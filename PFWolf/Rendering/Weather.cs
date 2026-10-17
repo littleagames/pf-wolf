@@ -30,17 +30,17 @@ internal sealed class Weather(
     internal WeatherInfo? levelweather;      // the level's rain or snow, null for none
     internal string? levelweathername;
 
-    const int MAXWEATHER = 10000;
-    const int TEXELGLOBAL = (int)MapConstants.TILEGLOBAL / GameConstants.TEXTURESIZE;    // global units a texel
-    const long NEARWEATHER = MapConstants.TILEGLOBAL / 4;                  // nothing's drawn nearer the view than this
+    const int MaxWeather = 10000;
+    const int TexelGlobal = (int)MapConstants.TileGlobal / GameConstants.TextureSize;    // global units a texel
+    const long NearWeather = MapConstants.TileGlobal / 4;                  // nothing's drawn nearer the view than this
 
     //
     // A share of the particles fall in a smaller box close around the view, so there's rain right
     // in front of you even with a wall a tile or two away: in the big box, most fall out of sight
     // behind the walls.
     //
-    const double NEARSHARE = 0.3;
-    const int NEARBOXTILES = 6;
+    const double NearShare = 0.3;
+    const int NearBoxTiles = 6;
 
     // Each particle: where it starts falling (a share of the height), how it sways, how much
     // faster or slower than the rest it falls, and the seed for where each fall of it lands
@@ -67,7 +67,7 @@ internal sealed class Weather(
         levelweathername = name;
 
         // The view's own random numbers, never the game's: demos and net games don't see them
-        int count = Math.Clamp(info.Count, 0, MAXWEATHER);
+        int count = Math.Clamp(info.Count, 0, MaxWeather);
         var random = new Random();
         weatherseed = random.Next();
         weatherz = new float[count];
@@ -82,9 +82,9 @@ internal sealed class Weather(
     }
 
     // How far across particle i's box is, in global units: the near ones' is smaller
-    int WeatherBox(WeatherInfo info, int i) => i < weatherz.Length * NEARSHARE
-        ? Math.Min(NEARBOXTILES, Math.Clamp(info.Distance, 1, 32) * 2) * (int)MapConstants.TILEGLOBAL
-        : Math.Clamp(info.Distance, 1, 32) * 2 * (int)MapConstants.TILEGLOBAL;
+    int WeatherBox(WeatherInfo info, int i) => i < weatherz.Length * NearShare
+        ? Math.Min(NearBoxTiles, Math.Clamp(info.Distance, 1, 32) * 2) * (int)MapConstants.TileGlobal
+        : Math.Clamp(info.Distance, 1, 32) * 2 * (int)MapConstants.TileGlobal;
 
     /// <summary>
     /// Where particle i lands on its fall'th fall, somewhere in a box across (0 to box - 1, each
@@ -120,15 +120,15 @@ internal sealed class Weather(
         if (!weatheron || occcount.Length == render.viewwidth)
             return;
         occcount = new byte[render.viewwidth];
-        occheight = new short[render.viewwidth * RenderState.MAXPOSTS];
-        occtop = new short[render.viewwidth * RenderState.MAXPOSTS];
-        occbottom = new short[render.viewwidth * RenderState.MAXPOSTS];
+        occheight = new short[render.viewwidth * RenderState.MaxPosts];
+        occtop = new short[render.viewwidth * RenderState.MaxPosts];
+        occbottom = new short[render.viewwidth * RenderState.MaxPosts];
     }
 
     /// <summary>Notes what the column's queued posts cover, before DrawPosts draws them</summary>
     internal void NoteOccluders()
     {
-        int at = render.pixx * RenderState.MAXPOSTS;
+        int at = render.pixx * RenderState.MaxPosts;
         for (int i = 0; i < render.postcount; i++, at++)
         {
             // the rows DrawPost fills
@@ -155,7 +155,7 @@ internal sealed class Weather(
     // Whether a wall nearer than something height high (as wallheight) covers row y of column x
     bool Occluded(int x, int y, int height)
     {
-        int at = x * RenderState.MAXPOSTS;
+        int at = x * RenderState.MaxPosts;
         for (int end = at + occcount[x]; at < end; at++)
             if (occheight[at] > height && y >= occtop[at] && y <= occbottom[at])
                 return true;
@@ -168,19 +168,19 @@ internal sealed class Weather(
     /// </summary>
     bool WeatherCovered(long gx, long gy, double z)
     {
-        long tx = gx >> MapConstants.TILESHIFT, ty = gy >> MapConstants.TILESHIFT;
+        long tx = gx >> MapConstants.TileShift, ty = gy >> MapConstants.TileShift;
         if ((ulong)tx >= (ulong)map.mapwidth || (ulong)ty >= (ulong)map.mapheight)
             return false;                           // off the map, it falls on the world outside
 
         int x = (int)tx, y = (int)ty;
         int tile = map.tilemap[x, y];
-        if ((tile & GameConstants.BIT_DOOR) != 0)
+        if ((tile & GameConstants.BitDoor) != 0)
             return true;
         if (tile != 0)
-            return z < map.WallStories(x, y) * GameConstants.TEXTURESIZE;
-        if (map.ceilingflat[(y << MapManager.MAPSHIFT) + x] != null)
+            return z < map.WallStories(x, y) * GameConstants.TextureSize;
+        if (map.ceilingflat[(y << MapManager.MapShift) + x] != null)
             return true;
-        return isArch(x, y) && z < map.storymap[x, y] * GameConstants.TEXTURESIZE;
+        return isArch(x, y) && z < map.storymap[x, y] * GameConstants.TextureSize;
     }
 
     struct WeatherDrop
@@ -191,7 +191,7 @@ internal sealed class Weather(
         public bool Splash;
     }
 
-    const int SPLASHTICS = 8;           // how long a splash lasts
+    const int SplashTics = 8;           // how long a splash lasts
 
     /// <summary>
     /// How far the wind has carried things by tic t, in global units. Gusts make it rise and fall
@@ -205,7 +205,7 @@ internal sealed class Weather(
             double w = 2 * Math.PI / info.GustTics;
             travel -= info.Gust * Math.Cos(w * t) / w;
         }
-        return ((long)(info.WindX * TEXELGLOBAL * travel), (long)(info.WindY * TEXELGLOBAL * travel));
+        return ((long)(info.WindX * TexelGlobal * travel), (long)(info.WindY * TexelGlobal * travel));
     }
 
     // The wind's strength at tic t, as a share of wind-x/wind-y
@@ -219,10 +219,10 @@ internal sealed class Weather(
     // Its color at (gx, gy), nx along the view: in the light there, and dimmed toward black with distance (to half)
     byte WeatherColor(byte basecolor, byte[] dim, long gx, long gy, long nx, long maxdist)
     {
-        byte color = lighting.LightAt(Lighting.TileIndex((int)(gx >> MapConstants.TILESHIFT), (int)(gy >> MapConstants.TILESHIFT)), gx, gy)
+        byte color = lighting.LightAt(Lighting.TileIndex((int)(gx >> MapConstants.TileShift), (int)(gy >> MapConstants.TileShift)), gx, gy)
             [lighting.ShadeOffset(nx) + basecolor];
-        int step = (int)(nx * (Lighting.FADESTEPS / 2) / maxdist);
-        return dim[Math.Min(step, Lighting.FADESTEPS - 1) * 256 + color];
+        int step = (int)(nx * (Lighting.FadeSteps / 2) / maxdist);
+        return dim[Math.Min(step, Lighting.FadeSteps - 1) * 256 + color];
     }
 
     void AddWeatherDrop(int x0, int y0, int x1, int y1, int size, byte color, long nx, bool splash)
@@ -263,12 +263,12 @@ internal sealed class Weather(
         bool snow = info.Kind.Equals("snow", StringComparison.OrdinalIgnoreCase);
         bool splashes = !snow && info.Splashes;
         int time = session.gamestate.TimeCount;
-        long maxdist = (long)Math.Clamp(info.Distance, 1, 32) * MapConstants.TILEGLOBAL;
+        long maxdist = (long)Math.Clamp(info.Distance, 1, 32) * MapConstants.TileGlobal;
 
         // Below the ceiling, if any tile has a ceiling flat it could show over; otherwise up past the tallest walls
         double top = map.hasceilingflats
-            ? map.wallstories * GameConstants.TEXTURESIZE
-            : (map.MaxWallStories + 1) * GameConstants.TEXTURESIZE;
+            ? map.wallstories * GameConstants.TextureSize
+            : (map.MaxWallStories + 1) * GameConstants.TextureSize;
         double fall = Math.Max(info.FallSpeed, 0.01);
         var (windx, windy) = WindDrift(info, time);
 
@@ -276,7 +276,7 @@ internal sealed class Weather(
         double nowx = info.WindX * gust, nowy = info.WindY * gust;
 
         byte basecolor = video.ParseColorOr(info.Color, 0x0f);
-        var dim = video.GetLightRow(Lighting.LIGHTLEVELS - 1, Lighting.LIGHTLEVELS, Lighting.FADESTEPS, 0, 0, 0);
+        var dim = video.GetLightRow(Lighting.LightLevels - 1, Lighting.LightLevels, Lighting.FadeSteps, 0, 0, 0);
         int maxstreak = Math.Max(render.viewheight / 4, 4);     // a streak right by the view is cut to this many rows
 
         for (int i = 0; i < count; i++)
@@ -290,7 +290,7 @@ internal sealed class Weather(
             double travelled = weatherz[i] * top + dropfall * time;
             long falls = (long)Math.Floor(travelled / top);
             double fallen = travelled - falls * top;
-            if (splashes && fallen < dropfall * SPLASHTICS)
+            if (splashes && fallen < dropfall * SplashTics)
                 AddSplash(info, i, falls - 1, time - fallen / dropfall, fallen / dropfall, originx, originy, box, basecolor, dim, maxdist);
 
             double z = top - fallen;
@@ -299,27 +299,27 @@ internal sealed class Weather(
             if (snow && info.Drift != 0)
             {
                 // each flake sways on its own
-                gx += (long)(info.Drift * TEXELGLOBAL * Math.Sin(time * 0.031 + weatherphase[i]));
-                gy += (long)(info.Drift * TEXELGLOBAL * Math.Cos(time * 0.023 + weatherphase[i] * 1.7));
+                gx += (long)(info.Drift * TexelGlobal * Math.Sin(time * 0.031 + weatherphase[i]));
+                gy += (long)(info.Drift * TexelGlobal * Math.Cos(time * 0.023 + weatherphase[i] * 1.7));
             }
             (gx, gy) = InWeatherBox(gx, gy, originx, originy, box);
 
             if (WeatherCovered(gx, gy, z))
                 continue;
             // Not right in the view's face, where a streak would cross half the screen
-            if (!ProjectPoint(gx, gy, z, out int x0, out int y0, out long nx, out double half) || nx > maxdist || nx < NEARWEATHER)
+            if (!ProjectPoint(gx, gy, z, out int x0, out int y0, out long nx, out double half) || nx > maxdist || nx < NearWeather)
                 continue;
 
             int x1 = x0, y1 = y0, size;
             if (snow)
-                size = Math.Clamp((int)(info.Size * half / (GameConstants.TEXTURESIZE / 2) + 0.5), 1, 8);
+                size = Math.Clamp((int)(info.Size * half / (GameConstants.TextureSize / 2) + 0.5), 1, 8);
             else
             {
                 // It trails back along the way it's going (with the wind as it is now): faster
                 // drops make longer streaks
                 double speed = Math.Sqrt(nowx * nowx + nowy * nowy + dropfall * dropfall);
                 double length = info.Length * weatherspeed[i];
-                if (!ProjectPoint(gx - (long)(nowx / speed * length * TEXELGLOBAL), gy - (long)(nowy / speed * length * TEXELGLOBAL),
+                if (!ProjectPoint(gx - (long)(nowx / speed * length * TexelGlobal), gy - (long)(nowy / speed * length * TexelGlobal),
                         z + dropfall / speed * length, out x1, out y1, out _, out _))
                     continue;
 
@@ -329,7 +329,7 @@ internal sealed class Weather(
                     x1 = x0 + (x1 - x0) * maxstreak / rows;
                     y1 = y0 + (y1 - y0) * maxstreak / rows;
                 }
-                size = Math.Clamp((int)(half / (GameConstants.TEXTURESIZE * 2)), 1, 3);
+                size = Math.Clamp((int)(half / (GameConstants.TextureSize * 2)), 1, 3);
             }
 
             AddWeatherDrop(x0, y0, x1, y1, size, WeatherColor(basecolor, dim, gx, gy, nx, maxdist), nx, false);
@@ -348,14 +348,14 @@ internal sealed class Weather(
         var (windx, windy) = WindDrift(info, landed);
         var (spotx, spoty) = WeatherSpot(i, fall, box);
         var (gx, gy) = InWeatherBox(spotx + windx, spoty + windy, originx, originy, box);
-        long tx = gx >> MapConstants.TILESHIFT, ty = gy >> MapConstants.TILESHIFT;
+        long tx = gx >> MapConstants.TileShift, ty = gy >> MapConstants.TileShift;
         if ((ulong)tx >= (ulong)map.mapwidth || (ulong)ty >= (ulong)map.mapheight || WeatherCovered(gx, gy, 0))
             return;
-        if (!ProjectPoint(gx, gy, 0, out int sx, out int sy, out long nx, out double half) || nx > maxdist || nx < NEARWEATHER)
+        if (!ProjectPoint(gx, gy, 0, out int sx, out int sy, out long nx, out double half) || nx > maxdist || nx < NearWeather)
             return;
 
         // it spreads to about 3 texels across as it goes
-        int spread = Math.Clamp((int)(3 * half / (GameConstants.TEXTURESIZE / 2) * (age + 1) / SPLASHTICS + 0.5), 1, 12);
+        int spread = Math.Clamp((int)(3 * half / (GameConstants.TextureSize / 2) * (age + 1) / SplashTics + 0.5), 1, 12);
         AddWeatherDrop(sx, sy, sx, sy, spread, WeatherColor(basecolor, dim, gx, gy, nx, maxdist), nx, true);
     }
 
@@ -381,7 +381,7 @@ internal sealed class Weather(
         long dx = gx - render.viewx, dy = gy - render.viewy;
         nx = (dx * render.viewcos >> 16) - (dy * render.viewsin >> 16);
         long ny = (dx * render.viewsin >> 16) + (dy * render.viewcos >> 16);
-        if (nx < GameConstants.MINDIST)
+        if (nx < GameConstants.MinDist)
         {
             sx = sy = 0;
             half = 0;
@@ -390,7 +390,7 @@ internal sealed class Weather(
 
         sx = (int)Math.Clamp(render.centerx + ny * render.scale / nx, -100000, 100000);
         half = render.heightnumerator * 32.0 / nx;
-        sy = (int)Math.Clamp(render.centery + half * (render.vieweyez - z) / (GameConstants.TEXTURESIZE / 2), -100000, 100000);
+        sy = (int)Math.Clamp(render.centery + half * (render.vieweyez - z) / (GameConstants.TextureSize / 2), -100000, 100000);
         return true;
     }
 

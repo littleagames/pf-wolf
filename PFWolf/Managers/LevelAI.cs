@@ -86,7 +86,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         var walls = _map.GetMapData().Walls;
         for (int y = 0; y < _map.mapheight; y++)
             for (int x = 0; x < _map.mapwidth; x++)
-                if (walls.TryGetValue(_map.MAPSPOT(x, y, 0), out var wall) && wall.Outlet is { Class.Length: > 0 } spec)
+                if (walls.TryGetValue(_map.MapSpot(x, y, 0), out var wall) && wall.Outlet is { Class.Length: > 0 } spec)
                 {
                     var outlet = new Outlet { X = x, Y = y, Spec = spec };
                     outlet.Delay = OutletDelay(outlet);
@@ -96,7 +96,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
 
     private int OutletDelay(Outlet outlet)
     {
-        int spot = _map.MAPSPOT(outlet.X, outlet.Y, 1);
+        int spot = _map.MapSpot(outlet.X, outlet.Y, 1);
         if ((spot & 0xff00) == 0xfa00)
             return 60 * (spot & 0xff);
         int min = outlet.Spec.Delay.ElementAtOrDefault(0), max = Math.Max(outlet.Spec.Delay.ElementAtOrDefault(1), min);
@@ -276,7 +276,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
 
         const int MaxAngle = 45 / 2;
         BlakeMonster? chosen = null;
-        int chosenDist = (int)GameConstants.MINACTORDIST;
+        int chosenDist = (int)GameConstants.MinActorDist;
 
         foreach (var ob in _map.GetActors().OfType<BlakeMonster>())
         {
@@ -298,8 +298,8 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
             var angle = Math.Atan2(session.player.Y - ob.Y, ob.X - session.player.X);
             if (angle < 0)
                 angle += Math.PI * 2;
-            int facing = Math.Abs(session.player.Angle - (int)(angle / (Math.PI * 2) * GameConstants.ANGLES));
-            if (Math.Min(facing, GameConstants.ANGLES - facing) > MaxAngle)
+            int facing = Math.Abs(session.player.Angle - (int)(angle / (Math.PI * 2) * GameConstants.Angles));
+            if (Math.Min(facing, GameConstants.Angles - facing) > MaxAngle)
                 continue;
 
             chosen = ob;

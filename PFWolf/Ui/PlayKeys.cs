@@ -142,7 +142,7 @@ internal sealed class PlayKeys(
                     "$STR_CHEATER2".ToLanguageText(language) + "\n\n" +
                     "$STR_CHEATER3".ToLanguageText(language) + "\n" +
                     "$STR_CHEATER4".ToLanguageText(language) + "\n" +
-                    "$STR_CHEATER5".ToLanguageText(language), GameConstants.MAXY);
+                    "$STR_CHEATER5".ToLanguageText(language), GameConstants.MaxY);
 
             inputManager.ClearKeysDown();
             inputManager.Ack();
@@ -158,7 +158,7 @@ internal sealed class PlayKeys(
         {
             audio.StopAll();
 
-            draw.Message("Cheat commands are\nnow available!\nPress ` for the console.", GameConstants.MAXY);
+            draw.Message("Cheat commands are\nnow available!\nPress ` for the console.", GameConstants.MaxY);
             inputManager.ClearKeysDown();
             inputManager.Ack();
 
@@ -176,7 +176,7 @@ internal sealed class PlayKeys(
             draw.Message("Commander Keen is also\n" +
                         "available from Apogee, but\n" +
                         "then, you already know\n" +
-                        "that - right, Cheatmeister?!", GameConstants.MAXY);
+                        "that - right, Cheatmeister?!", GameConstants.MaxY);
 
             inputManager.ClearKeysDown();
             inputManager.Ack();

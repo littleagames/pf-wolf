@@ -14,8 +14,8 @@ struct MapHeader
 
     public MapHeader()
     {
-        planestart = new Int32[MapConstants.MAPPLANES];
-        planelength = new UInt16[MapConstants.MAPPLANES];
+        planestart = new Int32[MapConstants.MapPlanes];
+        planelength = new UInt16[MapConstants.MapPlanes];
         name = new char[16];
     }
 }
@@ -34,8 +34,8 @@ public class Wolf3dMapFileLoader
     private readonly MapHeader?[] _levels;
     private readonly byte[] _gameMaps;
 
-    internal const ushort NEARTAG = 0xa7;
-    internal const ushort FARTAG = 0xa8;
+    internal const ushort NearTag = 0xa7;
+    internal const ushort FarTag = 0xa8;
 
     // MAPHEAD's offset table holds no more than this
     private const int MaxLevels = 100;
@@ -67,14 +67,14 @@ public class Wolf3dMapFileLoader
             var pos = BitConverter.ToInt32(mapHead, sizeof(ushort) + i * sizeof(int));
             if (pos <= 0)                           // $FFFFFFFF start is a sparse map; 0 is none
                 continue;
-            if (pos > gameMaps.Length - (MapConstants.MAPPLANES * 6 + 4 + 16))
+            if (pos > gameMaps.Length - (MapConstants.MapPlanes * 6 + 4 + 16))
                 throw new InvalidDataException($"MAPHEAD puts level {i + 1} past the end of GAMEMAPS");
 
             var level = new MapHeader();
             br.BaseStream.Seek(pos, SeekOrigin.Begin);
-            for (int p = 0; p < MapConstants.MAPPLANES; p++)
+            for (int p = 0; p < MapConstants.MapPlanes; p++)
                 level.planestart[p] = br.ReadInt32();
-            for (int p = 0; p < MapConstants.MAPPLANES; p++)
+            for (int p = 0; p < MapConstants.MapPlanes; p++)
                 level.planelength[p] = br.ReadUInt16();
             level.width = br.ReadUInt16();
             level.height = br.ReadUInt16();
@@ -118,23 +118,23 @@ public class Wolf3dMapFileLoader
     {
         int pos, compressed;
         var level = _levels[mapnum] ?? throw new PfWolfMapException($"There's no level {mapnum + 1}");
-        if (level.width != MapConstants.MAPSIZE || level.height != MapConstants.MAPSIZE)
-            throw new PfWolfMapException($"CA_CacheMap: Map not {MapConstants.MAPSIZE}*{MapConstants.MAPSIZE}!");
+        if (level.width != MapConstants.MapSize || level.height != MapConstants.MapSize)
+            throw new PfWolfMapException($"CA_CacheMap: Map not {MapConstants.MapSize}*{MapConstants.MapSize}!");
 
         //
         // load the planes into the allready allocated buffers
         //
-        var size = MapConstants.MAPAREA * sizeof(ushort);
+        var size = MapConstants.MapArea * sizeof(ushort);
 
         // GAMEMAPS has three planes; the height, tag and zone planes after them are left empty
-        UInt16[][] mapsegs = new ushort[MapConstants.LEVELPLANES][];
-        for (var plane = 0; plane < MapConstants.LEVELPLANES; plane++)
-            mapsegs[plane] = new ushort[MapConstants.MAPAREA];
+        UInt16[][] mapsegs = new ushort[MapConstants.LevelPlanes][];
+        for (var plane = 0; plane < MapConstants.LevelPlanes; plane++)
+            mapsegs[plane] = new ushort[MapConstants.MapArea];
 
         using (var fs = new MemoryStream(_gameMaps))
         using (BinaryReader br = new BinaryReader(fs))
         {
-            for (var plane = 0; plane < MapConstants.MAPPLANES; plane++)
+            for (var plane = 0; plane < MapConstants.MapPlanes; plane++)
             {
 
                 pos = level.planestart[plane];
@@ -203,7 +203,7 @@ public class Wolf3dMapFileLoader
             ch = BitConverter.ToUInt16(source, inptr);
             inptr += 2;
             chhigh = (ushort)(ch >> 8);
-            if (chhigh == NEARTAG)
+            if (chhigh == NearTag)
             {
                 count = (ushort)(ch & 0xff);
                 if (count == 0)
@@ -222,7 +222,7 @@ public class Wolf3dMapFileLoader
                         dest[outptr++] = dest[copyptr++];
                 }
             }
-            else if (chhigh == FARTAG)
+            else if (chhigh == FarTag)
             {
                 count = (ushort)(ch & 0xff);
                 if (count == 0)

@@ -57,8 +57,8 @@ internal sealed class CheatCommands(
             complete: (_, i) => i == 0 ? assets.GetActorMetadata().Actors.Keys : i == 1 ? ["0", "45", "90", "135", "180", "225", "270", "315"] : []);
         console.Register("pitch", "Looks up (positive) or down (negative) by that many degrees, as far as the view allows; 0 looks straight ahead.",
             "pitch [degrees]", PitchCommand, InLevel);
-        console.Register("eyeheight", $"Sets how high the view is above the floor, in texels (64 a story, {GameConstants.EYEDEFAULT} standing), until the level is left or reloaded.",
-            $"eyeheight [{GameConstants.MINEYE}-{GameConstants.MAXEYE}]", EyeHeightCommand, InLevel);
+        console.Register("eyeheight", $"Sets how high the view is above the floor, in texels (64 a story, {GameConstants.EyeDefault} standing), until the level is left or reloaded.",
+            $"eyeheight [{GameConstants.MinEye}-{GameConstants.MaxEye}]", EyeHeightCommand, InLevel);
         console.Register("hurt", "Damages the player.", "hurt [points]", HurtCommand, InLevel | Solo);
         console.Register("playerclass", "Shows the class being played as and the classes there are; with a name, the class new games are played as.",
             "playerclass [class]", PlayerClassCommand, complete: (_, i) => i == 0 ? classRules.PlayerClasses() : []);
@@ -105,10 +105,10 @@ internal sealed class CheatCommands(
         if (args.Length > 0)
         {
             if (!int.TryParse(args[0], out int z))
-                throw new ArgumentException($"usage: eyeheight [{GameConstants.MINEYE}-{GameConstants.MAXEYE}]");
+                throw new ArgumentException($"usage: eyeheight [{GameConstants.MinEye}-{GameConstants.MaxEye}]");
             hooks.SetEyeHeight(z);
         }
-        console.Print($"Eye height is {session.playerstate.EyeZ} ({GameConstants.MINEYE}-{GameConstants.MAXEYE}, 64 a story, {GameConstants.EYEDEFAULT} standing)");
+        console.Print($"Eye height is {session.playerstate.EyeZ} ({GameConstants.MinEye}-{GameConstants.MaxEye}, 64 a story, {GameConstants.EyeDefault} standing)");
     }
 
     internal void PlayerClassCommand(string[] args)
@@ -236,7 +236,7 @@ internal sealed class CheatCommands(
 
         int x = ParseInt(args[0], 0, mapManager.mapwidth - 1);
         int y = ParseInt(args[1], 0, mapManager.mapheight - 1);
-        int? angle = args.Length > 2 ? ParseInt(args[2], 0, GameConstants.ANGLES - 1) : null;
+        int? angle = args.Length > 2 ? ParseInt(args[2], 0, GameConstants.Angles - 1) : null;
 
         if (!TryTeleportPlayer(x, y, angle, out var problem))
             throw new ArgumentException(problem);
@@ -258,16 +258,16 @@ internal sealed class CheatCommands(
             return false;
         }
         if (mapManager.tilemap[x, y] != 0 || mapManager.actorat[x, y] != null
-            || !mapManager.VALIDAREA(mapManager.MAPSPOT(x, y, 0)))
+            || !mapManager.ValidArea(mapManager.MapSpot(x, y, 0)))
         {
             problem = $"tile {x},{y} is not open floor";
             return false;
         }
 
         session.player.SetPosition(x, y);
-        session.player.AreaNumber = (byte)(mapManager.MAPSPOT(x, y, 0) - mapManager.Floors.AreaTile);
+        session.player.AreaNumber = (byte)(mapManager.MapSpot(x, y, 0) - mapManager.Floors.AreaTile);
         if (angle is { } degrees)
-            session.player.Angle = (short)(((degrees % GameConstants.ANGLES) + GameConstants.ANGLES) % GameConstants.ANGLES);
+            session.player.Angle = (short)(((degrees % GameConstants.Angles) + GameConstants.Angles) % GameConstants.Angles);
         doors.ConnectAreas();
         return true;
     }
@@ -310,7 +310,7 @@ internal sealed class CheatCommands(
         var (x, y) = targets.TileArg(args, 2);
 
         if (mapManager.tilemap[x, y] != 0 || mapManager.actorat[x, y] != null
-            || !mapManager.VALIDAREA(mapManager.MAPSPOT(x, y, 0)))
+            || !mapManager.ValidArea(mapManager.MapSpot(x, y, 0)))
             throw new ArgumentException($"tile {x},{y} is not open floor");
 
         var before = mapManager.GetActors().Last;

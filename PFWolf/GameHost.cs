@@ -89,7 +89,7 @@ internal static partial class GameHost
     internal static int ShowTextScreen(string textName)
     {
         textPresenter.ShowTextPages(textName, fromMenu: true);
-        StartCPMusic(MENUSONG);
+        StartCPMusic(MenuSong);
         return 0;
     }
     // The high scores, and the level-end and victory screens (Ui/HighScoresScreen.cs,
@@ -310,7 +310,7 @@ internal static partial class GameHost
 
         titleLoop = new TitleLoop(_gameEngineManager, _assetManager, _videoManager, _graphicManager, _inputManager, _audioManager, ui,
             signonPanel, titleScreens, highScoresScreen, demos, netGames, quickKeys, mainGameLoop, cheatCommands, warpRequest, session,
-            new TitleLoopHooks(() => NoWait, () => INTROSONG,
+            new TitleLoopHooks(() => NoWait, () => IntroSong,
                 (skill, episode, map) => NewGame(skill, episode, map)));
 
         // What the actors use of the game (Entities/Actors/ActorWorld.cs); the map hands it to each
@@ -333,10 +333,10 @@ internal static partial class GameHost
 
     =============================================================================
     */
-    internal const long FOCALLENGTH = GameConstants.FOCALLENGTH;
+    internal const long BaseFocalLength = GameConstants.FocalLength;
 
-    const int VIEWWIDTH = 256;                   // size of view window
-    const int VIEWHEIGHT = 144;
+    const int ClassicViewWidth = 256;                   // size of view window
+    const int ClassicViewHeight = 144;
 
     /*
     =============================================================================

@@ -7,7 +7,7 @@ namespace PFWolf.Tests;
 
 public class LightingTests
 {
-    private const long Tile = MapConstants.TILEGLOBAL;
+    private const long Tile = MapConstants.TileGlobal;
 
     private readonly List<uint> _actorTicks = [];
 
@@ -111,7 +111,7 @@ public class LightingTests
         // Act / Assert
         Assert.That(lighting.LightAt(-1, 0, 0), Is.SameAs(lighting.lightrow));
         Assert.That(Rendering.Lighting.TileIndex(-1, 0), Is.EqualTo(-1));
-        Assert.That(Rendering.Lighting.TileIndex(MapManager.MAPSIZE, 0), Is.EqualTo(-1));
+        Assert.That(Rendering.Lighting.TileIndex(MapManager.MapSize, 0), Is.EqualTo(-1));
     }
 
     [Test]

@@ -226,8 +226,8 @@ public class LevelChecksTests
         var document = Room();
         EditorMaps.Set(document, 0, 0, 10, DoorSwitch);
         EditorMaps.Set(document, 0, 0, 20, DoorSwitch);
-        EditorMaps.Set(document, MapConstants.TAGPLANE, 0, 20, 4);
-        EditorMaps.Set(document, MapConstants.TAGPLANE, 30, 30, 9);
+        EditorMaps.Set(document, MapConstants.TagPlane, 0, 20, 4);
+        EditorMaps.Set(document, MapConstants.TagPlane, 30, 30, 9);
 
         // Act
         var messages = Check(document).Select(problem => problem.Message).ToList();
@@ -244,7 +244,7 @@ public class LevelChecksTests
     {
         // Arrange
         var document = Room();
-        EditorMaps.Set(document, MapConstants.ZONEPLANE, 10, 10, 3);
+        EditorMaps.Set(document, MapConstants.ZonePlane, 10, 10, 3);
 
         // Act
         var before = Check(document);
@@ -295,8 +295,8 @@ public class LevelChecksTests
         var document = Room();
         WallOff(document, 30, 30, 34, 34);
         EditorMaps.Set(document, 0, 0, 10, WallSwitch);
-        EditorMaps.Set(document, MapConstants.TAGPLANE, 0, 10, 5);
-        EditorMaps.Set(document, MapConstants.TAGPLANE, 30, 32, 5);
+        EditorMaps.Set(document, MapConstants.TagPlane, 0, 10, 5);
+        EditorMaps.Set(document, MapConstants.TagPlane, 30, 32, 5);
 
         // Act
         var problems = Check(document);

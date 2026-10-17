@@ -12,7 +12,7 @@ public class MidGameJoinTests
         var players = session.players.ToList();
         var join = new MidGameJoin(null!, null!, null!, null!, null!, null!, null!, null!, null!, session,
             new MidGameJoinHooks(_ => null, () => { }));
-        var state = BitConverter.GetBytes(MidGameJoin.NETSTATEVERSION + 1);
+        var state = BitConverter.GetBytes(MidGameJoin.NetStateVersion + 1);
 
         // Act
         var why = join.BeginJoinedGame(null!, new JoinStateInfo(null!, 1, 0, state));
@@ -32,7 +32,7 @@ public class MidGameJoinTests
             new MidGameJoinHooks(_ => null, () => { }));
 
         // Act
-        var why = join.BeginJoinedGame(null!, new JoinStateInfo(null!, 1, 0, BitConverter.GetBytes(MidGameJoin.NETSTATEVERSION)));
+        var why = join.BeginJoinedGame(null!, new JoinStateInfo(null!, 1, 0, BitConverter.GetBytes(MidGameJoin.NetStateVersion)));
 
         // Assert
         Assert.That(why, Does.StartWith("The game couldn't be taken up"));

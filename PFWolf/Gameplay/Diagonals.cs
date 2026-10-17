@@ -8,7 +8,7 @@ namespace PFWolf.Gameplay;
 A diagonal tile (MapManager.wallshape) is only solid on its named corner's side of the
 45 degree face. It keeps its actorat entry, so enemies never path into one; the player,
 projectiles and sight lines use these tests to get into and see through the open half.
-Coordinates are 16.16 global fixed point; u and v are tile-local (0..TILEGLOBAL).
+Coordinates are 16.16 global fixed point; u and v are tile-local (0..TileGlobal).
 
 =============================================================================
 */
@@ -23,8 +23,8 @@ internal static class Diagonals
     {
         WallShape.SolidNE => u - v,
         WallShape.SolidSW => v - u,
-        WallShape.SolidNW => MapConstants.TILEGLOBAL - u - v,
-        _ => u + v - MapConstants.TILEGLOBAL,     // SolidSE
+        WallShape.SolidNW => MapConstants.TileGlobal - u - v,
+        _ => u + v - MapConstants.TileGlobal,     // SolidSE
     };
 
     /// <summary>The tile edges a diagonal is solid along (its named corner's two), as automap faces.</summary>
@@ -45,7 +45,7 @@ internal static class Diagonals
 
     /// <summary>Whether tile-local (fu, fv), as fractions of a tile, is in the diagonal's solid half.</summary>
     internal static bool InDiagonalSolid(WallShape shape, float fu, float fv) =>
-        DiagonalDepth(shape, fu * MapConstants.TILEGLOBAL, fv * MapConstants.TILEGLOBAL) > 0;
+        DiagonalDepth(shape, fu * MapConstants.TileGlobal, fv * MapConstants.TileGlobal) > 0;
 
     /// <summary>
     /// Whether a box of half-width <paramref name="size"/> centred on (x, y) overlaps the solid
@@ -53,14 +53,14 @@ internal static class Diagonals
     /// </summary>
     internal static bool BoxHitsDiagonal(WallShape shape, int tilex, int tiley, long x, long y, long size)
     {
-        long ox = (long)tilex << MapConstants.TILESHIFT;
-        long oy = (long)tiley << MapConstants.TILESHIFT;
+        long ox = (long)tilex << MapConstants.TileShift;
+        long oy = (long)tiley << MapConstants.TileShift;
 
         //
         // the part of the box inside the tile
         //
-        long ul = Math.Max(x - size - ox, 0), uh = Math.Min(x + size - ox, MapConstants.TILEGLOBAL);
-        long vl = Math.Max(y - size - oy, 0), vh = Math.Min(y + size - oy, MapConstants.TILEGLOBAL);
+        long ul = Math.Max(x - size - ox, 0), uh = Math.Min(x + size - ox, MapConstants.TileGlobal);
+        long vl = Math.Max(y - size - oy, 0), vh = Math.Min(y + size - oy, MapConstants.TileGlobal);
         if (ul > uh || vl > vh)
             return false;
 
@@ -78,8 +78,8 @@ internal static class Diagonals
     /// </summary>
     internal static bool LineHitsDiagonal(WallShape shape, int tilex, int tiley, long x1, long y1, long x2, long y2)
     {
-        long ox = (long)tilex << MapConstants.TILESHIFT;
-        long oy = (long)tiley << MapConstants.TILESHIFT;
+        long ox = (long)tilex << MapConstants.TileShift;
+        long oy = (long)tiley << MapConstants.TileShift;
         double dx = x2 - x1, dy = y2 - y1;
 
         //
@@ -104,8 +104,8 @@ internal static class Diagonals
             return true;
         }
 
-        if (!Clip(-dx, x1 - ox) || !Clip(dx, ox + MapConstants.TILEGLOBAL - x1)
-            || !Clip(-dy, y1 - oy) || !Clip(dy, oy + MapConstants.TILEGLOBAL - y1))
+        if (!Clip(-dx, x1 - ox) || !Clip(dx, ox + MapConstants.TileGlobal - x1)
+            || !Clip(-dy, y1 - oy) || !Clip(dy, oy + MapConstants.TileGlobal - y1))
             return false;
 
         //

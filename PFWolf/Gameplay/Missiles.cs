@@ -52,7 +52,7 @@ internal sealed class Missiles(
     /// </summary>
     internal void FireMissile(Entities.Actors.Actor weapon, string[] args)
     {
-        const int ANGLES = GameConstants.ANGLES;
+        const int ANGLES = GameConstants.Angles;
         if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
         {
             Console.WriteLine("A_FireMissile: no missile given.");
@@ -83,11 +83,11 @@ internal sealed class Missiles(
         missile.TicCount = 1;
 
         // Just in front of the player, so one fired point blank at a wall still shows its blast
-        const int ahead = (int)(9L * GameConstants.MINDIST / 8);
+        const int ahead = (int)(9L * GameConstants.MinDist / 8);
         missile.X += MathUtils.FixedMul(ahead, TrigTables.costable[missile.Angle]);
         missile.Y -= MathUtils.FixedMul(ahead, TrigTables.sintable[missile.Angle]);
-        missile.TileX = (byte)(missile.X >> MapConstants.TILESHIFT);
-        missile.TileY = (byte)(missile.Y >> MapConstants.TILESHIFT);
+        missile.TileX = (byte)(missile.X >> MapConstants.TileShift);
+        missile.TileY = (byte)(missile.Y >> MapConstants.TileShift);
 
         attacks.PlayAttackSound();
         session.madenoise = true;
@@ -142,8 +142,8 @@ internal sealed class Missiles(
         int dy = -MathUtils.FixedMul(speed, TrigTables.sintable[ob.Angle]);
         ob.X += dx;
         ob.Y += dy;
-        ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
-        ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
+        ob.TileX = (byte)(ob.X >> MapConstants.TileShift);
+        ob.TileY = (byte)(ob.Y >> MapConstants.TileShift);
 
         Entities.Actors.Actor? victim = null;
         bool blocked = !hooks.ProjectileTryMove(ob);
@@ -155,7 +155,7 @@ internal sealed class Missiles(
         if (!blocked)
         {
             // the player's side's (factions.yaml) it flies past: no friendly fire
-            victim = (Entities.Actors.Actor?)map.ShootableActorsNear(ob.X, ob.Y, GameConstants.PROJECTILESIZE / 2)
+            victim = (Entities.Actors.Actor?)map.ShootableActorsNear(ob.X, ob.Y, GameConstants.ProjectileSize / 2)
                 .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !factions.IsAlly(ob, a))
                 ?? RivalHitBy(ob);
             if (victim == null)
@@ -184,7 +184,7 @@ internal sealed class Missiles(
     /// </summary>
     internal void Bounce(Entities.Actors.Actor ob, int dx, int dy)
     {
-        const int ANGLES = GameConstants.ANGLES;
+        const int ANGLES = GameConstants.Angles;
         ob.X -= dx;
         ob.Y -= dy;
 
@@ -194,8 +194,8 @@ internal sealed class Missiles(
         ob.Y += dy;
         bool yClear = hooks.ProjectileTryMove(ob);
         ob.Y -= dy;
-        ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
-        ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
+        ob.TileX = (byte)(ob.X >> MapConstants.TileShift);
+        ob.TileY = (byte)(ob.Y >> MapConstants.TileShift);
 
         ob.Angle = (short)(BounceAngle(ob.Angle, xClear, yClear) % ANGLES);
         ob.Speed /= 2;
@@ -209,7 +209,7 @@ internal sealed class Missiles(
     /// </summary>
     internal static int BounceAngle(int angle, bool xClear, bool yClear)
     {
-        const int ANGLES = GameConstants.ANGLES;
+        const int ANGLES = GameConstants.Angles;
         int turned = (xClear, yClear) switch
         {
             (false, true) => 180 - angle,       // a wall across x: x reversed
@@ -220,11 +220,11 @@ internal sealed class Missiles(
     }
 
     // In deathmatch, another living player a player's missile has flown into (as an enemy's
-    // projectile hits a player: within PROJECTILESIZE), else null. Co-op missiles fly through.
+    // projectile hits a player: within ProjectileSize), else null. Co-op missiles fly through.
     internal Entities.Actors.PlayerPawn? RivalHitBy(Entities.Actors.Actor ob) =>
         !session.IsVersus || ob.Shooter is not Entities.Actors.PlayerPawn { State: { } shooter } ? null
         : map.Players.FirstOrDefault(pawn => session.AreRivals(shooter, pawn.State) && pawn.State.health > 0
-            && Math.Abs((long)pawn.X - ob.X) < GameConstants.PROJECTILESIZE && Math.Abs((long)pawn.Y - ob.Y) < GameConstants.PROJECTILESIZE);
+            && Math.Abs((long)pawn.X - ob.X) < GameConstants.ProjectileSize && Math.Abs((long)pawn.Y - ob.Y) < GameConstants.ProjectileSize);
 
     /// <summary>
     /// Makes the player who fired a missile the acting player while it does its damage, so the
@@ -323,7 +323,7 @@ internal sealed class Missiles(
             {
                 int nx = x + dx, ny = y + dy;
                 if (Math.Abs(nx - cx) > radius || Math.Abs(ny - cy) > radius
-                    || nx < 0 || ny < 0 || nx >= MapManager.MAPSIZE || ny >= MapManager.MAPSIZE
+                    || nx < 0 || ny < 0 || nx >= MapManager.MapSize || ny >= MapManager.MapSize
                     || !seen.Add((nx, ny)) || IsSolidForBlast(nx, ny))
                     continue;
                 open.Enqueue((nx, ny));
@@ -338,7 +338,7 @@ internal sealed class Missiles(
     internal static int BlastFalloff(int damage, int radius, Entities.Actors.Actor blast, Entities.Actors.Actor target)
     {
         double dx = (double)target.X - blast.X, dy = (double)target.Y - blast.Y;
-        double tiles = Math.Sqrt(dx * dx + dy * dy) / MapConstants.TILEGLOBAL;
+        double tiles = Math.Sqrt(dx * dx + dy * dy) / MapConstants.TileGlobal;
         if (tiles >= radius)
             return 0;
         return tiles <= 1 ? damage : (int)(damage / (tiles * tiles));
@@ -349,7 +349,7 @@ internal sealed class Missiles(
     {
         Wall => true,
         Door door => door.door < 0 || doors.doorobjlist[door.door].action != DoorAction.Open,
-        _ => map.tilemap[x, y] != 0 && (map.tilemap[x, y] & GameConstants.BIT_DOOR) == 0,
+        _ => map.tilemap[x, y] != 0 && (map.tilemap[x, y] & GameConstants.BitDoor) == 0,
     };
 
     /// <summary>A_BlockTile: the actor's tile blocks movement, as a solid thing's does</summary>
@@ -381,7 +381,7 @@ internal sealed class Missiles(
             return;
 
         var player = session.player;
-        long reach = (long)(distance * MapConstants.TILEGLOBAL);
+        long reach = (long)(distance * MapConstants.TileGlobal);
         if (Math.Abs(player.X - ob.X) > reach || Math.Abs(player.Y - ob.Y) > reach)
             return;
 

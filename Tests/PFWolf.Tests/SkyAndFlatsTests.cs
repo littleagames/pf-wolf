@@ -29,7 +29,7 @@ public class SkyAndFlatsTests
         {
             vbufPtr = _pinned.AddrOfPinnedObject(),
             viewwidth = Width, viewheight = Height, centery = Height / 2, basecentery = Height / 2,
-            viewx = (int)(10.5 * MapConstants.TILEGLOBAL), viewy = (int)(10.5 * MapConstants.TILEGLOBAL),
+            viewx = (int)(10.5 * MapConstants.TileGlobal), viewy = (int)(10.5 * MapConstants.TileGlobal),
             heightnumerator = 0x10000, pixelangle = new short[Width], vieweyez = 32,
         };
         _lighting = new Lighting(null!, video, null!, new LightingHooks(() => 0, () => { }, _ => { }));
@@ -67,7 +67,7 @@ public class SkyAndFlatsTests
     {
         // Arrange: every tile's floor color 7
         var stone = new TextureAsset { Width = 64, Height = 64, RawData = Enumerable.Repeat((byte)7, 64 * 64).ToArray() };
-        var flats = Enumerable.Repeat<TextureAsset?>(stone, MapManager.MAPAREA).ToArray();
+        var flats = Enumerable.Repeat<TextureAsset?>(stone, MapManager.MapArea).ToArray();
 
         // Act
         _sky.SetupFlatColumns();
@@ -83,7 +83,7 @@ public class SkyAndFlatsTests
     {
         // Act: no flats anywhere, and no light zones or actor light to recolor it
         _sky.SetupFlatColumns();
-        _sky.DrawFlats(new TextureAsset?[MapManager.MAPAREA], 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
+        _sky.DrawFlats(new TextureAsset?[MapManager.MapArea], 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
 
         // Assert
         Assert.That(_screen.All(pixel => pixel == 1), Is.True);
@@ -93,11 +93,11 @@ public class SkyAndFlatsTests
     public void A_Flats_See_Through_Pixels_Leave_What_Is_There()
     {
         // Arrange: a see-through flat
-        var grate = new TextureAsset { Width = 64, Height = 64, RawData = Enumerable.Repeat(SkyAndFlats.FLATMASK, 64 * 64).ToArray() };
+        var grate = new TextureAsset { Width = 64, Height = 64, RawData = Enumerable.Repeat(SkyAndFlats.FlatMask, 64 * 64).ToArray() };
 
         // Act
         _sky.SetupFlatColumns();
-        _sky.DrawFlats(Enumerable.Repeat<TextureAsset?>(grate, MapManager.MAPAREA).ToArray(), 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
+        _sky.DrawFlats(Enumerable.Repeat<TextureAsset?>(grate, MapManager.MapArea).ToArray(), 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
 
         // Assert
         Assert.That(_screen.All(pixel => pixel == 1), Is.True);

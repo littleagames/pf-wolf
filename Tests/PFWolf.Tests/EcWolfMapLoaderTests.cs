@@ -9,10 +9,10 @@ public class EcWolfMapLoaderTests
 {
     private static MapAsset MakeMap(string name, int planesInUse)
     {
-        var data = new ushort[MapManager.LEVELPLANES][];
+        var data = new ushort[MapManager.LevelPlanes][];
         for (int plane = 0; plane < data.Length; plane++)
         {
-            data[plane] = new ushort[MapManager.MAPAREA];
+            data[plane] = new ushort[MapManager.MapArea];
             if (plane < planesInUse)
             {
                 for (int i = 0; i < data[plane].Length; i++)
@@ -22,8 +22,8 @@ public class EcWolfMapLoaderTests
 
         return new MapAsset
         {
-            Width = MapManager.MAPSIZE,
-            Height = MapManager.MAPSIZE,
+            Width = MapManager.MapSize,
+            Height = MapManager.MapSize,
             Name = name,
             MapData = data,
         };
@@ -36,7 +36,7 @@ public class EcWolfMapLoaderTests
     public void Save_Then_Load_Round_Trips_Every_Plane()
     {
         // Arrange
-        var map = MakeMap("Wolf1 Map1", MapManager.LEVELPLANES);
+        var map = MakeMap("Wolf1 Map1", MapManager.LevelPlanes);
 
         // Act
         var loaded = EcWolfMapLoader.Load(EcWolfMapLoader.Save(map, "MAP01"));
@@ -44,7 +44,7 @@ public class EcWolfMapLoaderTests
         // Assert
         Assert.That(loaded.Name, Is.EqualTo("Wolf1 Map1"));
         Assert.That((loaded.Width, loaded.Height), Is.EqualTo((map.Width, map.Height)));
-        for (int plane = 0; plane < MapManager.LEVELPLANES; plane++)
+        for (int plane = 0; plane < MapManager.LevelPlanes; plane++)
             Assert.That(loaded.MapData[plane], Is.EqualTo(map.MapData[plane]), $"plane {plane}");
     }
 
@@ -52,31 +52,31 @@ public class EcWolfMapLoaderTests
     public void Save_Leaves_Off_Empty_Trailing_Planes()
     {
         // Arrange: only GAMEMAPS' three planes are used
-        var map = MakeMap("E1M1", MapManager.MAPPLANES);
+        var map = MakeMap("E1M1", MapManager.MapPlanes);
 
         // Act
         var wad = EcWolfMapLoader.Save(map, "MAP01");
         var loaded = EcWolfMapLoader.Load(wad);
 
         // Assert
-        Assert.That(SavedPlaneCount(wad), Is.EqualTo(MapManager.MAPPLANES));
-        Assert.That(loaded.MapData, Has.Length.EqualTo(MapManager.LEVELPLANES));
-        Assert.That(loaded.MapData[MapManager.LEVELPLANES - 1], Has.All.EqualTo(0));
+        Assert.That(SavedPlaneCount(wad), Is.EqualTo(MapManager.MapPlanes));
+        Assert.That(loaded.MapData, Has.Length.EqualTo(MapManager.LevelPlanes));
+        Assert.That(loaded.MapData[MapManager.LevelPlanes - 1], Has.All.EqualTo(0));
     }
 
     [Test]
     public void Save_Keeps_Empty_Planes_Before_One_In_Use()
     {
         // Arrange: heights and tags empty, but light zones (the last) used
-        var map = MakeMap("Zones", MapManager.MAPPLANES);
-        map.MapData[MapManager.LEVELPLANES - 1][0] = 7;
+        var map = MakeMap("Zones", MapManager.MapPlanes);
+        map.MapData[MapManager.LevelPlanes - 1][0] = 7;
 
         // Act
         var wad = EcWolfMapLoader.Save(map, "MAP01");
 
         // Assert
-        Assert.That(SavedPlaneCount(wad), Is.EqualTo(MapManager.LEVELPLANES));
-        Assert.That(EcWolfMapLoader.Load(wad).MapData[MapManager.LEVELPLANES - 1][0], Is.EqualTo(7));
+        Assert.That(SavedPlaneCount(wad), Is.EqualTo(MapManager.LevelPlanes));
+        Assert.That(EcWolfMapLoader.Load(wad).MapData[MapManager.LevelPlanes - 1][0], Is.EqualTo(7));
     }
 
     [Test]

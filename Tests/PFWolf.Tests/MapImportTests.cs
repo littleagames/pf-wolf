@@ -9,7 +9,7 @@ public class MapImportTests
 {
     // A WDC .map file: "WDC3.1", map count, plane count, name length, then each map's name,
     // width, height and planes; tile i of plane p of map m is m * 10000 + p * 1000 + i % 97
-    private static byte[] WdcFile(int maps, int planes, int size = MapConstants.MAPSIZE, string name = "Imported")
+    private static byte[] WdcFile(int maps, int planes, int size = MapConstants.MapSize, string name = "Imported")
     {
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
@@ -102,10 +102,10 @@ public class MapImportTests
         var source = WdcMapFile.Read(WdcFile(1, 3))[0];
 
         // Act
-        MapImport.Apply(document, source, [new PlaneImport(2, MapConstants.HEIGHTPLANE)], "Import");
+        MapImport.Apply(document, source, [new PlaneImport(2, MapConstants.HeightPlane)], "Import");
 
         // Assert
-        Assert.That(document.Map.MapData[MapConstants.HEIGHTPLANE], Is.EqualTo(source.Planes[2]));
+        Assert.That(document.Map.MapData[MapConstants.HeightPlane], Is.EqualTo(source.Planes[2]));
         Assert.That(document.Map.MapData[2], Has.All.EqualTo(0));
     }
 
@@ -120,10 +120,10 @@ public class MapImportTests
 
         // Assert
         Assert.That(map.Name, Is.EqualTo("Imported1"));
-        Assert.That(map.MapData, Has.Length.EqualTo(MapConstants.LEVELPLANES));
+        Assert.That(map.MapData, Has.Length.EqualTo(MapConstants.LevelPlanes));
         Assert.That(map.MapData[1], Is.EqualTo(source.Planes[1]));
         Assert.That(map.MapData[0][0], Is.EqualTo(1));
-        Assert.That(map.MapData[0][MapConstants.MAPSIZE + 1], Is.EqualTo(107));
+        Assert.That(map.MapData[0][MapConstants.MapSize + 1], Is.EqualTo(107));
         Assert.That(map.MapData[2], Has.All.EqualTo(0));
     }
 
@@ -132,6 +132,6 @@ public class MapImportTests
     {
         var source = WdcMapFile.Read(WdcFile(1, 8))[0];
 
-        Assert.That(MapImport.ImportablePlanes(source), Is.EqualTo(Enumerable.Range(0, MapConstants.LEVELPLANES)));
+        Assert.That(MapImport.ImportablePlanes(source), Is.EqualTo(Enumerable.Range(0, MapConstants.LevelPlanes)));
     }
 }

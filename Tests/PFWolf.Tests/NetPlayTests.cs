@@ -7,7 +7,7 @@ namespace PFWolf.Tests;
 
 public class NetPlayTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private MapManager _map = null!;
     private Doors _doors = null!;
@@ -25,8 +25,8 @@ public class NetPlayTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _game = new GameSession();
         _doors = new Doors(null!, null!, _map, null!, null!, _game, null!);

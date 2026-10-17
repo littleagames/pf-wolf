@@ -19,11 +19,11 @@ internal sealed record NetPlayHooks(
 
 /// <summary>
 /// Every machine plays the whole game, from everyone's controls. A frame (a step) goes:
-/// this machine's controls (PollControls' localcmd) are sent for the step NETDELAY ahead; the
+/// this machine's controls (PollControls' localcmd) are sent for the step NetDelay ahead; the
 /// host gathers everyone's for each step and sends them out together; and once this step's
 /// are here, every player gets theirs (TicBundle) and the actors think. As long as each
 /// machine starts the same and plays the same controls through the same code, they all
-/// come out the same, so only the controls go over the network. Frames are NETTICS tics long,
+/// come out the same, so only the controls go over the network. Frames are NetTics tics long,
 /// always, so the game doesn't depend on how fast each machine is.
 ///
 /// Nothing local may change the game: no pausing, no cheats, no menus over it (Esc asks to
@@ -43,16 +43,16 @@ internal sealed class NetPlay(
     NetPlayHooks hooks)
 {
     /// <summary>Tics a frame plays, with others: always the same, on every machine</summary>
-    internal const uint NETTICS = 2;
+    internal const uint NetTics = 2;
 
     /// <summary>
     /// How many frames ahead a machine sends its controls: the time they have to reach the host
     /// and come back before they're needed, at the cost of that much delay before they act
     /// </summary>
-    internal const int NETDELAY = 2;
+    internal const int NetDelay = 2;
 
     /// <summary>How often (frames) the game is summed up to check every machine still agrees</summary>
-    internal const int NETCHECKEVERY = 35;
+    internal const int NetCheckEvery = 35;
 
     // The level being played, counted from 1 on every machine alike (each PlayLoop), and its frame
     internal int netlevel, netstep;
@@ -82,7 +82,7 @@ internal sealed class NetPlay(
         if (netJoinResume)
         {
             netJoinResume = false;
-            for (int step = netstep; step < netstep + NETDELAY; step++)
+            for (int step = netstep; step < netstep + NetDelay; step++)
                 session.SubmitLocal(netlevel, step, default);
             return;
         }
@@ -90,7 +90,7 @@ internal sealed class NetPlay(
         netlevel++;
         netstep = 0;
         session.ForgetBefore(netlevel);
-        for (int step = 0; step < NETDELAY; step++)
+        for (int step = 0; step < NetDelay; step++)
             session.SubmitLocal(netlevel, step, default);
     }
 
@@ -113,7 +113,7 @@ internal sealed class NetPlay(
         }
 
         // While asking about leaving, this player stands still
-        session.SubmitLocal(netlevel, netstep + NETDELAY, netLeavePrompt ? default : hooks.LocalCmd());
+        session.SubmitLocal(netlevel, netstep + NetDelay, netLeavePrompt ? default : hooks.LocalCmd());
 
         TicBundle? bundle;
         long waitStart = Environment.TickCount64;
@@ -180,7 +180,7 @@ internal sealed class NetPlay(
         if (NetSession.Current is not { } session)
             return;
 
-        if (netstep % NETCHECKEVERY == 0)
+        if (netstep % NetCheckEvery == 0)
             session.ReportChecksum(netlevel, netstep, GameChecksum());
 
         while (session.Notices.TryDequeue(out var line))

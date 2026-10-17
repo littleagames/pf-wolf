@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class WallPostsTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private MapManager _map = null!;
     private RenderState _render = null!;
@@ -16,7 +16,7 @@ public class WallPostsTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
         };
         // Looking east from the middle of tile (10, 10), the horizon at row 80
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade)
@@ -61,7 +61,7 @@ public class WallPostsTests
     [Test]
     public void Too_Close_Is_As_Tall_As_At_The_Nearest_Distance()
     {
-        Assert.That(_posts.HeightAt(_render.viewx, _render.viewy), Is.EqualTo(_posts.HeightAt(_render.viewx + (int)GameConstants.MINDIST, _render.viewy)));
+        Assert.That(_posts.HeightAt(_render.viewx, _render.viewy), Is.EqualTo(_posts.HeightAt(_render.viewx + (int)GameConstants.MinDist, _render.viewy)));
     }
 
     [TestCase(32, 32, 80 + 32)]     // eyes half a story up: the floor half a story's pixels below the horizon

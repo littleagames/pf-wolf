@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class WeatherTests
 {
-    private const long Tile = MapConstants.TILEGLOBAL;
+    private const long Tile = MapConstants.TileGlobal;
 
     private static (Weather Weather, RenderState Render) Make()
     {

@@ -55,9 +55,9 @@ internal sealed class DebugScreens(
         Actor? tile;
         string color = "Black";
 
-        zoom = 128 / MapManager.MAPSIZE;
+        zoom = 128 / MapManager.MapSize;
         offx = 160;
-        offy = (160 - (MapManager.MAPSIZE * zoom)) / 2;
+        offy = (160 - (MapManager.MapSize * zoom)) / 2;
 
         //
         // right side (raw)

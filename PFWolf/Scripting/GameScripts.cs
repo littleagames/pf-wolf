@@ -143,7 +143,7 @@ internal sealed class GameScripts(
             ["distanceto"] = Method("distanceto", (c, self) =>
             {
                 var other = ActorArg(c, 1);
-                double dx = (other.X - self.X) / (double)MapConstants.TILEGLOBAL, dy = (other.Y - self.Y) / (double)MapConstants.TILEGLOBAL;
+                double dx = (other.X - self.X) / (double)MapConstants.TileGlobal, dy = (other.Y - self.Y) / (double)MapConstants.TileGlobal;
                 return c.Return(Math.Sqrt(dx * dx + dy * dy));
             }),
             ["angleto"] = Method("angleto", (c, self) =>
@@ -154,7 +154,7 @@ internal sealed class GameScripts(
             }),
             ["cansee"] = Method("cansee", (c, self) =>
             {
-                long reach = Arg(c, 2).Type == LuaValueType.Number ? (long)(NumberArg(c, 2, 0) * MapConstants.TILEGLOBAL) : long.MaxValue;
+                long reach = Arg(c, 2).Type == LuaValueType.Number ? (long)(NumberArg(c, 2, 0) * MapConstants.TileGlobal) : long.MaxValue;
                 return c.Return(ActorArg(c, 1) is Entities.Actors.PlayerPawn pawn && session.IsTargetable(pawn) && projectileActions.CanSee(self, pawn, reach));
             }),
             ["nearestplayer"] = Method("nearestplayer", (c, self) =>
@@ -178,8 +178,8 @@ internal sealed class GameScripts(
             return new(key switch
             {
                 "name" => c.Return(self.Name),
-                "x" => c.Return(self.X / (double)MapConstants.TILEGLOBAL),
-                "y" => c.Return(self.Y / (double)MapConstants.TILEGLOBAL),
+                "x" => c.Return(self.X / (double)MapConstants.TileGlobal),
+                "y" => c.Return(self.Y / (double)MapConstants.TileGlobal),
                 "tilex" => c.Return(self.TileX),
                 "tiley" => c.Return(self.TileY),
                 "angle" => c.Return(ProjectileActions.FacingAngle(self)),
@@ -225,7 +225,7 @@ internal sealed class GameScripts(
                         follower.Follows = Arg(c, 2).ToBoolean();
                     break;
                 case "angle":
-                    self.Angle = (short)(((int)Math.Round(NumberArg(c, 2, 0)) % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES);
+                    self.Angle = (short)(((int)Math.Round(NumberArg(c, 2, 0)) % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles);
                     if (self is not Entities.Actors.Monster and not Entities.Actors.PlayerPawn)
                         self.Dir = ObjDir.NoDir;       // its facing is its angle from now on
                     break;
@@ -297,14 +297,14 @@ internal sealed class GameScripts(
         game["tag"] = new LuaFunction("game.tag", (c, _) =>
         {
             int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
-            if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+            if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.tag: {x},{y} isn't a tile on the map", 1);
             return new(c.Return(map.GetTag(x, y)));
         });
         game["patch"] = new LuaFunction("game.patch", (c, _) =>
         {
             int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
-            if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+            if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.patch: {x},{y} isn't a tile on the map", 1);
             return new(c.Return(map.GetPatch(x, y)));
         });

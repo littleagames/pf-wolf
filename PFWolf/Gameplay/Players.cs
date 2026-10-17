@@ -48,7 +48,7 @@ internal sealed class Players(
     GameSession session,
     PlayersHooks hooks)
 {
-    const int ANGLES = GameConstants.ANGLES;
+    const int Angles = GameConstants.Angles;
 
     /// <summary>Hurts a particular player (an enemy's shot, a projectile), as the acting player while it does</summary>
     internal void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker)
@@ -158,7 +158,7 @@ internal sealed class Players(
     // Floor a player can walk on: no wall, door or solid thing, and in an area
     internal bool IsOpenFloor(int x, int y) =>
         map.tilemap[x, y] == 0 && map.actorat[x, y] == null
-        && map.VALIDAREA(map.MAPSPOT(x, y, 0));
+        && map.ValidArea(map.MapSpot(x, y, 0));
 
     // Open floor nobody stands on: no enemy, and no player already put there
     internal bool IsFreeFloor(int x, int y) =>
@@ -173,14 +173,14 @@ internal sealed class Players(
     = Alone, dying ends the level (Died). With others, the game plays on: the dead player lies
     = where they fell, turning to face their killer as their view sinks (game-info
     = death-turn-speed, death-drop-height and death-drop-speed, as Died), and a press of use or
-    = fire once RESPAWNTICS have passed brings them back at the level's start with the class's
+    = fire once RespawnTics have passed brings them back at the level's start with the class's
     = starting loadout: whatever else they carried is lost. Their score stays; lives don't count.
     =
     ====================
     */
 
     /// <summary>How long a dead player lies before they can come back (tics)</summary>
-    internal const int RESPAWNTICS = 70;
+    internal const int RespawnTics = 70;
 
     /// <summary>The acting player has just been killed, with others playing on</summary>
     internal void PlayerDies()
@@ -203,12 +203,12 @@ internal sealed class Players(
     internal static short FacingAngle(Entities.Actors.PlayerPawn from, Entities.Actors.Actor? to)
     {
         if (to == null)
-            return (short)((from.Angle + ANGLES / 2) % ANGLES);
+            return (short)((from.Angle + Angles / 2) % Angles);
 
         var fangle = (float)Math.Atan2((float)(from.Y - to.Y), (float)(to.X - from.X));
         if (fangle < 0)
-            fangle = (float)(GameConstants.M_PI * 2 + fangle);
-        return (short)((int)(fangle / (GameConstants.M_PI * 2) * ANGLES) % ANGLES);
+            fangle = (float)(GameConstants.MathPi * 2 + fangle);
+        return (short)((int)(fangle / (GameConstants.MathPi * 2) * Angles) % Angles);
     }
 
     /// <summary>A dead player's think: turning to face their killer, sinking, and waiting to come back</summary>
@@ -220,18 +220,18 @@ internal sealed class Players(
         playerstate.DeadTics += (int)tics;
 
         // Turn the shorter way round toward the killer
-        int diff = ((playerstate.DeathAngle - player.Angle) % ANGLES + ANGLES) % ANGLES;
+        int diff = ((playerstate.DeathAngle - player.Angle) % Angles + Angles) % Angles;
         if (diff != 0)
         {
-            int step = Math.Min((int)tics * hooks.DeathTurnSpeed(), diff <= ANGLES / 2 ? diff : ANGLES - diff);
-            player.Angle = (short)(((player.Angle + (diff <= ANGLES / 2 ? step : -step)) % ANGLES + ANGLES) % ANGLES);
+            int step = Math.Min((int)tics * hooks.DeathTurnSpeed(), diff <= Angles / 2 ? diff : Angles - diff);
+            player.Angle = (short)(((player.Angle + (diff <= Angles / 2 ? step : -step)) % Angles + Angles) % Angles);
         }
 
         // and the view sinks (only with a death-drop-height)
         if (hooks.DeathDropHeight() is { } dropto && playerstate.EyeZ > dropto)
             playerstate.EyeZ = Math.Max(playerstate.EyeZ - (int)tics * hooks.DeathDropSpeed(), dropto);
 
-        if (playerstate.DeadTics >= RESPAWNTICS && hooks.MayRespawn(playerstate)
+        if (playerstate.DeadTics >= RespawnTics && hooks.MayRespawn(playerstate)
             && (session.playerinput.IsFreshPress(ButtonType.Use) || session.playerinput.IsFreshPress(ButtonType.Attack)))
             Respawn();
     }
@@ -269,7 +269,7 @@ internal sealed class Players(
         player.SetPosition(x, y);
         player.AreaNumber = map.SpawnArea(x, y);
         player.SetState(Entities.Actors.PlayerPawn.SpawnState);
-        player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
+        player.Angle = (short)((angle % Angles + Angles) % Angles);
         movement.Thrust(0, 0);
         hooks.ConnectAreas();
         if (session.IsVersus)

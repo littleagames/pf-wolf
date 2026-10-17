@@ -6,7 +6,7 @@ namespace PFWolf.Configuration;
 /// </summary>
 internal sealed class ControlSettings
 {
-    internal const int JOYTURNSPEEDS = 10;
+    internal const int JoyTurnSpeeds = 10;
 
     // Whether the mouse and the controller are used at all (the Control menu, config.cfg), and
     // the mouse's sensitivity, 0 to 9 (the mouse sensitivity screen)

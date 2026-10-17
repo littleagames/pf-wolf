@@ -125,7 +125,7 @@ public sealed class Mp3Decoder : AudioFileDecoder
 }
 
 /// <summary>
-/// RIFF WAVE: integer PCM of 8 (unsigned), 16, 24 or 32 bits, or 32/64-bit float, plain or
+/// Riff Wave: integer PCM of 8 (unsigned), 16, 24 or 32 bits, or 32/64-bit float, plain or
 /// WAVE_FORMAT_EXTENSIBLE. Other chunks (LIST, cue, fact) are skipped.
 /// </summary>
 public sealed class WavDecoder : AudioFileDecoder

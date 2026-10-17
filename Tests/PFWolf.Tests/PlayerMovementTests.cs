@@ -6,7 +6,7 @@ namespace PFWolf.Tests;
 
 public class PlayerMovementTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private MapManager _map = null!;
     private PushWalls _pushWalls = null!;
@@ -22,8 +22,8 @@ public class PlayerMovementTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
             mapwidth = 64,
             mapheight = 64,
         };
@@ -59,7 +59,7 @@ public class PlayerMovementTests
     [Test]
     public void Turning_Keeps_What_Doesnt_Make_A_Whole_Degree()
     {
-        // Arrange: ANGLESCALE (20) of controlx turns a degree, to the right for positive
+        // Arrange: AngleScale (20) of controlx turns a degree, to the right for positive
         var pawn = Player();
         pawn.Angle = 90;
         _session.playerinput.Begin(new TicCmd { ControlX = 45 });
@@ -128,8 +128,8 @@ public class PlayerMovementTests
     public void A_Pushwalls_Back_Blocks_Only_Where_It_Has_Got_To(byte pos, bool room)
     {
         // Arrange: a pushwall moving away east, the player close behind it
-        _map.tilemap[11, 10] = GameConstants.BIT_WALL;
-        _map.actorat[11, 10] = new Wall(GameConstants.BIT_WALL);
+        _map.tilemap[11, 10] = GameConstants.BitWall;
+        _map.actorat[11, 10] = new Wall(GameConstants.BitWall);
         _pushWalls.pushwalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = ControlDir.East, Pos = pos, Tile = 1 });
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;
@@ -141,7 +141,7 @@ public class PlayerMovementTests
     [Test]
     public void A_Solid_Actor_Close_By_Blocks()
     {
-        // Arrange: a guard marked on the next tile, within MINACTORDIST
+        // Arrange: a guard marked on the next tile, within MinActorDist
         var guard = new Monster { Name = "Guard", X = 11 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
         guard.RuntimeFlags |= ObjFlags.Shootable;
         _map.actorat[11, 10] = guard.Mark;

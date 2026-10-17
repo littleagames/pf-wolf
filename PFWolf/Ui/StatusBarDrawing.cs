@@ -29,8 +29,8 @@ internal sealed class StatusBarDrawing(
     StatusBarHooks hooks)
 {
     // The status bar's height in 320x200 lines (background), and a top bar's (top)
-    int STATUSLINES => StatusBar.Get("background")?.Height ?? 0;
-    int TOPLINES => StatusBar.Get("top")?.Height ?? 0;
+    int StatusLines => StatusBar.Get("background")?.Height ?? 0;
+    int TopLines => StatusBar.Get("top")?.Height ?? 0;
 
     /// <summary>
     /// Whether the status bar's parts aren't drawn now: with the view full screen, or for a
@@ -62,7 +62,7 @@ internal sealed class StatusBarDrawing(
     internal void StatusDrawPic(string picName, int x, int y)
     {
         using var _ = video.UseUiOrigin(UiAnchor.Bottom);
-        graphics.DrawPic(picName, x, 200 - STATUSLINES + y);
+        graphics.DrawPic(picName, x, 200 - StatusLines + y);
     }
 
     /// <summary>Draws a picture at the named part of the status bar, if the layout has it.</summary>
@@ -133,7 +133,7 @@ internal sealed class StatusBarDrawing(
     internal int TextWidth(string text, string font) => ui.TextWidth(text, font);
 
     /// <summary>Where a part's bar starts down the screen (320x200): the top bar's, or the bottom one's</summary>
-    internal int StatusBarTop(Assets.StatusBarElement element) => element.Top ? 0 : 200 - STATUSLINES;
+    internal int StatusBarTop(Assets.StatusBarElement element) => element.Top ? 0 : 200 - StatusLines;
 
     /// <summary>
     /// Lines the 320x200 layout up with the edge of the screen a part's bar is on, until
@@ -280,7 +280,7 @@ internal sealed class StatusBarDrawing(
         if (StatusBarHidden) return;
         if (StatusBar.Get("top") is { Pic: { Length: > 0 } pic } top)
         {
-            FillBarSides(top, atTop: true, TOPLINES);
+            FillBarSides(top, atTop: true, TopLines);
             using var _ = video.UseUiOrigin(Managers.UiAnchor.Top);
             graphics.DrawPic(pic, 0, 0);
         }
@@ -447,7 +447,7 @@ internal sealed class StatusBarDrawing(
         else if (area.Box.Count == 4)
             video.Bar(area.Box[0], top + area.Box[1], area.Box[2], area.Box[3], area.BoxColor ?? "Black");
 
-        var font = area.Font ?? messages.FirstOrDefault()?.Style.Font ?? UiFonts.SMALL_FONT;
+        var font = area.Font ?? messages.FirstOrDefault()?.Style.Font ?? UiFonts.SmallFont;
         string color = area.Color ?? "White";
         int width = area.Size.ElementAtOrDefault(0) is > 0 and var w ? w : 100;
         int height = area.Size.ElementAtOrDefault(1) is > 0 and var h ? h : 40;

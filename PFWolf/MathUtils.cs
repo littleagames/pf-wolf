@@ -2,11 +2,11 @@
 
 internal static class MathUtils
 {
-    internal const int FRACBITS = 16;
+    internal const int FracBits = 16;
 
     internal static int FixedMul(int a, int b)
     {
-        return (int) (((Int64)a * b + 0x8000) >> FRACBITS);
+        return (int) (((Int64)a * b + 0x8000) >> FracBits);
     }
 
     /// <summary>
@@ -26,13 +26,13 @@ internal static class MathUtils
             negative = !negative;
         }
 
-        var result = (int)(((Int64)a * b) >> FRACBITS);
+        var result = (int)(((Int64)a * b) >> FracBits);
         return negative ? -result : result;
     }
 
     internal static int FixedDiv(int a, int b)
     {
-        Int64 c = ((Int64)a << FRACBITS) / (Int64)b;
+        Int64 c = ((Int64)a << FracBits) / (Int64)b;
 
         return (int) c;
     }

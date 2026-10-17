@@ -52,7 +52,7 @@ internal static class SaveFile
     // 22: each actor's faction, after its cloak; after the actors, each one's target and shooter.
     // 23: each actor's own translation, after its faction.
     // 24: each tile's wall patch, at the end of the level (plane 0 is saved without them).
-    // 25: tilemap entries and moving pushwalls' wall ids are 16 bits (wall ids up to 255, WALLSHIFT 8).
+    // 25: tilemap entries and moving pushwalls' wall ids are 16 bits (wall ids up to 255, WallShift 8).
     // 26: the level objectives (done and total of each), after the wall patches.
     internal const int SaveVersion = 26;
     private const int OldestLoadableSaveVersion = SaveVersion;

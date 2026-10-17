@@ -39,7 +39,7 @@ internal sealed class SpriteDrawing(
     GameSession session,
     SpriteDrawingHooks hooks)
 {
-    internal VisibleObject[] vislist = new VisibleObject[GameConstants.MAXVISABLE];
+    internal VisibleObject[] vislist = new VisibleObject[GameConstants.MaxVisible];
 
     /*
 ========================
@@ -69,8 +69,8 @@ internal sealed class SpriteDrawing(
         //
         // translate point to view centered coordinates
         //
-        gx = ((int)tx << MapConstants.TILESHIFT) + 0x8000 - render.viewx;
-        gy = ((int)ty << MapConstants.TILESHIFT) + 0x8000 - render.viewy;
+        gx = ((int)tx << MapConstants.TileShift) + 0x8000 - render.viewx;
+        gy = ((int)ty << MapConstants.TileShift) + 0x8000 - render.viewy;
 
         //
         // calculate newx
@@ -90,7 +90,7 @@ internal sealed class SpriteDrawing(
         //
         // calculate height / perspective ratio
         //
-        if (nx < GameConstants.MINDIST)                 // too close, don't overflow the divide
+        if (nx < GameConstants.MinDist)                 // too close, don't overflow the divide
             dispheight = 0;
         else
         {
@@ -101,7 +101,7 @@ internal sealed class SpriteDrawing(
         //
         // see if it should be grabbed
         //
-        if (nx < MapConstants.TILEGLOBAL && ny > -MapConstants.TILEGLOBAL / 2 && ny < MapConstants.TILEGLOBAL / 2)
+        if (nx < MapConstants.TileGlobal && ny > -MapConstants.TileGlobal / 2 && ny < MapConstants.TileGlobal / 2)
             return true;
         else
             return false;
@@ -121,7 +121,7 @@ internal sealed class SpriteDrawing(
 
         var gxt = MathUtils.FixedMul(gx, fromcos);
         var gyt = MathUtils.FixedMul(gy, fromsin);
-        var nx = gxt - gyt - GameConstants.ACTORSIZE;
+        var nx = gxt - gyt - GameConstants.ActorSize;
 
         gxt = MathUtils.FixedMul(gx, fromsin);
         gyt = MathUtils.FixedMul(gy, fromcos);
@@ -129,7 +129,7 @@ internal sealed class SpriteDrawing(
 
         ob.TransX = nx;
 
-        if (nx < GameConstants.MINDIST)
+        if (nx < GameConstants.MinDist)
         {
             ob.ViewHeight = 0;
             return;
@@ -193,11 +193,11 @@ internal sealed class SpriteDrawing(
         else
             angle = (viewangle - 180) - GameConstants.dirangle[(byte)ob.Dir];
 
-        angle += GameConstants.ANGLES / 16;
-        while (angle >= GameConstants.ANGLES) angle -= GameConstants.ANGLES;
-        while (angle < 0) angle += GameConstants.ANGLES;
+        angle += GameConstants.Angles / 16;
+        while (angle >= GameConstants.Angles) angle -= GameConstants.Angles;
+        while (angle < 0) angle += GameConstants.Angles;
 
-        return (angle / (GameConstants.ANGLES / 8)) + 1;
+        return (angle / (GameConstants.Angles / 8)) + 1;
     }
 
     /// <summary>
@@ -214,8 +214,8 @@ internal sealed class SpriteDrawing(
 
         var fangle = Math.Atan2(ob.Y - target.Y, target.X - ob.X);
         if (fangle < 0)
-            fangle += GameConstants.M_PI * 2;
-        return (int)(fangle / (GameConstants.M_PI * 2) * GameConstants.ANGLES) % GameConstants.ANGLES;
+            fangle += GameConstants.MathPi * 2;
+        return (int)(fangle / (GameConstants.MathPi * 2) * GameConstants.Angles) % GameConstants.Angles;
     }
 
     internal void DrawScaleds()
@@ -318,7 +318,7 @@ internal sealed class SpriteDrawing(
                 visptr_val.cloaked = actor.Cloaked && !actor.CloakHit && actor.Hitpoints > 0;
                 actor.CloakHit = false;
 
-                if (visptr < GameConstants.MAXVISABLE - 1)
+                if (visptr < GameConstants.MaxVisible - 1)
                 {
                     visptr_val.tilex = atx;
                     visptr_val.tiley = aty;
@@ -336,7 +336,7 @@ internal sealed class SpriteDrawing(
             // so it's placed by its own geometry rather than as a billboard in its tile.
             if (WallSprites.IsWallSprite(actor))
             {
-                if (wallSprites.WallSpriteSeen(actor) && wallSprites.TransformWallSprite(actor, visptr_val) && visptr < GameConstants.MAXVISABLE - 1)
+                if (wallSprites.WallSpriteSeen(actor) && wallSprites.TransformWallSprite(actor, visptr_val) && visptr < GameConstants.MaxVisible - 1)
                 {
                     visptr_val.tilex = actor.TileX;
                     visptr_val.tiley = actor.TileY;
@@ -357,7 +357,7 @@ internal sealed class SpriteDrawing(
                 continue;                                               // to close to the object
             visptr_val.z = actor.Z;
 
-            if (visptr < (GameConstants.MAXVISABLE - 1))    // don't let it overflow
+            if (visptr < (GameConstants.MaxVisible - 1))    // don't let it overflow
             {
                 visptr_val.tilex = (byte)actor.Position.X;
                 visptr_val.tiley = (byte)actor.Position.Y;

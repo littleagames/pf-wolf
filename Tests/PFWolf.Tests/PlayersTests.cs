@@ -196,7 +196,7 @@ public class PlayersTests
         Assert.DoesNotThrow(() => rig.Players.ThinkPlayerDead(rig.Second.Pawn!));
 
         // Assert
-        Assert.That(rig.Second.DeadTics, Is.LessThan(Players.RESPAWNTICS));
+        Assert.That(rig.Second.DeadTics, Is.LessThan(Players.RespawnTics));
         Assert.That(rig.Second.health, Is.Zero);
     }
 

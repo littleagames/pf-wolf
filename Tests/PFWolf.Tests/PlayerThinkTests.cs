@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class PlayerThinkTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     // VictorySpin and the victory part of T_Player only use the session
     private static (PlayerThink Think, GameSession Session, PlayerPawn Player) Won(bool runnerOnItsWay = false)
@@ -42,7 +42,7 @@ public class PlayerThinkTests
     {
         // Arrange
         var (think, session, player) = Won();
-        int dest = (25 << MapConstants.TILESHIFT) - 0x3000;
+        int dest = (25 << MapConstants.TileShift) - 0x3000;
         session.playerstate.Pitch = 12;
 
         // Act / Assert: 4096 a tic

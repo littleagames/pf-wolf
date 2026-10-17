@@ -36,10 +36,10 @@ internal sealed class QuickKeys(
         {
             if (CheckQuickKeys(scancode) != 0)
                 return;
-            session.lastgamemusicoffset = StartCPMusic(controlPanel.MENUSONG);
+            session.lastgamemusicoffset = StartCPMusic(controlPanel.MenuSong);
         }
         else
-            StartCPMusic(controlPanel.MENUSONG);
+            StartCPMusic(controlPanel.MenuSong);
 
         controlPanel.Run(scancode);
     }
@@ -65,7 +65,7 @@ internal sealed class QuickKeys(
             // END GAME
             //
             case ScanCodes.F7:
-                if (loop.Confirm("$ENDGAMESTR".ToLanguageText(language), GameConstants.MAXY) != 0)
+                if (loop.Confirm("$ENDGAMESTR".ToLanguageText(language), GameConstants.MaxY) != 0)
                 {
                     session.playstate = PlayState.Died;
                     session.playerstate.LastAttacker = null;
@@ -79,7 +79,7 @@ internal sealed class QuickKeys(
             //
             // Always the quicksave file, never a save picked in the menus
             case ScanCodes.F8:
-                draw.Message("$STR_SAVING".ToLanguageText(language) + "...", GameConstants.MAXY);
+                draw.Message("$STR_SAVING".ToLanguageText(language) + "...", GameConstants.MaxY);
                 gameSaves.RunSaveGame(1);
                 return 1;
 
@@ -90,7 +90,7 @@ internal sealed class QuickKeys(
             case ScanCodes.F9:
                 if (File.Exists(gameSaves.QuickSavePath))
                 {
-                    if (loop.Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), GameConstants.MAXY) != 0)
+                    if (loop.Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), GameConstants.MaxY) != 0)
                         gameSaves.RunLoadGame(1);
                 }
                 else
@@ -99,7 +99,7 @@ internal sealed class QuickKeys(
                     if (video.HasMargins)
                         video.ClearScreen(0);
 
-                    session.lastgamemusicoffset = StartCPMusic(controlPanel.MENUSONG);
+                    session.lastgamemusicoffset = StartCPMusic(controlPanel.MenuSong);
                     gameSaves.RunLoadGame(0);    // loads lastgamemusicoffs
 
                     input.ClearKeysDown();
@@ -124,7 +124,7 @@ internal sealed class QuickKeys(
             //
             case ScanCodes.F10:
                 string endStr = ControlPanel.PickEndString(gameInfo.EndStrings, hooks.UiRandom);
-                if (loop.Confirm(endStr, GameConstants.MAXY) != 0)
+                if (loop.Confirm(endStr, GameConstants.MaxY) != 0)
                 {
                     video.Update();
                     audio.SetPaused(true);

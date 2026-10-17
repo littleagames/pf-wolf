@@ -526,7 +526,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                 input.Ack();
             }
 
-            var style = new TextStyle(UiFonts.SMALL_FONT, screen.CaptionColor, screen.CaptionBackground);
+            var style = new TextStyle(UiFonts.SmallFont, screen.CaptionColor, screen.CaptionBackground);
             foreach (var caption in screen.Captions)
             {
                 video.Bar(0, screen.CaptionY, 320, 200 - screen.CaptionY, screen.CaptionBackground);

@@ -200,13 +200,13 @@ public class TileTransformTests
     public void A_Patch_Moves_To_The_Turned_Face_And_Keeps_Its_Wall()
     {
         // Act
-        var flipped = Remap(TileTransform.FlipVertical, 0, (ushort)(Wall | SouthSign << MapConstants.PATCHSHIFT), out var outcome);
-        var turned = Remap(TileTransform.RotateClockwise, 0, (ushort)(Wall | EastSign << MapConstants.PATCHSHIFT), out var turnOutcome);
+        var flipped = Remap(TileTransform.FlipVertical, 0, (ushort)(Wall | SouthSign << MapConstants.PatchShift), out var outcome);
+        var turned = Remap(TileTransform.RotateClockwise, 0, (ushort)(Wall | EastSign << MapConstants.PatchShift), out var turnOutcome);
 
         // Assert
-        Assert.That(flipped, Is.EqualTo((ushort)(Wall | NorthSign << MapConstants.PATCHSHIFT)));
+        Assert.That(flipped, Is.EqualTo((ushort)(Wall | NorthSign << MapConstants.PatchShift)));
         Assert.That(outcome, Is.EqualTo(RemapOutcome.Turned));
-        Assert.That(turned, Is.EqualTo((ushort)(Wall | EastSign << MapConstants.PATCHSHIFT)));
+        Assert.That(turned, Is.EqualTo((ushort)(Wall | EastSign << MapConstants.PatchShift)));
         Assert.That(turnOutcome, Is.EqualTo(RemapOutcome.Unmatched));
     }
 

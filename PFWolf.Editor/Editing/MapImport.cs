@@ -22,8 +22,8 @@ public static class MapImport
     /// <summary>Why a level of the file can't be imported, or null when it can</summary>
     public static string? Check(WdcMap map)
     {
-        if (map.Width != MapConstants.MAPSIZE || map.Height != MapConstants.MAPSIZE)
-            return $"{Label(map)} is {map.Width}x{map.Height}; PFWolf levels are {MapConstants.MAPSIZE}x{MapConstants.MAPSIZE}.";
+        if (map.Width != MapConstants.MapSize || map.Height != MapConstants.MapSize)
+            return $"{Label(map)} is {map.Width}x{map.Height}; PFWolf levels are {MapConstants.MapSize}x{MapConstants.MapSize}.";
         if (map.Planes.Length == 0)
             return $"{Label(map)} has no planes.";
         return null;
@@ -35,7 +35,7 @@ public static class MapImport
     public static int TilesInUse(WdcMap map, int plane) => map.Planes[plane].Count(tile => tile != 0);
 
     /// <summary>The planes the file has that a level can take, each onto the same plane</summary>
-    public static IEnumerable<int> ImportablePlanes(WdcMap map) => Enumerable.Range(0, Math.Min(map.Planes.Length, MapConstants.LEVELPLANES));
+    public static IEnumerable<int> ImportablePlanes(WdcMap map) => Enumerable.Range(0, Math.Min(map.Planes.Length, MapConstants.LevelPlanes));
 
     /// <summary>Puts the planes onto the level as one undo step; returns how many tiles changed</summary>
     public static int Apply(MapDocument document, WdcMap source, IReadOnlyList<PlaneImport> planes, string description)

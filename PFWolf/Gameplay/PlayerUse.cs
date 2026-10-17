@@ -32,8 +32,8 @@ internal sealed class PlayerUse(
     GameSession session,
     PlayerUseHooks hooks)
 {
-    const int BIT_WALL = GameConstants.BIT_WALL;
-    const int BIT_DOOR = GameConstants.BIT_DOOR;
+    const int BitWall = GameConstants.BitWall;
+    const int BitDoor = GameConstants.BitDoor;
 
     // How long use has been held with nothing to use or talk to
     int useHeldTics;
@@ -67,12 +67,12 @@ internal sealed class PlayerUse(
 
         var gamestate = session.gamestate;
         var tag = map.GetTag(tilex, tiley);
-        if (wallSwitch.To is > 0 and < BIT_WALL && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
+        if (wallSwitch.To is > 0 and < BitWall && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
         {
             // flip the switch, keeping the door-side mark on a wall beside a door
             var tile = map.tilemap[tilex, tiley];
-            int from = tile & ~BIT_WALL;
-            map.tilemap[tilex, tiley] = (ushort)(wallSwitch.To | (tile & BIT_WALL));
+            int from = tile & ~BitWall;
+            map.tilemap[tilex, tiley] = (ushort)(wallSwitch.To | (tile & BitWall));
             map.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` wall's play-once animation starts now
             int thrown = from != wallSwitch.To ? 1 : 0;
 
@@ -80,12 +80,12 @@ internal sealed class PlayerUse(
             foreach (var (x, y) in map.TaggedTiles(tag))
             {
                 var other = map.tilemap[x, y];
-                int id = other & ~BIT_WALL;
-                if ((other & BIT_DOOR) == 0 && (id == from || id == wallSwitch.To))
+                int id = other & ~BitWall;
+                if ((other & BitDoor) == 0 && (id == from || id == wallSwitch.To))
                 {
                     if (id == from && id != wallSwitch.To && (x, y) != (tilex, tiley))
                         thrown++;
-                    map.tilemap[x, y] = (ushort)(wallSwitch.To | (other & BIT_WALL));
+                    map.tilemap[x, y] = (ushort)(wallSwitch.To | (other & BitWall));
                     map.RestartAnimations(x, y, gamestate.TimeCount);
                 }
             }
@@ -118,7 +118,7 @@ internal sealed class PlayerUse(
     internal MapSwitchTranslation? PatchSwitchAt(int tilex, int tiley, ControlDir dir)
     {
         int tile = map.tilemap[tilex, tiley];
-        if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0)
+        if ((tile & BitDoor) != 0 || (tile & ~BitWall) == 0)
             return null;                // open floor, a door or a moving pushwall
         int id = map.GetPatch(tilex, tiley);
         if (id == 0 || !map.GetMapData().Patches.TryGetValue(id, out var patch) || patch.Switch is not { } patchSwitch)
@@ -200,7 +200,7 @@ internal sealed class PlayerUse(
             return false;
 
         var player = session.player;
-        if (secret || map.MAPSPOT(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile)
+        if (secret || map.MapSpot(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile)
             session.playstate = PlayState.SecretLevel;
         else
             session.playstate = PlayState.Completed;
@@ -211,7 +211,7 @@ internal sealed class PlayerUse(
 
     internal void PressUse()
     {
-        const int ANGLES = GameConstants.ANGLES;
+        const int ANGLES = GameConstants.Angles;
         var playerinput = session.playerinput;
         var player = session.player;
         int checkx, checky, cmdtile;
@@ -278,9 +278,9 @@ internal sealed class PlayerUse(
             playerinput.SetHeld(ButtonType.Use, true);
             UsePatchSwitch(patchSwitch, checkx, checky, dir);
         }
-        // A wall beside a door keeps its id under BIT_WALL; a moving pushwall's tiles are bare BIT_WALL
-        else if (!playerinput.IsHeld(ButtonType.Use) && (cmdtile & BIT_DOOR) == 0
-            && map.GetMapData().Walls.TryGetValue(cmdtile & ~BIT_WALL, out var switchWall)
+        // A wall beside a door keeps its id under BitWall; a moving pushwall's tiles are bare BitWall
+        else if (!playerinput.IsHeld(ButtonType.Use) && (cmdtile & BitDoor) == 0
+            && map.GetMapData().Walls.TryGetValue(cmdtile & ~BitWall, out var switchWall)
             && switchWall.Switch is { } wallSwitch && wallSwitch.UsableFrom(dir))
         {
             //
@@ -289,10 +289,10 @@ internal sealed class PlayerUse(
             playerinput.SetHeld(ButtonType.Use, true);
             UseSwitch(wallSwitch, checkx, checky, dir);
         }
-        else if (!playerinput.IsHeld(ButtonType.Use) && (cmdtile & BIT_DOOR) != 0)
+        else if (!playerinput.IsHeld(ButtonType.Use) && (cmdtile & BitDoor) != 0)
         {
             playerinput.SetHeld(ButtonType.Use, true);
-            doors.OperateDoor(cmdtile & ~BIT_DOOR);
+            doors.OperateDoor(cmdtile & ~BitDoor);
         }
         else
         {
@@ -316,13 +316,13 @@ internal sealed class PlayerUse(
     /// </summary>
     internal bool TryUseActor()
     {
-        const int ANGLES = GameConstants.ANGLES;
+        const int ANGLES = GameConstants.Angles;
         var playerinput = session.playerinput;
         var player = session.player;
         if (playerinput.IsHeld(ButtonType.Use))
             return false;
 
-        const long Reach = MapConstants.TILEGLOBAL * 3 / 2;
+        const long Reach = MapConstants.TileGlobal * 3 / 2;
         Entities.Actors.Actor? chosen = null;
         long best = Reach;
         foreach (var actor in map.GetActors())

@@ -23,7 +23,7 @@ internal sealed class ViewQuake
     internal const double DecayPerTic = 1 / 200.0;
     // The pulse turns 30 degrees a tic, out to a fifth of the focal length at an intensity of 1
     internal const int PhaseDegreesPerTic = 30;
-    internal const long UnitExcursion = GameConstants.FOCALLENGTH / 5;
+    internal const long UnitExcursion = GameConstants.FocalLength / 5;
 
     readonly Random random;
     int phase;                  // degrees

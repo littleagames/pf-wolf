@@ -85,8 +85,8 @@ internal static class ConsoleArgs
     internal static double ParseTiles(string arg)
     {
         if (!double.TryParse(arg, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var tiles)
-            || tiles < 0 || tiles > MapManager.MAPSIZE)
-            throw new ArgumentException($"expected a number of tiles from 0 to {MapManager.MAPSIZE}, got \"{arg}\"");
+            || tiles < 0 || tiles > MapManager.MapSize)
+            throw new ArgumentException($"expected a number of tiles from 0 to {MapManager.MapSize}, got \"{arg}\"");
         return tiles;
     }
 

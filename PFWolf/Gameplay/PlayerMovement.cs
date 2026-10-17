@@ -40,14 +40,14 @@ internal sealed class PlayerMovement(
 
     /// <summary>The cardinal direction the player faces, as PressUse reckons it</summary>
     internal static ControlDir FacingDir(int angle) =>
-        angle < GameConstants.ANGLES / 8 || angle > 7 * GameConstants.ANGLES / 8 ? ControlDir.East
-        : angle < 3 * GameConstants.ANGLES / 8 ? ControlDir.North
-        : angle < 5 * GameConstants.ANGLES / 8 ? ControlDir.West
+        angle < GameConstants.Angles / 8 || angle > 7 * GameConstants.Angles / 8 ? ControlDir.East
+        : angle < 3 * GameConstants.Angles / 8 ? ControlDir.North
+        : angle < 5 * GameConstants.Angles / 8 ? ControlDir.West
         : ControlDir.South;
 
     internal void ControlMovement(Entities.Actors.Actor ob)
     {
-        const int ANGLES = GameConstants.ANGLES;
+        const int ANGLES = GameConstants.Angles;
         var playerinput = session.playerinput;
         var playerstate = session.playerstate;
         var tics = session.tics;
@@ -83,9 +83,9 @@ internal sealed class PlayerMovement(
             if (angle >= ANGLES)
                 angle -= ANGLES;
             if (playerinput.IsPressed(ButtonType.Run))
-                Move(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
+                Move(angle, (int)(GameConstants.RunMove * GameConstants.MoveScale * tics * side));
             else
-                Move(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
+                Move(angle, (int)(GameConstants.BaseMove * GameConstants.MoveScale * tics * side));
         }
 
         if (playerinput.IsPressed(ButtonType.StrafeRight))
@@ -94,9 +94,9 @@ internal sealed class PlayerMovement(
             if (angle < 0)
                 angle += ANGLES;
             if (playerinput.IsPressed(ButtonType.Run))
-                Move(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
+                Move(angle, (int)(GameConstants.RunMove * GameConstants.MoveScale * tics * side));
             else
-                Move(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
+                Move(angle, (int)(GameConstants.BaseMove * GameConstants.MoveScale * tics * side));
         }
 
         //
@@ -109,7 +109,7 @@ internal sealed class PlayerMovement(
                 angle += ANGLES;
             else if (angle >= ANGLES)
                 angle -= ANGLES;
-            Move(angle, (int)(Math.Abs(playerinput.ControlStrafe) * GameConstants.MOVESCALE * side));
+            Move(angle, (int)(Math.Abs(playerinput.ControlStrafe) * GameConstants.MoveScale * side));
         }
 
         //
@@ -126,14 +126,14 @@ internal sealed class PlayerMovement(
                 angle = ob.Angle - ANGLES / 4;
                 if (angle < 0)
                     angle += ANGLES;
-                Move(angle, (int)(playerinput.ControlX * GameConstants.MOVESCALE * side));      // move to left
+                Move(angle, (int)(playerinput.ControlX * GameConstants.MoveScale * side));      // move to left
             }
             else if (playerinput.ControlX < 0)
             {
                 angle = ob.Angle + ANGLES / 4;
                 if (angle >= ANGLES)
                     angle -= ANGLES;
-                Move(angle, (int)(-playerinput.ControlX * GameConstants.MOVESCALE * side));     // move to right
+                Move(angle, (int)(-playerinput.ControlX * GameConstants.MoveScale * side));     // move to right
             }
         }
         else
@@ -142,7 +142,7 @@ internal sealed class PlayerMovement(
             // not strafing
             //
             // a zoomed scope turns slower (Gameplay/WeaponZoom.cs)
-            int angleScale = GameConstants.ANGLESCALE * Math.Max(playerstate.TurnSlowdown, 1);
+            int angleScale = GameConstants.AngleScale * Math.Max(playerstate.TurnSlowdown, 1);
             playerstate.AngleFrac += (short)playerinput.ControlX;
             angleunits = playerstate.AngleFrac / angleScale;
             playerstate.AngleFrac -= (short)(angleunits * angleScale);
@@ -159,14 +159,14 @@ internal sealed class PlayerMovement(
         //
         if (playerinput.ControlY < 0)
         {
-            Move(ob.Angle, (int)(-playerinput.ControlY * GameConstants.MOVESCALE * forward)); // move forwards
+            Move(ob.Angle, (int)(-playerinput.ControlY * GameConstants.MoveScale * forward)); // move forwards
         }
         else if (playerinput.ControlY > 0)
         {
             angle = ob.Angle + ANGLES / 2;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            Move(angle, (int)(playerinput.ControlY * GameConstants.BACKMOVESCALE * forward));          // move backwards
+            Move(angle, (int)(playerinput.ControlY * GameConstants.BackMoveScale * forward));          // move backwards
         }
     }
 
@@ -181,8 +181,8 @@ internal sealed class PlayerMovement(
         //
         // moving bounds speed
         //
-        if (speed >= GameConstants.MINDIST * 2)
-            speed = (int)(GameConstants.MINDIST * 2 - 1);
+        if (speed >= GameConstants.MinDist * 2)
+            speed = (int)(GameConstants.MinDist * 2 - 1);
 
         // demos move the player exactly as v1.4 did, or they drift from what was recorded
         if ((session.demorecord || session.demoplayback))
@@ -199,13 +199,13 @@ internal sealed class PlayerMovement(
         ClipMove(player, xmove, ymove);
 
         var (oldtilex, oldtiley) = (player.TileX, player.TileY);
-        player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
-        player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
+        player.TileX = (byte)(player.X >> (int)MapConstants.TileShift);                // scale to tile values
+        player.TileY = (byte)(player.Y >> (int)MapConstants.TileShift);
 
         // A diagonal wall tile's open half has no area number (plane 0 holds the wall), so keep
         // the one the player walked in from.
-        var areatile = map.MAPSPOT(player.TileX, player.TileY, 0);
-        if (map.VALIDAREA(areatile))
+        var areatile = map.MapSpot(player.TileX, player.TileY, 0);
+        if (map.ValidArea(areatile))
             player.AreaNumber = (byte)(areatile - map.Floors.AreaTile);
 
         //
@@ -226,15 +226,15 @@ internal sealed class PlayerMovement(
 
     internal bool TryMove(Entities.Actors.Actor ob)
     {
-        const long PLAYERSIZE = GameConstants.PLAYERSIZE;
+        const long PLAYERSIZE = GameConstants.PlayerSize;
         uint xl, yl, xh, yh, x, y;
         Actor? check;
 
-        xl = (uint)((ob.X - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
-        yl = (uint)((ob.Y - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
+        xl = (uint)((ob.X - PLAYERSIZE) >> (int)MapConstants.TileShift);
+        yl = (uint)((ob.Y - PLAYERSIZE) >> (int)MapConstants.TileShift);
 
-        xh = (uint)((ob.X + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
-        yh = (uint)((ob.Y + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
+        xh = (uint)((ob.X + PLAYERSIZE) >> (int)MapConstants.TileShift);
+        yh = (uint)((ob.Y + PLAYERSIZE) >> (int)MapConstants.TileShift);
 
         const long PUSHWALLMINDIST = PLAYERSIZE;
         bool nearwallsprite = false;
@@ -251,25 +251,25 @@ internal sealed class PlayerMovement(
                 {
                     if (check is WallSpriteBlocker)
                         nearwallsprite = true;          // only its panel blocks: checked below
-                    else if (map.tilemap[x, y] == GameConstants.BIT_WALL
+                    else if (map.tilemap[x, y] == GameConstants.BitWall
                         && pushWalls.pushwalls.Find(p => p.X == x && p.Y == y) is { } pw)    // back of a moving pushwall?
                     {
                         switch (pw.Dir)
                         {
                             case ControlDir.North:
-                                if (ob.Y - PUSHWALLMINDIST <= (pw.Y << (int)MapConstants.TILESHIFT) + ((63 - pw.Pos) << 10))
+                                if (ob.Y - PUSHWALLMINDIST <= (pw.Y << (int)MapConstants.TileShift) + ((63 - pw.Pos) << 10))
                                     return false;
                                 break;
                             case ControlDir.West:
-                                if (ob.X - PUSHWALLMINDIST <= (pw.X << (int)MapConstants.TILESHIFT) + ((63 - pw.Pos) << 10))
+                                if (ob.X - PUSHWALLMINDIST <= (pw.X << (int)MapConstants.TileShift) + ((63 - pw.Pos) << 10))
                                     return false;
                                 break;
                             case ControlDir.East:
-                                if (ob.X + PUSHWALLMINDIST >= (pw.X << (int)MapConstants.TILESHIFT) + (pw.Pos << 10))
+                                if (ob.X + PUSHWALLMINDIST >= (pw.X << (int)MapConstants.TileShift) + (pw.Pos << 10))
                                     return false;
                                 break;
                             case ControlDir.South:
-                                if (ob.Y + PUSHWALLMINDIST >= (pw.Y << (int)MapConstants.TILESHIFT) + (pw.Pos << 10))
+                                if (ob.Y + PUSHWALLMINDIST >= (pw.Y << (int)MapConstants.TileShift) + (pw.Pos << 10))
                                     return false;
                                 break;
                         }
@@ -302,15 +302,15 @@ internal sealed class PlayerMovement(
 
         //
         // check for actors: a living actor marked on a tile near the player
-        // (MapManager.MarkActorTile), and within MINACTORDIST of it, blocks the move
+        // (MapManager.MarkActorTile), and within MinActorDist of it, blocks the move
         //
         if (yl > 0)
             yl--;
-        if (yh < MapManager.MAPSIZE - 1)
+        if (yh < MapManager.MapSize - 1)
             yh++;
         if (xl > 0)
             xl--;
-        if (xh < MapManager.MAPSIZE - 1)
+        if (xh < MapManager.MapSize - 1)
             xh++;
 
         for (y = yl; y <= yh; y++)
@@ -321,10 +321,10 @@ internal sealed class PlayerMovement(
                     continue;
 
                 var deltax = ob.X - actor.X;
-                if (deltax < -GameConstants.MINACTORDIST || deltax > GameConstants.MINACTORDIST)
+                if (deltax < -GameConstants.MinActorDist || deltax > GameConstants.MinActorDist)
                     continue;
                 var deltay = ob.Y - actor.Y;
-                if (deltay < -GameConstants.MINACTORDIST || deltay > GameConstants.MINACTORDIST)
+                if (deltay < -GameConstants.MinActorDist || deltay > GameConstants.MinActorDist)
                     continue;
 
                 // An ally following the player gets out of their way
@@ -352,9 +352,9 @@ internal sealed class PlayerMovement(
         if (TryMove(ob))
             return;
 
-        if ((session.noclip != 0) && ob.X > 2 * MapConstants.TILEGLOBAL && ob.Y > 2 * MapConstants.TILEGLOBAL
-            && ob.X < (((int)(map.mapwidth - 1)) << (int)MapConstants.TILESHIFT)
-            && ob.Y < (((int)(map.mapheight - 1)) << (int)MapConstants.TILESHIFT))
+        if ((session.noclip != 0) && ob.X > 2 * MapConstants.TileGlobal && ob.Y > 2 * MapConstants.TileGlobal
+            && ob.X < (((int)(map.mapwidth - 1)) << (int)MapConstants.TileShift)
+            && ob.Y < (((int)(map.mapheight - 1)) << (int)MapConstants.TileShift))
             return;         // walk through walls
 
         if (!audio.IsAnySoundPlaying())

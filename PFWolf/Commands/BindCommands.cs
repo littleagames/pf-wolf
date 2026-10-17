@@ -38,7 +38,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
         console.Register("joy_deadzone", "How much of a controller stick's travel around the middle is ignored, in percent.",
             "joy_deadzone [0-50]", args => SetOrShow("joy_deadzone", args, ref settings.joydeadzone, 0, 50));
         console.Register("joy_turnspeed", "How fast a controller's stick turns you, pushed all the way.",
-            "joy_turnspeed [0-9]", args => SetOrShow("joy_turnspeed", args, ref settings.joyturnspeed, 0, ControlSettings.JOYTURNSPEEDS - 1));
+            "joy_turnspeed [0-9]", args => SetOrShow("joy_turnspeed", args, ref settings.joyturnspeed, 0, ControlSettings.JoyTurnSpeeds - 1));
         console.Register("m_look", "Whether moving the mouse up and down looks up and down (1) or walks (0).",
             "m_look [0|1]", args => ToggleOrShow("m_look", args, ref settings.mouselook), complete: Values("0", "1"));
         console.Register("m_invert", "Whether mouse look is upside down: pushing the mouse away looks down.",

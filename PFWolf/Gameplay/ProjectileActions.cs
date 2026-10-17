@@ -30,9 +30,9 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         Entities.Actors.ActorActionRegistry.Register("A_JumpIfInSight", JumpIfInSight);
     }
 
-    // Just beyond a wall's face for a projectile's box (ProjectileTryMove: PROJSIZE either way)
-    // to be clear of it: half a tile from the centre to the face, PROJSIZE, and a little more
-    const int WALLFACEOUT = 0x8000 + GameConstants.PROJSIZE + 0x100;
+    // Just beyond a wall's face for a projectile's box (ProjectileTryMove: ProjSize either way)
+    // to be clear of it: half a tile from the centre to the face, ProjSize, and a little more
+    const int WallFaceOut = 0x8000 + GameConstants.ProjSize + 0x100;
 
     /// <summary>
     /// A_SpawnProjectile("Fireball"[, angle[, "relative"|"absolute"|"aim"]]): fires a projectile
@@ -89,9 +89,9 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
 
         missile.X = x;
         missile.Y = y;
-        missile.TileX = (byte)(x >> MapConstants.TILESHIFT);
-        missile.TileY = (byte)(y >> MapConstants.TILESHIFT);
-        missile.Angle = (short)((angle % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES);
+        missile.TileX = (byte)(x >> MapConstants.TileShift);
+        missile.TileY = (byte)(y >> MapConstants.TileShift);
+        missile.Angle = (short)((angle % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles);
         missile.Speed = speed;
         missile.Shooter = ob;
         missile.TicCount = 1;       // its first frame ends on the next tic, as a thrown one's (Monster.ThrowProjectile)
@@ -172,7 +172,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         if (IsInWall(ob))
         {
             int facing = FacingAngle(ob);
-            int cos = TrigTables.sintable[facing + GameConstants.ANGLES / 4], sin = TrigTables.sintable[facing];
+            int cos = TrigTables.sintable[facing + GameConstants.Angles / 4], sin = TrigTables.sintable[facing];
             if ((long)(pawn.X - x) * cos - (long)(pawn.Y - y) * sin <= 0)
                 return false;
         }
@@ -183,7 +183,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     internal bool IsInWall(Entities.Actors.Actor ob)
     {
         var tile = map.tilemap[ob.TileX, ob.TileY];
-        return tile != 0 && (tile & GameConstants.BIT_DOOR) == 0;
+        return tile != 0 && (tile & GameConstants.BitDoor) == 0;
     }
 
     /// <summary>Which way it faces, in degrees: its map facing, or its angle when it has none</summary>
@@ -200,11 +200,11 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
             return (ob.X, ob.Y);
 
         int facing = FacingAngle(ob);
-        int cos = TrigTables.sintable[facing + GameConstants.ANGLES / 4], sin = TrigTables.sintable[facing];
+        int cos = TrigTables.sintable[facing + GameConstants.Angles / 4], sin = TrigTables.sintable[facing];
         const int Axis = 0x6000;    // about 22 degrees off an axis still counts as facing along it
-        int centreX = (ob.TileX << MapConstants.TILESHIFT) + 0x8000, centreY = (ob.TileY << MapConstants.TILESHIFT) + 0x8000;
-        int x = centreX + (cos > Axis ? WALLFACEOUT : cos < -Axis ? -WALLFACEOUT : 0);
-        int y = centreY + (sin > Axis ? -WALLFACEOUT : sin < -Axis ? WALLFACEOUT : 0);  // y grows southward
+        int centreX = (ob.TileX << MapConstants.TileShift) + 0x8000, centreY = (ob.TileY << MapConstants.TileShift) + 0x8000;
+        int x = centreX + (cos > Axis ? WallFaceOut : cos < -Axis ? -WallFaceOut : 0);
+        int y = centreY + (sin > Axis ? -WallFaceOut : sin < -Axis ? WallFaceOut : 0);  // y grows southward
         return (x, y);
     }
 
@@ -220,13 +220,13 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         var angle = Math.Atan2(fromY - toY, toX - fromX);
         if (angle < 0)
             angle += Math.PI * 2;
-        return (int)(angle / (Math.PI * 2) * GameConstants.ANGLES);
+        return (int)(angle / (Math.PI * 2) * GameConstants.Angles);
     }
 
     internal static bool TryParseTiles(string text, out long reach)
     {
         bool ok = double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var tiles);
-        reach = ok ? (long)(tiles * MapConstants.TILEGLOBAL) : 0;
+        reach = ok ? (long)(tiles * MapConstants.TileGlobal) : 0;
         return ok;
     }
 

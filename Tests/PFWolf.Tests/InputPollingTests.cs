@@ -39,7 +39,7 @@ public class InputPollingTests
         _polling.PollButtonMove();
 
         // Assert: two tics at walking speed
-        Assert.That((_polling.controly, _polling.controlx), Is.EqualTo((-2 * GameConstants.BASEMOVE, 2 * GameConstants.BASEMOVE)));
+        Assert.That((_polling.controly, _polling.controlx), Is.EqualTo((-2 * GameConstants.BaseMove, 2 * GameConstants.BaseMove)));
     }
 
     [Test]
@@ -51,7 +51,7 @@ public class InputPollingTests
 
         _polling.PollButtonMove();
 
-        Assert.That((_polling.controly, _polling.controlx), Is.EqualTo((2 * GameConstants.RUNMOVE, -2 * GameConstants.RUNMOVE)));
+        Assert.That((_polling.controly, _polling.controlx), Is.EqualTo((2 * GameConstants.RunMove, -2 * GameConstants.RunMove)));
     }
 
     [Test]
@@ -60,7 +60,7 @@ public class InputPollingTests
         // Act / Assert
         _input.SetButtonPressed(ButtonType.LookUp, true);
         _polling.PollButtonMove();
-        Assert.That(_polling.controlpitch, Is.EqualTo(2 * InputPolling.LOOKSPEED).Within(1e-9));
+        Assert.That(_polling.controlpitch, Is.EqualTo(2 * InputPolling.LookSpeed).Within(1e-9));
 
         _input.SetButtonPressed(ButtonType.LookUp, false);
         _input.SetButtonPressed(ButtonType.LookDown, true);

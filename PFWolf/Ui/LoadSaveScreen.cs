@@ -32,25 +32,25 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
     GraphicManager graphics, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, UiText ui, LineInput lineInput, LoadSaveHooks hooks)
 {
     // Layout, inside the window in menudefs/load-game and save-game
-    private const int LS_STATUSY = 49;          // how it's sorted and filtered, across the window
-    private const int LS_LISTX = 11;            // the list column
-    private const int LS_LISTW = 124;
-    private const int LS_ROWY = 61;             // the first row
-    private const int LS_ROWH = 11;
-    private const int LS_ROWS = 10;             // rows showing at once
-    private const int LS_EDITW = 312 - (LS_LISTX - 3);  // the name being typed
-    private const int LS_ARROWX = 140;
-    private const int LS_DIVIDERX = 145;
-    private const int LS_PREVX = 148;           // the preview column
-    private const int LS_PREVW = 163;
-    private const int LS_THUMBX = LS_PREVX + (LS_PREVW - LS_THUMBW) / 2;
-    private const int LS_THUMBY = 61;
-    private const int LS_THUMBW = 112;
-    private const int LS_THUMBH = 56;
-    private const int LS_INFOY = LS_THUMBY + LS_THUMBH + 3;
-    private const int LS_INFOH = 9;
-    private const int LS_SEPY = LS_ROWY + LS_ROWS * LS_ROWH + 3;
-    private const int LS_HELPY = LS_SEPY + 3;
+    private const int LsStatusY = 49;          // how it's sorted and filtered, across the window
+    private const int LsListX = 11;            // the list column
+    private const int LsListW = 124;
+    private const int LsRowY = 61;             // the first row
+    private const int LsRowH = 11;
+    private const int LsRows = 10;             // rows showing at once
+    private const int LsEditW = 312 - (LsListX - 3);  // the name being typed
+    private const int LsArrowX = 140;
+    private const int LsDividerX = 145;
+    private const int LsPrevX = 148;           // the preview column
+    private const int LsPrevW = 163;
+    private const int LsThumbX = LsPrevX + (LsPrevW - LsThumbW) / 2;
+    private const int LsThumbY = 61;
+    private const int LsThumbW = 112;
+    private const int LsThumbH = 56;
+    private const int LsInfoY = LsThumbY + LsThumbH + 3;
+    private const int LsInfoH = 9;
+    private const int LsSepY = LsRowY + LsRows * LsRowH + 3;
+    private const int LsHelpY = LsSepY + 3;
 
     // The save last saved or loaded on these screens, which the load screen starts on
     internal SaveInfo? lastSaveGame;
@@ -104,9 +104,9 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             //
             int moved = state.Row, last = state.Rows.Count - 1;
             if (input.IsKeyDown(ScanCodes.PgUp))
-                moved = Math.Max(state.Row - (LS_ROWS - 1), 0);
+                moved = Math.Max(state.Row - (LsRows - 1), 0);
             else if (input.IsKeyDown(ScanCodes.PgDn))
-                moved = Math.Min(state.Row + (LS_ROWS - 1), last);
+                moved = Math.Min(state.Row + (LsRows - 1), last);
             else if (input.IsKeyDown(ScanCodes.Home))
                 moved = 0;
             else if (input.IsKeyDown(ScanCodes.End))
@@ -220,7 +220,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
     }
 
     /// <summary>The screen's text is in the small font</summary>
-    private static TextStyle LoadSaveStyle(string color, string background = "BKGDCOLOR") => new(UiFonts.SMALL_FONT, color, background);
+    private static TextStyle LoadSaveStyle(string color, string background = "BKGDCOLOR") => new(UiFonts.SmallFont, color, background);
 
     /// <summary>Lists the saves as the screen is set to show them, keeping the cursor on <paramref name="select"/> if it's there.</summary>
     private void FillSaveRows(LoadSaveState state, string? select)
@@ -252,7 +252,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
     }
 
     /// <summary>A save's name cut to fit a Confirm box, which is in the large font and can't be wider than the screen.</summary>
-    private string NameForConfirm(string name) => ui.FitText(name, 280, UiFonts.LARGE_FONT);
+    private string NameForConfirm(string name) => ui.FitText(name, 280, UiFonts.LargeFont);
 
     /// <summary>Names in the order a person would put them: "test 2" before "test 10".</summary>
     internal sealed class NaturalNameComparer : IComparer<string>
@@ -297,7 +297,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         loop.ShootSnd();
         DrawLSAction(0);
 
-        if (!hooks.Load(save.Path, LSA_X + 8, LSA_Y + 5))
+        if (!hooks.Load(save.Path, LsaX + 8, LsaY + 5))
             return false;
 
         lastSaveGame = save;
@@ -326,7 +326,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
 
         DrawLoadSaveScreen(state, editing: true);
         int y = LoadSaveRowY(state.Row, state.Top);
-        if (!lineInput.Run(LS_LISTX, y, ref name, name, true, GameConstants.MaxGameName - 1, LS_EDITW - 8, LoadSaveStyle("HIGHLIGHT")))
+        if (!lineInput.Run(LsListX, y, ref name, name, true, GameConstants.MaxGameName - 1, LsEditW - 8, LoadSaveStyle("HIGHLIGHT")))
         {
             audio.Play("menu/escape");
             return false;
@@ -334,7 +334,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
 
         var path = existing?.Path ?? hooks.NewSavePath();
         DrawLSAction(1);
-        if (!hooks.Save(path, name, LSA_X + 8, LSA_Y + 5))
+        if (!hooks.Save(path, name, LsaX + 8, LsaY + 5))
         {
             hooks.SaveFailed();
             return false;
@@ -345,21 +345,21 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         return true;
     }
 
-    internal const int LSA_X = 96;
-    internal const int LSA_Y = 80;
-    internal const int LSA_W = 130;
-    internal const int LSA_H = 42;
+    internal const int LsaX = 96;
+    internal const int LsaY = 80;
+    internal const int LsaW = 130;
+    internal const int LsaH = 42;
 
     /// <summary>The "Loading..." or "Saving..." box, with the disk the save code animates.</summary>
     internal void DrawLSAction(int which)
     {
         var language = assets.GetText("en-us");
-        draw.DrawWindow(LSA_X, LSA_Y, LSA_W, LSA_H, "TEXTCOLOR");
-        draw.DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, "Black", "HIGHLIGHT");
-        graphics.DrawPic("c_diskloading1", LSA_X + 8, LSA_Y + 5);
+        draw.DrawWindow(LsaX, LsaY, LsaW, LsaH, "TEXTCOLOR");
+        draw.DrawOutline(LsaX, LsaY, LsaW, LsaH, "Black", "HIGHLIGHT");
+        graphics.DrawPic("c_diskloading1", LsaX + 8, LsaY + 5);
 
         var text = which == 0 ? "$STR_LOADING" : "$STR_SAVING";
-        ui.TextAt(LSA_X + 46, LSA_Y + 13, new TextStyle(UiFonts.LARGE_FONT, "Black", "TEXTCOLOR")).Print(text.ToLanguageText(language) + "...");
+        ui.TextAt(LsaX + 46, LsaY + 13, new TextStyle(UiFonts.LargeFont, "Black", "TEXTCOLOR")).Print(text.ToLanguageText(language) + "...");
 
         video.Update();
     }
@@ -369,7 +369,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
     // DRAW THE SCREEN
     //
 
-    internal static int LoadSaveRowY(int row, int top) => LS_ROWY + (row - top) * LS_ROWH;
+    internal static int LoadSaveRowY(int row, int top) => LsRowY + (row - top) * LsRowH;
 
     private void DrawLoadSaveScreen(LoadSaveState state, bool editing = false)
     {
@@ -381,21 +381,21 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         // HOW THE LIST IS SORTED, AND WHOSE SAVES IT SHOWS
         //
         var status = LoadSaveStyle("READHCOLOR");
-        ui.TextAt(LS_LISTX, LS_STATUSY, status).Print((saveListByName ? "$STR_LS_SORTNAME" : "$STR_LS_SORTDATE").ToLanguageText(language));
+        ui.TextAt(LsListX, LsStatusY, status).Print((saveListByName ? "$STR_LS_SORTNAME" : "$STR_LS_SORTDATE").ToLanguageText(language));
         var filter = $"< {(saveListAllGames ? "$STR_LS_FILTERALL" : "$STR_LS_FILTERGAME").ToLanguageText(language)} >";
-        ui.TextAt(LS_PREVX + LS_PREVW - 2 - ui.TextWidth(filter, status.Font), LS_STATUSY, status).Print(filter);
-        video.HorizontalLine(8, 312, LS_ROWY - 3, "DEACTIVE");
+        ui.TextAt(LsPrevX + LsPrevW - 2 - ui.TextWidth(filter, status.Font), LsStatusY, status).Print(filter);
+        video.HorizontalLine(8, 312, LsRowY - 3, "DEACTIVE");
 
         //
         // THE LIST, SCROLLED SO THE CURSOR SHOWS
         //
         if (state.Row < state.Top)
             state.Top = state.Row;
-        if (state.Row >= state.Top + LS_ROWS)
-            state.Top = state.Row - LS_ROWS + 1;
-        state.Top = Math.Clamp(state.Top, 0, Math.Max(0, state.Rows.Count - LS_ROWS));
+        if (state.Row >= state.Top + LsRows)
+            state.Top = state.Row - LsRows + 1;
+        state.Top = Math.Clamp(state.Top, 0, Math.Max(0, state.Rows.Count - LsRows));
 
-        for (int i = 0; i < LS_ROWS && state.Top + i < state.Rows.Count; i++)
+        for (int i = 0; i < LsRows && state.Top + i < state.Rows.Count; i++)
         {
             int r = state.Top + i;
             DrawLoadSaveRow(state.Rows[r], LoadSaveRowY(r, state.Top), r == state.Row, editing: false);
@@ -404,19 +404,19 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         // With nothing to list there's nothing to preview either, so it says so across the window
         if (state.Rows.Count == 0)
         {
-            var empty = ui.CenteredText(8, 304, LS_ROWY + 4 * LS_ROWH, LoadSaveStyle("TEXTCOLOR"));
-            empty.CPrint(ui.FitText("$STR_LS_NOSAVES".ToLanguageText(language), empty.Width, UiFonts.SMALL_FONT));
+            var empty = ui.CenteredText(8, 304, LsRowY + 4 * LsRowH, LoadSaveStyle("TEXTCOLOR"));
+            empty.CPrint(ui.FitText("$STR_LS_NOSAVES".ToLanguageText(language), empty.Width, UiFonts.SmallFont));
             if (!saveListAllGames)
-                empty.CPrint(ui.FitText("$STR_LS_TRYALL".ToLanguageText(language), empty.Width, UiFonts.SMALL_FONT), LoadSaveStyle("READCOLOR"));
+                empty.CPrint(ui.FitText("$STR_LS_TRYALL".ToLanguageText(language), empty.Width, UiFonts.SmallFont), LoadSaveStyle("READCOLOR"));
         }
 
         if (state.Top > 0)
-            draw.DrawCustomArrow(LS_ARROWX, LS_ROWY, up: true);
-        if (state.Top + LS_ROWS < state.Rows.Count)
-            draw.DrawCustomArrow(LS_ARROWX, LS_SEPY - 7, up: false);
+            draw.DrawCustomArrow(LsArrowX, LsRowY, up: true);
+        if (state.Top + LsRows < state.Rows.Count)
+            draw.DrawCustomArrow(LsArrowX, LsSepY - 7, up: false);
 
         if (state.Rows.Count > 0)
-            video.Bar(LS_DIVIDERX, LS_ROWY - 2, 1, LS_SEPY - LS_ROWY + 1, "DEACTIVE");
+            video.Bar(LsDividerX, LsRowY - 2, 1, LsSepY - LsRowY + 1, "DEACTIVE");
 
         //
         // THE HIGHLIGHTED SAVE: ITS PICTURE AND PROGRESS
@@ -444,9 +444,9 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         //
         // WHICH KEYS DO WHAT
         //
-        video.HorizontalLine(8, 312, LS_SEPY, "DEACTIVE");
-        ui.CenteredText(0, 320, LS_HELPY, LoadSaveStyle("TEXTCOLOR"))
-            .CPrint(ui.FitText((state.Saving ? "$STR_LS_HELPSAVE" : "$STR_LS_HELPLOAD").ToLanguageText(language), 300, UiFonts.SMALL_FONT));
+        video.HorizontalLine(8, 312, LsSepY, "DEACTIVE");
+        ui.CenteredText(0, 320, LsHelpY, LoadSaveStyle("TEXTCOLOR"))
+            .CPrint(ui.FitText((state.Saving ? "$STR_LS_HELPSAVE" : "$STR_LS_HELPLOAD").ToLanguageText(language), 300, UiFonts.SmallFont));
 
         video.Update();
     }
@@ -459,44 +459,44 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         if (editing)
         {
             // Across the window, over the preview, so the name has room for all its letters
-            video.Bar(LS_LISTX - 3, y - 1, LS_EDITW, LS_ROWH, "BKGDCOLOR");
-            draw.DrawOutline(LS_LISTX - 3, y - 1, LS_EDITW, LS_ROWH, "HIGHLIGHT", "HIGHLIGHT");
+            video.Bar(LsListX - 3, y - 1, LsEditW, LsRowH, "BKGDCOLOR");
+            draw.DrawOutline(LsListX - 3, y - 1, LsEditW, LsRowH, "HIGHLIGHT", "HIGHLIGHT");
             return;     // US_LineInput draws the name
         }
 
         TextStyle style;
         if (selected)
         {
-            video.Bar(LS_LISTX - 3, y - 1, LS_LISTW + 4, LS_ROWH, "TEXTCOLOR");
-            draw.DrawOutline(LS_LISTX - 3, y - 1, LS_LISTW + 4, LS_ROWH, "Black", "HIGHLIGHT");
+            video.Bar(LsListX - 3, y - 1, LsListW + 4, LsRowH, "TEXTCOLOR");
+            draw.DrawOutline(LsListX - 3, y - 1, LsListW + 4, LsRowH, "Black", "HIGHLIGHT");
             style = LoadSaveStyle("Black", "TEXTCOLOR");
         }
         else
             style = LoadSaveStyle(save == null ? "READCOLOR" : "TEXTCOLOR");
 
-        ui.TextAt(LS_LISTX, y, style).Print(ui.FitText(save?.Name ?? "$STR_LS_NEWSAVE".ToLanguageText(language), LS_LISTW - 2, style.Font));
+        ui.TextAt(LsListX, y, style).Print(ui.FitText(save?.Name ?? "$STR_LS_NEWSAVE".ToLanguageText(language), LsListW - 2, style.Font));
     }
 
     /// <summary>The picture, fitted inside its box keeping its shape.</summary>
     private void DrawSaveThumbnail(SaveThumbnail? thumbnail)
     {
-        video.Bar(LS_THUMBX, LS_THUMBY, LS_THUMBW, LS_THUMBH, "Black");
-        draw.DrawOutline(LS_THUMBX - 1, LS_THUMBY - 1, LS_THUMBW + 2, LS_THUMBH + 2, "DEACTIVE", "DEACTIVE");
+        video.Bar(LsThumbX, LsThumbY, LsThumbW, LsThumbH, "Black");
+        draw.DrawOutline(LsThumbX - 1, LsThumbY - 1, LsThumbW + 2, LsThumbH + 2, "DEACTIVE", "DEACTIVE");
 
         if (thumbnail == null)
         {
-            ui.CenteredText(LS_THUMBX, LS_THUMBW, LS_THUMBY + LS_THUMBH / 2 - 5, LoadSaveStyle("DEACTIVE", "Black"))
-                .CPrint(ui.FitText("$STR_LS_NOPICTURE".ToLanguageText(assets.GetText("en-us")), LS_THUMBW, UiFonts.SMALL_FONT));
+            ui.CenteredText(LsThumbX, LsThumbW, LsThumbY + LsThumbH / 2 - 5, LoadSaveStyle("DEACTIVE", "Black"))
+                .CPrint(ui.FitText("$STR_LS_NOPICTURE".ToLanguageText(assets.GetText("en-us")), LsThumbW, UiFonts.SmallFont));
             return;
         }
 
-        int w = LS_THUMBW, h = w * thumbnail.Height / thumbnail.Width;
-        if (h > LS_THUMBH)
+        int w = LsThumbW, h = w * thumbnail.Height / thumbnail.Width;
+        if (h > LsThumbH)
         {
-            h = LS_THUMBH;
+            h = LsThumbH;
             w = h * thumbnail.Width / thumbnail.Height;
         }
-        video.DrawThumbnail(thumbnail, LS_THUMBX + (LS_THUMBW - w) / 2, LS_THUMBY + (LS_THUMBH - h) / 2, w, h);
+        video.DrawThumbnail(thumbnail, LsThumbX + (LsThumbW - w) / 2, LsThumbY + (LsThumbH - h) / 2, w, h);
     }
 
     /// <summary>When it was saved, where, on what skill, and how far along.</summary>
@@ -517,7 +517,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         string WithNote(string text, string note)
         {
             note = $" ({note})";
-            return ui.FitText(text, LS_PREVW - 4 - ui.TextWidth(note, UiFonts.SMALL_FONT), UiFonts.SMALL_FONT) + note;
+            return ui.FitText(text, LsPrevW - 4 - ui.TextWidth(note, UiFonts.SmallFont), UiFonts.SmallFont) + note;
         }
 
         // A save from another game pack says whose it is (it won't load here); one made with
@@ -539,7 +539,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         ];
 
         for (int i = 0; i < lines.Length; i++)
-            ui.CenteredText(LS_PREVX, LS_PREVW, LS_INFOY + i * LS_INFOH, LoadSaveStyle(lines[i].Color))
-                .CPrint(ui.FitText(lines[i].Text, LS_PREVW - 4, UiFonts.SMALL_FONT));
+            ui.CenteredText(LsPrevX, LsPrevW, LsInfoY + i * LsInfoH, LoadSaveStyle(lines[i].Color))
+                .CPrint(ui.FitText(lines[i].Text, LsPrevW - 4, UiFonts.SmallFont));
     }
 }

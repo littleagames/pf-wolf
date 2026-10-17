@@ -7,7 +7,7 @@ namespace PFWolf.Tests;
 
 public class PlayerUseTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     // A prisoner who can be used, and two items used by keys: one by an empty weapon slot, one
     // by holding use (their actions are registered by the tests)
@@ -72,8 +72,8 @@ public class PlayerUseTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var pawn = new PlayerPawn { State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10, Angle = 0 };
         _session.playerstate.Pawn = pawn;
@@ -155,7 +155,7 @@ public class PlayerUseTests
     {
         var book = _inventory.CreateActor("LogBook")!;
         (book.X, book.Y) = (_session.player.X + dx, _session.player.Y + dy);
-        (book.TileX, book.TileY) = ((byte)(book.X >> MapConstants.TILESHIFT), (byte)(book.Y >> MapConstants.TILESHIFT));
+        (book.TileX, book.TileY) = ((byte)(book.X >> MapConstants.TileShift), (byte)(book.Y >> MapConstants.TileShift));
         book.SetState(book.ResolvedStates["Spawn"]);
         _map.GetActors().AddLast(book);
         return book;

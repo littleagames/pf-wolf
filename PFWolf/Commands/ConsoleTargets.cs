@@ -33,7 +33,7 @@ internal sealed class ConsoleTargets(
             return "  panel (off its tile)";
 
         static string Point(double x, double y) =>
-            $"{x / MapConstants.TILEGLOBAL:0.##},{y / MapConstants.TILEGLOBAL:0.##}";
+            $"{x / MapConstants.TileGlobal:0.##},{y / MapConstants.TileGlobal:0.##}";
         return $"  panel {WallSprites.WallSpriteAxis(actor.Dir)} facing {actor.Dir}, {Point(span.X1, span.Y1)} to {Point(span.X2, span.Y2)}";
     }
 

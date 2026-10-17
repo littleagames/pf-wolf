@@ -43,7 +43,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     /// </summary>
     public string? FloorFlat(int x, int y)
     {
-        int index = this[MapConstants.FLATPLANE, x, y] & 0xff;
+        int index = this[MapConstants.FlatPlane, x, y] & 0xff;
         if (Defs.Flats.Floor.TryGetValue(index, out var flat))
             return flat;
         return Properties.DefaultFloor ?? content.DefaultMapInfo.DefaultFloor;
@@ -52,7 +52,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     /// <summary>The texture a tile's ceiling shows, like <see cref="FloorFlat"/>: null for the ceiling color</summary>
     public string? CeilingFlat(int x, int y)
     {
-        int index = this[MapConstants.FLATPLANE, x, y] >> 8;
+        int index = this[MapConstants.FlatPlane, x, y] >> 8;
         if (Defs.Flats.Ceiling.TryGetValue(index, out var flat))
             return flat;
         return Properties.DefaultCeiling ?? content.DefaultMapInfo.DefaultCeiling;
@@ -68,10 +68,10 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     public int LevelStories => Math.Clamp(Properties.WallHeight ?? content.DefaultMapInfo.WallHeight, 1, MaxStories);
 
     /// <summary>How tall a tile's wall is: its height-plane value when that's 1 to 8, else the level's (MapManager.WallStories)</summary>
-    public int Stories(int x, int y) => this[MapConstants.HEIGHTPLANE, x, y] is var stories and >= 1 and <= MaxStories ? stories : LevelStories;
+    public int Stories(int x, int y) => this[MapConstants.HeightPlane, x, y] is var stories and >= 1 and <= MaxStories ? stories : LevelStories;
 
     /// <summary>An open floor tile with a height over 1: a block from story 2 up to it, over the walkway</summary>
-    public bool IsArch(int x, int y) => KindAt(x, y) == TileKind.Floor && this[MapConstants.HEIGHTPLANE, x, y] is > 1 and <= MaxStories;
+    public bool IsArch(int x, int y) => KindAt(x, y) == TileKind.Floor && this[MapConstants.HeightPlane, x, y] is > 1 and <= MaxStories;
 
     /// <summary>The level's sky picture name (game-info sky), or null for its ceiling color</summary>
     public string? Sky => (Properties.Sky ?? content.DefaultMapInfo.Sky) is { Length: > 0 } sky ? sky : null;
@@ -104,7 +104,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     /// </summary>
     public (int Light, string? Tint) LightAt(int x, int y, IReadOnlyDictionary<int, ZoneProperties> zones, int levelLight)
     {
-        int zone = this[MapConstants.ZONEPLANE, x, y];
+        int zone = this[MapConstants.ZonePlane, x, y];
         if (zone != 0 && zones.TryGetValue(zone, out var properties))
             return (Math.Clamp(properties.Light ?? 255, 0, 255), properties.Color);
         return (levelLight, null);
@@ -138,7 +138,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     /// its <see cref="CeilingFlat"/> when the flat-plane ceiling index isn't 0, else null (GameHost.UseArchCeilingFlat)
     /// </summary>
     public string? ArchCeilingFlat(int x, int y)
-        => this[MapConstants.FLATPLANE, x, y] >> 8 == 0 ? null : CeilingFlat(x, y);
+        => this[MapConstants.FlatPlane, x, y] >> 8 == 0 ? null : CeilingFlat(x, y);
 
     /// <summary>
     /// An arch face's texture (its face "north", "south", "east" or "west"): that face of the wall
@@ -165,7 +165,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         {
             for (int x = 0; x < Width; x++)
             {
-                int tag = this[MapConstants.TAGPLANE, x, y];
+                int tag = this[MapConstants.TagPlane, x, y];
                 if (tag == 0)
                     continue;
                 if (!tags.TryGetValue(tag, out var tiles))
@@ -188,11 +188,11 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     /// </summary>
     public ushort this[int plane, int x, int y]
         => plane >= map.MapData.Length ? (ushort)0
-            : plane == 0 ? (ushort)(map.MapData[0][y * map.Width + x] & MapConstants.PLANE0CODEMASK)
+            : plane == 0 ? (ushort)(map.MapData[0][y * map.Width + x] & MapConstants.Plane0CodeMask)
             : map.MapData[plane][y * map.Width + x];
 
     /// <summary>The patch id on the tile (plane 0's high byte), 0 for none; the game only draws one on a wall</summary>
-    public int Patch(int x, int y) => map.MapData[0][y * map.Width + x] >> MapConstants.PATCHSHIFT;
+    public int Patch(int x, int y) => map.MapData[0][y * map.Width + x] >> MapConstants.PatchShift;
 
     /// <summary>The patch on a wall tile, when the mapdefs define it</summary>
     public MapPatchTranslation? PatchDef(int x, int y)
@@ -201,7 +201,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     public TileKind KindAt(int x, int y)
     {
         int tile = this[0, x, y];
-        if (tile is > 0 and <= MapConstants.MAXWALLID && Defs.Walls.ContainsKey(tile))
+        if (tile is > 0 and <= MapConstants.MaxWallId && Defs.Walls.ContainsKey(tile))
             return TileKind.Wall;
         if (Defs.Doors.ContainsKey(tile))
             return TileKind.Door;
@@ -290,19 +290,19 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         if (obj != 0)
             yield return $"Object {obj}: {ObjectText(x, y, obj)}";
 
-        int flat = this[MapConstants.FLATPLANE, x, y];
+        int flat = this[MapConstants.FlatPlane, x, y];
         if (flat != 0)
             yield return $"Flats: floor {FlatText(Defs.Flats.Floor, flat & 0xff)}, ceiling {FlatText(Defs.Flats.Ceiling, flat >> 8)}";
 
-        int height = this[MapConstants.HEIGHTPLANE, x, y];
+        int height = this[MapConstants.HeightPlane, x, y];
         if (height != 0)
             yield return $"Height: {height} {(height == 1 ? "story" : "stories")}";
 
-        int tag = this[MapConstants.TAGPLANE, x, y];
+        int tag = this[MapConstants.TagPlane, x, y];
         if (tag != 0)
             yield return $"Tag: {tag}";
 
-        int zone = this[MapConstants.ZONEPLANE, x, y];
+        int zone = this[MapConstants.ZonePlane, x, y];
         if (zone != 0)
             yield return $"Light zone: {zone}";
     }

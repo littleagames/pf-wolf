@@ -76,12 +76,12 @@ public sealed class TileRemap
 
     private (ushort, RemapOutcome) Plane0(ushort value)
     {
-        int code = value & MapConstants.PLANE0CODEMASK, patch = value >> MapConstants.PATCHSHIFT;
+        int code = value & MapConstants.Plane0CodeMask, patch = value >> MapConstants.PatchShift;
         var outcome = RemapOutcome.Same;
 
         if (_defs.Doors.TryGetValue(code, out var door))
             (code, outcome) = Door(code, door);
-        else if (code is > 0 and <= MapConstants.MAXWALLID && _defs.Walls.TryGetValue(code, out var wall))
+        else if (code is > 0 and <= MapConstants.MaxWallId && _defs.Walls.TryGetValue(code, out var wall))
         {
             // A switch used only from some faces: the same switch from the turned faces is another wall
             if (wall.Switch is { Sides.Count: > 0 } wallSwitch && !SameFaces(wallSwitch.Sides))
@@ -96,7 +96,7 @@ public sealed class TileRemap
             patch = newPatch;
             outcome |= patchOutcome;
         }
-        return ((ushort)(code | patch << MapConstants.PATCHSHIFT), outcome);
+        return ((ushort)(code | patch << MapConstants.PatchShift), outcome);
     }
 
     /// <summary>

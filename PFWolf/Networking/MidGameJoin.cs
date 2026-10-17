@@ -37,7 +37,7 @@ internal sealed class MidGameJoin(
     ===============
     */
 
-    internal const int NETSTATEVERSION = 5;     // 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
+    internal const int NetStateVersion = 5;     // 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save
@@ -49,7 +49,7 @@ internal sealed class MidGameJoin(
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
         {
-            bw.Write(NETSTATEVERSION);
+            bw.Write(NetStateVersion);
             bw.Write(netPlay.netlevel);
             bw.Write(netPlay.netstep);
             bw.Write(gameSession.netseed);
@@ -119,7 +119,7 @@ internal sealed class MidGameJoin(
         try
         {
             using var br = new BinaryReader(new MemoryStream(join.State));
-            if (br.ReadInt32() != NETSTATEVERSION)
+            if (br.ReadInt32() != NetStateVersion)
                 return "The host sent the game in a form this version can't read.";
 
             netPlay.netlevel = br.ReadInt32();

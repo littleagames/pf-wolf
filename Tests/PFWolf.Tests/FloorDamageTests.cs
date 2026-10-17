@@ -20,8 +20,8 @@ public class FloorDamageTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _session.playerstate.health = 100;
         _pawn = new PlayerPawn { State = _session.playerstate };

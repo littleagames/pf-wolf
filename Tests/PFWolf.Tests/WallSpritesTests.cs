@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class WallSpritesTests
 {
-    private const long Tile = MapConstants.TILEGLOBAL;
+    private const long Tile = MapConstants.TileGlobal;
 
     // A fence in tile (10, 10) whose front faces the given way
     private static Monster Fence(ObjDir facing, double? offset = null, params string[] flags)
@@ -92,7 +92,7 @@ public class WallSpritesTests
 
 public class WallSpriteBlockingTests
 {
-    private const long Tile = MapConstants.TILEGLOBAL;
+    private const long Tile = MapConstants.TileGlobal;
 
     private MapManager _map = null!;
     private WallSpriteBlocking _blocking = null!;

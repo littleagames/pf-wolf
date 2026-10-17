@@ -193,11 +193,11 @@ internal sealed class LevelEntry(
     /// </summary>
     internal void AlignPlayerInElevator(int lastx, int lasty, int panelWall)
     {
-        bool Panel(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MAPSIZE && y < MapManager.MAPSIZE
-            && mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BIT_DOOR) == 0
-            && mapManager.MAPSPOT(x, y, 0) == panelWall;
-        bool IsDoor(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MAPSIZE && y < MapManager.MAPSIZE
-            && (mapManager.tilemap[x, y] & GameConstants.BIT_DOOR) != 0;
+        bool Panel(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MapSize && y < MapManager.MapSize
+            && mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BitDoor) == 0
+            && mapManager.MapSpot(x, y, 0) == panelWall;
+        bool IsDoor(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MapSize && y < MapManager.MapSize
+            && (mapManager.tilemap[x, y] & GameConstants.BitDoor) != 0;
 
         int tilex = 0, ox = lastx, oy = lasty;
         if (!Panel(ox + 1, oy) && !Panel(ox - 1, oy))
@@ -215,7 +215,7 @@ internal sealed class LevelEntry(
 
             if (!Panel(ox + 2, oy) && tilex == 0)
             {
-                for (tilex = ox + 1; tilex < MapManager.MAPSIZE; tilex++)
+                for (tilex = ox + 1; tilex < MapManager.MapSize; tilex++)
                 {
                     if (!Panel(tilex, oy))
                         continue;
@@ -229,7 +229,7 @@ internal sealed class LevelEntry(
             tilex = lastx;
 
         short angle = session.player.Angle;
-        if (tilex < MapManager.MAPSIZE)
+        if (tilex < MapManager.MapSize)
         {
             if (IsDoor(tilex + 1, oy + 1)) { oy++; tilex--; angle = 0; }
             else if (IsDoor(tilex + 1, oy - 1)) { oy--; tilex--; angle = 0; }

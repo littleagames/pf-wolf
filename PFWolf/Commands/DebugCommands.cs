@@ -56,9 +56,9 @@ internal sealed class DebugCommands(
     {
         int x = session.player.TileX, y = session.player.TileY;
 
-        console.Print($"X: {session.player.X} ({session.player.X % MapConstants.TILEGLOBAL})  Y: {session.player.Y} ({session.player.Y % MapConstants.TILEGLOBAL})  Angle: {session.player.Angle}");
+        console.Print($"X: {session.player.X} ({session.player.X % MapConstants.TileGlobal})  Y: {session.player.Y} ({session.player.Y % MapConstants.TileGlobal})  Angle: {session.player.Angle}");
         console.Print($"Tile: {x},{y}  Area: {session.player.AreaNumber}  Map: {session.gamestate.mapon}");
-        console.Print($"tilemap: {map.tilemap[x, y]}  plane 1: {map.MAPSPOT(x, y, 1)}  spotvis: {map.spotvis[x, y]}");
+        console.Print($"tilemap: {map.tilemap[x, y]}  plane 1: {map.MapSpot(x, y, 1)}  spotvis: {map.spotvis[x, y]}");
         console.Print($"actorat: {map.actorat[x, y]?.GetType().Name ?? "(nothing)"}");
 
         var diagonals = new[] { (x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1) }
@@ -69,10 +69,10 @@ internal sealed class DebugCommands(
 
         var (fx, fy) = targets.TileArg([], 0);
         console.Print($"wall heights: level {map.wallstories}  tallest {map.MaxWallStories}  "
-            + $"faced tile {fx},{fy}: {map.WallStories(fx, fy)} (plane 3: {map.MAPSPOT(fx, fy, MapManager.HEIGHTPLANE)})");
+            + $"faced tile {fx},{fy}: {map.WallStories(fx, fy)} (plane 3: {map.MapSpot(fx, fy, MapManager.HeightPlane)})");
 
         console.Print($"flats: floor {map.FlatName(x, y, false)}  ceiling {map.FlatName(x, y, true)}  "
-            + $"(plane 2: {map.MAPSPOT(x, y, MapManager.FLATPLANE)})");
+            + $"(plane 2: {map.MapSpot(x, y, MapManager.FlatPlane)})");
 
         console.Print($"tags (plane 4): tile {map.GetTag(x, y)}  faced tile {fx},{fy}: {map.GetTag(fx, fy)}");
         console.Print($"faced tile {fx},{fy}: {targets.DescribePatch(map.GetPatch(fx, fy))}");

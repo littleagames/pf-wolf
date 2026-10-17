@@ -53,12 +53,12 @@ public static class EcWolfMapLoader
     /// </summary>
     public static MapAsset ToMapAsset(WdcMap map)
     {
-        if (map.Width != MapConstants.MAPSIZE || map.Height != MapConstants.MAPSIZE)
-            throw new InvalidDataException($"it's {map.Width}x{map.Height}; PFWolf maps are {MapConstants.MAPSIZE}x{MapConstants.MAPSIZE}");
+        if (map.Width != MapConstants.MapSize || map.Height != MapConstants.MapSize)
+            throw new InvalidDataException($"it's {map.Width}x{map.Height}; PFWolf maps are {MapConstants.MapSize}x{MapConstants.MapSize}");
 
-        var mapData = new ushort[MapConstants.LEVELPLANES][];
-        for (var plane = 0; plane < MapConstants.LEVELPLANES; plane++)
-            mapData[plane] = plane < map.Planes.Length ? (ushort[])map.Planes[plane].Clone() : new ushort[MapConstants.MAPAREA];
+        var mapData = new ushort[MapConstants.LevelPlanes][];
+        for (var plane = 0; plane < MapConstants.LevelPlanes; plane++)
+            mapData[plane] = plane < map.Planes.Length ? (ushort[])map.Planes[plane].Clone() : new ushort[MapConstants.MapArea];
 
         return new MapAsset
         {
@@ -78,7 +78,7 @@ public static class EcWolfMapLoader
             // Empty planes at the end (zones, tags, then heights) are left off, so ECWolf doesn't read
             // an empty height plane as an info plane. One in use keeps those before it.
             var planes = map.MapData.ToList();
-            while (planes.Count > MapConstants.MAPPLANES && planes[^1].All(tile => tile == 0))
+            while (planes.Count > MapConstants.MapPlanes && planes[^1].All(tile => tile == 0))
                 planes.RemoveAt(planes.Count - 1);
 
             bw.Write(Encoding.ASCII.GetBytes(Magic));

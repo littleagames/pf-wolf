@@ -730,7 +730,7 @@ internal class VideoManager
     /// <summary>
     /// The palette entry closest to a color as the eye sees it (in CIELAB): a faded or dimmed
     /// color keeps its hue where the palette allows, instead of jumping to one that's merely
-    /// near in RGB (a greyed blue to a purple).
+    /// near in Rgb (a greyed blue to a purple).
     /// </summary>
     private byte FindClosestPaletteIndexByLab(byte r, byte g, byte b)
     {
@@ -1459,7 +1459,7 @@ internal class VideoManager
 
     public void ClearScreen(byte color)
     {
-        // TODO: Will the "color" become a full 32-bit ARGB value in the future?
+        // TODO: Will the "color" become a full 32-bit Argb value in the future?
         SDL.SDL_FillRect(screenBuffer, IntPtr.Zero, color);
     }
 
@@ -1498,15 +1498,15 @@ internal class VideoManager
             throw new PfWolfVideoException("Unable to set relative mode for mouse: {0}", SDL.SDL_GetError());
     }
 
-    private const int NUMREDSHIFTS = 6;
-    private const int REDSTEPS = 8;
+    private const int NumRedShifts = 6;
+    private const int RedSteps = 8;
 
-    private const int NUMWHITESHIFTS = 3;
-    private const int WHITESTEPS = 20;
-    private const int WHITETICS = 6;
+    private const int NumWhiteShifts = 3;
+    private const int WhiteSteps = 20;
+    private const int WhiteTics = 6;
 
-    private SDL_Color[,] redshifts = new SDL_Color[NUMREDSHIFTS, 256];
-    private SDL_Color[,] whiteshifts = new SDL_Color[NUMWHITESHIFTS, 256];
+    private SDL_Color[,] redshifts = new SDL_Color[NumRedShifts, 256];
+    private SDL_Color[,] whiteshifts = new SDL_Color[NumWhiteShifts, 256];
 
     int damagecount, bonuscount;
     bool palshifted;
@@ -1516,7 +1516,7 @@ internal class VideoManager
     internal void InitRedShifts()
     {
         // Fade through intermediate red shift frames
-        for (int i = 1; i <= NUMREDSHIFTS; i++)
+        for (int i = 1; i <= NumRedShifts; i++)
         {
             int ri = i - 1;
             for (int j = 0; j < 256; j++)
@@ -1524,13 +1524,13 @@ internal class VideoManager
                 var basec = gamepal[j];
 
                 int delta = 256 - basec.r;
-                int newR = basec.r + delta * i / REDSTEPS;
+                int newR = basec.r + delta * i / RedSteps;
 
                 delta = -basec.g;
-                int newG = basec.g + delta * i / REDSTEPS;
+                int newG = basec.g + delta * i / RedSteps;
 
                 delta = -basec.b;
-                int newB = basec.b + delta * i / REDSTEPS;
+                int newB = basec.b + delta * i / RedSteps;
 
                 redshifts[ri, j] = new SDL_Color
                 {
@@ -1543,7 +1543,7 @@ internal class VideoManager
         }
 
         // Prepare white shift palettes
-        for (int i = 1; i <= NUMWHITESHIFTS; i++)
+        for (int i = 1; i <= NumWhiteShifts; i++)
         {
             int wi = i - 1;
             for (int j = 0; j < 256; j++)
@@ -1551,13 +1551,13 @@ internal class VideoManager
                 var basec = gamepal[j];
 
                 int delta = 256 - basec.r;
-                int newR = basec.r + delta * i / WHITESTEPS;
+                int newR = basec.r + delta * i / WhiteSteps;
 
                 delta = 248 - basec.g;
-                int newG = basec.g + delta * i / WHITESTEPS;
+                int newG = basec.g + delta * i / WhiteSteps;
 
                 delta = 0 - basec.b;
-                int newB = basec.b + delta * i / WHITESTEPS;
+                int newB = basec.b + delta * i / WhiteSteps;
 
                 whiteshifts[wi, j] = new SDL_Color
                 {
@@ -1576,9 +1576,9 @@ internal class VideoManager
 
         if (bonuscount != 0)
         {
-            white = bonuscount / WHITETICS + 1;
-            if (white > NUMWHITESHIFTS)
-                white = NUMWHITESHIFTS;
+            white = bonuscount / WhiteTics + 1;
+            if (white > NumWhiteShifts)
+                white = NumWhiteShifts;
             bonuscount -= (int)tics;
             if (bonuscount < 0)
                 bonuscount = 0;
@@ -1590,8 +1590,8 @@ internal class VideoManager
         if (damagecount != 0)
         {
             red = damagecount / 10 + 1;
-            if (red > NUMREDSHIFTS)
-                red = NUMREDSHIFTS;
+            if (red > NumRedShifts)
+                red = NumRedShifts;
 
             damagecount -= (int)tics;
             if (damagecount < 0)
@@ -1640,7 +1640,7 @@ internal class VideoManager
 
     internal void StartBonusFlash()
     {
-        bonuscount = NUMWHITESHIFTS * WHITETICS;    // white shift palette
+        bonuscount = NumWhiteShifts * WhiteTics;    // white shift palette
     }
 
     internal void StartDamageFlash(int damage)

@@ -62,15 +62,15 @@ internal sealed class Projectiles(
 
     internal bool ProjectileTryMove(Entities.Actors.Actor ob)
     {
-        const int PROJSIZE = GameConstants.PROJSIZE;
+        const int PROJSIZE = GameConstants.ProjSize;
         int xl, yl, xh, yh, x, y;
         Actor? check;
 
-        xl = (ob.X - PROJSIZE) >> MapConstants.TILESHIFT;
-        yl = (ob.Y - PROJSIZE) >> MapConstants.TILESHIFT;
+        xl = (ob.X - PROJSIZE) >> MapConstants.TileShift;
+        yl = (ob.Y - PROJSIZE) >> MapConstants.TileShift;
 
-        xh = (ob.X + PROJSIZE) >> MapConstants.TILESHIFT;
-        yh = (ob.Y + PROJSIZE) >> MapConstants.TILESHIFT;
+        xh = (ob.X + PROJSIZE) >> MapConstants.TileShift;
+        yh = (ob.Y + PROJSIZE) >> MapConstants.TileShift;
 
         //
         // check for solid walls
@@ -115,7 +115,7 @@ internal sealed class Projectiles(
     // the legacy (US_RndT()>>3) + base.
     internal void Projectile(Entities.Actors.Actor ob, string[] args)
     {
-        const long PROJECTILESIZE = GameConstants.PROJECTILESIZE;
+        const long PROJECTILESIZE = GameConstants.ProjectileSize;
         long deltax, deltay;
         int damage = 0;
         int speed;
@@ -187,8 +187,8 @@ internal sealed class Projectiles(
             return;
         }
 
-        ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
-        ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
+        ob.TileX = (byte)(ob.X >> MapConstants.TileShift);
+        ob.TileY = (byte)(ob.Y >> MapConstants.TileShift);
     }
 
     /*
@@ -203,11 +203,11 @@ internal sealed class Projectiles(
         int x, y, xl, yl, xh, yh;
         Actor? check;
 
-        xl = (int)((obx - GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yl = (int)((oby - GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
+        xl = (int)((obx - GameConstants.PlayerSize) >> MapConstants.TileShift);
+        yl = (int)((oby - GameConstants.PlayerSize) >> MapConstants.TileShift);
 
-        xh = (int)((obx + GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yh = (int)((oby + GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
+        xh = (int)((obx + GameConstants.PlayerSize) >> MapConstants.TileShift);
+        yh = (int)((oby + GameConstants.PlayerSize) >> MapConstants.TileShift);
 
         //
         // check for solid walls

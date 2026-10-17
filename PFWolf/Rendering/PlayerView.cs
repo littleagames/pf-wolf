@@ -41,7 +41,7 @@ internal sealed class PlayerView(
     {
         var player = session.player;
         int focallength = hooks.FocalLength();
-        int sin = TrigTables.sintable[player.Angle], cos = TrigTables.sintable[player.Angle + GameConstants.ANGLES / 4];
+        int sin = TrigTables.sintable[player.Angle], cos = TrigTables.sintable[player.Angle + GameConstants.Angles / 4];
         return (player.X - MathUtils.FixedMul(focallength, cos), player.Y + MathUtils.FixedMul(focallength, sin), sin, cos);
     }
 
@@ -67,12 +67,12 @@ internal sealed class PlayerView(
                 continue;
 
             int tx = (int)item.Position.X, ty = (int)item.Position.Y;
-            int gx = (tx << MapConstants.TILESHIFT) + 0x8000 - fromx;
-            int gy = (ty << MapConstants.TILESHIFT) + 0x8000 - fromy;
+            int gx = (tx << MapConstants.TileShift) + 0x8000 - fromx;
+            int gy = (ty << MapConstants.TileShift) + 0x8000 - fromy;
             int nx = MathUtils.FixedMul(gx, fromcos) - MathUtils.FixedMul(gy, fromsin);
             int ny = MathUtils.FixedMul(gx, fromsin) + MathUtils.FixedMul(gy, fromcos);
 
-            bool grab = nx - 0x2000 < MapConstants.TILEGLOBAL && ny > -MapConstants.TILEGLOBAL / 2 && ny < MapConstants.TILEGLOBAL / 2;
+            bool grab = nx - 0x2000 < MapConstants.TileGlobal && ny > -MapConstants.TileGlobal / 2 && ny < MapConstants.TileGlobal / 2;
             bool seen = nx > 0 || (tx == player.TileX && ty == player.TileY);
             if (grab && seen)
                 (touched ??= []).Add(item);
@@ -124,7 +124,7 @@ internal sealed class PlayerView(
     internal bool PlayerTileInView(PlayerPawn pawn) =>
         session.camera.Target == pawn && session.gamemode == GameMode.Single
             ? map.spotvis[pawn.TileX, pawn.TileY]
-            : map.tilemap[pawn.TileX, pawn.TileY] == 0 || (map.tilemap[pawn.TileX, pawn.TileY] & GameConstants.BIT_DOOR) != 0;
+            : map.tilemap[pawn.TileX, pawn.TileY] == 0 || (map.tilemap[pawn.TileX, pawn.TileY] & GameConstants.BitDoor) != 0;
 
     /// <summary>
     /// Whether a player could see an actor: in front of them, within the view's width either
@@ -133,16 +133,16 @@ internal sealed class PlayerView(
     internal bool InViewOf(PlayerPawn pawn, Entities.Actors.Actor actor)
     {
         int focallength = hooks.FocalLength();
-        int sin = TrigTables.sintable[pawn.Angle], cos = TrigTables.sintable[pawn.Angle + GameConstants.ANGLES / 4];
+        int sin = TrigTables.sintable[pawn.Angle], cos = TrigTables.sintable[pawn.Angle + GameConstants.Angles / 4];
         int fromx = pawn.X - MathUtils.FixedMul(focallength, cos), fromy = pawn.Y + MathUtils.FixedMul(focallength, sin);
         int gx = actor.X - fromx, gy = actor.Y - fromy;
-        int nx = MathUtils.FixedMul(gx, cos) - MathUtils.FixedMul(gy, sin) - GameConstants.ACTORSIZE;
+        int nx = MathUtils.FixedMul(gx, cos) - MathUtils.FixedMul(gy, sin) - GameConstants.ActorSize;
         int ny = MathUtils.FixedMul(gy, cos) + MathUtils.FixedMul(gx, sin);
-        if (nx < GameConstants.MINDIST)
+        if (nx < GameConstants.MinDist)
             return false;
 
         // |ny / nx| * scale within half the view: the view's width taken out of both
-        return Math.Abs((long)ny) * (GameConstants.FOCALLENGTH + GameConstants.MINDIST) < (long)nx * (GameConstants.VIEWGLOBAL / 2)
+        return Math.Abs((long)ny) * (GameConstants.FocalLength + GameConstants.MinDist) < (long)nx * (GameConstants.ViewGlobal / 2)
             && lineOfSight.CheckLine(actor, pawn);
     }
 

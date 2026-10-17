@@ -6,7 +6,7 @@ namespace PFWolf.Tests;
 
 public class RayTraceTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private MapManager _map = null!;
     private RenderState _render = null!;
@@ -17,8 +17,8 @@ public class RayTraceTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            spotvis = new bool[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            seen = new SeenFlags[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
+            seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],
         };
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade);
         _trace = new RayTrace(_map, null!, null!, null!, null!, _render);
@@ -29,7 +29,7 @@ public class RayTraceTests
     {
         // Arrange: heading east into column 5, the ray at y 7.5 tiles, rising a quarter tile a column
         (_render.xtile, _render.xtilestep, _render.yintercept) = (5, 1, 7 * Tile + Tile / 2);
-        _render.yinttile = _render.yintercept >> MapConstants.TILESHIFT;
+        _render.yinttile = _render.yintercept >> MapConstants.TileShift;
 
         // Act
         _trace.passvert(-Tile / 4);
@@ -44,7 +44,7 @@ public class RayTraceTests
     {
         // Arrange: heading north out of row 9, the ray at x 3.9 tiles, moving right a fifth of a tile a row
         (_render.ytile, _render.ytilestep, _render.xintercept) = (9, -1, 3 * Tile + Tile * 9 / 10);
-        _render.xinttile = _render.xintercept >> MapConstants.TILESHIFT;
+        _render.xinttile = _render.xintercept >> MapConstants.TileShift;
 
         // Act
         _trace.passhoriz(Tile / 5);

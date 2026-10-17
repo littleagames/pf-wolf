@@ -2,7 +2,7 @@ namespace PFWolf.Tests;
 
 public class MathUtilsTests
 {
-    private const int One = 1 << MathUtils.FRACBITS;
+    private const int One = 1 << MathUtils.FracBits;
 
     [TestCase(1, 1, 1)]
     [TestCase(2, 3, 6)]

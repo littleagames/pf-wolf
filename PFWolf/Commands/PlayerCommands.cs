@@ -23,11 +23,11 @@ internal sealed class PlayerCommands(
     PlayerCommandsHooks hooks)
 {
     /// <summary>The most players a game can have</summary>
-    internal const int MAXPLAYERS = 4;
+    internal const int MaxPlayers = 4;
 
     internal void Register()
     {
-        console.Register("addplayer", $"Adds a co-op player beside you, who stands still until you take them over with controlplayer (up to {MAXPLAYERS}; testing without the network).",
+        console.Register("addplayer", $"Adds a co-op player beside you, who stands still until you take them over with controlplayer (up to {MaxPlayers}; testing without the network).",
             "addplayer [class]", AddPlayerCommand, Cheat | InLevel, complete: (_, i) => i == 0 ? classes.PlayerClasses() : []);
         console.Register("controlplayer", "Makes another player yours: your view, status bar and controls.",
             "controlplayer <n>", ControlPlayerCommand, Cheat | InLevel);
@@ -42,8 +42,8 @@ internal sealed class PlayerCommands(
     /// <summary>`addplayer [class]`: a player who stands still (nothing drives them yet), beside you</summary>
     internal void AddPlayerCommand(string[] args)
     {
-        if (session.players.Count >= MAXPLAYERS)
-            throw new ArgumentException($"there can only be {MAXPLAYERS} players");
+        if (session.players.Count >= MaxPlayers)
+            throw new ArgumentException($"there can only be {MaxPlayers} players");
 
         var playerClass = args.Length > 0
             ? classes.FindPlayerClass(args[0]) ?? throw new ArgumentException($"no player class {args[0]}")

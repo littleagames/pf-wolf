@@ -30,20 +30,20 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
     internal List<CustomRow> Rows = [];
 
     // Layout, inside the window in menudefs/customize (the title graphic comes down to it)
-    private const int CUS_TITLEY = 48;          // the column titles
-    private const int CUS_ROWY = 61;            // the first row
-    private const int CUS_ROWH = 11;
-    private const int CUS_ROWS = 9;             // rows showing at once
-    private const int CUS_NAMEX = 12;
-    private static readonly int[] CUS_COLX = [124, 188, 252];   // a column per ControlBindings slot
-    private const int CUS_COLW = 62;
-    private const int CUS_SEPY = CUS_ROWY + CUS_ROWS * CUS_ROWH + 1;
-    private const int CUS_INFOY = CUS_SEPY + 2;     // what's going on: a prompt, a message, the controller
-    private const int CUS_HELPY = CUS_INFOY + 10;   // which keys do what
-    private const int CUS_ARROWX = 309;
+    private const int CusTitleY = 48;          // the column titles
+    private const int CusRowY = 61;            // the first row
+    private const int CusRowH = 11;
+    private const int CusRows = 9;             // rows showing at once
+    private const int CusNameX = 12;
+    private static readonly int[] CusColX = [124, 188, 252];   // a column per ControlBindings slot
+    private const int CusColW = 62;
+    private const int CusSepY = CusRowY + CusRows * CusRowH + 1;
+    private const int CusInfoY = CusSepY + 2;     // what's going on: a prompt, a message, the controller
+    private const int CusHelpY = CusInfoY + 10;   // which keys do what
+    private const int CusArrowX = 309;
 
     // How long a slot waits for a key or button before giving up, in tics
-    private const int CUS_CAPTURETICS = 6 * 70;
+    private const int CusCaptureTics = 6 * 70;
 
     internal List<CustomRow> LoadCustomizeRows()
     {
@@ -107,7 +107,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             if (input.IsKeyDown(ScanCodes.PgUp) || input.IsKeyDown(ScanCodes.PgDn))
             {
                 int step = input.IsKeyDown(ScanCodes.PgUp) ? -1 : 1;
-                for (int i = 0; i < CUS_ROWS - 1; i++)
+                for (int i = 0; i < CusRows - 1; i++)
                     moved = NextCustomRow(rows, moved, step, wrap: false);
             }
             else
@@ -190,7 +190,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
     }
 
     /// <summary>The screen's text is in the small font</summary>
-    private static TextStyle CustomizeStyle(string color, string background = "BKGDCOLOR") => new(UiFonts.SMALL_FONT, color, background);
+    private static TextStyle CustomizeStyle(string color, string background = "BKGDCOLOR") => new(UiFonts.SmallFont, color, background);
 
     /// <summary>The next row that can be picked, going <paramref name="step"/> from <paramref name="from"/>; -1 with none.</summary>
     internal static int NextCustomRow(List<CustomRow> rows, int from, int step, bool wrap = true)
@@ -227,7 +227,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
         loop.ShootSnd();
         DrawCustomizeScreen(rows, row, col, ref top, "", capturing: true);
 
-        var code = CaptureInput(controller, CUS_COLX[col], CustomRowY(row, top));
+        var code = CaptureInput(controller, CusColX[col], CustomRowY(row, top));
         if (code.IsNone)
         {
             audio.Play("menu/escape");
@@ -281,7 +281,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
         int lastFlash = start;
         bool showMark = true;
 
-        while ((int)GameEngineManager.GetTimeCount() - start < CUS_CAPTURETICS)
+        while ((int)GameEngineManager.GetTimeCount() - start < CusCaptureTics)
         {
             input.ProcessEvents();
 
@@ -324,7 +324,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
     // DRAW THE SCREEN
     //
 
-    internal static int CustomRowY(int row, int top) => CUS_ROWY + (row - top) * CUS_ROWH;
+    internal static int CustomRowY(int row, int top) => CusRowY + (row - top) * CusRowH;
 
     private void DrawCustomizeScreen(List<CustomRow> rows, int row, int col, ref int top, string info, bool capturing = false)
     {
@@ -336,38 +336,38 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
         // COLUMN TITLES
         //
         var titleStyle = CustomizeStyle("READHCOLOR", "BORDCOLOR");
-        ui.TextAt(CUS_NAMEX, CUS_TITLEY, titleStyle).Print("$STR_CTL_COLCONTROL".ToLanguageText(language));
+        ui.TextAt(CusNameX, CusTitleY, titleStyle).Print("$STR_CTL_COLCONTROL".ToLanguageText(language));
         string[] titles = ["$STR_CTL_COLKEY1", "$STR_CTL_COLKEY2", "$STR_CTL_COLPAD"];
         for (int c = 0; c < titles.Length; c++)
-            ui.TextAt(CUS_COLX[c], CUS_TITLEY, titleStyle).Print(titles[c].ToLanguageText(language));
-        video.HorizontalLine(6, 314, CUS_ROWY - 2, "DEACTIVE");
+            ui.TextAt(CusColX[c], CusTitleY, titleStyle).Print(titles[c].ToLanguageText(language));
+        video.HorizontalLine(6, 314, CusRowY - 2, "DEACTIVE");
 
         //
         // SCROLL SO THE CURSOR SHOWS, WITH ITS SECTION'S HEADER WHEN IT'S THE FIRST ROW UNDER ONE
         //
         if (row < top)
             top = row;
-        if (row >= top + CUS_ROWS)
-            top = row - CUS_ROWS + 1;
+        if (row >= top + CusRows)
+            top = row - CusRows + 1;
         if (row > 0 && row - 1 < top && rows[row - 1].Kind == CustomRowKind.Header)
             top = row - 1;
-        top = Math.Clamp(top, 0, Math.Max(0, rows.Count - CUS_ROWS));
+        top = Math.Clamp(top, 0, Math.Max(0, rows.Count - CusRows));
 
-        for (int i = 0; i < CUS_ROWS && top + i < rows.Count; i++)
+        for (int i = 0; i < CusRows && top + i < rows.Count; i++)
         {
             int r = top + i;
             DrawCustomRow(rows[r], CustomRowY(r, top), r == row, col, capturing && r == row);
         }
 
         if (top > 0)
-            draw.DrawCustomArrow(CUS_ARROWX, CUS_ROWY, up: true);
-        if (top + CUS_ROWS < rows.Count)
-            draw.DrawCustomArrow(CUS_ARROWX, CUS_SEPY - 6, up: false);
+            draw.DrawCustomArrow(CusArrowX, CusRowY, up: true);
+        if (top + CusRows < rows.Count)
+            draw.DrawCustomArrow(CusArrowX, CusSepY - 6, up: false);
 
         //
         // WHAT'S GOING ON, AND WHICH KEYS DO WHAT
         //
-        video.HorizontalLine(6, 314, CUS_SEPY, "DEACTIVE");
+        video.HorizontalLine(6, 314, CusSepY, "DEACTIVE");
 
         var current = rows[row];
         string help, infoColor = "HIGHLIGHT";
@@ -390,8 +390,8 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             help = (current.Kind == CustomRowKind.Reset ? "$STR_CTL_HELPRESET" : "$STR_CTL_HELP").ToLanguageText(language);
         }
 
-        ui.CenteredText(0, 320, CUS_INFOY, CustomizeStyle(infoColor)).CPrint(ui.FitText(info, 300, UiFonts.SMALL_FONT));
-        ui.CenteredText(0, 320, CUS_HELPY, CustomizeStyle("TEXTCOLOR")).CPrint(ui.FitText(help, 300, UiFonts.SMALL_FONT));
+        ui.CenteredText(0, 320, CusInfoY, CustomizeStyle(infoColor)).CPrint(ui.FitText(info, 300, UiFonts.SmallFont));
+        ui.CenteredText(0, 320, CusHelpY, CustomizeStyle("TEXTCOLOR")).CPrint(ui.FitText(help, 300, UiFonts.SmallFont));
 
         video.Update();
     }
@@ -401,18 +401,18 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
         switch (row.Kind)
         {
             case CustomRowKind.Header:
-                ui.TextAt(CUS_NAMEX - 4, y, CustomizeStyle("READCOLOR")).Print(row.Text);
-                int w = ui.TextWidth(row.Text, UiFonts.SMALL_FONT);
-                video.HorizontalLine(CUS_NAMEX + w + 2, 302, y + 5, "DEACTIVE");
+                ui.TextAt(CusNameX - 4, y, CustomizeStyle("READCOLOR")).Print(row.Text);
+                int w = ui.TextWidth(row.Text, UiFonts.SmallFont);
+                video.HorizontalLine(CusNameX + w + 2, 302, y + 5, "DEACTIVE");
                 break;
 
             case CustomRowKind.Reset:
-                ui.TextAt(CUS_NAMEX, y, CustomizeStyle(selected ? "HIGHLIGHT" : "TEXTCOLOR")).Print(row.Text);
+                ui.TextAt(CusNameX, y, CustomizeStyle(selected ? "HIGHLIGHT" : "TEXTCOLOR")).Print(row.Text);
                 break;
 
             case CustomRowKind.Control:
-                ui.TextAt(CUS_NAMEX, y, CustomizeStyle(selected ? "HIGHLIGHT" : "TEXTCOLOR"))
-                    .Print(ui.FitText(row.Text, CUS_COLX[0] - CUS_NAMEX - 4, UiFonts.SMALL_FONT));
+                ui.TextAt(CusNameX, y, CustomizeStyle(selected ? "HIGHLIGHT" : "TEXTCOLOR"))
+                    .Print(ui.FitText(row.Text, CusColX[0] - CusNameX - 4, UiFonts.SmallFont));
 
                 for (int c = 0; c < ControlBindings.SlotCount; c++)
                 {
@@ -421,7 +421,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
                     string label = cursor && capturing ? "?"
                         : code.IsNone ? "$STR_CTL_UNBOUND".ToLanguageText(assets.GetText("en-us"))
                         : BindingLabel(code);
-                    DrawCustomCell(CUS_COLX[c], y, label, cursor, unbound: code.IsNone);
+                    DrawCustomCell(CusColX[c], y, label, cursor, unbound: code.IsNone);
                 }
                 break;
         }
@@ -433,14 +433,14 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
         TextStyle style;
         if (selected)
         {
-            video.Bar(x - 3, y - 1, CUS_COLW - 2, CUS_ROWH, "TEXTCOLOR");
-            draw.DrawOutline(x - 3, y - 1, CUS_COLW - 2, CUS_ROWH, "Black", "HIGHLIGHT");
+            video.Bar(x - 3, y - 1, CusColW - 2, CusRowH, "TEXTCOLOR");
+            draw.DrawOutline(x - 3, y - 1, CusColW - 2, CusRowH, "Black", "HIGHLIGHT");
             style = CustomizeStyle("Black", "TEXTCOLOR");
         }
         else
             style = CustomizeStyle(unbound ? "DEACTIVE" : "TEXTCOLOR");
 
-        ui.TextAt(x, y, style).Print(ui.FitText(label, CUS_COLW - 6, style.Font));
+        ui.TextAt(x, y, style).Print(ui.FitText(label, CusColW - 6, style.Font));
     }
 
     /// <summary>

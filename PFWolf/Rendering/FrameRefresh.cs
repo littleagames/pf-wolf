@@ -90,8 +90,8 @@ internal sealed class FrameRefresh(
 
         lasttimecount += (int)session.tics;
 
-        if (session.tics > GameConstants.MAXTICS)
-            session.tics = GameConstants.MAXTICS;
+        if (session.tics > GameConstants.MaxTics)
+            session.tics = GameConstants.MaxTics;
     }
 
     /*
@@ -124,10 +124,10 @@ internal sealed class FrameRefresh(
     {
         var camera = session.camera;
         render.viewangle = camera.Angle;
-        render.midangle = (short)(render.viewangle * (GameConstants.FINEANGLES / GameConstants.ANGLES));
+        render.midangle = (short)(render.viewangle * (GameConstants.FineAngles / GameConstants.Angles));
 
         render.viewpitch = camera.Pitch;
-        render.vieweyez = Math.Clamp(camera.EyeZ, GameConstants.MINEYE, GameConstants.MAXEYE);
+        render.vieweyez = Math.Clamp(camera.EyeZ, GameConstants.MinEye, GameConstants.MaxEye);
         SetupPitch();
 
         render.viewsin = TrigTables.sintable[render.viewangle];
@@ -136,13 +136,13 @@ internal sealed class FrameRefresh(
         render.viewx = camera.X - MathUtils.FixedMul(render.focallength, render.viewcos);
         render.viewy = camera.Y + MathUtils.FixedMul(render.focallength, render.viewsin);
 
-        render.focaltx = (short)(render.viewx >> (int)MapConstants.TILESHIFT);
-        render.focalty = (short)(render.viewy >> (int)MapConstants.TILESHIFT);
+        render.focaltx = (short)(render.viewx >> (int)MapConstants.TileShift);
+        render.focalty = (short)(render.viewy >> (int)MapConstants.TileShift);
 
-        render.xpartialdown = (uint)(render.viewx & (MapConstants.TILEGLOBAL - 1));
-        render.xpartialup = (uint)(render.xpartialdown ^ (MapConstants.TILEGLOBAL - 1));
-        render.ypartialdown = (uint)(render.viewy & (MapConstants.TILEGLOBAL - 1));
-        render.ypartialup = (uint)(render.ypartialdown ^ (MapConstants.TILEGLOBAL - 1));
+        render.xpartialdown = (uint)(render.viewx & (MapConstants.TileGlobal - 1));
+        render.xpartialup = (uint)(render.xpartialdown ^ (MapConstants.TileGlobal - 1));
+        render.ypartialdown = (uint)(render.viewy & (MapConstants.TileGlobal - 1));
+        render.ypartialup = (uint)(render.ypartialdown ^ (MapConstants.TileGlobal - 1));
     }
 
     internal void ThreeDRefresh()
@@ -161,7 +161,7 @@ internal sealed class FrameRefresh(
         // Detect all sprites over camera fix. Demos need it too: Wolf4SDL 1.7c, which plays
         // the games' own demos through, always had it (enemies beside the player stay seen)
         if (map.tilemap[camera.TileX, camera.TileY] == 0 ||
-         (map.tilemap[camera.TileX, camera.TileY] & GameConstants.BIT_DOOR) != 0)
+         (map.tilemap[camera.TileX, camera.TileY] & GameConstants.BitDoor) != 0)
             map.spotvis[camera.TileX, camera.TileY] = true;
 
 
@@ -233,7 +233,7 @@ internal sealed class FrameRefresh(
             if (fpscounter)
             {
                 video.Bar(0, 0, 40, 10, session.bordercol);
-                graphics.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(UiFonts.SMALL_FONT, "Grey", "VIEWCOLOR"));
+                graphics.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(UiFonts.SmallFont, "Grey", "VIEWCOLOR"));
             }
 
             // Taken here, before the console is drawn, so it never shows in the shot.

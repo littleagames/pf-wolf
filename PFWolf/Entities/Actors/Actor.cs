@@ -45,7 +45,7 @@ internal record Actor : Thinker
 
     public byte AreaNumber { get; internal set; }
 
-    // The tag on the tile it spawned on (MapManager.TAGPLANE), 0 for none; a switch with the
+    // The tag on the tile it spawned on (MapManager.TagPlane), 0 for none; a switch with the
     // same tag acts on it wherever it has since moved.
     public ushort Tag { get; internal set; }
 
@@ -106,8 +106,8 @@ internal record Actor : Thinker
         Position = new Vector2(tilex, tiley);
         TileX = (byte)tilex;
         TileY = (byte)tiley;
-        X = (int)((tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
-        Y = (int)((tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+        X = (int)((tilex << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
+        Y = (int)((tiley << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
     }
 
     // Keeps the tile-snapped Position (used by the static-object render/visibility path)

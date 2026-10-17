@@ -37,10 +37,10 @@ Every time a door opens or closes the session.areas.areabyplayer matrix gets rec
 internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapManager map, InventoryManager inventory,
     HudMessageManager messages, GameSession session, DoorHooks hooks)
 {
-    internal const int DOORWIDTH = 0x7800;
-    internal const int OPENTICS = 300;
+    internal const int DoorWidth = 0x7800;
+    internal const int OpenTics = 300;
 
-    internal DoorObject[] doorobjlist = new DoorObject[GameConstants.MAXDOORS];
+    internal DoorObject[] doorobjlist = new DoorObject[GameConstants.MaxDoors];
     internal int lastdoorobj; // index
     internal short doornum;
 
@@ -71,8 +71,8 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     */
     internal void SpawnDoor(int tilex, int tiley, bool vertical, MapTextureTranslation doorXlat)
     {
-        if (doornum == GameConstants.MAXDOORS)
-            engine.Quit($"{GameConstants.MAXDOORS}+ doors on level!");
+        if (doornum == GameConstants.MaxDoors)
+            engine.Quit($"{GameConstants.MaxDoors}+ doors on level!");
 
         var doorobj = new DoorObject();
         doorobj.position = 0;              // doors start out fully closed
@@ -82,29 +82,29 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         doorobj.action = DoorAction.Closed;
         doorobj.xlat = doorXlat;
         // A mapdefs door-locks object on the door's tile locks it in place of its own lock
-        doorobj.maplock = map.GetMapData().DoorLocks.TryGetValue(map.MAPSPOT(tilex, tiley, 1), out var tileLock)
+        doorobj.maplock = map.GetMapData().DoorLocks.TryGetValue(map.MapSpot(tilex, tiley, 1), out var tileLock)
             ? tileLock
             : doorXlat.Lock;
         doorobjlist[lastdoorobj] = doorobj;
 
-        map.actorat[tilex, tiley] = new Door(doornum);// (uint)(doornum | GameConstants.BIT_DOOR);   // consider it a solid wall
+        map.actorat[tilex, tiley] = new Door(doornum);// (uint)(doornum | GameConstants.BitDoor);   // consider it a solid wall
 
         //
         // make the door tile a special tile, and mark the adjacent tiles
         // for door sides
         //
-        map.tilemap[tilex, tiley] = (ushort)(doornum | GameConstants.BIT_DOOR);
-        //map = &MAPSPOT(tilex, tiley, 0);
+        map.tilemap[tilex, tiley] = (ushort)(doornum | GameConstants.BitDoor);
+        //map = &MapSpot(tilex, tiley, 0);
         if (vertical)
         {
-            var map_areanum = map.MAPSPOT(tilex-1, tiley, 0);
+            var map_areanum = map.MapSpot(tilex-1, tiley, 0);
             map.SetMapSpot(tilex, tiley, 0, (ushort)map_areanum); // set area number
             MarkDoorSide(tilex, tiley - 1);
             MarkDoorSide(tilex, tiley + 1);
         }
         else
         {
-            var map_areanum = map.MAPSPOT(tilex, tiley-1, 0);
+            var map_areanum = map.MapSpot(tilex, tiley-1, 0);
             map.SetMapSpot(tilex, tiley, 0, (ushort)map_areanum);
             MarkDoorSide(tilex - 1, tiley);
             MarkDoorSide(tilex + 1, tiley);
@@ -115,16 +115,16 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     }
 
     /// <summary>
-    /// Marks a wall beside a door (BIT_WALL) so it's drawn with the door-side texture. Only a wall
+    /// Marks a wall beside a door (BitWall) so it's drawn with the door-side texture. Only a wall
     /// is marked: on open floor the mark would read as a moving pushwall, and on a door spawned
     /// before this one it would change that door's number.
     /// </summary>
     private void MarkDoorSide(int x, int y)
     {
-        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return;
-        if (map.tilemap[x, y] is > 0 and < GameConstants.BIT_WALL)
-            map.tilemap[x, y] |= GameConstants.BIT_WALL;
+        if (map.tilemap[x, y] is > 0 and < GameConstants.BitWall)
+            map.tilemap[x, y] |= GameConstants.BitWall;
     }
 
     //===========================================================================
@@ -173,28 +173,28 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
             if (doorobjlist[door].vertical)
             {
-                if (pawn.TileY == tiley && (((pawn.X + GameConstants.MINDIST) >> MapConstants.TILESHIFT) == tilex
-                    || ((pawn.X - GameConstants.MINDIST) >> MapConstants.TILESHIFT) == tilex))
+                if (pawn.TileY == tiley && (((pawn.X + GameConstants.MinDist) >> MapConstants.TileShift) == tilex
+                    || ((pawn.X - GameConstants.MinDist) >> MapConstants.TileShift) == tilex))
                     return;
             }
-            else if (pawn.TileX == tilex && (((pawn.Y + GameConstants.MINDIST) >> MapConstants.TILESHIFT) == tiley
-                || ((pawn.Y - GameConstants.MINDIST) >> MapConstants.TILESHIFT) == tiley))
+            else if (pawn.TileX == tilex && (((pawn.Y + GameConstants.MinDist) >> MapConstants.TileShift) == tiley
+                || ((pawn.Y - GameConstants.MinDist) >> MapConstants.TileShift) == tiley))
                 return;
         }
 
         if (doorobjlist[door].vertical)
         {
             // an enemy marked on a neighbouring tile, close enough to reach into the doorway
-            if (map.ActorMarkAt(tilex - 1, tiley) is { } west && ((west.X + GameConstants.MINDIST) >> MapConstants.TILESHIFT) == tilex)
+            if (map.ActorMarkAt(tilex - 1, tiley) is { } west && ((west.X + GameConstants.MinDist) >> MapConstants.TileShift) == tilex)
                 return;
-            if (map.ActorMarkAt(tilex + 1, tiley) is { } east && ((east.X - GameConstants.MINDIST) >> MapConstants.TILESHIFT) == tilex)
+            if (map.ActorMarkAt(tilex + 1, tiley) is { } east && ((east.X - GameConstants.MinDist) >> MapConstants.TileShift) == tilex)
                 return;
         }
         else
         {
-            if (map.ActorMarkAt(tilex, tiley - 1) is { } north && ((north.Y + GameConstants.MINDIST) >> MapConstants.TILESHIFT) == tiley)
+            if (map.ActorMarkAt(tilex, tiley - 1) is { } north && ((north.Y + GameConstants.MinDist) >> MapConstants.TileShift) == tiley)
                 return;
-            if (map.ActorMarkAt(tilex, tiley + 1) is { } south && ((south.Y - GameConstants.MINDIST) >> MapConstants.TILESHIFT) == tiley)
+            if (map.ActorMarkAt(tilex, tiley + 1) is { } south && ((south.Y - GameConstants.MinDist) >> MapConstants.TileShift) == tiley)
                 return;
         }
 
@@ -202,7 +202,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         //
         // play door sound if in a connected area
         //
-        area = map.MAPSPOT(tilex, tiley, 0) - map.Floors.AreaTile;
+        area = map.MapSpot(tilex, tiley, 0) - map.Floors.AreaTile;
 
         if (session.areas.areabyplayer[area] != 0 && doorobjlist[door].xlat.CloseSound is { Length: > 0 } closeSound)
         {
@@ -214,7 +214,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         //
         // make the door space solid
         //
-        map.actorat[tilex, tiley] = new Door(door);// (uint)(door | GameConstants.BIT_DOOR);
+        map.actorat[tilex, tiley] = new Door(door);// (uint)(door | GameConstants.BitDoor);
     }
 
     /*
@@ -348,7 +348,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         if (doorobjlist[door].held)
             return;
 
-        if ((doorobjlist[door].ticcount += (short)session.tics) >= OPENTICS)
+        if ((doorobjlist[door].ticcount += (short)session.tics) >= OpenTics)
             CloseDoor(door);
     }
 
@@ -377,13 +377,13 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
             if (doorobjlist[door].vertical)
             {
-                area1 = (uint)map.MAPSPOT(door_tilex + 1, door_tiley, 0);
-                area2 = (uint)map.MAPSPOT(door_tilex - 1, door_tiley, 0);
+                area1 = (uint)map.MapSpot(door_tilex + 1, door_tiley, 0);
+                area2 = (uint)map.MapSpot(door_tilex - 1, door_tiley, 0);
             }
             else
             {
-                area1 = (uint)map.MAPSPOT(door_tilex, door_tiley - 1, 0);
-                area2 = (uint)map.MAPSPOT(door_tilex, door_tiley + 1, 0);
+                area1 = (uint)map.MapSpot(door_tilex, door_tiley - 1, 0);
+                area2 = (uint)map.MapSpot(door_tilex, door_tiley + 1, 0);
             }
             area1 -= (uint)map.Floors.AreaTile;
             area2 -= (uint)map.Floors.AreaTile;
@@ -438,7 +438,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         tilex = doorobjlist[door].tilex;
         tiley = doorobjlist[door].tiley;
 
-        if ((map.actorat[tilex, tiley] is not Door)//!= (door | GameConstants.BIT_DOOR))
+        if ((map.actorat[tilex, tiley] is not Door)//!= (door | GameConstants.BitDoor))
             || map.Players.Any(pawn => pawn.TileX == tilex && pawn.TileY == tiley))
         {                       // something got inside the door
             OpenDoor(door);
@@ -465,13 +465,13 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
             if (doorobjlist[door].vertical)
             {
-                area1 = (uint)map.MAPSPOT(door_tilex + 1, door_tiley, 0);
-                area2 = (uint)map.MAPSPOT(door_tilex - 1, door_tiley, 0);
+                area1 = (uint)map.MapSpot(door_tilex + 1, door_tiley, 0);
+                area2 = (uint)map.MapSpot(door_tilex - 1, door_tiley, 0);
             }
             else
             {
-                area1 = (uint)map.MAPSPOT(door_tilex, door_tiley - 1, 0);
-                area2 = (uint)map.MAPSPOT(door_tilex, door_tiley + 1, 0);
+                area1 = (uint)map.MapSpot(door_tilex, door_tiley - 1, 0);
+                area2 = (uint)map.MapSpot(door_tilex, door_tiley + 1, 0);
             }
 
             area1 -= (uint)map.Floors.AreaTile;

@@ -71,7 +71,7 @@ public class AutomapInputTests
         _automap.Update(32, 32, 0);
         _automap.Pan(1, 0);
         float y = _automap.CenterY;
-        _polling.controly = -2 * GameConstants.BASEMOVE;
+        _polling.controly = -2 * GameConstants.BaseMove;
 
         // Act
         _keys.RouteMovementToAutomap();
@@ -85,11 +85,11 @@ public class AutomapInputTests
     public void Following_The_Player_Walking_Walks()
     {
         _automap.Open();
-        _polling.controly = -2 * GameConstants.BASEMOVE;
+        _polling.controly = -2 * GameConstants.BaseMove;
 
         _keys.RouteMovementToAutomap();
 
-        Assert.That(_polling.controly, Is.EqualTo(-2 * GameConstants.BASEMOVE));
+        Assert.That(_polling.controly, Is.EqualTo(-2 * GameConstants.BaseMove));
     }
 
     [Test]

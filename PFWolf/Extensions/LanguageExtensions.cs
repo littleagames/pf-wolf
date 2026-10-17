@@ -6,7 +6,7 @@ internal static class LanguageExtensions
 {
     /// <summary>
     /// Looks up a $NAME text key (anything else is used as-is), then fills in the
-    /// {YESBUTTONNAME} / {NOBUTTONNAME} placeholders with the confirm keys.
+    /// {YesButtonName} / {NoButtonName} placeholders with the confirm keys.
     /// </summary>
     internal static string ToLanguageText(this string text, LanguageMetadata? language)
     {
@@ -15,7 +15,7 @@ internal static class LanguageExtensions
             text = result;
 
         return text
-            .Replace("{YESBUTTONNAME}", GameConstants.YESBUTTONNAME)
-            .Replace("{NOBUTTONNAME}", GameConstants.NOBUTTONNAME);
+            .Replace("{YESBUTTONNAME}", GameConstants.YesButtonName)
+            .Replace("{NOBUTTONNAME}", GameConstants.NoButtonName);
     }
 }

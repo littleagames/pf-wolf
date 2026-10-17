@@ -38,7 +38,7 @@ internal struct CompiledShape
 /// </summary>
 public static class Wolf3dCompiledSpriteConverter
 {
-    // A VSWAP sprite is 64x64, as the game's textures are (GameHost.TEXTURESIZE)
+    // A VSWAP sprite is 64x64, as the game's textures are (GameHost.TextureSize)
     private const int SpriteSize = 64;
 
     internal static SpriteAsset Convert(byte[] rawData)

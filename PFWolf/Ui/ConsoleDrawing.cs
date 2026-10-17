@@ -18,10 +18,10 @@ internal sealed class ConsoleDrawing(
 {
     // Drop-down console layout, in the 320x200 virtual screen coordinates Bar/DrawText use. It
     // hangs from the top of the screen and reaches across all of it, however wide.
-    internal const int CONSOLE_HEIGHT = 100;
-    internal const int CONSOLE_MARGIN = 4;
-    internal const string CONSOLE_FONT = "SmallFont";
-    internal const string CONSOLE_PROMPT = "] ";
+    internal const int ConsoleHeight = 100;
+    internal const int ConsoleMargin = 4;
+    internal const string ConsoleFont = "SmallFont";
+    internal const string ConsolePrompt = "] ";
 
     // Whether the console panel was drawn over the last frame
     internal bool consoleDrawn;
@@ -58,7 +58,7 @@ internal sealed class ConsoleDrawing(
         if (!console.IsOpen)
             return;
 
-        var font = fonts.Find(CONSOLE_FONT);
+        var font = fonts.Find(ConsoleFont);
         if (font == null)
             return;
 
@@ -67,21 +67,21 @@ internal sealed class ConsoleDrawing(
         int lineHeight = font.LineHeight;
 
         using var _ = video.UseUiOrigin(UiAnchor.Top);
-        int line = video.ScreenY(CONSOLE_HEIGHT - 1), bottom = video.ScreenY(CONSOLE_HEIGHT);
+        int line = video.ScreenY(ConsoleHeight - 1), bottom = video.ScreenY(ConsoleHeight);
         video.BarScaledCoord(0, 0, video.screenWidth, line, "Black");
         video.BarScaledCoord(0, line, video.screenWidth, bottom - line, "Grey");
 
         // The text runs from the screen's left edge to its right, less the margins
-        int left = video.ToLayoutX(0, roundUp: true) + CONSOLE_MARGIN;
-        int textWidth = video.ToLayoutX(video.screenWidth) - left - CONSOLE_MARGIN;
+        int left = video.ToLayoutX(0, roundUp: true) + ConsoleMargin;
+        int textWidth = video.ToLayoutX(video.screenWidth) - left - ConsoleMargin;
 
         //
         // input line, scrolled sideways so the cursor stays visible
         //
-        int inputY = CONSOLE_HEIGHT - 2 - lineHeight;
+        int inputY = ConsoleHeight - 2 - lineHeight;
         string input = ConsoleSafeText(console.InputLine);
         int cursor = console.Cursor;
-        int promptWidth = ConsoleTextWidth(CONSOLE_PROMPT, font);
+        int promptWidth = ConsoleTextWidth(ConsolePrompt, font);
         int inputWidth = textWidth - promptWidth - 1;
 
         int start = 0;
@@ -89,7 +89,7 @@ internal sealed class ConsoleDrawing(
             start++;
         string visible = ConsoleFitText(input[start..], inputWidth, font);
 
-        graphics.DrawText(left, inputY, CONSOLE_PROMPT, font, "White");
+        graphics.DrawText(left, inputY, ConsolePrompt, font, "White");
         graphics.DrawText(left + promptWidth, inputY, visible, font, "White");
 
         if ((GameEngineManager.GetTimeCount() / 20) % 2 == 0)     // blink about 3 times a second
@@ -113,7 +113,7 @@ internal sealed class ConsoleDrawing(
 
         for (int i = scrollback.Count - 1 - console.ScrollOffset; i >= 0 && y >= 0; i--)
         {
-            string color = scrollback[i].StartsWith(CONSOLE_PROMPT) ? "White" : "HIGHLIGHT";
+            string color = scrollback[i].StartsWith(ConsolePrompt) ? "White" : "HIGHLIGHT";
             var rows = ConsoleWrapText(ConsoleSafeText(scrollback[i]), textWidth, font);
 
             for (int r = rows.Count - 1; r >= 0 && y >= 0; r--)

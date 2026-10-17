@@ -23,8 +23,8 @@ public class TimedSwitchesTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var pawn = new PlayerPawn { State = _session.playerstate };
         pawn.SetPosition(10, 10);
@@ -92,7 +92,7 @@ public class TimedSwitchesTests
     {
         // Arrange: the level loads again (a death, a saved game)
         Throw(10);
-        _map.tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE];
+        _map.tilemap = new ushort[MapManager.MapSize, MapManager.MapSize];
         _map.tilemap[11, 10] = SwitchOn;
 
         // Act

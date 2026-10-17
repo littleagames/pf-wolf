@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class PlayerBodiesTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private const string Yaml = """
         Player:
@@ -48,8 +48,8 @@ public class PlayerBodiesTests
         _session = new GameSession { tics = 1 };
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
         _session.playerstate.playerclass = "Player";

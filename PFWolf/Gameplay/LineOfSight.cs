@@ -9,7 +9,7 @@ namespace PFWolf.Gameplay;
 internal sealed class LineOfSight(MapManager map, Doors doors, GameSession session, Func<long, long, long, long, bool> wallSpriteBlocks)
 {
     // A diagonal step is blocked by a wall/door (actorat[,]) or by a living actor marked on the tile.
-    internal bool CHECKDIAG(int x, int y) => map.actorat[x, y] switch
+    internal bool CheckDiag(int x, int y) => map.actorat[x, y] switch
     {
         null => true,
         ActorMark mark => !Managers.MapManager.IsSolidActor(mark.Who),
@@ -18,7 +18,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
 
     // The per-actor movement, sight and combat code (MoveObj/TryWalk/CheckSide, CheckSight/
     // SightPlayer, SelectChaseDir/SelectDodgeDir, Kill/Damage, ...) lives on Entities.Actors.Monster.
-    // CHECKDIAG and CheckLine are here, since they aren't tied to a mover: CheckLine is whether
+    // CheckDiag and CheckLine are here, since they aren't tied to a mover: CheckLine is whether
     // there's a clear line from any actor to the player (the player's own sight uses it too).
     internal bool CheckLine(Entities.Actors.Actor ob) => CheckLine(ob, session.player);
 
@@ -44,8 +44,8 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         if (wallSpriteBlocks(fromX, fromY, to.X, to.Y))
             return false;
 
-        x1 = fromX >> GameConstants.UNSIGNEDSHIFT;
-        y1 = fromY >> GameConstants.UNSIGNEDSHIFT;
+        x1 = fromX >> GameConstants.UnsignedShift;
+        y1 = fromY >> GameConstants.UnsignedShift;
         xt1 = x1 >> 8;
         yt1 = y1 >> 8;
 
@@ -60,8 +60,8 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         {
             // An actor's TileX/TileY jump to the tile it's stepping onto as the step begins: the
             // line goes to the tile it's actually over
-            x2 = (ushort)(to.X >> GameConstants.UNSIGNEDSHIFT);
-            y2 = (ushort)(to.Y >> GameConstants.UNSIGNEDSHIFT);
+            x2 = (ushort)(to.X >> GameConstants.UnsignedShift);
+            y2 = (ushort)(to.Y >> GameConstants.UnsignedShift);
             xt2 = x2 >> 8;
             yt2 = y2 >> 8;
         }
@@ -108,10 +108,10 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 if (value == 0 || shape != WallShape.Square)
                     continue;
 
-                if (value < GameConstants.BIT_DOOR || value > GameConstants.BIT_ALLTILES)
+                if (value < GameConstants.BitDoor || value > GameConstants.BitAllTiles)
                     return false;
 
-                value &= ~(uint)GameConstants.BIT_DOOR;
+                value &= ~(uint)GameConstants.BitDoor;
                 intercept = (uint)(yfrac - ystep / 2);
 
                 if (intercept > doors.doorobjlist[value].position)
@@ -162,10 +162,10 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 if (value == 0 || shape != WallShape.Square)
                     continue;
 
-                if (value < GameConstants.BIT_DOOR || value > GameConstants.BIT_ALLTILES)
+                if (value < GameConstants.BitDoor || value > GameConstants.BitAllTiles)
                     return false;
 
-                value &= ~(uint)GameConstants.BIT_DOOR;
+                value &= ~(uint)GameConstants.BitDoor;
                 intercept = (uint)(xfrac - xstep / 2);
 
                 if (intercept > doors.doorobjlist[value].position)
@@ -176,5 +176,5 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         return true;
     }
 
-    internal const long MINSIGHT = 0x18000L;
+    internal const long MinSight = 0x18000L;
 }

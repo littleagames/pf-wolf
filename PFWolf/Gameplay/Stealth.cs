@@ -51,7 +51,7 @@ internal sealed record StealthHooks(
 
 internal sealed class Stealth(MapManager map, InventoryManager inventory, PlayerWeapons weapons, GameSession session, StealthHooks hooks)
 {
-    const int Tile = 1 << (int)Constants.MapConstants.TILESHIFT;
+    const int Tile = 1 << (int)Constants.MapConstants.TileShift;
 
     /// <summary>Whether a monster in its standing or patrolling think lets the disguised player be (no sighting this tic)</summary>
     internal bool Overlooks(Entities.Actors.Monster monster)

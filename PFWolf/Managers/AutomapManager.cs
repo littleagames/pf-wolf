@@ -119,8 +119,8 @@ internal class AutomapManager
         CenterX += (screenDx * cos + screenDy * sin) / Zoom;
         CenterY += (-screenDx * sin + screenDy * cos) / Zoom;
 
-        CenterX = Math.Clamp(CenterX, 0, MapManager.MAPSIZE);
-        CenterY = Math.Clamp(CenterY, 0, MapManager.MAPSIZE);
+        CenterX = Math.Clamp(CenterX, 0, MapManager.MapSize);
+        CenterY = Math.Clamp(CenterY, 0, MapManager.MapSize);
     }
 
     /// <summary>Recenters on the player and returns to follow mode.</summary>

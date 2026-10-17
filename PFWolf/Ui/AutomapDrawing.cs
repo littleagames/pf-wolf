@@ -67,12 +67,12 @@ internal sealed class AutomapDrawing(
         string.Format(key.ToLanguageText(assets.GetText("en-us")), args);
 
     // The grid only shows from this zoom (virtual pixels per tile) up; any closer together it's a solid wash
-    const float AUTOMAP_MINGRIDZOOM = 6f;
+    const float AutomapMinGridZoom = 6f;
 
     // How bright the 3D view stays under the map in Overlay mode
-    const float AUTOMAP_OVERLAYBRIGHTNESS = 0.4f;
+    const float AutomapOverlayBrightness = 0.4f;
 
-    const string AUTOMAP_FONT = "SmallFont";
+    const string AutomapFont = "SmallFont";
 
     string AutomapColor(string name) =>
         video.IsThemeColor(name) ? name : AutomapColorFallbacks[name];
@@ -127,20 +127,20 @@ internal sealed class AutomapDrawing(
         // Overlay: the 3D view just drawn, dimmed, so the game still shows through
         if (automap.Overlay)
             video.ShadeRegionScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight,
-                video.GetDarkenTable(AUTOMAP_OVERLAYBRIGHTNESS));
+                video.GetDarkenTable(AutomapOverlayBrightness));
         else
             video.BarScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight, AutomapColor("AutomapBackground"));
 
         bool reveal = (session.mapreveal != 0);
 
-        if (automap.ShowGrid && automap.Zoom >= AUTOMAP_MINGRIDZOOM)
+        if (automap.ShowGrid && automap.Zoom >= AutomapMinGridZoom)
             DrawAutomapGrid(view);
 
         if (automap.Style == AutomapStyle.Graphic)
         {
             DrawAutomapTexels(view, reveal);
             DrawAutomapWallSprites(view, reveal, graphic: true);
-            DrawAutomapActors(view, reveal, sprites: automap.Zoom >= AUTOMAP_MINSPRITEZOOM);
+            DrawAutomapActors(view, reveal, sprites: automap.Zoom >= AutomapMinSpriteZoom);
         }
         else
         {
@@ -178,7 +178,7 @@ internal sealed class AutomapDrawing(
     (int First, int Last) AutomapReach(float center, AutomapView view)
     {
         float reach = MathF.Sqrt(view.ClipWidth * view.ClipWidth + view.ClipHeight * view.ClipHeight) / 2 / view.TileSize + 1;
-        return (Math.Max(0, (int)MathF.Floor(center - reach)), Math.Min(MapManager.MAPSIZE - 1, (int)MathF.Ceiling(center + reach)));
+        return (Math.Max(0, (int)MathF.Floor(center - reach)), Math.Min(MapManager.MapSize - 1, (int)MathF.Ceiling(center + reach)));
     }
 
     /// <summary>
@@ -297,7 +297,7 @@ internal sealed class AutomapDrawing(
     void DrawAutomapWallSprites(AutomapView view, bool reveal, bool graphic)
     {
         // In graphic style about as wide as a door's strip, so it reads next to them
-        int pen = graphic ? Math.Max(view.Pen, (int)(view.TileSize * AUTOMAP_DOORWIDTH / 2)) : view.Pen;
+        int pen = graphic ? Math.Max(view.Pen, (int)(view.TileSize * AutomapDoorWidth / 2)) : view.Pen;
 
         foreach (var actor in map.GetActors())
         {
@@ -316,7 +316,7 @@ internal sealed class AutomapDrawing(
                 ? index.ToString()
                 : AutomapColor("AutomapWallSprite");
 
-            const float T = MapConstants.TILEGLOBAL;
+            const float T = MapConstants.TileGlobal;
             AutomapLine(view, (float)(span.X1 / T), (float)(span.Y1 / T), (float)(span.X2 / T), (float)(span.Y2 / T), color, pen);
         }
     }
@@ -346,7 +346,7 @@ internal sealed class AutomapDrawing(
 
         foreach (var (mark, actor) in marks.OrderBy(m => m.Mark))
         {
-            var (sx, sy) = view.ToScreen(actor.X / (float)MapConstants.TILEGLOBAL, actor.Y / (float)MapConstants.TILEGLOBAL);
+            var (sx, sy) = view.ToScreen(actor.X / (float)MapConstants.TileGlobal, actor.Y / (float)MapConstants.TileGlobal);
 
             if (sprites && DrawAutomapSprite(view, actor, sx, sy))
                 continue;
@@ -404,8 +404,8 @@ internal sealed class AutomapDrawing(
     /// <summary>An arrow on the player, pointing the way they face.</summary>
     void DrawAutomapPlayer(AutomapView view)
     {
-        float x = session.player.X / (float)MapConstants.TILEGLOBAL;
-        float y = session.player.Y / (float)MapConstants.TILEGLOBAL;
+        float x = session.player.X / (float)MapConstants.TileGlobal;
+        float y = session.player.Y / (float)MapConstants.TileGlobal;
 
         // Wolf3D angles run counterclockwise from east, and map Y grows southward
         float radians = session.player.Angle * MathF.PI / 180f;
@@ -435,11 +435,11 @@ internal sealed class AutomapDrawing(
     /// <summary>The player's tile and compass heading, in the bottom-left corner of the view.</summary>
     void DrawAutomapPosition(AutomapView view)
     {
-        var font = fonts.Find(AUTOMAP_FONT);
+        var font = fonts.Find(AutomapFont);
         if (font == null)
             return;
 
-        int heading = ((session.player.Angle % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES + GameConstants.ANGLES / 16) / (GameConstants.ANGLES / 8) % 8;
+        int heading = ((session.player.Angle % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles + GameConstants.Angles / 16) / (GameConstants.Angles / 8) % 8;
         string text = AutomapText("$STR_AM_POSITION", session.player.TileX, session.player.TileY, AutomapText(AutomapHeadings[heading]));
         if (!automap.Follow)
             text += "  " + AutomapText("$STR_AM_PAN");
@@ -482,7 +482,7 @@ internal sealed class AutomapDrawing(
     /// </summary>
     void DrawAutomapStats(AutomapView view)
     {
-        var font = fonts.Find(AUTOMAP_FONT);
+        var font = fonts.Find(AutomapFont);
         if (font == null)
             return;
 
@@ -555,11 +555,11 @@ internal sealed class AutomapDrawing(
     /// </summary>
     internal bool IsAutomapWall(int x, int y)
     {
-        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return true;
 
         int tile = map.tilemap[x, y];
-        return tile != 0 && (tile & GameConstants.BIT_DOOR) == 0 && tile != GameConstants.BIT_WALL;
+        return tile != 0 && (tile & GameConstants.BitDoor) == 0 && tile != GameConstants.BitWall;
     }
 
     /// <summary>
@@ -570,22 +570,22 @@ internal sealed class AutomapDrawing(
     {
         if (!IsAutomapWall(x, y))
             return false;
-        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return true;
 
         return (Diagonals.DiagonalSolidEdges(map.wallshape[x, y]) & edge) != 0;
     }
 
     // Below this zoom (virtual pixels per tile) sprites are too small to make out, so they're drawn as dots
-    const float AUTOMAP_MINSPRITEZOOM = 6f;
+    const float AutomapMinSpriteZoom = 6f;
 
     // A door is drawn as a strip this wide (in tiles) through the middle of its tile
-    const float AUTOMAP_DOORWIDTH = 0.2f;
+    const float AutomapDoorWidth = 0.2f;
 
     // Sprites are scaled so their visible part fits this much of a tile
-    const float AUTOMAP_SPRITESIZE = 0.9f;
+    const float AutomapSpriteSize = 0.9f;
 
-    const int AUTOMAP_TEXSIZE = 64;     // wall textures are 64x64, stored column by column
+    const int AutomapTexSize = 64;     // wall textures are 64x64, stored column by column
 
     readonly Dictionary<string, byte[]?> automapTextures = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, AutomapSprite?> automapSprites = new(StringComparer.OrdinalIgnoreCase);
@@ -595,14 +595,14 @@ internal sealed class AutomapDrawing(
 
     // Filled each frame so the per-pixel loop never looks anything up by name: the textures of each
     // seen wall tile's four faces, and which seen door (index + 1) a tile holds.
-    readonly AutomapFaces[,] automapWalls = new AutomapFaces[MapManager.MAPSIZE, MapManager.MAPSIZE];
+    readonly AutomapFaces[,] automapWalls = new AutomapFaces[MapManager.MapSize, MapManager.MapSize];
 
     /// <summary>The textures on a wall tile's four faces, as the automap draws them</summary>
     readonly record struct AutomapFaces(byte[]? North, byte[]? South, byte[]? East, byte[]? West)
     {
         public bool Any => North != null || South != null || East != null || West != null;
     }
-    readonly int[,] automapDoorAt = new int[MapManager.MAPSIZE, MapManager.MAPSIZE];
+    readonly int[,] automapDoorAt = new int[MapManager.MapSize, MapManager.MapSize];
     byte[]?[] automapDoorTextures = [];
 
     /// <summary>A wall texture's pixels, or null if it's missing or not 64x64.</summary>
@@ -615,7 +615,7 @@ internal sealed class AutomapDrawing(
         {
             // an animated one (animdefs) shows its first frame
             pixels = assets.Find<TextureAsset>(name, 0)?.BottomStory();
-            if (pixels != null && pixels.Length < AUTOMAP_TEXSIZE * AUTOMAP_TEXSIZE)
+            if (pixels != null && pixels.Length < AutomapTexSize * AutomapTexSize)
                 pixels = null;
             automapTextures[name] = pixels;
         }
@@ -626,9 +626,9 @@ internal sealed class AutomapDrawing(
     /// <summary>The textures a wall tile shows on its four faces.</summary>
     AutomapFaces AutomapWallTextures(MapObjectTranslationAsset? mapDefs, int tile)
     {
-        // A wall beside a door carries the door-side mark (BIT_WALL), which isn't part of its id
+        // A wall beside a door carries the door-side mark (BitWall), which isn't part of its id
         MapTextureTranslation? textures = null;
-        if (mapDefs == null || !mapDefs.Walls.TryGetValue(tile & ~GameConstants.BIT_WALL, out textures))
+        if (mapDefs == null || !mapDefs.Walls.TryGetValue(tile & ~GameConstants.BitWall, out textures))
             return default;
 
         return new AutomapFaces(AutomapTexture(textures.WallFace("north")), AutomapTexture(textures.WallFace("south")),
@@ -646,9 +646,9 @@ internal sealed class AutomapDrawing(
         // what each tile shows this frame
         //
         var wallTextures = new Dictionary<int, AutomapFaces>();
-        for (int x = 0; x < MapManager.MAPSIZE; x++)
+        for (int x = 0; x < MapManager.MapSize; x++)
         {
-            for (int y = 0; y < MapManager.MAPSIZE; y++)
+            for (int y = 0; y < MapManager.MapSize; y++)
             {
                 automapWalls[x, y] = default;
                 automapDoorAt[x, y] = 0;
@@ -753,7 +753,7 @@ internal sealed class AutomapDrawing(
             return -1;
 
         int tx = (int)mx, ty = (int)my;
-        if (tx >= MapManager.MAPSIZE || ty >= MapManager.MAPSIZE)
+        if (tx >= MapManager.MapSize || ty >= MapManager.MapSize)
             return -1;
 
         float fx = mx - tx, fy = my - ty;
@@ -784,13 +784,13 @@ internal sealed class AutomapDrawing(
         float along = doorobj.vertical ? fy : fx;
         int alongFixed = Math.Clamp((int)(along * 65536f), 0, 0xffff);
 
-        float edge = 0.5f - AUTOMAP_DOORWIDTH / 2;
-        if (across < edge || across >= edge + AUTOMAP_DOORWIDTH || doorobj.OpenAt(alongFixed))
+        float edge = 0.5f - AutomapDoorWidth / 2;
+        if (across < edge || across >= edge + AutomapDoorWidth || doorobj.OpenAt(alongFixed))
             return -1;
 
-        int column = Math.Clamp((int)(doorobj.TextureAlong(alongFixed) / 65536f * AUTOMAP_TEXSIZE), 0, AUTOMAP_TEXSIZE - 1);
-        int texrow = Math.Min((int)((across - edge) / AUTOMAP_DOORWIDTH * AUTOMAP_TEXSIZE), AUTOMAP_TEXSIZE - 1);
-        return texture[column * AUTOMAP_TEXSIZE + texrow];
+        int column = Math.Clamp((int)(doorobj.TextureAlong(alongFixed) / 65536f * AutomapTexSize), 0, AutomapTexSize - 1);
+        int texrow = Math.Min((int)((across - edge) / AutomapDoorWidth * AutomapTexSize), AutomapTexSize - 1);
+        return texture[column * AutomapTexSize + texrow];
     }
 
     /// <summary>
@@ -807,9 +807,9 @@ internal sealed class AutomapDrawing(
         if (texture == null)
             return -1;
 
-        int column = Math.Min((int)(fx * AUTOMAP_TEXSIZE), AUTOMAP_TEXSIZE - 1);
-        int row = Math.Min((int)(fy * AUTOMAP_TEXSIZE), AUTOMAP_TEXSIZE - 1);
-        return texture[column * AUTOMAP_TEXSIZE + row];
+        int column = Math.Min((int)(fx * AutomapTexSize), AutomapTexSize - 1);
+        int row = Math.Min((int)(fy * AutomapTexSize), AutomapTexSize - 1);
+        return texture[column * AutomapTexSize + row];
     }
 
     /// <summary>
@@ -829,7 +829,7 @@ internal sealed class AutomapDrawing(
             return false;
 
         // Screen pixels per sprite pixel, fitting the sprite's visible part into most of a tile
-        float scale = view.TileSize * AUTOMAP_SPRITESIZE / Math.Max(sprite.Width, sprite.Height);
+        float scale = view.TileSize * AutomapSpriteSize / Math.Max(sprite.Width, sprite.Height);
         float left = sx - sprite.Width * scale / 2, top = sy - sprite.Height * scale / 2;
 
         int x0 = Math.Max(view.ClipX, (int)MathF.Floor(left));

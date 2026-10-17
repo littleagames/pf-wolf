@@ -6,7 +6,7 @@ namespace PFWolf.Tests;
 
 public class WallHitsTests
 {
-    private const long Tile = MapConstants.TILEGLOBAL;
+    private const long Tile = MapConstants.TileGlobal;
 
     private RenderState _render = null!;
     private WallHits _hits = null!;

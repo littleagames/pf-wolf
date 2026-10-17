@@ -35,7 +35,7 @@ public class ProjectileActionsTests
 
         // Assert
         Assert.That(ok, Is.True);
-        Assert.That(reach, Is.EqualTo((long)(tiles * MapConstants.TILEGLOBAL)));
+        Assert.That(reach, Is.EqualTo((long)(tiles * MapConstants.TileGlobal)));
     }
 
     [Test]
@@ -48,12 +48,12 @@ public class ProjectileActionsTests
     public void Anything_Shootable_Near_Sets_Off_A_Mine_But_Not_Another_Mine_Or_Scenery()
     {
         // Arrange: a level with no players in it, the mine mid-tile
-        const int Tile = 1 << MapConstants.TILESHIFT;
+        const int Tile = 1 << MapConstants.TileShift;
         var session = new GameSession();
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var actions = new ProjectileActions(map, session, null!, (_, _) => { });
         var mine = new Monster { Name = "Landmine", X = 5 * Tile + Tile / 2, Y = 5 * Tile + Tile / 2, TileX = 5, TileY = 5 };

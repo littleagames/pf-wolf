@@ -199,7 +199,7 @@ public class ModFilesTests
         var level = EcWolfMapLoader.Load(source.Open("maps/MAP02.wad").ToArray());
         var gameInfo = YamlDataEntryLoader.Deserialize<PFWolf.Assets.GameInfoAsset>(ModFiles.ReadText(pk3, "game-info.yaml")!);
         Assert.That(where, Is.EqualTo($"{pk3}: maps/MAP02.wad"));
-        Assert.That(level.MapData[0][4 * MapConstants.MAPSIZE + 3], Is.EqualTo(5));
+        Assert.That(level.MapData[0][4 * MapConstants.MapSize + 3], Is.EqualTo(5));
         Assert.That(gameInfo.Maps.Keys, Is.EquivalentTo(new[] { "MAP01", "MAP02" }));
         Assert.That(ModFiles.ReadText(pk3, "game-info.yaml"), Does.StartWith("# kept"));
         Assert.That(document.IsDirty, Is.False);
@@ -248,7 +248,7 @@ public class ModFilesTests
         Assert.That(games.GamePacks["my-game"].Title, Is.EqualTo("My \"Game\""));
         var gameInfo = YamlDataEntryLoader.Deserialize<PFWolf.Assets.GameInfoAsset>(ModFiles.ReadText(request.Path, "game-info.yaml")!);
         Assert.That(gameInfo.Episodes["EP01"].StartMap, Is.EqualTo("MAP01"));
-        Assert.That(EcWolfMapLoader.Load(source.Open("maps/MAP01.wad").ToArray()).Width, Is.EqualTo(MapConstants.MAPSIZE));
+        Assert.That(EcWolfMapLoader.Load(source.Open("maps/MAP01.wad").ToArray()).Width, Is.EqualTo(MapConstants.MapSize));
     }
 
     [Test]

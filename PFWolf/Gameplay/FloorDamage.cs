@@ -47,7 +47,7 @@ internal sealed class FloorDamage(MapManager map, GameSession session, FloorDama
     // The tile's floor's damage, if it hurts and its interval came round since the last tic
     Assets.MapFloorDamage? DamageAt(Assets.MapFlatsTranslation flats, int x, int y, int before, int now)
     {
-        if (x is < 0 or >= MapManager.MAPSIZE || y is < 0 or >= MapManager.MAPSIZE)
+        if (x is < 0 or >= MapManager.MapSize || y is < 0 or >= MapManager.MapSize)
             return null;
         if (flats.DamageFor(hooks.FloorTexture(x, y)) is not { Amount: > 0 } damage)
             return null;

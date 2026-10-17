@@ -51,7 +51,7 @@ internal sealed class SpriteScaler(
                 break;                          // off the bottom of the view area
 
             frac += fracstep;
-            endpix = (frac >> MathUtils.FRACBITS) + toppix;
+            endpix = (frac >> MathUtils.FracBits) + toppix;
 
             if (endpix < 0)
                 continue;                       // not into the view area
@@ -110,7 +110,7 @@ internal sealed class SpriteScaler(
         if (spriteAsset == null)
             return;
 
-        fracstep = MathUtils.FixedDiv(height, GameConstants.TEXTURESIZE / 2);
+        fracstep = MathUtils.FixedDiv(height, GameConstants.TextureSize / 2);
         frac = 0;
 
         // Its origin pixel on the actor's spot on the floor (a Wolf3D sprite: the middle of its
@@ -143,7 +143,7 @@ internal sealed class SpriteScaler(
                 break;                // off the right side of the view area
 
             frac += fracstep;
-            x2 = (frac >> MathUtils.FRACBITS) + xcenter;
+            x2 = (frac >> MathUtils.FracBits) + xcenter;
 
             if (x2 < 0)
                 continue;             // not into the view area
@@ -191,7 +191,7 @@ internal sealed class SpriteScaler(
         if (spriteAsset == null)
             return;
 
-        fracstep = MathUtils.FixedDiv(height, GameConstants.TEXTURESIZE / 2);
+        fracstep = MathUtils.FixedDiv(height, GameConstants.TextureSize / 2);
         frac = 0;
 
         // Its origin pixel on the view's bottom edge, in the middle (a Wolf3D sprite: the middle of
@@ -213,7 +213,7 @@ internal sealed class SpriteScaler(
                 break;                // off the right side (an offset can put it there)
 
             frac += fracstep;
-            x2 = (frac >> MathUtils.FRACBITS) + xcenter;
+            x2 = (frac >> MathUtils.FracBits) + xcenter;
 
             for (x1 = Math.Max(x1, 0); x1 < Math.Min(x2, render.viewwidth); x1++)
                 ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, 0);
@@ -224,12 +224,12 @@ internal sealed class SpriteScaler(
     /// A distance in a sprite's texels as screen pixels, for a sprite drawn <paramref name="half"/>
     /// pixels to 32 texels (half a story)
     /// </summary>
-    internal static int TexelsToPixels(int texels, int half) => (int)Math.Floor(texels * (double)half / (GameConstants.TEXTURESIZE / 2));
+    internal static int TexelsToPixels(int texels, int half) => (int)Math.Floor(texels * (double)half / (GameConstants.TextureSize / 2));
 
     /// <summary>
     /// A sprite's top row on the screen: its origin (originy texels down from its top) on the
     /// floor's row, z texels higher (lower, negative), at half pixels to 32 texels
     /// </summary>
     internal static int RaisedTop(int floorRow, int originy, double z, int half) =>
-        floorRow - (int)Math.Floor((originy + z) * half / (GameConstants.TEXTURESIZE / 2));
+        floorRow - (int)Math.Floor((originy + z) * half / (GameConstants.TextureSize / 2));
 }

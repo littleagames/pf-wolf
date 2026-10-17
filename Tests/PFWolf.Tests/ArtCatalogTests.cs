@@ -54,8 +54,8 @@ public class ArtCatalogTests
         var uses = ArtCatalog.Uses(Content());
 
         // Assert: floor flats are the low byte, ceilings the high one
-        Assert.That(uses["FLOOR1"].Single().Target, Is.EqualTo(new PaletteTarget(MapConstants.FLATPLANE, 1, Keep: 0xff00)));
-        Assert.That(uses["CEIL1"].Single().Target, Is.EqualTo(new PaletteTarget(MapConstants.FLATPLANE, 2 << 8, Keep: 0x00ff)));
+        Assert.That(uses["FLOOR1"].Single().Target, Is.EqualTo(new PaletteTarget(MapConstants.FlatPlane, 1, Keep: 0xff00)));
+        Assert.That(uses["CEIL1"].Single().Target, Is.EqualTo(new PaletteTarget(MapConstants.FlatPlane, 2 << 8, Keep: 0x00ff)));
     }
 
     [Test]

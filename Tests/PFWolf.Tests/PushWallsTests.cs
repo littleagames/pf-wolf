@@ -63,7 +63,7 @@ public class PushWallsTests
     public void A_Players_Box_Reaches_Into_Neighbouring_Tiles(int dx, int dy, bool covers)
     {
         // Arrange: in tile (10, 10), close to its east edge
-        var pawn = new PlayerPawn { X = (10 << MapConstants.TILESHIFT) + 0xF000, Y = (10 << MapConstants.TILESHIFT) + 0x8000 };
+        var pawn = new PlayerPawn { X = (10 << MapConstants.TileShift) + 0xF000, Y = (10 << MapConstants.TileShift) + 0x8000 };
 
         // Act / Assert
         Assert.That(PushWalls.PlayerBoxCovers(pawn, 10 + dx, 10 + dy), Is.EqualTo(covers));
@@ -89,7 +89,7 @@ public class PushWallsTests
     public void A_Wall_Off_The_Map_Isnt_Read()
     {
         // Arrange
-        var wall = new MovingPushWall { X = (ushort)MapManager.MAPSIZE, Y = 1 };
+        var wall = new MovingPushWall { X = (ushort)MapManager.MapSize, Y = 1 };
         using var stream = new MemoryStream();
         wall.Write(new BinaryWriter(stream));
         stream.Position = 0;

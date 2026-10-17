@@ -68,7 +68,7 @@ public static class LevelChecks
                 if (tiles.Patch(x, y) is var patch and not 0)
                     CheckPatch(tiles, problems, unknownPatches, x, y, patch, kind);
 
-                int height = tiles[MapConstants.HEIGHTPLANE, x, y];
+                int height = tiles[MapConstants.HeightPlane, x, y];
                 if (height > 8)
                     problems.Add(new(CheckSeverity.Warning, $"height {height}: walls are 1 to 8 stories, so it's the level's height", x, y));
             }
@@ -194,7 +194,7 @@ public static class LevelChecks
                 if (switches.Count == 0)
                     continue;
 
-                int tag = tiles[MapConstants.TAGPLANE, x, y];
+                int tag = tiles[MapConstants.TagPlane, x, y];
                 bool needsTag = switches.Any(sw => sw.Actions.Any(action => TaggedActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase))));
                 if (tag == 0)
                 {
@@ -221,7 +221,7 @@ public static class LevelChecks
         {
             for (int x = 0; x < tiles.Width; x++)
             {
-                int zone = tiles[MapConstants.ZONEPLANE, x, y];
+                int zone = tiles[MapConstants.ZonePlane, x, y];
                 if (zone != 0 && !zones.ContainsKey(zone) && reported.Add(zone))
                     problems.Add(new(CheckSeverity.Warning, $"light zone {zone} isn't defined in the level properties, so it's lit as the level", x, y));
             }
@@ -242,7 +242,7 @@ public static class LevelChecks
         {
             for (int x = 0; x < tiles.Width; x++)
             {
-                if (tiles[MapConstants.TAGPLANE, x, y] is var tag and not 0
+                if (tiles[MapConstants.TagPlane, x, y] is var tag and not 0
                     && Switches(tiles, x, y).Any(sw => sw.Actions.Any(action => WallMovingActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase)))))
                     movedTags.Add(tag);
             }
@@ -252,7 +252,7 @@ public static class LevelChecks
         {
             TileKind.Floor or TileKind.Door => true,
             TileKind.Wall => tiles.Trigger(x, y) != null || tiles.Diagonal(x, y) != null
-                             || (!tiles.IsSwitch(x, y) && movedTags.Contains(tiles[MapConstants.TAGPLANE, x, y])),
+                             || (!tiles.IsSwitch(x, y) && movedTags.Contains(tiles[MapConstants.TagPlane, x, y])),
             _ => false,
         };
 

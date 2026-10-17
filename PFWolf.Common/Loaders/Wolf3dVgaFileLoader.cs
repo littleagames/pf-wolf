@@ -123,12 +123,12 @@ public class Wolf3dVgaFileLoader
     }
     private void GetGrChunkLength(FileStream fs, BinaryReader br, int chunk)
     {
-        fs.Seek(GRFILEPOS(chunk), SeekOrigin.Begin);
+        fs.Seek(GrFilePos(chunk), SeekOrigin.Begin);
         chunkexplen = br.ReadInt32();
-        chunkcomplen = GRFILEPOS(chunk + 1) - GRFILEPOS(chunk) - 4;
+        chunkcomplen = GrFilePos(chunk + 1) - GrFilePos(chunk) - 4;
     }
 
-    private int GRFILEPOS(int idx)
+    private int GrFilePos(int idx)
     {
         Debug.Assert(idx < grstarts.Length);
         return grstarts[idx];
@@ -150,17 +150,17 @@ public class Wolf3dVgaFileLoader
             //
             // load the chunk info a buffer
             //
-            pos = GRFILEPOS(chunk);
+            pos = GrFilePos(chunk);
 
             if (pos < 0) // $FFFFFFFF start is a sparse tile
                 continue;
 
             next = chunk + 1;
 
-            while (GRFILEPOS(next) == -1) // skip past any sparse tiles
+            while (GrFilePos(next) == -1) // skip past any sparse tiles
                 next++;
 
-            compressed = GRFILEPOS(next) - pos;
+            compressed = GrFilePos(next) - pos;
 
             fs.Seek(pos, SeekOrigin.Begin);
             bufferseg = new byte[compressed];
@@ -460,7 +460,7 @@ public class Wolf3dVgaFileLoader
     }
 
     /// <summary>
-    /// Spear's palette chunks (TITLEPAL, END1PAL...): 256 RGB triples of 6-bit VGA values (0-63)
+    /// Spear's palette chunks (TITLEPAL, END1PAL...): 256 Rgb triples of 6-bit VGA values (0-63)
     /// </summary>
     private static Palette ToPalette(byte[] data)
     {

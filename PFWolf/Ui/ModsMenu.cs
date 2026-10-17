@@ -179,7 +179,7 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
         var rows = modMenuEntries
             .Skip(modMenuPage * ModsPerPage)
             .Take(ModsPerPage)
-            .Select(entry => new ControlPanelItem((short)(entry.Loadable ? 1 : 0), ui.FitText(entry.Text, ModNameWidth, UiFonts.MENU_FONT), null, entry));
+            .Select(entry => new ControlPanelItem((short)(entry.Loadable ? 1 : 0), ui.FitText(entry.Text, ModNameWidth, UiFonts.MenuFont), null, entry));
 
         if (ModsPaged)
             rows = rows.Append(new ControlPanelItem(1, "$STR_MODS_MORE".ToLanguageText(language), null) { id = "more" });

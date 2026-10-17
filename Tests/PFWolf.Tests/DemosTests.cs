@@ -23,9 +23,9 @@ public class DemosTests
 
         // Assert: id's header is the map less one, two bytes of length and a pad byte; then
         // 3 bytes a frame, up to the buffer's end
-        Assert.That(_buffer.demoData, Has.Length.EqualTo(Demos.MAXDEMOSIZE));
+        Assert.That(_buffer.demoData, Has.Length.EqualTo(Demos.MaxDemoSize));
         Assert.That(_buffer.demoData[0], Is.EqualTo(4));
-        Assert.That((_buffer.demoptr, _buffer.lastdemoptr), Is.EqualTo((4, Demos.MAXDEMOSIZE)));
+        Assert.That((_buffer.demoptr, _buffer.lastdemoptr), Is.EqualTo((4, Demos.MaxDemoSize)));
         Assert.That(_session.demorecord, Is.True);
     }
 

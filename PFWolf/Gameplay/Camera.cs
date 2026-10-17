@@ -20,14 +20,14 @@ namespace PFWolf.Gameplay;
 
 internal sealed class Camera(GameSession session)
 {
-    const double TURNSPEED = 8;     // degrees a tic the view turns toward the way a watched actor goes
+    const double TurnSpeed = 8;     // degrees a tic the view turns toward the way a watched actor goes
 
     Entities.Actors.Actor? target;  // null: the player, whichever pawn that is now
     bool isfixed;
     int fixedx, fixedy;
     short fixedangle;
     double fixedpitch;
-    int fixedeyez = GameConstants.EYEDEFAULT;
+    int fixedeyez = GameConstants.EyeDefault;
     double smoothangle;             // a watched actor's view angle, turning after its 8-way walk
 
     /// <summary>
@@ -49,7 +49,7 @@ internal sealed class Camera(GameSession session)
     }
 
     /// <summary>Sits at a fixed point (global fixed-point x, y), facing angle</summary>
-    internal void SetFixed(int x, int y, short angle, double pitch = 0, int eyez = GameConstants.EYEDEFAULT)
+    internal void SetFixed(int x, int y, short angle, double pitch = 0, int eyez = GameConstants.EyeDefault)
     {
         (target, isfixed) = (null, true);
         (fixedx, fixedy, fixedangle, fixedpitch, fixedeyez) = (x, y, angle, pitch, eyez);
@@ -68,22 +68,22 @@ internal sealed class Camera(GameSession session)
             return;
 
         double delta = ActorViewAngle(Target!) - smoothangle;
-        delta = ((delta % GameConstants.ANGLES) + GameConstants.ANGLES * 1.5) % GameConstants.ANGLES - GameConstants.ANGLES / 2.0;    // the shorter way round
-        double step = TURNSPEED * tics;
+        delta = ((delta % GameConstants.Angles) + GameConstants.Angles * 1.5) % GameConstants.Angles - GameConstants.Angles / 2.0;    // the shorter way round
+        double step = TurnSpeed * tics;
         smoothangle += Math.Clamp(delta, -step, step);
-        smoothangle = ((smoothangle % GameConstants.ANGLES) + GameConstants.ANGLES) % GameConstants.ANGLES;
+        smoothangle = ((smoothangle % GameConstants.Angles) + GameConstants.Angles) % GameConstants.Angles;
     }
 
     internal int X => Target?.X ?? fixedx;
     internal int Y => Target?.Y ?? fixedy;
-    internal int TileX => X >> (int)MapConstants.TILESHIFT;
-    internal int TileY => Y >> (int)MapConstants.TILESHIFT;
+    internal int TileX => X >> (int)MapConstants.TileShift;
+    internal int TileY => Y >> (int)MapConstants.TileShift;
 
     internal short Angle => Target switch
     {
         null => fixedangle,
         PlayerPawn => Target.Angle,
-        _ => (short)((int)Math.Round(smoothangle) % GameConstants.ANGLES),
+        _ => (short)((int)Math.Round(smoothangle) % GameConstants.Angles),
     };
 
     internal double Pitch => Target switch
@@ -97,7 +97,7 @@ internal sealed class Camera(GameSession session)
     {
         null => fixedeyez,
         PlayerPawn pawn => pawn.State.EyeZ,
-        _ => GameConstants.EYEDEFAULT,
+        _ => GameConstants.EyeDefault,
     };
 
     /// <summary>

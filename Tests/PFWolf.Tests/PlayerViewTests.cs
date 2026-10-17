@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class PlayerViewTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
     private const int FocalLength = 0x5700;
 
     private MapManager _map = null!;
@@ -22,9 +22,9 @@ public class PlayerViewTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            spotvis = new bool[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
         };
         var doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         var lineOfSight = new LineOfSight(_map, doors, _session, (_, _, _, _) => false);
@@ -38,7 +38,7 @@ public class PlayerViewTests
         var pawn = new PlayerPawn { State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10, Angle = 0 };
         _session.playerstate.Pawn = pawn;
         // where a line to them aims: where their last move left them (T_Player sets these)
-        (_session.playerstate.PlUX, _session.playerstate.PlUY) = ((ushort)(pawn.X >> GameConstants.UNSIGNEDSHIFT), (ushort)(pawn.Y >> GameConstants.UNSIGNEDSHIFT));
+        (_session.playerstate.PlUX, _session.playerstate.PlUY) = ((ushort)(pawn.X >> GameConstants.UnsignedShift), (ushort)(pawn.Y >> GameConstants.UnsignedShift));
         return pawn;
     }
 

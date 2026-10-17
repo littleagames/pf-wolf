@@ -85,7 +85,7 @@ internal sealed class LevelSetup(
             session.gamestate.cluster = mapInfo.Cluster;
 
         map.wallstories = Math.Clamp(mapInfo?.WallHeight ?? engine.GetGameInfo().DefaultMap.WallHeight,
-            1, GameConstants.MAXWALLSTORIES);
+            1, GameConstants.MaxWallStories);
         skyAndFlats.levelsky = mapInfo?.Sky ?? engine.GetGameInfo().DefaultMap.Sky;
         weather.SetWeather(mapInfo?.Weather ?? engine.GetGameInfo().DefaultMap.Weather);
         map.BuildFlats(mapInfo?.DefaultFloor ?? engine.GetGameInfo().DefaultMap.DefaultFloor,
@@ -106,7 +106,7 @@ internal sealed class LevelSetup(
             for (x = 0; x < map.mapwidth; x++)
             {
                 // door (a plane 0 tile listed in the mapdefs doors)
-                if (doors.TryGetValue(map.MAPSPOT(x, y, 0), out var doorXlat))
+                if (doors.TryGetValue(map.MapSpot(x, y, 0), out var doorXlat))
                     doorObjects.SpawnDoor(x, y, doorXlat.Vertical, doorXlat);
             }
         }
@@ -135,18 +135,18 @@ internal sealed class LevelSetup(
         {
             for (x = 0; x < map.mapwidth; x++)
             {
-                var tile = map.MAPSPOT(x, y, 0);
+                var tile = map.MapSpot(x, y, 0);
 
                 if (tile == map.Floors.AmbushTile)
                 {
-                    if (map.VALIDAREA(map.MAPSPOT(x + 1, y, 0)))
-                        tile = (ushort)map.MAPSPOT(x + 1, y, 0);
-                    if (map.VALIDAREA(map.MAPSPOT(x, y - 1, 0)))
-                        tile = (ushort)map.MAPSPOT(x, y - 1, 0);
-                    if (map.VALIDAREA(map.MAPSPOT(x, y + 1, 0)))
-                        tile = (ushort)map.MAPSPOT(x, y + 1, 0);
-                    if (map.VALIDAREA(map.MAPSPOT(x - 1, y, 0)))
-                        tile = (ushort)map.MAPSPOT(x - 1, y, 0);
+                    if (map.ValidArea(map.MapSpot(x + 1, y, 0)))
+                        tile = (ushort)map.MapSpot(x + 1, y, 0);
+                    if (map.ValidArea(map.MapSpot(x, y - 1, 0)))
+                        tile = (ushort)map.MapSpot(x, y - 1, 0);
+                    if (map.ValidArea(map.MapSpot(x, y + 1, 0)))
+                        tile = (ushort)map.MapSpot(x, y + 1, 0);
+                    if (map.ValidArea(map.MapSpot(x - 1, y, 0)))
+                        tile = (ushort)map.MapSpot(x - 1, y, 0);
 
                     map.SetMapSpot(x, y, 1, 0);
                 }

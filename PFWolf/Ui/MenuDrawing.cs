@@ -75,7 +75,7 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
 
     /// <summary>The menu's text style for its items: its font and shadow (menudef font, item-shadow)</summary>
     internal TextStyle MenuItemStyle(ControlPanelMenuInfo item_i, string color)
-        => new(item_i.font ?? UiFonts.MENU_FONT, color,
+        => new(item_i.font ?? UiFonts.MenuFont, color,
             Shadow: item_i.itemShadow is { } shadow ? new FontShadow(1, 1, shadow) : null);
 
     /// <summary>
@@ -182,13 +182,13 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     /// Shows text in a box in the middle of the screen, and returns the box's text window with its
     /// print position just after the text
     /// </summary>
-    /// <param name="areaHeight">Height of the screen area the box is centered in: the play view (MAXY) in a game</param>
+    /// <param name="areaHeight">Height of the screen area the box is centered in: the play view (MaxY) in a game</param>
     internal TextWindow Message(string text, int areaHeight = 200)
     {
         int h = 0, w = 0, mw = 0, i, len = text.Length;
         var box = engine.GetGameInfo().MenuMessage;
         var style = box == null
-            ? new TextStyle(UiFonts.LARGE_FONT, "Black", "TEXTCOLOR")
+            ? new TextStyle(UiFonts.LargeFont, "Black", "TEXTCOLOR")
             : new TextStyle(box.Font, box.Color, box.Med, Shadow: new FontShadow(1, 1, box.Shadow));
 
         var font = fonts.Find(style.Font);

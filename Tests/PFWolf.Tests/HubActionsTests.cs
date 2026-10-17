@@ -4,7 +4,7 @@ namespace PFWolf.Tests;
 
 public class HubActionsTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private MapManager _map = null!;
     private GameSession _session = null!;
@@ -16,8 +16,8 @@ public class HubActionsTests
         _session = new GameSession { tics = 10 };
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _actions = new HubActions(null!, _map, null!, null!, null!, null!, null!, null!, null!, null!, null!, _session,
             new HubActionsHooks(_ => { }, (_, _) => { }));

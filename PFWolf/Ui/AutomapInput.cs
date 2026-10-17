@@ -20,10 +20,10 @@ internal sealed class AutomapInput(
     GameSession session)
 {
     // Map panning speed at the default zoom: 8 tiles a second at walking pace, in virtual pixels a tic
-    internal const float AUTOMAP_PANSPEED = 8 * AutomapManager.DefaultZoom / 70f;
+    internal const float AutomapPanSpeed = 8 * AutomapManager.DefaultZoom / 70f;
 
     // Zoom steps a second while a zoom key is held
-    internal const float AUTOMAP_KEYZOOMRATE = 5f;
+    internal const float AutomapKeyZoomRate = 5f;
 
     internal bool IsAutomapKeyDown(AutomapAction key) =>
         controls.Get(ControlAction.Of(key)).Any(code => code.Device != InputDevice.MouseWheel && polling.IsInputActive(code));
@@ -58,13 +58,13 @@ internal sealed class AutomapInput(
             // A wheel bound to a zoom key steps once a notch; keys zoom smoothly while held
             float zoom = AutomapWheelNotches(AutomapAction.ZoomIn) - AutomapWheelNotches(AutomapAction.ZoomOut);
             if (IsAutomapKeyDown(AutomapAction.ZoomIn) || input.IsKeyDown(ScanCodes.KeyPadPlus))
-                zoom += AUTOMAP_KEYZOOMRATE * session.tics / 70f;
+                zoom += AutomapKeyZoomRate * session.tics / 70f;
             if (IsAutomapKeyDown(AutomapAction.ZoomOut) || input.IsKeyDown(ScanCodes.KeyPadMinus))
-                zoom -= AUTOMAP_KEYZOOMRATE * session.tics / 70f;
+                zoom -= AutomapKeyZoomRate * session.tics / 70f;
             if (zoom != 0)
                 automap.ZoomBy(zoom);
 
-            float pan = AUTOMAP_PANSPEED * session.tics * (input.IsButtonPressed(ButtonType.Run) ? 2 : 1);
+            float pan = AutomapPanSpeed * session.tics * (input.IsButtonPressed(ButtonType.Run) ? 2 : 1);
             float panx = 0, pany = 0;
             if (IsAutomapKeyDown(AutomapAction.PanUp)) pany -= pan;
             if (IsAutomapKeyDown(AutomapAction.PanDown)) pany += pan;
@@ -73,7 +73,7 @@ internal sealed class AutomapInput(
             automap.Pan(panx, pany);
         }
 
-        automap.Update(session.player.X / (float)MapConstants.TILEGLOBAL, session.player.Y / (float)MapConstants.TILEGLOBAL, session.player.Angle);
+        automap.Update(session.player.X / (float)MapConstants.TileGlobal, session.player.Y / (float)MapConstants.TileGlobal, session.player.Angle);
     }
 
     /// <summary>
@@ -118,15 +118,15 @@ internal sealed class AutomapInput(
         if (!automap.IsOpen || automap.Follow)
             return;
 
-        // controlx/controly run BASEMOVE a tic at walking pace (RUNMOVE running)
+        // controlx/controly run BaseMove a tic at walking pace (RunMove running)
         float dx = polling.controlx + polling.controlstrafe, dy = polling.controly;
-        int strafe = (input.IsButtonPressed(ButtonType.Run) ? GameConstants.RUNMOVE : GameConstants.BASEMOVE) * (int)session.tics;
+        int strafe = (input.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove : GameConstants.BaseMove) * (int)session.tics;
         if (input.IsButtonPressed(ButtonType.StrafeLeft))
             dx -= strafe;
         if (input.IsButtonPressed(ButtonType.StrafeRight))
             dx += strafe;
 
-        automap.Pan(dx * AUTOMAP_PANSPEED / GameConstants.BASEMOVE, dy * AUTOMAP_PANSPEED / GameConstants.BASEMOVE);
+        automap.Pan(dx * AutomapPanSpeed / GameConstants.BaseMove, dy * AutomapPanSpeed / GameConstants.BaseMove);
 
         polling.controlx = polling.controly = polling.controlstrafe = 0;
         input.SetButtonPressed(ButtonType.StrafeLeft, false);

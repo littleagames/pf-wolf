@@ -100,7 +100,7 @@ internal sealed class Demos(
         audio.StopAll();
     }
 
-    internal const int MAXDEMOSIZE = 8192;
+    internal const int MaxDemoSize = 8192;
 
     /// <summary>
     /// A demo asked for by playdemo; the title loop plays it next (a game in progress ends first)
@@ -151,10 +151,10 @@ internal sealed class Demos(
     /// </summary>
     internal void StartDemoRecord(int mapIndex)
     {
-        demo.demoData = new byte[MAXDEMOSIZE];
+        demo.demoData = new byte[MaxDemoSize];
         demo.demoData[0] = (byte)mapIndex;
         demo.demoptr = 4;                            // leave space for length
-        demo.lastdemoptr = MAXDEMOSIZE;
+        demo.lastdemoptr = MaxDemoSize;
         session.demorecord = true;
     }
 

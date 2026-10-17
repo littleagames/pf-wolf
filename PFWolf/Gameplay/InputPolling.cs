@@ -45,11 +45,11 @@ internal sealed class InputPolling(
 
     // Degrees a tic the look keys (and a stick pushed all the way) look up or down: level to
     // the steepest the view allows (about 19 degrees) in half a second, like Heretic's keys
-    internal const double LOOKSPEED = 0.6;
+    internal const double LookSpeed = 0.6;
 
     // Turning speed with a stick pushed all the way, per tic: 50 to 140, 90 by default (the
-    // arrow keys turn at BASEMOVE, RUNMOVE running)
-    internal int JoyTurnSpeed => 50 + 10 * Math.Clamp(controlSettings.joyturnspeed, 0, ControlSettings.JOYTURNSPEEDS - 1);
+    // arrow keys turn at BaseMove, RunMove running)
+    internal int JoyTurnSpeed => 50 + 10 * Math.Clamp(controlSettings.joyturnspeed, 0, ControlSettings.JoyTurnSpeeds - 1);
 
     internal void PollControls()
     {
@@ -61,9 +61,9 @@ internal sealed class InputPolling(
         // get timing info for last frame
         //
         if (session.demoplayback || session.demorecord)   // demo recording and playback needs to be constant
-            WaitFixedTics(GameConstants.DEMOTICS);
+            WaitFixedTics(GameConstants.DemoTics);
         else if (session.netgame)                 // and so does playing with others (Networking/NetPlay.cs)
-            WaitFixedTics(Networking.NetPlay.NETTICS);
+            WaitFixedTics(Networking.NetPlay.NetTics);
         else
             frame.CalcTics();
 
@@ -293,7 +293,7 @@ internal sealed class InputPolling(
     /// <summary>Walking and turning from the movement buttons, whatever they're bound to.</summary>
     internal void PollButtonMove()
     {
-        int delta = (int)(inputManager.IsButtonPressed(ButtonType.Run) ? GameConstants.RUNMOVE * session.tics : GameConstants.BASEMOVE * session.tics);
+        int delta = (int)(inputManager.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove * session.tics : GameConstants.BaseMove * session.tics);
 
         if (inputManager.IsButtonPressed(ButtonType.MoveForward))
             controly -= delta;
@@ -305,9 +305,9 @@ internal sealed class InputPolling(
             controlx += delta;
 
         if (inputManager.IsButtonPressed(ButtonType.LookUp))
-            controlpitch += LOOKSPEED * session.tics;
+            controlpitch += LookSpeed * session.tics;
         if (inputManager.IsButtonPressed(ButtonType.LookDown))
-            controlpitch -= LOOKSPEED * session.tics;
+            controlpitch -= LookSpeed * session.tics;
         if (inputManager.IsButtonPressed(ButtonType.CenterView))
             controlcenterview = true;
     }
@@ -329,10 +329,10 @@ internal sealed class InputPolling(
 
         controlx += mousexmove * 10 / (13 - controlSettings.mouseadjustment);
 
-        // Looking goes as fast as turning: controlx turns a degree every ANGLESCALE. In the
+        // Looking goes as fast as turning: controlx turns a degree every AngleScale. In the
         // automap's pan mode the mouse pans the map, so it walks (RouteMovementToAutomap takes it).
         if (controlSettings.mouselook && !(automap.IsOpen && !automap.Follow))
-            controlpitch += (controlSettings.mouseinvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.mouseadjustment) / GameConstants.ANGLESCALE;
+            controlpitch += (controlSettings.mouseinvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.mouseadjustment) / GameConstants.AngleScale;
         else
             controly += mouseymove * 20 / (13 - controlSettings.mouseadjustment);
     }
@@ -350,7 +350,7 @@ internal sealed class InputPolling(
     {
         int joyx, joyy;
 
-        int speed = inputManager.IsButtonPressed(ButtonType.Run) ? GameConstants.RUNMOVE : GameConstants.BASEMOVE;
+        int speed = inputManager.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove : GameConstants.BaseMove;
 
         // A controller: the left stick walks and strafes and the right stick turns (classic: the
         // left stick walks and turns and the right strafes), as fast as they're pushed. Turning
@@ -367,7 +367,7 @@ internal sealed class InputPolling(
 
             // the right stick's up and down looks, whichever way the sticks are set
             float look = StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY);
-            controlpitch -= look * Math.Abs(look) * LOOKSPEED * session.tics;
+            controlpitch -= look * Math.Abs(look) * LookSpeed * session.tics;
             return;
         }
 

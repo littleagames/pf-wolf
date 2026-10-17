@@ -6,7 +6,7 @@ namespace PFWolf.Tests;
 
 public class WallSpriteDrawingTests
 {
-    private const long Tile = MapConstants.TILEGLOBAL;
+    private const long Tile = MapConstants.TileGlobal;
 
     private MapManager _map = null!;
     private RenderState _render = null!;
@@ -17,7 +17,7 @@ public class WallSpriteDrawingTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            spotvis = new bool[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
         };
         // Looking east from the middle of tile (10, 10)
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, new byte[256])
@@ -43,9 +43,9 @@ public class WallSpriteDrawingTests
     public void Nearer_Is_Taller_But_Never_Up_To_The_Drawn_Mark()
     {
         Assert.That(_drawing.HeightAtDepth(4 * Tile), Is.LessThan(_drawing.HeightAtDepth(2 * Tile)));
-        Assert.That(_drawing.HeightAtDepth(1), Is.EqualTo(_drawing.HeightAtDepth(GameConstants.MINDIST)));     // nearer than MINDIST is as at it
+        Assert.That(_drawing.HeightAtDepth(1), Is.EqualTo(_drawing.HeightAtDepth(GameConstants.MinDist)));     // nearer than MinDist is as at it
         _render.heightnumerator = 0x1000000;
-        Assert.That(_drawing.HeightAtDepth(GameConstants.MINDIST), Is.EqualTo(31999));
+        Assert.That(_drawing.HeightAtDepth(GameConstants.MinDist), Is.EqualTo(31999));
     }
 
     [Test]

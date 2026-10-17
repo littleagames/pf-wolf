@@ -36,16 +36,16 @@ internal abstract class MatchObjective(MapManager map, GameSession session, Deat
     public abstract void Write(BinaryWriter bw);
     public abstract void Read(BinaryReader br);
 
-    protected const int TILEGLOBAL = (int)MapConstants.TILEGLOBAL;
+    protected const int TileGlobal = (int)MapConstants.TileGlobal;
 
     /// <summary>The players alive on the level, in player order</summary>
     protected IEnumerable<PlayerPawn> LivingPawns =>
         map.Players.Where(pawn => !pawn.State.Gone && pawn.State.health > 0 && pawn.Active == ActiveType.Yes);
 
     /// <summary>Whether a player stands on (or right at) a tile: within <paramref name="reach"/> of its middle either way</summary>
-    protected static bool Touches(PlayerPawn pawn, int tilex, int tiley, int reach = TILEGLOBAL * 5 / 8) =>
-        Math.Abs((long)pawn.X - (tilex * (long)TILEGLOBAL + TILEGLOBAL / 2)) < reach
-        && Math.Abs((long)pawn.Y - (tiley * (long)TILEGLOBAL + TILEGLOBAL / 2)) < reach;
+    protected static bool Touches(PlayerPawn pawn, int tilex, int tiley, int reach = TileGlobal * 5 / 8) =>
+        Math.Abs((long)pawn.X - (tilex * (long)TileGlobal + TileGlobal / 2)) < reach
+        && Math.Abs((long)pawn.Y - (tiley * (long)TileGlobal + TileGlobal / 2)) < reach;
 
     /// <summary>Whether a player is within <paramref name="radius"/> tiles of one, either way (a zone of 2r+1 square)</summary>
     protected static bool InZone(PlayerPawn pawn, int tilex, int tiley, int radius) =>

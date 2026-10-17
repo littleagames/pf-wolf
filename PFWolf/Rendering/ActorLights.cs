@@ -18,29 +18,29 @@ namespace PFWolf.Rendering;
 ///
 /// A colored light tints what it lights. Where lights overlap, their light adds up, but a
 /// cell takes the tint of the strongest light there (lighting.celltint, by lighting.cellstrong). The tint
-/// fades toward white over TINTSTEPS steps as the light falls off, so a colored pool doesn't
+/// fades toward white over TintSteps steps as the light falls off, so a colored pool doesn't
 /// end in a hard edge.
 ///
 /// A_SetLight and A_LightOff change an actor's light as it plays (LightOverride, saved).
 /// </summary>
 internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting, GameSession session)
 {
-    const int LIGHTCELLS = Lighting.LIGHTCELLS, LIGHTCELLSHIFT = Lighting.LIGHTCELLSHIFT, GRIDSHIFT = Lighting.GRIDSHIFT;
-    const int CELLGLOBALSHIFT = Lighting.CELLGLOBALSHIFT, MAXLIGHTLEVEL = Lighting.MAXLIGHTLEVEL;
-    const int HALFCELL = 1 << (CELLGLOBALSHIFT - 1);
+    const int LightCellCount = Lighting.LightCells, LightCellShift = Lighting.LightCellShift, GridShift = Lighting.GridShift;
+    const int CellGlobalShift = Lighting.CellGlobalShift, MaxLightLevel = Lighting.MaxLightLevel;
+    const int HalfCell = 1 << (CellGlobalShift - 1);
 
     // The weapon in hand (the acting player's), and the player it's with
     Entities.Actors.Actor? weaponSprite => session.playerstate.WeaponSprite;
     readonly Dictionary<string, ActorLightInfo?> lightclasses = new(StringComparer.OrdinalIgnoreCase);
 
-    const int TINTSTEPS = 4;
+    const int TintSteps = 4;
 
     // Each light color's tints (indexes in tints), from a quarter of the color to all of it;
     // forgotten with the light rows (ResetLightRows)
     internal readonly Dictionary<string, byte[]> colortints = new(StringComparer.OrdinalIgnoreCase);
 
     readonly List<int> casttiles = [];           // the tiles whose cells have light added this frame
-    readonly int[] caststamp = new int[MapManager.MAPAREA], visitstamp = new int[MapManager.MAPAREA];
+    readonly int[] caststamp = new int[MapManager.MapArea], visitstamp = new int[MapManager.MapArea];
     int castframe, castvisit;
     readonly Queue<(int X, int Y)> castqueue = new();
     internal bool haslights;                              // some cell has light added this frame
@@ -94,10 +94,10 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             return steps.Length == 0 ? null : steps;
 
         var (r, g, b) = Lighting.ParseRgb(color, Lighting.NoTint, "light color");
-        steps = (r, g, b) == Lighting.NoTint ? [] : new byte[TINTSTEPS];
+        steps = (r, g, b) == Lighting.NoTint ? [] : new byte[TintSteps];
         for (int i = 0; i < steps.Length; i++)
         {
-            float amount = (i + 1) / (float)TINTSTEPS;
+            float amount = (i + 1) / (float)TintSteps;
             static byte Mix(byte to, float amount) => (byte)Math.Round(255 + (to - 255) * amount);
             steps[i] = lighting.TintIndex((Mix(r, amount), Mix(g, amount), Mix(b, amount)));
         }
@@ -245,13 +245,13 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     {
         foreach (int tile in casttiles)
         {
-            int x = tile & (MapManager.MAPSIZE - 1), y = tile >> MapManager.MAPSHIFT;
-            for (int cy = 0; cy < LIGHTCELLS; cy++)
+            int x = tile & (MapManager.MapSize - 1), y = tile >> MapManager.MapShift;
+            for (int cy = 0; cy < LightCellCount; cy++)
             {
-                int start = (((y << LIGHTCELLSHIFT) + cy) << GRIDSHIFT) + (x << LIGHTCELLSHIFT);
-                Array.Clear(lighting.celladd, start, LIGHTCELLS);
-                Array.Clear(lighting.cellstrong, start, LIGHTCELLS);
-                Array.Clear(lighting.celltint, start, LIGHTCELLS);
+                int start = (((y << LightCellShift) + cy) << GridShift) + (x << LightCellShift);
+                Array.Clear(lighting.celladd, start, LightCellCount);
+                Array.Clear(lighting.cellstrong, start, LightCellCount);
+                Array.Clear(lighting.celltint, start, LightCellCount);
             }
         }
         casttiles.Clear();
@@ -273,12 +273,12 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     /// <summary>Adds a light at (lx, ly) (global units) to the cells around it, as far as it spreads, tinted (null: white).</summary>
     void CastLight(int lx, int ly, int intensity, double radius, byte[]? tints)
     {
-        float levels = intensity / 255f * MAXLIGHTLEVEL;
-        long r = (long)(radius * MapConstants.TILEGLOBAL);
+        float levels = intensity / 255f * MaxLightLevel;
+        long r = (long)(radius * MapConstants.TileGlobal);
         if (levels <= 0 || r <= 0)
             return;
 
-        int tx = lx >> MapConstants.TILESHIFT, ty = ly >> MapConstants.TILESHIFT;
+        int tx = lx >> MapConstants.TileShift, ty = ly >> MapConstants.TileShift;
         if (Lighting.TileIndex(tx, ty) < 0)
             return;
 
@@ -311,25 +311,25 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     /// </summary>
     internal bool LightSees(int x, int y, int lx, int ly)
     {
-        const long INSET = MapConstants.TILEGLOBAL / 8;
-        long x0 = (long)x << MapConstants.TILESHIFT, y0 = (long)y << MapConstants.TILESHIFT;
-        long nearx = Math.Clamp(lx, x0 + INSET, x0 + MapConstants.TILEGLOBAL - INSET);
-        long neary = Math.Clamp(ly, y0 + INSET, y0 + MapConstants.TILEGLOBAL - INSET);
+        const long INSET = MapConstants.TileGlobal / 8;
+        long x0 = (long)x << MapConstants.TileShift, y0 = (long)y << MapConstants.TileShift;
+        long nearx = Math.Clamp(lx, x0 + INSET, x0 + MapConstants.TileGlobal - INSET);
+        long neary = Math.Clamp(ly, y0 + INSET, y0 + MapConstants.TileGlobal - INSET);
         return ClearLine(lx, ly, nearx, neary, x, y)
-            || ClearLine(lx, ly, x0 + MapConstants.TILEGLOBAL / 2, y0 + MapConstants.TILEGLOBAL / 2, x, y);
+            || ClearLine(lx, ly, x0 + MapConstants.TileGlobal / 2, y0 + MapConstants.TileGlobal / 2, x, y);
     }
 
     // Whether every tile a line passes through, between the light's tile and tile (x, y), lets
     // light through; checked every eighth of a tile along it
     bool ClearLine(long fromx, long fromy, long tox, long toy, int x, int y)
     {
-        int startx = (int)(fromx >> MapConstants.TILESHIFT), starty = (int)(fromy >> MapConstants.TILESHIFT);
+        int startx = (int)(fromx >> MapConstants.TileShift), starty = (int)(fromy >> MapConstants.TileShift);
         long dx = tox - fromx, dy = toy - fromy;
-        int steps = (int)(Math.Max(Math.Abs(dx), Math.Abs(dy)) / (MapConstants.TILEGLOBAL / 8)) + 1;
+        int steps = (int)(Math.Max(Math.Abs(dx), Math.Abs(dy)) / (MapConstants.TileGlobal / 8)) + 1;
         for (int i = 1; i < steps; i++)
         {
-            int sx = (int)((fromx + dx * i / steps) >> MapConstants.TILESHIFT);
-            int sy = (int)((fromy + dy * i / steps) >> MapConstants.TILESHIFT);
+            int sx = (int)((fromx + dx * i / steps) >> MapConstants.TileShift);
+            int sy = (int)((fromy + dy * i / steps) >> MapConstants.TileShift);
             if ((sx, sy) == (startx, starty) || (sx, sy) == (x, y))
                 continue;
             if (Lighting.TileIndex(sx, sy) < 0 || !LightPasses(sx, sy))
@@ -342,7 +342,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     internal bool LightEnters(int x, int y)
     {
         int tile = map.tilemap[x, y];
-        return tile == 0 || (tile & GameConstants.BIT_DOOR) != 0 || map.wallshape[x, y] != WallShape.Square;
+        return tile == 0 || (tile & GameConstants.BitDoor) != 0 || map.wallshape[x, y] != WallShape.Square;
     }
 
     // Light carries on through a tile: open floor, or a door that isn't shut
@@ -351,15 +351,15 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         int tile = map.tilemap[x, y];
         if (tile == 0)
             return true;
-        return (tile & GameConstants.BIT_DOOR) != 0 && doors.doorobjlist[tile & ~GameConstants.BIT_DOOR].action != DoorAction.Closed;
+        return (tile & GameConstants.BitDoor) != 0 && doors.doorobjlist[tile & ~GameConstants.BitDoor].action != DoorAction.Closed;
     }
 
     // Whether any of a tile is within r (global units) of (lx, ly)
     internal bool TileInReach(int x, int y, int lx, int ly, long r)
     {
-        long x0 = (long)x << MapConstants.TILESHIFT, y0 = (long)y << MapConstants.TILESHIFT;
-        long dx = Math.Max(Math.Max(x0 - lx, lx - (x0 + MapConstants.TILEGLOBAL)), 0);
-        long dy = Math.Max(Math.Max(y0 - ly, ly - (y0 + MapConstants.TILEGLOBAL)), 0);
+        long x0 = (long)x << MapConstants.TileShift, y0 = (long)y << MapConstants.TileShift;
+        long dx = Math.Max(Math.Max(x0 - lx, lx - (x0 + MapConstants.TileGlobal)), 0);
+        long dy = Math.Max(Math.Max(y0 - ly, ly - (y0 + MapConstants.TileGlobal)), 0);
         return dx * dx + dy * dy < r * r;
     }
 
@@ -375,13 +375,13 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         }
 
         long r2 = r * r;
-        int cellx0 = x << LIGHTCELLSHIFT, celly0 = y << LIGHTCELLSHIFT;
-        for (int cy = celly0; cy < celly0 + LIGHTCELLS; cy++)
+        int cellx0 = x << LightCellShift, celly0 = y << LightCellShift;
+        for (int cy = celly0; cy < celly0 + LightCellCount; cy++)
         {
-            long dy = ((long)cy << CELLGLOBALSHIFT) + HALFCELL - ly;
-            for (int cx = cellx0; cx < cellx0 + LIGHTCELLS; cx++)
+            long dy = ((long)cy << CellGlobalShift) + HalfCell - ly;
+            for (int cx = cellx0; cx < cellx0 + LightCellCount; cx++)
             {
-                long dx = ((long)cx << CELLGLOBALSHIFT) + HALFCELL - lx;
+                long dx = ((long)cx << CellGlobalShift) + HalfCell - lx;
                 long d2 = dx * dx + dy * dy;
                 if (d2 >= r2)
                     continue;
@@ -392,13 +392,13 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
                 if (add <= 0)
                     continue;
 
-                int i = (cy << GRIDSHIFT) + cx;
-                lighting.celladd[i] = (byte)Math.Min(lighting.celladd[i] + add, MAXLIGHTLEVEL);
+                int i = (cy << GridShift) + cx;
+                lighting.celladd[i] = (byte)Math.Min(lighting.celladd[i] + add, MaxLightLevel);
                 if (add > lighting.cellstrong[i])
                 {
                     lighting.cellstrong[i] = (byte)Math.Min(add, byte.MaxValue);
                     lighting.celltint[i] = tints == null ? (byte)0
-                        : tints[Math.Clamp((int)Math.Ceiling(falloff * TINTSTEPS), 1, TINTSTEPS) - 1];
+                        : tints[Math.Clamp((int)Math.Ceiling(falloff * TintSteps), 1, TintSteps) - 1];
                 }
             }
         }

@@ -104,7 +104,7 @@ public static class ImageDecoder
         int channels = colorType switch
         {
             0 => 1, // gray
-            2 => 3, // RGB
+            2 => 3, // Rgb
             3 => 1, // palette
             4 => 2, // gray + alpha
             6 => 4, // RGBA

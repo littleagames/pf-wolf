@@ -68,10 +68,10 @@ public static partial class MapFiles
     /// </summary>
     public static MapAsset NewMap(string title, ushort wall, ushort floor)
     {
-        int size = MapConstants.MAPSIZE;
-        var planes = new ushort[MapConstants.LEVELPLANES][];
+        int size = MapConstants.MapSize;
+        var planes = new ushort[MapConstants.LevelPlanes][];
         for (int p = 0; p < planes.Length; p++)
-            planes[p] = new ushort[MapConstants.MAPAREA];
+            planes[p] = new ushort[MapConstants.MapArea];
 
         for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)

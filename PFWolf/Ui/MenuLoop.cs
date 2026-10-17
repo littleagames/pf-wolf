@@ -349,7 +349,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         audio.Play("menu/activate"); // TODO: "shoot" is something else now
     }
 
-    /// <param name="areaHeight">Height of the screen area the question is centered in: the play view (MAXY) in a game</param>
+    /// <param name="areaHeight">Height of the screen area the question is centered in: the play view (MaxY) in a game</param>
     internal int Confirm(string text, int areaHeight = 200)
     {
         var language = assets.GetText("en-us");

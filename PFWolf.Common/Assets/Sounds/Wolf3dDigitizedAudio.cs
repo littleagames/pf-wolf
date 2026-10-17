@@ -2,9 +2,9 @@
 
 public struct HeadChunk
 {
-    public byte[] RIFF;
+    public byte[] Riff;
     public uint filelenminus8;
-    public byte[] WAVE;
+    public byte[] Wave;
     public byte[] fmt_;
     public uint formatlen;
     public ushort val0x0001;
@@ -15,8 +15,8 @@ public struct HeadChunk
     public ushort bitspersample;
     public HeadChunk()
     {
-        RIFF = new byte[4];
-        WAVE = new byte[4];
+        Riff = new byte[4];
+        Wave = new byte[4];
         fmt_ = new byte[4];
     }
 
@@ -34,9 +34,9 @@ public struct HeadChunk
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
         {
-            bw.Write(RIFF);
+            bw.Write(Riff);
             bw.Write(filelenminus8);
-            bw.Write(WAVE);
+            bw.Write(Wave);
             bw.Write(fmt_);
             bw.Write(formatlen);
             bw.Write(val0x0001);
@@ -105,9 +105,9 @@ public record Wolf3dDigitizedAudio : Asset
 
         HeadChunk head = new HeadChunk
         {
-            RIFF = [(byte)'R', (byte)'I', (byte)'F', (byte)'F'],
+            Riff = [(byte)'R', (byte)'I', (byte)'F', (byte)'F'],
             filelenminus8 = 0,
-            WAVE = [(byte)'W', (byte)'A', (byte)'V', (byte)'E'],
+            Wave = [(byte)'W', (byte)'A', (byte)'V', (byte)'E'],
             fmt_ = [(byte)'f', (byte)'m', (byte)'t', (byte)' '],
             formatlen = 0x10,
             val0x0001 = 0x0001,

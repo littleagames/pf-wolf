@@ -38,7 +38,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
                 "on" => SmartSwitchOp.On,
                 _ => SmartSwitchOp.Toggle,
             };
-            int target = map.MAPSPOT(trigger.TileX, trigger.TileY, 1);
+            int target = map.MapSpot(trigger.TileX, trigger.TileY, 1);
             if (target == 0)
                 return false;
             bool done = OperateSmartSwitch(target >> 8, target & 0xff, op);
@@ -54,15 +54,15 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
     /// <summary>Works whatever is on tile (x, y). True when it found an actor or thing there, or nothing at all.</summary>
     internal bool OperateSmartSwitch(int x, int y, SmartSwitchOp op)
     {
-        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return true;
 
         int tile = map.tilemap[x, y];
 
         // A door: unlocked and opened
-        if ((tile & GameConstants.BIT_DOOR) != 0)
+        if ((tile & GameConstants.BitDoor) != 0)
         {
-            int door = tile & ~GameConstants.BIT_DOOR;
+            int door = tile & ~GameConstants.BitDoor;
             if (door < doors.lastdoorobj)
             {
                 doors.doorobjlist[door].unlocked = true;
@@ -104,7 +104,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
         // A wall switch: thrown, unless it's already the way it's told to turn
         if (tile != 0)
         {
-            int id = tile & ~GameConstants.BIT_WALL;
+            int id = tile & ~GameConstants.BitWall;
             if (map.GetMapData().Walls.TryGetValue(id, out var wall) && wall.Switch is { } wallSwitch)
             {
                 bool isOn = wallSwitch.State.Equals("on", StringComparison.OrdinalIgnoreCase);

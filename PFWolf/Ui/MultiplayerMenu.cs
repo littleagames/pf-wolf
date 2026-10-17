@@ -102,7 +102,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         draw.DrawMenu(MultiplayerItems, Items);
         // The values line up just past the longer of their rows' names
         int column = Items.Where(item => item.id is "name" or "openport")
-            .Select(item => ui.TextWidth(item.text, MultiplayerItems.font ?? UiFonts.MENU_FONT) + 8)
+            .Select(item => ui.TextWidth(item.text, MultiplayerItems.font ?? UiFonts.MenuFont) + 8)
             .DefaultIfEmpty(88).Max();
         DrawRowValue(MultiplayerItems, Items, "name", MpConfig.Name, column);
         DrawRowValue(MultiplayerItems, Items, "openport",
@@ -193,12 +193,12 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         const int X = 32, Y = 80, W = 256, H = 40;
         draw.DrawWindow(X, Y, W, H, "BKGDCOLOR");
         draw.DrawOutline(X, Y, W, H, "DEACTIVE", "HIGHLIGHT");
-        ui.TextAt(X + 8, Y + 6, new TextStyle(UiFonts.SMALL_FONT, "READHCOLOR")).Print(prompt);
+        ui.TextAt(X + 8, Y + 6, new TextStyle(UiFonts.SmallFont, "READHCOLOR")).Print(prompt);
         video.Bar(X + 6, Y + 20, W - 12, 12, "BKGDCOLOR");
         video.Update();
 
         string typed = start;
-        bool ok = lineInput.Run(X + 8, Y + 22, ref typed, start, true, maxChars, W - 20, new TextStyle(UiFonts.SMALL_FONT, "HIGHLIGHT", "BKGDCOLOR"));
+        bool ok = lineInput.Run(X + 8, Y + 22, ref typed, start, true, maxChars, W - 20, new TextStyle(UiFonts.SmallFont, "HIGHLIGHT", "BKGDCOLOR"));
         input.ClearKeysDown();
         menuInput.WaitKeyUp();
         return ok && typed.Trim().Length > 0 ? typed.Trim() : null;
@@ -221,7 +221,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             Map: ArenaMaps(GameMode.Deathmatch).FirstOrDefault() ?? "");
 
         var session = NetSession.Host(netStart.HostPort, hooks.Identity(), MpConfig.Name, hooks.PlayerClass(),
-            LocalColor(), PlayerCommands.MAXPLAYERS, settings, out var error);
+            LocalColor(), PlayerCommands.MaxPlayers, settings, out var error);
         if (session == null)
         {
             ShowNetMessage($"{"$STR_MP_HOSTFAILED".ToLanguageText(language)}\n\n{MenuDrawing.WrapForMessage(error ?? "")}");
@@ -388,7 +388,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             var text = $"{info.HostName} {info.Players}/{info.MaxPlayers} {mode.ToLanguageText(language)}{(info.InGame ? " (playing)" : "")}, {info.Map}";
             bool canJoin = info.Players < info.MaxPlayers
                 && string.Equals(info.GamePack, engine.GamePackId, StringComparison.OrdinalIgnoreCase);
-            rows.Add(new ControlPanelItem((short)(canJoin ? 1 : 0), ui.FitText(text, 240, UiFonts.MENU_FONT), null, new JoinRow(game)));
+            rows.Add(new ControlPanelItem((short)(canJoin ? 1 : 0), ui.FitText(text, 240, UiFonts.MenuFont), null, new JoinRow(game)));
         }
 
         if (games.Count == 0)
@@ -431,7 +431,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         }
 
         defs.DrawMenuComponents("join-game");
-        draw.Message("$STR_MP_CONNECTING".ToLanguageText(language).Replace("{ADDRESS}", ui.FitText(shown, 200, UiFonts.SMALL_FONT)));
+        draw.Message("$STR_MP_CONNECTING".ToLanguageText(language).Replace("{ADDRESS}", ui.FitText(shown, 200, UiFonts.SmallFont)));
         draw.MenuFadeIn();
 
         // LiteNetLib gives up on its own after its connect attempts; Esc gives up sooner
@@ -482,7 +482,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     ControlPanelItem[] LobbyMenu = [];
     ControlPanelMenuInfo LobbyItems = null!;
 
-    // The lobby panel's rows: up to PlayerCommands.MAXPLAYERS players, then the last chat lines
+    // The lobby panel's rows: up to PlayerCommands.MaxPlayers players, then the last chat lines
     const int LobbyPanelX = 24, LobbyPanelY = 136, LobbyPanelRow = 9, LobbyChatLines = 1;
 
     /// <summary>
@@ -664,23 +664,23 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             draw.DrawMenuCheckbox(LobbyItems, LobbyMenu, "go", me?.Ready == true);
 
         // Who's in, and the last thing or two said
-        var panel = new TextStyle(UiFonts.SMALL_FONT, "TEXTCOLOR");
+        var panel = new TextStyle(UiFonts.SmallFont, "TEXTCOLOR");
         int y = LobbyPanelY;
-        for (int slot = 0; slot < PlayerCommands.MAXPLAYERS; slot++)
+        for (int slot = 0; slot < PlayerCommands.MaxPlayers; slot++)
         {
             var p = session.Players.FirstOrDefault(pl => pl.Slot == slot);
             string text = p == null ? "-"
                 : $"{p.Name}{(slot == 0 ? " (host)" : "")}  {PlayerClassLabel(p.PlayerClass)}"
                   + (teams ? $" ({GameModes.TeamLabel(p.Team)})" : string.IsNullOrEmpty(p.Color) ? "" : $" ({ColorLabel(p.Color)})")
                   + $"  {(slot == 0 ? "" : p.Ready ? "ready" : "not ready")}";
-            var style = p != null && p.Slot == session.LocalSlot ? new TextStyle(UiFonts.SMALL_FONT, "HIGHLIGHT") : panel;
-            ui.TextAt(LobbyPanelX, y, style).Print(ui.FitText($"{slot + 1}. {text}", 272, UiFonts.SMALL_FONT));
+            var style = p != null && p.Slot == session.LocalSlot ? new TextStyle(UiFonts.SmallFont, "HIGHLIGHT") : panel;
+            ui.TextAt(LobbyPanelX, y, style).Print(ui.FitText($"{slot + 1}. {text}", 272, UiFonts.SmallFont));
             y += LobbyPanelRow;
         }
 
         foreach (var line in session.Chat.TakeLast(LobbyChatLines))
         {
-            ui.TextAt(LobbyPanelX, y, new TextStyle(UiFonts.SMALL_FONT, "READCOLOR")).Print(ui.FitText(line, 272, UiFonts.SMALL_FONT));
+            ui.TextAt(LobbyPanelX, y, new TextStyle(UiFonts.SmallFont, "READCOLOR")).Print(ui.FitText(line, 272, UiFonts.SmallFont));
             y += LobbyPanelRow;
         }
 
@@ -702,7 +702,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         int x = info.x + info.indent + column;
         int y = info.y + index * info.rowHeight;
         video.Bar(x, y, 300 - x, info.rowHeight, "BKGDCOLOR");
-        ui.TextAt(x, y + 2, new TextStyle(UiFonts.SMALL_FONT, MenuDrawing.MenuItemColor(items[index], false))).Print(ui.FitText(value, 300 - x, UiFonts.SMALL_FONT));
+        ui.TextAt(x, y + 2, new TextStyle(UiFonts.SmallFont, MenuDrawing.MenuItemColor(items[index], false))).Print(ui.FitText(value, 300 - x, UiFonts.SmallFont));
     }
 
     /// <summary>A match's rules in a few words, for the lobby: "20 frags, 10 min, monsters"</summary>

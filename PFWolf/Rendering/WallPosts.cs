@@ -35,7 +35,7 @@ internal sealed class WallPosts(
     }
 
     // Half a light cell, in global units
-    const int HALFCELL = 1 << (Lighting.CELLGLOBALSHIFT - 1);
+    const int HalfCell = 1 << (Lighting.CellGlobalShift - 1);
 
     /// <summary>
     /// The light on a wall face at (x, y) (global units), seen from hittile: from the light cell
@@ -43,8 +43,8 @@ internal sealed class WallPosts(
     /// </summary>
     internal byte[] WallLight(int x, int y)
     {
-        long gx = x + (render.viewx > x ? HALFCELL : render.viewx < x ? -HALFCELL : 0);
-        long gy = y + (render.viewy > y ? HALFCELL : render.viewy < y ? -HALFCELL : 0);
+        long gx = x + (render.viewx > x ? HalfCell : render.viewx < x ? -HalfCell : 0);
+        long gy = y + (render.viewy > y ? HalfCell : render.viewy < y ? -HalfCell : 0);
         return lighting.LightAt(render.hittile, gx, gy);
     }
 
@@ -76,7 +76,7 @@ internal sealed class WallPosts(
         short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false,
         TextureAsset? patch = null, int patchofs = 0, int patchstory = 0)
     {
-        if (render.postcount == RenderState.MAXPOSTS)
+        if (render.postcount == RenderState.MaxPosts)
             return;
         render.postpatch[render.postcount] = patch;
         render.postpatchofs[render.postcount] = patchofs;
@@ -135,7 +135,7 @@ internal sealed class WallPosts(
         unsafe
         {
             byte* dest = (byte*)render.vbufPtr + render.screenofs + x;
-            double numerator = render.heightnumerator * 32.0 * skyAndFlats.EyeHalves(GameConstants.TEXTURESIZE);
+            double numerator = render.heightnumerator * 32.0 * skyAndFlats.EyeHalves(GameConstants.TextureSize);
 
             //
             // The underside, h half stories above the eye, shows on row y where its edge would at
@@ -143,7 +143,7 @@ internal sealed class WallPosts(
             // pixels high: nx = heightnumerator * 32 * h / (centery - y). Going that far along the
             // view means going nx / cos(offset) along the ray. That point's tile also gives its light.
             //
-            const double TORADIANS = 2 * Math.PI / GameConstants.FINEANGLES;
+            const double TORADIANS = 2 * Math.PI / GameConstants.FineAngles;
             double angle = (render.midangle + render.pixelangle[x]) * TORADIANS;
             double perview = 1 / Math.Cos(render.pixelangle[x] * TORADIANS);
             double stepx = Math.Cos(angle) * perview, stepy = -Math.Sin(angle) * perview;
@@ -155,7 +155,7 @@ internal sealed class WallPosts(
             {
                 double nx = numerator / (render.centery - y - 0.5);
                 long px = (long)(render.viewx + nx * stepx), py = (long)(render.viewy + nx * stepy);
-                var light = lighting.LightAt(Lighting.TileIndex((int)(px >> MapConstants.TILESHIFT), (int)(py >> MapConstants.TILESHIFT)), px, py);
+                var light = lighting.LightAt(Lighting.TileIndex((int)(px >> MapConstants.TileShift), (int)(py >> MapConstants.TileShift)), px, py);
                 int shadeofs = lighting.ShadeOffset((long)nx);
                 if (data == null)
                 {
@@ -163,11 +163,11 @@ internal sealed class WallPosts(
                     continue;
                 }
 
-                int u = (int)(px >> (MapConstants.TILESHIFT - GameConstants.TEXTURESHIFT)) & (GameConstants.TEXTURESIZE - 1);
-                int v = (int)(py >> (MapConstants.TILESHIFT - GameConstants.TEXTURESHIFT)) & (GameConstants.TEXTURESIZE - 1);
-                int row = flat || height < GameConstants.TEXTURESIZE ? v * height / GameConstants.TEXTURESIZE : height - GameConstants.TEXTURESIZE + v;
-                byte pixel = data[u * width / GameConstants.TEXTURESIZE * height + row];
-                if (flat && pixel == SkyAndFlats.FLATMASK)
+                int u = (int)(px >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
+                int v = (int)(py >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
+                int row = flat || height < GameConstants.TextureSize ? v * height / GameConstants.TextureSize : height - GameConstants.TextureSize + v;
+                byte pixel = data[u * width / GameConstants.TextureSize * height + row];
+                if (flat && pixel == SkyAndFlats.FlatMask)
                     pixel = skyAndFlats.ceilingcolor;
                 dest[y * pitch] = light[shadeofs + pixel];
             }
@@ -249,9 +249,9 @@ internal sealed class WallPosts(
     internal void UseArchCeilingFlat(int tilex, int tiley)
     {
         render.archunderflat = false;
-        if (map.MAPSPOT(tilex, tiley, MapManager.FLATPLANE) >> 8 == 0)
+        if (map.MapSpot(tilex, tiley, MapManager.FlatPlane) >> 8 == 0)
             return;
-        var flat = map.ceilingflat[(tiley << MapManager.MAPSHIFT) + tilex];
+        var flat = map.ceilingflat[(tiley << MapManager.MapShift) + tilex];
         if (flat == null)
             return;
         render.archunderside = flat;
@@ -299,8 +299,8 @@ internal sealed class WallPosts(
     }
 
     // Where the trace meets the vertical edge it enters xtile by, and the horizontal one it enters ytile by
-    internal int VertEdge => (render.xtilestep == 1 ? render.xtile : render.xtile + 1) << MapConstants.TILESHIFT;
-    internal int HorizEdge => (render.ytilestep == 1 ? render.ytile : render.ytile + 1) << MapConstants.TILESHIFT;
+    internal int VertEdge => (render.xtilestep == 1 ? render.xtile : render.xtile + 1) << MapConstants.TileShift;
+    internal int HorizEdge => (render.ytilestep == 1 ? render.ytile : render.ytile + 1) << MapConstants.TileShift;
 
     /// <summary>
     /// Whether the trace should go on past the wall it just hit, on the tile (tilex, tiley): only
@@ -308,7 +308,7 @@ internal sealed class WallPosts(
     /// </summary>
     internal bool TracePastWall(int tilex, int tiley)
     {
-        if (render.columntallest >= map.MaxWallStories || render.columntop <= 0 || render.postcount >= RenderState.MAXPOSTS - 1)
+        if (render.columntallest >= map.MaxWallStories || render.columntop <= 0 || render.postcount >= RenderState.MaxPosts - 1)
             return false;
         // a trace never leaves the map through its edge
         return tilex > 0 && tiley > 0 && tilex < map.mapwidth - 1 && tiley < map.mapheight - 1;
@@ -359,8 +359,8 @@ internal sealed class WallPosts(
         if (top < 0) top = 0;
         if (y < top) return;
 
-        long num = (long)(bottom - y) * (GameConstants.TEXTURESIZE / 2);
-        long t = num / half + firststory * GameConstants.TEXTURESIZE;
+        long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
+        long t = num / half + firststory * GameConstants.TextureSize;
         long rem = num % half;
         int pitch = (int)video.bufferPitch;
 
@@ -377,14 +377,14 @@ internal sealed class WallPosts(
             {
                 if (t != colt)
                 {
-                    col = shade[shadeofs + (t < GameConstants.TEXTURESIZE
+                    col = shade[shadeofs + (t < GameConstants.TextureSize
                         ? lowerdata[lowercolumn + lowerheight - 1 - (int)(t % lowerheight)]
                         : upperdata[uppercolumn + upperheight - 1 - (int)(t % upperheight)])];
                     colt = t;
                 }
                 dest[y * pitch] = col;
 
-                rem += GameConstants.TEXTURESIZE / 2;
+                rem += GameConstants.TextureSize / 2;
                 while (rem >= half)
                 {
                     rem -= half;
@@ -394,7 +394,7 @@ internal sealed class WallPosts(
         }
     }
 
-    const byte PATCHMASK = 0xff;        // a wall patch's see-through pixels, as a flat's
+    const byte PatchMask = 0xff;        // a wall patch's see-through pixels, as a flat's
 
     /// <summary>
     /// Draws one screen column of a wall patch over the wall post just drawn (DrawPost), its
@@ -408,7 +408,7 @@ internal sealed class WallPosts(
 
         int height = patch.Height;
         int first = story == 0 ? 0 : story - 1;
-        int last = story == 0 ? stories : Math.Min(stories, first + (height + GameConstants.TEXTURESIZE - 1) / GameConstants.TEXTURESIZE);
+        int last = story == 0 ? stories : Math.Min(stories, first + (height + GameConstants.TextureSize - 1) / GameConstants.TextureSize);
         if (first >= last)
             return;                     // on a story the wall doesn't reach
 
@@ -420,7 +420,7 @@ internal sealed class WallPosts(
         if (y < top) return;
 
         // texels up from the patch's bottom, stepped as DrawPost steps the wall's
-        long num = (long)(bottom - y) * (GameConstants.TEXTURESIZE / 2);
+        long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
         long t = num / half;
         long rem = num % half;
         int pitch = (int)video.bufferPitch;
@@ -437,11 +437,11 @@ internal sealed class WallPosts(
                 if (row < height)
                 {
                     byte pixel = data[column + height - 1 - (int)row];
-                    if (pixel != PATCHMASK)
+                    if (pixel != PatchMask)
                         dest[y * pitch] = shade[shadeofs + pixel];
                 }
 
-                rem += GameConstants.TEXTURESIZE / 2;
+                rem += GameConstants.TextureSize / 2;
                 while (rem >= half)
                 {
                     rem -= half;
@@ -453,7 +453,7 @@ internal sealed class WallPosts(
 
     // Where the column the trace found (0 to 63, times 64) starts in the texture's pixels
     internal static int TextureColumn(TextureAsset texture, int ofs) =>
-        (ofs >> GameConstants.TEXTURESHIFT) * texture.Width / GameConstants.TEXTURESIZE * texture.Height;
+        (ofs >> GameConstants.TextureShift) * texture.Width / GameConstants.TextureSize * texture.Height;
 
     /*
     ====================
@@ -488,15 +488,15 @@ internal sealed class WallPosts(
         //
         // calculate perspective ratio
         //
-        if (nx < GameConstants.MINDIST)
-            nx = (int)GameConstants.MINDIST;             // don't let divide overflow
+        if (nx < GameConstants.MinDist)
+            nx = (int)GameConstants.MinDist;             // don't let divide overflow
 
         height = (short)(render.heightnumerator / (nx >> 8));
         return height;
     }
 
     // The screen row the floor is on, for something half pixels to half a story
-    internal int FloorRow(int half) => render.centery + half * render.vieweyez / (GameConstants.TEXTURESIZE / 2);
+    internal int FloorRow(int half) => render.centery + half * render.vieweyez / (GameConstants.TextureSize / 2);
 
     // The face of a wall the trace sees, going the way it is
     internal string SeenFace(bool vertical) => vertical
@@ -505,7 +505,7 @@ internal sealed class WallPosts(
 
     internal static int LintelColumn(int along, bool flip)
     {
-        int texture = (along >> GameConstants.FIXED2TEXSHIFT) & GameConstants.TEXTUREMASK;
-        return flip ? GameConstants.TEXTUREMASK - texture : texture;
+        int texture = (along >> GameConstants.Fixed2TexShift) & GameConstants.TextureMask;
+        return flip ? GameConstants.TextureMask - texture : texture;
     }
 }

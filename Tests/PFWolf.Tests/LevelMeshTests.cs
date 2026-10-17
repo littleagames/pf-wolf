@@ -152,7 +152,7 @@ public class LevelMeshTests
         EditorMaps.Set(document, 0, 9, 10, FourSided);
         EditorMaps.Set(document, 0, 11, 10, FourSided);
         EditorMaps.Set(document, 0, 10, 10, HorizontalDoor);
-        EditorMaps.Set(document, MapConstants.HEIGHTPLANE, 10, 10, 2);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 2);
 
         // Act
         var mesh = Build(document);
@@ -185,7 +185,7 @@ public class LevelMeshTests
         var document = Room();
         EditorMaps.Set(document, 0, 10, 10, Wall);
         EditorMaps.Set(document, 0, 11, 10, Wall);
-        EditorMaps.Set(document, MapConstants.HEIGHTPLANE, 10, 10, 3);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 3);
 
         // Act
         var mesh = Build(document);
@@ -225,7 +225,7 @@ public class LevelMeshTests
         EditorMaps.Set(document, 0, 9, 10, Wall);
         EditorMaps.Set(document, 0, 11, 10, Wall);
         EditorMaps.Set(document, 0, 10, 10, HorizontalDoor);
-        EditorMaps.Set(document, MapConstants.HEIGHTPLANE, 10, 10, 2);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 2);
 
         // Act
         var door = At(Build(document), SurfaceKind.Door, 10, 10, Face.North).ToList();
@@ -344,7 +344,7 @@ public class LevelMeshTests
         // Arrange: a 3-story arch across the room's width at row 10, walls at each end (the room's edge)
         var document = Room();
         for (int x = 1; x < 63; x++)
-            EditorMaps.Set(document, MapConstants.HEIGHTPLANE, x, 10, 3);
+            EditorMaps.Set(document, MapConstants.HeightPlane, x, 10, 3);
 
         // Act
         var arch = At(Build(document), SurfaceKind.Arch, 20, 10).ToList();
@@ -366,8 +366,8 @@ public class LevelMeshTests
         // Arrange: a 3-story arch across the room at row 10
         var document = Room();
         for (int x = 1; x < 63; x++)
-            EditorMaps.Set(document, MapConstants.HEIGHTPLANE, x, 10, 3);
-        EditorMaps.Set(document, MapConstants.FLATPLANE, 20, 10, (ushort)(ceiling << 8));
+            EditorMaps.Set(document, MapConstants.HeightPlane, x, 10, 3);
+        EditorMaps.Set(document, MapConstants.FlatPlane, 20, 10, (ushort)(ceiling << 8));
 
         // Act
         var arch = At(Build(document), SurfaceKind.Arch, 20, 10).ToList();
@@ -383,7 +383,7 @@ public class LevelMeshTests
     {
         // Arrange: a single arch tile in the middle of the room: its runs end on open floor
         var document = Room();
-        EditorMaps.Set(document, MapConstants.HEIGHTPLANE, 20, 20, 3);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 20, 20, 3);
 
         // Act
         var mesh = Build(document);
@@ -398,7 +398,7 @@ public class LevelMeshTests
         // Arrange: a pillar with zone 1 (light 51, red) on the floor west of it
         var document = Room();
         EditorMaps.Set(document, 0, 10, 10, Wall);
-        EditorMaps.Set(document, MapConstants.ZONEPLANE, 9, 10, 1);
+        EditorMaps.Set(document, MapConstants.ZonePlane, 9, 10, 1);
         document.SetProperties(new MapProperties { Light = 255, Zones = [new ZoneProperties(1, Light: 51, Color: "#FF0000")] });
 
         // Act

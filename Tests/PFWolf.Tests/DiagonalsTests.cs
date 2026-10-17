@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class DiagonalsTests
 {
-    private const long Tile = MapConstants.TILEGLOBAL;
+    private const long Tile = MapConstants.TileGlobal;
 
     // Tile (1, 1)'s top-left corner, in global units
     private const long Ox = Tile, Oy = Tile;

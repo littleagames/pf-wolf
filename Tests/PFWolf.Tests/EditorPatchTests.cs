@@ -43,7 +43,7 @@ public class EditorPatchTests
 
     private static MapTiles Tiles(MapDocument document) => new(Content(), document.Map, () => document.Properties);
 
-    private static ushort Patched(ushort tile, int patch) => (ushort)(tile | patch << MapConstants.PATCHSHIFT);
+    private static ushort Patched(ushort tile, int patch) => (ushort)(tile | patch << MapConstants.PatchShift);
 
     [Test]
     public void A_Patched_Wall_Reads_As_Its_Wall_With_Its_Patch()
@@ -95,7 +95,7 @@ public class EditorPatchTests
         // Arrange: a wall and open floor side by side
         var document = Room();
         EditorMaps.Set(document, 0, 10, 10, OtherWall);
-        var tools = Tools(document, patches: true, (ushort)(Sign << MapConstants.PATCHSHIFT));
+        var tools = Tools(document, patches: true, (ushort)(Sign << MapConstants.PatchShift));
 
         // Act: a stroke across both
         tools.Press(10, 10);
@@ -122,7 +122,7 @@ public class EditorPatchTests
         tools.Press(10, 10);
 
         // Assert
-        Assert.That(picked, Is.EqualTo(Lever << MapConstants.PATCHSHIFT));
+        Assert.That(picked, Is.EqualTo(Lever << MapConstants.PatchShift));
     }
 
     [Test]
@@ -188,7 +188,7 @@ public class EditorPatchTests
 
         // Assert
         Assert.That(entries[0].Value, Is.Zero);
-        Assert.That(entries.Single(entry => entry.Value == Lever << MapConstants.PATCHSHIFT).Label, Does.Contain("LEVER").And.Contain("switch"));
+        Assert.That(entries.Single(entry => entry.Value == Lever << MapConstants.PatchShift).Label, Does.Contain("LEVER").And.Contain("switch"));
     }
 
     [Test]
@@ -217,7 +217,7 @@ public class EditorPatchTests
         var document = Room();
         EditorMaps.Set(document, 0, 10, 10, Patched(Wall, TallSign));
         EditorMaps.Set(document, 0, 20, 10, Patched(Wall, TallSign));
-        EditorMaps.Set(document, MapConstants.HEIGHTPLANE, 20, 10, 2);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 20, 10, 2);
 
         // Act
         var mesh = LevelMesh.Build(Tiles(document));

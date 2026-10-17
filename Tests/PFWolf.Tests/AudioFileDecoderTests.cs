@@ -7,7 +7,7 @@ namespace PFWolf.Tests;
 
 public class AudioFileDecoderTests
 {
-    // A RIFF WAVE file: fmt, then any extra chunks, then data
+    // A Riff Wave file: fmt, then any extra chunks, then data
     private static byte[] Wav(ushort format, ushort channels, int sampleRate, ushort bits, byte[] samples,
         (string Id, byte[] Body)[]? extraChunks = null, bool extensible = false)
     {

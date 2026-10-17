@@ -130,7 +130,7 @@ public class DeathmatchTests
         rig.Deathmatch.QueueItemRespawn(medikit);
 
         // Assert
-        Assert.That(rig.Deathmatch.itemrespawns, Is.EqualTo(new[] { new ItemRespawn("Medikit", 12, 34, 100 + Deathmatch.ITEMRESPAWNTICS) }));
+        Assert.That(rig.Deathmatch.itemrespawns, Is.EqualTo(new[] { new ItemRespawn("Medikit", 12, 34, 100 + Deathmatch.ItemRespawnTics) }));
     }
 
     [Test]

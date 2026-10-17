@@ -195,17 +195,17 @@ public sealed class MapCanvas : Control
         }
 
         // Flats are drawn in place of the floor (DrawTile); here only their numbers
-        if (ShowFlats) DrawPlaneValues(context, tiles, MapConstants.FLATPLANE, x0, y0, x1, y1, fill: false);
-        if (ShowHeights) DrawPlaneValues(context, tiles, MapConstants.HEIGHTPLANE, x0, y0, x1, y1);
+        if (ShowFlats) DrawPlaneValues(context, tiles, MapConstants.FlatPlane, x0, y0, x1, y1, fill: false);
+        if (ShowHeights) DrawPlaneValues(context, tiles, MapConstants.HeightPlane, x0, y0, x1, y1);
         if (ShowZones) DrawZones(context, tiles, x0, y0, x1, y1);
         if (ShowTags)
         {
-            DrawPlaneValues(context, tiles, MapConstants.TAGPLANE, x0, y0, x1, y1);
+            DrawPlaneValues(context, tiles, MapConstants.TagPlane, x0, y0, x1, y1);
             DrawSwitchLinks(context, tiles);
         }
 
         // Everything that shares the tag of the tile under the pointer
-        if (_hover.X >= 0 && tiles[MapConstants.TAGPLANE, _hover.X, _hover.Y] is var hoverTag and not 0
+        if (_hover.X >= 0 && tiles[MapConstants.TagPlane, _hover.X, _hover.Y] is var hoverTag and not 0
             && tiles.TaggedTiles().TryGetValue(hoverTag, out var sameTag))
         {
             foreach (var (tx, ty) in sameTag)
@@ -451,7 +451,7 @@ public sealed class MapCanvas : Control
         {
             for (int x = x0; x <= x1; x++)
             {
-                int id = tiles[MapConstants.ZONEPLANE, x, y];
+                int id = tiles[MapConstants.ZonePlane, x, y];
                 if (id == 0)
                     continue;
 
@@ -574,7 +574,7 @@ public sealed class MapCanvas : Control
                     continue;
 
                 // Flats read as floor/ceiling indices
-                var label = plane == MapConstants.FLATPLANE ? $"{value & 0xff}/{value >> 8}" : value.ToString(CultureInfo.InvariantCulture);
+                var label = plane == MapConstants.FlatPlane ? $"{value & 0xff}/{value >> 8}" : value.ToString(CultureInfo.InvariantCulture);
                 var text = new FormattedText(label, CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight, LabelFont, Math.Min(_zoom * 0.35, 16), Brushes.White);
                 context.DrawText(text, new Point(rect.Center.X - text.Width / 2, rect.Center.Y - text.Height / 2));

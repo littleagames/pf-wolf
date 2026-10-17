@@ -85,13 +85,13 @@ internal static class WallSprites
         double dx = ny, dy = -nx;
 
         double offset = actor.Properties.TryGetValue(WallSpriteOffsetProperty, out var value)
-            ? Convert.ToDouble(value) * MapConstants.TILEGLOBAL / 64
+            ? Convert.ToDouble(value) * MapConstants.TileGlobal / 64
             : 0;
 
-        double ox = (double)actor.TileX * MapConstants.TILEGLOBAL;
-        double oy = (double)actor.TileY * MapConstants.TILEGLOBAL;
-        double px = ox + MapConstants.TILEGLOBAL / 2 + nx * offset;
-        double py = oy + MapConstants.TILEGLOBAL / 2 + ny * offset;
+        double ox = (double)actor.TileX * MapConstants.TileGlobal;
+        double oy = (double)actor.TileY * MapConstants.TileGlobal;
+        double px = ox + MapConstants.TileGlobal / 2 + nx * offset;
+        double py = oy + MapConstants.TileGlobal / 2 + ny * offset;
 
         //
         // clip the panel's line to the tile (Liang-Barsky, unbounded in both directions)
@@ -109,8 +109,8 @@ internal static class WallSprites
             return t0 < t1;
         }
 
-        if (!Clip(-dx, px - ox) || !Clip(dx, ox + MapConstants.TILEGLOBAL - px)
-            || !Clip(-dy, py - oy) || !Clip(dy, oy + MapConstants.TILEGLOBAL - py))
+        if (!Clip(-dx, px - ox) || !Clip(dx, ox + MapConstants.TileGlobal - px)
+            || !Clip(-dy, py - oy) || !Clip(dy, oy + MapConstants.TileGlobal - py))
             return null;
 
         return new WallSpriteSpan(px + t0 * dx, py + t0 * dy, px + t1 * dx, py + t1 * dy);
@@ -199,8 +199,8 @@ internal sealed class WallSpriteBlocking(MapManager map)
     /// <summary>Whether a panel that isn't WALLSPRITE.SHOOTTHROUGH stands across the line (sight, hitscan).</summary>
     internal bool WallSpriteBlocksLine(long x1, long y1, long x2, long y2)
     {
-        long xl = Math.Min(x1, x2) >> MapConstants.TILESHIFT, xh = Math.Max(x1, x2) >> MapConstants.TILESHIFT;
-        long yl = Math.Min(y1, y2) >> MapConstants.TILESHIFT, yh = Math.Max(y1, y2) >> MapConstants.TILESHIFT;
+        long xl = Math.Min(x1, x2) >> MapConstants.TileShift, xh = Math.Max(x1, x2) >> MapConstants.TileShift;
+        long yl = Math.Min(y1, y2) >> MapConstants.TileShift, yh = Math.Max(y1, y2) >> MapConstants.TileShift;
 
         foreach (var actor in map.GetActors())
         {

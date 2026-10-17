@@ -67,7 +67,7 @@ public class PlayerCommandsTests
     [Test]
     public void There_Can_Only_Be_So_Many_Players()
     {
-        while (_session.players.Count < PlayerCommands.MAXPLAYERS)
+        while (_session.players.Count < PlayerCommands.MaxPlayers)
             _session.players.Add(new Entities.PlayerState { Number = _session.players.Count });
 
         Assert.Throws<ArgumentException>(() => _commands.AddPlayerCommand([]));

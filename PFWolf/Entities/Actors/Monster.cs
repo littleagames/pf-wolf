@@ -45,7 +45,7 @@ internal record Monster : Actor
     private protected bool CheckLine(Actor ob) => World.LineOfSight.CheckLine(ob);
     private protected bool CheckLine(Actor ob, Actor to) => World.LineOfSight.CheckLine(ob, to);
     private protected bool CheckLine(int fromX, int fromY, Actor to) => World.LineOfSight.CheckLine(fromX, fromY, to);
-    private protected bool CheckDiag(int x, int y) => World.LineOfSight.CHECKDIAG(x, y);
+    private protected bool CheckDiag(int x, int y) => World.LineOfSight.CheckDiag(x, y);
     private protected DoorObject[] DoorObjects => World.Doors.doorobjlist;
     private protected int LastDoorObject => World.Doors.lastdoorobj;
     private protected void OpenDoor(int door) => World.Doors.OpenDoor(door);
@@ -161,8 +161,8 @@ internal record Monster : Actor
 
     internal void RecenterOnTile()
     {
-        X = (int)((TileX << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
-        Y = (int)((TileY << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+        X = (int)((TileX << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
+        Y = (int)((TileY << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
     }
 
     /*
@@ -201,7 +201,7 @@ internal record Monster : Actor
                 var deltax = Math.Abs(newx - pawn.X);
                 var deltay = Math.Abs(newy - pawn.Y);
 
-                if (deltax <= MINACTORDIST && deltay <= MINACTORDIST)
+                if (deltax <= MinActorDist && deltay <= MinActorDist)
                 {
                     // An ally walking after a player (or out of their way) is only stopped
                     // getting nearer them, not moving off past or away from them
@@ -340,14 +340,14 @@ internal record Monster : Actor
 
         // A door tile has no area of its own, so a PHASEDOORS actor passing through one
         // keeps the area it came from, and so does one crossing a floor code that isn't an area
-        if (MapManager.actorat[TileX, TileY] is not Door && MapManager.VALIDAREA(MapManager.MAPSPOT(TileX, TileY, 0)))
-            AreaNumber = (byte)(MapManager.MAPSPOT(TileX, TileY, 0) - MapManager.Floors.AreaTile);
-        Distance = (int)MapConstants.TILEGLOBAL;
+        if (MapManager.actorat[TileX, TileY] is not Door && MapManager.ValidArea(MapManager.MapSpot(TileX, TileY, 0)))
+            AreaNumber = (byte)(MapManager.MapSpot(TileX, TileY, 0) - MapManager.Floors.AreaTile);
+        Distance = (int)MapConstants.TileGlobal;
         SyncPosition();
         return true;
     }
 
-    // CHECKDIAG(int, int) lives in Gameplay/LineOfSight.cs -- it isn't tied to the mover, so
+    // CheckDiag(int, int) lives in Gameplay/LineOfSight.cs -- it isn't tied to the mover, so
     // there's no Entities.Actors.Actor-typed overload.
 
     internal int CheckSide(int x, int y, ref int doornumtile)
@@ -460,7 +460,7 @@ internal record Monster : Actor
         var deltax = other.X - X;
         var deltay = other.Y - Y;
 
-        if (deltax > -MINSIGHT && deltax < MINSIGHT && deltay > -MINSIGHT && deltay < MINSIGHT)
+        if (deltax > -MinSight && deltax < MinSight && deltay > -MinSight && deltay < MinSight)
             return true;
 
         switch (Dir)
@@ -584,7 +584,7 @@ internal record Monster : Actor
         RuntimeFlags &= ~(ObjFlags.AttackMode | ObjFlags.FirstAttack | ObjFlags.Following);
         _target = null;
         Temp2 = 0;
-        Speed = PropertyInt("speed", SPDPATROL);
+        Speed = PropertyInt("speed", SpdPatrol);
         if (Distance < 0)
             Distance = 0;
         SetState("Spawn");
@@ -701,7 +701,7 @@ internal record Monster : Actor
 
     // Open floor nothing stands on (nor the player shoving it)
     private bool OpenForStep(int x, int y, PlayerPawn shover) =>
-        x is > 0 and < MapManager.MAPSIZE - 1 && y is > 0 and < MapManager.MAPSIZE - 1
+        x is > 0 and < MapManager.MapSize - 1 && y is > 0 and < MapManager.MapSize - 1
         && MapManager.tilemap[x, y] == 0 && MapManager.actorat[x, y] is null
         && !(shover.TileX == x && shover.TileY == y);
 
@@ -718,7 +718,7 @@ internal record Monster : Actor
     {
         RuntimeFlags &= ~ObjFlags.Following;
         _stepAside = null;
-        Speed = PropertyInt("speed", SPDPATROL);
+        Speed = PropertyInt("speed", SpdPatrol);
         if (stand)
             SetState("Spawn");
     }
@@ -726,7 +726,7 @@ internal record Monster : Actor
     // Its speed going after someone (as FirstSighting sets it)
     private int ChaseSpeed()
     {
-        int speed = PropertyInt("speed", SPDPATROL);
+        int speed = PropertyInt("speed", SpdPatrol);
         if (Properties.TryGetValue("monster.chasespeed", out var chaseSpeed))
             return Convert.ToInt32(chaseSpeed);
         if (Properties.TryGetValue("monster.chasespeedmultiplier", out var mult))
@@ -761,7 +761,7 @@ internal record Monster : Actor
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TILEGLOBAL;
+                Distance = (int)MapConstants.TileGlobal;
                 if (!(DemoRecord || DemoPlayback))
                     TryWalk();
             }
@@ -871,7 +871,7 @@ internal record Monster : Actor
     /// </summary>
     private bool TargetIsRunning() => Target switch
     {
-        PlayerPawn pawn => pawn.State.ThrustSpeed >= RUNSPEED,
+        PlayerPawn pawn => pawn.State.ThrustSpeed >= RunSpeed,
         Monster monster => monster.RuntimeFlags.HasFlag(ObjFlags.AttackMode) && monster.Dir != ObjDir.NoDir,
         _ => false,
     };
@@ -1189,7 +1189,7 @@ internal record Monster : Actor
         if (MapManager.PatrolPointAt(TileX, TileY) is { } point)
             Dir = point.Dir;
 
-        Distance = (int)MapConstants.TILEGLOBAL;
+        Distance = (int)MapConstants.TileGlobal;
 
         if (!TryWalk())
             Dir = ObjDir.NoDir;
@@ -1260,8 +1260,8 @@ internal record Monster : Actor
 
     internal virtual void Kill(Entities.Actors.Actor? attacker = null)
     {
-        var tilex = X >> (int)MapConstants.TILESHIFT;
-        var tiley = Y >> (int)MapConstants.TILESHIFT;
+        var tilex = X >> (int)MapConstants.TileShift;
+        var tiley = Y >> (int)MapConstants.TileShift;
 
         // `monster.floordeath`: on that floor (game-info floor-number) it isn't killed but goes
         // to its FloorDeath state, worth nothing yet (Goldfire morphing on Planet Strike's last)
@@ -1538,7 +1538,7 @@ internal record Monster : Actor
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TILEGLOBAL;
+                Distance = (int)MapConstants.TileGlobal;
                 if (!(DemoRecord || DemoPlayback))
                     TryWalk();
             }
@@ -1549,7 +1549,7 @@ internal record Monster : Actor
                 break;
             }
 
-            if (TileX > MapManager.MAPSIZE || TileY > MapManager.MAPSIZE)
+            if (TileX > MapManager.MapSize || TileY > MapManager.MapSize)
                 GameEngineManager.Quit($"T_Path hit a wall at {TileX},{TileY}, dir {Dir}");
 
             RecenterOnTile();
@@ -1623,7 +1623,7 @@ internal record Monster : Actor
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TILEGLOBAL;
+                Distance = (int)MapConstants.TileGlobal;
                 if (!(DemoRecord || DemoPlayback))
                     TryWalk();
             }
@@ -1660,12 +1660,12 @@ internal record Monster : Actor
             var dx = Target.X - X;
             if (dx < 0) dx = -dx;
             dx -= move;
-            if (dx <= MINACTORDIST)
+            if (dx <= MinActorDist)
             {
                 var dy = Target.Y - Y;
                 if (dy < 0) dy = -dy;
                 dy -= move;
-                if (dy <= MINACTORDIST)
+                if (dy <= MinActorDist)
                 {
                     SetState("Attack");
                     return;
@@ -1704,13 +1704,13 @@ internal record Monster : Actor
 
         var dx = Target.X - X;
         if (dx < 0) dx = -dx;
-        dx -= (int)MapConstants.TILEGLOBAL;
-        if (dx <= MINACTORDIST)
+        dx -= (int)MapConstants.TileGlobal;
+        if (dx <= MinActorDist)
         {
             var dy = Target.Y - Y;
             if (dy < 0) dy = -dy;
-            dy -= (int)MapConstants.TILEGLOBAL;
-            if (dy <= MINACTORDIST)
+            dy -= (int)MapConstants.TileGlobal;
+            if (dy <= MinActorDist)
                 return NextRandom() < chance;
         }
         return false;
@@ -1785,7 +1785,7 @@ internal record Monster : Actor
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TILEGLOBAL;
+                Distance = (int)MapConstants.TileGlobal;
                 TryWalk();
             }
 
@@ -1891,16 +1891,16 @@ internal record Monster : Actor
     // Spawns a projectile actor (Needle/Rocket/Fire, actordefs/wolf3d/projectiles.yaml) at the
     // thrower and aims it at the player. TicCount 1 makes its first frame expire on the very
     // next tic, so the state's Action (a rocket's first smoke puff) fires almost immediately.
-    // angleOffset turns the shot away from the player, in ANGLES units (the Death Knight's
+    // angleOffset turns the shot away from the player, in Angles units (the Death Knight's
     // rockets go 4 either side). With no sound given, the projectile's own attacksound plays.
     private void ThrowProjectile(string className, int speed, string? sound = null, int angleOffset = 0)
     {
         var deltax = Target.X - X;
         var deltay = Y - Target.Y;
         var angle = (float)Math.Atan2((float)deltay, (float)deltax);
-        if (angle < 0) angle = (float)(M_PI * 2 + angle);
-        var iangle = (int)(angle / (M_PI * 2) * ANGLES);
-        iangle = ((iangle + angleOffset) % ANGLES + ANGLES) % ANGLES;
+        if (angle < 0) angle = (float)(MathPi * 2 + angle);
+        var iangle = (int)(angle / (MathPi * 2) * Angles);
+        iangle = ((iangle + angleOffset) % Angles + Angles) % Angles;
 
         var newobj = MapManager.SpawnAtActor(className, this);
         if (newobj == null)
@@ -1949,7 +1949,7 @@ internal record Monster : Actor
 
     /// <summary>
     /// A_FireProjectile("HRocket"[, angle offset[, "shoot"]]): launches a projectile at the player,
-    /// turned by the offset in ANGLES units; with "shoot", also fires a gun volley (T_Shoot), as the
+    /// turned by the offset in Angles units; with "shoot", also fires a gun volley (T_Shoot), as the
     /// Death Knight does with each rocket.
     /// </summary>
     internal void FireProjectile(string[] args)
@@ -2004,14 +2004,14 @@ internal record Monster : Actor
         {
             var deltax = X - pawn.X;
             var deltay = Y - pawn.Y;
-            if (deltax >= -MINACTORDIST && deltax <= MINACTORDIST && deltay >= -MINACTORDIST && deltay <= MINACTORDIST)
+            if (deltax >= -MinActorDist && deltax <= MinActorDist && deltay >= -MinActorDist && deltay <= MinActorDist)
                 return;
         }
 
-        var xl = (int)((X - MINDIST) >> (int)MapConstants.TILESHIFT);
-        var xh = (int)((X + MINDIST) >> (int)MapConstants.TILESHIFT);
-        var yl = (int)((Y - MINDIST) >> (int)MapConstants.TILESHIFT);
-        var yh = (int)((Y + MINDIST) >> (int)MapConstants.TILESHIFT);
+        var xl = (int)((X - MinDist) >> (int)MapConstants.TileShift);
+        var xh = (int)((X + MinDist) >> (int)MapConstants.TileShift);
+        var yl = (int)((Y - MinDist) >> (int)MapConstants.TileShift);
+        var yh = (int)((Y + MinDist) >> (int)MapConstants.TileShift);
 
         for (var y = yl; y <= yh; y++)
             for (var x = xl; x <= xh; x++)
@@ -2032,7 +2032,7 @@ internal record Monster : Actor
         if (newActor == null)
             return;
 
-        newActor.Speed = SPDPATROL * 5;
+        newActor.Speed = SpdPatrol * 5;
 
         if (!LoadedGame && newActor is Monster { CountsAsKill: true })
             GameState.killtotal++;
@@ -2056,7 +2056,7 @@ internal record Monster : Actor
         }
 
         // As a map spawn of it would: its own speed, and a kill to count unless it's NOTCOUNTED
-        newActor.Speed = newActor.PropertyInt("speed", SPDPATROL);
+        newActor.Speed = newActor.PropertyInt("speed", SpdPatrol);
         if (!LoadedGame && newActor is Monster { CountsAsKill: true })
             GameState.killtotal++;
 

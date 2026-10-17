@@ -36,8 +36,8 @@ internal static partial class GameHost
     static ChangeViewScreen changeViewScreen = null!;
 
     // Control panel song: the main menu's music in menudefs/main-menu
-    internal static string MENUSONG => controlPanel.MENUSONG;
-    internal static string INTROSONG => controlPanel.INTROSONG;
+    internal static string MenuSong => controlPanel.MenuSong;
+    internal static string IntroSong => controlPanel.IntroSong;
 
     internal static ControlPanelItem[] MainMenu { get => controlPanel.MainMenu; set => controlPanel.MainMenu = value; }
     internal static ControlPanelMenuInfo MainItems { get => controlPanel.MainItems; set => controlPanel.MainItems = value; }
@@ -248,7 +248,7 @@ internal static partial class GameHost
         menuDefs.Article = name =>
         {
             articleReader.ShowText(name);
-            StartCPMusic(MENUSONG);
+            StartCPMusic(MenuSong);
             return 0;
         };
         menuDefs.Script = function =>

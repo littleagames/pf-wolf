@@ -87,10 +87,10 @@ internal sealed class PlayerThink(
         if (gamestate.victoryflag)              // watching the BJ actor
             return;
 
-        session.playerstate.PlUX = (ushort)(player.X >> GameConstants.UNSIGNEDSHIFT);    // scale to fit in unsigned
-        session.playerstate.PlUY = (ushort)(player.Y >> GameConstants.UNSIGNEDSHIFT);
-        player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
-        player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
+        session.playerstate.PlUX = (ushort)(player.X >> GameConstants.UnsignedShift);    // scale to fit in unsigned
+        session.playerstate.PlUY = (ushort)(player.Y >> GameConstants.UnsignedShift);
+        player.TileX = (byte)(player.X >> (int)MapConstants.TileShift);                // scale to tile values
+        player.TileY = (byte)(player.Y >> (int)MapConstants.TileShift);
 
         // The weapon's Ready/Fire states (Gameplay/WeaponInHand.cs): starts and plays attacks
         weaponInHand.TickWeapon();
@@ -115,7 +115,7 @@ internal sealed class PlayerThink(
                 player.Angle = 270;
         }
 
-        desty = ((player.TileY - 5) << (int)MapConstants.TILESHIFT) - 0x3000;
+        desty = ((player.TileY - 5) << (int)MapConstants.TileShift) - 0x3000;
 
         if (player.Y > desty)
         {
@@ -128,7 +128,7 @@ internal sealed class PlayerThink(
     // angle: the mapdefs player start's facing, 0=east, 90=north, 180=west, 270=south
     internal void SpawnPlayer(int tilex, int tiley, int angle)
     {
-        const int ANGLES = GameConstants.ANGLES;
+        const int ANGLES = GameConstants.Angles;
         var player = session.player;
         player.Active = ActiveType.Yes;
         player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y

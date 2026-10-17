@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class FrameRefreshTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private RenderState _render = null!;
     private GameSession _session = null!;
@@ -76,7 +76,7 @@ public class FrameRefreshTests
         _frame.Setup3DView();
 
         // Assert: the view point is behind the camera (south of it, as north is up the map)
-        Assert.That((_render.viewangle, _render.midangle), Is.EqualTo(((short)90, (short)(90 * GameConstants.FINEANGLES / GameConstants.ANGLES))));
+        Assert.That((_render.viewangle, _render.midangle), Is.EqualTo(((short)90, (short)(90 * GameConstants.FineAngles / GameConstants.Angles))));
         Assert.That((_render.viewsin, _render.viewcos), Is.EqualTo((TrigTables.sintable[90], TrigTables.costable[90])));
         Assert.That(_render.viewx, Is.EqualTo(10 * Tile + Tile / 2).Within(1));
         Assert.That(_render.viewy, Is.EqualTo(20 * Tile + Tile / 2 + _render.focallength).Within(1));
@@ -95,9 +95,9 @@ public class FrameRefreshTests
         Assert.That((_render.ypartialdown, _render.ypartialup), Is.EqualTo(((uint)(Tile / 4), (uint)(Tile - 1 - Tile / 4))));
     }
 
-    [TestCase(GameConstants.EYEDEFAULT, GameConstants.EYEDEFAULT)]
-    [TestCase(0, GameConstants.MINEYE)]
-    [TestCase(200, GameConstants.MAXEYE)]
+    [TestCase(GameConstants.EyeDefault, GameConstants.EyeDefault)]
+    [TestCase(0, GameConstants.MinEye)]
+    [TestCase(200, GameConstants.MaxEye)]
     public void The_Eye_Stays_Within_A_Story(int eyez, int seen)
     {
         _session.camera.SetFixed(5 * Tile, 5 * Tile, 0, eyez: eyez);

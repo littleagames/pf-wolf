@@ -120,7 +120,7 @@ internal sealed class Radar(
             {
                 string color = unmapped;
                 int mx = (int)Math.Floor(lmx), my = (int)Math.Floor(lmy);
-                if (mx >= 0 && mx < MapManager.MAPSIZE && my >= 0 && my < MapManager.MAPSIZE)
+                if (mx >= 0 && mx < MapManager.MapSize && my >= 0 && my < MapManager.MapSize)
                 {
                     if (!drawnplayer && mx == session.player.TileX && my == session.player.TileY)
                     {
@@ -151,9 +151,9 @@ internal sealed class Radar(
     {
         int tile = map.tilemap[x, y];
         string color;
-        if ((tile & GameConstants.BIT_DOOR) != 0)
+        if ((tile & GameConstants.BitDoor) != 0)
         {
-            var d = doors.doorobjlist[tile & ~GameConstants.BIT_DOOR];
+            var d = doors.doorobjlist[tile & ~GameConstants.BitDoor];
             // As bstone: a door with a lock (none once a key has unlocked it) is locked, open or shut
             color = !string.IsNullOrEmpty(d.Lock) ? locked
                 : d.action == DoorAction.Closed ? door

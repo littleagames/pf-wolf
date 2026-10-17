@@ -5,14 +5,14 @@ namespace PFWolf.Ui;
 /// <summary>The fonts the menus and screens use</summary>
 internal static class UiFonts
 {
-    internal const string SMALL_FONT = "SmallFont";
-    internal const string LARGE_FONT = "LargeFont";
+    internal const string SmallFont = "SmallFont";
+    internal const string LargeFont = "LargeFont";
 
     /// <summary>Control panel menu items are printed in this</summary>
-    internal const string MENU_FONT = LARGE_FONT;
+    internal const string MenuFont = LargeFont;
 
     /// <summary>Control panel text in <paramref name="color"/> on the menu background</summary>
-    internal static TextStyle MenuStyle(string color) => new(MENU_FONT, color);
+    internal static TextStyle MenuStyle(string color) => new(MenuFont, color);
 }
 
 /// <summary>Text on the 320x200 screen: placing it, measuring it, and windows to print it in</summary>
@@ -87,9 +87,9 @@ internal sealed class UiText(GraphicManager graphics, FontManager fonts)
     }
 
     /// <summary>Black text on the white of a <see cref="CenterWindow"/></summary>
-    internal static readonly TextStyle PromptStyle = new(UiFonts.SMALL_FONT, "Black", "White");
+    internal static readonly TextStyle PromptStyle = new(UiFonts.SmallFont, "Black", "White");
 
     /// <summary>A framed window of w by h tiles, centered in the play view</summary>
     internal TextWindow CenterWindow(int w, int h, TextStyle style)
-        => DrawWindow(((GameConstants.MAXX / 8) - w) / 2, ((GameConstants.MAXY / 8) - h) / 2, w, h, style);
+        => DrawWindow(((GameConstants.MaxX / 8) - w) / 2, ((GameConstants.MaxY / 8) - h) / 2, w, h, style);
 }

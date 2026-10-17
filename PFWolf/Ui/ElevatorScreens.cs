@@ -357,7 +357,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
             for (int x = 0; x < 64; x++)
             {
                 byte color = background;
-                if (x < MapManager.MAPSIZE && y < MapManager.MAPSIZE && mapManager.seen[x, y] != SeenFlags.None)
+                if (x < MapManager.MapSize && y < MapManager.MapSize && mapManager.seen[x, y] != SeenFlags.None)
                     color = byte.Parse(hooks.TileColor(x, y, unmapped, floor, door, locked));
                 image[y * 64 + x] = color;
             }

@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class MissilesTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private const string Yaml = """
         Inventory:
@@ -30,8 +30,8 @@ public class MissilesTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         _sounds = [];
@@ -94,10 +94,10 @@ public class MissilesTests
         _map.actorat[1, 1] = new Wall(1);
         _map.tilemap[2, 1] = 5;                                  // a wall with nothing on actorat (a moving pushwall's)
         _map.actorat[3, 1] = new Door(0);
-        _map.tilemap[3, 1] = (ushort)(GameConstants.BIT_DOOR | 0);
+        _map.tilemap[3, 1] = (ushort)(GameConstants.BitDoor | 0);
         _doors.doorobjlist[0] = new DoorObject { action = DoorAction.Closed };
         _map.actorat[4, 1] = new Door(1);
-        _map.tilemap[4, 1] = (ushort)(GameConstants.BIT_DOOR | 1);
+        _map.tilemap[4, 1] = (ushort)(GameConstants.BitDoor | 1);
         _doors.doorobjlist[1] = new DoorObject { action = DoorAction.Open };
 
         // Act / Assert

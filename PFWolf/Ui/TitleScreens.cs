@@ -55,7 +55,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     }
 
     /// <summary>Wolf3D's PG-13 rating screen</summary>
-    internal void PG13()
+    internal void Pg13()
     {
         video.FadeOut();
         video.FillScreen("Light Blue");     // background

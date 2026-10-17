@@ -43,7 +43,7 @@ internal static partial class GameHost
     static Demos MakeDemos() => new(_assetManager, _gameEngineManager, _videoManager, _audioManager, ui, lineInput, demoBuffer, levelMusic, levelLoop,
         session, new DemosHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), () => DemoSkill, DrawPlayScreen,
             SetupGameLevel, RunLevelHooks, () => demoTesting,
-            DemoTestReport, () => INTROSONG));
+            DemoTestReport, () => IntroSong));
 
     internal static void PlayDemo(int demonumber) => demos.PlayDemo(demonumber);
     internal static bool DemoExists(int demonumber) => demos.DemoExists(demonumber);
@@ -141,8 +141,8 @@ internal static partial class GameHost
             for (int x = 0; x < _mapManager.mapwidth; x++)
             {
                 int tile = _mapManager.tilemap[x, y];
-                if (tile != 0 && (tile & GameConstants.BIT_DOOR) == 0
-                    && data.Walls.TryGetValue(tile & ~GameConstants.BIT_WALL, out var wall) && wall.Switch is { } wallSwitch)
+                if (tile != 0 && (tile & GameConstants.BitDoor) == 0
+                    && data.Walls.TryGetValue(tile & ~GameConstants.BitWall, out var wall) && wall.Switch is { } wallSwitch)
                     yield return wallSwitch;
                 if (_mapManager.GetPatch(x, y) is var patch and > 0 && data.Patches.TryGetValue(patch, out var patchDef)
                     && patchDef.Switch is { } patchSwitch)
@@ -251,10 +251,10 @@ internal static partial class GameHost
     // ==== WL_DEF =================================================================================
 
     // The game's constants (Gameplay/GameConstants.cs)
-    internal const int MAXTICS = GameConstants.MAXTICS;
-    internal const int BIT_DOOR = GameConstants.BIT_DOOR;
-    internal const int ANGLES = GameConstants.ANGLES;
-    internal const int TEXTURESIZE = GameConstants.TEXTURESIZE;
+    internal const int MaxTics = GameConstants.MaxTics;
+    internal const int BitDoor = GameConstants.BitDoor;
+    internal const int Angles = GameConstants.Angles;
+    internal const int TextureSize = GameConstants.TextureSize;
 
     internal static void ClearMemory() => _audioManager.StopAll();
 

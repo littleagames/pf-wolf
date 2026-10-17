@@ -90,7 +90,7 @@ internal sealed class MainGameLoop(
         if (!change.KeepPosition)
             return;
 
-        session.player.SetPosition(change.X >> (int)MapConstants.TILESHIFT, change.Y >> (int)MapConstants.TILESHIFT);
+        session.player.SetPosition(change.X >> (int)MapConstants.TileShift, change.Y >> (int)MapConstants.TileShift);
         session.player.X = change.X;
         session.player.Y = change.Y;
         session.player.Angle = change.Angle;

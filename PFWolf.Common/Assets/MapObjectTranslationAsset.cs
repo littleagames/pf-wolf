@@ -9,7 +9,7 @@ public record MapObjectTranslationAsset : Asset
     public Dictionary<int, MapTriggerTranslation> Triggers { get; internal set; } = new();
     public Dictionary<int, MapDiagonalTranslation> Diagonals { get; internal set; } = new();
 
-    /// <summary>Wall patches by id (1 to 255): the high byte of a wall tile's plane 0 value (MapConstants.PATCHSHIFT)</summary>
+    /// <summary>Wall patches by id (1 to 255): the high byte of a wall tile's plane 0 value (MapConstants.PatchShift)</summary>
     public Dictionary<int, MapPatchTranslation> Patches { get; internal set; } = new();
 
     public MapFlatsTranslation Flats { get; internal set; } = new();
@@ -198,7 +198,7 @@ public record MapDiagonalTranslation
 /// <summary>
 /// A wall patch: a picture with see-through pixels (palette index 0xFF) drawn over a wall's face,
 /// such as a sign, a switch or a crack, so one wall can carry any decoration. A wall tile gets
-/// one by the high byte of its plane 0 value (MapConstants.PATCHSHIFT); it moves with the wall
+/// one by the high byte of its plane 0 value (MapConstants.PatchShift); it moves with the wall
 /// when it's pushed. Patches on doors and open floor are ignored.
 /// </summary>
 public record MapPatchTranslation

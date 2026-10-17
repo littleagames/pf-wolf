@@ -47,7 +47,7 @@ internal partial record BlakeMonster
     /// </summary>
     internal void Bounce()
     {
-        if (Math.Max(Math.Abs(Player.X - X), Math.Abs(Player.Y - Y)) < MapConstants.TILEGLOBAL
+        if (Math.Max(Math.Abs(Player.X - X), Math.Abs(Player.Y - Y)) < MapConstants.TileGlobal
             && PropertyInt("monster.touchdamage", 0) is > 0 and var zap)
         {
             PlayActorSound(this, "touchsound");
@@ -212,7 +212,7 @@ internal partial record BlakeMonster
     =============================================================================
     */
 
-    private const int SEEK_TURN_DELAY = 30;
+    private const int SeekTurnDelay = 30;
 
     /// <summary>
     /// A turret's think: facing the player (within its eighth of the circle, 15 tiles, in a clear
@@ -245,7 +245,7 @@ internal partial record BlakeMonster
         Temp2 -= (short)Tics;
         if (Temp2 <= 0)
         {
-            Temp2 = SEEK_TURN_DELAY;
+            Temp2 = SeekTurnDelay;
             Dir = Dir >= ObjDir.SouthEast ? ObjDir.East : Dir + 1;
         }
     }
@@ -382,7 +382,7 @@ internal partial record BlakeMonster
     /// <summary>
     /// A_FireSpread("SpectorShot", chance, health, lowchance, 24, 16, 8): a projectile at the
     /// player and, chance times in 256 (lowchance below that health), one either side at each
-    /// offset in ANGLES units too (bstone's morphed Goldfire)
+    /// offset in Angles units too (bstone's morphed Goldfire)
     /// </summary>
     internal void FireSpread(string[] args)
     {

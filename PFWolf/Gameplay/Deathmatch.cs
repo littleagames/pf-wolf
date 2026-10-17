@@ -68,7 +68,7 @@ internal interface IMatchObjective
 /// deathmatch starts (`deathmatch: true`), else any open floor, as far from rivals as can be
 /// had. Each carries every key, so no door is shut to anyone (but in Heist). A weapon on the
 /// floor stays there for everyone without it yet; anything else taken comes back after
-/// ITEMRESPAWNTICS (with item-respawn on). Killing another player is a frag (killing yourself
+/// ItemRespawnTics (with item-respawn on). Killing another player is a frag (killing yourself
 /// takes one away). The first to the score limit, or whoever leads when the time runs out,
 /// ends the match: a deathmatch counts each player's frags, a team game each team's score
 /// (team deathmatch: its frags; the other modes: what their objective gives it). The map's
@@ -89,7 +89,7 @@ internal sealed class Deathmatch(
     internal NetRules netrules = DefaultRules;
 
     /// <summary>How long a taken item takes to come back, in a deathmatch (tics)</summary>
-    internal const int ITEMRESPAWNTICS = 30 * 70;
+    internal const int ItemRespawnTics = 30 * 70;
 
     /// <summary>The match has been won (the score limit) or run out of time: the level ends, for the scoreboard</summary>
     internal bool matchover;
@@ -200,7 +200,7 @@ internal sealed class Deathmatch(
 
     /// <summary>An item has just been taken: it comes back where it was after a while</summary>
     internal void QueueItemRespawn(Inventory item) =>
-        itemrespawns.Add(new ItemRespawn(item.Name, (int)item.Position.X, (int)item.Position.Y, session.gamestate.TimeCount + ITEMRESPAWNTICS));
+        itemrespawns.Add(new ItemRespawn(item.Name, (int)item.Position.X, (int)item.Position.Y, session.gamestate.TimeCount + ItemRespawnTics));
 
     /// <summary>Each frame of a deathmatch: items coming back, the objective, and the time limit</summary>
     internal void TickDeathmatch()

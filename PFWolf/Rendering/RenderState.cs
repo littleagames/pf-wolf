@@ -10,7 +10,7 @@ namespace PFWolf.Rendering;
 /// </summary>
 internal sealed class RenderState
 {
-    internal const int MAXPOSTS = 16;
+    internal const int MaxPosts = 16;
 
     //
     // projection: the view window and how the world is projected into it
@@ -40,7 +40,7 @@ internal sealed class RenderState
     internal short viewangle;
     internal int viewsin, viewcos;
     internal double viewpitch;          // degrees, up positive; this frame's, from the camera
-    internal int vieweyez = GameConstants.EYEDEFAULT;     // this frame's, from the camera
+    internal int vieweyez = GameConstants.EyeDefault;     // this frame's, from the camera
     internal bool markseen;             // whether this frame's walls and floor go on the automap: only the player's view
 
     internal int postx;
@@ -73,20 +73,20 @@ internal sealed class RenderState
     // the posts a column draws, nearest last: each wall the trace hits queues one (QueuePost)
     //
     internal int postcount;
-    internal readonly short[] postheights = new short[MAXPOSTS];
-    internal readonly byte[] postfirststory = new byte[MAXPOSTS];
-    internal readonly byte[] poststories = new byte[MAXPOSTS];
-    internal readonly TextureAsset[] postlower = new TextureAsset[MAXPOSTS];
-    internal readonly int[] postlowerofs = new int[MAXPOSTS];
-    internal readonly TextureAsset[] postupper = new TextureAsset[MAXPOSTS];
-    internal readonly int[] postupperofs = new int[MAXPOSTS];
-    internal readonly short[] postunderside = new short[MAXPOSTS];     // an arch's: the height where the trace leaves
-    internal readonly TextureAsset?[] postundertexture = new TextureAsset?[MAXPOSTS];
-    internal readonly bool[] postunderflat = new bool[MAXPOSTS];         // the underside's texture is a ceiling
-    internal readonly byte[][] postlight = new byte[MAXPOSTS][];        // its face's light row
-    internal readonly TextureAsset?[] postpatch = new TextureAsset?[MAXPOSTS];     // a wall patch over it
-    internal readonly int[] postpatchofs = new int[MAXPOSTS];
-    internal readonly byte[] postpatchstory = new byte[MAXPOSTS];
+    internal readonly short[] postheights = new short[MaxPosts];
+    internal readonly byte[] postfirststory = new byte[MaxPosts];
+    internal readonly byte[] poststories = new byte[MaxPosts];
+    internal readonly TextureAsset[] postlower = new TextureAsset[MaxPosts];
+    internal readonly int[] postlowerofs = new int[MaxPosts];
+    internal readonly TextureAsset[] postupper = new TextureAsset[MaxPosts];
+    internal readonly int[] postupperofs = new int[MaxPosts];
+    internal readonly short[] postunderside = new short[MaxPosts];     // an arch's: the height where the trace leaves
+    internal readonly TextureAsset?[] postundertexture = new TextureAsset?[MaxPosts];
+    internal readonly bool[] postunderflat = new bool[MaxPosts];         // the underside's texture is a ceiling
+    internal readonly byte[][] postlight = new byte[MaxPosts][];        // its face's light row
+    internal readonly TextureAsset?[] postpatch = new TextureAsset?[MaxPosts];     // a wall patch over it
+    internal readonly int[] postpatchofs = new int[MaxPosts];
+    internal readonly byte[] postpatchstory = new byte[MaxPosts];
 
     internal int hittile = -1;
     internal short postheight;          // the height (as wallheight) of the post ScalePost queues
@@ -101,7 +101,7 @@ internal sealed class RenderState
     internal int patchstory;
     internal bool hitpushwall;          // the wall being hit is a moving pushwall: its tile is pwallx, pwally
 
-    internal int diaghitu;              // where the last TraceDiagonal hit, as the tile-local x (0..TILEGLOBAL)
+    internal int diaghitu;              // where the last TraceDiagonal hit, as the tile-local x (0..TileGlobal)
 
     //
     // the arch the trace is passing under

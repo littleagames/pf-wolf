@@ -15,8 +15,8 @@ internal sealed class ViewSetup(
     PlayArea screenArea,
     Configuration.GameSettings settings)
 {
-    // Radians to fine angles (FINEANGLES a turn)
-    const float RadToInt = GameConstants.FINEANGLES / 2 / GameConstants.PI;
+    // Radians to fine angles (FineAngles a turn)
+    const float RadToInt = GameConstants.FineAngles / 2 / GameConstants.Pi;
 
     /// <summary>
     /// The view sizes there are: with a status bar drawn over the view (overlay), none smaller
@@ -43,7 +43,7 @@ internal sealed class ViewSetup(
     /// </summary>
     internal int BorderedViewHeight(int width)
     {
-        int height = (int)(width * 16 * GameConstants.HEIGHTRATIO * video.screenHeight / 200);
+        int height = (int)(width * 16 * GameConstants.HeightRatio * video.screenHeight / 200);
         int room = screenArea.PlayAreaHeight - video.ToScreenLength(2);
         return Math.Min(height, room);
     }
@@ -68,7 +68,7 @@ internal sealed class ViewSetup(
         //
         // calculate trace angles and projection constants
         //
-        CalcProjection(GameConstants.FOCALLENGTH + focalExcursion);
+        CalcProjection(GameConstants.FocalLength + focalExcursion);
 
         return true;
     }
@@ -82,7 +82,7 @@ internal sealed class ViewSetup(
         if (excursion == focalExcursion)
             return;
         focalExcursion = excursion;
-        CalcProjection(GameConstants.FOCALLENGTH + excursion);
+        CalcProjection(GameConstants.FocalLength + excursion);
     }
 
     /*
@@ -107,8 +107,8 @@ internal sealed class ViewSetup(
         // The view stays where it always is (the usual focal length behind the camera); a longer
         // focal length (a scope's zoom, a quake's pulse) only narrows what it sees, magnifying it.
         // Midnight Assault moved the view back with it, which put a zoomed view behind walls.
-        render.focallength = (int)GameConstants.FOCALLENGTH;
-        facedist = focal + GameConstants.MINDIST;
+        render.focallength = (int)GameConstants.FocalLength;
+        facedist = focal + GameConstants.MinDist;
         halfview = render.viewwidth / 2;                                 // half view in pixels
 
         //
@@ -116,13 +116,13 @@ internal sealed class ViewSetup(
         // and sprite x calculations: from the projection width, so a view wider than the
         // classic shape sees further to the sides rather than having its walls made taller
         //
-        render.scale = (int) (render.projectionwidth / 2 * facedist / (GameConstants.VIEWGLOBAL / 2));
+        render.scale = (int) (render.projectionwidth / 2 * facedist / (GameConstants.ViewGlobal / 2));
 
         //
         // divide heightnumerator by a posts distance to get the posts height for
         // the heightbuffer.  The pixel height is height>>2
         //
-        render.heightnumerator = (int)((MapConstants.TILEGLOBAL * render.scale) >> 6);
+        render.heightnumerator = (int)((MapConstants.TileGlobal * render.scale) >> 6);
 
         //
         // calculate the angle offset from view angle of each pixel's ray
@@ -131,7 +131,7 @@ internal sealed class ViewSetup(
         for (i = 0; i < halfview; i++)
         {
             // start 1/2 pixel over, so viewangle bisects two middle pixels
-            tang = (int)i * GameConstants.VIEWGLOBAL / render.projectionwidth / facedist;
+            tang = (int)i * GameConstants.ViewGlobal / render.projectionwidth / facedist;
             angle = (float)Math.Atan(tang);
             intang = (int)(angle * RadToInt);
             render.pixelangle[halfview - 1 - i] = (short)intang;
@@ -162,7 +162,7 @@ internal sealed class ViewSetup(
         if (size == 20)
             return (double)VideoSettings.BaseWidth / Math.Max(playArea, 1);
 
-        double height = Math.Min(size * 16 * GameConstants.HEIGHTRATIO, playArea - 2);
+        double height = Math.Min(size * 16 * GameConstants.HeightRatio, playArea - 2);
         return size * 16 / Math.Max(height, 1);
     }
 

@@ -11,7 +11,7 @@ internal sealed record LightingHooks(Func<int> HeightNumerator, Action ClearColo
 
 /// <summary>
 /// SHADING: the view is drawn in palette indices, so shading remaps them, Doom colormap style. A
-/// light row (VideoManager.GetLightRow) holds FADESTEPS remaps of 256 entries for one light (a
+/// light row (VideoManager.GetLightRow) holds FadeSteps remaps of 256 entries for one light (a
 /// level and a tint): step 0 is only lit, and each step after it goes further toward the fade
 /// color. A pixel's step comes from its distance along the view (as CalcHeight measures it), so
 /// walls take one per post, flats one per row, and sprites one per sprite.
@@ -33,8 +33,8 @@ internal sealed class Lighting(
     MapManager map,
     LightingHooks hooks)
 {
-    internal const int LIGHTLEVELS = 32;    // light 0 (black) to LIGHTLEVELS - 1 (full)
-    internal const int FADESTEPS = 32;      // step 0 (none) to FADESTEPS - 1 (all the fade color)
+    internal const int LightLevels = 32;    // light 0 (black) to LightLevels - 1 (full)
+    internal const int FadeSteps = 32;      // step 0 (none) to FadeSteps - 1 (all the fade color)
 
     internal static readonly byte[] noshade = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
 
@@ -46,7 +46,7 @@ internal sealed class Lighting(
     internal bool shading;                // anything to do: something is dimmed, tinted or faded
     internal byte[] lightrow = noshade;   // the level's light's row
     internal byte fader, fadeg, fadeb;
-    internal long fadestart, fadeend;     // along the view, in global units (TILEGLOBAL a tile)
+    internal long fadestart, fadeend;     // along the view, in global units (TileGlobal a tile)
     internal int maxfadestep;
     internal bool inversefade;            // fade-curve inverse: maxfadestep × (1 − fadestart / nx)
 
@@ -120,9 +120,9 @@ internal sealed class Lighting(
             return;
 
         (fader, fadeg, fadeb) = ParseRgb(s.FadeColor, (0, 0, 0), "shading fade-color");
-        fadestart = (long)(Math.Max(s.FadeStart, 0) * MapConstants.TILEGLOBAL);
-        fadeend = Math.Max((long)(s.FadeEnd * MapConstants.TILEGLOBAL), fadestart + 1);
-        maxfadestep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FADESTEPS - 1));
+        fadestart = (long)(Math.Max(s.FadeStart, 0) * MapConstants.TileGlobal);
+        fadeend = Math.Max((long)(s.FadeEnd * MapConstants.TileGlobal), fadestart + 1);
+        maxfadestep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FadeSteps - 1));
         inversefade = s.InverseFade;
 
         ResetLightRows();
@@ -172,12 +172,12 @@ internal sealed class Lighting(
         }
     }
 
-    // The light level (0 to LIGHTLEVELS - 1) for a light (0 to 255)
-    internal static int LightLevelOf(int light) => (int)Math.Round(Math.Clamp(light, 0, 255) / 255.0 * (LIGHTLEVELS - 1));
+    // The light level (0 to LightLevels - 1) for a light (0 to 255)
+    internal static int LightLevelOf(int light) => (int)Math.Round(Math.Clamp(light, 0, 255) / 255.0 * (LightLevels - 1));
 
     // The light row for a light level with a tint
     internal byte[] LevelRow(int level, (byte R, byte G, byte B) tint) =>
-        shading ? video.GetLightRow(level, LIGHTLEVELS, FADESTEPS, fader, fadeg, fadeb, tint.R, tint.G, tint.B) : noshade;
+        shading ? video.GetLightRow(level, LightLevels, FadeSteps, fader, fadeg, fadeb, tint.R, tint.G, tint.B) : noshade;
 
     /// <summary>Where the remap for something nx away along the view (global units) starts in a light row.</summary>
     internal int ShadeOffset(long nx)
@@ -206,21 +206,21 @@ internal sealed class Lighting(
         SetShading(ResolveShading(mapInfo, defaultMap));
     }
 
-    internal const int LIGHTCELLSHIFT = 3;
-    internal const int LIGHTCELLS = 1 << LIGHTCELLSHIFT;                    // cells a tile, each way
-    internal const int CELLGLOBALSHIFT = MapConstants.TILESHIFT - LIGHTCELLSHIFT;    // global units to cells
-    internal const int GRIDSHIFT = MapManager.MAPSHIFT + LIGHTCELLSHIFT;
-    internal const int GRIDSIZE = 1 << GRIDSHIFT;                           // cells across the map
-    internal const int MAXLIGHTLEVEL = LIGHTLEVELS - 1;
+    internal const int LightCellShift = 3;
+    internal const int LightCells = 1 << LightCellShift;                    // cells a tile, each way
+    internal const int CellGlobalShift = MapConstants.TileShift - LightCellShift;    // global units to cells
+    internal const int GridShift = MapManager.MapShift + LightCellShift;
+    internal const int GridSize = 1 << GridShift;                           // cells across the map
+    internal const int MaxLightLevel = LightLevels - 1;
 
-    // Each tile's base light, indexed (y << MAPSHIFT) + x like the flats: a light level, and a
+    // Each tile's base light, indexed (y << MapShift) + x like the flats: a light level, and a
     // tint (an index in tints)
-    internal readonly byte[] tilelevel = new byte[MapManager.MAPAREA], tiletint = new byte[MapManager.MAPAREA];
+    internal readonly byte[] tilelevel = new byte[MapManager.MapArea], tiletint = new byte[MapManager.MapArea];
 
-    // Light levels added to each cell, indexed (y << GRIDSHIFT) + x in cells; the most of them any
+    // Light levels added to each cell, indexed (y << GridShift) + x in cells; the most of them any
     // one light added, and that light's tint (0: none, the tile's own)
-    internal readonly byte[] celladd = new byte[GRIDSIZE * GRIDSIZE];
-    internal readonly byte[] cellstrong = new byte[GRIDSIZE * GRIDSIZE], celltint = new byte[GRIDSIZE * GRIDSIZE];
+    internal readonly byte[] celladd = new byte[GridSize * GridSize];
+    internal readonly byte[] cellstrong = new byte[GridSize * GridSize], celltint = new byte[GridSize * GridSize];
 
     // The tints in use (0 is none), and each one's light rows by level, made as they're needed
     internal readonly List<(byte R, byte G, byte B)> tints = [];
@@ -242,7 +242,7 @@ internal sealed class Lighting(
         if (tints.Count > byte.MaxValue)
             return 0;                   // more tints than a tile can name: untinted
         tints.Add(tint);
-        tintrows.Add(new byte[LIGHTLEVELS][]);
+        tintrows.Add(new byte[LightLevels][]);
         return (byte)(tints.Count - 1);
     }
 
@@ -262,7 +262,7 @@ internal sealed class Lighting(
 
     /// <summary>The index of a tile in tilelevel and tiletint, or -1 off the map.</summary>
     internal static int TileIndex(int x, int y) =>
-        (uint)x < MapManager.MAPSIZE && (uint)y < MapManager.MAPSIZE ? (y << MapManager.MAPSHIFT) + x : -1;
+        (uint)x < MapManager.MapSize && (uint)y < MapManager.MapSize ? (y << MapManager.MapShift) + x : -1;
 
     /// <summary>
     /// The light row at a point (global units): the base light of a tile (a TileIndex; off the
@@ -276,20 +276,20 @@ internal sealed class Lighting(
             return lightrow;
 
         int level = tilelevel[tile], tint = tiletint[tile];
-        long cx = gx >> CELLGLOBALSHIFT, cy = gy >> CELLGLOBALSHIFT;
-        if ((ulong)cx < GRIDSIZE && (ulong)cy < GRIDSIZE)
+        long cx = gx >> CellGlobalShift, cy = gy >> CellGlobalShift;
+        if ((ulong)cx < GridSize && (ulong)cy < GridSize)
         {
-            long cell = (cy << GRIDSHIFT) + cx;
+            long cell = (cy << GridShift) + cx;
             level += celladd[cell];
             if (celltint[cell] != 0)
                 tint = celltint[cell];
         }
-        return RowOf(tint, level > MAXLIGHTLEVEL ? MAXLIGHTLEVEL : level);
+        return RowOf(tint, level > MaxLightLevel ? MaxLightLevel : level);
     }
 
     /// <summary>The middle of a tile, in global units: where something placed on the tile stands.</summary>
     internal static (int X, int Y) TileCenter(int x, int y) =>
-        ((x << MapConstants.TILESHIFT) + (int)MapConstants.TILEGLOBAL / 2, (y << MapConstants.TILESHIFT) + (int)MapConstants.TILEGLOBAL / 2);
+        ((x << MapConstants.TileShift) + (int)MapConstants.TileGlobal / 2, (y << MapConstants.TileShift) + (int)MapConstants.TileGlobal / 2);
 
     /// <summary>Brings the tiles' base lights up to date with the zone plane and the zones; called before each frame.</summary>
     internal void UpdateLightGrid()
@@ -300,10 +300,10 @@ internal sealed class Lighting(
         gridversion = map.ZonesVersion;
 
         haszones = false;
-        for (int y = 0; y < MapManager.MAPSIZE; y++)
-            for (int x = 0; x < MapManager.MAPSIZE; x++)
+        for (int y = 0; y < MapManager.MapSize; y++)
+            for (int x = 0; x < MapManager.MapSize; x++)
             {
-                int i = (y << MapManager.MAPSHIFT) + x;
+                int i = (y << MapManager.MapShift) + x;
                 tilelevel[i] = (byte)ambientlevel;
                 tiletint[i] = 0;
                 if (x < map.mapwidth && y < map.mapheight

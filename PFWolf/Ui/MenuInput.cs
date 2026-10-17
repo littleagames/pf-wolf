@@ -10,7 +10,7 @@ namespace PFWolf.Ui;
 /// <param name="joystickEnabled">Whether the controller is on</param>
 internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngineManager engine, Func<bool> mouseEnabled, Func<bool> joystickEnabled)
 {
-    internal int SENSITIVE = 60;
+    internal int Sensitive = 60;
 
     internal int SoundStatus = 1;
 
@@ -70,23 +70,23 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
             totalMousex += mousex;
             totalMousey += mousey;
 
-            if (totalMousey < -SENSITIVE)
+            if (totalMousey < -Sensitive)
             {
                 ci.dir = Direction.North;
                 mouseactive = 1;
             }
-            else if (totalMousey > SENSITIVE)
+            else if (totalMousey > Sensitive)
             {
                 ci.dir = Direction.South;
                 mouseactive = 1;
             }
 
-            if (totalMousex < -SENSITIVE)
+            if (totalMousex < -Sensitive)
             {
                 ci.dir = Direction.West;
                 mouseactive = 1;
             }
-            else if (totalMousex > SENSITIVE)
+            else if (totalMousex > Sensitive)
             {
                 ci.dir = Direction.East;
                 mouseactive = 1;
@@ -113,14 +113,14 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
             int jx, jy, jb;
 
             input.GetJoyDelta(out jx, out jy);
-            if (jy < -SENSITIVE)
+            if (jy < -Sensitive)
                 ci.dir = Direction.North;
-            else if (jy > SENSITIVE)
+            else if (jy > Sensitive)
                 ci.dir = Direction.South;
 
-            if (jx < -SENSITIVE)
+            if (jx < -Sensitive)
                 ci.dir = Direction.West;
-            else if (jx > SENSITIVE)
+            else if (jx > Sensitive)
                 ci.dir = Direction.East;
 
             jb = input.JoyButtons();

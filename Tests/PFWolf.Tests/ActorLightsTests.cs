@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class ActorLightsTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private MapManager _map = null!;
     private Doors _doors = null!;
@@ -20,8 +20,8 @@ public class ActorLightsTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         ActorLights? lights = null;
@@ -44,7 +44,7 @@ public class ActorLightsTests
 
     // The light added to the cell in the middle of a tile
     private int AddedAt(int x, int y) =>
-        _lighting.celladd[(((y << Lighting.LIGHTCELLSHIFT) + Lighting.LIGHTCELLS / 2) << Lighting.GRIDSHIFT) + (x << Lighting.LIGHTCELLSHIFT) + Lighting.LIGHTCELLS / 2];
+        _lighting.celladd[(((y << Lighting.LightCellShift) + Lighting.LightCells / 2) << Lighting.GridShift) + (x << Lighting.LightCellShift) + Lighting.LightCells / 2];
 
     private void Dim() => _lighting.SetShading(new ShadingSettings("#000000", 0, 16, 0, 64));
 
@@ -87,7 +87,7 @@ public class ActorLightsTests
     {
         // Arrange: door 0 a tile east
         Dim();
-        _map.tilemap[11, 10] = (ushort)(GameConstants.BIT_DOOR | 0);
+        _map.tilemap[11, 10] = (ushort)(GameConstants.BitDoor | 0);
         _doors.doorobjlist[0] = new DoorObject { tilex = 11, tiley = 10, action = DoorAction.Closed };
         Lamp(10, 10);
 
@@ -138,7 +138,7 @@ public class ActorLightsTests
         _lights.CastActorLights();
 
         // Assert
-        int middle = (((10 << Lighting.LIGHTCELLSHIFT) + 4) << Lighting.GRIDSHIFT) + (10 << Lighting.LIGHTCELLSHIFT) + 4;
+        int middle = (((10 << Lighting.LightCellShift) + 4) << Lighting.GridShift) + (10 << Lighting.LightCellShift) + 4;
         Assert.That(_lighting.celltint[middle], Is.Not.Zero);
     }
 

@@ -145,7 +145,7 @@ public class ImageDecoderTests
     [Test]
     public void Png_16_Bit_Rgb_Keeps_The_High_Byte_And_Matches_tRNS_At_Full_Precision()
     {
-        // Arrange: 2x1 16-bit RGB; the first pixel is tRNS's color, the second differs only in a low byte
+        // Arrange: 2x1 16-bit Rgb; the first pixel is tRNS's color, the second differs only in a low byte
         var png = Png(2, 1, 16, 2, [0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBD],
             ("tRNS", [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC]));
 

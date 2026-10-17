@@ -93,7 +93,7 @@ internal sealed class PlayerState
     public int StealthKills;
     public int SuspicionMeter, SuspicionPending;
     public double Pitch;                    // looking up (positive) or down, in degrees
-    public int EyeZ = GameConstants.EYEDEFAULT;   // eye height, in texels above the floor
+    public int EyeZ = GameConstants.EyeDefault;   // eye height, in texels above the floor
 
     // What others see of them (Gameplay/PlayerBodies.cs): their class's sprites, drawn where they are
     public Actors.Actor? Body;

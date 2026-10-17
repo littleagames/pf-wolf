@@ -77,7 +77,7 @@ internal sealed class HubActions(
         if (elevatorScreens.Elevator is not { } elevator)
             return false;
 
-        int panelWall = mapManager.MAPSPOT(trigger.TileX, trigger.TileY, 0);
+        int panelWall = mapManager.MapSpot(trigger.TileX, trigger.TileY, 0);
 
         // Planet Strike's teleporter map (Ui/ElevatorScreens.cs): the player comes out at the
         // new floor's start
@@ -115,7 +115,7 @@ internal sealed class HubActions(
     /// </summary>
     bool TeleportAction(Entities.TriggerActivation trigger, string[] args)
     {
-        int value = mapManager.MAPSPOT(trigger.TileX, trigger.TileY, 1);
+        int value = mapManager.MapSpot(trigger.TileX, trigger.TileY, 1);
         if (value == 0)
             return false;
 
@@ -137,10 +137,10 @@ internal sealed class HubActions(
 
         // 0xF5nn (mapinfo "value") keeps the tile in the object-plane tile after it
         if ((value & 0xff00) == 0xf500)
-            value = mapManager.MAPSPOT(trigger.TileX + 1, trigger.TileY, 1);
+            value = mapManager.MapSpot(trigger.TileX + 1, trigger.TileY, 1);
 
         int x = value >> 8, y = value & 0xff;
-        if (x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+        if (x >= MapManager.MapSize || y >= MapManager.MapSize)
             return false;
         session.player.SetPosition(x, y);
         movement.Thrust(0, 0);
@@ -207,7 +207,7 @@ internal sealed class HubActions(
 
     /// <summary>Whether the player can stand on a tile: on the map, no wall or door, nothing solid or alive on it</summary>
     bool IsOpenForPlayer(int x, int y) =>
-        x > 0 && y > 0 && x < MapManager.MAPSIZE - 1 && y < MapManager.MAPSIZE - 1
+        x > 0 && y > 0 && x < MapManager.MapSize - 1 && y < MapManager.MapSize - 1
         && mapManager.tilemap[x, y] == 0
         && mapManager.actorat[x, y] == null
         && !mapManager.IsShootableActorAt(x, y);
@@ -235,14 +235,14 @@ internal sealed class HubActions(
         {
             for (int x = 0; x < mapManager.mapwidth; x++)
             {
-                if (mapManager.MAPSPOT(x, y, 0) != wall)
+                if (mapManager.MapSpot(x, y, 0) != wall)
                     continue;
-                double dx = (x << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2 - session.player.X;
-                double dy = session.player.Y - ((y << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+                double dx = (x << MapConstants.TileShift) + MapConstants.TileGlobal / 2 - session.player.X;
+                double dy = session.player.Y - ((y << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
                 var angle = Math.Atan2(dy, dx);
                 if (angle < 0)
                     angle += Math.PI * 2;
-                RotateView((int)(angle / (Math.PI * 2) * GameConstants.ANGLES), 2);
+                RotateView((int)(angle / (Math.PI * 2) * GameConstants.Angles), 2);
                 y = mapManager.mapheight;
                 break;
             }
@@ -259,10 +259,10 @@ internal sealed class HubActions(
 
         // From two tiles behind the player
         double a = session.player.Angle * Math.PI / 180;
-        runner.X = session.player.X - (int)(Math.Cos(a) * 2 * MapConstants.TILEGLOBAL);
-        runner.Y = session.player.Y + (int)(Math.Sin(a) * 2 * MapConstants.TILEGLOBAL);
-        runner.TileX = (byte)(runner.X >> MapConstants.TILESHIFT);
-        runner.TileY = (byte)(runner.Y >> MapConstants.TILESHIFT);
+        runner.X = session.player.X - (int)(Math.Cos(a) * 2 * MapConstants.TileGlobal);
+        runner.Y = session.player.Y + (int)(Math.Sin(a) * 2 * MapConstants.TileGlobal);
+        runner.TileX = (byte)(runner.X >> MapConstants.TileShift);
+        runner.TileY = (byte)(runner.Y >> MapConstants.TileShift);
         runner.SyncPosition();
         runner.Temp1 = runner.TileX;       // where it set off from
         runner.Temp3 = runner.TileY;
@@ -280,12 +280,12 @@ internal sealed class HubActions(
         double a = ob.Temp2 * Math.PI / 180;
         int nx = ob.X + (int)(Math.Cos(a) * speed * session.tics);
         int ny = ob.Y - (int)(Math.Sin(a) * speed * session.tics);
-        int tx = nx >> MapConstants.TILESHIFT, ty = ny >> MapConstants.TILESHIFT;
+        int tx = nx >> MapConstants.TileShift, ty = ny >> MapConstants.TileShift;
 
         // Starting behind the player can be inside a wall: it runs on out of it, and only a wall
         // it runs into stops it
-        bool IsWall(int x, int y) => mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BIT_DOOR) == 0;
-        bool blocked = tx < 0 || ty < 0 || tx >= MapManager.MAPSIZE || ty >= MapManager.MAPSIZE
+        bool IsWall(int x, int y) => mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BitDoor) == 0;
+        bool blocked = tx < 0 || ty < 0 || tx >= MapManager.MapSize || ty >= MapManager.MapSize
             || (IsWall(tx, ty) && !IsWall(ob.TileX, ob.TileY));
         if (!blocked)
         {
@@ -303,16 +303,16 @@ internal sealed class HubActions(
     /// <summary>Turns the view to <paramref name="destAngle"/> at <paramref name="speed"/> degrees a tic, drawing as it goes</summary>
     void RotateView(int destAngle, int speed)
     {
-        destAngle = ((destAngle % GameConstants.ANGLES) + GameConstants.ANGLES) % GameConstants.ANGLES;
+        destAngle = ((destAngle % GameConstants.Angles) + GameConstants.Angles) % GameConstants.Angles;
         int diff = destAngle - session.player.Angle;
-        if (diff > GameConstants.ANGLES / 2) diff -= GameConstants.ANGLES;
-        if (diff < -GameConstants.ANGLES / 2) diff += GameConstants.ANGLES;
+        if (diff > GameConstants.Angles / 2) diff -= GameConstants.Angles;
+        if (diff < -GameConstants.Angles / 2) diff += GameConstants.Angles;
 
         while (diff != 0)
         {
             int step = Math.Min(Math.Abs(diff), Math.Max(1, (int)(speed * session.tics))) * Math.Sign(diff);
             diff -= step;
-            session.player.Angle = (short)(((session.player.Angle + step) % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES);
+            session.player.Angle = (short)(((session.player.Angle + step) % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles);
             frame.ThreeDRefresh();
             frame.CalcTics();
         }

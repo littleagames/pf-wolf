@@ -519,7 +519,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             return;
 
         // What a switch acts on, or what acts on it: the tiles with the same tag (plane 4)
-        if (Tiles is { } tiles && _target.X >= 0 && tiles[MapConstants.TAGPLANE, _target.X, _target.Y] is var tag and not 0
+        if (Tiles is { } tiles && _target.X >= 0 && tiles[MapConstants.TagPlane, _target.X, _target.Y] is var tag and not 0
             && tiles.TaggedTiles().TryGetValue(tag, out var tagged))
         {
             foreach (var (x, y) in tagged)

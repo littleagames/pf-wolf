@@ -22,9 +22,9 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
     internal ControlPanelItem[] MainMenu = [];
     internal ControlPanelMenuInfo MainItems = null!;
     // Control panel song: the main menu's music in menudefs/main-menu
-    internal string MENUSONG => engine.GetGameInfo().MenuMusic ?? assets.GetMenu("main-menu")?.Music ?? "WONDERIN";
-    internal string INTROSONG => engine.GetGameInfo().IntroMusic ?? "";
-    internal string HIGHSCORESSONG => engine.GetGameInfo().HighScoresMusic ?? "";
+    internal string MenuSong => engine.GetGameInfo().MenuMusic ?? assets.GetMenu("main-menu")?.Music ?? "WONDERIN";
+    internal string IntroSong => engine.GetGameInfo().IntroMusic ?? "";
+    internal string HighScoresSong => engine.GetGameInfo().HighScoresMusic ?? "";
 
     internal int StartGame;
 
@@ -140,7 +140,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
                 case "backtodemo":
                     StartGame = 1;
                     if (!session.ingame)
-                        audio.PlayMusic(INTROSONG);
+                        audio.PlayMusic(IntroSong);
                     video.FadeOut(settings().menuFadeStyle, new Color { Alpha = 255 }, 10, settings().menuFadeTics);
                     break;
 
@@ -206,13 +206,13 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
     {
         audio.PlayMusic("CORNER");
         articles.HelpScreens();
-        audio.PlayMusic(MENUSONG);
+        audio.PlayMusic(MenuSong);
         return 1;
     }
 
     internal int ViewScores()
     {
-        audio.PlayMusic(HIGHSCORESSONG);
+        audio.PlayMusic(HighScoresSong);
 
         highScores.DrawHighScores();
         video.Update();
@@ -220,7 +220,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
 
         input.Ack();
 
-        audio.PlayMusic(MENUSONG);
+        audio.PlayMusic(MenuSong);
         draw.MenuFadeOut();
 
         return 0;

@@ -14,8 +14,8 @@ internal static class GameConstants
     =============================================================================
     */
 
-    internal const string YESBUTTONNAME = "Y";
-    internal const string NOBUTTONNAME = "N";
+    internal const string YesButtonName = "Y";
+    internal const string NoButtonName = "N";
 
     /*
     =============================================================================
@@ -24,63 +24,63 @@ internal static class GameConstants
 
     =============================================================================
     */
-    internal const int MAXTICS = 10;
-    internal const int DEMOTICS = 4;
+    internal const int MaxTics = 10;
+    internal const int DemoTics = 4;
 
-    // tilemap holds a wall's id below BIT_WALL: 1 to 255, all a plane-0 code can be (its high
-    // byte is the wall patch). Wolf3D's WALLSHIFT was 6, so 63 walls.
-    internal const int WALLSHIFT = 8;
-    internal const int BIT_WALL = (1 << WALLSHIFT);
-    internal const int BIT_DOOR = (1 << (WALLSHIFT + 1));
-    internal const int BIT_ALLTILES = (1 << (WALLSHIFT + 2));
+    // tilemap holds a wall's id below BitWall: 1 to 255, all a plane-0 code can be (its high
+    // byte is the wall patch). Wolf3D's WallShift was 6, so 63 walls.
+    internal const int WallShift = 8;
+    internal const int BitWall = (1 << WallShift);
+    internal const int BitDoor = (1 << (WallShift + 1));
+    internal const int BitAllTiles = (1 << (WallShift + 2));
 
-    internal const int MAXACTORS = 150;
-    internal const int MAXSTATS = 400;
-    // A door tile in tilemap is BIT_DOOR | its number: 128 doors (Wolf3D allowed 64; Midnight
+    internal const int MaxActors = 150;
+    internal const int MaxStats = 400;
+    // A door tile in tilemap is BitDoor | its number: 128 doors (Wolf3D allowed 64; Midnight
     // Assault's Wolf4SDL raised it to 128). A door test must still come before the door-side
-    // (BIT_WALL) test, should MAXDOORS ever pass BIT_WALL.
-    internal const int MAXDOORS = 128;
-    internal const int MAXVISABLE = 250;
+    // (BitWall) test, should MaxDoors ever pass BitWall.
+    internal const int MaxDoors = 128;
+    internal const int MaxVisible = 250;
 
-    internal const int NUMBERCHARS = 9;
+    internal const int NumberChars = 9;
 
     //----------------
 
-    internal const int RUNSPEED = 6000;
+    internal const int RunSpeed = 6000;
 
-    internal const float HEIGHTRATIO = 0.50f;
+    internal const float HeightRatio = 0.50f;
 
-    internal const long PLAYERSIZE = MINDIST;// player radius
-    internal const long MINACTORDIST = 0x10000L;// minimum dist from player center
+    internal const long PlayerSize = MinDist;// player radius
+    internal const long MinActorDist = 0x10000L;// minimum dist from player center
                                                 // to any actor center
 
-    internal const float PI = 3.141592657f;
-    internal const float M_PI = PI;
-    internal const int UNSIGNEDSHIFT = 8;
+    internal const float Pi = 3.141592657f;
+    internal const float MathPi = Pi;
+    internal const int UnsignedShift = 8;
 
-    internal const int ANGLES = 360;
-    internal const int ANGLEQUAD = (ANGLES / 4);
-    internal const int FINEANGLES = 3600;
-    internal const int ANG90 = (FINEANGLES / 4);
-    internal const int ANG180 = ANG90 * 2;
-    internal const int ANG270 = ANG90 * 3;
-    internal const int ANG360 = ANG90 * 4;
-    internal const int VANG90 = (ANGLES / 4);
-    internal const int VANG180 = VANG90 * 2;
-    internal const int VANG270 = VANG90 * 3;
-    internal const int VANG360 = VANG90 * 4;
+    internal const int Angles = 360;
+    internal const int AngleQuad = (Angles / 4);
+    internal const int FineAngles = 3600;
+    internal const int Ang90 = (FineAngles / 4);
+    internal const int Ang180 = Ang90 * 2;
+    internal const int Ang270 = Ang90 * 3;
+    internal const int Ang360 = Ang90 * 4;
+    internal const int Vang90 = (Angles / 4);
+    internal const int Vang180 = Vang90 * 2;
+    internal const int Vang270 = Vang90 * 3;
+    internal const int Vang360 = Vang90 * 4;
 
-    internal const long MINDIST = 0x5800L;
+    internal const long MinDist = 0x5800L;
 
-    internal const int TEXTURESHIFT = 6;
-    internal const int FIXED2TEXSHIFT = (TEXTURESHIFT == 8) ? 0 : (TEXTURESHIFT == 7 ? 2 : 4);
-    internal const int TEXTURESIZE = (1 << TEXTURESHIFT);
-    internal const int TEXTUREMASK = (TEXTURESIZE * (TEXTURESIZE - 1));
+    internal const int TextureShift = 6;
+    internal const int Fixed2TexShift = (TextureShift == 8) ? 0 : (TextureShift == 7 ? 2 : 4);
+    internal const int TextureSize = (1 << TextureShift);
+    internal const int TextureMask = (TextureSize * (TextureSize - 1));
 
-    internal const int NORTH = 0;
-    internal const int EAST = 1;
-    internal const int SOUTH = 2;
-    internal const int WEST = 3;
+    internal const int North = 0;
+    internal const int East = 1;
+    internal const int South = 2;
+    internal const int West = 3;
 
     /*
     =============================================================================
@@ -90,12 +90,12 @@ internal static class GameConstants
     =============================================================================
     */
 
-    internal const int BASEMOVE  = 35;
-    internal const int RUNMOVE   = 70;
-    internal const int BASETURN  = 35;
-    internal const int RUNTURN = 70;
+    internal const int BaseMove  = 35;
+    internal const int RunMove   = 70;
+    internal const int BaseTurn  = 35;
+    internal const int RunTurn = 70;
 
-    internal const int JOYSCALE = 2;
+    internal const int JoyScale = 2;
 
     /*
     =============================================================================
@@ -104,9 +104,9 @@ internal static class GameConstants
 
     =============================================================================
     */
-    internal const int TURNTICS = 10;
-    internal const int SPDPATROL = 512;
-    internal const int SPDDOG = 1500;
+    internal const int TurnTics = 10;
+    internal const int SpdPatrol = 512;
+    internal const int SpdDog = 1500;
 
     /*
     =============================================================================
@@ -116,32 +116,32 @@ internal static class GameConstants
     =============================================================================
     */
 
-    internal const int ACTORSIZE = 0x4000;
+    internal const int ActorSize = 0x4000;
 
     // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
-    internal const int MAXWALLSTORIES = 8;
+    internal const int MaxWallStories = 8;
 
     // How high above the floor the view is, in texels (64 a story); see GameHost.WL_DRAW's Eye height
-    internal const int EYEDEFAULT = TEXTURESIZE / 2, MINEYE = 4, MAXEYE = TEXTURESIZE - 4;
+    internal const int EyeDefault = TextureSize / 2, MinEye = 4, MaxEye = TextureSize - 4;
 
-    internal const long MOVESCALE = 150L;
-    internal const long BACKMOVESCALE = 100L;
-    internal const int ANGLESCALE = 20;
+    internal const long MoveScale = 150L;
+    internal const long BackMoveScale = 100L;
+    internal const int AngleScale = 20;
 
-    internal const long PROJECTILESIZE = 0xc000L;
-    internal const int PROJSIZE = 0x2000;        // a projectile's box, either way (ProjectileTryMove)
+    internal const long ProjectileSize = 0xc000L;
+    internal const int ProjSize = 0x2000;        // a projectile's box, either way (ProjectileTryMove)
 
-    internal const int BJRUNSPEED = 2048;
-    internal const int BJJUMPSPEED = 680;
+    internal const int BjRunSpeed = 2048;
+    internal const int BjJumpSpeed = 680;
 
-    internal const int MAXX = 320;
-    internal const int MAXY = 160;
+    internal const int MaxX = 320;
+    internal const int MaxY = 160;
 
     internal const int MaxGameName = 32;    // a save's name, as typed in the save menu, is one less
 
-    internal const long FOCALLENGTH = (0x5700L);               // in global coordinates
-    internal const int VIEWGLOBAL = 0x10000;               // globals visable flush to wall
+    internal const long FocalLength = (0x5700L);               // in global coordinates
+    internal const int ViewGlobal = 0x10000;               // globals visable flush to wall
 
-    internal static readonly int[] dirangle ={0,ANGLES/8,2*ANGLES/8,3*ANGLES/8,4*ANGLES/8,
-                       5*ANGLES/8,6*ANGLES/8,7*ANGLES/8,ANGLES};
+    internal static readonly int[] dirangle ={0,Angles/8,2*Angles/8,3*Angles/8,4*Angles/8,
+                       5*Angles/8,6*Angles/8,7*Angles/8,Angles};
 }

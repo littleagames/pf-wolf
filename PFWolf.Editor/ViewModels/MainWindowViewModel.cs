@@ -125,10 +125,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         new(0, "Walls, doors and floors (plane 0)"),
         new(0, "Wall patches (plane 0, high byte)", Patches: true),
         new(1, "Things (plane 1)"),
-        new(MapConstants.FLATPLANE, "Flats (plane 2)"),
-        new(MapConstants.HEIGHTPLANE, "Heights (plane 3)"),
-        new(MapConstants.TAGPLANE, "Tags (plane 4)"),
-        new(MapConstants.ZONEPLANE, "Light zones (plane 5)"),
+        new(MapConstants.FlatPlane, "Flats (plane 2)"),
+        new(MapConstants.HeightPlane, "Heights (plane 3)"),
+        new(MapConstants.TagPlane, "Tags (plane 4)"),
+        new(MapConstants.ZonePlane, "Light zones (plane 5)"),
     ];
 
     [ObservableProperty]
@@ -344,7 +344,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             "Things" => ["things", id],
             "Triggers" => ["triggers", id],
             "Diagonals" => ["diagonals", id],
-            PaletteEntries.PatchGroup => ["patches", (entry.Value >> MapConstants.PATCHSHIFT).ToString(System.Globalization.CultureInfo.InvariantCulture)],
+            PaletteEntries.PatchGroup => ["patches", (entry.Value >> MapConstants.PatchShift).ToString(System.Globalization.CultureInfo.InvariantCulture)],
             _ => null,
         };
         if (path == null)
@@ -601,18 +601,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private ChoiceOption? _selectedFlatFloor;
     [ObservableProperty] private ChoiceOption? _selectedFlatCeiling;
 
-    public bool IsFlatsPlane => SelectedPlane.Plane == MapConstants.FLATPLANE;
-    public bool HasNextUnused => SelectedPlane.Plane is MapConstants.TAGPLANE or MapConstants.ZONEPLANE;
+    public bool IsFlatsPlane => SelectedPlane.Plane == MapConstants.FlatPlane;
+    public bool HasNextUnused => SelectedPlane.Plane is MapConstants.TagPlane or MapConstants.ZonePlane;
 
     /// <summary>What a plane's number means</summary>
     public string PlaneHint => SelectedPlane.Patches
         ? "A picture over a wall's faces (mapdefs patches). Patches only go on walls; the walls themselves stay as they are."
         : SelectedPlane.Plane switch
     {
-        MapConstants.FLATPLANE => "Ceiling × 256 + floor: the mapdefs flats indices. 0 is the level's default floor and ceiling.",
-        MapConstants.HEIGHTPLANE => $"The wall's height in stories, 1 to 8. 0 uses the level's height ({LevelWallHeight}). Taller than 1 on open floor makes an arch.",
-        MapConstants.TAGPLANE => "A switch acts on the doors, walls and things that share its tag. 0 is no tag.",
-        MapConstants.ZONEPLANE => "The level's light zones (Level properties); 0 is lit as the level.",
+        MapConstants.FlatPlane => "Ceiling × 256 + floor: the mapdefs flats indices. 0 is the level's default floor and ceiling.",
+        MapConstants.HeightPlane => $"The wall's height in stories, 1 to 8. 0 uses the level's height ({LevelWallHeight}). Taller than 1 on open floor makes an arch.",
+        MapConstants.TagPlane => "A switch acts on the doors, walls and things that share its tag. 0 is no tag.",
+        MapConstants.ZonePlane => "The level's light zones (Level properties); 0 is lit as the level.",
         _ => "",
     };
 
@@ -1003,7 +1003,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string ValueLabel(ushort value)
     {
         if (!HasPalette)
-            return SelectedPlane.Plane == MapConstants.FLATPLANE ? $"{value} (floor {value & 0xff}, ceiling {value >> 8})" : value.ToString();
+            return SelectedPlane.Plane == MapConstants.FlatPlane ? $"{value} (floor {value & 0xff}, ceiling {value >> 8})" : value.ToString();
         if (SelectedPlane.Plane == 1 && Content?.MapDefs.Things.TryGetValue(value, out var thing) == true)
         {
             var details = new List<string> { PaletteEntries.Facing(thing.Angles) };
@@ -1038,10 +1038,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             case 0: ShowWalls = true; break;
             case 1: ShowThings = true; break;
-            case MapConstants.FLATPLANE: ShowFlats = true; break;
-            case MapConstants.HEIGHTPLANE: ShowHeights = true; break;
-            case MapConstants.TAGPLANE: ShowTags = true; break;
-            case MapConstants.ZONEPLANE: ShowZones = true; break;
+            case MapConstants.FlatPlane: ShowFlats = true; break;
+            case MapConstants.HeightPlane: ShowHeights = true; break;
+            case MapConstants.TagPlane: ShowTags = true; break;
+            case MapConstants.ZonePlane: ShowZones = true; break;
         }
         BuildPalette();
     }
@@ -1163,7 +1163,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             (Controller.Combine, Controller.Read) = plane != 0 ? (null, null)
                 : SelectedPlane.Patches ? PaletteEntries.PatchLayer(content.MapDefs) : PaletteEntries.TileLayer(content.MapDefs);
             _thingVariants = PaletteEntries.ThingVariants(content.MapDefs);
-            if (plane == MapConstants.FLATPLANE)
+            if (plane == MapConstants.FlatPlane)
             {
                 _syncing = true;
                 FillFlatOptions(FlatFloorOptions, content.MapDefs.Flats.Floor);
@@ -1189,9 +1189,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         if (plane != 0)
             return value == 0;
-        int code = value & MapConstants.PLANE0CODEMASK;
-        return value >> MapConstants.PATCHSHIFT == 0 && !defs.Doors.ContainsKey(code)
-               && !(code is > 0 and <= MapConstants.MAXWALLID && defs.Walls.ContainsKey(code));
+        int code = value & MapConstants.Plane0CodeMask;
+        return value >> MapConstants.PatchShift == 0 && !defs.Doors.ContainsKey(code)
+               && !(code is > 0 and <= MapConstants.MaxWallId && defs.Walls.ContainsKey(code));
     }
 
     private void FilterPalette()
@@ -1321,7 +1321,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (name == null)
             return;
 
-        var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MAXWALLID).DefaultIfEmpty(1).Min());
+        var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MaxWallId).DefaultIfEmpty(1).Min());
         var map = MapFiles.NewMap(name.ToUpperInvariant(), wall, PaletteEntries.EraseValue(content.MapDefs, 0));
         AddNewDocument(name.ToUpperInvariant(), map);
         Status = $"New level {map.Name}: saving it into a mod lists it in the mod's game-info too (warp there with the map command)";
@@ -1369,7 +1369,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         name = name.ToUpperInvariant();
         var title = string.IsNullOrWhiteSpace(request.Source.Name) ? name : request.Source.Name;
-        var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MAXWALLID).DefaultIfEmpty(1).Min());
+        var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MaxWallId).DefaultIfEmpty(1).Min());
         var map = MapImport.NewLevel(title, request.Source, request.Planes, wall, PaletteEntries.EraseValue(content.MapDefs, 0));
         AddNewDocument(name, map);
         Status = $"New level {name} from {from}, plane{(request.Planes.Count == 1 ? "" : "s")} {planes}: saving it into a mod lists it in the mod's game-info too";

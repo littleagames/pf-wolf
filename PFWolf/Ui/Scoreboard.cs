@@ -62,12 +62,12 @@ internal sealed class Scoreboard(
         int ty = y + 4;
         if (title != null)
         {
-            ui.CenteredText(X, W, ty, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READHCOLOR")).CPrint(title);
+            ui.CenteredText(X, W, ty, new Fonts.TextStyle(UiFonts.SmallFont, "READHCOLOR")).CPrint(title);
             ty += Row;
         }
         if (teams)
         {
-            ui.CenteredText(X, W, ty, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READHCOLOR"))
+            ui.CenteredText(X, W, ty, new Fonts.TextStyle(UiFonts.SmallFont, "READHCOLOR"))
                 .CPrint($"Red {Match!.teamscores[0]}   -   {Match.teamscores[1]} Blue");
             ty += Row;
         }
@@ -77,7 +77,7 @@ internal sealed class Scoreboard(
             : mode.IsTeamGame() ? mode.ScoreName() : "Score";
         string? second = mode == GameMode.Deathmatch || mode == GameMode.TeamDeathmatch ? null
             : mode.IsTeamGame() ? "Frags" : "Kills";
-        var heading = new Fonts.TextStyle(UiFonts.SMALL_FONT, "READCOLOR");
+        var heading = new Fonts.TextStyle(UiFonts.SmallFont, "READCOLOR");
         ui.TextAt(X + 6, ty, heading).Print("Player");
         ui.TextAt(X + 150, ty, heading).Print(first);
         if (second != null)
@@ -86,13 +86,13 @@ internal sealed class Scoreboard(
 
         foreach (var p in ranked)
         {
-            var style = new Fonts.TextStyle(UiFonts.SMALL_FONT, ReferenceEquals(p, session.localplayer) ? "HIGHLIGHT" : "TEXTCOLOR");
+            var style = new Fonts.TextStyle(UiFonts.SmallFont, ReferenceEquals(p, session.localplayer) ? "HIGHLIGHT" : "TEXTCOLOR");
             var name = p.Name ?? $"Player {p.Number + 1}";
             if (teams && p.Team is 0 or 1)
                 name = $"{GameModes.TeamLabel(p.Team)}: {name}";
             if (p.health <= 0)
                 name += " (dead)";
-            ui.TextAt(X + 6, ty, style).Print(ui.FitText(name, 140, UiFonts.SMALL_FONT));
+            ui.TextAt(X + 6, ty, style).Print(ui.FitText(name, 140, UiFonts.SmallFont));
             ui.TextAt(X + 150, ty, style).Print(PlayerScore(p).ToString());
             if (second != null)
                 ui.TextAt(X + 200, ty, style).Print((second == "Frags" ? p.Frags : p.Kills).ToString());

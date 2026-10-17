@@ -26,7 +26,7 @@ public class TextureChangeTests
         Assert.That(map.ChangedTexture(3, 4, "switch1"), Is.EqualTo("SWITCHANIM"));
         Assert.That(map.ChangedTexture(3, 4, "OTHER"), Is.EqualTo("OTHER"));
         Assert.That(map.ChangedTexture(4, 3, "SWITCH1"), Is.EqualTo("SWITCH1"));
-        Assert.That(map.animstart[(4 << MapManager.MAPSHIFT) + 3], Is.EqualTo(100));
+        Assert.That(map.animstart[(4 << MapManager.MapShift) + 3], Is.EqualTo(100));
     }
 
     [Test]
@@ -63,11 +63,11 @@ public class TextureChangeTests
         var (starts, changes) = MapManager.ReadTextureChanges(new BinaryReader(stream));
 
         // Assert
-        Assert.That(starts[(5 << MapManager.MAPSHIFT) + 2], Is.EqualTo(70));
-        Assert.That(starts[(9 << MapManager.MAPSHIFT) + 9], Is.EqualTo(140));
+        Assert.That(starts[(5 << MapManager.MapShift) + 2], Is.EqualTo(70));
+        Assert.That(starts[(9 << MapManager.MapShift) + 9], Is.EqualTo(140));
         Assert.That(starts.Count(s => s != 0), Is.EqualTo(2));
-        Assert.That(changes.Keys, Is.EqualTo(new[] { (5 << MapManager.MAPSHIFT) + 2 }));
-        Assert.That(changes[(5 << MapManager.MAPSHIFT) + 2]["from"], Is.EqualTo("TO"));
+        Assert.That(changes.Keys, Is.EqualTo(new[] { (5 << MapManager.MapShift) + 2 }));
+        Assert.That(changes[(5 << MapManager.MapShift) + 2]["from"], Is.EqualTo("TO"));
         Assert.That(stream.Position, Is.EqualTo(stream.Length));
     }
 

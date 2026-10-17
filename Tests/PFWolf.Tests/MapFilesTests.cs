@@ -28,7 +28,7 @@ public class MapFilesTests
         // Arrange
         var document = EditorMaps.Document("map07");
         EditorMaps.Set(document, 0, 3, 4, 1);
-        EditorMaps.Set(document, MapConstants.ZONEPLANE, 5, 6, 9);
+        EditorMaps.Set(document, MapConstants.ZonePlane, 5, 6, 9);
 
         // Act
         var path = MapFiles.Save(document, _folder);
@@ -36,7 +36,7 @@ public class MapFilesTests
 
         // Assert
         Assert.That(path, Is.EqualTo(Path.Combine(_folder, "maps", "MAP07.wad")));
-        for (int plane = 0; plane < MapConstants.LEVELPLANES; plane++)
+        for (int plane = 0; plane < MapConstants.LevelPlanes; plane++)
             Assert.That(loaded.MapData[plane], Is.EqualTo(document.Map.MapData[plane]), $"plane {plane}");
         Assert.That(loaded.Name, Is.EqualTo("Test"));
     }
@@ -111,7 +111,7 @@ public class MapFilesTests
         var map = MapFiles.NewMap("MAP61", wall: 1, floor: 107);
 
         // Assert
-        Assert.That(map.MapData, Has.Length.EqualTo(MapConstants.LEVELPLANES));
+        Assert.That(map.MapData, Has.Length.EqualTo(MapConstants.LevelPlanes));
         Assert.That(map.MapData[0][0], Is.EqualTo(1));
         Assert.That(map.MapData[0][63 * 64 + 63], Is.EqualTo(1));
         Assert.That(map.MapData[0][1 * 64 + 1], Is.EqualTo(107));

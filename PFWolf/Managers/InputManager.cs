@@ -196,7 +196,7 @@ internal class InputManager
     private int joystickIndex = 0;
     private int joystickHat = -1;
 
-    private const int TEXTINPUTSIZE = SDL.SDL_TEXTINPUTEVENT_TEXT_SIZE;
+    private const int TextInputSize = SDL.SDL_TEXTINPUTEVENT_TEXT_SIZE;
 
     internal void ClearKey(ScanCodes code)
     {
@@ -232,7 +232,7 @@ internal class InputManager
     // held and LastScan only keeps the latest. Drained by the play loop; cleared with the keys.
     private const int MaxPressedKeys = 32;
     private readonly Queue<ScanCodes> pressedKeys = new();
-    internal char[] textinput = new char[TEXTINPUTSIZE];
+    internal char[] textinput = new char[TextInputSize];
     internal ScanCodes LastScan;
 
     // Mouse wheel notches since the last TakeWheelDelta (positive = away from the user).
@@ -730,7 +730,7 @@ internal class InputManager
                 {
                     // e.text.text is a fixed-size, null-terminated UTF-8 buffer.
                     int length = 0;
-                    while (length < TEXTINPUTSIZE && e.text.text[length] != 0)
+                    while (length < TextInputSize && e.text.text[length] != 0)
                         length++;
                     text = System.Text.Encoding.UTF8.GetString(e.text.text, length);
                 }

@@ -7,7 +7,7 @@ namespace PFWolf.Tests;
 
 public class SpriteDrawingTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private RenderState _render = null!;
     private HashSet<string> _sprites = null!;
@@ -46,8 +46,8 @@ public class SpriteDrawingTests
 
         // Assert
         Assert.That(guard.ViewX, Is.EqualTo(_render.centerx));
-        Assert.That(guard.TransX, Is.EqualTo(3 * Tile - GameConstants.ACTORSIZE));
-        Assert.That(guard.ViewHeight, Is.EqualTo(_render.heightnumerator / ((3 * Tile - GameConstants.ACTORSIZE) >> 8)));
+        Assert.That(guard.TransX, Is.EqualTo(3 * Tile - GameConstants.ActorSize));
+        Assert.That(guard.ViewHeight, Is.EqualTo(_render.heightnumerator / ((3 * Tile - GameConstants.ActorSize) >> 8)));
     }
 
     [Test]
@@ -83,7 +83,7 @@ public class SpriteDrawingTests
         _drawing.TransformActorFrom(guard, _render.viewx + 3 * Tile, _render.viewy, 0, -0x10000);
 
         // Assert
-        Assert.That((guard.ViewX, guard.TransX), Is.EqualTo(((short)_render.centerx, 2 * Tile - GameConstants.ACTORSIZE)));
+        Assert.That((guard.ViewX, guard.TransX), Is.EqualTo(((short)_render.centerx, 2 * Tile - GameConstants.ActorSize)));
     }
 
     [TestCase(11, 10, true)]        // the next tile ahead: within grabbing distance

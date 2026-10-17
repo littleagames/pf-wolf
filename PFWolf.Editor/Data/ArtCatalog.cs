@@ -224,7 +224,7 @@ public static class ArtCatalog
 
         foreach (var (id, patch) in defs.Patches.Where(patch => patch.Key is >= 1 and <= 255).OrderBy(patch => patch.Key))
         {
-            var target = new PaletteTarget(0, (ushort)(id << PFWolf.Constants.MapConstants.PATCHSHIFT), Patch: true);
+            var target = new PaletteTarget(0, (ushort)(id << PFWolf.Constants.MapConstants.PatchShift), Patch: true);
             Add(patch.Texture, new ArtUse(patch.Switch != null ? $"Switch patch {id}" : $"Patch {id}", target));
             if (patch.TextureEw.Length > 0)
                 Add(patch.TextureEw, new ArtUse($"Patch {id} east/west", target));
@@ -258,7 +258,7 @@ public static class ArtCatalog
         return uses;
     }
 
-    private const int MapFlatPlane = PFWolf.Constants.MapConstants.FLATPLANE;
+    private const int MapFlatPlane = PFWolf.Constants.MapConstants.FlatPlane;
 
     private static IEnumerable<(string Name, string Texture)> Sides(MapTextureTranslation sides)
     {

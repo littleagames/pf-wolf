@@ -29,19 +29,19 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
     =============================================================================
     */
 
-    private const int WORDLIMIT = 80;
-    private const int FONTHEIGHT = 10;
-    private const int PICMARGIN = 8;
+    private const int WordLimit = 80;
+    private const int FontHeight = 10;
+    private const int PicMargin = 8;
 
     // The page's layout (game-info article: Wolf3D's help window by default), taken as an article starts
     ArticleInfo layout = new();
-    int TOPMARGIN => layout.Margins.Top;
-    int LEFTMARGIN => layout.Margins.Left;
-    int RIGHTMARGIN => layout.Margins.Right;
-    int TEXTROWS => layout.TextRows;
-    private const int SPACEWIDTH = 7;
-    private const int SCREENPIXWIDTH = 320;
-    private const int SCREENMID = (SCREENPIXWIDTH / 2);
+    int TopMargin => layout.Margins.Top;
+    int LeftMargin => layout.Margins.Left;
+    int RightMargin => layout.Margins.Right;
+    int TextRows => layout.TextRows;
+    private const int SpaceWidth = 7;
+    private const int ScreenPixWidth = 320;
+    private const int ScreenMid = (ScreenPixWidth / 2);
 
     /*
     =============================================================================
@@ -134,10 +134,10 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
         // From the start, not where the last article shown was left (the original pointed at the new text)
         textIndex = 0;
         layout = engine.GetGameInfo().Article;
-        leftmargin = new uint[TEXTROWS];
-        rightmargin = new uint[TEXTROWS];
+        leftmargin = new uint[TextRows];
+        rightmargin = new uint[TextRows];
         // Where the layout has got to on the page, and the color ^C last set
-        var page = TextWindow.FullScreen(graphics, new TextStyle(UiFonts.SMALL_FONT, layout.TextColor, layout.Background));
+        var page = TextWindow.FullScreen(graphics, new TextStyle(UiFonts.SmallFont, layout.TextColor, layout.Background));
         video.FillScreen(layout.Background);
         CacheLayout();
 
@@ -409,14 +409,14 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
             graphics.DrawPic(picture.Pic, picture.X, picture.Y);
 
 
-        for (i = 0; i < TEXTROWS; i++)
+        for (i = 0; i < TextRows; i++)
         {
-            leftmargin[i] = (uint)LEFTMARGIN;
-            rightmargin[i] = (uint)(SCREENPIXWIDTH - RIGHTMARGIN);
+            leftmargin[i] = (uint)LeftMargin;
+            rightmargin[i] = (uint)(ScreenPixWidth - RightMargin);
         }
 
-        page.PrintX = LEFTMARGIN;
-        page.PrintY = TOPMARGIN;
+        page.PrintX = LeftMargin;
+        page.PrintY = TopMargin;
         rowon = 0;
         layoutdone = false;
 
@@ -524,8 +524,8 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
 
             case 'L':
                 page.PrintY = ParseNumber();
-                rowon = (uint)((page.PrintY - TOPMARGIN) / FONTHEIGHT);
-                page.PrintY = (int)(TOPMARGIN + rowon * FONTHEIGHT);
+                rowon = (uint)((page.PrintY - TopMargin) / FontHeight);
+                page.PrintY = (int)(TopMargin + rowon * FontHeight);
                 page.PrintX = ParseNumber();
                 while (text[textIndex++] != '\n')         // scan to end of line
                     ;
@@ -550,20 +550,20 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
                 // adjust margins
                 //
                 picmid = picx + picwidth / 2;
-                if (picmid > SCREENMID)
-                    margin = picx - PICMARGIN;                        // new right margin
+                if (picmid > ScreenMid)
+                    margin = picx - PicMargin;                        // new right margin
                 else
-                    margin = picx + picwidth + PICMARGIN;       // new left margin
+                    margin = picx + picwidth + PicMargin;       // new left margin
 
-                top = (picy - TOPMARGIN) / FONTHEIGHT;
+                top = (picy - TopMargin) / FontHeight;
                 if (top < 0)
                     top = 0;
-                bottom = (picy + picheight - TOPMARGIN) / FONTHEIGHT;
-                if (bottom >= TEXTROWS)
-                    bottom = TEXTROWS - 1;
+                bottom = (picy + picheight - TopMargin) / FontHeight;
+                if (bottom >= TextRows)
+                    bottom = TextRows - 1;
 
                 for (i = top; i <= bottom; i++)
-                    if (picmid > SCREENMID)
+                    if (picmid > ScreenMid)
                         rightmargin[i] = (uint)margin;
                     else
                         leftmargin[i] = (uint)margin;
@@ -608,7 +608,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
 
     private void HandleWord(TextWindow page)
     {
-        char[] wword = new char[WORDLIMIT];
+        char[] wword = new char[WordLimit];
         int wordindex;
 
 
@@ -620,7 +620,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
         while (text[textIndex] > 32)
         {
             wword[wordindex] = text[textIndex++];
-            if (++wordindex == WORDLIMIT)
+            if (++wordindex == WordLimit)
                 engine.Quit("PageLayout: Word limit exceeded");
         }
         string word = new string(wword, 0, wordindex);
@@ -647,7 +647,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
         //
         while (text[textIndex] == ' ')
         {
-            page.PrintX += SPACEWIDTH;
+            page.PrintX += SpaceWidth;
             textIndex++;
         }
     }
@@ -664,7 +664,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
     {
         char ch;
 
-        if (++rowon == TEXTROWS)
+        if (++rowon == TextRows)
         {
             //
             // overflowed the page, so skip until next page break
@@ -685,6 +685,6 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
             } while (true);
         }
         page.PrintX = (int)leftmargin[rowon];
-        page.PrintY += FONTHEIGHT;
+        page.PrintY += FontHeight;
     }
 }

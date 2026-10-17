@@ -14,7 +14,7 @@ namespace PFWolf.Gameplay.MatchModes;
     the banner in its color. Bring it to your own base while your own flag is
     there and it's a capture, for your team; the flag goes home. Die carrying
     it and it drops where you fell: the other team runs over it to take it on,
-    yours to send it home, and it goes home by itself after RETURNTICS.
+    yours to send it home, and it goes home by itself after ReturnTics.
 
 =============================================================================
 */
@@ -25,7 +25,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
     public override GameMode Mode => GameMode.CaptureTheFlag;
 
     /// <summary>How long a dropped flag lies before it goes home by itself (tics)</summary>
-    internal const int RETURNTICS = 30 * 70;
+    internal const int ReturnTics = 30 * 70;
 
     /// <summary>The flag carrier's sprite (sprites/wolf3d/player/flag)</summary>
     internal const string CarrySprite = "PLFG";
@@ -107,7 +107,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
 
         // A flag lying too long goes home
         for (int team = 0; team < 2; team++)
-            if (flags[team].State == FlagState.Dropped && time - flags[team].DroppedAt >= RETURNTICS)
+            if (flags[team].State == FlagState.Dropped && time - flags[team].DroppedAt >= ReturnTics)
             {
                 SendHome(team);
                 Announce($"The {GameModes.TeamLabel(team)} flag went back to base", "misc/end_bonus1");
@@ -206,7 +206,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
             var where = flag.State switch
             {
                 FlagState.Home => "home",
-                FlagState.Dropped => $"dropped ({Math.Max(0, RETURNTICS - (session.gamestate.TimeCount - flag.DroppedAt)) / 70}s)",
+                FlagState.Dropped => $"dropped ({Math.Max(0, ReturnTics - (session.gamestate.TimeCount - flag.DroppedAt)) / 70}s)",
                 _ => CarrierOf(flag) is { } carrier
                     ? ReferenceEquals(carrier, session.localplayer) ? "you have it!" : $"{NameOf(carrier)} has it"
                     : "taken",

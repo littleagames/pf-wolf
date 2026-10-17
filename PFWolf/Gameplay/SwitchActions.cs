@@ -177,7 +177,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         // With a uses code, the machine's object-plane value (code << 8 | uses left) says how many
         // more times it works; any other value, or none left, and it's out of order
         int usesCode = int.TryParse(args.ElementAtOrDefault(5), out var code) ? code : -1;
-        int spot = map.MAPSPOT(trigger.TileX, trigger.TileY, 1);
+        int spot = map.MapSpot(trigger.TileX, trigger.TileY, 1);
         int usesLeft = usesCode >= 0 && spot >> 8 == usesCode ? spot & 0xff : usesCode >= 0 ? 0 : int.MaxValue;
         if (usesLeft <= 0)
             return Refuse(args.ElementAtOrDefault(4));
@@ -247,8 +247,8 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     private IEnumerable<(int X, int Y)> TaggedWalls(TriggerActivation trigger) =>
         map.TaggedTiles(trigger.Tag).Where(t =>
             (t.X, t.Y) != (trigger.TileX, trigger.TileY)
-            && (map.tilemap[t.X, t.Y] & GameConstants.BIT_DOOR) == 0
-            && (map.tilemap[t.X, t.Y] & ~GameConstants.BIT_WALL) != 0);
+            && (map.tilemap[t.X, t.Y] & GameConstants.BitDoor) == 0
+            && (map.tilemap[t.X, t.Y] & ~GameConstants.BitWall) != 0);
 
     /// <summary>A direction's name (north, east, south, west, any case), or null</summary>
     internal static ControlDir? ParseDirection(string? name) => name?.Trim().ToLowerInvariant() switch
@@ -284,7 +284,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
 
         // every tagged wall moves together; one sound for the lot
         bool moved = false, any = false;
-        foreach (var (x, y) in TaggedWalls(trigger).Where(t => onlyObject == null || map.MAPSPOT(t.X, t.Y, 1) == onlyObject).ToList())
+        foreach (var (x, y) in TaggedWalls(trigger).Where(t => onlyObject == null || map.MapSpot(t.X, t.Y, 1) == onlyObject).ToList())
         {
             any = true;
             moved |= pushWalls.PushWall(x, y, dir);
@@ -298,7 +298,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
 
     private bool SetWallAction(TriggerActivation trigger, string[] args)
     {
-        if (!int.TryParse(args.ElementAtOrDefault(0), out var id) || id is <= 0 or >= GameConstants.BIT_WALL
+        if (!int.TryParse(args.ElementAtOrDefault(0), out var id) || id is <= 0 or >= GameConstants.BitWall
             || !map.GetMapData().Walls.ContainsKey(id))
         {
             Console.WriteLine($"A_SetWall: '{args.ElementAtOrDefault(0)}' isn't a walls.yaml wall id.");
@@ -309,7 +309,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         foreach (var (x, y) in TaggedWalls(trigger))
         {
             // keeping the door-side mark on a wall beside a door
-            map.tilemap[x, y] = (ushort)(id | (map.tilemap[x, y] & GameConstants.BIT_WALL));
+            map.tilemap[x, y] = (ushort)(id | (map.tilemap[x, y] & GameConstants.BitWall));
             map.RestartAnimations(x, y, session.gamestate.TimeCount);
             any = true;
         }
@@ -363,14 +363,14 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         var tile = map.tilemap[x, y];
         MapTextureTranslation? faces = null;
         MapTextureTranslation? locked = null;
-        if ((tile & GameConstants.BIT_DOOR) != 0)
+        if ((tile & GameConstants.BitDoor) != 0)
         {
-            var door = doors.doorobjlist[tile & ~GameConstants.BIT_DOOR];
+            var door = doors.doorobjlist[tile & ~GameConstants.BitDoor];
             faces = door.xlat;
             locked = door.xlat?.Locked;
         }
-        else if ((tile & ~GameConstants.BIT_WALL) != 0)
-            map.GetMapData().Walls.TryGetValue(tile & ~GameConstants.BIT_WALL, out faces);
+        else if ((tile & ~GameConstants.BitWall) != 0)
+            map.GetMapData().Walls.TryGetValue(tile & ~GameConstants.BitWall, out faces);
 
         var names = new[] { faces, locked }
             .Where(f => f != null)

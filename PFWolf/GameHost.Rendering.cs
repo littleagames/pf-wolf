@@ -39,7 +39,7 @@ internal static partial class GameHost
     //
     // refresh variables
     internal static int viewx { get => render.viewx; set => render.viewx = value; }
-    static readonly TextureAsset notexture = new() { RawData = new byte[TEXTURESIZE * TEXTURESIZE] };
+    static readonly TextureAsset notexture = new() { RawData = new byte[TextureSize * TextureSize] };
 
     // The renderer's shared per-frame state (Rendering/RenderState.cs): the fields below, under their old names, are its
     internal static readonly RenderState render = new(notexture, Lighting.noshade);
@@ -56,7 +56,7 @@ internal static partial class GameHost
     ====================
     */
 
-    internal const int EYEDEFAULT = GameConstants.EYEDEFAULT, MINEYE = GameConstants.MINEYE, MAXEYE = GameConstants.MAXEYE;
+    internal const int EyeDefault = GameConstants.EyeDefault, MinEye = GameConstants.MinEye, MaxEye = GameConstants.MaxEye;
 
     // A column's posts and the arches the trace passes under (Rendering/WallPosts.cs)
     static WallPosts wallPosts = null!;     // made in InitServices
@@ -134,7 +134,7 @@ internal static partial class GameHost
         }
         int rumble = mapon != null && _gameEngineManager.GetGameInfo().Maps.TryGetValue(mapon, out var map) ? map.Shake : 0;
         // a scope's zoom magnifies the view: its focal length that many times as long
-        long zoom = (long)(GameConstants.FOCALLENGTH * (weaponZoom.Magnification() - 1));
+        long zoom = (long)(GameConstants.FocalLength * (weaponZoom.Magnification() - 1));
         viewSetup.SetFocalExcursion(viewQuake.Update((int)session.tics, rumble) + zoom);
     }
 
@@ -217,7 +217,7 @@ internal static partial class GameHost
 
     // ==== Camera =================================================================================
 
-    internal static void SetEyeHeight(int z) => playereyez = Math.Clamp(z, MINEYE, MAXEYE);
+    internal static void SetEyeHeight(int z) => playereyez = Math.Clamp(z, MinEye, MaxEye);
 
     // The `spectate` command (Gameplay/Spectating.cs)
     static Spectating spectating = null!;       // made in InitServices

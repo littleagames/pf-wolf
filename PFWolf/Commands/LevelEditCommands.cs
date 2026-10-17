@@ -22,7 +22,7 @@ internal sealed class LevelEditCommands(
     internal void Register()
     {
         console.Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
-            $"wallheight [1-{GameConstants.MAXWALLSTORIES}]", WallHeightCommand, Cheat | InLevel);
+            $"wallheight [1-{GameConstants.MaxWallStories}]", WallHeightCommand, Cheat | InLevel);
         console.Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
             "sky [name|none]", SkyCommand, InLevel);
         console.Register("weather", "Makes it rain or snow (a game-info weather-types name, or rain, heavy-rain, snow or blizzard) until the level is left or reloaded; none for clear weather.",
@@ -43,7 +43,7 @@ internal sealed class LevelEditCommands(
             "zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]", ZoneEffectCommand, Cheat | InLevel,
             complete: (_, i) => i == 1 ? ["none", "flicker", "pulse", "strobe"] : []);
         console.Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
-            $"height <0-{GameConstants.MAXWALLSTORIES}> [tilex tiley]", HeightCommand, Cheat | InLevel);
+            $"height <0-{GameConstants.MaxWallStories}> [tilex tiley]", HeightCommand, Cheat | InLevel);
         console.Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
             "tag [0-65535 [tilex tiley]]", TagCommand, Cheat | InLevel);
         console.Register("patch", "Shows or sets the patch (mapdefs patches) on a wall tile (default: the one you face); 0 takes it off.",
@@ -57,9 +57,9 @@ internal sealed class LevelEditCommands(
     internal void HeightCommand(string[] args)
     {
         if (args.Length == 0)
-            throw new ArgumentException($"usage: height <0-{GameConstants.MAXWALLSTORIES}> [tilex tiley]");
+            throw new ArgumentException($"usage: height <0-{GameConstants.MaxWallStories}> [tilex tiley]");
 
-        int stories = ParseInt(args[0], 0, GameConstants.MAXWALLSTORIES);
+        int stories = ParseInt(args[0], 0, GameConstants.MaxWallStories);
         var (x, y) = targets.TileArg(args, 1);
 
         map.SetWallStories(x, y, stories);
@@ -102,7 +102,7 @@ internal sealed class LevelEditCommands(
         {
             var patch = (byte)ParseInt(args[0], 0, 255);
             int tile = map.tilemap[x, y];
-            if (patch != 0 && ((tile & GameConstants.BIT_DOOR) != 0 || (tile & ~GameConstants.BIT_WALL) == 0))
+            if (patch != 0 && ((tile & GameConstants.BitDoor) != 0 || (tile & ~GameConstants.BitWall) == 0))
                 throw new ArgumentException($"Tile {x},{y} isn't a wall: patches go on walls only");
             map.SetPatch(x, y, patch);
         }
@@ -221,7 +221,7 @@ internal sealed class LevelEditCommands(
     internal void WallHeightCommand(string[] args)
     {
         if (args.Length > 0)
-            map.wallstories = ParseInt(args[0], 1, GameConstants.MAXWALLSTORIES);
+            map.wallstories = ParseInt(args[0], 1, GameConstants.MaxWallStories);
         console.Print($"Walls are {map.wallstories} {(map.wallstories == 1 ? "story" : "stories")} tall");
     }
 

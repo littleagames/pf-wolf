@@ -17,9 +17,9 @@ public class RenderStateTests
         // Assert
         Assert.That(state.postsource, Is.SameAs(notexture));
         Assert.That(state.archlight, Is.SameAs(noshade));
-        Assert.That((state.vieweyez, state.hittile), Is.EqualTo((GameConstants.EYEDEFAULT, -1)));
-        Assert.That(state.postheights, Has.Length.EqualTo(RenderState.MAXPOSTS));
-        Assert.That(state.postlight, Has.Length.EqualTo(RenderState.MAXPOSTS));
+        Assert.That((state.vieweyez, state.hittile), Is.EqualTo((GameConstants.EyeDefault, -1)));
+        Assert.That(state.postheights, Has.Length.EqualTo(RenderState.MaxPosts));
+        Assert.That(state.postlight, Has.Length.EqualTo(RenderState.MaxPosts));
     }
 
     [Test]

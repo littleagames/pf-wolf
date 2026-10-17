@@ -104,7 +104,7 @@ internal sealed class TitleLoop(
         else
         {
             video.Bar(0, 189, 300, 11, "Maroon");
-            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SMALL_FONT, "Bright Yellow", "Maroon")).CPrint("Press a key"); // "Oprima una tecla"
+            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, "Bright Yellow", "Maroon")).CPrint("Press a key"); // "Oprima una tecla"
 
             video.Update();
 
@@ -112,7 +112,7 @@ internal sealed class TitleLoop(
                 input.Ack();
 
             video.Bar(0, 189, 300, 11, "Maroon");
-            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SMALL_FONT, "Lime", "Maroon")).CPrint("Working..."); // "pensando..."
+            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, "Lime", "Maroon")).CPrint("Working..."); // "pensando..."
 
             video.Update();
         }
@@ -145,7 +145,7 @@ internal sealed class TitleLoop(
             audio.PlayMusic(hooks.IntroSong());
 
             if (!hooks.NoWait() && assets.Exists<GraphicAsset>("pg13"))    // a standalone game may have none
-                titleScreens.PG13();
+                titleScreens.Pg13();
         }
 
         while (true)

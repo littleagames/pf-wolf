@@ -29,8 +29,8 @@ internal sealed record TimedSwitch(int X, int Y, bool Patch, int From, int To, u
 /// </summary>
 internal sealed class TimedSwitches(MapManager map, GameSession session)
 {
-    const int BIT_WALL = GameConstants.BIT_WALL;
-    const int BIT_DOOR = GameConstants.BIT_DOOR;
+    const int BitWall = GameConstants.BitWall;
+    const int BitDoor = GameConstants.BitDoor;
 
     readonly List<TimedSwitch> pending = [];
 
@@ -74,9 +74,9 @@ internal sealed class TimedSwitches(MapManager map, GameSession session)
             else
             {
                 var tile = map.tilemap[x, y];
-                if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) != sw.To)
+                if ((tile & BitDoor) != 0 || (tile & ~BitWall) != sw.To)
                     continue;
-                map.tilemap[x, y] = (ushort)(sw.From | (tile & BIT_WALL));
+                map.tilemap[x, y] = (ushort)(sw.From | (tile & BitWall));
             }
             map.RestartAnimations(x, y, session.gamestate.TimeCount);
         }

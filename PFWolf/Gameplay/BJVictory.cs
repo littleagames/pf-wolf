@@ -31,7 +31,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
     {
         int move;
 
-        move = (int)(GameConstants.BJRUNSPEED * session.tics);
+        move = (int)(GameConstants.BjRunSpeed * session.tics);
 
         while (move != 0)
         {
@@ -66,7 +66,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
     {
         int move;
 
-        move = (int)(GameConstants.BJJUMPSPEED * session.tics);
+        move = (int)(GameConstants.BjJumpSpeed * session.tics);
         ob.MoveObj(move);
     }
 
@@ -97,7 +97,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
 
         bj.TileY = (byte)(player.TileY + 1);
         bj.SyncPosition();
-        bj.AreaNumber = (byte)(map.MAPSPOT(bj.TileX, bj.TileY, 0) - map.Floors.AreaTile);
+        bj.AreaNumber = (byte)(map.MapSpot(bj.TileX, bj.TileY, 0) - map.Floors.AreaTile);
 
         // SpawnNewObj started every actor a random number of tics into its first frame.
         bj.TicCount = map.SpawnTicCount(bj.CurrentState);

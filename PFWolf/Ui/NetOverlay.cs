@@ -20,7 +20,7 @@ internal sealed class NetOverlay(
     NetPlay netPlay,
     GameSession game)
 {
-    const int MAXY = GameConstants.MAXY;
+    const int MaxY = GameConstants.MaxY;
 
     // Typing a line to say to the others (T), and what's typed so far
     internal bool netChatting;
@@ -136,7 +136,7 @@ internal sealed class NetOverlay(
     {
         if (MatchLineHeight() == 0)
             return;
-        var style = new Fonts.TextStyle(UiFonts.SMALL_FONT, "HIGHLIGHT");
+        var style = new Fonts.TextStyle(UiFonts.SmallFont, "HIGHLIGHT");
         var (score, news) = Match!.MatchStatus();
         int y = (ViewTop?.Invoke() ?? 0) + 2;
         if (game.gamemode == GameMode.Heist)
@@ -159,11 +159,11 @@ internal sealed class NetOverlay(
         }
         else if (score.Length > 0)      // (Horde has none: just its wave)
         {
-            ui.CenteredText(0, 320, y, style).CPrint(ui.FitText(score, 300, UiFonts.SMALL_FONT));
+            ui.CenteredText(0, 320, y, style).CPrint(ui.FitText(score, 300, UiFonts.SmallFont));
             y += 9;
         }
         if (news != null)
-            ui.CenteredText(0, 320, y, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READCOLOR")).CPrint(ui.FitText(news, 300, UiFonts.SMALL_FONT));
+            ui.CenteredText(0, 320, y, new Fonts.TextStyle(UiFonts.SmallFont, "READCOLOR")).CPrint(ui.FitText(news, 300, UiFonts.SmallFont));
     }
 
     /// <summary>Over the view, with others: who the game is waiting for, or whether to leave</summary>
@@ -183,19 +183,19 @@ internal sealed class NetOverlay(
             var watching = game.camera.Target is Entities.Actors.PlayerPawn pawn && pawn != localplayer.Pawn
                 ? $"Watching {pawn.State.Name ?? $"Player {pawn.State.Number + 1}"} - " : "";
             var hint = $"{watching}use or fire to come back, left/right to watch others";
-            ui.CenteredText(0, 320, MAXY - 12, new Fonts.TextStyle(UiFonts.SMALL_FONT, "HIGHLIGHT")).CPrint(ui.FitText(hint, 300, UiFonts.SMALL_FONT));
+            ui.CenteredText(0, 320, MaxY - 12, new Fonts.TextStyle(UiFonts.SmallFont, "HIGHLIGHT")).CPrint(ui.FitText(hint, 300, UiFonts.SmallFont));
         }
 
         // The line being typed to the others
         if (netChatting)
         {
-            video.Bar(16, MAXY - 24, 288, 11, "BKGDCOLOR");
-            ui.TextAt(20, MAXY - 22, new Fonts.TextStyle(UiFonts.SMALL_FONT, "HIGHLIGHT"))
-                .Print(ui.FitText($"Say: {netChatText}_", 280, UiFonts.SMALL_FONT));
+            video.Bar(16, MaxY - 24, 288, 11, "BKGDCOLOR");
+            ui.TextAt(20, MaxY - 22, new Fonts.TextStyle(UiFonts.SmallFont, "HIGHLIGHT"))
+                .Print(ui.FitText($"Say: {netChatText}_", 280, UiFonts.SmallFont));
         }
 
         var text = netPlay.netLeavePrompt ? "Leave this game?\n(Y or N)" : netPlay.netWaiting;
         if (text != null)
-            draw.Message(text, MAXY);
+            draw.Message(text, MaxY);
     }
 }

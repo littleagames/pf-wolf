@@ -4,7 +4,7 @@ namespace PFWolf.Tests;
 
 public class ConsoleTargetsTests
 {
-    private const int Tile = 1 << MapConstants.TILESHIFT;
+    private const int Tile = 1 << MapConstants.TileShift;
 
     private MapManager _map = null!;
     private GameSession _session = null!;
@@ -16,9 +16,9 @@ public class ConsoleTargetsTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            mapwidth = MapManager.MAPSIZE, mapheight = MapManager.MAPSIZE,
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            mapwidth = MapManager.MapSize, mapheight = MapManager.MapSize,
         };
         _session.playerstate.Pawn = new Entities.Actors.PlayerPawn
         {

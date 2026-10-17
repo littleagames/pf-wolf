@@ -91,10 +91,10 @@ display strings (^DS), music and sounds by number (^PM, ^PS) and scaled sprite o
 internal sealed class TextPresenter(AssetManager assets, InputManager input, AudioManager audio,
     VideoManager video, GraphicManager graphics, FontManager fonts, MenuDrawing draw, MenuInput menuInput)
 {
-    const char TP_RETURN = '\r';
-    const char TP_CONTROL = '^';
-    const int TP_MARGIN = 1;
-    const int TP_CURSOR_SAVES = 8;
+    const char ReturnCode = '\r';
+    const char Control = '^';
+    const int Margin = 1;
+    const int CursorSaves = 8;
 
     const int center = 0x0001, boxshape = 0x0004, shadowText = 0x0008, presenting = 0x0010,
         startOfLine = 0x0020, upReleased = 0x0040, downReleased = 0x0080, shadowPic = 0x0400,
@@ -116,7 +116,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     Fonts.Font? tpfont;
     int tpfontcolor;
     bool tpjustifyright;
-    readonly int[] tpsavex = new int[TP_CURSOR_SAVES + 1], tpsavey = new int[TP_CURSOR_SAVES + 1];
+    readonly int[] tpsavex = new int[CursorSaves + 1], tpsavey = new int[CursorSaves + 1];
     readonly int[] tppagex = new int[2], tppagey = new int[2];
 
     char TpAt(int i) => i >= 0 && i < tptext.Length ? tptext[i] : '\0';
@@ -162,7 +162,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             if (pos >= tptext.Length)
                 break;
 
-            if (tptext[pos++] == TP_CONTROL && TpAt(pos) == 'E' && TpAt(pos + 1) == 'P')
+            if (tptext[pos++] == Control && TpAt(pos) == 'E' && TpAt(pos + 1) == 'P')
             {
                 pos += 2;
                 pi.Pages.Add(pos);
@@ -176,11 +176,11 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     /// <summary>A line starting with a semicolon is a comment: how far to skip past it, or 0</summary>
     int TpLineCommented(int pos)
     {
-        if (TpAt(pos) != ';' || TpAt(pos - 2) != TP_RETURN)
+        if (TpAt(pos) != ';' || TpAt(pos - 2) != ReturnCode)
             return 0;
 
         int s = pos;
-        while (s < tptext.Length && tptext[s] != TP_RETURN)
+        while (s < tptext.Length && tptext[s] != ReturnCode)
             s++;
         return s + 2 - pos;
     }
@@ -197,10 +197,10 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         tplt = pi.Light;
         tpdk = pi.Dark;
         tpsh = pi.Shadow;
-        tpxl = pi.X1 + TP_MARGIN;
-        tpyl = pi.Y1 + TP_MARGIN;
-        tpxh = pi.X2 - TP_MARGIN;
-        tpyh = pi.Y2 - TP_MARGIN;
+        tpxl = pi.X1 + Margin;
+        tpyl = pi.Y1 + Margin;
+        tpxh = pi.X2 - Margin;
+        tpyh = pi.Y2 - Margin;
         tpfontcolor = pi.FontColor;
         tpjustifyright = false;
         pi.Escaped = false;
@@ -230,7 +230,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         tpfontnumber = pi.Font;
         tpfont = PresenterFont(tpfontnumber);
         tpflags = presenting | startOfLine;
-        if (TpAt(tppos) == TP_CONTROL)
+        if (TpAt(tppos) == Control)
             TpHandleCodes();
 
         // The info line under the region
@@ -242,8 +242,8 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             tpfontcolor = pi.InfoColor;
 
             tppx = tpxl;
-            tppy = tpyh + TP_MARGIN + 1;
-            video.Bar(tpxl - TP_MARGIN, tppy, tpxh - tpxl + 1 + TP_MARGIN * 2, 8, tpbg.ToString());
+            tppy = tpyh + Margin + 1;
+            video.Bar(tpxl - Margin, tppy, tpxh - tpxl + 1 + Margin * 2, 8, tpbg.ToString());
             TpShadowPrint(pi.InfoLine, tpsh);
 
             if (pi.Flags.HasFlag(PresenterFlags.ShowPages) && pi.PageX >= 0)
@@ -265,11 +265,11 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
         tpfont = PresenterFont(tpfontnumber);
         if (!pi.Flags.HasFlag(PresenterFlags.UseCurrent))
-            video.Bar(tpxl - TP_MARGIN, tpyl - TP_MARGIN, tpxh - tpxl + 1 + TP_MARGIN * 2, tpyh - tpyl + 1 + TP_MARGIN * 2, tpbg.ToString());
+            video.Bar(tpxl - Margin, tpyl - Margin, tpxh - tpxl + 1 + Margin * 2, tpyh - tpyl + 1 + Margin * 2, tpbg.ToString());
 
         while ((tpflags & presenting) != 0 && tppos <= tptext.Length)
         {
-            if (TpAt(tppos) == TP_CONTROL)
+            if (TpAt(tppos) == Control)
                 TpHandleCodes();
             else if (tppos >= tptext.Length)
                 break;              // a script with no ^XX ends with its text
@@ -296,7 +296,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         // Up to the right margin, the end, a line break or a code
         int scanx = tpcurx;
         int scan = tppos;
-        while (scanx + TpWidth(TpAt(scan)) <= tpxh && TpAt(scan) != '\0' && TpAt(scan) != TP_RETURN && TpAt(scan) != TP_CONTROL)
+        while (scanx + TpWidth(TpAt(scan)) <= tpxh && TpAt(scan) != '\0' && TpAt(scan) != ReturnCode && TpAt(scan) != Control)
             scanx += TpWidth(TpAt(scan++));
 
         bool newlineOnly = false;
@@ -304,7 +304,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         if (scanx + TpWidth(TpAt(scan)) > tpxh)
         {
             int lastx = scanx, last = scan;
-            while (scan != tppos && TpAt(scan) != ' ' && TpAt(scan) != TP_RETURN)
+            while (scan != tppos && TpAt(scan) != ' ' && TpAt(scan) != ReturnCode)
                 scanx -= TpWidth(TpAt(scan--));
 
             if (scan == tppos)
@@ -331,7 +331,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
             tppx = tpcurx;
             tppy = tpcury;
-            if (TpAt(tppos) != TP_RETURN)
+            if (TpAt(tppos) != ReturnCode)
             {
                 if (tp.PrintDelay > 0)
                     TpSlowPrint(line, tp.PrintDelay);
@@ -346,11 +346,11 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         // A wrapped line's space, and the line break
         if (TpAt(tppos) == ' ' && TpAt(tppos + 1) != ' ')
             tppos++;
-        if (TpAt(tppos) == TP_RETURN)
+        if (TpAt(tppos) == ReturnCode)
             tppos += TpAt(tppos + 1) == '\n' ? 2 : 1;
 
         // Codes don't move to the next line
-        if (TpAt(scan) != TP_CONTROL && TpAt(scan) != '\0')
+        if (TpAt(scan) != Control && TpAt(scan) != '\0')
         {
             tpcurx = tpxl;
             if (tp.Flags.HasFlag(PresenterFlags.ScrollRegion) && tpcury + TpFontHeight * 2 > tpyh)
@@ -392,10 +392,10 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
     void TpHandleCodes()
     {
-        if (TpAt(tppos - 2) == TP_RETURN && TpAt(tppos - 1) == '\n')
+        if (TpAt(tppos - 2) == ReturnCode && TpAt(tppos - 1) == '\n')
             tpflags |= startOfLine;
 
-        while (TpAt(tppos) == TP_CONTROL && (tpflags & presenting) != 0)
+        while (TpAt(tppos) == Control && (tpflags & presenting) != 0)
         {
             var code = $"{TpAt(tppos + 1)}{TpAt(tppos + 2)}";
             tppos += 3;
@@ -409,9 +409,9 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                         // The rest of the line's width, codes and all, centered between the margins
                         int length = 0;
                         int s = tppos;
-                        while (TpAt(s) != '\0' && TpAt(s) != TP_RETURN)
+                        while (TpAt(s) != '\0' && TpAt(s) != ReturnCode)
                         {
-                            if (TpAt(s) == TP_CONTROL)
+                            if (TpAt(s) == Control)
                             {
                                 var sub = $"{TpAt(s + 1)}{TpAt(s + 2)}";
                                 int digits = TpCodeDigits(sub);
@@ -469,24 +469,24 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                     break;
 
                 case "SL":
-                    tpsavex[TP_CURSOR_SAVES] = tpcurx;
-                    tpsavey[TP_CURSOR_SAVES] = tpcury;
+                    tpsavex[CursorSaves] = tpcurx;
+                    tpsavey[CursorSaves] = tpcury;
                     break;
                 case "RL":
-                    tpcurx = tpsavex[TP_CURSOR_SAVES];
-                    tpcury = tpsavey[TP_CURSOR_SAVES];
+                    tpcurx = tpsavex[CursorSaves];
+                    tpcury = tpsavey[CursorSaves];
                     break;
                 case "SX":
-                    tpsavex[Math.Min(value, TP_CURSOR_SAVES)] = tpcurx;
+                    tpsavex[Math.Min(value, CursorSaves)] = tpcurx;
                     break;
                 case "RX":
-                    tpcurx = tpsavex[Math.Min(value, TP_CURSOR_SAVES)];
+                    tpcurx = tpsavex[Math.Min(value, CursorSaves)];
                     break;
                 case "SY":
-                    tpsavey[Math.Min(value, TP_CURSOR_SAVES)] = tpcury;
+                    tpsavey[Math.Min(value, CursorSaves)] = tpcury;
                     break;
                 case "RY":
-                    tpcury = tpsavey[Math.Min(value, TP_CURSOR_SAVES)];
+                    tpcury = tpsavey[Math.Min(value, CursorSaves)];
                     break;
 
                 case "FN":
@@ -516,10 +516,10 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                     tpxh = value == 0xfff ? tpcurx : value;
                     break;
                 case "DM":
-                    tpxl = tp.X1 + TP_MARGIN;
-                    tpyl = tp.Y1 + TP_MARGIN;
-                    tpxh = tp.X2 - TP_MARGIN;
-                    tpyh = tp.Y2 - TP_MARGIN;
+                    tpxl = tp.X1 + Margin;
+                    tpyl = tp.Y1 + Margin;
+                    tpxh = tp.X2 - Margin;
+                    tpyh = tp.Y2 - Margin;
                     break;
 
                 case "PX":
@@ -567,7 +567,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             }
         }
 
-        if (TpAt(tppos) == TP_RETURN && TpAt(tppos + 1) == '\n' && (tpflags & startOfLine) != 0)
+        if (TpAt(tppos) == ReturnCode && TpAt(tppos + 1) == '\n' && (tpflags & startOfLine) != 0)
             tppos += 2;
     }
 
@@ -752,7 +752,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             tpflags &= ~presenting;
 
         tpcurx = tpxl;
-        video.Bar(tpcurx, tpcury, tpxh - tpxl + 1 + TP_MARGIN * 2, TpFontHeight + TpShadowed, tpbg.ToString());
+        video.Bar(tpcurx, tpcury, tpxh - tpxl + 1 + Margin * 2, TpFontHeight + TpShadowed, tpbg.ToString());
     }
 
     /// <summary>^EP: shows the page and waits to go to the one before or after, or to finish</summary>
@@ -827,7 +827,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             tpcury = tpyh - TpFontHeight;
         tppos = tp.Pages[tp.PageNum];
 
-        if (TpAt(tppos) == TP_CONTROL)
+        if (TpAt(tppos) == Control)
         {
             TpHandleCodes();
             tpflags &= ~startOfLine;
@@ -891,8 +891,8 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         draw.BevelBox(x2, y2, w2, h2, box.Lo, box.Med, box.Hi);
 
         var font = PresenterFont(box.Font);
-        int lines = 1 + script.Count(c => c == TP_RETURN);
-        int height = (font?.Height ?? 8) * lines + 1 + TP_MARGIN * 2;
+        int lines = 1 + script.Count(c => c == ReturnCode);
+        int height = (font?.Height ?? 8) * lines + 1 + Margin * 2;
 
         var pi = new PresenterInfo
         {

@@ -148,16 +148,16 @@ internal partial record BlakeMonster : Monster
     */
 
     // Why a SMART actor runs (CheckRunChase)
-    private const int RR_AMMO = 1, RR_HEALTH = 2, RR_INTERROGATED = 4;
+    private const int RrAmmo = 1, RrHealth = 2, RrInterrogated = 4;
 
     // How much faster a SMART actor runs than it chases
-    private const int RUNAWAY_SPEED = 1000;
+    private const int RunAwaySpeed = 1000;
 
     // How far a corpse slides back each tic (T_BlowBack)
-    private const int SLIDE_SPEED = 0x2000;
+    private const int SlideSpeed = 0x2000;
 
     // How far a body killed by anything but the player's own gun slides
-    private const int DEFAULT_KNOCKBACK = 0x5000;
+    private const int DefaultKnockback = 0x5000;
 
     /// <summary>
     /// Sets up what's Blake Stone's about a freshly spawned actor (MapManager.SpawnThing): its
@@ -172,7 +172,7 @@ internal partial record BlakeMonster : Monster
             RuntimeFlags |= ObjFlags.Friendly;
 
         // The 0xFA value east of it on the object plane, if there is one
-        int east = tilex + 1 < MapManager.MAPSIZE ? MapManager.MAPSPOT(tilex + 1, tiley, 1) : 0;
+        int east = tilex + 1 < MapManager.MapSize ? MapManager.MapSpot(tilex + 1, tiley, 1) : 0;
         int? mapValue = (east & 0xff00) == 0xfa00 ? east & 0xff : null;
 
         // A sleeper's wake delay (T_WaitToWake), in tics: the map's value in seconds, else a
@@ -271,8 +271,8 @@ internal partial record BlakeMonster : Monster
         MadeNoise = true;
 
         var target = Target;
-        if (Math.Abs(target.X - X) - MapConstants.TILEGLOBAL <= MINACTORDIST
-            && Math.Abs(target.Y - Y) - MapConstants.TILEGLOBAL <= MINACTORDIST
+        if (Math.Abs(target.X - X) - MapConstants.TileGlobal <= MinActorDist
+            && Math.Abs(target.Y - Y) - MapConstants.TileGlobal <= MinActorDist
             && NextRandom() < chance)
         {
             HurtTarget(max > min ? min + NextRandom() * (max - min + 1) / 256 : min);
@@ -349,7 +349,7 @@ internal partial record BlakeMonster : Monster
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].action != DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TILEGLOBAL;
+                Distance = (int)MapConstants.TileGlobal;
             }
 
             if (move < Distance)
@@ -459,11 +459,11 @@ internal partial record BlakeMonster : Monster
     {
         int reason = 0;
         if (Ammo == 0)
-            reason |= RR_AMMO;
+            reason |= RrAmmo;
         if (Hitpoints <= MapManager.GetScaledHealth(this) >> 1)
-            reason |= RR_HEALTH;
+            reason |= RrHealth;
         if ((RuntimeFlags & (ObjFlags.Friendly | ObjFlags.Interrogated)) == ObjFlags.Interrogated)
-            reason |= RR_INTERROGATED;
+            reason |= RrInterrogated;
 
         if (reason != 0)
         {
@@ -471,13 +471,13 @@ internal partial record BlakeMonster : Monster
             {
                 Temp3 = 0;
                 RuntimeFlags |= ObjFlags.RunAway;
-                Speed += RUNAWAY_SPEED;
+                Speed += RunAwaySpeed;
             }
         }
         else if (RuntimeFlags.HasFlag(ObjFlags.RunAway))
         {
             RuntimeFlags &= ~ObjFlags.RunAway;
-            Speed -= RUNAWAY_SPEED;
+            Speed -= RunAwaySpeed;
         }
 
         return reason;
@@ -540,7 +540,7 @@ internal partial record BlakeMonster : Monster
     {
         // A scientist that turned mean backs off to a door, then (half the time) attacks
         bool justFindDoor = false;
-        if ((reason & RR_INTERROGATED) != 0)
+        if ((reason & RrInterrogated) != 0)
         {
             justFindDoor = true;
             if (NextRandom() < 128)
@@ -594,7 +594,7 @@ internal partial record BlakeMonster : Monster
 
                 // Else maybe head for it
                 if (!RuntimeFlags.HasFlag(ObjFlags.RunToStatic)
-                    && ((reason & RR_AMMO) != 0 && ammoGain > 0 || (reason & RR_HEALTH) != 0 && healthGain > 0))
+                    && ((reason & RrAmmo) != 0 && ammoGain > 0 || (reason & RrHealth) != 0 && healthGain > 0))
                 {
                     RuntimeFlags |= ObjFlags.RunToStatic;
                     SeekX = item.TileX;
@@ -672,7 +672,7 @@ internal partial record BlakeMonster : Monster
         if (point != null)
             Dir = point.Dir;
 
-        Distance = (int)MapConstants.TILEGLOBAL;
+        Distance = (int)MapConstants.TileGlobal;
         bool randomTurn = HasFlag("RANDOMTURN") && NextRandom() > 180;
         bool cantWalk = !CanWalk();
 
@@ -713,7 +713,7 @@ internal partial record BlakeMonster : Monster
         TileX = (byte)(TileX - dx);
         TileY = (byte)(TileY - dy);
         Dir = opposite[(byte)Dir];
-        Distance = (int)MapConstants.TILEGLOBAL - Distance;
+        Distance = (int)MapConstants.TileGlobal - Distance;
         SyncPosition();
     }
 
@@ -739,7 +739,7 @@ internal partial record BlakeMonster : Monster
             return false;
 
         int x = TileX + dx, y = TileY + dy;
-        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return false;
         if (dx != 0 && dy != 0)
             return CheckDiag(x, y) && CheckDiag(TileX + dx, TileY) && CheckDiag(TileX, TileY + dy);
@@ -795,7 +795,7 @@ internal partial record BlakeMonster : Monster
         }
         Temp2 = 0;
 
-        if (Math.Abs(Player.X - X) > MapConstants.TILEGLOBAL || Math.Abs(Player.Y - Y) > MapConstants.TILEGLOBAL)
+        if (Math.Abs(Player.X - X) > MapConstants.TileGlobal || Math.Abs(Player.Y - Y) > MapConstants.TileGlobal)
         {
             RuntimeFlags |= ObjFlags.Shootable;
             SetState("Recover");
@@ -814,14 +814,14 @@ internal partial record BlakeMonster : Monster
 
         int distance = ReferenceEquals(killer, Player)
             ? (PlayerState.weapon != null && int.TryParse(InventoryManager.GetProperty(PlayerState.weapon, "weapon.knockback")?.ToString(), out var k) ? k : 0)
-            : killer.PropertyInt("knockback", DEFAULT_KNOCKBACK);
+            : killer.PropertyInt("knockback", DefaultKnockback);
         if (distance <= 0)
             return;
 
         var angle = Math.Atan2(killer.Y - Y, X - killer.X);
         if (angle < 0)
             angle += Math.PI * 2;
-        Angle = (short)((int)(angle / (Math.PI * 2) * ANGLES) % ANGLES);
+        Angle = (short)((int)(angle / (Math.PI * 2) * Angles) % Angles);
         Temp3 = (short)Math.Min(distance, short.MaxValue);
         RuntimeFlags |= ObjFlags.Sliding;
     }
@@ -832,7 +832,7 @@ internal partial record BlakeMonster : Monster
         if (!RuntimeFlags.HasFlag(ObjFlags.Sliding))
             return;
 
-        int step = Math.Min((int)Temp3, SLIDE_SPEED);
+        int step = Math.Min((int)Temp3, SlideSpeed);
         Temp3 -= (short)step;
         if (Temp3 <= 0)
             RuntimeFlags &= ~ObjFlags.Sliding;
@@ -842,19 +842,19 @@ internal partial record BlakeMonster : Monster
         if (!ClipMove(dx, dy))
             RuntimeFlags &= ~ObjFlags.Sliding;
 
-        TileX = (byte)(X >> (int)MapConstants.TILESHIFT);
-        TileY = (byte)(Y >> (int)MapConstants.TILESHIFT);
+        TileX = (byte)(X >> (int)MapConstants.TileShift);
+        TileY = (byte)(Y >> (int)MapConstants.TileShift);
         SyncPosition();
     }
 
     // Moves an actor unless that would put it into a wall, something solid or a door that isn't open
     private bool ClipMove(int dx, int dy)
     {
-        int nx = X + dx, ny = Y + dy, size = (int)MINDIST;
+        int nx = X + dx, ny = Y + dy, size = (int)MinDist;
         foreach (var (cx, cy) in new[] { (nx - size, ny - size), (nx + size, ny - size), (nx - size, ny + size), (nx + size, ny + size) })
         {
-            int tx = cx >> (int)MapConstants.TILESHIFT, ty = cy >> (int)MapConstants.TILESHIFT;
-            if (tx < 0 || ty < 0 || tx >= MapManager.MAPSIZE || ty >= MapManager.MAPSIZE)
+            int tx = cx >> (int)MapConstants.TileShift, ty = cy >> (int)MapConstants.TileShift;
+            if (tx < 0 || ty < 0 || tx >= MapManager.MapSize || ty >= MapManager.MapSize)
                 return false;
             switch (MapManager.actorat[tx, ty])
             {

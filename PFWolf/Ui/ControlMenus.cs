@@ -161,9 +161,9 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
         DrawControllerValues();
 
         // Which controller the settings are for, under the hints
-        ui.CenteredText(0, 320, 160, new TextStyle(UiFonts.SMALL_FONT, "READCOLOR")).CPrint(ui.FitText(input.ControllerName is string name
+        ui.CenteredText(0, 320, 160, new TextStyle(UiFonts.SmallFont, "READCOLOR")).CPrint(ui.FitText(input.ControllerName is string name
             ? $"{"$STR_CTL_PAD".ToLanguageText(language)} {name}"
-            : "$STR_CTL_NOPAD".ToLanguageText(language), 300, UiFonts.SMALL_FONT));     // a controller's name can be long
+            : "$STR_CTL_NOPAD".ToLanguageText(language), 300, UiFonts.SmallFont));     // a controller's name can be long
 
         draw.DrawMenuGun(JoyItems);
         video.Update();
@@ -174,7 +174,7 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
         var language = assets.GetText("en-us");
 
         draw.DrawMenuSlider(JoyItems, JoyMenu, "joy-deadzone", Math.Clamp(settings.joydeadzone, 0, JoyDeadzoneMax) / JoyDeadzoneStep, JoyDeadzoneMax / JoyDeadzoneStep);
-        draw.DrawMenuSlider(JoyItems, JoyMenu, "joy-turnspeed", Math.Clamp(settings.joyturnspeed, 0, ControlSettings.JOYTURNSPEEDS - 1), ControlSettings.JOYTURNSPEEDS - 1);
+        draw.DrawMenuSlider(JoyItems, JoyMenu, "joy-turnspeed", Math.Clamp(settings.joyturnspeed, 0, ControlSettings.JoyTurnSpeeds - 1), ControlSettings.JoyTurnSpeeds - 1);
         draw.DrawMenuChoice(JoyItems, JoyMenu, "joy-sticks", (settings.joyclassicsticks ? "$STR_JOYCLASSIC" : "$STR_JOYMODERN").ToLanguageText(language));
     }
 
@@ -191,7 +191,7 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
                 break;
 
             case "joy-turnspeed":
-                int turnspeed = Math.Clamp(settings.joyturnspeed + delta, 0, ControlSettings.JOYTURNSPEEDS - 1);
+                int turnspeed = Math.Clamp(settings.joyturnspeed + delta, 0, ControlSettings.JoyTurnSpeeds - 1);
                 if (turnspeed == settings.joyturnspeed)
                     return;
                 settings.joyturnspeed = turnspeed;

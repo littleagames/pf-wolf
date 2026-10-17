@@ -70,9 +70,9 @@ internal sealed class PlayerClassRules(GameEngineManager engine, InventoryManage
     /// <summary>The most armor points the player can have: the Player class's `player.maxarmor` (no cap but the armor's own when left out)</summary>
     internal short MaxArmor => (short)Math.Clamp(inventory.GetIntProperty(PlayerClass, "player.maxarmor", short.MaxValue), 0, short.MaxValue);
 
-    /// <summary>How high a player's eyes are standing, in texels: their class's `player.eyeheight` (EYEDEFAULT when left out)</summary>
+    /// <summary>How high a player's eyes are standing, in texels: their class's `player.eyeheight` (EyeDefault when left out)</summary>
     internal int StandingEyeZ(Entities.PlayerState p) =>
-        Math.Clamp(inventory.GetIntProperty(p.playerclass, "player.eyeheight", GameConstants.EYEDEFAULT), GameConstants.MINEYE, GameConstants.MAXEYE);
+        Math.Clamp(inventory.GetIntProperty(p.playerclass, "player.eyeheight", GameConstants.EyeDefault), GameConstants.MinEye, GameConstants.MaxEye);
 
     /// <summary>
     /// Whether the class may pick up a weapon or ammo: with a `player.weapons` list, only the

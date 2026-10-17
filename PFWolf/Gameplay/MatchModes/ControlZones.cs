@@ -19,7 +19,7 @@ namespace PFWolf.Gameplay.MatchModes;
     King of the Hill: one hill at a time, at one of the HillSpot markers
     (mapdefs 443; else spots spread over the map). The team alone on it holds
     it, until they leave or die, or the other team comes; it moves to another
-    spot at random every HILLTICS.
+    spot at random every HillTics.
 
 =============================================================================
 */
@@ -118,7 +118,7 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
     public override GameMode Mode => GameMode.Domination;
 
     /// <summary>How long one player alone takes to bring a point over from nobody's (tics); twice that from the other team's</summary>
-    internal const int CAPTURETICS = 3 * 70;
+    internal const int CaptureTics = 3 * 70;
 
     public override void LevelSetup()
     {
@@ -150,17 +150,17 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
             int team = red > 0 ? 0 : 1, sign = team == 0 ? 1 : -1;
             if (zone.Owner == team)
             {
-                zone.Progress = sign * CAPTURETICS;     // theirs, and fully so again
+                zone.Progress = sign * CaptureTics;     // theirs, and fully so again
                 continue;
             }
 
-            zone.Progress = Math.Clamp(zone.Progress + sign * (int)session.tics * Math.Max(red, blue), -CAPTURETICS, CAPTURETICS);
+            zone.Progress = Math.Clamp(zone.Progress + sign * (int)session.tics * Math.Max(red, blue), -CaptureTics, CaptureTics);
             if (zone.Owner >= 0 && Math.Sign(zone.Progress) != Math.Sign(zone.Owner == 0 ? 1 : -1))
             {
                 Announce($"{GameModes.TeamLabel(zone.Owner)} lost point {Letter(i)}");
                 zone.Owner = -1;        // brought back to nobody's
             }
-            if (zone.Owner < 0 && zone.Progress * sign >= CAPTURETICS)
+            if (zone.Owner < 0 && zone.Progress * sign >= CaptureTics)
             {
                 zone.Owner = team;
                 foreach (var pawn in LivingPawns.Where(pawn => pawn.State.Team == team && InZone(pawn, zone.At.x, zone.At.y, Radius)))
@@ -180,7 +180,7 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
             var holder = zone.Owner >= 0 ? GameModes.TeamLabel(zone.Owner) : "-";
             var (red, blue) = PlayersIn(zone);
             bool taking = red > 0 != blue > 0 && zone.Owner != (red > 0 ? 0 : 1);
-            return taking ? $"{Letter(i)}: {holder} ({Math.Abs(zone.Progress) * 100 / CAPTURETICS}%)" : $"{Letter(i)}: {holder}";
+            return taking ? $"{Letter(i)}: {holder} ({Math.Abs(zone.Progress) * 100 / CaptureTics}%)" : $"{Letter(i)}: {holder}";
         }));
 }
 
@@ -190,10 +190,10 @@ internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathma
     public override GameMode Mode => GameMode.KingOfTheHill;
 
     /// <summary>How long the hill stays in one place (tics)</summary>
-    internal const int HILLTICS = 60 * 70;
+    internal const int HillTics = 60 * 70;
 
     /// <summary>How many spots the hill moves between on a map without HillSpot markers</summary>
-    internal const int SPOTS = 5;
+    internal const int Spots = 5;
 
     /// <summary>Which spot the hill is on now, and when it moves on (gamestate.TimeCount)</summary>
     internal int hill, movesat;
@@ -208,11 +208,11 @@ internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathma
         scoredsecond = session.gamestate.TimeCount / 70;
         var spots = Markers("HillSpot");
         if (spots.Count == 0)
-            spots = SpreadOut(OpenFloor(), SPOTS, []);
+            spots = SpreadOut(OpenFloor(), Spots, []);
         foreach (var spot in spots)
             zones.Add(new Zone { At = spot });
         hill = 0;       // the first (the middle of the map, without markers)
-        movesat = session.gamestate.TimeCount + HILLTICS;
+        movesat = session.gamestate.TimeCount + HillTics;
         ShowZoneFlags();
     }
 
@@ -228,7 +228,7 @@ internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathma
             zones[hill].Owner = -1;
             if (zones.Count > 1)
                 hill = (hill + 1 + session.random.RndT() % (zones.Count - 1)) % zones.Count;
-            movesat = session.gamestate.TimeCount + HILLTICS;
+            movesat = session.gamestate.TimeCount + HillTics;
             Announce("The hill has moved!", "world/pushwall");
         }
 

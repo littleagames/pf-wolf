@@ -14,9 +14,9 @@ public class AutomapDrawingTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            seen = new SeenFlags[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],
         };
         _automap = new AutomapDrawing(null!, null!, null!, null!, null!, _map, null!, null!, null!, null!, null!, _session,
             new AutomapHooks(() => (0, 0, 320, 160), map => map, tics => "", () => []));
@@ -43,9 +43,9 @@ public class AutomapDrawingTests
     [TestCase(0, false)]                                // open floor
     [TestCase(5, true)]                                 // a wall
     [TestCase(200, true)]                               // a wall past Wolf3D's 63
-    [TestCase(GameConstants.BIT_WALL | 255, true)]      // the highest wall id, beside a door
-    [TestCase(GameConstants.BIT_DOOR | 2, false)]             // a door shows as floor (drawn on its own)
-    [TestCase(GameConstants.BIT_WALL, false)]                 // a moving pushwall's tile (drawn at its offset)
+    [TestCase(GameConstants.BitWall | 255, true)]      // the highest wall id, beside a door
+    [TestCase(GameConstants.BitDoor | 2, false)]             // a door shows as floor (drawn on its own)
+    [TestCase(GameConstants.BitWall, false)]                 // a moving pushwall's tile (drawn at its offset)
     public void Walls_Are_What_Shows_As_Wall(int tile, bool wall)
     {
         _map.tilemap[3, 4] = (ushort)tile;
@@ -56,7 +56,7 @@ public class AutomapDrawingTests
     public void Off_The_Map_Is_Wall()
     {
         Assert.That(_automap.IsAutomapWall(-1, 0), Is.True);
-        Assert.That(_automap.IsAutomapWall(0, MapManager.MAPSIZE), Is.True);
+        Assert.That(_automap.IsAutomapWall(0, MapManager.MapSize), Is.True);
     }
 
     [Test]
@@ -113,16 +113,16 @@ public class RadarTests
         // Arrange
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
         map.tilemap[1, 1] = 5;
-        map.tilemap[2, 1] = GameConstants.BIT_DOOR | 0;
+        map.tilemap[2, 1] = GameConstants.BitDoor | 0;
         doors.doorobjlist[0] = new DoorObject { action = DoorAction.Closed };
-        map.tilemap[3, 1] = GameConstants.BIT_DOOR | 1;
+        map.tilemap[3, 1] = GameConstants.BitDoor | 1;
         doors.doorobjlist[1] = new DoorObject { action = DoorAction.Open };
 
         // Act
@@ -141,13 +141,13 @@ public class RadarTests
         // Arrange: a gold-key door, closed
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
-            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
-        map.tilemap[2, 1] = GameConstants.BIT_DOOR | 0;
+        map.tilemap[2, 1] = GameConstants.BitDoor | 0;
         doors.doorobjlist[0] = new DoorObject { action = DoorAction.Closed, maplock = "GoldKey" };
         string Color() => radar.RadarTileColor(2, 1, "unmapped", "floor", "door", "locked");
 
