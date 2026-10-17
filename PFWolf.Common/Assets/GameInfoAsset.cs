@@ -253,6 +253,13 @@ public record GameInfoAsset : Asset
     public string? HelpText { get; init; }
 
     /// <summary>
+    /// How articles (Read This, end texts, briefings shown as articles) lay out their pages: the
+    /// pictures framing every page, the text's margins and color, and the page number. Wolf3D's
+    /// help window by default.
+    /// </summary>
+    public ArticleInfo Article { get; init; } = new();
+
+    /// <summary>
     /// What's shown when the game is lost, the last life gone, before the high scores (Blake
     /// Stone's transmission from Goldfire); nothing when unset
     /// </summary>
@@ -766,6 +773,67 @@ public record SkillInfo
     /// an enemy without it, or a skill without one, uses the enemy's plain `health`
     /// </summary>
     public string? EnemyHealth { get; init; }
+}
+
+/// <summary>
+/// game-info `article`: the page every article is laid out on (320x200). The screen is filled
+/// with background, then the frame's pictures are drawn in order, then the text goes between the
+/// margins, in lines of 10 pixels, and the page number last. Each value left out is Wolf3D's.
+/// </summary>
+public record ArticleInfo
+{
+    public const int ScreenWidth = 320, ScreenHeight = 200, FontHeight = 10;
+
+    /// <summary>The color the screen is filled with first (a colors.yaml name)</summary>
+    public string Background { get; init; } = "BACKCOLOR";
+
+    /// <summary>Pictures drawn on every page, before the text: Wolf3D's help window by default, or one full-screen picture</summary>
+    public List<ArticlePicture> Frame { get; init; } =
+    [
+        new() { Pic = "h_topwindow", X = 0, Y = 0 },
+        new() { Pic = "h_leftwindow", X = 0, Y = 8 },
+        new() { Pic = "h_rightwindow", X = 312, Y = 8 },
+        new() { Pic = "h_bottominfo", X = 8, Y = 176 },
+    ];
+
+    /// <summary>Pixels kept clear of text at each edge</summary>
+    public ArticleMargins Margins { get; init; } = new();
+
+    /// <summary>The text's color until a ^C changes it (a colors.yaml name)</summary>
+    public string TextColor { get; init; } = "Black";
+
+    /// <summary>"pg 1 of 2": where, in what color, and how it's written ({0} the page, {1} how many)</summary>
+    public ArticlePageNumber PageNumber { get; init; } = new();
+
+    /// <summary>The lines of text a page has between its margins</summary>
+    public int TextRows => Math.Max((ScreenHeight - Margins.Top - Margins.Bottom) / FontHeight, 1);
+}
+
+public record ArticlePicture
+{
+    public string Pic { get; init; } = "";
+    public int X { get; init; }
+    public int Y { get; init; }
+}
+
+public record ArticleMargins
+{
+    public int Top { get; init; } = 16;
+    public int Bottom { get; init; } = 32;
+    public int Left { get; init; } = 16;
+    public int Right { get; init; } = 16;
+}
+
+public record ArticlePageNumber
+{
+    /// <summary>false leaves it out</summary>
+    public bool Show { get; init; } = true;
+    public int X { get; init; } = 213;
+    public int Y { get; init; } = 183;
+    public string Color { get; init; } = "Dark Yellow";
+    public string Format { get; init; } = "pg {0} of {1}";
+
+    public string Text(int page, int pages) => Format.Replace("{0}", page.ToString()).Replace("{1}", pages.ToString());
 }
 
 /// <summary>A class in game-info's player-classes: how the class menu shows it</summary>

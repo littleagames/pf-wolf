@@ -1,3 +1,5 @@
+using PFWolf.Assets;
+
 namespace PFWolf.Editor.Data;
 
 /// <summary>What an article draws on its page</summary>
@@ -63,6 +65,9 @@ public sealed class ArticleArt
     /// <summary>The "pg 1 of 2" color (the theme's Dark Yellow)</summary>
     public byte PageNumberColor { get; init; }
 
+    /// <summary>The page's layout (game-info article): its frame pictures, margins and page number; Wolf3D's by default</summary>
+    public ArticleInfo Layout { get; init; } = new();
+
     public int Advance(char ch)
     {
         if (FontWidths is not { Length: > 0 } widths)
@@ -104,7 +109,7 @@ public sealed class ArticleLayout
     // How far the game looks for the ^E before giving up (CacheLayout's bombpoint)
     public const int SearchLimit = 30000;
 
-    /// <summary>The help screen's frame, drawn first on every page</summary>
+    /// <summary>Wolf3D's help screen frame, drawn first on every page (game-info article's default)</summary>
     public static readonly (string Picture, int X, int Y)[] Frame =
     [
         ("h_topwindow", 0, 0),
@@ -122,8 +127,14 @@ public sealed class ArticleLayout
     // The page being laid out: where the text has got to, the margins of each line, the print
     // position, and the color ^C last set
     private int _index;
-    private readonly int[] _leftMargin = new int[TextRows];
-    private readonly int[] _rightMargin = new int[TextRows];
+    private readonly int[] _leftMargin;
+    private readonly int[] _rightMargin;
+
+    // The game's layout of a page (game-info article)
+    private int Top => _art.Layout.Margins.Top;
+    private int Left => _art.Layout.Margins.Left;
+    private int Right => _art.Layout.Margins.Right;
+    private int Rows => _art.Layout.TextRows;
     private int _row;
     private int _printX, _printY;
     private byte _color;
@@ -135,6 +146,8 @@ public sealed class ArticleLayout
     {
         _text = text;
         _art = art;
+        _leftMargin = new int[Rows];
+        _rightMargin = new int[Rows];
         var starts = new List<int> { 0 };
         for (int i = 0; i < text.Length; i++)
         {
@@ -266,16 +279,16 @@ public sealed class ArticleLayout
     {
         int start = _index;
         _draws = [];
-        foreach (var (picture, x, y) in Frame)
-            _draws.Add(new ArticleDraw(ArticleDrawKind.Picture, x, y, -1) { Text = picture });
+        foreach (var picture in _art.Layout.Frame)
+            _draws.Add(new ArticleDraw(ArticleDrawKind.Picture, picture.X, picture.Y, -1) { Text = picture.Pic });
 
-        for (int i = 0; i < TextRows; i++)
+        for (int i = 0; i < Rows; i++)
         {
-            _leftMargin[i] = LeftMargin;
-            _rightMargin[i] = ScreenWidth - RightMargin;
+            _leftMargin[i] = Left;
+            _rightMargin[i] = ScreenWidth - Right;
         }
-        _printX = LeftMargin;
-        _printY = TopMargin;
+        _printX = Left;
+        _printY = Top;
         _row = 0;
         _color = _art.TextColor;
         _layoutDone = false;
@@ -308,7 +321,8 @@ public sealed class ArticleLayout
         }
 
         int number = _pages.Count + 1;
-        _draws.Add(new ArticleDraw(ArticleDrawKind.Text, 213, 183, -1) { Text = $"pg {number} of {PageCount}", Color = _art.PageNumberColor });
+        if (_art.Layout.PageNumber is { Show: true } pageNumber)
+            _draws.Add(new ArticleDraw(ArticleDrawKind.Text, pageNumber.X, pageNumber.Y, -1) { Text = pageNumber.Text(number, PageCount), Color = _art.PageNumberColor });
         _pages.Add(new ArticlePage(number, start, Math.Min(_index, _text.Length), _draws) { CutFrom = _cutFrom });
     }
 
@@ -358,15 +372,15 @@ public sealed class ArticleLayout
             {
                 _index++;
                 int y = ParseNumber(at);
-                int row = (y - TopMargin) / FontHeight;
-                if (row < 0 || row >= TextRows)
+                int row = (y - Top) / FontHeight;
+                if (row < 0 || row >= Rows)
                 {
                     // The game reads past its margins there, and crashes
-                    Problem(at, $"^L's y ({y}) is off the page's lines: it must be at most {TopMargin + TextRows * FontHeight - 1}", isError: true);
-                    row = Math.Clamp(row, 0, TextRows - 1);
+                    Problem(at, $"^L's y ({y}) is off the page's lines: it must be at most {Top + Rows * FontHeight - 1}", isError: true);
+                    row = Math.Clamp(row, 0, Rows - 1);
                 }
                 _row = row;
-                _printY = TopMargin + row * FontHeight;
+                _printY = Top + row * FontHeight;
                 _printX = ParseNumber(at);
                 RipToEndOfLine();
                 break;
@@ -397,8 +411,8 @@ public sealed class ArticleLayout
                 // Keep the text clear of it: the picture's side of the page moves the margin in
                 int middle = x + size.Width / 2;
                 int margin = middle > ScreenWidth / 2 ? x - PicMargin : x + size.Width + PicMargin;
-                int top = Math.Max((y - TopMargin) / FontHeight, 0);
-                int bottom = Math.Min((y + size.Height - TopMargin) / FontHeight, TextRows - 1);
+                int top = Math.Max((y - Top) / FontHeight, 0);
+                int bottom = Math.Min((y + size.Height - Top) / FontHeight, Rows - 1);
                 for (int row = top; row <= bottom; row++)
                 {
                     if (middle > ScreenWidth / 2)
@@ -486,7 +500,7 @@ public sealed class ArticleLayout
 
         while (_printX + width > _rightMargin[_row])
         {
-            if (width > ScreenWidth - LeftMargin - RightMargin)
+            if (width > ScreenWidth - Left - Right)
                 Problem(start, $"\"{Shorten(word)}\" is wider than a line: it can't fit, and pushes the rest of the page off it");
             else if (width > _rightMargin[_row] - _leftMargin[_row] && _printX == _leftMargin[_row])
                 Problem(start, $"\"{Shorten(word)}\" doesn't fit beside the picture on its line: it goes further down");
@@ -509,10 +523,10 @@ public sealed class ArticleLayout
     // The next line down, or, past the last, the rest of the page is cut until the next ^P or ^E
     private void NewLine(int? wordStart = null)
     {
-        if (++_row == TextRows)
+        if (++_row == Rows)
         {
             _layoutDone = true;
-            _row = TextRows - 1;
+            _row = Rows - 1;
             int cut = wordStart ?? _index;
             while (!AtEnd)
             {

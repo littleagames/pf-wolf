@@ -31,12 +31,14 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
 
     private const int WORDLIMIT = 80;
     private const int FONTHEIGHT = 10;
-    private const int TOPMARGIN = 16;
-    private const int BOTTOMMARGIN = 32;
-    private const int LEFTMARGIN = 16;
-    private const int RIGHTMARGIN = 16;
     private const int PICMARGIN = 8;
-    private const int TEXTROWS = ((200 - TOPMARGIN - BOTTOMMARGIN) / FONTHEIGHT);
+
+    // The page's layout (game-info article: Wolf3D's help window by default), taken as an article starts
+    ArticleInfo layout = new();
+    int TOPMARGIN => layout.Margins.Top;
+    int LEFTMARGIN => layout.Margins.Left;
+    int RIGHTMARGIN => layout.Margins.Right;
+    int TEXTROWS => layout.TextRows;
     private const int SPACEWIDTH = 7;
     private const int SCREENPIXWIDTH = 320;
     private const int SCREENMID = (SCREENPIXWIDTH / 2);
@@ -52,8 +54,8 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
     int pagenum;
     int numpages;
 
-    uint[] leftmargin = new uint[TEXTROWS];
-    uint[] rightmargin = new uint[TEXTROWS];
+    uint[] leftmargin = [];
+    uint[] rightmargin = [];
     string text = "";
     int textIndex = 0;
     uint rowon;
@@ -131,9 +133,12 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
         text = article;
         // From the start, not where the last article shown was left (the original pointed at the new text)
         textIndex = 0;
+        layout = engine.GetGameInfo().Article;
+        leftmargin = new uint[TEXTROWS];
+        rightmargin = new uint[TEXTROWS];
         // Where the layout has got to on the page, and the color ^C last set
-        var page = TextWindow.FullScreen(graphics, new TextStyle(UiFonts.SMALL_FONT, "Black", "BACKCOLOR"));
-        video.FillScreen("BACKCOLOR");
+        var page = TextWindow.FullScreen(graphics, new TextStyle(UiFonts.SMALL_FONT, layout.TextColor, layout.Background));
+        video.FillScreen(layout.Background);
         CacheLayout();
 
         newpage = true;
@@ -394,22 +399,20 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
         int i;
         char ch;
 
-        page.Style = page.Style with { Color = "Black" };
+        page.Style = page.Style with { Color = layout.TextColor };
 
         //
-        // clear the screen
+        // clear the screen, and the frame round the text (game-info article)
         //
-        video.FillScreen("BACKCOLOR");
-        graphics.DrawPic("h_topwindow", 0, 0);
-        graphics.DrawPic("h_leftwindow", 0, 8);
-        graphics.DrawPic("h_rightwindow", 312, 8);
-        graphics.DrawPic("h_bottominfo", 8, 176);
+        video.FillScreen(layout.Background);
+        foreach (var picture in layout.Frame)
+            graphics.DrawPic(picture.Pic, picture.X, picture.Y);
 
 
         for (i = 0; i < TEXTROWS; i++)
         {
-            leftmargin[i] = LEFTMARGIN;
-            rightmargin[i] = SCREENPIXWIDTH - RIGHTMARGIN;
+            leftmargin[i] = (uint)LEFTMARGIN;
+            rightmargin[i] = (uint)(SCREENPIXWIDTH - RIGHTMARGIN);
         }
 
         page.PrintX = LEFTMARGIN;
@@ -454,10 +457,10 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
 
         pagenum++;
 
-        if (shownumber)
+        if (shownumber && layout.PageNumber.Show)
         {
-            var str = $"pg {pagenum} of {numpages}";
-            graphics.DrawText(213, 183, str, page.Style with { Color = "Dark Yellow" });    //12^BACKCOLOR;
+            var number = layout.PageNumber;
+            graphics.DrawText(number.X, number.Y, number.Text(pagenum, numpages), page.Style with { Color = number.Color });
         }
     }
 
@@ -482,7 +485,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
                 picx = ParseNumber();
                 picwidth = ParseNumber();
                 picheight = ParseNumber();
-                video.Bar(picx, picy, picwidth, picheight, "BACKCOLOR");
+                video.Bar(picx, picy, picwidth, picheight, layout.Background);
                 RipToEOL();
                 break;
             case ';':               // comment

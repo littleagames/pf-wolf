@@ -142,19 +142,22 @@ public static class TextCatalog
             ? content.Assets.FindInGamePack<AliasAsset>("alias")
             : null;
         var theme = Theme(content);
+        var layout = content.GameInfo?.Article ?? new ArticleInfo();
 
         return new ArticleArt
         {
             FontWidths = font?.Width,
             PictureName = number => alias?.ArtExtern.GetValueOrDefault(number),
             PictureSize = name => content.Find<GraphicAsset>(name) is { } picture ? (picture.Width, picture.Height) : null,
-            TextColor = ThemeColor(content, theme, "Black"),
-            PageNumberColor = ThemeColor(content, theme, "Dark Yellow"),
+            TextColor = ThemeColor(content, theme, layout.TextColor),
+            PageNumberColor = ThemeColor(content, theme, layout.PageNumber.Color),
+            Layout = layout,
         };
     }
 
-    /// <summary>The background articles are drawn on (the theme's BACKCOLOR)</summary>
-    public static byte BackColor(GameContent content) => ThemeColor(content, Theme(content), "BACKCOLOR");
+    /// <summary>The background articles are drawn on (game-info article's background: the theme's BACKCOLOR by default)</summary>
+    public static byte BackColor(GameContent content) =>
+        ThemeColor(content, Theme(content), (content.GameInfo?.Article ?? new ArticleInfo()).Background);
 
     private static ColorThemeAsset? Theme(GameContent content)
         => content.Assets.Exists<ColorThemeAsset>($"{content.PackId}/colors")

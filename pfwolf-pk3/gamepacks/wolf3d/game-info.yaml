@@ -134,6 +134,22 @@ player-colors: [green, red, blue, yellow, cyan, magenta, gray, brown]
 # right on the skill it was recorded on, and id's were recorded on HARD.
 demo-skill: HARD
 
+# The page articles (Read This, end texts) are laid out on, 320x200: the screen filled with
+# background, the frame's pictures drawn in order, the text between the margins (lines of 10
+# pixels, in text-color until a ^C) and the page number ({0} the page, {1} how many; show: false
+# leaves it out). Each value left out is these, Wolf3D's help window; a game can frame its pages
+# with one full-screen picture instead (frame: [ { pic: HELPBACK, x: 0, y: 0 } ]).
+article:
+  background: BACKCOLOR
+  frame:
+    - { pic: h_topwindow, x: 0, y: 0 }
+    - { pic: h_leftwindow, x: 0, y: 8 }
+    - { pic: h_rightwindow, x: 312, y: 8 }
+    - { pic: h_bottominfo, x: 8, y: 176 }
+  margins: { top: 16, bottom: 32, left: 16, right: 16 }
+  text-color: Black
+  page-number: { x: 213, y: 183, color: "Dark Yellow", format: "pg {0} of {1}" }
+
 # The New Game menu's episodes. Besides these keys, an episode can have locked-message (listed,
 # but picking it shows that text: the shareware's), or starts-locked: true (greyed out, as its
 # locked-name if it has one, until its key is unlocked for good by A_Unlock("EP02"), Lua
