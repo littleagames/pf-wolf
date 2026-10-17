@@ -63,7 +63,11 @@ public sealed class ImfMusicSource : MusicSource
                     _commandIndex = 0;   // loop the track
                 }
                 var command = _commands[_commandIndex];
-                _chip.WriteRegister(command.Register, command.Value);
+                // Buffered, so writes in one tick land a few samples apart as on real hardware
+                // (ID_SD's alOut waits after each). Unbuffered, a key-off then key-on in the same
+                // tick never reaches the envelope and the note isn't struck again: the songs'
+                // drum lines do exactly that, and went missing.
+                _chip.WriteRegisterBuffered(command.Register, command.Value);
                 _framesRemainingInCommand = command.Delay * framesPerTick;
                 _commandIndex++;
             }

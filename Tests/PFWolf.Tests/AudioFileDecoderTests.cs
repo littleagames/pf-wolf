@@ -271,6 +271,28 @@ public class AudioFileDecoderTests
     }
 
     [Test]
+    public void Imf_Key_Off_Then_On_In_One_Tick_Strikes_The_Note_Again()
+    {
+        // Arrange: a note that decays to silence while held, then is keyed off and on with no
+        // delay between, as the songs' drum lines do
+        var song = Wolf3dImfAudio.FromFile(ImfCommands(
+            (0x20, 0x01, 0), (0x23, 0x01, 0), (0x40, 0x00, 0), (0x43, 0x00, 0),
+            (0x60, 0xF8, 0), (0x63, 0xF8, 0), (0x80, 0xF8, 0), (0x83, 0xF8, 0),
+            (0xC0, 0x30, 0), (0xA0, 0x80, 0), (0xB0, 0x31, 350),
+            (0xB0, 0x11, 0), (0xB0, 0x31, 70)));
+        using var source = new ImfMusicSource(song);
+        var stereo = new short[ImfMusicSource.MusicSampleRate / 2 * 2];
+        source.Read(stereo, loop: false);
+        var hit = new short[ImfMusicSource.MusicSampleRate / 10 * 2];
+
+        // Act
+        source.Read(hit, loop: false);
+
+        // Assert
+        Assert.That(hit.Max(sample => Math.Abs((int)sample)), Is.GreaterThan(1000));
+    }
+
+    [Test]
     public void Pk3_Imf_Music_Loads_By_Name_And_Replaces_A_Music_File_Beneath()
     {
         // Arrange: the base pk3 has CORNER as a WAV and a new IMF song; a mod gives CORNER as an IMF
