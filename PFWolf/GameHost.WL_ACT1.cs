@@ -35,19 +35,8 @@ internal static partial class GameHost
 
     static Doors doors = null!;
 
-    internal const int DOORWIDTH = Doors.DOORWIDTH;
-    internal const int OPENTICS = Doors.OPENTICS;
-
-    internal static doorobj_t[] doorobjlist => doors.doorobjlist;
-    internal static int lastdoorobj => doors.lastdoorobj;
-    internal static short doornum => doors.doornum;
-    internal static byte[] areabyplayer { get => session.areas.areabyplayer; set => session.areas.areabyplayer = value; }
-
     internal static void ConnectAreas() => doors.ConnectAreas();
     internal static void InitAreas() => session.areas.InitAreas(_mapManager.Players.Select(pawn => (int)pawn.AreaNumber), _mapManager.Floors.NumAreas);
-    internal static void OpenDoor(int door) => doors.OpenDoor(door);
-    static void RefuseLocked(string lockItem, string lockedSound, string lockMessage, string lockMessageStyle, bool isSwitch = false)
-        => doors.RefuseLocked(lockItem, lockedSound, lockMessage, lockMessageStyle, isSwitch);
 
     /*
     =============================================================================
@@ -61,10 +50,6 @@ internal static partial class GameHost
     */
 
     static PushWalls pushWalls = null!;
-
-    // The moving pushwall the renderer is tracing, picked by SelectPushWall as a trace enters
-    // one of its tiles
-    static MovingPushWall pwall => pushWalls.pwall;
 
     internal static bool PushWall(int checkx, int checky, controldirs dir, string? moveSound = null, string? blockedSound = null)
         => pushWalls.PushWall(checkx, checky, dir, moveSound, blockedSound);
@@ -91,7 +76,4 @@ internal static partial class GameHost
 
     private static void RegisterSwitchActions() => (switchActions ??= MakeSwitchActions()).Register();
     private static void RegisterSmartSwitchActions() => (smartSwitches ??= MakeSmartSwitches()).Register();
-
-    /// <summary>A dying actor's floors actor-code work: what it carried, and the tile its death switches</summary>
-    internal static void CarriedDeathWork(Entities.Actors.Actor ob, int tilex, int tiley) => smartSwitches.CarriedDeathWork(ob, tilex, tiley);
 }

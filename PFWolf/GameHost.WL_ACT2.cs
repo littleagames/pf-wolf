@@ -16,11 +16,6 @@ internal static partial class GameHost
     =============================================================================
     */
 
-    internal const long PROJECTILESIZE = GameConstants.PROJECTILESIZE;
-
-    internal const int BJRUNSPEED = GameConstants.BJRUNSPEED;
-    internal const int BJJUMPSPEED = GameConstants.BJJUMPSPEED;
-
     // Enemy state tables, spawn functions (SpawnStand/SpawnPatrol/SpawnBoss/etc.), and AI
     // think/action functions (T_Stand/T_Chase/T_Shoot/etc., along with starthitpoints and
     // the enemy_states/EnemyStateList lookup) were removed from this file -- enemies now
@@ -31,8 +26,6 @@ internal static partial class GameHost
     // BJ-victory end-of-episode cutscene (actordefs/wolf3d/victory.yaml) run on the same type,
     // spawned into MapManager._actors by MapManager.SpawnAtActor. CheckPosition's only caller
     // is A_StartDeathCam (Gameplay/PlayerDeath.cs), placing the camera.
-
-    internal const int PROJSIZE = GameConstants.PROJSIZE;
 
     // Enemies' projectiles and their effects (Gameplay/Projectiles.cs), actors' sounds
     // (Gameplay/ActorSounds.cs) and BJ's victory run (Gameplay/BJVictory.cs)

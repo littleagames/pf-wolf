@@ -12,8 +12,6 @@ internal static partial class GameHost
     =============================================================================
     */
 
-    internal const int ACTORSIZE = GameConstants.ACTORSIZE;
-
     /*
     =============================================================================
 
@@ -32,9 +30,6 @@ internal static partial class GameHost
     // math tables
     //
     internal static short[] pixelangle { get => render.pixelangle; set => render.pixelangle = value; }
-    internal static int[] finetangent => TrigTables.finetangent;   // (Rendering/TrigTables.cs)
-    internal static int[] sintable => TrigTables.sintable;
-    internal static int[] costable => TrigTables.costable;
 
     //
     // refresh variables
@@ -43,14 +38,6 @@ internal static partial class GameHost
 
     // The renderer's shared per-frame state (Rendering/RenderState.cs): the fields below, under their old names, are its
     internal static readonly RenderState render = new(notexture, Lighting.noshade);
-
-    //
-    // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
-    //
-    internal const int MAXWALLSTORIES = GameConstants.MAXWALLSTORIES;
-    internal static int wallstories { get => _mapManager.wallstories; set => _mapManager.wallstories = value; }
-
-    internal static double viewpitch { get => render.viewpitch; set => render.viewpitch = value; }   // degrees, up positive; this frame's, from the camera
 
     /*
     ====================
@@ -104,8 +91,6 @@ internal static partial class GameHost
             () => deathCamSprite, () => weaponScale));
 
     static void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos) => spriteDrawing.TransformActorFrom(ob, fromx, fromy, fromsin, fromcos);
-    internal static bool HasDirectionalSprites(string sprite, string frameLetter) => spriteDrawing.HasDirectionalSprites(sprite, frameLetter);
-    internal static string FrontShapeName(string sprite, string frameLetter) => spriteDrawing.FrontShapeName(sprite, frameLetter);
 
     // One frame: its tics, the view from the camera, and drawing it all (Rendering/FrameRefresh.cs)
     static FrameRefresh frameRefresh = null!;       // made in InitServices

@@ -45,22 +45,6 @@ internal static partial class GameHost
     static UiText ui = null!;               // made in InitServices
     static LineInput lineInput = null!;
 
-    internal const string SMALL_FONT = UiFonts.SMALL_FONT;
-    internal const string LARGE_FONT = UiFonts.LARGE_FONT;
-    internal const string MENU_FONT = UiFonts.MENU_FONT;
-
-    internal const int MaxX = 320;
-    internal const int MaxY = 200;
-    internal const int MaxHelpLines = 500;
-    internal const int MaxHighName = HighScore.MaxHighName;
-    internal const int LegacyScoreCount = HighScore.LegacyScoreCount;
-    internal const int MaxGameName = GameConstants.MaxGameName;
-    internal const int MaxString = LineInput.MaxString;
-
-    internal static TextWindow US_DrawWindow(int x, int y, int w, int h, TextStyle style) => ui.DrawWindow(x, y, w, h, style);
-    internal static bool US_LineInput(int x, int y, ref string buf, string def, bool escok, int maxchars, int maxwidth, TextStyle style)
-        => lineInput.Run(x, y, ref buf, def, escok, maxchars, maxwidth, style);
-
     // The high score table: Wolf3D's, until InitHighScores puts in the game pack's
     // The settings and high scores config.cfg and controls.cfg keep (Configuration/GameSettings.cs)
     internal static readonly GameSettings settings = new();
@@ -113,7 +97,6 @@ internal static partial class GameHost
     static HighScoresScreen highScoresScreen = null!;
     static IntermissionScreen intermissionScreen = null!;
     internal static void DrawHighScores() => highScoresScreen.DrawHighScores();
-    static IntermissionAsset Intermission => intermissionScreen.Intermission;           // the death cam's text uses these too
 
     static IntermissionHooks MakeIntermissionHooks() => new(
         ViewColorBorder: () =>
@@ -351,7 +334,6 @@ internal static partial class GameHost
     =============================================================================
     */
     internal const long FOCALLENGTH = GameConstants.FOCALLENGTH;
-    internal const int VIEWGLOBAL = GameConstants.VIEWGLOBAL;
 
     const int VIEWWIDTH = 256;                   // size of view window
     const int VIEWHEIGHT = 144;
@@ -373,22 +355,15 @@ internal static partial class GameHost
     static int viewwidth { get => render.viewwidth; set => render.viewwidth = value; }
     static int viewheight { get => render.viewheight; set => render.viewheight = value; }
     static short centerx { get => render.centerx; set => render.centerx = value; }
-    static short centery { get => render.centery; set => render.centery = value; }   // centery is this frame's horizon: basecentery moved by viewpitch
-    static short basecentery { get => render.basecentery; set => render.basecentery = value; }   // the horizon looking straight ahead, mid view
     static int shootdelta { get => render.shootdelta; set => render.shootdelta = value; }   // pixels away from centerx a target can be
-    static int projectionwidth { get => render.projectionwidth; set => render.projectionwidth = value; }   // the view width the field of view is worked out for (see ProjectionWidth)
     static int heightnumerator { get => render.heightnumerator; set => render.heightnumerator = value; }
 
     static bool startgame { get => session.startgame; set => session.startgame = value; }
-    internal static bool loadedgame { get => session.loadedgame; set => session.loadedgame = value; }
-    internal static int mouseadjustment { get => controlSettings.mouseadjustment; set => controlSettings.mouseadjustment = value; }
 
     //
     // Command line parameter variables
     //
     internal static bool param_nowait = false;
-    internal static int param_mission = 0;
-    internal static bool param_goodtimes = false;
     static readonly WarpRequest warpRequest = new();    // --warp, --skill, --start
 
     /// <summary>Runs the game: what Main does (GameHost.cs)</summary>
@@ -603,9 +578,6 @@ internal static partial class GameHost
     internal static void NewViewSize(int width) => viewSetup.NewViewSize(width);
     // Where the play area is, between the status bars (Ui/PlayArea.cs)
     static PlayArea playArea = null!;       // made in InitServices
-    internal static int PlayAreaHeight => playArea.PlayAreaHeight;
-    internal static int PlayAreaAndStatusLine => playArea.PlayAreaAndStatusLine;
-    internal static int PlayAreaTop => playArea.PlayAreaTop;
     internal static void ShowViewSize(int width) => viewSetup.ShowViewSize(width);
 
     internal static void DoJukebox() => jukebox.DoJukebox();

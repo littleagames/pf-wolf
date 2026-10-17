@@ -16,15 +16,6 @@ internal static partial class GameHost
 
     // The acting player's pawn and controls, and this frame's tics (Gameplay/GameSession.cs)
     internal static Entities.Actors.PlayerPawn player => session.player;
-    internal static uint tics { get => session.tics; set => session.tics = value; }
-
-    // Cheats and debug switches (Gameplay/GameSession.cs)
-    internal static byte singlestep { get => session.singlestep; set => session.singlestep = value; }
-    internal static byte godmode { get => session.godmode; set => session.godmode = value; }
-    internal static byte noclip { get => session.noclip; set => session.noclip = value; }
-    internal static byte ammocheat { get => session.ammocheat; set => session.ammocheat = value; }
-    internal static byte mapreveal { get => session.mapreveal; set => session.mapreveal = value; }
-    internal static int extravbls { get => session.extravbls; set => session.extravbls = value; }
 
     //
     // control info
@@ -56,10 +47,6 @@ internal static partial class GameHost
 
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
     internal static ControlSettings controlSettings => settings.controlSettings;
-
-    internal const int JOYTURNSPEEDS = ControlSettings.JOYTURNSPEEDS;
-
-    static int lastgamemusicoffset { get => session.lastgamemusicoffset; set => session.lastgamemusicoffset = value; }
 
     /*
     =============================================================================
@@ -98,11 +85,4 @@ internal static partial class GameHost
         (x, y) => _mapManager.GetZone(x, y),
         () => stealth.WearingDisguise(session.playerstate),
         _audioManager.SetAmbient));
-
-    internal const int MAXX = GameConstants.MAXX;
-    internal const int MAXY = GameConstants.MAXY;
-
-    // The prompt window (Ui/UiText.cs)
-    internal static Fonts.TextStyle PromptStyle => UiText.PromptStyle;
-    internal static Fonts.TextWindow CenterWindow(int w, int h, Fonts.TextStyle style) => ui.CenterWindow(w, h, style);
 }

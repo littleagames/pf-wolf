@@ -13,21 +13,6 @@ namespace PFWolf;
 
 internal static partial class GameHost
 {
-    internal const int SM_X = 48;
-    internal const int SM_W = 250;
-
-    internal const int SM_Y1 = 20;
-    internal const int SM_H1 = 4 * 13 - 7;
-    internal const int SM_Y2 = SM_Y1 + 5 * 13;
-    internal const int SM_H2 = 4 * 13 - 7;
-    internal const int SM_Y3 = SM_Y2 + 5 * 13;
-    internal const int SM_H3 = 3 * 13 - 7;
-
-    internal const int CTL_X = 24;
-    internal const int CTL_Y = 86;
-    internal const int CTL_W = 284;
-    internal const int CTL_H = 60;
-
     /*
     =============================================================================
 
@@ -115,20 +100,6 @@ internal static partial class GameHost
     static MenuInput menuInput = null!;
     static MenuDrawing menuDrawing = null!;
     static MenuLoop menuLoop = null!;
-
-    private const int MenuSliderWidth = MenuDrawing.MenuSliderWidth;
-    private const int MenuSliderOffset = MenuDrawing.MenuSliderOffset;
-    private const int MenuChoiceWidth = MenuDrawing.MenuChoiceWidth;
-
-    internal static void BevelBox(int x, int y, int width, int height, int hi, int med, int lo) => menuDrawing.BevelBox(x, y, width, height, hi, med, lo);
-    internal static void BevelBox(int x, int y, int width, int height, string hi, string med, string lo) => menuDrawing.BevelBox(x, y, width, height, hi, med, lo);
-    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, CP_itemtype[] items, string id, bool on) => menuDrawing.DrawMenuCheckbox(iteminfo, items, id, on);
-    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on, bool highlighted = false) => menuDrawing.DrawMenuCheckbox(iteminfo, index, on, highlighted);
-
-    internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
-        => menuLoop.HandleMenu(item_i, items, routine, adjust, idle);
-    internal static void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
-        => menuLoop.DrawGun(item_i, items, x, ref y, which, basey, routine);
 
     internal static int StartCPMusic(string song) => quickKeys.StartCPMusic(song);
 

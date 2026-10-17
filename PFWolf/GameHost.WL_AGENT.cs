@@ -16,12 +16,6 @@ internal static partial class GameHost
     =============================================================================
     */
 
-    internal const int MAXMOUSETURN   = 10;
-
-    internal const long MOVESCALE = GameConstants.MOVESCALE;
-    internal const long BACKMOVESCALE = GameConstants.BACKMOVESCALE;
-    internal const int ANGLESCALE = GameConstants.ANGLESCALE;
-
     /*
     =============================================================================
 
@@ -53,7 +47,6 @@ internal static partial class GameHost
             (x, y) => (wallspritefromx, wallspritefromy) = (x, y),
             ActivateTrigger));
 
-    internal static void ClipMove(Entities.Actors.Actor ob, int xmove, int ymove) => playerMovement.ClipMove(ob, xmove, ymove);
     static controldirs FacingDir(int angle) => PlayerMovement.FacingDir(angle);
 
     // Picking items up (Gameplay/Pickups.cs)
@@ -74,8 +67,6 @@ internal static partial class GameHost
         new(_gameEngineManager, _assetManager, _videoManager, _inventoryManager, statusBarDrawing, playerClassRules, playerWeapons, session,
             settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound));
 
-    private const string BasePlayerClass = PlayerClassRules.BasePlayerClass;
-    private static string PlayerClass => playerstate.playerclass;
     internal static List<string> PlayerClasses() => playerClassRules.PlayerClasses();
     internal static string DefaultPlayerClass => playerClassRules.DefaultPlayerClass;
     private static double PlayerFactor(string key) => playerClassRules.PlayerFactor(key);
@@ -213,11 +204,6 @@ internal static partial class GameHost
 
     static PlayerWeapons MakePlayerWeapons() =>
         new(_inventoryManager, _graphicManager, statusBarDrawing, session, new PlayerWeaponsHooks(UseSlotItem));
-
-    internal static int WeaponSelectionOrder(string weapon) => playerWeapons.WeaponSelectionOrder(weapon);
-    internal static string? BestWeapon(bool canFire = false) => playerWeapons.BestWeapon(canFire);
-    private static bool TryGiveWeapon(Entities.Actors.Weapon pickup) => playerWeapons.TryGiveWeapon(pickup);
-    private static bool TryGiveWeapon(string weaponName, int ammoGive) => playerWeapons.TryGiveWeapon(weaponName, ammoGive);
 
     // The use key, switches, mapdefs triggers, the exits and held items' use (Gameplay/PlayerUse.cs)
     static PlayerUse playerUse = null!;     // made in InitServices

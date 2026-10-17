@@ -89,7 +89,4 @@ internal static partial class GameHost
         if (_mapManager.Player != null && viewsize != 21)
             DrawPlayScreen();
     }
-
-    /// <summary>The mouse look and controller settings as console commands, for saving to controls.cfg.</summary>
-    internal static IEnumerable<string> GetControllerSettingCommands() => controlSettings.SettingCommands();
 }

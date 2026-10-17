@@ -12,7 +12,4 @@ internal static partial class GameHost
             () => focallength, () => viewwidth, TransformActorFrom, IsWallSprite, GetBonus));
 
     static (int x, int y, int sin, int cos) PlayerViewOrigin() => playerView.PlayerViewOrigin();
-    internal static bool PlayerTileInView(PlayerPawn pawn) => playerView.PlayerTileInView(pawn);
-    internal static bool InViewOf(PlayerPawn pawn, Entities.Actors.Actor actor) => playerView.InViewOf(pawn, actor);
-    internal static bool SeenByAPlayer(Entities.Actors.Actor actor) => playerView.SeenByAPlayer(actor);
 }

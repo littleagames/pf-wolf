@@ -9,7 +9,6 @@ internal static partial class GameHost
     // (Rendering/WallSprites.cs WallSpriteBlocking)
     static WallSpriteBlocking wallSpriteBlocking = null!;       // made in InitServices
 
-    internal const string WallSpriteFlag = WallSprites.WallSpriteFlag;
     internal static bool IsWallSprite(Entities.Actors.Actor actor) => WallSprites.IsWallSprite(actor);
 
     static int wallspritefromx { get => wallSpriteBlocking.wallspritefromx; set => wallSpriteBlocking.wallspritefromx = value; }

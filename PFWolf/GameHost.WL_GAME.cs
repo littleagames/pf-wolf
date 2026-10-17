@@ -14,8 +14,6 @@ internal static partial class GameHost
 
 =============================================================================
 */
-    static bool ingame { get => session.ingame; set => session.ingame = value; }
-    static bool fizzlein { get => session.fizzlein; set => session.fizzlein = value; }
     internal static gametype gamestate { get => session.gamestate; set => session.gamestate = value; }
     static string bordercol { get => session.bordercol; set => session.bordercol = value; } // color of the Change View/Ingame border
 
@@ -41,8 +39,6 @@ internal static partial class GameHost
 
     internal static void PlayDemo(int demonumber) => demos.PlayDemo(demonumber);
     internal static bool DemoExists(int demonumber) => demos.DemoExists(demonumber);
-    internal static void RecordDemo() => demos.RecordDemo();
-    internal static void RecordDemo(int level, int? demonumber = null) => demos.RecordDemo(level, demonumber);
 
     // playdemo, demotest and recorddemo (Commands/DemoCommands.cs)
     static DemoCommands demoCommands = null!;       // made in InitServices

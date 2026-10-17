@@ -12,6 +12,4 @@ internal static partial class GameHost
     internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs,
         bool cloaked = false, SpriteTranslation? translation = null) =>
         spriteScaler.ScaleColumn(x, toppix, fracstep, sprite, column, shade, shadeofs, cloaked, translation);
-    internal static void SimpleScaleShape(int dispx, string shapenum, int dispheight, byte[]? shade = null, int dropy = 0) =>
-        spriteScaler.SimpleScaleShape(dispx, shapenum, dispheight, shade, dropy);
 }

@@ -36,7 +36,6 @@ internal static partial class GameHost
                 FindMenuItem(MainMenu, "readthis")?.active = 1;
             }));
 
-    internal static bool autosaveEnabled { get => settings.autosaveEnabled; set => settings.autosaveEnabled = value; }
     static bool autosavePending { get => gameSaves.autosavePending; set => gameSaves.autosavePending = value; }
 
     internal static void AutoSaveGame() => gameSaves.AutoSaveGame();

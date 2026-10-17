@@ -4,8 +4,6 @@ namespace PFWolf;
 // (Gameplay/PlayerAttacks.cs)
 internal static partial class GameHost
 {
-    internal const string WeaponReadyState = WeaponInHand.WeaponReadyState;
-
     static PlayerAttacks playerAttacks = null!;     // made in InitServices
     static WeaponInHand weaponInHand = null!;
 
@@ -20,6 +18,4 @@ internal static partial class GameHost
     static void RegisterWeaponActions() => (weaponInHand ??= MakeWeaponInHand()).Register();
 
     static string? WeaponShapeName() => weaponInHand.WeaponShapeName();
-
-    internal static bool PlayerWeaponIsSilent() => playerAttacks.PlayerWeaponIsSilent();
 }

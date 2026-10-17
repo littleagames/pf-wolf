@@ -33,12 +33,8 @@ internal static partial class GameHost
     static Scoreboard MakeScoreboard() =>
         new(_videoManager, _inputManager, menuDrawing, ui, session, ClearMemory);
 
-    internal static readonly NetRules DefaultRules = Deathmatch.DefaultRules;
-
     /// <summary>The rules of the deathmatch being played</summary>
     internal static NetRules netrules { get => deathmatch.netrules; set => deathmatch.netrules = value; }
-
-    /// <summary>The match has been won (the frag limit) or run out of time: the level ends, for the scoreboard</summary>
 
     static (int x, int y, int angle) DeathmatchSpot(PlayerPawn self) => deathmatch.DeathmatchSpot(self);
     static void GiveDeathmatchKeys() => deathmatch.GiveDeathmatchKeys();

@@ -4,9 +4,6 @@ namespace PFWolf;
 
 internal static partial class GameHost
 {
-    // Where the view is drawn from (Gameplay/Camera.cs)
-    internal static Camera camera => session.camera;
-
     internal static void SetEyeHeight(int z) => playereyez = Math.Clamp(z, MINEYE, MAXEYE);
 
     // The `spectate` command (Gameplay/Spectating.cs)
