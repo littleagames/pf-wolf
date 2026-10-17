@@ -70,7 +70,7 @@ public class FrameRefreshTests
     public void The_View_Is_Set_Up_From_The_Camera_A_Focal_Length_Behind_It()
     {
         // Arrange: a fixed camera in the middle of tile (10, 20), looking north
-        _session.camera.SetFixed(10 * Tile + Tile / 2, 20 * Tile + Tile / 2, 90);
+        _session.Camera.SetFixed(10 * Tile + Tile / 2, 20 * Tile + Tile / 2, 90);
 
         // Act
         _frame.Setup3DView();
@@ -87,7 +87,7 @@ public class FrameRefreshTests
     public void Where_The_View_Is_In_Its_Tile_Is_Kept_Both_Ways()
     {
         // A camera a quarter of the way into tile (3, 3) east and south, looking east
-        _session.camera.SetFixed(3 * Tile + Tile / 4 + _render.FocalLength, 3 * Tile + Tile / 4, 0);
+        _session.Camera.SetFixed(3 * Tile + Tile / 4 + _render.FocalLength, 3 * Tile + Tile / 4, 0);
 
         _frame.Setup3DView();
 
@@ -100,7 +100,7 @@ public class FrameRefreshTests
     [TestCase(200, GameConstants.MaxEye)]
     public void The_Eye_Stays_Within_A_Story(int eyez, int seen)
     {
-        _session.camera.SetFixed(5 * Tile, 5 * Tile, 0, eyez: eyez);
+        _session.Camera.SetFixed(5 * Tile, 5 * Tile, 0, eyez: eyez);
 
         _frame.Setup3DView();
 
@@ -110,7 +110,7 @@ public class FrameRefreshTests
     [Test]
     public void The_Cameras_Pitch_Moves_The_Horizon()
     {
-        _session.camera.SetFixed(5 * Tile, 5 * Tile, 0, pitch: 30);
+        _session.Camera.SetFixed(5 * Tile, 5 * Tile, 0, pitch: 30);
 
         _frame.Setup3DView();
 

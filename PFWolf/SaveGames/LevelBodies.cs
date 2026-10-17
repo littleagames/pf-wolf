@@ -29,27 +29,27 @@ internal sealed class LevelBodies(
     /// <summary>
     /// The level as it stands, as a save holds it and as a hub keeps a level that's been left:
     /// the map and its actors (MapManager.WriteLevelState), then doors, area connections, the
-    /// moving pushwalls, the player's last attacker, the automap's seen tiles and the light zones.
+    /// moving MovingWalls, the player's last attacker, the automap's seen tiles and the light zones.
     /// </summary>
     internal void WriteLevelBody(BinaryWriter bw)
     {
         map.WriteLevelState(bw);
 
-        bw.Write(doorObjects.lastdoorobj);
-        for (int i = 0; i < doorObjects.lastdoorobj; i++)
-            doorObjects.doorobjlist[i].WriteState(bw);
+        bw.Write(doorObjects.LastDoorObj);
+        for (int i = 0; i < doorObjects.LastDoorObj; i++)
+            doorObjects.DoorObjList[i].WriteState(bw);
 
-        bw.Write(session.areas.areabyplayer.Length);
-        bw.Write(session.areas.areaconnect);
-        bw.Write(session.areas.areabyplayer);
+        bw.Write(session.Areas.AreaByPlayer.Length);
+        bw.Write(session.Areas.AreaConnect);
+        bw.Write(session.Areas.AreaByPlayer);
 
-        bw.Write(pushWalls.pushwalls.Count);
-        foreach (var wall in pushWalls.pushwalls)
+        bw.Write(pushWalls.MovingWalls.Count);
+        foreach (var wall in pushWalls.MovingWalls)
             wall.Write(bw);
 
         // Died() turns the player to face their killer, so keep who that is.
         // (By reference: actors are records, so IndexOf would match a look-alike by value.)
-        bw.Write(map.GetSavedActors().FindIndex(a => ReferenceEquals(a, session.playerstate.LastAttacker)));
+        bw.Write(map.GetSavedActors().FindIndex(a => ReferenceEquals(a, session.PlayerState.LastAttacker)));
 
         bw.Write(map.GetSeenBytes());
 
@@ -84,7 +84,7 @@ internal sealed class LevelBodies(
 
     /// <summary>
     /// Lays a level body over the level SetupGameLevel just built from the same map (with
-    /// loadedgame set, so it didn't count kills, treasure and secrets again)
+    /// LoadedGame set, so it didn't count kills, treasure and secrets again)
     /// </summary>
     /// <param name="ownerOf">With several players (one joining mid-game), whose each saved pawn is, by its place among the actors</param>
     internal List<Entities.Actors.Actor> ApplyLevelBody(LevelBody body, Func<int, Entities.PlayerState?>? ownerOf = null)
@@ -92,23 +92,23 @@ internal sealed class LevelBodies(
         var actors = map.RestoreLevelState(body.Level, ownerOf);
 
         // Door positions and orientations come from the map; only the motion is saved.
-        for (int i = 0; i < Math.Min(doorObjects.lastdoorobj, body.Doors.Length); i++)
+        for (int i = 0; i < Math.Min(doorObjects.LastDoorObj, body.Doors.Length); i++)
         {
-            doorObjects.doorobjlist[i].action = body.Doors[i].action;
-            doorObjects.doorobjlist[i].ticcount = body.Doors[i].ticcount;
-            doorObjects.doorobjlist[i].position = body.Doors[i].position;
-            doorObjects.doorobjlist[i].held = body.Doors[i].held;
-            doorObjects.doorobjlist[i].unlocked = body.Doors[i].unlocked;
+            doorObjects.DoorObjList[i].Action = body.Doors[i].Action;
+            doorObjects.DoorObjList[i].TicCount = body.Doors[i].TicCount;
+            doorObjects.DoorObjList[i].Position = body.Doors[i].Position;
+            doorObjects.DoorObjList[i].Held = body.Doors[i].Held;
+            doorObjects.DoorObjList[i].Unlocked = body.Doors[i].Unlocked;
         }
 
-        session.areas.areaconnect = body.AreaConnect;
-        session.areas.areabyplayer = body.AreaByPlayer;
+        session.Areas.AreaConnect = body.AreaConnect;
+        session.Areas.AreaByPlayer = body.AreaByPlayer;
 
         // copies, so a hub level's kept body isn't moved along with the live walls
-        pushWalls.pushwalls.Clear();
+        pushWalls.MovingWalls.Clear();
         foreach (var wall in body.PushWalls)
         {
-            pushWalls.pushwalls.Add(new MovingPushWall
+            pushWalls.MovingWalls.Add(new MovingPushWall
             {
                 State = wall.State, Pos = wall.Pos, X = wall.X, Y = wall.Y, Dir = wall.Dir, Tile = wall.Tile,
             });
@@ -117,8 +117,8 @@ internal sealed class LevelBodies(
         map.SetSeenBytes(body.Seen);
         lighting.RestoreZoneLights(body.Zones);
 
-        session.playerstate.LastAttacker = body.LastAttacker >= 0 && body.LastAttacker < actors.Count ? actors[body.LastAttacker] : null;
-        session.playerstate.FaceTimes = 0;
+        session.PlayerState.LastAttacker = body.LastAttacker >= 0 && body.LastAttacker < actors.Count ? actors[body.LastAttacker] : null;
+        session.PlayerState.FaceTimes = 0;
         return actors;
     }
 }

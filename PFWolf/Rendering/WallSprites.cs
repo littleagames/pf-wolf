@@ -19,7 +19,7 @@ internal readonly record struct WallSpriteSpan(double X1, double Y1, double X2, 
 /// north/south (an east-west panel), and the four diagonals stand the panel corner to corner.
 /// The back shows the sprite mirrored.
 ///
-/// The `wallsprite.offset` property moves the panel off the tile centre toward its front, in
+/// The `WallSprite.offset` property moves the panel off the tile centre toward its front, in
 /// texels (64 to a tile): 32 puts an axis-aligned panel on the tile edge. The panel is always
 /// clipped to its own tile. Coordinates are 16.16 global fixed point.
 ///
@@ -27,7 +27,7 @@ internal readonly record struct WallSpriteSpan(double X1, double Y1, double X2, 
 /// side of it in its tile, and it blocks sight and hitscan unless it has the
 /// WALLSPRITE.SHOOTTHROUGH flag (a grille or chain-link fence), and projectiles unless it has
 /// WALLSPRITE.PROJECTILETHROUGH. Enemies keep out of its whole tile (WallSpriteBlocker in
-/// actorat), as they do a diagonal wall's.
+/// actorat), as they do a diagonal WallId's.
 ///
 /// A WALLSPRITE.PASSABLE panel is only seen: the player, enemies and projectiles go through it
 /// (an arch, cobwebs, a beam overhead); it still blocks sight and hitscan unless it's
@@ -68,7 +68,7 @@ internal static class WallSprites
     };
 
     /// <summary>
-    /// Where a wall sprite's panel stands, or null if the actor isn't one, has no facing, or its
+    /// Where a WallId sprite's panel stands, or null if the actor isn't one, has no facing, or its
     /// offset pushes the panel out of its tile.
     /// </summary>
     internal static WallSpriteSpan? GetWallSpriteSpan(Entities.Actors.Actor actor)

@@ -19,7 +19,7 @@ public class PlayKeysTests
     {
         _console = new ConsoleManager();
         _input = new InputManager(new Lazy<ConsoleManager>(() => _console));
-        var session = _session = new GameSession { netgame = true };
+        var session = _session = new GameSession { NetGame = true };
         var render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
         var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, session, null!);
         var polling = new InputPolling(_input, _console, new AutomapManager(), new ControlBindings(), new ControlSettings(), frame,
@@ -65,7 +65,7 @@ public class PlayKeysTests
     [Test]
     public void Binds_Dont_Run_While_Recording_A_Demo()
     {
-        _session.demorecord = true;
+        _session.DemoRecord = true;
         _console.Bind(InputCode.FromKey(ScanCodes.K), "bound_k");
         Press(ScanCodes.K);
 
@@ -80,11 +80,11 @@ public class PlayKeysTests
         // Arrange
         _console.Bind(InputCode.FromKey(ScanCodes.K), "bound_k");
         Press(ScanCodes.K);
-        _session.demoplayback = true;
+        _session.DemoPlayback = true;
 
         // Act: the demo ends, and the next frame's keys are checked
         _keys.CheckKeys();
-        _session.demoplayback = false;
+        _session.DemoPlayback = false;
         _keys.CheckKeys();
 
         // Assert
@@ -105,7 +105,7 @@ public class PlayKeysTests
     [Test]
     public void Not_While_Recording_A_Demo()
     {
-        _session.demorecord = true;
+        _session.DemoRecord = true;
         Press(ScanCodes.Grave);
 
         _keys.CheckKeys();

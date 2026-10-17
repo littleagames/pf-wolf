@@ -37,7 +37,7 @@ internal sealed class PlayerBodies(
     /// <summary>Moves and animates every player's body, each frame</summary>
     internal void TickPlayerBodies(uint tics)
     {
-        foreach (var p in session.players)
+        foreach (var p in session.Players)
             TickPlayerBody(p, tics);
     }
 
@@ -46,10 +46,10 @@ internal sealed class PlayerBodies(
         if (p.Pawn is not { } pawn)
             return;
 
-        if (p.BodyClass != p.playerclass)
+        if (p.BodyClass != p.PlayerClass)
         {
-            p.BodyClass = p.playerclass;
-            p.Body = inventory.CreateActor(p.playerclass);
+            p.BodyClass = p.PlayerClass;
+            p.Body = inventory.CreateActor(p.PlayerClass);
             if (p.Body?.ResolvedStates.ContainsKey("Spawn") != true)
                 p.Body = null;
             else
@@ -66,7 +66,7 @@ internal sealed class PlayerBodies(
         bool attacking = p.WeaponSprite?.CurrentState is { } weaponState && weaponState.StateName != WeaponInHand.WeaponReadyState;
         p.PainTics = Math.Max(p.PainTics - (int)tics, 0);
 
-        var want = p.health <= 0 ? "Death"
+        var want = p.Health <= 0 ? "Death"
             : p.PainTics > 0 ? (p.PainAlt && body.ResolvedStates.ContainsKey("Pain1") ? "Pain1" : "Pain")
             : attacking ? "Missile"
             : moving ? "See"
@@ -88,11 +88,11 @@ internal sealed class PlayerBodies(
 
     /// <summary>A player's body to draw this frame: anyone's but the one the camera looks through</summary>
     internal Entities.Actors.Actor? VisiblePlayerBody(PlayerPawn pawn) =>
-        session.camera.Target != pawn && pawn.State.Body is { CurrentState: { Sprite.Length: > 0 } state } body && state.Sprite != "TNT1"
+        session.Camera.Target != pawn && pawn.State.Body is { CurrentState: { Sprite.Length: > 0 } state } body && state.Sprite != "TNT1"
             ? body : null;
 
     /// <summary>Whether an actor is one of the players' bodies (they turn by their Angle, like a projectile)</summary>
-    internal bool IsPlayerBody(Entities.Actors.Actor actor) => session.players.Any(p => ReferenceEquals(p.Body, actor));
+    internal bool IsPlayerBody(Entities.Actors.Actor actor) => session.Players.Any(p => ReferenceEquals(p.Body, actor));
 
     /// <summary>
     /// The sprite to draw for an actor's frame: its own, except a player's body, which shows their
@@ -106,13 +106,13 @@ internal sealed class PlayerBodies(
         var state = actor.CurrentState!;
 
         // Carrying a flag: its sprite in place of the Spawn one, frame by frame where it has it
-        if (session.players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is { CarrySprite: { } carry, BodyHoldsWeapon: true }
+        if (session.Players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is { CarrySprite: { } carry, BodyHoldsWeapon: true }
             && actor.ResolvedStates.TryGetValue("Spawn", out var bodySpawn)
             && string.Equals(state.Sprite, bodySpawn.Sprite, StringComparison.OrdinalIgnoreCase)
             && SpriteExists(spriteDrawing.ActorShapeName(carry, state.FrameLetter, actor)))
             return carry;
 
-        if (session.players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is not { weapon: { } weapon, BodyHoldsWeapon: true }
+        if (session.Players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is not { Weapon: { } weapon, BodyHoldsWeapon: true }
             || !actor.ResolvedStates.TryGetValue("Spawn", out var spawn)
             || !string.Equals(state.Sprite, spawn.Sprite, StringComparison.OrdinalIgnoreCase)
             || inventory.GetStringProperty(weapon, "weapon.bodysprite") is not { Length: > 0 } swap)
@@ -124,13 +124,13 @@ internal sealed class PlayerBodies(
     internal string? SpawnSprite(Entities.Actors.Actor? actor) =>
         actor != null && actor.ResolvedStates.TryGetValue("Spawn", out var spawn) ? spawn.Sprite : null;
 
-    internal readonly Dictionary<string, bool> _spriteExistsCache = new(StringComparer.OrdinalIgnoreCase);
+    internal readonly Dictionary<string, bool> SpriteExistsCache = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Whether there's a sprite picture of that name (PLPSA1)</summary>
     internal bool SpriteExists(string name)
     {
-        if (!_spriteExistsCache.TryGetValue(name, out var exists))
-            _spriteExistsCache[name] = exists = assets.Exists<Assets.SpriteAsset>(name);
+        if (!SpriteExistsCache.TryGetValue(name, out var exists))
+            SpriteExistsCache[name] = exists = assets.Exists<Assets.SpriteAsset>(name);
         return exists;
     }
 

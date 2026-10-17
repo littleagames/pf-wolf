@@ -75,10 +75,10 @@ public class PlayerUseTests
             tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
-        var pawn = new PlayerPawn { State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10, Angle = 0 };
-        _session.playerstate.Pawn = pawn;
+        var pawn = new PlayerPawn { State = _session.PlayerState, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10, Angle = 0 };
+        _session.PlayerState.Pawn = pawn;
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        _inventory.SetHolder(_session.playerstate.Items);
+        _inventory.SetHolder(_session.PlayerState.Items);
         _use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session, new PlayerUseHooks(_ => { }, () => false));
     }
 
@@ -86,7 +86,7 @@ public class PlayerUseTests
     private Monster Prisoner(int dx, int dy)
     {
         var prisoner = (Monster)_inventory.CreateActor("Prisoner")!;
-        (prisoner.X, prisoner.Y) = (_session.player.X + dx, _session.player.Y + dy);
+        (prisoner.X, prisoner.Y) = (_session.Player.X + dx, _session.Player.Y + dy);
         prisoner.RuntimeFlags |= ObjFlags.Shootable;
         prisoner.SetState(prisoner.ResolvedStates["Spawn"]);
         _map.GetActors().AddLast(prisoner);
@@ -105,7 +105,7 @@ public class PlayerUseTests
         // Assert
         Assert.That(used, Is.True);
         Assert.That(prisoner.CurrentState!.StateName, Is.EqualTo("Use"));
-        Assert.That(_session.playerinput.IsHeld(ButtonType.Use), Is.True);
+        Assert.That(_session.PlayerInput.IsHeld(ButtonType.Use), Is.True);
     }
 
     [Test]
@@ -146,7 +146,7 @@ public class PlayerUseTests
         // Act / Assert
         Assert.That(_use.TryUseActor(), Is.False);
         prisoner.RuntimeFlags &= ~ObjFlags.AttackMode;
-        _session.playerinput.SetHeld(ButtonType.Use, true);
+        _session.PlayerInput.SetHeld(ButtonType.Use, true);
         Assert.That(_use.TryUseActor(), Is.False);
     }
 
@@ -154,7 +154,7 @@ public class PlayerUseTests
     private Entities.Actors.Actor LogBook(int dx, int dy)
     {
         var book = _inventory.CreateActor("LogBook")!;
-        (book.X, book.Y) = (_session.player.X + dx, _session.player.Y + dy);
+        (book.X, book.Y) = (_session.Player.X + dx, _session.Player.Y + dy);
         (book.TileX, book.TileY) = ((byte)(book.X >> MapConstants.TileShift), (byte)(book.Y >> MapConstants.TileShift));
         book.SetState(book.ResolvedStates["Spawn"]);
         _map.GetActors().AddLast(book);
@@ -211,7 +211,7 @@ public class PlayerUseTests
     {
         // Arrange
         _inventory.Give("Detonator", 1);
-        _session.tics = 20;
+        _session.Tics = 20;
 
         // Act / Assert
         _use.UseHeldItem();
@@ -229,13 +229,13 @@ public class PlayerUseTests
     [Test]
     public void An_Exit_Waits_While_A_Level_Objective_Blocks_It()
     {
-        // Arrange: the objectives say no
+        // Arrange: the MatchObjectives say no
         var use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session,
             new PlayerUseHooks(_ => { }, () => false, ExitAllowed: () => false));
 
         // Act / Assert: refused, the level goes on
         Assert.That(use.ExitAction(secret: false), Is.False);
-        Assert.That(_session.playstate, Is.EqualTo(PlayState.StillPlaying));
+        Assert.That(_session.PlayState, Is.EqualTo(PlayState.StillPlaying));
     }
 
     [Test]

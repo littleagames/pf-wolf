@@ -8,7 +8,7 @@ public class IntermissionTests
     public void Ratios_Are_Percentages_Rounded_Down()
     {
         // Arrange
-        var game = new GameState { killcount = 2, killtotal = 3, secretcount = 1, secrettotal = 1, treasurecount = 0, treasuretotal = 8 };
+        var game = new GameState { KillCount = 2, KillTotal = 3, SecretCount = 1, SecretTotal = 1, TreasureCount = 0, TreasureTotal = 8 };
 
         // Act / Assert
         Assert.That(IntermissionScreen.Ratios(game), Is.EqualTo((66, 100, 0)));
@@ -30,7 +30,7 @@ public class IntermissionTests
     }
 
     private static LevelRatio Floor(short kill, short secret, short treasure, int time) =>
-        new() { kill = kill, secret = secret, treasure = treasure, time = time };
+        new() { Kill = kill, Secret = secret, Treasure = treasure, Time = time };
 
     private static readonly Dictionary<string, MapInfo> Maps = new()
     {
@@ -151,9 +151,9 @@ public class HighScoreRankingTests
 {
     private static HighScore[] Table() =>
     [
-        new() { name = "A", score = 5000, completed = 3 },
-        new() { name = "B", score = 3000, completed = 2 },
-        new() { name = "C", score = 1000, completed = 1 },
+        new() { Name = "A", Score = 5000, Completed = 3 },
+        new() { Name = "B", Score = 3000, Completed = 2 },
+        new() { Name = "C", Score = 1000, Completed = 1 },
     ];
 
     [Test]
@@ -163,11 +163,11 @@ public class HighScoreRankingTests
         var table = Table();
 
         // Act
-        int row = HighScore.Insert(table, new HighScore { name = "New", score = 4000 });
+        int row = HighScore.Insert(table, new HighScore { Name = "New", Score = 4000 });
 
         // Assert
         Assert.That(row, Is.EqualTo(1));
-        Assert.That(table.Select(s => s.name), Is.EqualTo(new[] { "A", "New", "B" }));
+        Assert.That(table.Select(s => s.Name), Is.EqualTo(new[] { "A", "New", "B" }));
     }
 
     [Test]
@@ -177,8 +177,8 @@ public class HighScoreRankingTests
         var table = Table();
 
         // Act / Assert
-        Assert.That(HighScore.Insert(table, new HighScore { score = 500 }), Is.EqualTo(-1));
-        Assert.That(table.Select(s => s.name), Is.EqualTo(new[] { "A", "B", "C" }));
+        Assert.That(HighScore.Insert(table, new HighScore { Score = 500 }), Is.EqualTo(-1));
+        Assert.That(table.Select(s => s.Name), Is.EqualTo(new[] { "A", "B", "C" }));
     }
 
     [Test]
@@ -188,8 +188,8 @@ public class HighScoreRankingTests
         var table = Table();
 
         // Act
-        int further = HighScore.Insert(table, new HighScore { name = "Further", score = 3000, completed = 5 });
-        int same = HighScore.Insert(Table(), new HighScore { score = 3000, completed = 2 });
+        int further = HighScore.Insert(table, new HighScore { Name = "Further", Score = 3000, Completed = 5 });
+        int same = HighScore.Insert(Table(), new HighScore { Score = 3000, Completed = 2 });
 
         // Assert: a tie that got no further stays below
         Assert.That(further, Is.EqualTo(1));
@@ -217,6 +217,6 @@ public class HighScoreRankingTests
         var score = HighScoresScreen.NewScore(1234, won, floor, cluster, floorScore);
 
         // Assert
-        Assert.That((score.score, (int)score.completed, (int)score.episode, (int)score.ratio), Is.EqualTo((1234, completed, episode, ratio)));
+        Assert.That((score.Score, (int)score.Completed, (int)score.Episode, (int)score.Ratio), Is.EqualTo((1234, completed, episode, ratio)));
     }
 }

@@ -3,8 +3,8 @@ using PFWolf.Managers;
 
 namespace PFWolf.Gameplay.MatchModes;
 
-/// <summary>What the modes' objectives need from the game</summary>
-/// <param name="IsOpenFloor">Floor a player can walk on (no wall, door or solid thing, in an area)</param>
+/// <summary>What the modes' MatchObjectives need from the game</summary>
+/// <param name="IsOpenFloor">Floor a player can walk on (no WallId, DoorNumber or solid thing, in an area)</param>
 /// <param name="IsFreeFloor">Open floor nobody stands on</param>
 /// <param name="Translation">A translation by name if this game has it (translations.yaml), else null</param>
 /// <param name="PlaySound">A sound everyone hears, as the game's own (an announcement)</param>
@@ -24,11 +24,11 @@ internal sealed record MatchModeHooks(
 internal abstract class MatchObjective(MapManager map, GameSession session, Deathmatch match, HudMessageManager hud, MatchModeHooks hooks)
     : IMatchObjective
 {
-    protected readonly MapManager map = map;
-    protected readonly GameSession session = session;
-    protected readonly Deathmatch match = match;
-    protected readonly HudMessageManager hud = hud;
-    protected readonly MatchModeHooks hooks = hooks;
+    protected readonly MapManager Map = map;
+    protected readonly GameSession Session = session;
+    protected readonly Deathmatch Match = match;
+    protected readonly HudMessageManager Hud = hud;
+    protected readonly MatchModeHooks Hooks = hooks;
 
     public abstract GameMode Mode { get; }
     public abstract void LevelSetup();
@@ -40,7 +40,7 @@ internal abstract class MatchObjective(MapManager map, GameSession session, Deat
 
     /// <summary>The players alive on the level, in player order</summary>
     protected IEnumerable<PlayerPawn> LivingPawns =>
-        map.Players.Where(pawn => !pawn.State.Gone && pawn.State.health > 0 && pawn.Active == ActiveType.Yes);
+        Map.Players.Where(pawn => !pawn.State.Gone && pawn.State.Health > 0 && pawn.Active == ActiveType.Yes);
 
     /// <summary>Whether a player stands on (or right at) a tile: within <paramref name="reach"/> of its middle either way</summary>
     protected static bool Touches(PlayerPawn pawn, int tilex, int tiley, int reach = TileGlobal * 5 / 8) =>
@@ -57,23 +57,23 @@ internal abstract class MatchObjective(MapManager map, GameSession session, Deat
     /// <summary>Tells everyone (over the view, and the console) what's happened, with a sound</summary>
     protected void Announce(string text, string? sound = null)
     {
-        hud.Show(HudMessageKind.Other, text);
+        Hud.Show(HudMessageKind.Other, text);
         if (sound != null)
-            hooks.PlaySound(sound);
+            Hooks.PlaySound(sound);
     }
 
     /// <summary>The translation a team's flag is drawn through: flag-red, flag-blue, or flag-neutral for nobody's</summary>
     protected string? FlagTranslation(int team) =>
-        hooks.Translation(team switch { 0 => "flag-red", 1 => "flag-blue", _ => "flag-neutral" });
+        Hooks.Translation(team switch { 0 => "flag-red", 1 => "flag-blue", _ => "flag-neutral" });
 
     /// <summary>The flag of a class shown on a tile, if there is one</summary>
     protected Entities.Actors.Actor? FlagAt(string className, int tilex, int tiley) =>
-        map.GetActors().FirstOrDefault(a => !a.IsRemoved && a.Name == className && a.TileX == tilex && a.TileY == tiley);
+        Map.GetActors().FirstOrDefault(a => !a.IsRemoved && a.Name == className && a.TileX == tilex && a.TileY == tiley);
 
     /// <summary>Shows a flag of a class on a tile (one already there is kept), through a translation</summary>
     protected void ShowFlag(string className, int tilex, int tiley, string? translation = null)
     {
-        var flag = FlagAt(className, tilex, tiley) ?? map.SpawnThing(tilex, tiley, new Assets.MapActorTranslation { Class = className }, countKill: false);
+        var flag = FlagAt(className, tilex, tiley) ?? Map.SpawnThing(tilex, tiley, new Assets.MapActorTranslation { Class = className }, countKill: false);
         if (flag != null && translation != null)
             flag.Translation = translation;
     }
@@ -81,22 +81,22 @@ internal abstract class MatchObjective(MapManager map, GameSession session, Deat
     /// <summary>Takes away every flag of a class but those on the tiles given</summary>
     protected void HideFlags(string className, params (int x, int y)[] keep)
     {
-        foreach (var flag in map.GetActors().Where(a => !a.IsRemoved && a.Name == className).ToList())
+        foreach (var flag in Map.GetActors().Where(a => !a.IsRemoved && a.Name == className).ToList())
             if (!keep.Contains((flag.TileX, flag.TileY)))
-                map.MarkForRemoval(flag);
+                Map.MarkForRemoval(flag);
     }
 
     /// <summary>Where the map's markers of a class stand, in the order they were placed</summary>
     protected List<(int x, int y)> Markers(string className) =>
-        map.GetActors().Where(a => !a.IsRemoved && a.Name == className).Select(a => ((int)a.TileX, (int)a.TileY)).ToList();
+        Map.GetActors().Where(a => !a.IsRemoved && a.Name == className).Select(a => ((int)a.TileX, (int)a.TileY)).ToList();
 
     /// <summary>Every open floor tile of the map, row by row</summary>
     protected List<(int x, int y)> OpenFloor()
     {
         var tiles = new List<(int x, int y)>();
-        for (int y = 1; y < map.mapheight - 1; y++)
-            for (int x = 1; x < map.mapwidth - 1; x++)
-                if (hooks.IsOpenFloor(x, y))
+        for (int y = 1; y < Map.mapheight - 1; y++)
+            for (int x = 1; x < Map.mapwidth - 1; x++)
+                if (Hooks.IsOpenFloor(x, y))
                     tiles.Add((x, y));
         return tiles;
     }

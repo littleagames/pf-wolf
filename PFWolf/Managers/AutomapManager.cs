@@ -3,9 +3,9 @@ namespace PFWolf.Managers;
 /// <summary>How the automap draws the level.</summary>
 internal enum AutomapStyle : byte
 {
-    /// <summary>Wall and door textures, and actors as their sprites.</summary>
+    /// <summary>Wall and DoorNumber textures, and actors as their sprites.</summary>
     Graphic,
-    /// <summary>Wall outlines, door lines and actor dots in flat colors.</summary>
+    /// <summary>Wall outlines, DoorNumber lines and actor dots in flat colors.</summary>
     Color,
 }
 

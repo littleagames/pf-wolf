@@ -52,14 +52,14 @@ public class MountedWeaponsTests
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        _inventory.SetHolder(_session.playerstate.Items);
+        _inventory.SetHolder(_session.PlayerState.Items);
         _inventory.Give("Pistol", 1);
-        _session.playerstate.weapon = _session.playerstate.chosenweapon = "Pistol";
+        _session.PlayerState.Weapon = _session.PlayerState.ChosenWeapon = "Pistol";
 
         // The player at 10,10 facing east, the nest a tile ahead
-        _pawn = new PlayerPawn { State = _session.playerstate, Angle = 0 };
+        _pawn = new PlayerPawn { State = _session.PlayerState, Angle = 0 };
         _pawn.SetPosition(10, 10);
-        _session.playerstate.Pawn = _pawn;
+        _session.PlayerState.Pawn = _pawn;
         _nest = _inventory.CreateActor("Nest")!;
         _nest.SetPosition(11, 10);
         _map.GetActors().AddLast(_nest);
@@ -84,10 +84,10 @@ public class MountedWeaponsTests
         // Assert
         Assert.That(_mounted.IsMounted, Is.True);
         Assert.That((_pawn.TileX, _pawn.TileY, _pawn.Angle), Is.EqualTo(((byte)11, (byte)10, (short)0)));
-        Assert.That(_session.playerstate.weapon, Is.EqualTo("NestGun"));
+        Assert.That(_session.PlayerState.Weapon, Is.EqualTo("NestGun"));
         Assert.That(_inventory.Has("NestGun"), Is.True);
         Assert.That(_sounds, Is.EqualTo(new[] { "nest/load" }));
-        Assert.That(_session.playerinput.IsHeld(ButtonType.Attack), Is.True);
+        Assert.That(_session.PlayerInput.IsHeld(ButtonType.Attack), Is.True);
     }
 
     [Test]
@@ -111,14 +111,14 @@ public class MountedWeaponsTests
         Assert.That(wasOn, Is.True);
         Assert.That(_mounted.IsMounted, Is.False);
         Assert.That((_pawn.TileX, _pawn.TileY), Is.EqualTo(((byte)10, (byte)10)));
-        Assert.That(_session.playerstate.weapon, Is.EqualTo("Pistol"));
+        Assert.That(_session.PlayerState.Weapon, Is.EqualTo("Pistol"));
         Assert.That(_inventory.Has("NestGun"), Is.False);
     }
 
     [Test]
     public void Getting_Off_Tries_The_Sides_Then_The_Front_When_Behind_Is_Blocked()
     {
-        // Arrange: a wall behind and on the north side, a solid-free south side
+        // Arrange: a WallId behind and on the north side, a solid-free south side
         _mounted.Mount(_nest, ["NestGun"]);
         _map.tilemap[10, 10] = 1;
         _map.tilemap[11, 9] = 1;
@@ -133,7 +133,7 @@ public class MountedWeaponsTests
     [Test]
     public void With_Nowhere_To_Go_They_Stay_On_And_Are_Told()
     {
-        // Arrange: walled in all round, and someone shootable standing where a wall isn't
+        // Arrange: walled in all round, and someone shootable standing where a WallId isn't
         _mounted.Mount(_nest, ["NestGun"]);
         _map.tilemap[10, 10] = _map.tilemap[11, 9] = _map.tilemap[11, 11] = 1;
         var guard = new Monster { Name = "Guard" };
@@ -161,14 +161,14 @@ public class MountedWeaponsTests
     {
         // Arrange
         _mounted.Mount(_nest, ["NestGun"]);
-        _session.gamestate.mapon = "NEXTMAP";
+        _session.GameState.MapOn = "NEXTMAP";
 
         // Act
         _mounted.Tick();
 
         // Assert
         Assert.That(_mounted.IsMounted, Is.False);
-        Assert.That(_session.playerstate.weapon, Is.EqualTo("Pistol"));
+        Assert.That(_session.PlayerState.Weapon, Is.EqualTo("Pistol"));
         Assert.That(_inventory.Has("NestGun"), Is.False);
     }
 
@@ -177,14 +177,14 @@ public class MountedWeaponsTests
     {
         // Arrange: as a saved game might bring back
         _inventory.Give("NestGun", 1);
-        _session.playerstate.weapon = "NestGun";
+        _session.PlayerState.Weapon = "NestGun";
 
         // Act
         _mounted.Tick();
 
         // Assert
         Assert.That(_inventory.Has("NestGun"), Is.False);
-        Assert.That(_session.playerstate.weapon, Is.EqualTo("Pistol"));
+        Assert.That(_session.PlayerState.Weapon, Is.EqualTo("Pistol"));
     }
 
     [TestCase(ControlDir.East, -1, 0)]

@@ -6,6 +6,6 @@ namespace PFWolf.Gameplay;
 /// </summary>
 internal sealed class DemoBuffer
 {
-    internal byte[] demoData = null!;
-    internal int demoptr, lastdemoptr;
+    internal byte[] DemoData = null!;
+    internal int DemoPtr, LastDemoPtr;
 }

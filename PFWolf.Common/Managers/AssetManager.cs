@@ -416,7 +416,7 @@ public class AssetManager
     }
 
     /// <summary>
-    /// Every asset with this name, of any type, with where it came from: e.g. a wall's
+    /// Every asset with this name, of any type, with where it came from: e.g. a WallId's
     /// picture from VSWAP.WL6, replaced by a mod's PNG
     /// </summary>
     public IEnumerable<(string Type, string Name, IReadOnlyList<AssetOrigin> Origins)> FindAssetOrigins(string assetName)
@@ -502,7 +502,7 @@ public class AssetManager
                 throw new ArgumentException($"Asset name cannot be empty. Asset Type: {assetType}", nameof(assetName));
             }
 
-            // Once per type, as below: a wall with no texture for a side is looked up every frame
+            // Once per type, as below: a WallId with no texture for a side is looked up every frame
             if (_reportedMissing.Add("\0" + assetType))
                 WarningLog.Write($"Asset name cannot be empty. Asset Type: {assetType}");
             return null;
@@ -513,7 +513,7 @@ public class AssetManager
         if (_assets.TryGetValue(key, out var foundAsset))
             return foundAsset;
 
-        // Once per asset: the renderer looks up a missing wall texture every frame
+        // Once per asset: the renderer looks up a missing WallId texture every frame
         if (_reportedMissing.Add(key))
             WarningLog.Write($"Asset not found: {assetName} (Type: {assetType})");
         return null;

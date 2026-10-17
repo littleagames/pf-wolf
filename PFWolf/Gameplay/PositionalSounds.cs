@@ -15,7 +15,7 @@ internal sealed class PositionalSounds(AudioManager audio, GameSession session)
         audio.PlayAt(s, FixedToTiles(ob.X), FixedToTiles(ob.Y));
 
     internal void UpdateSoundListener() =>
-        audio.SetListener(FixedToTiles(session.camera.X), FixedToTiles(session.camera.Y), session.camera.Angle);
+        audio.SetListener(FixedToTiles(session.Camera.X), FixedToTiles(session.Camera.Y), session.Camera.Angle);
 
     internal static float FixedToTiles(int value) => value / (float)MapConstants.TileGlobal;
 }

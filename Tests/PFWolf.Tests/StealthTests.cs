@@ -89,16 +89,16 @@ public class StealthTests
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        _inventory.SetHolder(_session.playerstate.Items);
+        _inventory.SetHolder(_session.PlayerState.Items);
         _inventory.Give("Knife", 1);
         _inventory.Give("Pistol", 1);
-        _session.playerstate.weapon = _session.playerstate.chosenweapon = "Pistol";
-        _session.playerstate.health = 100;
-        _session.tics = 1;
+        _session.PlayerState.Weapon = _session.PlayerState.ChosenWeapon = "Pistol";
+        _session.PlayerState.Health = 100;
+        _session.Tics = 1;
 
-        _pawn = new PlayerPawn { State = _session.playerstate };
+        _pawn = new PlayerPawn { State = _session.PlayerState };
         _pawn.SetPosition(10, 10);
-        _session.playerstate.Pawn = _pawn;
+        _session.PlayerState.Pawn = _pawn;
 
         var bar = new StatusBarDrawing(null!, null, null!, null!, _inventory, null!, null!, null!, _session,
             new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
@@ -119,7 +119,7 @@ public class StealthTests
     {
         _inventory.Give("Uniform", 1);
         _inventory.Give("IDPapers", 1);
-        _session.playerstate.weapon = _session.playerstate.chosenweapon = "IDPapers";
+        _session.PlayerState.Weapon = _session.PlayerState.ChosenWeapon = "IDPapers";
     }
 
     private Monster Enemy(string name, int tilesEast = 2)
@@ -147,7 +147,7 @@ public class StealthTests
 
         // in uniform, papers in hand, but already noticed
         Disguise();
-        _session.playerstate.Undetected = false;
+        _session.PlayerState.Undetected = false;
         Assert.That(_stealth.Overlooks(guard), Is.False);
     }
 
@@ -181,7 +181,7 @@ public class StealthTests
 
         // Act / Assert
         Assert.That(_stealth.Overlooks(guard), Is.True);
-        Assert.That(_session.playerstate.SuspicionPending, Is.GreaterThan(0));
+        Assert.That(_session.PlayerState.SuspicionPending, Is.GreaterThan(0));
         Assert.That(_stealth.Overlooks(guard), Is.False);
         Assert.That(guard.Suspicion, Is.Zero);
     }
@@ -197,9 +197,9 @@ public class StealthTests
         // Act / Assert
         _stealth.Overlooks(guard);
         _stealth.Tick();
-        Assert.That(_session.playerstate.SuspicionMeter, Is.EqualTo(50));
+        Assert.That(_session.PlayerState.SuspicionMeter, Is.EqualTo(50));
         _stealth.Tick();
-        Assert.That(_session.playerstate.SuspicionMeter, Is.Zero);
+        Assert.That(_session.PlayerState.SuspicionMeter, Is.Zero);
     }
 
     [Test]
@@ -227,7 +227,7 @@ public class StealthTests
         Assert.That(_papersRustles, Is.EqualTo(1));
         Assert.That(guard.Suspicion, Is.EqualTo(-1));
         Assert.That(_stealth.Overlooks(guard), Is.True);
-        Assert.That(_session.playerstate.Undetected, Is.True);
+        Assert.That(_session.PlayerState.Undetected, Is.True);
     }
 
     [Test]
@@ -243,7 +243,7 @@ public class StealthTests
 
         // Assert
         Assert.That(_messages, Is.EqualTo(new[] { "Not fooled!" }));
-        Assert.That(_session.playerstate.Undetected, Is.False);
+        Assert.That(_session.PlayerState.Undetected, Is.False);
     }
 
     [Test]
@@ -258,24 +258,24 @@ public class StealthTests
         // Assert
         Assert.That(caught, Is.False);
         Assert.That(_messages, Is.EqualTo(new[] { "Blown" }));
-        Assert.That(_session.playerstate.Undetected, Is.False);
+        Assert.That(_session.PlayerState.Undetected, Is.False);
         Assert.That(_inventory.Has("Uniform"), Is.False);
         Assert.That(_inventory.Has("IDPapers"), Is.False);
-        Assert.That(_session.playerstate.weapon, Is.Not.EqualTo("IDPapers"));
+        Assert.That(_session.PlayerState.Weapon, Is.Not.EqualTo("IDPapers"));
     }
 
     [Test]
     public void Noticed_After_Killing_Unseen_They_Hear_So()
     {
         // Arrange: a knife kill
-        _session.playerstate.weapon = "Knife";
+        _session.PlayerState.Weapon = "Knife";
         _stealth.Killed(_pawn);
 
         // Act
         _stealth.Spotted(Enemy("Guard"));
 
         // Assert
-        Assert.That(_session.playerstate.StealthKills, Is.EqualTo(1));
+        Assert.That(_session.PlayerState.StealthKills, Is.EqualTo(1));
         Assert.That(_messages, Is.EqualTo(new[] { "Lost" }));
     }
 
@@ -284,15 +284,15 @@ public class StealthTests
     {
         // Act: a pistol, a zoomed scope, then a knife once seen
         _stealth.Killed(_pawn);
-        _session.playerstate.ZoomMode = ZoomMode.Zoomed;
+        _session.PlayerState.ZoomMode = ZoomMode.Zoomed;
         _stealth.Killed(_pawn);
-        _session.playerstate.ZoomMode = ZoomMode.Ready;
-        _session.playerstate.Undetected = false;
-        _session.playerstate.weapon = "Knife";
+        _session.PlayerState.ZoomMode = ZoomMode.Ready;
+        _session.PlayerState.Undetected = false;
+        _session.PlayerState.Weapon = "Knife";
         _stealth.Killed(_pawn);
 
         // Assert
-        Assert.That(_session.playerstate.StealthKills, Is.EqualTo(1));
+        Assert.That(_session.PlayerState.StealthKills, Is.EqualTo(1));
     }
 
     [Test]
@@ -319,7 +319,7 @@ public class StealthTests
         rack.SetState("Spawn");
         var guard = Enemy("Guard");
         guard.RuntimeFlags |= ObjFlags.AttackMode;
-        _session.playerstate.Undetected = false;
+        _session.PlayerState.Undetected = false;
 
         // Act / Assert
         _stealth.Disguise(rack, ["Uniform", "IDPapers", "Taken"]);
@@ -329,7 +329,7 @@ public class StealthTests
         guard.RuntimeFlags &= ~ObjFlags.AttackMode;
         _stealth.Disguise(rack, ["Uniform", "IDPapers", "Taken"]);
         Assert.That(_inventory.Has("Uniform") && _inventory.Has("IDPapers"), Is.True);
-        Assert.That(_session.playerstate.Undetected, Is.True);
+        Assert.That(_session.PlayerState.Undetected, Is.True);
         Assert.That(_messages.Last(), Is.EqualTo("Uniform taken."));
         Assert.That(_sounds, Is.EqualTo(new[] { "uniform" }));
         Assert.That(rack.CurrentState!.StateName, Is.EqualTo("Taken"));

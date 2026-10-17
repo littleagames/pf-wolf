@@ -73,7 +73,7 @@ public class MapRoundTripTests
     [Category("GameData")]
     public void No_Game_Level_Uses_The_High_Byte_Of_Plane_0(string gameMaps, string mapHead)
     {
-        // Arrange: wall patches are kept there (MapConstants.PatchShift)
+        // Arrange: WallId patches are kept there (MapConstants.PatchShift)
         var folder = DataFolderCandidates().FirstOrDefault(folder => File.Exists(Path.Combine(folder, gameMaps)) && File.Exists(Path.Combine(folder, mapHead)));
         if (folder == null)
             Assert.Ignore($"{gameMaps} isn't in {string.Join(" or ", DataFolderCandidates())}; set PFWOLF_GAMEDATA to a folder that has it");

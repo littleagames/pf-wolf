@@ -46,26 +46,26 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
             //
             // name
             //
-            ui.TextAt(layout.NameX, y, style).Print(s.name);
+            ui.TextAt(layout.NameX, y, style).Print(s.Name);
 
             //
             // level
             //
-            var buffer = (s.completed & ~HighScore.Won).ToString();
+            var buffer = (s.Completed & ~HighScore.Won).ToString();
             int x = layout.LevelRight - ui.TextWidth(buffer, style.Font);
             if (!layout.ShowLevel)
             { }
-            else if ((s.completed & HighScore.Won) != 0 && !string.IsNullOrEmpty(layout.WonPic))
+            else if ((s.Completed & HighScore.Won) != 0 && !string.IsNullOrEmpty(layout.WonPic))
                 graphics.DrawPic(layout.WonPic, x + 8, y - 1);
             else if (layout.ShowEpisode)
-                ui.TextAt(x - 6, y, style).Print($"E{s.episode + 1}/L{buffer}");
+                ui.TextAt(x - 6, y, style).Print($"E{s.Episode + 1}/L{buffer}");
             else
                 ui.TextAt(x, y, style).Print(buffer);
 
             //
             // score
             //
-            buffer = s.score.ToString();
+            buffer = s.Score.ToString();
             ui.TextAt(layout.ScoreRight - ui.TextWidth(buffer, style.Font), y, style).Print(buffer);
 
             //
@@ -73,7 +73,7 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
             //
             if (layout.RatioRight > 0)
             {
-                buffer = s.ratio.ToString();
+                buffer = s.Ratio.ToString();
                 ui.TextAt(layout.RatioRight - ui.TextWidth(buffer, style.Font), y, style).Print(buffer);
             }
         }
@@ -88,10 +88,10 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
     internal void CheckHighScore(int score, bool won)
     {
         var gameInfo = engine.GetGameInfo();
-        var gamestate = session.gamestate;
-        int floor = gameInfo.Maps.TryGetValue(gamestate.mapon, out var mapInfo) ? mapInfo.FloorNumber : 1;
+        var gamestate = session.GameState;
+        int floor = gameInfo.Maps.TryGetValue(gamestate.MapOn, out var mapInfo) ? mapInfo.FloorNumber : 1;
 
-        var myscore = NewScore(score, won, floor, gamestate.cluster, floorScore());
+        var myscore = NewScore(score, won, floor, gamestate.Cluster, floorScore());
         var table = scores();
         int n = HighScore.Insert(table, myscore);
 
@@ -119,10 +119,10 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
                 video.Update();
             }
 
-            string str = table[n].name;
+            string str = table[n].Name;
             lineInput.Run(x, y, ref str, "", true, HighScore.MaxHighName, layout.EntryWidth,
                 new TextStyle(layout.Font, layout.EntryColor, layout.EntryBackground));
-            table[n].name = str;
+            table[n].Name = str;
             engine.WriteConfig();
         }
         else
@@ -138,10 +138,10 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
     /// </summary>
     internal static HighScore NewScore(int score, bool won, int floor, int cluster, int floorScore) => new()
     {
-        name = "",
-        score = score,
-        episode = (ushort)Math.Max(cluster - 1, 0),
-        completed = (ushort)(Math.Clamp(floor, 0, HighScore.Won - 1) | (won ? HighScore.Won : 0)),
-        ratio = (ushort)Math.Clamp(floorScore * 100 / 300, 0, 100),     // the last floor's rating
+        Name = "",
+        Score = score,
+        Episode = (ushort)Math.Max(cluster - 1, 0),
+        Completed = (ushort)(Math.Clamp(floor, 0, HighScore.Won - 1) | (won ? HighScore.Won : 0)),
+        Ratio = (ushort)Math.Clamp(floorScore * 100 / 300, 0, 100),     // the last floor's rating
     };
 }

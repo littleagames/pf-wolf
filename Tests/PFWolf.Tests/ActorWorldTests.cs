@@ -15,7 +15,7 @@ public class ActorWorldTests
             null!, null!, null!, null!, null!, _session);
     }
 
-    private static PlayerPawn Pawn(short health) => new() { State = new Entities.PlayerState { health = health } };
+    private static PlayerPawn Pawn(short health) => new() { State = new Entities.PlayerState { Health = health } };
 
     // GameMode by number: Single, Coop, Deathmatch
     [TestCase(0, 0, true)]          // alone, dying ends the level: still gone after that frame

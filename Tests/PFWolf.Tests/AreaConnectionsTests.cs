@@ -10,14 +10,14 @@ public class AreaConnectionsTests
         areas.Reset(Areas);
         foreach (var (a, b) in doors)
         {
-            areas.areaconnect[a, b]++;
-            areas.areaconnect[b, a]++;
+            areas.AreaConnect[a, b]++;
+            areas.AreaConnect[b, a]++;
         }
         return areas;
     }
 
     private static int[] ByPlayer(AreaConnections areas) =>
-        Enumerable.Range(0, Areas).Where(i => areas.areabyplayer[i] != 0).ToArray();
+        Enumerable.Range(0, Areas).Where(i => areas.AreaByPlayer[i] != 0).ToArray();
 
     [Test]
     public void A_New_Level_Has_Nothing_Connected()
@@ -26,7 +26,7 @@ public class AreaConnectionsTests
         var areas = WithDoorsOpen();
 
         // Assert
-        Assert.That(areas.areabyplayer, Has.Length.EqualTo(Areas));
+        Assert.That(areas.AreaByPlayer, Has.Length.EqualTo(Areas));
         Assert.That(ByPlayer(areas), Is.Empty);
     }
 
@@ -46,10 +46,10 @@ public class AreaConnectionsTests
     [Test]
     public void A_Closed_Door_Cuts_The_Chain()
     {
-        // Arrange: the 1-2 door has closed again
+        // Arrange: the 1-2 DoorNumber has closed again
         var areas = WithDoorsOpen((0, 1), (1, 2));
-        areas.areaconnect[1, 2]--;
-        areas.areaconnect[2, 1]--;
+        areas.AreaConnect[1, 2]--;
+        areas.AreaConnect[2, 1]--;
 
         // Act
         areas.ConnectAreas([0], Areas);
@@ -63,8 +63,8 @@ public class AreaConnectionsTests
     {
         // Arrange: two doors open between 0 and 1, then one closes
         var areas = WithDoorsOpen((0, 1), (0, 1));
-        areas.areaconnect[0, 1]--;
-        areas.areaconnect[1, 0]--;
+        areas.AreaConnect[0, 1]--;
+        areas.AreaConnect[1, 0]--;
 
         // Act
         areas.ConnectAreas([0], Areas);
@@ -89,7 +89,7 @@ public class AreaConnectionsTests
     [Test]
     public void A_Player_Off_The_Areas_Connects_Nothing()
     {
-        // Arrange: standing on a tile that isn't an area (a door, say)
+        // Arrange: standing on a tile that isn't an area (a DoorNumber, say)
         var areas = WithDoorsOpen((0, 1));
 
         // Act

@@ -51,14 +51,14 @@ internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, in
 internal enum SeenFlags : byte
 {
     None = 0,
-    /// <summary>A view ray crossed the tile (open floor, or an open door).</summary>
+    /// <summary>A view ray crossed the tile (open floor, or an open DoorNumber).</summary>
     Floor = 1,
-    /// <summary>A view ray hit this side of the tile's wall or door.</summary>
+    /// <summary>A view ray hit this side of the tile's WallId or DoorNumber.</summary>
     NorthFace = 2,
     SouthFace = 4,
     WestFace = 8,
     EastFace = 16,
-    /// <summary>A view ray hit a diagonal wall's 45 degree face (MapManager.wallshape).</summary>
+    /// <summary>A view ray hit a diagonal WallId's 45 degree face (MapManager.wallshape).</summary>
     DiagonalFace = 32,
 }
 
@@ -78,7 +78,7 @@ internal class MapManager
     private readonly Lazy<FactionManager> factionManager;
     private readonly GameSession session;
 
-    /// <summary>How many 64 unit stories tall the level's walls are, where plane 3 doesn't say (tall walls; mapdefs wall-height)</summary>
+    /// <summary>How many 64 unit stories tall the level's walls are, where plane 3 doesn't say (tall walls; mapdefs WallId-height)</summary>
     internal int wallstories = 1;
 
     private UInt16[][] mapsegs = new ushort[LevelPlanes][];
@@ -88,16 +88,16 @@ internal class MapManager
     // The acting player's pawn (GameSession.ActAs), held in _actors with every other player's at
     // its head, in player order. Null until CreatePlayer runs for the current level -- LoadMap
     // clears _actors, which drops the previous level's pawns.
-    internal Entities.Actors.PlayerPawn? Player => session.playerstate.Pawn;
+    internal Entities.Actors.PlayerPawn? Player => session.PlayerState.Pawn;
 
     /// <summary>Every player's pawn on this level, in player order</summary>
     internal IEnumerable<Entities.Actors.PlayerPawn> Players =>
-        session.players.Select(p => p.Pawn).OfType<Entities.Actors.PlayerPawn>();
+        session.Players.Select(p => p.Pawn).OfType<Entities.Actors.PlayerPawn>();
 
     // Drops every player's pawn (the level's actors are going)
     private void ForgetPawns()
     {
-        foreach (var p in session.players)
+        foreach (var p in session.Players)
             p.Pawn = null;
     }
 
@@ -115,13 +115,13 @@ internal class MapManager
     internal ushort[,] tilemap;
 
     /// <summary>
-    /// Each wall tile's shape: Square, or a 45 degree diagonal from a mapdefs diagonal marker on
+    /// Each WallId tile's shape: Square, or a 45 degree diagonal from a mapdefs diagonal marker on
     /// the object plane. Not saved: it's rebuilt from the planes whenever they're loaded or restored.
     /// </summary>
     internal WallShape[,] wallshape = new WallShape[MapSize, MapSize];
 
     /// <summary>
-    /// Each tile's wall height in stories from the height plane (plane 3), or 0 where it has
+    /// Each tile's WallId height in stories from the height plane (plane 3), or 0 where it has
     /// none and the map's default applies (see <see cref="WallStories"/>). Rebuilt from the
     /// planes whenever they're loaded or restored, like <see cref="wallshape"/>.
     /// </summary>
@@ -129,7 +129,7 @@ internal class MapManager
     private int maxtilestories;
 
     /// <summary>
-    /// Each wall tile's patch (mapdefs patches), 0 for none. A map keeps it in the high byte of
+    /// Each WallId tile's patch (mapdefs patches), 0 for none. A map keeps it in the high byte of
     /// plane 0 (MapConstants.PatchShift), which LoadMap takes off into here, so plane 0 holds only
     /// the tiles' own codes. Saved with the level.
     /// </summary>
@@ -177,7 +177,7 @@ internal class MapManager
 
     /// <summary>
     /// What the player has seen of this level, for the automap: floor the view rays have crossed
-    /// and the wall faces they've hit. Unlike spotvis it lasts for the whole level, and it's saved.
+    /// and the WallId faces they've hit. Unlike spotvis it lasts for the whole level, and it's saved.
     /// </summary>
     internal SeenFlags[,] seen;
 
@@ -212,7 +212,7 @@ internal class MapManager
         return mapsegs[0][y * mapwidth + x];
     }
 
-    // A wall's id is kept in tilemap below the BitWall and BitDoor flags
+    // A WallId's id is kept in tilemap below the BitWall and BitDoor flags
     private static bool IsWallId(int tile) => tile is > 0 and < GameConstants.BitWall;
 
     private readonly HashSet<int> badwallids = new(), badswitches = new();
@@ -264,7 +264,7 @@ internal class MapManager
     ffDataBottomLeft  = MAPSPOT(0,   MXX, 0); MAPSPOT(0,   MXX, 0) = MAPSPOT(0,       MXX - 1, 0);
 #endif
 
-        tilemap = new ushort[MapSize, MapSize]; // wall values only
+        tilemap = new ushort[MapSize, MapSize]; // WallId values only
         spotvis = new bool[MapSize, MapSize];
         seen = new SeenFlags[MapSize, MapSize];
         actorat = new Actor?[MapSize, MapSize];
@@ -306,7 +306,7 @@ internal class MapManager
                 CheckPatch(mapName, x, y, isWall: solid && !data.Doors.ContainsKey(tile), data);
                 if (solid)
                 {
-                    // solid wall (a door's tile is made a door by SpawnDoor)
+                    // solid WallId (a DoorNumber's tile is made a DoorNumber by SpawnDoor)
                     tilemap[x, y] = (ushort)tile;
                     actorat[x, y] = new Wall(tile);// (uint)tile;
                 }
@@ -323,9 +323,9 @@ internal class MapManager
                 if (infotiles[y * MapSize + x])
                     continue;
 
-                // Things only stand on open floor: an object-plane value on a wall or door is
-                // something else (Blake Stone's door locks, switch and teleporter data), unless
-                // the thing is one made to sit in a wall (`in-wall: true`, a trap shooter)
+                // Things only stand on open floor: an object-plane value on a WallId or DoorNumber is
+                // something else (Blake Stone's DoorNumber locks, switch and teleporter data), unless
+                // the thing is one made to sit in a WallId (`in-WallId: true`, a trap shooter)
                 int objtile = MapSpot(x, y, 1);
                 if (data.Things.TryGetValue(objtile, out var thingXlat) && (!solid || thingXlat.InWall && !data.Doors.ContainsKey(tile)))
                 {
@@ -349,8 +349,8 @@ internal class MapManager
 
                 if (data.Triggers.TryGetValue(objtile, out var triggerXlat))
                 {
-                    if (triggerXlat.Secret && !session.loadedgame)
-                        session.gamestate.secrettotal++;
+                    if (triggerXlat.Secret && !session.LoadedGame)
+                        session.GameState.SecretTotal++;
                     // what shows on its tile (mapdefs trigger `class`)
                     if (!string.IsNullOrEmpty(triggerXlat.Class))
                         SpawnThing(x, y, new MapActorTranslation { Class = triggerXlat.Class }, countKill: false);
@@ -367,7 +367,7 @@ internal class MapManager
 
     /// <summary>
     /// Makes the open tiles round the map's edge solid: view traces and movement only stop at
-    /// walls, and would run off the map. They're a wall id the mapdefs don't give, so they're
+    /// walls, and would run off the map. They're a WallId id the mapdefs don't give, so they're
     /// drawn as nothing (the floor and ceiling show through) but can't be crossed.
     /// </summary>
     private void SealEdge(string mapName, MapObjectTranslationAsset data)
@@ -450,7 +450,7 @@ internal class MapManager
             if (MapInfoCodes.HintText(kind) is { } hintText)
             {
                 // the hint's number, and the room it's in: its floor's, or a neighbour's on a floor
-                // code that isn't a room; 0xff when it's on a wall or door (a general hint)
+                // code that isn't a room; 0xff when it's on a WallId or DoorNumber (a general hint)
                 int spot = mapsegs[0][i];
                 bool onWall = IsWallId(spot) && GetMapData().Walls.ContainsKey(spot) || GetMapData().Doors.ContainsKey(spot);
                 byte area = onWall ? (byte)0xff : SpawnArea(i % MapSize, i / MapSize);
@@ -598,10 +598,10 @@ internal class MapManager
             }
     }
 
-    /// <summary>How many stories tall the wall on this tile is.</summary>
+    /// <summary>How many stories tall the WallId on this tile is.</summary>
     internal int WallStories(int x, int y) => storymap[x, y] != 0 ? storymap[x, y] : wallstories;
 
-    /// <summary>The tallest wall anywhere on the level.</summary>
+    /// <summary>The tallest WallId anywhere on the level.</summary>
     internal int MaxWallStories => Math.Max(maxtilestories, wallstories);
 
     /// <summary>
@@ -683,7 +683,7 @@ internal class MapManager
     private readonly HashSet<string> misplacedpatches = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Drops a patch from a tile that isn't a wall (open floor or a door), and says so once a
+    /// Drops a patch from a tile that isn't a WallId (open floor or a DoorNumber), and says so once a
     /// map; one mapdefs doesn't list is kept (a mod may add it) but reported once.
     /// </summary>
     private void CheckPatch(string mapName, int x, int y, bool isWall, MapObjectTranslationAsset data)
@@ -823,7 +823,7 @@ internal class MapManager
 
                         TEXTURE CHANGES AND ANIMATION STARTS
 
-    A_ChangeTexture("FROM", "TO") swaps one texture for another on a tile's wall faces, door
+    A_ChangeTexture("FROM", "TO") swaps one texture for another on a tile's WallId faces, DoorNumber
     faces and floor and ceiling, by name, whatever walls.yaml, doors.yaml or the flats give it.
     Whenever a tile changes (a switch flips, A_SetWall, A_ChangeTexture), it notes the level tic:
     an animation that plays once (animdefs, ending in stop) starts there on that tile. A looping
@@ -835,7 +835,7 @@ internal class MapManager
     // Per tile ((y << MapShift) + x): the textures changed on it, from -> to
     private Dictionary<int, Dictionary<string, string>> texturechanges = [];
 
-    /// <summary>The level's objectives (game-info objectives) by name: how many are done, of how many. Saved with the level.</summary>
+    /// <summary>The level's MatchObjectives (game-info MatchObjectives) by name: how many are done, of how many. Saved with the level.</summary>
     internal Dictionary<string, ObjectiveCount> objectives = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Per tile ((y &lt;&lt; MapShift) + x): the level tic it last changed, 0 for never.</summary>
@@ -928,7 +928,7 @@ internal class MapManager
 
     private readonly HashSet<string> missingflats = new(StringComparer.OrdinalIgnoreCase);
 
-    // A flat is any texture: a VSWAP wall, or a picture in the pk3's textures/ or flats/; or an
+    // A flat is any texture: a VSWAP WallId, or a picture in the pk3's textures/ or flats/; or an
     // animation of them (animdefs), returned as the AnimatedAsset when every frame will do
     private Asset? FindFlat(string? name)
     {
@@ -969,10 +969,10 @@ internal class MapManager
     }
 
     /// <summary>
-    /// A solid wall tile that can take a shape: not a door, not a moving pushwall, and not open
-    /// floor. A wall beside a door (SpawnDoor sets BitWall on it, for the door-side texture) counts.
-    /// Plane 0 has to hold a mapdefs wall too: before SpawnDoor runs, a door tile's raw tilemap
-    /// value (90-101 in Wolf3D) looks just like a wall id with BitWall set.
+    /// A solid WallId tile that can take a shape: not a DoorNumber, not a moving pushwall, and not open
+    /// floor. A WallId beside a DoorNumber (SpawnDoor sets BitWall on it, for the DoorNumber-side texture) counts.
+    /// Plane 0 has to hold a mapdefs WallId too: before SpawnDoor runs, a DoorNumber tile's raw tilemap
+    /// value (90-101 in Wolf3D) looks just like a WallId id with BitWall set.
     /// </summary>
     internal bool IsPlainWall(int x, int y)
     {
@@ -989,7 +989,7 @@ internal class MapManager
             : null;
 
     /// <summary>
-    /// Gives a wall tile a shape by writing the first mapdefs marker for it onto the object plane,
+    /// Gives a WallId tile a shape by writing the first mapdefs marker for it onto the object plane,
     /// so it's saved with the level like a map-authored one. Square clears the marker. Returns the
     /// marker id written (0 for Square), or null if the mapdefs have no marker for that shape.
     /// </summary>
@@ -1055,7 +1055,7 @@ internal class MapManager
         // (Blake Stone's bio-techs: half of them informants)
         if (builtActor.PropertyStrings("spawn.random") is { Count: > 0 } choices)
         {
-            var choice = choices[session.random.RndT() % choices.Count];
+            var choice = choices[session.Random.RndT() % choices.Count];
             if (!actorMetaData.Actors.TryGetValue(choice, out var chosen) || Joining(actorMetaData.CreateActor(choice, chosen)) is not { } chosenActor)
             {
                 Console.WriteLine($"{thing.Class}'s spawn.random names \"{choice}\", which isn't an actor");
@@ -1076,7 +1076,7 @@ internal class MapManager
         // every actor, not just ones on an ambush tile -- without this, AreaNumber sits at
         // its byte default (0, a real area index, not an "unset" sentinel) until the actor
         // first moves through TryWalk, which recomputes it correctly. Until then, anything
-        // gated on AreaNumber (SightPlayer's areabyplayer connectivity check, T_Shoot/
+        // gated on AreaNumber (SightPlayer's AreaByPlayer connectivity check, T_Shoot/
         // CheckSight's area check) reads the wrong area, e.g. a stationary/ambushed actor
         // that never patrols would never notice the player if area 0 isn't connected.
         builtActor.AreaNumber = SpawnArea(tilex, tiley);
@@ -1131,8 +1131,8 @@ internal class MapManager
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
             // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
             // and nor do those that aren't kills (Monster.IsKill: NOTCOUNTED ones, informants)
-            if (countKill && !session.loadedgame && (builtActor is not Entities.Actors.Monster m || m.CountsAsKill))
-                session.gamestate.killtotal++;
+            if (countKill && !session.LoadedGame && (builtActor is not Entities.Actors.Monster m || m.CountsAsKill))
+                session.GameState.KillTotal++;
 
             // Points only for the first kill (Monster.Kill clears it)
             if (builtActor.Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
@@ -1187,9 +1187,9 @@ internal class MapManager
         }
 
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
-        // (Gameplay/Pickups.cs) bumps treasurecount on pickup off the same flag.
-        if (!session.loadedgame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
-            session.gamestate.treasuretotal++;
+        // (Gameplay/Pickups.cs) bumps TreasureCount on pickup off the same flag.
+        if (!session.LoadedGame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
+            session.GameState.TreasureTotal++;
 
         //if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
         //{
@@ -1247,8 +1247,8 @@ internal class MapManager
         if (frame == null || frame.HoldsForever || frame.TicTime <= 0)
             return (short)Math.Max(frame?.TicTime ?? 0, (short)0);
 
-        var count = session.random.RndT() % frame.TicTime;
-        return (short)(session.demorecord || session.demoplayback ? count : count + 1);
+        var count = session.Random.RndT() % frame.TicTime;
+        return (short)(session.DemoRecord || session.DemoPlayback ? count : count + 1);
     }
 
     internal Entities.Actors.Actor? SpawnMorphedEnemy(string className, Entities.Actors.Actor source)
@@ -1403,7 +1403,7 @@ internal class MapManager
 
     /// <summary>
     /// The enemies on a tile, living or dead: corpses keep occupying their tile, which is what
-    /// stops a door closing or a pushwall sliding onto them.
+    /// stops a DoorNumber closing or a pushwall sliding onto them.
     /// </summary>
     internal IEnumerable<Entities.Actors.Actor> EnemiesAt(int tilex, int tiley)
     {
@@ -1455,7 +1455,7 @@ internal class MapManager
             _actors.Remove(state.Pawn);
 
         var pawn = new Entities.Actors.PlayerPawn { State = state, World = World };
-        pawn.Faction = factionManager.Value.PlayerFaction(state.playerclass);
+        pawn.Faction = factionManager.Value.PlayerFaction(state.PlayerClass);
         state.Pawn = pawn;
         PlacePawn(pawn);
         return pawn;
@@ -1549,7 +1549,7 @@ internal class MapManager
         // As the original: an enemy that has never been on screen (nor patrols) does nothing
         // while its area isn't connected to the player's
         if (ob is Entities.Actors.Monster { SleepsOutOfReach: true } && ob.Active == ActiveType.No
-            && ob.AreaNumber < Floors.NumAreas && session.areas.areabyplayer[ob.AreaNumber] == 0)
+            && ob.AreaNumber < Floors.NumAreas && session.Areas.AreaByPlayer[ob.AreaNumber] == 0)
             return;
 
         // It's lifted off its tile while it thinks, and put back on the one it ends up on
@@ -1559,7 +1559,7 @@ internal class MapManager
 
         // Mirrors vanilla DoActor (WL_PLAY.C): a frame that holds forever (-1) only
         // runs its Think each tic; Next is never consulted again. So does one with no countdown
-        // at all, as the original's ticcount 0: a demo's spawn can leave a patroller that way
+        // at all, as the original's TicCount 0: a demo's spawn can leave a patroller that way
         // (SpawnTicCount), walking on its first frame until it changes state.
         if (!state.HoldsForever && !(ob.TicCount == 0 && state.TicTime > 0))
         {
@@ -1585,7 +1585,7 @@ internal class MapManager
 
     /*
     The original kept each enemy in actorat[] too, on the tile it was on as of its last think:
-    it overwrote a door's entry there (so a door can't close on it) and a door opening all the
+    it overwrote a DoorNumber's entry there (so a DoorNumber can't close on it) and a DoorNumber opening all the
     way cleared it. Other enemies' moves (Monster.CheckSide, CheckDiag), the player's
     (TryMove), and doors closing all read it from there, which demos depend on.
     */
@@ -1598,13 +1598,13 @@ internal class MapManager
 
         ref var spot = ref actorat[ob.TileX, ob.TileY];
         if (spot is Wall or BlockingActor)
-            return;                 // never on a wall or a solid thing (or a wall sprite's tile)
+            return;                 // never on a WallId or a solid thing (or a WallId sprite's tile)
         if (ob.RuntimeFlags.HasFlag(ObjFlags.NonMark) && spot != null)
             return;                 // a corpse only takes an empty tile
         spot = ob.Mark;
     }
 
-    /// <summary>Clears an enemy's (or a door's) entry from actorat[], as DoActor and KillActor did</summary>
+    /// <summary>Clears an enemy's (or a DoorNumber's) entry from actorat[], as DoActor and KillActor did</summary>
     internal void UnmarkActorTile(int tilex, int tiley)
     {
         if (actorat[tilex, tiley] is ActorMark or Door)
@@ -1620,9 +1620,9 @@ internal class MapManager
                                     SAVE GAMES
 
     A save stores the level as it stands, not as a diff from the map file: the map planes
-    (pushwalls, ambush tiles and doors rewrite them), the wall/door tilemap, what blocks each
+    (MovingWalls, ambush tiles and doors rewrite them), the WallId/DoorNumber tilemap, what blocks each
     tile, and every actor. Loading reloads the map first (for the parts a save doesn't hold,
-    such as door lock translations) and then lays this over it.
+    such as DoorNumber lock translations) and then lays this over it.
 
     =============================================================================
     */
@@ -1651,11 +1651,11 @@ internal class MapManager
                 {
                     case Wall wall:
                         bw.Write((byte)SavedTile.Wall);
-                        bw.Write(wall.wall);
+                        bw.Write(wall.WallId);
                         break;
                     case Door door:
                         bw.Write((byte)SavedTile.Door);
-                        bw.Write(door.door);
+                        bw.Write(door.DoorNumber);
                         break;
                     case WallSpriteBlocker:
                         bw.Write((byte)SavedTile.WallSprite);
@@ -1800,7 +1800,7 @@ internal class MapManager
         ForgetPawns();
 
         // A save is a single player's game: its pawn is the local player's
-        var local = session.localplayer;
+        var local = session.LocalPlayer;
         var restored = new List<Entities.Actors.Actor>(level.Actors.Count);
         foreach (var saved in level.Actors)
         {

@@ -3,7 +3,7 @@ using PFWolf.Managers;
 namespace PFWolf.Networking;
 
 /// <summary>What playing with others needs from the game</summary>
-/// <param name="LocalCmd">This machine's controls for this frame (PollControls' localcmd)</param>
+/// <param name="LocalCmd">This machine's controls for this frame (PollControls' LocalCmd)</param>
 /// <param name="WriteNetState">The game as it stands, for a player who's just joined (Networking/MidGameJoin.cs)</param>
 /// <param name="ThreeDRefresh">Draws the view, with the waiting-for message over it</param>
 /// <param name="ResetLastTimeCount">After a wait: no rush to catch up on it</param>
@@ -19,7 +19,7 @@ internal sealed record NetPlayHooks(
 
 /// <summary>
 /// Every machine plays the whole game, from everyone's controls. A frame (a step) goes:
-/// this machine's controls (PollControls' localcmd) are sent for the step NetDelay ahead; the
+/// this machine's controls (PollControls' LocalCmd) are sent for the step NetDelay ahead; the
 /// host gathers everyone's for each step and sends them out together; and once this step's
 /// are here, every player gets theirs (TicBundle) and the actors think. As long as each
 /// machine starts the same and plays the same controls through the same code, they all
@@ -152,7 +152,7 @@ internal sealed class NetPlay(
         }
 
         // Anyone leaving leaves, and anyone joining joins, at this step on every machine
-        var players = game.players;
+        var players = game.Players;
         for (int i = 0; i < players.Count; i++)
         {
             if (bundle.HasLeft(i) && !players[i].Gone)
@@ -198,8 +198,8 @@ internal sealed class NetPlay(
         {
             map.MarkForRemoval(pawn);      // dropped from the actors as they next think
             p.Pawn = null;
-            if (game.camera.Target == pawn)
-                game.camera.FollowPlayer();
+            if (game.Camera.Target == pawn)
+                game.Camera.FollowPlayer();
             hooks.ConnectAreas();
         }
     }
@@ -222,7 +222,7 @@ internal sealed class NetPlay(
                 hash = (hash ^ c) * 16777619;
         }
 
-        Add(game.random.rndindex);
+        Add(game.Random.RndIndex);
         foreach (var actor in map.GetActors())
         {
             if (actor.IsRemoved)
@@ -235,16 +235,16 @@ internal sealed class NetPlay(
             Add(actor.TicCount);
             AddText(actor.CurrentState?.StateName);
         }
-        foreach (var p in game.players)
+        foreach (var p in game.Players)
         {
-            Add(p.health);
-            Add(p.score);
-            Add(p.armor);
-            AddText(p.weapon);
+            Add(p.Health);
+            Add(p.Score);
+            Add(p.Armor);
+            AddText(p.Weapon);
         }
-        for (int door = 0; door < doors.doornum; door++)
-            Add(doors.doorobjlist[door].position);
-        foreach (var wall in pushWalls.pushwalls)
+        for (int door = 0; door < doors.DoorNum; door++)
+            Add(doors.DoorObjList[door].Position);
+        foreach (var wall in pushWalls.MovingWalls)
         {
             Add(wall.State);
             Add(wall.X);
@@ -254,5 +254,5 @@ internal sealed class NetPlay(
     }
 
     /// <summary>Whether the game with others is over for this machine: it left, or lost the host</summary>
-    internal bool NetGameOver => game.netgame && (netLeft || NetSession.Current is not { Error: null });
+    internal bool NetGameOver => game.NetGame && (netLeft || NetSession.Current is not { Error: null });
 }

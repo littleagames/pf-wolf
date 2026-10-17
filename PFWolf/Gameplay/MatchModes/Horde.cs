@@ -30,21 +30,21 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
     internal enum Phase { Break, Wave }
 
     /// <summary>The wave being fought (or coming next, in a break), from 1</summary>
-    internal int wave;
+    internal int Wave;
 
     /// <summary>Waves the players have outlasted</summary>
-    internal int survived;
+    internal int Survived;
 
-    internal Phase phase;
+    internal Phase CurrentPhase;
 
-    /// <summary>When the break ends, or the next enemy can come in (gamestate.TimeCount)</summary>
-    internal int nextat;
+    /// <summary>When the break ends, or the next enemy can come in (GameState.TimeCount)</summary>
+    internal int NextAt;
 
     /// <summary>The wave's enemies still to come in, by class, in order</summary>
-    internal readonly List<(string Class, int Count)> tocome = [];
+    internal readonly List<(string Class, int Count)> ToCome = [];
 
     /// <summary>The match is lost: everyone died at once</summary>
-    internal bool wiped;
+    internal bool Wiped;
 
     // Where enemies can come in: the markers, else the map's open floor
     List<(int x, int y)> spawns = [];
@@ -56,17 +56,17 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
         markerspawns = spawns.Count > 0;
         if (!markerspawns)
             spawns = OpenFloor();
-        wave = 1;
-        survived = 0;
-        wiped = false;
-        tocome.Clear();
+        Wave = 1;
+        Survived = 0;
+        Wiped = false;
+        ToCome.Clear();
         StartBreak();
     }
 
     void StartBreak()
     {
-        phase = Phase.Break;
-        nextat = session.gamestate.TimeCount + Math.Max(settings().BreakSeconds, 1) * 70;
+        CurrentPhase = Phase.Break;
+        NextAt = Session.GameState.TimeCount + Math.Max(settings().BreakSeconds, 1) * 70;
     }
 
     /// <summary>
@@ -87,54 +87,54 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
 
     public override void Tick()
     {
-        if (wiped)
+        if (Wiped)
             return;
-        var time = session.gamestate.TimeCount;
+        var time = Session.GameState.TimeCount;
         var info = settings();
 
-        if (phase == Phase.Break)
+        if (CurrentPhase == Phase.Break)
         {
-            if (time < nextat)
+            if (time < NextAt)
                 return;
-            phase = Phase.Wave;
-            tocome.Clear();
-            tocome.AddRange(WaveEnemies(wave, map.Players.Count(pawn => !pawn.State.Gone)));
-            nextat = time;
-            Announce($"Wave {wave}!", "misc/yeah");
+            CurrentPhase = Phase.Wave;
+            ToCome.Clear();
+            ToCome.AddRange(WaveEnemies(Wave, Map.Players.Count(pawn => !pawn.State.Gone)));
+            NextAt = time;
+            Announce($"Wave {Wave}!", "misc/yeah");
         }
 
         // Bring the next one in, while there's room
         int alive = AliveEnemies();
-        if (tocome.Count > 0 && time >= nextat && alive < Math.Max(info.MaxAlive, 1))
+        if (ToCome.Count > 0 && time >= NextAt && alive < Math.Max(info.MaxAlive, 1))
         {
-            if (SpawnEnemy(tocome[0].Class))
+            if (SpawnEnemy(ToCome[0].Class))
             {
-                tocome[0] = (tocome[0].Class, tocome[0].Count - 1);
-                if (tocome[0].Count <= 0)
-                    tocome.RemoveAt(0);
+                ToCome[0] = (ToCome[0].Class, ToCome[0].Count - 1);
+                if (ToCome[0].Count <= 0)
+                    ToCome.RemoveAt(0);
                 alive++;
             }
-            nextat = time + Math.Max(info.SpawnTics, 1);
+            NextAt = time + Math.Max(info.SpawnTics, 1);
         }
 
         // The wave's beaten: a break, and the dead can come back
-        if (tocome.Count == 0 && alive == 0)
+        if (ToCome.Count == 0 && alive == 0)
         {
-            survived = wave;
-            Announce($"Wave {wave} cleared!", "misc/100percent");
-            if (match.netrules.ScoreLimit > 0 && survived >= match.netrules.ScoreLimit)
+            Survived = Wave;
+            Announce($"Wave {Wave} cleared!", "misc/100percent");
+            if (Match.NetRules.ScoreLimit > 0 && Survived >= Match.NetRules.ScoreLimit)
             {
-                match.EndMatch();
+                Match.EndMatch();
                 return;
             }
-            wave++;
+            Wave++;
             StartBreak();
         }
     }
 
     /// <summary>The level's living enemies (any of them: a wave's, or the map's own with monsters on)</summary>
     int AliveEnemies() =>
-        map.GetActors().Count(a => a is Monster && !a.IsRemoved && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
+        Map.GetActors().Count(a => a is Monster && !a.IsRemoved && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
 
     /// <summary>One of a wave's enemies comes in, hunting, at a spawn out of the players' way: whether one did</summary>
     bool SpawnEnemy(string className)
@@ -142,28 +142,28 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
         var players = LivingPawns.ToList();
         bool Reachable((int x, int y) t)
         {
-            int area = map.AreaAt(t.x, t.y);
-            return area < 0 || area >= map.Floors.NumAreas || session.areas.areabyplayer[area] != 0;
+            int area = Map.AreaAt(t.x, t.y);
+            return area < 0 || area >= Map.Floors.NumAreas || Session.Areas.AreaByPlayer[area] != 0;
         }
         int Nearest((int x, int y) t) =>
             players.Count == 0 ? int.MaxValue : players.Min(pawn => Math.Max(Math.Abs(pawn.TileX - t.x), Math.Abs(pawn.TileY - t.y)));
 
-        var free = spawns.Where(t => hooks.IsFreeFloor(t.x, t.y) && Reachable(t)).ToList();
+        var free = spawns.Where(t => Hooks.IsFreeFloor(t.x, t.y) && Reachable(t)).ToList();
         if (free.Count == 0)
             return false;
         var far = free.Where(t => Nearest(t) >= (markerspawns ? 2 : 8)).ToList();
         if (far.Count > 0)
             free = far;
-        var spot = free[((session.random.RndT() << 8) | session.random.RndT()) % free.Count];
+        var spot = free[((Session.Random.RndT() << 8) | Session.Random.RndT()) % free.Count];
 
-        bool nomonsters = map.NoMonsters;
-        map.NoMonsters = false;     // the map's own may be left out; a wave's never are
-        var spawned = map.SpawnThing(spot.x, spot.y, new MapActorTranslation { Class = className, Angles = -1 }, countKill: false);
-        map.NoMonsters = nomonsters;
+        bool nomonsters = Map.NoMonsters;
+        Map.NoMonsters = false;     // the map's own may be left out; a wave's never are
+        var spawned = Map.SpawnThing(spot.x, spot.y, new MapActorTranslation { Class = className, Angles = -1 }, countKill: false);
+        Map.NoMonsters = nomonsters;
         if (spawned is not Monster monster)
         {
             if (spawned != null)
-                map.MarkForRemoval(spawned);
+                Map.MarkForRemoval(spawned);
             return false;
         }
         monster.Active = ActiveType.Yes;
@@ -174,44 +174,44 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
     /// <summary>A player has died: with everyone dead at once, the match is lost</summary>
     public void PlayerDied(Entities.PlayerState victim)
     {
-        if (session.players.Where(p => !p.Gone && p.Pawn != null).All(p => p.health <= 0))
+        if (Session.Players.Where(p => !p.Gone && p.Pawn != null).All(p => p.Health <= 0))
         {
-            wiped = true;
-            Announce($"Everyone's dead! You survived {survived} wave{(survived == 1 ? "" : "s")}.");
-            match.EndMatch();
+            Wiped = true;
+            Announce($"Everyone's dead! You survived {Survived} wave{(Survived == 1 ? "" : "s")}.");
+            Match.EndMatch();
         }
     }
 
     /// <summary>The dead come back only in a break between waves</summary>
-    public bool MayRespawn(Entities.PlayerState p) => phase == Phase.Break;
+    public bool MayRespawn(Entities.PlayerState p) => CurrentPhase == Phase.Break;
 
     public string? StatusLine()
     {
-        if (phase == Phase.Break)
-            return $"Wave {wave} in {Math.Max(0, nextat - session.gamestate.TimeCount) / 70 + 1}s";
-        int left = tocome.Sum(e => e.Count) + AliveEnemies();
-        return $"Wave {wave}: {left} left" + (session.localplayer.health <= 0 ? " - back after the wave" : "");
+        if (CurrentPhase == Phase.Break)
+            return $"Wave {Wave} in {Math.Max(0, NextAt - Session.GameState.TimeCount) / 70 + 1}s";
+        int left = ToCome.Sum(e => e.Count) + AliveEnemies();
+        return $"Wave {Wave}: {left} left" + (Session.LocalPlayer.Health <= 0 ? " - back after the wave" : "");
     }
 
     public string? FinalTitle() =>
-        wiped ? $"Survived {survived} wave{(survived == 1 ? "" : "s")}"
-        : survived > 0 && match.netrules.ScoreLimit > 0 && survived >= match.netrules.ScoreLimit ? $"Victory! All {survived} waves beaten"
-        : $"Survived {survived} wave{(survived == 1 ? "" : "s")}";
+        Wiped ? $"Survived {Survived} wave{(Survived == 1 ? "" : "s")}"
+        : Survived > 0 && Match.NetRules.ScoreLimit > 0 && Survived >= Match.NetRules.ScoreLimit ? $"Victory! All {Survived} waves beaten"
+        : $"Survived {Survived} wave{(Survived == 1 ? "" : "s")}";
 
     public string? Details() =>
-        $"wave {wave} ({phase}), {survived} survived, {AliveEnemies()} alive, to come: "
-        + (tocome.Count == 0 ? "none" : string.Join(", ", tocome.Select(e => $"{e.Count} {e.Class}")))
+        $"wave {Wave} ({CurrentPhase}), {Survived} survived, {AliveEnemies()} alive, to come: "
+        + (ToCome.Count == 0 ? "none" : string.Join(", ", ToCome.Select(e => $"{e.Count} {e.Class}")))
         + $"; {spawns.Count} spawn spots ({(markerspawns ? "markers" : "open floor")})";
 
     public override void Write(BinaryWriter bw)
     {
-        bw.Write(wave);
-        bw.Write(survived);
-        bw.Write((byte)phase);
-        bw.Write(nextat);
-        bw.Write(wiped);
-        bw.Write(tocome.Count);
-        foreach (var (cls, count) in tocome)
+        bw.Write(Wave);
+        bw.Write(Survived);
+        bw.Write((byte)CurrentPhase);
+        bw.Write(NextAt);
+        bw.Write(Wiped);
+        bw.Write(ToCome.Count);
+        foreach (var (cls, count) in ToCome)
         {
             bw.Write(cls);
             bw.Write(count);
@@ -220,13 +220,13 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
 
     public override void Read(BinaryReader br)
     {
-        wave = br.ReadInt32();
-        survived = br.ReadInt32();
-        phase = (Phase)br.ReadByte();
-        nextat = br.ReadInt32();
-        wiped = br.ReadBoolean();
-        tocome.Clear();
+        Wave = br.ReadInt32();
+        Survived = br.ReadInt32();
+        CurrentPhase = (Phase)br.ReadByte();
+        NextAt = br.ReadInt32();
+        Wiped = br.ReadBoolean();
+        ToCome.Clear();
         for (int i = br.ReadInt32(); i > 0; i--)
-            tocome.Add((br.ReadString(), br.ReadInt32()));
+            ToCome.Add((br.ReadString(), br.ReadInt32()));
     }
 }

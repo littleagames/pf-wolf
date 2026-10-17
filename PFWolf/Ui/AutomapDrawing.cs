@@ -9,7 +9,7 @@ namespace PFWolf.Ui;
 /// <param name="View">The 3D view's rectangle on the screen (x, y, width, height): the map is drawn in it</param>
 /// <param name="MapDisplayName">A map's name as the game shows it</param>
 /// <param name="FormatPlayTime">The time on the level, as the stats show it</param>
-/// <param name="ObjectiveStats">The level objectives' stats lines (Gameplay/Objectives.cs)</param>
+/// <param name="ObjectiveStats">The level MatchObjectives' stats lines (Gameplay/Objectives.cs)</param>
 internal sealed record AutomapHooks(
     Func<(int X, int Y, int Width, int Height)> View,
     Func<string, string> MapDisplayName,
@@ -18,7 +18,7 @@ internal sealed record AutomapHooks(
 
 /// <summary>
 /// The automap drawn over the 3D view (AutomapManager has where it's centred, its zoom, style and
-/// the rest): the walls, doors and pushwalls the player has seen, the actors worth marking, the
+/// the rest): the walls, doors and MovingWalls the player has seen, the actors worth marking, the
 /// player's arrow, position and the level's stats.
 ///
 /// AUTOMAP GRAPHIC MODE draws it with the level's own art: seen walls filled with their
@@ -77,14 +77,14 @@ internal sealed class AutomapDrawing(
     string AutomapColor(string name) =>
         video.IsThemeColor(name) ? name : AutomapColorFallbacks[name];
 
-    // A locked door is drawn in its key's color: the theme's "Automap<lock item>" if it has one
-    // (e.g. AutomapGoldKey), else the door's mapdefs automap-color, else the plain door color.
+    // A locked DoorNumber is drawn in its key's color: the theme's "Automap<lock item>" if it has one
+    // (e.g. AutomapGoldKey), else the DoorNumber's mapdefs automap-color, else the plain DoorNumber color.
     string AutomapDoorColor(DoorObject door)
     {
         if (!string.IsNullOrEmpty(door.Lock) && video.IsThemeColor("Automap" + door.Lock))
             return "Automap" + door.Lock;
 
-        return !string.IsNullOrEmpty(door.xlat.AutomapColor) ? door.xlat.AutomapColor : AutomapColor("AutomapDoor");
+        return !string.IsNullOrEmpty(door.Xlat.AutomapColor) ? door.Xlat.AutomapColor : AutomapColor("AutomapDoor");
     }
 
     /// <summary>
@@ -131,7 +131,7 @@ internal sealed class AutomapDrawing(
         else
             video.BarScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight, AutomapColor("AutomapBackground"));
 
-        bool reveal = (session.mapreveal != 0);
+        bool reveal = (session.MapReveal != 0);
 
         if (automap.ShowGrid && automap.Zoom >= AutomapMinGridZoom)
             DrawAutomapGrid(view);
@@ -182,8 +182,8 @@ internal sealed class AutomapDrawing(
     }
 
     /// <summary>
-    /// Every seen wall face that borders open space, as a line along the tile edge. A diagonal
-    /// wall shows its two solid edges and a line corner to corner for its 45 degree face.
+    /// Every seen WallId face that borders open space, as a line along the tile edge. A diagonal
+    /// WallId shows its two solid edges and a line corner to corner for its 45 degree face.
     /// </summary>
     void DrawAutomapWalls(AutomapView view, bool reveal)
     {
@@ -223,14 +223,14 @@ internal sealed class AutomapDrawing(
         }
     }
 
-    /// <summary>The pushwalls on the move, each as a square outline at its current offset.</summary>
+    /// <summary>The MovingWalls on the move, each as a square outline at its current offset.</summary>
     void DrawAutomapPushwall(AutomapView view, bool reveal)
     {
         string color = AutomapColor("AutomapWall");
 
-        foreach (var wall in pushWalls.pushwalls)
+        foreach (var wall in pushWalls.MovingWalls)
         {
-            int dx = PushWalls.dirs[(int)wall.Dir][0], dy = PushWalls.dirs[(int)wall.Dir][1];
+            int dx = PushWalls.Dirs[(int)wall.Dir][0], dy = PushWalls.Dirs[(int)wall.Dir][1];
 
             if (!reveal && map.seen[wall.X, wall.Y] == SeenFlags.None
                         && map.seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
@@ -247,45 +247,45 @@ internal sealed class AutomapDrawing(
     }
 
     /// <summary>
-    /// Seen doors, as a line through the middle of the door tile covering the part of the door
-    /// that's still closed, so it shortens as the door slides open.
+    /// Seen doors, as a line through the middle of the DoorNumber tile covering the part of the DoorNumber
+    /// that's still closed, so it shortens as the DoorNumber slides open.
     /// </summary>
     void DrawAutomapDoors(AutomapView view, bool reveal)
     {
-        for (int i = 0; i < doors.lastdoorobj; i++)
+        for (int i = 0; i < doors.LastDoorObj; i++)
         {
-            var door = doors.doorobjlist[i];
-            if (!reveal && map.seen[door.tilex, door.tiley] == SeenFlags.None)
+            var door = doors.DoorObjList[i];
+            if (!reveal && map.seen[door.TileX, door.TileY] == SeenFlags.None)
                 continue;
 
-            // The door is solid from `position` (0 = closed .. 0xffff = open) to the far side
-            float open = door.position / 65536f;
+            // The DoorNumber is solid from `position` (0 = closed .. 0xffff = open) to the far side
+            float open = door.Position / 65536f;
             if (open >= 0.99f)
                 continue;
 
             string color = AutomapDoorColor(door);
 
-            if (door.xlat.Split)
+            if (door.Xlat.Split)
             {
                 // Two halves, each solid from its outer edge to half of `open` short of the middle
                 float half = 0.5f - open / 2;
-                if (door.vertical)
+                if (door.Vertical)
                 {
-                    AutomapLine(view, door.tilex + 0.5f, door.tiley, door.tilex + 0.5f, door.tiley + half, color);
-                    AutomapLine(view, door.tilex + 0.5f, door.tiley + 1 - half, door.tilex + 0.5f, door.tiley + 1, color);
+                    AutomapLine(view, door.TileX + 0.5f, door.TileY, door.TileX + 0.5f, door.TileY + half, color);
+                    AutomapLine(view, door.TileX + 0.5f, door.TileY + 1 - half, door.TileX + 0.5f, door.TileY + 1, color);
                 }
                 else
                 {
-                    AutomapLine(view, door.tilex, door.tiley + 0.5f, door.tilex + half, door.tiley + 0.5f, color);
-                    AutomapLine(view, door.tilex + 1 - half, door.tiley + 0.5f, door.tilex + 1, door.tiley + 0.5f, color);
+                    AutomapLine(view, door.TileX, door.TileY + 0.5f, door.TileX + half, door.TileY + 0.5f, color);
+                    AutomapLine(view, door.TileX + 1 - half, door.TileY + 0.5f, door.TileX + 1, door.TileY + 0.5f, color);
                 }
                 continue;
             }
 
-            if (door.vertical)
-                AutomapLine(view, door.tilex + 0.5f, door.tiley + open, door.tilex + 0.5f, door.tiley + 1, color);
+            if (door.Vertical)
+                AutomapLine(view, door.TileX + 0.5f, door.TileY + open, door.TileX + 0.5f, door.TileY + 1, color);
             else
-                AutomapLine(view, door.tilex + open, door.tiley + 0.5f, door.tilex + 1, door.tiley + 0.5f, color);
+                AutomapLine(view, door.TileX + open, door.TileY + 0.5f, door.TileX + 1, door.TileY + 0.5f, color);
         }
     }
 
@@ -296,7 +296,7 @@ internal sealed class AutomapDrawing(
     /// </summary>
     void DrawAutomapWallSprites(AutomapView view, bool reveal, bool graphic)
     {
-        // In graphic style about as wide as a door's strip, so it reads next to them
+        // In graphic style about as wide as a DoorNumber's strip, so it reads next to them
         int pen = graphic ? Math.Max(view.Pen, (int)(view.TileSize * AutomapDoorWidth / 2)) : view.Pen;
 
         foreach (var actor in map.GetActors())
@@ -379,7 +379,7 @@ internal sealed class AutomapDrawing(
 
             // The player's own side (factions.yaml) in its own color; one following them is
             // always shown, wherever it is
-            if (factions.IsAlly(actor, session.player))
+            if (factions.IsAlly(actor, session.Player))
                 return reveal || (actor.RuntimeFlags & ObjFlags.Visible) != 0
                     || actor is Entities.Actors.Monster { Follows: true } ? AutomapMark.Ally : AutomapMark.None;
 
@@ -404,11 +404,11 @@ internal sealed class AutomapDrawing(
     /// <summary>An arrow on the player, pointing the way they face.</summary>
     void DrawAutomapPlayer(AutomapView view)
     {
-        float x = session.player.X / (float)MapConstants.TileGlobal;
-        float y = session.player.Y / (float)MapConstants.TileGlobal;
+        float x = session.Player.X / (float)MapConstants.TileGlobal;
+        float y = session.Player.Y / (float)MapConstants.TileGlobal;
 
         // Wolf3D angles run counterclockwise from east, and map Y grows southward
-        float radians = session.player.Angle * MathF.PI / 180f;
+        float radians = session.Player.Angle * MathF.PI / 180f;
         float dirX = MathF.Cos(radians), dirY = -MathF.Sin(radians);
 
         // Most of a tile long, but at least 8 virtual pixels when zoomed far out
@@ -439,8 +439,8 @@ internal sealed class AutomapDrawing(
         if (font == null)
             return;
 
-        int heading = ((session.player.Angle % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles + GameConstants.Angles / 16) / (GameConstants.Angles / 8) % 8;
-        string text = AutomapText("$STR_AM_POSITION", session.player.TileX, session.player.TileY, AutomapText(AutomapHeadings[heading]));
+        int heading = ((session.Player.Angle % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles + GameConstants.Angles / 16) / (GameConstants.Angles / 8) % 8;
+        string text = AutomapText("$STR_AM_POSITION", session.Player.TileX, session.Player.TileY, AutomapText(AutomapHeadings[heading]));
         if (!automap.Follow)
             text += "  " + AutomapText("$STR_AM_PAN");
 
@@ -454,7 +454,7 @@ internal sealed class AutomapDrawing(
         int width = font.Measure(text);
         if (width > room)
         {
-            text = AutomapText("$STR_AM_POSITIONSHORT", session.player.TileX, session.player.TileY);
+            text = AutomapText("$STR_AM_POSITIONSHORT", session.Player.TileX, session.Player.TileY);
             width = font.Measure(text);
             if (width > room || font.Height + 2 > bottom - top)
                 return;
@@ -488,12 +488,12 @@ internal sealed class AutomapDrawing(
 
         (string Text, string Color)[] lines =
         [
-            (hooks.MapDisplayName(session.gamestate.mapon), AutomapColor("AutomapTitle")),
-            (AutomapText("$STR_AM_KILLS", session.gamestate.killcount, session.gamestate.killtotal), AutomapColor("AutomapStats")),
-            (AutomapText("$STR_AM_TREASURE", session.gamestate.treasurecount, session.gamestate.treasuretotal), AutomapColor("AutomapStats")),
-            (AutomapText("$STR_AM_SECRETS", session.gamestate.secretcount, session.gamestate.secrettotal), AutomapColor("AutomapStats")),
+            (hooks.MapDisplayName(session.GameState.MapOn), AutomapColor("AutomapTitle")),
+            (AutomapText("$STR_AM_KILLS", session.GameState.KillCount, session.GameState.KillTotal), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_TREASURE", session.GameState.TreasureCount, session.GameState.TreasureTotal), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_SECRETS", session.GameState.SecretCount, session.GameState.SecretTotal), AutomapColor("AutomapStats")),
             .. (hooks.ObjectiveStats?.Invoke() ?? []).Select(line => (line, AutomapColor("AutomapStats"))),     // "Sabotages: 2 of 5"
-            (AutomapText("$STR_AM_TIME", hooks.FormatPlayTime(session.gamestate.TimeCount)), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_TIME", hooks.FormatPlayTime(session.GameState.TimeCount)), AutomapColor("AutomapStats")),
         ];
 
         // DrawText and Bar work in 320x200 virtual pixels; the bottom rows are the position line's
@@ -550,8 +550,8 @@ internal sealed class AutomapDrawing(
     }
 
     /// <summary>
-    /// Whether a tile is solid wall. Doors count as open floor, and so do the tiles of a moving
-    /// pushwall (drawn separately at its offset); off the map counts as wall.
+    /// Whether a tile is solid WallId. Doors count as open floor, and so do the tiles of a moving
+    /// pushwall (drawn separately at its offset); off the map counts as WallId.
     /// </summary>
     internal bool IsAutomapWall(int x, int y)
     {
@@ -563,7 +563,7 @@ internal sealed class AutomapDrawing(
     }
 
     /// <summary>
-    /// Whether the tile at (x, y) is solid all along its given edge: a wall, and for a diagonal,
+    /// Whether the tile at (x, y) is solid all along its given edge: a WallId, and for a diagonal,
     /// one of its solid edges (across an open edge its neighbor's face can be seen).
     /// </summary>
     internal bool IsAutomapSolidEdge(int x, int y, SeenFlags edge)
@@ -579,13 +579,13 @@ internal sealed class AutomapDrawing(
     // Below this zoom (virtual pixels per tile) sprites are too small to make out, so they're drawn as dots
     const float AutomapMinSpriteZoom = 6f;
 
-    // A door is drawn as a strip this wide (in tiles) through the middle of its tile
+    // A DoorNumber is drawn as a strip this wide (in tiles) through the middle of its tile
     const float AutomapDoorWidth = 0.2f;
 
     // Sprites are scaled so their visible part fits this much of a tile
     const float AutomapSpriteSize = 0.9f;
 
-    const int AutomapTexSize = 64;     // wall textures are 64x64, stored column by column
+    const int AutomapTexSize = 64;     // WallId textures are 64x64, stored column by column
 
     readonly Dictionary<string, byte[]?> automapTextures = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, AutomapSprite?> automapSprites = new(StringComparer.OrdinalIgnoreCase);
@@ -594,10 +594,10 @@ internal sealed class AutomapDrawing(
     sealed record AutomapSprite(SpriteAsset Asset, int Left, int Top, int Width, int Height);
 
     // Filled each frame so the per-pixel loop never looks anything up by name: the textures of each
-    // seen wall tile's four faces, and which seen door (index + 1) a tile holds.
+    // seen WallId tile's four faces, and which seen DoorNumber (index + 1) a tile holds.
     readonly AutomapFaces[,] automapWalls = new AutomapFaces[MapManager.MapSize, MapManager.MapSize];
 
-    /// <summary>The textures on a wall tile's four faces, as the automap draws them</summary>
+    /// <summary>The textures on a WallId tile's four faces, as the automap draws them</summary>
     readonly record struct AutomapFaces(byte[]? North, byte[]? South, byte[]? East, byte[]? West)
     {
         public bool Any => North != null || South != null || East != null || West != null;
@@ -605,7 +605,7 @@ internal sealed class AutomapDrawing(
     readonly int[,] automapDoorAt = new int[MapManager.MapSize, MapManager.MapSize];
     byte[]?[] automapDoorTextures = [];
 
-    /// <summary>A wall texture's pixels, or null if it's missing or not 64x64.</summary>
+    /// <summary>A WallId texture's pixels, or null if it's missing or not 64x64.</summary>
     byte[]? AutomapTexture(string name)
     {
         if (string.IsNullOrEmpty(name))
@@ -623,10 +623,10 @@ internal sealed class AutomapDrawing(
         return pixels;
     }
 
-    /// <summary>The textures a wall tile shows on its four faces.</summary>
+    /// <summary>The textures a WallId tile shows on its four faces.</summary>
     AutomapFaces AutomapWallTextures(MapObjectTranslationAsset? mapDefs, int tile)
     {
-        // A wall beside a door carries the door-side mark (BitWall), which isn't part of its id
+        // A WallId beside a DoorNumber carries the DoorNumber-side mark (BitWall), which isn't part of its id
         MapTextureTranslation? textures = null;
         if (mapDefs == null || !mapDefs.Walls.TryGetValue(tile & ~GameConstants.BitWall, out textures))
             return default;
@@ -674,24 +674,24 @@ internal sealed class AutomapDrawing(
             }
         }
 
-        if (automapDoorTextures.Length < doors.lastdoorobj)
-            automapDoorTextures = new byte[]?[doors.doorobjlist.Length];
+        if (automapDoorTextures.Length < doors.LastDoorObj)
+            automapDoorTextures = new byte[]?[doors.DoorObjList.Length];
 
-        for (int i = 0; i < doors.lastdoorobj; i++)
+        for (int i = 0; i < doors.LastDoorObj; i++)
         {
-            var door = doors.doorobjlist[i];
-            if (!reveal && map.seen[door.tilex, door.tiley] == SeenFlags.None)
+            var door = doors.DoorObjList[i];
+            if (!reveal && map.seen[door.TileX, door.TileY] == SeenFlags.None)
                 continue;
 
-            automapDoorAt[door.tilex, door.tiley] = i + 1;
-            automapDoorTextures[i] = AutomapTexture(door.vertical ? door.xlat.East : door.xlat.North);
+            automapDoorAt[door.TileX, door.TileY] = i + 1;
+            automapDoorTextures[i] = AutomapTexture(door.Vertical ? door.Xlat.East : door.Xlat.North);
         }
 
-        // The pushwalls on the move that can be seen: each one's corner on the map and textures
+        // The MovingWalls on the move that can be seen: each one's corner on the map and textures
         var pushes = new List<(float X, float Y, AutomapFaces Faces)>();
-        foreach (var wall in pushWalls.pushwalls)
+        foreach (var wall in pushWalls.MovingWalls)
         {
-            int dx = PushWalls.dirs[(int)wall.Dir][0], dy = PushWalls.dirs[(int)wall.Dir][1];
+            int dx = PushWalls.Dirs[(int)wall.Dir][0], dy = PushWalls.Dirs[(int)wall.Dir][1];
             if (!reveal && map.seen[wall.X, wall.Y] == SeenFlags.None
                         && map.seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
                 continue;
@@ -761,7 +761,7 @@ internal sealed class AutomapDrawing(
         var faces = automapWalls[tx, ty];
         if (faces.Any)
         {
-            // a diagonal wall fills only its solid half; the backdrop shows through the open one
+            // a diagonal WallId fills only its solid half; the backdrop shows through the open one
             var shape = map.wallshape[tx, ty];
             if (shape != WallShape.Square && !Diagonals.InDiagonalSolid(shape, fx, fy))
                 return -1;
@@ -773,15 +773,15 @@ internal sealed class AutomapDrawing(
         if (door == 0)
             return -1;
 
-        var doorobj = doors.doorobjlist[door - 1];
+        var doorobj = doors.DoorObjList[door - 1];
         var texture = automapDoorTextures[door - 1];
         if (texture == null)
             return -1;
 
-        // Across the strip and along the door: the door is solid from `position` to the far side
+        // Across the strip and along the DoorNumber: the DoorNumber is solid from `position` to the far side
         // of its tile, and its texture slides with it, as in the 3D view
-        float across = doorobj.vertical ? fx : fy;
-        float along = doorobj.vertical ? fy : fx;
+        float across = doorobj.Vertical ? fx : fy;
+        float along = doorobj.Vertical ? fy : fx;
         int alongFixed = Math.Clamp((int)(along * 65536f), 0, 0xffff);
 
         float edge = 0.5f - AutomapDoorWidth / 2;
@@ -794,7 +794,7 @@ internal sealed class AutomapDrawing(
     }
 
     /// <summary>
-    /// A wall tile's color at (fx, fy) within it. The tile is split corner to corner: each part
+    /// A WallId tile's color at (fx, fy) within it. The tile is split corner to corner: each part
     /// uses the texture of the face on its nearest edge (a face with none, the other axis's), so
     /// with Wolf3D's darker east/west faces each block reads as raised with shaded sides.
     /// </summary>

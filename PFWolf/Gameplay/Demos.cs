@@ -51,30 +51,30 @@ internal sealed class Demos(
         // A demo recorded with that number plays in place of the game's own
         var recorded = ReadRecordedDemo(demonumber);
         if (recorded != null)
-            demo.demoData = recorded;
+            demo.DemoData = recorded;
         else
         {
             var demoAsset = assets.Find<DemoAsset>($"demo{demonumber}");
             if (demoAsset == null)
                 return;
 
-            demo.demoData = demoAsset.RawData;
+            demo.DemoData = demoAsset.RawData;
         }
-        demo.demoptr = 0;
+        demo.DemoPtr = 0;
 
         // id's header: the floor in the first episode (0 = MAP01), a 16-bit length counting the
         // header, and a pad byte. Every demo plays on game-info's demo-skill (the hardest, as id's did).
-        if (demo.demoData.Length < 4)
+        if (demo.DemoData.Length < 4)
             return;
 
-        var mapName = $"MAP{demo.demoData[0] + 1:D2}";
+        var mapName = $"MAP{demo.DemoData[0] + 1:D2}";
         if (!engine.GetGameInfo().Maps.TryGetValue(mapName, out var mapInfo))
             return;
 
-        length = BitConverter.ToInt16(demo.demoData, 1);
-        demo.demoptr = 4;
-        demo.lastdemoptr = Math.Min((int)length, demo.demoData.Length);   // stop at the data's end if the length overshoots
-        if (demo.lastdemoptr - demo.demoptr < 3)
+        length = BitConverter.ToInt16(demo.DemoData, 1);
+        demo.DemoPtr = 4;
+        demo.LastDemoPtr = Math.Min((int)length, demo.DemoData.Length);   // stop at the data's end if the length overshoots
+        if (demo.LastDemoPtr - demo.DemoPtr < 3)
             return;
 
         hooks.NewGame(hooks.DemoSkill(), new EpisodeInfo { StartMap = mapName }, mapInfo, PlayerClassRules.BasePlayerClass);   // recorded as Player: another class's stats would change how it plays
@@ -83,8 +83,8 @@ internal sealed class Demos(
 
         hooks.DrawPlayScreen();
 
-        session.startgame = false;
-        session.demoplayback = true;
+        session.GameChosen = false;
+        session.DemoPlayback = true;
 
         hooks.SetupGameLevel();
         hooks.RunLevelHooks("new");       // as when it was recorded (RecordDemo)
@@ -94,7 +94,7 @@ internal sealed class Demos(
         if (hooks.DemoTesting())
             Console.WriteLine(hooks.DemoTestReport(demonumber));
 
-        session.demoplayback = false;
+        session.DemoPlayback = false;
 
         music.StopMusic();
         audio.StopAll();
@@ -105,7 +105,7 @@ internal sealed class Demos(
     /// <summary>
     /// A demo asked for by playdemo; the title loop plays it next (a game in progress ends first)
     /// </summary>
-    internal int? pendingDemo;
+    internal int? PendingDemo;
 
     /// <summary>Whether demo number <paramref name="demonumber"/> has been recorded or comes with the game</summary>
     internal bool DemoExists(int demonumber)
@@ -116,10 +116,10 @@ internal sealed class Demos(
     /// </summary>
     internal void PlayPendingDemo()
     {
-        if (pendingDemo is not int demonumber)
+        if (PendingDemo is not int demonumber)
             return;
 
-        pendingDemo = null;
+        PendingDemo = null;
         PlayDemo(demonumber);
         video.FadeOut();
         if (video.HasMargins)
@@ -151,11 +151,11 @@ internal sealed class Demos(
     /// </summary>
     internal void StartDemoRecord(int mapIndex)
     {
-        demo.demoData = new byte[MaxDemoSize];
-        demo.demoData[0] = (byte)mapIndex;
-        demo.demoptr = 4;                            // leave space for length
-        demo.lastdemoptr = MaxDemoSize;
-        session.demorecord = true;
+        demo.DemoData = new byte[MaxDemoSize];
+        demo.DemoData[0] = (byte)mapIndex;
+        demo.DemoPtr = 4;                            // leave space for length
+        demo.LastDemoPtr = MaxDemoSize;
+        session.DemoRecord = true;
     }
 
     /// <summary>
@@ -166,13 +166,13 @@ internal sealed class Demos(
     {
         int length;
 
-        session.demorecord = false;
+        session.DemoRecord = false;
 
         // The length counts the 4 header bytes; the byte after it is padding
-        length = demo.demoptr;
-        demo.demoData[1] = (byte)length;
-        demo.demoData[2] = (byte)(length >> 8);
-        demo.demoData[3] = 0;
+        length = demo.DemoPtr;
+        demo.DemoData[1] = (byte)length;
+        demo.DemoData[2] = (byte)(length >> 8);
+        demo.DemoData[3] = 0;
 
         if (demonumber == null)
         {
@@ -189,9 +189,9 @@ internal sealed class Demos(
         }
 
         if (demonumber is int number)
-            SaveDemo(number, demo.demoData[..length]);
+            SaveDemo(number, demo.DemoData[..length]);
 
-        demo.demoData = [];
+        demo.DemoData = [];
     }
 
     internal void SaveDemo(int demonumber, byte[] data)
@@ -256,17 +256,17 @@ internal sealed class Demos(
         return maps;
     }
 
-    internal DemoRecordRequest? pendingRecord;
+    internal DemoRecordRequest? PendingRecord;
 
     /// <summary>
     /// Starts the recording recorddemo asked for, if any. Returns whether one ran.
     /// </summary>
     internal bool RecordPendingDemo()
     {
-        if (pendingRecord is not { } request)
+        if (PendingRecord is not { } request)
             return false;
 
-        pendingRecord = null;
+        PendingRecord = null;
         RecordDemo(request.Level, request.DemoNumber);
         return true;
     }
@@ -286,18 +286,18 @@ internal sealed class Demos(
         hooks.DrawPlayScreen();
         video.FadeIn();
 
-        session.startgame = false;
-        session.demorecord = true;
+        session.GameChosen = false;
+        session.DemoRecord = true;
 
         hooks.SetupGameLevel();
         hooks.RunLevelHooks("new");       // as when it's played back (PlayDemo)
         music.StartMusic();
 
-        session.fizzlein = true;
+        session.FizzleIn = true;
 
         loop.PlayLoop();
 
-        session.demoplayback = false;
+        session.DemoPlayback = false;
 
         music.StopMusic();
         video.FadeOut();

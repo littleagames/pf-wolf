@@ -28,26 +28,26 @@ internal record Monster : Actor
     private protected FactionManager FactionManager => World.Factions;
     private protected LevelAI LevelAI => World.LevelAI;
 
-    private protected GameState GameState => World.Session.gamestate;
-    private protected uint Tics => World.Session.tics;
-    private protected int NextRandom() => World.Session.random.RndT();
-    private protected byte[] AreaByPlayer => World.Session.areas.areabyplayer;
-    private protected PlayerPawn Player => World.Session.player;
-    private protected PlayerState PlayerState => World.Session.playerstate;
-    private protected PlayerState LocalPlayer => World.Session.localplayer;
-    private protected GameMode GameMode => World.Session.gamemode;
-    private protected bool DemoRecord => World.Session.demorecord;
-    private protected bool DemoPlayback => World.Session.demoplayback;
-    private protected bool LoadedGame => World.Session.loadedgame;
-    private protected bool MadeNoise { get => World.Session.madenoise; set => World.Session.madenoise = value; }
-    private protected PlayState PlayState { get => World.Session.playstate; set => World.Session.playstate = value; }
+    private protected GameState GameState => World.Session.GameState;
+    private protected uint Tics => World.Session.Tics;
+    private protected int NextRandom() => World.Session.Random.RndT();
+    private protected byte[] AreaByPlayer => World.Session.Areas.AreaByPlayer;
+    private protected PlayerPawn Player => World.Session.Player;
+    private protected PlayerState PlayerState => World.Session.PlayerState;
+    private protected PlayerState LocalPlayer => World.Session.LocalPlayer;
+    private protected GameMode GameMode => World.Session.GameMode;
+    private protected bool DemoRecord => World.Session.DemoRecord;
+    private protected bool DemoPlayback => World.Session.DemoPlayback;
+    private protected bool LoadedGame => World.Session.LoadedGame;
+    private protected bool MadeNoise { get => World.Session.MadeNoise; set => World.Session.MadeNoise = value; }
+    private protected PlayState PlayState { get => World.Session.PlayState; set => World.Session.PlayState = value; }
 
     private protected bool CheckLine(Actor ob) => World.LineOfSight.CheckLine(ob);
     private protected bool CheckLine(Actor ob, Actor to) => World.LineOfSight.CheckLine(ob, to);
     private protected bool CheckLine(int fromX, int fromY, Actor to) => World.LineOfSight.CheckLine(fromX, fromY, to);
     private protected bool CheckDiag(int x, int y) => World.LineOfSight.CheckDiag(x, y);
-    private protected DoorObject[] DoorObjects => World.Doors.doorobjlist;
-    private protected int LastDoorObject => World.Doors.lastdoorobj;
+    private protected DoorObject[] DoorObjects => World.Doors.DoorObjList;
+    private protected int LastDoorObject => World.Doors.LastDoorObj;
     private protected void OpenDoor(int door) => World.Doors.OpenDoor(door);
     private protected void SpawnItemAt(string itemClass, int tilex, int tiley) => World.Map.SpawnThing(tilex, tiley, itemClass);
     private protected void PlayActorSound(Actor ob, string key) => World.ActorSounds.PlayActorSound(ob, key);
@@ -85,7 +85,7 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m => m.Shoot());
         ActorActionRegistry.RegisterFor<Monster>("A_HitlerMorph", m => m.HitlerMorph());
         // A_Morph("Class"[, "keep"]): becomes another enemy where it stands (a boss's next
-        // phase); the new one is shootable at its own health and speed and already chasing. This
+        // CurrentPhase); the new one is shootable at its own health and speed and already chasing. This
         // one leaves the level, or with "keep" stays as it is (a corpse, as Mecha Hitler's armor)
         ActorActionRegistry.RegisterFor<Monster>("A_Morph", (m, args) => m.Morph(args));
 
@@ -142,10 +142,10 @@ internal record Monster : Actor
 
     // The way back from each direction, and the diagonal between two (east/west, then
     // north/south), in ObjDir order (from WL_STATE.C)
-    protected static readonly ObjDir[] opposite = new ObjDir[9]
+    protected static readonly ObjDir[] Opposite = new ObjDir[9]
         {ObjDir.West,ObjDir.SouthWest,ObjDir.South,ObjDir.SouthEast,ObjDir.East,ObjDir.NorthEast,ObjDir.North,ObjDir.NorthWest,ObjDir.NoDir};
 
-    protected static readonly ObjDir[,] diagonal = new ObjDir[9, 9]
+    protected static readonly ObjDir[,] Diagonal = new ObjDir[9, 9]
 {
     /* east */  {ObjDir.NoDir,ObjDir.NoDir,ObjDir.NorthEast,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.SouthEast,ObjDir.NoDir,ObjDir.NoDir
 },
@@ -338,7 +338,7 @@ internal record Monster : Actor
             return true;
         }
 
-        // A door tile has no area of its own, so a PHASEDOORS actor passing through one
+        // A DoorNumber tile has no area of its own, so a PHASEDOORS actor passing through one
         // keeps the area it came from, and so does one crossing a floor code that isn't an area
         if (MapManager.actorat[TileX, TileY] is not Door && MapManager.ValidArea(MapManager.MapSpot(TileX, TileY, 0)))
             AreaNumber = (byte)(MapManager.MapSpot(TileX, TileY, 0) - MapManager.Floors.AreaTile);
@@ -362,19 +362,19 @@ internal record Monster : Actor
                 return 0;
             if (temp is Door door)
             {
-                // PHASEDOORS actors (ghosts, Spectres) drift straight through a door
+                // PHASEDOORS actors (ghosts, Spectres) drift straight through a DoorNumber
                 // without opening it. Don't set doornumtile for them: TryWalk would give
-                // them a "waiting on door" Distance, which T_Ghosts doesn't handle (its
+                // them a "waiting on DoorNumber" Distance, which T_Ghosts doesn't handle (its
                 // move loop then never ends).
                 if (Flags.Contains("PHASEDOORS", StringComparer.OrdinalIgnoreCase))
                     return 2;
 
-                // NOLOCKEDDOORS actors (Blake Stone's) don't open a door that needs a key, and
+                // NOLOCKEDDOORS actors (Blake Stone's) don't open a DoorNumber that needs a key, and
                 // NODOORS ones (its liquid alien and electro-spheres) none at all
-                if (HasFlag("NODOORS") || HasFlag("NOLOCKEDDOORS") && DoorObjects[door.door].Lock.Length > 0)
+                if (HasFlag("NODOORS") || HasFlag("NOLOCKEDDOORS") && DoorObjects[door.DoorNumber].Lock.Length > 0)
                     return 0;
 
-                doornumtile = door.door;
+                doornumtile = door.DoorNumber;
                 if (!(DemoRecord || DemoPlayback))
                 {
                     OpenDoor(doornumtile);
@@ -635,7 +635,7 @@ internal record Monster : Actor
             foreach (var pawn in MapManager.Players)
             {
                 int dist = TileDistance(pawn);
-                if (pawn.State.health > 0 && dist < best && IsAllyOf(pawn))
+                if (pawn.State.Health > 0 && dist < best && IsAllyOf(pawn))
                     (nearest, best) = (pawn, dist);
             }
             return nearest;
@@ -759,7 +759,7 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
+                if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
                     return;
                 Distance = (int)MapConstants.TileGlobal;
                 if (!(DemoRecord || DemoPlayback))
@@ -813,7 +813,7 @@ internal record Monster : Actor
         bool counted = alive && CountsAsKill;
         Faction = faction;
         if (alive && counted != CountsAsKill)
-            GameState.killtotal += (short)(CountsAsKill ? 1 : -1);
+            GameState.KillTotal += (short)(CountsAsKill ? 1 : -1);
 
         if (follow)
             Follows = true;
@@ -991,7 +991,7 @@ internal record Monster : Actor
             RuntimeFlags &= ~ObjFlags.FirstAttack;
         }
         else
-            turnaround = opposite[(byte)Dir];
+            turnaround = Opposite[(byte)Dir];
 
         SeekDelta(out deltax, out deltay);
 
@@ -1032,7 +1032,7 @@ internal record Monster : Actor
             tdir = dirtry[3]; dirtry[3] = dirtry[4]; dirtry[4] = tdir;
         }
 
-        dirtry[0] = diagonal[(byte)dirtry[1], (byte)dirtry[2]];
+        dirtry[0] = Diagonal[(byte)dirtry[1], (byte)dirtry[2]];
 
         for (i = 0; i < 5; i++)
         {
@@ -1062,7 +1062,7 @@ internal record Monster : Actor
         ObjDir turnaround;
 
         olddir = Dir;
-        turnaround = opposite[(byte)olddir];
+        turnaround = Opposite[(byte)olddir];
 
         // Following (FollowStep): towards the tile it's walking to, not what it's after
         if (_walkGoal is { } goal)
@@ -1229,7 +1229,7 @@ internal record Monster : Actor
     internal string? KillingDamageType(Entities.Actors.Actor? attacker)
     {
         if (attacker is PlayerPawn pawn)
-            return pawn.State.weapon is { Length: > 0 } weapon ? InventoryManager.GetStringProperty(weapon, "weapon.damagetype") : null;
+            return pawn.State.Weapon is { Length: > 0 } weapon ? InventoryManager.GetStringProperty(weapon, "weapon.damagetype") : null;
         return attacker?.Properties.TryGetValue("damagetype", out var type) == true && type?.ToString() is { Length: > 0 } name ? name : null;
     }
 
@@ -1307,8 +1307,8 @@ internal record Monster : Actor
 
         if (Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
         {
-            PlayerState.killx = Player.X;       // the killer's spot, for the death cam
-            PlayerState.killy = Player.Y;
+            PlayerState.KillX = Player.X;       // the killer's spot, for the death cam
+            PlayerState.KillY = Player.Y;
         }
 
         // A sleeper that becomes an enemy (`monster.becomes`) isn't the kill; that enemy is.
@@ -1316,7 +1316,7 @@ internal record Monster : Actor
         // Whoever killed it, as the kill ratio counts the players' enemies however they die
         if (CountsAsKill && !Properties.ContainsKey("monster.becomes"))
         {
-            GameState.killcount++;
+            GameState.KillCount++;
             if (killedBy is PlayerPawn unseen)
                 World.Stealth?.Killed(unseen);      // a knife or a scope's kill, unseen (Gameplay/Stealth.cs)
         }
@@ -1345,7 +1345,7 @@ internal record Monster : Actor
 
     // The local player's side (their pawn's, or their class's before they have one)
     private string PlayersFaction =>
-        LocalPlayer.Pawn?.Faction ?? FactionManager.PlayerFaction(LocalPlayer.playerclass);
+        LocalPlayer.Pawn?.Faction ?? FactionManager.PlayerFaction(LocalPlayer.PlayerClass);
 
     /// <summary>Whether dying, it leaves its `dropweapon`/`dropitem`</summary>
     protected virtual bool LeavesDrops => true;
@@ -1425,7 +1425,7 @@ internal record Monster : Actor
         var source = attacker?.Shooter ?? attacker;
         bool byPlayer = source is null or PlayerPawn;
         if (byPlayer && Properties.TryGetValue("monster.minweapon", out var minWeapon) && minWeapon is string minWeaponName
-            && (PlayerState.weapon == null || WeaponSelectionOrder(PlayerState.weapon) > WeaponSelectionOrder(minWeaponName)))
+            && (PlayerState.Weapon == null || WeaponSelectionOrder(PlayerState.Weapon) > WeaponSelectionOrder(minWeaponName)))
             return;
 
         // It turns on whoever hurt it (or fired what did), unless they're on its side: a neutral
@@ -1536,7 +1536,7 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
+                if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
                     return;
                 Distance = (int)MapConstants.TileGlobal;
                 if (!(DemoRecord || DemoPlayback))
@@ -1564,7 +1564,7 @@ internal record Monster : Actor
 
     internal virtual void Chase()
     {
-        if (GameState.victoryflag)
+        if (GameState.VictoryFlag)
             return;
 
         var dodge = false;
@@ -1621,7 +1621,7 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
+                if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
                     return;
                 Distance = (int)MapConstants.TileGlobal;
                 if (!(DemoRecord || DemoPlayback))
@@ -1783,7 +1783,7 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
+                if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
                     return;
                 Distance = (int)MapConstants.TileGlobal;
                 TryWalk();
@@ -1997,7 +1997,7 @@ internal record Monster : Actor
 
 
     // A dead Spectre comes back once nothing is in the way: the player isn't right on top of
-    // it, and the tiles it covers hold no wall, door, blocking object or live enemy
+    // it, and the tiles it covers hold no WallId, DoorNumber, blocking object or live enemy
     internal void Dormant()
     {
         foreach (var pawn in MapManager.Players)
@@ -2035,7 +2035,7 @@ internal record Monster : Actor
         newActor.Speed = SpdPatrol * 5;
 
         if (!LoadedGame && newActor is Monster { CountsAsKill: true })
-            GameState.killtotal++;
+            GameState.KillTotal++;
     }
 
     /// <summary>A_Morph: the enemy of class args[0] takes its place (see RegisterActions)</summary>
@@ -2058,7 +2058,7 @@ internal record Monster : Actor
         // As a map spawn of it would: its own speed, and a kill to count unless it's NOTCOUNTED
         newActor.Speed = newActor.PropertyInt("speed", SpdPatrol);
         if (!LoadedGame && newActor is Monster { CountsAsKill: true })
-            GameState.killtotal++;
+            GameState.KillTotal++;
 
         if (!args.Skip(1).Any(a => a.Trim().Equals("keep", StringComparison.OrdinalIgnoreCase)))
             MapManager.MarkForRemoval(this);

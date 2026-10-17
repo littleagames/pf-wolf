@@ -12,7 +12,7 @@ public class PlayerMovementTests
     private PushWalls _pushWalls = null!;
     private GameSession _session = null!;
     private List<string> _sounds = null!;
-    private bool _noclip { get => _session.noclip != 0; set => _session.noclip = (byte)(value ? 1 : 0); }
+    private bool _noclip { get => _session.NoClip != 0; set => _session.NoClip = (byte)(value ? 1 : 0); }
     private PlayerMovement _movement = null!;
 
     [SetUp]
@@ -28,7 +28,7 @@ public class PlayerMovementTests
             mapheight = 64,
         };
         _pushWalls = new PushWalls(null!, null!, new GameSession());
-        _session.playerstate.Pawn = new PlayerPawn { State = _session.playerstate };
+        _session.PlayerState.Pawn = new PlayerPawn { State = _session.PlayerState };
         _sounds = [];
         _noclip = false;
         _movement = new PlayerMovement(_map, new AudioManager(new Lazy<AssetManager>(() => null!), _session), _pushWalls, _session,
@@ -39,7 +39,7 @@ public class PlayerMovementTests
     // In the middle of tile (10, 10)
     private PlayerPawn Player()
     {
-        var pawn = _session.player;
+        var pawn = _session.Player;
         (pawn.X, pawn.Y) = (10 * Tile + Tile / 2, 10 * Tile + Tile / 2);
         return pawn;
     }
@@ -59,17 +59,17 @@ public class PlayerMovementTests
     [Test]
     public void Turning_Keeps_What_Doesnt_Make_A_Whole_Degree()
     {
-        // Arrange: AngleScale (20) of controlx turns a degree, to the right for positive
+        // Arrange: AngleScale (20) of ControlX turns a degree, to the right for positive
         var pawn = Player();
         pawn.Angle = 90;
-        _session.playerinput.Begin(new TicCmd { ControlX = 45 });
+        _session.PlayerInput.Begin(new TicCmd { ControlX = 45 });
 
         // Act
         _movement.ControlMovement(pawn);
 
         // Assert
         Assert.That(pawn.Angle, Is.EqualTo(88));
-        Assert.That(_session.playerstate.AngleFrac, Is.EqualTo(5));
+        Assert.That(_session.PlayerState.AngleFrac, Is.EqualTo(5));
     }
 
     [Test]
@@ -78,7 +78,7 @@ public class PlayerMovementTests
         // Arrange
         var pawn = Player();
         pawn.Angle = 0;
-        _session.playerinput.Begin(new TicCmd { ControlX = 20 });
+        _session.PlayerInput.Begin(new TicCmd { ControlX = 20 });
 
         // Act
         _movement.ControlMovement(pawn);
@@ -94,15 +94,15 @@ public class PlayerMovementTests
         var pawn = Player();
 
         // Act / Assert
-        _session.playerinput.Begin(new TicCmd { Pitch = 15 });
+        _session.PlayerInput.Begin(new TicCmd { Pitch = 15 });
         _movement.ControlMovement(pawn);
-        _session.playerinput.Begin(new TicCmd { Pitch = 15 });
+        _session.PlayerInput.Begin(new TicCmd { Pitch = 15 });
         _movement.ControlMovement(pawn);
-        Assert.That(_session.playerstate.Pitch, Is.EqualTo(20));
+        Assert.That(_session.PlayerState.Pitch, Is.EqualTo(20));
 
-        _session.playerinput.Begin(new TicCmd { CenterView = true });
+        _session.PlayerInput.Begin(new TicCmd { CenterView = true });
         _movement.ControlMovement(pawn);
-        Assert.That(_session.playerstate.Pitch, Is.Zero);
+        Assert.That(_session.PlayerState.Pitch, Is.Zero);
     }
 
     [Test]
@@ -114,7 +114,7 @@ public class PlayerMovementTests
     [Test]
     public void A_Wall_The_Players_Box_Reaches_Into_Blocks()
     {
-        // Arrange: a wall east, and the player close to it
+        // Arrange: a WallId east, and the player close to it
         _map.actorat[11, 10] = new Wall(1);
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;
@@ -130,7 +130,7 @@ public class PlayerMovementTests
         // Arrange: a pushwall moving away east, the player close behind it
         _map.tilemap[11, 10] = GameConstants.BitWall;
         _map.actorat[11, 10] = new Wall(GameConstants.BitWall);
-        _pushWalls.pushwalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = ControlDir.East, Pos = pos, Tile = 1 });
+        _pushWalls.MovingWalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = ControlDir.East, Pos = pos, Tile = 1 });
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;
 
@@ -156,7 +156,7 @@ public class PlayerMovementTests
     [Test]
     public void Running_Into_A_Wall_Slides_Along_It_And_Bumps()
     {
-        // Arrange: a wall east; the player moves east and a little south
+        // Arrange: a WallId east; the player moves east and a little south
         _map.actorat[11, 10] = new Wall(1);
         var pawn = Player();
         pawn.X = 11 * Tile - 0x6000;

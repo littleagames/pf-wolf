@@ -90,12 +90,12 @@ public class PlayerWeaponsTests
         public readonly GameSession Session = new();
         public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
         public readonly List<int> SlotItemsUsed = [];
-        public bool AmmoCheat { get => Session.ammocheat != 0; set => Session.ammocheat = (byte)(value ? 1 : 0); }
+        public bool AmmoCheat { get => Session.AmmoCheat != 0; set => Session.AmmoCheat = (byte)(value ? 1 : 0); }
         public readonly PlayerWeapons Weapons;
 
         public Rig(params string[] held)
         {
-            Inventory.SetHolder(Session.playerstate.Items);
+            Inventory.SetHolder(Session.PlayerState.Items);
             foreach (var item in held)
                 Inventory.Give(item, 1);
             // With no status bar layout nothing is drawn, so no graphics are needed (the weapon's
@@ -107,15 +107,15 @@ public class PlayerWeaponsTests
 
         public string? InHand
         {
-            get => Session.playerstate.weapon;
-            set => Session.playerstate.weapon = Session.playerstate.chosenweapon = value;
+            get => Session.PlayerState.Weapon;
+            set => Session.PlayerState.Weapon = Session.PlayerState.ChosenWeapon = value;
         }
 
         public void Press(object button)
         {
-            Session.playerinput.SetPressed((ButtonType)button, true);
+            Session.PlayerInput.SetPressed((ButtonType)button, true);
             Weapons.CheckWeaponChange();
-            Session.playerinput.SetPressed((ButtonType)button, false);
+            Session.PlayerInput.SetPressed((ButtonType)button, false);
         }
     }
 
@@ -174,7 +174,7 @@ public class PlayerWeaponsTests
         Assert.That(rig.InHand, Is.EqualTo("ChainGun"));
         rig.Press(ButtonType.Slot4);
         Assert.That(rig.InHand, Is.EqualTo("Shotgun"));
-        Assert.That(rig.Session.playerstate.chosenweapon, Is.EqualTo("Shotgun"));
+        Assert.That(rig.Session.PlayerState.ChosenWeapon, Is.EqualTo("Shotgun"));
     }
 
     [Test]
@@ -360,7 +360,7 @@ public class PlayerWeaponsTests
         rig.InHand = "Rifle";
         var rifle = rig.Inventory.CreateActor("Rifle")!;
         rifle.ArmState(rifle.ResolvedStates[WeaponInHand.ReloadState]);
-        rig.Session.playerstate.WeaponSprite = rifle;
+        rig.Session.PlayerState.WeaponSprite = rifle;
 
         // Act / Assert
         rig.Press(ButtonType.Slot1);
@@ -373,16 +373,16 @@ public class PlayerWeaponsTests
         // Arrange
         var rig = new Rig("ChargePistol");
         rig.InHand = "ChargePistol";
-        rig.Session.tics = 4;
+        rig.Session.Tics = 4;
 
         // Act / Assert
         Assert.That(rig.Weapons.TakeCharge(), Is.True);
         Assert.That(rig.Weapons.TakeCharge(), Is.False);
         rig.Weapons.TickWeaponCharge();
         rig.Weapons.TickWeaponCharge();
-        Assert.That(rig.Session.playerstate.WeaponCharge, Is.EqualTo(2));
+        Assert.That(rig.Session.PlayerState.WeaponCharge, Is.EqualTo(2));
         rig.Weapons.TickWeaponCharge();
-        Assert.That(rig.Session.playerstate.WeaponCharge, Is.Zero);     // never below
+        Assert.That(rig.Session.PlayerState.WeaponCharge, Is.Zero);     // never below
         Assert.That(rig.Weapons.TakeCharge(), Is.True);
     }
 
@@ -396,6 +396,6 @@ public class PlayerWeaponsTests
         // Act / Assert
         Assert.That(rig.Weapons.TakeCharge(), Is.True);
         Assert.That(rig.Weapons.TakeCharge(), Is.True);
-        Assert.That(rig.Session.playerstate.WeaponCharge, Is.Zero);
+        Assert.That(rig.Session.PlayerState.WeaponCharge, Is.Zero);
     }
 }

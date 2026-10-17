@@ -104,7 +104,7 @@ internal sealed class DebugScreens(
             }
         }
 
-        video.Bar((session.player.TileX * zoom) + offx, (session.player.TileY * zoom) + offy, zoom, zoom, "White");
+        video.Bar((session.Player.TileX * zoom) + offx, (session.Player.TileY * zoom) + offy, zoom, zoom, "White");
 
         video.Update();
         input.Ack();

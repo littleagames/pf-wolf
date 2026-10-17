@@ -45,10 +45,10 @@ public class GameModeTests
     {
         // Arrange: red, red, blue
         var session = new GameSession();
-        session.players[0].Team = 0;
-        session.players.Add(new Entities.PlayerState { Number = 1, Team = 0 });
-        session.players.Add(new Entities.PlayerState { Number = 2, Team = 1 });
-        var (red1, red2, blue) = (session.players[0], session.players[1], session.players[2]);
+        session.Players[0].Team = 0;
+        session.Players.Add(new Entities.PlayerState { Number = 1, Team = 0 });
+        session.Players.Add(new Entities.PlayerState { Number = 2, Team = 1 });
+        var (red1, red2, blue) = (session.Players[0], session.Players[1], session.Players[2]);
 
         // Act / Assert
         session.SetGameMode(GameMode.TeamDeathmatch);
@@ -104,28 +104,28 @@ public class MatchScoringTests
         public Rig(GameMode mode)
         {
             Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session);
-            Session.players[0].Team = 0;
-            Session.players.Add(new Entities.PlayerState { Number = 1, Team = 0 });
-            Session.players.Add(new Entities.PlayerState { Number = 2, Team = 1 });
-            foreach (var p in Session.players)
+            Session.Players[0].Team = 0;
+            Session.Players.Add(new Entities.PlayerState { Number = 1, Team = 0 });
+            Session.Players.Add(new Entities.PlayerState { Number = 2, Team = 1 });
+            foreach (var p in Session.Players)
                 p.Pawn = new PlayerPawn { State = p };
             Session.ActingChanged = p => Inventory.SetHolder(p.Items);
             Session.SetGameMode(mode);
-            Session.SetActing(Session.players[1]);
+            Session.SetActing(Session.Players[1]);
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
             Match = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((_, _) => true, () => { }));
-            Match.netrules = Match.netrules with { ScoreLimit = mode.DefaultScoreLimit() };
+            Match.NetRules = Match.NetRules with { ScoreLimit = mode.DefaultScoreLimit() };
             var console = new ConsoleManager();
             Hud = new HudMessageManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<ConsoleManager>(console));
         }
 
         public MatchModeHooks Hooks => new((_, _) => true, (_, _) => true, name => name, _ => { });
 
-        public Entities.PlayerState Red1 => Session.players[0];
-        public Entities.PlayerState Red2 => Session.players[1];
-        public Entities.PlayerState Blue => Session.players[2];
+        public Entities.PlayerState Red1 => Session.Players[0];
+        public Entities.PlayerState Red2 => Session.Players[1];
+        public Entities.PlayerState Blue => Session.Players[2];
     }
 
     [Test]
@@ -133,18 +133,18 @@ public class MatchScoringTests
     {
         // Arrange
         var rig = new Rig(GameMode.TeamDeathmatch);
-        rig.Match.netrules = rig.Match.netrules with { ScoreLimit = 2 };
+        rig.Match.NetRules = rig.Match.NetRules with { ScoreLimit = 2 };
 
         // Act / Assert
         rig.Match.PlayerKilled(rig.Blue, rig.Red1.Pawn);
         rig.Match.PlayerKilled(rig.Red2, rig.Blue.Pawn);
-        Assert.That(rig.Match.teamscores, Is.EqualTo(new[] { 1, 1 }));
-        Assert.That(rig.Match.matchover, Is.False);
+        Assert.That(rig.Match.TeamScores, Is.EqualTo(new[] { 1, 1 }));
+        Assert.That(rig.Match.MatchOver, Is.False);
 
         rig.Match.PlayerKilled(rig.Blue, rig.Red2.Pawn);
-        Assert.That(rig.Match.teamscores, Is.EqualTo(new[] { 2, 1 }));
+        Assert.That(rig.Match.TeamScores, Is.EqualTo(new[] { 2, 1 }));
         Assert.That((rig.Red1.Frags, rig.Red2.Frags, rig.Blue.Frags), Is.EqualTo((1, 1, 1)));
-        Assert.That(rig.Match.matchover, Is.True);
+        Assert.That(rig.Match.MatchOver, Is.True);
         Assert.That(rig.Match.LeadingTeam, Is.EqualTo(0));
     }
 
@@ -153,7 +153,7 @@ public class MatchScoringTests
     {
         var rig = new Rig(GameMode.TeamDeathmatch);
         rig.Match.PlayerKilled(rig.Blue, rig.Blue.Pawn);
-        Assert.That((rig.Match.teamscores[1], rig.Blue.Frags), Is.EqualTo((-1, -1)));
+        Assert.That((rig.Match.TeamScores[1], rig.Blue.Frags), Is.EqualTo((-1, -1)));
     }
 
     [Test]
@@ -161,16 +161,16 @@ public class MatchScoringTests
     {
         // Arrange: a lead of 10 wins
         var rig = new Rig(GameMode.Heist);
-        rig.Match.netrules = rig.Match.netrules with { ScoreLimit = 10 };
+        rig.Match.NetRules = rig.Match.NetRules with { ScoreLimit = 10 };
 
         // Act / Assert: both past 10, nobody's won
         rig.Match.AddTeamScore(0, 8);
         rig.Match.AddTeamScore(1, 12);
         rig.Match.AddTeamScore(0, 8);
-        Assert.That(rig.Match.matchover, Is.False);
+        Assert.That(rig.Match.MatchOver, Is.False);
 
         rig.Match.AddTeamScore(0, 6);       // 22 to 12
-        Assert.That(rig.Match.matchover, Is.True);
+        Assert.That(rig.Match.MatchOver, Is.True);
         Assert.That(rig.Match.LeadingTeam, Is.EqualTo(0));
     }
 
@@ -208,7 +208,7 @@ public class MatchScoringTests
         ((IMatchObjective)heist).ItemTaken(chest);
 
         // Assert
-        Assert.That(rig.Match.teamscores, Is.EqualTo(new[] { 10, 0 }));
+        Assert.That(rig.Match.TeamScores, Is.EqualTo(new[] { 10, 0 }));
         Assert.That(rig.Red2.Objective, Is.EqualTo(10));
         Assert.That(((IMatchObjective)heist).StatusLine(), Is.EqualTo("Red leads by 10"));
     }
@@ -218,7 +218,7 @@ public class MatchScoringTests
     {
         var rig = new Rig(GameMode.CaptureTheFlag);
         rig.Match.AddTeamScore(1, 2);
-        rig.Red1.score = 1234;
+        rig.Red1.Score = 1234;
         Assert.That((rig.Match.ScoreShown(rig.Blue), rig.Match.ScoreShown(rig.Red1)), Is.EqualTo((2, 0)));
     }
 
@@ -228,12 +228,12 @@ public class MatchScoringTests
         var rig = new Rig(GameMode.Domination);
         rig.Match.AddTeamScore(0, 5);
         rig.Red1.Frags = rig.Blue.Objective = 3;
-        rig.Match.matchover = true;
+        rig.Match.MatchOver = true;
 
         rig.Match.NewMatch();
 
-        Assert.That(rig.Match.teamscores, Is.EqualTo(new[] { 0, 0 }));
-        Assert.That((rig.Red1.Frags, rig.Blue.Objective, rig.Match.matchover), Is.EqualTo((0, 0, false)));
+        Assert.That(rig.Match.TeamScores, Is.EqualTo(new[] { 0, 0 }));
+        Assert.That((rig.Red1.Frags, rig.Blue.Objective, rig.Match.MatchOver), Is.EqualTo((0, 0, false)));
     }
 
     // A Horde with these waves
@@ -263,23 +263,23 @@ public class MatchScoringTests
         // Arrange: a wave being fought
         var rig = new Rig(GameMode.Horde);
         var horde = HordeOf(rig, new HordeInfo());
-        horde.phase = Horde.Phase.Wave;
-        horde.survived = 3;
+        horde.CurrentPhase = Horde.Phase.Wave;
+        horde.Survived = 3;
         IMatchObjective objective = horde;
 
         // Act / Assert
         Assert.That(objective.MayRespawn(rig.Red1), Is.False);
-        rig.Red1.health = rig.Red2.health = 0;
-        rig.Blue.health = 50;
+        rig.Red1.Health = rig.Red2.Health = 0;
+        rig.Blue.Health = 50;
         objective.PlayerDied(rig.Red2);
-        Assert.That(rig.Match.matchover, Is.False, "one still standing");
+        Assert.That(rig.Match.MatchOver, Is.False, "one still standing");
 
-        rig.Blue.health = 0;
+        rig.Blue.Health = 0;
         objective.PlayerDied(rig.Blue);
-        Assert.That(rig.Match.matchover, Is.True);
+        Assert.That(rig.Match.MatchOver, Is.True);
         Assert.That(objective.FinalTitle(), Is.EqualTo("Survived 3 waves"));
 
-        horde.phase = Horde.Phase.Break;
+        horde.CurrentPhase = Horde.Phase.Break;
         Assert.That(objective.MayRespawn(rig.Red1), Is.True);
     }
 }
@@ -291,18 +291,18 @@ public class TeamScoreboardTests
     {
         // Arrange: blue, red, red, with captures
         var session = new GameSession();
-        session.players[0].Team = 1;
-        session.players.Add(new Entities.PlayerState { Number = 1, Team = 0, Objective = 1 });
-        session.players.Add(new Entities.PlayerState { Number = 2, Team = 0, Objective = 2 });
+        session.Players[0].Team = 1;
+        session.Players.Add(new Entities.PlayerState { Number = 1, Team = 0, Objective = 1 });
+        session.Players.Add(new Entities.PlayerState { Number = 2, Team = 0, Objective = 2 });
         session.SetGameMode(GameMode.CaptureTheFlag);
         var match = new Deathmatch(null!, null!, null!, session, null!);
         var board = new Scoreboard(null!, null!, null!, null!, session, () => { }) { Match = match };
-        match.teamscores[1] = 3;
+        match.TeamScores[1] = 3;
 
         // Act / Assert
         Assert.That(board.RankedPlayers().Select(p => p.Number), Is.EqualTo(new[] { 2, 1, 0 }));
         Assert.That(board.WinnerTitle(), Is.EqualTo("Blue team wins!"));
-        match.teamscores[0] = 3;
+        match.TeamScores[0] = 3;
         Assert.That(board.WinnerTitle(), Is.EqualTo("It's a draw!"));
     }
 }

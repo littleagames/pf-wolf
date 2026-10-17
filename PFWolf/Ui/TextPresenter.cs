@@ -83,7 +83,7 @@ and message boxes (bstone jm_tp.cpp). A script is text with ^ codes, two letters
 number of hex digits (^FC3a sets the color, ^CE centers the line, ^EP ends a page, ^XX the
 script). Lines word wrap within the region; a line of nothing but codes takes no room.
 Fonts and shapes come from gamepacks/{pack}/presenter.yaml. Not done: animations (^AN),
-display strings (^DS), music and sounds by number (^PM, ^PS) and scaled sprite or wall shapes.
+display strings (^DS), music and sounds by number (^PM, ^PS) and scaled sprite or WallId shapes.
 
 =============================================================================
 */
@@ -587,7 +587,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
     readonly Dictionary<int, TpShape?> tpShapes = [];
 
-    /// <summary>What presenter.yaml gives shape <paramref name="number"/>: a picture, sprite or wall; null if none</summary>
+    /// <summary>What presenter.yaml gives shape <paramref name="number"/>: a picture, sprite or WallId; null if none</summary>
     TpShape? ShapePic(int number)
     {
         if (tpShapes.TryGetValue(number, out var cached))

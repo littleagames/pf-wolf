@@ -43,9 +43,9 @@ internal sealed class WeaponZoom(InventoryManager inventory, AudioManager audio,
     /// <summary>Moves the acting player's zoom on by a tic's worth, from the zoom key</summary>
     internal void Tick(bool reloading)
     {
-        var playerstate = session.playerstate;
-        var input = session.playerinput;
-        var weapon = playerstate.weapon;
+        var playerstate = session.PlayerState;
+        var input = session.PlayerInput;
+        var weapon = playerstate.Weapon;
         if (MaxZoom(weapon) <= 1 || reloading)
         {
             Reset();
@@ -57,7 +57,7 @@ internal sealed class WeaponZoom(InventoryManager inventory, AudioManager audio,
             && inventory.GetStringProperty(weapon!, "weapon.zoomsound") is { Length: > 0 } sound)
             audio.Play(sound);
 
-        int tics = (int)session.tics;
+        int tics = (int)session.Tics;
         (playerstate.ZoomMode, playerstate.ZoomLevel) = Step(playerstate.ZoomMode, playerstate.ZoomLevel, pressed, held, tics);
         playerstate.TurnSlowdown = playerstate.ZoomMode == ZoomMode.Zoomed
             ? Math.Max(1, inventory.GetIntProperty(weapon!, "weapon.zoomturn", 1))
@@ -84,25 +84,25 @@ internal sealed class WeaponZoom(InventoryManager inventory, AudioManager audio,
     /// <summary>The acting player's scope down: no zoom</summary>
     internal void Reset()
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         (playerstate.ZoomMode, playerstate.ZoomLevel, playerstate.TurnSlowdown) = (ZoomMode.Ready, 0, 1);
     }
 
     /// <summary>How many times the view's magnified now: 1 for not at all</summary>
     internal double Magnification()
     {
-        var playerstate = session.playerstate;
-        return 1 + (MaxZoom(playerstate.weapon) - 1) * playerstate.ZoomLevel / MaxLevel;
+        var playerstate = session.PlayerState;
+        return 1 + (MaxZoom(playerstate.Weapon) - 1) * playerstate.ZoomLevel / MaxLevel;
     }
 
     /// <summary>Whether the acting player is looking through the scope: zooming in, zoomed or zooming out</summary>
-    internal bool Scoped => session.playerstate.ZoomMode != ZoomMode.Ready;
+    internal bool Scoped => session.PlayerState.ZoomMode != ZoomMode.Ready;
 
     /// <summary>Whether the acting player is zoomed all the way in (and let go): ZoomFire's turn</summary>
-    internal bool Zoomed => session.playerstate.ZoomMode == ZoomMode.Zoomed;
+    internal bool Zoomed => session.PlayerState.ZoomMode == ZoomMode.Zoomed;
 
     /// <summary>The picture over the view while scoped (weapon.zoompic), or null</summary>
     internal string? ScopePicture() =>
-        Scoped && session.playerstate.weapon is { } weapon && inventory.GetStringProperty(weapon, "weapon.zoompic") is { Length: > 0 } pic
+        Scoped && session.PlayerState.Weapon is { } weapon && inventory.GetStringProperty(weapon, "weapon.zoompic") is { Length: > 0 } pic
             ? pic : null;
 }

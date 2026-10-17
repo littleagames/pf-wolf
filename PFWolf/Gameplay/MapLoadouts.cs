@@ -16,7 +16,7 @@ internal sealed class MapLoadouts(InventoryManager inventory, PlayerWeapons weap
     {
         if (loadout == null)
             return;
-        foreach (var p in session.players)
+        foreach (var p in session.Players)
         {
             using var _ = session.ActAs(p);
             ApplyToActing(loadout);
@@ -25,7 +25,7 @@ internal sealed class MapLoadouts(InventoryManager inventory, PlayerWeapons weap
 
     void ApplyToActing(MapLoadout loadout)
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         bool armed = false;
 
         if (loadout.TakeWeapons)
@@ -64,14 +64,14 @@ internal sealed class MapLoadouts(InventoryManager inventory, PlayerWeapons weap
 
         if (armed)
         {
-            playerstate.weapon = playerstate.chosenweapon = weapons.BestWeapon(canFire: true) ?? weapons.BestWeapon();
+            playerstate.Weapon = playerstate.ChosenWeapon = weapons.BestWeapon(canFire: true) ?? weapons.BestWeapon();
             playerstate.WeaponSprite = null;        // the weapon in hand starts on its Ready state
             playerstate.WeaponPower = 0;
         }
 
         if (loadout.Health is { } health)
-            playerstate.health = (short)Math.Max(health, 1);
-        if (loadout.HealthCap is { } cap && playerstate.health > cap)
-            playerstate.health = (short)Math.Max(cap, 1);
+            playerstate.Health = (short)Math.Max(health, 1);
+        if (loadout.HealthCap is { } cap && playerstate.Health > cap)
+            playerstate.Health = (short)Math.Max(cap, 1);
     }
 }

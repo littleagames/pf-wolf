@@ -18,12 +18,12 @@ public class MainGameLoopTests
     {
         // Arrange
         var loop = Make();
-        loop.pendingMapChange = new PendingMapChange("MAP02", KeepPosition: false, 0, 0, 0);
+        loop.PendingMapChange = new PendingMapChange("MAP02", KeepPosition: false, 0, 0, 0);
 
         // Act
         loop.ApplyPendingMapChange();
 
         // Assert
-        Assert.That(loop.pendingMapChange, Is.Null);
+        Assert.That(loop.PendingMapChange, Is.Null);
     }
 }

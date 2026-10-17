@@ -8,8 +8,8 @@ public class GameSessionTests
     private static GameSession TwoPlayers()
     {
         var session = new GameSession();
-        session.players.Add(new Entities.PlayerState());
-        foreach (var p in session.players)
+        session.Players.Add(new Entities.PlayerState());
+        foreach (var p in session.Players)
             p.Pawn = new PlayerPawn { State = p };
         return session;
     }
@@ -21,10 +21,10 @@ public class GameSessionTests
         var session = new GameSession();
 
         // Assert
-        Assert.That(session.players, Has.Count.EqualTo(1));
-        Assert.That(session.playerstate, Is.SameAs(session.localplayer));
+        Assert.That(session.Players, Has.Count.EqualTo(1));
+        Assert.That(session.PlayerState, Is.SameAs(session.LocalPlayer));
         Assert.That(session.ActingIsLocal, Is.True);
-        Assert.That(session.gamemode, Is.EqualTo(GameMode.Single));
+        Assert.That(session.GameMode, Is.EqualTo(GameMode.Single));
     }
 
     [Test]
@@ -32,17 +32,17 @@ public class GameSessionTests
     {
         // Arrange
         var session = TwoPlayers();
-        var other = session.players[1];
+        var other = session.Players[1];
 
         // Act / Assert
         using (session.ActAs(other))
         {
-            Assert.That(session.playerstate, Is.SameAs(other));
-            Assert.That(session.player, Is.SameAs(other.Pawn));
-            Assert.That(session.playerinput, Is.SameAs(other.Input));
+            Assert.That(session.PlayerState, Is.SameAs(other));
+            Assert.That(session.Player, Is.SameAs(other.Pawn));
+            Assert.That(session.PlayerInput, Is.SameAs(other.Input));
             Assert.That(session.ActingIsLocal, Is.False);
         }
-        Assert.That(session.playerstate, Is.SameAs(session.players[0]));
+        Assert.That(session.PlayerState, Is.SameAs(session.Players[0]));
         Assert.That(session.ActingIsLocal, Is.True);
     }
 
@@ -55,12 +55,12 @@ public class GameSessionTests
         session.ActingChanged = heard.Add;
 
         // Act
-        using (session.ActAs(session.players[1]))
+        using (session.ActAs(session.Players[1]))
         {
         }
 
         // Assert
-        Assert.That(heard, Is.EqualTo(new[] { session.players[1], session.players[0] }));
+        Assert.That(heard, Is.EqualTo(new[] { session.Players[1], session.Players[0] }));
     }
 
     [Test]
@@ -70,17 +70,17 @@ public class GameSessionTests
         var session = TwoPlayers();
 
         // Act
-        session.consoleplayer = 1;
+        session.ConsolePlayer = 1;
 
         // Assert
-        Assert.That(session.localplayer, Is.SameAs(session.players[1]));
+        Assert.That(session.LocalPlayer, Is.SameAs(session.Players[1]));
         Assert.That(session.ActingIsLocal, Is.False);       // the first is still acting
     }
 
     [Test]
     public void No_Pawn_Means_No_Player()
     {
-        Assert.Throws<InvalidOperationException>(() => _ = new GameSession().player);
+        Assert.Throws<InvalidOperationException>(() => _ = new GameSession().Player);
     }
 
     [Test]
@@ -95,7 +95,7 @@ public class GameSessionTests
         session.SetGameMode(GameMode.Coop);
 
         // Assert
-        Assert.That(session.gamemode, Is.EqualTo(GameMode.Coop));
+        Assert.That(session.GameMode, Is.EqualTo(GameMode.Coop));
         Assert.That(heard, Is.EqualTo(GameMode.Coop));
     }
 }
@@ -105,9 +105,9 @@ public class CameraTests
     private static (GameSession Session, PlayerPawn Pawn) WithPlayer()
     {
         var session = new GameSession();
-        var pawn = new PlayerPawn { State = session.players[0], X = 0x18000, Y = 0x28000, Angle = 45 };
-        session.players[0].Pawn = pawn;
-        session.players[0].Pitch = 10;
+        var pawn = new PlayerPawn { State = session.Players[0], X = 0x18000, Y = 0x28000, Angle = 45 };
+        session.Players[0].Pawn = pawn;
+        session.Players[0].Pitch = 10;
         return (session, pawn);
     }
 
@@ -116,7 +116,7 @@ public class CameraTests
     {
         // Arrange
         var (session, pawn) = WithPlayer();
-        var camera = session.camera;
+        var camera = session.Camera;
 
         // Assert
         Assert.That(camera.Target, Is.SameAs(pawn));
@@ -130,7 +130,7 @@ public class CameraTests
     [Test]
     public void There_Is_No_Target_Before_The_Player_Has_A_Pawn()
     {
-        Assert.That(new GameSession().camera.Target, Is.Null);
+        Assert.That(new GameSession().Camera.Target, Is.Null);
     }
 
     [Test]
@@ -138,7 +138,7 @@ public class CameraTests
     {
         // Arrange
         var (session, _) = WithPlayer();
-        var camera = session.camera;
+        var camera = session.Camera;
 
         // Act
         camera.SetFixed(0x30000, 0x40000, 180, pitch: -5, eyez: 20);
@@ -154,13 +154,13 @@ public class CameraTests
     {
         // Arrange
         var (session, pawn) = WithPlayer();
-        session.camera.SetFixed(0, 0, 0);
+        session.Camera.SetFixed(0, 0, 0);
 
         // Act
-        session.camera.FollowPlayer();
+        session.Camera.FollowPlayer();
 
         // Assert
-        Assert.That(session.camera.Target, Is.SameAs(pawn));
+        Assert.That(session.Camera.Target, Is.SameAs(pawn));
     }
 
     [Test]
@@ -171,14 +171,14 @@ public class CameraTests
         var guard = new Monster { Name = "Guard", Dir = ObjDir.North };
 
         // Act
-        session.camera.Follow(guard);
+        session.Camera.Follow(guard);
 
         // Assert
-        Assert.That(session.camera.Spectating, Is.True);
-        Assert.That(session.camera.OnPlayer, Is.False);
-        Assert.That(session.camera.Angle, Is.EqualTo((short)90));
-        Assert.That(session.camera.Pitch, Is.EqualTo(0));
-        Assert.That(session.camera.EyeZ, Is.EqualTo(GameConstants.EyeDefault));
+        Assert.That(session.Camera.Spectating, Is.True);
+        Assert.That(session.Camera.OnPlayer, Is.False);
+        Assert.That(session.Camera.Angle, Is.EqualTo((short)90));
+        Assert.That(session.Camera.Pitch, Is.EqualTo(0));
+        Assert.That(session.Camera.EyeZ, Is.EqualTo(GameConstants.EyeDefault));
     }
 
     [TestCase(5u, 40)]          // 8 degrees a tic toward north
@@ -188,14 +188,14 @@ public class CameraTests
         // Arrange
         var (session, _) = WithPlayer();
         var guard = new Monster { Name = "Guard", Dir = ObjDir.East };
-        session.camera.Follow(guard);
+        session.Camera.Follow(guard);
         guard.Dir = ObjDir.North;
 
         // Act
-        session.camera.Tick(tics);
+        session.Camera.Tick(tics);
 
         // Assert
-        Assert.That(session.camera.Angle, Is.EqualTo((short)expected));
+        Assert.That(session.Camera.Angle, Is.EqualTo((short)expected));
     }
 
     [Test]
@@ -204,14 +204,14 @@ public class CameraTests
         // Arrange: east (0) to south (270) is 90 degrees clockwise, not 270 the other way
         var (session, _) = WithPlayer();
         var guard = new Monster { Name = "Guard", Dir = ObjDir.East };
-        session.camera.Follow(guard);
+        session.Camera.Follow(guard);
         guard.Dir = ObjDir.South;
 
         // Act
-        session.camera.Tick(1);
+        session.Camera.Tick(1);
 
         // Assert
-        Assert.That(session.camera.Angle, Is.EqualTo((short)352));
+        Assert.That(session.Camera.Angle, Is.EqualTo((short)352));
     }
 
     [Test]
@@ -220,13 +220,13 @@ public class CameraTests
         // Arrange
         var (session, pawn) = WithPlayer();
         var guard = new Monster { Name = "Guard" };
-        session.camera.Follow(guard);
+        session.Camera.Follow(guard);
 
         // Act
         guard.IsRemoved = true;
 
         // Assert
-        Assert.That(session.camera.Target, Is.SameAs(pawn));
-        Assert.That(session.camera.Spectating, Is.False);
+        Assert.That(session.Camera.Target, Is.SameAs(pawn));
+        Assert.That(session.Camera.Spectating, Is.False);
     }
 }

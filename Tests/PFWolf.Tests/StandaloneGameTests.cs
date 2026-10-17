@@ -145,9 +145,9 @@ public class StandaloneGameTests
         // Arrange: a demo walking from the start through both doors to the exit switch, using each
         var demos = Directory.CreateDirectory(Path.Combine(_workFolder, "demos")).FullName;
         File.WriteAllBytes(Path.Combine(demos, "DEMO0.dmo"), ScriptedDemo(
-            (0, -35, 60), (Use, 0, 2), (0, 0, 80),      // to the airlock door, and open it
+            (0, -35, 60), (Use, 0, 2), (0, 0, 80),      // to the airlock DoorNumber, and open it
             (0, -35, 70), (Attack, 0, 3), (0, 0, 20),   // into the hall, firing the blaster
-            (0, -35, 90), (Use, 0, 2), (0, 0, 80),      // up to the vault door, and open it
+            (0, -35, 90), (Use, 0, 2), (0, 0, 80),      // up to the vault DoorNumber, and open it
             (0, -35, 60), (Use, 0, 2), (0, 0, 200)));   // up to the switch, and throw it
 
         // Act

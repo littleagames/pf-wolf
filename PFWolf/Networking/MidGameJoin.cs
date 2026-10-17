@@ -52,23 +52,23 @@ internal sealed class MidGameJoin(
             bw.Write(NetStateVersion);
             bw.Write(netPlay.netlevel);
             bw.Write(netPlay.netstep);
-            bw.Write(gameSession.netseed);
-            bw.Write(gameSession.random.rndindex);
-            bw.Write((byte)gameSession.gamemode);
-            bw.Write(deathmatch.netrules.Monsters);
-            bw.Write(deathmatch.netrules.ScoreLimit);
-            bw.Write(deathmatch.netrules.TimeLimitMinutes);
-            bw.Write(deathmatch.netrules.ItemRespawn);
-            bw.Write(deathmatch.matchover);
-            bw.Write(deathmatch.teamscores[0]);
-            bw.Write(deathmatch.teamscores[1]);
-            gameSession.gamestate.Write(bw, gameSession.players[0]);
+            bw.Write(gameSession.NetSeed);
+            bw.Write(gameSession.Random.RndIndex);
+            bw.Write((byte)gameSession.GameMode);
+            bw.Write(deathmatch.NetRules.Monsters);
+            bw.Write(deathmatch.NetRules.ScoreLimit);
+            bw.Write(deathmatch.NetRules.TimeLimitMinutes);
+            bw.Write(deathmatch.NetRules.ItemRespawn);
+            bw.Write(deathmatch.MatchOver);
+            bw.Write(deathmatch.TeamScores[0]);
+            bw.Write(deathmatch.TeamScores[1]);
+            gameSession.GameState.Write(bw, gameSession.Players[0]);
 
             var actors = mapManager.GetSavedActors();
             int IndexOf(Entities.Actors.Actor? actor) => actor == null ? -1 : actors.FindIndex(a => ReferenceEquals(a, actor));
 
-            bw.Write(gameSession.players.Count);
-            foreach (var p in gameSession.players)
+            bw.Write(gameSession.Players.Count);
+            foreach (var p in gameSession.Players)
                 WriteNetPlayer(bw, p, IndexOf);
 
             bw.Write(inventoryManager.SharedItems.Count);
@@ -87,11 +87,11 @@ internal sealed class MidGameJoin(
 
             // What a save doesn't keep (each actor's target and shooter are in the level body):
             // who pushed each moving pushwall, in the level body's order
-            foreach (var wall in pushWalls.pushwalls)
+            foreach (var wall in pushWalls.MovingWalls)
                 bw.Write(wall.Pusher is { } pusher && ReferenceEquals(pusher.State.Pawn, pusher) ? pusher.State.Number : -1);
 
-            bw.Write(deathmatch.itemrespawns.Count);
-            foreach (var item in deathmatch.itemrespawns)
+            bw.Write(deathmatch.ItemRespawns.Count);
+            foreach (var item in deathmatch.ItemRespawns)
             {
                 bw.Write(item.ClassName);
                 bw.Write(item.TileX);
@@ -124,31 +124,31 @@ internal sealed class MidGameJoin(
 
             netPlay.netlevel = br.ReadInt32();
             netPlay.netstep = br.ReadInt32();
-            gameSession.netseed = br.ReadByte();
+            gameSession.NetSeed = br.ReadByte();
             int rnd = br.ReadInt32();
             var mode = (GameMode)br.ReadByte();
-            deathmatch.netrules = new NetRules(br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadBoolean());
-            deathmatch.matchover = br.ReadBoolean();
-            deathmatch.teamscores[0] = br.ReadInt32();
-            deathmatch.teamscores[1] = br.ReadInt32();
+            deathmatch.NetRules = new NetRules(br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadBoolean());
+            deathmatch.MatchOver = br.ReadBoolean();
+            deathmatch.TeamScores[0] = br.ReadInt32();
+            deathmatch.TeamScores[1] = br.ReadInt32();
             var (game, _) = GameState.Read(br);
 
             // The players, as the host has them
             playersManager.ResetPlayers();
-            gameSession.players.Clear();
+            gameSession.Players.Clear();
             var lastAttackers = new List<int>();
             var weapons = new List<Entities.Actors.ActorSnapshot?>();
             for (int i = br.ReadInt32(), n = 0; n < i; n++)
             {
                 var p = new Entities.PlayerState { Number = n };
                 ReadNetPlayer(br, p, out var lastAttacker, out var weapon);
-                gameSession.players.Add(p);
+                gameSession.Players.Add(p);
                 lastAttackers.Add(lastAttacker);
                 weapons.Add(weapon);
             }
             session.BeginPlaying();
-            gameSession.consoleplayer = Math.Max(0, session.LocalIndex);
-            gameSession.SetActing(gameSession.localplayer);
+            gameSession.ConsolePlayer = Math.Max(0, session.LocalIndex);
+            gameSession.SetActing(gameSession.LocalPlayer);
             gameSession.SetGameMode(mode);
 
             var shared = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -161,29 +161,29 @@ internal sealed class MidGameJoin(
                 owners[i] = br.ReadInt32();
 
             // The level: built from its map, then laid over as the host has it
-            gameSession.gamestate = game;
-            gameSession.loadedgame = true;
-            gameSession.netgame = true;
+            gameSession.GameState = game;
+            gameSession.LoadedGame = true;
+            gameSession.NetGame = true;
             netPlay.netLeft = false;
             levelSetup.SetupGameLevel();
             var body = levelBodies.ReadLevelBody(br);
-            var actors = levelBodies.ApplyLevelBody(body, i => i < owners.Length && owners[i] >= 0 && owners[i] < gameSession.players.Count ? gameSession.players[owners[i]] : null);
+            var actors = levelBodies.ApplyLevelBody(body, i => i < owners.Length && owners[i] >= 0 && owners[i] < gameSession.Players.Count ? gameSession.Players[owners[i]] : null);
 
             Entities.Actors.Actor? At(int index) => index >= 0 && index < actors.Count ? actors[index] : null;
-            foreach (var wall in pushWalls.pushwalls)
+            foreach (var wall in pushWalls.MovingWalls)
             {
                 int pusher = br.ReadInt32();
-                wall.Pusher = pusher >= 0 && pusher < gameSession.players.Count ? gameSession.players[pusher].Pawn : null;
+                wall.Pusher = pusher >= 0 && pusher < gameSession.Players.Count ? gameSession.Players[pusher].Pawn : null;
             }
 
-            deathmatch.itemrespawns.Clear();
+            deathmatch.ItemRespawns.Clear();
             for (int i = br.ReadInt32(); i > 0; i--)
-                deathmatch.itemrespawns.Add(new ItemRespawn(br.ReadString(), br.ReadInt32(), br.ReadInt32(), br.ReadInt32()));
+                deathmatch.ItemRespawns.Add(new ItemRespawn(br.ReadString(), br.ReadInt32(), br.ReadInt32(), br.ReadInt32()));
             deathmatch.Objective?.Read(br);
 
-            for (int i = 0; i < gameSession.players.Count; i++)
+            for (int i = 0; i < gameSession.Players.Count; i++)
             {
-                var p = gameSession.players[i];
+                var p = gameSession.Players[i];
                 p.LastAttacker = At(lastAttackers[i]);
                 if (weapons[i] is { } snapshot && inventoryManager.CreateActor(snapshot.ClassName) is { } weapon)
                 {
@@ -192,19 +192,19 @@ internal sealed class MidGameJoin(
                 }
             }
 
-            gameSession.random.rndindex = rnd;
-            gameSession.godmode = gameSession.noclip = gameSession.ammocheat = 0;
+            gameSession.Random.RndIndex = rnd;
+            gameSession.GodMode = gameSession.NoClip = gameSession.AmmoCheat = 0;
             scoreboard.showscoreboard = false;
             netPlay.netJoinResume = true;
-            gameSession.camera.FollowPlayer();
+            gameSession.Camera.FollowPlayer();
             hooks.StartGame();
             return null;
         }
         catch (Exception e) when (e is IOException or InvalidDataException or FormatException or IndexOutOfRangeException or ArgumentException)
         {
             Console.WriteLine($"Network: couldn't take up the game: {e}");
-            gameSession.netgame = false;
-            gameSession.loadedgame = false;
+            gameSession.NetGame = false;
+            gameSession.LoadedGame = false;
             return $"The game couldn't be taken up: {e.Message}";
         }
     }

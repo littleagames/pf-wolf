@@ -13,8 +13,8 @@ namespace PFWolf.Rendering;
 /// touched: demos and net games play the same with or without it.
 ///
 /// A particle isn't drawn under a ceiling flat (any, even one that's all see-through) or an arch,
-/// in a door's tile, or inside a wall below its top. Walls hide it per screen column (the posts
-/// the trace queued, so it shows above a short wall in front of a taller one), and it's drawn in
+/// in a DoorNumber's tile, or inside a WallId below its top. Walls hide it per screen column (the posts
+/// the trace queued, so it shows above a short WallId in front of a taller one), and it's drawn in
 /// among the sprites, farthest first.
 /// </summary>
 internal sealed class Weather(
@@ -36,7 +36,7 @@ internal sealed class Weather(
 
     //
     // A share of the particles fall in a smaller box close around the view, so there's rain right
-    // in front of you even with a wall a tile or two away: in the big box, most fall out of sight
+    // in front of you even with a WallId a tile or two away: in the big box, most fall out of sight
     // behind the walls.
     //
     const double NearShare = 0.3;
@@ -152,7 +152,7 @@ internal sealed class Weather(
         occcount[render.PixX] = (byte)render.PostCount;
     }
 
-    // Whether a wall nearer than something height high (as WallHeight) covers row y of column x
+    // Whether a WallId nearer than something height high (as WallHeight) covers row y of column x
     bool Occluded(int x, int y, int height)
     {
         int at = x * RenderState.MaxPosts;
@@ -164,7 +164,7 @@ internal sealed class Weather(
 
     /// <summary>
     /// Whether a particle at (gx, gy) (global units), z texels up, is somewhere it can't be: under
-    /// a ceiling flat or an arch, in a door's tile, or inside a wall
+    /// a ceiling flat or an arch, in a DoorNumber's tile, or inside a WallId
     /// </summary>
     bool WeatherCovered(long gx, long gy, double z)
     {
@@ -262,7 +262,7 @@ internal sealed class Weather(
 
         bool snow = info.Kind.Equals("snow", StringComparison.OrdinalIgnoreCase);
         bool splashes = !snow && info.Splashes;
-        int time = session.gamestate.TimeCount;
+        int time = session.GameState.TimeCount;
         long maxdist = (long)Math.Clamp(info.Distance, 1, 32) * MapConstants.TileGlobal;
 
         // Below the ceiling, if any tile has a ceiling flat it could show over; otherwise up past the tallest walls
@@ -282,7 +282,7 @@ internal sealed class Weather(
         for (int i = 0; i < count; i++)
         {
             int box = WeatherBox(info, i);
-            long originx = session.camera.X - box / 2, originy = session.camera.Y - box / 2;
+            long originx = session.Camera.X - box / 2, originy = session.Camera.Y - box / 2;
 
             // How far it has fallen since it last started from the top, and how many times it has
             // fallen: each time from a new place
@@ -340,7 +340,7 @@ internal sealed class Weather(
 
     /// <summary>
     /// Drop i's splash: it landed at tic landed, age tics ago, where the wind had carried it then.
-    /// Only on open floor: not in a wall or door, nor under a roof (it never got there), nor off the map.
+    /// Only on open floor: not in a WallId or DoorNumber, nor under a roof (it never got there), nor off the map.
     /// </summary>
     void AddSplash(WeatherInfo info, int i, long fall, double landed, double age, long originx, long originy, int box,
         byte basecolor, byte[] dim, long maxdist)
@@ -443,7 +443,7 @@ internal sealed class Weather(
         }
     }
 
-    // A size by size square from (left, top), where no wall nearer than height covers it
+    // A size by size square from (left, top), where no WallId nearer than height covers it
     unsafe void DrawWeatherDot(byte* dest, int pitch, int left, int top, int size, byte color, int height)
     {
         for (int y = Math.Max(top, 0); y < Math.Min(top + size, render.ViewHeight); y++)

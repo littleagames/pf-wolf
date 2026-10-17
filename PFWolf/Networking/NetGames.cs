@@ -71,7 +71,7 @@ internal sealed class NetGames(
             multiplayerMenu.ConnectTo(at.Host, at.Port);
 
         draw.MenuFadeOut();
-        return (game.startgame || game.loadedgame);     // (joining a game being played takes it up as a loaded one)
+        return (game.GameChosen || game.LoadedGame);     // (joining a game being played takes it up as a loaded one)
     }
 
     /*
@@ -120,30 +120,30 @@ internal sealed class NetGames(
         if (mode != GameMode.Coop
             && gameInfo.Maps.TryGetValue(start.Settings.Map, out var arena) && arena.IsArenaFor(mode.Id()))
         {
-            game.gamestate.mapon = start.Settings.Map;
-            game.gamestate.cluster = arena.Cluster;
+            game.GameState.MapOn = start.Settings.Map;
+            game.GameState.Cluster = arena.Cluster;
         }
 
-        game.players.Clear();
+        game.Players.Clear();
         for (int i = 0; i < start.Players.Count; i++)
         {
             // In a team game, each is seen in their team's color
             int team = mode.IsTeamGame() ? start.Players[i].Team & 1 : -1;
             var color = team >= 0 ? PlayerColor(GameModes.TeamNames[team]) : PlayerColor(start.Players[i].Color);
             var p = new Entities.PlayerState { Number = i, Name = start.Players[i].Name, Color = color, Team = team };
-            game.players.Add(p);
+            game.Players.Add(p);
             using (game.ActAs(p))
                 playersManager.StartPlayer(ClassOrDefault(start.Players[i].PlayerClass));
         }
-        game.consoleplayer = Math.Max(0, start.Players.FindIndex(p => p.Slot == session.LocalSlot));
-        game.SetActing(game.localplayer);
+        game.ConsolePlayer = Math.Max(0, start.Players.FindIndex(p => p.Slot == session.LocalSlot));
+        game.SetActing(game.LocalPlayer);
         game.SetGameMode(start.Settings.Mode);
 
-        game.godmode = game.noclip = game.ammocheat = 0;     // no cheats carried in from playing alone
-        game.netgame = true;
-        game.netseed = start.Seed;
+        game.GodMode = game.NoClip = game.AmmoCheat = 0;     // no cheats carried in from playing alone
+        game.NetGame = true;
+        game.NetSeed = start.Seed;
         var rules = start.Settings;
-        deathmatch.netrules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.ScoreLimit, rules.TimeLimit, rules.ItemRespawn);
+        deathmatch.NetRules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.ScoreLimit, rules.TimeLimit, rules.ItemRespawn);
         deathmatch.NewMatch();
         scoreboard.showscoreboard = false;
         netPlay.netlevel = 0;
@@ -160,7 +160,7 @@ internal sealed class NetGames(
     internal void EndNetGame()
     {
         var error = NetSession.Current?.Error;
-        game.netgame = false;
+        game.NetGame = false;
         netPlay.netLeft = false;
         NetSession.Current?.Dispose();
         if (error != null)

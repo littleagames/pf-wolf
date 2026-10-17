@@ -23,7 +23,7 @@ internal sealed record SpriteDrawingHooks(
 /// <summary>
 /// The level's sprites: each actor and item worth drawing is placed on the view (TransformActor),
 /// given the sprite for its angle to the viewer (CalcRotate), and they're drawn farthest first
-/// behind the walls in front of them (DrawScaleds), wall sprites and weather among them; then the
+/// behind the walls in front of them (DrawScaleds), WallId sprites and weather among them; then the
 /// weapon in hand over everything (DrawPlayerWeapon).
 /// </summary>
 internal sealed class SpriteDrawing(
@@ -191,7 +191,7 @@ internal sealed class SpriteDrawing(
         else if (ob.Dir == ObjDir.NoDir)
             return 1;                                   // facing no way: toward whoever looks
         else
-            angle = (viewangle - 180) - GameConstants.dirangle[(byte)ob.Dir];
+            angle = (viewangle - 180) - GameConstants.DirAngle[(byte)ob.Dir];
 
         angle += GameConstants.Angles / 16;
         while (angle >= GameConstants.Angles) angle -= GameConstants.Angles;
@@ -232,7 +232,7 @@ internal sealed class SpriteDrawing(
         //
         //for (statptr = 0; statptr != laststatobj; statptr++)
         var actorList = map.GetActors();
-        var looker = session.camera.Target;
+        var looker = session.Camera.Target;
 
         var node = actorList.First;
         while (node != null)
@@ -256,11 +256,11 @@ internal sealed class SpriteDrawing(
                 continue;                                               // the one looked through
 
             VisibleObject visptr_val = new VisibleObject();
-            visptr_val.translation = translation;
+            visptr_val.Translation = translation;
             //statobj_t statptr_val = statobjlist[statptr];
             if (actor.CurrentState == null)
                 continue;
-            visptr_val.bright = lighting.Shading && Lighting.IsBright(actor);
+            visptr_val.Bright = lighting.Shading && Lighting.IsBright(actor);
 
             // A marker with no sprite (a patrol point) takes no VisList slot. Inventory still
             // goes through below, where touching it is what picks it up.
@@ -278,7 +278,7 @@ internal sealed class SpriteDrawing(
                 var atx = actor.TileX;
                 var aty = actor.TileY;
 
-                // A neighbouring tile only counts while it's open floor: a wall the player
+                // A neighbouring tile only counts while it's open floor: a WallId the player
                 // sees isn't somewhere the actor could be showing from
                 bool Seen(int x, int y) => map.spotvis[x, y] && map.tilemap[x, y] == 0;
                 if (!(map.spotvis[atx, aty]
@@ -297,7 +297,7 @@ internal sealed class SpriteDrawing(
 
                 // Once near enough to the view, an enemy is awake for good (MapManager.DoActor);
                 // with others, what they see wakes it instead (WakeSeenEnemies)
-                if (actor is Entities.Actors.Monster && session.gamemode == GameMode.Single)
+                if (actor is Entities.Actors.Monster && session.GameMode == GameMode.Single)
                     actor.Active = ActiveType.Yes;
 
                 // Too close or far away to draw: as the original, it keeps whether it was
@@ -309,28 +309,28 @@ internal sealed class SpriteDrawing(
                 actor.RuntimeFlags |= ObjFlags.Visible;
 
                 var sprite = hooks.DrawnSprite(actor);                        // a player's body shows their weapon
-                visptr_val.shapenum = ActorShapeName(sprite, actor.CurrentState.FrameLetter, actor);
-                visptr_val.viewx = actor.ViewX;
-                visptr_val.viewheight = (short)actor.ViewHeight;
-                visptr_val.z = actor.Z;
+                visptr_val.ShapeNum = ActorShapeName(sprite, actor.CurrentState.FrameLetter, actor);
+                visptr_val.ViewX = actor.ViewX;
+                visptr_val.ViewHeight = (short)actor.ViewHeight;
+                visptr_val.Z = actor.Z;
 
                 // A cloaked enemy shows for a frame when it's hit (bstone's FL2_DAMAGE_CLOAK)
-                visptr_val.cloaked = actor.Cloaked && !actor.CloakHit && actor.Hitpoints > 0;
+                visptr_val.Cloaked = actor.Cloaked && !actor.CloakHit && actor.Hitpoints > 0;
                 actor.CloakHit = false;
 
                 if (visptr < GameConstants.MaxVisible - 1)
                 {
-                    visptr_val.tilex = atx;
-                    visptr_val.tiley = aty;
-                    visptr_val.worldx = actor.X;
-                    visptr_val.worldy = actor.Y;
+                    visptr_val.TileX = atx;
+                    visptr_val.TileY = aty;
+                    visptr_val.WorldX = actor.X;
+                    visptr_val.WorldY = actor.Y;
                     VisList[visptr] = visptr_val;
                     visptr++;
                 }
                 continue;
             }
 
-            visptr_val.shapenum = actor.CurrentState.GetShapeName(ObjDir.NoDir);
+            visptr_val.ShapeNum = actor.CurrentState.GetShapeName(ObjDir.NoDir);
 
             // A panel (GameHost.cs) is drawn column by column, clipped per column,
             // so it's placed by its own geometry rather than as a billboard in its tile.
@@ -338,9 +338,9 @@ internal sealed class SpriteDrawing(
             {
                 if (wallSprites.WallSpriteSeen(actor) && wallSprites.TransformWallSprite(actor, visptr_val) && visptr < GameConstants.MaxVisible - 1)
                 {
-                    visptr_val.tilex = actor.TileX;
-                    visptr_val.tiley = actor.TileY;
-                    (visptr_val.worldx, visptr_val.worldy) = Lighting.TileCenter(actor.TileX, actor.TileY);
+                    visptr_val.TileX = actor.TileX;
+                    visptr_val.TileY = actor.TileY;
+                    (visptr_val.WorldX, visptr_val.WorldY) = Lighting.TileCenter(actor.TileX, actor.TileY);
                     VisList[visptr] = visptr_val;
                     visptr++;
                 }
@@ -351,17 +351,17 @@ internal sealed class SpriteDrawing(
                 continue;                                               // not visable
 
             // Picking it up is TouchItems' job (Rendering/PlayerView.cs), not the renderer's
-            TransformTile((int)actor.Position.X, (int)actor.Position.Y, ref visptr_val.viewx, ref visptr_val.viewheight);
+            TransformTile((int)actor.Position.X, (int)actor.Position.Y, ref visptr_val.ViewX, ref visptr_val.ViewHeight);
 
-            if (visptr_val.viewheight == 0)
+            if (visptr_val.ViewHeight == 0)
                 continue;                                               // to close to the object
-            visptr_val.z = actor.Z;
+            visptr_val.Z = actor.Z;
 
             if (visptr < (GameConstants.MaxVisible - 1))    // don't let it overflow
             {
-                visptr_val.tilex = (byte)actor.Position.X;
-                visptr_val.tiley = (byte)actor.Position.Y;
-                (visptr_val.worldx, visptr_val.worldy) = Lighting.TileCenter(visptr_val.tilex, visptr_val.tiley);
+                visptr_val.TileX = (byte)actor.Position.X;
+                visptr_val.TileY = (byte)actor.Position.Y;
+                (visptr_val.WorldX, visptr_val.WorldY) = Lighting.TileCenter(visptr_val.TileX, visptr_val.TileY);
                 //visptr_val.flags = actor.Flags;
                 VisList[visptr] = visptr_val;
                 visptr++;
@@ -382,7 +382,7 @@ internal sealed class SpriteDrawing(
             for (visstep = 0; visstep < visptr; visstep++)
             {
                 VisibleObject visstep_val = VisList[visstep];
-                height = visstep_val.viewheight;
+                height = visstep_val.ViewHeight;
                 if (height < least)
                 {
                     least = height;
@@ -395,13 +395,13 @@ internal sealed class SpriteDrawing(
             if (farthest != -1)
             {
                 VisibleObject farthest_obj = VisList[farthest];
-                weather.DrawWeatherBeyond(farthest_obj.viewheight);
-                if (farthest_obj.wallsprite != null)
+                weather.DrawWeatherBeyond(farthest_obj.ViewHeight);
+                if (farthest_obj.WallSprite != null)
                     wallSprites.ScaleWallSprite(farthest_obj);
                 else
                     scaler.ScaleShape(farthest_obj);
 
-                farthest_obj.viewheight = 32000;
+                farthest_obj.ViewHeight = 32000;
             }
         }
 
@@ -410,17 +410,17 @@ internal sealed class SpriteDrawing(
 
     internal void DrawPlayerWeapon()
     {
-        if (session.gamestate.victoryflag)
+        if (session.GameState.VictoryFlag)
         {
             // The death cam's banner, on whichever frame T_DeathCam has it (TNT1 is the "off" half of its flash)
-            if (session.player.CurrentState?.StateName == PlayerPawn.DeathCamState
+            if (session.Player.CurrentState?.StateName == PlayerPawn.DeathCamState
                 && hooks.DeathCamSprite()?.CurrentState is { Sprite.Length: > 0 } state && state.Sprite != "TNT1")
                 scaler.SimpleScaleShape(render.ViewWidth / 2, $"{state.Sprite}{state.FrameLetter}0", render.ViewHeight + 1);
             return;
         }
 
         // Only in the player's own view
-        if (!session.camera.OnPlayer)
+        if (!session.Camera.OnPlayer)
             return;
 
         // The frame the weapon's states are on (Gameplay/WeaponInHand.cs), in the light of the
@@ -430,11 +430,11 @@ internal sealed class SpriteDrawing(
         {
             int height = (int)((render.ViewHeight + 1) * hooks.WeaponScale());
             scaler.SimpleScaleShape(render.ViewWidth / 2, shape, height,
-                session.playerstate.WeaponSprite != null && Lighting.IsBright(session.playerstate.WeaponSprite) ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(session.player.TileX, session.player.TileY), session.player.X, session.player.Y),
+                session.PlayerState.WeaponSprite != null && Lighting.IsBright(session.PlayerState.WeaponSprite) ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(session.Player.TileX, session.Player.TileY), session.Player.X, session.Player.Y),
                 ((render.ViewHeight + 1) >> 1) - (height >> 1) + weaponBob.Drop(render.ViewHeight));
         }
 
-        if ((session.demoplayback || session.demorecord))
+        if ((session.DemoPlayback || session.DemoRecord))
             scaler.SimpleScaleShape(render.ViewWidth / 2, "DEMOA0", render.ViewHeight + 1);
     }
 }

@@ -67,7 +67,7 @@ public class ArtFilesGameTests
     [Test]
     public void Every_Wall_Texture_Saved_Into_A_Mod_Loads_Back_The_Same()
     {
-        // Arrange: each of the game's wall textures written as the pixel editor would
+        // Arrange: each of the game's WallId textures written as the pixel editor would
         var content = Load();
         var mod = MakeMod();
         var names = ArtCatalog.Build(content).Where(entry => entry.Kind == ArtKind.Texture).Select(entry => entry.Name).ToList();
@@ -90,7 +90,7 @@ public class ArtFilesGameTests
     private static PaletteColor[] Colors(GameContent content, IndexedPicture picture)
         => picture.Indices.Select(index => content.LoadedPalette[index]).ToArray();
 
-    // Two of the game's wall textures
+    // Two of the game's WallId textures
     private static (string First, string Second) TwoTextures(GameContent content)
     {
         var names = ArtCatalog.Build(content).Where(entry => entry.Kind == ArtKind.Texture).Select(entry => entry.Name).Take(2).ToList();
@@ -124,7 +124,7 @@ public class ArtFilesGameTests
     [Test]
     public void A_Mods_Picture_Is_Renamed_Then_Deleted()
     {
-        // Arrange: a new wall texture in the mod
+        // Arrange: a new WallId texture in the mod
         var content = Load();
         var mod = MakeMod();
         var png = PngFile.Write(ArtCache.Indexed(content, ArtKind.Texture, TwoTextures(content).First)!, content.LoadedPalette);

@@ -23,10 +23,10 @@ public class DemosTests
 
         // Assert: id's header is the map less one, two bytes of length and a pad byte; then
         // 3 bytes a frame, up to the buffer's end
-        Assert.That(_buffer.demoData, Has.Length.EqualTo(Demos.MaxDemoSize));
-        Assert.That(_buffer.demoData[0], Is.EqualTo(4));
-        Assert.That((_buffer.demoptr, _buffer.lastdemoptr), Is.EqualTo((4, Demos.MaxDemoSize)));
-        Assert.That(_session.demorecord, Is.True);
+        Assert.That(_buffer.DemoData, Has.Length.EqualTo(Demos.MaxDemoSize));
+        Assert.That(_buffer.DemoData[0], Is.EqualTo(4));
+        Assert.That((_buffer.DemoPtr, _buffer.LastDemoPtr), Is.EqualTo((4, Demos.MaxDemoSize)));
+        Assert.That(_session.DemoRecord, Is.True);
     }
 
     [Test]
@@ -35,6 +35,6 @@ public class DemosTests
         // Act / Assert: no game is started (NewGame fails the test)
         Assert.That(_demos.RecordPendingDemo(), Is.False);
         _demos.PlayPendingDemo();
-        Assert.That(_session.demorecord, Is.False);
+        Assert.That(_session.DemoRecord, Is.False);
     }
 }

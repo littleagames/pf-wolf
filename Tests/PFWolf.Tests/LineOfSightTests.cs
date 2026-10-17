@@ -57,9 +57,9 @@ public class LineOfSightTests
         Assert.That(CanSeeAlongRow10(), Is.True);
     }
 
-    // Vanilla's quirk, kept for the demos: the door's position (0 to 0xffff across the tile) is
+    // Vanilla's quirk, kept for the demos: the DoorNumber's position (0 to 0xffff across the tile) is
     // compared with where the line crosses in whole map coordinates (8.8 fixed point, so 0x0A80
-    // in the middle of row 10), not where it crosses the tile. A door on row 10 lets sight
+    // in the middle of row 10), not where it crosses the tile. A DoorNumber on row 10 lets sight
     // through once it's past 0x0A80, long before it has really slid out of the way.
     [TestCase((ushort)0, false)]            // closed
     [TestCase((ushort)0x0A00, false)]       // short of the crossing's whole value
@@ -67,9 +67,9 @@ public class LineOfSightTests
     [TestCase((ushort)0xffff, true)]        // all the way open
     public void A_Door_Blocks_It_Until_It_Has_Slid_Past_The_Line(ushort position, bool clear)
     {
-        // Arrange: door 0 across the row at x 8
+        // Arrange: DoorNumber 0 across the row at x 8
         _map.tilemap[8, 10] = GameConstants.BitDoor | 0;
-        _doors.doorobjlist[0] = new DoorObject { tilex = 8, tiley = 10, vertical = true, position = position };
+        _doors.DoorObjList[0] = new DoorObject { TileX = 8, TileY = 10, Vertical = true, Position = position };
 
         // Act / Assert
         Assert.That(CanSeeAlongRow10(), Is.EqualTo(clear));

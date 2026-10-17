@@ -92,7 +92,7 @@ public class EditorPatchTests
     [Test]
     public void The_Patches_Layer_Puts_Patches_On_Walls_Only_And_Keeps_The_Walls()
     {
-        // Arrange: a wall and open floor side by side
+        // Arrange: a WallId and open floor side by side
         var document = Room();
         EditorMaps.Set(document, 0, 10, 10, OtherWall);
         var tools = Tools(document, patches: true, (ushort)(Sign << MapConstants.PatchShift));
@@ -164,7 +164,7 @@ public class EditorPatchTests
     [Test]
     public void The_Wall_Fill_Sees_A_Patched_Wall_As_Its_Wall()
     {
-        // Arrange: a run of wall, one of them patched, in the room
+        // Arrange: a run of WallId, one of them patched, in the room
         var document = Room();
         for (int x = 10; x <= 12; x++)
             EditorMaps.Set(document, 0, x, 10, OtherWall);
@@ -201,7 +201,7 @@ public class EditorPatchTests
         // Act
         var mesh = LevelMesh.Build(Tiles(document));
 
-        // Assert: two surfaces on the south face (the wall, the patch just in front of it), one elsewhere
+        // Assert: two surfaces on the south face (the WallId, the patch just in front of it), one elsewhere
         var south = mesh.Surfaces.Where(s => s.Ref is { Kind: SurfaceKind.Wall, X: 10, Y: 10, Face: Face.South }).ToList();
         Assert.That(south, Has.Count.EqualTo(2));
         var patch = south.Single(s => s.Texture.Name == "SIGN");
@@ -235,7 +235,7 @@ public class EditorPatchTests
     public void The_Checks_Point_Out_Patches_Off_Walls_Unknown_Ones_And_Ones_That_Never_Show()
     {
         // Arrange: a patch on floor, one the mapdefs don't have, and a south-only one whose south
-        // side is against another wall
+        // side is against another WallId
         var document = Room();
         EditorMaps.Set(document, 0, 8, 8, Patched(Floor, Sign));
         EditorMaps.Set(document, 0, 10, 10, Patched(Wall, 99));

@@ -55,6 +55,6 @@ internal sealed class ActorWorld(
     /// <summary>Disguise and going unseen (Gameplay/Stealth.cs); none, enemies notice as Wolf3D's do</summary>
     internal Gameplay.Stealth? Stealth { get; set; }
 
-    /// <summary>The level objectives (Gameplay/Objectives.cs): an `objective` actor's death completes one</summary>
+    /// <summary>The level MatchObjectives (Gameplay/Objectives.cs): an `objective` actor's death completes one</summary>
     internal Gameplay.Objectives? Objectives { get; set; }
 }

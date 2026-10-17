@@ -5,11 +5,11 @@ namespace PFWolf.Gameplay;
 /// <summary>
 /// id's table of random numbers (US_RndT): the game's only source of chance, stepped through one
 /// at a time, so a demo or a network game comes out the same wherever it starts from the same
-/// place in it. That place (rndindex) goes out to joining players and into the net checksums.
+/// place in it. That place (RndIndex) goes out to joining players and into the net checksums.
 /// </summary>
 internal sealed class RandomTable
 {
-    internal int rndindex;
+    internal int RndIndex;
 
     static readonly byte[] rndtable = {
       0,   8, 109, 220, 222, 241, 149, 107,  75, 248, 254, 140,  16,  66,
@@ -36,15 +36,15 @@ internal sealed class RandomTable
     internal void InitRndT(bool randomize)
     {
         if (randomize)
-            rndindex = (int)((SDL.SDL_GetTicks() >> 4) & 0xff);
+            RndIndex = (int)((SDL.SDL_GetTicks() >> 4) & 0xff);
         else
-            rndindex = 0;
+            RndIndex = 0;
     }
 
     /// <summary>The next number, 0 to 255</summary>
     internal int RndT()
     {
-        rndindex = (rndindex + 1) & 0xff;
-        return rndtable[rndindex];
+        RndIndex = (RndIndex + 1) & 0xff;
+        return rndtable[RndIndex];
     }
 }

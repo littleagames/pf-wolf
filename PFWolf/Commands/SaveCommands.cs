@@ -67,7 +67,7 @@ internal sealed class SaveCommands(
 
     internal void SaveCommand(string[] args)
     {
-        var name = args.Length > 0 ? string.Join(' ', args) : playScreen.GetMapDisplayName(session.gamestate.mapon);
+        var name = args.Length > 0 ? string.Join(' ', args) : playScreen.GetMapDisplayName(session.GameState.MapOn);
         if (name.Length > GameConstants.MaxGameName - 1)
             name = name[..(GameConstants.MaxGameName - 1)];
 
@@ -93,11 +93,11 @@ internal sealed class SaveCommands(
         // Between frames, not mid-command: the load replaces every actor, the player included.
         console.Defer(() =>
         {
-            session.loadedgame = true;
+            session.LoadedGame = true;
             if (gameSaves.LoadTheGame(save.Path, 0, 0))
-                session.playstate = PlayState.Abort;    // GameLoop redraws and restarts music for the loaded level
+                session.PlayState = PlayState.Abort;    // GameLoop redraws and restarts music for the loaded level
             else
-                session.loadedgame = false;
+                session.LoadedGame = false;
         });
     }
 }

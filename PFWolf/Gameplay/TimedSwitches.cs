@@ -7,9 +7,9 @@ namespace PFWolf.Gameplay;
 /// <summary>A thrown switch waiting to turn back (TimedSwitches)</summary>
 /// <param name="X">Its tile</param>
 /// <param name="Y">Its tile</param>
-/// <param name="Patch">Whether it's a patch's switch (else a switch wall)</param>
-/// <param name="From">The wall or patch id it was</param>
-/// <param name="To">The wall or patch id it was thrown to</param>
+/// <param name="Patch">Whether it's a patch's switch (else a switch WallId)</param>
+/// <param name="From">The WallId or patch id it was</param>
+/// <param name="To">The WallId or patch id it was thrown to</param>
 /// <param name="Tag">Its tile's tag, for the linked switches and the reset actions</param>
 /// <param name="Dir">The way the player faced as they threw it</param>
 /// <param name="Actions">Its reset-actions</param>
@@ -78,10 +78,10 @@ internal sealed class TimedSwitches(MapManager map, GameSession session)
                     continue;
                 map.tilemap[x, y] = (ushort)(sw.From | (tile & BitWall));
             }
-            map.RestartAnimations(x, y, session.gamestate.TimeCount);
+            map.RestartAnimations(x, y, session.GameState.TimeCount);
         }
 
-        if (sw.Actions.Count == 0 || session.playerstate.Pawn is not { } player)
+        if (sw.Actions.Count == 0 || session.PlayerState.Pawn is not { } player)
             return;
         var activation = new Entities.TriggerActivation(sw.X, sw.Y, sw.Dir, player, sw.Tag);
         foreach (var action in sw.Actions)

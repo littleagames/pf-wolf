@@ -11,7 +11,7 @@ A sound looped, unplaced, while the player is in a zone (the zone plane, as ligh
 game-info's default-map or a map's `zones:` give a zone `ambient: <sound>`, and
 `ambient-disguised: <sound>` to play instead while the player wears a disguise (Gameplay/Stealth.cs).
 `ambient: none` is silence. Stepping into a zone with no ambient leaves what's playing as it is,
-so a door or a light zone between two areas doesn't cut the sound off. A map's zone takes each
+so a DoorNumber or a light zone between two areas doesn't cut the sound off. A map's zone takes each
 value it leaves out from the default map's zone of the same id.
 
 The sound goes on the ambient channel (AudioManager.SetAmbient, as Lua game.ambient), asked for
@@ -45,7 +45,7 @@ internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
     /// <summary>Each tic of the level: the player's zone's sound on the ambient channel</summary>
     internal void Tick()
     {
-        var map = session.gamestate.mapon;
+        var map = session.GameState.MapOn;
         if (!string.Equals(map, level, StringComparison.OrdinalIgnoreCase))
             Enter(map);
         if (zones.Count == 0)

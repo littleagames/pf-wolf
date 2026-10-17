@@ -14,20 +14,20 @@ public class NetPlayerStateTests
         {
             Name = "Drew",
             Gone = false,
-            playerclass = "Soldier",
+            PlayerClass = "Soldier",
             Color = "red",
-            oldscore = 100,
-            score = 2500,
-            nextextra = 40000,
-            lives = 2,
-            health = 64,
-            armor = 30,
-            armorpercent = 33,
-            weapon = "Knife",
-            chosenweapon = "Pistol",
-            faceframe = 1,
-            killx = 123456,
-            killy = 654321,
+            OldScore = 100,
+            Score = 2500,
+            NextExtra = 40000,
+            Lives = 2,
+            Health = 64,
+            Armor = 30,
+            ArmorPercent = 33,
+            Weapon = "Knife",
+            ChosenWeapon = "Pistol",
+            FaceFrame = 1,
+            KillX = 123456,
+            KillY = 654321,
             Frags = 7,
             Kills = 12,
             ThrustSpeed = 5000,
@@ -71,11 +71,11 @@ public class NetPlayerStateTests
         var (read, lastAttacker, weapon) = RoundTrip(played);
 
         // Assert
-        Assert.That((read.Name, read.Gone, read.playerclass, read.Color), Is.EqualTo(("Drew", false, "Soldier", "red")));
-        Assert.That((read.oldscore, read.score, read.nextextra, read.lives), Is.EqualTo((100, 2500, 40000, (short)2)));
-        Assert.That((read.health, read.armor, read.armorpercent), Is.EqualTo(((short)64, (short)30, (short)33)));
-        Assert.That((read.weapon, read.chosenweapon, read.faceframe), Is.EqualTo(("Knife", "Pistol", (short)1)));
-        Assert.That((read.killx, read.killy, read.Frags, read.Kills), Is.EqualTo((123456, 654321, 7, 12)));
+        Assert.That((read.Name, read.Gone, read.PlayerClass, read.Color), Is.EqualTo(("Drew", false, "Soldier", "red")));
+        Assert.That((read.OldScore, read.Score, read.NextExtra, read.Lives), Is.EqualTo((100, 2500, 40000, (short)2)));
+        Assert.That((read.Health, read.Armor, read.ArmorPercent), Is.EqualTo(((short)64, (short)30, (short)33)));
+        Assert.That((read.Weapon, read.ChosenWeapon, read.FaceFrame), Is.EqualTo(("Knife", "Pistol", (short)1)));
+        Assert.That((read.KillX, read.KillY, read.Frags, read.Kills), Is.EqualTo((123456, 654321, 7, 12)));
         Assert.That(read.Items, Is.EquivalentTo(played.Items));
         Assert.That((read.ThrustSpeed, read.PlUX, read.PlUY, read.AngleFrac), Is.EqualTo((5000, (ushort)1234, (ushort)4321, (short)13)));
         Assert.That((read.FaceCount, read.FaceTimes, read.WeaponCharge), Is.EqualTo((22, 3, 9)));
@@ -89,13 +89,13 @@ public class NetPlayerStateTests
     public void Nothing_Left_Out_Reads_Back_As_Nothing()
     {
         // Arrange
-        var p = new PlayerState { playerclass = "Player" };
+        var p = new PlayerState { PlayerClass = "Player" };
 
         // Act
         var (read, lastAttacker, _) = RoundTrip(p);
 
         // Assert
-        Assert.That((read.Name, read.Color, read.weapon, read.chosenweapon), Is.EqualTo(((string?)null, (string?)null, (string?)null, (string?)null)));
+        Assert.That((read.Name, read.Color, read.Weapon, read.ChosenWeapon), Is.EqualTo(((string?)null, (string?)null, (string?)null, (string?)null)));
         Assert.That(lastAttacker, Is.EqualTo(-1));
         Assert.That(read.Items, Is.Empty);
     }

@@ -20,9 +20,9 @@ public class ConsoleTargetsTests
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
             mapwidth = MapManager.MapSize, mapheight = MapManager.MapSize,
         };
-        _session.playerstate.Pawn = new Entities.Actors.PlayerPawn
+        _session.PlayerState.Pawn = new Entities.Actors.PlayerPawn
         {
-            State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10,
+            State = _session.PlayerState, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10,
         };
         _targets = new ConsoleTargets(_map, new Lighting(null!, null!, _map, null!), _session);
     }
@@ -33,7 +33,7 @@ public class ConsoleTargetsTests
     [TestCase(270, 10, 11)]
     public void Without_A_Tile_It_Means_The_One_Faced(int angle, int x, int y)
     {
-        _session.player.Angle = (short)angle;
+        _session.Player.Angle = (short)angle;
         Assert.That(_targets.TileArg([], 0), Is.EqualTo((x, y)));
     }
 
@@ -50,7 +50,7 @@ public class ConsoleTargetsTests
         // Arrange: a far guard, a near one, and a nearer one that's dead
         Entities.Actors.Monster Guard(int tiles, bool alive) => new()
         {
-            Name = "Guard", X = _session.player.X + tiles * Tile, Y = _session.player.Y,
+            Name = "Guard", X = _session.Player.X + tiles * Tile, Y = _session.Player.Y,
             RuntimeFlags = alive ? ObjFlags.Shootable : 0,
         };
         var far = Guard(8, true);

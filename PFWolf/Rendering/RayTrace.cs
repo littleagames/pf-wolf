@@ -5,8 +5,8 @@ namespace PFWolf.Rendering;
 
 /// <summary>
 /// The ray trace: for each screen column, a ray from the view point across the map, tile edge by
-/// tile edge (vertical edges in VertEntry, horizontal in HorizEntry), until it hits a wall, a
-/// door, a diagonal or a moving pushwall (WallHits), going on past short walls for taller ones
+/// tile edge (vertical edges in VertEntry, horizontal in HorizEntry), until it hits a WallId, a
+/// DoorNumber, a diagonal or a moving pushwall (WallHits), going on past short walls for taller ones
 /// behind them; then the column's posts are drawn (WallPosts). Tiles it passes are seen.
 /// </summary>
 internal sealed class RayTrace(
@@ -23,7 +23,7 @@ internal sealed class RayTrace(
         int xstep = 0, ystep = 0;
         int xinttemp = 0, yinttemp = 0;                            // holds temporary intercept position
         uint xpartial = 0, ypartial = 0;
-        int pwallposnorm=0, pwallposinv=0, pwallposi=0;           // holds modified pwall.Pos
+        int pwallposnorm=0, pwallposinv=0, pwallposi=0;           // holds modified PWall.Pos
 
         for (render.PixX = 0; render.PixX < render.ViewWidth; render.PixX++)
         {
@@ -90,7 +90,7 @@ internal sealed class RayTrace(
             render.ColumnHit = render.PastWall = render.ArchOpen = false;
             render.ColumnTallest = 0;
             render.ColumnTop = render.ViewHeight;
-            bool focalhit = false;              // hit a wall in the view's own tile: no trace
+            bool focalhit = false;              // hit a WallId in the view's own tile: no trace
 
             //
             // special treatment when player is in back tile of pushwall
@@ -99,45 +99,45 @@ internal sealed class RayTrace(
             if (render.HitPushwall)
             {
                 pushWalls.SelectPushWall(render.FocalTx, render.FocalTy);
-                render.HitStories = map.WallStories(pushWalls.pwall.X, pushWalls.pwall.Y);
-                if ((pushWalls.pwall.Dir == ControlDir.East && render.XTileStep == 1) || (pushWalls.pwall.Dir == ControlDir.West && render.XTileStep == -1))
+                render.HitStories = map.WallStories(pushWalls.PWall.X, pushWalls.PWall.Y);
+                if ((pushWalls.PWall.Dir == ControlDir.East && render.XTileStep == 1) || (pushWalls.PWall.Dir == ControlDir.West && render.XTileStep == -1))
                 {
-                    yinttemp = render.YIntercept - ((ystep * (64 - pushWalls.pwall.Pos)) >> 6);
+                    yinttemp = render.YIntercept - ((ystep * (64 - pushWalls.PWall.Pos)) >> 6);
 
                     //
                     //  trace hit vertical pushwall back?
                     //
                     if (yinttemp >> MapConstants.TileShift == render.FocalTy)
                     {
-                        if (pushWalls.pwall.Dir == ControlDir.East)
-                            render.XIntercept = (render.FocalTx << MapConstants.TileShift) + (pushWalls.pwall.Pos << 10);
+                        if (pushWalls.PWall.Dir == ControlDir.East)
+                            render.XIntercept = (render.FocalTx << MapConstants.TileShift) + (pushWalls.PWall.Pos << 10);
                         else
-                            render.XIntercept = (int)(((render.FocalTx << MapConstants.TileShift) - MapConstants.TileGlobal) + ((64 - pushWalls.pwall.Pos) << 10));
+                            render.XIntercept = (int)(((render.FocalTx << MapConstants.TileShift) - MapConstants.TileGlobal) + ((64 - pushWalls.PWall.Pos) << 10));
 
                         render.YIntercept = yinttemp;
                         render.YIntTile = render.YIntercept >> MapConstants.TileShift;
-                        render.TileHit = pushWalls.pwall.Tile;
+                        render.TileHit = pushWalls.PWall.Tile;
                         hits.HitVertWall();
                         focalhit = true;
                     }
                 }
-                else if ((pushWalls.pwall.Dir == ControlDir.South && render.YTileStep == 1) || (pushWalls.pwall.Dir == ControlDir.North && render.YTileStep == -1))
+                else if ((pushWalls.PWall.Dir == ControlDir.South && render.YTileStep == 1) || (pushWalls.PWall.Dir == ControlDir.North && render.YTileStep == -1))
                 {
-                    xinttemp = render.XIntercept - ((xstep * (64 - pushWalls.pwall.Pos)) >> 6);
+                    xinttemp = render.XIntercept - ((xstep * (64 - pushWalls.PWall.Pos)) >> 6);
 
                     //
                     // trace hit horizontal pushwall back?
                     //
                     if (xinttemp >> MapConstants.TileShift == render.FocalTx)
                     {
-                        if (pushWalls.pwall.Dir == ControlDir.South)
-                            render.YIntercept = (render.FocalTy << MapConstants.TileShift) + (pushWalls.pwall.Pos << 10);
+                        if (pushWalls.PWall.Dir == ControlDir.South)
+                            render.YIntercept = (render.FocalTy << MapConstants.TileShift) + (pushWalls.PWall.Pos << 10);
                         else
-                            render.YIntercept = (int)(((render.FocalTy << MapConstants.TileShift) - MapConstants.TileGlobal) + ((64 - pushWalls.pwall.Pos) << 10));
+                            render.YIntercept = (int)(((render.FocalTy << MapConstants.TileShift) - MapConstants.TileGlobal) + ((64 - pushWalls.PWall.Pos) << 10));
 
                         render.XIntercept = xinttemp;
                         render.XIntTile = render.XIntercept >> MapConstants.TileShift;
-                        render.TileHit = pushWalls.pwall.Tile;
+                        render.TileHit = pushWalls.PWall.Tile;
                         hits.HitHorizWall();
                         focalhit = true;
                     }
@@ -146,7 +146,7 @@ internal sealed class RayTrace(
             else if (map.wallshape[render.FocalTx, render.FocalTy] is var focalshape and not WallShape.Square)
             {
                 //
-                // the view starts inside a diagonal tile (noclip), so the trace never enters it:
+                // the view starts inside a diagonal tile (NoClip), so the trace never enters it:
                 // check its face from the view point
                 //
                 if (hits.TraceDiagonal(focalshape, render.FocalTx, render.FocalTy,
@@ -170,8 +170,8 @@ internal sealed class RayTrace(
             }
 
             //
-            // trace along this angle until we hit a wall, and on past it while a taller wall
-            // could still show over the top: a wall that is hit and passed is traced through
+            // trace along this angle until we hit a WallId, and on past it while a taller WallId
+            // could still show over the top: a WallId that is hit and passed is traced through
             // from where the trace entered its tile, as if it were open floor
             //
             // CORE LOOP!
@@ -228,31 +228,31 @@ internal sealed class RayTrace(
         render.TileHit = map.tilemap[render.XTile, render.YIntTile];
         render.HitPushwall = render.TileHit == GameConstants.BitWall;
         if (render.HitPushwall)
-            pushWalls.SelectPushWall(hitx, hity);     // which of the moving pushwalls this is
-        render.HitStories =render.TileHit == GameConstants.BitWall ? map.WallStories(pushWalls.pwall.X, pushWalls.pwall.Y) : map.WallStories(hitx, hity);
+            pushWalls.SelectPushWall(hitx, hity);     // which of the moving MovingWalls this is
+        render.HitStories =render.TileHit == GameConstants.BitWall ? map.WallStories(pushWalls.PWall.X, pushWalls.PWall.Y) : map.WallStories(hitx, hity);
 
         if (render.TileHit != 0)
         {
             if ((render.TileHit & GameConstants.BitDoor) != 0)
             {
                 //
-                // hit a vertical door, so find which coordinate the door would be
-                // intersected at, and check to see if the door is open past that point
+                // hit a vertical DoorNumber, so find which coordinate the DoorNumber would be
+                // intersected at, and check to see if the DoorNumber is open past that point
                 //
-                var door = doors.doorobjlist[render.TileHit & ~GameConstants.BitDoor];
+                var door = doors.DoorObjList[render.TileHit & ~GameConstants.BitDoor];
                 yinttemp = render.YIntercept + (ystep >> 1);    // add halfstep to current intercept position
                 int planex = (int)((render.XTile << (int)MapConstants.TileShift) + (MapConstants.TileGlobal / 2));
 
-                if (door.action == DoorAction.Open)
+                if (door.Action == DoorAction.Open)
                 {
                     if (yinttemp >> MapConstants.TileShift == render.YIntTile)
                         hits.NoteLintel(door, planex, yinttemp);
-                    PassVert(ystep); // door is open, continue tracing
+                    PassVert(ystep); // DoorNumber is open, continue tracing
                     return false;
                 }
 
                 //
-                // midpoint is outside tile, so it hit the side of the wall before a door
+                // midpoint is outside tile, so it hit the side of the WallId before a DoorNumber
                 //
                 if (yinttemp >> MapConstants.TileShift != render.YIntTile)
                 {
@@ -260,10 +260,10 @@ internal sealed class RayTrace(
                     return false;
                 }
 
-                if (door.action != DoorAction.Closed)
+                if (door.Action != DoorAction.Closed)
                 {
                     //
-                    // the trace hit the door plane at pixel position YIntercept, see if the door is
+                    // the trace hit the DoorNumber plane at pixel position YIntercept, see if the DoorNumber is
                     // closed that much
                     //
                     if (door.OpenAt(yinttemp))
@@ -282,23 +282,23 @@ internal sealed class RayTrace(
             else if (render.TileHit == GameConstants.BitWall)
             {
                 //
-                // hit a sliding vertical wall
+                // hit a sliding vertical WallId
                 //
-                if (pushWalls.pwall.Dir == ControlDir.West || pushWalls.pwall.Dir == ControlDir.East)
+                if (pushWalls.PWall.Dir == ControlDir.West || pushWalls.PWall.Dir == ControlDir.East)
                 {
-                    if (pushWalls.pwall.Dir == ControlDir.West)
+                    if (pushWalls.PWall.Dir == ControlDir.West)
                     {
-                        pwallposnorm = 64 - pushWalls.pwall.Pos;
-                        pwallposinv = pushWalls.pwall.Pos;
+                        pwallposnorm = 64 - pushWalls.PWall.Pos;
+                        pwallposinv = pushWalls.PWall.Pos;
                     }
                     else
                     {
-                        pwallposnorm = pushWalls.pwall.Pos;
-                        pwallposinv = 64 - pushWalls.pwall.Pos;
+                        pwallposnorm = pushWalls.PWall.Pos;
+                        pwallposinv = 64 - pushWalls.PWall.Pos;
                     }
 
-                    if ((pushWalls.pwall.Dir == ControlDir.East && render.XTile == pushWalls.pwall.X && render.YIntTile == pushWalls.pwall.Y)
-                     || (pushWalls.pwall.Dir == ControlDir.West && !(render.XTile == pushWalls.pwall.X && render.YIntTile == pushWalls.pwall.Y)))
+                    if ((pushWalls.PWall.Dir == ControlDir.East && render.XTile == pushWalls.PWall.X && render.YIntTile == pushWalls.PWall.Y)
+                     || (pushWalls.PWall.Dir == ControlDir.West && !(render.XTile == pushWalls.PWall.X && render.YIntTile == pushWalls.PWall.Y)))
                     {
                         yinttemp = render.YIntercept + ((ystep * pwallposnorm) >> 6);
 
@@ -311,7 +311,7 @@ internal sealed class RayTrace(
                         render.YIntercept = yinttemp;
                         render.XIntercept = (int)(((render.XTile << MapConstants.TileShift) + MapConstants.TileGlobal) - (pwallposinv << 10));
                         render.YIntTile = render.YIntercept >> MapConstants.TileShift;
-                        render.TileHit = pushWalls.pwall.Tile;
+                        render.TileHit = pushWalls.PWall.Tile;
 
                         hits.HitVertWall();
                     }
@@ -328,25 +328,25 @@ internal sealed class RayTrace(
                         render.YIntercept = yinttemp;
                         render.XIntercept = (render.XTile << MapConstants.TileShift) -(pwallposinv << 10);
                         render.YIntTile = render.YIntercept >> MapConstants.TileShift;
-                        render.TileHit = pushWalls.pwall.Tile;
+                        render.TileHit = pushWalls.PWall.Tile;
 
                         hits.HitVertWall();
                     }
                 }
                 else
                 {
-                    if (pushWalls.pwall.Dir == ControlDir.North)
-                        pwallposi = 64 - pushWalls.pwall.Pos;
+                    if (pushWalls.PWall.Dir == ControlDir.North)
+                        pwallposi = 64 - pushWalls.PWall.Pos;
                     else
-                        pwallposi = pushWalls.pwall.Pos;
+                        pwallposi = pushWalls.PWall.Pos;
 
-                    if ((pushWalls.pwall.Dir == ControlDir.South && (ushort)render.YIntercept < (pwallposi << 10))
-                     || (pushWalls.pwall.Dir == ControlDir.North && (ushort)render.YIntercept > (pwallposi << 10)))
+                    if ((pushWalls.PWall.Dir == ControlDir.South && (ushort)render.YIntercept < (pwallposi << 10))
+                     || (pushWalls.PWall.Dir == ControlDir.North && (ushort)render.YIntercept > (pwallposi << 10)))
                     {
-                        if (render.XTile == pushWalls.pwall.X && render.YIntTile == pushWalls.pwall.Y)
+                        if (render.XTile == pushWalls.PWall.X && render.YIntTile == pushWalls.PWall.Y)
                         {
-                            if ((pushWalls.pwall.Dir == ControlDir.South && (int)((ushort)render.YIntercept) + ystep < (pwallposi << 10))
-                             || (pushWalls.pwall.Dir == ControlDir.North && (int)((ushort)render.YIntercept) + ystep > (pwallposi << 10)))
+                            if ((pushWalls.PWall.Dir == ControlDir.South && (int)((ushort)render.YIntercept) + ystep < (pwallposi << 10))
+                             || (pushWalls.PWall.Dir == ControlDir.North && (int)((ushort)render.YIntercept) + ystep > (pwallposi << 10)))
                             {
                                 //goto PassVert;
                                 PassVert(ystep);
@@ -356,14 +356,14 @@ internal sealed class RayTrace(
                             //
                             // set up a horizontal intercept position
                             //
-                            if (pushWalls.pwall.Dir == ControlDir.South)
+                            if (pushWalls.PWall.Dir == ControlDir.South)
                                 render.YIntercept = (render.YIntTile << MapConstants.TileShift) + (pwallposi << 10);
                             else
                                 render.YIntercept = (int)(((render.YIntTile << MapConstants.TileShift) - MapConstants.TileGlobal) + (pwallposi << 10));
 
-                            render.XIntercept -= (xstep * (64 - pushWalls.pwall.Pos)) >> 6;
+                            render.XIntercept -= (xstep * (64 - pushWalls.PWall.Pos)) >> 6;
                             render.XIntTile = render.XIntercept >> MapConstants.TileShift;
-                            render.TileHit = pushWalls.pwall.Tile;
+                            render.TileHit = pushWalls.PWall.Tile;
 
                             hits.HitHorizWall();
                         }
@@ -371,25 +371,25 @@ internal sealed class RayTrace(
                         {
                             render.TexDelta = (ushort)(pwallposi << 10);
                             render.XIntercept = render.XTile << MapConstants.TileShift;
-                            render.TileHit = pushWalls.pwall.Tile;
+                            render.TileHit = pushWalls.PWall.Tile;
 
                             hits.HitVertWall();
                         }
                     }
                     else
                     {
-                        if (render.XTile == pushWalls.pwall.X && render.YIntTile == pushWalls.pwall.Y)
+                        if (render.XTile == pushWalls.PWall.X && render.YIntTile == pushWalls.PWall.Y)
                         {
                             render.TexDelta = (ushort)(pwallposi << 10);
                             render.XIntercept = render.XTile << MapConstants.TileShift;
-                            render.TileHit = pushWalls.pwall.Tile;
+                            render.TileHit = pushWalls.PWall.Tile;
 
                             hits.HitVertWall();
                         }
                         else
                         {
-                            if ((pushWalls.pwall.Dir == ControlDir.South && ((ushort)render.YIntercept) + ystep > (pwallposi << 10))
-                             || (pushWalls.pwall.Dir == ControlDir.North && ((ushort)render.YIntercept) + ystep < (pwallposi << 10)))
+                            if ((pushWalls.PWall.Dir == ControlDir.South && ((ushort)render.YIntercept) + ystep > (pwallposi << 10))
+                             || (pushWalls.PWall.Dir == ControlDir.North && ((ushort)render.YIntercept) + ystep < (pwallposi << 10)))
                             {
                                 //goto PassVert;
                                 PassVert(ystep);
@@ -399,14 +399,14 @@ internal sealed class RayTrace(
                             //
                             // set up a horizontal intercept position
                             //
-                            if (pushWalls.pwall.Dir == ControlDir.South)
-                                render.YIntercept = (render.YIntTile << MapConstants.TileShift) - ((64 - pushWalls.pwall.Pos) << 10);
+                            if (pushWalls.PWall.Dir == ControlDir.South)
+                                render.YIntercept = (render.YIntTile << MapConstants.TileShift) - ((64 - pushWalls.PWall.Pos) << 10);
                             else
-                                render.YIntercept = (render.YIntTile << MapConstants.TileShift) + ((64 - pushWalls.pwall.Pos) << 10);
+                                render.YIntercept = (render.YIntTile << MapConstants.TileShift) + ((64 - pushWalls.PWall.Pos) << 10);
 
-                            render.XIntercept -= (xstep * pushWalls.pwall.Pos) >> 6;
+                            render.XIntercept -= (xstep * pushWalls.PWall.Pos) >> 6;
                             render.XIntTile = render.XIntercept >> MapConstants.TileShift;
-                            render.TileHit = pushWalls.pwall.Tile;
+                            render.TileHit = pushWalls.PWall.Tile;
 
                             hits.HitHorizWall();
                         }
@@ -473,31 +473,31 @@ internal sealed class RayTrace(
         render.TileHit = map.tilemap[render.XIntTile, render.YTile];
         render.HitPushwall = render.TileHit == GameConstants.BitWall;
         if (render.HitPushwall)
-            pushWalls.SelectPushWall(hitx, hity);     // which of the moving pushwalls this is
-        render.HitStories =render.TileHit == GameConstants.BitWall ? map.WallStories(pushWalls.pwall.X, pushWalls.pwall.Y) : map.WallStories(hitx, hity);
+            pushWalls.SelectPushWall(hitx, hity);     // which of the moving MovingWalls this is
+        render.HitStories =render.TileHit == GameConstants.BitWall ? map.WallStories(pushWalls.PWall.X, pushWalls.PWall.Y) : map.WallStories(hitx, hity);
 
         if (render.TileHit != 0)
         {
             if ((render.TileHit & GameConstants.BitDoor) != 0)
             {
                 //
-                // hit a horizontal door, so find which coordinate the door would be
-                // intersected at, and check to see if the door is open past that point
+                // hit a horizontal DoorNumber, so find which coordinate the DoorNumber would be
+                // intersected at, and check to see if the DoorNumber is open past that point
                 //
-                var door = doors.doorobjlist[render.TileHit & ~GameConstants.BitDoor];
+                var door = doors.DoorObjList[render.TileHit & ~GameConstants.BitDoor];
                 xinttemp = render.XIntercept + (xstep >> 1);    // add half step to current intercept position
                 int planey = (int)((render.YTile << (int)MapConstants.TileShift) + (MapConstants.TileGlobal / 2));
 
-                if (door.action == (byte)DoorAction.Open)
+                if (door.Action == (byte)DoorAction.Open)
                 {
                     if ((xinttemp >> MapConstants.TileShift) == render.XIntTile)
                         hits.NoteLintel(door, xinttemp, planey);
-                    PassHoriz(xstep); // door is open, continue tracing
+                    PassHoriz(xstep); // DoorNumber is open, continue tracing
                     return false;
                 }
 
                 //
-                // midpoint is outside tile, so it hit the side of the wall before a door
+                // midpoint is outside tile, so it hit the side of the WallId before a DoorNumber
                 //
                 if ((xinttemp >> MapConstants.TileShift) != render.XIntTile)
                 {
@@ -505,10 +505,10 @@ internal sealed class RayTrace(
                     return false;
                 }
 
-                if (door.action != DoorAction.Closed)
+                if (door.Action != DoorAction.Closed)
                 {
                     //
-                    // the trace hit the door plane at pixel position XIntercept, see if the door is
+                    // the trace hit the DoorNumber plane at pixel position XIntercept, see if the DoorNumber is
                     // closed that much
                     //
                     if (door.OpenAt(xinttemp))
@@ -527,23 +527,23 @@ internal sealed class RayTrace(
             else if (render.TileHit == GameConstants.BitWall)
             {
                 //
-                // hit a sliding horizontal wall
+                // hit a sliding horizontal WallId
                 //
-                if (pushWalls.pwall.Dir == ControlDir.North || pushWalls.pwall.Dir == ControlDir.South)
+                if (pushWalls.PWall.Dir == ControlDir.North || pushWalls.PWall.Dir == ControlDir.South)
                 {
-                    if (pushWalls.pwall.Dir == ControlDir.North)
+                    if (pushWalls.PWall.Dir == ControlDir.North)
                     {
-                        pwallposnorm = 64 - pushWalls.pwall.Pos;
-                        pwallposinv = pushWalls.pwall.Pos;
+                        pwallposnorm = 64 - pushWalls.PWall.Pos;
+                        pwallposinv = pushWalls.PWall.Pos;
                     }
                     else
                     {
-                        pwallposnorm = pushWalls.pwall.Pos;
-                        pwallposinv = 64 - pushWalls.pwall.Pos;
+                        pwallposnorm = pushWalls.PWall.Pos;
+                        pwallposinv = 64 - pushWalls.PWall.Pos;
                     }
 
-                    if ((pushWalls.pwall.Dir == ControlDir.South && render.XIntTile == pushWalls.pwall.X && render.YTile == pushWalls.pwall.Y)
-                     || (pushWalls.pwall.Dir == ControlDir.North && !(render.XIntTile == pushWalls.pwall.X && render.YTile == pushWalls.pwall.Y)))
+                    if ((pushWalls.PWall.Dir == ControlDir.South && render.XIntTile == pushWalls.PWall.X && render.YTile == pushWalls.PWall.Y)
+                     || (pushWalls.PWall.Dir == ControlDir.North && !(render.XIntTile == pushWalls.PWall.X && render.YTile == pushWalls.PWall.Y)))
                     {
                         xinttemp = render.XIntercept + ((xstep * pwallposnorm) >> 6);
 
@@ -556,7 +556,7 @@ internal sealed class RayTrace(
                         render.XIntercept = xinttemp;
                         render.YIntercept = (int)(((render.YTile << MapConstants.TileShift) +MapConstants.TileGlobal) -(pwallposinv << 10));
                         render.XIntTile = render.XIntercept >> MapConstants.TileShift;
-                        render.TileHit = pushWalls.pwall.Tile;
+                        render.TileHit = pushWalls.PWall.Tile;
 
                         hits.HitHorizWall();
                     }
@@ -573,25 +573,25 @@ internal sealed class RayTrace(
                         render.XIntercept = xinttemp;
                         render.YIntercept = (render.YTile << MapConstants.TileShift) -(pwallposinv << 10);
                         render.XIntTile = render.XIntercept >> MapConstants.TileShift;
-                        render.TileHit = pushWalls.pwall.Tile;
+                        render.TileHit = pushWalls.PWall.Tile;
 
                         hits.HitHorizWall();
                     }
                 }
                 else
                 {
-                    if (pushWalls.pwall.Dir == ControlDir.West)
-                        pwallposi = 64 - pushWalls.pwall.Pos;
+                    if (pushWalls.PWall.Dir == ControlDir.West)
+                        pwallposi = 64 - pushWalls.PWall.Pos;
                     else
-                        pwallposi = pushWalls.pwall.Pos;
+                        pwallposi = pushWalls.PWall.Pos;
 
-                    if ((pushWalls.pwall.Dir == ControlDir.East && (ushort)render.XIntercept < (pwallposi << 10))
-                     || (pushWalls.pwall.Dir == ControlDir.West && (ushort)render.XIntercept > (pwallposi << 10)))
+                    if ((pushWalls.PWall.Dir == ControlDir.East && (ushort)render.XIntercept < (pwallposi << 10))
+                     || (pushWalls.PWall.Dir == ControlDir.West && (ushort)render.XIntercept > (pwallposi << 10)))
                     {
-                        if (render.XIntTile == pushWalls.pwall.X && render.YTile == pushWalls.pwall.Y)
+                        if (render.XIntTile == pushWalls.PWall.X && render.YTile == pushWalls.PWall.Y)
                         {
-                            if ((pushWalls.pwall.Dir == ControlDir.East && (render.XIntercept) + xstep < (pwallposi << 10))
-                             || (pushWalls.pwall.Dir == ControlDir.West && (render.XIntercept) + xstep > (pwallposi << 10)))
+                            if ((pushWalls.PWall.Dir == ControlDir.East && (render.XIntercept) + xstep < (pwallposi << 10))
+                             || (pushWalls.PWall.Dir == ControlDir.West && (render.XIntercept) + xstep > (pwallposi << 10)))
 
                             {
                                 PassHoriz(xstep);
@@ -601,15 +601,15 @@ internal sealed class RayTrace(
                             //
                             // set up a vertical intercept position
                             //
-                            render.YIntercept -= (ystep * (64 - pushWalls.pwall.Pos)) >> 6;
+                            render.YIntercept -= (ystep * (64 - pushWalls.PWall.Pos)) >> 6;
                             render.YIntTile = render.YIntercept >> MapConstants.TileShift;
 
-                            if (pushWalls.pwall.Dir == ControlDir.East)
+                            if (pushWalls.PWall.Dir == ControlDir.East)
                                 render.XIntercept = (render.XIntTile << MapConstants.TileShift) + (pwallposi << 10);
                             else
                                 render.XIntercept = (int)(((render.XIntTile << MapConstants.TileShift) - MapConstants.TileGlobal) + (pwallposi << 10));
 
-                            render.TileHit = pushWalls.pwall.Tile;
+                            render.TileHit = pushWalls.PWall.Tile;
 
                             hits.HitVertWall();
                         }
@@ -617,25 +617,25 @@ internal sealed class RayTrace(
                         {
                             render.TexDelta = (ushort)(pwallposi << 10);
                             render.YIntercept = render.YTile << MapConstants.TileShift;
-                            render.TileHit = pushWalls.pwall.Tile;
+                            render.TileHit = pushWalls.PWall.Tile;
 
                             hits.HitHorizWall();
                         }
                     }
                     else
                     {
-                        if (render.XIntTile == pushWalls.pwall.X && render.YTile == pushWalls.pwall.Y)
+                        if (render.XIntTile == pushWalls.PWall.X && render.YTile == pushWalls.PWall.Y)
                         {
                             render.TexDelta = (ushort)(pwallposi << 10);
                             render.YIntercept = render.YTile << MapConstants.TileShift;
-                            render.TileHit = pushWalls.pwall.Tile;
+                            render.TileHit = pushWalls.PWall.Tile;
 
                             hits.HitHorizWall();
                         }
                         else
                         {
-                            if ((pushWalls.pwall.Dir == ControlDir.East && (render.XIntercept) + xstep > (pwallposi << 10))
-                             || (pushWalls.pwall.Dir == ControlDir.West && (render.XIntercept) + xstep < (pwallposi << 10)))
+                            if ((pushWalls.PWall.Dir == ControlDir.East && (render.XIntercept) + xstep > (pwallposi << 10))
+                             || (pushWalls.PWall.Dir == ControlDir.West && (render.XIntercept) + xstep < (pwallposi << 10)))
 
                             {
                                 PassHoriz(xstep);
@@ -645,15 +645,15 @@ internal sealed class RayTrace(
                             //
                             // set up a vertical intercept position
                             //
-                            render.YIntercept -= (ystep * pushWalls.pwall.Pos) >> 6;
+                            render.YIntercept -= (ystep * pushWalls.PWall.Pos) >> 6;
                             render.YIntTile = render.YIntercept >> MapConstants.TileShift;
 
-                            if (pushWalls.pwall.Dir == ControlDir.East)
-                                render.XIntercept = (render.XIntTile << MapConstants.TileShift) - ((64 - pushWalls.pwall.Pos) << 10);
+                            if (pushWalls.PWall.Dir == ControlDir.East)
+                                render.XIntercept = (render.XIntTile << MapConstants.TileShift) - ((64 - pushWalls.PWall.Pos) << 10);
                             else
-                                render.XIntercept = (render.XIntTile << MapConstants.TileShift) + ((64 - pushWalls.pwall.Pos) << 10);
+                                render.XIntercept = (render.XIntTile << MapConstants.TileShift) + ((64 - pushWalls.PWall.Pos) << 10);
 
-                            render.TileHit = pushWalls.pwall.Tile;
+                            render.TileHit = pushWalls.PWall.Tile;
 
                             hits.HitVertWall();
                         }
@@ -711,7 +711,7 @@ internal sealed class RayTrace(
         render.XIntTile = render.XIntercept >> (int)MapConstants.TileShift;
     }
 
-    /// <summary>Marks a wall face the rays hit as seen, for the automap, when the view is the player's</summary>
+    /// <summary>Marks a WallId face the rays hit as seen, for the automap, when the view is the player's</summary>
     internal void MarkSeen(int x, int y, SeenFlags face)
     {
         if (render.MarkSeen)

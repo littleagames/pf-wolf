@@ -177,7 +177,7 @@ public class FactionGameTests
         Assert.That(KillTotal(result), Is.EqualTo(8), "the axis and the mutants, not the squad or the prisoners");
     }
 
-    // Prints, each second, every actor on a side: class:faction:health:state:tilex
+    // Prints, each second, every actor on a side: class:faction:health:state:TileX
     private const string CensusScript = """
         local due = 0
         game.ontick(function(tics)
@@ -278,7 +278,7 @@ public class FactionGameTests
 
     private static int TileX(string census, string who) => Part(census, who, 4);
 
-    // A field (name:faction:health:state:tilex) of an actor in a census line
+    // A field (name:faction:health:state:TileX) of an actor in a census line
     private static int Part(string census, string who, int field) =>
         census.Split(' ').Where(part => part.StartsWith(who + ":")).Select(part => int.Parse(part.Split(':')[field])).First();
 

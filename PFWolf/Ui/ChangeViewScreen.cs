@@ -91,7 +91,7 @@ internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, 
         // The help goes in the bottom 40 lines of the screen, where the status bar is
         int top = video.ScreenYAboveBottom(40);
         if (view != 21)
-            video.BarScaledCoord(0, top, video.screenWidth, video.screenHeight - top, session.bordercol);
+            video.BarScaledCoord(0, top, video.screenWidth, video.screenHeight - top, session.BorderCol);
 
         hooks.ShowViewSize(view);
 

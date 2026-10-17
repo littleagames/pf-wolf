@@ -32,28 +32,28 @@ internal sealed record HubState(
 internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, GameSession session)
 {
     /// <summary>The hub levels that have been left, as they were left, by map</summary>
-    internal readonly Dictionary<string, byte[]> hubLevels = new(StringComparer.OrdinalIgnoreCase);
+    internal readonly Dictionary<string, byte[]> HubLevels = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The maps the player has been on this game: their floors are open in the elevator</summary>
-    internal readonly HashSet<string> visitedMaps = new(StringComparer.OrdinalIgnoreCase);
+    internal readonly HashSet<string> VisitedMaps = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Floors unlocked without having been on them (A_UnlockFloor: Planet Strike's security cubes)</summary>
-    internal readonly HashSet<string> unlockedMaps = new(StringComparer.OrdinalIgnoreCase);
+    internal readonly HashSet<string> UnlockedMaps = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Each floor's overhead map (64x64 palette colors) as last seen, for the teleporter (Ui/ElevatorScreens.cs)</summary>
-    internal readonly Dictionary<string, byte[]> floorOverheads = new(StringComparer.OrdinalIgnoreCase);
+    internal readonly Dictionary<string, byte[]> FloorOverheads = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Each floor's overall score (0 to 300) as last left, for the mission ratio (Ui/ElevatorScreens.cs)</summary>
-    internal readonly Dictionary<string, int> floorScores = new(StringComparer.OrdinalIgnoreCase);
+    internal readonly Dictionary<string, int> FloorScores = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The map the level in play came from</summary>
-    internal string? levelMap;
+    internal string? LevelMap;
 
-    /// <summary>The player as they came into the level (gamestate, inventory), for death-restores-level-start</summary>
-    internal byte[]? levelStart;
+    /// <summary>The player as they came into the level (GameState, inventory), for death-restores-level-start</summary>
+    internal byte[]? LevelStart;
 
     /// <summary>How many informants the level started with</summary>
-    internal int informantTotal;
+    internal int InformantTotal;
 
     internal bool IsHubMap(string? map) =>
         map != null && engine.GetGameInfo().Maps.TryGetValue(map, out var info)
@@ -61,7 +61,7 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
 
     /// <summary>The episode being played: the one whose start map is in the level's cluster</summary>
     internal EpisodeInfo? CurrentEpisode() =>
-        engine.GetGameInfo().Episodes.Values.FirstOrDefault(e => ClusterOf(e.StartMap) == ClusterOf(session.gamestate.mapon));
+        engine.GetGameInfo().Episodes.Values.FirstOrDefault(e => ClusterOf(e.StartMap) == ClusterOf(session.GameState.MapOn));
 
     internal short ClusterOf(string? map) =>
         map != null && engine.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.Cluster : (short)-1;
@@ -69,62 +69,62 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
     /// <summary>The map of the level's cluster with this floor number, if any</summary>
     internal string? ClusterFloorMap(int floor)
     {
-        var cluster = ClusterOf(session.gamestate.mapon);
+        var cluster = ClusterOf(session.GameState.MapOn);
         return engine.GetGameInfo().Maps.FirstOrDefault(m => m.Value.Cluster == cluster && m.Value.FloorNumber == floor).Key;
     }
 
     internal int CurrentFloorNumber() =>
-        engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var info) ? info.FloorNumber : 0;
+        engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var info) ? info.FloorNumber : 0;
 
     /// <summary>Whether a floor is open in the teleporter: been on, or unlocked</summary>
-    internal bool FloorOpen(string map) => visitedMaps.Contains(map) || unlockedMaps.Contains(map);
+    internal bool FloorOpen(string map) => VisitedMaps.Contains(map) || UnlockedMaps.Contains(map);
 
     /// <summary>A new game: nothing kept, nowhere been</summary>
     internal void ResetHubs()
     {
-        hubLevels.Clear();
-        visitedMaps.Clear();
-        unlockedMaps.Clear();
-        floorOverheads.Clear();
-        floorScores.Clear();
-        levelMap = null;
-        levelStart = null;
+        HubLevels.Clear();
+        VisitedMaps.Clear();
+        UnlockedMaps.Clear();
+        FloorOverheads.Clear();
+        FloorScores.Clear();
+        LevelMap = null;
+        LevelStart = null;
     }
 
     internal void WriteHubState(BinaryWriter bw)
     {
-        bw.Write(hubLevels.Count);
-        foreach (var (map, data) in hubLevels)
+        bw.Write(HubLevels.Count);
+        foreach (var (map, data) in HubLevels)
         {
             bw.Write(map);
             bw.Write(data.Length);
             bw.Write(data);
         }
 
-        bw.Write(visitedMaps.Count);
-        foreach (var map in visitedMaps)
+        bw.Write(VisitedMaps.Count);
+        foreach (var map in VisitedMaps)
             bw.Write(map);
 
-        bw.Write(levelMap ?? "");
+        bw.Write(LevelMap ?? "");
 
-        bw.Write(levelStart?.Length ?? 0);
-        if (levelStart != null)
-            bw.Write(levelStart);
+        bw.Write(LevelStart?.Length ?? 0);
+        if (LevelStart != null)
+            bw.Write(LevelStart);
 
-        bw.Write(floorScores.Count);
-        foreach (var (map, score) in floorScores)
+        bw.Write(FloorScores.Count);
+        foreach (var (map, score) in FloorScores)
         {
             bw.Write(map);
             bw.Write(score);
         }
 
-        bw.Write(informantTotal);
+        bw.Write(InformantTotal);
 
-        bw.Write(unlockedMaps.Count);
-        foreach (var map in unlockedMaps)
+        bw.Write(UnlockedMaps.Count);
+        foreach (var map in UnlockedMaps)
             bw.Write(map);
-        bw.Write(floorOverheads.Count);
-        foreach (var (map, image) in floorOverheads)
+        bw.Write(FloorOverheads.Count);
+        foreach (var (map, image) in FloorOverheads)
         {
             bw.Write(map);
             bw.Write(image.Length);
@@ -169,22 +169,22 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
 
     internal void RestoreHubState(HubState state)
     {
-        hubLevels.Clear();
+        HubLevels.Clear();
         foreach (var (map, data) in state.Levels)
-            hubLevels[map] = data;
-        visitedMaps.Clear();
-        visitedMaps.UnionWith(state.Visited);
-        unlockedMaps.Clear();
-        unlockedMaps.UnionWith(state.Unlocked);
-        floorOverheads.Clear();
+            HubLevels[map] = data;
+        VisitedMaps.Clear();
+        VisitedMaps.UnionWith(state.Visited);
+        UnlockedMaps.Clear();
+        UnlockedMaps.UnionWith(state.Unlocked);
+        FloorOverheads.Clear();
         foreach (var (map, image) in state.Overheads)
-            floorOverheads[map] = image;
-        floorScores.Clear();
+            FloorOverheads[map] = image;
+        FloorScores.Clear();
         foreach (var (map, score) in state.FloorScores)
-            floorScores[map] = score;
-        levelMap = state.LevelMap ?? session.gamestate.mapon;
-        levelStart = state.LevelStart;
-        informantTotal = state.InformantTotal;
+            FloorScores[map] = score;
+        LevelMap = state.LevelMap ?? session.GameState.MapOn;
+        LevelStart = state.LevelStart;
+        InformantTotal = state.InformantTotal;
     }
 
     /*
@@ -208,9 +208,9 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
     /// <summary>Points, informants and enemies, as (got, total) for the level in play</summary>
     internal (int Got, int Total)[] FloorStats() =>
     [
-        (session.gamestate.treasurecount, session.gamestate.treasuretotal),
-        (InformantsAlive(), informantTotal),
-        (session.gamestate.killcount, session.gamestate.killtotal),
+        (session.GameState.TreasureCount, session.GameState.TreasureTotal),
+        (InformantsAlive(), InformantTotal),
+        (session.GameState.KillCount, session.GameState.KillTotal),
     ];
 
     internal int FloorScore() => FloorStats().Sum(s => Ratio(s.Got, s.Total));
@@ -222,14 +222,14 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
     internal int MissionRatio()
     {
         var gameInfo = engine.GetGameInfo();
-        var cluster = ClusterOf(session.gamestate.mapon);
+        var cluster = ClusterOf(session.GameState.MapOn);
         var floors = gameInfo.Maps.Where(m => m.Value.Cluster == cluster && !string.IsNullOrEmpty(m.Value.Music)).Select(m => m.Key).ToList();
         if (floors.Count == 0)
             return 100;
 
-        int total = floors.Sum(map => map.Equals(session.gamestate.mapon, StringComparison.OrdinalIgnoreCase)
+        int total = floors.Sum(map => map.Equals(session.GameState.MapOn, StringComparison.OrdinalIgnoreCase)
             ? FloorScore()
-            : floorScores.GetValueOrDefault(map, 100));
+            : FloorScores.GetValueOrDefault(map, 100));
         return total * 100 / (floors.Count * 300);
     }
 }

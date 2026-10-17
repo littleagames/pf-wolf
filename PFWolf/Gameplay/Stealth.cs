@@ -57,7 +57,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     internal bool Overlooks(Entities.Actors.Monster monster)
     {
         // Anyone it could see who isn't in disguise, it sees as ever
-        var pawns = map.Players.Where(p => p.State.health > 0).ToList();
+        var pawns = map.Players.Where(p => p.State.Health > 0).ToList();
         if (pawns.Count == 0 || !pawns.All(p => Disguised(p.State)))
             return false;
 
@@ -72,7 +72,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
         {
             var state = pawn.State;
             state.SuspicionPending = Math.Max(state.SuspicionPending, Math.Max(monster.Suspicion * 100 / max, 1));
-            monster.Suspicion -= (int)session.tics;
+            monster.Suspicion -= (int)session.Tics;
             if (monster.Suspicion > 0)
                 return true;
             monster.Suspicion = 0;          // out of patience: it notices them as ever
@@ -120,10 +120,10 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
             return false;
 
         using var _ = session.ActAs(pawn.State);
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         if (hooks.StealthOnly())
         {
-            if (playerstate.health > 0)
+            if (playerstate.Health > 0)
             {
                 if (hooks.Settings().Caught is { Length: > 0 } caught)
                     hooks.ShowMessage(caught);
@@ -149,7 +149,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     {
         var state = killer.State;
         if (state.Undetected && (state.ZoomMode == ZoomMode.Zoomed
-            || state.weapon is { } weapon && IsTrue(inventory.GetProperty(weapon, "weapon.stealthkill"))))
+            || state.Weapon is { } weapon && IsTrue(inventory.GetProperty(weapon, "weapon.stealthkill"))))
             state.StealthKills++;
     }
 
@@ -161,7 +161,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     internal void ShowPapers(Entities.Actors.Actor weapon)
     {
         hooks.PlayAttackSound();
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         foreach (var monster in map.GetActors().OfType<Entities.Actors.Monster>().ToList())
         {
             if (monster.IsRemoved || monster.Suspicion <= 0 || monster.RuntimeFlags.HasFlag(ObjFlags.AttackMode)
@@ -199,7 +199,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
         inventory.Give(disguise, 1);
         if (papers.Length > 0)
             inventory.Give(papers, 1);
-        session.playerstate.Undetected = true;
+        session.PlayerState.Undetected = true;
         weapons.DrawWeapon();
 
         if (inventory.GetStringProperty(disguise, "inventory.pickupmessage") is { Length: > 0 } message)
@@ -213,7 +213,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     /// <summary>Each player think: the meter shows what the enemies told it last tic</summary>
     internal void Tick()
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         playerstate.SuspicionMeter = playerstate.SuspicionPending;
         playerstate.SuspicionPending = 0;
     }
@@ -225,7 +225,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     /// <summary>Whether the player's unseen, in disguise and with papers in hand</summary>
     internal bool Disguised(Entities.PlayerState state)
     {
-        if (!state.Undetected || state.weapon is not { } weapon || !IsTrue(inventory.GetProperty(weapon, "weapon.papers")))
+        if (!state.Undetected || state.Weapon is not { } weapon || !IsTrue(inventory.GetProperty(weapon, "weapon.papers")))
             return false;
         return state.Items.Any(item => item.Value > 0 && IsTrue(inventory.GetProperty(item.Key, "inventory.disguise")));
     }
@@ -236,13 +236,13 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
             .Any(m => !m.IsRemoved && m.Hitpoints > 0 && m.RuntimeFlags.HasFlag(ObjFlags.AttackMode));
 
     IEnumerable<string> DisguiseItems() =>
-        session.playerstate.Items.Where(item => item.Value > 0 && IsTrue(inventory.GetProperty(item.Key, "inventory.disguise")))
+        session.PlayerState.Items.Where(item => item.Value > 0 && IsTrue(inventory.GetProperty(item.Key, "inventory.disguise")))
             .Select(item => item.Key).ToList();
 
     // Off with the disguise and papers (the papers' weapon out of hand)
     void TakeDisguise()
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         var gone = DisguiseItems()
             .Concat(playerstate.Items.Where(item => item.Value > 0 && IsTrue(inventory.GetProperty(item.Key, "weapon.papers"))).Select(item => item.Key))
             .ToList();
@@ -251,10 +251,10 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
         foreach (var item in gone)
             inventory.Take(item, playerstate.Items[item]);
 
-        if (playerstate.weapon is { } weapon && !inventory.Has(weapon))
-            playerstate.weapon = playerstate.chosenweapon = weapons.BestWeapon(canFire: true);
-        else if (playerstate.chosenweapon is { } chosen && !inventory.Has(chosen))
-            playerstate.chosenweapon = playerstate.weapon;
+        if (playerstate.Weapon is { } weapon && !inventory.Has(weapon))
+            playerstate.Weapon = playerstate.ChosenWeapon = weapons.BestWeapon(canFire: true);
+        else if (playerstate.ChosenWeapon is { } chosen && !inventory.Has(chosen))
+            playerstate.ChosenWeapon = playerstate.Weapon;
         weapons.DrawWeapon();
     }
 

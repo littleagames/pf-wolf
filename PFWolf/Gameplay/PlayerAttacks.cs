@@ -37,7 +37,7 @@ internal sealed class PlayerAttacks(
 {
     /// <summary>Whether the weapon in hand is a silent one (weapon.silent): its shots don't alert anyone</summary>
     internal bool PlayerWeaponIsSilent() =>
-        session.playerstate.weapon != null && inventory.GetProperty(session.playerstate.weapon, "weapon.silent") is { } silent
+        session.PlayerState.Weapon != null && inventory.GetProperty(session.PlayerState.Weapon, "weapon.silent") is { } silent
         && (silent is true || bool.TryParse(silent.ToString(), out var b) && b);
 
     // What the acting player's shot could hit, nearest first, leaving out their own side's
@@ -47,15 +47,15 @@ internal sealed class PlayerAttacks(
     // "Chase" state, so they never qualify. With others playing, ShootCandidatesFrom.
     internal List<ShotTarget> FindShootCandidates()
     {
-        if (session.gamemode != GameMode.Single)
-            return ShootCandidatesFrom(session.player);
+        if (session.GameMode != GameMode.Single)
+            return ShootCandidatesFrom(session.Player);
 
         var candidates = new List<Entities.Actors.Monster>();
 
         foreach (var actor in map.GetActors().OfType<Entities.Actors.Monster>())
         {
             if (actor == null || !actor.ResolvedStates.ContainsKey("Chase")) continue;
-            if (factions.IsAlly(session.player, actor)) continue;     // the player's side: shots pass them by
+            if (factions.IsAlly(session.Player, actor)) continue;     // the player's side: shots pass them by
             if (actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && actor.RuntimeFlags.HasFlag(ObjFlags.Visible)
                 && Math.Abs(actor.ViewX - hooks.CenterX()) < hooks.ShootDelta())
             {
@@ -84,7 +84,7 @@ internal sealed class PlayerAttacks(
         {
             bool enemy = actor is Entities.Actors.Monster && !actor.IsRemoved && actor.ResolvedStates.ContainsKey("Chase")
                 && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && !factions.IsAlly(shooter, actor);
-            bool rival = actor is Entities.Actors.PlayerPawn pawn && pawn.State.health > 0
+            bool rival = actor is Entities.Actors.PlayerPawn pawn && pawn.State.Health > 0
                 && session.AreRivals(shooter.State, pawn.State);     // no friendly fire in a team game
             if (!enemy && !rival)
                 continue;
@@ -113,15 +113,15 @@ internal sealed class PlayerAttacks(
     internal void HitShotTarget(Entities.Actors.Actor target, uint damage)
     {
         if (target is Entities.Actors.PlayerPawn pawn)
-            hooks.HurtPlayer(pawn, (int)damage, session.player);
+            hooks.HurtPlayer(pawn, (int)damage, session.Player);
         else if (target is Entities.Actors.Monster monster)
-            monster.Damage(damage, session.player);
+            monster.Damage(damage, session.Player);
     }
 
     // The weapon in hand's `attacksound`.
     internal void PlayAttackSound()
     {
-        if (session.playerstate.weapon != null && inventory.GetStringProperty(session.playerstate.weapon, "attacksound") is { Length: > 0 } sound)
+        if (session.PlayerState.Weapon != null && inventory.GetStringProperty(session.PlayerState.Weapon, "attacksound") is { Length: > 0 } sound)
             hooks.PlayPlayerSound(sound);
     }
 
@@ -133,7 +133,7 @@ internal sealed class PlayerAttacks(
         if (closest == null)
             return; // missed
 
-        HitShotTarget(closest, PlayerDamage(session.random.RndT() >> 4));
+        HitShotTarget(closest, PlayerDamage(session.Random.RndT() >> 4));
     }
 
     // A player attack's damage, scaled by the class's player.damagedealt
@@ -148,13 +148,13 @@ internal sealed class PlayerAttacks(
     {
         PlayAttackSound();
         if (!silent && !PlayerWeaponIsSilent())
-            session.madenoise = true;
+            session.MadeNoise = true;
 
         var closest = FindShootCandidates().FirstOrDefault().Actor;
         if (closest == null || !lineOfSight.CheckLine(closest))
             return;
 
-        int damage = max > min ? min + session.random.RndT() * (max - min + 1) / 256 : min;
+        int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
         HitShotTarget(closest, PlayerDamage(damage));
     }
 
@@ -169,7 +169,7 @@ internal sealed class PlayerAttacks(
 
         // A silent weapon (weapon.silent, Blake Stone's auto-charge pistol) alerts no one
         if (!PlayerWeaponIsSilent())
-            session.madenoise = true;
+            session.MadeNoise = true;
 
         //
         // find the closest potential target, and confirm a clear line to it
@@ -186,19 +186,19 @@ internal sealed class PlayerAttacks(
         //
         // hit something
         //
-        var player = session.player;
+        var player = session.Player;
         dx = Math.Abs(closest.TileX - player.TileX);
         dy = Math.Abs(closest.TileY - player.TileY);
         dist = dx > dy ? dx : dy;
         if (dist < 2)
-            damage = session.random.RndT() / near;
+            damage = session.Random.RndT() / near;
         else if (dist < 4)
-            damage = session.random.RndT() / mid;
+            damage = session.Random.RndT() / mid;
         else
         {
-            if ((session.random.RndT() / 12) < dist)           // missed
+            if ((session.Random.RndT() / 12) < dist)           // missed
                 return;
-            damage = session.random.RndT() / far;
+            damage = session.Random.RndT() / far;
         }
 
         HitShotTarget(closest, PlayerDamage(damage));

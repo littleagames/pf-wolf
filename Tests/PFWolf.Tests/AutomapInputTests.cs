@@ -20,7 +20,7 @@ public class AutomapInputTests
         _input = new InputManager(new Lazy<ConsoleManager>(() => _console));
         _automap = new AutomapManager();
         _controls = new ControlBindings();
-        _session = new GameSession { tics = 2 };
+        _session = new GameSession { Tics = 2 };
         var render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
         var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, _session, null!);
         _polling = new InputPolling(_input, _console, _automap, _controls, new ControlSettings(), frame, new DemoBuffer(), _session,
@@ -38,7 +38,7 @@ public class AutomapInputTests
         _keys.ToggleAutomap();
         Assert.That(_automap.IsOpen, Is.False);
 
-        _session.demoplayback = true;
+        _session.DemoPlayback = true;
         _keys.ToggleAutomap();
         Assert.That(_automap.IsOpen, Is.False);
     }
@@ -71,25 +71,25 @@ public class AutomapInputTests
         _automap.Update(32, 32, 0);
         _automap.Pan(1, 0);
         float y = _automap.CenterY;
-        _polling.controly = -2 * GameConstants.BaseMove;
+        _polling.ControlY = -2 * GameConstants.BaseMove;
 
         // Act
         _keys.RouteMovementToAutomap();
 
         // Assert: the map moved up, the player won't
         Assert.That(_automap.CenterY, Is.LessThan(y));
-        Assert.That((_polling.controlx, _polling.controly, _polling.controlstrafe), Is.EqualTo((0, 0, 0)));
+        Assert.That((_polling.ControlX, _polling.ControlY, _polling.ControlStrafe), Is.EqualTo((0, 0, 0)));
     }
 
     [Test]
     public void Following_The_Player_Walking_Walks()
     {
         _automap.Open();
-        _polling.controly = -2 * GameConstants.BaseMove;
+        _polling.ControlY = -2 * GameConstants.BaseMove;
 
         _keys.RouteMovementToAutomap();
 
-        Assert.That(_polling.controly, Is.EqualTo(-2 * GameConstants.BaseMove));
+        Assert.That(_polling.ControlY, Is.EqualTo(-2 * GameConstants.BaseMove));
     }
 
     [Test]
@@ -103,6 +103,6 @@ public class AutomapInputTests
         Assert.That(_console.Scrollback[^1], Is.EqualTo("am_style is color"));
 
         _keys.AmRevealCommand([]);
-        Assert.That((_session.mapreveal != 0, _console.Scrollback[^1]), Is.EqualTo((true, "Automap reveal ON")));
+        Assert.That((_session.MapReveal != 0, _console.Scrollback[^1]), Is.EqualTo((true, "Automap reveal ON")));
     }
 }

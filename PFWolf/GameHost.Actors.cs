@@ -103,10 +103,10 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_StartDeathCam", StartDeathCam);
         ActorActionRegistry.Register("A_Quake", Quake);       // the view shakes (A_Quake, in GameHost.Rendering.cs)
         // A_MakeNoise: a noise, as a shot's: enemies in the areas joined to the player's come
-        // (Midnight Assault's lights coming on: madenoise)
+        // (Midnight Assault's lights coming on: MadeNoise)
         ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => madenoise = true);
 
-        // Level objectives (Gameplay/Objectives.cs): A_CompleteObjective("name"[, n]) and
+        // Level MatchObjectives (Gameplay/Objectives.cs): A_CompleteObjective("name"[, n]) and
         // A_AddObjective("name"[, n]), from an actor or a switch; A_JumpIfObjectiveDone("name", "State")
         static int Amount(string[] args) => args.Length > 1 && int.TryParse(args[1], out var n) ? n : 1;
         ActorActionRegistry.Register("A_CompleteObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) objectives.Complete(args[0], Amount(args)); });
@@ -155,25 +155,25 @@ internal static partial class GameHost
         RegisterWeaponActions();
 
         // mapdefs trigger and switch actions, run when the player uses a trigger's tile or a
-        // switch wall (PressUse) or steps onto a walk-over trigger (Thrust)
+        // switch WallId (PressUse) or steps onto a walk-over trigger (Thrust)
         // A_PushWall("moving sound", "blocked sound"[, "direction", "message"]): either sound left
         // out is silent. With a direction (north, east, south or west) it only moves that way:
         // pushed from another side, it shows the message and plays the blocked sound instead
-        // (Midnight Assault's one-way pushwalls)
+        // (Midnight Assault's one-way MovingWalls)
         Entities.MapTriggerRegistry.Register("A_PushWall", PushWallAction);
         Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, _) => { VictoryTile(); return true; });
         Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => ExitAction(secret: false));
         Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
         // Hub clusters' ways between levels, the teleporter's floors and the victory run (Gameplay/HubActions.cs)
         (hubActions ??= MakeHubActions()).Register();
-        RegisterSwitchActions();    // tag-targeted door and wall actions (Gameplay/SwitchActions.cs)
+        RegisterSwitchActions();    // tag-targeted DoorNumber and WallId actions (Gameplay/SwitchActions.cs)
         RegisterSmartSwitchActions();   // A_SmartSwitch (Gameplay/SmartSwitches.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Rendering/Lighting.cs)
         RegisterActorLightActions(); // actors' own lights (Rendering/ActorLights.cs)
         RegisterProjectileActions(); // projectiles and jumps for any actor, traps (Gameplay/ProjectileActions.cs)
     }
 
-    /// <summary>A_PushWall: the trigger's wall pushed the way the player faces, unless it only goes another way (see RegisterActorActions)</summary>
+    /// <summary>A_PushWall: the trigger's WallId pushed the way the player faces, unless it only goes another way (see RegisterActorActions)</summary>
     static bool PushWallAction(Entities.TriggerActivation trigger, string[] args)
     {
         var moveSound = args.ElementAtOrDefault(0);
@@ -274,19 +274,19 @@ internal static partial class GameHost
     static Stealth stealth => _stealth ??= new Stealth(_mapManager, _inventoryManager, playerWeapons, session,
         new StealthHooks(
             () => _gameEngineManager.GetGameInfo().Stealth,
-            () => session.gamestate.mapon is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && info.StealthOnly,
+            () => session.GameState.MapOn is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && info.StealthOnly,
             message => _hudMessageManager.Show(HudMessageKind.Lock, message),
             PlayPlayerSound,
             playerAttacks.PlayAttackSound,
-            actor => (actor.AreaNumber >= _mapManager.Floors.NumAreas || session.areas.areabyplayer[actor.AreaNumber] != 0)
+            actor => (actor.AreaNumber >= _mapManager.Floors.NumAreas || session.Areas.AreaByPlayer[actor.AreaNumber] != 0)
                 && lineOfSight.CheckLine(actor),
             actor =>
             {
                 // Caught on a stealth-only map: the mission's failed, as a death at their hands
-                session.playerstate.LastAttacker = actor;
-                session.playerstate.health = 0;
+                session.PlayerState.LastAttacker = actor;
+                session.PlayerState.Health = 0;
                 statusBarDrawing.DrawHealth();
-                if (session.gamemode == GameMode.Single)
+                if (session.GameMode == GameMode.Single)
                     playstate = PlayState.Died;
                 else
                     PlayerDies();
@@ -324,8 +324,8 @@ internal static partial class GameHost
     ====================
     */
 
-    internal static List<Entities.PlayerState> players => session.players;
-    internal static Entities.PlayerState playerstate => session.playerstate;
+    internal static List<Entities.PlayerState> players => session.Players;
+    internal static Entities.PlayerState playerstate => session.PlayerState;
     internal static GameSession.ActingScope ActAs(Entities.PlayerState p) => session.ActAs(p);
     static void SetActing(Entities.PlayerState p) => session.SetActing(p);
 
@@ -345,7 +345,7 @@ internal static partial class GameHost
     internal static void ThinkPlayerDead(Entities.Actors.Actor ob) => playersManager.ThinkPlayerDead(ob);
     static void AddNetPlayer(Networking.NetJoin join) => playersManager.AddNetPlayer(join);
 
-    // addplayer, gamemode and controlplayer (Commands/PlayerCommands.cs)
+    // addplayer, GameMode and controlplayer (Commands/PlayerCommands.cs)
     static PlayerCommands playerCommands = null!;       // made in InitServices
 
     //
@@ -389,14 +389,14 @@ internal static partial class GameHost
     static Doors doors = null!;
 
     internal static void ConnectAreas() => doors.ConnectAreas();
-    internal static void InitAreas() => session.areas.InitAreas(_mapManager.Players.Select(pawn => (int)pawn.AreaNumber), _mapManager.Floors.NumAreas);
+    internal static void InitAreas() => session.Areas.InitAreas(_mapManager.Players.Select(pawn => (int)pawn.AreaNumber), _mapManager.Floors.NumAreas);
 
     /*
     =============================================================================
 
                                     PUSHABLE WALLS
 
-    Gameplay/PushWalls.cs (made in InitServices); these forward to it, the renderer's pwall
+    Gameplay/PushWalls.cs (made in InitServices); these forward to it, the renderer's PWall
     accessors included.
 
     =============================================================================

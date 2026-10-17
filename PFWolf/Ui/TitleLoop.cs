@@ -210,7 +210,7 @@ internal sealed class TitleLoop(
                 // demo
                 //
                 demos.PlayDemo(titleScreens.TakeNextTitleDemo());
-                if (session.playstate == PlayState.Abort)
+                if (session.PlayState == PlayState.Abort)
                     break;
                 video.FadeOut();
                 if (video.HasMargins)
@@ -232,11 +232,11 @@ internal sealed class TitleLoop(
     /// <summary>Plays the game the menu started or loaded, if it did, then puts the title music back</summary>
     internal void RunStartedGame()
     {
-        if (!session.startgame && !session.loadedgame)
+        if (!session.GameChosen && !session.LoadedGame)
             return;
 
         mainGameLoop.GameLoop();
-        if (session.netgame)
+        if (session.NetGame)
             netGames.EndNetGame();       // a game with others is over: leave it (Networking/NetGames.cs)
         if (!hooks.NoWait())
         {
@@ -253,7 +253,7 @@ internal sealed class TitleLoop(
             return false;
 
         hooks.NewGame(warp.Difficulty, warp.Episode, gameInfo.Maps[warp.Map]);
-        session.gamestate.mapon = warp.Map;
+        session.GameState.MapOn = warp.Map;
         Console.WriteLine($"Warping to {warp.Map}, skill {warp.Difficulty + 1}");
         return true;
     }

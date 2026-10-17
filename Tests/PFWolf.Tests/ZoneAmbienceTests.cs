@@ -27,7 +27,7 @@ public class ZoneAmbienceTests
     private GameSession _session = null!;
 
     // The level being played (the session's map)
-    private string? _map { get => _session.gamestate.mapon; set => _session.gamestate.mapon = value!; }
+    private string? _map { get => _session.GameState.MapOn; set => _session.GameState.MapOn = value!; }
     private (int X, int Y)? _tile;
     private int[,] _zones = null!;
     private bool _disguised;

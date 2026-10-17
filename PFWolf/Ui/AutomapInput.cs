@@ -38,7 +38,7 @@ internal sealed class AutomapInput(
     /// </summary>
     internal void ToggleAutomap()
     {
-        if ((session.demoplayback || session.demorecord))
+        if ((session.DemoPlayback || session.DemoRecord))
             return;
 
         automap.Toggle();       // the play loop's next UpdateAutomap centers it before it's drawn
@@ -58,13 +58,13 @@ internal sealed class AutomapInput(
             // A wheel bound to a zoom key steps once a notch; keys zoom smoothly while held
             float zoom = AutomapWheelNotches(AutomapAction.ZoomIn) - AutomapWheelNotches(AutomapAction.ZoomOut);
             if (IsAutomapKeyDown(AutomapAction.ZoomIn) || input.IsKeyDown(ScanCodes.KeyPadPlus))
-                zoom += AutomapKeyZoomRate * session.tics / 70f;
+                zoom += AutomapKeyZoomRate * session.Tics / 70f;
             if (IsAutomapKeyDown(AutomapAction.ZoomOut) || input.IsKeyDown(ScanCodes.KeyPadMinus))
-                zoom -= AutomapKeyZoomRate * session.tics / 70f;
+                zoom -= AutomapKeyZoomRate * session.Tics / 70f;
             if (zoom != 0)
                 automap.ZoomBy(zoom);
 
-            float pan = AutomapPanSpeed * session.tics * (input.IsButtonPressed(ButtonType.Run) ? 2 : 1);
+            float pan = AutomapPanSpeed * session.Tics * (input.IsButtonPressed(ButtonType.Run) ? 2 : 1);
             float panx = 0, pany = 0;
             if (IsAutomapKeyDown(AutomapAction.PanUp)) pany -= pan;
             if (IsAutomapKeyDown(AutomapAction.PanDown)) pany += pan;
@@ -73,7 +73,7 @@ internal sealed class AutomapInput(
             automap.Pan(panx, pany);
         }
 
-        automap.Update(session.player.X / (float)MapConstants.TileGlobal, session.player.Y / (float)MapConstants.TileGlobal, session.player.Angle);
+        automap.Update(session.Player.X / (float)MapConstants.TileGlobal, session.Player.Y / (float)MapConstants.TileGlobal, session.Player.Angle);
     }
 
     /// <summary>
@@ -118,9 +118,9 @@ internal sealed class AutomapInput(
         if (!automap.IsOpen || automap.Follow)
             return;
 
-        // controlx/controly run BaseMove a tic at walking pace (RunMove running)
-        float dx = polling.controlx + polling.controlstrafe, dy = polling.controly;
-        int strafe = (input.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove : GameConstants.BaseMove) * (int)session.tics;
+        // ControlX/ControlY run BaseMove a tic at walking pace (RunMove running)
+        float dx = polling.ControlX + polling.ControlStrafe, dy = polling.ControlY;
+        int strafe = (input.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove : GameConstants.BaseMove) * (int)session.Tics;
         if (input.IsButtonPressed(ButtonType.StrafeLeft))
             dx -= strafe;
         if (input.IsButtonPressed(ButtonType.StrafeRight))
@@ -128,7 +128,7 @@ internal sealed class AutomapInput(
 
         automap.Pan(dx * AutomapPanSpeed / GameConstants.BaseMove, dy * AutomapPanSpeed / GameConstants.BaseMove);
 
-        polling.controlx = polling.controly = polling.controlstrafe = 0;
+        polling.ControlX = polling.ControlY = polling.ControlStrafe = 0;
         input.SetButtonPressed(ButtonType.StrafeLeft, false);
         input.SetButtonPressed(ButtonType.StrafeRight, false);
     }
@@ -176,7 +176,7 @@ internal sealed class AutomapInput(
 
     internal void AmRevealCommand(string[] args)
     {
-        session.mapreveal = (byte)(Toggle(args, session.mapreveal != 0) ? 1 : 0);
-        console.Print(session.mapreveal != 0 ? "Automap reveal ON" : "Automap reveal OFF");
+        session.MapReveal = (byte)(Toggle(args, session.MapReveal != 0) ? 1 : 0);
+        console.Print(session.MapReveal != 0 ? "Automap reveal ON" : "Automap reveal OFF");
     }
 }

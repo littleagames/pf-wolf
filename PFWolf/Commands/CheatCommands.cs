@@ -15,8 +15,8 @@ internal sealed record CheatCommandsHooks(
     Action<int> SetEyeHeight);
 
 /// <summary>
-/// The cheats (the old Tab debug keys, plus a few new ones): god, noclip, give, map, exitlevel,
-/// tp, killall, diag, summon, pitch, eyeheight, hurt and playerclass
+/// The cheats (the old Tab debug keys, plus a few new ones): god, NoClip, give, map, exitlevel,
+/// tp, killall, diag, summon, pitch, eyeheight, hurt and PlayerClass
 /// </summary>
 internal sealed class CheatCommands(
     ConsoleManager console,
@@ -46,7 +46,7 @@ internal sealed class CheatCommands(
         console.Register("map", "Warps to a level.", "map <MAP##>", MapCommand, Cheat | InLevel, aliases: ["warp"],
             complete: (_, i) => i == 0 ? engine.GetGameInfo().Maps.Keys : []);
         console.Register("exitlevel", "Completes the current level.", "exitlevel",
-            _ => session.playstate = PlayState.Completed, Cheat | InLevel);
+            _ => session.PlayState = PlayState.Completed, Cheat | InLevel);
         console.Register("tp", "Teleports to a tile.", "tp <tilex> <tiley> [angle]", TeleportCommand, Cheat | InLevel);
         console.Register("killall", "Kills every enemy on the level.", "killall", KillAllCommand, Cheat | InLevel);
         console.Register("diag", "Makes a wall tile (default: the one you face) a 45 degree wall, named by its solid corner.",
@@ -72,9 +72,9 @@ internal sealed class CheatCommands(
     internal void GodCommand(string[] args)
     {
         // 0 = off, 1 = on, 2 = on without the damage flash (ApplyDamageToPlayer)
-        session.godmode = (byte)(args.Length > 0 ? ParseInt(args[0], 0, 2) : session.godmode == 0 ? 1 : 0);
+        session.GodMode = (byte)(args.Length > 0 ? ParseInt(args[0], 0, 2) : session.GodMode == 0 ? 1 : 0);
 
-        console.Print(session.godmode switch
+        console.Print(session.GodMode switch
         {
             0 => "God mode OFF",
             1 => "God mode ON",
@@ -84,8 +84,8 @@ internal sealed class CheatCommands(
 
     internal void NoclipCommand(string[] args)
     {
-        session.noclip = (byte)(Toggle(args, session.noclip != 0) ? 1 : 0);
-        console.Print(session.noclip != 0 ? "No clipping ON" : "No clipping OFF");
+        session.NoClip = (byte)(Toggle(args, session.NoClip != 0) ? 1 : 0);
+        console.Print(session.NoClip != 0 ? "No clipping ON" : "No clipping OFF");
     }
 
     internal void PitchCommand(string[] args)
@@ -95,9 +95,9 @@ internal sealed class CheatCommands(
         {
             if (!double.TryParse(args[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double degrees))
                 throw new ArgumentException("usage: pitch [degrees]");
-            session.playerstate.Pitch = Math.Clamp(degrees, -max, max);
+            session.PlayerState.Pitch = Math.Clamp(degrees, -max, max);
         }
-        console.Print($"Pitch is {session.playerstate.Pitch:0.#} degrees (up to {max:0.#} either way)");
+        console.Print($"Pitch is {session.PlayerState.Pitch:0.#} degrees (up to {max:0.#} either way)");
     }
 
     internal void EyeHeightCommand(string[] args)
@@ -108,7 +108,7 @@ internal sealed class CheatCommands(
                 throw new ArgumentException($"usage: eyeheight [{GameConstants.MinEye}-{GameConstants.MaxEye}]");
             hooks.SetEyeHeight(z);
         }
-        console.Print($"Eye height is {session.playerstate.EyeZ} ({GameConstants.MinEye}-{GameConstants.MaxEye}, 64 a story, {GameConstants.EyeDefault} standing)");
+        console.Print($"Eye height is {session.PlayerState.EyeZ} ({GameConstants.MinEye}-{GameConstants.MaxEye}, 64 a story, {GameConstants.EyeDefault} standing)");
     }
 
     internal void PlayerClassCommand(string[] args)
@@ -121,8 +121,8 @@ internal sealed class CheatCommands(
                 ?? throw new ArgumentException($"no player class {args[0]}; there's {string.Join(", ", classes)}"));
         }
 
-        if (session.ingame)
-            console.Print($"Playing as {session.playerstate.playerclass}");
+        if (session.InGame)
+            console.Print($"Playing as {session.PlayerState.PlayerClass}");
         console.Print($"New games are played as {hooks.NewGamePlayerClass() ?? classRules.DefaultPlayerClass}");
         console.Print($"Classes: {string.Join(", ", classes)}");
     }
@@ -146,12 +146,12 @@ internal sealed class CheatCommands(
 
             case "health":
                 stats.HealSelf(amount ?? classRules.MaxHealth);
-                console.Print($"Health is {session.playerstate.health}");
+                console.Print($"Health is {session.PlayerState.Health}");
                 break;
 
             case "points":
                 stats.GivePoints(amount ?? 100000);
-                console.Print($"Score is {session.playerstate.score}");
+                console.Print($"Score is {session.PlayerState.Score}");
                 break;
 
             case "keys":
@@ -190,7 +190,7 @@ internal sealed class CheatCommands(
         if (inventory.FindClass(item, "BasicArmor") != null)
         {
             stats.TryGiveArmor(item);
-            console.Print($"Armor is {session.playerstate.armor} ({session.playerstate.armorpercent}%)");
+            console.Print($"Armor is {session.PlayerState.Armor} ({session.PlayerState.ArmorPercent}%)");
         }
         else if (inventory.FindClass(item, "Weapon") != null)
         {
@@ -225,8 +225,8 @@ internal sealed class CheatCommands(
         var map = maps.Keys.FirstOrDefault(k => string.Equals(k, args[0], StringComparison.OrdinalIgnoreCase))
             ?? throw new ArgumentException($"no map \"{args[0]}\"; type \"maps\" for a list");
 
-        session.gamestate.mapon = map;
-        session.playstate = PlayState.Warped;
+        session.GameState.MapOn = map;
+        session.PlayState = PlayState.Warped;
     }
 
     internal void TeleportCommand(string[] args)
@@ -246,7 +246,7 @@ internal sealed class CheatCommands(
 
     /// <summary>
     /// Moves the player to a tile, facing <paramref name="angle"/> (degrees, 0 east) when given.
-    /// Only onto open floor: a solid tile, a door or a blocking object would trap the player, and
+    /// Only onto open floor: a solid tile, a DoorNumber or a blocking object would trap the player, and
     /// an area number is needed for the sight/sound area bookkeeping.
     /// </summary>
     internal bool TryTeleportPlayer(int x, int y, int? angle, out string problem)
@@ -264,10 +264,10 @@ internal sealed class CheatCommands(
             return false;
         }
 
-        session.player.SetPosition(x, y);
-        session.player.AreaNumber = (byte)(mapManager.MapSpot(x, y, 0) - mapManager.Floors.AreaTile);
+        session.Player.SetPosition(x, y);
+        session.Player.AreaNumber = (byte)(mapManager.MapSpot(x, y, 0) - mapManager.Floors.AreaTile);
         if (angle is { } degrees)
-            session.player.Angle = (short)(((degrees % GameConstants.Angles) + GameConstants.Angles) % GameConstants.Angles);
+            session.Player.Angle = (short)(((degrees % GameConstants.Angles) + GameConstants.Angles) % GameConstants.Angles);
         doors.ConnectAreas();
         return true;
     }
@@ -300,7 +300,7 @@ internal sealed class CheatCommands(
             ?? throw new ArgumentException($"no actor class named {args[0]}");
 
         // Facing back at the player by default, so a panel is seen from its front.
-        int angle = args.Length > 1 ? ParseInt(args[1], 0, 359) : PlayerMovement.FacingDir(session.player.Angle) switch
+        int angle = args.Length > 1 ? ParseInt(args[1], 0, 359) : PlayerMovement.FacingDir(session.Player.Angle) switch
         {
             ControlDir.East => 180,
             ControlDir.North => 270,
@@ -338,6 +338,6 @@ internal sealed class CheatCommands(
     internal void HurtCommand(string[] args)
     {
         stats.TakeDamage(args.Length > 0 ? ParseInt(args[0], 1, 1000) : 16, null!);
-        console.Print($"Health is {session.playerstate.health}, armor {session.playerstate.armor} ({session.playerstate.armorpercent}%)");
+        console.Print($"Health is {session.PlayerState.Health}, armor {session.PlayerState.Armor} ({session.PlayerState.ArmorPercent}%)");
     }
 }

@@ -13,7 +13,7 @@ public class HubActionsTests
     [SetUp]
     public void Make()
     {
-        _session = new GameSession { tics = 10 };
+        _session = new GameSession { Tics = 10 };
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
             tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
@@ -44,7 +44,7 @@ public class HubActionsTests
 
         // Assert
         Assert.That(blake.X, Is.EqualTo(x + 30000));
-        Assert.That(_session.playstate, Is.EqualTo(PlayState.StillPlaying));
+        Assert.That(_session.PlayState, Is.EqualTo(PlayState.StillPlaying));
     }
 
     [Test]
@@ -56,13 +56,13 @@ public class HubActionsTests
         _actions.ThinkVictoryRun(blake);
 
         Assert.That(blake.TileX, Is.EqualTo(16));
-        Assert.That(_session.playstate, Is.EqualTo(PlayState.Victorious));
+        Assert.That(_session.PlayState, Is.EqualTo(PlayState.Victorious));
     }
 
     [Test]
     public void A_Wall_In_The_Way_Ends_The_Run_There()
     {
-        // Arrange: a wall in the next tile east
+        // Arrange: a WallId in the next tile east
         var blake = Runner();
         blake.X += Tile / 2 - 1;
         _map.tilemap[11, 10] = 1;
@@ -73,13 +73,13 @@ public class HubActionsTests
 
         // Assert: it stays put, and the cluster is won
         Assert.That(blake.X, Is.EqualTo(x));
-        Assert.That(_session.playstate, Is.EqualTo(PlayState.Victorious));
+        Assert.That(_session.PlayState, Is.EqualTo(PlayState.Victorious));
     }
 
     [Test]
     public void Starting_Inside_A_Wall_It_Runs_On_Out()
     {
-        // Behind the player can be inside a wall: only one it runs into stops it
+        // Behind the player can be inside a WallId: only one it runs into stops it
         _map.tilemap[10, 10] = 1;
         _map.tilemap[11, 10] = 1;
         var blake = Runner();
@@ -88,6 +88,6 @@ public class HubActionsTests
         _actions.ThinkVictoryRun(blake);
 
         Assert.That(blake.X, Is.GreaterThan(x));
-        Assert.That(_session.playstate, Is.EqualTo(PlayState.StillPlaying));
+        Assert.That(_session.PlayState, Is.EqualTo(PlayState.StillPlaying));
     }
 }

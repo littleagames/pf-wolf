@@ -47,9 +47,9 @@ internal sealed class PlayerActions(
         }
 
         var keepPosition = args.Skip(1).Any(a => a.Equals("keep-position", StringComparison.OrdinalIgnoreCase));
-        hooks.SetPendingMapChange(new PendingMapChange(map, keepPosition, session.player.X, session.player.Y, session.player.Angle));
-        session.gamestate.mapon = map;
-        session.playstate = PlayState.Warped;
+        hooks.SetPendingMapChange(new PendingMapChange(map, keepPosition, session.Player.X, session.Player.Y, session.Player.Angle));
+        session.GameState.MapOn = map;
+        session.PlayState = PlayState.Warped;
     }
 
     internal void GiveInventoryAction(Entities.Actors.Actor actor, string[] args)

@@ -192,7 +192,7 @@ public class StatusBarElement
 
     /// <summary>
     /// radar: its colors (palette indices, color names or #RRGGBB) by what's there: unmapped,
-    /// floor, door, locked, player, key, enemy. weapon-slots: current (the weapon in hand's
+    /// floor, DoorNumber, locked, player, key, enemy. weapon-slots: current (the weapon in hand's
     /// slot), held (a slot with a weapon held) and empty.
     /// </summary>
     public Dictionary<string, string> Colors { get; set; } = new(StringComparer.OrdinalIgnoreCase);

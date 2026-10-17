@@ -68,7 +68,7 @@ public class ActorLightsTests
     [Test]
     public void A_Wall_Is_Lit_But_Nothing_Behind_It()
     {
-        // Arrange: a wall two tiles east
+        // Arrange: a WallId two tiles east
         Dim();
         _map.tilemap[12, 10] = 1;
         Lamp(10, 10);
@@ -78,17 +78,17 @@ public class ActorLightsTests
 
         // Assert
         Assert.That(AddedAt(11, 10), Is.GreaterThan(0));
-        Assert.That(AddedAt(12, 10), Is.Zero);          // a solid wall's tile isn't entered
+        Assert.That(AddedAt(12, 10), Is.Zero);          // a solid WallId's tile isn't entered
         Assert.That(AddedAt(13, 10), Is.Zero);
     }
 
     [Test]
     public void A_Shut_Door_Is_Lit_But_Stops_The_Light_And_An_Open_One_Doesnt()
     {
-        // Arrange: door 0 a tile east
+        // Arrange: DoorNumber 0 a tile east
         Dim();
         _map.tilemap[11, 10] = (ushort)(GameConstants.BitDoor | 0);
-        _doors.doorobjlist[0] = new DoorObject { tilex = 11, tiley = 10, action = DoorAction.Closed };
+        _doors.DoorObjList[0] = new DoorObject { TileX = 11, TileY = 10, Action = DoorAction.Closed };
         Lamp(10, 10);
 
         // Act / Assert
@@ -96,7 +96,7 @@ public class ActorLightsTests
         Assert.That(AddedAt(11, 10), Is.GreaterThan(0));
         Assert.That(AddedAt(12, 10), Is.Zero);
 
-        _doors.doorobjlist[0].action = DoorAction.Open;
+        _doors.DoorObjList[0].Action = DoorAction.Open;
         _lights.CastActorLights();
         Assert.That(AddedAt(12, 10), Is.GreaterThan(0));
     }

@@ -33,20 +33,20 @@ public class DeathmatchTests
         {
             Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session);
             // Two players, acting as the second: the status bar is only the local player's
-            Session.players.Add(new Entities.PlayerState { Number = 1 });
-            foreach (var p in Session.players)
+            Session.Players.Add(new Entities.PlayerState { Number = 1 });
+            foreach (var p in Session.Players)
                 p.Pawn = new PlayerPawn { State = p };
             Session.ActingChanged = p => Inventory.SetHolder(p.Items);
             Session.SetGameMode(GameMode.Deathmatch);
-            Session.SetActing(Session.players[1]);
+            Session.SetActing(Session.Players[1]);
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
             Deathmatch = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((_, _) => true, () => { }));
         }
 
-        public Entities.PlayerState First => Session.players[0];
-        public Entities.PlayerState Second => Session.players[1];
+        public Entities.PlayerState First => Session.Players[0];
+        public Entities.PlayerState Second => Session.Players[1];
     }
 
     [Test]
@@ -87,18 +87,18 @@ public class DeathmatchTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Deathmatch.netrules = rig.Deathmatch.netrules with { ScoreLimit = 2 };
+        rig.Deathmatch.NetRules = rig.Deathmatch.NetRules with { ScoreLimit = 2 };
 
         // Act / Assert: the second frag ends it
         for (int i = 0; i < 2; i++)
             rig.Deathmatch.CountFrag(rig.Second, rig.First.Pawn);
-        Assert.That(rig.Deathmatch.matchover, Is.True);
-        Assert.That(rig.Session.playstate, Is.EqualTo(PlayState.Abort));
+        Assert.That(rig.Deathmatch.MatchOver, Is.True);
+        Assert.That(rig.Session.PlayState, Is.EqualTo(PlayState.Abort));
 
         // and another doesn't end it again
-        rig.Session.playstate = PlayState.StillPlaying;
+        rig.Session.PlayState = PlayState.StillPlaying;
         rig.Deathmatch.CountFrag(rig.Second, rig.First.Pawn);
-        Assert.That(rig.Session.playstate, Is.EqualTo(PlayState.StillPlaying));
+        Assert.That(rig.Session.PlayState, Is.EqualTo(PlayState.StillPlaying));
     }
 
     [Test]
@@ -106,15 +106,15 @@ public class DeathmatchTests
     {
         // Arrange: a minute
         var rig = new Rig();
-        rig.Deathmatch.netrules = rig.Deathmatch.netrules with { TimeLimitMinutes = 1 };
+        rig.Deathmatch.NetRules = rig.Deathmatch.NetRules with { TimeLimitMinutes = 1 };
 
         // Act / Assert
-        rig.Session.gamestate.TimeCount = 60 * 70 - 1;
+        rig.Session.GameState.TimeCount = 60 * 70 - 1;
         rig.Deathmatch.TickDeathmatch();
-        Assert.That(rig.Deathmatch.matchover, Is.False);
-        rig.Session.gamestate.TimeCount = 60 * 70;
+        Assert.That(rig.Deathmatch.MatchOver, Is.False);
+        rig.Session.GameState.TimeCount = 60 * 70;
         rig.Deathmatch.TickDeathmatch();
-        Assert.That(rig.Deathmatch.matchover, Is.True);
+        Assert.That(rig.Deathmatch.MatchOver, Is.True);
     }
 
     [Test]
@@ -122,7 +122,7 @@ public class DeathmatchTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Session.gamestate.TimeCount = 100;
+        rig.Session.GameState.TimeCount = 100;
         var medikit = new CustomInventory { Name = "Medikit" };
         medikit.SetPosition(12, 34);
 
@@ -130,7 +130,7 @@ public class DeathmatchTests
         rig.Deathmatch.QueueItemRespawn(medikit);
 
         // Assert
-        Assert.That(rig.Deathmatch.itemrespawns, Is.EqualTo(new[] { new ItemRespawn("Medikit", 12, 34, 100 + Deathmatch.ItemRespawnTics) }));
+        Assert.That(rig.Deathmatch.ItemRespawns, Is.EqualTo(new[] { new ItemRespawn("Medikit", 12, 34, 100 + Deathmatch.ItemRespawnTics) }));
     }
 
     [Test]
@@ -138,14 +138,14 @@ public class DeathmatchTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Deathmatch.itemrespawns.Add(new ItemRespawn("Medikit", 1, 1, 500));
-        rig.Session.gamestate.TimeCount = 499;
+        rig.Deathmatch.ItemRespawns.Add(new ItemRespawn("Medikit", 1, 1, 500));
+        rig.Session.GameState.TimeCount = 499;
 
         // Act
         rig.Deathmatch.TickDeathmatch();
 
         // Assert
-        Assert.That(rig.Deathmatch.itemrespawns, Has.Count.EqualTo(1));
+        Assert.That(rig.Deathmatch.ItemRespawns, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -153,14 +153,14 @@ public class DeathmatchTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Deathmatch.itemrespawns.Add(new ItemRespawn("Medikit", 1, 1, 500));
+        rig.Deathmatch.ItemRespawns.Add(new ItemRespawn("Medikit", 1, 1, 500));
 
         // Act / Assert
         rig.Deathmatch.DeathmatchLevelSetup();
-        Assert.That(rig.Deathmatch.itemrespawns, Is.Empty);
+        Assert.That(rig.Deathmatch.ItemRespawns, Is.Empty);
         Assert.That(rig.Map.NoMonsters, Is.True);
 
-        rig.Deathmatch.netrules = rig.Deathmatch.netrules with { Monsters = true };
+        rig.Deathmatch.NetRules = rig.Deathmatch.NetRules with { Monsters = true };
         rig.Deathmatch.DeathmatchLevelSetup();
         Assert.That(rig.Map.NoMonsters, Is.False);
     }
@@ -186,8 +186,8 @@ public class ScoreboardTests
     private static (Scoreboard Board, GameSession Session) Board()
     {
         var session = new GameSession();
-        session.players.Add(new Entities.PlayerState { Number = 1 });
-        session.players.Add(new Entities.PlayerState { Number = 2 });
+        session.Players.Add(new Entities.PlayerState { Number = 1 });
+        session.Players.Add(new Entities.PlayerState { Number = 2 });
         return (new Scoreboard(null!, null!, null!, null!, session, () => { }), session);
     }
 
@@ -197,7 +197,7 @@ public class ScoreboardTests
         // Arrange
         var (board, session) = Board();
         session.SetGameMode(GameMode.Deathmatch);
-        (session.players[0].Frags, session.players[1].Frags, session.players[2].Frags) = (3, 5, 5);
+        (session.Players[0].Frags, session.Players[1].Frags, session.Players[2].Frags) = (3, 5, 5);
 
         // Act / Assert
         Assert.That(board.RankedPlayers().Select(p => p.Number), Is.EqualTo(new[] { 1, 2, 0 }));
@@ -209,8 +209,8 @@ public class ScoreboardTests
         // Arrange
         var (board, session) = Board();
         session.SetGameMode(GameMode.Coop);
-        (session.players[0].score, session.players[1].score, session.players[2].score) = (500, 100, 900);
-        session.players[2].Gone = true;
+        (session.Players[0].Score, session.Players[1].Score, session.Players[2].Score) = (500, 100, 900);
+        session.Players[2].Gone = true;
 
         // Act / Assert
         Assert.That(board.RankedPlayers().Select(p => p.Number), Is.EqualTo(new[] { 0, 1 }));

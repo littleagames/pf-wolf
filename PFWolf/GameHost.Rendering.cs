@@ -4,7 +4,7 @@ using PFWolf.Entities.Actors;
 
 namespace PFWolf;
 
-// GameHost's rendering wiring: the 3D view, sprites, lighting, weather, wall sprites, the camera and what players see
+// GameHost's rendering wiring: the 3D view, sprites, lighting, weather, WallId sprites, the camera and what players see
 internal static partial class GameHost
 {
     // ==== WL_DRAW ================================================================================
@@ -50,8 +50,8 @@ internal static partial class GameHost
     = Eye height
     =
     = How high above the floor the view is, in texels (64 a story). Vanilla's eye is half a
-    = story up. It stays under one story: wall tops are never drawn, so a view over a one
-    = story wall would show the floor behind it through it.
+    = story up. It stays under one story: WallId tops are never drawn, so a view over a one
+    = story WallId would show the floor behind it through it.
     =
     ====================
     */
@@ -67,7 +67,7 @@ internal static partial class GameHost
     static bool IsArch(int tilex, int tiley) => wallPosts.IsArch(tilex, tiley);
     static int FloorRow(int half) => wallPosts.FloorRow(half);
 
-    // What the trace does when it hits a wall, door or diagonal (Rendering/WallHits.cs)
+    // What the trace does when it hits a WallId, DoorNumber or diagonal (Rendering/WallHits.cs)
     static WallHits wallHits = null!;       // made in InitServices
 
     static WallHits MakeWallHits() => new(_assetManager, _mapManager, doors, pushWalls, wallPosts, render, session);
@@ -126,7 +126,7 @@ internal static partial class GameHost
 
     static void UpdateViewQuake()
     {
-        var mapon = session.gamestate.mapon;
+        var mapon = session.GameState.MapOn;
         if (mapon != quakeMap)
         {
             viewQuake.Reset();          // a new level starts still
@@ -135,7 +135,7 @@ internal static partial class GameHost
         int rumble = mapon != null && _gameEngineManager.GetGameInfo().Maps.TryGetValue(mapon, out var map) ? map.Shake : 0;
         // a scope's zoom magnifies the view: its focal length that many times as long
         long zoom = (long)(GameConstants.FocalLength * (weaponZoom.Magnification() - 1));
-        viewSetup.SetFocalExcursion(viewQuake.Update((int)session.tics, rumble) + zoom);
+        viewSetup.SetFocalExcursion(viewQuake.Update((int)session.Tics, rumble) + zoom);
     }
 
     /// <summary>A_Quake(min[, max]): shakes the view, at a power (0-200) rolled from min to max (Midnight Assault's blasts)</summary>
@@ -210,7 +210,7 @@ internal static partial class GameHost
         wallSpriteBlocking.WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player);
     internal static bool WallSpriteBlocksLine(long x1, long y1, long x2, long y2) => wallSpriteBlocking.WallSpriteBlocksLine(x1, y1, x2, y2);
 
-    // Drawing wall sprites (Rendering/WallSpriteDrawing.cs)
+    // Drawing WallId sprites (Rendering/WallSpriteDrawing.cs)
     static WallSpriteDrawing wallSpriteDrawing = null!;     // made in InitServices
 
     static WallSpriteDrawing MakeWallSpriteDrawing() => new(_assetManager, _mapManager, lighting, render, spriteScaler, FloorRow);

@@ -34,7 +34,7 @@ internal sealed class Pickups(
 {
     internal void GetBonus(Inventory builtActor)
     {
-        if ((session.playstate == PlayState.Died))
+        if ((session.PlayState == PlayState.Died))
             return;
 
         //if (string.IsNullOrWhiteSpace(check.item_class))
@@ -53,7 +53,7 @@ internal sealed class Pickups(
             return;
 
         // Deathmatch: a weapon stays where it is, so it's only for a player without it yet
-        if (session.gamemode.KeepsItems() && builtActor is Weapon weaponPickup && hooks.HasWeaponFrom(weaponPickup))
+        if (session.GameMode.KeepsItems() && builtActor is Weapon weaponPickup && hooks.HasWeaponFrom(weaponPickup))
             return;
 
         // An item the player can't take (health at 100, a key already held) stays on the
@@ -66,7 +66,7 @@ internal sealed class Pickups(
         }
 
         if (builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
-            session.gamestate.treasurecount++;
+            session.GameState.TreasureCount++;
 
         builtActor.RunState("Pickup");
 
@@ -91,12 +91,12 @@ internal sealed class Pickups(
 
         // Deathmatch (Gameplay/Deathmatch.cs): a weapon stays for everyone else, and anything
         // else comes back a while after it's taken
-        if (session.gamemode.KeepsItems() && builtActor is Weapon)
+        if (session.GameMode.KeepsItems() && builtActor is Weapon)
             return;
-        if (session.gamemode.KeepsItems() && hooks.ItemRespawn())
+        if (session.GameMode.KeepsItems() && hooks.ItemRespawn())
             hooks.QueueItemRespawn(builtActor);
 
-        //check.shapenum = "";                   // remove from list
+        //check.ShapeNum = "";                   // remove from list
         map.RemoveActor(builtActor);
     }
 }

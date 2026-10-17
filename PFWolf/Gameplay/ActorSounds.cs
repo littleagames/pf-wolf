@@ -24,7 +24,7 @@ internal sealed class ActorSounds(
     {
         var sounds = ob.PropertyStrings(key);
         if (sounds.Count > 0)
-            playSoundAt(sounds[sounds.Count == 1 ? 0 : session.random.RndT() % sounds.Count], ob);
+            playSoundAt(sounds[sounds.Count == 1 ? 0 : session.Random.RndT() % sounds.Count], ob);
     }
 
     // A_ActiveSound: the actor's "activesound" (Mecha Hitler's stomp), only where the player can
@@ -32,7 +32,7 @@ internal sealed class ActorSounds(
     internal void ActiveSound(Entities.Actors.Actor ob)
     {
         if (ob.Properties.TryGetValue("activesound", out var sound) && sound is string soundName
-            && (ob.AreaNumber >= map.Floors.NumAreas || session.areas.areabyplayer[ob.AreaNumber] != 0))
+            && (ob.AreaNumber >= map.Floors.NumAreas || session.Areas.AreaByPlayer[ob.AreaNumber] != 0))
             playSoundAt(soundName, ob);
     }
 

@@ -80,18 +80,18 @@ internal sealed class FrameRefresh(
             LastTimeCount = (int)GameEngineManager.GetTimeCount();    // if the game was paused a LONG time
 
         uint curtime = SDL.SDL_GetTicks();
-        session.tics = (uint)((curtime * 7) / 100 - LastTimeCount); // TODO: Rounding?
-        if (session.tics == 0)
+        session.Tics = (uint)((curtime * 7) / 100 - LastTimeCount); // TODO: Rounding?
+        if (session.Tics == 0)
         {
             // wait until end of current tic
             GameEngineManager.DelayMs((uint)(((LastTimeCount + 1) * 100) / 7 - curtime)); // TODO: Rounding error?
-            session.tics = 1;
+            session.Tics = 1;
         }
 
-        LastTimeCount += (int)session.tics;
+        LastTimeCount += (int)session.Tics;
 
-        if (session.tics > GameConstants.MaxTics)
-            session.tics = GameConstants.MaxTics;
+        if (session.Tics > GameConstants.MaxTics)
+            session.Tics = GameConstants.MaxTics;
     }
 
     /*
@@ -122,7 +122,7 @@ internal sealed class FrameRefresh(
 
     internal void Setup3DView()
     {
-        var camera = session.camera;
+        var camera = session.Camera;
         render.ViewAngle = camera.Angle;
         render.MidAngle = (short)(render.ViewAngle * (GameConstants.FineAngles / GameConstants.Angles));
 
@@ -147,7 +147,7 @@ internal sealed class FrameRefresh(
 
     internal void ThreeDRefresh()
     {
-        var camera = session.camera;
+        var camera = session.Camera;
 
         // Create a Span<T> from the multidimensional array's data reference
         Span<bool> data = MemoryMarshal.CreateSpan(
@@ -175,7 +175,7 @@ internal sealed class FrameRefresh(
         Setup3DView();
         lighting.UpdateLightGrid();
         actorLights.CastActorLights();
-        map.AnimateFlats(session.gamestate.TimeCount);     // animated floors and ceilings, on the level's clock as walls are
+        map.AnimateFlats(session.GameState.TimeCount);     // animated floors and ceilings, on the level's clock as walls are
 
         //
         // follow the walls from there to the right, drawing as we go
@@ -213,10 +213,10 @@ internal sealed class FrameRefresh(
         // show screen and time last cycle
         //
 
-        if (session.fizzlein)
+        if (session.FizzleIn)
         {
             video.Transition(hooks.LevelFadeStyle(), 0, 0, video.screenWidth, video.screenHeight, (uint)hooks.LevelFadeTics());
-            session.fizzlein = false;
+            session.FizzleIn = false;
 
             LastTimeCount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count
         }
@@ -232,7 +232,7 @@ internal sealed class FrameRefresh(
 
             if (FpsCounter)
             {
-                video.Bar(0, 0, 40, 10, session.bordercol);
+                video.Bar(0, 0, 40, 10, session.BorderCol);
                 graphics.DrawText(4, 1, $"{Fps} fps", new Fonts.TextStyle(UiFonts.SmallFont, "Grey", "VIEWCOLOR"));
             }
 
@@ -250,7 +250,7 @@ internal sealed class FrameRefresh(
         if (FpsCounter)
         {
             FpsFrames++;
-            FpsTime += (int)session.tics;
+            FpsTime += (int)session.Tics;
 
             if (FpsTime > 35)
             {

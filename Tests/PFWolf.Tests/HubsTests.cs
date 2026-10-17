@@ -8,14 +8,14 @@ public class HubsTests
     private static Hubs Played()
     {
         var hubs = Fresh();
-        hubs.hubLevels["MAP02"] = [1, 2, 3];
-        hubs.visitedMaps.UnionWith(["MAP01", "MAP02"]);
-        hubs.unlockedMaps.Add("MAP05");
-        hubs.floorOverheads["MAP01"] = [9, 9];
-        hubs.floorScores["MAP01"] = 250;
-        hubs.levelMap = "MAP02";
-        hubs.levelStart = [7, 7, 7];
-        hubs.informantTotal = 4;
+        hubs.HubLevels["MAP02"] = [1, 2, 3];
+        hubs.VisitedMaps.UnionWith(["MAP01", "MAP02"]);
+        hubs.UnlockedMaps.Add("MAP05");
+        hubs.FloorOverheads["MAP01"] = [9, 9];
+        hubs.FloorScores["MAP01"] = 250;
+        hubs.LevelMap = "MAP02";
+        hubs.LevelStart = [7, 7, 7];
+        hubs.InformantTotal = 4;
         return hubs;
     }
 
@@ -65,9 +65,9 @@ public class HubsTests
         hubs.RestoreHubState(state);
 
         // Assert
-        Assert.That(hubs.hubLevels.Keys, Is.EquivalentTo(new[] { "MAP02" }));
-        Assert.That(hubs.visitedMaps, Is.EquivalentTo(new[] { "MAP01", "MAP02" }));
-        Assert.That((hubs.levelMap, hubs.informantTotal), Is.EqualTo(("MAP02", 4)));
+        Assert.That(hubs.HubLevels.Keys, Is.EquivalentTo(new[] { "MAP02" }));
+        Assert.That(hubs.VisitedMaps, Is.EquivalentTo(new[] { "MAP01", "MAP02" }));
+        Assert.That((hubs.LevelMap, hubs.InformantTotal), Is.EqualTo(("MAP02", 4)));
     }
 
     [Test]
@@ -75,14 +75,14 @@ public class HubsTests
     {
         // Arrange: an older save, before the level map was kept
         var session = new GameSession();
-        session.gamestate.mapon = "MAP07";
+        session.GameState.MapOn = "MAP07";
         var hubs = Fresh(session);
 
         // Act
         hubs.RestoreHubState(RoundTrip(Fresh()));
 
         // Assert
-        Assert.That(hubs.levelMap, Is.EqualTo("MAP07"));
+        Assert.That(hubs.LevelMap, Is.EqualTo("MAP07"));
     }
 
     [Test]
@@ -95,13 +95,13 @@ public class HubsTests
         hubs.ResetHubs();
 
         // Assert
-        Assert.That(hubs.hubLevels, Is.Empty);
-        Assert.That(hubs.visitedMaps, Is.Empty);
-        Assert.That(hubs.unlockedMaps, Is.Empty);
-        Assert.That(hubs.floorOverheads, Is.Empty);
-        Assert.That(hubs.floorScores, Is.Empty);
-        Assert.That(hubs.levelMap, Is.Null);
-        Assert.That(hubs.levelStart, Is.Null);
+        Assert.That(hubs.HubLevels, Is.Empty);
+        Assert.That(hubs.VisitedMaps, Is.Empty);
+        Assert.That(hubs.UnlockedMaps, Is.Empty);
+        Assert.That(hubs.FloorOverheads, Is.Empty);
+        Assert.That(hubs.FloorScores, Is.Empty);
+        Assert.That(hubs.LevelMap, Is.Null);
+        Assert.That(hubs.LevelStart, Is.Null);
     }
 
     [TestCase("MAP01", true)]       // been on

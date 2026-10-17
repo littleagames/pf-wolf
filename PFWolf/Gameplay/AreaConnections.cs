@@ -6,9 +6,9 @@ namespace PFWolf.Gameplay;
                                 AREA CONNECTIONS
 
 Map tile values 0x6a through 0xa3 (mapdefs floors) are area numbers. Enemies only notice and
-hear the player from areas connected to the player's. Each door counts in areaconnect while
-it's open, joining the two areas it stands between; areabyplayer is worked out afresh from
-the players' areas each time a door opens or closes, or a player crosses into another area.
+hear the player from areas connected to the player's. Each DoorNumber counts in AreaConnect while
+it's open, joining the two areas it stands between; AreaByPlayer is worked out afresh from
+the players' areas each time a DoorNumber opens or closes, or a player crosses into another area.
 
 =============================================================================
 */
@@ -16,15 +16,15 @@ the players' areas each time a door opens or closes, or a player crosses into an
 internal sealed class AreaConnections
 {
     // Sized to the mapdefs area count by Reset (InitDoorList)
-    internal byte[,] areaconnect = new byte[0, 0];
+    internal byte[,] AreaConnect = new byte[0, 0];
 
-    internal byte[] areabyplayer = [];
+    internal byte[] AreaByPlayer = [];
 
     /// <summary>A new level's areas: none connected, none by a player</summary>
     internal void Reset(int numareas)
     {
-        areabyplayer = new byte[numareas];
-        areaconnect = new byte[numareas, numareas];
+        AreaByPlayer = new byte[numareas];
+        AreaConnect = new byte[numareas, numareas];
     }
 
     /*
@@ -42,9 +42,9 @@ internal sealed class AreaConnections
 
         for (i = 0; i < numareas; i++)
         {
-            if (areaconnect[areanumber, i] != 0 && areabyplayer[i] == 0)
+            if (AreaConnect[areanumber, i] != 0 && AreaByPlayer[i] == 0)
             {
-                areabyplayer[i] = 1; // true
+                AreaByPlayer[i] = 1; // true
                 RecursiveConnect(i, numareas);
             }
         }
@@ -53,12 +53,12 @@ internal sealed class AreaConnections
     // With several players, an area is "by the player" when it's connected to any of theirs
     internal void ConnectAreas(IEnumerable<int> playerAreas, int numareas)
     {
-        Array.Fill(areabyplayer, (byte)0);
+        Array.Fill(AreaByPlayer, (byte)0);
         foreach (var area in playerAreas)
         {
             if (area >= numareas)
                 continue;
-            areabyplayer[area] = 1; // true
+            AreaByPlayer[area] = 1; // true
             RecursiveConnect(area, numareas);
         }
     }
@@ -66,11 +66,11 @@ internal sealed class AreaConnections
     /// <summary>Only the players' own areas, as a level starts</summary>
     internal void InitAreas(IEnumerable<int> playerAreas, int numareas)
     {
-        Array.Fill(areabyplayer, (byte)0);
+        Array.Fill(AreaByPlayer, (byte)0);
         foreach (var area in playerAreas)
         {
             if (area < numareas)
-                areabyplayer[area] = 1; // true
+                AreaByPlayer[area] = 1; // true
         }
     }
 }

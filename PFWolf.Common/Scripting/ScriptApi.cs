@@ -163,7 +163,7 @@ public static class ScriptApi
             .Select(word => new ScriptApiEntry(ScriptApiKind.Keyword, word, word, "Lua"))];
 
     /// <summary>
-    /// The switch actions game.trigger runs (mapdefs/wolf3d/walls.yaml describes them at wall
+    /// The switch actions game.trigger runs (mapdefs/wolf3d/walls.yaml describes them at WallId
     /// 21), less those that work on a switch's own tile, which a script hasn't got
     /// </summary>
     public static IReadOnlyList<string> TriggerActions { get; } =

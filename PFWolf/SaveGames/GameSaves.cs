@@ -81,7 +81,7 @@ internal sealed class GameSaves(
     internal SaveInfo CurrentSaveInfo(string path, string name)
     {
         var language = assets.GetText("en-us");
-        var skill = engine.GetGameInfo().Skills.Values.ElementAtOrDefault(session.gamestate.difficulty);
+        var skill = engine.GetGameInfo().Skills.Values.ElementAtOrDefault(session.GameState.Difficulty);
 
         return new SaveInfo
         {
@@ -89,21 +89,21 @@ internal sealed class GameSaves(
             Name = name,
             SavedAt = DateTime.UtcNow,
             GamePack = engine.GamePackId,
-            MapOn = session.gamestate.mapon,
-            MapName = playScreen.GetMapDisplayName(session.gamestate.mapon),
-            Difficulty = session.gamestate.difficulty,
+            MapOn = session.GameState.MapOn,
+            MapName = playScreen.GetMapDisplayName(session.GameState.MapOn),
+            Difficulty = session.GameState.Difficulty,
             SkillName = skill?.Name.ToLanguageText(language) ?? "",
-            LevelTime = session.gamestate.TimeCount,
-            PlayTime = session.gamestate.PlayTime,
-            Score = session.playerstate.score,
-            Lives = session.playerstate.lives,
-            Health = session.playerstate.health,
-            Kills = session.gamestate.killcount,
-            KillTotal = session.gamestate.killtotal,
-            Secrets = session.gamestate.secretcount,
-            SecretTotal = session.gamestate.secrettotal,
-            Treasure = session.gamestate.treasurecount,
-            TreasureTotal = session.gamestate.treasuretotal,
+            LevelTime = session.GameState.TimeCount,
+            PlayTime = session.GameState.PlayTime,
+            Score = session.PlayerState.Score,
+            Lives = session.PlayerState.Lives,
+            Health = session.PlayerState.Health,
+            Kills = session.GameState.KillCount,
+            KillTotal = session.GameState.KillTotal,
+            Secrets = session.GameState.SecretCount,
+            SecretTotal = session.GameState.SecretTotal,
+            Treasure = session.GameState.TreasureCount,
+            TreasureTotal = session.GameState.TreasureTotal,
             Mods = CurrentSavedMods(),
         };
     }
@@ -146,7 +146,7 @@ internal sealed class GameSaves(
     internal bool SaveTheGame(string path, string name, int x, int y)
     {
         // A save holds one player (GameState's stats, one inventory, one pawn)
-        if (session.players.Count > 1)
+        if (session.Players.Count > 1)
         {
             Console.WriteLine($"Couldn't save the game to {path}: games with more than one player can't be saved yet.");
             return false;
@@ -171,7 +171,7 @@ internal sealed class GameSaves(
     internal void WriteSaveBody(BinaryWriter bw, int x, int y)
     {
         DiskFlopAnim(x, y);
-        session.gamestate.Write(bw, session.playerstate);
+        session.GameState.Write(bw, session.PlayerState);
 
         bw.Write(session.LevelRatios.Count);
         foreach (var (map, ratios) in session.LevelRatios)
@@ -195,7 +195,7 @@ internal sealed class GameSaves(
         if (weapon != null)
             Entities.Actors.ActorSnapshot.Capture(weapon).Write(bw);
 
-        bw.Write(session.playerstate.WeaponCharge);
+        bw.Write(session.PlayerState.WeaponCharge);
 
         DiskFlopAnim(x, y);
         hubs.WriteHubState(bw);
@@ -236,7 +236,7 @@ internal sealed class GameSaves(
     }
 
     /// <summary>
-    /// Loads a save over whatever is running. The caller sets <c>loadedgame</c> first, so the
+    /// Loads a save over whatever is running. The caller sets <c>LoadedGame</c> first, so the
     /// level rebuild doesn't re-count kills, treasure and secrets. Returns false, having shown
     /// why and changed nothing, if the save can't be loaded.
     /// </summary>
@@ -255,20 +255,20 @@ internal sealed class GameSaves(
             using var bodyReader = new BinaryReader(new MemoryStream(body));
             data = ReadSaveBody(bodyReader);
 
-            if (!engine.GetGameInfo().Maps.ContainsKey(data.GameState.mapon))
-                throw new InvalidDataException($"Map \"{data.GameState.mapon}\" isn't in this game.");
+            if (!engine.GetGameInfo().Maps.ContainsKey(data.GameState.MapOn))
+                throw new InvalidDataException($"Map \"{data.GameState.MapOn}\" isn't in this game.");
 
-            if (classes.FindPlayerClass(data.Player.playerclass) is not { } playerClass)
-                throw new InvalidDataException($"Player class \"{data.Player.playerclass}\" isn't in this game.");
-            data.Player.playerclass = playerClass;
+            if (classes.FindPlayerClass(data.Player.PlayerClass) is not { } playerClass)
+                throw new InvalidDataException($"Player class \"{data.Player.PlayerClass}\" isn't in this game.");
+            data.Player.PlayerClass = playerClass;
 
-            foreach (var weapon in new[] { data.Player.weapon, data.Player.chosenweapon })
+            foreach (var weapon in new[] { data.Player.Weapon, data.Player.ChosenWeapon })
             {
                 if (weapon != null && inventoryManager.FindClass(weapon, "Weapon") == null)
                     throw new InvalidDataException($"Weapon \"{weapon}\" isn't in this game.");
             }
 
-            var problem = mapManager.CheckLevelState(data.Body.Level, data.GameState.mapon);
+            var problem = mapManager.CheckLevelState(data.Body.Level, data.GameState.MapOn);
             if (problem != null)
                 throw new InvalidDataException(problem);
         }
@@ -292,9 +292,9 @@ internal sealed class GameSaves(
             WarnOtherMods(info!);
 
         DiskFlopAnim(x, y);
-        session.gamestate = data.GameState;
+        session.GameState = data.GameState;
         playersManager.ResetPlayers();         // a save is a single player's game
-        session.playerstate.CopyStatsFrom(data.Player);
+        session.PlayerState.CopyStatsFrom(data.Player);
         session.LevelRatios = data.LevelRatios;
         inventoryManager.Restore(data.Inventory);
 
@@ -307,13 +307,13 @@ internal sealed class GameSaves(
         hubs.RestoreHubState(data.Hubs);
 
         // The weapon picks up where it was (mid-attack, say).
-        session.playerstate.WeaponSprite = null;
+        session.PlayerState.WeaponSprite = null;
         if (weaponInHand.SyncWeaponSprite() is { } sprite && data.Weapon != null
             && string.Equals(data.Weapon.ClassName, sprite.Name, StringComparison.OrdinalIgnoreCase))
         {
             data.Weapon.ApplyTo(sprite);
         }
-        session.playerstate.WeaponCharge = data.WeaponCharge;
+        session.PlayerState.WeaponCharge = data.WeaponCharge;
 
         if (!checksumOk)
         {
@@ -323,8 +323,8 @@ internal sealed class GameSaves(
             input.ClearKeysDown();
             input.Ack();
 
-            session.playerstate.oldscore = session.playerstate.score = 0;
-            session.playerstate.lives = 1;
+            session.PlayerState.OldScore = session.PlayerState.Score = 0;
+            session.PlayerState.Lives = 1;
             stats.GiveStartingInventory();
         }
 
@@ -352,15 +352,15 @@ internal sealed class GameSaves(
         //
         if (quick != 0)
         {
-            session.loadedgame = true;
+            session.LoadedGame = true;
             var loaded = LoadTheGame(QuickSavePath, 0, 0);
-            session.loadedgame = false;
+            session.LoadedGame = false;
             if (!loaded)
                 return 0;
 
             if (settings.viewsize != 21)
                 playScreen.DrawPlayScreen();
-            music.ContinueMusic(session.lastgamemusicoffset);
+            music.ContinueMusic(session.LastGameMusicOffset);
             return 1;
         }
 
@@ -388,14 +388,14 @@ internal sealed class GameSaves(
         CurrentThumbnail: () => video.MakeThumbnail(ThumbnailWidth),
         ListSaves: ListSaveGames,
         NewSavePath: NewSaveGamePath,
-        NewSaveName: () => playScreen.GetMapDisplayName(session.gamestate.mapon),
+        NewSaveName: () => playScreen.GetMapDisplayName(session.GameState.MapOn),
         HasOtherMods: HasOtherMods,
         Load: (path, x, y) =>
         {
-            session.loadedgame = true;
+            session.LoadedGame = true;
             if (LoadTheGame(path, x, y))
                 return true;
-            session.loadedgame = false;
+            session.LoadedGame = false;
             return false;
         },
         Save: SaveTheGame,

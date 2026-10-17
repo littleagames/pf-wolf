@@ -14,7 +14,7 @@ by (Lua game.record(map), and game.onlevelend's result for the level just finish
 A map's record is made when it's finished (its exit, a secret exit or the game won; not dying or
 leaving the game), and each finish only betters it, field by field: the most kills, secrets,
 items and stealth kills (with their totals), the quickest time, under par ever, unseen to the end
-ever, and the most done of each level objective (game-info objectives). A demo playing back
+ever, and the most done of each level objective (game-info MatchObjectives). A demo playing back
 records nothing.
 
 =============================================================================

@@ -19,7 +19,7 @@ public class CheatCommandsTests
         _newClass = null;
         var session = _session = new GameSession();
         var inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        inventory.SetHolder(session.playerstate.Items);
+        inventory.SetHolder(session.PlayerState.Items);
         new CheatCommands(_console, null!, null!, inventory, null!, null!, null!, null!, new PlayerClassRules(null!, inventory, session),
             null!, null!, null!, session,
             new CheatCommandsHooks(() => _newClass, c => _newClass = c, _ => { })).Register();
@@ -29,27 +29,27 @@ public class CheatCommandsTests
     public void God_Toggles_And_Takes_A_Level()
     {
         _console.Execute("god");
-        Assert.That(_session.godmode, Is.EqualTo(1));
+        Assert.That(_session.GodMode, Is.EqualTo(1));
         _console.Execute("god 2");
-        Assert.That(_session.godmode, Is.EqualTo(2));
+        Assert.That(_session.GodMode, Is.EqualTo(2));
         _console.Execute("god");
-        Assert.That(_session.godmode, Is.EqualTo(0));
+        Assert.That(_session.GodMode, Is.EqualTo(0));
     }
 
     [Test]
     public void Noclip_Toggles()
     {
         _console.Execute("noclip");
-        Assert.That((_session.noclip, _console.Scrollback[^1]), Is.EqualTo(((byte)1, "No clipping ON")));
+        Assert.That((_session.NoClip, _console.Scrollback[^1]), Is.EqualTo(((byte)1, "No clipping ON")));
         _console.Execute("noclip");
-        Assert.That(_session.noclip, Is.EqualTo(0));
+        Assert.That(_session.NoClip, Is.EqualTo(0));
     }
 
     [Test]
     public void Exitlevel_Completes_The_Level()
     {
         _console.Execute("exitlevel");
-        Assert.That(_session.playstate, Is.EqualTo(PlayState.Completed));
+        Assert.That(_session.PlayState, Is.EqualTo(PlayState.Completed));
     }
 
     [TestCase("give")]

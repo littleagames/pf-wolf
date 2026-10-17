@@ -15,28 +15,28 @@ internal class HighScore
     /// </summary>
     internal const ushort Won = 0x8000;
 
-    public string name;
-    public int score;
-    public ushort completed, episode;
+    public string Name;
+    public int Score;
+    public ushort Completed, Episode;
 
     /// <summary>The last floor's rating, 0 to 100 (Blake Stone's mission ratio column)</summary>
-    public ushort ratio;
+    public ushort Ratio;
 
     public HighScore()
     {
-        name = "";
+        Name = "";
     }
 
     /// <summary>Wolf3D's own high scores</summary>
     internal static HighScore[] WolfDefaults() =>
     [
-        new HighScore {name = "id software-'92", score = 10000,completed = 1},
-        new HighScore {name = "Adrian Carmack", score = 10000,completed = 1},
-        new HighScore {name = "John Carmack", score = 10000,completed = 1},
-        new HighScore {name = "Kevin Cloud", score = 10000,completed = 1},
-        new HighScore {name = "Tom Hall", score = 10000,completed = 1},
-        new HighScore {name = "John Romero", score = 10000,completed = 1},
-        new HighScore {name = "Jay Wilbur", score = 10000,completed = 1},
+        new HighScore {Name = "id software-'92", Score = 10000,Completed = 1},
+        new HighScore {Name = "Adrian Carmack", Score = 10000,Completed = 1},
+        new HighScore {Name = "John Carmack", Score = 10000,Completed = 1},
+        new HighScore {Name = "Kevin Cloud", Score = 10000,Completed = 1},
+        new HighScore {Name = "Tom Hall", Score = 10000,Completed = 1},
+        new HighScore {Name = "John Romero", Score = 10000,Completed = 1},
+        new HighScore {Name = "Jay Wilbur", Score = 10000,Completed = 1},
     ];
 
     /// <summary>
@@ -55,8 +55,8 @@ internal class HighScore
         {
             var d = i < layout.Defaults.Count ? layout.Defaults[i] : null;
             table[i] = d == null
-                ? (layout.Defaults.Count == 0 && i < scores.Length ? scores[i] : new HighScore { score = 10000, completed = 1 })
-                : new HighScore { name = d.Name, score = d.Score, completed = (ushort)d.Level };
+                ? (layout.Defaults.Count == 0 && i < scores.Length ? scores[i] : new HighScore { Score = 10000, Completed = 1 })
+                : new HighScore { Name = d.Name, Score = d.Score, Completed = (ushort)d.Level };
         }
         return table;
     }
@@ -72,8 +72,8 @@ internal class HighScore
         int n;
         for (i = 0, n = -1; i < scores.Length; i++)
         {
-            if ((myscore.score > scores[i].score)
-                || ((myscore.score == scores[i].score) && (myscore.completed > scores[i].completed)))
+            if ((myscore.Score > scores[i].Score)
+                || ((myscore.Score == scores[i].Score) && (myscore.Completed > scores[i].Completed)))
             {
                 for (j = (ushort)scores.Length; --j > i;)
                     scores[j] = scores[j - 1];
@@ -92,19 +92,19 @@ internal class HighScore
         var nameBytes = br.ReadBytes(MaxHighName + 1);
         if (nameBytes.Length != MaxHighName + 1)
             throw new EndOfStreamException();
-        name = System.Text.Encoding.Latin1.GetString(nameBytes).TrimEnd('\0');
-        score = br.ReadInt32();
-        completed = br.ReadUInt16();
-        episode = br.ReadUInt16();
+        Name = System.Text.Encoding.Latin1.GetString(nameBytes).TrimEnd('\0');
+        Score = br.ReadInt32();
+        Completed = br.ReadUInt16();
+        Episode = br.ReadUInt16();
     }
 
     internal void Write(BinaryWriter bw)
     {
         var nameBytes = new byte[MaxHighName + 1];
-        System.Text.Encoding.Latin1.GetBytes(name, 0, Math.Min(name.Length, MaxHighName), nameBytes, 0);
+        System.Text.Encoding.Latin1.GetBytes(Name, 0, Math.Min(Name.Length, MaxHighName), nameBytes, 0);
         bw.Write(nameBytes);
-        bw.Write(score);
-        bw.Write(completed);
-        bw.Write(episode);
+        bw.Write(Score);
+        bw.Write(Completed);
+        bw.Write(Episode);
     }
 }

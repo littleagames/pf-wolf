@@ -75,15 +75,15 @@ public class LatchingTests
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        _inventory.SetHolder(_session.playerstate.Items);
+        _inventory.SetHolder(_session.PlayerState.Items);
         _inventory.Give("Pistol", 1);
-        _session.playerstate.weapon = _session.playerstate.chosenweapon = "Pistol";
-        _session.playerstate.health = 100;
+        _session.PlayerState.Weapon = _session.PlayerState.ChosenWeapon = "Pistol";
+        _session.PlayerState.Health = 100;
 
         // The player at 10,10, the dog biting from the tile east
-        _pawn = new PlayerPawn { State = _session.playerstate };
+        _pawn = new PlayerPawn { State = _session.PlayerState };
         _pawn.SetPosition(10, 10);
-        _session.playerstate.Pawn = _pawn;
+        _session.PlayerState.Pawn = _pawn;
         _dog = (Monster)_inventory.CreateActor("Dog")!;
         _dog.SetPosition(11, 10);
         _dog.Hitpoints = 1;
@@ -118,12 +118,12 @@ public class LatchingTests
         _latching.LatchOn(_dog, "DogStruggle");
 
         // Assert
-        var playerstate = _session.playerstate;
+        var playerstate = _session.PlayerState;
         Assert.That(_latching.IsLatched, Is.True);
-        Assert.That(playerstate.weapon, Is.EqualTo("DogStruggle"));
+        Assert.That(playerstate.Weapon, Is.EqualTo("DogStruggle"));
         Assert.That(playerstate.LatchFrom, Is.EqualTo("Pistol"));
         Assert.That(playerstate.MoveSlowdown, Is.EqualTo(10));
-        Assert.That(_session.playerinput.IsHeld(ButtonType.Attack), Is.True);
+        Assert.That(_session.PlayerInput.IsHeld(ButtonType.Attack), Is.True);
         Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.Shootable), Is.False);
         Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.NonMark), Is.True);
         Assert.That(_dog.CurrentState!.StateName, Is.EqualTo("Latched"));
@@ -191,9 +191,9 @@ public class LatchingTests
         _latching.LatchRelease(Struggle());
 
         // Assert
-        var playerstate = _session.playerstate;
+        var playerstate = _session.PlayerState;
         Assert.That(_latching.IsLatched, Is.False);
-        Assert.That(playerstate.weapon, Is.EqualTo("Pistol"));
+        Assert.That(playerstate.Weapon, Is.EqualTo("Pistol"));
         Assert.That(_inventory.Has("DogStruggle"), Is.False);
         Assert.That(playerstate.MoveSlowdown, Is.EqualTo(1));
     }
@@ -218,7 +218,7 @@ public class LatchingTests
     {
         // Arrange: latched in a saved game, say, with the player's side of it lost
         _latching.LatchOn(_dog, "DogStruggle");
-        _session.playerstate.Latch = null;
+        _session.PlayerState.Latch = null;
 
         // Act
         _latching.LatchHurt(_dog);
@@ -235,14 +235,14 @@ public class LatchingTests
     {
         // Arrange
         _latching.LatchOn(_dog, "DogStruggle");
-        _session.gamestate.mapon = "NEXTMAP";
+        _session.GameState.MapOn = "NEXTMAP";
 
         // Act
         _latching.Tick();
 
         // Assert
         Assert.That(_latching.IsLatched, Is.False);
-        Assert.That(_session.playerstate.weapon, Is.EqualTo("Pistol"));
+        Assert.That(_session.PlayerState.Weapon, Is.EqualTo("Pistol"));
     }
 
     [Test]
@@ -265,13 +265,13 @@ public class LatchingTests
     {
         // Arrange
         _inventory.Give("DogStruggle", 1);
-        _session.playerstate.weapon = "DogStruggle";
+        _session.PlayerState.Weapon = "DogStruggle";
 
         // Act
         _latching.Tick();
 
         // Assert
         Assert.That(_inventory.Has("DogStruggle"), Is.False);
-        Assert.That(_session.playerstate.weapon, Is.EqualTo("Pistol"));
+        Assert.That(_session.PlayerState.Weapon, Is.EqualTo("Pistol"));
     }
 }

@@ -54,7 +54,7 @@ internal sealed class PlayKeys(
         var language = assets.GetText("en-us");
         ScanCodes scan;
 
-        if (video.screenfaded || session.demoplayback)    // don't do anything with a faded screen
+        if (video.screenfaded || session.DemoPlayback)    // don't do anything with a faded screen
         {
             while (inputManager.TryTakePressedKey(out _)) { }     // nor fire binds for these keys later
             return;
@@ -74,7 +74,7 @@ internal sealed class PlayKeys(
             return;
         }
 
-        if (inputManager.IsKeyDown(ScanCodes.Grave) && !session.demorecord)
+        if (inputManager.IsKeyDown(ScanCodes.Grave) && !session.DemoRecord)
         {
             inputManager.ClearKeysDown();
             inputManager.ClearTextInput();
@@ -103,14 +103,14 @@ internal sealed class PlayKeys(
             if (hooks.HandleAutomapKey(input))        // the automap's own keys, while it's open
                 continue;
 
-            if (!session.demorecord && console.Binds.TryGetValue(input, out var boundCommand))
+            if (!session.DemoRecord && console.Binds.TryGetValue(input, out var boundCommand))
                 console.Execute(boundCommand);
         }
 
         scan = inputManager.GetLastKeyPressed();
 
         // With others: no cheat keys, no pausing and no menus over the game; Esc asks to leave
-        if (session.netgame)
+        if (session.NetGame)
         {
             hooks.NetCheckKeys(scan);
             return;
@@ -121,11 +121,11 @@ internal sealed class PlayKeys(
         //
         if (inputManager.IsKeyDown(ScanCodes.M) && inputManager.IsKeyDown(ScanCodes.L) && inputManager.IsKeyDown(ScanCodes.I))
         {
-            session.playerstate.health = classes.MaxHealth;
+            session.PlayerState.Health = classes.MaxHealth;
             inventory.Give("GoldKey", 1);
             inventory.Give("SilverKey", 1);
-            session.playerstate.score = 0;
-            session.gamestate.TimeCount += (int)42000L;
+            session.PlayerState.Score = 0;
+            session.GameState.TimeCount += (int)42000L;
             // the best weapon there is (the gatling gun)
             if (weapons.AllWeapons().OrderBy(weapons.WeaponSelectionOrder).FirstOrDefault() is { } bestWeapon)
                 weapons.GiveWeapon(bestWeapon);
@@ -228,10 +228,10 @@ internal sealed class PlayKeys(
             video.FadeOut();
             if (settings.viewsize != 21)
                 hooks.DrawPlayScreen();
-            if (!session.startgame && !session.loadedgame)
+            if (!session.GameChosen && !session.LoadedGame)
                 music.ContinueMusic(lastoffs);
-            if (session.loadedgame)
-                session.playstate = PlayState.Abort;
+            if (session.LoadedGame)
+                session.PlayState = PlayState.Abort;
             frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
             inputManager.CenterMouse();
             return;

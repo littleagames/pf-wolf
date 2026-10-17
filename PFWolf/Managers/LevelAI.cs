@@ -5,7 +5,7 @@ namespace PFWolf.Managers;
 
 /// <summary>
 /// What the level does on its own, rather than any one actor (GameHost builds it, for the level loop and setup, the player and the actors):
-/// enemies coming out of wall outlets (mapdefs walls `outlet:`), Goldfire warping in at his spawn
+/// enemies coming out of WallId outlets (mapdefs walls `outlet:`), Goldfire warping in at his spawn
 /// sites (WARPSITE markers), the once-a-level `dropitem.onfloor` drop, and the player talking to
 /// Blake Stone's actors, as bstone has them (3d_act1.cpp, 3d_act2.cpp, 3d_agent.cpp). The
 /// actors themselves are <see cref="Monster"/>s and <see cref="BlakeMonster"/>s.
@@ -64,7 +64,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
 
                                 WALL OUTLETS
 
-    A wall with an `outlet:` (mapdefs walls) lets its actor out onto open floor beside it, in
+    A WallId with an `outlet:` (mapdefs walls) lets its actor out onto open floor beside it, in
     a room that joins the player's: every so many seconds (a 0xFA value on its object-plane tile,
     else its delay), as long as fewer than its max for the skill are about. One comes out where
     the player can see it, or now and then anyway, never within a tile of the player.
@@ -100,7 +100,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         if ((spot & 0xff00) == 0xfa00)
             return 60 * (spot & 0xff);
         int min = outlet.Spec.Delay.ElementAtOrDefault(0), max = Math.Max(outlet.Spec.Delay.ElementAtOrDefault(1), min);
-        return 60 * min + session.random.RndT() * 60 * (max - min) / 256;
+        return 60 * min + session.Random.RndT() * 60 * (max - min) / 256;
     }
 
     // A BlakeMonster that came out of an outlet keeps its tile (SeekX/SeekY, plus one), so each
@@ -114,12 +114,12 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         foreach (var outlet in _outlets)
         {
             var max = outlet.Spec.Max;
-            if (max.Count == 0 || OutletCount(outlet) >= max[Math.Min(session.gamestate.difficulty, max.Count - 1)])
+            if (max.Count == 0 || OutletCount(outlet) >= max[Math.Min(session.GameState.Difficulty, max.Count - 1)])
                 continue;
 
-            if (outlet.Delay > session.tics)
+            if (outlet.Delay > session.Tics)
             {
-                outlet.Delay -= (int)session.tics;
+                outlet.Delay -= (int)session.Tics;
                 continue;
             }
             outlet.Delay = 1;       // try again next tic, unless one comes out
@@ -129,18 +129,18 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
             foreach (var (dx, dy) in new[] { (0, -1), (1, 0), (0, 1), (-1, 0) })
             {
                 int area = _map.AreaAt(outlet.X + dx, outlet.Y + dy);
-                if (area >= 0 && area < _map.Floors.NumAreas && session.areas.areabyplayer[area] != 0)
+                if (area >= 0 && area < _map.Floors.NumAreas && session.Areas.AreaByPlayer[area] != 0)
                 {
                     spot = (outlet.X + dx, outlet.Y + dy);
                     break;
                 }
             }
             if (spot is not { } tile || _map.actorat[tile.X, tile.Y] != null || _map.IsShootableActorAt(tile.X, tile.Y)
-                || Math.Abs(session.player.TileX - tile.X) < 2 && Math.Abs(session.player.TileY - tile.Y) < 2)
+                || Math.Abs(session.Player.TileX - tile.X) < 2 && Math.Abs(session.Player.TileY - tile.Y) < 2)
                 continue;
 
             // Where the player can see it, or now and then anyway
-            if (!PlayerCanSee(tile.X, tile.Y) && session.random.RndT() < 200)
+            if (!PlayerCanSee(tile.X, tile.Y) && session.Random.RndT() < 200)
                 continue;
 
             var spawned = _map.SpawnThing(tile.X, tile.Y, new Assets.MapActorTranslation { Class = outlet.Spec.Class, Angles = -1 }, countKill: false);
@@ -191,7 +191,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
             return 60;
         var range = site.PropertyInts(first ? "warpsite.firstwait" : "warpsite.wait");
         int min = range.ElementAtOrDefault(0), max = Math.Max(range.ElementAtOrDefault(1), min);
-        return 60 * min + session.random.RndT() * 60 * (max - min) / 256;
+        return 60 * min + session.Random.RndT() * 60 * (max - min) / 256;
     }
 
     private void TickWarpSites()
@@ -201,9 +201,9 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         if (_map.GetActors().Any(a => !a.IsRemoved && a.Name == _warpClass))
             return;     // it's about (or still warping out)
 
-        if (_warpWait > session.tics)
+        if (_warpWait > session.Tics)
         {
-            _warpWait -= (int)session.tics;
+            _warpWait -= (int)session.Tics;
             return;
         }
 
@@ -226,7 +226,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
 
         var site = _warpSites[_warpChosen];
         if (_map.IsShootableActorAt(site.TileX, site.TileY)
-            || Math.Abs(session.player.TileX - site.TileX) <= 1 || Math.Abs(session.player.TileY - site.TileY) <= 1)
+            || Math.Abs(session.Player.TileX - site.TileX) <= 1 || Math.Abs(session.Player.TileY - site.TileY) <= 1)
             return;
 
         _map.SpawnThing(site.TileX, site.TileY, new Assets.MapActorTranslation { Class = _warpClass }, countKill: false);
@@ -270,7 +270,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
     {
         if (_talkDelay > 0)
         {
-            _talkDelay = Math.Max(_talkDelay - (int)session.tics, 0);
+            _talkDelay = Math.Max(_talkDelay - (int)session.Tics, 0);
             return false;
         }
 
@@ -282,10 +282,10 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         {
             if (ob.IsRemoved || !ob.HasFlag("TALKATIVE")
                 || (ob.RuntimeFlags & (ObjFlags.Friendly | ObjFlags.Visible)) != (ObjFlags.Friendly | ObjFlags.Visible)
-                || Math.Abs(ob.TileX - session.player.TileX) > 2 || Math.Abs(ob.TileY - session.player.TileY) > 2)
+                || Math.Abs(ob.TileX - session.Player.TileX) > 2 || Math.Abs(ob.TileY - session.Player.TileY) > 2)
                 continue;
 
-            int dist = Math.Min(Math.Abs(session.player.X - ob.X), Math.Abs(session.player.Y - ob.Y));
+            int dist = Math.Min(Math.Abs(session.Player.X - ob.X), Math.Abs(session.Player.Y - ob.Y));
             if (dist >= chosenDist)
                 continue;
 
@@ -295,10 +295,10 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
                 continue;
             }
 
-            var angle = Math.Atan2(session.player.Y - ob.Y, ob.X - session.player.X);
+            var angle = Math.Atan2(session.Player.Y - ob.Y, ob.X - session.Player.X);
             if (angle < 0)
                 angle += Math.PI * 2;
-            int facing = Math.Abs(session.player.Angle - (int)(angle / (Math.PI * 2) * GameConstants.Angles));
+            int facing = Math.Abs(session.Player.Angle - (int)(angle / (Math.PI * 2) * GameConstants.Angles));
             if (Math.Min(facing, GameConstants.Angles - facing) > MaxAngle)
                 continue;
 
@@ -321,7 +321,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
     /// </summary>
     internal bool ShouldWarnKilledInformant()
     {
-        if (_warnedKilledInformant && session.random.RndT() >= 25)
+        if (_warnedKilledInformant && session.Random.RndT() >= 25)
             return false;
         _warnedKilledInformant = true;
         return true;

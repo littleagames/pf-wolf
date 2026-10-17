@@ -22,7 +22,7 @@ public class MissilesTests
     private GameSession _session = null!;
     private Missiles _missiles = null!;
     private List<(string Sound, Entities.Actors.Actor At)> _sounds = null!;
-    private bool _died { get => _session.playstate == PlayState.Died; set => _session.playstate = value ? PlayState.Died : PlayState.StillPlaying; }
+    private bool _died { get => _session.PlayState == PlayState.Died; set => _session.PlayState = value ? PlayState.Died : PlayState.StillPlaying; }
 
     [SetUp]
     public void MakeLevel()
@@ -39,12 +39,12 @@ public class MissilesTests
 
         // Acting as a second player: no damage flash, which only the local player has
         var inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        _session.players.Add(new Entities.PlayerState());
+        _session.Players.Add(new Entities.PlayerState());
         _session.ActingChanged = p => inventory.SetHolder(p.Items);
-        _session.SetActing(_session.players[1]);
-        _session.playerstate.playerclass = "Player";
-        _session.playerstate.health = 100;
-        _session.playerstate.Pawn = new PlayerPawn { State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
+        _session.SetActing(_session.Players[1]);
+        _session.PlayerState.PlayerClass = "Player";
+        _session.PlayerState.Health = 100;
+        _session.PlayerState.Pawn = new PlayerPawn { State = _session.PlayerState, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
 
         var bar = new StatusBarDrawing(null!, null, null!, null!, inventory, null!, null!, null!, _session,
             new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
@@ -92,13 +92,13 @@ public class MissilesTests
     {
         // Arrange
         _map.actorat[1, 1] = new Wall(1);
-        _map.tilemap[2, 1] = 5;                                  // a wall with nothing on actorat (a moving pushwall's)
+        _map.tilemap[2, 1] = 5;                                  // a WallId with nothing on actorat (a moving pushwall's)
         _map.actorat[3, 1] = new Door(0);
         _map.tilemap[3, 1] = (ushort)(GameConstants.BitDoor | 0);
-        _doors.doorobjlist[0] = new DoorObject { action = DoorAction.Closed };
+        _doors.DoorObjList[0] = new DoorObject { Action = DoorAction.Closed };
         _map.actorat[4, 1] = new Door(1);
         _map.tilemap[4, 1] = (ushort)(GameConstants.BitDoor | 1);
-        _doors.doorobjlist[1] = new DoorObject { action = DoorAction.Open };
+        _doors.DoorObjList[1] = new DoorObject { Action = DoorAction.Open };
 
         // Act / Assert
         Assert.That(_missiles.IsSolidForBlast(0, 1), Is.False);
@@ -187,7 +187,7 @@ public class MissilesTests
     public void A_Players_Share_Of_A_Falloff_Blast_Is_Capped(int tileX, int hurt)
     {
         // Arrange
-        var pawn = _session.playerstate.Pawn!;
+        var pawn = _session.PlayerState.Pawn!;
         (pawn.X, pawn.TileX, pawn.TileY) = (tileX * Tile + Tile / 2, (byte)tileX, 10);
         var blast = new Monster { Name = "Rocket", X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10 };
 
@@ -202,7 +202,7 @@ public class MissilesTests
     public void Without_Falloff_A_Blast_Hurts_The_Same_All_Through()
     {
         // Arrange: two tiles off
-        var pawn = _session.playerstate.Pawn!;
+        var pawn = _session.PlayerState.Pawn!;
         (pawn.X, pawn.TileX, pawn.TileY) = (12 * Tile + Tile / 2, 12, 10);
         var blast = new Monster { Name = "Rocket", X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10 };
 
@@ -213,8 +213,8 @@ public class MissilesTests
         Assert.That(_playerHurts, Is.EqualTo(new[] { 100 }));
     }
 
-    [TestCase(30, false, true, 150)]     // a wall across x: x turned back
-    [TestCase(30, true, false, 330)]     // a wall across y: y turned back
+    [TestCase(30, false, true, 150)]     // a WallId across x: x turned back
+    [TestCase(30, true, false, 330)]     // a WallId across y: y turned back
     [TestCase(30, false, false, 210)]    // a corner: straight back
     [TestCase(300, false, true, 240)]
     public void A_Bounce_Turns_Off_The_Wall_It_Met(int angle, bool xClear, bool yClear, int turned)
@@ -278,13 +278,13 @@ public class MissilesTests
     public void A_Shock_Hurts_The_Player_Close_By_With_Its_Sound()
     {
         // Arrange: a tile away, a sure chance
-        var fence = new Monster { Name = "Fence", X = _session.player.X + Tile, Y = _session.player.Y };
+        var fence = new Monster { Name = "Fence", X = _session.Player.X + Tile, Y = _session.Player.Y };
 
         // Act
         _missiles.ShockNearby(fence, ["5", "1.5", "256", "zap"]);
 
         // Assert
-        Assert.That(_session.playerstate.health, Is.EqualTo(95));
+        Assert.That(_session.PlayerState.Health, Is.EqualTo(95));
         Assert.That(_sounds, Is.EqualTo(new[] { ("zap", (Entities.Actors.Actor)fence) }));
     }
 
@@ -292,15 +292,15 @@ public class MissilesTests
     public void A_Shock_Doesnt_Reach_Further_Than_Its_Distance_Or_A_Dead_Player()
     {
         // Arrange
-        var fence = new Monster { Name = "Fence", X = _session.player.X + 2 * Tile, Y = _session.player.Y };
+        var fence = new Monster { Name = "Fence", X = _session.Player.X + 2 * Tile, Y = _session.Player.Y };
 
         // Act / Assert
         _missiles.ShockNearby(fence, ["5", "1.5", "256"]);
-        Assert.That(_session.playerstate.health, Is.EqualTo(100));
+        Assert.That(_session.PlayerState.Health, Is.EqualTo(100));
 
-        fence.X = _session.player.X;
+        fence.X = _session.Player.X;
         _died = true;
         _missiles.ShockNearby(fence, ["5", "1.5", "256"]);
-        Assert.That(_session.playerstate.health, Is.EqualTo(100));
+        Assert.That(_session.PlayerState.Health, Is.EqualTo(100));
     }
 }

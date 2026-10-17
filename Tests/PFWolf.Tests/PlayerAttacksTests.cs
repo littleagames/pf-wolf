@@ -35,8 +35,8 @@ public class PlayerAttacksTests
 
         public Rig(string? weapon)
         {
-            Session.playerstate.weapon = weapon;
-            Session.playerstate.Pawn = new PlayerPawn { State = Session.playerstate };
+            Session.PlayerState.Weapon = weapon;
+            Session.PlayerState.Pawn = new PlayerPawn { State = Session.PlayerState };
             var hooks = new PlayerAttackHooks(() => (0, 0, 0, 0x10000), () => 160, () => 10,
                 (victim, points, attacker) => PlayersHurt.Add((victim, points, attacker)),
                 Sounds.Add, () => DamageDealt);
@@ -91,6 +91,6 @@ public class PlayerAttacksTests
         Assert.That(rig.PlayersHurt, Has.Count.EqualTo(1));
         Assert.That(rig.PlayersHurt[0].Victim, Is.SameAs(rival));
         Assert.That(rig.PlayersHurt[0].Points, Is.EqualTo(12));
-        Assert.That(rig.PlayersHurt[0].Attacker, Is.SameAs(rig.Session.player));
+        Assert.That(rig.PlayersHurt[0].Attacker, Is.SameAs(rig.Session.Player));
     }
 }

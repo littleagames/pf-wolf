@@ -40,15 +40,15 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     internal const string LatchedState = "Latched";
 
     /// <summary>Whether something is latched onto the acting player</summary>
-    internal bool IsLatched => session.playerstate.Latch != null;
+    internal bool IsLatched => session.PlayerState.Latch != null;
 
     /// <summary>Whether what latched onto the acting player still holds on (alive, on this level)</summary>
     internal bool StillHeld
     {
         get
         {
-            var playerstate = session.playerstate;
-            return playerstate.Latch is { IsRemoved: false, Hitpoints: > 0 } && playerstate.LatchMap == session.gamestate.mapon;
+            var playerstate = session.PlayerState;
+            return playerstate.Latch is { IsRemoved: false, Hitpoints: > 0 } && playerstate.LatchMap == session.GameState.MapOn;
         }
     }
 
@@ -64,9 +64,9 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
             && gun.Length > 0 && inventory.FindClass(gun, "Weapon") != null)
         {
             using var _ = session.ActAs(pawn.State);
-            var playerstate = session.playerstate;
-            if (playerstate.Latch == null && playerstate.Mount == null && playerstate.health > 0
-                && session.random.RndT() < Chance(1, 128))
+            var playerstate = session.PlayerState;
+            if (playerstate.Latch == null && playerstate.Mount == null && playerstate.Health > 0
+                && session.Random.RndT() < Chance(1, 128))
             {
                 LatchOn(biter, gun);
                 return;
@@ -77,16 +77,16 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
 
     internal void LatchOn(Entities.Actors.Monster biter, string gun)
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         (playerstate.Latch, playerstate.LatchGun, playerstate.LatchFrom, playerstate.LatchMap, playerstate.LatchStrikes) =
-            (biter, gun, playerstate.chosenweapon, session.gamestate.mapon, 0);
+            (biter, gun, playerstate.ChosenWeapon, session.GameState.MapOn, 0);
         playerstate.MoveSlowdown = Math.Max(inventory.GetIntProperty(gun, "weapon.slowmove", 1), 1);
 
         inventory.Give(gun, 1);
-        playerstate.weapon = playerstate.chosenweapon = gun;
+        playerstate.Weapon = playerstate.ChosenWeapon = gun;
         playerstate.WeaponSprite = null;            // the struggle starts from its Ready, whatever they were doing
         playerstate.WeaponPower = 0;
-        session.playerinput.SetHeld(ButtonType.Attack, true);   // a strike needs a fresh press
+        session.PlayerInput.SetHeld(ButtonType.Attack, true);   // a strike needs a fresh press
         weapons.DrawWeapon();
 
         // Out of sight and out of the way
@@ -101,15 +101,15 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     /// </summary>
     internal void LatchHurt(Entities.Actors.Actor biter)
     {
-        var victim = session.players.FirstOrDefault(p => ReferenceEquals(p.Latch, biter));
+        var victim = session.Players.FirstOrDefault(p => ReferenceEquals(p.Latch, biter));
         if (victim == null)
         {
             if (biter is Entities.Actors.Monster monster)
                 LetGo(monster);
             return;
         }
-        if (victim.Pawn is { } pawn && victim.health > 0)
-            hooks.HurtPlayer(pawn, session.random.RndT() >> 4, biter);
+        if (victim.Pawn is { } pawn && victim.Health > 0)
+            hooks.HurtPlayer(pawn, session.Random.RndT() >> 4, biter);
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     /// </summary>
     internal void ShakeOff(Entities.Actors.Actor weapon, string[] args)
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         if (!StillHeld || playerstate.Latch is not Entities.Actors.Monster biter || playerstate.Pawn is not { } player)
             return;
         int Arg(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var n) ? n : fallback;
@@ -128,7 +128,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
         biter.SyncPosition();
         hooks.PlayAttackSound();
 
-        if (++playerstate.LatchStrikes >= Math.Max(Arg(0, 5), 1) || session.random.RndT() < Math.Clamp(Arg(1, 128), 0, 256))
+        if (++playerstate.LatchStrikes >= Math.Max(Arg(0, 5), 1) || session.Random.RndT() < Math.Clamp(Arg(1, 128), 0, 256))
         {
             playerstate.LatchStrikes = 0;
             hooks.HurtMonster(biter, Math.Max(Arg(2, 1), 0), player);
@@ -154,17 +154,17 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     /// </summary>
     internal void Tick()
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         if (IsLatched)
         {
-            if (playerstate.weapon != playerstate.LatchGun || playerstate.LatchMap != session.gamestate.mapon
+            if (playerstate.Weapon != playerstate.LatchGun || playerstate.LatchMap != session.GameState.MapOn
                 || playerstate.Latch!.IsRemoved || !StillHeld && hooks.WeaponReady())
                 Release();
         }
-        else if (playerstate.weapon is { } weapon && IsLatchGun(weapon))
+        else if (playerstate.Weapon is { } weapon && IsLatchGun(weapon))
         {
             inventory.Take(weapon, 1);
-            playerstate.weapon = playerstate.chosenweapon = weapons.BestWeapon(canFire: true);
+            playerstate.Weapon = playerstate.ChosenWeapon = weapons.BestWeapon(canFire: true);
             weapons.DrawWeapon();
         }
     }
@@ -175,14 +175,14 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
 
     void Release()
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         if (playerstate.LatchGun is { } gun)
         {
-            if (playerstate.weapon == gun)
+            if (playerstate.Weapon == gun)
             {
-                playerstate.weapon = playerstate.chosenweapon =
+                playerstate.Weapon = playerstate.ChosenWeapon =
                     playerstate.LatchFrom is { } before && inventory.Has(before) && weapons.CanFire(before) ? before : weapons.BestWeapon(canFire: true);
-                session.playerinput.SetHeld(ButtonType.Attack, true);
+                session.PlayerInput.SetHeld(ButtonType.Attack, true);
             }
             inventory.Take(gun, 1);
         }

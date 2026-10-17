@@ -6,7 +6,7 @@ namespace PFWolf.Entities;
 /// A mapdefs trigger or switch being set off: the tile it sits on, the direction it was used
 /// from, who used it, and its tile's tag (0 for none), which says what its actions act on.
 /// (Actors.Actor spelled out: a bare `Actor` in the Wolf3D namespaces is the legacy
-/// Wolf3D.Actor wall/door base class.)
+/// Wolf3D.Actor WallId/DoorNumber base class.)
 /// </summary>
 internal record TriggerActivation(int TileX, int TileY, ControlDir Dir, Actors.Actor Activator, ushort Tag);
 

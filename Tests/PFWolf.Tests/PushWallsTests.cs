@@ -5,11 +5,11 @@ namespace PFWolf.Tests;
 
 public class PushWallsTests
 {
-    // Finding the wall on a tile only looks at the list
+    // Finding the WallId on a tile only looks at the list
     private static PushWalls With(params MovingPushWall[] walls)
     {
         var pushWalls = new PushWalls(null!, null!, new GameSession());
-        pushWalls.pushwalls.AddRange(walls);
+        pushWalls.MovingWalls.AddRange(walls);
         return pushWalls;
     }
 
@@ -40,7 +40,7 @@ public class PushWallsTests
         pushWalls.SelectPushWall(40, 40);
 
         // Assert
-        Assert.That(pushWalls.pwall, Is.SameAs(north));
+        Assert.That(pushWalls.PWall, Is.SameAs(north));
     }
 
     [Test]
@@ -53,7 +53,7 @@ public class PushWallsTests
         pushWalls.ClearPushWalls();
 
         // Assert
-        Assert.That(pushWalls.pushwalls, Is.Empty);
+        Assert.That(pushWalls.MovingWalls, Is.Empty);
     }
 
     [TestCase(0, 0, true)]                  // the tile the player is in
@@ -100,7 +100,7 @@ public class PushWallsTests
 
     [TestCase(null, 2)]         // game-info leaves it out: Wolf3D's two tiles
     [TestCase(3, 3)]            // End of Destiny's
-    [TestCase(0, 1)]            // a wall always moves a tile
+    [TestCase(0, 1)]            // a WallId always moves a tile
     public void A_Wall_Slides_As_Far_As_Game_Info_Says(int? setting, int tiles)
     {
         // Arrange
@@ -113,9 +113,9 @@ public class PushWallsTests
     [Test]
     public void Directions_Are_North_East_South_West()
     {
-        Assert.That(PushWalls.dirs[(int)ControlDir.North], Is.EqualTo(new[] { 0, -1 }));
-        Assert.That(PushWalls.dirs[(int)ControlDir.East], Is.EqualTo(new[] { 1, 0 }));
-        Assert.That(PushWalls.dirs[(int)ControlDir.South], Is.EqualTo(new[] { 0, 1 }));
-        Assert.That(PushWalls.dirs[(int)ControlDir.West], Is.EqualTo(new[] { -1, 0 }));
+        Assert.That(PushWalls.Dirs[(int)ControlDir.North], Is.EqualTo(new[] { 0, -1 }));
+        Assert.That(PushWalls.Dirs[(int)ControlDir.East], Is.EqualTo(new[] { 1, 0 }));
+        Assert.That(PushWalls.Dirs[(int)ControlDir.South], Is.EqualTo(new[] { 0, 1 }));
+        Assert.That(PushWalls.Dirs[(int)ControlDir.West], Is.EqualTo(new[] { -1, 0 }));
     }
 }

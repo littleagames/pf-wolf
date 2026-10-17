@@ -220,12 +220,12 @@ public class GameServicesTests
 
         // Act
         var map = provider.GetRequiredService<MapManager>();
-        session.SetActing(session.localplayer);
-        session.localplayer.Pawn = new Entities.Actors.PlayerPawn();
+        session.SetActing(session.LocalPlayer);
+        session.LocalPlayer.Pawn = new Entities.Actors.PlayerPawn();
 
         // Assert: the map's player is the session's
         Assert.That(provider.GetRequiredService<GameSession>(), Is.SameAs(session));
-        Assert.That(map.Player, Is.SameAs(session.localplayer.Pawn));
+        Assert.That(map.Player, Is.SameAs(session.LocalPlayer.Pawn));
     }
 }
 
@@ -238,15 +238,15 @@ public class GameInfoSettingsTests
         var settings = GameInfoSettings.Read(new GameInfoAsset());
 
         // Assert
-        Assert.That(settings.screenFadeStyle, Is.EqualTo(FadeStyle.Palette));
-        Assert.That(settings.screenFadeTics, Is.Null);
-        Assert.That((settings.menuFadeStyle, settings.menuFadeTics), Is.EqualTo((FadeStyle.Palette, 20)));
-        Assert.That((settings.deathFadeStyle, settings.deathFadeTics), Is.EqualTo((FadeStyle.Fizzle, 70)));
-        Assert.That((settings.levelFadeStyle, settings.levelFadeTics), Is.EqualTo((FadeStyle.Fizzle, 20)));
-        Assert.That(settings.deathFadeColor, Is.EqualTo("Maroon"));
-        Assert.That((settings.deathTurnSpeed, settings.deathHoldTics), Is.EqualTo((2, 100)));
-        Assert.That((settings.deathDropHeight, settings.deathDropSpeed), Is.EqualTo(((int?)null, 1)));
-        Assert.That((settings.weaponScale, settings.weaponBob), Is.EqualTo((1.0, false)));
+        Assert.That(settings.ScreenFadeStyle, Is.EqualTo(FadeStyle.Palette));
+        Assert.That(settings.ScreenFadeTics, Is.Null);
+        Assert.That((settings.MenuFadeStyle, settings.MenuFadeTics), Is.EqualTo((FadeStyle.Palette, 20)));
+        Assert.That((settings.DeathFadeStyle, settings.DeathFadeTics), Is.EqualTo((FadeStyle.Fizzle, 70)));
+        Assert.That((settings.LevelFadeStyle, settings.LevelFadeTics), Is.EqualTo((FadeStyle.Fizzle, 20)));
+        Assert.That(settings.DeathFadeColor, Is.EqualTo("Maroon"));
+        Assert.That((settings.DeathTurnSpeed, settings.DeathHoldTics), Is.EqualTo((2, 100)));
+        Assert.That((settings.DeathDropHeight, settings.DeathDropSpeed), Is.EqualTo(((int?)null, 1)));
+        Assert.That((settings.WeaponScale, settings.WeaponBob), Is.EqualTo((1.0, false)));
     }
 
     [Test]
@@ -256,20 +256,20 @@ public class GameInfoSettingsTests
         var settings = GameInfoSettings.Read(new GameInfoAsset { ScreenFadeStyle = "Fizzle" });
 
         // Assert
-        Assert.That(settings.menuFadeStyle, Is.EqualTo(FadeStyle.Fizzle));
+        Assert.That(settings.MenuFadeStyle, Is.EqualTo(FadeStyle.Fizzle));
     }
 
     [Test]
     public void Styles_Are_Read_By_Name_Whatever_The_Case()
     {
-        Assert.That(GameInfoSettings.Read(new GameInfoAsset { DeathFadeStyle = "palette" }).deathFadeStyle, Is.EqualTo(FadeStyle.Palette));
+        Assert.That(GameInfoSettings.Read(new GameInfoAsset { DeathFadeStyle = "palette" }).DeathFadeStyle, Is.EqualTo(FadeStyle.Palette));
     }
 
     [TestCase("sparkle")]
     [TestCase("0")]         // not by number
     public void An_Unknown_Style_Is_The_Default(string style)
     {
-        Assert.That(GameInfoSettings.Read(new GameInfoAsset { LevelFadeStyle = style }).levelFadeStyle, Is.EqualTo(FadeStyle.Fizzle));
+        Assert.That(GameInfoSettings.Read(new GameInfoAsset { LevelFadeStyle = style }).LevelFadeStyle, Is.EqualTo(FadeStyle.Fizzle));
     }
 
     [TestCase(0)]
@@ -280,8 +280,8 @@ public class GameInfoSettingsTests
         var settings = GameInfoSettings.Read(new GameInfoAsset { ScreenFadeTics = tics, MenuFadeTics = tics });
 
         // Assert
-        Assert.That(settings.screenFadeTics, Is.Null);
-        Assert.That(settings.menuFadeTics, Is.EqualTo(20));
+        Assert.That(settings.ScreenFadeTics, Is.Null);
+        Assert.That(settings.MenuFadeTics, Is.EqualTo(20));
     }
 
     [Test]
@@ -298,16 +298,16 @@ public class GameInfoSettingsTests
         });
 
         // Assert
-        Assert.That(settings.deathTurnSpeed, Is.EqualTo(1));
-        Assert.That(settings.deathHoldTics, Is.EqualTo(0));
-        Assert.That(settings.deathDropHeight, Is.EqualTo(GameConstants.MaxEye));
-        Assert.That(settings.deathDropSpeed, Is.EqualTo(1));
-        Assert.That(settings.weaponScale, Is.EqualTo(2));
+        Assert.That(settings.DeathTurnSpeed, Is.EqualTo(1));
+        Assert.That(settings.DeathHoldTics, Is.EqualTo(0));
+        Assert.That(settings.DeathDropHeight, Is.EqualTo(GameConstants.MaxEye));
+        Assert.That(settings.DeathDropSpeed, Is.EqualTo(1));
+        Assert.That(settings.WeaponScale, Is.EqualTo(2));
     }
 
     [Test]
     public void A_Blank_Death_Color_Is_Maroon()
     {
-        Assert.That(GameInfoSettings.Read(new GameInfoAsset { DeathFadeColor = " " }).deathFadeColor, Is.EqualTo("Maroon"));
+        Assert.That(GameInfoSettings.Read(new GameInfoAsset { DeathFadeColor = " " }).DeathFadeColor, Is.EqualTo("Maroon"));
     }
 }

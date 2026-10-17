@@ -50,7 +50,7 @@ public class PickupsTests
         public readonly MapManager Map;
         public readonly Pickups Pickups;
         public bool HasWeapon, ItemRespawn;
-        public bool Died { get => Session.playstate == PlayState.Died; set => Session.playstate = value ? PlayState.Died : PlayState.StillPlaying; }
+        public bool Died { get => Session.PlayState == PlayState.Died; set => Session.PlayState = value ? PlayState.Died : PlayState.StillPlaying; }
         public readonly List<string> Sounds = [];
         public readonly List<Inventory> Respawning = [];
 
@@ -58,11 +58,11 @@ public class PickupsTests
         {
             Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session);
             // Acting as a second player: no pickup flash or message, which only the local player has
-            Session.players.Add(new Entities.PlayerState());
+            Session.Players.Add(new Entities.PlayerState());
             Session.ActingChanged = p => Inventory.SetHolder(p.Items);
-            Session.SetActing(Session.players[1]);
-            Session.playerstate.playerclass = "Player";
-            Session.playerstate.health = 50;
+            Session.SetActing(Session.Players[1]);
+            Session.PlayerState.PlayerClass = "Player";
+            Session.PlayerState.Health = 50;
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
@@ -96,7 +96,7 @@ public class PickupsTests
         rig.Pickups.GetBonus(medikit);
 
         // Assert
-        Assert.That(rig.Session.playerstate.health, Is.EqualTo(75));
+        Assert.That(rig.Session.PlayerState.Health, Is.EqualTo(75));
         Assert.That(rig.OnTheFloor(medikit), Is.False);
     }
 
@@ -105,7 +105,7 @@ public class PickupsTests
     {
         // Arrange: health already full
         var rig = new Rig();
-        rig.Session.playerstate.health = 100;
+        rig.Session.PlayerState.Health = 100;
         var medikit = rig.Item("Medikit");
 
         // Act
@@ -138,7 +138,7 @@ public class PickupsTests
     {
         var rig = new Rig();
         rig.Pickups.GetBonus(rig.Item("Cross"));
-        Assert.That(rig.Session.gamestate.treasurecount, Is.EqualTo(1));
+        Assert.That(rig.Session.GameState.TreasureCount, Is.EqualTo(1));
     }
 
     [Test]
@@ -152,7 +152,7 @@ public class PickupsTests
         rig.Pickups.GetBonus(medikit);
 
         // Assert
-        Assert.That(rig.Session.playerstate.health, Is.EqualTo(50));
+        Assert.That(rig.Session.PlayerState.Health, Is.EqualTo(50));
         Assert.That(rig.OnTheFloor(medikit), Is.True);
     }
 

@@ -4,16 +4,16 @@ using PFWolf.Constants;
 namespace PFWolf.Rendering;
 
 /// <summary>
-/// A screen column's walls, as the ray trace finds them: each wall it hits queues a post
+/// A screen column's walls, as the ray trace finds them: each WallId it hits queues a post
 /// (ScalePost, QueuePost), and once the trace is done they're drawn nearest last (DrawPosts):
-/// the stories of each wall, wall patches over them, and an arch's underside. Also the arches
-/// the trace passes under, tracing on past a wall to the taller ones behind it, and the light a
-/// wall face takes from the open tile it's seen from.
+/// the stories of each WallId, WallId patches over them, and an arch's underside. Also the arches
+/// the trace passes under, tracing on past a WallId to the taller ones behind it, and the light a
+/// WallId face takes from the open tile it's seen from.
 /// </summary>
-/// <summary>The texture of a plain wall's face, if it is one (WL_DRAW's WallTexture); mirrored: the face is flipped</summary>
+/// <summary>The texture of a plain WallId's face, if it is one (WL_DRAW's WallTexture); mirrored: the face is flipped</summary>
 internal delegate TextureAsset? WallTextureLookup(int tilex, int tiley, string face, out bool mirrored);
 
-/// <param name="wallTexture">The texture of a plain wall's face (WL_DRAW's WallTexture)</param>
+/// <param name="wallTexture">The texture of a plain WallId's face (WL_DRAW's WallTexture)</param>
 internal sealed class WallPosts(
     VideoManager video,
     MapManager map,
@@ -25,8 +25,8 @@ internal sealed class WallPosts(
     WallTextureLookup wallTexture)
 {
     // The open tile the trace last came from (a TileIndex): walls and doors it hits are seen from
-    // there, so take its base light. A wall or door tile keeps the one before it (a wall the
-    // trace passes, an open door).
+    // there, so take its base light. A WallId or DoorNumber tile keeps the one before it (a WallId the
+    // trace passes, an open DoorNumber).
 
     internal void EnterTileLight(int x, int y)
     {
@@ -38,8 +38,8 @@ internal sealed class WallPosts(
     const int HalfCell = 1 << (Lighting.CellGlobalShift - 1);
 
     /// <summary>
-    /// The light on a wall face at (x, y) (global units), seen from HitTile: from the light cell
-    /// just in front of it, half a cell toward the view, not the one inside the wall.
+    /// The light on a WallId face at (x, y) (global units), seen from HitTile: from the light cell
+    /// just in front of it, half a cell toward the view, not the one inside the WallId.
     /// </summary>
     internal byte[] WallLight(int x, int y)
     {
@@ -58,8 +58,8 @@ internal sealed class WallPosts(
         render.PatchSource = null;
 
         //
-        // sprites clip against the nearest wall: nothing behind it is taller than it
-        // on screen, since every wall stands at least a story high and sprites don't
+        // sprites clip against the nearest WallId: nothing behind it is taller than it
+        // on screen, since every WallId stands at least a story high and sprites don't
         //
         if (!render.ColumnHit)
         {
@@ -182,8 +182,8 @@ internal sealed class WallPosts(
     = An open floor tile with a height (plane 3) above one story is an arch: a block from the
     = second story up to that height, that can be walked under. The trace opens one as it
     = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
-    = Its faces take the texture of a wall beside it, and its underside the tile's ceiling flat
-    = (a non-zero flat-plane ceiling index), else the wall's texture too.
+    = Its faces take the texture of a WallId beside it, and its underside the tile's ceiling flat
+    = (a non-zero flat-plane ceiling index), else the WallId's texture too.
     =
     ====================
     */
@@ -192,12 +192,12 @@ internal sealed class WallPosts(
     internal bool IsArch(int tilex, int tiley) => map.tilemap[tilex, tiley] == 0 && map.storymap[tilex, tiley] > 1;
 
     /// <summary>
-    /// The trace enters the arch at (tilex, tiley), crossing its edge at (edgex, edgey); vertical
+    /// The trace enters the arch at (TileX, TileY), crossing its edge at (edgex, edgey); vertical
     /// says whether that's an edge along x = constant (an east or west face).
     /// </summary>
     internal void OpenArch(int tilex, int tiley, int edgex, int edgey, bool vertical)
     {
-        // the same face of the wall at either end of the run of arch tiles in line with the face,
+        // the same face of the WallId at either end of the run of arch tiles in line with the face,
         // else at either end of the run across it (a face on the end of a run, entered along it)
         int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
         var face = SeenFace(vertical);
@@ -217,7 +217,7 @@ internal sealed class WallPosts(
             : LintelColumn(edgex, (render.YTileStep == 1) != mirrored);
     }
 
-    // The texture on face of the wall that ends the run of arch tiles from (tilex, tiley) going (dx, dy)
+    // The texture on face of the WallId that ends the run of arch tiles from (TileX, TileY) going (dx, dy)
     internal TextureAsset? ArchEndTexture(int tilex, int tiley, int dx, int dy, string face, out bool mirrored)
     {
         mirrored = false;
@@ -235,7 +235,7 @@ internal sealed class WallPosts(
 
     /// <summary>
     /// The texture of an arch tile's underside: the same one whichever way the trace enters it,
-    /// so it doesn't change as the view moves under it. It's from a wall ending the run of arch
+    /// so it doesn't change as the view moves under it. It's from a WallId ending the run of arch
     /// tiles it's in, north or south first, else west or east: its face toward the arch.
     /// </summary>
     internal TextureAsset? ArchUndersideTexture(int tilex, int tiley) =>
@@ -244,7 +244,7 @@ internal sealed class WallPosts(
 
     /// <summary>
     /// An arch tile with a ceiling flat (a non-zero ceiling index on the flat plane, its flat
-    /// from mapdefs or the level's default ceiling) shows it underneath, in place of the wall texture
+    /// from mapdefs or the level's default ceiling) shows it underneath, in place of the WallId texture
     /// </summary>
     internal void UseArchCeilingFlat(int tilex, int tiley)
     {
@@ -286,7 +286,7 @@ internal sealed class WallPosts(
         QueuePost(render.ArchHeight, 1, render.ArchStories, render.ArchTexture!, render.ArchOfs, render.ArchTexture!, render.ArchOfs, exitheight, render.ArchUnderside, render.ArchLight, render.ArchUnderFlat);
     }
 
-    // The height (as WallHeight) of a wall at (x, y)
+    // The height (as WallHeight) of a WallId at (x, y)
     internal short HeightAt(int x, int y)
     {
         int savex = render.XIntercept, savey = render.YIntercept;
@@ -303,8 +303,8 @@ internal sealed class WallPosts(
     internal int HorizEdge => (render.YTileStep == 1 ? render.YTile : render.YTile + 1) << MapConstants.TileShift;
 
     /// <summary>
-    /// Whether the trace should go on past the wall it just hit, on the tile (tilex, tiley): only
-    /// while a taller wall somewhere on the level could still show above everything it has hit.
+    /// Whether the trace should go on past the WallId it just hit, on the tile (TileX, TileY): only
+    /// while a taller WallId somewhere on the level could still show above everything it has hit.
     /// </summary>
     internal bool TracePastWall(int tilex, int tiley)
     {
@@ -315,7 +315,7 @@ internal sealed class WallPosts(
     }
 
     //
-    // the trace's position, kept from before it enters a tile, to carry on past a wall it hits there
+    // the trace's position, kept from before it enters a tile, to carry on past a WallId it hits there
     //
 
     internal void SaveTrace()
@@ -336,7 +336,7 @@ internal sealed class WallPosts(
     }
 
     /// <summary>
-    /// Draws one screen column of a wall, standing on the floor, stories tall. Stories
+    /// Draws one screen column of a WallId, standing on the floor, stories tall. Stories
     /// firststory and up are drawn: the first story from lower, the ones above it from upper.
     /// A texture covers a story per 64 texels of its height, from the floor up, and repeats
     /// above that. half is half a story's height in pixels; lowerofs and UpperOfs are the
@@ -349,7 +349,7 @@ internal sealed class WallPosts(
         if (half <= 0) half = 100;
 
         //
-        // row k up from the floor line shows texel k * 32 / half up the wall; step that
+        // row k up from the floor line shows texel k * 32 / half up the WallId; step that
         // along as whole texels (t) plus a remainder, so it matches the old ScalePost exactly
         //
         int floor = FloorRow(half);
@@ -394,13 +394,13 @@ internal sealed class WallPosts(
         }
     }
 
-    const byte PatchMask = 0xff;        // a wall patch's see-through pixels, as a flat's
+    const byte PatchMask = 0xff;        // a WallId patch's see-through pixels, as a flat's
 
     /// <summary>
-    /// Draws one screen column of a wall patch over the wall post just drawn (DrawPost), its
+    /// Draws one screen column of a WallId patch over the WallId post just drawn (DrawPost), its
     /// texels laid out the same way: from the floor of story <paramref name="story"/> (1 up) for
-    /// as many stories as the patch is tall, or (story 0) on every story of the wall, repeating as
-    /// the wall's texture does. Its see-through pixels leave the wall showing.
+    /// as many stories as the patch is tall, or (story 0) on every story of the WallId, repeating as
+    /// the WallId's texture does. Its see-through pixels leave the WallId showing.
     /// </summary>
     internal void DrawPatch(int x, int half, int stories, TextureAsset patch, int ofs, int story, byte[] shade, int shadeofs)
     {
@@ -410,7 +410,7 @@ internal sealed class WallPosts(
         int first = story == 0 ? 0 : story - 1;
         int last = story == 0 ? stories : Math.Min(stories, first + (height + GameConstants.TextureSize - 1) / GameConstants.TextureSize);
         if (first >= last)
-            return;                     // on a story the wall doesn't reach
+            return;                     // on a story the WallId doesn't reach
 
         int floor = FloorRow(half);
         int bottom = floor - 1 - first * 2 * half;
@@ -419,7 +419,7 @@ internal sealed class WallPosts(
         if (top < 0) top = 0;
         if (y < top) return;
 
-        // texels up from the patch's bottom, stepped as DrawPost steps the wall's
+        // texels up from the patch's bottom, stepped as DrawPost steps the WallId's
         long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
         long t = num / half;
         long rem = num % half;
@@ -460,7 +460,7 @@ internal sealed class WallPosts(
     =
     = CalcHeight
     =
-    = The height (as WallHeight) of the wall the trace just hit, from how far along the view its
+    = The height (as WallHeight) of the WallId the trace just hit, from how far along the view its
     = intercept is
     =
     ====================
@@ -498,7 +498,7 @@ internal sealed class WallPosts(
     // The screen row the floor is on, for something half pixels to half a story
     internal int FloorRow(int half) => render.CenterY + half * render.ViewEyeZ / (GameConstants.TextureSize / 2);
 
-    // The face of a wall the trace sees, going the way it is
+    // The face of a WallId the trace sees, going the way it is
     internal string SeenFace(bool vertical) => vertical
         ? render.XTileStep == 1 ? "west" : "east"
         : render.YTileStep == 1 ? "north" : "south";

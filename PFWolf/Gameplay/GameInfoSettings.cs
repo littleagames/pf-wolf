@@ -10,38 +10,38 @@ namespace PFWolf.Gameplay;
 internal sealed class GameInfoSettings
 {
     // Ordinary fades (screen-fade-style, screen-fade-tics), which VideoManager does
-    internal FadeStyle screenFadeStyle = FadeStyle.Palette;
-    internal int? screenFadeTics;
+    internal FadeStyle ScreenFadeStyle = FadeStyle.Palette;
+    internal int? ScreenFadeTics;
 
-    internal FadeStyle menuFadeStyle = FadeStyle.Palette, deathFadeStyle = FadeStyle.Fizzle, levelFadeStyle = FadeStyle.Fizzle;
-    internal int menuFadeTics = 20, deathFadeTics = 70, levelFadeTics = 20;
-    internal string deathFadeColor = "Maroon";
+    internal FadeStyle MenuFadeStyle = FadeStyle.Palette, DeathFadeStyle = FadeStyle.Fizzle, LevelFadeStyle = FadeStyle.Fizzle;
+    internal int MenuFadeTics = 20, DeathFadeTics = 70, LevelFadeTics = 20;
+    internal string DeathFadeColor = "Maroon";
     // The death screen's turn to face the killer (degrees a tic) and hold on the color (tics)
-    internal int deathTurnSpeed = 2, deathHoldTics = 100;
+    internal int DeathTurnSpeed = 2, DeathHoldTics = 100;
     // The dead view's drop toward the floor: the eye height it ends at (null: no drop) and texels a tic
-    internal int? deathDropHeight;
-    internal int deathDropSpeed = 1;
-    internal double weaponScale = 1;    // game-info weapon-scale
-    internal bool weaponBob;            // game-info weapon-bob
+    internal int? DeathDropHeight;
+    internal int DeathDropSpeed = 1;
+    internal double WeaponScale = 1;    // game-info weapon-scale
+    internal bool WeaponBob;            // game-info weapon-bob
 
     internal static GameInfoSettings Read(GameInfoAsset gameInfo)
     {
         var settings = new GameInfoSettings();
-        settings.screenFadeStyle = ParseFadeStyle(gameInfo.ScreenFadeStyle, "screen-fade-style", FadeStyle.Palette);
-        settings.screenFadeTics = ParseFadeTics(gameInfo.ScreenFadeTics, "screen-fade-tics");
-        settings.menuFadeStyle = ParseFadeStyle(gameInfo.MenuFadeStyle, "menu-fade-style", settings.screenFadeStyle);
-        settings.menuFadeTics = ParseFadeTics(gameInfo.MenuFadeTics, "menu-fade-tics") ?? 20;
-        settings.deathFadeStyle = ParseFadeStyle(gameInfo.DeathFadeStyle, "death-fade-style", FadeStyle.Fizzle);
-        settings.deathFadeTics = ParseFadeTics(gameInfo.DeathFadeTics, "death-fade-tics") ?? 70;
-        settings.deathFadeColor = string.IsNullOrWhiteSpace(gameInfo.DeathFadeColor) ? "Maroon" : gameInfo.DeathFadeColor;
-        settings.deathTurnSpeed = Math.Max(gameInfo.DeathTurnSpeed ?? 2, 1);    // 0 would never finish turning
-        settings.deathHoldTics = Math.Max(gameInfo.DeathHoldTics ?? 100, 0);
-        settings.deathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, GameConstants.MinEye, GameConstants.MaxEye) : null;
-        settings.deathDropSpeed = Math.Max(gameInfo.DeathDropSpeed ?? 1, 1);    // 0 would never finish dropping
-        settings.weaponScale = Math.Clamp(gameInfo.WeaponScale ?? 1, 0.1, 2);
-        settings.weaponBob = gameInfo.WeaponBob ?? false;
-        settings.levelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
-        settings.levelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
+        settings.ScreenFadeStyle = ParseFadeStyle(gameInfo.ScreenFadeStyle, "screen-fade-style", FadeStyle.Palette);
+        settings.ScreenFadeTics = ParseFadeTics(gameInfo.ScreenFadeTics, "screen-fade-tics");
+        settings.MenuFadeStyle = ParseFadeStyle(gameInfo.MenuFadeStyle, "menu-fade-style", settings.ScreenFadeStyle);
+        settings.MenuFadeTics = ParseFadeTics(gameInfo.MenuFadeTics, "menu-fade-tics") ?? 20;
+        settings.DeathFadeStyle = ParseFadeStyle(gameInfo.DeathFadeStyle, "death-fade-style", FadeStyle.Fizzle);
+        settings.DeathFadeTics = ParseFadeTics(gameInfo.DeathFadeTics, "death-fade-tics") ?? 70;
+        settings.DeathFadeColor = string.IsNullOrWhiteSpace(gameInfo.DeathFadeColor) ? "Maroon" : gameInfo.DeathFadeColor;
+        settings.DeathTurnSpeed = Math.Max(gameInfo.DeathTurnSpeed ?? 2, 1);    // 0 would never finish turning
+        settings.DeathHoldTics = Math.Max(gameInfo.DeathHoldTics ?? 100, 0);
+        settings.DeathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, GameConstants.MinEye, GameConstants.MaxEye) : null;
+        settings.DeathDropSpeed = Math.Max(gameInfo.DeathDropSpeed ?? 1, 1);    // 0 would never finish dropping
+        settings.WeaponScale = Math.Clamp(gameInfo.WeaponScale ?? 1, 0.1, 2);
+        settings.WeaponBob = gameInfo.WeaponBob ?? false;
+        settings.LevelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
+        settings.LevelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
         return settings;
     }
 

@@ -18,7 +18,7 @@ namespace PFWolf.Scripting;
 /// action of the same name wins (the script's is ignored, with a warning).
 ///
 /// What the scripts get, besides Lua's basic, string, table, math and bit32 libraries:
-///   an actor's fields: name, x, y (in tiles: a tile's middle is n + 0.5), tilex, tiley, angle
+///   an actor's fields: name, x, y (in tiles: a tile's middle is n + 0.5), TileX, TileY, angle
 ///     (degrees, 0 east, 90 north: the way it faces, or a projectile flies), health, speed,
 ///     z (how much higher it's drawn, in texels), state, tag, inwall, removed, isplayer, shooter
 ///     (who fired a projectile), temp1..temp3 (whole numbers kept in saved games: a script's own
@@ -183,7 +183,7 @@ internal sealed class GameScripts(
                 "tilex" => c.Return(self.TileX),
                 "tiley" => c.Return(self.TileY),
                 "angle" => c.Return(ProjectileActions.FacingAngle(self)),
-                "health" => c.Return(self is Entities.Actors.PlayerPawn pawn ? pawn.State.health : self.Hitpoints),
+                "health" => c.Return(self is Entities.Actors.PlayerPawn pawn ? pawn.State.Health : self.Hitpoints),
                 "speed" => c.Return(self.Speed),
                 "z" => c.Return(self.Z),
                 "state" => c.Return(self.CurrentState?.StateName is { } state ? state : LuaValue.Nil),
@@ -245,7 +245,7 @@ internal sealed class GameScripts(
         game["random"] = new LuaFunction("game.random", (c, _) =>
         {
             if (c.ArgumentCount == 0)
-                return new(c.Return(session.random.RndT()));
+                return new(c.Return(session.Random.RndT()));
             int low = c.ArgumentCount > 1 ? (int)NumberArg(c, 0, 1) : 1;
             int high = (int)NumberArg(c, c.ArgumentCount > 1 ? 1 : 0, 1);
             if (high < low)
@@ -338,10 +338,10 @@ internal sealed class GameScripts(
         // Gameplay/LevelRecords.cs), as game.onlevelend's result; nil if it's never been finished
         game["record"] = new LuaFunction("game.record", (c, _) =>
             new(c.Return(Record(StringArg(c, 0)) is { } record ? ResultTable(record) : LuaValue.Nil)));
-        game["time"] = new LuaFunction("game.time", (c, _) => new(c.Return(session.gamestate.TimeCount)));
-        game["tics"] = new LuaFunction("game.tics", (c, _) => new(c.Return(session.tics)));
-        game["map"] = new LuaFunction("game.map", (c, _) => new(c.Return(session.gamestate.mapon ?? "")));
-        game["skill"] = new LuaFunction("game.skill", (c, _) => new(c.Return(session.gamestate.difficulty)));
+        game["time"] = new LuaFunction("game.time", (c, _) => new(c.Return(session.GameState.TimeCount)));
+        game["tics"] = new LuaFunction("game.tics", (c, _) => new(c.Return(session.Tics)));
+        game["map"] = new LuaFunction("game.map", (c, _) => new(c.Return(session.GameState.MapOn ?? "")));
+        game["skill"] = new LuaFunction("game.skill", (c, _) => new(c.Return(session.GameState.Difficulty)));
         // game.ambient(sound) loops a sound at the listener as the ambience, in place of the one
         // there was; game.ambient(nil) stops it. Asking for the one playing changes nothing, so
         // a script can ask every tick (Managers/AudioManager.cs SetAmbient).
@@ -351,7 +351,7 @@ internal sealed class GameScripts(
             return new(c.Return());
         });
         // game.objective(name): how many of a level objective are done, and of how many
-        // (game-info objectives: Gameplay/Objectives.cs); 0, 0 for one the level hasn't
+        // (game-info MatchObjectives: Gameplay/Objectives.cs); 0, 0 for one the level hasn't
         game["objective"] = new LuaFunction("game.objective", (c, _) =>
         {
             var name = StringArg(c, 0);
@@ -386,8 +386,8 @@ internal sealed class GameScripts(
         paused), after the actors, with the tics that went by (70 a second; usually 1 or 2).
     game.onlevelend(function(map, result) ... end): called as a level's finished (its exit, a
         secret exit or the game won; not dying or leaving), before the tally, once its record is
-        kept (game.record). result has kills, killtotal, secrets, secrettotal, items, itemtotal,
-        time (tics), par (seconds, 0 for none), underpar, undetected, stealthkills, objectives
+        kept (game.record). result has kills, KillTotal, secrets, SecretTotal, items, itemtotal,
+        time (tics), par (seconds, 0 for none), underpar, undetected, stealthkills, MatchObjectives
         ({name = {done = n, total = n}}) and exit ("exit", "secret" or "victory"). It's the
         place to game.unlock what the finish earned: anything unlocked is told on the tally.
         Not called while a demo plays back.
@@ -426,7 +426,7 @@ internal sealed class GameScripts(
 
     /// <summary>The scripts' level hooks, as a level starts (GameLoop, PlayDemo, RecordDemo)</summary>
     internal void RunLevelHooks(string reason) =>
-        RunHooks(levelHooks, [reason, session.gamestate.mapon ?? ""]);
+        RunHooks(levelHooks, [reason, session.GameState.MapOn ?? ""]);
 
     /// <summary>
     /// The scripts' level-end hooks, as a level's finished (before the tally): the map, what this
@@ -472,7 +472,7 @@ internal sealed class GameScripts(
     internal void RunTickHooks()
     {
         if (tickHooks.Count > 0)
-            RunHooks(tickHooks, [session.tics]);
+            RunHooks(tickHooks, [session.Tics]);
     }
 
     void RunHooks(List<ScriptHook> hooks, LuaValue[] arguments)
@@ -505,11 +505,11 @@ internal sealed class GameScripts(
     int GameRandom(int count)
     {
         if (count <= 256)
-            return session.random.RndT() * count / 256;
+            return session.Random.RndT() * count / 256;
         long value = 0, range = 1;
         while (range < count)
         {
-            value = value << 8 | (uint)session.random.RndT();
+            value = value << 8 | (uint)session.Random.RndT();
             range <<= 8;
         }
         return (int)(value * count / range);
@@ -602,7 +602,7 @@ internal sealed class GameScripts(
             throw new ArgumentException("usage: lua <code>");
         _scripts ??= NewConsoleScriptHost();
         // `me` is the player (nil outside a level), for trying the actor methods out
-        _scripts.Globals["me"] = LuaActor.Of(session.localplayer?.Pawn);
+        _scripts.Globals["me"] = LuaActor.Of(session.LocalPlayer?.Pawn);
         if (_scripts.Execute(string.Join(' ', args)) is { } error)
             console.Print(error);
     }

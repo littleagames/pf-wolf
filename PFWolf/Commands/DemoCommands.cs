@@ -28,7 +28,7 @@ internal sealed class DemoCommands(
             });
     }
     // Queues the demo for the title loop; in a level the game ends first (PlayLoop exits on the
-    // abort, and GameLoop, seeing pendingDemo, goes back to the title without a death or scores)
+    // abort, and GameLoop, seeing PendingDemo, goes back to the title without a death or scores)
     internal void PlayDemoCommand(string[] args)
     {
         if (args.Length == 0 || !int.TryParse(args[0], out int demonumber) || demonumber < 0 || demonumber > 9)
@@ -40,14 +40,14 @@ internal sealed class DemoCommands(
             return;
         }
 
-        demoPlayback.pendingDemo = demonumber;
-        if (session.ingame)
-            session.playstate = PlayState.Abort;
+        demoPlayback.PendingDemo = demonumber;
+        if (session.InGame)
+            session.PlayState = PlayState.Abort;
     }
 
     internal void DemoTestCommand(string[] args)
     {
-        if (session.ingame)
+        if (session.InGame)
         {
             console.Print("demotest runs from the title or --exec, not during a game");
             return;
@@ -83,15 +83,15 @@ internal sealed class DemoCommands(
     /// </summary>
     internal string DemoTestReport(int demonumber)
     {
-        var actors = map.GetActors().Where(a => !a.IsRemoved && !ReferenceEquals(a, session.player)).ToList();
+        var actors = map.GetActors().Where(a => !a.IsRemoved && !ReferenceEquals(a, session.Player)).ToList();
         ulong hash = 14695981039346656037UL;    // FNV-1a
         foreach (var a in actors)
             foreach (var c in $"{a.Name},{a.X},{a.Y},{a.Hitpoints},{a.CurrentState?.StateName}|")
                 hash = (hash ^ c) * 1099511628211UL;
 
-        return $"demotest {demonumber}: data {demo.demoptr}/{demo.lastdemoptr} score {session.playerstate.score} health {session.playerstate.health} "
-            + $"kills {session.gamestate.killcount}/{session.gamestate.killtotal} treasure {session.gamestate.treasurecount}/{session.gamestate.treasuretotal} "
-            + $"player {session.player.X},{session.player.Y},{session.player.Angle} actors {actors.Count} hash {hash:x16}";
+        return $"demotest {demonumber}: data {demo.DemoPtr}/{demo.LastDemoPtr} score {session.PlayerState.Score} health {session.PlayerState.Health} "
+            + $"kills {session.GameState.KillCount}/{session.GameState.KillTotal} treasure {session.GameState.TreasureCount}/{session.GameState.TreasureTotal} "
+            + $"player {session.Player.X},{session.Player.Y},{session.Player.Angle} actors {actors.Count} hash {hash:x16}";
     }
 
     // Queued like playdemo. The map is MAP## or just its number; a demo can only name MAP01 onwards,
@@ -118,8 +118,8 @@ internal sealed class DemoCommands(
             demonumber = number;
         }
 
-        demoPlayback.pendingRecord = new DemoRecordRequest(level, demonumber);
-        if (session.ingame)
-            session.playstate = PlayState.Abort;
+        demoPlayback.PendingRecord = new DemoRecordRequest(level, demonumber);
+        if (session.InGame)
+            session.PlayState = PlayState.Abort;
     }
 }

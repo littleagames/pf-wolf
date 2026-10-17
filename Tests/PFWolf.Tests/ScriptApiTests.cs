@@ -1,6 +1,6 @@
 using Lua;
 using PFWolf.Scripting;
-// PFWolf.Actor, the legacy wall/door base class, would win over a plain Actor alias
+// PFWolf.Actor, the legacy WallId/DoorNumber base class, would win over a plain Actor alias
 using EntityActor = PFWolf.Entities.Actors.Actor;
 
 namespace PFWolf.Tests;

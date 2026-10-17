@@ -20,19 +20,19 @@ public class PlayerDeathTests
             tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
-        var session = new GameSession { tics = 5 };
+        var session = new GameSession { Tics = 5 };
         var death = new PlayerDeath(null!, null!, null!, null!, null!, new InventoryManager(ActorDefs.Metadata(Yaml)), null!, map,
             null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!, new Configuration.GameSettings(), null!);
         var player = new Entities.Actors.Monster { Name = "Player" };
 
         // Act / Assert: made, and moved on a frame by this frame's tics
         death.ThinkDeathCam(player);
-        var banner = death.deathCamSprite;
+        var banner = death.DeathCamSprite;
         Assert.That(banner?.CurrentState?.FrameLetter, Is.EqualTo("B"));
 
         // the same one, each frame after
         death.ThinkDeathCam(player);
-        Assert.That(death.deathCamSprite, Is.SameAs(banner));
+        Assert.That(death.DeathCamSprite, Is.SameAs(banner));
     }
 
     [Test]

@@ -83,25 +83,25 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         DrawBJ();
 
         var gameInfo = engine.GetGameInfo();
-        var mapInfo = gameInfo.Maps[session.gamestate.mapon];
-        //if (session.gamestate.mapon < LRpack)
+        var mapInfo = gameInfo.Maps[session.GameState.MapOn];
+        //if (session.GameState.MapOn < LRpack)
         {
             foreach (var label in Intermission.Labels ?? [])
                 ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
             WriteValue("bonus", "0");
             WriteValue("floor", mapInfo.FloorNumber.ToString());
-            WriteValue("name", hooks.MapDisplayName(session.gamestate.mapon));
+            WriteValue("name", hooks.MapDisplayName(session.GameState.MapOn));
             if (!string.IsNullOrWhiteSpace(mapInfo.Author))     // a map pack's credit; none, nothing drawn
                 WriteValue("author", mapInfo.Author.ToLanguageText(language));
             WriteValue("par", int.SecondsAsTime(mapInfo.ParTime));
             //
             // PRINT TIME
             //
-            sec = session.gamestate.TimeCount / 70;
+            sec = session.GameState.TimeCount / 70;
 
             if (sec > 99 * 60)      // 99 minutes max
                 sec = 99 * 60;
-            if (session.gamestate.TimeCount < mapInfo.ParTime * 70)
+            if (session.GameState.TimeCount < mapInfo.ParTime * 70)
                 timeleft = mapInfo.ParTime - sec;
 
             min = sec / 60;
@@ -115,7 +115,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             //
             // FIGURE RATIOS OUT BEFOREHAND
             //
-            (kr, sr, tr) = Ratios(session.gamestate);
+            (kr, sr, tr) = Ratios(session.GameState);
 
 
             //
@@ -291,13 +291,13 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             // SAVE RATIO INFORMATION FOR ENDGAME
             //
             // The latest run through a floor counts; the win tally averages the won cluster's floors
-            session.LevelRatios[session.gamestate.mapon] =
+            session.LevelRatios[session.GameState.MapOn] =
                 new LevelRatio
             {
-                kill = (short)kr,
-                secret = (short)sr,
-                treasure = (short)tr,
-                time = min * 60 + sec
+                Kill = (short)kr,
+                Secret = (short)sr,
+                Treasure = (short)tr,
+                Time = min * 60 + sec
             };
 
             // TODO This should be set up as different LevelCompleted "screens"???
@@ -343,7 +343,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// What the game-info shows when the current cluster is won; an empty one when it has no entry
     /// </summary>
     internal ClusterInfo WonCluster()
-        => engine.GetGameInfo().Clusters.GetValueOrDefault(session.gamestate.cluster) ?? new();
+        => engine.GetGameInfo().Clusters.GetValueOrDefault(session.GameState.Cluster) ?? new();
 
     /// <summary>
     /// The color a won cluster fades to (its victory-fade-color), or black
@@ -357,12 +357,12 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     internal static (int Kill, int Secret, int Treasure) Ratios(GameState gamestate)
     {
         int kr = 0, sr = 0, tr = 0;
-        if (gamestate.killtotal != 0)
-            kr = (gamestate.killcount * 100) / gamestate.killtotal;
-        if (gamestate.secrettotal != 0)
-            sr = (gamestate.secretcount * 100) / gamestate.secrettotal;
-        if (gamestate.treasuretotal != 0)
-            tr = (gamestate.treasurecount * 100) / gamestate.treasuretotal;
+        if (gamestate.KillTotal != 0)
+            kr = (gamestate.KillCount * 100) / gamestate.KillTotal;
+        if (gamestate.SecretTotal != 0)
+            sr = (gamestate.SecretCount * 100) / gamestate.SecretTotal;
+        if (gamestate.TreasureTotal != 0)
+            tr = (gamestate.TreasureCount * 100) / gamestate.TreasureTotal;
         return (kr, sr, tr);
     }
 
@@ -387,13 +387,13 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             .Select(lr => lr.Value)
             .ToList();
 
-        int sec = floors.Sum(f => f.time);
+        int sec = floors.Sum(f => f.Time);
         int kr = 0, sr = 0, tr = 0;
         if (floors.Count > 0)
         {
-            kr = floors.Sum(f => f.kill) / floors.Count;
-            sr = floors.Sum(f => f.secret) / floors.Count;
-            tr = floors.Sum(f => f.treasure) / floors.Count;
+            kr = floors.Sum(f => f.Kill) / floors.Count;
+            sr = floors.Sum(f => f.Secret) / floors.Count;
+            tr = floors.Sum(f => f.Treasure) / floors.Count;
         }
 
         int min = sec / 60;
@@ -429,7 +429,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
         foreach (var pic in screen.Pics)
             graphics.DrawPic(pic.Pic, pic.X, pic.Y);
-        (min, sec, kr, sr, tr) = ClusterTotals(session.LevelRatios, engine.GetGameInfo().Maps, session.gamestate.cluster);
+        (min, sec, kr, sr, tr) = ClusterTotals(session.LevelRatios, engine.GetGameInfo().Maps, session.GameState.Cluster);
 
         WriteValue(screen.Values, "time", $"{min:00}:{sec:00}");
         video.Update();
@@ -443,7 +443,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         //
         // TOTAL TIME VERIFICATION CODE
         //
-        //if (session.gamestate.difficulty >= 2)   // medium or harder
+        //if (session.GameState.difficulty >= 2)   // medium or harder
         //{
         //    graphics.DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
         //    fontnumber = "SmallFont";

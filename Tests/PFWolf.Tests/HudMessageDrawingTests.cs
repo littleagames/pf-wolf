@@ -20,7 +20,7 @@ public class HudMessageDrawingTests
     public void Make()
     {
         _session = new GameSession();
-        _session.playerstate.Pawn = new Entities.Actors.PlayerPawn { State = _session.playerstate };
+        _session.PlayerState.Pawn = new Entities.Actors.PlayerPawn { State = _session.PlayerState };
         var console = new ConsoleManager();
         _messages = new HudMessageManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<ConsoleManager>(console))
         {
@@ -43,7 +43,7 @@ public class HudMessageDrawingTests
     public void The_Obituary_Fills_In_Who_Died_And_Who_Did_It()
     {
         // Arrange
-        _session.playerstate.LastAttacker = Guard("%o was shot by %k");
+        _session.PlayerState.LastAttacker = Guard("%o was shot by %k");
 
         // Act
         _drawing.ShowObituary();
@@ -58,7 +58,7 @@ public class HudMessageDrawingTests
         // Arrange
         var rocket = new Entities.Actors.Monster { Name = "Rocket" };
         rocket.Shooter = Guard("%o ate %k's rocket");
-        _session.playerstate.LastAttacker = rocket;
+        _session.PlayerState.LastAttacker = rocket;
 
         // Act
         _drawing.ShowObituary();

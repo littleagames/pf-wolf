@@ -10,7 +10,7 @@ internal enum ZoneEffect : byte { None, Flicker, Pulse, Strobe }
 
 /// <summary>
 /// How an effect moves a light between low and its light, for light zones and actor lights
-/// alike. An effect's place is a phase (tics into a pulse or strobe cycle, or for a flicker,
+/// alike. An effect's place is a CurrentPhase (tics into a pulse or strobe cycle, or for a flicker,
 /// tics until it jumps again) and, for a flicker, how far toward low it jumped (0 to 256).
 /// </summary>
 internal static class LightEffects

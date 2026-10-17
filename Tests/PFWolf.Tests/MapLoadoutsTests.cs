@@ -54,11 +54,11 @@ public class MapLoadoutsTests
         _session = new GameSession();
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
         _session.ActingChanged = p => _inventory.SetHolder(p.Items);
-        _session.SetActing(_session.players[0]);
+        _session.SetActing(_session.Players[0]);
         foreach (var (item, amount) in new[] { ("Knife", 1), ("Pistol", 1), ("Shotgun", 1), ("Ammo45", 40), ("AmmoShells", 12), ("PistolMag", 6), ("Medkit", 2) })
             _inventory.Give(item, amount);
-        _session.playerstate.weapon = _session.playerstate.chosenweapon = "Shotgun";
-        _session.playerstate.health = 80;
+        _session.PlayerState.Weapon = _session.PlayerState.ChosenWeapon = "Shotgun";
+        _session.PlayerState.Health = 80;
 
         var bar = new StatusBarDrawing(null!, null, null!, null!, _inventory, null!, null!, null!, _session,
             new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
@@ -77,16 +77,16 @@ public class MapLoadoutsTests
         // Assert: the magazine's rounds stay, the rest of the ammo goes, the medkits stay
         Assert.That(_inventory.Items.Where(i => i.Value > 0).ToDictionary(i => i.Key, i => i.Value),
             Is.EquivalentTo(new Dictionary<string, int> { ["Knife"] = 1, ["Pistol"] = 1, ["PistolMag"] = 6, ["Medkit"] = 2 }));
-        Assert.That(_session.playerstate.health, Is.EqualTo(50));
-        Assert.That(_session.playerstate.weapon, Is.EqualTo("Pistol"));
+        Assert.That(_session.PlayerState.Health, Is.EqualTo(50));
+        Assert.That(_session.PlayerState.Weapon, Is.EqualTo("Pistol"));
     }
 
     [Test]
     public void A_Health_Cap_Doesnt_Raise_It()
     {
-        _session.playerstate.health = 30;
+        _session.PlayerState.Health = 30;
         _loadouts.Apply(Loadout("health-cap: 50\n"));
-        Assert.That(_session.playerstate.health, Is.EqualTo(30));
+        Assert.That(_session.PlayerState.Health, Is.EqualTo(30));
         Assert.That(_inventory.Has("Shotgun"), Is.True);
     }
 
@@ -94,25 +94,25 @@ public class MapLoadoutsTests
     public void POW_Takes_Everything_And_Sets_Health_To_One()
     {
         _loadouts.Apply(Loadout("take-weapons: true\nhealth: 1\n"));
-        Assert.That(_session.playerstate.health, Is.EqualTo(1));
+        Assert.That(_session.PlayerState.Health, Is.EqualTo(1));
         Assert.That(_inventory.Items.Where(i => i.Value > 0).Select(i => i.Key), Is.EquivalentTo(new[] { "PistolMag", "Medkit" }));
-        Assert.That(_session.playerstate.weapon, Is.Null);
+        Assert.That(_session.PlayerState.Weapon, Is.Null);
     }
 
     [Test]
     public void Knife_Only_Puts_The_Knife_In_Hand()
     {
         _loadouts.Apply(Loadout("take-weapons: true\ngive: { Knife: 1 }\n"));
-        Assert.That(_session.playerstate.weapon, Is.EqualTo("Knife"));
-        Assert.That(_session.playerstate.WeaponSprite, Is.Null);
+        Assert.That(_session.PlayerState.Weapon, Is.EqualTo("Knife"));
+        Assert.That(_session.PlayerState.WeaponSprite, Is.Null);
     }
 
     [Test]
     public void Every_Player_Gets_It()
     {
         // Arrange: a second player, with a shotgun
-        var second = new Entities.PlayerState { health = 100 };
-        _session.players.Add(second);
+        var second = new Entities.PlayerState { Health = 100 };
+        _session.Players.Add(second);
         using (_session.ActAs(second))
             _inventory.Give("Shotgun", 1);
 
@@ -128,6 +128,6 @@ public class MapLoadoutsTests
     public void No_Loadout_Changes_Nothing()
     {
         _loadouts.Apply(null);
-        Assert.That(_inventory.Has("Shotgun") && _session.playerstate.health == 80, Is.True);
+        Assert.That(_inventory.Has("Shotgun") && _session.PlayerState.Health == 80, Is.True);
     }
 }

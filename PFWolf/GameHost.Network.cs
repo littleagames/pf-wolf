@@ -27,7 +27,7 @@ internal static partial class GameHost
     */
 
     // Whether the game running is one with others over the network, and its levels' random seed (Gameplay/GameSession.cs)
-    internal static bool netgame { get => session.netgame; set => session.netgame = value; }
+    internal static bool netgame { get => session.NetGame; set => session.NetGame = value; }
 
     // The multiplayer screens (Ui/MultiplayerMenu.cs) and the command line's --host and --join
     // (Networking/NetStartRequest.cs), made in InitServices
@@ -134,7 +134,7 @@ internal static partial class GameHost
             (x, y) => playersManager.IsFreeFloor(x, y),
             name => _translationManager.Exists(name) ? name : null,
             name => _audioManager.Play(name));
-        deathmatch.objectives.AddRange(
+        deathmatch.MatchObjectives.AddRange(
         [
             new Gameplay.MatchModes.CaptureTheFlag(_mapManager, session, deathmatch, _hudMessageManager, hooks),
             new Gameplay.MatchModes.Heist(_mapManager, session, deathmatch, _hudMessageManager, hooks),
@@ -148,7 +148,7 @@ internal static partial class GameHost
         new(_videoManager, _inputManager, menuDrawing, ui, session, ClearMemory);
 
     /// <summary>The rules of the deathmatch being played</summary>
-    internal static NetRules netrules { get => deathmatch.netrules; set => deathmatch.netrules = value; }
+    internal static NetRules netrules { get => deathmatch.NetRules; set => deathmatch.NetRules = value; }
 
     static (int x, int y, int angle) DeathmatchSpot(PlayerPawn self) => deathmatch.DeathmatchSpot(self);
     static void GiveDeathmatchKeys() => deathmatch.GiveDeathmatchKeys();

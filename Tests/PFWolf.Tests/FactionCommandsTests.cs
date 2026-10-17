@@ -10,7 +10,7 @@ public class FactionCommandsTests
     {
         _console = new ConsoleManager { LevelLoaded = () => true, CheatsEnabled = () => true };
         _session = new GameSession();
-        _session.players.Add(new Entities.PlayerState { Number = 1, Color = "Red" });
+        _session.Players.Add(new Entities.PlayerState { Number = 1, Color = "Red" });
         var assets = new AssetManager();
         var map = new MapManager(new Lazy<AssetManager>(() => assets), null!, _session);
         var inventory = new InventoryManager(ActorDefs.Metadata("Player: {}"));
@@ -23,7 +23,7 @@ public class FactionCommandsTests
     {
         _console.Execute("playercolor none 2");
 
-        Assert.That(_session.players[1].Color, Is.Null);
+        Assert.That(_session.Players[1].Color, Is.Null);
         Assert.That(_console.Scrollback[^1], Is.EqualTo("Player 2 is in their class's own colors"));
     }
 
@@ -32,7 +32,7 @@ public class FactionCommandsTests
     {
         _console.Execute("playercolor Purple");
 
-        Assert.That(_session.players[0].Color, Is.Null);
+        Assert.That(_session.Players[0].Color, Is.Null);
         Assert.That(_console.Scrollback[^1], Does.Contain("no translation Purple"));
     }
 

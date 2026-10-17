@@ -319,7 +319,7 @@ public class PfWolfPk3Loader
 
         if (IsIn(fullName, "textures/") || IsIn(fullName, "flats/"))
         {
-            // wall textures of any size (a VSWAP wall of the same name is replaced); flats/ is
+            // WallId textures of any size (a VSWAP WallId of the same name is replaced); flats/ is
             // ECWolf's folder for floor and ceiling textures, which are textures like any other.
             // Named by file name, in whatever subfolders (NestableFolders).
             AddReference(assetName, () => TextureAsset.FromGraphic(

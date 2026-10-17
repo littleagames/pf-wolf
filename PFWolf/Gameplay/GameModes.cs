@@ -20,7 +20,7 @@ namespace PFWolf.Gameplay;
     Horde           together against waves of enemies (horde.yaml): the
                     match ends when every player is dead at once
 
-    Every versus mode gives each player every key (no door is shut to
+    Every versus mode gives each player every key (no DoorNumber is shut to
     anyone), except Heist, where the best treasure is behind locked doors:
     keys are found, and lost with a death.
 
@@ -60,7 +60,7 @@ internal static class GameModes
     /// <summary>Each player carries every key (every versus mode but Heist)</summary>
     internal static bool GivesAllKeys(this GameMode mode) => mode.IsVersus() && mode != GameMode.Heist;
 
-    /// <summary>The mode's name in game-info's map `modes:` lists and the `gamemode` command</summary>
+    /// <summary>The mode's name in game-info's map `modes:` lists and the `GameMode` command</summary>
     internal static string Id(this GameMode mode) => mode switch
     {
         GameMode.Coop => "coop",

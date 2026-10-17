@@ -92,7 +92,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
         audio.StopAll();        // ClearMemory
 
         var gameInfo = engine.GetGameInfo();
-        if (!gameInfo.Clusters.TryGetValue(session.gamestate.cluster, out var clusterInfo)
+        if (!gameInfo.Clusters.TryGetValue(session.GameState.Cluster, out var clusterInfo)
             || string.IsNullOrEmpty(clusterInfo?.EndText))
         {
             return;

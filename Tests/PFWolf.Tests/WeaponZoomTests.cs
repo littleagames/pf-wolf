@@ -30,10 +30,10 @@ public class WeaponZoomTests
         public Rig(string weapon)
         {
             var inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-            inventory.SetHolder(Session.playerstate.Items);
+            inventory.SetHolder(Session.PlayerState.Items);
             Zoom = new WeaponZoom(inventory, new AudioManager(new Lazy<AssetManager>(() => null!), Session), Session);
-            Session.playerstate.weapon = weapon;
-            Session.tics = 1;
+            Session.PlayerState.Weapon = weapon;
+            Session.Tics = 1;
         }
 
         // The zoom key down (pressed now, and held from before after the first tic) for that many tics
@@ -41,16 +41,16 @@ public class WeaponZoomTests
         {
             for (int i = 0; i < tics; i++)
             {
-                Session.playerinput.SetPressed(ButtonType.Zoom, true);
-                Session.playerinput.SetHeld(ButtonType.Zoom, i > 0);
+                Session.PlayerInput.SetPressed(ButtonType.Zoom, true);
+                Session.PlayerInput.SetHeld(ButtonType.Zoom, i > 0);
                 Zoom.Tick(reloading: false);
             }
         }
 
         public void LetGo()
         {
-            Session.playerinput.SetPressed(ButtonType.Zoom, false);
-            Session.playerinput.SetHeld(ButtonType.Zoom, false);
+            Session.PlayerInput.SetPressed(ButtonType.Zoom, false);
+            Session.PlayerInput.SetHeld(ButtonType.Zoom, false);
             Zoom.Tick(reloading: false);
         }
     }
@@ -66,10 +66,10 @@ public class WeaponZoomTests
         rig.LetGo();
 
         // Assert
-        Assert.That(rig.Session.playerstate.ZoomLevel, Is.EqualTo(50));
-        Assert.That(rig.Session.playerstate.ZoomMode, Is.EqualTo(ZoomMode.Zoomed));
+        Assert.That(rig.Session.PlayerState.ZoomLevel, Is.EqualTo(50));
+        Assert.That(rig.Session.PlayerState.ZoomMode, Is.EqualTo(ZoomMode.Zoomed));
         Assert.That(rig.Zoom.Magnification(), Is.EqualTo(3.5));        // 1 + 5 * 50%
-        Assert.That(rig.Session.playerstate.TurnSlowdown, Is.EqualTo(4));
+        Assert.That(rig.Session.PlayerState.TurnSlowdown, Is.EqualTo(4));
         Assert.That(rig.Zoom.ScopePicture(), Is.EqualTo("SCOPE"));
     }
 
@@ -78,7 +78,7 @@ public class WeaponZoomTests
     {
         var rig = new Rig("Rifle");
         rig.Hold(80);
-        Assert.That(rig.Session.playerstate.ZoomLevel, Is.EqualTo(WeaponZoom.MaxLevel));
+        Assert.That(rig.Session.PlayerState.ZoomLevel, Is.EqualTo(WeaponZoom.MaxLevel));
         Assert.That(rig.Zoom.Magnification(), Is.EqualTo(6));
     }
 
@@ -92,13 +92,13 @@ public class WeaponZoomTests
 
         // Act / Assert: 5 a tic out
         rig.Hold(3);
-        Assert.That(rig.Session.playerstate.ZoomMode, Is.EqualTo(ZoomMode.ZoomOut));
-        Assert.That(rig.Session.playerstate.ZoomLevel, Is.EqualTo(10));
+        Assert.That(rig.Session.PlayerState.ZoomMode, Is.EqualTo(ZoomMode.ZoomOut));
+        Assert.That(rig.Session.PlayerState.ZoomLevel, Is.EqualTo(10));
         rig.LetGo();
-        Assert.That(rig.Session.playerstate.ZoomMode, Is.EqualTo(ZoomMode.Ready));
+        Assert.That(rig.Session.PlayerState.ZoomMode, Is.EqualTo(ZoomMode.Ready));
         Assert.That(rig.Zoom.Magnification(), Is.EqualTo(1));
         Assert.That(rig.Zoom.ScopePicture(), Is.Null);
-        Assert.That(rig.Session.playerstate.TurnSlowdown, Is.EqualTo(1));
+        Assert.That(rig.Session.PlayerState.TurnSlowdown, Is.EqualTo(1));
     }
 
     [Test]
@@ -110,12 +110,12 @@ public class WeaponZoomTests
 
         // Act / Assert
         rig.Zoom.Tick(reloading: true);
-        Assert.That(rig.Session.playerstate.ZoomLevel, Is.Zero);
+        Assert.That(rig.Session.PlayerState.ZoomLevel, Is.Zero);
 
         rig.Hold(20);
-        rig.Session.playerstate.weapon = "Pistol";
+        rig.Session.PlayerState.Weapon = "Pistol";
         rig.Zoom.Tick(reloading: false);
-        Assert.That(rig.Session.playerstate.ZoomMode, Is.EqualTo(ZoomMode.Ready));
+        Assert.That(rig.Session.PlayerState.ZoomMode, Is.EqualTo(ZoomMode.Ready));
     }
 
     [Test]
@@ -123,7 +123,7 @@ public class WeaponZoomTests
     {
         var rig = new Rig("Pistol");
         rig.Hold(20);
-        Assert.That(rig.Session.playerstate.ZoomLevel, Is.Zero);
+        Assert.That(rig.Session.PlayerState.ZoomLevel, Is.Zero);
         Assert.That(rig.Zoom.Magnification(), Is.EqualTo(1));
     }
 }

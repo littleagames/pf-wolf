@@ -28,8 +28,8 @@ internal sealed class Scoreboard(
     /// </summary>
     internal List<Entities.PlayerState> RankedPlayers()
     {
-        var mode = session.gamemode;
-        var present = session.players.Where(p => !p.Gone);
+        var mode = session.GameMode;
+        var present = session.Players.Where(p => !p.Gone);
         var ranked = mode.IsTeamGame()
             ? present.OrderBy(p => p.Team < 0 ? 2 : p.Team).ThenByDescending(p => PlayerScore(p))
             : present.OrderByDescending(p => PlayerScore(p));
@@ -37,11 +37,11 @@ internal sealed class Scoreboard(
     }
 
     // The scoreboard's number for a player: frags, what they did for the team, or score
-    int PlayerScore(Entities.PlayerState p) => session.gamemode switch
+    int PlayerScore(Entities.PlayerState p) => session.GameMode switch
     {
         GameMode.Deathmatch or GameMode.TeamDeathmatch => p.Frags,
-        _ when session.gamemode.IsTeamGame() => p.Objective,
-        _ => p.score,
+        _ when session.GameMode.IsTeamGame() => p.Objective,
+        _ => p.Score,
     };
 
     /// <summary>
@@ -52,7 +52,7 @@ internal sealed class Scoreboard(
     internal void DrawScoreboard(int y, string? title = null)
     {
         var ranked = RankedPlayers();
-        var mode = session.gamemode;
+        var mode = session.GameMode;
         bool teams = mode.IsTeamGame() && Match != null;
         const int X = 40, W = 240, Row = 10;
         int h = 14 + Row * ranked.Count + (title != null ? Row : 0) + (teams ? Row : 0);
@@ -68,7 +68,7 @@ internal sealed class Scoreboard(
         if (teams)
         {
             ui.CenteredText(X, W, ty, new Fonts.TextStyle(UiFonts.SmallFont, "READHCOLOR"))
-                .CPrint($"Red {Match!.teamscores[0]}   -   {Match.teamscores[1]} Blue");
+                .CPrint($"Red {Match!.TeamScores[0]}   -   {Match.TeamScores[1]} Blue");
             ty += Row;
         }
 
@@ -86,11 +86,11 @@ internal sealed class Scoreboard(
 
         foreach (var p in ranked)
         {
-            var style = new Fonts.TextStyle(UiFonts.SmallFont, ReferenceEquals(p, session.localplayer) ? "HIGHLIGHT" : "TEXTCOLOR");
+            var style = new Fonts.TextStyle(UiFonts.SmallFont, ReferenceEquals(p, session.LocalPlayer) ? "HIGHLIGHT" : "TEXTCOLOR");
             var name = p.Name ?? $"Player {p.Number + 1}";
             if (teams && p.Team is 0 or 1)
                 name = $"{GameModes.TeamLabel(p.Team)}: {name}";
-            if (p.health <= 0)
+            if (p.Health <= 0)
                 name += " (dead)";
             ui.TextAt(X + 6, ty, style).Print(ui.FitText(name, 140, UiFonts.SmallFont));
             ui.TextAt(X + 150, ty, style).Print(PlayerScore(p).ToString());
@@ -105,7 +105,7 @@ internal sealed class Scoreboard(
     {
         if (Match?.Objective?.FinalTitle() is { } objective)
             return objective;
-        if (session.gamemode.IsTeamGame() && Match != null)
+        if (session.GameMode.IsTeamGame() && Match != null)
             return Match.LeadingTeam < 0 ? "It's a draw!" : $"{GameModes.TeamLabel(Match.LeadingTeam)} team wins!";
         var winner = RankedPlayers().FirstOrDefault();
         return winner == null ? "Match over" : $"{winner.Name ?? $"Player {winner.Number + 1}"} wins!";

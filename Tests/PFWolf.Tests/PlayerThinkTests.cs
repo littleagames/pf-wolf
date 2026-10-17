@@ -11,10 +11,10 @@ public class PlayerThinkTests
     private static (PlayerThink Think, GameSession Session, PlayerPawn Player) Won(bool runnerOnItsWay = false)
     {
         var session = new GameSession();
-        var pawn = new PlayerPawn { State = session.playerstate, X = 10 * Tile + Tile / 2, Y = 30 * Tile + Tile / 2, TileX = 10, TileY = 30 };
-        session.playerstate.Pawn = pawn;
-        session.gamestate.victoryflag = true;
-        session.tics = 1;
+        var pawn = new PlayerPawn { State = session.PlayerState, X = 10 * Tile + Tile / 2, Y = 30 * Tile + Tile / 2, TileX = 10, TileY = 30 };
+        session.PlayerState.Pawn = pawn;
+        session.GameState.VictoryFlag = true;
+        session.Tics = 1;
         var think = new PlayerThink(null!, null!, null!, null!, null!, null!, null!, null!, null!, session,
             new PlayerThinkHooks(() => { }, () => runnerOnItsWay, () => { }, _ => { }));
         return (think, session, pawn);
@@ -43,15 +43,15 @@ public class PlayerThinkTests
         // Arrange
         var (think, session, player) = Won();
         int dest = (25 << MapConstants.TileShift) - 0x3000;
-        session.playerstate.Pitch = 12;
+        session.PlayerState.Pitch = 12;
 
         // Act / Assert: 4096 a tic
         int y = player.Y;
         think.VictorySpin();
         Assert.That(player.Y, Is.EqualTo(y - 4096));
-        Assert.That(session.playerstate.Pitch, Is.Zero);        // watching BJ straight on
+        Assert.That(session.PlayerState.Pitch, Is.Zero);        // watching BJ straight on
 
-        session.tics = 1000;
+        session.Tics = 1000;
         think.VictorySpin();
         Assert.That(player.Y, Is.EqualTo(dest));
     }

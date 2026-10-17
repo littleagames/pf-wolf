@@ -58,7 +58,7 @@ public class ToolGameTests
     [Test]
     public void The_Magic_Wand_Selects_A_Run_Of_Walls()
     {
-        // Arrange: E1M2's blue wall at (20, 54)
+        // Arrange: E1M2's blue WallId at (20, 54)
         var (document, tools) = Open("map02");
         tools.Tool = EditTool.MagicWand;
         var code = document[0, 20, 54] & 0xff;

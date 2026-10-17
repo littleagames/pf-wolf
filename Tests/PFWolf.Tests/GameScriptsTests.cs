@@ -30,10 +30,10 @@ public class GameScriptsTests
     {
         // Arrange
         var host = Host();
-        _session.gamestate.TimeCount = 1234;
-        _session.gamestate.mapon = "MAP07";
-        _session.gamestate.difficulty = 2;
-        _session.tics = 3;
+        _session.GameState.TimeCount = 1234;
+        _session.GameState.MapOn = "MAP07";
+        _session.GameState.Difficulty = 2;
+        _session.Tics = 3;
 
         // Act
         host.Execute("print(game.time(), game.map(), game.skill(), game.tics())");
@@ -47,7 +47,7 @@ public class GameScriptsTests
     {
         // Arrange
         var host = Host();
-        int start = _session.random.rndindex;
+        int start = _session.Random.RndIndex;
 
         // Act
         host.Execute("for i = 1, 200 do local n = game.random(3, 5) if n < 3 or n > 5 then print('out', n) end end print('done')");
@@ -55,7 +55,7 @@ public class GameScriptsTests
         // Assert
         Assert.That(Printed(), Has.None.StartsWith("out"));
         Assert.That(Printed(), Has.Some.EqualTo("done"));
-        Assert.That(_session.random.rndindex, Is.Not.EqualTo(start));      // the game's own numbers moved on
+        Assert.That(_session.Random.RndIndex, Is.Not.EqualTo(start));      // the game's own numbers moved on
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class GameScriptsTests
         // Arrange
         var host = Host();
         host.Load("game.onlevel(function(reason, map) print('level', reason, map) end)", "test.lua");
-        _session.gamestate.mapon = "MAP02";
+        _session.GameState.MapOn = "MAP02";
 
         // Act
         _scripts.RunLevelHooks("restarted");
@@ -128,7 +128,7 @@ public class GameScriptsTests
         // Arrange
         var host = Host();
         host.Load("game.ontick(function(tics) print('tick', tics) end)", "test.lua");
-        _session.tics = 2;
+        _session.Tics = 2;
 
         // Act
         _scripts.RunTickHooks();

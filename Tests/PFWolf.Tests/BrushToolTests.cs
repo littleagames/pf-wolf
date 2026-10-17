@@ -111,7 +111,7 @@ public class BrushToolTests
     [Test]
     public void A_Room_Has_Walls_Round_Open_Floor()
     {
-        // Arrange: a wall in the way inside where the room goes
+        // Arrange: a WallId in the way inside where the room goes
         var (document, tools) = Setup(EditTool.Room);
         EditorMaps.Set(document, 0, 12, 12, OtherWall);
 
@@ -130,7 +130,7 @@ public class BrushToolTests
     [Test]
     public void A_Stamp_Drag_Lays_Copies_Side_By_Side()
     {
-        // Arrange: copy a 2 × 1 piece: a wall and open floor
+        // Arrange: copy a 2 × 1 piece: a WallId and open floor
         var (document, tools) = Setup(EditTool.Select);
         EditorMaps.Set(document, 0, 0, 0, Wall);
         tools.Press(0, 0);
@@ -145,7 +145,7 @@ public class BrushToolTests
             tools.Move(x, 20);
         tools.Release();
 
-        // Assert: copies at 20, 22, 24 (each around the pointer: the wall a tile left of it)
+        // Assert: copies at 20, 22, 24 (each around the pointer: the WallId a tile left of it)
         Assert.That(document[0, 19, 20], Is.EqualTo(Wall));
         Assert.That(document[0, 21, 20], Is.EqualTo(Wall));
         Assert.That(document[0, 23, 20], Is.EqualTo(Wall));

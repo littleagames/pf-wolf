@@ -6,7 +6,7 @@ namespace PFWolf.Gameplay;
 /// <summary>What setting up a level needs from the game</summary>
 /// <param name="CurrentSkill">The skill being played (its enemy-health)</param>
 /// <param name="ApplyLoadout">Gives the players the level's starting loadout (Gameplay/MapLoadouts.cs)</param>
-/// <param name="CountObjectives">Counts the level's objectives and announces them (Gameplay/Objectives.cs)</param>
+/// <param name="CountObjectives">Counts the level's MatchObjectives and announces them (Gameplay/Objectives.cs)</param>
 internal sealed record LevelSetupHooks(
     Func<SkillInfo> CurrentSkill,
     Action<MapLoadout?> ApplyLoadout,
@@ -14,7 +14,7 @@ internal sealed record LevelSetupHooks(
 
 /// <summary>
 /// Setting up a level to play (SetupGameLevel): the players' view and the level's counts reset,
-/// the map loaded with its wall height, sky, weather and flats, then the doors and players
+/// the map loaded with its WallId height, sky, weather and flats, then the doors and players
 /// spawned, the ambush markers taken out, and its shading and level AI set up.
 /// </summary>
 internal sealed class LevelSetup(
@@ -37,25 +37,25 @@ internal sealed class LevelSetup(
 {
     internal void SetupGameLevel()
     {
-        foreach (var p in session.players)
+        foreach (var p in session.Players)
         {
             p.Pitch = 0;                    // each level, and each loaded game, starts looking straight ahead
             p.EyeZ = classes.StandingEyeZ(p);       // from standing height
         }
-        session.camera.FollowPlayer();              // through the player's eyes
+        session.Camera.FollowPlayer();              // through the player's eyes
         weaponBob.Init();
 
-        if (!session.loadedgame)
+        if (!session.LoadedGame)
         {
-            session.gamestate.TimeCount =
-            session.gamestate.secrettotal =
-            session.gamestate.killtotal =
-            session.gamestate.treasuretotal =
-            session.gamestate.secretcount =
-            session.gamestate.killcount =
-            session.gamestate.treasurecount = 0;
+            session.GameState.TimeCount =
+            session.GameState.SecretTotal =
+            session.GameState.KillTotal =
+            session.GameState.TreasureTotal =
+            session.GameState.SecretCount =
+            session.GameState.KillCount =
+            session.GameState.TreasureCount = 0;
             pushWalls.ClearPushWalls();
-            foreach (var p in session.players)
+            foreach (var p in session.Players)
             {
                 p.WeaponSprite = null;      // the weapon in hand starts on its Ready state
                 p.FaceTimes = 0;
@@ -64,25 +64,25 @@ internal sealed class LevelSetup(
             }
         }
 
-        if ((session.demoplayback || session.demorecord))
-            session.random.InitRndT(false);
-        else if (session.netgame)
-            session.random.rndindex = session.netseed;         // where the host said, the same on every machine
+        if ((session.DemoPlayback || session.DemoRecord))
+            session.Random.InitRndT(false);
+        else if (session.NetGame)
+            session.Random.RndIndex = session.NetSeed;         // where the host said, the same on every machine
         else
-            session.random.InitRndT(true);
+            session.Random.InitRndT(true);
 
         //
         // load the level
         //
         deathmatch.DeathmatchLevelSetup();         // with or without its enemies (Gameplay/Deathmatch.cs)
-        //int mapnum = gamestate.mapon + 10 * gamestate.cluster;
-        map.LoadMap(session.gamestate.mapon, session.gamestate.difficulty, hooks.CurrentSkill().EnemyHealth,
-            engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var loadingMap) ? loadingMap.FloorNumber : -1);
+        //int mapnum = GameState.MapOn + 10 * GameState.cluster;
+        map.LoadMap(session.GameState.MapOn, session.GameState.Difficulty, hooks.CurrentSkill().EnemyHealth,
+            engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var loadingMap) ? loadingMap.FloorNumber : -1);
 
         // The cluster follows the map, however it was reached: a new game, the next/secret
         // level, a map-change trigger or the console's "map" warp
-        if (engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var mapInfo))
-            session.gamestate.cluster = mapInfo.Cluster;
+        if (engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var mapInfo))
+            session.GameState.Cluster = mapInfo.Cluster;
 
         map.wallstories = Math.Clamp(mapInfo?.WallHeight ?? engine.GetGameInfo().DefaultMap.WallHeight,
             1, GameConstants.MaxWallStories);
@@ -105,7 +105,7 @@ internal sealed class LevelSetup(
         {
             for (x = 0; x < map.mapwidth; x++)
             {
-                // door (a plane 0 tile listed in the mapdefs doors)
+                // DoorNumber (a plane 0 tile listed in the mapdefs doors)
                 if (doors.TryGetValue(map.MapSpot(x, y, 0), out var doorXlat))
                     doorObjects.SpawnDoor(x, y, doorXlat.Vertical, doorXlat);
             }
@@ -117,14 +117,14 @@ internal sealed class LevelSetup(
 
         //
         // spawn the player (MapManager.LoadMap already spawned every other thing and counted
-        // the secret pushwalls, from the mapdefs)
+        // the secret MovingWalls, from the mapdefs)
         //
         if (map.PlayerStart is { } start)
             playersManager.SpawnPlayers(start.TileX, start.TileY, start.Angle);
         else
         {
             var (standx, standy) = playersManager.StandInStart();
-            Console.WriteLine($"{session.gamestate.mapon} has no mapdefs player start; starting on {standx},{standy}");
+            Console.WriteLine($"{session.GameState.MapOn} has no mapdefs player start; starting on {standx},{standy}");
             playersManager.SpawnPlayers(standx, standy, 90);
         }
 
@@ -154,13 +154,13 @@ internal sealed class LevelSetup(
         }
 
         lighting.InitLevelShading(mapInfo);
-        levelAI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
+        levelAI.OnLevelStart();      // WallId outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
 
         // the level's starting loadout, as it starts afresh (game-info map loadout)
-        if (!session.loadedgame)
+        if (!session.LoadedGame)
         {
             hooks.ApplyLoadout(mapInfo?.Loadout);
-            hooks.CountObjectives();        // its objectives, counted afresh (a loaded game has its own)
+            hooks.CountObjectives();        // its MatchObjectives, counted afresh (a loaded game has its own)
         }
 
         //

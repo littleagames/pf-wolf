@@ -8,8 +8,8 @@ namespace PFWolf.Gameplay;
 /// <summary>What the player's movement needs from the game</summary>
 /// <param name="PlayerFactor">A factor from the player class (player.forwardmove, player.sidemove), 1 when left out</param>
 /// <param name="MaxPitch">How far up or down the view can look, in degrees</param>
-/// <param name="PlayPlayerSound">A sound the acting player makes (bumping a wall)</param>
-/// <param name="WallSpriteHit">The wall sprite panel the player's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
+/// <param name="PlayPlayerSound">A sound the acting player makes (bumping a WallId)</param>
+/// <param name="WallSpriteHit">The WallId sprite panel the player's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
 /// <param name="WallSpriteMoveFrom">Where a move starts, so a panel the player already overlaps there doesn't block it</param>
 /// <param name="ActivateTrigger">Runs a mapdefs trigger (a walk-over one, stepped onto)</param>
 internal sealed record PlayerMovementHooks(
@@ -22,7 +22,7 @@ internal sealed record PlayerMovementHooks(
 
 /// <summary>
 /// The acting player's movement: turning, looking up and down, walking and strafing from their
-/// input, and the move itself -- blocked by walls, pushwalls, diagonals, wall sprites and
+/// input, and the move itself -- blocked by walls, MovingWalls, diagonals, WallId sprites and
 /// actors, sliding along what it can -- then the walk-over and floor triggers it steps onto.
 /// </summary>
 internal sealed class PlayerMovement(
@@ -48,9 +48,9 @@ internal sealed class PlayerMovement(
     internal void ControlMovement(Entities.Actors.Actor ob)
     {
         const int ANGLES = GameConstants.Angles;
-        var playerinput = session.playerinput;
-        var playerstate = session.playerstate;
-        var tics = session.tics;
+        var playerinput = session.PlayerInput;
+        var playerstate = session.PlayerState;
+        var tics = session.Tics;
         int angle;
         int angleunits;
 
@@ -172,12 +172,12 @@ internal sealed class PlayerMovement(
 
     internal void Thrust(int angle, int speed)
     {
-        var player = session.player;
+        var player = session.Player;
         int xmove, ymove;
         //
         // ZERO FUNNY COUNTER IF MOVED!
         //
-        session.playerstate.ThrustSpeed += speed;
+        session.PlayerState.ThrustSpeed += speed;
         //
         // moving bounds speed
         //
@@ -185,7 +185,7 @@ internal sealed class PlayerMovement(
             speed = (int)(GameConstants.MinDist * 2 - 1);
 
         // demos move the player exactly as v1.4 did, or they drift from what was recorded
-        if ((session.demorecord || session.demoplayback))
+        if ((session.DemoRecord || session.DemoPlayback))
         {
             xmove = MathUtils.FixedByFracOrig(speed, TrigTables.CosTable[angle]);
             ymove = -MathUtils.FixedByFracOrig(speed, TrigTables.SinTable[angle]);
@@ -202,7 +202,7 @@ internal sealed class PlayerMovement(
         player.TileX = (byte)(player.X >> (int)MapConstants.TileShift);                // scale to tile values
         player.TileY = (byte)(player.Y >> (int)MapConstants.TileShift);
 
-        // A diagonal wall tile's open half has no area number (plane 0 holds the wall), so keep
+        // A diagonal WallId tile's open half has no area number (plane 0 holds the WallId), so keep
         // the one the player walked in from.
         var areatile = map.MapSpot(player.TileX, player.TileY, 0);
         if (map.ValidArea(areatile))
@@ -252,7 +252,7 @@ internal sealed class PlayerMovement(
                     if (check is WallSpriteBlocker)
                         nearwallsprite = true;          // only its panel blocks: checked below
                     else if (map.tilemap[x, y] == GameConstants.BitWall
-                        && pushWalls.pushwalls.Find(p => p.X == x && p.Y == y) is { } pw)    // back of a moving pushwall?
+                        && pushWalls.MovingWalls.Find(p => p.X == x && p.Y == y) is { } pw)    // back of a moving pushwall?
                     {
                         switch (pw.Dir)
                         {
@@ -291,7 +291,7 @@ internal sealed class PlayerMovement(
         }
 
         //
-        // a wall sprite only blocks along its panel (Rendering/WallSprites.cs)
+        // a WallId sprite only blocks along its panel (Rendering/WallSprites.cs)
         //
         if (nearwallsprite
             && hooks.WallSpriteHit((int)xl, (int)yl, (int)xh, (int)yh, ob.X, ob.Y, PLAYERSIZE) is { } panel)
@@ -352,7 +352,7 @@ internal sealed class PlayerMovement(
         if (TryMove(ob))
             return;
 
-        if ((session.noclip != 0) && ob.X > 2 * MapConstants.TileGlobal && ob.Y > 2 * MapConstants.TileGlobal
+        if ((session.NoClip != 0) && ob.X > 2 * MapConstants.TileGlobal && ob.Y > 2 * MapConstants.TileGlobal
             && ob.X < (((int)(map.mapwidth - 1)) << (int)MapConstants.TileShift)
             && ob.Y < (((int)(map.mapheight - 1)) << (int)MapConstants.TileShift))
             return;         // walk through walls
@@ -362,7 +362,7 @@ internal sealed class PlayerMovement(
 
         //
         // ran into a diagonal face: slide along it (the move's part in the face's direction),
-        // since neither axis on its own gets past a 45 degree wall
+        // since neither axis on its own gets past a 45 degree WallId
         //
         if (diagonalblock != WallShape.Square)
         {
@@ -375,7 +375,7 @@ internal sealed class PlayerMovement(
         }
 
         //
-        // ran into a wall sprite's panel: slide along it, which for a diagonal one neither
+        // ran into a WallId sprite's panel: slide along it, which for a diagonal one neither
         // axis on its own would
         //
         if (wallspriteblock is { } panel)

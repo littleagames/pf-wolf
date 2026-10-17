@@ -4,7 +4,7 @@ using PFWolf.Managers;
 namespace PFWolf.Gameplay;
 
 /// <summary>What projectiles need from the game</summary>
-/// <param name="WallSpriteHit">The wall sprite panel a projectile's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
+/// <param name="WallSpriteHit">The WallId sprite panel a projectile's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
 internal sealed record ProjectileHooks(
@@ -41,7 +41,7 @@ internal sealed class Projectiles(
             return;
         }
 
-        if (args.Length > 1 && int.TryParse(args[1], out var chance) && session.random.RndT() >= chance)
+        if (args.Length > 1 && int.TryParse(args[1], out var chance) && session.Random.RndT() >= chance)
             return;
 
         map.SpawnAtActor(args[0], ob);
@@ -82,7 +82,7 @@ internal sealed class Projectiles(
                 if (check is null or ActorMark)     // enemies are hit by the projectile's own check
                     continue;
 
-                // a wall sprite only blocks along its panel, unless it lets projectiles through
+                // a WallId sprite only blocks along its panel, unless it lets projectiles through
                 if (check is WallSpriteBlocker)
                 {
                     if (hooks.WallSpriteHit(x, y, x, y, ob.X, ob.Y, PROJSIZE) != null)
@@ -120,7 +120,7 @@ internal sealed class Projectiles(
         int damage = 0;
         int speed;
 
-        speed = (int)(ob.Speed * session.tics);
+        speed = (int)(ob.Speed * session.Tics);
 
         deltax = MathUtils.FixedMul(speed, TrigTables.CosTable[ob.Angle]);
         deltay = -MathUtils.FixedMul(speed, TrigTables.SinTable[ob.Angle]);
@@ -141,7 +141,7 @@ internal sealed class Projectiles(
 
         if (!ProjectileTryMove(ob))
         {
-            // A projectile with a Death state (rockets) blows up against the wall with its
+            // A projectile with a Death state (rockets) blows up against the WallId with its
             // deathsound, like the legacy switch to s_boom1; the rest (needles, flames, sparks)
             // just vanish
             if (ob.ResolvedStates.ContainsKey("Death"))
@@ -170,7 +170,7 @@ internal sealed class Projectiles(
             var minDamage = args.Length > 0 && int.TryParse(args[0], out var min) ? min : 0;
             var maxDamage = args.Length > 1 && int.TryParse(args[1], out var max) ? max : minDamage;
             damage = maxDamage > minDamage
-                ? minDamage + session.random.RndT() * (maxDamage - minDamage + 1) / 256
+                ? minDamage + session.Random.RndT() * (maxDamage - minDamage + 1) / 256
                 : minDamage;
 
             if (hit != null)
@@ -179,7 +179,7 @@ internal sealed class Projectiles(
                 monster!.Damage((uint)damage, ob);
 
             // BURSTONPLAYER projectiles (Blake Stone's spit and shots) burst on the player (or
-            // the enemy) as on a wall
+            // the enemy) as on a WallId
             if (ob.HasFlag("BURSTONPLAYER") && ob.ResolvedStates.ContainsKey("Death"))
                 ob.SetState("Death");
             else

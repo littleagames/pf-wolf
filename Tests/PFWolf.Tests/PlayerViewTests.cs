@@ -35,10 +35,10 @@ public class PlayerViewTests
     // In the middle of tile (10, 10), facing east
     private PlayerPawn Player()
     {
-        var pawn = new PlayerPawn { State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10, Angle = 0 };
-        _session.playerstate.Pawn = pawn;
+        var pawn = new PlayerPawn { State = _session.PlayerState, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10, Angle = 0 };
+        _session.PlayerState.Pawn = pawn;
         // where a line to them aims: where their last move left them (T_Player sets these)
-        (_session.playerstate.PlUX, _session.playerstate.PlUY) = ((ushort)(pawn.X >> GameConstants.UnsignedShift), (ushort)(pawn.Y >> GameConstants.UnsignedShift));
+        (_session.PlayerState.PlUX, _session.PlayerState.PlUY) = ((ushort)(pawn.X >> GameConstants.UnsignedShift), (ushort)(pawn.Y >> GameConstants.UnsignedShift));
         return pawn;
     }
 
@@ -83,7 +83,7 @@ public class PlayerViewTests
     {
         // Arrange
         var pawn = Player();
-        _session.camera.Follow(pawn);
+        _session.Camera.Follow(pawn);
 
         // Act / Assert
         Assert.That(_view.PlayerTileInView(pawn), Is.False);
@@ -96,12 +96,12 @@ public class PlayerViewTests
     {
         // Arrange: with others playing, the screen isn't asked
         var pawn = Player();
-        _session.camera.Follow(pawn);
+        _session.Camera.Follow(pawn);
         _session.SetGameMode(GameMode.Coop);
 
         // Act / Assert
         Assert.That(_view.PlayerTileInView(pawn), Is.True);
-        _map.tilemap[10, 10] = 1;       // somehow in a wall
+        _map.tilemap[10, 10] = 1;       // somehow in a WallId
         Assert.That(_view.PlayerTileInView(pawn), Is.False);
     }
 }

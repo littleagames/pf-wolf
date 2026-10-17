@@ -30,7 +30,7 @@ internal sealed class PlayerStats(
     Configuration.GameSettings settings,
     PlayerStatsHooks hooks)
 {
-    Entities.PlayerState playerstate => session.playerstate;
+    Entities.PlayerState PlayerState => session.PlayerState;
 
     /// <summary>
     /// Starts the grin if the item, or the weapon it gives, is flagged WEAPON.ALWAYSGRIN: the
@@ -45,9 +45,9 @@ internal sealed class PlayerStats(
                 || given != null && inventory.CreateActor(given)?.Flags.Contains(AlwaysGrin, StringComparer.OrdinalIgnoreCase) == true))
             return;
 
-        playerstate.GrinSound = pickupSound;
-        playerstate.FaceTimes = 38;     // how long demos hold it, as they can't depend on the sound playing
-        playerstate.FaceCount = 0;
+        PlayerState.GrinSound = pickupSound;
+        PlayerState.FaceTimes = 38;     // how long demos hold it, as they can't depend on the sound playing
+        PlayerState.FaceCount = 0;
         statusBar.DrawFace();
     }
 
@@ -64,25 +64,25 @@ internal sealed class PlayerStats(
     internal void UpdateFace()
     {
         // don't make demo depend on sound playback, nor a game every player's machine plays alike
-        if ((session.demoplayback || session.demorecord) || session.gamemode != GameMode.Single)
+        if ((session.DemoPlayback || session.DemoRecord) || session.GameMode != GameMode.Single)
         {
-            if (playerstate.FaceTimes > 0)
+            if (PlayerState.FaceTimes > 0)
             {
-                playerstate.FaceTimes--;
+                PlayerState.FaceTimes--;
                 return;
             }
         }
         else if (statusBar.Grinning)
             return;
 
-        playerstate.FaceCount += (int)session.tics;
-        if (playerstate.FaceCount > session.random.RndT())
+        PlayerState.FaceCount += (int)session.Tics;
+        if (PlayerState.FaceCount > session.Random.RndT())
         {
-            playerstate.faceframe = (short)(session.random.RndT() >> 6);
-            if (playerstate.faceframe == 3)
-                playerstate.faceframe = 1;
+            PlayerState.FaceFrame = (short)(session.Random.RndT() >> 6);
+            if (PlayerState.FaceFrame == 3)
+                PlayerState.FaceFrame = 1;
 
-            playerstate.FaceCount = 0;
+            PlayerState.FaceCount = 0;
             statusBar.DrawFace();
         }
     }
@@ -100,48 +100,48 @@ internal sealed class PlayerStats(
     // projectiles (Gameplay/Projectiles.cs) -- is an Entities.Actors.Actor now.
     internal void TakeDamage(int points, Entities.Actors.Actor attacker)
     {
-        playerstate.LastAttacker = attacker;
+        PlayerState.LastAttacker = attacker;
         ApplyDamageToPlayer(points);
     }
 
     internal void ApplyDamageToPlayer(int points)
     {
-        if (session.gamestate.victoryflag)
+        if (session.GameState.VictoryFlag)
             return;
         // With others playing, a dead player lies there until they come back (T_PlayerDead)
-        if (session.gamemode != GameMode.Single && playerstate.health <= 0)
+        if (session.GameMode != GameMode.Single && PlayerState.Health <= 0)
             return;
         // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2), then the class's,
         // then a manned gun's cover (weapon.mountdamage: Gameplay/MountedWeapons.cs)
         points = (int)(points * Math.Max(hooks.SkillDamageTaken(), 0) * classes.DamageTakenFactor);
-        if (playerstate.Mount != null && playerstate.MountGun is { } gun)
+        if (PlayerState.Mount != null && PlayerState.MountGun is { } gun)
             points = points * Math.Max(inventory.GetIntProperty(gun, "weapon.mountdamage", 100), 0) / 100;
 
-        int godmode = session.godmode;
+        int godmode = session.GodMode;
         if (godmode == 0)
         {
             // Armor takes its share of the hit off its points, as far as they go
-            int saved = Math.Min(points * playerstate.armorpercent / 100, playerstate.armor);
-            playerstate.armor -= (short)saved;
-            if (playerstate.armor == 0)
-                playerstate.armorpercent = 0;
+            int saved = Math.Min(points * PlayerState.ArmorPercent / 100, PlayerState.Armor);
+            PlayerState.Armor -= (short)saved;
+            if (PlayerState.Armor == 0)
+                PlayerState.ArmorPercent = 0;
             points -= saved;
 
-            playerstate.health -= (short)points;
+            PlayerState.Health -= (short)points;
         }
 
         // How others see it (their body's Pain or Pain1, as an enemy's by its health left)
-        if (points > 0 && playerstate.health > 0)
+        if (points > 0 && PlayerState.Health > 0)
         {
-            playerstate.PainTics = 10;
-            playerstate.PainAlt = (playerstate.health & 1) == 0;
+            PlayerState.PainTics = 10;
+            PlayerState.PainAlt = (PlayerState.Health & 1) == 0;
         }
 
-        if (playerstate.health <= 0)
+        if (PlayerState.Health <= 0)
         {
-            playerstate.health = 0;
-            if (session.gamemode == GameMode.Single)
-                session.playstate = PlayState.Died;                   // Died(): the level starts again
+            PlayerState.Health = 0;
+            if (session.GameMode == GameMode.Single)
+                session.PlayState = PlayState.Died;                   // Died(): the level starts again
             else
                 hooks.PlayerDies();             // the rest play on (Gameplay/Players.cs)
         }
@@ -157,11 +157,11 @@ internal sealed class PlayerStats(
         // Vanilla only restarted it with the status bar showing; here it always does, so how a
         // demo plays doesn't depend on the view size.
         if (statusBar.StatusBar.Get("face") is { Ouch.Length: > 0 } face && points > face.OuchDamage
-            && playerstate.health != 0 && godmode == 0 && assets.Exists<Assets.GraphicAsset>(face.Ouch))
+            && PlayerState.Health != 0 && godmode == 0 && assets.Exists<Assets.GraphicAsset>(face.Ouch))
         {
             if (!(settings.viewsize == 21) && session.ActingIsLocal)
                 statusBar.StatusDrawFace(face.Ouch);
-            playerstate.FaceCount = 0;
+            PlayerState.FaceCount = 0;
         }
     }
 
@@ -177,19 +177,19 @@ internal sealed class PlayerStats(
         if (inventory.GetProperty(armorClass, "armor.maxsaveamount") != null)
         {
             int cap = Math.Min(inventory.GetIntProperty(armorClass, "armor.maxsaveamount", 0), classes.MaxArmor);
-            if (playerstate.armor >= cap || amount <= 0)
+            if (PlayerState.Armor >= cap || amount <= 0)
                 return false;
-            if (playerstate.armor == 0)
-                playerstate.armorpercent = percent;
-            playerstate.armor = (short)Math.Min(playerstate.armor + amount, cap);
+            if (PlayerState.Armor == 0)
+                PlayerState.ArmorPercent = percent;
+            PlayerState.Armor = (short)Math.Min(PlayerState.Armor + amount, cap);
         }
         else
         {
             amount = Math.Min(amount, classes.MaxArmor);
-            if (playerstate.armor >= amount)
+            if (PlayerState.Armor >= amount)
                 return false;
-            playerstate.armor = (short)amount;
-            playerstate.armorpercent = percent;
+            PlayerState.Armor = (short)amount;
+            PlayerState.ArmorPercent = percent;
         }
 
         statusBar.DrawArmor();
@@ -200,7 +200,7 @@ internal sealed class PlayerStats(
     internal void HealSelf(int points, int? upTo = null)
     {
         int cap = Math.Min(upTo ?? classes.MaxHealth, classes.MaxHealth);
-        playerstate.health = (short)Math.Min(playerstate.health + points, Math.Max(cap, playerstate.health));
+        PlayerState.Health = (short)Math.Min(PlayerState.Health + points, Math.Max(cap, PlayerState.Health));
 
         statusBar.DrawHealth();
         statusBar.DrawFace();
@@ -216,8 +216,8 @@ internal sealed class PlayerStats(
 
     internal void GiveExtraMan()
     {
-        if (playerstate.lives < classes.MaxLives)
-            playerstate.lives++;
+        if (PlayerState.Lives < classes.MaxLives)
+            PlayerState.Lives++;
         statusBar.DrawLives();
         if (statusBar.StatusBar.Get("lives")?.Sound is { Length: > 0 } sound)
             hooks.PlayPlayerSound(sound);
@@ -236,10 +236,10 @@ internal sealed class PlayerStats(
 
     internal void GivePoints(int points)
     {
-        playerstate.score += points;
-        while (ExtraLifeScore > 0 && playerstate.score >= playerstate.nextextra)
+        PlayerState.Score += points;
+        while (ExtraLifeScore > 0 && PlayerState.Score >= PlayerState.NextExtra)
         {
-            playerstate.nextextra += ExtraLifeScore;
+            PlayerState.NextExtra += ExtraLifeScore;
             GiveExtraMan();
         }
         statusBar.DrawScore();
@@ -252,9 +252,9 @@ internal sealed class PlayerStats(
     internal void GiveStartingInventory()
     {
         inventory.Clear();
-        playerstate.armor = playerstate.armorpercent = 0;
+        PlayerState.Armor = PlayerState.ArmorPercent = 0;
 
-        var playerClass = playerstate.playerclass;
+        var playerClass = PlayerState.PlayerClass;
         if (inventory.GetProperty(playerClass, "player.startitem") is IDictionary<object, object> items)
         {
             foreach (var (item, amount) in items)
@@ -269,7 +269,7 @@ internal sealed class PlayerStats(
         else
             Console.WriteLine($"No player.startitem on actordefs class {playerClass}: the player starts with nothing.");
 
-        playerstate.weapon = playerstate.chosenweapon = weapons.BestWeapon();
+        PlayerState.Weapon = PlayerState.ChosenWeapon = weapons.BestWeapon();
     }
 
     /// <summary>Whether giving the item would do anything now (a health item, unless health is full); without giving it</summary>
@@ -279,7 +279,7 @@ internal sealed class PlayerStats(
             return true;
         int itemMax = inventory.GetIntProperty(item.Name, "inventory.maxamount", 0);
         int cap = itemMax > 0 ? Math.Min(itemMax, classes.MaxHealth) : classes.MaxHealth;
-        return playerstate.health < cap;
+        return PlayerState.Health < cap;
     }
 
     /// <summary>
@@ -296,7 +296,7 @@ internal sealed class PlayerStats(
                 // gibs only help when nearly dead); 0 is up to the player's max health
                 int itemMax = inventory.GetIntProperty(item.Name, "inventory.maxamount", 0);
                 int cap = itemMax > 0 ? Math.Min(itemMax, classes.MaxHealth) : classes.MaxHealth;
-                if (playerstate.health >= cap)
+                if (PlayerState.Health >= cap)
                     return false;
                 HealSelf(amount, cap);
                 return true;

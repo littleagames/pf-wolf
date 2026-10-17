@@ -182,7 +182,7 @@ public record GameInfoAsset : Asset
 
     /// <summary>
     /// The messages shown over the view (hud-messages.yaml): whether they're on until the
-    /// player says otherwise, and the style each kind is shown in when its actor or door
+    /// player says otherwise, and the style each kind is shown in when its actor or DoorNumber
     /// doesn't give one
     /// </summary>
     public HudMessagesInfo HudMessages { get; init; } = new();
@@ -242,7 +242,7 @@ public record GameInfoAsset : Asset
     public List<string> DeathKeeps { get; init; } = [];
 
     /// <summary>
-    /// Level objectives by name (Gameplay/Objectives.cs): things a level counts and the player
+    /// Level MatchObjectives by name (Gameplay/Objectives.cs): things a level counts and the player
     /// completes (switches with `objective`, actors with an `objective` property, A_CompleteObjective),
     /// with their messages, and whether the exits wait for them (Midnight Assault's sabotage
     /// targets and goal enemies)
@@ -299,7 +299,7 @@ public record HudMessagesInfo
     /// <summary>The style for an item's pickup message</summary>
     public string PickupStyle { get; init; } = "Default";
 
-    /// <summary>The style for a locked door's message</summary>
+    /// <summary>The style for a locked DoorNumber's message</summary>
     public string LockStyle { get; init; } = "Center";
 
     /// <summary>The style for what killed the player</summary>
@@ -582,7 +582,7 @@ public record DefaultMapInfo
     public int WallHeight { get; init; } = 1;
 
     /// <summary>
-    /// Graphic (or wall texture) drawn in place of the ceiling color; null for none
+    /// Graphic (or WallId texture) drawn in place of the ceiling color; null for none
     /// </summary>
     public string? Sky { get; init; } = null;
 
@@ -1006,7 +1006,7 @@ public record MapLoadout
 }
 
 /// <summary>
-/// A level objective (game-info `objectives:`). Its messages are text or $language keys, each %d
+/// A level objective (game-info `MatchObjectives:`). Its messages are text or $language keys, each %d
 /// filled in turn: <see cref="Start"/> the total, <see cref="Progress"/> and <see cref="Stats"/>
 /// done and total, <see cref="Refused"/> those left. None shows nothing.
 /// </summary>
@@ -1163,7 +1163,7 @@ public record MapInfo
     public int? WallHeight { get; init; } = null;
 
     /// <summary>
-    /// Graphic (or wall texture) drawn in place of the ceiling color; null uses the default map's
+    /// Graphic (or WallId texture) drawn in place of the ceiling color; null uses the default map's
     /// </summary>
     public string? Sky { get; init; } = null;
 

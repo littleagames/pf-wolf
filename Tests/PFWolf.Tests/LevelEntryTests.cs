@@ -20,7 +20,7 @@ public class LevelEntryTests
     {
         _session = new GameSession();
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        _inventory.SetHolder(_session.playerstate.Items);
+        _inventory.SetHolder(_session.PlayerState.Items);
         _hubs = new Hubs(null!, null!, _session);
         _entry = new LevelEntry(null!, _inventory, _hubs, null!, null!, _session,
             new LevelEntryHooks(() => { }, () => [], _ => { }, _ => null!, _ => { }));
@@ -36,24 +36,24 @@ public class LevelEntryTests
     public void Death_Puts_The_Player_Back_As_They_Came_In_With_The_Lives_They_Have_Now()
     {
         // Arrange: into the level with 80 health, 1000 points, 3 lives and no key
-        var player = _session.playerstate;
-        (player.health, player.score, player.lives) = (80, 1000, 3);
-        _session.gamestate.mapon = "MAP03";
+        var player = _session.PlayerState;
+        (player.Health, player.Score, player.Lives) = (80, 1000, 3);
+        _session.GameState.MapOn = "MAP03";
         _entry.MarkLevelStart();
 
         // the level's played: a key, more points, then a life lost
         _inventory.Give("GoldKey", 1);
-        (player.health, player.score, player.lives) = (5, 4000, 2);
-        _session.gamestate.mapon = "MAP04";
+        (player.Health, player.Score, player.Lives) = (5, 4000, 2);
+        _session.GameState.MapOn = "MAP04";
 
         // Act
         bool restored = _entry.RestoreLevelStart();
 
         // Assert
         Assert.That(restored, Is.True);
-        Assert.That((player.health, player.score, player.lives), Is.EqualTo((80, 1000, 2)));
+        Assert.That((player.Health, player.Score, player.Lives), Is.EqualTo((80, 1000, 2)));
         Assert.That(_inventory.GetCount("GoldKey"), Is.EqualTo(0));
-        Assert.That(_session.gamestate.mapon, Is.EqualTo("MAP03"));
+        Assert.That(_session.GameState.MapOn, Is.EqualTo("MAP03"));
     }
 
     [Test]

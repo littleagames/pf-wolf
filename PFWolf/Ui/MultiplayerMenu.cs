@@ -583,7 +583,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                     if (session.IsHost)
                     {
                         if (session.CanStart)
-                            session.StartGame((byte)game.random.RndT());
+                            session.StartGame((byte)game.Random.RndT());
                         else
                         {
                             draw.Message("$STR_MP_NOTREADY".ToLanguageText(language));

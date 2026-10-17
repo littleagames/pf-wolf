@@ -22,8 +22,8 @@ internal static partial class GameHost
 
 =============================================================================
 */
-    internal static GameState gamestate { get => session.gamestate; set => session.gamestate = value; }
-    static string bordercol { get => session.bordercol; set => session.bordercol = value; } // color of the Change View/Ingame border
+    internal static GameState gamestate { get => session.GameState; set => session.GameState = value; }
+    static string bordercol { get => session.BorderCol; set => session.BorderCol = value; } // color of the Change View/Ingame border
 
     // The game from its first level to its end (Gameplay/MainGameLoop.cs)
     static MainGameLoop mainGameLoop = null!;       // made in InitServices
@@ -35,7 +35,7 @@ internal static partial class GameHost
             MarkLevelStart, ApplyPendingWarpStart, AlignPlayerInElevator, ShowLevelStartMessage, name => articleReader.ShowText(name),
             LevelWon));
 
-    static PendingMapChange? pendingMapChange { get => mainGameLoop.pendingMapChange; set => mainGameLoop.pendingMapChange = value; }
+    static PendingMapChange? pendingMapChange { get => mainGameLoop.PendingMapChange; set => mainGameLoop.PendingMapChange = value; }
 
     // Demos: played, recorded and asked for from the console (Gameplay/Demos.cs)
     static Demos demos = null!;     // made in InitServices
@@ -77,7 +77,7 @@ internal static partial class GameHost
         new LevelSetupHooks(() => CurrentSkill,
             loadout => mapLoadouts.Apply(loadout), () => objectives.CountLevel(announce: !demoplayback && !demorecord)));
 
-    // Level objectives (Gameplay/Objectives.cs): sabotage targets, goal enemies
+    // Level MatchObjectives (Gameplay/Objectives.cs): sabotage targets, goal enemies
     static Objectives? _objectives;
     static Objectives objectives => _objectives ??= new Objectives(_mapManager, new ObjectiveHooks(
         () => _gameEngineManager.GetGameInfo().Objectives,
@@ -103,7 +103,7 @@ internal static partial class GameHost
     /// </summary>
     static void LevelWon(PlayState how)
     {
-        if (demoplayback || gamestate.mapon is not { Length: > 0 } map)
+        if (demoplayback || gamestate.MapOn is not { Length: > 0 } map)
             return;
         var result = CurrentLevelResult(map);
         levelRecords.Record(map, result);
@@ -121,14 +121,14 @@ internal static partial class GameHost
         int par = _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.ParTime : 0;
         return new LevelResult
         {
-            Kills = gamestate.killcount, KillTotal = gamestate.killtotal,
-            Secrets = gamestate.secretcount, SecretTotal = gamestate.secrettotal,
-            Items = gamestate.treasurecount, ItemTotal = gamestate.treasuretotal,
+            Kills = gamestate.KillCount, KillTotal = gamestate.KillTotal,
+            Secrets = gamestate.SecretCount, SecretTotal = gamestate.SecretTotal,
+            Items = gamestate.TreasureCount, ItemTotal = gamestate.TreasureTotal,
             Time = gamestate.TimeCount,
             Par = par,
             UnderPar = par > 0 && gamestate.TimeCount < par * 70,
-            Undetected = session.playerstate.Undetected,
-            StealthKills = session.playerstate.StealthKills,
+            Undetected = session.PlayerState.Undetected,
+            StealthKills = session.PlayerState.StealthKills,
             Objectives = _mapManager.objectives.ToDictionary(o => o.Key, o => (o.Value.Done, o.Value.Total), StringComparer.OrdinalIgnoreCase),
         };
     }
@@ -166,18 +166,18 @@ internal static partial class GameHost
 
     internal static void StartDeathCam(Entities.Actors.Actor ob) => playerDeath.StartDeathCam(ob);
     internal static void ThinkDeathCam(Entities.Actors.Actor ob) => playerDeath.ThinkDeathCam(ob);
-    static Entities.Actors.Actor? deathCamSprite => playerDeath.deathCamSprite;
+    static Entities.Actors.Actor? deathCamSprite => playerDeath.DeathCamSprite;
 
     // ==== WL_PLAY ================================================================================
 
-    internal static bool madenoise { get => session.madenoise; set => session.madenoise = value; }  // true when shooting or screaming
+    internal static bool madenoise { get => session.MadeNoise; set => session.MadeNoise = value; }  // true when shooting or screaming
 
-    internal static PlayState playstate { get => session.playstate; set => session.playstate = value; }
+    internal static PlayState playstate { get => session.PlayState; set => session.PlayState = value; }
 
     internal static int DebugOk { get => session.DebugOk; set => session.DebugOk = value; }
 
     // The acting player's pawn and controls, and this frame's tics (Gameplay/GameSession.cs)
-    internal static Entities.Actors.PlayerPawn player => session.player;
+    internal static Entities.Actors.PlayerPawn player => session.Player;
 
     //
     // control info
@@ -190,13 +190,13 @@ internal static partial class GameHost
 
     internal static int viewsize { get => settings.viewsize; set => settings.viewsize = value; }
 
-    internal static bool demorecord { get => session.demorecord; set => session.demorecord = value; }
-    internal static bool demoplayback { get => session.demoplayback; set => session.demoplayback = value; }
+    internal static bool demorecord { get => session.DemoRecord; set => session.DemoRecord = value; }
+    internal static bool demoplayback { get => session.DemoPlayback; set => session.DemoPlayback = value; }
     // A demo's controls (Gameplay/DemoBuffer.cs)
     internal static readonly DemoBuffer demoBuffer = new();
 
     //
-    // current user input: gathered each frame by PollControls into localcmd, which is all the
+    // current user input: gathered each frame by PollControls into LocalCmd, which is all the
     // game itself reads (through the player's PlayerInput) (Gameplay/InputPolling.cs)
     //
     static InputPolling inputPolling = null!;       // made in InitServices
@@ -205,7 +205,7 @@ internal static partial class GameHost
         frameRefresh, demoBuffer, session,
         new InputPollingHooks(() => netChatting, () => netLeavePrompt, () => demoTesting, RouteMovementToAutomap));
 
-    static TicCmd localcmd => inputPolling.localcmd;
+    static TicCmd localcmd => inputPolling.LocalCmd;
 
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
     internal static ControlSettings controlSettings => settings.controlSettings;
@@ -241,11 +241,11 @@ internal static partial class GameHost
     // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
     static ZoneAmbience? _zoneAmbience;
     static ZoneAmbience zoneAmbience => _zoneAmbience ??= new ZoneAmbience(session, new ZoneAmbienceHooks(
-        () => gamestate.mapon is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info : null,
+        () => gamestate.MapOn is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info : null,
         () => _gameEngineManager.GetGameInfo().DefaultMap,
-        () => session.player is { } pawn ? (pawn.TileX, pawn.TileY) : null,
+        () => session.Player is { } pawn ? (pawn.TileX, pawn.TileY) : null,
         (x, y) => _mapManager.GetZone(x, y),
-        () => stealth.WearingDisguise(session.playerstate),
+        () => stealth.WearingDisguise(session.PlayerState),
         _audioManager.SetAmbient));
 
     // ==== WL_DEF =================================================================================
@@ -273,7 +273,7 @@ internal static partial class GameHost
                                     SAVE GAMES
 
     The file around a save (header, thumbnail, checksum) is SaveGames/SaveFile.cs's. Its body
-    holds the game (gamestate, level ratios, inventory), the level as it stands
+    holds the game (GameState, level ratios, inventory), the level as it stands
     (WriteLevelBody), the weapon, and the hub clusters' levels kept as they were left
     (Gameplay/Hubs.cs). Saving and loading are SaveGames/GameSaves.cs; the level's part,
     SaveGames/LevelBodies.cs.
@@ -366,7 +366,7 @@ internal static partial class GameHost
         _hudMessageManager, hubs, elevatorScreens, playScreen, frameRefresh, playerMovement, session,
         new HubActionsHooks(change => pendingMapChange = change, PlaySoundLocActor));
 
-    internal static bool victoryRunning { get => hubActions.victoryRunning; set => hubActions.victoryRunning = value; }
+    internal static bool victoryRunning { get => hubActions.VictoryRunning; set => hubActions.VictoryRunning = value; }
 
     // ==== Scripting ==============================================================================
 

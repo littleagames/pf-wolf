@@ -101,12 +101,12 @@ internal sealed class SpriteScaler(
         int x1, x2, xcenter;
         int frac, fracstep;
 
-        height = sprite.viewheight >> 3;        // low three bits are fractional
+        height = sprite.ViewHeight >> 3;        // low three bits are fractional
 
         if (height == 0)
             return;                 // too close or far away
 
-        var spriteAsset = assets.Find<SpriteAsset>(sprite.shapenum);
+        var spriteAsset = assets.Find<SpriteAsset>(sprite.ShapeNum);
         if (spriteAsset == null)
             return;
 
@@ -116,17 +116,17 @@ internal sealed class SpriteScaler(
         // Its origin pixel on the actor's spot on the floor (a Wolf3D sprite: the middle of its
         // bottom row, so a story tall), raised by the actor's Z (a grenade in the air)
         var (originx, originy) = spriteAsset.Origin;
-        xcenter = sprite.viewx - TexelsToPixels(originx, height);
-        toppix = RaisedTop(floorRow(height), originy, sprite.z, height);
+        xcenter = sprite.ViewX - TexelsToPixels(originx, height);
+        toppix = RaisedTop(floorRow(height), originy, sprite.Z, height);
 
-        byte[] shade = sprite.bright ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
-        int shadeofs = sprite.bright ? 0 : lighting.ShadeOffsetForHeight(sprite.viewheight);
+        byte[] shade = sprite.Bright ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(sprite.TileX, sprite.TileY), sprite.WorldX, sprite.WorldY);
+        int shadeofs = sprite.Bright ? 0 : lighting.ShadeOffsetForHeight(sprite.ViewHeight);
 
         // A cloaked sprite (Planet Strike's) darkens what's behind it, through shade level 16 as
         // bstone's shading[0x1000 | pixel] does
-        if (sprite.cloaked)
+        if (sprite.Cloaked)
         {
-            shade = lighting.LightAt(Lighting.TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
+            shade = lighting.LightAt(Lighting.TileIndex(sprite.TileX, sprite.TileY), sprite.WorldX, sprite.WorldY);
             shadeofs = Math.Min(16 * 256, shade.Length - 256);
         }
 
@@ -156,9 +156,9 @@ internal sealed class SpriteScaler(
 
             while (x1 < x2)
             {
-                if (render.WallHeight[x1] < sprite.viewheight)
+                if (render.WallHeight[x1] < sprite.ViewHeight)
                 {
-                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.cloaked, sprite.translation);
+                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.Cloaked, sprite.Translation);
                 }
 
                 x1++;

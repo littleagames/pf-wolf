@@ -7,7 +7,7 @@ namespace PFWolf.Ui;
 
                                 ELEVATOR
 
-A_FloorSelect (a switch action, on Blake Stone's elevator panel wall) shows the floor-select
+A_FloorSelect (a switch action, on Blake Stone's elevator panel WallId) shows the floor-select
 screen from gamepacks/{pack}/elevator.yaml (bstone's InputFloor). Its buttons are the floors
 of the level's hub cluster by game-info floor-number. Arrows (or turning) move the selector,
 space, enter or fire press its button, a number key presses that floor's (0 is floor 10),
@@ -23,13 +23,13 @@ open one opens with the unlock item, used up as it does. Choosing a floor leaves
 
                                 TELEPORTER
 
-Planet Strike's way between floors (bstone's ps_input_floor): its teleporter wall runs
+Planet Strike's way between floors (bstone's ps_input_floor): its teleporter WallId runs
 A_FloorSelect as the elevator's does, and an elevator.yaml with `style: teleporter` shows
 the teleporter map instead of the panel. Up and down (or left and right) move through the
 cluster's floors by floor number; Enter goes, Esc leaves. A floor is open once the player
 has been on it or it's been unlocked (A_UnlockFloor, when a floor's security cube is
 destroyed); others show "teleport disabled". Each floor's overhead map is kept as it was
-when the player left it (Gameplay/Hubs.cs floorOverheads).
+when the player left it (Gameplay/Hubs.cs FloorOverheads).
 
 The fission detonator (an item with `inventory.useslot` and `inventory.use`) is dropped by
 its slot key: A_DropDetonator, beside the floor's security cube, with the next floor still
@@ -40,7 +40,7 @@ death unlocks the next floor.
 */
 
 /// <summary>What the elevator and teleporter screens need from the rest of the game</summary>
-/// <param name="TileColor">A seen tile's color on the radar (GameHost.RadarTileColor): its tile, then the unmapped, floor, door and locked colors</param>
+/// <param name="TileColor">A seen tile's color on the radar (GameHost.RadarTileColor): its tile, then the unmapped, floor, DoorNumber and locked colors</param>
 /// <param name="MapDisplayName">A map's name as it's shown</param>
 internal sealed record ElevatorHooks(Func<int, int, string, string, string, string, string> TileColor, Func<string, string> MapDisplayName);
 
@@ -54,7 +54,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     /// <summary>The cluster's floors, by floor number, that have a button</summary>
     internal Dictionary<int, string> ElevatorFloors(ElevatorAsset elevator)
     {
-        var cluster = hubs.ClusterOf(session.gamestate.mapon);
+        var cluster = hubs.ClusterOf(session.GameState.MapOn);
         var floors = new Dictionary<int, string>();
         foreach (var (map, info) in engine.GetGameInfo().Maps)
         {
@@ -68,8 +68,8 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     internal string? FloorSelectScreen(ElevatorAsset elevator)
     {
         var floors = ElevatorFloors(elevator);
-        int current = engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var mapInfo) ? mapInfo.FloorNumber : 0;
-        bool Open(int floor) => floors.TryGetValue(floor, out var m) && hubs.visitedMaps.Contains(m);
+        int current = engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var mapInfo) ? mapInfo.FloorNumber : 0;
+        bool Open(int floor) => floors.TryGetValue(floor, out var m) && hubs.VisitedMaps.Contains(m);
         int lastOpen = Enumerable.Range(1, elevator.Buttons).Where(Open).DefaultIfEmpty(0).Max();
 
         video.FadeOut();
@@ -376,7 +376,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     /// <summary>The teleporter map: the map chosen, or null if the player left it</summary>
     internal string? TeleporterScreen(ElevatorAsset elevator, TeleporterLayout layout)
     {
-        var cluster = hubs.ClusterOf(session.gamestate.mapon);
+        var cluster = hubs.ClusterOf(session.GameState.MapOn);
         var floors = engine.GetGameInfo().Maps
             .Where(m => m.Value.Cluster == cluster && m.Value.FloorNumber >= 0 && m.Value.FloorNumber < layout.Floors.Count)
             .GroupBy(m => m.Value.FloorNumber).ToDictionary(g => g.Key, g => g.First().Key);
@@ -387,7 +387,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
         int selected = floors.ContainsKey(current) ? current : floors.Keys.Min();
 
         // This floor's overhead as it stands
-        hubs.floorOverheads[session.gamestate.mapon] = CaptureOverhead();
+        hubs.FloorOverheads[session.GameState.MapOn] = CaptureOverhead();
 
         var font = presenter.PresenterFont(layout.Font);
         byte? mask = layout.MaskColor is >= 0 and <= 255 ? (byte)layout.MaskColor : null;
@@ -419,14 +419,14 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
 
             // Its overhead map, as last seen
             var o = layout.Overhead;
-            if (floors.TryGetValue(floor, out var map) && hubs.floorOverheads.TryGetValue(map, out var image) && !locked)
+            if (floors.TryGetValue(floor, out var map) && hubs.FloorOverheads.TryGetValue(map, out var image) && !locked)
             {
                 for (int y = 0; y < 64; y++)
                     for (int x = 0; x < 64; x++)
                         video.Bar(o.X + x, o.Y + y, 1, 1, image[y * 64 + x].ToString());
                 if (floor == current)
                 {
-                    int px = session.player.TileX, py = session.player.TileY;
+                    int px = session.Player.TileX, py = session.Player.TileY;
                     if (px < 64 && py < 64)
                         video.Bar(o.X + px, o.Y + py, 1, 1, OverheadColor(layout, "player", 240));
                 }

@@ -4,7 +4,7 @@ using static PFWolf.Commands.ConsoleArgs;
 namespace PFWolf.Commands;
 
 /// <summary>
-/// Changing the level as it's played, from the console (not saved): its wall height, sky,
+/// Changing the level as it's played, from the console (not saved): its WallId height, sky,
 /// weather, fog and light, the light zones, and a tile's height, tag, patch and flats
 /// </summary>
 internal sealed class LevelEditCommands(
@@ -116,7 +116,7 @@ internal sealed class LevelEditCommands(
             throw new ArgumentException("usage: flat <floor 0-255> <ceiling 0-255> [tilex tiley]");
 
         int floor = ParseInt(args[0], 0, 255), ceiling = ParseInt(args[1], 0, 255);
-        var (x, y) = args.Length >= 4 ? targets.TileArg(args, 2) : (session.player.TileX, session.player.TileY);
+        var (x, y) = args.Length >= 4 ? targets.TileArg(args, 2) : (session.Player.TileX, session.Player.TileY);
 
         map.SetFlats(x, y, (ushort)(floor | ceiling << 8));
         console.Print($"Tile {x},{y}: floor {map.FlatName(x, y, false)}, ceiling {map.FlatName(x, y, true)}");
@@ -144,7 +144,7 @@ internal sealed class LevelEditCommands(
             throw new ArgumentException("usage: zone [0-65535 [tilex tiley [tilex2 tiley2]]]");
 
         // the tile stood on, one given, or a rectangle between two
-        var (x1, y1) = args.Length >= 3 ? targets.TileArg(args, 1) : (session.player.TileX, session.player.TileY);
+        var (x1, y1) = args.Length >= 3 ? targets.TileArg(args, 1) : (session.Player.TileX, session.Player.TileY);
         var (x2, y2) = args.Length == 5 ? targets.TileArg(args, 3) : (x1, y1);
         if (args.Length > 0)
         {

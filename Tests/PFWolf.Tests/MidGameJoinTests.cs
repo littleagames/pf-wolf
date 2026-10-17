@@ -9,7 +9,7 @@ public class MidGameJoinTests
     {
         // Arrange: a state from a newer (or older) version
         var session = new GameSession();
-        var players = session.players.ToList();
+        var players = session.Players.ToList();
         var join = new MidGameJoin(null!, null!, null!, null!, null!, null!, null!, null!, null!, session,
             new MidGameJoinHooks(_ => null, () => { }));
         var state = BitConverter.GetBytes(MidGameJoin.NetStateVersion + 1);
@@ -19,15 +19,15 @@ public class MidGameJoinTests
 
         // Assert
         Assert.That(why, Does.Contain("can't read"));
-        Assert.That(session.players, Is.EqualTo(players));
-        Assert.That(session.netgame, Is.False);
+        Assert.That(session.Players, Is.EqualTo(players));
+        Assert.That(session.NetGame, Is.False);
     }
 
     [Test]
     public void A_Garbled_Game_Is_Refused_And_Isnt_Played_With_Others()
     {
         // Arrange: the right version, then nothing
-        var session = new GameSession { netgame = true, loadedgame = true };
+        var session = new GameSession { NetGame = true, LoadedGame = true };
         var join = new MidGameJoin(null!, null!, null!, null!, null!, null!, null!, null!, new NetPlay(null!, null!, null!, null!, null!, null!, session, null!), session,
             new MidGameJoinHooks(_ => null, () => { }));
 
@@ -36,6 +36,6 @@ public class MidGameJoinTests
 
         // Assert
         Assert.That(why, Does.StartWith("The game couldn't be taken up"));
-        Assert.That((session.netgame, session.loadedgame), Is.EqualTo((false, false)));
+        Assert.That((session.NetGame, session.LoadedGame), Is.EqualTo((false, false)));
     }
 }

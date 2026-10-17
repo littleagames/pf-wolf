@@ -134,7 +134,7 @@ public class SoundCatalogGameTests
         // Act
         var entries = SoundCatalog.Build(content);
 
-        // Assert: the door sound, made of the game's three sounds, each used by it
+        // Assert: the DoorNumber sound, made of the game's three sounds, each used by it
         var door = entries.Single(entry => entry.Kind == SoundKind.Sound && entry.Name == "doors/open");
         var variants = SoundCatalog.Variants(content, door.Name);
         Assert.That(variants.Select(variant => variant.Kind), Is.EqualTo(new[] { SoundKind.Digitized, SoundKind.AdLib, SoundKind.PcSpeaker }));

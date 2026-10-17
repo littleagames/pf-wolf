@@ -62,7 +62,7 @@ internal class ConsoleManager
     /// <summary>Whether a level is loaded. Wired to the player's existence at registration.</summary>
     internal Func<bool> LevelLoaded { get; set; } = () => false;
 
-    /// <summary>Whether this is a game with others, where SinglePlayer commands can't run. Wired to GameHost.netgame.</summary>
+    /// <summary>Whether this is a game with others, where SinglePlayer commands can't run. Wired to GameHost.NetGame.</summary>
     internal Func<bool> PlayingWithOthers { get; set; } = () => false;
 
     internal bool IsOpen { get; private set; }

@@ -29,10 +29,10 @@ internal sealed class Heist(MapManager map, GameSession session, Deathmatch matc
     public override GameMode Mode => GameMode.Heist;
 
     /// <summary>The worth of each piece of treasure on the level when it started (for the status line)</summary>
-    internal int levelloot;
+    internal int LevelLoot;
 
     public override void LevelSetup() =>
-        levelloot = map.GetActors().OfType<Inventory>().Where(item => !item.IsRemoved).Sum(LootValue);
+        LevelLoot = Map.GetActors().OfType<Inventory>().Where(item => !item.IsRemoved).Sum(LootValue);
 
     public override void Tick() { }
 
@@ -54,24 +54,24 @@ internal sealed class Heist(MapManager map, GameSession session, Deathmatch matc
     /// <summary>Treasure taken pulls the rope toward the taker's team</summary>
     public void ItemTaken(Inventory item)
     {
-        var p = session.playerstate;
+        var p = Session.PlayerState;
         int value = LootValue(item);
         if (p.Team is not (0 or 1) || value <= 0)
             return;
         p.Objective += value;
         if (value >= 10)
             Announce($"{NameOf(p)} grabbed {value} worth of loot for {GameModes.TeamLabel(p.Team)}");
-        match.AddTeamScore(p.Team, value);
+        Match.AddTeamScore(p.Team, value);
     }
 
     /// <summary>Who's ahead: "Red leads by 12"</summary>
     public string? StatusLine()
     {
-        int lead = match.teamscores[0] - match.teamscores[1];
+        int lead = Match.TeamScores[0] - Match.TeamScores[1];
         return lead == 0 ? "Even" : $"{GameModes.TeamLabel(lead > 0 ? 0 : 1)} leads by {Math.Abs(lead)}";
     }
 
-    public override void Write(BinaryWriter bw) => bw.Write(levelloot);
+    public override void Write(BinaryWriter bw) => bw.Write(LevelLoot);
 
-    public override void Read(BinaryReader br) => levelloot = br.ReadInt32();
+    public override void Read(BinaryReader br) => LevelLoot = br.ReadInt32();
 }

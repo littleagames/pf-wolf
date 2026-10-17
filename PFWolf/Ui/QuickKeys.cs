@@ -32,11 +32,11 @@ internal sealed class QuickKeys(
 {
     internal void OpenControlPanel(ScanCodes scancode)
     {
-        if (session.ingame)
+        if (session.InGame)
         {
             if (CheckQuickKeys(scancode) != 0)
                 return;
-            session.lastgamemusicoffset = StartCPMusic(controlPanel.MenuSong);
+            session.LastGameMusicOffset = StartCPMusic(controlPanel.MenuSong);
         }
         else
             StartCPMusic(controlPanel.MenuSong);
@@ -67,9 +67,9 @@ internal sealed class QuickKeys(
             case ScanCodes.F7:
                 if (loop.Confirm("$ENDGAMESTR".ToLanguageText(language), GameConstants.MaxY) != 0)
                 {
-                    session.playstate = PlayState.Died;
-                    session.playerstate.LastAttacker = null;
-                    session.playerstate.lives = 0;
+                    session.PlayState = PlayState.Died;
+                    session.PlayerState.LastAttacker = null;
+                    session.PlayerState.Lives = 0;
                 }
 
                 MenuDefs.FindMenuItem(controlPanel.MainMenu, "savegame")?.active = 0;
@@ -99,7 +99,7 @@ internal sealed class QuickKeys(
                     if (video.HasMargins)
                         video.ClearScreen(0);
 
-                    session.lastgamemusicoffset = StartCPMusic(controlPanel.MenuSong);
+                    session.LastGameMusicOffset = StartCPMusic(controlPanel.MenuSong);
                     gameSaves.RunLoadGame(0);    // loads lastgamemusicoffs
 
                     input.ClearKeysDown();
@@ -107,11 +107,11 @@ internal sealed class QuickKeys(
                     if (settings.viewsize != 21)
                         playScreen.DrawPlayScreen();
 
-                    if (!session.startgame && !session.loadedgame)
-                        music.ContinueMusic(session.lastgamemusicoffset);
+                    if (!session.GameChosen && !session.LoadedGame)
+                        music.ContinueMusic(session.LastGameMusicOffset);
 
-                    if (session.loadedgame)
-                        session.playstate = PlayState.Abort;
+                    if (session.LoadedGame)
+                        session.PlayState = PlayState.Abort;
 
                     frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
 

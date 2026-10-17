@@ -7,7 +7,7 @@ namespace PFWolf.Rendering;
 /// <param name="FocalLength">How far behind the player the view point is (Setup3DView's FocalLength)</param>
 /// <param name="ViewWidth">The view's width in pixels</param>
 /// <param name="TransformActorFrom">Works out where an actor would be on a view from a point (sets its ViewX, ViewHeight, TransX)</param>
-/// <param name="IsWallSprite">Whether an actor is a wall sprite (never picked up)</param>
+/// <param name="IsWallSprite">Whether an actor is a WallId sprite (never picked up)</param>
 /// <param name="GetBonus">The acting player picks an item up (Gameplay/Pickups.cs)</param>
 internal sealed record PlayerViewHooks(
     Func<int> FocalLength,
@@ -39,7 +39,7 @@ internal sealed class PlayerView(
     /// <summary>The player's view point and its sine and cosine: FocalLength behind them, as Setup3DView puts it</summary>
     internal (int x, int y, int sin, int cos) PlayerViewOrigin()
     {
-        var player = session.player;
+        var player = session.Player;
         int focallength = hooks.FocalLength();
         int sin = TrigTables.SinTable[player.Angle], cos = TrigTables.SinTable[player.Angle + GameConstants.Angles / 4];
         return (player.X - MathUtils.FixedMul(focallength, cos), player.Y + MathUtils.FixedMul(focallength, sin), sin, cos);
@@ -55,7 +55,7 @@ internal sealed class PlayerView(
         if (map.Player == null)
             return;
 
-        var player = session.player;
+        var player = session.Player;
         var (fromx, fromy, fromsin, fromcos) = PlayerViewOrigin();
         List<Inventory>? touched = null;
 
@@ -91,7 +91,7 @@ internal sealed class PlayerView(
     /// </summary>
     internal void PlayerSight()
     {
-        if (session.camera.OnPlayer || map.Player == null)
+        if (session.Camera.OnPlayer || map.Player == null)
             return;
 
         var (fromx, fromy, fromsin, fromcos) = PlayerViewOrigin();
@@ -107,7 +107,7 @@ internal sealed class PlayerView(
 
             bool onscreen = actor.ViewHeight > 0
                 && actor.ViewX + actor.ViewHeight >= 0 && actor.ViewX - actor.ViewHeight < viewwidth;
-            if (onscreen && actor is Monster && session.gamemode == GameMode.Single)
+            if (onscreen && actor is Monster && session.GameMode == GameMode.Single)
                 actor.Active = ActiveType.Yes;      // seen: awake for good, as when drawn
             if (onscreen && lineOfSight.CheckLine(actor))
                 actor.RuntimeFlags |= ObjFlags.Visible;
@@ -118,11 +118,11 @@ internal sealed class PlayerView(
 
     /// <summary>
     /// Whether a player's tile is in view: vanilla read spotvis there, which the camera fix
-    /// always set. With others (or the camera elsewhere), whether it's open floor or a door,
+    /// always set. With others (or the camera elsewhere), whether it's open floor or a DoorNumber,
     /// which is what that comes to, without asking the screen.
     /// </summary>
     internal bool PlayerTileInView(PlayerPawn pawn) =>
-        session.camera.Target == pawn && session.gamemode == GameMode.Single
+        session.Camera.Target == pawn && session.GameMode == GameMode.Single
             ? map.spotvis[pawn.TileX, pawn.TileY]
             : map.tilemap[pawn.TileX, pawn.TileY] == 0 || (map.tilemap[pawn.TileX, pawn.TileY] & GameConstants.BitDoor) != 0;
 
@@ -148,7 +148,7 @@ internal sealed class PlayerView(
 
     /// <summary>Whether any living player could see an actor (InViewOf)</summary>
     internal bool SeenByAPlayer(Entities.Actors.Actor actor) =>
-        map.Players.Any(pawn => pawn.State.health > 0 && InViewOf(pawn, actor));
+        map.Players.Any(pawn => pawn.State.Health > 0 && InViewOf(pawn, actor));
 
     /// <summary>
     /// With several players, each frame: enemies a living player could see wake for good, as

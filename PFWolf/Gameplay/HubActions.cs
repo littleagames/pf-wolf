@@ -18,7 +18,7 @@ internal sealed record HubActionsHooks(
 /// floor's run to the shuttle (A_VictoryRun, T_VictoryRun).
 /// </summary>
 /// <remarks>
-/// A_FloorSelect (a switch action, on Blake Stone's elevator panel wall) shows the floor-select
+/// A_FloorSelect (a switch action, on Blake Stone's elevator panel WallId) shows the floor-select
 /// screen from gamepacks/{pack}/elevator.yaml (bstone's InputFloor). Its buttons are the floors
 /// of the level's hub cluster by game-info floor-number. Arrows (or turning) move the selector,
 /// space, enter or fire press its button, a number key presses that floor's (0 is floor 10),
@@ -26,13 +26,13 @@ internal sealed record HubActionsHooks(
 /// open one opens with the unlock item, used up as it does. Choosing a floor leaves the level
 /// (Warped); the player comes out in the same elevator on the new floor.
 /// <para/>
-/// Planet Strike's way between floors (bstone's ps_input_floor): its teleporter wall runs
+/// Planet Strike's way between floors (bstone's ps_input_floor): its teleporter WallId runs
 /// A_FloorSelect as the elevator's does, and an elevator.yaml with `style: teleporter` shows
 /// the teleporter map instead of the panel. Up and down (or left and right) move through the
 /// cluster's floors by floor number; Enter goes, Esc leaves. A floor is open once the player
 /// has been on it or it's been unlocked (A_UnlockFloor, when a floor's security cube is
 /// destroyed); others show "teleport disabled". Each floor's overhead map is kept as it was
-/// when the player left it (Gameplay/Hubs.cs floorOverheads).
+/// when the player left it (Gameplay/Hubs.cs FloorOverheads).
 /// <para/>
 /// The fission detonator (an item with `inventory.useslot` and `inventory.use`) is dropped by
 /// its slot key: A_DropDetonator, beside the floor's security cube, with the next floor still
@@ -93,9 +93,9 @@ internal sealed class HubActions(
 
         hooks.SetPendingMapChange(teleporter
             ? new PendingMapChange(map, false, 0, 0, 0, WaitTics: 0)
-            : new PendingMapChange(map, true, session.player.X, session.player.Y, session.player.Angle, WaitTics: 0, ElevatorWall: panelWall));
-        session.gamestate.mapon = map;
-        session.playstate = PlayState.Warped;
+            : new PendingMapChange(map, true, session.Player.X, session.Player.Y, session.Player.Angle, WaitTics: 0, ElevatorWall: panelWall));
+        session.GameState.MapOn = map;
+        session.PlayState = PlayState.Warped;
         return true;
     }
 
@@ -108,7 +108,7 @@ internal sealed class HubActions(
     */
 
     /// <summary>
-    /// A_Teleport: Blake Stone's teleporter wall (32), by the object-plane value on it. 0xF4nn
+    /// A_Teleport: Blake Stone's teleporter WallId (32), by the object-plane value on it. 0xF4nn
     /// takes the player to floor nn of the cluster, where they come out at the same spot (the
     /// floors' teleporters line up); 0xF5nn moves them to the tile on this floor that the
     /// object-plane value after it gives, its x in the high byte and y in the low byte.
@@ -124,14 +124,14 @@ internal sealed class HubActions(
         {
             int floor = value & 0xff;
             var gameInfo = engine.GetGameInfo();
-            var cluster = hubs.ClusterOf(session.gamestate.mapon);
+            var cluster = hubs.ClusterOf(session.GameState.MapOn);
             var map = gameInfo.Maps.FirstOrDefault(m => m.Value.Cluster == cluster && m.Value.FloorNumber == floor && !string.IsNullOrEmpty(m.Value.Music)).Key;
-            if (map == null || map.Equals(session.gamestate.mapon, StringComparison.OrdinalIgnoreCase))
+            if (map == null || map.Equals(session.GameState.MapOn, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            hooks.SetPendingMapChange(new PendingMapChange(map, true, session.player.X, session.player.Y, session.player.Angle, WaitTics: 0));
-            session.gamestate.mapon = map;
-            session.playstate = PlayState.Warped;
+            hooks.SetPendingMapChange(new PendingMapChange(map, true, session.Player.X, session.Player.Y, session.Player.Angle, WaitTics: 0));
+            session.GameState.MapOn = map;
+            session.PlayState = PlayState.Warped;
             return true;
         }
 
@@ -142,7 +142,7 @@ internal sealed class HubActions(
         int x = value >> 8, y = value & 0xff;
         if (x >= MapManager.MapSize || y >= MapManager.MapSize)
             return false;
-        session.player.SetPosition(x, y);
+        session.Player.SetPosition(x, y);
         movement.Thrust(0, 0);
         return true;
     }
@@ -200,12 +200,12 @@ internal sealed class HubActions(
 
         if (!string.IsNullOrEmpty(sound))
             audio.Play(sound);
-        session.player.SetPosition(to.X, to.Y);
+        session.Player.SetPosition(to.X, to.Y);
         movement.Thrust(0, 0);
         return true;
     }
 
-    /// <summary>Whether the player can stand on a tile: on the map, no wall or door, nothing solid or alive on it</summary>
+    /// <summary>Whether the player can stand on a tile: on the map, no WallId or DoorNumber, nothing solid or alive on it</summary>
     bool IsOpenForPlayer(int x, int y) =>
         x > 0 && y > 0 && x < MapManager.MapSize - 1 && y < MapManager.MapSize - 1
         && mapManager.tilemap[x, y] == 0
@@ -221,13 +221,13 @@ internal sealed class HubActions(
     */
 
     /// <summary>
-    /// A_VictoryRun("Class", wall): the player has reached the way out (Blake Stone's win
-    /// floor). The view turns toward the map's first tile of the given wall (the shuttle), and
+    /// A_VictoryRun("Class", WallId): the player has reached the way out (Blake Stone's win
+    /// floor). The view turns toward the map's first tile of the given WallId (the shuttle), and
     /// the class (Blake) runs past the player that way; six tiles on, the cluster is won.
     /// </summary>
     bool VictoryRunAction(Entities.TriggerActivation trigger, string[] args)
     {
-        if (session.gamestate.victoryflag || args.Length == 0)
+        if (session.GameState.VictoryFlag || args.Length == 0)
             return false;
 
         int wall = args.Length > 1 && int.TryParse(args[1], out var w) ? w : 0;
@@ -237,8 +237,8 @@ internal sealed class HubActions(
             {
                 if (mapManager.MapSpot(x, y, 0) != wall)
                     continue;
-                double dx = (x << MapConstants.TileShift) + MapConstants.TileGlobal / 2 - session.player.X;
-                double dy = session.player.Y - ((y << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
+                double dx = (x << MapConstants.TileShift) + MapConstants.TileGlobal / 2 - session.Player.X;
+                double dy = session.Player.Y - ((y << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
                 var angle = Math.Atan2(dy, dx);
                 if (angle < 0)
                     angle += Math.PI * 2;
@@ -248,41 +248,41 @@ internal sealed class HubActions(
             }
         }
 
-        session.gamestate.victoryflag = true;
-        victoryRunning = true;
-        var runner = mapManager.SpawnAtActor(args[0], session.player);
+        session.GameState.VictoryFlag = true;
+        VictoryRunning = true;
+        var runner = mapManager.SpawnAtActor(args[0], session.Player);
         if (runner == null)
         {
-            session.playstate = PlayState.Victorious;
+            session.PlayState = PlayState.Victorious;
             return true;
         }
 
         // From two tiles behind the player
-        double a = session.player.Angle * Math.PI / 180;
-        runner.X = session.player.X - (int)(Math.Cos(a) * 2 * MapConstants.TileGlobal);
-        runner.Y = session.player.Y + (int)(Math.Sin(a) * 2 * MapConstants.TileGlobal);
+        double a = session.Player.Angle * Math.PI / 180;
+        runner.X = session.Player.X - (int)(Math.Cos(a) * 2 * MapConstants.TileGlobal);
+        runner.Y = session.Player.Y + (int)(Math.Sin(a) * 2 * MapConstants.TileGlobal);
         runner.TileX = (byte)(runner.X >> MapConstants.TileShift);
         runner.TileY = (byte)(runner.Y >> MapConstants.TileShift);
         runner.SyncPosition();
         runner.Temp1 = runner.TileX;       // where it set off from
         runner.Temp3 = runner.TileY;
-        runner.Temp2 = session.player.Angle;
+        runner.Temp2 = session.Player.Angle;
         return true;
     }
 
     /// <summary>A_VictoryRun's runner is on its way: the player watches it rather than turning round (T_Player)</summary>
-    internal bool victoryRunning;
+    internal bool VictoryRunning;
 
-    /// <summary>T_VictoryRun: runs the way the player faced (Temp2); six tiles on from where it set off (Temp1, Temp3), or at a wall, the cluster is won</summary>
+    /// <summary>T_VictoryRun: runs the way the player faced (Temp2); six tiles on from where it set off (Temp1, Temp3), or at a WallId, the cluster is won</summary>
     internal void ThinkVictoryRun(Entities.Actors.Actor ob)
     {
         const int speed = 3000;
         double a = ob.Temp2 * Math.PI / 180;
-        int nx = ob.X + (int)(Math.Cos(a) * speed * session.tics);
-        int ny = ob.Y - (int)(Math.Sin(a) * speed * session.tics);
+        int nx = ob.X + (int)(Math.Cos(a) * speed * session.Tics);
+        int ny = ob.Y - (int)(Math.Sin(a) * speed * session.Tics);
         int tx = nx >> MapConstants.TileShift, ty = ny >> MapConstants.TileShift;
 
-        // Starting behind the player can be inside a wall: it runs on out of it, and only a wall
+        // Starting behind the player can be inside a WallId: it runs on out of it, and only a WallId
         // it runs into stops it
         bool IsWall(int x, int y) => mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BitDoor) == 0;
         bool blocked = tx < 0 || ty < 0 || tx >= MapManager.MapSize || ty >= MapManager.MapSize
@@ -297,22 +297,22 @@ internal sealed class HubActions(
         }
 
         if (blocked || Math.Abs(ob.TileX - ob.Temp1) >= 6 || Math.Abs(ob.TileY - ob.Temp3) >= 6)
-            session.playstate = PlayState.Victorious;
+            session.PlayState = PlayState.Victorious;
     }
 
     /// <summary>Turns the view to <paramref name="destAngle"/> at <paramref name="speed"/> degrees a tic, drawing as it goes</summary>
     void RotateView(int destAngle, int speed)
     {
         destAngle = ((destAngle % GameConstants.Angles) + GameConstants.Angles) % GameConstants.Angles;
-        int diff = destAngle - session.player.Angle;
+        int diff = destAngle - session.Player.Angle;
         if (diff > GameConstants.Angles / 2) diff -= GameConstants.Angles;
         if (diff < -GameConstants.Angles / 2) diff += GameConstants.Angles;
 
         while (diff != 0)
         {
-            int step = Math.Min(Math.Abs(diff), Math.Max(1, (int)(speed * session.tics))) * Math.Sign(diff);
+            int step = Math.Min(Math.Abs(diff), Math.Max(1, (int)(speed * session.Tics))) * Math.Sign(diff);
             diff -= step;
-            session.player.Angle = (short)(((session.player.Angle + step) % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles);
+            session.Player.Angle = (short)(((session.Player.Angle + step) % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles);
             frame.ThreeDRefresh();
             frame.CalcTics();
         }
@@ -324,7 +324,7 @@ internal sealed class HubActions(
     {
         if (hubs.ClusterFloorMap(hubs.CurrentFloorNumber() + 1) is not { } next || hubs.FloorOpen(next))
             return false;
-        hubs.unlockedMaps.Add(next);
+        hubs.UnlockedMaps.Add(next);
         hudMessages.Show(HudMessageKind.Other, string.IsNullOrEmpty(message) ? "$PS_FLOORUNLOCKED" : message);
         audio.Play("bs/roll_score");
         return true;
@@ -354,18 +354,18 @@ internal sealed class HubActions(
             Say("$PS_NOCOMPUTER");
             return false;
         }
-        if (cube.AreaNumber != session.player.AreaNumber && SpawnAreaOf(cube) != mapManager.SpawnArea(session.player.TileX, session.player.TileY))
+        if (cube.AreaNumber != session.Player.AreaNumber && SpawnAreaOf(cube) != mapManager.SpawnArea(session.Player.TileX, session.Player.TileY))
         {
             Say("$PS_NOTNEAR");
             return false;
         }
-        if (Math.Max(Math.Abs(session.player.TileX - cube.TileX), Math.Abs(session.player.TileY - cube.TileY)) > range)
+        if (Math.Max(Math.Abs(session.Player.TileX - cube.TileX), Math.Abs(session.Player.TileY - cube.TileY)) > range)
         {
             Say("$PS_GETCLOSER");
             return false;
         }
 
-        var dropped = mapManager.SpawnAtActor(armed, session.player);
+        var dropped = mapManager.SpawnAtActor(armed, session.Player);
         if (dropped == null)
             return false;
         inventory.Take("PlasmaDetonator", 1);

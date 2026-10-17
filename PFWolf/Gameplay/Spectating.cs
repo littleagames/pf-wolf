@@ -31,7 +31,7 @@ internal sealed class Spectating(
 
         if (mode.Equals("player", StringComparison.OrdinalIgnoreCase))
         {
-            session.camera.FollowPlayer();
+            session.Camera.FollowPlayer();
             console.Print("Watching through your own eyes");
             return;
         }
@@ -50,13 +50,13 @@ internal sealed class Spectating(
 
         // The one after (or before) the actor watched now, round the list; the first (or last)
         // from the player's eyes
-        int at = session.camera.Spectating ? candidates.IndexOf(session.camera.Target!) : -1;
+        int at = session.Camera.Spectating ? candidates.IndexOf(session.Camera.Target!) : -1;
         int next = at < 0
             ? (back ? candidates.Count - 1 : 0)
             : (at + (back ? -1 : 1) + candidates.Count) % candidates.Count;
 
         var watched = candidates[next];
-        session.camera.Follow(watched);
+        session.Camera.Follow(watched);
 
         var text = $"Watching {hudMessageDrawing.ActorTag(watched)}";
         console.Print($"{text} ({watched.Name} at {watched.TileX},{watched.TileY}, {next + 1} of {candidates.Count})");

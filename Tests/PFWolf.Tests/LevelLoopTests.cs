@@ -12,8 +12,8 @@ public class LevelLoopTests
         var map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<FactionManager>(() => factions), session);
         var guard = new Entities.Actors.Monster { Name = "Guard" };
         map.GetActors().AddLast(guard);
-        session.players.Add(new Entities.PlayerState { Number = 2, Gone = true });
-        session.players.Add(new Entities.PlayerState { Number = 3 });
+        session.Players.Add(new Entities.PlayerState { Number = 2, Gone = true });
+        session.Players.Add(new Entities.PlayerState { Number = 3 });
         var loop = new LevelLoop(null!, null!, null!, null!, null!, map, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!);
 
 
@@ -21,8 +21,8 @@ public class LevelLoopTests
         loop.InitActorList();
 
         // Assert: the players think first, in order; whoever has gone has no pawn
-        Assert.That(map.GetActors(), Is.EqualTo(new Entities.Actors.Actor?[] { session.players[0].Pawn, session.players[2].Pawn, guard }));
-        Assert.That(session.players[0].Pawn, Is.Not.Null);
-        Assert.That(session.players[1].Pawn, Is.Null);
+        Assert.That(map.GetActors(), Is.EqualTo(new Entities.Actors.Actor?[] { session.Players[0].Pawn, session.Players[2].Pawn, guard }));
+        Assert.That(session.Players[0].Pawn, Is.Not.Null);
+        Assert.That(session.Players[1].Pawn, Is.Null);
     }
 }

@@ -38,12 +38,12 @@ public class NetGamesTests
     {
         // Arrange
         _netPlay.netLeft = true;
-        _session.netgame = true;
+        _session.NetGame = true;
 
         // Act: no session open (nothing to say why)
         _games.EndNetGame();
 
         // Assert
-        Assert.That((_session.netgame, _netPlay.netLeft), Is.EqualTo((false, false)));
+        Assert.That((_session.NetGame, _netPlay.netLeft), Is.EqualTo((false, false)));
     }
 }

@@ -60,8 +60,8 @@ internal sealed class NetOverlay(
     /// <summary>Dead, with others: watches the next (or previous) living player, until coming back</summary>
     internal void WatchNextPlayer(int step)
     {
-        var camera = game.camera;
-        var living = map.Players.Where(pawn => pawn.State != game.localplayer && pawn.State.health > 0).ToList();
+        var camera = game.Camera;
+        var living = map.Players.Where(pawn => pawn.State != game.LocalPlayer && pawn.State.Health > 0).ToList();
         if (living.Count == 0)
         {
             camera.FollowPlayer();
@@ -86,8 +86,8 @@ internal sealed class NetOverlay(
             return;
         }
 
-        var localplayer = game.localplayer;
-        if (localplayer.health <= 0 && localplayer.Pawn != null)
+        var localplayer = game.LocalPlayer;
+        if (localplayer.Health <= 0 && localplayer.Pawn != null)
         {
             if (input.IsButtonPressed(ButtonType.TurnRight) && !input.IsButtonHeld(ButtonType.TurnRight))
                 WatchNextPlayer(1);
@@ -100,7 +100,7 @@ internal sealed class NetOverlay(
             if (scan == ScanCodes.Y)
             {
                 netPlay.netLeft = true;
-                game.playstate = PlayState.Abort;
+                game.PlayState = PlayState.Abort;
             }
             if (scan is ScanCodes.Y or ScanCodes.N or ScanCodes.Escape)
             {
@@ -125,8 +125,8 @@ internal sealed class NetOverlay(
 
     /// <summary>How much of the view's top the match's line takes (0 with no match on), for the messages to go under</summary>
     internal int MatchLineHeight() =>
-        Match == null || game.gamemode is GameMode.Single or GameMode.Coop ? 0
-        : Match.Objective?.StatusLine() != null && game.gamemode != GameMode.Horde ? 20 : 11;
+        Match == null || game.GameMode is GameMode.Single or GameMode.Coop ? 0
+        : Match.Objective?.StatusLine() != null && game.GameMode != GameMode.Horde ? 20 : 11;
 
     /// <summary>
     /// A match's line across the top of the view: the teams' scores (Heist's tug of war as a
@@ -139,12 +139,12 @@ internal sealed class NetOverlay(
         var style = new Fonts.TextStyle(UiFonts.SmallFont, "HIGHLIGHT");
         var (score, news) = Match!.MatchStatus();
         int y = (ViewTop?.Invoke() ?? 0) + 2;
-        if (game.gamemode == GameMode.Heist)
+        if (game.GameMode == GameMode.Heist)
         {
             // The rope: its middle, and how far it's been pulled toward the team ahead
             const int RopeX = 110, RopeW = 100;
-            int limit = Math.Max(1, Match.netrules.ScoreLimit > 0 ? Match.netrules.ScoreLimit : 100);
-            int lead = Math.Clamp(Match.teamscores[0] - Match.teamscores[1], -limit, limit);
+            int limit = Math.Max(1, Match.NetRules.ScoreLimit > 0 ? Match.NetRules.ScoreLimit : 100);
+            int lead = Math.Clamp(Match.TeamScores[0] - Match.TeamScores[1], -limit, limit);
             int pulled = lead * (RopeW / 2) / limit;
             video.Bar(RopeX - 1, y - 1, RopeW + 2, 7, "BKGDCOLOR");
             video.Bar(RopeX, y, RopeW, 5, "#404040");
@@ -153,8 +153,8 @@ internal sealed class NetOverlay(
             else if (pulled < 0)
                 video.Bar(RopeX + RopeW / 2, y, -pulled, 5, "#0000FC");
             video.Bar(RopeX + RopeW / 2, y - 1, 1, 7, "#FCFCFC");
-            ui.TextAt(RopeX - 40, y - 1, style).Print($"Red {Match.teamscores[0]}");
-            ui.TextAt(RopeX + RopeW + 6, y - 1, style).Print($"{Match.teamscores[1]} Blue");
+            ui.TextAt(RopeX - 40, y - 1, style).Print($"Red {Match.TeamScores[0]}");
+            ui.TextAt(RopeX + RopeW + 6, y - 1, style).Print($"{Match.TeamScores[1]} Blue");
             y += 9;
         }
         else if (score.Length > 0)      // (Horde has none: just its wave)
@@ -170,17 +170,17 @@ internal sealed class NetOverlay(
     internal void DrawNetOverlay()
     {
         DrawMatchLine();
-        if (!game.netgame)
+        if (!game.NetGame)
             return;
 
         // Dead: everyone's score, who's being watched, and how to come back
-        var localplayer = game.localplayer;
-        bool dead = localplayer.health <= 0 && localplayer.Pawn != null;
+        var localplayer = game.LocalPlayer;
+        bool dead = localplayer.Health <= 0 && localplayer.Pawn != null;
         if (scoreboard.showscoreboard || dead)
             scoreboard.DrawScoreboard(12);
         if (dead)
         {
-            var watching = game.camera.Target is Entities.Actors.PlayerPawn pawn && pawn != localplayer.Pawn
+            var watching = game.Camera.Target is Entities.Actors.PlayerPawn pawn && pawn != localplayer.Pawn
                 ? $"Watching {pawn.State.Name ?? $"Player {pawn.State.Number + 1}"} - " : "";
             var hint = $"{watching}use or fire to come back, left/right to watch others";
             ui.CenteredText(0, 320, MaxY - 12, new Fonts.TextStyle(UiFonts.SmallFont, "HIGHLIGHT")).CPrint(ui.FitText(hint, 300, UiFonts.SmallFont));

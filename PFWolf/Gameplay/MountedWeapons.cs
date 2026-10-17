@@ -31,12 +31,12 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
     MountedWeaponsHooks hooks)
 {
     /// <summary>Whether the acting player is manning a mounted gun</summary>
-    internal bool IsMounted => session.playerstate.Mount != null;
+    internal bool IsMounted => session.PlayerState.Mount != null;
 
     /// <summary>A_Mount("Gun"[, "sound"]): the player who used it mans it, with that gun</summary>
     internal void Mount(Entities.Actors.Actor mount, string[] args)
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         if (IsMounted || args.Length == 0 || string.IsNullOrWhiteSpace(args[0]) || playerstate.Pawn is not { } player)
             return;
         var gun = args[0].Trim();
@@ -49,11 +49,11 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         // the way they face as they use it, squared up
         int facing = FacingAngle(PlayerMovement.FacingDir(player.Angle));
         (playerstate.Mount, playerstate.MountGun, playerstate.MountFrom, playerstate.MountMap) =
-            (mount, gun, playerstate.chosenweapon, session.gamestate.mapon);
+            (mount, gun, playerstate.ChosenWeapon, session.GameState.MapOn);
         inventory.Give(gun, 1);
-        playerstate.weapon = playerstate.chosenweapon = gun;
+        playerstate.Weapon = playerstate.ChosenWeapon = gun;
         playerstate.WeaponPower = 0;
-        session.playerinput.SetHeld(ButtonType.Attack, true);   // no shot from a fire held as they got on
+        session.PlayerInput.SetHeld(ButtonType.Attack, true);   // no shot from a fire held as they got on
 
         player.SetPosition(mount.TileX, mount.TileY);
         player.Angle = (short)facing;
@@ -69,7 +69,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
     /// </summary>
     internal bool TryDismount()
     {
-        var playerstate = session.playerstate;
+        var playerstate = session.PlayerState;
         if (!IsMounted || playerstate.Pawn is not { } player)
             return false;
 
@@ -96,14 +96,14 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
     /// </summary>
     internal void Tick()
     {
-        var playerstate = session.playerstate;
-        if (IsMounted && (playerstate.weapon != playerstate.MountGun || playerstate.MountMap != session.gamestate.mapon
+        var playerstate = session.PlayerState;
+        if (IsMounted && (playerstate.Weapon != playerstate.MountGun || playerstate.MountMap != session.GameState.MapOn
             || playerstate.Mount!.IsRemoved))
             Leave();
-        else if (!IsMounted && playerstate.weapon is { } weapon && IsMountedGun(weapon))
+        else if (!IsMounted && playerstate.Weapon is { } weapon && IsMountedGun(weapon))
         {
             inventory.Take(weapon, 1);
-            playerstate.weapon = playerstate.chosenweapon = weapons.BestWeapon(canFire: true);
+            playerstate.Weapon = playerstate.ChosenWeapon = weapons.BestWeapon(canFire: true);
             weapons.DrawWeapon();
         }
     }
@@ -115,13 +115,13 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
     // Off the gun: it's taken away, and the weapon they had before is back if they can still fire it
     void Leave()
     {
-        var playerstate = session.playerstate;
-        if (playerstate.MountGun is { } gun && playerstate.weapon == gun)
+        var playerstate = session.PlayerState;
+        if (playerstate.MountGun is { } gun && playerstate.Weapon == gun)
         {
             inventory.Take(gun, 1);
-            playerstate.weapon = playerstate.chosenweapon =
+            playerstate.Weapon = playerstate.ChosenWeapon =
                 playerstate.MountFrom is { } before && inventory.Has(before) && weapons.CanFire(before) ? before : weapons.BestWeapon(canFire: true);
-            session.playerinput.SetHeld(ButtonType.Attack, true);
+            session.PlayerInput.SetHeld(ButtonType.Attack, true);
         }
         else if (playerstate.MountGun is { } kept)
             inventory.Take(kept, 1);
@@ -129,7 +129,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         weapons.DrawWeapon();
     }
 
-    // Nothing in the way: no wall or door, and nothing solid or shootable standing there
+    // Nothing in the way: no WallId or DoorNumber, and nothing solid or shootable standing there
     bool IsOpen(int x, int y) =>
         x is > 0 and < MapManager.MapSize - 1 && y is > 0 and < MapManager.MapSize - 1
         && map.tilemap[x, y] == 0 && map.actorat[x, y] == null

@@ -41,10 +41,10 @@ public class AutomapDrawingTests
     }
 
     [TestCase(0, false)]                                // open floor
-    [TestCase(5, true)]                                 // a wall
-    [TestCase(200, true)]                               // a wall past Wolf3D's 63
-    [TestCase(GameConstants.BitWall | 255, true)]      // the highest wall id, beside a door
-    [TestCase(GameConstants.BitDoor | 2, false)]             // a door shows as floor (drawn on its own)
+    [TestCase(5, true)]                                 // a WallId
+    [TestCase(200, true)]                               // a WallId past Wolf3D's 63
+    [TestCase(GameConstants.BitWall | 255, true)]      // the highest WallId id, beside a DoorNumber
+    [TestCase(GameConstants.BitDoor | 2, false)]             // a DoorNumber shows as floor (drawn on its own)
     [TestCase(GameConstants.BitWall, false)]                 // a moving pushwall's tile (drawn at its offset)
     public void Walls_Are_What_Shows_As_Wall(int tile, bool wall)
     {
@@ -121,9 +121,9 @@ public class RadarTests
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
         map.tilemap[1, 1] = 5;
         map.tilemap[2, 1] = GameConstants.BitDoor | 0;
-        doors.doorobjlist[0] = new DoorObject { action = DoorAction.Closed };
+        doors.DoorObjList[0] = new DoorObject { Action = DoorAction.Closed };
         map.tilemap[3, 1] = GameConstants.BitDoor | 1;
-        doors.doorobjlist[1] = new DoorObject { action = DoorAction.Open };
+        doors.DoorObjList[1] = new DoorObject { Action = DoorAction.Open };
 
         // Act
         string Color(int x) => radar.RadarTileColor(x, 1, "unmapped", "floor", "door", "locked");
@@ -138,7 +138,7 @@ public class RadarTests
     [Test]
     public void A_Locked_Door_Shows_As_Locked_Open_Or_Shut_Until_A_Key_Unlocks_It()
     {
-        // Arrange: a gold-key door, closed
+        // Arrange: a gold-key DoorNumber, closed
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
             tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
@@ -148,18 +148,18 @@ public class RadarTests
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
         map.tilemap[2, 1] = GameConstants.BitDoor | 0;
-        doors.doorobjlist[0] = new DoorObject { action = DoorAction.Closed, maplock = "GoldKey" };
+        doors.DoorObjList[0] = new DoorObject { Action = DoorAction.Closed, MapLock = "GoldKey" };
         string Color() => radar.RadarTileColor(2, 1, "unmapped", "floor", "door", "locked");
 
         // Act / Assert: as bstone, the lock wins whether it's open or shut
         Assert.That(Color(), Is.EqualTo("locked"));
-        doors.doorobjlist[0].action = DoorAction.Open;
+        doors.DoorObjList[0].Action = DoorAction.Open;
         Assert.That(Color(), Is.EqualTo("locked"));
 
-        // a key has unlocked it (doors.yaml takes-key): an ordinary door from now on
-        doors.doorobjlist[0].unlocked = true;
+        // a key has unlocked it (doors.yaml takes-key): an ordinary DoorNumber from now on
+        doors.DoorObjList[0].Unlocked = true;
         Assert.That(Color(), Is.EqualTo("floor"));
-        doors.doorobjlist[0].action = DoorAction.Closed;
+        doors.DoorObjList[0].Action = DoorAction.Closed;
         Assert.That(Color(), Is.EqualTo("door"));
     }
 }

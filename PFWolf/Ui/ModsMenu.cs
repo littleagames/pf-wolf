@@ -110,7 +110,7 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
                 input.ClearKeysDown();
                 input.Ack();
             }
-            else if (loop.Confirm(session.ingame ? "$STR_MODS_RESTART_INGAME" : "$STR_MODS_RESTART") != 0)
+            else if (loop.Confirm(session.InGame ? "$STR_MODS_RESTART_INGAME" : "$STR_MODS_RESTART") != 0)
             {
                 audio.SetPaused(true);
                 audio.StopAll();

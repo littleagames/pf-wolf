@@ -129,7 +129,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         //
         // ALREADY IN A GAME?
         //
-        if (session.ingame)
+        if (session.InGame)
             if (loop.Confirm($"$CURGAME".ToLanguageText(language)) == 0)
             {
                 draw.MenuFadeOut();

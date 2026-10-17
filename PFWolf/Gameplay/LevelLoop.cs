@@ -47,18 +47,18 @@ internal sealed class LevelLoop(
     GameSession session,
     LevelLoopHooks hooks)
 {
-    internal int funnyticount;
+    internal int FunnyTicCount;
 
     internal void PlayLoop()
     {
-        session.playstate = PlayState.StillPlaying;
+        session.PlayState = PlayState.StillPlaying;
         frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
         frame.FrameOn = 0;
-        funnyticount = 0;
+        FunnyTicCount = 0;
         input.InitButtonState();
         if (!netPlay.netJoinResume)             // (just joined mid-level: kept as the host had them)
         {
-            foreach (var p in session.players)  // every player's, so every machine starts the level alike
+            foreach (var p in session.Players)  // every player's, so every machine starts the level alike
             {
                 p.AngleFrac = 0;
                 p.FaceCount = 0;
@@ -66,14 +66,14 @@ internal sealed class LevelLoop(
             }
         }
         video.ClearPaletteShifts();
-        if (session.netgame)
+        if (session.NetGame)
             netPlay.NetLevelStart();            // counting frames from 0 (Networking/NetPlay.cs)
 
         input.CenterMouse();
 
         hudMessages.Clear();     // nothing left over from the last level, life or saved game
 
-        if (session.demoplayback)
+        if (session.DemoPlayback)
             input.StartAck();
 
         hooks.UpdateSoundListener();
@@ -86,61 +86,61 @@ internal sealed class LevelLoop(
             // CalcTics still advances LastTimeCount each frame, so no time builds up to be
             // spent all at once when the console closes.
             // Not with others, though: the game goes on for them
-            bool worldPaused = console.IsPausingGame && !session.netgame;
+            bool worldPaused = console.IsPausingGame && !session.NetGame;
 
             if (!worldPaused)
             {
                 // this frame's controls, for each player to read as they think: with others,
                 // everyone's as the host sent them (Networking/NetPlay.cs); else this machine's for
                 // the local player, and whatever came for everyone else
-                if (session.netgame)
+                if (session.NetGame)
                 {
                     if (!netPlay.NetFrame())
                     {
-                        session.playstate = PlayState.Abort;    // left the game, or the host is gone
+                        session.PlayState = PlayState.Abort;    // left the game, or the host is gone
                         continue;
                     }
                 }
                 else
                 {
-                    foreach (var p in session.players)
-                        p.Input.Begin(ReferenceEquals(p, session.localplayer) ? polling.localcmd : p.PendingCmd);
+                    foreach (var p in session.Players)
+                        p.Input.Begin(ReferenceEquals(p, session.LocalPlayer) ? polling.LocalCmd : p.PendingCmd);
                 }
 
                 //
                 // actor thinking
                 //
-                session.madenoise = false;
+                session.MadeNoise = false;
                 doors.MoveDoors();
                 pushWalls.MovePWalls();
-                timedSwitches.Tick(session.tics);       // switches turning back by themselves (Gameplay/TimedSwitches.cs)
+                timedSwitches.Tick(session.Tics);       // switches turning back by themselves (Gameplay/TimedSwitches.cs)
 
                 // Every actor lives in map._actors. The player is at its head, so it still
                 // thinks before every enemy, projectile and the BJ-victory actor.
-                map.DoActors(session.tics);
+                map.DoActors(session.Tics);
                 floorDamage.Tick();                     // floors that hurt (Gameplay/FloorDamage.cs)
-                foreach (var p in session.players)    // pickups each player walked onto (Rendering/PlayerView.cs)
+                foreach (var p in session.Players)    // pickups each player walked onto (Rendering/PlayerView.cs)
                 {
                     if (p.Pawn is { } pawn && session.IsTargetable(pawn))
                         using (session.ActAs(p))
                             playerView.TouchItems();
                 }
-                hooks.TickPlayerBodies(session.tics);     // what others see of the players, and
-                session.camera.Tick(session.tics);          // a watched actor's view turning (Gameplay/Camera.cs)
-                levelAI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
-                lighting.TickZoneLights(session.tics);       // light zones' fades and effects (Rendering/Lighting.cs)
+                hooks.TickPlayerBodies(session.Tics);     // what others see of the players, and
+                session.Camera.Tick(session.Tics);          // a watched actor's view turning (Gameplay/Camera.cs)
+                levelAI.Tick();     // WallId outlets and warp sites (Managers.LevelAI)
+                lighting.TickZoneLights(session.Tics);       // light zones' fades and effects (Rendering/Lighting.cs)
                 hooks.TickAmbience?.Invoke();               // the player's zone's ambient sound (Gameplay/ZoneAmbience.cs)
                 scripts.RunTickHooks();             // the scripts' game.ontick hooks (Scripting/GameScripts.cs)
-                if (session.gamemode != GameMode.Single)
+                if (session.GameMode != GameMode.Single)
                     playerView.WakeSeenEnemies();      // what the renderer did alone (Rendering/PlayerView.cs)
-                if (session.gamemode is not (GameMode.Single or GameMode.Coop))
+                if (session.GameMode is not (GameMode.Single or GameMode.Coop))
                     deathmatch.TickDeathmatch();       // items back, the objective and the time limit (Gameplay/Deathmatch.cs)
-                if (session.netgame)
+                if (session.NetGame)
                     netPlay.NetFrameDone();
-                console.TickWaiting((int)session.tics);      // commands put off by `wait`
+                console.TickWaiting((int)session.Tics);      // commands put off by `wait`
 
-                video.UpdatePaletteShifts(session.tics);
-                hudMessages.Tick((int)session.tics);
+                video.UpdatePaletteShifts(session.Tics);
+                hudMessages.Tick((int)session.Tics);
             }
 
             hooks.UpdateAutomap();
@@ -152,8 +152,8 @@ internal sealed class LevelLoop(
 
             if (!worldPaused)
             {
-                session.gamestate.TimeCount += (int)session.tics;
-                session.gamestate.PlayTime += (int)session.tics;
+                session.GameState.TimeCount += (int)session.Tics;
+                session.GameState.PlayTime += (int)session.Tics;
             }
 
             hooks.UpdateSoundListener();      // JAB
@@ -167,31 +167,31 @@ internal sealed class LevelLoop(
             //
             // debug aids
             //
-            if (session.singlestep != 0)
+            if (session.SingleStep != 0)
             {
-                GameEngineManager.WaitVBL(session.singlestep);
+                GameEngineManager.WaitVBL(session.SingleStep);
                 frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
             }
-            if (session.extravbls != 0)
-                GameEngineManager.WaitVBL((uint)session.extravbls);
+            if (session.ExtraVbls != 0)
+                GameEngineManager.WaitVBL((uint)session.ExtraVbls);
 
-            if (session.demoplayback && !hooks.DemoTesting())       // demotest plays each to its end
+            if (session.DemoPlayback && !hooks.DemoTesting())       // demotest plays each to its end
             {
                 if (input.CheckAck())
                 {
                     input.ClearKeysDown();
-                    session.playstate = PlayState.Abort;
+                    session.PlayState = PlayState.Abort;
                 }
             }
         }
-        while (session.playstate == 0 && !session.startgame);
+        while (session.PlayState == 0 && !session.GameChosen);
 
         // Intermission, death and menu screens don't draw the console, so don't leave it
         // capturing keys behind them (e.g. after a "map" command ends the level).
         console.Close();
         automap.Close();
 
-        if (session.playstate != PlayState.Died)
+        if (session.PlayState != PlayState.Died)
             video.FinishPaletteShifts();
     }
 
@@ -200,7 +200,7 @@ internal sealed class LevelLoop(
         //
         // the players are created first, so they sit at the head of _actors and think first
         //
-        foreach (var p in session.players.Where(p => !p.Gone))     // not anyone who has left the game
+        foreach (var p in session.Players.Where(p => !p.Gone))     // not anyone who has left the game
             map.CreatePlayer(p);
     }
 }

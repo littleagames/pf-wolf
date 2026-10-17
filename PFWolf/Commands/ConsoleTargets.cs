@@ -5,7 +5,7 @@ namespace PFWolf.Commands;
 
 /// <summary>
 /// What console commands act on and how they describe it: a tile (named, or the one the player
-/// faces), the enemies chosen by class (or the nearest), a wall sprite, a patch and a light zone
+/// faces), the enemies chosen by class (or the nearest), a WallId sprite, a patch and a light zone
 /// </summary>
 internal sealed class ConsoleTargets(
     MapManager map,
@@ -19,12 +19,12 @@ internal sealed class ConsoleTargets(
             .Where(m => !m.IsRemoved && m.RuntimeFlags.HasFlag(ObjFlags.Shootable));
         var chosen = className != null
             ? living.Where(m => m.Name.Equals(className, StringComparison.OrdinalIgnoreCase)).ToList()
-            : living.OrderBy(m => Math.Max(Math.Abs(m.X - session.player.X), Math.Abs(m.Y - session.player.Y))).Take(1).ToList();
+            : living.OrderBy(m => Math.Max(Math.Abs(m.X - session.Player.X), Math.Abs(m.Y - session.Player.Y))).Take(1).ToList();
         return chosen.Count > 0 ? chosen
             : throw new ArgumentException(className != null ? $"no living {className} on the level" : "no living enemy on the level");
     }
 
-    /// <summary>"  panel ..." for a wall sprite, else nothing.</summary>
+    /// <summary>"  panel ..." for a WallId sprite, else nothing.</summary>
     internal string WallSpriteDescription(Entities.Actors.Actor actor)
     {
         if (!WallSprites.IsWallSprite(actor))
@@ -46,8 +46,8 @@ internal sealed class ConsoleTargets(
         if (args.Length >= index + 2)
             return (ParseInt(args[index], 0, map.mapwidth - 1), ParseInt(args[index + 1], 0, map.mapheight - 1));
 
-        int x = session.player.TileX, y = session.player.TileY;
-        switch (PlayerMovement.FacingDir(session.player.Angle))
+        int x = session.Player.TileX, y = session.Player.TileY;
+        switch (PlayerMovement.FacingDir(session.Player.Angle))
         {
             case ControlDir.East: x++; break;
             case ControlDir.North: y--; break;

@@ -39,11 +39,11 @@ internal sealed class PlayerThink(
     */
     internal void ThinkPlayer(Entities.Actors.Actor ob)
     {
-        var gamestate = session.gamestate;
-        var playerinput = session.playerinput;
-        var player = session.player;
+        var gamestate = session.GameState;
+        var playerinput = session.PlayerInput;
+        var player = session.Player;
 
-        if (gamestate.victoryflag)              // watching the BJ actor
+        if (gamestate.VictoryFlag)              // watching the BJ actor
         {
             if (!hooks.VictoryRunning())        // A_VictoryRun's runner goes the way the player faces
                 VictorySpin();
@@ -57,10 +57,10 @@ internal sealed class PlayerThink(
         // Reloading is like being ready, as the original Midnight Assault's T_Reload: use works,
         // and fire is kept for cutting the reload short (WeaponInHand.TickWeapon); only the
         // weapon can't be changed (PlayerWeapons.CheckWeaponChange)
-        if (weaponInHand.IsWeaponReady() || WeaponInHand.IsReloading(session.playerstate.WeaponSprite))
+        if (weaponInHand.IsWeaponReady() || WeaponInHand.IsReloading(session.PlayerState.WeaponSprite))
         {
             weapons.CheckWeaponChange();
-            hooks.UpdateZoom(WeaponInHand.IsReloading(session.playerstate.WeaponSprite));
+            hooks.UpdateZoom(WeaponInHand.IsReloading(session.PlayerState.WeaponSprite));
 
             if (playerinput.IsPressed(ButtonType.Use))
                 use.PressUse();
@@ -83,12 +83,12 @@ internal sealed class PlayerThink(
 
         movement.ControlMovement(ob);
         if (session.ActingIsLocal)              // only the local player's view bobs
-            weaponBob.Update(playerinput.ControlY, session.tics);
-        if (gamestate.victoryflag)              // watching the BJ actor
+            weaponBob.Update(playerinput.ControlY, session.Tics);
+        if (gamestate.VictoryFlag)              // watching the BJ actor
             return;
 
-        session.playerstate.PlUX = (ushort)(player.X >> GameConstants.UnsignedShift);    // scale to fit in unsigned
-        session.playerstate.PlUY = (ushort)(player.Y >> GameConstants.UnsignedShift);
+        session.PlayerState.PlUX = (ushort)(player.X >> GameConstants.UnsignedShift);    // scale to fit in unsigned
+        session.PlayerState.PlUY = (ushort)(player.Y >> GameConstants.UnsignedShift);
         player.TileX = (byte)(player.X >> (int)MapConstants.TileShift);                // scale to tile values
         player.TileY = (byte)(player.Y >> (int)MapConstants.TileShift);
 
@@ -98,10 +98,10 @@ internal sealed class PlayerThink(
 
     internal void VictorySpin()
     {
-        var player = session.player;
-        var tics = session.tics;
+        var player = session.Player;
+        var tics = session.Tics;
         int desty;
-        session.playerstate.Pitch = 0;            // watch BJ straight on
+        session.PlayerState.Pitch = 0;            // watch BJ straight on
         if (player.Angle > 270)
         {
             player.Angle -= (short)(tics * 3);
@@ -129,7 +129,7 @@ internal sealed class PlayerThink(
     internal void SpawnPlayer(int tilex, int tiley, int angle)
     {
         const int ANGLES = GameConstants.Angles;
-        var player = session.player;
+        var player = session.Player;
         player.Active = ActiveType.Yes;
         player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y
         player.AreaNumber = map.SpawnArea(tilex, tiley);

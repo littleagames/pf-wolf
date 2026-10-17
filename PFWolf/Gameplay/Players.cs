@@ -63,7 +63,7 @@ internal sealed class Players(
     /// </summary>
     internal void PlayPlayerSound(string name)
     {
-        if (session.ActingIsLocal || session.playerstate.Pawn is not { } pawn)
+        if (session.ActingIsLocal || session.PlayerState.Pawn is not { } pawn)
             audio.Play(name);
         else
             hooks.PlaySoundAt(name, pawn);
@@ -74,13 +74,13 @@ internal sealed class Players(
     /// </summary>
     internal void ResetPlayers()
     {
-        var players = session.players;
+        var players = session.Players;
         players.Clear();
         players.Add(new Entities.PlayerState());
-        session.consoleplayer = 0;
+        session.ConsolePlayer = 0;
         session.SetActing(players[0]);
         session.SetGameMode(GameMode.Single);
-        session.netgame = false;       // BeginNetGame says otherwise, after
+        session.NetGame = false;       // BeginNetGame says otherwise, after
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ internal sealed class Players(
     internal void SpawnPlayers(int tilex, int tiley, int angle)
     {
         var taken = new List<(int x, int y)>();
-        foreach (var p in session.players.Where(p => p.Pawn != null))
+        foreach (var p in session.Players.Where(p => p.Pawn != null))
         {
             using var _ = session.ActAs(p);
             if (session.IsVersus)
@@ -125,7 +125,7 @@ internal sealed class Players(
 
     /// <summary>
     /// The nearest open floor tile to a spot (by steps across open floor, so never through a
-    /// wall), that isn't one of <paramref name="taken"/> and has nothing standing on it; null
+    /// WallId), that isn't one of <paramref name="taken"/> and has nothing standing on it; null
     /// if there's none within reach.
     /// </summary>
     internal (int x, int y)? FreeTileNear(int tilex, int tiley, List<(int x, int y)> taken)
@@ -155,7 +155,7 @@ internal sealed class Players(
         return null;
     }
 
-    // Floor a player can walk on: no wall, door or solid thing, and in an area
+    // Floor a player can walk on: no WallId, DoorNumber or solid thing, and in an area
     internal bool IsOpenFloor(int x, int y) =>
         map.tilemap[x, y] == 0 && map.actorat[x, y] == null
         && map.ValidArea(map.MapSpot(x, y, 0));
@@ -185,16 +185,16 @@ internal sealed class Players(
     /// <summary>The acting player has just been killed, with others playing on</summary>
     internal void PlayerDies()
     {
-        var playerstate = session.playerstate;
-        var player = session.player;
-        playerstate.weapon = null;              // take away weapon, as Died
+        var playerstate = session.PlayerState;
+        var player = session.Player;
+        playerstate.Weapon = null;              // take away weapon, as Died
         playerstate.DeadTics = 0;
         playerstate.DeathAngle = FacingAngle(player, playerstate.LastAttacker);
         player.SetState(Entities.Actors.PlayerPawn.DeadState);
-        if (session.gamemode != GameMode.Coop)
+        if (session.GameMode != GameMode.Coop)
             hooks.CountFrag(playerstate, playerstate.LastAttacker);     // a frag, a flag dropped... (Gameplay/Deathmatch.cs)
 
-        if (inventory.GetStringProperty(playerstate.playerclass, "deathsound") is { Length: > 0 } deathSound)
+        if (inventory.GetStringProperty(playerstate.PlayerClass, "deathsound") is { Length: > 0 } deathSound)
             PlayPlayerSound(deathSound);
         hooks.ShowObituary();
     }
@@ -214,9 +214,9 @@ internal sealed class Players(
     /// <summary>A dead player's think: turning to face their killer, sinking, and waiting to come back</summary>
     internal void ThinkPlayerDead(Entities.Actors.Actor ob)
     {
-        var playerstate = session.playerstate;
-        var player = session.player;
-        var tics = session.tics;
+        var playerstate = session.PlayerState;
+        var player = session.Player;
+        var tics = session.Tics;
         playerstate.DeadTics += (int)tics;
 
         // Turn the shorter way round toward the killer
@@ -232,17 +232,17 @@ internal sealed class Players(
             playerstate.EyeZ = Math.Max(playerstate.EyeZ - (int)tics * hooks.DeathDropSpeed(), dropto);
 
         if (playerstate.DeadTics >= RespawnTics && hooks.MayRespawn(playerstate)
-            && (session.playerinput.IsFreshPress(ButtonType.Use) || session.playerinput.IsFreshPress(ButtonType.Attack)))
+            && (session.PlayerInput.IsFreshPress(ButtonType.Use) || session.PlayerInput.IsFreshPress(ButtonType.Attack)))
             Respawn();
     }
 
     /// <summary>Brings the acting player back at the level's start, with the class's starting loadout</summary>
     internal void Respawn()
     {
-        var playerstate = session.playerstate;
-        var player = session.player;
+        var playerstate = session.PlayerState;
+        var player = session.Player;
         stats.GiveStartingInventory();
-        playerstate.health = classes.StartingHealth;
+        playerstate.Health = classes.StartingHealth;
         playerstate.Pitch = 0;
         playerstate.EyeZ = classes.StandingEyeZ(playerstate);
         playerstate.WeaponSprite = null;
@@ -252,7 +252,7 @@ internal sealed class Players(
 
         // The start, or the nearest free spot to it with someone already there
         var taken = map.Players
-            .Where(pawn => pawn != player && pawn.State.health > 0)
+            .Where(pawn => pawn != player && pawn.State.Health > 0)
             .Select(pawn => ((int)pawn.TileX, (int)pawn.TileY))
             .ToList();
         int x = player.TileX, y = player.TileY, angle = player.Angle;
@@ -275,7 +275,7 @@ internal sealed class Players(
         if (session.IsVersus)
             hooks.GiveDeathmatchKeys();
         if (session.ActingIsLocal)
-            session.camera.FollowPlayer();      // back through their own eyes, from watching someone
+            session.Camera.FollowPlayer();      // back through their own eyes, from watching someone
 
         // Their screen and status bar, if they're this machine's player
         if (session.ActingIsLocal)
@@ -290,18 +290,18 @@ internal sealed class Players(
 
     /// <summary>What messages call a player: their name, else "Player n" (the class's tag, alone)</summary>
     internal string? PlayerName(Entities.Actors.PlayerPawn pawn) =>
-        session.gamemode == GameMode.Single ? null : pawn.State.Name ?? $"Player {pawn.State.Number + 1}";
+        session.GameMode == GameMode.Single ? null : pawn.State.Name ?? $"Player {pawn.State.Number + 1}";
 
     /// <summary>The acting player starts the game afresh as <paramref name="playerClass"/>: their loadout, health and lives</summary>
     internal void StartPlayer(string playerClass)
     {
-        var playerstate = session.playerstate;
-        playerstate.playerclass = playerClass;
+        var playerstate = session.PlayerState;
+        playerstate.PlayerClass = playerClass;
         stats.GiveStartingInventory();
 
-        playerstate.health = classes.StartingHealth;
-        playerstate.lives = classes.StartingLives;
-        playerstate.nextextra = stats.ExtraLifeScore;
+        playerstate.Health = classes.StartingHealth;
+        playerstate.Lives = classes.StartingLives;
+        playerstate.NextExtra = stats.ExtraLifeScore;
     }
 
     /// <summary>
@@ -310,7 +310,7 @@ internal sealed class Players(
     /// </summary>
     internal void AddNetPlayer(Networking.NetJoin join)
     {
-        var players = session.players;
+        var players = session.Players;
         if (join.Index != players.Count)
         {
             Console.WriteLine($"Network: {join.Name} joined as player {join.Index + 1}, but there are {players.Count} players here");
@@ -336,7 +336,7 @@ internal sealed class Players(
             }
             else if (map.PlayerStart is { } start)
             {
-                var taken = map.Players.Where(other => other != pawn && other.State.health > 0)
+                var taken = map.Players.Where(other => other != pawn && other.State.Health > 0)
                     .Select(other => ((int)other.TileX, (int)other.TileY)).ToList();
                 var (x, y) = taken.Contains((start.TileX, start.TileY))
                     ? FreeTileNear(start.TileX, start.TileY, taken) ?? (start.TileX, start.TileY)

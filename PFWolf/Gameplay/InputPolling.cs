@@ -16,7 +16,7 @@ internal sealed record InputPollingHooks(
 
 /// <summary>
 /// Each frame's controls: the tics it moves the game on by (CalcTics, or a fixed step for demos
-/// and games with others), then the buttons, keys, mouse and controller read into localcmd, the
+/// and games with others), then the buttons, keys, mouse and controller read into LocalCmd, the
 /// one TicCmd the game reads (PollControls). Also what's held down for each control
 /// (IsControlDown, IsInputActive) and the fresh presses console binds run on.
 /// </summary>
@@ -32,15 +32,15 @@ internal sealed class InputPolling(
     InputPollingHooks hooks)
 {
     //
-    // current user input: gathered here each frame by PollControls into localcmd, which is all
+    // current user input: gathered here each frame by PollControls into LocalCmd, which is all
     // the game itself reads (through the player's PlayerInput)
     //
-    internal TicCmd localcmd;
-    internal int controlx, controly;         // range from -100 to 100 per tic
-    internal int controlstrafe;              // a controller stick's sideways move, the same range (positive is right)
-    internal int wheelnotches;               // the mouse wheel's turn this frame (positive is away from the user)
-    internal double controlpitch;            // how far to look up (down if negative) this frame, in degrees
-    internal bool controlcenterview;         // look straight ahead again this frame
+    internal TicCmd LocalCmd;
+    internal int ControlX, ControlY;         // range from -100 to 100 per tic
+    internal int ControlStrafe;              // a controller stick's sideways move, the same range (positive is right)
+    internal int WheelNotchesThisFrame;               // the mouse wheel's turn this frame (positive is away from the user)
+    internal double ControlPitch;            // how far to look up (down if negative) this frame, in degrees
+    internal bool ControlCenterView;         // look straight ahead again this frame
 
 
     // Degrees a tic the look keys (and a stick pushed all the way) look up or down: level to
@@ -60,34 +60,34 @@ internal sealed class InputPolling(
         //
         // get timing info for last frame
         //
-        if (session.demoplayback || session.demorecord)   // demo recording and playback needs to be constant
+        if (session.DemoPlayback || session.DemoRecord)   // demo recording and playback needs to be constant
             WaitFixedTics(GameConstants.DemoTics);
-        else if (session.netgame)                 // and so does playing with others (Networking/NetPlay.cs)
+        else if (session.NetGame)                 // and so does playing with others (Networking/NetPlay.cs)
             WaitFixedTics(Networking.NetPlay.NetTics);
         else
             frame.CalcTics();
 
-        localcmd = default;
-        controlx = 0;
-        controly = 0;
-        controlstrafe = 0;
-        controlpitch = 0;
-        controlcenterview = false;
-        wheelnotches = inputManager.TakeWheelDelta();    // taken every frame, so turns don't pile up
+        LocalCmd = default;
+        ControlX = 0;
+        ControlY = 0;
+        ControlStrafe = 0;
+        ControlPitch = 0;
+        ControlCenterView = false;
+        WheelNotchesThisFrame = inputManager.TakeWheelDelta();    // taken every frame, so turns don't pile up
         inputManager.ProcessButtons();
 
-        if (session.demoplayback)
+        if (session.DemoPlayback)
         {
             //
             // read commands from demo buffer: a byte of buttons (the first eight ButtonType)
             // and a signed byte each of turning and walking a tic
             //
-            localcmd.Buttons = demo.demoData[demo.demoptr++];
-            localcmd.ControlX = (sbyte)demo.demoData[demo.demoptr++] * (int)session.tics;
-            localcmd.ControlY = (sbyte)demo.demoData[demo.demoptr++] * (int)session.tics;
+            LocalCmd.Buttons = demo.DemoData[demo.DemoPtr++];
+            LocalCmd.ControlX = (sbyte)demo.DemoData[demo.DemoPtr++] * (int)session.Tics;
+            LocalCmd.ControlY = (sbyte)demo.DemoData[demo.DemoPtr++] * (int)session.Tics;
 
-            if (demo.demoptr + 3 > demo.lastdemoptr)
-                session.playstate = PlayState.Completed;   // demo is done: no whole frame left
+            if (demo.DemoPtr + 3 > demo.LastDemoPtr)
+                session.PlayState = PlayState.Completed;   // demo is done: no whole frame left
 
             return;
         }
@@ -116,53 +116,53 @@ internal sealed class InputPolling(
         //
         // bound movement to a maximum
         //
-        max = (int)(100 * session.tics);
+        max = (int)(100 * session.Tics);
         min = -max;
-        if (controlx > max)
-            controlx = max;
-        else if (controlx < min)
-            controlx = min;
+        if (ControlX > max)
+            ControlX = max;
+        else if (ControlX < min)
+            ControlX = min;
 
-        if (controly > max)
-            controly = max;
-        else if (controly < min)
-            controly = min;
+        if (ControlY > max)
+            ControlY = max;
+        else if (ControlY < min)
+            ControlY = min;
 
-        controlstrafe = Math.Clamp(controlstrafe, min, max);
+        ControlStrafe = Math.Clamp(ControlStrafe, min, max);
 
         hooks.RouteMovementToAutomap();       // pan mode: movement moves the map, not the player
 
-        if (session.demorecord)
+        if (session.DemoRecord)
         {
             //
             // save info out to demo buffer
             //
-            controlx /= (int)session.tics;
-            controly /= (int)session.tics;
-            controlstrafe = 0;      // a demo has no room for a stick's strafe, so it isn't played either
+            ControlX /= (int)session.Tics;
+            ControlY /= (int)session.Tics;
+            ControlStrafe = 0;      // a demo has no room for a stick's strafe, so it isn't played either
 
             // the demo format has room for the first eight buttons only
-            demo.demoData[demo.demoptr++] = (byte)LocalButtons();
-            demo.demoData[demo.demoptr++] = (byte)controlx; // these might be wrong
-            demo.demoData[demo.demoptr++] = (byte)controly;// these might need 4 bytes
+            demo.DemoData[demo.DemoPtr++] = (byte)LocalButtons();
+            demo.DemoData[demo.DemoPtr++] = (byte)ControlX; // these might be wrong
+            demo.DemoData[demo.DemoPtr++] = (byte)ControlY;// these might need 4 bytes
 
-            if (demo.demoptr >= demo.lastdemoptr - 8)
-                session.playstate = PlayState.Completed;
+            if (demo.DemoPtr >= demo.LastDemoPtr - 8)
+                session.PlayState = PlayState.Completed;
             else
             {
-                controlx *= (int)session.tics;
-                controly *= (int)session.tics;
+                ControlX *= (int)session.Tics;
+                ControlY *= (int)session.Tics;
             }
         }
 
-        localcmd = new TicCmd
+        LocalCmd = new TicCmd
         {
             Buttons = LocalButtons(),
-            ControlX = controlx,
-            ControlY = controly,
-            ControlStrafe = controlstrafe,
-            Pitch = controlpitch,
-            CenterView = controlcenterview,
+            ControlX = ControlX,
+            ControlY = ControlY,
+            ControlStrafe = ControlStrafe,
+            Pitch = ControlPitch,
+            CenterView = ControlCenterView,
         };
     }
 
@@ -194,7 +194,7 @@ internal sealed class InputPolling(
         if (timediff < -2 * step)       // more than 2-times the step behind?
             frame.LastTimeCount = (int)((curtime * 7) / 100);    // yes, set to current timecount
 
-        session.tics = step;
+        session.Tics = step;
     }
 
     /*
@@ -252,7 +252,7 @@ internal sealed class InputPolling(
     };
 
     // Mouse and controller inputs that were down last frame, so a press is only taken once
-    internal readonly HashSet<InputCode> heldinputs = [];
+    internal readonly HashSet<InputCode> HeldInputs = [];
 
     /// <summary>
     /// The mouse buttons, wheel turns and controller buttons with a console bind or an automap
@@ -269,8 +269,8 @@ internal sealed class InputPolling(
         foreach (var input in watched)
         {
             if (!IsInputActive(input))
-                heldinputs.Remove(input);
-            else if (heldinputs.Add(input) || input.Device == InputDevice.MouseWheel)   // every notch is a press
+                HeldInputs.Remove(input);
+            else if (HeldInputs.Add(input) || input.Device == InputDevice.MouseWheel)   // every notch is a press
                 fresh.Add(input);
         }
         return fresh;
@@ -278,8 +278,8 @@ internal sealed class InputPolling(
 
     /// <summary>How many notches the wheel turned this frame the way a wheel input stands for (0 for anything else).</summary>
     internal int WheelNotches(InputCode code) =>
-        code == InputCode.WheelUp ? Math.Max(wheelnotches, 0)
-        : code == InputCode.WheelDown ? Math.Max(-wheelnotches, 0)
+        code == InputCode.WheelUp ? Math.Max(WheelNotchesThisFrame, 0)
+        : code == InputCode.WheelDown ? Math.Max(-WheelNotchesThisFrame, 0)
         : 0;
 
     /*
@@ -293,23 +293,23 @@ internal sealed class InputPolling(
     /// <summary>Walking and turning from the movement buttons, whatever they're bound to.</summary>
     internal void PollButtonMove()
     {
-        int delta = (int)(inputManager.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove * session.tics : GameConstants.BaseMove * session.tics);
+        int delta = (int)(inputManager.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove * session.Tics : GameConstants.BaseMove * session.Tics);
 
         if (inputManager.IsButtonPressed(ButtonType.MoveForward))
-            controly -= delta;
+            ControlY -= delta;
         if (inputManager.IsButtonPressed(ButtonType.MoveBackward))
-            controly += delta;
+            ControlY += delta;
         if (inputManager.IsButtonPressed(ButtonType.TurnLeft))
-            controlx -= delta;
+            ControlX -= delta;
         if (inputManager.IsButtonPressed(ButtonType.TurnRight))
-            controlx += delta;
+            ControlX += delta;
 
         if (inputManager.IsButtonPressed(ButtonType.LookUp))
-            controlpitch += LookSpeed * session.tics;
+            ControlPitch += LookSpeed * session.Tics;
         if (inputManager.IsButtonPressed(ButtonType.LookDown))
-            controlpitch -= LookSpeed * session.tics;
+            ControlPitch -= LookSpeed * session.Tics;
         if (inputManager.IsButtonPressed(ButtonType.CenterView))
-            controlcenterview = true;
+            ControlCenterView = true;
     }
 
 
@@ -327,14 +327,14 @@ internal sealed class InputPolling(
 
         SDL_GetRelativeMouseState(out mousexmove, out mouseymove);
 
-        controlx += mousexmove * 10 / (13 - controlSettings.mouseadjustment);
+        ControlX += mousexmove * 10 / (13 - controlSettings.mouseadjustment);
 
-        // Looking goes as fast as turning: controlx turns a degree every AngleScale. In the
+        // Looking goes as fast as turning: ControlX turns a degree every AngleScale. In the
         // automap's pan mode the mouse pans the map, so it walks (RouteMovementToAutomap takes it).
         if (controlSettings.mouselook && !(automap.IsOpen && !automap.Follow))
-            controlpitch += (controlSettings.mouseinvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.mouseadjustment) / GameConstants.AngleScale;
+            ControlPitch += (controlSettings.mouseinvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.mouseadjustment) / GameConstants.AngleScale;
         else
-            controly += mouseymove * 20 / (13 - controlSettings.mouseadjustment);
+            ControlY += mouseymove * 20 / (13 - controlSettings.mouseadjustment);
     }
 
 
@@ -361,30 +361,30 @@ internal sealed class InputPolling(
             var strafeAxis = controlSettings.joyclassicsticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX;
             float turn = StickValue(turnAxis);
 
-            controly += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY) * speed * session.tics);
-            controlstrafe += (int)(StickValue(strafeAxis) * speed * session.tics);
-            controlx += (int)(turn * Math.Abs(turn) * JoyTurnSpeed * session.tics);
+            ControlY += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY) * speed * session.Tics);
+            ControlStrafe += (int)(StickValue(strafeAxis) * speed * session.Tics);
+            ControlX += (int)(turn * Math.Abs(turn) * JoyTurnSpeed * session.Tics);
 
             // the right stick's up and down looks, whichever way the sticks are set
             float look = StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY);
-            controlpitch -= look * Math.Abs(look) * LookSpeed * session.tics;
+            ControlPitch -= look * Math.Abs(look) * LookSpeed * session.Tics;
             return;
         }
 
         // A plain joystick: its stick walks and turns at full speed once it's pushed halfway
         inputManager.GetJoyDelta(out joyx, out joyy);
 
-        int delta = (int)(speed * session.tics);
+        int delta = (int)(speed * session.Tics);
 
         // The movement buttons are in PollButtonMove, whatever they're bound to
         if (joyx > 64)
-            controlx += delta;
+            ControlX += delta;
         else if (joyx < -64)
-            controlx -= delta;
+            ControlX -= delta;
         if (joyy > 64)
-            controly += delta;
+            ControlY += delta;
         else if (joyy < -64)
-            controly -= delta;
+            ControlY -= delta;
     }
 
     /// <summary>A controller stick's axis from -1 to 1, with the dead zone taken out and the rest stretched to fill it.</summary>

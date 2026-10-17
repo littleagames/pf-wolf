@@ -23,10 +23,10 @@ public class FloorDamageTests
             tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
-        _session.playerstate.health = 100;
-        _pawn = new PlayerPawn { State = _session.playerstate };
+        _session.PlayerState.Health = 100;
+        _pawn = new PlayerPawn { State = _session.PlayerState };
         _pawn.SetPosition(10, 10);
-        _session.playerstate.Pawn = _pawn;
+        _session.PlayerState.Pawn = _pawn;
 
         _textures = new() { [(10, 10)] = "WATER_ELECTRIC", [(12, 10)] = "WATER_ELECTRIC", [(14, 10)] = "WATER_DARK" };
         _flats = PFWolf.Loaders.YamlDataEntryLoader.Deserialize<MapFlatsTranslation>("damage:\n  water_electric: { amount: 25, tics: 20 }\n");
@@ -49,7 +49,7 @@ public class FloorDamageTests
 
     private void RunTo(int time)
     {
-        _session.gamestate.TimeCount = time;
+        _session.GameState.TimeCount = time;
         _floors.Tick();
     }
 
@@ -94,7 +94,7 @@ public class FloorDamageTests
     [Test]
     public void A_Dead_Player_Isnt_Hurt_Again()
     {
-        _session.playerstate.health = 0;
+        _session.PlayerState.Health = 0;
         RunTo(1); RunTo(20);
         Assert.That(_hurt, Is.Empty);
     }

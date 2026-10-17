@@ -38,7 +38,7 @@ internal sealed class FactionCommands(
         {
             foreach (var actor in map.GetActors())
             {
-                bool alive = actor is Entities.Actors.PlayerPawn pawn ? pawn.State.health > 0
+                bool alive = actor is Entities.Actors.PlayerPawn pawn ? pawn.State.Health > 0
                     : actor is Entities.Actors.Monster && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable);
                 if (alive && !actor.IsRemoved && actor.Faction != null)
                     members[actor.Faction] = members.GetValueOrDefault(actor.Faction) + 1;
@@ -97,9 +97,9 @@ internal sealed class FactionCommands(
         string? color = args[0].Equals("none", StringComparison.OrdinalIgnoreCase) ? null : args[0];
         if (color != null && !translations.Exists(color))
             throw new ArgumentException($"no translation {color} in translations.yaml ({string.Join(", ", translations.Names)})");
-        int n = args.Length > 1 ? ParseInt(args[1], 1, session.players.Count) : session.consoleplayer + 1;
+        int n = args.Length > 1 ? ParseInt(args[1], 1, session.Players.Count) : session.ConsolePlayer + 1;
 
-        session.players[n - 1].Color = color;
+        session.Players[n - 1].Color = color;
         console.Print($"Player {n} is {(color == null ? "in their class's own colors" : $"drawn in {color}")}");
     }
 }

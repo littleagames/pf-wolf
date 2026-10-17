@@ -39,24 +39,24 @@ internal sealed class PlayerWeapons(
     {
         // Not while reloading, manning a mounted gun or with something latched on, as the original
         // Midnight Assault's CheckWeaponChange
-        if (WeaponInHand.IsReloading(session.playerstate.WeaponSprite) || session.playerstate.Mount != null
-            || session.playerstate.Latch != null)
+        if (WeaponInHand.IsReloading(session.PlayerState.WeaponSprite) || session.PlayerState.Mount != null
+            || session.PlayerState.Latch != null)
             return;
 
         var usable = OwnedWeapons().Where(CanFire).ToList();
-        if (!CanFire(session.playerstate.chosenweapon) && session.playerstate.weapon != null)
-            usable.Remove(session.playerstate.weapon);
+        if (!CanFire(session.PlayerState.ChosenWeapon) && session.PlayerState.Weapon != null)
+            usable.Remove(session.PlayerState.Weapon);
         if (usable.Count == 0)
             return;
 
         string? newWeapon = null;
-        var current = session.playerstate.weapon != null ? usable.IndexOf(session.playerstate.weapon) : -1;
+        var current = session.PlayerState.Weapon != null ? usable.IndexOf(session.PlayerState.Weapon) : -1;
 
-        if (session.playerinput.IsFreshPress(ButtonType.NextWeapon))
+        if (session.PlayerInput.IsFreshPress(ButtonType.NextWeapon))
         {
             newWeapon = usable[(current + 1) % usable.Count];
         }
-        else if (session.playerinput.IsFreshPress(ButtonType.PrevWeapon))
+        else if (session.PlayerInput.IsFreshPress(ButtonType.PrevWeapon))
         {
             newWeapon = usable[current <= 0 ? usable.Count - 1 : current - 1];
         }
@@ -64,7 +64,7 @@ internal sealed class PlayerWeapons(
         {
             for (var slot = 0; slot < SlotButtons.Length; slot++)
             {
-                if (!session.playerinput.IsFreshPress(SlotButtons[slot]))
+                if (!session.PlayerInput.IsFreshPress(SlotButtons[slot]))
                     continue;
 
                 // The best weapon with ammo in that slot; pressed again with one of the slot's
@@ -75,11 +75,11 @@ internal sealed class PlayerWeapons(
                     hooks.UseSlotItem(slot);      // Planet Strike's fission detonator (Gameplay/PlayerUse.cs)
                     break;
                 }
-                var inHand = session.playerstate.weapon != null ? inSlot.IndexOf(session.playerstate.weapon) : -1;
+                var inHand = session.PlayerState.Weapon != null ? inSlot.IndexOf(session.PlayerState.Weapon) : -1;
                 newWeapon = inHand >= 0
                     ? inSlot[(inHand + 1) % inSlot.Count]
                     : inSlot.OrderBy(WeaponSelectionOrder).First();
-                if (newWeapon == session.playerstate.weapon)
+                if (newWeapon == session.PlayerState.Weapon)
                     newWeapon = null;
                 break;
             }
@@ -87,7 +87,7 @@ internal sealed class PlayerWeapons(
 
         if (newWeapon != null)
         {
-            session.playerstate.weapon = session.playerstate.chosenweapon = newWeapon;
+            session.PlayerState.Weapon = session.PlayerState.ChosenWeapon = newWeapon;
             DrawWeapon();
         }
     }
@@ -151,7 +151,7 @@ internal sealed class PlayerWeapons(
     /// </summary>
     internal int Reload(int? rounds = null)
     {
-        var weapon = session.playerstate.weapon;
+        var weapon = session.PlayerState.Weapon;
         if (WeaponMagazine(weapon) is not { } magazine)
             return 0;
         var ammoType = WeaponAmmoType(weapon)!;
@@ -165,9 +165,9 @@ internal sealed class PlayerWeapons(
     /// <summary>Takes one shot's ammo for the weapon in hand, from its magazine if it has one (unless the ammo cheat is on).</summary>
     internal void UseAmmo()
     {
-        var weapon = session.playerstate.weapon;
+        var weapon = session.PlayerState.Weapon;
         var ammoType = WeaponAmmoType(weapon);
-        if (ammoType != null && !(session.ammocheat != 0))
+        if (ammoType != null && !(session.AmmoCheat != 0))
             inventory.Take(WeaponMagazine(weapon) ?? ammoType, ShotCost(weapon!));
         DrawAmmo();
     }
@@ -191,7 +191,7 @@ internal sealed class PlayerWeapons(
     // The status bar shows the ammo of the weapon the player picked, even while out of ammo
     // forces a fallback; with an ammo-less weapon picked, the ammo of the best one that has some.
     string? DisplayAmmoType() =>
-        WeaponAmmoType(session.playerstate.chosenweapon)
+        WeaponAmmoType(session.PlayerState.ChosenWeapon)
         ?? OwnedWeapons().OrderBy(WeaponSelectionOrder).Select(WeaponAmmoType).FirstOrDefault(t => t != null);
 
     internal int GetAmmo() => DisplayAmmoType() is { } type ? inventory.GetCount(type) : 0;
@@ -200,15 +200,15 @@ internal sealed class PlayerWeapons(
     {
         if (statusBar.StatusBarHidden) return;
         // only-with-ammo: nothing while the weapon in hand needs none (Blake Stone's auto charge pistol)
-        bool hide = statusBar.StatusBar.Get("ammo")?.OnlyWithAmmo == true && WeaponAmmoType(session.playerstate.weapon) == null;
+        bool hide = statusBar.StatusBar.Get("ammo")?.OnlyWithAmmo == true && WeaponAmmoType(session.PlayerState.Weapon) == null;
         // item: what to count while the weapon picked uses none (Planet Strike's charge units)
-        int ammo = WeaponAmmoType(session.playerstate.chosenweapon) == null && statusBar.StatusBar.Get("ammo")?.Item is { Length: > 0 } item
+        int ammo = WeaponAmmoType(session.PlayerState.ChosenWeapon) == null && statusBar.StatusBar.Get("ammo")?.Item is { Length: > 0 } item
             ? inventory.GetCount(item)
             : GetAmmo();
         statusBar.LatchNumber("ammo", ammo, hide);
         // clip: the rounds loaded in the weapon in hand's magazine; nothing for one without
-        statusBar.LatchNumber("clip", WeaponMagazine(session.playerstate.weapon) is { } magazine ? inventory.GetCount(magazine) : 0,
-            hide: WeaponMagazine(session.playerstate.weapon) == null);
+        statusBar.LatchNumber("clip", WeaponMagazine(session.PlayerState.Weapon) is { } magazine ? inventory.GetCount(magazine) : 0,
+            hide: WeaponMagazine(session.PlayerState.Weapon) == null);
         statusBar.DrawCounts();         // a carried item's count (medkits) changes with ammo's
         DrawAmmoGauge();
     }
@@ -303,7 +303,7 @@ internal sealed class PlayerWeapons(
 
         var newBest = BestWeapon();
         if (newBest != null && newBest != oldBest)
-            session.playerstate.weapon = session.playerstate.chosenweapon = newBest;
+            session.PlayerState.Weapon = session.PlayerState.ChosenWeapon = newBest;
 
         DrawWeapon();
         DrawAmmo();
@@ -323,12 +323,12 @@ internal sealed class PlayerWeapons(
     /// </summary>
     internal bool TakeCharge()
     {
-        int charge = WeaponChargeTics(session.playerstate.weapon);
+        int charge = WeaponChargeTics(session.PlayerState.Weapon);
         if (charge <= 0)
             return true;
-        if (session.playerstate.WeaponCharge > 0)
+        if (session.PlayerState.WeaponCharge > 0)
             return false;
-        session.playerstate.WeaponCharge = charge;
+        session.PlayerState.WeaponCharge = charge;
         DrawCharge();
         return true;
     }
@@ -336,10 +336,10 @@ internal sealed class PlayerWeapons(
     /// <summary>Counts the weapon's charge down, redrawing the status bar's charge light once it's ready</summary>
     internal void TickWeaponCharge()
     {
-        if (session.playerstate.WeaponCharge <= 0)
+        if (session.PlayerState.WeaponCharge <= 0)
             return;
-        session.playerstate.WeaponCharge = Math.Max(session.playerstate.WeaponCharge - (int)session.tics, 0);
-        if (session.playerstate.WeaponCharge == 0)
+        session.PlayerState.WeaponCharge = Math.Max(session.PlayerState.WeaponCharge - (int)session.Tics, 0);
+        if (session.PlayerState.WeaponCharge == 0)
             DrawCharge();
     }
 
@@ -350,9 +350,9 @@ internal sealed class PlayerWeapons(
     internal void DrawCharge()
     {
         if (statusBar.StatusBarHidden) return;
-        if (statusBar.StatusBar.Get("charge") is not { } element || WeaponChargeTics(session.playerstate.weapon) <= 0)
+        if (statusBar.StatusBar.Get("charge") is not { } element || WeaponChargeTics(session.PlayerState.Weapon) <= 0)
             return;
-        var pic = session.playerstate.WeaponCharge > 0 ? element.Wait : element.Ready;
+        var pic = session.PlayerState.WeaponCharge > 0 ? element.Wait : element.Ready;
         using var _ = statusBar.StatusBarOrigin(element);
         if (!string.IsNullOrEmpty(pic))
             graphics.DrawPic(pic, element.X, statusBar.StatusBarTop(element) + element.Y);
@@ -374,7 +374,7 @@ internal sealed class PlayerWeapons(
 
         statusBar.ClearBox(element);
         var held = OwnedWeapons().Select(WeaponSlot).ToHashSet();
-        int current = session.playerstate.weapon is { } weapon ? WeaponSlot(weapon) : -1;
+        int current = session.PlayerState.Weapon is { } weapon ? WeaponSlot(weapon) : -1;
         var x = element.X;
         for (int slot = 1; slot <= element.Slots; slot++)
         {
@@ -396,7 +396,7 @@ internal sealed class PlayerWeapons(
     internal void DrawAmmoGauge()
     {
         if (statusBar.StatusBarHidden) return;
-        if (statusBar.StatusBar.Get("ammo-gauge") is not { } gauge || WeaponAmmoType(session.playerstate.weapon) is not { } ammoType)
+        if (statusBar.StatusBar.Get("ammo-gauge") is not { } gauge || WeaponAmmoType(session.PlayerState.Weapon) is not { } ammoType)
             return;
         statusBar.DrawGauge(gauge, ammoType);
     }

@@ -62,7 +62,7 @@ public class SelectionToolTests
         // Act: drag it 5 to the right
         Drag(tools, 0, 0, 5, 0);
 
-        // Assert: the wall went, its neighbour stayed
+        // Assert: the WallId went, its neighbour stayed
         Assert.That(document[0, 5, 0], Is.EqualTo(Wall));
         Assert.That(document[0, 0, 0], Is.EqualTo(Floor));
         Assert.That(document[0, 1, 0], Is.EqualTo(OtherWall));
@@ -132,7 +132,7 @@ public class SelectionToolTests
     [Test]
     public void Pasting_Over_Leaves_What_Is_Under_The_Pastes_Open_Floor()
     {
-        // Arrange: copy a wall with open floor beside it, onto a row of other walls
+        // Arrange: copy a WallId with open floor beside it, onto a row of other walls
         var (document, tools) = Setup();
         EditorMaps.Set(document, 0, 0, 0, Wall);
         foreach (var x in new[] { 10, 11 })

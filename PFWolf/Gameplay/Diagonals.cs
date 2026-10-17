@@ -49,7 +49,7 @@ internal static class Diagonals
 
     /// <summary>
     /// Whether a box of half-width <paramref name="size"/> centred on (x, y) overlaps the solid
-    /// half of the diagonal tile at (tilex, tiley).
+    /// half of the diagonal tile at (TileX, TileY).
     /// </summary>
     internal static bool BoxHitsDiagonal(WallShape shape, int tilex, int tiley, long x, long y, long size)
     {
@@ -74,7 +74,7 @@ internal static class Diagonals
 
     /// <summary>
     /// Whether the line from (x1, y1) to (x2, y2) passes through the solid half of the diagonal
-    /// tile at (tilex, tiley). Grazing the face doesn't count.
+    /// tile at (TileX, TileY). Grazing the face doesn't count.
     /// </summary>
     internal static bool LineHitsDiagonal(WallShape shape, int tilex, int tiley, long x1, long y1, long x2, long y2)
     {

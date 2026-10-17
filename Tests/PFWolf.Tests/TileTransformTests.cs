@@ -185,7 +185,7 @@ public class TileTransformTests
         var turned = Remap(TileTransform.RotateClockwise, 0, VerticalDoor, out var outcome);
         var flipped = Remap(TileTransform.FlipHorizontal, 0, VerticalDoor, out var flipOutcome);
 
-        // Assert: the door alike but for its faces, as Wolf3D's light and dark ones are
+        // Assert: the DoorNumber alike but for its faces, as Wolf3D's light and dark ones are
         Assert.That(turned, Is.EqualTo(HorizontalDoor));
         Assert.That(outcome, Is.EqualTo(RemapOutcome.Turned));
         Assert.That(flipped, Is.EqualTo(VerticalDoor));
@@ -243,7 +243,7 @@ public class TileTransformTests
     [Test]
     public void Rotating_The_Selection_Turns_Its_Tiles_And_Things_As_One_Undo_Step()
     {
-        // Arrange: a 3 Ã— 1 strip with a wall at its west end and a guard facing east in the middle
+        // Arrange: a 3 Ã— 1 strip with a WallId at its west end and a guard facing east in the middle
         var (document, tools) = Setup();
         EditorMaps.Set(document, 0, 10, 10, Wall);
         EditorMaps.Set(document, 1, 11, 10, GuardEast);
@@ -254,7 +254,7 @@ public class TileTransformTests
         // Act
         tools.Transform(TileTransform.RotateClockwise);
 
-        // Assert: upright around the middle tile, the wall on top, the guard facing south
+        // Assert: upright around the middle tile, the WallId on top, the guard facing south
         Assert.That(tools.Selection!.Bounds, Is.EqualTo(new TileRect(11, 9, 11, 11)));
         Assert.That(document[0, 11, 9], Is.EqualTo(Wall));
         Assert.That(document[0, 10, 10], Is.EqualTo(Floor));

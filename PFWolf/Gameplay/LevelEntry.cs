@@ -31,26 +31,26 @@ internal sealed class LevelEntry(
     LevelEntryHooks hooks)
 {
     /// <summary>
-    /// Builds the level for gamestate.mapon (GameLoop): a kept hub level as it was left, or the
+    /// Builds the level for GameState.MapOn (GameLoop): a kept hub level as it was left, or the
     /// map afresh. Moving to another cluster forgets the kept levels. True when it's a kept level.
     /// </summary>
     internal bool EnterLevel()
     {
-        if (hubs.levelMap != null && hubs.ClusterOf(hubs.levelMap) != hubs.ClusterOf(session.gamestate.mapon))
+        if (hubs.LevelMap != null && hubs.ClusterOf(hubs.LevelMap) != hubs.ClusterOf(session.GameState.MapOn))
         {
-            hubs.hubLevels.Clear();
-            hubs.floorScores.Clear();
+            hubs.HubLevels.Clear();
+            hubs.FloorScores.Clear();
         }
 
-        bool restored = RestoreHubLevel(session.gamestate.mapon);
+        bool restored = RestoreHubLevel(session.GameState.MapOn);
         if (!restored)
         {
             levelSetup.SetupGameLevel();
-            hubs.informantTotal = mapManager.GetActors().Count(a => !a.IsRemoved && a is Entities.Actors.Informant);
+            hubs.InformantTotal = mapManager.GetActors().Count(a => !a.IsRemoved && a is Entities.Actors.Informant);
         }
 
-        hubs.levelMap = session.gamestate.mapon;
-        hubs.visitedMaps.Add(session.gamestate.mapon);
+        hubs.LevelMap = session.GameState.MapOn;
+        hubs.VisitedMaps.Add(session.GameState.MapOn);
         hooks.ClearVictoryRun();
         return restored;
     }
@@ -58,32 +58,32 @@ internal sealed class LevelEntry(
     /// <summary>Keeps the level being left, if it's a hub level (GameLoop, after PlayLoop)</summary>
     internal void LeaveLevel()
     {
-        if (hubs.levelMap == null || !hubs.IsHubMap(hubs.levelMap))
+        if (hubs.LevelMap == null || !hubs.IsHubMap(hubs.LevelMap))
             return;
 
-        hubs.floorScores[hubs.levelMap] = hubs.FloorScore();
-        hubs.floorOverheads[hubs.levelMap] = hooks.CaptureOverhead();
+        hubs.FloorScores[hubs.LevelMap] = hubs.FloorScore();
+        hubs.FloorOverheads[hubs.LevelMap] = hooks.CaptureOverhead();
 
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
         {
-            bw.Write((int)session.gamestate.TimeCount);
-            bw.Write((int)session.gamestate.killcount);
-            bw.Write((int)session.gamestate.killtotal);
-            bw.Write((int)session.gamestate.secretcount);
-            bw.Write((int)session.gamestate.secrettotal);
-            bw.Write((int)session.gamestate.treasurecount);
-            bw.Write((int)session.gamestate.treasuretotal);
-            bw.Write(hubs.informantTotal);
+            bw.Write((int)session.GameState.TimeCount);
+            bw.Write((int)session.GameState.KillCount);
+            bw.Write((int)session.GameState.KillTotal);
+            bw.Write((int)session.GameState.SecretCount);
+            bw.Write((int)session.GameState.SecretTotal);
+            bw.Write((int)session.GameState.TreasureCount);
+            bw.Write((int)session.GameState.TreasureTotal);
+            bw.Write(hubs.InformantTotal);
             hooks.WriteLevelBody(bw);
         }
-        hubs.hubLevels[hubs.levelMap] = ms.ToArray();
+        hubs.HubLevels[hubs.LevelMap] = ms.ToArray();
     }
 
     /// <summary>Rebuilds a kept hub level as it was left; false if there's none (or it can't be)</summary>
     internal bool RestoreHubLevel(string map)
     {
-        if (!hubs.hubLevels.TryGetValue(map, out var data))
+        if (!hubs.HubLevels.TryGetValue(map, out var data))
             return false;
 
         int timeCount, killCount, killTotal, secretCount, secretTotal, treasureCount, treasureTotal, informants;
@@ -107,26 +107,26 @@ internal sealed class LevelEntry(
         catch (Exception e) when (e is IOException or InvalidDataException or FormatException)
         {
             Console.WriteLine($"The kept level {map} couldn't be restored, so it starts afresh: {e.Message}");
-            hubs.hubLevels.Remove(map);
+            hubs.HubLevels.Remove(map);
             return false;
         }
 
         // Built from the map without counting anything again, then laid over as it was
-        var wasLoaded = session.loadedgame;
-        session.loadedgame = true;
+        var wasLoaded = session.LoadedGame;
+        session.LoadedGame = true;
         levelSetup.SetupGameLevel();
-        session.loadedgame = wasLoaded;
+        session.LoadedGame = wasLoaded;
         hooks.ApplyLevelBody(body);
 
-        session.gamestate.TimeCount = timeCount;
-        session.gamestate.killcount = (short)killCount;
-        session.gamestate.killtotal = (short)killTotal;
-        session.gamestate.secretcount = (short)secretCount;
-        session.gamestate.secrettotal = (short)secretTotal;
-        session.gamestate.treasurecount = (short)treasureCount;
-        session.gamestate.treasuretotal = (short)treasureTotal;
-        hubs.informantTotal = informants;
-        session.playerstate.WeaponSprite = null;
+        session.GameState.TimeCount = timeCount;
+        session.GameState.KillCount = (short)killCount;
+        session.GameState.KillTotal = (short)killTotal;
+        session.GameState.SecretCount = (short)secretCount;
+        session.GameState.SecretTotal = (short)secretTotal;
+        session.GameState.TreasureCount = (short)treasureCount;
+        session.GameState.TreasureTotal = (short)treasureTotal;
+        hubs.InformantTotal = informants;
+        session.PlayerState.WeaponSprite = null;
         return true;
     }
 
@@ -136,24 +136,24 @@ internal sealed class LevelEntry(
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
         {
-            session.gamestate.Write(bw, session.playerstate);
+            session.GameState.Write(bw, session.PlayerState);
             bw.Write(inventoryManager.Items.Count);
             foreach (var (item, count) in inventoryManager.Items)
             {
                 bw.Write(item);
                 bw.Write(count);
             }
-            bw.Write(session.playerstate.WeaponCharge);
+            bw.Write(session.PlayerState.WeaponCharge);
         }
-        hubs.levelStart = ms.ToArray();
+        hubs.LevelStart = ms.ToArray();
     }
 
     /// <summary>The items the player had coming into the level (MarkLevelStart), or null if it wasn't marked</summary>
     internal IReadOnlyDictionary<string, int>? LevelStartItems()
     {
-        if (hubs.levelStart == null)
+        if (hubs.LevelStart == null)
             return null;
-        using var br = new BinaryReader(new MemoryStream(hubs.levelStart));
+        using var br = new BinaryReader(new MemoryStream(hubs.LevelStart));
         GameState.Read(br);
         var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = br.ReadCount(); i > 0; i--)
@@ -167,29 +167,29 @@ internal sealed class LevelEntry(
     /// </summary>
     internal bool RestoreLevelStart()
     {
-        if (hubs.levelStart == null)
+        if (hubs.LevelStart == null)
             return false;
 
-        using var br = new BinaryReader(new MemoryStream(hubs.levelStart));
+        using var br = new BinaryReader(new MemoryStream(hubs.LevelStart));
         var (state, player) = GameState.Read(br);
         var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = br.ReadCount(); i > 0; i--)
             inventory[br.ReadString()] = br.ReadInt32();
         int charge = br.ReadInt32();
 
-        player.lives = session.playerstate.lives;
-        player.playerclass = session.playerstate.playerclass;
-        session.gamestate = state;
-        session.playerstate.CopyStatsFrom(player);
+        player.Lives = session.PlayerState.Lives;
+        player.PlayerClass = session.PlayerState.PlayerClass;
+        session.GameState = state;
+        session.PlayerState.CopyStatsFrom(player);
         inventoryManager.Restore(inventory);
-        session.playerstate.WeaponCharge = charge;
+        session.PlayerState.WeaponCharge = charge;
         return true;
     }
 
     /// <summary>
     /// Puts the player in the elevator they arrive in (bstone's AlignPlayerInElevator): every
     /// floor's elevator is where the last floor's was, so from the tile the player left from,
-    /// beside the panel wall, it finds the spot inside facing the doors.
+    /// beside the panel WallId, it finds the spot inside facing the doors.
     /// </summary>
     internal void AlignPlayerInElevator(int lastx, int lasty, int panelWall)
     {
@@ -228,7 +228,7 @@ internal sealed class LevelEntry(
         if (tilex == 0)
             tilex = lastx;
 
-        short angle = session.player.Angle;
+        short angle = session.Player.Angle;
         if (tilex < MapManager.MapSize)
         {
             if (IsDoor(tilex + 1, oy + 1)) { oy++; tilex--; angle = 0; }
@@ -239,8 +239,8 @@ internal sealed class LevelEntry(
         else
             tilex = ox;
 
-        session.player.SetPosition(tilex, oy);
-        session.player.Angle = angle;
+        session.Player.SetPosition(tilex, oy);
+        session.Player.Angle = angle;
         movement.Thrust(0, 0);       // settles the player's tile and area
     }
 }

@@ -29,7 +29,7 @@ public class GameSavesTests
     public void A_Game_With_Several_Players_Isnt_Saved()
     {
         // Arrange
-        _session.players.Add(new Entities.PlayerState { Number = 2 });
+        _session.Players.Add(new Entities.PlayerState { Number = 2 });
 
         // Act / Assert: refused before anything is drawn or written
         Assert.That(_saves.SaveTheGame("unused.dat", "x", 0, 0), Is.False);

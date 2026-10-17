@@ -24,23 +24,23 @@ public class PlayersTests
         public readonly List<string> SoundsAtPawns = [];
         public readonly List<(Entities.PlayerState Victim, Entities.Actors.Actor? Killer)> Frags = [];
         public int Obituaries;
-        public bool NetGameCleared => !Session.netgame;
+        public bool NetGameCleared => !Session.NetGame;
         public int? DropTo;
 
         public Rig()
         {
             // Two players in a network game, acting as the second: no flash or status bar, which only the local player has
-            Session.netgame = true;
-            Session.players.Add(new Entities.PlayerState { Number = 1 });
+            Session.NetGame = true;
+            Session.Players.Add(new Entities.PlayerState { Number = 1 });
             Session.ActingChanged = p => Inventory.SetHolder(p.Items);
             Session.SetGameMode(GameMode.Coop);
-            foreach (var p in Session.players)
+            foreach (var p in Session.Players)
             {
-                p.playerclass = "Player";
-                p.health = 100;
+                p.PlayerClass = "Player";
+                p.Health = 100;
                 p.Pawn = new PlayerPawn { State = p };
             }
-            Session.SetActing(Session.players[1]);
+            Session.SetActing(Session.Players[1]);
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
@@ -53,7 +53,7 @@ public class PlayersTests
                     () => Obituaries++, () => { }, () => 5, () => DropTo, () => 4, color => color));
         }
 
-        public Entities.PlayerState Second => Session.players[1];
+        public Entities.PlayerState Second => Session.Players[1];
     }
 
     private static readonly Monster Guard = new() { Name = "Guard", X = 0, Y = 0 };
@@ -68,9 +68,9 @@ public class PlayersTests
         rig.Players.ResetPlayers();
 
         // Assert
-        Assert.That(rig.Session.players, Has.Count.EqualTo(1));
-        Assert.That(rig.Session.playerstate, Is.SameAs(rig.Session.localplayer));
-        Assert.That(rig.Session.gamemode, Is.EqualTo(GameMode.Single));
+        Assert.That(rig.Session.Players, Has.Count.EqualTo(1));
+        Assert.That(rig.Session.PlayerState, Is.SameAs(rig.Session.LocalPlayer));
+        Assert.That(rig.Session.GameMode, Is.EqualTo(GameMode.Single));
         Assert.That(rig.NetGameCleared, Is.True);
     }
 
@@ -79,15 +79,15 @@ public class PlayersTests
     {
         // Arrange
         var rig = new Rig();
-        using var _ = rig.Session.ActAs(rig.Session.players[0]);
+        using var _ = rig.Session.ActAs(rig.Session.Players[0]);
 
         // Act
         rig.Players.TakeDamage(rig.Second.Pawn!, 30, Guard);
 
         // Assert
-        Assert.That(rig.Second.health, Is.EqualTo(70));
-        Assert.That(rig.Session.players[0].health, Is.EqualTo(100));
-        Assert.That(rig.Session.playerstate, Is.SameAs(rig.Session.players[0]));
+        Assert.That(rig.Second.Health, Is.EqualTo(70));
+        Assert.That(rig.Session.Players[0].Health, Is.EqualTo(100));
+        Assert.That(rig.Session.PlayerState, Is.SameAs(rig.Session.Players[0]));
     }
 
     [Test]
@@ -103,14 +103,14 @@ public class PlayersTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Second.weapon = "Pistol";
+        rig.Second.Weapon = "Pistol";
 
         // Act
         rig.Players.TakeDamage(rig.Second.Pawn!, 500, Guard);
 
         // Assert
-        Assert.That(rig.Second.health, Is.Zero);
-        Assert.That(rig.Second.weapon, Is.Null);
+        Assert.That(rig.Second.Health, Is.Zero);
+        Assert.That(rig.Second.Weapon, Is.Null);
         Assert.That(rig.Second.Pawn!.CurrentState!.StateName, Is.EqualTo(PlayerPawn.DeadState));
         Assert.That(rig.SoundsAtPawns, Is.EqualTo(new[] { "player/death" }));
         Assert.That(rig.Obituaries, Is.EqualTo(1));
@@ -156,7 +156,7 @@ public class PlayersTests
         pawn.Angle = 0;
         rig.Second.DeathAngle = 80;
         rig.Second.EyeZ = 32;
-        rig.Session.tics = 2;
+        rig.Session.Tics = 2;
 
         // Act
         rig.Players.ThinkPlayerDead(pawn);
@@ -178,7 +178,7 @@ public class PlayersTests
     {
         var rig = new Rig();
         rig.Second.EyeZ = 32;
-        rig.Session.tics = 2;
+        rig.Session.Tics = 2;
         rig.Players.ThinkPlayerDead(rig.Second.Pawn!);
         Assert.That(rig.Second.EyeZ, Is.EqualTo(32));
     }
@@ -188,16 +188,16 @@ public class PlayersTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Second.health = 0;
-        rig.Session.tics = 1;
-        rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
+        rig.Second.Health = 0;
+        rig.Session.Tics = 1;
+        rig.Session.PlayerInput.SetPressed(ButtonType.Attack, true);
 
         // Act: Respawn would need the map, which isn't there
         Assert.DoesNotThrow(() => rig.Players.ThinkPlayerDead(rig.Second.Pawn!));
 
         // Assert
         Assert.That(rig.Second.DeadTics, Is.LessThan(Players.RespawnTics));
-        Assert.That(rig.Second.health, Is.Zero);
+        Assert.That(rig.Second.Health, Is.Zero);
     }
 
     [Test]
@@ -205,10 +205,10 @@ public class PlayersTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Session.players[0].Name = "Drew";
+        rig.Session.Players[0].Name = "Drew";
 
         // Act / Assert
-        Assert.That(rig.Players.PlayerName(rig.Session.players[0].Pawn!), Is.EqualTo("Drew"));
+        Assert.That(rig.Players.PlayerName(rig.Session.Players[0].Pawn!), Is.EqualTo("Drew"));
         Assert.That(rig.Players.PlayerName(rig.Second.Pawn!), Is.EqualTo("Player 2"));
         rig.Session.SetGameMode(GameMode.Single);
         Assert.That(rig.Players.PlayerName(rig.Second.Pawn!), Is.Null);

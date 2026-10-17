@@ -54,9 +54,9 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     internal void MenuFadeOut()
     {
         var fadeColor = engine.GetGameInfo().MenuFadeColor;
-        video.FadeOut(settings().menuFadeStyle, string.IsNullOrEmpty(fadeColor) ? new Color { Alpha = 255 } : Color.FromHexRGBA(fadeColor), 10, settings().menuFadeTics);
+        video.FadeOut(settings().MenuFadeStyle, string.IsNullOrEmpty(fadeColor) ? new Color { Alpha = 255 } : Color.FromHexRGBA(fadeColor), 10, settings().MenuFadeTics);
     }
-    internal void MenuFadeIn() => video.FadeIn(settings().menuFadeStyle, 10, settings().menuFadeTics);
+    internal void MenuFadeIn() => video.FadeIn(settings().MenuFadeStyle, 10, settings().MenuFadeTics);
 
     internal void DrawMenu(ControlPanelMenuInfo item_i, ControlPanelItem[] items)
     {

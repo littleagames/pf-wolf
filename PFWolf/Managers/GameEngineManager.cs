@@ -388,7 +388,7 @@ internal class GameEngineManager
             {
                 config.ScoreTable[i] = new HighScore();
                 config.ScoreTable[i].Read(br);
-                config.ScoreTable[i].ratio = br.ReadUInt16();
+                config.ScoreTable[i].Ratio = br.ReadUInt16();
             }
         }
         if (stream.Position < stream.Length && config.Video != null)
@@ -646,7 +646,7 @@ internal class GameEngineManager
         foreach (var s in settings.Scores)
         {
             s.Write(bw);
-            bw.Write(s.ratio);
+            bw.Write(s.Ratio);
         }
 
         WriteMoreVideoSettings(bw, videoManager.Settings);

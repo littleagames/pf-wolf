@@ -56,7 +56,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         if (video.HasMargins)
             video.ClearScreen(0);
 
-        if (!session.ingame)
+        if (!session.InGame)
         { }// CA_LoadAllSounds();
         else
             MenuDefs.FindMenuItem(MainMenu, "savegame")?.active = 1;
@@ -139,9 +139,9 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
 
                 case "backtodemo":
                     StartGame = 1;
-                    if (!session.ingame)
+                    if (!session.InGame)
                         audio.PlayMusic(IntroSong);
-                    video.FadeOut(settings().menuFadeStyle, new Color { Alpha = 255 }, 10, settings().menuFadeTics);
+                    video.FadeOut(settings().MenuFadeStyle, new Color { Alpha = 255 }, 10, settings().MenuFadeTics);
                     break;
 
                 case "quit":
@@ -170,7 +170,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         //
         // CHANGE MAINMENU ITEM
         //
-        if (session.startgame || session.loadedgame)
+        if (session.GameChosen || session.LoadedGame)
             EnableEndGameMenuItem();
     }
 
@@ -186,7 +186,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         var backToDemo = MenuDefs.FindMenuItem(MainMenu, "backtodemo");
         if (backToDemo != null)
         {
-            if (session.ingame)
+            if (session.InGame)
             {
                 backToDemo.text = "$MENU_BACKTOGAME".ToLanguageText(language);
                 backToDemo.active = 2;

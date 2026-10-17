@@ -60,8 +60,8 @@ public class WallSpriteDrawingTests
 
         // Assert: its middle is 3 tiles along the view
         Assert.That(drawn, Is.True);
-        Assert.That(vis.wallsprite, Is.SameAs(fence));
-        Assert.That(vis.viewheight, Is.EqualTo(_drawing.HeightAtDepth(3 * Tile)));
+        Assert.That(vis.WallSprite, Is.SameAs(fence));
+        Assert.That(vis.ViewHeight, Is.EqualTo(_drawing.HeightAtDepth(3 * Tile)));
     }
 
     [Test]

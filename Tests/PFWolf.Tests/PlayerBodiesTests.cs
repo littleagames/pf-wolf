@@ -45,20 +45,20 @@ public class PlayerBodiesTests
     [SetUp]
     public void Make()
     {
-        _session = new GameSession { tics = 1 };
+        _session = new GameSession { Tics = 1 };
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
             tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        _session.playerstate.playerclass = "Player";
-        _session.playerstate.health = 100;
-        _session.playerstate.Pawn = new Entities.Actors.PlayerPawn { State = _session.playerstate, X = 5 * Tile, Y = 5 * Tile };
+        _session.PlayerState.PlayerClass = "Player";
+        _session.PlayerState.Health = 100;
+        _session.PlayerState.Pawn = new Entities.Actors.PlayerPawn { State = _session.PlayerState, X = 5 * Tile, Y = 5 * Tile };
         _bodies = new PlayerBodies(new AssetManager(), _map, _inventory, null!, _session);
     }
 
-    private string? BodyState => _session.playerstate.Body?.CurrentState?.StateName;
+    private string? BodyState => _session.PlayerState.Body?.CurrentState?.StateName;
 
     [Test]
     public void A_Still_Player_Stands_And_A_Moving_One_Walks()
@@ -68,16 +68,16 @@ public class PlayerBodiesTests
         _bodies.TickPlayerBodies(1);
         Assert.That(BodyState, Is.EqualTo("Spawn"));
 
-        _session.playerstate.Pawn!.X += Tile / 4;
+        _session.PlayerState.Pawn!.X += Tile / 4;
         _bodies.TickPlayerBodies(1);
         Assert.That(BodyState, Is.EqualTo("See"));
-        Assert.That(_session.playerstate.Body!.X, Is.EqualTo(_session.playerstate.Pawn.X));
+        Assert.That(_session.PlayerState.Body!.X, Is.EqualTo(_session.PlayerState.Pawn.X));
     }
 
     [Test]
     public void A_Dead_Player_Lies_Dead()
     {
-        _session.playerstate.health = 0;
+        _session.PlayerState.Health = 0;
 
         _bodies.TickPlayerBodies(1);
 
@@ -87,11 +87,11 @@ public class PlayerBodiesTests
     [Test]
     public void A_Class_With_No_Spawn_State_Has_No_Body()
     {
-        _session.playerstate.playerclass = "Ghost";
+        _session.PlayerState.PlayerClass = "Ghost";
 
         _bodies.TickPlayerBodies(1);
 
-        Assert.That(_session.playerstate.Body, Is.Null);
+        Assert.That(_session.PlayerState.Body, Is.Null);
     }
 
     [Test]
@@ -99,7 +99,7 @@ public class PlayerBodiesTests
     {
         _bodies.TickPlayerBodies(1);
 
-        Assert.That(_bodies.IsPlayerBody(_session.playerstate.Body!), Is.True);
+        Assert.That(_bodies.IsPlayerBody(_session.PlayerState.Body!), Is.True);
         Assert.That(_bodies.IsPlayerBody(new Entities.Actors.Monster { Name = "Guard" }), Is.False);
     }
 
@@ -108,13 +108,13 @@ public class PlayerBodiesTests
     {
         // Arrange
         _bodies.TickPlayerBodies(1);
-        var pawn = _session.playerstate.Pawn!;
+        var pawn = _session.PlayerState.Pawn!;
 
         // Act / Assert: following the player, then fixed elsewhere
-        _session.camera.Follow(pawn);
+        _session.Camera.Follow(pawn);
         Assert.That(_bodies.VisiblePlayerBody(pawn), Is.Null);
-        _session.camera.SetFixed(0, 0, 0);
-        Assert.That(_bodies.VisiblePlayerBody(pawn), Is.SameAs(_session.playerstate.Body));
+        _session.Camera.SetFixed(0, 0, 0);
+        Assert.That(_bodies.VisiblePlayerBody(pawn), Is.SameAs(_session.PlayerState.Body));
     }
 
     [Test]
@@ -136,11 +136,11 @@ public class PlayerBodiesTests
         // Act / Assert
         Assert.That(spectating.SpectateCandidates(), Is.EqualTo(new[] { first, second }));
         spectating.SpectateCommand([]);
-        Assert.That(_session.camera.Target, Is.SameAs(first));
+        Assert.That(_session.Camera.Target, Is.SameAs(first));
         spectating.SpectateCommand(["next"]);
-        Assert.That(_session.camera.Target, Is.SameAs(second));
+        Assert.That(_session.Camera.Target, Is.SameAs(second));
         spectating.SpectateCommand(["next"]);
-        Assert.That(_session.camera.Target, Is.SameAs(first));      // round again
+        Assert.That(_session.Camera.Target, Is.SameAs(first));      // round again
         spectating.SpectateCommand(["player"]);
         Assert.That(console.Scrollback[^1], Is.EqualTo("Watching through your own eyes"));
     }

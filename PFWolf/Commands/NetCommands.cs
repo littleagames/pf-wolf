@@ -21,18 +21,18 @@ internal sealed class NetCommands(
     /// <summary>`net_status`: the game with others as this machine has it</summary>
     internal void NetStatusCommand(string[] args)
     {
-        if (!game.netgame || NetSession.Current is not { } session)
+        if (!game.NetGame || NetSession.Current is not { } session)
         {
             console.Print("Not playing with others");
             return;
         }
 
         var lines = new List<string> { $"{(session.IsHost ? "Hosting" : "Joined")}, level {netPlay.netlevel}, frame {netPlay.netstep}, game sum {netPlay.GameChecksum():x8}" };
-        for (int i = 0; i < game.players.Count; i++)
+        for (int i = 0; i < game.Players.Count; i++)
         {
-            var p = game.players[i];
-            lines.Add($"  {i + 1}. {p.Name}{(i == game.consoleplayer ? " (you)" : "")}: "
-                + (p.Pawn is { } pawn ? $"{pawn.X},{pawn.Y} facing {pawn.Angle}, health {p.health}" : p.Gone ? "left" : "-"));
+            var p = game.Players[i];
+            lines.Add($"  {i + 1}. {p.Name}{(i == game.ConsolePlayer ? " (you)" : "")}: "
+                + (p.Pawn is { } pawn ? $"{pawn.X},{pawn.Y} facing {pawn.Angle}, health {p.Health}" : p.Gone ? "left" : "-"));
         }
         if (session.IsHost)
             lines.Add($"  {session.SumsMatched} of {session.SumsCompared} checks matched");

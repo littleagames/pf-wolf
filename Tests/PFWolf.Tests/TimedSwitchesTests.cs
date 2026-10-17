@@ -26,9 +26,9 @@ public class TimedSwitchesTests
             tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
             actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
-        var pawn = new PlayerPawn { State = _session.playerstate };
+        var pawn = new PlayerPawn { State = _session.PlayerState };
         pawn.SetPosition(10, 10);
-        _session.playerstate.Pawn = pawn;
+        _session.PlayerState.Pawn = pawn;
         _timed = new TimedSwitches(_map, _session);
     }
 
@@ -39,7 +39,7 @@ public class TimedSwitchesTests
     // name in it), so it running shows as the registry saying it has no handler for it
     private int Resets => _console.ToString().Split('\n').Count(line => line.Contains("'A_TestReset'"));
 
-    // A switch wall at 11,10, thrown from off to on
+    // A switch WallId at 11,10, thrown from off to on
     private void Throw(int resetTics)
     {
         _map.tilemap[11, 10] = SwitchOn;
@@ -75,14 +75,14 @@ public class TimedSwitchesTests
     [Test]
     public void A_Wall_Changed_Meanwhile_Is_Left_Alone()
     {
-        // Arrange: something else made it another wall
+        // Arrange: something else made it another WallId
         Throw(10);
         _map.tilemap[11, 10] = 7;
 
         // Act
         _timed.Tick(10);
 
-        // Assert: the wall stays, the actions still run
+        // Assert: the WallId stays, the actions still run
         Assert.That(_map.tilemap[11, 10], Is.EqualTo(7));
         Assert.That(Resets, Is.EqualTo(1));
     }

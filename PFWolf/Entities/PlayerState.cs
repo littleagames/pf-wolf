@@ -5,7 +5,7 @@ namespace PFWolf.Entities;
 /// (the actor on the map) is made again each level; this lasts the whole game.
 /// </summary>
 /// <remarks>
-/// The game is written against "the player": GameHost's player, playerstate, playerinput and
+/// The game is written against "the player": GameHost's player, PlayerState, PlayerInput and
 /// the player globals below them (anglefrac, playerpitch, LastAttacker...) are whichever
 /// player is acting right now (GameHost.ActAs). Outside a player's own think that's the local
 /// player, the one this machine's screen, status bar and sounds belong to.
@@ -31,14 +31,14 @@ internal sealed class PlayerState
     public TicCmd PendingCmd;
 
     // What was GameState's (GameTypes.cs), and is still saved in its place
-    public string playerclass = "Player";   // the actordefs class played as (game-info player-classes)
-    public int oldscore, score, nextextra;
-    public short lives;
-    public short health;
-    public short armor, armorpercent;       // armor points, and how much of each hit (0-100%) they absorb
-    public string? weapon, chosenweapon;    // the weapon in hand and the one picked (see GameState)
-    public short faceframe;
-    public int killx, killy;                // where what killed them stood
+    public string PlayerClass = "Player";   // the actordefs class played as (game-info player-classes)
+    public int OldScore, Score, NextExtra;
+    public short Lives;
+    public short Health;
+    public short Armor, ArmorPercent;       // armor points, and how much of each hit (0-100%) they absorb
+    public string? Weapon, ChosenWeapon;    // the weapon in hand and the one picked (see GameState)
+    public short FaceFrame;
+    public int KillX, KillY;                // where what killed them stood
 
     // Playing with others: other players killed in a deathmatch (less their own deaths by
     // their own hand), and enemies killed (for the scoreboard)
@@ -117,10 +117,10 @@ internal sealed class PlayerState
     /// </summary>
     public void CopyStatsFrom(PlayerState other)
     {
-        playerclass = other.playerclass;
-        (oldscore, score, nextextra) = (other.oldscore, other.score, other.nextextra);
-        (lives, health, armor, armorpercent) = (other.lives, other.health, other.armor, other.armorpercent);
-        (weapon, chosenweapon, faceframe) = (other.weapon, other.chosenweapon, other.faceframe);
-        (killx, killy) = (other.killx, other.killy);
+        PlayerClass = other.PlayerClass;
+        (OldScore, Score, NextExtra) = (other.OldScore, other.Score, other.NextExtra);
+        (Lives, Health, Armor, ArmorPercent) = (other.Lives, other.Health, other.Armor, other.ArmorPercent);
+        (Weapon, ChosenWeapon, FaceFrame) = (other.Weapon, other.ChosenWeapon, other.FaceFrame);
+        (KillX, KillY) = (other.KillX, other.KillY);
     }
 }

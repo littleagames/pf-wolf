@@ -37,7 +37,7 @@ internal sealed class StatusBarDrawing(
     /// player other than this machine's (the bar is the local player's). A bar drawn over the
     /// view (overlay) is drawn only with the frame (DrawingOverlay), as the view under it is.
     /// </summary>
-    internal bool StatusBarHidden => (settings.viewsize == 21 && session.ingame) || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
+    internal bool StatusBarHidden => (settings.viewsize == 21 && session.InGame) || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
 
     /// <summary>Whether the status bar is drawn over the view every frame (statusbar.yaml background overlay)</summary>
     internal bool IsOverlay => StatusBar.Get("background")?.Overlay == true;
@@ -152,7 +152,7 @@ internal sealed class StatusBarDrawing(
     }
 
     // The face grins while the pickup sound of the WEAPON.ALWAYSGRIN item that made the player grin plays
-    internal bool Grinning => session.playerstate.GrinSound != null && audio.IsPlaying(session.playerstate.GrinSound);
+    internal bool Grinning => session.PlayerState.GrinSound != null && audio.IsPlaying(session.PlayerState.GrinSound);
 
     // The face (statusbar.yaml face): the grin, else the one for the player's health, looking
     // around through its pics, else once dead the one for what killed them
@@ -164,14 +164,14 @@ internal sealed class StatusBarDrawing(
         string? pic;
         if (Grinning && !string.IsNullOrEmpty(face.Grin))
             pic = face.Grin;
-        else if (session.playerstate.health != 0)
+        else if (session.PlayerState.Health != 0)
         {
             var faces = face.Faces.OrderByDescending(f => f.Health).ToList();
-            var pics = (faces.FirstOrDefault(f => session.playerstate.health >= f.Health) ?? faces.LastOrDefault())?.Pics;
-            pic = pics is { Count: > 0 } ? pics[session.playerstate.faceframe % pics.Count] : null;
+            var pics = (faces.FirstOrDefault(f => session.PlayerState.Health >= f.Health) ?? faces.LastOrDefault())?.Pics;
+            pic = pics is { Count: > 0 } ? pics[session.PlayerState.FaceFrame % pics.Count] : null;
         }
         else
-            pic = session.playerstate.LastAttacker != null && face.KilledBy.TryGetValue(session.playerstate.LastAttacker.Name, out var killedBy) ? killedBy : face.Dead;
+            pic = session.PlayerState.LastAttacker != null && face.KilledBy.TryGetValue(session.PlayerState.LastAttacker.Name, out var killedBy) ? killedBy : face.Dead;
 
         if (!string.IsNullOrEmpty(pic))
             StatusDrawFace(pic);
@@ -180,14 +180,14 @@ internal sealed class StatusBarDrawing(
     internal void DrawHealth()
     {
         if (StatusBarHidden) return;
-        LatchNumber("health", session.playerstate.health);
+        LatchNumber("health", session.PlayerState.Health);
     }
 
     // The status bar's optional armor number (statusbar.yaml `armor`)
     internal void DrawArmor()
     {
         if (StatusBarHidden) return;
-        LatchNumber("armor", session.playerstate.armor);
+        LatchNumber("armor", session.PlayerState.Armor);
     }
 
     internal void DrawKeys()
@@ -224,8 +224,8 @@ internal sealed class StatusBarDrawing(
     internal void DrawLevel()
     {
         var gameInfo = engine.GetGameInfo();
-        var mapInfo = gameInfo.Maps[session.gamestate.mapon];
-        //var mapInfo = MapInfoMappings.GameInfo.Maps[session.gamestate.mapon];
+        var mapInfo = gameInfo.Maps[session.GameState.MapOn];
+        //var mapInfo = MapInfoMappings.GameInfo.Maps[session.GameState.MapOn];
         if (StatusBarHidden) return;
         LatchNumber("level", mapInfo.FloorNumber);
     }
@@ -233,7 +233,7 @@ internal sealed class StatusBarDrawing(
     internal void DrawLives()
     {
         if (StatusBarHidden) return;
-        LatchNumber("lives", session.playerstate.lives);
+        LatchNumber("lives", session.PlayerState.Lives);
     }
 
     /// <summary>What the score box shows for a player with others playing (Gameplay/Deathmatch.cs: frags, the team's score); unset, their score</summary>
@@ -243,17 +243,17 @@ internal sealed class StatusBarDrawing(
     {
         if (StatusBarHidden) return;
         // a deathmatch keeps score in frags, a team game the team's
-        LatchNumber("score", session.gamemode != GameMode.Single && ScoreShown != null
-            ? ScoreShown(session.playerstate)
-            : session.gamemode == GameMode.Deathmatch ? session.playerstate.Frags : session.playerstate.score);
+        LatchNumber("score", session.GameMode != GameMode.Single && ScoreShown != null
+            ? ScoreShown(session.PlayerState)
+            : session.GameMode == GameMode.Deathmatch ? session.PlayerState.Frags : session.PlayerState.Score);
     }
 
     internal void DrawWeaponPic()
     {
         if (StatusBarHidden) return;
-        if (session.playerstate.weapon == null) return;
+        if (session.PlayerState.Weapon == null) return;
 
-        var icon = inventory.GetStringProperty(session.playerstate.weapon, "inventory.icon");
+        var icon = inventory.GetStringProperty(session.PlayerState.Weapon, "inventory.icon");
         if (!string.IsNullOrEmpty(icon) && StatusBar.Get("weapon") is { } element)
         {
             using var _ = StatusBarOrigin(element);
@@ -267,8 +267,8 @@ internal sealed class StatusBarDrawing(
     internal void DrawWeaponCorner()
     {
         if (StatusBarHidden) return;
-        if (session.playerstate.weapon == null || StatusBar.Get("weapon-corner") is not { } element) return;
-        var pic = element.WeaponPics.GetValueOrDefault(session.playerstate.weapon);
+        if (session.PlayerState.Weapon == null || StatusBar.Get("weapon-corner") is not { } element) return;
+        var pic = element.WeaponPics.GetValueOrDefault(session.PlayerState.Weapon);
         using var _ = StatusBarOrigin(element);
         if (!string.IsNullOrEmpty(pic))
             graphics.DrawPic(pic, element.X, StatusBarTop(element) + element.Y);
@@ -311,7 +311,7 @@ internal sealed class StatusBarDrawing(
     internal void DrawIcons()
     {
         if (StatusBarHidden) return;
-        bool magazine = session.playerstate.weapon is { } weapon
+        bool magazine = session.PlayerState.Weapon is { } weapon
             && inventory.GetStringProperty(weapon, "weapon.magazine") is { Length: > 0 };
         foreach (var (name, element) in StatusBar.Elements)
         {
@@ -342,7 +342,7 @@ internal sealed class StatusBarDrawing(
     internal void DrawPowerMeter()
     {
         if (StatusBarHidden) return;
-        int power = session.playerstate.WeaponPower > 0 ? session.playerstate.WeaponPower : session.playerstate.SuspicionMeter;
+        int power = session.PlayerState.WeaponPower > 0 ? session.PlayerState.WeaponPower : session.PlayerState.SuspicionMeter;
         if (power <= 0 || StatusBar.Get("power-meter") is not { } meter)
             return;
         using var _ = StatusBarOrigin(meter);
@@ -362,7 +362,7 @@ internal sealed class StatusBarDrawing(
     internal void DrawWeaponName()
     {
         if (StatusBarHidden) return;
-        if (StatusBar.Get("weapon-name") is not { } element || session.playerstate.weapon is not { } weapon)
+        if (StatusBar.Get("weapon-name") is not { } element || session.PlayerState.Weapon is not { } weapon)
             return;
         ClearBox(element);
         var font = element.Font ?? StatusBar.Get("numbers")?.Font;
@@ -378,7 +378,7 @@ internal sealed class StatusBarDrawing(
             return;
         var font = element.Font ?? StatusBar.Get("numbers")?.Font;
         if (!string.IsNullOrEmpty(font))
-            DrawStatusText(element, hooks.MapDisplayName(session.gamestate.mapon), font, element.Color ?? "White");
+            DrawStatusText(element, hooks.MapDisplayName(session.GameState.MapOn), font, element.Color ?? "White");
     }
 
     /// <summary>The radar's power gauge (statusbar.yaml radar-gauge): its item's count out of its max</summary>
@@ -425,7 +425,7 @@ internal sealed class StatusBarDrawing(
     string? infoareashown;
 
     /// <summary>Whether the status bar has an info area showing now</summary>
-    internal bool HasInfoArea => StatusBar.Get("info-area") != null && !(settings.viewsize == 21 && session.ingame);
+    internal bool HasInfoArea => StatusBar.Get("info-area") != null && !(settings.viewsize == 21 && session.InGame);
 
     internal void DrawInfoArea(bool force)
     {
@@ -495,10 +495,10 @@ internal sealed class StatusBarDrawing(
     /// <summary>Moves the heart monitor on by this tic's time, redrawing it as it changes</summary>
     internal void UpdateHeartMonitor()
     {
-        if (StatusBar.Get("heart-monitor") == null || (settings.viewsize == 21 && session.ingame))
+        if (StatusBar.Get("heart-monitor") == null || (settings.viewsize == 21 && session.InGame))
             return;
-        ecgscrolltics += (int)session.tics;
-        hearttics += (int)session.tics;
+        ecgscrolltics += (int)session.Tics;
+        hearttics += (int)session.Tics;
         DrawHeartMonitor(force: false);
     }
 
@@ -535,11 +535,11 @@ internal sealed class StatusBarDrawing(
             }
 
             int last = count - 1;
-            if (session.playerstate.health > 0 && ecglegend[last] == 0)
+            if (session.PlayerState.Health > 0 && ecglegend[last] == 0)
             {
-                if (session.playerstate.health < 33)
+                if (session.PlayerState.Health < 33)
                     (ecglegend[last], ecgsegments[last]) = (3, 18);
-                else if (session.playerstate.health >= 66)
+                else if (session.PlayerState.Health >= 66)
                 {
                     if (last == 0 || ecglegend[last - 1] != 1)
                         (ecglegend[last], ecgsegments[last]) = (1, 1);
@@ -551,9 +551,9 @@ internal sealed class StatusBarDrawing(
 
         // The heart: off when dead, bad when low, else a beat every pulse
         string? heart = heartpic;
-        if (session.playerstate.health <= 0)
+        if (session.PlayerState.Health <= 0)
             heart = monitor.HeartOff;
-        else if (session.playerstate.health < monitor.BadBelow)
+        else if (session.PlayerState.Health < monitor.BadBelow)
             heart = monitor.HeartBad;
         else if (hearttics >= monitor.PulseTics / 2 || heart == null || heart == monitor.HeartBad)
         {

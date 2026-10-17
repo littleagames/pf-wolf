@@ -12,7 +12,7 @@ public class GameSettingsTests
 
         // Assert
         Assert.That(settings.autosaveEnabled, Is.True);
-        Assert.That(settings.Scores, Is.EqualTo(HighScore.WolfDefaults()).Using<HighScore>((a, b) => a.name == b.name && a.score == b.score));
+        Assert.That(settings.Scores, Is.EqualTo(HighScore.WolfDefaults()).Using<HighScore>((a, b) => a.Name == b.Name && a.Score == b.Score));
     }
 
     [Test]

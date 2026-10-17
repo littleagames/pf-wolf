@@ -36,7 +36,7 @@ internal sealed class Camera(GameSession session)
     /// level always does (SetupGameLevel).
     /// </summary>
     internal Entities.Actors.Actor? Target =>
-        isfixed ? null : target is { IsRemoved: false } ? target : session.localplayer.Pawn;
+        isfixed ? null : target is { IsRemoved: false } ? target : session.LocalPlayer.Pawn;
 
     /// <summary>Looks through the player: the default, set each level</summary>
     internal void FollowPlayer() => (target, isfixed) = (null, false);
@@ -56,10 +56,10 @@ internal sealed class Camera(GameSession session)
     }
 
     /// <summary>Whether the view is the player's own, with their weapon and look</summary>
-    internal bool OnPlayer => Target is { } t && t == session.localplayer.Pawn;
+    internal bool OnPlayer => Target is { } t && t == session.LocalPlayer.Pawn;
 
     /// <summary>Whether the view is through an actor other than the player</summary>
-    internal bool Spectating => Target is { } t && t != session.localplayer.Pawn;
+    internal bool Spectating => Target is { } t && t != session.LocalPlayer.Pawn;
 
     /// <summary>Turns a watched actor's view toward the way it now goes, so it doesn't snap 45 degrees at a time</summary>
     internal void Tick(uint tics)
@@ -107,5 +107,5 @@ internal sealed class Camera(GameSession session)
     static short ActorViewAngle(Entities.Actors.Actor actor) =>
         actor.Dir == ObjDir.NoDir || actor.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase)
             ? actor.Angle
-            : (short)GameConstants.dirangle[(byte)actor.Dir];
+            : (short)GameConstants.DirAngle[(byte)actor.Dir];
 }

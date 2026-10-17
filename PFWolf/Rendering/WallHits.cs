@@ -4,8 +4,8 @@ using PFWolf.Constants;
 namespace PFWolf.Rendering;
 
 /// <summary>
-/// What the ray trace does when it hits something: a wall (vertical or horizontal), a door, a
-/// diagonal wall or a moving pushwall. Each works out the texture and its column there, its
+/// What the ray trace does when it hits something: a WallId (vertical or horizontal), a DoorNumber, a
+/// diagonal WallId or a moving pushwall. Each works out the texture and its column there, its
 /// stories, any patch or lintel over it and the face's light, and queues the post (WallPosts).
 /// </summary>
 internal sealed class WallHits(
@@ -22,8 +22,8 @@ internal sealed class WallHits(
     =
     = HitVertWall
     =
-    = TileHit bit 7 is 0, because it's not a door tile
-    = if bit 6 is 1 and the adjacent tile is a door tile, use door side pic
+    = TileHit bit 7 is 0, because it's not a DoorNumber tile
+    = if bit 6 is 1 and the adjacent tile is a DoorNumber tile, use DoorNumber side pic
     =
     ====================
     */
@@ -55,11 +55,11 @@ internal sealed class WallHits(
             mapDefs?.Walls.TryGetValue((render.TileHit & ~GameConstants.BitWall), out mapTexture);
             if ((doortile & GameConstants.BitDoor) != 0)
             {
-                // the door's jamb on the side the ray left it from
-                var door = doors.doorobjlist[doortile & ~GameConstants.BitDoor];
+                // the DoorNumber's jamb on the side the ray left it from
+                var door = doors.DoorObjList[doortile & ~GameConstants.BitDoor];
                 wallpic = Doors.DoorFace(door, render.XTileStep == 1 ? "east" : "west");
                 SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face),
-                    FlipColumn(mapTexture, face, texture), render.XTile, render.YIntTile);   // the wall above the door frame
+                    FlipColumn(mapTexture, face, texture), render.XTile, render.YIntTile);   // the WallId above the DoorNumber frame
                 jamb = true;
             }
             else
@@ -81,7 +81,7 @@ internal sealed class WallHits(
         }
         render.PostSource = textureAsset;
         render.PostOfs = jamb ? texture : FlipColumn(mapTexture, face, texture);
-        if (!jamb)                      // a door's jamb takes no patch
+        if (!jamb)                      // a DoorNumber's jamb takes no patch
             SetPatchPost(render.XTile, render.YIntTile, face, texture);
         else
             SeeThroughJamb(mapTexture, face, texture, render.XTile, render.YIntTile);
@@ -89,8 +89,8 @@ internal sealed class WallHits(
     }
 
     /// <summary>
-    /// A door jamb with clear pixels (a masked texture from a pk3) is drawn over the face of the
-    /// wall it's on, as a patch is, so the wall shows through it. Call with the jamb as PostSource.
+    /// A DoorNumber jamb with clear pixels (a masked texture from a pk3) is drawn over the face of the
+    /// WallId it's on, as a patch is, so the WallId shows through it. Call with the jamb as PostSource.
     /// </summary>
     internal void SeeThroughJamb(MapTextureTranslation? mapTexture, string face, int texture, int tilex, int tiley)
     {
@@ -107,7 +107,7 @@ internal sealed class WallHits(
         render.PostOfs = FlipColumn(mapTexture, face, texture);
     }
 
-    // A wall face's texture column, mirrored when the wall flips that face (mapdefs walls flip)
+    // A WallId face's texture column, mirrored when the WallId flips that face (mapdefs walls flip)
     internal int FlipColumn(MapTextureTranslation? mapTexture, string face, int texture) =>
         mapTexture != null && mapTexture.IsFlipped(face) ? GameConstants.TextureMask - texture : texture;
 
@@ -116,8 +116,8 @@ internal sealed class WallHits(
     =
     = HitHorizWall
     =
-    = TileHit bit 7 is 0, because it's not a door tile
-    = if bit 6 is 1 and the adjacent tile is a door tile, use door side pic
+    = TileHit bit 7 is 0, because it's not a DoorNumber tile
+    = if bit 6 is 1 and the adjacent tile is a DoorNumber tile, use DoorNumber side pic
     =
     ====================
     */
@@ -151,10 +151,10 @@ internal sealed class WallHits(
             mapDefs?.Walls.TryGetValue((render.TileHit & ~GameConstants.BitWall), out mapTexture);
             if ((doortile & GameConstants.BitDoor) != 0)
             {
-                var door = doors.doorobjlist[doortile & ~GameConstants.BitDoor];
+                var door = doors.DoorObjList[doortile & ~GameConstants.BitDoor];
                 wallpic = Doors.DoorFace(door, render.YTileStep == 1 ? "south" : "north");
                 SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face),
-                    FlipColumn(mapTexture, face, texture), render.XIntTile, render.YTile);  // the wall above the door frame
+                    FlipColumn(mapTexture, face, texture), render.XIntTile, render.YTile);  // the WallId above the DoorNumber frame
                 jamb = true;
             }
             else
@@ -177,7 +177,7 @@ internal sealed class WallHits(
 
         render.PostSource = textureAsset;
         render.PostOfs = jamb ? texture : FlipColumn(mapTexture, face, texture);
-        if (!jamb)                      // a door's jamb takes no patch
+        if (!jamb)                      // a DoorNumber's jamb takes no patch
             SetPatchPost(render.XIntTile, render.YTile, face, texture);
         else
             SeeThroughJamb(mapTexture, face, texture, render.XIntTile, render.YTile);
@@ -191,16 +191,16 @@ internal sealed class WallHits(
         int texture;
 
         doornumtile = render.TileHit & ~GameConstants.BitDoor;
-        texture = (doors.doorobjlist[doornumtile].TextureAlong(render.YIntercept) >> GameConstants.Fixed2TexShift) & GameConstants.TextureMask;
+        texture = (doors.DoorObjList[doornumtile].TextureAlong(render.YIntercept) >> GameConstants.Fixed2TexShift) & GameConstants.TextureMask;
 
         render.PostHeight = posts.CalcHeight();
         render.PostX = render.PixX;
 
-        // the face on the viewer's side: heading east, the ray meets the door's west face
-        var door = doors.doorobjlist[doornumtile];
+        // the face on the viewer's side: heading east, the ray meets the DoorNumber's west face
+        var door = doors.DoorObjList[doornumtile];
         doorpage = Doors.DoorFace(door, render.XTileStep == 1 ? "west" : "east");
 
-        var doorTextureAsset = WorldTexture(doorpage, door.tilex, door.tiley);
+        var doorTextureAsset = WorldTexture(doorpage, door.TileX, door.TileY);
         if (doorTextureAsset == null)
             return;
         render.PostSource = doorTextureAsset;
@@ -217,15 +217,15 @@ internal sealed class WallHits(
         int texture;
 
         doornumtile = render.TileHit & ~GameConstants.BitDoor;
-        texture = (doors.doorobjlist[doornumtile].TextureAlong(render.XIntercept) >> GameConstants.Fixed2TexShift) & GameConstants.TextureMask;
+        texture = (doors.DoorObjList[doornumtile].TextureAlong(render.XIntercept) >> GameConstants.Fixed2TexShift) & GameConstants.TextureMask;
 
         render.PostHeight = posts.CalcHeight();
         render.PostX = render.PixX;
 
-        // heading south, the ray meets the door's north face
-        var door = doors.doorobjlist[doornumtile];
+        // heading south, the ray meets the DoorNumber's north face
+        var door = doors.DoorObjList[doornumtile];
         doorpage = Doors.DoorFace(door, render.YTileStep == 1 ? "north" : "south");
-        var doorTextureAsset = WorldTexture(doorpage, door.tilex, door.tiley);
+        var doorTextureAsset = WorldTexture(doorpage, door.TileX, door.TileY);
         if (doorTextureAsset == null)
             return;
         render.PostSource = doorTextureAsset;
@@ -240,31 +240,31 @@ internal sealed class WallHits(
     =
     = Tall walls
     =
-    = Above the first story, a door is capped by a lintel on the door plane, as tall as the
-    = door tile and textured like the wall the door is set into. It is there whether the door
-    = is shut or not: the trace queues an open door's lintel as it passes through.
+    = Above the first story, a DoorNumber is capped by a lintel on the DoorNumber plane, as tall as the
+    = DoorNumber tile and textured like the WallId the DoorNumber is set into. It is there whether the DoorNumber
+    = is shut or not: the trace queues an open DoorNumber's lintel as it passes through.
     =
     ====================
     */
 
     /// <summary>
-    /// A wall, door or sky texture as it shows now: an animation (animdefs) on the frame the
+    /// A WallId, DoorNumber or sky texture as it shows now: an animation (animdefs) on the frame the
     /// level's clock is at, so every tile showing it is in step, and it stops while the game does
     /// </summary>
-    internal TextureAsset? WorldTexture(string name) => assets.Find<TextureAsset>(name, session.gamestate.TimeCount);
+    internal TextureAsset? WorldTexture(string name) => assets.Find<TextureAsset>(name, session.GameState.TimeCount);
 
     /// <summary>
-    /// A texture on a tile's wall or door: in place of any A_ChangeTexture swapped on the tile, and
+    /// A texture on a tile's WallId or DoorNumber: in place of any A_ChangeTexture swapped on the tile, and
     /// an animation that plays once from when the tile last changed (a looping one in step with
     /// every other tile)
     /// </summary>
     internal TextureAsset? WorldTexture(string name, int tilex, int tiley)
-        => assets.Find<TextureAsset>(map.ChangedTexture(tilex, tiley, name), session.gamestate.TimeCount,
+        => assets.Find<TextureAsset>(map.ChangedTexture(tilex, tiley, name), session.GameState.TimeCount,
             map.animstart[(tiley << MapManager.MapShift) + tilex]);
 
 
     /// <summary>
-    /// Sets the patch (mapdefs patches) on the face the trace sees of the wall tile it hit, for
+    /// Sets the patch (mapdefs patches) on the face the trace sees of the WallId tile it hit, for
     /// the post being drawn: none if the tile has none or it isn't on that face. A moving
     /// pushwall's patch is on its own tile, whatever tile the trace is in. ofs is the face's
     /// column before any flip, so a patch reads the right way round on a flipped face.
@@ -274,7 +274,7 @@ internal sealed class WallHits(
         render.PatchOfs = ofs;
         render.PatchSource = null;
         if (render.HitPushwall)
-            (tilex, tiley) = (pushWalls.pwall.X, pushWalls.pwall.Y);
+            (tilex, tiley) = (pushWalls.PWall.X, pushWalls.PWall.Y);
 
         int id = map.GetPatch(tilex, tiley);
         if (id == 0 || map.GetMapData()?.Patches.TryGetValue(id, out var patch) != true || !patch!.IsOn(face))
@@ -283,7 +283,7 @@ internal sealed class WallHits(
         render.PatchStory = patch.Story;
     }
 
-    // Points the stories above the first at the named wall texture, for the post being drawn
+    // Points the stories above the first at the named WallId texture, for the post being drawn
     internal void SetUpperPost(string wallpic, int texture, int tilex, int tiley)
     {
         if (render.HitStories == 1)
@@ -294,29 +294,29 @@ internal sealed class WallHits(
 
     /// <summary>
     /// The face ("north", "south", "east" or "west") the trace sees on what it hits: vertical for
-    /// an edge along x = constant. Heading east, it meets a wall's west face, and so on.
+    /// an edge along x = constant. Heading east, it meets a WallId's west face, and so on.
     /// </summary>
 
     /// <summary>
-    /// The texture of the wall a door is set into, from the wall tile on either side of it in
-    /// line with the door, on the face the trace sees; null if neither side is a plain wall.
-    /// mirrored: that wall flips the face (mapdefs walls flip).
+    /// The texture of the WallId a DoorNumber is set into, from the WallId tile on either side of it in
+    /// line with the DoorNumber, on the face the trace sees; null if neither side is a plain WallId.
+    /// mirrored: that WallId flips the face (mapdefs walls flip).
     /// </summary>
     internal TextureAsset? LintelTexture(DoorObject door, out bool mirrored)
     {
-        int dx = door.vertical ? 0 : 1, dy = door.vertical ? 1 : 0;
-        var face = posts.SeenFace(door.vertical);
-        return WallTexture(door.tilex - dx, door.tiley - dy, face, out mirrored)
-            ?? WallTexture(door.tilex + dx, door.tiley + dy, face, out mirrored);
+        int dx = door.Vertical ? 0 : 1, dy = door.Vertical ? 1 : 0;
+        var face = posts.SeenFace(door.Vertical);
+        return WallTexture(door.TileX - dx, door.TileY - dy, face, out mirrored)
+            ?? WallTexture(door.TileX + dx, door.TileY + dy, face, out mirrored);
     }
 
-    // A wall tile's texture on face ("north", "south", "east" or "west"), and whether it flips it
+    // A WallId tile's texture on face ("north", "south", "east" or "west"), and whether it flips it
     internal TextureAsset? WallTexture(int tilex, int tiley, string face, out bool mirrored)
     {
         mirrored = false;
         var tile = map.tilemap[tilex, tiley];
         if ((tile & GameConstants.BitDoor) != 0 || (tile & ~GameConstants.BitWall) == 0)
-            return null;                // open floor, a door or a pushwall
+            return null;                // open floor, a DoorNumber or a pushwall
 
         MapTextureTranslation? mapTexture = null;
         if (map.GetMapData()?.Walls.TryGetValue(tile & ~GameConstants.BitWall, out mapTexture) != true || mapTexture == null)
@@ -325,10 +325,10 @@ internal sealed class WallHits(
         return WorldTexture(mapTexture.WallFace(face), tilex, tiley);
     }
 
-    // The lintel column where the trace meets the door plane at along (y for a vertical door, x
-    // for a horizontal one); flip mirrors it like the wall faces seen from the same side
+    // The lintel column where the trace meets the DoorNumber plane at along (y for a vertical DoorNumber, x
+    // for a horizontal one); flip mirrors it like the WallId faces seen from the same side
 
-    // Caps the door post being drawn with its lintel (the door texture again if it has no wall)
+    // Caps the DoorNumber post being drawn with its lintel (the DoorNumber texture again if it has no WallId)
     internal void SetLintelPost(DoorObject door, int along, bool flip)
     {
         if (render.HitStories == 1)
@@ -339,12 +339,12 @@ internal sealed class WallHits(
     }
 
     /// <summary>
-    /// Notes the lintel of the door the trace is passing through, meeting its plane at
-    /// (planex, planey), in the column's queue. Nothing to do for a one story door.
+    /// Notes the lintel of the DoorNumber the trace is passing through, meeting its plane at
+    /// (planex, planey), in the column's queue. Nothing to do for a one story DoorNumber.
     /// </summary>
     internal void NoteLintel(DoorObject door, int planex, int planey)
     {
-        int stories = map.WallStories(door.tilex, door.tiley);
+        int stories = map.WallStories(door.TileX, door.TileY);
         if (stories == 1)
             return;
 
@@ -353,22 +353,22 @@ internal sealed class WallHits(
             return;                     // set into nothing: leave the view above it open
 
         short height = posts.HeightAt(planex, planey);
-        int ofs = door.vertical
+        int ofs = door.Vertical
             ? WallPosts.LintelColumn(planey, (render.XTileStep == -1) != mirrored)
             : WallPosts.LintelColumn(planex, (render.YTileStep == 1) != mirrored);
         posts.QueuePost(height, 1, stories, texture, ofs, texture, ofs, light: posts.WallLight(planex, planey));
     }
 
     /// <summary>
-    /// When the view starts inside a door tile, the trace never enters it, so check whether this
-    /// column meets the door plane ahead of the view point.
+    /// When the view starts inside a DoorNumber tile, the trace never enters it, so check whether this
+    /// column meets the DoorNumber plane ahead of the view point.
     /// </summary>
     internal void NoteFocalLintel(int xstep, int ystep)
     {
-        var door = doors.doorobjlist[map.tilemap[render.FocalTx, render.FocalTy] & ~GameConstants.BitDoor];
+        var door = doors.DoorObjList[map.tilemap[render.FocalTx, render.FocalTy] & ~GameConstants.BitDoor];
         const int HALFTILE = (int)MapConstants.TileGlobal / 2;
 
-        if (door.vertical)
+        if (door.Vertical)
         {
             int planex = (render.FocalTx << MapConstants.TileShift) + HALFTILE;
             int dist = (planex - render.ViewX) * render.XTileStep;
@@ -397,7 +397,7 @@ internal sealed class WallHits(
     =
     = A diagonal tile (MapManager.wallshape) is solid on the two edges at its named corner, with
     = a 45 degree face between the other two corners. A trace that enters through a solid edge
-    = hits it like a square wall. One that enters through an open edge either meets the face or
+    = hits it like a square WallId. One that enters through an open edge either meets the face or
     = crosses the open half and carries on to the next tile.
     =
     ====================
@@ -415,7 +415,7 @@ internal sealed class WallHits(
 
     /// <summary>
     /// Where a trace from tile-local (eu, ev), heading (du, dv), meets the diagonal face of the
-    /// tile at (tilex, tiley). All in 16.16 fixed point. On a hit, sets XIntercept/YIntercept and
+    /// tile at (TileX, TileY). All in 16.16 fixed point. On a hit, sets XIntercept/YIntercept and
     /// DiagHitU; false means it misses the face within the tile (it crosses the open half).
     /// </summary>
     internal bool TraceDiagonal(WallShape shape, int tilex, int tiley, long eu, long ev, long du, long dv)

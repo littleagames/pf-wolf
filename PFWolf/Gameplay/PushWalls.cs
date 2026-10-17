@@ -4,7 +4,7 @@ namespace PFWolf.Gameplay;
 
 /// <summary>
 /// A pushwall on the move. Any number can move at once, each with its own progress; a
-/// moving wall's two tiles (the one it's leaving and the one ahead) are bare GameConstants.BitWall.
+/// moving WallId's two tiles (the one it's leaving and the one ahead) are bare GameConstants.BitWall.
 /// </summary>
 internal sealed class MovingPushWall
 {
@@ -12,7 +12,7 @@ internal sealed class MovingPushWall
     public ushort Pos;                  // amount it has moved into the tile ahead (0-63)
     public ushort X, Y;                 // the tile it's leaving
     public ControlDir Dir;
-    public ushort Tile;                 // its wall id
+    public ushort Tile;                 // its WallId id
 
     // Who pushed it: the tiles it leaves take their area (not saved: a loaded game's
     // walls go by the first player, the only one a save has)
@@ -63,36 +63,36 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
     // Tiles a pushwall slides: read as it moves, so a loaded game's walls go as far as the game says
     internal int Distance => Math.Clamp(distance?.Invoke() ?? 2, 1, 255);
 
-    // The pushwalls on the move, in the order they were pushed
-    internal readonly List<MovingPushWall> pushwalls = [];
+    // The MovingWalls on the move, in the order they were pushed
+    internal readonly List<MovingPushWall> MovingWalls = [];
 
     // The moving pushwall the renderer is tracing, picked by SelectPushWall as a trace enters
     // one of its tiles
-    internal MovingPushWall pwall = new();
+    internal MovingPushWall PWall = new();
 
-    internal static readonly int[][] dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    internal static readonly int[][] Dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
     /// <summary>The moving pushwall on a tile, the one it's leaving or the one ahead, or null.</summary>
     internal MovingPushWall? PushWallAt(int x, int y)
     {
-        foreach (var wall in pushwalls)
+        foreach (var wall in MovingWalls)
         {
             if ((wall.X == x && wall.Y == y)
-                || (wall.X + dirs[(int)wall.Dir][0] == x && wall.Y + dirs[(int)wall.Dir][1] == y))
+                || (wall.X + Dirs[(int)wall.Dir][0] == x && wall.Y + Dirs[(int)wall.Dir][1] == y))
                 return wall;
         }
         return null;
     }
 
-    /// <summary>Points pwall at the moving pushwall on a tile; keeps the last one if there's none.</summary>
+    /// <summary>Points PWall at the moving pushwall on a tile; keeps the last one if there's none.</summary>
     internal void SelectPushWall(int x, int y)
     {
         if (PushWallAt(x, y) is { } wall)
-            pwall = wall;
+            PWall = wall;
     }
 
     /// <summary>Stops every pushwall where it is (a new level, or the player starting over).</summary>
-    internal void ClearPushWalls() => pushwalls.Clear();
+    internal void ClearPushWalls() => MovingWalls.Clear();
 
     Entities.Actors.PlayerPawn PusherOf(MovingPushWall wall) =>
         wall.Pusher is { } p && ReferenceEquals(p.State.Pawn, p) ? p : map.Players.First();
@@ -110,22 +110,22 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
     ===============
     */
     // A_PushWall, the mapdefs trigger action (registered in RegisterActorActions): true if the
-    // wall started moving, which is when a secret trigger counts as found. moveSound plays as it
+    // WallId started moving, which is when a secret trigger counts as found. moveSound plays as it
     // starts, blockedSound when something's in the way (either null for none).
     internal bool PushWall(int checkx, int checky, ControlDir dir, string? moveSound = null, string? blockedSound = null)
     {
         int oldtile, dx, dy;
 
-        // demos keep the original game's one wall at a time, so they play out the same
-        if (pushwalls.Count > 0 && (session.demoplayback || session.demorecord))
+        // demos keep the original game's one WallId at a time, so they play out the same
+        if (MovingWalls.Count > 0 && (session.DemoPlayback || session.DemoRecord))
             return false;
 
         oldtile = map.tilemap[checkx, checky];
-        if (oldtile == 0 || oldtile == GameConstants.BitWall)    // nothing there, or a wall already on the move
+        if (oldtile == 0 || oldtile == GameConstants.BitWall)    // nothing there, or a WallId already on the move
             return false;
 
-        dx = dirs[(int)dir][0];
-        dy = dirs[(int)dir][1];
+        dx = Dirs[(int)dir][0];
+        dy = Dirs[(int)dir][1];
 
         if (map.actorat[checkx + dx, checky + dy] != null
             || map.EnemiesAt(checkx + dx, checky + dy).Any())
@@ -138,7 +138,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
         map.tilemap[checkx + dx, checky + dy] = (ushort)oldtile;
         map.actorat[checkx + dx, checky + dy] = new Wall(oldtile);
 
-        pushwalls.Add(new MovingPushWall
+        MovingWalls.Add(new MovingPushWall
         {
             X = (ushort)checkx,
             Y = (ushort)checky,
@@ -146,12 +146,12 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             State = 1,
             Pos = 0,
             Tile = (ushort)oldtile,
-            Pusher = session.player,
+            Pusher = session.Player,
         });
         map.tilemap[checkx, checky] = GameConstants.BitWall;
         map.tilemap[checkx + dx, checky + dy] = GameConstants.BitWall;
         map.SetMapSpot(checkx, checky, 1,  0);   // remove P tile info
-        map.SetMapSpot(checkx, checky, 0, (ushort)map.MapSpot(session.player.TileX, session.player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
+        map.SetMapSpot(checkx, checky, 0, (ushort)map.MapSpot(session.Player.TileX, session.Player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
         if (!string.IsNullOrEmpty(moveSound))
             audio.Play(moveSound);
@@ -169,12 +169,12 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
     internal void MovePWalls()
     {
         // in the order they were pushed, so every machine in a net game moves them the same
-        for (int i = 0; i < pushwalls.Count;)
+        for (int i = 0; i < MovingWalls.Count;)
         {
-            if (MovePWall(pushwalls[i]))
+            if (MovePWall(MovingWalls[i]))
                 i++;
             else
-                pushwalls.RemoveAt(i);
+                MovingWalls.RemoveAt(i);
         }
     }
 
@@ -185,7 +185,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
 
         oldblock = wall.State / 128;
 
-        wall.State += (ushort)session.tics;
+        wall.State += (ushort)session.Tics;
 
         if (wall.State / 128 != oldblock)
         {
@@ -199,7 +199,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             map.actorat[wall.X, wall.Y] = null;
             map.SetMapSpot(wall.X, wall.Y, 0, (ushort)(PusherOf(wall).AreaNumber + map.Floors.AreaTile));    // TODO: this is unnecessary, and makes a mess of mapsegs
 
-            int dx = dirs[(byte)wall.Dir][0], dy = dirs[(byte)wall.Dir][1];
+            int dx = Dirs[(byte)wall.Dir][0], dy = Dirs[(byte)wall.Dir][1];
             //
             // see if it should be pushed farther
             //
@@ -216,7 +216,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             }
             else
             {
-                // the wall's height, tag and patch go with it, on the tile wall.X/wall.Y name
+                // the WallId's height, tag and patch go with it, on the tile WallId.X/WallId.Y name
                 map.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MovePatch(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
@@ -225,7 +225,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 int aheadx = wall.X + dx, aheady = wall.Y + dy;
 
                 // stopped by anything in the way, a player included (any of them), or another
-                // moving wall's tile
+                // moving WallId's tile
                 if (map.actorat[aheadx, aheady] != null
                     || map.tilemap[aheadx, aheady] == GameConstants.BitWall
                     || map.EnemiesAt(aheadx, aheady).Any()

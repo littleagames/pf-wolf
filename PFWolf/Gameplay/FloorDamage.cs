@@ -23,7 +23,7 @@ internal sealed class FloorDamage(MapManager map, GameSession session, FloorDama
     /// <summary>Each tic, after everyone's moved</summary>
     internal void Tick()
     {
-        int now = session.gamestate.TimeCount;
+        int now = session.GameState.TimeCount;
         int before = now < lastTime ? now : lastTime;     // a new level's clock starts over
         lastTime = now;
         var flats = hooks.Flats();
@@ -32,7 +32,7 @@ internal sealed class FloorDamage(MapManager map, GameSession session, FloorDama
 
         foreach (var pawn in map.Players.ToList())
         {
-            if (pawn.State.health > 0 && DamageAt(flats, pawn.TileX, pawn.TileY, before, now) is { } damage)
+            if (pawn.State.Health > 0 && DamageAt(flats, pawn.TileX, pawn.TileY, before, now) is { } damage)
                 hooks.HurtPlayer(pawn, damage.Amount);
         }
 

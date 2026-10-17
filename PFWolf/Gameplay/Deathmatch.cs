@@ -10,7 +10,7 @@ namespace PFWolf.Gameplay;
 /// </summary>
 internal sealed record NetRules(bool Monsters, int ScoreLimit, int TimeLimitMinutes, bool ItemRespawn);
 
-// An item taken, to come back: its class, where, and when (gamestate.TimeCount)
+// An item taken, to come back: its class, where, and when (GameState.TimeCount)
 internal sealed record ItemRespawn(string ClassName, int TileX, int TileY, int At);
 
 /// <summary>What a deathmatch needs from the game</summary>
@@ -66,7 +66,7 @@ internal interface IMatchObjective
 /// Players against each other. Everyone comes in (and back) at a random spot: one of their
 /// team's starts in a team game (mapdefs player-starts with `team:`), else one of the map's
 /// deathmatch starts (`deathmatch: true`), else any open floor, as far from rivals as can be
-/// had. Each carries every key, so no door is shut to anyone (but in Heist). A weapon on the
+/// had. Each carries every key, so no DoorNumber is shut to anyone (but in Heist). A weapon on the
 /// floor stays there for everyone without it yet; anything else taken comes back after
 /// ItemRespawnTics (with item-respawn on). Killing another player is a frag (killing yourself
 /// takes one away). The first to the score limit, or whoever leads when the time runs out,
@@ -86,40 +86,40 @@ internal sealed class Deathmatch(
     internal static readonly NetRules DefaultRules = new(Monsters: false, ScoreLimit: 20, TimeLimitMinutes: 0, ItemRespawn: true);
 
     /// <summary>The rules of the match being played</summary>
-    internal NetRules netrules = DefaultRules;
+    internal NetRules NetRules = DefaultRules;
 
     /// <summary>How long a taken item takes to come back, in a deathmatch (tics)</summary>
     internal const int ItemRespawnTics = 30 * 70;
 
     /// <summary>The match has been won (the score limit) or run out of time: the level ends, for the scoreboard</summary>
-    internal bool matchover;
+    internal bool MatchOver;
 
     /// <summary>Each team's score this match (red's first)</summary>
-    internal readonly int[] teamscores = new int[2];
+    internal readonly int[] TeamScores = new int[2];
 
-    /// <summary>The modes' objectives (flags, loot, points, waves): the one for the mode being played runs</summary>
-    internal readonly List<IMatchObjective> objectives = [];
+    /// <summary>The modes' MatchObjectives (flags, loot, points, waves): the one for the mode being played runs</summary>
+    internal readonly List<IMatchObjective> MatchObjectives = [];
 
     /// <summary>The mode being played's objective, if it has one</summary>
-    internal IMatchObjective? Objective => objectives.FirstOrDefault(o => o.Mode == session.gamemode);
+    internal IMatchObjective? Objective => MatchObjectives.FirstOrDefault(o => o.Mode == session.GameMode);
 
     // Items taken, to come back
-    internal readonly List<ItemRespawn> itemrespawns = [];
+    internal readonly List<ItemRespawn> ItemRespawns = [];
 
     /// <summary>A new match: no score yet</summary>
     internal void NewMatch()
     {
-        matchover = false;
-        Array.Clear(teamscores);
-        foreach (var p in session.players)
+        MatchOver = false;
+        Array.Clear(TeamScores);
+        foreach (var p in session.Players)
             p.Frags = p.Objective = 0;
     }
 
     /// <summary>A new level of a deathmatch: nothing waiting to come back, and its enemies only with monsters on</summary>
     internal void DeathmatchLevelSetup()
     {
-        itemrespawns.Clear();
-        map.NoMonsters = (session.IsVersus || session.gamemode == GameMode.Horde) && !netrules.Monsters;
+        ItemRespawns.Clear();
+        map.NoMonsters = (session.IsVersus || session.GameMode == GameMode.Horde) && !NetRules.Monsters;
     }
 
     /// <summary>Once the level's things are in: the objective's own setup</summary>
@@ -135,7 +135,7 @@ internal sealed class Deathmatch(
     internal (int x, int y, int angle) DeathmatchSpot(PlayerPawn self)
     {
         var others = map.Players
-            .Where(pawn => pawn != self && pawn.Active == ActiveType.Yes && pawn.State.health > 0
+            .Where(pawn => pawn != self && pawn.Active == ActiveType.Yes && pawn.State.Health > 0
                 && (pawn.State.Team != self.State.Team || !session.IsTeamGame))
             .ToList();
         int NearestOther(int x, int y) =>
@@ -174,16 +174,16 @@ internal sealed class Deathmatch(
         if (far.Count > 0)
             spots = far;
 
-        var random = session.random;
+        var random = session.Random;
         var spot = spots[((random.RndT() << 8) | random.RndT()) % spots.Count];
         int angle = spot.angle >= 0 ? spot.angle : (random.RndT() & 3) * 90;     // a random way, where the spot says none
         return (spot.x, spot.y, angle);
     }
 
-    /// <summary>The acting player carries every key (in a deathmatch, no door is shut to anyone)</summary>
+    /// <summary>The acting player carries every key (in a deathmatch, no DoorNumber is shut to anyone)</summary>
     internal void GiveDeathmatchKeys()
     {
-        if (!session.gamemode.GivesAllKeys())
+        if (!session.GameMode.GivesAllKeys())
             return;
         hooks.GiveAllKeys();      // (GameHost.ConsoleCommands.cs)
         statusBar.DrawKeys();
@@ -200,30 +200,30 @@ internal sealed class Deathmatch(
 
     /// <summary>An item has just been taken: it comes back where it was after a while</summary>
     internal void QueueItemRespawn(Inventory item) =>
-        itemrespawns.Add(new ItemRespawn(item.Name, (int)item.Position.X, (int)item.Position.Y, session.gamestate.TimeCount + ItemRespawnTics));
+        ItemRespawns.Add(new ItemRespawn(item.Name, (int)item.Position.X, (int)item.Position.Y, session.GameState.TimeCount + ItemRespawnTics));
 
     /// <summary>Each frame of a deathmatch: items coming back, the objective, and the time limit</summary>
     internal void TickDeathmatch()
     {
-        var gamestate = session.gamestate;
-        for (int i = 0; i < itemrespawns.Count; i++)
+        var gamestate = session.GameState;
+        for (int i = 0; i < ItemRespawns.Count; i++)
         {
-            var item = itemrespawns[i];
+            var item = ItemRespawns[i];
             if (gamestate.TimeCount < item.At)
                 continue;
-            itemrespawns.RemoveAt(i--);
+            ItemRespawns.RemoveAt(i--);
             map.SpawnThing(item.TileX, item.TileY, item.ClassName);
         }
 
         Objective?.Tick();
 
-        if (netrules.TimeLimitMinutes > 0 && gamestate.TimeCount >= netrules.TimeLimitMinutes * 60 * 70)
+        if (NetRules.TimeLimitMinutes > 0 && gamestate.TimeCount >= NetRules.TimeLimitMinutes * 60 * 70)
             EndMatch();
     }
 
     /// <summary>Time left in the match (tics), or null with no time limit</summary>
     internal int? TimeLeft =>
-        netrules.TimeLimitMinutes > 0 ? Math.Max(0, netrules.TimeLimitMinutes * 60 * 70 - session.gamestate.TimeCount) : null;
+        NetRules.TimeLimitMinutes > 0 ? Math.Max(0, NetRules.TimeLimitMinutes * 60 * 70 - session.GameState.TimeCount) : null;
 
     /// <summary>
     /// A player has died in a deathmatch, killed by <paramref name="killer"/>: a frag for
@@ -233,7 +233,7 @@ internal sealed class Deathmatch(
     internal void CountFrag(Entities.PlayerState victim, Entities.Actors.Actor? killer)
     {
         var by = killer?.Shooter ?? killer;
-        bool tdm = session.gamemode == GameMode.TeamDeathmatch;
+        bool tdm = session.GameMode == GameMode.TeamDeathmatch;
         if (by is PlayerPawn rival && rival.State != victim)
         {
             if (!session.AreRivals(rival.State, victim))
@@ -243,7 +243,7 @@ internal sealed class Deathmatch(
                 statusBar.DrawScore();
             if (tdm)
                 AddTeamScore(rival.State.Team, 1);
-            else if (session.gamemode == GameMode.Deathmatch && netrules.ScoreLimit > 0 && rival.State.Frags >= netrules.ScoreLimit)
+            else if (session.GameMode == GameMode.Deathmatch && NetRules.ScoreLimit > 0 && rival.State.Frags >= NetRules.ScoreLimit)
                 EndMatch();
         }
         else if (by is PlayerPawn self && self.State == victim)
@@ -270,14 +270,14 @@ internal sealed class Deathmatch(
     /// </summary>
     internal void AddTeamScore(int team, int points)
     {
-        if (team is not (0 or 1) || matchover)
+        if (team is not (0 or 1) || MatchOver)
             return;
-        teamscores[team] += points;
+        TeamScores[team] += points;
         statusBar.DrawScore();
-        int limit = netrules.ScoreLimit;
+        int limit = NetRules.ScoreLimit;
         if (limit <= 0)
             return;
-        if (session.gamemode == GameMode.Heist ? teamscores[team] - teamscores[1 - team] >= limit : teamscores[team] >= limit)
+        if (session.GameMode == GameMode.Heist ? TeamScores[team] - TeamScores[1 - team] >= limit : TeamScores[team] >= limit)
             EndMatch();
     }
 
@@ -289,34 +289,34 @@ internal sealed class Deathmatch(
     {
         var parts = new List<string>();
         if (session.IsTeamGame)
-            parts.Add($"Red {teamscores[0]} - {teamscores[1]} Blue");
-        else if (session.gamemode == GameMode.Deathmatch)
-            parts.Add($"Frags {session.localplayer.Frags}" + (netrules.ScoreLimit > 0 ? $"/{netrules.ScoreLimit}" : ""));
-        if (session.IsTeamGame && netrules.ScoreLimit > 0)
-            parts.Add(session.gamemode == GameMode.Heist ? $"lead by {netrules.ScoreLimit}" : $"to {netrules.ScoreLimit}");
-        if (TimeLeft is { } left && session.gamemode != GameMode.Horde)
+            parts.Add($"Red {TeamScores[0]} - {TeamScores[1]} Blue");
+        else if (session.GameMode == GameMode.Deathmatch)
+            parts.Add($"Frags {session.LocalPlayer.Frags}" + (NetRules.ScoreLimit > 0 ? $"/{NetRules.ScoreLimit}" : ""));
+        if (session.IsTeamGame && NetRules.ScoreLimit > 0)
+            parts.Add(session.GameMode == GameMode.Heist ? $"lead by {NetRules.ScoreLimit}" : $"to {NetRules.ScoreLimit}");
+        if (TimeLeft is { } left && session.GameMode != GameMode.Horde)
             parts.Add($"{left / 70 / 60}:{left / 70 % 60:00}");
         return (string.Join("   ", parts), Objective?.StatusLine());
     }
 
     /// <summary>The team ahead, or -1 for a draw</summary>
-    internal int LeadingTeam => teamscores[0] == teamscores[1] ? -1 : teamscores[0] > teamscores[1] ? 0 : 1;
+    internal int LeadingTeam => TeamScores[0] == TeamScores[1] ? -1 : TeamScores[0] > TeamScores[1] ? 0 : 1;
 
     /// <summary>What the status bar's score box shows for the acting player: their frags, their team's score, or their score</summary>
-    internal int ScoreShown(Entities.PlayerState p) => session.gamemode switch
+    internal int ScoreShown(Entities.PlayerState p) => session.GameMode switch
     {
         GameMode.Deathmatch => p.Frags,
-        _ when session.IsTeamGame && p.Team is 0 or 1 => teamscores[p.Team],
-        _ => p.score,
+        _ when session.IsTeamGame && p.Team is 0 or 1 => TeamScores[p.Team],
+        _ => p.Score,
     };
 
     /// <summary>The deathmatch is over: the level ends, and the scoreboard shows who won</summary>
     internal void EndMatch()
     {
-        if (matchover)
+        if (MatchOver)
             return;
-        matchover = true;
-        session.playstate = PlayState.Abort;
+        MatchOver = true;
+        session.PlayState = PlayState.Abort;
     }
 
     /// <summary>The team with fewer players in it (red when even), for someone joining a team game</summary>

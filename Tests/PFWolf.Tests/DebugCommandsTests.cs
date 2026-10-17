@@ -32,7 +32,7 @@ public class DebugCommandsTests
         _console.Execute("slowmo 5");
         _console.Execute("vbls 2");
 
-        Assert.That((_session.singlestep, _session.extravbls), Is.EqualTo(((byte)5, 2)));
+        Assert.That((_session.SingleStep, _session.ExtraVbls), Is.EqualTo(((byte)5, 2)));
         Assert.That(_console.Scrollback[^1], Is.EqualTo("vbls is 2"));
     }
 

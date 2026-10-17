@@ -9,7 +9,7 @@ namespace PFWolf.Rendering;
 /// light grid around it (lighting.CellAdd), most at the actor and none at its radius. It spreads from
 /// the actor's tile through open floor and open doors, and lights the tiles it reaches that
 /// a straight line from it can see, so it doesn't shine through walls or round corners: a
-/// closed door or a diagonal wall is lit, but the light goes no further. Light can't make
+/// closed DoorNumber or a diagonal WallId is lit, but the light goes no further. Light can't make
 /// anything brighter than full, so actor lights only show where the level is darker than
 /// that, and aren't cast at all on a level with no lighting.shading.
 ///
@@ -30,7 +30,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     const int HalfCell = 1 << (CellGlobalShift - 1);
 
     // The weapon in hand (the acting player's), and the player it's with
-    Entities.Actors.Actor? WeaponSprite => session.playerstate.WeaponSprite;
+    Entities.Actors.Actor? WeaponSprite => session.PlayerState.WeaponSprite;
     readonly Dictionary<string, ActorLightInfo?> lightclasses = new(StringComparer.OrdinalIgnoreCase);
 
     const int TintSteps = 4;
@@ -265,7 +265,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             var (intensity, radius, color) = CurrentLight(actor);
             // the weapon in hand isn't placed in the world: it's where the player is
             bool inhand = ReferenceEquals(actor, WeaponSprite);
-            CastLight(inhand ? session.player.X : actor.X, inhand ? session.player.Y : actor.Y, intensity, radius, ColorTints(color));
+            CastLight(inhand ? session.Player.X : actor.X, inhand ? session.Player.Y : actor.Y, intensity, radius, ColorTints(color));
         }
         HasLights = casttiles.Count > 0;
     }
@@ -338,20 +338,20 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         return true;
     }
 
-    // Light can light a tile: open floor, a door or a diagonal wall (its open half), not a solid wall
+    // Light can light a tile: open floor, a DoorNumber or a diagonal WallId (its open half), not a solid WallId
     internal bool LightEnters(int x, int y)
     {
         int tile = map.tilemap[x, y];
         return tile == 0 || (tile & GameConstants.BitDoor) != 0 || map.wallshape[x, y] != WallShape.Square;
     }
 
-    // Light carries on through a tile: open floor, or a door that isn't shut
+    // Light carries on through a tile: open floor, or a DoorNumber that isn't shut
     internal bool LightPasses(int x, int y)
     {
         int tile = map.tilemap[x, y];
         if (tile == 0)
             return true;
-        return (tile & GameConstants.BitDoor) != 0 && doors.doorobjlist[tile & ~GameConstants.BitDoor].action != DoorAction.Closed;
+        return (tile & GameConstants.BitDoor) != 0 && doors.DoorObjList[tile & ~GameConstants.BitDoor].Action != DoorAction.Closed;
     }
 
     // Whether any of a tile is within r (global units) of (lx, ly)

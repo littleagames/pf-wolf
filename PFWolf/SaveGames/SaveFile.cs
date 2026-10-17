@@ -34,26 +34,26 @@ internal static class SaveFile
     // Still in development, so a layout change bumps SaveVersion and older saves are refused
     // rather than converted. 6: the header (SaveInfo) and thumbnail ahead of the body, no slots.
     // 7: the mods loaded when it was saved, at the end of the header.
-    // 8: a fourth map plane, wall heights moved from plane 2 to it (plane 2 is flats).
+    // 8: a fourth map plane, WallId heights moved from plane 2 to it (plane 2 is flats).
     // 9: the area count (mapdefs floors) ahead of the area tables.
-    // 10: the player class, after the skill in gamestate.
-    // 11: armor points and percent, after health in gamestate.
-    // 12: a fifth map plane (tags), each actor's tag after its tile, and whether each door is
+    // 10: the player class, after the skill in GameState.
+    // 11: armor points and percent, after health in GameState.
+    // 12: a fifth map plane (tags), each actor's tag after its tile, and whether each DoorNumber is
     //     held open by a switch.
     // 13: a sixth map plane (light zones).
     // 14: the light zones' lights, tints, fades and effects, at the end.
     // 15: each actor's light as A_SetLight / A_LightOff left it, after its runtime flags.
-    // 16: whether each door has been unlocked (doors.yaml takes-key), after held.
+    // 16: whether each DoorNumber has been unlocked (doors.yaml takes-key), after held.
     // 17: actors' Temp3, Ammo, SeekX/Y and TryDir; the weapon charge.
     // 18: the light zones before the weapon; the hub state (levels kept, floors visited) at the end.
     // 19: each actor's carried drops, death link and cloak (mapdefs floors actor-codes), after its light.
-    // 20: a count of moving pushwalls and each one's state, in place of the one pushwall.
+    // 20: a count of moving MovingWalls and each one's state, in place of the one pushwall.
     // 21: after the actors, when tiles last changed (animation starts) and A_ChangeTexture's swaps.
     // 22: each actor's faction, after its cloak; after the actors, each one's target and shooter.
     // 23: each actor's own translation, after its faction.
-    // 24: each tile's wall patch, at the end of the level (plane 0 is saved without them).
-    // 25: tilemap entries and moving pushwalls' wall ids are 16 bits (wall ids up to 255, WallShift 8).
-    // 26: the level objectives (done and total of each), after the wall patches.
+    // 24: each tile's WallId patch, at the end of the level (plane 0 is saved without them).
+    // 25: tilemap entries and moving MovingWalls' WallId ids are 16 bits (WallId ids up to 255, WallShift 8).
+    // 26: the level MatchObjectives (done and total of each), after the WallId patches.
     internal const int SaveVersion = 26;
     private const int OldestLoadableSaveVersion = SaveVersion;
 

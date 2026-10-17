@@ -22,40 +22,40 @@ internal sealed class WeaponInHand(
     internal const string WeaponReadyState = "Ready";
 
     // The weapon in hand's actor is the acting player's
-    Entities.Actors.Actor? weaponSprite
+    Entities.Actors.Actor? WeaponSprite
     {
-        get => session.playerstate.WeaponSprite;
-        set => session.playerstate.WeaponSprite = value;
+        get => session.PlayerState.WeaponSprite;
+        set => session.PlayerState.WeaponSprite = value;
     }
 
     /// <summary>
-    /// Makes the weapon sprite match <c>playerstate.weapon</c>: a new weapon in hand starts on its
+    /// Makes the weapon sprite match <c>PlayerState.weapon</c>: a new weapon in hand starts on its
     /// Ready state (dropping whatever the old one was doing); no weapon means no sprite.
     /// </summary>
     internal Entities.Actors.Actor? SyncWeaponSprite()
     {
-        var playerstate = session.playerstate;
-        if (playerstate.weapon == null)
-            return weaponSprite = null;
+        var playerstate = session.PlayerState;
+        if (playerstate.Weapon == null)
+            return WeaponSprite = null;
 
-        if (weaponSprite != null && string.Equals(weaponSprite.Name, playerstate.weapon, StringComparison.OrdinalIgnoreCase))
-            return weaponSprite;
+        if (WeaponSprite != null && string.Equals(WeaponSprite.Name, playerstate.Weapon, StringComparison.OrdinalIgnoreCase))
+            return WeaponSprite;
 
-        var old = weaponSprite;
-        weaponSprite = inventory.CreateActor(playerstate.weapon);
-        if (weaponSprite == null)
+        var old = WeaponSprite;
+        WeaponSprite = inventory.CreateActor(playerstate.Weapon);
+        if (WeaponSprite == null)
             return null;
 
         // A weapon picked up mid-attack takes over the attack where it had got to, as vanilla's
         // T_Attack carried on through the new weapon's attackinfo; otherwise it starts Ready
-        if (old != null && AttackStep(old) is { } step && AttackFrame(weaponSprite, step) is { } frame)
+        if (old != null && AttackStep(old) is { } step && AttackFrame(WeaponSprite, step) is { } frame)
         {
-            weaponSprite.CurrentState = frame;
-            weaponSprite.TicCount = old.TicCount;
+            WeaponSprite.CurrentState = frame;
+            WeaponSprite.TicCount = old.TicCount;
         }
-        else if (weaponSprite.ResolvedStates.TryGetValue(WeaponReadyState, out var ready))
-            weaponSprite.ArmState(ready);
-        return weaponSprite;
+        else if (WeaponSprite.ResolvedStates.TryGetValue(WeaponReadyState, out var ready))
+            WeaponSprite.ArmState(ready);
+        return WeaponSprite;
     }
 
     /// <summary>How many timed frames into its attack (from Fire's first) a weapon is, or null when it isn't attacking</summary>
@@ -106,11 +106,11 @@ internal sealed class WeaponInHand(
 
         // Fire cuts a reload short once a round is in (the original Midnight Assault's T_Reload),
         // so a shotgun loading shell by shell can shoot between them
-        if (IsReloading(sprite) && weapons.IsLoaded(session.playerstate.weapon)
-            && session.playerinput.IsFreshPress(ButtonType.Attack))
+        if (IsReloading(sprite) && weapons.IsLoaded(session.PlayerState.Weapon)
+            && session.PlayerInput.IsFreshPress(ButtonType.Attack))
             StartState(sprite, "Fire", ButtonType.Attack);
 
-        map.DoActor(sprite, session.tics);
+        map.DoActor(sprite, session.Tics);
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ internal sealed class WeaponInHand(
     // comes a tic early); the button that started it is held until it's let go
     void StartState(Entities.Actors.Actor weapon, string state, ButtonType button)
     {
-        session.playerinput.SetHeld(button, true);
+        session.PlayerInput.SetHeld(button, true);
         weapon.TicCount = 0;
         JumpWeaponState(weapon, state);
     }
@@ -166,11 +166,11 @@ internal sealed class WeaponInHand(
     /// </summary>
     internal void WeaponReady(Entities.Actors.Actor weapon)
     {
-        var playerstate = session.playerstate;
-        var inHand = weapons.CanFire(playerstate.chosenweapon) ? playerstate.chosenweapon : weapons.BestWeapon(canFire: true);
-        if (inHand != null && inHand != playerstate.weapon)
+        var playerstate = session.PlayerState;
+        var inHand = weapons.CanFire(playerstate.ChosenWeapon) ? playerstate.ChosenWeapon : weapons.BestWeapon(canFire: true);
+        if (inHand != null && inHand != playerstate.Weapon)
         {
-            playerstate.weapon = inHand;
+            playerstate.Weapon = inHand;
             weapons.DrawWeapon();
 
             // A press now fires the weapon taken up (as vanilla, where the knife came out as the
@@ -180,15 +180,15 @@ internal sealed class WeaponInHand(
             weapon = taken;
         }
 
-        if (weapons.CanReload(playerstate.weapon) && weapon.ResolvedStates.ContainsKey(ReloadState)
-            && (!weapons.IsLoaded(playerstate.weapon) || session.playerinput.IsFreshPress(ButtonType.Reload)))
+        if (weapons.CanReload(playerstate.Weapon) && weapon.ResolvedStates.ContainsKey(ReloadState)
+            && (!weapons.IsLoaded(playerstate.Weapon) || session.PlayerInput.IsFreshPress(ButtonType.Reload)))
         {
             StartState(weapon, ReloadState, ButtonType.Reload);
             return;
         }
 
         // Zoomed in through a scope, a weapon with a ZoomFire state fires that (Gameplay/WeaponZoom.cs)
-        if (session.playerinput.IsFreshPress(ButtonType.Attack))
+        if (session.PlayerInput.IsFreshPress(ButtonType.Attack))
             StartState(weapon, playerstate.ZoomMode == ZoomMode.Zoomed && weapon.ResolvedStates.ContainsKey("ZoomFire") ? "ZoomFire" : "Fire",
                 ButtonType.Attack);
     }
@@ -202,7 +202,7 @@ internal sealed class WeaponInHand(
     {
         int? rounds = args.Length > 0 && int.TryParse(args[0], out var n) && n > 0 ? n : null;
         weapons.Reload(rounds);
-        if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) && weapons.CanReload(session.playerstate.weapon))
+        if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) && weapons.CanReload(session.PlayerState.Weapon))
             JumpWeaponState(weapon, args[1]);
     }
 
@@ -214,11 +214,11 @@ internal sealed class WeaponInHand(
     /// </summary>
     internal void HoldCharge(Entities.Actors.Actor weapon, string[] args)
     {
-        if (!session.playerinput.IsPressed(ButtonType.Attack) || args.Length == 0)
+        if (!session.PlayerInput.IsPressed(ButtonType.Attack) || args.Length == 0)
             return;
         int max = args.Length > 1 && int.TryParse(args[1], out var m) ? Math.Clamp(m, 1, 100) : 100;
-        var playerstate = session.playerstate;
-        playerstate.WeaponPower = Math.Min(playerstate.WeaponPower + (int)session.tics, max);
+        var playerstate = session.PlayerState;
+        playerstate.WeaponPower = Math.Min(playerstate.WeaponPower + (int)session.Tics, max);
         JumpWeaponState(weapon, args[0]);
     }
 
@@ -229,7 +229,7 @@ internal sealed class WeaponInHand(
     /// </summary>
     internal void FireBullet(Entities.Actors.Actor weapon, string[] args)
     {
-        if (!weapons.IsLoaded(session.playerstate.weapon) || !weapons.TakeCharge())
+        if (!weapons.IsLoaded(session.PlayerState.Weapon) || !weapons.TakeCharge())
             return;
         int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
         int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
@@ -245,21 +245,21 @@ internal sealed class WeaponInHand(
     /// </summary>
     internal void GunAttack(Entities.Actors.Actor weapon, string[] args)
     {
-        if (!weapons.IsLoaded(session.playerstate.weapon) || !weapons.TakeCharge())
+        if (!weapons.IsLoaded(session.PlayerState.Weapon) || !weapons.TakeCharge())
             return;
         int Divisor(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var d) && d > 0 ? d : fallback;
-        attacks.GunAttack(session.player, Divisor(0, 4), Divisor(1, 6), Divisor(2, 6));
+        attacks.GunAttack(session.Player, Divisor(0, 4), Divisor(1, 6), Divisor(2, 6));
         weapons.UseAmmo();
     }
 
     // A_CustomPunch(damage, ...): the arguments aren't read yet; KnifeAttack deals vanilla's
     // US_RndT() >> 4 (0-15), which is what weapons.yaml asks for.
-    internal void CustomPunch(Entities.Actors.Actor weapon) => attacks.KnifeAttack(session.player);
+    internal void CustomPunch(Entities.Actors.Actor weapon) => attacks.KnifeAttack(session.Player);
 
     /// <summary>Fire still held and a round ready: back to Hold (or Fire, for a weapon without one).</summary>
     internal void ReFire(Entities.Actors.Actor weapon)
     {
-        if (!session.playerinput.IsPressed(ButtonType.Attack) || !weapons.IsLoaded(session.playerstate.weapon))
+        if (!session.PlayerInput.IsPressed(ButtonType.Attack) || !weapons.IsLoaded(session.PlayerState.Weapon))
             return;
         if (!JumpWeaponState(weapon, "Hold"))
             JumpWeaponState(weapon, "Fire");

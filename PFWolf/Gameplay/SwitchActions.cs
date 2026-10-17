@@ -34,24 +34,24 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         // A_ToggleDoor(["hold"]): opens the tagged doors that are shut or shutting, closes the rest
         MapTriggerRegistry.Register("A_ToggleDoor", (trigger, args) => ForTaggedDoors(trigger, door =>
         {
-            if (doors.doorobjlist[door].action is DoorAction.Closed or DoorAction.Closing)
+            if (doors.DoorObjList[door].Action is DoorAction.Closed or DoorAction.Closing)
                 SwitchOpenDoor(door, Hold(args));
             else
                 doors.CloseDoor(door);
         }));
 
         // A_MoveWall([direction], ["moving sound"], ["blocked sound"]): pushes every tagged
-        // wall north, east, south or west, or left out (or ""), the way the player faces. The
+        // WallId north, east, south or west, or left out (or ""), the way the player faces. The
         // blocked sound plays when none of them could move. Their tag goes with them, so they
         // can be moved again.
         MapTriggerRegistry.Register("A_MoveWall", MoveWallAction);
 
-        // A_SetWall(id): turns the tagged walls into wall id (walls.yaml), e.g. lights on a
+        // A_SetWall(id): turns the tagged walls into WallId id (walls.yaml), e.g. lights on a
         // panel coming on
         MapTriggerRegistry.Register("A_SetWall", SetWallAction);
 
         // A_ChangeTexture("FROM", "TO"): the switch's own tile and the tagged ones show texture TO
-        // wherever they showed FROM: wall and door faces, floors and ceilings. TO can be an animation
+        // wherever they showed FROM: WallId and DoorNumber faces, floors and ceilings. TO can be an animation
         // (animdefs); one that plays once starts as it's changed. Changing it back takes another
         // A_ChangeTexture("TO", "FROM").
         MapTriggerRegistry.Register("A_ChangeTexture", ChangeTextureAction);
@@ -136,7 +136,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         int x = trigger.Activator.TileX, y = trigger.Activator.TileY;
         if (trigger.TileX >= 0)
         {
-            int dx = PushWalls.dirs[(int)trigger.Dir][0], dy = PushWalls.dirs[(int)trigger.Dir][1];
+            int dx = PushWalls.Dirs[(int)trigger.Dir][0], dy = PushWalls.Dirs[(int)trigger.Dir][1];
             (x, y) = (trigger.TileX - dx, trigger.TileY - dy);
         }
 
@@ -214,25 +214,25 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
 
     internal static bool Hold(string[] args) => args.Any(a => a.Equals("hold", StringComparison.OrdinalIgnoreCase));
 
-    // A switch opens a door whatever its lock: the lock is for opening it by hand (put a lock
+    // A switch opens a DoorNumber whatever its lock: the lock is for opening it by hand (put a lock
     // on the switch to need a key for it)
     private void SwitchOpenDoor(int door, bool hold)
     {
         doors.OpenDoor(door);
         if (hold)
-            doors.doorobjlist[door].held = true;
+            doors.DoorObjList[door].Held = true;
     }
 
-    /// <summary>Runs <paramref name="act"/> on each door on a tile with the trigger's tag; false if there are none.</summary>
+    /// <summary>Runs <paramref name="act"/> on each DoorNumber on a tile with the trigger's tag; false if there are none.</summary>
     private bool ForTaggedDoors(TriggerActivation trigger, Action<int> act)
     {
         bool any = false;
         if (trigger.Tag == 0)
             return false;
 
-        for (int door = 0; door < doors.lastdoorobj; door++)
+        for (int door = 0; door < doors.LastDoorObj; door++)
         {
-            if (map.GetTag(doors.doorobjlist[door].tilex, doors.doorobjlist[door].tiley) != trigger.Tag)
+            if (map.GetTag(doors.DoorObjList[door].TileX, doors.DoorObjList[door].TileY) != trigger.Tag)
                 continue;
             act(door);
             any = true;
@@ -241,7 +241,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     }
 
     /// <summary>
-    /// The wall tiles with the trigger's tag, besides its own: solid walls (a wall beside a door
+    /// The WallId tiles with the trigger's tag, besides its own: solid walls (a WallId beside a DoorNumber
     /// too), not doors or a moving pushwall's tiles.
     /// </summary>
     private IEnumerable<(int X, int Y)> TaggedWalls(TriggerActivation trigger) =>
@@ -282,7 +282,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
 
         int? onlyObject = int.TryParse(args.ElementAtOrDefault(3), out var objectValue) ? objectValue : null;
 
-        // every tagged wall moves together; one sound for the lot
+        // every tagged WallId moves together; one sound for the lot
         bool moved = false, any = false;
         foreach (var (x, y) in TaggedWalls(trigger).Where(t => onlyObject == null || map.MapSpot(t.X, t.Y, 1) == onlyObject).ToList())
         {
@@ -308,9 +308,9 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         bool any = false;
         foreach (var (x, y) in TaggedWalls(trigger))
         {
-            // keeping the door-side mark on a wall beside a door
+            // keeping the DoorNumber-side mark on a WallId beside a DoorNumber
             map.tilemap[x, y] = (ushort)(id | (map.tilemap[x, y] & GameConstants.BitWall));
-            map.RestartAnimations(x, y, session.gamestate.TimeCount);
+            map.RestartAnimations(x, y, session.GameState.TimeCount);
             any = true;
         }
         return any;
@@ -342,7 +342,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
             if (!onFlat && !walls.Any(name => Shows(name, from)))
                 continue;
 
-            map.ChangeTexture(x, y, from, to, session.gamestate.TimeCount);
+            map.ChangeTexture(x, y, from, to, session.GameState.TimeCount);
             any = true;
             flats |= onFlat;
         }
@@ -355,8 +355,8 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     internal static bool Shows(string? name, string texture) => name != null && name.Equals(texture, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The textures a tile shows now (through any A_ChangeTexture on it): its wall's faces, or its
-    /// door's (and its locked ones), and its floor and ceiling
+    /// The textures a tile shows now (through any A_ChangeTexture on it): its WallId's faces, or its
+    /// DoorNumber's (and its locked ones), and its floor and ceiling
     /// </summary>
     private (IEnumerable<string> Walls, string? Floor, string? Ceiling) TileTextures(int x, int y)
     {
@@ -365,9 +365,9 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         MapTextureTranslation? locked = null;
         if ((tile & GameConstants.BitDoor) != 0)
         {
-            var door = doors.doorobjlist[tile & ~GameConstants.BitDoor];
-            faces = door.xlat;
-            locked = door.xlat?.Locked;
+            var door = doors.DoorObjList[tile & ~GameConstants.BitDoor];
+            faces = door.Xlat;
+            locked = door.Xlat?.Locked;
         }
         else if ((tile & ~GameConstants.BitWall) != 0)
             map.GetMapData().Walls.TryGetValue(tile & ~GameConstants.BitWall, out faces);

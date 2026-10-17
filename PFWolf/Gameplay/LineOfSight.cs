@@ -2,13 +2,13 @@ namespace PFWolf.Gameplay;
 
 /// <summary>
 /// Whether one thing can see another: a clear line through the tile map (walls, the solid
-/// half of diagonals, the closed part of doors, and wall sprites' panels); and whether a
+/// half of diagonals, the closed part of doors, and WallId sprites' panels); and whether a
 /// diagonal step is blocked
 /// </summary>
-/// <param name="wallSpriteBlocks">Whether a wall sprite's panel crosses the line between two points (global coordinates)</param>
+/// <param name="wallSpriteBlocks">Whether a WallId sprite's panel crosses the line between two points (global coordinates)</param>
 internal sealed class LineOfSight(MapManager map, Doors doors, GameSession session, Func<long, long, long, long, bool> wallSpriteBlocks)
 {
-    // A diagonal step is blocked by a wall/door (actorat[,]) or by a living actor marked on the tile.
+    // A diagonal step is blocked by a WallId/DoorNumber (actorat[,]) or by a living actor marked on the tile.
     internal bool CheckDiag(int x, int y) => map.actorat[x, y] switch
     {
         null => true,
@@ -20,7 +20,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
     // SightPlayer, SelectChaseDir/SelectDodgeDir, Kill/Damage, ...) lives on Entities.Actors.Monster.
     // CheckDiag and CheckLine are here, since they aren't tied to a mover: CheckLine is whether
     // there's a clear line from any actor to the player (the player's own sight uses it too).
-    internal bool CheckLine(Entities.Actors.Actor ob) => CheckLine(ob, session.player);
+    internal bool CheckLine(Entities.Actors.Actor ob) => CheckLine(ob, session.Player);
 
     /// <summary>Whether there's a clear line from an actor to another (a player, or any actor)</summary>
     internal bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.Actor to) => CheckLine(ob.X, ob.Y, to);
@@ -40,7 +40,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         int xfrac, yfrac, deltafrac;
         uint value, intercept;
 
-        // a wall sprite's panel across the line (Rendering/WallSprites.cs), unless it's shoot-through
+        // a WallId sprite's panel across the line (Rendering/WallSprites.cs), unless it's shoot-through
         if (wallSpriteBlocks(fromX, fromY, to.X, to.Y))
             return false;
 
@@ -114,7 +114,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 value &= ~(uint)GameConstants.BitDoor;
                 intercept = (uint)(yfrac - ystep / 2);
 
-                if (intercept > doors.doorobjlist[value].position)
+                if (intercept > doors.DoorObjList[value].Position)
                     return false;
 
             } while (x != xt2);
@@ -168,7 +168,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 value &= ~(uint)GameConstants.BitDoor;
                 intercept = (uint)(xfrac - xstep / 2);
 
-                if (intercept > doors.doorobjlist[value].position)
+                if (intercept > doors.DoorObjList[value].Position)
                     return false;
             } while (y != yt2);
         }

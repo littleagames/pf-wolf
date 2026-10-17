@@ -7,7 +7,7 @@ namespace PFWolf.Ui;
 /// of the tiles around the player, turned so the way they face is up, of what they've seen
 /// (the automap's seen tiles). It always shows at 1x; zooming in (2x, 4x: radar zoom in and
 /// out) uses up its item, the radar's power, and shows enemies. When the power runs out it
-/// goes back to 1x. (bstone also shows pushwalls at 4x; not done.)
+/// goes back to 1x. (bstone also shows MovingWalls at 4x; not done.)
 /// </summary>
 internal sealed class Radar(
     MapManager map,
@@ -30,7 +30,7 @@ internal sealed class Radar(
     /// <summary>Each tic: the radar's zoom keys, its power going while it's zoomed in, and the radar drawn</summary>
     internal void UpdateRadar()
     {
-        if (statusBar.StatusBar.Get("radar") is not { } radar || (settings.viewsize == 21 && session.ingame))
+        if (statusBar.StatusBar.Get("radar") is not { } radar || (settings.viewsize == 21 && session.InGame))
             return;
 
         int power = string.IsNullOrEmpty(radar.Item) ? 0 : inventory.GetCount(radar.Item);
@@ -51,9 +51,9 @@ internal sealed class Radar(
 
         // Zoomed in, it uses tics << zoom of its power every other frame
         radarframe++;
-        if (power > 0 && radarzoom > 0 && session.godmode == 0 && (radarframe & 1) != 0)
+        if (power > 0 && radarzoom > 0 && session.GodMode == 0 && (radarframe & 1) != 0)
         {
-            int left = Math.Max(power - ((int)session.tics << radarzoom), 0);
+            int left = Math.Max(power - ((int)session.Tics << radarzoom), 0);
             inventory.Take(radar.Item!, power - left);
             if (left == 0)
             {
@@ -94,7 +94,7 @@ internal sealed class Radar(
         var enemies = new HashSet<int>();
         foreach (var thing in map.GetActors())
         {
-            if (thing.IsRemoved || thing == session.player)
+            if (thing.IsRemoved || thing == session.Player)
                 continue;
             if (inventory.FindClass(thing.Name, "Key") != null)
                 keys.Add(thing.TileX << 8 | thing.TileY);
@@ -103,8 +103,8 @@ internal sealed class Radar(
         }
 
         // The map turned so the player's facing is up, as bstone walks it
-        double px = session.player.X / 65536.0, py = session.player.Y / 65536.0;
-        double angle = session.player.Angle * Math.PI / 180;
+        double px = session.Player.X / 65536.0, py = session.Player.Y / 65536.0;
+        double angle = session.Player.Angle * Math.PI / 180;
         // The sine with the sign that keeps the way the player faces at the top (checked against
         // the automap; bstone's own sign put it at the bottom here)
         double psin = -Math.Sin(angle), pcos = Math.Cos(angle);
@@ -122,7 +122,7 @@ internal sealed class Radar(
                 int mx = (int)Math.Floor(lmx), my = (int)Math.Floor(lmy);
                 if (mx >= 0 && mx < MapManager.MapSize && my >= 0 && my < MapManager.MapSize)
                 {
-                    if (!drawnplayer && mx == session.player.TileX && my == session.player.TileY)
+                    if (!drawnplayer && mx == session.Player.TileX && my == session.Player.TileY)
                     {
                         color = playerColor;
                         drawnplayer = true;
@@ -146,17 +146,17 @@ internal sealed class Radar(
         }
     }
 
-    // What a seen tile shows as: open floor, a door (closed, or locked), or a wall (as unmapped)
+    // What a seen tile shows as: open floor, a DoorNumber (closed, or locked), or a WallId (as unmapped)
     internal string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked)
     {
         int tile = map.tilemap[x, y];
         string color;
         if ((tile & GameConstants.BitDoor) != 0)
         {
-            var d = doors.doorobjlist[tile & ~GameConstants.BitDoor];
-            // As bstone: a door with a lock (none once a key has unlocked it) is locked, open or shut
+            var d = doors.DoorObjList[tile & ~GameConstants.BitDoor];
+            // As bstone: a DoorNumber with a lock (none once a key has unlocked it) is locked, open or shut
             color = !string.IsNullOrEmpty(d.Lock) ? locked
-                : d.action == DoorAction.Closed ? door
+                : d.Action == DoorAction.Closed ? door
                 : floor;
         }
         else if (tile != 0)

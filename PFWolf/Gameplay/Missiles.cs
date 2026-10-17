@@ -5,7 +5,7 @@ using PFWolf.Managers;
 namespace PFWolf.Gameplay;
 
 /// <summary>What missiles, blasts and barriers need from the game</summary>
-/// <param name="ProjectileTryMove">Whether a projectile can be where it is (not in a wall or a solid thing)</param>
+/// <param name="ProjectileTryMove">Whether a projectile can be where it is (not in a WallId or a solid thing)</param>
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
 internal sealed record MissileHooks(
@@ -14,7 +14,7 @@ internal sealed record MissileHooks(
     Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer);
 
 /// <summary>
-/// The player's weapons can throw missiles (A_FireMissile) that fly until they hit a wall, a
+/// The player's weapons can throw missiles (A_FireMissile) that fly until they hit a WallId, a
 /// solid thing or an enemy, then go to their Death state, which can blow up (A_Explode) and
 /// hurt everything shootable around it. A weapon with `weapon.chargetics` only fires with a
 /// full charge and takes that long to charge again (Blake Stone's auto charge pistol).
@@ -58,16 +58,16 @@ internal sealed class Missiles(
             Console.WriteLine("A_FireMissile: no missile given.");
             return;
         }
-        if (!weapons.IsLoaded(session.playerstate.weapon) || !weapons.TakeCharge())
+        if (!weapons.IsLoaded(session.PlayerState.Weapon) || !weapons.TakeCharge())
             return;
 
-        var player = session.player;
+        var player = session.Player;
         var missile = map.SpawnAtActor(args[0], player);
         if (missile == null)
             return;
 
         int spread = args.Length > 1 && int.TryParse(args[1], out var s) ? Math.Max(s, 0) : 0;
-        int angle = player.Angle + (spread > 0 ? session.random.RndT() % (2 * spread + 1) - spread : 0);
+        int angle = player.Angle + (spread > 0 ? session.Random.RndT() % (2 * spread + 1) - spread : 0);
         missile.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         missile.Speed = ReadMissileSpeed(missile);
         // Its height in the air, and how fast that rises (`z`, `zspeed`: Missiles.Fall)
@@ -75,14 +75,14 @@ internal sealed class Missiles(
         missile.ZSpeed = PropertyDouble(missile, "zspeed", 0);
         if (args.Skip(2).Any(a => a.Trim().Equals("power", StringComparison.OrdinalIgnoreCase)))
         {
-            missile.Speed = ThrowSpeed(missile.Speed, session.playerstate.WeaponPower);
-            missile.ZSpeed = missile.ZSpeed * Math.Clamp(session.playerstate.WeaponPower, 25, 100) / 100;
-            session.playerstate.WeaponPower = 0;
+            missile.Speed = ThrowSpeed(missile.Speed, session.PlayerState.WeaponPower);
+            missile.ZSpeed = missile.ZSpeed * Math.Clamp(session.PlayerState.WeaponPower, 25, 100) / 100;
+            session.PlayerState.WeaponPower = 0;
         }
         missile.Shooter = player;
         missile.TicCount = 1;
 
-        // Just in front of the player, so one fired point blank at a wall still shows its blast
+        // Just in front of the player, so one fired point blank at a WallId still shows its blast
         const int ahead = (int)(9L * GameConstants.MinDist / 8);
         missile.X += MathUtils.FixedMul(ahead, TrigTables.CosTable[missile.Angle]);
         missile.Y -= MathUtils.FixedMul(ahead, TrigTables.SinTable[missile.Angle]);
@@ -90,7 +90,7 @@ internal sealed class Missiles(
         missile.TileY = (byte)(missile.Y >> MapConstants.TileShift);
 
         attacks.PlayAttackSound();
-        session.madenoise = true;
+        session.MadeNoise = true;
         weapons.UseAmmo();
     }
 
@@ -120,24 +120,24 @@ internal sealed class Missiles(
     {
         int speed = missile.Properties.TryGetValue("speed", out var v) && int.TryParse(v?.ToString(), out var n) ? n : 0x1c00;
         if (missile.Properties.TryGetValue("speed.random", out var r) && int.TryParse(r?.ToString(), out var extra) && extra > 0)
-            speed += session.random.RndT() * extra / 256;
+            speed += session.Random.RndT() * extra / 256;
         return speed;
     }
 
     /// <summary>
     /// A_Missile(min, max[, "bounce"]): a player's missile's think. It flies along its angle, and
     /// up and down too when it has a `gravity` (from its `z` and `zspeed` as it was fired);
-    /// meeting a wall, a solid thing or something shootable (not the player), it hurts that
-    /// min..max and goes to its Death state. With bounce, a wall turns it back off it at half the
+    /// meeting a WallId, a solid thing or something shootable (not the player), it hurts that
+    /// min..max and goes to its Death state. With bounce, a WallId turns it back off it at half the
     /// speed, with its `bouncesound`, as Midnight Assault's grenade (its Death then comes from its
     /// states running out: its fuse).
     /// </summary>
     internal void Missile(Entities.Actors.Actor ob, string[] args)
     {
         // up and down as it flies, with a gravity (Missiles.Fall)
-        (ob.Z, ob.ZSpeed) = Fall(ob.Z, ob.ZSpeed, PropertyDouble(ob, "gravity", 0), PropertyDouble(ob, "zfloor", 0), (int)session.tics);
+        (ob.Z, ob.ZSpeed) = Fall(ob.Z, ob.ZSpeed, PropertyDouble(ob, "gravity", 0), PropertyDouble(ob, "zfloor", 0), (int)session.Tics);
 
-        int speed = (int)(ob.Speed * session.tics);
+        int speed = (int)(ob.Speed * session.Tics);
         int dx = MathUtils.FixedMul(speed, TrigTables.CosTable[ob.Angle]);
         int dy = -MathUtils.FixedMul(speed, TrigTables.SinTable[ob.Angle]);
         ob.X += dx;
@@ -166,7 +166,7 @@ internal sealed class Missiles(
         {
             int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
             int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
-            int damage = max > min ? min + session.random.RndT() * (max - min + 1) / 256 : min;
+            int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
             if (damage > 0)
             {
                 using var _ = ActAsShooter(ob);
@@ -178,7 +178,7 @@ internal sealed class Missiles(
     }
 
     /// <summary>
-    /// A missile that's just moved dx, dy into a wall goes back to where it was and turns off it:
+    /// A missile that's just moved dx, dy into a WallId goes back to where it was and turns off it:
     /// its x reversed if only moving along x is blocked, its y if only y, both in a corner (as the
     /// original's grenade did, trying each way on its own). It slows to half, with its bouncesound.
     /// </summary>
@@ -204,7 +204,7 @@ internal sealed class Missiles(
     }
 
     /// <summary>
-    /// The angle (degrees, 0 east, 90 north) a missile turns to off a wall: x reversed if moving
+    /// The angle (degrees, 0 east, 90 north) a missile turns to off a WallId: x reversed if moving
     /// along y alone was clear, y reversed if along x alone was, straight back otherwise
     /// </summary>
     internal static int BounceAngle(int angle, bool xClear, bool yClear)
@@ -212,8 +212,8 @@ internal sealed class Missiles(
         const int ANGLES = GameConstants.Angles;
         int turned = (xClear, yClear) switch
         {
-            (false, true) => 180 - angle,       // a wall across x: x reversed
-            (true, false) => -angle,            // a wall across y: y reversed
+            (false, true) => 180 - angle,       // a WallId across x: x reversed
+            (true, false) => -angle,            // a WallId across y: y reversed
             _ => angle + 180,                   // a corner, or nothing clear: straight back
         };
         return (turned % ANGLES + ANGLES) % ANGLES;
@@ -223,7 +223,7 @@ internal sealed class Missiles(
     // projectile hits a player: within ProjectileSize), else null. Co-op missiles fly through.
     internal Entities.Actors.PlayerPawn? RivalHitBy(Entities.Actors.Actor ob) =>
         !session.IsVersus || ob.Shooter is not Entities.Actors.PlayerPawn { State: { } shooter } ? null
-        : map.Players.FirstOrDefault(pawn => session.AreRivals(shooter, pawn.State) && pawn.State.health > 0
+        : map.Players.FirstOrDefault(pawn => session.AreRivals(shooter, pawn.State) && pawn.State.Health > 0
             && Math.Abs((long)pawn.X - ob.X) < GameConstants.ProjectileSize && Math.Abs((long)pawn.Y - ob.Y) < GameConstants.ProjectileSize);
 
     /// <summary>
@@ -233,7 +233,7 @@ internal sealed class Missiles(
     /// a missile no player fired.
     /// </summary>
     internal GameSession.ActingScope ActAsShooter(Entities.Actors.Actor ob) =>
-        session.ActAs(ob.Shooter is Entities.Actors.PlayerPawn { State: { } shooter } ? shooter : session.playerstate);
+        session.ActAs(ob.Shooter is Entities.Actors.PlayerPawn { State: { } shooter } ? shooter : session.PlayerState);
 
     // A missile's (or its blast's) damage landing: on an enemy, or a player (deathmatch rivals,
     // or someone caught in a blast), with the missile as the attacker (frags go to its Shooter)
@@ -280,7 +280,7 @@ internal sealed class Missiles(
         bool falloff = options.Any(a => a.Equals("falloff", StringComparison.OrdinalIgnoreCase));
         int playerMax = options.Select(a => a.StartsWith("playermax:", StringComparison.OrdinalIgnoreCase)
             && int.TryParse(a["playermax:".Length..], out var cap) ? cap : -1).FirstOrDefault(cap => cap >= 0, int.MaxValue);
-        int damage = max > min ? min + session.random.RndT() * (max - min + 1) / 256 : min;
+        int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
 
         // What a thing standing where it does takes of the blast (0 for out of its reach)
         int DamageTo(Entities.Actors.Actor target) => falloff ? BlastFalloff(damage, radius, ob, target) : damage;
@@ -291,7 +291,7 @@ internal sealed class Missiles(
 
         var shooter = ob.Shooter as Entities.Actors.PlayerPawn;
         var blasted = !hurtPlayer ? []
-            : map.Players.Where(pawn => (session.gamemode == GameMode.Single || pawn.State.health > 0) && (shooter == null
+            : map.Players.Where(pawn => (session.GameMode == GameMode.Single || pawn.State.Health > 0) && (shooter == null
                 || ReferenceEquals(pawn, shooter) || session.AreRivals(shooter.State, pawn.State))).ToList();
         using var _ = ActAsShooter(ob);
 
@@ -344,11 +344,11 @@ internal sealed class Missiles(
         return tiles <= 1 ? damage : (int)(damage / (tiles * tiles));
     }
 
-    // A wall, a moving pushwall or a door that isn't open stops a blast
+    // A WallId, a moving pushwall or a DoorNumber that isn't open stops a blast
     internal bool IsSolidForBlast(int x, int y) => map.actorat[x, y] switch
     {
         Wall => true,
-        Door door => door.door < 0 || doors.doorobjlist[door.door].action != DoorAction.Open,
+        Door door => door.DoorNumber < 0 || doors.DoorObjList[door.DoorNumber].Action != DoorAction.Open,
         _ => map.tilemap[x, y] != 0 && (map.tilemap[x, y] & GameConstants.BitDoor) == 0,
     };
 
@@ -377,10 +377,10 @@ internal sealed class Missiles(
         double distance = args.Length > 1 && double.TryParse(args[1], System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out var r) ? r : 1;
         int chance = args.Length > 2 && int.TryParse(args[2], out var c) ? c : 16;
-        if (damage <= 0 || (session.playstate == PlayState.Died) || session.random.RndT() >= chance)
+        if (damage <= 0 || (session.PlayState == PlayState.Died) || session.Random.RndT() >= chance)
             return;
 
-        var player = session.player;
+        var player = session.Player;
         long reach = (long)(distance * MapConstants.TileGlobal);
         if (Math.Abs(player.X - ob.X) > reach || Math.Abs(player.Y - ob.Y) > reach)
             return;

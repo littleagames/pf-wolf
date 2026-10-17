@@ -38,16 +38,16 @@ internal abstract class ControlZones(MapManager map, GameSession session, Deathm
         public int Progress;
     }
 
-    internal readonly List<Zone> zones = [];
+    internal readonly List<Zone> Zones = [];
 
     /// <summary>The last whole second the zones scored in</summary>
-    internal int scoredsecond;
+    internal int ScoredSecond;
 
     /// <summary>How many tiles out from its middle a zone reaches (1: a 3x3 square)</summary>
     protected virtual int Radius => 1;
 
     /// <summary>The zones being played for (King of the Hill: just the hill)</summary>
-    protected virtual IEnumerable<Zone> ActiveZones => zones;
+    protected virtual IEnumerable<Zone> ActiveZones => Zones;
 
     /// <summary>Each team's living players in a zone</summary>
     protected (int red, int blue) PlayersIn(Zone zone)
@@ -65,14 +65,14 @@ internal abstract class ControlZones(MapManager map, GameSession session, Deathm
     /// <summary>Points a team has scored in each second gone by, for the zones it holds</summary>
     protected void ScoreSeconds()
     {
-        int second = session.gamestate.TimeCount / 70;
-        for (; scoredsecond < second; scoredsecond++)
+        int second = Session.GameState.TimeCount / 70;
+        for (; ScoredSecond < second; ScoredSecond++)
             foreach (var zone in ActiveZones.Where(z => z.Owner >= 0).ToList())
             {
                 // and each of the team in it scores one for themselves
                 foreach (var pawn in LivingPawns.Where(pawn => pawn.State.Team == zone.Owner && InZone(pawn, zone.At.x, zone.At.y, Radius)))
                     pawn.State.Objective++;
-                match.AddTeamScore(zone.Owner, 1);
+                Match.AddTeamScore(zone.Owner, 1);
             }
     }
 
@@ -86,13 +86,13 @@ internal abstract class ControlZones(MapManager map, GameSession session, Deathm
 
     /// <summary>Each zone's place and holder: "A 3,4 Red; B 30,30 -"</summary>
     public string? Details() =>
-        string.Join("; ", zones.Select((z, i) => $"{Letter(i)} {z.At.x},{z.At.y} {(z.Owner >= 0 ? GameModes.TeamLabel(z.Owner) : "-")}"));
+        string.Join("; ", Zones.Select((z, i) => $"{Letter(i)} {z.At.x},{z.At.y} {(z.Owner >= 0 ? GameModes.TeamLabel(z.Owner) : "-")}"));
 
     public override void Write(BinaryWriter bw)
     {
-        bw.Write(scoredsecond);
-        bw.Write(zones.Count);
-        foreach (var zone in zones)
+        bw.Write(ScoredSecond);
+        bw.Write(Zones.Count);
+        foreach (var zone in Zones)
         {
             WriteTile(bw, zone.At);
             bw.Write(zone.Owner);
@@ -102,10 +102,10 @@ internal abstract class ControlZones(MapManager map, GameSession session, Deathm
 
     public override void Read(BinaryReader br)
     {
-        scoredsecond = br.ReadInt32();
-        zones.Clear();
+        ScoredSecond = br.ReadInt32();
+        Zones.Clear();
         for (int i = br.ReadInt32(); i > 0; i--)
-            zones.Add(new Zone { At = ReadTile(br), Owner = br.ReadInt32(), Progress = br.ReadInt32() });
+            Zones.Add(new Zone { At = ReadTile(br), Owner = br.ReadInt32(), Progress = br.ReadInt32() });
     }
 
     // A zone's letter: A, B, C...
@@ -122,8 +122,8 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
 
     public override void LevelSetup()
     {
-        zones.Clear();
-        scoredsecond = session.gamestate.TimeCount / 70;
+        Zones.Clear();
+        ScoredSecond = Session.GameState.TimeCount / 70;
         var spots = Markers("ControlPoint");
         if (spots.Count == 0)
         {
@@ -134,15 +134,15 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
                 : SpreadOut(floor, 3, []);
         }
         foreach (var spot in spots)
-            zones.Add(new Zone { At = spot });
+            Zones.Add(new Zone { At = spot });
         ShowZoneFlags();
     }
 
     public override void Tick()
     {
-        for (int i = 0; i < zones.Count; i++)
+        for (int i = 0; i < Zones.Count; i++)
         {
-            var zone = zones[i];
+            var zone = Zones[i];
             var (red, blue) = PlayersIn(zone);
             if (red > 0 == blue > 0)
                 continue;       // empty, or contested
@@ -154,7 +154,7 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
                 continue;
             }
 
-            zone.Progress = Math.Clamp(zone.Progress + sign * (int)session.tics * Math.Max(red, blue), -CaptureTics, CaptureTics);
+            zone.Progress = Math.Clamp(zone.Progress + sign * (int)Session.Tics * Math.Max(red, blue), -CaptureTics, CaptureTics);
             if (zone.Owner >= 0 && Math.Sign(zone.Progress) != Math.Sign(zone.Owner == 0 ? 1 : -1))
             {
                 Announce($"{GameModes.TeamLabel(zone.Owner)} lost point {Letter(i)}");
@@ -175,7 +175,7 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
 
     /// <summary>Who holds each point: "A: Red   B: -   C: Blue (taking 40%)"</summary>
     public string? StatusLine() =>
-        string.Join("   ", zones.Select((zone, i) =>
+        string.Join("   ", Zones.Select((zone, i) =>
         {
             var holder = zone.Owner >= 0 ? GameModes.TeamLabel(zone.Owner) : "-";
             var (red, blue) = PlayersIn(zone);
@@ -195,45 +195,45 @@ internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathma
     /// <summary>How many spots the hill moves between on a map without HillSpot markers</summary>
     internal const int Spots = 5;
 
-    /// <summary>Which spot the hill is on now, and when it moves on (gamestate.TimeCount)</summary>
-    internal int hill, movesat;
+    /// <summary>Which spot the hill is on now, and when it moves on (GameState.TimeCount)</summary>
+    internal int Hill, MovesAt;
 
     protected override int Radius => 1;
 
-    protected override IEnumerable<Zone> ActiveZones => zones.Count > 0 ? [zones[hill]] : [];
+    protected override IEnumerable<Zone> ActiveZones => Zones.Count > 0 ? [Zones[Hill]] : [];
 
     public override void LevelSetup()
     {
-        zones.Clear();
-        scoredsecond = session.gamestate.TimeCount / 70;
+        Zones.Clear();
+        ScoredSecond = Session.GameState.TimeCount / 70;
         var spots = Markers("HillSpot");
         if (spots.Count == 0)
             spots = SpreadOut(OpenFloor(), Spots, []);
         foreach (var spot in spots)
-            zones.Add(new Zone { At = spot });
-        hill = 0;       // the first (the middle of the map, without markers)
-        movesat = session.gamestate.TimeCount + HillTics;
+            Zones.Add(new Zone { At = spot });
+        Hill = 0;       // the first (the middle of the map, without markers)
+        MovesAt = Session.GameState.TimeCount + HillTics;
         ShowZoneFlags();
     }
 
     public override void Tick()
     {
-        if (zones.Count == 0)
+        if (Zones.Count == 0)
             return;
 
         // Time's up: the hill moves on, to another spot at random
-        if (session.gamestate.TimeCount >= movesat)
+        if (Session.GameState.TimeCount >= MovesAt)
         {
             ScoreSeconds();
-            zones[hill].Owner = -1;
-            if (zones.Count > 1)
-                hill = (hill + 1 + session.random.RndT() % (zones.Count - 1)) % zones.Count;
-            movesat = session.gamestate.TimeCount + HillTics;
+            Zones[Hill].Owner = -1;
+            if (Zones.Count > 1)
+                Hill = (Hill + 1 + Session.Random.RndT() % (Zones.Count - 1)) % Zones.Count;
+            MovesAt = Session.GameState.TimeCount + HillTics;
             Announce("The hill has moved!", "world/pushwall");
         }
 
         // Held by the team alone on it; nobody's with both, or neither
-        var zone = zones[hill];
+        var zone = Zones[Hill];
         var (red, blue) = PlayersIn(zone);
         int holder = red > 0 == blue > 0 ? -1 : red > 0 ? 0 : 1;
         if (holder != zone.Owner)
@@ -250,10 +250,10 @@ internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathma
     /// <summary>Who holds the hill, and when it moves: "Hill: Red   moves in 0:42"</summary>
     public string? StatusLine()
     {
-        if (zones.Count == 0)
+        if (Zones.Count == 0)
             return null;
-        int left = Math.Max(0, movesat - session.gamestate.TimeCount) / 70;
-        var zone = zones[hill];
+        int left = Math.Max(0, MovesAt - Session.GameState.TimeCount) / 70;
+        var zone = Zones[Hill];
         var holder = zone.Owner >= 0 ? GameModes.TeamLabel(zone.Owner) : PlayersIn(zone) is (> 0, > 0) ? "contested" : "nobody";
         return $"Hill: {holder}   moves in {left / 60}:{left % 60:00}";
     }
@@ -261,14 +261,14 @@ internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathma
     public override void Write(BinaryWriter bw)
     {
         base.Write(bw);
-        bw.Write(hill);
-        bw.Write(movesat);
+        bw.Write(Hill);
+        bw.Write(MovesAt);
     }
 
     public override void Read(BinaryReader br)
     {
         base.Read(br);
-        hill = br.ReadInt32();
-        movesat = br.ReadInt32();
+        Hill = br.ReadInt32();
+        MovesAt = br.ReadInt32();
     }
 }

@@ -76,7 +76,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
         if (input.Key is ScanCodes.Grave or ScanCodes.Escape)
             throw new ArgumentException($"\"{input}\" is reserved");
 
-        // One argument is the command line as-is (`bind F5 "god; noclip"`); several are
+        // One argument is the command line as-is (`bind F5 "god; NoClip"`); several are
         // rejoined, re-quoting any that need it (`bind F5 give GoldKey`).
         var command = args.Length == 2 ? args[1] : string.Join(' ', args[1..].Select(QuoteArg));
 

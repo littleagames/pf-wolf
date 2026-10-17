@@ -7,7 +7,7 @@ namespace PFWolf.Tests;
 /// <summary>
 /// Wall patches in play (Wolf3D): a mod's one-room MAP01 puts patches in plane 0's high byte, a
 /// scripted demo plays it, and a script prints the patches it finds. The player starts at the
-/// room's west end (10,32) facing west, at the wall (9,32). Needs Wolf3D's data files, as
+/// room's west end (10,32) facing west, at the WallId (9,32). Needs Wolf3D's data files, as
 /// DemoRegressionTests does.
 /// </summary>
 [Category("GameData")]
@@ -40,14 +40,14 @@ public class PatchGameTests
         }
     }
 
-    // Tiles the probe reports: the wall the player faces, one on the room's north wall, open
-    // floor in the room, and the floor two tiles past the faced wall
+    // Tiles the probe reports: the WallId the player faces, one on the room's north WallId, open
+    // floor in the room, and the floor two tiles past the faced WallId
     private const int Faced = 9 + 32 * 64, North = 16 + 29 * 64, Floor = 16 + 32 * 64, Beyond = 7 + 32 * 64;
 
     [Test]
     public void A_Patch_Stays_On_Its_Wall_Moves_With_A_Pushwall_And_Leaves_Plane_0_Its_Codes()
     {
-        // Arrange: a sign on the room's north wall, a patch on open floor (ignored), and a
+        // Arrange: a sign on the room's north WallId, a patch on open floor (ignored), and a
         // patched pushwall in front of the player, who uses it
         var mod = WriteRoom("""
             patches:
@@ -59,7 +59,7 @@ public class PatchGameTests
         // Act
         var (output, first, last) = Play(mod, new DemoStep(0, 0, 0, 10), new DemoStep(Use, 0, 0, 3), new DemoStep(0, 0, 0, 400));
 
-        // Assert (a patched wall that kept its high byte wouldn't be a wall at all, nor a pushwall)
+        // Assert (a patched WallId that kept its high byte wouldn't be a WallId at all, nor a pushwall)
         Assert.That(output, Has.Some.Contains("16,32, which isn't a wall, is ignored"));
         Assert.That(first, Does.Contain("faced=9 north=5 floor=0 beyond=0"), first);
         Assert.That(last, Does.Contain("faced=0 north=5 floor=0 beyond=9"), last);
@@ -68,8 +68,8 @@ public class PatchGameTests
     [Test]
     public void A_Patch_Switch_Toggles_And_Its_Linked_Patches_Flip_With_It()
     {
-        // Arrange: a two-way switch patch on the faced wall, and one sharing its tag (3) on the
-        // north wall; the player uses it twice
+        // Arrange: a two-way switch patch on the faced WallId, and one sharing its tag (3) on the
+        // north WallId; the player uses it twice
         var mod = WriteRoom("""
             patches:
               10: { texture: GSTEAGL1, switch: { to: 11 } }
@@ -89,7 +89,7 @@ public class PatchGameTests
     [Test]
     public void A_Patch_That_Gives_What_The_Player_Has_No_Use_For_Stays_Put()
     {
-        // Arrange: a first aid kit on the wall, taken off when used, and the player's health full
+        // Arrange: a first aid kit on the WallId, taken off when used, and the player's health full
         var mod = WriteRoom("""
             patches:
               20:
@@ -110,7 +110,7 @@ public class PatchGameTests
     [Test]
     public void A_Patch_Gives_Or_Spawns_An_Item_And_Comes_Off()
     {
-        // Arrange: a patch on the faced wall that gives ammo and drops a first aid kit (which the
+        // Arrange: a patch on the faced WallId that gives ammo and drops a first aid kit (which the
         // player, at full health, leaves lying), taken off when used
         var mod = WriteRoom("""
             patches:
@@ -179,7 +179,7 @@ public class PatchGameTests
     /// <summary>
     /// A mod in the work folder: MAP01 as one room (x 10-22, y 30-34) with the player at (10,32)
     /// facing west, plane 0 values and tags (plane 4) at the tiles given, and the patches. With
-    /// <paramref name="pushwall"/>, the faced wall (9,32) is a pushwall with two tiles of floor behind it.
+    /// <paramref name="pushwall"/>, the faced WallId (9,32) is a pushwall with two tiles of floor behind it.
     /// </summary>
     private string WriteRoom(string patchesYaml, Dictionary<int, int> walls, Dictionary<int, int>? tags = null, bool pushwall = false)
     {

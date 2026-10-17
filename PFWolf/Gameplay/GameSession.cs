@@ -17,10 +17,10 @@ internal enum GameMode { Single, Coop, Deathmatch, TeamDeathmatch, CaptureTheFla
 
     The state nearly all of the game reads: who's playing and who's acting
     now, how they play together, this frame's tics, the game's progress
-    (gamestate) and where the view is drawn from (camera).
+    (GameState) and where the view is drawn from (camera).
 
     The game's player code is written for one player: it reads player,
-    playerstate and playerinput, which are always the acting player's.
+    PlayerState and PlayerInput, which are always the acting player's.
     MapManager.DoActors makes each pawn the acting player while it thinks,
     ActAs does it for anything else done to a particular player (hurting
     them, say), and the rest of the time it's the local player: the one
@@ -35,42 +35,42 @@ internal sealed class GameSession
 {
     public GameSession()
     {
-        playerstate = players[0];
-        camera = new Camera(this);
+        PlayerState = Players[0];
+        Camera = new Camera(this);
     }
 
     /// <summary>Everyone in the game, in the order they think; never empty once a game has started</summary>
-    internal readonly List<PlayerState> players = [new()];
+    internal readonly List<PlayerState> Players = [new()];
 
     /// <summary>Which of players is this machine's: what the screen shows and the controls drive</summary>
-    internal int consoleplayer;
+    internal int ConsolePlayer;
 
     /// <summary>This machine's player</summary>
-    internal PlayerState localplayer => players[consoleplayer];
+    internal PlayerState LocalPlayer => Players[ConsolePlayer];
 
     /// <summary>The player acting now: see ActAs</summary>
-    internal PlayerState playerstate { get; private set; }
+    internal PlayerState PlayerState { get; private set; }
 
     /// <summary>Whether the acting player is this machine's, so their screen, status bar and sounds are shown</summary>
-    internal bool ActingIsLocal => ReferenceEquals(playerstate, localplayer);
+    internal bool ActingIsLocal => ReferenceEquals(PlayerState, LocalPlayer);
 
     /// <summary>Told each time the acting player changes (the inventory reads the acting player's items)</summary>
     internal Action<PlayerState>? ActingChanged;
 
     /// <summary>
     /// Makes <paramref name="p"/> the acting player until the returned scope is disposed: the
-    /// game's player code (player, playerstate, the inventory...) then reads and changes theirs.
+    /// game's player code (player, PlayerState, the inventory...) then reads and changes theirs.
     /// </summary>
     internal ActingScope ActAs(PlayerState p)
     {
-        var scope = new ActingScope(this, playerstate);
+        var scope = new ActingScope(this, PlayerState);
         SetActing(p);
         return scope;
     }
 
     internal void SetActing(PlayerState p)
     {
-        playerstate = p;
+        PlayerState = p;
         ActingChanged?.Invoke(p);
     }
 
@@ -81,28 +81,28 @@ internal sealed class GameSession
 
     // The acting player's pawn, which lives in MapManager._actors like every other actor; this
     // is just a shortcut to it.
-    internal PlayerPawn player =>
-        playerstate.Pawn ?? throw new InvalidOperationException("The player has not been spawned for this level yet.");
+    internal PlayerPawn Player =>
+        PlayerState.Pawn ?? throw new InvalidOperationException("The player has not been spawned for this level yet.");
 
     // The acting player's controls this frame: the game reads these, never _inputManager's buttons
-    internal PlayerInput playerinput => playerstate.Input;
+    internal PlayerInput PlayerInput => PlayerState.Input;
 
-    internal GameMode gamemode { get; private set; } = GameMode.Single;
+    internal GameMode GameMode { get; private set; } = GameMode.Single;
 
     /// <summary>Told each time the game mode changes (co-op shares keys)</summary>
     internal Action<GameMode>? GameModeChanged;
 
     internal void SetGameMode(GameMode mode)
     {
-        gamemode = mode;
+        GameMode = mode;
         GameModeChanged?.Invoke(mode);
     }
 
     /// <summary>Players fight each other (deathmatch and every team mode)</summary>
-    internal bool IsVersus => gamemode.IsVersus();
+    internal bool IsVersus => GameMode.IsVersus();
 
     /// <summary>Players are on two teams (Entities.PlayerState.Team)</summary>
-    internal bool IsTeamGame => gamemode.IsTeamGame();
+    internal bool IsTeamGame => GameMode.IsTeamGame();
 
     /// <summary>
     /// Whether two players fight: in a versus mode, anyone else, but not a teammate (no
@@ -112,9 +112,9 @@ internal sealed class GameSession
         IsVersus && !ReferenceEquals(a, b) && !(IsTeamGame && a.Team == b.Team);
 
     /// <summary>The tics this frame moves the game on by</summary>
-    internal uint tics;
+    internal uint Tics;
 
-    internal GameState gamestate = new GameState();
+    internal GameState GameState = new GameState();
 
     /// <summary>
     /// Each floor's ratios and time as last completed, by map, for the win tally (saved with
@@ -123,63 +123,63 @@ internal sealed class GameSession
     internal Dictionary<string, LevelRatio> LevelRatios = new();
 
     /// <summary>id's random numbers, which every machine and every demo has to step through alike</summary>
-    internal readonly RandomTable random = new();
+    internal readonly RandomTable Random = new();
 
     /// <summary>Which of the level's areas are connected, by open doors, to the players' (Gameplay/AreaConnections.cs)</summary>
-    internal readonly AreaConnections areas = new();
+    internal readonly AreaConnections Areas = new();
 
-    internal readonly Camera camera;
+    internal readonly Camera Camera;
 
     /// <summary>Whether the level being set up came from a save (its totals are the save's, not counted afresh)</summary>
-    internal bool loadedgame;
+    internal bool LoadedGame;
 
     /// <summary>Whether a demo's being recorded, or played back</summary>
-    internal bool demorecord, demoplayback;
+    internal bool DemoRecord, DemoPlayback;
 
     /// <summary>
     /// Whether a player can be gone after: one alive. A lone player always can (dying ends the
     /// level there, and the rest of that frame plays on as it always has).
     /// </summary>
-    internal bool IsTargetable(PlayerPawn pawn) => gamemode == GameMode.Single || pawn.State.health > 0;
+    internal bool IsTargetable(PlayerPawn pawn) => GameMode == GameMode.Single || pawn.State.Health > 0;
 
     // ---- The game's flow, its network game, and the cheat and debug switches (GameHost had these as its own statics)
 
     /// <summary>A game was chosen in the menu (new or loaded): the title loop starts it</summary>
-    internal bool startgame;
+    internal bool GameChosen;
 
     /// <summary>Whether a game is going (the menu was opened from it), and whether the next frame fades the level in</summary>
-    internal bool ingame, fizzlein;
+    internal bool InGame, FizzleIn;
 
     /// <summary>The color of the border around the view (Change View, in game)</summary>
-    internal string bordercol = "VIEWCOLOR";
+    internal string BorderCol = "VIEWCOLOR";
 
     /// <summary>Where the menu left the level's song, to carry on from</summary>
-    internal int lastgamemusicoffset;
+    internal int LastGameMusicOffset;
 
     /// <summary>Whether the game running is one with others over the network</summary>
-    internal bool netgame;
+    internal bool NetGame;
 
     /// <summary>The random number table's starting place for each level of a network game (the host's pick)</summary>
-    internal byte netseed;
+    internal byte NetSeed;
 
     /// <summary>The debug keys and cheat commands are on (Shift+Alt+Backspace, or --cheats)</summary>
     internal int DebugOk;
 
     /// <summary>Cheats and debug switches: frame stepping, god mode, walking through walls, endless ammo, the whole map shown</summary>
-    internal byte singlestep, godmode, noclip, ammocheat, mapreveal;
+    internal byte SingleStep, GodMode, NoClip, AmmoCheat, MapReveal;
 
     /// <summary>Extra frames waited each refresh (the bls debug command)</summary>
-    internal int extravbls;
+    internal int ExtraVbls;
 
     /// <summary>true when shooting or screaming: enemies in the player's areas hear it this tic</summary>
-    internal bool madenoise;
+    internal bool MadeNoise;
 
     /// <summary>How the level's going: playing on, died, completed, warped...</summary>
-    internal PlayState playstate;
+    internal PlayState PlayState;
 
     /// <summary>
     /// A random number for which of a sound's variants plays: the game's own alone, as it always
     /// was, but not with others (one machine may have its sound off, and play none)
     /// </summary>
-    internal int SoundRandom() => gamemode == GameMode.Single ? random.RndT() : Random.Shared.Next(256);
+    internal int SoundRandom() => GameMode == GameMode.Single ? Random.RndT() : System.Random.Shared.Next(256);
 }

@@ -85,12 +85,12 @@ internal partial record BlakeMonster
             if (IsDiagonal(Dir))
             {
                 var left = (ObjDir)(((int)Dir + 2) % 8);
-                var right = opposite[(byte)left];
+                var right = Opposite[(byte)left];
                 if (TryBounceDir(left) || TryBounceDir(right))
                     continue;
             }
 
-            if (!TryBounceDir(opposite[(byte)Dir]))
+            if (!TryBounceDir(Opposite[(byte)Dir]))
             {
                 Dir = ObjDir.NoDir;
                 return;
@@ -129,7 +129,7 @@ internal partial record BlakeMonster
                 "horizontal" => (NextRandom() & 1) != 0 ? ObjDir.East : ObjDir.West,
                 _ => (ObjDir)((NextRandom() % 4) * 2 + 1),
             };
-            if (TryBounceDir(dir) || TryBounceDir(opposite[(byte)dir]))
+            if (TryBounceDir(dir) || TryBounceDir(Opposite[(byte)dir]))
                 return;
         }
         Dir = ObjDir.NoDir;

@@ -69,7 +69,7 @@ public class PlayerClassRulesTests
     private static (PlayerClassRules Rules, GameSession Session) Playing(string playerClass)
     {
         var session = new GameSession();
-        session.playerstate.playerclass = playerClass;
+        session.PlayerState.PlayerClass = playerClass;
         return (new PlayerClassRules(null!, new InventoryManager(ActorDefs.Metadata(Yaml)), session), session);
     }
 
@@ -115,9 +115,9 @@ public class PlayerClassRulesTests
         var (rules, session) = Playing("Soldier");
 
         // Act / Assert
-        Assert.That(rules.StandingEyeZ(session.playerstate), Is.EqualTo(GameConstants.MaxEye));
-        session.playerstate.playerclass = "Player";
-        Assert.That(rules.StandingEyeZ(session.playerstate), Is.EqualTo(GameConstants.EyeDefault));
+        Assert.That(rules.StandingEyeZ(session.PlayerState), Is.EqualTo(GameConstants.MaxEye));
+        session.PlayerState.PlayerClass = "Player";
+        Assert.That(rules.StandingEyeZ(session.PlayerState), Is.EqualTo(GameConstants.EyeDefault));
     }
 
     [TestCase("Pistol", true)]

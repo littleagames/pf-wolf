@@ -25,15 +25,15 @@ public class RandomTableTests
 
         // Act / Assert
         Assert.That(Enumerable.Range(0, 256).Select(_ => random.RndT()), Is.EqualTo(first));
-        Assert.That(random.rndindex, Is.EqualTo(0));
+        Assert.That(random.RndIndex, Is.EqualTo(0));
     }
 
     [Test]
     public void Two_Tables_At_The_Same_Place_Agree()
     {
         // Arrange: as a joining player is given the host's place
-        var host = new RandomTable { rndindex = 77 };
-        var joiner = new RandomTable { rndindex = host.rndindex };
+        var host = new RandomTable { RndIndex = 77 };
+        var joiner = new RandomTable { RndIndex = host.RndIndex };
 
         // Act / Assert
         for (int i = 0; i < 300; i++)
@@ -50,7 +50,7 @@ public class RandomTableTests
         random.InitRndT(randomize: true);
 
         // Assert
-        Assert.That(random.rndindex, Is.InRange(0, 255));
+        Assert.That(random.RndIndex, Is.InRange(0, 255));
     }
 }
 
@@ -77,8 +77,8 @@ public class HighScoreTests
 
         // Assert
         Assert.That(table, Has.Length.EqualTo(9));
-        Assert.That(table[0].name, Is.EqualTo("id software-'92"));
-        Assert.That((table[8].name, table[8].score, table[8].completed), Is.EqualTo(("", 10000, (ushort)1)));
+        Assert.That(table[0].Name, Is.EqualTo("id software-'92"));
+        Assert.That((table[8].Name, table[8].Score, table[8].Completed), Is.EqualTo(("", 10000, (ushort)1)));
     }
 
     [Test]
@@ -92,8 +92,8 @@ public class HighScoreTests
         }, HighScore.WolfDefaults());
 
         // Assert
-        Assert.That((table[0].name, table[0].score, table[0].completed), Is.EqualTo(("Blake", 5000, (ushort)3)));
-        Assert.That(table[1].name, Is.Empty);
+        Assert.That((table[0].Name, table[0].Score, table[0].Completed), Is.EqualTo(("Blake", 5000, (ushort)3)));
+        Assert.That(table[1].Name, Is.Empty);
     }
 
     [TestCase(0, 1)]
@@ -107,7 +107,7 @@ public class HighScoreTests
     public void A_Score_Reads_Back_What_Was_Written()
     {
         // Arrange
-        var score = new HighScore { name = "Jérôme", score = 123456, completed = 9, episode = 2 };
+        var score = new HighScore { Name = "Jérôme", Score = 123456, Completed = 9, Episode = 2 };
         using var stream = new MemoryStream();
 
         // Act
@@ -118,14 +118,14 @@ public class HighScoreTests
 
         // Assert: Latin-1, so an accented letter is still one byte
         Assert.That(stream.Length, Is.EqualTo(HighScore.MaxHighName + 1 + 4 + 2 + 2));
-        Assert.That((read.name, read.score, read.completed, read.episode), Is.EqualTo(("Jérôme", 123456, (ushort)9, (ushort)2)));
+        Assert.That((read.Name, read.Score, read.Completed, read.Episode), Is.EqualTo(("Jérôme", 123456, (ushort)9, (ushort)2)));
     }
 
     [Test]
     public void A_Long_Name_Is_Cut_To_Fit()
     {
         // Arrange
-        var score = new HighScore { name = new string('x', 100) };
+        var score = new HighScore { Name = new string('x', 100) };
         using var stream = new MemoryStream();
 
         // Act
@@ -135,7 +135,7 @@ public class HighScoreTests
         read.Read(new BinaryReader(stream));
 
         // Assert
-        Assert.That(read.name, Has.Length.EqualTo(HighScore.MaxHighName));
+        Assert.That(read.Name, Has.Length.EqualTo(HighScore.MaxHighName));
     }
 }
 

@@ -13,11 +13,11 @@ internal sealed class BJVictory(MapManager map, GameSession session)
     internal void VictoryTile()
     {
         SpawnBJVictory();
-        session.gamestate.victoryflag = true;
+        session.GameState.VictoryFlag = true;
     }
 
     // Ends the game in victory (the Angel of Death's last death frame)
-    internal void Victory(Entities.Actors.Actor ob) => session.playstate = PlayState.Victorious;
+    internal void Victory(Entities.Actors.Actor ob) => session.PlayState = PlayState.Victorious;
 
     /*
     ===============
@@ -31,7 +31,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
     {
         int move;
 
-        move = (int)(GameConstants.BjRunSpeed * session.tics);
+        move = (int)(GameConstants.BjRunSpeed * session.Tics);
 
         while (move != 0)
         {
@@ -66,7 +66,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
     {
         int move;
 
-        move = (int)(GameConstants.BjJumpSpeed * session.tics);
+        move = (int)(GameConstants.BjJumpSpeed * session.Tics);
         ob.MoveObj(move);
     }
 
@@ -81,13 +81,13 @@ internal sealed class BJVictory(MapManager map, GameSession session)
 
     internal void ThinkBjDone(Entities.Actors.Actor ob)
     {
-        session.playstate = PlayState.Victorious;                            // exit castle tile
+        session.PlayState = PlayState.Victorious;                            // exit castle tile
     }
 
 
     internal void SpawnBJVictory()
     {
-        var player = session.player;
+        var player = session.Player;
 
         // Same spot the legacy SpawnNewObj used: BJ's tile is the one south of the player's, but
         // he starts at the player's exact position (SpawnAtActor copies the player's x/y).

@@ -14,9 +14,9 @@ internal sealed class NewGames(
     PlayerClassRules classes,
     GameSession session)
 {
-    /// <summary>The skill being played (game-info skills, by gamestate.difficulty); an ordinary one if it's missing</summary>
+    /// <summary>The skill being played (game-info skills, by GameState.difficulty); an ordinary one if it's missing</summary>
     internal SkillInfo CurrentSkill =>
-        engine.GetGameInfo().Skills.Values.ElementAtOrDefault(session.gamestate.difficulty) ?? new SkillInfo();
+        engine.GetGameInfo().Skills.Values.ElementAtOrDefault(session.GameState.Difficulty) ?? new SkillInfo();
 
     /// <summary>
     /// The skill demos are recorded and played back on (they only replay right on the skill they
@@ -36,25 +36,25 @@ internal sealed class NewGames(
         }
     }
 
-    /// <summary>The class the next new game is played as (the `playerclass` command); null for the default</summary>
-    internal string? newGamePlayerClass;
+    /// <summary>The class the next new game is played as (the `PlayerClass` command); null for the default</summary>
+    internal string? NewGamePlayerClass;
 
     /// <summary>
-    /// Starts a game as <paramref name="playerClass"/>: when null, the `playerclass` command's pick,
+    /// Starts a game as <paramref name="playerClass"/>: when null, the `PlayerClass` command's pick,
     /// else game-info's first player class
     /// </summary>
     internal void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo, string? playerClass = null)
     {
-        session.gamestate = new GameState();
+        session.GameState = new GameState();
         session.LevelRatios = [];       // the win tally averages only this game's floors
         hubs.ResetHubs();            // no levels kept, no floors been on (Gameplay/Hubs.cs)
-        session.gamestate.difficulty = difficulty;
+        session.GameState.Difficulty = difficulty;
         playersManager.ResetPlayers();         // just the local player, until anyone joins (Gameplay/Players.cs)
         inventory.ClearShared();
-        playersManager.StartPlayer(playerClass ?? newGamePlayerClass ?? classes.DefaultPlayerClass);
-        session.gamestate.cluster = mapInfo.Cluster;
-        session.gamestate.mapon = epInfo.StartMap;
+        playersManager.StartPlayer(playerClass ?? NewGamePlayerClass ?? classes.DefaultPlayerClass);
+        session.GameState.Cluster = mapInfo.Cluster;
+        session.GameState.MapOn = epInfo.StartMap;
 
-        session.startgame = true;
+        session.GameChosen = true;
     }
 }

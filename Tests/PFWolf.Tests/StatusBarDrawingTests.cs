@@ -16,7 +16,7 @@ public class StatusBarDrawingTests
     [Test]
     public void Hidden_With_The_View_Full_Screen()
     {
-        Assert.That(Bar(new GameSession { ingame = true }, fullScreen: true).StatusBarHidden, Is.True);
+        Assert.That(Bar(new GameSession { InGame = true }, fullScreen: true).StatusBarHidden, Is.True);
     }
 
     [Test]
@@ -24,11 +24,11 @@ public class StatusBarDrawingTests
     {
         // Arrange: the bar is this machine's player's
         var session = new GameSession();
-        session.players.Add(new Entities.PlayerState());
+        session.Players.Add(new Entities.PlayerState());
         var bar = Bar(session);
 
         // Act / Assert
-        using (session.ActAs(session.players[1]))
+        using (session.ActAs(session.Players[1]))
             Assert.That(bar.StatusBarHidden, Is.True);
         Assert.That(bar.StatusBarHidden, Is.False);
     }
@@ -38,7 +38,7 @@ public class StatusBarDrawingTests
     {
         // Arrange
         var session = new GameSession();
-        session.playerstate.health = 50;
+        session.PlayerState.Health = 50;
         var bar = Bar(session);
 
         // Act / Assert: the managers it's given are null, so drawing anything would throw

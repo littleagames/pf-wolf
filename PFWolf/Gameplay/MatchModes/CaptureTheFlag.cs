@@ -39,10 +39,10 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
         public FlagState State;
         public (int x, int y) At;           // where it lies, dropped
         public int Carrier = -1;            // the player carrying it (their Number)
-        public int DroppedAt;               // when it was dropped (gamestate.TimeCount)
+        public int DroppedAt;               // when it was dropped (GameState.TimeCount)
     }
 
-    internal readonly Flag[] flags = [new(), new()];
+    internal readonly Flag[] Flags = [new(), new()];
 
     static readonly string[] FlagClasses = ["RedFlag", "BlueFlag"];
     static readonly string[] BaseClasses = ["RedFlagBase", "BlueFlagBase"];
@@ -56,7 +56,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
         {
             if (Markers(BaseClasses[team]) is { Count: > 0 } placed)
                 homes[team] = placed[0];
-            else if (map.TeamStarts[team] is { Count: > 0 } starts)
+            else if (Map.TeamStarts[team] is { Count: > 0 } starts)
                 homes[team] = NearestOf(floor, Middle(starts.Select(s => (s.TileX, s.TileY)).ToList()));
         }
         if (homes[0] == null || homes[1] == null)
@@ -76,38 +76,38 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
 
         for (int team = 0; team < 2; team++)
         {
-            flags[team].Home = homes[team] ?? (1, 1);
+            Flags[team].Home = homes[team] ?? (1, 1);
             SendHome(team);
         }
         ShowFlags();
     }
 
-    public (int x, int y)? TeamHome(int team) => team is 0 or 1 ? flags[team].Home : null;
+    public (int x, int y)? TeamHome(int team) => team is 0 or 1 ? Flags[team].Home : null;
 
     // A flag back at its base
     void SendHome(int team)
     {
-        var flag = flags[team];
+        var flag = Flags[team];
         flag.State = FlagState.Home;
         flag.Carrier = -1;
         flag.At = flag.Home;
     }
 
     Entities.PlayerState? CarrierOf(Flag flag) =>
-        flag.State == FlagState.Carried && flag.Carrier >= 0 && flag.Carrier < session.players.Count ? session.players[flag.Carrier] : null;
+        flag.State == FlagState.Carried && flag.Carrier >= 0 && flag.Carrier < Session.Players.Count ? Session.Players[flag.Carrier] : null;
 
     public override void Tick()
     {
-        var time = session.gamestate.TimeCount;
+        var time = Session.GameState.TimeCount;
 
         // A carrier gone from the game (or the level) drops it
         for (int team = 0; team < 2; team++)
-            if (flags[team].State == FlagState.Carried && CarrierOf(flags[team]) is not { Gone: false, Pawn: not null, health: > 0 })
-                Drop(team, CarrierOf(flags[team]));
+            if (Flags[team].State == FlagState.Carried && CarrierOf(Flags[team]) is not { Gone: false, Pawn: not null, Health: > 0 })
+                Drop(team, CarrierOf(Flags[team]));
 
         // A flag lying too long goes home
         for (int team = 0; team < 2; team++)
-            if (flags[team].State == FlagState.Dropped && time - flags[team].DroppedAt >= ReturnTics)
+            if (Flags[team].State == FlagState.Dropped && time - Flags[team].DroppedAt >= ReturnTics)
             {
                 SendHome(team);
                 Announce($"The {GameModes.TeamLabel(team)} flag went back to base", "misc/end_bonus1");
@@ -121,7 +121,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
             int own = p.Team, other = 1 - p.Team;
 
             // Taking the other team's flag (at its base, or where it was dropped)
-            var theirs = flags[other];
+            var theirs = Flags[other];
             if (theirs.State != FlagState.Carried && Touches(pawn, theirs.At.x, theirs.At.y))
             {
                 theirs.State = FlagState.Carried;
@@ -130,7 +130,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
             }
 
             // Sending your own home, where it was dropped
-            var mine = flags[own];
+            var mine = Flags[own];
             if (mine.State == FlagState.Dropped && Touches(pawn, mine.At.x, mine.At.y))
             {
                 SendHome(own);
@@ -144,7 +144,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
                 SendHome(other);
                 p.Objective++;
                 Announce($"{NameOf(p)} captured the {GameModes.TeamLabel(other)} flag!", "misc/1up");
-                match.AddTeamScore(own, 1);
+                Match.AddTeamScore(own, 1);
             }
         }
 
@@ -155,14 +155,14 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
     public void PlayerDied(Entities.PlayerState victim)
     {
         for (int team = 0; team < 2; team++)
-            if (flags[team].State == FlagState.Carried && flags[team].Carrier == victim.Number)
+            if (Flags[team].State == FlagState.Carried && Flags[team].Carrier == victim.Number)
                 Drop(team, victim);
         ShowFlags();
     }
 
     void Drop(int team, Entities.PlayerState? carrier)
     {
-        var flag = flags[team];
+        var flag = Flags[team];
         if (carrier?.Pawn is not { } pawn)
         {
             SendHome(team);
@@ -171,7 +171,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
         flag.State = FlagState.Dropped;
         flag.Carrier = -1;
         flag.At = (pawn.TileX, pawn.TileY);
-        flag.DroppedAt = session.gamestate.TimeCount;
+        flag.DroppedAt = Session.GameState.TimeCount;
         Announce($"{NameOf(carrier)} dropped the {GameModes.TeamLabel(team)} flag");
     }
 
@@ -180,7 +180,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
     {
         for (int team = 0; team < 2; team++)
         {
-            var flag = flags[team];
+            var flag = Flags[team];
             if (flag.State == FlagState.Carried)
                 HideFlags(FlagClasses[team]);
             else
@@ -190,11 +190,11 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
             }
         }
 
-        foreach (var p in session.players)
+        foreach (var p in Session.Players)
         {
-            int carried = Array.FindIndex(flags, f => f.State == FlagState.Carried && f.Carrier == p.Number);
+            int carried = Array.FindIndex(Flags, f => f.State == FlagState.Carried && f.Carrier == p.Number);
             p.CarrySprite = carried >= 0 ? CarrySprite : null;
-            p.CarryTranslation = carried >= 0 && p.Team is 0 or 1 ? hooks.Translation($"{GameModes.TeamNames[p.Team]}-carrier") : null;
+            p.CarryTranslation = carried >= 0 && p.Team is 0 or 1 ? Hooks.Translation($"{GameModes.TeamNames[p.Team]}-carrier") : null;
         }
     }
 
@@ -202,25 +202,25 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
     public string? StatusLine() =>
         string.Join("   ", Enumerable.Range(0, 2).Select(team =>
         {
-            var flag = flags[team];
+            var flag = Flags[team];
             var where = flag.State switch
             {
                 FlagState.Home => "home",
-                FlagState.Dropped => $"dropped ({Math.Max(0, ReturnTics - (session.gamestate.TimeCount - flag.DroppedAt)) / 70}s)",
+                FlagState.Dropped => $"dropped ({Math.Max(0, ReturnTics - (Session.GameState.TimeCount - flag.DroppedAt)) / 70}s)",
                 _ => CarrierOf(flag) is { } carrier
-                    ? ReferenceEquals(carrier, session.localplayer) ? "you have it!" : $"{NameOf(carrier)} has it"
+                    ? ReferenceEquals(carrier, Session.LocalPlayer) ? "you have it!" : $"{NameOf(carrier)} has it"
                     : "taken",
             };
             return $"{GameModes.TeamLabel(team)} flag: {where}";
         }));
 
     public string? Details() =>
-        $"red base {flags[0].Home.x},{flags[0].Home.y}; blue base {flags[1].Home.x},{flags[1].Home.y}; "
-        + $"red flag {flags[0].State} at {flags[0].At.x},{flags[0].At.y}; blue flag {flags[1].State} at {flags[1].At.x},{flags[1].At.y}";
+        $"red base {Flags[0].Home.x},{Flags[0].Home.y}; blue base {Flags[1].Home.x},{Flags[1].Home.y}; "
+        + $"red flag {Flags[0].State} at {Flags[0].At.x},{Flags[0].At.y}; blue flag {Flags[1].State} at {Flags[1].At.x},{Flags[1].At.y}";
 
     public override void Write(BinaryWriter bw)
     {
-        foreach (var flag in flags)
+        foreach (var flag in Flags)
         {
             WriteTile(bw, flag.Home);
             bw.Write((byte)flag.State);
@@ -232,7 +232,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
 
     public override void Read(BinaryReader br)
     {
-        foreach (var flag in flags)
+        foreach (var flag in Flags)
         {
             flag.Home = ReadTile(br);
             flag.State = (FlagState)br.ReadByte();

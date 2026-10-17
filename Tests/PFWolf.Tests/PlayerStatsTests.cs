@@ -81,21 +81,21 @@ public class PlayerStatsTests
         public readonly GameSession Session = new();
         public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
         public readonly PlayerStats Stats;
-        public int GodMode { get => Session.godmode; set => Session.godmode = (byte)value; }
-        public bool Demo { get => Session.demoplayback; set => Session.demoplayback = value; }
+        public int GodMode { get => Session.GodMode; set => Session.GodMode = (byte)value; }
+        public bool Demo { get => Session.DemoPlayback; set => Session.DemoPlayback = value; }
         public double Skill = 1;
         public int NetDeaths;
-        public int Deaths => Session.playstate == PlayState.Died ? 1 : 0;
+        public int Deaths => Session.PlayState == PlayState.Died ? 1 : 0;
 
         public Rig(string playerClass = "Player")
         {
             // Acting as a second player: no damage flash or status bar, which only the local player has
-            Session.players.Add(new Entities.PlayerState());
+            Session.Players.Add(new Entities.PlayerState());
             Session.ActingChanged = p => Inventory.SetHolder(p.Items);
-            Session.SetActing(Session.players[1]);
-            Player.playerclass = playerClass;
-            Player.health = 100;
-            Player.lives = 3;
+            Session.SetActing(Session.Players[1]);
+            Player.PlayerClass = playerClass;
+            Player.Health = 100;
+            Player.Lives = 3;
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
@@ -105,7 +105,7 @@ public class PlayerStatsTests
                 new Configuration.GameSettings(), new PlayerStatsHooks(() => Skill, () => NetDeaths++, _ => { }));
         }
 
-        public Entities.PlayerState Player => Session.playerstate;
+        public Entities.PlayerState Player => Session.PlayerState;
     }
 
     private static readonly Monster Guard = new() { Name = "Guard" };
@@ -120,7 +120,7 @@ public class PlayerStatsTests
         rig.Stats.TakeDamage(30, Guard);
 
         // Assert
-        Assert.That(rig.Player.health, Is.EqualTo(70));
+        Assert.That(rig.Player.Health, Is.EqualTo(70));
         Assert.That(rig.Player.LastAttacker, Is.SameAs(Guard));
         Assert.That(rig.Player.PainTics, Is.EqualTo(10));
     }
@@ -135,7 +135,7 @@ public class PlayerStatsTests
         rig.Stats.TakeDamage(40, Guard);
 
         // Assert
-        Assert.That(rig.Player.health, Is.EqualTo(80));
+        Assert.That(rig.Player.Health, Is.EqualTo(80));
     }
 
     [Test]
@@ -143,14 +143,14 @@ public class PlayerStatsTests
     {
         // Arrange: 50% armor with 10 points left
         var rig = new Rig();
-        (rig.Player.armor, rig.Player.armorpercent) = (10, 50);
+        (rig.Player.Armor, rig.Player.ArmorPercent) = (10, 50);
 
         // Act
         rig.Stats.TakeDamage(40, Guard);
 
         // Assert: 10 of the 20 it would have saved
-        Assert.That(rig.Player.health, Is.EqualTo(70));
-        Assert.That((rig.Player.armor, rig.Player.armorpercent), Is.EqualTo(((short)0, (short)0)));
+        Assert.That(rig.Player.Health, Is.EqualTo(70));
+        Assert.That((rig.Player.Armor, rig.Player.ArmorPercent), Is.EqualTo(((short)0, (short)0)));
     }
 
     [Test]
@@ -158,7 +158,7 @@ public class PlayerStatsTests
     {
         var rig = new Rig { GodMode = 1 };
         rig.Stats.TakeDamage(40, Guard);
-        Assert.That(rig.Player.health, Is.EqualTo(100));
+        Assert.That(rig.Player.Health, Is.EqualTo(100));
     }
 
     [Test]
@@ -171,7 +171,7 @@ public class PlayerStatsTests
         rig.Stats.TakeDamage(500, Guard);
 
         // Assert
-        Assert.That(rig.Player.health, Is.Zero);
+        Assert.That(rig.Player.Health, Is.Zero);
         Assert.That((rig.Deaths, rig.NetDeaths), Is.EqualTo((1, 0)));
     }
 
@@ -194,9 +194,9 @@ public class PlayerStatsTests
     public void Nothing_Hurts_Once_The_Game_Is_Won()
     {
         var rig = new Rig();
-        rig.Session.gamestate.victoryflag = true;
+        rig.Session.GameState.VictoryFlag = true;
         rig.Stats.TakeDamage(40, Guard);
-        Assert.That(rig.Player.health, Is.EqualTo(100));
+        Assert.That(rig.Player.Health, Is.EqualTo(100));
     }
 
     [Test]
@@ -207,9 +207,9 @@ public class PlayerStatsTests
 
         // Act / Assert
         Assert.That(rig.Stats.TryGiveArmor("GreenArmor"), Is.True);
-        Assert.That((rig.Player.armor, rig.Player.armorpercent), Is.EqualTo(((short)100, (short)33)));
+        Assert.That((rig.Player.Armor, rig.Player.ArmorPercent), Is.EqualTo(((short)100, (short)33)));
         Assert.That(rig.Stats.TryGiveArmor("BlueArmor"), Is.True);
-        Assert.That((rig.Player.armor, rig.Player.armorpercent), Is.EqualTo(((short)150, (short)50)));    // the class's max armor
+        Assert.That((rig.Player.Armor, rig.Player.ArmorPercent), Is.EqualTo(((short)150, (short)50)));    // the class's max armor
         Assert.That(rig.Stats.TryGiveArmor("GreenArmor"), Is.False);
     }
 
@@ -222,9 +222,9 @@ public class PlayerStatsTests
 
         // Act / Assert
         Assert.That(rig.Stats.TryGiveArmor("ArmorBonus"), Is.False);     // at the class's max already
-        rig.Player.armor = 20;
+        rig.Player.Armor = 20;
         Assert.That(rig.Stats.TryGiveArmor("ArmorBonus"), Is.True);
-        Assert.That((rig.Player.armor, rig.Player.armorpercent), Is.EqualTo(((short)21, (short)50)));
+        Assert.That((rig.Player.Armor, rig.Player.ArmorPercent), Is.EqualTo(((short)21, (short)50)));
     }
 
     [Test]
@@ -232,15 +232,15 @@ public class PlayerStatsTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Player.health = 5;
+        rig.Player.Health = 5;
 
         // Act / Assert: blood only helps the nearly dead
         Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Blood" }, 25), Is.True);
-        Assert.That(rig.Player.health, Is.EqualTo(10));
+        Assert.That(rig.Player.Health, Is.EqualTo(10));
         Assert.That(rig.Stats.CouldTakeInventory(new Health { Name = "Blood" }), Is.False);
         Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Blood" }, 25), Is.False);
         Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Medikit" }, 125), Is.True);
-        Assert.That(rig.Player.health, Is.EqualTo(100));
+        Assert.That(rig.Player.Health, Is.EqualTo(100));
         Assert.That(rig.Stats.CouldTakeInventory(new Health { Name = "Medikit" }), Is.False);
     }
 
@@ -257,13 +257,13 @@ public class PlayerStatsTests
     {
         // Arrange: over the max (a cheat, a megasphere)
         var rig = new Rig();
-        rig.Player.health = 150;
+        rig.Player.Health = 150;
 
         // Act
         rig.Stats.HealSelf(10);
 
         // Assert
-        Assert.That(rig.Player.health, Is.EqualTo(150));
+        Assert.That(rig.Player.Health, Is.EqualTo(150));
     }
 
     [Test]
@@ -277,7 +277,7 @@ public class PlayerStatsTests
             rig.Stats.GiveExtraMan();
 
         // Assert
-        Assert.That(rig.Player.lives, Is.EqualTo(4));
+        Assert.That(rig.Player.Lives, Is.EqualTo(4));
     }
 
     [Test]
@@ -294,8 +294,8 @@ public class PlayerStatsTests
         Assert.That(rig.Inventory.Has("GoldKey"), Is.False);
         Assert.That(rig.Inventory.GetCount("Clip"), Is.EqualTo(8));
         Assert.That(rig.Inventory.Has("GreenArmor"), Is.False);         // worn, not held
-        Assert.That((rig.Player.armor, rig.Player.armorpercent), Is.EqualTo(((short)100, (short)33)));
-        Assert.That((rig.Player.weapon, rig.Player.chosenweapon), Is.EqualTo(("Pistol", "Pistol")));
+        Assert.That((rig.Player.Armor, rig.Player.ArmorPercent), Is.EqualTo(((short)100, (short)33)));
+        Assert.That((rig.Player.Weapon, rig.Player.ChosenWeapon), Is.EqualTo(("Pistol", "Pistol")));
     }
 
     [Test]

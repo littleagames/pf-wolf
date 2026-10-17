@@ -20,7 +20,7 @@ public class InputPollingTests
         _input = new InputManager(new Lazy<ConsoleManager>(() => _console));
         _settings = new ControlSettings();
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
-        _session = new GameSession { tics = 2 };
+        _session = new GameSession { Tics = 2 };
         _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, _session, null!);
         _polling = new InputPolling(_input, _console, new AutomapManager(), new ControlBindings(), _settings, _frame,
             new DemoBuffer(), _session,
@@ -39,7 +39,7 @@ public class InputPollingTests
         _polling.PollButtonMove();
 
         // Assert: two tics at walking speed
-        Assert.That((_polling.controly, _polling.controlx), Is.EqualTo((-2 * GameConstants.BaseMove, 2 * GameConstants.BaseMove)));
+        Assert.That((_polling.ControlY, _polling.ControlX), Is.EqualTo((-2 * GameConstants.BaseMove, 2 * GameConstants.BaseMove)));
     }
 
     [Test]
@@ -51,7 +51,7 @@ public class InputPollingTests
 
         _polling.PollButtonMove();
 
-        Assert.That((_polling.controly, _polling.controlx), Is.EqualTo((2 * GameConstants.RunMove, -2 * GameConstants.RunMove)));
+        Assert.That((_polling.ControlY, _polling.ControlX), Is.EqualTo((2 * GameConstants.RunMove, -2 * GameConstants.RunMove)));
     }
 
     [Test]
@@ -60,14 +60,14 @@ public class InputPollingTests
         // Act / Assert
         _input.SetButtonPressed(ButtonType.LookUp, true);
         _polling.PollButtonMove();
-        Assert.That(_polling.controlpitch, Is.EqualTo(2 * InputPolling.LookSpeed).Within(1e-9));
+        Assert.That(_polling.ControlPitch, Is.EqualTo(2 * InputPolling.LookSpeed).Within(1e-9));
 
         _input.SetButtonPressed(ButtonType.LookUp, false);
         _input.SetButtonPressed(ButtonType.LookDown, true);
         _input.SetButtonPressed(ButtonType.CenterView, true);
         _polling.PollButtonMove();
-        Assert.That(_polling.controlpitch, Is.EqualTo(0).Within(1e-9));
-        Assert.That(_polling.controlcenterview, Is.True);
+        Assert.That(_polling.ControlPitch, Is.EqualTo(0).Within(1e-9));
+        Assert.That(_polling.ControlCenterView, Is.True);
     }
 
     [Test]
@@ -84,7 +84,7 @@ public class InputPollingTests
     [TestCase(0, 0, 0)]
     public void The_Wheel_Counts_Notches_Its_Way(int turned, int up, int down)
     {
-        _polling.wheelnotches = turned;
+        _polling.WheelNotchesThisFrame = turned;
         Assert.That((_polling.WheelNotches(InputCode.WheelUp), _polling.WheelNotches(InputCode.WheelDown)), Is.EqualTo((up, down)));
         Assert.That(_polling.WheelNotches(InputCode.FromKey(ScanCodes.A)), Is.EqualTo(0));
     }
@@ -93,7 +93,7 @@ public class InputPollingTests
     public void The_Mouse_Wheel_Only_Counts_With_The_Mouse_Enabled()
     {
         // Arrange
-        _polling.wheelnotches = 1;
+        _polling.WheelNotchesThisFrame = 1;
 
         // Act / Assert
         _settings.mouseenabled = false;
@@ -109,12 +109,12 @@ public class InputPollingTests
         // Arrange: a bind on the wheel
         _settings.mouseenabled = true;
         _console.Bind(InputCode.WheelUp, "echo up");
-        _polling.wheelnotches = 1;
+        _polling.WheelNotchesThisFrame = 1;
 
         // Act / Assert: every frame it turns is a press
         Assert.That(_polling.TakeFreshPresses(), Is.EqualTo(new[] { InputCode.WheelUp }));
         Assert.That(_polling.TakeFreshPresses(), Is.EqualTo(new[] { InputCode.WheelUp }));
-        _polling.wheelnotches = 0;
+        _polling.WheelNotchesThisFrame = 0;
         Assert.That(_polling.TakeFreshPresses(), Is.Empty);
     }
 
@@ -125,6 +125,6 @@ public class InputPollingTests
         _polling.WaitFixedTics(4);
 
         // Assert
-        Assert.That(_session.tics, Is.EqualTo(4));
+        Assert.That(_session.Tics, Is.EqualTo(4));
     }
 }

@@ -15,7 +15,7 @@ internal sealed class PlayerClassRules(GameEngineManager engine, InventoryManage
 
     // The class being played as, for its `player.*` properties (inherited from Player where it
     // leaves them out)
-    string PlayerClass => session.playerstate.playerclass;
+    string PlayerClass => session.PlayerState.PlayerClass;
 
     /// <summary>The classes a new game can be played as: game-info's player-classes, else just Player</summary>
     internal List<string> PlayerClasses()
@@ -72,7 +72,7 @@ internal sealed class PlayerClassRules(GameEngineManager engine, InventoryManage
 
     /// <summary>How high a player's eyes are standing, in texels: their class's `player.eyeheight` (EyeDefault when left out)</summary>
     internal int StandingEyeZ(Entities.PlayerState p) =>
-        Math.Clamp(inventory.GetIntProperty(p.playerclass, "player.eyeheight", GameConstants.EyeDefault), GameConstants.MinEye, GameConstants.MaxEye);
+        Math.Clamp(inventory.GetIntProperty(p.PlayerClass, "player.eyeheight", GameConstants.EyeDefault), GameConstants.MinEye, GameConstants.MaxEye);
 
     /// <summary>
     /// Whether the class may pick up a weapon or ammo: with a `player.weapons` list, only the

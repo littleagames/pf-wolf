@@ -28,7 +28,7 @@ internal static partial class GameHost
     internal static FactionManager _factionManager;
     internal static TranslationManager _translationManager;
 
-    // Who's playing, the acting player, tics, gamestate and the camera (Gameplay/GameSession.cs)
+    // Who's playing, the acting player, tics, GameState and the camera (Gameplay/GameSession.cs)
     internal static readonly GameSession session = new();
 
     /*
@@ -52,8 +52,8 @@ internal static partial class GameHost
     internal static HighScore[] Scores { get => settings.Scores; set => settings.Scores = value; }
     internal static void InitHighScores() => Scores = HighScore.TableFor(_gameEngineManager.GetGameInfo().HighScores, Scores);
 
-    internal static void InitRandom(bool randomize) => session.random.InitRndT(randomize);
-    internal static int NextRandom() => session.random.RndT();
+    internal static void InitRandom(bool randomize) => session.Random.InitRndT(randomize);
+    internal static int NextRandom() => session.Random.RndT();
 
     // Everything written to stdout from the start until the signon screen is done
     private static StartupOutput? startupOutput;
@@ -153,7 +153,7 @@ internal static partial class GameHost
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
-        _inventoryManager.PlayerClass = () => playerstate.playerclass;
+        _inventoryManager.PlayerClass = () => playerstate.PlayerClass;
         session.ActingChanged = p => _inventoryManager.SetHolder(p.Items);
         session.GameModeChanged = mode => _inventoryManager.ShareKeys = mode.IsCoopLike();
         SetActing(playerstate);         // the inventory reads the acting player's items
@@ -358,7 +358,7 @@ internal static partial class GameHost
     static int shootdelta { get => render.ShootDelta; set => render.ShootDelta = value; }   // pixels away from CenterX a target can be
     static int heightnumerator { get => render.HeightNumerator; set => render.HeightNumerator = value; }
 
-    static bool startgame { get => session.startgame; set => session.startgame = value; }
+    static bool startgame { get => session.GameChosen; set => session.GameChosen = value; }
 
     //
     // Command line parameter variables
@@ -515,20 +515,20 @@ internal static partial class GameHost
     // Fade styles and lengths, the death screen and the weapon in hand, from game-info
     // (Gameplay/GameInfoSettings.cs); ordinary fades use _videoManager.FadeStyle and FadeTics
     static GameInfoSettings gameInfoSettings = new();
-    internal static FadeStyle levelFadeStyle => gameInfoSettings.levelFadeStyle;
-    internal static int levelFadeTics => gameInfoSettings.levelFadeTics;
-    internal static int deathTurnSpeed => gameInfoSettings.deathTurnSpeed;
-    internal static int? deathDropHeight => gameInfoSettings.deathDropHeight;
-    internal static int deathDropSpeed => gameInfoSettings.deathDropSpeed;
-    internal static double weaponScale => gameInfoSettings.weaponScale;
+    internal static FadeStyle levelFadeStyle => gameInfoSettings.LevelFadeStyle;
+    internal static int levelFadeTics => gameInfoSettings.LevelFadeTics;
+    internal static int deathTurnSpeed => gameInfoSettings.DeathTurnSpeed;
+    internal static int? deathDropHeight => gameInfoSettings.DeathDropHeight;
+    internal static int deathDropSpeed => gameInfoSettings.DeathDropSpeed;
+    internal static double weaponScale => gameInfoSettings.WeaponScale;
     internal static readonly WeaponBob weaponBob = new();
 
     private static void ReadFadeStyles()
     {
         gameInfoSettings = GameInfoSettings.Read(_gameEngineManager.GetGameInfo());
-        _videoManager.FadeStyle = gameInfoSettings.screenFadeStyle;
-        _videoManager.FadeTics = gameInfoSettings.screenFadeTics;
-        weaponBob.Enabled = gameInfoSettings.weaponBob;
+        _videoManager.FadeStyle = gameInfoSettings.ScreenFadeStyle;
+        _videoManager.FadeTics = gameInfoSettings.ScreenFadeTics;
+        weaponBob.Enabled = gameInfoSettings.WeaponBob;
     }
 
     // From the signon through the title loop to the games it starts (Ui/TitleLoop.cs)
@@ -546,8 +546,8 @@ internal static partial class GameHost
 
     internal static SkillInfo CurrentSkill => newGames.CurrentSkill;
     internal static short DemoSkill => newGames.DemoSkill;
-    /// <summary>The class the next new game is played as (the `playerclass` command); null for the default</summary>
-    internal static string? newGamePlayerClass { get => newGames.newGamePlayerClass; set => newGames.newGamePlayerClass = value; }
+    /// <summary>The class the next new game is played as (the `PlayerClass` command); null for the default</summary>
+    internal static string? newGamePlayerClass { get => newGames.NewGamePlayerClass; set => newGames.NewGamePlayerClass = value; }
     internal static void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo, string? playerClass = null) =>
         newGames.NewGame(difficulty, epInfo, mapInfo, playerClass);
     private record DigiMapEntry

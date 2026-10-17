@@ -9,7 +9,7 @@ internal sealed record PlayerCommandsHooks(
     Action DrawPlayScreen,
     Func<string, string?>? PlayerColor = null);
 
-/// <summary>Several players on one machine, for testing without the network: addplayer, gamemode and controlplayer</summary>
+/// <summary>Several players on one machine, for testing without the network: addplayer, GameMode and controlplayer</summary>
 internal sealed class PlayerCommands(
     ConsoleManager console,
     MapManager map,
@@ -42,19 +42,19 @@ internal sealed class PlayerCommands(
     /// <summary>`addplayer [class]`: a player who stands still (nothing drives them yet), beside you</summary>
     internal void AddPlayerCommand(string[] args)
     {
-        if (session.players.Count >= MaxPlayers)
+        if (session.Players.Count >= MaxPlayers)
             throw new ArgumentException($"there can only be {MaxPlayers} players");
 
         var playerClass = args.Length > 0
             ? classes.FindPlayerClass(args[0]) ?? throw new ArgumentException($"no player class {args[0]}")
-            : session.localplayer.playerclass;
+            : session.LocalPlayer.PlayerClass;
 
-        var p = new Entities.PlayerState { Number = session.players.Count };
-        session.players.Add(p);
-        if (session.gamemode == GameMode.Single)
+        var p = new Entities.PlayerState { Number = session.Players.Count };
+        session.Players.Add(p);
+        if (session.GameMode == GameMode.Single)
             session.SetGameMode(GameMode.Coop);
 
-        var at = session.localplayer.Pawn;
+        var at = session.LocalPlayer.Pawn;
         using (session.ActAs(p))
         {
             playersManager.StartPlayer(playerClass);
@@ -66,11 +66,11 @@ internal sealed class PlayerCommands(
         doors.ConnectAreas();
 
         console.Print($"Player {p.Number + 1} ({playerClass}) is at {p.Pawn!.TileX},{p.Pawn.TileY}; "
-            + $"{session.players.Count} players, {session.gamemode.Id()}");
+            + $"{session.Players.Count} players, {session.GameMode.Id()}");
     }
 
     /// <summary>
-    /// `gamemode [mode [scorelimit]]`: how the players here play together (with more than one).
+    /// `GameMode [mode [scorelimit]]`: how the players here play together (with more than one).
     /// A team mode puts them on alternate teams (setteam changes it), in the teams' colors, and
     /// starts the mode's objective on this level.
     /// </summary>
@@ -78,33 +78,33 @@ internal sealed class PlayerCommands(
     {
         if (args.Length > 0)
         {
-            if (session.players.Count < 2)
+            if (session.Players.Count < 2)
                 throw new ArgumentException("there's only one player: addplayer first");
             var mode = GameModes.Parse(args[0]) ?? throw new ArgumentException($"usage: gamemode [{string.Join("|", GameModes.NetModes.Select(m => m.Id()))} [scorelimit]]");
             session.SetGameMode(mode);
-            deathmatch.netrules = deathmatch.netrules with
+            deathmatch.NetRules = deathmatch.NetRules with
             {
                 ScoreLimit = args.Length > 1 && int.TryParse(args[1], out var limit) ? Math.Max(limit, 0) : mode.DefaultScoreLimit(),
             };
-            foreach (var p in session.players)
+            foreach (var p in session.Players)
                 SetTeam(p, mode.IsTeamGame() ? p.Number % 2 : -1);
             deathmatch.NewMatch();
             if (map != null)
                 deathmatch.ObjectiveLevelSetup();
         }
-        console.Print($"Game mode: {session.gamemode.Id()}, {session.players.Count} player(s)");
+        console.Print($"Game mode: {session.GameMode.Id()}, {session.Players.Count} player(s)");
     }
 
     /// <summary>`match`: the mode, score, time left and objective, and each player's team and score</summary>
     internal void MatchCommand(string[] args)
     {
         var (score, news) = deathmatch.MatchStatus();
-        console.Print($"Match: {session.gamemode.Id()}  {score}" + (news != null ? $"  |  {news}" : ""));
+        console.Print($"Match: {session.GameMode.Id()}  {score}" + (news != null ? $"  |  {news}" : ""));
         if (deathmatch.Objective?.Details() is { } details)
             console.Print($"  {details}");
-        foreach (var p in session.players.Where(p => !p.Gone))
+        foreach (var p in session.Players.Where(p => !p.Gone))
             console.Print($"  {p.Number + 1}. {p.Name ?? $"Player {p.Number + 1}"}" + (p.Team >= 0 ? $" ({GameModes.TeamLabel(p.Team)})" : "")
-                + $": frags {p.Frags}, objective {p.Objective}, kills {p.Kills}, health {p.health}" + (p.Pawn is { } pawn ? $" at {pawn.TileX},{pawn.TileY}" : ""));
+                + $": frags {p.Frags}, objective {p.Objective}, kills {p.Kills}, health {p.Health}" + (p.Pawn is { } pawn ? $" at {pawn.TileX},{pawn.TileY}" : ""));
     }
 
     /// <summary>`setteam &lt;red|blue&gt; [n]`: puts you (or player n) on a team, in its color</summary>
@@ -115,9 +115,9 @@ internal sealed class PlayerCommands(
             throw new ArgumentException("usage: setteam <red|blue> [n]");
         if (!session.IsTeamGame)
             throw new ArgumentException("this isn't a team game: gamemode first");
-        var p = args.Length > 1 && int.TryParse(args[1], out var n) && n >= 1 && n <= session.players.Count
-            ? session.players[n - 1]
-            : session.localplayer;
+        var p = args.Length > 1 && int.TryParse(args[1], out var n) && n >= 1 && n <= session.Players.Count
+            ? session.Players[n - 1]
+            : session.LocalPlayer;
         SetTeam(p, team);
         console.Print($"Player {p.Number + 1} is on {GameModes.TeamLabel(team)}");
     }
@@ -132,16 +132,16 @@ internal sealed class PlayerCommands(
     /// <summary>`controlplayer &lt;n&gt;`: your view, status bar and controls become player n's</summary>
     internal void ControlPlayerCommand(string[] args)
     {
-        if (args.Length == 0 || !int.TryParse(args[0], out var n) || n < 1 || n > session.players.Count)
-            throw new ArgumentException($"usage: controlplayer <1-{session.players.Count}>");
+        if (args.Length == 0 || !int.TryParse(args[0], out var n) || n < 1 || n > session.Players.Count)
+            throw new ArgumentException($"usage: controlplayer <1-{session.Players.Count}>");
 
-        session.localplayer.PendingCmd = default;   // the one left behind stands still
-        session.consoleplayer = n - 1;
-        session.SetActing(session.localplayer);
-        session.camera.FollowPlayer();
+        session.LocalPlayer.PendingCmd = default;   // the one left behind stands still
+        session.ConsolePlayer = n - 1;
+        session.SetActing(session.LocalPlayer);
+        session.Camera.FollowPlayer();
         if (settings.viewsize != 21)
             hooks.DrawPlayScreen();
-        console.Print($"You're player {n} ({session.localplayer.playerclass})");
+        console.Print($"You're player {n} ({session.LocalPlayer.PlayerClass})");
     }
 
 }

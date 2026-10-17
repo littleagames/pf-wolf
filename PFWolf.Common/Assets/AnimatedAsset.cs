@@ -24,7 +24,7 @@ public record AnimationFrame<T>(string Name, T Asset, int Tics) where T : Asset;
 /// <summary>
 /// An animdefs animation: a name that stands for a list of <typeparamref name="T"/> frames, each
 /// shown for some tics, over and over (or once, holding the last, when it ends in `stop`). It's
-/// kept under the same name and kind as its frames, so a wall, flat, sky or picture that names it
+/// kept under the same name and kind as its frames, so a WallId, flat, sky or picture that names it
 /// shows whichever frame is up (AssetManager.Find).
 /// </summary>
 public record AnimatedAsset<T> : Asset, IAnimatedAsset where T : Asset

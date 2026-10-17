@@ -13,7 +13,7 @@ public class NetPlayTests
     private Doors _doors = null!;
     private PushWalls _pushWalls = null!;
     private GameSession _game = null!;
-    private bool _netGame { get => _game.netgame; set => _game.netgame = value; }
+    private bool _netGame { get => _game.NetGame; set => _game.NetGame = value; }
     private int _areasConnected;
 
     private NetPlay NetPlay() =>
@@ -66,12 +66,12 @@ public class NetPlayTests
         Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "an actor moving");
         guard.Hitpoints -= 1;
         Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "an actor hurt");
-        _game.playerstate.health -= 1;
+        _game.PlayerState.Health -= 1;
         Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "a player hurt");
-        _game.random.RndT();
+        _game.Random.RndT();
         Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "the random numbers moving on");
-        _doors.doornum = 1;
-        _doors.doorobjlist[0] = new DoorObject { position = 0x8000 };
+        _doors.DoorNum = 1;
+        _doors.DoorObjList[0] = new DoorObject { Position = 0x8000 };
         Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "a door opening");
     }
 
@@ -96,8 +96,8 @@ public class NetPlayTests
         // Arrange
         var p = new Entities.PlayerState { Number = 1 };
         p.Pawn = new PlayerPawn { State = p };
-        _game.players.Add(p);
-        _game.camera.Follow(p.Pawn);
+        _game.Players.Add(p);
+        _game.Camera.Follow(p.Pawn);
 
         // Act
         var pawn = p.Pawn;
@@ -107,7 +107,7 @@ public class NetPlayTests
         Assert.That(p.Gone, Is.True);
         Assert.That(p.Pawn, Is.Null);
         Assert.That(pawn.IsRemoved, Is.True);
-        Assert.That(_game.camera.Target, Is.Not.SameAs(pawn));
+        Assert.That(_game.Camera.Target, Is.Not.SameAs(pawn));
         Assert.That(_areasConnected, Is.EqualTo(1));
     }
 
@@ -145,7 +145,7 @@ public class NetOverlayTests
 {
     private static (NetOverlay Overlay, NetPlay NetPlay, GameSession Game) Overlay()
     {
-        var game = new GameSession { netgame = true };
+        var game = new GameSession { NetGame = true };
         var netPlay = new NetPlay(null!, null!, null!, null!, null!, null!, game,
             new NetPlayHooks(() => default, () => [], () => { }, () => { }, _ => { }, () => { }));
         var input = new InputManager(new Lazy<ConsoleManager>(() => new ConsoleManager()));
@@ -173,7 +173,7 @@ public class NetOverlayTests
         // Assert
         Assert.That(netPlay.netLeft, Is.True);
         Assert.That(netPlay.netLeavePrompt, Is.False);
-        Assert.That(game.playstate, Is.EqualTo(PlayState.Abort));
+        Assert.That(game.PlayState, Is.EqualTo(PlayState.Abort));
     }
 
     [TestCase("N")]
@@ -189,7 +189,7 @@ public class NetOverlayTests
 
         // Assert
         Assert.That((netPlay.netLeft, netPlay.netLeavePrompt), Is.EqualTo((false, false)));
-        Assert.That(game.playstate, Is.EqualTo(PlayState.StillPlaying));
+        Assert.That(game.PlayState, Is.EqualTo(PlayState.StillPlaying));
     }
 
     [Test]

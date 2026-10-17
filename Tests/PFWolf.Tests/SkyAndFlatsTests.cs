@@ -48,7 +48,7 @@ public class SkyAndFlatsTests
 
     [TestCase(32, 0.0)]         // at the eyes
     [TestCase(0, 1.0)]          // the floor: half a story down
-    [TestCase(128, 3.0)]        // the top of a two-story wall
+    [TestCase(128, 3.0)]        // the top of a two-story WallId
     public void Distances_Up_Or_Down_From_The_Eyes_Are_In_Half_Stories(int z, double halves)
     {
         Assert.That(_sky.EyeHalves(z), Is.EqualTo(halves));

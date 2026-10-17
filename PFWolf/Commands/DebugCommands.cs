@@ -54,10 +54,10 @@ internal sealed class DebugCommands(
 
     internal void WhereCommand(string[] args)
     {
-        int x = session.player.TileX, y = session.player.TileY;
+        int x = session.Player.TileX, y = session.Player.TileY;
 
-        console.Print($"X: {session.player.X} ({session.player.X % MapConstants.TileGlobal})  Y: {session.player.Y} ({session.player.Y % MapConstants.TileGlobal})  Angle: {session.player.Angle}");
-        console.Print($"Tile: {x},{y}  Area: {session.player.AreaNumber}  Map: {session.gamestate.mapon}");
+        console.Print($"X: {session.Player.X} ({session.Player.X % MapConstants.TileGlobal})  Y: {session.Player.Y} ({session.Player.Y % MapConstants.TileGlobal})  Angle: {session.Player.Angle}");
+        console.Print($"Tile: {x},{y}  Area: {session.Player.AreaNumber}  Map: {session.GameState.MapOn}");
         console.Print($"tilemap: {map.tilemap[x, y]}  plane 1: {map.MapSpot(x, y, 1)}  spotvis: {map.spotvis[x, y]}");
         console.Print($"actorat: {map.actorat[x, y]?.GetType().Name ?? "(nothing)"}");
 
@@ -88,16 +88,16 @@ internal sealed class DebugCommands(
         int alive = actors.Count(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
         int active = actors.Count(a => a.Active != ActiveType.No);
 
-        console.Print($"Doors: {doors.doornum}");
-        for (int i = 0; i < doors.doornum; i++)
+        console.Print($"Doors: {doors.DoorNum}");
+        for (int i = 0; i < doors.DoorNum; i++)
         {
-            var door = doors.doorobjlist[i];
+            var door = doors.DoorObjList[i];
             if (!string.IsNullOrEmpty(door.Lock))
-                console.Print($"  locked ({door.Lock}) at {door.tilex},{door.tiley}");
+                console.Print($"  locked ({door.Lock}) at {door.TileX},{door.TileY}");
         }
         console.Print($"Actors: {actors.Count}  active: {active}");
         console.Print($"Enemies: {enemies}  alive: {alive}");
-        console.Print($"Kills: {session.gamestate.killcount}/{session.gamestate.killtotal}  Secrets: {session.gamestate.secretcount}/{session.gamestate.secrettotal}  Treasure: {session.gamestate.treasurecount}/{session.gamestate.treasuretotal}");
+        console.Print($"Kills: {session.GameState.KillCount}/{session.GameState.KillTotal}  Secrets: {session.GameState.SecretCount}/{session.GameState.SecretTotal}  Treasure: {session.GameState.TreasureCount}/{session.GameState.TreasureTotal}");
     }
 
     internal void ActorsCommand(string[] args)
@@ -132,14 +132,14 @@ internal sealed class DebugCommands(
     {
         // Ten to a row (an episode's worth in Wolf3D) so a whole game fits in the console.
         var names = engine.GetGameInfo().Maps.Keys
-            .Select(name => name == session.gamestate?.mapon ? $"[{name}]" : name)
+            .Select(name => name == session.GameState?.MapOn ? $"[{name}]" : name)
             .ToList();
 
         for (int i = 0; i < names.Count; i += 10)
             console.Print(string.Join(' ', names.Skip(i).Take(10)));
 
         if (map.Player != null)
-            console.Print($"Current map is {session.gamestate.mapon}");
+            console.Print($"Current map is {session.GameState.MapOn}");
     }
 
     internal void FpsCommand(string[] args)
@@ -170,14 +170,14 @@ internal sealed class DebugCommands(
     internal void SlowMoCommand(string[] args)
     {
         if (args.Length > 0)
-            session.singlestep = (byte)ParseInt(args[0], 0, 50);
-        console.Print($"slowmo is {session.singlestep}");
+            session.SingleStep = (byte)ParseInt(args[0], 0, 50);
+        console.Print($"slowmo is {session.SingleStep}");
     }
 
     internal void VblsCommand(string[] args)
     {
         if (args.Length > 0)
-            session.extravbls = ParseInt(args[0], 0, 8);
-        console.Print($"vbls is {session.extravbls}");
+            session.ExtraVbls = ParseInt(args[0], 0, 8);
+        console.Print($"vbls is {session.ExtraVbls}");
     }
 }

@@ -70,7 +70,7 @@ internal static partial class GameHost
         LoadGame: RunLoadGame,
         EndGame: () =>
         {
-            playerstate.lives = 0;
+            playerstate.Lives = 0;
             playstate = PlayState.Died;
             LastAttacker = null;
         },
