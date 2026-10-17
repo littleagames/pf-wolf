@@ -8,7 +8,7 @@ namespace PFWolf.Rendering;
 /// default map's), shaded row by row; a level's sky above the horizon; and the textured floor
 /// and ceiling flats drawn over them before the walls.
 /// </summary>
-/// <param name="worldTexture">A WallId texture by name, an animated one's frame by the level's clock</param>
+/// <param name="worldTexture">A wall texture by name, an animated one's frame by the level's clock</param>
 internal sealed class SkyAndFlats(
     GameEngineManager engine,
     AssetManager assets,
@@ -51,7 +51,7 @@ internal sealed class SkyAndFlats(
 
     const int SkyCircle = 1024;         // sky pixels all the way round: a 256 wide picture shows 4 times
 
-    internal string? LevelSky;   // the level's sky graphic (or WallId texture), null for none
+    internal string? LevelSky;   // the level's sky graphic (or wall texture), null for none
     Asset? skysource;            // the picture or texture skycolumns holds (an animation's frame)
     byte[] skycolumns = [];      // its pixels, column by column
     int skywidth, skyheight;
@@ -86,7 +86,7 @@ internal sealed class SkyAndFlats(
         }
         else if (source is TextureAsset texture && texture.RawData.Length >= texture.Width * texture.Height)
         {
-            // WallId textures already are column by column
+            // wall textures already are column by column
             skywidth = texture.Width;
             skyheight = texture.Height;
             skycolumns = texture.RawData;

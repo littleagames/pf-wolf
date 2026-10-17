@@ -6,7 +6,7 @@ namespace PFWolf.Gameplay;
 /// <summary>What setting up a level needs from the game</summary>
 /// <param name="CurrentSkill">The skill being played (its enemy-health)</param>
 /// <param name="ApplyLoadout">Gives the players the level's starting loadout (Gameplay/MapLoadouts.cs)</param>
-/// <param name="CountObjectives">Counts the level's MatchObjectives and announces them (Gameplay/Objectives.cs)</param>
+/// <param name="CountObjectives">Counts the level's objectives and announces them (Gameplay/Objectives.cs)</param>
 internal sealed record LevelSetupHooks(
     Func<SkillInfo> CurrentSkill,
     Action<MapLoadout?> ApplyLoadout,
@@ -14,7 +14,7 @@ internal sealed record LevelSetupHooks(
 
 /// <summary>
 /// Setting up a level to play (SetupGameLevel): the players' view and the level's counts reset,
-/// the map loaded with its WallId height, sky, weather and flats, then the doors and players
+/// the map loaded with its wall height, sky, weather and flats, then the doors and players
 /// spawned, the ambush markers taken out, and its shading and level AI set up.
 /// </summary>
 internal sealed class LevelSetup(
@@ -105,7 +105,7 @@ internal sealed class LevelSetup(
         {
             for (x = 0; x < map.mapwidth; x++)
             {
-                // DoorNumber (a plane 0 tile listed in the mapdefs doors)
+                // door (a plane 0 tile listed in the mapdefs doors)
                 if (doors.TryGetValue(map.MapSpot(x, y, 0), out var doorXlat))
                     doorObjects.SpawnDoor(x, y, doorXlat.Vertical, doorXlat);
             }
@@ -154,13 +154,13 @@ internal sealed class LevelSetup(
         }
 
         lighting.InitLevelShading(mapInfo);
-        levelAI.OnLevelStart();      // WallId outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
+        levelAI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
 
         // the level's starting loadout, as it starts afresh (game-info map loadout)
         if (!session.LoadedGame)
         {
             hooks.ApplyLoadout(mapInfo?.Loadout);
-            hooks.CountObjectives();        // its MatchObjectives, counted afresh (a loaded game has its own)
+            hooks.CountObjectives();        // its objectives, counted afresh (a loaded game has its own)
         }
 
         //

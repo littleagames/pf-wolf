@@ -118,7 +118,7 @@ public class MountedWeaponsTests
     [Test]
     public void Getting_Off_Tries_The_Sides_Then_The_Front_When_Behind_Is_Blocked()
     {
-        // Arrange: a WallId behind and on the north side, a solid-free south side
+        // Arrange: a wall behind and on the north side, a solid-free south side
         _mounted.Mount(_nest, ["NestGun"]);
         _map.tilemap[10, 10] = 1;
         _map.tilemap[11, 9] = 1;
@@ -133,7 +133,7 @@ public class MountedWeaponsTests
     [Test]
     public void With_Nowhere_To_Go_They_Stay_On_And_Are_Told()
     {
-        // Arrange: walled in all round, and someone shootable standing where a WallId isn't
+        // Arrange: walled in all round, and someone shootable standing where a wall isn't
         _mounted.Mount(_nest, ["NestGun"]);
         _map.tilemap[10, 10] = _map.tilemap[11, 9] = _map.tilemap[11, 11] = 1;
         var guard = new Monster { Name = "Guard" };

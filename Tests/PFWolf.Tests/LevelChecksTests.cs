@@ -187,7 +187,7 @@ public class LevelChecksTests
     [Test]
     public void A_Door_Needs_Walls_On_The_Sides_It_Slides_Into()
     {
-        // Arrange: a vertical DoorNumber in a north-south WallId line is fine; one in open floor isn't
+        // Arrange: a vertical door in a north-south wall line is fine; one in open floor isn't
         var document = Room();
         using (var edit = document.BeginEdit("Doors"))
         {
@@ -291,7 +291,7 @@ public class LevelChecksTests
     [Test]
     public void A_Room_Behind_A_Wall_A_Switch_Moves_Is_Reachable()
     {
-        // Arrange: the switch and the WallId it moves share tag 5
+        // Arrange: the switch and the wall it moves share tag 5
         var document = Room();
         WallOff(document, 30, 30, 34, 34);
         EditorMaps.Set(document, 0, 0, 10, WallSwitch);

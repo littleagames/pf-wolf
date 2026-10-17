@@ -10,7 +10,7 @@ public static class MapConstants
     public const int MapSize = (1 << MapShift);
     public const int MapArea = MapSize * MapSize;
 
-    /// <summary>Wall ids on plane 0 are 1 to this; the game keeps its WallId and DoorNumber flags above them</summary>
+    /// <summary>Wall ids on plane 0 are 1 to this; the game keeps its wall and door flags above them</summary>
     public const int MaxWallId = 255;
 
     /// <summary>Planes in a GAMEMAPS level: walls, objects and ECWolf's flats</summary>
@@ -18,7 +18,7 @@ public static class MapConstants
 
     /// <summary>
     /// Planes every loaded level has: walls, objects, flats (ECWolf's floor and ceiling, see
-    /// <see cref="FlatPlane"/>), WallId heights, tags and light zones. A GAMEMAPS level has none
+    /// <see cref="FlatPlane"/>), wall heights, tags and light zones. A GAMEMAPS level has none
     /// of the last three, so they're empty.
     /// </summary>
     public const int LevelPlanes = 6;
@@ -29,7 +29,7 @@ public static class MapConstants
     /// </summary>
     public const int FlatPlane = 2;
 
-    /// <summary>Each tile's WallId height in stories, 0 where the map's default applies</summary>
+    /// <summary>Each tile's wall height in stories, 0 where the map's default applies</summary>
     public const int HeightPlane = 3;
 
     /// <summary>
@@ -41,11 +41,11 @@ public static class MapConstants
     public const int ZonePlane = 5;
 
     /// <summary>
-    /// A WallId tile's patch (mapdefs patches, 1 to 255; 0 for none) is the high byte of its plane 0
-    /// value, the WallId id the low byte: plane 0 value = WallId | patch &lt;&lt; PatchShift
+    /// A wall tile's patch (mapdefs patches, 1 to 255; 0 for none) is the high byte of its plane 0
+    /// value, the wall id the low byte: plane 0 value = wall | patch &lt;&lt; PatchShift
     /// </summary>
     public const int PatchShift = 8;
 
-    /// <summary>The plane 0 bits that hold the tile's own code (WallId, DoorNumber, floor), below its patch</summary>
+    /// <summary>The plane 0 bits that hold the tile's own code (wall, door, floor), below its patch</summary>
     public const int Plane0CodeMask = 0xff;
 }

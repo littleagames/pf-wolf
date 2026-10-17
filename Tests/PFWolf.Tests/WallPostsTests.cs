@@ -144,6 +144,6 @@ public class WallPostsTests
         Assert.That(_posts.IsArch(3, 3), Is.True);
         Assert.That(_posts.IsArch(4, 3), Is.False);
         _map.tilemap[3, 3] = 5;
-        Assert.That(_posts.IsArch(3, 3), Is.False);         // a WallId, however tall
+        Assert.That(_posts.IsArch(3, 3), Is.False);         // a wall, however tall
     }
 }

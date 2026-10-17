@@ -219,18 +219,18 @@ internal class DoorObject
     public bool Vertical;
     public DoorAction Action;
     public short TicCount;
-    public ushort Position;            // leading edge of DoorNumber (0 = closed, 0xffff = fully open)
+    public ushort Position;            // leading edge of door (0 = closed, 0xffff = fully open)
     public bool Held;                  // opened by a switch to stay open, until something closes it
     public MapTextureTranslation Xlat = MapTextureTranslation.None;
     public string MapLock = "";        // the lock from the map: a door-locks object on its tile, else its doors.yaml lock
-    public bool Unlocked;              // a takes-key DoorNumber the player has opened with its lock item
+    public bool Unlocked;              // a takes-key door the player has opened with its lock item
 
-    /// <summary>The item the DoorNumber needs to open, empty when it needs none</summary>
+    /// <summary>The item the door needs to open, empty when it needs none</summary>
     public string Lock => Unlocked ? "" : MapLock;
 
     /// <summary>
-    /// Whether the DoorNumber has slid out of the way at along (0..0xffff across the tile). A sliding
-    /// DoorNumber is open below its leading edge; a split DoorNumber (doors.yaml split) opens from the middle,
+    /// Whether the door has slid out of the way at along (0..0xffff across the tile). A sliding
+    /// door is open below its leading edge; a split door (doors.yaml split) opens from the middle,
     /// each half sliding out by half of position.
     /// </summary>
     public bool OpenAt(int along)
@@ -242,7 +242,7 @@ internal class DoorObject
         return along >= 0x8000 - half && along < 0x8000 + half;
     }
 
-    /// <summary>Where the DoorNumber's texture is at along: it slides with the DoorNumber (or with its half)</summary>
+    /// <summary>Where the door's texture is at along: it slides with the door (or with its half)</summary>
     public int TextureAlong(int along)
     {
         if (!Xlat.Split)
@@ -280,7 +280,7 @@ internal class BlockingActor: Actor
 {
 }
 
-// A WallId sprite's tile (Rendering/WallSprites.cs): enemies keep out of all of it, as they do a
+// A wall sprite's tile (Rendering/WallSprites.cs): enemies keep out of all of it, as they do a
 // solid static's, while the player and projectiles are only stopped by the panel itself.
 internal class WallSpriteBlocker: BlockingActor
 {
@@ -377,8 +377,8 @@ internal enum ObjFlags
     Interrogated = 0x00002000,   // has been talked to: an informant has given its hint, a scientist turned mean
     LockedState = 0x00004000,    // just hurt: no more pain or shooting back until it next chases
     ShootMode = 0x00008000,      // `monster.shootmode` actors: shooting rather than closing in
-    RunAway = 0x00010000,        // a SMART actor running for supplies or a DoorNumber
-    RunToStatic = 0x00020000,    // ... heading for a pickup or DoorNumber (SeekX/SeekY) rather than a far corner
+    RunAway = 0x00010000,        // a SMART actor running for supplies or a door
+    RunToStatic = 0x00020000,    // ... heading for a pickup or door (SeekX/SeekY) rather than a far corner
     MustAttack = 0x00040000,     // a scientist asked once already: the next asking makes it mean
     HasAmmo = 0x00080000,        // an informant still has its charge pack to give
     HasTokens = 0x00100000,      // ... and its food tokens

@@ -157,7 +157,7 @@ public class Wolf3dVswapFileLoader
         Action<string>? warn = null)
     {
         var assets = new Dictionary<string, Asset>();
-        // 1) Get WallId texture mapping
+        // 1) Get wall texture mapping
         // 2) Get sprite mapping
         // 3) Get digi sound mapping
 

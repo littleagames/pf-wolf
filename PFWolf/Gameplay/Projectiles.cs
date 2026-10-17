@@ -4,7 +4,7 @@ using PFWolf.Managers;
 namespace PFWolf.Gameplay;
 
 /// <summary>What projectiles need from the game</summary>
-/// <param name="WallSpriteHit">The WallId sprite panel a projectile's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
+/// <param name="WallSpriteHit">The wall sprite panel a projectile's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
 internal sealed record ProjectileHooks(
@@ -82,7 +82,7 @@ internal sealed class Projectiles(
                 if (check is null or ActorMark)     // enemies are hit by the projectile's own check
                     continue;
 
-                // a WallId sprite only blocks along its panel, unless it lets projectiles through
+                // a wall sprite only blocks along its panel, unless it lets projectiles through
                 if (check is WallSpriteBlocker)
                 {
                     if (hooks.WallSpriteHit(x, y, x, y, ob.X, ob.Y, PROJSIZE) != null)
@@ -141,7 +141,7 @@ internal sealed class Projectiles(
 
         if (!ProjectileTryMove(ob))
         {
-            // A projectile with a Death state (rockets) blows up against the WallId with its
+            // A projectile with a Death state (rockets) blows up against the wall with its
             // deathsound, like the legacy switch to s_boom1; the rest (needles, flames, sparks)
             // just vanish
             if (ob.ResolvedStates.ContainsKey("Death"))
@@ -179,7 +179,7 @@ internal sealed class Projectiles(
                 monster!.Damage((uint)damage, ob);
 
             // BURSTONPLAYER projectiles (Blake Stone's spit and shots) burst on the player (or
-            // the enemy) as on a WallId
+            // the enemy) as on a wall
             if (ob.HasFlag("BURSTONPLAYER") && ob.ResolvedStates.ContainsKey("Death"))
                 ob.SetState("Death");
             else

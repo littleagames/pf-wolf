@@ -62,7 +62,7 @@ public class HubActionsTests
     [Test]
     public void A_Wall_In_The_Way_Ends_The_Run_There()
     {
-        // Arrange: a WallId in the next tile east
+        // Arrange: a wall in the next tile east
         var blake = Runner();
         blake.X += Tile / 2 - 1;
         _map.tilemap[11, 10] = 1;
@@ -79,7 +79,7 @@ public class HubActionsTests
     [Test]
     public void Starting_Inside_A_Wall_It_Runs_On_Out()
     {
-        // Behind the player can be inside a WallId: only one it runs into stops it
+        // Behind the player can be inside a wall: only one it runs into stops it
         _map.tilemap[10, 10] = 1;
         _map.tilemap[11, 10] = 1;
         var blake = Runner();

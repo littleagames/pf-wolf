@@ -5,7 +5,7 @@ using System.Text;
 namespace PFWolf.Assets
 {
     /// <summary>
-    /// A WallId texture, stored column by column: column x starts at x * Height, top pixel first.
+    /// A wall texture, stored column by column: column x starts at x * Height, top pixel first.
     /// VSWAP walls are 64x64. Ones from a pack's textures/ folder can be any size: a taller one
     /// spans a story per 64 pixels, from the floor up.
     /// </summary>
@@ -17,7 +17,7 @@ namespace PFWolf.Assets
         public int Height { get; init; } = StorySize;
 
         /// <summary>
-        /// Made from a picture with clear pixels (now 0xFF), which a DoorNumber jamb shows its WallId
+        /// Made from a picture with clear pixels (now 0xFF), which a door jamb shows its wall
         /// through. VSWAP walls never are: 0xFF is an ordinary color in them.
         /// </summary>
         public bool Masked { get; init; }

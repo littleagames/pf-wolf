@@ -3,8 +3,8 @@ using PFWolf.Managers;
 
 namespace PFWolf.Gameplay.MatchModes;
 
-/// <summary>What the modes' MatchObjectives need from the game</summary>
-/// <param name="IsOpenFloor">Floor a player can walk on (no WallId, DoorNumber or solid thing, in an area)</param>
+/// <summary>What the modes' objectives need from the game</summary>
+/// <param name="IsOpenFloor">Floor a player can walk on (no wall, door or solid thing, in an area)</param>
 /// <param name="IsFreeFloor">Open floor nobody stands on</param>
 /// <param name="Translation">A translation by name if this game has it (translations.yaml), else null</param>
 /// <param name="PlaySound">A sound everyone hears, as the game's own (an announcement)</param>

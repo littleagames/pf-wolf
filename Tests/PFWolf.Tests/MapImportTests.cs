@@ -97,7 +97,7 @@ public class MapImportTests
     [Test]
     public void Apply_Puts_A_Plane_Onto_Another()
     {
-        // Arrange: an old level with its WallId heights on plane 2
+        // Arrange: an old level with its wall heights on plane 2
         var document = EditorMaps.Document();
         var source = WdcMapFile.Read(WdcFile(1, 3))[0];
 

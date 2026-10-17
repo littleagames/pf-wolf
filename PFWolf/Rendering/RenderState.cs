@@ -5,7 +5,7 @@ namespace PFWolf.Rendering;
 /// <summary>
 /// The renderer's shared state for the frame being drawn: the view and its projection, the
 /// ray trace, the queue of posts a screen column draws, and the arch being traced through. The
-/// renderer's parts (the trace and WallId hits, posts, arches, sprites, weather) all read and
+/// renderer's parts (the trace and wall hits, posts, arches, sprites, weather) all read and
 /// write it, so it's plain fields, named as the renderer has always named them.
 /// </summary>
 internal sealed class RenderState
@@ -46,7 +46,7 @@ internal sealed class RenderState
     internal int PostX;
     internal TextureAsset PostSource;   // the texture of the post ScalePost draws
     internal int PostOfs;               // its column, times 64 (as the texture's across a tile)
-    internal TextureAsset? UpperSource; // stories above the first, if not PostSource (DoorNumber lintels)
+    internal TextureAsset? UpperSource; // stories above the first, if not PostSource (door lintels)
     internal int UpperOfs;
 
     //
@@ -63,14 +63,14 @@ internal sealed class RenderState
     internal int XIntTile, YIntTile;
     internal ushort TexDelta;
 
-    // the trace saved while it looks on past the nearest WallId (tall walls behind short ones)
+    // the trace saved while it looks on past the nearest wall (tall walls behind short ones)
     internal short SavedXTile, SavedYTile;
     internal int SavedXIntercept, SavedYIntercept, SavedXIntTile, SavedYIntTile;
     internal ushort SavedTexDelta;
-    internal bool PastWall;             // tracing on past the nearest WallId: tiles aren't visible
+    internal bool PastWall;             // tracing on past the nearest wall: tiles aren't visible
 
     //
-    // the posts a column draws, nearest last: each WallId the trace hits queues one (QueuePost)
+    // the posts a column draws, nearest last: each wall the trace hits queues one (QueuePost)
     //
     internal int PostCount;
     internal readonly short[] PostHeights = new short[MaxPosts];
@@ -84,22 +84,22 @@ internal sealed class RenderState
     internal readonly TextureAsset?[] PostUnderTexture = new TextureAsset?[MaxPosts];
     internal readonly bool[] PostUnderFlat = new bool[MaxPosts];         // the underside's texture is a ceiling
     internal readonly byte[][] PostLight = new byte[MaxPosts][];        // its face's light row
-    internal readonly TextureAsset?[] PostPatch = new TextureAsset?[MaxPosts];     // a WallId patch over it
+    internal readonly TextureAsset?[] PostPatch = new TextureAsset?[MaxPosts];     // a wall patch over it
     internal readonly int[] PostPatchOfs = new int[MaxPosts];
     internal readonly byte[] PostPatchStory = new byte[MaxPosts];
 
     internal int HitTile = -1;
     internal short PostHeight;          // the height (as WallHeight) of the post ScalePost queues
-    internal int HitStories;            // how many stories tall the WallId the trace just hit is
-    internal bool ColumnHit;            // this column's trace has hit a WallId: WallHeight is set
-    internal int ColumnTallest;         // the most stories of any WallId it has hit
+    internal int HitStories;            // how many stories tall the wall the trace just hit is
+    internal bool ColumnHit;            // this column's trace has hit a wall: WallHeight is set
+    internal int ColumnTallest;         // the most stories of any wall it has hit
     internal int ColumnTop;             // the highest screen row any of them reach
 
-    // the WallId patch for the post ScalePost queues, if it has one
+    // the wall patch for the post ScalePost queues, if it has one
     internal TextureAsset? PatchSource;
     internal int PatchOfs;              // its column (never mirrored with a flipped face)
     internal int PatchStory;
-    internal bool HitPushwall;          // the WallId being hit is a moving pushwall: its tile is pwallx, pwally
+    internal bool HitPushwall;          // the wall being hit is a moving pushwall: its tile is pwallx, pwally
 
     internal int DiagHitU;              // where the last TraceDiagonal hit, as the tile-local x (0..TileGlobal)
 

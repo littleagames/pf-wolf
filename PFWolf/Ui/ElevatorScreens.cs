@@ -7,7 +7,7 @@ namespace PFWolf.Ui;
 
                                 ELEVATOR
 
-A_FloorSelect (a switch action, on Blake Stone's elevator panel WallId) shows the floor-select
+A_FloorSelect (a switch action, on Blake Stone's elevator panel wall) shows the floor-select
 screen from gamepacks/{pack}/elevator.yaml (bstone's InputFloor). Its buttons are the floors
 of the level's hub cluster by game-info floor-number. Arrows (or turning) move the selector,
 space, enter or fire press its button, a number key presses that floor's (0 is floor 10),
@@ -23,7 +23,7 @@ open one opens with the unlock item, used up as it does. Choosing a floor leaves
 
                                 TELEPORTER
 
-Planet Strike's way between floors (bstone's ps_input_floor): its teleporter WallId runs
+Planet Strike's way between floors (bstone's ps_input_floor): its teleporter wall runs
 A_FloorSelect as the elevator's does, and an elevator.yaml with `style: teleporter` shows
 the teleporter map instead of the panel. Up and down (or left and right) move through the
 cluster's floors by floor number; Enter goes, Esc leaves. A floor is open once the player
@@ -40,7 +40,7 @@ death unlocks the next floor.
 */
 
 /// <summary>What the elevator and teleporter screens need from the rest of the game</summary>
-/// <param name="TileColor">A seen tile's color on the radar (GameHost.RadarTileColor): its tile, then the unmapped, floor, DoorNumber and locked colors</param>
+/// <param name="TileColor">A seen tile's color on the radar (GameHost.RadarTileColor): its tile, then the unmapped, floor, door and locked colors</param>
 /// <param name="MapDisplayName">A map's name as it's shown</param>
 internal sealed record ElevatorHooks(Func<int, int, string, string, string, string, string> TileColor, Func<string, string> MapDisplayName);
 

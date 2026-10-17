@@ -7,9 +7,9 @@ namespace PFWolf.Gameplay;
 /// <summary>A thrown switch waiting to turn back (TimedSwitches)</summary>
 /// <param name="X">Its tile</param>
 /// <param name="Y">Its tile</param>
-/// <param name="Patch">Whether it's a patch's switch (else a switch WallId)</param>
-/// <param name="From">The WallId or patch id it was</param>
-/// <param name="To">The WallId or patch id it was thrown to</param>
+/// <param name="Patch">Whether it's a patch's switch (else a switch wall)</param>
+/// <param name="From">The wall or patch id it was</param>
+/// <param name="To">The wall or patch id it was thrown to</param>
 /// <param name="Tag">Its tile's tag, for the linked switches and the reset actions</param>
 /// <param name="Dir">The way the player faced as they threw it</param>
 /// <param name="Actions">Its reset-actions</param>

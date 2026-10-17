@@ -77,7 +77,7 @@ internal static partial class GameHost
         new LevelSetupHooks(() => CurrentSkill,
             loadout => mapLoadouts.Apply(loadout), () => objectives.CountLevel(announce: !demoplayback && !demorecord)));
 
-    // Level MatchObjectives (Gameplay/Objectives.cs): sabotage targets, goal enemies
+    // Level objectives (Gameplay/Objectives.cs): sabotage targets, goal enemies
     static Objectives? _objectives;
     static Objectives objectives => _objectives ??= new Objectives(_mapManager, new ObjectiveHooks(
         () => _gameEngineManager.GetGameInfo().Objectives,

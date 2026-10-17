@@ -19,7 +19,7 @@ internal sealed record LightingHooks(Func<int> HeightNumerator, Action ClearColo
 /// THE LIGHT GRID: where the light falls. Each tile has a base light, a level and a tint: its
 /// zone's, else the level's. On top of that the level is split into light cells, LIGHTCELLS a
 /// tile each way, and each cell has light added to it (CellAdd, in light levels) by lights
-/// moving about. Light is looked up at a point: the base light of a tile (the open tile a WallId
+/// moving about. Light is looked up at a point: the base light of a tile (the open tile a wall
 /// is seen from, the tile a floor pixel or a sprite is on) plus the cell the point is in.
 ///
 /// ZONE LIGHTS: light zones change as the level is played: switches and actor states set their

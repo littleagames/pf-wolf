@@ -114,7 +114,7 @@ public class PlayerMovementTests
     [Test]
     public void A_Wall_The_Players_Box_Reaches_Into_Blocks()
     {
-        // Arrange: a WallId east, and the player close to it
+        // Arrange: a wall east, and the player close to it
         _map.actorat[11, 10] = new Wall(1);
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;
@@ -156,7 +156,7 @@ public class PlayerMovementTests
     [Test]
     public void Running_Into_A_Wall_Slides_Along_It_And_Bumps()
     {
-        // Arrange: a WallId east; the player moves east and a little south
+        // Arrange: a wall east; the player moves east and a little south
         _map.actorat[11, 10] = new Wall(1);
         var pawn = Player();
         pawn.X = 11 * Tile - 0x6000;

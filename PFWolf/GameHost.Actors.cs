@@ -106,7 +106,7 @@ internal static partial class GameHost
         // (Midnight Assault's lights coming on: MadeNoise)
         ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => madenoise = true);
 
-        // Level MatchObjectives (Gameplay/Objectives.cs): A_CompleteObjective("name"[, n]) and
+        // Level objectives (Gameplay/Objectives.cs): A_CompleteObjective("name"[, n]) and
         // A_AddObjective("name"[, n]), from an actor or a switch; A_JumpIfObjectiveDone("name", "State")
         static int Amount(string[] args) => args.Length > 1 && int.TryParse(args[1], out var n) ? n : 1;
         ActorActionRegistry.Register("A_CompleteObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) objectives.Complete(args[0], Amount(args)); });
@@ -155,7 +155,7 @@ internal static partial class GameHost
         RegisterWeaponActions();
 
         // mapdefs trigger and switch actions, run when the player uses a trigger's tile or a
-        // switch WallId (PressUse) or steps onto a walk-over trigger (Thrust)
+        // switch wall (PressUse) or steps onto a walk-over trigger (Thrust)
         // A_PushWall("moving sound", "blocked sound"[, "direction", "message"]): either sound left
         // out is silent. With a direction (north, east, south or west) it only moves that way:
         // pushed from another side, it shows the message and plays the blocked sound instead
@@ -166,14 +166,14 @@ internal static partial class GameHost
         Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
         // Hub clusters' ways between levels, the teleporter's floors and the victory run (Gameplay/HubActions.cs)
         (hubActions ??= MakeHubActions()).Register();
-        RegisterSwitchActions();    // tag-targeted DoorNumber and WallId actions (Gameplay/SwitchActions.cs)
+        RegisterSwitchActions();    // tag-targeted door and wall actions (Gameplay/SwitchActions.cs)
         RegisterSmartSwitchActions();   // A_SmartSwitch (Gameplay/SmartSwitches.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Rendering/Lighting.cs)
         RegisterActorLightActions(); // actors' own lights (Rendering/ActorLights.cs)
         RegisterProjectileActions(); // projectiles and jumps for any actor, traps (Gameplay/ProjectileActions.cs)
     }
 
-    /// <summary>A_PushWall: the trigger's WallId pushed the way the player faces, unless it only goes another way (see RegisterActorActions)</summary>
+    /// <summary>A_PushWall: the trigger's wall pushed the way the player faces, unless it only goes another way (see RegisterActorActions)</summary>
     static bool PushWallAction(Entities.TriggerActivation trigger, string[] args)
     {
         var moveSound = args.ElementAtOrDefault(0);

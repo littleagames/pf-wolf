@@ -20,7 +20,7 @@ namespace PFWolf.Gameplay;
     Horde           together against waves of enemies (horde.yaml): the
                     match ends when every player is dead at once
 
-    Every versus mode gives each player every key (no DoorNumber is shut to
+    Every versus mode gives each player every key (no door is shut to
     anyone), except Heist, where the best treasure is behind locked doors:
     keys are found, and lost with a death.
 

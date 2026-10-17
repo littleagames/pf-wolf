@@ -39,7 +39,7 @@ public class TimedSwitchesTests
     // name in it), so it running shows as the registry saying it has no handler for it
     private int Resets => _console.ToString().Split('\n').Count(line => line.Contains("'A_TestReset'"));
 
-    // A switch WallId at 11,10, thrown from off to on
+    // A switch wall at 11,10, thrown from off to on
     private void Throw(int resetTics)
     {
         _map.tilemap[11, 10] = SwitchOn;
@@ -75,14 +75,14 @@ public class TimedSwitchesTests
     [Test]
     public void A_Wall_Changed_Meanwhile_Is_Left_Alone()
     {
-        // Arrange: something else made it another WallId
+        // Arrange: something else made it another wall
         Throw(10);
         _map.tilemap[11, 10] = 7;
 
         // Act
         _timed.Tick(10);
 
-        // Assert: the WallId stays, the actions still run
+        // Assert: the wall stays, the actions still run
         Assert.That(_map.tilemap[11, 10], Is.EqualTo(7));
         Assert.That(Resets, Is.EqualTo(1));
     }

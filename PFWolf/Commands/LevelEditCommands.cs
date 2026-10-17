@@ -4,7 +4,7 @@ using static PFWolf.Commands.ConsoleArgs;
 namespace PFWolf.Commands;
 
 /// <summary>
-/// Changing the level as it's played, from the console (not saved): its WallId height, sky,
+/// Changing the level as it's played, from the console (not saved): its wall height, sky,
 /// weather, fog and light, the light zones, and a tile's height, tag, patch and flats
 /// </summary>
 internal sealed class LevelEditCommands(

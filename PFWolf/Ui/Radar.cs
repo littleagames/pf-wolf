@@ -146,7 +146,7 @@ internal sealed class Radar(
         }
     }
 
-    // What a seen tile shows as: open floor, a DoorNumber (closed, or locked), or a WallId (as unmapped)
+    // What a seen tile shows as: open floor, a door (closed, or locked), or a wall (as unmapped)
     internal string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked)
     {
         int tile = map.tilemap[x, y];
@@ -154,7 +154,7 @@ internal sealed class Radar(
         if ((tile & GameConstants.BitDoor) != 0)
         {
             var d = doors.DoorObjList[tile & ~GameConstants.BitDoor];
-            // As bstone: a DoorNumber with a lock (none once a key has unlocked it) is locked, open or shut
+            // As bstone: a door with a lock (none once a key has unlocked it) is locked, open or shut
             color = !string.IsNullOrEmpty(d.Lock) ? locked
                 : d.Action == DoorAction.Closed ? door
                 : floor;

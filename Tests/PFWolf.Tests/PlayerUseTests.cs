@@ -229,7 +229,7 @@ public class PlayerUseTests
     [Test]
     public void An_Exit_Waits_While_A_Level_Objective_Blocks_It()
     {
-        // Arrange: the MatchObjectives say no
+        // Arrange: the objectives say no
         var use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session,
             new PlayerUseHooks(_ => { }, () => false, ExitAllowed: () => false));
 

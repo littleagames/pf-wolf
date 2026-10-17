@@ -5,7 +5,7 @@ using PFWolf.Managers;
 namespace PFWolf.Gameplay;
 
 /// <summary>What missiles, blasts and barriers need from the game</summary>
-/// <param name="ProjectileTryMove">Whether a projectile can be where it is (not in a WallId or a solid thing)</param>
+/// <param name="ProjectileTryMove">Whether a projectile can be where it is (not in a wall or a solid thing)</param>
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
 internal sealed record MissileHooks(
@@ -14,7 +14,7 @@ internal sealed record MissileHooks(
     Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer);
 
 /// <summary>
-/// The player's weapons can throw missiles (A_FireMissile) that fly until they hit a WallId, a
+/// The player's weapons can throw missiles (A_FireMissile) that fly until they hit a wall, a
 /// solid thing or an enemy, then go to their Death state, which can blow up (A_Explode) and
 /// hurt everything shootable around it. A weapon with `weapon.chargetics` only fires with a
 /// full charge and takes that long to charge again (Blake Stone's auto charge pistol).
@@ -82,7 +82,7 @@ internal sealed class Missiles(
         missile.Shooter = player;
         missile.TicCount = 1;
 
-        // Just in front of the player, so one fired point blank at a WallId still shows its blast
+        // Just in front of the player, so one fired point blank at a wall still shows its blast
         const int ahead = (int)(9L * GameConstants.MinDist / 8);
         missile.X += MathUtils.FixedMul(ahead, TrigTables.CosTable[missile.Angle]);
         missile.Y -= MathUtils.FixedMul(ahead, TrigTables.SinTable[missile.Angle]);
@@ -127,8 +127,8 @@ internal sealed class Missiles(
     /// <summary>
     /// A_Missile(min, max[, "bounce"]): a player's missile's think. It flies along its angle, and
     /// up and down too when it has a `gravity` (from its `z` and `zspeed` as it was fired);
-    /// meeting a WallId, a solid thing or something shootable (not the player), it hurts that
-    /// min..max and goes to its Death state. With bounce, a WallId turns it back off it at half the
+    /// meeting a wall, a solid thing or something shootable (not the player), it hurts that
+    /// min..max and goes to its Death state. With bounce, a wall turns it back off it at half the
     /// speed, with its `bouncesound`, as Midnight Assault's grenade (its Death then comes from its
     /// states running out: its fuse).
     /// </summary>
@@ -178,7 +178,7 @@ internal sealed class Missiles(
     }
 
     /// <summary>
-    /// A missile that's just moved dx, dy into a WallId goes back to where it was and turns off it:
+    /// A missile that's just moved dx, dy into a wall goes back to where it was and turns off it:
     /// its x reversed if only moving along x is blocked, its y if only y, both in a corner (as the
     /// original's grenade did, trying each way on its own). It slows to half, with its bouncesound.
     /// </summary>
@@ -204,7 +204,7 @@ internal sealed class Missiles(
     }
 
     /// <summary>
-    /// The angle (degrees, 0 east, 90 north) a missile turns to off a WallId: x reversed if moving
+    /// The angle (degrees, 0 east, 90 north) a missile turns to off a wall: x reversed if moving
     /// along y alone was clear, y reversed if along x alone was, straight back otherwise
     /// </summary>
     internal static int BounceAngle(int angle, bool xClear, bool yClear)
@@ -212,8 +212,8 @@ internal sealed class Missiles(
         const int ANGLES = GameConstants.Angles;
         int turned = (xClear, yClear) switch
         {
-            (false, true) => 180 - angle,       // a WallId across x: x reversed
-            (true, false) => -angle,            // a WallId across y: y reversed
+            (false, true) => 180 - angle,       // a wall across x: x reversed
+            (true, false) => -angle,            // a wall across y: y reversed
             _ => angle + 180,                   // a corner, or nothing clear: straight back
         };
         return (turned % ANGLES + ANGLES) % ANGLES;
@@ -344,7 +344,7 @@ internal sealed class Missiles(
         return tiles <= 1 ? damage : (int)(damage / (tiles * tiles));
     }
 
-    // A WallId, a moving pushwall or a DoorNumber that isn't open stops a blast
+    // A wall, a moving pushwall or a door that isn't open stops a blast
     internal bool IsSolidForBlast(int x, int y) => map.actorat[x, y] switch
     {
         Wall => true,

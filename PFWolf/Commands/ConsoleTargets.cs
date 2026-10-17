@@ -5,7 +5,7 @@ namespace PFWolf.Commands;
 
 /// <summary>
 /// What console commands act on and how they describe it: a tile (named, or the one the player
-/// faces), the enemies chosen by class (or the nearest), a WallId sprite, a patch and a light zone
+/// faces), the enemies chosen by class (or the nearest), a wall sprite, a patch and a light zone
 /// </summary>
 internal sealed class ConsoleTargets(
     MapManager map,
@@ -24,7 +24,7 @@ internal sealed class ConsoleTargets(
             : throw new ArgumentException(className != null ? $"no living {className} on the level" : "no living enemy on the level");
     }
 
-    /// <summary>"  panel ..." for a WallId sprite, else nothing.</summary>
+    /// <summary>"  panel ..." for a wall sprite, else nothing.</summary>
     internal string WallSpriteDescription(Entities.Actors.Actor actor)
     {
         if (!WallSprites.IsWallSprite(actor))

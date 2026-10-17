@@ -9,7 +9,7 @@ namespace PFWolf.Gameplay;
 /// <param name="PlayPlayerSound">A sound the acting player makes (a switch's)</param>
 /// <param name="Dismount">Steps the player off a mounted gun they're manning: true if they were on one (Gameplay/MountedWeapons.cs)</param>
 /// <param name="CompleteObjective">So many more of a level objective are done (a switch with `objective`: Gameplay/Objectives.cs)</param>
-/// <param name="ExitAllowed">Whether the level can be left (its blocks-exit MatchObjectives done); saying why not if not</param>
+/// <param name="ExitAllowed">Whether the level can be left (its blocks-exit objectives done); saying why not if not</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
@@ -18,7 +18,7 @@ internal sealed record PlayerUseHooks(
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
-/// a switch WallId, a DoorNumber -- else an actor there to be used or talked to, else an item held to be
+/// a switch wall, a door -- else an actor there to be used or talked to, else an item held to be
 /// used that way. Also the switches themselves, mapdefs triggers, the exits and the items an
 /// empty weapon slot's key uses.
 /// </summary>
@@ -55,7 +55,7 @@ internal sealed class PlayerUse(
     }
 
     /// <summary>
-    /// Throws a switch WallId: refused without its lock item, else it turns into its `to` WallId,
+    /// Throws a switch wall: refused without its lock item, else it turns into its `to` wall,
     /// plays its sound and runs its actions on whatever shares its tile's tag. The other switches
     /// with its tag that are either way of the same switch flip with it (as Blake Stone's
     /// barrier switches do), without running their actions.
@@ -69,11 +69,11 @@ internal sealed class PlayerUse(
         var tag = map.GetTag(tilex, tiley);
         if (wallSwitch.To is > 0 and < BitWall && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
         {
-            // flip the switch, keeping the DoorNumber-side mark on a WallId beside a DoorNumber
+            // flip the switch, keeping the door-side mark on a wall beside a door
             var tile = map.tilemap[tilex, tiley];
             int from = tile & ~BitWall;
             map.tilemap[tilex, tiley] = (ushort)(wallSwitch.To | (tile & BitWall));
-            map.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` WallId's play-once animation starts now
+            map.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` wall's play-once animation starts now
             int thrown = from != wallSwitch.To ? 1 : 0;
 
             // and the linked ones: set to the new way, not toggled, so any out of step come back
@@ -112,14 +112,14 @@ internal sealed class PlayerUse(
     }
 
     /// <summary>
-    /// The switch of the patch on the WallId tile (TileX, TileY) the player faces going dir, if
+    /// The switch of the patch on the wall tile (TileX, TileY) the player faces going dir, if
     /// it's on the face they press (facing east presses the west face) and usable from there
     /// </summary>
     internal MapSwitchTranslation? PatchSwitchAt(int tilex, int tiley, ControlDir dir)
     {
         int tile = map.tilemap[tilex, tiley];
         if ((tile & BitDoor) != 0 || (tile & ~BitWall) == 0)
-            return null;                // open floor, a DoorNumber or a moving pushwall
+            return null;                // open floor, a door or a moving pushwall
         int id = map.GetPatch(tilex, tiley);
         if (id == 0 || !map.GetMapData().Patches.TryGetValue(id, out var patch) || patch.Switch is not { } patchSwitch)
             return null;
@@ -136,7 +136,7 @@ internal sealed class PlayerUse(
 
     /// <summary>
     /// Throws a patch's switch (patches.yaml): refused without its lock item, else it plays its
-    /// sound and runs its actions on whatever shares the tile's tag, as a WallId's switch does.
+    /// sound and runs its actions on whatever shares the tile's tag, as a wall's switch does.
     /// Then, unless all its actions came to nothing (an item the player has no room for, say),
     /// the patch turns into its `to` patch, or comes off with `remove`; and so do the other
     /// patches with the tag that are either way of the same switch, so linked ones stay in step.
@@ -260,7 +260,7 @@ internal sealed class PlayerUse(
         if (map.GetTrigger(checkx, checky) is { IsWalkOver: false } trigger)
         {
             //
-            // mapdefs use trigger (a pushable WallId): once a press, not every frame use is held,
+            // mapdefs use trigger (a pushable wall): once a press, not every frame use is held,
             // for one that stays (`repeat`: a ladder) or refuses (a one-way pushwall's message)
             //
             ResetUseHeld();
@@ -273,18 +273,18 @@ internal sealed class PlayerUse(
         if (!playerinput.IsHeld(ButtonType.Use) && PatchSwitchAt(checkx, checky, dir) is { } patchSwitch)
         {
             //
-            // use a patch that's a switch (patches.yaml), over the WallId's own
+            // use a patch that's a switch (patches.yaml), over the wall's own
             //
             playerinput.SetHeld(ButtonType.Use, true);
             UsePatchSwitch(patchSwitch, checkx, checky, dir);
         }
-        // A WallId beside a DoorNumber keeps its id under BitWall; a moving pushwall's tiles are bare BitWall
+        // A wall beside a door keeps its id under BitWall; a moving pushwall's tiles are bare BitWall
         else if (!playerinput.IsHeld(ButtonType.Use) && (cmdtile & BitDoor) == 0
             && map.GetMapData().Walls.TryGetValue(cmdtile & ~BitWall, out var switchWall)
             && switchWall.Switch is { } wallSwitch && wallSwitch.UsableFrom(dir))
         {
             //
-            // use a switch (a mapdefs WallId with a switch, such as the elevator's)
+            // use a switch (a mapdefs wall with a switch, such as the elevator's)
             //
             playerinput.SetHeld(ButtonType.Use, true);
             UseSwitch(wallSwitch, checkx, checky, dir);

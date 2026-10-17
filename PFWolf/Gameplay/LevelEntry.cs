@@ -189,7 +189,7 @@ internal sealed class LevelEntry(
     /// <summary>
     /// Puts the player in the elevator they arrive in (bstone's AlignPlayerInElevator): every
     /// floor's elevator is where the last floor's was, so from the tile the player left from,
-    /// beside the panel WallId, it finds the spot inside facing the doors.
+    /// beside the panel wall, it finds the spot inside facing the doors.
     /// </summary>
     internal void AlignPlayerInElevator(int lastx, int lasty, int panelWall)
     {

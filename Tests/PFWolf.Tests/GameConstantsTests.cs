@@ -15,7 +15,7 @@ public class GameConstantsTests
     [Test]
     public void Wall_Ids_Reach_255_Below_The_Tile_Flags()
     {
-        // WallShift 8 rather than Wolf3D's 6: every plane-0 code can be a WallId
+        // WallShift 8 rather than Wolf3D's 6: every plane-0 code can be a wall
         Assert.That((GameConstants.BitWall, GameConstants.BitDoor, GameConstants.BitAllTiles), Is.EqualTo((256, 512, 1024)));
         Assert.That(GameConstants.BitWall - 1, Is.EqualTo(MapConstants.MaxWallId));
         Assert.That(GameConstants.MaxDoors, Is.LessThanOrEqualTo(GameConstants.BitWall));

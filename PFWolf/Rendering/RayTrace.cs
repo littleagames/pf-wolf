@@ -5,8 +5,8 @@ namespace PFWolf.Rendering;
 
 /// <summary>
 /// The ray trace: for each screen column, a ray from the view point across the map, tile edge by
-/// tile edge (vertical edges in VertEntry, horizontal in HorizEntry), until it hits a WallId, a
-/// DoorNumber, a diagonal or a moving pushwall (WallHits), going on past short walls for taller ones
+/// tile edge (vertical edges in VertEntry, horizontal in HorizEntry), until it hits a wall, a
+/// door, a diagonal or a moving pushwall (WallHits), going on past short walls for taller ones
 /// behind them; then the column's posts are drawn (WallPosts). Tiles it passes are seen.
 /// </summary>
 internal sealed class RayTrace(
@@ -90,7 +90,7 @@ internal sealed class RayTrace(
             render.ColumnHit = render.PastWall = render.ArchOpen = false;
             render.ColumnTallest = 0;
             render.ColumnTop = render.ViewHeight;
-            bool focalhit = false;              // hit a WallId in the view's own tile: no trace
+            bool focalhit = false;              // hit a wall in the view's own tile: no trace
 
             //
             // special treatment when player is in back tile of pushwall
@@ -170,8 +170,8 @@ internal sealed class RayTrace(
             }
 
             //
-            // trace along this angle until we hit a WallId, and on past it while a taller WallId
-            // could still show over the top: a WallId that is hit and passed is traced through
+            // trace along this angle until we hit a wall, and on past it while a taller wall
+            // could still show over the top: a wall that is hit and passed is traced through
             // from where the trace entered its tile, as if it were open floor
             //
             // CORE LOOP!
@@ -236,8 +236,8 @@ internal sealed class RayTrace(
             if ((render.TileHit & GameConstants.BitDoor) != 0)
             {
                 //
-                // hit a vertical DoorNumber, so find which coordinate the DoorNumber would be
-                // intersected at, and check to see if the DoorNumber is open past that point
+                // hit a vertical door, so find which coordinate the door would be
+                // intersected at, and check to see if the door is open past that point
                 //
                 var door = doors.DoorObjList[render.TileHit & ~GameConstants.BitDoor];
                 yinttemp = render.YIntercept + (ystep >> 1);    // add halfstep to current intercept position
@@ -247,12 +247,12 @@ internal sealed class RayTrace(
                 {
                     if (yinttemp >> MapConstants.TileShift == render.YIntTile)
                         hits.NoteLintel(door, planex, yinttemp);
-                    PassVert(ystep); // DoorNumber is open, continue tracing
+                    PassVert(ystep); // door is open, continue tracing
                     return false;
                 }
 
                 //
-                // midpoint is outside tile, so it hit the side of the WallId before a DoorNumber
+                // midpoint is outside tile, so it hit the side of the wall before a door
                 //
                 if (yinttemp >> MapConstants.TileShift != render.YIntTile)
                 {
@@ -263,7 +263,7 @@ internal sealed class RayTrace(
                 if (door.Action != DoorAction.Closed)
                 {
                     //
-                    // the trace hit the DoorNumber plane at pixel position YIntercept, see if the DoorNumber is
+                    // the trace hit the door plane at pixel position YIntercept, see if the door is
                     // closed that much
                     //
                     if (door.OpenAt(yinttemp))
@@ -282,7 +282,7 @@ internal sealed class RayTrace(
             else if (render.TileHit == GameConstants.BitWall)
             {
                 //
-                // hit a sliding vertical WallId
+                // hit a sliding vertical wall
                 //
                 if (pushWalls.PWall.Dir == ControlDir.West || pushWalls.PWall.Dir == ControlDir.East)
                 {
@@ -481,8 +481,8 @@ internal sealed class RayTrace(
             if ((render.TileHit & GameConstants.BitDoor) != 0)
             {
                 //
-                // hit a horizontal DoorNumber, so find which coordinate the DoorNumber would be
-                // intersected at, and check to see if the DoorNumber is open past that point
+                // hit a horizontal door, so find which coordinate the door would be
+                // intersected at, and check to see if the door is open past that point
                 //
                 var door = doors.DoorObjList[render.TileHit & ~GameConstants.BitDoor];
                 xinttemp = render.XIntercept + (xstep >> 1);    // add half step to current intercept position
@@ -492,12 +492,12 @@ internal sealed class RayTrace(
                 {
                     if ((xinttemp >> MapConstants.TileShift) == render.XIntTile)
                         hits.NoteLintel(door, xinttemp, planey);
-                    PassHoriz(xstep); // DoorNumber is open, continue tracing
+                    PassHoriz(xstep); // door is open, continue tracing
                     return false;
                 }
 
                 //
-                // midpoint is outside tile, so it hit the side of the WallId before a DoorNumber
+                // midpoint is outside tile, so it hit the side of the wall before a door
                 //
                 if ((xinttemp >> MapConstants.TileShift) != render.XIntTile)
                 {
@@ -508,7 +508,7 @@ internal sealed class RayTrace(
                 if (door.Action != DoorAction.Closed)
                 {
                     //
-                    // the trace hit the DoorNumber plane at pixel position XIntercept, see if the DoorNumber is
+                    // the trace hit the door plane at pixel position XIntercept, see if the door is
                     // closed that much
                     //
                     if (door.OpenAt(xinttemp))
@@ -527,7 +527,7 @@ internal sealed class RayTrace(
             else if (render.TileHit == GameConstants.BitWall)
             {
                 //
-                // hit a sliding horizontal WallId
+                // hit a sliding horizontal wall
                 //
                 if (pushWalls.PWall.Dir == ControlDir.North || pushWalls.PWall.Dir == ControlDir.South)
                 {
@@ -711,7 +711,7 @@ internal sealed class RayTrace(
         render.XIntTile = render.XIntercept >> (int)MapConstants.TileShift;
     }
 
-    /// <summary>Marks a WallId face the rays hit as seen, for the automap, when the view is the player's</summary>
+    /// <summary>Marks a wall face the rays hit as seen, for the automap, when the view is the player's</summary>
     internal void MarkSeen(int x, int y, SeenFlags face)
     {
         if (render.MarkSeen)

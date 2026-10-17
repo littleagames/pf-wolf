@@ -351,7 +351,7 @@ internal sealed class GameScripts(
             return new(c.Return());
         });
         // game.objective(name): how many of a level objective are done, and of how many
-        // (game-info MatchObjectives: Gameplay/Objectives.cs); 0, 0 for one the level hasn't
+        // (game-info objectives: Gameplay/Objectives.cs); 0, 0 for one the level hasn't
         game["objective"] = new LuaFunction("game.objective", (c, _) =>
         {
             var name = StringArg(c, 0);
@@ -387,7 +387,7 @@ internal sealed class GameScripts(
     game.onlevelend(function(map, result) ... end): called as a level's finished (its exit, a
         secret exit or the game won; not dying or leaving), before the tally, once its record is
         kept (game.record). result has kills, KillTotal, secrets, SecretTotal, items, itemtotal,
-        time (tics), par (seconds, 0 for none), underpar, undetected, stealthkills, MatchObjectives
+        time (tics), par (seconds, 0 for none), underpar, undetected, stealthkills, objectives
         ({name = {done = n, total = n}}) and exit ("exit", "secret" or "victory"). It's the
         place to game.unlock what the finish earned: anything unlocked is told on the tally.
         Not called while a demo plays back.

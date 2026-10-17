@@ -66,7 +66,7 @@ internal interface IMatchObjective
 /// Players against each other. Everyone comes in (and back) at a random spot: one of their
 /// team's starts in a team game (mapdefs player-starts with `team:`), else one of the map's
 /// deathmatch starts (`deathmatch: true`), else any open floor, as far from rivals as can be
-/// had. Each carries every key, so no DoorNumber is shut to anyone (but in Heist). A weapon on the
+/// had. Each carries every key, so no door is shut to anyone (but in Heist). A weapon on the
 /// floor stays there for everyone without it yet; anything else taken comes back after
 /// ItemRespawnTics (with item-respawn on). Killing another player is a frag (killing yourself
 /// takes one away). The first to the score limit, or whoever leads when the time runs out,
@@ -97,7 +97,7 @@ internal sealed class Deathmatch(
     /// <summary>Each team's score this match (red's first)</summary>
     internal readonly int[] TeamScores = new int[2];
 
-    /// <summary>The modes' MatchObjectives (flags, loot, points, waves): the one for the mode being played runs</summary>
+    /// <summary>The modes' objectives (flags, loot, points, waves): the one for the mode being played runs</summary>
     internal readonly List<IMatchObjective> MatchObjectives = [];
 
     /// <summary>The mode being played's objective, if it has one</summary>
@@ -180,7 +180,7 @@ internal sealed class Deathmatch(
         return (spot.x, spot.y, angle);
     }
 
-    /// <summary>The acting player carries every key (in a deathmatch, no DoorNumber is shut to anyone)</summary>
+    /// <summary>The acting player carries every key (in a deathmatch, no door is shut to anyone)</summary>
     internal void GiveDeathmatchKeys()
     {
         if (!session.GameMode.GivesAllKeys())

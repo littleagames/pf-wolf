@@ -8,8 +8,8 @@ namespace PFWolf.Gameplay;
 /// <summary>What the player's movement needs from the game</summary>
 /// <param name="PlayerFactor">A factor from the player class (player.forwardmove, player.sidemove), 1 when left out</param>
 /// <param name="MaxPitch">How far up or down the view can look, in degrees</param>
-/// <param name="PlayPlayerSound">A sound the acting player makes (bumping a WallId)</param>
-/// <param name="WallSpriteHit">The WallId sprite panel the player's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
+/// <param name="PlayPlayerSound">A sound the acting player makes (bumping a wall)</param>
+/// <param name="WallSpriteHit">The wall sprite panel the player's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
 /// <param name="WallSpriteMoveFrom">Where a move starts, so a panel the player already overlaps there doesn't block it</param>
 /// <param name="ActivateTrigger">Runs a mapdefs trigger (a walk-over one, stepped onto)</param>
 internal sealed record PlayerMovementHooks(
@@ -22,7 +22,7 @@ internal sealed record PlayerMovementHooks(
 
 /// <summary>
 /// The acting player's movement: turning, looking up and down, walking and strafing from their
-/// input, and the move itself -- blocked by walls, MovingWalls, diagonals, WallId sprites and
+/// input, and the move itself -- blocked by walls, MovingWalls, diagonals, wall sprites and
 /// actors, sliding along what it can -- then the walk-over and floor triggers it steps onto.
 /// </summary>
 internal sealed class PlayerMovement(
@@ -202,7 +202,7 @@ internal sealed class PlayerMovement(
         player.TileX = (byte)(player.X >> (int)MapConstants.TileShift);                // scale to tile values
         player.TileY = (byte)(player.Y >> (int)MapConstants.TileShift);
 
-        // A diagonal WallId tile's open half has no area number (plane 0 holds the WallId), so keep
+        // A diagonal wall tile's open half has no area number (plane 0 holds the wall), so keep
         // the one the player walked in from.
         var areatile = map.MapSpot(player.TileX, player.TileY, 0);
         if (map.ValidArea(areatile))
@@ -291,7 +291,7 @@ internal sealed class PlayerMovement(
         }
 
         //
-        // a WallId sprite only blocks along its panel (Rendering/WallSprites.cs)
+        // a wall sprite only blocks along its panel (Rendering/WallSprites.cs)
         //
         if (nearwallsprite
             && hooks.WallSpriteHit((int)xl, (int)yl, (int)xh, (int)yh, ob.X, ob.Y, PLAYERSIZE) is { } panel)
@@ -362,7 +362,7 @@ internal sealed class PlayerMovement(
 
         //
         // ran into a diagonal face: slide along it (the move's part in the face's direction),
-        // since neither axis on its own gets past a 45 degree WallId
+        // since neither axis on its own gets past a 45 degree wall
         //
         if (diagonalblock != WallShape.Square)
         {
@@ -375,7 +375,7 @@ internal sealed class PlayerMovement(
         }
 
         //
-        // ran into a WallId sprite's panel: slide along it, which for a diagonal one neither
+        // ran into a wall sprite's panel: slide along it, which for a diagonal one neither
         // axis on its own would
         //
         if (wallspriteblock is { } panel)

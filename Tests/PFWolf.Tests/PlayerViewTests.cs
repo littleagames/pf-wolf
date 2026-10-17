@@ -101,7 +101,7 @@ public class PlayerViewTests
 
         // Act / Assert
         Assert.That(_view.PlayerTileInView(pawn), Is.True);
-        _map.tilemap[10, 10] = 1;       // somehow in a WallId
+        _map.tilemap[10, 10] = 1;       // somehow in a wall
         Assert.That(_view.PlayerTileInView(pawn), Is.False);
     }
 }

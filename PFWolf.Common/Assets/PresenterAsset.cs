@@ -25,7 +25,7 @@ public record PresenterAsset : Asset
 }
 
 /// <summary>
-/// A shape a script can draw: a picture, or a sprite or WallId texture at 64x64 (a sprite's
+/// A shape a script can draw: a picture, or a sprite or wall texture at 64x64 (a sprite's
 /// see-through parts let what's behind show)
 /// </summary>
 public record PresenterShape

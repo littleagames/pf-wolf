@@ -107,7 +107,7 @@ public class PixelDocumentTests
         texture.SetPixel(0, 0, PixelDocument.Clear);
         texture.EndEdit();
 
-        // Assert: a WallId texture has no see-through pixels, so "clear" draws color 0
+        // Assert: a wall texture has no see-through pixels, so "clear" draws color 0
         Assert.That(Rows(sprite), Is.EqualTo(new[] { ".2", "22" }));
         Assert.That(texture.Opaque, Is.Null);
         Assert.That(Rows(texture), Is.EqualTo(new[] { "02", "34" }));

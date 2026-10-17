@@ -27,8 +27,8 @@ internal static class GameConstants
     internal const int MaxTics = 10;
     internal const int DemoTics = 4;
 
-    // tilemap holds a WallId's id below BitWall: 1 to 255, all a plane-0 code can be (its high
-    // byte is the WallId patch). Wolf3D's WallShift was 6, so 63 walls.
+    // tilemap holds a wall's id below BitWall: 1 to 255, all a plane-0 code can be (its high
+    // byte is the wall patch). Wolf3D's WallShift was 6, so 63 walls.
     internal const int WallShift = 8;
     internal const int BitWall = (1 << WallShift);
     internal const int BitDoor = (1 << (WallShift + 1));
@@ -36,8 +36,8 @@ internal static class GameConstants
 
     internal const int MaxActors = 150;
     internal const int MaxStats = 400;
-    // A DoorNumber tile in tilemap is BitDoor | its number: 128 doors (Wolf3D allowed 64; Midnight
-    // Assault's Wolf4SDL raised it to 128). A DoorNumber test must still come before the DoorNumber-side
+    // A door tile in tilemap is BitDoor | its number: 128 doors (Wolf3D allowed 64; Midnight
+    // Assault's Wolf4SDL raised it to 128). A door test must still come before the door-side
     // (BitWall) test, should MaxDoors ever pass BitWall.
     internal const int MaxDoors = 128;
     internal const int MaxVisible = 250;
@@ -118,7 +118,7 @@ internal static class GameConstants
 
     internal const int ActorSize = 0x4000;
 
-    // tall walls: every WallId is wallstories 64 unit stories tall, built up from the floor
+    // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
     internal const int MaxWallStories = 8;
 
     // How high above the floor the view is, in texels (64 a story); see GameHost.WL_DRAW's Eye height
@@ -140,7 +140,7 @@ internal static class GameConstants
     internal const int MaxGameName = 32;    // a save's name, as typed in the save menu, is one less
 
     internal const long FocalLength = (0x5700L);               // in global coordinates
-    internal const int ViewGlobal = 0x10000;               // globals visable flush to WallId
+    internal const int ViewGlobal = 0x10000;               // globals visable flush to wall
 
     internal static readonly int[] DirAngle ={0,Angles/8,2*Angles/8,3*Angles/8,4*Angles/8,
                        5*Angles/8,6*Angles/8,7*Angles/8,Angles};

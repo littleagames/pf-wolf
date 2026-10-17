@@ -4,7 +4,7 @@ namespace PFWolf.Gameplay;
 
 /// <summary>
 /// A pushwall on the move. Any number can move at once, each with its own progress; a
-/// moving WallId's two tiles (the one it's leaving and the one ahead) are bare GameConstants.BitWall.
+/// moving wall's two tiles (the one it's leaving and the one ahead) are bare GameConstants.BitWall.
 /// </summary>
 internal sealed class MovingPushWall
 {
@@ -12,7 +12,7 @@ internal sealed class MovingPushWall
     public ushort Pos;                  // amount it has moved into the tile ahead (0-63)
     public ushort X, Y;                 // the tile it's leaving
     public ControlDir Dir;
-    public ushort Tile;                 // its WallId id
+    public ushort Tile;                 // its wall id
 
     // Who pushed it: the tiles it leaves take their area (not saved: a loaded game's
     // walls go by the first player, the only one a save has)
@@ -110,18 +110,18 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
     ===============
     */
     // A_PushWall, the mapdefs trigger action (registered in RegisterActorActions): true if the
-    // WallId started moving, which is when a secret trigger counts as found. moveSound plays as it
+    // wall started moving, which is when a secret trigger counts as found. moveSound plays as it
     // starts, blockedSound when something's in the way (either null for none).
     internal bool PushWall(int checkx, int checky, ControlDir dir, string? moveSound = null, string? blockedSound = null)
     {
         int oldtile, dx, dy;
 
-        // demos keep the original game's one WallId at a time, so they play out the same
+        // demos keep the original game's one wall at a time, so they play out the same
         if (MovingWalls.Count > 0 && (session.DemoPlayback || session.DemoRecord))
             return false;
 
         oldtile = map.tilemap[checkx, checky];
-        if (oldtile == 0 || oldtile == GameConstants.BitWall)    // nothing there, or a WallId already on the move
+        if (oldtile == 0 || oldtile == GameConstants.BitWall)    // nothing there, or a wall already on the move
             return false;
 
         dx = Dirs[(int)dir][0];
@@ -216,7 +216,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             }
             else
             {
-                // the WallId's height, tag and patch go with it, on the tile WallId.X/WallId.Y name
+                // the wall's height, tag and patch go with it, on the tile wall.X/wall.Y name
                 map.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MovePatch(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
@@ -225,7 +225,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 int aheadx = wall.X + dx, aheady = wall.Y + dy;
 
                 // stopped by anything in the way, a player included (any of them), or another
-                // moving WallId's tile
+                // moving wall's tile
                 if (map.actorat[aheadx, aheady] != null
                     || map.tilemap[aheadx, aheady] == GameConstants.BitWall
                     || map.EnemiesAt(aheadx, aheady).Any()

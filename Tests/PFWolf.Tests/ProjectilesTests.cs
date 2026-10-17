@@ -44,7 +44,7 @@ public class ProjectilesTests
     [Test]
     public void A_Wall_Its_Box_Reaches_Stops_It()
     {
-        // Arrange: a WallId east, the needle close to it
+        // Arrange: a wall east, the needle close to it
         _map.actorat[11, 10] = new Wall(1);
 
         // Act / Assert
@@ -77,7 +77,7 @@ public class ProjectilesTests
     [Test]
     public void A_Projectile_Without_A_Death_State_Vanishes_Against_A_Wall()
     {
-        // Arrange: flying east into a WallId
+        // Arrange: flying east into a wall
         _map.actorat[11, 10] = new Wall(1);
         var needle = Needle(Tile / 2 - 0x1000);
         needle.Angle = 0;

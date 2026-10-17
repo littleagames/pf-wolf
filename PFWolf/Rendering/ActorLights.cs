@@ -9,7 +9,7 @@ namespace PFWolf.Rendering;
 /// light grid around it (lighting.CellAdd), most at the actor and none at its radius. It spreads from
 /// the actor's tile through open floor and open doors, and lights the tiles it reaches that
 /// a straight line from it can see, so it doesn't shine through walls or round corners: a
-/// closed DoorNumber or a diagonal WallId is lit, but the light goes no further. Light can't make
+/// closed door or a diagonal wall is lit, but the light goes no further. Light can't make
 /// anything brighter than full, so actor lights only show where the level is darker than
 /// that, and aren't cast at all on a level with no lighting.shading.
 ///
@@ -338,14 +338,14 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         return true;
     }
 
-    // Light can light a tile: open floor, a DoorNumber or a diagonal WallId (its open half), not a solid WallId
+    // Light can light a tile: open floor, a door or a diagonal wall (its open half), not a solid wall
     internal bool LightEnters(int x, int y)
     {
         int tile = map.tilemap[x, y];
         return tile == 0 || (tile & GameConstants.BitDoor) != 0 || map.wallshape[x, y] != WallShape.Square;
     }
 
-    // Light carries on through a tile: open floor, or a DoorNumber that isn't shut
+    // Light carries on through a tile: open floor, or a door that isn't shut
     internal bool LightPasses(int x, int y)
     {
         int tile = map.tilemap[x, y];

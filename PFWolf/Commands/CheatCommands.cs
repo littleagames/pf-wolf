@@ -246,7 +246,7 @@ internal sealed class CheatCommands(
 
     /// <summary>
     /// Moves the player to a tile, facing <paramref name="angle"/> (degrees, 0 east) when given.
-    /// Only onto open floor: a solid tile, a DoorNumber or a blocking object would trap the player, and
+    /// Only onto open floor: a solid tile, a door or a blocking object would trap the player, and
     /// an area number is needed for the sight/sound area bookkeeping.
     /// </summary>
     internal bool TryTeleportPlayer(int x, int y, int? angle, out string problem)

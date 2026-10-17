@@ -43,7 +43,7 @@ internal partial record BlakeMonster : Monster
 
     // Shots it has left (`monster.ammo`; an informant: the room it last picked a hint in), the
     // tile it's heading for when it runs away (an informant: the hints it picked; one that came
-    // out of a WallId outlet: that outlet's tile, plus one), and the way a patroller turns when
+    // out of a wall outlet: that outlet's tile, plus one), and the way a patroller turns when
     // blocked (a dir, plus 128 for clockwise; nodir when not turning). Kept in saved games.
     public short Ammo { get; internal set; }
     public byte SeekX { get; internal set; }
@@ -122,7 +122,7 @@ internal partial record BlakeMonster : Monster
     Flags:
       FRIENDLY       starts friendly: patrolling, it only looks for the player after a noise
       TALKATIVE      can be talked to (use, facing it, close by)
-      SMART          runs for supplies or a DoorNumber while out of ammo, at half health or less, or
+      SMART          runs for supplies or a door while out of ammo, at half health or less, or
                      after turning mean when talked to (rent-a-cops, pro guards, scientists)
       PATROLTURNS    a patroller blocked turns aside rather than stopping
       RANDOMTURN     ... and sometimes turns at random
@@ -345,7 +345,7 @@ internal partial record BlakeMonster : Monster
         {
             if (Distance < 0)
             {
-                // waiting for a DoorNumber to open
+                // waiting for a door to open
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].Action != DoorAction.Open)
                     return;
@@ -430,7 +430,7 @@ internal partial record BlakeMonster : Monster
         if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
             return;
         if (!CheckLine(this, Target))
-            return;     // what it's after is behind a WallId
+            return;     // what it's after is behind a wall
 
         ShotAtPlayer();
         PlayActorSound(this, "attacksound");
@@ -485,7 +485,7 @@ internal partial record BlakeMonster : Monster
 
     /// <summary>
     /// Which way (in tiles) an actor closing in heads: at the player, or, for a SMART actor that
-    /// should be running, at the pickup, DoorNumber or far corner it's running for
+    /// should be running, at the pickup, door or far corner it's running for
     /// </summary>
     protected override void SeekDelta(out int deltax, out int deltay)
     {
@@ -534,11 +534,11 @@ internal partial record BlakeMonster : Monster
     /// <summary>
     /// A running actor looks for what it needs: true when it got some (taking an item it's
     /// standing on, or, out of the player's sight and area, simply getting some), false when it
-    /// has picked an item or a DoorNumber to head for (SeekX/SeekY) or has nothing new
+    /// has picked an item or a door to head for (SeekX/SeekY) or has nothing new
     /// </summary>
     private bool LookForGoodies(int reason)
     {
-        // A scientist that turned mean backs off to a DoorNumber, then (half the time) attacks
+        // A scientist that turned mean backs off to a door, then (half the time) attacks
         bool justFindDoor = false;
         if ((reason & RrInterrogated) != 0)
         {
@@ -604,7 +604,7 @@ internal partial record BlakeMonster : Monster
             }
         }
 
-        // Running for a DoorNumber out of the room, when the room joins the player's
+        // Running for a door out of the room, when the room joins the player's
         if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] != 0)
         {
             if (RuntimeFlags.HasFlag(ObjFlags.RunToStatic))
@@ -638,7 +638,7 @@ internal partial record BlakeMonster : Monster
         return false;
     }
 
-    /// <summary>Whether a DoorNumber joins an area to another and opens without a key (an actor's way out)</summary>
+    /// <summary>Whether a door joins an area to another and opens without a key (an actor's way out)</summary>
     private bool DoorLeadsOutOf(int door, int area)
     {
         var d = DoorObjects[door];
@@ -847,7 +847,7 @@ internal partial record BlakeMonster : Monster
         SyncPosition();
     }
 
-    // Moves an actor unless that would put it into a WallId, something solid or a DoorNumber that isn't open
+    // Moves an actor unless that would put it into a wall, something solid or a door that isn't open
     private bool ClipMove(int dx, int dy)
     {
         int nx = X + dx, ny = Y + dy, size = (int)MinDist;

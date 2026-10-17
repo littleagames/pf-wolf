@@ -85,7 +85,7 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m => m.Shoot());
         ActorActionRegistry.RegisterFor<Monster>("A_HitlerMorph", m => m.HitlerMorph());
         // A_Morph("Class"[, "keep"]): becomes another enemy where it stands (a boss's next
-        // CurrentPhase); the new one is shootable at its own health and speed and already chasing. This
+        // phase); the new one is shootable at its own health and speed and already chasing. This
         // one leaves the level, or with "keep" stays as it is (a corpse, as Mecha Hitler's armor)
         ActorActionRegistry.RegisterFor<Monster>("A_Morph", (m, args) => m.Morph(args));
 
@@ -338,7 +338,7 @@ internal record Monster : Actor
             return true;
         }
 
-        // A DoorNumber tile has no area of its own, so a PHASEDOORS actor passing through one
+        // A door tile has no area of its own, so a PHASEDOORS actor passing through one
         // keeps the area it came from, and so does one crossing a floor code that isn't an area
         if (MapManager.actorat[TileX, TileY] is not Door && MapManager.ValidArea(MapManager.MapSpot(TileX, TileY, 0)))
             AreaNumber = (byte)(MapManager.MapSpot(TileX, TileY, 0) - MapManager.Floors.AreaTile);
@@ -362,14 +362,14 @@ internal record Monster : Actor
                 return 0;
             if (temp is Door door)
             {
-                // PHASEDOORS actors (ghosts, Spectres) drift straight through a DoorNumber
+                // PHASEDOORS actors (ghosts, Spectres) drift straight through a door
                 // without opening it. Don't set doornumtile for them: TryWalk would give
-                // them a "waiting on DoorNumber" Distance, which T_Ghosts doesn't handle (its
+                // them a "waiting on door" Distance, which T_Ghosts doesn't handle (its
                 // move loop then never ends).
                 if (Flags.Contains("PHASEDOORS", StringComparer.OrdinalIgnoreCase))
                     return 2;
 
-                // NOLOCKEDDOORS actors (Blake Stone's) don't open a DoorNumber that needs a key, and
+                // NOLOCKEDDOORS actors (Blake Stone's) don't open a door that needs a key, and
                 // NODOORS ones (its liquid alien and electro-spheres) none at all
                 if (HasFlag("NODOORS") || HasFlag("NOLOCKEDDOORS") && DoorObjects[door.DoorNumber].Lock.Length > 0)
                     return 0;
@@ -1997,7 +1997,7 @@ internal record Monster : Actor
 
 
     // A dead Spectre comes back once nothing is in the way: the player isn't right on top of
-    // it, and the tiles it covers hold no WallId, DoorNumber, blocking object or live enemy
+    // it, and the tiles it covers hold no wall, door, blocking object or live enemy
     internal void Dormant()
     {
         foreach (var pawn in MapManager.Players)

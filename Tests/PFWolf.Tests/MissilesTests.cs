@@ -92,7 +92,7 @@ public class MissilesTests
     {
         // Arrange
         _map.actorat[1, 1] = new Wall(1);
-        _map.tilemap[2, 1] = 5;                                  // a WallId with nothing on actorat (a moving pushwall's)
+        _map.tilemap[2, 1] = 5;                                  // a wall with nothing on actorat (a moving pushwall's)
         _map.actorat[3, 1] = new Door(0);
         _map.tilemap[3, 1] = (ushort)(GameConstants.BitDoor | 0);
         _doors.DoorObjList[0] = new DoorObject { Action = DoorAction.Closed };
@@ -213,8 +213,8 @@ public class MissilesTests
         Assert.That(_playerHurts, Is.EqualTo(new[] { 100 }));
     }
 
-    [TestCase(30, false, true, 150)]     // a WallId across x: x turned back
-    [TestCase(30, true, false, 330)]     // a WallId across y: y turned back
+    [TestCase(30, false, true, 150)]     // a wall across x: x turned back
+    [TestCase(30, true, false, 330)]     // a wall across y: y turned back
     [TestCase(30, false, false, 210)]    // a corner: straight back
     [TestCase(300, false, true, 240)]
     public void A_Bounce_Turns_Off_The_Wall_It_Met(int angle, bool xClear, bool yClear, int turned)

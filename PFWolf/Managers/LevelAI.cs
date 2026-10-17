@@ -5,7 +5,7 @@ namespace PFWolf.Managers;
 
 /// <summary>
 /// What the level does on its own, rather than any one actor (GameHost builds it, for the level loop and setup, the player and the actors):
-/// enemies coming out of WallId outlets (mapdefs walls `outlet:`), Goldfire warping in at his spawn
+/// enemies coming out of wall outlets (mapdefs walls `outlet:`), Goldfire warping in at his spawn
 /// sites (WARPSITE markers), the once-a-level `dropitem.onfloor` drop, and the player talking to
 /// Blake Stone's actors, as bstone has them (3d_act1.cpp, 3d_act2.cpp, 3d_agent.cpp). The
 /// actors themselves are <see cref="Monster"/>s and <see cref="BlakeMonster"/>s.
@@ -64,7 +64,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
 
                                 WALL OUTLETS
 
-    A WallId with an `outlet:` (mapdefs walls) lets its actor out onto open floor beside it, in
+    A wall with an `outlet:` (mapdefs walls) lets its actor out onto open floor beside it, in
     a room that joins the player's: every so many seconds (a 0xFA value on its object-plane tile,
     else its delay), as long as fewer than its max for the skill are about. One comes out where
     the player can see it, or now and then anyway, never within a tile of the player.

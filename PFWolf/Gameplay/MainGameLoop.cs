@@ -9,7 +9,7 @@ namespace PFWolf.Gameplay;
 /// A map switch asked for by A_ChangeMap (Spear's pickup), an elevator or a teleporter:
 /// GameLoop waits WaitTics (Spear lets the pickup sound play out), loads the map without an
 /// intermission and, with KeepPosition, puts the player back where they stood, facing the
-/// same way. With ElevatorWall, they're then moved into the elevator by that panel WallId.
+/// same way. With ElevatorWall, they're then moved into the elevator by that panel wall.
 /// </summary>
 internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, short Angle, int WaitTics = 150, int ElevatorWall = 0);
 
@@ -19,7 +19,7 @@ internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, sh
 /// <param name="LeaveLevel">Keeps a hub level as it's left (Gameplay/LevelEntry.cs)</param>
 /// <param name="MarkLevelStart">What dying puts the player back to (Gameplay/LevelEntry.cs)</param>
 /// <param name="ApplyPendingWarpStart">--start's tile, the first time (GameHost.cs)</param>
-/// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel WallId (Gameplay/LevelEntry.cs)</param>
+/// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel wall (Gameplay/LevelEntry.cs)</param>
 /// <param name="ShowLevelStartMessage">A game's level start message (Blake Stone)</param>
 /// <param name="ShowText">Shows a text as an article (a map's briefing or debriefing: Ui/ArticleReader.cs)</param>
 /// <param name="LevelWon">A level's finished (its exit, a secret exit or the game won), before the tally: its record and the scripts' game.onlevelend hooks</param>

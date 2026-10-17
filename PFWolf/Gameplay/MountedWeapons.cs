@@ -129,7 +129,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         weapons.DrawWeapon();
     }
 
-    // Nothing in the way: no WallId or DoorNumber, and nothing solid or shootable standing there
+    // Nothing in the way: no wall or door, and nothing solid or shootable standing there
     bool IsOpen(int x, int y) =>
         x is > 0 and < MapManager.MapSize - 1 && y is > 0 and < MapManager.MapSize - 1
         && map.tilemap[x, y] == 0 && map.actorat[x, y] == null

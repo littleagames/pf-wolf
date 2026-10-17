@@ -23,7 +23,7 @@ internal sealed record SpriteDrawingHooks(
 /// <summary>
 /// The level's sprites: each actor and item worth drawing is placed on the view (TransformActor),
 /// given the sprite for its angle to the viewer (CalcRotate), and they're drawn farthest first
-/// behind the walls in front of them (DrawScaleds), WallId sprites and weather among them; then the
+/// behind the walls in front of them (DrawScaleds), wall sprites and weather among them; then the
 /// weapon in hand over everything (DrawPlayerWeapon).
 /// </summary>
 internal sealed class SpriteDrawing(
@@ -278,7 +278,7 @@ internal sealed class SpriteDrawing(
                 var atx = actor.TileX;
                 var aty = actor.TileY;
 
-                // A neighbouring tile only counts while it's open floor: a WallId the player
+                // A neighbouring tile only counts while it's open floor: a wall the player
                 // sees isn't somewhere the actor could be showing from
                 bool Seen(int x, int y) => map.spotvis[x, y] && map.tilemap[x, y] == 0;
                 if (!(map.spotvis[atx, aty]

@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 
 public class PushWallsTests
 {
-    // Finding the WallId on a tile only looks at the list
+    // Finding the wall on a tile only looks at the list
     private static PushWalls With(params MovingPushWall[] walls)
     {
         var pushWalls = new PushWalls(null!, null!, new GameSession());
@@ -100,7 +100,7 @@ public class PushWallsTests
 
     [TestCase(null, 2)]         // game-info leaves it out: Wolf3D's two tiles
     [TestCase(3, 3)]            // End of Destiny's
-    [TestCase(0, 1)]            // a WallId always moves a tile
+    [TestCase(0, 1)]            // a wall always moves a tile
     public void A_Wall_Slides_As_Far_As_Game_Info_Says(int? setting, int tiles)
     {
         // Arrange

@@ -72,7 +72,7 @@ public class LevelMeshTests
         // Act
         var mesh = Build(Room());
 
-        // Assert: the corner WallId only faces into the room, and the edge walls only inward
+        // Assert: the corner wall only faces into the room, and the edge walls only inward
         Assert.That(At(mesh, SurfaceKind.Wall, 0, 0).Where(s => s.Ref.Face != Face.Top), Is.Empty);
         Assert.That(At(mesh, SurfaceKind.Wall, 0, 5).Select(s => s.Ref.Face), Is.EquivalentTo(new[] { Face.East, Face.Top }));
     }
@@ -147,7 +147,7 @@ public class LevelMeshTests
     [Test]
     public void A_Lintel_Shows_The_Face_Of_The_Wall_On_Its_Side()
     {
-        // Arrange: a 2-story horizontal DoorNumber set into four-sided walls
+        // Arrange: a 2-story horizontal door set into four-sided walls
         var document = Room();
         EditorMaps.Set(document, 0, 9, 10, FourSided);
         EditorMaps.Set(document, 0, 11, 10, FourSided);
@@ -200,7 +200,7 @@ public class LevelMeshTests
     [Test]
     public void The_Walls_Beside_A_Door_Show_Its_Side()
     {
-        // Arrange: a vertical DoorNumber between two walls in an east-west corridor
+        // Arrange: a vertical door between two walls in an east-west corridor
         var document = Room();
         EditorMaps.Set(document, 0, 10, 9, Wall);
         EditorMaps.Set(document, 0, 10, 11, Wall);
@@ -220,7 +220,7 @@ public class LevelMeshTests
     [Test]
     public void Above_A_Door_Is_The_Wall_It_Is_Set_Into()
     {
-        // Arrange: a 2-story DoorNumber tile
+        // Arrange: a 2-story door tile
         var document = Room();
         EditorMaps.Set(document, 0, 9, 10, Wall);
         EditorMaps.Set(document, 0, 11, 10, Wall);
@@ -230,7 +230,7 @@ public class LevelMeshTests
         // Act
         var door = At(Build(document), SurfaceKind.Door, 10, 10, Face.North).ToList();
 
-        // Assert: the DoorNumber to story 1, its lintel in the WallId's north texture above it
+        // Assert: the door to story 1, its lintel in the wall's north texture above it
         Assert.That(door.Single(s => s.Points.Max(p => p.Y) == 1).Texture.Name, Is.EqualTo("DOOR"));
         Assert.That(door.Single(s => s.Points.Min(p => p.Y) == 1).Texture.Name, Is.EqualTo("WALLNS"));
     }
@@ -302,7 +302,7 @@ public class LevelMeshTests
     [Test]
     public void Painting_A_Picked_Wall_Changes_That_Wall_And_Undoes()
     {
-        // Arrange: looking north from (5, 5) at a WallId at (5, 3)
+        // Arrange: looking north from (5, 5) at a wall at (5, 3)
         var document = Room();
         EditorMaps.Set(document, 0, 5, 3, Wall);
         var camera = new Camera3D();
@@ -372,7 +372,7 @@ public class LevelMeshTests
         // Act
         var arch = At(Build(document), SurfaceKind.Arch, 20, 10).ToList();
 
-        // Assert: the underside's texture; the top keeps the WallId's
+        // Assert: the underside's texture; the top keeps the wall's
         var underside = arch.Single(s => s.Ref.Face == Face.Bottom);
         Assert.That((underside.Texture.Source, underside.Texture.Name), Is.EqualTo((source, name)));
         Assert.That(arch.Single(s => s.Ref.Face == Face.Top).Texture.Name, Is.EqualTo("WALLEW"));
@@ -451,7 +451,7 @@ public class LevelMeshTests
     [Test]
     public void Picking_Finds_The_Wall_In_Front_Of_The_Player_Start()
     {
-        // Arrange: start at (5, 5) facing north, a WallId two tiles ahead
+        // Arrange: start at (5, 5) facing north, a wall two tiles ahead
         var document = Room();
         EditorMaps.Set(document, 1, 5, 5, Start);
         EditorMaps.Set(document, 0, 5, 3, Wall);

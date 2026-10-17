@@ -11,7 +11,7 @@ namespace PFWolf.Loaders;
 ///   char[name length] name, int16 width, int16 height, then each plane's width x height
 ///   uint16s, uncompressed, all little-endian.
 /// The planes are the same as GAMEMAPS': walls, objects, then ECWolf's floor and ceiling
-/// flats; a fourth holds PFWolf's WallId heights (ECWolf reads it as its info plane), a fifth
+/// flats; a fourth holds PFWolf's wall heights (ECWolf reads it as its info plane), a fifth
 /// PFWolf's tags and a sixth its light zones. A map
 /// written in ECWolf's text format (TEXTMAP, UWMF) isn't read yet.
 /// </summary>
@@ -47,7 +47,7 @@ public static class EcWolfMapLoader
     }
 
     /// <summary>
-    /// A WDC map as a level: the fourth plane (ECWolf's info plane) holds PFWolf's WallId heights,
+    /// A WDC map as a level: the fourth plane (ECWolf's info plane) holds PFWolf's wall heights,
     /// the fifth its tags and the sixth its light zones; planes past them are left out, and
     /// missing ones are empty
     /// </summary>

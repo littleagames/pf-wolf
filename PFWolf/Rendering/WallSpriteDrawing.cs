@@ -4,9 +4,9 @@ using PFWolf.Constants;
 namespace PFWolf.Rendering;
 
 /// <summary>
-/// WALL SPRITE DRAWING: each screen column's view ray (the one the WallId trace casts) is met with
+/// WALL SPRITE DRAWING: each screen column's view ray (the one the wall trace casts) is met with
 /// the panel (WallSprites), which gives the sprite column that shows there and how far away it
-/// is -- measured along the view, as CalcHeight measures walls, so a panel and a WallId at the
+/// is -- measured along the view, as CalcHeight measures walls, so a panel and a wall at the
 /// same spot are the same height. The texture is pinned to the panel, so from behind it comes
 /// out mirrored.
 /// </summary>
@@ -54,7 +54,7 @@ internal sealed class WallSpriteDrawing(
         (short)Math.Min(render.HeightNumerator * 256.0 / Math.Max(nx, GameConstants.MinDist), 31999);
 
     /// <summary>
-    /// Fills in a WallId sprite's VisList entry: its height is the panel's middle's, for sorting
+    /// Fills in a wall sprite's VisList entry: its height is the panel's middle's, for sorting
     /// it among the other sprites. False if the panel is wholly behind the view.
     /// </summary>
     internal bool TransformWallSprite(Entities.Actors.Actor actor, VisibleObject vis)
@@ -70,7 +70,7 @@ internal sealed class WallSpriteDrawing(
         return true;
     }
 
-    /// <summary>Whether a WallId sprite's tile, or one beside it (a panel on a tile edge shows from there), was seen.</summary>
+    /// <summary>Whether a wall sprite's tile, or one beside it (a panel on a tile edge shows from there), was seen.</summary>
     internal bool WallSpriteSeen(Entities.Actors.Actor actor)
     {
         int x = actor.TileX, y = actor.TileY;
@@ -118,7 +118,7 @@ internal sealed class WallSpriteDrawing(
 
             short height = HeightAtDepth(s * (dx * cos - dy * sin));
             if (render.WallHeight[x] >= height)
-                continue;                                   // a WallId is in front
+                continue;                                   // a wall is in front
 
             int half = height >> 3;
             if (half == 0)

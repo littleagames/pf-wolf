@@ -46,7 +46,7 @@ public class AreaConnectionsTests
     [Test]
     public void A_Closed_Door_Cuts_The_Chain()
     {
-        // Arrange: the 1-2 DoorNumber has closed again
+        // Arrange: the 1-2 door has closed again
         var areas = WithDoorsOpen((0, 1), (1, 2));
         areas.AreaConnect[1, 2]--;
         areas.AreaConnect[2, 1]--;
@@ -89,7 +89,7 @@ public class AreaConnectionsTests
     [Test]
     public void A_Player_Off_The_Areas_Connects_Nothing()
     {
-        // Arrange: standing on a tile that isn't an area (a DoorNumber, say)
+        // Arrange: standing on a tile that isn't an area (a door, say)
         var areas = WithDoorsOpen((0, 1));
 
         // Act

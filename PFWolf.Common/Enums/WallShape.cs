@@ -1,8 +1,8 @@
 namespace PFWolf.Enums;
 
 /// <summary>
-/// The shape of a WallId tile (MapManager.wallshape). A diagonal is named by its solid corner:
-/// that corner's two tile edges stay ordinary square faces, and the WallId between the other two
+/// The shape of a wall tile (MapManager.wallshape). A diagonal is named by its solid corner:
+/// that corner's two tile edges stay ordinary square faces, and the wall between the other two
 /// corners is the 45 degree face. The open triangle across from it is empty space.
 /// </summary>
 public enum WallShape : byte

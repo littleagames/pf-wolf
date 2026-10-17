@@ -29,7 +29,7 @@ internal static class TrigTables
         }
 
         //
-        // CosTable overlays SinTable with a quarter CurrentPhase shift
+        // CosTable overlays SinTable with a quarter phase shift
         // Angles is assumed to be divisable by four
         //
 

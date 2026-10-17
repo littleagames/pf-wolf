@@ -9,7 +9,7 @@ public record MapObjectTranslationAsset : Asset
     public Dictionary<int, MapTriggerTranslation> Triggers { get; internal set; } = new();
     public Dictionary<int, MapDiagonalTranslation> Diagonals { get; internal set; } = new();
 
-    /// <summary>Wall patches by id (1 to 255): the high byte of a WallId tile's plane 0 value (MapConstants.PatchShift)</summary>
+    /// <summary>Wall patches by id (1 to 255): the high byte of a wall tile's plane 0 value (MapConstants.PatchShift)</summary>
     public Dictionary<int, MapPatchTranslation> Patches { get; internal set; } = new();
 
     public MapFlatsTranslation Flats { get; internal set; } = new();
@@ -23,8 +23,8 @@ public record MapObjectTranslationAsset : Asset
     public Dictionary<int, string> MapInfo { get; internal set; } = new();
 
     /// <summary>
-    /// Object-plane values that lock the DoorNumber they sit on, with the inventory item that opens it
-    /// (Blake Stone puts an access card's number on a DoorNumber tile). In place of the DoorNumber's own lock.
+    /// Object-plane values that lock the door they sit on, with the inventory item that opens it
+    /// (Blake Stone puts an access card's number on a door tile). In place of the door's own lock.
     /// </summary>
     public Dictionary<int, string> DoorLocks { get; internal set; } = new();
 
@@ -85,7 +85,7 @@ public static class MapInfoCodes
 }
 
 /// <summary>
-/// The floor codes on plane 0: the values that mark open floor rather than a WallId or DoorNumber.
+/// The floor codes on plane 0: the values that mark open floor rather than a wall or door.
 /// Each area code is a room, for sound and sight (areas connect through open doors); the
 /// ambush code makes the enemy standing on it wait deaf until it sees the player, then takes
 /// on a neighbouring area's code; standing on the secret exit code while flipping the
@@ -183,27 +183,27 @@ public record MapFloorDamage
 }
 
 /// <summary>
-/// An object-plane marker that turns the WallId tile under it into a 45 degree WallId. The WallId
+/// An object-plane marker that turns the wall tile under it into a 45 degree wall. The wall
 /// keeps its plane 0 texture id; this only gives it a shape (and optionally its diagonal face's
-/// texture). A marker on anything but a WallId tile is ignored.
+/// texture). A marker on anything but a wall tile is ignored.
 /// </summary>
 public record MapDiagonalTranslation
 {
     public Enums.WallShape Shape { get; set; }
 
-    /// <summary>The diagonal face's texture. Empty means the WallId's own North texture.</summary>
+    /// <summary>The diagonal face's texture. Empty means the wall's own North texture.</summary>
     public string Texture { get; set; } = "";
 }
 
 /// <summary>
-/// A WallId patch: a picture with see-through pixels (palette index 0xFF) drawn over a WallId's face,
-/// such as a sign, a switch or a crack, so one WallId can carry any decoration. A WallId tile gets
-/// one by the high byte of its plane 0 value (MapConstants.PatchShift); it moves with the WallId
+/// A wall patch: a picture with see-through pixels (palette index 0xFF) drawn over a wall's face,
+/// such as a sign, a switch or a crack, so one wall can carry any decoration. A wall tile gets
+/// one by the high byte of its plane 0 value (MapConstants.PatchShift); it moves with the wall
 /// when it's pushed. Patches on doors and open floor are ignored.
 /// </summary>
 public record MapPatchTranslation
 {
-    /// <summary>The picture: a texture as wide as a WallId's (any height), or an animdefs animation</summary>
+    /// <summary>The picture: a texture as wide as a wall's (any height), or an animdefs animation</summary>
     public string Texture { get; init; } = "";
 
     /// <summary>
@@ -218,12 +218,12 @@ public record MapPatchTranslation
             ? TextureEw
             : Texture;
 
-    /// <summary>The WallId faces it's on (north, south, east, west: the way the face looks out). Empty means all four.</summary>
+    /// <summary>The wall faces it's on (north, south, east, west: the way the face looks out). Empty means all four.</summary>
     public List<string> Sides { get; init; } = [];
 
     /// <summary>
-    /// The story of a tall WallId it's on, 1 (the bottom one, the default) and up; 0 repeats it on
-    /// every story, as the WallId's own texture does
+    /// The story of a tall wall it's on, 1 (the bottom one, the default) and up; 0 repeats it on
+    /// every story, as the wall's own texture does
     /// </summary>
     public int Story { get; init; } = 1;
 
@@ -298,10 +298,10 @@ public record MapActorTranslation
     public string Else { get; set; } = "";
 
     /// <summary>
-    /// Placed on a WallId tile too (`in-WallId: true`), not only on open floor: something that
-    /// works from inside a WallId, such as a trap shooting out of the face it looks out of (its
+    /// Placed on a wall tile too (`in-wall: true`), not only on open floor: something that
+    /// works from inside a wall, such as a trap shooting out of the face it looks out of (its
     /// <see cref="Angles"/>). Other things on walls are left out, since an object-plane value
-    /// there is often something else (Blake Stone's DoorNumber locks, switch and teleporter data).
+    /// there is often something else (Blake Stone's door locks, switch and teleporter data).
     /// </summary>
     public bool InWall { get; set; }
 
@@ -327,7 +327,7 @@ public record MapTextureTranslation
 
     /// <summary>
     /// The texture on one face: "north", "south", "east" or "west", the way the face looks out
-    /// (a WallId's north face is seen from the tile north of it). Empty if it doesn't give one.
+    /// (a wall's north face is seen from the tile north of it). Empty if it doesn't give one.
     /// </summary>
     public string Side(string face) => face switch
     {
@@ -341,8 +341,8 @@ public record MapTextureTranslation
     public static string OppositeFace(string face) => face switch { "north" => "south", "south" => "north", "east" => "west", _ => "east" };
 
     /// <summary>
-    /// A WallId's texture on one face (<see cref="Side"/>): a face it doesn't give falls back to the
-    /// one opposite, so a WallId that only gives North and East shows them on all four faces.
+    /// A wall's texture on one face (<see cref="Side"/>): a face it doesn't give falls back to the
+    /// one opposite, so a wall that only gives North and East shows them on all four faces.
     /// </summary>
     public string WallFace(string face)
     {
@@ -362,12 +362,12 @@ public record MapTextureTranslation
 
     /// <summary>
     /// Doors only: the inventory item class (e.g. "GoldKey") the player must carry to open
-    /// this DoorNumber. Empty means unlocked.
+    /// this door. Empty means unlocked.
     /// </summary>
     public string Lock { get; init; } = "";
 
     /// <summary>
-    /// Doors only: what's shown when the player tries this DoorNumber without its <see cref="Lock"/>
+    /// Doors only: what's shown when the player tries this door without its <see cref="Lock"/>
     /// item (a $NAME language key or the text itself). Empty uses the lock item's
     /// `key.lockedmessage`.
     /// </summary>
@@ -380,72 +380,72 @@ public record MapTextureTranslation
     public string LockMessageStyle { get; init; } = "";
 
     /// <summary>
-    /// Doors only: the DoorNumber's color on the automap (a theme color name or #RRGGBB), e.g. its
-    /// key's color on a locked DoorNumber. Empty uses the theme's AutomapDoor. A theme color named
+    /// Doors only: the door's color on the automap (a theme color name or #RRGGBB), e.g. its
+    /// key's color on a locked door. Empty uses the theme's AutomapDoor. A theme color named
     /// "Automap" + <see cref="Lock"/> (e.g. AutomapGoldKey) wins over it.
     /// </summary>
     public string AutomapColor { get; init; } = "";
 
     /// <summary>
-    /// Doors only: the sound when the player tries this DoorNumber without its <see cref="Lock"/>
+    /// Doors only: the sound when the player tries this door without its <see cref="Lock"/>
     /// item. Empty uses the lock item's `key.lockedsound`.
     /// </summary>
     public string LockedSound { get; init; } = "";
 
-    /// <summary>Doors only: played from the DoorNumber as it starts to open, when the player can hear it</summary>
+    /// <summary>Doors only: played from the door as it starts to open, when the player can hear it</summary>
     public string OpenSound { get; init; } = "";
 
-    /// <summary>Doors only: played from the DoorNumber as it starts to close, when the player can hear it</summary>
+    /// <summary>Doors only: played from the door as it starts to close, when the player can hear it</summary>
     public string CloseSound { get; init; } = "";
 
     /// <summary>
-    /// Doors only: the faces drawn while the DoorNumber is locked (any left out are its usual ones),
+    /// Doors only: the faces drawn while the door is locked (any left out are its usual ones),
     /// such as Blake Stone's doors with their lock lights on
     /// </summary>
     public MapTextureTranslation? Locked { get; init; }
 
     /// <summary>
-    /// Doors only: opening the DoorNumber with its lock item uses the item up and unlocks the DoorNumber for
+    /// Doors only: opening the door with its lock item uses the item up and unlocks the door for
     /// good (Blake Stone's access cards), instead of the item opening it every time
     /// </summary>
     public bool TakesKey { get; init; }
 
     /// <summary>
-    /// Doors only: a one-way DoorNumber, opened only from this side (north, south, east or west); from
+    /// Doors only: a one-way door, opened only from this side (north, south, east or west); from
     /// the other side it won't open. Empty: either side. A side's face is what's seen from it,
-    /// so a one-way DoorNumber's two faces can differ.
+    /// so a one-way door's two faces can differ.
     /// </summary>
     public string OpensFrom { get; init; } = "";
 
     /// <summary>
-    /// Doors only: the DoorNumber parts in the middle, its two halves sliding out to either side
-    /// (Blake Stone's doors), instead of sliding as one into the WallId
+    /// Doors only: the door parts in the middle, its two halves sliding out to either side
+    /// (Blake Stone's doors), instead of sliding as one into the wall
     /// </summary>
     public bool Split { get; init; }
 
-    /// <summary>Doors only: shown when the player tries a one-way DoorNumber from the wrong side (a $NAME language key or the text)</summary>
+    /// <summary>Doors only: shown when the player tries a one-way door from the wrong side (a $NAME language key or the text)</summary>
     public string WrongSideMessage { get; init; } = "";
 
-    /// <summary>Doors only: played when the player tries a one-way DoorNumber from the wrong side</summary>
+    /// <summary>Doors only: played when the player tries a one-way door from the wrong side</summary>
     public string WrongSideSound { get; init; } = "";
 
     /// <summary>
-    /// Doors only: the DoorNumber runs north-south, so it's passed through going east or west (its
-    /// East/West faces are the DoorNumber). False, it runs east-west (North/South are the DoorNumber).
+    /// Doors only: the door runs north-south, so it's passed through going east or west (its
+    /// East/West faces are the door). False, it runs east-west (North/South are the door).
     /// </summary>
     public bool Vertical { get; init; }
 
-    /// <summary>Walls only: makes this WallId a switch the player can use.</summary>
+    /// <summary>Walls only: makes this wall a switch the player can use.</summary>
     public MapSwitchTranslation? Switch { get; init; }
 
-    /// <summary>Walls only: makes this WallId an outlet enemies come out of (Blake Stone's electro-aliens).</summary>
+    /// <summary>Walls only: makes this wall an outlet enemies come out of (Blake Stone's electro-aliens).</summary>
     public MapOutletTranslation? Outlet { get; init; }
 
     public static MapTextureTranslation None => new(); // TODO: Missing texture
 }
 
 /// <summary>
-/// A WallId that lets enemies out (Managers/LevelAI.cs): every so often, while the room beside
+/// A wall that lets enemies out (Managers/LevelAI.cs): every so often, while the room beside
 /// it joins the player's, one comes out onto open floor beside it.
 /// </summary>
 public record MapOutletTranslation
@@ -453,7 +453,7 @@ public record MapOutletTranslation
     /// <summary>The actordefs class that comes out</summary>
     public string Class { get; init; } = "";
 
-    /// <summary>Seconds between them, [min, max] at random; a 0xFA value on the WallId's object-plane tile sets it instead</summary>
+    /// <summary>Seconds between them, [min, max] at random; a 0xFA value on the wall's object-plane tile sets it instead</summary>
     public List<int> Delay { get; init; } = [8, 30];
 
     /// <summary>How many from this outlet can be about at once, by skill (the last for any skill past the list)</summary>
@@ -464,23 +464,23 @@ public record MapOutletTranslation
 }
 
 /// <summary>
-/// A WallId the player uses (like a DoorNumber) to set things off. Using it turns it into WallId
+/// A wall the player uses (like a door) to set things off. Using it turns it into wall
 /// <see cref="To"/>, plays <see cref="Sound"/> and runs <see cref="Actions"/> through
-/// Entities.MapTriggerRegistry, which act on whatever shares the switch tile's tag. If WallId
+/// Entities.MapTriggerRegistry, which act on whatever shares the switch tile's tag. If wall
 /// <see cref="To"/> has a switch of its own (back to this one, say), it's a toggle; if not, the
 /// switch is thrown once and stays that way. Other walls with the switch's tag that are this
-/// WallId or WallId <see cref="To"/> turn into <see cref="To"/> with it, without running their
+/// wall or wall <see cref="To"/> turn into <see cref="To"/> with it, without running their
 /// actions, so switches linked to the same things stay in step (Blake Stone's barrier switches).
 /// </summary>
 public record MapSwitchTranslation
 {
     /// <summary>
-    /// The WallId id it turns into when used (1 to 255); 0 leaves the WallId as it is. On a patch's
+    /// The wall id it turns into when used (1 to 255); 0 leaves the wall as it is. On a patch's
     /// switch, the patch id it turns into (1 to 255).
     /// </summary>
     public int To { get; init; }
 
-    /// <summary>Patches only: once used, the patch comes off the WallId (a switch that works once, say, or an item taken off a shelf)</summary>
+    /// <summary>Patches only: once used, the patch comes off the wall (a switch that works once, say, or an item taken off a shelf)</summary>
     public bool Remove { get; init; }
 
     /// <summary>
@@ -513,7 +513,7 @@ public record MapSwitchTranslation
     /// <summary>
     /// A switch that turns back by itself (Midnight Assault's timed switches): this many tics
     /// after it's thrown, it and the linked ones thrown with it go back to what they were, and
-    /// <see cref="ResetActions"/> run. Make its `to` a WallId or patch that isn't a switch, so it
+    /// <see cref="ResetActions"/> run. Make its `to` a wall or patch that isn't a switch, so it
     /// can't be used meanwhile. 0: it stays thrown.
     /// </summary>
     public int ResetTics { get; init; }
@@ -522,7 +522,7 @@ public record MapSwitchTranslation
     public List<string> ResetActions { get; init; } = [];
 
     /// <summary>
-    /// A level objective (game-info MatchObjectives) this switch is one of: each WallId or patch with it
+    /// A level objective (game-info objectives) this switch is one of: each wall or patch with it
     /// counts toward the level's total as the level starts, and one is done as it's thrown
     /// (Midnight Assault's sabotage targets). Empty: none.
     /// </summary>

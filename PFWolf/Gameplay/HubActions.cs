@@ -18,7 +18,7 @@ internal sealed record HubActionsHooks(
 /// floor's run to the shuttle (A_VictoryRun, T_VictoryRun).
 /// </summary>
 /// <remarks>
-/// A_FloorSelect (a switch action, on Blake Stone's elevator panel WallId) shows the floor-select
+/// A_FloorSelect (a switch action, on Blake Stone's elevator panel wall) shows the floor-select
 /// screen from gamepacks/{pack}/elevator.yaml (bstone's InputFloor). Its buttons are the floors
 /// of the level's hub cluster by game-info floor-number. Arrows (or turning) move the selector,
 /// space, enter or fire press its button, a number key presses that floor's (0 is floor 10),
@@ -26,7 +26,7 @@ internal sealed record HubActionsHooks(
 /// open one opens with the unlock item, used up as it does. Choosing a floor leaves the level
 /// (Warped); the player comes out in the same elevator on the new floor.
 /// <para/>
-/// Planet Strike's way between floors (bstone's ps_input_floor): its teleporter WallId runs
+/// Planet Strike's way between floors (bstone's ps_input_floor): its teleporter wall runs
 /// A_FloorSelect as the elevator's does, and an elevator.yaml with `style: teleporter` shows
 /// the teleporter map instead of the panel. Up and down (or left and right) move through the
 /// cluster's floors by floor number; Enter goes, Esc leaves. A floor is open once the player
@@ -108,7 +108,7 @@ internal sealed class HubActions(
     */
 
     /// <summary>
-    /// A_Teleport: Blake Stone's teleporter WallId (32), by the object-plane value on it. 0xF4nn
+    /// A_Teleport: Blake Stone's teleporter wall (32), by the object-plane value on it. 0xF4nn
     /// takes the player to floor nn of the cluster, where they come out at the same spot (the
     /// floors' teleporters line up); 0xF5nn moves them to the tile on this floor that the
     /// object-plane value after it gives, its x in the high byte and y in the low byte.
@@ -205,7 +205,7 @@ internal sealed class HubActions(
         return true;
     }
 
-    /// <summary>Whether the player can stand on a tile: on the map, no WallId or DoorNumber, nothing solid or alive on it</summary>
+    /// <summary>Whether the player can stand on a tile: on the map, no wall or door, nothing solid or alive on it</summary>
     bool IsOpenForPlayer(int x, int y) =>
         x > 0 && y > 0 && x < MapManager.MapSize - 1 && y < MapManager.MapSize - 1
         && mapManager.tilemap[x, y] == 0
@@ -221,8 +221,8 @@ internal sealed class HubActions(
     */
 
     /// <summary>
-    /// A_VictoryRun("Class", WallId): the player has reached the way out (Blake Stone's win
-    /// floor). The view turns toward the map's first tile of the given WallId (the shuttle), and
+    /// A_VictoryRun("Class", wall): the player has reached the way out (Blake Stone's win
+    /// floor). The view turns toward the map's first tile of the given wall (the shuttle), and
     /// the class (Blake) runs past the player that way; six tiles on, the cluster is won.
     /// </summary>
     bool VictoryRunAction(Entities.TriggerActivation trigger, string[] args)
@@ -273,7 +273,7 @@ internal sealed class HubActions(
     /// <summary>A_VictoryRun's runner is on its way: the player watches it rather than turning round (T_Player)</summary>
     internal bool VictoryRunning;
 
-    /// <summary>T_VictoryRun: runs the way the player faced (Temp2); six tiles on from where it set off (Temp1, Temp3), or at a WallId, the cluster is won</summary>
+    /// <summary>T_VictoryRun: runs the way the player faced (Temp2); six tiles on from where it set off (Temp1, Temp3), or at a wall, the cluster is won</summary>
     internal void ThinkVictoryRun(Entities.Actors.Actor ob)
     {
         const int speed = 3000;
@@ -282,7 +282,7 @@ internal sealed class HubActions(
         int ny = ob.Y - (int)(Math.Sin(a) * speed * session.Tics);
         int tx = nx >> MapConstants.TileShift, ty = ny >> MapConstants.TileShift;
 
-        // Starting behind the player can be inside a WallId: it runs on out of it, and only a WallId
+        // Starting behind the player can be inside a wall: it runs on out of it, and only a wall
         // it runs into stops it
         bool IsWall(int x, int y) => mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BitDoor) == 0;
         bool blocked = tx < 0 || ty < 0 || tx >= MapManager.MapSize || ty >= MapManager.MapSize

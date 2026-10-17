@@ -2,13 +2,13 @@ namespace PFWolf.Gameplay;
 
 /// <summary>
 /// Whether one thing can see another: a clear line through the tile map (walls, the solid
-/// half of diagonals, the closed part of doors, and WallId sprites' panels); and whether a
+/// half of diagonals, the closed part of doors, and wall sprites' panels); and whether a
 /// diagonal step is blocked
 /// </summary>
-/// <param name="wallSpriteBlocks">Whether a WallId sprite's panel crosses the line between two points (global coordinates)</param>
+/// <param name="wallSpriteBlocks">Whether a wall sprite's panel crosses the line between two points (global coordinates)</param>
 internal sealed class LineOfSight(MapManager map, Doors doors, GameSession session, Func<long, long, long, long, bool> wallSpriteBlocks)
 {
-    // A diagonal step is blocked by a WallId/DoorNumber (actorat[,]) or by a living actor marked on the tile.
+    // A diagonal step is blocked by a wall/door (actorat[,]) or by a living actor marked on the tile.
     internal bool CheckDiag(int x, int y) => map.actorat[x, y] switch
     {
         null => true,
@@ -40,7 +40,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         int xfrac, yfrac, deltafrac;
         uint value, intercept;
 
-        // a WallId sprite's panel across the line (Rendering/WallSprites.cs), unless it's shoot-through
+        // a wall sprite's panel across the line (Rendering/WallSprites.cs), unless it's shoot-through
         if (wallSpriteBlocks(fromX, fromY, to.X, to.Y))
             return false;
 

@@ -125,7 +125,7 @@ internal sealed class Players(
 
     /// <summary>
     /// The nearest open floor tile to a spot (by steps across open floor, so never through a
-    /// WallId), that isn't one of <paramref name="taken"/> and has nothing standing on it; null
+    /// wall), that isn't one of <paramref name="taken"/> and has nothing standing on it; null
     /// if there's none within reach.
     /// </summary>
     internal (int x, int y)? FreeTileNear(int tilex, int tiley, List<(int x, int y)> taken)
@@ -155,7 +155,7 @@ internal sealed class Players(
         return null;
     }
 
-    // Floor a player can walk on: no WallId, DoorNumber or solid thing, and in an area
+    // Floor a player can walk on: no wall, door or solid thing, and in an area
     internal bool IsOpenFloor(int x, int y) =>
         map.tilemap[x, y] == 0 && map.actorat[x, y] == null
         && map.ValidArea(map.MapSpot(x, y, 0));

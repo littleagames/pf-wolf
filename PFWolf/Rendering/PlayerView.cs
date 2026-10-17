@@ -7,7 +7,7 @@ namespace PFWolf.Rendering;
 /// <param name="FocalLength">How far behind the player the view point is (Setup3DView's FocalLength)</param>
 /// <param name="ViewWidth">The view's width in pixels</param>
 /// <param name="TransformActorFrom">Works out where an actor would be on a view from a point (sets its ViewX, ViewHeight, TransX)</param>
-/// <param name="IsWallSprite">Whether an actor is a WallId sprite (never picked up)</param>
+/// <param name="IsWallSprite">Whether an actor is a wall sprite (never picked up)</param>
 /// <param name="GetBonus">The acting player picks an item up (Gameplay/Pickups.cs)</param>
 internal sealed record PlayerViewHooks(
     Func<int> FocalLength,
@@ -118,7 +118,7 @@ internal sealed class PlayerView(
 
     /// <summary>
     /// Whether a player's tile is in view: vanilla read spotvis there, which the camera fix
-    /// always set. With others (or the camera elsewhere), whether it's open floor or a DoorNumber,
+    /// always set. With others (or the camera elsewhere), whether it's open floor or a door,
     /// which is what that comes to, without asking the screen.
     /// </summary>
     internal bool PlayerTileInView(PlayerPawn pawn) =>

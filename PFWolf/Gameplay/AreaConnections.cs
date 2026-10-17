@@ -6,9 +6,9 @@ namespace PFWolf.Gameplay;
                                 AREA CONNECTIONS
 
 Map tile values 0x6a through 0xa3 (mapdefs floors) are area numbers. Enemies only notice and
-hear the player from areas connected to the player's. Each DoorNumber counts in AreaConnect while
+hear the player from areas connected to the player's. Each door counts in AreaConnect while
 it's open, joining the two areas it stands between; AreaByPlayer is worked out afresh from
-the players' areas each time a DoorNumber opens or closes, or a player crosses into another area.
+the players' areas each time a door opens or closes, or a player crosses into another area.
 
 =============================================================================
 */

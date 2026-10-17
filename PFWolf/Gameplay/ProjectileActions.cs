@@ -13,9 +13,9 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     Actions any actor can run, not just a Monster: firing a projectile any way at all
     (A_SpawnProjectile), and going to another state at random, with a player near, or with a
     player in sight (A_Jump, A_JumpIfPlayerWithin, A_JumpIfInSight). Made for traps, such as a
-    WallId that spits fireballs.
+    wall that spits fireballs.
 
-    An actor can stand inside a WallId (mapdefs `in-WallId: true`): it then looks and fires out of
+    An actor can stand inside a wall (mapdefs `in-wall: true`): it then looks and fires out of
     the face its map facing (`angles`) points out of, from just beyond that face.
 
     =============================================================================
@@ -30,7 +30,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         Entities.Actors.ActorActionRegistry.Register("A_JumpIfInSight", JumpIfInSight);
     }
 
-    // Just beyond a WallId's face for a projectile's box (ProjectileTryMove: ProjSize either way)
+    // Just beyond a wall's face for a projectile's box (ProjectileTryMove: ProjSize either way)
     // to be clear of it: half a tile from the centre to the face, ProjSize, and a little more
     const int WallFaceOut = 0x8000 + GameConstants.ProjSize + 0x100;
 
@@ -149,7 +149,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
 
     /// <summary>
     /// A_JumpIfInSight("State"[, tiles]): goes to the state when there's a clear line to a player
-    /// (within that many tiles each way, if given). One in a WallId only sees out of its face.
+    /// (within that many tiles each way, if given). One in a wall only sees out of its face.
     /// </summary>
     void JumpIfInSight(Entities.Actors.Actor ob, string[] args)
     {
@@ -162,7 +162,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
 
     /// <summary>
     /// Whether there's a clear line from the actor to a player, within reach (global units,
-    /// each way); one in a WallId only sees in front of the face it looks out of
+    /// each way); one in a wall only sees in front of the face it looks out of
     /// </summary>
     internal bool CanSee(Entities.Actors.Actor ob, Entities.Actors.PlayerPawn pawn, long reach = long.MaxValue)
     {
@@ -179,7 +179,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         return lineOfSight.CheckLine(x, y, pawn);
     }
 
-    /// <summary>Whether the actor stands inside a WallId (a map thing with `in-WallId: true`)</summary>
+    /// <summary>Whether the actor stands inside a wall (a map thing with `in-wall: true`)</summary>
     internal bool IsInWall(Entities.Actors.Actor ob)
     {
         var tile = map.tilemap[ob.TileX, ob.TileY];
@@ -191,7 +191,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         ob.Dir == ObjDir.NoDir ? ob.Angle : GameConstants.DirAngle[(byte)ob.Dir];
 
     /// <summary>
-    /// Where it looks and fires from: where it is, or for one inside a WallId, just beyond the face
+    /// Where it looks and fires from: where it is, or for one inside a wall, just beyond the face
     /// it faces out of (on both axes for a diagonal facing)
     /// </summary>
     internal (int X, int Y) LookoutPoint(Entities.Actors.Actor ob)
