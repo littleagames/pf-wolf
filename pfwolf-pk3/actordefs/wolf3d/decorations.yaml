@@ -1,3 +1,7 @@
+# Prop Hunt (Gameplay/MatchModes/PropHunt.cs): "prophunt.health" is the most health a prop has
+# looking like the decoration, 1-100 (inherited): big and sturdy things the most, small ones
+# a shot or two. Left out, it goes by the radius (50, up to 100 at 32). NODISGUISE keeps a
+# decoration from being a disguise at all.
 Puddle:
   flags: [NODISGUISE]     # flat on the floor: no Prop Hunt prop looks like it
   states:
@@ -17,6 +21,8 @@ Puddle2:
 OilDrum:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: DRUM
@@ -34,6 +40,8 @@ HorizontalOilDrum:
 TableWithChairs:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: TCHR
@@ -62,6 +70,7 @@ FloorLamp:
   radius: 32
   flags: [SOLID]
   properties:
+    "prophunt.health": 60
     "light.intensity": 160
     "light.radius": 2.5
   states:
@@ -82,6 +91,7 @@ TallFloorLamp:
 
 Chandelier:
   properties:
+    "prophunt.health": 50
     "light.intensity": 180
     "light.radius": 3
   states:
@@ -129,6 +139,8 @@ SwitchLightOff:
 HangingSkeleton:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 60
   states:
     Spawn:
       - sprite: HANG
@@ -147,6 +159,8 @@ HangingSkeleton2:
 WhiteColumn:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: COLU
@@ -164,6 +178,8 @@ CrackedColumn:
 GreenPlant:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 50
   states:
     Spawn:
       - sprite: PLNT
@@ -179,6 +195,8 @@ GreenPlant2:
         tics-per-frame: -1
 
 Skeleton:
+  properties:
+    "prophunt.health": 40
   states:
     Spawn:
       - sprite: SKEL
@@ -196,6 +214,8 @@ Skeleton2:
 Sink:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 60
   states:
     Spawn:
       - sprite: SINK
@@ -205,6 +225,8 @@ Sink:
 BrownPlant:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 50
   states:
     Spawn:
       - sprite: BPNT
@@ -222,6 +244,8 @@ BrownPlant2:
 Vase:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 35
   states:
     Spawn:
       - sprite: VASE
@@ -239,6 +263,8 @@ Vase2:
 Table:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: TABL
@@ -254,6 +280,8 @@ MetalTable:
         tics-per-frame: -1
 
 CeilingLight:
+  properties:
+    "prophunt.health": 50
   states:
     Spawn:
       - sprite: GLMP
@@ -271,6 +299,8 @@ CeilingLight2:
         tics-per-frame: -1
 
 RedCeilingLight:
+  properties:
+    "prophunt.health": 50
   states:
     Spawn:
       - sprite: RLMP
@@ -280,6 +310,8 @@ RedCeilingLight:
 
 Utensils:
   radius: 32
+  properties:
+    "prophunt.health": 40
   states:
     Spawn:
       - sprite: POT1
@@ -289,6 +321,8 @@ Utensils:
 Armor:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 90
   states:
     Spawn:
       - sprite: ARMR
@@ -306,6 +340,8 @@ Armor2:
 EmptyCage:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: CAG1
@@ -323,6 +359,8 @@ EmptyCage2:
 CageWithSkeleton:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: CAG2
@@ -338,6 +376,8 @@ BrokenCage:
         tics-per-frame: -1
 
 Bones:
+  properties:
+    "prophunt.health": 25
   states:
     Spawn:
       - sprite: BON1
@@ -345,6 +385,8 @@ Bones:
         tics-per-frame: -1
 
 Bones5:
+  properties:
+    "prophunt.health": 25
   states:
     Spawn:
       - sprite: BON5
@@ -354,6 +396,8 @@ Bones5:
 Bed:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: BUNK
@@ -362,6 +406,8 @@ Bed:
 
 Basket:
   radius: 32
+  properties:
+    "prophunt.health": 40
   states:
     Spawn:
       - sprite: BASK
@@ -370,6 +416,8 @@ Basket:
 
 DeadRat:
   parent: Basket
+  properties:
+    "prophunt.health": 25
   states:
     Spawn:
       - sprite: DRAT
@@ -379,6 +427,8 @@ DeadRat:
 Barrel:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: BARL
@@ -386,6 +436,8 @@ Barrel:
         tics-per-frame: -1
 
 HorizontalBarrel:
+  properties:
+    "prophunt.health": 25
   states:
     Spawn:
       - sprite: BON1
@@ -395,6 +447,8 @@ HorizontalBarrel:
 WellWithWater:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: WEL1
@@ -412,6 +466,8 @@ WellWithWater2:
 Well:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: WEL2
@@ -429,6 +485,8 @@ Well2:
 Flag:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 70
   states:
     Spawn:
       - sprite: FLAG
@@ -437,6 +495,8 @@ Flag:
 
 TeslaCoil:
   parent: Flag
+  properties:
+    "prophunt.health": 90
   states:
     Spawn:
       - sprite: COIL
@@ -446,6 +506,8 @@ TeslaCoil:
 Aardwolf:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: AARD
@@ -453,6 +515,8 @@ Aardwolf:
         tics-per-frame: -1
 
 Bones2:
+  properties:
+    "prophunt.health": 25
   states:
     Spawn:
       - sprite: BON2
@@ -468,6 +532,8 @@ Bones6:
         tics-per-frame: -1
 
 Bones3:
+  properties:
+    "prophunt.health": 25
   states:
     Spawn:
       - sprite: BON3
@@ -476,6 +542,8 @@ Bones3:
 
 BareLightBulb:
   parent: Bones3
+  properties:
+    "prophunt.health": 30
   states:
     Spawn:
       - sprite: BULB
@@ -483,6 +551,8 @@ BareLightBulb:
         tics-per-frame: -1
 
 Bones4:
+  properties:
+    "prophunt.health": 25
   states:
     Spawn:
       - sprite: BON4
@@ -491,6 +561,8 @@ Bones4:
 
 GreenSlime:
   parent: Bones4
+  properties:
+    "prophunt.health": 25
   states:
     Spawn:
       - sprite: SLIM
@@ -499,6 +571,8 @@ GreenSlime:
 
 UtensilsBlue:
   radius: 32
+  properties:
+    "prophunt.health": 40
   states:
     Spawn:
       - sprite: POT2
@@ -508,6 +582,8 @@ UtensilsBlue:
 Stove:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: STOV
@@ -517,6 +593,8 @@ Stove:
 Rack:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 70
   states:
     Spawn:
       - sprite: RACK
@@ -524,6 +602,8 @@ Rack:
         tics-per-frame: -1
 
 Vine:
+  properties:
+    "prophunt.health": 30
   states:
     Spawn:
       - sprite: VINE
@@ -532,6 +612,8 @@ Vine:
 
 Bubbles:
   parent: Vine
+  properties:
+    "prophunt.health": 30
   states:
     Spawn:
       - sprite: BUBL
@@ -541,6 +623,8 @@ Bubbles:
 TruckRear:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: TRUK
@@ -549,6 +633,8 @@ TruckRear:
 
 BJWasHere:
   parent: TruckRear
+  properties:
+    "prophunt.health": 50
   states:
     Spawn:
       - sprite: BJWH
@@ -558,6 +644,8 @@ BJWasHere:
 CageWithSkulls:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: CAG4
@@ -575,6 +663,8 @@ CageWithRat:
 CageWithGore:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: CAG3
@@ -592,6 +682,8 @@ CageWithGore2:
 Skewer:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 60
   states:
     Spawn:
       - sprite: SKWR
@@ -600,6 +692,8 @@ Skewer:
 
 SkullPile:
   parent: Skewer
+  properties:
+    "prophunt.health": 70
   states:
     Spawn:
       - sprite: SKPI
@@ -609,6 +703,8 @@ SkullPile:
 CowCarcass:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: COWC
@@ -617,6 +713,8 @@ CowCarcass:
 
 ChemicalTable:
   parent: CowCarcass
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: CHEM
@@ -626,6 +724,8 @@ ChemicalTable:
 WellWithBlood:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: WEL3
@@ -634,6 +734,8 @@ WellWithBlood:
 
 NuclearBarrel:
   parent: WellWithBlood
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: NUKE
@@ -643,6 +745,8 @@ NuclearBarrel:
 SatanStatue:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: STAT
@@ -660,6 +764,8 @@ BlueColumn:
 BrownColumn:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: COL2

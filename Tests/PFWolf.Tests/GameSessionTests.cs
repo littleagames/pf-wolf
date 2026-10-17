@@ -145,6 +145,7 @@ public class CameraTests
         Assert.That(camera.Chasing, Is.True);
         Assert.That((camera.X, camera.Y), Is.EqualTo((0x58000 - Camera.ChaseDistance, 0x58000)), "a tile and a half behind");
         Assert.That(camera.EyeZ, Is.EqualTo(session.Players[0].EyeZ + Camera.ChaseRise));
+        Assert.That(camera.Pitch, Is.EqualTo(session.Players[0].Pitch - Camera.ChaseTilt), "looking down at what's on the floor");
 
         wall = true;
         Assert.That(camera.X, Is.InRange(0x40000 + 0x4000, 0x58000 - 1), "pulled in a quarter tile short of the wall");

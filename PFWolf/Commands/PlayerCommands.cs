@@ -37,6 +37,28 @@ internal sealed class PlayerCommands(
             "match", MatchCommand, InLevel);
         console.Register("setteam", "Puts you (or player n) on a team in a team game.",
             "setteam <red|blue> [n]", SetTeamCommand, Cheat | InLevel, complete: (_, i) => i == 0 ? [.. GameModes.TeamNames] : []);
+        console.Register("disguise", "Prop Hunt: makes you (a prop) look like a decoration on the level, by class; lists them with none.",
+            "disguise [class]", DisguiseCommand, Cheat | InLevel,
+            complete: (_, i) => i == 0 && deathmatch.Objective is Gameplay.MatchModes.PropHunt hunt ? hunt.Disguises : []);
+    }
+
+    /// <summary>`disguise [class]`: a Prop Hunt prop's look, from the level's decorations</summary>
+    internal void DisguiseCommand(string[] args)
+    {
+        if (deathmatch.Objective is not Gameplay.MatchModes.PropHunt hunt)
+            throw new ArgumentException("this isn't Prop Hunt: gamemode prop-hunt first");
+        var me = session.LocalPlayer;
+        if (args.Length == 0)
+        {
+            console.Print($"You look like {me.Disguise ?? "yourself"}; the level's looks: {string.Join(", ", hunt.Disguises)}");
+            return;
+        }
+        if (!hunt.IsProp(me) || me.Health <= 0)
+            throw new ArgumentException("only a living prop can disguise");
+        var look = hunt.Disguises.FirstOrDefault(d => d.Equals(args[0], StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"no {args[0]} on this level: {string.Join(", ", hunt.Disguises)}");
+        hunt.Disguise(me, look);
+        console.Print($"You look like {look}");
     }
 
     /// <summary>`addplayer [class]`: a player who stands still (nothing drives them yet), beside you</summary>

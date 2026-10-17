@@ -17,8 +17,8 @@ namespace PFWolf.Gameplay;
 =
 = Chasing: where the match mode allows it (a Prop Hunt prop, to see what it looks like) and
 = the chasecam setting is on, the view of the player is from ChaseDistance behind them and
-= ChaseRise higher, pulled in short of any wall or shut door behind, with their body in view
-= and no weapon in hand.
+= ChaseRise higher, looking ChaseTilt further down, pulled in short of any wall or shut door
+= behind, with their body in view and no weapon in hand.
 =
 ====================
 */
@@ -71,6 +71,9 @@ internal sealed class Camera(GameSession session)
 
     /// <summary>How far behind and how much higher than the player's eyes the chasing view is (global units, texels)</summary>
     internal const int ChaseDistance = (int)MapConstants.TileGlobal * 3 / 2, ChaseRise = 16;
+
+    /// <summary>How far the chasing view looks down past the player's own look (degrees), so a look on the floor (bones) is in view</summary>
+    internal const double ChaseTilt = 15;
 
     /// <summary>Whether the view is of the player from behind (Chasing): their body shows, their weapon doesn't</summary>
     internal bool Chasing => OnPlayer && WantsChase?.Invoke() == true;
@@ -127,7 +130,7 @@ internal sealed class Camera(GameSession session)
     internal double Pitch => Target switch
     {
         null => fixedpitch,
-        PlayerPawn pawn => pawn.State.Pitch,
+        PlayerPawn pawn => Chasing ? pawn.State.Pitch - ChaseTilt : pawn.State.Pitch,
         _ => 0,
     };
 

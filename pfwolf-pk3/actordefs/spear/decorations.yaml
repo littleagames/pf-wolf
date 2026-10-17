@@ -7,6 +7,8 @@
 SkullOnStick:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 60
   states:
     Spawn:
       - sprite: SKWR
@@ -17,6 +19,8 @@ SkullOnStick:
 BloodyCage:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: CAG3
@@ -27,6 +31,8 @@ BloodyCage:
 CageWithGibs:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 80
   states:
     Spawn:
       - sprite: CAG4
@@ -36,6 +42,8 @@ CageWithGibs:
 # Replaces Wolf3D's Aardwolf sign (63)
 RedLight:
   radius: 32
+  properties:
+    "prophunt.health": 50
   states:
     Spawn:
       - sprite: RLMP
@@ -46,6 +54,8 @@ RedLight:
 CowSkull:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 50
   states:
     Spawn:
       - sprite: COWC
@@ -56,6 +66,8 @@ CowSkull:
 BloodyWell:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: WEL3
@@ -66,6 +78,8 @@ BloodyWell:
 AngelStatue:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: STAT
@@ -76,6 +90,8 @@ AngelStatue:
 MarblePillar:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: COL2
@@ -86,6 +102,8 @@ MarblePillar:
 Truck:
   radius: 32
   flags: [SOLID]
+  properties:
+    "prophunt.health": 100
   states:
     Spawn:
       - sprite: TRUK

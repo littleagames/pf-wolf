@@ -164,6 +164,18 @@ headless chase-cam and PH01 screenshots, the rules rows in a real lobby. Not don
 `prop-hunt:` defaults, Spear/Blake decoration checks, varied `prophunt.health` on Wolf3D's
 decorations (nearly all are solid, so nearly all give 100).
 
+### Tuning and Spear (2026-10-17)
+
+Wolf3D's decorations (and Spear's own) now set `prophunt.health` by how big and sturdy they
+look: tables, beds, wells, columns, statues and the stove 100; armor and Tesla coil 90; drums,
+barrels, cages, the cow carcass 80; flag, rack, skull pile 70; sink, floor lamp, hanging
+skeleton, skewer 60; plants and lights 50; basket and utensils 40; vase 35; vines and the
+bulb 30; bones, slime, dead rat 25. Spear: checked headless on five levels: its own
+decorations (RedLight, MarblePillar) and Wolf3D's are disguises with those healths and draw
+in the chase cam. Found and fixed there: things on the floor at the prop (bones, a vase's
+base) were below the chasing view, which now looks `Camera.ChaseTilt` (15°) further down.
+Added the `disguise [class]` cheat command to try looks.
+
 ### Phase 4 plan, as written
 
 - **Chase cam for props** (decision 1): a camera behind and above the prop, pushed in where
