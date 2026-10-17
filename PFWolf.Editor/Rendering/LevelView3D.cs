@@ -509,9 +509,9 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
                 AddTile(vertices, x, y, kind == MarkerKind.PushWall ? PushWallColor : SwitchColor, camera, faces: true);
         }
 
-        if (Controller?.Selection is { } selection && Tiles != null)
+        if (Controller?.Selection is { } selection && Tiles is { } selectedTiles)
         {
-            foreach (var (x, y) in selection.Tiles)
+            foreach (var (x, y) in selection.Tiles.Where(tile => tile.X >= 0 && tile.Y >= 0 && tile.X < selectedTiles.Width && tile.Y < selectedTiles.Height))
                 AddQuad(vertices, TileMarker(x, y, 0.03f), SquareUvs, SelectionColor);
         }
 

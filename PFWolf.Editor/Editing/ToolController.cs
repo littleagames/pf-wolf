@@ -299,7 +299,7 @@ public sealed class ToolController
                 _edit.Revert();
                 Clear(_edit, _movingFrom, CopyAllPlanes ? null : Plane);
                 _moving.Paste(_edit, _movingFrom.Left + dx, _movingFrom.Top + dy);
-                Selection = _movingFrom.Offset(dx, dy);
+                Selection = _movingFrom.Offset(dx, dy).Clip(document.Width, document.Height);
                 _edit.Refresh();
                 break;
 
@@ -575,7 +575,8 @@ public sealed class ToolController
         _pasteAt = (x, y);
         _edit.Revert();
         _pasting.Paste(_edit, x, y, PasteSkipsBlank ? IsBlank : null);
-        Selection = _pasting.SelectionAt(x, y);
+        // Only the part on the level: what's past its edge is dropped
+        Selection = _pasting.SelectionAt(x, y).Clip(_edit.Document.Width, _edit.Document.Height);
         _edit.Refresh();
     }
 

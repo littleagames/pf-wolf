@@ -152,6 +152,46 @@ public class SelectionToolTests
     }
 
     [Test]
+    public void A_Paste_Over_The_Levels_Edge_Drops_What_Falls_Off()
+    {
+        // Arrange: copy a 4 × 4 block of walls
+        var (document, tools) = Setup();
+        foreach (var (x, y) in TileShapes.Rectangle(new TileRect(0, 0, 3, 3), outline: false))
+            EditorMaps.Set(document, 0, x, y, Wall);
+        Drag(tools, 0, 0, 3, 3);
+        tools.Copy();
+
+        // Act: carry it past the bottom right corner, then put it down there
+        tools.StartPaste(10, 10);
+        tools.Move(62, 62);
+        var whilePasting = tools.Selection!.Bounds;
+        tools.Press(62, 62);
+        tools.Release();
+
+        // Assert: the part on the level is pasted and selected, the rest dropped
+        Assert.That(whilePasting, Is.EqualTo(new TileRect(62, 62, 63, 63)));
+        Assert.That(tools.Selection!.Bounds, Is.EqualTo(new TileRect(62, 62, 63, 63)));
+        Assert.That(document[0, 63, 63], Is.EqualTo(Wall));
+    }
+
+    [Test]
+    public void Dragging_A_Selection_Off_The_Level_Keeps_The_Selection_On_It()
+    {
+        // Arrange
+        var (_, tools) = Setup();
+        Drag(tools, 58, 10, 61, 12);
+
+        // Act: drag it 5 to the right, past the edge
+        tools.Press(58, 10);
+        tools.Move(63, 10);
+        var selection = tools.Selection!.Bounds;
+        tools.Release();
+
+        // Assert
+        Assert.That(selection, Is.EqualTo(new TileRect(63, 10, 63, 12)));
+    }
+
+    [Test]
     public void Replace_Swaps_A_Value_In_The_Selection_Only_When_Asked()
     {
         // Arrange
