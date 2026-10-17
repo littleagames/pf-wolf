@@ -102,10 +102,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
             "Click a tile to select the tiles joined to it that hold the same on the plane being edited (or every one on the level, with Joined only off). "
             + "Shift adds to the selection, Ctrl takes away.",
             EditorIcons.MagicWand),
-        new(EditTool.Paint, "Paint", "P", "Puts what's picked in the palette on every tile you drag over.", EditorIcons.Paint, GroupStart: true),
-        new(EditTool.Line, "Line", "L", "Drag a straight line of what's picked.", EditorIcons.Line),
-        new(EditTool.Rectangle, "Rectangle", "R", "Drag a box of what's picked (Outline only: just its edge).", EditorIcons.Rectangle),
+        new(EditTool.Paint, "Paint", "P", "Puts what's picked in the palette on every tile the brush passes over (its size and shape in the options bar).",
+            EditorIcons.Paint, GroupStart: true),
+        new(EditTool.Erase, "Erase", "E", "Clears every tile the brush passes over: open floor on plane 0, nothing on the others.", EditorIcons.Erase),
+        new(EditTool.Scatter, "Scatter", "A",
+            "Sprinkles what's picked (or the scatter set's values, at random) on some of the tiles the brush passes over, as many as the density says: "
+            + "decorations, rubble, a forest of pillars.",
+            EditorIcons.Scatter),
+        new(EditTool.Line, "Line", "L", "Drag a straight line of what's picked; Shift keeps it to a row, a column or a diagonal.", EditorIcons.Line),
+        new(EditTool.Rectangle, "Rectangle", "R", "Drag a box of what's picked (Outline only: just its edge); Shift makes it square.", EditorIcons.Rectangle),
+        new(EditTool.Ellipse, "Ellipse", "O", "Drag an ellipse of what's picked (Outline only: just its edge); Shift makes it a circle.", EditorIcons.Ellipse),
+        new(EditTool.Room, "Room", "M", "Drag a room: walls of what's picked round the edge, open floor inside; Shift makes it square.", EditorIcons.Room),
         new(EditTool.Fill, "Fill", "F", "Fills the joined tiles that hold the same as the one clicked.", EditorIcons.Fill),
+        new(EditTool.Stamp, "Stamp", "T",
+            "Puts what's copied (Ctrl+C) down around the pointer at each click; a drag lays copies side by side. ] [ Shift+H Shift+V turn the stamp.",
+            EditorIcons.Stamp),
         new(EditTool.Pick, "Pick", "I", "Click a tile to pick what's on it into the palette (an eyedropper).", EditorIcons.Pick, GroupStart: true),
     ];
 
@@ -551,6 +562,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private bool _copyAllPlanes = true;
     [ObservableProperty] private bool _wandJoined = true;
     [ObservableProperty] private bool _pasteSkipsBlank;
+    [ObservableProperty] private int _brushSize = 1;
+    [ObservableProperty] private bool _brushRound;
+    [ObservableProperty] private int _scatterDensity = 20;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPalette), nameof(IsFlatsPlane), nameof(HasNextUnused), nameof(PlaneHint))]
@@ -728,7 +742,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     partial void OnSelectedToolChanged(ToolOption value)
     {
         Controller.Tool = value.Tool;
-        OnToolStateChanged();
+        Controller.Refresh();       // the pointer shows what the tool covers
     }
 
     partial void OnOutlineChanged(bool value) => Controller.Outline = value;
@@ -736,14 +750,76 @@ public sealed partial class MainWindowViewModel : ObservableObject
     partial void OnWandJoinedChanged(bool value) => Controller.WandJoined = value;
     partial void OnPasteSkipsBlankChanged(bool value) => Controller.PasteSkipsBlank = value;
 
-    /// <summary>The options bar shows the rectangle tool's outline option</summary>
-    public bool ShowsOutlineOption => SelectedTool.Tool == EditTool.Rectangle;
+    partial void OnBrushSizeChanged(int value)
+    {
+        Controller.BrushSize = value;
+        Controller.Refresh();
+    }
+
+    partial void OnBrushRoundChanged(bool value) => Controller.BrushRound = value;
+    partial void OnScatterDensityChanged(int value) => Controller.ScatterDensity = value;
+
+    /// <summary>The options bar shows the outline option: the rectangle's and the ellipse's</summary>
+    public bool ShowsOutlineOption => SelectedTool.Tool is EditTool.Rectangle or EditTool.Ellipse;
 
     /// <summary>The options bar shows the magic wand's joined-only option</summary>
     public bool ShowsWandOption => SelectedTool.Tool == EditTool.MagicWand;
 
+    /// <summary>The options bar shows the brush's size and shape</summary>
+    public bool ShowsBrushOptions => SelectedTool.Tool is EditTool.Paint or EditTool.Erase or EditTool.Scatter;
+
+    /// <summary>The options bar shows the scatter brush's density and set</summary>
+    public bool ShowsScatterOptions => SelectedTool.Tool == EditTool.Scatter;
+
+    /// <summary>The options bar shows the stamp's size</summary>
+    public bool ShowsStampOptions => SelectedTool.Tool == EditTool.Stamp;
+
     /// <summary>The options bar shows what works on the selection: the selecting tools', or while pasting</summary>
     public bool ShowsSelectionOptions => SelectedTool.Tool is EditTool.Select or EditTool.MagicWand || Controller.IsPasting;
+
+    /// <summary>The options bar shows the rotate and flip buttons and Paste over: for the selection, a paste or the stamp</summary>
+    public bool ShowsTurnOptions => ShowsSelectionOptions || SelectedTool.Tool == EditTool.Stamp;
+
+    /// <summary>What the stamp puts down</summary>
+    public string StampInfo => Controller.ClipboardSize is var (width, height)
+        ? $"{width} × {height} tiles (what was last copied)"
+        : "Copy something first (select it, Ctrl+C)";
+
+    /// <summary>The values the scatter brush picks from at random; empty, it scatters what's picked</summary>
+    public ObservableCollection<ReplaceChoice> ScatterSet { get; } = [];
+
+    public string ScatterSetInfo => ScatterSet.Count == 0 ? "Scatters what's picked" : string.Join(", ", ScatterSet.Select(choice => choice.Label));
+
+    /// <summary>Adds what's picked in the palette to the scatter set</summary>
+    [RelayCommand]
+    private void AddToScatterSet()
+    {
+        var value = Controller.Value;
+        if (ScatterSet.All(choice => choice.Value != value))
+            ScatterSet.Add(new ReplaceChoice(value, ShortLabel(value)));
+        OnScatterSetChanged();
+    }
+
+    [RelayCommand]
+    private void ClearScatterSet()
+    {
+        ScatterSet.Clear();
+        OnScatterSetChanged();
+    }
+
+    private void OnScatterSetChanged()
+    {
+        Controller.ScatterValues = ScatterSet.Select(choice => choice.Value).ToList();
+        OnPropertyChanged(nameof(ScatterSetInfo));
+    }
+
+    // A value's palette name without its number
+    private string ShortLabel(ushort value)
+    {
+        var label = ValueLabel(value);
+        int cut = label.IndexOf("  (", StringComparison.Ordinal);
+        return cut > 0 ? label[..cut] : label;
+    }
 
     /// <summary>What the mouse does with the tool picked (or the paste being placed), for the status bar</summary>
     public string ToolHint => Controller.IsPasting
@@ -755,8 +831,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
             EditTool.Select => "Drag to select a block of tiles · Shift adds · Ctrl takes away",
             EditTool.MagicWand => "Click to select the tiles like it · Shift adds · Ctrl takes away",
             EditTool.Paint => "Drag to paint",
-            EditTool.Line => "Drag from one end of the line to the other",
-            EditTool.Rectangle => "Drag from one corner to the other",
+            EditTool.Erase => "Drag to erase",
+            EditTool.Scatter => "Drag to scatter",
+            EditTool.Line => "Drag from one end of the line to the other · Shift: straight",
+            EditTool.Rectangle or EditTool.Ellipse or EditTool.Room => "Drag from one corner to the other · Shift: square",
+            EditTool.Stamp => "Click to stamp what's copied · drag to lay copies side by side · ] [ rotate",
             EditTool.Fill => "Click to fill",
             EditTool.Pick => "Click a tile to pick what's on it",
             _ => "",
@@ -767,7 +846,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(ShowsOutlineOption));
         OnPropertyChanged(nameof(ShowsWandOption));
+        OnPropertyChanged(nameof(ShowsBrushOptions));
+        OnPropertyChanged(nameof(ShowsScatterOptions));
+        OnPropertyChanged(nameof(ShowsStampOptions));
         OnPropertyChanged(nameof(ShowsSelectionOptions));
+        OnPropertyChanged(nameof(ShowsTurnOptions));
+        OnPropertyChanged(nameof(StampInfo));
         DuplicateCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(ToolHint));
         CopyCommand.NotifyCanExecuteChanged();
@@ -813,7 +897,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             parts.Add($"{Tiles_(unmatched)} left as {(unmatched == 1 ? "it was" : "they were")}: the mapdefs have no value pointing the new way");
         if (paired > 0)
             parts.Add($"{Tiles_(paired)} read the tile east of {(paired == 1 ? "it" : "them")}, which moved: check {(paired == 1 ? "it" : "them")}");
-        Status = $"{TileTransforms.Describe(report.Transform)}{(Controller.IsPasting ? " (the paste)" : "")}"
+        var what = Controller.IsPasting ? " (the paste)" : SelectedTool.Tool == EditTool.Stamp ? " (the stamp)" : "";
+        Status = $"{TileTransforms.Describe(report.Transform)}{what}"
                  + (parts.Count > 0 ? ": " + string.Join("; ", parts) : "");
 
         static string Tiles_(int count) => count == 1 ? "1 tile" : $"{count} tiles";
@@ -945,6 +1030,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         Controller.CancelGesture();
         Controller.Plane = value.Plane;
+        ScatterSet.Clear();     // values from another plane's palette
+        OnScatterSetChanged();
 
         // Show the plane being edited
         switch (value.Plane)

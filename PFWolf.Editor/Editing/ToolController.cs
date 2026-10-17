@@ -9,6 +9,11 @@ public enum EditTool
     Pick,
     Select,
     MagicWand,
+    Erase,
+    Scatter,
+    Ellipse,
+    Room,
+    Stamp,
 }
 
 /// <summary>A rotate or flip, and what became of the values on the tiles that point somewhere</summary>
@@ -104,6 +109,41 @@ public sealed class ToolController
     /// </summary>
     public SelectMode SelectMode { get; set; }
 
+    /// <summary>How many tiles across the paint, erase and scatter brushes are, 1 to 9</summary>
+    public int BrushSize { get; set; } = 1;
+
+    /// <summary>The brushes are round, not square</summary>
+    public bool BrushRound { get; set; }
+
+    /// <summary>How many of the tiles the scatter brush passes over it puts something on, in percent</summary>
+    public int ScatterDensity { get; set; } = 20;
+
+    /// <summary>What the scatter brush picks from at random; empty: <see cref="Value"/></summary>
+    public IReadOnlyList<ushort> ScatterValues { get; set; } = [];
+
+    public Random Random { get; set; } = new();
+
+    /// <summary>Lines keep to rows, columns and diagonals, and boxes, ellipses and rooms to squares (Shift, as the map sets it)</summary>
+    public bool Constrain { get; set; }
+
+    // The scatter brush: the tiles it's passed over this stroke, each tried once
+    private readonly HashSet<(int X, int Y)> _scattered = [];
+
+    // The stamp: where it's been put down this drag
+    private readonly HashSet<(int X, int Y)> _stamped = [];
+
+    /// <summary>
+    /// The tiles the tool would work on with the pointer on (x, y), to show under it: the
+    /// brush's square, the stamp (the clipboard) around it, else the tile
+    /// </summary>
+    public TileRect HoverArea(int x, int y) => Tool switch
+    {
+        EditTool.Paint or EditTool.Erase or EditTool.Scatter => TileShapes.BrushBounds(x, y, BrushSize),
+        EditTool.Stamp when _clipboard != null && _pasting == null
+            => new TileRect(x - _clipboard.Width / 2, y - _clipboard.Height / 2, x - _clipboard.Width / 2 + _clipboard.Width - 1, y - _clipboard.Height / 2 + _clipboard.Height - 1),
+        _ => new TileRect(x, y, x, y),
+    };
+
     public TileSelection? Selection { get; private set; }
 
     /// <summary>Pasting: the pasted tiles follow the pointer until a click puts them down</summary>
@@ -140,15 +180,37 @@ public sealed class ToolController
         switch (Tool)
         {
             case EditTool.Paint:
-                _edit = document.BeginEdit("Paint");
-                Put(_edit, x, y, Value);
+            case EditTool.Erase:
+                _edit = document.BeginEdit(Tool == EditTool.Paint ? "Paint" : "Erase");
+                Brush(_edit, x, y);
+                _edit.Refresh();
+                break;
+
+            case EditTool.Scatter:
+                _scattered.Clear();
+                _edit = document.BeginEdit("Scatter");
+                Scatter(_edit, x, y);
                 _edit.Refresh();
                 break;
 
             case EditTool.Line:
             case EditTool.Rectangle:
-                _edit = document.BeginEdit(Tool == EditTool.Line ? "Line" : "Rectangle");
+            case EditTool.Ellipse:
+            case EditTool.Room:
+                _edit = document.BeginEdit(Tool.ToString());
                 DrawShape(x, y);
+                break;
+
+            case EditTool.Stamp:
+                if (_clipboard == null)
+                {
+                    _pressed = false;
+                    break;
+                }
+                _stamped.Clear();
+                _edit = document.BeginEdit("Stamp");
+                Stamp(_edit, x, y);
+                _edit.Refresh();
                 break;
 
             case EditTool.Fill:
@@ -204,16 +266,32 @@ public sealed class ToolController
 
         switch (Tool)
         {
-            case EditTool.Paint when _edit != null:
+            case EditTool.Paint or EditTool.Erase when _edit != null:
                 // Fill the gap a quick stroke leaves between pointer events
-                foreach (var (lx, ly) in TileShapes.Line(_last.X, _last.Y, x, y))
-                    Put(_edit, lx, ly, Value);
+                foreach (var (lx, ly) in TileShapes.Line(_last.X, _last.Y, x, y).Skip(1))
+                    Brush(_edit, lx, ly);
+                _edit.Refresh();
+                break;
+
+            case EditTool.Scatter when _edit != null:
+                foreach (var (lx, ly) in TileShapes.Line(_last.X, _last.Y, x, y).Skip(1))
+                    Scatter(_edit, lx, ly);
                 _edit.Refresh();
                 break;
 
             case EditTool.Line:
             case EditTool.Rectangle:
+            case EditTool.Ellipse:
+            case EditTool.Room:
                 DrawShape(x, y);
+                break;
+
+            case EditTool.Stamp when _edit != null && _clipboard != null:
+                // Side by side with the first, so a drag tiles it
+                int sx = _anchor.X + (int)Math.Floor((x - _anchor.X) / (double)_clipboard.Width) * _clipboard.Width;
+                int sy = _anchor.Y + (int)Math.Floor((y - _anchor.Y) / (double)_clipboard.Height) * _clipboard.Height;
+                Stamp(_edit, sx, sy);
+                _edit.Refresh();
                 break;
 
             case EditTool.Select when _moving != null && _edit != null && _movingFrom != null:
@@ -273,16 +351,69 @@ public sealed class ToolController
         RaiseChanged();
     }
 
+    // The line, box, ellipse or room from the anchor to (x, y), drawn again over what was there
     private void DrawShape(int x, int y)
     {
         _edit!.Revert();
-        var tiles = Tool == EditTool.Line
-            ? TileShapes.Line(_anchor.X, _anchor.Y, x, y)
-            : TileShapes.Rectangle(TileRect.FromCorners(_anchor.X, _anchor.Y, x, y), Outline);
-        foreach (var (tx, ty) in tiles)
-            Put(_edit, tx, ty, Value);
+        if (Constrain)
+            (x, y) = Tool == EditTool.Line ? TileShapes.Straighten(_anchor.X, _anchor.Y, x, y) : TileShapes.Square(_anchor.X, _anchor.Y, x, y);
+        var rect = TileRect.FromCorners(_anchor.X, _anchor.Y, x, y);
+        switch (Tool)
+        {
+            case EditTool.Line:
+                foreach (var (tx, ty) in TileShapes.Line(_anchor.X, _anchor.Y, x, y))
+                    Put(_edit, tx, ty, Value);
+                break;
+            case EditTool.Ellipse:
+                foreach (var (tx, ty) in TileShapes.Ellipse(rect, Outline))
+                    Put(_edit, tx, ty, Value);
+                break;
+            case EditTool.Room:
+                // Walls round the edge, the inside cleared (open floor on plane 0)
+                foreach (var (tx, ty) in TileShapes.Rectangle(rect, outline: false))
+                {
+                    bool edge = tx == rect.Left || tx == rect.Right || ty == rect.Top || ty == rect.Bottom;
+                    Put(_edit, tx, ty, edge ? Value : EraseValue(Plane));
+                }
+                break;
+            default:
+                foreach (var (tx, ty) in TileShapes.Rectangle(rect, Outline))
+                    Put(_edit, tx, ty, Value);
+                break;
+        }
         _edit.Refresh();
     }
+
+    // The paint or erase brush on (x, y)
+    private void Brush(MapEdit edit, int x, int y)
+    {
+        var value = Tool == EditTool.Erase ? EraseValue(Plane) : Value;
+        foreach (var (bx, by) in TileShapes.Brush(x, y, BrushSize, BrushRound))
+            Put(edit, bx, by, value);
+    }
+
+    // The scatter brush on (x, y): each tile it hasn't passed over yet this stroke gets something, at the density's odds
+    private void Scatter(MapEdit edit, int x, int y)
+    {
+        foreach (var tile in TileShapes.Brush(x, y, BrushSize, BrushRound))
+        {
+            if (!edit.Document.Contains(tile.X, tile.Y) || !_scattered.Add(tile) || Random.Next(100) >= ScatterDensity)
+                continue;
+            var value = ScatterValues.Count > 0 ? ScatterValues[Random.Next(ScatterValues.Count)] : Value;
+            Put(edit, tile.X, tile.Y, value);
+        }
+    }
+
+    // The clipboard put down around (x, y), unless it's been put there this drag
+    private void Stamp(MapEdit edit, int x, int y)
+    {
+        if (_clipboard == null || !_stamped.Add((x, y)))
+            return;
+        _clipboard.Paste(edit, x - _clipboard.Width / 2, y - _clipboard.Height / 2, PasteSkipsBlank ? IsBlank : null);
+    }
+
+    /// <summary>The clipboard's size, for the stamp's options; null when nothing's been copied</summary>
+    public (int Width, int Height)? ClipboardSize => _clipboard is { } clip ? (clip.Width, clip.Height) : null;
 
     public void Copy()
     {
@@ -396,8 +527,9 @@ public sealed class ToolController
     /// <summary>A rotate or flip was done, with what became of the values pointing somewhere</summary>
     public event EventHandler<TransformReport>? Transformed;
 
-    /// <summary>Whether there's something to rotate or flip: a paste being placed, or the selection</summary>
-    public bool CanTransform => _document != null && (_pasting != null || (Selection != null && !_pressed));
+    /// <summary>Whether there's something to rotate or flip: a paste being placed, the stamp, or the selection</summary>
+    public bool CanTransform => _document != null && !_pressed
+        && (_pasting != null || (Tool == EditTool.Stamp && _clipboard != null) || Selection != null);
 
     /// <summary>
     /// Rotates or flips the paste being placed, or else the selection's tiles where they are
@@ -415,6 +547,8 @@ public sealed class ToolController
             _pasting = _pasting.Transform(transform, remap, out counts);
             ShowPaste(_pasteAt.X, _pasteAt.Y);
         }
+        else if (Tool == EditTool.Stamp && _clipboard != null)
+            _clipboard = _clipboard.Transform(transform, remap, out counts);
         else
         {
             var selection = Selection!;
@@ -513,6 +647,9 @@ public sealed class ToolController
             }
         }
     }
+
+    /// <summary>Something the tools show changed (the brush's size, the tool): the views draw again</summary>
+    public void Refresh() => RaiseChanged();
 
     private void OnDocumentChanged(object? sender, EventArgs e) => RaiseChanged();
 

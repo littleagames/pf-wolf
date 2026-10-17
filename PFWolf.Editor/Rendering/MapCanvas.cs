@@ -220,7 +220,11 @@ public sealed class MapCanvas : Control
         if (Controller?.Selection is { } selection)
             DrawSelection(context, selection, x0, y0, x1, y1);
         if (_hover.X >= 0)
-            context.DrawRectangle(null, HoverPen, TileRect(_hover.X, _hover.Y));
+        {
+            // What the tool would cover: the brush, the stamp, else the tile
+            var area = Controller?.HoverArea(_hover.X, _hover.Y) ?? new Editing.TileRect(_hover.X, _hover.Y, _hover.X, _hover.Y);
+            context.DrawRectangle(null, HoverPen, new Rect(_origin.X + area.Left * _zoom, _origin.Y + area.Top * _zoom, area.Width * _zoom, area.Height * _zoom));
+        }
         if (ShowCamera && Camera is { } camera)
             DrawCamera(context, camera);
     }
@@ -578,6 +582,7 @@ public sealed class MapCanvas : Control
             _toolDown = true;
             e.Pointer.Capture(this);
             Controller.SelectMode = SelectModeFor(e.KeyModifiers);
+            Controller.Constrain = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
             Controller.Press(x, y);
         }
         else
@@ -627,6 +632,7 @@ public sealed class MapCanvas : Control
         if (Controller != null && (_toolDown || Controller.IsPasting))
         {
             var (x, y) = TileAt(position);
+            Controller.Constrain = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
             Controller.Move(x, y);
         }
     }

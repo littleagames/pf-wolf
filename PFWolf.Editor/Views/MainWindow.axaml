@@ -223,14 +223,35 @@
           <PathIcon Data="{Binding SelectedTool.Icon}" Opacity="0.7" />
           <TextBlock Text="{Binding SelectedTool.Label}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0" />
           <CheckBox Content="Outline only" IsChecked="{Binding Outline}" IsVisible="{Binding ShowsOutlineOption}"
-                    ToolTip.Tip="The rectangle tool draws only the edge" VerticalAlignment="Center" />
+                    ToolTip.Tip="The box or ellipse is only its edge" VerticalAlignment="Center" />
           <CheckBox Content="Joined only" IsChecked="{Binding WandJoined}" IsVisible="{Binding ShowsWandOption}" VerticalAlignment="Center"
                     ToolTip.Tip="The wand takes the tiles joined to the one clicked; off, every tile on the level that holds the same" />
-          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowsSelectionOptions}">
-            <CheckBox Content="Copy all planes" IsChecked="{Binding CopyAllPlanes}" VerticalAlignment="Center"
-                      ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
+
+          <!-- The brushes -->
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowsBrushOptions}">
+            <TextBlock Text="Size" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding BrushSize}" Minimum="1" Maximum="9" Increment="1" FormatString="0" Width="110"
+                           ToolTip.Tip="How many tiles across the brush is" VerticalAlignment="Center" />
+            <CheckBox Content="Round" IsChecked="{Binding BrushRound}" VerticalAlignment="Center"
+                      ToolTip.Tip="A round brush instead of a square one (a plus at size 3)" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowsScatterOptions}">
+            <TextBlock Text="Density %" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding ScatterDensity}" Minimum="1" Maximum="100" Increment="5" FormatString="0" Width="120"
+                           ToolTip.Tip="How many of the tiles the brush passes over get something" VerticalAlignment="Center" />
+            <Button Content="Add picked" Command="{Binding AddToScatterSetCommand}"
+                    ToolTip.Tip="Adds what's picked in the palette to the values the scatter brush picks from at random" />
+            <Button Content="Clear" Command="{Binding ClearScatterSetCommand}" />
+            <TextBlock Text="{Binding ScatterSetInfo}" VerticalAlignment="Center" Opacity="0.7" MaxWidth="320"
+                       TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding ScatterSetInfo}" />
+          </StackPanel>
+          <TextBlock Text="{Binding StampInfo}" IsVisible="{Binding ShowsStampOptions}" VerticalAlignment="Center" Opacity="0.7" />
+
+          <CheckBox Content="Copy all planes" IsChecked="{Binding CopyAllPlanes}" VerticalAlignment="Center" IsVisible="{Binding ShowsSelectionOptions}"
+                    ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowsTurnOptions}">
             <CheckBox Content="Paste over" IsChecked="{Binding PasteSkipsBlank}" VerticalAlignment="Center"
-                      ToolTip.Tip="A paste leaves what's under its open floor (on plane 0) and its empty tiles (on the other planes)" />
+                      ToolTip.Tip="A paste or stamp leaves what's under its open floor (on plane 0) and its empty tiles (on the other planes)" />
             <Button Classes="icon" Command="{Binding RotateCounterClockwiseCommand}"
                     ToolTip.Tip="Rotate counter-clockwise ([): things on it turn to face the new way">
               <PathIcon Data="{x:Static v:EditorIcons.RotateCounterClockwise}" />

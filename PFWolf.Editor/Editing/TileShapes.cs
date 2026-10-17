@@ -64,6 +64,75 @@ public static class TileShapes
     }
 
     /// <summary>
+    /// A brush's tiles around (x, y): a square <paramref name="size"/> tiles across, or the
+    /// round brush inside it (a plus at 3, a circle from 4 up)
+    /// </summary>
+    public static IEnumerable<(int X, int Y)> Brush(int x, int y, int size, bool round)
+    {
+        size = Math.Max(size, 1);
+        int low = -(size - 1) / 2, high = low + size - 1;
+        double middle = (low + high) / 2.0, reach = size * size / 4.0 - 0.5;
+        for (int dy = low; dy <= high; dy++)
+        {
+            for (int dx = low; dx <= high; dx++)
+            {
+                if (!round || size <= 2 || (dx - middle) * (dx - middle) + (dy - middle) * (dy - middle) <= reach)
+                    yield return (x + dx, y + dy);
+            }
+        }
+    }
+
+    /// <summary>The square a brush covers around (x, y)</summary>
+    public static TileRect BrushBounds(int x, int y, int size)
+    {
+        size = Math.Max(size, 1);
+        int low = -(size - 1) / 2;
+        return new TileRect(x + low, y + low, x + low + size - 1, y + low + size - 1);
+    }
+
+    /// <summary>The ellipse that fits in a rectangle, or only its edge</summary>
+    public static IEnumerable<(int X, int Y)> Ellipse(TileRect rect, bool outline)
+    {
+        double cx = rect.Left + rect.Width / 2.0, cy = rect.Top + rect.Height / 2.0;
+        double rx = rect.Width / 2.0, ry = rect.Height / 2.0;
+        bool Inside(int x, int y)
+        {
+            if (!rect.Contains(x, y))
+                return false;
+            double nx = (x + 0.5 - cx) / rx, ny = (y + 0.5 - cy) / ry;
+            return nx * nx + ny * ny <= 1.0001;
+        }
+
+        foreach (var (x, y) in Rectangle(rect, outline: false))
+        {
+            if (Inside(x, y) && (!outline || !Inside(x - 1, y) || !Inside(x + 1, y) || !Inside(x, y - 1) || !Inside(x, y + 1)))
+                yield return (x, y);
+        }
+    }
+
+    /// <summary>
+    /// Where a drag from (x0, y0) to (x1, y1) ends when held to a straight line: along a row,
+    /// a column or a 45° diagonal, whichever it's nearest
+    /// </summary>
+    public static (int X, int Y) Straighten(int x0, int y0, int x1, int y1)
+    {
+        int dx = x1 - x0, dy = y1 - y0;
+        if (Math.Abs(dx) > 2 * Math.Abs(dy))
+            return (x1, y0);
+        if (Math.Abs(dy) > 2 * Math.Abs(dx))
+            return (x0, y1);
+        int reach = Math.Max(Math.Abs(dx), Math.Abs(dy));
+        return (x0 + (dx < 0 ? -reach : reach), y0 + (dy < 0 ? -reach : reach));
+    }
+
+    /// <summary>Where a drag from (x0, y0) to (x1, y1) ends when held to a square</summary>
+    public static (int X, int Y) Square(int x0, int y0, int x1, int y1)
+    {
+        int dx = x1 - x0, dy = y1 - y0, reach = Math.Max(Math.Abs(dx), Math.Abs(dy));
+        return (x0 + (dx < 0 ? -reach : reach), y0 + (dy < 0 ? -reach : reach));
+    }
+
+    /// <summary>
     /// The tiles joined to (x, y) through edges that hold the same value on the plane as it does
     /// (the same part of it, through <paramref name="read"/>)
     /// </summary>
