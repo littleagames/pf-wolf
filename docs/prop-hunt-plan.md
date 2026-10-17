@@ -70,7 +70,19 @@ actors, not bodies). Under shading that's a tell. Handle in phase 3.
 - Tests: `GameModeTests` (Parse/Id/flags), a disguise test that Use on a decoration sets
   `Disguise` and the body's sprite, and a headless `gamemode ph` run.
 
-### Phase 2: rounds
+### Phase 2: rounds (done 2026-10-17)
+
+As built: `PropHunt.Phase` Hide (30 s) → Hunt (3 min) → RoundOver (5 s), constants
+`HideTics`/`HuntTics`/`RoundOverTics` for now (lobby rows in phase 4). Sides swap by
+`HuntingTeam` (players keep their team and color). A new round sets each player's
+`RoleClass` and then respawns everyone through `MatchModeHooks.Respawn` (`Players.Respawn`).
+Hunters wait through `IMatchObjective.IsWaiting`: `PlayerThinkHooks.Waiting` drops their
+`TicCmd` (`PlayerInput.Drop`), and `NetOverlay.DrawWaitingView` blacks out their view
+under the automap, messages and match line. `MayRespawn` is always false, and the dead hint
+says "back later". `TNT1` weapon frames now draw nothing instead of warning. Checked: unit
+tests for the round flow, a time-out, the score limit and join state; headless DM02 run
+through round 1 → round 2 (screenshot of the blackout). Not yet checked: a loopback network
+game, a hunter's view after the hide in a real window, 3-4 players.
 
 - `MatchModes/PropHunt.cs : MatchObjective`. Phases: **Hide** (hunters frozen and blacked
   out, props move) → **Hunt** (round timer) → **RoundOver** (a few seconds to show who won)

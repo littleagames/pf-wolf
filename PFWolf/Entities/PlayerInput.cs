@@ -30,6 +30,9 @@ internal sealed class PlayerInput
         cmd = next;
     }
 
+    /// <summary>This frame's command counts for nothing (kept waiting: Prop Hunt's hunters while the props hide)</summary>
+    public void Drop() => cmd = default;
+
     /// <summary>Nothing is pressed (as a level starts): the next frame sees every press as fresh</summary>
     public void Reset() => cmd = default;
 

@@ -48,6 +48,9 @@ internal interface IMatchObjective
     /// </summary>
     bool PlayerUse() => false;
 
+    /// <summary>Whether the mode keeps a player still and shows them nothing for now (Prop Hunt's hunters while the props hide)</summary>
+    bool IsWaiting(Entities.PlayerState p) => false;
+
     /// <summary>Whether a dead player may come back yet (Horde: only between waves)</summary>
     bool MayRespawn(Entities.PlayerState p) => true;
 

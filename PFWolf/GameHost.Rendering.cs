@@ -103,7 +103,13 @@ internal static partial class GameHost
     static FrameRefresh MakeFrameRefresh() => new(_videoManager, _graphicManager, MapManager, _consoleManager, lighting, actorLights,
         weather, skyAndFlats, rayTrace, spriteDrawing, playerView, Render, Session,
         new FrameRefreshHooks(() => LevelFadeStyle, () => LevelFadeTics,
-            RestoreBorderAfterConsole, DrawAutomap, () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole,
+            RestoreBorderAfterConsole,
+            () =>
+            {
+                netOverlay.DrawWaitingView();       // a hunter waiting while the props hide sees nothing
+                DrawAutomap();
+            },
+            () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole,
             () => ScreenshotPending, () => ScreenshotPending = false, TakeScreenshot, UpdateViewQuake,
             () => WeaponZoom.ScopePicture(), DrawScope));
 

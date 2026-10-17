@@ -235,7 +235,8 @@ internal static partial class GameHost
                 MountedWeapons.Tick();          // let off a gun they're no longer manning (dying, a load, a new level)
                 Latching.Tick();                // and out of a struggle that's over
                 Stealth.Tick();                 // the suspicion meter
-            }));
+            },
+            () => deathmatch.Objective?.IsWaiting(Session.PlayerState) == true));
 
     internal static void ThinkPlayer(Entities.Actors.Actor ob) => playerThink.ThinkPlayer(ob);
 

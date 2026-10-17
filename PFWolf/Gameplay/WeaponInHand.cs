@@ -134,7 +134,8 @@ internal sealed class WeaponInHand(
 
     /// <summary>The shape to draw for the weapon in hand, or null for none.</summary>
     internal string? WeaponShapeName() =>
-        SyncWeaponSprite()?.CurrentState is { Sprite.Length: > 0 } state ? $"{state.Sprite}{state.FrameLetter}0" : null;
+        SyncWeaponSprite()?.CurrentState is { Sprite.Length: > 0 } state && state.Sprite != "TNT1"     // TNT1: nothing in hand to see
+            ? $"{state.Sprite}{state.FrameLetter}0" : null;
 
     /// <summary>Puts the weapon on the named state, if it has one; returns whether it did.</summary>
     internal static bool JumpWeaponState(Entities.Actors.Actor weapon, string stateName)

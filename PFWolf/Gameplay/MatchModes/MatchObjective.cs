@@ -9,12 +9,14 @@ namespace PFWolf.Gameplay.MatchModes;
 /// <param name="Translation">A translation by name if this game has it (translations.yaml), else null</param>
 /// <param name="PlaySound">A sound everyone hears, as the game's own (an announcement)</param>
 /// <param name="Rearm">Gives a player their starting loadout afresh (for a new part in the mode: PlayerState.RoleClass), and every key</param>
+/// <param name="Respawn">Brings a player back afresh, dead or alive, at a spot of their team's (a new round)</param>
 internal sealed record MatchModeHooks(
     Func<int, int, bool> IsOpenFloor,
     Func<int, int, bool> IsFreeFloor,
     Func<string, string?> Translation,
     Action<string> PlaySound,
-    Action<Entities.PlayerState>? Rearm = null);
+    Action<Entities.PlayerState>? Rearm = null,
+    Action<Entities.PlayerState>? Respawn = null);
 
 /// <summary>
 /// What every mode's objective shares: the players in it, where they stand, announcing what's

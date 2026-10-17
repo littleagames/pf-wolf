@@ -134,7 +134,12 @@ internal static partial class GameHost
             (x, y) => playersManager.IsFreeFloor(x, y),
             name => TranslationManager.Exists(name) ? name : null,
             name => AudioManager.Play(name),
-            Rearm);
+            Rearm,
+            p =>
+            {
+                using var _ = Session.ActAs(p);
+                playersManager.Respawn();
+            });
         deathmatch.MatchObjectives.AddRange(
         [
             new Gameplay.MatchModes.CaptureTheFlag(MapManager, Session, deathmatch, HudMessageManager, hooks),

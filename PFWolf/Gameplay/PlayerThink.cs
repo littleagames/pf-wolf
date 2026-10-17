@@ -10,7 +10,9 @@ namespace PFWolf.Gameplay;
 /// <param name="VictoryRunning">Whether A_VictoryRun's runner is on its way (the player watches it rather than turning round)</param>
 /// <param name="InitAreas">Starts the level's area connections afresh, from where the players stand</param>
 /// <param name="UpdateZoom">Moves a scope's zoom on (Gameplay/WeaponZoom.cs), given whether the weapon's reloading</param>
-internal sealed record PlayerThinkHooks(Action UpdateRadar, Func<bool> VictoryRunning, Action InitAreas, Action<bool> UpdateZoom);
+/// <param name="Waiting">Whether the match mode keeps the acting player still for now (Prop Hunt's hunters while the props hide)</param>
+internal sealed record PlayerThinkHooks(Action UpdateRadar, Func<bool> VictoryRunning, Action InitAreas, Action<bool> UpdateZoom,
+    Func<bool>? Waiting = null);
 
 /// <summary>
 /// The acting player's think each tic (T_Player): the status bar's face and gauges, changing
@@ -49,6 +51,10 @@ internal sealed class PlayerThink(
                 VictorySpin();
             return;
         }
+
+        // Kept waiting by the match mode: their controls this frame count for nothing
+        if (hooks.Waiting?.Invoke() == true)
+            playerinput.Drop();
 
         stats.UpdateFace();
         statusBar.UpdateHeartMonitor();

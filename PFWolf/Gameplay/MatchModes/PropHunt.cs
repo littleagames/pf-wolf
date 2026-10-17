@@ -20,7 +20,14 @@ namespace PFWolf.Gameplay.MatchModes;
     enemy, item or player) with something to see, but not projectiles, wall
     sprites or any class flagged NODISGUISE (puddles, the modes' flags).
 
-    The red team hunts. (Rounds, swapping sides, are to come.)
+    A match is rounds. Each starts with the props hiding (HideTics) while
+    the hunters wait, kept still with their view blacked out; then the hunt
+    (HuntTics). The hunters win the round by killing every prop; the props
+    win it if any is still alive when the time runs out. Each round won is a
+    point for the team, and the score limit's rounds win the match. After a
+    few seconds (RoundOverTics) the sides swap and everyone comes back
+    afresh. The dead stay dead until then, watching the living. Red hunts
+    first.
 
 =============================================================================
 */
@@ -33,8 +40,24 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
     /// <summary>The player class whose loadout and weapons props have (actordefs prophunt.yaml)</summary>
     internal const string PropClass = "PropPlayer";
 
+    internal enum Phase { Hide, Hunt, RoundOver }
+
+    /// <summary>How long the props have to hide, the hunt lasts, and the end of a round shows who won (tics)</summary>
+    internal const int HideTics = 30 * 70, HuntTics = 3 * 60 * 70, RoundOverTics = 5 * 70;
+
     /// <summary>The team hunting (0 red, 1 blue); the other hides</summary>
     internal int HuntingTeam;
+
+    /// <summary>The round being played, from 1</summary>
+    internal int Round;
+
+    internal Phase CurrentPhase;
+
+    /// <summary>When the phase ends (GameState.TimeCount)</summary>
+    internal int PhaseEnds;
+
+    /// <summary>The team that won the round just over, or -1 for nobody (a draw)</summary>
+    internal int RoundWinner = -1;
 
     /// <summary>The decoration classes on the level a prop can look like, in the order first placed</summary>
     internal readonly List<string> Disguises = [];
@@ -58,15 +81,78 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
     public override void LevelSetup()
     {
         HuntingTeam = 0;
+        Round = 1;
+        RoundWinner = -1;
         Disguises.Clear();
         Disguises.AddRange(Map.GetActors().Where(CanDisguiseAs).Select(a => a.Name).Distinct());
+        StartPhase(Phase.Hide, HideTics);
+    }
+
+    void StartPhase(Phase phase, int tics)
+    {
+        CurrentPhase = phase;
+        PhaseEnds = Session.GameState.TimeCount + tics;
+    }
+
+    /// <summary>Each frame: everyone's part in it, and the round's clock: the hunt starting, a round won, the next round</summary>
+    public override void Tick()
+    {
+        UpdateParts();
+
+        var time = Session.GameState.TimeCount;
+        switch (CurrentPhase)
+        {
+            case Phase.Hide when time >= PhaseEnds:
+                StartPhase(Phase.Hunt, HuntTics);
+                Announce("Ready or not, here they come!", "misc/yeah");
+                break;
+
+            case Phase.Hunt:
+                int props = Session.Players.Count(p => !p.Gone && p.Pawn != null && IsProp(p));
+                int hiding = LivingPawns.Count(pawn => IsProp(pawn.State));
+                if (props > 0 && hiding == 0)
+                    EndRound(HuntingTeam, "The hunters found every prop!");
+                else if (time >= PhaseEnds)
+                    EndRound(hiding > 0 ? 1 - HuntingTeam : -1, hiding > 0 ? "The props stayed hidden!" : "Nobody wins the round");
+                break;
+
+            case Phase.RoundOver when time >= PhaseEnds:
+                NextRound();
+                break;
+        }
+    }
+
+    // A round's over: a point for the team that won it (the score limit's rounds end the match)
+    void EndRound(int winner, string text)
+    {
+        RoundWinner = winner;
+        StartPhase(Phase.RoundOver, RoundOverTics);
+        Announce(winner >= 0 ? $"{text} {GameModes.TeamLabel(winner)} wins round {Round}." : text, "misc/100percent");
+        if (winner >= 0)
+            Match.AddTeamScore(winner, 1);
+    }
+
+    // The sides swap, and everyone comes back afresh in their new part, the props to hide
+    void NextRound()
+    {
+        Round++;
+        HuntingTeam = 1 - HuntingTeam;
+        RoundWinner = -1;
+        foreach (var p in Session.Players.Where(p => !p.Gone && p.Pawn != null))
+        {
+            p.Disguise = null;
+            p.RoleClass = IsProp(p) ? PropClass : null;     // before coming back: their loadout is the part's
+            Hooks.Respawn?.Invoke(p);
+        }
+        StartPhase(Phase.Hide, HideTics);
+        Announce($"Round {Round}: {GameModes.TeamLabel(HuntingTeam)} hunts. Props, hide!");
     }
 
     /// <summary>
-    /// Each frame: each player's part (a prop's loadout when they become one), and a living prop
-    /// without a look gets one of the level's decorations at random
+    /// Each player's part (a prop's loadout when they become one), and a living prop without a
+    /// look gets one of the level's decorations at random
     /// </summary>
-    public override void Tick()
+    void UpdateParts()
     {
         foreach (var p in Session.Players)
         {
@@ -89,8 +175,19 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
         }
     }
 
-    /// <summary>A prop who dies drops their look: their own body falls</summary>
-    public void PlayerDied(Entities.PlayerState victim) => victim.Disguise = null;
+    /// <summary>A prop who dies drops their look (their own body falls), and everyone hears of it</summary>
+    public void PlayerDied(Entities.PlayerState victim)
+    {
+        if (victim.Disguise != null && CurrentPhase == Phase.Hunt)
+            Announce($"{NameOf(victim)} was found!");
+        victim.Disguise = null;
+    }
+
+    /// <summary>The dead stay dead until the next round</summary>
+    public bool MayRespawn(Entities.PlayerState p) => false;
+
+    /// <summary>The hunters wait, still and seeing nothing, while the props hide</summary>
+    public bool IsWaiting(Entities.PlayerState p) => CurrentPhase == Phase.Hide && p.Team == HuntingTeam;
 
     /// <summary>
     /// A living prop pressing use facing a decoration they can look like (within a tile and a
@@ -146,20 +243,31 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
     {
         var me = Session.LocalPlayer;
         int left = LivingPawns.Count(pawn => IsProp(pawn.State));
-        var count = $"{left} prop{(left == 1 ? "" : "s")} left";
-        if (!IsProp(me))
-            return me.Team is 0 or 1 ? $"Hunter - {count}" : count;
-        return me.Disguise is { } look ? $"Prop ({LookName(look)}) - {count}" : $"Prop - {count}";
+        int seconds = Math.Max(0, PhaseEnds - Session.GameState.TimeCount + 69) / 70;
+        var clock = $"{seconds / 60}:{seconds % 60:00}";
+        var news = CurrentPhase switch
+        {
+            Phase.Hide => $"Round {Round}: props hiding {clock}",
+            Phase.Hunt => $"Round {Round}: {left} prop{(left == 1 ? "" : "s")} left {clock}",
+            _ => RoundWinner >= 0 ? $"{GameModes.TeamLabel(RoundWinner)} wins round {Round}" : $"Round {Round} is a draw",
+        };
+        var part = IsProp(me) ? me.Disguise is { } look ? $"Prop ({LookName(look)})" : "Prop"
+            : me.Team is 0 or 1 ? "Hunter" : null;
+        return part != null ? $"{part} - {news}" : news;
     }
 
     public string? Details() =>
-        $"{GameModes.TeamLabel(HuntingTeam)} hunts; props: "
+        $"round {Round} ({CurrentPhase}, {Math.Max(0, PhaseEnds - Session.GameState.TimeCount) / 70}s left); {GameModes.TeamLabel(HuntingTeam)} hunts; props: "
         + string.Join(", ", Session.Players.Where(IsProp).Select(p => $"{NameOf(p)} as {p.Disguise ?? "themselves"} holding {p.Weapon ?? "nothing"}"))
         + $"; {Disguises.Count} looks: {string.Join(", ", Disguises)}";
 
     public override void Write(BinaryWriter bw)
     {
         bw.Write(HuntingTeam);
+        bw.Write(Round);
+        bw.Write((byte)CurrentPhase);
+        bw.Write(PhaseEnds);
+        bw.Write(RoundWinner);
         bw.Write(Disguises.Count);
         foreach (var look in Disguises)
             bw.Write(look);
@@ -168,6 +276,10 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
     public override void Read(BinaryReader br)
     {
         HuntingTeam = br.ReadInt32();
+        Round = br.ReadInt32();
+        CurrentPhase = (Phase)br.ReadByte();
+        PhaseEnds = br.ReadInt32();
+        RoundWinner = br.ReadInt32();
         Disguises.Clear();
         for (int i = br.ReadInt32(); i > 0; i--)
             Disguises.Add(br.ReadString());

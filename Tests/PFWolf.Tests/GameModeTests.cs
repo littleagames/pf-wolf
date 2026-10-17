@@ -312,6 +312,88 @@ public class MatchScoringTests
         Assert.That(rearmed, Has.Count.EqualTo(1), "once");
     }
 
+    // A Prop Hunt round on: everyone alive and on the level; the players brought back in a new round noted
+    private static PropHunt PropHuntOf(Rig rig, List<Entities.PlayerState> respawned)
+    {
+        var hunt = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks with { Respawn = respawned.Add });
+        foreach (var p in rig.Session.Players)
+        {
+            p.Health = 100;
+            p.Pawn!.Active = ActiveType.Yes;
+        }
+        hunt.LevelSetup();
+        return hunt;
+    }
+
+    [Test]
+    public void A_Prop_Hunt_Round_Hides_Then_Hunts_And_Finding_Every_Prop_Wins_It_For_The_Hunters()
+    {
+        // Arrange
+        var rig = new Rig(GameMode.PropHunt);
+        var respawned = new List<Entities.PlayerState>();
+        var hunt = PropHuntOf(rig, respawned);
+        IMatchObjective objective = hunt;
+        var clock = rig.Session.GameState;
+
+        // Act / Assert: the hunters (red) wait while the props hide
+        Assert.That(hunt.CurrentPhase, Is.EqualTo(PropHunt.Phase.Hide));
+        Assert.That((objective.IsWaiting(rig.Red1), objective.IsWaiting(rig.Blue)), Is.EqualTo((true, false)));
+
+        clock.TimeCount += PropHunt.HideTics;
+        hunt.Tick();
+        Assert.That(hunt.CurrentPhase, Is.EqualTo(PropHunt.Phase.Hunt));
+        Assert.That(objective.IsWaiting(rig.Red1), Is.False);
+
+        // the last prop's found
+        rig.Blue.Health = 0;
+        objective.PlayerDied(rig.Blue);
+        hunt.Tick();
+        Assert.That((hunt.CurrentPhase, hunt.RoundWinner), Is.EqualTo((PropHunt.Phase.RoundOver, 0)));
+        Assert.That(rig.Match.TeamScores, Is.EqualTo(new[] { 1, 0 }));
+        Assert.That(objective.MayRespawn(rig.Blue), Is.False, "back next round, not before");
+
+        // the next round: sides swap, everyone comes back in their new part
+        clock.TimeCount += PropHunt.RoundOverTics;
+        hunt.Tick();
+        Assert.That((hunt.Round, hunt.HuntingTeam, hunt.CurrentPhase), Is.EqualTo((2, 1, PropHunt.Phase.Hide)));
+        Assert.That(respawned, Is.EquivalentTo(rig.Session.Players));
+        Assert.That((rig.Red1.RoleClass, rig.Blue.RoleClass), Is.EqualTo(((string?)PropHunt.PropClass, (string?)null)));
+        Assert.That((objective.IsWaiting(rig.Red1), objective.IsWaiting(rig.Blue)), Is.EqualTo((false, true)));
+    }
+
+    [Test]
+    public void Props_Still_Hidden_When_The_Hunt_Runs_Out_Win_The_Round()
+    {
+        var rig = new Rig(GameMode.PropHunt);
+        var hunt = PropHuntOf(rig, []);
+        rig.Session.GameState.TimeCount += PropHunt.HideTics;
+        hunt.Tick();
+
+        rig.Session.GameState.TimeCount += PropHunt.HuntTics - 1;
+        hunt.Tick();
+        Assert.That(hunt.CurrentPhase, Is.EqualTo(PropHunt.Phase.Hunt), "a tic to go");
+
+        rig.Session.GameState.TimeCount++;
+        hunt.Tick();
+        Assert.That((hunt.CurrentPhase, hunt.RoundWinner), Is.EqualTo((PropHunt.Phase.RoundOver, 1)));
+        Assert.That(rig.Match.TeamScores, Is.EqualTo(new[] { 0, 1 }));
+    }
+
+    [Test]
+    public void The_Score_Limits_Rounds_Win_The_Prop_Hunt()
+    {
+        var rig = new Rig(GameMode.PropHunt);
+        rig.Match.NetRules = rig.Match.NetRules with { ScoreLimit = 1 };
+        var hunt = PropHuntOf(rig, []);
+        rig.Session.GameState.TimeCount += PropHunt.HideTics;
+        hunt.Tick();    // the hunt starts
+        rig.Session.GameState.TimeCount += PropHunt.HuntTics;
+        hunt.Tick();    // and runs out
+
+        Assert.That(rig.Match.MatchOver, Is.True);
+        Assert.That(rig.Match.LeadingTeam, Is.EqualTo(1));
+    }
+
     [Test]
     public void A_Prop_Who_Dies_Drops_Their_Disguise()
     {
@@ -330,7 +412,10 @@ public class MatchScoringTests
     public void Prop_Hunts_State_Goes_To_A_Player_Joining()
     {
         var rig = new Rig(GameMode.PropHunt);
-        var hunt = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks) { HuntingTeam = 1 };
+        var hunt = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks)
+        {
+            HuntingTeam = 1, Round = 3, CurrentPhase = PropHunt.Phase.Hunt, PhaseEnds = 1234, RoundWinner = 0,
+        };
         hunt.Disguises.AddRange(["Barrel", "Table"]);
         using var stream = new MemoryStream();
         hunt.Write(new BinaryWriter(stream));
@@ -339,7 +424,9 @@ public class MatchScoringTests
         var joined = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks);
         joined.Read(new BinaryReader(stream));
 
-        Assert.That((joined.HuntingTeam, joined.Disguises), Is.EqualTo((1, new List<string> { "Barrel", "Table" })));
+        Assert.That((joined.HuntingTeam, joined.Round, joined.CurrentPhase, joined.PhaseEnds, joined.RoundWinner),
+            Is.EqualTo((1, 3, PropHunt.Phase.Hunt, 1234, 0)));
+        Assert.That(joined.Disguises, Is.EqualTo(new[] { "Barrel", "Table" }));
     }
 
     [Test]

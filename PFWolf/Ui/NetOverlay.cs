@@ -123,6 +123,9 @@ internal sealed class NetOverlay(
     /// <summary>The top of the 3D view, in 320x200 pixels; unset, the screen's top</summary>
     internal Func<int>? ViewTop { get; set; }
 
+    /// <summary>The 3D view on the screen, in screen pixels (x, y, width, height); unset, none</summary>
+    internal Func<(int X, int Y, int Width, int Height)>? ViewRect { get; set; }
+
     /// <summary>How much of the view's top the match's line takes (0 with no match on), for the messages to go under</summary>
     internal int MatchLineHeight() =>
         Match == null || game.GameMode is GameMode.Single or GameMode.Coop ? 0
@@ -167,6 +170,18 @@ internal sealed class NetOverlay(
     }
 
     /// <summary>Over the view, with others: who the game is waiting for, or whether to leave</summary>
+    /// <summary>
+    /// Kept waiting by the mode (Prop Hunt's hunters while the props hide): the view blacked out,
+    /// under the automap, messages and the match's line
+    /// </summary>
+    internal void DrawWaitingView()
+    {
+        if (Match?.Objective?.IsWaiting(game.LocalPlayer) != true || ViewRect?.Invoke() is not { } view)
+            return;
+        video.BarScaledCoord(view.X, view.Y, view.Width, view.Height, "#000000");
+        ui.CenteredText(0, 320, 96, new Fonts.TextStyle(UiFonts.SmallFont, "HIGHLIGHT")).CPrint("The props are hiding...");
+    }
+
     internal void DrawNetOverlay()
     {
         DrawMatchLine();
@@ -182,7 +197,8 @@ internal sealed class NetOverlay(
         {
             var watching = game.Camera.Target is Entities.Actors.PlayerPawn pawn && pawn != localplayer.Pawn
                 ? $"Watching {pawn.State.Name ?? $"Player {pawn.State.Number + 1}"} - " : "";
-            var hint = $"{watching}use or fire to come back, left/right to watch others";
+            var back = Match?.Objective?.MayRespawn(localplayer) == false ? "back later" : "use or fire to come back";
+            var hint = $"{watching}{back}, left/right to watch others";
             ui.CenteredText(0, 320, MaxY - 12, new Fonts.TextStyle(UiFonts.SmallFont, "HIGHLIGHT")).CPrint(ui.FitText(hint, 300, UiFonts.SmallFont));
         }
 

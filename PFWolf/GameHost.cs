@@ -247,6 +247,7 @@ internal static partial class GameHost
         netOverlay = MakeNetOverlay();
         netOverlay.Match = deathmatch;
         netOverlay.ViewTop = () => _videoManager.ToLayoutY(Render.ViewScreenY, roundUp: true);
+        netOverlay.ViewRect = () => (Render.ViewScreenX, Render.ViewScreenY, Render.ViewWidth, Render.ViewHeight);
         hudMessageDrawing.TopReserved = netOverlay.MatchLineHeight;     // messages go under a match's line
         gameScripts = MakeGameScripts();
         levelMusic = new LevelMusic(GameEngineManager, AudioManager, Session);
