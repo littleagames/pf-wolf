@@ -100,9 +100,13 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     {
         defs.DrawMenuComponents("multiplayer");
         draw.DrawMenu(MultiplayerItems, Items);
-        draw.DrawMenuChoice(MultiplayerItems, Items, "name", ui.FitText(MpConfig.Name, MenuDrawing.MenuChoiceWidth, UiFonts.MENU_FONT));
-        draw.DrawMenuChoice(MultiplayerItems, Items, "openport",
-            (MpConfig.OpenPort ? "$STR_MP_ON" : "$STR_MP_OFF").ToLanguageText(assets.GetText("en-us")));
+        // The values line up just past the longer of their rows' names
+        int column = Items.Where(item => item.id is "name" or "openport")
+            .Select(item => ui.TextWidth(item.text, MultiplayerItems.font ?? UiFonts.MENU_FONT) + 8)
+            .DefaultIfEmpty(88).Max();
+        DrawRowValue(MultiplayerItems, Items, "name", MpConfig.Name, column);
+        DrawRowValue(MultiplayerItems, Items, "openport",
+            (MpConfig.OpenPort ? "$STR_MP_ON" : "$STR_MP_OFF").ToLanguageText(assets.GetText("en-us")), column);
         draw.DrawMenuGun(MultiplayerItems);
         video.Update();
     }
@@ -479,7 +483,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     CP_iteminfo LobbyItems = null!;
 
     // The lobby panel's rows: up to PlayerCommands.MAXPLAYERS players, then the last chat lines
-    const int LobbyPanelX = 24, LobbyPanelY = 140, LobbyPanelRow = 9, LobbyChatLines = 1;
+    const int LobbyPanelX = 24, LobbyPanelY = 136, LobbyPanelRow = 9, LobbyChatLines = 1;
 
     /// <summary>
     /// Waits in a game's lobby: the host sets the game up and starts it once everyone's ready;
@@ -686,15 +690,19 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     }
 
     // A lobby row's value, to the right of its name (cleared first)
-    void DrawLobbyValue(string id, string value)
+    void DrawLobbyValue(string id, string value) => DrawRowValue(LobbyItems, LobbyMenu, id, value);
+
+    // A row's value in the small font, to the right of its name (cleared first): the lobby's and
+    // the Multiplayer menu's, which have room for more than a menu-font choice column
+    void DrawRowValue(CP_iteminfo info, CP_itemtype[] items, string id, string value, int column = 88)
     {
-        int index = Array.FindIndex(LobbyMenu, item => item.id == id);
+        int index = Array.FindIndex(items, item => item.id == id);
         if (index < 0)
             return;
-        int x = LobbyItems.x + LobbyItems.indent + 88;
-        int y = LobbyItems.y + index * LobbyItems.rowHeight;
-        video.Bar(x, y, 300 - x, LobbyItems.rowHeight, "BKGDCOLOR");
-        ui.TextAt(x, y + 2, new TextStyle(UiFonts.SMALL_FONT, MenuDrawing.MenuItemColor(LobbyMenu[index], false))).Print(ui.FitText(value, 300 - x, UiFonts.SMALL_FONT));
+        int x = info.x + info.indent + column;
+        int y = info.y + index * info.rowHeight;
+        video.Bar(x, y, 300 - x, info.rowHeight, "BKGDCOLOR");
+        ui.TextAt(x, y + 2, new TextStyle(UiFonts.SMALL_FONT, MenuDrawing.MenuItemColor(items[index], false))).Print(ui.FitText(value, 300 - x, UiFonts.SMALL_FONT));
     }
 
     /// <summary>A match's rules in a few words, for the lobby: "20 frags, 10 min, monsters"</summary>

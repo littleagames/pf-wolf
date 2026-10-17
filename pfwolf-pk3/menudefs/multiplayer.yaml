@@ -3,7 +3,7 @@ type: "wolf3d-menu"
 position:
   x: 24
   y: 72
-indent: 56
+indent: 40
 components:
   -
     id: "background"
@@ -32,7 +32,8 @@ components:
       - y: 67
       - width: 288
       - height: 71
-# Handled by Program.Multiplayer.cs, by id; your name is drawn by code
+# Handled by Ui/MultiplayerMenu.cs, by id; the values (your name, open port) are drawn by code
+# in the small font, as the lobby's are
 menu-items:
   -
       id: "host"

@@ -2,7 +2,7 @@ music: "WONDERIN"
 type: "wolf3d-menu"
 position:
   x: 24
-  y: 26
+  y: 22
 indent: 40
 row-height: 12
 components:
@@ -23,24 +23,24 @@ components:
     params:
       - text: "$STR_MP_LOBBY"
       - horizontal-orientation: "center"
-      - y: 6
+      - y: 4
       - color: "READHCOLOR"
   # The game's settings and what you can do: 9 rows, 12 each plus 6
   -
     type: "Window"
     params:
       - x: 16
-      - y: 21
+      - y: 18
       - width: 288
       - height: 114
-  # Who's in, and what they've said (drawn by code: Program.Multiplayer.cs LobbyPanelY)
+  # Who's in, and what they've said: 5 rows of 9 plus 6 (drawn by code: Ui/MultiplayerMenu.cs LobbyPanelY)
   -
     type: "Window"
     params:
       - x: 16
-      - y: 137
+      - y: 133
       - width: 288
-      - height: 46
+      - height: 51
 # Handled by Program.Multiplayer.cs, by id. Only the host changes the mode, episode and
 # skill; everyone picks their own class and color. The host starts the game ("go") once everyone else
 # is ready; for them, "go" is that they're ready. The values are drawn by code. In any mode but
