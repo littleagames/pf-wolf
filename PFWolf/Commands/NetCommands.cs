@@ -3,18 +3,13 @@ using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf.Commands;
 
-/// <summary>What the net commands need from the game</summary>
-/// <param name="NetGame">Whether this is a game with others</param>
-internal sealed record NetCommandsHooks(Func<bool> NetGame);
-
 /// <summary>Games with others from the console: net_find, net_portcheck, net_status and scoreboard</summary>
 internal sealed class NetCommands(
     ConsoleManager console,
     MultiplayerMenu multiplayerMenu,
     Scoreboard scoreboard,
     NetPlay netPlay,
-    GameSession game,
-    NetCommandsHooks hooks)
+    GameSession game)
 {
     internal void Register()
     {
@@ -26,7 +21,7 @@ internal sealed class NetCommands(
     /// <summary>`net_status`: the game with others as this machine has it</summary>
     internal void Cmd_NetStatus(string[] args)
     {
-        if (!hooks.NetGame() || NetSession.Current is not { } session)
+        if (!game.netgame || NetSession.Current is not { } session)
         {
             console.Print("Not playing with others");
             return;

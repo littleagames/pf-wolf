@@ -191,8 +191,7 @@ internal static partial class GameHost
         lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
         doors = new Doors(_gameEngineManager, _audioManager, _mapManager, _inventoryManager, _hudMessageManager, session,
             new DoorHooks(PlaySoundLocTile, DrawKeys));
-        pushWalls = new PushWalls(_mapManager, _audioManager, session, () => demoplayback || demorecord,
-            () => _gameEngineManager.GetGameInfo().PushwallDistance);
+        pushWalls = new PushWalls(_mapManager, _audioManager, session, () => _gameEngineManager.GetGameInfo().PushwallDistance);
         wallSpriteBlocking = new WallSpriteBlocking(_mapManager);
         lineOfSight = new LineOfSight(_mapManager, doors, session, WallSpriteBlocksLine);
         levelAI = new LevelAI(_mapManager, lineOfSight, positionalSounds, session);
@@ -245,14 +244,13 @@ internal static partial class GameHost
         playerAttacks = MakePlayerAttacks();
         projectiles = MakeProjectiles();
         actorSounds = new ActorSounds(_mapManager, _audioManager, session, PlaySoundLocActor);
-        bjVictory = new BJVictory(_mapManager, session, state => playstate = state);
+        bjVictory = new BJVictory(_mapManager, session);
         missiles = MakeMissiles();
         weaponInHand = MakeWeaponInHand();
         pickups = MakePickups();
         playerThink = MakePlayerThink();
         playersManager = MakePlayers();
-        newGames = new NewGames(_gameEngineManager, _inventoryManager, hubs, playersManager, playerClassRules, session,
-            new NewGamesHooks(() => startgame = true));
+        newGames = new NewGames(_gameEngineManager, _inventoryManager, hubs, playersManager, playerClassRules, session);
         hudMessageDrawing = MakeHudMessageDrawing();
         spectating = new Spectating(_mapManager, _consoleManager, _hudMessageManager, hudMessageDrawing, session);
         playerCommands = new PlayerCommands(_consoleManager, _mapManager, doors, playerClassRules, playersManager, playerThink, deathmatch, session,
@@ -279,7 +277,7 @@ internal static partial class GameHost
         jukebox = new Jukebox(_inputManager, _videoManager, _audioManager, menuDrawing, menuLoop, menuDefs);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
-            menuDrawing, menuLoop, menuInput, menuDefs, ui, () => ingame);
+            menuDrawing, menuLoop, menuInput, menuDefs, ui, session);
         videoMenu = new VideoMenu(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
         soundMenu = new SoundMenu(_audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
         controlMenus = new ControlMenus(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, controlSettings);
@@ -298,7 +296,7 @@ internal static partial class GameHost
         multiplayerMenu = new MultiplayerMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             _inventoryManager, _consoleManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, session, netStart, MakeMultiplayerHooks());
         netGames = MakeNetGames();
-        netCommands = new NetCommands(_consoleManager, multiplayerMenu, scoreboard, netPlay, session, new NetCommandsHooks(() => netgame));
+        netCommands = new NetCommands(_consoleManager, multiplayerMenu, scoreboard, netPlay, session);
         elevatorScreens = new ElevatorScreens(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
             _inventoryManager, _mapManager, menuDrawing, textPresenter, hubs, session, new ElevatorHooks(RadarTileColor, GetMapDisplayName));
         changeViewScreen = new ChangeViewScreen(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, ui,
@@ -306,10 +304,10 @@ internal static partial class GameHost
         optionsMenu = new OptionsMenu(_videoManager, _hudMessageManager, _automapManager, menuDrawing, menuLoop, menuInput, menuDefs);
         playerDeath = MakePlayerDeath();
         newGameMenu = new NewGameMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
-            menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, _inventoryManager, () => ingame, StartNewGame, PlayerClasses,
+            menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, _inventoryManager, session, StartNewGame, PlayerClasses,
             episode => unlocks.IsOpen(episode));
         controlPanel = new ControlPanel(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop,
-            menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, MakeControlPanelHooks());
+            menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, session, MakeControlPanelHooks());
         moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);
         mainGameLoop = MakeMainGameLoop();
         quickKeys = new QuickKeys(_gameEngineManager, _assetManager, _videoManager, _audioManager, _inputManager, menuDrawing, menuLoop,

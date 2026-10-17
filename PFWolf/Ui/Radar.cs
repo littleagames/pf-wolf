@@ -9,8 +9,6 @@ namespace PFWolf.Ui;
 /// out) uses up its item, the radar's power, and shows enemies. When the power runs out it
 /// goes back to 1x. (bstone also shows pushwalls at 4x; not done.)
 /// </summary>
-/// <param name="fullScreenView">Whether the view fills the screen in a game, with no status bar</param>
-/// <param name="godMode">The god mode cheat (0 off): it keeps the radar's power</param>
 internal sealed class Radar(
     MapManager map,
     InventoryManager inventory,
@@ -21,8 +19,7 @@ internal sealed class Radar(
     StatusBarDrawing statusBar,
     Doors doors,
     GameSession session,
-    Func<bool> fullScreenView,
-    Func<int> godMode)
+    Configuration.GameSettings settings)
 {
     /// <summary>The radar's zoom: 0 for 1x, 1 for 2x, 2 for 4x</summary>
     internal int radarzoom;
@@ -33,7 +30,7 @@ internal sealed class Radar(
     /// <summary>Each tic: the radar's zoom keys, its power going while it's zoomed in, and the radar drawn</summary>
     internal void UpdateRadar()
     {
-        if (statusBar.StatusBar.Get("radar") is not { } radar || fullScreenView())
+        if (statusBar.StatusBar.Get("radar") is not { } radar || (settings.viewsize == 21 && session.ingame))
             return;
 
         int power = string.IsNullOrEmpty(radar.Item) ? 0 : inventory.GetCount(radar.Item);
@@ -54,7 +51,7 @@ internal sealed class Radar(
 
         // Zoomed in, it uses tics << zoom of its power every other frame
         radarframe++;
-        if (power > 0 && radarzoom > 0 && godMode() == 0 && (radarframe & 1) != 0)
+        if (power > 0 && radarzoom > 0 && session.godmode == 0 && (radarframe & 1) != 0)
         {
             int left = Math.Max(power - ((int)session.tics << radarzoom), 0);
             inventory.Take(radar.Item!, power - left);

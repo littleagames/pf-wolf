@@ -10,12 +10,18 @@ public class StatusBarOverlayTests
         public readonly StatusBarDrawing Bar;
         public readonly PlayArea Area;
         public readonly ViewSetup View;
-        public bool FullScreen;
+        private readonly Configuration.GameSettings barSettings = new();
+
+        // A full screen view while playing hides the status bar
+        public bool FullScreen
+        {
+            set => (barSettings.viewsize, Session.ingame) = value ? (21, true) : (19, false);
+        }
 
         public Rig(bool overlay)
         {
             Bar = new StatusBarDrawing(null!, null, null!, null!, null!, null!, null!, null!, Session,
-                new StatusBarHooks(() => FullScreen, map => map, (text, _, _) => [text]));
+                barSettings, new StatusBarHooks(map => map, (text, _, _) => [text]));
             Bar.StatusBar = new StatusBarAsset(new Dictionary<string, StatusBarElement>
             {
                 ["background"] = new() { Height = 40, Overlay = overlay },

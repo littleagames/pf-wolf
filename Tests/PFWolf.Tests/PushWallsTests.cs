@@ -8,7 +8,7 @@ public class PushWallsTests
     // Finding the wall on a tile only looks at the list
     private static PushWalls With(params MovingPushWall[] walls)
     {
-        var pushWalls = new PushWalls(null!, null!, null!, () => false);
+        var pushWalls = new PushWalls(null!, null!, new GameSession());
         pushWalls.pushwalls.AddRange(walls);
         return pushWalls;
     }
@@ -104,7 +104,7 @@ public class PushWallsTests
     public void A_Wall_Slides_As_Far_As_Game_Info_Says(int? setting, int tiles)
     {
         // Arrange
-        var pushWalls = new PushWalls(null!, null!, null!, () => false, () => setting);
+        var pushWalls = new PushWalls(null!, null!, new GameSession(), () => setting);
 
         // Act / Assert
         Assert.That(pushWalls.Distance, Is.EqualTo(tiles));

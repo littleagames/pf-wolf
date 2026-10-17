@@ -3,13 +3,11 @@ using PFWolf.Extensions;
 namespace PFWolf.Ui;
 
 /// <summary>What the control panel needs from the game</summary>
-/// <param name="InGame">Whether a game is being played (the menu is over it)</param>
-/// <param name="GameStarted">Whether the menu started or loaded a game</param>
 /// <param name="SaveGame">The Save Game screen (CP_SaveGame), 0 for the screen</param>
 /// <param name="LoadGame">The Load Game screen (CP_LoadGame), 0 for the screen</param>
 /// <param name="EndGame">Ends the game being played: no lives left, died, nobody to turn to</param>
 /// <param name="Random">A random number, 0 to 255, for picking a quit message</param>
-internal sealed record ControlPanelHooks(Func<bool> InGame, Func<bool> GameStarted, Func<int, int> SaveGame, Func<int, int> LoadGame,
+internal sealed record ControlPanelHooks(Func<int, int> SaveGame, Func<int, int> LoadGame,
     Action EndGame, Func<int> Random);
 
 /// <summary>
@@ -18,7 +16,7 @@ internal sealed record ControlPanelHooks(Func<bool> InGame, Func<bool> GameStart
 /// </summary>
 internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
     MenuDrawing draw, MenuLoop loop, MenuDefs defs, ArticleReader articles, HighScoresScreen highScores, SoundMenu soundMenu,
-    ControlMenus controlMenus, ChangeViewScreen changeView, Func<GameInfoSettings> settings, ControlPanelHooks hooks)
+    ControlMenus controlMenus, ChangeViewScreen changeView, Func<GameInfoSettings> settings, GameSession session, ControlPanelHooks hooks)
 {
     // Loaded from menudefs/ in CheckForEpisodes
     internal CP_itemtype[] MainMenu = [];
@@ -58,7 +56,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         if (video.HasMargins)
             video.ClearScreen(0);
 
-        if (!hooks.InGame())
+        if (!session.ingame)
         { }// CA_LoadAllSounds();
         else
             MenuDefs.FindMenuItem(MainMenu, "savegame")?.active = 1;
@@ -141,7 +139,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
 
                 case "backtodemo":
                     StartGame = 1;
-                    if (!hooks.InGame())
+                    if (!session.ingame)
                         audio.PlayMusic(INTROSONG);
                     video.FadeOut(settings().menuFadeStyle, new Color { Alpha = 255 }, 10, settings().menuFadeTics);
                     break;
@@ -172,7 +170,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         //
         // CHANGE MAINMENU ITEM
         //
-        if (hooks.GameStarted())
+        if (session.startgame || session.loadedgame)
             EnableEndGameMenuItem();
     }
 
@@ -188,7 +186,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         var backToDemo = MenuDefs.FindMenuItem(MainMenu, "backtodemo");
         if (backToDemo != null)
         {
-            if (hooks.InGame())
+            if (session.ingame)
             {
                 backToDemo.text = "$MENU_BACKTOGAME".ToLanguageText(language);
                 backToDemo.active = 2;

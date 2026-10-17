@@ -10,8 +10,6 @@ namespace PFWolf.Ui;
 /// being typed, and the overlay -- the scoreboard while dead, who the game is waiting for, and
 /// whether to leave.
 /// </summary>
-/// <param name="netGame">Whether this is a game with others</param>
-/// <param name="setPlayState">Ends the level the way it says (leaving)</param>
 internal sealed class NetOverlay(
     InputManager input,
     VideoManager video,
@@ -20,9 +18,7 @@ internal sealed class NetOverlay(
     MenuDrawing draw,
     Scoreboard scoreboard,
     NetPlay netPlay,
-    GameSession game,
-    Func<bool> netGame,
-    Action<playstatetypes> setPlayState)
+    GameSession game)
 {
     const int MAXY = GameConstants.MAXY;
 
@@ -104,7 +100,7 @@ internal sealed class NetOverlay(
             if (scan == ScanCodes.sc_Y)
             {
                 netPlay.netLeft = true;
-                setPlayState(playstatetypes.ex_abort);
+                game.playstate = playstatetypes.ex_abort;
             }
             if (scan is ScanCodes.sc_Y or ScanCodes.sc_N or ScanCodes.sc_Escape)
             {
@@ -174,7 +170,7 @@ internal sealed class NetOverlay(
     internal void DrawNetOverlay()
     {
         DrawMatchLine();
-        if (!netGame())
+        if (!game.netgame)
             return;
 
         // Dead: everyone's score, who's being watched, and how to come back

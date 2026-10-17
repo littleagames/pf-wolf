@@ -9,9 +9,8 @@ namespace PFWolf.Ui;
 /// switched on are saved to mods.cfg on the way out, and as they only load when the game
 /// starts, it offers to restart.
 /// </summary>
-/// <param name="ingame">Whether a game is being played (the restart question says it will end)</param>
 internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
-    MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, UiText ui, Func<bool> ingame)
+    MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, UiText ui, GameSession session)
 {
     /// <summary>A row of the Mods menu: a mod in mods.cfg or the mods folder</summary>
     internal sealed class ModMenuEntry(string fullPath, ModSource? mod, bool on, bool loadable)
@@ -111,7 +110,7 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
                 input.ClearKeysDown();
                 input.Ack();
             }
-            else if (loop.Confirm(ingame() ? "$STR_MODS_RESTART_INGAME" : "$STR_MODS_RESTART") != 0)
+            else if (loop.Confirm(session.ingame ? "$STR_MODS_RESTART_INGAME" : "$STR_MODS_RESTART") != 0)
             {
                 audio.SetPaused(true);
                 audio.StopAll();

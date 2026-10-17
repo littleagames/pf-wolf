@@ -191,14 +191,15 @@ public class BJVictoryTests
     public void BJ_Done_And_The_Angels_Last_Frame_Win_The_Game()
     {
         // Arrange
-        var states = new List<object>();
-        var victory = new BJVictory(null!, new GameSession(), state => states.Add(state));
+        var session = new GameSession();
+        var victory = new BJVictory(null!, session);
 
-        // Act
+        // Act / Assert
         victory.T_BJDone(new Monster { Name = "BJVictory" });
-        victory.A_Victory(new Monster { Name = "Angel" });
+        Assert.That(session.playstate, Is.EqualTo(playstatetypes.ex_victorious));
 
-        // Assert
-        Assert.That(states, Is.EqualTo(new object[] { playstatetypes.ex_victorious, playstatetypes.ex_victorious }));
+        session.playstate = playstatetypes.ex_stillplaying;
+        victory.A_Victory(new Monster { Name = "Angel" });
+        Assert.That(session.playstate, Is.EqualTo(playstatetypes.ex_victorious));
     }
 }

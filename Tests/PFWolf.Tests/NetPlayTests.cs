@@ -30,7 +30,7 @@ public class NetPlayTests
         };
         _game = new GameSession();
         _doors = new Doors(null!, null!, _map, null!, null!, _game, null!);
-        _pushWalls = new PushWalls(null!, null!, null!, () => false);
+        _pushWalls = new PushWalls(null!, null!, new GameSession());
         _netGame = false;
         _areasConnected = 0;
     }
@@ -143,14 +143,13 @@ public class NetPlayTests
 
 public class NetOverlayTests
 {
-    private static (NetOverlay Overlay, NetPlay NetPlay, List<playstatetypes> Ends) Overlay()
+    private static (NetOverlay Overlay, NetPlay NetPlay, GameSession Game) Overlay()
     {
         var game = new GameSession { netgame = true };
         var netPlay = new NetPlay(null!, null!, null!, null!, null!, null!, game,
             new NetPlayHooks(() => default, () => [], () => { }, () => { }, _ => { }, () => { }));
-        var ends = new List<playstatetypes>();
         var input = new InputManager(new Lazy<ConsoleManager>(() => new ConsoleManager()));
-        return (new NetOverlay(input, null!, null!, null!, null!, null!, netPlay, game, () => true, ends.Add), netPlay, ends);
+        return (new NetOverlay(input, null!, null!, null!, null!, null!, netPlay, game), netPlay, game);
     }
 
     [Test]
@@ -165,7 +164,7 @@ public class NetOverlayTests
     public void Then_Y_Leaves()
     {
         // Arrange
-        var (overlay, netPlay, ends) = Overlay();
+        var (overlay, netPlay, game) = Overlay();
         netPlay.netLeavePrompt = true;
 
         // Act
@@ -174,7 +173,7 @@ public class NetOverlayTests
         // Assert
         Assert.That(netPlay.netLeft, Is.True);
         Assert.That(netPlay.netLeavePrompt, Is.False);
-        Assert.That(ends, Is.EqualTo(new[] { playstatetypes.ex_abort }));
+        Assert.That(game.playstate, Is.EqualTo(playstatetypes.ex_abort));
     }
 
     [TestCase("sc_N")]
@@ -182,7 +181,7 @@ public class NetOverlayTests
     public void And_N_Or_Esc_Plays_On(string key)
     {
         // Arrange
-        var (overlay, netPlay, ends) = Overlay();
+        var (overlay, netPlay, game) = Overlay();
         netPlay.netLeavePrompt = true;
 
         // Act
@@ -190,7 +189,7 @@ public class NetOverlayTests
 
         // Assert
         Assert.That((netPlay.netLeft, netPlay.netLeavePrompt), Is.EqualTo((false, false)));
-        Assert.That(ends, Is.Empty);
+        Assert.That(game.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
     }
 
     [Test]

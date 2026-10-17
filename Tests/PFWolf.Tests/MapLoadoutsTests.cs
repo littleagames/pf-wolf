@@ -61,7 +61,7 @@ public class MapLoadoutsTests
         _session.playerstate.health = 80;
 
         var bar = new StatusBarDrawing(null!, null, null!, null!, _inventory, null!, null!, null!, _session,
-            new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+            new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
         var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
         _loadouts = new MapLoadouts(_inventory, weapons, _session);
     }

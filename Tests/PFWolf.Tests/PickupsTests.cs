@@ -49,7 +49,8 @@ public class PickupsTests
         public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
         public readonly MapManager Map;
         public readonly Pickups Pickups;
-        public bool Died, HasWeapon, ItemRespawn;
+        public bool HasWeapon, ItemRespawn;
+        public bool Died { get => Session.playstate == playstatetypes.ex_died; set => Session.playstate = value ? playstatetypes.ex_died : playstatetypes.ex_stillplaying; }
         public readonly List<string> Sounds = [];
         public readonly List<Inventory> Respawning = [];
 
@@ -64,13 +65,13 @@ public class PickupsTests
             Session.playerstate.health = 50;
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
-                new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+                new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
             var classes = new PlayerClassRules(null!, Inventory, Session);
             var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(_ => { }));
             var stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,
                 new Configuration.GameSettings(), new PlayerStatsHooks(() => 1, () => { }, _ => { }));
             Pickups = new Pickups(Map, null!, null!, classes, stats, Session,
-                new PickupHooks(() => Died, Sounds.Add, _ => HasWeapon, () => ItemRespawn, Respawning.Add));
+                new PickupHooks(Sounds.Add, _ => HasWeapon, () => ItemRespawn, Respawning.Add));
         }
 
         // An item lying on the level

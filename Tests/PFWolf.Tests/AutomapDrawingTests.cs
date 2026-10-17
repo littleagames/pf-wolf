@@ -118,7 +118,7 @@ public class RadarTests
         };
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
-        var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, () => false, () => 0);
+        var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
         map.tilemap[1, 1] = 5;
         map.tilemap[2, 1] = GameConstants.BIT_DOOR | 0;
         doors.doorobjlist[0] = new doorobj_t { action = dooractiontypes.dr_closed };
@@ -146,7 +146,7 @@ public class RadarTests
         };
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
-        var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, () => false, () => 0);
+        var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
         map.tilemap[2, 1] = GameConstants.BIT_DOOR | 0;
         doors.doorobjlist[0] = new doorobj_t { action = dooractiontypes.dr_closed, maplock = "GoldKey" };
         string Color() => radar.RadarTileColor(2, 1, "unmapped", "floor", "door", "locked");

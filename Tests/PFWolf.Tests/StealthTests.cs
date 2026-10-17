@@ -101,7 +101,7 @@ public class StealthTests
         _session.playerstate.Pawn = _pawn;
 
         var bar = new StatusBarDrawing(null!, null, null!, null!, _inventory, null!, null!, null!, _session,
-            new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+            new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
         var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
         (_messages, _sounds, _caught, _stealthOnly, _papersRustles) = ([], [], [], false, 0);
         _stealth = new Stealth(_map, _inventory, weapons, _session, new StealthHooks(

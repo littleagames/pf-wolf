@@ -7,7 +7,7 @@ internal static partial class GameHost
 
     static Radar MakeRadar() =>
         new(_mapManager, _inventoryManager, _inputManager, _hudMessageManager, _videoManager, _graphicManager,
-            statusBarDrawing, doors, session, () => viewsize == 21 && ingame, () => godmode);
+            statusBarDrawing, doors, session, settings);
 
     internal static void UpdateRadar() => radar.UpdateRadar();
     static string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked) =>

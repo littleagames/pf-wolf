@@ -101,7 +101,7 @@ public class PlayerWeaponsTests
             // With no status bar layout nothing is drawn, so no graphics are needed (the weapon's
             // picture is still looked up in the inventory)
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
-                new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+                new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
             Weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(SlotItemsUsed.Add));
         }
 

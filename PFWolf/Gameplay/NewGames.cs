@@ -2,10 +2,6 @@ using PFWolf.Assets;
 
 namespace PFWolf.Gameplay;
 
-/// <summary>What starting a new game needs from the game</summary>
-/// <param name="StartGame">The game starts playing</param>
-internal sealed record NewGamesHooks(Action StartGame);
-
 /// <summary>
 /// Starting a new game (NewGame): the game's state afresh, no hub levels kept, the one local
 /// player starting as their class; and the skill being played, or that demos are played on.
@@ -16,8 +12,7 @@ internal sealed class NewGames(
     Hubs hubs,
     Players playersManager,
     PlayerClassRules classes,
-    GameSession session,
-    NewGamesHooks hooks)
+    GameSession session)
 {
     /// <summary>The skill being played (game-info skills, by gamestate.difficulty); an ordinary one if it's missing</summary>
     internal SkillInfo CurrentSkill =>
@@ -60,6 +55,6 @@ internal sealed class NewGames(
         session.gamestate.cluster = mapInfo.Cluster;
         session.gamestate.mapon = epInfo.StartMap;
 
-        hooks.StartGame();
+        session.startgame = true;
     }
 }

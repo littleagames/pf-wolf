@@ -98,7 +98,7 @@ public class PlayerStatsTests
             Player.lives = 3;
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
-                new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+                new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
             var classes = new PlayerClassRules(null!, Inventory, Session);
             var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(_ => { }));
             Stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,

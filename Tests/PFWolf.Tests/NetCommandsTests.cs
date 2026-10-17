@@ -7,7 +7,7 @@ public class NetCommandsTests
     {
         // Arrange
         var console = new ConsoleManager();
-        new NetCommands(console, null!, null!, null!, new GameSession(), new NetCommandsHooks(() => false)).Register();
+        new NetCommands(console, null!, null!, null!, new GameSession()).Register();
 
         // Act
         console.Execute("net_status");
@@ -22,7 +22,7 @@ public class NetCommandsTests
     public void Each_Command_Is_There(string name)
     {
         var console = new ConsoleManager();
-        new NetCommands(console, null!, null!, null!, new GameSession(), new NetCommandsHooks(() => false)).Register();
+        new NetCommands(console, null!, null!, null!, new GameSession()).Register();
 
         Assert.That(console.TryGetCommand(name, out _), Is.True);
     }

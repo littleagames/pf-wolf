@@ -22,7 +22,7 @@ public class ViewSetupTests
         _settings = new Configuration.GameSettings { viewsize = 21 };
         // No status bar here (no assets): the play area is the whole screen
         var bar = new StatusBarDrawing(null!, null, null!, null!, null!, null!, null!, null!, new GameSession(),
-            new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+            new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
         _setup = new ViewSetup(video, null!, _render, new PlayArea(video, bar), _settings);
     }
 

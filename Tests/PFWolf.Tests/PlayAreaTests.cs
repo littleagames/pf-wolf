@@ -11,7 +11,7 @@ public class PlayAreaTests
             screenWidth = 320, screenHeight = 200,
         };
         var bar = new StatusBarDrawing(null!, null, null!, null!, null!, null!, null!, null!, new GameSession(),
-            new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+            new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
 
         // Act
         var area = new PlayArea(video, bar);

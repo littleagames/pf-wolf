@@ -5,14 +5,12 @@ using PFWolf.Managers;
 namespace PFWolf.Gameplay;
 
 /// <summary>What picking items up needs from the game</summary>
-/// <param name="PlayerDied">Whether the player has just died this tic (nothing's picked up then)</param>
 /// <param name="PlayPlayerSound">A sound the acting player makes (the item's pickup sound)</param>
 /// <param name="HasWeaponFrom">Deathmatch: whether the player already has the weapon a pickup gives</param>
 /// <param name="ItemRespawn">Deathmatch: whether items taken come back (the game's rules)</param>
 /// <param name="QueueItemRespawn">Deathmatch: brings an item taken back a while later</param>
 /// <param name="Taken">An item's been taken, by the acting player (Heist's loot: Gameplay/MatchModes)</param>
 internal sealed record PickupHooks(
-    Func<bool> PlayerDied,
     Action<string> PlayPlayerSound,
     Func<Weapon, bool> HasWeaponFrom,
     Func<bool> ItemRespawn,
@@ -36,7 +34,7 @@ internal sealed class Pickups(
 {
     internal void GetBonus(Inventory builtActor)
     {
-        if (hooks.PlayerDied())
+        if ((session.playstate == playstatetypes.ex_died))
             return;
 
         //if (string.IsNullOrWhiteSpace(check.item_class))

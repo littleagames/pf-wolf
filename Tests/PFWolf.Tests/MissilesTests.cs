@@ -47,7 +47,7 @@ public class MissilesTests
         _session.playerstate.Pawn = new PlayerPawn { State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
 
         var bar = new StatusBarDrawing(null!, null, null!, null!, inventory, null!, null!, null!, _session,
-            new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+            new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
         var classes = new PlayerClassRules(null!, inventory, _session);
         var weapons = new PlayerWeapons(inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
         var stats = new PlayerStats(null!, null!, null!, inventory, bar, classes, weapons, _session,

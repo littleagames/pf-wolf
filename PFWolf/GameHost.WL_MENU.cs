@@ -77,8 +77,6 @@ internal static partial class GameHost
     internal static int CP_Quit(int _) => controlPanel.Quit();
 
     static ControlPanelHooks MakeControlPanelHooks() => new(
-        InGame: () => ingame,
-        GameStarted: () => startgame || loadedgame,
         SaveGame: CP_SaveGame,
         LoadGame: CP_LoadGame,
         EndGame: () =>

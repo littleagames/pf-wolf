@@ -4,11 +4,9 @@ using PFWolf.Managers;
 namespace PFWolf.Ui;
 
 /// <summary>What the status bar drawing needs from the game</summary>
-/// <param name="FullScreenView">Whether the view fills the screen in a game, with no status bar</param>
 /// <param name="MapDisplayName">A map's name as the game shows it</param>
 /// <param name="WrapText">Text split into lines no wider than a width in a font</param>
 internal sealed record StatusBarHooks(
-    Func<bool> FullScreenView,
     Func<string, string> MapDisplayName,
     Func<string, string, int, List<string>> WrapText);
 
@@ -27,6 +25,7 @@ internal sealed class StatusBarDrawing(
     HudMessageManager hudMessages,
     UiText ui,
     GameSession session,
+    Configuration.GameSettings settings,
     StatusBarHooks hooks)
 {
     // The status bar's height in 320x200 lines (background), and a top bar's (top)
@@ -38,7 +37,7 @@ internal sealed class StatusBarDrawing(
     /// player other than this machine's (the bar is the local player's). A bar drawn over the
     /// view (overlay) is drawn only with the frame (DrawingOverlay), as the view under it is.
     /// </summary>
-    internal bool StatusBarHidden => hooks.FullScreenView() || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
+    internal bool StatusBarHidden => (settings.viewsize == 21 && session.ingame) || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
 
     /// <summary>Whether the status bar is drawn over the view every frame (statusbar.yaml background overlay)</summary>
     internal bool IsOverlay => StatusBar.Get("background")?.Overlay == true;
@@ -426,7 +425,7 @@ internal sealed class StatusBarDrawing(
     string? infoareashown;
 
     /// <summary>Whether the status bar has an info area showing now</summary>
-    internal bool HasInfoArea => StatusBar.Get("info-area") != null && !hooks.FullScreenView();
+    internal bool HasInfoArea => StatusBar.Get("info-area") != null && !(settings.viewsize == 21 && session.ingame);
 
     internal void DrawInfoArea(bool force)
     {
@@ -496,7 +495,7 @@ internal sealed class StatusBarDrawing(
     /// <summary>Moves the heart monitor on by this tic's time, redrawing it as it changes</summary>
     internal void UpdateHeartMonitor()
     {
-        if (StatusBar.Get("heart-monitor") == null || hooks.FullScreenView())
+        if (StatusBar.Get("heart-monitor") == null || (settings.viewsize == 21 && session.ingame))
             return;
         ecgscrolltics += (int)session.tics;
         hearttics += (int)session.tics;

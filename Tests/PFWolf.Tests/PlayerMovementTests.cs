@@ -27,7 +27,7 @@ public class PlayerMovementTests
             mapwidth = 64,
             mapheight = 64,
         };
-        _pushWalls = new PushWalls(null!, null!, null!, () => false);
+        _pushWalls = new PushWalls(null!, null!, new GameSession());
         _session.playerstate.Pawn = new PlayerPawn { State = _session.playerstate };
         _sounds = [];
         _noclip = false;

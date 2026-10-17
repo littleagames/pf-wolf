@@ -43,7 +43,7 @@ public class PlayersTests
             Session.SetActing(Session.players[1]);
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
-                new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+                new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
             var classes = new PlayerClassRules(null!, Inventory, Session);
             var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(_ => { }));
             var stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,

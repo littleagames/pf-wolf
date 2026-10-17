@@ -57,9 +57,8 @@ time.
 =============================================================================
 */
 
-/// <param name="demoActive">Whether a demo is playing or recording</param>
 /// <param name="distance">How many tiles a pushwall slides (game-info pushwall-distance); 2 when left out</param>
-internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession session, Func<bool> demoActive, Func<int?>? distance = null)
+internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession session, Func<int?>? distance = null)
 {
     // Tiles a pushwall slides: read as it moves, so a loaded game's walls go as far as the game says
     internal int Distance => Math.Clamp(distance?.Invoke() ?? 2, 1, 255);
@@ -118,7 +117,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
         int oldtile, dx, dy;
 
         // demos keep the original game's one wall at a time, so they play out the same
-        if (pushwalls.Count > 0 && demoActive())
+        if (pushwalls.Count > 0 && (session.demoplayback || session.demorecord))
             return false;
 
         oldtile = map.tilemap[checkx, checky];

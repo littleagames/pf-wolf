@@ -8,8 +8,7 @@ namespace PFWolf.Gameplay;
 /// map's arrow icons for a few tiles, jumps, and then ends the level; and the Angel of Death's
 /// last frame (A_Victory) ends the game.
 /// </summary>
-/// <param name="setPlayState">Ends the level the way it says</param>
-internal sealed class BJVictory(MapManager map, GameSession session, Action<playstatetypes> setPlayState)
+internal sealed class BJVictory(MapManager map, GameSession session)
 {
     internal void VictoryTile()
     {
@@ -18,7 +17,7 @@ internal sealed class BJVictory(MapManager map, GameSession session, Action<play
     }
 
     // Ends the game in victory (the Angel of Death's last death frame)
-    internal void A_Victory(Entities.Actors.Actor ob) => setPlayState(playstatetypes.ex_victorious);
+    internal void A_Victory(Entities.Actors.Actor ob) => session.playstate = playstatetypes.ex_victorious;
 
     /*
     ===============
@@ -82,7 +81,7 @@ internal sealed class BJVictory(MapManager map, GameSession session, Action<play
 
     internal void T_BJDone(Entities.Actors.Actor ob)
     {
-        setPlayState(playstatetypes.ex_victorious);                            // exit castle tile
+        session.playstate = playstatetypes.ex_victorious;                            // exit castle tile
     }
 
 

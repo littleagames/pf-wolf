@@ -10,12 +10,11 @@ internal sealed record PlayerClassChoice(string Class, string? PicName);
 /// New Game: the episode (none to choose with only one), the class (only when there's a
 /// choice), then the skill, Esc stepping back one; then the episode's briefing, if it has one
 /// </summary>
-/// <param name="inGame">Whether a game is being played (starting another asks first)</param>
 /// <param name="startGame">Starts the new game: its skill, episode, first map and class</param>
 /// <param name="episodeOpen">Whether an episode can be picked: not starts-locked, or unlocked since (Gameplay/Unlocks.cs)</param>
 internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
     GraphicManager graphics, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, TextPresenter presenter,
-    InventoryManager inventory, Func<bool> inGame, Action<short, EpisodeInfo, MapInfo?, string?> startGame, Func<List<string>> playerClasses,
+    InventoryManager inventory, GameSession session, Action<short, EpisodeInfo, MapInfo?, string?> startGame, Func<List<string>> playerClasses,
     Func<EpisodeInfo, bool> episodeOpen)
 {
     /// <summary>
@@ -130,7 +129,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         //
         // ALREADY IN A GAME?
         //
-        if (inGame())
+        if (session.ingame)
             if (loop.Confirm($"$CURGAME".ToLanguageText(language)) == 0)
             {
                 draw.MenuFadeOut();

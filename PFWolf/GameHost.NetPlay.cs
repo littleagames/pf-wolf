@@ -15,8 +15,7 @@ internal static partial class GameHost
                 () => lasttimecount = (int)GameEngineManager.GetTimeCount(), AddNetPlayer, ConnectAreas));
 
     static NetOverlay MakeNetOverlay() =>
-        new(_inputManager, _videoManager, _mapManager, ui, menuDrawing, scoreboard, netPlay, session,
-            () => netgame, state => playstate = state);
+        new(_inputManager, _videoManager, _mapManager, ui, menuDrawing, scoreboard, netPlay, session);
 
     /// <summary>Tics a frame plays, with others: always the same, on every machine</summary>
     internal const uint NETTICS = NetPlay.NETTICS;
