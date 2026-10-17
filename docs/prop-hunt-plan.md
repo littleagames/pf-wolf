@@ -103,7 +103,21 @@ game, a hunter's view after the hide in a real window, 3-4 players.
 - Tests: headless round runs with `wait` + `addplayer`, round win both ways, team swap,
   mid-game join state round-trip.
 
-### Phase 3: hunting rules and prop tells
+### Phase 3: hunting rules and prop tells (done 2026-10-17)
+
+As built: `IMatchObjective.IsDecoy` → `PlayerAttackHooks.IsDecoy`: during the hunt a hunter's
+`ShootCandidatesFrom` also counts the level's disguise decorations, and hitting one costs the
+hunter a quarter of the shot's damage (`PlayerAttacks.DecoyShare`, at least 1). Prop health:
+`PropHunt.HealthAs` (50 + radius × 50 / 32, 25-100, or `prophunt.health`), kept as the same share
+when the look changes (`PropHunt.Disguise`), and capped there each tic. `MatchModeHooks.ShowHealth`
+redraws it. Snapping: `PlayerBodies.SettleTics` (1 s still → body drawn at the tile's middle;
+`PlayerState.StillTics`, display only). Taunts: `A_Taunt(...)` on PropHands' Fire (one of
+seven Wolf3D sounds, 2 s cooldown), played as the prop's own sound (positional for others).
+Lights: `ActorLights.LitActors` includes players' bodies, so a lamp disguise lights up. Left
+out: the forced taunt, last-prop pistol, projectiles hitting decoys. Checked: unit tests
+(health shares, decoy rules) and a headless run (health 50/50 as a ceiling light). Not yet
+checked by eye or ear: the penalty, the snap, taunts, lamp light under shading, Blake/Spear
+taunt sounds (Wolf3D names).
 
 - **Wrong-prop penalty** (decision 2): in Prop Hunt, `ShootCandidatesFrom` also counts
   decorations that could be disguises (same test as phase 1). When the nearest target is a

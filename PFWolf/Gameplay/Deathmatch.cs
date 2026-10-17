@@ -48,6 +48,12 @@ internal interface IMatchObjective
     /// </summary>
     bool PlayerUse() => false;
 
+    /// <summary>
+    /// Whether an actor that isn't an enemy or a player is something the acting player's shot
+    /// can hit, hurting the shooter instead (Prop Hunt: a hunter shooting a real decoration)
+    /// </summary>
+    bool IsDecoy(Entities.Actors.Actor actor) => false;
+
     /// <summary>Whether the mode keeps a player still and shows them nothing for now (Prop Hunt's hunters while the props hide)</summary>
     bool IsWaiting(Entities.PlayerState p) => false;
 

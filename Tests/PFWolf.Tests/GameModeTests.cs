@@ -395,6 +395,66 @@ public class MatchScoringTests
     }
 
     [Test]
+    public void A_Props_Health_Goes_By_The_Size_Of_What_It_Looks_Like()
+    {
+        // Arrange
+        var metadata = ActorDefs.Metadata("""
+            Lamp: {}
+            Barrel:
+              radius: 32
+            Vase:
+              properties:
+                "prophunt.health": 30
+            """);
+        Entities.Actors.Actor Make(string name) => metadata.CreateActor(name, metadata.Actors[name]);
+        var rig = new Rig(GameMode.PropHunt);
+        var shown = new List<Entities.PlayerState>();
+        var hunt = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks with { ShowHealth = shown.Add });
+        foreach (var name in new[] { "Lamp", "Barrel", "Vase" })
+            hunt.DisguiseHealth[name] = PropHunt.HealthAs(Make(name));
+
+        // Act / Assert
+        Assert.That(hunt.DisguiseHealth, Is.EqualTo(new Dictionary<string, int> { ["Lamp"] = 50, ["Barrel"] = 100, ["Vase"] = 30 }));
+
+        rig.Blue.Health = 80;
+        hunt.Disguise(rig.Blue, "Lamp");
+        Assert.That(rig.Blue.Health, Is.EqualTo(40), "the same share of the most");
+        hunt.Disguise(rig.Blue, "Barrel");
+        Assert.That(rig.Blue.Health, Is.EqualTo(80));
+        Assert.That(shown, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public void Only_A_Hunters_Shot_In_The_Hunt_Can_Hit_A_Real_Decoration()
+    {
+        // Arrange: a lamp a prop could look like, and red hunting
+        var metadata = ActorDefs.Metadata("""
+            Lamp:
+              states:
+                Spawn:
+                  - sprite: CLMP
+                    frames: [A]
+                    tics-per-frame: -1
+            """);
+        var lamp = metadata.CreateActor("Lamp", metadata.Actors["Lamp"]);
+        var rig = new Rig(GameMode.PropHunt);
+        var hunt = PropHuntOf(rig, []);
+        hunt.DisguiseHealth["Lamp"] = 50;
+        IMatchObjective objective = hunt;
+
+        // Act / Assert: hiding, nobody shoots
+        rig.Session.SetActing(rig.Red1);
+        Assert.That(objective.IsDecoy(lamp), Is.False, "not while the props hide");
+
+        rig.Session.GameState.TimeCount += PropHunt.HideTics;
+        hunt.Tick();
+        Assert.That(objective.IsDecoy(lamp), Is.True);
+
+        rig.Session.SetActing(rig.Blue);
+        Assert.That(objective.IsDecoy(lamp), Is.False, "a prop's shot");
+    }
+
+    [Test]
     public void A_Prop_Who_Dies_Drops_Their_Disguise()
     {
         var rig = new Rig(GameMode.PropHunt);

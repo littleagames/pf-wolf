@@ -13,7 +13,10 @@ PropPlayer:
     "player.startitem":
       PropHands: 1
 
-# A prop's empty hands: nothing to see, and firing does nothing
+# A prop's empty hands: nothing to see, and firing taunts the hunters with a sound from where
+# the prop stands (A_Taunt picks one of its sounds at random), at most once every 2 seconds.
+# Each `prophunt.health` on a decoration class sets the most health a prop has as it (1-100);
+# left out, it goes by the decoration's size: 50, up to 100 for a solid one (radius 32).
 PropHands:
   parent: Weapon
   properties:
@@ -43,5 +46,6 @@ PropHands:
     Fire:
       - sprite: TNT1
         frames: [A]
-        tics-per-frame: 10
+        tics-per-frame: 140
+        action: A_Taunt("guard/sight", "ss/sight", "officer/sight", "dog/sight", "hans/sight", "misc/yeah", "misc/slurpie")
         next-state: Ready

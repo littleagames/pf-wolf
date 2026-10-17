@@ -139,6 +139,11 @@ internal static partial class GameHost
             {
                 using var _ = Session.ActAs(p);
                 playersManager.Respawn();
+            },
+            p =>
+            {
+                using var _ = Session.ActAs(p);
+                statusBarDrawing.DrawHealth();
             });
         deathmatch.MatchObjectives.AddRange(
         [

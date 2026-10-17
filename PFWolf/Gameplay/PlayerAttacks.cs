@@ -11,13 +11,18 @@ namespace PFWolf.Gameplay;
 /// <param name="HurtPlayer">Hurts another player, as the acting player while it does (deathmatch)</param>
 /// <param name="PlayPlayerSound">A sound the acting player makes</param>
 /// <param name="DamageDealt">How much of their weapons' damage the player deals (player.damagedealt)</param>
+/// <param name="IsDecoy">
+/// Whether the match mode makes a decoration something the acting player's shot can hit, to
+/// their own cost (Prop Hunt's hunters: it might have been a prop)
+/// </param>
 internal sealed record PlayerAttackHooks(
     Func<(int x, int y, int sin, int cos)> ViewOrigin,
     Func<int> CenterX,
     Func<int> ShootDelta,
     Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer,
     Action<string> PlayPlayerSound,
-    Func<double> DamageDealt);
+    Func<double> DamageDealt,
+    Func<Entities.Actors.Actor, bool>? IsDecoy = null);
 
 /// <summary>Something a player's shot could hit, and how far in front of them it is (TransX)</summary>
 internal readonly record struct ShotTarget(Entities.Actors.Actor Actor, int Depth);
@@ -73,7 +78,8 @@ internal sealed class PlayerAttacks(
     /// several machines has to come out the same on each): the living enemies -- and, in
     /// deathmatch, the other living players -- within the shot's angle either side of straight
     /// ahead (the renderer's ShootDelta, which comes to the same angle however wide the view),
-    /// with a clear line to them. Nearest first.
+    /// with a clear line to them. Nearest first. In Prop Hunt, a hunter's shot can hit the
+    /// decorations too (IsDecoy), so a prop beside one is covered by it.
     /// </summary>
     internal List<ShotTarget> ShootCandidatesFrom(Entities.Actors.PlayerPawn shooter)
     {
@@ -86,7 +92,7 @@ internal sealed class PlayerAttacks(
                 && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && !factions.IsAlly(shooter, actor);
             bool rival = actor is Entities.Actors.PlayerPawn pawn && pawn.State.Health > 0
                 && session.AreRivals(shooter.State, pawn.State);     // no friendly fire in a team game
-            if (!enemy && !rival)
+            if (!enemy && !rival && hooks.IsDecoy?.Invoke(actor) != true)
                 continue;
 
             // As TransformActorFrom: how far in front (nx) and to the side (ny)
@@ -109,14 +115,22 @@ internal sealed class PlayerAttacks(
         return candidates.OrderBy(c => c.Depth).ToList();
     }
 
-    /// <summary>A player's shot or blow lands on an enemy, or (deathmatch) another player</summary>
+    /// <summary>
+    /// A player's shot or blow lands on an enemy, or (deathmatch) another player; or on a decoy
+    /// (Prop Hunt: a decoration that wasn't a prop), which costs the shooter DecoyShare of it
+    /// </summary>
     internal void HitShotTarget(Entities.Actors.Actor target, uint damage)
     {
         if (target is Entities.Actors.PlayerPawn pawn)
             hooks.HurtPlayer(pawn, (int)damage, session.Player);
         else if (target is Entities.Actors.Monster monster)
             monster.Damage(damage, session.Player);
+        else if (hooks.IsDecoy?.Invoke(target) == true)
+            hooks.HurtPlayer(session.Player, Math.Max(1, (int)damage / DecoyShare), target);
     }
+
+    /// <summary>A shot at a decoy hurts the shooter by this part of its damage (a quarter)</summary>
+    internal const int DecoyShare = 4;
 
     // The weapon in hand's `attacksound`.
     internal void PlayAttackSound()

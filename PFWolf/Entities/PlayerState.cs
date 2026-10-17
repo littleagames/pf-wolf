@@ -113,6 +113,7 @@ internal sealed class PlayerState
     public bool BodyHoldsWeapon;            // Body is drawn with Player's sprites, so the weapon's weapon.bodysprite stands in for them
     public string? Color;                   // the translation (translations.yaml) Body is drawn through; null for the class's own
     public int BodyLastX, BodyLastY;        // where they were last tic, to tell if they're walking
+    public int StillTics;                   // how long they've stood still (a prop's look settles on its tile's middle)
     public int PainTics;                    // tics left showing them hurt
     public bool PainAlt;                    // Pain1 rather than Pain (even health left, as enemies)
 

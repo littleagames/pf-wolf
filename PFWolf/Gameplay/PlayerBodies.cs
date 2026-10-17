@@ -1,3 +1,4 @@
+using PFWolf.Constants;
 using PFWolf.Entities.Actors;
 
 namespace PFWolf.Gameplay;
@@ -32,10 +33,14 @@ internal sealed class PlayerBodies(
     = as is any frame the weapon's sprite doesn't have.
     =
     = A Prop Hunt prop's disguise (PlayerState.Disguise) is drawn instead: the decoration's own
-    = Spawn states, played as on the map whatever the prop does.
+    = Spawn states, played as on the map whatever the prop does. Once the prop has stood still
+    = for SettleTics it's drawn in the middle of its tile, where the map's decorations stand.
     =
     ====================
     */
+
+    /// <summary>How long a disguised prop stands still before it's drawn in its tile's middle (a second)</summary>
+    internal const int SettleTics = 70;
 
     /// <summary>Moves and animates every player's body, each frame</summary>
     internal void TickPlayerBodies(uint tics)
@@ -67,6 +72,7 @@ internal sealed class PlayerBodies(
 
         bool moving = pawn.X != p.BodyLastX || pawn.Y != p.BodyLastY;
         (p.BodyLastX, p.BodyLastY) = (pawn.X, pawn.Y);
+        p.StillTics = moving ? 0 : Math.Min(p.StillTics + (int)tics, SettleTics);
         bool attacking = p.WeaponSprite?.CurrentState is { } weaponState && weaponState.StateName != WeaponInHand.WeaponReadyState;
         p.PainTics = Math.Max(p.PainTics - (int)tics, 0);
 
@@ -81,8 +87,10 @@ internal sealed class PlayerBodies(
         if (!InStateGroup(body, want))
             body.SetState(want);
 
-        body.X = pawn.X;
-        body.Y = pawn.Y;
+        bool settled = p.Disguise != null && p.StillTics >= SettleTics;
+        const int Half = (int)MapConstants.TileGlobal / 2;
+        body.X = settled ? (pawn.TileX << (int)MapConstants.TileShift) + Half : pawn.X;
+        body.Y = settled ? (pawn.TileY << (int)MapConstants.TileShift) + Half : pawn.Y;
         body.TileX = pawn.TileX;
         body.TileY = pawn.TileY;
         body.Angle = pawn.Angle;

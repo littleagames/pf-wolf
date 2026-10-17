@@ -227,12 +227,16 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         }
     }
 
-    // The actors that might give off light: those on the level, and the weapon in hand
+    // The actors that might give off light: those on the level, the players' bodies (a Prop Hunt
+    // prop disguised as a lamp lights up as one) and the weapon in hand
     IEnumerable<Entities.Actors.Actor> LitActors()
     {
         foreach (var actor in map.GetActors())
             if (!actor.IsRemoved && MightLight(actor))
                 yield return actor;
+        foreach (var p in session.Players)
+            if (p.Pawn != null && !p.Gone && p.Body is { } body && MightLight(body))
+                yield return body;
         if (WeaponSprite != null && MightLight(WeaponSprite))
             yield return WeaponSprite;
     }

@@ -62,6 +62,9 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
     /// <summary>The decoration classes on the level a prop can look like, in the order first placed</summary>
     internal readonly List<string> Disguises = [];
 
+    /// <summary>The most health a prop has as each of them (HealthAs)</summary>
+    internal readonly Dictionary<string, int> DisguiseHealth = new(StringComparer.Ordinal);
+
     /// <summary>Whether a player is a prop: on the team that isn't hunting</summary>
     internal bool IsProp(Entities.PlayerState p) => p.Team is 0 or 1 && p.Team != HuntingTeam;
 
@@ -78,13 +81,42 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
     /// <summary>What messages call a decoration class: its words apart ("Floor Lamp" for FloorLamp)</summary>
     internal static string LookName(string className) => Regex.Replace(className, "(?<=[a-z0-9])(?=[A-Z])", " ");
 
+    /// <summary>
+    /// The most health a prop has looking like a decoration, by its size: half for one with no
+    /// radius, up to all of it (100) for a solid one's full tile (radius 32); its class's
+    /// `prophunt.health` says otherwise
+    /// </summary>
+    internal static int HealthAs(Entities.Actors.Actor decoration) =>
+        decoration.Properties.TryGetValue("prophunt.health", out var given) && int.TryParse(given?.ToString(), out var health)
+            ? Math.Clamp(health, 1, 100)
+            : Math.Clamp(50 + decoration.Radius * 50 / 32, 25, 100);
+
+    /// <summary>The most health a player has looking as they do: all of it (100) as themselves</summary>
+    internal int MostHealth(string? disguise) =>
+        disguise != null && DisguiseHealth.TryGetValue(disguise, out var health) ? health : 100;
+
+    /// <summary>A prop takes on a look: their health goes with it, the same share of the most they can have</summary>
+    internal void Disguise(Entities.PlayerState p, string? look)
+    {
+        int from = MostHealth(p.Disguise), to = MostHealth(look);
+        p.Disguise = look;
+        if (p.Health > 0 && from != to)
+        {
+            p.Health = (short)Math.Clamp(p.Health * to / from, 1, to);
+            Hooks.ShowHealth?.Invoke(p);
+        }
+    }
+
     public override void LevelSetup()
     {
         HuntingTeam = 0;
         Round = 1;
         RoundWinner = -1;
         Disguises.Clear();
-        Disguises.AddRange(Map.GetActors().Where(CanDisguiseAs).Select(a => a.Name).Distinct());
+        DisguiseHealth.Clear();
+        foreach (var decoration in Map.GetActors().Where(CanDisguiseAs))
+            if (DisguiseHealth.TryAdd(decoration.Name, HealthAs(decoration)))
+                Disguises.Add(decoration.Name);
         StartPhase(Phase.Hide, HideTics);
     }
 
@@ -150,7 +182,7 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
 
     /// <summary>
     /// Each player's part (a prop's loadout when they become one), and a living prop without a
-    /// look gets one of the level's decorations at random
+    /// look gets one of the level's decorations at random. No prop heals past the most its look allows.
     /// </summary>
     void UpdateParts()
     {
@@ -171,7 +203,13 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
             if (!prop || p.Health <= 0)
                 p.Disguise = null;
             else if (p.Disguise == null && Disguises.Count > 0)
-                p.Disguise = Disguises[((Session.Random.RndT() << 8) | Session.Random.RndT()) % Disguises.Count];
+                Disguise(p, Disguises[((Session.Random.RndT() << 8) | Session.Random.RndT()) % Disguises.Count]);
+
+            if (prop && p.Disguise != null && p.Health > MostHealth(p.Disguise))
+            {
+                p.Health = (short)MostHealth(p.Disguise);
+                Hooks.ShowHealth?.Invoke(p);
+            }
         }
     }
 
@@ -185,6 +223,14 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
 
     /// <summary>The dead stay dead until the next round</summary>
     public bool MayRespawn(Entities.PlayerState p) => false;
+
+    /// <summary>
+    /// A hunter's shot can hit any decoration a prop could look like, during the hunt: a real
+    /// one costs them (PlayerAttacks.HitShotTarget)
+    /// </summary>
+    public bool IsDecoy(Entities.Actors.Actor actor) =>
+        CurrentPhase == Phase.Hunt && Session.PlayerState.Team == HuntingTeam
+        && DisguiseHealth.ContainsKey(actor.Name) && CanDisguiseAs(actor);
 
     /// <summary>The hunters wait, still and seeing nothing, while the props hide</summary>
     public bool IsWaiting(Entities.PlayerState p) => CurrentPhase == Phase.Hide && p.Team == HuntingTeam;
@@ -203,7 +249,7 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
         input.SetHeld(ButtonType.Use, true);
         if (!string.Equals(p.Disguise, decoration.Name, StringComparison.Ordinal))
         {
-            p.Disguise = decoration.Name;
+            Disguise(p, decoration.Name);
             if (Session.ActingIsLocal)
                 Hud.Show(HudMessageKind.Other, $"Disguised as {LookName(decoration.Name)}");
         }
@@ -258,8 +304,9 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
 
     public string? Details() =>
         $"round {Round} ({CurrentPhase}, {Math.Max(0, PhaseEnds - Session.GameState.TimeCount) / 70}s left); {GameModes.TeamLabel(HuntingTeam)} hunts; props: "
-        + string.Join(", ", Session.Players.Where(IsProp).Select(p => $"{NameOf(p)} as {p.Disguise ?? "themselves"} holding {p.Weapon ?? "nothing"}"))
-        + $"; {Disguises.Count} looks: {string.Join(", ", Disguises)}";
+        + string.Join(", ", Session.Players.Where(IsProp).Select(p =>
+            $"{NameOf(p)} as {p.Disguise ?? "themselves"} holding {p.Weapon ?? "nothing"}, health {p.Health}/{MostHealth(p.Disguise)}"))
+        + $"; {Disguises.Count} looks: {string.Join(", ", Disguises.Select(d => $"{d} ({MostHealth(d)})"))}";
 
     public override void Write(BinaryWriter bw)
     {
@@ -270,7 +317,10 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
         bw.Write(RoundWinner);
         bw.Write(Disguises.Count);
         foreach (var look in Disguises)
+        {
             bw.Write(look);
+            bw.Write(MostHealth(look));
+        }
     }
 
     public override void Read(BinaryReader br)
@@ -281,7 +331,12 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
         PhaseEnds = br.ReadInt32();
         RoundWinner = br.ReadInt32();
         Disguises.Clear();
+        DisguiseHealth.Clear();
         for (int i = br.ReadInt32(); i > 0; i--)
-            Disguises.Add(br.ReadString());
+        {
+            var look = br.ReadString();
+            Disguises.Add(look);
+            DisguiseHealth[look] = br.ReadInt32();
+        }
     }
 }

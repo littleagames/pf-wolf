@@ -99,6 +99,13 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_DeathScream", DeathScream);
         ActorActionRegistry.Register("A_ActiveSound", ActiveSound);
         ActorActionRegistry.Register("A_PlaySound", PlaySound);
+        // A_Taunt("a", "b", ...): one of the sounds at random, as the acting player's (heard from
+        // where they stand by everyone else: a Prop Hunt prop's fire, actordefs prophunt.yaml)
+        ActorActionRegistry.Register("A_Taunt", (Entities.Actors.Actor _, string[] sounds) =>
+        {
+            if (sounds.Length > 0)
+                PlayPlayerSound(sounds[Session.Random.RndT() % sounds.Length]);
+        });
         ActorActionRegistry.Register("A_Victory", Victory);
         ActorActionRegistry.Register("A_StartDeathCam", StartDeathCam);
         ActorActionRegistry.Register("A_Quake", Quake);       // the view shakes (A_Quake, in GameHost.Rendering.cs)
@@ -304,7 +311,7 @@ internal static partial class GameHost
     static PlayerAttacks MakePlayerAttacks() =>
         new(MapManager, InventoryManager, FactionManager, lineOfSight, Session,
             new PlayerAttackHooks(PlayerViewOrigin, () => CenterX, () => ShootDelta, TakeDamage, PlayPlayerSound,
-                () => DamageDealt));
+                () => DamageDealt, actor => deathmatch.Objective?.IsDecoy(actor) == true));
 
     static WeaponInHand MakeWeaponInHand() =>
         new(InventoryManager, MapManager, Session, playerWeapons, playerAttacks, RegisterMissileActions);
