@@ -56,7 +56,7 @@ public class PickupsTests
 
         public Rig()
         {
-            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session);
+            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session, null);
             // Acting as a second player: no pickup flash or message, which only the local player has
             Session.Players.Add(new Entities.PlayerState());
             Session.ActingChanged = p => Inventory.SetHolder(p.Items);

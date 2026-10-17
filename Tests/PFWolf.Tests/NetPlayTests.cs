@@ -23,7 +23,7 @@ public class NetPlayTests
     [SetUp]
     public void MakeLevel()
     {
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
             TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
             ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],

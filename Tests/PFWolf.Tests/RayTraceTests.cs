@@ -15,7 +15,7 @@ public class RayTraceTests
     [SetUp]
     public void Make()
     {
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
             Spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
             Seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],

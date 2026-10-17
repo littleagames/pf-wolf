@@ -9,7 +9,7 @@ public class LevelLoopTests
         // CreatePlayer gives each pawn its side from the map's FactionManager
         var factions = new FactionManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<InventoryManager>(() => new InventoryManager(ActorDefs.Metadata("Player: {}"))));
         var session = new GameSession();      // it starts with its first player
-        var map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<FactionManager>(() => factions), session);
+        var map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<FactionManager>(() => factions), session, null);
         var guard = new Entities.Actors.Monster { Name = "Guard" };
         map.GetActors().AddLast(guard);
         session.Players.Add(new Entities.PlayerState { Number = 2, Gone = true });

@@ -12,7 +12,7 @@ public class FactionCommandsTests
         _session = new GameSession();
         _session.Players.Add(new Entities.PlayerState { Number = 1, Color = "Red" });
         var assets = new AssetManager();
-        var map = new MapManager(new Lazy<AssetManager>(() => assets), null!, _session);
+        var map = new MapManager(new Lazy<AssetManager>(() => assets), null!, _session, null);
         var inventory = new InventoryManager(ActorDefs.Metadata("Player: {}"));
         new FactionCommands(_console, assets, map, new FactionManager(new Lazy<AssetManager>(() => assets), new Lazy<InventoryManager>(() => inventory)),
             new TranslationManager(new Lazy<AssetManager>(() => assets), null!), null!, _session).Register();

@@ -31,6 +31,9 @@ internal static partial class GameHost
     // Who's playing, the acting player, tics, GameState and the camera (Gameplay/GameSession.cs)
     internal static readonly GameSession Session = new();
 
+    // What the actors use of the game (Entities/Actors/ActorWorld.cs), built last in InitServices
+    static Entities.Actors.ActorWorld actorWorld = null!;
+
     /*
     =============================================================================
 
@@ -142,7 +145,7 @@ internal static partial class GameHost
     /// <summary>Builds the managers (Startup/GameServices.cs) and hooks them up</summary>
     private static void InitServices()
     {
-        var serviceProvider = GameServices.Build(Session, Settings);
+        var serviceProvider = GameServices.Build(Session, Settings, () => actorWorld);
 
         GameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
         _videoManager = serviceProvider.GetRequiredService<VideoManager>();
@@ -314,8 +317,8 @@ internal static partial class GameHost
                 (skill, episode, map) => NewGame(skill, episode, map)));
 
         // What the actors use of the game (Entities/Actors/ActorWorld.cs); the map hands it to each
-        // as it joins the level. Given to the map here, as the world needs the map
-        MapManager.World = new Entities.Actors.ActorWorld(GameEngineManager, AssetManager, AudioManager, InventoryManager,
+        // as it joins the level, taking it (lazily, through the services) once actors are made
+        actorWorld = new Entities.Actors.ActorWorld(GameEngineManager, AssetManager, AudioManager, InventoryManager,
             HudMessageManager, MapManager, FactionManager, lineOfSight, doors, positionalSounds, actorSounds, hudMessageDrawing,
             playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, LevelAI, Stealth, Objectives, Session);
 

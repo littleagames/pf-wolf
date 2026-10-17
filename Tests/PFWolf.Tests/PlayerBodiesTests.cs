@@ -46,7 +46,7 @@ public class PlayerBodiesTests
     public void Make()
     {
         _session = new GameSession { Tics = 1 };
-        _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
+        _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session, null)
         {
             TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
             ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],

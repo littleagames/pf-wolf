@@ -31,7 +31,7 @@ public class DeathmatchTests
 
         public Rig()
         {
-            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session);
+            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session, null);
             // Two players, acting as the second: the status bar is only the local player's
             Session.Players.Add(new Entities.PlayerState { Number = 1 });
             foreach (var p in Session.Players)

@@ -12,7 +12,7 @@ public class LevelEditCommandsTests
     {
         _console = new ConsoleManager { LevelLoaded = () => true, CheatsEnabled = () => true };
         _render = new RenderState(new Assets.TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession());
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null);
         _commands = new LevelEditCommands(_console, null!, _map, null!, null!, null!, null!, _render, null!, new GameSession());
         _commands.Register();
     }

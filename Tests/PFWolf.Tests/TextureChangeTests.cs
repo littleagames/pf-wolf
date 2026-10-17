@@ -9,7 +9,7 @@ namespace PFWolf.Tests;
 /// </summary>
 public class TextureChangeTests
 {
-    private static MapManager NewMapManager() => new(new Lazy<AssetManager>(() => new AssetManager()), null!, new GameSession());
+    private static MapManager NewMapManager() => new(new Lazy<AssetManager>(() => new AssetManager()), null!, new GameSession(), null);
 
     private static TextureAsset Texture(byte pixel) => new() { RawData = Enumerable.Repeat(pixel, 64 * 64).ToArray() };
 

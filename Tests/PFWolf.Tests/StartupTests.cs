@@ -227,6 +227,24 @@ public class GameServicesTests
         Assert.That(provider.GetRequiredService<GameSession>(), Is.SameAs(session));
         Assert.That(map.Player, Is.SameAs(session.LocalPlayer.Pawn));
     }
+
+    [Test]
+    public void The_Map_Takes_The_Actor_World_Only_Once_It_Needs_It()
+    {
+        // Arrange: the world isn't built yet when the map is (it needs the map)
+        Entities.Actors.ActorWorld? world = null;
+        var session = new GameSession();
+        using var provider = GameServices.Register(new ServiceCollection(), session, new Configuration.GameSettings(), () => world!)
+            .BuildServiceProvider();
+        var map = provider.GetRequiredService<MapManager>();
+
+        // Act: built afterwards, as GameHost does at the end of InitServices
+        world = new Entities.Actors.ActorWorld(null!, null!, null!, null!, null!, map, null!, null!, null!, null!, null!, null!,
+            null!, null!, null!, null!, null!, null!, null!, null, null, session);
+
+        // Assert
+        Assert.That(map.World, Is.SameAs(world));
+    }
 }
 
 public class GameInfoSettingsTests

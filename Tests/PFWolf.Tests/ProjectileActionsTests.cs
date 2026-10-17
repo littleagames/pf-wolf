@@ -50,7 +50,7 @@ public class ProjectileActionsTests
         // Arrange: a level with no players in it, the mine mid-tile
         const int Tile = 1 << MapConstants.TileShift;
         var session = new GameSession();
-        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, session)
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, session, null)
         {
             TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
             ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],

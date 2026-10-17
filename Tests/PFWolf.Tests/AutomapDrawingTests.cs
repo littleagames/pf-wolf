@@ -12,7 +12,7 @@ public class AutomapDrawingTests
     public void MakeLevel()
     {
         _session = new GameSession();
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null)
         {
             TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
             ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
@@ -111,7 +111,7 @@ public class RadarTests
     public void A_Seen_Tile_Shows_As_Floor_Or_Wall()
     {
         // Arrange
-        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
             TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
             ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
@@ -139,7 +139,7 @@ public class RadarTests
     public void A_Locked_Door_Shows_As_Locked_Open_Or_Shut_Until_A_Key_Unlocks_It()
     {
         // Arrange: a gold-key door, closed
-        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
             TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
             ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],

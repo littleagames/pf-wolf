@@ -104,12 +104,18 @@ internal class MapManager
     private int _difficulty;
     private string? _enemyHealthKey;
 
-    public MapManager(Lazy<AssetManager> assetManager, Lazy<FactionManager> factionManager, GameSession session)
+    public MapManager(Lazy<AssetManager> assetManager, Lazy<FactionManager> factionManager, GameSession session,
+        Lazy<Entities.Actors.ActorWorld>? actorWorld)
     {
         this.assetManager = assetManager;
         this.factionManager = factionManager;
         this.session = session;
+        this.actorWorld = actorWorld;
     }
+
+    // What the actors use of the game, taken when the first actor is made: it's built after the
+    // map (it needs the map). Null in tests that make maps with no world
+    private readonly Lazy<Entities.Actors.ActorWorld>? actorWorld;
 
     internal ushort MapWidth, MapHeight;
     internal ushort[,] TileMap;
@@ -1323,8 +1329,8 @@ internal class MapManager
             ? Joining(RuntimeActorMetadata.CreateActor(className, actor))
             : null;
 
-    // What the actors use of the game; GameHost gives it once it's built (ActorWorld needs this map)
-    internal Entities.Actors.ActorWorld World { get; set; } = null!;
+    // What the actors use of the game (see actorWorld)
+    internal Entities.Actors.ActorWorld World => actorWorld?.Value!;
 
     // An actor made for this level: it uses the game through the world
     private Entities.Actors.Actor Joining(Entities.Actors.Actor actor)

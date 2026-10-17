@@ -103,7 +103,7 @@ public class MatchScoringTests
 
         public Rig(GameMode mode)
         {
-            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session);
+            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session, null);
             Session.Players[0].Team = 0;
             Session.Players.Add(new Entities.PlayerState { Number = 1, Team = 0 });
             Session.Players.Add(new Entities.PlayerState { Number = 2, Team = 1 });

@@ -7,11 +7,19 @@ namespace PFWolf.Startup;
 /// <summary>The managers the game is built from, one of each</summary>
 internal static class GameServices
 {
-    internal static IServiceCollection Register(IServiceCollection services, GameSession session, GameSettings settings)
+    /// <param name="actorWorld">
+    /// What the actors use of the game (Entities/Actors/ActorWorld.cs), which GameHost builds from
+    /// the managers here and its own classes once they exist: the map takes it lazily, as it needs it
+    /// only when actors are made (on a level), well after that
+    /// </param>
+    internal static IServiceCollection Register(IServiceCollection services, GameSession session, GameSettings settings,
+        Func<Entities.Actors.ActorWorld>? actorWorld = null)
     {
         services.AddTransient(typeof(Lazy<>), typeof(Lazier<>));
         services.AddSingleton(session);
         services.AddSingleton(settings);
+        services.AddSingleton(_ => actorWorld?.Invoke()
+            ?? throw new InvalidOperationException("The actor world is asked for before the game has built it"));
         services.AddSingleton<GameEngineManager>();
         services.AddSingleton<VideoManager>();
         services.AddSingleton<AudioManager>();
@@ -29,5 +37,6 @@ internal static class GameServices
         return services;
     }
 
-    internal static ServiceProvider Build(GameSession session, GameSettings settings) => Register(new ServiceCollection(), session, settings).BuildServiceProvider();
+    internal static ServiceProvider Build(GameSession session, GameSettings settings, Func<Entities.Actors.ActorWorld> actorWorld) =>
+        Register(new ServiceCollection(), session, settings, actorWorld).BuildServiceProvider();
 }

@@ -9,7 +9,7 @@ public class LevelAITests
     public void Make()
     {
         _session = new GameSession();
-        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session);
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null);
         _ai = new LevelAI(map, null!, null!, _session);
     }
 
