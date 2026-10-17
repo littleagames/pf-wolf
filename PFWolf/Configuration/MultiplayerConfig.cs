@@ -2,7 +2,8 @@ namespace PFWolf.Configuration;
 
 /// <summary>
 /// multiplayer.cfg in the game's config folder: what playing with others remembers, as
-/// `key value` lines -- the player's name, and the address last joined (so it's offered again).
+/// `key value` lines -- the player's name, the address last joined (so it's offered again), and
+/// the like.
 /// Blank lines and lines starting with # are skipped; unknown keys are kept as they are.
 /// </summary>
 internal sealed class MultiplayerConfig
@@ -20,6 +21,9 @@ internal sealed class MultiplayerConfig
 
     /// <summary>The color others see you in (a game-info player-colors translation); empty for your class's own</summary>
     public string Color { get; set; } = "";
+
+    /// <summary>Whether internet addresses are hidden on screen and in the console, for streaming or recording</summary>
+    public bool StreamerMode { get; set; }
 
     private readonly List<string> _otherLines = [];
 
@@ -46,6 +50,7 @@ internal sealed class MultiplayerConfig
                     case "last-address": config.LastAddress = value; break;
                     case "open-port": config.OpenPort = value is not ("false" or "0" or "off"); break;
                     case "color": config.Color = value; break;
+                    case "streamer-mode": config.StreamerMode = value is "true" or "1" or "on"; break;
                     default: config._otherLines.Add(line); break;
                 }
             }
@@ -64,11 +69,13 @@ internal sealed class MultiplayerConfig
         {
             File.WriteAllLines(path,
             [
-                "# Playing with others: your name, the address you last joined, whether hosting opens the router's port, and your color",
+                "# Playing with others: your name, the address you last joined, whether hosting opens the router's port, your color,",
+                "# and whether internet addresses are hidden (streamer mode)",
                 $"name {Name}",
                 $"last-address {LastAddress}",
                 $"open-port {(OpenPort ? "true" : "false")}",
                 $"color {Color}",
+                $"streamer-mode {(StreamerMode ? "true" : "false")}",
                 .. _otherLines,
             ]);
             return true;

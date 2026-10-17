@@ -46,6 +46,44 @@ public class NetAddressesTests
         Assert.That(NetAddresses.IsLinkLocal(IPAddress.Parse(address)), Is.EqualTo(linkLocal));
     }
 
+    [TestCase("10.1.2.3", true)]
+    [TestCase("172.16.0.1", true)]
+    [TestCase("172.32.0.1", false)]
+    [TestCase("192.168.1.53", true)]
+    [TestCase("100.101.102.103", true)]     // carrier-grade NAT / Tailscale
+    [TestCase("127.0.0.1", true)]
+    [TestCase("71.94.110.234", false)]
+    [TestCase("fd00::1", true)]
+    [TestCase("2001:db8::1", false)]
+    public void Private_Addresses_Are_Spotted(string address, bool isPrivate)
+    {
+        Assert.That(NetAddresses.IsPrivate(IPAddress.Parse(address)), Is.EqualTo(isPrivate));
+    }
+
+    [Test]
+    public void Streamer_Mode_Hides_Internet_Addresses_But_Not_Lan_Ones()
+    {
+        // Act
+        var text = NetAddresses.Hide("LAN 192.168.1.53, net 71.94.110.234:10700 (UPnP ok). Was 8.8.8.8.", hide: true);
+
+        // Assert
+        Assert.That(text, Is.EqualTo("LAN 192.168.1.53, net (hidden):10700 (UPnP ok). Was (hidden)."));
+    }
+
+    [Test]
+    public void Streamer_Mode_Hides_A_Typed_Host_Name()
+    {
+        Assert.That(NetAddresses.Hide("Couldn't find the address \"frag.example.net\".", hide: true, typedHost: "frag.example.net"),
+            Is.EqualTo("Couldn't find the address \"(hidden)\"."));
+        Assert.That(NetAddresses.Hide("Connecting to 10.0.0.5", hide: true, typedHost: "10.0.0.5"), Is.EqualTo("Connecting to 10.0.0.5"));
+    }
+
+    [Test]
+    public void Without_Streamer_Mode_Nothing_Is_Hidden()
+    {
+        Assert.That(NetAddresses.Hide("net 71.94.110.234", hide: false, typedHost: "71.94.110.234"), Is.EqualTo("net 71.94.110.234"));
+    }
+
     [Test]
     public void An_Open_Port_Says_Where_To_Join()
     {

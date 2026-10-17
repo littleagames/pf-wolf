@@ -41,6 +41,8 @@ $STR_MP_NAME: "Your Name"
 $STR_MP_PORTCHECK: "Check Internet Port"
 # Whether hosting asks the router to open the port (UPnP)
 $STR_MP_OPENPORT: "Open Port"
+# Hides internet addresses (yours, and ones typed in), for streaming
+$STR_MP_STREAMER: "Streamer Mode"
 # {PORT} is replaced with the port being checked
 $STR_MP_CHECKING: "Checking whether the\ninternet can reach\nport {PORT}...\n\n(Esc to stop)"
 $STR_MP_LOBBY: "Multiplayer Game"
@@ -63,6 +65,11 @@ $STR_MP_READY: "Ready"
 $STR_MP_START: "Start Game"
 $STR_MP_CHAT: "Say..."
 $STR_MP_LEAVE: "Leave"
+# The host copies where others join to the clipboard (the internet address once known, else the LAN one)
+$STR_MP_COPYADDRESS: "Copy Address"
+# {ADDRESS} is replaced with what was copied (hidden in streamer mode)
+$STR_MP_COPIED: "Copied {ADDRESS}\nto the clipboard."
+$STR_MP_COPYFAILED: "Couldn't copy to\nthe clipboard."
 $STR_MP_LOOKING: "Looking for games..."
 $STR_MP_ADDRESS: "Type an address..."
 $STR_MP_ENTERNAME: "Your name:"

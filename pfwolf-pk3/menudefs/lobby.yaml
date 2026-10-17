@@ -4,7 +4,7 @@ position:
   x: 24
   y: 22
 indent: 40
-row-height: 12
+row-height: 11
 components:
   -
     id: "background"
@@ -25,22 +25,22 @@ components:
       - horizontal-orientation: "center"
       - y: 4
       - color: "READHCOLOR"
-  # The game's settings and what you can do: 9 rows, 12 each plus 6
+  # The game's settings and what you can do: 10 rows, 11 each plus 6
   -
     type: "Window"
     params:
       - x: 16
       - y: 18
       - width: 288
-      - height: 114
-  # Who's in, and what they've said: 5 rows of 9 plus 6 (drawn by code: Ui/MultiplayerMenu.cs LobbyPanelY)
+      - height: 116
+  # Who's in, and what they've said: 5 rows of 9 plus 4 (drawn by code: Ui/MultiplayerMenu.cs LobbyPanelY)
   -
     type: "Window"
     params:
       - x: 16
-      - y: 133
+      - y: 135
       - width: 288
-      - height: 51
+      - height: 49
 # Handled by Ui/MultiplayerMenu.cs, by id. Only the host changes the mode, episode and
 # skill; everyone picks their own class and color. The host starts the game ("go") once everyone else
 # is ready; for them, "go" is that they're ready. The values are drawn by code. In any mode but
@@ -89,6 +89,12 @@ menu-items:
       type: "MenuSwitcher"
       text: "$STR_MP_CHAT"
       short-key: T
+      enabled: true
+  # The host copies where others join to the clipboard (greyed for the others)
+  -
+      id: "copy"
+      type: "MenuSwitcher"
+      text: "$STR_MP_COPYADDRESS"
       enabled: true
   -
       id: "leave"

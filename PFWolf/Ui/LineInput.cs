@@ -15,9 +15,10 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
     internal const int MaxString = 128;
     /// <summary>
     /// Lets a line of text be typed in at (x, y), in <paramref name="style"/>; its background
-    /// color is what erases the old text and blinks the cursor
+    /// color is what erases the old text and blinks the cursor. <paramref name="masked"/> shows
+    /// a * for each character typed, as for a password (streamer mode's addresses).
     /// </summary>
-    internal bool Run(int x, int y, ref string buf, string def, bool escok, int maxchars, int maxwidth, TextStyle style)
+    internal bool Run(int x, int y, ref string buf, string def, bool escok, int maxchars, int maxwidth, TextStyle style, bool masked = false)
     {
         bool redraw,
                     cursorvis, cursormoved,
@@ -29,6 +30,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
         uint curtime, lasttime, lastdirtime, lastbuttontime, lastdirmovetime;
         ControlInfo ci;
         Direction lastdir = Direction.None;
+        string Shown(string text) => masked ? new string('*', text.Length) : text;
 
         if (!string.IsNullOrEmpty(def))
             s = def;
@@ -51,7 +53,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
             readAnyControl(out ci);
 
             if (cursorvis)
-                ui.XORICursor(x, y, s, cursor, style);
+                ui.XORICursor(x, y, Shown(s), cursor, style);
 
             sc = input.GetLastKeyPressed();
             input.ClearLastKey();
@@ -88,7 +90,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
 
                         if (s.Length == cursor)
                         {
-                            ui.MeasureText(s, style.Font, out w, out h);
+                            ui.MeasureText(Shown(s), style.Font, out w, out h);
                             if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                 break;
 
@@ -105,7 +107,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         {
                             if (string.IsNullOrEmpty(s) || s[cursor] == 0)
                             {
-                                ui.MeasureText(s, style.Font, out w, out h);
+                                ui.MeasureText(Shown(s), style.Font, out w, out h);
                                 if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                     break;
                                 s += ' ';
@@ -122,7 +124,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         {
                             if (string.IsNullOrEmpty(s) || s[cursor] == 0)
                             {
-                                ui.MeasureText(s, style.Font, out w, out h);
+                                ui.MeasureText(Shown(s), style.Font, out w, out h);
                                 if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                     break;
                                 s += ' ';
@@ -251,7 +253,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                 {
                     char txt = textinput[t];
                     //len = (int)strlen(s);
-                    ui.MeasureText(s, style.Font, out w, out h);
+                    ui.MeasureText(Shown(s), style.Font, out w, out h);
 
                     if (!char.IsControl(txt) && (s.Length < MaxString - 1) && ((maxchars == 0) || (s.Length < maxchars))
                         && ((maxwidth == 0) || (w < maxwidth)))
@@ -271,9 +273,9 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
 
             if (redraw)
             {
-                graphics.DrawText(x, y, olds, style.Inverted);
+                graphics.DrawText(x, y, Shown(olds), style.Inverted);
                 olds = s;
-                graphics.DrawText(x, y, s, style);
+                graphics.DrawText(x, y, Shown(s), style);
 
                 redraw = false;
             }
@@ -293,15 +295,15 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
             }
             else GameEngineManager.DelayMs(5);
             if (cursorvis)
-                ui.XORICursor(x, y, s, cursor, style);
+                ui.XORICursor(x, y, Shown(s), cursor, style);
 
             video.Update();
         }
 
         if (cursorvis)
-            ui.XORICursor(x, y, s, cursor, style);
+            ui.XORICursor(x, y, Shown(s), cursor, style);
         if (!result)
-            graphics.DrawText(x, y, olds, style);
+            graphics.DrawText(x, y, Shown(olds), style);
         video.Update();
 
         input.ClearKeysDown();

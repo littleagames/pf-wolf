@@ -572,7 +572,7 @@ internal sealed class NetSession : IDisposable
         {
             DisconnectReason.ConnectionRejected => NetRefusal.Read(info.AdditionalData) ?? "The host turned you away.",
             DisconnectReason.ConnectionFailed =>
-                $"No answer from {peer.Address}:{peer.Port}.Is the host's firewall letting PFWolf in? "
+                $"No answer from {peer.Address}:{peer.Port}. Is the host's firewall letting PFWolf in? "
                 + "On the same network, use the host's LAN address; its internet one needs port forwarding.",
             DisconnectReason.Timeout => "Lost the connection to the host.",
             DisconnectReason.RemoteConnectionClose => "The host left the game.",

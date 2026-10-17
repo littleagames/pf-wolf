@@ -78,6 +78,47 @@ internal static class NetAddresses
         return bytes[0] == 169 && bytes[1] == 254;
     }
 
+    /// <summary>What streamer mode shows in place of an internet address</summary>
+    internal const string Hidden = "(hidden)";
+
+    /// <summary>
+    /// An address only reachable from the local or a virtual network, so harmless to show:
+    /// loopback, 10.x, 172.16-31.x, 192.168.x, link-local, and 100.64-127.x (carrier-grade NAT,
+    /// and Tailscale); IPv6 loopback, link-local and unique-local ones too
+    /// </summary>
+    internal static bool IsPrivate(IPAddress address)
+    {
+        if (IPAddress.IsLoopback(address))
+            return true;
+        if (address.IsIPv4MappedToIPv6)
+            address = address.MapToIPv4();
+        if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            return address.IsIPv6LinkLocal || address.IsIPv6UniqueLocal || address.IsIPv6SiteLocal;
+        var b = address.GetAddressBytes();
+        return b[0] == 10
+            || (b[0] == 172 && b[1] is >= 16 and <= 31)
+            || (b[0] == 192 && b[1] == 168)
+            || IsLinkLocal(address)
+            || (b[0] == 100 && b[1] is >= 64 and <= 127);
+    }
+
+    static readonly System.Text.RegularExpressions.Regex IPv4Pattern =
+        new(@"(?<![\d.])\d{1,3}(?:\.\d{1,3}){3}(?![\d.]*\d)", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>
+    /// Streamer mode: <paramref name="text"/> with every internet (IPv4) address in it replaced by
+    /// <see cref="Hidden"/>, and <paramref name="typedHost"/> too (a host name or address typed in
+    /// to join), unless it's a private one. Unchanged when <paramref name="hide"/> is off.
+    /// </summary>
+    internal static string Hide(string text, bool hide, string? typedHost = null)
+    {
+        if (!hide || string.IsNullOrEmpty(text))
+            return text;
+        if (!string.IsNullOrEmpty(typedHost) && !(IPAddress.TryParse(typedHost, out var typed) && IsPrivate(typed)))
+            text = text.Replace(typedHost, Hidden, StringComparison.OrdinalIgnoreCase);
+        return IPv4Pattern.Replace(text, m => IPAddress.TryParse(m.Value, out var a) && IsPrivate(a) ? m.Value : Hidden);
+    }
+
     /// <summary>
     /// Asks a public "what is my IP" service for the address the internet sees this machine
     /// (its router) at. Players outside the local network join there, once the router forwards

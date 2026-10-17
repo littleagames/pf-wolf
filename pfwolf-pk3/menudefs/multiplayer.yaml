@@ -31,8 +31,8 @@ components:
       - x: 16
       - y: 67
       - width: 288
-      - height: 71
-# Handled by Ui/MultiplayerMenu.cs, by id; the values (your name, open port) are drawn by code
+      - height: 84
+# Handled by Ui/MultiplayerMenu.cs, by id; the values (your name, open port, streamer mode) are drawn by code
 # in the small font, as the lobby's are
 menu-items:
   -
@@ -65,4 +65,11 @@ menu-items:
       type: "MenuSwitcher"
       text: "$STR_MP_PORTCHECK"
       short-key: C
+      enabled: true
+  # Hides internet addresses on screen and in the console, for streaming; drawn by code
+  -
+      id: "streamer"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_STREAMER"
+      short-key: S
       enabled: true

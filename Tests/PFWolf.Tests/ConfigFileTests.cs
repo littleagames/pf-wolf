@@ -84,6 +84,7 @@ public class ConfigFileTests
         Assert.That(config.Name, Is.EqualTo(Environment.UserName));
         Assert.That(config.LastAddress, Is.Empty);
         Assert.That(config.OpenPort, Is.True);
+        Assert.That(config.StreamerMode, Is.False);
     }
 
     [Test]
@@ -91,14 +92,14 @@ public class ConfigFileTests
     {
         // Arrange
         var path = PathOf(MultiplayerConfig.FileName);
-        var config = new MultiplayerConfig { Name = "Some Player", LastAddress = "192.168.1.5:10700", OpenPort = false };
+        var config = new MultiplayerConfig { Name = "Some Player", LastAddress = "192.168.1.5:10700", OpenPort = false, StreamerMode = true };
 
         // Act
         config.Write(path);
         var read = MultiplayerConfig.Read(path);
 
         // Assert
-        Assert.That((read.Name, read.LastAddress, read.OpenPort), Is.EqualTo(("Some Player", "192.168.1.5:10700", false)));
+        Assert.That((read.Name, read.LastAddress, read.OpenPort, read.StreamerMode), Is.EqualTo(("Some Player", "192.168.1.5:10700", false, true)));
     }
 
     [Test]

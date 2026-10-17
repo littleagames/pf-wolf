@@ -1,4 +1,5 @@
 using System.Net;
+using SDL2;
 using PFWolf.Configuration;
 using PFWolf.Extensions;
 using PFWolf.Fonts;
@@ -80,6 +81,10 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                     MpConfig.OpenPort = !MpConfig.OpenPort;
                     MpConfig.Write(MpConfigPath);
                     break;
+                case "streamer":
+                    MpConfig.StreamerMode = !MpConfig.StreamerMode;
+                    MpConfig.Write(MpConfigPath);
+                    break;
             }
 
             if (hooks.Started())
@@ -101,12 +106,13 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         defs.DrawMenuComponents("multiplayer");
         draw.DrawMenu(MultiplayerItems, Items);
         // The values line up just past the longer of their rows' names
-        int column = Items.Where(item => item.Id is "name" or "openport")
+        int column = Items.Where(item => item.Id is "name" or "openport" or "streamer")
             .Select(item => ui.TextWidth(item.Text, MultiplayerItems.Font ?? UiFonts.MenuFont) + 8)
             .DefaultIfEmpty(88).Max();
+        var language = assets.GetText("en-us");
         DrawRowValue(MultiplayerItems, Items, "name", MpConfig.Name, column);
-        DrawRowValue(MultiplayerItems, Items, "openport",
-            (MpConfig.OpenPort ? "$STR_MP_ON" : "$STR_MP_OFF").ToLanguageText(assets.GetText("en-us")), column);
+        DrawRowValue(MultiplayerItems, Items, "openport", (MpConfig.OpenPort ? "$STR_MP_ON" : "$STR_MP_OFF").ToLanguageText(language), column);
+        DrawRowValue(MultiplayerItems, Items, "streamer", (MpConfig.StreamerMode ? "$STR_MP_ON" : "$STR_MP_OFF").ToLanguageText(language), column);
         draw.DrawMenuGun(MultiplayerItems);
         video.Update();
     }
@@ -166,12 +172,17 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         console.Print($"Checking UDP port {port} from the internet...");
         var (result, mapping) = CheckPortAsync(port, CancellationToken.None).GetAwaiter().GetResult();
         if (mapping != null)
-            console.Print(NetAddresses.DescribePortMapping(mapping, NetAddresses.LocalAddress()));
-        console.Print(NetAddresses.DescribePortCheck(result, mapping, port, NetAddresses.LocalAddress()));
+            console.Print(Shown(NetAddresses.DescribePortMapping(mapping, NetAddresses.LocalAddress())));
+        console.Print(Shown(NetAddresses.DescribePortCheck(result, mapping, port, NetAddresses.LocalAddress())));
         if (result.Server != null)
             console.Print($"  (checked with {result.Server}; the router sent us out on port {result.MappedPort})");
     }
 
+    // The host name or address last typed in to join, for streamer mode to hide wherever it's shown
+    string? typedHost;
+
+    /// <summary>Text as it goes on screen or into the console: internet addresses hidden in streamer mode</summary>
+    internal string Shown(string text) => NetAddresses.Hide(text, MpConfig.StreamerMode, typedHost);
 
 
     void EditName()
@@ -186,9 +197,9 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
 
     /// <summary>
     /// Asks for a line of text in a box over the screen: what was typed, or null if Esc was
-    /// pressed (or nothing was typed)
+    /// pressed (or nothing was typed); <paramref name="masked"/> shows * for what's typed
     /// </summary>
-    string? AskLine(string prompt, string start, int maxChars)
+    string? AskLine(string prompt, string start, int maxChars, bool masked = false)
     {
         const int X = 32, Y = 80, W = 256, H = 40;
         draw.DrawWindow(X, Y, W, H, "BKGDCOLOR");
@@ -198,7 +209,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         video.Update();
 
         string typed = start;
-        bool ok = lineInput.Run(X + 8, Y + 22, ref typed, start, true, maxChars, W - 20, new TextStyle(UiFonts.SmallFont, "HIGHLIGHT", "BKGDCOLOR"));
+        bool ok = lineInput.Run(X + 8, Y + 22, ref typed, start, true, maxChars, W - 20, new TextStyle(UiFonts.SmallFont, "HIGHLIGHT", "BKGDCOLOR"), masked);
         input.ClearKeysDown();
         menuInput.WaitKeyUp();
         return ok && typed.Trim().Length > 0 ? typed.Trim() : null;
@@ -238,7 +249,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             hostRouter = new PortMapper.Result(PortMapper.Outcome.NoRouter, session.Port, "off in the Multiplayer menu");
         console.Print($"LAN: others join at {hostLan}");
         if (hostRouter != null)
-            console.Print(NetAddresses.DescribePortMapping(hostRouter, NetAddresses.LocalAddress()));
+            console.Print(Shown(NetAddresses.DescribePortMapping(hostRouter, NetAddresses.LocalAddress())));
         UpdateHostNote(session);
         Lobby(session);
     }
@@ -330,7 +341,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                 else
                 {
                     var language = assets.GetText("en-us");
-                    var typed = AskLine("$STR_MP_ENTERADDRESS".ToLanguageText(language), MpConfig.LastAddress, 40);
+                    var typed = AskLine("$STR_MP_ENTERADDRESS".ToLanguageText(language), MpConfig.LastAddress, 40, masked: MpConfig.StreamerMode);
                     if (typed != null && NetAddresses.ParseAddress(typed) is { } at)
                     {
                         MpConfig.LastAddress = typed;
@@ -370,8 +381,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
 
         console.Print(browser.Games.Count == 0 ? "No games found" : $"{browser.Games.Count} game(s) found:");
         foreach (var game in browser.Games)
-            console.Print($"  {game.Info.HostName} at {game.Address}: {game.Info.GamePack}, {game.Info.Mode}, {game.Info.Map}, "
-                + $"{game.Info.Players}/{game.Info.MaxPlayers}{(game.Info.InGame ? ", started" : "")}");
+            console.Print(Shown($"  {game.Info.HostName} at {game.Address}:{game.Info.GamePack}, {game.Info.Mode}, {game.Info.Map}, "
+                + $"{game.Info.Players}/{game.Info.MaxPlayers}{(game.Info.InGame ? ", started" : "")}"));
     }
 
     /// <summary>The join screen's rows (its items-source): the games found, then typing an address</summary>
@@ -398,14 +409,20 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     }
 
     /// <summary>Joins the game at an address: waits to be let in, then its lobby</summary>
-    internal void ConnectTo(string host, int port) =>
+    internal void ConnectTo(string host, int port)
+    {
+        typedHost = host;
         ConnectTo(NetSession.Join(host, port, hooks.Identity(), MpConfig.Name, hooks.PlayerClass(), LocalColor(), out var error),
             error, NetAddresses.WithPort(host, port));
+    }
 
     /// <summary>Joins a game found on the local network, at the address it answered from</summary>
-    void ConnectTo(IPEndPoint at) =>
+    void ConnectTo(IPEndPoint at)
+    {
+        typedHost = null;
         ConnectTo(NetSession.Join(at, hooks.Identity(), MpConfig.Name, hooks.PlayerClass(), LocalColor(), out var error),
             error, NetAddresses.WithPort(at.Address.ToString(), at.Port));
+    }
 
     /// <summary>The colors players pick from (game-info player-colors)</summary>
     List<string> PlayerColors() => engine.GetGameInfo().PlayerColors;
@@ -431,7 +448,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         }
 
         defs.DrawMenuComponents("join-game");
-        draw.Message("$STR_MP_CONNECTING".ToLanguageText(language).Replace("{ADDRESS}", ui.FitText(shown, 200, UiFonts.SmallFont)));
+        draw.Message("$STR_MP_CONNECTING".ToLanguageText(language).Replace("{ADDRESS}", ui.FitText(Shown(shown), 200, UiFonts.SmallFont)));
         draw.MenuFadeIn();
 
         // LiteNetLib gives up on its own after its connect attempts; Esc gives up sooner
@@ -462,11 +479,11 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         Lobby(session);
     }
 
-    /// <summary>A message over the menu background, until a key</summary>
+    /// <summary>A message over the menu background, until a key (internet addresses hidden in streamer mode)</summary>
     internal void ShowNetMessage(string text)
     {
         defs.DrawMenuComponents("multiplayer");
-        draw.Message(text);
+        draw.Message(Shown(text));
         draw.MenuFadeIn();
         input.ClearKeysDown();
         input.Ack();
@@ -483,7 +500,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     ControlPanelMenuInfo LobbyItems = null!;
 
     // The lobby panel's rows: up to PlayerCommands.MaxPlayers players, then the last chat lines
-    const int LobbyPanelX = 24, LobbyPanelY = 136, LobbyPanelRow = 9, LobbyChatLines = 1;
+    const int LobbyPanelX = 24, LobbyPanelY = 138, LobbyPanelRow = 9, LobbyChatLines = 1;
 
     /// <summary>
     /// Waits in a game's lobby: the host sets the game up and starts it once everyone's ready;
@@ -535,7 +552,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                 if (lookup.Result is { } address)
                 {
                     hostPublic = NetAddresses.WithPort(address, session.Port);
-                    console.Print($"Internet: others join at {hostPublic}");
+                    console.Print(Shown($"Internet: others join at {hostPublic}"));
                     UpdateHostNote(session);
                 }
             }
@@ -545,7 +562,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             {
                 portMapping = null;
                 hostRouter = mapped.Result;
-                console.Print(NetAddresses.DescribePortMapping(hostRouter, NetAddresses.LocalAddress()));
+                console.Print(Shown(NetAddresses.DescribePortMapping(hostRouter, NetAddresses.LocalAddress())));
                 UpdateHostNote(session);
             }
 
@@ -604,6 +621,10 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                     fadeIn = true;
                     break;
 
+                case "copy" when session.IsHost:
+                    CopyHostAddress();
+                    break;
+
                 case "chat":
                     var line = AskLine("$STR_MP_SAY".ToLanguageText(language), "", NetProtocol.MaxChatLength);
                     if (line != null)
@@ -619,6 +640,23 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                     break;
             }
         }
+    }
+
+    /// <summary>
+    /// The lobby's "Copy Address": where others join (the internet address once it's known, else
+    /// the LAN one) onto the clipboard, to paste into a private message. Streamer mode hides it in
+    /// the message that says so too.
+    /// </summary>
+    void CopyHostAddress()
+    {
+        var language = assets.GetText("en-us");
+        var address = hostPublic ?? hostLan;
+        bool copied = address.Length > 0 && !address.StartsWith("port ") && SDL.SDL_SetClipboardText(address) == 0;
+        draw.Message(copied
+            ? "$STR_MP_COPIED".ToLanguageText(language).Replace("{ADDRESS}", Shown(address) == address ? address : "your address")
+            : "$STR_MP_COPYFAILED".ToLanguageText(language));
+        input.ClearKeysDown();
+        input.Ack();
     }
 
     void DrawLobby(NetSession session)
@@ -648,6 +686,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             colorRow.Active = (short)(teams || PlayerColors().Count > 1 ? 1 : 0);
         }
         MenuDefs.FindMenuItem(LobbyMenu, "rules")?.Active = (short)(host && settings.Mode != GameMode.Coop ? 1 : 0);
+        MenuDefs.FindMenuItem(LobbyMenu, "copy")?.Active = (short)(host ? 1 : 0);
         if (LobbyMenu[LobbyItems.CurPos].Active == 0)
             LobbyItems.CurPos = (short)Math.Max(0, Array.FindIndex(LobbyMenu, item => item.Active != 0));
 
@@ -680,7 +719,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
 
         foreach (var line in session.Chat.TakeLast(LobbyChatLines))
         {
-            ui.TextAt(LobbyPanelX, y, new TextStyle(UiFonts.SmallFont, "READCOLOR")).Print(ui.FitText(line, 272, UiFonts.SmallFont));
+            ui.TextAt(LobbyPanelX, y, new TextStyle(UiFonts.SmallFont, "READCOLOR")).Print(ui.FitText(Shown(line), 272, UiFonts.SmallFont));
             y += LobbyPanelRow;
         }
 
