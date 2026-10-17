@@ -13,12 +13,12 @@ public class NetPlayTests
     private Doors _doors = null!;
     private PushWalls _pushWalls = null!;
     private GameSession _game = null!;
-    private bool _netGame;
+    private bool _netGame { get => _game.netgame; set => _game.netgame = value; }
     private int _areasConnected;
 
     private NetPlay NetPlay() =>
         new(_map, null!, null!, null!, _doors, _pushWalls, _game,
-            new NetPlayHooks(() => default, () => [], () => { }, () => { }, _ => { }, () => _areasConnected++, () => _netGame));
+            new NetPlayHooks(() => default, () => [], () => { }, () => { }, _ => { }, () => _areasConnected++));
 
     [SetUp]
     public void MakeLevel()
@@ -145,9 +145,9 @@ public class NetOverlayTests
 {
     private static (NetOverlay Overlay, NetPlay NetPlay, List<playstatetypes> Ends) Overlay()
     {
-        var game = new GameSession();
+        var game = new GameSession { netgame = true };
         var netPlay = new NetPlay(null!, null!, null!, null!, null!, null!, game,
-            new NetPlayHooks(() => default, () => [], () => { }, () => { }, _ => { }, () => { }, () => true));
+            new NetPlayHooks(() => default, () => [], () => { }, () => { }, _ => { }, () => { }));
         var ends = new List<playstatetypes>();
         var input = new InputManager(new Lazy<ConsoleManager>(() => new ConsoleManager()));
         return (new NetOverlay(input, null!, null!, null!, null!, null!, netPlay, game, () => true, ends.Add), netPlay, ends);

@@ -38,9 +38,7 @@ internal static partial class GameHost
 
     static NetGames MakeNetGames() => new(_gameEngineManager, _assetManager, _audioManager, _translationManager, menuDrawing, multiplayerMenu,
         netStart, gameSaves, playerClassRules, playersManager, deathmatch, scoreboard, netPlay, session,
-        new NetGamesHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), on => netgame = on,
-            seed => netseed = seed, () => godmode = noclip = ammocheat = 0, () => StartGame, start => StartGame = start,
-            () => startgame || loadedgame, () => MENUSONG));
+        new NetGamesHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), () => StartGame, start => StartGame = start, () => MENUSONG));
 
     /// <summary>The command line's --host, --join, --port and --name</summary>
     internal static void SetNetParams(GameParams gameParams) => netGames.SetNetParams(gameParams);

@@ -9,15 +9,13 @@ namespace PFWolf.Networking;
 /// <param name="ResetLastTimeCount">After a wait: no rush to catch up on it</param>
 /// <param name="AddNetPlayer">A player joins at this frame (Gameplay/Players.cs)</param>
 /// <param name="ConnectAreas">Works out again which areas join the players' (one has left)</param>
-/// <param name="NetGame">Whether this is a game with others</param>
 internal sealed record NetPlayHooks(
     Func<Entities.TicCmd> LocalCmd,
     Func<byte[]> WriteNetState,
     Action ThreeDRefresh,
     Action ResetLastTimeCount,
     Action<NetJoin> AddNetPlayer,
-    Action ConnectAreas,
-    Func<bool> NetGame);
+    Action ConnectAreas);
 
 /// <summary>
 /// Every machine plays the whole game, from everyone's controls. A frame (a step) goes:
@@ -256,5 +254,5 @@ internal sealed class NetPlay(
     }
 
     /// <summary>Whether the game with others is over for this machine: it left, or lost the host</summary>
-    internal bool NetGameOver => hooks.NetGame() && (netLeft || NetSession.Current is not { Error: null });
+    internal bool NetGameOver => game.netgame && (netLeft || NetSession.Current is not { Error: null });
 }

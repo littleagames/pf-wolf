@@ -6,7 +6,6 @@ public class NetGamesTests
 {
     private GameSession _session = null!;
     private NetPlay _netPlay = null!;
-    private bool? _netgame;
     private NetGames _games = null!;
 
     [SetUp]
@@ -14,11 +13,9 @@ public class NetGamesTests
     {
         _session = new GameSession();
         _netPlay = new NetPlay(null!, null!, null!, null!, null!, null!, _session, null!);
-        _netgame = null;
         _games = new NetGames(null!, null!, null!, new TranslationManager(new Lazy<AssetManager>(() => new AssetManager()), null!), null!, null!,
             new NetStartRequest(), null!, null!, null!, null!, null!, _netPlay, _session,
-            new NetGamesHooks((_, _, _, _) => Assert.Fail("no game"), on => _netgame = on, _ => { }, () => { }, () => 0, _ => { },
-                () => false, () => "MENU"));
+            new NetGamesHooks((_, _, _, _) => Assert.Fail("no game"), () => 0, _ => { }, () => "MENU"));
     }
 
     [Test]
@@ -41,11 +38,12 @@ public class NetGamesTests
     {
         // Arrange
         _netPlay.netLeft = true;
+        _session.netgame = true;
 
         // Act: no session open (nothing to say why)
         _games.EndNetGame();
 
         // Assert
-        Assert.That((_netgame, _netPlay.netLeft), Is.EqualTo(((bool?)false, false)));
+        Assert.That((_session.netgame, _netPlay.netLeft), Is.EqualTo((false, false)));
     }
 }

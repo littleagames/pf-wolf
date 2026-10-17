@@ -12,7 +12,7 @@ internal static partial class GameHost
     static NetPlay MakeNetPlay() =>
         new(_mapManager, _videoManager, _inputManager, _hudMessageManager, doors, pushWalls, session,
             new NetPlayHooks(() => localcmd, WriteNetState, ThreeDRefresh,
-                () => lasttimecount = (int)GameEngineManager.GetTimeCount(), AddNetPlayer, ConnectAreas, () => netgame));
+                () => lasttimecount = (int)GameEngineManager.GetTimeCount(), AddNetPlayer, ConnectAreas));
 
     static NetOverlay MakeNetOverlay() =>
         new(_inputManager, _videoManager, _mapManager, ui, menuDrawing, scoreboard, netPlay, session,

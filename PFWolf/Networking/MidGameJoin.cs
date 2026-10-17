@@ -4,19 +4,9 @@ using PFWolf.SaveGames;
 namespace PFWolf.Networking;
 
 /// <summary>What joining a game mid-level needs from the game</summary>
-/// <param name="NetSeed">Where the random numbers start each level, as the host said</param>
-/// <param name="SetNetSeed">Sets it, from the host's game</param>
-/// <param name="SetLoadedGame">The level is built as a loaded game's is (nothing counted again)</param>
-/// <param name="SetNetGame">This is (or isn't, if it fails) a game with others</param>
-/// <param name="ClearCheats">No god mode, no clipping, no ammo cheat: they're one machine's</param>
 /// <param name="PlayerColor">A player's color by name (null for none)</param>
 /// <param name="StartGame">The game starts playing</param>
 internal sealed record MidGameJoinHooks(
-    Func<byte> NetSeed,
-    Action<byte> SetNetSeed,
-    Action<bool> SetLoadedGame,
-    Action<bool> SetNetGame,
-    Action ClearCheats,
     Func<string, string?> PlayerColor,
     Action StartGame);
 
@@ -62,7 +52,7 @@ internal sealed class MidGameJoin(
             bw.Write(NETSTATEVERSION);
             bw.Write(netPlay.netlevel);
             bw.Write(netPlay.netstep);
-            bw.Write(hooks.NetSeed());
+            bw.Write(gameSession.netseed);
             bw.Write(gameSession.random.rndindex);
             bw.Write((byte)gameSession.gamemode);
             bw.Write(deathmatch.netrules.Monsters);
@@ -134,7 +124,7 @@ internal sealed class MidGameJoin(
 
             netPlay.netlevel = br.ReadInt32();
             netPlay.netstep = br.ReadInt32();
-            hooks.SetNetSeed(br.ReadByte());
+            gameSession.netseed = br.ReadByte();
             int rnd = br.ReadInt32();
             var mode = (GameMode)br.ReadByte();
             deathmatch.netrules = new NetRules(br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadBoolean());
@@ -172,8 +162,8 @@ internal sealed class MidGameJoin(
 
             // The level: built from its map, then laid over as the host has it
             gameSession.gamestate = game;
-            hooks.SetLoadedGame(true);
-            hooks.SetNetGame(true);
+            gameSession.loadedgame = true;
+            gameSession.netgame = true;
             netPlay.netLeft = false;
             levelSetup.SetupGameLevel();
             var body = levelBodies.ReadLevelBody(br);
@@ -203,7 +193,7 @@ internal sealed class MidGameJoin(
             }
 
             gameSession.random.rndindex = rnd;
-            hooks.ClearCheats();
+            gameSession.godmode = gameSession.noclip = gameSession.ammocheat = 0;
             scoreboard.showscoreboard = false;
             netPlay.netJoinResume = true;
             gameSession.camera.FollowPlayer();
@@ -213,8 +203,8 @@ internal sealed class MidGameJoin(
         catch (Exception e) when (e is IOException or InvalidDataException or FormatException or IndexOutOfRangeException or ArgumentException)
         {
             Console.WriteLine($"Network: couldn't take up the game: {e}");
-            hooks.SetNetGame(false);
-            hooks.SetLoadedGame(false);
+            gameSession.netgame = false;
+            gameSession.loadedgame = false;
             return $"The game couldn't be taken up: {e.Message}";
         }
     }

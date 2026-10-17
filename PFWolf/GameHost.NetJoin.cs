@@ -25,8 +25,7 @@ internal static partial class GameHost
 
     static MidGameJoin MakeMidGameJoin() => new(_mapManager, _inventoryManager, levelBodies, levelSetup, pushWalls, playersManager, deathmatch,
         scoreboard, netPlay, session,
-        new MidGameJoinHooks(() => netseed, seed => netseed = seed, on => loadedgame = on, on => netgame = on,
-            () => godmode = noclip = ammocheat = 0, PlayerColor, () => StartGame = 1));
+        new MidGameJoinHooks(PlayerColor, () => StartGame = 1));
 
     static byte[] WriteNetState() => midGameJoin.WriteNetState();
     static string? BeginJoinedGame(NetSession session, JoinStateInfo join) => midGameJoin.BeginJoinedGame(session, join);

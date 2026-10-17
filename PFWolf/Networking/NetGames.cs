@@ -6,21 +6,13 @@ namespace PFWolf.Networking;
 
 /// <summary>What starting and ending games with others needs from the game</summary>
 /// <param name="NewGame">Starts a game on a skill, from a map, as a player class (GameHost.NewGame)</param>
-/// <param name="SetNetGame">This is (or stops being) a game with others</param>
-/// <param name="SetNetSeed">Where the levels' random numbers start, as the host said</param>
-/// <param name="ClearCheats">No cheats carried in from playing alone</param>
 /// <param name="StartGame">The menu's "start the game" (0: not)</param>
 /// <param name="SetStartGame">Sets it</param>
-/// <param name="StartedOrLoaded">Whether a game was started, or taken up as a loaded one</param>
 /// <param name="MenuSong">The menus' music</param>
 internal sealed record NetGamesHooks(
     Action<short, EpisodeInfo, MapInfo, string> NewGame,
-    Action<bool> SetNetGame,
-    Action<byte> SetNetSeed,
-    Action ClearCheats,
     Func<int> StartGame,
     Action<int> SetStartGame,
-    Func<bool> StartedOrLoaded,
     Func<string> MenuSong);
 
 /// <summary>
@@ -79,7 +71,7 @@ internal sealed class NetGames(
             multiplayerMenu.ConnectTo(at.Host, at.Port);
 
         draw.MenuFadeOut();
-        return hooks.StartedOrLoaded();     // (joining a game being played takes it up as a loaded one)
+        return (game.startgame || game.loadedgame);     // (joining a game being played takes it up as a loaded one)
     }
 
     /*
@@ -147,9 +139,9 @@ internal sealed class NetGames(
         game.SetActing(game.localplayer);
         game.SetGameMode(start.Settings.Mode);
 
-        hooks.ClearCheats();     // no cheats carried in from playing alone
-        hooks.SetNetGame(true);
-        hooks.SetNetSeed(start.Seed);
+        game.godmode = game.noclip = game.ammocheat = 0;     // no cheats carried in from playing alone
+        game.netgame = true;
+        game.netseed = start.Seed;
         var rules = start.Settings;
         deathmatch.netrules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.ScoreLimit, rules.TimeLimit, rules.ItemRespawn);
         deathmatch.NewMatch();
@@ -168,7 +160,7 @@ internal sealed class NetGames(
     internal void EndNetGame()
     {
         var error = NetSession.Current?.Error;
-        hooks.SetNetGame(false);
+        game.netgame = false;
         netPlay.netLeft = false;
         NetSession.Current?.Dispose();
         if (error != null)
