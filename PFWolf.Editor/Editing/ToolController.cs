@@ -8,6 +8,7 @@ public enum EditTool
     Fill,
     Pick,
     Select,
+    MagicWand,
 }
 
 /// <summary>A rotate or flip, and what became of the values on the tiles that point somewhere</summary>
@@ -26,9 +27,13 @@ public sealed class ToolController
     private (int X, int Y) _last;
     private bool _pressed;
 
-    // Moving the selection's contents: what was lifted, and where the selection started
+    // Moving the selection's contents: what was lifted, and the selection it was lifted from
     private TileClip? _moving;
-    private TileRect _movingFrom;
+    private TileSelection? _movingFrom;
+
+    // Dragging out a selection that adds to or takes from another: the one it started with
+    private TileSelection? _selectBase;
+    private SelectMode _selectMode;
 
     private TileClip? _clipboard;
     private TileClip? _pasting;
@@ -84,7 +89,22 @@ public sealed class ToolController
     /// <summary>Copying takes every plane, not just the one being edited</summary>
     public bool CopyAllPlanes { get; set; } = true;
 
-    public TileRect? Selection { get; private set; }
+    /// <summary>The magic wand takes only the tiles joined to the one clicked, not every one like it on the level</summary>
+    public bool WandJoined { get; set; } = true;
+
+    /// <summary>Pasting leaves what's under the empty tiles of the paste (<see cref="IsBlank"/>)</summary>
+    public bool PasteSkipsBlank { get; set; }
+
+    /// <summary>Whether a value on a plane is nothing much (open floor, no thing), which a paste over can leave out</summary>
+    public Func<int, ushort, bool>? IsBlank { get; set; }
+
+    /// <summary>
+    /// How the next selection made goes with the one there (the map sets it from Shift and Ctrl
+    /// as the button goes down)
+    /// </summary>
+    public SelectMode SelectMode { get; set; }
+
+    public TileSelection? Selection { get; private set; }
 
     /// <summary>Pasting: the pasted tiles follow the pointer until a click puts them down</summary>
     public bool IsPasting => _pasting != null;
@@ -110,7 +130,7 @@ public sealed class ToolController
             // The paste is already showing where it'll go
             _edit?.Commit();
             _edit = null;
-            Selection = new TileRect(x, y, x + _pasting.Width - 1, y + _pasting.Height - 1);
+            Selection = _pasting.SelectionAt(x, y).Clip(document.Width, document.Height);
             _pasting = null;
             _pressed = false;
             RaiseChanged();
@@ -146,7 +166,7 @@ public sealed class ToolController
                 break;
 
             case EditTool.Select:
-                if (Selection is { } selection && selection.Contains(x, y))
+                if (SelectMode == SelectMode.Replace && Selection is { } selection && selection.Contains(x, y))
                 {
                     // Drag the selection's contents somewhere else
                     _moving = TileClip.Copy(document, selection, CopyAllPlanes ? null : Plane);
@@ -155,9 +175,15 @@ public sealed class ToolController
                 }
                 else
                 {
-                    Selection = new TileRect(x, y, x, y);
-                    RaiseChanged();
+                    _selectBase = SelectMode == SelectMode.Replace ? null : Selection;
+                    _selectMode = SelectMode;
+                    SelectBand(x, y);
                 }
+                break;
+
+            case EditTool.MagicWand:
+                Wand(document, x, y);
+                _pressed = false;
                 break;
         }
     }
@@ -190,7 +216,7 @@ public sealed class ToolController
                 DrawShape(x, y);
                 break;
 
-            case EditTool.Select when _moving != null && _edit != null:
+            case EditTool.Select when _moving != null && _edit != null && _movingFrom != null:
                 int dx = x - _anchor.X, dy = y - _anchor.Y;
                 _edit.Revert();
                 Clear(_edit, _movingFrom, CopyAllPlanes ? null : Plane);
@@ -200,8 +226,7 @@ public sealed class ToolController
                 break;
 
             case EditTool.Select:
-                Selection = TileRect.FromCorners(_anchor.X, _anchor.Y, Math.Clamp(x, 0, document.Width - 1), Math.Clamp(y, 0, document.Height - 1));
-                RaiseChanged();
+                SelectBand(Math.Clamp(x, 0, document.Width - 1), Math.Clamp(y, 0, document.Height - 1));
                 break;
         }
 
@@ -212,8 +237,40 @@ public sealed class ToolController
     {
         _pressed = false;
         _moving = null;
+        _movingFrom = null;
+        _selectBase = null;
         _edit?.Commit();
         _edit = null;
+        RaiseChanged();     // what can be done with the selection now the button's up
+    }
+
+    // The box dragged from the anchor to (x, y), with the selection it adds to or takes from
+    private void SelectBand(int x, int y)
+    {
+        var band = TileSelection.Rect(TileRect.FromCorners(_anchor.X, _anchor.Y, x, y));
+        Selection = _selectBase is { } start ? start.Combine(band, _selectMode) : _selectMode == SelectMode.Subtract ? null : band;
+        RaiseChanged();
+    }
+
+    /// <summary>The magic wand: the tiles holding what the one clicked does on the plane being edited, joined to it or anywhere</summary>
+    private void Wand(MapDocument document, int x, int y)
+    {
+        IEnumerable<(int X, int Y)> tiles;
+        if (WandJoined)
+            tiles = TileShapes.FloodFill(document, Plane, x, y, Read);
+        else
+        {
+            var value = ReadAt(document, x, y);
+            tiles = TileShapes.Rectangle(new TileRect(0, 0, document.Width - 1, document.Height - 1), outline: false)
+                .Where(tile => ReadAt(document, tile.X, tile.Y) == value);
+        }
+
+        var picked = TileSelection.FromTiles(tiles);
+        Selection = picked == null ? Selection
+            : SelectMode != SelectMode.Replace && Selection is { } start ? start.Combine(picked, SelectMode)
+            : SelectMode == SelectMode.Subtract ? null
+            : picked;
+        RaiseChanged();
     }
 
     private void DrawShape(int x, int y)
@@ -242,6 +299,15 @@ public sealed class ToolController
         Delete("Cut");
     }
 
+    /// <summary>Copies the selection and picks the copy up to put down somewhere else, starting one tile down and right</summary>
+    public void Duplicate()
+    {
+        if (Selection is not { } selection)
+            return;
+        Copy();
+        StartPaste(selection.Left + 1, selection.Top + 1);
+    }
+
     /// <summary>Clears the selection: open floor on plane 0, nothing on the others</summary>
     public void Delete(string description = "Delete")
     {
@@ -261,6 +327,31 @@ public sealed class ToolController
         Put(edit, x, y, EraseValue(Plane));
     }
 
+    /// <summary>
+    /// Puts <paramref name="to"/> wherever the layer being edited holds <paramref name="from"/>,
+    /// in the selection (or the whole level), as one undo step; how many tiles changed
+    /// </summary>
+    public int Replace(ushort from, ushort to, bool selectionOnly)
+    {
+        if (_document is not { } document || from == to)
+            return 0;
+        CancelGesture();
+        var tiles = selectionOnly && Selection is { } selection
+            ? selection.Tiles
+            : TileShapes.Rectangle(new TileRect(0, 0, document.Width - 1, document.Height - 1), outline: false);
+
+        int count = 0;
+        using var edit = document.BeginEdit("Replace");
+        foreach (var (x, y) in tiles)
+        {
+            if (ReadAt(document, x, y) != from)
+                continue;
+            Put(edit, x, y, to);
+            count++;
+        }
+        return count;
+    }
+
     /// <summary>Picks up the clipboard: it follows the pointer from (x, y) until a click puts it down</summary>
     public void StartPaste(int x, int y)
     {
@@ -270,6 +361,33 @@ public sealed class ToolController
         _pasting = _clipboard;
         _edit = _document.BeginEdit("Paste");
         ShowPaste(Math.Max(x, 0), Math.Max(y, 0));
+    }
+
+    /// <summary>
+    /// The arrow keys: moves the paste being placed, or else the selection's tiles, a tile at
+    /// a time (each move its own undo step)
+    /// </summary>
+    public void Nudge(int dx, int dy)
+    {
+        if (_document is not { } document)
+            return;
+        if (_pasting != null)
+        {
+            ShowPaste(_pasteAt.X + dx, _pasteAt.Y + dy);
+            return;
+        }
+        if (_pressed || Selection is not { } selection)
+            return;
+
+        int? plane = CopyAllPlanes ? null : Plane;
+        var clip = TileClip.Copy(document, selection, plane);
+        using (var edit = document.BeginEdit("Move"))
+        {
+            Clear(edit, selection, plane);
+            clip.Paste(edit, selection.Left + dx, selection.Top + dy);
+        }
+        Selection = selection.Offset(dx, dy).Clip(document.Width, document.Height);
+        RaiseChanged();
     }
 
     /// <summary>Makes what a transform searches the mapdefs with, so things turn with it; null turns the tiles only</summary>
@@ -299,16 +417,16 @@ public sealed class ToolController
         }
         else
         {
-            var selection = Selection!.Value;
+            var selection = Selection!;
             int? plane = CopyAllPlanes ? null : Plane;
             var clip = TileClip.Copy(document, selection, plane).Transform(transform, remap, out counts);
-            var placed = TileTransforms.Place(transform, selection, document.Width, document.Height);
+            var placed = TileTransforms.Place(transform, selection.Bounds, document.Width, document.Height);
             using (var edit = document.BeginEdit(TileTransforms.Describe(transform)))
             {
                 Clear(edit, selection, plane);
                 clip.Paste(edit, placed.Left, placed.Top);
             }
-            Selection = placed.Intersect(new TileRect(0, 0, document.Width - 1, document.Height - 1));
+            Selection = clip.SelectionAt(placed.Left, placed.Top).Clip(document.Width, document.Height);
         }
         RaiseChanged();
         Transformed?.Invoke(this, new TransformReport(transform, counts));
@@ -322,8 +440,8 @@ public sealed class ToolController
             return;
         _pasteAt = (x, y);
         _edit.Revert();
-        _pasting.Paste(_edit, x, y);
-        Selection = new TileRect(x, y, x + _pasting.Width - 1, y + _pasting.Height - 1);
+        _pasting.Paste(_edit, x, y, PasteSkipsBlank ? IsBlank : null);
+        Selection = _pasting.SelectionAt(x, y);
         _edit.Refresh();
     }
 
@@ -343,7 +461,7 @@ public sealed class ToolController
         if (_document == null || !_document.Contains(x, y))
             return;
         CancelGesture();
-        Selection = new TileRect(x, y, x, y);
+        Selection = TileSelection.Rect(new TileRect(x, y, x, y));
         RaiseChanged();
     }
 
@@ -351,7 +469,20 @@ public sealed class ToolController
     {
         if (_document == null)
             return;
-        Selection = new TileRect(0, 0, _document.Width - 1, _document.Height - 1);
+        Selection = TileSelection.Rect(new TileRect(0, 0, _document.Width - 1, _document.Height - 1));
+        RaiseChanged();
+    }
+
+    /// <summary>Selects every tile that isn't selected, and none that is</summary>
+    public void InvertSelection()
+    {
+        if (_document is not { } document)
+            return;
+        CancelGesture();
+        var all = new TileRect(0, 0, document.Width - 1, document.Height - 1);
+        Selection = Selection is { } selection
+            ? TileSelection.FromTiles(TileShapes.Rectangle(all, outline: false).Where(tile => !selection.Contains(tile.X, tile.Y)))
+            : TileSelection.Rect(all);
         RaiseChanged();
     }
 
@@ -362,16 +493,18 @@ public sealed class ToolController
         _edit = null;
         _pasting = null;
         _moving = null;
+        _movingFrom = null;
+        _selectBase = null;
         _pressed = false;
     }
 
-    private void Clear(MapEdit edit, TileRect rect, int? plane)
+    private void Clear(MapEdit edit, TileSelection selection, int? plane)
     {
         for (int p = 0; p < edit.Document.Planes; p++)
         {
             if (plane != null && plane != p)
                 continue;
-            foreach (var (x, y) in TileShapes.Rectangle(rect, outline: false))
+            foreach (var (x, y) in selection.Tiles)
             {
                 if (plane == null)
                     edit.Set(p, x, y, EraseValue(p));

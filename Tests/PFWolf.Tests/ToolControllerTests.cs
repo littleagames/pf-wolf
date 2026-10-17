@@ -1,4 +1,4 @@
-using PFWolf.Editor.Editing;
+﻿using PFWolf.Editor.Editing;
 
 namespace PFWolf.Tests;
 
@@ -108,7 +108,7 @@ public class ToolControllerTests
         Assert.That(document[0, 30, 40], Is.EqualTo(1));
         Assert.That(document[1, 31, 41], Is.EqualTo(23));
         Assert.That(document[0, 20, 20], Is.EqualTo(100), "the paste's first position is put back as it moves");
-        Assert.That(tools.Selection, Is.EqualTo(new TileRect(30, 40, 31, 41)));
+        Assert.That(tools.Selection!.Bounds, Is.EqualTo(new TileRect(30, 40, 31, 41)));
     }
 
     [Test]
@@ -148,7 +148,7 @@ public class ToolControllerTests
         // Assert
         Assert.That(document[0, 8, 9], Is.EqualTo(1));
         Assert.That(document[0, 5, 5], Is.EqualTo(100), "where it was is cleared to open floor");
-        Assert.That(tools.Selection, Is.EqualTo(new TileRect(8, 9, 8, 9)));
+        Assert.That(tools.Selection!.Bounds, Is.EqualTo(new TileRect(8, 9, 8, 9)));
     }
 
     [Test]

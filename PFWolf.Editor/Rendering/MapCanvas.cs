@@ -218,17 +218,45 @@ public sealed class MapCanvas : Control
 
         context.DrawRectangle(null, MapEdgePen, new Rect(_origin, new Size(tiles.Width * _zoom, tiles.Height * _zoom)));
         if (Controller?.Selection is { } selection)
-        {
-            var rect = new Rect(_origin.X + selection.Left * _zoom, _origin.Y + selection.Top * _zoom, selection.Width * _zoom, selection.Height * _zoom);
-            context.DrawRectangle(SelectionBrush, SelectionPen, rect);
-        }
+            DrawSelection(context, selection, x0, y0, x1, y1);
         if (_hover.X >= 0)
             context.DrawRectangle(null, HoverPen, TileRect(_hover.X, _hover.Y));
         if (ShowCamera && Camera is { } camera)
             DrawCamera(context, camera);
     }
 
-    private static readonly IBrush CameraBrush = new SolidColorBrush(Color.FromRgb(255, 120, 200));
+    /// <summary>
+    /// The selection tinted, edged where it meets what isn't selected; a rectangle as one box.
+    /// Only the part on screen is drawn tile by tile.
+    /// </summary>
+    private void DrawSelection(DrawingContext context, TileSelection selection, int x0, int y0, int x1, int y1)
+    {
+        if (selection.IsRectangle)
+        {
+            var rect = new Rect(_origin.X + selection.Left * _zoom, _origin.Y + selection.Top * _zoom, selection.Width * _zoom, selection.Height * _zoom);
+            context.DrawRectangle(SelectionBrush, SelectionPen, rect);
+            return;
+        }
+
+        int left = Math.Max(x0, selection.Left), right = Math.Min(x1, selection.Right);
+        int top = Math.Max(y0, selection.Top), bottom = Math.Min(y1, selection.Bottom);
+        for (int y = top; y <= bottom; y++)
+        {
+            for (int x = left; x <= right; x++)
+            {
+                if (!selection.Contains(x, y))
+                    continue;
+                var rect = TileRect(x, y);
+                context.FillRectangle(SelectionBrush, rect);
+                if (!selection.Contains(x, y - 1)) context.DrawLine(SelectionPen, rect.TopLeft, rect.TopRight);
+                if (!selection.Contains(x, y + 1)) context.DrawLine(SelectionPen, rect.BottomLeft, rect.BottomRight);
+                if (!selection.Contains(x - 1, y)) context.DrawLine(SelectionPen, rect.TopLeft, rect.BottomLeft);
+                if (!selection.Contains(x + 1, y)) context.DrawLine(SelectionPen, rect.TopRight, rect.BottomRight);
+            }
+        }
+    }
+
+    private static readonly IBrush CameraBrush =new SolidColorBrush(Color.FromRgb(255, 120, 200));
     private static readonly IPen CameraPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 120, 200)), 1.5);
 
     /// <summary>The 3D view's eye: a dot, and the edges of what it sees along the ground</summary>
@@ -549,6 +577,7 @@ public sealed class MapCanvas : Control
             var (x, y) = TileAt(position);
             _toolDown = true;
             e.Pointer.Capture(this);
+            Controller.SelectMode = SelectModeFor(e.KeyModifiers);
             Controller.Press(x, y);
         }
         else
@@ -609,6 +638,12 @@ public sealed class MapCanvas : Control
             SetHover(-1, -1);
     }
 
+    /// <summary>Shift adds to the selection, Ctrl takes from it</summary>
+    private static SelectMode SelectModeFor(KeyModifiers modifiers)
+        => modifiers.HasFlag(KeyModifiers.Shift) ? SelectMode.Add
+            : modifiers.HasFlag(KeyModifiers.Control) ? SelectMode.Subtract
+            : SelectMode.Replace;
+
     /// <summary>The tile under a point, which may be off the level</summary>
     private (int X, int Y) TileAt(Point position)
         => ((int)Math.Floor((position.X - _origin.X) / _zoom), (int)Math.Floor((position.Y - _origin.Y) / _zoom));
@@ -653,6 +688,13 @@ public sealed class MapCanvas : Control
                 break;
             case Key.A when ctrl:
                 Controller?.SelectAll();
+                break;
+            case Key.D when ctrl:
+                Controller?.Duplicate();
+                break;
+            case Key.Left or Key.Right or Key.Up or Key.Down when e.KeyModifiers == KeyModifiers.None:
+                var (dx, dy) = e.Key switch { Key.Left => (-1, 0), Key.Right => (1, 0), Key.Up => (0, -1), _ => (0, 1) };
+                Controller?.Nudge(dx, dy);
                 break;
             case Key.Delete:
                 Controller?.Delete();

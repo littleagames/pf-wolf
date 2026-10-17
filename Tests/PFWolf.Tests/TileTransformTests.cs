@@ -1,4 +1,4 @@
-using PFWolf.Assets;
+﻿using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Editor.Editing;
 using PFWolf.Enums;
@@ -243,7 +243,7 @@ public class TileTransformTests
     [Test]
     public void Rotating_The_Selection_Turns_Its_Tiles_And_Things_As_One_Undo_Step()
     {
-        // Arrange: a 3 × 1 strip with a wall at its west end and a guard facing east in the middle
+        // Arrange: a 3 Ã— 1 strip with a wall at its west end and a guard facing east in the middle
         var (document, tools) = Setup();
         EditorMaps.Set(document, 0, 10, 10, Wall);
         EditorMaps.Set(document, 1, 11, 10, GuardEast);
@@ -255,7 +255,7 @@ public class TileTransformTests
         tools.Transform(TileTransform.RotateClockwise);
 
         // Assert: upright around the middle tile, the wall on top, the guard facing south
-        Assert.That(tools.Selection, Is.EqualTo(new TileRect(11, 9, 11, 11)));
+        Assert.That(tools.Selection!.Bounds, Is.EqualTo(new TileRect(11, 9, 11, 11)));
         Assert.That(document[0, 11, 9], Is.EqualTo(Wall));
         Assert.That(document[0, 10, 10], Is.EqualTo(Floor));
         Assert.That(document[1, 11, 10], Is.EqualTo(GuardSouth));
@@ -281,8 +281,8 @@ public class TileTransformTests
         tools.Press(20, 20);
         tools.Release();
 
-        // Assert: a 1 × 2 paste, the guard (the strip's west end) now at the bottom, facing north
-        Assert.That(tools.Selection, Is.EqualTo(new TileRect(20, 20, 20, 21)));
+        // Assert: a 1 Ã— 2 paste, the guard (the strip's west end) now at the bottom, facing north
+        Assert.That(tools.Selection!.Bounds, Is.EqualTo(new TileRect(20, 20, 20, 21)));
         Assert.That(document[1, 20, 21], Is.EqualTo(GuardNorth));
         Assert.That(document[1, 5, 5], Is.EqualTo(GuardEast));
     }

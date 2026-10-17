@@ -455,6 +455,64 @@ public partial class MainWindow : Window, IEditorDialogs
         return answer;
     }
 
+    public async Task<ReplaceRequest?> AskReplace(ReplaceSetup setup)
+    {
+        var from = new ComboBox
+        {
+            ItemsSource = setup.Found,
+            SelectedItem = setup.Found.FirstOrDefault(choice => choice.Value == setup.From) ?? setup.Found.FirstOrDefault(),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            MaxDropDownHeight = 400,
+        };
+        var to = new ComboBox
+        {
+            ItemsSource = setup.Choices,
+            SelectedItem = setup.Choices?.FirstOrDefault(choice => choice.Value == setup.To) ?? setup.Choices?.FirstOrDefault(),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            MaxDropDownHeight = 400,
+            IsVisible = setup.Choices != null,
+        };
+        var toNumber = new NumericUpDown
+        {
+            Value = setup.To, Minimum = 0, Maximum = ushort.MaxValue, Increment = 1, FormatString = "0",
+            IsVisible = setup.Choices == null,
+        };
+        var inSelection = new RadioButton { Content = "In the selection", GroupName = "where", IsEnabled = setup.HasSelection, IsChecked = setup.HasSelection };
+        var inLevel = new RadioButton { Content = "In the whole level", GroupName = "where", IsChecked = !setup.HasSelection };
+        var ok = new Button { Content = "Replace", IsDefault = true, Classes = { "accent" }, IsEnabled = setup.Found.Count > 0 };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        var dialog = MakeDialog("Replace", new StackPanel
+        {
+            Spacing = 8,
+            Children =
+            {
+                new TextBlock { Text = $"On {setup.PlaneName}, put", TextWrapping = TextWrapping.Wrap },
+                to,
+                toNumber,
+                new TextBlock { Text = "wherever the level has" },
+                from,
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16, Children = { inSelection, inLevel } },
+                new TextBlock { Text = "One undo step undoes it.", Opacity = 0.7 },
+                Buttons(ok, cancel),
+            },
+        });
+        dialog.Width = 480;
+
+        ReplaceRequest? answer = null;
+        ok.Click += (_, _) =>
+        {
+            if (from.SelectedItem is not ReplaceChoice found)
+                return;
+            ushort value = setup.Choices != null ? (to.SelectedItem as ReplaceChoice)?.Value ?? found.Value : (ushort)Math.Clamp(toNumber.Value ?? 0, 0, ushort.MaxValue);
+            answer = new ReplaceRequest(found.Value, value, inSelection.IsChecked == true);
+            dialog.Close();
+        };
+        cancel.Click += (_, _) => dialog.Close();
+
+        await dialog.ShowDialog(DialogOwner);
+        return answer;
+    }
+
     public async Task<UnsavedChoice> AskUnsaved(string message)
     {
         var save = new Button { Content = "Save", IsDefault = true, Classes = { "accent" } };

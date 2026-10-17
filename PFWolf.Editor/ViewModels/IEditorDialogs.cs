@@ -22,6 +22,27 @@ public sealed record ImportSetup(
     string SuggestedName,
     Func<string, string?> CheckName);
 
+/// <summary>A value Replace can find or put down, as it's listed</summary>
+public sealed record ReplaceChoice(ushort Value, string Label)
+{
+    public override string ToString() => Label;
+}
+
+/// <summary>
+/// What the Replace dialog offers: the values on the level (to find) and the ones to put down
+/// (null: any number), starting on <see cref="From"/> and <see cref="To"/>
+/// </summary>
+public sealed record ReplaceSetup(
+    string PlaneName,
+    IReadOnlyList<ReplaceChoice> Found,
+    IReadOnlyList<ReplaceChoice>? Choices,
+    ushort From,
+    ushort To,
+    bool HasSelection);
+
+/// <summary>What to replace with what, and where</summary>
+public sealed record ReplaceRequest(ushort From, ushort To, bool SelectionOnly);
+
 /// <summary>The questions the editor asks, which the window answers with its dialogs</summary>
 public interface IEditorDialogs
 {
@@ -50,6 +71,9 @@ public interface IEditorDialogs
 
     /// <summary>Asks which level of the file, which planes onto which, and where to; null when cancelled</summary>
     Task<ImportRequest?> AskImport(ImportSetup setup);
+
+    /// <summary>Asks which value to replace with which, in the selection or the level; null when cancelled</summary>
+    Task<ReplaceRequest?> AskReplace(ReplaceSetup setup);
 
     /// <summary>Shows the level properties dialog; true when it's closed with OK (and the properties build)</summary>
     Task<bool> EditProperties(MapPropertiesViewModel properties);

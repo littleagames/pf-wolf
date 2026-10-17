@@ -511,9 +511,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
 
         if (Controller?.Selection is { } selection && Tiles != null)
         {
-            for (int y = selection.Top; y <= selection.Bottom; y++)
-                for (int x = selection.Left; x <= selection.Right; x++)
-                    AddQuad(vertices, TileMarker(x, y, 0.03f), SquareUvs, SelectionColor);
+            foreach (var (x, y) in selection.Tiles)
+                AddQuad(vertices, TileMarker(x, y, 0.03f), SquareUvs, SelectionColor);
         }
 
         if (_hover is not { } hover)
@@ -693,6 +692,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             {
                 _toolDown = true;
                 _gestureMesh = _mesh;
+                // Shift here puts the target in front of a wall face, so it doesn't add to the selection
+                controller.SelectMode = SelectMode.Replace;
                 controller.Press(_target.X, _target.Y);
             }
         }

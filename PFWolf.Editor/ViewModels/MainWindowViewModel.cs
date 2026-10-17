@@ -94,9 +94,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public IReadOnlyList<ToolOption> Tools { get; } =
     [
         new(EditTool.Select, "Select", "S",
-            "Drag to select a block of tiles; drag inside the selection to move it. Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste it; "
-            + "Delete clears it; ] and [ rotate it (or the paste being placed), Shift+H and Shift+V flip it.",
+            "Drag to select a block of tiles (Shift: add to the selection, Ctrl: take away); drag inside the selection or use the arrow keys to move it. "
+            + "Ctrl+C, Ctrl+X, Ctrl+V and Ctrl+D copy, cut, paste and duplicate it; Delete clears it; ] and [ rotate it (or the paste being placed), "
+            + "Shift+H and Shift+V flip it.",
             EditorIcons.Select),
+        new(EditTool.MagicWand, "Magic wand", "W",
+            "Click a tile to select the tiles joined to it that hold the same on the plane being edited (or every one on the level, with Joined only off). "
+            + "Shift adds to the selection, Ctrl takes away.",
+            EditorIcons.MagicWand),
         new(EditTool.Paint, "Paint", "P", "Puts what's picked in the palette on every tile you drag over.", EditorIcons.Paint, GroupStart: true),
         new(EditTool.Line, "Line", "L", "Drag a straight line of what's picked.", EditorIcons.Line),
         new(EditTool.Rectangle, "Rectangle", "R", "Drag a box of what's picked (Outline only: just its edge).", EditorIcons.Rectangle),
@@ -544,6 +549,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private ToolOption _selectedTool;
     [ObservableProperty] private bool _outline;
     [ObservableProperty] private bool _copyAllPlanes = true;
+    [ObservableProperty] private bool _wandJoined = true;
+    [ObservableProperty] private bool _pasteSkipsBlank;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPalette), nameof(IsFlatsPlane), nameof(HasNextUnused), nameof(PlaneHint))]
@@ -726,12 +733,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     partial void OnOutlineChanged(bool value) => Controller.Outline = value;
     partial void OnCopyAllPlanesChanged(bool value) => Controller.CopyAllPlanes = value;
+    partial void OnWandJoinedChanged(bool value) => Controller.WandJoined = value;
+    partial void OnPasteSkipsBlankChanged(bool value) => Controller.PasteSkipsBlank = value;
 
     /// <summary>The options bar shows the rectangle tool's outline option</summary>
     public bool ShowsOutlineOption => SelectedTool.Tool == EditTool.Rectangle;
 
-    /// <summary>The options bar shows what works on the selection: the select tool's, or while pasting</summary>
-    public bool ShowsSelectionOptions => SelectedTool.Tool == EditTool.Select || Controller.IsPasting;
+    /// <summary>The options bar shows the magic wand's joined-only option</summary>
+    public bool ShowsWandOption => SelectedTool.Tool == EditTool.MagicWand;
+
+    /// <summary>The options bar shows what works on the selection: the selecting tools', or while pasting</summary>
+    public bool ShowsSelectionOptions => SelectedTool.Tool is EditTool.Select or EditTool.MagicWand || Controller.IsPasting;
 
     /// <summary>What the mouse does with the tool picked (or the paste being placed), for the status bar</summary>
     public string ToolHint => Controller.IsPasting
@@ -740,7 +752,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             EditTool.Select when Controller.Selection != null
                 => "Drag inside the selection to move it · drag outside for a new one · ] [ rotate · Shift+H, Shift+V flip · Esc: select nothing",
-            EditTool.Select => "Drag to select a block of tiles",
+            EditTool.Select => "Drag to select a block of tiles · Shift adds · Ctrl takes away",
+            EditTool.MagicWand => "Click to select the tiles like it · Shift adds · Ctrl takes away",
             EditTool.Paint => "Drag to paint",
             EditTool.Line => "Drag from one end of the line to the other",
             EditTool.Rectangle => "Drag from one corner to the other",
@@ -753,7 +766,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void OnToolStateChanged()
     {
         OnPropertyChanged(nameof(ShowsOutlineOption));
+        OnPropertyChanged(nameof(ShowsWandOption));
         OnPropertyChanged(nameof(ShowsSelectionOptions));
+        DuplicateCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(ToolHint));
         CopyCommand.NotifyCanExecuteChanged();
         CutCommand.NotifyCanExecuteChanged();
@@ -848,6 +863,73 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void SelectNone() => Controller.Escape();
+
+    [RelayCommand(CanExecute = nameof(HasDocument))]
+    private void InvertSelection() => Controller.InvertSelection();
+
+    /// <summary>Copies the selection and picks the copy up to put down somewhere else</summary>
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void Duplicate()
+    {
+        Controller.Duplicate();
+        Status = "Duplicated the selection: click to put the copy down";
+    }
+
+    /// <summary>One value for another on the plane being edited, in the selection or the whole level</summary>
+    [RelayCommand(CanExecute = nameof(HasDocument))]
+    private async Task ReplaceAsync()
+    {
+        if (Document is not { } document || Dialogs == null)
+            return;
+        Controller.CancelGesture();
+
+        // What's on the level, most used first; what can go down instead
+        var read = Controller.Read ?? (value => value);
+        int plane = SelectedPlane.Plane;
+        var found = document.Map.MapData[plane].GroupBy(value => read(value))
+            .OrderByDescending(group => group.Count())
+            .Select(group => new ReplaceChoice(group.Key, $"{ValueLabel(group.Key)}   ({group.Count()} tiles)"))
+            .ToList();
+        var choices = HasPalette
+            ? ReplaceValues().Select(value => new ReplaceChoice(value, ValueLabel(value))).ToList()
+            : null;
+        var from = _hover.X >= 0 ? read(document[plane, _hover.X, _hover.Y])
+            : Controller.Selection is { } selection ? read(document[plane, selection.Left, selection.Top])
+            : found.FirstOrDefault()?.Value ?? 0;
+
+        var setup = new ReplaceSetup(SelectedPlane.Label, found, choices, from, Controller.Value, Controller.Selection != null);
+        if (await Dialogs.AskReplace(setup) is not { } request)
+            return;
+        int count = Controller.Replace(request.From, request.To, request.SelectionOnly);
+        Status = $"Replaced {ValueLabel(request.From)} with {ValueLabel(request.To)} on {count} tile{(count == 1 ? "" : "s")}"
+                 + (request.SelectionOnly ? " in the selection" : "");
+    }
+
+    /// <summary>Every value the palette can put down on the plane being edited, things in each way they come</summary>
+    private IEnumerable<ushort> ReplaceValues()
+    {
+        var values = _allPaletteItems.Select(item => item.Entry.Value);
+        if (SelectedPlane.Plane == 1)
+            values = values.Concat(_thingVariants.Values.SelectMany(variants => variants.Select(v => v.Id)));
+        return values.Distinct().Order();
+    }
+
+    /// <summary>A value on the plane being edited, as the palette names it (a thing with its facing, skill and patrolling)</summary>
+    private string ValueLabel(ushort value)
+    {
+        if (!HasPalette)
+            return SelectedPlane.Plane == MapConstants.FLATPLANE ? $"{value} (floor {value & 0xff}, ceiling {value >> 8})" : value.ToString();
+        if (SelectedPlane.Plane == 1 && Content?.MapDefs.Things.TryGetValue(value, out var thing) == true)
+        {
+            var details = new List<string> { PaletteEntries.Facing(thing.Angles) };
+            if (thing.Patrol != 0)
+                details.Add("patrols");
+            if (thing.MinSkill > 0)
+                details.Add($"skill {thing.MinSkill + 1} and up");
+            return $"{thing.Class}, {string.Join(", ", details)}  ({value})";
+        }
+        return _allPaletteItems.FirstOrDefault(item => item.Entry.Value == value)?.Label ?? $"{value}  (not in the mapdefs)";
+    }
 
     /// <summary>The map should zoom to show the whole level</summary>
     public event EventHandler? FitRequested;
@@ -990,6 +1072,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             Controller.EraseValue = p => PaletteEntries.EraseValue(content.MapDefs, p);
             Controller.MakeRemap = transform => new TileRemap(content.MapDefs, transform, content.IsWallSprite);
+            Controller.IsBlank = (p, value) => IsBlank(content.MapDefs, p, value);
             (Controller.Combine, Controller.Read) = plane != 0 ? (null, null)
                 : SelectedPlane.Patches ? PaletteEntries.PatchLayer(content.MapDefs) : PaletteEntries.TileLayer(content.MapDefs);
             _thingVariants = PaletteEntries.ThingVariants(content.MapDefs);
@@ -1012,6 +1095,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SelectedPaletteItem = PaletteItems.FirstOrDefault(item => item.Entry.Group is "Walls" or "Patches") ?? PaletteItems.FirstOrDefault();
         else
             OnPlaneValueChanged(PlaneValue);
+    }
+
+    /// <summary>What a paste over leaves out: open floor without a patch on plane 0, and nothing (0) on the rest</summary>
+    private static bool IsBlank(PFWolf.Assets.MapObjectTranslationAsset defs, int plane, ushort value)
+    {
+        if (plane != 0)
+            return value == 0;
+        int code = value & MapConstants.PLANE0CODEMASK;
+        return value >> MapConstants.PATCHSHIFT == 0 && !defs.Doors.ContainsKey(code)
+               && !(code is > 0 and <= MapConstants.MAXWALLID && defs.Walls.ContainsKey(code));
     }
 
     private void FilterPalette()

@@ -167,6 +167,17 @@ public sealed class TileClip
         return new TileClip(width, height, planes, mask);
     }
 
+    /// <summary>The selection it was copied as, put with its top left corner on (left, top)</summary>
+    public TileSelection SelectionAt(int left, int top) => new(new TileRect(left, top, left + Width - 1, top + Height - 1), _mask);
+
+    /// <summary>The selected tiles</summary>
+    /// <param name="plane">The one plane to copy, or null for all of them</param>
+    public static TileClip Copy(MapDocument document, TileSelection selection, int? plane)
+    {
+        var clip = Copy(document, selection.Bounds, plane);
+        return selection.Mask is { } mask ? new TileClip(clip.Width, clip.Height, clip._planes, (bool[])mask.Clone()) : clip;
+    }
+
     /// <param name="plane">The one plane to copy, or null for all of them</param>
     public static TileClip Copy(MapDocument document, TileRect rect, int? plane)
     {
@@ -185,8 +196,11 @@ public sealed class TileClip
         return new TileClip(rect.Width, rect.Height, planes);
     }
 
-    /// <summary>Puts the tiles down with their top left corner on (left, top); what falls off the level is dropped</summary>
-    public void Paste(MapEdit edit, int left, int top)
+    /// <summary>
+    /// Puts the tiles down with their top left corner on (left, top); what falls off the level
+    /// is dropped, and so is a value <paramref name="skip"/> says to leave out (plane, value)
+    /// </summary>
+    public void Paste(MapEdit edit, int left, int top, Func<int, ushort, bool>? skip = null)
     {
         for (int p = 0; p < _planes.Length; p++)
         {
@@ -194,7 +208,7 @@ public sealed class TileClip
                 continue;
             for (int y = 0; y < Height; y++)
                 for (int x = 0; x < Width; x++)
-                    if (Includes(x, y))
+                    if (Includes(x, y) && skip?.Invoke(p, this[p, x, y]) != true)
                         edit.Set(p, left + x, top + y, this[p, x, y]);
         }
     }

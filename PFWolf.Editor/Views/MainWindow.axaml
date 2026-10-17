@@ -16,6 +16,7 @@
     <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
     <KeyBinding Gesture="Ctrl+N" Command="{Binding NewMapCommand}" />
     <KeyBinding Gesture="Ctrl+I" Command="{Binding ImportMapCommand}" />
+    <KeyBinding Gesture="Ctrl+H" Command="{Binding ReplaceCommand}" />
     <KeyBinding Gesture="F4" Command="{Binding EditPropertiesCommand}" />
     <KeyBinding Gesture="F7" Command="{Binding CheckLevelCommand}" />
     <KeyBinding Gesture="F5" Command="{Binding PlayCommand}" />
@@ -77,8 +78,15 @@
         <MenuItem Header="_Copy" Command="{Binding CopyCommand}" InputGesture="Ctrl+C" />
         <MenuItem Header="_Paste" Command="{Binding PasteCommand}" InputGesture="Ctrl+V"
                   ToolTip.Tip="The copied tiles follow the pointer until a click puts them down" />
+        <MenuItem Header="Dup_licate" Command="{Binding DuplicateCommand}" InputGesture="Ctrl+D"
+                  ToolTip.Tip="Copies the selection and picks the copy up, to click down somewhere else" />
         <MenuItem Header="_Delete" Command="{Binding DeleteSelectionCommand}" InputGesture="Delete"
                   ToolTip.Tip="Clears the selection: open floor on plane 0, nothing on the others" />
+        <MenuItem Header="Paste o_ver (skip empty tiles)" ToggleType="CheckBox" IsChecked="{Binding PasteSkipsBlank}"
+                  ToolTip.Tip="A paste leaves what's under its open floor (on plane 0) and its empty tiles (on the other planes)" />
+        <Separator />
+        <MenuItem Header="R_eplace…" Command="{Binding ReplaceCommand}" InputGesture="Ctrl+H"
+                  ToolTip.Tip="One value for another on the plane being edited, in the selection or the whole level" />
         <Separator />
         <MenuItem Header="Rotate c_lockwise" Command="{Binding RotateClockwiseCommand}" InputGesture="OemCloseBrackets"
                   ToolTip.Tip="The selection turns around its middle (or the paste being placed turns); things on it turn to face the new way">
@@ -97,6 +105,8 @@
         <Separator />
         <MenuItem Header="Select _all" Command="{Binding SelectAllCommand}" InputGesture="Ctrl+A" />
         <MenuItem Header="Select _nothing" Command="{Binding SelectNoneCommand}" InputGesture="Escape" />
+        <MenuItem Header="_Invert selection" Command="{Binding InvertSelectionCommand}"
+                  ToolTip.Tip="Selects every tile that isn't selected, and none that is" />
         <Separator />
         <MenuItem Header="C_opy all planes" ToggleType="CheckBox" IsChecked="{Binding CopyAllPlanes}"
                   ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
@@ -214,9 +224,13 @@
           <TextBlock Text="{Binding SelectedTool.Label}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0" />
           <CheckBox Content="Outline only" IsChecked="{Binding Outline}" IsVisible="{Binding ShowsOutlineOption}"
                     ToolTip.Tip="The rectangle tool draws only the edge" VerticalAlignment="Center" />
+          <CheckBox Content="Joined only" IsChecked="{Binding WandJoined}" IsVisible="{Binding ShowsWandOption}" VerticalAlignment="Center"
+                    ToolTip.Tip="The wand takes the tiles joined to the one clicked; off, every tile on the level that holds the same" />
           <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowsSelectionOptions}">
             <CheckBox Content="Copy all planes" IsChecked="{Binding CopyAllPlanes}" VerticalAlignment="Center"
                       ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
+            <CheckBox Content="Paste over" IsChecked="{Binding PasteSkipsBlank}" VerticalAlignment="Center"
+                      ToolTip.Tip="A paste leaves what's under its open floor (on plane 0) and its empty tiles (on the other planes)" />
             <Button Classes="icon" Command="{Binding RotateCounterClockwiseCommand}"
                     ToolTip.Tip="Rotate counter-clockwise ([): things on it turn to face the new way">
               <PathIcon Data="{x:Static v:EditorIcons.RotateCounterClockwise}" />
