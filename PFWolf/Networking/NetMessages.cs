@@ -227,7 +227,7 @@ internal sealed record TicBundle(int Level, int Step, byte Left, NetJoin? Join, 
 /// <summary>
 /// What a player joining a game already being played gets from the host: the game (as
 /// StartGame had it, with everyone since), the frame it's at, and the game as it stands
-/// after that frame (GameHost.NetJoin.cs)
+/// after that frame (Networking/MidGameJoin.cs)
 /// </summary>
 internal sealed record JoinStateInfo(StartGameInfo Start, int Level, int Step, byte[] State);
 

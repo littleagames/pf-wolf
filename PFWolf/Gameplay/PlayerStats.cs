@@ -95,9 +95,9 @@ internal sealed class PlayerStats(
     ===============
     */
 
-    // LastAttacker feeds Died()'s swing-around-to-face-the-killer (GameHost.WL_GAME.cs) and the
+    // LastAttacker feeds Died()'s swing-around-to-face-the-killer (Gameplay/PlayerDeath.cs) and the
     // needle-death face in DrawFace. Every attacker -- enemies (Entities.Actors.Monster) and
-    // projectiles (GameHost.WL_ACT2.cs) -- is an Entities.Actors.Actor now.
+    // projectiles (Gameplay/Projectiles.cs) -- is an Entities.Actors.Actor now.
     internal void TakeDamage(int points, Entities.Actors.Actor attacker)
     {
         playerstate.LastAttacker = attacker;
@@ -143,7 +143,7 @@ internal sealed class PlayerStats(
             if (session.gamemode == GameMode.Single)
                 session.playstate = playstatetypes.ex_died;                   // Died(): the level starts again
             else
-                hooks.PlayerDies();             // the rest play on (GameHost.Players.cs)
+                hooks.PlayerDies();             // the rest play on (Gameplay/Players.cs)
         }
 
         if (godmode != 2 && session.ActingIsLocal)

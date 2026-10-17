@@ -10,7 +10,7 @@ namespace PFWolf.Entities.Actors;
 
 /// <summary>
 /// An actor that moves, sees, fights and dies: Wolf3D's and Spear of Destiny's enemies, ported
-/// from WL_STATE.C / WL_ACT2.C (GameHost.WL_STATE.cs / GameHost.WL_ACT2.cs). An actordefs class
+/// from WL_STATE.C / WL_ACT2.C. An actordefs class
 /// is one when it has Monster as an ancestor (`parent: Monster`), which anything with health
 /// or a think/action registered here needs. Its thinks and actions are registered below under
 /// the names the actordefs use (`think: T_Chase`), and run on the actor itself; subclasses
@@ -167,7 +167,7 @@ internal record Monster : Actor
 
     /*
     =============================================================================
-    MOVEMENT / COLLISION (ported from GameHost.WL_STATE.cs)
+    MOVEMENT / COLLISION (ported from WL_STATE.C)
     =============================================================================
     */
 
@@ -347,7 +347,7 @@ internal record Monster : Actor
         return true;
     }
 
-    // CHECKDIAG(int, int) lives in GameHost.WL_STATE.cs -- it isn't tied to the mover, so
+    // CHECKDIAG(int, int) lives in Gameplay/LineOfSight.cs -- it isn't tied to the mover, so
     // there's no Entities.Actors.Actor-typed overload.
 
     internal int CheckSide(int x, int y, ref int doornumtile)
@@ -1197,7 +1197,7 @@ internal record Monster : Actor
 
     /*
     =============================================================================
-    COMBAT (ported from GameHost.WL_STATE.cs)
+    COMBAT (ported from WL_STATE.C)
     =============================================================================
     */
 
@@ -1506,7 +1506,7 @@ internal record Monster : Actor
 
     /*
     =============================================================================
-    PER-ENEMY THINK/ACTION FUNCTIONS (ported from GameHost.WL_ACT2.cs)
+    PER-ENEMY THINK/ACTION FUNCTIONS (ported from WL_ACT2.C)
     =============================================================================
     */
 

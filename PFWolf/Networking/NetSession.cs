@@ -358,7 +358,7 @@ internal sealed class NetSession : IDisposable
     }
 
     /// <summary>
-    /// The game's state summed up after a step (GameHost.NetPlay.cs), for the host to compare
+    /// The game's state summed up after a step (Networking/NetPlay.cs), for the host to compare
     /// every machine's: they should never differ
     /// </summary>
     public void ReportChecksum(int level, int step, uint sum)
@@ -383,7 +383,7 @@ internal sealed class NetSession : IDisposable
 
     /// <summary>
     /// Host: sends a player who has just joined the game as it stands after the step they came
-    /// in at (GameHost.NetJoin.cs), so they can play on from the next
+    /// in at (Networking/MidGameJoin.cs), so they can play on from the next
     /// </summary>
     public void SendJoinState(int index, int level, int step, byte[] state)
     {

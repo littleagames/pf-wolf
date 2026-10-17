@@ -4,7 +4,7 @@ using PFWolf.SaveGames;
 namespace PFWolf.Ui;
 
 /// <summary>What the menu keys during play need from the game</summary>
-/// <param name="UiRandom">A random number for show (GameHost.NetPlay.cs)</param>
+/// <param name="UiRandom">A random number for show (GameHost.Network.cs)</param>
 internal sealed record QuickKeysHooks(
     Func<int> UiRandom);
 

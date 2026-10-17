@@ -15,11 +15,11 @@ internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, sh
 
 /// <summary>What the game's main loop needs from the game</summary>
 /// <param name="SetAutosavePending">The level saves itself once it's drawn</param>
-/// <param name="EnterLevel">A kept hub level as it was left, or the map afresh: true if kept (GameHost.Hubs.cs)</param>
-/// <param name="LeaveLevel">Keeps a hub level as it's left (GameHost.Hubs.cs)</param>
-/// <param name="MarkLevelStart">What dying puts the player back to (GameHost.Hubs.cs)</param>
+/// <param name="EnterLevel">A kept hub level as it was left, or the map afresh: true if kept (Gameplay/LevelEntry.cs)</param>
+/// <param name="LeaveLevel">Keeps a hub level as it's left (Gameplay/LevelEntry.cs)</param>
+/// <param name="MarkLevelStart">What dying puts the player back to (Gameplay/LevelEntry.cs)</param>
 /// <param name="ApplyPendingWarpStart">--start's tile, the first time (GameHost.cs)</param>
-/// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel wall (GameHost.Hubs.cs)</param>
+/// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel wall (Gameplay/LevelEntry.cs)</param>
 /// <param name="ShowLevelStartMessage">A game's level start message (Blake Stone)</param>
 /// <param name="ShowText">Shows a text as an article (a map's briefing or debriefing: Ui/ArticleReader.cs)</param>
 /// <param name="LevelWon">A level's finished (its exit, a secret exit or the game won), before the tally: its record and the scripts' game.onlevelend hooks</param>
@@ -136,7 +136,7 @@ internal sealed class MainGameLoop(
             string levelStart = "loaded";
             if (!session.loadedgame)
             {
-                bool kept = hooks.EnterLevel();   // a kept hub level as it was left, or the map afresh (GameHost.Hubs.cs)
+                bool kept = hooks.EnterLevel();   // a kept hub level as it was left, or the map afresh (Gameplay/LevelEntry.cs)
                 ApplyPendingMapChange();
                 hooks.ApplyPendingWarpStart();    // --start's tile, the first time (GameHost.cs)
                 if (!died)

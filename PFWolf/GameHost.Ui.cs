@@ -1,18 +1,21 @@
 using CommandLine;
-using SDL2;
-using PFWolf.Assets;
 using PFWolf.Assets.Sounds;
+using PFWolf.Assets;
 using PFWolf.Configuration;
 using PFWolf.Constants;
 using PFWolf.Entities;
 using PFWolf.Extensions;
 using PFWolf.Fonts;
 using PFWolf.Managers;
+using SDL2;
 
 namespace PFWolf;
 
+// GameHost's screen wiring: the menus, the automap, the status bar and radar, HUD messages, the console's drawing, debug screens
 internal static partial class GameHost
 {
+    // ==== WL_MENU ================================================================================
+
     /*
     =============================================================================
 
@@ -271,4 +274,101 @@ internal static partial class GameHost
     private static CP_itemtype[] BuildModsPage() => modsMenu.BuildModsPage();
 
     private static CP_itemtype[] PlayerClassRows() => newGameMenu.PlayerClassRows();
+
+    // ==== Automap ================================================================================
+
+    // Drawing the automap (Ui/AutomapDrawing.cs)
+    static AutomapDrawing automapDrawing = null!;       // made in InitServices
+
+    static AutomapDrawing MakeAutomapDrawing() =>
+        new(_assetManager, _videoManager, _graphicManager, _fontManager, _automapManager, _mapManager, _factionManager,
+            _translationManager, doors, pushWalls, spriteDrawing, session, new AutomapHooks(
+                () => (viewscreenx, viewscreeny, viewwidth, viewheight), GetMapDisplayName, FormatPlayTime,
+                () => objectives.StatsLines()));
+
+    internal static void DrawAutomap() => automapDrawing.DrawAutomap();
+
+    // The automap's keys and console commands (Ui/AutomapInput.cs)
+    static AutomapInput automapInput = null!;       // made in InitServices
+
+    static AutomapInput MakeAutomapInput() => new(_inputManager, _consoleManager, _automapManager, _mapManager, controls, controlSettings,
+        inputPolling, session);
+
+    internal static void ToggleAutomap() => automapInput.ToggleAutomap();
+    internal static void UpdateAutomap() => automapInput.UpdateAutomap();
+    internal static bool HandleAutomapKey(InputCode code) => automapInput.HandleAutomapKey(code);
+    internal static void RouteMovementToAutomap() => automapInput.RouteMovementToAutomap();
+
+    private static void Cmd_AmStyle(string[] args) => automapInput.Cmd_AmStyle(args);
+    private static void Cmd_AmOverlay(string[] args) => automapInput.Cmd_AmOverlay(args);
+    private static void Cmd_AmGrid(string[] args) => automapInput.Cmd_AmGrid(args);
+    private static void Cmd_AmStats(string[] args) => automapInput.Cmd_AmStats(args);
+    private static void Cmd_AmReveal(string[] args) => automapInput.Cmd_AmReveal(args);
+
+    // ==== StatusBarParts =========================================================================
+
+    /*
+    =============================================================================
+
+                                    STATUS BAR
+
+    The layout (statusbar.yaml) and its parts drawn from the player's state are in
+    Ui/StatusBarDrawing.cs, and the weapon's ammo and charge light in Gameplay/PlayerWeapons.cs.
+
+    =============================================================================
+    */
+
+    static StatusBarDrawing statusBarDrawing = null!;     // made in InitServices
+
+    static StatusBarDrawing MakeStatusBarDrawing() =>
+        new(_gameEngineManager, _assetManager, _videoManager, _graphicManager, _inventoryManager, _audioManager,
+            _hudMessageManager, ui, session, settings, new StatusBarHooks(GetMapDisplayName, WrapText));
+
+    static void DrawKeys() => statusBarDrawing.DrawKeys();
+    static void DrawScore() => statusBarDrawing.DrawScore();
+
+    // ==== Radar ==================================================================================
+
+    // The status bar's radar (Ui/Radar.cs)
+    static Radar radar = null!;     // made in InitServices
+
+    static Radar MakeRadar() =>
+        new(_mapManager, _inventoryManager, _inputManager, _hudMessageManager, _videoManager, _graphicManager,
+            statusBarDrawing, doors, session, settings);
+
+    internal static void UpdateRadar() => radar.UpdateRadar();
+    static string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked) =>
+        radar.RadarTileColor(x, y, unmapped, floor, door, locked);
+
+    // ==== HudMessages ============================================================================
+
+    // The HUD messages drawn over the view, and the obituary (Ui/HudMessageDrawing.cs)
+    static HudMessageDrawing hudMessageDrawing = null!;     // made in InitServices
+
+    static HudMessageDrawing MakeHudMessageDrawing() => new(_videoManager, _graphicManager, _inventoryManager, _hudMessageManager, ui,
+        statusBarDrawing, playersManager, render, session);
+
+    internal static void DrawHudMessages() => hudMessageDrawing.DrawHudMessages();
+    internal static void ShowObituary() => hudMessageDrawing.ShowObituary();
+    static List<string> WrapText(string text, string font, int width) => hudMessageDrawing.WrapText(text, font, width);
+
+    // ==== ConsoleDraw ============================================================================
+
+    // The drop-down console drawn over the screen (Ui/ConsoleDrawing.cs)
+    static ConsoleDrawing consoleDrawing = null!;       // made in InitServices
+
+    internal static void RestoreBorderAfterConsole() => consoleDrawing.RestoreBorderAfterConsole();
+    internal static void DrawConsole() => consoleDrawing.DrawConsole();
+
+    // ==== WL_DEBUG ===============================================================================
+    // The old Tab+key debug keys are now console commands (GameHost.ConsoleCommands.cs); the screens
+    // they show and save are Ui/DebugScreens.cs.
+
+    static DebugScreens debugScreens = null!;       // made in InitServices
+    static DebugCommands debugCommands = null!;     // (Commands/DebugCommands.cs)
+
+    // Set by the "screenshot" command; ThreeDRefresh takes the shot before drawing the console.
+    static bool screenshotPending { get => debugScreens.screenshotPending; set => debugScreens.screenshotPending = value; }
+
+    internal static string TakeScreenshot() => debugScreens.TakeScreenshot();
 }

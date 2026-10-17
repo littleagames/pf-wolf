@@ -1,13 +1,18 @@
 using PFWolf.Assets;
 using PFWolf.Constants;
-using PFWolf.Enums;
 using PFWolf.Entities.Actors;
+using PFWolf.Enums;
+using PFWolf.Extensions;
 using PFWolf.Managers;
+using System.Data;
 
 namespace PFWolf;
 
+// GameHost's player and actor wiring: the player, weapons, players, doors and switches, enemies, projectiles
 internal static partial class GameHost
 {
+    // ==== WL_AGENT ===============================================================================
+
     /*
     =============================================================================
 
@@ -26,7 +31,7 @@ internal static partial class GameHost
 
     //
     // player state info: thrustspeed, plux/pluy, anglefrac, LastAttacker and the rest are the
-    // acting player's (GameHost.Players.cs)
+    // acting player's (Gameplay/Players.cs)
     //
 
     /*
@@ -90,13 +95,13 @@ internal static partial class GameHost
         Entities.Actors.Monster.RegisterActions();
         Entities.Actors.BlakeMonster.RegisterActions();
 
-        // Any actor's sounds, and the end of the game (GameHost.WL_ACT2.cs)
+        // Any actor's sounds, and the end of the game (Gameplay/ActorSounds.cs)
         ActorActionRegistry.Register("A_DeathScream", A_DeathScream);
         ActorActionRegistry.Register("A_ActiveSound", A_ActiveSound);
         ActorActionRegistry.Register("A_PlaySound", A_PlaySound);
         ActorActionRegistry.Register("A_Victory", A_Victory);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
-        ActorActionRegistry.Register("A_Quake", A_Quake);       // the view shakes (GameHost.WL_DRAW.cs)
+        ActorActionRegistry.Register("A_Quake", A_Quake);       // the view shakes (A_Quake, in GameHost.Rendering.cs)
         // A_MakeNoise: a noise, as a shot's: enemies in the areas joined to the player's come
         // (Midnight Assault's lights coming on: madenoise)
         ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => madenoise = true);
@@ -131,12 +136,12 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => levelAI.WarpSiteGone());
         ActorActionRegistry.Register("A_WarpSitesOff", (Entities.Actors.Actor _) => levelAI.WarpSitesOff());
 
-        // Projectiles and effects (GameHost.WL_ACT2.cs).
+        // Projectiles and effects (Gameplay/Projectiles.cs).
         ActorActionRegistry.Register("A_Projectile", A_Projectile);
         ActorActionRegistry.Register("A_SpawnThing", A_SpawnThing);
         ActorActionRegistry.Register("A_Remove", A_Remove);
 
-        // BJ victory cutscene (GameHost.WL_ACT2.cs): BJ walks the patrol arrows as a Monster.
+        // BJ victory cutscene (Gameplay/BJVictory.cs): BJ walks the patrol arrows as a Monster.
         ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("T_BJRun", T_BJRun);
         ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("T_BJJump", T_BJJump);
         ActorActionRegistry.Register("T_BJDone", T_BJDone);
@@ -146,7 +151,7 @@ internal static partial class GameHost
         ActorActionRegistry.Register("T_DeathCam", T_DeathCam);
         ActorActionRegistry.Register("T_PlayerDead", T_PlayerDead);
 
-        // The weapon in hand's states (GameHost.PlayerWeapon.cs).
+        // The weapon in hand's states (Gameplay/WeaponInHand.cs).
         RegisterWeaponActions();
 
         // mapdefs trigger and switch actions, run when the player uses a trigger's tile or a
@@ -165,7 +170,7 @@ internal static partial class GameHost
         RegisterSmartSwitchActions();   // A_SmartSwitch (Gameplay/SmartSwitches.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Rendering/Lighting.cs)
         RegisterActorLightActions(); // actors' own lights (Rendering/ActorLights.cs)
-        RegisterProjectileActions(); // projectiles and jumps for any actor, traps (GameHost.ProjectileActions.cs)
+        RegisterProjectileActions(); // projectiles and jumps for any actor, traps (Gameplay/ProjectileActions.cs)
     }
 
     /// <summary>A_PushWall: the trigger's wall pushed the way the player faces, unless it only goes another way (see RegisterActorActions)</summary>
@@ -286,4 +291,218 @@ internal static partial class GameHost
                 else
                     PlayerDies();
             }));
+
+    // ==== PlayerWeapon ===========================================================================
+    // The weapon in hand's states (Gameplay/WeaponInHand.cs) and the player's knife and gun
+    // (Gameplay/PlayerAttacks.cs)
+
+    static PlayerAttacks playerAttacks = null!;     // made in InitServices
+    static WeaponInHand weaponInHand = null!;
+
+    static PlayerAttacks MakePlayerAttacks() =>
+        new(_mapManager, _inventoryManager, _factionManager, lineOfSight, session,
+            new PlayerAttackHooks(PlayerViewOrigin, () => centerx, () => shootdelta, TakeDamage, PlayPlayerSound,
+                () => DamageDealt));
+
+    static WeaponInHand MakeWeaponInHand() =>
+        new(_inventoryManager, _mapManager, session, playerWeapons, playerAttacks, RegisterMissileActions);
+
+    static void RegisterWeaponActions() => (weaponInHand ??= MakeWeaponInHand()).Register();
+
+    static string? WeaponShapeName() => weaponInHand.WeaponShapeName();
+
+    // ==== Players ================================================================================
+
+    /*
+    ====================
+    =
+    = Players
+    =
+    = Everyone in the game, each with their own PlayerState, and who's acting now: the
+    = GameSession (Gameplay/GameSession.cs), which these forward to.
+    =
+    ====================
+    */
+
+    internal static List<Entities.PlayerState> players => session.players;
+    internal static Entities.PlayerState playerstate => session.playerstate;
+    internal static GameSession.ActingScope ActAs(Entities.PlayerState p) => session.ActAs(p);
+    static void SetActing(Entities.PlayerState p) => session.SetActing(p);
+
+    // Everyone in the game coming and going (Gameplay/Players.cs)
+    static Players playersManager = null!;      // made in InitServices
+
+    static Players MakePlayers() =>
+        new(_mapManager, _audioManager, _videoManager, _inventoryManager, _hudMessageManager, statusBarDrawing, playerClassRules, playerStats,
+            playerWeapons, playerMovement, playerThink, session,
+            new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, MayRespawn, ShowObituary, ConnectAreas,
+                () => deathTurnSpeed, () => deathDropHeight, () => deathDropSpeed, PlayerColor));
+
+    internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);
+    internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);
+    static bool IsFreeFloor(int x, int y) => playersManager.IsFreeFloor(x, y);
+    internal static void PlayerDies() => playersManager.PlayerDies();
+    internal static void T_PlayerDead(Entities.Actors.Actor ob) => playersManager.T_PlayerDead(ob);
+    static void AddNetPlayer(Networking.NetJoin join) => playersManager.AddNetPlayer(join);
+
+    // addplayer, gamemode and controlplayer (Commands/PlayerCommands.cs)
+    static PlayerCommands playerCommands = null!;       // made in InitServices
+
+    //
+    // The acting player's state, under the names the game has always used for it
+    //
+    static Entities.Actors.Actor? LastAttacker { get => playerstate.LastAttacker; set => playerstate.LastAttacker = value; }
+
+    // The player's own look up/down (degrees, up positive) and eye height (texels above the
+    // floor): reset each level, not saved
+    internal static int playereyez { get => playerstate.EyeZ; set => playerstate.EyeZ = value; }
+
+    // ==== WL_ACT1 ================================================================================
+
+    /*
+    ===============
+    =
+    = PlaceItemType
+    =
+    = Called during game play to drop actors' items.  It finds the proper
+    = item number based on the item type (bo_???).  If there are no free item
+    = spots, nothing is done.
+    =
+    ===============
+    */
+    internal static void PlaceItemType(string item_class, int tilex, int tiley)
+    {
+        _mapManager.SpawnThing(tilex, tiley, item_class);
+    }
+
+    /*
+    =============================================================================
+
+                                    DOORS
+
+    The doors and the areas they join are Gameplay/Doors.cs (made in InitServices) and
+    Gameplay/AreaConnections.cs (on the session); these forward to them.
+
+    =============================================================================
+    */
+
+    static Doors doors = null!;
+
+    internal static void ConnectAreas() => doors.ConnectAreas();
+    internal static void InitAreas() => session.areas.InitAreas(_mapManager.Players.Select(pawn => (int)pawn.AreaNumber), _mapManager.Floors.NumAreas);
+
+    /*
+    =============================================================================
+
+                                    PUSHABLE WALLS
+
+    Gameplay/PushWalls.cs (made in InitServices); these forward to it, the renderer's pwall
+    accessors included.
+
+    =============================================================================
+    */
+
+    static PushWalls pushWalls = null!;
+
+    internal static bool PushWall(int checkx, int checky, controldirs dir, string? moveSound = null, string? blockedSound = null)
+        => pushWalls.PushWall(checkx, checky, dir, moveSound, blockedSound);
+
+    /*
+    =============================================================================
+
+                                    SWITCHES
+
+    The switch and trigger actions and Blake Stone's smart switches are Gameplay/SwitchActions.cs
+    and Gameplay/SmartSwitches.cs (made in InitServices); these forward to them.
+
+    =============================================================================
+    */
+
+    static SwitchActions switchActions = null!;
+    static SmartSwitches smartSwitches = null!;
+
+    // Made in InitServices. Registering only binds the handlers, so a test that lists the action
+    // names (ScriptApiTests) can register them before any services exist: then they're made here.
+    static SwitchActions MakeSwitchActions() => new(_audioManager, _mapManager, _inventoryManager, _hudMessageManager, doors, pushWalls, session,
+        new SwitchHooks(CouldTakeInventory, TryApplyInventory));
+    static SmartSwitches MakeSmartSwitches() => new(_mapManager, doors, session, (wallSwitch, x, y) => UseSwitch(wallSwitch, x, y, FacingDir(player.Angle)));
+
+    private static void RegisterSwitchActions() => (switchActions ??= MakeSwitchActions()).Register();
+    private static void RegisterSmartSwitchActions() => (smartSwitches ??= MakeSmartSwitches()).Register();
+
+    // ==== WL_ACT2 ================================================================================
+
+    /*
+    =============================================================================
+
+                                   LOCAL CONSTANTS
+
+    =============================================================================
+    */
+
+    // Enemy state tables, spawn functions (SpawnStand/SpawnPatrol/SpawnBoss/etc.), and AI
+    // think/action functions (T_Stand/T_Chase/T_Shoot/etc., along with starthitpoints and
+    // the enemy_states/EnemyStateList lookup) were removed from this file -- enemies now
+    // run on the new Entities.Actors.Actor type, spawned by MapManager.LoadMap from
+    // mapdefs/wolf3d/enemies.yaml and driven by the AI on Entities.Actors.Monster.
+    //
+    // Projectiles (Rocket/Smoke/Needle/Fire, actordefs/wolf3d/projectiles.yaml) and the
+    // BJ-victory end-of-episode cutscene (actordefs/wolf3d/victory.yaml) run on the same type,
+    // spawned into MapManager._actors by MapManager.SpawnAtActor. CheckPosition's only caller
+    // is A_StartDeathCam (Gameplay/PlayerDeath.cs), placing the camera.
+
+    // Enemies' projectiles and their effects (Gameplay/Projectiles.cs), actors' sounds
+    // (Gameplay/ActorSounds.cs) and BJ's victory run (Gameplay/BJVictory.cs)
+    static Projectiles projectiles = null!;     // made in InitServices
+    static ActorSounds actorSounds = null!;
+    static BJVictory bjVictory = null!;
+
+    static Projectiles MakeProjectiles() =>
+        new(_mapManager, _factionManager, session, new ProjectileHooks(
+            (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: false),
+            PlaySoundLocActor, TakeDamage));
+
+    internal static void A_SpawnThing(Entities.Actors.Actor ob, string[] args) => projectiles.A_SpawnThing(ob, args);
+    internal static void A_Remove(Entities.Actors.Actor ob) => projectiles.A_Remove(ob);
+    internal static bool ProjectileTryMove(Entities.Actors.Actor ob) => projectiles.ProjectileTryMove(ob);
+    internal static void A_Projectile(Entities.Actors.Actor ob, string[] args) => projectiles.A_Projectile(ob, args);
+
+    internal static void A_DeathScream(Entities.Actors.Actor ob) => actorSounds.A_DeathScream(ob);
+    internal static void PlayActorSound(Entities.Actors.Actor ob, string key) => actorSounds.PlayActorSound(ob, key);
+    internal static void A_ActiveSound(Entities.Actors.Actor ob) => actorSounds.A_ActiveSound(ob);
+    internal static void A_PlaySound(Entities.Actors.Actor ob, string[] args) => actorSounds.A_PlaySound(ob, args);
+
+    internal static void VictoryTile() => bjVictory.VictoryTile();
+    internal static void A_Victory(Entities.Actors.Actor ob) => bjVictory.A_Victory(ob);
+    internal static void T_BJRun(Entities.Actors.Monster ob) => bjVictory.T_BJRun(ob);
+    internal static void T_BJJump(Entities.Actors.Monster ob) => bjVictory.T_BJJump(ob);
+    internal static void T_BJDone(Entities.Actors.Actor ob) => bjVictory.T_BJDone(ob);
+
+    // ==== WL_STATE ===============================================================================
+
+    // Line of sight (Gameplay/LineOfSight.cs, made in InitServices); these forward to it
+    static LineOfSight lineOfSight = null!;
+
+    // What the level does on its own: outlets, warp sites, floor drops, talking (Managers/LevelAI.cs)
+    internal static LevelAI levelAI = null!;      // made in InitServices
+
+    // ==== Missiles ===============================================================================
+
+    // Missiles, blasts and barriers (Gameplay/Missiles.cs)
+    static Missiles missiles = null!;   // made in InitServices
+
+    static Missiles MakeMissiles() =>
+        new(_mapManager, _factionManager, doors, playerWeapons, playerAttacks, playerStats, session,
+            new MissileHooks(ProjectileTryMove, PlaySoundLocActor, TakeDamage));
+
+    static void RegisterMissileActions() => (missiles ??= MakeMissiles()).Register();
+
+    // ==== ProjectileActions ======================================================================
+
+    // Projectiles and jumps for any actor (Gameplay/ProjectileActions.cs, made in InitServices).
+    // Registering only binds the handlers, so it can happen before the services exist (ScriptApiTests).
+    static ProjectileActions projectileActions = null!;
+    static ProjectileActions MakeProjectileActions() => new(_mapManager, session, lineOfSight, PlayActorSound);
+
+    static void RegisterProjectileActions() => (projectileActions ??= MakeProjectileActions()).Register();
 }

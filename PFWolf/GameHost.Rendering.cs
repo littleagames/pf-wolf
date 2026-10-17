@@ -1,9 +1,14 @@
 using PFWolf.Assets;
+using PFWolf.Constants;
+using PFWolf.Entities.Actors;
 
 namespace PFWolf;
 
+// GameHost's rendering wiring: the 3D view, sprites, lighting, weather, wall sprites, the camera and what players see
 internal static partial class GameHost
 {
+    // ==== WL_DRAW ================================================================================
+
     /*
     =============================================================================
 
@@ -145,4 +150,98 @@ internal static partial class GameHost
 
     internal static double MaxPitch() => frameRefresh.MaxPitch();
     internal static void ThreeDRefresh() => frameRefresh.ThreeDRefresh();
+
+    // ==== WL_SCALE ===============================================================================
+
+    // Drawing sprites scaled onto the view (Rendering/SpriteScaler.cs)
+    static SpriteScaler spriteScaler = null!;       // made in InitServices
+
+    static SpriteScaler MakeSpriteScaler() => new(_assetManager, _videoManager, lighting, render, FloorRow);
+
+    internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs,
+        bool cloaked = false, SpriteTranslation? translation = null) =>
+        spriteScaler.ScaleColumn(x, toppix, fracstep, sprite, column, shade, shadeofs, cloaked, translation);
+
+    // ==== WL_SHADE ===============================================================================
+
+    // The level's shading, light grid and light zones (Rendering/Lighting.cs)
+    static Lighting lighting = null!;       // made in InitServices
+
+    // The level-editing console commands (Commands/LevelEditCommands.cs)
+    static LevelEditCommands levelEditCommands = null!;     // made in InitServices
+    static FactionCommands factionCommands = null!;     // (Commands/FactionCommands.cs)
+
+    static Lighting MakeLighting() =>
+        new(_gameEngineManager, _videoManager, _mapManager,
+            new LightingHooks(() => heightnumerator, () => colortints.Clear(), TickActorLights));
+
+    private static void RegisterZoneLightActions() => (lighting ??= MakeLighting()).RegisterZoneLightActions();
+
+    // ==== ActorLights ============================================================================
+
+    // Light actors give off (Rendering/ActorLights.cs)
+    static ActorLights actorLights = null!;     // made in InitServices
+
+    static ActorLights MakeActorLights() => new(_mapManager, doors, lighting ??= MakeLighting(), session);
+
+    static Dictionary<string, byte[]> colortints => actorLights.colortints;
+
+    private static void RegisterActorLightActions() => (actorLights ??= MakeActorLights()).RegisterActorLightActions();
+    static void TickActorLights(uint tics) => actorLights.TickActorLights(tics);
+
+    // ==== Weather ================================================================================
+
+    // Rain and snow (Rendering/Weather.cs)
+    static Weather weather = null!;     // made in InitServices
+
+    static Weather MakeWeather() => new(_gameEngineManager, _videoManager, _mapManager, lighting, render, session, FloorRow, IsArch);
+
+    // ==== WallSprites ============================================================================
+
+    // Wall sprites' geometry (Rendering/WallSprites.cs) and their blocking on the level
+    // (Rendering/WallSprites.cs WallSpriteBlocking)
+    static WallSpriteBlocking wallSpriteBlocking = null!;       // made in InitServices
+
+    internal static bool IsWallSprite(Entities.Actors.Actor actor) => WallSprites.IsWallSprite(actor);
+
+    static int wallspritefromx { get => wallSpriteBlocking.wallspritefromx; set => wallSpriteBlocking.wallspritefromx = value; }
+    static int wallspritefromy { get => wallSpriteBlocking.wallspritefromy; set => wallSpriteBlocking.wallspritefromy = value; }
+    internal static WallSpriteSpan? WallSpriteHitByBox(int xl, int yl, int xh, int yh, long x, long y, long size, bool player) =>
+        wallSpriteBlocking.WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player);
+    internal static bool WallSpriteBlocksLine(long x1, long y1, long x2, long y2) => wallSpriteBlocking.WallSpriteBlocksLine(x1, y1, x2, y2);
+
+    // Drawing wall sprites (Rendering/WallSpriteDrawing.cs)
+    static WallSpriteDrawing wallSpriteDrawing = null!;     // made in InitServices
+
+    static WallSpriteDrawing MakeWallSpriteDrawing() => new(_assetManager, _mapManager, lighting, render, spriteScaler, FloorRow);
+
+    // ==== Camera =================================================================================
+
+    internal static void SetEyeHeight(int z) => playereyez = Math.Clamp(z, MINEYE, MAXEYE);
+
+    // The `spectate` command (Gameplay/Spectating.cs)
+    static Spectating spectating = null!;       // made in InitServices
+
+    static IEnumerable<Entities.Actors.Actor> SpectateCandidates() => spectating.SpectateCandidates();
+    private static void Cmd_Spectate(string[] args) => spectating.Cmd_Spectate(args);
+
+    // What others see of each player (Gameplay/PlayerBodies.cs)
+    static PlayerBodies playerBodies = null!;       // made in InitServices
+
+    internal static void TickPlayerBodies(uint tics) => playerBodies.TickPlayerBodies(tics);
+    static Entities.Actors.Actor? VisiblePlayerBody(PlayerPawn pawn) => playerBodies.VisiblePlayerBody(pawn);
+    static bool IsPlayerBody(Entities.Actors.Actor actor) => playerBodies.IsPlayerBody(actor);
+    internal static string DrawnSprite(Entities.Actors.Actor actor) => playerBodies.DrawnSprite(actor);
+    static bool SpriteExists(string name) => playerBodies.SpriteExists(name);
+
+    // ==== PlayerSight ============================================================================
+
+    // What the player touches and sees, kept apart from what the camera draws (Rendering/PlayerView.cs)
+    static PlayerView playerView = null!;       // made in InitServices
+
+    static PlayerView MakePlayerView() =>
+        new(_mapManager, lineOfSight, session, new PlayerViewHooks(
+            () => focallength, () => viewwidth, TransformActorFrom, IsWallSprite, GetBonus));
+
+    static (int x, int y, int sin, int cos) PlayerViewOrigin() => playerView.PlayerViewOrigin();
 }

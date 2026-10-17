@@ -7,7 +7,7 @@ namespace PFWolf.Ui;
 /// <param name="NetChatting">Typing something to say to the others: the keys are the line's</param>
 /// <param name="NetChatKeys">The chat line's keys (Ui/NetOverlay.cs)</param>
 /// <param name="NetCheckKeys">The keys in a game with others: Esc asks to leave (Ui/NetOverlay.cs)</param>
-/// <param name="ToggleAutomap">Opens or shuts the automap (GameHost.Automap.cs)</param>
+/// <param name="ToggleAutomap">Opens or shuts the automap (Ui/AutomapInput.cs)</param>
 /// <param name="HandleAutomapKey">The automap's own keys while it's open: true if it took one</param>
 /// <param name="DrawPlayBorder">Redraws the border around the view</param>
 /// <param name="DrawPlayBorderSides">Redraws the border's sides</param>

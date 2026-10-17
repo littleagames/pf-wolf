@@ -291,7 +291,7 @@ internal sealed class PlayerMovement(
         }
 
         //
-        // a wall sprite only blocks along its panel (GameHost.WallSprites.cs)
+        // a wall sprite only blocks along its panel (Rendering/WallSprites.cs)
         //
         if (nearwallsprite
             && hooks.WallSpriteHit((int)xl, (int)yl, (int)xh, (int)yh, ob.X, ob.Y, PLAYERSIZE) is { } panel)

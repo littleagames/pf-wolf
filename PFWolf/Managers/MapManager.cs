@@ -145,7 +145,7 @@ internal class MapManager
 
     /// <summary>
     /// Each tile's light zone, 0 for none (the map's light): the map's game-info zones say how
-    /// each is lit (GameHost.WL_SHADE.cs).
+    /// each is lit (Rendering/Lighting.cs).
     /// </summary>
     internal const int ZONEPLANE = MapConstants.ZONEPLANE;
 
@@ -1064,7 +1064,7 @@ internal class MapManager
             builtActor = chosenActor;
         }
 
-        // A deathmatch without monsters (GameHost.Deathmatch.cs) leaves the map's enemies out
+        // A deathmatch without monsters (Gameplay/Deathmatch.cs) leaves the map's enemies out
         if (NoMonsters && builtActor is Entities.Actors.Monster)
             return null;
 
@@ -1072,7 +1072,7 @@ internal class MapManager
         builtActor.Translation = TranslationManager.SpawnTranslation(builtActor, thing.Translation);
         builtActor.SetPosition(tilex, tiley);
 
-        // SpawnNewObj (GameHost.WL_STATE.cs) always set areanumber from the spawn tile for
+        // SpawnNewObj (WL_STATE.C) always set areanumber from the spawn tile for
         // every actor, not just ones on an ambush tile -- without this, AreaNumber sits at
         // its byte default (0, a real area index, not an "unset" sentinel) until the actor
         // first moves through TryWalk, which recomputes it correctly. Until then, anything
@@ -1150,7 +1150,7 @@ internal class MapManager
             else
             {
                 // Grunts only ambush if placed directly on an ambush floor tile (SpawnStand
-                // in GameHost.WL_ACT2.cs), unlike AMBUSH actors, which always are.
+                // in WL_ACT2.C), unlike AMBUSH actors, which always are.
                 var floorTile = MAPSPOT(tilex, tiley, 0);
                 if (floorTile == Floors.AmbushTile)
                 {
@@ -1187,7 +1187,7 @@ internal class MapManager
         }
 
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
-        // (GameHost.WL_AGENT.cs) bumps treasurecount on pickup off the same flag.
+        // (Gameplay/Pickups.cs) bumps treasurecount on pickup off the same flag.
         if (!session.loadedgame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
             session.gamestate.treasuretotal++;
 
@@ -1267,7 +1267,7 @@ internal class MapManager
         builtActor.Distance = source.Distance;
         builtActor.Dir = source.Dir;
         builtActor.AreaNumber = source.AreaNumber;
-        // Hitler stuck-with-nodir fix (GameHost.WL_ACT2.cs's A_HitlerMorph): the morphed
+        // Hitler stuck-with-nodir fix (Monster's A_HitlerMorph): the morphed
         // actor must remain markable even if the dying source had FL_NONMARK set.
         builtActor.RuntimeFlags = (source.RuntimeFlags & ~objflags.FL_NONMARK) | objflags.FL_SHOOTABLE;
         builtActor.Hitpoints = GetScaledHealth(builtActor);
@@ -1557,7 +1557,7 @@ internal class MapManager
         if (marks)
             UnmarkActorTile(ob.TileX, ob.TileY);
 
-        // Mirrors GameHost.DoActor (GameHost.WL_PLAY.cs): a frame that holds forever (-1) only
+        // Mirrors vanilla DoActor (WL_PLAY.C): a frame that holds forever (-1) only
         // runs its Think each tic; Next is never consulted again. So does one with no countdown
         // at all, as the original's ticcount 0: a demo's spawn can leave a patroller that way
         // (SpawnTicCount), walking on its first frame until it changes state.

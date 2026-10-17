@@ -11,7 +11,7 @@ internal class visobj_t
     public short viewheight;
     public string shapenum;
     public objflags flags;
-    public Entities.Actors.Actor? wallsprite;   // drawn as a panel (GameHost.WallSprites.cs), not a billboard
+    public Entities.Actors.Actor? wallsprite;   // drawn as a panel (Rendering/WallSprites.cs), not a billboard
     public bool bright;                         // drawn unshaded (Lighting.IsBright)
     public bool cloaked;                        // drawn as a dark shimmer of what's behind it (Actor.Cloaked)
     public int worldx, worldy;                  // where it stands (global units), for its light
@@ -50,7 +50,7 @@ internal enum buttontypes
     bt_slot8,
     bt_slot9,
     bt_slot0,
-    // Looking up and down (y-shearing, GameHost.WL_DRAW.cs): the view's pitch only, not saved or in demos
+    // Looking up and down (y-shearing, Rendering/FrameRefresh.cs): the view's pitch only, not saved or in demos
     bt_lookup,
     bt_lookdown,
     bt_centerview,
@@ -280,7 +280,7 @@ internal class BlockingActor: Actor
 {
 }
 
-// A wall sprite's tile (GameHost.WallSprites.cs): enemies keep out of all of it, as they do a
+// A wall sprite's tile (Rendering/WallSprites.cs): enemies keep out of all of it, as they do a
 // solid static's, while the player and projectiles are only stopped by the panel itself.
 internal class WallSpriteBlocker: BlockingActor
 {

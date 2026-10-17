@@ -6,7 +6,7 @@ namespace PFWolf.Rendering;
 /// <summary>What the level's lighting needs from the game</summary>
 /// <param name="HeightNumerator">The view's height numerator (CalcHeight), to turn a height back into a distance</param>
 /// <param name="ClearColorTints">Forgets the actor lights' color tints (the tints they name are gone)</param>
-/// <param name="TickActorLights">Runs the actors' lights for this tic's worth of time (GameHost.ActorLights.cs)</param>
+/// <param name="TickActorLights">Runs the actors' lights for this tic's worth of time (Rendering/ActorLights.cs)</param>
 internal sealed record LightingHooks(Func<int> HeightNumerator, Action ClearColorTints, Action<uint> TickActorLights);
 
 /// <summary>
@@ -329,7 +329,7 @@ internal sealed class Lighting(
         foreach (var zone in levelzones.Values)
             zone.Tick((int)tics, zonerandom);
         UpdateZoneLevels();
-        hooks.TickActorLights(tics);      // and actors' (GameHost.ActorLights.cs)
+        hooks.TickActorLights(tics);      // and actors' (Rendering/ActorLights.cs)
     }
 
     /// <summary>The zone with this id, made (at full light) if the level has none yet.</summary>

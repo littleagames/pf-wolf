@@ -5,9 +5,9 @@ namespace PFWolf.Gameplay;
 
 /// <summary>What playing a level needs from the game</summary>
 /// <param name="DemoTesting">demotest: each demo plays to its end, keys or not</param>
-/// <param name="TickPlayerBodies">What others see of the players (GameHost.Camera.cs)</param>
+/// <param name="TickPlayerBodies">What others see of the players (Gameplay/PlayerBodies.cs)</param>
 /// <param name="UpdateSoundListener">Where the sounds are heard from</param>
-/// <param name="UpdateAutomap">The automap's movement and zoom (GameHost.Automap.cs)</param>
+/// <param name="UpdateAutomap">The automap's movement and zoom (Ui/AutomapInput.cs)</param>
 /// <param name="AutosavePending">Whether the level asked for an autosave</param>
 /// <param name="AutoSaveGame">Makes it, now there's a picture of the level for it</param>
 /// <param name="TickAmbience">The player's zone's ambient sound (Gameplay/ZoneAmbience.cs)</param>

@@ -40,7 +40,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         int xfrac, yfrac, deltafrac;
         uint value, intercept;
 
-        // a wall sprite's panel across the line (GameHost.WallSprites.cs), unless it's shoot-through
+        // a wall sprite's panel across the line (Rendering/WallSprites.cs), unless it's shoot-through
         if (wallSpriteBlocks(fromX, fromY, to.X, to.Y))
             return false;
 

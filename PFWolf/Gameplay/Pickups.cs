@@ -89,7 +89,7 @@ internal sealed class Pickups(
 
         hooks.Taken?.Invoke(builtActor);
 
-        // Deathmatch (GameHost.Deathmatch.cs): a weapon stays for everyone else, and anything
+        // Deathmatch (Gameplay/Deathmatch.cs): a weapon stays for everyone else, and anything
         // else comes back a while after it's taken
         if (session.gamemode.KeepsItems() && builtActor is Weapon)
             return;

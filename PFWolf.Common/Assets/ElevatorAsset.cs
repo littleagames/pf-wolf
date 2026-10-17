@@ -2,7 +2,7 @@ namespace PFWolf.Assets;
 
 /// <summary>
 /// A game pack's floor-select screen (gamepacks/{pack}/elevator.yaml), as A_FloorSelect shows
-/// it (GameHost.Elevator.cs): Blake Stone's elevator panel. Its buttons are the floors of the
+/// it (Ui/ElevatorScreens.cs): Blake Stone's elevator panel. Its buttons are the floors of the
 /// level's cluster, by game-info floor-number. Coordinates are on the 320x200 screen and colors
 /// are palette indices.
 /// </summary>
@@ -119,7 +119,7 @@ public record ElevatorMessages
 }
 
 /// <summary>
-/// Planet Strike's teleporter map (GameHost.Teleporter.cs, bstone's ps_input_floor): pictures
+/// Planet Strike's teleporter map (Ui/ElevatorScreens.cs, bstone's ps_input_floor): pictures
 /// drawn first, then each floor's spot on the map, its picture (on for the one chosen) named
 /// by the format with the floor's number from 1; up and down buttons lit as they're used; the
 /// chosen floor's name in a bar; an overhead map of the floor as last seen; help text.
@@ -183,7 +183,7 @@ public record TeleporterSpot
     public int Y { get; set; }
 }
 
-/// <summary>Where the floor's stat bars go (see GameHost.Elevator.cs ShowFloorStats)</summary>
+/// <summary>Where the floor's stat bars go (see Ui/ElevatorScreens.cs ShowFloorStats)</summary>
 public record ElevatorStats
 {
     public int X { get; set; }

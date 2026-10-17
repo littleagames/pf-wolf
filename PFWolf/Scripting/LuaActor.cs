@@ -5,7 +5,7 @@ namespace PFWolf.Scripting;
 
 /// <summary>
 /// An actor as scripts see it: a Lua userdata whose fields and methods (`self.x`,
-/// `self:jump("Fire")`) are GameHost.Scripting.cs's metatable. Each actor has one, so the same
+/// `self:jump("Fire")`) are Scripting/GameScripts.cs's metatable. Each actor has one, so the same
 /// actor is the same value in Lua (`a == b`).
 /// </summary>
 internal sealed class LuaActor : ILuaUserData

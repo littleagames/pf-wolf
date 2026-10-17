@@ -2,7 +2,7 @@ namespace PFWolf.Networking;
 
 /// <summary>
 /// One player in full, as the host sends the game to someone joining mid-game
-/// (GameHost.NetJoin.cs WriteNetState): what a save holds for them, and everything else of theirs
+/// (Networking/MidGameJoin.cs WriteNetState): what a save holds for them, and everything else of theirs
 /// that decides how the game goes on.
 /// </summary>
 internal static class NetPlayerState

@@ -71,7 +71,7 @@ internal enum NetMessage : byte
     // Either way: a player says something (the host passes it on to everyone)
     Chat,                   // from slot, text
 
-    // Playing (GameHost.NetPlay.cs): each machine sends its player's controls for a frame; the
+    // Playing (Networking/NetPlay.cs): each machine sends its player's controls for a frame; the
     // host sends everyone's, once it has them all, and every machine plays that frame with them
     Cmd,                    // player to host: level, step, TicCmd
     Tics,                   // host to all: TicBundle

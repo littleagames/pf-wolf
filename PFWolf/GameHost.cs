@@ -382,7 +382,7 @@ internal static partial class GameHost
 
         InitServices();
         _gameEngineManager.Init(gameParams, modPaths);
-        SetNetParams(gameParams);     // --host, --join, --port, --name (GameHost.Multiplayer.cs)
+        SetNetParams(gameParams);     // --host, --join, --port, --name (Networking/NetGames.cs)
         warpRequest.SetParams(gameParams);  // --warp, --skill, --start (Gameplay/WarpRequest.cs)
 
         // The Mods menu's choices (mods.cfg, per game), then the command line's
@@ -402,7 +402,7 @@ internal static partial class GameHost
             Environment.Exit(1);
         }
         RegisterActorActions();
-        LoadScripts();      // after the built-in actions, which a script's can't replace (GameHost.Scripting.cs)
+        LoadScripts();      // after the built-in actions, which a script's can't replace (Scripting/GameScripts.cs)
         Entities.Actors.Monster.CheckClasses(_assetManager.GetActorMetadata());
         _factionManager.CheckClasses(_assetManager.GetActorMetadata());
         _translationManager.CheckDefinitions(_assetManager.GetActorMetadata(), _factionManager.Table);

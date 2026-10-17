@@ -4,7 +4,7 @@ namespace PFWolf.Networking;
 
 /// <summary>What playing with others needs from the game</summary>
 /// <param name="LocalCmd">This machine's controls for this frame (PollControls' localcmd)</param>
-/// <param name="WriteNetState">The game as it stands, for a player who's just joined (GameHost.NetJoin.cs)</param>
+/// <param name="WriteNetState">The game as it stands, for a player who's just joined (Networking/MidGameJoin.cs)</param>
 /// <param name="ThreeDRefresh">Draws the view, with the waiting-for message over it</param>
 /// <param name="ResetLastTimeCount">After a wait: no rush to catch up on it</param>
 /// <param name="AddNetPlayer">A player joins at this frame (Gameplay/Players.cs)</param>

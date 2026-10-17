@@ -7,7 +7,7 @@ namespace PFWolf.Gameplay;
 /// <param name="NetChatting">Typing something to say to the others: the controls are the line's</param>
 /// <param name="NetLeavePrompt">Asking whether to leave the game with others</param>
 /// <param name="DemoTesting">demotest: playing the demos through as fast as they go</param>
-/// <param name="RouteMovementToAutomap">The automap's pan mode takes the movement (GameHost.Automap.cs)</param>
+/// <param name="RouteMovementToAutomap">The automap's pan mode takes the movement (Ui/AutomapInput.cs)</param>
 internal sealed record InputPollingHooks(
     Func<bool> NetChatting,
     Func<bool> NetLeavePrompt,
@@ -62,7 +62,7 @@ internal sealed class InputPolling(
         //
         if (session.demoplayback || session.demorecord)   // demo recording and playback needs to be constant
             WaitFixedTics(GameConstants.DEMOTICS);
-        else if (session.netgame)                 // and so does playing with others (GameHost.NetPlay.cs)
+        else if (session.netgame)                 // and so does playing with others (Networking/NetPlay.cs)
             WaitFixedTics(Networking.NetPlay.NETTICS);
         else
             frame.CalcTics();
