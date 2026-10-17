@@ -34,7 +34,7 @@ components:
       - height: 58
 # A match's rules, changed with left/right (or picking them); the values are drawn by code. The
 # limit row is named for the mode (frags, captures, loot lead, points, waves to win)
-# (Program.Multiplayer.cs)
+# (Ui/MultiplayerMenu.cs)
 menu-items:
   -
       id: "fraglimit"

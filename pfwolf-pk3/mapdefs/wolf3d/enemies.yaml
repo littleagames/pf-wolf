@@ -1,5 +1,5 @@
 # Enemy map-object numbers, converted from the ScanInfoPlane switch in
-# Program.WL_GAME.cs to the same things:/class:/angles:/patrol:/min-skill: schema
+# WL_GAME.C to the same things:/class:/angles:/patrol:/min-skill: schema
 # MapActorTranslation actually deserializes (matching decorations.yaml -- this file
 # previously used a different actors:/Actor:/State:/Direction:/Skills:/Flags: shape
 # that the loader never consumed, so enemies never actually spawned through it).
@@ -14,7 +14,7 @@
 #
 # Bosses and ghosts are single, direction-less tiles (angles always 0, patrol
 # always 0); bosses are always ambush-ready regardless of angles/patrol/min-skill
-# (SpawnBoss et al. in Program.WL_ACT2.cs), and ghosts have no skill gating in the
+# (SpawnBoss et al. in WL_ACT2.C), and ghosts have no skill gating in the
 # original switch at all.
 things:
   # ---------------------------------------------------------------------

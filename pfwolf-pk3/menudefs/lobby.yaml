@@ -41,7 +41,7 @@ components:
       - y: 133
       - width: 288
       - height: 51
-# Handled by Program.Multiplayer.cs, by id. Only the host changes the mode, episode and
+# Handled by Ui/MultiplayerMenu.cs, by id. Only the host changes the mode, episode and
 # skill; everyone picks their own class and color. The host starts the game ("go") once everyone else
 # is ready; for them, "go" is that they're ready. The values are drawn by code. In any mode but
 # co-op the episode row is "Map" and picks the arena (game-info maps with `deathmatch: true`, or

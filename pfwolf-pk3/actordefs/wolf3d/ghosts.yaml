@@ -1,5 +1,5 @@
 # =============================================================================
-# DRAFT - converted from Program.WL_ACT2.cs and Program.WL_STATE.cs
+# DRAFT - converted from WL_ACT2.C and WL_STATE.C
 #
 # Ghosts (classtypes.ghostobj / enemytypes.en_blinky, en_clyde, en_pinky,
 # en_inky) -- Pac-Man-style bonus-level enemies. SpawnGhosts never sets

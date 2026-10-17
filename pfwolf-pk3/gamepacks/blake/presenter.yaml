@@ -1,4 +1,4 @@
-# The JAM text presenter (Program.TextPresenter.cs): Blake Stone's briefings, elevator messages,
+# The JAM text presenter (Ui/TextPresenter.cs): Blake Stone's briefings, elevator messages,
 # message boxes and help pages are scripts in its ^ codes. Colors are palette indices.
 
 # The fonts a script's ^FNn picks from (fonts.yaml): ^FN0 isn't printable, so it's ^FN1's

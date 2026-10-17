@@ -1,4 +1,4 @@
-# Planet Strike's teleporter map (Program.Teleporter.cs), over blake's elevator panel
+# Planet Strike's teleporter map (Ui/ElevatorScreens.cs), over blake's elevator panel
 # (gamepacks/blake/elevator.yaml), as bstone's ps_input_floor lays it out. Colors are palette
 # indices; floors are by game-info floor-number from 0.
 style: teleporter

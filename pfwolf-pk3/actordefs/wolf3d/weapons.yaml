@@ -5,7 +5,7 @@
 # The Fire/Hold timings reproduce vanilla attackinfo: every frame lasts 6 tics, and the
 # attack fires at the end of C (end of D too for the gatling gun's second shot).
 # The muzzle flash frames light the room around the player (state `light:`, see
-# Program.ActorLights.cs); that only shows where the level is darker than full light.
+# Rendering/ActorLights.cs); that only shows where the level is darker than full light.
 # weapon.bodysprite is how other players see someone holding the weapon: it's drawn in place of
 # the player class's Spawn sprite (PLMP, player.yaml) in every frame that uses it, when the
 # weapon's sprite has that frame. Variants inherit their parent's (BluePistol shows PLPS).

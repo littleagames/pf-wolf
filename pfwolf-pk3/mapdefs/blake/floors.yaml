@@ -11,7 +11,7 @@ floors:
     # The way out: Blake runs for the shuttle (the map's first wall 30) and the mission is won
     157: A_VictoryRun("BlakeVictory", 30)
     # Smart switch triggers: the object-plane value on the tile is the tile they work (a door,
-    # a wall switch, an enemy; Program.SmartSwitch.cs). 158 toggles, and goes once it has found
+    # a wall switch, an enemy; Gameplay/SmartSwitches.cs). 158 toggles, and goes once it has found
     # something there to work besides a door or wall; 159 turns things off, 160 on.
     158: A_SmartSwitch("toggle", "remove")
     159: A_SmartSwitch("off")

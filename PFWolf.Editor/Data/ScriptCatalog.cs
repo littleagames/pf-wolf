@@ -41,7 +41,7 @@ public sealed record ScriptReport(IReadOnlyList<ScriptItem> Actions, IReadOnlyLi
 }
 
 /// <summary>
-/// The Lua scripts the game runs at startup (PFWolf's GameHost.Scripting.cs): every scripts/*.lua
+/// The Lua scripts the game runs at startup (PFWolf's Scripting/GameScripts.cs): every scripts/*.lua
 /// in pfwolf.pk3 and the mods, in the order they run, what each defines (its A_ and T_
 /// functions, the actions and thinks actordefs states call) and what calls those. A script is
 /// checked the way the game would load it, without running it: it must compile, and what the

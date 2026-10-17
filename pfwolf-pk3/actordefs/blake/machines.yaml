@@ -1,7 +1,7 @@
 # Blake Stone's other foes and moving scenery, as bstone has them: electro-aliens and their
 # shots, electro-spheres, the liquid alien, hanging turrets, floating bombs, volatile material
 # transports, projection generators, security lights, steam vents, drips, flickering lights and
-# ooze. What their thinks and actions do is in Program.BlakeMachines.cs; the map numbers that
+# ooze. What their thinks and actions do is in Entities/Actors/BlakeMonster.Machines.cs; the map numbers that
 # place them are in mapdefs/blake/machines.yaml. Health is by skill (novice ... veteran).
 
 # -----------------------------------------------------------------------
@@ -233,7 +233,7 @@ FloatingBombFixed:
   parent: FloatingBomb
   flags: [STATIONARY]
   properties:
-    "switched": kill      # a smart switch on its tile sets it off (Program.SmartSwitch.cs)
+    "switched": kill      # a smart switch on its tile sets it off (Gameplay/SmartSwitches.cs)
     "seesound": ""
   states:
     Spawn:
@@ -282,7 +282,7 @@ VolatileTransportFixed:
   parent: VolatileTransport
   flags: [STATIONARY]
   properties:
-    "switched": kill      # a smart switch on its tile sets it off (Program.SmartSwitch.cs)
+    "switched": kill      # a smart switch on its tile sets it off (Gameplay/SmartSwitches.cs)
 
 # -----------------------------------------------------------------------
 # Projection generator: destroying them all wins the level. It flinches at its first hit;

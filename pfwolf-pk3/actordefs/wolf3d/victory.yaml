@@ -1,5 +1,5 @@
 # =============================================================================
-# The end-of-episode victory cutscene actor, converted from Program.WL_ACT2.cs
+# The end-of-episode victory cutscene actor, converted from WL_ACT2.C
 # (SpawnBJVictory / s_bjrun1..s_bjjump4).
 #
 # Not placed on maps: SpawnBJVictory creates one at runtime when the player steps

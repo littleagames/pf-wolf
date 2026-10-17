@@ -1,7 +1,7 @@
 # Blake Stone's guards and bio-techs, as bstone has them (3d_act2.cpp's states, 3d_state.cpp's
 # AI): health by skill (novice, skilled, expert, veteran), points, reaction delays and sounds are
 # its. They chase dodging (T_Chase), shoot back when hurt (monster.painattack) and slide
-# back from the shot that kills them (T_BlowBack); see Program.BlakeAI.cs for what the flags and
+# back from the shot that kills them (T_BlowBack); see Entities/Actors/BlakeMonster.cs for what the flags and
 # properties do. The map numbers that place them are in mapdefs/blake/enemies.yaml.
 
 # What they all share: patrollers turn aside when blocked, none open a door needing a card, and

@@ -12,7 +12,7 @@
 #         Clip: 150
 Player:
   # What other players (and the camera, spectating) see of a player: never placed on the map,
-  # just drawn where the player is (Program.Camera.cs TickPlayerBodies). Spawn standing still,
+  # just drawn where the player is (Gameplay/PlayerBodies.cs TickPlayerBodies). Spawn standing still,
   # See walking, Missile while their weapon fires, Pain (or Pain1, by whether their health is
   # odd or even) when hurt, Death once dead. A to K turn with the player (8 views); L to O are
   # seen from the front only. Don't give it a Chase state: that makes an actor an enemy.

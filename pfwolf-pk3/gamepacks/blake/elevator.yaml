@@ -1,4 +1,4 @@
-# The elevator's floor-select screen (Program.Elevator.cs), as bstone lays it out: A_FloorSelect
+# The elevator's floor-select screen (Ui/ElevatorScreens.cs), as bstone lays it out: A_FloorSelect
 # on the panel wall (mapdefs/blake/walls.yaml, wall 21) shows it. Colors are palette indices.
 
 # The next floor up opens with the red access card, which is used up

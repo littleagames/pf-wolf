@@ -75,7 +75,7 @@ RadarEnergy:
 # The fission detonator, one to a floor: blowing up its security cube with it opens the way on
 # (bstone's GivePlasmaDetonator, up to 100). Slot key 7, or use held with nothing to use or
 # talk to (every 60 tics, as bstone), drops one by the floor's security cube
-# (Program.Teleporter.cs A_DropDetonator).
+# (Gameplay/HubActions.cs A_DropDetonator).
 PlasmaDetonator:
   parent: Ammo
   properties:

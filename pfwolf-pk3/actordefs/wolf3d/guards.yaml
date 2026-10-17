@@ -1,5 +1,5 @@
 # =============================================================================
-# DRAFT - converted from Program.WL_ACT2.cs and Program.WL_STATE.cs
+# DRAFT - converted from WL_ACT2.C and WL_STATE.C
 #
 # Standard rank-and-file enemies: Guard, Officer, SS, Mutant, Dog. These are
 # the enemies that can be placed on patrol (a "Path" state) as well as
@@ -53,7 +53,7 @@
 #    which replaces the dropitem while the player has nothing as good.
 # 7. Frame letters: Attack/Pain/Death originally all pointed at frame "A"
 #    (the rotating Spawn/stand sprite), which produced invalid asset names
-#    like "GARDA0" once IsDirectionalState (Program.WL_DRAW.cs) correctly
+#    like "GARDA0" once IsDirectionalState (now Rendering/SpriteDrawing.cs) correctly
 #    stopped treating those states as directional -- there is no "A0" asset,
 #    only "A1".."A8". Corrected here against the actual single-view frame
 #    letters (verified both by rendering raw-data-map.yaml's registered
@@ -666,7 +666,7 @@ Dog:
 
 # -----------------------------------------------------------------------
 # DeadGuard -- pre-placed corpse decoration (mapdefs/wolf3d/decorations.yaml
-# object 124), not a live enemy. SpawnDeadGuard (Program.WL_ACT2.cs) spawns
+# object 124), not a live enemy. SpawnDeadGuard (WL_ACT2.C) spawns
 # this directly into s_grddie4, Guard's held final death frame, as an
 # inertobj: static, non-blocking, no AI, never shootable/killable again.
 # -----------------------------------------------------------------------

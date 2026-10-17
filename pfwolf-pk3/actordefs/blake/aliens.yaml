@@ -388,7 +388,7 @@ GurneySleeper:
 PodEgg:
   parent: BlakeMonster
   properties:
-    "switched": kill      # a smart switch on its tile hatches it (Program.SmartSwitch.cs)
+    "switched": kill      # a smart switch on its tile hatches it (Gameplay/SmartSwitches.cs)
     "tag": "$BS_PODALIEN"
     "health": 1
     "monster.becomes": "PodAlien"

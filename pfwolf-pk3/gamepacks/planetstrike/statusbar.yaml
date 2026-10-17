@@ -7,7 +7,7 @@
 # Parts Aliens of Gold's bar doesn't have:
 #   weapon-corner:  a picture under the weapon's, for the weapon in hand (weapon-pics, by class)
 #   radar-gauge:    a gauge like ammo-gauge, of an item's count out of its max (item)
-#   radar:          the map around the player (Program.Radar.cs), tiles across at 1x from x, y;
+#   radar:          the map around the player (Ui/Radar.cs), tiles across at 1x from x, y;
 #                   zoom-pics (1x, 2x, 4x) at zoom-x, zoom-y; zooming in uses up item; colors
 heart-monitor: !remove
 
