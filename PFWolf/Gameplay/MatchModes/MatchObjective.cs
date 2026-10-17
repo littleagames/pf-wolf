@@ -40,7 +40,7 @@ internal abstract class MatchObjective(MapManager map, GameSession session, Deat
 
     /// <summary>The players alive on the level, in player order</summary>
     protected IEnumerable<PlayerPawn> LivingPawns =>
-        map.Players.Where(pawn => !pawn.State.Gone && pawn.State.health > 0 && pawn.Active == activetypes.ac_yes);
+        map.Players.Where(pawn => !pawn.State.Gone && pawn.State.health > 0 && pawn.Active == ActiveType.ac_yes);
 
     /// <summary>Whether a player stands on (or right at) a tile: within <paramref name="reach"/> of its middle either way</summary>
     protected static bool Touches(PlayerPawn pawn, int tilex, int tiley, int reach = TILEGLOBAL * 5 / 8) =>

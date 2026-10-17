@@ -22,7 +22,7 @@ internal static partial class GameHost
 
 =============================================================================
 */
-    internal static gametype gamestate { get => session.gamestate; set => session.gamestate = value; }
+    internal static GameState gamestate { get => session.gamestate; set => session.gamestate = value; }
     static string bordercol { get => session.bordercol; set => session.bordercol = value; } // color of the Change View/Ingame border
 
     // The game from its first level to its end (Gameplay/MainGameLoop.cs)
@@ -101,7 +101,7 @@ internal static partial class GameHost
     /// A level's finished, before its tally: its record is bettered and the scripts' level-end
     /// hooks run (which may unlock what it earned). Not while a demo plays back.
     /// </summary>
-    static void LevelWon(playstatetypes how)
+    static void LevelWon(PlayState how)
     {
         if (demoplayback || gamestate.mapon is not { Length: > 0 } map)
             return;
@@ -109,8 +109,8 @@ internal static partial class GameHost
         levelRecords.Record(map, result);
         gameScripts.RunLevelEndHooks(map, result, how switch
         {
-            playstatetypes.ex_secretlevel => "secret",
-            playstatetypes.ex_victorious => "victory",
+            PlayState.ex_secretlevel => "secret",
+            PlayState.ex_victorious => "victory",
             _ => "exit",
         });
     }
@@ -172,7 +172,7 @@ internal static partial class GameHost
 
     internal static bool madenoise { get => session.madenoise; set => session.madenoise = value; }  // true when shooting or screaming
 
-    internal static playstatetypes playstate { get => session.playstate; set => session.playstate = value; }
+    internal static PlayState playstate { get => session.playstate; set => session.playstate = value; }
 
     internal static int DebugOk { get => session.DebugOk; set => session.DebugOk = value; }
 

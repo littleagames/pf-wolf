@@ -13,7 +13,7 @@ public class PushWallsTests
         return pushWalls;
     }
 
-    private static MovingPushWall Wall(ushort x, ushort y, controldirs dir) => new() { X = x, Y = y, Dir = dir, Tile = 7 };
+    private static MovingPushWall Wall(ushort x, ushort y, ControlDir dir) => new() { X = x, Y = y, Dir = dir, Tile = 7 };
 
     [TestCase(10, 10, true)]        // the tile it's leaving
     [TestCase(11, 10, true)]        // the tile ahead, east
@@ -22,7 +22,7 @@ public class PushWallsTests
     public void A_Wall_Is_On_The_Tile_It_Leaves_And_The_One_Ahead(int x, int y, bool on)
     {
         // Arrange
-        var wall = Wall(10, 10, controldirs.di_east);
+        var wall = Wall(10, 10, ControlDir.di_east);
 
         // Act / Assert
         Assert.That(With(wall).PushWallAt(x, y), on ? Is.SameAs(wall) : Is.Null);
@@ -32,8 +32,8 @@ public class PushWallsTests
     public void The_Renderer_Keeps_The_Last_Wall_When_A_Tile_Has_None()
     {
         // Arrange
-        var north = Wall(5, 5, controldirs.di_north);
-        var pushWalls = With(Wall(20, 20, controldirs.di_south), north);
+        var north = Wall(5, 5, ControlDir.di_north);
+        var pushWalls = With(Wall(20, 20, ControlDir.di_south), north);
 
         // Act
         pushWalls.SelectPushWall(5, 4);
@@ -47,7 +47,7 @@ public class PushWallsTests
     public void Clearing_Stops_Them_All()
     {
         // Arrange
-        var pushWalls = With(Wall(1, 1, controldirs.di_north), Wall(2, 2, controldirs.di_west));
+        var pushWalls = With(Wall(1, 1, ControlDir.di_north), Wall(2, 2, ControlDir.di_west));
 
         // Act
         pushWalls.ClearPushWalls();
@@ -73,7 +73,7 @@ public class PushWallsTests
     public void A_Moving_Wall_Reads_Back_What_It_Wrote()
     {
         // Arrange
-        var wall = new MovingPushWall { State = 130, Pos = 2, X = 30, Y = 40, Dir = controldirs.di_south, Tile = 200 };
+        var wall = new MovingPushWall { State = 130, Pos = 2, X = 30, Y = 40, Dir = ControlDir.di_south, Tile = 200 };
         using var stream = new MemoryStream();
 
         // Act
@@ -113,9 +113,9 @@ public class PushWallsTests
     [Test]
     public void Directions_Are_North_East_South_West()
     {
-        Assert.That(PushWalls.dirs[(int)controldirs.di_north], Is.EqualTo(new[] { 0, -1 }));
-        Assert.That(PushWalls.dirs[(int)controldirs.di_east], Is.EqualTo(new[] { 1, 0 }));
-        Assert.That(PushWalls.dirs[(int)controldirs.di_south], Is.EqualTo(new[] { 0, 1 }));
-        Assert.That(PushWalls.dirs[(int)controldirs.di_west], Is.EqualTo(new[] { -1, 0 }));
+        Assert.That(PushWalls.dirs[(int)ControlDir.di_north], Is.EqualTo(new[] { 0, -1 }));
+        Assert.That(PushWalls.dirs[(int)ControlDir.di_east], Is.EqualTo(new[] { 1, 0 }));
+        Assert.That(PushWalls.dirs[(int)ControlDir.di_south], Is.EqualTo(new[] { 0, 1 }));
+        Assert.That(PushWalls.dirs[(int)ControlDir.di_west], Is.EqualTo(new[] { -1, 0 }));
     }
 }

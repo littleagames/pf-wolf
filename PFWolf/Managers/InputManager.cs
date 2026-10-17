@@ -223,8 +223,8 @@ internal class InputManager
     private bool MousePresent;
     private bool forcegrabmouse;
 
-    private bool[] buttonstate = new bool[(int)buttontypes.NUMBUTTONS];
-    private bool[] buttonheld = new bool[(int)buttontypes.NUMBUTTONS];
+    private bool[] buttonstate = new bool[(int)ButtonType.NUMBUTTONS];
+    private bool[] buttonheld = new bool[(int)ButtonType.NUMBUTTONS];
 
     private bool[] Keyboard = new bool[(int)ScanCodes.sc_Last];
 
@@ -337,7 +337,7 @@ internal class InputManager
 
     public void InitButtonState()
     {
-        buttonstate = new bool[(int)buttontypes.NUMBUTTONS];
+        buttonstate = new bool[(int)ButtonType.NUMBUTTONS];
     }
 
     internal void Shutdown()
@@ -436,22 +436,22 @@ internal class InputManager
     internal float GetPadAxis(SDL.SDL_GameControllerAxis axis) =>
         GameController == IntPtr.Zero ? 0 : Math.Max(RawPadAxis(axis) / 32767f, -1f);
 
-    public bool IsButtonPressed(buttontypes code)
+    public bool IsButtonPressed(ButtonType code)
     {
         return buttonstate[(int)code];
     }
 
-    public bool IsButtonHeld(buttontypes code)
+    public bool IsButtonHeld(ButtonType code)
     {
         return buttonheld[(int)code];
     }
 
-    public void SetButtonPressed(buttontypes button, bool isPressed)
+    public void SetButtonPressed(ButtonType button, bool isPressed)
     {
         buttonstate[(int)button] = isPressed;
     }
 
-    public void SetButtonHeld(buttontypes button, bool isHeld)
+    public void SetButtonHeld(ButtonType button, bool isHeld)
     {
         buttonheld[(int)button] = isHeld;
     }
@@ -825,7 +825,7 @@ internal class InputManager
         return false;
     }
 
-    private bool[] btnstate = new bool[(int)buttontypes.NUMBUTTONS];
+    private bool[] btnstate = new bool[(int)ButtonType.NUMBUTTONS];
     public void StartAck()
     {
         int i;
@@ -843,7 +843,7 @@ internal class InputManager
         if (MousePresent)
             buttons |= MouseButtons();
 
-        for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++, buttons >>= 1)
+        for (i = 0; i < (int)ButtonType.NUMBUTTONS; i++, buttons >>= 1)
         {
             if ((buttons & 1) != 0)
                 btnstate[i] = true;
@@ -905,7 +905,7 @@ internal class InputManager
         if (MousePresent)
             buttons |= MouseButtons();
 
-        for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++, buttons >>= 1)
+        for (i = 0; i < (int)ButtonType.NUMBUTTONS; i++, buttons >>= 1)
         {
             if ((buttons & 1) != 0)
             {

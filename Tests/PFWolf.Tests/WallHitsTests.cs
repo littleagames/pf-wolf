@@ -27,7 +27,7 @@ public class WallHitsTests
     [TestCase("SolidNW", "di_east", false)]
     public void A_Diagonals_Solid_Edges_Are_The_Two_On_Its_Solid_Side(string shape, string edge, bool solid)
     {
-        Assert.That(_hits.IsSolidEdge(Enum.Parse<WallShape>(shape), Enum.Parse<controldirs>(edge)), Is.EqualTo(solid));
+        Assert.That(_hits.IsSolidEdge(Enum.Parse<WallShape>(shape), Enum.Parse<ControlDir>(edge)), Is.EqualTo(solid));
     }
 
     [Test]

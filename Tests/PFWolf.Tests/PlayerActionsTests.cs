@@ -14,7 +14,7 @@ public class PlayerActionsTests
         actions.ChangeMapAction(new Entities.Actors.Monster { Name = "Spear" }, []);
 
         // Assert
-        Assert.That((change, session.playstate), Is.EqualTo(((PendingMapChange?)null, playstatetypes.ex_stillplaying)));
+        Assert.That((change, session.playstate), Is.EqualTo(((PendingMapChange?)null, PlayState.ex_stillplaying)));
     }
 
     [Test]

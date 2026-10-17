@@ -44,7 +44,7 @@ public class TimedSwitchesTests
     {
         _map.tilemap[11, 10] = SwitchOn;
         _timed.Thrown(new MapSwitchTranslation { To = SwitchOn, ResetTics = resetTics, ResetActions = ["A_TestReset"] },
-            11, 10, patch: false, SwitchOff, SwitchOn, 0, controldirs.di_east);
+            11, 10, patch: false, SwitchOff, SwitchOn, 0, ControlDir.di_east);
     }
 
     [Test]

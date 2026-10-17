@@ -38,16 +38,16 @@ internal static partial class GameHost
     internal static string MENUSONG => controlPanel.MENUSONG;
     internal static string INTROSONG => controlPanel.INTROSONG;
 
-    internal static CP_itemtype[] MainMenu { get => controlPanel.MainMenu; set => controlPanel.MainMenu = value; }
-    internal static CP_iteminfo MainItems { get => controlPanel.MainItems; set => controlPanel.MainItems = value; }
-    internal static CP_itemtype[] OptMenu { get => optionsMenu.OptMenu; set => optionsMenu.OptMenu = value; }
-    internal static CP_iteminfo OptItems { get => optionsMenu.OptItems; set => optionsMenu.OptItems = value; }
-    internal static CP_itemtype[] NewEmenu { get => newGameMenu.NewEmenu; set => newGameMenu.NewEmenu = value; }
-    internal static CP_iteminfo NewEitems { get => newGameMenu.NewEitems; set => newGameMenu.NewEitems = value; }
-    internal static CP_itemtype[] NewMenu { get => newGameMenu.NewMenu; set => newGameMenu.NewMenu = value; }
-    internal static CP_iteminfo NewItems { get => newGameMenu.NewItems; set => newGameMenu.NewItems = value; }
-    internal static CP_itemtype[] ClassMenu { get => newGameMenu.ClassMenu; set => newGameMenu.ClassMenu = value; }
-    internal static CP_iteminfo ClassItems { get => newGameMenu.ClassItems; set => newGameMenu.ClassItems = value; }
+    internal static ControlPanelItem[] MainMenu { get => controlPanel.MainMenu; set => controlPanel.MainMenu = value; }
+    internal static ControlPanelMenuInfo MainItems { get => controlPanel.MainItems; set => controlPanel.MainItems = value; }
+    internal static ControlPanelItem[] OptMenu { get => optionsMenu.OptMenu; set => optionsMenu.OptMenu = value; }
+    internal static ControlPanelMenuInfo OptItems { get => optionsMenu.OptItems; set => optionsMenu.OptItems = value; }
+    internal static ControlPanelItem[] NewEmenu { get => newGameMenu.NewEmenu; set => newGameMenu.NewEmenu = value; }
+    internal static ControlPanelMenuInfo NewEitems { get => newGameMenu.NewEitems; set => newGameMenu.NewEitems = value; }
+    internal static ControlPanelItem[] NewMenu { get => newGameMenu.NewMenu; set => newGameMenu.NewMenu = value; }
+    internal static ControlPanelMenuInfo NewItems { get => newGameMenu.NewItems; set => newGameMenu.NewItems = value; }
+    internal static ControlPanelItem[] ClassMenu { get => newGameMenu.ClassMenu; set => newGameMenu.ClassMenu = value; }
+    internal static ControlPanelMenuInfo ClassItems { get => newGameMenu.ClassItems; set => newGameMenu.ClassItems = value; }
 
     internal static int StartGame { get => controlPanel.StartGame; set => controlPanel.StartGame = value; }
 
@@ -70,7 +70,7 @@ internal static partial class GameHost
         EndGame: () =>
         {
             playerstate.lives = 0;
-            playstate = playstatetypes.ex_died;
+            playstate = PlayState.ex_died;
             LastAttacker = null;
         },
         Random: UiRandom);
@@ -86,9 +86,9 @@ internal static partial class GameHost
 
     // The jukebox (Ui/Jukebox.cs); its songs are loaded from menudefs/ in CheckForEpisodes
     static Jukebox jukebox = null!;     // made in InitServices
-    internal static CP_itemtype[] MusicMenu { get => jukebox.MusicMenu; set => jukebox.MusicMenu = value; }
+    internal static ControlPanelItem[] MusicMenu { get => jukebox.MusicMenu; set => jukebox.MusicMenu = value; }
     internal const int JukeboxPageSize = Jukebox.JukeboxPageSize;
-    internal static CP_iteminfo MusicItems { get => jukebox.MusicItems; set => jukebox.MusicItems = value; }
+    internal static ControlPanelMenuInfo MusicItems { get => jukebox.MusicItems; set => jukebox.MusicItems = value; }
     /*
     =============================================================================
 
@@ -121,14 +121,14 @@ internal static partial class GameHost
     static SoundMenu soundMenu = null!;
     static ControlMenus controlMenus = null!;
 
-    internal static CP_itemtype[] VidMenu { get => videoMenu.Items; set => videoMenu.Items = value; }
-    internal static CP_iteminfo VidItems { get => videoMenu.Info; set => videoMenu.Info = value; }
-    internal static CP_itemtype[] SndMenu { get => soundMenu.Items; set => soundMenu.Items = value; }
-    internal static CP_iteminfo SndItems { get => soundMenu.Info; set => soundMenu.Info = value; }
-    internal static CP_itemtype[] CtlMenu { get => controlMenus.CtlMenu; set => controlMenus.CtlMenu = value; }
-    internal static CP_iteminfo CtlItems { get => controlMenus.CtlItems; set => controlMenus.CtlItems = value; }
-    internal static CP_itemtype[] JoyMenu { get => controlMenus.JoyMenu; set => controlMenus.JoyMenu = value; }
-    internal static CP_iteminfo JoyItems { get => controlMenus.JoyItems; set => controlMenus.JoyItems = value; }
+    internal static ControlPanelItem[] VidMenu { get => videoMenu.Items; set => videoMenu.Items = value; }
+    internal static ControlPanelMenuInfo VidItems { get => videoMenu.Info; set => videoMenu.Info = value; }
+    internal static ControlPanelItem[] SndMenu { get => soundMenu.Items; set => soundMenu.Items = value; }
+    internal static ControlPanelMenuInfo SndItems { get => soundMenu.Info; set => soundMenu.Info = value; }
+    internal static ControlPanelItem[] CtlMenu { get => controlMenus.CtlMenu; set => controlMenus.CtlMenu = value; }
+    internal static ControlPanelMenuInfo CtlItems { get => controlMenus.CtlItems; set => controlMenus.CtlItems = value; }
+    internal static ControlPanelItem[] JoyMenu { get => controlMenus.JoyMenu; set => controlMenus.JoyMenu = value; }
+    internal static ControlPanelMenuInfo JoyItems { get => controlMenus.JoyItems; set => controlMenus.JoyItems = value; }
 
     internal static int CP_Video(int _) => videoMenu.Run();
     internal static int CP_Sound(int _) => soundMenu.Run();
@@ -210,8 +210,8 @@ internal static partial class GameHost
 
     static MenuDefs menuDefs = null!;
 
-    private static (CP_itemtype[] items, CP_iteminfo info) LoadMenu(string name, short curpos = 0) => menuDefs.LoadMenu(name, curpos);
-    internal static CP_itemtype? FindMenuItem(CP_itemtype[] items, string id) => MenuDefs.FindMenuItem(items, id);
+    private static (ControlPanelItem[] items, ControlPanelMenuInfo info) LoadMenu(string name, short curpos = 0) => menuDefs.LoadMenu(name, curpos);
+    internal static ControlPanelItem? FindMenuItem(ControlPanelItem[] items, string id) => MenuDefs.FindMenuItem(items, id);
 
     /// <summary>What menudefs' items can do, and the menus built from the game's data</summary>
     private static void RegisterMenuDefs()
@@ -271,9 +271,9 @@ internal static partial class GameHost
     static CustomizeControlsScreen customizeScreen = null!;
     internal static int CustomControls(int _) => customizeScreen.Run();
     internal static int CP_Mods(int _) => modsMenu.Run();
-    private static CP_itemtype[] BuildModsPage() => modsMenu.BuildModsPage();
+    private static ControlPanelItem[] BuildModsPage() => modsMenu.BuildModsPage();
 
-    private static CP_itemtype[] PlayerClassRows() => newGameMenu.PlayerClassRows();
+    private static ControlPanelItem[] PlayerClassRows() => newGameMenu.PlayerClassRows();
 
     // ==== Automap ================================================================================
 

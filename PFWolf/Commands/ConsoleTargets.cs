@@ -16,7 +16,7 @@ internal sealed class ConsoleTargets(
     internal List<Entities.Actors.Monster> ChosenActors(string? className)
     {
         var living = map.GetActors().OfType<Entities.Actors.Monster>()
-            .Where(m => !m.IsRemoved && m.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
+            .Where(m => !m.IsRemoved && m.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE));
         var chosen = className != null
             ? living.Where(m => m.Name.Equals(className, StringComparison.OrdinalIgnoreCase)).ToList()
             : living.OrderBy(m => Math.Max(Math.Abs(m.X - session.player.X), Math.Abs(m.Y - session.player.Y))).Take(1).ToList();
@@ -49,9 +49,9 @@ internal sealed class ConsoleTargets(
         int x = session.player.TileX, y = session.player.TileY;
         switch (PlayerMovement.FacingDir(session.player.Angle))
         {
-            case controldirs.di_east: x++; break;
-            case controldirs.di_north: y--; break;
-            case controldirs.di_west: x--; break;
+            case ControlDir.di_east: x++; break;
+            case ControlDir.di_north: y--; break;
+            case ControlDir.di_west: x--; break;
             default: y++; break;
         }
         return (x, y);

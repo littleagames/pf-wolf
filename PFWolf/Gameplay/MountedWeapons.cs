@@ -53,7 +53,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         inventory.Give(gun, 1);
         playerstate.weapon = playerstate.chosenweapon = gun;
         playerstate.WeaponPower = 0;
-        session.playerinput.SetHeld(buttontypes.bt_attack, true);   // no shot from a fire held as they got on
+        session.playerinput.SetHeld(ButtonType.bt_attack, true);   // no shot from a fire held as they got on
 
         player.SetPosition(mount.TileX, mount.TileY);
         player.Angle = (short)facing;
@@ -121,7 +121,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
             inventory.Take(gun, 1);
             playerstate.weapon = playerstate.chosenweapon =
                 playerstate.MountFrom is { } before && inventory.Has(before) && weapons.CanFire(before) ? before : weapons.BestWeapon(canFire: true);
-            session.playerinput.SetHeld(buttontypes.bt_attack, true);
+            session.playerinput.SetHeld(ButtonType.bt_attack, true);
         }
         else if (playerstate.MountGun is { } kept)
             inventory.Take(kept, 1);
@@ -134,22 +134,22 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         x is > 0 and < MapManager.MAPSIZE - 1 && y is > 0 and < MapManager.MAPSIZE - 1
         && map.tilemap[x, y] == 0 && map.actorat[x, y] == null
         && !map.GetActors().Any(a => !a.IsRemoved && a.TileX == x && a.TileY == y && a is not Entities.Actors.PlayerPawn
-            && (a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) || a.Flags.Contains("SOLID")));
+            && (a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE) || a.Flags.Contains("SOLID")));
 
     /// <summary>The tiles to step off onto, in turn: behind, to either side, then in front (ExitMountedWeapon)</summary>
-    internal static IEnumerable<(int X, int Y)> ExitTiles(int x, int y, controldirs facing) => facing switch
+    internal static IEnumerable<(int X, int Y)> ExitTiles(int x, int y, ControlDir facing) => facing switch
     {
-        controldirs.di_east => [(x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)],
-        controldirs.di_north => [(x, y + 1), (x + 1, y), (x - 1, y), (x, y - 1)],
-        controldirs.di_west => [(x + 1, y), (x, y - 1), (x, y + 1), (x - 1, y)],
+        ControlDir.di_east => [(x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)],
+        ControlDir.di_north => [(x, y + 1), (x + 1, y), (x - 1, y), (x, y - 1)],
+        ControlDir.di_west => [(x + 1, y), (x, y - 1), (x, y + 1), (x - 1, y)],
         _ => [(x, y - 1), (x + 1, y), (x - 1, y), (x, y + 1)],
     };
 
-    internal static int FacingAngle(controldirs dir) => dir switch
+    internal static int FacingAngle(ControlDir dir) => dir switch
     {
-        controldirs.di_east => 0,
-        controldirs.di_north => 90,
-        controldirs.di_west => 180,
+        ControlDir.di_east => 0,
+        ControlDir.di_north => 90,
+        ControlDir.di_west => 180,
         _ => 270,
     };
 }

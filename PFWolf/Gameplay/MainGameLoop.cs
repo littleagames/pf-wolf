@@ -32,7 +32,7 @@ internal sealed record MainGameLoopHooks(
     Action<int, int, int> AlignPlayerInElevator,
     Action<string> ShowLevelStartMessage,
     Action<string> ShowText,
-    Action<playstatetypes>? LevelWon = null);
+    Action<PlayState>? LevelWon = null);
 
 /// <summary>
 /// The game from its first level to its end (GameLoop): each level entered, played and left,
@@ -205,10 +205,10 @@ internal sealed class MainGameLoop(
                 return;
             }
 
-            if (session.playstate is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_warped)
+            if (session.playstate is PlayState.ex_completed or PlayState.ex_secretlevel or PlayState.ex_warped)
                 hooks.LeaveLevel();               // a hub level is kept as it's left
 
-            if (session.playstate == playstatetypes.ex_warped && pendingMapChange != null)
+            if (session.playstate == PlayState.ex_warped && pendingMapChange != null)
             {
                 // Spear waits 150 tics for its pickup sound before the new map loads; the score
                 // carries over, as the level ends without an intermission to bank it
@@ -223,7 +223,7 @@ internal sealed class MainGameLoop(
             music.StopMusic();
             session.ingame = false;
 
-            if (session.demorecord && session.playstate != playstatetypes.ex_warped)
+            if (session.demorecord && session.playstate != PlayState.ex_warped)
                 demos.FinishDemoRecord();
 
             if (demos.pendingDemo != null || demos.pendingRecord != null)
@@ -247,21 +247,21 @@ internal sealed class MainGameLoop(
             }
 
             // Its record and the scripts' level-end hooks, before the tally tells what they unlocked
-            if (session.playstate is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_victorious)
+            if (session.playstate is PlayState.ex_completed or PlayState.ex_secretlevel or PlayState.ex_victorious)
                 hooks.LevelWon?.Invoke(session.playstate);
 
             switch (session.playstate)
             {
-                case playstatetypes.ex_completed:
-                case playstatetypes.ex_secretlevel:
+                case PlayState.ex_completed:
+                case PlayState.ex_secretlevel:
                     // A level with no next level (a boss floor left by exitlevel, or by a map's own
                     // exit) ends its cluster, as the victory tile does
                     var leftInfo = engine.GetGameInfo().Maps[session.gamestate.mapon];
-                    var nextMap = session.playstate == playstatetypes.ex_secretlevel ? leftInfo.SecretNext ?? leftInfo.Next : leftInfo.Next;
+                    var nextMap = session.playstate == PlayState.ex_secretlevel ? leftInfo.SecretNext ?? leftInfo.Next : leftInfo.Next;
                     if (string.IsNullOrEmpty(nextMap) && string.IsNullOrEmpty(leftInfo.EndMessage))
                     {
-                        session.playstate = playstatetypes.ex_victorious;
-                        goto case playstatetypes.ex_victorious;
+                        session.playstate = PlayState.ex_victorious;
+                        goto case PlayState.ex_victorious;
                     }
 
                     if (settings.viewsize == 21) playScreen.DrawPlayScreen();
@@ -296,7 +296,7 @@ internal sealed class MainGameLoop(
                     session.gamestate.mapon = nextMap;      // the secret exit falls back to next if there's no secret-next
                     break;
 
-                case playstatetypes.ex_died:
+                case PlayState.ex_died:
                     death.Died();
                     died = true;                    // don't "get psyched!"
 
@@ -317,7 +317,7 @@ internal sealed class MainGameLoop(
                     controlPanel.EnableViewScoresMenuItem();
                     return;
 
-                case playstatetypes.ex_victorious:
+                case PlayState.ex_victorious:
                     if (hubs.CurrentEpisode()?.EndBriefing is { Length: > 0 } endBriefing)
                     {
                         // Blake Stone: the mission's won message over the status bar, then its

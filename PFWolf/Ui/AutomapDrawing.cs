@@ -79,7 +79,7 @@ internal sealed class AutomapDrawing(
 
     // A locked door is drawn in its key's color: the theme's "Automap<lock item>" if it has one
     // (e.g. AutomapGoldKey), else the door's mapdefs automap-color, else the plain door color.
-    string AutomapDoorColor(doorobj_t door)
+    string AutomapDoorColor(DoorObject door)
     {
         if (!string.IsNullOrEmpty(door.Lock) && video.IsThemeColor("Automap" + door.Lock))
             return "Automap" + door.Lock;
@@ -312,7 +312,7 @@ internal sealed class AutomapDrawing(
             if (!seen)
                 continue;
 
-            string color = graphic && AutomapSpriteColor(actor.CurrentState.GetShapeName(objdirtypes.nodir)) is { } index
+            string color = graphic && AutomapSpriteColor(actor.CurrentState.GetShapeName(ObjDir.nodir)) is { } index
                 ? index.ToString()
                 : AutomapColor("AutomapWallSprite");
 
@@ -373,20 +373,20 @@ internal sealed class AutomapDrawing(
 
         if (actor.ResolvedStates.ContainsKey("Chase"))
         {
-            bool dead = (actor.RuntimeFlags & objflags.FL_SHOOTABLE) == 0 && (actor.RuntimeFlags & objflags.FL_NONMARK) != 0;
+            bool dead = (actor.RuntimeFlags & ObjFlags.FL_SHOOTABLE) == 0 && (actor.RuntimeFlags & ObjFlags.FL_NONMARK) != 0;
             if (dead)
                 return floorSeen ? AutomapMark.Corpse : AutomapMark.None;
 
             // The player's own side (factions.yaml) in its own color; one following them is
             // always shown, wherever it is
             if (factions.IsAlly(actor, session.player))
-                return reveal || (actor.RuntimeFlags & objflags.FL_VISABLE) != 0
+                return reveal || (actor.RuntimeFlags & ObjFlags.FL_VISABLE) != 0
                     || actor is Entities.Actors.Monster { Follows: true } ? AutomapMark.Ally : AutomapMark.None;
 
-            return reveal || (actor.RuntimeFlags & objflags.FL_VISABLE) != 0 ? AutomapMark.Enemy : AutomapMark.None;
+            return reveal || (actor.RuntimeFlags & ObjFlags.FL_VISABLE) != 0 ? AutomapMark.Enemy : AutomapMark.None;
         }
 
-        if (actor.Active == activetypes.ac_yes || actor.CurrentState.Sprite == "TNT1")
+        if (actor.Active == ActiveType.ac_yes || actor.CurrentState.Sprite == "TNT1")
             return AutomapMark.None;                            // projectiles, smoke, patrol points
 
         if (!floorSeen)
@@ -822,7 +822,7 @@ internal sealed class AutomapDrawing(
         var state = actor.CurrentState!;
         string shape = spriteDrawing.HasDirectionalSprites(state.Sprite, state.FrameLetter)
             ? spriteDrawing.FrontShapeName(state.Sprite, state.FrameLetter)
-            : state.GetShapeName(objdirtypes.nodir);
+            : state.GetShapeName(ObjDir.nodir);
 
         var sprite = FindAutomapSprite(shape);
         if (sprite == null)

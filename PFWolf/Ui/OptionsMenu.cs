@@ -4,8 +4,8 @@ internal sealed class OptionsMenu(VideoManager video, HudMessageManager messages
     MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs)
 {
     // Loaded from menudefs/ in CheckForEpisodes
-    internal CP_itemtype[] OptMenu = [];
-    internal CP_iteminfo OptItems = null!;
+    internal ControlPanelItem[] OptMenu = [];
+    internal ControlPanelMenuInfo OptItems = null!;
     /// <summary>
     /// The Options submenu. Most items run their own screen (Sound, Control, Change View,
     /// Video), and this menu is drawn again when that screen is left; Messages and Automap Stats

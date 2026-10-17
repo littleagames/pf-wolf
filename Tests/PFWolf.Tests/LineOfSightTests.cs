@@ -69,7 +69,7 @@ public class LineOfSightTests
     {
         // Arrange: door 0 across the row at x 8
         _map.tilemap[8, 10] = GameConstants.BIT_DOOR | 0;
-        _doors.doorobjlist[0] = new doorobj_t { tilex = 8, tiley = 10, vertical = true, position = position };
+        _doors.doorobjlist[0] = new DoorObject { tilex = 8, tiley = 10, vertical = true, position = position };
 
         // Act / Assert
         Assert.That(CanSeeAlongRow10(), Is.EqualTo(clear));

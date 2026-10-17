@@ -13,8 +13,8 @@ internal sealed record ActorSnapshot
     public string? StateName { get; init; }
     public int StateFrame { get; init; }
     public short TicCount { get; init; }
-    public activetypes Active { get; init; }
-    public objdirtypes Dir { get; init; }
+    public ActiveType Active { get; init; }
+    public ObjDir Dir { get; init; }
     public short Angle { get; init; }
     public short Hitpoints { get; init; }
     public int Speed { get; init; }
@@ -33,7 +33,7 @@ internal sealed record ActorSnapshot
     public byte TileX { get; init; }
     public byte TileY { get; init; }
     public ushort Tag { get; init; }
-    public objflags RuntimeFlags { get; init; }
+    public ObjFlags RuntimeFlags { get; init; }
     public LightOverride? Light { get; init; }
     public List<string> CarriedDrops { get; init; } = [];
     public ushort DeathLink { get; init; }
@@ -64,7 +64,7 @@ internal sealed record ActorSnapshot
             Ammo = (actor as BlakeMonster)?.Ammo ?? 0,
             SeekX = (actor as BlakeMonster)?.SeekX ?? 0,
             SeekY = (actor as BlakeMonster)?.SeekY ?? 0,
-            TryDir = (actor as BlakeMonster)?.TryDir ?? (byte)objdirtypes.nodir,
+            TryDir = (actor as BlakeMonster)?.TryDir ?? (byte)ObjDir.nodir,
             Hidden = actor.Hidden,
             AreaNumber = actor.AreaNumber,
             X = actor.X,
@@ -171,8 +171,8 @@ internal sealed record ActorSnapshot
             StateName = stateName.Length == 0 ? null : stateName,
             StateFrame = br.ReadInt32(),
             TicCount = br.ReadInt16(),
-            Active = (activetypes)br.ReadByte(),
-            Dir = (objdirtypes)br.ReadByte(),
+            Active = (ActiveType)br.ReadByte(),
+            Dir = (ObjDir)br.ReadByte(),
             Angle = br.ReadInt16(),
             Hitpoints = br.ReadInt16(),
             Speed = br.ReadInt32(),
@@ -191,7 +191,7 @@ internal sealed record ActorSnapshot
             TileX = br.ReadByte(),
             TileY = br.ReadByte(),
             Tag = br.ReadUInt16(),
-            RuntimeFlags = (objflags)br.ReadInt32(),
+            RuntimeFlags = (ObjFlags)br.ReadInt32(),
             Light = br.ReadBoolean() ? LightOverride.Read(br) : null,
             CarriedDrops = [.. Enumerable.Range(0, br.ReadInt32()).Select(_ => br.ReadString())],
             DeathLink = br.ReadUInt16(),

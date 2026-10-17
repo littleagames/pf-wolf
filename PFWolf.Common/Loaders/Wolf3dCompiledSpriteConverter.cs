@@ -2,18 +2,18 @@ using PFWolf.Assets;
 
 namespace PFWolf.Loaders;
 
-internal struct compshape_t
+internal struct CompiledShape
 {
     public ushort leftpix, rightpix;
     public ushort[] dataofs;
     // table data after dataofs[rightpix-leftpix+1]
 
-    public compshape_t()
+    public CompiledShape()
     {
         dataofs = new ushort[64];
     }
 
-    public compshape_t(byte[] data)
+    public CompiledShape(byte[] data)
     {
         var offset = 0;
         leftpix = BitConverter.ToUInt16(data);
@@ -43,7 +43,7 @@ public static class Wolf3dCompiledSpriteConverter
 
     internal static SpriteAsset Convert(byte[] rawData)
     {
-        var shape = new compshape_t(rawData);
+        var shape = new CompiledShape(rawData);
         int size = SpriteSize;
 
         var indices = new byte[size * size];

@@ -151,7 +151,7 @@ public class PlayKeysTests
     [Test]
     public void The_Automap_Button_Opens_The_Automap()
     {
-        _input.SetButtonPressed(buttontypes.bt_automap, true);
+        _input.SetButtonPressed(ButtonType.bt_automap, true);
 
         _keys.CheckKeys();
 

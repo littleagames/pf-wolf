@@ -126,7 +126,7 @@ public class StealthTests
     {
         var enemy = (Monster)_inventory.CreateActor(name)!;
         enemy.SetPosition(10 + tilesEast, 10);
-        enemy.RuntimeFlags |= objflags.FL_SHOOTABLE | objflags.FL_VISABLE;
+        enemy.RuntimeFlags |= ObjFlags.FL_SHOOTABLE | ObjFlags.FL_VISABLE;
         enemy.Hitpoints = 25;
         _map.GetActors().AddLast(enemy);
         return enemy;
@@ -318,7 +318,7 @@ public class StealthTests
         var rack = _inventory.CreateActor("CoatRack")!;
         rack.SetState("Spawn");
         var guard = Enemy("Guard");
-        guard.RuntimeFlags |= objflags.FL_ATTACKMODE;
+        guard.RuntimeFlags |= ObjFlags.FL_ATTACKMODE;
         _session.playerstate.Undetected = false;
 
         // Act / Assert
@@ -326,7 +326,7 @@ public class StealthTests
         Assert.That(_messages, Is.EqualTo(new[] { "Alert" }));
         Assert.That(_inventory.Has("Uniform"), Is.False);
 
-        guard.RuntimeFlags &= ~objflags.FL_ATTACKMODE;
+        guard.RuntimeFlags &= ~ObjFlags.FL_ATTACKMODE;
         _stealth.A_Disguise(rack, ["Uniform", "IDPapers", "Taken"]);
         Assert.That(_inventory.Has("Uniform") && _inventory.Has("IDPapers"), Is.True);
         Assert.That(_session.playerstate.Undetected, Is.True);

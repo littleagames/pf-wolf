@@ -39,7 +39,7 @@ internal sealed class SpriteDrawing(
     GameSession session,
     SpriteDrawingHooks hooks)
 {
-    internal visobj_t[] vislist = new visobj_t[GameConstants.MAXVISABLE];
+    internal VisibleObject[] vislist = new VisibleObject[GameConstants.MAXVISABLE];
 
     /*
 ========================
@@ -188,7 +188,7 @@ internal sealed class SpriteDrawing(
             angle = (viewangle - 180) - ob.Angle;
         else if (AimAngle(ob) is { } facing)
             angle = (viewangle - 180) - facing;
-        else if (ob.Dir == objdirtypes.nodir)
+        else if (ob.Dir == ObjDir.nodir)
             return 1;                                   // facing no way: toward whoever looks
         else
             angle = (viewangle - 180) - GameConstants.dirangle[(byte)ob.Dir];
@@ -255,7 +255,7 @@ internal sealed class SpriteDrawing(
             else if (actor == looker)
                 continue;                                               // the one looked through
 
-            visobj_t visptr_val = new visobj_t();
+            VisibleObject visptr_val = new VisibleObject();
             visptr_val.translation = translation;
             //statobj_t statptr_val = statobjlist[statptr];
             if (actor.CurrentState == null)
@@ -273,7 +273,7 @@ internal sealed class SpriteDrawing(
             // the tile-snapped, always-front-facing path decorations/pickups use below.
             // Projectiles and their smoke/explosions (spawned Active by SpawnAtActor) fly
             // between tiles too, so they take the same path.
-            if (actor.ResolvedStates.ContainsKey("Chase") || actor.Active == activetypes.ac_yes)
+            if (actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.ac_yes)
             {
                 var atx = actor.TileX;
                 var aty = actor.TileY;
@@ -291,14 +291,14 @@ internal sealed class SpriteDrawing(
                     || Seen(atx - 1, aty + 1)
                     || Seen(atx + 1, aty + 1)))
                 {
-                    actor.RuntimeFlags &= ~objflags.FL_VISABLE;
+                    actor.RuntimeFlags &= ~ObjFlags.FL_VISABLE;
                     continue;
                 }
 
                 // Once near enough to the view, an enemy is awake for good (MapManager.DoActor);
                 // with others, what they see wakes it instead (WakeSeenEnemies)
                 if (actor is Entities.Actors.Monster && session.gamemode == GameMode.Single)
-                    actor.Active = activetypes.ac_yes;
+                    actor.Active = ActiveType.ac_yes;
 
                 // Too close or far away to draw: as the original, it keeps whether it was
                 // on screen last frame (enemy aim reads that)
@@ -306,7 +306,7 @@ internal sealed class SpriteDrawing(
                 if (actor.ViewHeight == 0)
                     continue;
 
-                actor.RuntimeFlags |= objflags.FL_VISABLE;
+                actor.RuntimeFlags |= ObjFlags.FL_VISABLE;
 
                 var sprite = hooks.DrawnSprite(actor);                        // a player's body shows their weapon
                 visptr_val.shapenum = ActorShapeName(sprite, actor.CurrentState.FrameLetter, actor);
@@ -330,7 +330,7 @@ internal sealed class SpriteDrawing(
                 continue;
             }
 
-            visptr_val.shapenum = actor.CurrentState.GetShapeName(objdirtypes.nodir);
+            visptr_val.shapenum = actor.CurrentState.GetShapeName(ObjDir.nodir);
 
             // A panel (GameHost.cs) is drawn column by column, clipped per column,
             // so it's placed by its own geometry rather than as a billboard in its tile.
@@ -381,7 +381,7 @@ internal sealed class SpriteDrawing(
             least = 32000;
             for (visstep = 0; visstep < visptr; visstep++)
             {
-                visobj_t visstep_val = vislist[visstep];
+                VisibleObject visstep_val = vislist[visstep];
                 height = visstep_val.viewheight;
                 if (height < least)
                 {
@@ -394,7 +394,7 @@ internal sealed class SpriteDrawing(
             //
             if (farthest != -1)
             {
-                visobj_t farthest_obj = vislist[farthest];
+                VisibleObject farthest_obj = vislist[farthest];
                 weather.DrawWeatherBeyond(farthest_obj.viewheight);
                 if (farthest_obj.wallsprite != null)
                     wallSprites.ScaleWallSprite(farthest_obj);

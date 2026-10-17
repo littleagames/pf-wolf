@@ -10,7 +10,7 @@ public class MenuTests
     public void ItemKey_Is_The_Short_Key_Or_The_First_Letter(string text, char shortKey, char expected)
     {
         // Arrange
-        var item = new CP_itemtype(1, text, null) { shortKey = shortKey };
+        var item = new ControlPanelItem(1, text, null) { shortKey = shortKey };
 
         // Act / Assert
         Assert.That(MenuLoop.ItemKey(item), Is.EqualTo(expected));
@@ -35,14 +35,14 @@ public class MenuTests
     [TestCase((short)3, false, "DarkGreen")]    // a locked episode
     public void MenuItemColor_Goes_By_Whether_It_Is_Active_And_Highlighted(short active, bool highlighted, string expected)
     {
-        Assert.That(MenuDrawing.MenuItemColor(new CP_itemtype(active, "Item", null), highlighted), Is.EqualTo(expected));
+        Assert.That(MenuDrawing.MenuItemColor(new ControlPanelItem(active, "Item", null), highlighted), Is.EqualTo(expected));
     }
 
     [Test]
     public void Rows_Go_Down_By_The_Menus_Row_Height()
     {
         // Arrange
-        var menu = new CP_iteminfo(x: 72, y: 40, amount: 5, curpos: 0, indent: 24) { rowHeight = 13 };
+        var menu = new ControlPanelMenuInfo(x: 72, y: 40, amount: 5, curpos: 0, indent: 24) { rowHeight = 13 };
 
         // Act / Assert
         Assert.That(MenuDrawing.MenuItemY(menu, 0), Is.EqualTo(40));

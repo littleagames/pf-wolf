@@ -42,7 +42,7 @@ internal sealed class DemoCommands(
 
         demoPlayback.pendingDemo = demonumber;
         if (session.ingame)
-            session.playstate = playstatetypes.ex_abort;
+            session.playstate = PlayState.ex_abort;
     }
 
     internal void Cmd_DemoTest(string[] args)
@@ -120,6 +120,6 @@ internal sealed class DemoCommands(
 
         demoPlayback.pendingRecord = new DemoRecordRequest(level, demonumber);
         if (session.ingame)
-            session.playstate = playstatetypes.ex_abort;
+            session.playstate = PlayState.ex_abort;
     }
 }

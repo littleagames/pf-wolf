@@ -42,7 +42,7 @@ internal sealed class PlayerUse(
     /// Runs a mapdefs trigger's action. If it goes off, a secret trigger counts as found, and the
     /// trigger's tile is cleared so it can't go off again (unless it's a `repeat` one).
     /// </summary>
-    internal void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir)
+    internal void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir)
     {
         var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.player, map.GetTag(tilex, tiley));
         if (!Entities.MapTriggerRegistry.Invoke(trigger.Action, activation))
@@ -60,7 +60,7 @@ internal sealed class PlayerUse(
     /// with its tag that are either way of the same switch flip with it (as Blake Stone's
     /// barrier switches do), without running their actions.
     /// </summary>
-    internal void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir)
+    internal void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir)
     {
         if (RefuseSwitchLock(wallSwitch))
             return;
@@ -115,7 +115,7 @@ internal sealed class PlayerUse(
     /// The switch of the patch on the wall tile (tilex, tiley) the player faces going dir, if
     /// it's on the face they press (facing east presses the west face) and usable from there
     /// </summary>
-    internal MapSwitchTranslation? PatchSwitchAt(int tilex, int tiley, controldirs dir)
+    internal MapSwitchTranslation? PatchSwitchAt(int tilex, int tiley, ControlDir dir)
     {
         int tile = map.tilemap[tilex, tiley];
         if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0)
@@ -126,9 +126,9 @@ internal sealed class PlayerUse(
 
         var face = dir switch
         {
-            controldirs.di_east => "west",
-            controldirs.di_west => "east",
-            controldirs.di_north => "south",
+            ControlDir.di_east => "west",
+            ControlDir.di_west => "east",
+            ControlDir.di_north => "south",
             _ => "north",
         };
         return patch.IsOn(face) && patchSwitch.UsableFrom(dir) ? patchSwitch : null;
@@ -141,7 +141,7 @@ internal sealed class PlayerUse(
     /// the patch turns into its `to` patch, or comes off with `remove`; and so do the other
     /// patches with the tag that are either way of the same switch, so linked ones stay in step.
     /// </summary>
-    internal void UsePatchSwitch(MapSwitchTranslation patchSwitch, int tilex, int tiley, controldirs dir)
+    internal void UsePatchSwitch(MapSwitchTranslation patchSwitch, int tilex, int tiley, ControlDir dir)
     {
         if (RefuseSwitchLock(patchSwitch))
             return;
@@ -201,9 +201,9 @@ internal sealed class PlayerUse(
 
         var player = session.player;
         if (secret || map.MAPSPOT(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile)
-            session.playstate = playstatetypes.ex_secretlevel;
+            session.playstate = PlayState.ex_secretlevel;
         else
-            session.playstate = playstatetypes.ex_completed;
+            session.playstate = PlayState.ex_completed;
 
         audio.WaitSoundDone();
         return true;
@@ -215,7 +215,7 @@ internal sealed class PlayerUse(
         var playerinput = session.playerinput;
         var player = session.player;
         int checkx, checky, cmdtile;
-        controldirs dir;
+        ControlDir dir;
 
         // Nothing's used with something latched on (Gameplay/Latching.cs)
         if (session.playerstate.Latch != null)
@@ -228,31 +228,31 @@ internal sealed class PlayerUse(
         {
             checkx = player.TileX + 1;
             checky = player.TileY;
-            dir = controldirs.di_east;
+            dir = ControlDir.di_east;
         }
         else if (player.Angle < 3 * ANGLES / 8)
         {
             checkx = player.TileX;
             checky = player.TileY - 1;
-            dir = controldirs.di_north;
+            dir = ControlDir.di_north;
         }
         else if (player.Angle < 5 * ANGLES / 8)
         {
             checkx = player.TileX - 1;
             checky = player.TileY;
-            dir = controldirs.di_west;
+            dir = ControlDir.di_west;
         }
         else
         {
             checkx = player.TileX;
             checky = player.TileY + 1;
-            dir = controldirs.di_south;
+            dir = ControlDir.di_south;
         }
 
         // Manning a mounted gun, a fresh press (not while firing) steps them off it (Gameplay/MountedWeapons.cs)
-        if (!playerinput.IsHeld(buttontypes.bt_use) && !playerinput.IsPressed(buttontypes.bt_attack) && hooks.Dismount())
+        if (!playerinput.IsHeld(ButtonType.bt_use) && !playerinput.IsPressed(ButtonType.bt_attack) && hooks.Dismount())
         {
-            playerinput.SetHeld(buttontypes.bt_use, true);
+            playerinput.SetHeld(ButtonType.bt_use, true);
             return;
         }
 
@@ -264,34 +264,34 @@ internal sealed class PlayerUse(
             // for one that stays (`repeat`: a ladder) or refuses (a one-way pushwall's message)
             //
             ResetUseHeld();
-            if (playerinput.IsHeld(buttontypes.bt_use))
+            if (playerinput.IsHeld(ButtonType.bt_use))
                 return;
-            playerinput.SetHeld(buttontypes.bt_use, true);
+            playerinput.SetHeld(ButtonType.bt_use, true);
             ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }
-        if (!playerinput.IsHeld(buttontypes.bt_use) && PatchSwitchAt(checkx, checky, dir) is { } patchSwitch)
+        if (!playerinput.IsHeld(ButtonType.bt_use) && PatchSwitchAt(checkx, checky, dir) is { } patchSwitch)
         {
             //
             // use a patch that's a switch (patches.yaml), over the wall's own
             //
-            playerinput.SetHeld(buttontypes.bt_use, true);
+            playerinput.SetHeld(ButtonType.bt_use, true);
             UsePatchSwitch(patchSwitch, checkx, checky, dir);
         }
         // A wall beside a door keeps its id under BIT_WALL; a moving pushwall's tiles are bare BIT_WALL
-        else if (!playerinput.IsHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) == 0
+        else if (!playerinput.IsHeld(ButtonType.bt_use) && (cmdtile & BIT_DOOR) == 0
             && map.GetMapData().Walls.TryGetValue(cmdtile & ~BIT_WALL, out var switchWall)
             && switchWall.Switch is { } wallSwitch && wallSwitch.UsableFrom(dir))
         {
             //
             // use a switch (a mapdefs wall with a switch, such as the elevator's)
             //
-            playerinput.SetHeld(buttontypes.bt_use, true);
+            playerinput.SetHeld(ButtonType.bt_use, true);
             UseSwitch(wallSwitch, checkx, checky, dir);
         }
-        else if (!playerinput.IsHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
+        else if (!playerinput.IsHeld(ButtonType.bt_use) && (cmdtile & BIT_DOOR) != 0)
         {
-            playerinput.SetHeld(buttontypes.bt_use, true);
+            playerinput.SetHeld(ButtonType.bt_use, true);
             doors.OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
@@ -319,7 +319,7 @@ internal sealed class PlayerUse(
         const int ANGLES = GameConstants.ANGLES;
         var playerinput = session.playerinput;
         var player = session.player;
-        if (playerinput.IsHeld(buttontypes.bt_use))
+        if (playerinput.IsHeld(ButtonType.bt_use))
             return false;
 
         const long Reach = MapConstants.TILEGLOBAL * 3 / 2;
@@ -329,8 +329,8 @@ internal sealed class PlayerUse(
         {
             if (actor.IsRemoved || actor is Entities.Actors.PlayerPawn || !actor.ResolvedStates.ContainsKey("Use"))
                 continue;
-            if (actor is Entities.Actors.Monster && (!actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
-                || actor.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE)))
+            if (actor is Entities.Actors.Monster && (!actor.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE)
+                || actor.RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE)))
                 continue;
 
             long dx = actor.X - player.X, dy = player.Y - actor.Y;     // y grows southward
@@ -349,7 +349,7 @@ internal sealed class PlayerUse(
 
         if (chosen == null)
             return false;
-        playerinput.SetHeld(buttontypes.bt_use, true);
+        playerinput.SetHeld(ButtonType.bt_use, true);
         chosen.SetState("Use");
         return true;
     }

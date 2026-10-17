@@ -544,16 +544,16 @@ public record MapSwitchTranslation
     public string State { get; init; } = "";
 
     /// <summary>Whether the player can use it while facing <paramref name="dir"/>.</summary>
-    public bool UsableFrom(controldirs dir)
+    public bool UsableFrom(ControlDir dir)
     {
         if (Sides.Count == 0)
             return true;
 
         var face = dir switch
         {
-            controldirs.di_east => "west",
-            controldirs.di_west => "east",
-            controldirs.di_north => "south",
+            ControlDir.di_east => "west",
+            ControlDir.di_west => "east",
+            ControlDir.di_north => "south",
             _ => "north",
         };
         return Sides.Contains(face, StringComparer.OrdinalIgnoreCase);

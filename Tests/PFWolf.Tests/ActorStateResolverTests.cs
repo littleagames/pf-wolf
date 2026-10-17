@@ -203,8 +203,8 @@ public class ActorStateResolverTests
             """)["Spawn"];
 
         // Assert
-        Assert.That(frame.GetShapeName(objdirtypes.north), Is.EqualTo("GARDA2"));
-        Assert.That(frame.GetShapeName(objdirtypes.nodir), Is.EqualTo("GARDA0"));
+        Assert.That(frame.GetShapeName(ObjDir.north), Is.EqualTo("GARDA2"));
+        Assert.That(frame.GetShapeName(ObjDir.nodir), Is.EqualTo("GARDA0"));
     }
 
     [Test]

@@ -44,7 +44,7 @@ public class HubActionsTests
 
         // Assert
         Assert.That(blake.X, Is.EqualTo(x + 30000));
-        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
+        Assert.That(_session.playstate, Is.EqualTo(PlayState.ex_stillplaying));
     }
 
     [Test]
@@ -56,7 +56,7 @@ public class HubActionsTests
         _actions.T_VictoryRun(blake);
 
         Assert.That(blake.TileX, Is.EqualTo(16));
-        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_victorious));
+        Assert.That(_session.playstate, Is.EqualTo(PlayState.ex_victorious));
     }
 
     [Test]
@@ -73,7 +73,7 @@ public class HubActionsTests
 
         // Assert: it stays put, and the cluster is won
         Assert.That(blake.X, Is.EqualTo(x));
-        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_victorious));
+        Assert.That(_session.playstate, Is.EqualTo(PlayState.ex_victorious));
     }
 
     [Test]
@@ -88,6 +88,6 @@ public class HubActionsTests
         _actions.T_VictoryRun(blake);
 
         Assert.That(blake.X, Is.GreaterThan(x));
-        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
+        Assert.That(_session.playstate, Is.EqualTo(PlayState.ex_stillplaying));
     }
 }

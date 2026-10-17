@@ -47,7 +47,7 @@ public class AutomapInputTests
     public void Its_Keys_Only_Work_While_Its_Open()
     {
         // Arrange: F bound to follow
-        _controls.Set(ControlAction.Of(automapkeys.am_follow), 0, KeyF);
+        _controls.Set(ControlAction.Of(AutomapAction.am_follow), 0, KeyF);
 
         // Act / Assert
         Assert.That(_keys.HandleAutomapKey(KeyF), Is.False);

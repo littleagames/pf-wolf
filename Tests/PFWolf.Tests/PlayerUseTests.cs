@@ -87,7 +87,7 @@ public class PlayerUseTests
     {
         var prisoner = (Monster)_inventory.CreateActor("Prisoner")!;
         (prisoner.X, prisoner.Y) = (_session.player.X + dx, _session.player.Y + dy);
-        prisoner.RuntimeFlags |= objflags.FL_SHOOTABLE;
+        prisoner.RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
         prisoner.SetState(prisoner.ResolvedStates["Spawn"]);
         _map.GetActors().AddLast(prisoner);
         return prisoner;
@@ -105,7 +105,7 @@ public class PlayerUseTests
         // Assert
         Assert.That(used, Is.True);
         Assert.That(prisoner.CurrentState!.StateName, Is.EqualTo("Use"));
-        Assert.That(_session.playerinput.IsHeld(buttontypes.bt_use), Is.True);
+        Assert.That(_session.playerinput.IsHeld(ButtonType.bt_use), Is.True);
     }
 
     [Test]
@@ -141,12 +141,12 @@ public class PlayerUseTests
     {
         // Arrange
         var prisoner = Prisoner(Tile, 0);
-        prisoner.RuntimeFlags |= objflags.FL_ATTACKMODE;
+        prisoner.RuntimeFlags |= ObjFlags.FL_ATTACKMODE;
 
         // Act / Assert
         Assert.That(_use.TryUseActor(), Is.False);
-        prisoner.RuntimeFlags &= ~objflags.FL_ATTACKMODE;
-        _session.playerinput.SetHeld(buttontypes.bt_use, true);
+        prisoner.RuntimeFlags &= ~ObjFlags.FL_ATTACKMODE;
+        _session.playerinput.SetHeld(ButtonType.bt_use, true);
         Assert.That(_use.TryUseActor(), Is.False);
     }
 
@@ -235,7 +235,7 @@ public class PlayerUseTests
 
         // Act / Assert: refused, the level goes on
         Assert.That(use.ExitAction(secret: false), Is.False);
-        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
+        Assert.That(_session.playstate, Is.EqualTo(PlayState.ex_stillplaying));
     }
 
     [Test]

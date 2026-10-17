@@ -210,7 +210,7 @@ internal sealed class TitleLoop(
                 // demo
                 //
                 demos.PlayDemo(titleScreens.TakeNextTitleDemo());
-                if (session.playstate == playstatetypes.ex_abort)
+                if (session.playstate == PlayState.ex_abort)
                     break;
                 video.FadeOut();
                 if (video.HasMargins)

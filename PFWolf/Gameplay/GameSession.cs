@@ -114,13 +114,13 @@ internal sealed class GameSession
     /// <summary>The tics this frame moves the game on by</summary>
     internal uint tics;
 
-    internal gametype gamestate = new gametype();
+    internal GameState gamestate = new GameState();
 
     /// <summary>
     /// Each floor's ratios and time as last completed, by map, for the win tally (saved with
     /// the game); a new game starts it empty
     /// </summary>
-    internal Dictionary<string, LRstruct> LevelRatios = new();
+    internal Dictionary<string, LevelRatio> LevelRatios = new();
 
     /// <summary>id's random numbers, which every machine and every demo has to step through alike</summary>
     internal readonly RandomTable random = new();
@@ -175,7 +175,7 @@ internal sealed class GameSession
     internal bool madenoise;
 
     /// <summary>How the level's going: playing on, died, completed, warped...</summary>
-    internal playstatetypes playstate;
+    internal PlayState playstate;
 
     /// <summary>
     /// A random number for which of a sound's variants plays: the game's own alone, as it always

@@ -54,10 +54,10 @@ internal partial record BlakeMonster
             TakeDamage(zap, this);
         }
 
-        if (Dir == objdirtypes.nodir)
+        if (Dir == ObjDir.nodir)
         {
             BounceStartDir();
-            if (Dir == objdirtypes.nodir)
+            if (Dir == ObjDir.nodir)
                 return;
         }
 
@@ -84,7 +84,7 @@ internal partial record BlakeMonster
             // Blocked: a diagonal one tries a right angle either way, then everything goes back
             if (IsDiagonal(Dir))
             {
-                var left = (objdirtypes)(((int)Dir + 2) % 8);
+                var left = (ObjDir)(((int)Dir + 2) % 8);
                 var right = opposite[(byte)left];
                 if (TryBounceDir(left) || TryBounceDir(right))
                     continue;
@@ -92,15 +92,15 @@ internal partial record BlakeMonster
 
             if (!TryBounceDir(opposite[(byte)Dir]))
             {
-                Dir = objdirtypes.nodir;
+                Dir = ObjDir.nodir;
                 return;
             }
         }
     }
 
-    private static bool IsDiagonal(objdirtypes dir) => dir is objdirtypes.northeast or objdirtypes.northwest or objdirtypes.southeast or objdirtypes.southwest;
+    private static bool IsDiagonal(ObjDir dir) => dir is ObjDir.northeast or ObjDir.northwest or ObjDir.southeast or ObjDir.southwest;
 
-    private bool TryBounceDir(objdirtypes dir)
+    private bool TryBounceDir(ObjDir dir)
     {
         var old = Dir;
         Dir = dir;
@@ -125,14 +125,14 @@ internal partial record BlakeMonster
         {
             var dir = BounceKinds[(first + i) % BounceKinds.Length] switch
             {
-                "vertical" => (US_RndT() & 1) != 0 ? objdirtypes.north : objdirtypes.south,
-                "horizontal" => (US_RndT() & 1) != 0 ? objdirtypes.east : objdirtypes.west,
-                _ => (objdirtypes)((US_RndT() % 4) * 2 + 1),
+                "vertical" => (US_RndT() & 1) != 0 ? ObjDir.north : ObjDir.south,
+                "horizontal" => (US_RndT() & 1) != 0 ? ObjDir.east : ObjDir.west,
+                _ => (ObjDir)((US_RndT() % 4) * 2 + 1),
             };
             if (TryBounceDir(dir) || TryBounceDir(opposite[(byte)dir]))
                 return;
         }
-        Dir = objdirtypes.nodir;
+        Dir = ObjDir.nodir;
     }
 
     // A diagonal bouncer going straight (it was boxed in) takes the first diagonal it can, once there's room
@@ -140,7 +140,7 @@ internal partial record BlakeMonster
     {
         if (IsDiagonal(Dir) || PropertyStrings("monster.bounce").FirstOrDefault()?.ToLowerInvariant() is "vertical" or "horizontal")
             return false;
-        foreach (var dir in new[] { objdirtypes.northeast, objdirtypes.northwest, objdirtypes.southwest, objdirtypes.southeast })
+        foreach (var dir in new[] { ObjDir.northeast, ObjDir.northwest, ObjDir.southwest, ObjDir.southeast })
             if (TryBounceDir(dir))
                 return true;
         return false;
@@ -161,9 +161,9 @@ internal partial record BlakeMonster
     internal void SetShootable(string[] args)
     {
         if (args.FirstOrDefault()?.Equals("off", StringComparison.OrdinalIgnoreCase) == true)
-            RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+            RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
         else
-            RuntimeFlags |= objflags.FL_SHOOTABLE;
+            RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
     }
 
     /// <summary>The liquid alien moving as a puddle (Chase): near the player, but not right by them, it rises (Rise)</summary>
@@ -183,7 +183,7 @@ internal partial record BlakeMonster
     /// </summary>
     internal void LiquidStand()
     {
-        RuntimeFlags |= objflags.FL_SHOOTABLE;
+        RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
         if (US_RndT() < 80 && Temp2 < 5)
         {
             Temp2++;
@@ -193,9 +193,9 @@ internal partial record BlakeMonster
 
         if (Math.Abs(TileX - Target.TileX) > 1 || Math.Abs(TileY - Target.TileY) > 1)
         {
-            if (!RuntimeFlags.HasFlag(objflags.FL_VISABLE) || US_RndT() < 40 || Temp2 == 5)
+            if (!RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) || US_RndT() < 40 || Temp2 == 5)
             {
-                RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+                RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
                 Temp2 = 0;
                 SetState("Fall");
             }
@@ -246,7 +246,7 @@ internal partial record BlakeMonster
         if (Temp2 <= 0)
         {
             Temp2 = SEEK_TURN_DELAY;
-            Dir = Dir >= objdirtypes.southeast ? objdirtypes.east : Dir + 1;
+            Dir = Dir >= ObjDir.southeast ? ObjDir.east : Dir + 1;
         }
     }
 
@@ -256,7 +256,7 @@ internal partial record BlakeMonster
         if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
             return false;
         var target = Target;
-        if (Dir == objdirtypes.nodir)
+        if (Dir == ObjDir.nodir)
             return CheckLine(this, target);
 
         var angle = Math.Atan2(Y - target.Y, target.X - X) * 180 / Math.PI;
@@ -286,7 +286,7 @@ internal partial record BlakeMonster
     /// </summary>
     internal void SteamVent()
     {
-        if (!RuntimeFlags.HasFlag(objflags.FL_VISABLE))
+        if (!RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE))
             return;
         if (Temp3 == 0)
         {
@@ -341,7 +341,7 @@ internal partial record BlakeMonster
     /// <summary>A_SelfDestruct: the actor dies, with its points (the floating bomb, reaching the player, blows itself up)</summary>
     internal void SelfDestruct()
     {
-        if (!RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+        if (!RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE))
             return;
         Hitpoints = 0;
         Kill(null);
@@ -367,7 +367,7 @@ internal partial record BlakeMonster
     {
         if (args.Length == 0)
             return;
-        int left = _mapManager.GetActors().Count(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
+        int left = _mapManager.GetActors().Count(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE));
         _hudMessageManager.Show(Managers.HudMessageKind.Other, args[0], args.ElementAtOrDefault(1),
             new Dictionary<char, string> { ['n'] = left.ToString() });
     }
@@ -375,8 +375,8 @@ internal partial record BlakeMonster
     /// <summary>A_VictoryIfLast: the level is won once none of this actor's class still stands (the last projection generator)</summary>
     internal void VictoryIfLast()
     {
-        if (!_mapManager.GetActors().Any(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)))
-            playstate = playstatetypes.ex_victorious;
+        if (!_mapManager.GetActors().Any(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE)))
+            playstate = PlayState.ex_victorious;
     }
 
     /// <summary>

@@ -22,7 +22,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     /// locked-name if they have one, and moves the cursor off one onto the first that's open
     /// </summary>
     /// <returns>Whether any episode is open</returns>
-    internal static bool ShowEpisodeLocks(CP_itemtype[] rows, CP_iteminfo info, Func<EpisodeInfo, bool> open, Func<string, string> text)
+    internal static bool ShowEpisodeLocks(ControlPanelItem[] rows, ControlPanelMenuInfo info, Func<EpisodeInfo, bool> open, Func<string, string> text)
     {
         bool any = false;
         foreach (var row in rows)
@@ -41,12 +41,12 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     }
 
     // Loaded from menudefs/ in CheckForEpisodes
-    internal CP_itemtype[] NewEmenu = [];
-    internal CP_iteminfo NewEitems = null!;
-    internal CP_itemtype[] NewMenu = [];
-    internal CP_iteminfo NewItems = null!;
-    internal CP_itemtype[] ClassMenu = [];
-    internal CP_iteminfo ClassItems = null!;
+    internal ControlPanelItem[] NewEmenu = [];
+    internal ControlPanelMenuInfo NewEitems = null!;
+    internal ControlPanelItem[] NewMenu = [];
+    internal ControlPanelMenuInfo NewItems = null!;
+    internal ControlPanelItem[] ClassMenu = [];
+    internal ControlPanelMenuInfo ClassItems = null!;
     internal int Run()
     {
         var language = assets.GetText("en-us");
@@ -263,7 +263,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     }
 
     /// <summary>The new-class menu's rows: named by game-info, else by the class's tag (the name obituaries use), else the class</summary>
-    internal CP_itemtype[] PlayerClassRows()
+    internal ControlPanelItem[] PlayerClassRows()
     {
         var gameInfo = engine.GetGameInfo();
         var language = assets.GetText("en-us");
@@ -271,7 +271,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         {
             var info = gameInfo.PlayerClasses.FirstOrDefault(c => string.Equals(c.Key, playerClass, StringComparison.OrdinalIgnoreCase)).Value;
             var name = info?.Name ?? inventory.GetStringProperty(playerClass, "tag") ?? playerClass;
-            return new CP_itemtype(1, name.ToLanguageText(language), null, new PlayerClassChoice(playerClass, info?.PicName));
+            return new ControlPanelItem(1, name.ToLanguageText(language), null, new PlayerClassChoice(playerClass, info?.PicName));
         }).ToArray();
     }
 }

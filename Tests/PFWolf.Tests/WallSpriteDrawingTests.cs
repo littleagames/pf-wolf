@@ -29,7 +29,7 @@ public class WallSpriteDrawingTests
 
     // A north-south fence through the middle of a tile
     private static Monster Fence(int x, int y) =>
-        new() { Name = "Fence", TileX = (byte)x, TileY = (byte)y, Dir = objdirtypes.east, Flags = [WallSprites.WallSpriteFlag] };
+        new() { Name = "Fence", TileX = (byte)x, TileY = (byte)y, Dir = ObjDir.east, Flags = [WallSprites.WallSpriteFlag] };
 
     [Test]
     public void Depth_Is_Along_The_View_Not_Straight_Line_Distance()
@@ -53,7 +53,7 @@ public class WallSpriteDrawingTests
     {
         // Arrange
         var fence = Fence(13, 10);
-        var vis = new visobj_t();
+        var vis = new VisibleObject();
 
         // Act
         bool drawn = _drawing.TransformWallSprite(fence, vis);
@@ -67,7 +67,7 @@ public class WallSpriteDrawingTests
     [Test]
     public void One_Wholly_Behind_The_View_Isnt()
     {
-        Assert.That(_drawing.TransformWallSprite(Fence(7, 10), new visobj_t()), Is.False);
+        Assert.That(_drawing.TransformWallSprite(Fence(7, 10), new VisibleObject()), Is.False);
     }
 
     [TestCase(13, 10, true)]        // its own tile seen

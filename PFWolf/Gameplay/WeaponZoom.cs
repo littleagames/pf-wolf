@@ -52,7 +52,7 @@ internal sealed class WeaponZoom(InventoryManager inventory, AudioManager audio,
             return;
         }
 
-        bool pressed = input.IsPressed(buttontypes.bt_zoom), held = input.IsHeld(buttontypes.bt_zoom);
+        bool pressed = input.IsPressed(ButtonType.bt_zoom), held = input.IsHeld(ButtonType.bt_zoom);
         if (pressed && !held && playerstate.ZoomMode is ZoomMode.Ready or ZoomMode.Zoomed
             && inventory.GetStringProperty(weapon!, "weapon.zoomsound") is { Length: > 0 } sound)
             audio.Play(sound);

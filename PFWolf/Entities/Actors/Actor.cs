@@ -21,9 +21,9 @@ internal record Actor : Thinker
     public Vector2 Position { get; private set; } = Vector2.Zero;
 
     // Think/state-transition bookkeeping, driven by MapManager.DoActor.
-    public activetypes Active { get; internal set; } = activetypes.ac_no;
+    public ActiveType Active { get; internal set; } = ActiveType.ac_no;
     public short TicCount { get; internal set; }
-    public objdirtypes Dir { get; internal set; } = objdirtypes.nodir;
+    public ObjDir Dir { get; internal set; } = ObjDir.nodir;
     public short Angle { get; internal set; }
     public short Hitpoints { get; internal set; }
     public int Speed { get; internal set; }
@@ -91,8 +91,8 @@ internal record Actor : Thinker
     public byte TileY { get; internal set; }
 
     // Runtime combat/AI bookkeeping (FL_SHOOTABLE, FL_AMBUSH, FL_ATTACKMODE, etc. --
-    // GameTypes.cs's objflags), distinct from the static, YAML-declared `Flags` above.
-    public objflags RuntimeFlags { get; internal set; }
+    // GameTypes.cs's ObjFlags), distinct from the static, YAML-declared `Flags` above.
+    public ObjFlags RuntimeFlags { get; internal set; }
 
     // Screen-space hit-testing data, recomputed every frame in Rendering/SpriteDrawing.cs's
     // DrawScaleds (set there by TransformActor) so Gameplay/PlayerAttacks.cs's

@@ -19,8 +19,8 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
     ControlMenus controlMenus, ChangeViewScreen changeView, Func<GameInfoSettings> settings, GameSession session, ControlPanelHooks hooks)
 {
     // Loaded from menudefs/ in CheckForEpisodes
-    internal CP_itemtype[] MainMenu = [];
-    internal CP_iteminfo MainItems = null!;
+    internal ControlPanelItem[] MainMenu = [];
+    internal ControlPanelMenuInfo MainItems = null!;
     // Control panel song: the main menu's music in menudefs/main-menu
     internal string MENUSONG => engine.GetGameInfo().MenuMusic ?? assets.GetMenu("main-menu")?.Music ?? "WONDERIN";
     internal string INTROSONG => engine.GetGameInfo().IntroMusic ?? "";

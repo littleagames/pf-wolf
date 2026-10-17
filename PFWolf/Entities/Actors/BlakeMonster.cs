@@ -48,7 +48,7 @@ internal partial record BlakeMonster : Monster
     public short Ammo { get; internal set; }
     public byte SeekX { get; internal set; }
     public byte SeekY { get; internal set; }
-    public byte TryDir { get; internal set; } = (byte)objdirtypes.nodir;
+    public byte TryDir { get; internal set; } = (byte)ObjDir.nodir;
 
     // Out of the shots it started with: a `dropitem.needsammo` drop isn't left, a `dropitem.alt` one is
     protected override bool OutOfAmmo => Properties.ContainsKey("monster.ammo") && Ammo == 0;
@@ -68,7 +68,7 @@ internal partial record BlakeMonster : Monster
     // last chased doesn't flinch again
     protected override bool OnHurt(int oldHitpoints) =>
         WoundActor(oldHitpoints)
-        || Properties.ContainsKey("monster.painattack") && RuntimeFlags.HasFlag(objflags.FL_LOCKEDSTATE);
+        || Properties.ContainsKey("monster.painattack") && RuntimeFlags.HasFlag(ObjFlags.FL_LOCKEDSTATE);
 
     // ... and a `monster.painattack` actor now and then shoots straight back, and can't be
     // stunned again until it next chases
@@ -81,7 +81,7 @@ internal partial record BlakeMonster : Monster
             ChangeShootMode();
             DoAttack();
         }
-        RuntimeFlags |= objflags.FL_LOCKEDSTATE;
+        RuntimeFlags |= ObjFlags.FL_LOCKEDSTATE;
     }
 
     // A STEPBACK actor walking into the player turns round and heads back to the tile it came
@@ -169,7 +169,7 @@ internal partial record BlakeMonster : Monster
         var ammo = PropertyInts("monster.ammo");
         Ammo = (short)(ammo.Count == 0 ? 1 : ammo.Count == 1 ? ammo[0] : ammo[0] + US_RndT() % (ammo[1] - ammo[0] + 1));
         if (HasFlag("FRIENDLY"))
-            RuntimeFlags |= objflags.FL_FRIENDLY;
+            RuntimeFlags |= ObjFlags.FL_FRIENDLY;
 
         // The 0xFA value east of it on the object plane, if there is one
         int east = tilex + 1 < MapManager.MAPSIZE ? _mapManager.MAPSPOT(tilex + 1, tiley, 1) : 0;
@@ -183,7 +183,7 @@ internal partial record BlakeMonster : Monster
             int seconds = mapValue ?? (wake.Count == 1 ? wake[0] : wake[0] + US_RndT() % (wake[1] - wake[0] + 1));
             Temp2 = Temp3 = (short)(seconds * 60);
             if (seconds == 255)
-                RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+                RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
         }
 
         var stages = PropertyInts("monster.woundstages");
@@ -221,7 +221,7 @@ internal partial record BlakeMonster : Monster
         }
 
         var spawned = _mapManager.SpawnThing(TileX, TileY,
-            new Assets.MapActorTranslation { Class = args[0], Angles = Dir == objdirtypes.nodir ? -1 : (int)Dir * 45 }, countKill: false);
+            new Assets.MapActorTranslation { Class = args[0], Angles = Dir == ObjDir.nodir ? -1 : (int)Dir * 45 }, countKill: false);
         if (spawned == null)
         {
             Console.WriteLine($"A_SpawnEnemy: \"{args[0]}\" isn't an actor.");
@@ -235,7 +235,7 @@ internal partial record BlakeMonster : Monster
         if (args.Skip(1).Any(a => a.Equals("chase", StringComparison.OrdinalIgnoreCase)) && spawned.ResolvedStates.ContainsKey("Chase"))
         {
             spawned.SetState("Chase");
-            spawned.Dir = objdirtypes.nodir;
+            spawned.Dir = ObjDir.nodir;
         }
     }
 
@@ -245,7 +245,7 @@ internal partial record BlakeMonster : Monster
     /// </summary>
     internal void WaitToWake()
     {
-        if (!RuntimeFlags.HasFlag(objflags.FL_VISABLE) || Temp3 <= 0 || Temp3 == 255 * 60)
+        if (!RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) || Temp3 <= 0 || Temp3 == 255 * 60)
             return;
         if (Temp2 > tics)
         {
@@ -253,7 +253,7 @@ internal partial record BlakeMonster : Monster
             return;
         }
         Temp2 = 0;
-        RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+        RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
         SetState("Wake");
     }
 
@@ -289,7 +289,7 @@ internal partial record BlakeMonster : Monster
 
     internal override void Chase()
     {
-        RuntimeFlags &= ~objflags.FL_LOCKEDSTATE;
+        RuntimeFlags &= ~ObjFlags.FL_LOCKEDSTATE;
 
         if (gamestate.victoryflag || HasFlag("STATIONARY"))
             return;
@@ -311,16 +311,16 @@ internal partial record BlakeMonster : Monster
                     else
                     {
                         ChangeShootMode();
-                        if (!RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE))
+                        if (!RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTMODE))
                             Ammo >>= 1;      // closing in lasts half as long
                     }
                 }
 
                 int chance = nearAttack || shootMode
-                    ? (RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE) ? 300 : 0)
+                    ? (RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTMODE) ? 300 : 0)
                     : (int)((tics << 4) / dist);
 
-                if (US_RndT() < chance && Ammo != 0 && !RuntimeFlags.HasFlag(objflags.FL_INTERROGATED))
+                if (US_RndT() < chance && Ammo != 0 && !RuntimeFlags.HasFlag(ObjFlags.FL_INTERROGATED))
                 {
                     DoAttack();
                     return;
@@ -333,10 +333,10 @@ internal partial record BlakeMonster : Monster
             }
         }
 
-        if (Dir == objdirtypes.nodir)
+        if (Dir == ObjDir.nodir)
         {
             SelectBlakeChaseDir();
-            if (Dir == objdirtypes.nodir)
+            if (Dir == ObjDir.nodir)
                 return;     // boxed in
         }
 
@@ -347,7 +347,7 @@ internal partial record BlakeMonster : Monster
             {
                 // waiting for a door to open
                 OpenDoor(-Distance - 1);
-                if (doorobjlist[-Distance - 1].action != dooractiontypes.dr_open)
+                if (doorobjlist[-Distance - 1].action != DoorAction.dr_open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
             }
@@ -362,7 +362,7 @@ internal partial record BlakeMonster : Monster
             move -= Distance;
 
             SelectBlakeChaseDir();
-            if (Dir == objdirtypes.nodir)
+            if (Dir == ObjDir.nodir)
                 return;
         }
     }
@@ -382,14 +382,14 @@ internal partial record BlakeMonster : Monster
     /// </summary>
     private void ChangeShootMode()
     {
-        if (RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE))
+        if (RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTMODE))
         {
-            RuntimeFlags &= ~objflags.FL_SHOOTMODE;
+            RuntimeFlags &= ~ObjFlags.FL_SHOOTMODE;
             Ammo = (short)(60 + US_RndT() % 60);
         }
         else
         {
-            RuntimeFlags |= objflags.FL_SHOOTMODE;
+            RuntimeFlags |= ObjFlags.FL_SHOOTMODE;
             Ammo = (short)(1 + US_RndT() % 2);
         }
     }
@@ -462,21 +462,21 @@ internal partial record BlakeMonster : Monster
             reason |= RR_AMMO;
         if (Hitpoints <= _mapManager.GetScaledHealth(this) >> 1)
             reason |= RR_HEALTH;
-        if ((RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_INTERROGATED)) == objflags.FL_INTERROGATED)
+        if ((RuntimeFlags & (ObjFlags.FL_FRIENDLY | ObjFlags.FL_INTERROGATED)) == ObjFlags.FL_INTERROGATED)
             reason |= RR_INTERROGATED;
 
         if (reason != 0)
         {
-            if (!RuntimeFlags.HasFlag(objflags.FL_RUNAWAY))
+            if (!RuntimeFlags.HasFlag(ObjFlags.FL_RUNAWAY))
             {
                 Temp3 = 0;
-                RuntimeFlags |= objflags.FL_RUNAWAY;
+                RuntimeFlags |= ObjFlags.FL_RUNAWAY;
                 Speed += RUNAWAY_SPEED;
             }
         }
-        else if (RuntimeFlags.HasFlag(objflags.FL_RUNAWAY))
+        else if (RuntimeFlags.HasFlag(ObjFlags.FL_RUNAWAY))
         {
-            RuntimeFlags &= ~objflags.FL_RUNAWAY;
+            RuntimeFlags &= ~ObjFlags.FL_RUNAWAY;
             Speed -= RUNAWAY_SPEED;
         }
 
@@ -499,7 +499,7 @@ internal partial record BlakeMonster : Monster
                 if (TileX == SeekX && TileY == SeekY)
                 {
                     GetCornerSeek();
-                    RuntimeFlags &= ~objflags.FL_INTERROGATED;
+                    RuntimeFlags &= ~ObjFlags.FL_INTERROGATED;
                 }
 
                 deltax = SeekX - TileX;
@@ -526,7 +526,7 @@ internal partial record BlakeMonster : Monster
     private void GetCornerSeek()
     {
         int point = US_RndT() & 3;
-        RuntimeFlags &= ~objflags.FL_RUNTOSTATIC;
+        RuntimeFlags &= ~ObjFlags.FL_RUNTOSTATIC;
         SeekX = SeekPointX[point];
         SeekY = SeekPointY[point];
     }
@@ -544,13 +544,13 @@ internal partial record BlakeMonster : Monster
         {
             justFindDoor = true;
             if (US_RndT() < 128)
-                RuntimeFlags &= ~objflags.FL_INTERROGATED;
+                RuntimeFlags &= ~ObjFlags.FL_INTERROGATED;
         }
 
         int maxHealth = _mapManager.GetScaledHealth(this);
 
         // Out of the player's area and sight, it cheats
-        if (player.AreaNumber != AreaNumber && !RuntimeFlags.HasFlag(objflags.FL_VISABLE))
+        if (player.AreaNumber != AreaNumber && !RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE))
         {
             if (Ammo == 0)
                 Ammo += 8;
@@ -593,10 +593,10 @@ internal partial record BlakeMonster : Monster
                 }
 
                 // Else maybe head for it
-                if (!RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC)
+                if (!RuntimeFlags.HasFlag(ObjFlags.FL_RUNTOSTATIC)
                     && ((reason & RR_AMMO) != 0 && ammoGain > 0 || (reason & RR_HEALTH) != 0 && healthGain > 0))
                 {
-                    RuntimeFlags |= objflags.FL_RUNTOSTATIC;
+                    RuntimeFlags |= ObjFlags.FL_RUNTOSTATIC;
                     SeekX = item.TileX;
                     SeekY = item.TileY;
                     return false;
@@ -607,7 +607,7 @@ internal partial record BlakeMonster : Monster
         // Running for a door out of the room, when the room joins the player's
         if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] != 0)
         {
-            if (RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC))
+            if (RuntimeFlags.HasFlag(ObjFlags.FL_RUNTOSTATIC))
                 return false;   // already heading somewhere
 
             var doors = new List<int>();
@@ -626,10 +626,10 @@ internal partial record BlakeMonster : Monster
                 Temp3 = (short)(chosen + 1);
                 SeekX = (byte)doorobjlist[chosen].tilex;
                 SeekY = (byte)doorobjlist[chosen].tiley;
-                RuntimeFlags |= objflags.FL_RUNTOSTATIC;
+                RuntimeFlags |= ObjFlags.FL_RUNTOSTATIC;
             }
         }
-        else if (RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC))
+        else if (RuntimeFlags.HasFlag(ObjFlags.FL_RUNTOSTATIC))
         {
             // What it was after is gone, or it's far off: off to a corner
             SeekX = 0;
@@ -679,25 +679,25 @@ internal partial record BlakeMonster : Monster
         // A patrol point wins over a random turn
         if (cantWalk || randomTurn && point == null)
         {
-            if (TryDir == (byte)objdirtypes.nodir)
+            if (TryDir == (byte)ObjDir.nodir)
                 TryDir |= (byte)(US_RndT() & 128);      // which way round
             else
-                Dir = (objdirtypes)(TryDir & 127);    // on from the last way tried
+                Dir = (ObjDir)(TryDir & 127);    // on from the last way tried
 
             if ((TryDir & 128) != 0)
-                Dir = Dir == objdirtypes.east ? objdirtypes.southeast : Dir - 1;
+                Dir = Dir == ObjDir.east ? ObjDir.southeast : Dir - 1;
             else
-                Dir = Dir >= objdirtypes.southeast ? objdirtypes.east : Dir + 1;
+                Dir = Dir >= ObjDir.southeast ? ObjDir.east : Dir + 1;
 
             TryDir = (byte)((TryDir & 128) | (byte)Dir);
             if (!CanWalk())
-                Dir = objdirtypes.nodir;
+                Dir = ObjDir.nodir;
         }
 
-        if (Dir != objdirtypes.nodir)
+        if (Dir != ObjDir.nodir)
         {
             TryWalk();
-            TryDir = (byte)objdirtypes.nodir;
+            TryDir = (byte)ObjDir.nodir;
         }
     }
 
@@ -718,16 +718,16 @@ internal partial record BlakeMonster : Monster
     }
 
     // The tile step for a direction, (0, 0) for none
-    private static (int Dx, int Dy) DirOffset(objdirtypes dir) => dir switch
+    private static (int Dx, int Dy) DirOffset(ObjDir dir) => dir switch
     {
-        objdirtypes.east => (1, 0),
-        objdirtypes.northeast => (1, -1),
-        objdirtypes.north => (0, -1),
-        objdirtypes.northwest => (-1, -1),
-        objdirtypes.west => (-1, 0),
-        objdirtypes.southwest => (-1, 1),
-        objdirtypes.south => (0, 1),
-        objdirtypes.southeast => (1, 1),
+        ObjDir.east => (1, 0),
+        ObjDir.northeast => (1, -1),
+        ObjDir.north => (0, -1),
+        ObjDir.northwest => (-1, -1),
+        ObjDir.west => (-1, 0),
+        ObjDir.southwest => (-1, 1),
+        ObjDir.south => (0, 1),
+        ObjDir.southeast => (1, 1),
         _ => (0, 0),
     };
 
@@ -780,7 +780,7 @@ internal partial record BlakeMonster : Monster
 
         PlayActorSound(this, "woundsound");
         SetState("Wounded");
-        RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+        RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
         Temp2 = (short)(5 * 60 + US_RndT() % 20 * 60);
         return true;
     }
@@ -797,7 +797,7 @@ internal partial record BlakeMonster : Monster
 
         if (Math.Abs(player.X - X) > MapConstants.TILEGLOBAL || Math.Abs(player.Y - Y) > MapConstants.TILEGLOBAL)
         {
-            RuntimeFlags |= objflags.FL_SHOOTABLE;
+            RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
             SetState("Recover");
         }
     }
@@ -823,24 +823,24 @@ internal partial record BlakeMonster : Monster
             angle += Math.PI * 2;
         Angle = (short)((int)(angle / (Math.PI * 2) * ANGLES) % ANGLES);
         Temp3 = (short)Math.Min(distance, short.MaxValue);
-        RuntimeFlags |= objflags.FL_SLIDING;
+        RuntimeFlags |= ObjFlags.FL_SLIDING;
     }
 
     /// <summary>The think on Death frames: the body slides back a step each tic until it's gone its distance or hits something</summary>
     internal void BlowBack()
     {
-        if (!RuntimeFlags.HasFlag(objflags.FL_SLIDING))
+        if (!RuntimeFlags.HasFlag(ObjFlags.FL_SLIDING))
             return;
 
         int step = Math.Min((int)Temp3, SLIDE_SPEED);
         Temp3 -= (short)step;
         if (Temp3 <= 0)
-            RuntimeFlags &= ~objflags.FL_SLIDING;
+            RuntimeFlags &= ~ObjFlags.FL_SLIDING;
 
         int dx = MathUtils.FixedMul(step, costable[Angle]);
         int dy = -MathUtils.FixedMul(step, sintable[Angle]);
         if (!ClipMove(dx, dy))
-            RuntimeFlags &= ~objflags.FL_SLIDING;
+            RuntimeFlags &= ~ObjFlags.FL_SLIDING;
 
         TileX = (byte)(X >> (int)MapConstants.TILESHIFT);
         TileY = (byte)(Y >> (int)MapConstants.TILESHIFT);
@@ -860,7 +860,7 @@ internal partial record BlakeMonster : Monster
             {
                 case Wall or BlockingActor:
                     return false;
-                case Door door when doorobjlist[door.door].action != dooractiontypes.dr_open:
+                case Door door when doorobjlist[door.door].action != DoorAction.dr_open:
                     return false;
             }
         }
@@ -893,15 +893,15 @@ internal partial record BlakeMonster : Monster
     {
         // Asked twice, or half the time anyway, it turns mean
         string list;
-        if (RuntimeFlags.HasFlag(objflags.FL_MUSTATTACK) || (US_RndT() & 1) != 0)
+        if (RuntimeFlags.HasFlag(ObjFlags.FL_MUSTATTACK) || (US_RndT() & 1) != 0)
         {
-            RuntimeFlags &= ~objflags.FL_FRIENDLY;
-            RuntimeFlags |= objflags.FL_INTERROGATED;
+            RuntimeFlags &= ~ObjFlags.FL_FRIENDLY;
+            RuntimeFlags |= ObjFlags.FL_INTERROGATED;
             list = PropertyStrings("talk.hostile").FirstOrDefault() ?? "";
         }
         else
         {
-            RuntimeFlags |= objflags.FL_MUSTATTACK;
+            RuntimeFlags |= ObjFlags.FL_MUSTATTACK;
             list = PropertyStrings("talk.friendly").FirstOrDefault() ?? "";
         }
         Say(RandomSaying(list));

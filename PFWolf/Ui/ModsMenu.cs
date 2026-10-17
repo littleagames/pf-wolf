@@ -37,8 +37,8 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
 
     private List<ModMenuEntry> modMenuEntries = [];
     private int modMenuPage;
-    internal CP_itemtype[] Items = [];
-    internal CP_iteminfo Info = null!;
+    internal ControlPanelItem[] Items = [];
+    internal ControlPanelMenuInfo Info = null!;
 
     /// <summary>Whether that many mods need more than one page</summary>
     internal static bool Paged(int count) => count > ModsPageSize;
@@ -173,16 +173,16 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
     }
 
     /// <summary>The Mods menu's rows for the page showing (its items-source)</summary>
-    internal CP_itemtype[] BuildModsPage()
+    internal ControlPanelItem[] BuildModsPage()
     {
         var language = assets.GetText("en-us");
         var rows = modMenuEntries
             .Skip(modMenuPage * ModsPerPage)
             .Take(ModsPerPage)
-            .Select(entry => new CP_itemtype((short)(entry.Loadable ? 1 : 0), ui.FitText(entry.Text, ModNameWidth, UiFonts.MENU_FONT), null, entry));
+            .Select(entry => new ControlPanelItem((short)(entry.Loadable ? 1 : 0), ui.FitText(entry.Text, ModNameWidth, UiFonts.MENU_FONT), null, entry));
 
         if (ModsPaged)
-            rows = rows.Append(new CP_itemtype(1, "$STR_MODS_MORE".ToLanguageText(language), null) { id = "more" });
+            rows = rows.Append(new ControlPanelItem(1, "$STR_MODS_MORE".ToLanguageText(language), null) { id = "more" });
 
         return rows.ToArray();
     }

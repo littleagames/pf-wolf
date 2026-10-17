@@ -145,7 +145,7 @@ internal sealed class GameSaves(
     /// </summary>
     internal bool SaveTheGame(string path, string name, int x, int y)
     {
-        // A save holds one player (gametype's stats, one inventory, one pawn)
+        // A save holds one player (GameState's stats, one inventory, one pawn)
         if (session.players.Count > 1)
         {
             Console.WriteLine($"Couldn't save the game to {path}: games with more than one player can't be saved yet.");
@@ -203,9 +203,9 @@ internal sealed class GameSaves(
 
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
     internal sealed record SaveGameData(
-        gametype GameState,
+        GameState GameState,
         Entities.PlayerState Player,
-        Dictionary<string, LRstruct> LevelRatios,
+        Dictionary<string, LevelRatio> LevelRatios,
         Dictionary<string, int> Inventory,
         LevelBody Body,
         Entities.Actors.ActorSnapshot? Weapon,
@@ -214,11 +214,11 @@ internal sealed class GameSaves(
 
     internal SaveGameData ReadSaveBody(BinaryReader br)
     {
-        var (state, player) = gametype.Read(br);
+        var (state, player) = GameState.Read(br);
 
-        var ratios = new Dictionary<string, LRstruct>();
+        var ratios = new Dictionary<string, LevelRatio>();
         for (int i = br.ReadCount(); i > 0; i--)
-            ratios[br.ReadString()] = LRstruct.Read(br);
+            ratios[br.ReadString()] = LevelRatio.Read(br);
 
         var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = br.ReadCount(); i > 0; i--)

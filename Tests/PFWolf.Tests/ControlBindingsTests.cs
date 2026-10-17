@@ -4,9 +4,9 @@ namespace PFWolf.Tests;
 
 public class ControlBindingsTests
 {
-    private static readonly ControlAction Attack = ControlAction.Of(buttontypes.bt_attack);
-    private static readonly ControlAction Use = ControlAction.Of(buttontypes.bt_use);
-    private static readonly ControlAction ZoomIn = ControlAction.Of(automapkeys.am_zoomin);
+    private static readonly ControlAction Attack = ControlAction.Of(ButtonType.bt_attack);
+    private static readonly ControlAction Use = ControlAction.Of(ButtonType.bt_use);
+    private static readonly ControlAction ZoomIn = ControlAction.Of(AutomapAction.am_zoomin);
 
     private static ControlBindings Empty()
     {
@@ -37,7 +37,7 @@ public class ControlBindingsTests
 
         // Assert
         Assert.That(parsed, Is.True);
-        Assert.That(action, Is.EqualTo(ControlAction.Of(buttontypes.bt_slot2)));
+        Assert.That(action, Is.EqualTo(ControlAction.Of(ButtonType.bt_slot2)));
     }
 
     [Test]

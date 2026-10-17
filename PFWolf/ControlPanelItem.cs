@@ -1,8 +1,8 @@
 ﻿namespace PFWolf;
 
-internal class CP_itemtype
+internal class ControlPanelItem
 {
-    public CP_itemtype(short active, string text, Func<int, int>? routine)
+    public ControlPanelItem(short active, string text, Func<int, int>? routine)
     {
         this.active = active;
         this.text = text;
@@ -10,7 +10,7 @@ internal class CP_itemtype
         this.data = null;
     }
 
-    public CP_itemtype(short active, string text, Func<int, int>? routine, object data)
+    public ControlPanelItem(short active, string text, Func<int, int>? routine, object data)
     {
         this.active = active;
         this.text = text;
@@ -31,7 +31,7 @@ internal class CP_itemtype
     public bool? checkbox;
 }
 
-internal class CP_iteminfo
+internal class ControlPanelMenuInfo
 {
     public short x, y, amount, curpos, indent;
 
@@ -48,7 +48,7 @@ internal class CP_iteminfo
     /// <summary>A toggle item's checkbox, from its text's left and top</summary>
     public int checkboxX = -24, checkboxY = 3;
 
-    public CP_iteminfo(short x, short y, short amount, short curpos, short indent)
+    public ControlPanelMenuInfo(short x, short y, short amount, short curpos, short indent)
     {
         this.x = x;
         this.y = y;

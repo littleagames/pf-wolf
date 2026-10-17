@@ -113,9 +113,9 @@ public class PlayerWeaponsTests
 
         public void Press(object button)
         {
-            Session.playerinput.SetPressed((buttontypes)button, true);
+            Session.playerinput.SetPressed((ButtonType)button, true);
             Weapons.CheckWeaponChange();
-            Session.playerinput.SetPressed((buttontypes)button, false);
+            Session.playerinput.SetPressed((ButtonType)button, false);
         }
     }
 
@@ -152,11 +152,11 @@ public class PlayerWeaponsTests
         rig.InHand = "Pistol";
 
         // Act / Assert
-        rig.Press(buttontypes.bt_nextweapon);
+        rig.Press(ButtonType.bt_nextweapon);
         Assert.That(rig.InHand, Is.EqualTo("MachineGun"));
-        rig.Press(buttontypes.bt_nextweapon);
+        rig.Press(ButtonType.bt_nextweapon);
         Assert.That(rig.InHand, Is.EqualTo("Knife"));       // the shotgun has no shells
-        rig.Press(buttontypes.bt_prevweapon);
+        rig.Press(ButtonType.bt_prevweapon);
         Assert.That(rig.InHand, Is.EqualTo("MachineGun"));
     }
 
@@ -170,9 +170,9 @@ public class PlayerWeaponsTests
         rig.InHand = "Knife";
 
         // Act / Assert
-        rig.Press(buttontypes.bt_slot4);
+        rig.Press(ButtonType.bt_slot4);
         Assert.That(rig.InHand, Is.EqualTo("ChainGun"));
-        rig.Press(buttontypes.bt_slot4);
+        rig.Press(ButtonType.bt_slot4);
         Assert.That(rig.InHand, Is.EqualTo("Shotgun"));
         Assert.That(rig.Session.playerstate.chosenweapon, Is.EqualTo("Shotgun"));
     }
@@ -185,7 +185,7 @@ public class PlayerWeaponsTests
         rig.InHand = "Knife";
 
         // Act
-        rig.Press(buttontypes.bt_slot7);
+        rig.Press(ButtonType.bt_slot7);
 
         // Assert
         Assert.That(rig.SlotItemsUsed, Is.EqualTo(new[] { 7 }));
@@ -363,7 +363,7 @@ public class PlayerWeaponsTests
         rig.Session.playerstate.WeaponSprite = rifle;
 
         // Act / Assert
-        rig.Press(buttontypes.bt_slot1);
+        rig.Press(ButtonType.bt_slot1);
         Assert.That(rig.InHand, Is.EqualTo("Rifle"));
     }
 

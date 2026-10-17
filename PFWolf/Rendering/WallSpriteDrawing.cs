@@ -57,7 +57,7 @@ internal sealed class WallSpriteDrawing(
     /// Fills in a wall sprite's vislist entry: its height is the panel's middle's, for sorting
     /// it among the other sprites. False if the panel is wholly behind the view.
     /// </summary>
-    internal bool TransformWallSprite(Entities.Actors.Actor actor, visobj_t vis)
+    internal bool TransformWallSprite(Entities.Actors.Actor actor, VisibleObject vis)
     {
         if (WallSprites.GetWallSpriteSpan(actor) is not { } span)
             return false;
@@ -79,7 +79,7 @@ internal sealed class WallSpriteDrawing(
             || map.spotvis[x, y + 1] || map.spotvis[x, y - 1];
     }
 
-    internal void ScaleWallSprite(visobj_t vis)
+    internal void ScaleWallSprite(VisibleObject vis)
     {
         if (vis.wallsprite == null || WallSprites.GetWallSpriteSpan(vis.wallsprite) is not { } span)
             return;

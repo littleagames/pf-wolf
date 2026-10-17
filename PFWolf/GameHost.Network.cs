@@ -35,7 +35,7 @@ internal static partial class GameHost
     static readonly NetStartRequest netStart = new();
 
     internal static int CP_Multiplayer(int _) => multiplayerMenu.Run();
-    static CP_itemtype[] BuildJoinRows() => multiplayerMenu.BuildJoinRows();
+    static ControlPanelItem[] BuildJoinRows() => multiplayerMenu.BuildJoinRows();
 
     // Starting and ending games with others (Networking/NetGames.cs)
     static NetGames netGames = null!;       // made in InitServices

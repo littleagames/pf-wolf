@@ -5,7 +5,7 @@ namespace PFWolf.Loaders;
 
 public class Wolf3dVswapFileLoader
 {
-    private struct digiinfo
+    private struct DigiInfo
     {
         public uint startpage;
         public uint length;
@@ -192,7 +192,7 @@ public class Wolf3dVswapFileLoader
 
         var numDigi = (ushort)(PM_GetPageSize(ChunksInFile - 1) / 4);
 
-        var digiList = new digiinfo[numDigi];
+        var digiList = new DigiInfo[numDigi];
 
         for (int i = 0; i < numDigi; i++)
         {

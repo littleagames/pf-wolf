@@ -158,7 +158,7 @@ internal class GameEngineManager
         public required HighScore[] Scores;
         public bool MouseEnabled, JoystickEnabled;
         public required ScanCodes[] DirScan, ButtonScan;
-        public required buttontypes[] ButtonMouse, ButtonJoy;
+        public required ButtonType[] ButtonMouse, ButtonJoy;
         public int ViewSize, MouseAdjustment;
         public bool? PauseWhenOpen;
         public ScanCodes? AutomapKey;
@@ -221,7 +221,7 @@ internal class GameEngineManager
     // (the automap key was appended at the end later), and a button for each mouse and joystick
     // button. They're in controls.cfg now; these are only read from an older config.cfg.
     private const int LayoutDirCount = 4;
-    private const int LayoutButtonCount = (int)buttontypes.bt_automap;
+    private const int LayoutButtonCount = (int)ButtonType.bt_automap;
     private const int LayoutMouseCount = 4;
     private const int LayoutJoyCount = 32;
 
@@ -322,8 +322,8 @@ internal class GameEngineManager
             JoystickEnabled = br.ReadByte() != 0,
             DirScan = new ScanCodes[LayoutDirCount],
             ButtonScan = new ScanCodes[LayoutButtonCount],
-            ButtonMouse = new buttontypes[LayoutMouseCount],
-            ButtonJoy = new buttontypes[LayoutJoyCount],
+            ButtonMouse = new ButtonType[LayoutMouseCount],
+            ButtonJoy = new ButtonType[LayoutJoyCount],
         };
         _ = br.ReadByte(); // joypad enabled placeholder
         _ = br.ReadByte(); // joystick progressive placeholder
@@ -334,9 +334,9 @@ internal class GameEngineManager
         for (int i = 0; i < config.ButtonScan.Length; i++)
             config.ButtonScan[i] = (ScanCodes)br.ReadInt32();
         for (int i = 0; i < config.ButtonMouse.Length; i++)
-            config.ButtonMouse[i] = (buttontypes)br.ReadInt32();
+            config.ButtonMouse[i] = (ButtonType)br.ReadInt32();
         for (int i = 0; i < config.ButtonJoy.Length; i++)
-            config.ButtonJoy[i] = (buttontypes)br.ReadInt32();
+            config.ButtonJoy[i] = (ButtonType)br.ReadInt32();
 
         config.ViewSize = br.ReadInt32();
         config.MouseAdjustment = br.ReadInt32();

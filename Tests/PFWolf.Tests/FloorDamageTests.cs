@@ -42,7 +42,7 @@ public class FloorDamageTests
     {
         var enemy = new Monster { Name = "Guard", Hitpoints = 25 };
         enemy.SetPosition(x, y);
-        enemy.RuntimeFlags |= objflags.FL_SHOOTABLE;
+        enemy.RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
         _map.GetActors().AddLast(enemy);
         return enemy;
     }

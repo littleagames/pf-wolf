@@ -79,7 +79,7 @@ internal sealed class InputPolling(
         if (session.demoplayback)
         {
             //
-            // read commands from demo buffer: a byte of buttons (the first eight buttontypes)
+            // read commands from demo buffer: a byte of buttons (the first eight ButtonType)
             // and a signed byte each of turning and walking a tic
             //
             localcmd.Buttons = demo.demoData[demo.demoptr++];
@@ -87,7 +87,7 @@ internal sealed class InputPolling(
             localcmd.ControlY = (sbyte)demo.demoData[demo.demoptr++] * (int)session.tics;
 
             if (demo.demoptr + 3 > demo.lastdemoptr)
-                session.playstate = playstatetypes.ex_completed;   // demo is done: no whole frame left
+                session.playstate = PlayState.ex_completed;   // demo is done: no whole frame left
 
             return;
         }
@@ -147,7 +147,7 @@ internal sealed class InputPolling(
             demo.demoData[demo.demoptr++] = (byte)controly;// these might need 4 bytes
 
             if (demo.demoptr >= demo.lastdemoptr - 8)
-                session.playstate = playstatetypes.ex_completed;
+                session.playstate = PlayState.ex_completed;
             else
             {
                 controlx *= (int)session.tics;
@@ -170,9 +170,9 @@ internal sealed class InputPolling(
     internal uint LocalButtons()
     {
         uint buttons = 0;
-        for (int i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
+        for (int i = 0; i < (int)ButtonType.NUMBUTTONS; i++)
         {
-            if (inputManager.IsButtonPressed((buttontypes)i))
+            if (inputManager.IsButtonPressed((ButtonType)i))
                 buttons |= 1u << i;
         }
         return buttons;
@@ -208,10 +208,10 @@ internal sealed class InputPolling(
     /// <summary>Presses every button with something bound to it held down.</summary>
     internal void PollButtons()
     {
-        for (int i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
+        for (int i = 0; i < (int)ButtonType.NUMBUTTONS; i++)
         {
-            if (IsControlDown(ControlAction.Of((buttontypes)i)))
-                inputManager.SetButtonPressed((buttontypes)i, true);
+            if (IsControlDown(ControlAction.Of((ButtonType)i)))
+                inputManager.SetButtonPressed((ButtonType)i, true);
         }
     }
 
@@ -293,22 +293,22 @@ internal sealed class InputPolling(
     /// <summary>Walking and turning from the movement buttons, whatever they're bound to.</summary>
     internal void PollButtonMove()
     {
-        int delta = (int)(inputManager.IsButtonPressed(buttontypes.bt_run) ? GameConstants.RUNMOVE * session.tics : GameConstants.BASEMOVE * session.tics);
+        int delta = (int)(inputManager.IsButtonPressed(ButtonType.bt_run) ? GameConstants.RUNMOVE * session.tics : GameConstants.BASEMOVE * session.tics);
 
-        if (inputManager.IsButtonPressed(buttontypes.bt_moveforward))
+        if (inputManager.IsButtonPressed(ButtonType.bt_moveforward))
             controly -= delta;
-        if (inputManager.IsButtonPressed(buttontypes.bt_movebackward))
+        if (inputManager.IsButtonPressed(ButtonType.bt_movebackward))
             controly += delta;
-        if (inputManager.IsButtonPressed(buttontypes.bt_turnleft))
+        if (inputManager.IsButtonPressed(ButtonType.bt_turnleft))
             controlx -= delta;
-        if (inputManager.IsButtonPressed(buttontypes.bt_turnright))
+        if (inputManager.IsButtonPressed(ButtonType.bt_turnright))
             controlx += delta;
 
-        if (inputManager.IsButtonPressed(buttontypes.bt_lookup))
+        if (inputManager.IsButtonPressed(ButtonType.bt_lookup))
             controlpitch += LOOKSPEED * session.tics;
-        if (inputManager.IsButtonPressed(buttontypes.bt_lookdown))
+        if (inputManager.IsButtonPressed(ButtonType.bt_lookdown))
             controlpitch -= LOOKSPEED * session.tics;
-        if (inputManager.IsButtonPressed(buttontypes.bt_centerview))
+        if (inputManager.IsButtonPressed(ButtonType.bt_centerview))
             controlcenterview = true;
     }
 
@@ -350,7 +350,7 @@ internal sealed class InputPolling(
     {
         int joyx, joyy;
 
-        int speed = inputManager.IsButtonPressed(buttontypes.bt_run) ? GameConstants.RUNMOVE : GameConstants.BASEMOVE;
+        int speed = inputManager.IsButtonPressed(ButtonType.bt_run) ? GameConstants.RUNMOVE : GameConstants.BASEMOVE;
 
         // A controller: the left stick walks and strafes and the right stick turns (classic: the
         // left stick walks and turns and the right strafes), as fast as they're pushed. Turning

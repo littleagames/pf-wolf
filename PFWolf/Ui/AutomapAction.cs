@@ -1,7 +1,7 @@
 namespace PFWolf;
 
 /// <summary>The keys that work while the automap is open; bound in <see cref="Configuration.ControlBindings"/>.</summary>
-internal enum automapkeys
+internal enum AutomapAction
 {
     am_zoomin,
     am_zoomout,

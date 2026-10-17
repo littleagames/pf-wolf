@@ -12,8 +12,8 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
     MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs)
 {
     // Loaded from menudefs/ in CheckForEpisodes
-    internal CP_itemtype[] Items = [];
-    internal CP_iteminfo Info = null!;
+    internal ControlPanelItem[] Items = [];
+    internal ControlPanelMenuInfo Info = null!;
     internal int Run()
     {
         int which;

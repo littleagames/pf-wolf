@@ -95,7 +95,7 @@ internal sealed class HubActions(
             ? new PendingMapChange(map, false, 0, 0, 0, WaitTics: 0)
             : new PendingMapChange(map, true, session.player.X, session.player.Y, session.player.Angle, WaitTics: 0, ElevatorWall: panelWall));
         session.gamestate.mapon = map;
-        session.playstate = playstatetypes.ex_warped;
+        session.playstate = PlayState.ex_warped;
         return true;
     }
 
@@ -131,7 +131,7 @@ internal sealed class HubActions(
 
             hooks.SetPendingMapChange(new PendingMapChange(map, true, session.player.X, session.player.Y, session.player.Angle, WaitTics: 0));
             session.gamestate.mapon = map;
-            session.playstate = playstatetypes.ex_warped;
+            session.playstate = PlayState.ex_warped;
             return true;
         }
 
@@ -185,9 +185,9 @@ internal sealed class HubActions(
             // either hand, then ahead
             (int dx, int dy)[] order = trigger.Dir switch
             {
-                controldirs.di_east => [(-1, 0), (0, -1), (0, 1), (1, 0)],
-                controldirs.di_north => [(0, 1), (1, 0), (-1, 0), (0, -1)],
-                controldirs.di_west => [(1, 0), (0, -1), (0, 1), (-1, 0)],
+                ControlDir.di_east => [(-1, 0), (0, -1), (0, 1), (1, 0)],
+                ControlDir.di_north => [(0, 1), (1, 0), (-1, 0), (0, -1)],
+                ControlDir.di_west => [(1, 0), (0, -1), (0, 1), (-1, 0)],
                 _ => [(0, -1), (1, 0), (-1, 0), (0, 1)],
             };
             var spot = order.Select(d => (X: to.X + d.dx, Y: to.Y + d.dy))
@@ -253,7 +253,7 @@ internal sealed class HubActions(
         var runner = mapManager.SpawnAtActor(args[0], session.player);
         if (runner == null)
         {
-            session.playstate = playstatetypes.ex_victorious;
+            session.playstate = PlayState.ex_victorious;
             return true;
         }
 
@@ -297,7 +297,7 @@ internal sealed class HubActions(
         }
 
         if (blocked || Math.Abs(ob.TileX - ob.Temp1) >= 6 || Math.Abs(ob.TileY - ob.Temp3) >= 6)
-            session.playstate = playstatetypes.ex_victorious;
+            session.playstate = PlayState.ex_victorious;
     }
 
     /// <summary>Turns the view to <paramref name="destAngle"/> at <paramref name="speed"/> degrees a tic, drawing as it goes</summary>

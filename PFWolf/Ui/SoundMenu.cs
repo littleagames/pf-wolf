@@ -7,8 +7,8 @@ namespace PFWolf.Ui;
 internal sealed class SoundMenu(AudioManager audio, VideoManager video, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs)
 {
     // Loaded from menudefs/ in CheckForEpisodes
-    internal CP_itemtype[] Items = [];
-    internal CP_iteminfo Info = null!;
+    internal ControlPanelItem[] Items = [];
+    internal ControlPanelMenuInfo Info = null!;
     internal int Run()
     {
         int which;

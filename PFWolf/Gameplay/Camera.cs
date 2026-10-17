@@ -105,7 +105,7 @@ internal sealed class Camera(GameSession session)
     /// else the way it walks, or its Angle when it stands still.
     /// </summary>
     static short ActorViewAngle(Entities.Actors.Actor actor) =>
-        actor.Dir == objdirtypes.nodir || actor.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase)
+        actor.Dir == ObjDir.nodir || actor.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase)
             ? actor.Angle
             : (short)GameConstants.dirangle[(byte)actor.Dir];
 }

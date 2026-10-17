@@ -51,7 +51,7 @@ public class ConsoleTargetsTests
         Entities.Actors.Monster Guard(int tiles, bool alive) => new()
         {
             Name = "Guard", X = _session.player.X + tiles * Tile, Y = _session.player.Y,
-            RuntimeFlags = alive ? objflags.FL_SHOOTABLE : 0,
+            RuntimeFlags = alive ? ObjFlags.FL_SHOOTABLE : 0,
         };
         var far = Guard(8, true);
         var near = Guard(3, true);

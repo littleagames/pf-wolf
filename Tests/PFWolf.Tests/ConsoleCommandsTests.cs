@@ -282,7 +282,7 @@ public class BindCommandsTests
         _console.Execute("bindaction attack F5 \"Mouse 2\"");
 
         // Assert
-        var attack = ControlAction.Of(buttontypes.bt_attack);
+        var attack = ControlAction.Of(ButtonType.bt_attack);
         Assert.That(_controls[attack, 0], Is.EqualTo(ParseInput("F5")));
         Assert.That(_controls[attack, 1], Is.EqualTo(ParseInput("Mouse 2")));
     }
@@ -291,7 +291,7 @@ public class BindCommandsTests
     public void Bindaction_With_A_Bad_Name_Leaves_The_Control_Alone()
     {
         // Arrange
-        var attack = ControlAction.Of(buttontypes.bt_attack);
+        var attack = ControlAction.Of(ButtonType.bt_attack);
         var before = _controls.FormatInputs(attack);
 
         // Act

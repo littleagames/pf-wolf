@@ -86,7 +86,7 @@ internal sealed class PlayKeys(
         //
         // automap
         //
-        if (inputManager.IsButtonPressed(buttontypes.bt_automap) && !inputManager.IsButtonHeld(buttontypes.bt_automap))
+        if (inputManager.IsButtonPressed(ButtonType.bt_automap) && !inputManager.IsButtonHeld(ButtonType.bt_automap))
             hooks.ToggleAutomap();
 
         //
@@ -188,7 +188,7 @@ internal sealed class PlayKeys(
         //
         // pause key weirdness can't be checked as a scan code
         //
-        if (inputManager.IsButtonPressed(buttontypes.bt_pause))
+        if (inputManager.IsButtonPressed(ButtonType.bt_pause))
             engine.SetPaused(true);
         if (engine.IsPaused())
         {
@@ -215,14 +215,14 @@ internal sealed class PlayKeys(
             return;
         }
 
-        if ((scan >= ScanCodes.sc_F1 && scan <= ScanCodes.sc_F9) || scan == ScanCodes.sc_Escape || inputManager.IsButtonPressed(buttontypes.bt_esc))
+        if ((scan >= ScanCodes.sc_F1 && scan <= ScanCodes.sc_F9) || scan == ScanCodes.sc_Escape || inputManager.IsButtonPressed(ButtonType.bt_esc))
         {
             int lastoffs = music.StopMusic();
             automap.Close();
             audio.StopAll();
             video.FadeOut();
 
-            hooks.ControlPanel(inputManager.IsButtonPressed(buttontypes.bt_esc) ? ScanCodes.sc_Escape : scan);
+            hooks.ControlPanel(inputManager.IsButtonPressed(ButtonType.bt_esc) ? ScanCodes.sc_Escape : scan);
 
             inputManager.ClearKeysDown();
             video.FadeOut();
@@ -231,7 +231,7 @@ internal sealed class PlayKeys(
             if (!session.startgame && !session.loadedgame)
                 music.ContinueMusic(lastoffs);
             if (session.loadedgame)
-                session.playstate = playstatetypes.ex_abort;
+                session.playstate = PlayState.ex_abort;
             frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
             inputManager.CenterMouse();
             return;

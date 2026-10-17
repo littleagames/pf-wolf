@@ -94,8 +94,8 @@ public class UnlocksTests
     {
         // Arrange: EP02 and EP03 locked, the cursor left on EP02
         var unlocks = Make();
-        var rows = _info.Episodes.Values.Select(ep => new CP_itemtype(1, ep.Name, null, ep)).ToArray();
-        var info = new CP_iteminfo(0, 0, (short)rows.Length, 1, 0);
+        var rows = _info.Episodes.Values.Select(ep => new ControlPanelItem(1, ep.Name, null, ep)).ToArray();
+        var info = new ControlPanelMenuInfo(0, 0, (short)rows.Length, 1, 0);
 
         // Act
         bool any = NewGameMenu.ShowEpisodeLocks(rows, info, unlocks.IsOpen, text => text);

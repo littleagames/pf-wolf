@@ -9,8 +9,8 @@ internal sealed class ModMenus(VideoManager video, MenuDrawing draw, MenuLoop lo
 {
     internal int Run(string name)
     {
-        CP_itemtype[] items;
-        CP_iteminfo info;
+        ControlPanelItem[] items;
+        ControlPanelMenuInfo info;
         try
         {
             (items, info) = defs.LoadMenu(name);

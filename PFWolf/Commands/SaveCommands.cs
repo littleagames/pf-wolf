@@ -95,7 +95,7 @@ internal sealed class SaveCommands(
         {
             session.loadedgame = true;
             if (gameSaves.LoadTheGame(save.Path, 0, 0))
-                session.playstate = playstatetypes.ex_abort;    // GameLoop redraws and restarts music for the loaded level
+                session.playstate = PlayState.ex_abort;    // GameLoop redraws and restarts music for the loaded level
             else
                 session.loadedgame = false;
         });

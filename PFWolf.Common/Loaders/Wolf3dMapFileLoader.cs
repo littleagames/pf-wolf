@@ -4,7 +4,7 @@ using PFWolf.Constants;
 namespace PFWolf.Loaders;
 
 /// <summary>A level's header in GAMEMAPS</summary>
-struct maptype
+struct MapHeader
 {
     public int[] planestart;
     public UInt16[] planelength;
@@ -12,7 +12,7 @@ struct maptype
     public UInt16 height;
     public char[] name;
 
-    public maptype()
+    public MapHeader()
     {
         planestart = new Int32[MapConstants.MAPPLANES];
         planelength = new UInt16[MapConstants.MAPPLANES];
@@ -31,7 +31,7 @@ public class Wolf3dMapFileLoader
 {
     private readonly ushort _rlewTag;
     // Null where MAPHEAD has no level
-    private readonly maptype?[] _levels;
+    private readonly MapHeader?[] _levels;
     private readonly byte[] _gameMaps;
 
     internal const ushort NEARTAG = 0xa7;
@@ -59,7 +59,7 @@ public class Wolf3dMapFileLoader
             throw new InvalidDataException("MAPHEAD is too short");
 
         _rlewTag = BitConverter.ToUInt16(mapHead, 0);
-        _levels = new maptype?[Math.Min(MaxLevels, (mapHead.Length - sizeof(ushort)) / sizeof(int))];
+        _levels = new MapHeader?[Math.Min(MaxLevels, (mapHead.Length - sizeof(ushort)) / sizeof(int))];
 
         using var br = new BinaryReader(new MemoryStream(gameMaps));
         for (int i = 0; i < _levels.Length; i++)
@@ -70,7 +70,7 @@ public class Wolf3dMapFileLoader
             if (pos > gameMaps.Length - (MapConstants.MAPPLANES * 6 + 4 + 16))
                 throw new InvalidDataException($"MAPHEAD puts level {i + 1} past the end of GAMEMAPS");
 
-            var level = new maptype();
+            var level = new MapHeader();
             br.BaseStream.Seek(pos, SeekOrigin.Begin);
             for (int p = 0; p < MapConstants.MAPPLANES; p++)
                 level.planestart[p] = br.ReadInt32();

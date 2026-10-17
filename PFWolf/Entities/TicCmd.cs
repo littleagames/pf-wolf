@@ -7,7 +7,7 @@ namespace PFWolf.Entities;
 /// </summary>
 internal struct TicCmd
 {
-    /// <summary>A bit for each <see cref="buttontypes"/> held down (bit 0 is bt_attack)</summary>
+    /// <summary>A bit for each <see cref="ButtonType"/> held down (bit 0 is bt_attack)</summary>
     public uint Buttons;
 
     /// <summary>
@@ -22,9 +22,9 @@ internal struct TicCmd
     /// <summary>Look straight ahead again this frame</summary>
     public bool CenterView;
 
-    public readonly bool IsDown(buttontypes button) => (Buttons & Bit(button)) != 0;
+    public readonly bool IsDown(ButtonType button) => (Buttons & Bit(button)) != 0;
 
-    public void SetDown(buttontypes button, bool down)
+    public void SetDown(ButtonType button, bool down)
     {
         if (down)
             Buttons |= Bit(button);
@@ -32,5 +32,5 @@ internal struct TicCmd
             Buttons &= ~Bit(button);
     }
 
-    static uint Bit(buttontypes button) => 1u << (int)button;
+    static uint Bit(ButtonType button) => 1u << (int)button;
 }

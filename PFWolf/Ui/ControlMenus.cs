@@ -13,10 +13,10 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
     MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, UiText ui, ControlSettings settings)
 {
     // Loaded from menudefs/ in CheckForEpisodes
-    internal CP_itemtype[] CtlMenu = [];
-    internal CP_iteminfo CtlItems = null!;
-    internal CP_itemtype[] JoyMenu = [];
-    internal CP_iteminfo JoyItems = null!;
+    internal ControlPanelItem[] CtlMenu = [];
+    internal ControlPanelMenuInfo CtlItems = null!;
+    internal ControlPanelItem[] JoyMenu = [];
+    internal ControlPanelMenuInfo JoyItems = null!;
     internal int RunControl()
     {
         int which;

@@ -34,7 +34,7 @@ internal sealed class Pickups(
 {
     internal void GetBonus(Inventory builtActor)
     {
-        if ((session.playstate == playstatetypes.ex_died))
+        if ((session.playstate == PlayState.ex_died))
             return;
 
         //if (string.IsNullOrWhiteSpace(check.item_class))

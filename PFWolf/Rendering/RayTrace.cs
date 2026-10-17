@@ -100,7 +100,7 @@ internal sealed class RayTrace(
             {
                 pushWalls.SelectPushWall(render.focaltx, render.focalty);
                 render.hitstories = map.WallStories(pushWalls.pwall.X, pushWalls.pwall.Y);
-                if ((pushWalls.pwall.Dir == controldirs.di_east && render.xtilestep == 1) || (pushWalls.pwall.Dir == controldirs.di_west && render.xtilestep == -1))
+                if ((pushWalls.pwall.Dir == ControlDir.di_east && render.xtilestep == 1) || (pushWalls.pwall.Dir == ControlDir.di_west && render.xtilestep == -1))
                 {
                     yinttemp = render.yintercept - ((ystep * (64 - pushWalls.pwall.Pos)) >> 6);
 
@@ -109,7 +109,7 @@ internal sealed class RayTrace(
                     //
                     if (yinttemp >> MapConstants.TILESHIFT == render.focalty)
                     {
-                        if (pushWalls.pwall.Dir == controldirs.di_east)
+                        if (pushWalls.pwall.Dir == ControlDir.di_east)
                             render.xintercept = (render.focaltx << MapConstants.TILESHIFT) + (pushWalls.pwall.Pos << 10);
                         else
                             render.xintercept = (int)(((render.focaltx << MapConstants.TILESHIFT) - MapConstants.TILEGLOBAL) + ((64 - pushWalls.pwall.Pos) << 10));
@@ -121,7 +121,7 @@ internal sealed class RayTrace(
                         focalhit = true;
                     }
                 }
-                else if ((pushWalls.pwall.Dir == controldirs.di_south && render.ytilestep == 1) || (pushWalls.pwall.Dir == controldirs.di_north && render.ytilestep == -1))
+                else if ((pushWalls.pwall.Dir == ControlDir.di_south && render.ytilestep == 1) || (pushWalls.pwall.Dir == ControlDir.di_north && render.ytilestep == -1))
                 {
                     xinttemp = render.xintercept - ((xstep * (64 - pushWalls.pwall.Pos)) >> 6);
 
@@ -130,7 +130,7 @@ internal sealed class RayTrace(
                     //
                     if (xinttemp >> MapConstants.TILESHIFT == render.focaltx)
                     {
-                        if (pushWalls.pwall.Dir == controldirs.di_south)
+                        if (pushWalls.pwall.Dir == ControlDir.di_south)
                             render.yintercept = (render.focalty << MapConstants.TILESHIFT) + (pushWalls.pwall.Pos << 10);
                         else
                             render.yintercept = (int)(((render.focalty << MapConstants.TILESHIFT) - MapConstants.TILEGLOBAL) + ((64 - pushWalls.pwall.Pos) << 10));
@@ -243,7 +243,7 @@ internal sealed class RayTrace(
                 yinttemp = render.yintercept + (ystep >> 1);    // add halfstep to current intercept position
                 int planex = (int)((render.xtile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
 
-                if (door.action == dooractiontypes.dr_open)
+                if (door.action == DoorAction.dr_open)
                 {
                     if (yinttemp >> MapConstants.TILESHIFT == render.yinttile)
                         hits.NoteLintel(door, planex, yinttemp);
@@ -260,7 +260,7 @@ internal sealed class RayTrace(
                     return false;
                 }
 
-                if (door.action != dooractiontypes.dr_closed)
+                if (door.action != DoorAction.dr_closed)
                 {
                     //
                     // the trace hit the door plane at pixel position yintercept, see if the door is
@@ -284,9 +284,9 @@ internal sealed class RayTrace(
                 //
                 // hit a sliding vertical wall
                 //
-                if (pushWalls.pwall.Dir == controldirs.di_west || pushWalls.pwall.Dir == controldirs.di_east)
+                if (pushWalls.pwall.Dir == ControlDir.di_west || pushWalls.pwall.Dir == ControlDir.di_east)
                 {
-                    if (pushWalls.pwall.Dir == controldirs.di_west)
+                    if (pushWalls.pwall.Dir == ControlDir.di_west)
                     {
                         pwallposnorm = 64 - pushWalls.pwall.Pos;
                         pwallposinv = pushWalls.pwall.Pos;
@@ -297,8 +297,8 @@ internal sealed class RayTrace(
                         pwallposinv = 64 - pushWalls.pwall.Pos;
                     }
 
-                    if ((pushWalls.pwall.Dir == controldirs.di_east && render.xtile == pushWalls.pwall.X && render.yinttile == pushWalls.pwall.Y)
-                     || (pushWalls.pwall.Dir == controldirs.di_west && !(render.xtile == pushWalls.pwall.X && render.yinttile == pushWalls.pwall.Y)))
+                    if ((pushWalls.pwall.Dir == ControlDir.di_east && render.xtile == pushWalls.pwall.X && render.yinttile == pushWalls.pwall.Y)
+                     || (pushWalls.pwall.Dir == ControlDir.di_west && !(render.xtile == pushWalls.pwall.X && render.yinttile == pushWalls.pwall.Y)))
                     {
                         yinttemp = render.yintercept + ((ystep * pwallposnorm) >> 6);
 
@@ -335,18 +335,18 @@ internal sealed class RayTrace(
                 }
                 else
                 {
-                    if (pushWalls.pwall.Dir == controldirs.di_north)
+                    if (pushWalls.pwall.Dir == ControlDir.di_north)
                         pwallposi = 64 - pushWalls.pwall.Pos;
                     else
                         pwallposi = pushWalls.pwall.Pos;
 
-                    if ((pushWalls.pwall.Dir == controldirs.di_south && (ushort)render.yintercept < (pwallposi << 10))
-                     || (pushWalls.pwall.Dir == controldirs.di_north && (ushort)render.yintercept > (pwallposi << 10)))
+                    if ((pushWalls.pwall.Dir == ControlDir.di_south && (ushort)render.yintercept < (pwallposi << 10))
+                     || (pushWalls.pwall.Dir == ControlDir.di_north && (ushort)render.yintercept > (pwallposi << 10)))
                     {
                         if (render.xtile == pushWalls.pwall.X && render.yinttile == pushWalls.pwall.Y)
                         {
-                            if ((pushWalls.pwall.Dir == controldirs.di_south && (int)((ushort)render.yintercept) + ystep < (pwallposi << 10))
-                             || (pushWalls.pwall.Dir == controldirs.di_north && (int)((ushort)render.yintercept) + ystep > (pwallposi << 10)))
+                            if ((pushWalls.pwall.Dir == ControlDir.di_south && (int)((ushort)render.yintercept) + ystep < (pwallposi << 10))
+                             || (pushWalls.pwall.Dir == ControlDir.di_north && (int)((ushort)render.yintercept) + ystep > (pwallposi << 10)))
                             {
                                 //goto passvert;
                                 passvert(ystep);
@@ -356,7 +356,7 @@ internal sealed class RayTrace(
                             //
                             // set up a horizontal intercept position
                             //
-                            if (pushWalls.pwall.Dir == controldirs.di_south)
+                            if (pushWalls.pwall.Dir == ControlDir.di_south)
                                 render.yintercept = (render.yinttile << MapConstants.TILESHIFT) + (pwallposi << 10);
                             else
                                 render.yintercept = (int)(((render.yinttile << MapConstants.TILESHIFT) - MapConstants.TILEGLOBAL) + (pwallposi << 10));
@@ -388,8 +388,8 @@ internal sealed class RayTrace(
                         }
                         else
                         {
-                            if ((pushWalls.pwall.Dir == controldirs.di_south && ((ushort)render.yintercept) + ystep > (pwallposi << 10))
-                             || (pushWalls.pwall.Dir == controldirs.di_north && ((ushort)render.yintercept) + ystep < (pwallposi << 10)))
+                            if ((pushWalls.pwall.Dir == ControlDir.di_south && ((ushort)render.yintercept) + ystep > (pwallposi << 10))
+                             || (pushWalls.pwall.Dir == ControlDir.di_north && ((ushort)render.yintercept) + ystep < (pwallposi << 10)))
                             {
                                 //goto passvert;
                                 passvert(ystep);
@@ -399,7 +399,7 @@ internal sealed class RayTrace(
                             //
                             // set up a horizontal intercept position
                             //
-                            if (pushWalls.pwall.Dir == controldirs.di_south)
+                            if (pushWalls.pwall.Dir == ControlDir.di_south)
                                 render.yintercept = (render.yinttile << MapConstants.TILESHIFT) - ((64 - pushWalls.pwall.Pos) << 10);
                             else
                                 render.yintercept = (render.yinttile << MapConstants.TILESHIFT) + ((64 - pushWalls.pwall.Pos) << 10);
@@ -417,7 +417,7 @@ internal sealed class RayTrace(
             {
                 var shape = map.wallshape[render.xtile, render.yinttile];
                 if (shape != WallShape.Square
-                    && !hits.IsSolidEdge(shape, render.xtilestep == 1 ? controldirs.di_west : controldirs.di_east))
+                    && !hits.IsSolidEdge(shape, render.xtilestep == 1 ? ControlDir.di_west : ControlDir.di_east))
                 {
                     //
                     // entered a diagonal by an open edge: hit its face, or cross the open half
@@ -488,7 +488,7 @@ internal sealed class RayTrace(
                 xinttemp = render.xintercept + (xstep >> 1);    // add half step to current intercept position
                 int planey = (int)((render.ytile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
 
-                if (door.action == (byte)dooractiontypes.dr_open)
+                if (door.action == (byte)DoorAction.dr_open)
                 {
                     if ((xinttemp >> MapConstants.TILESHIFT) == render.xinttile)
                         hits.NoteLintel(door, xinttemp, planey);
@@ -505,7 +505,7 @@ internal sealed class RayTrace(
                     return false;
                 }
 
-                if (door.action != dooractiontypes.dr_closed)
+                if (door.action != DoorAction.dr_closed)
                 {
                     //
                     // the trace hit the door plane at pixel position xintercept, see if the door is
@@ -529,9 +529,9 @@ internal sealed class RayTrace(
                 //
                 // hit a sliding horizontal wall
                 //
-                if (pushWalls.pwall.Dir == controldirs.di_north || pushWalls.pwall.Dir == controldirs.di_south)
+                if (pushWalls.pwall.Dir == ControlDir.di_north || pushWalls.pwall.Dir == ControlDir.di_south)
                 {
-                    if (pushWalls.pwall.Dir == controldirs.di_north)
+                    if (pushWalls.pwall.Dir == ControlDir.di_north)
                     {
                         pwallposnorm = 64 - pushWalls.pwall.Pos;
                         pwallposinv = pushWalls.pwall.Pos;
@@ -542,8 +542,8 @@ internal sealed class RayTrace(
                         pwallposinv = 64 - pushWalls.pwall.Pos;
                     }
 
-                    if ((pushWalls.pwall.Dir == controldirs.di_south && render.xinttile == pushWalls.pwall.X && render.ytile == pushWalls.pwall.Y)
-                     || (pushWalls.pwall.Dir == controldirs.di_north && !(render.xinttile == pushWalls.pwall.X && render.ytile == pushWalls.pwall.Y)))
+                    if ((pushWalls.pwall.Dir == ControlDir.di_south && render.xinttile == pushWalls.pwall.X && render.ytile == pushWalls.pwall.Y)
+                     || (pushWalls.pwall.Dir == ControlDir.di_north && !(render.xinttile == pushWalls.pwall.X && render.ytile == pushWalls.pwall.Y)))
                     {
                         xinttemp = render.xintercept + ((xstep * pwallposnorm) >> 6);
 
@@ -580,18 +580,18 @@ internal sealed class RayTrace(
                 }
                 else
                 {
-                    if (pushWalls.pwall.Dir == controldirs.di_west)
+                    if (pushWalls.pwall.Dir == ControlDir.di_west)
                         pwallposi = 64 - pushWalls.pwall.Pos;
                     else
                         pwallposi = pushWalls.pwall.Pos;
 
-                    if ((pushWalls.pwall.Dir == controldirs.di_east && (ushort)render.xintercept < (pwallposi << 10))
-                     || (pushWalls.pwall.Dir == controldirs.di_west && (ushort)render.xintercept > (pwallposi << 10)))
+                    if ((pushWalls.pwall.Dir == ControlDir.di_east && (ushort)render.xintercept < (pwallposi << 10))
+                     || (pushWalls.pwall.Dir == ControlDir.di_west && (ushort)render.xintercept > (pwallposi << 10)))
                     {
                         if (render.xinttile == pushWalls.pwall.X && render.ytile == pushWalls.pwall.Y)
                         {
-                            if ((pushWalls.pwall.Dir == controldirs.di_east && (render.xintercept) + xstep < (pwallposi << 10))
-                             || (pushWalls.pwall.Dir == controldirs.di_west && (render.xintercept) + xstep > (pwallposi << 10)))
+                            if ((pushWalls.pwall.Dir == ControlDir.di_east && (render.xintercept) + xstep < (pwallposi << 10))
+                             || (pushWalls.pwall.Dir == ControlDir.di_west && (render.xintercept) + xstep > (pwallposi << 10)))
 
                             {
                                 passhoriz(xstep);
@@ -604,7 +604,7 @@ internal sealed class RayTrace(
                             render.yintercept -= (ystep * (64 - pushWalls.pwall.Pos)) >> 6;
                             render.yinttile = render.yintercept >> MapConstants.TILESHIFT;
 
-                            if (pushWalls.pwall.Dir == controldirs.di_east)
+                            if (pushWalls.pwall.Dir == ControlDir.di_east)
                                 render.xintercept = (render.xinttile << MapConstants.TILESHIFT) + (pwallposi << 10);
                             else
                                 render.xintercept = (int)(((render.xinttile << MapConstants.TILESHIFT) - MapConstants.TILEGLOBAL) + (pwallposi << 10));
@@ -634,8 +634,8 @@ internal sealed class RayTrace(
                         }
                         else
                         {
-                            if ((pushWalls.pwall.Dir == controldirs.di_east && (render.xintercept) + xstep > (pwallposi << 10))
-                             || (pushWalls.pwall.Dir == controldirs.di_west && (render.xintercept) + xstep < (pwallposi << 10)))
+                            if ((pushWalls.pwall.Dir == ControlDir.di_east && (render.xintercept) + xstep > (pwallposi << 10))
+                             || (pushWalls.pwall.Dir == ControlDir.di_west && (render.xintercept) + xstep < (pwallposi << 10)))
 
                             {
                                 passhoriz(xstep);
@@ -648,7 +648,7 @@ internal sealed class RayTrace(
                             render.yintercept -= (ystep * pushWalls.pwall.Pos) >> 6;
                             render.yinttile = render.yintercept >> MapConstants.TILESHIFT;
 
-                            if (pushWalls.pwall.Dir == controldirs.di_east)
+                            if (pushWalls.pwall.Dir == ControlDir.di_east)
                                 render.xintercept = (render.xinttile << MapConstants.TILESHIFT) - ((64 - pushWalls.pwall.Pos) << 10);
                             else
                                 render.xintercept = (render.xinttile << MapConstants.TILESHIFT) + ((64 - pushWalls.pwall.Pos) << 10);
@@ -664,7 +664,7 @@ internal sealed class RayTrace(
             {
                 var shape = map.wallshape[render.xinttile, render.ytile];
                 if (shape != WallShape.Square
-                    && !hits.IsSolidEdge(shape, render.ytilestep == 1 ? controldirs.di_north : controldirs.di_south))
+                    && !hits.IsSolidEdge(shape, render.ytilestep == 1 ? ControlDir.di_north : ControlDir.di_south))
                 {
                     //
                     // entered a diagonal by an open edge: hit its face, or cross the open half

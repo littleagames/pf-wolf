@@ -13,7 +13,7 @@ namespace PFWolf.Ui;
 internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, GraphicManager graphics, AudioManager audio, UiText ui)
 {
     readonly Dictionary<string, Func<int, int>> actions = new(StringComparer.Ordinal);
-    readonly Dictionary<string, Func<CP_itemtype[]>> sources = new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, Func<ControlPanelItem[]>> sources = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// A page of presenter text (Blake Stone's instructions, story and ordering info): the
@@ -41,18 +41,18 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
     internal void RegisterAction(string name, Func<int, int> action) => actions[name] = action;
 
     /// <summary>The rows of a menu with items-source: <paramref name="name"/></summary>
-    internal void RegisterSource(string name, Func<CP_itemtype[]> rows) => sources[name] = rows;
+    internal void RegisterSource(string name, Func<ControlPanelItem[]> rows) => sources[name] = rows;
 
     /// <summary>
     /// Builds the item list and layout for a menu defined in menudefs/
     /// </summary>
-    internal (CP_itemtype[] items, CP_iteminfo info) LoadMenu(string name, short curpos = 0)
+    internal (ControlPanelItem[] items, ControlPanelMenuInfo info) LoadMenu(string name, short curpos = 0)
     {
         var menuAsset = assets.GetMenu(name)
             ?? throw new InvalidOperationException($"Menu '{name}' not found in menudefs");
         var language = assets.GetText("en-us");
 
-        CP_itemtype[] items;
+        ControlPanelItem[] items;
         if (menuAsset.ItemsSource != null)
         {
             if (menuAsset.MenuItems.Count > 0)
@@ -64,7 +64,7 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
             items = menuAsset.MenuItems
                     .Where(mi => InCurrentGamePack(mi.GamePacks))
                     .Select(mi =>
-                    new CP_itemtype(
+                    new ControlPanelItem(
                         (short)(mi.Enabled && mi is not BlankMenuItem ? (mi.Highlighted ? 2 : 1) : 0),
                         (mi.Text ?? "").ToLanguageText(language),
                         MapFunction(name, mi as MenuSwitcher))
@@ -86,7 +86,7 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
                 Console.WriteLine($"Menu '{name}': default-selection {selection} is out of range (0-{items.Length - 1})");
         }
 
-        var info = new CP_iteminfo(
+        var info = new ControlPanelMenuInfo(
             (short)menuAsset.Position.X,
             (short)menuAsset.Position.Y,
             amount: (short)items.Length,
@@ -108,7 +108,7 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
     /// <summary>
     /// Builds menu items from game data for a menu's items-source
     /// </summary>
-    private CP_itemtype[] BuildSourceItems(string menuName, string source)
+    private ControlPanelItem[] BuildSourceItems(string menuName, string source)
     {
         var gameInfo = engine.GetGameInfo();
         var language = assets.GetText("en-us");
@@ -120,19 +120,19 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
                 // rows are tall enough for both (spacer-rows: false)
                 if (assets.GetMenu(menuName)?.SpacerRows == false)
                     return gameInfo.Episodes.Values
-                        .Select(ep => new CP_itemtype(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key })
+                        .Select(ep => new ControlPanelItem(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key })
                         .ToArray();
                 return gameInfo.Episodes.Values.SelectMany(ep =>
-                    new CP_itemtype[]
+                    new ControlPanelItem[]
                     {
-                        new CP_itemtype(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key },
-                        new CP_itemtype(0, "", null)
+                        new ControlPanelItem(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key },
+                        new ControlPanelItem(0, "", null)
                     }).SkipLast(1)
                     .ToArray();
 
             case "skills":
                 return gameInfo.Skills.Values
-                    .Select(skill => new CP_itemtype(1, skill.Name.ToLanguageText(language), null, skill))
+                    .Select(skill => new ControlPanelItem(1, skill.Name.ToLanguageText(language), null, skill))
                     .ToArray();
 
             default:
@@ -146,13 +146,13 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
     /// <summary>
     /// Finds a menu item by its YAML id, or null if the menu has no such item (or isn't loaded yet)
     /// </summary>
-    internal static CP_itemtype? FindMenuItem(CP_itemtype[] items, string id)
+    internal static ControlPanelItem? FindMenuItem(ControlPanelItem[] items, string id)
         => items.FirstOrDefault(item => item.id == id);
 
     /// <summary>
     /// Id of the chosen item from HandleMenu's result, or null for escape / an item without an id
     /// </summary>
-    internal static string? SelectedId(CP_itemtype[] items, int which)
+    internal static string? SelectedId(ControlPanelItem[] items, int which)
         => which >= 0 && which < items.Length ? items[which].id : null;
 
     /// <summary>

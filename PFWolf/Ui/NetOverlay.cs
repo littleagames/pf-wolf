@@ -89,9 +89,9 @@ internal sealed class NetOverlay(
         var localplayer = game.localplayer;
         if (localplayer.health <= 0 && localplayer.Pawn != null)
         {
-            if (input.IsButtonPressed(buttontypes.bt_turnright) && !input.IsButtonHeld(buttontypes.bt_turnright))
+            if (input.IsButtonPressed(ButtonType.bt_turnright) && !input.IsButtonHeld(ButtonType.bt_turnright))
                 WatchNextPlayer(1);
-            else if (input.IsButtonPressed(buttontypes.bt_turnleft) && !input.IsButtonHeld(buttontypes.bt_turnleft))
+            else if (input.IsButtonPressed(ButtonType.bt_turnleft) && !input.IsButtonHeld(ButtonType.bt_turnleft))
                 WatchNextPlayer(-1);
         }
 
@@ -100,7 +100,7 @@ internal sealed class NetOverlay(
             if (scan == ScanCodes.sc_Y)
             {
                 netPlay.netLeft = true;
-                game.playstate = playstatetypes.ex_abort;
+                game.playstate = PlayState.ex_abort;
             }
             if (scan is ScanCodes.sc_Y or ScanCodes.sc_N or ScanCodes.sc_Escape)
             {
@@ -110,7 +110,7 @@ internal sealed class NetOverlay(
             return;
         }
 
-        if (scan == ScanCodes.sc_Escape || input.IsButtonPressed(buttontypes.bt_esc))
+        if (scan == ScanCodes.sc_Escape || input.IsButtonPressed(ButtonType.bt_esc))
         {
             netPlay.netLeavePrompt = true;
             input.ClearKeysDown();

@@ -34,7 +34,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         // A_ToggleDoor(["hold"]): opens the tagged doors that are shut or shutting, closes the rest
         MapTriggerRegistry.Register("A_ToggleDoor", (trigger, args) => ForTaggedDoors(trigger, door =>
         {
-            if (doors.doorobjlist[door].action is dooractiontypes.dr_closed or dooractiontypes.dr_closing)
+            if (doors.doorobjlist[door].action is DoorAction.dr_closed or DoorAction.dr_closing)
                 SwitchOpenDoor(door, Hold(args));
             else
                 doors.CloseDoor(door);
@@ -251,12 +251,12 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
             && (map.tilemap[t.X, t.Y] & ~GameConstants.BIT_WALL) != 0);
 
     /// <summary>A direction's name (north, east, south, west, any case), or null</summary>
-    internal static controldirs? ParseDirection(string? name) => name?.Trim().ToLowerInvariant() switch
+    internal static ControlDir? ParseDirection(string? name) => name?.Trim().ToLowerInvariant() switch
     {
-        "north" => controldirs.di_north,
-        "east" => controldirs.di_east,
-        "south" => controldirs.di_south,
-        "west" => controldirs.di_west,
+        "north" => ControlDir.di_north,
+        "east" => ControlDir.di_east,
+        "south" => ControlDir.di_south,
+        "west" => ControlDir.di_west,
         _ => null,
     };
 
@@ -269,7 +269,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     private bool MoveWallAction(TriggerActivation trigger, string[] args)
     {
         var dirName = args.ElementAtOrDefault(0);
-        controldirs dir;
+        ControlDir dir;
         if (string.IsNullOrWhiteSpace(dirName))
             dir = trigger.Dir;
         else if (ParseDirection(dirName) is { } named)

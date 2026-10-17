@@ -30,13 +30,13 @@ internal sealed class PlayerState
     /// </summary>
     public TicCmd PendingCmd;
 
-    // What was gametype's (GameTypes.cs), and is still saved in its place
+    // What was GameState's (GameTypes.cs), and is still saved in its place
     public string playerclass = "Player";   // the actordefs class played as (game-info player-classes)
     public int oldscore, score, nextextra;
     public short lives;
     public short health;
     public short armor, armorpercent;       // armor points, and how much of each hit (0-100%) they absorb
-    public string? weapon, chosenweapon;    // the weapon in hand and the one picked (see gametype)
+    public string? weapon, chosenweapon;    // the weapon in hand and the one picked (see GameState)
     public short faceframe;
     public int killx, killy;                // where what killed them stood
 
@@ -112,7 +112,7 @@ internal sealed class PlayerState
     public string? Name;
 
     /// <summary>
-    /// Copies what a gametype read from a save holds for the player into this one: the game
+    /// Copies what a GameState read from a save holds for the player into this one: the game
     /// keeps a single player's stats in a save, in among the game's own.
     /// </summary>
     public void CopyStatsFrom(PlayerState other)

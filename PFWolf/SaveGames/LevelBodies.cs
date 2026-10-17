@@ -6,7 +6,7 @@ namespace PFWolf.SaveGames;
 /// <summary>What <see cref="LevelBodies.WriteLevelBody"/> wrote, read without changing any game state.</summary>
 internal sealed record LevelBody(
     LevelSnapshot Level,
-    doorobj_t[] Doors,
+    DoorObject[] Doors,
     byte[,] AreaConnect,
     byte[] AreaByPlayer,
     List<MovingPushWall> PushWalls,
@@ -60,10 +60,10 @@ internal sealed class LevelBodies(
     {
         var level = MapManager.ReadLevelState(br);
 
-        var doors = new doorobj_t[br.ReadCount()];
+        var doors = new DoorObject[br.ReadCount()];
         for (int i = 0; i < doors.Length; i++)
         {
-            doors[i] = new doorobj_t();
+            doors[i] = new DoorObject();
             doors[i].ReadState(br);
         }
 

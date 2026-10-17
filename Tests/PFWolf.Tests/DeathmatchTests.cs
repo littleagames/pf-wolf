@@ -93,12 +93,12 @@ public class DeathmatchTests
         for (int i = 0; i < 2; i++)
             rig.Deathmatch.CountFrag(rig.Second, rig.First.Pawn);
         Assert.That(rig.Deathmatch.matchover, Is.True);
-        Assert.That(rig.Session.playstate, Is.EqualTo(playstatetypes.ex_abort));
+        Assert.That(rig.Session.playstate, Is.EqualTo(PlayState.ex_abort));
 
         // and another doesn't end it again
-        rig.Session.playstate = playstatetypes.ex_stillplaying;
+        rig.Session.playstate = PlayState.ex_stillplaying;
         rig.Deathmatch.CountFrag(rig.Second, rig.First.Pawn);
-        Assert.That(rig.Session.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
+        Assert.That(rig.Session.playstate, Is.EqualTo(PlayState.ex_stillplaying));
     }
 
     [Test]

@@ -94,7 +94,7 @@ public class AutomapDrawingTests
     {
         // Arrange
         _map.seen[3, 4] = SeenFlags.Floor;
-        var rocket = new Monster { Name = "Rocket", TileX = 3, TileY = 4, Active = activetypes.ac_yes };
+        var rocket = new Monster { Name = "Rocket", TileX = 3, TileY = 4, Active = ActiveType.ac_yes };
         rocket.SetState(new ActorStateFrame { StateName = "Spawn", Sprite = "ROCK", FrameLetter = "A", TicTime = -1 });
         var marker = new Monster { Name = "PatrolPoint", TileX = 3, TileY = 4 };
         marker.SetState(new ActorStateFrame { StateName = "Spawn", Sprite = "TNT1", FrameLetter = "A", TicTime = -1 });
@@ -121,9 +121,9 @@ public class RadarTests
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
         map.tilemap[1, 1] = 5;
         map.tilemap[2, 1] = GameConstants.BIT_DOOR | 0;
-        doors.doorobjlist[0] = new doorobj_t { action = dooractiontypes.dr_closed };
+        doors.doorobjlist[0] = new DoorObject { action = DoorAction.dr_closed };
         map.tilemap[3, 1] = GameConstants.BIT_DOOR | 1;
-        doors.doorobjlist[1] = new doorobj_t { action = dooractiontypes.dr_open };
+        doors.doorobjlist[1] = new DoorObject { action = DoorAction.dr_open };
 
         // Act
         string Color(int x) => radar.RadarTileColor(x, 1, "unmapped", "floor", "door", "locked");
@@ -148,18 +148,18 @@ public class RadarTests
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
         map.tilemap[2, 1] = GameConstants.BIT_DOOR | 0;
-        doors.doorobjlist[0] = new doorobj_t { action = dooractiontypes.dr_closed, maplock = "GoldKey" };
+        doors.doorobjlist[0] = new DoorObject { action = DoorAction.dr_closed, maplock = "GoldKey" };
         string Color() => radar.RadarTileColor(2, 1, "unmapped", "floor", "door", "locked");
 
         // Act / Assert: as bstone, the lock wins whether it's open or shut
         Assert.That(Color(), Is.EqualTo("locked"));
-        doors.doorobjlist[0].action = dooractiontypes.dr_open;
+        doors.doorobjlist[0].action = DoorAction.dr_open;
         Assert.That(Color(), Is.EqualTo("locked"));
 
         // a key has unlocked it (doors.yaml takes-key): an ordinary door from now on
         doors.doorobjlist[0].unlocked = true;
         Assert.That(Color(), Is.EqualTo("floor"));
-        doors.doorobjlist[0].action = dooractiontypes.dr_closed;
+        doors.doorobjlist[0].action = DoorAction.dr_closed;
         Assert.That(Color(), Is.EqualTo("door"));
     }
 }

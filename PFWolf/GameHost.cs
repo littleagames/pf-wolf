@@ -300,7 +300,7 @@ internal static partial class GameHost
         titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(
                 DemoExists,
-                demonumber => { PlayDemo(demonumber); return playstate == playstatetypes.ex_abort; },
+                demonumber => { PlayDemo(demonumber); return playstate == PlayState.ex_abort; },
                 ClearMargins,
                 DrawHighScores,
                 DrawTitle,
@@ -550,9 +550,9 @@ internal static partial class GameHost
     internal static string? newGamePlayerClass { get => newGames.newGamePlayerClass; set => newGames.newGamePlayerClass = value; }
     internal static void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo, string? playerClass = null) =>
         newGames.NewGame(difficulty, epInfo, mapInfo, playerClass);
-    private record digimap
+    private record DigiMapEntry
     {
-        public digimap(string sound, int index, int channel)
+        public DigiMapEntry(string sound, int index, int channel)
         {
             this.sound = sound;
             this.index = index;

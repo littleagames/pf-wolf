@@ -40,7 +40,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     internal const int DOORWIDTH = 0x7800;
     internal const int OPENTICS = 300;
 
-    internal doorobj_t[] doorobjlist = new doorobj_t[GameConstants.MAXDOORS];
+    internal DoorObject[] doorobjlist = new DoorObject[GameConstants.MAXDOORS];
     internal int lastdoorobj; // index
     internal short doornum;
 
@@ -74,12 +74,12 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         if (doornum == GameConstants.MAXDOORS)
             engine.Quit($"{GameConstants.MAXDOORS}+ doors on level!");
 
-        var doorobj = new doorobj_t();
+        var doorobj = new DoorObject();
         doorobj.position = 0;              // doors start out fully closed
         doorobj.tilex = (sbyte)tilex;
         doorobj.tiley = (sbyte)tiley;
         doorobj.vertical = vertical;
-        doorobj.action = dooractiontypes.dr_closed;
+        doorobj.action = DoorAction.dr_closed;
         doorobj.xlat = doorXlat;
         // A mapdefs door-locks object on the door's tile locks it in place of its own lock
         doorobj.maplock = map.GetMapData().DoorLocks.TryGetValue(map.MAPSPOT(tilex, tiley, 1), out var tileLock)
@@ -138,10 +138,10 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     */
     internal void OpenDoor(int door)
     {
-        if (doorobjlist[door].action == (byte)dooractiontypes.dr_open)
+        if (doorobjlist[door].action == (byte)DoorAction.dr_open)
             doorobjlist[door].ticcount = 0;         // reset open time
         else
-            doorobjlist[door].action = dooractiontypes.dr_opening;  // start it opening
+            doorobjlist[door].action = DoorAction.dr_opening;  // start it opening
     }
 
     /*
@@ -209,7 +209,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             hooks.PlaySoundAt(closeSound, doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
         }
 
-        doorobjlist[door].action = dooractiontypes.dr_closing;
+        doorobjlist[door].action = DoorAction.dr_closing;
         doorobjlist[door].held = false;     // closing lets go of a switch's hold
         //
         // make the door space solid
@@ -234,7 +234,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         // A one-way door only opens from its opens-from side
         if (!OnOpeningSide(doorobjlist[door]))
         {
-            if (doorobjlist[door].action == dooractiontypes.dr_closed)
+            if (doorobjlist[door].action == DoorAction.dr_closed)
             {
                 if (xlat.WrongSideSound is { Length: > 0 } sound)
                     audio.Play(sound);
@@ -267,12 +267,12 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
         switch (doorobjlist[door].action)
         {
-            case dooractiontypes.dr_closed:
-            case dooractiontypes.dr_closing:
+            case DoorAction.dr_closed:
+            case DoorAction.dr_closing:
                 OpenDoor(door);
                 break;
-            case dooractiontypes.dr_open:
-            case dooractiontypes.dr_opening:
+            case DoorAction.dr_open:
+            case DoorAction.dr_opening:
                 CloseDoor(door);
                 break;
         }
@@ -283,7 +283,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     /// Whether the player is on a one-way door's opens-from side (or in line with it); always
     /// true for an ordinary door
     /// </summary>
-    bool OnOpeningSide(doorobj_t door) => door.xlat.OpensFrom.ToLowerInvariant() switch
+    bool OnOpeningSide(DoorObject door) => door.xlat.OpensFrom.ToLowerInvariant() switch
     {
         "east" => session.player.TileX >= door.tilex,
         "west" => session.player.TileX <= door.tilex,
@@ -296,7 +296,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     /// The texture on one face of a door (north, south, east or west): its locked face while
     /// it's locked, else its own; a face it doesn't give falls back to the one opposite.
     /// </summary>
-    internal static string DoorFace(doorobj_t door, string face)
+    internal static string DoorFace(DoorObject door, string face)
     {
         var xlat = door.xlat;
         if (!string.IsNullOrEmpty(door.Lock) && xlat.Locked != null)
@@ -414,7 +414,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             //
             position = 0xffff;
             doorobjlist[door].ticcount = 0;
-            doorobjlist[door].action = (byte)dooractiontypes.dr_open;
+            doorobjlist[door].action = (byte)DoorAction.dr_open;
             map.actorat[doorobjlist[door].tilex, doorobjlist[door].tiley] = null;
         }
 
@@ -458,7 +458,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             //
             position = 0;
 
-            doorobjlist[door].action = dooractiontypes.dr_closed;
+            doorobjlist[door].action = DoorAction.dr_closed;
 
             var door_tilex = doorobjlist[door].tilex;
             var door_tiley = doorobjlist[door].tiley;
@@ -511,15 +511,15 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         {
             switch (doorobjlist[door].action)
             {
-                case dooractiontypes.dr_open:
+                case DoorAction.dr_open:
                     DoorOpen(door);
                     break;
 
-                case dooractiontypes.dr_opening:
+                case DoorAction.dr_opening:
                     DoorOpening(door);
                     break;
 
-                case dooractiontypes.dr_closing:
+                case DoorAction.dr_closing:
                     DoorClosing(door);
                     break;
             }

@@ -50,7 +50,7 @@ public class PickupsTests
         public readonly MapManager Map;
         public readonly Pickups Pickups;
         public bool HasWeapon, ItemRespawn;
-        public bool Died { get => Session.playstate == playstatetypes.ex_died; set => Session.playstate = value ? playstatetypes.ex_died : playstatetypes.ex_stillplaying; }
+        public bool Died { get => Session.playstate == PlayState.ex_died; set => Session.playstate = value ? PlayState.ex_died : PlayState.ex_stillplaying; }
         public readonly List<string> Sounds = [];
         public readonly List<Inventory> Respawning = [];
 

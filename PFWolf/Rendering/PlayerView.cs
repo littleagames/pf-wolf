@@ -63,7 +63,7 @@ internal sealed class PlayerView(
         {
             // Only the items DrawScaleds would have drawn as statics
             if (actor is not Inventory item || item.IsRemoved || item.CurrentState == null
-                || item.ResolvedStates.ContainsKey("Chase") || item.Active == activetypes.ac_yes || hooks.IsWallSprite(item))
+                || item.ResolvedStates.ContainsKey("Chase") || item.Active == ActiveType.ac_yes || hooks.IsWallSprite(item))
                 continue;
 
             int tx = (int)item.Position.X, ty = (int)item.Position.Y;
@@ -100,7 +100,7 @@ internal sealed class PlayerView(
         foreach (var actor in map.GetActors())
         {
             if (actor is PlayerPawn || actor.IsRemoved || actor.CurrentState == null
-                || !(actor.ResolvedStates.ContainsKey("Chase") || actor.Active == activetypes.ac_yes))
+                || !(actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.ac_yes))
                 continue;
 
             hooks.TransformActorFrom(actor, fromx, fromy, fromsin, fromcos);
@@ -108,11 +108,11 @@ internal sealed class PlayerView(
             bool onscreen = actor.ViewHeight > 0
                 && actor.ViewX + actor.ViewHeight >= 0 && actor.ViewX - actor.ViewHeight < viewwidth;
             if (onscreen && actor is Monster && session.gamemode == GameMode.Single)
-                actor.Active = activetypes.ac_yes;      // seen: awake for good, as when drawn
+                actor.Active = ActiveType.ac_yes;      // seen: awake for good, as when drawn
             if (onscreen && lineOfSight.CheckLine(actor))
-                actor.RuntimeFlags |= objflags.FL_VISABLE;
+                actor.RuntimeFlags |= ObjFlags.FL_VISABLE;
             else
-                actor.RuntimeFlags &= ~objflags.FL_VISABLE;
+                actor.RuntimeFlags &= ~ObjFlags.FL_VISABLE;
         }
     }
 
@@ -158,8 +158,8 @@ internal sealed class PlayerView(
     {
         foreach (var actor in map.GetActors())
         {
-            if (actor is Monster && !actor.IsRemoved && actor.Active == activetypes.ac_no && SeenByAPlayer(actor))
-                actor.Active = activetypes.ac_yes;
+            if (actor is Monster && !actor.IsRemoved && actor.Active == ActiveType.ac_no && SeenByAPlayer(actor))
+                actor.Active = ActiveType.ac_yes;
         }
     }
 }

@@ -14,7 +14,7 @@ namespace PFWolf.Gameplay;
 /// <param name="Dir">The way the player faced as they threw it</param>
 /// <param name="Actions">Its reset-actions</param>
 /// <param name="Level">The level's tile map it was thrown on (a reload makes a new one)</param>
-internal sealed record TimedSwitch(int X, int Y, bool Patch, int From, int To, ushort Tag, controldirs Dir,
+internal sealed record TimedSwitch(int X, int Y, bool Patch, int From, int To, ushort Tag, ControlDir Dir,
     IReadOnlyList<string> Actions, ushort[,] Level)
 {
     internal int TicsLeft;
@@ -38,7 +38,7 @@ internal sealed class TimedSwitches(MapManager map, GameSession session)
     internal IReadOnlyList<TimedSwitch> Pending => pending;
 
     /// <summary>A switch just thrown from <paramref name="from"/> to <paramref name="to"/>: if it has reset-tics, it turns back after them</summary>
-    internal void Thrown(MapSwitchTranslation sw, int x, int y, bool patch, int from, int to, ushort tag, controldirs dir)
+    internal void Thrown(MapSwitchTranslation sw, int x, int y, bool patch, int from, int to, ushort tag, ControlDir dir)
     {
         if (sw.ResetTics <= 0)
             return;

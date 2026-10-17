@@ -4,13 +4,13 @@ using PFWolf.Constants;
 
 namespace PFWolf;
 
-internal class visobj_t
+internal class VisibleObject
 {
     public byte tilex, tiley;
     public short viewx;
     public short viewheight;
     public string shapenum;
-    public objflags flags;
+    public ObjFlags flags;
     public Entities.Actors.Actor? wallsprite;   // drawn as a panel (Rendering/WallSprites.cs), not a billboard
     public bool bright;                         // drawn unshaded (Lighting.IsBright)
     public bool cloaked;                        // drawn as a dark shimmer of what's behind it (Actor.Cloaked)
@@ -19,7 +19,7 @@ internal class visobj_t
     public double z;                            // drawn this many texels higher than its art puts it (Actor.Z)
 }
 
-internal enum buttontypes
+internal enum ButtonType
 {
     bt_nobutton = -1,
     bt_attack = 0,
@@ -65,14 +65,14 @@ internal enum buttontypes
     NUMBUTTONS
 };
 
-internal enum activetypes
+internal enum ActiveType
 {
     ac_no,
     ac_yes,
     ac_allways,
 }
 
-enum objdirtypes
+enum ObjDir
 {
     east,
     northeast,
@@ -91,7 +91,7 @@ enum objdirtypes
 //
 //---------------
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-internal class gametype
+internal class GameState
 {
     // The skill: its place in game-info's skills, 0 for the first (easiest)
     public short difficulty;
@@ -113,9 +113,9 @@ internal class gametype
     }
 
     /// <summary>Reads the game, and the one player's stats a save keeps in among it</summary>
-    public static (gametype Game, Entities.PlayerState Player) Read(BinaryReader br)
+    public static (GameState Game, Entities.PlayerState Player) Read(BinaryReader br)
     {
-        var game = new gametype();
+        var game = new GameState();
         var p = new Entities.PlayerState();
         game.difficulty = br.ReadInt16();
         p.playerclass = br.ReadString();
@@ -181,7 +181,7 @@ internal class gametype
 //{
 //    public byte tilex, tiley;
 //    public string shapenum;           // if shapenum == -1 the obj has been removed
-//    public objflags flags;
+//    public ObjFlags flags;
 //    public string item_class;
 
 //    public void Read(BinaryReader br)
@@ -189,7 +189,7 @@ internal class gametype
 //        tilex = br.ReadByte();
 //        tiley = br.ReadByte();
 //        shapenum = br.ReadString();
-//        flags = (objflags)br.ReadUInt32();
+//        flags = (ObjFlags)br.ReadUInt32();
 //        //itemnumber = (wl_stat_types)br.ReadByte();
 //    }
 
@@ -208,16 +208,16 @@ internal class gametype
 //    }
 //}
 
-internal enum dooractiontypes
+internal enum DoorAction
 {
     dr_open, dr_closed, dr_opening, dr_closing,
 };
 
-internal class doorobj_t
+internal class DoorObject
 {
     public sbyte tilex, tiley;
     public bool vertical;
-    public dooractiontypes action;
+    public DoorAction action;
     public short ticcount;
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
     public bool held;                  // opened by a switch to stay open, until something closes it
@@ -254,7 +254,7 @@ internal class doorobj_t
     // from the map, which a load has already respawned the doors from.
     public void ReadState(BinaryReader br)
     {
-        action = (dooractiontypes)br.ReadByte();
+        action = (DoorAction)br.ReadByte();
         ticcount = br.ReadInt16();
         position = br.ReadUInt16();
         held = br.ReadBoolean();
@@ -326,7 +326,7 @@ internal class ActorMark: Actor
     public readonly PFWolf.Entities.Actors.Monster Who;
 }
 
-internal enum playstatetypes
+internal enum PlayState
 {
     ex_stillplaying,
     ex_completed,
@@ -341,7 +341,7 @@ internal enum playstatetypes
 }
 
 [Flags]
-internal enum objflags
+internal enum ObjFlags
 {
     FL_SHOOTABLE = 0x00000001,
     FL_BONUS = 0x00000002,
@@ -388,12 +388,12 @@ internal enum objflags
     // next free bit is   0x00400000
 }
 
-internal class LRstruct
+internal class LevelRatio
 {
     public short kill, secret, treasure;
     public int time;
 
-    public static LRstruct Read(BinaryReader br) => new()
+    public static LevelRatio Read(BinaryReader br) => new()
     {
         kill = br.ReadInt16(),
         secret = br.ReadInt16(),

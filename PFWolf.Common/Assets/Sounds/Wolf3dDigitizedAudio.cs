@@ -1,6 +1,6 @@
 ﻿namespace PFWolf.Assets.Sounds;
 
-public struct headchunk
+public struct HeadChunk
 {
     public byte[] RIFF;
     public uint filelenminus8;
@@ -13,7 +13,7 @@ public struct headchunk
     public uint bytespersec;
     public ushort bytespersample;
     public ushort bitspersample;
-    public headchunk()
+    public HeadChunk()
     {
         RIFF = new byte[4];
         WAVE = new byte[4];
@@ -50,11 +50,11 @@ public struct headchunk
     }
 }
 
-public class wavechunk
+public class WaveChunk
 {
     public byte[] chunkid;
     public uint chunklength;
-    public wavechunk()
+    public WaveChunk()
     {
         chunkid = new byte[4];
     }
@@ -101,9 +101,9 @@ public record Wolf3dDigitizedAudio : Asset
         short[] newsamples = ToPcm16(targetSampleRate);
         int destsamples = newsamples.Length;
 
-        byte[] wavebuffer = new byte[headchunk.size_of + wavechunk.size_of + destsamples * 2];     // dest are 16-bit samples
+        byte[] wavebuffer = new byte[HeadChunk.size_of + WaveChunk.size_of + destsamples * 2];     // dest are 16-bit samples
 
-        headchunk head = new headchunk
+        HeadChunk head = new HeadChunk
         {
             RIFF = [(byte)'R', (byte)'I', (byte)'F', (byte)'F'],
             filelenminus8 = 0,
@@ -118,12 +118,12 @@ public record Wolf3dDigitizedAudio : Asset
             bitspersample = 16
         };
 
-        wavechunk dhead = new wavechunk
+        WaveChunk dhead = new WaveChunk
         {
             chunkid = [(byte)'d', (byte)'a', (byte)'t', (byte)'a'],
             chunklength = (uint)(destsamples * 2)
         };
-        head.filelenminus8 = (uint)(headchunk.size_of + destsamples * 2);  // (sizeof(dhead)-8 = 0)
+        head.filelenminus8 = (uint)(HeadChunk.size_of + destsamples * 2);  // (sizeof(dhead)-8 = 0)
 
         var headData = head.AsBytes();
         Buffer.BlockCopy(headData, 0, wavebuffer, 0, headData.Length);

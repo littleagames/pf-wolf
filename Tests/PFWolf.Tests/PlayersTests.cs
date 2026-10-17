@@ -190,7 +190,7 @@ public class PlayersTests
         var rig = new Rig();
         rig.Second.health = 0;
         rig.Session.tics = 1;
-        rig.Session.playerinput.SetPressed(buttontypes.bt_attack, true);
+        rig.Session.playerinput.SetPressed(ButtonType.bt_attack, true);
 
         // Act: Respawn would need the map, which isn't there
         Assert.DoesNotThrow(() => rig.Players.T_PlayerDead(rig.Second.Pawn!));

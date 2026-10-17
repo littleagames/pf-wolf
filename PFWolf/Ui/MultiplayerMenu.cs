@@ -47,8 +47,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     ===============
     */
 
-    internal CP_itemtype[] Items = [];
-    internal CP_iteminfo MultiplayerItems = null!;
+    internal ControlPanelItem[] Items = [];
+    internal ControlPanelMenuInfo MultiplayerItems = null!;
 
     /// <summary>The main menu's Multiplayer: host a game, join one, or change your name</summary>
     internal int Run()
@@ -276,8 +276,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     ===============
     */
 
-    CP_itemtype[] JoinMenu = [];
-    CP_iteminfo JoinItems = null!;
+    ControlPanelItem[] JoinMenu = [];
+    ControlPanelMenuInfo JoinItems = null!;
     LanBrowser? lanBrowser;
 
     // A row of the join screen: a game found, or typing in an address
@@ -375,10 +375,10 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     }
 
     /// <summary>The join screen's rows (its items-source): the games found, then typing an address</summary>
-    internal CP_itemtype[] BuildJoinRows()
+    internal ControlPanelItem[] BuildJoinRows()
     {
         var language = assets.GetText("en-us");
-        var rows = new List<CP_itemtype>();
+        var rows = new List<ControlPanelItem>();
         var games = lanBrowser?.Games ?? [];
 
         foreach (var game in games.Take(7))
@@ -388,12 +388,12 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             var text = $"{info.HostName} {info.Players}/{info.MaxPlayers} {mode.ToLanguageText(language)}{(info.InGame ? " (playing)" : "")}, {info.Map}";
             bool canJoin = info.Players < info.MaxPlayers
                 && string.Equals(info.GamePack, engine.GamePackId, StringComparison.OrdinalIgnoreCase);
-            rows.Add(new CP_itemtype((short)(canJoin ? 1 : 0), ui.FitText(text, 240, UiFonts.MENU_FONT), null, new JoinRow(game)));
+            rows.Add(new ControlPanelItem((short)(canJoin ? 1 : 0), ui.FitText(text, 240, UiFonts.MENU_FONT), null, new JoinRow(game)));
         }
 
         if (games.Count == 0)
-            rows.Add(new CP_itemtype(0, "$STR_MP_LOOKING".ToLanguageText(language), null));
-        rows.Add(new CP_itemtype(1, "$STR_MP_ADDRESS".ToLanguageText(language), null, new JoinRow(null)));
+            rows.Add(new ControlPanelItem(0, "$STR_MP_LOOKING".ToLanguageText(language), null));
+        rows.Add(new ControlPanelItem(1, "$STR_MP_ADDRESS".ToLanguageText(language), null, new JoinRow(null)));
         return rows.ToArray();
     }
 
@@ -479,8 +479,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     ===============
     */
 
-    CP_itemtype[] LobbyMenu = [];
-    CP_iteminfo LobbyItems = null!;
+    ControlPanelItem[] LobbyMenu = [];
+    ControlPanelMenuInfo LobbyItems = null!;
 
     // The lobby panel's rows: up to PlayerCommands.MAXPLAYERS players, then the last chat lines
     const int LobbyPanelX = 24, LobbyPanelY = 136, LobbyPanelRow = 9, LobbyChatLines = 1;
@@ -694,7 +694,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
 
     // A row's value in the small font, to the right of its name (cleared first): the lobby's and
     // the Multiplayer menu's, which have room for more than a menu-font choice column
-    void DrawRowValue(CP_iteminfo info, CP_itemtype[] items, string id, string value, int column = 88)
+    void DrawRowValue(ControlPanelMenuInfo info, ControlPanelItem[] items, string id, string value, int column = 88)
     {
         int index = Array.FindIndex(items, item => item.id == id);
         if (index < 0)
@@ -736,8 +736,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     };
 
     readonly int[] TimeLimits = [0, 5, 10, 15, 20, 30, 45, 60];
-    CP_itemtype[] RulesMenu = [];
-    CP_iteminfo RulesItems = null!;
+    ControlPanelItem[] RulesMenu = [];
+    ControlPanelMenuInfo RulesItems = null!;
 
     /// <summary>The host sets a deathmatch's rules (left/right, or picking them; Esc goes back)</summary>
     void EditRules(NetSession session)

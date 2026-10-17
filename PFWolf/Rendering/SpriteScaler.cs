@@ -95,7 +95,7 @@ internal sealed class SpriteScaler(
     =
     ===================
     */
-    internal void ScaleShape(visobj_t sprite)
+    internal void ScaleShape(VisibleObject sprite)
     {
         int height, toppix;
         int x1, x2, xcenter;

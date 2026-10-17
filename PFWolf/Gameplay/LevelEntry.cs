@@ -154,7 +154,7 @@ internal sealed class LevelEntry(
         if (hubs.levelStart == null)
             return null;
         using var br = new BinaryReader(new MemoryStream(hubs.levelStart));
-        gametype.Read(br);
+        GameState.Read(br);
         var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = br.ReadCount(); i > 0; i--)
             inventory[br.ReadString()] = br.ReadInt32();
@@ -171,7 +171,7 @@ internal sealed class LevelEntry(
             return false;
 
         using var br = new BinaryReader(new MemoryStream(hubs.levelStart));
-        var (state, player) = gametype.Read(br);
+        var (state, player) = GameState.Read(br);
         var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = br.ReadCount(); i > 0; i--)
             inventory[br.ReadString()] = br.ReadInt32();

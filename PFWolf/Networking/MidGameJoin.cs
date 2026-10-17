@@ -131,7 +131,7 @@ internal sealed class MidGameJoin(
             deathmatch.matchover = br.ReadBoolean();
             deathmatch.teamscores[0] = br.ReadInt32();
             deathmatch.teamscores[1] = br.ReadInt32();
-            var (game, _) = gametype.Read(br);
+            var (game, _) = GameState.Read(br);
 
             // The players, as the host has them
             playersManager.ResetPlayers();

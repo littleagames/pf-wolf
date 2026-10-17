@@ -5,13 +5,13 @@ namespace PFWolf.Loaders;
 
 public class Wolf3dVgaFileLoader
 {
-    private struct pictabletype
+    private struct PicTableEntry
     {
         public short width;
         public short height;
     }
 
-    private struct huffnode
+    private struct HuffNode
     {
         public ushort bit0, bit1; // 0-255 is a character, > is a pointer to a node
     }
@@ -23,8 +23,8 @@ public class Wolf3dVgaFileLoader
 
     private int[] grstarts = null!;
     private byte[][] grsegs = null!;
-    private huffnode[] grhuffman = new huffnode[255];
-    private pictabletype[] pictable = null!;
+    private HuffNode[] grhuffman = new HuffNode[255];
+    private PicTableEntry[] pictable = null!;
 
     private int chunkcomplen, chunkexplen;
     private int numChunks;
@@ -116,7 +116,7 @@ public class Wolf3dVgaFileLoader
             // many pics the file describes, so NUMPICS never needs to be hard-coded.
             numPics = chunkexplen / (sizeof(ushort) * 2);
             var dest = CAL_HuffExpand(compseg, chunkexplen, grhuffman);
-            pictable = StructHelpers.BytesToStructArray<pictabletype>(dest);
+            pictable = StructHelpers.BytesToStructArray<PicTableEntry>(dest);
 
             CA_CacheGrChunks(fs, br);
         }
@@ -271,7 +271,7 @@ public class Wolf3dVgaFileLoader
         //Array.Copy(temp, source, size);
     }
 
-    private static byte[] CAL_HuffExpand(byte[] source, int length, huffnode[] hufftable)
+    private static byte[] CAL_HuffExpand(byte[] source, int length, HuffNode[] hufftable)
     {
         if (length == 0 || source.Length == 0)
         {
@@ -340,7 +340,7 @@ public class Wolf3dVgaFileLoader
     // Same Huffman walk as CAL_HuffExpand, but for the one chunk (tile8) with no explicit
     // decompressed length: decode symbols until the compressed bitstream itself runs out,
     // discarding whatever partial symbol was in progress when the input ended.
-    private static byte[] CAL_HuffExpandUntilSourceExhausted(byte[] source, huffnode[] hufftable)
+    private static byte[] CAL_HuffExpandUntilSourceExhausted(byte[] source, HuffNode[] hufftable)
     {
         if (source.Length == 0)
         {

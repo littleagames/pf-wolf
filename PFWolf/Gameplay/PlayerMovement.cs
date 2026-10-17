@@ -18,7 +18,7 @@ internal sealed record PlayerMovementHooks(
     Action<string> PlayPlayerSound,
     Func<int, int, int, int, int, int, long, WallSpriteSpan?> WallSpriteHit,
     Action<int, int> WallSpriteMoveFrom,
-    Action<MapTriggerTranslation, int, int, controldirs> ActivateTrigger);
+    Action<MapTriggerTranslation, int, int, ControlDir> ActivateTrigger);
 
 /// <summary>
 /// The acting player's movement: turning, looking up and down, walking and strafing from their
@@ -39,11 +39,11 @@ internal sealed class PlayerMovement(
     WallSpriteSpan? wallspriteblock;
 
     /// <summary>The cardinal direction the player faces, as Cmd_Use reckons it</summary>
-    internal static controldirs FacingDir(int angle) =>
-        angle < GameConstants.ANGLES / 8 || angle > 7 * GameConstants.ANGLES / 8 ? controldirs.di_east
-        : angle < 3 * GameConstants.ANGLES / 8 ? controldirs.di_north
-        : angle < 5 * GameConstants.ANGLES / 8 ? controldirs.di_west
-        : controldirs.di_south;
+    internal static ControlDir FacingDir(int angle) =>
+        angle < GameConstants.ANGLES / 8 || angle > 7 * GameConstants.ANGLES / 8 ? ControlDir.di_east
+        : angle < 3 * GameConstants.ANGLES / 8 ? ControlDir.di_north
+        : angle < 5 * GameConstants.ANGLES / 8 ? ControlDir.di_west
+        : ControlDir.di_south;
 
     internal void ControlMovement(Entities.Actors.Actor ob)
     {
@@ -77,23 +77,23 @@ internal sealed class PlayerMovement(
         else if (playerinput.Pitch != 0)
             playerstate.Pitch = Math.Clamp(playerstate.Pitch + playerinput.Pitch, -hooks.MaxPitch(), hooks.MaxPitch());
 
-        if (playerinput.IsPressed(buttontypes.bt_strafeleft))
+        if (playerinput.IsPressed(ButtonType.bt_strafeleft))
         {
             angle = ob.Angle + ANGLES / 4;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            if (playerinput.IsPressed(buttontypes.bt_run))
+            if (playerinput.IsPressed(ButtonType.bt_run))
                 Move(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
             else
                 Move(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
         }
 
-        if (playerinput.IsPressed(buttontypes.bt_straferight))
+        if (playerinput.IsPressed(ButtonType.bt_straferight))
         {
             angle = ob.Angle - ANGLES / 4;
             if (angle < 0)
                 angle += ANGLES;
-            if (playerinput.IsPressed(buttontypes.bt_run))
+            if (playerinput.IsPressed(ButtonType.bt_run))
                 Move(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
             else
                 Move(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
@@ -115,7 +115,7 @@ internal sealed class PlayerMovement(
         //
         // side to side move
         //
-        if (playerinput.IsPressed(buttontypes.bt_strafe))
+        if (playerinput.IsPressed(ButtonType.bt_strafe))
         {
             //
             // strafing
@@ -256,19 +256,19 @@ internal sealed class PlayerMovement(
                     {
                         switch (pw.Dir)
                         {
-                            case controldirs.di_north:
+                            case ControlDir.di_north:
                                 if (ob.Y - PUSHWALLMINDIST <= (pw.Y << (int)MapConstants.TILESHIFT) + ((63 - pw.Pos) << 10))
                                     return false;
                                 break;
-                            case controldirs.di_west:
+                            case ControlDir.di_west:
                                 if (ob.X - PUSHWALLMINDIST <= (pw.X << (int)MapConstants.TILESHIFT) + ((63 - pw.Pos) << 10))
                                     return false;
                                 break;
-                            case controldirs.di_east:
+                            case ControlDir.di_east:
                                 if (ob.X + PUSHWALLMINDIST >= (pw.X << (int)MapConstants.TILESHIFT) + (pw.Pos << 10))
                                     return false;
                                 break;
-                            case controldirs.di_south:
+                            case ControlDir.di_south:
                                 if (ob.Y + PUSHWALLMINDIST >= (pw.Y << (int)MapConstants.TILESHIFT) + (pw.Pos << 10))
                                     return false;
                                 break;

@@ -11,12 +11,12 @@ internal sealed class Jukebox(
     MenuLoop loop,
     MenuDefs defs)
 {
-    internal CP_itemtype[] MusicMenu = [];
+    internal ControlPanelItem[] MusicMenu = [];
     // The jukebox shows one page of songs at a time
     internal const int JukeboxPageSize = 6;
 
     // Loaded from menudefs/ in CheckForEpisodes
-    internal CP_iteminfo MusicItems = null!;
+    internal ControlPanelMenuInfo MusicItems = null!;
 
     internal void DoJukebox()
     {

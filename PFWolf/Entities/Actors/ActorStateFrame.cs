@@ -24,9 +24,9 @@ internal class ActorStateFrame
     public string? Action { get; init; }
     public ActorStateFrame? Next { get; internal set; }
 
-    public string GetShapeName(objdirtypes dir)
+    public string GetShapeName(ObjDir dir)
     {
-        var frame = dir == objdirtypes.nodir ? 0 : (int)dir;
+        var frame = dir == ObjDir.nodir ? 0 : (int)dir;
         return $"{Sprite}{FrameLetter}{frame}";
     }
 }

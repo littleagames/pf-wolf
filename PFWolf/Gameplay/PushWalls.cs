@@ -11,7 +11,7 @@ internal sealed class MovingPushWall
     public ushort State;                // session.tics since it started: a tile per 128
     public ushort Pos;                  // amount it has moved into the tile ahead (0-63)
     public ushort X, Y;                 // the tile it's leaving
-    public controldirs Dir;
+    public ControlDir Dir;
     public ushort Tile;                 // its wall id
 
     // Who pushed it: the tiles it leaves take their area (not saved: a loaded game's
@@ -36,10 +36,10 @@ internal sealed class MovingPushWall
             Pos = br.ReadUInt16(),
             X = br.ReadUInt16(),
             Y = br.ReadUInt16(),
-            Dir = (controldirs)br.ReadByte(),
+            Dir = (ControlDir)br.ReadByte(),
             Tile = br.ReadUInt16(),
         };
-        if (wall.X >= MapManager.MAPSIZE || wall.Y >= MapManager.MAPSIZE || (int)wall.Dir > (int)controldirs.di_west)
+        if (wall.X >= MapManager.MAPSIZE || wall.Y >= MapManager.MAPSIZE || (int)wall.Dir > (int)ControlDir.di_west)
             throw new InvalidDataException($"Bad moving pushwall at {wall.X},{wall.Y}.");
         return wall;
     }
@@ -112,7 +112,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
     // A_PushWall, the mapdefs trigger action (registered in RegisterActorActions): true if the
     // wall started moving, which is when a secret trigger counts as found. moveSound plays as it
     // starts, blockedSound when something's in the way (either null for none).
-    internal bool PushWall(int checkx, int checky, controldirs dir, string? moveSound = null, string? blockedSound = null)
+    internal bool PushWall(int checkx, int checky, ControlDir dir, string? moveSound = null, string? blockedSound = null)
     {
         int oldtile, dx, dy;
 

@@ -67,7 +67,7 @@ internal sealed class QuickKeys(
             case ScanCodes.sc_F7:
                 if (loop.Confirm("$ENDGAMESTR".ToLanguageText(language), GameConstants.MAXY) != 0)
                 {
-                    session.playstate = playstatetypes.ex_died;
+                    session.playstate = PlayState.ex_died;
                     session.playerstate.LastAttacker = null;
                     session.playerstate.lives = 0;
                 }
@@ -111,7 +111,7 @@ internal sealed class QuickKeys(
                         music.ContinueMusic(session.lastgamemusicoffset);
 
                     if (session.loadedgame)
-                        session.playstate = playstatetypes.ex_abort;
+                        session.playstate = PlayState.ex_abort;
 
                     frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
 

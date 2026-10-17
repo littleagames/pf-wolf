@@ -85,7 +85,7 @@ public class PlayerStatsTests
         public bool Demo { get => Session.demoplayback; set => Session.demoplayback = value; }
         public double Skill = 1;
         public int NetDeaths;
-        public int Deaths => Session.playstate == playstatetypes.ex_died ? 1 : 0;
+        public int Deaths => Session.playstate == PlayState.ex_died ? 1 : 0;
 
         public Rig(string playerClass = "Player")
         {

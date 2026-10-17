@@ -302,7 +302,7 @@ internal sealed class WallHits(
     /// line with the door, on the face the trace sees; null if neither side is a plain wall.
     /// mirrored: that wall flips the face (mapdefs walls flip).
     /// </summary>
-    internal TextureAsset? LintelTexture(doorobj_t door, out bool mirrored)
+    internal TextureAsset? LintelTexture(DoorObject door, out bool mirrored)
     {
         int dx = door.vertical ? 0 : 1, dy = door.vertical ? 1 : 0;
         var face = posts.SeenFace(door.vertical);
@@ -329,7 +329,7 @@ internal sealed class WallHits(
     // for a horizontal one); flip mirrors it like the wall faces seen from the same side
 
     // Caps the door post being drawn with its lintel (the door texture again if it has no wall)
-    internal void SetLintelPost(doorobj_t door, int along, bool flip)
+    internal void SetLintelPost(DoorObject door, int along, bool flip)
     {
         if (render.hitstories == 1)
             return;
@@ -342,7 +342,7 @@ internal sealed class WallHits(
     /// Notes the lintel of the door the trace is passing through, meeting its plane at
     /// (planex, planey), in the column's queue. Nothing to do for a one story door.
     /// </summary>
-    internal void NoteLintel(doorobj_t door, int planex, int planey)
+    internal void NoteLintel(DoorObject door, int planex, int planey)
     {
         int stories = map.WallStories(door.tilex, door.tiley);
         if (stories == 1)
@@ -405,11 +405,11 @@ internal sealed class WallHits(
 
 
     // Whether the tile edge a trace enters by is one of the diagonal's two solid edges
-    internal bool IsSolidEdge(WallShape shape, controldirs edge) => edge switch
+    internal bool IsSolidEdge(WallShape shape, ControlDir edge) => edge switch
     {
-        controldirs.di_west => shape is WallShape.SolidNW or WallShape.SolidSW,
-        controldirs.di_east => shape is WallShape.SolidNE or WallShape.SolidSE,
-        controldirs.di_north => shape is WallShape.SolidNW or WallShape.SolidNE,
+        ControlDir.di_west => shape is WallShape.SolidNW or WallShape.SolidSW,
+        ControlDir.di_east => shape is WallShape.SolidNE or WallShape.SolidSE,
+        ControlDir.di_north => shape is WallShape.SolidNW or WallShape.SolidNE,
         _ => shape is WallShape.SolidSW or WallShape.SolidSE,
     };
 

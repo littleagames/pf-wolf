@@ -20,7 +20,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
     /// Called again and again while the menu waits (a network game's screens take in what has
     /// arrived and redraw); returning true leaves the menu at once, with -2.
     /// </param>
-    internal int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
+    internal int HandleMenu(ControlPanelMenuInfo item_i, ControlPanelItem[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
     {
         char key;
         int i, x, y, basey, exit, which;
@@ -290,7 +290,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         return 0; // JUST TO SHUT UP THE ERROR MESSAGES!
     }
 
-    internal static char ItemKey(CP_itemtype item)
+    internal static char ItemKey(ControlPanelItem item)
     {
         if (item.shortKey != '\0')
             return char.ToUpperInvariant(item.shortKey);
@@ -298,7 +298,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         return string.IsNullOrWhiteSpace(item.text) ? '\0' : item.text[0];
     }
 
-    internal void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which)
+    internal void EraseGun(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int x, int y, int which)
     {
         if (item_i.cursor != null)
             draw.DrawMenuBar(item_i, items, which, false);
@@ -321,7 +321,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         GameEngineManager.DelayMs(8 * 100 / 7);
     }
 
-    internal void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
+    internal void DrawGun(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int x, ref int y, int which, int basey, Action<int>? routine)
     {
         if (item_i.cursor != null)
         {

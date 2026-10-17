@@ -130,7 +130,7 @@ public class PlayerMovementTests
         // Arrange: a pushwall moving away east, the player close behind it
         _map.tilemap[11, 10] = GameConstants.BIT_WALL;
         _map.actorat[11, 10] = new Wall(GameConstants.BIT_WALL);
-        _pushWalls.pushwalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = controldirs.di_east, Pos = pos, Tile = 1 });
+        _pushWalls.pushwalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = ControlDir.di_east, Pos = pos, Tile = 1 });
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;
 
@@ -143,13 +143,13 @@ public class PlayerMovementTests
     {
         // Arrange: a guard marked on the next tile, within MINACTORDIST
         var guard = new Monster { Name = "Guard", X = 11 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
-        guard.RuntimeFlags |= objflags.FL_SHOOTABLE;
+        guard.RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
         _map.actorat[11, 10] = guard.Mark;
 
         // Act / Assert
         Assert.That(_movement.TryMove(Player()), Is.False);
 
-        guard.RuntimeFlags &= ~objflags.FL_SHOOTABLE;      // dead
+        guard.RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;      // dead
         Assert.That(_movement.TryMove(Player()), Is.True);
     }
 

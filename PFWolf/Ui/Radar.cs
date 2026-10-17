@@ -36,15 +36,15 @@ internal sealed class Radar(
         int power = string.IsNullOrEmpty(radar.Item) ? 0 : inventory.GetCount(radar.Item);
         int maxzoom = Math.Max(radar.ZoomPics.Count - 1, 0);
 
-        if (input.IsButtonPressed(buttontypes.bt_radarzoomin) && !input.IsButtonHeld(buttontypes.bt_radarzoomin))
+        if (input.IsButtonPressed(ButtonType.bt_radarzoomin) && !input.IsButtonHeld(ButtonType.bt_radarzoomin))
         {
-            input.SetButtonHeld(buttontypes.bt_radarzoomin, true);
+            input.SetButtonHeld(ButtonType.bt_radarzoomin, true);
             if (power > 0 && radarzoom < maxzoom)
                 radarzoom++;
         }
-        if (input.IsButtonPressed(buttontypes.bt_radarzoomout) && !input.IsButtonHeld(buttontypes.bt_radarzoomout))
+        if (input.IsButtonPressed(ButtonType.bt_radarzoomout) && !input.IsButtonHeld(ButtonType.bt_radarzoomout))
         {
-            input.SetButtonHeld(buttontypes.bt_radarzoomout, true);
+            input.SetButtonHeld(ButtonType.bt_radarzoomout, true);
             if (radarzoom > 0)
                 radarzoom--;
         }
@@ -156,7 +156,7 @@ internal sealed class Radar(
             var d = doors.doorobjlist[tile & ~GameConstants.BIT_DOOR];
             // As bstone: a door with a lock (none once a key has unlocked it) is locked, open or shut
             color = !string.IsNullOrEmpty(d.Lock) ? locked
-                : d.action == dooractiontypes.dr_closed ? door
+                : d.action == DoorAction.dr_closed ? door
                 : floor;
         }
         else if (tile != 0)

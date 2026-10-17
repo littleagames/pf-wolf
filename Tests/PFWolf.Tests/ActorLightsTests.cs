@@ -88,7 +88,7 @@ public class ActorLightsTests
         // Arrange: door 0 a tile east
         Dim();
         _map.tilemap[11, 10] = (ushort)(GameConstants.BIT_DOOR | 0);
-        _doors.doorobjlist[0] = new doorobj_t { tilex = 11, tiley = 10, action = dooractiontypes.dr_closed };
+        _doors.doorobjlist[0] = new DoorObject { tilex = 11, tiley = 10, action = DoorAction.dr_closed };
         Lamp(10, 10);
 
         // Act / Assert
@@ -96,7 +96,7 @@ public class ActorLightsTests
         Assert.That(AddedAt(11, 10), Is.GreaterThan(0));
         Assert.That(AddedAt(12, 10), Is.Zero);
 
-        _doors.doorobjlist[0].action = dooractiontypes.dr_open;
+        _doors.doorobjlist[0].action = DoorAction.dr_open;
         _lights.CastActorLights();
         Assert.That(AddedAt(12, 10), Is.GreaterThan(0));
     }

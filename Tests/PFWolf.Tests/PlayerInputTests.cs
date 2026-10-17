@@ -4,7 +4,7 @@ namespace PFWolf.Tests;
 
 public class PlayerInputTests
 {
-    private static TicCmd Pressing(params buttontypes[] buttons)
+    private static TicCmd Pressing(params ButtonType[] buttons)
     {
         var cmd = new TicCmd();
         foreach (var button in buttons)
@@ -16,15 +16,15 @@ public class PlayerInputTests
     public void TicCmd_SetDown_Sets_And_Clears_One_Bit()
     {
         // Arrange
-        var cmd = Pressing(buttontypes.bt_attack, buttontypes.bt_use);
+        var cmd = Pressing(ButtonType.bt_attack, ButtonType.bt_use);
 
         // Act
-        cmd.SetDown(buttontypes.bt_attack, false);
+        cmd.SetDown(ButtonType.bt_attack, false);
 
         // Assert
-        Assert.That(cmd.IsDown(buttontypes.bt_attack), Is.False);
-        Assert.That(cmd.IsDown(buttontypes.bt_use), Is.True);
-        Assert.That(cmd.Buttons, Is.EqualTo(1u << (int)buttontypes.bt_use));
+        Assert.That(cmd.IsDown(ButtonType.bt_attack), Is.False);
+        Assert.That(cmd.IsDown(ButtonType.bt_use), Is.True);
+        Assert.That(cmd.Buttons, Is.EqualTo(1u << (int)ButtonType.bt_use));
     }
 
     [Test]
@@ -34,11 +34,11 @@ public class PlayerInputTests
         var input = new PlayerInput();
 
         // Act
-        input.Begin(Pressing(buttontypes.bt_use));
+        input.Begin(Pressing(ButtonType.bt_use));
 
         // Assert
-        Assert.That(input.IsPressed(buttontypes.bt_use), Is.True);
-        Assert.That(input.IsFreshPress(buttontypes.bt_use), Is.True);
+        Assert.That(input.IsPressed(ButtonType.bt_use), Is.True);
+        Assert.That(input.IsFreshPress(ButtonType.bt_use), Is.True);
     }
 
     [Test]
@@ -46,14 +46,14 @@ public class PlayerInputTests
     {
         // Arrange
         var input = new PlayerInput();
-        input.Begin(Pressing(buttontypes.bt_use));
+        input.Begin(Pressing(ButtonType.bt_use));
 
         // Act
-        input.Begin(Pressing(buttontypes.bt_use));
+        input.Begin(Pressing(ButtonType.bt_use));
 
         // Assert
-        Assert.That(input.IsHeld(buttontypes.bt_use), Is.True);
-        Assert.That(input.IsFreshPress(buttontypes.bt_use), Is.False);
+        Assert.That(input.IsHeld(ButtonType.bt_use), Is.True);
+        Assert.That(input.IsFreshPress(ButtonType.bt_use), Is.False);
     }
 
     [Test]
@@ -61,14 +61,14 @@ public class PlayerInputTests
     {
         // Arrange
         var input = new PlayerInput();
-        input.Begin(Pressing(buttontypes.bt_use));
+        input.Begin(Pressing(ButtonType.bt_use));
         input.Begin(Pressing());
 
         // Act
-        input.Begin(Pressing(buttontypes.bt_use));
+        input.Begin(Pressing(ButtonType.bt_use));
 
         // Assert
-        Assert.That(input.IsFreshPress(buttontypes.bt_use), Is.True);
+        Assert.That(input.IsFreshPress(ButtonType.bt_use), Is.True);
     }
 
     [Test]
@@ -76,14 +76,14 @@ public class PlayerInputTests
     {
         // Arrange: the game drops a press mid-frame, so next frame it isn't held
         var input = new PlayerInput();
-        input.Begin(Pressing(buttontypes.bt_attack));
-        input.SetPressed(buttontypes.bt_attack, false);
+        input.Begin(Pressing(ButtonType.bt_attack));
+        input.SetPressed(ButtonType.bt_attack, false);
 
         // Act
-        input.Begin(Pressing(buttontypes.bt_attack));
+        input.Begin(Pressing(ButtonType.bt_attack));
 
         // Assert
-        Assert.That(input.IsFreshPress(buttontypes.bt_attack), Is.True);
+        Assert.That(input.IsFreshPress(ButtonType.bt_attack), Is.True);
     }
 
     [Test]
@@ -91,13 +91,13 @@ public class PlayerInputTests
     {
         // Arrange
         var input = new PlayerInput();
-        input.Begin(Pressing(buttontypes.bt_use));
+        input.Begin(Pressing(ButtonType.bt_use));
 
         // Act
-        input.SetHeld(buttontypes.bt_use, true);
+        input.SetHeld(ButtonType.bt_use, true);
 
         // Assert
-        Assert.That(input.IsFreshPress(buttontypes.bt_use), Is.False);
+        Assert.That(input.IsFreshPress(ButtonType.bt_use), Is.False);
     }
 
     [Test]
@@ -105,14 +105,14 @@ public class PlayerInputTests
     {
         // Arrange
         var input = new PlayerInput();
-        input.Begin(Pressing(buttontypes.bt_use));
+        input.Begin(Pressing(ButtonType.bt_use));
         input.Reset();
 
         // Act
-        input.Begin(Pressing(buttontypes.bt_use));
+        input.Begin(Pressing(ButtonType.bt_use));
 
         // Assert
-        Assert.That(input.IsFreshPress(buttontypes.bt_use), Is.True);
+        Assert.That(input.IsFreshPress(ButtonType.bt_use), Is.True);
     }
 
     [Test]
@@ -120,15 +120,15 @@ public class PlayerInputTests
     {
         // Arrange
         var original = new PlayerInput();
-        original.Begin(Pressing(buttontypes.bt_attack, buttontypes.bt_run));
+        original.Begin(Pressing(ButtonType.bt_attack, ButtonType.bt_run));
         var restored = new PlayerInput();
 
         // Act
         restored.RestoreButtons(original.Buttons);
-        restored.Begin(Pressing(buttontypes.bt_attack));
+        restored.Begin(Pressing(ButtonType.bt_attack));
 
         // Assert
-        Assert.That(restored.IsHeld(buttontypes.bt_attack), Is.True);
-        Assert.That(restored.IsHeld(buttontypes.bt_run), Is.True);
+        Assert.That(restored.IsHeld(ButtonType.bt_attack), Is.True);
+        Assert.That(restored.IsHeld(ButtonType.bt_run), Is.True);
     }
 }

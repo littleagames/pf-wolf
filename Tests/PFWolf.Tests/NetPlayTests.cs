@@ -71,7 +71,7 @@ public class NetPlayTests
         _game.random.RndT();
         Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "the random numbers moving on");
         _doors.doornum = 1;
-        _doors.doorobjlist[0] = new doorobj_t { position = 0x8000 };
+        _doors.doorobjlist[0] = new DoorObject { position = 0x8000 };
         Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "a door opening");
     }
 
@@ -173,7 +173,7 @@ public class NetOverlayTests
         // Assert
         Assert.That(netPlay.netLeft, Is.True);
         Assert.That(netPlay.netLeavePrompt, Is.False);
-        Assert.That(game.playstate, Is.EqualTo(playstatetypes.ex_abort));
+        Assert.That(game.playstate, Is.EqualTo(PlayState.ex_abort));
     }
 
     [TestCase("sc_N")]
@@ -189,7 +189,7 @@ public class NetOverlayTests
 
         // Assert
         Assert.That((netPlay.netLeft, netPlay.netLeavePrompt), Is.EqualTo((false, false)));
-        Assert.That(game.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
+        Assert.That(game.playstate, Is.EqualTo(PlayState.ex_stillplaying));
     }
 
     [Test]

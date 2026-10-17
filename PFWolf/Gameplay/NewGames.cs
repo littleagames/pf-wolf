@@ -45,7 +45,7 @@ internal sealed class NewGames(
     /// </summary>
     internal void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo, string? playerClass = null)
     {
-        session.gamestate = new gametype();
+        session.gamestate = new GameState();
         session.LevelRatios = [];       // the win tally averages only this game's floors
         hubs.ResetHubs();            // no levels kept, no floors been on (Gameplay/Hubs.cs)
         session.gamestate.difficulty = difficulty;

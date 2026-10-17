@@ -292,7 +292,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             //
             // The latest run through a floor counts; the win tally averages the won cluster's floors
             session.LevelRatios[session.gamestate.mapon] =
-                new LRstruct
+                new LevelRatio
             {
                 kill = (short)kr,
                 secret = (short)sr,
@@ -354,7 +354,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             : Entities.Color.FromHexRGBA(cluster.VictoryFadeColor);
 
     /// <summary>A level's kill, secret and treasure ratios in percent; one with none of something is 0</summary>
-    internal static (int Kill, int Secret, int Treasure) Ratios(gametype gamestate)
+    internal static (int Kill, int Secret, int Treasure) Ratios(GameState gamestate)
     {
         int kr = 0, sr = 0, tr = 0;
         if (gamestate.killtotal != 0)
@@ -380,7 +380,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// averages the ones played.
     /// </summary>
     internal static (int Min, int Sec, int Kill, int Secret, int Treasure) ClusterTotals(
-        Dictionary<string, LRstruct> levelRatios, Dictionary<string, MapInfo> maps, int cluster)
+        Dictionary<string, LevelRatio> levelRatios, Dictionary<string, MapInfo> maps, int cluster)
     {
         var floors = levelRatios
             .Where(lr => maps.TryGetValue(lr.Key, out var map) && map.Cluster == cluster)

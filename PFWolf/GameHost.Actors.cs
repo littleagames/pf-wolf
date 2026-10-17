@@ -52,7 +52,7 @@ internal static partial class GameHost
             (x, y) => (wallspritefromx, wallspritefromy) = (x, y),
             ActivateTrigger));
 
-    static controldirs FacingDir(int angle) => PlayerMovement.FacingDir(angle);
+    static ControlDir FacingDir(int angle) => PlayerMovement.FacingDir(angle);
 
     // Picking items up (Gameplay/Pickups.cs)
     static Pickups pickups = null!;     // made in InitServices
@@ -218,8 +218,8 @@ internal static partial class GameHost
             new PlayerUseHooks(PlayPlayerSound, () => mountedWeapons.TryDismount(),
                 (objective, amount) => objectives.Complete(objective, amount), () => objectives.ExitAllowed()));
 
-    private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
-    private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
+    private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
+    private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
     private static bool ExitAction(bool secret) => playerUse.ExitAction(secret);
     static void UseSlotItem(int slot) => playerUse.UseSlotItem(slot);
 
@@ -287,7 +287,7 @@ internal static partial class GameHost
                 session.playerstate.health = 0;
                 statusBarDrawing.DrawHealth();
                 if (session.gamemode == GameMode.Single)
-                    playstate = playstatetypes.ex_died;
+                    playstate = PlayState.ex_died;
                 else
                     PlayerDies();
             }));
@@ -404,7 +404,7 @@ internal static partial class GameHost
 
     static PushWalls pushWalls = null!;
 
-    internal static bool PushWall(int checkx, int checky, controldirs dir, string? moveSound = null, string? blockedSound = null)
+    internal static bool PushWall(int checkx, int checky, ControlDir dir, string? moveSound = null, string? blockedSound = null)
         => pushWalls.PushWall(checkx, checky, dir, moveSound, blockedSound);
 
     /*

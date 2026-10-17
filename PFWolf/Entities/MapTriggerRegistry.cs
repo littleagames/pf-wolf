@@ -8,7 +8,7 @@ namespace PFWolf.Entities;
 /// (Actors.Actor spelled out: a bare `Actor` in the Wolf3D namespaces is the legacy
 /// Wolf3D.Actor wall/door base class.)
 /// </summary>
-internal record TriggerActivation(int TileX, int TileY, controldirs Dir, Actors.Actor Activator, ushort Tag);
+internal record TriggerActivation(int TileX, int TileY, ControlDir Dir, Actors.Actor Activator, ushort Tag);
 
 /// <summary>
 /// Dispatches the `action` call strings on mapdefs triggers and switches (e.g. `A_PushWall`) to

@@ -8,7 +8,7 @@ public class IntermissionTests
     public void Ratios_Are_Percentages_Rounded_Down()
     {
         // Arrange
-        var game = new gametype { killcount = 2, killtotal = 3, secretcount = 1, secrettotal = 1, treasurecount = 0, treasuretotal = 8 };
+        var game = new GameState { killcount = 2, killtotal = 3, secretcount = 1, secrettotal = 1, treasurecount = 0, treasuretotal = 8 };
 
         // Act / Assert
         Assert.That(IntermissionScreen.Ratios(game), Is.EqualTo((66, 100, 0)));
@@ -17,7 +17,7 @@ public class IntermissionTests
     [Test]
     public void A_Level_With_None_Of_Something_Rates_It_0()
     {
-        Assert.That(IntermissionScreen.Ratios(new gametype()), Is.EqualTo((0, 0, 0)));
+        Assert.That(IntermissionScreen.Ratios(new GameState()), Is.EqualTo((0, 0, 0)));
     }
 
     [TestCase(0, 0, 0, 0, 0)]
@@ -29,7 +29,7 @@ public class IntermissionTests
         Assert.That(IntermissionScreen.LevelBonus(timeleft, 100, 10000, kr, sr, tr), Is.EqualTo(expected));
     }
 
-    private static LRstruct Floor(short kill, short secret, short treasure, int time) =>
+    private static LevelRatio Floor(short kill, short secret, short treasure, int time) =>
         new() { kill = kill, secret = secret, treasure = treasure, time = time };
 
     private static readonly Dictionary<string, MapInfo> Maps = new()
@@ -43,7 +43,7 @@ public class IntermissionTests
     public void The_Victory_Tally_Averages_The_Clusters_Floors_Played()
     {
         // Arrange: another cluster's floor doesn't count
-        var ratios = new Dictionary<string, LRstruct>
+        var ratios = new Dictionary<string, LevelRatio>
         {
             ["E1M1"] = Floor(100, 50, 80, 90),
             ["E1M2"] = Floor(50, 0, 21, 75),
@@ -64,7 +64,7 @@ public class IntermissionTests
     public void The_Time_Stops_At_99_99()
     {
         // Arrange
-        var ratios = new Dictionary<string, LRstruct> { ["E1M1"] = Floor(0, 0, 0, 100 * 60 + 5) };
+        var ratios = new Dictionary<string, LevelRatio> { ["E1M1"] = Floor(0, 0, 0, 100 * 60 + 5) };
 
         // Act / Assert
         Assert.That(IntermissionScreen.ClusterTotals(ratios, Maps, 1), Is.EqualTo((99, 99, 0, 0, 0)));

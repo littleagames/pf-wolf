@@ -54,16 +54,16 @@ internal static class WallSprites
     /// shootable: it blocks nothing
     /// </summary>
     internal static bool IsBroken(Entities.Actors.Actor actor) =>
-        actor is Entities.Actors.Monster && !actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
+        actor is Entities.Actors.Monster && !actor.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE)
         && actor.Properties.Keys.Any(k => k == "health" || k.StartsWith("health.", StringComparison.Ordinal));
 
     /// <summary>Which way a facing's panel runs across the tile, for messages.</summary>
-    internal static string WallSpriteAxis(objdirtypes dir) => dir switch
+    internal static string WallSpriteAxis(ObjDir dir) => dir switch
     {
-        objdirtypes.east or objdirtypes.west => "north-south",
-        objdirtypes.north or objdirtypes.south => "east-west",
-        objdirtypes.northeast or objdirtypes.southwest => "northwest-southeast",
-        objdirtypes.northwest or objdirtypes.southeast => "northeast-southwest",
+        ObjDir.east or ObjDir.west => "north-south",
+        ObjDir.north or ObjDir.south => "east-west",
+        ObjDir.northeast or ObjDir.southwest => "northwest-southeast",
+        ObjDir.northwest or ObjDir.southeast => "northeast-southwest",
         _ => "none",
     };
 
@@ -73,7 +73,7 @@ internal static class WallSprites
     /// </summary>
     internal static WallSpriteSpan? GetWallSpriteSpan(Entities.Actors.Actor actor)
     {
-        if (!IsWallSprite(actor) || actor.Dir == objdirtypes.nodir)
+        if (!IsWallSprite(actor) || actor.Dir == ObjDir.nodir)
             return null;
 
         //

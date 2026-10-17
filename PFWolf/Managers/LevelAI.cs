@@ -106,7 +106,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
     // A BlakeMonster that came out of an outlet keeps its tile (SeekX/SeekY, plus one), so each
     // outlet knows how many of its own are about; of any other class, every one about counts
     private int OutletCount(Outlet outlet) =>
-        _map.GetActors().Count(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && a.Name == outlet.Spec.Class
+        _map.GetActors().Count(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE) && a.Name == outlet.Spec.Class
             && (a is not BlakeMonster b || b.SeekX == outlet.X + 1 && b.SeekY == outlet.Y + 1));
 
     private void TickOutlets()
@@ -281,7 +281,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         foreach (var ob in _map.GetActors().OfType<BlakeMonster>())
         {
             if (ob.IsRemoved || !ob.HasFlag("TALKATIVE")
-                || (ob.RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_VISABLE)) != (objflags.FL_FRIENDLY | objflags.FL_VISABLE)
+                || (ob.RuntimeFlags & (ObjFlags.FL_FRIENDLY | ObjFlags.FL_VISABLE)) != (ObjFlags.FL_FRIENDLY | ObjFlags.FL_VISABLE)
                 || Math.Abs(ob.TileX - session.player.TileX) > 2 || Math.Abs(ob.TileY - session.player.TileY) > 2)
                 continue;
 
@@ -289,9 +289,9 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
             if (dist >= chosenDist)
                 continue;
 
-            if (ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
+            if (ob.RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE))
             {
-                ob.RuntimeFlags &= ~objflags.FL_FRIENDLY;
+                ob.RuntimeFlags &= ~ObjFlags.FL_FRIENDLY;
                 continue;
             }
 
