@@ -257,7 +257,6 @@ internal sealed class SpriteDrawing(
 
             VisibleObject visptr_val = new VisibleObject();
             visptr_val.Translation = translation;
-            //statobj_t statptr_val = statobjlist[statptr];
             if (actor.CurrentState == null)
                 continue;
             visptr_val.Bright = lighting.Shading && Lighting.IsBright(actor);

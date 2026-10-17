@@ -176,38 +176,6 @@ internal class GameState
     }
 }
 
-
-//internal class statobj_t
-//{
-//    public byte TileX, TileY;
-//    public string ShapeNum;           // if ShapeNum == -1 the obj has been removed
-//    public ObjFlags flags;
-//    public string item_class;
-
-//    public void Read(BinaryReader br)
-//    {
-//        TileX = br.ReadByte();
-//        TileY = br.ReadByte();
-//        ShapeNum = br.ReadString();
-//        flags = (ObjFlags)br.ReadUInt32();
-//        //itemnumber = (wl_stat_types)br.ReadByte();
-//    }
-
-//    public byte[] AsBytes()
-//    {
-//        var ms = new MemoryStream();
-//        var bw = new BinaryWriter(ms);
-//        {
-//            bw.Write(TileX);
-//            bw.Write(TileY);
-//            bw.Write(ShapeNum);
-//            bw.Write((uint)flags);
-//            //bw.Write((byte)itemnumber);
-//            return ms.ToArray();
-//        }
-//    }
-//}
-
 internal enum DoorAction
 {
     Open, Closed, Opening, Closing,
