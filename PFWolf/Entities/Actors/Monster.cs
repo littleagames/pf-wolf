@@ -1201,6 +1201,63 @@ internal record Monster : Actor
     =============================================================================
     */
 
+    // The damage of the blow that's killing it (Damage sets it for Kill), 0 when it dies some
+    // other way (a cheat, a smart switch)
+    private int _killingBlow;
+
+    /*
+    =============================================================================
+    DEATH STATES
+
+    How it dies follows how it was killed (End of Destiny's gibbing and stealth deaths,
+    Midnight Assault's gibbed, burned, sniped and silent ones; ZDoom's Death.Type and XDeath):
+
+      Death.<Type>  the killing blow's damage type, when the class has that state: the
+                    attacker's `damagetype` (a missile's, a blast's, a monster's), or for a
+                    player's shot or blow their weapon's `weapon.damagetype`. Death.Fire,
+                    Death.Melee, Death.Stealth... (any case)
+      XDeath        an overkill: a killing blow of at least `death.gibdamage`, or health left
+                    below -`death.gibhealth`; with `death.gibtypes: [...]`, only by those types
+      Death         otherwise
+
+    A state can pick again among them by chance or anything else (A_Jump, a 0-tic frame's
+    next-state): Midnight Assault's sniped death is a Death.Sniper that's taken one time in four.
+    =============================================================================
+    */
+
+    /// <summary>The killing blow's damage type: see DEATH STATES; null for none</summary>
+    internal string? KillingDamageType(Entities.Actors.Actor? attacker)
+    {
+        if (attacker is PlayerPawn pawn)
+            return pawn.State.weapon is { Length: > 0 } weapon ? _inventoryManager.GetStringProperty(weapon, "weapon.damagetype") : null;
+        return attacker?.Properties.TryGetValue("damagetype", out var type) == true && type?.ToString() is { Length: > 0 } name ? name : null;
+    }
+
+    /// <summary>The state it dies into, killed by <paramref name="attacker"/> (see DEATH STATES)</summary>
+    internal string DeathStateFor(Entities.Actors.Actor? attacker) =>
+        ChooseDeathState(ResolvedStates.Keys, KillingDamageType(attacker), _killingBlow, Hitpoints,
+            PropertyInt("death.gibdamage", 0), PropertyInt("death.gibhealth", -1), PropertyStrings("death.gibtypes"));
+
+    /// <summary>
+    /// The death state among <paramref name="states"/>: Death.(damage type), then XDeath for an
+    /// overkill (a blow of at least gibDamage when that's over 0, or health left below -gibHealth
+    /// when that's 0 or more; only by gibTypes when there are any), then Death
+    /// </summary>
+    internal static string ChooseDeathState(IEnumerable<string> states, string? damageType, int blow, int healthLeft,
+        int gibDamage, int gibHealth, IReadOnlyCollection<string> gibTypes)
+    {
+        var names = states as ICollection<string> ?? states.ToList();
+        if (damageType is { Length: > 0 } && names.FirstOrDefault(s => s.Equals("Death." + damageType, StringComparison.OrdinalIgnoreCase)) is { } typed)
+            return typed;
+
+        bool overkill = gibDamage > 0 && blow >= gibDamage || gibHealth >= 0 && healthLeft < -gibHealth;
+        bool gibbingType = gibTypes.Count == 0 || damageType != null && gibTypes.Contains(damageType, StringComparer.OrdinalIgnoreCase);
+        if (overkill && gibbingType && names.Contains("XDeath"))
+            return "XDeath";
+
+        return "Death";
+    }
+
     internal virtual void Kill(Entities.Actors.Actor? attacker = null)
     {
         var tilex = X >> (int)MapConstants.TILESHIFT;
@@ -1234,7 +1291,7 @@ internal record Monster : Actor
         if (killedBy is PlayerPawn killer)
             killer.State.Kills++;       // for the scoreboard, with others (a missile's: who fired it)
         World.Objectives?.ActorDied(this);     // an `objective` enemy's death (Gameplay/Objectives.cs)
-        SetState("Death");
+        SetState(DeathStateFor(attacker));
         OnKilled(attacker);
 
         // One of the player's own side down: they hear of it (as an obituary)
@@ -1389,7 +1446,15 @@ internal record Monster : Actor
 
         if (Hitpoints <= 0)
         {
-            Kill(attacker);
+            _killingBlow = (int)damage;     // for Kill's choice of death state
+            try
+            {
+                Kill(attacker);
+            }
+            finally
+            {
+                _killingBlow = 0;
+            }
             return;
         }
 
