@@ -16,7 +16,7 @@ public class WallPostsTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
         };
         // Looking east from the middle of tile (10, 10), the horizon at row 80
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade)
@@ -139,11 +139,11 @@ public class WallPostsTests
     [Test]
     public void An_Arch_Is_An_Open_Tile_More_Than_One_Story_Tall()
     {
-        _map.storymap[3, 3] = 2;
-        _map.storymap[4, 3] = 1;
+        _map.StoryMap[3, 3] = 2;
+        _map.StoryMap[4, 3] = 1;
         Assert.That(_posts.IsArch(3, 3), Is.True);
         Assert.That(_posts.IsArch(4, 3), Is.False);
-        _map.tilemap[3, 3] = 5;
+        _map.TileMap[3, 3] = 5;
         Assert.That(_posts.IsArch(3, 3), Is.False);         // a wall, however tall
     }
 }

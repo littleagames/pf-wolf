@@ -12,7 +12,7 @@ public class GameSavesTests
         _session = new GameSession();
         _screens.Clear();
         _saves = new GameSaves(null!, new AssetManager(), null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!,
-            null!, null!, null!, null!, new Configuration.GameSettings { viewsize = 15 }, _session,
+            null!, null!, null!, null!, new Configuration.GameSettings { ViewSize = 15 }, _session,
             new GameSavesHooks(saving => { _screens.Add(saving); return 1; }, () => { }));
     }
 
@@ -40,14 +40,14 @@ public class GameSavesTests
     public void With_Autosave_Off_A_New_Level_Isnt_Saved()
     {
         // Arrange
-        _saves.autosaveEnabled = false;
-        _saves.autosavePending = true;
+        _saves.AutosaveEnabled = false;
+        _saves.AutosavePending = true;
 
         // Act: no engine, so a save would throw
         _saves.AutoSaveGame();
 
         // Assert
-        Assert.That(_saves.autosavePending, Is.False);
+        Assert.That(_saves.AutosavePending, Is.False);
     }
 
     [Test]

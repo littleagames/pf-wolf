@@ -17,16 +17,16 @@ internal static partial class GameHost
     /// </summary>
     internal static void RegisterConsoleCommands()
     {
-        _consoleManager.CheatsEnabled = () => DebugOk != 0 && !netgame;      // never with others: every machine has to play alike
-        _consoleManager.PlayingWithOthers = () => netgame;
-        _consoleManager.LevelLoaded = () => _mapManager.Player != null;
+        _consoleManager.CheatsEnabled = () => DebugOk != 0 && !NetGame;      // never with others: every machine has to play alike
+        _consoleManager.PlayingWithOthers = () => NetGame;
+        _consoleManager.LevelLoaded = () => MapManager.Player != null;
 
         // the console itself, binds and controls, video, messages and assets (Commands/)
-        new CoreCommands(_consoleManager, _gameEngineManager.GetConfigFilePath).Register();
-        new BindCommands(_consoleManager, controls, controlSettings).Register();
+        new CoreCommands(_consoleManager, GameEngineManager.GetConfigFilePath).Register();
+        new BindCommands(_consoleManager, Controls, ControlSettings).Register();
         new VideoCommands(_consoleManager, _videoManager, RedrawAfterVideoChange).Register();
-        new MessageCommands(_consoleManager, _hudMessageManager).Register();
-        new AssetCommands(_consoleManager, _assetManager, _audioManager, _gameEngineManager).Register();
+        new MessageCommands(_consoleManager, HudMessageManager).Register();
+        new AssetCommands(_consoleManager, AssetManager, AudioManager, GameEngineManager).Register();
 
         //
         // automap
@@ -65,10 +65,10 @@ internal static partial class GameHost
         Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", ScriptsCommand);
         Register("lua", "Runs Lua in the scripts' state (`me` is the player). Strings take 'single quotes'; separate statements with spaces, not ;.",
             "lua <code>", LuaCommand, Cheat);
-        new Commands.UnlockCommands(_consoleManager, unlocks, levelRecords).Register();     // unlock, lock, records (Commands/UnlockCommands.cs)
+        new Commands.UnlockCommands(_consoleManager, Unlocks, LevelRecords).Register();     // unlock, lock, records (Commands/UnlockCommands.cs)
         demoCommands.Register();        // playdemo, demotest, recorddemo (Commands/DemoCommands.cs)
         saveCommands.Register();        // saves, autosave, save, load (Commands/SaveCommands.cs)
-        Register("quit", "Quits the game immediately.", "quit", _ => _gameEngineManager.Quit(""));
+        Register("quit", "Quits the game immediately.", "quit", _ => GameEngineManager.Quit(""));
     }
 
     // The cheats (Commands/CheatCommands.cs)
@@ -86,7 +86,7 @@ internal static partial class GameHost
     /// <summary>The play screen round the view, drawn again after a video mode change blanks it</summary>
     static void RedrawAfterVideoChange()
     {
-        if (_mapManager.Player != null && viewsize != 21)
+        if (MapManager.Player != null && ViewSize != 21)
             DrawPlayScreen();
     }
 }

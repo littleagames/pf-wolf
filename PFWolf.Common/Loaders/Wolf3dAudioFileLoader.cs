@@ -7,7 +7,7 @@ namespace PFWolf.Loaders;
 
 public class Wolf3dAudioFileLoader
 {
-    internal int[] audiostarts;
+    internal int[] AudioStarts;
     private readonly string audioDataFileName;
 
     private Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
@@ -27,10 +27,10 @@ public class Wolf3dAudioFileLoader
         using (BinaryReader br = new BinaryReader(fs))
         {
             var count = fs.Length / sizeof(int);
-            audiostarts = new int[count];
+            AudioStarts = new int[count];
             for (int i = 0; i < count; i++)
             {
-                audiostarts[i] = br.ReadInt32();
+                AudioStarts[i] = br.ReadInt32();
             }
         }
     }
@@ -49,8 +49,8 @@ public class Wolf3dAudioFileLoader
             var tagBytes = Encoding.ASCII.GetBytes(tag);
             bool IsTag(int chunk, out byte[] data)
             {
-                int pos = audiostarts[chunk];
-                int size = audiostarts[chunk + 1] - pos;
+                int pos = AudioStarts[chunk];
+                int size = AudioStarts[chunk + 1] - pos;
                 data = [];
                 if (size <= 0 || pos < 0 || pos + size > fs.Length)
                     return false;
@@ -61,7 +61,7 @@ public class Wolf3dAudioFileLoader
 
             // How many chunks each block has, to name the ones past the map's names
             var blockCounts = new List<int> { 0 };
-            for (int i = 0; i < audiostarts.Length - 1; i++)
+            for (int i = 0; i < AudioStarts.Length - 1; i++)
             {
                 if (IsTag(i, out _))
                     blockCounts.Add(0);
@@ -73,7 +73,7 @@ public class Wolf3dAudioFileLoader
             var musicNames = new DataMapNames(musicDataMap, "songs", "MUSIC");
 
             int block = 0;
-            for (int i = 0, assetIndex = 0; i < audiostarts.Length - 1; i++, assetIndex++)
+            for (int i = 0, assetIndex = 0; i < AudioStarts.Length - 1; i++, assetIndex++)
             {
                 //var currentType = i / AudioMappings.SoundMappingKeys.Count; // Determine this count value based on the file alone
                 if (IsTag(i, out var data))

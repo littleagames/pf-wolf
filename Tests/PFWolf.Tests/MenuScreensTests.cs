@@ -115,7 +115,7 @@ public class MenuDefsTests
     public void Items_Are_Found_By_Id()
     {
         // Arrange
-        ControlPanelItem[] items = [new(1, "New Game", null) { id = "newgame" }, new(1, "Quit", null) { id = "quit" }];
+        ControlPanelItem[] items = [new(1, "New Game", null) { Id = "newgame" }, new(1, "Quit", null) { Id = "quit" }];
 
         // Act / Assert
         Assert.That(MenuDefs.FindMenuItem(items, "quit"), Is.SameAs(items[1]));

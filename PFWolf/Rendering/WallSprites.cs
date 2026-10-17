@@ -27,7 +27,7 @@ internal readonly record struct WallSpriteSpan(double X1, double Y1, double X2, 
 /// side of it in its tile, and it blocks sight and hitscan unless it has the
 /// WALLSPRITE.SHOOTTHROUGH flag (a grille or chain-link fence), and projectiles unless it has
 /// WALLSPRITE.PROJECTILETHROUGH. Enemies keep out of its whole tile (WallSpriteBlocker in
-/// actorat), as they do a diagonal wall's.
+/// ActorAt), as they do a diagonal wall's.
 ///
 /// A WALLSPRITE.PASSABLE panel is only seen: the player, enemies and projectiles go through it
 /// (an arch, cobwebs, a beam overhead); it still blocks sight and hitscan unless it's

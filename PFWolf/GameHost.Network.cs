@@ -27,7 +27,7 @@ internal static partial class GameHost
     */
 
     // Whether the game running is one with others over the network, and its levels' random seed (Gameplay/GameSession.cs)
-    internal static bool netgame { get => session.NetGame; set => session.NetGame = value; }
+    internal static bool NetGame { get => Session.NetGame; set => Session.NetGame = value; }
 
     // The multiplayer screens (Ui/MultiplayerMenu.cs) and the command line's --host and --join
     // (Networking/NetStartRequest.cs), made in InitServices
@@ -40,8 +40,8 @@ internal static partial class GameHost
     // Starting and ending games with others (Networking/NetGames.cs)
     static NetGames netGames = null!;       // made in InitServices
 
-    static NetGames MakeNetGames() => new(_gameEngineManager, _assetManager, _audioManager, _translationManager, menuDrawing, multiplayerMenu,
-        netStart, gameSaves, playerClassRules, playersManager, deathmatch, scoreboard, netPlay, session,
+    static NetGames MakeNetGames() => new(GameEngineManager, AssetManager, AudioManager, TranslationManager, menuDrawing, multiplayerMenu,
+        netStart, gameSaves, playerClassRules, playersManager, deathmatch, scoreboard, netPlay, Session,
         new NetGamesHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), () => StartGame, start => StartGame = start, () => MenuSong));
 
     /// <summary>The command line's --host, --join, --port and --name</summary>
@@ -52,14 +52,14 @@ internal static partial class GameHost
 
     /// <summary>What the multiplayer screens need from the game</summary>
     static MultiplayerHooks MakeMultiplayerHooks() => new(
-        PlayerClass: () => newGamePlayerClass ?? DefaultPlayerClass,
-        ClassChosen: playerClass => newGamePlayerClass = playerClass,
+        PlayerClass: () => NewGamePlayerClass ?? DefaultPlayerClass,
+        ClassChosen: playerClass => NewGamePlayerClass = playerClass,
         PlayerClasses: PlayerClasses,
         Identity: LocalIdentity,
         BeginNetGame: BeginNetGame,
         BeginJoinedGame: BeginJoinedGame,
         Started: () => StartGame != 0,
-        EpisodeOpen: episode => unlocks.IsOpen(episode));
+        EpisodeOpen: episode => Unlocks.IsOpen(episode));
 
     // ==== NetPlay ================================================================================
 
@@ -69,16 +69,16 @@ internal static partial class GameHost
     static NetOverlay netOverlay = null!;
 
     static NetPlay MakeNetPlay() =>
-        new(_mapManager, _videoManager, _inputManager, _hudMessageManager, doors, pushWalls, session,
-            new NetPlayHooks(() => localcmd, WriteNetState, ThreeDRefresh,
-                () => lasttimecount = (int)GameEngineManager.GetTimeCount(), AddNetPlayer, ConnectAreas));
+        new(MapManager, _videoManager, _inputManager, HudMessageManager, doors, pushWalls, Session,
+            new NetPlayHooks(() => LocalCmd, WriteNetState, ThreeDRefresh,
+                () => LastTimeCount = (int)GameEngineManager.GetTimeCount(), AddNetPlayer, ConnectAreas));
 
     static NetOverlay MakeNetOverlay() =>
-        new(_inputManager, _videoManager, _mapManager, ui, menuDrawing, scoreboard, netPlay, session);
+        new(_inputManager, _videoManager, MapManager, ui, menuDrawing, scoreboard, netPlay, Session);
 
-    static bool netLeavePrompt => netPlay.netLeavePrompt;
+    static bool NetLeavePrompt => netPlay.NetLeavePrompt;
 
-    static bool netChatting => netOverlay.netChatting;
+    static bool NetChatting => netOverlay.NetChatting;
     static void NetChatKeys() => netOverlay.NetChatKeys();
     static void NetCheckKeys(ScanCodes scan) => netOverlay.NetCheckKeys(scan);
     static void DrawNetOverlay() => netOverlay.DrawNetOverlay();
@@ -87,7 +87,7 @@ internal static partial class GameHost
     static NetCommands netCommands = null!;     // made in InitServices
 
     /// <summary>A random number for something only this machine shows (a quit message), not the game's own</summary>
-    internal static int UiRandom() => netgame ? Random.Shared.Next(256) : NextRandom();
+    internal static int UiRandom() => NetGame ? Random.Shared.Next(256) : NextRandom();
 
     // ==== NetJoin ================================================================================
 
@@ -109,8 +109,8 @@ internal static partial class GameHost
     // Joining mid-game (Networking/MidGameJoin.cs)
     static MidGameJoin midGameJoin = null!;     // made in InitServices
 
-    static MidGameJoin MakeMidGameJoin() => new(_mapManager, _inventoryManager, levelBodies, levelSetup, pushWalls, playersManager, deathmatch,
-        scoreboard, netPlay, session,
+    static MidGameJoin MakeMidGameJoin() => new(MapManager, InventoryManager, levelBodies, levelSetup, pushWalls, playersManager, deathmatch,
+        scoreboard, netPlay, Session,
         new MidGameJoinHooks(PlayerColor, () => StartGame = 1));
 
     static byte[] WriteNetState() => midGameJoin.WriteNetState();
@@ -123,7 +123,7 @@ internal static partial class GameHost
     static Scoreboard scoreboard = null!;
 
     static Deathmatch MakeDeathmatch() =>
-        new(_mapManager, _inventoryManager, statusBarDrawing, session,
+        new(MapManager, InventoryManager, statusBarDrawing, Session,
             new DeathmatchHooks(IsFreeFloor, GiveAllKeys));
 
     // Each mode's objective (Gameplay/MatchModes): the one for the mode played runs
@@ -132,23 +132,23 @@ internal static partial class GameHost
         var hooks = new Gameplay.MatchModes.MatchModeHooks(
             (x, y) => playersManager.IsOpenFloor(x, y),
             (x, y) => playersManager.IsFreeFloor(x, y),
-            name => _translationManager.Exists(name) ? name : null,
-            name => _audioManager.Play(name));
+            name => TranslationManager.Exists(name) ? name : null,
+            name => AudioManager.Play(name));
         deathmatch.MatchObjectives.AddRange(
         [
-            new Gameplay.MatchModes.CaptureTheFlag(_mapManager, session, deathmatch, _hudMessageManager, hooks),
-            new Gameplay.MatchModes.Heist(_mapManager, session, deathmatch, _hudMessageManager, hooks),
-            new Gameplay.MatchModes.Domination(_mapManager, session, deathmatch, _hudMessageManager, hooks),
-            new Gameplay.MatchModes.KingOfTheHill(_mapManager, session, deathmatch, _hudMessageManager, hooks),
-            new Gameplay.MatchModes.Horde(_mapManager, session, deathmatch, _hudMessageManager, hooks, () => _gameEngineManager.GetGameInfo().Horde),
+            new Gameplay.MatchModes.CaptureTheFlag(MapManager, Session, deathmatch, HudMessageManager, hooks),
+            new Gameplay.MatchModes.Heist(MapManager, Session, deathmatch, HudMessageManager, hooks),
+            new Gameplay.MatchModes.Domination(MapManager, Session, deathmatch, HudMessageManager, hooks),
+            new Gameplay.MatchModes.KingOfTheHill(MapManager, Session, deathmatch, HudMessageManager, hooks),
+            new Gameplay.MatchModes.Horde(MapManager, Session, deathmatch, HudMessageManager, hooks, () => GameEngineManager.GetGameInfo().Horde),
         ]);
     }
 
     static Scoreboard MakeScoreboard() =>
-        new(_videoManager, _inputManager, menuDrawing, ui, session, ClearMemory);
+        new(_videoManager, _inputManager, menuDrawing, ui, Session, ClearMemory);
 
     /// <summary>The rules of the deathmatch being played</summary>
-    internal static NetRules netrules { get => deathmatch.NetRules; set => deathmatch.NetRules = value; }
+    internal static NetRules NetRules { get => deathmatch.NetRules; set => deathmatch.NetRules = value; }
 
     static (int x, int y, int angle) DeathmatchSpot(PlayerPawn self) => deathmatch.DeathmatchSpot(self);
     static void GiveDeathmatchKeys() => deathmatch.GiveDeathmatchKeys();

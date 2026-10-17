@@ -45,9 +45,9 @@ internal sealed class SaveCommands(
     internal void AutoSaveCommand(string[] args)
     {
         if (args.Length > 0)
-            gameSaves.autosaveEnabled = ParseBool(args[0]);
+            gameSaves.AutosaveEnabled = ParseBool(args[0]);
 
-        console.Print($"autosave is {(gameSaves.autosaveEnabled ? 1 : 0)}");
+        console.Print($"autosave is {(gameSaves.AutosaveEnabled ? 1 : 0)}");
     }
 
     // A save by its number in the saves list or its name (the newest, if several share it)

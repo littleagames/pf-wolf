@@ -22,10 +22,10 @@ public class PlayerMovementTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
-            mapwidth = 64,
-            mapheight = 64,
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            MapWidth = 64,
+            MapHeight = 64,
         };
         _pushWalls = new PushWalls(null!, null!, new GameSession());
         _session.PlayerState.Pawn = new PlayerPawn { State = _session.PlayerState };
@@ -115,7 +115,7 @@ public class PlayerMovementTests
     public void A_Wall_The_Players_Box_Reaches_Into_Blocks()
     {
         // Arrange: a wall east, and the player close to it
-        _map.actorat[11, 10] = new Wall(1);
+        _map.ActorAt[11, 10] = new Wall(1);
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;
 
@@ -128,8 +128,8 @@ public class PlayerMovementTests
     public void A_Pushwalls_Back_Blocks_Only_Where_It_Has_Got_To(byte pos, bool room)
     {
         // Arrange: a pushwall moving away east, the player close behind it
-        _map.tilemap[11, 10] = GameConstants.BitWall;
-        _map.actorat[11, 10] = new Wall(GameConstants.BitWall);
+        _map.TileMap[11, 10] = GameConstants.BitWall;
+        _map.ActorAt[11, 10] = new Wall(GameConstants.BitWall);
         _pushWalls.MovingWalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = ControlDir.East, Pos = pos, Tile = 1 });
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;
@@ -144,7 +144,7 @@ public class PlayerMovementTests
         // Arrange: a guard marked on the next tile, within MinActorDist
         var guard = new Monster { Name = "Guard", X = 11 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
         guard.RuntimeFlags |= ObjFlags.Shootable;
-        _map.actorat[11, 10] = guard.Mark;
+        _map.ActorAt[11, 10] = guard.Mark;
 
         // Act / Assert
         Assert.That(_movement.TryMove(Player()), Is.False);
@@ -157,7 +157,7 @@ public class PlayerMovementTests
     public void Running_Into_A_Wall_Slides_Along_It_And_Bumps()
     {
         // Arrange: a wall east; the player moves east and a little south
-        _map.actorat[11, 10] = new Wall(1);
+        _map.ActorAt[11, 10] = new Wall(1);
         var pawn = Player();
         pawn.X = 11 * Tile - 0x6000;
         var (x, y) = (pawn.X, pawn.Y);
@@ -174,9 +174,9 @@ public class PlayerMovementTests
     public void Boxed_In_The_Player_Stays_Put()
     {
         // Arrange: walls east and south, moving into the corner
-        _map.actorat[11, 10] = new Wall(1);
-        _map.actorat[10, 11] = new Wall(1);
-        _map.actorat[11, 11] = new Wall(1);
+        _map.ActorAt[11, 10] = new Wall(1);
+        _map.ActorAt[10, 11] = new Wall(1);
+        _map.ActorAt[11, 11] = new Wall(1);
         var pawn = Player();
         (pawn.X, pawn.Y) = (11 * Tile - 0x6000, 11 * Tile - 0x6000);
         var (x, y) = (pawn.X, pawn.Y);
@@ -193,7 +193,7 @@ public class PlayerMovementTests
     {
         // Arrange
         _noclip = true;
-        _map.actorat[11, 10] = new Wall(1);
+        _map.ActorAt[11, 10] = new Wall(1);
         var pawn = Player();
         pawn.X = 11 * Tile - 0x6000;
         var x = pawn.X;

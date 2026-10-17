@@ -74,9 +74,9 @@ internal sealed class WallSpriteDrawing(
     internal bool WallSpriteSeen(Entities.Actors.Actor actor)
     {
         int x = actor.TileX, y = actor.TileY;
-        return map.spotvis[x, y]
-            || map.spotvis[x + 1, y] || map.spotvis[x - 1, y]
-            || map.spotvis[x, y + 1] || map.spotvis[x, y - 1];
+        return map.Spotvis[x, y]
+            || map.Spotvis[x + 1, y] || map.Spotvis[x - 1, y]
+            || map.Spotvis[x, y + 1] || map.Spotvis[x, y - 1];
     }
 
     internal void ScaleWallSprite(VisibleObject vis)

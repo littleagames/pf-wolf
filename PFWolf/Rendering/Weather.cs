@@ -169,18 +169,18 @@ internal sealed class Weather(
     bool WeatherCovered(long gx, long gy, double z)
     {
         long tx = gx >> MapConstants.TileShift, ty = gy >> MapConstants.TileShift;
-        if ((ulong)tx >= (ulong)map.mapwidth || (ulong)ty >= (ulong)map.mapheight)
+        if ((ulong)tx >= (ulong)map.MapWidth || (ulong)ty >= (ulong)map.MapHeight)
             return false;                           // off the map, it falls on the world outside
 
         int x = (int)tx, y = (int)ty;
-        int tile = map.tilemap[x, y];
+        int tile = map.TileMap[x, y];
         if ((tile & GameConstants.BitDoor) != 0)
             return true;
         if (tile != 0)
             return z < map.WallStories(x, y) * GameConstants.TextureSize;
-        if (map.ceilingflat[(y << MapManager.MapShift) + x] != null)
+        if (map.CeilingFlat[(y << MapManager.MapShift) + x] != null)
             return true;
-        return isArch(x, y) && z < map.storymap[x, y] * GameConstants.TextureSize;
+        return isArch(x, y) && z < map.StoryMap[x, y] * GameConstants.TextureSize;
     }
 
     struct WeatherDrop
@@ -266,8 +266,8 @@ internal sealed class Weather(
         long maxdist = (long)Math.Clamp(info.Distance, 1, 32) * MapConstants.TileGlobal;
 
         // Below the ceiling, if any tile has a ceiling flat it could show over; otherwise up past the tallest walls
-        double top = map.hasceilingflats
-            ? map.wallstories * GameConstants.TextureSize
+        double top = map.HasCeilingFlats
+            ? map.LevelWallStories * GameConstants.TextureSize
             : (map.MaxWallStories + 1) * GameConstants.TextureSize;
         double fall = Math.Max(info.FallSpeed, 0.01);
         var (windx, windy) = WindDrift(info, time);
@@ -349,7 +349,7 @@ internal sealed class Weather(
         var (spotx, spoty) = WeatherSpot(i, fall, box);
         var (gx, gy) = InWeatherBox(spotx + windx, spoty + windy, originx, originy, box);
         long tx = gx >> MapConstants.TileShift, ty = gy >> MapConstants.TileShift;
-        if ((ulong)tx >= (ulong)map.mapwidth || (ulong)ty >= (ulong)map.mapheight || WeatherCovered(gx, gy, 0))
+        if ((ulong)tx >= (ulong)map.MapWidth || (ulong)ty >= (ulong)map.MapHeight || WeatherCovered(gx, gy, 0))
             return;
         if (!ProjectPoint(gx, gy, 0, out int sx, out int sy, out long nx, out double half) || nx > maxdist || nx < NearWeather)
             return;
@@ -400,7 +400,7 @@ internal sealed class Weather(
         if (weathernext >= weathercount || weatherkeys[weathernext] >= height)
             return;
 
-        int pitch = (int)video.bufferPitch;
+        int pitch = (int)video.BufferPitch;
         unsafe
         {
             byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;

@@ -26,15 +26,15 @@ public class RenderStateTests
     public void Program_Reads_And_Writes_The_Same_State()
     {
         // The renderer's old names are GameHost's forwards onto its one RenderState
-        int before = GameHost.render.ViewX;
+        int before = GameHost.Render.ViewX;
         try
         {
-            GameHost.render.ViewX = 123;
-            Assert.That(GameHost.viewx, Is.EqualTo(123));
+            GameHost.Render.ViewX = 123;
+            Assert.That(GameHost.ViewX, Is.EqualTo(123));
         }
         finally
         {
-            GameHost.render.ViewX = before;
+            GameHost.Render.ViewX = before;
         }
     }
 }

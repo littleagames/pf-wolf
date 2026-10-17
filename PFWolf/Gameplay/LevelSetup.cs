@@ -84,7 +84,7 @@ internal sealed class LevelSetup(
         if (engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var mapInfo))
             session.GameState.Cluster = mapInfo.Cluster;
 
-        map.wallstories = Math.Clamp(mapInfo?.WallHeight ?? engine.GetGameInfo().DefaultMap.WallHeight,
+        map.LevelWallStories = Math.Clamp(mapInfo?.WallHeight ?? engine.GetGameInfo().DefaultMap.WallHeight,
             1, GameConstants.MaxWallStories);
         skyAndFlats.LevelSky = mapInfo?.Sky ?? engine.GetGameInfo().DefaultMap.Sky;
         weather.SetWeather(mapInfo?.Weather ?? engine.GetGameInfo().DefaultMap.Weather);
@@ -101,9 +101,9 @@ internal sealed class LevelSetup(
 
         int x, y;
         var doors = map.GetMapData().Doors;
-        for (y = 0; y < map.mapheight; y++)
+        for (y = 0; y < map.MapHeight; y++)
         {
-            for (x = 0; x < map.mapwidth; x++)
+            for (x = 0; x < map.MapWidth; x++)
             {
                 // door (a plane 0 tile listed in the mapdefs doors)
                 if (doors.TryGetValue(map.MapSpot(x, y, 0), out var doorXlat))
@@ -131,9 +131,9 @@ internal sealed class LevelSetup(
         //
         // take out the ambush markers
         //
-        for (y = 0; y < map.mapheight; y++)
+        for (y = 0; y < map.MapHeight; y++)
         {
-            for (x = 0; x < map.mapwidth; x++)
+            for (x = 0; x < map.MapWidth; x++)
             {
                 var tile = map.MapSpot(x, y, 0);
 

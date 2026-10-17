@@ -29,7 +29,7 @@ internal sealed class AutomapInput(
         controls.Get(ControlAction.Of(key)).Any(code => code.Device != InputDevice.MouseWheel && polling.IsInputActive(code));
 
     internal int AutomapWheelNotches(AutomapAction key) =>
-        controlSettings.mouseenabled ? controls.Get(ControlAction.Of(key)).Sum(polling.WheelNotches) : 0;
+        controlSettings.MouseEnabled ? controls.Get(ControlAction.Of(key)).Sum(polling.WheelNotches) : 0;
 
 
     /// <summary>

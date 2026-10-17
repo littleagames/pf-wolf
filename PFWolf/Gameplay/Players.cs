@@ -114,10 +114,10 @@ internal sealed class Players(
     /// </summary>
     internal (int x, int y) StandInStart()
     {
-        int midx = map.mapwidth / 2, midy = map.mapheight / 2;
-        var tiles = from y in Enumerable.Range(1, Math.Max(map.mapheight - 2, 0))
-                    from x in Enumerable.Range(1, Math.Max(map.mapwidth - 2, 0))
-                    where map.tilemap[x, y] == 0 && map.actorat[x, y] == null
+        int midx = map.MapWidth / 2, midy = map.MapHeight / 2;
+        var tiles = from y in Enumerable.Range(1, Math.Max(map.MapHeight - 2, 0))
+                    from x in Enumerable.Range(1, Math.Max(map.MapWidth - 2, 0))
+                    where map.TileMap[x, y] == 0 && map.ActorAt[x, y] == null
                     orderby IsFreeFloor(x, y) ? 0 : 1, (x - midx) * (x - midx) + (y - midy) * (y - midy)
                     select (x, y);
         return tiles.Cast<(int, int)?>().FirstOrDefault() ?? (midx, midy);
@@ -146,7 +146,7 @@ internal sealed class Players(
             foreach (var (dx, dy) in new[] { (1, 0), (0, -1), (-1, 0), (0, 1) })
             {
                 int nx = x + dx, ny = y + dy;
-                if (nx <= 0 || ny <= 0 || nx >= map.mapwidth - 1 || ny >= map.mapheight - 1
+                if (nx <= 0 || ny <= 0 || nx >= map.MapWidth - 1 || ny >= map.MapHeight - 1
                     || !seen.Add((nx, ny)) || !IsOpenFloor(nx, ny))
                     continue;
                 frontier.Enqueue((nx, ny, steps + 1));
@@ -157,7 +157,7 @@ internal sealed class Players(
 
     // Floor a player can walk on: no wall, door or solid thing, and in an area
     internal bool IsOpenFloor(int x, int y) =>
-        map.tilemap[x, y] == 0 && map.actorat[x, y] == null
+        map.TileMap[x, y] == 0 && map.ActorAt[x, y] == null
         && map.ValidArea(map.MapSpot(x, y, 0));
 
     // Open floor nobody stands on: no enemy, and no player already put there

@@ -24,7 +24,7 @@ internal sealed class ConsoleDrawing(
     internal const string ConsolePrompt = "] ";
 
     // Whether the console panel was drawn over the last frame
-    internal bool consoleDrawn;
+    internal bool ConsoleDrawn;
 
     /// <summary>
     /// Draws the console over the top of the screen: output lines (word-wrapped, newest at the
@@ -38,10 +38,10 @@ internal sealed class ConsoleDrawing(
     /// </summary>
     internal void RestoreBorderAfterConsole()
     {
-        if (!consoleDrawn || console.IsOpen)
+        if (!ConsoleDrawn || console.IsOpen)
             return;
 
-        consoleDrawn = false;
+        ConsoleDrawn = false;
         playScreen.DrawPlayBorderSides();
         if (playArea.TopLines > 0)
         {
@@ -62,18 +62,18 @@ internal sealed class ConsoleDrawing(
         if (font == null)
             return;
 
-        consoleDrawn = true;
+        ConsoleDrawn = true;
 
         int lineHeight = font.LineHeight;
 
         using var _ = video.UseUiOrigin(UiAnchor.Top);
         int line = video.ScreenY(ConsoleHeight - 1), bottom = video.ScreenY(ConsoleHeight);
-        video.BarScaledCoord(0, 0, video.screenWidth, line, "Black");
-        video.BarScaledCoord(0, line, video.screenWidth, bottom - line, "Grey");
+        video.BarScaledCoord(0, 0, video.ScreenWidth, line, "Black");
+        video.BarScaledCoord(0, line, video.ScreenWidth, bottom - line, "Grey");
 
         // The text runs from the screen's left edge to its right, less the margins
         int left = video.ToLayoutX(0, roundUp: true) + ConsoleMargin;
-        int textWidth = video.ToLayoutX(video.screenWidth) - left - ConsoleMargin;
+        int textWidth = video.ToLayoutX(video.ScreenWidth) - left - ConsoleMargin;
 
         //
         // input line, scrolled sideways so the cursor stays visible

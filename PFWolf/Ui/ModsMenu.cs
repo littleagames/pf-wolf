@@ -5,7 +5,7 @@ using PFWolf.Loaders;
 namespace PFWolf.Ui;
 
 /// <summary>
-/// The Mods screen: a checkbox for each pk3, zip and folder in the mods folder. The ones
+/// The Mods screen: a CheckBox for each pk3, zip and folder in the mods folder. The ones
 /// switched on are saved to mods.cfg on the way out, and as they only load when the game
 /// starts, it offers to restart.
 /// </summary>
@@ -84,14 +84,14 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
             if (which < 0)
                 break;
 
-            if (Items[which].id == "more")
+            if (Items[which].Id == "more")
             {
                 modMenuPage = (modMenuPage + 1) % ModsPageCount;
                 LoadModsPage();
                 DrawModsMenu();
                 audio.Play("menu/move1");
             }
-            else if (Items[which].data is ModMenuEntry entry)
+            else if (Items[which].Data is ModMenuEntry entry)
             {
                 entry.On = !entry.On;
                 DrawModsMenu();
@@ -169,7 +169,7 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
     private void LoadModsPage()
     {
         (Items, Info) = defs.LoadMenu("mods");
-        Info.curpos = (short)Math.Max(0, Array.FindIndex(Items, item => item.active != 0));
+        Info.CurPos = (short)Math.Max(0, Array.FindIndex(Items, item => item.Active != 0));
     }
 
     /// <summary>The Mods menu's rows for the page showing (its items-source)</summary>
@@ -182,7 +182,7 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
             .Select(entry => new ControlPanelItem((short)(entry.Loadable ? 1 : 0), ui.FitText(entry.Text, ModNameWidth, UiFonts.MenuFont), null, entry));
 
         if (ModsPaged)
-            rows = rows.Append(new ControlPanelItem(1, "$STR_MODS_MORE".ToLanguageText(language), null) { id = "more" });
+            rows = rows.Append(new ControlPanelItem(1, "$STR_MODS_MORE".ToLanguageText(language), null) { Id = "more" });
 
         return rows.ToArray();
     }
@@ -193,7 +193,7 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
         draw.DrawMenu(Info, Items);
         for (var i = 0; i < Items.Length; i++)
         {
-            if (Items[i].data is ModMenuEntry entry)
+            if (Items[i].Data is ModMenuEntry entry)
                 draw.DrawMenuCheckbox(Info, i, entry.On);
         }
         draw.DrawMenuGun(Info);

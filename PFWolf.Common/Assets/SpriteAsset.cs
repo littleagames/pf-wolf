@@ -35,7 +35,7 @@ public record SpriteAsset : Asset
     public const int DefaultOriginX = 32, DefaultOriginY = 64;
 
     /// <summary>The pixel (from the top-left corner) that sits on the actor's spot on the floor</summary>
-    public (int X, int Y) Origin => HasOffset ? (Offset.x, Offset.y) : (DefaultOriginX, DefaultOriginY);
+    public (int X, int Y) Origin => HasOffset ? (Offset.X, Offset.Y) : (DefaultOriginX, DefaultOriginY);
 
     // Each opacity mask's first drawn row, worked out once (by the mask, so a copy made `with` a
     // new one gets its own)

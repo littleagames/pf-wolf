@@ -33,7 +33,7 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
         var gamePalette = palette == null ? null : new GamePalette { Colors = palette.ToSDLColors() };
 
         var screen = new byte[JamMovieAsset.ScreenWidth * JamMovieAsset.ScreenHeight];
-        if (!video.screenfaded)
+        if (!video.ScreenFaded)
             video.FadeOut();
         video.ClearScreen(0);
         input.ClearKeysDown();
@@ -86,7 +86,7 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
                     lastFrame = GameEngineManager.GetTimeCount();
 
                     menuInput.ReadAnyControl(out var ci);
-                    if (!video.screenfaded && (ci.button0 || ci.button1 || input.GetLastKeyPressed() != ScanCodes.None))
+                    if (!video.ScreenFaded && (ci.Button0 || ci.Button1 || input.GetLastKeyPressed() != ScanCodes.None))
                     {
                         skipped = true;
                         if (everFaded)

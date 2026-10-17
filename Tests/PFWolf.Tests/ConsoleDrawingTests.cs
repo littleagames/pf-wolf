@@ -56,9 +56,9 @@ public class ConsoleDrawingTests
         Assert.DoesNotThrow(drawing.RestoreBorderAfterConsole);
 
         // drawn, but still open
-        drawing.consoleDrawn = true;
+        drawing.ConsoleDrawn = true;
         console.Open();
         Assert.DoesNotThrow(drawing.RestoreBorderAfterConsole);
-        Assert.That(drawing.consoleDrawn, Is.True);
+        Assert.That(drawing.ConsoleDrawn, Is.True);
     }
 }

@@ -63,7 +63,7 @@ internal sealed class PlayScreen(
         statusBar.DrawPowerMeter();
         statusBar.DrawHeartMonitor(force: true);
         statusBar.DrawRadarGauge();
-        if (statusBar.StatusBar.Get("radar") is { } radar && !(settings.viewsize == 21 && session.InGame))
+        if (statusBar.StatusBar.Get("radar") is { } radar && !(settings.ViewSize == 21 && session.InGame))
             radarDrawing.DrawRadar(radar);
         statusBar.DrawInfoArea(force: true);
     }
@@ -75,7 +75,7 @@ internal sealed class PlayScreen(
     /// </summary>
     internal void DrawStatusOverlay()
     {
-        if (!statusBar.IsOverlay || !session.InGame || settings.viewsize == 21)
+        if (!statusBar.IsOverlay || !session.InGame || settings.ViewSize == 21)
             return;
         statusBar.DrawingOverlay = true;
         try
@@ -112,16 +112,16 @@ internal sealed class PlayScreen(
             int top = video.ScreenYAboveBottom(playArea.StatusLines);
             if (sides > 0 && playArea.StatusLines > 0)
             {
-                video.BarScaledCoord(0, top, sides, video.screenHeight - top, session.BorderCol);
-                video.BarScaledCoord(video.screenWidth - sides, top, sides, video.screenHeight - top, session.BorderCol);
+                video.BarScaledCoord(0, top, sides, video.ScreenHeight - top, session.BorderCol);
+                video.BarScaledCoord(video.ScreenWidth - sides, top, sides, video.ScreenHeight - top, session.BorderCol);
             }
         }
 
-        if (render.ViewHeight == video.screenHeight) return;
+        if (render.ViewHeight == video.ScreenHeight) return;
 
-        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaHeight, session.BorderCol);
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.ScreenWidth, playArea.PlayAreaHeight, session.BorderCol);
 
-        int xl = video.screenWidth / 2 - render.ViewWidth / 2;
+        int xl = video.ScreenWidth / 2 - render.ViewWidth / 2;
         int yl = playArea.PlayAreaTop + (playArea.PlayAreaHeight - render.ViewHeight) / 2;
         video.BarScaledCoord(xl, yl, render.ViewWidth, render.ViewHeight, "Black");
 
@@ -143,10 +143,10 @@ internal sealed class PlayScreen(
 
     internal void DrawPlayBorderSides()
     {
-        if (settings.viewsize == 21) return;
+        if (settings.ViewSize == 21) return;
 
-        int sw = video.screenWidth;
-        int sh = video.screenHeight;
+        int sw = video.ScreenWidth;
+        int sh = video.ScreenHeight;
         int vw = render.ViewWidth;
         int vh = render.ViewHeight;
         int px = BorderLinePixels;
@@ -190,7 +190,7 @@ internal sealed class PlayScreen(
     /// </summary>
     internal void DrawStatusBorder(string color)
     {
-        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaHeight, color);
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.ScreenWidth, playArea.PlayAreaHeight, color);
 
         foreach (var rect in statusBar.StatusBar.Get("border")?.Rects ?? [])
         {
@@ -203,7 +203,7 @@ internal sealed class PlayScreen(
                 x = 0;
             }
             if (rect[0] + rect[2] >= 320)
-                width = video.screenWidth - x;  // out to the right edge
+                width = video.ScreenWidth - x;  // out to the right edge
             // Down from the status bar's top, which sits on the screen's bottom
             int y = video.ScreenYAboveBottom(playArea.StatusLines - rect[1]);
             video.BarScaledCoord(x, y, width, video.ScreenYAboveBottom(playArea.StatusLines - rect[1] - rect[3]) - y, color);
@@ -276,10 +276,10 @@ internal sealed class PlayScreen(
         statusBar.DrawLevel();
 
         // the play area, below any top status bar, down to the bottom one's first line
-        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaAndStatusLine, session.BorderCol);
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.ScreenWidth, playArea.PlayAreaAndStatusLine, session.BorderCol);
 
         // Centered over the screen above the status bar
-        int boxX = (video.screenWidth - video.ToScreenLength(224)) / 2;
+        int boxX = (video.ScreenWidth - video.ToScreenLength(224)) / 2;
         int boxY = (video.ScreenYAboveBottom(playArea.StatusLines) - video.ToScreenLength(48)) / 2;
         if (assets.Exists<GraphicAsset>("getpsyched"))     // a standalone game may have none
             graphics.DrawPicScaledCoord("getpsyched", boxX, boxY);
@@ -303,11 +303,11 @@ internal sealed class PlayScreen(
     internal void ShowLevelStartMessage(string script)
     {
         DrawPlayScreen();       // the new level's bars, then the view blacked out under the message
-        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaAndStatusLine, "0");
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.ScreenWidth, playArea.PlayAreaAndStatusLine, "0");
         using (video.UseUiOriginAboveBottom(playArea.StatusLines))
             hooks.PresenterMessageBox(script.Replace("\\r", "\r").Replace("\n", "\r\n"));
         video.Update();
-        if (video.screenfaded)
+        if (video.ScreenFaded)
             video.FadeIn();
         input.UserInput(35);
         video.FadeOut();

@@ -355,7 +355,7 @@ internal sealed class GameScripts(
         game["objective"] = new LuaFunction("game.objective", (c, _) =>
         {
             var name = StringArg(c, 0);
-            return map.objectives.TryGetValue(name, out var count) ? new(c.Return(count.Done, count.Total)) : new(c.Return(0, 0));
+            return map.ObjectiveCounts.TryGetValue(name, out var count) ? new(c.Return(count.Done, count.Total)) : new(c.Return(0, 0));
         });
         // game.unlock(name): unlocks a name from game to game (a starts-locked episode's key, or a
         // script's own), true if it wasn't already; game.unlocked(name): whether it is

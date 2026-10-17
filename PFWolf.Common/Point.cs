@@ -2,7 +2,7 @@ namespace PFWolf;
 
 public struct Point
 {
-    public int x, y;
+    public int X, Y;
 
-    public static Point Zero => new Point { x = 0, y = 0 };
+    public static Point Zero => new Point { X = 0, Y = 0 };
 }

@@ -182,7 +182,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     /// <summary>Whether the actor stands inside a wall (a map thing with `in-wall: true`)</summary>
     internal bool IsInWall(Entities.Actors.Actor ob)
     {
-        var tile = map.tilemap[ob.TileX, ob.TileY];
+        var tile = map.TileMap[ob.TileX, ob.TileY];
         return tile != 0 && (tile & GameConstants.BitDoor) == 0;
     }
 

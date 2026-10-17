@@ -54,7 +54,7 @@ internal sealed class PlayKeys(
         var language = assets.GetText("en-us");
         ScanCodes scan;
 
-        if (video.screenfaded || session.DemoPlayback)    // don't do anything with a faded screen
+        if (video.ScreenFaded || session.DemoPlayback)    // don't do anything with a faded screen
         {
             while (inputManager.TryTakePressedKey(out _)) { }     // nor fire binds for these keys later
             return;
@@ -147,7 +147,7 @@ internal sealed class PlayKeys(
             inputManager.ClearKeysDown();
             inputManager.Ack();
 
-            if (settings.viewsize < 17)
+            if (settings.ViewSize < 17)
                 hooks.DrawPlayBorder();
         }
 
@@ -181,7 +181,7 @@ internal sealed class PlayKeys(
             inputManager.ClearKeysDown();
             inputManager.Ack();
 
-            if (settings.viewsize < 18)
+            if (settings.ViewSize < 18)
                 hooks.DrawPlayBorder();
         }
 
@@ -226,7 +226,7 @@ internal sealed class PlayKeys(
 
             inputManager.ClearKeysDown();
             video.FadeOut();
-            if (settings.viewsize != 21)
+            if (settings.ViewSize != 21)
                 hooks.DrawPlayScreen();
             if (!session.GameChosen && !session.LoadedGame)
                 music.ContinueMusic(lastoffs);

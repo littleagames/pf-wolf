@@ -23,8 +23,8 @@ public class ProjectilesTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _wallSpriteInTheWay = false;
         _projectiles = new Projectiles(_map, null!, _session, new ProjectileHooks(
@@ -45,7 +45,7 @@ public class ProjectilesTests
     public void A_Wall_Its_Box_Reaches_Stops_It()
     {
         // Arrange: a wall east, the needle close to it
-        _map.actorat[11, 10] = new Wall(1);
+        _map.ActorAt[11, 10] = new Wall(1);
 
         // Act / Assert
         Assert.That(_projectiles.ProjectileTryMove(Needle(Tile / 2 - 0x1000)), Is.False);
@@ -56,7 +56,7 @@ public class ProjectilesTests
     public void An_Enemys_Mark_Doesnt_Stop_It()
     {
         // Arrange: enemies are hit by the projectile's own check, not by the map
-        _map.actorat[10, 10] = new Monster { Name = "Guard" }.Mark;
+        _map.ActorAt[10, 10] = new Monster { Name = "Guard" }.Mark;
 
         // Act / Assert
         Assert.That(_projectiles.ProjectileTryMove(Needle()), Is.True);
@@ -66,7 +66,7 @@ public class ProjectilesTests
     public void A_Wall_Sprite_Stops_It_Only_Along_Its_Panel()
     {
         // Arrange
-        _map.actorat[10, 10] = new WallSpriteBlocker();
+        _map.ActorAt[10, 10] = new WallSpriteBlocker();
 
         // Act / Assert
         Assert.That(_projectiles.ProjectileTryMove(Needle()), Is.True);
@@ -78,7 +78,7 @@ public class ProjectilesTests
     public void A_Projectile_Without_A_Death_State_Vanishes_Against_A_Wall()
     {
         // Arrange: flying east into a wall
-        _map.actorat[11, 10] = new Wall(1);
+        _map.ActorAt[11, 10] = new Wall(1);
         var needle = Needle(Tile / 2 - 0x1000);
         needle.Angle = 0;
         needle.Speed = 0x800;
@@ -114,7 +114,7 @@ public class ProjectilesTests
     public void The_Death_Cam_Can_Stand_Only_Clear_Of_Walls_And_Solid_Things()
     {
         // Arrange
-        _map.actorat[11, 10] = new BlockingActor();
+        _map.ActorAt[11, 10] = new BlockingActor();
 
         // Act / Assert
         Assert.That(_projectiles.CheckPosition(10 * Tile + Tile / 2, 10 * Tile + Tile / 2), Is.True);

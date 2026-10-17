@@ -22,7 +22,7 @@ public class LevelEditCommandsTests
     {
         // Act / Assert
         _console.Execute("wallheight 3");
-        Assert.That((_map.wallstories, _console.Scrollback[^1]), Is.EqualTo((3, "Walls are 3 stories tall")));
+        Assert.That((_map.LevelWallStories, _console.Scrollback[^1]), Is.EqualTo((3, "Walls are 3 stories tall")));
         _console.Execute("wallheight 1");
         Assert.That(_console.Scrollback[^1], Is.EqualTo("Walls are 1 story tall"));
     }

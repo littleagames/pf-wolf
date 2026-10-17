@@ -8,7 +8,7 @@ public class PlayAreaTests
         // Arrange: no assets, so no status bar either way
         var video = new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
         {
-            screenWidth = 320, screenHeight = 200,
+            ScreenWidth = 320, ScreenHeight = 200,
         };
         var bar = new StatusBarDrawing(null!, null, null!, null!, null!, null!, null!, null!, new GameSession(),
             new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));

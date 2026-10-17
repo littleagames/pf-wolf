@@ -18,7 +18,7 @@ DoorObjList[] holds most of the information for the doors
 door->position holds the amount the door is open, ranging from 0 to 0xffff
         this is directly accessed by AsmRefresh during rendering
 
-The number of doors is limited to 64 because a spot in tilemap holds the
+The number of doors is limited to 64 because a spot in TileMap holds the
         door number in the low 6 bits, with the high bit meaning a door center
         and bit 6 meaning a door side tile
 
@@ -87,13 +87,13 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             : doorXlat.Lock;
         DoorObjList[LastDoorObj] = doorobj;
 
-        map.actorat[tilex, tiley] = new Door(DoorNum);// (uint)(DoorNum | GameConstants.BitDoor);   // consider it a solid wall
+        map.ActorAt[tilex, tiley] = new Door(DoorNum);// (uint)(DoorNum | GameConstants.BitDoor);   // consider it a solid wall
 
         //
         // make the door tile a special tile, and mark the adjacent tiles
         // for door sides
         //
-        map.tilemap[tilex, tiley] = (ushort)(DoorNum | GameConstants.BitDoor);
+        map.TileMap[tilex, tiley] = (ushort)(DoorNum | GameConstants.BitDoor);
         //map = &MapSpot(TileX, TileY, 0);
         if (vertical)
         {
@@ -123,8 +123,8 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     {
         if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return;
-        if (map.tilemap[x, y] is > 0 and < GameConstants.BitWall)
-            map.tilemap[x, y] |= GameConstants.BitWall;
+        if (map.TileMap[x, y] is > 0 and < GameConstants.BitWall)
+            map.TileMap[x, y] |= GameConstants.BitWall;
     }
 
     //===========================================================================
@@ -162,7 +162,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         tilex = DoorObjList[door].TileX;
         tiley = DoorObjList[door].TileY;
 
-        if (map.actorat[tilex, tiley] is Actor)     // an enemy (or its corpse) in the doorway
+        if (map.ActorAt[tilex, tiley] is Actor)     // an enemy (or its corpse) in the doorway
             return;
 
         // any player in the doorway, or close enough to reach into it
@@ -214,7 +214,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         //
         // make the door space solid
         //
-        map.actorat[tilex, tiley] = new Door(door);// (uint)(door | GameConstants.BitDoor);
+        map.ActorAt[tilex, tiley] = new Door(door);// (uint)(door | GameConstants.BitDoor);
     }
 
     /*
@@ -415,7 +415,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             position = 0xffff;
             DoorObjList[door].TicCount = 0;
             DoorObjList[door].Action = (byte)DoorAction.Open;
-            map.actorat[DoorObjList[door].TileX, DoorObjList[door].TileY] = null;
+            map.ActorAt[DoorObjList[door].TileX, DoorObjList[door].TileY] = null;
         }
 
         DoorObjList[door].Position = (ushort)position;
@@ -438,7 +438,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         tilex = DoorObjList[door].TileX;
         tiley = DoorObjList[door].TileY;
 
-        if ((map.actorat[tilex, tiley] is not Door)//!= (door | GameConstants.BitDoor))
+        if ((map.ActorAt[tilex, tiley] is not Door)//!= (door | GameConstants.BitDoor))
             || map.Players.Any(pawn => pawn.TileX == tilex && pawn.TileY == tiley))
         {                       // something got inside the door
             OpenDoor(door);

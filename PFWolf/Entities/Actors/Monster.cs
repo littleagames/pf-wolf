@@ -340,7 +340,7 @@ internal record Monster : Actor
 
         // A door tile has no area of its own, so a PHASEDOORS actor passing through one
         // keeps the area it came from, and so does one crossing a floor code that isn't an area
-        if (MapManager.actorat[TileX, TileY] is not Door && MapManager.ValidArea(MapManager.MapSpot(TileX, TileY, 0)))
+        if (MapManager.ActorAt[TileX, TileY] is not Door && MapManager.ValidArea(MapManager.MapSpot(TileX, TileY, 0)))
             AreaNumber = (byte)(MapManager.MapSpot(TileX, TileY, 0) - MapManager.Floors.AreaTile);
         Distance = (int)MapConstants.TileGlobal;
         SyncPosition();
@@ -352,7 +352,7 @@ internal record Monster : Actor
 
     internal int CheckSide(int x, int y, ref int doornumtile)
     {
-        var temp = MapManager.actorat[x, y];
+        var temp = MapManager.ActorAt[x, y];
         if (temp is ActorMark mark)
             return MapManager.IsSolidActor(mark.Who) ? 0 : 2;     // another enemy's there (alive, it's in the way)
 
@@ -702,7 +702,7 @@ internal record Monster : Actor
     // Open floor nothing stands on (nor the player shoving it)
     private bool OpenForStep(int x, int y, PlayerPawn shover) =>
         x is > 0 and < MapManager.MapSize - 1 && y is > 0 and < MapManager.MapSize - 1
-        && MapManager.tilemap[x, y] == 0 && MapManager.actorat[x, y] is null
+        && MapManager.TileMap[x, y] == 0 && MapManager.ActorAt[x, y] is null
         && !(shover.TileX == x && shover.TileY == y);
 
     private void StartWalking()
@@ -1274,7 +1274,7 @@ internal record Monster : Actor
         }
 
         // As KillActor: it dies on the tile it's over, not the one it was walking to (except
-        // Mecha Hitler, whose Hitler would otherwise jump: MCS's fix), and leaves actorat[]
+        // Mecha Hitler, whose Hitler would otherwise jump: MCS's fix), and leaves ActorAt[]
         // until its corpse lies on an empty tile
         if (Name != "MechaHitler")
         {
@@ -1330,7 +1330,7 @@ internal record Monster : Actor
     /// </summary>
     internal virtual bool SleepsOutOfReach => true;
 
-    /// <summary>Its entry in actorat[] while it's marked there (MapManager.MarkActorTile)</summary>
+    /// <summary>Its entry in ActorAt[] while it's marked there (MapManager.MarkActorTile)</summary>
     internal ActorMark Mark => _mark is { } mark && ReferenceEquals(mark.Who, this) ? mark : _mark = new ActorMark(this);   // not a copy's (`with`)
     private ActorMark? _mark;
 
@@ -2016,7 +2016,7 @@ internal record Monster : Actor
         for (var y = yl; y <= yh; y++)
             for (var x = xl; x <= xh; x++)
             {
-                if (MapManager.actorat[x, y] != null || MapManager.IsShootableActorAt(x, y))
+                if (MapManager.ActorAt[x, y] != null || MapManager.IsShootableActorAt(x, y))
                     return;
             }
 

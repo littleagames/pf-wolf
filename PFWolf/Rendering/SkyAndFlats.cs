@@ -97,7 +97,7 @@ internal sealed class SkyAndFlats(
 
     void DrawSky()
     {
-        int pitch = (int)video.bufferPitch;
+        int pitch = (int)video.BufferPitch;
 
         unsafe
         {
@@ -143,12 +143,12 @@ internal sealed class SkyAndFlats(
             {
                 DrawSky();
                 y = render.CenterY;
-                destIndex += render.CenterY * (int)video.bufferPitch;
+                destIndex += render.CenterY * (int)video.BufferPitch;
             }
             else
             {
                 // the ceiling is at the top of the walls
-                for (y = 0; y < render.CenterY; y++, destIndex += (int)video.bufferPitch)
+                for (y = 0; y < render.CenterY; y++, destIndex += (int)video.BufferPitch)
                 {
                     byte color = lighting.LightRow[FlatRowShadeOffset(y, CeilingHalves) + ceilingColor];
                     for (var v = 0; v < render.ViewWidth; v++)
@@ -156,7 +156,7 @@ internal sealed class SkyAndFlats(
                 }
             }
 
-            for (; y < render.ViewHeight; y++, destIndex += (int)video.bufferPitch)
+            for (; y < render.ViewHeight; y++, destIndex += (int)video.BufferPitch)
             {
                 byte color = lighting.LightRow[FlatRowShadeOffset(y, FloorHalves) + floorColor];
                 for (var v = 0; v < render.ViewWidth; v++)
@@ -166,15 +166,15 @@ internal sealed class SkyAndFlats(
 
         // In light zones or actors' light, even the plain colors change from place to place, so
         // they're cast too. A sky stays behind the ceiling flats, showing where there are none.
-        bool floorflats = map.hasfloorflats || lighting.HasZones || actorLights.HasLights;
-        bool ceilingflats = map.hasceilingflats || (lighting.HasZones || actorLights.HasLights) && !sky;
+        bool floorflats = map.HasFloorFlats || lighting.HasZones || actorLights.HasLights;
+        bool ceilingflats = map.HasCeilingFlats || (lighting.HasZones || actorLights.HasLights) && !sky;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
             if (floorflats)
-                DrawFlats(map.floorflat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, false);
+                DrawFlats(map.FloorFlat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, false);
             if (ceilingflats)
-                DrawFlats(map.ceilingflat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky);
+                DrawFlats(map.CeilingFlat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky);
         }
     }
 
@@ -223,7 +223,7 @@ internal sealed class SkyAndFlats(
     /// </summary>
     internal void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves, bool behind)
     {
-        int pitch = (int)video.bufferPitch;
+        int pitch = (int)video.BufferPitch;
         double numerator = render.HeightNumerator * 32.0 * halves;
 
         unsafe
@@ -274,7 +274,7 @@ internal sealed class SkyAndFlats(
     // ShadeOffset for screen row y of a floor or ceiling halves half stories from the eye (as DrawFlats)
     // How far the floor, and the ceiling at the top of the level's walls, are from the eye, in half stories
     internal double FloorHalves => EyeHalves(0);
-    internal double CeilingHalves => EyeHalves(map.wallstories * GameConstants.TextureSize);
+    internal double CeilingHalves => EyeHalves(map.LevelWallStories * GameConstants.TextureSize);
 
     int FlatRowShadeOffset(int y, double halves) =>
         lighting.Shading ? lighting.ShadeOffset((long)(render.HeightNumerator * 32.0 * halves / Math.Abs(y + 0.5 - render.CenterY))) : 0;

@@ -15,7 +15,7 @@ public class LightingTests
     internal static VideoManager GreyVideo()
     {
         var video = new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")));
-        var property = typeof(VideoManager).GetProperty("gamepal", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var property = typeof(VideoManager).GetProperty("GamePal", BindingFlags.NonPublic | BindingFlags.Instance)!;
         var colorType = property.PropertyType.GetElementType()!;
         var palette = Array.CreateInstance(colorType, 256);
         for (int i = 0; i < 256; i++)

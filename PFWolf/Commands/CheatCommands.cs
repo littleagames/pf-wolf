@@ -234,8 +234,8 @@ internal sealed class CheatCommands(
         if (args.Length < 2)
             throw new ArgumentException("usage: tp <tilex> <tiley> [angle]");
 
-        int x = ParseInt(args[0], 0, mapManager.mapwidth - 1);
-        int y = ParseInt(args[1], 0, mapManager.mapheight - 1);
+        int x = ParseInt(args[0], 0, mapManager.MapWidth - 1);
+        int y = ParseInt(args[1], 0, mapManager.MapHeight - 1);
         int? angle = args.Length > 2 ? ParseInt(args[2], 0, GameConstants.Angles - 1) : null;
 
         if (!TryTeleportPlayer(x, y, angle, out var problem))
@@ -252,12 +252,12 @@ internal sealed class CheatCommands(
     internal bool TryTeleportPlayer(int x, int y, int? angle, out string problem)
     {
         problem = "";
-        if (x < 0 || y < 0 || x >= mapManager.mapwidth || y >= mapManager.mapheight)
+        if (x < 0 || y < 0 || x >= mapManager.MapWidth || y >= mapManager.MapHeight)
         {
             problem = $"tile {x},{y} is off the level";
             return false;
         }
-        if (mapManager.tilemap[x, y] != 0 || mapManager.actorat[x, y] != null
+        if (mapManager.TileMap[x, y] != 0 || mapManager.ActorAt[x, y] != null
             || !mapManager.ValidArea(mapManager.MapSpot(x, y, 0)))
         {
             problem = $"tile {x},{y} is not open floor";
@@ -309,7 +309,7 @@ internal sealed class CheatCommands(
         };
         var (x, y) = targets.TileArg(args, 2);
 
-        if (mapManager.tilemap[x, y] != 0 || mapManager.actorat[x, y] != null
+        if (mapManager.TileMap[x, y] != 0 || mapManager.ActorAt[x, y] != null
             || !mapManager.ValidArea(mapManager.MapSpot(x, y, 0)))
             throw new ArgumentException($"tile {x},{y} is not open floor");
 

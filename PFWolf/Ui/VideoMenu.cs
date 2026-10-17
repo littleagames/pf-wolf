@@ -4,7 +4,7 @@ using PFWolf.Extensions;
 namespace PFWolf.Ui;
 
 /// <summary>
-/// The Video menu (menudefs/video): fullscreen, VSync and aspect checkboxes, and the window
+/// The Video menu (menudefs/video): FullScreen, VSync and aspect checkboxes, and the window
 /// size, resolution, UI scale and filter stepped through with left/right (or Enter). A change
 /// that could leave the screen unreadable asks to be kept, and goes back if it isn't.
 /// </summary>
@@ -66,10 +66,10 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
 
         defs.DrawMenuComponents("video");
 
-        // The window's size means nothing while fullscreen
-        MenuDefs.FindMenuItem(Items, "window-size")?.active = (short)(settings.Fullscreen ? 0 : 1);
-        if (Items[Info.curpos].active == 0)
-            Info.curpos = (short)Math.Max(0, Array.FindIndex(Items, item => item.active != 0));
+        // The window's size means nothing while FullScreen
+        MenuDefs.FindMenuItem(Items, "window-size")?.Active = (short)(settings.Fullscreen ? 0 : 1);
+        if (Items[Info.CurPos].Active == 0)
+            Info.CurPos = (short)Math.Max(0, Array.FindIndex(Items, item => item.Active != 0));
 
         draw.DrawMenu(Info, Items);
 
@@ -115,7 +115,7 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
             return;
 
         // Left/right arrive while HandleMenu is still running, before it records where the cursor is
-        Info.curpos = (short)which;
+        Info.CurPos = (short)which;
         audio.Play("menu/move1");
         ChangeVideo(choices[next]);
     }
@@ -247,7 +247,7 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
 
     /// <summary>
     /// Switches to a video mode and redraws the menu in it. A change that could leave the
-    /// screen unreadable (fullscreen, the window's size, the resolution, VSync) then asks to be
+    /// screen unreadable (FullScreen, the window's size, the resolution, VSync) then asks to be
     /// kept, and goes back if it isn't.
     /// </summary>
     private void ChangeVideo(VideoSettings next)
@@ -309,13 +309,13 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
             }
 
             menuInput.ReadAnyControl(out ci);
-            if (input.IsKeyDown(ScanCodes.Y) || ci.button0)
+            if (input.IsKeyDown(ScanCodes.Y) || ci.Button0)
             {
                 keep = true;
                 break;
             }
 
-            if (input.IsKeyDown(ScanCodes.N) || input.IsKeyDown(ScanCodes.Escape) || ci.button1)
+            if (input.IsKeyDown(ScanCodes.N) || input.IsKeyDown(ScanCodes.Escape) || ci.Button1)
                 break;
 
             GameEngineManager.DelayMs(5);

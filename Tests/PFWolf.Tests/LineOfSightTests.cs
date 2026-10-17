@@ -16,8 +16,8 @@ public class LineOfSightTests
         // An open map with nothing on it; the tests put walls and doors where they need them
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _doors = new Doors(null!, null!, _map, null!, null!, new GameSession(), null!);
         _wallSpriteInTheWay = false;
@@ -41,7 +41,7 @@ public class LineOfSightTests
     public void A_Wall_In_The_Way_Blocks_It()
     {
         // Arrange
-        _map.tilemap[8, 10] = 1;
+        _map.TileMap[8, 10] = 1;
 
         // Act / Assert
         Assert.That(CanSeeAlongRow10(), Is.False);
@@ -51,7 +51,7 @@ public class LineOfSightTests
     public void A_Wall_Off_The_Line_Doesnt()
     {
         // Arrange
-        _map.tilemap[8, 12] = 1;
+        _map.TileMap[8, 12] = 1;
 
         // Act / Assert
         Assert.That(CanSeeAlongRow10(), Is.True);
@@ -68,7 +68,7 @@ public class LineOfSightTests
     public void A_Door_Blocks_It_Until_It_Has_Slid_Past_The_Line(ushort position, bool clear)
     {
         // Arrange: door 0 across the row at x 8
-        _map.tilemap[8, 10] = GameConstants.BitDoor | 0;
+        _map.TileMap[8, 10] = GameConstants.BitDoor | 0;
         _doors.DoorObjList[0] = new DoorObject { TileX = 8, TileY = 10, Vertical = true, Position = position };
 
         // Act / Assert
@@ -89,8 +89,8 @@ public class LineOfSightTests
     public void A_Diagonal_Step_Is_Blocked_Only_By_What_Stands_There()
     {
         // Arrange
-        _map.actorat[3, 3] = new Wall(1);
-        _map.actorat[4, 4] = new Door(0);
+        _map.ActorAt[3, 3] = new Wall(1);
+        _map.ActorAt[4, 4] = new Door(0);
 
         // Act / Assert
         Assert.That(Sight().CheckDiag(2, 2), Is.True);

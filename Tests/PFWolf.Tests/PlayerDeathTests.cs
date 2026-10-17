@@ -17,8 +17,8 @@ public class PlayerDeathTests
         // Arrange
         var map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var session = new GameSession { Tics = 5 };
         var death = new PlayerDeath(null!, null!, null!, null!, null!, new InventoryManager(ActorDefs.Metadata(Yaml)), null!, map,

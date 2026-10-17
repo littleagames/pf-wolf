@@ -22,7 +22,7 @@ internal sealed class Radar(
     Configuration.GameSettings settings)
 {
     /// <summary>The radar's zoom: 0 for 1x, 1 for 2x, 2 for 4x</summary>
-    internal int radarzoom;
+    internal int RadarZoom;
 
     // Counts the frames, so its power goes every other one as bstone's does
     int radarframe;
@@ -30,7 +30,7 @@ internal sealed class Radar(
     /// <summary>Each tic: the radar's zoom keys, its power going while it's zoomed in, and the radar drawn</summary>
     internal void UpdateRadar()
     {
-        if (statusBar.StatusBar.Get("radar") is not { } radar || (settings.viewsize == 21 && session.InGame))
+        if (statusBar.StatusBar.Get("radar") is not { } radar || (settings.ViewSize == 21 && session.InGame))
             return;
 
         int power = string.IsNullOrEmpty(radar.Item) ? 0 : inventory.GetCount(radar.Item);
@@ -39,31 +39,31 @@ internal sealed class Radar(
         if (input.IsButtonPressed(ButtonType.RadarZoomIn) && !input.IsButtonHeld(ButtonType.RadarZoomIn))
         {
             input.SetButtonHeld(ButtonType.RadarZoomIn, true);
-            if (power > 0 && radarzoom < maxzoom)
-                radarzoom++;
+            if (power > 0 && RadarZoom < maxzoom)
+                RadarZoom++;
         }
         if (input.IsButtonPressed(ButtonType.RadarZoomOut) && !input.IsButtonHeld(ButtonType.RadarZoomOut))
         {
             input.SetButtonHeld(ButtonType.RadarZoomOut, true);
-            if (radarzoom > 0)
-                radarzoom--;
+            if (RadarZoom > 0)
+                RadarZoom--;
         }
 
         // Zoomed in, it uses tics << zoom of its power every other frame
         radarframe++;
-        if (power > 0 && radarzoom > 0 && session.GodMode == 0 && (radarframe & 1) != 0)
+        if (power > 0 && RadarZoom > 0 && session.GodMode == 0 && (radarframe & 1) != 0)
         {
-            int left = Math.Max(power - ((int)session.Tics << radarzoom), 0);
+            int left = Math.Max(power - ((int)session.Tics << RadarZoom), 0);
             inventory.Take(radar.Item!, power - left);
             if (left == 0)
             {
-                radarzoom = 0;
+                RadarZoom = 0;
                 if (!string.IsNullOrEmpty(radar.EmptyMessage))
                     hudMessages.Show(HudMessageKind.Other, radar.EmptyMessage);
             }
         }
         else if (power <= 0)
-            radarzoom = 0;
+            RadarZoom = 0;
 
         statusBar.DrawRadarGauge();
         DrawRadar(radar);
@@ -76,7 +76,7 @@ internal sealed class Radar(
 
         using var _ = statusBar.StatusBarOrigin(radar);
         int top = statusBar.StatusBarTop(radar);
-        int zoompic = Math.Min(radarzoom, radar.ZoomPics.Count - 1);
+        int zoompic = Math.Min(RadarZoom, radar.ZoomPics.Count - 1);
         if (zoompic >= 0)
             graphics.DrawPic(radar.ZoomPics[zoompic], radar.ZoomX, top + radar.ZoomY);
 
@@ -85,7 +85,7 @@ internal sealed class Radar(
             locked = Color("locked", "24"), playerColor = Color("player", "240"), key = Color("key", "243"),
             enemy = Color("enemy", "24");
 
-        int scale = 1 << radarzoom;
+        int scale = 1 << RadarZoom;
         double radius = radar.Tiles / 2.0 / scale;
         int diameter = (int)(radius * 2);
 
@@ -127,7 +127,7 @@ internal sealed class Radar(
                         color = playerColor;
                         drawnplayer = true;
                     }
-                    else if (map.seen[mx, my] != SeenFlags.None)
+                    else if (map.Seen[mx, my] != SeenFlags.None)
                     {
                         color = RadarTileColor(mx, my, unmapped, floor, door, locked);
                         if (keys.Contains(mx << 8 | my))
@@ -149,7 +149,7 @@ internal sealed class Radar(
     // What a seen tile shows as: open floor, a door (closed, or locked), or a wall (as unmapped)
     internal string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked)
     {
-        int tile = map.tilemap[x, y];
+        int tile = map.TileMap[x, y];
         string color;
         if ((tile & GameConstants.BitDoor) != 0)
         {

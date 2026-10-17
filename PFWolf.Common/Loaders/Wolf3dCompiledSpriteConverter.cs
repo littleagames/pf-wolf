@@ -4,28 +4,28 @@ namespace PFWolf.Loaders;
 
 internal struct CompiledShape
 {
-    public ushort leftpix, rightpix;
-    public ushort[] dataofs;
-    // table data after dataofs[rightpix-leftpix+1]
+    public ushort LeftPix, RightPix;
+    public ushort[] DataOfs;
+    // table data after DataOfs[RightPix-LeftPix+1]
 
     public CompiledShape()
     {
-        dataofs = new ushort[64];
+        DataOfs = new ushort[64];
     }
 
     public CompiledShape(byte[] data)
     {
         var offset = 0;
-        leftpix = BitConverter.ToUInt16(data);
+        LeftPix = BitConverter.ToUInt16(data);
         offset += sizeof(ushort);
 
-        rightpix = BitConverter.ToUInt16(data.Skip(offset).ToArray());
+        RightPix = BitConverter.ToUInt16(data.Skip(offset).ToArray());
         offset += sizeof(ushort);
 
-        dataofs = new ushort[64];
+        DataOfs = new ushort[64];
         for (int i = 0; i < 64; i++)
         {
-            dataofs[i] = BitConverter.ToUInt16(data.Skip(offset).ToArray());
+            DataOfs[i] = BitConverter.ToUInt16(data.Skip(offset).ToArray());
             offset += sizeof(ushort);
         }
     }
@@ -49,9 +49,9 @@ public static class Wolf3dCompiledSpriteConverter
         var indices = new byte[size * size];
         var mask = new byte[size * size];
 
-        for (int column = shape.leftpix; column <= shape.rightpix; column++)
+        for (int column = shape.LeftPix; column <= shape.RightPix; column++)
         {
-            int cmdIndex = shape.dataofs[column - shape.leftpix];
+            int cmdIndex = shape.DataOfs[column - shape.LeftPix];
 
             int end;
             while ((end = BitConverter.ToInt16(rawData, cmdIndex) >> 1) != 0)

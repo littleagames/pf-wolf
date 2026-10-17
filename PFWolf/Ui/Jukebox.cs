@@ -32,8 +32,8 @@ internal sealed class Jukebox(
         int pages = Math.Max(1, (MusicMenu.Length + JukeboxPageSize - 1) / JukeboxPageSize);
         int start = (int)((SDL.SDL_GetTicks() / 10) % (uint)pages) * JukeboxPageSize;
         var page = MusicMenu.Skip(start).Take(JukeboxPageSize).ToArray();
-        MusicItems.amount = (short)page.Length;
-        MusicItems.curpos = 0;
+        MusicItems.Amount = (short)page.Length;
+        MusicItems.CurPos = 0;
 
         //CA_LoadAllSounds();
 
@@ -50,11 +50,11 @@ internal sealed class Jukebox(
             if (which >= 0)
             {
                 if (lastsong >= 0)
-                    page[lastsong].active = 1;
+                    page[lastsong].Active = 1;
 
-                if (page[which].data is string song)
+                if (page[which].Data is string song)
                     audio.PlayMusic(song);
-                page[which].active = 2;
+                page[which].Active = 2;
                 draw.DrawMenu(MusicItems, page);
                 video.Update();
                 lastsong = which;

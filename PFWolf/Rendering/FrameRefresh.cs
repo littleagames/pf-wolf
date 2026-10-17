@@ -151,8 +151,8 @@ internal sealed class FrameRefresh(
 
         // Create a Span<T> from the multidimensional array's data reference
         Span<bool> data = MemoryMarshal.CreateSpan(
-            ref map.spotvis[0, 0], // Reference to the first element
-            map.spotvis.Length     // Total number of elements
+            ref map.Spotvis[0, 0], // Reference to the first element
+            map.Spotvis.Length     // Total number of elements
         );
 
         // Fill the span with the value
@@ -160,9 +160,9 @@ internal sealed class FrameRefresh(
 
         // Detect all sprites over camera fix. Demos need it too: Wolf4SDL 1.7c, which plays
         // the games' own demos through, always had it (enemies beside the player stay seen)
-        if (map.tilemap[camera.TileX, camera.TileY] == 0 ||
-         (map.tilemap[camera.TileX, camera.TileY] & GameConstants.BitDoor) != 0)
-            map.spotvis[camera.TileX, camera.TileY] = true;
+        if (map.TileMap[camera.TileX, camera.TileY] == 0 ||
+         (map.TileMap[camera.TileX, camera.TileY] & GameConstants.BitDoor) != 0)
+            map.Spotvis[camera.TileX, camera.TileY] = true;
 
 
         render.Vbuf = 0;
@@ -215,7 +215,7 @@ internal sealed class FrameRefresh(
 
         if (session.FizzleIn)
         {
-            video.Transition(hooks.LevelFadeStyle(), 0, 0, video.screenWidth, video.screenHeight, (uint)hooks.LevelFadeTics());
+            video.Transition(hooks.LevelFadeStyle(), 0, 0, video.ScreenWidth, video.ScreenHeight, (uint)hooks.LevelFadeTics());
             session.FizzleIn = false;
 
             LastTimeCount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count

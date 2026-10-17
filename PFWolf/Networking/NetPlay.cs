@@ -55,43 +55,43 @@ internal sealed class NetPlay(
     internal const int NetCheckEvery = 35;
 
     // The level being played, counted from 1 on every machine alike (each PlayLoop), and its frame
-    internal int netlevel, netstep;
+    internal int NetLevel, NetStep;
 
     // Esc pressed: asking whether to leave. And whether this machine has left the game
-    internal bool netLeavePrompt, netLeft;
+    internal bool NetLeavePrompt, NetLeft;
 
     // The waiting-for message, while a step's controls are late
-    internal string? netWaiting;
+    internal string? NetWaiting;
 
     // Host: a player who came in at the frame just played, to send the game to before the next
-    internal (int Index, int Step)? pendingjoinstate;
+    internal (int Index, int Step)? PendingJoinState;
 
     // A player joining: the game they've just taken up carries on, rather than a level starting
-    internal bool netJoinResume;
+    internal bool NetJoinResume;
 
     /// <summary>Starts counting frames for a new level, sending empty controls for the frames before ours can arrive</summary>
     internal void NetLevelStart()
     {
-        netLeavePrompt = false;
-        netWaiting = null;
-        pendingjoinstate = null;        // (someone who came in on a level's last frame is left waiting)
+        NetLeavePrompt = false;
+        NetWaiting = null;
+        PendingJoinState = null;        // (someone who came in on a level's last frame is left waiting)
         if (NetSession.Current is not { } session)
             return;
 
         // Just joined: the game taken up carries on from the frame after the host's (BeginJoinedGame)
-        if (netJoinResume)
+        if (NetJoinResume)
         {
-            netJoinResume = false;
-            for (int step = netstep; step < netstep + NetDelay; step++)
-                session.SubmitLocal(netlevel, step, default);
+            NetJoinResume = false;
+            for (int step = NetStep; step < NetStep + NetDelay; step++)
+                session.SubmitLocal(NetLevel, step, default);
             return;
         }
 
-        netlevel++;
-        netstep = 0;
-        session.ForgetBefore(netlevel);
+        NetLevel++;
+        NetStep = 0;
+        session.ForgetBefore(NetLevel);
         for (int step = 0; step < NetDelay; step++)
-            session.SubmitLocal(netlevel, step, default);
+            session.SubmitLocal(NetLevel, step, default);
     }
 
     /// <summary>
@@ -101,23 +101,23 @@ internal sealed class NetPlay(
     /// </summary>
     internal bool NetFrame()
     {
-        if (NetSession.Current is not { } session || session.Error != null || netLeft)
+        if (NetSession.Current is not { } session || session.Error != null || NetLeft)
             return false;
 
         // A player who came in at the frame just played gets the game as it now stands
         session.Poll();
-        if (pendingjoinstate is { } joined)
+        if (PendingJoinState is { } joined)
         {
-            session.SendJoinState(joined.Index, netlevel, joined.Step, hooks.WriteNetState());
-            pendingjoinstate = null;
+            session.SendJoinState(joined.Index, NetLevel, joined.Step, hooks.WriteNetState());
+            PendingJoinState = null;
         }
 
         // While asking about leaving, this player stands still
-        session.SubmitLocal(netlevel, netstep + NetDelay, netLeavePrompt ? default : hooks.LocalCmd());
+        session.SubmitLocal(NetLevel, NetStep + NetDelay, NetLeavePrompt ? default : hooks.LocalCmd());
 
         TicBundle? bundle;
         long waitStart = Environment.TickCount64;
-        while ((bundle = session.TryTake(netlevel, netstep)) == null)
+        while ((bundle = session.TryTake(NetLevel, NetStep)) == null)
         {
             session.Poll();
             if (session.Error != null)
@@ -126,28 +126,28 @@ internal sealed class NetPlay(
             // Late: say who for, and let Esc give up on them
             if (Environment.TickCount64 - waitStart > 500)
             {
-                var waiting = $"Waiting for {string.Join(", ", session.WaitingFor(netlevel, netstep))}...";
-                if (waiting != netWaiting && !session.HasBundle(netlevel, netstep))
+                var waiting = $"Waiting for {string.Join(", ", session.WaitingFor(NetLevel, NetStep))}...";
+                if (waiting != NetWaiting && !session.HasBundle(NetLevel, NetStep))
                 {
-                    netWaiting = waiting;
+                    NetWaiting = waiting;
                     hooks.ThreeDRefresh();
-                    if (video.screenfaded)
+                    if (video.ScreenFaded)
                         video.FadeIn();     // a level's first frame: others are still on the intermission
                 }
                 input.ProcessEvents();
                 if (input.IsKeyDown(ScanCodes.Escape))
                 {
                     input.ClearKeysDown();
-                    netLeft = true;
+                    NetLeft = true;
                     return false;
                 }
             }
             GameEngineManager.DelayMs(1);
         }
 
-        if (netWaiting != null)
+        if (NetWaiting != null)
         {
-            netWaiting = null;
+            NetWaiting = null;
             hooks.ResetLastTimeCount();     // no rush to catch up on the wait
         }
 
@@ -162,7 +162,7 @@ internal sealed class NetPlay(
         {
             hooks.AddNetPlayer(join);
             if (session.IsHost)
-                pendingjoinstate = (join.Index, netstep);     // the game goes to them once this frame's played
+                PendingJoinState = (join.Index, NetStep);     // the game goes to them once this frame's played
         }
         for (int i = 0; i < players.Count; i++)
         {
@@ -170,7 +170,7 @@ internal sealed class NetPlay(
             p.Input.Begin(!p.Gone && i < bundle.Cmds.Length ? bundle.Cmds[i] : default);
         }
 
-        netstep++;
+        NetStep++;
         return true;
     }
 
@@ -180,8 +180,8 @@ internal sealed class NetPlay(
         if (NetSession.Current is not { } session)
             return;
 
-        if (netstep % NetCheckEvery == 0)
-            session.ReportChecksum(netlevel, netstep, GameChecksum());
+        if (NetStep % NetCheckEvery == 0)
+            session.ReportChecksum(NetLevel, NetStep, GameChecksum());
 
         while (session.Notices.TryDequeue(out var line))
         {
@@ -254,5 +254,5 @@ internal sealed class NetPlay(
     }
 
     /// <summary>Whether the game with others is over for this machine: it left, or lost the host</summary>
-    internal bool NetGameOver => game.NetGame && (netLeft || NetSession.Current is not { Error: null });
+    internal bool NetGameOver => game.NetGame && (NetLeft || NetSession.Current is not { Error: null });
 }

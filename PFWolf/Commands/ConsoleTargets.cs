@@ -44,7 +44,7 @@ internal sealed class ConsoleTargets(
     internal (int x, int y) TileArg(string[] args, int index)
     {
         if (args.Length >= index + 2)
-            return (ParseInt(args[index], 0, map.mapwidth - 1), ParseInt(args[index + 1], 0, map.mapheight - 1));
+            return (ParseInt(args[index], 0, map.MapWidth - 1), ParseInt(args[index + 1], 0, map.MapHeight - 1));
 
         int x = session.Player.TileX, y = session.Player.TileY;
         switch (PlayerMovement.FacingDir(session.Player.Angle))

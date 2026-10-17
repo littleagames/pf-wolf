@@ -27,7 +27,7 @@ internal sealed class NetCommands(
             return;
         }
 
-        var lines = new List<string> { $"{(session.IsHost ? "Hosting" : "Joined")}, level {netPlay.netlevel}, frame {netPlay.netstep}, game sum {netPlay.GameChecksum():x8}" };
+        var lines = new List<string> { $"{(session.IsHost ? "Hosting" : "Joined")}, level {netPlay.NetLevel}, frame {netPlay.NetStep}, game sum {netPlay.GameChecksum():x8}" };
         for (int i = 0; i < game.Players.Count; i++)
         {
             var p = game.Players[i];

@@ -20,8 +20,8 @@ public class ActorLightsTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         ActorLights? lights = null;
@@ -70,7 +70,7 @@ public class ActorLightsTests
     {
         // Arrange: a wall two tiles east
         Dim();
-        _map.tilemap[12, 10] = 1;
+        _map.TileMap[12, 10] = 1;
         Lamp(10, 10);
 
         // Act
@@ -87,7 +87,7 @@ public class ActorLightsTests
     {
         // Arrange: door 0 a tile east
         Dim();
-        _map.tilemap[11, 10] = (ushort)(GameConstants.BitDoor | 0);
+        _map.TileMap[11, 10] = (ushort)(GameConstants.BitDoor | 0);
         _doors.DoorObjList[0] = new DoorObject { TileX = 11, TileY = 10, Action = DoorAction.Closed };
         Lamp(10, 10);
 

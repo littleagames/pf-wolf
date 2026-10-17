@@ -65,7 +65,7 @@ internal sealed class SignonPanel(GameEngineManager engine, AssetManager assets,
     {
         var settings = video.Settings;
         var shownIn = settings.Fullscreen ? "Fullscreen" : $"Window {settings.WindowWidth}x{settings.WindowHeight}";
-        var drawnAt = $"{video.screenWidth}x{video.screenHeight}";
+        var drawnAt = $"{video.ScreenWidth}x{video.ScreenHeight}";
         return settings.Fullscreen || drawnAt != $"{settings.WindowWidth}x{settings.WindowHeight}"
             ? $"{shownIn}, drawn {drawnAt}"
             : shownIn;

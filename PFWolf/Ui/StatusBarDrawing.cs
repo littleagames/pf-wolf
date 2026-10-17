@@ -37,7 +37,7 @@ internal sealed class StatusBarDrawing(
     /// player other than this machine's (the bar is the local player's). A bar drawn over the
     /// view (overlay) is drawn only with the frame (DrawingOverlay), as the view under it is.
     /// </summary>
-    internal bool StatusBarHidden => (settings.viewsize == 21 && session.InGame) || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
+    internal bool StatusBarHidden => (settings.ViewSize == 21 && session.InGame) || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
 
     /// <summary>Whether the status bar is drawn over the view every frame (statusbar.yaml background overlay)</summary>
     internal bool IsOverlay => StatusBar.Get("background")?.Overlay == true;
@@ -294,14 +294,14 @@ internal sealed class StatusBarDrawing(
     internal void FillBarSides(Assets.StatusBarElement bar, bool atTop, int height)
     {
         int left = video.ScreenX(0), right = video.ScreenX(320);
-        if (height <= 0 || (left <= 0 && right >= video.screenWidth))
+        if (height <= 0 || (left <= 0 && right >= video.ScreenWidth))
             return;
 
         int y0 = atTop ? 0 : video.ScreenYAboveBottom(height);
-        int y1 = atTop ? video.ToScreenLength(height) : video.screenHeight;
+        int y1 = atTop ? video.ToScreenLength(height) : video.ScreenHeight;
         string color = bar.SideColor ?? "Black";
         video.BarScaledCoord(0, y0, left, y1 - y0, color);
-        video.BarScaledCoord(right, y0, video.screenWidth - right, y1 - y0, color);
+        video.BarScaledCoord(right, y0, video.ScreenWidth - right, y1 - y0, color);
     }
 
     /// <summary>
@@ -425,7 +425,7 @@ internal sealed class StatusBarDrawing(
     string? infoareashown;
 
     /// <summary>Whether the status bar has an info area showing now</summary>
-    internal bool HasInfoArea => StatusBar.Get("info-area") != null && !(settings.viewsize == 21 && session.InGame);
+    internal bool HasInfoArea => StatusBar.Get("info-area") != null && !(settings.ViewSize == 21 && session.InGame);
 
     internal void DrawInfoArea(bool force)
     {
@@ -495,7 +495,7 @@ internal sealed class StatusBarDrawing(
     /// <summary>Moves the heart monitor on by this tic's time, redrawing it as it changes</summary>
     internal void UpdateHeartMonitor()
     {
-        if (StatusBar.Get("heart-monitor") == null || (settings.viewsize == 21 && session.InGame))
+        if (StatusBar.Get("heart-monitor") == null || (settings.ViewSize == 21 && session.InGame))
             return;
         ecgscrolltics += (int)session.Tics;
         hearttics += (int)session.Tics;

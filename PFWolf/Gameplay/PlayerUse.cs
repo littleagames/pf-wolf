@@ -70,22 +70,22 @@ internal sealed class PlayerUse(
         if (wallSwitch.To is > 0 and < BitWall && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
         {
             // flip the switch, keeping the door-side mark on a wall beside a door
-            var tile = map.tilemap[tilex, tiley];
+            var tile = map.TileMap[tilex, tiley];
             int from = tile & ~BitWall;
-            map.tilemap[tilex, tiley] = (ushort)(wallSwitch.To | (tile & BitWall));
+            map.TileMap[tilex, tiley] = (ushort)(wallSwitch.To | (tile & BitWall));
             map.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` wall's play-once animation starts now
             int thrown = from != wallSwitch.To ? 1 : 0;
 
             // and the linked ones: set to the new way, not toggled, so any out of step come back
             foreach (var (x, y) in map.TaggedTiles(tag))
             {
-                var other = map.tilemap[x, y];
+                var other = map.TileMap[x, y];
                 int id = other & ~BitWall;
                 if ((other & BitDoor) == 0 && (id == from || id == wallSwitch.To))
                 {
                     if (id == from && id != wallSwitch.To && (x, y) != (tilex, tiley))
                         thrown++;
-                    map.tilemap[x, y] = (ushort)(wallSwitch.To | (other & BitWall));
+                    map.TileMap[x, y] = (ushort)(wallSwitch.To | (other & BitWall));
                     map.RestartAnimations(x, y, gamestate.TimeCount);
                 }
             }
@@ -117,7 +117,7 @@ internal sealed class PlayerUse(
     /// </summary>
     internal MapSwitchTranslation? PatchSwitchAt(int tilex, int tiley, ControlDir dir)
     {
-        int tile = map.tilemap[tilex, tiley];
+        int tile = map.TileMap[tilex, tiley];
         if ((tile & BitDoor) != 0 || (tile & ~BitWall) == 0)
             return null;                // open floor, a door or a moving pushwall
         int id = map.GetPatch(tilex, tiley);
@@ -256,7 +256,7 @@ internal sealed class PlayerUse(
             return;
         }
 
-        cmdtile = map.tilemap[checkx, checky];
+        cmdtile = map.TileMap[checkx, checky];
         if (map.GetTrigger(checkx, checky) is { IsWalkOver: false } trigger)
         {
             //

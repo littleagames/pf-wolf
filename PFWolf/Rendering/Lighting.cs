@@ -306,7 +306,7 @@ internal sealed class Lighting(
                 int i = (y << MapManager.MapShift) + x;
                 TileLevel[i] = (byte)AmbientLevel;
                 TileTint[i] = 0;
-                if (x < map.mapwidth && y < map.mapheight
+                if (x < map.MapWidth && y < map.MapHeight
                     && map.GetZone(x, y) is var id and not 0
                     && LevelZones.TryGetValue(id, out var zone) && zone.RowLevel >= 0)
                 {

@@ -3,24 +3,24 @@
 public struct HeadChunk
 {
     public byte[] Riff;
-    public uint filelenminus8;
+    public uint FileLenMinus8;
     public byte[] Wave;
-    public byte[] fmt_;
-    public uint formatlen;
-    public ushort val0x0001;
-    public ushort channels;
-    public uint samplerate;
-    public uint bytespersec;
-    public ushort bytespersample;
-    public ushort bitspersample;
+    public byte[] Fmt;
+    public uint FormatLen;
+    public ushort Val0x0001;
+    public ushort Channels;
+    public uint SampleRate;
+    public uint BytesPerSec;
+    public ushort BytesPerSample;
+    public ushort BitsPerSample;
     public HeadChunk()
     {
         Riff = new byte[4];
         Wave = new byte[4];
-        fmt_ = new byte[4];
+        Fmt = new byte[4];
     }
 
-    public static int size_of =>
+    public static int SizeOf =>
         4 * sizeof(byte)
         + sizeof(uint)
         + 4 * sizeof(byte)
@@ -35,16 +35,16 @@ public struct HeadChunk
         using var bw = new BinaryWriter(ms);
         {
             bw.Write(Riff);
-            bw.Write(filelenminus8);
+            bw.Write(FileLenMinus8);
             bw.Write(Wave);
-            bw.Write(fmt_);
-            bw.Write(formatlen);
-            bw.Write(val0x0001);
-            bw.Write(channels);
-            bw.Write(samplerate);
-            bw.Write(bytespersec);
-            bw.Write(bytespersample);
-            bw.Write(bitspersample);
+            bw.Write(Fmt);
+            bw.Write(FormatLen);
+            bw.Write(Val0x0001);
+            bw.Write(Channels);
+            bw.Write(SampleRate);
+            bw.Write(BytesPerSec);
+            bw.Write(BytesPerSample);
+            bw.Write(BitsPerSample);
             return ms.ToArray();
         }
     }
@@ -52,14 +52,14 @@ public struct HeadChunk
 
 public class WaveChunk
 {
-    public byte[] chunkid;
-    public uint chunklength;
+    public byte[] ChunkId;
+    public uint ChunkLength;
     public WaveChunk()
     {
-        chunkid = new byte[4];
+        ChunkId = new byte[4];
     }
 
-    public static int size_of =>
+    public static int SizeOf =>
         4 * sizeof(byte)
         + sizeof(uint);
 
@@ -68,8 +68,8 @@ public class WaveChunk
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
         {
-            bw.Write(chunkid);
-            bw.Write(chunklength);
+            bw.Write(ChunkId);
+            bw.Write(ChunkLength);
             return ms.ToArray();
         }
     }
@@ -101,29 +101,29 @@ public record Wolf3dDigitizedAudio : Asset
         short[] newsamples = ToPcm16(targetSampleRate);
         int destsamples = newsamples.Length;
 
-        byte[] wavebuffer = new byte[HeadChunk.size_of + WaveChunk.size_of + destsamples * 2];     // dest are 16-bit samples
+        byte[] wavebuffer = new byte[HeadChunk.SizeOf + WaveChunk.SizeOf + destsamples * 2];     // dest are 16-bit samples
 
         HeadChunk head = new HeadChunk
         {
             Riff = [(byte)'R', (byte)'I', (byte)'F', (byte)'F'],
-            filelenminus8 = 0,
+            FileLenMinus8 = 0,
             Wave = [(byte)'W', (byte)'A', (byte)'V', (byte)'E'],
-            fmt_ = [(byte)'f', (byte)'m', (byte)'t', (byte)' '],
-            formatlen = 0x10,
-            val0x0001 = 0x0001,
-            channels = 1,
-            samplerate = (uint)targetSampleRate,
-            bytespersec = (uint)(targetSampleRate * 2),
-            bytespersample = 2,
-            bitspersample = 16
+            Fmt = [(byte)'f', (byte)'m', (byte)'t', (byte)' '],
+            FormatLen = 0x10,
+            Val0x0001 = 0x0001,
+            Channels = 1,
+            SampleRate = (uint)targetSampleRate,
+            BytesPerSec = (uint)(targetSampleRate * 2),
+            BytesPerSample = 2,
+            BitsPerSample = 16
         };
 
         WaveChunk dhead = new WaveChunk
         {
-            chunkid = [(byte)'d', (byte)'a', (byte)'t', (byte)'a'],
-            chunklength = (uint)(destsamples * 2)
+            ChunkId = [(byte)'d', (byte)'a', (byte)'t', (byte)'a'],
+            ChunkLength = (uint)(destsamples * 2)
         };
-        head.filelenminus8 = (uint)(HeadChunk.size_of + destsamples * 2);  // (sizeof(dhead)-8 = 0)
+        head.FileLenMinus8 = (uint)(HeadChunk.SizeOf + destsamples * 2);  // (sizeof(dhead)-8 = 0)
 
         var headData = head.AsBytes();
         Buffer.BlockCopy(headData, 0, wavebuffer, 0, headData.Length);

@@ -30,7 +30,7 @@ internal sealed class WallPosts(
 
     internal void EnterTileLight(int x, int y)
     {
-        if (map.tilemap[x, y] == 0)
+        if (map.TileMap[x, y] == 0)
             render.HitTile = Lighting.TileIndex(x, y);
     }
 
@@ -130,7 +130,7 @@ internal sealed class WallPosts(
         int to = Math.Min(FloorRow(exithalf) - 2 * exithalf - 1, render.ViewHeight - 1);
         if (from > to)
             return;
-        int pitch = (int)video.bufferPitch;
+        int pitch = (int)video.BufferPitch;
 
         unsafe
         {
@@ -189,7 +189,7 @@ internal sealed class WallPosts(
     */
 
 
-    internal bool IsArch(int tilex, int tiley) => map.tilemap[tilex, tiley] == 0 && map.storymap[tilex, tiley] > 1;
+    internal bool IsArch(int tilex, int tiley) => map.TileMap[tilex, tiley] == 0 && map.StoryMap[tilex, tiley] > 1;
 
     /// <summary>
     /// The trace enters the arch at (TileX, TileY), crossing its edge at (edgex, edgey); vertical
@@ -210,7 +210,7 @@ internal sealed class WallPosts(
         render.ArchLight = WallLight(edgex, edgey);
         render.ArchUnderside = ArchUndersideTexture(tilex, tiley) ?? render.ArchTexture;
         UseArchCeilingFlat(tilex, tiley);
-        render.ArchStories = map.storymap[tilex, tiley];
+        render.ArchStories = map.StoryMap[tilex, tiley];
         render.ArchHeight = HeightAt(edgex, edgey);
         render.ArchOfs = vertical
             ? LintelColumn(edgey, (render.XTileStep == -1) != mirrored)
@@ -225,7 +225,7 @@ internal sealed class WallPosts(
         {
             tilex += dx;
             tiley += dy;
-            if (tilex < 0 || tiley < 0 || tilex >= map.mapwidth || tiley >= map.mapheight)
+            if (tilex < 0 || tiley < 0 || tilex >= map.MapWidth || tiley >= map.MapHeight)
                 return null;
         }
         while (IsArch(tilex, tiley));
@@ -251,7 +251,7 @@ internal sealed class WallPosts(
         render.ArchUnderFlat = false;
         if (map.MapSpot(tilex, tiley, MapManager.FlatPlane) >> 8 == 0)
             return;
-        var flat = map.ceilingflat[(tiley << MapManager.MapShift) + tilex];
+        var flat = map.CeilingFlat[(tiley << MapManager.MapShift) + tilex];
         if (flat == null)
             return;
         render.ArchUnderside = flat;
@@ -268,7 +268,7 @@ internal sealed class WallPosts(
         render.ArchTexture = render.NoTexture;
         render.ArchOpen = true;
         render.ArchLight = lighting.LightAt(render.HitTile, render.ViewX, render.ViewY);
-        render.ArchStories = map.storymap[render.FocalTx, render.FocalTy];
+        render.ArchStories = map.StoryMap[render.FocalTx, render.FocalTy];
         render.ArchHeight = short.MaxValue;
         render.ArchOfs = 0;
     }
@@ -311,7 +311,7 @@ internal sealed class WallPosts(
         if (render.ColumnTallest >= map.MaxWallStories || render.ColumnTop <= 0 || render.PostCount >= RenderState.MaxPosts - 1)
             return false;
         // a trace never leaves the map through its edge
-        return tilex > 0 && tiley > 0 && tilex < map.mapwidth - 1 && tiley < map.mapheight - 1;
+        return tilex > 0 && tiley > 0 && tilex < map.MapWidth - 1 && tiley < map.MapHeight - 1;
     }
 
     //
@@ -362,7 +362,7 @@ internal sealed class WallPosts(
         long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
         long t = num / half + firststory * GameConstants.TextureSize;
         long rem = num % half;
-        int pitch = (int)video.bufferPitch;
+        int pitch = (int)video.BufferPitch;
 
         byte[] lowerdata = lower.RawData, upperdata = upper.RawData;
         int lowerheight = lower.Height, upperheight = upper.Height;
@@ -423,7 +423,7 @@ internal sealed class WallPosts(
         long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
         long t = num / half;
         long rem = num % half;
-        int pitch = (int)video.bufferPitch;
+        int pitch = (int)video.BufferPitch;
 
         byte[] data = patch.RawData;
         int column = TextureColumn(patch, ofs);

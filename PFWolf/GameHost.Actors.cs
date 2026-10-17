@@ -46,10 +46,10 @@ internal static partial class GameHost
     static PlayerMovement playerMovement = null!;   // made in InitServices
 
     static PlayerMovement MakePlayerMovement() =>
-        new(_mapManager, _audioManager, pushWalls, session, new PlayerMovementHooks(
+        new(MapManager, AudioManager, pushWalls, Session, new PlayerMovementHooks(
             PlayerFactor, MaxPitch, PlayPlayerSound,
             (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: true),
-            (x, y) => (wallspritefromx, wallspritefromy) = (x, y),
+            (x, y) => (WallSpriteFromX, WallSpriteFromY) = (x, y),
             ActivateTrigger));
 
     static ControlDir FacingDir(int angle) => PlayerMovement.FacingDir(angle);
@@ -58,9 +58,9 @@ internal static partial class GameHost
     static Pickups pickups = null!;     // made in InitServices
 
     static Pickups MakePickups() =>
-        new(_mapManager, _videoManager, _hudMessageManager, playerClassRules, playerStats, session,
+        new(MapManager, _videoManager, HudMessageManager, playerClassRules, playerStats, Session,
             new PickupHooks(PlayPlayerSound, HasWeaponFrom,
-                () => netrules.ItemRespawn, QueueItemRespawn, item => deathmatch.Objective?.ItemTaken(item)));
+                () => NetRules.ItemRespawn, QueueItemRespawn, item => deathmatch.Objective?.ItemTaken(item)));
 
     internal static void GetBonus(Inventory builtActor) => pickups.GetBonus(builtActor);
     // The player classes' rules (Gameplay/PlayerClassRules.cs) and the acting player's health,
@@ -69,8 +69,8 @@ internal static partial class GameHost
     static PlayerStats playerStats = null!;
 
     static PlayerStats MakePlayerStats() =>
-        new(_gameEngineManager, _assetManager, _videoManager, _inventoryManager, statusBarDrawing, playerClassRules, playerWeapons, session,
-            settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound));
+        new(GameEngineManager, AssetManager, _videoManager, InventoryManager, statusBarDrawing, playerClassRules, playerWeapons, Session,
+            Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound));
 
     internal static List<string> PlayerClasses() => playerClassRules.PlayerClasses();
     internal static string DefaultPlayerClass => playerClassRules.DefaultPlayerClass;
@@ -104,37 +104,37 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_Quake", Quake);       // the view shakes (A_Quake, in GameHost.Rendering.cs)
         // A_MakeNoise: a noise, as a shot's: enemies in the areas joined to the player's come
         // (Midnight Assault's lights coming on: MadeNoise)
-        ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => madenoise = true);
+        ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => MadeNoise = true);
 
         // Level objectives (Gameplay/Objectives.cs): A_CompleteObjective("name"[, n]) and
         // A_AddObjective("name"[, n]), from an actor or a switch; A_JumpIfObjectiveDone("name", "State")
         static int Amount(string[] args) => args.Length > 1 && int.TryParse(args[1], out var n) ? n : 1;
-        ActorActionRegistry.Register("A_CompleteObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) objectives.Complete(args[0], Amount(args)); });
-        ActorActionRegistry.Register("A_AddObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) objectives.Add(args[0], Amount(args)); });
-        ActorActionRegistry.Register("A_JumpIfObjectiveDone", (Entities.Actors.Actor ob, string[] args) => objectives.JumpIfObjectiveDone(ob, args));
-        Entities.MapTriggerRegistry.Register("A_CompleteObjective", (_, args) => { if (args.Length == 0) return false; objectives.Complete(args[0], Amount(args)); return true; });
-        Entities.MapTriggerRegistry.Register("A_AddObjective", (_, args) => { if (args.Length == 0) return false; objectives.Add(args[0], Amount(args)); return true; });
+        ActorActionRegistry.Register("A_CompleteObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) Objectives.Complete(args[0], Amount(args)); });
+        ActorActionRegistry.Register("A_AddObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) Objectives.Add(args[0], Amount(args)); });
+        ActorActionRegistry.Register("A_JumpIfObjectiveDone", (Entities.Actors.Actor ob, string[] args) => Objectives.JumpIfObjectiveDone(ob, args));
+        Entities.MapTriggerRegistry.Register("A_CompleteObjective", (_, args) => { if (args.Length == 0) return false; Objectives.Complete(args[0], Amount(args)); return true; });
+        Entities.MapTriggerRegistry.Register("A_AddObjective", (_, args) => { if (args.Length == 0) return false; Objectives.Add(args[0], Amount(args)); return true; });
         // A_Unlock("name"[, "message"]): unlocks a name for good (Gameplay/Unlocks.cs: a starts-locked
         // episode's key), showing the message if it wasn't already
         static void UnlockWithMessage(string[] args)
         {
             if (args.Length > 0 && Unlock(args[0]) && args.Length > 1 && args[1].Length > 0)
-                _hudMessageManager.Show(HudMessageKind.Lock, args[1]);
+                HudMessageManager.Show(HudMessageKind.Lock, args[1]);
         }
         ActorActionRegistry.Register("A_Unlock", (Entities.Actors.Actor _, string[] args) => UnlockWithMessage(args));
         Entities.MapTriggerRegistry.Register("A_Unlock", (_, args) => { if (args.Length == 0) return false; UnlockWithMessage(args); return true; });
-        ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => mountedWeapons.Mount(ob, args));
-        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => latching.LatchBite(m, args));
-        ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => latching.LatchHurt(ob));
-        ActorActionRegistry.Register("A_ShakeOff", (Entities.Actors.Actor ob, string[] args) => latching.ShakeOff(ob, args));
-        ActorActionRegistry.Register("A_JumpIfLatched", (Entities.Actors.Actor ob, string[] args) => latching.JumpIfLatched(ob, args));
-        ActorActionRegistry.Register("A_LatchRelease", (Entities.Actors.Actor ob) => latching.LatchRelease(ob));
-        ActorActionRegistry.Register("A_ShowPapers", (Entities.Actors.Actor ob) => stealth.ShowPapers(ob));
-        ActorActionRegistry.Register("A_Disguise", (Entities.Actors.Actor ob, string[] args) => stealth.Disguise(ob, args));
+        ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => MountedWeapons.Mount(ob, args));
+        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => Latching.LatchBite(m, args));
+        ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => Latching.LatchHurt(ob));
+        ActorActionRegistry.Register("A_ShakeOff", (Entities.Actors.Actor ob, string[] args) => Latching.ShakeOff(ob, args));
+        ActorActionRegistry.Register("A_JumpIfLatched", (Entities.Actors.Actor ob, string[] args) => Latching.JumpIfLatched(ob, args));
+        ActorActionRegistry.Register("A_LatchRelease", (Entities.Actors.Actor ob) => Latching.LatchRelease(ob));
+        ActorActionRegistry.Register("A_ShowPapers", (Entities.Actors.Actor ob) => Stealth.ShowPapers(ob));
+        ActorActionRegistry.Register("A_Disguise", (Entities.Actors.Actor ob, string[] args) => Stealth.Disguise(ob, args));
 
         // Goldfire's warp sites (Managers.LevelAI)
-        ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => levelAI.WarpSiteGone());
-        ActorActionRegistry.Register("A_WarpSitesOff", (Entities.Actors.Actor _) => levelAI.WarpSitesOff());
+        ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => LevelAI.WarpSiteGone());
+        ActorActionRegistry.Register("A_WarpSitesOff", (Entities.Actors.Actor _) => LevelAI.WarpSitesOff());
 
         // Projectiles and effects (Gameplay/Projectiles.cs).
         ActorActionRegistry.Register("A_Projectile", Projectile);
@@ -189,9 +189,9 @@ internal static partial class GameHost
             if (trigger.Dir != onlyDir)
             {
                 if (args.ElementAtOrDefault(3) is { Length: > 0 } message)
-                    _hudMessageManager.Show(HudMessageKind.Lock, message);
+                    HudMessageManager.Show(HudMessageKind.Lock, message);
                 if (!string.IsNullOrEmpty(blockedSound))
-                    _audioManager.Play(blockedSound);
+                    AudioManager.Play(blockedSound);
                 return false;
             }
         }
@@ -201,22 +201,22 @@ internal static partial class GameHost
     // A_GiveExtraMan, A_GiveInventory and A_ChangeMap (Gameplay/PlayerActions.cs)
     static PlayerActions playerActions = null!;     // made in InitServices (or by RegisterActorActions without it)
 
-    static PlayerActions MakePlayerActions() => new(_gameEngineManager, _assetManager, playerStats, session,
-        new PlayerActionsHooks(change => pendingMapChange = change));
+    static PlayerActions MakePlayerActions() => new(GameEngineManager, AssetManager, playerStats, Session,
+        new PlayerActionsHooks(change => PendingMapChange = change));
 
     // The weapons as inventory: picking, ammo, giving, the charge (Gameplay/PlayerWeapons.cs)
     static PlayerWeapons playerWeapons = null!;     // made in InitServices
 
     static PlayerWeapons MakePlayerWeapons() =>
-        new(_inventoryManager, _graphicManager, statusBarDrawing, session, new PlayerWeaponsHooks(UseSlotItem));
+        new(InventoryManager, _graphicManager, statusBarDrawing, Session, new PlayerWeaponsHooks(UseSlotItem));
 
     // The use key, switches, mapdefs triggers, the exits and held items' use (Gameplay/PlayerUse.cs)
     static PlayerUse playerUse = null!;     // made in InitServices
 
     static PlayerUse MakePlayerUse() =>
-        new(_mapManager, _audioManager, _inventoryManager, doors, levelAI, timedSwitches, session,
-            new PlayerUseHooks(PlayPlayerSound, () => mountedWeapons.TryDismount(),
-                (objective, amount) => objectives.Complete(objective, amount), () => objectives.ExitAllowed()));
+        new(MapManager, AudioManager, InventoryManager, doors, LevelAI, TimedSwitches, Session,
+            new PlayerUseHooks(PlayPlayerSound, () => MountedWeapons.TryDismount(),
+                (objective, amount) => Objectives.Complete(objective, amount), () => Objectives.ExitAllowed()));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
@@ -227,67 +227,67 @@ internal static partial class GameHost
     static PlayerThink playerThink = null!;     // made in InitServices
 
     static PlayerThink MakePlayerThink() =>
-        new(_mapManager, statusBarDrawing, playerStats, playerWeapons, weaponInHand, playerUse, playerMovement, weaponBob, levelAI, session,
-            new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas, reloading =>
+        new(MapManager, statusBarDrawing, playerStats, playerWeapons, weaponInHand, playerUse, playerMovement, WeaponBob, LevelAI, Session,
+            new PlayerThinkHooks(UpdateRadar, () => VictoryRunning, InitAreas, reloading =>
             {
-                weaponZoom.Tick(reloading);
-                mountedWeapons.Tick();          // let off a gun they're no longer manning (dying, a load, a new level)
-                latching.Tick();                // and out of a struggle that's over
-                stealth.Tick();                 // the suspicion meter
+                WeaponZoom.Tick(reloading);
+                MountedWeapons.Tick();          // let off a gun they're no longer manning (dying, a load, a new level)
+                Latching.Tick();                // and out of a struggle that's over
+                Stealth.Tick();                 // the suspicion meter
             }));
 
     internal static void ThinkPlayer(Entities.Actors.Actor ob) => playerThink.ThinkPlayer(ob);
 
     // A weapon's scope (Gameplay/WeaponZoom.cs): the zoom key, the view's magnification and the scope's picture
     static WeaponZoom? _weaponZoom;
-    static WeaponZoom weaponZoom => _weaponZoom ??= new WeaponZoom(_inventoryManager, _audioManager, session);
+    static WeaponZoom WeaponZoom => _weaponZoom ??= new WeaponZoom(InventoryManager, AudioManager, Session);
 
     // Mounted guns the player mans (Gameplay/MountedWeapons.cs): A_Mount, and getting off with use
     static MountedWeapons? _mountedWeapons;
-    static MountedWeapons mountedWeapons => _mountedWeapons ??= new MountedWeapons(_mapManager, _inventoryManager, playerWeapons, session,
-        new MountedWeaponsHooks(PlayPlayerSound, message => _hudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0)));
+    static MountedWeapons MountedWeapons => _mountedWeapons ??= new MountedWeapons(MapManager, InventoryManager, playerWeapons, Session,
+        new MountedWeaponsHooks(PlayPlayerSound, message => HudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0)));
 
     // Things that latch onto the player (Gameplay/Latching.cs): A_LatchBite, and striking them off
     static Latching? _latching;
-    static Latching latching => _latching ??= new Latching(_mapManager, _inventoryManager, playerWeapons, session,
+    static Latching Latching => _latching ??= new Latching(MapManager, InventoryManager, playerWeapons, Session,
         new LatchingHooks(playersManager.TakeDamage, playerAttacks.PlayAttackSound, weaponInHand.IsWeaponReady,
             (monster, damage, by) => monster.Damage((uint)damage, by)));
 
     // Switches that turn back by themselves (Gameplay/TimedSwitches.cs), ticked by the level loop
     static TimedSwitches? _timedSwitches;
-    static TimedSwitches timedSwitches => _timedSwitches ??= new TimedSwitches(_mapManager, session);
+    static TimedSwitches TimedSwitches => _timedSwitches ??= new TimedSwitches(MapManager, Session);
 
     // Floors that hurt (Gameplay/FloorDamage.cs), ticked by the level loop
     static FloorDamage? _floorDamage;
-    static FloorDamage floorDamage => _floorDamage ??= new FloorDamage(_mapManager, session, new FloorDamageHooks(
+    static FloorDamage FloorDamage => _floorDamage ??= new FloorDamage(MapManager, Session, new FloorDamageHooks(
         (pawn, points) =>
         {
-            using var _ = session.ActAs(pawn.State);
+            using var _ = Session.ActAs(pawn.State);
             playerStats.ApplyDamageToPlayer(points);
         },
         (monster, points) => monster.Damage((uint)points),
-        () => _mapManager.GetMapData().Flats,
-        (x, y) => _mapManager.FlatTextureName(x, y, ceiling: false)));
+        () => MapManager.GetMapData().Flats,
+        (x, y) => MapManager.FlatTextureName(x, y, ceiling: false)));
 
     // Disguise and going unseen (Gameplay/Stealth.cs): enemies' suspicion, papers, the uniform
     static Stealth? _stealth;
-    static Stealth stealth => _stealth ??= new Stealth(_mapManager, _inventoryManager, playerWeapons, session,
+    static Stealth Stealth => _stealth ??= new Stealth(MapManager, InventoryManager, playerWeapons, Session,
         new StealthHooks(
-            () => _gameEngineManager.GetGameInfo().Stealth,
-            () => session.GameState.MapOn is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && info.StealthOnly,
-            message => _hudMessageManager.Show(HudMessageKind.Lock, message),
+            () => GameEngineManager.GetGameInfo().Stealth,
+            () => Session.GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && info.StealthOnly,
+            message => HudMessageManager.Show(HudMessageKind.Lock, message),
             PlayPlayerSound,
             playerAttacks.PlayAttackSound,
-            actor => (actor.AreaNumber >= _mapManager.Floors.NumAreas || session.Areas.AreaByPlayer[actor.AreaNumber] != 0)
+            actor => (actor.AreaNumber >= MapManager.Floors.NumAreas || Session.Areas.AreaByPlayer[actor.AreaNumber] != 0)
                 && lineOfSight.CheckLine(actor),
             actor =>
             {
                 // Caught on a stealth-only map: the mission's failed, as a death at their hands
-                session.PlayerState.LastAttacker = actor;
-                session.PlayerState.Health = 0;
+                Session.PlayerState.LastAttacker = actor;
+                Session.PlayerState.Health = 0;
                 statusBarDrawing.DrawHealth();
-                if (session.GameMode == GameMode.Single)
-                    playstate = PlayState.Died;
+                if (Session.GameMode == GameMode.Single)
+                    PlayState = PlayState.Died;
                 else
                     PlayerDies();
             }));
@@ -300,12 +300,12 @@ internal static partial class GameHost
     static WeaponInHand weaponInHand = null!;
 
     static PlayerAttacks MakePlayerAttacks() =>
-        new(_mapManager, _inventoryManager, _factionManager, lineOfSight, session,
-            new PlayerAttackHooks(PlayerViewOrigin, () => centerx, () => shootdelta, TakeDamage, PlayPlayerSound,
+        new(MapManager, InventoryManager, FactionManager, lineOfSight, Session,
+            new PlayerAttackHooks(PlayerViewOrigin, () => CenterX, () => ShootDelta, TakeDamage, PlayPlayerSound,
                 () => DamageDealt));
 
     static WeaponInHand MakeWeaponInHand() =>
-        new(_inventoryManager, _mapManager, session, playerWeapons, playerAttacks, RegisterMissileActions);
+        new(InventoryManager, MapManager, Session, playerWeapons, playerAttacks, RegisterMissileActions);
 
     static void RegisterWeaponActions() => (weaponInHand ??= MakeWeaponInHand()).Register();
 
@@ -324,19 +324,19 @@ internal static partial class GameHost
     ====================
     */
 
-    internal static List<Entities.PlayerState> players => session.Players;
-    internal static Entities.PlayerState playerstate => session.PlayerState;
-    internal static GameSession.ActingScope ActAs(Entities.PlayerState p) => session.ActAs(p);
-    static void SetActing(Entities.PlayerState p) => session.SetActing(p);
+    internal static List<Entities.PlayerState> PlayerStates => Session.Players;
+    internal static Entities.PlayerState PlayerState => Session.PlayerState;
+    internal static GameSession.ActingScope ActAs(Entities.PlayerState p) => Session.ActAs(p);
+    static void SetActing(Entities.PlayerState p) => Session.SetActing(p);
 
     // Everyone in the game coming and going (Gameplay/Players.cs)
     static Players playersManager = null!;      // made in InitServices
 
     static Players MakePlayers() =>
-        new(_mapManager, _audioManager, _videoManager, _inventoryManager, _hudMessageManager, statusBarDrawing, playerClassRules, playerStats,
-            playerWeapons, playerMovement, playerThink, session,
+        new(MapManager, AudioManager, _videoManager, InventoryManager, HudMessageManager, statusBarDrawing, playerClassRules, playerStats,
+            playerWeapons, playerMovement, playerThink, Session,
             new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, MayRespawn, ShowObituary, ConnectAreas,
-                () => deathTurnSpeed, () => deathDropHeight, () => deathDropSpeed, PlayerColor));
+                () => DeathTurnSpeed, () => DeathDropHeight, () => DeathDropSpeed, PlayerColor));
 
     internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);
     internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);
@@ -351,11 +351,11 @@ internal static partial class GameHost
     //
     // The acting player's state, under the names the game has always used for it
     //
-    static Entities.Actors.Actor? LastAttacker { get => playerstate.LastAttacker; set => playerstate.LastAttacker = value; }
+    static Entities.Actors.Actor? LastAttacker { get => PlayerState.LastAttacker; set => PlayerState.LastAttacker = value; }
 
     // The player's own look up/down (degrees, up positive) and eye height (texels above the
     // floor): reset each level, not saved
-    internal static int playereyez { get => playerstate.EyeZ; set => playerstate.EyeZ = value; }
+    internal static int PlayerEyeZ { get => PlayerState.EyeZ; set => PlayerState.EyeZ = value; }
 
     // ==== WL_ACT1 ================================================================================
 
@@ -372,7 +372,7 @@ internal static partial class GameHost
     */
     internal static void PlaceItemType(string item_class, int tilex, int tiley)
     {
-        _mapManager.SpawnThing(tilex, tiley, item_class);
+        MapManager.SpawnThing(tilex, tiley, item_class);
     }
 
     /*
@@ -389,7 +389,7 @@ internal static partial class GameHost
     static Doors doors = null!;
 
     internal static void ConnectAreas() => doors.ConnectAreas();
-    internal static void InitAreas() => session.Areas.InitAreas(_mapManager.Players.Select(pawn => (int)pawn.AreaNumber), _mapManager.Floors.NumAreas);
+    internal static void InitAreas() => Session.Areas.InitAreas(MapManager.Players.Select(pawn => (int)pawn.AreaNumber), MapManager.Floors.NumAreas);
 
     /*
     =============================================================================
@@ -423,9 +423,9 @@ internal static partial class GameHost
 
     // Made in InitServices. Registering only binds the handlers, so a test that lists the action
     // names (ScriptApiTests) can register them before any services exist: then they're made here.
-    static SwitchActions MakeSwitchActions() => new(_audioManager, _mapManager, _inventoryManager, _hudMessageManager, doors, pushWalls, session,
+    static SwitchActions MakeSwitchActions() => new(AudioManager, MapManager, InventoryManager, HudMessageManager, doors, pushWalls, Session,
         new SwitchHooks(CouldTakeInventory, TryApplyInventory));
-    static SmartSwitches MakeSmartSwitches() => new(_mapManager, doors, session, (wallSwitch, x, y) => UseSwitch(wallSwitch, x, y, FacingDir(player.Angle)));
+    static SmartSwitches MakeSmartSwitches() => new(MapManager, doors, Session, (wallSwitch, x, y) => UseSwitch(wallSwitch, x, y, FacingDir(Player.Angle)));
 
     private static void RegisterSwitchActions() => (switchActions ??= MakeSwitchActions()).Register();
     private static void RegisterSmartSwitchActions() => (smartSwitches ??= MakeSmartSwitches()).Register();
@@ -458,7 +458,7 @@ internal static partial class GameHost
     static BJVictory bjVictory = null!;
 
     static Projectiles MakeProjectiles() =>
-        new(_mapManager, _factionManager, session, new ProjectileHooks(
+        new(MapManager, FactionManager, Session, new ProjectileHooks(
             (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: false),
             PlaySoundLocActor, TakeDamage));
 
@@ -484,7 +484,7 @@ internal static partial class GameHost
     static LineOfSight lineOfSight = null!;
 
     // What the level does on its own: outlets, warp sites, floor drops, talking (Managers/LevelAI.cs)
-    internal static LevelAI levelAI = null!;      // made in InitServices
+    internal static LevelAI LevelAI = null!;      // made in InitServices
 
     // ==== Missiles ===============================================================================
 
@@ -492,7 +492,7 @@ internal static partial class GameHost
     static Missiles missiles = null!;   // made in InitServices
 
     static Missiles MakeMissiles() =>
-        new(_mapManager, _factionManager, doors, playerWeapons, playerAttacks, playerStats, session,
+        new(MapManager, FactionManager, doors, playerWeapons, playerAttacks, playerStats, Session,
             new MissileHooks(ProjectileTryMove, PlaySoundLocActor, TakeDamage));
 
     static void RegisterMissileActions() => (missiles ??= MakeMissiles()).Register();
@@ -502,7 +502,7 @@ internal static partial class GameHost
     // Projectiles and jumps for any actor (Gameplay/ProjectileActions.cs, made in InitServices).
     // Registering only binds the handlers, so it can happen before the services exist (ScriptApiTests).
     static ProjectileActions projectileActions = null!;
-    static ProjectileActions MakeProjectileActions() => new(_mapManager, session, lineOfSight, PlayActorSound);
+    static ProjectileActions MakeProjectileActions() => new(MapManager, Session, lineOfSight, PlayActorSound);
 
     static void RegisterProjectileActions() => (projectileActions ??= MakeProjectileActions()).Register();
 }

@@ -194,10 +194,10 @@ internal sealed class LevelEntry(
     internal void AlignPlayerInElevator(int lastx, int lasty, int panelWall)
     {
         bool Panel(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MapSize && y < MapManager.MapSize
-            && mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BitDoor) == 0
+            && mapManager.TileMap[x, y] != 0 && (mapManager.TileMap[x, y] & GameConstants.BitDoor) == 0
             && mapManager.MapSpot(x, y, 0) == panelWall;
         bool IsDoor(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MapSize && y < MapManager.MapSize
-            && (mapManager.tilemap[x, y] & GameConstants.BitDoor) != 0;
+            && (mapManager.TileMap[x, y] & GameConstants.BitDoor) != 0;
 
         int tilex = 0, ox = lastx, oy = lasty;
         if (!Panel(ox + 1, oy) && !Panel(ox - 1, oy))

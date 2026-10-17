@@ -7,8 +7,8 @@ public class Wolf3dVswapFileLoader
 {
     private struct DigiInfo
     {
-        public uint startpage;
-        public uint length;
+        public uint StartPage;
+        public uint Length;
     }
 
     private UInt16 ChunksInFile;
@@ -199,8 +199,8 @@ public class Wolf3dVswapFileLoader
             // Calculate the size of the digi from the sizes of the pages between
             // the start page and the start page of the next sound
 
-            digiList[i].startpage = soundInfoPage[i * 2];
-            if ((int)digiList[i].startpage >= ChunksInFile - 1)
+            digiList[i].StartPage = soundInfoPage[i * 2];
+            if ((int)digiList[i].StartPage >= ChunksInFile - 1)
             {
                 numDigi = (ushort)i;
                 break;
@@ -216,7 +216,7 @@ public class Wolf3dVswapFileLoader
             else lastPage = ChunksInFile - 1;
 
             int size = 0;
-            for (int page = (int)(PMSoundStart + digiList[i].startpage); page < lastPage; page++)
+            for (int page = (int)(PMSoundStart + digiList[i].StartPage); page < lastPage; page++)
                 size += (int)GetPageSize(page);
 
             // Don't include padding of sound info page, if padding was added
@@ -229,7 +229,7 @@ public class Wolf3dVswapFileLoader
                 size -= 0x10000;
             size = (int)((size & 0xffff0000) | soundInfoPage[i * 2 + 1]);
 
-            digiList[i].length = (uint)size;
+            digiList[i].Length = (uint)size;
         }
 
         for (int i = 0; i < numDigi; i++)
@@ -237,17 +237,17 @@ public class Wolf3dVswapFileLoader
             // The sound info page's size can take in padding past the last entry (shareware's is
             // a whole page of them): past the map's names, an entry that doesn't start after the
             // one before it is that padding, not a sound
-            if (i >= digitizedAudio.Count && i > 0 && digiList[i].startpage <= digiList[i - 1].startpage)
+            if (i >= digitizedAudio.Count && i > 0 && digiList[i].StartPage <= digiList[i - 1].StartPage)
                 break;
 
             // Left out of the release (shareware's): its pages are sparse
-            if (GetPage((int)(PMSoundStart + digiList[i].startpage)).Length == 0)
+            if (GetPage((int)(PMSoundStart + digiList[i].StartPage)).Length == 0)
                 continue;
 
             byte[] soundData;
             try
             {
-                soundData = GetSoundPage(digiList[i].startpage, digiList[i].length);
+                soundData = GetSoundPage(digiList[i].StartPage, digiList[i].Length);
             }
             catch (PfWolfFileLoaderException) when (i >= digitizedAudio.Count)
             {

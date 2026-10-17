@@ -17,8 +17,8 @@ public class RayTraceTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
-            seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],
+            Spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
+            Seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],
         };
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
         _trace = new RayTrace(_map, null!, null!, null!, null!, _render);
@@ -35,7 +35,7 @@ public class RayTraceTests
         _trace.PassVert(-Tile / 4);
 
         // Assert
-        Assert.That(_map.spotvis[5, 7], Is.True);
+        Assert.That(_map.Spotvis[5, 7], Is.True);
         Assert.That((_render.XTile, _render.YIntercept, _render.YIntTile), Is.EqualTo(((short)6, 7 * Tile + Tile / 4, 7)));
     }
 
@@ -50,7 +50,7 @@ public class RayTraceTests
         _trace.PassHoriz(Tile / 5);
 
         // Assert: it has crossed into column 4
-        Assert.That(_map.spotvis[3, 9], Is.True);
+        Assert.That(_map.Spotvis[3, 9], Is.True);
         Assert.That((_render.YTile, _render.XIntTile), Is.EqualTo(((short)8, 4)));
     }
 
@@ -65,7 +65,7 @@ public class RayTraceTests
         _trace.PassVert(0);
 
         // Assert
-        Assert.That(_map.spotvis[5, 7], Is.False);
+        Assert.That(_map.Spotvis[5, 7], Is.False);
     }
 
     [Test]
@@ -73,11 +73,11 @@ public class RayTraceTests
     {
         // Act / Assert
         _trace.MarkSeen(4, 4, SeenFlags.WestFace);
-        Assert.That(_map.seen[4, 4], Is.EqualTo(SeenFlags.None));
+        Assert.That(_map.Seen[4, 4], Is.EqualTo(SeenFlags.None));
 
         _render.MarkSeen = true;
         _trace.MarkSeen(4, 4, SeenFlags.WestFace);
         _trace.MarkSeen(4, 4, SeenFlags.NorthFace);
-        Assert.That(_map.seen[4, 4], Is.EqualTo(SeenFlags.WestFace | SeenFlags.NorthFace));
+        Assert.That(_map.Seen[4, 4], Is.EqualTo(SeenFlags.WestFace | SeenFlags.NorthFace));
     }
 }

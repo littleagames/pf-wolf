@@ -112,7 +112,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             }
             else
             {
-                switch (ci.dir)
+                switch (ci.Dir)
                 {
                     case Direction.North: moved = NextCustomRow(rows, row, -1); break;
                     case Direction.South: moved = NextCustomRow(rows, row, 1); break;
@@ -137,7 +137,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             //
             // CHANGE A SLOT, OR RESET THEM ALL
             //
-            if (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
+            if (ci.Button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
             {
                 menuInput.WaitKeyUp();
 
@@ -159,7 +159,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             // CLEAR A SLOT
             //
             if (current.Kind == CustomRowKind.Control
-                && (ci.button3 || input.IsKeyDown(ScanCodes.Delete) || input.IsKeyDown(ScanCodes.BackSpace)))
+                && (ci.Button3 || input.IsKeyDown(ScanCodes.Delete) || input.IsKeyDown(ScanCodes.BackSpace)))
             {
                 if (!controls[current.Action, col].IsNone)
                 {
@@ -177,7 +177,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             //
             // DONE
             //
-            if (ci.button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
+            if (ci.Button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
                 break;
         }
 

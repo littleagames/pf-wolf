@@ -25,8 +25,8 @@ public class NetPlayTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _game = new GameSession();
         _doors = new Doors(null!, null!, _map, null!, null!, _game, null!);
@@ -116,16 +116,16 @@ public class NetPlayTests
     {
         // Arrange
         var netPlay = NetPlay();
-        netPlay.netLeavePrompt = true;
-        netPlay.netWaiting = "Waiting for Drew...";
-        netPlay.pendingjoinstate = (1, 5);
+        netPlay.NetLeavePrompt = true;
+        netPlay.NetWaiting = "Waiting for Drew...";
+        netPlay.PendingJoinState = (1, 5);
 
         // Act
         netPlay.NetLevelStart();
 
         // Assert
         Assert.That(netPlay.NetFrame(), Is.False);
-        Assert.That((netPlay.netlevel, netPlay.netLeavePrompt, netPlay.netWaiting, netPlay.pendingjoinstate), Is.EqualTo((0, false, (string?)null, ((int, int)?)null)));
+        Assert.That((netPlay.NetLevel, netPlay.NetLeavePrompt, netPlay.NetWaiting, netPlay.PendingJoinState), Is.EqualTo((0, false, (string?)null, ((int, int)?)null)));
     }
 
     [Test]
@@ -157,7 +157,7 @@ public class NetOverlayTests
     {
         var (overlay, netPlay, _) = Overlay();
         overlay.NetCheckKeys(ScanCodes.Escape);
-        Assert.That(netPlay.netLeavePrompt, Is.True);
+        Assert.That(netPlay.NetLeavePrompt, Is.True);
     }
 
     [Test]
@@ -165,14 +165,14 @@ public class NetOverlayTests
     {
         // Arrange
         var (overlay, netPlay, game) = Overlay();
-        netPlay.netLeavePrompt = true;
+        netPlay.NetLeavePrompt = true;
 
         // Act
         overlay.NetCheckKeys(ScanCodes.Y);
 
         // Assert
-        Assert.That(netPlay.netLeft, Is.True);
-        Assert.That(netPlay.netLeavePrompt, Is.False);
+        Assert.That(netPlay.NetLeft, Is.True);
+        Assert.That(netPlay.NetLeavePrompt, Is.False);
         Assert.That(game.PlayState, Is.EqualTo(PlayState.Abort));
     }
 
@@ -182,13 +182,13 @@ public class NetOverlayTests
     {
         // Arrange
         var (overlay, netPlay, game) = Overlay();
-        netPlay.netLeavePrompt = true;
+        netPlay.NetLeavePrompt = true;
 
         // Act
         overlay.NetCheckKeys(Enum.Parse<ScanCodes>(key));
 
         // Assert
-        Assert.That((netPlay.netLeft, netPlay.netLeavePrompt), Is.EqualTo((false, false)));
+        Assert.That((netPlay.NetLeft, netPlay.NetLeavePrompt), Is.EqualTo((false, false)));
         Assert.That(game.PlayState, Is.EqualTo(PlayState.StillPlaying));
     }
 
@@ -200,11 +200,11 @@ public class NetOverlayTests
 
         // Act / Assert
         overlay.NetCheckKeys(ScanCodes.T);
-        Assert.That(overlay.netChatting, Is.True);
+        Assert.That(overlay.NetChatting, Is.True);
 
-        overlay.netChatting = false;
-        netPlay.netLeavePrompt = true;
+        overlay.NetChatting = false;
+        netPlay.NetLeavePrompt = true;
         overlay.NetCheckKeys(ScanCodes.T);
-        Assert.That(overlay.netChatting, Is.False);
+        Assert.That(overlay.NetChatting, Is.False);
     }
 }

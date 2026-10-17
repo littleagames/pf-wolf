@@ -247,8 +247,8 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     private IEnumerable<(int X, int Y)> TaggedWalls(TriggerActivation trigger) =>
         map.TaggedTiles(trigger.Tag).Where(t =>
             (t.X, t.Y) != (trigger.TileX, trigger.TileY)
-            && (map.tilemap[t.X, t.Y] & GameConstants.BitDoor) == 0
-            && (map.tilemap[t.X, t.Y] & ~GameConstants.BitWall) != 0);
+            && (map.TileMap[t.X, t.Y] & GameConstants.BitDoor) == 0
+            && (map.TileMap[t.X, t.Y] & ~GameConstants.BitWall) != 0);
 
     /// <summary>A direction's name (north, east, south, west, any case), or null</summary>
     internal static ControlDir? ParseDirection(string? name) => name?.Trim().ToLowerInvariant() switch
@@ -309,7 +309,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         foreach (var (x, y) in TaggedWalls(trigger))
         {
             // keeping the door-side mark on a wall beside a door
-            map.tilemap[x, y] = (ushort)(id | (map.tilemap[x, y] & GameConstants.BitWall));
+            map.TileMap[x, y] = (ushort)(id | (map.TileMap[x, y] & GameConstants.BitWall));
             map.RestartAnimations(x, y, session.GameState.TimeCount);
             any = true;
         }
@@ -360,7 +360,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     /// </summary>
     private (IEnumerable<string> Walls, string? Floor, string? Ceiling) TileTextures(int x, int y)
     {
-        var tile = map.tilemap[x, y];
+        var tile = map.TileMap[x, y];
         MapTextureTranslation? faces = null;
         MapTextureTranslation? locked = null;
         if ((tile & GameConstants.BitDoor) != 0)

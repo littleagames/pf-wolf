@@ -14,9 +14,9 @@ public class AutomapDrawingTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
-            seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            Seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],
         };
         _automap = new AutomapDrawing(null!, null!, null!, null!, null!, _map, null!, null!, null!, null!, null!, _session,
             new AutomapHooks(() => (0, 0, 320, 160), map => map, tics => "", () => []));
@@ -48,7 +48,7 @@ public class AutomapDrawingTests
     [TestCase(GameConstants.BitWall, false)]                 // a moving pushwall's tile (drawn at its offset)
     public void Walls_Are_What_Shows_As_Wall(int tile, bool wall)
     {
-        _map.tilemap[3, 4] = (ushort)tile;
+        _map.TileMap[3, 4] = (ushort)tile;
         Assert.That(_automap.IsAutomapWall(3, 4), Is.EqualTo(wall));
     }
 
@@ -69,7 +69,7 @@ public class AutomapDrawingTests
         // Act / Assert
         Assert.That(_automap.GetAutomapMark(clip, reveal: false), Is.EqualTo(AutomapDrawing.AutomapMark.None));
         Assert.That(_automap.GetAutomapMark(clip, reveal: true), Is.EqualTo(AutomapDrawing.AutomapMark.Item));
-        _map.seen[3, 4] = SeenFlags.Floor;
+        _map.Seen[3, 4] = SeenFlags.Floor;
         Assert.That(_automap.GetAutomapMark(clip, reveal: false), Is.EqualTo(AutomapDrawing.AutomapMark.Item));
     }
 
@@ -77,7 +77,7 @@ public class AutomapDrawingTests
     public void Solid_Decor_Shows_And_What_You_Walk_Through_Doesnt()
     {
         // Arrange
-        _map.seen[3, 4] = SeenFlags.Floor;
+        _map.Seen[3, 4] = SeenFlags.Floor;
         var spawn = new ActorStateFrame { StateName = "Spawn", Sprite = "BARL", FrameLetter = "A", TicTime = -1 };
         var barrel = new Monster { Name = "Barrel", TileX = 3, TileY = 4, Flags = ["SOLID"] };
         var puddle = new Monster { Name = "Puddle", TileX = 3, TileY = 4 };
@@ -93,7 +93,7 @@ public class AutomapDrawingTests
     public void Projectiles_And_Markers_Never_Show()
     {
         // Arrange
-        _map.seen[3, 4] = SeenFlags.Floor;
+        _map.Seen[3, 4] = SeenFlags.Floor;
         var rocket = new Monster { Name = "Rocket", TileX = 3, TileY = 4, Active = ActiveType.Yes };
         rocket.SetState(new ActorStateFrame { StateName = "Spawn", Sprite = "ROCK", FrameLetter = "A", TicTime = -1 });
         var marker = new Monster { Name = "PatrolPoint", TileX = 3, TileY = 4 };
@@ -113,16 +113,16 @@ public class RadarTests
         // Arrange
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
-        map.tilemap[1, 1] = 5;
-        map.tilemap[2, 1] = GameConstants.BitDoor | 0;
+        map.TileMap[1, 1] = 5;
+        map.TileMap[2, 1] = GameConstants.BitDoor | 0;
         doors.DoorObjList[0] = new DoorObject { Action = DoorAction.Closed };
-        map.tilemap[3, 1] = GameConstants.BitDoor | 1;
+        map.TileMap[3, 1] = GameConstants.BitDoor | 1;
         doors.DoorObjList[1] = new DoorObject { Action = DoorAction.Open };
 
         // Act
@@ -141,13 +141,13 @@ public class RadarTests
         // Arrange: a gold-key door, closed
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, new Configuration.GameSettings());
-        map.tilemap[2, 1] = GameConstants.BitDoor | 0;
+        map.TileMap[2, 1] = GameConstants.BitDoor | 0;
         doors.DoorObjList[0] = new DoorObject { Action = DoorAction.Closed, MapLock = "GoldKey" };
         string Color() => radar.RadarTileColor(2, 1, "unmapped", "floor", "door", "locked");
 

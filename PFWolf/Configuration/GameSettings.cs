@@ -7,16 +7,16 @@ namespace PFWolf.Configuration;
 internal sealed class GameSettings
 {
     /// <summary>The keys, mouse buttons and joystick buttons bound to each button and automap key (saved to controls.cfg).</summary>
-    internal readonly ControlBindings controls = new();
+    internal readonly ControlBindings Controls = new();
 
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
-    internal readonly ControlSettings controlSettings = new();
+    internal readonly ControlSettings ControlSettings = new();
 
     internal HighScore[] Scores = HighScore.WolfDefaults();
 
     /// <summary>How big the view is, 4 to 21 (21: the whole screen, no status bar)</summary>
-    internal int viewsize;
+    internal int ViewSize;
 
     /// <summary>Whether the game saves itself at each new level (autosave.dat)</summary>
-    internal bool autosaveEnabled = true;
+    internal bool AutosaveEnabled = true;
 }

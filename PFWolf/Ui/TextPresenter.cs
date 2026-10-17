@@ -759,7 +759,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     void TpEndPage()
     {
         video.Update();
-        if (video.screenfaded)
+        if (video.ScreenFaded)
             video.FadeIn();
 
         input.ClearKeysDown();
@@ -768,21 +768,21 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         {
             GameEngineManager.DelayMs(5);
             menuInput.ReadAnyControl(out var ci);
-            var dir = ci.dir;
+            var dir = ci.Dir;
             if (input.IsKeyDown(ScanCodes.PgUp))
                 dir = Direction.North;
             else if (input.IsKeyDown(ScanCodes.PgDn))
                 dir = Direction.South;
 
             if (tp.Flags.HasFlag(PresenterFlags.Continue)
-                && (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter)))
+                && (ci.Button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter)))
             {
                 tp.Escaped = false;
                 tpflags &= ~presenting;
                 break;
             }
 
-            if (ci.button1 || input.IsKeyDown(ScanCodes.Escape))
+            if (ci.Button1 || input.IsKeyDown(ScanCodes.Escape))
             {
                 tp.Escaped = true;
                 tpflags &= ~presenting;

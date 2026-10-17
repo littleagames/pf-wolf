@@ -37,8 +37,8 @@ internal class GraphicManager
     {
         // Across the whole screen, however wide
         int top = videoManager.ScreenY(y), line = videoManager.ScreenY(y + MenuStripe.LineY);
-        videoManager.BarScaledCoord(0, top, videoManager.screenWidth, videoManager.ScreenY(y + MenuStripe.Height) - top, color ?? MenuStripe.Color);
-        videoManager.BarScaledCoord(0, line, videoManager.screenWidth, videoManager.ScreenY(y + MenuStripe.LineY + 1) - line, lineColor ?? MenuStripe.LineColor);
+        videoManager.BarScaledCoord(0, top, videoManager.ScreenWidth, videoManager.ScreenY(y + MenuStripe.Height) - top, color ?? MenuStripe.Color);
+        videoManager.BarScaledCoord(0, line, videoManager.ScreenWidth, videoManager.ScreenY(y + MenuStripe.LineY + 1) - line, lineColor ?? MenuStripe.LineColor);
     }
 
     public void DrawMenuBackground(string color)

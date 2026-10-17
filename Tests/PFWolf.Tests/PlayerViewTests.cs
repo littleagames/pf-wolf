@@ -22,9 +22,9 @@ public class PlayerViewTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
-            spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            Spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
         };
         var doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         var lineOfSight = new LineOfSight(_map, doors, _session, (_, _, _, _) => false);
@@ -72,7 +72,7 @@ public class PlayerViewTests
     public void A_Wall_In_The_Way_Hides_It()
     {
         // Arrange
-        _map.tilemap[12, 10] = 1;
+        _map.TileMap[12, 10] = 1;
 
         // Act / Assert
         Assert.That(_view.InViewOf(Player(), Guard(15, 10)), Is.False);
@@ -87,7 +87,7 @@ public class PlayerViewTests
 
         // Act / Assert
         Assert.That(_view.PlayerTileInView(pawn), Is.False);
-        _map.spotvis[10, 10] = true;
+        _map.Spotvis[10, 10] = true;
         Assert.That(_view.PlayerTileInView(pawn), Is.True);
     }
 
@@ -101,7 +101,7 @@ public class PlayerViewTests
 
         // Act / Assert
         Assert.That(_view.PlayerTileInView(pawn), Is.True);
-        _map.tilemap[10, 10] = 1;       // somehow in a wall
+        _map.TileMap[10, 10] = 1;       // somehow in a wall
         Assert.That(_view.PlayerTileInView(pawn), Is.False);
     }
 }

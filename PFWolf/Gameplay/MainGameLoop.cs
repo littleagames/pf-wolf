@@ -130,7 +130,7 @@ internal sealed class MainGameLoop(
         {
             if (!session.LoadedGame)
                 foreach (var p in session.Players) p.Score = p.OldScore;
-            if (!died || settings.viewsize != 21) statusBar.DrawScore();
+            if (!died || settings.ViewSize != 21) statusBar.DrawScore();
 
             session.GameChosen = false;
             string levelStart = "loaded";
@@ -231,7 +231,7 @@ internal sealed class MainGameLoop(
                 // playdemo or recorddemo ended the game: back to the title loop, which starts the demo
                 audio.StopAll();
                 video.FadeOut();
-                MenuDefs.FindMenuItem(controlPanel.MainMenu, "savegame")?.active = 0;
+                MenuDefs.FindMenuItem(controlPanel.MainMenu, "savegame")?.Active = 0;
                 controlPanel.EnableViewScoresMenuItem();
                 return;
             }
@@ -264,7 +264,7 @@ internal sealed class MainGameLoop(
                         goto case PlayState.Victorious;
                     }
 
-                    if (settings.viewsize == 21) playScreen.DrawPlayScreen();
+                    if (settings.ViewSize == 21) playScreen.DrawPlayScreen();
                     foreach (var p in session.Players)
                     {
                         using var _ = session.ActAs(p);
@@ -278,7 +278,7 @@ internal sealed class MainGameLoop(
                     if (!hubs.IsHubMap(hubs.LevelMap))
                         intermission.LevelCompleted();          // do the intermission; a hub's levels are just left
                     ShowDebriefing(leftInfo);
-                    if (settings.viewsize == 21) playScreen.DrawPlayScreen();
+                    if (settings.ViewSize == 21) playScreen.DrawPlayScreen();
                     foreach (var p in session.Players) p.OldScore = p.Score;
 
                     // The Spear demo's last floor: its message ends the game (shown at the end of
@@ -309,9 +309,9 @@ internal sealed class MainGameLoop(
                     audio.StopAll();
 
                     // The pack's game over screen, unless the game was ended from the menu
-                    if (!controlPanel.endedFromMenu && engine.GetGameInfo().LoseScreen is { } loseScreen)
+                    if (!controlPanel.EndedFromMenu && engine.GetGameInfo().LoseScreen is { } loseScreen)
                         presenter.ShowLoseScreen(loseScreen);
-                    controlPanel.endedFromMenu = false;
+                    controlPanel.EndedFromMenu = false;
 
                     highScores.CheckHighScore(session.PlayerState.Score, won: false);
                     controlPanel.EnableViewScoresMenuItem();
@@ -344,7 +344,7 @@ internal sealed class MainGameLoop(
                         return;
                     }
 
-                    if (settings.viewsize == 21) playScreen.DrawPlayScreen();
+                    if (settings.ViewSize == 21) playScreen.DrawPlayScreen();
                     // The won level's debriefing first (a Midnight Assault mission's), then the tally
                     if (engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var wonMap))
                         ShowDebriefing(wonMap);
@@ -365,7 +365,7 @@ internal sealed class MainGameLoop(
                     return;
 
                 default:
-                    if (settings.viewsize == 21) playScreen.DrawPlayScreen();
+                    if (settings.ViewSize == 21) playScreen.DrawPlayScreen();
                     audio.StopAll();
                     break;
             }

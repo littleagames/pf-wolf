@@ -10,7 +10,7 @@ public class MenuTests
     public void ItemKey_Is_The_Short_Key_Or_The_First_Letter(string text, char shortKey, char expected)
     {
         // Arrange
-        var item = new ControlPanelItem(1, text, null) { shortKey = shortKey };
+        var item = new ControlPanelItem(1, text, null) { ShortKey = shortKey };
 
         // Act / Assert
         Assert.That(MenuLoop.ItemKey(item), Is.EqualTo(expected));
@@ -42,7 +42,7 @@ public class MenuTests
     public void Rows_Go_Down_By_The_Menus_Row_Height()
     {
         // Arrange
-        var menu = new ControlPanelMenuInfo(x: 72, y: 40, amount: 5, curpos: 0, indent: 24) { rowHeight = 13 };
+        var menu = new ControlPanelMenuInfo(x: 72, y: 40, amount: 5, curpos: 0, indent: 24) { RowHeight = 13 };
 
         // Act / Assert
         Assert.That(MenuDrawing.MenuItemY(menu, 0), Is.EqualTo(40));

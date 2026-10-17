@@ -71,7 +71,7 @@ internal sealed class SpriteScaler(
                 table = translation!.ForRow(row - top);
             byte color = shade[shadeofs + (table == null ? index : table[index])];
 
-            var destIndex = video.ylookup[startpix] + x;
+            var destIndex = video.YLookup[startpix] + x;
             unsafe
             {
                 byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
@@ -79,7 +79,7 @@ internal sealed class SpriteScaler(
                 {
                     // cloaked: what's behind, darkened (shade is then the light table, shadeofs its level)
                     dest[destIndex] = cloaked ? shade[shadeofs + dest[destIndex]] : color;
-                    destIndex += video.bufferPitch;
+                    destIndex += video.BufferPitch;
                     startpix++;
                 }
             }

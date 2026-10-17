@@ -6,7 +6,7 @@ namespace PFWolf.Gameplay;
                     DIAGONAL WALL COLLISION AND SIGHT
 
 A diagonal tile (MapManager.wallshape) is only solid on its named corner's side of the
-45 degree face. It keeps its actorat entry, so enemies never path into one; the player,
+45 degree face. It keeps its ActorAt entry, so enemies never path into one; the player,
 projectiles and sight lines use these tests to get into and see through the open half.
 Coordinates are 16.16 global fixed point; u and v are tile-local (0..TileGlobal).
 

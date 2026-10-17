@@ -273,7 +273,7 @@ internal class DoorObject
 
 internal abstract class Actor
 {
-    // Marker base for the tiles actorat[,] holds: Wall, Door, and BlockingActor (a solid static).
+    // Marker base for the tiles ActorAt[,] holds: Wall, Door, and BlockingActor (a solid static).
 }
 
 internal class BlockingActor: Actor
@@ -315,7 +315,7 @@ internal class Door: Actor
     public int DoorNumber;
 }
 
-// An enemy standing on the tile, as the original kept them in actorat[] (MapManager.MarkActorTile)
+// An enemy standing on the tile, as the original kept them in ActorAt[] (MapManager.MarkActorTile)
 internal class ActorMark: Actor
 {
     public ActorMark(PFWolf.Entities.Actors.Monster who)

@@ -102,15 +102,15 @@ public class UnlocksTests
 
         // Assert
         Assert.That(any, Is.True);
-        Assert.That(rows.Select(r => r.active), Is.EqualTo(new short[] { 1, 0, 0 }));
-        Assert.That(rows.Select(r => r.text), Is.EqualTo(new[] { "Campaign", "- Locked -", "Challenges" }));
-        Assert.That(info.curpos, Is.EqualTo(0));
+        Assert.That(rows.Select(r => r.Active), Is.EqualTo(new short[] { 1, 0, 0 }));
+        Assert.That(rows.Select(r => r.Text), Is.EqualTo(new[] { "Campaign", "- Locked -", "Challenges" }));
+        Assert.That(info.CurPos, Is.EqualTo(0));
 
         // Unlocked, it has its name back
         unlocks.Unlock("EP02");
         NewGameMenu.ShowEpisodeLocks(rows, info, unlocks.IsOpen, text => text);
-        Assert.That(rows[1].active, Is.EqualTo(1));
-        Assert.That(rows[1].text, Is.EqualTo("Dog Tag Missions"));
+        Assert.That(rows[1].Active, Is.EqualTo(1));
+        Assert.That(rows[1].Text, Is.EqualTo("Dog Tag Missions"));
     }
 
     [Test]

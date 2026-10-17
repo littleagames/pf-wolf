@@ -49,7 +49,7 @@ internal sealed class InputPolling(
 
     // Turning speed with a stick pushed all the way, per tic: 50 to 140, 90 by default (the
     // arrow keys turn at BaseMove, RunMove running)
-    internal int JoyTurnSpeed => 50 + 10 * Math.Clamp(controlSettings.joyturnspeed, 0, ControlSettings.JoyTurnSpeeds - 1);
+    internal int JoyTurnSpeed => 50 + 10 * Math.Clamp(controlSettings.JoyTurnSpeed, 0, ControlSettings.JoyTurnSpeeds - 1);
 
     internal void PollControls()
     {
@@ -107,10 +107,10 @@ internal sealed class InputPolling(
         //
         PollButtonMove();
 
-        if (controlSettings.mouseenabled && inputManager.IsMouseInputGrabbed())
+        if (controlSettings.MouseEnabled && inputManager.IsMouseInputGrabbed())
             PollMouseMove();
 
-        if (controlSettings.joystickenabled)
+        if (controlSettings.JoystickEnabled)
             PollJoystickMove();
 
         //
@@ -245,9 +245,9 @@ internal sealed class InputPolling(
     /// </summary>
     internal bool IsInputActive(InputCode code) => code.Device switch
     {
-        InputDevice.MouseButton => controlSettings.mouseenabled && inputManager.IsMouseInputGrabbed() && inputManager.IsInputDown(code),
-        InputDevice.MouseWheel => controlSettings.mouseenabled && WheelNotches(code) > 0,
-        InputDevice.JoyButton or InputDevice.PadButton or InputDevice.PadAxis => controlSettings.joystickenabled && inputManager.IsInputDown(code),
+        InputDevice.MouseButton => controlSettings.MouseEnabled && inputManager.IsMouseInputGrabbed() && inputManager.IsInputDown(code),
+        InputDevice.MouseWheel => controlSettings.MouseEnabled && WheelNotches(code) > 0,
+        InputDevice.JoyButton or InputDevice.PadButton or InputDevice.PadAxis => controlSettings.JoystickEnabled && inputManager.IsInputDown(code),
         _ => inputManager.IsInputDown(code),
     };
 
@@ -327,14 +327,14 @@ internal sealed class InputPolling(
 
         SDL_GetRelativeMouseState(out mousexmove, out mouseymove);
 
-        ControlX += mousexmove * 10 / (13 - controlSettings.mouseadjustment);
+        ControlX += mousexmove * 10 / (13 - controlSettings.MouseAdjustment);
 
         // Looking goes as fast as turning: ControlX turns a degree every AngleScale. In the
         // automap's pan mode the mouse pans the map, so it walks (RouteMovementToAutomap takes it).
-        if (controlSettings.mouselook && !(automap.IsOpen && !automap.Follow))
-            ControlPitch += (controlSettings.mouseinvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.mouseadjustment) / GameConstants.AngleScale;
+        if (controlSettings.MouseLook && !(automap.IsOpen && !automap.Follow))
+            ControlPitch += (controlSettings.MouseInvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.MouseAdjustment) / GameConstants.AngleScale;
         else
-            ControlY += mouseymove * 20 / (13 - controlSettings.mouseadjustment);
+            ControlY += mouseymove * 20 / (13 - controlSettings.MouseAdjustment);
     }
 
 
@@ -357,8 +357,8 @@ internal sealed class InputPolling(
         // goes up with the square of the push, for fine aim near the middle.
         if (inputManager.HasGameController)
         {
-            var turnAxis = controlSettings.joyclassicsticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX;
-            var strafeAxis = controlSettings.joyclassicsticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX;
+            var turnAxis = controlSettings.JoyClassicSticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX;
+            var strafeAxis = controlSettings.JoyClassicSticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX;
             float turn = StickValue(turnAxis);
 
             ControlY += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY) * speed * session.Tics);
@@ -391,7 +391,7 @@ internal sealed class InputPolling(
     internal float StickValue(SDL_GameControllerAxis axis)
     {
         float value = inputManager.GetPadAxis(axis);
-        float deadzone = Math.Clamp(controlSettings.joydeadzone, 0, 90) / 100f;
+        float deadzone = Math.Clamp(controlSettings.JoyDeadzone, 0, 90) / 100f;
 
         if (Math.Abs(value) <= deadzone)
             return 0;

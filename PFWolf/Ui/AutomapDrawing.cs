@@ -117,7 +117,7 @@ internal sealed class AutomapDrawing(
             return;
 
         // Sized with the UI: a layout pixel's worth of screen pixels for the pen, whole
-        float tileSize = automap.Zoom * (float)video.uiScale;   // screen pixels per tile
+        float tileSize = automap.Zoom * (float)video.UiScale;   // screen pixels per tile
         int pen = Math.Max(1, video.ToScreenLength(1));
         var clip = hooks.View();
         var view = new AutomapView(clip.X, clip.Y, clip.Width, clip.Height, tileSize,
@@ -202,9 +202,9 @@ internal sealed class AutomapDrawing(
                     continue;
 
                 // Only the faces the player has looked at, unless the reveal cheat is on
-                var faces = reveal ? allFaces : map.seen[x, y];
+                var faces = reveal ? allFaces : map.Seen[x, y];
 
-                var shape = map.wallshape[x, y];
+                var shape = map.WallShapes[x, y];
                 if (shape != WallShape.Square)
                 {
                     faces &= Diagonals.DiagonalSolidEdges(shape) | SeenFlags.DiagonalFace;   // its open edges are empty space
@@ -232,8 +232,8 @@ internal sealed class AutomapDrawing(
         {
             int dx = PushWalls.Dirs[(int)wall.Dir][0], dy = PushWalls.Dirs[(int)wall.Dir][1];
 
-            if (!reveal && map.seen[wall.X, wall.Y] == SeenFlags.None
-                        && map.seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
+            if (!reveal && map.Seen[wall.X, wall.Y] == SeenFlags.None
+                        && map.Seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
                 continue;
 
             float offset = wall.Pos / 64f;
@@ -255,7 +255,7 @@ internal sealed class AutomapDrawing(
         for (int i = 0; i < doors.LastDoorObj; i++)
         {
             var door = doors.DoorObjList[i];
-            if (!reveal && map.seen[door.TileX, door.TileY] == SeenFlags.None)
+            if (!reveal && map.Seen[door.TileX, door.TileY] == SeenFlags.None)
                 continue;
 
             // The door is solid from `position` (0 = closed .. 0xffff = open) to the far side
@@ -307,8 +307,8 @@ internal sealed class AutomapDrawing(
                 continue;
 
             int x = actor.TileX, y = actor.TileY;
-            bool seen = reveal || ((map.seen[x, y] | map.seen[x + 1, y] | map.seen[x - 1, y]
-                | map.seen[x, y + 1] | map.seen[x, y - 1]) & SeenFlags.Floor) != 0;
+            bool seen = reveal || ((map.Seen[x, y] | map.Seen[x + 1, y] | map.Seen[x - 1, y]
+                | map.Seen[x, y + 1] | map.Seen[x, y - 1]) & SeenFlags.Floor) != 0;
             if (!seen)
                 continue;
 
@@ -369,7 +369,7 @@ internal sealed class AutomapDrawing(
         if (actor is PlayerPawn || actor.IsRemoved || actor.Hidden || actor.CurrentState == null)
             return AutomapMark.None;
 
-        bool floorSeen = reveal || (map.seen[actor.TileX, actor.TileY] & SeenFlags.Floor) != 0;
+        bool floorSeen = reveal || (map.Seen[actor.TileX, actor.TileY] & SeenFlags.Floor) != 0;
 
         if (actor.ResolvedStates.ContainsKey("Chase"))
         {
@@ -558,7 +558,7 @@ internal sealed class AutomapDrawing(
         if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return true;
 
-        int tile = map.tilemap[x, y];
+        int tile = map.TileMap[x, y];
         return tile != 0 && (tile & GameConstants.BitDoor) == 0 && tile != GameConstants.BitWall;
     }
 
@@ -573,7 +573,7 @@ internal sealed class AutomapDrawing(
         if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return true;
 
-        return (Diagonals.DiagonalSolidEdges(map.wallshape[x, y]) & edge) != 0;
+        return (Diagonals.DiagonalSolidEdges(map.WallShapes[x, y]) & edge) != 0;
     }
 
     // Below this zoom (virtual pixels per tile) sprites are too small to make out, so they're drawn as dots
@@ -661,12 +661,12 @@ internal sealed class AutomapDrawing(
                 // faces its own open half.
                 bool visible = reveal
                     ? !IsAutomapWall(x - 1, y) || !IsAutomapWall(x + 1, y) || !IsAutomapWall(x, y - 1) || !IsAutomapWall(x, y + 1)
-                      || map.wallshape[x, y] != WallShape.Square
-                    : map.seen[x, y] != SeenFlags.None;
+                      || map.WallShapes[x, y] != WallShape.Square
+                    : map.Seen[x, y] != SeenFlags.None;
                 if (!visible)
                     continue;
 
-                int tile = map.tilemap[x, y];
+                int tile = map.TileMap[x, y];
                 if (!wallTextures.TryGetValue(tile, out var textures))
                     wallTextures[tile] = textures = AutomapWallTextures(mapDefs, tile);
 
@@ -680,7 +680,7 @@ internal sealed class AutomapDrawing(
         for (int i = 0; i < doors.LastDoorObj; i++)
         {
             var door = doors.DoorObjList[i];
-            if (!reveal && map.seen[door.TileX, door.TileY] == SeenFlags.None)
+            if (!reveal && map.Seen[door.TileX, door.TileY] == SeenFlags.None)
                 continue;
 
             automapDoorAt[door.TileX, door.TileY] = i + 1;
@@ -692,8 +692,8 @@ internal sealed class AutomapDrawing(
         foreach (var wall in pushWalls.MovingWalls)
         {
             int dx = PushWalls.Dirs[(int)wall.Dir][0], dy = PushWalls.Dirs[(int)wall.Dir][1];
-            if (!reveal && map.seen[wall.X, wall.Y] == SeenFlags.None
-                        && map.seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
+            if (!reveal && map.Seen[wall.X, wall.Y] == SeenFlags.None
+                        && map.Seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
                 continue;
 
             pushes.Add((wall.X + dx * wall.Pos / 64f, wall.Y + dy * wall.Pos / 64f, AutomapWallTextures(mapDefs, wall.Tile)));
@@ -720,7 +720,7 @@ internal sealed class AutomapDrawing(
                 float mx = view.CenterX + (dx * view.Cos + dy * view.Sin) / view.TileSize;
                 float my = view.CenterY + (-dx * view.Sin + dy * view.Cos) / view.TileSize;
 
-                byte* row = dest + video.ylookup[sy];
+                byte* row = dest + video.YLookup[sy];
 
                 for (int sx = view.ClipX; sx < view.ClipX + view.ClipWidth; sx++, mx += stepX, my += stepY)
                 {
@@ -762,7 +762,7 @@ internal sealed class AutomapDrawing(
         if (faces.Any)
         {
             // a diagonal wall fills only its solid half; the backdrop shows through the open one
-            var shape = map.wallshape[tx, ty];
+            var shape = map.WallShapes[tx, ty];
             if (shape != WallShape.Square && !Diagonals.InDiagonalSolid(shape, fx, fy))
                 return -1;
 
@@ -856,7 +856,7 @@ internal sealed class AutomapDrawing(
                 if (v < 0 || v >= sprite.Height)
                     continue;
 
-                byte* row = dest + video.ylookup[y];
+                byte* row = dest + video.YLookup[y];
                 int srcRow = (sprite.Top + v) * asset.Width + sprite.Left;
 
                 for (int x = x0; x < x1; x++)

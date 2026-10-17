@@ -84,8 +84,8 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
     {
         _outlets = [];
         var walls = _map.GetMapData().Walls;
-        for (int y = 0; y < _map.mapheight; y++)
-            for (int x = 0; x < _map.mapwidth; x++)
+        for (int y = 0; y < _map.MapHeight; y++)
+            for (int x = 0; x < _map.MapWidth; x++)
                 if (walls.TryGetValue(_map.MapSpot(x, y, 0), out var wall) && wall.Outlet is { Class.Length: > 0 } spec)
                 {
                     var outlet = new Outlet { X = x, Y = y, Spec = spec };
@@ -135,7 +135,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
                     break;
                 }
             }
-            if (spot is not { } tile || _map.actorat[tile.X, tile.Y] != null || _map.IsShootableActorAt(tile.X, tile.Y)
+            if (spot is not { } tile || _map.ActorAt[tile.X, tile.Y] != null || _map.IsShootableActorAt(tile.X, tile.Y)
                 || Math.Abs(session.Player.TileX - tile.X) < 2 && Math.Abs(session.Player.TileY - tile.Y) < 2)
                 continue;
 

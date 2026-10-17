@@ -75,7 +75,7 @@ internal sealed class UiText(GraphicManager graphics, FontManager fonts)
         return window;
     }
 
-    private bool _xoricursor_status = false;
+    private bool xorCursorStatus = false;
     internal void XORICursor(int x, int y, string s, int cursor, TextStyle style)
     {
         int w = TextWidth(s, style.Font);
@@ -83,7 +83,7 @@ internal sealed class UiText(GraphicManager graphics, FontManager fonts)
         // Blinks by drawing the cursor glyph in the text color, then in the background color;
         // without a shadow, outline or glow, which would reach past the line and wear away what's there
         style = style with { Shadow = FontShadow.None, Outline = FontOutline.None, Glow = FontGlow.None };
-        graphics.DrawText(x + w - 1, y, "\x80", (_xoricursor_status ^= true) ? style : style.Inverted);
+        graphics.DrawText(x + w - 1, y, "\x80", (xorCursorStatus ^= true) ? style : style.Inverted);
     }
 
     /// <summary>Black text on the white of a <see cref="CenterWindow"/></summary>

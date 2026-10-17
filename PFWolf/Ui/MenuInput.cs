@@ -46,7 +46,7 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
             GameEngineManager.DelayMs(5);
             ReadAnyControl(out ci);
         }
-        while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.dir != Direction.None);
+        while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.Dir != Direction.None);
     }
 
     int totalMousex = 0, totalMousey = 0;
@@ -72,23 +72,23 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
 
             if (totalMousey < -Sensitive)
             {
-                ci.dir = Direction.North;
+                ci.Dir = Direction.North;
                 mouseactive = 1;
             }
             else if (totalMousey > Sensitive)
             {
-                ci.dir = Direction.South;
+                ci.Dir = Direction.South;
                 mouseactive = 1;
             }
 
             if (totalMousex < -Sensitive)
             {
-                ci.dir = Direction.West;
+                ci.Dir = Direction.West;
                 mouseactive = 1;
             }
             else if (totalMousex > Sensitive)
             {
-                ci.dir = Direction.East;
+                ci.Dir = Direction.East;
                 mouseactive = 1;
             }
 
@@ -100,10 +100,10 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
 
             if (buttons != 0)
             {
-                ci.button0 = (buttons & 1) != 0;
-                ci.button1 = (buttons & 2) != 0;
-                ci.button2 = (buttons & 4) != 0;
-                ci.button3 = false;
+                ci.Button0 = (buttons & 1) != 0;
+                ci.Button1 = (buttons & 2) != 0;
+                ci.Button2 = (buttons & 4) != 0;
+                ci.Button3 = false;
                 mouseactive = 1;
             }
         }
@@ -114,22 +114,22 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
 
             input.GetJoyDelta(out jx, out jy);
             if (jy < -Sensitive)
-                ci.dir = Direction.North;
+                ci.Dir = Direction.North;
             else if (jy > Sensitive)
-                ci.dir = Direction.South;
+                ci.Dir = Direction.South;
 
             if (jx < -Sensitive)
-                ci.dir = Direction.West;
+                ci.Dir = Direction.West;
             else if (jx > Sensitive)
-                ci.dir = Direction.East;
+                ci.Dir = Direction.East;
 
             jb = input.JoyButtons();
             if (jb != 0)
             {
-                ci.button0 = (jb & 1) != 0;
-                ci.button1 = (jb & 2) != 0;
-                ci.button2 = (jb & 4) != 0;
-                ci.button3 = (jb & 8) != 0;
+                ci.Button0 = (jb & 1) != 0;
+                ci.Button1 = (jb & 2) != 0;
+                ci.Button2 = (jb & 4) != 0;
+                ci.Button3 = (jb & 8) != 0;
             }
         }
     }
@@ -146,10 +146,10 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
         {
             ReadAnyControl(out ci);
             bool keyPressed =
-               ci.button0 ||
-               ci.button1 ||
-               ci.button2 ||
-               ci.button3 ||
+               ci.Button0 ||
+               ci.Button1 ||
+               ci.Button2 ||
+               ci.Button3 ||
                input.IsKeyDown(ScanCodes.Space) ||
                input.IsKeyDown(ScanCodes.Enter) ||
                input.IsKeyDown(ScanCodes.Escape);

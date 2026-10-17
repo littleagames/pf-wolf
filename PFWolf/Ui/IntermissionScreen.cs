@@ -33,7 +33,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// line, for the level-end screens drawn over the play area
     /// </summary>
     private void ClearAboveStatusBar() =>
-        video.BarScaledCoord(0, 0, video.screenWidth,
+        video.BarScaledCoord(0, 0, video.ScreenWidth,
             video.ScreenYAboveBottom(playArea.StatusLines - 1), "VIEWCOLOR");
 
     private IntermissionAsset? intermission;
@@ -79,7 +79,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         //
         input.ClearKeysDown();
         input.StartAck();
-        bj_which = 0;
+        bjWhich = 0;
         DrawBJ();
 
         var gameInfo = engine.GetGameInfo();
@@ -132,7 +132,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                         PlayIntermissionSound(Intermission.Sounds.Tally);
                     video.Update();
                     while (audio.IsAnySoundPlaying())
-                        BJ_Breathe();
+                        BjBreathe();
                     if (input.CheckAck())
                         goto done;
                 }
@@ -141,7 +141,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
 
                 PlayIntermissionSound(Intermission.Sounds.TallyDone);
                 while (audio.IsAnySoundPlaying())
-                    BJ_Breathe();
+                    BjBreathe();
             }
 
             //
@@ -156,7 +156,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                     PlayIntermissionSound(Intermission.Sounds.Tally);
                 video.Update();
                 while (audio.IsAnySoundPlaying())
-                    BJ_Breathe();
+                    BjBreathe();
 
                 if (input.CheckAck())
                     goto done;
@@ -182,7 +182,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
 
             video.Update();
             while (audio.IsAnySoundPlaying())
-                BJ_Breathe();
+                BjBreathe();
 
             //
             // SECRET RATIO
@@ -196,7 +196,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                     PlayIntermissionSound(Intermission.Sounds.Tally);
                 video.Update();
                 while (audio.IsAnySoundPlaying())
-                    BJ_Breathe();
+                    BjBreathe();
 
                 if (input.CheckAck())
                     goto done;
@@ -221,7 +221,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                 PlayIntermissionSound(Intermission.Sounds.TallyDone);
             video.Update();
             while (audio.IsAnySoundPlaying())
-                BJ_Breathe();
+                BjBreathe();
 
             //
             // TREASURE RATIO
@@ -235,7 +235,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                     PlayIntermissionSound(Intermission.Sounds.Tally);
                 video.Update();
                 while (audio.IsAnySoundPlaying())
-                    BJ_Breathe();
+                    BjBreathe();
                 if (input.CheckAck())
                     goto done;
             }
@@ -259,7 +259,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                 PlayIntermissionSound(Intermission.Sounds.TallyDone);
             video.Update();
             while (audio.IsAnySoundPlaying())
-                BJ_Breathe();
+                BjBreathe();
 
 
             //
@@ -320,7 +320,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         lastBreathTime = (int)GameEngineManager.GetTimeCount();
         input.StartAck();
         while (!input.CheckAck())
-            BJ_Breathe();
+            BjBreathe();
 
         //
         // done
@@ -543,21 +543,21 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     // Breathe Mr. BJ!!!
     //
     // The first breath comes sooner, once per run, as in the original
-    int bj_which = 0, bj_max = 10;
-    internal void BJ_Breathe()
+    int bjWhich = 0, bjMax = 10;
+    internal void BjBreathe()
     {
         GameEngineManager.DelayMs(5);
 
         if (Intermission.Bj is not { Pics.Count: > 1 } bj)
             return;
 
-        if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bj_max)
+        if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bjMax)
         {
-            bj_which = (bj_which + 1) % bj.Pics.Count;
+            bjWhich = (bjWhich + 1) % bj.Pics.Count;
             DrawBJ();
             video.Update();
             lastBreathTime = (int)GameEngineManager.GetTimeCount();
-            bj_max = bj.BreathTics;
+            bjMax = bj.BreathTics;
         }
     }
 
@@ -565,7 +565,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     private void DrawBJ()
     {
         if (Intermission.Bj is { Pics.Count: > 0 } bj)
-            graphics.DrawPic(bj.Pics[bj_which % bj.Pics.Count], bj.X, bj.Y);
+            graphics.DrawPic(bj.Pics[bjWhich % bj.Pics.Count], bj.X, bj.Y);
     }
 
     /// <summary>The level-end screen's text style: intermission.yaml's font and color, else the intermission font's</summary>

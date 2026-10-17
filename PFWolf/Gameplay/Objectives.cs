@@ -36,7 +36,7 @@ left, A_Exit and A_SecretExit refuse with its refused message. The counts are sa
 internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
 {
     /// <summary>An objective's count (none: nothing to do)</summary>
-    internal ObjectiveCount Count(string name) => map.objectives.TryGetValue(name, out var count) ? count : new ObjectiveCount();
+    internal ObjectiveCount Count(string name) => map.ObjectiveCounts.TryGetValue(name, out var count) ? count : new ObjectiveCount();
 
     /// <summary>
     /// Counts the level's objectives as it starts afresh: its switches' and actors' (the actors
@@ -44,7 +44,7 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
     /// </summary>
     internal void CountLevel(bool announce)
     {
-        map.objectives.Clear();
+        map.ObjectiveCounts.Clear();
         foreach (var sw in hooks.Switches())
             if (sw.Objective is { Length: > 0 } name)
                 Add(name, 1);
@@ -54,7 +54,7 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
 
         if (!announce)
             return;
-        foreach (var (name, count) in map.objectives)
+        foreach (var (name, count) in map.ObjectiveCounts)
             if (Info(name) is { Start: { Length: > 0 } start } info && count.Total >= Math.Max(info.StartFrom, 1))
                 hooks.ShowMessage(Format(start, count.Total));
     }
@@ -65,8 +65,8 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
         if (string.IsNullOrWhiteSpace(name) || amount <= 0)
             return;
         name = name.Trim();
-        if (!map.objectives.TryGetValue(name, out var count))
-            map.objectives[name] = count = new ObjectiveCount();
+        if (!map.ObjectiveCounts.TryGetValue(name, out var count))
+            map.ObjectiveCounts[name] = count = new ObjectiveCount();
         count.Total += amount;
     }
 
@@ -76,8 +76,8 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
         if (string.IsNullOrWhiteSpace(name) || amount <= 0)
             return;
         name = name.Trim();
-        if (!map.objectives.TryGetValue(name, out var count))
-            map.objectives[name] = count = new ObjectiveCount();
+        if (!map.ObjectiveCounts.TryGetValue(name, out var count))
+            map.ObjectiveCounts[name] = count = new ObjectiveCount();
         if (count.Total > 0 && count.Done >= count.Total)
             return;                 // all done already
         count.Done += amount;
@@ -107,7 +107,7 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
     /// </summary>
     internal bool ExitAllowed()
     {
-        foreach (var (name, count) in map.objectives)
+        foreach (var (name, count) in map.ObjectiveCounts)
         {
             if (count.Left == 0 || Info(name) is not { BlocksExit: true } info)
                 continue;
@@ -120,7 +120,7 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
 
     /// <summary>The automap's stats lines for the level's objectives</summary>
     internal IEnumerable<string> StatsLines() =>
-        map.objectives.Where(o => o.Value.Total > 0 && Info(o.Key)?.Stats is { Length: > 0 })
+        map.ObjectiveCounts.Where(o => o.Value.Total > 0 && Info(o.Key)?.Stats is { Length: > 0 })
             .Select(o => Format(Info(o.Key)!.Stats!, o.Value.Done, o.Value.Total));
 
     /// <summary>A_JumpIfObjectiveDone("name", "State"): the actor goes there once all of it's done</summary>

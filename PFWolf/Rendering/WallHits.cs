@@ -51,7 +51,7 @@ internal sealed class WallHits(
             //
             // check for adjacent doors
             //
-            var doortile = map.tilemap[render.XTile - render.XTileStep, render.YIntTile];
+            var doortile = map.TileMap[render.XTile - render.XTileStep, render.YIntTile];
             mapDefs?.Walls.TryGetValue((render.TileHit & ~GameConstants.BitWall), out mapTexture);
             if ((doortile & GameConstants.BitDoor) != 0)
             {
@@ -147,7 +147,7 @@ internal sealed class WallHits(
             //
             // check for adjacent doors
             //
-            var doortile = map.tilemap[render.XIntTile, render.YTile - render.YTileStep];
+            var doortile = map.TileMap[render.XIntTile, render.YTile - render.YTileStep];
             mapDefs?.Walls.TryGetValue((render.TileHit & ~GameConstants.BitWall), out mapTexture);
             if ((doortile & GameConstants.BitDoor) != 0)
             {
@@ -260,7 +260,7 @@ internal sealed class WallHits(
     /// </summary>
     internal TextureAsset? WorldTexture(string name, int tilex, int tiley)
         => assets.Find<TextureAsset>(map.ChangedTexture(tilex, tiley, name), session.GameState.TimeCount,
-            map.animstart[(tiley << MapManager.MapShift) + tilex]);
+            map.AnimStart[(tiley << MapManager.MapShift) + tilex]);
 
 
     /// <summary>
@@ -314,7 +314,7 @@ internal sealed class WallHits(
     internal TextureAsset? WallTexture(int tilex, int tiley, string face, out bool mirrored)
     {
         mirrored = false;
-        var tile = map.tilemap[tilex, tiley];
+        var tile = map.TileMap[tilex, tiley];
         if ((tile & GameConstants.BitDoor) != 0 || (tile & ~GameConstants.BitWall) == 0)
             return null;                // open floor, a door or a pushwall
 
@@ -365,7 +365,7 @@ internal sealed class WallHits(
     /// </summary>
     internal void NoteFocalLintel(int xstep, int ystep)
     {
-        var door = doors.DoorObjList[map.tilemap[render.FocalTx, render.FocalTy] & ~GameConstants.BitDoor];
+        var door = doors.DoorObjList[map.TileMap[render.FocalTx, render.FocalTy] & ~GameConstants.BitDoor];
         const int HALFTILE = (int)MapConstants.TileGlobal / 2;
 
         if (door.Vertical)

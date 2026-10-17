@@ -11,7 +11,7 @@ namespace PFWolf.Ui;
 internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, AssetManager assets, FontManager fonts,
     GameEngineManager engine, UiText ui, Func<GameInfoSettings> settings)
 {
-    static readonly string[] color_hlite =
+    static readonly string[] colorHlite =
     {
         "DEACTIVE",
         "HIGHLIGHT",
@@ -19,7 +19,7 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
         "Green" // 4 165 0 (used for disabled episodes)
     };
 
-    static readonly string[] color_norml =
+    static readonly string[] colorNorml =
     {
         "DEACTIVE",
         "TEXTCOLOR",
@@ -60,23 +60,23 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
 
     internal void DrawMenu(ControlPanelMenuInfo item_i, ControlPanelItem[] items)
     {
-        int which = item_i.curpos;
+        int which = item_i.CurPos;
 
-        for (int i = 0; i < item_i.amount; i++)
-            PrintMenuItem(item_i, items, i, items[i].active > 0 ? MenuItemColor(items[i], which == i) : "DEACTIVE");
+        for (int i = 0; i < item_i.Amount; i++)
+            PrintMenuItem(item_i, items, i, items[i].Active > 0 ? MenuItemColor(items[i], which == i) : "DEACTIVE");
     }
 
     /// <summary>An item's text in its row; a newline in it goes on under the start of the text</summary>
     internal void PrintMenuItem(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int which, string color)
-        => ui.TextAt(item_i.x + item_i.indent, MenuItemY(item_i, which), MenuItemStyle(item_i, color)).Print(items[which].text);
+        => ui.TextAt(item_i.X + item_i.Indent, MenuItemY(item_i, which), MenuItemStyle(item_i, color)).Print(items[which].Text);
 
     /// <summary>The top of an item's row</summary>
-    internal static int MenuItemY(ControlPanelMenuInfo item_i, int which) => item_i.y + which * item_i.rowHeight;
+    internal static int MenuItemY(ControlPanelMenuInfo item_i, int which) => item_i.Y + which * item_i.RowHeight;
 
     /// <summary>The menu's text style for its items: its font and shadow (menudef font, item-shadow)</summary>
     internal TextStyle MenuItemStyle(ControlPanelMenuInfo item_i, string color)
-        => new(item_i.font ?? UiFonts.MenuFont, color,
-            Shadow: item_i.itemShadow is { } shadow ? new FontShadow(1, 1, shadow) : null);
+        => new(item_i.Font ?? UiFonts.MenuFont, color,
+            Shadow: item_i.ItemShadow is { } shadow ? new FontShadow(1, 1, shadow) : null);
 
     /// <summary>
     /// Draws or erases a menu's highlight bar (menudef cursor) behind the item, printing the item
@@ -84,15 +84,15 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     /// </summary>
     internal void DrawMenuBar(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int which, bool on)
     {
-        var bar = item_i.cursor!;
+        var bar = item_i.Cursor!;
         video.Bar(bar.X, MenuItemY(item_i, which) + bar.YOffset, bar.Width, bar.Height, on ? bar.Color : bar.EraseColor);
         PrintMenuItem(item_i, items, which, MenuItemColor(items[which], on));
-        if (items[which].checkbox is bool checkedOn)
+        if (items[which].CheckBox is bool checkedOn)
             DrawMenuCheckbox(item_i, which, checkedOn, highlighted: on);
     }
 
     internal static string MenuItemColor(ControlPanelItem item, bool hlight)
-        => hlight ? color_hlite[item.active] : color_norml[item.active];
+        => hlight ? colorHlite[item.Active] : colorNorml[item.Active];
 
     internal const int MenuSliderWidth = 88;
     internal const int MenuSliderOffset = 120; // from the start of the row's text, clear of "Sound Volume"; choices use it too
@@ -101,13 +101,13 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     // a track with a highlighted knob at the current value (0 to max).
     internal void DrawMenuSlider(ControlPanelMenuInfo iteminfo, ControlPanelItem[] items, string id, int value, int max)
     {
-        int index = Array.FindIndex(items, item => item.id == id);
+        int index = Array.FindIndex(items, item => item.Id == id);
         if (index < 0)
             return;
 
         int knobWidth = MenuSliderWidth / (max + 1);
-        int x = iteminfo.x + iteminfo.indent + MenuSliderOffset;
-        int y = iteminfo.y + index * iteminfo.rowHeight + 2;
+        int x = iteminfo.X + iteminfo.Indent + MenuSliderOffset;
+        int y = iteminfo.Y + index * iteminfo.RowHeight + 2;
         video.Bar(x, y, knobWidth * (max + 1), 9, "TEXTCOLOR");
         DrawOutline(x, y, knobWidth * (max + 1), 9, "Black", "HIGHLIGHT");
         DrawOutline(x + knobWidth * value, y, knobWidth, 9, "Black", "READCOLOR");
@@ -119,13 +119,13 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     // A ChoiceMenuItem's current value, in the same column as the sliders. Greyed out with the row.
     internal void DrawMenuChoice(ControlPanelMenuInfo iteminfo, ControlPanelItem[] items, string id, string value)
     {
-        int index = Array.FindIndex(items, item => item.id == id);
+        int index = Array.FindIndex(items, item => item.Id == id);
         if (index < 0)
             return;
 
-        int x = iteminfo.x + iteminfo.indent + MenuSliderOffset;
-        int y = iteminfo.y + index * iteminfo.rowHeight;
-        video.Bar(x, y, MenuChoiceWidth, iteminfo.rowHeight, "BKGDCOLOR");
+        int x = iteminfo.X + iteminfo.Indent + MenuSliderOffset;
+        int y = iteminfo.Y + index * iteminfo.RowHeight;
+        video.Bar(x, y, MenuChoiceWidth, iteminfo.RowHeight, "BKGDCOLOR");
 
         ui.TextAt(x, y, MenuItemStyle(iteminfo, MenuItemColor(items[index], false))).Print(value);
     }
@@ -146,10 +146,10 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     // The on/off box to the left of a ToggleMenuItem's text
     internal void DrawMenuCheckbox(ControlPanelMenuInfo iteminfo, ControlPanelItem[] items, string id, bool on)
     {
-        int index = Array.FindIndex(items, item => item.id == id);
+        int index = Array.FindIndex(items, item => item.Id == id);
         if (index >= 0)
         {
-            items[index].checkbox = on;
+            items[index].CheckBox = on;
             DrawMenuCheckbox(iteminfo, index, on);
         }
     }
@@ -157,8 +157,8 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     /// <param name="highlighted">Under a highlight bar: the pack's c_selected_hi / c_notselected_hi, when it has them</param>
     internal void DrawMenuCheckbox(ControlPanelMenuInfo iteminfo, int index, bool on, bool highlighted = false)
     {
-        int x = iteminfo.x + iteminfo.indent + iteminfo.checkboxX;
-        int y = iteminfo.y + index * iteminfo.rowHeight + iteminfo.checkboxY;
+        int x = iteminfo.X + iteminfo.Indent + iteminfo.CheckboxX;
+        int y = iteminfo.Y + index * iteminfo.RowHeight + iteminfo.CheckboxY;
         var pic = on ? "c_selected" : "c_notselected";
         if (highlighted && assets.Exists<GraphicAsset>(pic + "_hi"))
             pic += "_hi";
@@ -170,11 +170,11 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
         int x, y;
 
         // A highlight bar goes on with its item's text when HandleMenu starts
-        if (iteminfo.cursor != null)
+        if (iteminfo.Cursor != null)
             return;
 
-        x = iteminfo.x & -8;    // same column HandleMenu draws and erases the gun in
-        y = iteminfo.y + iteminfo.curpos * iteminfo.rowHeight - 2;
+        x = iteminfo.X & -8;    // same column HandleMenu draws and erases the gun in
+        y = iteminfo.Y + iteminfo.CurPos * iteminfo.RowHeight - 2;
         graphics.DrawPic("c_cursor1", x, y);
     }
 

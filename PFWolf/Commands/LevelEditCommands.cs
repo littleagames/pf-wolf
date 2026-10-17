@@ -64,7 +64,7 @@ internal sealed class LevelEditCommands(
 
         map.SetWallStories(x, y, stories);
         console.Print(stories == 0
-            ? $"Tile {x},{y} is back to the level's height ({map.wallstories})"
+            ? $"Tile {x},{y} is back to the level's height ({map.LevelWallStories})"
             : $"Tile {x},{y} is now {stories} {(stories == 1 ? "story" : "stories")} tall");
     }
 
@@ -101,7 +101,7 @@ internal sealed class LevelEditCommands(
         if (args.Length > 0)
         {
             var patch = (byte)ParseInt(args[0], 0, 255);
-            int tile = map.tilemap[x, y];
+            int tile = map.TileMap[x, y];
             if (patch != 0 && ((tile & GameConstants.BitDoor) != 0 || (tile & ~GameConstants.BitWall) == 0))
                 throw new ArgumentException($"Tile {x},{y} isn't a wall: patches go on walls only");
             map.SetPatch(x, y, patch);
@@ -221,8 +221,8 @@ internal sealed class LevelEditCommands(
     internal void WallHeightCommand(string[] args)
     {
         if (args.Length > 0)
-            map.wallstories = ParseInt(args[0], 1, GameConstants.MaxWallStories);
-        console.Print($"Walls are {map.wallstories} {(map.wallstories == 1 ? "story" : "stories")} tall");
+            map.LevelWallStories = ParseInt(args[0], 1, GameConstants.MaxWallStories);
+        console.Print($"Walls are {map.LevelWallStories} {(map.LevelWallStories == 1 ? "story" : "stories")} tall");
     }
 
     internal void SkyCommand(string[] args)

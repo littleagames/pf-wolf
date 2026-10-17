@@ -8,8 +8,8 @@ namespace PFWolf.Gameplay;
 /// <param name="wallSpriteBlocks">Whether a wall sprite's panel crosses the line between two points (global coordinates)</param>
 internal sealed class LineOfSight(MapManager map, Doors doors, GameSession session, Func<long, long, long, long, bool> wallSpriteBlocks)
 {
-    // A diagonal step is blocked by a wall/door (actorat[,]) or by a living actor marked on the tile.
-    internal bool CheckDiag(int x, int y) => map.actorat[x, y] switch
+    // A diagonal step is blocked by a wall/door (ActorAt[,]) or by a living actor marked on the tile.
+    internal bool CheckDiag(int x, int y) => map.ActorAt[x, y] switch
     {
         null => true,
         ActorMark mark => !Managers.MapManager.IsSolidActor(mark.Who),
@@ -99,8 +99,8 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 y = yfrac >> 8;
                 yfrac += ystep;
 
-                value = (uint)map.tilemap[x, y];
-                var shape = map.wallshape[x, y];
+                value = (uint)map.TileMap[x, y];
+                var shape = map.WallShapes[x, y];
                 if (shape != WallShape.Square && Diagonals.LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
                     return false;
                 x += xstep;
@@ -153,8 +153,8 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 x = xfrac >> 8;
                 xfrac += xstep;
 
-                value = (uint)map.tilemap[x, y];
-                var shape = map.wallshape[x, y];
+                value = (uint)map.TileMap[x, y];
+                var shape = map.WallShapes[x, y];
                 if (shape != WallShape.Square && Diagonals.LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
                     return false;
                 y += ystep;

@@ -27,13 +27,13 @@ internal sealed class ViewSetup(
     internal void NewViewSize(int width)
     {
         width = AllowedViewSize(width);
-        settings.viewsize = width;
-        if (settings.viewsize == 21)
-            SetViewSize((uint)video.screenWidth, (uint)video.screenHeight);
-        else if (settings.viewsize == 20)
-            SetViewSize((uint)video.screenWidth, (uint)screenArea.PlayAreaHeight);
+        settings.ViewSize = width;
+        if (settings.ViewSize == 21)
+            SetViewSize((uint)video.ScreenWidth, (uint)video.ScreenHeight);
+        else if (settings.ViewSize == 20)
+            SetViewSize((uint)video.ScreenWidth, (uint)screenArea.PlayAreaHeight);
         else
-            SetViewSize((uint)(width * 16 * video.screenWidth / 320), (uint)BorderedViewHeight(width));
+            SetViewSize((uint)(width * 16 * video.ScreenWidth / 320), (uint)BorderedViewHeight(width));
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ internal sealed class ViewSetup(
     /// </summary>
     internal int BorderedViewHeight(int width)
     {
-        int height = (int)(width * 16 * GameConstants.HeightRatio * video.screenHeight / 200);
+        int height = (int)(width * 16 * GameConstants.HeightRatio * video.ScreenHeight / 200);
         int room = screenArea.PlayAreaHeight - video.ToScreenLength(2);
         return Math.Min(height, room);
     }
@@ -56,13 +56,13 @@ internal sealed class ViewSetup(
         render.CenterY = render.BaseCenterY = (short)(render.ViewHeight / 2);
         render.ProjectionWidth = ProjectionWidth(render.ViewWidth, render.ViewHeight);
         render.ShootDelta = render.ProjectionWidth / 10;               // the same angle either side, however wide the view
-        if (render.ViewHeight == video.screenHeight)
+        if (render.ViewHeight == video.ScreenHeight)
             render.ViewScreenX = render.ViewScreenY = (int)(render.ScreenOfs = 0);
         else
         {
-            render.ViewScreenX = (video.screenWidth - render.ViewWidth) / 2;
+            render.ViewScreenX = (video.ScreenWidth - render.ViewWidth) / 2;
             render.ViewScreenY = screenArea.PlayAreaTop + (screenArea.PlayAreaHeight - render.ViewHeight) / 2;
-            render.ScreenOfs = (uint)(render.ViewScreenY * video.screenWidth + render.ViewScreenX);
+            render.ScreenOfs = (uint)(render.ViewScreenY * video.ScreenWidth + render.ViewScreenX);
         }
 
         //
@@ -149,7 +149,7 @@ internal sealed class ViewSetup(
     {
         // SetViewSize rounds the height down to even, so allow for the line that may lose:
         // otherwise a classic layout could come out a hair too wide and change
-        int classicWidth = (int)Math.Ceiling((height + 1) * ClassicViewAspect(settings.viewsize) - 1e-9);
+        int classicWidth = (int)Math.Ceiling((height + 1) * ClassicViewAspect(settings.ViewSize) - 1e-9);
         return Math.Max(1, Math.Min(width, classicWidth));
     }
 
@@ -176,19 +176,19 @@ internal sealed class ViewSetup(
 
         if (width == 21)
         {
-            render.ViewWidth = video.screenWidth;
-            render.ViewHeight = video.screenHeight;
-            video.BarScaledCoord(0, 0, video.screenWidth, video.screenHeight, "Black");
+            render.ViewWidth = video.ScreenWidth;
+            render.ViewHeight = video.ScreenHeight;
+            video.BarScaledCoord(0, 0, video.ScreenWidth, video.ScreenHeight, "Black");
         }
         else if (width == 20)
         {
-            render.ViewWidth = video.screenWidth;
+            render.ViewWidth = video.ScreenWidth;
             render.ViewHeight = screenArea.PlayAreaHeight;
             playScreen.DrawPlayBorder();
         }
         else
         {
-            render.ViewWidth = width * 16 * video.screenWidth / 320;
+            render.ViewWidth = width * 16 * video.ScreenWidth / 320;
             render.ViewHeight = BorderedViewHeight(width);
             playScreen.DrawPlayBorder();
         }

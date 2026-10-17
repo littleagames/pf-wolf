@@ -22,27 +22,27 @@ internal static partial class GameHost
 
 =============================================================================
 */
-    internal static GameState gamestate { get => session.GameState; set => session.GameState = value; }
-    static string bordercol { get => session.BorderCol; set => session.BorderCol = value; } // color of the Change View/Ingame border
+    internal static GameState GameState { get => Session.GameState; set => Session.GameState = value; }
+    static string BorderCol { get => Session.BorderCol; set => Session.BorderCol = value; } // color of the Change View/Ingame border
 
     // The game from its first level to its end (Gameplay/MainGameLoop.cs)
     static MainGameLoop mainGameLoop = null!;       // made in InitServices
 
-    static MainGameLoop MakeMainGameLoop() => new(_gameEngineManager, _assetManager, _videoManager, _audioManager, _inputManager,
-        _inventoryManager, statusBarDrawing, playScreen, levelMusic, levelLoop, playerMovement, playerDeath, demos, deathmatch, scoreboard,
-        netPlay, gameScripts, hubs, controlPanel, intermissionScreen, highScoresScreen, textPresenter, moviePlayer, session,
-        settings, new MainGameLoopHooks(on => autosavePending = on, EnterLevel, LeaveLevel,
+    static MainGameLoop MakeMainGameLoop() => new(GameEngineManager, AssetManager, _videoManager, AudioManager, _inputManager,
+        InventoryManager, statusBarDrawing, playScreen, levelMusic, levelLoop, playerMovement, playerDeath, demos, deathmatch, scoreboard,
+        netPlay, gameScripts, hubs, controlPanel, intermissionScreen, highScoresScreen, textPresenter, moviePlayer, Session,
+        Settings, new MainGameLoopHooks(on => AutosavePending = on, EnterLevel, LeaveLevel,
             MarkLevelStart, ApplyPendingWarpStart, AlignPlayerInElevator, ShowLevelStartMessage, name => articleReader.ShowText(name),
             LevelWon));
 
-    static PendingMapChange? pendingMapChange { get => mainGameLoop.PendingMapChange; set => mainGameLoop.PendingMapChange = value; }
+    static PendingMapChange? PendingMapChange { get => mainGameLoop.PendingMapChange; set => mainGameLoop.PendingMapChange = value; }
 
     // Demos: played, recorded and asked for from the console (Gameplay/Demos.cs)
     static Demos demos = null!;     // made in InitServices
 
-    static Demos MakeDemos() => new(_assetManager, _gameEngineManager, _videoManager, _audioManager, ui, lineInput, demoBuffer, levelMusic, levelLoop,
-        session, new DemosHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), () => DemoSkill, DrawPlayScreen,
-            SetupGameLevel, RunLevelHooks, () => demoTesting,
+    static Demos MakeDemos() => new(AssetManager, GameEngineManager, _videoManager, AudioManager, ui, lineInput, DemoBuffer, levelMusic, levelLoop,
+        Session, new DemosHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), () => DemoSkill, DrawPlayScreen,
+            SetupGameLevel, RunLevelHooks, () => DemoTesting,
             DemoTestReport, () => IntroSong));
 
     internal static void PlayDemo(int demonumber) => demos.PlayDemo(demonumber);
@@ -52,15 +52,15 @@ internal static partial class GameHost
     static DemoCommands demoCommands = null!;       // made in InitServices
 
     /// <summary>Set while demotest runs: demos play without waiting, and each prints its report as it ends</summary>
-    internal static bool demoTesting { get => demoCommands.demoTesting; set => demoCommands.demoTesting = value; }
+    internal static bool DemoTesting { get => demoCommands.DemoTesting; set => demoCommands.DemoTesting = value; }
     internal static string DemoTestReport(int demonumber) => demoCommands.DemoTestReport(demonumber);
 
     // The screen around the view: status bar, border and "get psyched" (Ui/PlayScreen.cs)
     static PlayScreen playScreen = null!;       // made in InitServices
 
-    static PlayScreen MakePlayScreen() => new(_assetManager, _gameEngineManager, _videoManager, _graphicManager, _inputManager,
-        statusBarDrawing, playerWeapons, radar, render, playArea,
-        settings, session, new PlayScreenHooks(PresenterMessageBox));
+    static PlayScreen MakePlayScreen() => new(AssetManager, GameEngineManager, _videoManager, _graphicManager, _inputManager,
+        statusBarDrawing, playerWeapons, radar, Render, playArea,
+        Settings, Session, new PlayScreenHooks(PresenterMessageBox));
 
     internal static void DrawPlayScreen() => playScreen.DrawPlayScreen();
     internal static void DrawPlayBorder() => playScreen.DrawPlayBorder();
@@ -72,30 +72,30 @@ internal static partial class GameHost
     // Setting up a level to play (Gameplay/LevelSetup.cs)
     static LevelSetup levelSetup = null!;       // made in InitServices
 
-    static LevelSetup MakeLevelSetup() => new(_gameEngineManager, _mapManager, render, skyAndFlats, weather, lighting, doors, pushWalls,
-        deathmatch, playersManager, playerClassRules, levelLoop, weaponBob, levelAI, session,
+    static LevelSetup MakeLevelSetup() => new(GameEngineManager, MapManager, Render, skyAndFlats, weather, lighting, doors, pushWalls,
+        deathmatch, playersManager, playerClassRules, levelLoop, WeaponBob, LevelAI, Session,
         new LevelSetupHooks(() => CurrentSkill,
-            loadout => mapLoadouts.Apply(loadout), () => objectives.CountLevel(announce: !demoplayback && !demorecord)));
+            loadout => MapLoadouts.Apply(loadout), () => Objectives.CountLevel(announce: !DemoPlayback && !DemoRecord)));
 
     // Level objectives (Gameplay/Objectives.cs): sabotage targets, goal enemies
     static Objectives? _objectives;
-    static Objectives objectives => _objectives ??= new Objectives(_mapManager, new ObjectiveHooks(
-        () => _gameEngineManager.GetGameInfo().Objectives,
-        text => _hudMessageManager.Localize(text),
-        message => _hudMessageManager.Show(HudMessageKind.Lock, message),
+    static Objectives Objectives => _objectives ??= new Objectives(MapManager, new ObjectiveHooks(
+        () => GameEngineManager.GetGameInfo().Objectives,
+        text => HudMessageManager.Localize(text),
+        message => HudMessageManager.Show(HudMessageKind.Lock, message),
         LevelSwitches));
 
     // What the player has unlocked, from game to game (Gameplay/Unlocks.cs): starts-locked episodes
     static Unlocks? _unlocks;
-    internal static Unlocks unlocks => _unlocks ??= new Unlocks(() => _gameEngineManager.GetConfigFilePath(Unlocks.FileName),
-        () => _gameEngineManager.GetGameInfo());
+    internal static Unlocks Unlocks => _unlocks ??= new Unlocks(() => GameEngineManager.GetConfigFilePath(Unlocks.FileName),
+        () => GameEngineManager.GetGameInfo());
 
     /// <summary>A_Unlock, game.unlock: unlocks a name, but not while a demo plays back</summary>
-    internal static bool Unlock(string name) => !demoplayback && unlocks.Unlock(name);
+    internal static bool Unlock(string name) => !DemoPlayback && Unlocks.Unlock(name);
 
     // The best done on each map, from game to game (Gameplay/LevelRecords.cs)
     static LevelRecords? _levelRecords;
-    internal static LevelRecords levelRecords => _levelRecords ??= new LevelRecords(() => _gameEngineManager.GetConfigFilePath(LevelRecords.FileName));
+    internal static LevelRecords LevelRecords => _levelRecords ??= new LevelRecords(() => GameEngineManager.GetConfigFilePath(LevelRecords.FileName));
 
     /// <summary>
     /// A level's finished, before its tally: its record is bettered and the scripts' level-end
@@ -103,10 +103,10 @@ internal static partial class GameHost
     /// </summary>
     static void LevelWon(PlayState how)
     {
-        if (demoplayback || gamestate.MapOn is not { Length: > 0 } map)
+        if (DemoPlayback || GameState.MapOn is not { Length: > 0 } map)
             return;
         var result = CurrentLevelResult(map);
-        levelRecords.Record(map, result);
+        LevelRecords.Record(map, result);
         gameScripts.RunLevelEndHooks(map, result, how switch
         {
             PlayState.SecretLevel => "secret",
@@ -118,33 +118,33 @@ internal static partial class GameHost
     /// <summary>What the level being played has come to so far</summary>
     internal static LevelResult CurrentLevelResult(string map)
     {
-        int par = _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.ParTime : 0;
+        int par = GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.ParTime : 0;
         return new LevelResult
         {
-            Kills = gamestate.KillCount, KillTotal = gamestate.KillTotal,
-            Secrets = gamestate.SecretCount, SecretTotal = gamestate.SecretTotal,
-            Items = gamestate.TreasureCount, ItemTotal = gamestate.TreasureTotal,
-            Time = gamestate.TimeCount,
+            Kills = GameState.KillCount, KillTotal = GameState.KillTotal,
+            Secrets = GameState.SecretCount, SecretTotal = GameState.SecretTotal,
+            Items = GameState.TreasureCount, ItemTotal = GameState.TreasureTotal,
+            Time = GameState.TimeCount,
             Par = par,
-            UnderPar = par > 0 && gamestate.TimeCount < par * 70,
-            Undetected = session.PlayerState.Undetected,
-            StealthKills = session.PlayerState.StealthKills,
-            Objectives = _mapManager.objectives.ToDictionary(o => o.Key, o => (o.Value.Done, o.Value.Total), StringComparer.OrdinalIgnoreCase),
+            UnderPar = par > 0 && GameState.TimeCount < par * 70,
+            Undetected = Session.PlayerState.Undetected,
+            StealthKills = Session.PlayerState.StealthKills,
+            Objectives = MapManager.ObjectiveCounts.ToDictionary(o => o.Key, o => (o.Value.Done, o.Value.Total), StringComparer.OrdinalIgnoreCase),
         };
     }
 
     // Every switch on the level: its switch walls' and its patches'
     static IEnumerable<MapSwitchTranslation> LevelSwitches()
     {
-        var data = _mapManager.GetMapData();
-        for (int y = 0; y < _mapManager.mapheight; y++)
-            for (int x = 0; x < _mapManager.mapwidth; x++)
+        var data = MapManager.GetMapData();
+        for (int y = 0; y < MapManager.MapHeight; y++)
+            for (int x = 0; x < MapManager.MapWidth; x++)
             {
-                int tile = _mapManager.tilemap[x, y];
+                int tile = MapManager.TileMap[x, y];
                 if (tile != 0 && (tile & GameConstants.BitDoor) == 0
                     && data.Walls.TryGetValue(tile & ~GameConstants.BitWall, out var wall) && wall.Switch is { } wallSwitch)
                     yield return wallSwitch;
-                if (_mapManager.GetPatch(x, y) is var patch and > 0 && data.Patches.TryGetValue(patch, out var patchDef)
+                if (MapManager.GetPatch(x, y) is var patch and > 0 && data.Patches.TryGetValue(patch, out var patchDef)
                     && patchDef.Switch is { } patchSwitch)
                     yield return patchSwitch;
             }
@@ -152,48 +152,48 @@ internal static partial class GameHost
 
     // A map's starting loadout (Gameplay/MapLoadouts.cs)
     static MapLoadouts? _mapLoadouts;
-    static MapLoadouts mapLoadouts => _mapLoadouts ??= new MapLoadouts(_inventoryManager, playerWeapons, session);
+    static MapLoadouts MapLoadouts => _mapLoadouts ??= new MapLoadouts(InventoryManager, playerWeapons, Session);
 
     internal static void SetupGameLevel() => levelSetup.SetupGameLevel();
 
     // A player's death, and the death cam (Gameplay/PlayerDeath.cs)
     static PlayerDeath playerDeath = null!;     // made in InitServices
 
-    static PlayerDeath MakePlayerDeath() => new(_assetManager, _gameEngineManager, _videoManager, _inputManager, _audioManager,
-        _inventoryManager, _hudMessageManager, _mapManager, ui, frameRefresh, render, playerClassRules, playerStats, playerWeapons,
-        statusBarDrawing, pushWalls, projectiles, playScreen, intermissionScreen, session, playArea,
-        settings, new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, () => levelEntry.LevelStartItems()));
+    static PlayerDeath MakePlayerDeath() => new(AssetManager, GameEngineManager, _videoManager, _inputManager, AudioManager,
+        InventoryManager, HudMessageManager, MapManager, ui, frameRefresh, Render, playerClassRules, playerStats, playerWeapons,
+        statusBarDrawing, pushWalls, projectiles, playScreen, intermissionScreen, Session, playArea,
+        Settings, new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, () => levelEntry.LevelStartItems()));
 
     internal static void StartDeathCam(Entities.Actors.Actor ob) => playerDeath.StartDeathCam(ob);
     internal static void ThinkDeathCam(Entities.Actors.Actor ob) => playerDeath.ThinkDeathCam(ob);
-    static Entities.Actors.Actor? deathCamSprite => playerDeath.DeathCamSprite;
+    static Entities.Actors.Actor? DeathCamSprite => playerDeath.DeathCamSprite;
 
     // ==== WL_PLAY ================================================================================
 
-    internal static bool madenoise { get => session.MadeNoise; set => session.MadeNoise = value; }  // true when shooting or screaming
+    internal static bool MadeNoise { get => Session.MadeNoise; set => Session.MadeNoise = value; }  // true when shooting or screaming
 
-    internal static PlayState playstate { get => session.PlayState; set => session.PlayState = value; }
+    internal static PlayState PlayState { get => Session.PlayState; set => Session.PlayState = value; }
 
-    internal static int DebugOk { get => session.DebugOk; set => session.DebugOk = value; }
+    internal static int DebugOk { get => Session.DebugOk; set => Session.DebugOk = value; }
 
     // The acting player's pawn and controls, and this frame's tics (Gameplay/GameSession.cs)
-    internal static Entities.Actors.PlayerPawn player => session.Player;
+    internal static Entities.Actors.PlayerPawn Player => Session.Player;
 
     //
     // control info
     //
-    internal static bool mouseenabled { get => controlSettings.mouseenabled; set => controlSettings.mouseenabled = value; }
-    internal static bool joystickenabled { get => controlSettings.joystickenabled; set => controlSettings.joystickenabled = value; }
+    internal static bool MouseEnabled { get => ControlSettings.MouseEnabled; set => ControlSettings.MouseEnabled = value; }
+    internal static bool JoystickEnabled { get => ControlSettings.JoystickEnabled; set => ControlSettings.JoystickEnabled = value; }
 
     // The keys, mouse buttons and joystick buttons bound to each button and automap key (Configuration/GameSettings.cs)
-    internal static ControlBindings controls => settings.controls;
+    internal static ControlBindings Controls => Settings.Controls;
 
-    internal static int viewsize { get => settings.viewsize; set => settings.viewsize = value; }
+    internal static int ViewSize { get => Settings.ViewSize; set => Settings.ViewSize = value; }
 
-    internal static bool demorecord { get => session.DemoRecord; set => session.DemoRecord = value; }
-    internal static bool demoplayback { get => session.DemoPlayback; set => session.DemoPlayback = value; }
+    internal static bool DemoRecord { get => Session.DemoRecord; set => Session.DemoRecord = value; }
+    internal static bool DemoPlayback { get => Session.DemoPlayback; set => Session.DemoPlayback = value; }
     // A demo's controls (Gameplay/DemoBuffer.cs)
-    internal static readonly DemoBuffer demoBuffer = new();
+    internal static readonly DemoBuffer DemoBuffer = new();
 
     //
     // current user input: gathered each frame by PollControls into LocalCmd, which is all the
@@ -201,14 +201,14 @@ internal static partial class GameHost
     //
     static InputPolling inputPolling = null!;       // made in InitServices
 
-    static InputPolling MakeInputPolling() => new(_inputManager, _consoleManager, _automapManager, controls, controlSettings,
-        frameRefresh, demoBuffer, session,
-        new InputPollingHooks(() => netChatting, () => netLeavePrompt, () => demoTesting, RouteMovementToAutomap));
+    static InputPolling MakeInputPolling() => new(_inputManager, _consoleManager, _automapManager, Controls, ControlSettings,
+        frameRefresh, DemoBuffer, Session,
+        new InputPollingHooks(() => NetChatting, () => NetLeavePrompt, () => DemoTesting, RouteMovementToAutomap));
 
-    static TicCmd localcmd => inputPolling.LocalCmd;
+    static TicCmd LocalCmd => inputPolling.LocalCmd;
 
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
-    internal static ControlSettings controlSettings => settings.controlSettings;
+    internal static ControlSettings ControlSettings => Settings.ControlSettings;
 
     /*
     =============================================================================
@@ -224,29 +224,29 @@ internal static partial class GameHost
     // The keys during play (Ui/PlayKeys.cs)
     static PlayKeys playKeys = null!;       // made in InitServices
 
-    static PlayKeys MakePlayKeys() => new(_assetManager, _videoManager, _inputManager, _audioManager, _graphicManager, _gameEngineManager,
-        _consoleManager, _automapManager, _inventoryManager, menuDrawing, inputPolling, statusBarDrawing, playerWeapons, playerClassRules,
-        levelMusic, frameRefresh, session,
-        settings, new PlayKeysHooks(() => netChatting, NetChatKeys, NetCheckKeys,
+    static PlayKeys MakePlayKeys() => new(AssetManager, _videoManager, _inputManager, AudioManager, _graphicManager, GameEngineManager,
+        _consoleManager, _automapManager, InventoryManager, menuDrawing, inputPolling, statusBarDrawing, playerWeapons, playerClassRules,
+        levelMusic, frameRefresh, Session,
+        Settings, new PlayKeysHooks(() => NetChatting, NetChatKeys, NetCheckKeys,
             ToggleAutomap, HandleAutomapKey, DrawPlayBorder, DrawPlayBorderSides,
             OpenControlPanel, DrawPlayScreen));
 
     // Playing a level, a frame at a time (Gameplay/LevelLoop.cs)
     static LevelLoop levelLoop = null!;     // made in InitServices
 
-    static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, _hudMessageManager, _mapManager,
-        frameRefresh, inputPolling, playKeys, doors, pushWalls, timedSwitches, floorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, levelAI, session,
-        new LevelLoopHooks(() => demoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => autosavePending, AutoSaveGame, () => zoneAmbience.Tick()));
+    static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, HudMessageManager, MapManager,
+        frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
+        new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick()));
 
     // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
     static ZoneAmbience? _zoneAmbience;
-    static ZoneAmbience zoneAmbience => _zoneAmbience ??= new ZoneAmbience(session, new ZoneAmbienceHooks(
-        () => gamestate.MapOn is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info : null,
-        () => _gameEngineManager.GetGameInfo().DefaultMap,
-        () => session.Player is { } pawn ? (pawn.TileX, pawn.TileY) : null,
-        (x, y) => _mapManager.GetZone(x, y),
-        () => stealth.WearingDisguise(session.PlayerState),
-        _audioManager.SetAmbient));
+    static ZoneAmbience ZoneAmbience => _zoneAmbience ??= new ZoneAmbience(Session, new ZoneAmbienceHooks(
+        () => GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info : null,
+        () => GameEngineManager.GetGameInfo().DefaultMap,
+        () => Session.Player is { } pawn ? (pawn.TileX, pawn.TileY) : null,
+        (x, y) => MapManager.GetZone(x, y),
+        () => Stealth.WearingDisguise(Session.PlayerState),
+        AudioManager.SetAmbient));
 
     // ==== WL_DEF =================================================================================
 
@@ -256,7 +256,7 @@ internal static partial class GameHost
     internal const int Angles = GameConstants.Angles;
     internal const int TextureSize = GameConstants.TextureSize;
 
-    internal static void ClearMemory() => _audioManager.StopAll();
+    internal static void ClearMemory() => AudioManager.StopAll();
 
     // Sounds placed where things are, heard from the camera (Gameplay/PositionalSounds.cs)
     static PositionalSounds positionalSounds = null!;       // made in InitServices
@@ -284,9 +284,9 @@ internal static partial class GameHost
     // Saving and loading the game, the autosave and the quick keys (SaveGames/GameSaves.cs)
     static GameSaves gameSaves = null!;     // made in InitServices
 
-    static GameSaves MakeGameSaves() => new(_gameEngineManager, _assetManager, _videoManager, _inputManager, _graphicManager,
-        _inventoryManager, _mapManager, menuDrawing, playScreen, levelBodies, levelSetup, levelMusic, playersManager, weaponInHand,
-        playerClassRules, playerStats, hubs, settings, session,
+    static GameSaves MakeGameSaves() => new(GameEngineManager, AssetManager, _videoManager, _inputManager, _graphicManager,
+        InventoryManager, MapManager, menuDrawing, playScreen, levelBodies, levelSetup, levelMusic, playersManager, weaponInHand,
+        playerClassRules, playerStats, hubs, Settings, Session,
         new GameSavesHooks(saving => loadSaveScreen.Run(saving),
             () =>
             {
@@ -294,10 +294,10 @@ internal static partial class GameHost
                 //
                 // CHANGE "READ THIS!" TO NORMAL COLOR
                 //
-                FindMenuItem(MainMenu, "readthis")?.active = 1;
+                FindMenuItem(MainMenu, "readthis")?.Active = 1;
             }));
 
-    static bool autosavePending { get => gameSaves.autosavePending; set => gameSaves.autosavePending = value; }
+    static bool AutosavePending { get => gameSaves.AutosavePending; set => gameSaves.AutosavePending = value; }
 
     internal static void AutoSaveGame() => gameSaves.AutoSaveGame();
     internal static string FormatPlayTime(int tics) => SaveFile.FormatPlayTime(tics);
@@ -348,8 +348,8 @@ internal static partial class GameHost
     // Entering and leaving levels, and the level start death goes back to (Gameplay/LevelEntry.cs)
     static LevelEntry levelEntry = null!;       // made in InitServices
 
-    static LevelEntry MakeLevelEntry() => new(_mapManager, _inventoryManager, hubs, levelSetup, playerMovement, session,
-        new LevelEntryHooks(() => victoryRunning = false, CaptureOverhead,
+    static LevelEntry MakeLevelEntry() => new(MapManager, InventoryManager, hubs, levelSetup, playerMovement, Session,
+        new LevelEntryHooks(() => VictoryRunning = false, CaptureOverhead,
             WriteLevelBody, ReadLevelBody, body => ApplyLevelBody(body)));
 
     internal static bool EnterLevel() => levelEntry.EnterLevel();
@@ -362,11 +362,11 @@ internal static partial class GameHost
     // and the victory run (Gameplay/HubActions.cs)
     static HubActions hubActions = null!;       // made in InitServices (or by RegisterActorActions without it)
 
-    static HubActions MakeHubActions() => new(_gameEngineManager, _mapManager, _audioManager, _inputManager, _inventoryManager,
-        _hudMessageManager, hubs, elevatorScreens, playScreen, frameRefresh, playerMovement, session,
-        new HubActionsHooks(change => pendingMapChange = change, PlaySoundLocActor));
+    static HubActions MakeHubActions() => new(GameEngineManager, MapManager, AudioManager, _inputManager, InventoryManager,
+        HudMessageManager, hubs, elevatorScreens, playScreen, frameRefresh, playerMovement, Session,
+        new HubActionsHooks(change => PendingMapChange = change, PlaySoundLocActor));
 
-    internal static bool victoryRunning { get => hubActions.VictoryRunning; set => hubActions.VictoryRunning = value; }
+    internal static bool VictoryRunning { get => hubActions.VictoryRunning; set => hubActions.VictoryRunning = value; }
 
     // ==== Scripting ==============================================================================
 
@@ -374,18 +374,18 @@ internal static partial class GameHost
     static GameScripts gameScripts = null!;     // made in InitServices
 
     static GameScripts MakeGameScripts() =>
-        new(_assetManager, _mapManager, _audioManager, _hudMessageManager, _consoleManager, _translationManager,
-            projectileActions ??= MakeProjectileActions(), session, PlaySoundLocActor)
+        new(AssetManager, MapManager, AudioManager, HudMessageManager, _consoleManager, TranslationManager,
+            projectileActions ??= MakeProjectileActions(), Session, PlaySoundLocActor)
         {
             Unlock = Unlock,
-            IsUnlocked = name => unlocks.IsUnlocked(name),
-            Record = map => levelRecords.Get(map),
+            IsUnlocked = name => Unlocks.IsUnlocked(name),
+            Record = map => LevelRecords.Get(map),
         };
 
     // The script API's tests install it with no services: it's made then
     internal static void InstallScriptApi(ScriptHost host) => (gameScripts ??= MakeGameScripts()).InstallScriptApi(host);
 
-    static ScriptHost? _scripts => gameScripts?.Scripts;
+    static ScriptHost? Scripts => gameScripts?.Scripts;
     static void LoadScripts() => gameScripts.LoadScripts();
     static void RunLevelHooks(string reason) => gameScripts.RunLevelHooks(reason);
     static void ScriptsCommand(string[] args) => gameScripts.ScriptsCommand(args);

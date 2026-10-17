@@ -345,25 +345,25 @@ internal sealed class Missiles(
     }
 
     // A wall, a moving pushwall or a door that isn't open stops a blast
-    internal bool IsSolidForBlast(int x, int y) => map.actorat[x, y] switch
+    internal bool IsSolidForBlast(int x, int y) => map.ActorAt[x, y] switch
     {
         Wall => true,
         Door door => door.DoorNumber < 0 || doors.DoorObjList[door.DoorNumber].Action != DoorAction.Open,
-        _ => map.tilemap[x, y] != 0 && (map.tilemap[x, y] & GameConstants.BitDoor) == 0,
+        _ => map.TileMap[x, y] != 0 && (map.TileMap[x, y] & GameConstants.BitDoor) == 0,
     };
 
     /// <summary>A_BlockTile: the actor's tile blocks movement, as a solid thing's does</summary>
     internal void BlockTile(Entities.Actors.Actor ob)
     {
-        if (map.actorat[ob.TileX, ob.TileY] == null)
-            map.actorat[ob.TileX, ob.TileY] = new BlockingActor();
+        if (map.ActorAt[ob.TileX, ob.TileY] == null)
+            map.ActorAt[ob.TileX, ob.TileY] = new BlockingActor();
     }
 
     /// <summary>A_UnblockTile: the actor's tile no longer blocks (if a solid thing was all that blocked it)</summary>
     internal void UnblockTile(Entities.Actors.Actor ob)
     {
-        if (map.actorat[ob.TileX, ob.TileY] is BlockingActor and not WallSpriteBlocker)
-            map.actorat[ob.TileX, ob.TileY] = null;
+        if (map.ActorAt[ob.TileX, ob.TileY] is BlockingActor and not WallSpriteBlocker)
+            map.ActorAt[ob.TileX, ob.TileY] = null;
     }
 
     /// <summary>

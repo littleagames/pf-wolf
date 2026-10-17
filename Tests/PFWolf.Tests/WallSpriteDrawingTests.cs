@@ -17,7 +17,7 @@ public class WallSpriteDrawingTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
+            Spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
         };
         // Looking east from the middle of tile (10, 10)
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, new byte[256])
@@ -75,7 +75,7 @@ public class WallSpriteDrawingTests
     [TestCase(11, 10, false)]
     public void A_Panel_Shows_Once_Its_Tile_Or_One_Beside_It_Is_Seen(int seenX, int seenY, bool shows)
     {
-        _map.spotvis[seenX, seenY] = true;
+        _map.Spotvis[seenX, seenY] = true;
         Assert.That(_drawing.WallSpriteSeen(Fence(13, 10)), Is.EqualTo(shows));
     }
 }

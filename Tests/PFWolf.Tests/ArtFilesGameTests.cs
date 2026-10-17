@@ -111,7 +111,7 @@ public class ArtFilesGameTests
 
         // Assert
         var sprite = after.Find<SpriteAsset>("GARDA1")!;
-        Assert.That((sprite.Offset.x, sprite.Offset.y), Is.EqualTo((3, -7)));
+        Assert.That((sprite.Offset.X, sprite.Offset.Y), Is.EqualTo((3, -7)));
         var picture = ArtCache.Indexed(after, ArtKind.Sprite, "GARDA1")!;
         Assert.That(picture.Opaque, Is.EqualTo(before.Opaque));
         for (int i = 0; i < picture.Indices.Length; i++)

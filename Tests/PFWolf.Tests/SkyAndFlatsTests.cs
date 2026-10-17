@@ -22,8 +22,8 @@ public class SkyAndFlatsTests
         _pinned = GCHandle.Alloc(_screen, GCHandleType.Pinned);
         var video = new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
         {
-            bufferPitch = Width,
-            ylookup = Enumerable.Range(0, Height).Select(y => (uint)(y * Width)).ToArray(),
+            BufferPitch = Width,
+            YLookup = Enumerable.Range(0, Height).Select(y => (uint)(y * Width)).ToArray(),
         };
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade)
         {
@@ -58,7 +58,7 @@ public class SkyAndFlatsTests
     public void The_Ceiling_Is_At_The_Top_Of_The_Levels_Walls()
     {
         Assert.That((_sky.FloorHalves, _sky.CeilingHalves), Is.EqualTo((1.0, 1.0)));
-        _map.wallstories = 2;
+        _map.LevelWallStories = 2;
         Assert.That(_sky.CeilingHalves, Is.EqualTo(3.0));
     }
 

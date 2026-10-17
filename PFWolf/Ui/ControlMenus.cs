@@ -31,26 +31,26 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
             switch (MenuDefs.SelectedId(CtlMenu, which))
             {
                 case "mouse-enabled":
-                    settings.mouseenabled ^= true;
+                    settings.MouseEnabled ^= true;
                     input.CenterMouse();
                     DrawCtlScreen();
                     loop.ShootSnd();
                     break;
 
                 case "mouse-look":
-                    settings.mouselook ^= true;
+                    settings.MouseLook ^= true;
                     DrawCtlScreen();
                     loop.ShootSnd();
                     break;
 
                 case "mouse-invert":
-                    settings.mouseinvert ^= true;
+                    settings.MouseInvert ^= true;
                     DrawCtlScreen();
                     loop.ShootSnd();
                     break;
 
                 case "joystick-enabled":
-                    settings.joystickenabled ^= true;
+                    settings.JoystickEnabled ^= true;
                     DrawCtlScreen();
                     loop.ShootSnd();
                     break;
@@ -80,36 +80,36 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
         var mouseSensItem = MenuDefs.FindMenuItem(CtlMenu, "mouse-sensitivity");
 
         if (input.JoyPresent())
-            MenuDefs.FindMenuItem(CtlMenu, "joystick-enabled")?.active = 1;
+            MenuDefs.FindMenuItem(CtlMenu, "joystick-enabled")?.Active = 1;
 
         if (input.IsMousePresent())
         {
-            mouseEnabledItem?.active = 1;
+            mouseEnabledItem?.Active = 1;
         }
 
-        mouseSensItem?.active = (short)(settings.mouseenabled ? 1 : 0);
+        mouseSensItem?.Active = (short)(settings.MouseEnabled ? 1 : 0);
 
         // Inverting only means something while the mouse looks
-        MenuDefs.FindMenuItem(CtlMenu, "mouse-look")?.active = (short)(settings.mouseenabled ? 1 : 0);
-        MenuDefs.FindMenuItem(CtlMenu, "mouse-invert")?.active = (short)(settings.mouseenabled && settings.mouselook ? 1 : 0);
+        MenuDefs.FindMenuItem(CtlMenu, "mouse-look")?.Active = (short)(settings.MouseEnabled ? 1 : 0);
+        MenuDefs.FindMenuItem(CtlMenu, "mouse-invert")?.Active = (short)(settings.MouseEnabled && settings.MouseLook ? 1 : 0);
 
         draw.DrawMenu(CtlItems, CtlMenu);
 
-        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-enabled", settings.mouseenabled);
-        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-look", settings.mouselook);
-        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-invert", settings.mouseinvert);
-        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "joystick-enabled", settings.joystickenabled);
+        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-enabled", settings.MouseEnabled);
+        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-look", settings.MouseLook);
+        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-invert", settings.MouseInvert);
+        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "joystick-enabled", settings.JoystickEnabled);
 
         //
         // PICK FIRST AVAILABLE SPOT
         //
-        if (CtlItems.curpos < 0 || CtlMenu[CtlItems.curpos].active == 0)
+        if (CtlItems.CurPos < 0 || CtlMenu[CtlItems.CurPos].Active == 0)
         {
-            for (i = 0; i < CtlItems.amount; i++)
+            for (i = 0; i < CtlItems.Amount; i++)
             {
-                if (CtlMenu[i].active != 0)
+                if (CtlMenu[i].Active != 0)
                 {
-                    CtlItems.curpos = (short)i;
+                    CtlItems.CurPos = (short)i;
                     break;
                 }
             }
@@ -173,9 +173,9 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
     {
         var language = assets.GetText("en-us");
 
-        draw.DrawMenuSlider(JoyItems, JoyMenu, "joy-deadzone", Math.Clamp(settings.joydeadzone, 0, JoyDeadzoneMax) / JoyDeadzoneStep, JoyDeadzoneMax / JoyDeadzoneStep);
-        draw.DrawMenuSlider(JoyItems, JoyMenu, "joy-turnspeed", Math.Clamp(settings.joyturnspeed, 0, ControlSettings.JoyTurnSpeeds - 1), ControlSettings.JoyTurnSpeeds - 1);
-        draw.DrawMenuChoice(JoyItems, JoyMenu, "joy-sticks", (settings.joyclassicsticks ? "$STR_JOYCLASSIC" : "$STR_JOYMODERN").ToLanguageText(language));
+        draw.DrawMenuSlider(JoyItems, JoyMenu, "joy-deadzone", Math.Clamp(settings.JoyDeadzone, 0, JoyDeadzoneMax) / JoyDeadzoneStep, JoyDeadzoneMax / JoyDeadzoneStep);
+        draw.DrawMenuSlider(JoyItems, JoyMenu, "joy-turnspeed", Math.Clamp(settings.JoyTurnSpeed, 0, ControlSettings.JoyTurnSpeeds - 1), ControlSettings.JoyTurnSpeeds - 1);
+        draw.DrawMenuChoice(JoyItems, JoyMenu, "joy-sticks", (settings.JoyClassicSticks ? "$STR_JOYCLASSIC" : "$STR_JOYMODERN").ToLanguageText(language));
     }
 
     // Left/right on a Controller Settings row
@@ -184,21 +184,21 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
         switch (MenuDefs.SelectedId(JoyMenu, which))
         {
             case "joy-deadzone":
-                int deadzone = Math.Clamp((settings.joydeadzone / JoyDeadzoneStep + delta) * JoyDeadzoneStep, 0, JoyDeadzoneMax);
-                if (deadzone == settings.joydeadzone)
+                int deadzone = Math.Clamp((settings.JoyDeadzone / JoyDeadzoneStep + delta) * JoyDeadzoneStep, 0, JoyDeadzoneMax);
+                if (deadzone == settings.JoyDeadzone)
                     return;
-                settings.joydeadzone = deadzone;
+                settings.JoyDeadzone = deadzone;
                 break;
 
             case "joy-turnspeed":
-                int turnspeed = Math.Clamp(settings.joyturnspeed + delta, 0, ControlSettings.JoyTurnSpeeds - 1);
-                if (turnspeed == settings.joyturnspeed)
+                int turnspeed = Math.Clamp(settings.JoyTurnSpeed + delta, 0, ControlSettings.JoyTurnSpeeds - 1);
+                if (turnspeed == settings.JoyTurnSpeed)
                     return;
-                settings.joyturnspeed = turnspeed;
+                settings.JoyTurnSpeed = turnspeed;
                 break;
 
             case "joy-sticks":
-                settings.joyclassicsticks = !settings.joyclassicsticks;
+                settings.JoyClassicSticks = !settings.JoyClassicSticks;
                 break;
 
             default:
@@ -216,23 +216,23 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
         int exit = 0, oldMA;
 
 
-        oldMA = settings.mouseadjustment;
+        oldMA = settings.MouseAdjustment;
         DrawMouseSens();
         do
         {
             GameEngineManager.DelayMs(5);
             menuInput.ReadAnyControl(out ci);
-            switch (ci.dir)
+            switch (ci.Dir)
             {
                 case Direction.North:
                 case Direction.West:
-                    if (settings.mouseadjustment != 0)
+                    if (settings.MouseAdjustment != 0)
                     {
-                        settings.mouseadjustment--;
+                        settings.MouseAdjustment--;
                         video.Bar(60, 97, 200, 10, "TEXTCOLOR");
                         draw.DrawOutline(60, 97, 200, 10, "Black", "HIGHLIGHT");
-                        draw.DrawOutline(60 + 20 * settings.mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
-                        video.Bar(61 + 20 * settings.mouseadjustment, 98, 19, 9, "READHCOLOR");
+                        draw.DrawOutline(60 + 20 * settings.MouseAdjustment, 97, 20, 10, "Black", "READCOLOR");
+                        video.Bar(61 + 20 * settings.MouseAdjustment, 98, 19, 9, "READHCOLOR");
                         video.Update();
                         audio.Play("menu/move1");
                         menuInput.TicDelay(20);
@@ -241,13 +241,13 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
 
                 case Direction.South:
                 case Direction.East:
-                    if (settings.mouseadjustment < 9)
+                    if (settings.MouseAdjustment < 9)
                     {
-                        settings.mouseadjustment++;
+                        settings.MouseAdjustment++;
                         video.Bar(60, 97, 200, 10, "TEXTCOLOR");
                         draw.DrawOutline(60, 97, 200, 10, "Black", "HIGHLIGHT");
-                        draw.DrawOutline(60 + 20 * settings.mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
-                        video.Bar(61 + 20 * settings.mouseadjustment, 98, 19, 9, "READHCOLOR");
+                        draw.DrawOutline(60 + 20 * settings.MouseAdjustment, 97, 20, 10, "Black", "READCOLOR");
+                        video.Bar(61 + 20 * settings.MouseAdjustment, 98, 19, 9, "READHCOLOR");
                         video.Update();
                         audio.Play("menu/move1");
                         menuInput.TicDelay(20);
@@ -255,9 +255,9 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
                     break;
             }
 
-            if (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
+            if (ci.Button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
                 exit = 1;
-            else if (ci.button1 || input.IsKeyDown(ScanCodes.Escape))
+            else if (ci.Button1 || input.IsKeyDown(ScanCodes.Escape))
                 exit = 2;
 
         }
@@ -265,7 +265,7 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
 
         if (exit == 2)
         {
-            settings.mouseadjustment = oldMA;
+            settings.MouseAdjustment = oldMA;
             audio.Play("menu/escape");
         }
         else
@@ -283,8 +283,8 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
 
         video.Bar(60, 97, 200, 10, "TEXTCOLOR");
         draw.DrawOutline(60, 97, 200, 10, "Black", "HIGHLIGHT");
-        draw.DrawOutline(60 + 20 * settings.mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
-        video.Bar(61 + 20 * settings.mouseadjustment, 98, 19, 9, "READHCOLOR");
+        draw.DrawOutline(60 + 20 * settings.MouseAdjustment, 97, 20, 10, "Black", "READCOLOR");
+        video.Bar(61 + 20 * settings.MouseAdjustment, 98, 19, 9, "READHCOLOR");
 
         video.Update();
         draw.MenuFadeIn();

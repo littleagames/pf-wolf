@@ -246,12 +246,12 @@ internal sealed class PlayerMovement(
         {
             for (x = xl; x <= xh; x++)
             {
-                check = map.actorat[x, y];
+                check = map.ActorAt[x, y];
                 if (check != null && check is not ActorMark)       // enemies are checked below
                 {
                     if (check is WallSpriteBlocker)
                         nearwallsprite = true;          // only its panel blocks: checked below
-                    else if (map.tilemap[x, y] == GameConstants.BitWall
+                    else if (map.TileMap[x, y] == GameConstants.BitWall
                         && pushWalls.MovingWalls.Find(p => p.X == x && p.Y == y) is { } pw)    // back of a moving pushwall?
                     {
                         switch (pw.Dir)
@@ -274,7 +274,7 @@ internal sealed class PlayerMovement(
                                 break;
                         }
                     }
-                    else if (map.wallshape[x, y] is var shape and not WallShape.Square)
+                    else if (map.WallShapes[x, y] is var shape and not WallShape.Square)
                     {
                         //
                         // a diagonal only blocks on its solid side of the face
@@ -353,8 +353,8 @@ internal sealed class PlayerMovement(
             return;
 
         if ((session.NoClip != 0) && ob.X > 2 * MapConstants.TileGlobal && ob.Y > 2 * MapConstants.TileGlobal
-            && ob.X < (((int)(map.mapwidth - 1)) << (int)MapConstants.TileShift)
-            && ob.Y < (((int)(map.mapheight - 1)) << (int)MapConstants.TileShift))
+            && ob.X < (((int)(map.MapWidth - 1)) << (int)MapConstants.TileShift)
+            && ob.Y < (((int)(map.MapHeight - 1)) << (int)MapConstants.TileShift))
             return;         // walk through walls
 
         if (!audio.IsAnySoundPlaying())

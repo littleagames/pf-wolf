@@ -26,7 +26,7 @@ public class TextureChangeTests
         Assert.That(map.ChangedTexture(3, 4, "switch1"), Is.EqualTo("SWITCHANIM"));
         Assert.That(map.ChangedTexture(3, 4, "OTHER"), Is.EqualTo("OTHER"));
         Assert.That(map.ChangedTexture(4, 3, "SWITCH1"), Is.EqualTo("SWITCH1"));
-        Assert.That(map.animstart[(4 << MapManager.MapShift) + 3], Is.EqualTo(100));
+        Assert.That(map.AnimStart[(4 << MapManager.MapShift) + 3], Is.EqualTo(100));
     }
 
     [Test]

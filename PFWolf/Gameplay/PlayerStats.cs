@@ -159,7 +159,7 @@ internal sealed class PlayerStats(
         if (statusBar.StatusBar.Get("face") is { Ouch.Length: > 0 } face && points > face.OuchDamage
             && PlayerState.Health != 0 && godmode == 0 && assets.Exists<Assets.GraphicAsset>(face.Ouch))
         {
-            if (!(settings.viewsize == 21) && session.ActingIsLocal)
+            if (!(settings.ViewSize == 21) && session.ActingIsLocal)
                 statusBar.StatusDrawFace(face.Ouch);
             PlayerState.FaceCount = 0;
         }

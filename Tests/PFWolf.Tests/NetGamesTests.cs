@@ -37,13 +37,13 @@ public class NetGamesTests
     public void Ending_A_Game_With_Others_Goes_Back_To_Playing_Alone()
     {
         // Arrange
-        _netPlay.netLeft = true;
+        _netPlay.NetLeft = true;
         _session.NetGame = true;
 
         // Act: no session open (nothing to say why)
         _games.EndNetGame();
 
         // Assert
-        Assert.That((_session.NetGame, _netPlay.netLeft), Is.EqualTo((false, false)));
+        Assert.That((_session.NetGame, _netPlay.NetLeft), Is.EqualTo((false, false)));
     }
 }

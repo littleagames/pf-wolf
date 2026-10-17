@@ -48,8 +48,8 @@ public class MountedWeaponsTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
         _inventory.SetHolder(_session.PlayerState.Items);
@@ -120,8 +120,8 @@ public class MountedWeaponsTests
     {
         // Arrange: a wall behind and on the north side, a solid-free south side
         _mounted.Mount(_nest, ["NestGun"]);
-        _map.tilemap[10, 10] = 1;
-        _map.tilemap[11, 9] = 1;
+        _map.TileMap[10, 10] = 1;
+        _map.TileMap[11, 9] = 1;
 
         // Act
         _mounted.TryDismount();
@@ -135,7 +135,7 @@ public class MountedWeaponsTests
     {
         // Arrange: walled in all round, and someone shootable standing where a wall isn't
         _mounted.Mount(_nest, ["NestGun"]);
-        _map.tilemap[10, 10] = _map.tilemap[11, 9] = _map.tilemap[11, 11] = 1;
+        _map.TileMap[10, 10] = _map.TileMap[11, 9] = _map.TileMap[11, 11] = 1;
         var guard = new Monster { Name = "Guard" };
         guard.SetPosition(12, 10);
         guard.RuntimeFlags |= ObjFlags.Shootable;

@@ -80,14 +80,14 @@ internal sealed class NetGames(
     ===============
     */
 
-    internal NetIdentity? localIdentity;
+    internal NetIdentity? CachedLocalIdentity;
 
     /// <summary>
     /// What this machine runs, for the host to check a joining player against: the engine (its
     /// version and commit), the game pack and its data files, and the mods, by name and by
     /// content (Networking/ContentHash.cs)
     /// </summary>
-    internal NetIdentity LocalIdentity() => localIdentity ??= new NetIdentity(GameEngineManager.EngineVersion, engine.GamePackId,
+    internal NetIdentity LocalIdentity() => CachedLocalIdentity ??= new NetIdentity(GameEngineManager.EngineVersion, engine.GamePackId,
         engine.GameReleaseId ?? "", string.Join(", ", gameSaves.CurrentSavedMods()),
         ContentHash.Of(AssetManager.BasePk3FileName, assets.LoadedMods.Select(mod => mod.FullPath)));
 
@@ -145,9 +145,9 @@ internal sealed class NetGames(
         var rules = start.Settings;
         deathmatch.NetRules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.ScoreLimit, rules.TimeLimit, rules.ItemRespawn);
         deathmatch.NewMatch();
-        scoreboard.showscoreboard = false;
-        netPlay.netlevel = 0;
-        netPlay.netLeft = false;
+        scoreboard.ShowScoreboard = false;
+        netPlay.NetLevel = 0;
+        netPlay.NetLeft = false;
         session.BeginPlaying();
         hooks.SetStartGame(1);
     }
@@ -161,7 +161,7 @@ internal sealed class NetGames(
     {
         var error = NetSession.Current?.Error;
         game.NetGame = false;
-        netPlay.netLeft = false;
+        netPlay.NetLeft = false;
         NetSession.Current?.Dispose();
         if (error != null)
             multiplayerMenu.ShowNetMessage(MenuDrawing.WrapForMessage(error));     // the host left, or the connection was lost

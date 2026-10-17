@@ -57,7 +57,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
         if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
             return true;
 
-        int tile = map.tilemap[x, y];
+        int tile = map.TileMap[x, y];
 
         // A door: unlocked and opened
         if ((tile & GameConstants.BitDoor) != 0)
@@ -79,8 +79,8 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
             var switched = thing.Properties.TryGetValue("switched", out var how) ? how?.ToString() : null;
             if (switched?.Equals("remove", StringComparison.OrdinalIgnoreCase) == true)
             {
-                if (map.actorat[x, y] is BlockingActor)
-                    map.actorat[x, y] = null;
+                if (map.ActorAt[x, y] is BlockingActor)
+                    map.ActorAt[x, y] = null;
                 map.MarkForRemoval(thing);
             }
             else if (thing is Entities.Actors.Monster monster && monster.RuntimeFlags.HasFlag(ObjFlags.Shootable))

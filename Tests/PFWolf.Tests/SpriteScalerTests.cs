@@ -22,8 +22,8 @@ public class SpriteScalerTests
         _pinned = GCHandle.Alloc(_screen, GCHandleType.Pinned);
         var video = new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
         {
-            bufferPitch = Width,
-            ylookup = Enumerable.Range(0, Height).Select(y => (uint)(y * Width)).ToArray(),
+            BufferPitch = Width,
+            YLookup = Enumerable.Range(0, Height).Select(y => (uint)(y * Width)).ToArray(),
         };
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Unshaded)
         {

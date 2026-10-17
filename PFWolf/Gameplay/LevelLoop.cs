@@ -56,7 +56,7 @@ internal sealed class LevelLoop(
         frame.FrameOn = 0;
         FunnyTicCount = 0;
         input.InitButtonState();
-        if (!netPlay.netJoinResume)             // (just joined mid-level: kept as the host had them)
+        if (!netPlay.NetJoinResume)             // (just joined mid-level: kept as the host had them)
         {
             foreach (var p in session.Players)  // every player's, so every machine starts the level alike
             {
@@ -157,7 +157,7 @@ internal sealed class LevelLoop(
             }
 
             hooks.UpdateSoundListener();      // JAB
-            if (video.screenfaded)
+            if (video.ScreenFaded)
                 video.FadeIn();
 
             keys.CheckKeys();

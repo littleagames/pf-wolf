@@ -13,13 +13,13 @@ public class ViewSetupTests
     {
         var video = new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
         {
-            screenWidth = 1920, screenHeight = 1080,
+            ScreenWidth = 1920, ScreenHeight = 1080,
         };
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade)
         {
             PixelAngle = new short[1920],
         };
-        _settings = new Configuration.GameSettings { viewsize = 21 };
+        _settings = new Configuration.GameSettings { ViewSize = 21 };
         // No status bar here (no assets): the play area is the whole screen
         var bar = new StatusBarDrawing(null!, null, null!, null!, null!, null!, null!, null!, new GameSession(),
             new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));

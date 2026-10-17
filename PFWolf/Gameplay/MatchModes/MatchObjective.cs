@@ -94,8 +94,8 @@ internal abstract class MatchObjective(MapManager map, GameSession session, Deat
     protected List<(int x, int y)> OpenFloor()
     {
         var tiles = new List<(int x, int y)>();
-        for (int y = 1; y < Map.mapheight - 1; y++)
-            for (int x = 1; x < Map.mapwidth - 1; x++)
+        for (int y = 1; y < Map.MapHeight - 1; y++)
+            for (int x = 1; x < Map.MapWidth - 1; x++)
                 if (Hooks.IsOpenFloor(x, y))
                     tiles.Add((x, y));
         return tiles;

@@ -5,7 +5,7 @@ public class StatusBarDrawingTests
     // With no assets there's no layout, so nothing is drawn and no manager is needed
     private static StatusBarDrawing Bar(GameSession session, bool fullScreen = false) =>
         new(null!, null, null!, null!, null!, null!, null!, null!, session,
-            new Configuration.GameSettings { viewsize = fullScreen ? 21 : 19 }, new StatusBarHooks(map => map, (text, _, _) => [text]));
+            new Configuration.GameSettings { ViewSize = fullScreen ? 21 : 19 }, new StatusBarHooks(map => map, (text, _, _) => [text]));
 
     [Test]
     public void Shows_For_The_Local_Player_With_A_View_That_Leaves_Room()

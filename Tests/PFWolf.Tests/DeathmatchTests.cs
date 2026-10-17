@@ -221,11 +221,11 @@ public class ScoreboardTests
     {
         var (board, _) = Board();
         board.ScoreboardCommand([]);
-        Assert.That(board.showscoreboard, Is.True);
+        Assert.That(board.ShowScoreboard, Is.True);
         board.ScoreboardCommand([]);
-        Assert.That(board.showscoreboard, Is.False);
+        Assert.That(board.ShowScoreboard, Is.False);
         board.ScoreboardCommand(["1"]);
         board.ScoreboardCommand(["1"]);
-        Assert.That(board.showscoreboard, Is.True);
+        Assert.That(board.ShowScoreboard, Is.True);
     }
 }

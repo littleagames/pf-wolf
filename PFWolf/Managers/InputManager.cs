@@ -5,10 +5,10 @@ namespace PFWolf.Managers;
 
 internal struct ControlInfo
 {
-    public bool button0, button1, button2, button3;
-    public short x, y;
-    public short xaxis, yaxis;
-    public Direction dir;
+    public bool Button0, Button1, Button2, Button3;
+    public short X, Y;
+    public short XAxis, YAxis;
+    public Direction Dir;
 }
 public enum ScanCodes
 {
@@ -232,7 +232,7 @@ internal class InputManager
     // held and LastScan only keeps the latest. Drained by the play loop; cleared with the keys.
     private const int MaxPressedKeys = 32;
     private readonly Queue<ScanCodes> pressedKeys = new();
-    internal char[] textinput = new char[TextInputSize];
+    internal char[] TextInput = new char[TextInputSize];
     internal ScanCodes LastScan;
 
     // Mouse wheel notches since the last TakeWheelDelta (positive = away from the user).
@@ -283,7 +283,7 @@ internal class InputManager
     };
 
 
-    /// <summary>Grabs or frees the mouse, as going in or out of fullscreen does (F12 toggles it by hand).</summary>
+    /// <summary>Grabs or frees the mouse, as going in or out of FullScreen does (F12 toggles it by hand).</summary>
     internal void SetMouseGrab(bool grab)
     {
         if (GrabInput == grab)
@@ -484,12 +484,12 @@ internal class InputManager
 
     internal char[] GetTextInput()
     {
-        return textinput;
+        return TextInput;
     }
 
     internal void ClearTextInput()
     {
-        Array.Fill(textinput, (char)0);
+        Array.Fill(TextInput, (char)0);
     }
 
     internal void ReadControl(out ControlInfo info)
@@ -538,15 +538,15 @@ internal class InputManager
         dx = mx * 127;
         dy = my * 127;
 
-        info.x = (short)dx;
-        info.xaxis = (short)mx;
-        info.y = (short)dy;
-        info.yaxis = (short)my;
-        info.button0 = ((buttons & 1) != 0 );
-        info.button1 = ((buttons & (1 << 1)) != 0);
-        info.button2 = ((buttons & (1 << 2)) != 0);
-        info.button3 = ((buttons & (1 << 3)) != 0);
-        info.dir = DirTable[((my + 1) * 3) + (mx + 1)];
+        info.X = (short)dx;
+        info.XAxis = (short)mx;
+        info.Y = (short)dy;
+        info.YAxis = (short)my;
+        info.Button0 = ((buttons & 1) != 0 );
+        info.Button1 = ((buttons & (1 << 1)) != 0);
+        info.Button2 = ((buttons & (1 << 2)) != 0);
+        info.Button3 = ((buttons & (1 << 3)) != 0);
+        info.Dir = DirTable[((my + 1) * 3) + (mx + 1)];
     }
 
     internal bool IsMousePresent() => MousePresent;
@@ -743,14 +743,14 @@ internal class InputManager
 
                 // Append rather than overwrite: several text events can arrive in one poll when
                 // typing quickly, and readers clear the buffer once they've consumed it.
-                int end = Array.IndexOf(textinput, (char)0);
+                int end = Array.IndexOf(TextInput, (char)0);
                 if (end < 0)
                     break;
                 foreach (char c in text)
                 {
-                    if (end >= textinput.Length - 1)
+                    if (end >= TextInput.Length - 1)
                         break;
-                    textinput[end++] = c;
+                    TextInput[end++] = c;
                 }
                 break;
         }
@@ -937,6 +937,6 @@ internal class InputManager
     {
         if (MousePresent && GrabInput)
             Console.WriteLine("Center mouse");
-          //  SDL.SDL_WarpMouseInWindow(window, screenWidth / 2, screenHeight / 2);
+          //  SDL.SDL_WarpMouseInWindow(window, ScreenWidth / 2, ScreenHeight / 2);
     }
 }

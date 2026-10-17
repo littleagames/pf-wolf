@@ -15,7 +15,7 @@ public class StatusBarOverlayTests
         // A full screen view while playing hides the status bar
         public bool FullScreen
         {
-            set => (barSettings.viewsize, Session.InGame) = value ? (21, true) : (19, false);
+            set => (barSettings.ViewSize, Session.InGame) = value ? (21, true) : (19, false);
         }
 
         public Rig(bool overlay)
@@ -27,7 +27,7 @@ public class StatusBarOverlayTests
                 ["background"] = new() { Height = 40, Overlay = overlay },
             });
             Area = new PlayArea(null!, Bar);
-            View = new ViewSetup(null!, null!, null!, Area, new Configuration.GameSettings { viewsize = 19 });
+            View = new ViewSetup(null!, null!, null!, Area, new Configuration.GameSettings { ViewSize = 19 });
         }
     }
 

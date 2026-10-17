@@ -32,6 +32,6 @@ public class DemoCommandsTests
         _commands.DemoTestCommand([]);
 
         Assert.That(_console.Scrollback[^1], Is.EqualTo("demotest runs from the title or --exec, not during a game"));
-        Assert.That(_commands.demoTesting, Is.False);
+        Assert.That(_commands.DemoTesting, Is.False);
     }
 }

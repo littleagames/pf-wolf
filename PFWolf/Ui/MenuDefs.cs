@@ -69,9 +69,9 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
                         (mi.Text ?? "").ToLanguageText(language),
                         MapFunction(name, mi as MenuSwitcher))
                     {
-                        id = mi.Id,
-                        shortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0],
-                        data = (mi as MusicMenuItem)?.Music
+                        Id = mi.Id,
+                        ShortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0],
+                        Data = (mi as MusicMenuItem)?.Music
                     })
                     .ToArray();
         }
@@ -93,13 +93,13 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
             curpos: curpos,
             indent: (short)menuAsset.Indent)
         {
-            rowHeight = menuAsset.RowHeight is > 0 and int rowHeight ? rowHeight : 13,
-            font = menuAsset.Font,
-            itemShadow = menuAsset.ItemShadow,
-            cursor = menuAsset.Cursor,
-            selectionPic = menuAsset.SelectionPic,
-            checkboxX = menuAsset.CheckboxOffset?.X ?? -24,
-            checkboxY = menuAsset.CheckboxOffset?.Y ?? 3,
+            RowHeight = menuAsset.RowHeight is > 0 and int rowHeight ? rowHeight : 13,
+            Font = menuAsset.Font,
+            ItemShadow = menuAsset.ItemShadow,
+            Cursor = menuAsset.Cursor,
+            SelectionPic = menuAsset.SelectionPic,
+            CheckboxX = menuAsset.CheckboxOffset?.X ?? -24,
+            CheckboxY = menuAsset.CheckboxOffset?.Y ?? 3,
         };
 
         return (items, info);
@@ -120,12 +120,12 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
                 // rows are tall enough for both (spacer-rows: false)
                 if (assets.GetMenu(menuName)?.SpacerRows == false)
                     return gameInfo.Episodes.Values
-                        .Select(ep => new ControlPanelItem(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key })
+                        .Select(ep => new ControlPanelItem(1, ep.Name.ToLanguageText(language), null, ep) { ShortKey = ep.Key })
                         .ToArray();
                 return gameInfo.Episodes.Values.SelectMany(ep =>
                     new ControlPanelItem[]
                     {
-                        new ControlPanelItem(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key },
+                        new ControlPanelItem(1, ep.Name.ToLanguageText(language), null, ep) { ShortKey = ep.Key },
                         new ControlPanelItem(0, "", null)
                     }).SkipLast(1)
                     .ToArray();
@@ -147,13 +147,13 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
     /// Finds a menu item by its YAML id, or null if the menu has no such item (or isn't loaded yet)
     /// </summary>
     internal static ControlPanelItem? FindMenuItem(ControlPanelItem[] items, string id)
-        => items.FirstOrDefault(item => item.id == id);
+        => items.FirstOrDefault(item => item.Id == id);
 
     /// <summary>
     /// Id of the chosen item from HandleMenu's result, or null for escape / an item without an id
     /// </summary>
     internal static string? SelectedId(ControlPanelItem[] items, int which)
-        => which >= 0 && which < items.Length ? items[which].id : null;
+        => which >= 0 && which < items.Length ? items[which].Id : null;
 
     /// <summary>
     /// Draws the non-interactive parts of a menu (background, windows, graphics, labels)

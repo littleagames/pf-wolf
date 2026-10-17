@@ -20,7 +20,7 @@ internal sealed record VideoSettings
     internal const int MaxRenderWidth = 8192;
     internal const int MaxRenderHeight = 4096;
 
-    /// <summary>Borderless fullscreen on the desktop; the window size is kept for leaving it.</summary>
+    /// <summary>Borderless FullScreen on the desktop; the window size is kept for leaving it.</summary>
     public bool Fullscreen { get; init; }
 
     /// <summary>
@@ -39,7 +39,7 @@ internal sealed record VideoSettings
 
     /// <summary>
     /// The render size follows what the picture is shown in: the window, or the desktop when
-    /// fullscreen (less a sixth of its height when aspect correcting, which stretches it back).
+    /// FullScreen (less a sixth of its height when aspect correcting, which stretches it back).
     /// VideoManager works it out into <see cref="RenderSize"/> whenever the mode is set.
     /// </summary>
     public bool MatchWindow { get; init; }
@@ -51,7 +51,7 @@ internal sealed record VideoSettings
     /// </summary>
     public double UiScale { get; init; }
 
-    /// <summary>The window's size when it isn't fullscreen.</summary>
+    /// <summary>The window's size when it isn't FullScreen.</summary>
     public int WindowWidth { get; init; } = 640;
     public int WindowHeight { get; init; } = 400;
 

@@ -10,7 +10,7 @@ namespace PFWolf.Ui;
 internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicManager graphics, VideoManager video,
     InputManager input, AudioManager audio, AssetManager assets)
 {
-    internal int redrawitem = 1, lastitem = -1;
+    internal int RedrawItem = 1, LastItem = -1;
 
     /// <param name="adjust">
     /// Called with the highlighted item and -1 or +1 when left or right is pressed, for menus
@@ -28,19 +28,19 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         int lastBlinkTime, timer;
         ControlInfo ci;
 
-        which = item_i.curpos;
-        x = item_i.x & -8;
-        basey = item_i.y - 2;
-        y = basey + which * item_i.rowHeight;
+        which = item_i.CurPos;
+        x = item_i.X & -8;
+        basey = item_i.Y - 2;
+        y = basey + which * item_i.RowHeight;
         // A highlight bar (Blake Stone's) flashes on and off, where the gun blinks its shape
-        bool bar = item_i.cursor != null, barOn = true;
+        bool bar = item_i.Cursor != null, barOn = true;
 
         if (bar)
             draw.DrawMenuBar(item_i, items, which, true);
         else
         {
             graphics.DrawPic("c_cursor1", x, y);
-            if (redrawitem != 0)
+            if (RedrawItem != 0)
                 draw.PrintMenuItem(item_i, items, which, MenuDrawing.MenuItemColor(items[which], true));
         }
         //
@@ -51,7 +51,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         video.Update();
 
         shape = "c_cursor1";
-        timer = bar ? item_i.cursor!.FlashTics : 8;
+        timer = bar ? item_i.Cursor!.FlashTics : 8;
         exit = 0;
         lastBlinkTime = (int)GameEngineManager.GetTimeCount();
         input.ClearKeysDown();
@@ -114,9 +114,9 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                 if (key >= 'a')
                     key -= (char)('a' - 'A');
 
-                for (i = which + 1; i < item_i.amount; i++)
+                for (i = which + 1; i < item_i.Amount; i++)
                 {
-                    if (items[i].active != 0 && ItemKey(items[i]) == key)
+                    if (items[i].Active != 0 && ItemKey(items[i]) == key)
                     {
                         EraseGun(item_i, items, x, y, which);
                         which = i;
@@ -133,7 +133,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                 if (ok == 0)
                 {
                     for (i = 0; i < which; i++)
-                        if (items[i].active != 0 && ItemKey(items[i]) == key)
+                        if (items[i].Active != 0 && ItemKey(items[i]) == key)
                         {
                             EraseGun(item_i, items, x, y, which);
                             which = i;
@@ -148,7 +148,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
             // GET INPUT
             //
             menuInput.ReadAnyControl(out ci);
-            switch (ci.dir)
+            switch (ci.Dir)
             {
                 ////////////////////////////////////////////////
                 //
@@ -161,7 +161,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     //
                     // ANIMATE HALF-STEP
                     //
-                    if (!bar && which != 0 && items[which - 1].active != 0)
+                    if (!bar && which != 0 && items[which - 1].Active != 0)
                     {
                         y -= 6;
                         DrawHalfStep(x, y);
@@ -173,11 +173,11 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     do
                     {
                         if (which == 0)
-                            which = item_i.amount - 1;
+                            which = item_i.Amount - 1;
                         else
                             which--;
                     }
-                    while (items[which].active == 0);
+                    while (items[which].Active == 0);
 
                     DrawGun(item_i, items, x, ref y, which, basey, routine);
                     //
@@ -196,7 +196,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     //
                     // ANIMATE HALF-STEP
                     //
-                    if (!bar && which != item_i.amount - 1 && items[which + 1].active != 0)
+                    if (!bar && which != item_i.Amount - 1 && items[which + 1].Active != 0)
                     {
                         y += 6;
                         DrawHalfStep(x, y);
@@ -204,12 +204,12 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
 
                     do
                     {
-                        if (which == item_i.amount - 1)
+                        if (which == item_i.Amount - 1)
                             which = 0;
                         else
                             which++;
                     }
-                    while (items[which].active == 0);
+                    while (items[which].Active == 0);
 
                     DrawGun(item_i, items, x, ref y, which, basey, routine);
 
@@ -234,10 +234,10 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     break;
             }
 
-            if (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
+            if (ci.Button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
                 exit = 1;
 
-            if (ci.button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
+            if (ci.Button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
                 exit = 2;
 
         }
@@ -250,32 +250,32 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         //
         if (bar)
             draw.DrawMenuBar(item_i, items, which, false);
-        else if (lastitem != which)
+        else if (LastItem != which)
         {
             video.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
             draw.PrintMenuItem(item_i, items, which, MenuDrawing.MenuItemColor(items[which], true));
-            redrawitem = 1;
+            RedrawItem = 1;
         }
         else
-            redrawitem = 0;
+            RedrawItem = 0;
 
         routine?.Invoke(which);
         video.Update();
 
-        item_i.curpos = (short)which;
+        item_i.CurPos = (short)which;
 
-        lastitem = which;
+        LastItem = which;
         switch (exit)
         {
             case 1:
                 //
                 // CALL THE ROUTINE
                 //
-                if (items[which].routine != null)
+                if (items[which].Routine != null)
                 {
                     ShootSnd();
                     draw.MenuFadeOut();
-                    items[which].routine!.Invoke(0);
+                    items[which].Routine!.Invoke(0);
                 }
                 return which;
 
@@ -292,15 +292,15 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
 
     internal static char ItemKey(ControlPanelItem item)
     {
-        if (item.shortKey != '\0')
-            return char.ToUpperInvariant(item.shortKey);
+        if (item.ShortKey != '\0')
+            return char.ToUpperInvariant(item.ShortKey);
 
-        return string.IsNullOrWhiteSpace(item.text) ? '\0' : item.text[0];
+        return string.IsNullOrWhiteSpace(item.Text) ? '\0' : item.Text[0];
     }
 
     internal void EraseGun(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int x, int y, int which)
     {
-        if (item_i.cursor != null)
+        if (item_i.Cursor != null)
             draw.DrawMenuBar(item_i, items, which, false);
         else
         {
@@ -323,15 +323,15 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
 
     internal void DrawGun(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int x, ref int y, int which, int basey, Action<int>? routine)
     {
-        if (item_i.cursor != null)
+        if (item_i.Cursor != null)
         {
-            y = basey + which * item_i.rowHeight;
+            y = basey + which * item_i.RowHeight;
             draw.DrawMenuBar(item_i, items, which, true);
         }
         else
         {
             video.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-            y = basey + which * item_i.rowHeight;
+            y = basey + which * item_i.RowHeight;
             graphics.DrawPic("c_cursor1", x, y);
             draw.PrintMenuItem(item_i, items, which, MenuDrawing.MenuItemColor(items[which], true));
         }
@@ -389,9 +389,9 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
             }
             else GameEngineManager.DelayMs(5);
         }
-        while (!input.IsKeyDown(ScanCodes.Y) && !input.IsKeyDown(ScanCodes.N) && !input.IsKeyDown(ScanCodes.Escape) && !ci.button0 && !ci.button1);
+        while (!input.IsKeyDown(ScanCodes.Y) && !input.IsKeyDown(ScanCodes.N) && !input.IsKeyDown(ScanCodes.Escape) && !ci.Button0 && !ci.Button1);
 
-        if (input.IsKeyDown(ScanCodes.Y) || ci.button0)
+        if (input.IsKeyDown(ScanCodes.Y) || ci.Button0)
         {
             xit = 1;
             ShootSnd();

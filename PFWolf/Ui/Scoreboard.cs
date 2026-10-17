@@ -17,7 +17,7 @@ internal sealed class Scoreboard(
     Action clearMemory)
 {
     /// <summary>Whether the scoreboard is up over the view (the `scoreboard` command toggles it)</summary>
-    internal bool showscoreboard;
+    internal bool ShowScoreboard;
 
     /// <summary>The match's team scores and objective (Gameplay/Deathmatch.cs); unset, none</summary>
     internal Deathmatch? Match { get; set; }
@@ -129,6 +129,6 @@ internal sealed class Scoreboard(
     /// <summary>`scoreboard`: shows or hides the scoreboard over the view (bind it to a key)</summary>
     internal void ScoreboardCommand(string[] args)
     {
-        showscoreboard = args.Length > 0 ? args[0] == "1" : !showscoreboard;
+        ShowScoreboard = args.Length > 0 ? args[0] == "1" : !ShowScoreboard;
     }
 }

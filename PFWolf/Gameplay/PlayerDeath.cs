@@ -53,7 +53,7 @@ internal sealed class PlayerDeath(
         int dx, dy;
         int iangle, curangle, clockwise, counter, change;
 
-        if (video.screenfaded)
+        if (video.ScreenFaded)
         {
             frame.ThreeDRefresh();
             video.FadeIn();
@@ -169,7 +169,7 @@ internal sealed class PlayerDeath(
             pushWalls.ClearPushWalls();
             session.PlayerState.WeaponSprite = null;            // the weapon in hand starts on its Ready state
 
-            if (settings.viewsize != 21)
+            if (settings.ViewSize != 21)
             {
                 statusBar.DrawKeys();
                 weapons.DrawWeapon();
@@ -223,9 +223,9 @@ internal sealed class PlayerDeath(
         }
 
         session.GameState.VictoryFlag = true;
-        uint fadeheight = (uint)(settings.viewsize != 21 ? video.ScreenYAboveBottom(playArea.StatusLines) : video.screenHeight);
-        video.BarScaledCoord(0, 0, video.screenWidth, (int)fadeheight, session.BorderCol);
-        video.Transition(hooks.Settings().DeathFadeStyle, 0, 0, video.screenWidth, (int)fadeheight, (uint)hooks.Settings().DeathFadeTics);
+        uint fadeheight = (uint)(settings.ViewSize != 21 ? video.ScreenYAboveBottom(playArea.StatusLines) : video.ScreenHeight);
+        video.BarScaledCoord(0, 0, video.ScreenWidth, (int)fadeheight, session.BorderCol);
+        video.Transition(hooks.Settings().DeathFadeStyle, 0, 0, video.ScreenWidth, (int)fadeheight, (uint)hooks.Settings().DeathFadeTics);
 
         foreach (var label in deathcam.Labels)
             ui.TextAt(label.X, label.Y, intermission.IntermissionTextStyle).Print(label.Text.ToLanguageText(language));

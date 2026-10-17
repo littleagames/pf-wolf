@@ -79,7 +79,7 @@ internal class MapManager
     private readonly GameSession session;
 
     /// <summary>How many 64 unit stories tall the level's walls are, where plane 3 doesn't say (tall walls; mapdefs wall-height)</summary>
-    internal int wallstories = 1;
+    internal int LevelWallStories = 1;
 
     private UInt16[][] mapsegs = new ushort[LevelPlanes][];
 
@@ -111,21 +111,21 @@ internal class MapManager
         this.session = session;
     }
 
-    internal ushort mapwidth, mapheight;
-    internal ushort[,] tilemap;
+    internal ushort MapWidth, MapHeight;
+    internal ushort[,] TileMap;
 
     /// <summary>
     /// Each wall tile's shape: Square, or a 45 degree diagonal from a mapdefs diagonal marker on
     /// the object plane. Not saved: it's rebuilt from the planes whenever they're loaded or restored.
     /// </summary>
-    internal WallShape[,] wallshape = new WallShape[MapSize, MapSize];
+    internal WallShape[,] WallShapes = new WallShape[MapSize, MapSize];
 
     /// <summary>
     /// Each tile's wall height in stories from the height plane (plane 3), or 0 where it has
     /// none and the map's default applies (see <see cref="WallStories"/>). Rebuilt from the
-    /// planes whenever they're loaded or restored, like <see cref="wallshape"/>.
+    /// planes whenever they're loaded or restored, like <see cref="WallShapes"/>.
     /// </summary>
-    internal byte[,] storymap = new byte[MapSize, MapSize];
+    internal byte[,] StoryMap = new byte[MapSize, MapSize];
     private int maxtilestories;
 
     /// <summary>
@@ -133,7 +133,7 @@ internal class MapManager
     /// plane 0 (MapConstants.PatchShift), which LoadMap takes off into here, so plane 0 holds only
     /// the tiles' own codes. Saved with the level.
     /// </summary>
-    internal byte[,] patchmap = new byte[MapSize, MapSize];
+    internal byte[,] PatchMap = new byte[MapSize, MapSize];
 
     internal const int HeightPlane = MapConstants.HeightPlane;
 
@@ -154,7 +154,7 @@ internal class MapManager
 
     /// <summary>
     /// ECWolf's floor and ceiling plane: the low byte of a tile's value picks its floor flat and
-    /// the high byte its ceiling flat, through the mapdefs flats table (see <see cref="floorflat"/>).
+    /// the high byte its ceiling flat, through the mapdefs flats table (see <see cref="FloorFlat"/>).
     /// </summary>
     internal const int FlatPlane = MapConstants.FlatPlane;
 
@@ -165,29 +165,29 @@ internal class MapManager
     /// are only built when a level is loaded or restored; an animated flat's tiles are set to its
     /// frame each frame (AnimateFlats).
     /// </summary>
-    internal TextureAsset?[] floorflat = new TextureAsset?[MapArea], ceilingflat = new TextureAsset?[MapArea];
+    internal TextureAsset?[] FloorFlat = new TextureAsset?[MapArea], CeilingFlat = new TextureAsset?[MapArea];
 
     // The tiles whose floor or ceiling is an animation (animdefs), with it
     private readonly List<(int Index, AnimatedAsset<TextureAsset> Animation)> animatedfloors = [], animatedceilings = [];
 
     /// <summary>Whether any tile has a floor flat, or a ceiling flat.</summary>
-    internal bool hasfloorflats, hasceilingflats;
-    internal bool[,] spotvis;
-    internal Actor?[,] actorat;
+    internal bool HasFloorFlats, HasCeilingFlats;
+    internal bool[,] Spotvis;
+    internal Actor?[,] ActorAt;
 
     /// <summary>
     /// What the player has seen of this level, for the automap: floor the view rays have crossed
     /// and the wall faces they've hit. Unlike spotvis it lasts for the whole level, and it's saved.
     /// </summary>
-    internal SeenFlags[,] seen;
+    internal SeenFlags[,] Seen;
 
-    /// <summary>Adds the floor tiles visible this frame (spotvis, after the walls are traced) to <see cref="seen"/>.</summary>
+    /// <summary>Adds the floor tiles visible this frame (spotvis, after the walls are traced) to <see cref="Seen"/>.</summary>
     internal void MarkSeenFromSpotvis()
     {
         for (int x = 0; x < MapSize; x++)
             for (int y = 0; y < MapSize; y++)
-                if (spotvis[x, y])
-                    seen[x, y] |= SeenFlags.Floor;
+                if (Spotvis[x, y])
+                    Seen[x, y] |= SeenFlags.Floor;
     }
 
     /// <summary>The seen map as one byte per tile, column by column, for save games.</summary>
@@ -196,7 +196,7 @@ internal class MapManager
         var bytes = new byte[MapSize * MapSize];
         for (int x = 0; x < MapSize; x++)
             for (int y = 0; y < MapSize; y++)
-                bytes[x * MapSize + y] = (byte)seen[x, y];
+                bytes[x * MapSize + y] = (byte)Seen[x, y];
         return bytes;
     }
 
@@ -204,15 +204,15 @@ internal class MapManager
     {
         for (int x = 0; x < MapSize; x++)
             for (int y = 0; y < MapSize; y++)
-                seen[x, y] = (SeenFlags)bytes[x * MapSize + y];
+                Seen[x, y] = (SeenFlags)bytes[x * MapSize + y];
     }
 
     public ushort GetTile(int x, int y, int plane)
     {
-        return mapsegs[0][y * mapwidth + x];
+        return mapsegs[0][y * MapWidth + x];
     }
 
-    // A wall's id is kept in tilemap below the BitWall and BitDoor flags
+    // A wall's id is kept in TileMap below the BitWall and BitDoor flags
     private static bool IsWallId(int tile) => tile is > 0 and < GameConstants.BitWall;
 
     private readonly HashSet<int> badwallids = new(), badswitches = new();
@@ -236,8 +236,8 @@ internal class MapManager
         if (mapAsset == null)
             throw new Exception($"Map not found {mapName}");
 
-        mapwidth = mapAsset.Width;
-        mapheight = mapAsset.Height;
+        MapWidth = mapAsset.Width;
+        MapHeight = mapAsset.Height;
         // Clone each plane: SpawnDoor and other setup code mutate mapsegs in place
         // (e.g. SetMapSpot), and mapAsset is a cached singleton reused for every
         // load of this level, so writing through the original array would
@@ -246,13 +246,13 @@ internal class MapManager
         for (int i = 0; i < mapAsset.MapData.Length; i++)
             mapsegs[i] = (ushort[])mapAsset.MapData[i].Clone();
         SplitPatches();
-        floorflat = new TextureAsset?[MapArea];     // BuildFlats fills these in, once the level's defaults are known
-        ceilingflat = new TextureAsset?[MapArea];
-        hasfloorflats = hasceilingflats = false;
+        FloorFlat = new TextureAsset?[MapArea];     // BuildFlats fills these in, once the level's defaults are known
+        CeilingFlat = new TextureAsset?[MapArea];
+        HasFloorFlats = HasCeilingFlats = false;
         animatedfloors.Clear();
         animatedceilings.Clear();
         ClearTextureChanges();
-        objectives = new(StringComparer.OrdinalIgnoreCase);     // counted afresh as the level's set up (Gameplay/Objectives.cs)
+        ObjectiveCounts = new(StringComparer.OrdinalIgnoreCase);     // counted afresh as the level's set up (Gameplay/Objectives.cs)
 
 #if USE_FEATUREFLAGS
     const int MXX = MAPSIZE - 1;
@@ -264,10 +264,10 @@ internal class MapManager
     ffDataBottomLeft  = MAPSPOT(0,   MXX, 0); MAPSPOT(0,   MXX, 0) = MAPSPOT(0,       MXX - 1, 0);
 #endif
 
-        tilemap = new ushort[MapSize, MapSize]; // wall values only
-        spotvis = new bool[MapSize, MapSize];
-        seen = new SeenFlags[MapSize, MapSize];
-        actorat = new Actor?[MapSize, MapSize];
+        TileMap = new ushort[MapSize, MapSize]; // wall values only
+        Spotvis = new bool[MapSize, MapSize];
+        Seen = new SeenFlags[MapSize, MapSize];
+        ActorAt = new Actor?[MapSize, MapSize];
 
         // Every actor lives in _actors and nothing else clears this list, so reloading a level
         // (death with lives left, replaying a level in a new game, etc.) would otherwise pile
@@ -297,9 +297,9 @@ internal class MapManager
                 && badpatchswitches.Add(id))
                 Console.WriteLine($"mapdefs patch {id}'s switch goes to {patchSwitch.To}, which isn't a patch; it won't change when used");
 
-        for (int y = 0; y < mapheight; y++)
+        for (int y = 0; y < MapHeight; y++)
         {
-            for (int x = 0; x < mapwidth; x++)
+            for (int x = 0; x < MapWidth; x++)
             {
                 int tile = MapSpot(x, y, 0);
                 bool solid = IsWallId(tile) && data.Walls.ContainsKey(tile) || data.Doors.ContainsKey(tile);
@@ -307,15 +307,15 @@ internal class MapManager
                 if (solid)
                 {
                     // solid wall (a door's tile is made a door by SpawnDoor)
-                    tilemap[x, y] = (ushort)tile;
-                    actorat[x, y] = new Wall(tile);// (uint)tile;
+                    TileMap[x, y] = (ushort)tile;
+                    ActorAt[x, y] = new Wall(tile);// (uint)tile;
                 }
                 else
                 {
                     // area floor (unless a patroller already scanned is heading onto it)
-                    tilemap[x, y] = 0;
-                    if (actorat[x, y] is not ActorMark)
-                        actorat[x, y] = null;
+                    TileMap[x, y] = 0;
+                    if (ActorAt[x, y] is not ActorMark)
+                        ActorAt[x, y] = null;
                 }
 
                 // TODO: SpawnDoor
@@ -374,14 +374,14 @@ internal class MapManager
     {
         int edgeWall = Enumerable.Range(1, GameConstants.BitWall - 1).Reverse().FirstOrDefault(id => !data.Walls.ContainsKey(id), 1);
         int sealedTiles = 0;
-        for (int y = 0; y < mapheight; y++)
+        for (int y = 0; y < MapHeight; y++)
         {
-            for (int x = 0; x < mapwidth; x++)
+            for (int x = 0; x < MapWidth; x++)
             {
-                if ((x != 0 && y != 0 && x != mapwidth - 1 && y != mapheight - 1) || tilemap[x, y] != 0)
+                if ((x != 0 && y != 0 && x != MapWidth - 1 && y != MapHeight - 1) || TileMap[x, y] != 0)
                     continue;
-                tilemap[x, y] = (ushort)edgeWall;
-                actorat[x, y] = new Wall(edgeWall);
+                TileMap[x, y] = (ushort)edgeWall;
+                ActorAt[x, y] = new Wall(edgeWall);
                 sealedTiles++;
             }
         }
@@ -530,7 +530,7 @@ internal class MapManager
     {
         if (floor != 0xff && floor != CurrentFloorNumber)
             return;     // on another floor: for when floors keep their state
-        if (x <= 0 || y <= 0 || x >= mapwidth - 1 || y >= mapheight - 1)
+        if (x <= 0 || y <= 0 || x >= MapWidth - 1 || y >= MapHeight - 1)
             return;
 
         int target = (y << MapShift) + x;
@@ -550,7 +550,7 @@ internal class MapManager
                 {
                     int nx = sx + dx, ny = sy + dy;
                     int next = (ny << MapShift) + nx;
-                    if (nx >= 0 && ny >= 0 && nx < mapwidth && ny < mapheight
+                    if (nx >= 0 && ny >= 0 && nx < MapWidth && ny < MapHeight
                         && linked.Contains(mapsegs[1][next]) && seen.Add(next))
                         open.Enqueue(next);
                 }
@@ -571,38 +571,38 @@ internal class MapManager
         foreach (var (dx, dy) in new[] { (0, 0), (1, 0), (0, -1), (0, 1), (-1, 0) })
         {
             int tx = x + dx, ty = y + dy;
-            if (tx >= 0 && ty >= 0 && tx < mapwidth && ty < mapheight && ValidArea(MapSpot(tx, ty, 0)))
+            if (tx >= 0 && ty >= 0 && tx < MapWidth && ty < MapHeight && ValidArea(MapSpot(tx, ty, 0)))
                 return (byte)(MapSpot(tx, ty, 0) - Floors.AreaTile);
         }
         return 0;
     }
 
     /// <summary>
-    /// Sets <see cref="storymap"/> from the height plane. Values outside 1 to MaxWallStories
+    /// Sets <see cref="StoryMap"/> from the height plane. Values outside 1 to MaxWallStories
     /// (such as an ECWolf info plane) are left to the map's default.
     /// </summary>
     private void BuildWallHeights()
     {
-        storymap = new byte[MapSize, MapSize];
+        StoryMap = new byte[MapSize, MapSize];
         maxtilestories = 0;
 
-        for (int y = 0; y < mapheight; y++)
-            for (int x = 0; x < mapwidth; x++)
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
             {
                 int stories = MapSpot(x, y, HeightPlane);
                 if (stories is >= 1 and <= GameConstants.MaxWallStories)
                 {
-                    storymap[x, y] = (byte)stories;
+                    StoryMap[x, y] = (byte)stories;
                     maxtilestories = Math.Max(maxtilestories, stories);
                 }
             }
     }
 
     /// <summary>How many stories tall the wall on this tile is.</summary>
-    internal int WallStories(int x, int y) => storymap[x, y] != 0 ? storymap[x, y] : wallstories;
+    internal int WallStories(int x, int y) => StoryMap[x, y] != 0 ? StoryMap[x, y] : LevelWallStories;
 
     /// <summary>The tallest wall anywhere on the level.</summary>
-    internal int MaxWallStories => Math.Max(maxtilestories, wallstories);
+    internal int MaxWallStories => Math.Max(maxtilestories, LevelWallStories);
 
     /// <summary>
     /// Sets a tile's height on the height plane, so it's saved with the level; 0 gives it back
@@ -611,7 +611,7 @@ internal class MapManager
     internal void SetWallStories(int x, int y, int stories)
     {
         SetMapSpot(x, y, HeightPlane, (ushort)stories);
-        storymap[x, y] = (byte)stories;
+        StoryMap[x, y] = (byte)stories;
         if (stories > maxtilestories)
             maxtilestories = stories;
     }
@@ -658,23 +658,23 @@ internal class MapManager
         if (tag == 0)
             yield break;
 
-        for (int y = 0; y < mapheight; y++)
-            for (int x = 0; x < mapwidth; x++)
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
                 if (GetTag(x, y) == tag)
                     yield return (x, y);
     }
 
     /// <summary>
-    /// Takes each tile's patch off the high byte of plane 0 into <see cref="patchmap"/>, leaving
+    /// Takes each tile's patch off the high byte of plane 0 into <see cref="PatchMap"/>, leaving
     /// plane 0 its own codes (walls, doors, floors), as everything else reads them
     /// </summary>
     private void SplitPatches()
     {
-        patchmap = new byte[MapSize, MapSize];
+        PatchMap = new byte[MapSize, MapSize];
         var plane = mapsegs[0];
         for (int i = 0; i < plane.Length && i < MapArea; i++)
         {
-            patchmap[i % MapSize, i / MapSize] = (byte)(plane[i] >> MapConstants.PatchShift);
+            PatchMap[i % MapSize, i / MapSize] = (byte)(plane[i] >> MapConstants.PatchShift);
             plane[i] &= MapConstants.Plane0CodeMask;
         }
     }
@@ -688,13 +688,13 @@ internal class MapManager
     /// </summary>
     private void CheckPatch(string mapName, int x, int y, bool isWall, MapObjectTranslationAsset data)
     {
-        int patch = patchmap[x, y];
+        int patch = PatchMap[x, y];
         if (patch == 0)
             return;
 
         if (!isWall)
         {
-            patchmap[x, y] = 0;
+            PatchMap[x, y] = 0;
             if (misplacedpatches.Add(mapName))
                 Console.WriteLine($"{mapName}: a patch on {x},{y}, which isn't a wall, is ignored (patches go on walls only)");
             return;
@@ -705,25 +705,25 @@ internal class MapManager
     }
 
     /// <summary>The patch on a tile, 0 for none.</summary>
-    internal byte GetPatch(int x, int y) => patchmap[x, y];
+    internal byte GetPatch(int x, int y) => PatchMap[x, y];
 
     /// <summary>Puts a patch on a tile, so it's saved with the level; 0 takes it off.</summary>
-    internal void SetPatch(int x, int y, byte patch) => patchmap[x, y] = patch;
+    internal void SetPatch(int x, int y, byte patch) => PatchMap[x, y] = patch;
 
     /// <summary>Moves a tile's patch to another tile, as a pushwall slides.</summary>
     internal void MovePatch(int fromx, int fromy, int tox, int toy)
     {
-        var patch = patchmap[fromx, fromy];
+        var patch = PatchMap[fromx, fromy];
         if (patch == 0)
             return;
-        patchmap[fromx, fromy] = 0;
-        patchmap[tox, toy] = patch;
+        PatchMap[fromx, fromy] = 0;
+        PatchMap[tox, toy] = patch;
     }
 
     /// <summary>Moves a tile's height to another tile, as a pushwall slides.</summary>
     internal void MoveWallStories(int fromx, int fromy, int tox, int toy)
     {
-        int stories = storymap[fromx, fromy];
+        int stories = StoryMap[fromx, fromy];
         SetWallStories(fromx, fromy, 0);
         SetWallStories(tox, toy, stories);
     }
@@ -741,7 +741,7 @@ internal class MapManager
     }
 
     /// <summary>
-    /// Sets <see cref="floorflat"/> and <see cref="ceilingflat"/> from the flat plane, as ECWolf
+    /// Sets <see cref="FloorFlat"/> and <see cref="CeilingFlat"/> from the flat plane, as ECWolf
     /// does: the low byte is the floor's index in the mapdefs flats table and the high byte the
     /// ceiling's. An index the table doesn't list (or whose texture isn't found) gets the map's
     /// default; with no default either, the tile keeps the floor or ceiling color.
@@ -755,19 +755,19 @@ internal class MapManager
         Asset? Flat(string? name) => name == null ? null
             : found.TryGetValue(name, out var flat) ? flat : found[name] = FindFlat(name);
 
-        floorflat = new TextureAsset?[MapArea];
-        ceilingflat = new TextureAsset?[MapArea];
-        hasfloorflats = hasceilingflats = false;
+        FloorFlat = new TextureAsset?[MapArea];
+        CeilingFlat = new TextureAsset?[MapArea];
+        HasFloorFlats = HasCeilingFlats = false;
         animatedfloors.Clear();
         animatedceilings.Clear();
-        for (int y = 0; y < mapheight; y++)
-            for (int x = 0; x < mapwidth; x++)
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
             {
                 int i = (y << MapShift) + x;
-                floorflat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: false)), i, animatedfloors);
-                ceilingflat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: true)), i, animatedceilings);
-                hasfloorflats |= floorflat[i] != null;
-                hasceilingflats |= ceilingflat[i] != null;
+                FloorFlat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: false)), i, animatedfloors);
+                CeilingFlat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: true)), i, animatedceilings);
+                HasFloorFlats |= FloorFlat[i] != null;
+                HasCeilingFlats |= CeilingFlat[i] != null;
             }
     }
 
@@ -783,14 +783,14 @@ internal class MapManager
     /// <summary>
     /// Sets the tiles with an animated floor or ceiling (animdefs) to its frame <paramref name="tics"/>
     /// into the level: a looping one on the same frame on every tile, one that plays once from when
-    /// its tile last changed (<see cref="animstart"/>). Once a frame, before the view is drawn.
+    /// its tile last changed (<see cref="AnimStart"/>). Once a frame, before the view is drawn.
     /// </summary>
     internal void AnimateFlats(int tics)
     {
         foreach (var (i, animation) in animatedfloors)
-            floorflat[i] = animation.FrameAt(animation.Loops ? tics : tics - animstart[i]);
+            FloorFlat[i] = animation.FrameAt(animation.Loops ? tics : tics - AnimStart[i]);
         foreach (var (i, animation) in animatedceilings)
-            ceilingflat[i] = animation.FrameAt(animation.Loops ? tics : tics - animstart[i]);
+            CeilingFlat[i] = animation.FrameAt(animation.Loops ? tics : tics - AnimStart[i]);
     }
 
     /// <summary>
@@ -836,10 +836,10 @@ internal class MapManager
     private Dictionary<int, Dictionary<string, string>> texturechanges = [];
 
     /// <summary>The level's objectives (game-info objectives) by name: how many are done, of how many. Saved with the level.</summary>
-    internal Dictionary<string, ObjectiveCount> objectives = new(StringComparer.OrdinalIgnoreCase);
+    internal Dictionary<string, ObjectiveCount> ObjectiveCounts = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Per tile ((y &lt;&lt; MapShift) + x): the level tic it last changed, 0 for never.</summary>
-    internal int[] animstart = new int[MapArea];
+    internal int[] AnimStart = new int[MapArea];
 
     /// <summary>The texture a tile shows in place of <paramref name="name"/> (itself, unless A_ChangeTexture swapped it).</summary>
     internal string ChangedTexture(int x, int y, string name)
@@ -848,7 +848,7 @@ internal class MapManager
             : changes.GetValueOrDefault(name, name);
 
     /// <summary>Notes a tile changed at level tic <paramref name="tic"/>: an animation that plays once on it starts over.</summary>
-    internal void RestartAnimations(int x, int y, int tic) => animstart[(y << MapShift) + x] = tic;
+    internal void RestartAnimations(int x, int y, int tic) => AnimStart[(y << MapShift) + x] = tic;
 
     /// <summary>
     /// Makes a tile show <paramref name="to"/> where it showed <paramref name="from"/> (as it is
@@ -866,7 +866,7 @@ internal class MapManager
             changes[original] = to;
         if (!changes.ContainsKey(from))
             changes[from] = to;
-        animstart[i] = tic;
+        AnimStart[i] = tic;
     }
 
     /// <summary>Rebuilds the flats, after A_ChangeTexture changed some.</summary>
@@ -875,18 +875,18 @@ internal class MapManager
     private void ClearTextureChanges()
     {
         texturechanges = [];
-        animstart = new int[MapArea];
+        AnimStart = new int[MapArea];
     }
 
     // Saved after the actors: the tiles that have changed, with when and what
     internal void WriteTextureChanges(BinaryWriter bw)
     {
-        var starts = Enumerable.Range(0, MapArea).Where(i => animstart[i] != 0).ToList();
+        var starts = Enumerable.Range(0, MapArea).Where(i => AnimStart[i] != 0).ToList();
         bw.Write(starts.Count);
         foreach (var i in starts)
         {
             bw.Write(i);
-            bw.Write(animstart[i]);
+            bw.Write(AnimStart[i]);
         }
 
         bw.Write(texturechanges.Count);
@@ -955,15 +955,15 @@ internal class MapManager
         return null;
     }
 
-    /// <summary>Sets <see cref="wallshape"/> from the diagonal markers on the object plane.</summary>
+    /// <summary>Sets <see cref="WallShapes"/> from the diagonal markers on the object plane.</summary>
     private void BuildWallShapes()
     {
         var diagonals = GetMapData().Diagonals;
-        wallshape = new WallShape[MapSize, MapSize];
+        WallShapes = new WallShape[MapSize, MapSize];
 
-        for (int y = 0; y < mapheight; y++)
-            for (int x = 0; x < mapwidth; x++)
-                wallshape[x, y] = IsPlainWall(x, y) && diagonals.TryGetValue(MapSpot(x, y, 1), out var diagonal)
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
+                WallShapes[x, y] = IsPlainWall(x, y) && diagonals.TryGetValue(MapSpot(x, y, 1), out var diagonal)
                     ? diagonal.Shape
                     : WallShape.Square;
     }
@@ -971,12 +971,12 @@ internal class MapManager
     /// <summary>
     /// A solid wall tile that can take a shape: not a door, not a moving pushwall, and not open
     /// floor. A wall beside a door (SpawnDoor sets BitWall on it, for the door-side texture) counts.
-    /// Plane 0 has to hold a mapdefs wall too: before SpawnDoor runs, a door tile's raw tilemap
+    /// Plane 0 has to hold a mapdefs wall too: before SpawnDoor runs, a door tile's raw TileMap
     /// value (90-101 in Wolf3D) looks just like a wall id with BitWall set.
     /// </summary>
     internal bool IsPlainWall(int x, int y)
     {
-        var tile = tilemap[x, y];
+        var tile = TileMap[x, y];
         var spot = MapSpot(x, y, 0);
         return IsWallId(spot) && !GetMapData().Doors.ContainsKey(spot) && GetMapData().Walls.ContainsKey(spot)
             && (tile & GameConstants.BitDoor) == 0 && (tile & ~GameConstants.BitWall) != 0;
@@ -984,7 +984,7 @@ internal class MapManager
 
     /// <summary>The diagonal marker on this tile, if its shape came from one.</summary>
     internal MapDiagonalTranslation? GetDiagonal(int x, int y) =>
-        wallshape[x, y] != WallShape.Square && GetMapData().Diagonals.TryGetValue(MapSpot(x, y, 1), out var diagonal)
+        WallShapes[x, y] != WallShape.Square && GetMapData().Diagonals.TryGetValue(MapSpot(x, y, 1), out var diagonal)
             ? diagonal
             : null;
 
@@ -1005,7 +1005,7 @@ internal class MapManager
         }
 
         SetMapSpot(x, y, 1, (ushort)marker);
-        wallshape[x, y] = shape;
+        WallShapes[x, y] = shape;
         return marker;
     }
 
@@ -1167,7 +1167,7 @@ internal class MapManager
                 builtActor.Cloaked |= code.Cloak;
                 if (code.Ambush)
                     builtActor.RuntimeFlags |= ObjFlags.Ambush;
-                if (code.Link.Equals("east", StringComparison.OrdinalIgnoreCase) && tilex + 1 < mapwidth)
+                if (code.Link.Equals("east", StringComparison.OrdinalIgnoreCase) && tilex + 1 < MapWidth)
                 {
                     builtActor.DeathLink = (ushort)MapSpot(tilex + 1, tiley, 1);
                     SetMapSpot(tilex + 1, tiley, 1, 0);     // a tile, not a thing
@@ -1199,11 +1199,11 @@ internal class MapManager
         // Solid statics (barrels, pillars, tables, ...; `flags: [SOLID]` in actordefs, inherited
         // through `parent:`) make their whole tile impassable to the player, enemies and
         // projectiles, as the original's `block` statics did. The blocking marker is the same
-        // "something is here" entry walls and doors use, so every actorat[,] check sees it.
+        // "something is here" entry walls and doors use, so every ActorAt[,] check sees it.
         if (builtActor.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
-            actorat[tilex, tiley] = new BlockingActor();
-        else if (WallSprites.IsWallSprite(builtActor) && !WallSprites.IsPassable(builtActor) && actorat[tilex, tiley] == null)
-            actorat[tilex, tiley] = new WallSpriteBlocker();
+            ActorAt[tilex, tiley] = new BlockingActor();
+        else if (WallSprites.IsWallSprite(builtActor) && !WallSprites.IsPassable(builtActor) && ActorAt[tilex, tiley] == null)
+            ActorAt[tilex, tiley] = new WallSpriteBlocker();
 
         _actors.AddLast(builtActor);
         return builtActor;
@@ -1294,7 +1294,7 @@ internal class MapManager
     /// Spawns a runtime projectile or effect (Rocket, Smoke, Needle, Fire --
     /// actordefs/wolf3d/projectiles.yaml) at another actor's exact fixed-point position. It is
     /// an "active" actor (free-moving, drawn through the exact-position path, never marked in
-    /// actorat); callers set Angle/Speed.
+    /// ActorAt); callers set Angle/Speed.
     /// </summary>
     internal Entities.Actors.Actor? SpawnAtActor(string className, Entities.Actors.Actor source)
     {
@@ -1381,7 +1381,7 @@ internal class MapManager
         return _actors;
     }
 
-    // actorat[,] only tracks walls and doors; the questions it used to answer about actors
+    // ActorAt[,] only tracks walls and doors; the questions it used to answer about actors
     // ("is something standing on that tile?") are answered from _actors instead. An actor
     // occupies its TileX/TileY, which -- as in the original -- moves to the destination tile the
     // instant a step begins.
@@ -1584,19 +1584,19 @@ internal class MapManager
     }
 
     /*
-    The original kept each enemy in actorat[] too, on the tile it was on as of its last think:
+    The original kept each enemy in ActorAt[] too, on the tile it was on as of its last think:
     it overwrote a door's entry there (so a door can't close on it) and a door opening all the
     way cleared it. Other enemies' moves (Monster.CheckSide, CheckDiag), the player's
     (TryMove), and doors closing all read it from there, which demos depend on.
     */
 
-    /// <summary>Puts a living or dead enemy in actorat[] where it stands, as DoActor did after its think</summary>
+    /// <summary>Puts a living or dead enemy in ActorAt[] where it stands, as DoActor did after its think</summary>
     internal void MarkActorTile(Entities.Actors.Monster ob)
     {
         if (ob.RuntimeFlags.HasFlag(ObjFlags.NeverMark))
             return;
 
-        ref var spot = ref actorat[ob.TileX, ob.TileY];
+        ref var spot = ref ActorAt[ob.TileX, ob.TileY];
         if (spot is Wall or BlockingActor)
             return;                 // never on a wall or a solid thing (or a wall sprite's tile)
         if (ob.RuntimeFlags.HasFlag(ObjFlags.NonMark) && spot != null)
@@ -1604,15 +1604,15 @@ internal class MapManager
         spot = ob.Mark;
     }
 
-    /// <summary>Clears an enemy's (or a door's) entry from actorat[], as DoActor and KillActor did</summary>
+    /// <summary>Clears an enemy's (or a door's) entry from ActorAt[], as DoActor and KillActor did</summary>
     internal void UnmarkActorTile(int tilex, int tiley)
     {
-        if (actorat[tilex, tiley] is ActorMark or Door)
-            actorat[tilex, tiley] = null;
+        if (ActorAt[tilex, tiley] is ActorMark or Door)
+            ActorAt[tilex, tiley] = null;
     }
 
     /// <summary>The enemy marked on a tile (MarkActorTile), if any</summary>
-    internal Entities.Actors.Monster? ActorMarkAt(int tilex, int tiley) => (actorat[tilex, tiley] as ActorMark)?.Who;
+    internal Entities.Actors.Monster? ActorMarkAt(int tilex, int tiley) => (ActorAt[tilex, tiley] as ActorMark)?.Who;
 
     /*
     =============================================================================
@@ -1620,7 +1620,7 @@ internal class MapManager
                                     SAVE GAMES
 
     A save stores the level as it stands, not as a diff from the map file: the map planes
-    (MovingWalls, ambush tiles and doors rewrite them), the wall/door tilemap, what blocks each
+    (MovingWalls, ambush tiles and doors rewrite them), the wall/door TileMap, what blocks each
     tile, and every actor. Loading reloads the map first (for the parts a save doesn't hold,
     such as door lock translations) and then lays this over it.
 
@@ -1646,8 +1646,8 @@ internal class MapManager
         {
             for (int y = 0; y < MapSize; y++)
             {
-                bw.Write(tilemap[x, y]);
-                switch (actorat[x, y])
+                bw.Write(TileMap[x, y]);
+                switch (ActorAt[x, y])
                 {
                     case Wall wall:
                         bw.Write((byte)SavedTile.Wall);
@@ -1688,10 +1688,10 @@ internal class MapManager
 
         for (int x = 0; x < MapSize; x++)
             for (int y = 0; y < MapSize; y++)
-                bw.Write(patchmap[x, y]);
+                bw.Write(PatchMap[x, y]);
 
-        bw.Write(objectives.Count);
-        foreach (var (name, count) in objectives)
+        bw.Write(ObjectiveCounts.Count);
+        foreach (var (name, count) in ObjectiveCounts)
         {
             bw.Write(name);
             bw.Write(count.Done);
@@ -1781,14 +1781,14 @@ internal class MapManager
     internal List<Entities.Actors.Actor> RestoreLevelState(LevelSnapshot level, Func<int, Entities.PlayerState?>? ownerOf = null)
     {
         mapsegs = level.Planes.Select(plane => (ushort[])plane.Clone()).ToArray();
-        tilemap = (ushort[,])level.TileMap.Clone();
-        patchmap = (byte[,])level.Patches.Clone();
-        actorat = (Actor?[,])level.ActorAt.Clone();
+        TileMap = (ushort[,])level.TileMap.Clone();
+        PatchMap = (byte[,])level.Patches.Clone();
+        ActorAt = (Actor?[,])level.ActorAt.Clone();
         // copies, so a hub level's kept snapshot doesn't change with the live level
-        animstart = (int[])level.AnimationStarts.Clone();
+        AnimStart = (int[])level.AnimationStarts.Clone();
         texturechanges = level.TextureChanges.ToDictionary(c => c.Key,
             c => new Dictionary<string, string>(c.Value, StringComparer.OrdinalIgnoreCase));
-        objectives = level.Objectives.ToDictionary(o => o.Key, o => new ObjectiveCount { Done = o.Value.Done, Total = o.Value.Total },
+        ObjectiveCounts = level.Objectives.ToDictionary(o => o.Key, o => new ObjectiveCount { Done = o.Value.Done, Total = o.Value.Total },
             StringComparer.OrdinalIgnoreCase);
         ReadMapInfo(fillFlats: false);      // the saved flat plane already has the map's flats
         BuildWallShapes();
@@ -1824,7 +1824,7 @@ internal class MapManager
             restored[i].Shooter = At(level.Links[i].Shooter);
         }
 
-        // Saves don't hold the enemies' actorat[] marks: put them back where they stand
+        // Saves don't hold the enemies' ActorAt[] marks: put them back where they stand
         foreach (var monster in restored.OfType<Entities.Actors.Monster>())
             MarkActorTile(monster);
 

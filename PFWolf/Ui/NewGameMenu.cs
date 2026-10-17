@@ -27,16 +27,16 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         bool any = false;
         foreach (var row in rows)
         {
-            if (row.data is not EpisodeInfo episode)
+            if (row.Data is not EpisodeInfo episode)
                 continue;
             bool isOpen = open(episode);
-            row.active = (short)(isOpen ? 1 : 0);
-            row.text = text(!isOpen && episode.LockedName is { Length: > 0 } lockedName ? lockedName : episode.Name);
+            row.Active = (short)(isOpen ? 1 : 0);
+            row.Text = text(!isOpen && episode.LockedName is { Length: > 0 } lockedName ? lockedName : episode.Name);
             any |= isOpen;
         }
 
-        if (any && (info.curpos < 0 || info.curpos >= rows.Length || rows[info.curpos].active == 0))
-            info.curpos = (short)Array.FindIndex(rows, row => row.active != 0);
+        if (any && (info.CurPos < 0 || info.CurPos >= rows.Length || rows[info.CurPos].Active == 0))
+            info.CurPos = (short)Array.FindIndex(rows, row => row.Active != 0);
         return any;
     }
 
@@ -88,7 +88,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         DrawNewEpisode();
         do
         {
-            which = loop.HandleMenu(NewEitems, NewEmenu, NewEitems.selectionPic != null ? DrawNewEpisodePic : null);
+            which = loop.HandleMenu(NewEitems, NewEmenu, NewEitems.SelectionPic != null ? DrawNewEpisodePic : null);
             switch (which)
             {
                 case -1:
@@ -96,7 +96,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
                     return 0;
 
                 default:
-                    episodeInfo = (EpisodeInfo?)NewEmenu[which].data;
+                    episodeInfo = (EpisodeInfo?)NewEmenu[which].Data;
 
                     string? refusal = null;
                     if (episodeInfo == null)
@@ -150,7 +150,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
                 goto firstpart;
             }
 
-            playerClass = ((PlayerClassChoice)ClassMenu[which].data!).Class;
+            playerClass = ((PlayerClassChoice)ClassMenu[which].Data!).Class;
             loop.ShootSnd();
         }
 
@@ -192,14 +192,14 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
 
         // Each episode's picture (pic-name in game-info) sits between the cursor and the name,
         // or the highlighted one's at the menu's selection-pic
-        if (NewEitems.selectionPic != null)
-            DrawNewEpisodePic(NewEitems.curpos);
+        if (NewEitems.SelectionPic != null)
+            DrawNewEpisodePic(NewEitems.CurPos);
         else
         {
             for (int i = 0; i < NewEmenu.Length; i++)
             {
-                if (NewEmenu[i].data is EpisodeInfo episode && !string.IsNullOrEmpty(episode.PicName))
-                    graphics.DrawPic(episode.PicName, NewEitems.x + 32, MenuDrawing.MenuItemY(NewEitems, i));
+                if (NewEmenu[i].Data is EpisodeInfo episode && !string.IsNullOrEmpty(episode.PicName))
+                    graphics.DrawPic(episode.PicName, NewEitems.X + 32, MenuDrawing.MenuItemY(NewEitems, i));
             }
         }
 
@@ -211,8 +211,8 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     /// <summary>The highlighted episode's picture at the menu's selection-pic, when it has one</summary>
     internal void DrawNewEpisodePic(int w)
     {
-        if (NewEitems.selectionPic is { } at && w >= 0 && w < NewEmenu.Length
-            && NewEmenu[w].data is EpisodeInfo { PicName: { Length: > 0 } pic })
+        if (NewEitems.SelectionPic is { } at && w >= 0 && w < NewEmenu.Length
+            && NewEmenu[w].Data is EpisodeInfo { PicName: { Length: > 0 } pic })
             graphics.DrawPic(pic, at.X, at.Y);
     }
 
@@ -221,7 +221,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         defs.DrawMenuComponents("new-game");
 
         draw.DrawMenu(NewItems, NewMenu);
-        DrawNewGameDiff(NewItems.curpos);
+        DrawNewGameDiff(NewItems.CurPos);
         video.Update();
         draw.MenuFadeIn();
         menuInput.WaitKeyUp();
@@ -231,12 +231,12 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     {
         // Face picture for the highlighted skill (pic-name in game-info), at the menu's
         // selection-pic or beside the skills
-        if (w >= 0 && w < NewMenu.Length && NewMenu[w].data is SkillInfo skill)
+        if (w >= 0 && w < NewMenu.Length && NewMenu[w].Data is SkillInfo skill)
         {
-            if (NewItems.selectionPic is { } at)
+            if (NewItems.SelectionPic is { } at)
                 graphics.DrawPic(skill.PicName, at.X, at.Y);
             else
-                graphics.DrawPic(skill.PicName, NewItems.x + 185, NewItems.y + 7);
+                graphics.DrawPic(skill.PicName, NewItems.X + 185, NewItems.Y + 7);
         }
     }
 
@@ -247,7 +247,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     {
         defs.DrawMenuComponents("new-class");
         draw.DrawMenu(ClassItems, ClassMenu);
-        DrawNewClassPic(ClassItems.curpos);
+        DrawNewClassPic(ClassItems.CurPos);
         video.Update();
         draw.MenuFadeIn();
         menuInput.WaitKeyUp();
@@ -256,9 +256,9 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     internal void DrawNewClassPic(int w)
     {
         // The highlighted class's picture; pictures can differ in size, so the last one is cleared first
-        int x = ClassItems.x + 175, y = ClassItems.y - 6;
+        int x = ClassItems.X + 175, y = ClassItems.Y - 6;
         video.Bar(x, y, 96, 100, "BKGDCOLOR");
-        if (w >= 0 && w < ClassMenu.Length && ClassMenu[w].data is PlayerClassChoice { PicName: { Length: > 0 } pic })
+        if (w >= 0 && w < ClassMenu.Length && ClassMenu[w].Data is PlayerClassChoice { PicName: { Length: > 0 } pic })
             graphics.DrawPic(pic, x, y);
     }
 

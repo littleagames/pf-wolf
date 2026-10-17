@@ -19,7 +19,7 @@ internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, 
         int exit = 0, oldview, newview;
         ControlInfo ci;
 
-        newview = oldview = settings.viewsize;
+        newview = oldview = settings.ViewSize;
         DrawChangeView(oldview);
         draw.MenuFadeIn();
 
@@ -28,7 +28,7 @@ internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, 
             menuInput.CheckPause();
             GameEngineManager.DelayMs(5);
             menuInput.ReadAnyControl(out ci);
-            switch (ci.dir)
+            switch (ci.Dir)
             {
                 case Direction.South:
                 case Direction.West:
@@ -57,9 +57,9 @@ internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, 
                     break;
             }
 
-            if (ci.button0 || input.IsKeyDown(ScanCodes.Enter))
+            if (ci.Button0 || input.IsKeyDown(ScanCodes.Enter))
                 exit = 1;
-            else if (ci.button1 || input.IsKeyDown(ScanCodes.Escape))
+            else if (ci.Button1 || input.IsKeyDown(ScanCodes.Escape))
             {
                 audio.Play("menu/escape");
                 draw.MenuFadeOut();
@@ -91,7 +91,7 @@ internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, 
         // The help goes in the bottom 40 lines of the screen, where the status bar is
         int top = video.ScreenYAboveBottom(40);
         if (view != 21)
-            video.BarScaledCoord(0, top, video.screenWidth, video.screenHeight - top, session.BorderCol);
+            video.BarScaledCoord(0, top, video.ScreenWidth, video.ScreenHeight - top, session.BorderCol);
 
         hooks.ShowViewSize(view);
 

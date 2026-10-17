@@ -11,7 +11,7 @@ public class GameSettingsTests
         var settings = new GameSettings();
 
         // Assert
-        Assert.That(settings.autosaveEnabled, Is.True);
+        Assert.That(settings.AutosaveEnabled, Is.True);
         Assert.That(settings.Scores, Is.EqualTo(HighScore.WolfDefaults()).Using<HighScore>((a, b) => a.Name == b.Name && a.Score == b.Score));
     }
 
@@ -24,9 +24,9 @@ public class GameSettingsTests
             null!, null!, settings, new GameSession(), null!);
 
         // Act
-        saves.autosaveEnabled = false;
+        saves.AutosaveEnabled = false;
 
         // Assert
-        Assert.That(settings.autosaveEnabled, Is.False);
+        Assert.That(settings.AutosaveEnabled, Is.False);
     }
 }

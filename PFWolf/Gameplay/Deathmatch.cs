@@ -149,8 +149,8 @@ internal sealed class Deathmatch(
             : [];
         if (spots.Count == 0)
         {
-            for (int y = 1; y < map.mapheight - 1; y++)
-                for (int x = 1; x < map.mapwidth - 1; x++)
+            for (int y = 1; y < map.MapHeight - 1; y++)
+                for (int x = 1; x < map.MapWidth - 1; x++)
                     if (hooks.IsFreeFloor(x, y) && !map.ShootableActorsAt(x, y).Any() && map.PatrolPointAt(x, y) == null)
                         spots.Add((x, y, -1));
         }

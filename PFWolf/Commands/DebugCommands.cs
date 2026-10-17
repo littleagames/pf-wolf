@@ -36,7 +36,7 @@ internal sealed class DebugCommands(
         console.Register("fade", "Fades the view out to black and back in, to try a fade style.",
             "fade <palette|fizzle|melt|mosaic> [tics]", FadeCommand, InLevel,
             complete: Values(Enum.GetNames<FadeStyle>().Select(n => n.ToLowerInvariant()).ToArray()));
-        console.Register("screenshot","Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => debugScreens.screenshotPending = true);
+        console.Register("screenshot","Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => debugScreens.ScreenshotPending = true);
     }
     internal void OverheadCommand(string[] args)
     {
@@ -46,7 +46,7 @@ internal sealed class DebugCommands(
         console.Defer(() =>
         {
             debugScreens.BasicOverhead();
-            if (settings.viewsize < 20)
+            if (settings.ViewSize < 20)
                 playScreen.DrawPlayBorder();
             frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
         });
@@ -58,17 +58,17 @@ internal sealed class DebugCommands(
 
         console.Print($"X: {session.Player.X} ({session.Player.X % MapConstants.TileGlobal})  Y: {session.Player.Y} ({session.Player.Y % MapConstants.TileGlobal})  Angle: {session.Player.Angle}");
         console.Print($"Tile: {x},{y}  Area: {session.Player.AreaNumber}  Map: {session.GameState.MapOn}");
-        console.Print($"tilemap: {map.tilemap[x, y]}  plane 1: {map.MapSpot(x, y, 1)}  spotvis: {map.spotvis[x, y]}");
-        console.Print($"actorat: {map.actorat[x, y]?.GetType().Name ?? "(nothing)"}");
+        console.Print($"tilemap: {map.TileMap[x, y]}  plane 1: {map.MapSpot(x, y, 1)}  spotvis: {map.Spotvis[x, y]}");
+        console.Print($"actorat: {map.ActorAt[x, y]?.GetType().Name ?? "(nothing)"}");
 
         var diagonals = new[] { (x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1) }
-            .Where(t => map.wallshape[t.Item1, t.Item2] != WallShape.Square)
-            .Select(t => $"{t.Item1},{t.Item2} {map.wallshape[t.Item1, t.Item2]}");
+            .Where(t => map.WallShapes[t.Item1, t.Item2] != WallShape.Square)
+            .Select(t => $"{t.Item1},{t.Item2} {map.WallShapes[t.Item1, t.Item2]}");
         if (diagonals.Any())
             console.Print($"diagonal walls beside: {string.Join("  ", diagonals)}");
 
         var (fx, fy) = targets.TileArg([], 0);
-        console.Print($"wall heights: level {map.wallstories}  tallest {map.MaxWallStories}  "
+        console.Print($"wall heights: level {map.LevelWallStories}  tallest {map.MaxWallStories}  "
             + $"faced tile {fx},{fy}: {map.WallStories(fx, fy)} (plane 3: {map.MapSpot(fx, fy, MapManager.HeightPlane)})");
 
         console.Print($"flats: floor {map.FlatName(x, y, false)}  ceiling {map.FlatName(x, y, true)}  "

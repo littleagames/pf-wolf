@@ -120,14 +120,14 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
         if (MovingWalls.Count > 0 && (session.DemoPlayback || session.DemoRecord))
             return false;
 
-        oldtile = map.tilemap[checkx, checky];
+        oldtile = map.TileMap[checkx, checky];
         if (oldtile == 0 || oldtile == GameConstants.BitWall)    // nothing there, or a wall already on the move
             return false;
 
         dx = Dirs[(int)dir][0];
         dy = Dirs[(int)dir][1];
 
-        if (map.actorat[checkx + dx, checky + dy] != null
+        if (map.ActorAt[checkx + dx, checky + dy] != null
             || map.EnemiesAt(checkx + dx, checky + dy).Any())
         {
             if (!string.IsNullOrEmpty(blockedSound))
@@ -135,8 +135,8 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             return false;
         }
 
-        map.tilemap[checkx + dx, checky + dy] = (ushort)oldtile;
-        map.actorat[checkx + dx, checky + dy] = new Wall(oldtile);
+        map.TileMap[checkx + dx, checky + dy] = (ushort)oldtile;
+        map.ActorAt[checkx + dx, checky + dy] = new Wall(oldtile);
 
         MovingWalls.Add(new MovingPushWall
         {
@@ -148,8 +148,8 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             Tile = (ushort)oldtile,
             Pusher = session.Player,
         });
-        map.tilemap[checkx, checky] = GameConstants.BitWall;
-        map.tilemap[checkx + dx, checky + dy] = GameConstants.BitWall;
+        map.TileMap[checkx, checky] = GameConstants.BitWall;
+        map.TileMap[checkx + dx, checky + dy] = GameConstants.BitWall;
         map.SetMapSpot(checkx, checky, 1,  0);   // remove P tile info
         map.SetMapSpot(checkx, checky, 0, (ushort)map.MapSpot(session.Player.TileX, session.Player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
@@ -195,8 +195,8 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             //
             // the tile can now be walked into
             //
-            map.tilemap[wall.X, wall.Y] = 0;
-            map.actorat[wall.X, wall.Y] = null;
+            map.TileMap[wall.X, wall.Y] = 0;
+            map.ActorAt[wall.X, wall.Y] = null;
             map.SetMapSpot(wall.X, wall.Y, 0, (ushort)(PusherOf(wall).AreaNumber + map.Floors.AreaTile));    // TODO: this is unnecessary, and makes a mess of mapsegs
 
             int dx = Dirs[(byte)wall.Dir][0], dy = Dirs[(byte)wall.Dir][1];
@@ -208,7 +208,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 //
                 // the block has been pushed as far as it goes
                 //
-                map.tilemap[wall.X + dx, wall.Y + dy] = (ushort)oldtile;
+                map.TileMap[wall.X + dx, wall.Y + dy] = (ushort)oldtile;
                 map.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MovePatch(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
@@ -226,17 +226,17 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
 
                 // stopped by anything in the way, a player included (any of them), or another
                 // moving wall's tile
-                if (map.actorat[aheadx, aheady] != null
-                    || map.tilemap[aheadx, aheady] == GameConstants.BitWall
+                if (map.ActorAt[aheadx, aheady] != null
+                    || map.TileMap[aheadx, aheady] == GameConstants.BitWall
                     || map.EnemiesAt(aheadx, aheady).Any()
                     || map.Players.Any(pawn => PlayerBoxCovers(pawn, aheadx, aheady)))
                 {
-                    map.tilemap[wall.X, wall.Y] = (ushort)oldtile;
+                    map.TileMap[wall.X, wall.Y] = (ushort)oldtile;
                     return false;
                 }
 
-                map.actorat[aheadx, aheady] = new Wall(oldtile);
-                map.tilemap[aheadx, aheady] = GameConstants.BitWall;
+                map.ActorAt[aheadx, aheady] = new Wall(oldtile);
+                map.TileMap[aheadx, aheady] = GameConstants.BitWall;
             }
         }
 

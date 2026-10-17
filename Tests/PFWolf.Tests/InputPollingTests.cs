@@ -96,9 +96,9 @@ public class InputPollingTests
         _polling.WheelNotchesThisFrame = 1;
 
         // Act / Assert
-        _settings.mouseenabled = false;
+        _settings.MouseEnabled = false;
         Assert.That(_polling.IsInputActive(InputCode.WheelUp), Is.False);
-        _settings.mouseenabled = true;
+        _settings.MouseEnabled = true;
         Assert.That(_polling.IsInputActive(InputCode.WheelUp), Is.True);
         Assert.That(_polling.IsInputActive(InputCode.WheelDown), Is.False);
     }
@@ -107,7 +107,7 @@ public class InputPollingTests
     public void A_Bound_Button_Fires_Once_Per_Press_But_The_Wheel_Every_Notch()
     {
         // Arrange: a bind on the wheel
-        _settings.mouseenabled = true;
+        _settings.MouseEnabled = true;
         _console.Bind(InputCode.WheelUp, "echo up");
         _polling.WheelNotchesThisFrame = 1;
 

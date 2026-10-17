@@ -30,8 +30,8 @@ public class MissilesTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         _sounds = [];
@@ -91,13 +91,13 @@ public class MissilesTests
     public void Open_Floor_And_Open_Doors_Let_A_Blast_Through_And_Walls_And_Shut_Doors_Dont()
     {
         // Arrange
-        _map.actorat[1, 1] = new Wall(1);
-        _map.tilemap[2, 1] = 5;                                  // a wall with nothing on actorat (a moving pushwall's)
-        _map.actorat[3, 1] = new Door(0);
-        _map.tilemap[3, 1] = (ushort)(GameConstants.BitDoor | 0);
+        _map.ActorAt[1, 1] = new Wall(1);
+        _map.TileMap[2, 1] = 5;                                  // a wall with nothing on ActorAt (a moving pushwall's)
+        _map.ActorAt[3, 1] = new Door(0);
+        _map.TileMap[3, 1] = (ushort)(GameConstants.BitDoor | 0);
         _doors.DoorObjList[0] = new DoorObject { Action = DoorAction.Closed };
-        _map.actorat[4, 1] = new Door(1);
-        _map.tilemap[4, 1] = (ushort)(GameConstants.BitDoor | 1);
+        _map.ActorAt[4, 1] = new Door(1);
+        _map.TileMap[4, 1] = (ushort)(GameConstants.BitDoor | 1);
         _doors.DoorObjList[1] = new DoorObject { Action = DoorAction.Open };
 
         // Act / Assert
@@ -116,9 +116,9 @@ public class MissilesTests
 
         // Act / Assert
         _missiles.BlockTile(barrier);
-        Assert.That(_map.actorat[5, 6], Is.TypeOf<BlockingActor>());
+        Assert.That(_map.ActorAt[5, 6], Is.TypeOf<BlockingActor>());
         _missiles.UnblockTile(barrier);
-        Assert.That(_map.actorat[5, 6], Is.Null);
+        Assert.That(_map.ActorAt[5, 6], Is.Null);
     }
 
     [Test]
@@ -127,14 +127,14 @@ public class MissilesTests
         // Arrange
         var barrier = new Monster { Name = "Barrier", TileX = 5, TileY = 6 };
         var wall = new Wall(1);
-        _map.actorat[5, 6] = wall;
+        _map.ActorAt[5, 6] = wall;
 
         // Act
         _missiles.BlockTile(barrier);
         _missiles.UnblockTile(barrier);
 
         // Assert
-        Assert.That(_map.actorat[5, 6], Is.SameAs(wall));
+        Assert.That(_map.ActorAt[5, 6], Is.SameAs(wall));
     }
 
     [Test]

@@ -141,7 +141,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             if (!string.IsNullOrEmpty(screen.FizzlePic))
             {
                 graphics.DrawPic(screen.FizzlePic, 0, 0);
-                video.Transition(FadeStyle.Fizzle, 0, 0, video.screenWidth, video.screenHeight, (uint)screen.FizzleTics);
+                video.Transition(FadeStyle.Fizzle, 0, 0, video.ScreenWidth, video.ScreenHeight, (uint)screen.FizzleTics);
             }
 
             pressed = WaitOnTitleScreen(screen);
@@ -149,7 +149,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
 
         if (!string.IsNullOrEmpty(screen.FadeTo))
             video.FadeOut(Color.FromHexRGBA(screen.FadeTo), 20);
-        if (!video.screenfaded)
+        if (!video.ScreenFaded)
             video.FadeOut();
         input.ClearKeysDown();
         return pressed;

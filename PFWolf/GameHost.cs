@@ -14,22 +14,22 @@ namespace PFWolf;
 internal static partial class GameHost
 {
     private static VideoManager _videoManager;
-    internal static AudioManager _audioManager;
+    internal static AudioManager AudioManager;
     private static InputManager _inputManager;
-    internal static GameEngineManager _gameEngineManager;
+    internal static GameEngineManager GameEngineManager;
     private static GraphicManager _graphicManager;
     private static FontManager _fontManager;
-    internal static MapManager _mapManager;
-    internal static AssetManager _assetManager;
-    internal static InventoryManager _inventoryManager;
+    internal static MapManager MapManager;
+    internal static AssetManager AssetManager;
+    internal static InventoryManager InventoryManager;
     private static ConsoleManager _consoleManager;
     private static AutomapManager _automapManager;
-    internal static HudMessageManager _hudMessageManager;
-    internal static FactionManager _factionManager;
-    internal static TranslationManager _translationManager;
+    internal static HudMessageManager HudMessageManager;
+    internal static FactionManager FactionManager;
+    internal static TranslationManager TranslationManager;
 
     // Who's playing, the acting player, tics, GameState and the camera (Gameplay/GameSession.cs)
-    internal static readonly GameSession session = new();
+    internal static readonly GameSession Session = new();
 
     /*
     =============================================================================
@@ -47,13 +47,13 @@ internal static partial class GameHost
 
     // The high score table: Wolf3D's, until InitHighScores puts in the game pack's
     // The settings and high scores config.cfg and controls.cfg keep (Configuration/GameSettings.cs)
-    internal static readonly GameSettings settings = new();
+    internal static readonly GameSettings Settings = new();
 
-    internal static HighScore[] Scores { get => settings.Scores; set => settings.Scores = value; }
-    internal static void InitHighScores() => Scores = HighScore.TableFor(_gameEngineManager.GetGameInfo().HighScores, Scores);
+    internal static HighScore[] Scores { get => Settings.Scores; set => Settings.Scores = value; }
+    internal static void InitHighScores() => Scores = HighScore.TableFor(GameEngineManager.GetGameInfo().HighScores, Scores);
 
-    internal static void InitRandom(bool randomize) => session.Random.InitRndT(randomize);
-    internal static int NextRandom() => session.Random.RndT();
+    internal static void InitRandom(bool randomize) => Session.Random.InitRndT(randomize);
+    internal static int NextRandom() => Session.Random.RndT();
 
     // Everything written to stdout from the start until the signon screen is done
     private static StartupOutput? startupOutput;
@@ -101,13 +101,13 @@ internal static partial class GameHost
     static IntermissionHooks MakeIntermissionHooks() => new(
         ViewColorBorder: () =>
         {
-            if (bordercol != "VIEWCOLOR")
+            if (BorderCol != "VIEWCOLOR")
                 DrawStatusBorder("VIEWCOLOR");
         },
         GiveEveryone: bonus =>
         {
             // Everyone's bonus, with others: each machine gives each player theirs alike
-            foreach (var p in players)
+            foreach (var p in PlayerStates)
             {
                 using var _ = ActAs(p);
                 GivePoints(bonus);
@@ -115,10 +115,10 @@ internal static partial class GameHost
         },
         DrawScore: DrawScore,
         DrawPlayBorder: DrawPlayBorder,
-        GameWon: () => { FindMenuItem(MainMenu, "savegame")?.active = 0; },
+        GameWon: () => { FindMenuItem(MainMenu, "savegame")?.Active = 0; },
         EndText: EndText,
         MapDisplayName: GetMapDisplayName,
-        NewUnlocks: () => unlocks.TakeNews());
+        NewUnlocks: () => Unlocks.TakeNews());
 
     // game-info's intro and title-loop screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)
@@ -142,49 +142,49 @@ internal static partial class GameHost
     /// <summary>Builds the managers (Startup/GameServices.cs) and hooks them up</summary>
     private static void InitServices()
     {
-        var serviceProvider = GameServices.Build(session, settings);
+        var serviceProvider = GameServices.Build(Session, Settings);
 
-        _gameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
+        GameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
         _videoManager = serviceProvider.GetRequiredService<VideoManager>();
-        _audioManager = serviceProvider.GetRequiredService<AudioManager>();
+        AudioManager = serviceProvider.GetRequiredService<AudioManager>();
         _inputManager = serviceProvider.GetRequiredService<InputManager>();
         _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();
         _fontManager = serviceProvider.GetRequiredService<FontManager>();
-        _mapManager = serviceProvider.GetRequiredService<MapManager>();
-        _assetManager = serviceProvider.GetRequiredService<AssetManager>();
-        _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
-        _inventoryManager.PlayerClass = () => playerstate.PlayerClass;
-        session.ActingChanged = p => _inventoryManager.SetHolder(p.Items);
-        session.GameModeChanged = mode => _inventoryManager.ShareKeys = mode.IsCoopLike();
-        SetActing(playerstate);         // the inventory reads the acting player's items
+        MapManager = serviceProvider.GetRequiredService<MapManager>();
+        AssetManager = serviceProvider.GetRequiredService<AssetManager>();
+        InventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
+        InventoryManager.PlayerClass = () => PlayerState.PlayerClass;
+        Session.ActingChanged = p => InventoryManager.SetHolder(p.Items);
+        Session.GameModeChanged = mode => InventoryManager.ShareKeys = mode.IsCoopLike();
+        SetActing(PlayerState);         // the inventory reads the acting player's items
         _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
         _automapManager = serviceProvider.GetRequiredService<AutomapManager>();
-        _hudMessageManager = serviceProvider.GetRequiredService<HudMessageManager>();
-        _factionManager = serviceProvider.GetRequiredService<FactionManager>();
-        _translationManager = serviceProvider.GetRequiredService<TranslationManager>();
+        HudMessageManager = serviceProvider.GetRequiredService<HudMessageManager>();
+        FactionManager = serviceProvider.GetRequiredService<FactionManager>();
+        TranslationManager = serviceProvider.GetRequiredService<TranslationManager>();
 
         ui = new UiText(_graphicManager, _fontManager);
 
-        positionalSounds = new PositionalSounds(_audioManager, session);
+        positionalSounds = new PositionalSounds(AudioManager, Session);
 
-        debugScreens = new DebugScreens(_gameEngineManager, _videoManager, _inputManager, _mapManager, session);
-        menuInput = new MenuInput(_inputManager, _audioManager, _gameEngineManager, () => mouseenabled, () => joystickenabled);
-        menuDrawing = new MenuDrawing(_graphicManager, _videoManager, _assetManager, _fontManager, _gameEngineManager, ui, () => gameInfoSettings);
-        menuLoop = new MenuLoop(menuDrawing, menuInput, _graphicManager, _videoManager, _inputManager, _audioManager, _assetManager);
+        debugScreens = new DebugScreens(GameEngineManager, _videoManager, _inputManager, MapManager, Session);
+        menuInput = new MenuInput(_inputManager, AudioManager, GameEngineManager, () => MouseEnabled, () => JoystickEnabled);
+        menuDrawing = new MenuDrawing(_graphicManager, _videoManager, AssetManager, _fontManager, GameEngineManager, ui, () => gameInfoSettings);
+        menuLoop = new MenuLoop(menuDrawing, menuInput, _graphicManager, _videoManager, _inputManager, AudioManager, AssetManager);
         lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
-        doors = new Doors(_gameEngineManager, _audioManager, _mapManager, _inventoryManager, _hudMessageManager, session,
+        doors = new Doors(GameEngineManager, AudioManager, MapManager, InventoryManager, HudMessageManager, Session,
             new DoorHooks(PlaySoundLocTile, DrawKeys));
-        pushWalls = new PushWalls(_mapManager, _audioManager, session, () => _gameEngineManager.GetGameInfo().PushwallDistance);
-        wallSpriteBlocking = new WallSpriteBlocking(_mapManager);
-        lineOfSight = new LineOfSight(_mapManager, doors, session, WallSpriteBlocksLine);
-        levelAI = new LevelAI(_mapManager, lineOfSight, positionalSounds, session);
+        pushWalls = new PushWalls(MapManager, AudioManager, Session, () => GameEngineManager.GetGameInfo().PushwallDistance);
+        wallSpriteBlocking = new WallSpriteBlocking(MapManager);
+        lineOfSight = new LineOfSight(MapManager, doors, Session, WallSpriteBlocksLine);
+        LevelAI = new LevelAI(MapManager, lineOfSight, positionalSounds, Session);
         switchActions = MakeSwitchActions();
         smartSwitches = MakeSmartSwitches();
-        hubs = new Hubs(_gameEngineManager, _mapManager, session);
+        hubs = new Hubs(GameEngineManager, MapManager, Session);
         projectileActions = MakeProjectileActions();
         lighting = MakeLighting();
-        levelBodies = new LevelBodies(_mapManager, doors, pushWalls, lighting, session);
-        consoleTargets = new ConsoleTargets(_mapManager, lighting, session);
+        levelBodies = new LevelBodies(MapManager, doors, pushWalls, lighting, Session);
+        consoleTargets = new ConsoleTargets(MapManager, lighting, Session);
         actorLights = MakeActorLights();
         weather = MakeWeather();
         spriteScaler = MakeSpriteScaler();
@@ -194,11 +194,11 @@ internal static partial class GameHost
         wallHits = MakeWallHits();
         rayTrace = MakeRayTrace();
         spriteDrawing = MakeSpriteDrawing();
-        playerBodies = new PlayerBodies(_assetManager, _mapManager, _inventoryManager, spriteDrawing, session);
+        playerBodies = new PlayerBodies(AssetManager, MapManager, InventoryManager, spriteDrawing, Session);
         playerView = MakePlayerView();
-        levelEditCommands = new LevelEditCommands(_consoleManager, _assetManager, _mapManager, lighting, actorLights, weather, skyAndFlats, render,
-            consoleTargets, session);
-        factionCommands = new FactionCommands(_consoleManager, _assetManager, _mapManager, _factionManager, _translationManager, consoleTargets, session);
+        levelEditCommands = new LevelEditCommands(_consoleManager, AssetManager, MapManager, lighting, actorLights, weather, skyAndFlats, Render,
+            consoleTargets, Session);
+        factionCommands = new FactionCommands(_consoleManager, AssetManager, MapManager, FactionManager, TranslationManager, consoleTargets, Session);
         frameRefresh = MakeFrameRefresh();
         inputPolling = MakeInputPolling();
         automapInput = MakeAutomapInput();
@@ -209,118 +209,118 @@ internal static partial class GameHost
         AddObjectives();
         radar = MakeRadar();
         automapDrawing = MakeAutomapDrawing();
-        playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
+        playerClassRules = new PlayerClassRules(GameEngineManager, InventoryManager, Session);
         playerWeapons = MakePlayerWeapons();
         playScreen = MakePlayScreen();
-        viewSetup = new ViewSetup(_videoManager, playScreen, render, playArea, settings);
+        viewSetup = new ViewSetup(_videoManager, playScreen, Render, playArea, Settings);
         consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing, playArea);
-        debugCommands = new DebugCommands(_consoleManager, _gameEngineManager, _videoManager, _mapManager, doors, frameRefresh, debugScreens,
-            playScreen, render, consoleTargets, session,
-            settings);
+        debugCommands = new DebugCommands(_consoleManager, GameEngineManager, _videoManager, MapManager, doors, frameRefresh, debugScreens,
+            playScreen, Render, consoleTargets, Session,
+            Settings);
         playerStats = MakePlayerStats();
         playerActions = MakePlayerActions();
-        cheatCommands = new CheatCommands(_consoleManager, _gameEngineManager, _assetManager, _inventoryManager, _mapManager, doors, statusBarDrawing,
-            playerWeapons, playerClassRules, playerStats, frameRefresh, consoleTargets, session,
-            new CheatCommandsHooks(() => newGamePlayerClass, playerClass => newGamePlayerClass = playerClass, SetEyeHeight));
+        cheatCommands = new CheatCommands(_consoleManager, GameEngineManager, AssetManager, InventoryManager, MapManager, doors, statusBarDrawing,
+            playerWeapons, playerClassRules, playerStats, frameRefresh, consoleTargets, Session,
+            new CheatCommandsHooks(() => NewGamePlayerClass, playerClass => NewGamePlayerClass = playerClass, SetEyeHeight));
         playerUse = MakePlayerUse();
         playerMovement = MakePlayerMovement();
         playerAttacks = MakePlayerAttacks();
         projectiles = MakeProjectiles();
-        actorSounds = new ActorSounds(_mapManager, _audioManager, session, PlaySoundLocActor);
-        bjVictory = new BJVictory(_mapManager, session);
+        actorSounds = new ActorSounds(MapManager, AudioManager, Session, PlaySoundLocActor);
+        bjVictory = new BJVictory(MapManager, Session);
         missiles = MakeMissiles();
         weaponInHand = MakeWeaponInHand();
         pickups = MakePickups();
         playerThink = MakePlayerThink();
         playersManager = MakePlayers();
-        newGames = new NewGames(_gameEngineManager, _inventoryManager, hubs, playersManager, playerClassRules, session);
+        newGames = new NewGames(GameEngineManager, InventoryManager, hubs, playersManager, playerClassRules, Session);
         hudMessageDrawing = MakeHudMessageDrawing();
-        spectating = new Spectating(_mapManager, _consoleManager, _hudMessageManager, hudMessageDrawing, session);
-        playerCommands = new PlayerCommands(_consoleManager, _mapManager, doors, playerClassRules, playersManager, playerThink, deathmatch, session,
-            settings, new PlayerCommandsHooks(DrawPlayScreen, PlayerColor));
+        spectating = new Spectating(MapManager, _consoleManager, HudMessageManager, hudMessageDrawing, Session);
+        playerCommands = new PlayerCommands(_consoleManager, MapManager, doors, playerClassRules, playersManager, playerThink, deathmatch, Session,
+            Settings, new PlayerCommandsHooks(DrawPlayScreen, PlayerColor));
         scoreboard = MakeScoreboard();
         scoreboard.Match = deathmatch;
         netPlay = MakeNetPlay();
         netOverlay = MakeNetOverlay();
         netOverlay.Match = deathmatch;
-        netOverlay.ViewTop = () => _videoManager.ToLayoutY(render.ViewScreenY, roundUp: true);
+        netOverlay.ViewTop = () => _videoManager.ToLayoutY(Render.ViewScreenY, roundUp: true);
         hudMessageDrawing.TopReserved = netOverlay.MatchLineHeight;     // messages go under a match's line
         gameScripts = MakeGameScripts();
-        levelMusic = new LevelMusic(_gameEngineManager, _audioManager, session);
+        levelMusic = new LevelMusic(GameEngineManager, AudioManager, Session);
         playKeys = MakePlayKeys();
         levelLoop = MakeLevelLoop();
         levelSetup = MakeLevelSetup();
         levelEntry = MakeLevelEntry();
         gameSaves = MakeGameSaves();
-        saveCommands = new SaveCommands(_consoleManager, _gameEngineManager, gameSaves, playScreen, session);
+        saveCommands = new SaveCommands(_consoleManager, GameEngineManager, gameSaves, playScreen, Session);
         midGameJoin = MakeMidGameJoin();
         demos = MakeDemos();
-        demoCommands = new DemoCommands(_consoleManager, _mapManager, demos, demoBuffer, session);
-        menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
-        jukebox = new Jukebox(_inputManager, _videoManager, _audioManager, menuDrawing, menuLoop, menuDefs);
+        demoCommands = new DemoCommands(_consoleManager, MapManager, demos, DemoBuffer, Session);
+        menuDefs = new MenuDefs(AssetManager, GameEngineManager, _graphicManager, AudioManager, ui);
+        jukebox = new Jukebox(_inputManager, _videoManager, AudioManager, menuDrawing, menuLoop, menuDefs);
         RegisterMenuDefs();
-        modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
-            menuDrawing, menuLoop, menuInput, menuDefs, ui, session);
-        videoMenu = new VideoMenu(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
-        soundMenu = new SoundMenu(_audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
-        controlMenus = new ControlMenus(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, controlSettings);
-        customizeScreen = new CustomizeControlsScreen(_assetManager, _inputManager, _audioManager, _videoManager,
-            menuDrawing, menuLoop, menuInput, menuDefs, ui, controls);
-        textPresenter = new TextPresenter(_assetManager, _inputManager, _audioManager, _videoManager,
+        modsMenu = new ModsMenu(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
+            menuDrawing, menuLoop, menuInput, menuDefs, ui, Session);
+        videoMenu = new VideoMenu(AssetManager, _inputManager, AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        soundMenu = new SoundMenu(AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        controlMenus = new ControlMenus(AssetManager, _inputManager, AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, ControlSettings);
+        customizeScreen = new CustomizeControlsScreen(AssetManager, _inputManager, AudioManager, _videoManager,
+            menuDrawing, menuLoop, menuInput, menuDefs, ui, Controls);
+        textPresenter = new TextPresenter(AssetManager, _inputManager, AudioManager, _videoManager,
             _graphicManager, _fontManager, menuDrawing, menuInput);
-        articleReader = new ArticleReader(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
-            _graphicManager, menuInput, session, textPresenter);
-        highScoresScreen = new HighScoresScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
-            _graphicManager, menuDrawing, menuDefs, ui, lineInput, session, () => Scores, FloorScore);
-        intermissionScreen = new IntermissionScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
-            _graphicManager, menuDrawing, ui, session, playArea, MakeIntermissionHooks());
-        loadSaveScreen = new LoadSaveScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
+        articleReader = new ArticleReader(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
+            _graphicManager, menuInput, Session, textPresenter);
+        highScoresScreen = new HighScoresScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
+            _graphicManager, menuDrawing, menuDefs, ui, lineInput, Session, () => Scores, FloorScore);
+        intermissionScreen = new IntermissionScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
+            _graphicManager, menuDrawing, ui, Session, playArea, MakeIntermissionHooks());
+        loadSaveScreen = new LoadSaveScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
             _graphicManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, MakeLoadSaveHooks());
-        multiplayerMenu = new MultiplayerMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
-            _inventoryManager, _consoleManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, session, netStart, MakeMultiplayerHooks());
+        multiplayerMenu = new MultiplayerMenu(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
+            InventoryManager, _consoleManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, Session, netStart, MakeMultiplayerHooks());
         netGames = MakeNetGames();
-        netCommands = new NetCommands(_consoleManager, multiplayerMenu, scoreboard, netPlay, session);
-        elevatorScreens = new ElevatorScreens(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
-            _inventoryManager, _mapManager, menuDrawing, textPresenter, hubs, session, new ElevatorHooks(RadarTileColor, GetMapDisplayName));
-        changeViewScreen = new ChangeViewScreen(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, ui,
-            settings, session, new ChangeViewHooks(ShowViewSize, NewViewSize));
-        optionsMenu = new OptionsMenu(_videoManager, _hudMessageManager, _automapManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        netCommands = new NetCommands(_consoleManager, multiplayerMenu, scoreboard, netPlay, Session);
+        elevatorScreens = new ElevatorScreens(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager, _graphicManager,
+            InventoryManager, MapManager, menuDrawing, textPresenter, hubs, Session, new ElevatorHooks(RadarTileColor, GetMapDisplayName));
+        changeViewScreen = new ChangeViewScreen(AssetManager, _inputManager, AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, ui,
+            Settings, Session, new ChangeViewHooks(ShowViewSize, NewViewSize));
+        optionsMenu = new OptionsMenu(_videoManager, HudMessageManager, _automapManager, menuDrawing, menuLoop, menuInput, menuDefs);
         playerDeath = MakePlayerDeath();
-        newGameMenu = new NewGameMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
-            menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, _inventoryManager, session, StartNewGame, PlayerClasses,
-            episode => unlocks.IsOpen(episode));
-        controlPanel = new ControlPanel(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop,
-            menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, session, MakeControlPanelHooks());
-        moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);
+        newGameMenu = new NewGameMenu(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager, _graphicManager,
+            menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, InventoryManager, Session, StartNewGame, PlayerClasses,
+            episode => Unlocks.IsOpen(episode));
+        controlPanel = new ControlPanel(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager, menuDrawing, menuLoop,
+            menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, Session, MakeControlPanelHooks());
+        moviePlayer = new MoviePlayer(AssetManager, _videoManager, _inputManager, AudioManager, menuInput);
         mainGameLoop = MakeMainGameLoop();
-        quickKeys = new QuickKeys(_gameEngineManager, _assetManager, _videoManager, _audioManager, _inputManager, menuDrawing, menuLoop,
-            controlPanel, gameSaves, levelMusic, frameRefresh, playScreen, session,
-            settings, new QuickKeysHooks(UiRandom));
+        quickKeys = new QuickKeys(GameEngineManager, AssetManager, _videoManager, AudioManager, _inputManager, menuDrawing, menuLoop,
+            controlPanel, gameSaves, levelMusic, frameRefresh, playScreen, Session,
+            Settings, new QuickKeysHooks(UiRandom));
         hubActions = MakeHubActions();
-        titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
+        titleScreens = new TitleScreens(_videoManager, AudioManager, _inputManager, _graphicManager, AssetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(
                 DemoExists,
-                demonumber => { PlayDemo(demonumber); return playstate == PlayState.Abort; },
+                demonumber => { PlayDemo(demonumber); return PlayState == PlayState.Abort; },
                 ClearMargins,
                 DrawHighScores,
                 DrawTitle,
                 DrawTitleText));
-        signonPanel = new SignonPanel(_gameEngineManager, _assetManager, _videoManager, _inputManager, _audioManager,
-            _graphicManager, _fontManager, ui, () => mouseenabled, () => _scripts?.Loaded.Count ?? 0);
+        signonPanel = new SignonPanel(GameEngineManager, AssetManager, _videoManager, _inputManager, AudioManager,
+            _graphicManager, _fontManager, ui, () => MouseEnabled, () => Scripts?.Loaded.Count ?? 0);
 
-        titleLoop = new TitleLoop(_gameEngineManager, _assetManager, _videoManager, _graphicManager, _inputManager, _audioManager, ui,
-            signonPanel, titleScreens, highScoresScreen, demos, netGames, quickKeys, mainGameLoop, cheatCommands, warpRequest, session,
+        titleLoop = new TitleLoop(GameEngineManager, AssetManager, _videoManager, _graphicManager, _inputManager, AudioManager, ui,
+            signonPanel, titleScreens, highScoresScreen, demos, netGames, quickKeys, mainGameLoop, cheatCommands, warpRequest, Session,
             new TitleLoopHooks(() => NoWait, () => IntroSong,
                 (skill, episode, map) => NewGame(skill, episode, map)));
 
         // What the actors use of the game (Entities/Actors/ActorWorld.cs); the map hands it to each
         // as it joins the level. Given to the map here, as the world needs the map
-        _mapManager.World = new Entities.Actors.ActorWorld(_gameEngineManager, _assetManager, _audioManager, _inventoryManager,
-            _hudMessageManager, _mapManager, _factionManager, lineOfSight, doors, positionalSounds, actorSounds, hudMessageDrawing,
-            playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, levelAI, session)
+        MapManager.World = new Entities.Actors.ActorWorld(GameEngineManager, AssetManager, AudioManager, InventoryManager,
+            HudMessageManager, MapManager, FactionManager, lineOfSight, doors, positionalSounds, actorSounds, hudMessageDrawing,
+            playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, LevelAI, Session)
         {
-            Stealth = stealth,
-            Objectives = objectives,
+            Stealth = Stealth,
+            Objectives = Objectives,
         };
 
         // TODO: Remove circular dependencies here
@@ -349,16 +349,16 @@ internal static partial class GameHost
     //
     // proejection variables
     //
-    static int focallength { get => render.FocalLength; set => render.FocalLength = value; }
-    static int viewscreenx { get => render.ViewScreenX; set => render.ViewScreenX = value; }
-    static int viewscreeny { get => render.ViewScreenY; set => render.ViewScreenY = value; }
-    static int viewwidth { get => render.ViewWidth; set => render.ViewWidth = value; }
-    static int viewheight { get => render.ViewHeight; set => render.ViewHeight = value; }
-    static short centerx { get => render.CenterX; set => render.CenterX = value; }
-    static int shootdelta { get => render.ShootDelta; set => render.ShootDelta = value; }   // pixels away from CenterX a target can be
-    static int heightnumerator { get => render.HeightNumerator; set => render.HeightNumerator = value; }
+    static int FocalLength { get => Render.FocalLength; set => Render.FocalLength = value; }
+    static int ViewScreenX { get => Render.ViewScreenX; set => Render.ViewScreenX = value; }
+    static int ViewScreenY { get => Render.ViewScreenY; set => Render.ViewScreenY = value; }
+    static int ViewWidth { get => Render.ViewWidth; set => Render.ViewWidth = value; }
+    static int ViewHeight { get => Render.ViewHeight; set => Render.ViewHeight = value; }
+    static short CenterX { get => Render.CenterX; set => Render.CenterX = value; }
+    static int ShootDelta { get => Render.ShootDelta; set => Render.ShootDelta = value; }   // pixels away from CenterX a target can be
+    static int HeightNumerator { get => Render.HeightNumerator; set => Render.HeightNumerator = value; }
 
-    static bool startgame { get => session.GameChosen; set => session.GameChosen = value; }
+    static bool GameChosen { get => Session.GameChosen; set => Session.GameChosen = value; }
 
     //
     // Command line parameter variables
@@ -381,18 +381,18 @@ internal static partial class GameHost
         GameFolder.Use();
 
         InitServices();
-        _gameEngineManager.Init(gameParams, modPaths);
+        GameEngineManager.Init(gameParams, modPaths);
         SetNetParams(gameParams);     // --host, --join, --port, --name (Networking/NetGames.cs)
         warpRequest.SetParams(gameParams);  // --warp, --skill, --start (Gameplay/WarpRequest.cs)
 
         // The Mods menu's choices (mods.cfg, per game), then the command line's
-        var configMods = ModsConfig.Read(_gameEngineManager.GetConfigFilePath(ModsConfig.FileName));
+        var configMods = ModsConfig.Read(GameEngineManager.GetConfigFilePath(ModsConfig.FileName));
         try
         {
-            _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, configMods.Concat(modPaths));
+            AssetManager.Load(GameEngineManager.GamePackId, GameEngineManager.GameReleaseId, configMods.Concat(modPaths));
             // Animated pictures in menus and the status bar play in real time; the view's walls,
             // flats and sky go by the level's clock instead (WorldTexture)
-            _assetManager.AnimationClock = () => (int)GameEngineManager.GetTimeCount();
+            AssetManager.AnimationClock = () => (int)GameEngineManager.GetTimeCount();
         }
         catch (DataFilesException e)
         {
@@ -403,9 +403,9 @@ internal static partial class GameHost
         }
         RegisterActorActions();
         LoadScripts();      // after the built-in actions, which a script's can't replace (Scripting/GameScripts.cs)
-        Entities.Actors.Monster.CheckClasses(_assetManager.GetActorMetadata());
-        _factionManager.CheckClasses(_assetManager.GetActorMetadata());
-        _translationManager.CheckDefinitions(_assetManager.GetActorMetadata(), _factionManager.Table);
+        Entities.Actors.Monster.CheckClasses(AssetManager.GetActorMetadata());
+        FactionManager.CheckClasses(AssetManager.GetActorMetadata());
+        TranslationManager.CheckDefinitions(AssetManager.GetActorMetadata(), FactionManager.Table);
         RegisterConsoleCommands();
 
         //CheckParameters(args); // Remove
@@ -416,10 +416,10 @@ internal static partial class GameHost
 
         // After the config is read, so these can override its settings: the controls and binds
         // saved on the last exit, then the player's own autoexec.cfg, then any --exec commands.
-        _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.ControlsFileName));
-        _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.BindsFileName));
-        _gameEngineManager.SettingsLoaded = true;      // from here on, saving them keeps what was loaded
-        _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.AutoexecFileName));
+        _consoleManager.ExecFile(GameEngineManager.GetConfigFilePath(GameEngineManager.ControlsFileName));
+        _consoleManager.ExecFile(GameEngineManager.GetConfigFilePath(GameEngineManager.BindsFileName));
+        GameEngineManager.SettingsLoaded = true;      // from here on, saving them keeps what was loaded
+        _consoleManager.ExecFile(GameEngineManager.GetConfigFilePath(GameEngineManager.AutoexecFileName));
 
         // --cheats: the debug keys and cheat commands from the start, as Shift+Alt+Backspace opens them
         if (gameParams.Cheats)
@@ -430,21 +430,21 @@ internal static partial class GameHost
 
         DemoLoop();
 
-        _gameEngineManager.Quit("Demo loop exited???");
+        GameEngineManager.Quit("Demo loop exited???");
     }
 
     private static void InitGame()
     {
         bool didjukebox = false;
-        var theme = _assetManager.FindInGamePack<ColorThemeAsset>("colors");
-        _videoManager.Init(theme, _gameEngineManager.ReadVideoConfig());
-        _graphicManager.MenuBackdrop = _gameEngineManager.GetGameInfo().MenuBackdrop;
-        _graphicManager.MenuStripe = _gameEngineManager.GetGameInfo().MenuStripe;
+        var theme = AssetManager.FindInGamePack<ColorThemeAsset>("colors");
+        _videoManager.Init(theme, GameEngineManager.ReadVideoConfig());
+        _graphicManager.MenuBackdrop = GameEngineManager.GetGameInfo().MenuBackdrop;
+        _graphicManager.MenuStripe = GameEngineManager.GetGameInfo().MenuStripe;
         ReadFadeStyles();
-        _inputManager.Init(_videoManager.fullscreen);
+        _inputManager.Init(_videoManager.FullScreen);
         
-        pixelangle = new short[_videoManager.screenWidth];
-        wallheight = new short[_videoManager.screenWidth];
+        PixelAngle = new short[_videoManager.ScreenWidth];
+        WallHeight = new short[_videoManager.ScreenWidth];
         _videoManager.VideoModeChanged += OnVideoModeChanged;
 
         //AppDomain.CurrentDomain.ProcessExit += (s, e) => SDL.SDL_Quit();
@@ -461,11 +461,11 @@ internal static partial class GameHost
         InitDigiMap();
 
         InitHighScores();
-        _gameEngineManager.ReadConfig();
+        GameEngineManager.ReadConfig();
 
         // Set "Read This" back to standard active
-        FindMenuItem(MainMenu, "readthis")?.active = 1;
-        MainItems.curpos = 0;
+        FindMenuItem(MainMenu, "readthis")?.Active = 1;
+        MainItems.CurPos = 0;
 
         //
         // HOLDING DOWN 'M' KEY?
@@ -482,7 +482,7 @@ internal static partial class GameHost
         //
         BuildTables();          // trig tables
 
-        NewViewSize(viewsize);
+        NewViewSize(ViewSize);
 
         //
         // initialize variables
@@ -495,7 +495,7 @@ internal static partial class GameHost
     }
 
     // A new render size needs per-column tables for the new width and the view placed again;
-    // fullscreen takes the mouse, a window gives it back.
+    // FullScreen takes the mouse, a window gives it back.
     private static void OnVideoModeChanged(object? sender, VideoSettings previous)
     {
         var current = _videoManager.Settings;
@@ -503,9 +503,9 @@ internal static partial class GameHost
         if (current.RenderWidth != previous.RenderWidth || current.RenderHeight != previous.RenderHeight
             || current.EffectiveUiScale != previous.EffectiveUiScale)
         {
-            pixelangle = new short[_videoManager.screenWidth];
-            wallheight = new short[_videoManager.screenWidth];
-            NewViewSize(viewsize);
+            PixelAngle = new short[_videoManager.ScreenWidth];
+            WallHeight = new short[_videoManager.ScreenWidth];
+            NewViewSize(ViewSize);
         }
 
         if (current.Fullscreen != previous.Fullscreen)
@@ -515,20 +515,20 @@ internal static partial class GameHost
     // Fade styles and lengths, the death screen and the weapon in hand, from game-info
     // (Gameplay/GameInfoSettings.cs); ordinary fades use _videoManager.FadeStyle and FadeTics
     static GameInfoSettings gameInfoSettings = new();
-    internal static FadeStyle levelFadeStyle => gameInfoSettings.LevelFadeStyle;
-    internal static int levelFadeTics => gameInfoSettings.LevelFadeTics;
-    internal static int deathTurnSpeed => gameInfoSettings.DeathTurnSpeed;
-    internal static int? deathDropHeight => gameInfoSettings.DeathDropHeight;
-    internal static int deathDropSpeed => gameInfoSettings.DeathDropSpeed;
-    internal static double weaponScale => gameInfoSettings.WeaponScale;
-    internal static readonly WeaponBob weaponBob = new();
+    internal static FadeStyle LevelFadeStyle => gameInfoSettings.LevelFadeStyle;
+    internal static int LevelFadeTics => gameInfoSettings.LevelFadeTics;
+    internal static int DeathTurnSpeed => gameInfoSettings.DeathTurnSpeed;
+    internal static int? DeathDropHeight => gameInfoSettings.DeathDropHeight;
+    internal static int DeathDropSpeed => gameInfoSettings.DeathDropSpeed;
+    internal static double WeaponScale => gameInfoSettings.WeaponScale;
+    internal static readonly WeaponBob WeaponBob = new();
 
     private static void ReadFadeStyles()
     {
-        gameInfoSettings = GameInfoSettings.Read(_gameEngineManager.GetGameInfo());
+        gameInfoSettings = GameInfoSettings.Read(GameEngineManager.GetGameInfo());
         _videoManager.FadeStyle = gameInfoSettings.ScreenFadeStyle;
         _videoManager.FadeTics = gameInfoSettings.ScreenFadeTics;
-        weaponBob.Enabled = gameInfoSettings.WeaponBob;
+        WeaponBob.Enabled = gameInfoSettings.WeaponBob;
     }
 
     // From the signon through the title loop to the games it starts (Ui/TitleLoop.cs)
@@ -547,28 +547,28 @@ internal static partial class GameHost
     internal static SkillInfo CurrentSkill => newGames.CurrentSkill;
     internal static short DemoSkill => newGames.DemoSkill;
     /// <summary>The class the next new game is played as (the `PlayerClass` command); null for the default</summary>
-    internal static string? newGamePlayerClass { get => newGames.NewGamePlayerClass; set => newGames.NewGamePlayerClass = value; }
+    internal static string? NewGamePlayerClass { get => newGames.NewGamePlayerClass; set => newGames.NewGamePlayerClass = value; }
     internal static void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo, string? playerClass = null) =>
         newGames.NewGame(difficulty, epInfo, mapInfo, playerClass);
     private record DigiMapEntry
     {
         public DigiMapEntry(string sound, int index, int channel)
         {
-            this.sound = sound;
-            this.index = index;
-            this.channel = channel;
+            this.Sound = sound;
+            this.Index = index;
+            this.Channel = channel;
         }
 
-        public string sound;
-        public int index;
-        public int channel;
+        public string Sound;
+        public int Index;
+        public int Channel;
     }
 
     static void InitDigiMap()
     {
       //  foreach (var sound in DigitizedSoundMappings.NameIndexMap)
       //  {
-         //   _audioManager.SD_PrepareSound(sound);
+         //   AudioManager.SD_PrepareSound(sound);
      //   }
     }
 

@@ -267,16 +267,16 @@ internal class GameEngineManager
         bool hasLegacyControls = config.DirScan.Any(key => key != ScanCodes.None);
         bool legacyConfig = hasLegacyControls && !File.Exists(GetConfigFilePath(ControlsFileName));
         if (legacyConfig)
-            settings.controls.ImportLegacy(config.DirScan, config.ButtonScan, config.ButtonMouse, config.ButtonJoy,
+            settings.Controls.ImportLegacy(config.DirScan, config.ButtonScan, config.ButtonMouse, config.ButtonJoy,
                 config.AutomapKey, config.AutomapKeys);
 
         // Devices that were there last time may not be now. A controller can be plugged in
         // later, so its setting is kept as it was either way. Before that, the joystick was
         // saved as off whenever none was plugged in, so an old config's "off" doesn't count.
-        settings.controlSettings.mouseenabled = config.MouseEnabled && inputManager.IsMousePresent();
-        settings.controlSettings.joystickenabled = config.JoystickEnabled || legacyConfig;
-        settings.controlSettings.mouseadjustment = Math.Clamp(config.MouseAdjustment, 0, 9);
-        settings.viewsize = Math.Clamp(config.ViewSize, 4, 21);
+        settings.ControlSettings.MouseEnabled = config.MouseEnabled && inputManager.IsMousePresent();
+        settings.ControlSettings.JoystickEnabled = config.JoystickEnabled || legacyConfig;
+        settings.ControlSettings.MouseAdjustment = Math.Clamp(config.MouseAdjustment, 0, 9);
+        settings.ViewSize = Math.Clamp(config.ViewSize, 4, 21);
         if (config.PauseWhenOpen is bool pause)
             consoleManager.PauseWhenOpen = pause;
         if (config.AutomapStyle is AutomapStyle style && Enum.IsDefined(style))
@@ -297,7 +297,7 @@ internal class GameEngineManager
         if (config.MusicVolume is int musicVolume)
             audioManager.MusicVolume = musicVolume;
         if (config.AutoSave is bool autoSave)
-            settings.autosaveEnabled = autoSave;
+            settings.AutosaveEnabled = autoSave;
         if (config.HudMessages is HudMessagesSetting.Off or HudMessagesSetting.On)
             hudMessageManager.EnabledSetting = config.HudMessages == HudMessagesSetting.On;
         if (config.AutomapStats is bool stats)
@@ -467,7 +467,7 @@ internal class GameEngineManager
 
     /// <summary>
     /// The video mode to open the window in: config.cfg's, or the default without one, then
-    /// changed by any --fullscreen, --windowed, --res or --scale given. Read on its own, ahead
+    /// changed by any --FullScreen, --windowed, --res or --scale given. Read on its own, ahead
     /// of the rest of the config, since the window has to exist before anything else loads.
     /// A mode picked on the command line is saved like one picked in the menu.
     /// </summary>
@@ -529,12 +529,12 @@ internal class GameEngineManager
     {
         // Every sound device and music start switched on (AudioManager's defaults).
         if (inputManager.IsMousePresent())
-            settings.controlSettings.mouseenabled = true;
+            settings.ControlSettings.MouseEnabled = true;
 
-        settings.controlSettings.joystickenabled = true;     // used as soon as one is plugged in
+        settings.ControlSettings.JoystickEnabled = true;     // used as soon as one is plugged in
 
-        settings.viewsize = 19;
-        settings.controlSettings.mouseadjustment = 5;
+        settings.ViewSize = 19;
+        settings.ControlSettings.MouseAdjustment = 5;
     }
 
     /// <summary>
@@ -558,7 +558,7 @@ internal class GameEngineManager
             {
                 using var writer = new StreamWriter(stream);
                 writer.WriteLine("// Written by the game; use autoexec.cfg for your own commands.");
-                foreach (var command in settings.controls.GetCommands().Concat(settings.controlSettings.SettingCommands()))
+                foreach (var command in settings.Controls.GetCommands().Concat(settings.ControlSettings.SettingCommands()))
                     writer.WriteLine(command);
             });
 
@@ -601,8 +601,8 @@ internal class GameEngineManager
         bw.Write((byte)0); // music mode placeholder
         bw.Write((byte)0); // digitized mode placeholder
 
-        bw.Write(settings.controlSettings.mouseenabled);
-        bw.Write(settings.controlSettings.joystickenabled);
+        bw.Write(settings.ControlSettings.MouseEnabled);
+        bw.Write(settings.ControlSettings.JoystickEnabled);
         bw.Write((byte)0); // joypad placeholder
         bw.Write((byte)0); // joystick-progressive placeholder
         bw.Write((int)0); // joystick port placeholder
@@ -611,8 +611,8 @@ internal class GameEngineManager
         for (int i = 0; i < LayoutDirCount + LayoutButtonCount + LayoutMouseCount + LayoutJoyCount; i++)
             bw.Write((int)0);
 
-        bw.Write(settings.viewsize);
-        bw.Write(settings.controlSettings.mouseadjustment);
+        bw.Write(settings.ViewSize);
+        bw.Write(settings.ControlSettings.MouseAdjustment);
         bw.Write(consoleManager.PauseWhenOpen);
         bw.Write((int)ScanCodes.None);   // automap key placeholder
         bw.Write((byte)automapManager.Style);
@@ -633,7 +633,7 @@ internal class GameEngineManager
         bw.Write((byte)audioManager.SoundVolume);
         bw.Write((byte)audioManager.MusicVolume);
         WriteVideoSettings(bw, videoManager.Settings);
-        bw.Write((byte)(settings.autosaveEnabled ? 1 : 0));
+        bw.Write((byte)(settings.AutosaveEnabled ? 1 : 0));
         bw.Write((byte)(hudMessageManager.EnabledSetting switch
         {
             true => HudMessagesSetting.On,

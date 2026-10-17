@@ -57,7 +57,7 @@ internal sealed class DemoCommands(
             ? args.Select(a => int.TryParse(a, out var n) ? n : -1).ToList()
             : Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).ToList();
 
-        demoTesting = true;
+        DemoTesting = true;
         try
         {
             foreach (var demonumber in demos)
@@ -70,12 +70,12 @@ internal sealed class DemoCommands(
         }
         finally
         {
-            demoTesting = false;
+            DemoTesting = false;
         }
     }
 
     /// <summary>Set while demotest runs: demos play without waiting, and each prints <see cref="DemoTestReport"/> as it ends</summary>
-    internal bool demoTesting;
+    internal bool DemoTesting;
 
     /// <summary>
     /// How a demo ended, for demotest: how far it got, the player's stats and spot, and a hash of

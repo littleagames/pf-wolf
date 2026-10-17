@@ -29,14 +29,14 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
     internal int StartGame;
 
     /// <summary>The game was ended with End Game in the menu, so the game over screen is skipped</summary>
-    internal bool endedFromMenu;
+    internal bool EndedFromMenu;
     private void EnableEndGameMenuItem()
     {
         var language = assets.GetText("en-us");
         var item = MenuDefs.FindMenuItem(MainMenu, "viewscores");
         if (item == null) return;
-        item.routine = null;
-        item.text = "$MENU_ENDGAME".ToLanguageText(language);
+        item.Routine = null;
+        item.Text = "$MENU_ENDGAME".ToLanguageText(language);
     }
 
     internal void EnableViewScoresMenuItem()
@@ -44,8 +44,8 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         var language = assets.GetText("en-us");
         var item = MenuDefs.FindMenuItem(MainMenu, "viewscores");
         if (item == null) return;
-        item.routine = _ => ViewScores();
-        item.text = "$MENU_VIEWSCORES".ToLanguageText(language);
+        item.Routine = _ => ViewScores();
+        item.Text = "$MENU_VIEWSCORES".ToLanguageText(language);
     }
 
     internal void SetupControlPanel()
@@ -59,7 +59,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         if (!session.InGame)
         { }// CA_LoadAllSounds();
         else
-            MenuDefs.FindMenuItem(MainMenu, "savegame")?.active = 1;
+            MenuDefs.FindMenuItem(MainMenu, "savegame")?.Active = 1;
 
         input.CenterMouse();
     }
@@ -125,7 +125,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
             switch (which < 0 ? "quit" : MenuDefs.SelectedId(MainMenu, which))
             {
                 case "viewscores":
-                    if (MainMenu[which].routine == null)
+                    if (MainMenu[which].Routine == null)
                     {
                         if (EndGame() != 0)
                             StartGame = 1;
@@ -188,13 +188,13 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         {
             if (session.InGame)
             {
-                backToDemo.text = "$MENU_BACKTOGAME".ToLanguageText(language);
-                backToDemo.active = 2;
+                backToDemo.Text = "$MENU_BACKTOGAME".ToLanguageText(language);
+                backToDemo.Active = 2;
             }
             else
             {
-                backToDemo.text = "$MENU_BACKTODEMO".ToLanguageText(language);
-                backToDemo.active = 1;
+                backToDemo.Text = "$MENU_BACKTODEMO".ToLanguageText(language);
+                backToDemo.Active = 1;
             }
         }
 
@@ -235,9 +235,9 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         if (res == 0) return 0;
 
         hooks.EndGame();
-        endedFromMenu = true;       // no game over screen (bstone's InstantQuit)
+        EndedFromMenu = true;       // no game over screen (bstone's InstantQuit)
 
-        MenuDefs.FindMenuItem(MainMenu, "savegame")?.active = 0;
+        MenuDefs.FindMenuItem(MainMenu, "savegame")?.Active = 0;
         EnableViewScoresMenuItem();
         return 1;
     }

@@ -70,8 +70,8 @@ internal static partial class GameHost
         LoadGame: RunLoadGame,
         EndGame: () =>
         {
-            playerstate.Lives = 0;
-            playstate = PlayState.Died;
+            PlayerState.Lives = 0;
+            PlayState = PlayState.Died;
             LastAttacker = null;
         },
         Random: UiRandom);
@@ -81,8 +81,8 @@ internal static partial class GameHost
     {
         NewGame(difficulty, episode, mapInfo!, playerClass);
         StartGame = 1;
-        unlocks.ForgetNews();       // what was unlocked before isn't told on this game's first tally
-        FindMenuItem(MainMenu, "readthis")?.active = 1;
+        Unlocks.ForgetNews();       // what was unlocked before isn't told on this game's first tally
+        FindMenuItem(MainMenu, "readthis")?.Active = 1;
     }
 
     // The jukebox (Ui/Jukebox.cs); its songs are loaded from menudefs/ in CheckForEpisodes
@@ -154,28 +154,28 @@ internal static partial class GameHost
                 }
                 catch (IOException e)
                 {
-                    _gameEngineManager.Quit($"The configuration directory \"{configdir}\" could not be created.");
+                    GameEngineManager.Quit($"The configuration directory \"{configdir}\" could not be created.");
                 }
             }
         }*/
 
         // The running release's data files were checked for when the assets were loaded
         // Build every menudef now so problems in any of them are reported at startup
-        foreach (var menuName in _assetManager.GetMenuNames())
+        foreach (var menuName in AssetManager.GetMenuNames())
         {
-            var menu = _assetManager.GetMenu(menuName);
+            var menu = AssetManager.GetMenu(menuName);
             if (menu == null)
                 continue;
 
-            var music = _gameEngineManager.GetGameInfo().MenuMusic ?? menu.Music;
-            if (!string.IsNullOrEmpty(music) && !_audioManager.HasMusic(music))
+            var music = GameEngineManager.GetGameInfo().MenuMusic ?? menu.Music;
+            if (!string.IsNullOrEmpty(music) && !AudioManager.HasMusic(music))
                 Console.WriteLine($"Menu '{menuName}': unknown music '{music}'");
 
             var packLists = menu.MenuItems.Select(item => item.GamePacks)
                 .Concat(menu.Components.Select(component => component.GamePacks));
             foreach (var pack in packLists.Where(list => list != null).SelectMany(list => list!).Distinct())
             {
-                if (pack != GamePackList.AnyPack && !_gameEngineManager.KnownGamePackIds.Contains(GamePackList.PackName(pack), StringComparer.OrdinalIgnoreCase))
+                if (pack != GamePackList.AnyPack && !GameEngineManager.KnownGamePackIds.Contains(GamePackList.PackName(pack), StringComparer.OrdinalIgnoreCase))
                     Console.WriteLine($"Menu '{menuName}': unknown game pack '{pack}' in game-packs");
             }
         }
@@ -193,8 +193,8 @@ internal static partial class GameHost
 
         (MusicMenu, MusicItems) = LoadMenu("jukebox");
         // Only the songs the game has (the shareware has 10 of the 27)
-        MusicMenu = MusicMenu.Where(item => item.data is not string song || _audioManager.HasMusic(song)).ToArray();
-        MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
+        MusicMenu = MusicMenu.Where(item => item.Data is not string song || AudioManager.HasMusic(song)).ToArray();
+        MusicItems.Amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
     }
 
     /*
@@ -282,18 +282,18 @@ internal static partial class GameHost
     static AutomapDrawing automapDrawing = null!;       // made in InitServices
 
     static AutomapDrawing MakeAutomapDrawing() =>
-        new(_assetManager, _videoManager, _graphicManager, _fontManager, _automapManager, _mapManager, _factionManager,
-            _translationManager, doors, pushWalls, spriteDrawing, session, new AutomapHooks(
-                () => (viewscreenx, viewscreeny, viewwidth, viewheight), GetMapDisplayName, FormatPlayTime,
-                () => objectives.StatsLines()));
+        new(AssetManager, _videoManager, _graphicManager, _fontManager, _automapManager, MapManager, FactionManager,
+            TranslationManager, doors, pushWalls, spriteDrawing, Session, new AutomapHooks(
+                () => (ViewScreenX, ViewScreenY, ViewWidth, ViewHeight), GetMapDisplayName, FormatPlayTime,
+                () => Objectives.StatsLines()));
 
     internal static void DrawAutomap() => automapDrawing.DrawAutomap();
 
     // The automap's keys and console commands (Ui/AutomapInput.cs)
     static AutomapInput automapInput = null!;       // made in InitServices
 
-    static AutomapInput MakeAutomapInput() => new(_inputManager, _consoleManager, _automapManager, _mapManager, controls, controlSettings,
-        inputPolling, session);
+    static AutomapInput MakeAutomapInput() => new(_inputManager, _consoleManager, _automapManager, MapManager, Controls, ControlSettings,
+        inputPolling, Session);
 
     internal static void ToggleAutomap() => automapInput.ToggleAutomap();
     internal static void UpdateAutomap() => automapInput.UpdateAutomap();
@@ -322,8 +322,8 @@ internal static partial class GameHost
     static StatusBarDrawing statusBarDrawing = null!;     // made in InitServices
 
     static StatusBarDrawing MakeStatusBarDrawing() =>
-        new(_gameEngineManager, _assetManager, _videoManager, _graphicManager, _inventoryManager, _audioManager,
-            _hudMessageManager, ui, session, settings, new StatusBarHooks(GetMapDisplayName, WrapText));
+        new(GameEngineManager, AssetManager, _videoManager, _graphicManager, InventoryManager, AudioManager,
+            HudMessageManager, ui, Session, Settings, new StatusBarHooks(GetMapDisplayName, WrapText));
 
     static void DrawKeys() => statusBarDrawing.DrawKeys();
     static void DrawScore() => statusBarDrawing.DrawScore();
@@ -334,8 +334,8 @@ internal static partial class GameHost
     static Radar radar = null!;     // made in InitServices
 
     static Radar MakeRadar() =>
-        new(_mapManager, _inventoryManager, _inputManager, _hudMessageManager, _videoManager, _graphicManager,
-            statusBarDrawing, doors, session, settings);
+        new(MapManager, InventoryManager, _inputManager, HudMessageManager, _videoManager, _graphicManager,
+            statusBarDrawing, doors, Session, Settings);
 
     internal static void UpdateRadar() => radar.UpdateRadar();
     static string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked) =>
@@ -346,8 +346,8 @@ internal static partial class GameHost
     // The HUD messages drawn over the view, and the obituary (Ui/HudMessageDrawing.cs)
     static HudMessageDrawing hudMessageDrawing = null!;     // made in InitServices
 
-    static HudMessageDrawing MakeHudMessageDrawing() => new(_videoManager, _graphicManager, _inventoryManager, _hudMessageManager, ui,
-        statusBarDrawing, playersManager, render, session);
+    static HudMessageDrawing MakeHudMessageDrawing() => new(_videoManager, _graphicManager, InventoryManager, HudMessageManager, ui,
+        statusBarDrawing, playersManager, Render, Session);
 
     internal static void DrawHudMessages() => hudMessageDrawing.DrawHudMessages();
     internal static void ShowObituary() => hudMessageDrawing.ShowObituary();
@@ -369,7 +369,7 @@ internal static partial class GameHost
     static DebugCommands debugCommands = null!;     // (Commands/DebugCommands.cs)
 
     // Set by the "screenshot" command; ThreeDRefresh takes the shot before drawing the console.
-    static bool screenshotPending { get => debugScreens.screenshotPending; set => debugScreens.screenshotPending = value; }
+    static bool ScreenshotPending { get => debugScreens.ScreenshotPending; set => debugScreens.ScreenshotPending = value; }
 
     internal static string TakeScreenshot() => debugScreens.TakeScreenshot();
 }

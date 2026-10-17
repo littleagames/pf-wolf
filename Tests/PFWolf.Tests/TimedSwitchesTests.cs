@@ -23,8 +23,8 @@ public class TimedSwitchesTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         var pawn = new PlayerPawn { State = _session.PlayerState };
         pawn.SetPosition(10, 10);
@@ -42,7 +42,7 @@ public class TimedSwitchesTests
     // A switch wall at 11,10, thrown from off to on
     private void Throw(int resetTics)
     {
-        _map.tilemap[11, 10] = SwitchOn;
+        _map.TileMap[11, 10] = SwitchOn;
         _timed.Thrown(new MapSwitchTranslation { To = SwitchOn, ResetTics = resetTics, ResetActions = ["A_TestReset"] },
             11, 10, patch: false, SwitchOff, SwitchOn, 0, ControlDir.East);
     }
@@ -55,10 +55,10 @@ public class TimedSwitchesTests
 
         // Act / Assert
         _timed.Tick(139);
-        Assert.That(_map.tilemap[11, 10], Is.EqualTo(SwitchOn));
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(SwitchOn));
         Assert.That(Resets, Is.Zero);
         _timed.Tick(1);
-        Assert.That(_map.tilemap[11, 10], Is.EqualTo(SwitchOff));
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(SwitchOff));
         Assert.That(Resets, Is.EqualTo(1));
         Assert.That(_timed.Pending, Is.Empty);
     }
@@ -68,7 +68,7 @@ public class TimedSwitchesTests
     {
         Throw(0);
         _timed.Tick(1000);
-        Assert.That(_map.tilemap[11, 10], Is.EqualTo(SwitchOn));
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(SwitchOn));
         Assert.That(_timed.Pending, Is.Empty);
     }
 
@@ -77,13 +77,13 @@ public class TimedSwitchesTests
     {
         // Arrange: something else made it another wall
         Throw(10);
-        _map.tilemap[11, 10] = 7;
+        _map.TileMap[11, 10] = 7;
 
         // Act
         _timed.Tick(10);
 
         // Assert: the wall stays, the actions still run
-        Assert.That(_map.tilemap[11, 10], Is.EqualTo(7));
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(7));
         Assert.That(Resets, Is.EqualTo(1));
     }
 
@@ -92,14 +92,14 @@ public class TimedSwitchesTests
     {
         // Arrange: the level loads again (a death, a saved game)
         Throw(10);
-        _map.tilemap = new ushort[MapManager.MapSize, MapManager.MapSize];
-        _map.tilemap[11, 10] = SwitchOn;
+        _map.TileMap = new ushort[MapManager.MapSize, MapManager.MapSize];
+        _map.TileMap[11, 10] = SwitchOn;
 
         // Act
         _timed.Tick(10);
 
         // Assert
-        Assert.That(_map.tilemap[11, 10], Is.EqualTo(SwitchOn));
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(SwitchOn));
         Assert.That(Resets, Is.Zero);
         Assert.That(_timed.Pending, Is.Empty);
     }
@@ -112,7 +112,7 @@ public class TimedSwitchesTests
         Throw(10);
         _timed.Tick(5);
         Assert.That(_timed.Pending, Has.Count.EqualTo(1));
-        Assert.That(_map.tilemap[11, 10], Is.EqualTo(SwitchOn));
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(SwitchOn));
     }
 
     [Test]

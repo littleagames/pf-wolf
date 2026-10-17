@@ -73,7 +73,7 @@ public class PngGraphicDataLoader
                 {
                     int x = (grAbBuf[0] << 24) | (grAbBuf[1] << 16) | (grAbBuf[2] << 8) | grAbBuf[3];
                     int y = (grAbBuf[4] << 24) | (grAbBuf[5] << 16) | (grAbBuf[6] << 8) | grAbBuf[7];
-                    offset = new Point { x = x, y = y };
+                    offset = new Point { X = x, Y = y };
                 }
                 stream.Position += 4; // Skip CRC
                 break;

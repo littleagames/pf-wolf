@@ -160,7 +160,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
 
             input.ClearLastKey();
             menuInput.ReadAnyControl(out ci);
-            Direction dir = ci.dir;
+            Direction dir = ci.Dir;
             switch (dir)
             {
                 case Direction.North:
@@ -168,7 +168,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
                     break;
 
                 default:
-                    if (ci.button0)
+                    if (ci.Button0)
                         dir = Direction.South;
                     switch (input.GetLastKeyPressed())
                     {
@@ -210,7 +210,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
                     menuInput.TicDelay(20);
                     break;
             }
-        } while (input.GetLastKeyPressed() != ScanCodes.Escape && !ci.button1);
+        } while (input.GetLastKeyPressed() != ScanCodes.Escape && !ci.Button1);
 
         input.ClearKeysDown();
     }

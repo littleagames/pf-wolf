@@ -6,17 +6,17 @@ namespace PFWolf.Loaders;
 /// <summary>A level's header in GAMEMAPS</summary>
 struct MapHeader
 {
-    public int[] planestart;
-    public UInt16[] planelength;
-    public UInt16 width;
-    public UInt16 height;
-    public char[] name;
+    public int[] PlaneStart;
+    public UInt16[] PlaneLength;
+    public UInt16 Width;
+    public UInt16 Height;
+    public char[] Name;
 
     public MapHeader()
     {
-        planestart = new Int32[MapConstants.MapPlanes];
-        planelength = new UInt16[MapConstants.MapPlanes];
-        name = new char[16];
+        PlaneStart = new Int32[MapConstants.MapPlanes];
+        PlaneLength = new UInt16[MapConstants.MapPlanes];
+        Name = new char[16];
     }
 }
 
@@ -73,13 +73,13 @@ public class Wolf3dMapFileLoader
             var level = new MapHeader();
             br.BaseStream.Seek(pos, SeekOrigin.Begin);
             for (int p = 0; p < MapConstants.MapPlanes; p++)
-                level.planestart[p] = br.ReadInt32();
+                level.PlaneStart[p] = br.ReadInt32();
             for (int p = 0; p < MapConstants.MapPlanes; p++)
-                level.planelength[p] = br.ReadUInt16();
-            level.width = br.ReadUInt16();
-            level.height = br.ReadUInt16();
+                level.PlaneLength[p] = br.ReadUInt16();
+            level.Width = br.ReadUInt16();
+            level.Height = br.ReadUInt16();
             for (int n = 0; n < 16; n++)
-                level.name[n] = (char)br.ReadByte();
+                level.Name[n] = (char)br.ReadByte();
             _levels[i] = level;
         }
     }
@@ -118,7 +118,7 @@ public class Wolf3dMapFileLoader
     {
         int pos, compressed;
         var level = _levels[mapnum] ?? throw new PfWolfMapException($"There's no level {mapnum + 1}");
-        if (level.width != MapConstants.MapSize || level.height != MapConstants.MapSize)
+        if (level.Width != MapConstants.MapSize || level.Height != MapConstants.MapSize)
             throw new PfWolfMapException($"CA_CacheMap: Map not {MapConstants.MapSize}*{MapConstants.MapSize}!");
 
         //
@@ -137,8 +137,8 @@ public class Wolf3dMapFileLoader
             for (var plane = 0; plane < MapConstants.MapPlanes; plane++)
             {
 
-                pos = level.planestart[plane];
-                compressed = level.planelength[plane];
+                pos = level.PlaneStart[plane];
+                compressed = level.PlaneLength[plane];
 
                 if (compressed == 0)
                     continue; // empty plane
@@ -182,10 +182,10 @@ public class Wolf3dMapFileLoader
 
             return new MapAsset() // TODO: Add raw data for the entire map's data like a single MAP file, which means I'll have to come up with the format here.
             {
-                Width = level.width,
-                Height = level.height,
+                Width = level.Width,
+                Height = level.Height,
                 // A 16-character buffer: the name ends at its first NUL, with whatever was in memory after it
-                Name = new string(level.name).Split('\0')[0],
+                Name = new string(level.Name).Split('\0')[0],
                 MapData = mapsegs
             };
         }

@@ -23,8 +23,8 @@ internal sealed class NetOverlay(
     const int MaxY = GameConstants.MaxY;
 
     // Typing a line to say to the others (T), and what's typed so far
-    internal bool netChatting;
-    internal string netChatText = "";
+    internal bool NetChatting;
+    internal string NetChatText = "";
 
     /// <summary>While typing a chat line: letters go on it, Backspace takes one off, Enter says it, Esc drops it</summary>
     internal void NetChatKeys()
@@ -33,8 +33,8 @@ internal sealed class NetOverlay(
         {
             if (c == 0)
                 break;
-            if (c >= ' ' && c < 127 && netChatText.Length < NetProtocol.MaxChatLength)
-                netChatText += c;
+            if (c >= ' ' && c < 127 && NetChatText.Length < NetProtocol.MaxChatLength)
+                NetChatText += c;
         }
         input.ClearTextInput();
 
@@ -43,15 +43,15 @@ internal sealed class NetOverlay(
             switch (key)
             {
                 case ScanCodes.Enter:
-                    NetSession.Current?.Say(netChatText);
+                    NetSession.Current?.Say(NetChatText);
                     goto case ScanCodes.Escape;
                 case ScanCodes.Escape:
-                    netChatting = false;
-                    netChatText = "";
+                    NetChatting = false;
+                    NetChatText = "";
                     input.ClearKeysDown();
                     return;
-                case ScanCodes.BackSpace when netChatText.Length > 0:
-                    netChatText = netChatText[..^1];
+                case ScanCodes.BackSpace when NetChatText.Length > 0:
+                    NetChatText = NetChatText[..^1];
                     break;
             }
         }
@@ -77,10 +77,10 @@ internal sealed class NetOverlay(
     /// </summary>
     internal void NetCheckKeys(ScanCodes scan)
     {
-        if (!netPlay.netLeavePrompt && scan == ScanCodes.T)
+        if (!netPlay.NetLeavePrompt && scan == ScanCodes.T)
         {
-            netChatting = true;
-            netChatText = "";
+            NetChatting = true;
+            NetChatText = "";
             input.ClearTextInput();
             input.ClearKeysDown();
             return;
@@ -95,16 +95,16 @@ internal sealed class NetOverlay(
                 WatchNextPlayer(-1);
         }
 
-        if (netPlay.netLeavePrompt)
+        if (netPlay.NetLeavePrompt)
         {
             if (scan == ScanCodes.Y)
             {
-                netPlay.netLeft = true;
+                netPlay.NetLeft = true;
                 game.PlayState = PlayState.Abort;
             }
             if (scan is ScanCodes.Y or ScanCodes.N or ScanCodes.Escape)
             {
-                netPlay.netLeavePrompt = false;
+                netPlay.NetLeavePrompt = false;
                 input.ClearKeysDown();
             }
             return;
@@ -112,7 +112,7 @@ internal sealed class NetOverlay(
 
         if (scan == ScanCodes.Escape || input.IsButtonPressed(ButtonType.Esc))
         {
-            netPlay.netLeavePrompt = true;
+            netPlay.NetLeavePrompt = true;
             input.ClearKeysDown();
         }
     }
@@ -176,7 +176,7 @@ internal sealed class NetOverlay(
         // Dead: everyone's score, who's being watched, and how to come back
         var localplayer = game.LocalPlayer;
         bool dead = localplayer.Health <= 0 && localplayer.Pawn != null;
-        if (scoreboard.showscoreboard || dead)
+        if (scoreboard.ShowScoreboard || dead)
             scoreboard.DrawScoreboard(12);
         if (dead)
         {
@@ -187,14 +187,14 @@ internal sealed class NetOverlay(
         }
 
         // The line being typed to the others
-        if (netChatting)
+        if (NetChatting)
         {
             video.Bar(16, MaxY - 24, 288, 11, "BKGDCOLOR");
             ui.TextAt(20, MaxY - 22, new Fonts.TextStyle(UiFonts.SmallFont, "HIGHLIGHT"))
-                .Print(ui.FitText($"Say: {netChatText}_", 280, UiFonts.SmallFont));
+                .Print(ui.FitText($"Say: {NetChatText}_", 280, UiFonts.SmallFont));
         }
 
-        var text = netPlay.netLeavePrompt ? "Leave this game?\n(Y or N)" : netPlay.netWaiting;
+        var text = netPlay.NetLeavePrompt ? "Leave this game?\n(Y or N)" : netPlay.NetWaiting;
         if (text != null)
             draw.Message(text, MaxY);
     }

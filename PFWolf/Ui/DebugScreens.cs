@@ -13,7 +13,7 @@ internal sealed class DebugScreens(
     GameSession session)
 {
     // Set by the "screenshot" command; ThreeDRefresh takes the shot before drawing the console.
-    internal bool screenshotPending;
+    internal bool ScreenshotPending;
 
     /// <summary>
     /// Saves the screen to the first free WSHOT###.BMP in the screenshots folder and says where
@@ -62,13 +62,13 @@ internal sealed class DebugScreens(
         //
         // right side (raw)
         //
-        for (y = 0; y < map.mapheight; y++)
+        for (y = 0; y < map.MapHeight; y++)
         {
-            for (x = 0; x < map.mapwidth; x++)
+            for (x = 0; x < map.MapWidth; x++)
             {
                 color = "Black";
-                if (map.actorat[x, y] is Wall) color = "Grey";
-                if (map.actorat[x, y] is Door) color = "White";
+                if (map.ActorAt[x, y] is Wall) color = "Grey";
+                if (map.ActorAt[x, y] is Door) color = "White";
                 video.Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, color);
             }
         }
@@ -78,15 +78,15 @@ internal sealed class DebugScreens(
         //
         offx -= 128;
 
-        for (y = 0; y < map.mapheight; y++)
+        for (y = 0; y < map.MapHeight; y++)
         {
-            for (x = 0; x < map.mapwidth; x++)
+            for (x = 0; x < map.MapWidth; x++)
             {
-                tile = map.actorat[x, y];
+                tile = map.ActorAt[x, y];
 
                 if (tile is null)
                 {
-                    if (map.spotvis[x, y])
+                    if (map.Spotvis[x, y])
                         color = "Dark Green";
                     else
                         color = "Black";      // nothing

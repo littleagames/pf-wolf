@@ -280,8 +280,8 @@ internal sealed class SpriteDrawing(
 
                 // A neighbouring tile only counts while it's open floor: a wall the player
                 // sees isn't somewhere the actor could be showing from
-                bool Seen(int x, int y) => map.spotvis[x, y] && map.tilemap[x, y] == 0;
-                if (!(map.spotvis[atx, aty]
+                bool Seen(int x, int y) => map.Spotvis[x, y] && map.TileMap[x, y] == 0;
+                if (!(map.Spotvis[atx, aty]
                     || Seen(atx - 1, aty)
                     || Seen(atx + 1, aty)
                     || Seen(atx, aty - 1)
@@ -347,7 +347,7 @@ internal sealed class SpriteDrawing(
                 continue;
             }
 
-            if (!map.spotvis[(int)actor.Position.X, (int)actor.Position.Y])
+            if (!map.Spotvis[(int)actor.Position.X, (int)actor.Position.Y])
                 continue;                                               // not visable
 
             // Picking it up is TouchItems' job (Rendering/PlayerView.cs), not the renderer's

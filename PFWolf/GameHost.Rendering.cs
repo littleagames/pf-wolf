@@ -29,20 +29,20 @@ internal static partial class GameHost
     short[] spanstart;
 #endif
 
-    internal static short[] wallheight { get => render.WallHeight; set => render.WallHeight = value; }
+    internal static short[] WallHeight { get => Render.WallHeight; set => Render.WallHeight = value; }
 
     //
     // math tables
     //
-    internal static short[] pixelangle { get => render.PixelAngle; set => render.PixelAngle = value; }
+    internal static short[] PixelAngle { get => Render.PixelAngle; set => Render.PixelAngle = value; }
 
     //
     // refresh variables
-    internal static int viewx { get => render.ViewX; set => render.ViewX = value; }
+    internal static int ViewX { get => Render.ViewX; set => Render.ViewX = value; }
     static readonly TextureAsset notexture = new() { RawData = new byte[TextureSize * TextureSize] };
 
     // The renderer's shared per-frame state (Rendering/RenderState.cs): the fields below, under their old names, are its
-    internal static readonly RenderState render = new(notexture, Lighting.NoShade);
+    internal static readonly RenderState Render = new(notexture, Lighting.NoShade);
 
     /*
     ====================
@@ -62,7 +62,7 @@ internal static partial class GameHost
     static WallPosts wallPosts = null!;     // made in InitServices
 
     static WallPosts MakeWallPosts() =>
-        new(_videoManager, _mapManager, lighting, skyAndFlats, render, weather, session, WallTexture);
+        new(_videoManager, MapManager, lighting, skyAndFlats, Render, weather, Session, WallTexture);
 
     static bool IsArch(int tilex, int tiley) => wallPosts.IsArch(tilex, tiley);
     static int FloorRow(int half) => wallPosts.FloorRow(half);
@@ -70,7 +70,7 @@ internal static partial class GameHost
     // What the trace does when it hits a wall, door or diagonal (Rendering/WallHits.cs)
     static WallHits wallHits = null!;       // made in InitServices
 
-    static WallHits MakeWallHits() => new(_assetManager, _mapManager, doors, pushWalls, wallPosts, render, session);
+    static WallHits MakeWallHits() => new(AssetManager, MapManager, doors, pushWalls, wallPosts, Render, Session);
 
     internal static TextureAsset? WorldTexture(string name) => wallHits.WorldTexture(name);
     static TextureAsset? WorldTexture(string name, int tilex, int tiley) => wallHits.WorldTexture(name, tilex, tiley);
@@ -80,32 +80,32 @@ internal static partial class GameHost
     static SkyAndFlats skyAndFlats = null!;     // made in InitServices
 
     static SkyAndFlats MakeSkyAndFlats() =>
-        new(_gameEngineManager, _assetManager, _videoManager, _mapManager, lighting, actorLights, render, session, WorldTexture);
+        new(GameEngineManager, AssetManager, _videoManager, MapManager, lighting, actorLights, Render, Session, WorldTexture);
 
     // The ray trace (Rendering/RayTrace.cs)
     static RayTrace rayTrace = null!;       // made in InitServices
 
-    static RayTrace MakeRayTrace() => new(_mapManager, doors, pushWalls, wallPosts, wallHits, render);
+    static RayTrace MakeRayTrace() => new(MapManager, doors, pushWalls, wallPosts, wallHits, Render);
 
     // The sprites and the weapon in hand (Rendering/SpriteDrawing.cs)
     static SpriteDrawing spriteDrawing = null!;     // made in InitServices
 
-    static SpriteDrawing MakeSpriteDrawing() => new(_assetManager, _mapManager, _translationManager, lighting, spriteScaler,
-        wallSpriteDrawing, weather, render, weaponBob, session,
+    static SpriteDrawing MakeSpriteDrawing() => new(AssetManager, MapManager, TranslationManager, lighting, spriteScaler,
+        wallSpriteDrawing, weather, Render, WeaponBob, Session,
         new SpriteDrawingHooks(WeaponShapeName, IsPlayerBody, VisiblePlayerBody, DrawnSprite, SpriteExists,
-            () => deathCamSprite, () => weaponScale));
+            () => DeathCamSprite, () => WeaponScale));
 
     static void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos) => spriteDrawing.TransformActorFrom(ob, fromx, fromy, fromsin, fromcos);
 
     // One frame: its tics, the view from the camera, and drawing it all (Rendering/FrameRefresh.cs)
     static FrameRefresh frameRefresh = null!;       // made in InitServices
 
-    static FrameRefresh MakeFrameRefresh() => new(_videoManager, _graphicManager, _mapManager, _consoleManager, lighting, actorLights,
-        weather, skyAndFlats, rayTrace, spriteDrawing, playerView, render, session,
-        new FrameRefreshHooks(() => levelFadeStyle, () => levelFadeTics,
+    static FrameRefresh MakeFrameRefresh() => new(_videoManager, _graphicManager, MapManager, _consoleManager, lighting, actorLights,
+        weather, skyAndFlats, rayTrace, spriteDrawing, playerView, Render, Session,
+        new FrameRefreshHooks(() => LevelFadeStyle, () => LevelFadeTics,
             RestoreBorderAfterConsole, DrawAutomap, () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole,
-            () => screenshotPending, () => screenshotPending = false, TakeScreenshot, UpdateViewQuake,
-            () => weaponZoom.ScopePicture(), DrawScope));
+            () => ScreenshotPending, () => ScreenshotPending = false, TakeScreenshot, UpdateViewQuake,
+            () => WeaponZoom.ScopePicture(), DrawScope));
 
     // A scope's picture over the whole screen (the original's H_SNIPERSCOPE at 0, 0), with black
     // past its edges on a screen wider or taller than it, so nothing outside the scope shows
@@ -113,10 +113,10 @@ internal static partial class GameHost
     {
         int left = _videoManager.ScreenX(0), right = _videoManager.ScreenX(320);
         int top = _videoManager.ScreenY(0), bottom = _videoManager.ScreenY(200);
-        _videoManager.BarScaledCoord(0, 0, Math.Max(left, 0), _videoManager.screenHeight, "Black");
-        _videoManager.BarScaledCoord(right, 0, Math.Max(_videoManager.screenWidth - right, 0), _videoManager.screenHeight, "Black");
-        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, Math.Max(top, 0), "Black");
-        _videoManager.BarScaledCoord(0, bottom, _videoManager.screenWidth, Math.Max(_videoManager.screenHeight - bottom, 0), "Black");
+        _videoManager.BarScaledCoord(0, 0, Math.Max(left, 0), _videoManager.ScreenHeight, "Black");
+        _videoManager.BarScaledCoord(right, 0, Math.Max(_videoManager.ScreenWidth - right, 0), _videoManager.ScreenHeight, "Black");
+        _videoManager.BarScaledCoord(0, 0, _videoManager.ScreenWidth, Math.Max(top, 0), "Black");
+        _videoManager.BarScaledCoord(0, bottom, _videoManager.ScreenWidth, Math.Max(_videoManager.ScreenHeight - bottom, 0), "Black");
         _graphicManager.DrawPic(pic, 0, 0);
     }
 
@@ -126,16 +126,16 @@ internal static partial class GameHost
 
     static void UpdateViewQuake()
     {
-        var mapon = session.GameState.MapOn;
+        var mapon = Session.GameState.MapOn;
         if (mapon != quakeMap)
         {
             viewQuake.Reset();          // a new level starts still
             quakeMap = mapon;
         }
-        int rumble = mapon != null && _gameEngineManager.GetGameInfo().Maps.TryGetValue(mapon, out var map) ? map.Shake : 0;
+        int rumble = mapon != null && GameEngineManager.GetGameInfo().Maps.TryGetValue(mapon, out var map) ? map.Shake : 0;
         // a scope's zoom magnifies the view: its focal length that many times as long
-        long zoom = (long)(GameConstants.FocalLength * (weaponZoom.Magnification() - 1));
-        viewSetup.SetFocalExcursion(viewQuake.Update((int)session.Tics, rumble) + zoom);
+        long zoom = (long)(GameConstants.FocalLength * (WeaponZoom.Magnification() - 1));
+        viewSetup.SetFocalExcursion(viewQuake.Update((int)Session.Tics, rumble) + zoom);
     }
 
     /// <summary>A_Quake(min[, max]): shakes the view, at a power (0-200) rolled from min to max (Midnight Assault's blasts)</summary>
@@ -146,7 +146,7 @@ internal static partial class GameHost
         viewQuake.Start(max > min ? Random.Shared.Next(min, max + 1) : min);
     }
 
-    static int lasttimecount { get => frameRefresh.LastTimeCount; set => frameRefresh.LastTimeCount = value; }
+    static int LastTimeCount { get => frameRefresh.LastTimeCount; set => frameRefresh.LastTimeCount = value; }
 
     internal static double MaxPitch() => frameRefresh.MaxPitch();
     internal static void ThreeDRefresh() => frameRefresh.ThreeDRefresh();
@@ -156,7 +156,7 @@ internal static partial class GameHost
     // Drawing sprites scaled onto the view (Rendering/SpriteScaler.cs)
     static SpriteScaler spriteScaler = null!;       // made in InitServices
 
-    static SpriteScaler MakeSpriteScaler() => new(_assetManager, _videoManager, lighting, render, FloorRow);
+    static SpriteScaler MakeSpriteScaler() => new(AssetManager, _videoManager, lighting, Render, FloorRow);
 
     internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs,
         bool cloaked = false, SpriteTranslation? translation = null) =>
@@ -172,8 +172,8 @@ internal static partial class GameHost
     static FactionCommands factionCommands = null!;     // (Commands/FactionCommands.cs)
 
     static Lighting MakeLighting() =>
-        new(_gameEngineManager, _videoManager, _mapManager,
-            new LightingHooks(() => heightnumerator, () => colortints.Clear(), TickActorLights));
+        new(GameEngineManager, _videoManager, MapManager,
+            new LightingHooks(() => HeightNumerator, () => ColorTintTables.Clear(), TickActorLights));
 
     private static void RegisterZoneLightActions() => (lighting ??= MakeLighting()).RegisterZoneLightActions();
 
@@ -182,9 +182,9 @@ internal static partial class GameHost
     // Light actors give off (Rendering/ActorLights.cs)
     static ActorLights actorLights = null!;     // made in InitServices
 
-    static ActorLights MakeActorLights() => new(_mapManager, doors, lighting ??= MakeLighting(), session);
+    static ActorLights MakeActorLights() => new(MapManager, doors, lighting ??= MakeLighting(), Session);
 
-    static Dictionary<string, byte[]> colortints => actorLights.ColorTintTables;
+    static Dictionary<string, byte[]> ColorTintTables => actorLights.ColorTintTables;
 
     private static void RegisterActorLightActions() => (actorLights ??= MakeActorLights()).RegisterActorLightActions();
     static void TickActorLights(uint tics) => actorLights.TickActorLights(tics);
@@ -194,7 +194,7 @@ internal static partial class GameHost
     // Rain and snow (Rendering/Weather.cs)
     static Weather weather = null!;     // made in InitServices
 
-    static Weather MakeWeather() => new(_gameEngineManager, _videoManager, _mapManager, lighting, render, session, FloorRow, IsArch);
+    static Weather MakeWeather() => new(GameEngineManager, _videoManager, MapManager, lighting, Render, Session, FloorRow, IsArch);
 
     // ==== WallSprites ============================================================================
 
@@ -204,8 +204,8 @@ internal static partial class GameHost
 
     internal static bool IsWallSprite(Entities.Actors.Actor actor) => WallSprites.IsWallSprite(actor);
 
-    static int wallspritefromx { get => wallSpriteBlocking.WallSpriteFromX; set => wallSpriteBlocking.WallSpriteFromX = value; }
-    static int wallspritefromy { get => wallSpriteBlocking.WallSpriteFromY; set => wallSpriteBlocking.WallSpriteFromY = value; }
+    static int WallSpriteFromX { get => wallSpriteBlocking.WallSpriteFromX; set => wallSpriteBlocking.WallSpriteFromX = value; }
+    static int WallSpriteFromY { get => wallSpriteBlocking.WallSpriteFromY; set => wallSpriteBlocking.WallSpriteFromY = value; }
     internal static WallSpriteSpan? WallSpriteHitByBox(int xl, int yl, int xh, int yh, long x, long y, long size, bool player) =>
         wallSpriteBlocking.WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player);
     internal static bool WallSpriteBlocksLine(long x1, long y1, long x2, long y2) => wallSpriteBlocking.WallSpriteBlocksLine(x1, y1, x2, y2);
@@ -213,11 +213,11 @@ internal static partial class GameHost
     // Drawing wall sprites (Rendering/WallSpriteDrawing.cs)
     static WallSpriteDrawing wallSpriteDrawing = null!;     // made in InitServices
 
-    static WallSpriteDrawing MakeWallSpriteDrawing() => new(_assetManager, _mapManager, lighting, render, spriteScaler, FloorRow);
+    static WallSpriteDrawing MakeWallSpriteDrawing() => new(AssetManager, MapManager, lighting, Render, spriteScaler, FloorRow);
 
     // ==== Camera =================================================================================
 
-    internal static void SetEyeHeight(int z) => playereyez = Math.Clamp(z, MinEye, MaxEye);
+    internal static void SetEyeHeight(int z) => PlayerEyeZ = Math.Clamp(z, MinEye, MaxEye);
 
     // The `spectate` command (Gameplay/Spectating.cs)
     static Spectating spectating = null!;       // made in InitServices
@@ -240,8 +240,8 @@ internal static partial class GameHost
     static PlayerView playerView = null!;       // made in InitServices
 
     static PlayerView MakePlayerView() =>
-        new(_mapManager, lineOfSight, session, new PlayerViewHooks(
-            () => focallength, () => viewwidth, TransformActorFrom, IsWallSprite, GetBonus));
+        new(MapManager, lineOfSight, Session, new PlayerViewHooks(
+            () => FocalLength, () => ViewWidth, TransformActorFrom, IsWallSprite, GetBonus));
 
     static (int x, int y, int sin, int cos) PlayerViewOrigin() => playerView.PlayerViewOrigin();
 }

@@ -33,7 +33,7 @@ public class PlayKeysTests
         // pausing or cheat combos to reach)
         _keys = new PlayKeys(new AssetManager(), new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test"))), _input, null!, null!, null!, _console, new AutomapManager(), null!, null!,
             polling, null!, null!, null!, null!, frame, session,
-            new Configuration.GameSettings { viewsize = 21 }, new PlayKeysHooks(() => _chatting,
+            new Configuration.GameSettings { ViewSize = 21 }, new PlayKeysHooks(() => _chatting,
                 () => _calls.Add("chat"), scan => _calls.Add($"net {scan}"), () => _calls.Add("automap"),
                 _ => _automapTakes, () => { }, () => { }, _ => { }, () => { }));
     }

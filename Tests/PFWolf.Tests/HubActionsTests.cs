@@ -16,8 +16,8 @@ public class HubActionsTests
         _session = new GameSession { Tics = 10 };
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
-            tilemap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            actorat = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
         };
         _actions = new HubActions(null!, _map, null!, null!, null!, null!, null!, null!, null!, null!, null!, _session,
             new HubActionsHooks(_ => { }, (_, _) => { }));
@@ -65,7 +65,7 @@ public class HubActionsTests
         // Arrange: a wall in the next tile east
         var blake = Runner();
         blake.X += Tile / 2 - 1;
-        _map.tilemap[11, 10] = 1;
+        _map.TileMap[11, 10] = 1;
         int x = blake.X;
 
         // Act
@@ -80,8 +80,8 @@ public class HubActionsTests
     public void Starting_Inside_A_Wall_It_Runs_On_Out()
     {
         // Behind the player can be inside a wall: only one it runs into stops it
-        _map.tilemap[10, 10] = 1;
-        _map.tilemap[11, 10] = 1;
+        _map.TileMap[10, 10] = 1;
+        _map.TileMap[11, 10] = 1;
         var blake = Runner();
         int x = blake.X;
 

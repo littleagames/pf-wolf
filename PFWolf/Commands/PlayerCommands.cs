@@ -139,7 +139,7 @@ internal sealed class PlayerCommands(
         session.ConsolePlayer = n - 1;
         session.SetActing(session.LocalPlayer);
         session.Camera.FollowPlayer();
-        if (settings.viewsize != 21)
+        if (settings.ViewSize != 21)
             hooks.DrawPlayScreen();
         console.Print($"You're player {n} ({session.LocalPlayer.PlayerClass})");
     }

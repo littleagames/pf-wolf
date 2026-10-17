@@ -309,21 +309,21 @@ public class BindCommandsTests
         _console.Execute("joy_turnspeed 99");
 
         // Assert
-        Assert.That(_settings.joydeadzone, Is.EqualTo(30));
-        Assert.That(_settings.joyturnspeed, Is.EqualTo(4));        // 99 is past the fastest: left alone
-        Assert.That(_settings.mouselook, Is.True);
-        Assert.That(_settings.mouseinvert, Is.True);
-        Assert.That(_settings.joyclassicsticks, Is.True);
+        Assert.That(_settings.JoyDeadzone, Is.EqualTo(30));
+        Assert.That(_settings.JoyTurnSpeed, Is.EqualTo(4));        // 99 is past the fastest: left alone
+        Assert.That(_settings.MouseLook, Is.True);
+        Assert.That(_settings.MouseInvert, Is.True);
+        Assert.That(_settings.JoyClassicSticks, Is.True);
     }
 
     [Test]
     public void Saved_Settings_Read_Back_The_Same()
     {
         // Arrange
-        _settings.mouselook = true;
-        _settings.joydeadzone = 35;
-        _settings.joyturnspeed = 7;
-        _settings.joyclassicsticks = true;
+        _settings.MouseLook = true;
+        _settings.JoyDeadzone = 35;
+        _settings.JoyTurnSpeed = 7;
+        _settings.JoyClassicSticks = true;
         var loaded = new ControlSettings();
         var console = new ConsoleManager();
         new BindCommands(console, new ControlBindings(), loaded).Register();

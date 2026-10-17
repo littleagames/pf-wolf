@@ -78,7 +78,7 @@ internal sealed class Projectiles(
         for (y = yl; y <= yh; y++)
             for (x = xl; x <= xh; x++)
             {
-                check = map.actorat[x, y];
+                check = map.ActorAt[x, y];
                 if (check is null or ActorMark)     // enemies are hit by the projectile's own check
                     continue;
 
@@ -91,7 +91,7 @@ internal sealed class Projectiles(
                 }
 
                 // a diagonal only blocks on its solid side of the face
-                if (map.wallshape[x, y] is var shape and not WallShape.Square
+                if (map.WallShapes[x, y] is var shape and not WallShape.Square
                     && !Diagonals.BoxHitsDiagonal(shape, x, y, ob.X, ob.Y, PROJSIZE))
                     continue;
 
@@ -216,7 +216,7 @@ internal sealed class Projectiles(
         {
             for (x = xl; x <= xh; x++)
             {
-                check = map.actorat[x, y];
+                check = map.ActorAt[x, y];
                 if (check is not (null or ActorMark))     // only walls and solid things
                     return false;
             }

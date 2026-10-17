@@ -50,8 +50,8 @@ internal sealed class MidGameJoin(
         using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
         {
             bw.Write(NetStateVersion);
-            bw.Write(netPlay.netlevel);
-            bw.Write(netPlay.netstep);
+            bw.Write(netPlay.NetLevel);
+            bw.Write(netPlay.NetStep);
             bw.Write(gameSession.NetSeed);
             bw.Write(gameSession.Random.RndIndex);
             bw.Write((byte)gameSession.GameMode);
@@ -122,8 +122,8 @@ internal sealed class MidGameJoin(
             if (br.ReadInt32() != NetStateVersion)
                 return "The host sent the game in a form this version can't read.";
 
-            netPlay.netlevel = br.ReadInt32();
-            netPlay.netstep = br.ReadInt32();
+            netPlay.NetLevel = br.ReadInt32();
+            netPlay.NetStep = br.ReadInt32();
             gameSession.NetSeed = br.ReadByte();
             int rnd = br.ReadInt32();
             var mode = (GameMode)br.ReadByte();
@@ -164,7 +164,7 @@ internal sealed class MidGameJoin(
             gameSession.GameState = game;
             gameSession.LoadedGame = true;
             gameSession.NetGame = true;
-            netPlay.netLeft = false;
+            netPlay.NetLeft = false;
             levelSetup.SetupGameLevel();
             var body = levelBodies.ReadLevelBody(br);
             var actors = levelBodies.ApplyLevelBody(body, i => i < owners.Length && owners[i] >= 0 && owners[i] < gameSession.Players.Count ? gameSession.Players[owners[i]] : null);
@@ -194,8 +194,8 @@ internal sealed class MidGameJoin(
 
             gameSession.Random.RndIndex = rnd;
             gameSession.GodMode = gameSession.NoClip = gameSession.AmmoCheat = 0;
-            scoreboard.showscoreboard = false;
-            netPlay.netJoinResume = true;
+            scoreboard.ShowScoreboard = false;
+            netPlay.NetJoinResume = true;
             gameSession.Camera.FollowPlayer();
             hooks.StartGame();
             return null;

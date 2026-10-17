@@ -7,13 +7,13 @@ public class Wolf3dVgaFileLoader
 {
     private struct PicTableEntry
     {
-        public short width;
-        public short height;
+        public short Width;
+        public short Height;
     }
 
     private struct HuffNode
     {
-        public ushort bit0, bit1; // 0-255 is a character, > is a pointer to a node
+        public ushort Bit0, Bit1; // 0-255 is a character, > is a pointer to a node
     }
 
     // Structural layout of every VGAGRAPH file: STRUCTPIC is always the first chunk,
@@ -57,8 +57,8 @@ public class Wolf3dVgaFileLoader
         {
             for (int i = 0; i < 255; i++)
             {
-                grhuffman[i].bit0 = br.ReadUInt16();
-                grhuffman[i].bit1 = br.ReadUInt16();
+                grhuffman[i].Bit0 = br.ReadUInt16();
+                grhuffman[i].Bit1 = br.ReadUInt16();
             }
         }
 
@@ -223,8 +223,8 @@ public class Wolf3dVgaFileLoader
         }
         else
         {
-            width = pictable[chunk - StartPics].width;
-            height = pictable[chunk - StartPics].height;
+            width = pictable[chunk - StartPics].Width;
+            height = pictable[chunk - StartPics].Height;
 
             grsegs[chunk] = DeplaneVga(grsegs[chunk], width, height);
         }
@@ -302,9 +302,9 @@ public class Wolf3dVgaFileLoader
                 throw new PfWolfGraphicException($"CAL_HuffExpand: compressed data ran out after {destIndex} of {length} bytes.");
 
             if ((val & mask) == 0)
-                nodeval = hufftable[huffptr].bit0;
+                nodeval = hufftable[huffptr].Bit0;
             else
-                nodeval = hufftable[huffptr].bit1;
+                nodeval = hufftable[huffptr].Bit1;
 
             if (mask == 0x80)
             {
@@ -360,9 +360,9 @@ public class Wolf3dVgaFileLoader
         while (true)
         {
             if ((val & mask) == 0)
-                nodeval = hufftable[huffptr].bit0;
+                nodeval = hufftable[huffptr].Bit0;
             else
-                nodeval = hufftable[huffptr].bit1;
+                nodeval = hufftable[huffptr].Bit1;
 
             if (mask == 0x80)
             {
@@ -418,7 +418,7 @@ public class Wolf3dVgaFileLoader
             var data = grsegs[StartPics + j];
             if (data == null)
                 continue;
-            assets[picNames.NameAt(j).ToLowerInvariant()] = new GraphicAsset(data, pictable[j].width, pictable[j].height);
+            assets[picNames.NameAt(j).ToLowerInvariant()] = new GraphicAsset(data, pictable[j].Width, pictable[j].Height);
         }
 
         // Tile8

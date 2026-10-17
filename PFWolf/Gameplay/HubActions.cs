@@ -208,8 +208,8 @@ internal sealed class HubActions(
     /// <summary>Whether the player can stand on a tile: on the map, no wall or door, nothing solid or alive on it</summary>
     bool IsOpenForPlayer(int x, int y) =>
         x > 0 && y > 0 && x < MapManager.MapSize - 1 && y < MapManager.MapSize - 1
-        && mapManager.tilemap[x, y] == 0
-        && mapManager.actorat[x, y] == null
+        && mapManager.TileMap[x, y] == 0
+        && mapManager.ActorAt[x, y] == null
         && !mapManager.IsShootableActorAt(x, y);
 
     /*
@@ -231,9 +231,9 @@ internal sealed class HubActions(
             return false;
 
         int wall = args.Length > 1 && int.TryParse(args[1], out var w) ? w : 0;
-        for (int y = 0; y < mapManager.mapheight && wall > 0; y++)
+        for (int y = 0; y < mapManager.MapHeight && wall > 0; y++)
         {
-            for (int x = 0; x < mapManager.mapwidth; x++)
+            for (int x = 0; x < mapManager.MapWidth; x++)
             {
                 if (mapManager.MapSpot(x, y, 0) != wall)
                     continue;
@@ -243,7 +243,7 @@ internal sealed class HubActions(
                 if (angle < 0)
                     angle += Math.PI * 2;
                 RotateView((int)(angle / (Math.PI * 2) * GameConstants.Angles), 2);
-                y = mapManager.mapheight;
+                y = mapManager.MapHeight;
                 break;
             }
         }
@@ -284,7 +284,7 @@ internal sealed class HubActions(
 
         // Starting behind the player can be inside a wall: it runs on out of it, and only a wall
         // it runs into stops it
-        bool IsWall(int x, int y) => mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BitDoor) == 0;
+        bool IsWall(int x, int y) => mapManager.TileMap[x, y] != 0 && (mapManager.TileMap[x, y] & GameConstants.BitDoor) == 0;
         bool blocked = tx < 0 || ty < 0 || tx >= MapManager.MapSize || ty >= MapManager.MapSize
             || (IsWall(tx, ty) && !IsWall(ob.TileX, ob.TileY));
         if (!blocked)

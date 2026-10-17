@@ -51,17 +51,17 @@ internal sealed class GameSaves(
     internal string AutoSavePath => Path.Combine(SaveDirectory, SaveFile.AutoSaveFile);
 
     // Whether a new level saves itself as it starts (the `autosave` setting, saved in the config)
-    internal bool autosaveEnabled { get => settings.autosaveEnabled; set => settings.autosaveEnabled = value; }
+    internal bool AutosaveEnabled { get => settings.AutosaveEnabled; set => settings.AutosaveEnabled = value; }
 
     // Set as a new level begins; PlayLoop saves once the first frame is drawn, so the
     // autosave has a picture of it
-    internal bool autosavePending;
+    internal bool AutosavePending;
 
     /// <summary>Saves over the autosave, if it's on. Quietly: a failure is only logged.</summary>
     internal void AutoSaveGame()
     {
-        autosavePending = false;
-        if (autosaveEnabled)
+        AutosavePending = false;
+        if (AutosaveEnabled)
             SaveTheGame(AutoSavePath, "$STR_LS_AUTO".ToLanguageText(assets.GetText("en-us")), 0, 0);
     }
 
@@ -358,7 +358,7 @@ internal sealed class GameSaves(
             if (!loaded)
                 return 0;
 
-            if (settings.viewsize != 21)
+            if (settings.ViewSize != 21)
                 playScreen.DrawPlayScreen();
             music.ContinueMusic(session.LastGameMusicOffset);
             return 1;
@@ -410,7 +410,7 @@ internal sealed class GameSaves(
 
 
 
-    internal byte diskflopanim_which = 0;
+    internal byte DiskFlopAnimWhich = 0;
     internal void DiskFlopAnim(int x, int y)
     {
         if (x == 0 && y == 0)
@@ -418,9 +418,9 @@ internal sealed class GameSaves(
 
         string[] diskpics = new[] { "c_diskloading1", "c_diskloading2" };
 
-        graphics.DrawPic(diskpics[diskflopanim_which], x, y);
+        graphics.DrawPic(diskpics[DiskFlopAnimWhich], x, y);
         video.Update();
-        diskflopanim_which ^= 1;
+        DiskFlopAnimWhich ^= 1;
     }
 
 }

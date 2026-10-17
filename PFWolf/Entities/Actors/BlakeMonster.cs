@@ -744,7 +744,7 @@ internal partial record BlakeMonster : Monster
         if (dx != 0 && dy != 0)
             return CheckDiag(x, y) && CheckDiag(TileX + dx, TileY) && CheckDiag(TileX, TileY + dy);
 
-        switch (MapManager.actorat[x, y])
+        switch (MapManager.ActorAt[x, y])
         {
             case Wall or BlockingActor:
                 return false;
@@ -856,7 +856,7 @@ internal partial record BlakeMonster : Monster
             int tx = cx >> (int)MapConstants.TileShift, ty = cy >> (int)MapConstants.TileShift;
             if (tx < 0 || ty < 0 || tx >= MapManager.MapSize || ty >= MapManager.MapSize)
                 return false;
-            switch (MapManager.actorat[tx, ty])
+            switch (MapManager.ActorAt[tx, ty])
             {
                 case Wall or BlockingActor:
                     return false;

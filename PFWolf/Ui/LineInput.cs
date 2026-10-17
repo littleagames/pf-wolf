@@ -60,16 +60,16 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
             curtime = GameEngineManager.GetTimeCount();
 
             // After each direction change accept the next change after 250 ms and then everz 125 ms
-            if (ci.dir != lastdir || (curtime - lastdirtime > Timing.TickBase / 4 && curtime - lastdirmovetime > Timing.TickBase / 8))
+            if (ci.Dir != lastdir || (curtime - lastdirtime > Timing.TickBase / 4 && curtime - lastdirmovetime > Timing.TickBase / 8))
             {
-                if (ci.dir != lastdir)
+                if (ci.Dir != lastdir)
                 {
-                    lastdir = ci.dir;
+                    lastdir = ci.Dir;
                     lastdirtime = curtime;
                 }
                 lastdirmovetime = curtime;
 
-                switch ((Direction)ci.dir)
+                switch ((Direction)ci.Dir)
                 {
                     case Direction.West:
                         if (cursor != 0)
@@ -139,20 +139,20 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
 
             if ((int)(curtime - lastbuttontime) > Timing.TickBase / 4)   // 250 ms
             {
-                if (ci.button0)             // acts as return
+                if (ci.Button0)             // acts as return
                 {
                     buf = s; //snprintf(buf, maxchars + 1, "%s", s);
                     done = true;
                     result = true;
                     checkkey = false;
                 }
-                if (ci.button1 && escok)    // acts as escape
+                if (ci.Button1 && escok)    // acts as escape
                 {
                     done = true;
                     result = false;
                     checkkey = false;
                 }
-                if (ci.button2)             // acts as backspace
+                if (ci.Button2)             // acts as backspace
                 {
                     lastbuttontime = curtime;
                     if (cursor != 0)
@@ -246,7 +246,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         break;
                 }
                 var textinput = input.GetTextInput();
-                //for (text = textinput; *text; text++)
+                //for (text = TextInput; *text; text++)
                 for (int t = 0; t < textinput.Length && textinput[t] != '\0'; t++)
                 {
                     char txt = textinput[t];

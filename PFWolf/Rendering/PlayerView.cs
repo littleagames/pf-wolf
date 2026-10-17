@@ -123,8 +123,8 @@ internal sealed class PlayerView(
     /// </summary>
     internal bool PlayerTileInView(PlayerPawn pawn) =>
         session.Camera.Target == pawn && session.GameMode == GameMode.Single
-            ? map.spotvis[pawn.TileX, pawn.TileY]
-            : map.tilemap[pawn.TileX, pawn.TileY] == 0 || (map.tilemap[pawn.TileX, pawn.TileY] & GameConstants.BitDoor) != 0;
+            ? map.Spotvis[pawn.TileX, pawn.TileY]
+            : map.TileMap[pawn.TileX, pawn.TileY] == 0 || (map.TileMap[pawn.TileX, pawn.TileY] & GameConstants.BitDoor) != 0;
 
     /// <summary>
     /// Whether a player could see an actor: in front of them, within the view's width either

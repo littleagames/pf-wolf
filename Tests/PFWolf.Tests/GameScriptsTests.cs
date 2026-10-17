@@ -110,7 +110,7 @@ public class GameScriptsTests
     {
         // Arrange: a map with 2 of 5 sabotage targets done
         var map = new MapManager(new Lazy<AssetManager>(() => null!), null!, _session);
-        map.objectives["sabotage"] = new ObjectiveCount { Done = 2, Total = 5 };
+        map.ObjectiveCounts["sabotage"] = new ObjectiveCount { Done = 2, Total = 5 };
         _scripts = new GameScripts(null!, map, null!, null!, _console, null, null!, _session, (_, _) => { });
         var host = Host();
 

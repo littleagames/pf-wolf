@@ -95,7 +95,7 @@ internal sealed class RayTrace(
             //
             // special treatment when player is in back tile of pushwall
             //
-            render.HitPushwall = map.tilemap[render.FocalTx, render.FocalTy] == GameConstants.BitWall;
+            render.HitPushwall = map.TileMap[render.FocalTx, render.FocalTy] == GameConstants.BitWall;
             if (render.HitPushwall)
             {
                 pushWalls.SelectPushWall(render.FocalTx, render.FocalTy);
@@ -143,7 +143,7 @@ internal sealed class RayTrace(
                     }
                 }
             }
-            else if (map.wallshape[render.FocalTx, render.FocalTy] is var focalshape and not WallShape.Square)
+            else if (map.WallShapes[render.FocalTx, render.FocalTy] is var focalshape and not WallShape.Square)
             {
                 //
                 // the view starts inside a diagonal tile (NoClip), so the trace never enters it:
@@ -153,14 +153,14 @@ internal sealed class RayTrace(
                     render.ViewX & (MapConstants.TileGlobal - 1), render.ViewY & (MapConstants.TileGlobal - 1),
                     render.XTileStep * MapConstants.TileGlobal, ystep))
                 {
-                    render.TileHit = map.tilemap[render.FocalTx, render.FocalTy];
+                    render.TileHit = map.TileMap[render.FocalTx, render.FocalTy];
                     render.HitStories = map.WallStories(render.FocalTx, render.FocalTy);
                     hits.HitDiagWall(focalshape, render.FocalTx, render.FocalTy);
                     MarkSeen(render.FocalTx, render.FocalTy, SeenFlags.DiagonalFace);
                     focalhit = true;
                 }
             }
-            else if ((map.tilemap[render.FocalTx, render.FocalTy] & GameConstants.BitDoor) != 0)
+            else if ((map.TileMap[render.FocalTx, render.FocalTy] & GameConstants.BitDoor) != 0)
             {
                 hits.NoteFocalLintel(xstep, ystep);
             }
@@ -225,7 +225,7 @@ internal sealed class RayTrace(
         int hitx = render.XTile, hity = render.YIntTile;
         posts.CloseArch(posts.VertEdge, render.YIntercept);
         posts.EnterTileLight(render.XTile - render.XTileStep, render.YIntTile);
-        render.TileHit = map.tilemap[render.XTile, render.YIntTile];
+        render.TileHit = map.TileMap[render.XTile, render.YIntTile];
         render.HitPushwall = render.TileHit == GameConstants.BitWall;
         if (render.HitPushwall)
             pushWalls.SelectPushWall(hitx, hity);     // which of the moving MovingWalls this is
@@ -415,7 +415,7 @@ internal sealed class RayTrace(
             }
             else
             {
-                var shape = map.wallshape[render.XTile, render.YIntTile];
+                var shape = map.WallShapes[render.XTile, render.YIntTile];
                 if (shape != WallShape.Square
                     && !hits.IsSolidEdge(shape, render.XTileStep == 1 ? ControlDir.West : ControlDir.East))
                 {
@@ -458,7 +458,7 @@ internal sealed class RayTrace(
     internal void PassVert(int ystep)
     {
         if (!render.PastWall)
-            map.spotvis[render.XTile, render.YIntTile] = true;
+            map.Spotvis[render.XTile, render.YIntTile] = true;
         render.XTile += render.XTileStep;
         render.YIntercept += ystep;
         render.YIntTile = render.YIntercept >> (int)MapConstants.TileShift;
@@ -470,7 +470,7 @@ internal sealed class RayTrace(
         int hitx = render.XIntTile, hity = render.YTile;
         posts.CloseArch(render.XIntercept, posts.HorizEdge);
         posts.EnterTileLight(render.XIntTile, render.YTile - render.YTileStep);
-        render.TileHit = map.tilemap[render.XIntTile, render.YTile];
+        render.TileHit = map.TileMap[render.XIntTile, render.YTile];
         render.HitPushwall = render.TileHit == GameConstants.BitWall;
         if (render.HitPushwall)
             pushWalls.SelectPushWall(hitx, hity);     // which of the moving MovingWalls this is
@@ -662,7 +662,7 @@ internal sealed class RayTrace(
             }
             else
             {
-                var shape = map.wallshape[render.XIntTile, render.YTile];
+                var shape = map.WallShapes[render.XIntTile, render.YTile];
                 if (shape != WallShape.Square
                     && !hits.IsSolidEdge(shape, render.YTileStep == 1 ? ControlDir.North : ControlDir.South))
                 {
@@ -705,7 +705,7 @@ internal sealed class RayTrace(
     internal void PassHoriz(int xstep)
     {
         if (!render.PastWall)
-            map.spotvis[render.XIntTile, render.YTile] = true;
+            map.Spotvis[render.XIntTile, render.YTile] = true;
         render.YTile += render.YTileStep;
         render.XIntercept += xstep;
         render.XIntTile = render.XIntercept >> (int)MapConstants.TileShift;
@@ -715,6 +715,6 @@ internal sealed class RayTrace(
     internal void MarkSeen(int x, int y, SeenFlags face)
     {
         if (render.MarkSeen)
-            map.seen[x, y] |= face;
+            map.Seen[x, y] |= face;
     }
 }

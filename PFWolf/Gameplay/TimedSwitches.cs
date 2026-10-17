@@ -43,13 +43,13 @@ internal sealed class TimedSwitches(MapManager map, GameSession session)
         if (sw.ResetTics <= 0)
             return;
         pending.RemoveAll(p => p.X == x && p.Y == y && p.Patch == patch);
-        pending.Add(new TimedSwitch(x, y, patch, from, to, tag, dir, sw.ResetActions, map.tilemap) { TicsLeft = sw.ResetTics });
+        pending.Add(new TimedSwitch(x, y, patch, from, to, tag, dir, sw.ResetActions, map.TileMap) { TicsLeft = sw.ResetTics });
     }
 
     /// <summary>Each tic: those whose time is up turn back. Ones from an earlier load of the level are dropped.</summary>
     internal void Tick(uint tics)
     {
-        pending.RemoveAll(p => !ReferenceEquals(p.Level, map.tilemap));
+        pending.RemoveAll(p => !ReferenceEquals(p.Level, map.TileMap));
         foreach (var sw in pending.ToList())
         {
             sw.TicsLeft -= (int)tics;
@@ -73,10 +73,10 @@ internal sealed class TimedSwitches(MapManager map, GameSession session)
             }
             else
             {
-                var tile = map.tilemap[x, y];
+                var tile = map.TileMap[x, y];
                 if ((tile & BitDoor) != 0 || (tile & ~BitWall) != sw.To)
                     continue;
-                map.tilemap[x, y] = (ushort)(sw.From | (tile & BitWall));
+                map.TileMap[x, y] = (ushort)(sw.From | (tile & BitWall));
             }
             map.RestartAnimations(x, y, session.GameState.TimeCount);
         }

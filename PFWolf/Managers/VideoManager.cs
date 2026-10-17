@@ -28,21 +28,21 @@ internal class VideoManager
     /// </summary>
     internal event EventHandler<VideoSettings>? VideoModeChanged;
 
-    internal bool fullscreen => Settings.Fullscreen;
+    internal bool FullScreen => Settings.Fullscreen;
     // The screen buffer's size: Settings' render size
-    internal short screenWidth;
-    internal short screenHeight;
-    internal int screenBits = -1; // use "best" color depth according to libSDL
+    internal short ScreenWidth;
+    internal short ScreenHeight;
+    internal int ScreenBits = -1; // use "best" color depth according to libSDL
 
-    internal IntPtr screen = IntPtr.Zero;
-    internal uint screenPitch;
+    internal IntPtr Screen = IntPtr.Zero;
+    internal uint ScreenPitch;
 
-    internal IntPtr screenBuffer = IntPtr.Zero;
-    internal uint bufferPitch;
+    internal IntPtr ScreenBuffer = IntPtr.Zero;
+    internal uint BufferPitch;
 
-    internal IntPtr window;
-    internal IntPtr renderer;
-    internal IntPtr texture;
+    internal IntPtr WindowHandle;
+    internal IntPtr Renderer;
+    internal IntPtr Texture;
 
     /// <summary>
     /// The UI scale: screen pixels to each of the 320x200 pixels that menus, text, pictures and
@@ -51,26 +51,26 @@ internal class VideoManager
     /// 2 and 3 screen pixels by turns and always meet. The 3D view fills the screen buffer
     /// whatever this is.
     /// </summary>
-    internal double uiScale = 1;
+    internal double UiScale = 1;
 
     /// <summary>
     /// Where the 320x200 layout's left edge is on the screen (screen pixels), always centered
     /// across, and which edge it lines up with down the screen (<see cref="UseUiOrigin"/>).
     /// </summary>
-    internal int uiX;
+    internal int UiX;
     private int uiY;
     private UiAnchor uiAnchor;
 
-    internal uint[] ylookup;
+    internal uint[] YLookup;
 
-    public bool screenfaded { get; private set; }
+    public bool ScreenFaded { get; private set; }
 
-    internal SDL.SDL_Color[] palette1 = new SDL.SDL_Color[256];
-    internal SDL.SDL_Color[] palette2 = new SDL.SDL_Color[256];
-    internal SDL.SDL_Color[] curpal = new SDL.SDL_Color[256];
+    internal SDL.SDL_Color[] Palette1 = new SDL.SDL_Color[256];
+    internal SDL.SDL_Color[] Palette2 = new SDL.SDL_Color[256];
+    internal SDL.SDL_Color[] CurPal = new SDL.SDL_Color[256];
 
     [Obsolete("Will be 32-bit in the future, and this will only be used to map legacy data to 32bit. This will move to a graphic/asset manager")]
-    private SDL.SDL_Color[] gamepal { get; set; }
+    private SDL.SDL_Color[] GamePal { get; set; }
     /// <summary>
     /// Palette index for each color name seen so far: the theme's names, filled at Init,
     /// plus any #RRGGBB literals as they are first drawn. Drawing calls resolve colors
@@ -118,7 +118,7 @@ internal class VideoManager
     0x01200000,     // 25   25,22      (this is enough for 8191x4095)
 };
     private readonly Lazy<AssetManager> _assetManager;
-    static uint rndbits_y;
+    static uint rndBitsY;
     static uint rndmask;
 
     public VideoManager(Lazy<AssetManager> assetManager)
@@ -139,7 +139,7 @@ internal class VideoManager
         if (pal == null)
             throw new PfWolfVideoException($"Could not find '{paletteName}' palette in asset manager.");
 
-        gamepal = pal.ToSDLColors();
+        GamePal = pal.ToSDLColors();
         _darkenTable = null;
         _lightRows.Clear();
         _lightMatches.Clear();
@@ -156,8 +156,8 @@ internal class VideoManager
     {
         DestroyRenderer();
         DestroySurfaces();
-        if (window != IntPtr.Zero) SDL.SDL_DestroyWindow(window);
-        window = IntPtr.Zero;
+        if (WindowHandle != IntPtr.Zero) SDL.SDL_DestroyWindow(WindowHandle);
+        WindowHandle = IntPtr.Zero;
     }
 
     /// <summary>
@@ -192,7 +192,7 @@ internal class VideoManager
 
     /// <summary>
     /// For settings whose render size matches the window (<see cref="VideoSettings.MatchWindow"/>),
-    /// that size worked out: the window's, or the display's when fullscreen, made shorter by
+    /// that size worked out: the window's, or the display's when FullScreen, made shorter by
     /// a sixth when aspect correcting so the 6:5 stretch fills it. Other settings come back as they are.
     /// </summary>
     internal VideoSettings ResolveRenderSize(VideoSettings settings)
@@ -200,7 +200,7 @@ internal class VideoManager
         if (!settings.MatchWindow)
             return settings;
 
-        var (width, height) = settings.Fullscreen && window != IntPtr.Zero
+        var (width, height) = settings.Fullscreen && WindowHandle != IntPtr.Zero
             ? GetDisplaySize()
             : (settings.WindowWidth, settings.WindowHeight);
         if (settings.AspectCorrect)
@@ -217,16 +217,16 @@ internal class VideoManager
     /// <summary>The size of the display the window is on.</summary>
     internal (int Width, int Height) GetDisplaySize()
     {
-        int display = Math.Max(0, SDL.SDL_GetWindowDisplayIndex(window));
+        int display = Math.Max(0, SDL.SDL_GetWindowDisplayIndex(WindowHandle));
         return SDL.SDL_GetDisplayBounds(display, out var bounds) == 0
             ? (bounds.w, bounds.h)
-            : (screenWidth, screenHeight);
+            : (ScreenWidth, ScreenHeight);
     }
 
     /// <summary>The largest window that fits on that display, clear of taskbars and with its frame showing.</summary>
     internal (int Width, int Height) GetLargestWindowSize()
     {
-        int display = Math.Max(0, SDL.SDL_GetWindowDisplayIndex(window));
+        int display = Math.Max(0, SDL.SDL_GetWindowDisplayIndex(WindowHandle));
         return SDL.SDL_GetDisplayUsableBounds(display, out var bounds) == 0
             ? (bounds.w, bounds.h - WindowFrameAllowance)
             : (Settings.WindowWidth, Settings.WindowHeight);
@@ -270,14 +270,14 @@ internal class VideoManager
     private bool SetWindowMode(VideoSettings settings)
     {
         if (settings.Fullscreen)
-            return SDL.SDL_SetWindowFullscreen(window, (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) == 0;
+            return SDL.SDL_SetWindowFullscreen(WindowHandle, (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) == 0;
 
-        if (SDL.SDL_SetWindowFullscreen(window, 0) != 0)
+        if (SDL.SDL_SetWindowFullscreen(WindowHandle, 0) != 0)
             return false;
 
-        SDL.SDL_SetWindowSize(window, settings.WindowWidth, settings.WindowHeight);
-        int centered = SDL.SDL_WINDOWPOS_CENTERED_DISPLAY(SDL.SDL_GetWindowDisplayIndex(window));
-        SDL.SDL_SetWindowPosition(window, centered, centered);
+        SDL.SDL_SetWindowSize(WindowHandle, settings.WindowWidth, settings.WindowHeight);
+        int centered = SDL.SDL_WINDOWPOS_CENTERED_DISPLAY(SDL.SDL_GetWindowDisplayIndex(WindowHandle));
+        SDL.SDL_SetWindowPosition(WindowHandle, centered, centered);
         return true;
     }
 
@@ -290,50 +290,50 @@ internal class VideoManager
         if (settings.VSync && !Headless)
             flags |= SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC;
 
-        renderer = SDL.SDL_CreateRenderer(window, -1, flags);
-        if (renderer == IntPtr.Zero)
+        Renderer = SDL.SDL_CreateRenderer(WindowHandle, -1, flags);
+        if (Renderer == IntPtr.Zero)
             return false;
 
-        SDL.SDL_SetRenderDrawBlendMode(renderer, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND);
+        SDL.SDL_SetRenderDrawBlendMode(Renderer, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND);
         return SetLogicalSize(settings);
     }
 
     // The picture keeps its shape in any window, with black bars filling the rest
     private bool SetLogicalSize(VideoSettings settings)
-        => SDL.SDL_RenderSetLogicalSize(renderer, settings.DisplayWidth, settings.DisplayHeight) == 0;
+        => SDL.SDL_RenderSetLogicalSize(Renderer, settings.DisplayWidth, settings.DisplayHeight) == 0;
 
     /// <summary>The screen buffer and the 32-bit surface it's converted to, at the render size.</summary>
     private bool CreateSurfaces(VideoSettings settings)
     {
         int width = settings.RenderWidth, height = settings.RenderHeight;
 
-        SDL.SDL_PixelFormatEnumToMasks(SDL.SDL_PIXELFORMAT_ARGB8888, out screenBits, out uint r, out uint g, out uint b, out uint a);
+        SDL.SDL_PixelFormatEnumToMasks(SDL.SDL_PIXELFORMAT_ARGB8888, out ScreenBits, out uint r, out uint g, out uint b, out uint a);
 
-        screen = SDL.SDL_CreateRGBSurface(0, width, height, screenBits, r, g, b, a);
-        if (screen == IntPtr.Zero)
+        Screen = SDL.SDL_CreateRGBSurface(0, width, height, ScreenBits, r, g, b, a);
+        if (Screen == IntPtr.Zero)
             return false;
-        SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(screen), curpal, 0, 256);
+        SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(Screen), CurPal, 0, 256);
 
-        screenBuffer = SDL.SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
-        if (screenBuffer == IntPtr.Zero)
+        ScreenBuffer = SDL.SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
+        if (ScreenBuffer == IntPtr.Zero)
             return false;
-        SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(screenBuffer), curpal, 0, 256);
+        SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(ScreenBuffer), CurPal, 0, 256);
 
-        screenWidth = (short)width;
-        screenHeight = (short)height;
-        screenPitch = (uint)GetSurface(screen).pitch;
-        bufferPitch = (uint)GetSurface(screenBuffer).pitch;
-        uiScale = settings.EffectiveUiScale;
+        ScreenWidth = (short)width;
+        ScreenHeight = (short)height;
+        ScreenPitch = (uint)GetSurface(Screen).pitch;
+        BufferPitch = (uint)GetSurface(ScreenBuffer).pitch;
+        UiScale = settings.EffectiveUiScale;
         SetUiOrigin(UiAnchor.Center);
 
-        ylookup = new uint[screenHeight];
-        for (int i = 0; i < screenHeight; i++)
-            ylookup[i] = (uint)(i * bufferPitch);
+        YLookup = new uint[ScreenHeight];
+        for (int i = 0; i < ScreenHeight; i++)
+            YLookup[i] = (uint)(i * BufferPitch);
 
-        int rndbits_x = log2_ceil((UInt32)screenWidth);
-        rndbits_y = (uint)log2_ceil((UInt32)screenHeight);
+        int rndbits_x = Log2Ceil((UInt32)ScreenWidth);
+        rndBitsY = (uint)Log2Ceil((UInt32)ScreenHeight);
 
-        int rndbits = rndbits_x + (int)rndbits_y;
+        int rndbits = rndbits_x + (int)rndBitsY;
         if (rndbits < 17)
             rndbits = 17;       // no problem, just a bit slower
         else if (rndbits > 25)
@@ -348,54 +348,54 @@ internal class VideoManager
         // Read when a texture is created
         SDL.SDL_SetHint(SDL.SDL_HINT_RENDER_SCALE_QUALITY, settings.Filter == ScaleFilter.Linear ? "1" : "0");
 
-        texture = SDL.SDL_CreateTexture(renderer,
+        Texture = SDL.SDL_CreateTexture(Renderer,
             SDL.SDL_PIXELFORMAT_ARGB8888,
             (int)SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
-            screenWidth,
-            screenHeight);
-        return texture != IntPtr.Zero;
+            ScreenWidth,
+            ScreenHeight);
+        return Texture != IntPtr.Zero;
     }
 
     private void DestroyTexture()
     {
-        if (texture != IntPtr.Zero) SDL.SDL_DestroyTexture(texture);
-        texture = IntPtr.Zero;
+        if (Texture != IntPtr.Zero) SDL.SDL_DestroyTexture(Texture);
+        Texture = IntPtr.Zero;
     }
 
     // Its texture goes with it
     private void DestroyRenderer()
     {
         DestroyTexture();
-        if (renderer != IntPtr.Zero) SDL.SDL_DestroyRenderer(renderer);
-        renderer = IntPtr.Zero;
+        if (Renderer != IntPtr.Zero) SDL.SDL_DestroyRenderer(Renderer);
+        Renderer = IntPtr.Zero;
     }
 
     private void DestroySurfaces()
     {
-        if (screenBuffer != IntPtr.Zero) SDL.SDL_FreeSurface(screenBuffer);
-        if (screen != IntPtr.Zero) SDL.SDL_FreeSurface(screen);
-        screenBuffer = screen = IntPtr.Zero;
+        if (ScreenBuffer != IntPtr.Zero) SDL.SDL_FreeSurface(ScreenBuffer);
+        if (Screen != IntPtr.Zero) SDL.SDL_FreeSurface(Screen);
+        ScreenBuffer = Screen = IntPtr.Zero;
     }
 
     /// <summary>
     /// Screen pixels across <paramref name="n"/> layout pixels at the UI scale, rounded down
     /// (and down for a negative count too, so edges further left or up keep their order).
     /// </summary>
-    internal int ToScreenLength(int n) => (int)Math.Floor(n * uiScale + 1e-6);
+    internal int ToScreenLength(int n) => (int)Math.Floor(n * UiScale + 1e-6);
 
     // Transitions (melt, mosaic) work in blocks of whole screen pixels about a layout pixel big
-    private int TransitionBlockSize => Math.Max(1, (int)Math.Round(uiScale));
+    private int TransitionBlockSize => Math.Max(1, (int)Math.Round(UiScale));
 
     /// <summary>Whether the screen has room beyond the 320x200 layout, which nothing laid out in it covers.</summary>
-    internal bool HasMargins => screenWidth != ToScreenLength(VideoSettings.BaseWidth)
-        || screenHeight != ToScreenLength(VideoSettings.BaseHeight);
+    internal bool HasMargins => ScreenWidth != ToScreenLength(VideoSettings.BaseWidth)
+        || ScreenHeight != ToScreenLength(VideoSettings.BaseHeight);
 
     // Puts the 320x200 layout at an anchor: always centered across, and up or down as anchored
     private void SetUiOrigin(UiAnchor anchor)
     {
-        int room = screenHeight - ToScreenLength(VideoSettings.BaseHeight);
+        int room = ScreenHeight - ToScreenLength(VideoSettings.BaseHeight);
         uiAnchor = anchor;
-        uiX = (screenWidth - ToScreenLength(VideoSettings.BaseWidth)) / 2;
+        UiX = (ScreenWidth - ToScreenLength(VideoSettings.BaseWidth)) / 2;
         uiY = anchor switch
         {
             UiAnchor.Top => 0,
@@ -439,18 +439,18 @@ internal class VideoManager
     }
 
     /// <summary>The screen x of layout x's left edge.</summary>
-    internal int ScreenX(int x) => uiX + ToScreenLength(x);
+    internal int ScreenX(int x) => UiX + ToScreenLength(x);
 
     /// <summary>
     /// The screen y of layout y's top edge. A bottom-anchored layout is measured up from the
     /// screen's bottom, so its last line sits flush on it whatever the scale.
     /// </summary>
     internal int ScreenY(int y) => uiAnchor == UiAnchor.Bottom
-        ? screenHeight - ToScreenLength(VideoSettings.BaseHeight - y)
+        ? ScreenHeight - ToScreenLength(VideoSettings.BaseHeight - y)
         : uiY + ToScreenLength(y);
 
     /// <summary>The screen y this many layout lines up from the screen's bottom: where a bottom bar that tall starts.</summary>
-    internal int ScreenYAboveBottom(int lines) => screenHeight - ToScreenLength(lines);
+    internal int ScreenYAboveBottom(int lines) => ScreenHeight - ToScreenLength(lines);
 
     /// <summary>
     /// The layout x whose pixel covers screen x; with <paramref name="roundUp"/>, the first
@@ -465,7 +465,7 @@ internal class VideoManager
     {
         // A guess from the scale, put right against the rounded edges
         int origin = toScreen(0);
-        int v = (int)Math.Floor((screen - origin) / uiScale);
+        int v = (int)Math.Floor((screen - origin) / UiScale);
         while (toScreen(v) > screen) v--;
         while (toScreen(v + 1) <= screen) v++;
         if (roundUp && toScreen(v) < screen) v++;
@@ -473,7 +473,7 @@ internal class VideoManager
     }
 
     /// <summary>Fills the whole screen with a color: the 320x200 layout and any room round it.</summary>
-    public void FillScreen(string color) => BarScaledCoord(0, 0, screenWidth, screenHeight, color);
+    public void FillScreen(string color) => BarScaledCoord(0, 0, ScreenWidth, ScreenHeight, color);
 
     /// <summary>
     /// Draws a paletted picture at (x, y) in the 320x200 layout; with an opacity mask (a PNG's
@@ -501,7 +501,7 @@ internal class VideoManager
     // smaller ones, say) is cut off there. A pixel the opacity mask has as 0 isn't drawn.
     private void DrawScaledPixels(byte[] source, int width, int height, int[] xs, int[] ys, byte[]? opacityMask = null)
     {
-        IntPtr destPtr = LockSurface(screenBuffer);
+        IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero) return;
 
         unsafe
@@ -509,20 +509,20 @@ internal class VideoManager
             byte* dest = (byte*)destPtr;
             for (int j = 0; j < height; j++)
             {
-                int y0 = Math.Max(ys[j], 0), y1 = Math.Min(ys[j + 1], screenHeight);
+                int y0 = Math.Max(ys[j], 0), y1 = Math.Min(ys[j + 1], ScreenHeight);
                 if (y0 >= y1)
                     continue;
 
                 for (int i = 0; i < width; i++)
                 {
-                    int x0 = Math.Max(xs[i], 0), x1 = Math.Min(xs[i + 1], screenWidth);
+                    int x0 = Math.Max(xs[i], 0), x1 = Math.Min(xs[i + 1], ScreenWidth);
                     if (x0 >= x1 || opacityMask != null && opacityMask[j * width + i] == 0)
                         continue;
 
                     byte col = source[j * width + i];
                     for (int y = y0; y < y1; y++)
                     {
-                        byte* row = dest + ylookup[y];
+                        byte* row = dest + YLookup[y];
                         for (int x = x0; x < x1; x++)
                             row[x] = col;
                     }
@@ -530,7 +530,7 @@ internal class VideoManager
             }
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
     }
 
     public void HorizontalLine(int x1, int x2, int y, string color) => Bar(x1, y, x2 - x1 + 1, 1, color);
@@ -551,14 +551,14 @@ internal class VideoManager
             return;
 
         byte col = ResolveColorByte(color);
-        IntPtr destPtr = LockSurface(screenBuffer);
+        IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero) return;
 
         unsafe
         {
             byte* dest = (byte*)destPtr;
 
-            dest += ylookup[scy] + scx;
+            dest += YLookup[scy] + scx;
 
 
             while (scheight-- > 0)
@@ -569,11 +569,11 @@ internal class VideoManager
                     dest[i] = col;
                 }
 
-                dest += bufferPitch;
+                dest += BufferPitch;
             }
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
     }
 
     /// <summary>Cuts a rectangle (screen pixels) down to the part on the screen; false if none of it is.</summary>
@@ -581,8 +581,8 @@ internal class VideoManager
     {
         if (x < 0) { width += x; x = 0; }
         if (y < 0) { height += y; y = 0; }
-        width = Math.Min(width, screenWidth - x);
-        height = Math.Min(height, screenHeight - y);
+        width = Math.Min(width, ScreenWidth - x);
+        height = Math.Min(height, ScreenHeight - y);
         return width > 0 && height > 0;
     }
 
@@ -610,7 +610,7 @@ internal class VideoManager
         if (_gradients.TryGetValue(key, out var table))
             return table;
 
-        var c = gamepal[ResolveColorByte(color)];
+        var c = GamePal[ResolveColorByte(color)];
         static byte Shade(byte value, float amount)
             => (byte)Math.Clamp(amount >= 0 ? value + (255 - value) * amount : value * (1 + amount), 0, 255);
 
@@ -640,8 +640,8 @@ internal class VideoManager
         if (_glowColors.TryGetValue(key, out var colors))
             return colors;
 
-        var g = gamepal[ResolveColorByte(glow)];
-        var b = gamepal[ResolveColorByte(background)];
+        var g = GamePal[ResolveColorByte(glow)];
+        var b = GamePal[ResolveColorByte(background)];
         static byte Mix(byte from, byte to, float amount) => (byte)Math.Clamp(from + (to - from) * amount, 0, 255);
 
         colors = new string[radius];
@@ -663,7 +663,7 @@ internal class VideoManager
         var table = new byte[256];
         for (int i = 0; i < table.Length; i++)
         {
-            var c = gamepal[i];
+            var c = GamePal[i];
             table[i] = FindClosestPaletteIndex((byte)(c.r * brightness), (byte)(c.g * brightness), (byte)(c.b * brightness));
         }
 
@@ -712,7 +712,7 @@ internal class VideoManager
                     continue;
                 }
 
-                var c = gamepal[i];
+                var c = GamePal[i];
                 byte r = Mix(c.r * lightR, fadeR, fade), g = Mix(c.g * lightG, fadeG, fade), b = Mix(c.b * lightB, fadeB, fade);
                 int rgb = r << 16 | g << 8 | b;
                 if (!matches.TryGetValue(rgb, out var index))
@@ -734,7 +734,7 @@ internal class VideoManager
     /// </summary>
     private byte FindClosestPaletteIndexByLab(byte r, byte g, byte b)
     {
-        _paletteLab ??= gamepal.Select(c => ToLab(c.r, c.g, c.b)).ToArray();
+        _paletteLab ??= GamePal.Select(c => ToLab(c.r, c.g, c.b)).ToArray();
 
         var (l, a, bb) = ToLab(r, g, b);
         byte closestIndex = 0;
@@ -778,23 +778,23 @@ internal class VideoManager
         if (!ClipToScreen(ref scx, ref scy, ref scwidth, ref scheight))
             return;
 
-        IntPtr destPtr = LockSurface(screenBuffer);
+        IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero) return;
 
         unsafe
         {
-            byte* dest = (byte*)destPtr + ylookup[scy] + scx;
+            byte* dest = (byte*)destPtr + YLookup[scy] + scx;
 
             while (scheight-- > 0)
             {
                 for (int i = 0; i < scwidth; i++)
                     dest[i] = table[dest[i]];
 
-                dest += bufferPitch;
+                dest += BufferPitch;
             }
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
     }
 
     /// <summary>Whether a color name is defined by the game pack's theme.</summary>
@@ -821,7 +821,7 @@ internal class VideoManager
         int ex = (int)Math.Round(bx), ey = (int)Math.Round(by);
 
         byte col = ResolveColorByte(color);
-        IntPtr destPtr = LockSurface(screenBuffer);
+        IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero) return;
 
         unsafe
@@ -837,7 +837,7 @@ internal class VideoManager
             {
                 for (int py = 0; py < thickness; py++)
                 {
-                    byte* row = dest + ylookup[sy + py] + sx;
+                    byte* row = dest + YLookup[sy + py] + sx;
                     for (int px = 0; px < thickness; px++)
                         row[px] = col;
                 }
@@ -851,7 +851,7 @@ internal class VideoManager
             }
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
     }
 
     /// <summary>Cohen–Sutherland: trims a line to a rectangle, or returns false if none of it is inside.</summary>
@@ -925,8 +925,8 @@ internal class VideoManager
     private const int TicsPerFadeStep = 2;
 
     internal void FadeIn() => FadeIn(30);
-    internal void FadeIn(int steps) => FadeIn(FadeStyle, new GamePalette { Colors = gamepal }, steps, FadeTics);
-    internal void FadeIn(FadeStyle style, int steps, int? tics = null) => FadeIn(style, new GamePalette { Colors = gamepal }, steps, tics);
+    internal void FadeIn(int steps) => FadeIn(FadeStyle, new GamePalette { Colors = GamePal }, steps, FadeTics);
+    internal void FadeIn(FadeStyle style, int steps, int? tics = null) => FadeIn(style, new GamePalette { Colors = GamePal }, steps, tics);
     internal void FadeIn(GamePalette gamePalette, int steps) => FadeIn(FadeStyle, gamePalette, steps, FadeTics);
 
     private void FadeIn(int start, int end, GamePalette gamePalette, int steps)
@@ -935,8 +935,8 @@ internal class VideoManager
         var palette = gamePalette.Colors;
 
         GameEngineManager.WaitVBL(1);
-        GetPalette(palette1);
-        Array.Copy(palette1, palette2, 256);
+        GetPalette(Palette1);
+        Array.Copy(Palette1, Palette2, 256);
 
         //
         // fade through intermediate frames
@@ -945,24 +945,24 @@ internal class VideoManager
         {
             for (j = start; j <= end; j++)
             {
-                delta = palette[j].r - palette1[j].r;
-                palette2[j].r = (byte)(palette1[j].r + delta * i / steps);
-                delta = palette[j].g - palette1[j].g;
-                palette2[j].g = (byte)(palette1[j].g + delta * i / steps);
-                delta = palette[j].b - palette1[j].b;
-                palette2[j].b = (byte)(palette1[j].b + delta * i / steps);
-                palette2[j].a = 255;// SDL_ALPHA_OPAQUE;
+                delta = palette[j].r - Palette1[j].r;
+                Palette2[j].r = (byte)(Palette1[j].r + delta * i / steps);
+                delta = palette[j].g - Palette1[j].g;
+                Palette2[j].g = (byte)(Palette1[j].g + delta * i / steps);
+                delta = palette[j].b - Palette1[j].b;
+                Palette2[j].b = (byte)(Palette1[j].b + delta * i / steps);
+                Palette2[j].a = 255;// SDL_ALPHA_OPAQUE;
             }
 
             GameEngineManager.WaitVBL(1);
-            SetPalette(palette2, true);
+            SetPalette(Palette2, true);
         }
 
         //
         // final color
         //
         SetPalette(palette, true);
-        screenfaded = false;
+        ScreenFaded = false;
     }
 
     internal void FadeOut() => FadeOut(new Color { Alpha = 255 }, 30);
@@ -974,8 +974,8 @@ internal class VideoManager
         int red = color.Red, green = color.Green, blue = color.Blue;
 
         GameEngineManager.WaitVBL(1);
-        GetPalette(palette1);
-        Array.Copy(palette1, palette2, 256);
+        GetPalette(Palette1);
+        Array.Copy(Palette1, Palette2, 256);
 
         //
         // fade through intermediate frames
@@ -984,26 +984,26 @@ internal class VideoManager
         {
             for (j = start; j <= end; j++)
             {
-                int origR = palette1[j].r;
+                int origR = Palette1[j].r;
                 int deltaR = red - origR;
                 int newR = origR + deltaR * i / steps;
 
-                int origG = palette1[j].g;
+                int origG = Palette1[j].g;
                 int deltaG = green - origG;
                 int newG = origG + deltaG * i / steps;
 
-                int origB = palette1[j].b;
+                int origB = Palette1[j].b;
                 int deltaB = blue - origB;
                 int newB = origB + deltaB * i / steps;
 
-                palette2[j].r = (byte)Math.Clamp(newR, 0, 255);
-                palette2[j].g = (byte)Math.Clamp(newG, 0, 255);
-                palette2[j].b = (byte)Math.Clamp(newB, 0, 255);
-                palette2[j].a = 255;
+                Palette2[j].r = (byte)Math.Clamp(newR, 0, 255);
+                Palette2[j].g = (byte)Math.Clamp(newG, 0, 255);
+                Palette2[j].b = (byte)Math.Clamp(newB, 0, 255);
+                Palette2[j].a = 255;
             }
 
             GameEngineManager.WaitVBL(1);
-            SetPalette(palette2, true);
+            SetPalette(Palette2, true);
         }
 
         //
@@ -1011,7 +1011,7 @@ internal class VideoManager
         //
         FillPalette(red, green, blue);
 
-        screenfaded = true;
+        ScreenFaded = true;
     }
 
 
@@ -1027,7 +1027,7 @@ internal class VideoManager
     internal void DrawImageRegion(byte[] pixels, byte[]? opacityMask, int stride, int srcX, int srcY, int width, int height,
         int x, int y, byte? key = null, string? color = null, byte[]? rowColors = null)
     {
-        IntPtr destPtr = LockSurface(screenBuffer);
+        IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero)
             return;
 
@@ -1060,22 +1060,22 @@ internal class VideoManager
             }
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
     }
 
     // Whether any of a 320x200 layout pixel's screen rectangle is on the screen
-    private bool LayoutXOnScreen(int x) => ScreenX(x + 1) > 0 && ScreenX(x) < screenWidth;
+    private bool LayoutXOnScreen(int x) => ScreenX(x + 1) > 0 && ScreenX(x) < ScreenWidth;
 
-    private bool LayoutYOnScreen(int y) => ScreenY(y + 1) > 0 && ScreenY(y) < screenHeight;
+    private bool LayoutYOnScreen(int y) => ScreenY(y + 1) > 0 && ScreenY(y) < ScreenHeight;
 
     // Fills the screen rectangle between a 320x200 layout pixel's edges, clipped to the screen
     private unsafe void PutLayoutPixel(byte* dest, int x, int y, byte color)
     {
-        int x0 = Math.Max(ScreenX(x), 0), x1 = Math.Min(ScreenX(x + 1), screenWidth);
-        int y0 = Math.Max(ScreenY(y), 0), y1 = Math.Min(ScreenY(y + 1), screenHeight);
+        int x0 = Math.Max(ScreenX(x), 0), x1 = Math.Min(ScreenX(x + 1), ScreenWidth);
+        int y0 = Math.Max(ScreenY(y), 0), y1 = Math.Min(ScreenY(y + 1), ScreenHeight);
         for (int sy = y0; sy < y1; sy++)
         {
-            byte* row = dest + ylookup[sy];
+            byte* row = dest + YLookup[sy];
             for (int sx = x0; sx < x1; sx++)
                 row[sx] = color;
         }
@@ -1088,7 +1088,7 @@ internal class VideoManager
     /// <param name="rowColors">A palette index for each row of the glyphs, in place of <paramref name="fontcolor"/></param>
     internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font, byte[]? rowColors = null)
     {
-        IntPtr destPtr = LockSurface(screenBuffer);
+        IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero)
             return;
 
@@ -1127,12 +1127,12 @@ internal class VideoManager
                 }
             }
 
-            UnlockSurface(screenBuffer);
+            UnlockSurface(ScreenBuffer);
         }
     }
 
     /// <summary>Writes the screen to a BMP file; false (see SDL_GetError) if it couldn't.</summary>
-    internal bool SaveScreenShot(string filename) => SDL.SDL_SaveBMP(screenBuffer, filename) == 0;
+    internal bool SaveScreenShot(string filename) => SDL.SDL_SaveBMP(ScreenBuffer, filename) == 0;
 
     // The 3D view as last drawn, so a save gets a picture of the game even though a menu,
     // message or the console has been drawn over the screen since
@@ -1153,17 +1153,17 @@ internal class VideoManager
         _viewCopyWidth = width;
         _viewCopyHeight = height;
 
-        IntPtr srcPtr = LockSurface(screenBuffer);
+        IntPtr srcPtr = LockSurface(ScreenBuffer);
         if (srcPtr == IntPtr.Zero) return;
 
         unsafe
         {
             byte* src = (byte*)srcPtr;
             for (int j = 0; j < height; j++)
-                new ReadOnlySpan<byte>(src + ylookup[y + j] + x, width).CopyTo(_viewCopy.AsSpan(j * width, width));
+                new ReadOnlySpan<byte>(src + YLookup[y + j] + x, width).CopyTo(_viewCopy.AsSpan(j * width, width));
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
     }
 
     /// <summary>
@@ -1194,7 +1194,7 @@ internal class VideoManager
                 {
                     for (int sx = x0; sx < x1; sx++)
                     {
-                        var c = gamepal[_viewCopy[sy * sw + sx]];
+                        var c = GamePal[_viewCopy[sy * sw + sx]];
                         r += c.r; g += c.g; b += c.b;
                     }
                 }
@@ -1219,11 +1219,11 @@ internal class VideoManager
         int destx = ScreenX(x), desty = ScreenY(y);
         int dw = ScreenX(x + width) - destx, dh = ScreenY(y + height) - desty;
         // Clipped to the screen, but sampled over the whole rectangle
-        int clipw = Math.Min(dw, screenWidth - destx), cliph = Math.Min(dh, screenHeight - desty);
+        int clipw = Math.Min(dw, ScreenWidth - destx), cliph = Math.Min(dh, ScreenHeight - desty);
         if (destx < 0 || desty < 0 || clipw <= 0 || cliph <= 0 || thumbnail.Width <= 0 || thumbnail.Height <= 0)
             return;
 
-        IntPtr destPtr = LockSurface(screenBuffer);
+        IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero) return;
 
         unsafe
@@ -1232,13 +1232,13 @@ internal class VideoManager
             for (int j = 0; j < cliph; j++)
             {
                 int row = (j * thumbnail.Height / dh) * thumbnail.Width;
-                byte* line = dest + ylookup[desty + j] + destx;
+                byte* line = dest + YLookup[desty + j] + destx;
                 for (int i = 0; i < clipw; i++)
                     line[i] = thumbnail.Pixels[row + i * thumbnail.Width / dw];
             }
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
     }
 
     /// <summary>
@@ -1254,9 +1254,9 @@ internal class VideoManager
             var canvas = new TransitionCanvas
             {
                 From = from,
-                To = RenderScreenBuffer(curpal),
+                To = RenderScreenBuffer(CurPal),
                 Output = (uint[])from.Clone(),
-                Stride = screenWidth,
+                Stride = ScreenWidth,
                 X = x1,
                 Y = y1,
                 Width = width,
@@ -1266,7 +1266,7 @@ internal class VideoManager
             RunTransition(style, canvas, tics);
         }
 
-        Update(screenBuffer);
+        Update(ScreenBuffer);
     }
 
     /// <summary>
@@ -1283,13 +1283,13 @@ internal class VideoManager
 
         var from = CaptureScreen();
         var to = new uint[from.Length];
-        Array.Fill(to, SDL.SDL_MapRGBA(GetSurface(screen).format, color.Red, color.Green, color.Blue, 255));
+        Array.Fill(to, SDL.SDL_MapRGBA(GetSurface(Screen).format, color.Red, color.Green, color.Blue, 255));
 
         RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: false, toIsSolid: true), StyledFadeTics(steps, tics));
 
         // Leave things as the palette fade does, so anything drawn before the fade in stays hidden
         FillPalette(color.Red, color.Green, color.Blue);
-        screenfaded = true;
+        ScreenFaded = true;
     }
 
     /// <summary>
@@ -1308,10 +1308,10 @@ internal class VideoManager
         var from = CaptureScreen();
         var to = RenderScreenBuffer(gamePalette.Colors);
 
-        RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: screenfaded, toIsSolid: false), StyledFadeTics(steps, tics));
+        RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: ScreenFaded, toIsSolid: false), StyledFadeTics(steps, tics));
 
         SetPalette(gamePalette.Colors, true);
-        screenfaded = false;
+        ScreenFaded = false;
     }
 
     private static int PaletteFadeSteps(int steps, int? tics) => tics is { } t ? Math.Max(1, t / TicsPerFadeStep) : steps;
@@ -1322,11 +1322,11 @@ internal class VideoManager
         From = from,
         To = to,
         Output = (uint[])from.Clone(),
-        Stride = screenWidth,
+        Stride = ScreenWidth,
         X = 0,
         Y = 0,
-        Width = screenWidth,
-        Height = screenHeight,
+        Width = ScreenWidth,
+        Height = ScreenHeight,
         ScaleFactor = TransitionBlockSize,
         FromIsSolid = fromIsSolid,
         ToIsSolid = toIsSolid,
@@ -1337,7 +1337,7 @@ internal class VideoManager
     {
         ScreenTransition transition = style switch
         {
-            FadeStyle.Fizzle => new FizzleTransition(rndmask, (int)rndbits_y),
+            FadeStyle.Fizzle => new FizzleTransition(rndmask, (int)rndBitsY),
             FadeStyle.Melt => new MeltTransition(canvas),
             FadeStyle.Mosaic => new MosaicTransition(),
             _ => throw new ArgumentOutOfRangeException(nameof(style), style, "Not a transition style"),
@@ -1364,78 +1364,78 @@ internal class VideoManager
     /// <summary>The frame last put on screen, as 32-bit pixels.</summary>
     private uint[] CaptureScreen()
     {
-        var pixels = new uint[screenWidth * screenHeight];
+        var pixels = new uint[ScreenWidth * ScreenHeight];
 
-        IntPtr src = LockSurface(screen);
+        IntPtr src = LockSurface(Screen);
         if (src == IntPtr.Zero)
             throw new PfWolfVideoException("Unable to lock screen surface: {0}", SDL.SDL_GetError());
 
         unsafe
         {
-            for (int y = 0; y < screenHeight; y++)
-                new ReadOnlySpan<uint>((byte*)src + y * screenPitch, screenWidth)
-                    .CopyTo(pixels.AsSpan(y * screenWidth, screenWidth));
+            for (int y = 0; y < ScreenHeight; y++)
+                new ReadOnlySpan<uint>((byte*)src + y * ScreenPitch, ScreenWidth)
+                    .CopyTo(pixels.AsSpan(y * ScreenWidth, ScreenWidth));
         }
 
-        UnlockSurface(screen);
+        UnlockSurface(Screen);
         return pixels;
     }
 
     /// <summary>The screen buffer as it would look drawn in <paramref name="palette"/>, as 32-bit pixels.</summary>
     private uint[] RenderScreenBuffer(SDL.SDL_Color[] palette)
     {
-        var format = GetSurface(screen).format;
+        var format = GetSurface(Screen).format;
         var colors = new uint[256];
         for (int i = 0; i < colors.Length; i++)
             colors[i] = SDL.SDL_MapRGBA(format, palette[i].r, palette[i].g, palette[i].b, 255);
 
-        var pixels = new uint[screenWidth * screenHeight];
+        var pixels = new uint[ScreenWidth * ScreenHeight];
 
-        IntPtr src = LockSurface(screenBuffer);
+        IntPtr src = LockSurface(ScreenBuffer);
         if (src == IntPtr.Zero)
             throw new PfWolfVideoException("Unable to lock screen buffer: {0}", SDL.SDL_GetError());
 
         unsafe
         {
             byte* buffer = (byte*)src;
-            for (int y = 0; y < screenHeight; y++)
+            for (int y = 0; y < ScreenHeight; y++)
             {
-                byte* row = buffer + ylookup[y];
-                for (int x = 0; x < screenWidth; x++)
-                    pixels[y * screenWidth + x] = colors[row[x]];
+                byte* row = buffer + YLookup[y];
+                for (int x = 0; x < ScreenWidth; x++)
+                    pixels[y * ScreenWidth + x] = colors[row[x]];
             }
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
         return pixels;
     }
 
     /// <summary>Copies full-screen 32-bit pixels to the screen surface and shows them.</summary>
     private void PresentPixels(uint[] pixels)
     {
-        IntPtr dest = LockSurface(screen);
+        IntPtr dest = LockSurface(Screen);
         if (dest == IntPtr.Zero)
             throw new PfWolfVideoException("Unable to lock screen surface: {0}", SDL.SDL_GetError());
 
         unsafe
         {
-            for (int y = 0; y < screenHeight; y++)
-                pixels.AsSpan(y * screenWidth, screenWidth)
-                    .CopyTo(new Span<uint>((byte*)dest + y * screenPitch, screenWidth));
+            for (int y = 0; y < ScreenHeight; y++)
+                pixels.AsSpan(y * ScreenWidth, ScreenWidth)
+                    .CopyTo(new Span<uint>((byte*)dest + y * ScreenPitch, ScreenWidth));
         }
 
-        UnlockSurface(screen);
+        UnlockSurface(Screen);
 
-        SDL.SDL_UpdateTexture(texture, IntPtr.Zero, GetSurface(screen).pixels, (int)screenPitch);
+        SDL.SDL_UpdateTexture(Texture, IntPtr.Zero, GetSurface(Screen).pixels, (int)ScreenPitch);
         Present();
     }
 
     // Shows the texture; the clear blacks out any letterbox bars around it
     private void Present()
     {
-        SDL.SDL_RenderClear(renderer);
-        SDL.SDL_RenderCopy(renderer, texture, IntPtr.Zero, IntPtr.Zero);
-        SDL.SDL_RenderPresent(renderer);
+        SDL.SDL_RenderClear(Renderer);
+        SDL.SDL_RenderCopy(Renderer, Texture, IntPtr.Zero, IntPtr.Zero);
+        SDL.SDL_RenderPresent(Renderer);
     }
 
 
@@ -1443,47 +1443,47 @@ internal class VideoManager
     {
         byte col;
 
-        IntPtr destPtr = LockSurface(screenBuffer);
+        IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero)
             return 0;
 
         unsafe
         {
             byte* dest = (byte*)destPtr;
-            col = dest[ylookup[y] + x];
+            col = dest[YLookup[y] + x];
         }
 
-        UnlockSurface(screenBuffer);
+        UnlockSurface(ScreenBuffer);
         return col;
     }
 
     public void ClearScreen(byte color)
     {
         // TODO: Will the "color" become a full 32-bit Argb value in the future?
-        SDL.SDL_FillRect(screenBuffer, IntPtr.Zero, color);
+        SDL.SDL_FillRect(ScreenBuffer, IntPtr.Zero, color);
     }
 
     public void Update()
     {
-        Update(screenBuffer);
+        Update(ScreenBuffer);
     }
 
     private void Update(IntPtr surface)
     {
-        SDL.SDL_BlitSurface(surface, IntPtr.Zero, screen, IntPtr.Zero);
+        SDL.SDL_BlitSurface(surface, IntPtr.Zero, Screen, IntPtr.Zero);
 
-        var screenPixels = GetSurface(screen).pixels;
-        SDL.SDL_UpdateTexture(texture, IntPtr.Zero, screenPixels, (int)screenPitch);
+        var screenPixels = GetSurface(Screen).pixels;
+        SDL.SDL_UpdateTexture(Texture, IntPtr.Zero, screenPixels, (int)ScreenPitch);
         Present();
     }
 
-    public IntPtr LockSurface() => LockSurface(screenBuffer);
-    public void UnlockSurface() => UnlockSurface(screenBuffer);
+    public IntPtr LockSurface() => LockSurface(ScreenBuffer);
+    public void UnlockSurface() => UnlockSurface(ScreenBuffer);
 
     public void CenterMouse()
     {
-        SDL.SDL_GetWindowSize(window, out int width, out int height);
-        SDL.SDL_WarpMouseInWindow(window, width / 2, height / 2);
+        SDL.SDL_GetWindowSize(WindowHandle, out int width, out int height);
+        SDL.SDL_WarpMouseInWindow(WindowHandle, width / 2, height / 2);
     }
 
     internal void SetWindowGrab(object? sender, bool grabInput)
@@ -1492,7 +1492,7 @@ internal class VideoManager
         if (SDL.SDL_ShowCursor(!grabInput ? 1 : 0) < 0)
             throw new PfWolfVideoException("Unable to {0} cursor: {1}", (grabInput ? "show" : "hide"), SDL.SDL_GetError());
 
-        SDL.SDL_SetWindowGrab(window, grabInput ? SDL.SDL_bool.SDL_TRUE : SDL.SDL_bool.SDL_FALSE);
+        SDL.SDL_SetWindowGrab(WindowHandle, grabInput ? SDL.SDL_bool.SDL_TRUE : SDL.SDL_bool.SDL_FALSE);
 
         if (SDL.SDL_SetRelativeMouseMode(grabInput ? SDL.SDL_bool.SDL_TRUE : SDL.SDL_bool.SDL_FALSE) > 0)
             throw new PfWolfVideoException("Unable to set relative mode for mouse: {0}", SDL.SDL_GetError());
@@ -1521,7 +1521,7 @@ internal class VideoManager
             int ri = i - 1;
             for (int j = 0; j < 256; j++)
             {
-                var basec = gamepal[j];
+                var basec = GamePal[j];
 
                 int delta = 256 - basec.r;
                 int newR = basec.r + delta * i / RedSteps;
@@ -1548,7 +1548,7 @@ internal class VideoManager
             int wi = i - 1;
             for (int j = 0; j < 256; j++)
             {
-                var basec = gamepal[j];
+                var basec = GamePal[j];
 
                 int delta = 256 - basec.r;
                 int newR = basec.r + delta * i / WhiteSteps;
@@ -1618,7 +1618,7 @@ internal class VideoManager
         }
         else if (palshifted)
         {
-            SetPalette(gamepal, false);        // back to normal
+            SetPalette(GamePal, false);        // back to normal
             palshifted = false;
         }
     }
@@ -1628,7 +1628,7 @@ internal class VideoManager
         if (palshifted)
         {
             palshifted = false;
-            SetPalette(gamepal, true);
+            SetPalette(GamePal, true);
         }
     }
 
@@ -1685,7 +1685,7 @@ internal class VideoManager
                     32, image.Width * 4, SDL.SDL_PIXELFORMAT_ABGR8888);
                 if (surface == IntPtr.Zero)
                     return;
-                SDL.SDL_SetWindowIcon(window, surface);
+                SDL.SDL_SetWindowIcon(WindowHandle, surface);
                 SDL.SDL_FreeSurface(surface);
             }
         }
@@ -1703,15 +1703,15 @@ internal class VideoManager
         if (settings.Fullscreen)
             flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-        window = SDL.SDL_CreateWindow(title, SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
+        WindowHandle = SDL.SDL_CreateWindow(title, SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
             settings.WindowWidth, settings.WindowHeight, flags);
-        if (window == IntPtr.Zero)
+        if (WindowHandle == IntPtr.Zero)
             throw new PfWolfVideoException("Unable to create the window: {0}", SDL.SDL_GetError());
 
         SetWindowIcon();
         SDL.SDL_ShowCursor(SDL.SDL_DISABLE);
 
-        Array.Copy(gamepal, curpal, 256);
+        Array.Copy(GamePal, CurPal, 256);
         settings = ResolveRenderSize(settings);
 
         // A saved mode this machine can't do (another display, another graphics card) falls
@@ -1774,20 +1774,20 @@ internal class VideoManager
 
     private void GetPalette(SDL.SDL_Color[] palette)
     {
-        Array.Copy(curpal, palette, 256);
+        Array.Copy(CurPal, palette, 256);
     }
 
     private void SetPalette(SDL.SDL_Color[] palette, bool forceupdate)
     {
-        Array.Copy(palette, curpal, 256);
+        Array.Copy(palette, CurPal, 256);
 
-        if (screenBits == 0)
-            SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(screen), palette, 0, 256);
+        if (ScreenBits == 0)
+            SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(Screen), palette, 0, 256);
         else
         {
-            SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(screenBuffer), palette, 0, 256);
+            SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(ScreenBuffer), palette, 0, 256);
             if (forceupdate)
-                Update(screenBuffer);
+                Update(ScreenBuffer);
         }
     }
 
@@ -1819,7 +1819,7 @@ internal class VideoManager
         SetPalette(pal, true);
     }
 
-    private static int log2_ceil(UInt32 x)
+    private static int Log2Ceil(UInt32 x)
     {
         int n = 0;
         UInt32 v = 1;
@@ -1865,11 +1865,11 @@ internal class VideoManager
         byte closestIndex = 0;
         int closestDistance = int.MaxValue;
 
-        for (int i = 0; i < gamepal.Length; i++)
+        for (int i = 0; i < GamePal.Length; i++)
         {
-            int dr = r - gamepal[i].r;
-            int dg = g - gamepal[i].g;
-            int db = b - gamepal[i].b;
+            int dr = r - GamePal[i].r;
+            int dg = g - GamePal[i].g;
+            int db = b - GamePal[i].b;
             int distance = dr * dr + dg * dg + db * db;
 
             if (distance < closestDistance)

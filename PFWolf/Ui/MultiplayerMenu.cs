@@ -101,8 +101,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         defs.DrawMenuComponents("multiplayer");
         draw.DrawMenu(MultiplayerItems, Items);
         // The values line up just past the longer of their rows' names
-        int column = Items.Where(item => item.id is "name" or "openport")
-            .Select(item => ui.TextWidth(item.text, MultiplayerItems.font ?? UiFonts.MenuFont) + 8)
+        int column = Items.Where(item => item.Id is "name" or "openport")
+            .Select(item => ui.TextWidth(item.Text, MultiplayerItems.Font ?? UiFonts.MenuFont) + 8)
             .DefaultIfEmpty(88).Max();
         DrawRowValue(MultiplayerItems, Items, "name", MpConfig.Name, column);
         DrawRowValue(MultiplayerItems, Items, "openport",
@@ -297,9 +297,9 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             while (true)
             {
                 (JoinMenu, JoinItems) = defs.LoadMenu("join-game", Math.Min(curpos, (short)0));
-                JoinItems.curpos = (short)Math.Clamp(curpos, 0, Math.Max(0, JoinMenu.Length - 1));
-                if (JoinMenu[JoinItems.curpos].active == 0)
-                    JoinItems.curpos = (short)Math.Max(0, Array.FindIndex(JoinMenu, item => item.active != 0));
+                JoinItems.CurPos = (short)Math.Clamp(curpos, 0, Math.Max(0, JoinMenu.Length - 1));
+                if (JoinMenu[JoinItems.CurPos].Active == 0)
+                    JoinItems.CurPos = (short)Math.Max(0, Array.FindIndex(JoinMenu, item => item.Active != 0));
                 seen = browser.Changes;
 
                 defs.DrawMenuComponents("join-game");
@@ -318,14 +318,14 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                     browser.Poll();
                     return browser.Changes != seen;     // the list changed: build it again
                 });
-                curpos = JoinItems.curpos;
+                curpos = JoinItems.CurPos;
 
                 if (which == -2)
                     continue;
                 if (which < 0)
                     break;
 
-                if (JoinMenu[which].data is JoinRow { Game: { } game })
+                if (JoinMenu[which].Data is JoinRow { Game: { } game })
                     ConnectTo(game.Address);
                 else
                 {
@@ -495,7 +495,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         var language = assets.GetText("en-us");
         (LobbyMenu, LobbyItems) = defs.LoadMenu("lobby");
         if (MenuDefs.FindMenuItem(LobbyMenu, "go") is { } go)
-            go.text = (session.IsHost ? "$STR_MP_START" : "$STR_MP_READY").ToLanguageText(language);
+            go.Text = (session.IsHost ? "$STR_MP_START" : "$STR_MP_READY").ToLanguageText(language);
 
         bool fadeIn = true;
         while (true)
@@ -631,25 +631,25 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         // Only the host changes the game; a class to pick only when there's more than one
         bool host = session.IsHost;
         bool arenas = PicksArena(settings);
-        MenuDefs.FindMenuItem(LobbyMenu, "mode")?.active = (short)(host ? 1 : 0);
+        MenuDefs.FindMenuItem(LobbyMenu, "mode")?.Active = (short)(host ? 1 : 0);
         if (MenuDefs.FindMenuItem(LobbyMenu, "episode") is { } episodeRow)
         {
             // A deathmatch is played on an arena: the episode row picks it instead
-            episodeRow.text = (arenas ? "$STR_MP_MAP" : "$STR_MP_EPISODE").ToLanguageText(language);
-            episodeRow.active = (short)(host && (arenas ? ArenaMaps(settings.Mode).Count : PlayableEpisodes().Count) > 1 ? 1 : 0);
+            episodeRow.Text = (arenas ? "$STR_MP_MAP" : "$STR_MP_EPISODE").ToLanguageText(language);
+            episodeRow.Active = (short)(host && (arenas ? ArenaMaps(settings.Mode).Count : PlayableEpisodes().Count) > 1 ? 1 : 0);
         }
-        MenuDefs.FindMenuItem(LobbyMenu, "skill")?.active = (short)(host ? 1 : 0);
-        MenuDefs.FindMenuItem(LobbyMenu, "class")?.active = (short)(hooks.PlayerClasses().Count > 1 ? 1 : 0);
+        MenuDefs.FindMenuItem(LobbyMenu, "skill")?.Active = (short)(host ? 1 : 0);
+        MenuDefs.FindMenuItem(LobbyMenu, "class")?.Active = (short)(hooks.PlayerClasses().Count > 1 ? 1 : 0);
         bool teams = settings.Mode.IsTeamGame();
         if (MenuDefs.FindMenuItem(LobbyMenu, "color") is { } colorRow)
         {
             // In a team game you're seen in your team's color: the color row picks the team instead
-            colorRow.text = (teams ? "$STR_MP_TEAM" : "$STR_MP_COLOR").ToLanguageText(language);
-            colorRow.active = (short)(teams || PlayerColors().Count > 1 ? 1 : 0);
+            colorRow.Text = (teams ? "$STR_MP_TEAM" : "$STR_MP_COLOR").ToLanguageText(language);
+            colorRow.Active = (short)(teams || PlayerColors().Count > 1 ? 1 : 0);
         }
-        MenuDefs.FindMenuItem(LobbyMenu, "rules")?.active = (short)(host && settings.Mode != GameMode.Coop ? 1 : 0);
-        if (LobbyMenu[LobbyItems.curpos].active == 0)
-            LobbyItems.curpos = (short)Math.Max(0, Array.FindIndex(LobbyMenu, item => item.active != 0));
+        MenuDefs.FindMenuItem(LobbyMenu, "rules")?.Active = (short)(host && settings.Mode != GameMode.Coop ? 1 : 0);
+        if (LobbyMenu[LobbyItems.CurPos].Active == 0)
+            LobbyItems.CurPos = (short)Math.Max(0, Array.FindIndex(LobbyMenu, item => item.Active != 0));
 
         defs.DrawMenuComponents("lobby");
         draw.DrawMenu(LobbyItems, LobbyMenu);
@@ -696,12 +696,12 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     // the Multiplayer menu's, which have room for more than a menu-font choice column
     void DrawRowValue(ControlPanelMenuInfo info, ControlPanelItem[] items, string id, string value, int column = 88)
     {
-        int index = Array.FindIndex(items, item => item.id == id);
+        int index = Array.FindIndex(items, item => item.Id == id);
         if (index < 0)
             return;
-        int x = info.x + info.indent + column;
-        int y = info.y + index * info.rowHeight;
-        video.Bar(x, y, 300 - x, info.rowHeight, "BKGDCOLOR");
+        int x = info.X + info.Indent + column;
+        int y = info.Y + index * info.RowHeight;
+        video.Bar(x, y, 300 - x, info.RowHeight, "BKGDCOLOR");
         ui.TextAt(x, y + 2, new TextStyle(UiFonts.SmallFont, MenuDrawing.MenuItemColor(items[index], false))).Print(ui.FitText(value, 300 - x, UiFonts.SmallFont));
     }
 
@@ -768,7 +768,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     void StepRule(NetSession session, int which, int delta)
     {
         var settings = session.Settings;
-        RulesItems.curpos = (short)which;
+        RulesItems.CurPos = (short)which;
         settings = MenuDefs.SelectedId(RulesMenu, which) switch
         {
             "fraglimit" => settings with { ScoreLimit = StepLimit(settings.Mode.ScoreLimits(), settings.ScoreLimit, delta) },
@@ -789,8 +789,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         var language = assets.GetText("en-us");
         var settings = session.Settings;
         defs.DrawMenuComponents("net-rules");
-        MenuDefs.FindMenuItem(RulesMenu, "fraglimit")?.text = ScoreLimitKey(settings.Mode).ToLanguageText(language);
-        MenuDefs.FindMenuItem(RulesMenu, "timelimit")?.active = (short)(settings.Mode == GameMode.Horde ? 0 : 1);
+        MenuDefs.FindMenuItem(RulesMenu, "fraglimit")?.Text = ScoreLimitKey(settings.Mode).ToLanguageText(language);
+        MenuDefs.FindMenuItem(RulesMenu, "timelimit")?.Active = (short)(settings.Mode == GameMode.Horde ? 0 : 1);
         draw.DrawMenu(RulesItems, RulesMenu);
         var none = "$STR_MP_NONE".ToLanguageText(language);
         draw.DrawMenuChoice(RulesItems, RulesMenu, "fraglimit", settings.ScoreLimit > 0 ? settings.ScoreLimit.ToString() : none);
@@ -806,7 +806,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     {
         var id = MenuDefs.SelectedId(LobbyMenu, which);
         var settings = session.Settings;
-        LobbyItems.curpos = (short)which;
+        LobbyItems.CurPos = (short)which;
 
         switch (id)
         {

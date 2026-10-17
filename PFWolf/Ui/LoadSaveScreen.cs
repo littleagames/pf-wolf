@@ -53,7 +53,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
     private const int LsHelpY = LsSepY + 3;
 
     // The save last saved or loaded on these screens, which the load screen starts on
-    internal SaveInfo? lastSaveGame;
+    internal SaveInfo? LastSaveGame;
 
     // How the list is shown; kept for the rest of the session
     private bool saveListByName;         // else newest first
@@ -86,7 +86,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             state.CurrentThumbnail = hooks.CurrentThumbnail();
         }
 
-        FillSaveRows(state, saving ? null : lastSaveGame?.Path);
+        FillSaveRows(state, saving ? null : LastSaveGame?.Path);
 
         DrawLoadSaveScreen(state);
         draw.MenuFadeIn();
@@ -111,9 +111,9 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
                 moved = 0;
             else if (input.IsKeyDown(ScanCodes.End))
                 moved = last;
-            else if (ci.dir == Direction.North)
+            else if (ci.Dir == Direction.North)
                 moved = state.Row > 0 ? state.Row - 1 : last;
-            else if (ci.dir == Direction.South)
+            else if (ci.Dir == Direction.South)
                 moved = state.Row < last ? state.Row + 1 : 0;
 
             if (last >= 0 && moved != state.Row)
@@ -128,13 +128,13 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             //
             // THIS GAME'S SAVES OR EVERYONE'S
             //
-            if (ci.dir is Direction.West or Direction.East)
+            if (ci.Dir is Direction.West or Direction.East)
             {
                 saveListAllGames = !saveListAllGames;
                 audio.Play("menu/move1");
                 FillSaveRows(state, state.Selected?.Path);
                 DrawLoadSaveScreen(state);
-                while (ci.dir != Direction.None)
+                while (ci.Dir != Direction.None)
                 {
                     GameEngineManager.DelayMs(5);
                     menuInput.ReadAnyControl(out ci);
@@ -145,7 +145,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             //
             // NEWEST FIRST OR BY NAME
             //
-            if (ci.button2 || input.IsKeyDown(ScanCodes.Tab))
+            if (ci.Button2 || input.IsKeyDown(ScanCodes.Tab))
             {
                 saveListByName = !saveListByName;
                 audio.Play("menu/move1");
@@ -161,15 +161,15 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             // DELETE A SAVE
             //
             if (state.Selected is { } doomed
-                && (ci.button3 || input.IsKeyDown(ScanCodes.Delete) || input.IsKeyDown(ScanCodes.BackSpace)))
+                && (ci.Button3 || input.IsKeyDown(ScanCodes.Delete) || input.IsKeyDown(ScanCodes.BackSpace)))
             {
                 if (loop.Confirm(string.Format("$STR_LS_DELETE".ToLanguageText(language), NameForConfirm(doomed.Name))) != 0)
                 {
                     try
                     {
                         File.Delete(doomed.Path);
-                        if (lastSaveGame?.Path == doomed.Path)
-                            lastSaveGame = null;
+                        if (LastSaveGame?.Path == doomed.Path)
+                            LastSaveGame = null;
                     }
                     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                     {
@@ -189,7 +189,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             //
             // LOAD OR SAVE
             //
-            if (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
+            if (ci.Button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
             {
                 menuInput.WaitKeyUp();
                 bool done = saving ? SaveFromScreen(state) : LoadFromScreen(state);
@@ -206,7 +206,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             //
             // DONE
             //
-            if (ci.button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
+            if (ci.Button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
             {
                 audio.Play("menu/escape");
                 break;
@@ -300,7 +300,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
         if (!hooks.Load(save.Path, LsaX + 8, LsaY + 5))
             return false;
 
-        lastSaveGame = save;
+        LastSaveGame = save;
         hooks.Loaded();
         loop.ShootSnd();
         return true;
@@ -340,7 +340,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             return false;
         }
 
-        lastSaveGame = SaveFile.ReadInfo(path);
+        LastSaveGame = SaveFile.ReadInfo(path);
         loop.ShootSnd();
         return true;
     }

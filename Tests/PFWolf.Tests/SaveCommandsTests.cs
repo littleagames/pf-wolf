@@ -23,7 +23,7 @@ public class SaveCommandsTests
         _console.Execute("autosave");
         Assert.That(_console.Scrollback[^1], Is.EqualTo("autosave is 1"));
         _console.Execute("autosave 0");
-        Assert.That((_saves.autosaveEnabled, _console.Scrollback[^1]), Is.EqualTo((false, "autosave is 0")));
+        Assert.That((_saves.AutosaveEnabled, _console.Scrollback[^1]), Is.EqualTo((false, "autosave is 0")));
     }
 
     [Test]

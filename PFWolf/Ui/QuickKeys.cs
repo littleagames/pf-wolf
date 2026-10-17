@@ -72,7 +72,7 @@ internal sealed class QuickKeys(
                     session.PlayerState.Lives = 0;
                 }
 
-                MenuDefs.FindMenuItem(controlPanel.MainMenu, "savegame")?.active = 0;
+                MenuDefs.FindMenuItem(controlPanel.MainMenu, "savegame")?.Active = 0;
                 return 1;
             //
             // QUICKSAVE
@@ -104,7 +104,7 @@ internal sealed class QuickKeys(
 
                     input.ClearKeysDown();
                     video.FadeOut();
-                    if (settings.viewsize != 21)
+                    if (settings.ViewSize != 21)
                         playScreen.DrawPlayScreen();
 
                     if (!session.GameChosen && !session.LoadedGame)
