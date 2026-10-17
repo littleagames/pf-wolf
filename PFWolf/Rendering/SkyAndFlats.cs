@@ -247,6 +247,16 @@ internal sealed class SkyAndFlats(
 
                     long tile = (tiley << MapManager.MapShift) + tilex;
                     var texture = flats[tile];
+
+                    // A wall's tile rarely has a flat, but the rows just past its face (where its post
+                    // rounds short of the true edge) land on it: they take the tile the ray came from
+                    if (texture == null && map.TileMap[tilex, tiley] != 0
+                        && FlatBeforeWall(flatdirx[x], flatdiry[x], ref px, ref py, ref tilex, ref tiley))
+                    {
+                        tile = (tiley << MapManager.MapShift) + tilex;
+                        texture = flats[tile];
+                    }
+
                     byte pixel = color;
                     if (texture != null)
                     {
@@ -269,6 +279,38 @@ internal sealed class SkyAndFlats(
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Moves a flat point (px, py) in a wall's tile back to the edge of the tile its ray (dirx, diry)
+    /// entered through, and to that tile; false when the eye is in the wall's tile itself.
+    /// </summary>
+    bool FlatBeforeWall(long dirx, long diry, ref long px, ref long py, ref long tilex, ref long tiley)
+    {
+        long eyetilex = render.ViewX >> MapConstants.TileShift, eyetiley = render.ViewY >> MapConstants.TileShift;
+        if (eyetilex == tilex && eyetiley == tiley)
+            return false;
+
+        // how far into the tile the point is from the side the ray came in on, along each axis;
+        // the side crossed last is the one it entered by
+        long tilesize = 1L << MapConstants.TileShift;
+        long left = tilex << MapConstants.TileShift, top = tiley << MapConstants.TileShift;
+        long intox = dirx > 0 ? px - left : left + tilesize - px;
+        long intoy = diry > 0 ? py - top : top + tilesize - py;
+        bool crossedx = eyetiley == tiley
+            || eyetilex != tilex && intox * Math.Abs(diry) < intoy * Math.Abs(dirx);
+
+        if (crossedx)
+        {
+            tilex += dirx > 0 ? -1 : 1;
+            px = dirx > 0 ? left - 1 : left + tilesize;
+        }
+        else
+        {
+            tiley += diry > 0 ? -1 : 1;
+            py = diry > 0 ? top - 1 : top + tilesize;
+        }
+        return (ulong)tilex < MapManager.MapSize && (ulong)tiley < MapManager.MapSize;
     }
 
     // ShadeOffset for screen row y of a floor or ceiling halves half stories from the eye (as DrawFlats)
