@@ -13,13 +13,13 @@ internal sealed class DemoCommands(
     internal void Register()
     {
         console.Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
-            "playdemo <0-9>", Cmd_PlayDemo, Solo,
+            "playdemo <0-9>", PlayDemoCommand, Solo,
             complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).Select(n => n.ToString()) : []);
         console.Register("demotest", "Plays demos (all of them, or those given) back to back without waiting, and prints how each ended: score, kills, where the player and every actor finished. For checking a change to the game hasn't changed how it plays; run it from --exec.",
-            "demotest [0-9 ...]", Cmd_DemoTest, Solo,
+            "demotest [0-9 ...]", DemoTestCommand, Solo,
             complete: (_, _) => Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).Select(n => n.ToString()));
         console.Register("recorddemo", "Records a demo on a level, on the hardest skill, until the level ends or you die; saves it as that demo number, or asks for one. Ends the game in progress first.",
-            "recorddemo <MAP##> [0-9]", Cmd_RecordDemo, Solo,
+            "recorddemo <MAP##> [0-9]", RecordDemoCommand, Solo,
             complete: (_, i) => i switch
             {
                 0 => Enumerable.Range(1, demoPlayback.DemoMapCount()).Select(n => $"MAP{n:D2}"),
@@ -29,7 +29,7 @@ internal sealed class DemoCommands(
     }
     // Queues the demo for the title loop; in a level the game ends first (PlayLoop exits on the
     // abort, and GameLoop, seeing pendingDemo, goes back to the title without a death or scores)
-    internal void Cmd_PlayDemo(string[] args)
+    internal void PlayDemoCommand(string[] args)
     {
         if (args.Length == 0 || !int.TryParse(args[0], out int demonumber) || demonumber < 0 || demonumber > 9)
             throw new ArgumentException("usage: playdemo <0-9>");
@@ -45,7 +45,7 @@ internal sealed class DemoCommands(
             session.playstate = PlayState.Abort;
     }
 
-    internal void Cmd_DemoTest(string[] args)
+    internal void DemoTestCommand(string[] args)
     {
         if (session.ingame)
         {
@@ -96,7 +96,7 @@ internal sealed class DemoCommands(
 
     // Queued like playdemo. The map is MAP## or just its number; a demo can only name MAP01 onwards,
     // one byte's worth, so it has to be one of the maps counting up from MAP01
-    internal void Cmd_RecordDemo(string[] args)
+    internal void RecordDemoCommand(string[] args)
     {
         const string usage = "usage: recorddemo <MAP##> [0-9]";
         if (args.Length == 0)

@@ -117,10 +117,10 @@ public class ObjectivesTests
 
         // Act / Assert
         _objectives.ActorDied(first);
-        _objectives.A_JumpIfObjectiveDone(last, ["targets", "Goal"]);
+        _objectives.JumpIfObjectiveDone(last, ["targets", "Goal"]);
         Assert.That(last.CurrentState?.StateName, Is.Not.EqualTo("Goal"));
         _objectives.ActorDied(last);
-        _objectives.A_JumpIfObjectiveDone(last, ["targets", "Goal"]);
+        _objectives.JumpIfObjectiveDone(last, ["targets", "Goal"]);
         Assert.That(last.CurrentState?.StateName, Is.EqualTo("Goal"));
         Assert.That(_messages, Is.EqualTo(new[] { "Defeated: 1 of 2", "Defeated: 2 of 2" }));
     }

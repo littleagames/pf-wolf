@@ -19,7 +19,7 @@ public class GameScriptsTests
     // The lua command makes the Lua state; a script then loads into it as one would at startup
     private ScriptHost Host()
     {
-        _scripts.Cmd_Lua(["x = 1"]);
+        _scripts.LuaCommand(["x = 1"]);
         return _scripts.Scripts!;
     }
 
@@ -155,7 +155,7 @@ public class GameScriptsTests
     [Test]
     public void The_Scripts_Command_Says_When_None_Are_Loaded()
     {
-        _scripts.Cmd_Scripts([]);
+        _scripts.ScriptsCommand([]);
         Assert.That(Printed(), Has.Some.Contains("No scripts are loaded"));
     }
 }

@@ -25,7 +25,7 @@ internal sealed class Spectating(
         map.GetActors().Where(a => !a.IsRemoved && a is not PlayerPawn
             && a.ResolvedStates.ContainsKey("Chase") && a.Hitpoints > 0);
 
-    internal void Cmd_Spectate(string[] args)
+    internal void SpectateCommand(string[] args)
     {
         var mode = args.Length > 0 ? args[0] : "next";
 

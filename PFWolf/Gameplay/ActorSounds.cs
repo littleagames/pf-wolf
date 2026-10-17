@@ -14,7 +14,7 @@ internal sealed class ActorSounds(
     GameSession session,
     Action<string, Entities.Actors.Actor> playSoundAt)
 {
-    internal void A_DeathScream(Entities.Actors.Actor ob) => PlayActorSound(ob, "deathsound");
+    internal void DeathScream(Entities.Actors.Actor ob) => PlayActorSound(ob, "deathsound");
 
     /// <summary>
     /// Plays an actor's sound property from where it is: one sound, or a list to pick one from
@@ -29,7 +29,7 @@ internal sealed class ActorSounds(
 
     // A_ActiveSound: the actor's "activesound" (Mecha Hitler's stomp), only where the player can
     // hear it -- in an area connected to theirs, as vanilla's A_MechaSound was
-    internal void A_ActiveSound(Entities.Actors.Actor ob)
+    internal void ActiveSound(Entities.Actors.Actor ob)
     {
         if (ob.Properties.TryGetValue("activesound", out var sound) && sound is string soundName
             && (ob.AreaNumber >= map.Floors.NumAreas || session.areas.areabyplayer[ob.AreaNumber] != 0))
@@ -38,7 +38,7 @@ internal sealed class ActorSounds(
 
     // A_PlaySound("angel/breath"): plays a sound, not placed in the world; with "positional"
     // (A_PlaySound("misc/yeah", "positional")), from where the actor is
-    internal void A_PlaySound(Entities.Actors.Actor ob, string[] args)
+    internal void PlaySound(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length == 0)
             return;

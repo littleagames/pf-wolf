@@ -12,21 +12,21 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
 {
     internal void Register()
     {
-        console.Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", Cmd_Mods);
+        console.Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", ModsCommand);
         console.Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
-            "assetinfo <name>", Cmd_AssetInfo, complete: (_, i) => i == 0 ? assets.AssetNames : []);
+            "assetinfo <name>", AssetInfoCommand, complete: (_, i) => i == 0 ? assets.AssetNames : []);
         console.Register("anims", "Lists the animations (animdefs): what they animate, how long they run, and whether they loop; with a name, its frames too.",
-            "anims [name]", Cmd_Anims, complete: (_, i) => i == 0 ? assets.Animations.Keys : []);
+            "anims [name]", AnimsCommand, complete: (_, i) => i == 0 ? assets.Animations.Keys : []);
         console.Register("playsound", "Plays a sound: a sound-seq name (doors/open), or a sound file's or digitized sound's name.",
-            "playsound <name>", Cmd_PlaySound);
+            "playsound <name>", PlaySoundCommand);
         console.Register("changemus", "Plays a song, from a pk3's music/ folder or the game's own; with no name, shows what's playing. A song that ends stops instead of looping with 'once'.",
-            "changemus [name] [once]", Cmd_ChangeMus, complete: (_, i) => i == 1 ? ["once"] : []);
+            "changemus [name] [once]", ChangeMusCommand, complete: (_, i) => i == 1 ? ["once"] : []);
         console.Register("exportmap", "Writes a level, or all of them, as ECWolf binary maps (NAME.wad) for a mod's maps/ folder: to the exports folder, or the folder given.",
-            "exportmap <MAP##|all> [folder]", Cmd_ExportMap,
+            "exportmap <MAP##|all> [folder]", ExportMapCommand,
             complete: (_, i) => i == 0 ? ["all", .. engine.GetGameInfo().Maps.Keys] : []);
     }
 
-    private void Cmd_Mods(string[] args)
+    private void ModsCommand(string[] args)
     {
         var mods = assets.LoadedMods;
         if (mods.Count == 0)
@@ -44,7 +44,7 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
             console.Print(warning);
     }
 
-    private void Cmd_AssetInfo(string[] args)
+    private void AssetInfoCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: assetinfo <name>");
@@ -66,7 +66,7 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
             console.Print($"No asset named {args[0]}");
     }
 
-    private void Cmd_Anims(string[] args)
+    private void AnimsCommand(string[] args)
     {
         var animations = assets.Animations
             .Where(a => args.Length == 0 || a.Key.Equals(args[0], StringComparison.OrdinalIgnoreCase))
@@ -98,7 +98,7 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
         }
     }
 
-    private void Cmd_ExportMap(string[] args)
+    private void ExportMapCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: exportmap <MAP##|all> [folder]");
@@ -127,7 +127,7 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
         console.Print($"Wrote {written} level{(written == 1 ? "" : "s")} to {Path.GetFullPath(folder)}");
     }
 
-    private void Cmd_PlaySound(string[] args)
+    private void PlaySoundCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: playsound <name>");
@@ -138,7 +138,7 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
             : $"{args[0]} didn't play: there's no such sound, or the sound devices it has are off");
     }
 
-    private void Cmd_ChangeMus(string[] args)
+    private void ChangeMusCommand(string[] args)
     {
         if (args.Length == 0)
         {

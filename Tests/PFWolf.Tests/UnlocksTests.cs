@@ -122,9 +122,9 @@ public class UnlocksTests
         var commands = new UnlockCommands(console, unlocks);
 
         // Act
-        commands.Cmd_Unlock(["all"]);
-        commands.Cmd_Unlock([]);
-        commands.Cmd_Lock(["EP03"]);
+        commands.UnlockCommand(["all"]);
+        commands.UnlockCommand([]);
+        commands.LockCommand(["EP03"]);
 
         // Assert
         Assert.That(console.Scrollback, Has.Some.EqualTo("Unlocked 2 more"));
@@ -144,7 +144,7 @@ public class UnlocksTests
             Unlock = unlocks.Unlock,
             IsUnlocked = unlocks.IsUnlocked,
         };
-        scripts.Cmd_Lua(["x = 1"]);
+        scripts.LuaCommand(["x = 1"]);
 
         // Act
         scripts.Scripts!.Execute("print(game.unlocked('EP02'), game.unlock('EP02'), game.unlock('EP02'), game.unlocked('ep02'))");

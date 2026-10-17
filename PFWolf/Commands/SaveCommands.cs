@@ -13,18 +13,18 @@ internal sealed class SaveCommands(
 {
     internal void Register()
     {
-        console.Register("saves", "Lists the saved games, newest first, numbered for load.", "saves", Cmd_Saves);
+        console.Register("saves", "Lists the saved games, newest first, numbered for load.", "saves", SavesCommand);
         console.Register("autosave", "Whether each new level saves itself as it starts, to the Autosave.", "autosave [0|1]",
-            Cmd_AutoSave, complete: Values("0", "1"));
+            AutoSaveCommand, complete: Values("0", "1"));
         console.Register("save", "Saves the game. A name that's already saved is saved over; with none, it's a new save named for the level.",
-            "save [name]", Cmd_Save, InLevel | Solo, complete: CompleteSaveName);
-        console.Register("load", "Loads a saved game, by its number in saves or its name.", "load <number|name>", Cmd_Load, InLevel | Solo,
+            "save [name]", SaveCommand, InLevel | Solo, complete: CompleteSaveName);
+        console.Register("load", "Loads a saved game, by its number in saves or its name.", "load <number|name>", LoadCommand, InLevel | Solo,
             complete: CompleteSaveName);
     }
     internal IEnumerable<string> CompleteSaveName(string[] args, int index) =>
         index == 0 ? gameSaves.ListSaveGames().Select(s => s.Name).Distinct(StringComparer.OrdinalIgnoreCase) : [];
 
-    internal void Cmd_Saves(string[] args)
+    internal void SavesCommand(string[] args)
     {
         var saves = gameSaves.ListSaveGames();
         if (saves.Count == 0)
@@ -42,7 +42,7 @@ internal sealed class SaveCommands(
     }
 
 
-    internal void Cmd_AutoSave(string[] args)
+    internal void AutoSaveCommand(string[] args)
     {
         if (args.Length > 0)
             gameSaves.autosaveEnabled = ParseBool(args[0]);
@@ -65,7 +65,7 @@ internal sealed class SaveCommands(
             ?? throw new ArgumentException($"there's no save called \"{arg}\"; saves lists them");
     }
 
-    internal void Cmd_Save(string[] args)
+    internal void SaveCommand(string[] args)
     {
         var name = args.Length > 0 ? string.Join(' ', args) : playScreen.GetMapDisplayName(session.gamestate.mapon);
         if (name.Length > GameConstants.MaxGameName - 1)
@@ -83,7 +83,7 @@ internal sealed class SaveCommands(
         console.Print($"Saved \"{name}\" to {Path.GetFileName(path)}");
     }
 
-    internal void Cmd_Load(string[] args)
+    internal void LoadCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: load <number|name>");

@@ -300,11 +300,11 @@ internal static partial class GameHost
     internal static bool HandleAutomapKey(InputCode code) => automapInput.HandleAutomapKey(code);
     internal static void RouteMovementToAutomap() => automapInput.RouteMovementToAutomap();
 
-    private static void Cmd_AmStyle(string[] args) => automapInput.Cmd_AmStyle(args);
-    private static void Cmd_AmOverlay(string[] args) => automapInput.Cmd_AmOverlay(args);
-    private static void Cmd_AmGrid(string[] args) => automapInput.Cmd_AmGrid(args);
-    private static void Cmd_AmStats(string[] args) => automapInput.Cmd_AmStats(args);
-    private static void Cmd_AmReveal(string[] args) => automapInput.Cmd_AmReveal(args);
+    private static void AmStyleCommand(string[] args) => automapInput.AmStyleCommand(args);
+    private static void AmOverlayCommand(string[] args) => automapInput.AmOverlayCommand(args);
+    private static void AmGridCommand(string[] args) => automapInput.AmGridCommand(args);
+    private static void AmStatsCommand(string[] args) => automapInput.AmStatsCommand(args);
+    private static void AmRevealCommand(string[] args) => automapInput.AmRevealCommand(args);
 
     // ==== StatusBarParts =========================================================================
 

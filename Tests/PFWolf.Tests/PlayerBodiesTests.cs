@@ -135,13 +135,13 @@ public class PlayerBodiesTests
 
         // Act / Assert
         Assert.That(spectating.SpectateCandidates(), Is.EqualTo(new[] { first, second }));
-        spectating.Cmd_Spectate([]);
+        spectating.SpectateCommand([]);
         Assert.That(_session.camera.Target, Is.SameAs(first));
-        spectating.Cmd_Spectate(["next"]);
+        spectating.SpectateCommand(["next"]);
         Assert.That(_session.camera.Target, Is.SameAs(second));
-        spectating.Cmd_Spectate(["next"]);
+        spectating.SpectateCommand(["next"]);
         Assert.That(_session.camera.Target, Is.SameAs(first));      // round again
-        spectating.Cmd_Spectate(["player"]);
+        spectating.SpectateCommand(["player"]);
         Assert.That(console.Scrollback[^1], Is.EqualTo("Watching through your own eyes"));
     }
 }

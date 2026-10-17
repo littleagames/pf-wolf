@@ -96,13 +96,13 @@ public class AutomapInputTests
     public void The_Am_Commands_Set_And_Show_Its_Settings()
     {
         // Act / Assert
-        _keys.Cmd_AmGrid(["1"]);
+        _keys.AmGridCommand(["1"]);
         Assert.That((_automap.ShowGrid, _console.Scrollback[^1]), Is.EqualTo((true, "am_grid is 1")));
 
-        _keys.Cmd_AmStyle(["color"]);
+        _keys.AmStyleCommand(["color"]);
         Assert.That(_console.Scrollback[^1], Is.EqualTo("am_style is color"));
 
-        _keys.Cmd_AmReveal([]);
+        _keys.AmRevealCommand([]);
         Assert.That((_session.mapreveal != 0, _console.Scrollback[^1]), Is.EqualTo((true, "Automap reveal ON")));
     }
 }

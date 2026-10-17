@@ -209,7 +209,7 @@ internal sealed class PlayerUse(
         return true;
     }
 
-    internal void Cmd_Use()
+    internal void PressUse()
     {
         const int ANGLES = GameConstants.ANGLES;
         var playerinput = session.playerinput;

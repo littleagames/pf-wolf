@@ -61,11 +61,11 @@ internal sealed class HubActions(
         Entities.MapTriggerRegistry.Register("A_Teleport", TeleportAction);
         Entities.MapTriggerRegistry.Register("A_TeleportTag", TeleportTagAction);
         Entities.MapTriggerRegistry.Register("A_VictoryRun", VictoryRunAction);
-        Entities.Actors.ActorActionRegistry.Register("T_VictoryRun", T_VictoryRun);
+        Entities.Actors.ActorActionRegistry.Register("T_VictoryRun", ThinkVictoryRun);
 
         // A_UnlockFloor: the cluster's next floor up (by floor number) opens in the teleporter
         Entities.MapTriggerRegistry.Register("A_UnlockFloor", (_, args) => UnlockNextFloor(args.ElementAtOrDefault(0)));
-        Entities.Actors.ActorActionRegistry.Register("A_UnlockFloor", A_UnlockFloor);
+        Entities.Actors.ActorActionRegistry.Register("A_UnlockFloor", UnlockFloor);
 
         // A_DropDetonator("ArmedClass", "CubeClass"[, range]): the fission detonator, dropped by its slot key beside the floor's
         // security cube with the next floor still locked; it goes off a few seconds later, breaking the cube
@@ -274,7 +274,7 @@ internal sealed class HubActions(
     internal bool victoryRunning;
 
     /// <summary>T_VictoryRun: runs the way the player faced (Temp2); six tiles on from where it set off (Temp1, Temp3), or at a wall, the cluster is won</summary>
-    internal void T_VictoryRun(Entities.Actors.Actor ob)
+    internal void ThinkVictoryRun(Entities.Actors.Actor ob)
     {
         const int speed = 3000;
         double a = ob.Temp2 * Math.PI / 180;
@@ -318,7 +318,7 @@ internal sealed class HubActions(
         }
     }
 
-    void A_UnlockFloor(Entities.Actors.Actor ob, string[] args) => UnlockNextFloor(args.ElementAtOrDefault(0));
+    void UnlockFloor(Entities.Actors.Actor ob, string[] args) => UnlockNextFloor(args.ElementAtOrDefault(0));
 
     bool UnlockNextFloor(string? message)
     {

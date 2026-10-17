@@ -221,7 +221,7 @@ public class StealthTests
         guard.Suspicion = 300;
 
         // Act
-        _stealth.A_ShowPapers(null!);
+        _stealth.ShowPapers(null!);
 
         // Assert
         Assert.That(_papersRustles, Is.EqualTo(1));
@@ -239,7 +239,7 @@ public class StealthTests
         officer.Suspicion = 300;
 
         // Act
-        _stealth.A_ShowPapers(null!);
+        _stealth.ShowPapers(null!);
 
         // Assert
         Assert.That(_messages, Is.EqualTo(new[] { "Not fooled!" }));
@@ -322,12 +322,12 @@ public class StealthTests
         _session.playerstate.Undetected = false;
 
         // Act / Assert
-        _stealth.A_Disguise(rack, ["Uniform", "IDPapers", "Taken"]);
+        _stealth.Disguise(rack, ["Uniform", "IDPapers", "Taken"]);
         Assert.That(_messages, Is.EqualTo(new[] { "Alert" }));
         Assert.That(_inventory.Has("Uniform"), Is.False);
 
         guard.RuntimeFlags &= ~ObjFlags.AttackMode;
-        _stealth.A_Disguise(rack, ["Uniform", "IDPapers", "Taken"]);
+        _stealth.Disguise(rack, ["Uniform", "IDPapers", "Taken"]);
         Assert.That(_inventory.Has("Uniform") && _inventory.Has("IDPapers"), Is.True);
         Assert.That(_session.playerstate.Undetected, Is.True);
         Assert.That(_messages.Last(), Is.EqualTo("Uniform taken."));

@@ -16,10 +16,10 @@ internal sealed class VideoCommands(ConsoleManager console, VideoManager video, 
             args => ApplyVideo(s => s with { RenderScale = args.Length > 0 ? ParseInt(args[0], 1, 8) : throw new ArgumentException("usage: vid_scale <1-8>"), RenderSize = null, MatchWindow = false }),
             complete: Values("1", "2", "3", "4", "5", "6"));
         console.Register("vid_render", "Draws the game at any size and shape in place of 320x200 times vid_scale: auto follows the window (or the desktop when fullscreen); default goes back to vid_scale.",
-            "vid_render <width> <height> | auto | default", Cmd_VidRender, complete: Values("auto", "default"));
+            "vid_render <width> <height> | auto | default", VidRenderCommand, complete: Values("auto", "default"));
         console.Register("vid_uiscale", "How big the menus, text and status bar are: screen pixels to each of their 320x200 pixels (2.5 is fine), or auto for the most whole number that fits.",
-            "vid_uiscale <n|auto>", Cmd_VidUiScale, complete: Values("auto", "1", "1.5", "2", "2.5", "3", "4"));
-        console.Register("vid_window", "The window's size when it isn't fullscreen.", "vid_window <width> <height>", Cmd_VidWindow);
+            "vid_uiscale <n|auto>", VidUiScaleCommand, complete: Values("auto", "1", "1.5", "2", "2.5", "3", "4"));
+        console.Register("vid_window", "The window's size when it isn't fullscreen.", "vid_window <width> <height>", VidWindowCommand);
         console.Register("vid_vsync", "Waits for the display's refresh before showing each frame.", "vid_vsync [0|1]",
             args => ApplyVideo(s => s with { VSync = Toggle(args, s.VSync) }), complete: Values("0", "1"));
         console.Register("vid_aspect", "Shows the picture at 4:3, the shape it had on a CRT (1), or with square pixels (0).",
@@ -54,7 +54,7 @@ internal sealed class VideoCommands(ConsoleManager console, VideoManager video, 
         console.Print($"vsync {(s.VSync ? 1 : 0)}  aspect {(s.AspectCorrect ? 1 : 0)}  filter {s.Filter.ToString().ToLowerInvariant()}");
     }
 
-    private void Cmd_VidWindow(string[] args)
+    private void VidWindowCommand(string[] args)
     {
         if (args.Length < 2)
             throw new ArgumentException("usage: vid_window <width> <height>");
@@ -64,7 +64,7 @@ internal sealed class VideoCommands(ConsoleManager console, VideoManager video, 
         ApplyVideo(s => s with { WindowWidth = width, WindowHeight = height });
     }
 
-    private void Cmd_VidRender(string[] args)
+    private void VidRenderCommand(string[] args)
     {
         if (args.Length == 1 && args[0].Equals("default", StringComparison.OrdinalIgnoreCase))
         {
@@ -84,7 +84,7 @@ internal sealed class VideoCommands(ConsoleManager console, VideoManager video, 
         ApplyVideo(s => s with { RenderSize = (width, height), MatchWindow = false });
     }
 
-    private void Cmd_VidUiScale(string[] args)
+    private void VidUiScaleCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: vid_uiscale <n|auto>");

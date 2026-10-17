@@ -310,7 +310,7 @@ internal static partial class GameHost
 
         titleLoop = new TitleLoop(_gameEngineManager, _assetManager, _videoManager, _graphicManager, _inputManager, _audioManager, ui,
             signonPanel, titleScreens, highScoresScreen, demos, netGames, quickKeys, mainGameLoop, cheatCommands, warpRequest, session,
-            new TitleLoopHooks(() => param_nowait, () => INTROSONG,
+            new TitleLoopHooks(() => NoWait, () => INTROSONG,
                 (skill, episode, map) => NewGame(skill, episode, map)));
 
         // What the actors use of the game (Entities/Actors/ActorWorld.cs); the map hands it to each
@@ -363,7 +363,7 @@ internal static partial class GameHost
     //
     // Command line parameter variables
     //
-    internal static bool param_nowait = false;
+    internal static bool NoWait = false;
     static readonly WarpRequest warpRequest = new();    // --warp, --skill, --start
 
     /// <summary>Runs the game: what Main does (GameHost.cs)</summary>
@@ -377,7 +377,7 @@ internal static partial class GameHost
         // Relative mod paths are made full here, before GameFolder.Use can move away from the
         // folder they mean
         var (gameParams, modPaths) = StartupArgs.Parse(args, Console.Error);
-        param_nowait = gameParams.NoWait;
+        NoWait = gameParams.NoWait;
         GameFolder.Use();
 
         InitServices();

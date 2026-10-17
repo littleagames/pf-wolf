@@ -28,19 +28,19 @@ internal sealed class PlayerCommands(
     internal void Register()
     {
         console.Register("addplayer", $"Adds a co-op player beside you, who stands still until you take them over with controlplayer (up to {MAXPLAYERS}; testing without the network).",
-            "addplayer [class]", Cmd_AddPlayer, Cheat | InLevel, complete: (_, i) => i == 0 ? classes.PlayerClasses() : []);
+            "addplayer [class]", AddPlayerCommand, Cheat | InLevel, complete: (_, i) => i == 0 ? classes.PlayerClasses() : []);
         console.Register("controlplayer", "Makes another player yours: your view, status bar and controls.",
-            "controlplayer <n>", Cmd_ControlPlayer, Cheat | InLevel);
+            "controlplayer <n>", ControlPlayerCommand, Cheat | InLevel);
         console.Register("gamemode", "Shows or sets how the players play together: co-op, deathmatch, or a team mode (team-deathmatch, ctf, heist, domination, king-of-the-hill) or horde.",
-            "gamemode [mode [scorelimit]]", Cmd_GameMode, Cheat | InLevel, complete: (_, i) => i == 0 ? GameModes.NetModes.Select(m => m.Id()).ToList() : []);
+            "gamemode [mode [scorelimit]]", GameModeCommand, Cheat | InLevel, complete: (_, i) => i == 0 ? GameModes.NetModes.Select(m => m.Id()).ToList() : []);
         console.Register("match", "Shows the match being played: the mode, the score, the time left and the objective (whose flag's where, the wave).",
-            "match", Cmd_Match, InLevel);
+            "match", MatchCommand, InLevel);
         console.Register("setteam", "Puts you (or player n) on a team in a team game.",
-            "setteam <red|blue> [n]", Cmd_SetTeam, Cheat | InLevel, complete: (_, i) => i == 0 ? [.. GameModes.TeamNames] : []);
+            "setteam <red|blue> [n]", SetTeamCommand, Cheat | InLevel, complete: (_, i) => i == 0 ? [.. GameModes.TeamNames] : []);
     }
 
     /// <summary>`addplayer [class]`: a player who stands still (nothing drives them yet), beside you</summary>
-    internal void Cmd_AddPlayer(string[] args)
+    internal void AddPlayerCommand(string[] args)
     {
         if (session.players.Count >= MAXPLAYERS)
             throw new ArgumentException($"there can only be {MAXPLAYERS} players");
@@ -74,7 +74,7 @@ internal sealed class PlayerCommands(
     /// A team mode puts them on alternate teams (setteam changes it), in the teams' colors, and
     /// starts the mode's objective on this level.
     /// </summary>
-    internal void Cmd_GameMode(string[] args)
+    internal void GameModeCommand(string[] args)
     {
         if (args.Length > 0)
         {
@@ -96,7 +96,7 @@ internal sealed class PlayerCommands(
     }
 
     /// <summary>`match`: the mode, score, time left and objective, and each player's team and score</summary>
-    internal void Cmd_Match(string[] args)
+    internal void MatchCommand(string[] args)
     {
         var (score, news) = deathmatch.MatchStatus();
         console.Print($"Match: {session.gamemode.Id()}  {score}" + (news != null ? $"  |  {news}" : ""));
@@ -108,7 +108,7 @@ internal sealed class PlayerCommands(
     }
 
     /// <summary>`setteam &lt;red|blue&gt; [n]`: puts you (or player n) on a team, in its color</summary>
-    internal void Cmd_SetTeam(string[] args)
+    internal void SetTeamCommand(string[] args)
     {
         int team = args.Length > 0 ? Array.FindIndex(GameModes.TeamNames, t => t.Equals(args[0], StringComparison.OrdinalIgnoreCase)) : -1;
         if (team < 0)
@@ -130,7 +130,7 @@ internal sealed class PlayerCommands(
             p.Color = hooks.PlayerColor?.Invoke(GameModes.TeamNames[team]);
     }
     /// <summary>`controlplayer &lt;n&gt;`: your view, status bar and controls become player n's</summary>
-    internal void Cmd_ControlPlayer(string[] args)
+    internal void ControlPlayerCommand(string[] args)
     {
         if (args.Length == 0 || !int.TryParse(args[0], out var n) || n < 1 || n > session.players.Count)
             throw new ArgumentException($"usage: controlplayer <1-{session.players.Count}>");

@@ -582,7 +582,7 @@ internal sealed class GameScripts(
     =============================================================================
     */
 
-    internal void Cmd_Scripts(string[] args)
+    internal void ScriptsCommand(string[] args)
     {
         if (_scripts == null)
         {
@@ -596,7 +596,7 @@ internal sealed class GameScripts(
         console.Print(scriptActions.Count == 0 ? "No script actions" : $"Actions: {string.Join(", ", scriptActions)}");
     }
 
-    internal void Cmd_Lua(string[] args)
+    internal void LuaCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: lua <code>");

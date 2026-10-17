@@ -38,7 +38,7 @@ internal sealed class PlayerMovement(
     // The panel the player last ran into in TryMove, for ClipMove to slide along
     WallSpriteSpan? wallspriteblock;
 
-    /// <summary>The cardinal direction the player faces, as Cmd_Use reckons it</summary>
+    /// <summary>The cardinal direction the player faces, as PressUse reckons it</summary>
     internal static ControlDir FacingDir(int angle) =>
         angle < GameConstants.ANGLES / 8 || angle > 7 * GameConstants.ANGLES / 8 ? ControlDir.East
         : angle < 3 * GameConstants.ANGLES / 8 ? ControlDir.North

@@ -22,7 +22,7 @@ public class Wolf3dMapFileLoaderTests
         var dest = new ushort[3];
 
         // Act
-        EmptyLoader().CAL_CarmackExpand(Words(1, 2, 3), dest, 6);
+        EmptyLoader().CarmackExpand(Words(1, 2, 3), dest, 6);
 
         // Assert
         Assert.That(dest, Is.EqualTo(new ushort[] { 1, 2, 3 }));
@@ -36,7 +36,7 @@ public class Wolf3dMapFileLoaderTests
         var dest = new ushort[4];
 
         // Act
-        EmptyLoader().CAL_CarmackExpand(source, dest, 8);
+        EmptyLoader().CarmackExpand(source, dest, 8);
 
         // Assert
         Assert.That(dest, Is.EqualTo(new ushort[] { 0x1234, 0x5678, 0x1234, 0x5678 }));
@@ -50,7 +50,7 @@ public class Wolf3dMapFileLoaderTests
         var dest = new ushort[5];
 
         // Act
-        EmptyLoader().CAL_CarmackExpand(source, dest, 10);
+        EmptyLoader().CarmackExpand(source, dest, 10);
 
         // Assert
         Assert.That(dest, Is.EqualTo(new ushort[] { 10, 20, 30, 20, 30 }));
@@ -65,7 +65,7 @@ public class Wolf3dMapFileLoaderTests
         var dest = new ushort[1];
 
         // Act
-        EmptyLoader().CAL_CarmackExpand(source, dest, 2);
+        EmptyLoader().CarmackExpand(source, dest, 2);
 
         // Assert
         Assert.That(dest[0], Is.EqualTo((ushort)((tag << 8) | 0x42)));

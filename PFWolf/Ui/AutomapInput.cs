@@ -135,7 +135,7 @@ internal sealed class AutomapInput(
 
 
 
-    internal void Cmd_AmStyle(string[] args)
+    internal void AmStyleCommand(string[] args)
     {
         if (args.Length > 0)
         {
@@ -150,7 +150,7 @@ internal sealed class AutomapInput(
         console.Print($"am_style is {automap.Style.ToString().ToLowerInvariant()}");
     }
 
-    internal void Cmd_AmOverlay(string[] args)
+    internal void AmOverlayCommand(string[] args)
     {
         if (args.Length > 0)
             automap.Overlay = ParseBool(args[0]);
@@ -158,7 +158,7 @@ internal sealed class AutomapInput(
         console.Print($"am_overlay is {(automap.Overlay ? 1 : 0)}");
     }
 
-    internal void Cmd_AmGrid(string[] args)
+    internal void AmGridCommand(string[] args)
     {
         if (args.Length > 0)
             automap.ShowGrid = ParseBool(args[0]);
@@ -166,7 +166,7 @@ internal sealed class AutomapInput(
         console.Print($"am_grid is {(automap.ShowGrid ? 1 : 0)}");
     }
 
-    internal void Cmd_AmStats(string[] args)
+    internal void AmStatsCommand(string[] args)
     {
         if (args.Length > 0)
             automap.ShowStats = ParseBool(args[0]);
@@ -174,7 +174,7 @@ internal sealed class AutomapInput(
         console.Print($"am_stats is {(automap.ShowStats ? 1 : 0)}");
     }
 
-    internal void Cmd_AmReveal(string[] args)
+    internal void AmRevealCommand(string[] args)
     {
         session.mapreveal = (byte)(Toggle(args, session.mapreveal != 0) ? 1 : 0);
         console.Print(session.mapreveal != 0 ? "Automap reveal ON" : "Automap reveal OFF");

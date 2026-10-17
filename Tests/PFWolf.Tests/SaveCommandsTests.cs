@@ -29,6 +29,6 @@ public class SaveCommandsTests
     [Test]
     public void Load_Needs_A_Save_To_Load()
     {
-        Assert.Throws<ArgumentException>(() => _commands.Cmd_Load([]));
+        Assert.Throws<ArgumentException>(() => _commands.LoadCommand([]));
     }
 }

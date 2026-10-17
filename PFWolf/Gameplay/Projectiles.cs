@@ -33,7 +33,7 @@ internal sealed class Projectiles(
 
     // A_SpawnThing("Smoke"): spawns the given actor at this one's position (a rocket's smoke trail)
     // A_SpawnThing("GreenOoze", 128): with a chance, only that many times in 256
-    internal void A_SpawnThing(Entities.Actors.Actor ob, string[] args)
+    internal void SpawnThing(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
         {
@@ -49,7 +49,7 @@ internal sealed class Projectiles(
 
     // Terminal action for one-shot effects (Smoke, a rocket's Death): the legacy chain ended on a null
     // next state, which removed the object once its last frame's tics ran out.
-    internal void A_Remove(Entities.Actors.Actor ob) => map.MarkForRemoval(ob);
+    internal void Remove(Entities.Actors.Actor ob) => map.MarkForRemoval(ob);
 
     /*
     ===================
@@ -113,7 +113,7 @@ internal sealed class Projectiles(
     // min..max damage (just min without a max), and with the HURTMONSTERS flag so does hitting
     // an enemy. The roll scales one US_RndT() across the range, so a 32-wide range is exactly
     // the legacy (US_RndT()>>3) + base.
-    internal void A_Projectile(Entities.Actors.Actor ob, string[] args)
+    internal void Projectile(Entities.Actors.Actor ob, string[] args)
     {
         const long PROJECTILESIZE = GameConstants.PROJECTILESIZE;
         long deltax, deltay;

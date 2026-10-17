@@ -15,21 +15,21 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
         // binds (saved to binds.cfg on exit)
         //
         console.Register("bind", "Binds a key, mouse button, wheel turn or controller button to a command run when it's pressed in play, or shows its bind.",
-            "bind <key or button> [command]", Cmd_Bind, complete: CompleteBind);
-        console.Register("unbind", "Removes a key or button's bind.", "unbind <key or button>", Cmd_Unbind,
+            "bind <key or button> [command]", BindCommand, complete: CompleteBind);
+        console.Register("unbind", "Removes a key or button's bind.", "unbind <key or button>", UnbindCommand,
             complete: (_, i) => i == 0 ? console.Binds.Keys.Select(input => input.ToString()) : []);
         console.Register("unbindall", "Removes every bind.", "unbindall", _ =>
         {
             console.UnbindAll();
             console.Print("All binds removed");
         });
-        console.Register("binds", "Lists the key binds.", "binds", Cmd_Binds);
+        console.Register("binds", "Lists the key binds.", "binds", BindsCommand);
 
         //
         // controls (saved to controls.cfg on exit)
         //
         console.Register("bindaction", "Sets a control's keys and buttons: up to two keys, mouse buttons or wheel turns and one controller button. Lists them all with no control.",
-            "bindaction [control] [key|\"Mouse 1-5\"|\"Wheel Up\"|\"Pad A\"|\"Joy 1-32\"...|none]", Cmd_BindAction, complete: CompleteBindAction);
+            "bindaction [control] [key|\"Mouse 1-5\"|\"Wheel Up\"|\"Pad A\"|\"Joy 1-32\"...|none]", BindActionCommand, complete: CompleteBindAction);
         console.Register("resetcontrols", "Puts every control back to its default keys and buttons.", "resetcontrols", _ =>
         {
             controls.SetDefaults();
@@ -44,7 +44,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
         console.Register("m_invert", "Whether mouse look is upside down: pushing the mouse away looks down.",
             "m_invert [0|1]", args => ToggleOrShow("m_invert", args, ref settings.mouseinvert), complete: Values("0", "1"));
         console.Register("joy_sticks", "Which controller stick turns: the right (modern) or the left, with the right strafing (classic).",
-            "joy_sticks [modern|classic]", Cmd_JoySticks, complete: Values("modern", "classic"));
+            "joy_sticks [modern|classic]", JoySticksCommand, complete: Values("modern", "classic"));
     }
 
     IEnumerable<string> CompleteBind(string[] args, int index) => index switch
@@ -57,7 +57,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
     static IEnumerable<string> CompleteBindAction(string[] args, int index) =>
         index == 0 ? ControlAction.All.Select(action => action.Name) : ["none", .. InputCode.AllNames()];
 
-    private void Cmd_Bind(string[] args)
+    private void BindCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: bind <key or button> [command]");
@@ -84,7 +84,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
         console.Print($"\"{input}\" = \"{command}\"");
     }
 
-    private void Cmd_Unbind(string[] args)
+    private void UnbindCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: unbind <key or button>");
@@ -95,7 +95,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
             : $"\"{input}\" is not bound");
     }
 
-    private void Cmd_Binds(string[] args)
+    private void BindsCommand(string[] args)
     {
         if (console.Binds.Count == 0)
         {
@@ -107,7 +107,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
             console.Print($"\"{input}\" = \"{command}\"");
     }
 
-    private void Cmd_BindAction(string[] args)
+    private void BindActionCommand(string[] args)
     {
         if (args.Length == 0)
         {
@@ -169,7 +169,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
         console.Print($"{name} = {(setting ? 1 : 0)}");
     }
 
-    private void Cmd_JoySticks(string[] args)
+    private void JoySticksCommand(string[] args)
     {
         if (args.Length > 0)
         {

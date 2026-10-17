@@ -23,11 +23,11 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
 
     internal void Register()
     {
-        Entities.Actors.ActorActionRegistry.Register("A_SpawnProjectile", A_SpawnProjectile);
-        Entities.Actors.ActorActionRegistry.Register("A_Jump", A_Jump);
-        Entities.Actors.ActorActionRegistry.Register("A_JumpIfPlayerWithin", A_JumpIfPlayerWithin);
-        Entities.Actors.ActorActionRegistry.Register("A_JumpIfActorWithin", A_JumpIfActorWithin);
-        Entities.Actors.ActorActionRegistry.Register("A_JumpIfInSight", A_JumpIfInSight);
+        Entities.Actors.ActorActionRegistry.Register("A_SpawnProjectile", SpawnProjectileAction);
+        Entities.Actors.ActorActionRegistry.Register("A_Jump", Jump);
+        Entities.Actors.ActorActionRegistry.Register("A_JumpIfPlayerWithin", JumpIfPlayerWithin);
+        Entities.Actors.ActorActionRegistry.Register("A_JumpIfActorWithin", JumpIfActorWithin);
+        Entities.Actors.ActorActionRegistry.Register("A_JumpIfInSight", JumpIfInSight);
     }
 
     // Just beyond a wall's face for a projectile's box (ProjectileTryMove: PROJSIZE either way)
@@ -42,7 +42,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     /// `speed` (1/65536 tile a tic, default 0x2000, plus up to `speed.random` more) and `spread`
     /// (up to that many degrees either way, at random) apply, and its `attacksound` plays.
     /// </summary>
-    void A_SpawnProjectile(Entities.Actors.Actor ob, string[] args)
+    void SpawnProjectileAction(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
         {
@@ -104,7 +104,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     /// A_Jump(chance, "State"[, "State2"...]): chance times in 256, goes to one of the states
     /// (picked at random when there are several)
     /// </summary>
-    void A_Jump(Entities.Actors.Actor ob, string[] args)
+    void Jump(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length < 2 || !int.TryParse(args[0], out var chance) || session.random.RndT() >= chance)
             return;
@@ -116,7 +116,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     /// A_JumpIfPlayerWithin(tiles, "State"): goes to the state when a player is within that many
     /// tiles of it, each way (it may be a fraction: 1.5)
     /// </summary>
-    void A_JumpIfPlayerWithin(Entities.Actors.Actor ob, string[] args)
+    void JumpIfPlayerWithin(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length < 2 || !TryParseTiles(args[0], out var reach))
             return;
@@ -130,7 +130,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     /// counts too, other than another of its own class (Midnight Assault's landmine, set off by
     /// whoever steps on it)
     /// </summary>
-    void A_JumpIfActorWithin(Entities.Actors.Actor ob, string[] args)
+    void JumpIfActorWithin(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length < 2 || !TryParseTiles(args[0], out var reach))
             return;
@@ -151,7 +151,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     /// A_JumpIfInSight("State"[, tiles]): goes to the state when there's a clear line to a player
     /// (within that many tiles each way, if given). One in a wall only sees out of its face.
     /// </summary>
-    void A_JumpIfInSight(Entities.Actors.Actor ob, string[] args)
+    void JumpIfInSight(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length == 0)
             return;

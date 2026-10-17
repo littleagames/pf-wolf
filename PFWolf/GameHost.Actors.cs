@@ -96,12 +96,12 @@ internal static partial class GameHost
         Entities.Actors.BlakeMonster.RegisterActions();
 
         // Any actor's sounds, and the end of the game (Gameplay/ActorSounds.cs)
-        ActorActionRegistry.Register("A_DeathScream", A_DeathScream);
-        ActorActionRegistry.Register("A_ActiveSound", A_ActiveSound);
-        ActorActionRegistry.Register("A_PlaySound", A_PlaySound);
-        ActorActionRegistry.Register("A_Victory", A_Victory);
-        ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
-        ActorActionRegistry.Register("A_Quake", A_Quake);       // the view shakes (A_Quake, in GameHost.Rendering.cs)
+        ActorActionRegistry.Register("A_DeathScream", DeathScream);
+        ActorActionRegistry.Register("A_ActiveSound", ActiveSound);
+        ActorActionRegistry.Register("A_PlaySound", PlaySound);
+        ActorActionRegistry.Register("A_Victory", Victory);
+        ActorActionRegistry.Register("A_StartDeathCam", StartDeathCam);
+        ActorActionRegistry.Register("A_Quake", Quake);       // the view shakes (A_Quake, in GameHost.Rendering.cs)
         // A_MakeNoise: a noise, as a shot's: enemies in the areas joined to the player's come
         // (Midnight Assault's lights coming on: madenoise)
         ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => madenoise = true);
@@ -111,7 +111,7 @@ internal static partial class GameHost
         static int Amount(string[] args) => args.Length > 1 && int.TryParse(args[1], out var n) ? n : 1;
         ActorActionRegistry.Register("A_CompleteObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) objectives.Complete(args[0], Amount(args)); });
         ActorActionRegistry.Register("A_AddObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) objectives.Add(args[0], Amount(args)); });
-        ActorActionRegistry.Register("A_JumpIfObjectiveDone", (Entities.Actors.Actor ob, string[] args) => objectives.A_JumpIfObjectiveDone(ob, args));
+        ActorActionRegistry.Register("A_JumpIfObjectiveDone", (Entities.Actors.Actor ob, string[] args) => objectives.JumpIfObjectiveDone(ob, args));
         Entities.MapTriggerRegistry.Register("A_CompleteObjective", (_, args) => { if (args.Length == 0) return false; objectives.Complete(args[0], Amount(args)); return true; });
         Entities.MapTriggerRegistry.Register("A_AddObjective", (_, args) => { if (args.Length == 0) return false; objectives.Add(args[0], Amount(args)); return true; });
         // A_Unlock("name"[, "message"]): unlocks a name for good (Gameplay/Unlocks.cs: a starts-locked
@@ -123,39 +123,39 @@ internal static partial class GameHost
         }
         ActorActionRegistry.Register("A_Unlock", (Entities.Actors.Actor _, string[] args) => UnlockWithMessage(args));
         Entities.MapTriggerRegistry.Register("A_Unlock", (_, args) => { if (args.Length == 0) return false; UnlockWithMessage(args); return true; });
-        ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => mountedWeapons.A_Mount(ob, args));
-        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => latching.A_LatchBite(m, args));
-        ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => latching.A_LatchHurt(ob));
-        ActorActionRegistry.Register("A_ShakeOff", (Entities.Actors.Actor ob, string[] args) => latching.A_ShakeOff(ob, args));
-        ActorActionRegistry.Register("A_JumpIfLatched", (Entities.Actors.Actor ob, string[] args) => latching.A_JumpIfLatched(ob, args));
-        ActorActionRegistry.Register("A_LatchRelease", (Entities.Actors.Actor ob) => latching.A_LatchRelease(ob));
-        ActorActionRegistry.Register("A_ShowPapers", (Entities.Actors.Actor ob) => stealth.A_ShowPapers(ob));
-        ActorActionRegistry.Register("A_Disguise", (Entities.Actors.Actor ob, string[] args) => stealth.A_Disguise(ob, args));
+        ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => mountedWeapons.Mount(ob, args));
+        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => latching.LatchBite(m, args));
+        ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => latching.LatchHurt(ob));
+        ActorActionRegistry.Register("A_ShakeOff", (Entities.Actors.Actor ob, string[] args) => latching.ShakeOff(ob, args));
+        ActorActionRegistry.Register("A_JumpIfLatched", (Entities.Actors.Actor ob, string[] args) => latching.JumpIfLatched(ob, args));
+        ActorActionRegistry.Register("A_LatchRelease", (Entities.Actors.Actor ob) => latching.LatchRelease(ob));
+        ActorActionRegistry.Register("A_ShowPapers", (Entities.Actors.Actor ob) => stealth.ShowPapers(ob));
+        ActorActionRegistry.Register("A_Disguise", (Entities.Actors.Actor ob, string[] args) => stealth.Disguise(ob, args));
 
         // Goldfire's warp sites (Managers.LevelAI)
         ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => levelAI.WarpSiteGone());
         ActorActionRegistry.Register("A_WarpSitesOff", (Entities.Actors.Actor _) => levelAI.WarpSitesOff());
 
         // Projectiles and effects (Gameplay/Projectiles.cs).
-        ActorActionRegistry.Register("A_Projectile", A_Projectile);
-        ActorActionRegistry.Register("A_SpawnThing", A_SpawnThing);
-        ActorActionRegistry.Register("A_Remove", A_Remove);
+        ActorActionRegistry.Register("A_Projectile", Projectile);
+        ActorActionRegistry.Register("A_SpawnThing", SpawnThing);
+        ActorActionRegistry.Register("A_Remove", Remove);
 
         // BJ victory cutscene (Gameplay/BJVictory.cs): BJ walks the patrol arrows as a Monster.
-        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("T_BJRun", T_BJRun);
-        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("T_BJJump", T_BJJump);
-        ActorActionRegistry.Register("T_BJDone", T_BJDone);
+        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("T_BJRun", ThinkBjRun);
+        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("T_BJJump", ThinkBjJump);
+        ActorActionRegistry.Register("T_BJDone", ThinkBjDone);
 
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
-        ActorActionRegistry.Register("T_Player", T_Player);
-        ActorActionRegistry.Register("T_DeathCam", T_DeathCam);
-        ActorActionRegistry.Register("T_PlayerDead", T_PlayerDead);
+        ActorActionRegistry.Register("T_Player", ThinkPlayer);
+        ActorActionRegistry.Register("T_DeathCam", ThinkDeathCam);
+        ActorActionRegistry.Register("T_PlayerDead", ThinkPlayerDead);
 
         // The weapon in hand's states (Gameplay/WeaponInHand.cs).
         RegisterWeaponActions();
 
         // mapdefs trigger and switch actions, run when the player uses a trigger's tile or a
-        // switch wall (Cmd_Use) or steps onto a walk-over trigger (Thrust)
+        // switch wall (PressUse) or steps onto a walk-over trigger (Thrust)
         // A_PushWall("moving sound", "blocked sound"[, "direction", "message"]): either sound left
         // out is silent. With a direction (north, east, south or west) it only moves that way:
         // pushed from another side, it shows the message and plays the blocked sound instead
@@ -236,7 +236,7 @@ internal static partial class GameHost
                 stealth.Tick();                 // the suspicion meter
             }));
 
-    internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);
+    internal static void ThinkPlayer(Entities.Actors.Actor ob) => playerThink.ThinkPlayer(ob);
 
     // A weapon's scope (Gameplay/WeaponZoom.cs): the zoom key, the view's magnification and the scope's picture
     static WeaponZoom? _weaponZoom;
@@ -342,7 +342,7 @@ internal static partial class GameHost
     internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);
     static bool IsFreeFloor(int x, int y) => playersManager.IsFreeFloor(x, y);
     internal static void PlayerDies() => playersManager.PlayerDies();
-    internal static void T_PlayerDead(Entities.Actors.Actor ob) => playersManager.T_PlayerDead(ob);
+    internal static void ThinkPlayerDead(Entities.Actors.Actor ob) => playersManager.ThinkPlayerDead(ob);
     static void AddNetPlayer(Networking.NetJoin join) => playersManager.AddNetPlayer(join);
 
     // addplayer, gamemode and controlplayer (Commands/PlayerCommands.cs)
@@ -462,21 +462,21 @@ internal static partial class GameHost
             (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: false),
             PlaySoundLocActor, TakeDamage));
 
-    internal static void A_SpawnThing(Entities.Actors.Actor ob, string[] args) => projectiles.A_SpawnThing(ob, args);
-    internal static void A_Remove(Entities.Actors.Actor ob) => projectiles.A_Remove(ob);
+    internal static void SpawnThing(Entities.Actors.Actor ob, string[] args) => projectiles.SpawnThing(ob, args);
+    internal static void Remove(Entities.Actors.Actor ob) => projectiles.Remove(ob);
     internal static bool ProjectileTryMove(Entities.Actors.Actor ob) => projectiles.ProjectileTryMove(ob);
-    internal static void A_Projectile(Entities.Actors.Actor ob, string[] args) => projectiles.A_Projectile(ob, args);
+    internal static void Projectile(Entities.Actors.Actor ob, string[] args) => projectiles.Projectile(ob, args);
 
-    internal static void A_DeathScream(Entities.Actors.Actor ob) => actorSounds.A_DeathScream(ob);
+    internal static void DeathScream(Entities.Actors.Actor ob) => actorSounds.DeathScream(ob);
     internal static void PlayActorSound(Entities.Actors.Actor ob, string key) => actorSounds.PlayActorSound(ob, key);
-    internal static void A_ActiveSound(Entities.Actors.Actor ob) => actorSounds.A_ActiveSound(ob);
-    internal static void A_PlaySound(Entities.Actors.Actor ob, string[] args) => actorSounds.A_PlaySound(ob, args);
+    internal static void ActiveSound(Entities.Actors.Actor ob) => actorSounds.ActiveSound(ob);
+    internal static void PlaySound(Entities.Actors.Actor ob, string[] args) => actorSounds.PlaySound(ob, args);
 
     internal static void VictoryTile() => bjVictory.VictoryTile();
-    internal static void A_Victory(Entities.Actors.Actor ob) => bjVictory.A_Victory(ob);
-    internal static void T_BJRun(Entities.Actors.Monster ob) => bjVictory.T_BJRun(ob);
-    internal static void T_BJJump(Entities.Actors.Monster ob) => bjVictory.T_BJJump(ob);
-    internal static void T_BJDone(Entities.Actors.Actor ob) => bjVictory.T_BJDone(ob);
+    internal static void Victory(Entities.Actors.Actor ob) => bjVictory.Victory(ob);
+    internal static void ThinkBjRun(Entities.Actors.Monster ob) => bjVictory.ThinkBjRun(ob);
+    internal static void ThinkBjJump(Entities.Actors.Monster ob) => bjVictory.ThinkBjJump(ob);
+    internal static void ThinkBjDone(Entities.Actors.Actor ob) => bjVictory.ThinkBjDone(ob);
 
     // ==== WL_STATE ===============================================================================
 

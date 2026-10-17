@@ -37,7 +37,7 @@ internal sealed class PlayerThink(
     =
     ===============
     */
-    internal void T_Player(Entities.Actors.Actor ob)
+    internal void ThinkPlayer(Entities.Actors.Actor ob)
     {
         var gamestate = session.gamestate;
         var playerinput = session.playerinput;
@@ -63,7 +63,7 @@ internal sealed class PlayerThink(
             hooks.UpdateZoom(WeaponInHand.IsReloading(session.playerstate.WeaponSprite));
 
             if (playerinput.IsPressed(ButtonType.Use))
-                use.Cmd_Use();
+                use.PressUse();
             else
             {
                 levelAI.ResetTalkDelay();

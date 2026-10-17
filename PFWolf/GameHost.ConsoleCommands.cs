@@ -33,14 +33,14 @@ internal static partial class GameHost
         //
         Register("automap", "Opens or closes the automap.", "automap", _ => ToggleAutomap(), InLevel);
         Register("am_style", "How the automap draws the level: wall textures and sprites, or flat colors.",
-            "am_style [graphic|color]", Cmd_AmStyle, complete: Values("graphic", "color"));
+            "am_style [graphic|color]", AmStyleCommand, complete: Values("graphic", "color"));
         Register("am_overlay", "Whether the automap is drawn over the dimmed game view (1) or a solid backdrop (0).",
-            "am_overlay [0|1]", Cmd_AmOverlay, complete: Values("0", "1"));
+            "am_overlay [0|1]", AmOverlayCommand, complete: Values("0", "1"));
         Register("am_grid", "Whether the automap marks every tile edge with a faint grid when zoomed in.",
-            "am_grid [0|1]", Cmd_AmGrid, complete: Values("0", "1"));
+            "am_grid [0|1]", AmGridCommand, complete: Values("0", "1"));
         Register("am_stats", "Whether the automap shows the level's name, kills, treasure, secrets and time.",
-            "am_stats [0|1]", Cmd_AmStats, complete: Values("0", "1"));
-        Register("am_reveal", "Shows the whole map on the automap, seen or not.", "am_reveal [0|1]", Cmd_AmReveal, Cheat,
+            "am_stats [0|1]", AmStatsCommand, complete: Values("0", "1"));
+        Register("am_reveal", "Shows the whole map on the automap, seen or not.", "am_reveal [0|1]", AmRevealCommand, Cheat,
             complete: Values("0", "1"));
 
         //
@@ -55,16 +55,16 @@ internal static partial class GameHost
         factionCommands.Register();     // factions, setfaction, settranslation, translations, playercolor (Commands/FactionCommands.cs)
         levelEditCommands.Register();       // wallheight, sky, weather, fog, light(s), zone*, height, tag, patch, flat(s) (Commands/LevelEditCommands.cs)
         Register("spectate", "Watches through another actor's eyes while you play on: the next or previous enemy (default next), the next of a class, or back to the player. Not saved; each level starts on the player.",
-            "spectate [next|prev|player|<class>]", Cmd_Spectate, Cheat | InLevel,
+            "spectate [next|prev|player|<class>]", SpectateCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["next", "prev", "player", .. SpectateCandidates().Select(a => a.Name).Distinct()] : []);
         playerCommands.Register();      // addplayer, controlplayer, gamemode (Commands/PlayerCommands.cs)
 
         //
         // debugging aids and information
         //
-        Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", Cmd_Scripts);
+        Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", ScriptsCommand);
         Register("lua", "Runs Lua in the scripts' state (`me` is the player). Strings take 'single quotes'; separate statements with spaces, not ;.",
-            "lua <code>", Cmd_Lua, Cheat);
+            "lua <code>", LuaCommand, Cheat);
         new Commands.UnlockCommands(_consoleManager, unlocks, levelRecords).Register();     // unlock, lock, records (Commands/UnlockCommands.cs)
         demoCommands.Register();        // playdemo, demotest, recorddemo (Commands/DemoCommands.cs)
         saveCommands.Register();        // saves, autosave, save, load (Commands/SaveCommands.cs)

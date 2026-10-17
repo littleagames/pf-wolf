@@ -158,7 +158,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     /// that suspects the player: each is satisfied, unless its monster.papersfail says it isn't
     /// fooled, when the player's no longer unseen
     /// </summary>
-    internal void A_ShowPapers(Entities.Actors.Actor weapon)
+    internal void ShowPapers(Entities.Actors.Actor weapon)
     {
         hooks.PlayAttackSound();
         var playerstate = session.playerstate;
@@ -183,7 +183,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     /// A_Disguise("Disguise", "Papers"[, "State"]): see above. The disguise's pickupmessage and
     /// pickupsound go with it, and the thing used goes to the state.
     /// </summary>
-    internal void A_Disguise(Entities.Actors.Actor ob, string[] args)
+    internal void Disguise(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length < 2 || string.IsNullOrWhiteSpace(args[0]))
             return;

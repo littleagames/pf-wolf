@@ -195,7 +195,7 @@ internal sealed class PlayerDeath(
         }
     }
 
-    internal void A_StartDeathCam(Entities.Actors.Actor ob)
+    internal void StartDeathCam(Entities.Actors.Actor ob)
     {
         var language = assets.GetText("en-us");
         int dx, dy;
@@ -276,7 +276,7 @@ internal sealed class PlayerDeath(
     internal Entities.Actors.Actor? deathCamSprite;
 
     /// <summary>The player's think while on its DeathCam state: animates the banner.</summary>
-    internal void T_DeathCam(Entities.Actors.Actor ob)
+    internal void ThinkDeathCam(Entities.Actors.Actor ob)
     {
         deathCamSprite ??= inventory.CreateActor("DeathCam");
         if (deathCamSprite != null)

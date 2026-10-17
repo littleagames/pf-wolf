@@ -147,13 +147,13 @@ internal sealed class WeaponInHand(
 
     internal void Register()
     {
-        Entities.Actors.ActorActionRegistry.Register("A_WeaponReady", A_WeaponReady);
-        Entities.Actors.ActorActionRegistry.Register("A_GunAttack", A_GunAttack);
-        Entities.Actors.ActorActionRegistry.Register("A_FireBullet", A_FireBullet);
-        Entities.Actors.ActorActionRegistry.Register("A_HoldCharge", A_HoldCharge);
-        Entities.Actors.ActorActionRegistry.Register("A_CustomPunch", A_CustomPunch);
-        Entities.Actors.ActorActionRegistry.Register("A_ReFire", A_ReFire);
-        Entities.Actors.ActorActionRegistry.Register("A_Reload", A_Reload);
+        Entities.Actors.ActorActionRegistry.Register("A_WeaponReady", WeaponReady);
+        Entities.Actors.ActorActionRegistry.Register("A_GunAttack", GunAttack);
+        Entities.Actors.ActorActionRegistry.Register("A_FireBullet", FireBullet);
+        Entities.Actors.ActorActionRegistry.Register("A_HoldCharge", HoldCharge);
+        Entities.Actors.ActorActionRegistry.Register("A_CustomPunch", CustomPunch);
+        Entities.Actors.ActorActionRegistry.Register("A_ReFire", ReFire);
+        Entities.Actors.ActorActionRegistry.Register("A_Reload", Reload);
         registerMissileActions();
     }
 
@@ -164,7 +164,7 @@ internal sealed class WeaponInHand(
     /// a press of reload while it isn't full, if there's ammo to load. Otherwise a fresh press of
     /// fire starts the Fire state.
     /// </summary>
-    internal void A_WeaponReady(Entities.Actors.Actor weapon)
+    internal void WeaponReady(Entities.Actors.Actor weapon)
     {
         var playerstate = session.playerstate;
         var inHand = weapons.CanFire(playerstate.chosenweapon) ? playerstate.chosenweapon : weapons.BestWeapon(canFire: true);
@@ -198,7 +198,7 @@ internal sealed class WeaponInHand(
     /// fits or that many rounds. Given a state, it goes there while the magazine still has room
     /// and there's ammo left (a shotgun's shell-by-shell loop).
     /// </summary>
-    internal void A_Reload(Entities.Actors.Actor weapon, string[] args)
+    internal void Reload(Entities.Actors.Actor weapon, string[] args)
     {
         int? rounds = args.Length > 0 && int.TryParse(args[0], out var n) && n > 0 ? n : null;
         weapons.Reload(rounds);
@@ -212,7 +212,7 @@ internal sealed class WeaponInHand(
     /// the state, held there; let go, it carries on (Midnight Assault's grenade). A_FireMissile's
     /// "power" throws with it.
     /// </summary>
-    internal void A_HoldCharge(Entities.Actors.Actor weapon, string[] args)
+    internal void HoldCharge(Entities.Actors.Actor weapon, string[] args)
     {
         if (!session.playerinput.IsPressed(ButtonType.Attack) || args.Length == 0)
             return;
@@ -227,7 +227,7 @@ internal sealed class WeaponInHand(
     /// sights, for min..max whatever the distance (Midnight Assault's FireBullet; its zoomed sniper
     /// shot); silent, it alerts no one. Ammo and charge as A_GunAttack.
     /// </summary>
-    internal void A_FireBullet(Entities.Actors.Actor weapon, string[] args)
+    internal void FireBullet(Entities.Actors.Actor weapon, string[] args)
     {
         if (!weapons.IsLoaded(session.playerstate.weapon) || !weapons.TakeCharge())
             return;
@@ -243,7 +243,7 @@ internal sealed class WeaponInHand(
     /// (and, for a weapon.chargetics weapon, charge) for it. A hit deals a random 0-255 divided by
     /// near within 2 tiles, mid within 4 and far beyond (Wolf3D's 4, 6, 6 when left out).
     /// </summary>
-    internal void A_GunAttack(Entities.Actors.Actor weapon, string[] args)
+    internal void GunAttack(Entities.Actors.Actor weapon, string[] args)
     {
         if (!weapons.IsLoaded(session.playerstate.weapon) || !weapons.TakeCharge())
             return;
@@ -254,10 +254,10 @@ internal sealed class WeaponInHand(
 
     // A_CustomPunch(damage, ...): the arguments aren't read yet; KnifeAttack deals vanilla's
     // US_RndT() >> 4 (0-15), which is what weapons.yaml asks for.
-    internal void A_CustomPunch(Entities.Actors.Actor weapon) => attacks.KnifeAttack(session.player);
+    internal void CustomPunch(Entities.Actors.Actor weapon) => attacks.KnifeAttack(session.player);
 
     /// <summary>Fire still held and a round ready: back to Hold (or Fire, for a weapon without one).</summary>
-    internal void A_ReFire(Entities.Actors.Actor weapon)
+    internal void ReFire(Entities.Actors.Actor weapon)
     {
         if (!session.playerinput.IsPressed(ButtonType.Attack) || !weapons.IsLoaded(session.playerstate.weapon))
             return;

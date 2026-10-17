@@ -79,7 +79,7 @@ public class MountedWeaponsTests
         _pawn.Angle = 20;
 
         // Act
-        _mounted.A_Mount(_nest, ["NestGun", "nest/load"]);
+        _mounted.Mount(_nest, ["NestGun", "nest/load"]);
 
         // Assert
         Assert.That(_mounted.IsMounted, Is.True);
@@ -93,7 +93,7 @@ public class MountedWeaponsTests
     [Test]
     public void A_Mount_Without_A_Weapon_Class_Does_Nothing()
     {
-        _mounted.A_Mount(_nest, ["NoSuchGun"]);
+        _mounted.Mount(_nest, ["NoSuchGun"]);
         Assert.That(_mounted.IsMounted, Is.False);
         Assert.That((_pawn.TileX, _pawn.TileY), Is.EqualTo(((byte)10, (byte)10)));
     }
@@ -102,7 +102,7 @@ public class MountedWeaponsTests
     public void Getting_Off_Steps_Back_With_The_Weapon_They_Had()
     {
         // Arrange
-        _mounted.A_Mount(_nest, ["NestGun"]);
+        _mounted.Mount(_nest, ["NestGun"]);
 
         // Act
         bool wasOn = _mounted.TryDismount();
@@ -119,7 +119,7 @@ public class MountedWeaponsTests
     public void Getting_Off_Tries_The_Sides_Then_The_Front_When_Behind_Is_Blocked()
     {
         // Arrange: a wall behind and on the north side, a solid-free south side
-        _mounted.A_Mount(_nest, ["NestGun"]);
+        _mounted.Mount(_nest, ["NestGun"]);
         _map.tilemap[10, 10] = 1;
         _map.tilemap[11, 9] = 1;
 
@@ -134,7 +134,7 @@ public class MountedWeaponsTests
     public void With_Nowhere_To_Go_They_Stay_On_And_Are_Told()
     {
         // Arrange: walled in all round, and someone shootable standing where a wall isn't
-        _mounted.A_Mount(_nest, ["NestGun"]);
+        _mounted.Mount(_nest, ["NestGun"]);
         _map.tilemap[10, 10] = _map.tilemap[11, 9] = _map.tilemap[11, 11] = 1;
         var guard = new Monster { Name = "Guard" };
         guard.SetPosition(12, 10);
@@ -160,7 +160,7 @@ public class MountedWeaponsTests
     public void A_New_Level_Lets_Them_Off_Where_They_Are()
     {
         // Arrange
-        _mounted.A_Mount(_nest, ["NestGun"]);
+        _mounted.Mount(_nest, ["NestGun"]);
         _session.gamestate.mapon = "NEXTMAP";
 
         // Act

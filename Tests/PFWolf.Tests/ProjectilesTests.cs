@@ -85,7 +85,7 @@ public class ProjectilesTests
         _session.tics = 1;
 
         // Act
-        _projectiles.A_Projectile(needle, ["10"]);
+        _projectiles.Projectile(needle, ["10"]);
 
         // Assert
         Assert.That(needle.IsRemoved, Is.True);
@@ -102,7 +102,7 @@ public class ProjectilesTests
         int y = needle.Y;
 
         // Act
-        _projectiles.A_Projectile(needle, ["10"]);
+        _projectiles.Projectile(needle, ["10"]);
 
         // Assert
         Assert.That(needle.Y, Is.EqualTo(y - Tile));
@@ -125,7 +125,7 @@ public class ProjectilesTests
     public void A_Remove_Takes_The_Effect_Away()
     {
         var smoke = Needle();
-        _projectiles.A_Remove(smoke);
+        _projectiles.Remove(smoke);
         Assert.That(smoke.IsRemoved, Is.True);
     }
 }
@@ -147,7 +147,7 @@ public class ActorSoundsTests
         guard.Properties["deathsound"] = "guard/death";
 
         // Act
-        Sounds().A_DeathScream(guard);
+        Sounds().DeathScream(guard);
 
         // Assert
         Assert.That(_played, Is.EqualTo(new[] { "guard/death" }));
@@ -163,7 +163,7 @@ public class ActorSoundsTests
 
         // Act
         for (int i = 0; i < 30; i++)
-            sounds.A_DeathScream(guard);
+            sounds.DeathScream(guard);
 
         // Assert
         Assert.That(_played, Has.All.AnyOf("a", "b", "c"));
@@ -173,14 +173,14 @@ public class ActorSoundsTests
     [Test]
     public void One_Without_The_Sound_Is_Quiet()
     {
-        Sounds().A_DeathScream(new Monster { Name = "Ghost" });
+        Sounds().DeathScream(new Monster { Name = "Ghost" });
         Assert.That(_played, Is.Empty);
     }
 
     [Test]
     public void A_Positional_Sound_Comes_From_The_Actor()
     {
-        Sounds().A_PlaySound(new Monster { Name = "BJ" }, ["misc/yeah", "positional"]);
+        Sounds().PlaySound(new Monster { Name = "BJ" }, ["misc/yeah", "positional"]);
         Assert.That(_played, Is.EqualTo(new[] { "misc/yeah" }));
     }
 }
@@ -195,11 +195,11 @@ public class BJVictoryTests
         var victory = new BJVictory(null!, session);
 
         // Act / Assert
-        victory.T_BJDone(new Monster { Name = "BJVictory" });
+        victory.ThinkBjDone(new Monster { Name = "BJVictory" });
         Assert.That(session.playstate, Is.EqualTo(PlayState.Victorious));
 
         session.playstate = PlayState.StillPlaying;
-        victory.A_Victory(new Monster { Name = "Angel" });
+        victory.Victory(new Monster { Name = "Angel" });
         Assert.That(session.playstate, Is.EqualTo(PlayState.Victorious));
     }
 }

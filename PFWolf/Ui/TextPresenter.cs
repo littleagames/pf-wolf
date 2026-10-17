@@ -96,9 +96,9 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     const int TP_MARGIN = 1;
     const int TP_CURSOR_SAVES = 8;
 
-    const int fl_center = 0x0001, fl_boxshape = 0x0004, fl_shadowtext = 0x0008, fl_presenting = 0x0010,
-        fl_startofline = 0x0020, fl_upreleased = 0x0040, fl_dnreleased = 0x0080, fl_shadowpic = 0x0400,
-        fl_clearscback = 0x0800;
+    const int center = 0x0001, boxshape = 0x0004, shadowText = 0x0008, presenting = 0x0010,
+        startOfLine = 0x0020, upReleased = 0x0040, downReleased = 0x0080, shadowPic = 0x0400,
+        clearScBack = 0x0800;
 
     PresenterAsset? presenterAsset;
     PresenterAsset Presenter =>
@@ -129,7 +129,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
     int TpWidth(char ch) => tpfont?.Advance(ch) ?? 0;
     int TpFontHeight => tpfont?.Height ?? 8;
-    int TpShadowed => (tpflags & fl_shadowtext) != 0 ? 1 : 0;
+    int TpShadowed => (tpflags & shadowText) != 0 ? 1 : 0;
 
     /// <summary>
     /// A VGAGRAPH text as a presenter script: up to and including its ^XX, the end marker. Null
@@ -185,8 +185,8 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         return s + 2 - pos;
     }
 
-    /// <summary>Presents a script (TP_Presenter): prints it into its region, page by page</summary>
-    internal void TP_Presenter(PresenterInfo pi)
+    /// <summary>Presents a script (RunPresenter): prints it into its region, page by page</summary>
+    internal void RunPresenter(PresenterInfo pi)
     {
         tp = pi;
         if (pi.Pages.Count == 0)
@@ -229,7 +229,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
         tpfontnumber = pi.Font;
         tpfont = PresenterFont(tpfontnumber);
-        tpflags = fl_presenting | fl_startofline;
+        tpflags = presenting | startOfLine;
         if (TpAt(tppos) == TP_CONTROL)
             TpHandleCodes();
 
@@ -267,7 +267,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         if (!pi.Flags.HasFlag(PresenterFlags.UseCurrent))
             video.Bar(tpxl - TP_MARGIN, tpyl - TP_MARGIN, tpxh - tpxl + 1 + TP_MARGIN * 2, tpyh - tpyl + 1 + TP_MARGIN * 2, tpbg.ToString());
 
-        while ((tpflags & fl_presenting) != 0 && tppos <= tptext.Length)
+        while ((tpflags & presenting) != 0 && tppos <= tptext.Length)
         {
             if (TpAt(tppos) == TP_CONTROL)
                 TpHandleCodes();
@@ -284,7 +284,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     /// <summary>Prints as much of the line as fits, and moves to the next line where it should</summary>
     void TpWrapText()
     {
-        tpflags &= ~fl_startofline;
+        tpflags &= ~startOfLine;
 
         int skip = TpLineCommented(tppos);
         if (skip != 0)
@@ -322,7 +322,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         if (!newlineOnly)
         {
             var line = tptext[tppos..Math.Min(scan, tptext.Length)];
-            if (tpjustifyright && (tpflags & fl_center) == 0 && tpfont != null)
+            if (tpjustifyright && (tpflags & center) == 0 && tpfont != null)
             {
                 tpcurx = tpxh - tpfont.Measure(line) + 1;
                 if (tpcurx < tpxl)
@@ -341,7 +341,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             tppos = scan;
         }
 
-        tpflags &= ~fl_center;
+        tpflags &= ~center;
 
         // A wrapped line's space, and the line break
         if (TpAt(tppos) == ' ' && TpAt(tppos + 1) != ' ')
@@ -393,9 +393,9 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     void TpHandleCodes()
     {
         if (TpAt(tppos - 2) == TP_RETURN && TpAt(tppos - 1) == '\n')
-            tpflags |= fl_startofline;
+            tpflags |= startOfLine;
 
-        while (TpAt(tppos) == TP_CONTROL && (tpflags & fl_presenting) != 0)
+        while (TpAt(tppos) == TP_CONTROL && (tpflags & presenting) != 0)
         {
             var code = $"{TpAt(tppos + 1)}{TpAt(tppos + 2)}";
             tppos += 3;
@@ -426,7 +426,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                         // margin, so it starts the next line from the left instead
                         int room = tpxh - tpcurx + 1 - length;
                         tpcurx = room >= 0 ? tpcurx + room / 2 : tpxh + 1;
-                        tpflags |= fl_center;
+                        tpflags |= center;
                         break;
                     }
 
@@ -495,16 +495,16 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                     break;
 
                 case "ST":
-                    tpflags = value != 0 ? tpflags | fl_shadowtext : tpflags & ~fl_shadowtext;
+                    tpflags = value != 0 ? tpflags | shadowText : tpflags & ~shadowText;
                     break;
                 case "SP":
-                    tpflags = value != 0 ? tpflags | fl_shadowpic : tpflags & ~fl_shadowpic;
+                    tpflags = value != 0 ? tpflags | shadowPic : tpflags & ~shadowPic;
                     break;
                 case "BX":
-                    tpflags = value != 0 ? tpflags | fl_boxshape : tpflags & ~fl_boxshape;
+                    tpflags = value != 0 ? tpflags | boxshape : tpflags & ~boxshape;
                     break;
                 case "SB":
-                    tpflags = value != 0 ? tpflags | fl_clearscback : tpflags & ~fl_clearscback;
+                    tpflags = value != 0 ? tpflags | clearScBack : tpflags & ~clearScBack;
                     break;
 
                 case "LM":
@@ -559,7 +559,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                     break;
 
                 case "XX":
-                    tpflags &= ~fl_presenting;
+                    tpflags &= ~presenting;
                     video.Update();
                     break;
 
@@ -567,7 +567,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             }
         }
 
-        if (TpAt(tppos) == TP_RETURN && TpAt(tppos + 1) == '\n' && (tpflags & fl_startofline) != 0)
+        if (TpAt(tppos) == TP_RETURN && TpAt(tppos + 1) == '\n' && (tpflags & startOfLine) != 0)
             tppos += 2;
     }
 
@@ -630,7 +630,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             video.MemToScreen(shape.Pixels, shape.Width, shape.Height, x, y);
         else
         {
-            if ((tpflags & fl_clearscback) != 0)
+            if ((tpflags & clearScBack) != 0)
                 video.Bar(x, y, shape.Width, shape.Height, tpbg.ToString());
             video.DrawImageRegion(shape.Pixels, shape.Mask, shape.Width, 0, 0, shape.Width, shape.Height, x, y);
         }
@@ -644,7 +644,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             return 0;
 
         int x2 = x1 + shape.Width - 1, y2 = y1 + shape.Height - 1;
-        if ((tpflags & fl_boxshape) != 0)
+        if ((tpflags & boxshape) != 0)
         {
             x1--;
             x2++;
@@ -659,7 +659,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             }
         }
 
-        if ((tpflags & fl_shadowpic) != 0)
+        if ((tpflags & shadowPic) != 0)
         {
             x2++;
             y2++;
@@ -679,7 +679,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         tplastx = tpcurx;
         tplasty = tpcury;
 
-        if ((tpflags & fl_shadowtext) != 0)
+        if ((tpflags & shadowText) != 0)
             TpShadowPrint(text, tpfontcolor == tpbg ? tpbg : tpsh);
         else
             TpDraw(text, tpfontcolor);
@@ -730,7 +730,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                 {
                     TpPrint(text[(i + 1)..]);
                     video.Update();
-                    tpflags &= ~fl_presenting;
+                    tpflags &= ~presenting;
                     return;
                 }
             }
@@ -749,7 +749,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         input.Ack();
         tp.Escaped = input.GetLastKeyPressed() == ScanCodes.Escape;
         if (tp.Escaped)
-            tpflags &= ~fl_presenting;
+            tpflags &= ~presenting;
 
         tpcurx = tpxl;
         video.Bar(tpcurx, tpcury, tpxh - tpxl + 1 + TP_MARGIN * 2, TpFontHeight + TpShadowed, tpbg.ToString());
@@ -763,7 +763,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             video.FadeIn();
 
         input.ClearKeysDown();
-        tpflags |= fl_upreleased | fl_dnreleased;
+        tpflags |= upReleased | downReleased;
         while (true)
         {
             GameEngineManager.DelayMs(5);
@@ -778,44 +778,44 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                 && (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter)))
             {
                 tp.Escaped = false;
-                tpflags &= ~fl_presenting;
+                tpflags &= ~presenting;
                 break;
             }
 
             if (ci.button1 || input.IsKeyDown(ScanCodes.Escape))
             {
                 tp.Escaped = true;
-                tpflags &= ~fl_presenting;
+                tpflags &= ~presenting;
                 break;
             }
 
             if ((dir == Direction.North || dir == Direction.West) && tp.PageNum > 0)
             {
-                if ((tpflags & fl_upreleased) != 0)
+                if ((tpflags & upReleased) != 0)
                 {
                     tp.PageNum--;
-                    tpflags &= ~fl_upreleased;
+                    tpflags &= ~upReleased;
                     break;
                 }
             }
             else
             {
-                tpflags |= fl_upreleased;
+                tpflags |= upReleased;
                 if ((dir == Direction.South || dir == Direction.East) && tp.PageNum < tp.Pages.Count - 1)
                 {
-                    if ((tpflags & fl_dnreleased) != 0)
+                    if ((tpflags & downReleased) != 0)
                     {
                         tp.PageNum++;
-                        tpflags &= ~fl_dnreleased;
+                        tpflags &= ~downReleased;
                         break;
                     }
                 }
                 else
-                    tpflags |= fl_dnreleased;
+                    tpflags |= downReleased;
             }
         }
 
-        if ((tpflags & fl_presenting) == 0)
+        if ((tpflags & presenting) == 0)
         {
             input.ClearKeysDown();
             return;
@@ -830,7 +830,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         if (TpAt(tppos) == TP_CONTROL)
         {
             TpHandleCodes();
-            tpflags &= ~fl_startofline;
+            tpflags &= ~startOfLine;
         }
         video.Bar(tpxl, tpyl, tpxh - tpxl + 1, tpyh - tpyl + 1, tpbg.ToString());
         TpPrintPageNumber();
@@ -909,7 +909,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         };
         pi.X2 = pi.X1 + w2 - 3;
         pi.Y2 = pi.Y1 + height - 1;
-        TP_Presenter(pi);
+        RunPresenter(pi);
     }
 
     /// <summary>
@@ -935,7 +935,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         video.Update();
         video.FadeIn();
 
-        TP_Presenter(new PresenterInfo
+        RunPresenter(new PresenterInfo
         {
             Flags = PresenterFlags.UseCurrent | PresenterFlags.ShowCursor | PresenterFlags.ScrollRegion
                 | PresenterFlags.Continue | PresenterFlags.TermSound | PresenterFlags.Abortable,
@@ -997,7 +997,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             PageX = briefing.PageX ?? -1,
             PageY = briefing.PageY,
         };
-        TP_Presenter(pi);
+        RunPresenter(pi);
 
         video.FadeOut();
         input.ClearKeysDown();
@@ -1010,7 +1010,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         if (PresenterScript(text.Script) is not { } script)
             return;
 
-        TP_Presenter(new PresenterInfo
+        RunPresenter(new PresenterInfo
         {
             Flags = PresenterFlags.CacheNoGfx,
             Script = script,

@@ -127,7 +127,7 @@ internal sealed class Scoreboard(
     }
 
     /// <summary>`scoreboard`: shows or hides the scoreboard over the view (bind it to a key)</summary>
-    internal void Cmd_Scoreboard(string[] args)
+    internal void ScoreboardCommand(string[] args)
     {
         showscoreboard = args.Length > 0 ? args[0] == "1" : !showscoreboard;
     }

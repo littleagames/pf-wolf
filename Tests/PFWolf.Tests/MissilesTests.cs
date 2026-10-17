@@ -115,9 +115,9 @@ public class MissilesTests
         var barrier = new Monster { Name = "Barrier", TileX = 5, TileY = 6 };
 
         // Act / Assert
-        _missiles.A_BlockTile(barrier);
+        _missiles.BlockTile(barrier);
         Assert.That(_map.actorat[5, 6], Is.TypeOf<BlockingActor>());
-        _missiles.A_UnblockTile(barrier);
+        _missiles.UnblockTile(barrier);
         Assert.That(_map.actorat[5, 6], Is.Null);
     }
 
@@ -130,8 +130,8 @@ public class MissilesTests
         _map.actorat[5, 6] = wall;
 
         // Act
-        _missiles.A_BlockTile(barrier);
-        _missiles.A_UnblockTile(barrier);
+        _missiles.BlockTile(barrier);
+        _missiles.UnblockTile(barrier);
 
         // Assert
         Assert.That(_map.actorat[5, 6], Is.SameAs(wall));
@@ -192,7 +192,7 @@ public class MissilesTests
         var blast = new Monster { Name = "Rocket", X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10 };
 
         // Act
-        _missiles.A_Explode(blast, ["600", "600", "3", "hurtplayer", "falloff", "playermax:150"]);
+        _missiles.Explode(blast, ["600", "600", "3", "hurtplayer", "falloff", "playermax:150"]);
 
         // Assert
         Assert.That(_playerHurts, Is.EqualTo(hurt > 0 ? new[] { hurt } : Array.Empty<int>()));
@@ -207,7 +207,7 @@ public class MissilesTests
         var blast = new Monster { Name = "Rocket", X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10 };
 
         // Act
-        _missiles.A_Explode(blast, ["100", "100", "2", "hurtplayer"]);
+        _missiles.Explode(blast, ["100", "100", "2", "hurtplayer"]);
 
         // Assert
         Assert.That(_playerHurts, Is.EqualTo(new[] { 100 }));
@@ -281,7 +281,7 @@ public class MissilesTests
         var fence = new Monster { Name = "Fence", X = _session.player.X + Tile, Y = _session.player.Y };
 
         // Act
-        _missiles.A_ShockNearby(fence, ["5", "1.5", "256", "zap"]);
+        _missiles.ShockNearby(fence, ["5", "1.5", "256", "zap"]);
 
         // Assert
         Assert.That(_session.playerstate.health, Is.EqualTo(95));
@@ -295,12 +295,12 @@ public class MissilesTests
         var fence = new Monster { Name = "Fence", X = _session.player.X + 2 * Tile, Y = _session.player.Y };
 
         // Act / Assert
-        _missiles.A_ShockNearby(fence, ["5", "1.5", "256"]);
+        _missiles.ShockNearby(fence, ["5", "1.5", "256"]);
         Assert.That(_session.playerstate.health, Is.EqualTo(100));
 
         fence.X = _session.player.X;
         _died = true;
-        _missiles.A_ShockNearby(fence, ["5", "1.5", "256"]);
+        _missiles.ShockNearby(fence, ["5", "1.5", "256"]);
         Assert.That(_session.playerstate.health, Is.EqualTo(100));
     }
 }

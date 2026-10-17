@@ -212,7 +212,7 @@ internal sealed class Players(
     }
 
     /// <summary>A dead player's think: turning to face their killer, sinking, and waiting to come back</summary>
-    internal void T_PlayerDead(Entities.Actors.Actor ob)
+    internal void ThinkPlayerDead(Entities.Actors.Actor ob)
     {
         var playerstate = session.playerstate;
         var player = session.player;

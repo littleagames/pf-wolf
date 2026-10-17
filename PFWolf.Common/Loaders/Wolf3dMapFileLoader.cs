@@ -173,7 +173,7 @@ public class Wolf3dMapFileLoader
                 else
                 {
                     var buffer2seg = new ushort[expanded / sizeof(ushort)]; // might be byte[expanded]
-                    CAL_CarmackExpand(bufferseg.Skip(sizeof(ushort)).ToArray(), buffer2seg, expanded);
+                    CarmackExpand(bufferseg.Skip(sizeof(ushort)).ToArray(), buffer2seg, expanded);
                     rlewseg = buffer2seg.Skip(1).ToArray();
                 }
                 RlewExpand(rlewseg, out ushort[] dest, size, _rlewTag);
@@ -191,7 +191,7 @@ public class Wolf3dMapFileLoader
         }
     }
 
-    internal void CAL_CarmackExpand(byte[] source, ushort[] dest, int length)
+    internal void CarmackExpand(byte[] source, ushort[] dest, int length)
     {
         ushort ch, chhigh, count, offset;
         int inptr = 0, outptr = 0, copyptr = 0;

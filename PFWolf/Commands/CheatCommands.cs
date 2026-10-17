@@ -36,32 +36,32 @@ internal sealed class CheatCommands(
 {
     internal void Register()
     {
-        console.Register("god", "God mode: 1 = on, 2 = on without the damage flash.", "god [0|1|2]", Cmd_God, Cheat | InLevel,
+        console.Register("god", "God mode: 1 = on, 2 = on without the damage flash.", "god [0|1|2]", GodCommand, Cheat | InLevel,
             complete: Values("0", "1", "2"));
-        console.Register("noclip", "Walk through walls.", "noclip [0|1]", Cmd_Noclip, Cheat | InLevel,
+        console.Register("noclip", "Walk through walls.", "noclip [0|1]", NoclipCommand, Cheat | InLevel,
             complete: Values("0", "1"));
         console.Register("give", "Gives an item (weapon, ammo, key or armor), or health, points, keys, weapons, ammo or all.",
-            "give <item|health|points|keys|weapons|ammo|all> [amount]", Cmd_Give, Cheat | InLevel,
+            "give <item|health|points|keys|weapons|ammo|all> [amount]", GiveCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["all", "health", "points", "keys", "weapons", "ammo", .. GivableItems()] : []);
-        console.Register("map", "Warps to a level.", "map <MAP##>", Cmd_Map, Cheat | InLevel, aliases: ["warp"],
+        console.Register("map", "Warps to a level.", "map <MAP##>", MapCommand, Cheat | InLevel, aliases: ["warp"],
             complete: (_, i) => i == 0 ? engine.GetGameInfo().Maps.Keys : []);
         console.Register("exitlevel", "Completes the current level.", "exitlevel",
             _ => session.playstate = PlayState.Completed, Cheat | InLevel);
-        console.Register("tp", "Teleports to a tile.", "tp <tilex> <tiley> [angle]", Cmd_Teleport, Cheat | InLevel);
-        console.Register("killall", "Kills every enemy on the level.", "killall", Cmd_KillAll, Cheat | InLevel);
+        console.Register("tp", "Teleports to a tile.", "tp <tilex> <tiley> [angle]", TeleportCommand, Cheat | InLevel);
+        console.Register("killall", "Kills every enemy on the level.", "killall", KillAllCommand, Cheat | InLevel);
         console.Register("diag", "Makes a wall tile (default: the one you face) a 45 degree wall, named by its solid corner.",
-            "diag <square|solidnw|solidne|solidsw|solidse> [tilex tiley]", Cmd_Diag, Cheat | InLevel,
+            "diag <square|solidnw|solidne|solidsw|solidse> [tilex tiley]", DiagCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? Enum.GetNames<WallShape>().Select(n => n.ToLowerInvariant()) : []);
         console.Register("summon", "Spawns an actor on an open tile (default: the one you face), facing an angle (default: back at you).",
-            "summon <class> [angle] [tilex tiley]", Cmd_Summon, Cheat | InLevel,
+            "summon <class> [angle] [tilex tiley]", SummonCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? assets.GetActorMetadata().Actors.Keys : i == 1 ? ["0", "45", "90", "135", "180", "225", "270", "315"] : []);
         console.Register("pitch", "Looks up (positive) or down (negative) by that many degrees, as far as the view allows; 0 looks straight ahead.",
-            "pitch [degrees]", Cmd_Pitch, InLevel);
+            "pitch [degrees]", PitchCommand, InLevel);
         console.Register("eyeheight", $"Sets how high the view is above the floor, in texels (64 a story, {GameConstants.EYEDEFAULT} standing), until the level is left or reloaded.",
-            $"eyeheight [{GameConstants.MINEYE}-{GameConstants.MAXEYE}]", Cmd_EyeHeight, InLevel);
-        console.Register("hurt", "Damages the player.", "hurt [points]", Cmd_Hurt, InLevel | Solo);
+            $"eyeheight [{GameConstants.MINEYE}-{GameConstants.MAXEYE}]", EyeHeightCommand, InLevel);
+        console.Register("hurt", "Damages the player.", "hurt [points]", HurtCommand, InLevel | Solo);
         console.Register("playerclass", "Shows the class being played as and the classes there are; with a name, the class new games are played as.",
-            "playerclass [class]", Cmd_PlayerClass, complete: (_, i) => i == 0 ? classRules.PlayerClasses() : []);
+            "playerclass [class]", PlayerClassCommand, complete: (_, i) => i == 0 ? classRules.PlayerClasses() : []);
     }
     /// <summary>The item classes `give` accepts by name (see GiveItem).</summary>
     internal IEnumerable<string> GivableItems() =>
@@ -69,7 +69,7 @@ internal sealed class CheatCommands(
             .SelectMany(inventory.GetClassesDerivedFrom)
             .Where(item => inventory.FindClass(item, "WeaponGiver") == null);
 
-    internal void Cmd_God(string[] args)
+    internal void GodCommand(string[] args)
     {
         // 0 = off, 1 = on, 2 = on without the damage flash (ApplyDamageToPlayer)
         session.godmode = (byte)(args.Length > 0 ? ParseInt(args[0], 0, 2) : session.godmode == 0 ? 1 : 0);
@@ -82,13 +82,13 @@ internal sealed class CheatCommands(
         });
     }
 
-    internal void Cmd_Noclip(string[] args)
+    internal void NoclipCommand(string[] args)
     {
         session.noclip = (byte)(Toggle(args, session.noclip != 0) ? 1 : 0);
         console.Print(session.noclip != 0 ? "No clipping ON" : "No clipping OFF");
     }
 
-    internal void Cmd_Pitch(string[] args)
+    internal void PitchCommand(string[] args)
     {
         double max = frame.MaxPitch();
         if (args.Length > 0)
@@ -100,7 +100,7 @@ internal sealed class CheatCommands(
         console.Print($"Pitch is {session.playerstate.Pitch:0.#} degrees (up to {max:0.#} either way)");
     }
 
-    internal void Cmd_EyeHeight(string[] args)
+    internal void EyeHeightCommand(string[] args)
     {
         if (args.Length > 0)
         {
@@ -111,7 +111,7 @@ internal sealed class CheatCommands(
         console.Print($"Eye height is {session.playerstate.EyeZ} ({GameConstants.MINEYE}-{GameConstants.MAXEYE}, 64 a story, {GameConstants.EYEDEFAULT} standing)");
     }
 
-    internal void Cmd_PlayerClass(string[] args)
+    internal void PlayerClassCommand(string[] args)
     {
         var classes = classRules.PlayerClasses();
         if (args.Length > 0)
@@ -127,7 +127,7 @@ internal sealed class CheatCommands(
         console.Print($"Classes: {string.Join(", ", classes)}");
     }
 
-    internal void Cmd_Give(string[] args)
+    internal void GiveCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("give what? e.g. give all, give health 50, give GoldKey");
@@ -216,7 +216,7 @@ internal sealed class CheatCommands(
             inventory.Give(key, 1);
     }
 
-    internal void Cmd_Map(string[] args)
+    internal void MapCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("which map? type \"maps\" for a list");
@@ -229,7 +229,7 @@ internal sealed class CheatCommands(
         session.playstate = PlayState.Warped;
     }
 
-    internal void Cmd_Teleport(string[] args)
+    internal void TeleportCommand(string[] args)
     {
         if (args.Length < 2)
             throw new ArgumentException("usage: tp <tilex> <tiley> [angle]");
@@ -272,7 +272,7 @@ internal sealed class CheatCommands(
         return true;
     }
 
-    internal void Cmd_Diag(string[] args)
+    internal void DiagCommand(string[] args)
     {
         if (args.Length == 0 || !Enum.TryParse<WallShape>(args[0], ignoreCase: true, out var shape)
             || !Enum.IsDefined(shape))
@@ -290,7 +290,7 @@ internal sealed class CheatCommands(
         console.Print($"Tile {x},{y} is now {shape} (plane 1: {marker})");
     }
 
-    internal void Cmd_Summon(string[] args)
+    internal void SummonCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: summon <class> [angle] [tilex tiley]");
@@ -322,7 +322,7 @@ internal sealed class CheatCommands(
         console.Print($"Spawned {className} at {x},{y} facing {angle}{targets.WallSpriteDescription(actor.Value)}");
     }
 
-    internal void Cmd_KillAll(string[] args)
+    internal void KillAllCommand(string[] args)
     {
         // Snapshot first: Kill can drop items, which adds to the actor list.
         var enemies = mapManager.GetActors().OfType<Entities.Actors.Monster>()
@@ -335,7 +335,7 @@ internal sealed class CheatCommands(
         console.Print($"Killed {enemies.Count} enemies");
     }
 
-    internal void Cmd_Hurt(string[] args)
+    internal void HurtCommand(string[] args)
     {
         stats.TakeDamage(args.Length > 0 ? ParseInt(args[0], 1, 1000) : 16, null!);
         console.Print($"Health is {session.playerstate.health}, armor {session.playerstate.armor} ({session.playerstate.armorpercent}%)");

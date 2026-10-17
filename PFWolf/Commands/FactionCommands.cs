@@ -15,20 +15,20 @@ internal sealed class FactionCommands(
     internal void Register()
     {
         console.Register("factions", "Lists the factions (factions.yaml), how each treats the others, and who's on each in the level.",
-            "factions", Cmd_Factions);
+            "factions", FactionsCommand);
         console.Register("setfaction", "Puts the nearest living enemy, or every actor of a class, on a faction (for trying factions out).",
-            "setfaction <faction> [class]", Cmd_SetFaction, Cheat | InLevel,
+            "setfaction <faction> [class]", SetFactionCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? factions.Table.Names : i == 1 ? assets.GetActorMetadata().Actors.Keys : []);
         console.Register("settranslation", "Draws the nearest living enemy, or every actor of a class, through a color translation (translations.yaml); none goes back to its own (or its faction's).",
-            "settranslation <translation|none> [class]", Cmd_SetTranslation, Cheat | InLevel,
+            "settranslation <translation|none> [class]", SetTranslationCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? translations.Names.Append("none") : i == 1 ? assets.GetActorMetadata().Actors.Keys : []);
         console.Register("translations", "Lists the color translations (translations.yaml).", "translations",
             _ => console.Print(string.Join(", ", translations.Names.DefaultIfEmpty("(none)"))));
         console.Register("playercolor", "Shows a player (default: you) in a color (a translation, as game-info player-colors offers); none for their class's own.",
-            "playercolor <color|none> [n]", Cmd_PlayerColor, Cheat | InLevel,
+            "playercolor <color|none> [n]", PlayerColorCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? translations.Names.Append("none") : []);
     }
-    internal void Cmd_Factions(string[] args)
+    internal void FactionsCommand(string[] args)
     {
         var table = factions.Table;
 
@@ -59,7 +59,7 @@ internal sealed class FactionCommands(
         }
     }
 
-    internal void Cmd_SetFaction(string[] args)
+    internal void SetFactionCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: setfaction <faction> [class]");
@@ -75,7 +75,7 @@ internal sealed class FactionCommands(
             : $"{chosen.Count} {chosen[0].Name}s are now {faction}");
     }
 
-    internal void Cmd_SetTranslation(string[] args)
+    internal void SetTranslationCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: settranslation <translation|none> [class]");
@@ -90,7 +90,7 @@ internal sealed class FactionCommands(
             + (translation == null ? "back to their own colors" : $"drawn through {translation}"));
     }
 
-    internal void Cmd_PlayerColor(string[] args)
+    internal void PlayerColorCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: playercolor <color|none> [n]");

@@ -213,7 +213,7 @@ public class WeaponInHandTests
         rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act
-        rig.Hand.A_WeaponReady(sprite);
+        rig.Hand.WeaponReady(sprite);
 
         // Assert
         Assert.That(sprite.CurrentState!.StateName, Is.EqualTo("Fire"));
@@ -229,7 +229,7 @@ public class WeaponInHandTests
         var sprite = rig.Sprite;
 
         // Act
-        rig.Hand.A_WeaponReady(sprite);
+        rig.Hand.WeaponReady(sprite);
 
         // Assert
         Assert.That(sprite.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
@@ -242,7 +242,7 @@ public class WeaponInHandTests
         var rig = new Rig("Knife", "Pistol") { InHand = "Pistol" };
 
         // Act
-        rig.Hand.A_WeaponReady(rig.Sprite);
+        rig.Hand.WeaponReady(rig.Sprite);
 
         // Assert
         Assert.That(rig.InHand, Is.EqualTo("Knife"));
@@ -251,7 +251,7 @@ public class WeaponInHandTests
 
         // and with ammo again the pistol is taken back up
         rig.Inventory.Give("Clip", 8);
-        rig.Hand.A_WeaponReady(rig.Sprite);
+        rig.Hand.WeaponReady(rig.Sprite);
         Assert.That(rig.InHand, Is.EqualTo("Pistol"));
     }
 
@@ -265,12 +265,12 @@ public class WeaponInHandTests
         rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act / Assert: the machine gun has a Hold state
-        rig.Hand.A_ReFire(gun);
+        rig.Hand.ReFire(gun);
         Assert.That(gun.CurrentState!.StateName, Is.EqualTo("Hold"));
 
         rig.InHand = "Pistol";
         var pistol = rig.Sprite;
-        rig.Hand.A_ReFire(pistol);
+        rig.Hand.ReFire(pistol);
         Assert.That(pistol.CurrentState!.StateName, Is.EqualTo("Fire"));
     }
 
@@ -283,7 +283,7 @@ public class WeaponInHandTests
         rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act: pressed, but no ammo
-        rig.Hand.A_ReFire(gun);
+        rig.Hand.ReFire(gun);
 
         // Assert
         Assert.That(gun.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
@@ -300,17 +300,17 @@ public class WeaponInHandTests
         rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act / Assert: held, it goes up a tic's worth each time and back to Fire
-        rig.Hand.A_HoldCharge(weapon, ["Fire"]);
+        rig.Hand.HoldCharge(weapon, ["Fire"]);
         Assert.That(rig.Session.playerstate.WeaponPower, Is.EqualTo(3));
         Assert.That(weapon.CurrentState!.StateName, Is.EqualTo("Fire"));
         for (int i = 0; i < 50; i++)
-            rig.Hand.A_HoldCharge(weapon, ["Fire"]);
+            rig.Hand.HoldCharge(weapon, ["Fire"]);
         Assert.That(rig.Session.playerstate.WeaponPower, Is.EqualTo(100));
 
         // let go: it stays where it is
         WeaponInHand.JumpWeaponState(weapon, "Reload");
         rig.Session.playerinput.SetPressed(ButtonType.Attack, false);
-        rig.Hand.A_HoldCharge(weapon, ["Fire"]);
+        rig.Hand.HoldCharge(weapon, ["Fire"]);
         Assert.That(weapon.CurrentState!.StateName, Is.EqualTo("Reload"));
     }
 
@@ -325,7 +325,7 @@ public class WeaponInHandTests
         rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act
-        rig.Hand.A_WeaponReady(rifle);
+        rig.Hand.WeaponReady(rifle);
 
         // Assert
         Assert.That(rifle.CurrentState!.StateName, Is.EqualTo("ZoomFire"));
@@ -340,7 +340,7 @@ public class WeaponInHandTests
         var rifle = rig.Sprite;
 
         // Act
-        rig.Hand.A_WeaponReady(rifle);
+        rig.Hand.WeaponReady(rifle);
 
         // Assert
         Assert.That(rifle.CurrentState!.StateName, Is.EqualTo(WeaponInHand.ReloadState));
@@ -358,7 +358,7 @@ public class WeaponInHandTests
         rig.Session.playerinput.SetPressed(ButtonType.Reload, true);
 
         // Act / Assert
-        rig.Hand.A_WeaponReady(rifle);
+        rig.Hand.WeaponReady(rifle);
         Assert.That(rifle.CurrentState!.StateName, Is.EqualTo(WeaponInHand.ReloadState));
         Assert.That(rig.Session.playerinput.IsFreshPress(ButtonType.Reload), Is.False);
 
@@ -367,7 +367,7 @@ public class WeaponInHandTests
         WeaponInHand.JumpWeaponState(rifle, WeaponInHand.WeaponReadyState);
         rig.Session.playerinput.SetHeld(ButtonType.Reload, false);
         rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
-        rig.Hand.A_WeaponReady(rifle);
+        rig.Hand.WeaponReady(rifle);
         Assert.That(rifle.CurrentState!.StateName, Is.EqualTo("Fire"));
     }
 
@@ -378,7 +378,7 @@ public class WeaponInHandTests
         var rig = new Rig("Knife", "Rifle") { InHand = "Rifle" };
 
         // Act
-        rig.Hand.A_WeaponReady(rig.Sprite);
+        rig.Hand.WeaponReady(rig.Sprite);
 
         // Assert
         Assert.That(rig.InHand, Is.EqualTo("Knife"));
@@ -393,7 +393,7 @@ public class WeaponInHandTests
         rig.Inventory.Give("RifleMag", 1);
 
         // Act
-        rig.Hand.A_Reload(rig.Sprite, []);
+        rig.Hand.Reload(rig.Sprite, []);
 
         // Assert
         Assert.That((rig.Inventory.GetCount("RifleMag"), rig.Inventory.GetCount("Clip")), Is.EqualTo((5, 3)));
@@ -410,12 +410,12 @@ public class WeaponInHandTests
         WeaponInHand.JumpWeaponState(rifle, WeaponInHand.ReloadState);
 
         // Act / Assert
-        rig.Hand.A_Reload(rifle, ["1", "ReloadLoop"]);
+        rig.Hand.Reload(rifle, ["1", "ReloadLoop"]);
         Assert.That(rig.Inventory.GetCount("RifleMag"), Is.EqualTo(4));
         Assert.That(rifle.CurrentState!.StateName, Is.EqualTo("ReloadLoop"));      // still room, and a round left
 
         WeaponInHand.JumpWeaponState(rifle, WeaponInHand.ReloadState);
-        rig.Hand.A_Reload(rifle, ["1", "ReloadLoop"]);
+        rig.Hand.Reload(rifle, ["1", "ReloadLoop"]);
         Assert.That(rig.Inventory.GetCount("RifleMag"), Is.EqualTo(5));
         Assert.That(rifle.CurrentState!.StateName, Is.EqualTo(WeaponInHand.ReloadState));     // full
     }

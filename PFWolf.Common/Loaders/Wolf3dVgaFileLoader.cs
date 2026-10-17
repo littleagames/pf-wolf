@@ -109,19 +109,19 @@ public class Wolf3dVgaFileLoader
         using (FileStream fs = File.OpenRead(fname))
         using (BinaryReader br = new BinaryReader(fs))
         {
-            CAL_GetGrChunkLength(fs, br, StructPic);
+            GetGrChunkLength(fs, br, StructPic);
             byte[] compseg = br.ReadBytes(chunkcomplen);
 
             // The STRUCTPIC chunk's decompressed length (chunkexplen) tells us exactly how
             // many pics the file describes, so NUMPICS never needs to be hard-coded.
             numPics = chunkexplen / (sizeof(ushort) * 2);
-            var dest = CAL_HuffExpand(compseg, chunkexplen, grhuffman);
+            var dest = HuffExpand(compseg, chunkexplen, grhuffman);
             pictable = StructHelpers.BytesToStructArray<PicTableEntry>(dest);
 
             CacheGraphicChunks(fs, br);
         }
     }
-    private void CAL_GetGrChunkLength(FileStream fs, BinaryReader br, int chunk)
+    private void GetGrChunkLength(FileStream fs, BinaryReader br, int chunk)
     {
         fs.Seek(GRFILEPOS(chunk), SeekOrigin.Begin);
         chunkexplen = br.ReadInt32();
@@ -171,14 +171,14 @@ public class Wolf3dVgaFileLoader
                 bufferseg[i] = br.ReadByte();
             }
 
-            CAL_ExpandGrChunk(chunk, bufferseg);
+            ExpandGrChunk(chunk, bufferseg);
 
             if (chunk >= StartPics && chunk < StartExterns)
-                CAL_DeplaneGrChunk(chunk);
+                DeplaneGrChunk(chunk);
         }
     }
 
-    internal void CAL_ExpandGrChunk(int chunk, byte[] source)
+    internal void ExpandGrChunk(int chunk, byte[] source)
     {
         if (chunk == StartTile8)
         {
@@ -189,7 +189,7 @@ public class Wolf3dVgaFileLoader
 
             // The last byte's unused bits (up to 7) can decode as a few stray symbols past the
             // tiles (Blake Stone's 35 tiles come out 3 bytes long), so those are dropped.
-            var tileData = CAL_HuffExpandUntilSourceExhausted(source, grhuffman);
+            var tileData = HuffExpandUntilSourceExhausted(source, grhuffman);
             numTile8 = tileData.Length / BLOCK;
 
             if (tileData.Length - numTile8 * BLOCK >= 8)
@@ -203,10 +203,10 @@ public class Wolf3dVgaFileLoader
         // everything else has an explicit size longword
         //
         var expanded = BitConverter.ToInt32(source, 0);
-        grsegs[chunk] = CAL_HuffExpand(source.Skip(sizeof(int)).ToArray(), expanded, grhuffman);
+        grsegs[chunk] = HuffExpand(source.Skip(sizeof(int)).ToArray(), expanded, grhuffman);
     }
 
-    private void CAL_DeplaneGrChunk(int chunk)
+    private void DeplaneGrChunk(int chunk)
     {
         int i;
         short width, height;
@@ -271,7 +271,7 @@ public class Wolf3dVgaFileLoader
         //Array.Copy(temp, source, size);
     }
 
-    private static byte[] CAL_HuffExpand(byte[] source, int length, HuffNode[] hufftable)
+    private static byte[] HuffExpand(byte[] source, int length, HuffNode[] hufftable)
     {
         if (length == 0 || source.Length == 0)
         {
@@ -337,10 +337,10 @@ public class Wolf3dVgaFileLoader
         return dest;
     }
 
-    // Same Huffman walk as CAL_HuffExpand, but for the one chunk (tile8) with no explicit
+    // Same Huffman walk as HuffExpand, but for the one chunk (tile8) with no explicit
     // decompressed length: decode symbols until the compressed bitstream itself runs out,
     // discarding whatever partial symbol was in progress when the input ended.
-    private static byte[] CAL_HuffExpandUntilSourceExhausted(byte[] source, HuffNode[] hufftable)
+    private static byte[] HuffExpandUntilSourceExhausted(byte[] source, HuffNode[] hufftable)
     {
         if (source.Length == 0)
         {

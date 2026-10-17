@@ -159,7 +159,7 @@ public class PlayersTests
         rig.Session.tics = 2;
 
         // Act
-        rig.Players.T_PlayerDead(pawn);
+        rig.Players.ThinkPlayerDead(pawn);
 
         // Assert
         Assert.That(pawn.Angle, Is.EqualTo(10));
@@ -169,7 +169,7 @@ public class PlayersTests
         // the other way round
         rig.Second.DeathAngle = 350;
         pawn.Angle = 0;
-        rig.Players.T_PlayerDead(pawn);
+        rig.Players.ThinkPlayerDead(pawn);
         Assert.That(pawn.Angle, Is.EqualTo(350));
     }
 
@@ -179,7 +179,7 @@ public class PlayersTests
         var rig = new Rig();
         rig.Second.EyeZ = 32;
         rig.Session.tics = 2;
-        rig.Players.T_PlayerDead(rig.Second.Pawn!);
+        rig.Players.ThinkPlayerDead(rig.Second.Pawn!);
         Assert.That(rig.Second.EyeZ, Is.EqualTo(32));
     }
 
@@ -193,7 +193,7 @@ public class PlayersTests
         rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act: Respawn would need the map, which isn't there
-        Assert.DoesNotThrow(() => rig.Players.T_PlayerDead(rig.Second.Pawn!));
+        Assert.DoesNotThrow(() => rig.Players.ThinkPlayerDead(rig.Second.Pawn!));
 
         // Assert
         Assert.That(rig.Second.DeadTics, Is.LessThan(Players.RESPAWNTICS));

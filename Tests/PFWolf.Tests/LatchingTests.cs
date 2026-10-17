@@ -139,10 +139,10 @@ public class LatchingTests
         // Act / Assert: never lucky, so the fifth strike does it
         for (int strike = 1; strike < 5; strike++)
         {
-            _latching.A_ShakeOff(struggle, ["5", "0"]);
+            _latching.ShakeOff(struggle, ["5", "0"]);
             Assert.That(_latching.StillHeld, Is.True, $"strike {strike}");
         }
-        _latching.A_ShakeOff(struggle, ["5", "0"]);
+        _latching.ShakeOff(struggle, ["5", "0"]);
         Assert.That(_latching.StillHeld, Is.False);
         Assert.That(_dog.CurrentState!.StateName, Is.EqualTo("Death"));
         Assert.That(_strikeSounds, Is.EqualTo(5));
@@ -155,7 +155,7 @@ public class LatchingTests
         _latching.LatchOn(_dog, "DogStruggle");
 
         // Act: always lucky
-        _latching.A_ShakeOff(Struggle(), ["5", "256"]);
+        _latching.ShakeOff(Struggle(), ["5", "256"]);
 
         // Assert
         Assert.That((_dog.X, _dog.Y, _dog.TileX, _dog.TileY), Is.EqualTo((_pawn.X, _pawn.Y, _pawn.TileX, _pawn.TileY)));
@@ -171,12 +171,12 @@ public class LatchingTests
         struggle.SetState("Fire");
 
         // Act / Assert
-        _latching.A_JumpIfLatched(struggle, ["Ready"]);
+        _latching.JumpIfLatched(struggle, ["Ready"]);
         Assert.That(struggle.CurrentState!.StateName, Is.EqualTo("Ready"));
 
         struggle.SetState("Fire");
-        _latching.A_ShakeOff(struggle, ["5", "256"]);
-        _latching.A_JumpIfLatched(struggle, ["Ready"]);
+        _latching.ShakeOff(struggle, ["5", "256"]);
+        _latching.JumpIfLatched(struggle, ["Ready"]);
         Assert.That(struggle.CurrentState!.StateName, Is.EqualTo("Fire"));
     }
 
@@ -185,10 +185,10 @@ public class LatchingTests
     {
         // Arrange
         _latching.LatchOn(_dog, "DogStruggle");
-        _latching.A_ShakeOff(Struggle(), ["5", "256"]);
+        _latching.ShakeOff(Struggle(), ["5", "256"]);
 
         // Act
-        _latching.A_LatchRelease(Struggle());
+        _latching.LatchRelease(Struggle());
 
         // Assert
         var playerstate = _session.playerstate;
@@ -205,7 +205,7 @@ public class LatchingTests
         _latching.LatchOn(_dog, "DogStruggle");
 
         // Act
-        _latching.A_LatchHurt(_dog);
+        _latching.LatchHurt(_dog);
 
         // Assert
         Assert.That(_playerHurts, Has.Count.EqualTo(1));
@@ -221,7 +221,7 @@ public class LatchingTests
         _session.playerstate.Latch = null;
 
         // Act
-        _latching.A_LatchHurt(_dog);
+        _latching.LatchHurt(_dog);
 
         // Assert
         Assert.That(_playerHurts, Is.Empty);

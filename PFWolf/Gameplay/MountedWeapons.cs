@@ -34,7 +34,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
     internal bool IsMounted => session.playerstate.Mount != null;
 
     /// <summary>A_Mount("Gun"[, "sound"]): the player who used it mans it, with that gun</summary>
-    internal void A_Mount(Entities.Actors.Actor mount, string[] args)
+    internal void Mount(Entities.Actors.Actor mount, string[] args)
     {
         var playerstate = session.playerstate;
         if (IsMounted || args.Length == 0 || string.IsNullOrWhiteSpace(args[0]) || playerstate.Pawn is not { } player)

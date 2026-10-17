@@ -64,7 +64,7 @@ public class PlayerThinkTests
         player.Angle = 0;
 
         // Act: nothing else it needs is there, so this would throw if it did anything more
-        think.T_Player(player);
+        think.ThinkPlayer(player);
 
         // Assert
         Assert.That(player.Angle, Is.Not.EqualTo(0));
@@ -79,7 +79,7 @@ public class PlayerThinkTests
         int y = player.Y;
 
         // Act
-        think.T_Player(player);
+        think.ThinkPlayer(player);
 
         // Assert
         Assert.That((player.Angle, player.Y), Is.EqualTo(((short)0, y)));

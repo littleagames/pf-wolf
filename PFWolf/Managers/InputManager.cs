@@ -193,8 +193,8 @@ internal class InputManager
         _consoleManager = consoleManager;
     }
 
-    private int param_joystickindex = 0;
-    private int param_joystickhat = -1;
+    private int joystickIndex = 0;
+    private int joystickHat = -1;
 
     private const int TEXTINPUTSIZE = SDL.SDL_TEXTINPUTEVENT_TEXT_SIZE;
 
@@ -306,8 +306,8 @@ internal class InputManager
         ClearKeysDown();
 
         // A controller plugged in later is opened by HandleEvent
-        if (param_joystickindex >= 0 && param_joystickindex < SDL.SDL_NumJoysticks())
-            OpenJoystick(param_joystickindex);
+        if (joystickIndex >= 0 && joystickIndex < SDL.SDL_NumJoysticks())
+            OpenJoystick(joystickIndex);
 
         SDL.SDL_EventState(SDL.SDL_EventType.SDL_MOUSEMOTION, SDL.SDL_IGNORE);
 
@@ -320,7 +320,7 @@ internal class InputManager
         }
 
         int numJoysticks = SDL.SDL_NumJoysticks();
-        if (param_joystickindex > 0 && (param_joystickindex < -1 || param_joystickindex > numJoysticks))
+        if (joystickIndex > 0 && (joystickIndex < -1 || joystickIndex > numJoysticks))
         {
             if (numJoysticks == 0)
                 Console.WriteLine("No joysticks are available to SDL!");
@@ -591,9 +591,9 @@ internal class InputManager
         int x = SDL.SDL_JoystickGetAxis(Joystick, 0) >> 8;
         int y = SDL.SDL_JoystickGetAxis(Joystick, 1) >> 8;
 
-        if (param_joystickhat != -1 && param_joystickhat < JoyNumHats)
+        if (joystickHat != -1 && joystickHat < JoyNumHats)
         {
-            byte hatState = SDL.SDL_JoystickGetHat(Joystick, param_joystickhat);
+            byte hatState = SDL.SDL_JoystickGetHat(Joystick, joystickHat);
 
             if ((hatState & SDL.SDL_HAT_RIGHT) != 0)
                 x += 127;
@@ -853,12 +853,12 @@ internal class InputManager
     public int MouseButtons()
     {
         if (MousePresent)
-            return INL_GetMouseButtons();
+            return GetMouseButtons();
         else
             return 0;
     }
 
-    public int INL_GetMouseButtons()
+    public int GetMouseButtons()
     {
         int buttons = (int)SDL.SDL_GetMouseState(out _, out _);
         int middlePressed = (int)(buttons & SDL.SDL_BUTTON(SDL.SDL_BUTTON_MIDDLE));

@@ -164,8 +164,8 @@ internal static partial class GameHost
         statusBarDrawing, pushWalls, projectiles, playScreen, intermissionScreen, session, playArea,
         settings, new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, () => levelEntry.LevelStartItems()));
 
-    internal static void A_StartDeathCam(Entities.Actors.Actor ob) => playerDeath.A_StartDeathCam(ob);
-    internal static void T_DeathCam(Entities.Actors.Actor ob) => playerDeath.T_DeathCam(ob);
+    internal static void StartDeathCam(Entities.Actors.Actor ob) => playerDeath.StartDeathCam(ob);
+    internal static void ThinkDeathCam(Entities.Actors.Actor ob) => playerDeath.ThinkDeathCam(ob);
     static Entities.Actors.Actor? deathCamSprite => playerDeath.deathCamSprite;
 
     // ==== WL_PLAY ================================================================================
@@ -388,6 +388,6 @@ internal static partial class GameHost
     static ScriptHost? _scripts => gameScripts?.Scripts;
     static void LoadScripts() => gameScripts.LoadScripts();
     static void RunLevelHooks(string reason) => gameScripts.RunLevelHooks(reason);
-    static void Cmd_Scripts(string[] args) => gameScripts.Cmd_Scripts(args);
-    static void Cmd_Lua(string[] args) => gameScripts.Cmd_Lua(args);
+    static void ScriptsCommand(string[] args) => gameScripts.ScriptsCommand(args);
+    static void LuaCommand(string[] args) => gameScripts.LuaCommand(args);
 }

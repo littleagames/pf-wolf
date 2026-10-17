@@ -17,19 +17,19 @@ public class DemoCommandsTests
     [TestCase("x")]
     public void Playdemo_Takes_A_Demo_Number(string arg)
     {
-        Assert.Throws<ArgumentException>(() => _commands.Cmd_PlayDemo(arg == "" ? [] : [arg]));
+        Assert.Throws<ArgumentException>(() => _commands.PlayDemoCommand(arg == "" ? [] : [arg]));
     }
 
     [Test]
     public void Recorddemo_Needs_A_Map()
     {
-        Assert.Throws<ArgumentException>(() => _commands.Cmd_RecordDemo([]));
+        Assert.Throws<ArgumentException>(() => _commands.RecordDemoCommand([]));
     }
 
     [Test]
     public void Demotest_Doesnt_Run_During_A_Game()
     {
-        _commands.Cmd_DemoTest([]);
+        _commands.DemoTestCommand([]);
 
         Assert.That(_console.Scrollback[^1], Is.EqualTo("demotest runs from the title or --exec, not during a game"));
         Assert.That(_commands.demoTesting, Is.False);

@@ -14,14 +14,14 @@ internal sealed class UnlockCommands(ConsoleManager console, Unlocks unlocks, Le
     {
         if (records != null)
             console.Register("records", "Shows the best done on each map finished (or one map's); records clear [map] forgets them.",
-                "records [map|clear [map]]", Cmd_Records, complete: (_, i) => i == 0 ? ["clear", .. records.Maps] : []);
+                "records [map|clear [map]]", RecordsCommand, complete: (_, i) => i == 0 ? ["clear", .. records.Maps] : []);
         console.Register("unlock", "Unlocks a name for good: a starts-locked episode's key (EP02), or all of them; on its own, lists what's locked and unlocked.",
-            "unlock [name|all]", Cmd_Unlock, Cheat, complete: (_, i) => i == 0 ? ["all", .. unlocks.Lockable()] : []);
+            "unlock [name|all]", UnlockCommand, Cheat, complete: (_, i) => i == 0 ? ["all", .. unlocks.Lockable()] : []);
         console.Register("lock", "Locks an unlocked name again, or all of them (everything back as a first game has it).",
-            "lock <name|all>", Cmd_Lock, complete: (_, i) => i == 0 ? ["all", .. unlocks.Unlocked] : []);
+            "lock <name|all>", LockCommand, complete: (_, i) => i == 0 ? ["all", .. unlocks.Unlocked] : []);
     }
 
-    internal void Cmd_Unlock(string[] args)
+    internal void UnlockCommand(string[] args)
     {
         if (args.Length == 0)
         {
@@ -49,7 +49,7 @@ internal sealed class UnlockCommands(ConsoleManager console, Unlocks unlocks, Le
             : $"{args[0]} was already unlocked");
     }
 
-    internal void Cmd_Records(string[] args)
+    internal void RecordsCommand(string[] args)
     {
         if (records == null)
             return;
@@ -67,7 +67,7 @@ internal sealed class UnlockCommands(ConsoleManager console, Unlocks unlocks, Le
             console.Print(records.Get(map) is { } record ? $"{map}: {record.ToLine()}" : $"{map}: never finished");
     }
 
-    internal void Cmd_Lock(string[] args)
+    internal void LockCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("usage: lock <name|all>");

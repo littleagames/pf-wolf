@@ -53,7 +53,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     }
 
     /// <summary>A_LatchBite("Struggle"[, latch[, hit]]): a bite that may latch on (see above)</summary>
-    internal void A_LatchBite(Entities.Actors.Monster biter, string[] args)
+    internal void LatchBite(Entities.Actors.Monster biter, string[] args)
     {
         int Chance(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var c) ? Math.Clamp(c, 0, 256) : fallback;
         if (!biter.BiteLands(Chance(2, 240)))
@@ -99,7 +99,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     /// A_LatchHurt: the one it's latched onto is hurt, 0-15. Latched onto no one (a saved game
     /// loaded, they're off the level), it lets go and goes after them again.
     /// </summary>
-    internal void A_LatchHurt(Entities.Actors.Actor biter)
+    internal void LatchHurt(Entities.Actors.Actor biter)
     {
         var victim = session.players.FirstOrDefault(p => ReferenceEquals(p.Latch, biter));
         if (victim == null)
@@ -117,7 +117,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     /// (its attacksound), which ends up where the player is; chance times in 256 (128), or on the
     /// tries'th strike (5), it takes the damage (1, a dog's every hitpoint)
     /// </summary>
-    internal void A_ShakeOff(Entities.Actors.Actor weapon, string[] args)
+    internal void ShakeOff(Entities.Actors.Actor weapon, string[] args)
     {
         var playerstate = session.playerstate;
         if (!StillHeld || playerstate.Latch is not Entities.Actors.Monster biter || playerstate.Pawn is not { } player)
@@ -138,14 +138,14 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     }
 
     /// <summary>A_JumpIfLatched("State"): the weapon goes there while what's latched on holds on</summary>
-    internal void A_JumpIfLatched(Entities.Actors.Actor weapon, string[] args)
+    internal void JumpIfLatched(Entities.Actors.Actor weapon, string[] args)
     {
         if (StillHeld && args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             WeaponInHand.JumpWeaponState(weapon, args[0].Trim());
     }
 
     /// <summary>A_LatchRelease: the struggle's over, and the weapon they had is back in hand</summary>
-    internal void A_LatchRelease(Entities.Actors.Actor weapon) => Release();
+    internal void LatchRelease(Entities.Actors.Actor weapon) => Release();
 
     /// <summary>
     /// Each think: one whose struggle has ended some other way (dying, a load, another level, the

@@ -22,39 +22,39 @@ internal sealed class LevelEditCommands(
     internal void Register()
     {
         console.Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
-            $"wallheight [1-{GameConstants.MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
+            $"wallheight [1-{GameConstants.MAXWALLSTORIES}]", WallHeightCommand, Cheat | InLevel);
         console.Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
-            "sky [name|none]", Cmd_Sky, InLevel);
+            "sky [name|none]", SkyCommand, InLevel);
         console.Register("weather", "Makes it rain or snow (a game-info weather-types name, or rain, heavy-rain, snow or blizzard) until the level is left or reloaded; none for clear weather.",
-            "weather [name|none]", Cmd_Weather, InLevel,
+            "weather [name|none]", WeatherCommand, InLevel,
             complete: (_, i) => i == 0 ? weather.WeatherTypes().Keys.Append("none") : []);
         console.Register("fog", "Fades the view toward a color with distance, from start to end tiles away, up to max percent, until the level is left or reloaded; none for no shading.",
-            "fog [#RRGGBB|none] [start] [end] [max 0-100]", Cmd_Fog, Cheat | InLevel,
+            "fog [#RRGGBB|none] [start] [end] [max 0-100]", FogCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["none", "#000000", "#707070"] : []);
         console.Register("light", "Sets the level's light, 0 (black) to 255 (full), until the level is left or reloaded.",
-            "light [0-255]", Cmd_Light, Cheat | InLevel);
+            "light [0-255]", LightCommand, Cheat | InLevel);
         console.Register("lights", "Lists the actors giving off light (actordefs light.*, A_SetLight), and their light now.",
-            "lights", Cmd_Lights, InLevel);
+            "lights", LightsCommand, InLevel);
         console.Register("zone", "Shows or sets the light zone (plane 5) of the tile you stand on, a tile, or a rectangle of tiles; 0 takes them out of any zone.",
-            "zone [0-65535 [tilex tiley [tilex2 tiley2]]]", Cmd_Zone, Cheat | InLevel);
+            "zone [0-65535 [tilex tiley [tilex2 tiley2]]]", ZoneCommand, Cheat | InLevel);
         console.Register("zonelight", "Lists the level's light zones, or shows or sets how one is lit (light 0-255, optional #RRGGBB tint or none, optional fade tics; none as the light removes the zone).",
-            "zonelight [zone [0-255|none] [#RRGGBB|none] [tics]]", Cmd_ZoneLight, Cheat | InLevel);
+            "zonelight [zone [0-255|none] [#RRGGBB|none] [tics]]", ZoneLightCommand, Cheat | InLevel);
         console.Register("zoneeffect", "Makes a light zone flicker, pulse or strobe (none stops it), down to low, timed in tics (70 a second).",
-            "zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]", Cmd_ZoneEffect, Cheat | InLevel,
+            "zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]", ZoneEffectCommand, Cheat | InLevel,
             complete: (_, i) => i == 1 ? ["none", "flicker", "pulse", "strobe"] : []);
         console.Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
-            $"height <0-{GameConstants.MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
+            $"height <0-{GameConstants.MAXWALLSTORIES}> [tilex tiley]", HeightCommand, Cheat | InLevel);
         console.Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
-            "tag [0-65535 [tilex tiley]]", Cmd_Tag, Cheat | InLevel);
+            "tag [0-65535 [tilex tiley]]", TagCommand, Cheat | InLevel);
         console.Register("patch", "Shows or sets the patch (mapdefs patches) on a wall tile (default: the one you face); 0 takes it off.",
-            "patch [0-255 [tilex tiley]]", Cmd_Patch, Cheat | InLevel,
+            "patch [0-255 [tilex tiley]]", PatchCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? map.GetMapData().Patches.Keys.Order().Select(id => id.ToString()) : []);
         console.Register("flat", "Sets a tile's floor and ceiling flat indices (mapdefs flats) on the flat plane (default: the tile you stand on).",
-            "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", Cmd_Flat, Cheat | InLevel);
+            "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", FlatCommand, Cheat | InLevel);
         console.Register("flats", "Sets the level's default floor and ceiling textures, for tiles the flat plane doesn't give one (not saved).",
-            "flats [floor|none] [ceiling|none]", Cmd_Flats, InLevel);
+            "flats [floor|none] [ceiling|none]", FlatsCommand, InLevel);
     }
-    internal void Cmd_Height(string[] args)
+    internal void HeightCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException($"usage: height <0-{GameConstants.MAXWALLSTORIES}> [tilex tiley]");
@@ -68,7 +68,7 @@ internal sealed class LevelEditCommands(
             : $"Tile {x},{y} is now {stories} {(stories == 1 ? "story" : "stories")} tall");
     }
 
-    internal void Cmd_Tag(string[] args)
+    internal void TagCommand(string[] args)
     {
         if (args.Length is 2 or > 3)
             throw new ArgumentException("usage: tag [0-65535 [tilex tiley]]");
@@ -92,7 +92,7 @@ internal sealed class LevelEditCommands(
         console.Print($"Tile {x},{y}: tag {map.GetTag(x, y)}{tagged}");
     }
 
-    internal void Cmd_Patch(string[] args)
+    internal void PatchCommand(string[] args)
     {
         if (args.Length is 2 or > 3)
             throw new ArgumentException("usage: patch [0-255 [tilex tiley]]");
@@ -110,7 +110,7 @@ internal sealed class LevelEditCommands(
         console.Print($"Tile {x},{y}: {targets.DescribePatch(map.GetPatch(x, y))}");
     }
 
-    internal void Cmd_Flat(string[] args)
+    internal void FlatCommand(string[] args)
     {
         if (args.Length < 2)
             throw new ArgumentException("usage: flat <floor 0-255> <ceiling 0-255> [tilex tiley]");
@@ -122,7 +122,7 @@ internal sealed class LevelEditCommands(
         console.Print($"Tile {x},{y}: floor {map.FlatName(x, y, false)}, ceiling {map.FlatName(x, y, true)}");
     }
 
-    internal void Cmd_Flats(string[] args)
+    internal void FlatsCommand(string[] args)
     {
         string? Texture(int i)
         {
@@ -138,7 +138,7 @@ internal sealed class LevelEditCommands(
         console.Print($"Default floor: {map.DefaultFloor ?? "(color)"}  ceiling: {map.DefaultCeiling ?? "(color)"}");
     }
 
-    internal void Cmd_Zone(string[] args)
+    internal void ZoneCommand(string[] args)
     {
         if (args.Length is 2 or 4 or > 5)
             throw new ArgumentException("usage: zone [0-65535 [tilex tiley [tilex2 tiley2]]]");
@@ -159,7 +159,7 @@ internal sealed class LevelEditCommands(
         console.Print($"{tiles}: zone {shown} ({targets.DescribeZone(shown)})");
     }
 
-    internal void Cmd_ZoneLight(string[] args)
+    internal void ZoneLightCommand(string[] args)
     {
         if (args.Length == 0)
         {
@@ -193,7 +193,7 @@ internal sealed class LevelEditCommands(
         console.Print($"Zone {zone}: {targets.DescribeZone(zone)}");
     }
 
-    internal void Cmd_Lights(string[] args)
+    internal void LightsCommand(string[] args)
     {
         var lights = actorLights.DescribeActorLights().ToList();
         if (lights.Count == 0)
@@ -204,7 +204,7 @@ internal sealed class LevelEditCommands(
             console.Print("(the level is at full light, so they don't show)");
     }
 
-    internal void Cmd_ZoneEffect(string[] args)
+    internal void ZoneEffectCommand(string[] args)
     {
         if (args.Length < 2 || !Lighting.TryParseZoneEffect(args[1], out var effect))
             throw new ArgumentException("usage: zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]");
@@ -218,14 +218,14 @@ internal sealed class LevelEditCommands(
         console.Print($"Zone {zone}: {targets.DescribeZone(zone)}");
     }
 
-    internal void Cmd_WallHeight(string[] args)
+    internal void WallHeightCommand(string[] args)
     {
         if (args.Length > 0)
             map.wallstories = ParseInt(args[0], 1, GameConstants.MAXWALLSTORIES);
         console.Print($"Walls are {map.wallstories} {(map.wallstories == 1 ? "story" : "stories")} tall");
     }
 
-    internal void Cmd_Sky(string[] args)
+    internal void SkyCommand(string[] args)
     {
         if (args.Length > 0)
         {
@@ -237,7 +237,7 @@ internal sealed class LevelEditCommands(
         console.Print(skyAndFlats.levelsky == null ? "No sky: the ceiling is a color" : $"Sky: {skyAndFlats.levelsky}");
     }
 
-    internal void Cmd_Weather(string[] args)
+    internal void WeatherCommand(string[] args)
     {
         if (args.Length > 0)
         {
@@ -251,7 +251,7 @@ internal sealed class LevelEditCommands(
     // The level's shading, or what shading starts from when it has none
     internal ShadingSettings CurrentShading => lighting.levelshading ?? new ShadingSettings("#000000", 0, 16, 0, 255);
 
-    internal void Cmd_Fog(string[] args)
+    internal void FogCommand(string[] args)
     {
         if (args.Length > 0 && args[0].Equals("none", StringComparison.OrdinalIgnoreCase))
             lighting.SetShading(null);
@@ -273,7 +273,7 @@ internal sealed class LevelEditCommands(
             : "No fog");
     }
 
-    internal void Cmd_Light(string[] args)
+    internal void LightCommand(string[] args)
     {
         if (args.Length > 0)
             lighting.SetShading(CurrentShading with { Light = ParseInt(args[0], 0, 255) });

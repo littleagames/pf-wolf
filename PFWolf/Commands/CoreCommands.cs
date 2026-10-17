@@ -8,16 +8,16 @@ internal sealed class CoreCommands(ConsoleManager console, Func<string, string> 
 {
     internal void Register()
     {
-        console.Register("help", "Lists commands, or describes one.", "help [command]", Cmd_Help, aliases: ["?"],
+        console.Register("help", "Lists commands, or describes one.", "help [command]", HelpCommand, aliases: ["?"],
             complete: (_, i) => i == 0 ? CommandNames() : []);
         console.Register("echo", "Prints its arguments.", "echo <text...>",
             args => console.Print(string.Join(' ', args)));
         console.Register("clear", "Clears the console output.", "clear", _ => console.Clear(), aliases: ["cls"]);
-        console.Register("history", "Lists previously entered lines.", "history", Cmd_History);
-        console.Register("con_pause", "Whether the game pauses while the console is open.", "con_pause [0|1]", Cmd_ConPause,
+        console.Register("history", "Lists previously entered lines.", "history", HistoryCommand);
+        console.Register("con_pause", "Whether the game pauses while the console is open.", "con_pause [0|1]", ConPauseCommand,
             complete: Values("0", "1"));
         console.Register("exec", "Runs the commands in a script file (in the config folder unless a full path is given).",
-            "exec <file>", Cmd_Exec, complete: (_, i) => i == 0 ? ConfigScriptNames() : []);
+            "exec <file>", ExecCommand, complete: (_, i) => i == 0 ? ConfigScriptNames() : []);
         // Handled by ConsoleManager.Execute itself (the rest of the line waits); here for help
         console.Register("wait", "Puts the rest of the line off until so many tics of play have gone by (default 1).",
             "wait [tics]", _ => { });
@@ -33,7 +33,7 @@ internal sealed class CoreCommands(ConsoleManager console, Func<string, string> 
             : [];
     }
 
-    private void Cmd_Help(string[] args)
+    private void HelpCommand(string[] args)
     {
         if (args.Length > 0)
         {
@@ -59,14 +59,14 @@ internal sealed class CoreCommands(ConsoleManager console, Func<string, string> 
         }
     }
 
-    private void Cmd_History(string[] args)
+    private void HistoryCommand(string[] args)
     {
         var history = console.History;
         for (int i = 0; i < history.Count; i++)
             console.Print($"{i + 1,3}  {history[i]}");
     }
 
-    private void Cmd_ConPause(string[] args)
+    private void ConPauseCommand(string[] args)
     {
         if (args.Length > 0)
             console.PauseWhenOpen = ParseBool(args[0]);
@@ -74,7 +74,7 @@ internal sealed class CoreCommands(ConsoleManager console, Func<string, string> 
         console.Print($"con_pause is {(console.PauseWhenOpen ? 1 : 0)}");
     }
 
-    private void Cmd_Exec(string[] args)
+    private void ExecCommand(string[] args)
     {
         if (args.Length == 0)
             throw new ArgumentException("exec which file?");

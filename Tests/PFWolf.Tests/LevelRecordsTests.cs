@@ -71,7 +71,7 @@ public class LevelRecordsTests
             Unlock = name => { unlocked.Add(name); return true; },
             Record = records.Get,
         };
-        scripts.Cmd_Lua(["x = 1"]);
+        scripts.LuaCommand(["x = 1"]);
         scripts.Scripts!.Load("""
             game.onlevelend(function(map, r)
               print('end', map, r.exit, r.kills, r.killtotal, r.objectives.intel.done, r.underpar)

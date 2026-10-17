@@ -139,7 +139,7 @@ internal static partial class GameHost
     }
 
     /// <summary>A_Quake(min[, max]): shakes the view, at a power (0-200) rolled from min to max (Midnight Assault's blasts)</summary>
-    static void A_Quake(Entities.Actors.Actor ob, string[] args)
+    static void Quake(Entities.Actors.Actor ob, string[] args)
     {
         int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
         int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
@@ -223,7 +223,7 @@ internal static partial class GameHost
     static Spectating spectating = null!;       // made in InitServices
 
     static IEnumerable<Entities.Actors.Actor> SpectateCandidates() => spectating.SpectateCandidates();
-    private static void Cmd_Spectate(string[] args) => spectating.Cmd_Spectate(args);
+    private static void SpectateCommand(string[] args) => spectating.SpectateCommand(args);
 
     // What others see of each player (Gameplay/PlayerBodies.cs)
     static PlayerBodies playerBodies = null!;       // made in InitServices

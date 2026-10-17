@@ -24,21 +24,21 @@ internal sealed class DebugCommands(
 {
     internal void Register()
     {
-        console.Register("overhead", "Shows the raw and filtered map overview.", "overhead", Cmd_Overhead, Cheat | InLevel);
-        console.Register("where", "Shows the player's position and what's at their tile.", "where", Cmd_Where, InLevel, aliases: ["pos"]);
-        console.Register("count", "Counts doors and actors.", "count", Cmd_Count, InLevel);
-        console.Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
+        console.Register("overhead", "Shows the raw and filtered map overview.", "overhead", OverheadCommand, Cheat | InLevel);
+        console.Register("where", "Shows the player's position and what's at their tile.", "where", WhereCommand, InLevel, aliases: ["pos"]);
+        console.Register("count", "Counts doors and actors.", "count", CountCommand, InLevel);
+        console.Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", ActorsCommand, InLevel,
             complete: (_, i) => i == 0 ? map.GetActors().Select(a => a.Name) : []);
-        console.Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
-        console.Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
-        console.Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);
-        console.Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", Cmd_Vbls);
+        console.Register("maps", "Lists the levels that map can warp to.", "maps", MapsCommand);
+        console.Register("fps", "Toggles the frame rate counter.", "fps [0|1]", FpsCommand, complete: Values("0", "1"));
+        console.Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", SlowMoCommand);
+        console.Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", VblsCommand);
         console.Register("fade", "Fades the view out to black and back in, to try a fade style.",
-            "fade <palette|fizzle|melt|mosaic> [tics]", Cmd_Fade, InLevel,
+            "fade <palette|fizzle|melt|mosaic> [tics]", FadeCommand, InLevel,
             complete: Values(Enum.GetNames<FadeStyle>().Select(n => n.ToLowerInvariant()).ToArray()));
         console.Register("screenshot","Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => debugScreens.screenshotPending = true);
     }
-    internal void Cmd_Overhead(string[] args)
+    internal void OverheadCommand(string[] args)
     {
         // BasicOverhead is a blocking screen that waits for a key, so it can't run while the
         // console owns the keyboard. Close it and run the view from the play loop instead.
@@ -52,7 +52,7 @@ internal sealed class DebugCommands(
         });
     }
 
-    internal void Cmd_Where(string[] args)
+    internal void WhereCommand(string[] args)
     {
         int x = session.player.TileX, y = session.player.TileY;
 
@@ -81,7 +81,7 @@ internal sealed class DebugCommands(
         console.Print($"light zone (plane 5): {zone} ({targets.DescribeZone(zone)})");
     }
 
-    internal void Cmd_Count(string[] args)
+    internal void CountCommand(string[] args)
     {
         var actors = map.GetActors();
         int enemies = actors.Count(MapManager.IsEnemy);
@@ -100,7 +100,7 @@ internal sealed class DebugCommands(
         console.Print($"Kills: {session.gamestate.killcount}/{session.gamestate.killtotal}  Secrets: {session.gamestate.secretcount}/{session.gamestate.secrettotal}  Treasure: {session.gamestate.treasurecount}/{session.gamestate.treasuretotal}");
     }
 
-    internal void Cmd_Actors(string[] args)
+    internal void ActorsCommand(string[] args)
     {
         string filter = args.Length > 0 ? args[0] : "";
         int shown = 0;
@@ -128,7 +128,7 @@ internal sealed class DebugCommands(
         console.Print($"{shown} actor(s)");
     }
 
-    internal void Cmd_Maps(string[] args)
+    internal void MapsCommand(string[] args)
     {
         // Ten to a row (an episode's worth in Wolf3D) so a whole game fits in the console.
         var names = engine.GetGameInfo().Maps.Keys
@@ -142,13 +142,13 @@ internal sealed class DebugCommands(
             console.Print($"Current map is {session.gamestate.mapon}");
     }
 
-    internal void Cmd_Fps(string[] args)
+    internal void FpsCommand(string[] args)
     {
         frame.fpscounter = Toggle(args, frame.fpscounter);
         console.Print(frame.fpscounter ? "FPS counter ON" : "FPS counter OFF");
     }
 
-    internal void Cmd_Fade(string[] args)
+    internal void FadeCommand(string[] args)
     {
         if (args.Length == 0 || !Enum.TryParse<FadeStyle>(args[0], ignoreCase: true, out var style))
             throw new ArgumentException("usage: fade <palette|fizzle|melt|mosaic> [tics]");
@@ -167,14 +167,14 @@ internal sealed class DebugCommands(
         });
     }
 
-    internal void Cmd_SlowMo(string[] args)
+    internal void SlowMoCommand(string[] args)
     {
         if (args.Length > 0)
             session.singlestep = (byte)ParseInt(args[0], 0, 50);
         console.Print($"slowmo is {session.singlestep}");
     }
 
-    internal void Cmd_Vbls(string[] args)
+    internal void VblsCommand(string[] args)
     {
         if (args.Length > 0)
             session.extravbls = ParseInt(args[0], 0, 8);

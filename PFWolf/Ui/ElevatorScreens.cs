@@ -97,7 +97,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
                 graphics.DrawPic(pic.Pic, pic.X, pic.Y);
             if (presenter.PresenterScript(textName) is { } script)
             {
-                presenter.TP_Presenter(new PresenterInfo
+                presenter.RunPresenter(new PresenterInfo
                 {
                     Flags = PresenterFlags.CacheNoGfx | PresenterFlags.UseCurrent,
                     Script = script,

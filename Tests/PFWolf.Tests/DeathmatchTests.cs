@@ -220,12 +220,12 @@ public class ScoreboardTests
     public void The_Command_Toggles_It_Or_Sets_It()
     {
         var (board, _) = Board();
-        board.Cmd_Scoreboard([]);
+        board.ScoreboardCommand([]);
         Assert.That(board.showscoreboard, Is.True);
-        board.Cmd_Scoreboard([]);
+        board.ScoreboardCommand([]);
         Assert.That(board.showscoreboard, Is.False);
-        board.Cmd_Scoreboard(["1"]);
-        board.Cmd_Scoreboard(["1"]);
+        board.ScoreboardCommand(["1"]);
+        board.ScoreboardCommand(["1"]);
         Assert.That(board.showscoreboard, Is.True);
     }
 }

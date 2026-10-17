@@ -21,9 +21,9 @@ public class PlayerCommandsTests
     public void With_One_Player_The_Mode_Shows_But_Cant_Change()
     {
         // Act / Assert
-        _commands.Cmd_GameMode([]);
+        _commands.GameModeCommand([]);
         Assert.That(_console.Scrollback[^1], Is.EqualTo("Game mode: single, 1 player(s)"));
-        Assert.Throws<ArgumentException>(() => _commands.Cmd_GameMode(["coop"]));
+        Assert.Throws<ArgumentException>(() => _commands.GameModeCommand(["coop"]));
     }
 
     [Test]
@@ -33,7 +33,7 @@ public class PlayerCommandsTests
         _session.players.Add(new Entities.PlayerState { Number = 1 });
 
         // Act
-        _commands.Cmd_GameMode(["dm", "15"]);
+        _commands.GameModeCommand(["dm", "15"]);
 
         // Assert
         Assert.That(_session.gamemode, Is.EqualTo(GameMode.Deathmatch));
@@ -47,7 +47,7 @@ public class PlayerCommandsTests
     public void Only_A_Player_There_Is_Can_Be_Taken_Over(string n)
     {
         _session.players.Add(new Entities.PlayerState { Number = 1 });
-        Assert.Throws<ArgumentException>(() => _commands.Cmd_ControlPlayer([n]));
+        Assert.Throws<ArgumentException>(() => _commands.ControlPlayerCommand([n]));
     }
 
     [Test]
@@ -57,7 +57,7 @@ public class PlayerCommandsTests
         _session.players.Add(new Entities.PlayerState { Number = 1, playerclass = "Guard" });
 
         // Act
-        _commands.Cmd_ControlPlayer(["2"]);
+        _commands.ControlPlayerCommand(["2"]);
 
         // Assert
         Assert.That(_session.consoleplayer, Is.EqualTo(1));
@@ -70,6 +70,6 @@ public class PlayerCommandsTests
         while (_session.players.Count < PlayerCommands.MAXPLAYERS)
             _session.players.Add(new Entities.PlayerState { Number = _session.players.Count });
 
-        Assert.Throws<ArgumentException>(() => _commands.Cmd_AddPlayer([]));
+        Assert.Throws<ArgumentException>(() => _commands.AddPlayerCommand([]));
     }
 }

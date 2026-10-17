@@ -34,12 +34,12 @@ internal sealed class Missiles(
 {
     internal void Register()
     {
-        Entities.Actors.ActorActionRegistry.Register("A_FireMissile", A_FireMissile);
-        Entities.Actors.ActorActionRegistry.Register("A_Missile", A_Missile);
-        Entities.Actors.ActorActionRegistry.Register("A_Explode", A_Explode);
-        Entities.Actors.ActorActionRegistry.Register("A_BlockTile", A_BlockTile);
-        Entities.Actors.ActorActionRegistry.Register("A_UnblockTile", A_UnblockTile);
-        Entities.Actors.ActorActionRegistry.Register("A_ShockNearby", A_ShockNearby);
+        Entities.Actors.ActorActionRegistry.Register("A_FireMissile", FireMissile);
+        Entities.Actors.ActorActionRegistry.Register("A_Missile", Missile);
+        Entities.Actors.ActorActionRegistry.Register("A_Explode", Explode);
+        Entities.Actors.ActorActionRegistry.Register("A_BlockTile", BlockTile);
+        Entities.Actors.ActorActionRegistry.Register("A_UnblockTile", UnblockTile);
+        Entities.Actors.ActorActionRegistry.Register("A_ShockNearby", ShockNearby);
     }
 
     /// <summary>
@@ -50,7 +50,7 @@ internal sealed class Missiles(
     /// as the throw was cooked (A_HoldCharge): that share of its speed, a quarter at least
     /// (Midnight Assault's GrenadeAttack), and the cooking starts again.
     /// </summary>
-    internal void A_FireMissile(Entities.Actors.Actor weapon, string[] args)
+    internal void FireMissile(Entities.Actors.Actor weapon, string[] args)
     {
         const int ANGLES = GameConstants.ANGLES;
         if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
@@ -132,7 +132,7 @@ internal sealed class Missiles(
     /// speed, with its `bouncesound`, as Midnight Assault's grenade (its Death then comes from its
     /// states running out: its fuse).
     /// </summary>
-    internal void A_Missile(Entities.Actors.Actor ob, string[] args)
+    internal void Missile(Entities.Actors.Actor ob, string[] args)
     {
         // up and down as it flies, with a gravity (Missiles.Fall)
         (ob.Z, ob.ZSpeed) = Fall(ob.Z, ob.ZSpeed, PropertyDouble(ob, "gravity", 0), PropertyDouble(ob, "zfloor", 0), (int)session.tics);
@@ -270,7 +270,7 @@ internal sealed class Missiles(
     /// tile, a quarter of it two tiles out, a ninth at three. playermax:N caps what a player takes
     /// of it (the original's quarter of the most).
     /// </summary>
-    internal void A_Explode(Entities.Actors.Actor ob, string[] args)
+    internal void Explode(Entities.Actors.Actor ob, string[] args)
     {
         int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
         int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
@@ -353,14 +353,14 @@ internal sealed class Missiles(
     };
 
     /// <summary>A_BlockTile: the actor's tile blocks movement, as a solid thing's does</summary>
-    internal void A_BlockTile(Entities.Actors.Actor ob)
+    internal void BlockTile(Entities.Actors.Actor ob)
     {
         if (map.actorat[ob.TileX, ob.TileY] == null)
             map.actorat[ob.TileX, ob.TileY] = new BlockingActor();
     }
 
     /// <summary>A_UnblockTile: the actor's tile no longer blocks (if a solid thing was all that blocked it)</summary>
-    internal void A_UnblockTile(Entities.Actors.Actor ob)
+    internal void UnblockTile(Entities.Actors.Actor ob)
     {
         if (map.actorat[ob.TileX, ob.TileY] is BlockingActor and not WallSpriteBlocker)
             map.actorat[ob.TileX, ob.TileY] = null;
@@ -371,7 +371,7 @@ internal sealed class Missiles(
     /// player within distance tiles of it (each way): each tic it's run, a chance in 256 of a
     /// shock for damage, with the sound from where it is.
     /// </summary>
-    internal void A_ShockNearby(Entities.Actors.Actor ob, string[] args)
+    internal void ShockNearby(Entities.Actors.Actor ob, string[] args)
     {
         int damage = args.Length > 0 && int.TryParse(args[0], out var d) ? d : 0;
         double distance = args.Length > 1 && double.TryParse(args[1], System.Globalization.NumberStyles.Float,

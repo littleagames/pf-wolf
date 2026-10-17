@@ -26,12 +26,12 @@ public class PlayerDeathTests
         var player = new Entities.Actors.Monster { Name = "Player" };
 
         // Act / Assert: made, and moved on a frame by this frame's tics
-        death.T_DeathCam(player);
+        death.ThinkDeathCam(player);
         var banner = death.deathCamSprite;
         Assert.That(banner?.CurrentState?.FrameLetter, Is.EqualTo("B"));
 
         // the same one, each frame after
-        death.T_DeathCam(player);
+        death.ThinkDeathCam(player);
         Assert.That(death.deathCamSprite, Is.SameAs(banner));
     }
 

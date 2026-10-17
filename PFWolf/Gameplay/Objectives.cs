@@ -124,7 +124,7 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
             .Select(o => Format(Info(o.Key)!.Stats!, o.Value.Done, o.Value.Total));
 
     /// <summary>A_JumpIfObjectiveDone("name", "State"): the actor goes there once all of it's done</summary>
-    internal void A_JumpIfObjectiveDone(Entities.Actors.Actor actor, string[] args)
+    internal void JumpIfObjectiveDone(Entities.Actors.Actor actor, string[] args)
     {
         if (args.Length < 2 || !IsDone(args[0].Trim()))
             return;

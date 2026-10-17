@@ -40,7 +40,7 @@ public class HubActionsTests
         int x = blake.X;
 
         // Act: ten tics at 3000 a tic
-        _actions.T_VictoryRun(blake);
+        _actions.ThinkVictoryRun(blake);
 
         // Assert
         Assert.That(blake.X, Is.EqualTo(x + 30000));
@@ -53,7 +53,7 @@ public class HubActionsTests
         var blake = Runner(tilex: 15);
         blake.X += Tile / 2 - 1;        // about to cross into tile 16
 
-        _actions.T_VictoryRun(blake);
+        _actions.ThinkVictoryRun(blake);
 
         Assert.That(blake.TileX, Is.EqualTo(16));
         Assert.That(_session.playstate, Is.EqualTo(PlayState.Victorious));
@@ -69,7 +69,7 @@ public class HubActionsTests
         int x = blake.X;
 
         // Act
-        _actions.T_VictoryRun(blake);
+        _actions.ThinkVictoryRun(blake);
 
         // Assert: it stays put, and the cluster is won
         Assert.That(blake.X, Is.EqualTo(x));
@@ -85,7 +85,7 @@ public class HubActionsTests
         var blake = Runner();
         int x = blake.X;
 
-        _actions.T_VictoryRun(blake);
+        _actions.ThinkVictoryRun(blake);
 
         Assert.That(blake.X, Is.GreaterThan(x));
         Assert.That(_session.playstate, Is.EqualTo(PlayState.StillPlaying));

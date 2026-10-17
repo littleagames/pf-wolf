@@ -39,7 +39,7 @@ internal sealed class ConsoleTargets(
 
     /// <summary>
     /// The tile named by args[index] and args[index + 1], or when they aren't given, the tile in
-    /// front of the player, as Cmd_Use picks it.
+    /// front of the player, as PressUse picks it.
     /// </summary>
     internal (int x, int y) TileArg(string[] args, int index)
     {
