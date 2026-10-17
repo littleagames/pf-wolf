@@ -350,6 +350,7 @@ public class MatchScoringTests
         hunt.Tick();
         Assert.That((hunt.CurrentPhase, hunt.RoundWinner), Is.EqualTo((PropHunt.Phase.RoundOver, 0)));
         Assert.That(rig.Match.TeamScores, Is.EqualTo(new[] { 1, 0 }));
+        Assert.That((rig.Red1.Objective, rig.Red2.Objective, rig.Blue.Objective), Is.EqualTo((1, 1, 0)), "a round won each");
         Assert.That(objective.MayRespawn(rig.Blue), Is.False, "back next round, not before");
 
         // the next round: sides swap, everyone comes back in their new part

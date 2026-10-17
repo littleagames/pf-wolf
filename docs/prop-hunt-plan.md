@@ -133,6 +133,19 @@ taunt sounds (Wolf3D names).
 - Automap: other players are already left off (`AutomapDrawing` skips `PlayerPawn`).
   Check that nothing else shows them (names, the `match` command, the watching HUD).
 
+### Play-test (2026-10-17)
+
+Two windowed instances over loopback (host Red, client Blue), The Courtyard with the
+moody-lights mod. Checked: lobby Prop Hunt row, hide blackout, a prop seen as a lit ceiling
+light (light pool on wall and floor), settling to the tile's middle a second after a step,
+the hunter losing 8 health for three shots at a real column, taunts playing with no missing
+sounds (not heard), finding the prop ending round 2 for the hunters, time-outs winning rounds
+1 and 3 for the props, sides swapping, the match ending at 3 rounds, 402/402 checksums.
+Fixed after: rounds won now count for each player (the scoreboard's Rounds column was 0).
+Seen, still open: a prop's status bar keeps the last weapon's picture (PropHands has no
+`inventory.icon`; DogBite too), a 50-health prop's face looks hurt, and the automap's
+title overlaps the match line.
+
 ### Phase 4: polish (optional)
 
 - **Chase cam for props** (decision 1): a camera behind and above the prop, pushed in where

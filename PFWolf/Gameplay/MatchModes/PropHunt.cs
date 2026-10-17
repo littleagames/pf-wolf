@@ -154,14 +154,18 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
         }
     }
 
-    // A round's over: a point for the team that won it (the score limit's rounds end the match)
+    // A round's over: a point for the team that won it (the score limit's rounds end the match),
+    // and a round won for each of its players (the scoreboard's column)
     void EndRound(int winner, string text)
     {
         RoundWinner = winner;
         StartPhase(Phase.RoundOver, RoundOverTics);
         Announce(winner >= 0 ? $"{text} {GameModes.TeamLabel(winner)} wins round {Round}." : text, "misc/100percent");
-        if (winner >= 0)
-            Match.AddTeamScore(winner, 1);
+        if (winner < 0)
+            return;
+        foreach (var p in Session.Players.Where(p => !p.Gone && p.Team == winner))
+            p.Objective++;
+        Match.AddTeamScore(winner, 1);
     }
 
     // The sides swap, and everyone comes back afresh in their new part, the props to hide
