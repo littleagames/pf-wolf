@@ -510,3 +510,37 @@ The rules are at the top of pfwolf-pk3's `gamepacks/wolf3d/translations.yaml`:
 - Playing with others, everyone picks a color in the lobby (game-info `player-colors`).
 - In the console, `translations` lists them; with cheats on, `settranslation <name|none> [class]`
   and `playercolor <name|none> [n]` try them out.
+
+## Multiplayer modes and arenas
+
+Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
+Deathmatch, Capture the Flag, Heist, Domination, King of the Hill or Horde. The team modes put
+everyone on red or blue (the lobby's Color row becomes Team) and drawn in their team's color;
+teammates can't hurt each other. Each mode's limit (frags, captures, loot lead, points, waves) and
+time limit are on the Rules screen. What each one is, in short:
+
+- **Capture the Flag**: run over the other team's flag, bring it to your own while yours is home.
+  A carrier who dies drops it; the other team takes it on, yours sends it home (or it goes home
+  by itself after 30 seconds).
+- **Heist**: a tug of war over treasure. Each piece taken pulls the rope its worth toward your
+  team (its actordefs `heist.value`, else a hundredth of its score: cross 1, chalice 5, chest
+  10, crown 50); the first team to pull it the limit their way wins, or whoever has it their way
+  when time runs out. Keys aren't given: the best loot is behind locked doors.
+- **Domination**: three control points; a team alone on one takes it over (3 seconds, faster
+  with more of them), and each one held scores a point a second.
+- **King of the Hill**: one hill at a time; the team alone on it scores a point a second, and
+  the hill moves to another spot every minute.
+- **Horde**: everyone together against waves of enemies (game-info `horde:`, Wolf3D's are
+  mutants), with breaks between when the dead come back. Everyone dead at once ends it.
+
+The arenas are game-info maps with `deathmatch: true` (made by `examples/tools/make-deathmatch-maps.ps1`).
+An arena with no `modes:` list is one for every mode but Heist: the modes find spots for their
+flags, points and spawns on any map. `modes: [heist, team-deathmatch]` makes it an arena for those
+only (pfwolf-pk3's HE01, The Vault). Map things for them (pfwolf-pk3 `mapdefs/wolf3d`), all optional:
+
+- 430-433 red team starts and 434-437 blue (facing north, east, south, west)
+- 440 red's flag, 441 blue's flag, 442 a control point, 443 a spot the hill can be,
+  444 where Horde's enemies come in
+
+With cheats on, `addplayer` then `gamemode <mode> [limit]` tries a mode alone (`setteam
+<red|blue> [n]` moves a player), and `match` shows the score and where each mode's things are.

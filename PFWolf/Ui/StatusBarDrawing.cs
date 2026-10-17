@@ -237,11 +237,16 @@ internal sealed class StatusBarDrawing(
         LatchNumber("lives", session.playerstate.lives);
     }
 
+    /// <summary>What the score box shows for a player with others playing (Gameplay/Deathmatch.cs: frags, the team's score); unset, their score</summary>
+    internal Func<Entities.PlayerState, int>? ScoreShown { get; set; }
+
     internal void DrawScore()
     {
         if (StatusBarHidden) return;
-        // a deathmatch keeps score in frags
-        LatchNumber("score", session.gamemode == GameMode.Deathmatch ? session.playerstate.Frags : session.playerstate.score);
+        // a deathmatch keeps score in frags, a team game the team's
+        LatchNumber("score", session.gamemode != GameMode.Single && ScoreShown != null
+            ? ScoreShown(session.playerstate)
+            : session.gamemode == GameMode.Deathmatch ? session.playerstate.Frags : session.playerstate.score);
     }
 
     internal void DrawWeaponPic()

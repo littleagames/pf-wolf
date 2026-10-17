@@ -414,14 +414,57 @@ internal class ConsoleManager
         Execute(line);
     }
 
-    /// <summary>Executes every `;`-separated command on the line without echoing it.</summary>
-    internal void Execute(string line)
+    /// <summary>
+    /// Executes every `;`-separated command on the line without echoing it. `wait [tics]` puts
+    /// the rest of the line off until that many tics of play have gone by (1 if it doesn't say),
+    /// as Quake's did: a script can start a level, then go on in it (`--warp E1M1 --exec "wait;
+    /// give all"`).
+    /// </summary>
+    internal void Execute(string line) => RunCommands(Tokenize(line));
+
+    // Commands put off by `wait`: the rest of their line, and the tics still to go by
+    private readonly List<(List<string[]> Commands, int Tics)> _waiting = [];
+
+    private void RunCommands(List<string[]> commands)
     {
-        foreach (var args in Tokenize(line))
+        for (int i = 0; i < commands.Count; i++)
         {
-            if (args.Length > 0)
-                ExecuteCommand(args[0], args[1..]);
+            var args = commands[i];
+            if (args.Length == 0)
+                continue;
+            if (args[0].Equals("wait", StringComparison.OrdinalIgnoreCase))
+            {
+                int tics = args.Length > 1 && int.TryParse(args[1], out var n) ? Math.Max(n, 1) : 1;
+                _waiting.Add((commands.Skip(i + 1).ToList(), tics));
+                return;
+            }
+            ExecuteCommand(args[0], args[1..]);
         }
+    }
+
+    /// <summary>Whether any commands are waiting (`wait`)</summary>
+    internal bool HasWaiting => _waiting.Count > 0;
+
+    /// <summary>A frame of play has gone by: commands waiting this long run</summary>
+    internal void TickWaiting(int tics)
+    {
+        if (_waiting.Count == 0)
+            return;
+        var due = new List<List<string[]>>();
+        for (int i = 0; i < _waiting.Count; i++)
+        {
+            var (rest, left) = _waiting[i];
+            left -= Math.Max(tics, 1);
+            if (left > 0)
+                _waiting[i] = (rest, left);
+            else
+            {
+                due.Add(rest);
+                _waiting.RemoveAt(i--);
+            }
+        }
+        foreach (var commands in due)
+            RunCommands(commands);
     }
 
     /// <summary>True while a script file is running, for commands that only report back to someone typing.</summary>

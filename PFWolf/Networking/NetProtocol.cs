@@ -20,7 +20,7 @@ game) before they're in; the reason comes back with the refusal.
 internal static class NetProtocol
 {
     /// <summary>Changes whenever a message changes: players with different ones can't play together</summary>
-    public const int Version = 7;     // 7: 16-bit tilemap in the level body (save v25); 6: the mid-game join's level body has translations (save v23); 5: factions, targets and shooters (v22)
+    public const int Version = 8;     // 8: game modes (teams, score limit, objectives); 7: 16-bit tilemap in the level body (save v25); 6: the mid-game join's level body has translations (save v23); 5: factions, targets and shooters (v22)
 
     /// <summary>The port games are hosted on, and looked for on the local network</summary>
     public const int DefaultPort = 10645;

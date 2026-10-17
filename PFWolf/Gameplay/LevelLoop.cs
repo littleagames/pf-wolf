@@ -149,10 +149,11 @@ internal sealed class LevelLoop(
                 scripts.RunTickHooks();             // the scripts' game.ontick hooks (Scripting/GameScripts.cs)
                 if (session.gamemode != GameMode.Single)
                     playerView.WakeSeenEnemies();      // what the renderer did alone (Rendering/PlayerView.cs)
-                if (session.gamemode == GameMode.Deathmatch)
-                    deathmatch.TickDeathmatch();       // items back, and the time limit (Gameplay/Deathmatch.cs)
+                if (session.gamemode is not (GameMode.Single or GameMode.Coop))
+                    deathmatch.TickDeathmatch();       // items back, the objective and the time limit (Gameplay/Deathmatch.cs)
                 if (hooks.NetGame())
                     netPlay.NetFrameDone();
+                console.TickWaiting((int)session.tics);      // commands put off by `wait`
 
                 video.UpdatePaletteShifts(session.tics);
                 hudMessages.Tick((int)session.tics);

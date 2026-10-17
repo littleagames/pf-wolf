@@ -5,9 +5,10 @@ namespace PFWolf.Gameplay;
 
 /// <summary>
 /// How the players play together: Single (just one), Coop (together against the level, keys
-/// shared) or Deathmatch (against each other)
+/// shared), Deathmatch (everyone against everyone), or one of the team and objective modes
+/// (Gameplay/GameModes.cs). Sent over the network as a byte: new ones go at the end.
 /// </summary>
-internal enum GameMode { Single, Coop, Deathmatch }
+internal enum GameMode { Single, Coop, Deathmatch, TeamDeathmatch, CaptureTheFlag, Heist, Domination, KingOfTheHill, Horde }
 
 /*
 =============================================================================
@@ -96,6 +97,19 @@ internal sealed class GameSession
         gamemode = mode;
         GameModeChanged?.Invoke(mode);
     }
+
+    /// <summary>Players fight each other (deathmatch and every team mode)</summary>
+    internal bool IsVersus => gamemode.IsVersus();
+
+    /// <summary>Players are on two teams (Entities.PlayerState.Team)</summary>
+    internal bool IsTeamGame => gamemode.IsTeamGame();
+
+    /// <summary>
+    /// Whether two players fight: in a versus mode, anyone else, but not a teammate (no
+    /// friendly fire)
+    /// </summary>
+    internal bool AreRivals(PlayerState a, PlayerState b) =>
+        IsVersus && !ReferenceEquals(a, b) && !(IsTeamGame && a.Team == b.Team);
 
     /// <summary>The tics this frame moves the game on by</summary>
     internal uint tics;

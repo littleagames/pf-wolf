@@ -7,7 +7,8 @@ namespace PFWolf.Gameplay;
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="DeathmatchSpot">Deathmatch: somewhere random for a player to start</param>
 /// <param name="GiveDeathmatchKeys">Deathmatch: the acting player carries every key</param>
-/// <param name="CountFrag">Deathmatch: a player was killed, by whom</param>
+/// <param name="CountFrag">With others: a player was killed, by whom (a frag, a flag dropped)</param>
+/// <param name="MayRespawn">Whether a dead player may come back yet (Horde: between waves)</param>
 /// <param name="ShowObituary">Says what killed the acting player</param>
 /// <param name="ConnectAreas">Works out again which areas join the players' (a player came or went)</param>
 /// <param name="DeathTurnSpeed">How fast a dead player turns to face their killer (game-info death-turn-speed)</param>
@@ -20,6 +21,7 @@ internal sealed record PlayersHooks(
     Func<Entities.Actors.PlayerPawn, (int x, int y, int angle)> DeathmatchSpot,
     Action GiveDeathmatchKeys,
     Action<Entities.PlayerState, Entities.Actors.Actor?> CountFrag,
+    Func<Entities.PlayerState, bool> MayRespawn,
     Action ShowObituary,
     Action ConnectAreas,
     Func<int> DeathTurnSpeed,
@@ -93,7 +95,7 @@ internal sealed class Players(
         foreach (var p in session.players.Where(p => p.Pawn != null))
         {
             using var _ = session.ActAs(p);
-            if (session.gamemode == GameMode.Deathmatch)
+            if (session.IsVersus)
             {
                 // somewhere random, carrying every key (GameHost.Deathmatch.cs)
                 var (dx, dy, dangle) = hooks.DeathmatchSpot(p.Pawn!);
@@ -191,8 +193,8 @@ internal sealed class Players(
         playerstate.DeadTics = 0;
         playerstate.DeathAngle = FacingAngle(player, playerstate.LastAttacker);
         player.SetState(Entities.Actors.PlayerPawn.DeadState);
-        if (session.gamemode == GameMode.Deathmatch)
-            hooks.CountFrag(playerstate, playerstate.LastAttacker);
+        if (session.gamemode != GameMode.Coop)
+            hooks.CountFrag(playerstate, playerstate.LastAttacker);     // a frag, a flag dropped... (Gameplay/Deathmatch.cs)
 
         if (inventory.GetStringProperty(playerstate.playerclass, "deathsound") is { Length: > 0 } deathSound)
             PlayPlayerSound(deathSound);
@@ -231,7 +233,7 @@ internal sealed class Players(
         if (hooks.DeathDropHeight() is { } dropto && playerstate.EyeZ > dropto)
             playerstate.EyeZ = Math.Max(playerstate.EyeZ - (int)tics * hooks.DeathDropSpeed(), dropto);
 
-        if (playerstate.DeadTics >= RESPAWNTICS
+        if (playerstate.DeadTics >= RESPAWNTICS && hooks.MayRespawn(playerstate)
             && (session.playerinput.IsFreshPress(buttontypes.bt_use) || session.playerinput.IsFreshPress(buttontypes.bt_attack)))
             Respawn();
     }
@@ -256,7 +258,7 @@ internal sealed class Players(
             .Select(pawn => ((int)pawn.TileX, (int)pawn.TileY))
             .ToList();
         int x = player.TileX, y = player.TileY, angle = player.Angle;
-        if (session.gamemode == GameMode.Deathmatch)
+        if (session.IsVersus)
             (x, y, angle) = hooks.DeathmatchSpot(player);
         else if (map.PlayerStart is { } start)
         {
@@ -272,7 +274,7 @@ internal sealed class Players(
         player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         movement.Thrust(0, 0);
         hooks.ConnectAreas();
-        if (session.gamemode == GameMode.Deathmatch)
+        if (session.IsVersus)
             hooks.GiveDeathmatchKeys();
         if (session.ActingIsLocal)
             session.camera.FollowPlayer();      // back through their own eyes, from watching someone
@@ -317,13 +319,18 @@ internal sealed class Players(
             return;
         }
 
-        var p = new Entities.PlayerState { Number = join.Index, Name = join.Name, Color = hooks.PlayerColor(join.Color) };
+        int team = session.IsTeamGame ? join.Team & 1 : -1;      // a team game: on their team, in its color
+        var p = new Entities.PlayerState
+        {
+            Number = join.Index, Name = join.Name, Team = team,
+            Color = hooks.PlayerColor(team >= 0 ? GameModes.TeamNames[team] : join.Color),
+        };
         players.Add(p);
         using (session.ActAs(p))
         {
             StartPlayer(classes.FindPlayerClass(join.PlayerClass) ?? classes.DefaultPlayerClass);
             var pawn = map.CreatePlayer(p);
-            if (session.gamemode == GameMode.Deathmatch)
+            if (session.IsVersus)
             {
                 var (x, y, angle) = hooks.DeathmatchSpot(pawn);
                 think.SpawnPlayer(x, y, angle);

@@ -43,8 +43,9 @@ components:
       - height: 46
 # Handled by Program.Multiplayer.cs, by id. Only the host changes the mode, episode and
 # skill; everyone picks their own class and color. The host starts the game ("go") once everyone else
-# is ready; for them, "go" is that they're ready. The values are drawn by code. In a deathmatch
-# the episode row is "Map" and picks the arena (game-info maps with `deathmatch: true`).
+# is ready; for them, "go" is that they're ready. The values are drawn by code. In any mode but
+# co-op the episode row is "Map" and picks the arena (game-info maps with `deathmatch: true`, or
+# the mode in their `modes`); in a team mode the color row is "Team" (red or blue).
 menu-items:
   -
       id: "mode"
@@ -72,7 +73,7 @@ menu-items:
       type: "ChoiceMenuItem"
       text: "$STR_MP_COLOR"
       enabled: true
-  # A deathmatch's rules: the host picks them on a screen of their own
+  # A match's rules (any mode but co-op): the host picks them on a screen of their own
   -
       id: "rules"
       type: "ChoiceMenuItem"

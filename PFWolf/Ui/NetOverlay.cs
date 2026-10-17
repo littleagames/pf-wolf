@@ -121,9 +121,59 @@ internal sealed class NetOverlay(
         }
     }
 
+    /// <summary>The match being played (Gameplay/Deathmatch.cs), for the line across the top; unset, none</summary>
+    internal Deathmatch? Match { get; set; }
+
+    /// <summary>The top of the 3D view, in 320x200 pixels; unset, the screen's top</summary>
+    internal Func<int>? ViewTop { get; set; }
+
+    /// <summary>How much of the view's top the match's line takes (0 with no match on), for the messages to go under</summary>
+    internal int MatchLineHeight() =>
+        Match == null || game.gamemode is GameMode.Single or GameMode.Coop ? 0
+        : Match.Objective?.StatusLine() != null && game.gamemode != GameMode.Horde ? 20 : 11;
+
+    /// <summary>
+    /// A match's line across the top of the view: the teams' scores (Heist's tug of war as a
+    /// rope pulled one way or the other), the time left, and what the objective has to say
+    /// </summary>
+    internal void DrawMatchLine()
+    {
+        if (MatchLineHeight() == 0)
+            return;
+        var style = new Fonts.TextStyle(UiFonts.SMALL_FONT, "HIGHLIGHT");
+        var (score, news) = Match!.MatchStatus();
+        int y = (ViewTop?.Invoke() ?? 0) + 2;
+        if (game.gamemode == GameMode.Heist)
+        {
+            // The rope: its middle, and how far it's been pulled toward the team ahead
+            const int RopeX = 110, RopeW = 100;
+            int limit = Math.Max(1, Match.netrules.ScoreLimit > 0 ? Match.netrules.ScoreLimit : 100);
+            int lead = Math.Clamp(Match.teamscores[0] - Match.teamscores[1], -limit, limit);
+            int pulled = lead * (RopeW / 2) / limit;
+            video.Bar(RopeX - 1, y - 1, RopeW + 2, 7, "BKGDCOLOR");
+            video.Bar(RopeX, y, RopeW, 5, "#404040");
+            if (pulled > 0)
+                video.Bar(RopeX + RopeW / 2 - pulled, y, pulled, 5, "#FC0000");
+            else if (pulled < 0)
+                video.Bar(RopeX + RopeW / 2, y, -pulled, 5, "#0000FC");
+            video.Bar(RopeX + RopeW / 2, y - 1, 1, 7, "#FCFCFC");
+            ui.TextAt(RopeX - 40, y - 1, style).Print($"Red {Match.teamscores[0]}");
+            ui.TextAt(RopeX + RopeW + 6, y - 1, style).Print($"{Match.teamscores[1]} Blue");
+            y += 9;
+        }
+        else if (score.Length > 0)      // (Horde has none: just its wave)
+        {
+            ui.CenteredText(0, 320, y, style).CPrint(ui.FitText(score, 300, UiFonts.SMALL_FONT));
+            y += 9;
+        }
+        if (news != null)
+            ui.CenteredText(0, 320, y, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READCOLOR")).CPrint(ui.FitText(news, 300, UiFonts.SMALL_FONT));
+    }
+
     /// <summary>Over the view, with others: who the game is waiting for, or whether to leave</summary>
     internal void DrawNetOverlay()
     {
+        DrawMatchLine();
         if (!netGame())
             return;
 

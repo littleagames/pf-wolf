@@ -119,6 +119,10 @@ internal sealed class LevelSetup(
             }
         }
 
+        // the mode's flags, control points or waves (Gameplay/Objectives), before the players
+        // come in near their team's flag
+        deathmatch.ObjectiveLevelSetup();
+
         //
         // spawn the player (MapManager.LoadMap already spawned every other thing and counted
         // the secret pushwalls, from the mapdefs)

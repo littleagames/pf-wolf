@@ -122,9 +122,13 @@ public class Pk3ContentTests
             var map = loader.Load<MapAsset>(name);
             var objects = map.MapData[1];
             int deathmatchStarts = objects.Count(o => mapdefs.PlayerStarts.TryGetValue(o, out var s) && s.Deathmatch);
-            int ownStarts = objects.Count(o => mapdefs.PlayerStarts.TryGetValue(o, out var s) && !s.Deathmatch);
-            if (deathmatchStarts < 4)
+            int StartsOf(string team) => objects.Count(o => mapdefs.PlayerStarts.TryGetValue(o, out var s) && s.Team == team);
+            int ownStarts = objects.Count(o => mapdefs.PlayerStarts.TryGetValue(o, out var s) && !s.Deathmatch && s.Team.Length == 0);
+            if (gameInfo.Maps[name].IsArenaFor("deathmatch") && deathmatchStarts < 4)
                 problems.Add($"{name}: {deathmatchStarts} deathmatch starts, fewer than 4 players");
+            // An arena for team games only: each team's own starts, for 2 players a side
+            if (!gameInfo.Maps[name].IsArenaFor("deathmatch") && (StartsOf("red") < 2 || StartsOf("blue") < 2))
+                problems.Add($"{name}: {StartsOf("red")} red and {StartsOf("blue")} blue starts, fewer than 2 a side");
             if (ownStarts != 1)
                 problems.Add($"{name}: {ownStarts} player starts of its own, not 1");
             if (gameInfo.Episodes.Values.Any(e => e.StartMap == name))

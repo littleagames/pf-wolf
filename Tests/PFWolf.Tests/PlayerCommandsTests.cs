@@ -37,7 +37,7 @@ public class PlayerCommandsTests
 
         // Assert
         Assert.That(_session.gamemode, Is.EqualTo(GameMode.Deathmatch));
-        Assert.That(_deathmatch.netrules.FragLimit, Is.EqualTo(15));
+        Assert.That(_deathmatch.netrules.ScoreLimit, Is.EqualTo(15));
         Assert.That(_console.Scrollback[^1], Is.EqualTo("Game mode: deathmatch, 2 player(s)"));
     }
 

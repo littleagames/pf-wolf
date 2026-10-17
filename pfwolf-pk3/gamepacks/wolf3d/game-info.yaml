@@ -130,6 +130,23 @@ skills:
 # the default. "green" is the player sprites' own shirt.
 player-colors: [green, red, blue, yellow, cyan, magenta, gray, brown]
 
+# Horde (multiplayer): the waves of enemies sent at the players, first to last, each its classes
+# and how many of each. Past the last, each wave is the last again with `grow` more of each
+# class; every player past the first brings half as many again. Between waves there's a break
+# of `break-seconds`, when dead players come back; `spawn-tics` apart they come in, at most
+# `max-alive` of a wave alive at once.
+horde:
+  waves:
+    - enemies: { Mutant: 4 }
+    - enemies: { Mutant: 6 }
+    - enemies: { Mutant: 8 }
+    - enemies: { Mutant: 10 }
+    - enemies: { Mutant: 12 }
+  grow: 2
+  break-seconds: 10
+  spawn-tics: 35
+  max-alive: 12
+
 # The skill demos are recorded and played back on (left out: the hardest). A demo only replays
 # right on the skill it was recorded on, and id's were recorded on HARD.
 demo-skill: HARD
@@ -617,6 +634,15 @@ maps:
     deathmatch: true
     floor-number: 4
     music: NAZI_RAP
+    cluster: 1
+  # Made for Heist (examples/tools/make-deathmatch-maps.ps1): `modes` lists what it's an arena
+  # for; the DM arenas above, listing none, are arenas for every mode but Heist
+  HE01:
+    name: "The Vault"
+    deathmatch: true
+    modes: [heist, team-deathmatch]
+    floor-number: 5
+    music: SEARCHN
     cluster: 1
 
 end-strings:

@@ -28,7 +28,7 @@ internal static partial class GameHost
     static Players MakePlayers() =>
         new(_mapManager, _audioManager, _videoManager, _inventoryManager, _hudMessageManager, statusBarDrawing, playerClassRules, playerStats,
             playerWeapons, playerMovement, playerThink, session,
-            new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, ShowObituary, ConnectAreas,
+            new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, MayRespawn, ShowObituary, ConnectAreas,
                 () => deathTurnSpeed, () => deathDropHeight, () => deathDropSpeed, () => netgame = false, PlayerColor));
 
     internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);

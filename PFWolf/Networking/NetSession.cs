@@ -176,15 +176,18 @@ internal sealed class NetSession : IDisposable
         SendLobby();
     }
 
-    /// <summary>This machine's player picks a class or a color, or says they're ready</summary>
-    public void SetLocal(string playerClass, string color, bool ready)
+    /// <summary>This machine's player picks a class, a color or a team, or says they're ready</summary>
+    public void SetLocal(string playerClass, string color, bool ready, int? team = null)
     {
-        if (LocalPlayer is not { } me || (me.PlayerClass == playerClass && me.Color == color && me.Ready == ready))
+        if (LocalPlayer is not { } me)
+            return;
+        int picked = team ?? me.Team;
+        if (me.PlayerClass == playerClass && me.Color == color && me.Ready == ready && me.Team == picked)
             return;
 
         if (IsHost)
         {
-            ReplacePlayer(me with { PlayerClass = playerClass, Color = color, Ready = true });
+            ReplacePlayer(me with { PlayerClass = playerClass, Color = color, Ready = true, Team = picked });
             SendLobby();
         }
         else if (_host != null)
@@ -193,6 +196,7 @@ internal sealed class NetSession : IDisposable
             w.Put(playerClass);
             w.Put(ready);
             w.Put(color);
+            w.Put((byte)picked);
             _host.Send(w, DeliveryMethod.ReliableOrdered);
         }
     }
@@ -515,7 +519,8 @@ internal sealed class NetSession : IDisposable
         int slot = Enumerable.Range(0, _maxPlayers).First(s => Players.All(p => p.Slot != s));
         var peer = request.Accept();
         _slotOfPeer[peer.Id] = slot;
-        AddPlayer(new LobbyPlayer(slot, NetProtocol.CleanName(hello!.Name), hello.PlayerClass, Ready: false, hello.Color));
+        AddPlayer(new LobbyPlayer(slot, NetProtocol.CleanName(hello!.Name), hello.PlayerClass, Ready: false, hello.Color,
+            Gameplay.Deathmatch.SmallerTeam(Players.Select(p => p.Team))));      // on the team with fewer in it
     }
 
     private void OnPeerConnected(NetPeer peer)
@@ -540,7 +545,7 @@ internal sealed class NetSession : IDisposable
             _neededFrom.Add(long.MaxValue);     // until their step is set
             _indexOfSlot[slot] = index;
             _joinPeers[index] = peer;
-            _joining.Enqueue(new NetJoin(index, joiner.Name, joiner.PlayerClass, joiner.Color));
+            _joining.Enqueue(new NetJoin(index, joiner.Name, joiner.PlayerClass, joiner.Color, joiner.Team));
             Announce($"{joiner.Name} is joining the game");
         }
     }
@@ -603,7 +608,7 @@ internal sealed class NetSession : IDisposable
         switch (type)
         {
             case NetMessage.LobbyChange:
-                ReplacePlayer(player with { PlayerClass = reader.GetString(), Ready = reader.GetBool(), Color = reader.GetString() });
+                ReplacePlayer(player with { PlayerClass = reader.GetString(), Ready = reader.GetBool(), Color = reader.GetString(), Team = reader.GetByte() & 1 });
                 SendLobby();
                 break;
 

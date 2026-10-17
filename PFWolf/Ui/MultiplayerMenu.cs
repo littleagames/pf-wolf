@@ -214,7 +214,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         var episodes = PlayableEpisodes();
         var settings = new LobbySettings(GameMode.Coop, episodes.Count > 0 ? episodes[0] : 0,
             Math.Min(2, engine.GetGameInfo().Skills.Count - 1),     // the third skill, as the menus start on
-            Map: DeathmatchMaps().FirstOrDefault() ?? "");
+            Map: ArenaMaps(GameMode.Deathmatch).FirstOrDefault() ?? "");
 
         var session = NetSession.Host(netStart.HostPort, hooks.Identity(), MpConfig.Name, hooks.PlayerClass(),
             LocalColor(), PlayerCommands.MAXPLAYERS, settings, out var error);
@@ -380,7 +380,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         foreach (var game in games.Take(7))
         {
             var info = game.Info;
-            var mode = info.Mode == GameMode.Deathmatch ? "$STR_MP_DEATHMATCH" : "$STR_MP_COOP";
+            var mode = info.Mode.LabelKey();
             var text = $"{info.HostName} {info.Players}/{info.MaxPlayers} {mode.ToLanguageText(language)}{(info.InGame ? " (playing)" : "")}, {info.Map}";
             bool canJoin = info.Players < info.MaxPlayers
                 && string.Equals(info.GamePack, engine.GamePackId, StringComparison.OrdinalIgnoreCase);
@@ -594,7 +594,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                     }
                     break;
 
-                case "rules" when session.IsHost && session.Settings.Mode == GameMode.Deathmatch:
+                case "rules" when session.IsHost && session.Settings.Mode != GameMode.Coop:
                     draw.MenuFadeOut();
                     EditRules(session);
                     fadeIn = true;
@@ -632,23 +632,29 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         {
             // A deathmatch is played on an arena: the episode row picks it instead
             episodeRow.text = (arenas ? "$STR_MP_MAP" : "$STR_MP_EPISODE").ToLanguageText(language);
-            episodeRow.active = (short)(host && (arenas ? DeathmatchMaps().Count : PlayableEpisodes().Count) > 1 ? 1 : 0);
+            episodeRow.active = (short)(host && (arenas ? ArenaMaps(settings.Mode).Count : PlayableEpisodes().Count) > 1 ? 1 : 0);
         }
         MenuDefs.FindMenuItem(LobbyMenu, "skill")?.active = (short)(host ? 1 : 0);
         MenuDefs.FindMenuItem(LobbyMenu, "class")?.active = (short)(hooks.PlayerClasses().Count > 1 ? 1 : 0);
-        MenuDefs.FindMenuItem(LobbyMenu, "color")?.active = (short)(PlayerColors().Count > 1 ? 1 : 0);
-        MenuDefs.FindMenuItem(LobbyMenu, "rules")?.active = (short)(host && settings.Mode == GameMode.Deathmatch ? 1 : 0);
+        bool teams = settings.Mode.IsTeamGame();
+        if (MenuDefs.FindMenuItem(LobbyMenu, "color") is { } colorRow)
+        {
+            // In a team game you're seen in your team's color: the color row picks the team instead
+            colorRow.text = (teams ? "$STR_MP_TEAM" : "$STR_MP_COLOR").ToLanguageText(language);
+            colorRow.active = (short)(teams || PlayerColors().Count > 1 ? 1 : 0);
+        }
+        MenuDefs.FindMenuItem(LobbyMenu, "rules")?.active = (short)(host && settings.Mode != GameMode.Coop ? 1 : 0);
         if (LobbyMenu[LobbyItems.curpos].active == 0)
             LobbyItems.curpos = (short)Math.Max(0, Array.FindIndex(LobbyMenu, item => item.active != 0));
 
         defs.DrawMenuComponents("lobby");
         draw.DrawMenu(LobbyItems, LobbyMenu);
 
-        DrawLobbyValue("mode", (settings.Mode == GameMode.Deathmatch ? "$STR_MP_DEATHMATCH" : "$STR_MP_COOP").ToLanguageText(language));
+        DrawLobbyValue("mode", settings.Mode.LabelKey().ToLanguageText(language));
         DrawLobbyValue("episode", arenas ? MapLabel(settings.Map) : EpisodeLabel(settings.Episode));
         DrawLobbyValue("skill", gameInfo.Skills.Values.ElementAtOrDefault(settings.Skill)?.Name.ToLanguageText(language) ?? "?");
         DrawLobbyValue("class", me == null ? "" : PlayerClassLabel(me.PlayerClass));
-        DrawLobbyValue("color", me == null ? "" : ColorLabel(me.Color));
+        DrawLobbyValue("color", me == null ? "" : teams ? GameModes.TeamLabel(me.Team) : ColorLabel(me.Color));
         DrawLobbyValue("rules", RulesSummary(settings));
         if (!host)
             draw.DrawMenuCheckbox(LobbyItems, LobbyMenu, "go", me?.Ready == true);
@@ -661,7 +667,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             var p = session.Players.FirstOrDefault(pl => pl.Slot == slot);
             string text = p == null ? "-"
                 : $"{p.Name}{(slot == 0 ? " (host)" : "")}  {PlayerClassLabel(p.PlayerClass)}"
-                  + (string.IsNullOrEmpty(p.Color) ? "" : $" ({ColorLabel(p.Color)})")
+                  + (teams ? $" ({GameModes.TeamLabel(p.Team)})" : string.IsNullOrEmpty(p.Color) ? "" : $" ({ColorLabel(p.Color)})")
                   + $"  {(slot == 0 ? "" : p.Ready ? "ready" : "not ready")}";
             var style = p != null && p.Slot == session.LocalSlot ? new TextStyle(UiFonts.SMALL_FONT, "HIGHLIGHT") : panel;
             ui.TextAt(LobbyPanelX, y, style).Print(ui.FitText($"{slot + 1}. {text}", 272, UiFonts.SMALL_FONT));
@@ -691,25 +697,37 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         ui.TextAt(x, y + 2, new TextStyle(UiFonts.SMALL_FONT, MenuDrawing.MenuItemColor(LobbyMenu[index], false))).Print(ui.FitText(value, 300 - x, UiFonts.SMALL_FONT));
     }
 
-    /// <summary>A deathmatch's rules in a few words, for the lobby: "20 frags, 10 min, monsters"</summary>
+    /// <summary>A match's rules in a few words, for the lobby: "20 frags, 10 min, monsters"</summary>
     string RulesSummary(LobbySettings settings)
     {
-        if (settings.Mode != GameMode.Deathmatch)
+        if (settings.Mode == GameMode.Coop)
             return "-";
+        var what = settings.Mode.ScoreName().ToLowerInvariant();
         var parts = new List<string>
         {
-            settings.FragLimit > 0 ? $"{settings.FragLimit} frags" : "no frag limit",
+            settings.ScoreLimit > 0
+                ? settings.Mode == GameMode.Heist ? $"lead by {settings.ScoreLimit}" : $"{settings.ScoreLimit} {what}"
+                : settings.Mode == GameMode.Horde ? "endless" : $"no {what} limit",
         };
-        if (settings.TimeLimit > 0)
+        if (settings.TimeLimit > 0 && settings.Mode != GameMode.Horde)
             parts.Add($"{settings.TimeLimit} min");
         if (settings.Monsters)
             parts.Add("monsters");
         return string.Join(", ", parts);
     }
 
-    readonly int[] FragLimits = [0, 5, 10, 15, 20, 25, 30, 50, 100];
-    readonly int[] TimeLimits = [0, 5, 10, 15, 20, 30, 45, 60];
+    // What the rules screen's limit row is called, for the mode
+    static string ScoreLimitKey(GameMode mode) => mode switch
+    {
+        GameMode.Deathmatch or GameMode.TeamDeathmatch => "$STR_MP_FRAGLIMIT",
+        GameMode.CaptureTheFlag => "$STR_MP_CAPTURELIMIT",
+        GameMode.Heist => "$STR_MP_LOOTLIMIT",
+        GameMode.Domination or GameMode.KingOfTheHill => "$STR_MP_POINTLIMIT",
+        GameMode.Horde => "$STR_MP_WAVELIMIT",
+        _ => "$STR_MP_SCORELIMIT",
+    };
 
+    readonly int[] TimeLimits = [0, 5, 10, 15, 20, 30, 45, 60];
     CP_itemtype[] RulesMenu = [];
     CP_iteminfo RulesItems = null!;
 
@@ -745,7 +763,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         RulesItems.curpos = (short)which;
         settings = MenuDefs.SelectedId(RulesMenu, which) switch
         {
-            "fraglimit" => settings with { FragLimit = FragLimits[MenuDrawing.StepMenuChoice(Math.Max(0, Array.IndexOf(FragLimits, settings.FragLimit)), FragLimits.Length, delta, wrap: true)] },
+            "fraglimit" => settings with { ScoreLimit = StepLimit(settings.Mode.ScoreLimits(), settings.ScoreLimit, delta) },
             "timelimit" => settings with { TimeLimit = TimeLimits[MenuDrawing.StepMenuChoice(Math.Max(0, Array.IndexOf(TimeLimits, settings.TimeLimit)), TimeLimits.Length, delta, wrap: true)] },
             "monsters" => settings with { Monsters = !settings.Monsters },
             "itemrespawn" => settings with { ItemRespawn = !settings.ItemRespawn },
@@ -763,9 +781,11 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         var language = assets.GetText("en-us");
         var settings = session.Settings;
         defs.DrawMenuComponents("net-rules");
+        MenuDefs.FindMenuItem(RulesMenu, "fraglimit")?.text = ScoreLimitKey(settings.Mode).ToLanguageText(language);
+        MenuDefs.FindMenuItem(RulesMenu, "timelimit")?.active = (short)(settings.Mode == GameMode.Horde ? 0 : 1);
         draw.DrawMenu(RulesItems, RulesMenu);
         var none = "$STR_MP_NONE".ToLanguageText(language);
-        draw.DrawMenuChoice(RulesItems, RulesMenu, "fraglimit", settings.FragLimit > 0 ? settings.FragLimit.ToString() : none);
+        draw.DrawMenuChoice(RulesItems, RulesMenu, "fraglimit", settings.ScoreLimit > 0 ? settings.ScoreLimit.ToString() : none);
         draw.DrawMenuChoice(RulesItems, RulesMenu, "timelimit", settings.TimeLimit > 0 ? $"{settings.TimeLimit} min" : none);
         draw.DrawMenuCheckbox(RulesItems, RulesMenu, "monsters", settings.Monsters);
         draw.DrawMenuCheckbox(RulesItems, RulesMenu, "itemrespawn", settings.ItemRespawn);
@@ -783,11 +803,21 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         switch (id)
         {
             case "mode" when session.IsHost:
-                session.SetSettings(settings with { Mode = settings.Mode == GameMode.Coop ? GameMode.Deathmatch : GameMode.Coop });
+                // The next mode, with its own score limit, enemies and arena (the one picked, if it's one for it too)
+                var modes = GameModes.NetModes;
+                var mode = modes[MenuDrawing.StepMenuChoice(Math.Max(0, Array.IndexOf(modes, settings.Mode)), modes.Length, delta, wrap: true)];
+                var modeArenas = ArenaMaps(mode);
+                session.SetSettings(settings with
+                {
+                    Mode = mode,
+                    ScoreLimit = mode.DefaultScoreLimit(),
+                    Monsters = mode.DefaultMonsters(),
+                    Map = modeArenas.Contains(settings.Map, StringComparer.OrdinalIgnoreCase) ? settings.Map : modeArenas.FirstOrDefault() ?? "",
+                });
                 break;
 
             case "episode" when session.IsHost && PicksArena(settings):
-                var arenas = DeathmatchMaps();
+                var arenas = ArenaMaps(settings.Mode);
                 int arena = Math.Max(0, arenas.FindIndex(m => string.Equals(m, settings.Map, StringComparison.OrdinalIgnoreCase)));
                 session.SetSettings(settings with { Map = arenas[MenuDrawing.StepMenuChoice(arena, arenas.Count, delta, wrap: true)] });
                 break;
@@ -811,6 +841,10 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                 var next = classes[MenuDrawing.StepMenuChoice(current, classes.Count, delta, wrap: true)];
                 hooks.ClassChosen(next);        // the next game played alone starts as it too
                 session.SetLocal(next, me.Color, me.Ready);
+                break;
+
+            case "color" when settings.Mode.IsTeamGame() && session.LocalPlayer is { } me:
+                session.SetLocal(me.PlayerClass, me.Color, me.Ready, 1 - (me.Team & 1));      // the other team
                 break;
 
             case "color" when session.LocalPlayer is { } me && PlayerColors() is { Count: > 1 } colors:
@@ -839,20 +873,28 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             .Select(e => e.i)
             .ToList();
 
-    /// <summary>The deathmatch arenas (game-info maps with `deathmatch: true`), in game-info's order</summary>
-    List<string> DeathmatchMaps() =>
+    /// <summary>The arenas for a mode (game-info maps with `deathmatch: true` or the mode in their `modes`), in game-info's order</summary>
+    List<string> ArenaMaps(GameMode mode) =>
         engine.GetGameInfo().Maps
-            .Where(m => m.Value.Deathmatch)
+            .Where(m => m.Value.IsArenaFor(mode.Id()))
             .Select(m => m.Key)
             .ToList();
 
     /// <summary>
-    /// The game is a deathmatch on an arena the host picks: its game has arenas. Without any, a
-    /// deathmatch starts on an episode, as a co-op game does.
+    /// The game is played on an arena the host picks: its game has arenas for the mode. Without
+    /// any, it starts on an episode, as a co-op game does.
     /// </summary>
     bool PicksArena(LobbySettings settings) =>
-        settings.Mode == GameMode.Deathmatch && DeathmatchMaps().Count > 0;
+        settings.Mode != GameMode.Coop && ArenaMaps(settings.Mode).Count > 0;
 
+    // The next (or last) of a list of limits from where one is
+    static int StepLimit(int[] limits, int current, int delta)
+    {
+        int at = Array.IndexOf(limits, current);
+        if (at < 0)
+            at = Math.Max(0, Array.FindLastIndex(limits, l => l < current));
+        return limits[MenuDrawing.StepMenuChoice(at, limits.Length, delta, wrap: true)];
+    }
     /// <summary>An arena's name for the lobby and the LAN list: its game-info name, else its map name</summary>
     string MapLabel(string map)
     {

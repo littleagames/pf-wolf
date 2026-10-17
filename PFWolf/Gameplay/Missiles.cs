@@ -226,8 +226,8 @@ internal sealed class Missiles(
     // In deathmatch, another living player a player's missile has flown into (as an enemy's
     // projectile hits a player: within PROJECTILESIZE), else null. Co-op missiles fly through.
     internal Entities.Actors.PlayerPawn? RivalHitBy(Entities.Actors.Actor ob) =>
-        session.gamemode != GameMode.Deathmatch ? null
-        : map.Players.FirstOrDefault(pawn => !ReferenceEquals(pawn, ob.Shooter) && pawn.State.health > 0
+        !session.IsVersus || ob.Shooter is not Entities.Actors.PlayerPawn { State: { } shooter } ? null
+        : map.Players.FirstOrDefault(pawn => session.AreRivals(shooter, pawn.State) && pawn.State.health > 0
             && Math.Abs((long)pawn.X - ob.X) < GameConstants.PROJECTILESIZE && Math.Abs((long)pawn.Y - ob.Y) < GameConstants.PROJECTILESIZE);
 
     /// <summary>
@@ -296,7 +296,7 @@ internal sealed class Missiles(
         var shooter = ob.Shooter as Entities.Actors.PlayerPawn;
         var blasted = !hurtPlayer ? []
             : map.Players.Where(pawn => (session.gamemode == GameMode.Single || pawn.State.health > 0) && (shooter == null
-                || ReferenceEquals(pawn, shooter) || session.gamemode == GameMode.Deathmatch)).ToList();
+                || ReferenceEquals(pawn, shooter) || session.AreRivals(shooter.State, pawn.State))).ToList();
         using var _ = ActAsShooter(ob);
 
         var seen = new HashSet<(int, int)> { (cx, cy) };

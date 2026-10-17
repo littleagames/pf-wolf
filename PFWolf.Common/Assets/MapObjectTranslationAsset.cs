@@ -242,6 +242,12 @@ public record MapPlayerStartTranslation
 
     /// <summary>A deathmatch start: where players come into a deathmatch, not the level's own start</summary>
     public bool Deathmatch { get; set; }
+
+    /// <summary>
+    /// A team start ("red" or "blue"): where that team's players come into a team game (and back
+    /// after dying), a free one at random. Other games don't use it.
+    /// </summary>
+    public string Team { get; set; } = "";
 }
 
 /// <summary>

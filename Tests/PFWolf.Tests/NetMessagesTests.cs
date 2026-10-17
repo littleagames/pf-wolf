@@ -121,7 +121,7 @@ public class NetMessagesTests
     public void LobbySettings_Round_Trip()
     {
         // Arrange
-        var settings = new LobbySettings(GameMode.Deathmatch, 2, 3, Monsters: true, FragLimit: 50, TimeLimit: 15, ItemRespawn: false, Map: "DM03");
+        var settings = new LobbySettings(GameMode.Domination, 2, 3, Monsters: true, ScoreLimit: 500, TimeLimit: 15, ItemRespawn: false, Map: "DM03");
 
         // Act / Assert
         Assert.That(RoundTrip(settings.Write, LobbySettings.Read), Is.EqualTo(settings));
@@ -131,7 +131,7 @@ public class NetMessagesTests
     public void LobbyPlayer_List_Round_Trips_In_Order()
     {
         // Arrange
-        List<LobbyPlayer> players = [new(0, "Host", "Soldier", true, "blue"), new(1, "Guest", "Medic", false), new(3, "Late", "", true, "red")];
+        List<LobbyPlayer> players = [new(0, "Host", "Soldier", true, "blue", Team: 1), new(1, "Guest", "Medic", false), new(3, "Late", "", true, "red", Team: 0)];
 
         // Act
         var read = RoundTrip(w => LobbyPlayer.WriteList(w, players), LobbyPlayer.ReadList);
@@ -180,7 +180,7 @@ public class NetMessagesTests
     public void TicBundle_Round_Trips_With_A_Join()
     {
         // Arrange
-        var bundle = new TicBundle(3, 1234, 0b0100, new NetJoin(2, "Newcomer", "Soldier", "yellow"),
+        var bundle = new TicBundle(3, 1234, 0b0100, new NetJoin(2, "Newcomer", "Soldier", "yellow", Team: 1),
             [Cmd(1, 2, 3, 4), Cmd(0, 0, 0, 0), Cmd(uint.MaxValue, -5, -6, -7)]);
 
         // Act

@@ -172,7 +172,7 @@ internal static partial class GameHost
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
         _inventoryManager.PlayerClass = () => playerstate.playerclass;
         session.ActingChanged = p => _inventoryManager.SetHolder(p.Items);
-        session.GameModeChanged = mode => _inventoryManager.ShareKeys = mode == GameMode.Coop;
+        session.GameModeChanged = mode => _inventoryManager.ShareKeys = mode.IsCoopLike();
         SetActing(playerstate);         // the inventory reads the acting player's items
         _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
         _automapManager = serviceProvider.GetRequiredService<AutomapManager>();
@@ -223,6 +223,8 @@ internal static partial class GameHost
         statusBarDrawing = MakeStatusBarDrawing();
         playArea = new PlayArea(_videoManager, statusBarDrawing);
         deathmatch = MakeDeathmatch();
+        statusBarDrawing.ScoreShown = deathmatch.ScoreShown;
+        AddObjectives();
         radar = MakeRadar();
         automapDrawing = MakeAutomapDrawing();
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
@@ -255,10 +257,14 @@ internal static partial class GameHost
         hudMessageDrawing = MakeHudMessageDrawing();
         spectating = new Spectating(_mapManager, _consoleManager, _hudMessageManager, hudMessageDrawing, session);
         playerCommands = new PlayerCommands(_consoleManager, _mapManager, doors, playerClassRules, playersManager, playerThink, deathmatch, session,
-            new PlayerCommandsHooks(() => viewsize, DrawPlayScreen));
+            new PlayerCommandsHooks(() => viewsize, DrawPlayScreen, PlayerColor));
         scoreboard = MakeScoreboard();
+        scoreboard.Match = deathmatch;
         netPlay = MakeNetPlay();
         netOverlay = MakeNetOverlay();
+        netOverlay.Match = deathmatch;
+        netOverlay.ViewTop = () => _videoManager.ToLayoutY(render.viewscreeny, roundUp: true);
+        hudMessageDrawing.TopReserved = netOverlay.MatchLineHeight;     // messages go under a match's line
         gameScripts = MakeGameScripts();
         levelMusic = new LevelMusic(_gameEngineManager, _audioManager, session);
         playKeys = MakePlayKeys();

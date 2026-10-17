@@ -123,9 +123,10 @@ internal sealed class NetGames(
         hooks.NewGame((short)Math.Clamp(start.Settings.Skill, 0, gameInfo.Skills.Count - 1), episode, mapInfo,
             ClassOrDefault(start.Players[0].PlayerClass));
 
-        // A deathmatch on an arena starts there, not on the episode's first floor
-        if (start.Settings.Mode == GameMode.Deathmatch
-            && gameInfo.Maps.TryGetValue(start.Settings.Map, out var arena) && arena.Deathmatch)
+        // A match on an arena starts there, not on the episode's first floor
+        var mode = start.Settings.Mode;
+        if (mode != GameMode.Coop
+            && gameInfo.Maps.TryGetValue(start.Settings.Map, out var arena) && arena.IsArenaFor(mode.Id()))
         {
             game.gamestate.mapon = start.Settings.Map;
             game.gamestate.cluster = arena.Cluster;
@@ -134,7 +135,10 @@ internal sealed class NetGames(
         game.players.Clear();
         for (int i = 0; i < start.Players.Count; i++)
         {
-            var p = new Entities.PlayerState { Number = i, Name = start.Players[i].Name, Color = PlayerColor(start.Players[i].Color) };
+            // In a team game, each is seen in their team's color
+            int team = mode.IsTeamGame() ? start.Players[i].Team & 1 : -1;
+            var color = team >= 0 ? PlayerColor(GameModes.TeamNames[team]) : PlayerColor(start.Players[i].Color);
+            var p = new Entities.PlayerState { Number = i, Name = start.Players[i].Name, Color = color, Team = team };
             game.players.Add(p);
             using (game.ActAs(p))
                 playersManager.StartPlayer(ClassOrDefault(start.Players[i].PlayerClass));
@@ -147,8 +151,8 @@ internal sealed class NetGames(
         hooks.SetNetGame(true);
         hooks.SetNetSeed(start.Seed);
         var rules = start.Settings;
-        deathmatch.netrules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.FragLimit, rules.TimeLimit, rules.ItemRespawn);
-        deathmatch.matchover = false;
+        deathmatch.netrules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.ScoreLimit, rules.TimeLimit, rules.ItemRespawn);
+        deathmatch.NewMatch();
         scoreboard.showscoreboard = false;
         netPlay.netlevel = 0;
         netPlay.netLeft = false;

@@ -104,6 +104,14 @@ internal sealed class PlayerBodies(
     internal string DrawnSprite(Entities.Actors.Actor actor)
     {
         var state = actor.CurrentState!;
+
+        // Carrying a flag: its sprite in place of the Spawn one, frame by frame where it has it
+        if (session.players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is { CarrySprite: { } carry, BodyHoldsWeapon: true }
+            && actor.ResolvedStates.TryGetValue("Spawn", out var bodySpawn)
+            && string.Equals(state.Sprite, bodySpawn.Sprite, StringComparison.OrdinalIgnoreCase)
+            && SpriteExists(spriteDrawing.ActorShapeName(carry, state.FrameLetter, actor)))
+            return carry;
+
         if (session.players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is not { weapon: { } weapon, BodyHoldsWeapon: true }
             || !actor.ResolvedStates.TryGetValue("Spawn", out var spawn)
             || !string.Equals(state.Sprite, spawn.Sprite, StringComparison.OrdinalIgnoreCase)

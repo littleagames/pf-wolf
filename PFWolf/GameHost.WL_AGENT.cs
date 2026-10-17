@@ -62,7 +62,7 @@ internal static partial class GameHost
     static Pickups MakePickups() =>
         new(_mapManager, _videoManager, _hudMessageManager, playerClassRules, playerStats, session,
             new PickupHooks(() => playstate == playstatetypes.ex_died, PlayPlayerSound, HasWeaponFrom,
-                () => netrules.ItemRespawn, QueueItemRespawn));
+                () => netrules.ItemRespawn, QueueItemRespawn, item => deathmatch.Objective?.ItemTaken(item)));
 
     internal static void GetBonus(Inventory builtActor) => pickups.GetBonus(builtActor);
     // The player classes' rules (Gameplay/PlayerClassRules.cs) and the acting player's health,

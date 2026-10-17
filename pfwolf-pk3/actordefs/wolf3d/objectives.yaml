@@ -1,0 +1,52 @@
+# Multiplayer objectives (Gameplay/Objectives): the invisible markers a map places for them from
+# the object plane (mapdefs/wolf3d/objectives.yaml), and the flags the modes show. A mode finds
+# its own spots on a map without markers (the two places farthest apart for the flag bases, three
+# spread out for control points, a few for the hill), so any arena plays every mode but Heist.
+
+# Capture the Flag: where each team's flag stands (and its players come in near, without team
+# starts)
+RedFlagBase:
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: -1
+
+BlueFlagBase:
+  parent: RedFlagBase
+
+# Domination: a control point (a map has three, or as many as it likes)
+ControlPoint:
+  parent: RedFlagBase
+
+# King of the Hill: a place the hill can be (it moves from one to another at random)
+HillSpot:
+  parent: RedFlagBase
+
+# Horde: where the waves' enemies come in (out of the players' way)
+HordeSpawn:
+  parent: RedFlagBase
+
+# The flags, drawn on a pole (Wolf3D's own banner): a team's, through its color (translations.yaml
+# flag-blue for blue's; red's is its own red). Not solid: players run through to take one.
+TeamFlag:
+  states:
+    Spawn:
+      - sprite: FLAG
+        frames: [A]
+        tics-per-frame: -1
+
+RedFlag:
+  parent: TeamFlag
+
+BlueFlag:
+  parent: TeamFlag
+  properties:
+    translation: flag-blue
+
+# A control point's or the hill's flag: the code colors it for the team holding it (flag-red,
+# flag-blue), grey (flag-neutral) while nobody does
+ObjectiveFlag:
+  parent: TeamFlag
+  properties:
+    translation: flag-neutral

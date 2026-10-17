@@ -18,6 +18,9 @@ internal sealed class CoreCommands(ConsoleManager console, Func<string, string> 
             complete: Values("0", "1"));
         console.Register("exec", "Runs the commands in a script file (in the config folder unless a full path is given).",
             "exec <file>", Cmd_Exec, complete: (_, i) => i == 0 ? ConfigScriptNames() : []);
+        // Handled by ConsoleManager.Execute itself (the rest of the line waits); here for help
+        console.Register("wait", "Puts the rest of the line off until so many tics of play have gone by (default 1).",
+            "wait [tics]", _ => { });
     }
 
     IEnumerable<string> CommandNames() => console.Commands.Select(c => c.Name);

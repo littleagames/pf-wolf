@@ -47,7 +47,7 @@ internal sealed class MidGameJoin(
     ===============
     */
 
-    internal const int NETSTATEVERSION = 4;     // 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
+    internal const int NETSTATEVERSION = 5;     // 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save
@@ -66,10 +66,12 @@ internal sealed class MidGameJoin(
             bw.Write(gameSession.random.rndindex);
             bw.Write((byte)gameSession.gamemode);
             bw.Write(deathmatch.netrules.Monsters);
-            bw.Write(deathmatch.netrules.FragLimit);
+            bw.Write(deathmatch.netrules.ScoreLimit);
             bw.Write(deathmatch.netrules.TimeLimitMinutes);
             bw.Write(deathmatch.netrules.ItemRespawn);
             bw.Write(deathmatch.matchover);
+            bw.Write(deathmatch.teamscores[0]);
+            bw.Write(deathmatch.teamscores[1]);
             gameSession.gamestate.Write(bw, gameSession.players[0]);
 
             var actors = mapManager.GetSavedActors();
@@ -106,6 +108,9 @@ internal sealed class MidGameJoin(
                 bw.Write(item.TileY);
                 bw.Write(item.At);
             }
+
+            // The mode's flags, points or waves (Gameplay/MatchModes)
+            deathmatch.Objective?.Write(bw);
         }
         return ms.ToArray();
     }
@@ -134,6 +139,8 @@ internal sealed class MidGameJoin(
             var mode = (GameMode)br.ReadByte();
             deathmatch.netrules = new NetRules(br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadBoolean());
             deathmatch.matchover = br.ReadBoolean();
+            deathmatch.teamscores[0] = br.ReadInt32();
+            deathmatch.teamscores[1] = br.ReadInt32();
             var (game, _) = gametype.Read(br);
 
             // The players, as the host has them
@@ -182,6 +189,7 @@ internal sealed class MidGameJoin(
             deathmatch.itemrespawns.Clear();
             for (int i = br.ReadInt32(); i > 0; i--)
                 deathmatch.itemrespawns.Add(new ItemRespawn(br.ReadString(), br.ReadInt32(), br.ReadInt32(), br.ReadInt32()));
+            deathmatch.Objective?.Read(br);
 
             for (int i = 0; i < gameSession.players.Count; i++)
             {

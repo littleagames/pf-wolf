@@ -5,7 +5,7 @@ namespace PFWolf.Ui;
 
 /// <summary>
 /// The scoreboard, playing with others: over the view (the `scoreboard` command toggles it,
-/// and it's up while the player's dead), and full screen when a deathmatch ends.
+/// and it's up while the player's dead), and full screen when a match ends.
 /// </summary>
 /// <param name="clearMemory">Stops what's playing before the final scoreboard (ClearMemory)</param>
 internal sealed class Scoreboard(
@@ -19,22 +19,43 @@ internal sealed class Scoreboard(
     /// <summary>Whether the scoreboard is up over the view (the `scoreboard` command toggles it)</summary>
     internal bool showscoreboard;
 
-    /// <summary>The players, best first: by frags in a deathmatch, else by score</summary>
-    internal List<Entities.PlayerState> RankedPlayers() =>
-        session.players.Where(p => !p.Gone)
-            .OrderByDescending(p => session.gamemode == GameMode.Deathmatch ? p.Frags : p.score)
-            .ThenBy(p => p.Number)
-            .ToList();
+    /// <summary>The match's team scores and objective (Gameplay/Deathmatch.cs); unset, none</summary>
+    internal Deathmatch? Match { get; set; }
 
     /// <summary>
-    /// The scoreboard in a box at (x, y): each player's name, and their frags (deathmatch) or
-    /// score and kills (co-op), this machine's player highlighted
+    /// The players, best first: by frags in a deathmatch; in a team game by team (red first),
+    /// then what each did for it (frags in team deathmatch); else by score
+    /// </summary>
+    internal List<Entities.PlayerState> RankedPlayers()
+    {
+        var mode = session.gamemode;
+        var present = session.players.Where(p => !p.Gone);
+        var ranked = mode.IsTeamGame()
+            ? present.OrderBy(p => p.Team < 0 ? 2 : p.Team).ThenByDescending(p => PlayerScore(p))
+            : present.OrderByDescending(p => PlayerScore(p));
+        return ranked.ThenBy(p => p.Number).ToList();
+    }
+
+    // The scoreboard's number for a player: frags, what they did for the team, or score
+    int PlayerScore(Entities.PlayerState p) => session.gamemode switch
+    {
+        GameMode.Deathmatch or GameMode.TeamDeathmatch => p.Frags,
+        _ when session.gamemode.IsTeamGame() => p.Objective,
+        _ => p.score,
+    };
+
+    /// <summary>
+    /// The scoreboard in a box at (x, y): each team's score in a team game, then each player's
+    /// name and their frags (deathmatch), what they did for their team (and frags), or score
+    /// and kills (co-op, Horde), this machine's player highlighted
     /// </summary>
     internal void DrawScoreboard(int y, string? title = null)
     {
         var ranked = RankedPlayers();
+        var mode = session.gamemode;
+        bool teams = mode.IsTeamGame() && Match != null;
         const int X = 40, W = 240, Row = 10;
-        int h = 14 + Row * ranked.Count + (title != null ? Row : 0);
+        int h = 14 + Row * ranked.Count + (title != null ? Row : 0) + (teams ? Row : 0);
         video.Bar(X, y, W, h, "BKGDCOLOR");
         draw.DrawOutline(X, y, W, h, "DEACTIVE", "HIGHLIGHT");
 
@@ -44,35 +65,60 @@ internal sealed class Scoreboard(
             ui.CenteredText(X, W, ty, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READHCOLOR")).CPrint(title);
             ty += Row;
         }
-        bool dm = session.gamemode == GameMode.Deathmatch;
-        ui.TextAt(X + 6, ty, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READCOLOR")).Print(dm ? "Player" : "Player");
-        ui.TextAt(X + 150, ty, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READCOLOR")).Print(dm ? "Frags" : "Score");
-        if (!dm)
-            ui.TextAt(X + 200, ty, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READCOLOR")).Print("Kills");
+        if (teams)
+        {
+            ui.CenteredText(X, W, ty, new Fonts.TextStyle(UiFonts.SMALL_FONT, "READHCOLOR"))
+                .CPrint($"Red {Match!.teamscores[0]}   -   {Match.teamscores[1]} Blue");
+            ty += Row;
+        }
+
+        // Columns: a team game shows its own score and frags; co-op and Horde, score and kills
+        string first = mode == GameMode.Deathmatch || mode == GameMode.TeamDeathmatch ? "Frags"
+            : mode.IsTeamGame() ? mode.ScoreName() : "Score";
+        string? second = mode == GameMode.Deathmatch || mode == GameMode.TeamDeathmatch ? null
+            : mode.IsTeamGame() ? "Frags" : "Kills";
+        var heading = new Fonts.TextStyle(UiFonts.SMALL_FONT, "READCOLOR");
+        ui.TextAt(X + 6, ty, heading).Print("Player");
+        ui.TextAt(X + 150, ty, heading).Print(first);
+        if (second != null)
+            ui.TextAt(X + 200, ty, heading).Print(second);
         ty += Row;
 
         foreach (var p in ranked)
         {
             var style = new Fonts.TextStyle(UiFonts.SMALL_FONT, ReferenceEquals(p, session.localplayer) ? "HIGHLIGHT" : "TEXTCOLOR");
             var name = p.Name ?? $"Player {p.Number + 1}";
+            if (teams && p.Team is 0 or 1)
+                name = $"{GameModes.TeamLabel(p.Team)}: {name}";
             if (p.health <= 0)
                 name += " (dead)";
             ui.TextAt(X + 6, ty, style).Print(ui.FitText(name, 140, UiFonts.SMALL_FONT));
-            ui.TextAt(X + 150, ty, style).Print((dm ? p.Frags : p.score).ToString());
-            if (!dm)
-                ui.TextAt(X + 200, ty, style).Print(p.Kills.ToString());
+            ui.TextAt(X + 150, ty, style).Print(PlayerScore(p).ToString());
+            if (second != null)
+                ui.TextAt(X + 200, ty, style).Print((second == "Frags" ? p.Frags : p.Kills).ToString());
             ty += Row;
         }
     }
 
-    /// <summary>The end of a deathmatch: the final scoreboard, until a key</summary>
+    /// <summary>Who won, for the final scoreboard: a player, a team, or how long the players held out</summary>
+    internal string WinnerTitle()
+    {
+        if (Match?.Objective?.FinalTitle() is { } objective)
+            return objective;
+        if (session.gamemode.IsTeamGame() && Match != null)
+            return Match.LeadingTeam < 0 ? "It's a draw!" : $"{GameModes.TeamLabel(Match.LeadingTeam)} team wins!";
+        var winner = RankedPlayers().FirstOrDefault();
+        return winner == null ? "Match over" : $"{winner.Name ?? $"Player {winner.Number + 1}"} wins!";
+    }
+
+    /// <summary>The end of a match: the final scoreboard, until a key</summary>
     internal void ShowFinalScoreboard()
     {
-        var winner = RankedPlayers().FirstOrDefault();
+        var title = WinnerTitle();
         clearMemory();
         video.FadeOut();
         video.ClearScreen(0);
-        DrawScoreboard(40, winner == null ? "Match over" : $"{winner.Name ?? $"Player {winner.Number + 1}"} wins!");
+        DrawScoreboard(40, title);
         video.Update();
         video.FadeIn();
         input.ClearKeysDown();

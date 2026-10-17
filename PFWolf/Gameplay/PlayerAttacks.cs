@@ -86,8 +86,8 @@ internal sealed class PlayerAttacks(
         {
             bool enemy = actor is Entities.Actors.Monster && !actor.IsRemoved && actor.ResolvedStates.ContainsKey("Chase")
                 && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && !factions.IsAlly(shooter, actor);
-            bool rival = session.gamemode == GameMode.Deathmatch && actor is Entities.Actors.PlayerPawn pawn
-                && pawn != shooter && pawn.State.health > 0;
+            bool rival = actor is Entities.Actors.PlayerPawn pawn && pawn.State.health > 0
+                && session.AreRivals(shooter.State, pawn.State);     // no friendly fire in a team game
             if (!enemy && !rival)
                 continue;
 

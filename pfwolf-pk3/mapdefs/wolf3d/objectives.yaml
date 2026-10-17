@@ -1,0 +1,18 @@
+# Multiplayer objective markers (actordefs/wolf3d/objectives.yaml), by object-plane tile. Each is
+# invisible; the mode played draws what it needs there (a flag), and the others ignore them.
+# Team starts are in player.yaml (430-437).
+things:
+  # Capture the Flag: red's flag, blue's flag
+  440:
+    class: RedFlagBase
+  441:
+    class: BlueFlagBase
+  # Domination: a control point
+  442:
+    class: ControlPoint
+  # King of the Hill: a spot the hill can be
+  443:
+    class: HillSpot
+  # Horde: where enemies come in
+  444:
+    class: HordeSpawn

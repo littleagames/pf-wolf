@@ -40,5 +40,15 @@ magenta: ["96:111=176:191"]
 gray: ["96:111=16:31"]
 brown: ["96:111=208:223"]
 
+# Multiplayer team games (Gameplay/MatchModes): the flags on their poles (the banner's reds, 32:47,
+# and pinks to red, 48:55, which line up with the light blues 136:143), and a flag carrier
+# (sprites/wolf3d/player/flag, PLFG) in their team's shirt with the other team's banner: red's
+# carry blue's flag, blue's red's
+flag-red: []
+flag-blue: ["32:47=144:159", "48:55=136:143"]
+flag-neutral: ["32:47=16:31", "48:55=16:23"]
+red-carrier: ["96:111=32:47", "32:47=144:159", "48:55=136:143"]
+blue-carrier: ["96:111=144:159"]
+
 # Any sprite in shades of grey (a ghostly or stone look)
 grayscale: ["1:254=%[0,0,0]:[1,1,1]"]

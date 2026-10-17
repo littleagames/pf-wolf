@@ -88,7 +88,7 @@ public class DeathmatchTests
     {
         // Arrange
         var rig = new Rig();
-        rig.Deathmatch.netrules = rig.Deathmatch.netrules with { FragLimit = 2 };
+        rig.Deathmatch.netrules = rig.Deathmatch.netrules with { ScoreLimit = 2 };
 
         // Act
         for (int i = 0; i < 3; i++)

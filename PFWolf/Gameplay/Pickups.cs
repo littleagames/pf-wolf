@@ -10,12 +10,14 @@ namespace PFWolf.Gameplay;
 /// <param name="HasWeaponFrom">Deathmatch: whether the player already has the weapon a pickup gives</param>
 /// <param name="ItemRespawn">Deathmatch: whether items taken come back (the game's rules)</param>
 /// <param name="QueueItemRespawn">Deathmatch: brings an item taken back a while later</param>
+/// <param name="Taken">An item's been taken, by the acting player (Heist's loot: Gameplay/MatchModes)</param>
 internal sealed record PickupHooks(
     Func<bool> PlayerDied,
     Action<string> PlayPlayerSound,
     Func<Weapon, bool> HasWeaponFrom,
     Func<bool> ItemRespawn,
-    Action<Inventory> QueueItemRespawn);
+    Action<Inventory> QueueItemRespawn,
+    Action<Inventory>? Taken = null);
 
 /// <summary>
 /// The acting player picking up an item they walk over: unless their class may not, or they
@@ -53,7 +55,7 @@ internal sealed class Pickups(
             return;
 
         // Deathmatch: a weapon stays where it is, so it's only for a player without it yet
-        if (session.gamemode == GameMode.Deathmatch && builtActor is Weapon weaponPickup && hooks.HasWeaponFrom(weaponPickup))
+        if (session.gamemode.KeepsItems() && builtActor is Weapon weaponPickup && hooks.HasWeaponFrom(weaponPickup))
             return;
 
         // An item the player can't take (health at 100, a key already held) stays on the
@@ -87,11 +89,13 @@ internal sealed class Pickups(
         if (session.ActingIsLocal)
             video.StartBonusFlash();
 
+        hooks.Taken?.Invoke(builtActor);
+
         // Deathmatch (GameHost.Deathmatch.cs): a weapon stays for everyone else, and anything
         // else comes back a while after it's taken
-        if (session.gamemode == GameMode.Deathmatch && builtActor is Weapon)
+        if (session.gamemode.KeepsItems() && builtActor is Weapon)
             return;
-        if (session.gamemode == GameMode.Deathmatch && hooks.ItemRespawn())
+        if (session.gamemode.KeepsItems() && hooks.ItemRespawn())
             hooks.QueueItemRespawn(builtActor);
 
         //check.shapenum = "";                   // remove from list

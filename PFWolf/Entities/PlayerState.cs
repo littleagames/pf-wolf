@@ -44,6 +44,18 @@ internal sealed class PlayerState
     // their own hand), and enemies killed (for the scoreboard)
     public int Frags, Kills;
 
+    /// <summary>
+    /// Their team in a team mode (Gameplay/GameModes.cs: 0 red, 1 blue); -1 for none. What
+    /// they've done for it this match (captures, loot, points held) is <see cref="Objective"/>.
+    /// </summary>
+    public int Team = -1;
+    public int Objective;
+
+    // Carrying something others should see (Capture the Flag's flag): the sprite their body's
+    // Spawn frames are drawn with instead (PLFG), and the translation it's drawn through; null
+    // for nothing. Set every frame by the mode, so it isn't saved or sent.
+    public string? CarrySprite, CarryTranslation;
+
     /// <summary>Held item counts, keyed by item type (InventoryManager reads the acting player's)</summary>
     public readonly Dictionary<string, int> Items = new(StringComparer.OrdinalIgnoreCase);
 

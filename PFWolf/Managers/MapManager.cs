@@ -276,6 +276,8 @@ internal class MapManager
         ForgetPawns();
         PlayerStart = null;
         DeathmatchStarts.Clear();
+        foreach (var starts in TeamStarts)
+            starts.Clear();
 
         var data = GetMapData();
         UnhideAreas();
@@ -335,7 +337,10 @@ internal class MapManager
                 // only note where it starts; with several starts, the last one scanned wins.
                 if (data.PlayerStarts.TryGetValue(objtile, out var startXlat))
                 {
-                    if (startXlat.Deathmatch)
+                    int team = Array.FindIndex(Gameplay.GameModes.TeamNames, t => t.Equals(startXlat.Team, StringComparison.OrdinalIgnoreCase));
+                    if (team >= 0)
+                        TeamStarts[team].Add(new MapPlayerStart(x, y, startXlat.Angles));
+                    else if (startXlat.Deathmatch)
                         DeathmatchStarts.Add(new MapPlayerStart(x, y, startXlat.Angles));
                     else
                         PlayerStart = new MapPlayerStart(x, y, startXlat.Angles);
@@ -1011,6 +1016,9 @@ internal class MapManager
 
     /// <summary>The map's deathmatch starts (mapdefs player-starts with `deathmatch: true`), if it has any</summary>
     internal List<MapPlayerStart> DeathmatchStarts { get; } = [];
+
+    /// <summary>Each team's starts (mapdefs player-starts with `team: red` or `blue`), red's first</summary>
+    internal List<MapPlayerStart>[] TeamStarts { get; } = [[], []];
 
     /// <summary>Whether the map's enemies are left out as it loads (a deathmatch without monsters)</summary>
     internal bool NoMonsters { get; set; }

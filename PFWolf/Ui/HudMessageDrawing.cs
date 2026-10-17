@@ -17,6 +17,9 @@ internal sealed class HudMessageDrawing(
     RenderState render,
     GameSession session)
 {
+    /// <summary>Lines kept clear at the top of the view (a match's line across it); unset, none</summary>
+    internal Func<int>? TopReserved { get; set; }
+
     /// <summary>
     /// Draws the messages up now (HudMessageManager) over the 3D view. Each position's stack
     /// sits at its anchor, lined up with that side of the view (centered for the middle ones),
@@ -60,7 +63,7 @@ internal sealed class HudMessageDrawing(
             int blockHeight = lines.Sum(l => l.Height);
             int y = VerticalPlace(position.Anchor) switch
             {
-                0 => areaY,
+                0 => areaY + (TopReserved?.Invoke() ?? 0),     // under a match's line across the top (Ui/NetOverlay.cs)
                 1 => areaY + (areaH - blockHeight) / 2,
                 _ => areaY + areaH - blockHeight,
             } + position.Y;

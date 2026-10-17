@@ -25,3 +25,30 @@ player-starts:
   413:
     angles: 180
     deathmatch: true
+  # Team starts: where a team's players come into a team game (and come back after dying), a
+  # free one at random; red's 430-433, blue's 434-437 (facing north, east, south, west). Other
+  # games don't use them.
+  430:
+    angles: 90
+    team: red
+  431:
+    angles: 0
+    team: red
+  432:
+    angles: 270
+    team: red
+  433:
+    angles: 180
+    team: red
+  434:
+    angles: 90
+    team: blue
+  435:
+    angles: 0
+    team: blue
+  436:
+    angles: 270
+    team: blue
+  437:
+    angles: 180
+    team: blue

@@ -18,6 +18,9 @@ public record GameInfoAsset : Asset
     /// </summary>
     public List<string> PlayerColors { get; init; } = [];
 
+    /// <summary>The waves of enemies a multiplayer Horde game sends at the players</summary>
+    public HordeInfo Horde { get; init; } = new();
+
     public Dictionary<string, EpisodeInfo> Episodes { get; init; } = [];
     public Dictionary<int, ClusterInfo> Clusters { get; init; } = [];
     public Dictionary<string, MapInfo> Maps { get; init; } = [];
@@ -1056,6 +1059,40 @@ public record StealthInfo
     public int Range { get; init; } = 10;
 }
 
+/// <summary>
+/// Horde (multiplayer): waves of enemies coming at the players, who win by outlasting the
+/// lobby's number of waves (or play on until they all die at once). Each wave sends its
+/// enemies, a few at a time, from the map's horde spawns (mapdefs) or, without any, open floor
+/// out of the players' way; once they're all dead a break follows, when the dead come back.
+/// </summary>
+public record HordeInfo
+{
+    /// <summary>
+    /// The waves, first to last: each the enemies it sends (class: how many). Past the last,
+    /// each wave is the last one again with <see cref="Grow"/> more of each class per wave.
+    /// More players bring more: half as many again for each one past the first.
+    /// </summary>
+    public List<HordeWave> Waves { get; init; } = [];
+
+    /// <summary>How many more of each class every wave past the listed ones brings</summary>
+    public int Grow { get; init; } = 2;
+
+    /// <summary>The break between waves (seconds), when dead players can come back</summary>
+    public int BreakSeconds { get; init; } = 10;
+
+    /// <summary>Tics between one enemy coming in and the next</summary>
+    public int SpawnTics { get; init; } = 35;
+
+    /// <summary>The most of a wave's enemies alive at once; the rest wait their turn</summary>
+    public int MaxAlive { get; init; } = 12;
+}
+
+/// <summary>A Horde wave: the enemies it sends, by actordefs class</summary>
+public record HordeWave
+{
+    public Dictionary<string, int> Enemies { get; init; } = [];
+}
+
 public record MapInfo
 {
     /// <summary>
@@ -1075,6 +1112,20 @@ public record MapInfo
     /// only played alone by warping to it (the map command), to try it out
     /// </summary>
     public bool Deathmatch { get; init; }
+
+    /// <summary>
+    /// The multiplayer modes the map is an arena for, by id (deathmatch, team-deathmatch, ctf,
+    /// heist, domination, king-of-the-hill, horde). Left out, a `deathmatch: true` arena is one
+    /// for every mode but heist, which needs treasure placed for it: the others find their flags,
+    /// points and spawns on any map when it has none placed.
+    /// </summary>
+    public List<string> Modes { get; init; } = [];
+
+    /// <summary>Whether the map is an arena for a multiplayer mode (its id)</summary>
+    public bool IsArenaFor(string mode) =>
+        Modes.Count > 0
+            ? Modes.Contains(mode, StringComparer.OrdinalIgnoreCase)
+            : Deathmatch && mode is "deathmatch" or "team-deathmatch" or "ctf" or "domination" or "king-of-the-hill" or "horde";
 
     //public string Current { get; set; }
     public string Next { get; init; } = null!;

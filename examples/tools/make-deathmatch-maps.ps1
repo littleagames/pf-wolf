@@ -9,7 +9,8 @@
 #
 # Each level is an ECWolf binary map (a WAD holding a marker lump and a WDC3.1 PLANES lump)
 # with PFWolf's six planes; only walls/floors and objects are used. The arenas are listed in
-# gamepacks/wolf3d/game-info.yaml with `deathmatch: true`. -Show prints each whole layout.
+# gamepacks/wolf3d/game-info.yaml with `deathmatch: true` (and `modes:` for one made for some
+# modes only, as HE01 is for Heist). -Show prints each whole layout.
 
 param([switch]$Show)
 
@@ -36,6 +37,22 @@ $Common['o'] = @(0, 30)             # white column
 $Common['g'] = @(0, 31)             # green plant
 $Common['c'] = @(0, 27)             # chandelier
 $Common['L'] = @(0, 37)             # ceiling light
+# For team games (mirrored across, each swaps for the other: red's side is the west)
+$Common['R'] = @(0, 431)            # red team start, facing east
+$Common['B'] = @(0, 437)            # blue team start, facing west
+$Common['q'] = @(0, 108)            # guard, facing east
+$Common['Q'] = @(0, 110)            # guard, facing west
+# Heist's loot and the keys to it
+$Common['x'] = @(0, 52)             # cross (1)
+$Common['y'] = @(0, 53)             # chalice (5)
+$Common['J'] = @(0, 54)             # chest of jewels (10)
+$Common['K'] = @(0, 55)             # crown (50)
+$Common['k'] = @(0, 43)             # gold key
+$Common['s'] = @(0, 44)             # silver key
+$Common['{'] = @(92, 0)             # gold-locked door, in a wall running north-south
+$Common['}'] = @(93, 0)             # gold-locked door, in a wall running east-west
+$Common['['] = @(94, 0)             # silver-locked door, north-south
+$Common[']'] = @(95, 0)             # silver-locked door, east-west
 
 # Walls: '#' each arena's own wall, '%' and '&' its others
 $Arenas = @(
@@ -123,6 +140,32 @@ $Arenas = @(
             '#......h......P'
         )
     }
+    # Heist (game-info modes: [heist, team-deathmatch]): red's bases on the west, blue's on the
+    # east. Crosses and chalices lie about in the open; chests are behind the silver doors
+    # (silver keys in the side halls); crowns in the vault in the middle, behind its gold doors
+    # (one on each team's side), the gold keys at the dead ends of the halls between the silver
+    # rooms, where both teams can get at them. A few guards keep watch.
+    @{
+        Name = 'HE01'; Title = 'The Vault'
+        Walls = @{ '#' = 1; '%' = 19 }                  # grey stone, purple for the vault
+        Quarter = @(
+            '###############'
+            '#R....#.#J..y#.'
+            '#..h..#.#....#k'
+            '#R....|.#..J.#.'
+            '#.+...#.##]###.'
+            '#..m..#.....x..'
+            '###-###..o...o.'
+            '#..........y...'
+            '#.x..o.....L...'
+            '#.......q......'
+            '#.s..o...x.....'
+            '#..........%%%%'
+            '#.h........%K..'
+            '#.....g....%...'
+            '#.m........{..P'
+        )
+    }
 )
 
 $Size = 64
@@ -141,7 +184,7 @@ function Expand([string[]]$quarter) {
     foreach ($row in $quarter) { if ($row.Length -ne $width) { throw "Row '$row' isn't $width wide" } }
     $rows = foreach ($row in $quarter) {
         $right = -join $row.Substring(0, $width - 1).ToCharArray()[($width - 2)..0]
-        $row + (Swap $right '<' '>')
+        $row + (Swap (Swap (Swap $right '<' '>') 'R' 'B') 'q' 'Q')
     }
     $bottom = for ($i = $rows.Count - 2; $i -ge 0; $i--) { Swap $rows[$i] '^' 'v' }
     @($rows) + @($bottom)
