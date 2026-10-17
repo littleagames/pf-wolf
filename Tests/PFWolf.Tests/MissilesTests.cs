@@ -22,7 +22,7 @@ public class MissilesTests
     private GameSession _session = null!;
     private Missiles _missiles = null!;
     private List<(string Sound, Entities.Actors.Actor At)> _sounds = null!;
-    private bool _died { get => _session.playstate == PlayState.ex_died; set => _session.playstate = value ? PlayState.ex_died : PlayState.ex_stillplaying; }
+    private bool _died { get => _session.playstate == PlayState.Died; set => _session.playstate = value ? PlayState.Died : PlayState.StillPlaying; }
 
     [SetUp]
     public void MakeLevel()
@@ -95,10 +95,10 @@ public class MissilesTests
         _map.tilemap[2, 1] = 5;                                  // a wall with nothing on actorat (a moving pushwall's)
         _map.actorat[3, 1] = new Door(0);
         _map.tilemap[3, 1] = (ushort)(GameConstants.BIT_DOOR | 0);
-        _doors.doorobjlist[0] = new DoorObject { action = DoorAction.dr_closed };
+        _doors.doorobjlist[0] = new DoorObject { action = DoorAction.Closed };
         _map.actorat[4, 1] = new Door(1);
         _map.tilemap[4, 1] = (ushort)(GameConstants.BIT_DOOR | 1);
-        _doors.doorobjlist[1] = new DoorObject { action = DoorAction.dr_open };
+        _doors.doorobjlist[1] = new DoorObject { action = DoorAction.Open };
 
         // Act / Assert
         Assert.That(_missiles.IsSolidForBlast(0, 1), Is.False);

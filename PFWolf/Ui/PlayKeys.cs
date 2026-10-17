@@ -74,7 +74,7 @@ internal sealed class PlayKeys(
             return;
         }
 
-        if (inputManager.IsKeyDown(ScanCodes.sc_Grave) && !session.demorecord)
+        if (inputManager.IsKeyDown(ScanCodes.Grave) && !session.demorecord)
         {
             inputManager.ClearKeysDown();
             inputManager.ClearTextInput();
@@ -86,7 +86,7 @@ internal sealed class PlayKeys(
         //
         // automap
         //
-        if (inputManager.IsButtonPressed(ButtonType.bt_automap) && !inputManager.IsButtonHeld(ButtonType.bt_automap))
+        if (inputManager.IsButtonPressed(ButtonType.Automap) && !inputManager.IsButtonHeld(ButtonType.Automap))
             hooks.ToggleAutomap();
 
         //
@@ -119,7 +119,7 @@ internal sealed class PlayKeys(
         //
         // SECRET CHEAT CODE: 'MLI'
         //
-        if (inputManager.IsKeyDown(ScanCodes.sc_M) && inputManager.IsKeyDown(ScanCodes.sc_L) && inputManager.IsKeyDown(ScanCodes.sc_I))
+        if (inputManager.IsKeyDown(ScanCodes.M) && inputManager.IsKeyDown(ScanCodes.L) && inputManager.IsKeyDown(ScanCodes.I))
         {
             session.playerstate.health = classes.MaxHealth;
             inventory.Give("GoldKey", 1);
@@ -154,7 +154,7 @@ internal sealed class PlayKeys(
         //
         // OPEN UP DEBUG KEYS
         //
-        if (inputManager.IsKeyDown(ScanCodes.sc_BackSpace) && inputManager.IsKeyDown(ScanCodes.sc_LShift) && inputManager.IsKeyDown(ScanCodes.sc_Alt))
+        if (inputManager.IsKeyDown(ScanCodes.BackSpace) && inputManager.IsKeyDown(ScanCodes.LShift) && inputManager.IsKeyDown(ScanCodes.Alt))
         {
             audio.StopAll();
 
@@ -169,7 +169,7 @@ internal sealed class PlayKeys(
         //
         // TRYING THE KEEN CHEAT CODE!
         //
-        if (inputManager.IsKeyDown(ScanCodes.sc_B) && inputManager.IsKeyDown(ScanCodes.sc_A) && inputManager.IsKeyDown(ScanCodes.sc_T))
+        if (inputManager.IsKeyDown(ScanCodes.B) && inputManager.IsKeyDown(ScanCodes.A) && inputManager.IsKeyDown(ScanCodes.T))
         {
             audio.StopAll();
 
@@ -188,7 +188,7 @@ internal sealed class PlayKeys(
         //
         // pause key weirdness can't be checked as a scan code
         //
-        if (inputManager.IsButtonPressed(ButtonType.bt_pause))
+        if (inputManager.IsButtonPressed(ButtonType.Pause))
             engine.SetPaused(true);
         if (engine.IsPaused())
         {
@@ -202,8 +202,8 @@ internal sealed class PlayKeys(
             frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
             return;
         }
-        if (scan == ScanCodes.sc_F10 ||
-            scan == ScanCodes.sc_F9 || scan == ScanCodes.sc_F7 || scan == ScanCodes.sc_F8)     // pop up quit dialog
+        if (scan == ScanCodes.F10 ||
+            scan == ScanCodes.F9 || scan == ScanCodes.F7 || scan == ScanCodes.F8)     // pop up quit dialog
         {
             automap.Close();
             audio.StopAll();
@@ -215,14 +215,14 @@ internal sealed class PlayKeys(
             return;
         }
 
-        if ((scan >= ScanCodes.sc_F1 && scan <= ScanCodes.sc_F9) || scan == ScanCodes.sc_Escape || inputManager.IsButtonPressed(ButtonType.bt_esc))
+        if ((scan >= ScanCodes.F1 && scan <= ScanCodes.F9) || scan == ScanCodes.Escape || inputManager.IsButtonPressed(ButtonType.Esc))
         {
             int lastoffs = music.StopMusic();
             automap.Close();
             audio.StopAll();
             video.FadeOut();
 
-            hooks.ControlPanel(inputManager.IsButtonPressed(ButtonType.bt_esc) ? ScanCodes.sc_Escape : scan);
+            hooks.ControlPanel(inputManager.IsButtonPressed(ButtonType.Esc) ? ScanCodes.Escape : scan);
 
             inputManager.ClearKeysDown();
             video.FadeOut();
@@ -231,7 +231,7 @@ internal sealed class PlayKeys(
             if (!session.startgame && !session.loadedgame)
                 music.ContinueMusic(lastoffs);
             if (session.loadedgame)
-                session.playstate = PlayState.ex_abort;
+                session.playstate = PlayState.Abort;
             frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
             inputManager.CenterMouse();
             return;

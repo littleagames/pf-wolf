@@ -56,20 +56,20 @@ internal sealed class AutomapInput(
         if (automap.IsOpen)
         {
             // A wheel bound to a zoom key steps once a notch; keys zoom smoothly while held
-            float zoom = AutomapWheelNotches(AutomapAction.am_zoomin) - AutomapWheelNotches(AutomapAction.am_zoomout);
-            if (IsAutomapKeyDown(AutomapAction.am_zoomin) || input.IsKeyDown(ScanCodes.sc_KeyPadPlus))
+            float zoom = AutomapWheelNotches(AutomapAction.ZoomIn) - AutomapWheelNotches(AutomapAction.ZoomOut);
+            if (IsAutomapKeyDown(AutomapAction.ZoomIn) || input.IsKeyDown(ScanCodes.KeyPadPlus))
                 zoom += AUTOMAP_KEYZOOMRATE * session.tics / 70f;
-            if (IsAutomapKeyDown(AutomapAction.am_zoomout) || input.IsKeyDown(ScanCodes.sc_KeyPadMinus))
+            if (IsAutomapKeyDown(AutomapAction.ZoomOut) || input.IsKeyDown(ScanCodes.KeyPadMinus))
                 zoom -= AUTOMAP_KEYZOOMRATE * session.tics / 70f;
             if (zoom != 0)
                 automap.ZoomBy(zoom);
 
-            float pan = AUTOMAP_PANSPEED * session.tics * (input.IsButtonPressed(ButtonType.bt_run) ? 2 : 1);
+            float pan = AUTOMAP_PANSPEED * session.tics * (input.IsButtonPressed(ButtonType.Run) ? 2 : 1);
             float panx = 0, pany = 0;
-            if (IsAutomapKeyDown(AutomapAction.am_panup)) pany -= pan;
-            if (IsAutomapKeyDown(AutomapAction.am_pandown)) pany += pan;
-            if (IsAutomapKeyDown(AutomapAction.am_panleft)) panx -= pan;
-            if (IsAutomapKeyDown(AutomapAction.am_panright)) panx += pan;
+            if (IsAutomapKeyDown(AutomapAction.PanUp)) pany -= pan;
+            if (IsAutomapKeyDown(AutomapAction.PanDown)) pany += pan;
+            if (IsAutomapKeyDown(AutomapAction.PanLeft)) panx -= pan;
+            if (IsAutomapKeyDown(AutomapAction.PanRight)) panx += pan;
             automap.Pan(panx, pany);
         }
 
@@ -88,19 +88,19 @@ internal sealed class AutomapInput(
 
         bool Bound(AutomapAction automapKey) => controls.IsBound(ControlAction.Of(automapKey), code);
 
-        if (Bound(AutomapAction.am_center))
+        if (Bound(AutomapAction.Center))
             automap.SnapToPlayer();
-        else if (Bound(AutomapAction.am_follow))
+        else if (Bound(AutomapAction.Follow))
             automap.ToggleFollow();
-        else if (Bound(AutomapAction.am_rotate))
+        else if (Bound(AutomapAction.Rotate))
             automap.ToggleRotate();
-        else if (Bound(AutomapAction.am_style))
+        else if (Bound(AutomapAction.Style))
             automap.ToggleStyle();
-        else if (Bound(AutomapAction.am_overlay))
+        else if (Bound(AutomapAction.Overlay))
             automap.ToggleOverlay();
-        else if (Bound(AutomapAction.am_grid))
+        else if (Bound(AutomapAction.Grid))
             automap.ToggleGrid();
-        else if (Bound(AutomapAction.am_stats))
+        else if (Bound(AutomapAction.Stats))
             automap.ToggleStats();
         else    // held keys: used in UpdateAutomap, not binds
             return polling.IsAutomapInput(code);
@@ -120,17 +120,17 @@ internal sealed class AutomapInput(
 
         // controlx/controly run BASEMOVE a tic at walking pace (RUNMOVE running)
         float dx = polling.controlx + polling.controlstrafe, dy = polling.controly;
-        int strafe = (input.IsButtonPressed(ButtonType.bt_run) ? GameConstants.RUNMOVE : GameConstants.BASEMOVE) * (int)session.tics;
-        if (input.IsButtonPressed(ButtonType.bt_strafeleft))
+        int strafe = (input.IsButtonPressed(ButtonType.Run) ? GameConstants.RUNMOVE : GameConstants.BASEMOVE) * (int)session.tics;
+        if (input.IsButtonPressed(ButtonType.StrafeLeft))
             dx -= strafe;
-        if (input.IsButtonPressed(ButtonType.bt_straferight))
+        if (input.IsButtonPressed(ButtonType.StrafeRight))
             dx += strafe;
 
         automap.Pan(dx * AUTOMAP_PANSPEED / GameConstants.BASEMOVE, dy * AUTOMAP_PANSPEED / GameConstants.BASEMOVE);
 
         polling.controlx = polling.controly = polling.controlstrafe = 0;
-        input.SetButtonPressed(ButtonType.bt_strafeleft, false);
-        input.SetButtonPressed(ButtonType.bt_straferight, false);
+        input.SetButtonPressed(ButtonType.StrafeLeft, false);
+        input.SetButtonPressed(ButtonType.StrafeRight, false);
     }
 
 

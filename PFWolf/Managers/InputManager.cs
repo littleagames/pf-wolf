@@ -12,98 +12,98 @@ internal struct ControlInfo
 }
 public enum ScanCodes
 {
-    sc_None = SDL.SDL_Scancode.SDL_SCANCODE_UNKNOWN,
-    sc_Bad = 0x7fffffff,
-    sc_Last = SDL.SDL_Scancode.SDL_NUM_SCANCODES,
-    sc_Return = SDL.SDL_Scancode.SDL_SCANCODE_RETURN,
+    None = SDL.SDL_Scancode.SDL_SCANCODE_UNKNOWN,
+    Bad = 0x7fffffff,
+    Last = SDL.SDL_Scancode.SDL_NUM_SCANCODES,
+    Return = SDL.SDL_Scancode.SDL_SCANCODE_RETURN,
 
-    sc_Escape = SDL.SDL_Scancode.SDL_SCANCODE_ESCAPE,
-    sc_Space = SDL.SDL_Scancode.SDL_SCANCODE_SPACE,
-    sc_BackSpace = SDL.SDL_Scancode.SDL_SCANCODE_BACKSPACE,
-    sc_Tab = SDL.SDL_Scancode.SDL_SCANCODE_TAB,
-    sc_RAlt = SDL.SDL_Scancode.SDL_SCANCODE_RALT,
-    sc_LAlt = SDL.SDL_Scancode.SDL_SCANCODE_LALT,
-    sc_RControl = SDL.SDL_Scancode.SDL_SCANCODE_RCTRL,
-    sc_LControl = SDL.SDL_Scancode.SDL_SCANCODE_LCTRL,
-    sc_CapsLock = SDL.SDL_Scancode.SDL_SCANCODE_CAPSLOCK,
-    sc_LShift = SDL.SDL_Scancode.SDL_SCANCODE_LSHIFT,
-    sc_RShift = SDL.SDL_Scancode.SDL_SCANCODE_RSHIFT,
-    sc_UpArrow = SDL.SDL_Scancode.SDL_SCANCODE_UP,
-    sc_DownArrow = SDL.SDL_Scancode.SDL_SCANCODE_DOWN,
-    sc_LeftArrow = SDL.SDL_Scancode.SDL_SCANCODE_LEFT,
-    sc_RightArrow = SDL.SDL_Scancode.SDL_SCANCODE_RIGHT,
-    sc_Insert = SDL.SDL_Scancode.SDL_SCANCODE_INSERT,
-    sc_Delete = SDL.SDL_Scancode.SDL_SCANCODE_DELETE,
-    sc_Home = SDL.SDL_Scancode.SDL_SCANCODE_HOME,
-    sc_End = SDL.SDL_Scancode.SDL_SCANCODE_END,
-    sc_PgUp = SDL.SDL_Scancode.SDL_SCANCODE_PAGEUP,
-    sc_PgDn = SDL.SDL_Scancode.SDL_SCANCODE_PAGEDOWN,
-    sc_KeyPad2 = SDL.SDL_Scancode.SDL_SCANCODE_KP_2,
-    sc_KeyPad4 = SDL.SDL_Scancode.SDL_SCANCODE_KP_4,
-    sc_KeyPad5 = SDL.SDL_Scancode.SDL_SCANCODE_KP_5,
-    sc_KeyPad6 = SDL.SDL_Scancode.SDL_SCANCODE_KP_6,
-    sc_KeyPad8 = SDL.SDL_Scancode.SDL_SCANCODE_KP_8,
-    sc_KeyPadEnter = SDL.SDL_Scancode.SDL_SCANCODE_KP_ENTER,
-    sc_KeyPadPlus = SDL.SDL_Scancode.SDL_SCANCODE_KP_PLUS,
-    sc_KeyPadMinus = SDL.SDL_Scancode.SDL_SCANCODE_KP_MINUS,
-    sc_F1 = SDL.SDL_Scancode.SDL_SCANCODE_F1,
-    sc_F2 = SDL.SDL_Scancode.SDL_SCANCODE_F2,
-    sc_F3 = SDL.SDL_Scancode.SDL_SCANCODE_F3,
-    sc_F4 = SDL.SDL_Scancode.SDL_SCANCODE_F4,
-    sc_F5 = SDL.SDL_Scancode.SDL_SCANCODE_F5,
-    sc_F6 = SDL.SDL_Scancode.SDL_SCANCODE_F6,
-    sc_F7 = SDL.SDL_Scancode.SDL_SCANCODE_F7,
-    sc_F8 = SDL.SDL_Scancode.SDL_SCANCODE_F8,
-    sc_F9 = SDL.SDL_Scancode.SDL_SCANCODE_F9,
-    sc_F10 = SDL.SDL_Scancode.SDL_SCANCODE_F10,
-    sc_F11 = SDL.SDL_Scancode.SDL_SCANCODE_F11,
-    sc_F12 = SDL.SDL_Scancode.SDL_SCANCODE_F12,
-    sc_ScrollLock = SDL.SDL_Scancode.SDL_SCANCODE_SCROLLLOCK,
-    sc_PrintScreen = SDL.SDL_Scancode.SDL_SCANCODE_PAUSE,
-    sc_Pause = SDL.SDL_Scancode.SDL_SCANCODE_PAUSE,
-    sc_1 = SDL.SDL_Scancode.SDL_SCANCODE_1,
-    sc_2 = SDL.SDL_Scancode.SDL_SCANCODE_2,
-    sc_3 = SDL.SDL_Scancode.SDL_SCANCODE_3,
-    sc_4 = SDL.SDL_Scancode.SDL_SCANCODE_4,
-    sc_5 = SDL.SDL_Scancode.SDL_SCANCODE_5,
-    sc_6 = SDL.SDL_Scancode.SDL_SCANCODE_6,
-    sc_7 = SDL.SDL_Scancode.SDL_SCANCODE_7,
-    sc_8 = SDL.SDL_Scancode.SDL_SCANCODE_8,
-    sc_9 = SDL.SDL_Scancode.SDL_SCANCODE_9,
-    sc_0 = SDL.SDL_Scancode.SDL_SCANCODE_0,
-    sc_Equal = SDL.SDL_Scancode.SDL_SCANCODE_EQUALS,
-    sc_Minus = SDL.SDL_Scancode.SDL_SCANCODE_MINUS,
-    sc_Grave = SDL.SDL_Scancode.SDL_SCANCODE_GRAVE,
-    sc_A = SDL.SDL_Scancode.SDL_SCANCODE_A,
-    sc_B = SDL.SDL_Scancode.SDL_SCANCODE_B,
-    sc_C = SDL.SDL_Scancode.SDL_SCANCODE_C,
-    sc_D = SDL.SDL_Scancode.SDL_SCANCODE_D,
-    sc_E = SDL.SDL_Scancode.SDL_SCANCODE_E,
-    sc_F = SDL.SDL_Scancode.SDL_SCANCODE_F,
-    sc_G = SDL.SDL_Scancode.SDL_SCANCODE_G,
-    sc_H = SDL.SDL_Scancode.SDL_SCANCODE_H,
-    sc_I = SDL.SDL_Scancode.SDL_SCANCODE_I,
-    sc_J = SDL.SDL_Scancode.SDL_SCANCODE_J,
-    sc_K = SDL.SDL_Scancode.SDL_SCANCODE_K,
-    sc_L = SDL.SDL_Scancode.SDL_SCANCODE_L,
-    sc_M = SDL.SDL_Scancode.SDL_SCANCODE_M,
-    sc_N = SDL.SDL_Scancode.SDL_SCANCODE_N,
-    sc_O = SDL.SDL_Scancode.SDL_SCANCODE_O,
-    sc_P = SDL.SDL_Scancode.SDL_SCANCODE_P,
-    sc_Q = SDL.SDL_Scancode.SDL_SCANCODE_Q,
-    sc_R = SDL.SDL_Scancode.SDL_SCANCODE_R,
-    sc_S = SDL.SDL_Scancode.SDL_SCANCODE_S,
-    sc_T = SDL.SDL_Scancode.SDL_SCANCODE_T,
-    sc_U = SDL.SDL_Scancode.SDL_SCANCODE_U,
-    sc_V = SDL.SDL_Scancode.SDL_SCANCODE_V,
-    sc_W = SDL.SDL_Scancode.SDL_SCANCODE_W,
-    sc_X = SDL.SDL_Scancode.SDL_SCANCODE_X,
-    sc_Y = SDL.SDL_Scancode.SDL_SCANCODE_Y,
-    sc_Z = SDL.SDL_Scancode.SDL_SCANCODE_Z,
-    sc_Alt = sc_LAlt,
-    sc_Control = sc_LControl,
-    sc_Enter = sc_Return,
-    key_None = sc_None
+    Escape = SDL.SDL_Scancode.SDL_SCANCODE_ESCAPE,
+    Space = SDL.SDL_Scancode.SDL_SCANCODE_SPACE,
+    BackSpace = SDL.SDL_Scancode.SDL_SCANCODE_BACKSPACE,
+    Tab = SDL.SDL_Scancode.SDL_SCANCODE_TAB,
+    RAlt = SDL.SDL_Scancode.SDL_SCANCODE_RALT,
+    LAlt = SDL.SDL_Scancode.SDL_SCANCODE_LALT,
+    RControl = SDL.SDL_Scancode.SDL_SCANCODE_RCTRL,
+    LControl = SDL.SDL_Scancode.SDL_SCANCODE_LCTRL,
+    CapsLock = SDL.SDL_Scancode.SDL_SCANCODE_CAPSLOCK,
+    LShift = SDL.SDL_Scancode.SDL_SCANCODE_LSHIFT,
+    RShift = SDL.SDL_Scancode.SDL_SCANCODE_RSHIFT,
+    UpArrow = SDL.SDL_Scancode.SDL_SCANCODE_UP,
+    DownArrow = SDL.SDL_Scancode.SDL_SCANCODE_DOWN,
+    LeftArrow = SDL.SDL_Scancode.SDL_SCANCODE_LEFT,
+    RightArrow = SDL.SDL_Scancode.SDL_SCANCODE_RIGHT,
+    Insert = SDL.SDL_Scancode.SDL_SCANCODE_INSERT,
+    Delete = SDL.SDL_Scancode.SDL_SCANCODE_DELETE,
+    Home = SDL.SDL_Scancode.SDL_SCANCODE_HOME,
+    End = SDL.SDL_Scancode.SDL_SCANCODE_END,
+    PgUp = SDL.SDL_Scancode.SDL_SCANCODE_PAGEUP,
+    PgDn = SDL.SDL_Scancode.SDL_SCANCODE_PAGEDOWN,
+    KeyPad2 = SDL.SDL_Scancode.SDL_SCANCODE_KP_2,
+    KeyPad4 = SDL.SDL_Scancode.SDL_SCANCODE_KP_4,
+    KeyPad5 = SDL.SDL_Scancode.SDL_SCANCODE_KP_5,
+    KeyPad6 = SDL.SDL_Scancode.SDL_SCANCODE_KP_6,
+    KeyPad8 = SDL.SDL_Scancode.SDL_SCANCODE_KP_8,
+    KeyPadEnter = SDL.SDL_Scancode.SDL_SCANCODE_KP_ENTER,
+    KeyPadPlus = SDL.SDL_Scancode.SDL_SCANCODE_KP_PLUS,
+    KeyPadMinus = SDL.SDL_Scancode.SDL_SCANCODE_KP_MINUS,
+    F1 = SDL.SDL_Scancode.SDL_SCANCODE_F1,
+    F2 = SDL.SDL_Scancode.SDL_SCANCODE_F2,
+    F3 = SDL.SDL_Scancode.SDL_SCANCODE_F3,
+    F4 = SDL.SDL_Scancode.SDL_SCANCODE_F4,
+    F5 = SDL.SDL_Scancode.SDL_SCANCODE_F5,
+    F6 = SDL.SDL_Scancode.SDL_SCANCODE_F6,
+    F7 = SDL.SDL_Scancode.SDL_SCANCODE_F7,
+    F8 = SDL.SDL_Scancode.SDL_SCANCODE_F8,
+    F9 = SDL.SDL_Scancode.SDL_SCANCODE_F9,
+    F10 = SDL.SDL_Scancode.SDL_SCANCODE_F10,
+    F11 = SDL.SDL_Scancode.SDL_SCANCODE_F11,
+    F12 = SDL.SDL_Scancode.SDL_SCANCODE_F12,
+    ScrollLock = SDL.SDL_Scancode.SDL_SCANCODE_SCROLLLOCK,
+    PrintScreen = SDL.SDL_Scancode.SDL_SCANCODE_PAUSE,
+    Pause = SDL.SDL_Scancode.SDL_SCANCODE_PAUSE,
+    D1 = SDL.SDL_Scancode.SDL_SCANCODE_1,
+    D2 = SDL.SDL_Scancode.SDL_SCANCODE_2,
+    D3 = SDL.SDL_Scancode.SDL_SCANCODE_3,
+    D4 = SDL.SDL_Scancode.SDL_SCANCODE_4,
+    D5 = SDL.SDL_Scancode.SDL_SCANCODE_5,
+    D6 = SDL.SDL_Scancode.SDL_SCANCODE_6,
+    D7 = SDL.SDL_Scancode.SDL_SCANCODE_7,
+    D8 = SDL.SDL_Scancode.SDL_SCANCODE_8,
+    D9 = SDL.SDL_Scancode.SDL_SCANCODE_9,
+    D0 = SDL.SDL_Scancode.SDL_SCANCODE_0,
+    Equal = SDL.SDL_Scancode.SDL_SCANCODE_EQUALS,
+    Minus = SDL.SDL_Scancode.SDL_SCANCODE_MINUS,
+    Grave = SDL.SDL_Scancode.SDL_SCANCODE_GRAVE,
+    A = SDL.SDL_Scancode.SDL_SCANCODE_A,
+    B = SDL.SDL_Scancode.SDL_SCANCODE_B,
+    C = SDL.SDL_Scancode.SDL_SCANCODE_C,
+    D = SDL.SDL_Scancode.SDL_SCANCODE_D,
+    E = SDL.SDL_Scancode.SDL_SCANCODE_E,
+    F = SDL.SDL_Scancode.SDL_SCANCODE_F,
+    G = SDL.SDL_Scancode.SDL_SCANCODE_G,
+    H = SDL.SDL_Scancode.SDL_SCANCODE_H,
+    I = SDL.SDL_Scancode.SDL_SCANCODE_I,
+    J = SDL.SDL_Scancode.SDL_SCANCODE_J,
+    K = SDL.SDL_Scancode.SDL_SCANCODE_K,
+    L = SDL.SDL_Scancode.SDL_SCANCODE_L,
+    M = SDL.SDL_Scancode.SDL_SCANCODE_M,
+    N = SDL.SDL_Scancode.SDL_SCANCODE_N,
+    O = SDL.SDL_Scancode.SDL_SCANCODE_O,
+    P = SDL.SDL_Scancode.SDL_SCANCODE_P,
+    Q = SDL.SDL_Scancode.SDL_SCANCODE_Q,
+    R = SDL.SDL_Scancode.SDL_SCANCODE_R,
+    S = SDL.SDL_Scancode.SDL_SCANCODE_S,
+    T = SDL.SDL_Scancode.SDL_SCANCODE_T,
+    U = SDL.SDL_Scancode.SDL_SCANCODE_U,
+    V = SDL.SDL_Scancode.SDL_SCANCODE_V,
+    W = SDL.SDL_Scancode.SDL_SCANCODE_W,
+    X = SDL.SDL_Scancode.SDL_SCANCODE_X,
+    Y = SDL.SDL_Scancode.SDL_SCANCODE_Y,
+    Z = SDL.SDL_Scancode.SDL_SCANCODE_Z,
+    Alt = LAlt,
+    Control = LControl,
+    Enter = Return,
+    KeyNone = None
 }
 
 internal class InputManager
@@ -207,7 +207,7 @@ internal class InputManager
 
     internal void ClearLastKey()
     {
-        LastScan = ScanCodes.sc_None;
+        LastScan = ScanCodes.None;
     }
 
     /*
@@ -223,10 +223,10 @@ internal class InputManager
     private bool MousePresent;
     private bool forcegrabmouse;
 
-    private bool[] buttonstate = new bool[(int)ButtonType.NUMBUTTONS];
-    private bool[] buttonheld = new bool[(int)ButtonType.NUMBUTTONS];
+    private bool[] buttonstate = new bool[(int)ButtonType.Count];
+    private bool[] buttonheld = new bool[(int)ButtonType.Count];
 
-    private bool[] Keyboard = new bool[(int)ScanCodes.sc_Last];
+    private bool[] Keyboard = new bool[(int)ScanCodes.Last];
 
     // Fresh (non-repeat) key presses in order, for console binds: Keyboard[] only says what's
     // held and LastScan only keeps the latest. Drained by the play loop; cleared with the keys.
@@ -337,7 +337,7 @@ internal class InputManager
 
     public void InitButtonState()
     {
-        buttonstate = new bool[(int)ButtonType.NUMBUTTONS];
+        buttonstate = new bool[(int)ButtonType.Count];
     }
 
     internal void Shutdown()
@@ -415,7 +415,7 @@ internal class InputManager
     /// <summary>Whether a key, mouse button or joystick button is held down right now.</summary>
     internal bool IsInputDown(InputCode code) => code.Device switch
     {
-        InputDevice.Key => code.Code < (int)ScanCodes.sc_Last && Keyboard[code.Code],
+        InputDevice.Key => code.Code < (int)ScanCodes.Last && Keyboard[code.Code],
         InputDevice.MouseButton => MousePresent
             && (SDL.SDL_GetMouseState(out _, out _) & SDL.SDL_BUTTON((uint)code.Code)) != 0,
         InputDevice.JoyButton => Joystick != IntPtr.Zero && code.Code < JoyNumButtons
@@ -472,7 +472,7 @@ internal class InputManager
 
     internal void ClearKeysDown()
     {
-        LastScan = ScanCodes.sc_None;
+        LastScan = ScanCodes.None;
 
         Array.Fill(Keyboard, false);
         pressedKeys.Clear();
@@ -504,35 +504,35 @@ internal class InputManager
 
         ProcessEvents();
 
-        if (Keyboard[(int)ScanCodes.sc_Home])
+        if (Keyboard[(int)ScanCodes.Home])
         {
             mx = -1;
             my = -1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_PgUp])
+        else if (Keyboard[(int)ScanCodes.PgUp])
         {
             mx = 1;
             my = -1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_End])
+        else if (Keyboard[(int)ScanCodes.End])
         {
             mx = -1;
             my = 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_PgDn])
+        else if (Keyboard[(int)ScanCodes.PgDn])
         {
             mx = 1;
             my = 1;
         }
 
-        if (Keyboard[(int)ScanCodes.sc_UpArrow])
+        if (Keyboard[(int)ScanCodes.UpArrow])
             my = -1;
-        else if (Keyboard[(int)ScanCodes.sc_DownArrow])
+        else if (Keyboard[(int)ScanCodes.DownArrow])
             my = 1;
 
-        if (Keyboard[(int)ScanCodes.sc_LeftArrow])
+        if (Keyboard[(int)ScanCodes.LeftArrow])
             mx = -1;
-        else if (Keyboard[(int)ScanCodes.sc_RightArrow])
+        else if (Keyboard[(int)ScanCodes.RightArrow])
             mx = 1;
 
         dx = mx * 127;
@@ -678,7 +678,7 @@ internal class InputManager
                 break;
 
             case SDL.SDL_EventType.SDL_KEYDOWN:
-                if (key == ScanCodes.sc_ScrollLock || key == ScanCodes.sc_F12)
+                if (key == ScanCodes.ScrollLock || key == ScanCodes.F12)
                 {
                     GrabInput = !GrabInput;
 
@@ -693,7 +693,7 @@ internal class InputManager
                 if (_consoleManager.Value.IsOpen)
                 {
                     // Holding ` would otherwise auto-repeat and close the console right after opening it.
-                    if (e.key.repeat != 0 && key == ScanCodes.sc_Grave)
+                    if (e.key.repeat != 0 && key == ScanCodes.Grave)
                         return;
 
                     _consoleManager.Value.HandleKey(MapKey(key));
@@ -702,20 +702,20 @@ internal class InputManager
 
                 LastScan = MapKey(key);
 
-                if (LastScan < ScanCodes.sc_Last)
+                if (LastScan < ScanCodes.Last)
                     Keyboard[(int)LastScan] = true;
 
                 if (e.key.repeat == 0 && pressedKeys.Count < MaxPressedKeys)
                     pressedKeys.Enqueue(LastScan);
 
-                if (LastScan == ScanCodes.sc_Pause)
+                if (LastScan == ScanCodes.Pause)
                     Pause?.Invoke(this, true);
                 break;
 
             case SDL.SDL_EventType.SDL_KEYUP:
                 key = MapKey(key);
 
-                if (key < ScanCodes.sc_Last)
+                if (key < ScanCodes.Last)
                     Keyboard[(int)key] = false;
                 break;
 
@@ -764,10 +764,10 @@ internal class InputManager
     /// </summary>
     internal static ScanCodes FoldKey(ScanCodes key) => key switch
     {
-        ScanCodes.sc_KeyPadEnter => ScanCodes.sc_Enter,
-        ScanCodes.sc_RShift => ScanCodes.sc_LShift,
-        ScanCodes.sc_RAlt => ScanCodes.sc_LAlt,
-        ScanCodes.sc_RControl => ScanCodes.sc_LControl,
+        ScanCodes.KeyPadEnter => ScanCodes.Enter,
+        ScanCodes.RShift => ScanCodes.LShift,
+        ScanCodes.RAlt => ScanCodes.LAlt,
+        ScanCodes.RControl => ScanCodes.LControl,
         _ => key,
     };
 
@@ -777,18 +777,18 @@ internal class InputManager
 
         switch (key)
         {
-            case ScanCodes.sc_KeyPad2:
-            case ScanCodes.sc_KeyPad4:
-            case ScanCodes.sc_KeyPad6:
-            case ScanCodes.sc_KeyPad8:
+            case ScanCodes.KeyPad2:
+            case ScanCodes.KeyPad4:
+            case ScanCodes.KeyPad6:
+            case ScanCodes.KeyPad8:
                 if (((int)SDL.SDL_GetModState() & (int)SDL.SDL_Keymod.KMOD_NUM) == 0)
                 {
                     switch ((ScanCodes)key)
                     {
-                        case ScanCodes.sc_KeyPad2: scan = ScanCodes.sc_DownArrow; break;
-                        case ScanCodes.sc_KeyPad4: scan = ScanCodes.sc_LeftArrow; break;
-                        case ScanCodes.sc_KeyPad6: scan = ScanCodes.sc_RightArrow; break;
-                        case ScanCodes.sc_KeyPad8: scan = ScanCodes.sc_UpArrow; break;
+                        case ScanCodes.KeyPad2: scan = ScanCodes.DownArrow; break;
+                        case ScanCodes.KeyPad4: scan = ScanCodes.LeftArrow; break;
+                        case ScanCodes.KeyPad6: scan = ScanCodes.RightArrow; break;
+                        case ScanCodes.KeyPad8: scan = ScanCodes.UpArrow; break;
                     }
                 }
                 break;
@@ -825,7 +825,7 @@ internal class InputManager
         return false;
     }
 
-    private bool[] btnstate = new bool[(int)ButtonType.NUMBUTTONS];
+    private bool[] btnstate = new bool[(int)ButtonType.Count];
     public void StartAck()
     {
         int i;
@@ -843,7 +843,7 @@ internal class InputManager
         if (MousePresent)
             buttons |= MouseButtons();
 
-        for (i = 0; i < (int)ButtonType.NUMBUTTONS; i++, buttons >>= 1)
+        for (i = 0; i < (int)ButtonType.Count; i++, buttons >>= 1)
         {
             if ((buttons & 1) != 0)
                 btnstate[i] = true;
@@ -905,7 +905,7 @@ internal class InputManager
         if (MousePresent)
             buttons |= MouseButtons();
 
-        for (i = 0; i < (int)ButtonType.NUMBUTTONS; i++, buttons >>= 1)
+        for (i = 0; i < (int)ButtonType.Count; i++, buttons >>= 1)
         {
             if ((buttons & 1) != 0)
             {

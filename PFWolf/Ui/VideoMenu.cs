@@ -309,13 +309,13 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
             }
 
             menuInput.ReadAnyControl(out ci);
-            if (input.IsKeyDown(ScanCodes.sc_Y) || ci.button0)
+            if (input.IsKeyDown(ScanCodes.Y) || ci.button0)
             {
                 keep = true;
                 break;
             }
 
-            if (input.IsKeyDown(ScanCodes.sc_N) || input.IsKeyDown(ScanCodes.sc_Escape) || ci.button1)
+            if (input.IsKeyDown(ScanCodes.N) || input.IsKeyDown(ScanCodes.Escape) || ci.button1)
                 break;
 
             GameEngineManager.DelayMs(5);

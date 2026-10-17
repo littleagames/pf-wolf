@@ -26,7 +26,7 @@ internal class ActorStateFrame
 
     public string GetShapeName(ObjDir dir)
     {
-        var frame = dir == ObjDir.nodir ? 0 : (int)dir;
+        var frame = dir == ObjDir.NoDir ? 0 : (int)dir;
         return $"{Sprite}{FrameLetter}{frame}";
     }
 }

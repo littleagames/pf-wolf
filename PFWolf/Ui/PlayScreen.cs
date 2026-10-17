@@ -255,7 +255,7 @@ internal sealed class PlayScreen(
 
         }
         video.Update();
-        //      if (LastScan == sc_Escape)
+        //      if (LastScan == Escape)
         //      {
         //              input.ClearKeysDown();
         //              return(true);

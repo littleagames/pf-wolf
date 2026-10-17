@@ -107,8 +107,8 @@ internal sealed class WeaponInHand(
         // Fire cuts a reload short once a round is in (the original Midnight Assault's T_Reload),
         // so a shotgun loading shell by shell can shoot between them
         if (IsReloading(sprite) && weapons.IsLoaded(session.playerstate.weapon)
-            && session.playerinput.IsFreshPress(ButtonType.bt_attack))
-            StartState(sprite, "Fire", ButtonType.bt_attack);
+            && session.playerinput.IsFreshPress(ButtonType.Attack))
+            StartState(sprite, "Fire", ButtonType.Attack);
 
         map.DoActor(sprite, session.tics);
     }
@@ -181,16 +181,16 @@ internal sealed class WeaponInHand(
         }
 
         if (weapons.CanReload(playerstate.weapon) && weapon.ResolvedStates.ContainsKey(ReloadState)
-            && (!weapons.IsLoaded(playerstate.weapon) || session.playerinput.IsFreshPress(ButtonType.bt_reload)))
+            && (!weapons.IsLoaded(playerstate.weapon) || session.playerinput.IsFreshPress(ButtonType.Reload)))
         {
-            StartState(weapon, ReloadState, ButtonType.bt_reload);
+            StartState(weapon, ReloadState, ButtonType.Reload);
             return;
         }
 
         // Zoomed in through a scope, a weapon with a ZoomFire state fires that (Gameplay/WeaponZoom.cs)
-        if (session.playerinput.IsFreshPress(ButtonType.bt_attack))
+        if (session.playerinput.IsFreshPress(ButtonType.Attack))
             StartState(weapon, playerstate.ZoomMode == ZoomMode.Zoomed && weapon.ResolvedStates.ContainsKey("ZoomFire") ? "ZoomFire" : "Fire",
-                ButtonType.bt_attack);
+                ButtonType.Attack);
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ internal sealed class WeaponInHand(
     /// </summary>
     internal void A_HoldCharge(Entities.Actors.Actor weapon, string[] args)
     {
-        if (!session.playerinput.IsPressed(ButtonType.bt_attack) || args.Length == 0)
+        if (!session.playerinput.IsPressed(ButtonType.Attack) || args.Length == 0)
             return;
         int max = args.Length > 1 && int.TryParse(args[1], out var m) ? Math.Clamp(m, 1, 100) : 100;
         var playerstate = session.playerstate;
@@ -259,7 +259,7 @@ internal sealed class WeaponInHand(
     /// <summary>Fire still held and a round ready: back to Hold (or Fire, for a weapon without one).</summary>
     internal void A_ReFire(Entities.Actors.Actor weapon)
     {
-        if (!session.playerinput.IsPressed(ButtonType.bt_attack) || !weapons.IsLoaded(session.playerstate.weapon))
+        if (!session.playerinput.IsPressed(ButtonType.Attack) || !weapons.IsLoaded(session.playerstate.weapon))
             return;
         if (!JumpWeaponState(weapon, "Hold"))
             JumpWeaponState(weapon, "Fire");

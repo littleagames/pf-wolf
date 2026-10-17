@@ -144,7 +144,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         return map.Players.Any(pawn => session.IsTargetable(pawn) && Reach(pawn, x, y) <= reach)
             || map.GetActors().Any(a => !a.IsRemoved && a is not Entities.Actors.PlayerPawn && !ReferenceEquals(a, ob)
                 && !string.Equals(a.Name, ob.Name, StringComparison.OrdinalIgnoreCase)
-                && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE) && Reach(a, x, y) <= reach);
+                && a.RuntimeFlags.HasFlag(ObjFlags.Shootable) && Reach(a, x, y) <= reach);
     }
 
     /// <summary>
@@ -188,7 +188,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
 
     /// <summary>Which way it faces, in degrees: its map facing, or its angle when it has none</summary>
     internal static int FacingAngle(Entities.Actors.Actor ob) =>
-        ob.Dir == ObjDir.nodir ? ob.Angle : GameConstants.dirangle[(byte)ob.Dir];
+        ob.Dir == ObjDir.NoDir ? ob.Angle : GameConstants.dirangle[(byte)ob.Dir];
 
     /// <summary>
     /// Where it looks and fires from: where it is, or for one inside a wall, just beyond the face

@@ -135,7 +135,7 @@ internal sealed class Deathmatch(
     internal (int x, int y, int angle) DeathmatchSpot(PlayerPawn self)
     {
         var others = map.Players
-            .Where(pawn => pawn != self && pawn.Active == ActiveType.ac_yes && pawn.State.health > 0
+            .Where(pawn => pawn != self && pawn.Active == ActiveType.Yes && pawn.State.health > 0
                 && (pawn.State.Team != self.State.Team || !session.IsTeamGame))
             .ToList();
         int NearestOther(int x, int y) =>
@@ -316,7 +316,7 @@ internal sealed class Deathmatch(
         if (matchover)
             return;
         matchover = true;
-        session.playstate = PlayState.ex_abort;
+        session.playstate = PlayState.Abort;
     }
 
     /// <summary>The team with fewer players in it (red when even), for someone joining a team game</summary>

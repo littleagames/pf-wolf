@@ -150,9 +150,9 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
                ci.button1 ||
                ci.button2 ||
                ci.button3 ||
-               input.IsKeyDown(ScanCodes.sc_Space) ||
-               input.IsKeyDown(ScanCodes.sc_Enter) ||
-               input.IsKeyDown(ScanCodes.sc_Escape);
+               input.IsKeyDown(ScanCodes.Space) ||
+               input.IsKeyDown(ScanCodes.Enter) ||
+               input.IsKeyDown(ScanCodes.Escape);
 
             if (!keyPressed)
                 break;

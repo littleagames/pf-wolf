@@ -79,7 +79,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         doorobj.tilex = (sbyte)tilex;
         doorobj.tiley = (sbyte)tiley;
         doorobj.vertical = vertical;
-        doorobj.action = DoorAction.dr_closed;
+        doorobj.action = DoorAction.Closed;
         doorobj.xlat = doorXlat;
         // A mapdefs door-locks object on the door's tile locks it in place of its own lock
         doorobj.maplock = map.GetMapData().DoorLocks.TryGetValue(map.MAPSPOT(tilex, tiley, 1), out var tileLock)
@@ -138,10 +138,10 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     */
     internal void OpenDoor(int door)
     {
-        if (doorobjlist[door].action == (byte)DoorAction.dr_open)
+        if (doorobjlist[door].action == (byte)DoorAction.Open)
             doorobjlist[door].ticcount = 0;         // reset open time
         else
-            doorobjlist[door].action = DoorAction.dr_opening;  // start it opening
+            doorobjlist[door].action = DoorAction.Opening;  // start it opening
     }
 
     /*
@@ -209,7 +209,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             hooks.PlaySoundAt(closeSound, doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
         }
 
-        doorobjlist[door].action = DoorAction.dr_closing;
+        doorobjlist[door].action = DoorAction.Closing;
         doorobjlist[door].held = false;     // closing lets go of a switch's hold
         //
         // make the door space solid
@@ -234,7 +234,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         // A one-way door only opens from its opens-from side
         if (!OnOpeningSide(doorobjlist[door]))
         {
-            if (doorobjlist[door].action == DoorAction.dr_closed)
+            if (doorobjlist[door].action == DoorAction.Closed)
             {
                 if (xlat.WrongSideSound is { Length: > 0 } sound)
                     audio.Play(sound);
@@ -267,12 +267,12 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
         switch (doorobjlist[door].action)
         {
-            case DoorAction.dr_closed:
-            case DoorAction.dr_closing:
+            case DoorAction.Closed:
+            case DoorAction.Closing:
                 OpenDoor(door);
                 break;
-            case DoorAction.dr_open:
-            case DoorAction.dr_opening:
+            case DoorAction.Open:
+            case DoorAction.Opening:
                 CloseDoor(door);
                 break;
         }
@@ -414,7 +414,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             //
             position = 0xffff;
             doorobjlist[door].ticcount = 0;
-            doorobjlist[door].action = (byte)DoorAction.dr_open;
+            doorobjlist[door].action = (byte)DoorAction.Open;
             map.actorat[doorobjlist[door].tilex, doorobjlist[door].tiley] = null;
         }
 
@@ -458,7 +458,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             //
             position = 0;
 
-            doorobjlist[door].action = DoorAction.dr_closed;
+            doorobjlist[door].action = DoorAction.Closed;
 
             var door_tilex = doorobjlist[door].tilex;
             var door_tiley = doorobjlist[door].tiley;
@@ -511,15 +511,15 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         {
             switch (doorobjlist[door].action)
             {
-                case DoorAction.dr_open:
+                case DoorAction.Open:
                     DoorOpen(door);
                     break;
 
-                case DoorAction.dr_opening:
+                case DoorAction.Opening:
                     DoorOpening(door);
                     break;
 
-                case DoorAction.dr_closing:
+                case DoorAction.Closing:
                     DoorClosing(door);
                     break;
             }

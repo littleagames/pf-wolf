@@ -178,12 +178,12 @@ internal class ConsoleManager
     {
         switch (key)
         {
-            case ScanCodes.sc_Escape:
-            case ScanCodes.sc_Grave:
+            case ScanCodes.Escape:
+            case ScanCodes.Grave:
                 Close();
                 break;
 
-            case ScanCodes.sc_Return:
+            case ScanCodes.Return:
                 var line = InputLine;
                 SetInputLine("");
                 _draft = "";
@@ -192,34 +192,34 @@ internal class ConsoleManager
                 Submit(line);
                 break;
 
-            case ScanCodes.sc_BackSpace:
+            case ScanCodes.BackSpace:
                 if (Cursor > 0)
                 {
                     InputLine = InputLine.Remove(Cursor - 1, 1);
                     Cursor--;
                 }
                 break;
-            case ScanCodes.sc_Delete:
+            case ScanCodes.Delete:
                 if (Cursor < InputLine.Length)
                     InputLine = InputLine.Remove(Cursor, 1);
                 break;
 
-            case ScanCodes.sc_LeftArrow:
+            case ScanCodes.LeftArrow:
                 if (Cursor > 0)
                     Cursor--;
                 break;
-            case ScanCodes.sc_RightArrow:
+            case ScanCodes.RightArrow:
                 if (Cursor < InputLine.Length)
                     Cursor++;
                 break;
-            case ScanCodes.sc_Home:
+            case ScanCodes.Home:
                 Cursor = 0;
                 break;
-            case ScanCodes.sc_End:
+            case ScanCodes.End:
                 Cursor = InputLine.Length;
                 break;
 
-            case ScanCodes.sc_UpArrow:
+            case ScanCodes.UpArrow:
                 if (_historyIndex > 0)
                 {
                     if (_historyIndex == _history.Count)
@@ -227,7 +227,7 @@ internal class ConsoleManager
                     SetInputLine(_history[--_historyIndex]);
                 }
                 break;
-            case ScanCodes.sc_DownArrow:
+            case ScanCodes.DownArrow:
                 if (_historyIndex < _history.Count)
                 {
                     _historyIndex++;
@@ -235,14 +235,14 @@ internal class ConsoleManager
                 }
                 break;
 
-            case ScanCodes.sc_PgUp:
+            case ScanCodes.PgUp:
                 ScrollOffset = Math.Min(ScrollOffset + 4, Math.Max(0, _scrollback.Count - 1));
                 break;
-            case ScanCodes.sc_PgDn:
+            case ScanCodes.PgDn:
                 ScrollOffset = Math.Max(ScrollOffset - 4, 0);
                 break;
 
-            case ScanCodes.sc_Tab:
+            case ScanCodes.Tab:
                 CompleteAtCursor();
                 break;
         }

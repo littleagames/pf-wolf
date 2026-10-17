@@ -41,16 +41,16 @@ public class WeaponZoomTests
         {
             for (int i = 0; i < tics; i++)
             {
-                Session.playerinput.SetPressed(ButtonType.bt_zoom, true);
-                Session.playerinput.SetHeld(ButtonType.bt_zoom, i > 0);
+                Session.playerinput.SetPressed(ButtonType.Zoom, true);
+                Session.playerinput.SetHeld(ButtonType.Zoom, i > 0);
                 Zoom.Tick(reloading: false);
             }
         }
 
         public void LetGo()
         {
-            Session.playerinput.SetPressed(ButtonType.bt_zoom, false);
-            Session.playerinput.SetHeld(ButtonType.bt_zoom, false);
+            Session.playerinput.SetPressed(ButtonType.Zoom, false);
+            Session.playerinput.SetHeld(ButtonType.Zoom, false);
             Zoom.Tick(reloading: false);
         }
     }

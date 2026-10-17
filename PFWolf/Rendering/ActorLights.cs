@@ -351,7 +351,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         int tile = map.tilemap[x, y];
         if (tile == 0)
             return true;
-        return (tile & GameConstants.BIT_DOOR) != 0 && doors.doorobjlist[tile & ~GameConstants.BIT_DOOR].action != DoorAction.dr_closed;
+        return (tile & GameConstants.BIT_DOOR) != 0 && doors.doorobjlist[tile & ~GameConstants.BIT_DOOR].action != DoorAction.Closed;
     }
 
     // Whether any of a tile is within r (global units) of (lx, ly)

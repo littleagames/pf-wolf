@@ -143,20 +143,20 @@ internal record Monster : Actor
     // The way back from each direction, and the diagonal between two (east/west, then
     // north/south), in ObjDir order (from WL_STATE.C)
     protected static readonly ObjDir[] opposite = new ObjDir[9]
-        {ObjDir.west,ObjDir.southwest,ObjDir.south,ObjDir.southeast,ObjDir.east,ObjDir.northeast,ObjDir.north,ObjDir.northwest,ObjDir.nodir};
+        {ObjDir.West,ObjDir.SouthWest,ObjDir.South,ObjDir.SouthEast,ObjDir.East,ObjDir.NorthEast,ObjDir.North,ObjDir.NorthWest,ObjDir.NoDir};
 
     protected static readonly ObjDir[,] diagonal = new ObjDir[9, 9]
 {
-    /* east */  {ObjDir.nodir,ObjDir.nodir,ObjDir.northeast,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.southeast,ObjDir.nodir,ObjDir.nodir
+    /* east */  {ObjDir.NoDir,ObjDir.NoDir,ObjDir.NorthEast,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.SouthEast,ObjDir.NoDir,ObjDir.NoDir
 },
-                {ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir},
-    /* north */ { ObjDir.northeast,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.northwest,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir},
-                { ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir},
-    /* west */  { ObjDir.nodir,ObjDir.nodir,ObjDir.northwest,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.southwest,ObjDir.nodir,ObjDir.nodir},
-                { ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir},
-    /* south */ { ObjDir.southeast,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.southwest,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir},
-                { ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir},
-                { ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir,ObjDir.nodir}
+                {ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir},
+    /* north */ { ObjDir.NorthEast,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NorthWest,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir},
+                { ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir},
+    /* west */  { ObjDir.NoDir,ObjDir.NoDir,ObjDir.NorthWest,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.SouthWest,ObjDir.NoDir,ObjDir.NoDir},
+                { ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir},
+    /* south */ { ObjDir.SouthEast,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.SouthWest,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir},
+                { ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir},
+                { ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir}
 };
 
     internal void RecenterOnTile()
@@ -177,15 +177,15 @@ internal record Monster : Actor
 
         switch (Dir)
         {
-            case ObjDir.north: newy -= move; break;
-            case ObjDir.northeast: newx += move; newy -= move; break;
-            case ObjDir.east: newx += move; break;
-            case ObjDir.southeast: newx += move; newy += move; break;
-            case ObjDir.south: newy += move; break;
-            case ObjDir.southwest: newx -= move; newy += move; break;
-            case ObjDir.west: newx -= move; break;
-            case ObjDir.northwest: newx -= move; newy -= move; break;
-            case ObjDir.nodir: return;
+            case ObjDir.North: newy -= move; break;
+            case ObjDir.NorthEast: newx += move; newy -= move; break;
+            case ObjDir.East: newx += move; break;
+            case ObjDir.SouthEast: newx += move; newy += move; break;
+            case ObjDir.South: newy += move; break;
+            case ObjDir.SouthWest: newx -= move; newy += move; break;
+            case ObjDir.West: newx -= move; break;
+            case ObjDir.NorthWest: newx -= move; newy -= move; break;
+            case ObjDir.NoDir: return;
             default: GameEngineManager.Quit("MoveObj: bad dir!"); break;
         }
 
@@ -205,7 +205,7 @@ internal record Monster : Actor
                 {
                     // An ally walking after a player (or out of their way) is only stopped
                     // getting nearer them, not moving off past or away from them
-                    if (RuntimeFlags.HasFlag(ObjFlags.FL_FOLLOWING)
+                    if (RuntimeFlags.HasFlag(ObjFlags.Following)
                         && Math.Max(deltax, deltay) >= Math.Max(Math.Abs(X - pawn.X), Math.Abs(Y - pawn.Y)))
                         continue;
 
@@ -218,7 +218,7 @@ internal record Monster : Actor
                         OnBumpedPlayer();
 
                         // Walking after a player (or out of their way), it waits once it's up against one
-                        if (RuntimeFlags.HasFlag(ObjFlags.FL_FOLLOWING))
+                        if (RuntimeFlags.HasFlag(ObjFlags.Following))
                             StopWalking();
                         return;
                     }
@@ -238,7 +238,7 @@ internal record Monster : Actor
 
         switch (Dir)
         {
-            case ObjDir.north:
+            case ObjDir.North:
                 if (cutsCorners)
                 {
                     if (!CheckDiag(TileX, TileY - 1)) return false;
@@ -252,14 +252,14 @@ internal record Monster : Actor
                 TileY--;
                 break;
 
-            case ObjDir.northeast:
+            case ObjDir.NorthEast:
                 if (!CheckDiag(TileX + 1, TileY - 1)) return false;
                 if (!CheckDiag(TileX + 1, TileY)) return false;
                 if (!CheckDiag(TileX, TileY - 1)) return false;
                 TileX++; TileY--;
                 break;
 
-            case ObjDir.east:
+            case ObjDir.East:
                 if (cutsCorners)
                 {
                     if (!CheckDiag(TileX + 1, TileY)) return false;
@@ -273,14 +273,14 @@ internal record Monster : Actor
                 TileX++;
                 break;
 
-            case ObjDir.southeast:
+            case ObjDir.SouthEast:
                 if (!CheckDiag(TileX + 1, TileY + 1)) return false;
                 if (!CheckDiag(TileX + 1, TileY)) return false;
                 if (!CheckDiag(TileX, TileY + 1)) return false;
                 TileX++; TileY++;
                 break;
 
-            case ObjDir.south:
+            case ObjDir.South:
                 if (cutsCorners)
                 {
                     if (!CheckDiag(TileX, TileY + 1)) return false;
@@ -294,14 +294,14 @@ internal record Monster : Actor
                 TileY++;
                 break;
 
-            case ObjDir.southwest:
+            case ObjDir.SouthWest:
                 if (!CheckDiag(TileX - 1, TileY + 1)) return false;
                 if (!CheckDiag(TileX - 1, TileY)) return false;
                 if (!CheckDiag(TileX, TileY + 1)) return false;
                 TileX--; TileY++;
                 break;
 
-            case ObjDir.west:
+            case ObjDir.West:
                 if (cutsCorners)
                 {
                     if (!CheckDiag(TileX - 1, TileY)) return false;
@@ -315,14 +315,14 @@ internal record Monster : Actor
                 TileX--;
                 break;
 
-            case ObjDir.northwest:
+            case ObjDir.NorthWest:
                 if (!CheckDiag(TileX - 1, TileY - 1)) return false;
                 if (!CheckDiag(TileX - 1, TileY)) return false;
                 if (!CheckDiag(TileX, TileY - 1)) return false;
                 TileX--; TileY--;
                 break;
 
-            case ObjDir.nodir:
+            case ObjDir.NoDir:
                 return false;
 
             default:
@@ -465,28 +465,28 @@ internal record Monster : Actor
 
         switch (Dir)
         {
-            case ObjDir.north:
+            case ObjDir.North:
                 if (deltay > 0) return false;
                 break;
-            case ObjDir.east:
+            case ObjDir.East:
                 if (deltax < 0) return false;
                 break;
-            case ObjDir.south:
+            case ObjDir.South:
                 if (deltay < 0) return false;
                 break;
-            case ObjDir.west:
+            case ObjDir.West:
                 if (deltax > 0) return false;
                 break;
-            case ObjDir.northwest:
+            case ObjDir.NorthWest:
                 if (!(DemoRecord || DemoPlayback) && deltay > -deltax) return false;
                 break;
-            case ObjDir.northeast:
+            case ObjDir.NorthEast:
                 if (!(DemoRecord || DemoPlayback) && deltay > deltax) return false;
                 break;
-            case ObjDir.southwest:
+            case ObjDir.SouthWest:
                 if (!(DemoRecord || DemoPlayback) && deltax > deltay) return false;
                 break;
-            case ObjDir.southeast:
+            case ObjDir.SouthEast:
                 if (!(DemoRecord || DemoPlayback) && -deltax > deltay) return false;
                 break;
         }
@@ -548,13 +548,13 @@ internal record Monster : Actor
     private int _retargetIn;
 
     /// <summary>
-    /// Run (MapManager.DoActor) before each think: an enemy going after someone (FL_ATTACKMODE)
+    /// Run (MapManager.DoActor) before each think: an enemy going after someone (AttackMode)
     /// with no one left to go after gives up and stands; with rivals about, it may turn on
     /// someone nearer. True when it changed state.
     /// </summary>
     internal bool BeforeThink(uint tics)
     {
-        if (!RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE))
+        if (!RuntimeFlags.HasFlag(ObjFlags.AttackMode))
             return false;
 
         if (!HasFoe)
@@ -581,7 +581,7 @@ internal record Monster : Actor
     /// </summary>
     internal void GiveUp()
     {
-        RuntimeFlags &= ~(ObjFlags.FL_ATTACKMODE | ObjFlags.FL_FIRSTATTACK | ObjFlags.FL_FOLLOWING);
+        RuntimeFlags &= ~(ObjFlags.AttackMode | ObjFlags.FirstAttack | ObjFlags.Following);
         _target = null;
         Temp2 = 0;
         Speed = PropertyInt("speed", SPDPATROL);
@@ -595,7 +595,7 @@ internal record Monster : Actor
     FOLLOWING: an ally of the players going about with them
     =============================================================================
 
-    An actor that follows (FL_FOLLOWS: its `monster.follow: true` once it has seen an allied
+    An actor that follows (Follows: its `monster.follow: true` once it has seen an allied
     player, or A_SetFaction's "follow") walks after the nearest living player on its side when
     they get more than FollowFar tiles away, in its Chase state at its chasing speed, and stops
     within FollowNear. Anyone it's hostile to that it sees on the way, it goes after instead.
@@ -608,19 +608,19 @@ internal record Monster : Actor
     private (int X, int Y)? _walkGoal;
     private (int X, int Y)? _stepAside;
 
-    /// <summary>Whether it goes about with the players (FL_FOLLOWS)</summary>
+    /// <summary>Whether it goes about with the players (Follows)</summary>
     internal bool Follows
     {
-        get => RuntimeFlags.HasFlag(ObjFlags.FL_FOLLOWS);
+        get => RuntimeFlags.HasFlag(ObjFlags.Follows);
         set
         {
             if (value)
-                RuntimeFlags |= ObjFlags.FL_FOLLOWS;
+                RuntimeFlags |= ObjFlags.Follows;
             else
             {
-                if (RuntimeFlags.HasFlag(ObjFlags.FL_FOLLOWING))
+                if (RuntimeFlags.HasFlag(ObjFlags.Following))
                     StopWalking();
-                RuntimeFlags &= ~ObjFlags.FL_FOLLOWS;
+                RuntimeFlags &= ~ObjFlags.Follows;
             }
         }
     }
@@ -649,7 +649,7 @@ internal record Monster : Actor
     /// </summary>
     internal bool ThinkInstead(uint tics)
     {
-        if (RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE) || !RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE))
+        if (RuntimeFlags.HasFlag(ObjFlags.AttackMode) || !RuntimeFlags.HasFlag(ObjFlags.Shootable))
             return false;
 
         // `monster.follow`: it falls in with a player on its side once it sees them
@@ -658,7 +658,7 @@ internal record Monster : Actor
         if (!Follows)
             return false;
 
-        bool walking = RuntimeFlags.HasFlag(ObjFlags.FL_FOLLOWING);
+        bool walking = RuntimeFlags.HasFlag(ObjFlags.Following);
         if (walking && CheckSight())
         {
             // Someone to go after: that comes first
@@ -683,7 +683,7 @@ internal record Monster : Actor
     /// <summary>A player walked into it standing by: it steps a couple of tiles out of their way</summary>
     internal void ShovedBy(PlayerPawn pawn)
     {
-        if (!Follows || RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE) || _stepAside != null || !IsAllyOf(pawn))
+        if (!Follows || RuntimeFlags.HasFlag(ObjFlags.AttackMode) || _stepAside != null || !IsAllyOf(pawn))
             return;
 
         // To one side of the way they face (two tiles if there's room), else straight away from them
@@ -707,7 +707,7 @@ internal record Monster : Actor
 
     private void StartWalking()
     {
-        RuntimeFlags |= ObjFlags.FL_FOLLOWING;
+        RuntimeFlags |= ObjFlags.Following;
         Speed = ChaseSpeed();
         if (Distance < 0)
             Distance = 0;
@@ -716,7 +716,7 @@ internal record Monster : Actor
 
     private void StopWalking(bool stand = true)
     {
-        RuntimeFlags &= ~ObjFlags.FL_FOLLOWING;
+        RuntimeFlags &= ~ObjFlags.Following;
         _stepAside = null;
         Speed = PropertyInt("speed", SPDPATROL);
         if (stand)
@@ -747,7 +747,7 @@ internal record Monster : Actor
     // once it's there
     private void WalkStep(uint tics)
     {
-        if (Dir == ObjDir.nodir && !SelectWalkDir())
+        if (Dir == ObjDir.NoDir && !SelectWalkDir())
         {
             StopWalking();      // boxed in
             return;
@@ -759,7 +759,7 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
                 if (!(DemoRecord || DemoPlayback))
@@ -798,7 +798,7 @@ internal record Monster : Actor
         {
             _walkGoal = null;
         }
-        return Dir != ObjDir.nodir;
+        return Dir != ObjDir.NoDir;
     }
 
     /// <summary>
@@ -809,7 +809,7 @@ internal record Monster : Actor
     /// </summary>
     internal void SetFaction(string? faction, bool follow = false)
     {
-        bool alive = RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE);
+        bool alive = RuntimeFlags.HasFlag(ObjFlags.Shootable);
         bool counted = alive && CountsAsKill;
         Faction = faction;
         if (alive && counted != CountsAsKill)
@@ -833,11 +833,11 @@ internal record Monster : Actor
     /// </summary>
     internal bool IsTargetable(Actor actor) => actor is PlayerPawn pawn
         ? IsTargetable(pawn)
-        : !actor.IsRemoved && actor.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE);
+        : !actor.IsRemoved && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable);
 
     /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: GameHost.InViewOf)</summary>
     private bool SeenByThePlayers() =>
-        GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) : SeenByAPlayer(this);
+        GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.Visible) : SeenByAPlayer(this);
 
     /// <summary>Hurts the actor it's after: a player as their enemies' shots do, anything else as the player's shots</summary>
     protected void HurtTarget(int points)
@@ -860,7 +860,7 @@ internal record Monster : Actor
     /// </summary>
     private bool TargetSeesMe() => Target switch
     {
-        PlayerPawn pawn => GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) : InViewOf(pawn, this),
+        PlayerPawn pawn => GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.Visible) : InViewOf(pawn, this),
         Monster monster => monster.CanSee(this),
         _ => false,
     };
@@ -872,7 +872,7 @@ internal record Monster : Actor
     private bool TargetIsRunning() => Target switch
     {
         PlayerPawn pawn => pawn.State.ThrustSpeed >= RUNSPEED,
-        Monster monster => monster.RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE) && monster.Dir != ObjDir.nodir,
+        Monster monster => monster.RuntimeFlags.HasFlag(ObjFlags.AttackMode) && monster.Dir != ObjDir.NoDir,
         _ => false,
     };
 
@@ -908,7 +908,7 @@ internal record Monster : Actor
         if (HasFlag("BLIND"))
             return false;
 
-        if (RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE))
+        if (RuntimeFlags.HasFlag(ObjFlags.AttackMode))
             GameEngineManager.Quit("An actor in ATTACKMODE called SightPlayer!");
 
         if (Temp2 != 0)
@@ -927,11 +927,11 @@ internal record Monster : Actor
             if (World.Stealth?.Overlooks(this) == true)
                 return false;
 
-            if (RuntimeFlags.HasFlag(ObjFlags.FL_AMBUSH))
+            if (RuntimeFlags.HasFlag(ObjFlags.Ambush))
             {
                 if (!CheckSight())
                     return false;
-                RuntimeFlags &= ~ObjFlags.FL_AMBUSH;
+                RuntimeFlags &= ~ObjFlags.Ambush;
             }
             else
             {
@@ -946,7 +946,7 @@ internal record Monster : Actor
             }
 
             Temp2 = GetReactionDelay();
-            RuntimeFlags &= ~ObjFlags.FL_FRIENDLY;   // it has seen the player: no longer friendly
+            RuntimeFlags &= ~ObjFlags.Friendly;   // it has seen the player: no longer friendly
             return false;
         }
 
@@ -974,7 +974,7 @@ internal record Monster : Actor
         if (Distance < 0)
             Distance = 0;
 
-        RuntimeFlags |= ObjFlags.FL_ATTACKMODE | ObjFlags.FL_FIRSTATTACK;
+        RuntimeFlags |= ObjFlags.AttackMode | ObjFlags.FirstAttack;
     }
 
     internal void SelectDodgeDir()
@@ -985,10 +985,10 @@ internal record Monster : Actor
         ObjDir tdir;
         ObjDir turnaround;
 
-        if (RuntimeFlags.HasFlag(ObjFlags.FL_FIRSTATTACK))
+        if (RuntimeFlags.HasFlag(ObjFlags.FirstAttack))
         {
-            turnaround = ObjDir.nodir;
-            RuntimeFlags &= ~ObjFlags.FL_FIRSTATTACK;
+            turnaround = ObjDir.NoDir;
+            RuntimeFlags &= ~ObjFlags.FirstAttack;
         }
         else
             turnaround = opposite[(byte)Dir];
@@ -997,24 +997,24 @@ internal record Monster : Actor
 
         if (deltax > 0)
         {
-            dirtry[1] = ObjDir.east;
-            dirtry[3] = ObjDir.west;
+            dirtry[1] = ObjDir.East;
+            dirtry[3] = ObjDir.West;
         }
         else
         {
-            dirtry[1] = ObjDir.west;
-            dirtry[3] = ObjDir.east;
+            dirtry[1] = ObjDir.West;
+            dirtry[3] = ObjDir.East;
         }
 
         if (deltay > 0)
         {
-            dirtry[2] = ObjDir.south;
-            dirtry[4] = ObjDir.north;
+            dirtry[2] = ObjDir.South;
+            dirtry[4] = ObjDir.North;
         }
         else
         {
-            dirtry[2] = ObjDir.north;
-            dirtry[4] = ObjDir.south;
+            dirtry[2] = ObjDir.North;
+            dirtry[4] = ObjDir.South;
         }
 
         absdx = (uint)Math.Abs(deltax);
@@ -1036,7 +1036,7 @@ internal record Monster : Actor
 
         for (i = 0; i < 5; i++)
         {
-            if (dirtry[i] == ObjDir.nodir || dirtry[i] == turnaround)
+            if (dirtry[i] == ObjDir.NoDir || dirtry[i] == turnaround)
                 continue;
 
             Dir = dirtry[i];
@@ -1044,14 +1044,14 @@ internal record Monster : Actor
                 return;
         }
 
-        if (turnaround != ObjDir.nodir)
+        if (turnaround != ObjDir.NoDir)
         {
             Dir = turnaround;
             if (TryWalk())
                 return;
         }
 
-        Dir = ObjDir.nodir;
+        Dir = ObjDir.NoDir;
     }
 
     internal void SelectChaseDir()
@@ -1070,35 +1070,35 @@ internal record Monster : Actor
         else
             SeekDelta(out deltax, out deltay);
 
-        d[1] = ObjDir.nodir;
-        d[2] = ObjDir.nodir;
+        d[1] = ObjDir.NoDir;
+        d[2] = ObjDir.NoDir;
 
-        if (deltax > 0) d[1] = ObjDir.east;
-        else if (deltax < 0) d[1] = ObjDir.west;
-        if (deltay > 0) d[2] = ObjDir.south;
-        else if (deltay < 0) d[2] = ObjDir.north;
+        if (deltax > 0) d[1] = ObjDir.East;
+        else if (deltax < 0) d[1] = ObjDir.West;
+        if (deltay > 0) d[2] = ObjDir.South;
+        else if (deltay < 0) d[2] = ObjDir.North;
 
         if (Math.Abs(deltay) > Math.Abs(deltax))
         {
             tdir = d[1]; d[1] = d[2]; d[2] = tdir;
         }
 
-        if (d[1] == turnaround) d[1] = ObjDir.nodir;
-        if (d[2] == turnaround) d[2] = ObjDir.nodir;
+        if (d[1] == turnaround) d[1] = ObjDir.NoDir;
+        if (d[2] == turnaround) d[2] = ObjDir.NoDir;
 
-        if (d[1] != ObjDir.nodir)
+        if (d[1] != ObjDir.NoDir)
         {
             Dir = d[1];
             if (TryWalk()) return;
         }
 
-        if (d[2] != ObjDir.nodir)
+        if (d[2] != ObjDir.NoDir)
         {
             Dir = d[2];
             if (TryWalk()) return;
         }
 
-        if (olddir != ObjDir.nodir)
+        if (olddir != ObjDir.NoDir)
         {
             Dir = olddir;
             if (TryWalk()) return;
@@ -1106,7 +1106,7 @@ internal record Monster : Actor
 
         if (NextRandom() > 128)
         {
-            for (tdir = ObjDir.north; tdir <= ObjDir.west; tdir++)
+            for (tdir = ObjDir.North; tdir <= ObjDir.West; tdir++)
             {
                 if (tdir != turnaround)
                 {
@@ -1117,7 +1117,7 @@ internal record Monster : Actor
         }
         else
         {
-            for (tdir = ObjDir.west; tdir >= ObjDir.north; tdir--)
+            for (tdir = ObjDir.West; tdir >= ObjDir.North; tdir--)
             {
                 if (tdir != turnaround)
                 {
@@ -1127,16 +1127,16 @@ internal record Monster : Actor
             }
         }
 
-        if (turnaround != ObjDir.nodir)
+        if (turnaround != ObjDir.NoDir)
         {
             Dir = turnaround;
-            if (Dir != ObjDir.nodir)
+            if (Dir != ObjDir.NoDir)
             {
                 if (TryWalk()) return;
             }
         }
 
-        Dir = ObjDir.nodir;
+        Dir = ObjDir.NoDir;
     }
 
     internal void SelectRunDir()
@@ -1148,8 +1148,8 @@ internal record Monster : Actor
         deltax = Target.TileX - TileX;
         deltay = Target.TileY - TileY;
 
-        d[1] = deltax < 0 ? ObjDir.east : ObjDir.west;
-        d[2] = deltay < 0 ? ObjDir.south : ObjDir.north;
+        d[1] = deltax < 0 ? ObjDir.East : ObjDir.West;
+        d[2] = deltay < 0 ? ObjDir.South : ObjDir.North;
 
         if (Math.Abs(deltay) > Math.Abs(deltax))
         {
@@ -1164,7 +1164,7 @@ internal record Monster : Actor
 
         if (NextRandom() > 128)
         {
-            for (tdir = ObjDir.north; tdir <= ObjDir.west; tdir++)
+            for (tdir = ObjDir.North; tdir <= ObjDir.West; tdir++)
             {
                 Dir = tdir;
                 if (TryWalk()) return;
@@ -1172,14 +1172,14 @@ internal record Monster : Actor
         }
         else
         {
-            for (tdir = ObjDir.west; tdir >= ObjDir.north; tdir--)
+            for (tdir = ObjDir.West; tdir >= ObjDir.North; tdir--)
             {
                 Dir = tdir;
                 if (TryWalk()) return;
             }
         }
 
-        Dir = ObjDir.nodir;
+        Dir = ObjDir.NoDir;
     }
 
     // Called as a patroller (T_Path, T_BJRun) reaches a tile's centre: a patrol point there
@@ -1192,7 +1192,7 @@ internal record Monster : Actor
         Distance = (int)MapConstants.TILEGLOBAL;
 
         if (!TryWalk())
-            Dir = ObjDir.nodir;
+            Dir = ObjDir.NoDir;
     }
 
     /*
@@ -1269,7 +1269,7 @@ internal record Monster : Actor
             && ResolvedStates.ContainsKey("FloorDeath"))
         {
             SetState("FloorDeath");
-            RuntimeFlags &= ~(ObjFlags.FL_SHOOTABLE | ObjFlags.FL_FRIENDLY);
+            RuntimeFlags &= ~(ObjFlags.Shootable | ObjFlags.Friendly);
             return;
         }
 
@@ -1320,8 +1320,8 @@ internal record Monster : Actor
             if (killedBy is PlayerPawn unseen)
                 World.Stealth?.Killed(unseen);      // a knife or a scope's kill, unseen (Gameplay/Stealth.cs)
         }
-        RuntimeFlags &= ~(ObjFlags.FL_SHOOTABLE | ObjFlags.FL_FRIENDLY);
-        RuntimeFlags |= ObjFlags.FL_NONMARK;
+        RuntimeFlags &= ~(ObjFlags.Shootable | ObjFlags.Friendly);
+        RuntimeFlags |= ObjFlags.NonMark;
     }
 
     /// <summary>
@@ -1360,13 +1360,13 @@ internal record Monster : Actor
             return;
 
         // POINTSONCE actors (Spectres, which come back) only pay out the first time;
-        // FL_BONUS is set at spawn and cleared here, as in the original
+        // Bonus is set at spawn and cleared here, as in the original
         if (!Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
             GivePoints(Convert.ToInt32(points));
-        else if (RuntimeFlags.HasFlag(ObjFlags.FL_BONUS))
+        else if (RuntimeFlags.HasFlag(ObjFlags.Bonus))
         {
             GivePoints(Convert.ToInt32(points));
-            RuntimeFlags &= ~ObjFlags.FL_BONUS;
+            RuntimeFlags &= ~ObjFlags.Bonus;
         }
     }
 
@@ -1437,7 +1437,7 @@ internal record Monster : Actor
         if (!(attacker is PlayerPawn && PlayerWeaponIsSilent()))
             MadeNoise = true;
 
-        if (!RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE))
+        if (!RuntimeFlags.HasFlag(ObjFlags.AttackMode))
             damage <<= 1;
 
         int oldHitpoints = Hitpoints;
@@ -1461,7 +1461,7 @@ internal record Monster : Actor
         if (OnHurt(oldHitpoints))
             return;
 
-        if (!RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE) && NoticesWhenHurt)
+        if (!RuntimeFlags.HasFlag(ObjFlags.AttackMode) && NoticesWhenHurt)
             FirstSighting();
 
         // `monster.damagestates: [full, 3/4, 1/2, 1/4]` (the floating bomb, which looks more
@@ -1519,13 +1519,13 @@ internal record Monster : Actor
             return;
 
         // A friendly patroller only looks for the player once there's been a noise
-        if ((!RuntimeFlags.HasFlag(ObjFlags.FL_FRIENDLY) || MadeNoise) && SightPlayer())
+        if ((!RuntimeFlags.HasFlag(ObjFlags.Friendly) || MadeNoise) && SightPlayer())
             return;
 
-        if (Dir == ObjDir.nodir)
+        if (Dir == ObjDir.NoDir)
         {
             SelectPathDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
 
@@ -1536,7 +1536,7 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
                 if (!(DemoRecord || DemoPlayback))
@@ -1557,7 +1557,7 @@ internal record Monster : Actor
 
             SelectPathDir();
 
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
     }
@@ -1607,10 +1607,10 @@ internal record Monster : Actor
         else
             Hidden = true;
 
-        if (Dir == ObjDir.nodir)
+        if (Dir == ObjDir.NoDir)
         {
             if (dodge) SelectDodgeDir(); else SelectChaseDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
 
@@ -1621,7 +1621,7 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
                 if (!(DemoRecord || DemoPlayback))
@@ -1639,17 +1639,17 @@ internal record Monster : Actor
 
             if (dodge) SelectDodgeDir(); else SelectChaseDir();
 
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
     }
 
     internal void DogChase()
     {
-        if (Dir == ObjDir.nodir)
+        if (Dir == ObjDir.NoDir)
         {
             SelectDodgeDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
 
@@ -1682,7 +1682,7 @@ internal record Monster : Actor
             move -= Distance;
 
             SelectDodgeDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
     }
@@ -1721,10 +1721,10 @@ internal record Monster : Actor
 
     internal void GhostChase()
     {
-        if (Dir == ObjDir.nodir)
+        if (Dir == ObjDir.NoDir)
         {
             SelectChaseDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
 
@@ -1742,7 +1742,7 @@ internal record Monster : Actor
             move -= Distance;
 
             SelectChaseDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
     }
@@ -1769,10 +1769,10 @@ internal record Monster : Actor
         else
             Hidden = true;
 
-        if (Dir == ObjDir.nodir)
+        if (Dir == ObjDir.NoDir)
         {
             if (dodge) SelectDodgeDir(); else SelectChaseDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
 
@@ -1783,7 +1783,7 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.Open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
                 TryWalk();
@@ -1802,7 +1802,7 @@ internal record Monster : Actor
             else if (dodge) SelectDodgeDir();
             else SelectChaseDir();
 
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
     }
@@ -1821,10 +1821,10 @@ internal record Monster : Actor
         else
             Hidden = true;
 
-        if (Dir == ObjDir.nodir)
+        if (Dir == ObjDir.NoDir)
         {
             SelectDodgeDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
 
@@ -1842,7 +1842,7 @@ internal record Monster : Actor
             move -= Distance;
 
             SelectDodgeDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
     }
@@ -2020,9 +2020,9 @@ internal record Monster : Actor
                     return;
             }
 
-        RuntimeFlags |= ObjFlags.FL_AMBUSH | ObjFlags.FL_SHOOTABLE;
-        RuntimeFlags &= ~(ObjFlags.FL_ATTACKMODE | ObjFlags.FL_NONMARK);
-        Dir = ObjDir.nodir;
+        RuntimeFlags |= ObjFlags.Ambush | ObjFlags.Shootable;
+        RuntimeFlags &= ~(ObjFlags.AttackMode | ObjFlags.NonMark);
+        Dir = ObjDir.NoDir;
         SetState("Spawn");
     }
 

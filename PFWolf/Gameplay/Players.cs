@@ -163,7 +163,7 @@ internal sealed class Players(
     // Open floor nobody stands on: no enemy, and no player already put there
     internal bool IsFreeFloor(int x, int y) =>
         IsOpenFloor(x, y) && !map.EnemiesAt(x, y).Any()
-        && !map.Players.Any(pawn => pawn.TileX == x && pawn.TileY == y && pawn.Active == ActiveType.ac_yes);
+        && !map.Players.Any(pawn => pawn.TileX == x && pawn.TileY == y && pawn.Active == ActiveType.Yes);
 
     /*
     ====================
@@ -232,7 +232,7 @@ internal sealed class Players(
             playerstate.EyeZ = Math.Max(playerstate.EyeZ - (int)tics * hooks.DeathDropSpeed(), dropto);
 
         if (playerstate.DeadTics >= RESPAWNTICS && hooks.MayRespawn(playerstate)
-            && (session.playerinput.IsFreshPress(ButtonType.bt_use) || session.playerinput.IsFreshPress(ButtonType.bt_attack)))
+            && (session.playerinput.IsFreshPress(ButtonType.Use) || session.playerinput.IsFreshPress(ButtonType.Attack)))
             Respawn();
     }
 

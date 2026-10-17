@@ -42,15 +42,15 @@ internal sealed class NetOverlay(
         {
             switch (key)
             {
-                case ScanCodes.sc_Enter:
+                case ScanCodes.Enter:
                     NetSession.Current?.Say(netChatText);
-                    goto case ScanCodes.sc_Escape;
-                case ScanCodes.sc_Escape:
+                    goto case ScanCodes.Escape;
+                case ScanCodes.Escape:
                     netChatting = false;
                     netChatText = "";
                     input.ClearKeysDown();
                     return;
-                case ScanCodes.sc_BackSpace when netChatText.Length > 0:
+                case ScanCodes.BackSpace when netChatText.Length > 0:
                     netChatText = netChatText[..^1];
                     break;
             }
@@ -77,7 +77,7 @@ internal sealed class NetOverlay(
     /// </summary>
     internal void NetCheckKeys(ScanCodes scan)
     {
-        if (!netPlay.netLeavePrompt && scan == ScanCodes.sc_T)
+        if (!netPlay.netLeavePrompt && scan == ScanCodes.T)
         {
             netChatting = true;
             netChatText = "";
@@ -89,20 +89,20 @@ internal sealed class NetOverlay(
         var localplayer = game.localplayer;
         if (localplayer.health <= 0 && localplayer.Pawn != null)
         {
-            if (input.IsButtonPressed(ButtonType.bt_turnright) && !input.IsButtonHeld(ButtonType.bt_turnright))
+            if (input.IsButtonPressed(ButtonType.TurnRight) && !input.IsButtonHeld(ButtonType.TurnRight))
                 WatchNextPlayer(1);
-            else if (input.IsButtonPressed(ButtonType.bt_turnleft) && !input.IsButtonHeld(ButtonType.bt_turnleft))
+            else if (input.IsButtonPressed(ButtonType.TurnLeft) && !input.IsButtonHeld(ButtonType.TurnLeft))
                 WatchNextPlayer(-1);
         }
 
         if (netPlay.netLeavePrompt)
         {
-            if (scan == ScanCodes.sc_Y)
+            if (scan == ScanCodes.Y)
             {
                 netPlay.netLeft = true;
-                game.playstate = PlayState.ex_abort;
+                game.playstate = PlayState.Abort;
             }
-            if (scan is ScanCodes.sc_Y or ScanCodes.sc_N or ScanCodes.sc_Escape)
+            if (scan is ScanCodes.Y or ScanCodes.N or ScanCodes.Escape)
             {
                 netPlay.netLeavePrompt = false;
                 input.ClearKeysDown();
@@ -110,7 +110,7 @@ internal sealed class NetOverlay(
             return;
         }
 
-        if (scan == ScanCodes.sc_Escape || input.IsButtonPressed(ButtonType.bt_esc))
+        if (scan == ScanCodes.Escape || input.IsButtonPressed(ButtonType.Esc))
         {
             netPlay.netLeavePrompt = true;
             input.ClearKeysDown();

@@ -1085,7 +1085,7 @@ internal class MapManager
         // Angles: 0=east, 45=northeast, 90=north ... 315=southeast, in ObjDir order
         // (enemies only face the four cardinal ones, patrol points all eight); -1 faces no way
         // at all, so it sees all round (Blake Stone's aliens)
-        builtActor.Dir = thing.Angles < 0 ? ObjDir.nodir : (ObjDir)((thing.Angles / 45 % 8 + 8) % 8);
+        builtActor.Dir = thing.Angles < 0 ? ObjDir.NoDir : (ObjDir)((thing.Angles / 45 % 8 + 8) % 8);
 
         // Patrol selects the initial resolved state (mirrors SpawnStand vs SpawnPatrol):
         // "Path" for patrolling grunts, otherwise whatever CreateActor already set ("Spawn").
@@ -1093,16 +1093,16 @@ internal class MapManager
         {
             builtActor.ArmState(pathState);
             builtActor.Distance = (int)MapConstants.TILEGLOBAL;
-            builtActor.Active = ActiveType.ac_yes;     // a patroller walks wherever the player is
+            builtActor.Active = ActiveType.Yes;     // a patroller walks wherever the player is
 
             // As SpawnPatrol did: it's already on its way to the next tile, which is its tile from
             // now on (it leaves the spawn tile's centre), or reaching it would snap it back a tile
             switch (builtActor.Dir)
             {
-                case ObjDir.east: builtActor.TileX++; break;
-                case ObjDir.north: builtActor.TileY--; break;
-                case ObjDir.west: builtActor.TileX--; break;
-                case ObjDir.south: builtActor.TileY++; break;
+                case ObjDir.East: builtActor.TileX++; break;
+                case ObjDir.North: builtActor.TileY--; break;
+                case ObjDir.West: builtActor.TileX--; break;
+                case ObjDir.South: builtActor.TileY++; break;
             }
             builtActor.SyncPosition();
         }
@@ -1119,14 +1119,14 @@ internal class MapManager
             // hitpoints): never shootable, and not counted toward the kill ratio.
             builtActor.Speed = ReadIntProperty(builtActor, "speed", GameConstants.SPDDOG);
             if (alwaysAmbush)
-                builtActor.RuntimeFlags |= ObjFlags.FL_AMBUSH;
+                builtActor.RuntimeFlags |= ObjFlags.Ambush;
         }
         else if (hasHealth)
         {
             // A grunt or boss enemy (has scaled health), as opposed to a plain decoration/pickup.
             builtActor.Hitpoints = GetScaledHealth(builtActor);
             builtActor.Speed = ReadIntProperty(builtActor, "speed", GameConstants.SPDPATROL);
-            builtActor.RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
+            builtActor.RuntimeFlags |= ObjFlags.Shootable;
 
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
             // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
@@ -1136,16 +1136,16 @@ internal class MapManager
 
             // Points only for the first kill (Monster.Kill clears it)
             if (builtActor.Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
-                builtActor.RuntimeFlags |= ObjFlags.FL_BONUS;
+                builtActor.RuntimeFlags |= ObjFlags.Bonus;
 
             if (alwaysAmbush)
             {
-                builtActor.RuntimeFlags |= ObjFlags.FL_AMBUSH;
+                builtActor.RuntimeFlags |= ObjFlags.Ambush;
 
                 // The legacy boss spawners (SpawnGift, SpawnBoss, ...) all face nodir, which
                 // CheckSight takes as seeing all around; a map facing would blind them to a
                 // player approaching from behind.
-                builtActor.Dir = ObjDir.nodir;
+                builtActor.Dir = ObjDir.NoDir;
             }
             else
             {
@@ -1155,7 +1155,7 @@ internal class MapManager
                 if (floorTile == Floors.AmbushTile)
                 {
                     TakeNeighbourArea(builtActor, tilex, tiley);
-                    builtActor.RuntimeFlags |= ObjFlags.FL_AMBUSH;
+                    builtActor.RuntimeFlags |= ObjFlags.Ambush;
                 }
             }
 
@@ -1166,7 +1166,7 @@ internal class MapManager
                     builtActor.CarriedDrops.Add(code.Drop);
                 builtActor.Cloaked |= code.Cloak;
                 if (code.Ambush)
-                    builtActor.RuntimeFlags |= ObjFlags.FL_AMBUSH;
+                    builtActor.RuntimeFlags |= ObjFlags.Ambush;
                 if (code.Link.Equals("east", StringComparison.OrdinalIgnoreCase) && tilex + 1 < mapwidth)
                 {
                     builtActor.DeathLink = (ushort)MAPSPOT(tilex + 1, tiley, 1);
@@ -1193,7 +1193,7 @@ internal class MapManager
 
         //if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
         //{
-        //    newstatobj.flags = ObjFlags.FL_BONUS;
+        //    newstatobj.flags = ObjFlags.Bonus;
         //}
 
         // Solid statics (barrels, pillars, tables, ...; `flags: [SOLID]` in actordefs, inherited
@@ -1268,8 +1268,8 @@ internal class MapManager
         builtActor.Dir = source.Dir;
         builtActor.AreaNumber = source.AreaNumber;
         // Hitler stuck-with-nodir fix (Monster's A_HitlerMorph): the morphed
-        // actor must remain markable even if the dying source had FL_NONMARK set.
-        builtActor.RuntimeFlags = (source.RuntimeFlags & ~ObjFlags.FL_NONMARK) | ObjFlags.FL_SHOOTABLE;
+        // actor must remain markable even if the dying source had NonMark set.
+        builtActor.RuntimeFlags = (source.RuntimeFlags & ~ObjFlags.NonMark) | ObjFlags.Shootable;
         builtActor.Hitpoints = GetScaledHealth(builtActor);
         builtActor.Faction = factionManager.Value.InheritedFaction(builtActor, source);
         builtActor.Translation = TranslationManager.ClassTranslation(builtActor) ?? source.Translation;    // Hitler keeps Mecha Hitler's colors
@@ -1305,9 +1305,9 @@ internal class MapManager
         builtActor.SetPosition(source.TileX, source.TileY);
         builtActor.X = source.X;
         builtActor.Y = source.Y;
-        builtActor.Dir = ObjDir.nodir;
-        builtActor.Active = ActiveType.ac_yes;
-        builtActor.RuntimeFlags = ObjFlags.FL_NEVERMARK;
+        builtActor.Dir = ObjDir.NoDir;
+        builtActor.Active = ActiveType.Yes;
+        builtActor.RuntimeFlags = ObjFlags.NeverMark;
         builtActor.Faction = factionManager.Value.InheritedFaction(builtActor, source);
         builtActor.Translation = TranslationManager.ClassTranslation(builtActor);
 
@@ -1414,18 +1414,18 @@ internal class MapManager
         }
     }
 
-    /// <summary>True if a living (FL_SHOOTABLE) actor occupies the tile -- corpses don't count.</summary>
-    /// <summary>The living (FL_SHOOTABLE) actors on a tile</summary>
+    /// <summary>True if a living (Shootable) actor occupies the tile -- corpses don't count.</summary>
+    /// <summary>The living (Shootable) actors on a tile</summary>
     internal IEnumerable<Entities.Actors.Monster> ShootableActorsAt(int tilex, int tiley) =>
-        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.TileX == tilex && a.TileY == tiley && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE));
+        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.TileX == tilex && a.TileY == tiley && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
 
-    /// <summary>The living (FL_SHOOTABLE) actors within <paramref name="reach"/> (global units, each way) of a point, nearest first</summary>
+    /// <summary>The living (Shootable) actors within <paramref name="reach"/> (global units, each way) of a point, nearest first</summary>
     internal IEnumerable<Entities.Actors.Monster> ShootableActorsNear(int x, int y, long reach) =>
-        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE)
+        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(ObjFlags.Shootable)
                 && Math.Abs((long)a.X - x) <= reach && Math.Abs((long)a.Y - y) <= reach)
             .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
 
-    /// <summary>True if a living (FL_SHOOTABLE) actor that's in the way occupies the tile</summary>
+    /// <summary>True if a living (Shootable) actor that's in the way occupies the tile</summary>
     internal bool IsShootableActorAt(int tilex, int tiley)
     {
         foreach (var actor in _actors)
@@ -1442,7 +1442,7 @@ internal class MapManager
     /// (Blake Stone's hanging turrets and electro-spheres, which things pass under or through)
     /// </summary>
     internal static bool IsSolidActor(Entities.Actors.Actor actor) =>
-        actor.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE) && !actor.Flags.Contains("NOTSOLID", StringComparer.OrdinalIgnoreCase);
+        actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && !actor.Flags.Contains("NOTSOLID", StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Creates a fresh pawn for a player, replacing any they had, at the head of _actors after
@@ -1497,7 +1497,7 @@ internal class MapManager
         foreach (var actor in _actors)
         {
             if (actor is Entities.Actors.Monster monster && !actor.IsRemoved && actor.Faction != null
-                && actor.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE))
+                && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable))
             {
                 Combatants.Add(monster);
                 sides.Add(actor.Faction);
@@ -1548,12 +1548,12 @@ internal class MapManager
 
         // As the original: an enemy that has never been on screen (nor patrols) does nothing
         // while its area isn't connected to the player's
-        if (ob is Entities.Actors.Monster { SleepsOutOfReach: true } && ob.Active == ActiveType.ac_no
+        if (ob is Entities.Actors.Monster { SleepsOutOfReach: true } && ob.Active == ActiveType.No
             && ob.AreaNumber < Floors.NumAreas && session.areas.areabyplayer[ob.AreaNumber] == 0)
             return;
 
         // It's lifted off its tile while it thinks, and put back on the one it ends up on
-        bool marks = ob is Entities.Actors.Monster && (ob.RuntimeFlags & (ObjFlags.FL_NONMARK | ObjFlags.FL_NEVERMARK)) == 0;
+        bool marks = ob is Entities.Actors.Monster && (ob.RuntimeFlags & (ObjFlags.NonMark | ObjFlags.NeverMark)) == 0;
         if (marks)
             UnmarkActorTile(ob.TileX, ob.TileY);
 
@@ -1593,13 +1593,13 @@ internal class MapManager
     /// <summary>Puts a living or dead enemy in actorat[] where it stands, as DoActor did after its think</summary>
     internal void MarkActorTile(Entities.Actors.Monster ob)
     {
-        if (ob.RuntimeFlags.HasFlag(ObjFlags.FL_NEVERMARK))
+        if (ob.RuntimeFlags.HasFlag(ObjFlags.NeverMark))
             return;
 
         ref var spot = ref actorat[ob.TileX, ob.TileY];
         if (spot is Wall or BlockingActor)
             return;                 // never on a wall or a solid thing (or a wall sprite's tile)
-        if (ob.RuntimeFlags.HasFlag(ObjFlags.FL_NONMARK) && spot != null)
+        if (ob.RuntimeFlags.HasFlag(ObjFlags.NonMark) && spot != null)
             return;                 // a corpse only takes an empty tile
         spot = ob.Mark;
     }

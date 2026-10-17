@@ -29,7 +29,7 @@ public class WallSpriteDrawingTests
 
     // A north-south fence through the middle of a tile
     private static Monster Fence(int x, int y) =>
-        new() { Name = "Fence", TileX = (byte)x, TileY = (byte)y, Dir = ObjDir.east, Flags = [WallSprites.WallSpriteFlag] };
+        new() { Name = "Fence", TileX = (byte)x, TileY = (byte)y, Dir = ObjDir.East, Flags = [WallSprites.WallSpriteFlag] };
 
     [Test]
     public void Depth_Is_Along_The_View_Not_Straight_Line_Distance()

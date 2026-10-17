@@ -81,29 +81,29 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         //
         switch (scancode)
         {
-            case ScanCodes.sc_F1:
+            case ScanCodes.F1:
                 // Only where the main menu has "Read This!": its help text's pictures are the
                 // Apogee releases' (id's GT v1.4 and Spear made F1 a boss key instead)
                 if (MenuDefs.FindMenuItem(MainMenu, "readthis") != null)
                     articles.HelpScreens();
                 goto finishup;
-            case ScanCodes.sc_F2:
+            case ScanCodes.F2:
                 hooks.SaveGame(0);
                 goto finishup;
 
-            case ScanCodes.sc_F3:
+            case ScanCodes.F3:
                 hooks.LoadGame(0);
                 goto finishup;
 
-            case ScanCodes.sc_F4:
+            case ScanCodes.F4:
                 soundMenu.Run();
                 goto finishup;
 
-            case ScanCodes.sc_F5:
+            case ScanCodes.F5:
                 changeView.Run();
                 goto finishup;
 
-            case ScanCodes.sc_F6:
+            case ScanCodes.F6:
                 controlMenus.RunControl();
                 goto finishup;
 

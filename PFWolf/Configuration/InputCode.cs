@@ -79,10 +79,10 @@ internal readonly record struct InputCode(InputDevice Device, int Code)
     public SDL.SDL_GameControllerAxis Axis => (SDL.SDL_GameControllerAxis)(Code / 2);
     public bool IsPositive => Code % 2 == 1;
 
-    public ScanCodes Key => Device == InputDevice.Key ? (ScanCodes)Code : ScanCodes.sc_None;
+    public ScanCodes Key => Device == InputDevice.Key ? (ScanCodes)Code : ScanCodes.None;
 
     public static InputCode FromKey(ScanCodes key) =>
-        key > ScanCodes.sc_None && key < ScanCodes.sc_Last ? new(InputDevice.Key, (int)key) : None;
+        key > ScanCodes.None && key < ScanCodes.Last ? new(InputDevice.Key, (int)key) : None;
 
     public static InputCode FromMouseButton(int button) =>
         button >= 1 && button <= MouseButtonCount ? new(InputDevice.MouseButton, button) : None;
@@ -157,7 +157,7 @@ internal readonly record struct InputCode(InputDevice Device, int Code)
 
     /// <summary>Every name <see cref="TryParse"/> accepts, for the console's tab completion.</summary>
     public static IEnumerable<string> AllNames() =>
-        Enumerable.Range(1, (int)ScanCodes.sc_Last - 1)
+        Enumerable.Range(1, (int)ScanCodes.Last - 1)
             .Select(i => SDL.SDL_GetScancodeName((SDL.SDL_Scancode)i))
             .Where(name => !string.IsNullOrEmpty(name))
             .Concat(Enumerable.Range(1, MouseButtonCount).Select(i => $"Mouse {i}"))

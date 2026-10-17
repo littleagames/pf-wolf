@@ -73,7 +73,7 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
         }
 
         // ` always toggles the console and Escape always opens the menu, before binds are seen.
-        if (input.Key is ScanCodes.sc_Grave or ScanCodes.sc_Escape)
+        if (input.Key is ScanCodes.Grave or ScanCodes.Escape)
             throw new ArgumentException($"\"{input}\" is reserved");
 
         // One argument is the command line as-is (`bind F5 "god; noclip"`); several are

@@ -210,7 +210,7 @@ internal sealed class TitleLoop(
                 // demo
                 //
                 demos.PlayDemo(titleScreens.TakeNextTitleDemo());
-                if (session.playstate == PlayState.ex_abort)
+                if (session.playstate == PlayState.Abort)
                     break;
                 video.FadeOut();
                 if (video.HasMargins)
@@ -220,7 +220,7 @@ internal sealed class TitleLoop(
 
             video.FadeOut();
 
-            if (input.IsKeyDown(ScanCodes.sc_Tab))
+            if (input.IsKeyDown(ScanCodes.Tab))
                 demos.RecordDemo();
             else
                 quickKeys.OpenControlPanel(0);

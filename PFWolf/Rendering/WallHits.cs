@@ -407,9 +407,9 @@ internal sealed class WallHits(
     // Whether the tile edge a trace enters by is one of the diagonal's two solid edges
     internal bool IsSolidEdge(WallShape shape, ControlDir edge) => edge switch
     {
-        ControlDir.di_west => shape is WallShape.SolidNW or WallShape.SolidSW,
-        ControlDir.di_east => shape is WallShape.SolidNE or WallShape.SolidSE,
-        ControlDir.di_north => shape is WallShape.SolidNW or WallShape.SolidNE,
+        ControlDir.West => shape is WallShape.SolidNW or WallShape.SolidSW,
+        ControlDir.East => shape is WallShape.SolidNE or WallShape.SolidSE,
+        ControlDir.North => shape is WallShape.SolidNW or WallShape.SolidNE,
         _ => shape is WallShape.SolidSW or WallShape.SolidSE,
     };
 

@@ -4,7 +4,7 @@
 # Unique story bosses: Hans Grosse, Gretel Grosse, Dr. Schabbs, Otto
 # Giftmacher, General Fettgesicht, Fake Hitler, Mecha Hitler, Real Hitler.
 # All of these are always ambush-spawned stationary (SpawnBoss et al. set
-# FL_SHOOTABLE | FL_AMBUSH directly) -- none of them patrol, so unlike
+# the Shootable and Ambush flags directly) -- none of them patrol, so unlike
 # actordefs/wolf3d/guards.yaml, none of these define a "Path" state.
 # Standard rank-and-file enemies (Guard/Officer/SS/Mutant/Dog) live in
 # actordefs/wolf3d/guards.yaml, the Pac-Man-bonus-level ghosts live in

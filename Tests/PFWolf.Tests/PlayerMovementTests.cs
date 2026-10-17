@@ -44,13 +44,13 @@ public class PlayerMovementTests
         return pawn;
     }
 
-    [TestCase(0, "di_east")]
-    [TestCase(44, "di_east")]
-    [TestCase(46, "di_north")]
-    [TestCase(90, "di_north")]
-    [TestCase(180, "di_west")]
-    [TestCase(270, "di_south")]
-    [TestCase(359, "di_east")]
+    [TestCase(0, "East")]
+    [TestCase(44, "East")]
+    [TestCase(46, "North")]
+    [TestCase(90, "North")]
+    [TestCase(180, "West")]
+    [TestCase(270, "South")]
+    [TestCase(359, "East")]
     public void Facing_Is_The_Nearest_Of_The_Four_Directions(int angle, string dir)
     {
         Assert.That(PlayerMovement.FacingDir(angle).ToString(), Is.EqualTo(dir));
@@ -130,7 +130,7 @@ public class PlayerMovementTests
         // Arrange: a pushwall moving away east, the player close behind it
         _map.tilemap[11, 10] = GameConstants.BIT_WALL;
         _map.actorat[11, 10] = new Wall(GameConstants.BIT_WALL);
-        _pushWalls.pushwalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = ControlDir.di_east, Pos = pos, Tile = 1 });
+        _pushWalls.pushwalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = ControlDir.East, Pos = pos, Tile = 1 });
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;
 
@@ -143,13 +143,13 @@ public class PlayerMovementTests
     {
         // Arrange: a guard marked on the next tile, within MINACTORDIST
         var guard = new Monster { Name = "Guard", X = 11 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
-        guard.RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
+        guard.RuntimeFlags |= ObjFlags.Shootable;
         _map.actorat[11, 10] = guard.Mark;
 
         // Act / Assert
         Assert.That(_movement.TryMove(Player()), Is.False);
 
-        guard.RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;      // dead
+        guard.RuntimeFlags &= ~ObjFlags.Shootable;      // dead
         Assert.That(_movement.TryMove(Player()), Is.True);
     }
 

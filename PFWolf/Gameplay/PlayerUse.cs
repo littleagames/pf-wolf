@@ -126,9 +126,9 @@ internal sealed class PlayerUse(
 
         var face = dir switch
         {
-            ControlDir.di_east => "west",
-            ControlDir.di_west => "east",
-            ControlDir.di_north => "south",
+            ControlDir.East => "west",
+            ControlDir.West => "east",
+            ControlDir.North => "south",
             _ => "north",
         };
         return patch.IsOn(face) && patchSwitch.UsableFrom(dir) ? patchSwitch : null;
@@ -201,9 +201,9 @@ internal sealed class PlayerUse(
 
         var player = session.player;
         if (secret || map.MAPSPOT(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile)
-            session.playstate = PlayState.ex_secretlevel;
+            session.playstate = PlayState.SecretLevel;
         else
-            session.playstate = PlayState.ex_completed;
+            session.playstate = PlayState.Completed;
 
         audio.WaitSoundDone();
         return true;
@@ -228,31 +228,31 @@ internal sealed class PlayerUse(
         {
             checkx = player.TileX + 1;
             checky = player.TileY;
-            dir = ControlDir.di_east;
+            dir = ControlDir.East;
         }
         else if (player.Angle < 3 * ANGLES / 8)
         {
             checkx = player.TileX;
             checky = player.TileY - 1;
-            dir = ControlDir.di_north;
+            dir = ControlDir.North;
         }
         else if (player.Angle < 5 * ANGLES / 8)
         {
             checkx = player.TileX - 1;
             checky = player.TileY;
-            dir = ControlDir.di_west;
+            dir = ControlDir.West;
         }
         else
         {
             checkx = player.TileX;
             checky = player.TileY + 1;
-            dir = ControlDir.di_south;
+            dir = ControlDir.South;
         }
 
         // Manning a mounted gun, a fresh press (not while firing) steps them off it (Gameplay/MountedWeapons.cs)
-        if (!playerinput.IsHeld(ButtonType.bt_use) && !playerinput.IsPressed(ButtonType.bt_attack) && hooks.Dismount())
+        if (!playerinput.IsHeld(ButtonType.Use) && !playerinput.IsPressed(ButtonType.Attack) && hooks.Dismount())
         {
-            playerinput.SetHeld(ButtonType.bt_use, true);
+            playerinput.SetHeld(ButtonType.Use, true);
             return;
         }
 
@@ -264,34 +264,34 @@ internal sealed class PlayerUse(
             // for one that stays (`repeat`: a ladder) or refuses (a one-way pushwall's message)
             //
             ResetUseHeld();
-            if (playerinput.IsHeld(ButtonType.bt_use))
+            if (playerinput.IsHeld(ButtonType.Use))
                 return;
-            playerinput.SetHeld(ButtonType.bt_use, true);
+            playerinput.SetHeld(ButtonType.Use, true);
             ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }
-        if (!playerinput.IsHeld(ButtonType.bt_use) && PatchSwitchAt(checkx, checky, dir) is { } patchSwitch)
+        if (!playerinput.IsHeld(ButtonType.Use) && PatchSwitchAt(checkx, checky, dir) is { } patchSwitch)
         {
             //
             // use a patch that's a switch (patches.yaml), over the wall's own
             //
-            playerinput.SetHeld(ButtonType.bt_use, true);
+            playerinput.SetHeld(ButtonType.Use, true);
             UsePatchSwitch(patchSwitch, checkx, checky, dir);
         }
         // A wall beside a door keeps its id under BIT_WALL; a moving pushwall's tiles are bare BIT_WALL
-        else if (!playerinput.IsHeld(ButtonType.bt_use) && (cmdtile & BIT_DOOR) == 0
+        else if (!playerinput.IsHeld(ButtonType.Use) && (cmdtile & BIT_DOOR) == 0
             && map.GetMapData().Walls.TryGetValue(cmdtile & ~BIT_WALL, out var switchWall)
             && switchWall.Switch is { } wallSwitch && wallSwitch.UsableFrom(dir))
         {
             //
             // use a switch (a mapdefs wall with a switch, such as the elevator's)
             //
-            playerinput.SetHeld(ButtonType.bt_use, true);
+            playerinput.SetHeld(ButtonType.Use, true);
             UseSwitch(wallSwitch, checkx, checky, dir);
         }
-        else if (!playerinput.IsHeld(ButtonType.bt_use) && (cmdtile & BIT_DOOR) != 0)
+        else if (!playerinput.IsHeld(ButtonType.Use) && (cmdtile & BIT_DOOR) != 0)
         {
-            playerinput.SetHeld(ButtonType.bt_use, true);
+            playerinput.SetHeld(ButtonType.Use, true);
             doors.OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
@@ -319,7 +319,7 @@ internal sealed class PlayerUse(
         const int ANGLES = GameConstants.ANGLES;
         var playerinput = session.playerinput;
         var player = session.player;
-        if (playerinput.IsHeld(ButtonType.bt_use))
+        if (playerinput.IsHeld(ButtonType.Use))
             return false;
 
         const long Reach = MapConstants.TILEGLOBAL * 3 / 2;
@@ -329,8 +329,8 @@ internal sealed class PlayerUse(
         {
             if (actor.IsRemoved || actor is Entities.Actors.PlayerPawn || !actor.ResolvedStates.ContainsKey("Use"))
                 continue;
-            if (actor is Entities.Actors.Monster && (!actor.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE)
-                || actor.RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE)))
+            if (actor is Entities.Actors.Monster && (!actor.RuntimeFlags.HasFlag(ObjFlags.Shootable)
+                || actor.RuntimeFlags.HasFlag(ObjFlags.AttackMode)))
                 continue;
 
             long dx = actor.X - player.X, dy = player.Y - actor.Y;     // y grows southward
@@ -349,7 +349,7 @@ internal sealed class PlayerUse(
 
         if (chosen == null)
             return false;
-        playerinput.SetHeld(ButtonType.bt_use, true);
+        playerinput.SetHeld(ButtonType.Use, true);
         chosen.SetState("Use");
         return true;
     }

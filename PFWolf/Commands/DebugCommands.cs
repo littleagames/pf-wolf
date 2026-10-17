@@ -85,8 +85,8 @@ internal sealed class DebugCommands(
     {
         var actors = map.GetActors();
         int enemies = actors.Count(MapManager.IsEnemy);
-        int alive = actors.Count(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE));
-        int active = actors.Count(a => a.Active != ActiveType.ac_no);
+        int alive = actors.Count(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
+        int active = actors.Count(a => a.Active != ActiveType.No);
 
         console.Print($"Doors: {doors.doornum}");
         for (int i = 0; i < doors.doornum; i++)
@@ -115,7 +115,7 @@ internal sealed class DebugCommands(
                 line.Append($"  state {actor.CurrentState.StateName}");
             if (MapManager.IsEnemy(actor))
                 line.Append($"  hp {actor.Hitpoints}");
-            if (actor.Active != ActiveType.ac_no)
+            if (actor.Active != ActiveType.No)
                 line.Append("  active");
             if (actor.Tag != 0)
                 line.Append($"  tag {actor.Tag}");

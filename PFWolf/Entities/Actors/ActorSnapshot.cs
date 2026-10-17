@@ -64,7 +64,7 @@ internal sealed record ActorSnapshot
             Ammo = (actor as BlakeMonster)?.Ammo ?? 0,
             SeekX = (actor as BlakeMonster)?.SeekX ?? 0,
             SeekY = (actor as BlakeMonster)?.SeekY ?? 0,
-            TryDir = (actor as BlakeMonster)?.TryDir ?? (byte)ObjDir.nodir,
+            TryDir = (actor as BlakeMonster)?.TryDir ?? (byte)ObjDir.NoDir,
             Hidden = actor.Hidden,
             AreaNumber = actor.AreaNumber,
             X = actor.X,

@@ -82,7 +82,7 @@ internal sealed class PlayerBodies(
         body.TileY = pawn.TileY;
         body.Angle = pawn.Angle;
         body.AreaNumber = pawn.AreaNumber;
-        body.Active = ActiveType.ac_yes;     // drawn by its exact position, as a moving actor
+        body.Active = ActiveType.Yes;     // drawn by its exact position, as a moving actor
         map.DoActor(body, tics);
     }
 

@@ -51,7 +51,7 @@ internal sealed class LevelLoop(
 
     internal void PlayLoop()
     {
-        session.playstate = PlayState.ex_stillplaying;
+        session.playstate = PlayState.StillPlaying;
         frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
         frame.frameon = 0;
         funnyticount = 0;
@@ -97,7 +97,7 @@ internal sealed class LevelLoop(
                 {
                     if (!netPlay.NetFrame())
                     {
-                        session.playstate = PlayState.ex_abort;    // left the game, or the host is gone
+                        session.playstate = PlayState.Abort;    // left the game, or the host is gone
                         continue;
                     }
                 }
@@ -180,7 +180,7 @@ internal sealed class LevelLoop(
                 if (input.CheckAck())
                 {
                     input.ClearKeysDown();
-                    session.playstate = PlayState.ex_abort;
+                    session.playstate = PlayState.Abort;
                 }
             }
         }
@@ -191,7 +191,7 @@ internal sealed class LevelLoop(
         console.Close();
         automap.Close();
 
-        if (session.playstate != PlayState.ex_died)
+        if (session.playstate != PlayState.Died)
             video.FinishPaletteShifts();
     }
 

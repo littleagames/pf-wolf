@@ -105,7 +105,7 @@ public class SpriteDrawingTests
         _render.viewangle = 180;
         var guard = At(0, 0);
         guard.ViewX = (short)_render.centerx;
-        guard.Dir = Enum.Parse<ObjDir>(dir);
+        guard.Dir = Enum.Parse<ObjDir>(dir, ignoreCase: true);
 
         // Act / Assert: facing east it faces the viewer (view 1), west it shows its back (5)
         Assert.That(_drawing.CalcRotate(guard), Is.EqualTo(view));
@@ -115,7 +115,7 @@ public class SpriteDrawingTests
     public void Facing_No_Way_It_Faces_The_Viewer()
     {
         var guard = At(2, 0);
-        guard.Dir = ObjDir.nodir;
+        guard.Dir = ObjDir.NoDir;
         Assert.That(_drawing.CalcRotate(guard), Is.EqualTo(1));
     }
 
@@ -124,8 +124,8 @@ public class SpriteDrawingTests
     {
         // Arrange: the viewer looks west; both head west, away from it, with a Dir saying east
         _render.viewangle = 180;
-        var rocket = new Monster { Name = "Rocket", Flags = ["PROJECTILE"], Angle = 180, Dir = ObjDir.east, ViewX = (short)_render.centerx };
-        var body = new Monster { Name = "Body", Angle = 180, Dir = ObjDir.east, ViewX = (short)_render.centerx };
+        var rocket = new Monster { Name = "Rocket", Flags = ["PROJECTILE"], Angle = 180, Dir = ObjDir.East, ViewX = (short)_render.centerx };
+        var body = new Monster { Name = "Body", Angle = 180, Dir = ObjDir.East, ViewX = (short)_render.centerx };
 
         // Act / Assert: their backs
         Assert.That((_drawing.CalcRotate(rocket), _drawing.CalcRotate(body)), Is.EqualTo((5, 5)));
@@ -138,7 +138,7 @@ public class SpriteDrawingTests
         _sprites.UnionWith(["GARDA1", "GARDA5", "GARDB0"]);
         _render.viewangle = 180;
         var guard = At(0, 0);
-        (guard.ViewX, guard.Dir) = ((short)_render.centerx, ObjDir.west);
+        (guard.ViewX, guard.Dir) = ((short)_render.centerx, ObjDir.West);
 
         // Act / Assert
         Assert.That(_drawing.HasDirectionalSprites("GARD", "A"), Is.True);
@@ -154,7 +154,7 @@ public class SpriteDrawingTests
         _sprites.UnionWith(["GARDF0", "GARDF2"]);
         _render.viewangle = 180;
         var guard = At(0, 0);
-        (guard.ViewX, guard.Dir) = ((short)_render.centerx, ObjDir.west);
+        (guard.ViewX, guard.Dir) = ((short)_render.centerx, ObjDir.West);
 
         // Act / Assert: view 5 is missing
         Assert.That(_drawing.ActorShapeName("GARD", "F", guard), Is.EqualTo("GARDF0"));

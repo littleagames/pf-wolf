@@ -287,7 +287,7 @@ internal static partial class GameHost
                 session.playerstate.health = 0;
                 statusBarDrawing.DrawHealth();
                 if (session.gamemode == GameMode.Single)
-                    playstate = PlayState.ex_died;
+                    playstate = PlayState.Died;
                 else
                     PlayerDies();
             }));

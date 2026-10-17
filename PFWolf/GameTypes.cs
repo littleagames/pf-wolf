@@ -21,68 +21,68 @@ internal class VisibleObject
 
 internal enum ButtonType
 {
-    bt_nobutton = -1,
-    bt_attack = 0,
-    bt_strafe,
-    bt_run,
-    bt_use,
+    NoButton = -1,
+    Attack = 0,
+    Strafe,
+    Run,
+    Use,
     // Weapon slot keys: slot N picks a weapon with `weapon.slot: N`. Slots 1-4 sit where the old
     // ready-knife/pistol/machine gun/chaingun buttons were, so demos and the old config.cfg
     // layout (both indexed by this enum) still line up; 5-9 and 0 come after automap.
-    bt_slot1,
-    bt_slot2,
-    bt_slot3,
-    bt_slot4,
-    bt_nextweapon,
-    bt_prevweapon,
-    bt_esc,
-    bt_pause,
-    bt_strafeleft,
-    bt_straferight,
-    bt_moveforward,
-    bt_movebackward,
-    bt_turnleft,
-    bt_turnright,
-    bt_automap,
-    bt_slot5,
-    bt_slot6,
-    bt_slot7,
-    bt_slot8,
-    bt_slot9,
-    bt_slot0,
+    Slot1,
+    Slot2,
+    Slot3,
+    Slot4,
+    NextWeapon,
+    PrevWeapon,
+    Esc,
+    Pause,
+    StrafeLeft,
+    StrafeRight,
+    MoveForward,
+    MoveBackward,
+    TurnLeft,
+    TurnRight,
+    Automap,
+    Slot5,
+    Slot6,
+    Slot7,
+    Slot8,
+    Slot9,
+    Slot0,
     // Looking up and down (y-shearing, Rendering/FrameRefresh.cs): the view's pitch only, not saved or in demos
-    bt_lookup,
-    bt_lookdown,
-    bt_centerview,
+    LookUp,
+    LookDown,
+    CenterView,
     // The status bar radar's zoom (statusbar.yaml radar, Planet Strike's): not in demos
-    bt_radarzoomin,
-    bt_radarzoomout,
+    RadarZoomIn,
+    RadarZoomOut,
     // Reloads a weapon with a magazine (weapon.magazine; Midnight Assault's)
-    bt_reload,
+    Reload,
     // A scope's zoom (weapon.zoom; Midnight Assault's sniper rifle): held to zoom in, again to zoom out
-    bt_zoom,
+    Zoom,
 
-    NUMBUTTONS
+    Count
 };
 
 internal enum ActiveType
 {
-    ac_no,
-    ac_yes,
-    ac_allways,
+    No,
+    Yes,
+    Always,
 }
 
 enum ObjDir
 {
-    east,
-    northeast,
-    north,
-    northwest,
-    west,
-    southwest,
-    south,
-    southeast,
-    nodir,
+    East,
+    NorthEast,
+    North,
+    NorthWest,
+    West,
+    SouthWest,
+    South,
+    SouthEast,
+    NoDir,
 }
 
 //---------------
@@ -210,7 +210,7 @@ internal class GameState
 
 internal enum DoorAction
 {
-    dr_open, dr_closed, dr_opening, dr_closing,
+    Open, Closed, Opening, Closing,
 };
 
 internal class DoorObject
@@ -328,63 +328,63 @@ internal class ActorMark: Actor
 
 internal enum PlayState
 {
-    ex_stillplaying,
-    ex_completed,
-    ex_died,
-    ex_warped,
-    ex_resetgame,
-    ex_loadedgame,
-    ex_victorious,
-    ex_abort,
-    ex_demodone,
-    ex_secretlevel,
+    StillPlaying,
+    Completed,
+    Died,
+    Warped,
+    ResetGame,
+    LoadedGame,
+    Victorious,
+    Abort,
+    DemoDone,
+    SecretLevel,
 }
 
 [Flags]
 internal enum ObjFlags
 {
-    FL_SHOOTABLE = 0x00000001,
-    FL_BONUS = 0x00000002,
-    FL_NEVERMARK = 0x00000004,
-    FL_VISABLE = 0x00000008,
-    FL_ATTACKMODE = 0x00000010,
-    FL_FIRSTATTACK = 0x00000020,
-    FL_AMBUSH = 0x00000040,
-    FL_NONMARK = 0x00000080,
-    FL_FULLBRIGHT = 0x00000100,
+    Shootable = 0x00000001,
+    Bonus = 0x00000002,
+    NeverMark = 0x00000004,
+    Visible = 0x00000008,
+    AttackMode = 0x00000010,
+    FirstAttack = 0x00000020,
+    Ambush = 0x00000040,
+    NonMark = 0x00000080,
+    FullBright = 0x00000100,
 #if USE_DIR3DSPR
     // you can choose one of the following values in wl_act1.cpp
     // to make a static sprite a directional 3d sprite
     // (see example at the end of the statinfo array)
-    FL_DIR_HORIZ_MID = 0x00000200,
-    FL_DIR_HORIZ_FW = 0x00000400,
-    FL_DIR_HORIZ_BW = 0x00000600,
-    FL_DIR_VERT_MID = 0x00000a00,
-    FL_DIR_VERT_FW = 0x00000c00,
-    FL_DIR_VERT_BW = 0x00000e00,
+    DirHorizMid = 0x00000200,
+    DirHorizFw = 0x00000400,
+    DirHorizBw = 0x00000600,
+    DirVertMid = 0x00000a00,
+    DirVertFw = 0x00000c00,
+    DirVertBw = 0x00000e00,
 
     // these values are just used to improve readability of code
-    FL_DIR_NONE = 0x00000000,
-    FL_DIR_POS_MID = 0x00000200,
-    FL_DIR_POS_FW = 0x00000400,
-    FL_DIR_POS_BW = 0x00000600,
-    FL_DIR_POS_MASK = 0x00000600,
-    FL_DIR_VERT_FLAG = 0x00000800,
-    FL_DIR_MASK = 0x00000e00,
+    DirNone = 0x00000000,
+    DirPosMid = 0x00000200,
+    DirPosFw = 0x00000400,
+    DirPosBw = 0x00000600,
+    DirPosMask = 0x00000600,
+    DirVertFlag = 0x00000800,
+    DirMask = 0x00000e00,
 #endif
     // Blake Stone's AI (Entities.Actors.BlakeMonster)
-    FL_FRIENDLY = 0x00001000,       // doesn't go after the player until it hears or is told to (FRIENDLY actors)
-    FL_INTERROGATED = 0x00002000,   // has been talked to: an informant has given its hint, a scientist turned mean
-    FL_LOCKEDSTATE = 0x00004000,    // just hurt: no more pain or shooting back until it next chases
-    FL_SHOOTMODE = 0x00008000,      // `monster.shootmode` actors: shooting rather than closing in
-    FL_RUNAWAY = 0x00010000,        // a SMART actor running for supplies or a door
-    FL_RUNTOSTATIC = 0x00020000,    // ... heading for a pickup or door (SeekX/SeekY) rather than a far corner
-    FL_MUSTATTACK = 0x00040000,     // a scientist asked once already: the next asking makes it mean
-    FL_HASAMMO = 0x00080000,        // an informant still has its charge pack to give
-    FL_HASTOKENS = 0x00100000,      // ... and its food tokens
-    FL_SLIDING = 0x00200000,        // a corpse sliding back from the shot that killed it (T_BlowBack)
-    FL_FOLLOWS = 0x00400000,        // an ally that follows the players about (Monster.Follows: `monster.follow`, A_SetFaction "follow")
-    FL_FOLLOWING = 0x00800000,      // ... walking after them now, or out of their way (Monster.ThinkInstead)
+    Friendly = 0x00001000,       // doesn't go after the player until it hears or is told to (FRIENDLY actors)
+    Interrogated = 0x00002000,   // has been talked to: an informant has given its hint, a scientist turned mean
+    LockedState = 0x00004000,    // just hurt: no more pain or shooting back until it next chases
+    ShootMode = 0x00008000,      // `monster.shootmode` actors: shooting rather than closing in
+    RunAway = 0x00010000,        // a SMART actor running for supplies or a door
+    RunToStatic = 0x00020000,    // ... heading for a pickup or door (SeekX/SeekY) rather than a far corner
+    MustAttack = 0x00040000,     // a scientist asked once already: the next asking makes it mean
+    HasAmmo = 0x00080000,        // an informant still has its charge pack to give
+    HasTokens = 0x00100000,      // ... and its food tokens
+    Sliding = 0x00200000,        // a corpse sliding back from the shot that killed it (T_BlowBack)
+    Follows = 0x00400000,        // an ally that follows the players about (Monster.Follows: `monster.follow`, A_SetFaction "follow")
+    Following = 0x00800000,      // ... walking after them now, or out of their way (Monster.ThinkInstead)
     // next free bit is   0x00400000
 }
 

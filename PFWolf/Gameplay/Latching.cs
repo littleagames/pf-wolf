@@ -86,11 +86,11 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
         playerstate.weapon = playerstate.chosenweapon = gun;
         playerstate.WeaponSprite = null;            // the struggle starts from its Ready, whatever they were doing
         playerstate.WeaponPower = 0;
-        session.playerinput.SetHeld(ButtonType.bt_attack, true);   // a strike needs a fresh press
+        session.playerinput.SetHeld(ButtonType.Attack, true);   // a strike needs a fresh press
         weapons.DrawWeapon();
 
         // Out of sight and out of the way
-        biter.RuntimeFlags = (biter.RuntimeFlags & ~ObjFlags.FL_SHOOTABLE) | ObjFlags.FL_NONMARK;
+        biter.RuntimeFlags = (biter.RuntimeFlags & ~ObjFlags.Shootable) | ObjFlags.NonMark;
         map.UnmarkActorTile(biter.TileX, biter.TileY);
         GoTo(biter, LatchedState);
     }
@@ -182,7 +182,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
             {
                 playerstate.weapon = playerstate.chosenweapon =
                     playerstate.LatchFrom is { } before && inventory.Has(before) && weapons.CanFire(before) ? before : weapons.BestWeapon(canFire: true);
-                session.playerinput.SetHeld(ButtonType.bt_attack, true);
+                session.playerinput.SetHeld(ButtonType.Attack, true);
             }
             inventory.Take(gun, 1);
         }
@@ -199,7 +199,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     // Seen, shot and in the way again, and after them
     static void LetGo(Entities.Actors.Monster biter)
     {
-        biter.RuntimeFlags = (biter.RuntimeFlags & ~ObjFlags.FL_NONMARK) | ObjFlags.FL_SHOOTABLE;
+        biter.RuntimeFlags = (biter.RuntimeFlags & ~ObjFlags.NonMark) | ObjFlags.Shootable;
         GoTo(biter, biter.ResolvedStates.ContainsKey("Chase") ? "Chase" : "Spawn");
     }
 

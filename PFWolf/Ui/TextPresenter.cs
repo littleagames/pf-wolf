@@ -726,7 +726,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             {
                 GameEngineManager.DelayMs(5);
                 input.ProcessEvents();
-                if (tp.Flags.HasFlag(PresenterFlags.Abortable) && input.GetLastKeyPressed() != ScanCodes.sc_None)
+                if (tp.Flags.HasFlag(PresenterFlags.Abortable) && input.GetLastKeyPressed() != ScanCodes.None)
                 {
                     TpPrint(text[(i + 1)..]);
                     video.Update();
@@ -747,7 +747,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
         input.ClearKeysDown();
         input.Ack();
-        tp.Escaped = input.GetLastKeyPressed() == ScanCodes.sc_Escape;
+        tp.Escaped = input.GetLastKeyPressed() == ScanCodes.Escape;
         if (tp.Escaped)
             tpflags &= ~fl_presenting;
 
@@ -769,20 +769,20 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             GameEngineManager.DelayMs(5);
             menuInput.ReadAnyControl(out var ci);
             var dir = ci.dir;
-            if (input.IsKeyDown(ScanCodes.sc_PgUp))
+            if (input.IsKeyDown(ScanCodes.PgUp))
                 dir = Direction.North;
-            else if (input.IsKeyDown(ScanCodes.sc_PgDn))
+            else if (input.IsKeyDown(ScanCodes.PgDn))
                 dir = Direction.South;
 
             if (tp.Flags.HasFlag(PresenterFlags.Continue)
-                && (ci.button0 || input.IsKeyDown(ScanCodes.sc_Space) || input.IsKeyDown(ScanCodes.sc_Enter)))
+                && (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter)))
             {
                 tp.Escaped = false;
                 tpflags &= ~fl_presenting;
                 break;
             }
 
-            if (ci.button1 || input.IsKeyDown(ScanCodes.sc_Escape))
+            if (ci.button1 || input.IsKeyDown(ScanCodes.Escape))
             {
                 tp.Escaped = true;
                 tpflags &= ~fl_presenting;
@@ -836,9 +836,9 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         TpPrintPageNumber();
 
         // A held key doesn't flip page after page
-        while (input.IsKeyDown(ScanCodes.sc_UpArrow) || input.IsKeyDown(ScanCodes.sc_DownArrow)
-            || input.IsKeyDown(ScanCodes.sc_PgUp) || input.IsKeyDown(ScanCodes.sc_PgDn)
-            || input.IsKeyDown(ScanCodes.sc_LeftArrow) || input.IsKeyDown(ScanCodes.sc_RightArrow))
+        while (input.IsKeyDown(ScanCodes.UpArrow) || input.IsKeyDown(ScanCodes.DownArrow)
+            || input.IsKeyDown(ScanCodes.PgUp) || input.IsKeyDown(ScanCodes.PgDn)
+            || input.IsKeyDown(ScanCodes.LeftArrow) || input.IsKeyDown(ScanCodes.RightArrow))
         {
             GameEngineManager.DelayMs(5);
             input.ProcessEvents();

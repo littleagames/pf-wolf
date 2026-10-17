@@ -4,10 +4,10 @@ namespace PFWolf.Tests;
 
 public class SwitchActionsTests
 {
-    [TestCase("north", ControlDir.di_north)]
-    [TestCase("East", ControlDir.di_east)]
-    [TestCase(" south ", ControlDir.di_south)]
-    [TestCase("WEST", ControlDir.di_west)]
+    [TestCase("north", ControlDir.North)]
+    [TestCase("East", ControlDir.East)]
+    [TestCase(" south ", ControlDir.South)]
+    [TestCase("WEST", ControlDir.West)]
     public void A_Direction_Is_Read_By_Its_Name_In_Any_Case(string name, ControlDir dir)
     {
         Assert.That(SwitchActions.ParseDirection(name), Is.EqualTo(dir));

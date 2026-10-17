@@ -50,7 +50,7 @@ public class InputCodeTests
 
         // Assert
         Assert.That(parsed, Is.True);
-        Assert.That(input.Key, Is.EqualTo(ScanCodes.sc_Space));
+        Assert.That(input.Key, Is.EqualTo(ScanCodes.Space));
     }
 
     [Test]
@@ -89,7 +89,7 @@ public class InputCodeTests
     public void Mouse_And_Keys_Are_Not_Controller_Inputs()
     {
         Assert.That(InputCode.FromMouseButton(1).IsController, Is.False);
-        Assert.That(InputCode.FromKey(ScanCodes.sc_A).IsController, Is.False);
+        Assert.That(InputCode.FromKey(ScanCodes.A).IsController, Is.False);
         Assert.That(InputCode.WheelUp.IsController, Is.False);
         Assert.That(InputCode.FromJoyButton(0).IsController, Is.True);
     }

@@ -168,7 +168,7 @@ public class CameraTests
     {
         // Arrange
         var (session, _) = WithPlayer();
-        var guard = new Monster { Name = "Guard", Dir = ObjDir.north };
+        var guard = new Monster { Name = "Guard", Dir = ObjDir.North };
 
         // Act
         session.camera.Follow(guard);
@@ -187,9 +187,9 @@ public class CameraTests
     {
         // Arrange
         var (session, _) = WithPlayer();
-        var guard = new Monster { Name = "Guard", Dir = ObjDir.east };
+        var guard = new Monster { Name = "Guard", Dir = ObjDir.East };
         session.camera.Follow(guard);
-        guard.Dir = ObjDir.north;
+        guard.Dir = ObjDir.North;
 
         // Act
         session.camera.Tick(tics);
@@ -203,9 +203,9 @@ public class CameraTests
     {
         // Arrange: east (0) to south (270) is 90 degrees clockwise, not 270 the other way
         var (session, _) = WithPlayer();
-        var guard = new Monster { Name = "Guard", Dir = ObjDir.east };
+        var guard = new Monster { Name = "Guard", Dir = ObjDir.East };
         session.camera.Follow(guard);
-        guard.Dir = ObjDir.south;
+        guard.Dir = ObjDir.South;
 
         // Act
         session.camera.Tick(1);

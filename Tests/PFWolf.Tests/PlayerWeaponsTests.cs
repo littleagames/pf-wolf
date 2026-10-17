@@ -152,11 +152,11 @@ public class PlayerWeaponsTests
         rig.InHand = "Pistol";
 
         // Act / Assert
-        rig.Press(ButtonType.bt_nextweapon);
+        rig.Press(ButtonType.NextWeapon);
         Assert.That(rig.InHand, Is.EqualTo("MachineGun"));
-        rig.Press(ButtonType.bt_nextweapon);
+        rig.Press(ButtonType.NextWeapon);
         Assert.That(rig.InHand, Is.EqualTo("Knife"));       // the shotgun has no shells
-        rig.Press(ButtonType.bt_prevweapon);
+        rig.Press(ButtonType.PrevWeapon);
         Assert.That(rig.InHand, Is.EqualTo("MachineGun"));
     }
 
@@ -170,9 +170,9 @@ public class PlayerWeaponsTests
         rig.InHand = "Knife";
 
         // Act / Assert
-        rig.Press(ButtonType.bt_slot4);
+        rig.Press(ButtonType.Slot4);
         Assert.That(rig.InHand, Is.EqualTo("ChainGun"));
-        rig.Press(ButtonType.bt_slot4);
+        rig.Press(ButtonType.Slot4);
         Assert.That(rig.InHand, Is.EqualTo("Shotgun"));
         Assert.That(rig.Session.playerstate.chosenweapon, Is.EqualTo("Shotgun"));
     }
@@ -185,7 +185,7 @@ public class PlayerWeaponsTests
         rig.InHand = "Knife";
 
         // Act
-        rig.Press(ButtonType.bt_slot7);
+        rig.Press(ButtonType.Slot7);
 
         // Assert
         Assert.That(rig.SlotItemsUsed, Is.EqualTo(new[] { 7 }));
@@ -363,7 +363,7 @@ public class PlayerWeaponsTests
         rig.Session.playerstate.WeaponSprite = rifle;
 
         // Act / Assert
-        rig.Press(ButtonType.bt_slot1);
+        rig.Press(ButtonType.Slot1);
         Assert.That(rig.InHand, Is.EqualTo("Rifle"));
     }
 

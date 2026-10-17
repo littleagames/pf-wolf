@@ -175,17 +175,17 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
             {
                 switch (sc)
                 {
-                    case ScanCodes.sc_LeftArrow:
+                    case ScanCodes.LeftArrow:
                         if (cursor != 0)
                             cursor--;
                         cursormoved = true;
                         break;
-                    case ScanCodes.sc_RightArrow:
+                    case ScanCodes.RightArrow:
                         if (s[cursor] != 0)
                             cursor++;
                         cursormoved = true;
                         break;
-                    case ScanCodes.sc_Home:
+                    case ScanCodes.Home:
                         if (cursor > 0)
                         {
                             cursor--;
@@ -201,17 +201,17 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         }
                         cursormoved = true;
                         break;
-                    case ScanCodes.sc_End:
+                    case ScanCodes.End:
                         cursor = s.Length;
                         cursormoved = true;
                         break;
 
-                    case ScanCodes.sc_Return:
+                    case ScanCodes.Return:
                         buf = s;
                         done = true;
                         result = true;
                         break;
-                    case ScanCodes.sc_Escape:
+                    case ScanCodes.Escape:
                         if (escok)
                         {
                             done = true;
@@ -219,7 +219,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         }
                         break;
 
-                    case ScanCodes.sc_BackSpace:
+                    case ScanCodes.BackSpace:
                         if (cursor != 0)
                         {
                             //s = s.Substring(0, Math.Max(0, cursor - 1)) + s.Substring(cursor, s.Length - cursor);
@@ -232,7 +232,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         cursormoved = true;
                         break;
 
-                    case ScanCodes.sc_Delete:
+                    case ScanCodes.Delete:
                         if (s[cursor] != 0)
                         {
                             s = s.Substring(0, cursor) + s.Substring(cursor + 1, s.Length - cursor + 1);

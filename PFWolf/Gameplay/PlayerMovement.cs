@@ -40,10 +40,10 @@ internal sealed class PlayerMovement(
 
     /// <summary>The cardinal direction the player faces, as Cmd_Use reckons it</summary>
     internal static ControlDir FacingDir(int angle) =>
-        angle < GameConstants.ANGLES / 8 || angle > 7 * GameConstants.ANGLES / 8 ? ControlDir.di_east
-        : angle < 3 * GameConstants.ANGLES / 8 ? ControlDir.di_north
-        : angle < 5 * GameConstants.ANGLES / 8 ? ControlDir.di_west
-        : ControlDir.di_south;
+        angle < GameConstants.ANGLES / 8 || angle > 7 * GameConstants.ANGLES / 8 ? ControlDir.East
+        : angle < 3 * GameConstants.ANGLES / 8 ? ControlDir.North
+        : angle < 5 * GameConstants.ANGLES / 8 ? ControlDir.West
+        : ControlDir.South;
 
     internal void ControlMovement(Entities.Actors.Actor ob)
     {
@@ -77,23 +77,23 @@ internal sealed class PlayerMovement(
         else if (playerinput.Pitch != 0)
             playerstate.Pitch = Math.Clamp(playerstate.Pitch + playerinput.Pitch, -hooks.MaxPitch(), hooks.MaxPitch());
 
-        if (playerinput.IsPressed(ButtonType.bt_strafeleft))
+        if (playerinput.IsPressed(ButtonType.StrafeLeft))
         {
             angle = ob.Angle + ANGLES / 4;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            if (playerinput.IsPressed(ButtonType.bt_run))
+            if (playerinput.IsPressed(ButtonType.Run))
                 Move(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
             else
                 Move(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
         }
 
-        if (playerinput.IsPressed(ButtonType.bt_straferight))
+        if (playerinput.IsPressed(ButtonType.StrafeRight))
         {
             angle = ob.Angle - ANGLES / 4;
             if (angle < 0)
                 angle += ANGLES;
-            if (playerinput.IsPressed(ButtonType.bt_run))
+            if (playerinput.IsPressed(ButtonType.Run))
                 Move(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
             else
                 Move(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
@@ -115,7 +115,7 @@ internal sealed class PlayerMovement(
         //
         // side to side move
         //
-        if (playerinput.IsPressed(ButtonType.bt_strafe))
+        if (playerinput.IsPressed(ButtonType.Strafe))
         {
             //
             // strafing
@@ -256,19 +256,19 @@ internal sealed class PlayerMovement(
                     {
                         switch (pw.Dir)
                         {
-                            case ControlDir.di_north:
+                            case ControlDir.North:
                                 if (ob.Y - PUSHWALLMINDIST <= (pw.Y << (int)MapConstants.TILESHIFT) + ((63 - pw.Pos) << 10))
                                     return false;
                                 break;
-                            case ControlDir.di_west:
+                            case ControlDir.West:
                                 if (ob.X - PUSHWALLMINDIST <= (pw.X << (int)MapConstants.TILESHIFT) + ((63 - pw.Pos) << 10))
                                     return false;
                                 break;
-                            case ControlDir.di_east:
+                            case ControlDir.East:
                                 if (ob.X + PUSHWALLMINDIST >= (pw.X << (int)MapConstants.TILESHIFT) + (pw.Pos << 10))
                                     return false;
                                 break;
-                            case ControlDir.di_south:
+                            case ControlDir.South:
                                 if (ob.Y + PUSHWALLMINDIST >= (pw.Y << (int)MapConstants.TILESHIFT) + (pw.Pos << 10))
                                     return false;
                                 break;

@@ -172,16 +172,16 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
                         dir = Direction.South;
                     switch (input.GetLastKeyPressed())
                     {
-                        case ScanCodes.sc_UpArrow:
-                        case ScanCodes.sc_PgUp:
-                        case ScanCodes.sc_LeftArrow:
+                        case ScanCodes.UpArrow:
+                        case ScanCodes.PgUp:
+                        case ScanCodes.LeftArrow:
                             dir = Direction.North;
                             break;
 
-                        case ScanCodes.sc_Enter:
-                        case ScanCodes.sc_DownArrow:
-                        case ScanCodes.sc_PgDn:
-                        case ScanCodes.sc_RightArrow:
+                        case ScanCodes.Enter:
+                        case ScanCodes.DownArrow:
+                        case ScanCodes.PgDn:
+                        case ScanCodes.RightArrow:
                             dir = Direction.South;
                             break;
                     }
@@ -210,7 +210,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
                     menuInput.TicDelay(20);
                     break;
             }
-        } while (input.GetLastKeyPressed() != ScanCodes.sc_Escape && !ci.button1);
+        } while (input.GetLastKeyPressed() != ScanCodes.Escape && !ci.button1);
 
         input.ClearKeysDown();
     }

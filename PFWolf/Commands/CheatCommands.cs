@@ -46,7 +46,7 @@ internal sealed class CheatCommands(
         console.Register("map", "Warps to a level.", "map <MAP##>", Cmd_Map, Cheat | InLevel, aliases: ["warp"],
             complete: (_, i) => i == 0 ? engine.GetGameInfo().Maps.Keys : []);
         console.Register("exitlevel", "Completes the current level.", "exitlevel",
-            _ => session.playstate = PlayState.ex_completed, Cheat | InLevel);
+            _ => session.playstate = PlayState.Completed, Cheat | InLevel);
         console.Register("tp", "Teleports to a tile.", "tp <tilex> <tiley> [angle]", Cmd_Teleport, Cheat | InLevel);
         console.Register("killall", "Kills every enemy on the level.", "killall", Cmd_KillAll, Cheat | InLevel);
         console.Register("diag", "Makes a wall tile (default: the one you face) a 45 degree wall, named by its solid corner.",
@@ -226,7 +226,7 @@ internal sealed class CheatCommands(
             ?? throw new ArgumentException($"no map \"{args[0]}\"; type \"maps\" for a list");
 
         session.gamestate.mapon = map;
-        session.playstate = PlayState.ex_warped;
+        session.playstate = PlayState.Warped;
     }
 
     internal void Cmd_Teleport(string[] args)
@@ -302,9 +302,9 @@ internal sealed class CheatCommands(
         // Facing back at the player by default, so a panel is seen from its front.
         int angle = args.Length > 1 ? ParseInt(args[1], 0, 359) : PlayerMovement.FacingDir(session.player.Angle) switch
         {
-            ControlDir.di_east => 180,
-            ControlDir.di_north => 270,
-            ControlDir.di_west => 0,
+            ControlDir.East => 180,
+            ControlDir.North => 270,
+            ControlDir.West => 0,
             _ => 90,
         };
         var (x, y) = targets.TileArg(args, 2);
@@ -326,7 +326,7 @@ internal sealed class CheatCommands(
     {
         // Snapshot first: Kill can drop items, which adds to the actor list.
         var enemies = mapManager.GetActors().OfType<Entities.Actors.Monster>()
-            .Where(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE))
+            .Where(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(ObjFlags.Shootable))
             .ToList();
 
         foreach (var enemy in enemies)

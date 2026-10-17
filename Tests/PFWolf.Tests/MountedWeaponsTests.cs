@@ -87,7 +87,7 @@ public class MountedWeaponsTests
         Assert.That(_session.playerstate.weapon, Is.EqualTo("NestGun"));
         Assert.That(_inventory.Has("NestGun"), Is.True);
         Assert.That(_sounds, Is.EqualTo(new[] { "nest/load" }));
-        Assert.That(_session.playerinput.IsHeld(ButtonType.bt_attack), Is.True);
+        Assert.That(_session.playerinput.IsHeld(ButtonType.Attack), Is.True);
     }
 
     [Test]
@@ -138,7 +138,7 @@ public class MountedWeaponsTests
         _map.tilemap[10, 10] = _map.tilemap[11, 9] = _map.tilemap[11, 11] = 1;
         var guard = new Monster { Name = "Guard" };
         guard.SetPosition(12, 10);
-        guard.RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
+        guard.RuntimeFlags |= ObjFlags.Shootable;
         _map.GetActors().AddLast(guard);
 
         // Act
@@ -187,10 +187,10 @@ public class MountedWeaponsTests
         Assert.That(_session.playerstate.weapon, Is.EqualTo("Pistol"));
     }
 
-    [TestCase(ControlDir.di_east, -1, 0)]
-    [TestCase(ControlDir.di_north, 0, 1)]
-    [TestCase(ControlDir.di_west, 1, 0)]
-    [TestCase(ControlDir.di_south, 0, -1)]
+    [TestCase(ControlDir.East, -1, 0)]
+    [TestCase(ControlDir.North, 0, 1)]
+    [TestCase(ControlDir.West, 1, 0)]
+    [TestCase(ControlDir.South, 0, -1)]
     public void The_First_Tile_Tried_Is_Behind(ControlDir facing, int dx, int dy)
     {
         var tiles = MountedWeapons.ExitTiles(10, 10, facing).ToList();

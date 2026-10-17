@@ -28,8 +28,8 @@ internal sealed class PlayerWeapons(
     // The weapon slot keys, indexed by slot number (`weapon.slot` 0-9, 1-4 for Wolf3D's four).
     private static readonly ButtonType[] SlotButtons =
     [
-        ButtonType.bt_slot0, ButtonType.bt_slot1, ButtonType.bt_slot2, ButtonType.bt_slot3, ButtonType.bt_slot4,
-        ButtonType.bt_slot5, ButtonType.bt_slot6, ButtonType.bt_slot7, ButtonType.bt_slot8, ButtonType.bt_slot9,
+        ButtonType.Slot0, ButtonType.Slot1, ButtonType.Slot2, ButtonType.Slot3, ButtonType.Slot4,
+        ButtonType.Slot5, ButtonType.Slot6, ButtonType.Slot7, ButtonType.Slot8, ButtonType.Slot9,
     ];
 
     // Only weapons with ammo can be switched to. Out of ammo for the picked weapon, the player
@@ -52,11 +52,11 @@ internal sealed class PlayerWeapons(
         string? newWeapon = null;
         var current = session.playerstate.weapon != null ? usable.IndexOf(session.playerstate.weapon) : -1;
 
-        if (session.playerinput.IsFreshPress(ButtonType.bt_nextweapon))
+        if (session.playerinput.IsFreshPress(ButtonType.NextWeapon))
         {
             newWeapon = usable[(current + 1) % usable.Count];
         }
-        else if (session.playerinput.IsFreshPress(ButtonType.bt_prevweapon))
+        else if (session.playerinput.IsFreshPress(ButtonType.PrevWeapon))
         {
             newWeapon = usable[current <= 0 ? usable.Count - 1 : current - 1];
         }

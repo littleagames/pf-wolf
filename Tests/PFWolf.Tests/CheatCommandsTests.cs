@@ -49,7 +49,7 @@ public class CheatCommandsTests
     public void Exitlevel_Completes_The_Level()
     {
         _console.Execute("exitlevel");
-        Assert.That(_session.playstate, Is.EqualTo(PlayState.ex_completed));
+        Assert.That(_session.playstate, Is.EqualTo(PlayState.Completed));
     }
 
     [TestCase("give")]

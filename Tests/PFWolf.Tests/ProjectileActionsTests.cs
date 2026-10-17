@@ -62,7 +62,7 @@ public class ProjectileActionsTests
         {
             var actor = new Monster { Name = name, X = near, Y = mine.Y };
             if (shootable)
-                actor.RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
+                actor.RuntimeFlags |= ObjFlags.Shootable;
             map.GetActors().AddLast(actor);
             return actor;
         }

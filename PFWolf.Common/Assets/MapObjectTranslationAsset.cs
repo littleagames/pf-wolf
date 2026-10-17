@@ -551,9 +551,9 @@ public record MapSwitchTranslation
 
         var face = dir switch
         {
-            ControlDir.di_east => "west",
-            ControlDir.di_west => "east",
-            ControlDir.di_north => "south",
+            ControlDir.East => "west",
+            ControlDir.West => "east",
+            ControlDir.North => "south",
             _ => "north",
         };
         return Sides.Contains(face, StringComparer.OrdinalIgnoreCase);

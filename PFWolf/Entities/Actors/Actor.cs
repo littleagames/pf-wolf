@@ -21,9 +21,9 @@ internal record Actor : Thinker
     public Vector2 Position { get; private set; } = Vector2.Zero;
 
     // Think/state-transition bookkeeping, driven by MapManager.DoActor.
-    public ActiveType Active { get; internal set; } = ActiveType.ac_no;
+    public ActiveType Active { get; internal set; } = ActiveType.No;
     public short TicCount { get; internal set; }
-    public ObjDir Dir { get; internal set; } = ObjDir.nodir;
+    public ObjDir Dir { get; internal set; } = ObjDir.NoDir;
     public short Angle { get; internal set; }
     public short Hitpoints { get; internal set; }
     public int Speed { get; internal set; }
@@ -90,7 +90,7 @@ internal record Actor : Thinker
     public byte TileX { get; internal set; }
     public byte TileY { get; internal set; }
 
-    // Runtime combat/AI bookkeeping (FL_SHOOTABLE, FL_AMBUSH, FL_ATTACKMODE, etc. --
+    // Runtime combat/AI bookkeeping (Shootable, Ambush, AttackMode, etc. --
     // GameTypes.cs's ObjFlags), distinct from the static, YAML-declared `Flags` above.
     public ObjFlags RuntimeFlags { get; internal set; }
 

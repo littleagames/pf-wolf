@@ -211,14 +211,14 @@ internal sealed class PlayerDeath(
 
         if (session.gamestate.victoryflag)
         {
-            session.playstate = PlayState.ex_victorious;
+            session.playstate = PlayState.Victorious;
             return;
         }
 
         // With others there's no replay: it would move one player's view, on one machine
         if (session.gamemode != GameMode.Single)
         {
-            session.playstate = PlayState.ex_victorious;
+            session.playstate = PlayState.Victorious;
             return;
         }
 

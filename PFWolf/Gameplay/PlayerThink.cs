@@ -62,7 +62,7 @@ internal sealed class PlayerThink(
             weapons.CheckWeaponChange();
             hooks.UpdateZoom(WeaponInHand.IsReloading(session.playerstate.WeaponSprite));
 
-            if (playerinput.IsPressed(ButtonType.bt_use))
+            if (playerinput.IsPressed(ButtonType.Use))
                 use.Cmd_Use();
             else
             {
@@ -74,11 +74,11 @@ internal sealed class PlayerThink(
         {
             // Mid-attack, a fresh press of use or fire is dropped rather than kept for later
             // (vanilla T_Attack); fire held down from before still counts for A_ReFire.
-            if (playerinput.IsFreshPress(ButtonType.bt_use))
-                playerinput.SetPressed(ButtonType.bt_use, false);
+            if (playerinput.IsFreshPress(ButtonType.Use))
+                playerinput.SetPressed(ButtonType.Use, false);
 
-            if (playerinput.IsFreshPress(ButtonType.bt_attack))
-                playerinput.SetPressed(ButtonType.bt_attack, false);
+            if (playerinput.IsFreshPress(ButtonType.Attack))
+                playerinput.SetPressed(ButtonType.Attack, false);
         }
 
         movement.ControlMovement(ob);
@@ -130,12 +130,12 @@ internal sealed class PlayerThink(
     {
         const int ANGLES = GameConstants.ANGLES;
         var player = session.player;
-        player.Active = ActiveType.ac_yes;
+        player.Active = ActiveType.Yes;
         player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y
         player.AreaNumber = map.SpawnArea(tilex, tiley);
         player.SetState(PlayerPawn.SpawnState);
         player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
-        player.RuntimeFlags = ObjFlags.FL_NEVERMARK;
+        player.RuntimeFlags = ObjFlags.NeverMark;
         movement.Thrust(0, 0);                  // set some variables
 
         hooks.InitAreas();

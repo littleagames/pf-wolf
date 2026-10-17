@@ -22,7 +22,7 @@ internal record Informant : BlakeMonster
     internal override void OnSpawned(int tilex, int tiley)
     {
         base.OnSpawned(tilex, tiley);
-        RuntimeFlags |= ObjFlags.FL_HASAMMO | ObjFlags.FL_HASTOKENS;
+        RuntimeFlags |= ObjFlags.HasAmmo | ObjFlags.HasTokens;
         SeekX = SeekY = 0xff;     // no hint chosen yet
     }
 
@@ -40,11 +40,11 @@ internal record Informant : BlakeMonster
         string? said = null;
 
         // Asked again, it hands over what it has
-        if (RuntimeFlags.HasFlag(ObjFlags.FL_INTERROGATED))
+        if (RuntimeFlags.HasFlag(ObjFlags.Interrogated))
         {
             var gifts = PropertyStrings("talk.gifts");
             var giftMessages = PropertyStrings("talk.giftmessages");
-            foreach (var (flag, index) in new[] { (ObjFlags.FL_HASAMMO, 0), (ObjFlags.FL_HASTOKENS, 1) })
+            foreach (var (flag, index) in new[] { (ObjFlags.HasAmmo, 0), (ObjFlags.HasTokens, 1) })
             {
                 if (!RuntimeFlags.HasFlag(flag) || index >= gifts.Count
                     || InventoryManager.CreateActor(gifts[index]) is not Inventory gift || !CouldTakeInventory(gift))
@@ -61,7 +61,7 @@ internal record Informant : BlakeMonster
         if (said == null)
         {
             said = Hint();
-            RuntimeFlags |= ObjFlags.FL_INTERROGATED;
+            RuntimeFlags |= ObjFlags.Interrogated;
         }
 
         Say(said);

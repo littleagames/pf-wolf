@@ -57,9 +57,9 @@ internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, 
                     break;
             }
 
-            if (ci.button0 || input.IsKeyDown(ScanCodes.sc_Enter))
+            if (ci.button0 || input.IsKeyDown(ScanCodes.Enter))
                 exit = 1;
-            else if (ci.button1 || input.IsKeyDown(ScanCodes.sc_Escape))
+            else if (ci.button1 || input.IsKeyDown(ScanCodes.Escape))
             {
                 audio.Play("menu/escape");
                 draw.MenuFadeOut();

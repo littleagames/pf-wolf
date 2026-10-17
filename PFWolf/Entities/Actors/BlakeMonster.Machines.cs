@@ -54,10 +54,10 @@ internal partial record BlakeMonster
             TakeDamage(zap, this);
         }
 
-        if (Dir == ObjDir.nodir)
+        if (Dir == ObjDir.NoDir)
         {
             BounceStartDir();
-            if (Dir == ObjDir.nodir)
+            if (Dir == ObjDir.NoDir)
                 return;
         }
 
@@ -92,13 +92,13 @@ internal partial record BlakeMonster
 
             if (!TryBounceDir(opposite[(byte)Dir]))
             {
-                Dir = ObjDir.nodir;
+                Dir = ObjDir.NoDir;
                 return;
             }
         }
     }
 
-    private static bool IsDiagonal(ObjDir dir) => dir is ObjDir.northeast or ObjDir.northwest or ObjDir.southeast or ObjDir.southwest;
+    private static bool IsDiagonal(ObjDir dir) => dir is ObjDir.NorthEast or ObjDir.NorthWest or ObjDir.SouthEast or ObjDir.SouthWest;
 
     private bool TryBounceDir(ObjDir dir)
     {
@@ -125,14 +125,14 @@ internal partial record BlakeMonster
         {
             var dir = BounceKinds[(first + i) % BounceKinds.Length] switch
             {
-                "vertical" => (NextRandom() & 1) != 0 ? ObjDir.north : ObjDir.south,
-                "horizontal" => (NextRandom() & 1) != 0 ? ObjDir.east : ObjDir.west,
+                "vertical" => (NextRandom() & 1) != 0 ? ObjDir.North : ObjDir.South,
+                "horizontal" => (NextRandom() & 1) != 0 ? ObjDir.East : ObjDir.West,
                 _ => (ObjDir)((NextRandom() % 4) * 2 + 1),
             };
             if (TryBounceDir(dir) || TryBounceDir(opposite[(byte)dir]))
                 return;
         }
-        Dir = ObjDir.nodir;
+        Dir = ObjDir.NoDir;
     }
 
     // A diagonal bouncer going straight (it was boxed in) takes the first diagonal it can, once there's room
@@ -140,7 +140,7 @@ internal partial record BlakeMonster
     {
         if (IsDiagonal(Dir) || PropertyStrings("monster.bounce").FirstOrDefault()?.ToLowerInvariant() is "vertical" or "horizontal")
             return false;
-        foreach (var dir in new[] { ObjDir.northeast, ObjDir.northwest, ObjDir.southwest, ObjDir.southeast })
+        foreach (var dir in new[] { ObjDir.NorthEast, ObjDir.NorthWest, ObjDir.SouthWest, ObjDir.SouthEast })
             if (TryBounceDir(dir))
                 return true;
         return false;
@@ -161,9 +161,9 @@ internal partial record BlakeMonster
     internal void SetShootable(string[] args)
     {
         if (args.FirstOrDefault()?.Equals("off", StringComparison.OrdinalIgnoreCase) == true)
-            RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
+            RuntimeFlags &= ~ObjFlags.Shootable;
         else
-            RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
+            RuntimeFlags |= ObjFlags.Shootable;
     }
 
     /// <summary>The liquid alien moving as a puddle (Chase): near the player, but not right by them, it rises (Rise)</summary>
@@ -183,7 +183,7 @@ internal partial record BlakeMonster
     /// </summary>
     internal void LiquidStand()
     {
-        RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
+        RuntimeFlags |= ObjFlags.Shootable;
         if (NextRandom() < 80 && Temp2 < 5)
         {
             Temp2++;
@@ -193,9 +193,9 @@ internal partial record BlakeMonster
 
         if (Math.Abs(TileX - Target.TileX) > 1 || Math.Abs(TileY - Target.TileY) > 1)
         {
-            if (!RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) || NextRandom() < 40 || Temp2 == 5)
+            if (!RuntimeFlags.HasFlag(ObjFlags.Visible) || NextRandom() < 40 || Temp2 == 5)
             {
-                RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
+                RuntimeFlags &= ~ObjFlags.Shootable;
                 Temp2 = 0;
                 SetState("Fall");
             }
@@ -246,7 +246,7 @@ internal partial record BlakeMonster
         if (Temp2 <= 0)
         {
             Temp2 = SEEK_TURN_DELAY;
-            Dir = Dir >= ObjDir.southeast ? ObjDir.east : Dir + 1;
+            Dir = Dir >= ObjDir.SouthEast ? ObjDir.East : Dir + 1;
         }
     }
 
@@ -256,7 +256,7 @@ internal partial record BlakeMonster
         if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
             return false;
         var target = Target;
-        if (Dir == ObjDir.nodir)
+        if (Dir == ObjDir.NoDir)
             return CheckLine(this, target);
 
         var angle = Math.Atan2(Y - target.Y, target.X - X) * 180 / Math.PI;
@@ -286,7 +286,7 @@ internal partial record BlakeMonster
     /// </summary>
     internal void SteamVent()
     {
-        if (!RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE))
+        if (!RuntimeFlags.HasFlag(ObjFlags.Visible))
             return;
         if (Temp3 == 0)
         {
@@ -341,7 +341,7 @@ internal partial record BlakeMonster
     /// <summary>A_SelfDestruct: the actor dies, with its points (the floating bomb, reaching the player, blows itself up)</summary>
     internal void SelfDestruct()
     {
-        if (!RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE))
+        if (!RuntimeFlags.HasFlag(ObjFlags.Shootable))
             return;
         Hitpoints = 0;
         Kill(null);
@@ -367,7 +367,7 @@ internal partial record BlakeMonster
     {
         if (args.Length == 0)
             return;
-        int left = MapManager.GetActors().Count(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE));
+        int left = MapManager.GetActors().Count(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
         HudMessageManager.Show(Managers.HudMessageKind.Other, args[0], args.ElementAtOrDefault(1),
             new Dictionary<char, string> { ['n'] = left.ToString() });
     }
@@ -375,8 +375,8 @@ internal partial record BlakeMonster
     /// <summary>A_VictoryIfLast: the level is won once none of this actor's class still stands (the last projection generator)</summary>
     internal void VictoryIfLast()
     {
-        if (!MapManager.GetActors().Any(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE)))
-            PlayState = PlayState.ex_victorious;
+        if (!MapManager.GetActors().Any(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.Shootable)))
+            PlayState = PlayState.Victorious;
     }
 
     /// <summary>

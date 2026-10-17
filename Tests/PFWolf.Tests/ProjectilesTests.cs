@@ -196,10 +196,10 @@ public class BJVictoryTests
 
         // Act / Assert
         victory.T_BJDone(new Monster { Name = "BJVictory" });
-        Assert.That(session.playstate, Is.EqualTo(PlayState.ex_victorious));
+        Assert.That(session.playstate, Is.EqualTo(PlayState.Victorious));
 
-        session.playstate = PlayState.ex_stillplaying;
+        session.playstate = PlayState.StillPlaying;
         victory.A_Victory(new Monster { Name = "Angel" });
-        Assert.That(session.playstate, Is.EqualTo(PlayState.ex_victorious));
+        Assert.That(session.playstate, Is.EqualTo(PlayState.Victorious));
     }
 }

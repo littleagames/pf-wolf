@@ -86,7 +86,7 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
                     lastFrame = GameEngineManager.GetTimeCount();
 
                     menuInput.ReadAnyControl(out var ci);
-                    if (!video.screenfaded && (ci.button0 || ci.button1 || input.GetLastKeyPressed() != ScanCodes.sc_None))
+                    if (!video.screenfaded && (ci.button0 || ci.button1 || input.GetLastKeyPressed() != ScanCodes.None))
                     {
                         skipped = true;
                         if (everFaded)

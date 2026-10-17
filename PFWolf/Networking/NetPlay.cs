@@ -135,7 +135,7 @@ internal sealed class NetPlay(
                         video.FadeIn();     // a level's first frame: others are still on the intermission
                 }
                 input.ProcessEvents();
-                if (input.IsKeyDown(ScanCodes.sc_Escape))
+                if (input.IsKeyDown(ScanCodes.Escape))
                 {
                     input.ClearKeysDown();
                     netLeft = true;

@@ -87,7 +87,7 @@ public class LatchingTests
         _dog = (Monster)_inventory.CreateActor("Dog")!;
         _dog.SetPosition(11, 10);
         _dog.Hitpoints = 1;
-        _dog.RuntimeFlags |= ObjFlags.FL_SHOOTABLE | ObjFlags.FL_ATTACKMODE;
+        _dog.RuntimeFlags |= ObjFlags.Shootable | ObjFlags.AttackMode;
         _dog.SetState("Chase");
         _map.GetActors().AddLast(_dog);
 
@@ -123,9 +123,9 @@ public class LatchingTests
         Assert.That(playerstate.weapon, Is.EqualTo("DogStruggle"));
         Assert.That(playerstate.LatchFrom, Is.EqualTo("Pistol"));
         Assert.That(playerstate.MoveSlowdown, Is.EqualTo(10));
-        Assert.That(_session.playerinput.IsHeld(ButtonType.bt_attack), Is.True);
-        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE), Is.False);
-        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.FL_NONMARK), Is.True);
+        Assert.That(_session.playerinput.IsHeld(ButtonType.Attack), Is.True);
+        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.Shootable), Is.False);
+        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.NonMark), Is.True);
         Assert.That(_dog.CurrentState!.StateName, Is.EqualTo("Latched"));
     }
 
@@ -225,8 +225,8 @@ public class LatchingTests
 
         // Assert
         Assert.That(_playerHurts, Is.Empty);
-        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE), Is.True);
-        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.FL_NONMARK), Is.False);
+        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.Shootable), Is.True);
+        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.NonMark), Is.False);
         Assert.That(_dog.CurrentState!.StateName, Is.EqualTo("Chase"));
     }
 

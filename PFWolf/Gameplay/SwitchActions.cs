@@ -34,7 +34,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         // A_ToggleDoor(["hold"]): opens the tagged doors that are shut or shutting, closes the rest
         MapTriggerRegistry.Register("A_ToggleDoor", (trigger, args) => ForTaggedDoors(trigger, door =>
         {
-            if (doors.doorobjlist[door].action is DoorAction.dr_closed or DoorAction.dr_closing)
+            if (doors.doorobjlist[door].action is DoorAction.Closed or DoorAction.Closing)
                 SwitchOpenDoor(door, Hold(args));
             else
                 doors.CloseDoor(door);
@@ -253,10 +253,10 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     /// <summary>A direction's name (north, east, south, west, any case), or null</summary>
     internal static ControlDir? ParseDirection(string? name) => name?.Trim().ToLowerInvariant() switch
     {
-        "north" => ControlDir.di_north,
-        "east" => ControlDir.di_east,
-        "south" => ControlDir.di_south,
-        "west" => ControlDir.di_west,
+        "north" => ControlDir.North,
+        "east" => ControlDir.East,
+        "south" => ControlDir.South,
+        "west" => ControlDir.West,
         _ => null,
     };
 

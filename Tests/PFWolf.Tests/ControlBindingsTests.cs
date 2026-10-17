@@ -4,9 +4,9 @@ namespace PFWolf.Tests;
 
 public class ControlBindingsTests
 {
-    private static readonly ControlAction Attack = ControlAction.Of(ButtonType.bt_attack);
-    private static readonly ControlAction Use = ControlAction.Of(ButtonType.bt_use);
-    private static readonly ControlAction ZoomIn = ControlAction.Of(AutomapAction.am_zoomin);
+    private static readonly ControlAction Attack = ControlAction.Of(ButtonType.Attack);
+    private static readonly ControlAction Use = ControlAction.Of(ButtonType.Use);
+    private static readonly ControlAction ZoomIn = ControlAction.Of(AutomapAction.ZoomIn);
 
     private static ControlBindings Empty()
     {
@@ -30,6 +30,23 @@ public class ControlBindingsTests
     }
 
     [Test]
+    public void Every_Control_Keeps_The_Name_Controls_Cfg_Has_For_It()
+    {
+        // controls.cfg and menudefs' customize screens name the controls: a file format
+        string[] names =
+        [
+            "attack", "strafe", "run", "use", "slot1", "slot2", "slot3", "slot4", "nextweapon", "prevweapon",
+            "esc", "pause", "strafeleft", "straferight", "moveforward", "movebackward", "turnleft", "turnright",
+            "automap", "slot5", "slot6", "slot7", "slot8", "slot9", "slot0", "lookup", "lookdown", "centerview",
+            "radarzoomin", "radarzoomout", "reload", "zoom",
+            "am_zoomin", "am_zoomout", "am_panup", "am_pandown", "am_panleft", "am_panright", "am_center",
+            "am_follow", "am_rotate", "am_style", "am_overlay", "am_grid", "am_stats",
+        ];
+
+        Assert.That(ControlAction.All.Select(a => a.Name), Is.EqualTo(names));
+    }
+
+    [Test]
     public void ControlAction_TryParse_Reads_Old_Weapon_Names()
     {
         // Act
@@ -37,7 +54,7 @@ public class ControlBindingsTests
 
         // Assert
         Assert.That(parsed, Is.True);
-        Assert.That(action, Is.EqualTo(ControlAction.Of(ButtonType.bt_slot2)));
+        Assert.That(action, Is.EqualTo(ControlAction.Of(ButtonType.Slot2)));
     }
 
     [Test]
@@ -63,9 +80,9 @@ public class ControlBindingsTests
         var bindings = Empty();
 
         // Act
-        var first = bindings.Add(Attack, InputCode.FromKey(ScanCodes.sc_A));
-        var second = bindings.Add(Attack, InputCode.FromKey(ScanCodes.sc_B));
-        var third = bindings.Add(Attack, InputCode.FromKey(ScanCodes.sc_C));
+        var first = bindings.Add(Attack, InputCode.FromKey(ScanCodes.A));
+        var second = bindings.Add(Attack, InputCode.FromKey(ScanCodes.B));
+        var third = bindings.Add(Attack, InputCode.FromKey(ScanCodes.C));
 
         // Assert
         Assert.That(new[] { first, second, third }, Is.EqualTo(new[] { true, true, false }));
@@ -92,7 +109,7 @@ public class ControlBindingsTests
     {
         // Arrange
         var bindings = Empty();
-        var key = InputCode.FromKey(ScanCodes.sc_A);
+        var key = InputCode.FromKey(ScanCodes.A);
         bindings.Add(Attack, key);
 
         // Act
@@ -110,7 +127,7 @@ public class ControlBindingsTests
         var bindings = Empty();
 
         // Act / Assert
-        Assert.Throws<ArgumentException>(() => bindings[Attack, ControlBindings.ControllerSlot] = InputCode.FromKey(ScanCodes.sc_A));
+        Assert.Throws<ArgumentException>(() => bindings[Attack, ControlBindings.ControllerSlot] = InputCode.FromKey(ScanCodes.A));
         Assert.Throws<ArgumentException>(() => bindings[Attack, 0] = InputCode.FromJoyButton(0));
     }
 
@@ -119,7 +136,7 @@ public class ControlBindingsTests
     {
         // Arrange
         var bindings = Empty();
-        var key = InputCode.FromKey(ScanCodes.sc_A);
+        var key = InputCode.FromKey(ScanCodes.A);
         bindings.Add(Use, key);
 
         // Act
@@ -136,7 +153,7 @@ public class ControlBindingsTests
     {
         // Arrange: the automap's keys only work while it's open, so they can share
         var bindings = Empty();
-        var key = InputCode.FromKey(ScanCodes.sc_Equal);
+        var key = InputCode.FromKey(ScanCodes.Equal);
         bindings.Add(ZoomIn, key);
 
         // Act
@@ -152,7 +169,7 @@ public class ControlBindingsTests
     {
         // Arrange
         var bindings = Empty();
-        var key = InputCode.FromKey(ScanCodes.sc_A);
+        var key = InputCode.FromKey(ScanCodes.A);
         bindings[Attack, 0] = key;
 
         // Act
@@ -169,7 +186,7 @@ public class ControlBindingsTests
     {
         // Arrange
         var bindings = Empty();
-        bindings.Add(Attack, InputCode.FromKey(ScanCodes.sc_A));
+        bindings.Add(Attack, InputCode.FromKey(ScanCodes.A));
         bindings.Add(Attack, InputCode.FromMouseButton(1));
         bindings.Add(Attack, InputCode.FromJoyButton(0));
 
@@ -177,7 +194,7 @@ public class ControlBindingsTests
         bindings.Clear(Attack, InputDevice.MouseButton);
 
         // Assert
-        Assert.That(bindings.Get(Attack), Is.EqualTo(new[] { InputCode.FromKey(ScanCodes.sc_A), InputCode.FromJoyButton(0) }));
+        Assert.That(bindings.Get(Attack), Is.EqualTo(new[] { InputCode.FromKey(ScanCodes.A), InputCode.FromJoyButton(0) }));
     }
 
     [Test]
@@ -211,7 +228,7 @@ public class ControlBindingsTests
         var bindings = new ControlBindings();
 
         // Assert
-        Assert.That(bindings.IsBound(Attack, InputCode.FromKey(ScanCodes.sc_Control)), Is.True);
+        Assert.That(bindings.IsBound(Attack, InputCode.FromKey(ScanCodes.Control)), Is.True);
         Assert.That(bindings.IsBound(Attack, InputCode.FromMouseButton(1)), Is.True);
     }
 

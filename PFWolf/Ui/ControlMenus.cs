@@ -255,9 +255,9 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
                     break;
             }
 
-            if (ci.button0 || input.IsKeyDown(ScanCodes.sc_Space) || input.IsKeyDown(ScanCodes.sc_Enter))
+            if (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
                 exit = 1;
-            else if (ci.button1 || input.IsKeyDown(ScanCodes.sc_Escape))
+            else if (ci.button1 || input.IsKeyDown(ScanCodes.Escape))
                 exit = 2;
 
         }

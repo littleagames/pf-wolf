@@ -28,7 +28,7 @@ public class AutomapInputTests
         _keys = new AutomapInput(_input, _console, _automap, null!, _controls, new ControlSettings(), _polling, _session);
     }
 
-    private static readonly InputCode KeyF = InputCode.FromKey(ScanCodes.sc_F);
+    private static readonly InputCode KeyF = InputCode.FromKey(ScanCodes.F);
 
     [Test]
     public void The_Automap_Opens_And_Shuts_But_Not_In_A_Demo()
@@ -47,7 +47,7 @@ public class AutomapInputTests
     public void Its_Keys_Only_Work_While_Its_Open()
     {
         // Arrange: F bound to follow
-        _controls.Set(ControlAction.Of(AutomapAction.am_follow), 0, KeyF);
+        _controls.Set(ControlAction.Of(AutomapAction.Follow), 0, KeyF);
 
         // Act / Assert
         Assert.That(_keys.HandleAutomapKey(KeyF), Is.False);
@@ -60,7 +60,7 @@ public class AutomapInputTests
     public void A_Key_That_Isnt_The_Automaps_Is_Left_For_Binds()
     {
         _automap.Open();
-        Assert.That(_keys.HandleAutomapKey(InputCode.FromKey(ScanCodes.sc_F12)), Is.False);
+        Assert.That(_keys.HandleAutomapKey(InputCode.FromKey(ScanCodes.F12)), Is.False);
     }
 
     [Test]

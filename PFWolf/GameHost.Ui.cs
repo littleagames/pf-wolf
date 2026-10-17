@@ -71,7 +71,7 @@ internal static partial class GameHost
         EndGame: () =>
         {
             playerstate.lives = 0;
-            playstate = PlayState.ex_died;
+            playstate = PlayState.Died;
             LastAttacker = null;
         },
         Random: UiRandom);

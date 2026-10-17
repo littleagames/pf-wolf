@@ -19,13 +19,13 @@ internal sealed record PlayerViewHooks(
 /// <summary>
 /// Player sight: what the player touches and sees, kept apart from what the camera draws.
 /// Vanilla worked both out while drawing: items were picked up when the renderer found them
-/// under the view, and an enemy on the screen got FL_VISABLE (the gun's targets, enemy aim,
+/// under the view, and an enemy on the screen got Visible (the gun's targets, enemy aim,
 /// NOTICEWHENSEEN, Blake's AI, the automap's marks). While the camera is on the player, drawing
-/// still sets FL_VISABLE; when it's on someone else, PlayerSight sets it from the player's own
+/// still sets Visible; when it's on someone else, PlayerSight sets it from the player's own
 /// view.
 ///
 /// What players see, with several of them: alone, what the player sees is what the renderer
-/// drew: an enemy on the screen is FL_VISABLE (enemies aim worse at a player who can see them)
+/// drew: an enemy on the screen is Visible (enemies aim worse at a player who can see them)
 /// and wakes for good. With others, the screen is just one of them (and on another machine,
 /// another one), so it's worked out from each player's own position instead: InViewOf, the
 /// same on every machine.
@@ -63,7 +63,7 @@ internal sealed class PlayerView(
         {
             // Only the items DrawScaleds would have drawn as statics
             if (actor is not Inventory item || item.IsRemoved || item.CurrentState == null
-                || item.ResolvedStates.ContainsKey("Chase") || item.Active == ActiveType.ac_yes || hooks.IsWallSprite(item))
+                || item.ResolvedStates.ContainsKey("Chase") || item.Active == ActiveType.Yes || hooks.IsWallSprite(item))
                 continue;
 
             int tx = (int)item.Position.X, ty = (int)item.Position.Y;
@@ -85,7 +85,7 @@ internal sealed class PlayerView(
     }
 
     /// <summary>
-    /// When the camera is on someone else, sets FL_VISABLE and the gun's ViewX/TransX for what
+    /// When the camera is on someone else, sets Visible and the gun's ViewX/TransX for what
     /// the player would see: an enemy in front of them, on their screen and in their line of
     /// sight (CheckLine). Run after the frame is drawn, so it has the last word.
     /// </summary>
@@ -100,7 +100,7 @@ internal sealed class PlayerView(
         foreach (var actor in map.GetActors())
         {
             if (actor is PlayerPawn || actor.IsRemoved || actor.CurrentState == null
-                || !(actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.ac_yes))
+                || !(actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.Yes))
                 continue;
 
             hooks.TransformActorFrom(actor, fromx, fromy, fromsin, fromcos);
@@ -108,11 +108,11 @@ internal sealed class PlayerView(
             bool onscreen = actor.ViewHeight > 0
                 && actor.ViewX + actor.ViewHeight >= 0 && actor.ViewX - actor.ViewHeight < viewwidth;
             if (onscreen && actor is Monster && session.gamemode == GameMode.Single)
-                actor.Active = ActiveType.ac_yes;      // seen: awake for good, as when drawn
+                actor.Active = ActiveType.Yes;      // seen: awake for good, as when drawn
             if (onscreen && lineOfSight.CheckLine(actor))
-                actor.RuntimeFlags |= ObjFlags.FL_VISABLE;
+                actor.RuntimeFlags |= ObjFlags.Visible;
             else
-                actor.RuntimeFlags &= ~ObjFlags.FL_VISABLE;
+                actor.RuntimeFlags &= ~ObjFlags.Visible;
         }
     }
 
@@ -158,8 +158,8 @@ internal sealed class PlayerView(
     {
         foreach (var actor in map.GetActors())
         {
-            if (actor is Monster && !actor.IsRemoved && actor.Active == ActiveType.ac_no && SeenByAPlayer(actor))
-                actor.Active = ActiveType.ac_yes;
+            if (actor is Monster && !actor.IsRemoved && actor.Active == ActiveType.No && SeenByAPlayer(actor))
+                actor.Active = ActiveType.Yes;
         }
     }
 }

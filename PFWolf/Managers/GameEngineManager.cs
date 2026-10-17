@@ -221,7 +221,7 @@ internal class GameEngineManager
     // (the automap key was appended at the end later), and a button for each mouse and joystick
     // button. They're in controls.cfg now; these are only read from an older config.cfg.
     private const int LayoutDirCount = 4;
-    private const int LayoutButtonCount = (int)ButtonType.bt_automap;
+    private const int LayoutButtonCount = (int)ButtonType.Automap;
     private const int LayoutMouseCount = 4;
     private const int LayoutJoyCount = 32;
 
@@ -264,7 +264,7 @@ internal class GameEngineManager
         // The controls moved to controls.cfg, which the console runs at startup; config.cfg now
         // only has blanks where they were. A config from before that still has them: take them
         // over this once, and controls.cfg holds them from the next save on.
-        bool hasLegacyControls = config.DirScan.Any(key => key != ScanCodes.sc_None);
+        bool hasLegacyControls = config.DirScan.Any(key => key != ScanCodes.None);
         bool legacyConfig = hasLegacyControls && !File.Exists(GetConfigFilePath(ControlsFileName));
         if (legacyConfig)
             settings.controls.ImportLegacy(config.DirScan, config.ButtonScan, config.ButtonMouse, config.ButtonJoy,
@@ -614,7 +614,7 @@ internal class GameEngineManager
         bw.Write(settings.viewsize);
         bw.Write(settings.controlSettings.mouseadjustment);
         bw.Write(consoleManager.PauseWhenOpen);
-        bw.Write((int)ScanCodes.sc_None);   // automap key placeholder
+        bw.Write((int)ScanCodes.None);   // automap key placeholder
         bw.Write((byte)automapManager.Style);
         bw.Write(automapManager.Overlay);
         bw.Write(automapManager.ShowGrid);

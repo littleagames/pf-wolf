@@ -7,11 +7,11 @@ namespace PFWolf.Entities;
 /// </summary>
 internal struct TicCmd
 {
-    /// <summary>A bit for each <see cref="ButtonType"/> held down (bit 0 is bt_attack)</summary>
+    /// <summary>A bit for each <see cref="ButtonType"/> held down (bit 0 is Attack)</summary>
     public uint Buttons;
 
     /// <summary>
-    /// Turning (or sideways with bt_strafe), forward/back (negative is forwards) and a controller
+    /// Turning (or sideways with Strafe), forward/back (negative is forwards) and a controller
     /// stick's strafe (positive is right): up to 100 a tic, already multiplied by the frame's tics
     /// </summary>
     public int ControlX, ControlY, ControlStrafe;

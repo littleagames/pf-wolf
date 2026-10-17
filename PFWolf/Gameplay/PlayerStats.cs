@@ -141,7 +141,7 @@ internal sealed class PlayerStats(
         {
             playerstate.health = 0;
             if (session.gamemode == GameMode.Single)
-                session.playstate = PlayState.ex_died;                   // Died(): the level starts again
+                session.playstate = PlayState.Died;                   // Died(): the level starts again
             else
                 hooks.PlayerDies();             // the rest play on (Gameplay/Players.cs)
         }

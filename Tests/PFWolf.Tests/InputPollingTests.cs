@@ -32,8 +32,8 @@ public class InputPollingTests
     public void The_Movement_Buttons_Walk_And_Turn_A_Tics_Worth()
     {
         // Arrange
-        _input.SetButtonPressed(ButtonType.bt_moveforward, true);
-        _input.SetButtonPressed(ButtonType.bt_turnright, true);
+        _input.SetButtonPressed(ButtonType.MoveForward, true);
+        _input.SetButtonPressed(ButtonType.TurnRight, true);
 
         // Act
         _polling.PollButtonMove();
@@ -45,9 +45,9 @@ public class InputPollingTests
     [Test]
     public void Running_Goes_At_Run_Speed()
     {
-        _input.SetButtonPressed(ButtonType.bt_run, true);
-        _input.SetButtonPressed(ButtonType.bt_movebackward, true);
-        _input.SetButtonPressed(ButtonType.bt_turnleft, true);
+        _input.SetButtonPressed(ButtonType.Run, true);
+        _input.SetButtonPressed(ButtonType.MoveBackward, true);
+        _input.SetButtonPressed(ButtonType.TurnLeft, true);
 
         _polling.PollButtonMove();
 
@@ -58,13 +58,13 @@ public class InputPollingTests
     public void The_Look_Keys_Look_Up_And_Down_And_Center()
     {
         // Act / Assert
-        _input.SetButtonPressed(ButtonType.bt_lookup, true);
+        _input.SetButtonPressed(ButtonType.LookUp, true);
         _polling.PollButtonMove();
         Assert.That(_polling.controlpitch, Is.EqualTo(2 * InputPolling.LOOKSPEED).Within(1e-9));
 
-        _input.SetButtonPressed(ButtonType.bt_lookup, false);
-        _input.SetButtonPressed(ButtonType.bt_lookdown, true);
-        _input.SetButtonPressed(ButtonType.bt_centerview, true);
+        _input.SetButtonPressed(ButtonType.LookUp, false);
+        _input.SetButtonPressed(ButtonType.LookDown, true);
+        _input.SetButtonPressed(ButtonType.CenterView, true);
         _polling.PollButtonMove();
         Assert.That(_polling.controlpitch, Is.EqualTo(0).Within(1e-9));
         Assert.That(_polling.controlcenterview, Is.True);
@@ -73,10 +73,10 @@ public class InputPollingTests
     [Test]
     public void The_Buttons_Pressed_Are_A_Bit_Each()
     {
-        _input.SetButtonPressed(ButtonType.bt_attack, true);
-        _input.SetButtonPressed(ButtonType.bt_use, true);
+        _input.SetButtonPressed(ButtonType.Attack, true);
+        _input.SetButtonPressed(ButtonType.Use, true);
 
-        Assert.That(_polling.LocalButtons(), Is.EqualTo((1u << (int)ButtonType.bt_attack) | (1u << (int)ButtonType.bt_use)));
+        Assert.That(_polling.LocalButtons(), Is.EqualTo((1u << (int)ButtonType.Attack) | (1u << (int)ButtonType.Use)));
     }
 
     [TestCase(2, 2, 0)]
@@ -86,7 +86,7 @@ public class InputPollingTests
     {
         _polling.wheelnotches = turned;
         Assert.That((_polling.WheelNotches(InputCode.WheelUp), _polling.WheelNotches(InputCode.WheelDown)), Is.EqualTo((up, down)));
-        Assert.That(_polling.WheelNotches(InputCode.FromKey(ScanCodes.sc_A)), Is.EqualTo(0));
+        Assert.That(_polling.WheelNotches(InputCode.FromKey(ScanCodes.A)), Is.EqualTo(0));
     }
 
     [Test]

@@ -156,7 +156,7 @@ public class NetOverlayTests
     public void Esc_Asks_Whether_To_Leave()
     {
         var (overlay, netPlay, _) = Overlay();
-        overlay.NetCheckKeys(ScanCodes.sc_Escape);
+        overlay.NetCheckKeys(ScanCodes.Escape);
         Assert.That(netPlay.netLeavePrompt, Is.True);
     }
 
@@ -168,16 +168,16 @@ public class NetOverlayTests
         netPlay.netLeavePrompt = true;
 
         // Act
-        overlay.NetCheckKeys(ScanCodes.sc_Y);
+        overlay.NetCheckKeys(ScanCodes.Y);
 
         // Assert
         Assert.That(netPlay.netLeft, Is.True);
         Assert.That(netPlay.netLeavePrompt, Is.False);
-        Assert.That(game.playstate, Is.EqualTo(PlayState.ex_abort));
+        Assert.That(game.playstate, Is.EqualTo(PlayState.Abort));
     }
 
-    [TestCase("sc_N")]
-    [TestCase("sc_Escape")]
+    [TestCase("N")]
+    [TestCase("Escape")]
     public void And_N_Or_Esc_Plays_On(string key)
     {
         // Arrange
@@ -189,7 +189,7 @@ public class NetOverlayTests
 
         // Assert
         Assert.That((netPlay.netLeft, netPlay.netLeavePrompt), Is.EqualTo((false, false)));
-        Assert.That(game.playstate, Is.EqualTo(PlayState.ex_stillplaying));
+        Assert.That(game.playstate, Is.EqualTo(PlayState.StillPlaying));
     }
 
     [Test]
@@ -199,12 +199,12 @@ public class NetOverlayTests
         var (overlay, netPlay, _) = Overlay();
 
         // Act / Assert
-        overlay.NetCheckKeys(ScanCodes.sc_T);
+        overlay.NetCheckKeys(ScanCodes.T);
         Assert.That(overlay.netChatting, Is.True);
 
         overlay.netChatting = false;
         netPlay.netLeavePrompt = true;
-        overlay.NetCheckKeys(ScanCodes.sc_T);
+        overlay.NetCheckKeys(ScanCodes.T);
         Assert.That(overlay.netChatting, Is.False);
     }
 }

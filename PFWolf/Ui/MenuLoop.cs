@@ -234,10 +234,10 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     break;
             }
 
-            if (ci.button0 || input.IsKeyDown(ScanCodes.sc_Space) || input.IsKeyDown(ScanCodes.sc_Enter))
+            if (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
                 exit = 1;
 
-            if (ci.button1 && !input.IsKeyDown(ScanCodes.sc_Alt) || input.IsKeyDown(ScanCodes.sc_Escape))
+            if (ci.button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
                 exit = 2;
 
         }
@@ -389,9 +389,9 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
             }
             else GameEngineManager.DelayMs(5);
         }
-        while (!input.IsKeyDown(ScanCodes.sc_Y) && !input.IsKeyDown(ScanCodes.sc_N) && !input.IsKeyDown(ScanCodes.sc_Escape) && !ci.button0 && !ci.button1);
+        while (!input.IsKeyDown(ScanCodes.Y) && !input.IsKeyDown(ScanCodes.N) && !input.IsKeyDown(ScanCodes.Escape) && !ci.button0 && !ci.button1);
 
-        if (input.IsKeyDown(ScanCodes.sc_Y) || ci.button0)
+        if (input.IsKeyDown(ScanCodes.Y) || ci.button0)
         {
             xit = 1;
             ShootSnd();

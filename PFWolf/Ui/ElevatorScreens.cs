@@ -13,7 +13,7 @@ of the level's hub cluster by game-info floor-number. Arrows (or turning) move t
 space, enter or fire press its button, a number key presses that floor's (0 is floor 10),
 and Esc leaves. A floor the player has been on is open; the next floor up past the highest
 open one opens with the unlock item, used up as it does. Choosing a floor leaves the level
-(ex_warped); the player comes out in the same elevator on the new floor.
+(PlayState.Warped); the player comes out in the same elevator on the new floor.
 
 =============================================================================
 */
@@ -170,26 +170,26 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
             {
                 switch (key)
                 {
-                    case ScanCodes.sc_Escape:
+                    case ScanCodes.Escape:
                         done = true;
                         break;
-                    case ScanCodes.sc_UpArrow:
-                    case ScanCodes.sc_RightArrow:
+                    case ScanCodes.UpArrow:
+                    case ScanCodes.RightArrow:
                         cursor = cursor >= elevator.Buttons ? 1 : cursor + 1;
                         DrawCursor();
                         break;
-                    case ScanCodes.sc_DownArrow:
-                    case ScanCodes.sc_LeftArrow:
+                    case ScanCodes.DownArrow:
+                    case ScanCodes.LeftArrow:
                         cursor = cursor <= 1 ? elevator.Buttons : cursor - 1;
                         DrawCursor();
                         break;
-                    case ScanCodes.sc_Space:
-                    case ScanCodes.sc_Enter:
-                    case ScanCodes.sc_Control:
+                    case ScanCodes.Space:
+                    case ScanCodes.Enter:
+                    case ScanCodes.Control:
                         target = cursor;
                         break;
-                    case >= ScanCodes.sc_1 and <= ScanCodes.sc_0:
-                        target = key - ScanCodes.sc_1 + 1;
+                    case >= ScanCodes.D1 and <= ScanCodes.D0:
+                        target = key - ScanCodes.D1 + 1;
                         cursor = target;
                         DrawCursor();
                         break;
@@ -316,7 +316,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
             {
                 // A key finishes the bars at once, and still counts on the screen (a floor's number)
                 input.ProcessEvents();
-                if (input.GetLastKeyPressed() != ScanCodes.sc_None)
+                if (input.GetLastKeyPressed() != ScanCodes.None)
                     quick = true;
                 if (i % 2 == 0)
                     audio.Play("bs/stats1");
@@ -486,20 +486,20 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
             {
                 switch (key)
                 {
-                    case ScanCodes.sc_Escape:
+                    case ScanCodes.Escape:
                         done = true;
                         break;
-                    case ScanCodes.sc_UpArrow:
-                    case ScanCodes.sc_LeftArrow:
+                    case ScanCodes.UpArrow:
+                    case ScanCodes.LeftArrow:
                         move = -1;
                         break;
-                    case ScanCodes.sc_DownArrow:
-                    case ScanCodes.sc_RightArrow:
+                    case ScanCodes.DownArrow:
+                    case ScanCodes.RightArrow:
                         move = 1;
                         break;
-                    case ScanCodes.sc_Enter:
-                    case ScanCodes.sc_Space:
-                    case ScanCodes.sc_Control:
+                    case ScanCodes.Enter:
+                    case ScanCodes.Space:
+                    case ScanCodes.Control:
                         if (Locked(selected))
                         {
                             if (!string.IsNullOrEmpty(layout.LockedSound))

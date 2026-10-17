@@ -227,7 +227,7 @@ internal sealed class GameScripts(
                 case "angle":
                     self.Angle = (short)(((int)Math.Round(NumberArg(c, 2, 0)) % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES);
                     if (self is not Entities.Actors.Monster and not Entities.Actors.PlayerPawn)
-                        self.Dir = ObjDir.nodir;       // its facing is its angle from now on
+                        self.Dir = ObjDir.NoDir;       // its facing is its angle from now on
                     break;
                 default:
                     throw new LuaRuntimeException(c.State, (LuaValue)$"an actor's {key} can't be set (temp1..temp3, angle, speed, z, translation, faction and follows can)", 1);

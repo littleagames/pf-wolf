@@ -8,9 +8,9 @@ namespace PFWolf.Configuration;
 /// </summary>
 internal readonly record struct ControlAction(int Index)
 {
-    private const int ButtonCount = (int)ButtonType.NUMBUTTONS;
+    private const int ButtonCount = (int)ButtonType.Count;
 
-    public const int Count = ButtonCount + (int)AutomapAction.NUMAUTOMAPKEYS;
+    public const int Count = ButtonCount + (int)AutomapAction.Count;
 
     public static ControlAction Of(ButtonType button) => new((int)button);
     public static ControlAction Of(AutomapAction key) => new(ButtonCount + (int)key);
@@ -18,25 +18,26 @@ internal readonly record struct ControlAction(int Index)
     public static IEnumerable<ControlAction> All => Enumerable.Range(0, Count).Select(i => new ControlAction(i));
 
     public bool IsButton => Index < ButtonCount;
-    public ButtonType Button => IsButton ? (ButtonType)Index : ButtonType.bt_nobutton;
+    public ButtonType Button => IsButton ? (ButtonType)Index : ButtonType.NoButton;
     public bool IsAutomapKey => Index >= ButtonCount;
 
     /// <summary>
-    /// The name controls.cfg and the console use: the enum name, less bt_ for the buttons
-    /// ("attack", "slot1"); the automap keys keep their am_ ("am_zoomin").
+    /// The name controls.cfg and the console use (a file format, so it stays as it was): the
+    /// enum name in lower case for the buttons ("attack", "slot1"), and with am_ before it for the
+    /// automap keys ("am_zoomin").
     /// </summary>
     public string Name => IsButton
-        ? ((ButtonType)Index).ToString()["bt_".Length..]
-        : ((AutomapAction)(Index - ButtonCount)).ToString();
+        ? ((ButtonType)Index).ToString().ToLowerInvariant()
+        : "am_" + ((AutomapAction)(Index - ButtonCount)).ToString().ToLowerInvariant();
 
     // Names the weapon slot keys had before they were generic, still found in older
     // controls.cfg files and menus.
     private static readonly Dictionary<string, ButtonType> OldNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["readyknife"] = ButtonType.bt_slot1,
-        ["readypistol"] = ButtonType.bt_slot2,
-        ["readymachinegun"] = ButtonType.bt_slot3,
-        ["readychaingun"] = ButtonType.bt_slot4,
+        ["readyknife"] = ButtonType.Slot1,
+        ["readypistol"] = ButtonType.Slot2,
+        ["readymachinegun"] = ButtonType.Slot3,
+        ["readychaingun"] = ButtonType.Slot4,
     };
 
     public static bool TryParse(string name, out ControlAction action)
@@ -210,58 +211,58 @@ internal sealed class ControlBindings
 
         // A controller walks, strafes and turns with its sticks (PollJoystickMove); the d-pad
         // walks and turns like the arrow keys.
-        Default(ButtonType.bt_attack, Key(ScanCodes.sc_Control), Mouse(1), Trigger(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT));
-        Default(ButtonType.bt_strafe, Key(ScanCodes.sc_Alt), Mouse(3), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_X));
-        Default(ButtonType.bt_run, Key(ScanCodes.sc_LShift), Trigger(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT));
-        Default(ButtonType.bt_use, Key(ScanCodes.sc_Space), Mouse(2), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_A));
-        Default(ButtonType.bt_slot1, Key(ScanCodes.sc_1));
-        Default(ButtonType.bt_slot2, Key(ScanCodes.sc_2));
-        Default(ButtonType.bt_slot3, Key(ScanCodes.sc_3));
-        Default(ButtonType.bt_slot4, Key(ScanCodes.sc_4));
-        Default(ButtonType.bt_slot5, Key(ScanCodes.sc_5));
-        Default(ButtonType.bt_slot6, Key(ScanCodes.sc_6));
-        Default(ButtonType.bt_slot7, Key(ScanCodes.sc_7));
-        Default(ButtonType.bt_slot8, Key(ScanCodes.sc_8));
-        Default(ButtonType.bt_slot9, Key(ScanCodes.sc_9));
-        Default(ButtonType.bt_slot0, Key(ScanCodes.sc_0));
-        Default(ButtonType.bt_nextweapon, InputCode.WheelDown, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
-        Default(ButtonType.bt_prevweapon, InputCode.WheelUp, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
-        Default(ButtonType.bt_esc, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_START));
-        Default(ButtonType.bt_moveforward, Key(ScanCodes.sc_UpArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_UP));
-        Default(ButtonType.bt_movebackward, Key(ScanCodes.sc_DownArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_DOWN));
-        Default(ButtonType.bt_turnleft, Key(ScanCodes.sc_LeftArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_LEFT));
-        Default(ButtonType.bt_turnright, Key(ScanCodes.sc_RightArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
-        Default(ButtonType.bt_automap, Key(ScanCodes.sc_Tab), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_BACK));
+        Default(ButtonType.Attack, Key(ScanCodes.Control), Mouse(1), Trigger(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT));
+        Default(ButtonType.Strafe, Key(ScanCodes.Alt), Mouse(3), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_X));
+        Default(ButtonType.Run, Key(ScanCodes.LShift), Trigger(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+        Default(ButtonType.Use, Key(ScanCodes.Space), Mouse(2), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_A));
+        Default(ButtonType.Slot1, Key(ScanCodes.D1));
+        Default(ButtonType.Slot2, Key(ScanCodes.D2));
+        Default(ButtonType.Slot3, Key(ScanCodes.D3));
+        Default(ButtonType.Slot4, Key(ScanCodes.D4));
+        Default(ButtonType.Slot5, Key(ScanCodes.D5));
+        Default(ButtonType.Slot6, Key(ScanCodes.D6));
+        Default(ButtonType.Slot7, Key(ScanCodes.D7));
+        Default(ButtonType.Slot8, Key(ScanCodes.D8));
+        Default(ButtonType.Slot9, Key(ScanCodes.D9));
+        Default(ButtonType.Slot0, Key(ScanCodes.D0));
+        Default(ButtonType.NextWeapon, InputCode.WheelDown, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
+        Default(ButtonType.PrevWeapon, InputCode.WheelUp, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+        Default(ButtonType.Esc, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_START));
+        Default(ButtonType.MoveForward, Key(ScanCodes.UpArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_UP));
+        Default(ButtonType.MoveBackward, Key(ScanCodes.DownArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_DOWN));
+        Default(ButtonType.TurnLeft, Key(ScanCodes.LeftArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_LEFT));
+        Default(ButtonType.TurnRight, Key(ScanCodes.RightArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
+        Default(ButtonType.Automap, Key(ScanCodes.Tab), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_BACK));
 
         // A controller looks up and down with its right stick (PollJoystickMove)
-        Default(ButtonType.bt_lookup, Key(ScanCodes.sc_PgUp));
-        Default(ButtonType.bt_lookdown, Key(ScanCodes.sc_PgDn));
-        Default(ButtonType.bt_centerview, Key(ScanCodes.sc_End), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSTICK));
+        Default(ButtonType.LookUp, Key(ScanCodes.PgUp));
+        Default(ButtonType.LookDown, Key(ScanCodes.PgDn));
+        Default(ButtonType.CenterView, Key(ScanCodes.End), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSTICK));
 
         // Only does anything with a status bar radar (Planet Strike's); the automap's zoom keys
         // are its own while the map is open
-        Default(ButtonType.bt_radarzoomin, Key(ScanCodes.sc_Equal));
-        Default(ButtonType.bt_radarzoomout, Key(ScanCodes.sc_Minus));
+        Default(ButtonType.RadarZoomIn, Key(ScanCodes.Equal));
+        Default(ButtonType.RadarZoomOut, Key(ScanCodes.Minus));
 
         // Only does anything with a weapon that has a magazine (weapon.magazine)
-        Default(ButtonType.bt_reload, Key(ScanCodes.sc_R), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_Y));
+        Default(ButtonType.Reload, Key(ScanCodes.R), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_Y));
         // Only does anything with a weapon that has a scope (weapon.zoom)
-        Default(ButtonType.bt_zoom, Key(ScanCodes.sc_Z), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSTICK));
+        Default(ButtonType.Zoom, Key(ScanCodes.Z), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSTICK));
 
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
             Add(ControlAction.Of((AutomapAction)i), Key(DefaultAutomapKeys[i]));
 
         // While the map is open the wheel zooms it rather than changing weapons (see InputPolling.IsControlDown)
-        Add(ControlAction.Of(AutomapAction.am_zoomin), InputCode.WheelUp);
-        Add(ControlAction.Of(AutomapAction.am_zoomout), InputCode.WheelDown);
+        Add(ControlAction.Of(AutomapAction.ZoomIn), InputCode.WheelUp);
+        Add(ControlAction.Of(AutomapAction.ZoomOut), InputCode.WheelDown);
     }
 
     private static readonly ScanCodes[] DefaultAutomapKeys =
     [
-        ScanCodes.sc_Equal, ScanCodes.sc_Minus,
-        ScanCodes.sc_KeyPad8, ScanCodes.sc_KeyPad2, ScanCodes.sc_KeyPad4, ScanCodes.sc_KeyPad6,
-        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V, ScanCodes.sc_O, ScanCodes.sc_G,
-        ScanCodes.sc_S,
+        ScanCodes.Equal, ScanCodes.Minus,
+        ScanCodes.KeyPad8, ScanCodes.KeyPad2, ScanCodes.KeyPad4, ScanCodes.KeyPad6,
+        ScanCodes.C, ScanCodes.F, ScanCodes.R, ScanCodes.V, ScanCodes.O, ScanCodes.G,
+        ScanCodes.S,
     ];
 
     /*
@@ -303,19 +304,19 @@ internal sealed class ControlBindings
                 Add(action, code);
         }
 
-        ButtonType[] movement = [ButtonType.bt_moveforward, ButtonType.bt_turnright, ButtonType.bt_movebackward, ButtonType.bt_turnleft];
+        ButtonType[] movement = [ButtonType.MoveForward, ButtonType.TurnRight, ButtonType.MoveBackward, ButtonType.TurnLeft];
         for (int i = 0; i < Math.Min(dirScan.Length, movement.Length); i++)
             SetKey(ControlAction.Of(movement[i]), dirScan[i]);
 
         // Its keys for the movement buttons were always blank; the movement keys above stand for them
-        for (int i = 0; i < buttonScan.Length && i < (int)ButtonType.bt_automap; i++)
+        for (int i = 0; i < buttonScan.Length && i < (int)ButtonType.Automap; i++)
         {
             if (Array.IndexOf(movement, (ButtonType)i) < 0)
                 SetKey(ControlAction.Of((ButtonType)i), buttonScan[i]);
         }
 
         if (automapKey is ScanCodes key)
-            SetKey(ControlAction.Of(ButtonType.bt_automap), key);
+            SetKey(ControlAction.Of(ButtonType.Automap), key);
 
         for (int i = 0; i < Math.Min(automapKeys?.Length ?? 0, DefaultAutomapKeys.Length); i++)
             SetKey(ControlAction.Of((AutomapAction)i), automapKeys![i]);
@@ -347,11 +348,11 @@ internal sealed class ControlBindings
     // The old layout's 32 joystick buttons: these ten, then the rest unbound
     private static readonly ButtonType[] LegacyJoyDefaults =
     [
-        ButtonType.bt_attack, ButtonType.bt_strafe, ButtonType.bt_use, ButtonType.bt_run,
-        ButtonType.bt_strafeleft, ButtonType.bt_straferight, ButtonType.bt_esc, ButtonType.bt_pause,
-        ButtonType.bt_prevweapon, ButtonType.bt_nextweapon,
-        .. Enumerable.Repeat(ButtonType.bt_nobutton, 22),
+        ButtonType.Attack, ButtonType.Strafe, ButtonType.Use, ButtonType.Run,
+        ButtonType.StrafeLeft, ButtonType.StrafeRight, ButtonType.Esc, ButtonType.Pause,
+        ButtonType.PrevWeapon, ButtonType.NextWeapon,
+        .. Enumerable.Repeat(ButtonType.NoButton, 22),
     ];
 
-    private static bool IsLegacyButton(ButtonType button) => button >= 0 && button < ButtonType.NUMBUTTONS;
+    private static bool IsLegacyButton(ButtonType button) => button >= 0 && button < ButtonType.Count;
 }

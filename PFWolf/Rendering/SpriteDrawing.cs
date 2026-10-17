@@ -188,7 +188,7 @@ internal sealed class SpriteDrawing(
             angle = (viewangle - 180) - ob.Angle;
         else if (AimAngle(ob) is { } facing)
             angle = (viewangle - 180) - facing;
-        else if (ob.Dir == ObjDir.nodir)
+        else if (ob.Dir == ObjDir.NoDir)
             return 1;                                   // facing no way: toward whoever looks
         else
             angle = (viewangle - 180) - GameConstants.dirangle[(byte)ob.Dir];
@@ -273,7 +273,7 @@ internal sealed class SpriteDrawing(
             // the tile-snapped, always-front-facing path decorations/pickups use below.
             // Projectiles and their smoke/explosions (spawned Active by SpawnAtActor) fly
             // between tiles too, so they take the same path.
-            if (actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.ac_yes)
+            if (actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.Yes)
             {
                 var atx = actor.TileX;
                 var aty = actor.TileY;
@@ -291,14 +291,14 @@ internal sealed class SpriteDrawing(
                     || Seen(atx - 1, aty + 1)
                     || Seen(atx + 1, aty + 1)))
                 {
-                    actor.RuntimeFlags &= ~ObjFlags.FL_VISABLE;
+                    actor.RuntimeFlags &= ~ObjFlags.Visible;
                     continue;
                 }
 
                 // Once near enough to the view, an enemy is awake for good (MapManager.DoActor);
                 // with others, what they see wakes it instead (WakeSeenEnemies)
                 if (actor is Entities.Actors.Monster && session.gamemode == GameMode.Single)
-                    actor.Active = ActiveType.ac_yes;
+                    actor.Active = ActiveType.Yes;
 
                 // Too close or far away to draw: as the original, it keeps whether it was
                 // on screen last frame (enemy aim reads that)
@@ -306,7 +306,7 @@ internal sealed class SpriteDrawing(
                 if (actor.ViewHeight == 0)
                     continue;
 
-                actor.RuntimeFlags |= ObjFlags.FL_VISABLE;
+                actor.RuntimeFlags |= ObjFlags.Visible;
 
                 var sprite = hooks.DrawnSprite(actor);                        // a player's body shows their weapon
                 visptr_val.shapenum = ActorShapeName(sprite, actor.CurrentState.FrameLetter, actor);
@@ -330,7 +330,7 @@ internal sealed class SpriteDrawing(
                 continue;
             }
 
-            visptr_val.shapenum = actor.CurrentState.GetShapeName(ObjDir.nodir);
+            visptr_val.shapenum = actor.CurrentState.GetShapeName(ObjDir.NoDir);
 
             // A panel (GameHost.cs) is drawn column by column, clipped per column,
             // so it's placed by its own geometry rather than as a billboard in its tile.

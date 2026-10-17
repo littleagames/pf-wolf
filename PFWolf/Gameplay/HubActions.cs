@@ -24,7 +24,7 @@ internal sealed record HubActionsHooks(
 /// space, enter or fire press its button, a number key presses that floor's (0 is floor 10),
 /// and Esc leaves. A floor the player has been on is open; the next floor up past the highest
 /// open one opens with the unlock item, used up as it does. Choosing a floor leaves the level
-/// (ex_warped); the player comes out in the same elevator on the new floor.
+/// (Warped); the player comes out in the same elevator on the new floor.
 /// <para/>
 /// Planet Strike's way between floors (bstone's ps_input_floor): its teleporter wall runs
 /// A_FloorSelect as the elevator's does, and an elevator.yaml with `style: teleporter` shows
@@ -95,7 +95,7 @@ internal sealed class HubActions(
             ? new PendingMapChange(map, false, 0, 0, 0, WaitTics: 0)
             : new PendingMapChange(map, true, session.player.X, session.player.Y, session.player.Angle, WaitTics: 0, ElevatorWall: panelWall));
         session.gamestate.mapon = map;
-        session.playstate = PlayState.ex_warped;
+        session.playstate = PlayState.Warped;
         return true;
     }
 
@@ -131,7 +131,7 @@ internal sealed class HubActions(
 
             hooks.SetPendingMapChange(new PendingMapChange(map, true, session.player.X, session.player.Y, session.player.Angle, WaitTics: 0));
             session.gamestate.mapon = map;
-            session.playstate = PlayState.ex_warped;
+            session.playstate = PlayState.Warped;
             return true;
         }
 
@@ -185,9 +185,9 @@ internal sealed class HubActions(
             // either hand, then ahead
             (int dx, int dy)[] order = trigger.Dir switch
             {
-                ControlDir.di_east => [(-1, 0), (0, -1), (0, 1), (1, 0)],
-                ControlDir.di_north => [(0, 1), (1, 0), (-1, 0), (0, -1)],
-                ControlDir.di_west => [(1, 0), (0, -1), (0, 1), (-1, 0)],
+                ControlDir.East => [(-1, 0), (0, -1), (0, 1), (1, 0)],
+                ControlDir.North => [(0, 1), (1, 0), (-1, 0), (0, -1)],
+                ControlDir.West => [(1, 0), (0, -1), (0, 1), (-1, 0)],
                 _ => [(0, -1), (1, 0), (-1, 0), (0, 1)],
             };
             var spot = order.Select(d => (X: to.X + d.dx, Y: to.Y + d.dy))
@@ -253,7 +253,7 @@ internal sealed class HubActions(
         var runner = mapManager.SpawnAtActor(args[0], session.player);
         if (runner == null)
         {
-            session.playstate = PlayState.ex_victorious;
+            session.playstate = PlayState.Victorious;
             return true;
         }
 
@@ -297,7 +297,7 @@ internal sealed class HubActions(
         }
 
         if (blocked || Math.Abs(ob.TileX - ob.Temp1) >= 6 || Math.Abs(ob.TileY - ob.Temp3) >= 6)
-            session.playstate = PlayState.ex_victorious;
+            session.playstate = PlayState.Victorious;
     }
 
     /// <summary>Turns the view to <paramref name="destAngle"/> at <paramref name="speed"/> degrees a tic, drawing as it goes</summary>

@@ -210,14 +210,14 @@ public class WeaponInHandTests
         var rig = new Rig("Pistol") { InHand = "Pistol" };
         rig.Inventory.Give("Clip", 8);
         var sprite = rig.Sprite;
-        rig.Session.playerinput.SetPressed(ButtonType.bt_attack, true);
+        rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act
         rig.Hand.A_WeaponReady(sprite);
 
         // Assert
         Assert.That(sprite.CurrentState!.StateName, Is.EqualTo("Fire"));
-        Assert.That(rig.Session.playerinput.IsFreshPress(ButtonType.bt_attack), Is.False);
+        Assert.That(rig.Session.playerinput.IsFreshPress(ButtonType.Attack), Is.False);
     }
 
     [Test]
@@ -262,7 +262,7 @@ public class WeaponInHandTests
         var rig = new Rig("Pistol", "MachineGun") { InHand = "MachineGun" };
         rig.Inventory.Give("Clip", 8);
         var gun = rig.Sprite;
-        rig.Session.playerinput.SetPressed(ButtonType.bt_attack, true);
+        rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act / Assert: the machine gun has a Hold state
         rig.Hand.A_ReFire(gun);
@@ -280,7 +280,7 @@ public class WeaponInHandTests
         // Arrange
         var rig = new Rig("MachineGun") { InHand = "MachineGun" };
         var gun = rig.Sprite;
-        rig.Session.playerinput.SetPressed(ButtonType.bt_attack, true);
+        rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act: pressed, but no ammo
         rig.Hand.A_ReFire(gun);
@@ -297,7 +297,7 @@ public class WeaponInHandTests
         var weapon = rig.Sprite;
         WeaponInHand.JumpWeaponState(weapon, "Reload");
         rig.Session.tics = 3;
-        rig.Session.playerinput.SetPressed(ButtonType.bt_attack, true);
+        rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act / Assert: held, it goes up a tic's worth each time and back to Fire
         rig.Hand.A_HoldCharge(weapon, ["Fire"]);
@@ -309,7 +309,7 @@ public class WeaponInHandTests
 
         // let go: it stays where it is
         WeaponInHand.JumpWeaponState(weapon, "Reload");
-        rig.Session.playerinput.SetPressed(ButtonType.bt_attack, false);
+        rig.Session.playerinput.SetPressed(ButtonType.Attack, false);
         rig.Hand.A_HoldCharge(weapon, ["Fire"]);
         Assert.That(weapon.CurrentState!.StateName, Is.EqualTo("Reload"));
     }
@@ -322,7 +322,7 @@ public class WeaponInHandTests
         rig.Inventory.Give("RifleMag", 5);
         var rifle = rig.Sprite;
         rig.Session.playerstate.ZoomMode = ZoomMode.Zoomed;
-        rig.Session.playerinput.SetPressed(ButtonType.bt_attack, true);
+        rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
 
         // Act
         rig.Hand.A_WeaponReady(rifle);
@@ -355,18 +355,18 @@ public class WeaponInHandTests
         rig.Inventory.Give("Clip", 3);
         rig.Inventory.Give("RifleMag", 4);
         var rifle = rig.Sprite;
-        rig.Session.playerinput.SetPressed(ButtonType.bt_reload, true);
+        rig.Session.playerinput.SetPressed(ButtonType.Reload, true);
 
         // Act / Assert
         rig.Hand.A_WeaponReady(rifle);
         Assert.That(rifle.CurrentState!.StateName, Is.EqualTo(WeaponInHand.ReloadState));
-        Assert.That(rig.Session.playerinput.IsFreshPress(ButtonType.bt_reload), Is.False);
+        Assert.That(rig.Session.playerinput.IsFreshPress(ButtonType.Reload), Is.False);
 
         // full: reload does nothing, fire fires
         rig.Inventory.Give("RifleMag", 1);
         WeaponInHand.JumpWeaponState(rifle, WeaponInHand.WeaponReadyState);
-        rig.Session.playerinput.SetHeld(ButtonType.bt_reload, false);
-        rig.Session.playerinput.SetPressed(ButtonType.bt_attack, true);
+        rig.Session.playerinput.SetHeld(ButtonType.Reload, false);
+        rig.Session.playerinput.SetPressed(ButtonType.Attack, true);
         rig.Hand.A_WeaponReady(rifle);
         Assert.That(rifle.CurrentState!.StateName, Is.EqualTo("Fire"));
     }

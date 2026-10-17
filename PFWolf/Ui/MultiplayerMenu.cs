@@ -126,7 +126,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         while (!check.IsCompleted)
         {
             input.ProcessEvents();
-            if (input.IsKeyDown(ScanCodes.sc_Escape))
+            if (input.IsKeyDown(ScanCodes.Escape))
             {
                 cancel.Cancel();
                 input.ClearKeysDown();
@@ -440,7 +440,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         {
             session.Poll();
             input.ProcessEvents();
-            if (input.IsKeyDown(ScanCodes.sc_Escape))
+            if (input.IsKeyDown(ScanCodes.Escape))
             {
                 input.ClearKeysDown();
                 session.Dispose();

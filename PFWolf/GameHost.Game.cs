@@ -109,8 +109,8 @@ internal static partial class GameHost
         levelRecords.Record(map, result);
         gameScripts.RunLevelEndHooks(map, result, how switch
         {
-            PlayState.ex_secretlevel => "secret",
-            PlayState.ex_victorious => "victory",
+            PlayState.SecretLevel => "secret",
+            PlayState.Victorious => "victory",
             _ => "exit",
         });
     }

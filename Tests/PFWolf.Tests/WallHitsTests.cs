@@ -18,13 +18,13 @@ public class WallHitsTests
         _hits = new WallHits(null!, null!, null!, null!, null!, _render, new GameSession());
     }
 
-    [TestCase("SolidNE", "di_east", true)]
-    [TestCase("SolidNE", "di_north", true)]
-    [TestCase("SolidNE", "di_west", false)]
-    [TestCase("SolidNE", "di_south", false)]
-    [TestCase("SolidSW", "di_west", true)]
-    [TestCase("SolidSW", "di_south", true)]
-    [TestCase("SolidNW", "di_east", false)]
+    [TestCase("SolidNE", "East", true)]
+    [TestCase("SolidNE", "North", true)]
+    [TestCase("SolidNE", "West", false)]
+    [TestCase("SolidNE", "South", false)]
+    [TestCase("SolidSW", "West", true)]
+    [TestCase("SolidSW", "South", true)]
+    [TestCase("SolidNW", "East", false)]
     public void A_Diagonals_Solid_Edges_Are_The_Two_On_Its_Solid_Side(string shape, string edge, bool solid)
     {
         Assert.That(_hits.IsSolidEdge(Enum.Parse<WallShape>(shape), Enum.Parse<ControlDir>(edge)), Is.EqualTo(solid));

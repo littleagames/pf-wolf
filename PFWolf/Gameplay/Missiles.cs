@@ -348,7 +348,7 @@ internal sealed class Missiles(
     internal bool IsSolidForBlast(int x, int y) => map.actorat[x, y] switch
     {
         Wall => true,
-        Door door => door.door < 0 || doors.doorobjlist[door.door].action != DoorAction.dr_open,
+        Door door => door.door < 0 || doors.doorobjlist[door.door].action != DoorAction.Open,
         _ => map.tilemap[x, y] != 0 && (map.tilemap[x, y] & GameConstants.BIT_DOOR) == 0,
     };
 
@@ -377,7 +377,7 @@ internal sealed class Missiles(
         double distance = args.Length > 1 && double.TryParse(args[1], System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out var r) ? r : 1;
         int chance = args.Length > 2 && int.TryParse(args[2], out var c) ? c : 16;
-        if (damage <= 0 || (session.playstate == PlayState.ex_died) || session.random.RndT() >= chance)
+        if (damage <= 0 || (session.playstate == PlayState.Died) || session.random.RndT() >= chance)
             return;
 
         var player = session.player;

@@ -51,23 +51,23 @@ public class PlayKeysTests
     public void A_Bound_Key_Runs_Its_Command()
     {
         // Arrange
-        _console.Bind(InputCode.FromKey(ScanCodes.sc_K), "bound_k");
-        Press(ScanCodes.sc_K);
+        _console.Bind(InputCode.FromKey(ScanCodes.K), "bound_k");
+        Press(ScanCodes.K);
 
         // Act
         _keys.CheckKeys();
 
         // Assert: then, with others, the key goes on to the game's own keys
         Assert.That(Ran("bound_k"), Is.True);
-        Assert.That(_calls, Is.EqualTo(new[] { $"net {ScanCodes.sc_K}" }));
+        Assert.That(_calls, Is.EqualTo(new[] { $"net {ScanCodes.K}" }));
     }
 
     [Test]
     public void Binds_Dont_Run_While_Recording_A_Demo()
     {
         _session.demorecord = true;
-        _console.Bind(InputCode.FromKey(ScanCodes.sc_K), "bound_k");
-        Press(ScanCodes.sc_K);
+        _console.Bind(InputCode.FromKey(ScanCodes.K), "bound_k");
+        Press(ScanCodes.K);
 
         _keys.CheckKeys();
 
@@ -78,8 +78,8 @@ public class PlayKeysTests
     public void While_A_Demo_Plays_Keys_Are_Thrown_Away_Not_Kept_For_Later()
     {
         // Arrange
-        _console.Bind(InputCode.FromKey(ScanCodes.sc_K), "bound_k");
-        Press(ScanCodes.sc_K);
+        _console.Bind(InputCode.FromKey(ScanCodes.K), "bound_k");
+        Press(ScanCodes.K);
         _session.demoplayback = true;
 
         // Act: the demo ends, and the next frame's keys are checked
@@ -94,7 +94,7 @@ public class PlayKeysTests
     [Test]
     public void The_Grave_Key_Opens_The_Console_And_Nothing_Else_That_Frame()
     {
-        Press(ScanCodes.sc_Grave);
+        Press(ScanCodes.Grave);
 
         _keys.CheckKeys();
 
@@ -106,7 +106,7 @@ public class PlayKeysTests
     public void Not_While_Recording_A_Demo()
     {
         _session.demorecord = true;
-        Press(ScanCodes.sc_Grave);
+        Press(ScanCodes.Grave);
 
         _keys.CheckKeys();
 
@@ -127,8 +127,8 @@ public class PlayKeysTests
     public void While_Chatting_The_Keys_Are_The_Chat_Lines()
     {
         _chatting = true;
-        _console.Bind(InputCode.FromKey(ScanCodes.sc_K), "bound_k");
-        Press(ScanCodes.sc_K);
+        _console.Bind(InputCode.FromKey(ScanCodes.K), "bound_k");
+        Press(ScanCodes.K);
 
         _keys.CheckKeys();
 
@@ -140,8 +140,8 @@ public class PlayKeysTests
     public void The_Automaps_Own_Keys_Come_Before_Binds()
     {
         _automapTakes = true;
-        _console.Bind(InputCode.FromKey(ScanCodes.sc_K), "bound_k");
-        Press(ScanCodes.sc_K);
+        _console.Bind(InputCode.FromKey(ScanCodes.K), "bound_k");
+        Press(ScanCodes.K);
 
         _keys.CheckKeys();
 
@@ -151,7 +151,7 @@ public class PlayKeysTests
     [Test]
     public void The_Automap_Button_Opens_The_Automap()
     {
-        _input.SetButtonPressed(ButtonType.bt_automap, true);
+        _input.SetButtonPressed(ButtonType.Automap, true);
 
         _keys.CheckKeys();
 

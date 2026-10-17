@@ -312,7 +312,7 @@ internal sealed class AutomapDrawing(
             if (!seen)
                 continue;
 
-            string color = graphic && AutomapSpriteColor(actor.CurrentState.GetShapeName(ObjDir.nodir)) is { } index
+            string color = graphic && AutomapSpriteColor(actor.CurrentState.GetShapeName(ObjDir.NoDir)) is { } index
                 ? index.ToString()
                 : AutomapColor("AutomapWallSprite");
 
@@ -373,20 +373,20 @@ internal sealed class AutomapDrawing(
 
         if (actor.ResolvedStates.ContainsKey("Chase"))
         {
-            bool dead = (actor.RuntimeFlags & ObjFlags.FL_SHOOTABLE) == 0 && (actor.RuntimeFlags & ObjFlags.FL_NONMARK) != 0;
+            bool dead = (actor.RuntimeFlags & ObjFlags.Shootable) == 0 && (actor.RuntimeFlags & ObjFlags.NonMark) != 0;
             if (dead)
                 return floorSeen ? AutomapMark.Corpse : AutomapMark.None;
 
             // The player's own side (factions.yaml) in its own color; one following them is
             // always shown, wherever it is
             if (factions.IsAlly(actor, session.player))
-                return reveal || (actor.RuntimeFlags & ObjFlags.FL_VISABLE) != 0
+                return reveal || (actor.RuntimeFlags & ObjFlags.Visible) != 0
                     || actor is Entities.Actors.Monster { Follows: true } ? AutomapMark.Ally : AutomapMark.None;
 
-            return reveal || (actor.RuntimeFlags & ObjFlags.FL_VISABLE) != 0 ? AutomapMark.Enemy : AutomapMark.None;
+            return reveal || (actor.RuntimeFlags & ObjFlags.Visible) != 0 ? AutomapMark.Enemy : AutomapMark.None;
         }
 
-        if (actor.Active == ActiveType.ac_yes || actor.CurrentState.Sprite == "TNT1")
+        if (actor.Active == ActiveType.Yes || actor.CurrentState.Sprite == "TNT1")
             return AutomapMark.None;                            // projectiles, smoke, patrol points
 
         if (!floorSeen)
@@ -822,7 +822,7 @@ internal sealed class AutomapDrawing(
         var state = actor.CurrentState!;
         string shape = spriteDrawing.HasDirectionalSprites(state.Sprite, state.FrameLetter)
             ? spriteDrawing.FrontShapeName(state.Sprite, state.FrameLetter)
-            : state.GetShapeName(ObjDir.nodir);
+            : state.GetShapeName(ObjDir.NoDir);
 
         var sprite = FindAutomapSprite(shape);
         if (sprite == null)

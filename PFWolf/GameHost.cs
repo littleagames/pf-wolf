@@ -300,7 +300,7 @@ internal static partial class GameHost
         titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(
                 DemoExists,
-                demonumber => { PlayDemo(demonumber); return playstate == PlayState.ex_abort; },
+                demonumber => { PlayDemo(demonumber); return playstate == PlayState.Abort; },
                 ClearMargins,
                 DrawHighScores,
                 DrawTitle,
@@ -471,7 +471,7 @@ internal static partial class GameHost
         // HOLDING DOWN 'M' KEY?
         //
 
-        if (_inputManager.IsKeyDown(ScanCodes.sc_M))
+        if (_inputManager.IsKeyDown(ScanCodes.M))
         {
             DoJukebox();
             didjukebox = true;

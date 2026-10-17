@@ -103,13 +103,13 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             // MOVE AROUND
             //
             int moved = state.Row, last = state.Rows.Count - 1;
-            if (input.IsKeyDown(ScanCodes.sc_PgUp))
+            if (input.IsKeyDown(ScanCodes.PgUp))
                 moved = Math.Max(state.Row - (LS_ROWS - 1), 0);
-            else if (input.IsKeyDown(ScanCodes.sc_PgDn))
+            else if (input.IsKeyDown(ScanCodes.PgDn))
                 moved = Math.Min(state.Row + (LS_ROWS - 1), last);
-            else if (input.IsKeyDown(ScanCodes.sc_Home))
+            else if (input.IsKeyDown(ScanCodes.Home))
                 moved = 0;
-            else if (input.IsKeyDown(ScanCodes.sc_End))
+            else if (input.IsKeyDown(ScanCodes.End))
                 moved = last;
             else if (ci.dir == Direction.North)
                 moved = state.Row > 0 ? state.Row - 1 : last;
@@ -145,13 +145,13 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             //
             // NEWEST FIRST OR BY NAME
             //
-            if (ci.button2 || input.IsKeyDown(ScanCodes.sc_Tab))
+            if (ci.button2 || input.IsKeyDown(ScanCodes.Tab))
             {
                 saveListByName = !saveListByName;
                 audio.Play("menu/move1");
                 FillSaveRows(state, state.Selected?.Path);
                 DrawLoadSaveScreen(state);
-                while (input.IsKeyDown(ScanCodes.sc_Tab))
+                while (input.IsKeyDown(ScanCodes.Tab))
                     input.ProcessEvents();
                 menuInput.WaitKeyUp();
                 continue;
@@ -161,7 +161,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             // DELETE A SAVE
             //
             if (state.Selected is { } doomed
-                && (ci.button3 || input.IsKeyDown(ScanCodes.sc_Delete) || input.IsKeyDown(ScanCodes.sc_BackSpace)))
+                && (ci.button3 || input.IsKeyDown(ScanCodes.Delete) || input.IsKeyDown(ScanCodes.BackSpace)))
             {
                 if (loop.Confirm(string.Format("$STR_LS_DELETE".ToLanguageText(language), NameForConfirm(doomed.Name))) != 0)
                 {
@@ -189,7 +189,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             //
             // LOAD OR SAVE
             //
-            if (ci.button0 || input.IsKeyDown(ScanCodes.sc_Space) || input.IsKeyDown(ScanCodes.sc_Enter))
+            if (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
             {
                 menuInput.WaitKeyUp();
                 bool done = saving ? SaveFromScreen(state) : LoadFromScreen(state);
@@ -206,7 +206,7 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
             //
             // DONE
             //
-            if (ci.button1 && !input.IsKeyDown(ScanCodes.sc_Alt) || input.IsKeyDown(ScanCodes.sc_Escape))
+            if (ci.button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
             {
                 audio.Play("menu/escape");
                 break;

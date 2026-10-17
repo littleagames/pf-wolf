@@ -104,9 +104,9 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             // MOVE AROUND
             //
             int moved = row, movedCol = col;
-            if (input.IsKeyDown(ScanCodes.sc_PgUp) || input.IsKeyDown(ScanCodes.sc_PgDn))
+            if (input.IsKeyDown(ScanCodes.PgUp) || input.IsKeyDown(ScanCodes.PgDn))
             {
-                int step = input.IsKeyDown(ScanCodes.sc_PgUp) ? -1 : 1;
+                int step = input.IsKeyDown(ScanCodes.PgUp) ? -1 : 1;
                 for (int i = 0; i < CUS_ROWS - 1; i++)
                     moved = NextCustomRow(rows, moved, step, wrap: false);
             }
@@ -137,7 +137,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             //
             // CHANGE A SLOT, OR RESET THEM ALL
             //
-            if (ci.button0 || input.IsKeyDown(ScanCodes.sc_Space) || input.IsKeyDown(ScanCodes.sc_Enter))
+            if (ci.button0 || input.IsKeyDown(ScanCodes.Space) || input.IsKeyDown(ScanCodes.Enter))
             {
                 menuInput.WaitKeyUp();
 
@@ -159,7 +159,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             // CLEAR A SLOT
             //
             if (current.Kind == CustomRowKind.Control
-                && (ci.button3 || input.IsKeyDown(ScanCodes.sc_Delete) || input.IsKeyDown(ScanCodes.sc_BackSpace)))
+                && (ci.button3 || input.IsKeyDown(ScanCodes.Delete) || input.IsKeyDown(ScanCodes.BackSpace)))
             {
                 if (!controls[current.Action, col].IsNone)
                 {
@@ -177,7 +177,7 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
             //
             // DONE
             //
-            if (ci.button1 && !input.IsKeyDown(ScanCodes.sc_Alt) || input.IsKeyDown(ScanCodes.sc_Escape))
+            if (ci.button1 && !input.IsKeyDown(ScanCodes.Alt) || input.IsKeyDown(ScanCodes.Escape))
                 break;
         }
 
@@ -287,9 +287,9 @@ internal sealed class CustomizeControlsScreen(AssetManager assets, InputManager 
 
             while (input.TryTakePressedKey(out var key))
             {
-                if (key == ScanCodes.sc_Escape)
+                if (key == ScanCodes.Escape)
                     return InputCode.None;
-                if (!controller && key != ScanCodes.sc_Grave)
+                if (!controller && key != ScanCodes.Grave)
                     return InputCode.FromKey(key);
             }
 

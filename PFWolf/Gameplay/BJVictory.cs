@@ -17,7 +17,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
     }
 
     // Ends the game in victory (the Angel of Death's last death frame)
-    internal void A_Victory(Entities.Actors.Actor ob) => session.playstate = PlayState.ex_victorious;
+    internal void A_Victory(Entities.Actors.Actor ob) => session.playstate = PlayState.Victorious;
 
     /*
     ===============
@@ -81,7 +81,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
 
     internal void T_BJDone(Entities.Actors.Actor ob)
     {
-        session.playstate = PlayState.ex_victorious;                            // exit castle tile
+        session.playstate = PlayState.Victorious;                            // exit castle tile
     }
 
 
@@ -102,7 +102,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
         // SpawnNewObj started every actor a random number of tics into its first frame.
         bj.TicCount = map.SpawnTicCount(bj.CurrentState);
 
-        bj.Dir = ObjDir.north;
+        bj.Dir = ObjDir.North;
         bj.Temp1 = 6;                      // tiles to run forward
     }
 }

@@ -64,10 +64,10 @@ internal sealed class QuickKeys(
             //
             // END GAME
             //
-            case ScanCodes.sc_F7:
+            case ScanCodes.F7:
                 if (loop.Confirm("$ENDGAMESTR".ToLanguageText(language), GameConstants.MAXY) != 0)
                 {
-                    session.playstate = PlayState.ex_died;
+                    session.playstate = PlayState.Died;
                     session.playerstate.LastAttacker = null;
                     session.playerstate.lives = 0;
                 }
@@ -78,7 +78,7 @@ internal sealed class QuickKeys(
             // QUICKSAVE
             //
             // Always the quicksave file, never a save picked in the menus
-            case ScanCodes.sc_F8:
+            case ScanCodes.F8:
                 draw.Message("$STR_SAVING".ToLanguageText(language) + "...", GameConstants.MAXY);
                 gameSaves.RunSaveGame(1);
                 return 1;
@@ -87,7 +87,7 @@ internal sealed class QuickKeys(
             // QUICKLOAD
             //
             // The quicksave, or the load screen until there is one
-            case ScanCodes.sc_F9:
+            case ScanCodes.F9:
                 if (File.Exists(gameSaves.QuickSavePath))
                 {
                     if (loop.Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), GameConstants.MAXY) != 0)
@@ -111,7 +111,7 @@ internal sealed class QuickKeys(
                         music.ContinueMusic(session.lastgamemusicoffset);
 
                     if (session.loadedgame)
-                        session.playstate = PlayState.ex_abort;
+                        session.playstate = PlayState.Abort;
 
                     frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
 
@@ -122,7 +122,7 @@ internal sealed class QuickKeys(
             //
             // QUIT
             //
-            case ScanCodes.sc_F10:
+            case ScanCodes.F10:
                 string endStr = ControlPanel.PickEndString(gameInfo.EndStrings, hooks.UiRandom);
                 if (loop.Confirm(endStr, GameConstants.MAXY) != 0)
                 {
