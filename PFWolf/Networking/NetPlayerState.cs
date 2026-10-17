@@ -30,6 +30,8 @@ internal static class NetPlayerState
         bw.Write(p.Kills);
         bw.Write(p.Team);
         bw.Write(p.Objective);
+        bw.Write(p.Disguise ?? "");
+        bw.Write(p.RoleClass ?? "");
         bw.Write(p.Items.Count);
         foreach (var (item, count) in p.Items)
         {
@@ -82,6 +84,8 @@ internal static class NetPlayerState
         p.Kills = br.ReadInt32();
         p.Team = br.ReadInt32();
         p.Objective = br.ReadInt32();
+        p.Disguise = NullIfEmpty(br.ReadString());
+        p.RoleClass = NullIfEmpty(br.ReadString());
         for (int i = br.ReadInt32(); i > 0; i--)
             p.Items[br.ReadString()] = br.ReadInt32();
         p.ThrustSpeed = br.ReadInt32();

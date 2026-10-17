@@ -216,7 +216,8 @@ internal static partial class GameHost
     static PlayerUse MakePlayerUse() =>
         new(MapManager, AudioManager, InventoryManager, doors, LevelAI, TimedSwitches, Session,
             new PlayerUseHooks(PlayPlayerSound, () => MountedWeapons.TryDismount(),
-                (objective, amount) => Objectives.Complete(objective, amount), () => Objectives.ExitAllowed()));
+                (objective, amount) => Objectives.Complete(objective, amount), () => Objectives.ExitAllowed(),
+                () => deathmatch.Objective?.PlayerUse() == true));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);

@@ -31,7 +31,7 @@ internal sealed class PlayerCommands(
             "addplayer [class]", AddPlayerCommand, Cheat | InLevel, complete: (_, i) => i == 0 ? classes.PlayerClasses() : []);
         console.Register("controlplayer", "Makes another player yours: your view, status bar and controls.",
             "controlplayer <n>", ControlPlayerCommand, Cheat | InLevel);
-        console.Register("gamemode", "Shows or sets how the players play together: co-op, deathmatch, or a team mode (team-deathmatch, ctf, heist, domination, king-of-the-hill) or horde.",
+        console.Register("gamemode", "Shows or sets how the players play together: co-op, deathmatch, or a team mode (team-deathmatch, ctf, heist, domination, king-of-the-hill, prop-hunt) or horde.",
             "gamemode [mode [scorelimit]]", GameModeCommand, Cheat | InLevel, complete: (_, i) => i == 0 ? GameModes.NetModes.Select(m => m.Id()).ToList() : []);
         console.Register("match", "Shows the match being played: the mode, the score, the time left and the objective (whose flag's where, the wave).",
             "match", MatchCommand, InLevel);

@@ -133,7 +133,8 @@ internal static partial class GameHost
             (x, y) => playersManager.IsOpenFloor(x, y),
             (x, y) => playersManager.IsFreeFloor(x, y),
             name => TranslationManager.Exists(name) ? name : null,
-            name => AudioManager.Play(name));
+            name => AudioManager.Play(name),
+            Rearm);
         deathmatch.MatchObjectives.AddRange(
         [
             new Gameplay.MatchModes.CaptureTheFlag(MapManager, Session, deathmatch, HudMessageManager, hooks),
@@ -141,7 +142,20 @@ internal static partial class GameHost
             new Gameplay.MatchModes.Domination(MapManager, Session, deathmatch, HudMessageManager, hooks),
             new Gameplay.MatchModes.KingOfTheHill(MapManager, Session, deathmatch, HudMessageManager, hooks),
             new Gameplay.MatchModes.Horde(MapManager, Session, deathmatch, HudMessageManager, hooks, () => GameEngineManager.GetGameInfo().Horde),
+            new Gameplay.MatchModes.PropHunt(MapManager, Session, deathmatch, HudMessageManager, hooks),
         ]);
+    }
+
+    // A player's starting loadout afresh, carrying every key, as a respawn gives them
+    static void Rearm(Entities.PlayerState p)
+    {
+        using var _ = Session.ActAs(p);
+        playerStats.GiveStartingInventory();
+        p.WeaponSprite = null;
+        p.WeaponCharge = 0;
+        GiveDeathmatchKeys();
+        playerWeapons.DrawWeapon();
+        playerWeapons.DrawAmmo();
     }
 
     static Scoreboard MakeScoreboard() =>

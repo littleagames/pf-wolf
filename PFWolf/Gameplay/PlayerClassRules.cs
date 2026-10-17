@@ -77,11 +77,11 @@ internal sealed class PlayerClassRules(GameEngineManager engine, InventoryManage
     /// <summary>
     /// Whether the class may pick up a weapon or ammo: with a `player.weapons` list, only the
     /// weapons in it (or descended from them) and the ammo they use. Anything else, and every
-    /// item for a class without the list, may be.
+    /// item for a class without the list, may be. A part in the mode (PlayerState.RoleClass) has its own list.
     /// </summary>
     internal bool PlayerClassUsesItem(string item)
     {
-        if (inventory.GetProperty(PlayerClass, "player.weapons") is not { } property)
+        if (inventory.GetProperty(session.PlayerState.RoleClass ?? PlayerClass, "player.weapons") is not { } property)
             return true;
         string[] weapons = property switch
         {

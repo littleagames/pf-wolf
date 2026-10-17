@@ -1,0 +1,47 @@
+# Prop Hunt (Gameplay/MatchModes/PropHunt.cs). Shared by every game pack; a pack's own actordefs
+# can redefine them.
+#
+# A prop's part: the loadout and weapons it has (PlayerState.RoleClass) whatever class the player
+# picked. Its look is the decoration it's disguised as, never this class's, so it needs no sprites.
+# A decoration class with `flags: [NODISGUISE]` is one no prop can look like (puddles, flat on
+# the floor; the modes' flags).
+PropPlayer:
+  parent: Player
+  properties:
+    # Nothing to fight with, and never picks up a weapon or ammo
+    "player.weapons": [PropHands]
+    "player.startitem":
+      PropHands: 1
+
+# A prop's empty hands: nothing to see, and firing does nothing
+PropHands:
+  parent: Weapon
+  properties:
+    "inventory.type": PropHands
+    "weapon.slot": 1
+    "weapon.selectionorder": 9000
+  flags: [WEAPON.NOAUTOFIRE, WEAPON.NOALERT, WEAPON.NOGRIN, WEAPON.DONTBOB]
+  states:
+    Select:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Raise
+        next-state: Select
+    Deselect:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Lower
+        next-state: Deselect
+    Ready:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Ready

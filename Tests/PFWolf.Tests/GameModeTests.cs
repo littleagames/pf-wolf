@@ -15,6 +15,7 @@ public class GameModeTests
         Assert.That(GameModes.Parse("tdm"), Is.EqualTo(GameMode.TeamDeathmatch));
         Assert.That(GameModes.Parse("KOTH"), Is.EqualTo(GameMode.KingOfTheHill));
         Assert.That(GameModes.Parse("dom"), Is.EqualTo(GameMode.Domination));
+        Assert.That(GameModes.Parse("ph"), Is.EqualTo(GameMode.PropHunt));
         Assert.That(GameModes.Parse("nonsense"), Is.Null);
     }
 
@@ -26,6 +27,7 @@ public class GameModeTests
     [TestCase((int)GameMode.Domination, true, true, true)]
     [TestCase((int)GameMode.KingOfTheHill, true, true, true)]
     [TestCase((int)GameMode.Horde, false, false, false)]
+    [TestCase((int)GameMode.PropHunt, true, true, true)]
     public void What_Each_Mode_Is(int modeNumber, bool versus, bool teams, bool allKeys)
     {
         var mode = (GameMode)modeNumber;
@@ -77,7 +79,7 @@ public class GameModeTests
     {
         var arena = new MapInfo { Deathmatch = true };
         Assert.That(GameModes.NetModes.Where(m => arena.IsArenaFor(m.Id())),
-            Is.EquivalentTo(new[] { GameMode.Deathmatch, GameMode.TeamDeathmatch, GameMode.CaptureTheFlag, GameMode.Domination, GameMode.KingOfTheHill, GameMode.Horde }));
+            Is.EquivalentTo(new[] { GameMode.Deathmatch, GameMode.TeamDeathmatch, GameMode.CaptureTheFlag, GameMode.Domination, GameMode.KingOfTheHill, GameMode.Horde, GameMode.PropHunt }));
 
         var heist = new MapInfo { Modes = ["heist", "team-deathmatch"] };
         Assert.That(heist.IsArenaFor("heist"), Is.True);
@@ -281,6 +283,113 @@ public class MatchScoringTests
 
         horde.CurrentPhase = Horde.Phase.Break;
         Assert.That(objective.MayRespawn(rig.Red1), Is.True);
+    }
+
+    [Test]
+    public void Prop_Hunt_Props_Are_The_Team_Not_Hunting_And_Come_In_Disguised_With_A_Props_Loadout()
+    {
+        // Arrange: red hunts, blue hides; everyone alive
+        var rig = new Rig(GameMode.PropHunt);
+        var rearmed = new List<Entities.PlayerState>();
+        var hooks = rig.Hooks with { Rearm = rearmed.Add };
+        var hunt = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, hooks);
+        hunt.LevelSetup();
+        hunt.Disguises.AddRange(["FloorLamp", "Plant"]);
+        foreach (var p in rig.Session.Players)
+            p.Health = 100;
+
+        // Act
+        hunt.Tick();
+
+        // Assert
+        Assert.That((hunt.IsProp(rig.Red1), hunt.IsProp(rig.Blue)), Is.EqualTo((false, true)));
+        Assert.That(rig.Blue.Disguise, Is.AnyOf("FloorLamp", "Plant"));
+        Assert.That(rig.Blue.RoleClass, Is.EqualTo(PropHunt.PropClass));
+        Assert.That((rig.Red1.Disguise, rig.Red1.RoleClass), Is.EqualTo(((string?)null, (string?)null)));
+        Assert.That(rearmed, Is.EqualTo(new[] { rig.Blue }), "only a new prop gets a new loadout");
+
+        hunt.Tick();
+        Assert.That(rearmed, Has.Count.EqualTo(1), "once");
+    }
+
+    [Test]
+    public void A_Prop_Who_Dies_Drops_Their_Disguise()
+    {
+        var rig = new Rig(GameMode.PropHunt);
+        var hunt = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks);
+        rig.Blue.Disguise = "FloorLamp";
+
+        ((IMatchObjective)hunt).PlayerDied(rig.Blue);
+        rig.Blue.Health = 0;
+        hunt.Tick();
+
+        Assert.That(rig.Blue.Disguise, Is.Null);
+    }
+
+    [Test]
+    public void Prop_Hunts_State_Goes_To_A_Player_Joining()
+    {
+        var rig = new Rig(GameMode.PropHunt);
+        var hunt = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks) { HuntingTeam = 1 };
+        hunt.Disguises.AddRange(["Barrel", "Table"]);
+        using var stream = new MemoryStream();
+        hunt.Write(new BinaryWriter(stream));
+        stream.Position = 0;
+
+        var joined = new PropHunt(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks);
+        joined.Read(new BinaryReader(stream));
+
+        Assert.That((joined.HuntingTeam, joined.Disguises), Is.EqualTo((1, new List<string> { "Barrel", "Table" })));
+    }
+
+    [Test]
+    public void Props_Can_Look_Like_Plain_Scenery_Only()
+    {
+        // Arrange
+        var metadata = ActorDefs.Metadata("""
+            Inventory: {}
+            Health:
+              parent: Inventory
+            Monster: {}
+            FloorLamp:
+              states:
+                Spawn:
+                  - sprite: CLMP
+                    frames: [A]
+                    tics-per-frame: -1
+            Puddle:
+              parent: FloorLamp
+              flags: [NODISGUISE]
+            Marker:
+              states:
+                Spawn:
+                  - sprite: TNT1
+                    frames: [A]
+                    tics-per-frame: -1
+            Medikit:
+              parent: Health
+              states:
+                Spawn:
+                  - sprite: MEDI
+                    frames: [A]
+                    tics-per-frame: -1
+            Guard:
+              parent: Monster
+              states:
+                Spawn:
+                  - sprite: GARD
+                    frames: [A]
+                    tics-per-frame: -1
+            """);
+        bool Can(string name) => PropHunt.CanDisguiseAs(metadata.CreateActor(name, metadata.Actors[name]));
+
+        // Act / Assert
+        Assert.That(Can("FloorLamp"), Is.True);
+        Assert.That(Can("Puddle"), Is.False, "flagged");
+        Assert.That(Can("Marker"), Is.False, "nothing to see");
+        Assert.That(Can("Medikit"), Is.False, "an item");
+        Assert.That(Can("Guard"), Is.False, "an enemy");
+        Assert.That(PropHunt.LookName("TableWithChairs2"), Is.EqualTo("Table With Chairs2"));
     }
 }
 

@@ -42,6 +42,12 @@ internal interface IMatchObjective
     /// <summary>The acting player has picked an item up (Heist's loot)</summary>
     void ItemTaken(Inventory item) { }
 
+    /// <summary>
+    /// The acting player pressed use with nothing ahead to use (no door, switch or trigger):
+    /// true if the mode took the press (Prop Hunt: a prop takes on the look of a decoration)
+    /// </summary>
+    bool PlayerUse() => false;
+
     /// <summary>Whether a dead player may come back yet (Horde: only between waves)</summary>
     bool MayRespawn(Entities.PlayerState p) => true;
 
@@ -115,10 +121,15 @@ internal sealed class Deathmatch(
             p.Frags = p.Objective = 0;
     }
 
-    /// <summary>A new level of a deathmatch: nothing waiting to come back, and its enemies only with monsters on</summary>
+    /// <summary>
+    /// A new level of a deathmatch: nothing waiting to come back, its enemies only with monsters
+    /// on, and everyone as themselves (the mode gives out its parts again: Prop Hunt's props)
+    /// </summary>
     internal void DeathmatchLevelSetup()
     {
         ItemRespawns.Clear();
+        foreach (var p in session.Players)
+            p.Disguise = p.RoleClass = null;
         map.NoMonsters = (session.IsVersus || session.GameMode == GameMode.Horde) && !NetRules.Monsters;
     }
 

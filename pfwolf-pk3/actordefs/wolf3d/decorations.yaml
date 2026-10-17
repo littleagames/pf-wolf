@@ -1,4 +1,5 @@
 Puddle:
+  flags: [NODISGUISE]     # flat on the floor: no Prop Hunt prop looks like it
   states:
     Spawn:
       - sprite: WATR

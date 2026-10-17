@@ -771,6 +771,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         GameMode.Heist => "$STR_MP_LOOTLIMIT",
         GameMode.Domination or GameMode.KingOfTheHill => "$STR_MP_POINTLIMIT",
         GameMode.Horde => "$STR_MP_WAVELIMIT",
+        GameMode.PropHunt => "$STR_MP_ROUNDLIMIT",
         _ => "$STR_MP_SCORELIMIT",
     };
 

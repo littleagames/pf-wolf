@@ -8,7 +8,7 @@ namespace PFWolf.Gameplay;
 /// shared), Deathmatch (everyone against everyone), or one of the team and objective modes
 /// (Gameplay/GameModes.cs). Sent over the network as a byte: new ones go at the end.
 /// </summary>
-internal enum GameMode { Single, Coop, Deathmatch, TeamDeathmatch, CaptureTheFlag, Heist, Domination, KingOfTheHill, Horde }
+internal enum GameMode { Single, Coop, Deathmatch, TeamDeathmatch, CaptureTheFlag, Heist, Domination, KingOfTheHill, Horde, PropHunt }
 
 /*
 =============================================================================

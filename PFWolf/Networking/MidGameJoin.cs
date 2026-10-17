@@ -37,7 +37,7 @@ internal sealed class MidGameJoin(
     ===============
     */
 
-    internal const int NetStateVersion = 5;     // 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
+    internal const int NetStateVersion = 6;     // 6: each player's Prop Hunt disguise and part; 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save

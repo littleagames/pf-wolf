@@ -1115,9 +1115,9 @@ public record MapInfo
 
     /// <summary>
     /// The multiplayer modes the map is an arena for, by id (deathmatch, team-deathmatch, ctf,
-    /// heist, domination, king-of-the-hill, horde). Left out, a `deathmatch: true` arena is one
-    /// for every mode but heist, which needs treasure placed for it: the others find their flags,
-    /// points and spawns on any map when it has none placed.
+    /// heist, domination, king-of-the-hill, horde, prop-hunt). Left out, a `deathmatch: true`
+    /// arena is one for every mode but heist, which needs treasure placed for it: the others find
+    /// their flags, points and spawns on any map when it has none placed.
     /// </summary>
     public List<string> Modes { get; init; } = [];
 
@@ -1125,7 +1125,7 @@ public record MapInfo
     public bool IsArenaFor(string mode) =>
         Modes.Count > 0
             ? Modes.Contains(mode, StringComparer.OrdinalIgnoreCase)
-            : Deathmatch && mode is "deathmatch" or "team-deathmatch" or "ctf" or "domination" or "king-of-the-hill" or "horde";
+            : Deathmatch && mode is "deathmatch" or "team-deathmatch" or "ctf" or "domination" or "king-of-the-hill" or "horde" or "prop-hunt";
 
     //public string Current { get; set; }
     public string Next { get; init; } = null!;

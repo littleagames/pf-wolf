@@ -31,6 +31,9 @@ internal sealed class PlayerBodies(
     = so one set of states serves every weapon. Frames using any other sprite (deaths) are kept,
     = as is any frame the weapon's sprite doesn't have.
     =
+    = A Prop Hunt prop's disguise (PlayerState.Disguise) is drawn instead: the decoration's own
+    = Spawn states, played as on the map whatever the prop does.
+    =
     ====================
     */
 
@@ -46,10 +49,11 @@ internal sealed class PlayerBodies(
         if (p.Pawn is not { } pawn)
             return;
 
-        if (p.BodyClass != p.PlayerClass)
+        var looks = p.Disguise ?? p.PlayerClass;
+        if (p.BodyClass != looks)
         {
-            p.BodyClass = p.PlayerClass;
-            p.Body = inventory.CreateActor(p.PlayerClass);
+            p.BodyClass = looks;
+            p.Body = inventory.CreateActor(looks);
             if (p.Body?.ResolvedStates.ContainsKey("Spawn") != true)
                 p.Body = null;
             else
@@ -66,7 +70,8 @@ internal sealed class PlayerBodies(
         bool attacking = p.WeaponSprite?.CurrentState is { } weaponState && weaponState.StateName != WeaponInHand.WeaponReadyState;
         p.PainTics = Math.Max(p.PainTics - (int)tics, 0);
 
-        var want = p.Health <= 0 ? "Death"
+        var want = p.Disguise != null ? "Spawn"
+            : p.Health <= 0 ? "Death"
             : p.PainTics > 0 ? (p.PainAlt && body.ResolvedStates.ContainsKey("Pain1") ? "Pain1" : "Pain")
             : attacking ? "Missile"
             : moving ? "See"

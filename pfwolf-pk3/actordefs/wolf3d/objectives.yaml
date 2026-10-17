@@ -29,7 +29,9 @@ HordeSpawn:
 
 # The flags, drawn on a pole (Wolf3D's own banner): a team's, through its color (translations.yaml
 # flag-blue for blue's; red's is its own red). Not solid: players run through to take one.
+# NODISGUISE: no Prop Hunt prop looks like one.
 TeamFlag:
+  flags: [NODISGUISE]
   states:
     Spawn:
       - sprite: FLAG

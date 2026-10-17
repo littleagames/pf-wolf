@@ -254,7 +254,7 @@ internal sealed class PlayerStats(
         inventory.Clear();
         PlayerState.Armor = PlayerState.ArmorPercent = 0;
 
-        var playerClass = PlayerState.PlayerClass;
+        var playerClass = PlayerState.RoleClass ?? PlayerState.PlayerClass;
         if (inventory.GetProperty(playerClass, "player.startitem") is IDictionary<object, object> items)
         {
             foreach (var (item, amount) in items)

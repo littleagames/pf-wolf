@@ -19,6 +19,8 @@ namespace PFWolf.Gameplay;
                     moves on when its time is up
     Horde           together against waves of enemies (horde.yaml): the
                     match ends when every player is dead at once
+    PropHunt        props (one team) look like the level's decorations and
+                    hide; hunters (the other) find and shoot them: rounds
 
     Every versus mode gives each player every key (no door is shut to
     anyone), except Heist, where the best treasure is behind locked doors:
@@ -40,13 +42,13 @@ internal static class GameModes
     internal static readonly GameMode[] NetModes =
     [
         GameMode.Coop, GameMode.Deathmatch, GameMode.TeamDeathmatch, GameMode.CaptureTheFlag,
-        GameMode.Heist, GameMode.Domination, GameMode.KingOfTheHill, GameMode.Horde,
+        GameMode.Heist, GameMode.Domination, GameMode.KingOfTheHill, GameMode.Horde, GameMode.PropHunt,
     ];
 
     /// <summary>Players fight each other</summary>
     internal static bool IsVersus(this GameMode mode) =>
         mode is GameMode.Deathmatch or GameMode.TeamDeathmatch or GameMode.CaptureTheFlag
-            or GameMode.Heist or GameMode.Domination or GameMode.KingOfTheHill;
+            or GameMode.Heist or GameMode.Domination or GameMode.KingOfTheHill or GameMode.PropHunt;
 
     /// <summary>Players are on two teams, red and blue</summary>
     internal static bool IsTeamGame(this GameMode mode) => mode.IsVersus() && mode != GameMode.Deathmatch;
@@ -71,10 +73,11 @@ internal static class GameModes
         GameMode.Domination => "domination",
         GameMode.KingOfTheHill => "king-of-the-hill",
         GameMode.Horde => "horde",
+        GameMode.PropHunt => "prop-hunt",
         _ => "single",
     };
 
-    /// <summary>A mode by its id (or a short name: dm, tdm, dom, koth), or null</summary>
+    /// <summary>A mode by its id (or a short name: dm, tdm, dom, koth, ph), or null</summary>
     internal static GameMode? Parse(string name) => name.ToLowerInvariant() switch
     {
         "coop" or "co-op" => GameMode.Coop,
@@ -85,6 +88,7 @@ internal static class GameModes
         "domination" or "dom" => GameMode.Domination,
         "king-of-the-hill" or "kingofthehill" or "koth" => GameMode.KingOfTheHill,
         "horde" => GameMode.Horde,
+        "prop-hunt" or "prophunt" or "ph" => GameMode.PropHunt,
         _ => null,
     };
 
@@ -98,6 +102,7 @@ internal static class GameModes
         GameMode.Domination => "$STR_MP_DOMINATION",
         GameMode.KingOfTheHill => "$STR_MP_KOTH",
         GameMode.Horde => "$STR_MP_HORDE",
+        GameMode.PropHunt => "$STR_MP_PROPHUNT",
         _ => "$STR_MP_COOP",
     };
 
@@ -109,15 +114,18 @@ internal static class GameModes
         GameMode.Heist => "Loot",
         GameMode.Domination or GameMode.KingOfTheHill => "Points",
         GameMode.Horde => "Waves",
+        GameMode.PropHunt => "Rounds",
         _ => "Score",
     };
 
     /// <summary>
     /// What the score limit means: a deathmatch's frags, a team's captures or points, Heist's
-    /// lead in loot, Horde's waves to survive (0 for no limit: Horde goes on until everyone dies)
+    /// lead in loot, Horde's waves to survive (0 for no limit: Horde goes on until everyone dies),
+    /// Prop Hunt's rounds a team must win
     /// </summary>
     internal static int DefaultScoreLimit(this GameMode mode) => mode switch
     {
+        GameMode.PropHunt => 3,
         GameMode.Deathmatch => 20,
         GameMode.TeamDeathmatch => 50,
         GameMode.CaptureTheFlag => 3,
@@ -136,6 +144,7 @@ internal static class GameModes
         GameMode.Domination => [0, 100, 150, 200, 250, 300, 400, 500],
         GameMode.KingOfTheHill => [0, 30, 60, 100, 150, 200, 300],
         GameMode.Horde => [0, 5, 10, 15, 20, 25, 30, 50],
+        GameMode.PropHunt => [0, 2, 3, 4, 5, 7, 10],
         _ => [0, 5, 10, 15, 20, 25, 30, 50, 75, 100],
     };
 

@@ -90,6 +90,8 @@ internal class TranslationManager
     {
         if (actor.Translation != null)
             return actor.Translation;
+        if (actor is Entities.Actors.PlayerPawn { State.Disguise: not null } prop)
+            return prop.State.Body is { } disguise ? ClassTranslation(disguise) : null;     // as the decoration, not in their color
         if (actor is Entities.Actors.PlayerPawn pawn)
             return pawn.State.CarryTranslation ?? pawn.State.Color ?? (pawn.State.Body is { } body ? ClassTranslation(body) : null);
         if (actor is Entities.Actors.Monster && actor.Faction != null && HasHealth(actor))

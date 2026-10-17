@@ -10,11 +10,13 @@ namespace PFWolf.Gameplay;
 /// <param name="Dismount">Steps the player off a mounted gun they're manning: true if they were on one (Gameplay/MountedWeapons.cs)</param>
 /// <param name="CompleteObjective">So many more of a level objective are done (a switch with `objective`: Gameplay/Objectives.cs)</param>
 /// <param name="ExitAllowed">Whether the level can be left (its blocks-exit objectives done); saying why not if not</param>
+/// <param name="ModeUse">The match mode's own use, with nothing ahead to use: true if it took the press (Prop Hunt's disguises)</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
     Action<string, int>? CompleteObjective = null,
-    Func<bool>? ExitAllowed = null);
+    Func<bool>? ExitAllowed = null,
+    Func<bool>? ModeUse = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -296,10 +298,11 @@ internal sealed class PlayerUse(
         }
         else
         {
-            // Nothing ahead to use: use an actor that's there to be used (its Use state), else
-            // talk to whoever's there (BlakeMonster.TalkTo), else held long enough, use an item
-            // that's used that way (Planet Strike's fission detonator)
-            if (TryUseActor() || levelAI.TryTalk())
+            // Nothing ahead to use: the match mode's own use (a Prop Hunt disguise), else use an
+            // actor that's there to be used (its Use state), else talk to whoever's there
+            // (BlakeMonster.TalkTo), else held long enough, use an item that's used that way
+            // (Planet Strike's fission detonator)
+            if (hooks.ModeUse?.Invoke() == true || TryUseActor() || levelAI.TryTalk())
                 ResetUseHeld();
             else
                 UseHeldItem();

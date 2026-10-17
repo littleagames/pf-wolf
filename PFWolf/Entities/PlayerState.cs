@@ -56,6 +56,18 @@ internal sealed class PlayerState
     // for nothing. Set every frame by the mode, so it isn't saved or sent.
     public string? CarrySprite, CarryTranslation;
 
+    /// <summary>
+    /// Prop Hunt (Gameplay/MatchModes/PropHunt.cs): the decoration class a prop looks like to
+    /// everyone, its body drawn as that instead of their class; null for their own look
+    /// </summary>
+    public string? Disguise;
+
+    /// <summary>
+    /// The actordefs player class whose loadout (player.startitem) and weapons (player.weapons)
+    /// they have for their part in the mode (Prop Hunt's props: PropPlayer); null for their own class's
+    /// </summary>
+    public string? RoleClass;
+
     /// <summary>Held item counts, keyed by item type (InventoryManager reads the acting player's)</summary>
     public readonly Dictionary<string, int> Items = new(StringComparer.OrdinalIgnoreCase);
 
