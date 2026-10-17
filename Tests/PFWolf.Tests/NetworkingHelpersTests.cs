@@ -60,6 +60,38 @@ public class NetAddressesTests
         Assert.That(NetAddresses.IsPrivate(IPAddress.Parse(address)), Is.EqualTo(isPrivate));
     }
 
+    // Wi-Fi listed first, Ethernet carrying the default route: both have a gateway, same subnet
+    private static readonly (IPAddress, bool)[] TwoAdapters =
+    [
+        (IPAddress.Parse("fe80::1"), true),
+        (IPAddress.Parse("192.168.1.10"), true),
+        (IPAddress.Parse("169.254.3.4"), false),
+        (IPAddress.Parse("192.168.1.53"), true),
+    ];
+
+    [Test]
+    public void The_Local_Address_Is_The_Default_Routes_Adapter()
+    {
+        Assert.That(NetAddresses.PickLocalAddress(TwoAdapters, IPAddress.Parse("192.168.1.53")), Is.EqualTo(IPAddress.Parse("192.168.1.53")));
+    }
+
+    [Test]
+    public void Without_A_Route_The_Local_Address_Is_One_With_A_Gateway()
+    {
+        Assert.That(NetAddresses.PickLocalAddress(TwoAdapters, null), Is.EqualTo(IPAddress.Parse("192.168.1.10")));
+        Assert.That(NetAddresses.PickLocalAddress(
+            [(IPAddress.Parse("10.0.0.5"), false), (IPAddress.Parse("192.168.1.53"), true)], null), Is.EqualTo(IPAddress.Parse("192.168.1.53")));
+    }
+
+    [Test]
+    public void A_Routed_Address_No_Interface_Offers_Is_Ignored()
+    {
+        // e.g. a VPN tunnel's address, or loopback: tunnels are left out of the candidates
+        Assert.That(NetAddresses.PickLocalAddress(TwoAdapters, IPAddress.Parse("10.8.0.2")), Is.EqualTo(IPAddress.Parse("192.168.1.10")));
+        Assert.That(NetAddresses.PickLocalAddress(
+            [(IPAddress.Parse("127.0.0.1"), false)], IPAddress.Parse("127.0.0.1")), Is.Null);
+    }
+
     [Test]
     public void Streamer_Mode_Hides_Internet_Addresses_But_Not_Lan_Ones()
     {

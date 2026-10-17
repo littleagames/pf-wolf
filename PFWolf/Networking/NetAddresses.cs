@@ -39,34 +39,66 @@ internal static class NetAddresses
         address == null ? $"port {port}" : port == NetProtocol.DefaultPort ? address : $"{address}:{port}";
 
     /// <summary>
-    /// This machine's address on the local network, for the lobby to show: the IPv4 address of
-    /// the interface that is up and has a default gateway (the one actually on the network),
-    /// skipping loopback, link-local (169.254.x.x) and virtual adapters.
+    /// This machine's address on the local network, for the lobby to show: the IPv4 address
+    /// traffic to the internet actually leaves from (the default route's adapter, which matters
+    /// when Ethernet and Wi-Fi are both up), else that of an interface that is up and has a
+    /// default gateway; skipping loopback, link-local (169.254.x.x) and virtual adapters.
     /// </summary>
     internal static string? LocalAddress()
     {
         try
         {
-            var best = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+            var candidates = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
                 .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up
                     && n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback
                     && n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Tunnel)
                 .Select(n => n.GetIPProperties())
-                .Select(p => new
+                .SelectMany(p =>
                 {
-                    HasGateway = p.GatewayAddresses.Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
-                        && !g.Address.Equals(IPAddress.Any)),
-                    Address = p.UnicastAddresses
-                        .Select(u => u.Address)
-                        .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
-                            && !IPAddress.IsLoopback(a) && !IsLinkLocal(a)),
+                    bool hasGateway = p.GatewayAddresses.Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                        && !g.Address.Equals(IPAddress.Any));
+                    return p.UnicastAddresses.Select(u => (u.Address, hasGateway));
                 })
-                .Where(x => x.Address != null)
-                .OrderByDescending(x => x.HasGateway)
-                .FirstOrDefault();
-            return best?.Address?.ToString();
+                .ToList();
+            return PickLocalAddress(candidates, RoutedAddress())?.ToString();
         }
         catch (System.Net.NetworkInformation.NetworkInformationException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Which of the interfaces' addresses others on the local network reach this machine at:
+    /// <paramref name="routed"/> (where the default route leaves from) when it's one of them,
+    /// else the first with a default gateway, else the first at all. Only IPv4 ones that aren't
+    /// loopback or link-local count.
+    /// </summary>
+    internal static IPAddress? PickLocalAddress(IEnumerable<(IPAddress Address, bool HasGateway)> candidates, IPAddress? routed)
+    {
+        var usable = candidates
+            .Where(c => c.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                && !IPAddress.IsLoopback(c.Address) && !IsLinkLocal(c.Address))
+            .ToList();
+        if (routed != null && usable.Any(c => c.Address.Equals(routed)))
+            return routed;
+        return usable.OrderByDescending(c => c.HasGateway).Select(c => c.Address).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// The local IPv4 address the OS would send internet traffic from, found by connecting a
+    /// UDP socket to a public address (which only picks a route; nothing is sent). Null offline.
+    /// </summary>
+    static IPAddress? RoutedAddress()
+    {
+        try
+        {
+            using var socket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork,
+                System.Net.Sockets.SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
+            socket.Connect(new IPEndPoint(IPAddress.Parse("8.8.8.8"), 53));
+            return (socket.LocalEndPoint as IPEndPoint)?.Address;
+        }
+        catch (System.Net.Sockets.SocketException)
         {
             return null;
         }
