@@ -9,8 +9,7 @@ public class DemoCommandsTests
     public void Make()
     {
         _console = new ConsoleManager();
-        _commands = new DemoCommands(_console, null!, null!, new DemoBuffer(), new GameSession(),
-            new DemoCommandsHooks(() => true, _ => { }));
+        _commands = new DemoCommands(_console, null!, null!, new DemoBuffer(), new GameSession { ingame = true });
     }
 
     [TestCase("")]

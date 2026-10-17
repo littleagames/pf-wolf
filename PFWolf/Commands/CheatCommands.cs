@@ -6,22 +6,10 @@ using static PFWolf.Commands.ConsoleArgs;
 namespace PFWolf.Commands;
 
 /// <summary>What the cheat commands need from the game</summary>
-/// <param name="GodMode">God mode: 0 off, 1 on, 2 on without the damage flash</param>
-/// <param name="SetGodMode">Sets it</param>
-/// <param name="NoClip">Whether the player walks through walls</param>
-/// <param name="SetNoClip">Sets it</param>
-/// <param name="InGame">Whether a level is being played</param>
-/// <param name="SetPlayState">Ends the level (exitlevel, map)</param>
 /// <param name="NewGamePlayerClass">The class new games are played as, if one was picked</param>
 /// <param name="SetNewGamePlayerClass">Picks it</param>
 /// <param name="SetEyeHeight">How high the view is above the floor</param>
 internal sealed record CheatCommandsHooks(
-    Func<byte> GodMode,
-    Action<byte> SetGodMode,
-    Func<byte> NoClip,
-    Action<byte> SetNoClip,
-    Func<bool> InGame,
-    Action<playstatetypes> SetPlayState,
     Func<string?> NewGamePlayerClass,
     Action<string?> SetNewGamePlayerClass,
     Action<int> SetEyeHeight);
@@ -58,7 +46,7 @@ internal sealed class CheatCommands(
         console.Register("map", "Warps to a level.", "map <MAP##>", Cmd_Map, Cheat | InLevel, aliases: ["warp"],
             complete: (_, i) => i == 0 ? engine.GetGameInfo().Maps.Keys : []);
         console.Register("exitlevel", "Completes the current level.", "exitlevel",
-            _ => hooks.SetPlayState(playstatetypes.ex_completed), Cheat | InLevel);
+            _ => session.playstate = playstatetypes.ex_completed, Cheat | InLevel);
         console.Register("tp", "Teleports to a tile.", "tp <tilex> <tiley> [angle]", Cmd_Teleport, Cheat | InLevel);
         console.Register("killall", "Kills every enemy on the level.", "killall", Cmd_KillAll, Cheat | InLevel);
         console.Register("diag", "Makes a wall tile (default: the one you face) a 45 degree wall, named by its solid corner.",
@@ -84,9 +72,9 @@ internal sealed class CheatCommands(
     internal void Cmd_God(string[] args)
     {
         // 0 = off, 1 = on, 2 = on without the damage flash (ApplyDamageToPlayer)
-        hooks.SetGodMode((byte)(args.Length > 0 ? ParseInt(args[0], 0, 2) : hooks.GodMode() == 0 ? 1 : 0));
+        session.godmode = (byte)(args.Length > 0 ? ParseInt(args[0], 0, 2) : session.godmode == 0 ? 1 : 0);
 
-        console.Print(hooks.GodMode() switch
+        console.Print(session.godmode switch
         {
             0 => "God mode OFF",
             1 => "God mode ON",
@@ -96,8 +84,8 @@ internal sealed class CheatCommands(
 
     internal void Cmd_Noclip(string[] args)
     {
-        hooks.SetNoClip((byte)(Toggle(args, hooks.NoClip() != 0) ? 1 : 0));
-        console.Print(hooks.NoClip() != 0 ? "No clipping ON" : "No clipping OFF");
+        session.noclip = (byte)(Toggle(args, session.noclip != 0) ? 1 : 0);
+        console.Print(session.noclip != 0 ? "No clipping ON" : "No clipping OFF");
     }
 
     internal void Cmd_Pitch(string[] args)
@@ -133,7 +121,7 @@ internal sealed class CheatCommands(
                 ?? throw new ArgumentException($"no player class {args[0]}; there's {string.Join(", ", classes)}"));
         }
 
-        if (hooks.InGame())
+        if (session.ingame)
             console.Print($"Playing as {session.playerstate.playerclass}");
         console.Print($"New games are played as {hooks.NewGamePlayerClass() ?? classRules.DefaultPlayerClass}");
         console.Print($"Classes: {string.Join(", ", classes)}");
@@ -238,7 +226,7 @@ internal sealed class CheatCommands(
             ?? throw new ArgumentException($"no map \"{args[0]}\"; type \"maps\" for a list");
 
         session.gamestate.mapon = map;
-        hooks.SetPlayState(playstatetypes.ex_warped);
+        session.playstate = playstatetypes.ex_warped;
     }
 
     internal void Cmd_Teleport(string[] args)

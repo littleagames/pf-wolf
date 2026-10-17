@@ -12,7 +12,7 @@ public class SaveCommandsTests
         _console = new ConsoleManager();
         _saves = new GameSaves(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!,
             null!, null!, new Configuration.GameSettings(), new GameSession(), null!);
-        _commands = new SaveCommands(_console, null!, _saves, null!, new GameSession(), new SaveCommandsHooks(_ => { }, _ => { }));
+        _commands = new SaveCommands(_console, null!, _saves, null!, new GameSession());
         _commands.Register();
     }
 

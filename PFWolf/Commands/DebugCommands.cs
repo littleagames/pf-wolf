@@ -4,19 +4,6 @@ using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf.Commands;
 
-/// <summary>What the debugging commands need from the game</summary>
-/// <param name="ViewSize">The view's size setting (a border to redraw under 20)</param>
-/// <param name="SingleStep">VBLs waited each frame (slowmo)</param>
-/// <param name="SetSingleStep">Sets them</param>
-/// <param name="ExtraVbls">Extra VBLs a frame (vbls)</param>
-/// <param name="SetExtraVbls">Sets them</param>
-internal sealed record DebugCommandsHooks(
-    Func<int> ViewSize,
-    Func<byte> SingleStep,
-    Action<byte> SetSingleStep,
-    Func<int> ExtraVbls,
-    Action<int> SetExtraVbls);
-
 /// <summary>
 /// Debugging aids and information from the console: overhead, where, count, actors, maps, fps,
 /// slowmo, vbls, fade and screenshot
@@ -33,7 +20,7 @@ internal sealed class DebugCommands(
     RenderState render,
     ConsoleTargets targets,
     GameSession session,
-    DebugCommandsHooks hooks)
+    Configuration.GameSettings settings)
 {
     internal void Register()
     {
@@ -59,7 +46,7 @@ internal sealed class DebugCommands(
         console.Defer(() =>
         {
             debugScreens.BasicOverhead();
-            if (hooks.ViewSize() < 20)
+            if (settings.viewsize < 20)
                 playScreen.DrawPlayBorder();
             frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
         });
@@ -183,14 +170,14 @@ internal sealed class DebugCommands(
     internal void Cmd_SlowMo(string[] args)
     {
         if (args.Length > 0)
-            hooks.SetSingleStep((byte)ParseInt(args[0], 0, 50));
-        console.Print($"slowmo is {hooks.SingleStep()}");
+            session.singlestep = (byte)ParseInt(args[0], 0, 50);
+        console.Print($"slowmo is {session.singlestep}");
     }
 
     internal void Cmd_Vbls(string[] args)
     {
         if (args.Length > 0)
-            hooks.SetExtraVbls(ParseInt(args[0], 0, 8));
-        console.Print($"vbls is {hooks.ExtraVbls()}");
+            session.extravbls = ParseInt(args[0], 0, 8);
+        console.Print($"vbls is {session.extravbls}");
     }
 }

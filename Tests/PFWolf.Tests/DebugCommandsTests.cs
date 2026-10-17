@@ -4,19 +4,17 @@ public class DebugCommandsTests
 {
     private ConsoleManager _console = null!;
     private FrameRefresh _frame = null!;
-    private byte _singlestep;
-    private int _extravbls;
+    private GameSession _session = null!;
 
     [SetUp]
     public void Make()
     {
         _console = new ConsoleManager { LevelLoaded = () => true, CheatsEnabled = () => true };
-        var session = new GameSession();
+        var session = _session = new GameSession();
         var render = new RenderState(new Assets.TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade);
         _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, session, null!);
-        (_singlestep, _extravbls) = (0, 0);
         new DebugCommands(_console, null!, null!, null!, null!, _frame, null!, null!, render, null!, session,
-            new DebugCommandsHooks(() => 15, () => _singlestep, s => _singlestep = s, () => _extravbls, v => _extravbls = v)).Register();
+            new Configuration.GameSettings { viewsize = 15 }).Register();
     }
 
     [Test]
@@ -34,7 +32,7 @@ public class DebugCommandsTests
         _console.Execute("slowmo 5");
         _console.Execute("vbls 2");
 
-        Assert.That((_singlestep, _extravbls), Is.EqualTo(((byte)5, 2)));
+        Assert.That((_session.singlestep, _session.extravbls), Is.EqualTo(((byte)5, 2)));
         Assert.That(_console.Scrollback[^1], Is.EqualTo("vbls is 2"));
     }
 

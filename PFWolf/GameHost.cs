@@ -234,13 +234,12 @@ internal static partial class GameHost
         consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing, playArea);
         debugCommands = new DebugCommands(_consoleManager, _gameEngineManager, _videoManager, _mapManager, doors, frameRefresh, debugScreens,
             playScreen, render, consoleTargets, session,
-            new DebugCommandsHooks(() => viewsize, () => singlestep, step => singlestep = step, () => extravbls, vbls => extravbls = vbls));
+            settings);
         playerStats = MakePlayerStats();
         playerActions = MakePlayerActions();
         cheatCommands = new CheatCommands(_consoleManager, _gameEngineManager, _assetManager, _inventoryManager, _mapManager, doors, statusBarDrawing,
             playerWeapons, playerClassRules, playerStats, frameRefresh, consoleTargets, session,
-            new CheatCommandsHooks(() => godmode, on => godmode = on, () => noclip, on => noclip = on, () => ingame, s => playstate = s,
-                () => newGamePlayerClass, playerClass => newGamePlayerClass = playerClass, SetEyeHeight));
+            new CheatCommandsHooks(() => newGamePlayerClass, playerClass => newGamePlayerClass = playerClass, SetEyeHeight));
         playerUse = MakePlayerUse();
         playerMovement = MakePlayerMovement();
         playerAttacks = MakePlayerAttacks();
@@ -257,7 +256,7 @@ internal static partial class GameHost
         hudMessageDrawing = MakeHudMessageDrawing();
         spectating = new Spectating(_mapManager, _consoleManager, _hudMessageManager, hudMessageDrawing, session);
         playerCommands = new PlayerCommands(_consoleManager, _mapManager, doors, playerClassRules, playersManager, playerThink, deathmatch, session,
-            new PlayerCommandsHooks(() => viewsize, DrawPlayScreen, PlayerColor));
+            settings, new PlayerCommandsHooks(DrawPlayScreen, PlayerColor));
         scoreboard = MakeScoreboard();
         scoreboard.Match = deathmatch;
         netPlay = MakeNetPlay();
@@ -272,12 +271,10 @@ internal static partial class GameHost
         levelSetup = MakeLevelSetup();
         levelEntry = MakeLevelEntry();
         gameSaves = MakeGameSaves();
-        saveCommands = new SaveCommands(_consoleManager, _gameEngineManager, gameSaves, playScreen, session,
-            new SaveCommandsHooks(on => loadedgame = on, s => playstate = s));
+        saveCommands = new SaveCommands(_consoleManager, _gameEngineManager, gameSaves, playScreen, session);
         midGameJoin = MakeMidGameJoin();
         demos = MakeDemos();
-        demoCommands = new DemoCommands(_consoleManager, _mapManager, demos, demoBuffer, session,
-            new DemoCommandsHooks(() => ingame, s => playstate = s));
+        demoCommands = new DemoCommands(_consoleManager, _mapManager, demos, demoBuffer, session);
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         jukebox = new Jukebox(_inputManager, _videoManager, _audioManager, menuDrawing, menuLoop, menuDefs);
         RegisterMenuDefs();

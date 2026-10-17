@@ -3,21 +3,13 @@ using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf.Commands;
 
-/// <summary>What the save commands need from the game</summary>
-/// <param name="SetLoadedGame">A saved game is being loaded (the level rebuild doesn't count anything again)</param>
-/// <param name="SetPlayState">Ends the level, for the loaded one to start</param>
-internal sealed record SaveCommandsHooks(
-    Action<bool> SetLoadedGame,
-    Action<playstatetypes> SetPlayState);
-
 /// <summary>Saved games from the console: saves, autosave, save and load</summary>
 internal sealed class SaveCommands(
     ConsoleManager console,
     GameEngineManager engine,
     GameSaves gameSaves,
     PlayScreen playScreen,
-    GameSession session,
-    SaveCommandsHooks hooks)
+    GameSession session)
 {
     internal void Register()
     {
@@ -101,11 +93,11 @@ internal sealed class SaveCommands(
         // Between frames, not mid-command: the load replaces every actor, the player included.
         console.Defer(() =>
         {
-            hooks.SetLoadedGame(true);
+            session.loadedgame = true;
             if (gameSaves.LoadTheGame(save.Path, 0, 0))
-                hooks.SetPlayState(playstatetypes.ex_abort);    // GameLoop redraws and restarts music for the loaded level
+                session.playstate = playstatetypes.ex_abort;    // GameLoop redraws and restarts music for the loaded level
             else
-                hooks.SetLoadedGame(false);
+                session.loadedgame = false;
         });
     }
 }

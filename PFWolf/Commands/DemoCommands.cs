@@ -2,21 +2,13 @@ using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf.Commands;
 
-/// <summary>What the demo commands need from the game</summary>
-/// <param name="InGame">Whether a game is being played (it ends first)</param>
-/// <param name="SetPlayState">Ends the game in progress</param>
-internal sealed record DemoCommandsHooks(
-    Func<bool> InGame,
-    Action<playstatetypes> SetPlayState);
-
 /// <summary>Demos from the console: playdemo, demotest (the regression check) and recorddemo</summary>
 internal sealed class DemoCommands(
     ConsoleManager console,
     MapManager map,
     Demos demoPlayback,
     DemoBuffer demo,
-    GameSession session,
-    DemoCommandsHooks hooks)
+    GameSession session)
 {
     internal void Register()
     {
@@ -49,13 +41,13 @@ internal sealed class DemoCommands(
         }
 
         demoPlayback.pendingDemo = demonumber;
-        if (hooks.InGame())
-            hooks.SetPlayState(playstatetypes.ex_abort);
+        if (session.ingame)
+            session.playstate = playstatetypes.ex_abort;
     }
 
     internal void Cmd_DemoTest(string[] args)
     {
-        if (hooks.InGame())
+        if (session.ingame)
         {
             console.Print("demotest runs from the title or --exec, not during a game");
             return;
@@ -127,7 +119,7 @@ internal sealed class DemoCommands(
         }
 
         demoPlayback.pendingRecord = new DemoRecordRequest(level, demonumber);
-        if (hooks.InGame())
-            hooks.SetPlayState(playstatetypes.ex_abort);
+        if (session.ingame)
+            session.playstate = playstatetypes.ex_abort;
     }
 }

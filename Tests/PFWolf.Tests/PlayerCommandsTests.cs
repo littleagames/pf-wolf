@@ -14,7 +14,7 @@ public class PlayerCommandsTests
         _session = new GameSession();
         _deathmatch = new Deathmatch(null!, null!, null!, _session, null!);
         _commands = new PlayerCommands(_console, null!, null!, null!, null!, null!, _deathmatch, _session,
-            new PlayerCommandsHooks(() => 21, () => { }));
+            new Configuration.GameSettings { viewsize = 21 }, new PlayerCommandsHooks(() => { }));
     }
 
     [Test]

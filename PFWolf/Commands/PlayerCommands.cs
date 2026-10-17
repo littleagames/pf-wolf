@@ -3,11 +3,9 @@ using static PFWolf.Commands.ConsoleArgs;
 namespace PFWolf.Commands;
 
 /// <summary>What the player commands need from the game</summary>
-/// <param name="ViewSize">The view's size setting (21: the full screen, no status bar to redraw)</param>
 /// <param name="DrawPlayScreen">Redraws the status bar and view border, for the player now yours</param>
 /// <param name="PlayerColor">A color by name as this machine has it (the translation), or null</param>
 internal sealed record PlayerCommandsHooks(
-    Func<int> ViewSize,
     Action DrawPlayScreen,
     Func<string, string?>? PlayerColor = null);
 
@@ -21,6 +19,7 @@ internal sealed class PlayerCommands(
     PlayerThink think,
     Deathmatch deathmatch,
     GameSession session,
+    Configuration.GameSettings settings,
     PlayerCommandsHooks hooks)
 {
     /// <summary>The most players a game can have</summary>
@@ -140,7 +139,7 @@ internal sealed class PlayerCommands(
         session.consoleplayer = n - 1;
         session.SetActing(session.localplayer);
         session.camera.FollowPlayer();
-        if (hooks.ViewSize() != 21)
+        if (settings.viewsize != 21)
             hooks.DrawPlayScreen();
         console.Print($"You're player {n} ({session.localplayer.playerclass})");
     }
