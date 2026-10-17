@@ -1,3 +1,6 @@
+using Avalonia;
+using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Editing;
@@ -11,10 +14,18 @@ public sealed record PaletteItem(PaletteEntry Entry, Bitmap? Icon)
     public string Group => Entry.Group;
 }
 
-/// <summary>A tool button</summary>
-public sealed record ToolOption(EditTool Tool, string Label, string Key)
+/// <summary>
+/// A tool button: its icon, and the tooltip saying what it does and its key. GroupStart: the
+/// first of a group, set a little apart from the tool before it.
+/// </summary>
+public sealed record ToolOption(EditTool Tool, string Label, string Key, string Description, Geometry Icon, bool GroupStart = false)
 {
-    public string ToolTip => $"{Label} ({Key})";
+    public string ToolTip => $"{Label} ({Key})\n{Description}";
+
+    public Thickness Spacing => GroupStart ? new Thickness(0, 10, 0, 0) : new Thickness(0);
+
+    /// <summary>Its key, as the Tools menu shows it</summary>
+    public KeyGesture Gesture => new(Enum.Parse<Key>(Key));
 }
 
 /// <summary>A choice in one of the palette's drop-downs: a facing, a skill, a flat</summary>

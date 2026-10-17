@@ -227,7 +227,10 @@ public sealed class ToolController
     public void Copy()
     {
         if (_document != null && Selection is { } selection)
+        {
             _clipboard = TileClip.Copy(_document, selection, CopyAllPlanes ? null : Plane);
+            RaiseChanged();
+        }
     }
 
     public void Cut()

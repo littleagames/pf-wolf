@@ -44,6 +44,7 @@ public partial class MainWindow : Window, IEditorDialogs
         {
             viewModel.Dialogs = this;
             viewModel.GoToTile += (_, tile) => Canvas.CenterOn(tile.X, tile.Y);
+            viewModel.FitRequested += (_, _) => Canvas.FitToView();
             viewModel.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(MainWindowViewModel.Show3D))
@@ -212,6 +213,8 @@ public partial class MainWindow : Window, IEditorDialogs
     }
 
     private void OnTileHovered(object? sender, TileEventArgs e) => ViewModel.Hover(e.X, e.Y);
+
+    private void ExitEditor(object? sender, RoutedEventArgs e) => Close();
 
     private void OnToolKeyPressed(object? sender, string key) => ViewModel.SelectToolByKey(key);
 

@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PFWolf.Editor.ViewModels"
         xmlns:r="using:PFWolf.Editor.Rendering"
+        xmlns:v="using:PFWolf.Editor.Views"
         x:Class="PFWolf.Editor.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding WindowTitle}"
@@ -28,84 +29,192 @@
     <KeyBinding Gesture="F12" Command="{Binding ShowScriptsCommand}" />
   </Window.KeyBindings>
 
+  <Window.Styles>
+    <!-- The toolbar's and options bar's icon buttons -->
+    <Style Selector="Button.icon, ToggleButton.icon">
+      <Setter Property="Padding" Value="6" />
+    </Style>
+    <Style Selector="PathIcon">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+    </Style>
+    <Style Selector="Separator.bar">
+      <Setter Property="Width" Value="1" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Margin" Value="2,0" />
+      <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+    </Style>
+  </Window.Styles>
+
   <DockPanel>
-    <!-- The game's resources (each in its own browser window), then the game: its folder, which game, and loading it -->
-    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
-        <DropDownButton Grid.Column="0" Content="Resources" ToolTip.Tip="Browse the game's textures, sounds, palettes, texts and scripts">
-          <DropDownButton.Flyout>
-            <MenuFlyout Placement="BottomEdgeAlignedLeft">
-              <MenuItem Header="Textures and sprites…" Command="{Binding ShowArtCommand}" InputGesture="F6"
-                        ToolTip.Tip="Every wall texture, flat, sprite and picture, where it comes from and what uses it" />
-              <MenuItem Header="Sounds and music…" Command="{Binding ShowSoundsCommand}" InputGesture="F8"
-                        ToolTip.Tip="Every sound and song, to listen to, with where it comes from and what plays it" />
-              <MenuItem Header="Palettes…" Command="{Binding ShowPalettesCommand}" InputGesture="F9"
-                        ToolTip.Tip="Every palette, to look at and edit, with where it comes from and what's drawn in it" />
-              <MenuItem Header="Texts…" Command="{Binding ShowTextsCommand}" InputGesture="F2"
-                        ToolTip.Tip="The help screens, end texts and briefings, each article page as the game shows it, with what's wrong with it" />
-              <MenuItem Header="Scripts…" Command="{Binding ShowScriptsCommand}" InputGesture="F12"
-                        ToolTip.Tip="The Lua scripts the game runs (scripts/*.lua), with the actions they give, what calls them and what's wrong with them" />
-              <Separator />
-              <MenuItem Header="Definitions…" Command="{Binding ShowDefinitionsCommand}" InputGesture="F11"
-                        ToolTip.Tip="Game info, game packs, actor classes and map definitions, in fields or as YAML, saved into a mod (pfwolf.pk3 is read-only)" />
-            </MenuFlyout>
-          </DropDownButton.Flyout>
-        </DropDownButton>
-        <Separator Grid.Column="1" Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-        <TextBlock Grid.Column="2" Text="Game folder" VerticalAlignment="Center" />
-        <TextBox Grid.Column="3" Text="{Binding GameFolder}" PlaceholderText="The folder PFWolf.exe and pfwolf.pk3 are in" />
-        <Button Grid.Column="4" Content="Browse…" Click="BrowseGameFolder" />
-        <ComboBox Grid.Column="5" ItemsSource="{Binding GameChoices}" SelectedItem="{Binding SelectedGame}" MinWidth="200" />
-        <Button Grid.Column="6" Content="Load" Command="{Binding LoadCommand}" Classes="accent" />
+    <!-- Every command, with its key -->
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem Header="_Load the game" Command="{Binding LoadCommand}"
+                  ToolTip.Tip="Loads the game in the game folder with the mods, again if it's loaded (to see what's changed in the mods)" />
+        <Separator />
+        <MenuItem Header="_New level…" Command="{Binding NewMapCommand}" InputGesture="Ctrl+N" />
+        <MenuItem Header="_Import map…" Command="{Binding ImportMapCommand}" InputGesture="Ctrl+I"
+                  ToolTip.Tip="Planes from a WDC .map (or an ECWolf .wad) onto this level, or as a new level; pick which planes" />
+        <Separator />
+        <MenuItem Header="_Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S"
+                  ToolTip.Tip="To maps/NAME.wad in the level's mod (a folder or a pk3)" />
+        <MenuItem Header="Save _to…" Command="{Binding SaveAsCommand}" InputGesture="Ctrl+Shift+S"
+                  ToolTip.Tip="To another mod (a folder or a pk3)" />
+        <Separator />
+        <MenuItem Header="New _mod…" Command="{Binding NewModCommand}"
+                  ToolTip.Tip="A new pk3: a stand-alone game (needing no other game's files) or a mod of one of PFWolf's games" />
+        <MenuItem Header="Add mod _pk3…" Click="AddModFile" />
+        <MenuItem Header="Add mod _folder…" Click="AddModFolder" />
+        <Separator />
+        <MenuItem Header="E_xit" Click="ExitEditor" InputGesture="Alt+F4" />
+      </MenuItem>
+      <MenuItem Header="_Edit">
+        <MenuItem Header="_Undo" Command="{Binding UndoCommand}" InputGesture="Ctrl+Z" />
+        <MenuItem Header="_Redo" Command="{Binding RedoCommand}" InputGesture="Ctrl+Y" />
+        <Separator />
+        <MenuItem Header="Cu_t" Command="{Binding CutCommand}" InputGesture="Ctrl+X" />
+        <MenuItem Header="_Copy" Command="{Binding CopyCommand}" InputGesture="Ctrl+C" />
+        <MenuItem Header="_Paste" Command="{Binding PasteCommand}" InputGesture="Ctrl+V"
+                  ToolTip.Tip="The copied tiles follow the pointer until a click puts them down" />
+        <MenuItem Header="_Delete" Command="{Binding DeleteSelectionCommand}" InputGesture="Delete"
+                  ToolTip.Tip="Clears the selection: open floor on plane 0, nothing on the others" />
+        <Separator />
+        <MenuItem Header="Select _all" Command="{Binding SelectAllCommand}" InputGesture="Ctrl+A" />
+        <MenuItem Header="Select _nothing" Command="{Binding SelectNoneCommand}" InputGesture="Escape" />
+        <Separator />
+        <MenuItem Header="C_opy all planes" ToggleType="CheckBox" IsChecked="{Binding CopyAllPlanes}"
+                  ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Header="_Walls" ToggleType="CheckBox" IsChecked="{Binding ShowWalls}" />
+        <MenuItem Header="T_hings" ToggleType="CheckBox" IsChecked="{Binding ShowThings}" />
+        <MenuItem Header="_Flats" ToggleType="CheckBox" IsChecked="{Binding ShowFlats}" />
+        <MenuItem Header="H_eights" ToggleType="CheckBox" IsChecked="{Binding ShowHeights}" />
+        <MenuItem Header="_Tags" ToggleType="CheckBox" IsChecked="{Binding ShowTags}" />
+        <MenuItem Header="_Light zones" ToggleType="CheckBox" IsChecked="{Binding ShowZones}" />
+        <MenuItem Header="_Grid" ToggleType="CheckBox" IsChecked="{Binding ShowGrid}" />
+        <Separator />
+        <MenuItem Header="_3D view" ToggleType="CheckBox" IsChecked="{Binding Show3D}" InputGesture="F3"
+                  ToolTip.Tip="The level in 3D beside the map" />
+        <MenuItem Header="3D: thi_ngs" ToggleType="CheckBox" IsChecked="{Binding Show3DThings}" IsEnabled="{Binding Show3D}" />
+        <MenuItem Header="3D: _ceilings" ToggleType="CheckBox" IsChecked="{Binding Show3DCeilings}" IsEnabled="{Binding Show3D}" />
+        <MenuItem Header="3D: _shading" ToggleType="CheckBox" IsChecked="{Binding Show3DShading}" IsEnabled="{Binding Show3D}"
+                  ToolTip.Tip="The level's light, light zones and distance fade, as the game shows them" />
+        <MenuItem Header="3D: _markers" ToggleType="CheckBox" IsChecked="{Binding Show3DMarkers}" IsEnabled="{Binding Show3D}"
+                  ToolTip.Tip="Push walls in purple, switches in green; hovering a tagged tile shows everything with its tag in orange" />
+        <Separator />
+        <MenuItem Header="Fit the _level" Command="{Binding FitViewCommand}" InputGesture="Home" />
+      </MenuItem>
+      <MenuItem Header="_Tools" ItemsSource="{Binding Tools}">
+        <MenuItem.Styles>
+          <Style Selector="MenuItem > MenuItem" x:DataType="vm:ToolOption">
+            <Setter Property="Header" Value="{Binding Label}" />
+            <Setter Property="Icon">
+              <Template>
+                <PathIcon Data="{Binding Icon}" Width="16" Height="16" />
+              </Template>
+            </Setter>
+            <Setter Property="InputGesture" Value="{Binding Gesture}" />
+            <Setter Property="Command" Value="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).PickToolCommand}" />
+            <Setter Property="CommandParameter" Value="{Binding Key}" />
+            <Setter Property="ToolTip.Tip" Value="{Binding Description}" />
+          </Style>
+        </MenuItem.Styles>
+      </MenuItem>
+      <MenuItem Header="_Level">
+        <MenuItem Header="Level _properties…" Command="{Binding EditPropertiesCommand}" InputGesture="F4"
+                  ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones" />
+        <MenuItem Header="_Check level" Command="{Binding CheckLevelCommand}" InputGesture="F7"
+                  ToolTip.Tip="Player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
+      </MenuItem>
+      <MenuItem Header="_Resources">
+        <MenuItem Header="_Textures and sprites…" Command="{Binding ShowArtCommand}" InputGesture="F6"
+                  ToolTip.Tip="Every wall texture, flat, sprite and picture, where it comes from and what uses it" />
+        <MenuItem Header="_Sounds and music…" Command="{Binding ShowSoundsCommand}" InputGesture="F8"
+                  ToolTip.Tip="Every sound and song, to listen to, with where it comes from and what plays it" />
+        <MenuItem Header="_Palettes…" Command="{Binding ShowPalettesCommand}" InputGesture="F9"
+                  ToolTip.Tip="Every palette, to look at and edit, with where it comes from and what's drawn in it" />
+        <MenuItem Header="Te_xts…" Command="{Binding ShowTextsCommand}" InputGesture="F2"
+                  ToolTip.Tip="The help screens, end texts and briefings, each article page as the game shows it, with what's wrong with it" />
+        <MenuItem Header="S_cripts…" Command="{Binding ShowScriptsCommand}" InputGesture="F12"
+                  ToolTip.Tip="The Lua scripts the game runs (scripts/*.lua), with the actions they give, what calls them and what's wrong with them" />
+        <Separator />
+        <MenuItem Header="_Definitions…" Command="{Binding ShowDefinitionsCommand}" InputGesture="F11"
+                  ToolTip.Tip="Game info, game packs, actor classes and map definitions, in fields or as YAML, saved into a mod (pfwolf.pk3 is read-only)" />
+      </MenuItem>
+      <MenuItem Header="_Play">
+        <MenuItem Header="_Play" Command="{Binding PlayCommand}" InputGesture="F5"
+                  ToolTip.Tip="Saves the level if it's changed, then starts PFWolf on it with the mods" />
+        <MenuItem Header="Play from _here" Command="{Binding PlayHereCommand}" InputGesture="Shift+F5"
+                  ToolTip.Tip="Over the map: start on the tile under the pointer (from the menu: the selected tile)" />
+      </MenuItem>
+    </Menu>
+
+    <!-- The game: its folder, which game, and loading it -->
+    <Border DockPanel.Dock="Top" Padding="8,6" BorderThickness="0,1,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+        <TextBlock Grid.Column="0" Text="Game folder" VerticalAlignment="Center" />
+        <TextBox Grid.Column="1" Text="{Binding GameFolder}" PlaceholderText="The folder PFWolf.exe and pfwolf.pk3 are in" />
+        <Button Grid.Column="2" Content="Browse…" Click="BrowseGameFolder" />
+        <ComboBox Grid.Column="3" ItemsSource="{Binding GameChoices}" SelectedItem="{Binding SelectedGame}" MinWidth="200" />
+        <Button Grid.Column="4" Content="Load" Command="{Binding LoadCommand}" Classes="accent" />
       </Grid>
     </Border>
 
-    <!-- Editing: tools, undo, saving, playing (wraps onto a second line in a narrow window) -->
+    <!-- Undo, saving, the 3D view and playing; then the options of the tool picked (wraps in a narrow window) -->
     <Border DockPanel.Dock="Top" Padding="8,4" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <WrapPanel ItemSpacing="8" LineSpacing="4">
-        <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding SelectedTool}" Padding="0">
-          <ListBox.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal" />
-            </ItemsPanelTemplate>
-          </ListBox.ItemsPanel>
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="vm:ToolOption">
-              <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding ToolTip}" />
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-        <CheckBox Content="Outline only" IsChecked="{Binding Outline}" ToolTip.Tip="The rectangle tool draws only the edge" VerticalAlignment="Center" />
-        <CheckBox Content="Copy all planes" IsChecked="{Binding CopyAllPlanes}" VerticalAlignment="Center"
-                  ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
-        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-        <Button Content="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z" />
-        <Button Content="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Ctrl+Y" />
-        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-        <Button Content="Save" Command="{Binding SaveCommand}" ToolTip.Tip="Ctrl+S: to maps/NAME.wad in the level's mod (a folder or a pk3)" />
-        <Button Content="Save to…" Command="{Binding SaveAsCommand}" ToolTip.Tip="Ctrl+Shift+S: to another mod (a folder or a pk3)" />
-        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-        <Button Content="Level properties…" Command="{Binding EditPropertiesCommand}"
-                ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones (F4)" />
-        <Button Content="Check level" Command="{Binding CheckLevelCommand}"
-                ToolTip.Tip="F7: player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
-        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-        <ToggleButton Content="3D view" IsChecked="{Binding Show3D}" ToolTip.Tip="F3: the level in 3D beside the map" />
-        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-        <Button Content="▶ Play" Command="{Binding PlayCommand}" Classes="accent"
-                ToolTip.Tip="F5: saves the level if it's changed, then starts PFWolf on it with the mods" />
-        <Button Content="Play from here" Command="{Binding PlayHereCommand}"
-                ToolTip.Tip="Shift+F5 over the map: start on the tile under the pointer (the button: the selected tile)" />
+      <WrapPanel ItemSpacing="6" LineSpacing="4">
+        <Button Classes="icon" Command="{Binding UndoCommand}" ToolTip.Tip="Undo (Ctrl+Z)">
+          <PathIcon Data="{x:Static v:EditorIcons.Undo}" />
+        </Button>
+        <Button Classes="icon" Command="{Binding RedoCommand}" ToolTip.Tip="Redo (Ctrl+Y)">
+          <PathIcon Data="{x:Static v:EditorIcons.Redo}" />
+        </Button>
+        <Separator Classes="bar" />
+        <Button Classes="icon" Command="{Binding SaveCommand}" ToolTip.Tip="Save (Ctrl+S): to maps/NAME.wad in the level's mod (a folder or a pk3)">
+          <PathIcon Data="{x:Static v:EditorIcons.Save}" />
+        </Button>
+        <Separator Classes="bar" />
+        <ToggleButton Classes="icon" IsChecked="{Binding Show3D}" ToolTip.Tip="3D view (F3): the level in 3D beside the map">
+          <PathIcon Data="{x:Static v:EditorIcons.View3D}" />
+        </ToggleButton>
+        <Separator Classes="bar" />
+        <Button Command="{Binding PlayCommand}" Classes="accent"
+                ToolTip.Tip="Play (F5): saves the level if it's changed, then starts PFWolf on it with the mods">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{x:Static v:EditorIcons.Play}" Width="14" Height="14" />
+            <TextBlock Text="Play" />
+          </StackPanel>
+        </Button>
+        <Button Content="From here" Command="{Binding PlayHereCommand}"
+                ToolTip.Tip="Play from here (Shift+F5 over the map): start on the tile under the pointer (the button: the selected tile)" />
         <ComboBox ItemsSource="{Binding PlaySkills}" SelectedItem="{Binding SelectedPlaySkill}" MinWidth="150"
                   ToolTip.Tip="The skill Play starts on" VerticalAlignment="Center" />
+        <Separator Classes="bar" />
+
+        <!-- The tool's options -->
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <PathIcon Data="{Binding SelectedTool.Icon}" Opacity="0.7" />
+          <TextBlock Text="{Binding SelectedTool.Label}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0" />
+          <CheckBox Content="Outline only" IsChecked="{Binding Outline}" IsVisible="{Binding ShowsOutlineOption}"
+                    ToolTip.Tip="The rectangle tool draws only the edge" VerticalAlignment="Center" />
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowsSelectionOptions}">
+            <CheckBox Content="Copy all planes" IsChecked="{Binding CopyAllPlanes}" VerticalAlignment="Center"
+                      ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
+          </StackPanel>
+        </StackPanel>
       </WrapPanel>
     </Border>
 
-    <!-- What's under the pointer, and how things went -->
+    <!-- What's under the pointer, and how things went, with what the tool's mouse buttons do -->
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <StackPanel Spacing="2">
         <TextBlock Text="{Binding HoverInfo}" TextTrimming="CharacterEllipsis" MinHeight="18" />
-        <TextBlock Text="{Binding Status}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+          <TextBlock Text="{Binding Status}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+          <TextBlock Grid.Column="1" Text="{Binding ToolHint}" Opacity="0.55" TextTrimming="CharacterEllipsis" />
+        </Grid>
       </StackPanel>
     </Border>
 
@@ -248,27 +357,39 @@
         </ListBox.ItemTemplate>
       </ListBox>
 
+      <!-- Which layers the map shows (the View menu has them too, and the 3D view's) -->
       <StackPanel Grid.Row="4" Spacing="2" Margin="0,8,0,0">
         <TextBlock Text="Show" FontWeight="SemiBold" Margin="0,0,0,2" />
         <WrapPanel>
-          <CheckBox Content="Walls" IsChecked="{Binding ShowWalls}" MinWidth="130" />
-          <CheckBox Content="Things" IsChecked="{Binding ShowThings}" MinWidth="130" />
-          <CheckBox Content="Flats" IsChecked="{Binding ShowFlats}" MinWidth="130" />
-          <CheckBox Content="Heights" IsChecked="{Binding ShowHeights}" MinWidth="130" />
-          <CheckBox Content="Tags" IsChecked="{Binding ShowTags}" MinWidth="130" />
-          <CheckBox Content="Light zones" IsChecked="{Binding ShowZones}" MinWidth="130" />
-          <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" MinWidth="130" />
-          <CheckBox Content="3D: things" IsChecked="{Binding Show3DThings}" MinWidth="130" IsVisible="{Binding Show3D}" />
-          <CheckBox Content="3D: ceilings" IsChecked="{Binding Show3DCeilings}" MinWidth="130" IsVisible="{Binding Show3D}" />
-          <CheckBox Content="3D: shading" IsChecked="{Binding Show3DShading}" MinWidth="130" IsVisible="{Binding Show3D}"
-                    ToolTip.Tip="The level's light, light zones and distance fade, as the game shows them" />
-          <CheckBox Content="3D: markers" IsChecked="{Binding Show3DMarkers}" MinWidth="130" IsVisible="{Binding Show3D}"
-                    ToolTip.Tip="Push walls in purple, switches in green; hovering a tagged tile shows everything with its tag in orange" />
+          <CheckBox Content="Walls" IsChecked="{Binding ShowWalls}" MinWidth="90" />
+          <CheckBox Content="Things" IsChecked="{Binding ShowThings}" MinWidth="90" />
+          <CheckBox Content="Flats" IsChecked="{Binding ShowFlats}" MinWidth="90" />
+          <CheckBox Content="Heights" IsChecked="{Binding ShowHeights}" MinWidth="90" />
+          <CheckBox Content="Tags" IsChecked="{Binding ShowTags}" MinWidth="90" />
+          <CheckBox Content="Zones" IsChecked="{Binding ShowZones}" MinWidth="90" ToolTip.Tip="Light zones" />
         </WrapPanel>
-        <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,4,0,0"
-                   Text="Left button: the tool. Middle or right drag: pan. Wheel: zoom. Home: fit. Select tool: drag inside the selection to move it; Ctrl+C/X/V, Delete, Esc." />
       </StackPanel>
     </Grid>
+
+    <!-- The tools, in groups: selecting, drawing, picking -->
+    <Border DockPanel.Dock="Left" BorderThickness="1,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" Padding="2,4">
+      <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding SelectedTool}" Background="Transparent" Padding="0">
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem" x:DataType="vm:ToolOption">
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="Margin" Value="{Binding Spacing}" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="ToolTip.Tip" Value="{Binding ToolTip}" />
+            <Setter Property="ToolTip.Placement" Value="Right" />
+          </Style>
+        </ListBox.Styles>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:ToolOption">
+            <PathIcon Data="{Binding Icon}" Width="20" Height="20" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
 
     <!-- The map, and the 3D view beside it (F3) -->
     <Grid x:Name="Views" ColumnDefinitions="*,Auto,*">

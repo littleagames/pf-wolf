@@ -6,6 +6,7 @@ using PFWolf.Constants;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Editing;
 using PFWolf.Editor.Rendering;
+using PFWolf.Editor.Views;
 using PFWolf.Exceptions;
 
 namespace PFWolf.Editor.ViewModels;
@@ -35,7 +36,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         _settings = settings;
         _gameFolder = settings.GameFolder;
-        _selectedTool = Tools[0];
+        _selectedTool = Tools.First(tool => tool.Tool == EditTool.Paint);
         _selectedPlane = Planes[0];
         _show3D = settings.Show3D;
         foreach (var mod in settings.Mods)
@@ -44,6 +45,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _selectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(settings.Game, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
 
         Controller.ValuePicked += (_, value) => SelectValue(value);
+        Controller.Changed += (_, _) => OnToolStateChanged();
 
         // The shared code's warnings (an asset that can't be read, say) go to the problems list
         WarningLog.Sink = message => Dispatcher.UIThread.Post(() => Problems.Add(message));
@@ -87,14 +89,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SelectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(picked, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
     }
 
+    /// <summary>The tools, in the tool strip's order and groups: selecting, drawing, picking</summary>
     public IReadOnlyList<ToolOption> Tools { get; } =
     [
-        new(EditTool.Paint, "Paint", "P"),
-        new(EditTool.Line, "Line", "L"),
-        new(EditTool.Rectangle, "Rectangle", "R"),
-        new(EditTool.Fill, "Fill", "F"),
-        new(EditTool.Pick, "Pick", "I"),
-        new(EditTool.Select, "Select", "S"),
+        new(EditTool.Select, "Select", "S",
+            "Drag to select a block of tiles; drag inside the selection to move it. Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste it; Delete clears it.",
+            EditorIcons.Select),
+        new(EditTool.Paint, "Paint", "P", "Puts what's picked in the palette on every tile you drag over.", EditorIcons.Paint, GroupStart: true),
+        new(EditTool.Line, "Line", "L", "Drag a straight line of what's picked.", EditorIcons.Line),
+        new(EditTool.Rectangle, "Rectangle", "R", "Drag a box of what's picked (Outline only: just its edge).", EditorIcons.Rectangle),
+        new(EditTool.Fill, "Fill", "F", "Fills the joined tiles that hold the same as the one clicked.", EditorIcons.Fill),
+        new(EditTool.Pick, "Pick", "I", "Click a tile to pick what's on it into the palette (an eyedropper).", EditorIcons.Pick, GroupStart: true),
     ];
 
     public IReadOnlyList<PlaneOption> Planes { get; } =
@@ -711,9 +716,102 @@ public sealed partial class MainWindowViewModel : ObservableObject
     // Tools and palette
     //
 
-    partial void OnSelectedToolChanged(ToolOption value) => Controller.Tool = value.Tool;
+    partial void OnSelectedToolChanged(ToolOption value)
+    {
+        Controller.Tool = value.Tool;
+        OnToolStateChanged();
+    }
+
     partial void OnOutlineChanged(bool value) => Controller.Outline = value;
     partial void OnCopyAllPlanesChanged(bool value) => Controller.CopyAllPlanes = value;
+
+    /// <summary>The options bar shows the rectangle tool's outline option</summary>
+    public bool ShowsOutlineOption => SelectedTool.Tool == EditTool.Rectangle;
+
+    /// <summary>The options bar shows what works on the selection: the select tool's, or while pasting</summary>
+    public bool ShowsSelectionOptions => SelectedTool.Tool == EditTool.Select || Controller.IsPasting;
+
+    /// <summary>What the mouse does with the tool picked (or the paste being placed), for the status bar</summary>
+    public string ToolHint => Controller.IsPasting
+        ? "Pasting: click to put it down · Esc drops it"
+        : SelectedTool.Tool switch
+        {
+            EditTool.Select when Controller.Selection != null => "Drag inside the selection to move it · drag outside for a new one · Esc: select nothing",
+            EditTool.Select => "Drag to select a block of tiles",
+            EditTool.Paint => "Drag to paint",
+            EditTool.Line => "Drag from one end of the line to the other",
+            EditTool.Rectangle => "Drag from one corner to the other",
+            EditTool.Fill => "Click to fill",
+            EditTool.Pick => "Click a tile to pick what's on it",
+            _ => "",
+        } + " · middle or right drag: pan · wheel: zoom · Home: fit";
+
+    // The selection or the paste changed: what the options bar, the status bar and the Edit menu offer
+    private void OnToolStateChanged()
+    {
+        OnPropertyChanged(nameof(ShowsOutlineOption));
+        OnPropertyChanged(nameof(ShowsSelectionOptions));
+        OnPropertyChanged(nameof(ToolHint));
+        CopyCommand.NotifyCanExecuteChanged();
+        CutCommand.NotifyCanExecuteChanged();
+        DeleteSelectionCommand.NotifyCanExecuteChanged();
+        PasteCommand.NotifyCanExecuteChanged();
+    }
+
+    //
+    // The Edit menu: the selection and the clipboard (the map's keys do the same over the map)
+    //
+
+    private bool HasSelection => Controller.Selection != null;
+    private bool CanPaste => Controller.HasClipboard && Document != null;
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void Copy()
+    {
+        Controller.Copy();
+        Status = "Copied the selection";
+        PasteCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void Cut()
+    {
+        Controller.Cut();
+        Status = "Cut the selection";
+        PasteCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>Picks up the clipboard where the pointer was last on the map, else at the selection</summary>
+    [RelayCommand(CanExecute = nameof(CanPaste))]
+    private void Paste()
+    {
+        var (x, y) = _hover.X >= 0 ? _hover : Controller.Selection is { } selection ? (selection.Left, selection.Top) : (0, 0);
+        Controller.StartPaste(x, y);
+        Status = "Pasting: move the pointer over the map and click to put it down";
+    }
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void DeleteSelection() => Controller.Delete();
+
+    [RelayCommand(CanExecute = nameof(HasDocument))]
+    private void SelectAll()
+    {
+        SelectedTool = Tools.First(tool => tool.Tool == EditTool.Select);
+        Controller.SelectAll();
+    }
+
+    [RelayCommand]
+    private void SelectNone() => Controller.Escape();
+
+    /// <summary>The map should zoom to show the whole level</summary>
+    public event EventHandler? FitRequested;
+
+    [RelayCommand]
+    private void FitView() => FitRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>A tool from the Tools menu, by its key letter</summary>
+    [RelayCommand]
+    private void PickTool(string key) => SelectToolByKey(key);
 
     partial void OnSelectedPlaneChanged(PlaneOption value)
     {
