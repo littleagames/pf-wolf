@@ -42,7 +42,8 @@ internal static class PortCheck
         "stun.1und1.de", "stun.gmx.net", "stun.signalwire.com", "stun.easybell.de",
     ];
     const int StunPort = 3478;
-    const int MaxServersTried = 4;
+    const int MaxServersTried = 5;
+    const int ClosedVotesNeeded = 2;
 
     const ushort BindingRequest = 0x0001, BindingSuccess = 0x0101, BindingError = 0x0111;
     const ushort AttrMappedAddress = 0x0001, AttrChangeRequest = 0x0003, AttrChangedAddress = 0x0005,
@@ -64,7 +65,10 @@ internal static class PortCheck
 
         using (udp)
         {
-            int tried = 0;
+            // A server can advertise another address yet never answer from it, so one silent
+            // server isn't proof: "closed" needs ClosedVotesNeeded of them to stay silent
+            Result? closed = null;
+            int tried = 0, closedVotes = 0;
             foreach (var name in Servers)
             {
                 if (tried >= MaxServersTried || cancel.IsCancellationRequested)
@@ -79,15 +83,23 @@ internal static class PortCheck
                 var first = await AskAsync(udp, server, changeRequest: false, TimeSpan.FromMilliseconds(1500), cancel).ConfigureAwait(false);
                 if (first == null || first.Refused || first.Mapped == null || first.Other == null)
                     continue;       // no answer, or a server that can't answer from elsewhere
+                if (first.Other.Address.Equals(server.Address))
+                    continue;       // its "other" address is the same machine: it can't change address
 
                 // The same server answering from its other address and port: unasked-for, as far as the router knows
                 var second = await AskAsync(udp, server, changeRequest: true, TimeSpan.FromMilliseconds(2500), cancel).ConfigureAwait(false);
                 if (second != null && (second.Refused || second.From.Equals(server)))
                     continue;       // it refused or ignored the change request: can't tell anything from it
 
-                return new Result(second != null ? Outcome.Open : Outcome.Closed,
-                    first.Mapped.Address, first.Mapped.Port, name);
+                if (second != null)
+                    return new Result(Outcome.Open, first.Mapped.Address, first.Mapped.Port, name);
+
+                closed ??= new Result(Outcome.Closed, first.Mapped.Address, first.Mapped.Port, name);
+                if (++closedVotes >= ClosedVotesNeeded)
+                    break;
             }
+            if (closed != null)
+                return closed;
         }
         return new Result(Outcome.Unknown);
     }
