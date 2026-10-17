@@ -175,6 +175,23 @@ public sealed class GameContent
 
     private readonly Dictionary<string, string> _thingSpriteNames = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Why a thing's class shows nothing when it should: it isn't in the actordefs, or its Spawn
+    /// frame names a sprite the game can't find; null when it shows, or is meant not to (TNT1,
+    /// no Spawn frame: a patrol point), or when there are no actordefs to check against
+    /// </summary>
+    public string? BrokenThingReason(string className)
+    {
+        if (_actors.Count == 0)
+            return null;
+        if (!_actors.ContainsKey(className))
+            return $"{className} isn't in the actordefs";
+        if (ThingSprite(className) != null || SpawnFrame(className) is not { Frames.Count: > 0 } frame
+            || string.IsNullOrEmpty(frame.Sprite) || frame.Sprite == "TNT1")
+            return null;
+        return $"{className}'s sprite {frame.Sprite}{frame.Frames[0]} isn't found";
+    }
+
     /// <summary>The name of the sprite <see cref="ThingSprite"/> shows ("GARDA1"), or null when it has none</summary>
     public string? ThingSpriteName(string className)
         => ThingSprite(className) != null ? _thingSpriteNames.GetValueOrDefault(className) : null;

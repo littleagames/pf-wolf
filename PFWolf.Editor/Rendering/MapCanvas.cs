@@ -92,6 +92,10 @@ public sealed class MapCanvas : Control
     private static readonly IBrush BuriedBrush = new SolidColorBrush(Color.FromArgb(170, 16, 16, 20));
     private static readonly IBrush UnknownBrush = new SolidColorBrush(Color.FromRgb(220, 40, 40));
     private static readonly IBrush MissingTextureBrush = new SolidColorBrush(Color.FromRgb(120, 120, 128));
+    private static readonly IBrush BrokenBrush = new SolidColorBrush(Color.FromRgb(255, 140, 0));
+    private static readonly IBrush MarkerBackBrush = new SolidColorBrush(Color.FromArgb(220, 24, 24, 28));
+    private static readonly IPen UnknownMarkerPen = new Pen(UnknownBrush, 2);
+    private static readonly IPen BrokenMarkerPen = new Pen(BrokenBrush, 2);
     private static readonly IBrush ThingDotBrush = new SolidColorBrush(Color.FromRgb(240, 200, 64));
     private static readonly IBrush StartBrush = new SolidColorBrush(Color.FromRgb(64, 220, 96));
     private static readonly IPen GridPen = new Pen(new SolidColorBrush(Color.FromArgb(48, 255, 255, 255)), 1);
@@ -318,6 +322,8 @@ public sealed class MapCanvas : Control
                     // Its patch over it, the wall showing through where the patch is see-through
                     if (tiles.PatchDef(x, y) is { } patch && Art?.Flat(patch.Texture) is { } patchPicture)
                         context.DrawImage(patchPicture, new Rect(patchPicture.Size), rect);
+                    else if (tiles.Patch(x, y) != 0 && tiles.PatchDef(x, y) == null && _zoom >= 12)
+                        DrawBadge(context, rect, "?", UnknownBrush, bottom: true);     // a patch the mapdefs don't know
                     break;
 
                 case TileKind.Door:
@@ -344,6 +350,8 @@ public sealed class MapCanvas : Control
             var content = tiles.Content;
             if (content.IsWallSprite(thing.Class))
                 DrawWallSprite(context, rect, thing.Angles, content.WallSpriteOffset(thing.Class));
+            else if (content.BrokenThingReason(thing.Class) != null)
+                DrawMarker(context, rect, "!", BrokenBrush, BrokenMarkerPen);
             else if (Art?.ThingSprite(thing.Class) is { } sprite)
             {
                 if (_zoom >= 6)
@@ -369,6 +377,8 @@ public sealed class MapCanvas : Control
             context.DrawGeometry(StartBrush, null, Arrow(rect, start.Angles));
         else if (tiles.Trigger(x, y) is not null)
             context.DrawRectangle(null, TriggerPen, rect.Deflate(2));
+        else if (!tiles.ObjectKnown(x, y))
+            DrawMarker(context, rect, "?", UnknownBrush, UnknownMarkerPen);
 
         // An ambush floor: whoever stands on it waits deaf until they see the player
         if (ShowWalls && _zoom >= 12 && tiles.IsAmbush(x, y))
@@ -384,6 +394,23 @@ public sealed class MapCanvas : Control
             text.Width + 3, text.Height);
         context.FillRectangle(background, box);
         context.DrawText(text, new Point(box.X + 1.5, box.Y));
+    }
+
+    /// <summary>
+    /// An object-plane value that shows nothing: a box inset in the tile with its glyph ("?" for a
+    /// code the mapdefs don't know, "!" for a thing whose class or sprite is missing); just the box
+    /// when the tile's too small for the glyph
+    /// </summary>
+    private void DrawMarker(DrawingContext context, Rect rect, string glyph, IBrush brush, IPen pen)
+    {
+        var box = rect.Deflate(Math.Max(1, rect.Width * 0.15));
+        context.FillRectangle(MarkerBackBrush, box);
+        context.DrawRectangle(null, pen, box);
+        if (_zoom < 10)
+            return;
+
+        var text = new FormattedText(glyph, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, LabelFont, box.Height * 0.8, brush);
+        context.DrawText(text, new Point(box.Center.X - text.Width / 2, box.Center.Y - text.Height / 2));
     }
 
     /// <summary>A notch on the tile's edge the way the thing faces (0 east, 90 north)</summary>

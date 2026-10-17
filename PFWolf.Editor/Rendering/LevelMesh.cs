@@ -140,6 +140,7 @@ public sealed class LevelMesh
     private static readonly Vector4 TopShade = new(0.55f, 0.55f, 0.55f, 1);
     private static readonly Vector4 StartColor = new(0.25f, 0.86f, 0.38f, 1);
     private static readonly Vector4 UnknownColor = new(0.86f, 0.16f, 0.16f, 1);
+    private static readonly Vector4 BrokenColor = new(1f, 0.55f, 0f, 1);
 
     private LevelMesh(MapTiles tiles, bool shade)
     {
@@ -541,6 +542,12 @@ public sealed class LevelMesh
         var content = _tiles.Content;
         if (_tiles.Thing(x, y) is { } thing)
         {
+            if (content.BrokenThingReason(thing.Class) != null)
+            {
+                AddMarker(x, y, BrokenColor);
+                return;
+            }
+
             var sprite = content.ThingSprite(thing.Class);
             if (sprite is not { Width: > 0, Height: > 0 })
                 return;     // nothing to see in the game (a patrol point)
@@ -576,6 +583,21 @@ public sealed class LevelMesh
                 (arrow[1], arrow[2]) = (arrow[2], arrow[1]);
             AddFlat(new SurfaceRef(SurfaceKind.PlayerStart, x, y), arrow, 0.01f, up: true, TextureRef.Solid, StartColor);
         }
+        else if (!_tiles.ObjectKnown(x, y))
+            AddMarker(x, y, UnknownColor);
+    }
+
+    /// <summary>
+    /// An object-plane value that shows nothing (a code the mapdefs don't know, or a thing whose
+    /// class or sprite is missing): a diamond on the floor in its color, hidden with the things
+    /// </summary>
+    private void AddMarker(int x, int y, Vector4 color)
+    {
+        Vector2 center = new(x + 0.5f, y + 0.5f);
+        Vector2[] diamond = [center + new Vector2(0, 0.35f), center + new Vector2(0.35f, 0), center + new Vector2(0, -0.35f), center + new Vector2(-0.35f, 0)];
+        if (Cross(diamond[1] - diamond[0], diamond[2] - diamond[0]) > 0)
+            Array.Reverse(diamond);
+        AddFlat(new SurfaceRef(SurfaceKind.Thing, x, y), diamond, 0.01f, up: true, TextureRef.Solid, color);
     }
 
     /// <summary>

@@ -45,6 +45,7 @@ public static class LevelChecks
         var unknownFloor = new Dictionary<int, (int X, int Y, int Count)>();
         var unknownObjects = new Dictionary<int, (int X, int Y, int Count)>();
         var unknownPatches = new Dictionary<int, (int X, int Y, int Count)>();
+        var brokenThings = new Dictionary<string, (int X, int Y, int Count)>();
         for (int y = 0; y < tiles.Height; y++)
         {
             for (int x = 0; x < tiles.Width; x++)
@@ -59,7 +60,7 @@ public static class LevelChecks
                     starts.Add((x, y));
 
                 if (obj != 0)
-                    CheckObject(tiles, problems, unknownObjects, x, y, obj, kind);
+                    CheckObject(tiles, problems, unknownObjects, brokenThings, x, y, obj, kind);
 
                 if (kind == TileKind.Door)
                     CheckDoor(tiles, problems, x, y);
@@ -85,6 +86,8 @@ public static class LevelChecks
             problems.Add(new(CheckSeverity.Error, $"plane 0 value {value} isn't a wall, door or floor code in the mapdefs ({count} {Tiles(count)})", x, y));
         foreach (var (value, (x, y, count)) in unknownObjects)
             problems.Add(new(CheckSeverity.Warning, $"object code {value} isn't in the mapdefs, so nothing's placed ({count} {Tiles(count)})", x, y));
+        foreach (var (reason, (x, y, count)) in brokenThings)
+            problems.Add(new(CheckSeverity.Warning, $"{reason}, so nothing shows ({count} {Tiles(count)})", x, y));
         foreach (var (value, (x, y, count)) in unknownPatches)
             problems.Add(new(CheckSeverity.Warning, $"patch {value} isn't in the mapdefs patches, so nothing's drawn ({count} {Tiles(count)})", x, y));
 
@@ -107,7 +110,8 @@ public static class LevelChecks
             problems.Add(new(CheckSeverity.Warning, $"weather '{weather}' isn't a kind game-info's weather-types or the built-in ones have, so the level has none"));
     }
 
-    private static void CheckObject(MapTiles tiles, List<LevelProblem> problems, Dictionary<int, (int, int, int)> unknown, int x, int y, int obj, TileKind kind)
+    private static void CheckObject(MapTiles tiles, List<LevelProblem> problems, Dictionary<int, (int, int, int)> unknown,
+        Dictionary<string, (int, int, int)> broken, int x, int y, int obj, TileKind kind)
     {
         var defs = tiles.Content.MapDefs;
         bool solid = kind is TileKind.Wall or TileKind.Door;
@@ -117,6 +121,8 @@ public static class LevelChecks
             // an `in-wall` thing (a trap shooter) is placed on a wall, though not on a door
             if (solid && !(thing.InWall && kind == TileKind.Wall))
                 problems.Add(new(CheckSeverity.Warning, $"{thing.Class} is on a {(kind == TileKind.Door ? "door" : "wall")}, so it isn't placed", x, y));
+            else if (tiles.Content.BrokenThingReason(thing.Class) is { } reason)
+                Count(broken, reason, x, y);
             return;
         }
         if (defs.Diagonals.ContainsKey(obj))
@@ -125,15 +131,9 @@ public static class LevelChecks
                 problems.Add(new(CheckSeverity.Warning, "a diagonal marker on a tile that isn't a wall does nothing", x, y));
             return;
         }
-        if (defs.PlayerStarts.ContainsKey(obj) || defs.Triggers.ContainsKey(obj) || defs.DoorLocks.ContainsKey(obj)
-            || defs.MapInfo.ContainsKey(obj >> 8))
-            return;
 
-        // The tile after a map-info code holds that code's value
-        if (x > 0 && defs.MapInfo.TryGetValue(tiles[1, x - 1, y] >> 8, out var info) && MapInfoCodes.HasValue(info))
-            return;
-
-        Count(unknown, obj, x, y);
+        if (!tiles.ObjectKnown(x, y))
+            Count(unknown, obj, x, y);
     }
 
     /// <summary>
@@ -315,7 +315,7 @@ public static class LevelChecks
         return reached;
     }
 
-    private static void Count(Dictionary<int, (int X, int Y, int Count)> counts, int value, int x, int y)
+    private static void Count<T>(Dictionary<T, (int X, int Y, int Count)> counts, T value, int x, int y) where T : notnull
         => counts[value] = counts.TryGetValue(value, out var seen) ? (seen.X, seen.Y, seen.Count + 1) : (x, y, 1);
 
     private static string Tiles(int count) => count == 1 ? "tile" : "tiles";

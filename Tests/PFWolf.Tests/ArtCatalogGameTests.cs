@@ -99,6 +99,24 @@ public class ArtCatalogGameTests
     }
 
     [TestCase("wolf3d")]
+    [TestCase("spear")]
+    [TestCase("blake-aog")]
+    public void No_Stock_Thing_Shows_As_Broken(string game)
+    {
+        // Arrange
+        var content = Load(game);
+
+        // Act: the things the levels place (Spear's mapdefs also hold Wolf3D's, which it has no sprites for)
+        var broken = content.Maps.Select(entry => content.FindMap(entry.Name)!)
+            .SelectMany(map => map.MapData[1])
+            .Select(obj => content.MapDefs.Things.GetValueOrDefault(obj)?.Class).OfType<string>().Distinct()
+            .Select(content.BrokenThingReason).OfType<string>().ToList();
+
+        // Assert: the map editor marks these with "!", so the games' own levels mustn't have any
+        Assert.That(broken, Is.Empty);
+    }
+
+    [TestCase("wolf3d")]
     [TestCase("blake-aog")]
     public void Stock_Flats_Have_No_See_Through_Pixels(string game)
     {

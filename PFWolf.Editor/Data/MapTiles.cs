@@ -251,6 +251,21 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     public MapTriggerTranslation? Trigger(int x, int y)
         => Defs.Triggers.GetValueOrDefault(this[1, x, y]);
 
+    /// <summary>
+    /// Whether the mapdefs know the tile's object-plane value (0 is nothing, so known): a thing,
+    /// diagonal, player start, trigger, door lock or map-info code, or the value after a map-info code
+    /// </summary>
+    public bool ObjectKnown(int x, int y)
+    {
+        int obj = this[1, x, y];
+        if (obj == 0 || Defs.Things.ContainsKey(obj) || Defs.Diagonals.ContainsKey(obj) || Defs.PlayerStarts.ContainsKey(obj)
+            || Defs.Triggers.ContainsKey(obj) || Defs.DoorLocks.ContainsKey(obj) || Defs.MapInfo.ContainsKey(obj >> 8))
+            return true;
+
+        // The tile after a map-info code holds that code's value
+        return x > 0 && Defs.MapInfo.TryGetValue(this[1, x - 1, y] >> 8, out var info) && MapInfoCodes.HasValue(info);
+    }
+
     /// <summary>A diagonal marker, which only shapes a wall</summary>
     public MapDiagonalTranslation? Diagonal(int x, int y)
         => KindAt(x, y) == TileKind.Wall ? Defs.Diagonals.GetValueOrDefault(this[1, x, y]) : null;
@@ -303,6 +318,8 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
                 details.Add("patrols");
             if (thing.MinSkill > 0)
                 details.Add($"skill {thing.MinSkill + 1}+");
+            if (content.BrokenThingReason(thing.Class) is { } reason)
+                details.Add($"broken: {reason}");
             return string.Join(", ", details);
         }
         if (PlayerStart(x, y) is { } start)
