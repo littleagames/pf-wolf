@@ -122,6 +122,13 @@ public class ProjectilesTests
     }
 
     [Test]
+    public void The_Death_Cam_Can_Never_Stand_Off_The_Map()
+    {
+        Assert.That(_projectiles.CheckPosition(-Tile, 10 * Tile), Is.False);
+        Assert.That(_projectiles.CheckPosition(MapManager.MapSize * Tile, 10 * Tile), Is.False);
+    }
+
+    [Test]
     public void A_Remove_Takes_The_Effect_Away()
     {
         var smoke = Needle();
