@@ -499,8 +499,12 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     ControlPanelItem[] LobbyMenu = [];
     ControlPanelMenuInfo LobbyItems = null!;
 
-    // The lobby panel: PlayerCommands.MaxPlayers players in columns of LobbyPanelRows, then the last chat lines
-    const int LobbyPanelX = 24, LobbyPanelY = 138, LobbyPanelRow = 9, LobbyPanelRows = 4, LobbyPanelWidth = 272, LobbyChatLines = 1;
+    // The lobby's table of players (its window is in menudefs/lobby.yaml): a heading, then a row
+    // for each of PlayerCommands.MaxPlayers, its columns at these x's; under it, the last thing
+    // said and the keys. The settings scroll (visible-rows), their marks at LobbyScrollMarkX.
+    const int LobbyPanelX = 20, LobbyPanelWidth = 280, LobbyTableY = 104, LobbyTableRow = 8,
+        LobbyNameX = 30, LobbyClassX = 98, LobbyColorX = 192, LobbyStatusX = 242,
+        LobbyBottomY = 185, LobbyScrollMarkX = 296;
 
     /// <summary>
     /// Waits in a game's lobby: the host sets the game up and starts it once everyone's ready;
@@ -689,6 +693,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         MenuDefs.FindMenuItem(LobbyMenu, "copy")?.Active = (short)(host ? 1 : 0);
         if (LobbyMenu[LobbyItems.CurPos].Active == 0)
             LobbyItems.CurPos = (short)Math.Max(0, Array.FindIndex(LobbyMenu, item => item.Active != 0));
+        LobbyItems.ScrollTo(LobbyItems.CurPos);
 
         defs.DrawMenuComponents("lobby");
         draw.DrawMenu(LobbyItems, LobbyMenu);
@@ -697,56 +702,102 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         DrawLobbyValue("episode", arenas ? MapLabel(settings.Map) : EpisodeLabel(settings.Episode));
         DrawLobbyValue("skill", gameInfo.Skills.Values.ElementAtOrDefault(settings.Skill)?.Name.ToLanguageText(language) ?? "?");
         DrawLobbyValue("class", me == null ? "" : PlayerClassLabel(me.PlayerClass));
-        DrawLobbyValue("color", me == null ? "" : teams ? GameModes.TeamLabel(me.Team) : ColorLabel(me.Color));
+        DrawLobbyValue("color", me == null ? "" : teams ? GameModes.TeamLabel(me.Team) : ColorLabel(me.Color),
+            me == null ? null : PlayerColorText(teams, me.Team, me.Color));
         DrawLobbyValue("rules", RulesSummary(settings));
         if (!host)
             draw.DrawMenuCheckbox(LobbyItems, LobbyMenu, "go", me?.Ready == true);
+        draw.DrawMenuScrollMarks(LobbyItems, LobbyScrollMarkX);
 
-        // Who's in, a column of LobbyPanelRows at a time (with more than that, too narrow to say
-        // "ready": anyone not ready yet is greyed instead), and the last thing or two said
-        var panel = new TextStyle(UiFonts.SmallFont, "TEXTCOLOR");
-        int columns = (PlayerCommands.MaxPlayers + LobbyPanelRows - 1) / LobbyPanelRows;
-        int columnWidth = LobbyPanelWidth / columns;
-        for (int slot = 0; slot < PlayerCommands.MaxPlayers; slot++)
-        {
-            var p = session.Players.FirstOrDefault(pl => pl.Slot == slot);
-            string text = p == null ? "-"
-                : $"{p.Name}{(slot == 0 ? " (host)" : "")}  {PlayerClassLabel(p.PlayerClass)}"
-                  + (teams ? $" ({GameModes.TeamLabel(p.Team)})" : string.IsNullOrEmpty(p.Color) ? "" : $" ({ColorLabel(p.Color)})")
-                  + (columns > 1 || slot == 0 ? "" : $"  {(p.Ready ? "ready" : "not ready")}");
-            var style = p != null && p.Slot == session.LocalSlot ? new TextStyle(UiFonts.SmallFont, "HIGHLIGHT")
-                : p != null && columns > 1 && slot != 0 && !p.Ready ? new TextStyle(UiFonts.SmallFont, "DEACTIVE")
-                : panel;
-            int x = LobbyPanelX + slot / LobbyPanelRows * columnWidth, rowY = LobbyPanelY + slot % LobbyPanelRows * LobbyPanelRow;
-            ui.TextAt(x, rowY, style).Print(ui.FitText($"{slot + 1}. {text}", columnWidth - 4, UiFonts.SmallFont));
-        }
-        int y = LobbyPanelY + Math.Min(PlayerCommands.MaxPlayers, LobbyPanelRows) * LobbyPanelRow;
+        DrawLobbyPlayers(session, teams);
 
-        foreach (var line in session.Chat.TakeLast(LobbyChatLines))
-        {
-            ui.TextAt(LobbyPanelX, y, new TextStyle(UiFonts.SmallFont, "READCOLOR")).Print(ui.FitText(Shown(line), LobbyPanelWidth, UiFonts.SmallFont));
-            y += LobbyPanelRow;
-        }
+        // The last thing said, and the keys that work from any row
+        var keys = "T: chat   Esc: leave";
+        int keysX = LobbyPanelX + LobbyPanelWidth - ui.TextWidth(keys, UiFonts.SmallFont);
+        if (session.Chat.LastOrDefault() is { } line)
+            ui.TextAt(LobbyPanelX, LobbyBottomY, new TextStyle(UiFonts.SmallFont, "READCOLOR"))
+                .Print(ui.FitText(Shown(line), keysX - LobbyPanelX - 8, UiFonts.SmallFont));
+        ui.TextAt(keysX, LobbyBottomY, new TextStyle(UiFonts.SmallFont, "TEXTCOLOR")).Print(keys);
 
         session.MapLabel = arenas ? MapLabel(settings.Map) : EpisodeLabel(settings.Episode);
         draw.DrawMenuGun(LobbyItems);
         video.Update();
     }
 
-    // A lobby row's value, to the right of its name (cleared first)
-    void DrawLobbyValue(string id, string value) => DrawRowValue(LobbyItems, LobbyMenu, id, value);
+    /// <summary>
+    /// The lobby's table of who's in, a row a slot: number, name, class, color (or team) in that
+    /// color, and whether they're the host, ready (green) or not; this machine's row on a bar.
+    /// An empty slot is "open".
+    /// </summary>
+    void DrawLobbyPlayers(NetSession session, bool teams)
+    {
+        var heading = new TextStyle(UiFonts.SmallFont, "TEXTCOLOR");
+        int y = LobbyTableY;
+        ui.TextAt(LobbyPanelX, y, heading).Print("#");
+        ui.TextAt(LobbyNameX, y, heading).Print("Name");
+        ui.TextAt(LobbyClassX, y, heading).Print("Class");
+        ui.TextAt(LobbyColorX, y, heading).Print(teams ? "Team" : "Color");
+        ui.TextAt(LobbyStatusX, y, heading).Print("Status");
+        video.HorizontalLine(LobbyPanelX - 2, LobbyPanelX + LobbyPanelWidth + 2, y + LobbyTableRow + 1, "DEACTIVE");
+
+        y += LobbyTableRow + 3;
+
+        // This machine's row's bar first: it reaches up a pixel, under the row above's text
+        if (session.LocalSlot is >= 0 and < PlayerCommands.MaxPlayers and var local)
+            video.Bar(LobbyPanelX - 2, y + local * LobbyTableRow - 1, LobbyPanelWidth + 4, LobbyTableRow, "DEACTIVE");
+
+        for (int slot = 0; slot < PlayerCommands.MaxPlayers; slot++, y += LobbyTableRow)
+        {
+            var p = session.Players.FirstOrDefault(pl => pl.Slot == slot);
+            if (p == null)
+            {
+                var open = new TextStyle(UiFonts.SmallFont, "TEXTCOLOR");
+                ui.TextAt(LobbyPanelX, y, open).Print($"{slot + 1}");
+                ui.TextAt(LobbyNameX, y, open).Print("open");
+                continue;
+            }
+
+            var text = new TextStyle(UiFonts.SmallFont, "HIGHLIGHT");
+            ui.TextAt(LobbyPanelX, y, text).Print($"{slot + 1}");
+            ui.TextAt(LobbyNameX, y, text).Print(ui.FitText(p.Name, LobbyClassX - LobbyNameX - 4, UiFonts.SmallFont));
+            ui.TextAt(LobbyClassX, y, text).Print(ui.FitText(PlayerClassLabel(p.PlayerClass), LobbyColorX - LobbyClassX - 2, UiFonts.SmallFont));
+            ui.TextAt(LobbyColorX, y, new TextStyle(UiFonts.SmallFont, PlayerColorText(teams, p.Team, p.Color)))
+                .Print(ui.FitText(teams ? GameModes.TeamLabel(p.Team) : ColorLabel(p.Color), LobbyStatusX - LobbyColorX - 4, UiFonts.SmallFont));
+            var (status, color) = slot == 0 ? ("host", "READHCOLOR") : p.Ready ? ("ready", "Lime") : ("not ready", "TEXTCOLOR");
+            ui.TextAt(LobbyStatusX, y, new TextStyle(UiFonts.SmallFont, color)).Print(status);
+        }
+    }
+
+    /// <summary>
+    /// The text color for a player color (or, in a team game, their team): colors.yaml's
+    /// "player-NAME" (player-red), else plain text
+    /// </summary>
+    string PlayerColorText(bool teams, int team, string color)
+    {
+        var name = teams ? (team is 0 or 1 ? GameModes.TeamLabel(team) : "") : color;
+        var themed = $"player-{name.ToLowerInvariant()}";
+        return name.Length > 0 && video.IsThemeColor(themed) ? themed : "HIGHLIGHT";
+    }
+
+    // A lobby row's value, to the right of its name (cleared first), clear of the scroll marks
+    void DrawLobbyValue(string id, string value, string? color = null) =>
+        DrawRowValue(LobbyItems, LobbyMenu, id, value, right: LobbyScrollMarkX - 40, color: color);
 
     // A row's value in the small font, to the right of its name (cleared first): the lobby's and
     // the Multiplayer menu's, which have room for more than a menu-font choice column
-    void DrawRowValue(ControlPanelMenuInfo info, ControlPanelItem[] items, string id, string value, int column = 88)
+    void DrawRowValue(ControlPanelMenuInfo info, ControlPanelItem[] items, string id, string value, int column = 88,
+        int right = 300, string? color = null)
     {
         int index = Array.FindIndex(items, item => item.Id == id);
-        if (index < 0)
+        if (index < 0 || !info.IsRowVisible(index))
             return;
         int x = info.X + info.Indent + column;
-        int y = info.Y + index * info.RowHeight;
-        video.Bar(x, y, 300 - x, info.RowHeight, "BKGDCOLOR");
-        ui.TextAt(x, y + 2, new TextStyle(UiFonts.SmallFont, MenuDrawing.MenuItemColor(items[index], false))).Print(ui.FitText(value, 300 - x, UiFonts.SmallFont));
+        int y = info.RowY(index);
+        video.Bar(x, y, right - x, info.RowHeight, "BKGDCOLOR");
+        var shown = items[index].Active == 0 ? MenuDrawing.MenuItemColor(items[index], false) : color ?? MenuDrawing.MenuItemColor(items[index], false);
+        // Level with the row's name: a menu-font name is taller, so the value sits a little lower
+        int textY = y + (info.Font == UiFonts.SmallFont ? 0 : 2);
+        ui.TextAt(x, textY, new TextStyle(UiFonts.SmallFont, shown)).Print(ui.FitText(value, right - x, UiFonts.SmallFont));
     }
 
     /// <summary>A match's rules in a few words, for the lobby: "20 frags, 10 min, monsters"</summary>

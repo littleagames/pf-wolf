@@ -42,6 +42,9 @@ internal class MenuMetadata
     /// <summary>Pixels from one item to the next (default 13)</summary>
     public int? RowHeight { get; set; }
 
+    /// <summary>How many items are shown at once; the rest scroll into view with the cursor (default all)</summary>
+    public int? VisibleRows { get; set; }
+
     /// <summary>The items' font (default the menu font, LargeFont)</summary>
     public string? Font { get; set; }
 

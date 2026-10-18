@@ -99,6 +99,8 @@ public record MenuAsset : Asset
     public List<ComponentEntry>? Components { get; init; }
     public List<MenuItemEntry>? MenuItems { get; init; }
     public int? RowHeight { get; init; }
+    /// <summary>How many items are shown at once (visible-rows); the rest scroll into view with the cursor. Unset, all of them.</summary>
+    public int? VisibleRows { get; init; }
     public string? Font { get; init; }
     public string? ItemShadow { get; init; }
     public MenuCursorInfo? Cursor { get; init; }

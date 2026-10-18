@@ -55,3 +55,13 @@ AutomapWallSprite: "#8D8D8D"
 AutomapGrid: "#004040"
 AutomapTitle: "#FFFF55"
 AutomapStats: "#C2C2C2"
+
+# Multiplayer lobby: player colors (game-info player-colors) and teams as text, player-NAME
+player-green: "#04C400"
+player-red: "#FF5050"
+player-blue: "#6C8CFF"
+player-yellow: "#FFF600"
+player-cyan: "#55FFFF"
+player-magenta: "#FF55FF"
+player-gray: "#C2C2C2"
+player-brown: "#C08850"

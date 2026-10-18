@@ -20,6 +20,10 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
     /// Called again and again while the menu waits (a network game's screens take in what has
     /// arrived and redraw); returning true leaves the menu at once, with -2.
     /// </param>
+    /// <remarks>
+    /// A menu with VisibleRows scrolls when the cursor goes past what's shown: it returns -2 then
+    /// too (CurPos and TopRow updated), for the caller to draw it again and come back.
+    /// </remarks>
     internal int HandleMenu(ControlPanelMenuInfo item_i, ControlPanelItem[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
     {
         char key;
@@ -31,7 +35,8 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         which = item_i.CurPos;
         x = item_i.X & -8;
         basey = item_i.Y - 2;
-        y = basey + which * item_i.RowHeight;
+        item_i.ScrollTo(which);
+        y = item_i.RowY(which) - 2;
         // A highlight bar (Blake Stone's) flashes on and off, where the gun blinks its shape
         bool bar = item_i.Cursor != null, barOn = true;
 
@@ -120,6 +125,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     {
                         EraseGun(item_i, items, x, y, which);
                         which = i;
+                        if (item_i.ScrollTo(which)) { exit = 3; break; }
                         DrawGun(item_i, items, x, ref y, which, basey, routine);
                         ok = 1;
                         input.ClearKeysDown();
@@ -130,13 +136,14 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                 //
                 // DIDN'T FIND A MATCH FIRST TIME THRU. CHECK AGAIN.
                 //
-                if (ok == 0)
+                if (ok == 0 && exit == 0)
                 {
                     for (i = 0; i < which; i++)
                         if (items[i].Active != 0 && ItemKey(items[i]) == key)
                         {
                             EraseGun(item_i, items, x, y, which);
                             which = i;
+                            if (item_i.ScrollTo(which)) { exit = 3; break; }
                             DrawGun(item_i, items, x, ref y, which, basey, routine);
                             input.ClearKeysDown();
                             break;
@@ -161,7 +168,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     //
                     // ANIMATE HALF-STEP
                     //
-                    if (!bar && which != 0 && items[which - 1].Active != 0)
+                    if (!bar && which != 0 && items[which - 1].Active != 0 && item_i.IsRowVisible(which - 1))
                     {
                         y -= 6;
                         DrawHalfStep(x, y);
@@ -179,6 +186,8 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     }
                     while (items[which].Active == 0);
 
+                    // Off the end of what's shown: the menu scrolls, and the caller draws it again (-2)
+                    if (item_i.ScrollTo(which)) { exit = 3; menuInput.TicDelay(20); break; }
                     DrawGun(item_i, items, x, ref y, which, basey, routine);
                     //
                     // WAIT FOR BUTTON-UP OR DELAY NEXT MOVE
@@ -196,7 +205,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     //
                     // ANIMATE HALF-STEP
                     //
-                    if (!bar && which != item_i.Amount - 1 && items[which + 1].Active != 0)
+                    if (!bar && which != item_i.Amount - 1 && items[which + 1].Active != 0 && item_i.IsRowVisible(which + 1))
                     {
                         y += 6;
                         DrawHalfStep(x, y);
@@ -211,6 +220,8 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                     }
                     while (items[which].Active == 0);
 
+                    // Off the end of what's shown: the menu scrolls, and the caller draws it again (-2)
+                    if (item_i.ScrollTo(which)) { exit = 3; menuInput.TicDelay(20); break; }
                     DrawGun(item_i, items, x, ref y, which, basey, routine);
 
                     //
@@ -325,13 +336,13 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
     {
         if (item_i.Cursor != null)
         {
-            y = basey + which * item_i.RowHeight;
+            y = item_i.RowY(which) - 2;
             draw.DrawMenuBar(item_i, items, which, true);
         }
         else
         {
             video.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-            y = basey + which * item_i.RowHeight;
+            y = item_i.RowY(which) - 2;
             graphics.DrawPic("c_cursor1", x, y);
             draw.PrintMenuItem(item_i, items, which, MenuDrawing.MenuItemColor(items[which], true));
         }

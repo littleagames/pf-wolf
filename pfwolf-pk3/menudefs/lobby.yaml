@@ -5,6 +5,10 @@ position:
   y: 22
 indent: 40
 row-height: 11
+# The rows' names in the small font, like their values and the player table
+font: "SmallFont"
+# 7 of the 10 rows at a time: the cursor scrolls the rest into view
+visible-rows: 7
 components:
   -
     id: "background"
@@ -12,35 +16,29 @@ components:
     params:
       - color: "BORDCOLOR"
   -
-    id: "legend"
-    type: "Graphic"
-    params:
-      - name: "c_mouselback"
-      - horizontal-orientation: "center"
-      - y: 184
-  -
     type: "Label"
     params:
       - text: "$STR_MP_LOBBY"
       - horizontal-orientation: "center"
       - y: 4
       - color: "READHCOLOR"
-  # The game's settings and what you can do: 10 rows, 11 each plus 6
+  # The game's settings and what you can do: 7 rows shown, 11 each plus 6
   -
     type: "Window"
     params:
       - x: 16
       - y: 18
       - width: 288
-      - height: 116
-  # Who's in (8 players, two columns of 4), and what they've said: 5 rows of 9 plus 4 (drawn by code: Ui/MultiplayerMenu.cs LobbyPanelY)
+      - height: 82
+  # Who's in: a heading and 8 rows of 8 (drawn by code: Ui/MultiplayerMenu.cs DrawLobbyPlayers).
+  # Under it the last thing said and the keys, in place of a legend.
   -
     type: "Window"
     params:
       - x: 16
-      - y: 135
+      - y: 102
       - width: 288
-      - height: 49
+      - height: 78
 # Handled by Ui/MultiplayerMenu.cs, by id. Only the host changes the mode, episode and
 # skill; everyone picks their own class and color. The host starts the game ("go") once everyone else
 # is ready; for them, "go" is that they're ready. The values are drawn by code. In any mode but

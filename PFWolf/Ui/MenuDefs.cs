@@ -94,6 +94,7 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
             indent: (short)menuAsset.Indent)
         {
             RowHeight = menuAsset.RowHeight is > 0 and int rowHeight ? rowHeight : 13,
+            VisibleRows = menuAsset.VisibleRows is > 0 and int visibleRows ? visibleRows : 0,
             Font = menuAsset.Font,
             ItemShadow = menuAsset.ItemShadow,
             Cursor = menuAsset.Cursor,
