@@ -373,6 +373,7 @@ internal static partial class GameHost
     /// <summary>Runs the game: what Main does (GameHost.cs)</summary>
     internal static void Run(string[] args)
     {
+        ConsoleWindow.OpenIfAsked(args);
         CrashReport.Install();
 
         // What startup prints is shown on the signon screen as warnings

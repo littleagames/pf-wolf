@@ -16,6 +16,10 @@ internal class GameParams
     [Option("nowait", Required = false, HelpText = "Don't wait at the signon screen or show the intro screens; with --exec, for scripted runs.")]
     public bool NoWait { get; set; }
 
+    /// <summary>Read before parsing, by Startup.ConsoleWindow: here so the parser accepts it</summary>
+    [Option("console", Required = false, HelpText = "Open a console window beside the game for its output.")]
+    public bool Console { get; set; }
+
     [Option("exec", Required = false, HelpText = "Console commands to run once the game has started, separated by ';'.")]
     public string Exec { get; set; } = "";
 

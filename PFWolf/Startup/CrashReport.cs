@@ -3,6 +3,7 @@ namespace PFWolf.Startup;
 /// <summary>
 /// A crash writes the error to crash.log beside the exe (or in the temp folder when that can't
 /// be written) and keeps the console open, so a double-clicked exe doesn't vanish with it.
+/// Without a console window (no --console) it says so in a message box instead.
 /// </summary>
 internal static class CrashReport
 {
@@ -15,6 +16,12 @@ internal static class CrashReport
     {
         var report = Text(e.ExceptionObject, DateTime.Now);
         var logPath = Save(report, [AppContext.BaseDirectory, Path.GetTempPath()]);
+
+        if (!ConsoleWindow.HasOutput)
+        {
+            ShowMessageBox(logPath != null ? $"{report}{Environment.NewLine}Saved to {logPath}" : report);
+            return;
+        }
 
         try
         {
@@ -30,6 +37,18 @@ internal static class CrashReport
         catch
         {
             // No console to report to: the log is all there is
+        }
+    }
+
+    private static void ShowMessageBox(string text)
+    {
+        try
+        {
+            SDL2.SDL.SDL_ShowSimpleMessageBox(SDL2.SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "PFWolf crashed", text, IntPtr.Zero);
+        }
+        catch
+        {
+            // No SDL to show it with: the log is all there is
         }
     }
 
