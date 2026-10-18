@@ -19,7 +19,7 @@ public static class GameInfoFile
     public static readonly IReadOnlyList<string> Keys =
     [
         "name", "music", "next", "secret-next", "par-time", "floor-color", "ceiling-color", "wall-height",
-        "sky", "default-floor", "default-ceiling", "weather", "shading", "zones",
+        "sky", "default-floor", "default-ceiling", "weather", "shading", "zones", "scrollers",
     ];
 
     /// <summary>
@@ -172,6 +172,28 @@ public static class GameInfoFile
                         Field("ambient", Quote(zone.Ambient));
                         Field("ambient-disguised", Quote(zone.AmbientDisguised));
                         block.Append(childIndent).Append("  ").Append(zone.Id.ToString(CultureInfo.InvariantCulture))
+                            .Append(": { ").Append(string.Join(", ", fields)).Append(fields.Count > 0 ? " }" : "}").Append(newline);
+                    }
+                    break;
+
+                case "scrollers":
+                    if (properties.Scrollers.Count == 0)
+                        break;
+                    block.Append(childIndent).Append("scrollers:").Append(newline);
+                    foreach (var scroller in properties.Scrollers.OrderBy(scroller => scroller.Tag))
+                    {
+                        // a speed of 0 and a true switch are the defaults: left out
+                        var fields = new List<string>();
+                        if (scroller.X != 0)
+                            fields.Add($"x: {Number(scroller.X)}");
+                        if (scroller.Y != 0)
+                            fields.Add($"y: {Number(scroller.Y)}");
+                        foreach (var (name, on) in new[] { ("walls", scroller.Walls), ("floor", scroller.Floor), ("ceiling", scroller.Ceiling), ("active", scroller.Active) })
+                        {
+                            if (!on)
+                                fields.Add($"{name}: false");
+                        }
+                        block.Append(childIndent).Append("  ").Append(scroller.Tag.ToString(CultureInfo.InvariantCulture))
                             .Append(": { ").Append(string.Join(", ", fields)).Append(fields.Count > 0 ? " }" : "}").Append(newline);
                     }
                     break;

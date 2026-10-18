@@ -33,6 +33,25 @@ public class GameInfoFileTests
     }
 
     [Test]
+    public void Scrollers_Are_Written_With_Only_What_Differs_From_The_Defaults_And_Read_Back()
+    {
+        // Arrange
+        var properties = new MapProperties
+        {
+            Scrollers = [new ScrollerProperties(7, Y: 0.5, Floor: false, Ceiling: false), new ScrollerProperties(6, X: -2, Active: false)],
+        };
+
+        // Act
+        var text = GameInfoFile.Apply(null, "MAP01", properties, ["scrollers"]);
+
+        // Assert: by tag, speeds of 0 and switches left on left out
+        Assert.That(text, Is.EqualTo("maps:\n  MAP01:\n    scrollers:\n      6: { x: -2, active: false }\n      7: { y: 0.5, floor: false, ceiling: false }\n"));
+        var read = MapProperties.From(Parse(text).Maps["MAP01"]);
+        Assert.That(read.Scrollers, Is.EqualTo(properties.Scrollers.OrderBy(s => s.Tag)));
+        Assert.That(read.ChangedKeys(properties with { Scrollers = properties.Scrollers.OrderBy(s => s.Tag).ToList() }), Is.Empty);
+    }
+
+    [Test]
     public void Changing_A_Level_Keeps_Its_Other_Keys_And_Every_Comment_Elsewhere()
     {
         // Act

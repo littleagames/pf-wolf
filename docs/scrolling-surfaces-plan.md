@@ -60,13 +60,28 @@ Offsets move with the game's tics, so they stop while the game does. Saved with 
 
 ## Status (2026-10-18)
 
-Phases 1 and 2 done, uncommitted on feature/scrolling-walls-flats. Also a `scroll` console
-command (cheat): lists the level's scrollers, or `scroll <tag> <x> [y]|start|stop|none`.
-Documented in pfwolf-pk3's gamepacks/wolf3d/game-info.yaml (under the zones notes) and
-mapdefs/wolf3d/walls.yaml (switch actions). Tests: ScrollersTests, SkyAndFlatsTests (scrolled
-flats). Checked in-game headless (E1M1, a scratch mod's scrollers + `tag`): walls move right and
-down, floors east and south, door jambs and doors stay put.
+All three phases done on feature/scrolling-walls-flats (phases 1-2 committed as 1e4e8db).
+Also a `scroll` console command (cheat): lists the level's scrollers, or
+`scroll <tag> <x> [y]|start|stop|none`. Documented in pfwolf-pk3's
+gamepacks/wolf3d/game-info.yaml (under the zones notes) and mapdefs/wolf3d/walls.yaml (switch
+actions).
 
-Not checked: tall walls' upper stories, diagonals and moving pushwalls scrolling, a switch
-running the actions in play, a save/load mid-scroll, a hub level kept and returned to.
-Phase 3 (example mod, editor) not started.
+Phase 3: switch-demo's scroll room, south of the hall through an archway (layout in
+examples/tools/make-switch-demo-map.ps1, now writing flats and heights too): a conveyor floor
+(tag 6, x 2), a two-story waterfall wall with diagonal corners (tag 7, y 1), station 8
+(`A_ToggleScroll`, its own tag) and station 9 (`A_SetScroll(7, 0, 4)` and back). Editor: the
+Map Properties window has a Scrollers grid (MapProperties.Scrollers, game-info.yaml
+`scrollers:`), and the 3D view animates scrolling surfaces (a per-vertex scroll velocity and a
+tic clock in the shader; it keeps redrawing while any surface scrolls). The zones grid's
+Ambient and Disguised columns got their boxes back.
+
+Tests: ScrollersTests, SkyAndFlatsTests (scrolled flats), LevelMeshTests (scroll velocities),
+GameInfoFileTests (writing scrollers), MapPropertiesScrollersTests.
+
+Checked in-game: walls move right and down, floors east and south (measured); door jambs, doors
+and untagged walls stay put; both stories of a tall wall and a diagonal scroll; station 8
+stops the conveyor and station 9 speeds up the waterfall in play; a save made with the conveyor
+stopped loads back stopped at the same spot.
+
+Not checked: moving pushwalls scrolling, a hub level kept and returned to, the editor's 3D view
+by eye (the velocities are tested, the GL drawing isn't) and its Scrollers grid by hand.

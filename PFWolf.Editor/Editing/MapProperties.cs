@@ -11,6 +11,18 @@ public sealed record ZoneProperties(int Id, int? Light = null, string? Color = n
 }
 
 /// <summary>
+/// A scroller of a level (game-info scrollers: the tag plane's value → how its tiles' textures
+/// slide), speeds in texels a tic: on walls x right and y down, on floors and ceilings x east
+/// and y south
+/// </summary>
+public sealed record ScrollerProperties(int Tag, double X = 0, double Y = 0, bool Walls = true, bool Floor = true,
+    bool Ceiling = true, bool Active = true)
+{
+    public static ScrollerProperties From(int tag, ScrollerInfo scroller)
+        => new(tag, scroller.X, scroller.Y, scroller.Walls, scroller.Floor, scroller.Ceiling, scroller.Active);
+}
+
+/// <summary>
 /// A level's game-info entry, as far as the editor edits it: what's shown and played, the
 /// level after it, how it looks and how it's lit. Null leaves a value to the default map.
 /// </summary>
@@ -38,6 +50,8 @@ public sealed record MapProperties
 
     public IReadOnlyList<ZoneProperties> Zones { get; init; } = [];
 
+    public IReadOnlyList<ScrollerProperties> Scrollers { get; init; } = [];
+
     public bool HasShading => FadeColor != null || FadeStart != null || FadeEnd != null || MaxFade != null || Light != null;
 
     public static MapProperties From(MapInfo? info) => info == null ? new() : new()
@@ -60,6 +74,8 @@ public sealed record MapProperties
         MaxFade = info.Shading?.MaxFade,
         Light = info.Shading?.Light,
         Zones = (info.Zones ?? []).OrderBy(zone => zone.Key).Select(zone => ZoneProperties.From(zone.Key, zone.Value)).ToList(),
+        Scrollers = (info.Scrollers ?? []).OrderBy(scroller => scroller.Key)
+            .Select(scroller => ScrollerProperties.From(scroller.Key, scroller.Value)).ToList(),
     };
 
     /// <summary>The game-info keys whose values differ between the two</summary>
@@ -87,6 +103,7 @@ public sealed record MapProperties
         Check("shading", FadeColor == other.FadeColor && FadeStart == other.FadeStart && FadeEnd == other.FadeEnd
                          && MaxFade == other.MaxFade && Light == other.Light);
         Check("zones", Zones.SequenceEqual(other.Zones));
+        Check("scrollers", Scrollers.SequenceEqual(other.Scrollers));
         return keys;
     }
 

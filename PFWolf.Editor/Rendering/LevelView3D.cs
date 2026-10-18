@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Numerics;
 using Avalonia;
 using Avalonia.Controls;
@@ -70,10 +70,11 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     /// <summary>A tool's key letter was pressed over the view (not one used for flying)</summary>
     public event EventHandler<string>? ToolKeyPressed;
 
-    private const int FloatsPerVertex = 9;   // position 3, texture 2, color 4
+    private const int FloatsPerVertex = 11;   // position 3, texture 2, color 4, scroll 2
+    private const double TicsPerSecond = 70;     // the game's clock, which scrollers move by
 
     private Gl? _gl;
-    private int _program, _viewProjection, _mode, _texture, _eye, _forward, _fog, _fadeColor;
+    private int _program, _viewProjection, _mode, _texture, _eye, _forward, _fog, _fadeColor, _time;
     private int _staticVao, _staticVbo, _dynamicVao, _dynamicVbo;
     // The sky: a picture behind everything, drawn by a pass of its own over the whole view
     private int _skyProgram, _skyInverse, _skyEye, _skyScale, _skyTanHalf, _skyTexture, _skyVao, _skyVbo;
@@ -167,7 +168,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             var gl = new Gl(glInterface);
             bool es = GlVersion.Type == GlProfileType.OpenGLES;
             string header = es ? "#version 300 es\nprecision mediump float;\n" : "#version 330 core\n";
-            _program = gl.MakeProgram(header + VertexShader, header + FragmentShader, "aPosition", "aUv", "aColor");
+            _program = gl.MakeProgram(header + VertexShader, header + FragmentShader, "aPosition", "aUv", "aColor", "aScroll");
             _viewProjection = gl.GetUniformLocation(_program, "uViewProjection");
             _mode = gl.GetUniformLocation(_program, "uMode");
             _texture = gl.GetUniformLocation(_program, "uTexture");
@@ -175,6 +176,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             _forward = gl.GetUniformLocation(_program, "uForward");
             _fog = gl.GetUniformLocation(_program, "uFog");
             _fadeColor = gl.GetUniformLocation(_program, "uFadeColor");
+            _time = gl.GetUniformLocation(_program, "uTime");
 
             _skyProgram = gl.MakeProgram(header + SkyVertexShader, header + SkyFragmentShader, "aPosition");
             _skyInverse = gl.GetUniformLocation(_skyProgram, "uInverseViewProjection");
@@ -242,9 +244,11 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.VertexAttribPointer(0, 3, stride, 0);
         gl.VertexAttribPointer(1, 2, stride, 3 * sizeof(float));
         gl.VertexAttribPointer(2, 4, stride, 5 * sizeof(float));
+        gl.VertexAttribPointer(3, 2, stride, 9 * sizeof(float));
         gl.EnableVertexAttribArray(0);
         gl.EnableVertexAttribArray(1);
         gl.EnableVertexAttribArray(2);
+        gl.EnableVertexAttribArray(3);
         gl.BindVertexArray(0);
         return (vao, vbo);
     }
@@ -323,6 +327,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.Uniform3(_forward, camera.FlatForward);
         gl.Uniform4(_fog, fog?.Start ?? 0, fog?.End ?? 1, fog?.MaxFade ?? 0, fog is { Inverse: true } ? 1 : 0);
         gl.Uniform3(_fadeColor, fog?.Color ?? Vector3.Zero);
+        // Scrolling surfaces' clock, in tics; it starts over every hour, so a float keeps it exact
+        gl.Uniform1(_time, (float)(_clock.Elapsed.TotalSeconds * TicsPerSecond % 252000));
 
         // The level: one-sided faces, each texture's in one go
         gl.Enable(Gl.CULL_FACE);
@@ -387,7 +393,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.BindVertexArray(0);
         gl.UseProgram(0);
 
-        if (moving)
+        // Scrolling walls and flats move on by themselves
+        if (moving || _mesh.Scrolls)
             RequestNextFrameRendering();
     }
 
@@ -446,7 +453,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             {
                 int first = vertices.Count / FloatsPerVertex;
                 foreach (var surface in group)
-                    AddPolygon(vertices, surface.Points, surface.Uvs, surface.Color);
+                    AddPolygon(vertices, surface.Points, surface.Uvs, surface.Color, surface.Scroll);
                 _batches.Add((group.Key, first, vertices.Count / FloatsPerVertex - first));
             }
         }
@@ -456,24 +463,26 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     }
 
     /// <summary>A convex polygon as a fan of triangles</summary>
-    private static void AddPolygon(List<float> vertices, Vector3[] points, Vector2[] uvs, Vector4 color)
+    /// <param name="scroll">How far its texture moves a tic, in texture widths and heights</param>
+    private static void AddPolygon(List<float> vertices, Vector3[] points, Vector2[] uvs, Vector4 color, Vector2 scroll = default)
     {
         for (int i = 1; i + 1 < points.Length; i++)
         {
-            AddVertex(vertices, points[0], uvs[0], color);
-            AddVertex(vertices, points[i], uvs[i], color);
-            AddVertex(vertices, points[i + 1], uvs[i + 1], color);
+            AddVertex(vertices, points[0], uvs[0], color, scroll);
+            AddVertex(vertices, points[i], uvs[i], color, scroll);
+            AddVertex(vertices, points[i + 1], uvs[i + 1], color, scroll);
         }
     }
 
     private static void AddQuad(List<float> vertices, Vector3[] corners, Vector2[] uvs, Vector4 color)
         => AddPolygon(vertices, corners, uvs, color);
 
-    private static void AddVertex(List<float> vertices, Vector3 point, Vector2 uv, Vector4 color)
+    private static void AddVertex(List<float> vertices, Vector3 point, Vector2 uv, Vector4 color, Vector2 scroll)
     {
         vertices.Add(point.X); vertices.Add(point.Y); vertices.Add(point.Z);
         vertices.Add(uv.X); vertices.Add(uv.Y);
         vertices.Add(color.X); vertices.Add(color.Y); vertices.Add(color.Z); vertices.Add(color.W);
+        vertices.Add(scroll.X); vertices.Add(scroll.Y);
     }
 
     /// <summary>A sprite's corners, square to the view (bottom left, bottom right, top right, top left)</summary>
@@ -820,7 +829,9 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         in vec3 aPosition;
         in vec2 aUv;
         in vec4 aColor;
+        in vec2 aScroll;
         uniform mat4 uViewProjection;
+        uniform float uTime;
         uniform vec3 uEye;
         uniform vec3 uForward;
         out vec2 vUv;
@@ -829,7 +840,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         void main()
         {
             gl_Position = uViewProjection * vec4(aPosition, 1.0);
-            vUv = aUv;
+            vUv = aUv + aScroll * uTime;
             vColor = aColor;
             vDepth = dot(aPosition - uEye, uForward);
         }

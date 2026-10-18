@@ -72,6 +72,9 @@ public sealed class Surface
     public SurfaceRef Ref { get; init; }
     public bool TwoSided { get; init; }
 
+    /// <summary>How far its texture moves a tic, in texture widths and heights: a scroller's (Rendering/Scrollers.cs)</summary>
+    public Vector2 Scroll { get; init; }
+
     public Vector3 Normal => Vector3.Normalize(Vector3.Cross(Points[1] - Points[0], Points[2] - Points[0]));
 }
 
@@ -117,6 +120,7 @@ public sealed class LevelMesh
     private readonly Dictionary<string, float> _textureStories = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<int, ZoneProperties> _zones;
     private readonly int _levelLight;
+    private readonly Dictionary<int, ScrollerProperties> _scrollers;
 
     public List<Surface> Surfaces { get; } = [];
     public List<Billboard> Billboards { get; } = [];
@@ -126,6 +130,9 @@ public sealed class LevelMesh
 
     /// <summary>How the level fades with distance, or null for no fade</summary>
     public LevelFog? Fog { get; }
+
+    /// <summary>Whether some surface scrolls, so the view keeps drawing</summary>
+    public bool Scrolls { get; private set; }
 
     /// <summary>Push walls and switches, for the view to tint</summary>
     public Dictionary<(int X, int Y), MarkerKind> Markers { get; } = [];
@@ -149,6 +156,7 @@ public sealed class LevelMesh
         _zones = shade ? tiles.Zones : [];
         var shading = shade ? tiles.Shading : null;
         _levelLight = shading?.Light ?? 255;
+        _scrollers = tiles.Scrollers;
         if (shading is { MaxFade: > 0 })
         {
             Fog = new LevelFog(ParseColor(shading.FadeColor) is { } fade ? new Vector3(fade.X, fade.Y, fade.Z) : Vector3.Zero,
@@ -288,7 +296,7 @@ public sealed class LevelMesh
             }
             else
             {
-                AddWall(faceRef, a, b, bottom, stories, texture, light, flipU0, flipU1);
+                AddWall(faceRef, a, b, bottom, stories, texture, light, flipU0, flipU1, scroll: WallScroll(x, y, flipU1 - flipU0, texture));
                 if (patch != null && patch.IsOn(FaceName(face)))
                     AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), bottom, stories, patch, light, FaceName(face));
             }
@@ -303,7 +311,7 @@ public sealed class LevelMesh
             var (p, q) = Slant(x, y, diagonal.Shape);
             var (a, b) = Ordered(p, q, OpenDirection(diagonal.Shape));
             var texture = string.IsNullOrEmpty(diagonal.Texture) ? wall.North : diagonal.Texture;
-            AddWall(new SurfaceRef(SurfaceKind.Wall, x, y, Face.Diagonal), a, b, 0, stories, texture, Light(x, y));
+            AddWall(new SurfaceRef(SurfaceKind.Wall, x, y, Face.Diagonal), a, b, 0, stories, texture, Light(x, y), scroll: WallScroll(x, y, 1, texture));
 
             AddFlat(topRef, solid, stories, up: true, Texture(wall.North), topColor, TextureStories(wall.North));
             AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceiling, OpenHalf(x, y, diagonal.Shape));
@@ -314,7 +322,7 @@ public sealed class LevelMesh
 
     /// <summary>A wall face from a to b (left to right seen from its front) between two heights</summary>
     private void AddWall(SurfaceRef faceRef, Vector2 a, Vector2 b, float bottom, float top, string texture, Vector4 light,
-        float u0 = 0, float u1 = 1, bool twoSided = false)
+        float u0 = 0, float u1 = 1, bool twoSided = false, Vector2 scroll = default)
     {
         // The texture's stories repeat up the wall from the floor
         float stories = TextureStories(texture);
@@ -327,7 +335,9 @@ public sealed class LevelMesh
             Color = light,
             Ref = faceRef,
             TwoSided = twoSided,
+            Scroll = scroll,
         });
+        Scrolls |= scroll != Vector2.Zero;
     }
 
     // How far in front of its wall face a patch is drawn, in tiles, so the two don't fight
@@ -413,6 +423,33 @@ public sealed class LevelMesh
         AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Top), Corners(x, y), stories, up: true, topTexture, TopShade * light, undersideStories);
         return true;
     }
+
+    //
+    // Scrollers (Rendering/Scrollers.cs): a running one moves its tag's tiles' textures a tic
+    //
+
+    private ScrollerProperties? RunningScroller(int x, int y)
+        => _tiles[MapConstants.TagPlane, x, y] is var tag and not 0 && _scrollers.TryGetValue(tag, out var scroller) && scroller.Active
+            ? scroller : null;
+
+    /// <summary>
+    /// A wall face's texture moving right (x) and down (y) as seen, whichever way its u runs
+    /// (<paramref name="across"/>: u1 - u0, negative on a flipped face). Moving right, a point
+    /// shows the texel that was left of it; moving down, the one above it.
+    /// </summary>
+    private Vector2 WallScroll(int x, int y, float across, string texture)
+    {
+        if (RunningScroller(x, y) is not { Walls: true } scroller)
+            return default;
+        return new Vector2((float)(-scroller.X / TextureAsset.StorySize) * MathF.Sign(across),
+            (float)(-scroller.Y / TextureAsset.StorySize) / TextureStories(texture));
+    }
+
+    /// <summary>A floor's or ceiling's texture moving east (x) and south (y): u runs east, v south, a tile each</summary>
+    private Vector2 FlatScroll(int x, int y, Func<ScrollerProperties, bool> on)
+        => RunningScroller(x, y) is { } scroller && on(scroller)
+            ? new Vector2((float)(-scroller.X / TextureAsset.StorySize), (float)(-scroller.Y / TextureAsset.StorySize))
+            : default;
 
     /// <summary>How many stories tall a wall texture is: 64 rows each (TextureAsset)</summary>
     private float TextureStories(string name)
@@ -507,14 +544,16 @@ public sealed class LevelMesh
         var light = Light(x, y);
         var floor = _tiles.FloorFlat(x, y);
         AddFlat(new SurfaceRef(SurfaceKind.Floor, x, y), polygon, 0, up: true,
-            floor != null ? Flat(floor, floorColor) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light);
+            floor != null ? Flat(floor, floorColor) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light,
+            scroll: floor != null ? FlatScroll(x, y, scroller => scroller.Floor) : default);
 
         // The sky shows in place of the ceiling color, and behind a ceiling flat's see-through pixels
         var top = _tiles.CeilingFlat(x, y);
         if (ceiling is { } height && (top != null || Sky == null))
         {
             AddFlat(new SurfaceRef(SurfaceKind.Ceiling, x, y), polygon, height, up: false,
-                top != null ? Flat(top, Sky == null ? ceilingColor : default) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light);
+                top != null ? Flat(top, Sky == null ? ceilingColor : default) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light,
+                scroll: top != null ? FlatScroll(x, y, scroller => scroller.Ceiling) : default);
         }
     }
 
@@ -522,7 +561,8 @@ public sealed class LevelMesh
     /// A level polygon at a height, given anticlockwise seen from above, facing up or down. A
     /// texture of more than one story shows only its bottom one.
     /// </summary>
-    private void AddFlat(SurfaceRef flatRef, Vector2[] polygon, float height, bool up, TextureRef texture, Vector4 color, float textureStories = 1)
+    private void AddFlat(SurfaceRef flatRef, Vector2[] polygon, float height, bool up, TextureRef texture, Vector4 color, float textureStories = 1,
+        Vector2 scroll = default)
     {
         var points = polygon.Select(p => new Vector3(p.X, height, p.Y)).ToArray();
         if (!up)
@@ -534,7 +574,9 @@ public sealed class LevelMesh
             Texture = texture,
             Color = color,
             Ref = flatRef,
+            Scroll = scroll,
         });
+        Scrolls |= scroll != Vector2.Zero;
     }
 
     private void AddThing(int x, int y)

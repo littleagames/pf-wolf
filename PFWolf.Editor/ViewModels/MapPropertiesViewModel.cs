@@ -24,6 +24,18 @@ public sealed partial class ZoneRow : ObservableObject
     public static IReadOnlyList<string> Effects { get; } = ["", "flicker", "pulse", "strobe"];
 }
 
+/// <summary>A scroller as a row of the properties dialog</summary>
+public sealed partial class ScrollerRow : ObservableObject
+{
+    [ObservableProperty] private string _tag = "";
+    [ObservableProperty] private string _x = "";
+    [ObservableProperty] private string _y = "";
+    [ObservableProperty] private bool _walls = true;
+    [ObservableProperty] private bool _floor = true;
+    [ObservableProperty] private bool _ceiling = true;
+    [ObservableProperty] private bool _active = true;
+}
+
 /// <summary>
 /// The level properties dialog: a level's game-info entry as text fields, each left empty to
 /// use the default map's. The default map's values show as the fields' placeholders.
@@ -65,6 +77,15 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 Ambient = zone.Ambient ?? "", AmbientDisguised = zone.AmbientDisguised ?? "",
             });
         }
+        foreach (var scroller in properties.Scrollers)
+        {
+            Scrollers.Add(new ScrollerRow
+            {
+                Tag = scroller.Tag.ToString(CultureInfo.InvariantCulture),
+                X = scroller.X == 0 ? "" : Text(scroller.X), Y = scroller.Y == 0 ? "" : Text(scroller.Y),
+                Walls = scroller.Walls, Floor = scroller.Floor, Ceiling = scroller.Ceiling, Active = scroller.Active,
+            });
+        }
     }
 
     public string MapName { get; }
@@ -95,6 +116,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     [ObservableProperty] private string _light;
 
     public ObservableCollection<ZoneRow> Zones { get; } = [];
+    public ObservableCollection<ScrollerRow> Scrollers { get; } = [];
 
     [ObservableProperty] private string _error = "";
 
@@ -122,6 +144,16 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     [RelayCommand]
     private void RemoveZone(ZoneRow zone) => Zones.Remove(zone);
 
+    [RelayCommand]
+    private void AddScroller()
+    {
+        int next = Scrollers.Select(scroller => int.TryParse(scroller.Tag, out var tag) ? tag : 0).DefaultIfEmpty(0).Max() + 1;
+        Scrollers.Add(new ScrollerRow { Tag = next.ToString(CultureInfo.InvariantCulture) });
+    }
+
+    [RelayCommand]
+    private void RemoveScroller(ScrollerRow scroller) => Scrollers.Remove(scroller);
+
     /// <summary>The properties as entered, or null (with <see cref="Error"/> saying why) when one won't do</summary>
     public MapProperties? Build()
     {
@@ -136,6 +168,16 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 zones.Add(new ZoneProperties(id, Int(row.Light, $"zone {id}'s light", 0, 255), Color(row.Color, $"zone {id}'s color"),
                     Optional(row.Effect), Int(row.Low, $"zone {id}'s low", 0, 255), Int(row.Tics, $"zone {id}'s tics", 1, 100000),
                     Int(row.BrightTics, $"zone {id}'s bright tics", 1, 100000), Optional(row.Ambient), Optional(row.AmbientDisguised)));
+            }
+
+            var scrollers = new List<ScrollerProperties>();
+            foreach (var row in Scrollers)
+            {
+                var tag = Int(row.Tag, $"scroller tag '{row.Tag}'", 1, 65535) ?? throw new FormatException("every scroller needs a tag, 1 or more");
+                if (scrollers.Any(scroller => scroller.Tag == tag))
+                    throw new FormatException($"there are two scrollers for tag {tag}");
+                scrollers.Add(new ScrollerProperties(tag, Speed(row.X, $"scroller {tag}'s x"), Speed(row.Y, $"scroller {tag}'s y"),
+                    row.Walls, row.Floor, row.Ceiling, row.Active));
             }
 
             Error = "";
@@ -159,6 +201,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 MaxFade = Int(MaxFade, "max fade", 0, 100),
                 Light = Int(Light, "light", 0, 255),
                 Zones = zones.OrderBy(zone => zone.Id).ToList(),
+                Scrollers = scrollers.OrderBy(scroller => scroller.Tag).ToList(),
             };
         }
         catch (FormatException e)
@@ -194,6 +237,16 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
             return null;
         if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) || number < 0)
             throw new FormatException($"{what} is a number of tiles, 0 or more");
+        return number;
+    }
+
+    // Texels a tic, either way; empty is 0 (still)
+    private static double Speed(string text, string what)
+    {
+        if (Optional(text) is not { } value)
+            return 0;
+        if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) || Math.Abs(number) > 64)
+            throw new FormatException($"{what} is a speed in texels a tic, -64 to 64");
         return number;
     }
 

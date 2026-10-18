@@ -4,7 +4,7 @@
         x:Class="PFWolf.Editor.Views.MapPropertiesWindow"
         x:DataType="vm:MapPropertiesViewModel"
         Title="{Binding Title}"
-        Width="760" Height="720" MinWidth="640" MinHeight="480"
+        Width="960" Height="720" MinWidth="640" MinHeight="480"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
 
   <Window.Styles>
@@ -105,7 +105,9 @@
                 <TextBox Grid.Column="4" Text="{Binding Low}" />
                 <TextBox Grid.Column="5" Text="{Binding Tics}" />
                 <TextBox Grid.Column="6" Text="{Binding BrightTics}" />
-                <Button Grid.Column="7" Content="Remove"
+                <TextBox Grid.Column="7" Text="{Binding Ambient}" />
+                <TextBox Grid.Column="8" Text="{Binding AmbientDisguised}" />
+                <Button Grid.Column="9" Content="Remove"
                         Command="{Binding $parent[ItemsControl].((vm:MapPropertiesViewModel)DataContext).RemoveZoneCommand}"
                         CommandParameter="{Binding}" />
               </Grid>
@@ -113,6 +115,38 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
         <Button Content="Add a zone" Command="{Binding AddZoneCommand}" Margin="0,4,0,0" />
+
+        <TextBlock Classes="heading" Text="Scrollers (tags, plane 4)" />
+        <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12"
+                   Text="The textures of the tiles with a scroller's tag slide along, in texels a tic (64 a tile, 70 tics a second; negative the other way): on wall faces x right and y down, on floors and ceilings x east and y south. Door jambs, doors and patches stay put. Switches and actor states start, stop and change them (A_StartScroll, A_StopScroll, A_ToggleScroll, A_SetScroll); one not running waits for a switch." />
+        <Grid ColumnDefinitions="60,70,70,60,60,60,70,Auto" ColumnSpacing="6" Margin="0,4,0,0">
+          <TextBlock Grid.Column="0" Text="Tag" Opacity="0.7" />
+          <TextBlock Grid.Column="1" Text="X" Opacity="0.7" />
+          <TextBlock Grid.Column="2" Text="Y" Opacity="0.7" />
+          <TextBlock Grid.Column="3" Text="Walls" Opacity="0.7" />
+          <TextBlock Grid.Column="4" Text="Floor" Opacity="0.7" />
+          <TextBlock Grid.Column="5" Text="Ceiling" Opacity="0.7" />
+          <TextBlock Grid.Column="6" Text="Running" Opacity="0.7" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Scrollers}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ScrollerRow">
+              <Grid ColumnDefinitions="60,70,70,60,60,60,70,Auto" ColumnSpacing="6" Margin="0,2">
+                <TextBox Grid.Column="0" Text="{Binding Tag}" />
+                <TextBox Grid.Column="1" Text="{Binding X}" PlaceholderText="0" />
+                <TextBox Grid.Column="2" Text="{Binding Y}" PlaceholderText="0" />
+                <CheckBox Grid.Column="3" IsChecked="{Binding Walls}" />
+                <CheckBox Grid.Column="4" IsChecked="{Binding Floor}" />
+                <CheckBox Grid.Column="5" IsChecked="{Binding Ceiling}" />
+                <CheckBox Grid.Column="6" IsChecked="{Binding Active}" ToolTip.Tip="Scrolling as the level starts; off waits for a switch" />
+                <Button Grid.Column="7" Content="Remove"
+                        Command="{Binding $parent[ItemsControl].((vm:MapPropertiesViewModel)DataContext).RemoveScrollerCommand}"
+                        CommandParameter="{Binding}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Content="Add a scroller" Command="{Binding AddScrollerCommand}" Margin="0,4,0,0" />
       </StackPanel>
     </ScrollViewer>
   </DockPanel>

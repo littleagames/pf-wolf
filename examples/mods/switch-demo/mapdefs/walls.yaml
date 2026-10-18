@@ -160,3 +160,52 @@ walls:
             actions:
                 - A_SetZoneEffect(2, "none")
                 - A_SetZoneLight(2, 255, 0, "none")
+
+    # Stations 8 and 9, in the scroll room south of the hall, work its scrollers (game-info.yaml
+    # scrollers, by tag): tag 6 the conveyor floor, tag 7 the waterfall wall.
+
+    # Station 8, tag 6: stops the conveyor, and starts it again. A scroller action with no tag
+    # takes the switch's own.
+    '64':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 65
+            sound: switches/elevbutn
+            actions:
+                - A_ToggleScroll
+    '65':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 64
+            sound: switches/elevbutn
+            actions:
+                - A_ToggleScroll
+
+    # Station 9: the waterfall (tag 7, named, as the switch has no tag) from a trickle to a
+    # torrent, 4 texels a tic down, and back
+    '66':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 67
+            sound: switches/elevbutn
+            actions:
+                - A_SetScroll(7, 0, 4)
+    '67':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 66
+            sound: switches/elevbutn
+            actions:
+                - A_SetScroll(7, 0, 1)

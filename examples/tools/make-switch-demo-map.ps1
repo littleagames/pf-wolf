@@ -34,8 +34,14 @@ $Layout = @(
     '##sssss#.................#eeeee##'
     '#######4........P........########'   # y=37 station 4, the player start
     '########.................########'
-    '##########FFFFF##################'   # y=39 station 4's walls
-    '#################################'
+    '##########FFFFF####ooo###########'   # y=39 station 4's walls, the scroll room's archway
+    '###############ooooooooooooo#####'   # y=40 the scroll room
+    '###############ooooooooooooo#####'
+    '##############8~~~~~~~~~~~~~9####'   # y=42 station 8 and the conveyor, station 9
+    '###############~~~~~~~~~~~~~#####'
+    '###############ooooooooooooo#####'
+    '###############[ooooooooooo]#####'   # y=45 diagonal corners
+    '###############WWWWWWWWWWWWW#####'   # y=46 the waterfall, two stories tall
     '#################################'
 )
 
@@ -71,10 +77,21 @@ $Tiles = @{
     'X' = @{ Plane0 = 21 }                                  # elevator switch: ends the level
     '6' = @{ Plane0 = 60 }                                  # station 6: the light room's lights
     '7' = @{ Plane0 = 62 }                                  # station 7: the hall's alarm
+    # The scroll room: its scrollers are game-info.yaml's, by tag (6 the conveyor, 7 the
+    # waterfall). Flats are pfwolf-pk3's mapdefs flats (1 grey stone, 2 blue stone).
+    'o' = @{ Plane0 = $Hall; Flat = 1 }
+    '~' = @{ Plane0 = $Hall; Flat = 2; Tag = 6 }            # the conveyor (floor scrolls east)
+    'W' = @{ Plane0 = 40; Tag = 7; Height = 2 }             # the waterfall (walls scroll down)
+    '[' = @{ Plane0 = 40; Plane1 = 402; Tag = 7 }           # diagonal corner, solid to the SW
+    ']' = @{ Plane0 = 40; Plane1 = 403; Tag = 7 }           # diagonal corner, solid to the SE
+    '8' = @{ Plane0 = 64; Tag = 6 }                         # station 8: stops and starts the conveyor
+    '9' = @{ Plane0 = 66 }                                  # station 9: the waterfall's speed
 }
 
 $Size = 64
 $PlaneCount = 6
+$FlatPlane = 2
+$HeightPlane = 3
 $TagPlane = 4
 $ZonePlane = 5
 $planes = @()
@@ -90,6 +107,8 @@ for ($row = 0; $row -lt $Layout.Count; $row++) {
         $i = ($Top + $row) * $Size + $Left + $col
         $planes[0][$i] = $tile.Plane0
         if ($tile.Plane1) { $planes[1][$i] = $tile.Plane1 }
+        if ($tile.Flat) { $planes[$FlatPlane][$i] = $tile.Flat }
+        if ($tile.Height) { $planes[$HeightPlane][$i] = $tile.Height }
         if ($tile.Tag) { $planes[$TagPlane][$i] = $tile.Tag }
         if ($tile.Zone) { $planes[$ZonePlane][$i] = $tile.Zone }
     }

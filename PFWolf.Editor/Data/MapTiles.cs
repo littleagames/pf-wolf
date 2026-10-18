@@ -35,6 +35,9 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     /// <summary>The light zones that apply to the level: the default map's, with its own over them</summary>
     public Dictionary<int, ZoneProperties> Zones => Properties.EffectiveZones(content.DefaultMapInfo);
 
+    /// <summary>The level's scrollers by tag (game-info scrollers; a level's own only)</summary>
+    public Dictionary<int, ScrollerProperties> Scrollers => Properties.Scrollers.ToDictionary(scroller => scroller.Tag);
+
     public bool IsAmbush(int x, int y) => Floors.Ambush is { } ambush and >= 0 && this[0, x, y] == ambush;
 
     /// <summary>

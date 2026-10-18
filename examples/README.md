@@ -12,7 +12,7 @@ on in **Options → Mods** (the game restarts) and start a new game, or run:
 Wolf3D.exe --file switch-demo
 ```
 
-The hall has seven switch stations (the elevator's lever panels):
+The hall has seven switch stations, and the scroll room south of it two more (the elevator's lever panels):
 
 1. **North wall, left:** opens the door next to it and holds it open; use it again to close
    it. The door is gold-locked and the level has no gold key, so only the switch opens it.
@@ -38,11 +38,21 @@ While the room's lights are off, its floor lamp gives off a warm, flickering glo
 an **actor light** (`light.*` properties in the mod's `actordefs/demo-lights.yaml`). Fire your
 gun in there too: the weapons' muzzle flashes light up the dark around you.
 
+Through the archway in the hall's south wall is the **scroll room**, whose textures slide
+along: a conveyor floor running east (tag 6) and a two-story waterfall on the far wall, with
+its diagonal corners (tag 7). The mod's `game-info.yaml` lists each **scroller** by tag, with
+its speed and which surfaces it moves. Two more stations work them:
+
+8. **Scroll room, west wall:** stops the conveyor, and starts it again (`A_ToggleScroll` on
+   its own tag).
+9. **Scroll room, east wall:** turns the waterfall from a trickle to a torrent and back
+   (`A_SetScroll(7, 0, 4)`, naming the tag, as this switch has none).
+
 The exit room has the usual elevator switch, now just a switch whose action is `A_Exit`.
 
 ### What's in it
 
-- `mapdefs/walls.yaml`: the switch walls (ids 50-63), each with its `switch:` block. Every
+- `mapdefs/walls.yaml`: the switch walls (ids 50-67), each with its `switch:` block. Every
   field and action is described at wall 21 in `pfwolf-pk3/mapdefs/wolf3d/walls.yaml`.
 - `animdefs/switch-demo.yaml`: the two lever animations, made of the game's own lever
   textures. Animations are described in `pfwolf-pk3/animdefs/animdefs.yaml`.
@@ -52,8 +62,9 @@ The exit room has the usual elevator switch, now just a switch whose action is `
   light. Actor lights are described in `pfwolf-pk3/actordefs/wolf3d/decorations.yaml` (and
   the switch actions `A_SetLight` / `A_LightOff` at wall 21 in `mapdefs/wolf3d/walls.yaml`).
 - `game-info.yaml`: merged into the game's own; it gives the level its light zones (the
-  dark room, and the hall with the alarm's strobe timing). The zone fields are described
-  under `default-map` in `pfwolf-pk3/gamepacks/wolf3d/game-info.yaml`.
+  dark room, and the hall with the alarm's strobe timing) and the scroll room's scrollers.
+  The zone and scroller fields are described under `default-map` in
+  `pfwolf-pk3/gamepacks/wolf3d/game-info.yaml`.
 - `maps/MAP01.wad`: the level, an ECWolf binary map with PFWolf's six planes. It's built
   by `tools/make-switch-demo-map.ps1` from an ASCII layout; edit the layout there and run
   it again to change the level:

@@ -412,6 +412,49 @@ public class LevelMeshTests
     }
 
     [Test]
+    public void A_Running_Scrollers_Tagged_Walls_And_Floors_Move_Their_Textures_As_The_Game_Does()
+    {
+        // Arrange: a pillar and a flipped pillar with tag 3, floor west of the first with it too;
+        // tag 3 moves 2 texels right (east) and 1 down (south) a tic, but not on ceilings
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Wall);
+        EditorMaps.Set(document, 0, 12, 10, Flipped);
+        foreach (var (x, y) in new[] { (10, 10), (12, 10), (9, 10) })
+            EditorMaps.Set(document, MapConstants.TagPlane, x, y, 3);
+        document.SetProperties(new MapProperties { DefaultFloor = "FLOOR", Scrollers = [new ScrollerProperties(3, X: 2, Y: 1, Ceiling: false)] });
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert: a point shows the texel left of it and above it (u runs the other way on a
+        // flipped face); a floor's the texel west and north of it; untagged tiles stay still
+        const float Texel = 1 / 64f;
+        Assert.That(mesh.Scrolls, Is.True);
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Scroll, Is.EqualTo(new Vector2(-2 * Texel, -Texel)));
+        Assert.That(At(mesh, SurfaceKind.Wall, 12, 10, Face.South).Single().Scroll, Is.EqualTo(new Vector2(2 * Texel, -Texel)));
+        Assert.That(At(mesh, SurfaceKind.Floor, 9, 10).Single().Scroll, Is.EqualTo(new Vector2(-2 * Texel, -Texel)));
+        Assert.That(At(mesh, SurfaceKind.Floor, 9, 11).Single().Scroll, Is.EqualTo(Vector2.Zero));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.Top).Single().Scroll, Is.EqualTo(Vector2.Zero));
+    }
+
+    [Test]
+    public void A_Stopped_Scroller_Moves_Nothing()
+    {
+        // Arrange
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Wall);
+        EditorMaps.Set(document, MapConstants.TagPlane, 10, 10, 3);
+        document.SetProperties(new MapProperties { Scrollers = [new ScrollerProperties(3, X: 2, Active: false)] });
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert
+        Assert.That(mesh.Scrolls, Is.False);
+        Assert.That(mesh.Surfaces.All(surface => surface.Scroll == Vector2.Zero), Is.True);
+    }
+
+    [Test]
     public void The_Level_Fades_By_Its_Shading_And_Shading_Can_Be_Turned_Off()
     {
         // Arrange
