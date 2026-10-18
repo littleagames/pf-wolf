@@ -25,6 +25,9 @@ public sealed class DemoItem(DemoEntry entry, bool replaced)
     public string ToolTip => Entry.Source switch
     {
         DemoSource.Game => replaced ? $"The game's {Name}: the recorded DEMO{Entry.Number}.dmo plays in its place" : $"The game's {Name}",
+        DemoSource.Mod => $"From {Entry.Mod?.ModName}: {Entry.Mod?.EntryPath}"
+                          + (Entry.Number == null ? $". Not one of the title loop's (DEMO0-9): playdemo {Name} plays it"
+                              : replaced ? $". The recorded DEMO{Entry.Number}.dmo plays in its place" : ""),
         DemoSource.Recorded => $"Recorded with the game (recorddemo): {Entry.FilePath}. Plays in place of the game's DEMO{Entry.Number}",
         _ => Entry.FilePath ?? Name,
     } + (Entry.Demo.Problems.Count > 0 ? "\n" + string.Join("\n", Entry.Demo.Problems) : "");
@@ -89,7 +92,7 @@ public sealed partial class DemoBrowserViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
-    [NotifyCanExecuteChangedFor(nameof(TraceCommand), nameof(PlayCommand), nameof(StepCommand), nameof(GoToEndCommand))]
+    [NotifyCanExecuteChangedFor(nameof(TraceCommand), nameof(PlayCommand), nameof(StepCommand), nameof(GoToEndCommand), nameof(WatchCommand), nameof(AddToModCommand))]
     private DemoItem? _selectedItem;
 
     /// <summary>The demo picked, for the timeline</summary>
@@ -279,6 +282,94 @@ public sealed partial class DemoBrowserViewModel : ObservableObject, IDisposable
                 IsTracing = false;
             }
             cancel.Dispose();
+        }
+    }
+
+    /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
+    public Func<string, Task<string?>>? PickMod { get; set; }
+
+    /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
+    public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
+
+    /// <summary>A demo went into a mod (the editor adds the mod and loads the game again)</summary>
+    public event EventHandler<string>? Saved;
+
+    /// <summary>What's wrong with a name for a demo in a mod's demos/, or null when it will do</summary>
+    public static string? CheckDemoName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "Give it a name";
+        if (name.IndexOfAny([.. Path.GetInvalidFileNameChars(), ' ', '/', '\\']) >= 0)
+            return "A name is one word, of letters, digits, - and _";
+        return null;
+    }
+
+    /// <summary>
+    /// Saves the demo picked into a mod as demos/NAME.dmo: DEMO0-9 take that place in the title
+    /// loop (in place of the game's own of the number), any other name is for playdemo
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanWatch))]
+    private async Task AddToModAsync()
+    {
+        if (SelectedItem?.Entry is not { } entry || _content == null || AskText == null || PickMod == null)
+            return;
+
+        // The first title loop number free, else what it's called
+        var taken = Items.Where(item => item.Entry.Source is DemoSource.Game or DemoSource.Mod).Select(item => item.Entry.Number).ToHashSet();
+        var free = Enumerable.Range(0, DemoCatalog.MaxDemos).Cast<int?>().FirstOrDefault(number => !taken.Contains(number));
+        var suggested = free is { } number ? $"DEMO{number}" : Path.GetFileNameWithoutExtension(entry.Name);
+        var name = await AskText("Add to a mod",
+            "Its name in the mod's demos folder. DEMO0 to DEMO9 play in the title loop (in place of the game's own of that number); any other name plays with playdemo NAME:",
+            suggested, candidate => CheckDemoName(candidate.Trim()));
+        if (string.IsNullOrWhiteSpace(name))
+            return;
+        name = name.Trim();
+        var folder = await PickMod($"A mod to put {name} in (it goes in its demos folder)");
+        if (folder == null)
+            return;
+
+        try
+        {
+            var path = ModFiles.Write(folder, ($"demos/{name}.dmo", entry.Demo.Data));
+            Status = $"Saved {path}";
+            Saved?.Invoke(this, folder);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            Status = $"Couldn't save {name}: {e.Message}";
+        }
+    }
+
+    private bool CanWatch => SelectedItem?.Entry.Demo.IsPlayable == true;
+
+    /// <summary>
+    /// Starts PFWolf (in its window, with the mods) playing the demo picked: the very data shown
+    /// here, saved to a temporary file, so a recorded demo or a mod's plays as listed
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanWatch))]
+    private void Watch()
+    {
+        if (SelectedItem?.Entry is not { } entry || _content == null)
+            return;
+        if (GameToRun?.Invoke() is not { } game || !File.Exists(game.Exe))
+        {
+            Status = "There's no PFWolf program in the game folder to play the demo with";
+            return;
+        }
+
+        try
+        {
+            var folder = Path.Combine(Path.GetTempPath(), "pfwolf-editor-demos");
+            Directory.CreateDirectory(folder);
+            var name = string.Join("_", Path.GetFileNameWithoutExtension(entry.Name).Split(Path.GetInvalidFileNameChars()));
+            var path = Path.Combine(folder, $"{name}.dmo");
+            File.WriteAllBytes(path, entry.Demo.Data);
+            GameLaunch.Start(game.Exe, game.GameFolder, GameLaunch.DemoArguments(_content.PackId, path, game.Mods));
+            Status = $"Started PFWolf playing {entry.Name}";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            Status = $"Couldn't start the game: {e.Message}";
         }
     }
 

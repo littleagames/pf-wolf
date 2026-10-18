@@ -46,9 +46,9 @@ public class PfWolfPk3Loader
     /// menudefs/blake/; the menus directly in menudefs/ are every pack's). In pfwolf.pk3, levels
     /// and sprites that belong to one game (Wolf3D's deathmatch arenas, its players' sprites) are
     /// in maps/wolf3d/ and sprites/wolf3d/, so a game that isn't built on it (a standalone one)
-    /// doesn't get them.
+    /// doesn't get them. Demos too: demos/wolf3d/DEMO4.dmo is only Wolf3D's (a demo names its map by number).
     /// </summary>
-    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "animdefs/", "menudefs/", "maps/", "sprites/", "scripts/"];
+    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "animdefs/", "menudefs/", "maps/", "sprites/", "scripts/", "demos/"];
 
     /// <summary>
     /// Picture folders whose subfolders are only for keeping files in order (sprites/guards/,
@@ -379,6 +379,15 @@ public class PfWolfPk3Loader
             return;
         }
 
+        if (fullName.StartsWith("demos/"))
+        {
+            // demos/NAME.dmo, a demo in id's format: DEMO0-9 in place of the data files' own of
+            // that number, or new ones the title loop plays too; any other name for playdemo
+            if (entry.Name.EndsWith(".dmo", StringComparison.OrdinalIgnoreCase))
+                AddAsset(assetName, new DemoAsset(entry.Open().ToArray()));
+            return;
+        }
+
         if (IsIn(fullName, "sprites/"))
         {
             // Named by file name, in whatever subfolders (NestableFolders)
@@ -556,7 +565,7 @@ public class PfWolfPk3Loader
     /// </summary>
     private (string Folder, string Pack, string Path)? GetModPackFolder(string path)
     {
-        foreach (var folder in (string[])["gamepacks/", "maps/", "sprites/"])
+        foreach (var folder in (string[])["gamepacks/", "maps/", "sprites/", "demos/"])
         {
             if (!path.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
                 continue;

@@ -69,6 +69,9 @@ public partial class DemoBrowserWindow : Window
             case Key.End:
                 Run(ViewModel.GoToEndCommand);
                 break;
+            case Key.F5:
+                Run(ViewModel.WatchCommand);
+                break;
             case Key.O when e.KeyModifiers == KeyModifiers.Control:
                 OpenDemo(this, new RoutedEventArgs());
                 break;

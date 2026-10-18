@@ -59,6 +59,25 @@ public class DemoTraceGameTests
     }
 
     [Test]
+    public void A_Mods_Demo_Plays_By_Name()
+    {
+        // Arrange: a mod folder with demos/intro.dmo, walking forward on MAP01
+        HeadlessGame.PrepareFolder(_workFolder, "wolf3d");
+        var modFolder = Path.Combine(_workFolder, "demomod");
+        Directory.CreateDirectory(Path.Combine(modFolder, "demos"));
+        File.WriteAllBytes(Path.Combine(modFolder, "demos", "intro.dmo"), HeadlessGame.ScriptedDemo(0, new HeadlessGame.DemoStep(0, 0, -40, 15)));
+        var tracePath = Path.Combine(_workFolder, "trace.txt");
+
+        // Act
+        var (exitCode, output) = HeadlessGame.Run(_workFolder, "wolf3d", $"demotrace intro \"{tracePath}\"; quit", Timeout, modFolder);
+
+        // Assert
+        Assert.That(exitCode, Is.Zero, string.Join(Environment.NewLine, output.TakeLast(30)));
+        var trace = DemoTrace.Read(tracePath);
+        Assert.That((trace.Label, trace.MapName, trace.FrameCount), Is.EqualTo(("intro", "MAP01", 15)));
+    }
+
+    [Test]
     public void A_Dmo_File_Is_Traced_Too()
     {
         // Arrange: stand on MAP01 for 20 frames, turning

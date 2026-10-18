@@ -72,19 +72,23 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     /// <summary>The demo the title loop plays next</summary>
     int nextTitleDemo;
 
+    /// <summary>Demos the title loop goes round: DEMO0 to DEMO9, those the game has</summary>
+    internal const int TitleDemos = 10;
+
     /// <summary>
-    /// The demo for the title loop to play, of the four: the next one the game has, so one with
-    /// fewer (the Spear demo has only the first) plays the same one each time
+    /// The demo for the title loop to play: the next one the game has of DEMO0-9, so the four
+    /// the games come with play in turn, a mod's DEMO4 on joins them, and a game with fewer (the
+    /// Spear demo has only the first) plays the same one each time
     /// </summary>
     internal int TakeNextTitleDemo()
     {
-        for (int tries = 0; tries < 4; tries++)
+        for (int tries = 0; tries < TitleDemos; tries++)
         {
-            int demonumber = nextTitleDemo++ % 4;
+            int demonumber = nextTitleDemo++ % TitleDemos;
             if (hooks.DemoExists(demonumber))
                 return demonumber;
         }
-        return nextTitleDemo++ % 4;
+        return nextTitleDemo++ % TitleDemos;
     }
 
     /// <summary>

@@ -42,10 +42,22 @@ Checked in the editor on Wolf3D DEMO0 (start, mid, end frames). Not checked: Spe
 Blake demos in the window, a mod's changed level under a trace, the replay mid-fight by eye,
 opening/saving .dmo through the dialogs.
 
+## Demos in mods, and watching in the game (2026-10-18, done)
+
+- **`demos/NAME.dmo`** in pfwolf.pk3 or a mod is the DemoAsset NAME (PfWolfPk3Loader).
+  `demos/{pack}/` is that pack's only (a demo names its map by number). DEMO0-9 take that
+  place: in place of the data files' own, or new ones. The title loop now goes round DEMO0-9
+  (TitleScreens.TitleDemos), so a mod's DEMO4 on joins the four. Other names play with
+  `playdemo NAME`.
+- `playdemo` and `demotrace` take a number, a demo's name, or a .dmo file (Demos.FindDemo).
+- The editor lists mods' demos (source = the mod; tooltip says how it plays). **Add to mod…**
+  saves the demo picked as demos/NAME.dmo in a mod (suggesting the first free DEMO number),
+  then loads the game again with the mod. **▶ Watch in PFWolf** (F5 in the window) starts the
+  game in its window, with the mods, on `--nowait --exec "playdemo <temp .dmo>"`, and goes back
+  to the title when it ends.
+
 ## Ideas left
 
-- Demos in pk3s (`demos/` folder) so mods can ship them.
-- "Watch in PFWolf": launch the game windowed playing the demo.
 - Draw actors facing their way (the trace would need Dir), or with their sprite view toward
   the player.
 

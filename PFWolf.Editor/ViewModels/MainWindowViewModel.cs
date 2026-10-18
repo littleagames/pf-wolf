@@ -593,6 +593,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 // The game plays the demos to trace them, as Play starts it: from its folder, with the mods
                 GameToRun = () => Content == null ? null
                     : (Path.Combine(GameFolder, OperatingSystem.IsWindows() ? "PFWolf.exe" : "PFWolf"), GameFolder, Mods.ToList()),
+                PickMod = PickModToSaveIn,
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+            };
+            // A demo put in a mod: the game loads again with the mod, so the list shows it as the game has it
+            _demoBrowser.Saved += async (_, folder) =>
+            {
+                AddModFolder(folder);
+                await ReloadAfterDelete(() => _demoBrowser.Status, status => _demoBrowser.Status = status);
             };
             _demoBrowser.Load(Content, Art);
         }

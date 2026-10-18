@@ -13,15 +13,15 @@ internal sealed class DemoCommands(
 {
     internal void Register()
     {
-        console.Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
-            "playdemo <0-9>", PlayDemoCommand, Solo,
-            complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).Select(n => n.ToString()) : []);
+        console.Register("playdemo", "Plays a demo: by number one recorded with it (DEMO#.dmo in the demos folder), else the game's or a mod's own; or a mod's demo by name (demos/NAME.dmo), or a .dmo file. Ends the game in progress, then goes back to the title.",
+            "playdemo <0-9|name|file.dmo>", PlayDemoCommand, Solo,
+            complete: (_, i) => i == 0 ? DemoChoices() : []);
         console.Register("demotest", "Plays demos (all of them, or those given) back to back without waiting, and prints how each ended: score, kills, where the player and every actor finished. For checking a change to the game hasn't changed how it plays; run it from --exec.",
             "demotest [0-9 ...]", DemoTestCommand, Solo,
             complete: (_, _) => Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).Select(n => n.ToString()));
-        console.Register("demotrace", "Plays a demo (a number, or a .dmo file) through without waiting and writes down, frame by frame, where the player and every actor, door and pushwall went, for the editor's demo browser. Run it from --exec.",
-            "demotrace <0-9|file.dmo> <trace file>", DemoTraceCommand, Solo,
-            complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).Select(n => n.ToString()) : []);
+        console.Register("demotrace", "Plays a demo (a number, a mod's demo by name, or a .dmo file) through without waiting and writes down, frame by frame, where the player and every actor, door and pushwall went, for the editor's demo browser. Run it from --exec.",
+            "demotrace <0-9|name|file.dmo> <trace file>", DemoTraceCommand, Solo,
+            complete: (_, i) => i == 0 ? DemoChoices() : []);
         console.Register("recorddemo", "Records a demo on a level, on the hardest skill, until the level ends or you die; saves it as that demo number, or asks for one. Ends the game in progress first.",
             "recorddemo <MAP##> [0-9]", RecordDemoCommand, Solo,
             complete: (_, i) => i switch
@@ -35,19 +35,24 @@ internal sealed class DemoCommands(
     // abort, and GameLoop, seeing PendingDemo, goes back to the title without a death or scores)
     internal void PlayDemoCommand(string[] args)
     {
-        if (args.Length == 0 || !int.TryParse(args[0], out int demonumber) || demonumber < 0 || demonumber > 9)
-            throw new ArgumentException("usage: playdemo <0-9>");
+        if (args.Length == 0)
+            throw new ArgumentException("usage: playdemo <0-9|name|file.dmo>");
 
-        if (!demoPlayback.DemoExists(demonumber))
+        if (demoPlayback.FindDemo(args[0]) is not { } found)
         {
-            console.Print($"There's no demo {demonumber}");
+            console.Print($"There's no demo {args[0]}");
             return;
         }
 
-        demoPlayback.PendingDemo = demonumber;
+        demoPlayback.PendingDemo = (found.Number, found.Data);
         if (session.InGame)
             session.PlayState = PlayState.Abort;
     }
+
+    // The numbers of the demos there are, then the others' names (a mod's demos/NAME.dmo)
+    private IEnumerable<string> DemoChoices()
+        => Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).Select(n => n.ToString())
+            .Concat(demoPlayback.DemoNames().Where(name => !System.Text.RegularExpressions.Regex.IsMatch(name, "^demo[0-9]$")).Order());
 
     internal void DemoTestCommand(string[] args)
     {
@@ -80,7 +85,7 @@ internal sealed class DemoCommands(
 
     internal void DemoTraceCommand(string[] args)
     {
-        const string usage = "usage: demotrace <0-9|file.dmo> <trace file>";
+        const string usage = "usage: demotrace <0-9|name|file.dmo> <trace file>";
         if (args.Length < 2 || tracer == null)
             throw new ArgumentException(usage);
         if (session.InGame)
@@ -89,34 +94,13 @@ internal sealed class DemoCommands(
             return;
         }
 
-        // A number is the game's demo (or the one recorded with that number); else a file
-        int demonumber = -1;
-        byte[]? data;
-        string label;
-        if (args[0].Length == 1 && int.TryParse(args[0], out var number))
-        {
-            demonumber = number;
-            data = demoPlayback.DemoData(number);
-            label = args[0];
-        }
-        else
-        {
-            try
-            {
-                data = File.ReadAllBytes(args[0]);
-            }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
-            {
-                Console.WriteLine($"demotrace: couldn't read {args[0]}: {e.Message}");
-                return;
-            }
-            label = Path.GetFileName(args[0]).Replace(' ', '_');
-        }
-        if (data == null)
+        // A number is the game's demo (or the one recorded with that number); else a name, or a file
+        if (demoPlayback.FindDemo(args[0]) is not { } found)
         {
             Console.WriteLine($"demotrace {args[0]}: no such demo");
             return;
         }
+        var (demonumber, data, label) = found;
 
         var parsed = PFWolf.Assets.Demos.DemoFile.Parse(data);
         try

@@ -99,12 +99,41 @@ internal sealed class Demos(
     internal byte[]? DemoData(int demonumber)
         => ReadRecordedDemo(demonumber) ?? assets.Find<DemoAsset>($"demo{demonumber}")?.RawData;
 
+    /// <summary>
+    /// A demo by what the console was given: a number (0-9), a demo's name (a mod's
+    /// demos/NAME.dmo), else a .dmo file. Null when there's none of those.
+    /// </summary>
+    /// <returns>Its number (-1 for one by name or file), its data, and a name for it</returns>
+    internal (int Number, byte[] Data, string Label)? FindDemo(string what)
+    {
+        if (what.Length == 1 && int.TryParse(what, out var number))
+            return DemoData(number) is { } numbered ? (number, numbered, what) : null;
+
+        var name = Path.GetFileNameWithoutExtension(what);
+        if (!what.Contains('/') && !what.Contains('\\') && assets.Exists<DemoAsset>(name) && assets.Find<DemoAsset>(name) is { } asset)
+            return (-1, asset.RawData, name);
+
+        try
+        {
+            return File.Exists(what) ? (-1, File.ReadAllBytes(what), Path.GetFileName(what).Replace(' ', '_')) : null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            Console.WriteLine($"Couldn't read the demo {what}: {e.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>The names of the demos the packs and mods have (demos/NAME.dmo and the data files' DEMO0-9)</summary>
+    internal IEnumerable<string> DemoNames() => assets.NamesOf<DemoAsset>();
+
     internal const int MaxDemoSize = 8192;
 
     /// <summary>
-    /// A demo asked for by playdemo; the title loop plays it next (a game in progress ends first)
+    /// A demo asked for by playdemo: its number (-1 for one by name or file) and data; the title
+    /// loop plays it next (a game in progress ends first)
     /// </summary>
-    internal int? PendingDemo;
+    internal (int Number, byte[] Data)? PendingDemo;
 
     /// <summary>Whether demo number <paramref name="demonumber"/> has been recorded or comes with the game</summary>
     internal bool DemoExists(int demonumber)
@@ -115,11 +144,11 @@ internal sealed class Demos(
     /// </summary>
     internal void PlayPendingDemo()
     {
-        if (PendingDemo is not int demonumber)
+        if (PendingDemo is not { } pending)
             return;
 
         PendingDemo = null;
-        PlayDemo(demonumber);
+        PlayDemo(pending.Number, pending.Data);
         video.FadeOut();
         if (video.HasMargins)
             video.ClearScreen(0x00);

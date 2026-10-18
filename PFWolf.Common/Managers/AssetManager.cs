@@ -433,6 +433,13 @@ public class AssetManager
     public IEnumerable<string> AssetNames
         => _assets.Keys.Select(key => key.Substring(key.IndexOf(':') + 1)).Distinct();
 
+    /// <summary>The names of every loaded asset of this type, as loaded (lowercase)</summary>
+    public IEnumerable<string> NamesOf<T>() where T : Asset
+    {
+        var prefix = $"{typeof(T).Name}:".ToLowerInvariant();
+        return _assets.Keys.Where(key => key.StartsWith(prefix, StringComparison.Ordinal)).Select(key => key[prefix.Length..]);
+    }
+
     /// <summary>The Lua scripts (scripts/*.lua in pfwolf.pk3 and the mods), in the order they run</summary>
     /// <summary>Every asset of this type, under whatever name</summary>
     public IReadOnlyList<T> GetAll<T>() where T : Asset => _assets.Values.OfType<T>().Distinct().ToList();

@@ -12,12 +12,10 @@ public class DemoCommandsTests
         _commands = new DemoCommands(_console, null!, null!, new DemoBuffer(), new GameSession { InGame = true });
     }
 
-    [TestCase("")]
-    [TestCase("10")]
-    [TestCase("x")]
-    public void Playdemo_Takes_A_Demo_Number(string arg)
+    [Test]
+    public void Playdemo_Needs_A_Demo()
     {
-        Assert.Throws<ArgumentException>(() => _commands.PlayDemoCommand(arg == "" ? [] : [arg]));
+        Assert.Throws<ArgumentException>(() => _commands.PlayDemoCommand([]));
     }
 
     [Test]

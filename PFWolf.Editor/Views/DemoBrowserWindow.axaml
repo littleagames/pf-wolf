@@ -21,6 +21,8 @@
         <Button Content="Open .dmo…" Click="OpenDemo" ToolTip.Tip="Lists a demo file (id's format) to look at; Ctrl+O" />
         <Button Content="Save as .dmo…" Click="SaveDemo" IsEnabled="{Binding HasSelection}"
                 ToolTip.Tip="Saves the demo picked as a file: DEMO0-9.dmo in the game's demos folder plays in place of the game's own" />
+        <Button Content="Add to mod…" Command="{Binding AddToModCommand}"
+                ToolTip.Tip="Puts the demo picked in a mod (demos/NAME.dmo), to ship with it: DEMO0-9 play in the title loop" />
       </WrapPanel>
       <ListBox x:Name="List" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
         <ListBox.Styles>
@@ -56,8 +58,12 @@
         <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
           <TextBlock Text="{Binding TraceStatus}" TextWrapping="Wrap" VerticalAlignment="Center" Opacity="0.85" />
-          <Button Grid.Column="1" Content="{Binding TraceLabel}" Command="{Binding TraceCommand}"
-                  ToolTip.Tip="Has the game play the demo again (headless, with the mods) and write down where everyone went" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+            <Button Content="▶ Watch in PFWolf" Command="{Binding WatchCommand}"
+                    ToolTip.Tip="Starts the game in its window, with the mods, playing this demo; back to the title when it ends (F5)" />
+            <Button Content="{Binding TraceLabel}" Command="{Binding TraceCommand}"
+                    ToolTip.Tip="Has the game play the demo again (headless, with the mods) and write down where everyone went" />
+          </StackPanel>
         </Grid>
       </StackPanel>
 

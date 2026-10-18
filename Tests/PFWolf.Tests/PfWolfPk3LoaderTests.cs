@@ -409,6 +409,29 @@ public class PfWolfPk3LoaderTests
     }
 
     [Test]
+    public void A_Mods_Demos_Load_By_File_Name_And_Per_Pack()
+    {
+        // Arrange: shared demos, one for this pack and one for another; only .dmo files are demos
+        var basePk3 = new MemoryAssetSource("pfwolf.pk3", new() { ["gamepacks/gamepack-info.yaml"] = GamePackInfo });
+        var mod = new MemoryAssetSource("mymod.pk3", new() { ["demos/readme.txt"] = "not a demo" }, new()
+        {
+            ["demos/DEMO4.dmo"] = [3, 7, 0, 0, 1, 2, 3],
+            ["demos/intro.dmo"] = [0, 7, 0, 0, 0, 0, 0],
+            ["demos/alpha/DEMO5.dmo"] = [1, 7, 0, 0, 0, 0, 0],
+            ["demos/gamma/DEMO6.dmo"] = [2, 7, 0, 0, 0, 0, 0],
+        });
+
+        // Act
+        var loader = new PfWolfPk3Loader([basePk3], "alpha", "alpha", [mod]);
+        var demos = loader.GetAssets().Where(pair => pair.Value is DemoAsset).Select(pair => pair.Key).Order().ToList();
+
+        // Assert
+        Assert.That(demos, Is.EqualTo(new[] { "demoasset:demo4", "demoasset:demo5", "demoasset:intro" }));
+        Assert.That(loader.Load<DemoAsset>("DEMO4").RawData, Is.EqualTo(new byte[] { 3, 7, 0, 0, 1, 2, 3 }));
+        Assert.That(loader.Warnings, Is.Empty);
+    }
+
+    [Test]
     public void Scripts_Load_In_Order_And_A_Mods_Replace_Them_By_Name()
     {
         // Arrange: shared and per-pack scripts in the base pk3 (another pack's left out), and a

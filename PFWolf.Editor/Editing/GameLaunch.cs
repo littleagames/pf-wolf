@@ -23,6 +23,18 @@ public static class GameLaunch
         return arguments;
     }
 
+    /// <summary>
+    /// The game's command line to watch a demo: past the title and menus (--nowait) to the demo
+    /// file (playdemo), with the editor's mods; back to the title when it ends
+    /// </summary>
+    public static List<string> DemoArguments(string gamePackId, string demoPath, IEnumerable<string> mods)
+    {
+        var arguments = new List<string> { "--game", gamePackId, "--nowait", "--exec", $"playdemo \"{demoPath}\"" };
+        foreach (var mod in mods)
+            arguments.AddRange(["--file", mod]);
+        return arguments;
+    }
+
     /// <summary>Starts the game in its own folder, as it expects, and leaves it running</summary>
     public static void Start(string exe, string gameFolder, IEnumerable<string> arguments)
     {

@@ -201,6 +201,16 @@ public class TitleScreensTests
         // Act / Assert
         Assert.That(Enumerable.Range(0, 3).Select(_ => titles.TakeNextTitleDemo()), Is.EqualTo(new[] { 0, 0, 0 }));
     }
+
+    [Test]
+    public void A_Mods_Demos_Past_The_Fourth_Join_In()
+    {
+        // Arrange: a mod adds DEMO4 and DEMO7
+        var titles = WithDemos(0, 1, 2, 3, 4, 7);
+
+        // Act / Assert
+        Assert.That(Enumerable.Range(0, 7).Select(_ => titles.TakeNextTitleDemo()), Is.EqualTo(new[] { 0, 1, 2, 3, 4, 7, 0 }));
+    }
 }
 
 public class ModsMenuTests
