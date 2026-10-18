@@ -18,7 +18,6 @@ internal static class AssetManagerExtensions
     /// A menu by name: the running pack's own (menudefs/{pack}/name.yaml) when it has one, else
     /// the shared one
     /// </summary>
-    [Obsolete("Temporary endpoint until the asset types are implemented")]
     public static MenuMetadata? GetMenu(this AssetManager assets, string name)
     {
         var menuCache = MenuCaches.GetOrCreateValue(assets);
@@ -42,7 +41,6 @@ internal static class AssetManagerExtensions
     /// Text for a language: language/{lang} shared by every game pack, then the running
     /// pack's gamepacks/{pack}/language/{lang}, whose strings win
     /// </summary>
-    [Obsolete]
     public static LanguageMetadata? GetText(this AssetManager assets, string language)
     {
         var languageCache = LanguageCaches.GetOrCreateValue(assets);
