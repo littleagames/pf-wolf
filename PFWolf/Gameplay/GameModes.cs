@@ -1,3 +1,5 @@
+using PFWolf.Assets;
+
 namespace PFWolf.Gameplay;
 
 /*
@@ -44,6 +46,10 @@ internal static class GameModes
         GameMode.Coop, GameMode.Deathmatch, GameMode.TeamDeathmatch, GameMode.CaptureTheFlag,
         GameMode.Heist, GameMode.Domination, GameMode.KingOfTheHill, GameMode.Horde, GameMode.PropHunt,
     ];
+
+    /// <summary>The modes a game offers in the lobby: Horde only when its game-info lists waves</summary>
+    internal static GameMode[] NetModesFor(HordeInfo horde) =>
+        NetModes.Where(mode => mode != GameMode.Horde || horde.Waves.Count > 0).ToArray();
 
     /// <summary>Players fight each other</summary>
     internal static bool IsVersus(this GameMode mode) =>

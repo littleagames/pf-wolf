@@ -11,6 +11,6 @@ triggers:
   98: # pushwall
     action: A_PushWall("world/pushwall", "player/usefail")
     secret: true
-  99: # end of castle: BJ runs for the exit
-    action: A_VictoryTile
+  99: # end of castle: BJ (actordefs/wolf3d/victory.yaml) runs for the exit
+    action: A_VictoryTile("BJVictory")
     activation: walk

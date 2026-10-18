@@ -865,7 +865,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         {
             case "mode" when session.IsHost:
                 // The next mode, with its own score limit, enemies and arena (the one picked, if it's one for it too)
-                var modes = GameModes.NetModes;
+                var modes = GameModes.NetModesFor(engine.GetGameInfo().Horde);
                 var mode = modes[MenuDrawing.StepMenuChoice(Math.Max(0, Array.IndexOf(modes, settings.Mode)), modes.Length, delta, wrap: true)];
                 var modeArenas = ArenaMaps(mode);
                 session.SetSettings(settings with

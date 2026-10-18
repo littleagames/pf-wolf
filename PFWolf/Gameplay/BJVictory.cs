@@ -10,10 +10,19 @@ namespace PFWolf.Gameplay;
 /// </summary>
 internal sealed class BJVictory(MapManager map, GameSession session)
 {
-    internal void VictoryTile()
+    /// <summary>
+    /// A_VictoryTile("BJVictory"): the class runs for the exit (Wolf3D's BJ), and ends the level
+    /// once it's done. With no class, or one there isn't, the level ends straight away.
+    /// </summary>
+    internal void VictoryTile(string? runnerClass)
     {
-        SpawnBJVictory();
+        var ran = !string.IsNullOrWhiteSpace(runnerClass) && SpawnVictoryRunner(runnerClass.Trim());
         session.GameState.VictoryFlag = true;
+        if (!ran)
+        {
+            Console.WriteLine($"A_VictoryTile: no runner class \"{runnerClass}\"; give one, as A_VictoryTile(\"BJVictory\"). The level ends now.");
+            session.PlayState = PlayState.Victorious;
+        }
     }
 
     // Ends the game in victory (the Angel of Death's last death frame)
@@ -85,15 +94,16 @@ internal sealed class BJVictory(MapManager map, GameSession session)
     }
 
 
-    internal void SpawnBJVictory()
+    // Whether the runner came in
+    internal bool SpawnVictoryRunner(string runnerClass)
     {
         var player = session.Player;
 
         // Same spot the legacy SpawnNewObj used: BJ's tile is the one south of the player's, but
         // he starts at the player's exact position (SpawnAtActor copies the player's x/y).
-        var bj = map.SpawnAtActor("BJVictory", player);
+        var bj = map.SpawnAtActor(runnerClass, player);
         if (bj == null)
-            return;
+            return false;
 
         bj.TileY = (byte)(player.TileY + 1);
         bj.SyncPosition();
@@ -104,5 +114,6 @@ internal sealed class BJVictory(MapManager map, GameSession session)
 
         bj.Dir = ObjDir.North;
         bj.Temp1 = 6;                      // tiles to run forward
+        return true;
     }
 }

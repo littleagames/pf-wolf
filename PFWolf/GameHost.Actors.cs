@@ -168,7 +168,8 @@ internal static partial class GameHost
         // pushed from another side, it shows the message and plays the blocked sound instead
         // (Midnight Assault's one-way MovingWalls)
         Entities.MapTriggerRegistry.Register("A_PushWall", PushWallAction);
-        Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, _) => { VictoryTile(); return true; });
+        // A_VictoryTile("BJVictory"): that class runs for the exit, then the level ends (Gameplay/BJVictory.cs)
+        Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, args) => { VictoryTile(args.ElementAtOrDefault(0)); return true; });
         Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => ExitAction(secret: false));
         Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
         // Hub clusters' ways between levels, the teleporter's floors and the victory run (Gameplay/HubActions.cs)
@@ -481,7 +482,7 @@ internal static partial class GameHost
     internal static void ActiveSound(Entities.Actors.Actor ob) => actorSounds.ActiveSound(ob);
     internal static void PlaySound(Entities.Actors.Actor ob, string[] args) => actorSounds.PlaySound(ob, args);
 
-    internal static void VictoryTile() => bjVictory.VictoryTile();
+    internal static void VictoryTile(string? runnerClass) => bjVictory.VictoryTile(runnerClass);
     internal static void Victory(Entities.Actors.Actor ob) => bjVictory.Victory(ob);
     internal static void ThinkBjRun(Entities.Actors.Monster ob) => bjVictory.ThinkBjRun(ob);
     internal static void ThinkBjJump(Entities.Actors.Monster ob) => bjVictory.ThinkBjJump(ob);

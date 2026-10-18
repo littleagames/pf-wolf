@@ -1323,6 +1323,9 @@ internal class MapManager
 
     private ActorMetadata RuntimeActorMetadata => _runtimeActorMetadata ??= assetManager.Value.GetActorMetadata();
 
+    /// <summary>Whether there's an actordefs class of that name</summary>
+    internal bool IsActorClass(string className) => RuntimeActorMetadata.Actors.ContainsKey(className);
+
     /// <summary>Builds an actordefs class in its Spawn state, without placing it or adding it to _actors.</summary>
     private Entities.Actors.Actor? CreateRuntimeActor(string className) =>
         RuntimeActorMetadata.Actors.TryGetValue(className, out var actor)

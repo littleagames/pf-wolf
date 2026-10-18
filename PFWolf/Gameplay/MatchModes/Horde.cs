@@ -10,7 +10,8 @@ namespace PFWolf.Gameplay.MatchModes;
                                   HORDE
 
     The players together against waves of enemies (game-info horde: Wolf3D's
-    are mutants), coming in a few at a time at the map's HordeSpawn markers
+    are mutants; a game listing none has no Horde, and the lobby doesn't
+    offer it), coming in a few at a time at the map's HordeSpawn markers
     (mapdefs 444) or, without any, on open floor joined to the players' and
     well away from them, already hunting. Once a wave is all dead a break
     follows (break-seconds), when the dead can come back (only then) and the
@@ -50,8 +51,17 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
     List<(int x, int y)> spawns = [];
     bool markerspawns;
 
+    /// <summary>The game-info lists no waves (the game has no Horde): nothing comes</summary>
+    internal bool NoWaves => settings().Waves.Count == 0;
+
+    // Wave classes that aren't actordefs classes, already warned about
+    readonly HashSet<string> warnedClasses = new(StringComparer.OrdinalIgnoreCase);
+
     public override void LevelSetup()
     {
+        if (NoWaves)
+            Announce("This game has no Horde waves (game-info horde: waves).");
+
         spawns = Markers("HordeSpawn");
         markerspawns = spawns.Count > 0;
         if (!markerspawns)
@@ -76,7 +86,9 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
     internal List<(string Class, int Count)> WaveEnemies(int number, int players)
     {
         var info = settings();
-        var waves = info.Waves.Count > 0 ? info.Waves : [new HordeWave { Enemies = new() { ["Mutant"] = 4 } }];
+        var waves = info.Waves;
+        if (waves.Count == 0)
+            return [];
         int index = Math.Clamp(number - 1, 0, waves.Count - 1);
         int extra = Math.Max(0, number - waves.Count) * info.Grow;
         return waves[index].Enemies
@@ -87,7 +99,7 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
 
     public override void Tick()
     {
-        if (Wiped)
+        if (Wiped || NoWaves)
             return;
         var time = Session.GameState.TimeCount;
         var info = settings();
@@ -98,7 +110,7 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
                 return;
             CurrentPhase = Phase.Wave;
             ToCome.Clear();
-            ToCome.AddRange(WaveEnemies(Wave, Map.Players.Count(pawn => !pawn.State.Gone)));
+            ToCome.AddRange(WaveEnemies(Wave, Map.Players.Count(pawn => !pawn.State.Gone)).Where(e => IsEnemyClass(e.Class)));
             NextAt = time;
             Announce($"Wave {Wave}!", "misc/yeah");
         }
@@ -130,6 +142,17 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
             Wave++;
             StartBreak();
         }
+    }
+
+    // Whether a wave's class is one there is: one that isn't is left out (warned about once),
+    // so a typo can't hold a wave up for good
+    bool IsEnemyClass(string className)
+    {
+        if (Map.IsActorClass(className))
+            return true;
+        if (warnedClasses.Add(className))
+            Console.WriteLine($"Horde: wave enemy \"{className}\" isn't an actordefs class; left out.");
+        return false;
     }
 
     /// <summary>The level's living enemies (any of them: a wave's, or the map's own with monsters on)</summary>
@@ -187,6 +210,8 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
 
     public string? StatusLine()
     {
+        if (NoWaves)
+            return "No Horde waves in this game";
         if (CurrentPhase == Phase.Break)
             return $"Wave {Wave} in {Math.Max(0, NextAt - Session.GameState.TimeCount) / 70 + 1}s";
         int left = ToCome.Sum(e => e.Count) + AliveEnemies();

@@ -260,6 +260,30 @@ public class MatchScoringTests
     }
 
     [Test]
+    public void A_Game_With_No_Horde_Waves_Sends_Nothing_And_Says_So()
+    {
+        // Arrange: a game-info without horde: waves (Blake Stone's)
+        var rig = new Rig(GameMode.Horde);
+        var horde = HordeOf(rig, new HordeInfo());
+
+        // Act / Assert
+        Assert.That(horde.NoWaves, Is.True);
+        Assert.That(horde.WaveEnemies(1, 2), Is.Empty);
+        Assert.That(((IMatchObjective)horde).StatusLine(), Is.EqualTo("No Horde waves in this game"));
+    }
+
+    [Test]
+    public void The_Lobby_Offers_Horde_Only_When_The_Game_Lists_Waves()
+    {
+        // Arrange
+        var withWaves = new HordeInfo { Waves = [new HordeWave { Enemies = new() { ["Mutant"] = 4 } }] };
+
+        // Act / Assert
+        Assert.That(GameModes.NetModesFor(withWaves), Is.EqualTo(GameModes.NetModes));
+        Assert.That(GameModes.NetModesFor(new HordeInfo()), Is.EqualTo(GameModes.NetModes.Where(m => m != GameMode.Horde)));
+    }
+
+    [Test]
     public void In_Horde_The_Dead_Come_Back_Only_Between_Waves_And_Everyone_Dead_Ends_It()
     {
         // Arrange: a wave being fought
