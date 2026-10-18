@@ -37,14 +37,6 @@ internal sealed class Pickups(
         if ((session.PlayState == PlayState.Died))
             return;
 
-        //if (string.IsNullOrWhiteSpace(check.item_class))
-        //    return;
-
-        //var actors = AssetManager.GetActorMetadata();
-        //if (!actors.Actors.TryGetValue(check.item_class, out var actor))
-        //    return;
-        //var builtActor = actors.BuildActor(check.item_class, actor); // TODO: Should this just create objects?
-
         if (builtActor.Properties.Count == 0)
             return;
 
