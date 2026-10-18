@@ -26,6 +26,7 @@ internal static partial class GameHost
         new BindCommands(_consoleManager, Controls, ControlSettings).Register();
         new VideoCommands(_consoleManager, _videoManager, RedrawAfterVideoChange).Register();
         new MessageCommands(_consoleManager, HudMessageManager).Register();
+        new GameOptionCommands(_consoleManager, Settings.Options).Register();     // freelook, am_stats, autosave, weaponbob, alwaysrun, crosshair
         new AssetCommands(_consoleManager, AssetManager, AudioManager, GameEngineManager).Register();
 
         //
@@ -38,8 +39,6 @@ internal static partial class GameHost
             "am_overlay [0|1]", AmOverlayCommand, complete: Values("0", "1"));
         Register("am_grid", "Whether the automap marks every tile edge with a faint grid when zoomed in.",
             "am_grid [0|1]", AmGridCommand, complete: Values("0", "1"));
-        Register("am_stats", "Whether the automap shows the level's name, kills, treasure, secrets and time.",
-            "am_stats [0|1]", AmStatsCommand, complete: Values("0", "1"));
         Register("am_reveal", "Shows the whole map on the automap, seen or not.", "am_reveal [0|1]", AmRevealCommand, Cheat,
             complete: Values("0", "1"));
 
@@ -67,7 +66,7 @@ internal static partial class GameHost
             "lua <code>", LuaCommand, Cheat);
         new Commands.UnlockCommands(_consoleManager, Unlocks, LevelRecords).Register();     // unlock, lock, records (Commands/UnlockCommands.cs)
         demoCommands.Register();        // playdemo, demotest, recorddemo (Commands/DemoCommands.cs)
-        saveCommands.Register();        // saves, autosave, save, load (Commands/SaveCommands.cs)
+        saveCommands.Register();        // saves, save, load (Commands/SaveCommands.cs)
         Register("quit", "Quits the game immediately.", "quit", _ => GameEngineManager.Quit(""));
     }
 

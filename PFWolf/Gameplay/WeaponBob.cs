@@ -6,7 +6,9 @@ namespace PFWolf.Gameplay;
 // has it, and it's never saved: a level or loaded game starts it at rest.
 internal sealed class WeaponBob
 {
-    internal bool Enabled;                  // game-info weapon-bob
+    // The Game Options weaponbob setting (its default from game-info), asked each frame
+    internal Func<bool> EnabledSource = () => false;
+    internal bool Enabled { get => EnabledSource(); set => EnabledSource = () => value; }
 
     // In bstone's 200-line pixels: where the weapon swings between, and how far it may overshoot
     private const double BobMax = 10, BobMid = 6, BobMin = 2;

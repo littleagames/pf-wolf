@@ -155,6 +155,15 @@ public record GameInfoAsset : Asset
     public bool? WeaponBob { get; init; }
 
     /// <summary>
+    /// What the Game Options menu's settings are before the player changes them: a mod can turn
+    /// looking up and down off, or messages on. Each one left out keeps the engine's default.
+    /// </summary>
+    public SettingDefaultsInfo SettingDefaults { get; init; } = new();
+
+    /// <summary>The crosshair's color: a color name, #RRGGBB or palette index (default White)</summary>
+    public string? CrosshairColor { get; init; }
+
+    /// <summary>
     /// How long the death fade's color stays up before the level restarts or the game ends,
     /// in tics, unless a key is pressed (default 100)
     /// </summary>
@@ -289,6 +298,34 @@ public record MenuStripeInfo
     public int LineY { get; init; } = 22;
 
     public string LineColor { get; init; } = "STRIPE";
+}
+
+/// <summary>
+/// game-info setting-defaults: the Game Options menu's settings before the player chooses. null
+/// keeps the engine's default (given with each).
+/// </summary>
+public record SettingDefaultsInfo
+{
+    /// <summary>Whether the player can look up and down at all: keys, stick and mouse look (default true)</summary>
+    public bool? Look { get; init; }
+
+    /// <summary>Messages over the view (default hud-messages enabled, else false)</summary>
+    public bool? Messages { get; init; }
+
+    /// <summary>The automap's level name, kills, treasure, secrets and time (default true)</summary>
+    public bool? AutomapStats { get; init; }
+
+    /// <summary>Each new level saving itself as it starts (default true)</summary>
+    public bool? Autosave { get; init; }
+
+    /// <summary>The weapon in hand bobbing as the player walks (default weapon-bob, else false)</summary>
+    public bool? WeaponBob { get; init; }
+
+    /// <summary>Running without holding Run; holding it walks (default false)</summary>
+    public bool? AlwaysRun { get; init; }
+
+    /// <summary>A crosshair in the middle of the view (default false)</summary>
+    public bool? Crosshair { get; init; }
 }
 
 public record HudMessagesInfo

@@ -12,6 +12,7 @@ namespace PFWolf.Rendering;
 /// <param name="SpriteExists">Whether there's a sprite picture of that name</param>
 /// <param name="DeathCamSprite">The death cam's banner, while it shows (Gameplay/PlayerDeath.cs)</param>
 /// <param name="WeaponScale">How big the weapon in hand is drawn (game-info weapon-scale)</param>
+/// <param name="DrawCrosshair">The crosshair over the weapon, when the crosshair setting is on (Rendering/Crosshair.cs)</param>
 internal sealed record SpriteDrawingHooks(
     Func<string?> WeaponShapeName,
     Func<Entities.Actors.Actor, bool> IsPlayerBody,
@@ -19,7 +20,8 @@ internal sealed record SpriteDrawingHooks(
     Func<Entities.Actors.Actor, string> DrawnSprite,
     Func<string, bool> SpriteExists,
     Func<Entities.Actors.Actor?> DeathCamSprite,
-    Func<double> WeaponScale);
+    Func<double> WeaponScale,
+    Action? DrawCrosshair = null);
 /// <summary>
 /// The level's sprites: each actor and item worth drawing is placed on the view (TransformActor),
 /// given the sprite for its angle to the viewer (CalcRotate), and they're drawn farthest first
@@ -432,6 +434,8 @@ internal sealed class SpriteDrawing(
                 session.PlayerState.WeaponSprite != null && Lighting.IsBright(session.PlayerState.WeaponSprite) ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(session.Player.TileX, session.Player.TileY), session.Player.X, session.Player.Y),
                 ((render.ViewHeight + 1) >> 1) - (height >> 1) + weaponBob.Drop(render.ViewHeight));
         }
+
+        hooks.DrawCrosshair?.Invoke();
 
         if ((session.DemoPlayback || session.DemoRecord))
             scaler.SimpleScaleShape(render.ViewWidth / 2, "DEMOA0", render.ViewHeight + 1);

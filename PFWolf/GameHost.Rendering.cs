@@ -93,7 +93,18 @@ internal static partial class GameHost
     static SpriteDrawing MakeSpriteDrawing() => new(AssetManager, MapManager, TranslationManager, lighting, spriteScaler,
         wallSpriteDrawing, weather, Render, WeaponBob, Session,
         new SpriteDrawingHooks(WeaponShapeName, IsPlayerBody, VisiblePlayerBody, DrawnSprite, SpriteExists,
-            () => DeathCamSprite, () => WeaponScale));
+            () => DeathCamSprite, () => WeaponScale, DrawCrosshair));
+
+    // The crosshair setting's cross in the middle of the view (Rendering/Crosshair.cs)
+    static Crosshair? crosshair;
+
+    static void DrawCrosshair()
+    {
+        if (!Settings.Options.Crosshair)
+            return;
+        crosshair ??= new Crosshair(_videoManager, Render, GameEngineManager.GetGameInfo().CrosshairColor);
+        crosshair.Draw();
+    }
 
     static void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos) => spriteDrawing.TransformActorFrom(ob, fromx, fromy, fromsin, fromcos);
 

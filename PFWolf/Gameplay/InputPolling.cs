@@ -29,8 +29,15 @@ internal sealed class InputPolling(
     FrameRefresh frame,
     DemoBuffer demo,
     GameSession session,
-    InputPollingHooks hooks)
+    InputPollingHooks hooks,
+    GameOptions? gameOptions = null)
 {
+    // freelook and alwaysrun (Configuration/GameOptions.cs)
+    private readonly GameOptions options = gameOptions ?? new();
+
+    /// <summary>Whether Run is in effect: held, or not held with alwaysrun on</summary>
+    internal bool Running => inputManager.IsButtonPressed(ButtonType.Run) != options.AlwaysRun;
+
     //
     // current user input: gathered here each frame by PollControls into LocalCmd, which is all
     // the game itself reads (through the player's PlayerInput)
@@ -132,6 +139,14 @@ internal sealed class InputPolling(
 
         hooks.RouteMovementToAutomap();       // pan mode: movement moves the map, not the player
 
+        // With freelook off (a mod that wants the original's level view), nothing looks up or
+        // down, and the view goes back to level if it was looking when it was turned off
+        if (!options.Look)
+        {
+            ControlPitch = 0;
+            ControlCenterView = true;
+        }
+
         if (session.DemoRecord)
         {
             //
@@ -175,6 +190,10 @@ internal sealed class InputPolling(
             if (inputManager.IsButtonPressed((ButtonType)i))
                 buttons |= 1u << i;
         }
+
+        // alwaysrun turns Run over, so demos and the other players see it as held
+        if (options.AlwaysRun)
+            buttons ^= 1u << (int)ButtonType.Run;
         return buttons;
     }
 
@@ -293,7 +312,7 @@ internal sealed class InputPolling(
     /// <summary>Walking and turning from the movement buttons, whatever they're bound to.</summary>
     internal void PollButtonMove()
     {
-        int delta = (int)(inputManager.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove * session.Tics : GameConstants.BaseMove * session.Tics);
+        int delta = (int)(Running ? GameConstants.RunMove * session.Tics : GameConstants.BaseMove * session.Tics);
 
         if (inputManager.IsButtonPressed(ButtonType.MoveForward))
             ControlY -= delta;
@@ -331,7 +350,7 @@ internal sealed class InputPolling(
 
         // Looking goes as fast as turning: ControlX turns a degree every AngleScale. In the
         // automap's pan mode the mouse pans the map, so it walks (RouteMovementToAutomap takes it).
-        if (controlSettings.MouseLook && !(automap.IsOpen && !automap.Follow))
+        if (controlSettings.MouseLook && options.Look && !(automap.IsOpen && !automap.Follow))
             ControlPitch += (controlSettings.MouseInvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.MouseAdjustment) / GameConstants.AngleScale;
         else
             ControlY += mouseymove * 20 / (13 - controlSettings.MouseAdjustment);
@@ -350,7 +369,7 @@ internal sealed class InputPolling(
     {
         int joyx, joyy;
 
-        int speed = inputManager.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove : GameConstants.BaseMove;
+        int speed = Running ? GameConstants.RunMove : GameConstants.BaseMove;
 
         // A controller: the left stick walks and strafes and the right stick turns (classic: the
         // left stick walks and turns and the right strafes), as fast as they're pushed. Turning

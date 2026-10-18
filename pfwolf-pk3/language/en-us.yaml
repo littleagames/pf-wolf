@@ -24,6 +24,14 @@ $MENU_BACKTOGAME: "Back to Game"
 $MENU_QUIT: "Quit"
 $MENU_VIDEO: "Video"
 $MENU_MODS: "Mods"
+$MENU_GAMEOPTIONS: "Game Options"
+
+# Game Options
+$STR_FREELOOK: "Look Up/Down"
+$STR_AUTOSAVE: "Autosave"
+$STR_WEAPONBOB: "Weapon Bob"
+$STR_ALWAYSRUN: "Always Run"
+$STR_CROSSHAIR: "Crosshair"
 
 # Mods
 $STR_MODS_NONE: "There are no mods in\nthe mods folder beside\nthe game."

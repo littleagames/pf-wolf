@@ -173,6 +173,7 @@ internal class GameEngineManager
         public HudMessagesSetting? HudMessages;
         public bool? AutomapStats;
         public HighScore[]? ScoreTable;
+        public GameOptionSetting[]? GameOptions;
     }
 
     /// <summary>The video settings appended after the score table (see ReadMoreVideoSettings)</summary>
@@ -190,6 +191,28 @@ internal class GameEngineManager
         On = 1,
         GameDefault = 2,
     }
+
+    /// <summary>A Game Options setting (Configuration/GameOptions.cs), as saved in config.cfg</summary>
+    private enum GameOptionSetting : byte
+    {
+        Off = 0,
+        On = 1,
+        GameDefault = 2,
+    }
+
+    private static bool? ToChoice(GameOptionSetting setting) => setting switch
+    {
+        GameOptionSetting.Off => false,
+        GameOptionSetting.On => true,
+        _ => null,
+    };
+
+    private static GameOptionSetting FromChoice(bool? choice) => choice switch
+    {
+        false => GameOptionSetting.Off,
+        true => GameOptionSetting.On,
+        null => GameOptionSetting.GameDefault,
+    };
 
     /// <summary>The Video menu's on/off settings, as saved in config.cfg.</summary>
     [Flags]
@@ -296,12 +319,24 @@ internal class GameEngineManager
             audioManager.SoundVolume = soundVolume;     // clamped by the setter
         if (config.MusicVolume is int musicVolume)
             audioManager.MusicVolume = musicVolume;
-        if (config.AutoSave is bool autoSave)
-            settings.AutosaveEnabled = autoSave;
-        if (config.HudMessages is HudMessagesSetting.Off or HudMessagesSetting.On)
-            hudMessageManager.EnabledSetting = config.HudMessages == HudMessagesSetting.On;
-        if (config.AutomapStats is bool stats)
-            automapManager.ShowStats = stats;
+        var options = settings.Options;
+        if (config.GameOptions is { } saved)
+        {
+            for (int i = 0; i < Math.Min(saved.Length, (int)GameOption.Count); i++)
+                options.SetChoice((GameOption)i, ToChoice(saved[i]));
+        }
+        else
+        {
+            // A config from before Game Options: messages had their own three ways, while
+            // autosave and the automap stats were plain on/off, on unless turned off. Only a
+            // turned-off one counts as the player's choice, so the game's default can apply.
+            if (config.HudMessages is HudMessagesSetting.Off or HudMessagesSetting.On)
+                options.SetChoice(GameOption.Messages, config.HudMessages == HudMessagesSetting.On);
+            if (config.AutoSave == false)
+                options.SetChoice(GameOption.Autosave, false);
+            if (config.AutomapStats == false)
+                options.SetChoice(GameOption.AutomapStats, false);
+        }
     }
 
     private static ConfigData ParseConfig(BinaryReader br)
@@ -392,7 +427,19 @@ internal class GameEngineManager
             }
         }
         if (stream.Position < stream.Length && config.Video != null)
+        {
             config.Video = ReadMoreVideoSettings(br, config.Video);
+
+            // The Game Options settings, counted so settings added later still read from
+            // older configs: a byte each, off, on or the game's default
+            if (stream.Position < stream.Length)
+            {
+                int count = br.ReadByte();
+                config.GameOptions = new GameOptionSetting[count];
+                for (int i = 0; i < count; i++)
+                    config.GameOptions[i] = (GameOptionSetting)br.ReadByte();
+            }
+        }
 
         return config;
     }
@@ -650,6 +697,10 @@ internal class GameEngineManager
         }
 
         WriteMoreVideoSettings(bw, videoManager.Settings);
+
+        bw.Write((byte)GameOption.Count);
+        for (int i = 0; i < (int)GameOption.Count; i++)
+            bw.Write((byte)FromChoice(settings.Options.Choice((GameOption)i)));
     }
 
     /// <summary>

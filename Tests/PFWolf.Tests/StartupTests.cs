@@ -264,7 +264,7 @@ public class GameInfoSettingsTests
         Assert.That(settings.DeathFadeColor, Is.EqualTo("Maroon"));
         Assert.That((settings.DeathTurnSpeed, settings.DeathHoldTics), Is.EqualTo((2, 100)));
         Assert.That((settings.DeathDropHeight, settings.DeathDropSpeed), Is.EqualTo(((int?)null, 1)));
-        Assert.That((settings.WeaponScale, settings.WeaponBob), Is.EqualTo((1.0, false)));
+        Assert.That(settings.WeaponScale, Is.EqualTo(1.0));
     }
 
     [Test]

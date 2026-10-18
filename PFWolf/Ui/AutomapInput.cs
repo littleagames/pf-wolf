@@ -64,7 +64,7 @@ internal sealed class AutomapInput(
             if (zoom != 0)
                 automap.ZoomBy(zoom);
 
-            float pan = AutomapPanSpeed * session.Tics * (input.IsButtonPressed(ButtonType.Run) ? 2 : 1);
+            float pan = AutomapPanSpeed * session.Tics * (polling.Running ? 2 : 1);
             float panx = 0, pany = 0;
             if (IsAutomapKeyDown(AutomapAction.PanUp)) pany -= pan;
             if (IsAutomapKeyDown(AutomapAction.PanDown)) pany += pan;
@@ -120,7 +120,7 @@ internal sealed class AutomapInput(
 
         // ControlX/ControlY run BaseMove a tic at walking pace (RunMove running)
         float dx = polling.ControlX + polling.ControlStrafe, dy = polling.ControlY;
-        int strafe = (input.IsButtonPressed(ButtonType.Run) ? GameConstants.RunMove : GameConstants.BaseMove) * (int)session.Tics;
+        int strafe = (polling.Running ? GameConstants.RunMove : GameConstants.BaseMove) * (int)session.Tics;
         if (input.IsButtonPressed(ButtonType.StrafeLeft))
             dx -= strafe;
         if (input.IsButtonPressed(ButtonType.StrafeRight))
@@ -164,14 +164,6 @@ internal sealed class AutomapInput(
             automap.ShowGrid = ParseBool(args[0]);
 
         console.Print($"am_grid is {(automap.ShowGrid ? 1 : 0)}");
-    }
-
-    internal void AmStatsCommand(string[] args)
-    {
-        if (args.Length > 0)
-            automap.ShowStats = ParseBool(args[0]);
-
-        console.Print($"am_stats is {(automap.ShowStats ? 1 : 0)}");
     }
 
     internal void AmRevealCommand(string[] args)

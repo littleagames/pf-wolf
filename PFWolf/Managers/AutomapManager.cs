@@ -14,8 +14,10 @@ internal enum AutomapStyle : byte
 /// the center of the view and which way the map is turned. The map is drawn over the 3D view by
 /// GameHost.DrawAutomap, and the world keeps running underneath it.
 /// </summary>
-internal class AutomapManager
+internal class AutomapManager(Configuration.GameSettings? settings = null)
 {
+    private readonly Configuration.GameOptions options = settings?.Options ?? new();
+
     /// <summary>Zoom when the game starts, in 320x200 virtual pixels per map tile.</summary>
     internal const float DefaultZoom = 8f;
     internal const float MinZoom = 2f;
@@ -47,9 +49,13 @@ internal class AutomapManager
 
     /// <summary>
     /// Whether the level's name, kills, treasure, secrets and time show in the top-left corner
-    /// (the `am_stats` setting, saved in the config).
+    /// (the `am_stats` setting, saved in the config; a Game Options setting the game can default).
     /// </summary>
-    internal bool ShowStats { get; set; } = true;
+    internal bool ShowStats
+    {
+        get => options.AutomapStats;
+        set => options.SetChoice(Configuration.GameOption.AutomapStats, value);
+    }
 
     internal void ToggleStats() => ShowStats = !ShowStats;
 

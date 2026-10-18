@@ -22,7 +22,6 @@ internal sealed class GameInfoSettings
     internal int? DeathDropHeight;
     internal int DeathDropSpeed = 1;
     internal double WeaponScale = 1;    // game-info weapon-scale
-    internal bool WeaponBob;            // game-info weapon-bob
 
     internal static GameInfoSettings Read(GameInfoAsset gameInfo)
     {
@@ -39,7 +38,6 @@ internal sealed class GameInfoSettings
         settings.DeathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, GameConstants.MinEye, GameConstants.MaxEye) : null;
         settings.DeathDropSpeed = Math.Max(gameInfo.DeathDropSpeed ?? 1, 1);    // 0 would never finish dropping
         settings.WeaponScale = Math.Clamp(gameInfo.WeaponScale ?? 1, 0.1, 2);
-        settings.WeaponBob = gameInfo.WeaponBob ?? false;
         settings.LevelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
         settings.LevelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
         return settings;

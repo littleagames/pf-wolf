@@ -1,0 +1,81 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+# The Game Options settings (freelook, msg_enabled, am_stats, autosave, weaponbob, alwaysrun,
+# crosshair). Each starts as game-info setting-defaults has it, and is the player's own
+# choice once they switch it.
+position:
+  x: 52
+  y: 64
+indent: 48
+components:
+  -
+    id: "background"
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    id: "legend"
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "$MENU_GAMEOPTIONS"
+      - horizontal-orientation: "center"
+      - y: 42
+      - color: "READHCOLOR"
+  # Window fits the item count: 13 per row plus 6
+  -
+    type: "Window"
+    params:
+      - x: 44
+      - y: 61
+      - width: 202
+      - height: 97
+# Checkboxes drawn by code
+menu-items:
+  -
+      id: "freelook"
+      type: "ToggleMenuItem"
+      text: "$STR_FREELOOK"
+      short-key: L
+      enabled: true
+  -
+      id: "messages"
+      type: "ToggleMenuItem"
+      text: "$MENU_MESSAGES"
+      short-key: M
+      enabled: true
+  -
+      id: "automapstats"
+      type: "ToggleMenuItem"
+      text: "$MENU_AUTOMAPSTATS"
+      short-key: S
+      enabled: true
+  -
+      id: "autosave"
+      type: "ToggleMenuItem"
+      text: "$STR_AUTOSAVE"
+      short-key: A
+      enabled: true
+  -
+      id: "weaponbob"
+      type: "ToggleMenuItem"
+      text: "$STR_WEAPONBOB"
+      short-key: W
+      enabled: true
+  -
+      id: "alwaysrun"
+      type: "ToggleMenuItem"
+      text: "$STR_ALWAYSRUN"
+      short-key: R
+      enabled: true
+  -
+      id: "crosshair"
+      type: "ToggleMenuItem"
+      text: "$STR_CROSSHAIR"
+      short-key: C
+      enabled: true

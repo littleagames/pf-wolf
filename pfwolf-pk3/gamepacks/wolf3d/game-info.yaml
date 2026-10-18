@@ -83,9 +83,30 @@ level-fade-tics: 20
 # An extra life each time the score passes another this many points (0 or left out: never)
 extra-life-score: 40000
 
+# Options → Game Options before the player changes them; a mod can set any of these. Left out,
+# each keeps the engine's default (shown). The player's own choice, once made, wins over these
+# until they set it back with the console's `default` (e.g. `freelook default`).
+#   look:          looking up and down at all: the look keys, a controller's right stick and
+#                  mouse look (freelook; m_look stays the player's separate mouse choice)
+#   messages:      messages over the view (msg_enabled; hud-messages enabled below still works)
+#   automap-stats: the automap's level name, kills, treasure, secrets and time (am_stats)
+#   autosave:      each new level saves itself as it starts (autosave)
+#   weapon-bob:    the weapon in hand bobs as the player walks (weaponbob; a top-level weapon-bob still works)
+#   always-run:    running without holding Run, which then walks (alwaysrun)
+#   crosshair:     a crosshair in the middle of the view (crosshair), in crosshair-color
+# setting-defaults:
+#   look: true
+#   messages: false
+#   automap-stats: true
+#   autosave: true
+#   weapon-bob: false
+#   always-run: false
+#   crosshair: false
+# crosshair-color: White      # a color name, #RRGGBB or palette index
+
 # Messages over the view (styles in hud-messages.yaml). enabled is whether they're on before
-# the player chooses (msg_enabled); off keeps the original game's quiet screen. Each kind's
-# style is used when the item, door or killer doesn't name its own.
+# the player chooses (msg_enabled; setting-defaults messages wins); off keeps the original
+# game's quiet screen. Each kind's style is used when the item, door or killer doesn't name its own.
 hud-messages:
   enabled: false
   pickup-style: Default

@@ -203,7 +203,7 @@ internal static partial class GameHost
 
     static InputPolling MakeInputPolling() => new(_inputManager, _consoleManager, _automapManager, Controls, ControlSettings,
         frameRefresh, DemoBuffer, Session,
-        new InputPollingHooks(() => NetChatting, () => NetLeavePrompt, () => DemoTesting, RouteMovementToAutomap));
+        new InputPollingHooks(() => NetChatting, () => NetLeavePrompt, () => DemoTesting, RouteMovementToAutomap), Settings.Options);
 
     static TicCmd LocalCmd => inputPolling.LocalCmd;
 

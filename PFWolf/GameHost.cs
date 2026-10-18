@@ -292,7 +292,8 @@ internal static partial class GameHost
             InventoryManager, MapManager, menuDrawing, textPresenter, hubs, Session, new ElevatorHooks(RadarTileColor, GetMapDisplayName));
         changeViewScreen = new ChangeViewScreen(AssetManager, _inputManager, AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, ui,
             Settings, Session, new ChangeViewHooks(ShowViewSize, NewViewSize));
-        optionsMenu = new OptionsMenu(_videoManager, HudMessageManager, _automapManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        optionsMenu = new OptionsMenu(_videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        gameOptionsMenu = new GameOptionsMenu(_videoManager, HudMessageManager, Settings.Options, menuDrawing, menuLoop, menuInput, menuDefs);
         playerDeath = MakePlayerDeath();
         newGameMenu = new NewGameMenu(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager, _graphicManager,
             menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, InventoryManager, Session, StartNewGame, PlayerClasses,
@@ -533,7 +534,9 @@ internal static partial class GameHost
         gameInfoSettings = GameInfoSettings.Read(GameEngineManager.GetGameInfo());
         _videoManager.FadeStyle = gameInfoSettings.ScreenFadeStyle;
         _videoManager.FadeTics = gameInfoSettings.ScreenFadeTics;
-        WeaponBob.Enabled = gameInfoSettings.WeaponBob;
+        // The Game Options settings' defaults, before config.cfg's choices are read
+        Settings.Options.UseGameDefaults(GameEngineManager.GetGameInfo());
+        WeaponBob.EnabledSource = () => Settings.Options.WeaponBob;
     }
 
     // From the signon through the title loop to the games it starts (Ui/TitleLoop.cs)

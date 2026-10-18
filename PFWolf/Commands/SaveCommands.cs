@@ -3,7 +3,7 @@ using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf.Commands;
 
-/// <summary>Saved games from the console: saves, autosave, save and load</summary>
+/// <summary>Saved games from the console: saves, save and load (autosave is a Game Options command)</summary>
 internal sealed class SaveCommands(
     ConsoleManager console,
     GameEngineManager engine,
@@ -14,8 +14,6 @@ internal sealed class SaveCommands(
     internal void Register()
     {
         console.Register("saves", "Lists the saved games, newest first, numbered for load.", "saves", SavesCommand);
-        console.Register("autosave", "Whether each new level saves itself as it starts, to the Autosave.", "autosave [0|1]",
-            AutoSaveCommand, complete: Values("0", "1"));
         console.Register("save", "Saves the game. A name that's already saved is saved over; with none, it's a new save named for the level.",
             "save [name]", SaveCommand, InLevel | Solo, complete: CompleteSaveName);
         console.Register("load", "Loads a saved game, by its number in saves or its name.", "load <number|name>", LoadCommand, InLevel | Solo,
@@ -41,14 +39,6 @@ internal sealed class SaveCommands(
         }
     }
 
-
-    internal void AutoSaveCommand(string[] args)
-    {
-        if (args.Length > 0)
-            gameSaves.AutosaveEnabled = ParseBool(args[0]);
-
-        console.Print($"autosave is {(gameSaves.AutosaveEnabled ? 1 : 0)}");
-    }
 
     // A save by its number in the saves list or its name (the newest, if several share it)
     internal SaveInfo FindSaveGame(string arg)

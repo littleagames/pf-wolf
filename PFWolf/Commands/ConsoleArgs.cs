@@ -79,6 +79,10 @@ internal static class ConsoleArgs
         _ => throw new ArgumentException($"expected 0 or 1, got \"{arg}\""),
     };
 
+    /// <summary>0 or 1, or null for "default": a setting the game pack gives a default for</summary>
+    internal static bool? ParseChoice(string arg) =>
+        arg.Equals("default", StringComparison.OrdinalIgnoreCase) ? null : ParseBool(arg);
+
     /// <summary>Sets a toggle from args[0] if given, otherwise flips it.</summary>
     internal static bool Toggle(string[] args, bool current) => args.Length > 0 ? ParseBool(args[0]) : !current;
 

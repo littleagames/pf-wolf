@@ -1,4 +1,5 @@
 using PFWolf.Assets;
+using PFWolf.Configuration;
 using PFWolf.Extensions;
 
 namespace PFWolf.Managers;
@@ -55,14 +56,16 @@ internal class HudMessageManager
     private static readonly HudMessageStyle BuiltInDefault =
         new(DefaultStyleName, HudAnchor.TopLeft, 0, 0, 2, "SmallFont", "White", 210, 4);
 
-    public HudMessageManager(Lazy<AssetManager> assetManager, Lazy<ConsoleManager> consoleManager)
+    public HudMessageManager(Lazy<AssetManager> assetManager, Lazy<ConsoleManager> consoleManager, GameSettings? settings = null)
     {
         this.assetManager = assetManager;
         this.consoleManager = consoleManager;
+        options = settings?.Options ?? new GameOptions();
     }
 
     private readonly Lazy<AssetManager> assetManager;
     private readonly Lazy<ConsoleManager> consoleManager;
+    private readonly GameOptions options;
     private readonly List<HudMessage> messages = [];
     private readonly Dictionary<string, HudMessageStyle> styles = new(StringComparer.OrdinalIgnoreCase);
     private HudMessageStylesAsset? definitions;
@@ -71,12 +74,16 @@ internal class HudMessageManager
     /// <summary>
     /// Whether pickups, locked doors and obituaries show messages: the player's choice (the
     /// `msg_enabled` setting, saved in the config) or, until they make one, the game pack's
-    /// (game-info hud-messages enabled)
+    /// (game-info setting-defaults messages, or hud-messages enabled)
     /// </summary>
-    internal bool Enabled => EnabledSetting ?? GameInfo?.Enabled ?? false;
+    internal bool Enabled => options.Messages;
 
     /// <summary>The player's `msg_enabled` choice; null for the game pack's default</summary>
-    internal bool? EnabledSetting { get; set; }
+    internal bool? EnabledSetting
+    {
+        get => options.Choice(GameOption.Messages);
+        set => options.SetChoice(GameOption.Messages, value);
+    }
 
     private HudMessagesInfo? GameInfo =>
         gameInfo ??= assetManager.Value.FindInGamePack<GameInfoAsset>("game-info")?.HudMessages;

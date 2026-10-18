@@ -17,6 +17,9 @@ internal sealed class GameSettings
     /// <summary>How big the view is, 4 to 21 (21: the whole screen, no status bar)</summary>
     internal int ViewSize;
 
+    /// <summary>The Game Options menu's settings (Configuration/GameOptions.cs)</summary>
+    internal readonly GameOptions Options = new();
+
     /// <summary>Whether the game saves itself at each new level (autosave.dat)</summary>
-    internal bool AutosaveEnabled = true;
+    internal bool AutosaveEnabled { get => Options.Autosave; set => Options.SetChoice(GameOption.Autosave, value); }
 }

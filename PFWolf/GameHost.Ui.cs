@@ -119,6 +119,7 @@ internal static partial class GameHost
     */
 
     static VideoMenu videoMenu = null!;
+    static GameOptionsMenu gameOptionsMenu = null!;
     static SoundMenu soundMenu = null!;
     static ControlMenus controlMenus = null!;
 
@@ -132,6 +133,7 @@ internal static partial class GameHost
     internal static ControlPanelMenuInfo JoyItems { get => controlMenus.JoyItems; set => controlMenus.JoyItems = value; }
 
     internal static int RunVideoMenu(int _) => videoMenu.Run();
+    internal static int RunGameOptionsMenu(int _) => gameOptionsMenu.Run();
     internal static int RunSoundMenu(int _) => soundMenu.Run();
     internal static int RunControlMenu(int _) => controlMenus.RunControl();
     internal static int RunControllerSettings(int _) => controlMenus.RunControllerSettings();
@@ -183,6 +185,7 @@ internal static partial class GameHost
         (MainMenu, MainItems) = LoadMenu("main-menu");
         (OptMenu, OptItems) = LoadMenu("options");
         (VidMenu, VidItems) = LoadMenu("video");
+        (gameOptionsMenu.Items, gameOptionsMenu.Info) = LoadMenu("game-options");
         (SndMenu, SndItems) = LoadMenu("sound");
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
         (JoyMenu, JoyItems) = LoadMenu("controller");
@@ -225,6 +228,7 @@ internal static partial class GameHost
             ("CP_Multiplayer", RunMultiplayerMenu),
             ("CP_Options", RunOptionsMenu),
             ("CP_Video", RunVideoMenu),
+            ("CP_GameOptions", RunGameOptionsMenu),
             ("CP_Mods", RunModsMenu),
             ("CP_Sound", RunSoundMenu),
             ("CP_Control", RunControlMenu),
@@ -303,7 +307,6 @@ internal static partial class GameHost
     private static void AmStyleCommand(string[] args) => automapInput.AmStyleCommand(args);
     private static void AmOverlayCommand(string[] args) => automapInput.AmOverlayCommand(args);
     private static void AmGridCommand(string[] args) => automapInput.AmGridCommand(args);
-    private static void AmStatsCommand(string[] args) => automapInput.AmStatsCommand(args);
     private static void AmRevealCommand(string[] args) => automapInput.AmRevealCommand(args);
 
     // ==== StatusBarParts =========================================================================
