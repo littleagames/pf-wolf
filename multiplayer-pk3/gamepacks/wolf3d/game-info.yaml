@@ -65,11 +65,22 @@ maps:
       10: { light: 40 }                                 # secret passages
       11: { light: 150, effect: flicker, low: 60 }      # stashes
   DM04:
-    name: "The Red Pit"
+    name: "The Towers"
     deathmatch: true
     floor-number: 4
     music: NAZI_RAP
     cluster: 1
+    # Walls are 2 stories; the towers 4 (plane 3: the generator's Heights)
+    wall-height: 2
+    # graphics/TOWSKY.png: the tall walls demo's dusk sky (examples/tools/make-tall-walls-demo.ps1)
+    sky: TOWSKY
+    zones:
+      1: { light: 200 }                                 # north tower (grey stone)
+      2: { light: 200, color: "#C4D2FF" }               # east tower (blue stone), cool
+      3: { light: 200, color: "#FFE0B0" }               # south tower (wood), warm lamplight
+      4: { light: 190, color: "#FFC8B8" }               # west tower (red brick)
+      5: { light: 150, color: "#FFD8C0" }               # corner yards, dusk
+      6: { light: 190 }                                 # strips past the tips (weapons)
   # Made for Heist: `modes` lists what it's an arena for; the DM arenas above, listing none, are
   # arenas for every mode but Heist
   HE01:

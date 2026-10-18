@@ -290,25 +290,95 @@ $Arenas = @(
             '....ttttt.....rrrrkkkkaaaaaaaccc'
         )
     }
+    # The Towers, DM04: the whole 64x64. Four diamond towers (grey stone north, blue stone east,
+    # wood south, red brick west) fill the middle as one solid block, a big diamond 45 tiles
+    # across; a thin seam of brown stone between each pair, 2 stories against the towers' 4, cuts
+    # the skyline into four towers. Inside each, a diamond room with two starts, open to the sky,
+    # whose two doors open (through short passages cut into the outer faces) onto the perimeter;
+    # no tower reaches another. Outside: four corner yards with cover (a machine gun each) and
+    # the strips past the towers' tips that link them, with chainguns north and south, the
+    # flamethrower west and the rocket launcher east. Diamond faces are 45 degree walls, each
+    # in its tower's wall. Light zones: a tint per tower, dusk yards, brighter strips
+    # (multiplayer-pk3/gamepacks/wolf3d/game-info.yaml). Drafted from a formula: tile u,v from
+    # the middle is a tower when |u|+|v| <= 22, the north tower's room when |u|+|v+11| <= 8
+    # (the others turned).
     @{
-        Name = 'DM04'; Title = 'The Red Pit'
-        Walls = @{ '#' = 17; '%' = 18; '&' = 19 }      # red brick, with a swastika, purple
+        Name = 'DM04'; Title = 'The Towers'
+        Walls = @{ '#' = 44 }                           # brown stone: outer wall, cover, the seams
+        QuadrantWalls = @{ 'N' = @(1, 1, 12, 12); 'I' = @(17, 8, 17, 8) } # north/south towers (grey stone, wood), west/east (red brick, blue stone)
+        DiagonalSides = $true
+        Heights = @{ 'N' = 4; 'I' = 4; '7' = 4; '9' = 4; '1' = 4; '3' = 4 } # every 45 degree wall is a tower's
+        Sided = @{ 'F' = @(421, 420); 'W' = @(424, 422) } # flamethrower + gas west, rocket launcher + rockets east
+        Start = @(31, 2)                                # the middle is solid
         Quarter = @(
-            '###############'
-            '#.....####.....'
-            '#.v...####..v..'
-            '#...+.####.....'
-            '#.....####..o..'
-            '#..m..####.....'
-            '##%-%#####.....'
-            '#..............'
-            '#..o.....o.....'
-            '#..............'
-            '#..>....&&&....'
-            '#.......&&&.G..'
-            '#..o....&&&....'
-            '#.....m........'
-            '#......h......P'
+            '################################'
+            '#...............................'
+            '#...............................'
+            '#...............................'
+            '#...........................m..G'
+            '#................##.............'
+            '#................##.............'
+            '#..............+................'
+            '#...............................'
+            '#........###...................N'
+            '#........###..................3N'
+            '#........###.................3NN'
+            '#...........................3N7.'
+            '#..........................3N7..'
+            '#.............m............N7...'
+            '#......h.......M.........N-N....'
+            '#.......................3N......'
+            '#....##................3N7.....+'
+            '#....##...............3N7.......'
+            '#....................3N7........'
+            '#...................#NN.....^...'
+            '#..................3I#N1........'
+            '#.................3III#N1.......'
+            '#................3I7.9I#N1.....m'
+            '#...............3I7...9I#N1.....'
+            '#..............II7.....9I#N1....'
+            '#..............|........9I#N1...'
+            '#............3II.........9I#N1..'
+            '#...W.......3I7.....<.....9I#N1.'
+            '#..........3I7.............9I#NN'
+            '#.........3I7...............9I#N'
+            '#...F....III.....+.....m.....II#'
+        )
+        # n north/south tower rooms, w west/east ones, y corner yards, s strips past the tips
+        ZoneIds = @{ 'n' = @(1, 1, 3, 3); 'w' = @(4, 2, 4, 2); 'y' = 5; 's' = 6 }
+        Zones = @(
+            '................................'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyyssssss'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyyssssss'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyyssssss'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyyssssss'
+            '.yyyyyyyyyyyyyyyy..yyyyyyyssssss'
+            '.yyyyyyyyyyyyyyyy..yyyyyyyssssss'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyyssssss'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyyssssss'
+            '.yyyyyyyy...yyyyyyyyyyyyyysssss.'
+            '.yyyyyyyy...yyyyyyyyyyyyyysssss.'
+            '.yyyyyyyy...yyyyyyyyyyyyyyssss..'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyysss.nn'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyyss.nnn'
+            '.yyyyyyyyyyyyyyyyyyyyyyyyyn.nnnn'
+            '.yyyyyyyyyyyyyyyyyyyyyyyy.n.nnnn'
+            '.yyyyyyyyyyyyyyyyyyyyyyyy.nnnnnn'
+            '.yyyy..yyyyyyyyyyyyyyyyy.nnnnnnn'
+            '.yyyy..yyyyyyyyyyyyyyyy.nnnnnnnn'
+            '.yyyyyyyyyyyyyyyyyyyyy.nnnnnnnnn'
+            '.yyyyyyyyyyyyyyyyyyy...nnnnnnnnn'
+            '.yyyyyyyyyyyyyyyyyyy...nnnnnnnnn'
+            '.yyyyyyyyyyyyyyyyyy.....nnnnnnnn'
+            '.yyyyyyyyyyyyyyyyy.www...nnnnnnn'
+            '.yyyyyyyyyyyyyyyy.wwwww...nnnnnn'
+            '.yyyyyyyyyyyyyy..wwwwwww...nnnnn'
+            '.ssssssssssssswwwwwwwwwww...nnnn'
+            '.sssssssssssss..wwwwwwwwww...nnn'
+            '.ssssssssssss.wwwwwwwwwwwww...nn'
+            '.sssssssssss.wwwwwwwwwwwwwww....'
+            '.ssssssssss.wwwwwwwwwwwwwwwww...'
+            '.ssssssss...wwwwwwwwwwwwwwwww...'
         )
     }
     # Heist (game-info modes: [heist, team-deathmatch]): red's bases on the west, blue's on the
