@@ -47,11 +47,23 @@ maps:
       8: { light: 40 }                                  # secret passages
       9: { light: 160, effect: flicker, low: 60 }       # stashes
   DM03:
-    name: "Wooden Halls"
+    name: "The Wheel"
     deathmatch: true
     floor-number: 3
     music: WARMARCH
     cluster: 1
+    zones:
+      1: { light: 200, color: "#D8F0C8" }               # mossy stone spawn (NW), green
+      2: { light: 200, color: "#FFE0B0" }               # wood spawn (NE), warm lamplight
+      3: { light: 190 }                                 # grey brick spawn (SW)
+      4: { light: 200, color: "#C4D2FF" }               # blue panel spawn (SE), cool
+      5: { light: 120 }                                 # spawn halls
+      6: { light: 140, color: "#FFD8C0" }               # ring
+      7: { light: 220 }                                 # corridors (weapons)
+      8: { light: 170 }                                 # hub
+      9: { light: 255, color: "#C8F0FF", effect: pulse, low: 160 } # the pillar's vault (extra life)
+      10: { light: 40 }                                 # secret passages
+      11: { light: 150, effect: flicker, low: 60 }      # stashes
   DM04:
     name: "The Red Pit"
     deathmatch: true

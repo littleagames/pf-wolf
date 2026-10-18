@@ -28,6 +28,7 @@
 #                  `wall-height` (game-info); on a floor character (':', ';') it's an arch overhead
 #   Ceilings       a character's ceiling flat (mapdefs flats `ceiling:` index, plane 2's high
 #                  byte); on an arch, its underside
+#   DiagonalSides  $true: each 45 degree wall takes the wall beside it on its solid side, not 'D'
 #   Zones          the quarter's light zones, drawn like the layout (plane 5), and
 #   ZoneIds        what each of their characters is: a zone id, or @(NW, NE, SW, SE)
 # 45 degree walls are drawn 7 9 1 3 (where the solid corner is, as on a number pad: NW, NE, SW,
@@ -60,6 +61,7 @@ $Common['o'] = @(0, 30)             # white column
 $Common['g'] = @(0, 31)             # green plant
 $Common['c'] = @(0, 27)             # chandelier
 $Common['L'] = @(0, 37)             # ceiling light
+$Common['@'] = @(0, 56)             # extra life
 # For team games (mirrored across, each swaps for the other: red's side is the west)
 $Common['R'] = @(0, 431)            # red team start, facing east
 $Common['B'] = @(0, 437)            # blue team start, facing west
@@ -195,25 +197,97 @@ $Arenas = @(
             '.bbbbbbbbmmmmmmmmmmmmmmmmmmccccc'
         )
     }
+    # The Wheel, DM03: the whole 64x64. A round hub (19 across) inside a ring corridor (4 wide),
+    # a solid band 4 thick between them, crossed by four corridors 3 wide: a chaingun in the north
+    # and south ones, the flamethrower in the west one, the rocket launcher in the east one. In the
+    # middle of the hub, a pillar with a door in each side and an extra life inside. A spawn room
+    # in each corner outside the ring (each its own wall: mossy stone, wood, grey brick, blue
+    # panels; four starts and a machine gun each) joins the ring by a diagonal hall halfway
+    # between two corridors. A pushwall in each spawn room's two inner walls opens a passage to
+    # the stash room between it and its neighbour, which pushwalls in the ring's outer wall open
+    # onto too. Round walls are smoothed by 45 degree walls, each in the wall on its solid side:
+    # brown marble for the hub band, red brick for the ring's outer wall and the halls. Light
+    # zones: tinted spawns, dim halls and ring, bright corridors, a pulsing vault, dark passages,
+    # flickering stashes (multiplayer-pk3/gamepacks/wolf3d/game-info.yaml).
+    # Hashtable keys ignore case, so 'C', 'F' and 'W' here hide 'c', 'f' and 'w'.
     @{
-        Name = 'DM03'; Title = 'Wooden Halls'
-        Walls = @{ '#' = 12; '%' = 10 }                 # wood, wood with an eagle
+        Name = 'DM03'; Title = 'The Wheel'
+        Walls = @{ '#' = 17; '%' = 42; '&' = 46 }      # red brick, brown marble (hub band), its panels (pillar)
+        QuadrantWalls = @{ 'C' = @(24, 12, 35, 40) }    # mossy stone, wood, grey brick, blue panels
+        Pushwalls = @{ '*' = 'C'; '$' = '#' }
+        DiagonalSides = $true
+        Sided = @{ 'F' = @(421, 420); 'W' = @(424, 422) } # flamethrower + gas west, rocket launcher + rockets east
+        Start = @(31, 25)                               # the extra life has the middle
         Quarter = @(
-            '###############'
-            '#......#.......'
-            '#.>....#..c....'
-            '#......%.......'
-            '#..##.....##...'
-            '#..##..m..##...'
-            '#..............'
-            '####..##.%%%%%.'
-            '#.....##.%.....'
-            '#.+...##.%..g..'
-            '#.......c%.....'
-            '#..##....%..G..'
-            '#..##.^..%.....'
-            '#........%.....'
-            '#..h....M.....P'
+            '################################'
+            '################################'
+            '##CCCCCCCCCCC###################'
+            '##C.........C###################'
+            '##C.......h.C#############......'
+            '##C..v...v..C#############...m..'
+            '##C.........*..###########..W...'
+            '##C....L....C.############....+.'
+            '##C.........C...................'
+            '##C..>...>..C#############.#####'
+            '##C.M.......C#############.#####'
+            '##C..........9############.#.###'
+            '##CCCC*CCCC...9###########...###'
+            '######...##1...9############$###'
+            '######.#.###1...9#########7.....'
+            '########.####1...9#####7.......m'
+            '########.#####1...9##7...+......'
+            '########.######1...97...........'
+            '########.#######1...........31..'
+            '########.########1.......3%%%%.G'
+            '########.########7......3%%%%%..'
+            '########.#######7.....3%%%%%%7.m'
+            '########.#######.....3%%%%%7....'
+            '########.######7.....%%%%7......'
+            '########.######.....3%%%7......L'
+            '########.######.+..3%%%7.L......'
+            '####.........#7....%%%%.........'
+            '####.....###.#.....%%%7.........'
+            '####..W..##..$....3%%%..........'
+            '####.m...#####....9%%7.......3&-'
+            '####...+.#####...............&..'
+            '####.....#####.m...F.W..L....|.@'
+        )
+        # b spawn rooms, e their halls, r ring, k corridors, a hub, c the pillar's vault, s secret
+        # passages, t stashes
+        ZoneIds = @{ 'b' = @(1, 2, 3, 4); 'e' = 5; 'r' = 6; 'k' = 7; 'a' = 8; 'c' = 9; 's' = 10; 't' = 11 }
+        Zones = @(
+            '................................'
+            '................................'
+            '................................'
+            '...bbbbbbbbb....................'
+            '...bbbbbbbbb..............tttttt'
+            '...bbbbbbbbb..............tttttt'
+            '...bbbbbbbbbsss...........tttttt'
+            '...bbbbbbbbb.s............tttttt'
+            '...bbbbbbbbb.ssssssssssssstttttt'
+            '...bbbbbbbbb..............s.....'
+            '...bbbbbbbbb..............s.....'
+            '...bbbbbbbbbe.............s.s...'
+            '......s....eee............sss...'
+            '......sss...eee.............s...'
+            '......s.s....eee...........rrrrr'
+            '........s.....eee.......rrrrrrrr'
+            '........s......eee....rrrrrrrrrr'
+            '........s.......eee..rrrrrrrrrrr'
+            '........s........eeerrrrrrrr..kk'
+            '........s.........errrrrr.....kk'
+            '........s.........rrrrrr......kk'
+            '........s........rrrrr........kk'
+            '........s.......rrrrr.......aaaa'
+            '........s.......rrrrr.....aaaaaa'
+            '........s......rrrrr.....aaaaaaa'
+            '........s......rrrr.....aaaaaaaa'
+            '....tttttssss..rrrr....aaaaaaaaa'
+            '....ttttt...s.rrrrr....aaaaaaaaa'
+            '....ttttt..sssrrrr....aaaaaaaaaa'
+            '....ttttt.....rrrr....aaaaaaaaac'
+            '....ttttt.....rrrrkkkkaaaaaaaacc'
+            '....ttttt.....rrrrkkkkaaaaaaaccc'
         )
     }
     @{
@@ -406,6 +480,21 @@ function Quarter([int]$x, [int]$y, [int]$width, [int]$height) {
     ([int]($x -gt ($width - 1) / 2)) + 2 * [int]($y -gt ($height - 1) / 2)
 }
 
+# The wall a 45 degree wall at x,y takes in an arena with DiagonalSides: the wall beside it on
+# its solid side (north or south first, then west or east)
+function DiagonalWall($arena, [string[]]$layout, [int]$x, [int]$y, [int]$width, [int]$height) {
+    $sides = @{ '7' = @(@(0, -1), @(-1, 0)); '9' = @(@(0, -1), @(1, 0)); '1' = @(@(0, 1), @(-1, 0)); '3' = @(@(0, 1), @(1, 0)) }
+    foreach ($step in $sides[[string]$layout[$y][$x]]) {
+        $nx = $x + $step[0]; $ny = $y + $step[1]
+        if ($nx -lt 0 -or $ny -lt 0 -or $nx -ge $width -or $ny -ge $height) { continue }
+        $s = [string]$layout[$ny][$nx]
+        if ($arena.Walls.ContainsKey($s)) { return $arena.Walls[$s] }
+        if ($arena.QuadrantWalls -and $arena.QuadrantWalls.ContainsKey($s)) { return $arena.QuadrantWalls[$s][(Quarter $nx $ny $width $height)] }
+    }
+    if ($arena.Walls.ContainsKey('D')) { return $arena.Walls['D'] }
+    throw "$($arena.Name): the 45 degree wall at $x,$y has no wall beside it on its solid side"
+}
+
 function Write-Arena($arena) {
     $layout = Expand $arena.Quarter
     $height = $layout.Count
@@ -448,7 +537,7 @@ function Write-Arena($arena) {
                 continue
             }
             if ($Diagonals.ContainsKey($s)) {
-                $planes[0][$i] = $arena.Walls['D']
+                $planes[0][$i] = if ($arena.DiagonalSides) { DiagonalWall $arena $layout $x $y $width $height } else { $arena.Walls['D'] }
                 $planes[1][$i] = $Diagonals[$s]
                 continue
             }

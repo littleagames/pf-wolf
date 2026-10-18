@@ -1,4 +1,4 @@
 name: Multiplayer
 version: "1.0"
-description: Enemies seen shooting, hurt and (bosses) walking from every side, for co-op, playing as a Guard, Officer, SS, Mutant or Dog, plus the flamethrower and rocket launcher and, for Wolfenstein 3-D, the multiplayer arenas (Four Corners, Hell's Highways, Wooden Halls, The Red Pit, The Vault for Heist, The Storerooms for Prop Hunt).
+description: Enemies seen shooting, hurt and (bosses) walking from every side, for co-op, playing as a Guard, Officer, SS, Mutant or Dog, plus the flamethrower and rocket launcher and, for Wolfenstein 3-D, the multiplayer arenas (Four Corners, Hell's Highways, The Wheel, The Red Pit, The Vault for Heist, The Storerooms for Prop Hunt).
 game-packs: [wolf3d, spear]
