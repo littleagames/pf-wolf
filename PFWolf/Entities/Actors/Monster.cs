@@ -233,21 +233,16 @@ internal record Monster : Actor
     internal bool TryWalk()
     {
         int doornumtile = -1;
-        var cutsCorners = Name is "Dog" or "FakeHitler";
+        int r;
 
+        // Straight moves can open a door on the way (CheckSide; NODOORS actors such as
+        // Wolf3D's dogs and fake Hitlers can't), diagonal ones need all three tiles clear
         switch (Dir)
         {
             case ObjDir.North:
-                if (cutsCorners)
-                {
-                    if (!CheckDiag(TileX, TileY - 1)) return false;
-                }
-                else
-                {
-                    int r = CheckSide(TileX, TileY - 1, ref doornumtile);
-                    if (r == 0) return false;
-                    if (r == 1) return true;
-                }
+                r = CheckSide(TileX, TileY - 1, ref doornumtile);
+                if (r == 0) return false;
+                if (r == 1) return true;
                 TileY--;
                 break;
 
@@ -259,16 +254,9 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.East:
-                if (cutsCorners)
-                {
-                    if (!CheckDiag(TileX + 1, TileY)) return false;
-                }
-                else
-                {
-                    int r = CheckSide(TileX + 1, TileY, ref doornumtile);
-                    if (r == 0) return false;
-                    if (r == 1) return true;
-                }
+                r = CheckSide(TileX + 1, TileY, ref doornumtile);
+                if (r == 0) return false;
+                if (r == 1) return true;
                 TileX++;
                 break;
 
@@ -280,16 +268,9 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.South:
-                if (cutsCorners)
-                {
-                    if (!CheckDiag(TileX, TileY + 1)) return false;
-                }
-                else
-                {
-                    int r = CheckSide(TileX, TileY + 1, ref doornumtile);
-                    if (r == 0) return false;
-                    if (r == 1) return true;
-                }
+                r = CheckSide(TileX, TileY + 1, ref doornumtile);
+                if (r == 0) return false;
+                if (r == 1) return true;
                 TileY++;
                 break;
 
@@ -301,16 +282,9 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.West:
-                if (cutsCorners)
-                {
-                    if (!CheckDiag(TileX - 1, TileY)) return false;
-                }
-                else
-                {
-                    int r = CheckSide(TileX - 1, TileY, ref doornumtile);
-                    if (r == 0) return false;
-                    if (r == 1) return true;
-                }
+                r = CheckSide(TileX - 1, TileY, ref doornumtile);
+                if (r == 0) return false;
+                if (r == 1) return true;
                 TileX--;
                 break;
 

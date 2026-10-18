@@ -547,7 +547,7 @@ Fat:
 # -----------------------------------------------------------------------
 FakeHitler:
   parent: Monster
-  flags: [AMBUSH]
+  flags: [AMBUSH, NODOORS] # vanilla's TryWalk: fake Hitlers never open doors (CHECKDIAG, not CHECKSIDE)
   states:
     Spawn: # s_fakestand / T_Stand
       - sprite: FAKE

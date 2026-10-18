@@ -554,6 +554,7 @@ Mutant:
 # -----------------------------------------------------------------------
 Dog:
   parent: Monster
+  flags: [NODOORS] # vanilla's TryWalk: dogs never open doors (CHECKDIAG, not CHECKSIDE)
   states:
     Spawn: # reuses the first Path frame; dogs have no dedicated stand pose
       - sprite: DOGY
