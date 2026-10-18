@@ -1244,10 +1244,10 @@ internal record Monster : Actor
             return;
         }
 
-        // As KillActor: it dies on the tile it's over, not the one it was walking to (except
-        // Mecha Hitler, whose Hitler would otherwise jump: MCS's fix), and leaves ActorAt[]
-        // until its corpse lies on an empty tile
-        if (Name != "MechaHitler")
+        // As KillActor: it dies on the tile it's over, not the one it was walking to (except a
+        // KEEPTILEONDEATH one: Mecha Hitler, whose Hitler would otherwise jump: MCS's fix), and
+        // leaves ActorAt[] until its corpse lies on an empty tile
+        if (!HasFlag("KEEPTILEONDEATH"))
         {
             TileX = (byte)tilex;
             TileY = (byte)tiley;
@@ -1276,9 +1276,10 @@ internal record Monster : Actor
             SpawnItemAt(drop, tilex, tiley);
         CarriedDeathWork(this, tilex, tiley);
 
-        if (Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
+        // One with a death cam (a DeathCam state: Wolf3D's episode bosses) remembers the killer's spot for it
+        if (ResolvedStates.ContainsKey("DeathCam"))
         {
-            PlayerState.KillX = Player.X;       // the killer's spot, for the death cam
+            PlayerState.KillX = Player.X;
             PlayerState.KillY = Player.Y;
         }
 

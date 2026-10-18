@@ -122,8 +122,8 @@ internal sealed class PlayKeys(
         if (inputManager.IsKeyDown(ScanCodes.M) && inputManager.IsKeyDown(ScanCodes.L) && inputManager.IsKeyDown(ScanCodes.I))
         {
             session.PlayerState.Health = classes.MaxHealth;
-            inventory.Give("GoldKey", 1);
-            inventory.Give("SilverKey", 1);
+            foreach (var key in inventory.GetClassesDerivedFrom("Key"))     // every key there is (Wolf3D's gold and silver)
+                inventory.Give(key, 1);
             session.PlayerState.Score = 0;
             session.GameState.TimeCount += (int)42000L;
             // the best weapon there is (the gatling gun)

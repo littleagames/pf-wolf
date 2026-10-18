@@ -663,7 +663,9 @@ FakeHitler:
 # -----------------------------------------------------------------------
 MechaHitler:
   parent: Monster
-  flags: [AMBUSH]
+  # KEEPTILEONDEATH: dies on the tile it was walking to, not the one it's over, so the
+  # Hitler it morphs into doesn't jump back a tile (MCS's fix in KillActor)
+  flags: [AMBUSH, KEEPTILEONDEATH]
   states:
     Spawn: # s_mechastand / T_Stand
       - sprite: MECH

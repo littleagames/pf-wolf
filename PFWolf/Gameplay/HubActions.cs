@@ -67,9 +67,10 @@ internal sealed class HubActions(
         Entities.MapTriggerRegistry.Register("A_UnlockFloor", (_, args) => UnlockNextFloor(args.ElementAtOrDefault(0)));
         Entities.Actors.ActorActionRegistry.Register("A_UnlockFloor", UnlockFloor);
 
-        // A_DropDetonator("ArmedClass", "CubeClass"[, range]): the fission detonator, dropped by its slot key beside the floor's
-        // security cube with the next floor still locked; it goes off a few seconds later, breaking the cube
-        // (`monster.blastedby`), whose death unlocks the next floor
+        // A_DropDetonator("ArmedClass", "CubeClass", "ItemClass"[, range]): the fission detonator, dropped by its slot
+        // key beside the floor's security cube with the next floor still locked, which takes one ItemClass from the
+        // inventory; it goes off a few seconds later, breaking the cube (`monster.blastedby`), whose death unlocks the
+        // next floor
         Entities.MapTriggerRegistry.Register("A_DropDetonator", DropDetonatorAction);
     }
     bool FloorSelectAction(Entities.TriggerActivation trigger, string[] args)
@@ -334,9 +335,13 @@ internal sealed class HubActions(
     {
         var armed = args.ElementAtOrDefault(0);
         var cubeClass = args.ElementAtOrDefault(1);
-        int range = int.TryParse(args.ElementAtOrDefault(2), out var r) ? r : 2;
-        if (string.IsNullOrEmpty(armed) || string.IsNullOrEmpty(cubeClass))
+        var itemClass = args.ElementAtOrDefault(2);
+        int range = int.TryParse(args.ElementAtOrDefault(3), out var r) ? r : 2;
+        if (string.IsNullOrEmpty(armed) || string.IsNullOrEmpty(cubeClass) || string.IsNullOrEmpty(itemClass))
+        {
+            Console.WriteLine("A_DropDetonator: give the armed, cube and item classes, as A_DropDetonator(\"PlasmaDetonatorArmed\", \"SecurityCube\", \"PlasmaDetonator\").");
             return false;
+        }
 
         void Say(string text) => hudMessages.Show(HudMessageKind.Other, text);
 
@@ -368,7 +373,7 @@ internal sealed class HubActions(
         var dropped = mapManager.SpawnAtActor(armed, session.Player);
         if (dropped == null)
             return false;
-        inventory.Take("PlasmaDetonator", 1);
+        inventory.Take(itemClass, 1);
         Say("$PS_DETONATORDROPPED");
         hooks.PlaySoundAt("bs/robot_servo", dropped);
         return true;

@@ -82,7 +82,7 @@ PlasmaDetonator:
     "inventory.type": PlasmaDetonator
     "inventory.useslot": 7
     "inventory.useholdtics": 60
-    "inventory.use": 'A_DropDetonator("PlasmaDetonatorArmed", "SecurityCube")'
+    "inventory.use": 'A_DropDetonator("PlasmaDetonatorArmed", "SecurityCube", "PlasmaDetonator")' # drops the armed one by the cube, taking one of these
     "inventory.amount": 1
     "inventory.maxamount": 100
     "inventory.pickupsound": "bs/getdetonator"
