@@ -48,6 +48,7 @@ internal sealed class RenderState
     internal int PostOfs;               // its column, times 64 (as the texture's across a tile)
     internal TextureAsset? UpperSource; // stories above the first, if not PostSource (door lintels)
     internal int UpperOfs;
+    internal int ScrollRow;             // texels down its scroller has moved it (Rendering/Scrollers.cs)
 
     //
     // ray tracing variables
@@ -80,6 +81,7 @@ internal sealed class RenderState
     internal readonly int[] PostLowerOfs = new int[MaxPosts];
     internal readonly TextureAsset[] PostUpper = new TextureAsset[MaxPosts];
     internal readonly int[] PostUpperOfs = new int[MaxPosts];
+    internal readonly int[] PostScrollRow = new int[MaxPosts];          // texels down a scroller has moved it
     internal readonly short[] PostUnderside = new short[MaxPosts];     // an arch's: the height where the trace leaves
     internal readonly TextureAsset?[] PostUnderTexture = new TextureAsset?[MaxPosts];
     internal readonly bool[] PostUnderFlat = new bool[MaxPosts];         // the underside's texture is a ceiling

@@ -80,7 +80,7 @@ internal sealed class WallHits(
             return;
         }
         render.PostSource = textureAsset;
-        render.PostOfs = jamb ? texture : FlipColumn(mapTexture, face, texture);
+        render.PostOfs = jamb ? texture : FlipColumn(mapTexture, face, ScrollWall(render.XTile, render.YIntTile, texture));
         if (!jamb)                      // a door's jamb takes no patch
             SetPatchPost(render.XTile, render.YIntTile, face, texture);
         else
@@ -176,7 +176,7 @@ internal sealed class WallHits(
         }
 
         render.PostSource = textureAsset;
-        render.PostOfs = jamb ? texture : FlipColumn(mapTexture, face, texture);
+        render.PostOfs = jamb ? texture : FlipColumn(mapTexture, face, ScrollWall(render.XIntTile, render.YTile, texture));
         if (!jamb)                      // a door's jamb takes no patch
             SetPatchPost(render.XIntTile, render.YTile, face, texture);
         else
@@ -477,7 +477,23 @@ internal sealed class WallHits(
         if (textureAsset == null)
             return;
         render.PostSource = textureAsset;
-        render.PostOfs = texture;
+        render.PostOfs = ScrollWall(tilex, tiley, texture);
         posts.ScalePost();
+    }
+
+    /// <summary>
+    /// A wall face's column (as the trace finds it, before any flip) moved along by its tile's
+    /// scroller, which also moves the post's rows (Rendering/Scrollers.cs). A moving pushwall's
+    /// scroller is its own tile's, as its patch is.
+    /// </summary>
+    internal int ScrollWall(int tilex, int tiley, int texture)
+    {
+        var scrollers = map.Scrollers;
+        if (!scrollers.AnyWalls)
+            return texture;
+        if (render.HitPushwall)
+            (tilex, tiley) = (pushWalls.PWall.X, pushWalls.PWall.Y);
+        render.ScrollRow = scrollers.Row(tilex, tiley);
+        return scrollers.Column(tilex, tiley, texture);
     }
 }

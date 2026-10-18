@@ -774,6 +774,33 @@ public record ZoneInfo
 }
 
 /// <summary>
+/// How the textures of the tiles with its tag (the tag plane, plane 4) slide along, as Midnight
+/// Assault's scrolling walls and flats: conveyor belts, waterfalls, moving water. Speeds are in
+/// texels a tic (64 a tile, 70 tics a second); negative goes the other way. Switches and actor
+/// states start, stop and re-speed it (A_StartScroll, A_StopScroll, A_ToggleScroll, A_SetScroll).
+/// </summary>
+public record ScrollerInfo
+{
+    /// <summary>On a wall face, to the right as you look at it; on a floor or ceiling, east</summary>
+    public double X { get; init; }
+
+    /// <summary>On a wall face, down; on a floor or ceiling, south</summary>
+    public double Y { get; init; }
+
+    /// <summary>Whether the faces of tagged walls scroll (not door jambs, doors or wall patches)</summary>
+    public bool Walls { get; init; } = true;
+
+    /// <summary>Whether the floor flats of tagged tiles scroll</summary>
+    public bool Floor { get; init; } = true;
+
+    /// <summary>Whether the ceiling flats of tagged tiles scroll</summary>
+    public bool Ceiling { get; init; } = true;
+
+    /// <summary>Whether it's scrolling as the level starts; false waits for a switch</summary>
+    public bool Active { get; init; } = true;
+}
+
+/// <summary>
 /// How a level is shaded: everything is dimmed to its light, then fades toward the fade color
 /// with distance. Each value left out comes from the default map's shading, else the default
 /// here. A level with neither map nor default map shading isn't shaded.
@@ -1253,4 +1280,7 @@ public record MapInfo
     /// Light zones by zone id; each value left out uses the default map's zone of that id (see ZoneInfo)
     /// </summary>
     public Dictionary<int, ZoneInfo>? Zones { get; init; } = null;
+
+    /// <summary>Scrolling walls and flats by tag (the tag plane's value; see ScrollerInfo)</summary>
+    public Dictionary<int, ScrollerInfo>? Scrollers { get; init; } = null;
 }

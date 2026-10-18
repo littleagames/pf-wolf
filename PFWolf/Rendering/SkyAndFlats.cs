@@ -172,9 +172,11 @@ internal sealed class SkyAndFlats(
         {
             SetupFlatColumns();
             if (floorflats)
-                DrawFlats(map.FloorFlat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, false);
+                DrawFlats(map.FloorFlat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, false,
+                    map.Scrollers.AnyFloors ? map.Scrollers.FloorX : null, map.Scrollers.FloorY);
             if (ceilingflats)
-                DrawFlats(map.CeilingFlat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky);
+                DrawFlats(map.CeilingFlat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky,
+                    map.Scrollers.AnyCeilings ? map.Scrollers.CeilingX : null, map.Scrollers.CeilingY);
         }
     }
 
@@ -219,9 +221,11 @@ internal sealed class SkyAndFlats(
     /// Draws rows from to to (inclusive) of a flat whose surface is halves half stories from the
     /// eye (FloorHalves or CeilingHalves), each pixel in its tile's light. Tiles with no texture,
     /// and a texture's see-through (FlatMask) pixels, are color, or with no light zones or actor
-    /// light, or over the sky (behind), keep what's there.
+    /// light, or over the sky (behind), keep what's there. scrollx and scrolly (null: none) are how
+    /// far east and south each tile's texture has moved, in global units (Rendering/Scrollers.cs).
     /// </summary>
-    internal void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves, bool behind)
+    internal void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves, bool behind,
+        int[]? scrollx = null, int[]? scrolly = null)
     {
         int pitch = (int)video.BufferPitch;
         double numerator = render.HeightNumerator * 32.0 * halves;
@@ -260,8 +264,15 @@ internal sealed class SkyAndFlats(
                     byte pixel = color;
                     if (texture != null)
                     {
-                        int u = (int)(px >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
-                        int v = (int)(py >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
+                        // a scrolled tile shows the texel that's moved here from west and north of it
+                        long tx = px, ty = py;
+                        if (scrollx != null)
+                        {
+                            tx -= scrollx[tile];
+                            ty -= scrolly![tile];
+                        }
+                        int u = (int)(tx >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
+                        int v = (int)(ty >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
                         int height = texture.Height;
                         pixel = texture.RawData[u * texture.Width / GameConstants.TextureSize * height + v * height / GameConstants.TextureSize];
                     }

@@ -93,6 +93,36 @@ public class SkyAndFlatsTests
         Assert.That(_screen.All(pixel => pixel == 1), Is.True);
     }
 
+    [TestCase(8, 0, -8, 0)]         // moved 8 texels east: each pixel shows the texel 8 west of it
+    [TestCase(0, 5, 0, -5)]         // moved 5 south: the texel 5 north of it
+    public void A_Scrolled_Flat_Shows_The_Texel_That_Has_Moved_There(int east, int south, int du, int dv)
+    {
+        // Arrange: a flat whose texel (u, v) is u * 2 + v % 2, so both ways show; every tile moved
+        var ramp = new TextureAsset { Width = 64, Height = 64, RawData = new byte[64 * 64] };
+        for (int u = 0; u < 64; u++)
+            for (int v = 0; v < 64; v++)
+                ramp.RawData[u * 64 + v] = (byte)(u * 2 + v % 2 == SkyAndFlats.FlatMask ? 0 : u * 2 + v % 2);
+        var flats = Enumerable.Repeat<TextureAsset?>(ramp, MapManager.MapArea).ToArray();
+        var none = new int[MapManager.MapArea];
+        var scrollx = Enumerable.Repeat(east * 1024, MapManager.MapArea).ToArray();
+        var scrolly = Enumerable.Repeat(south * 1024, MapManager.MapArea).ToArray();
+        _sky.SetupFlatColumns();
+        _sky.DrawFlats(flats, 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false, none, none);
+        var still = (byte[])_screen.Clone();
+
+        // Act
+        _sky.DrawFlats(flats, 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false, scrollx, scrolly);
+
+        // Assert: the near rows' texels are the unscrolled ones, offset
+        for (int y = Height - 2; y < Height; y++)
+            for (int x = 0; x < Width; x++)
+            {
+                int u = still[y * Width + x] / 2, v = still[y * Width + x] % 2;
+                int expected = ((u + du) & 63) * 2 + ((v + dv) & 1);
+                Assert.That(At(x, y), Is.EqualTo(expected), $"pixel {x},{y}");
+            }
+    }
+
     [Test]
     public void A_Flats_See_Through_Pixels_Leave_What_Is_There()
     {

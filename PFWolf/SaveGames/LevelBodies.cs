@@ -12,7 +12,8 @@ internal sealed record LevelBody(
     List<MovingPushWall> PushWalls,
     int LastAttacker,
     byte[] Seen,
-    Dictionary<int, ZoneState> Zones);
+    Dictionary<int, ZoneState> Zones,
+    Dictionary<int, ScrollerState> Scrollers);
 
 /// <summary>
 /// The level as it stands: written into a save, kept for a hub level that's been left, and sent
@@ -29,7 +30,8 @@ internal sealed class LevelBodies(
     /// <summary>
     /// The level as it stands, as a save holds it and as a hub keeps a level that's been left:
     /// the map and its actors (MapManager.WriteLevelState), then doors, area connections, the
-    /// moving MovingWalls, the player's last attacker, the automap's seen tiles and the light zones.
+    /// moving MovingWalls, the player's last attacker, the automap's seen tiles, the light zones and
+    /// the scrollers.
     /// </summary>
     internal void WriteLevelBody(BinaryWriter bw)
     {
@@ -54,6 +56,7 @@ internal sealed class LevelBodies(
         bw.Write(map.GetSeenBytes());
 
         lighting.WriteZoneLights(bw);
+        map.Scrollers.Write(bw);
     }
 
     internal LevelBody ReadLevelBody(BinaryReader br)
@@ -79,7 +82,8 @@ internal sealed class LevelBodies(
             PushWalls: Enumerable.Range(0, br.ReadCount()).Select(_ => MovingPushWall.Read(br)).ToList(),
             LastAttacker: br.ReadInt32(),
             Seen: SaveFile.ReadExactly(br, MapManager.MapArea),
-            Zones: lighting.ReadZoneLights(br));
+            Zones: lighting.ReadZoneLights(br),
+            Scrollers: Scrollers.Read(br));
     }
 
     /// <summary>
@@ -116,6 +120,8 @@ internal sealed class LevelBodies(
 
         map.SetSeenBytes(body.Seen);
         lighting.RestoreZoneLights(body.Zones);
+        // copies, as the pushwalls, so a hub level's kept body doesn't scroll along with the live level
+        map.Scrollers.Restore(body.Scrollers.ToDictionary(s => s.Key, s => s.Value.Clone()));
 
         session.PlayerState.LastAttacker = body.LastAttacker >= 0 && body.LastAttacker < actors.Count ? actors[body.LastAttacker] : null;
         session.PlayerState.FaceTimes = 0;

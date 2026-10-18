@@ -154,6 +154,7 @@ internal sealed class LevelSetup(
         }
 
         lighting.InitLevelShading(mapInfo);
+        map.Scrollers.InitLevel(mapInfo);       // scrolling walls and flats (Rendering/Scrollers.cs)
         levelAI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
 
         // the level's starting loadout, as it starts afresh (game-info map loadout)

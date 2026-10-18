@@ -46,6 +46,9 @@ internal sealed class LevelEditCommands(
             $"height <0-{GameConstants.MaxWallStories}> [tilex tiley]", HeightCommand, Cheat | InLevel);
         console.Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
             "tag [0-65535 [tilex tiley]]", TagCommand, Cheat | InLevel);
+        console.Register("scroll", "Lists the level's scrollers (scrolling walls and flats, by tag), or sets one's speeds in texels a tic (x right/east, y down/south), starts, stops or removes it.",
+            "scroll [tag [x [y]|start|stop|none]]", ScrollCommand, Cheat | InLevel,
+            complete: (_, i) => i == 1 ? ["start", "stop", "none"] : []);
         console.Register("patch", "Shows or sets the patch (mapdefs patches) on a wall tile (default: the one you face); 0 takes it off.",
             "patch [0-255 [tilex tiley]]", PatchCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? map.GetMapData().Patches.Keys.Order().Select(id => id.ToString()) : []);
@@ -90,6 +93,51 @@ internal sealed class LevelEditCommands(
         var tagged = actors.Count == 0 ? ""
             : "  actors: " + string.Join(", ", actors.Select(a => $"{a.Name} {a.Tag}"));
         console.Print($"Tile {x},{y}: tag {map.GetTag(x, y)}{tagged}");
+    }
+
+    internal void ScrollCommand(string[] args)
+    {
+        var scrollers = map.Scrollers;
+        if (args.Length > 3)
+            throw new ArgumentException("usage: scroll [tag [x [y]|start|stop|none]]");
+
+        if (args.Length >= 2)
+        {
+            int tag = ParseInt(args[0], 1, ushort.MaxValue);
+            switch (args[1].ToLowerInvariant())
+            {
+                case "none":
+                    scrollers.Level.Remove(tag);
+                    scrollers.Rebuild();
+                    break;
+                case "start" or "stop" when !scrollers.Level.ContainsKey(tag):
+                    throw new ArgumentException($"The level has no scroller for tag {tag}");
+                case "start" or "stop":
+                    scrollers.Level[tag].Active = args[1].Equals("start", StringComparison.OrdinalIgnoreCase);
+                    break;
+                default:
+                    if (!scrollers.SetScrollAction("scroll", 0, args))
+                        return;
+                    break;
+            }
+        }
+
+        IEnumerable<int> shown = args.Length == 0 ? scrollers.Level.Keys.Order().ToList() : [ParseInt(args[0], 1, ushort.MaxValue)];
+        bool any = false;
+        foreach (var tag in shown)
+        {
+            if (!scrollers.Level.TryGetValue(tag, out var s))
+            {
+                console.Print($"Tag {tag}: no scroller");
+                continue;
+            }
+            var surfaces = string.Join(", ", new[] { ("walls", s.Walls), ("floor", s.Floor), ("ceiling", s.Ceiling) }.Where(p => p.Item2).Select(p => p.Item1));
+            int tiles = map.TaggedTiles((ushort)tag).Count();
+            console.Print($"Tag {tag}: x {s.X:0.###} y {s.Y:0.###} on {(surfaces.Length > 0 ? surfaces : "nothing")} of {tiles} tiles, {(s.Active ? "running" : "stopped")}");
+            any = true;
+        }
+        if (args.Length == 0 && !any)
+            console.Print("The level has no scrollers");
     }
 
     internal void PatchCommand(string[] args)

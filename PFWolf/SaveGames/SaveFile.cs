@@ -54,7 +54,8 @@ internal static class SaveFile
     // 24: each tile's wall patch, at the end of the level (plane 0 is saved without them).
     // 25: TileMap entries and moving MovingWalls' wall ids are 16 bits (wall ids up to 255, WallShift 8).
     // 26: the level objectives (done and total of each), after the wall patches.
-    internal const int SaveVersion = 26;
+    // 27: the level's scrollers (scrolling walls and flats), after the light zones.
+    internal const int SaveVersion = 27;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

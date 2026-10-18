@@ -135,6 +135,7 @@ internal sealed class LevelLoop(
                 session.Camera.Tick(session.Tics);          // a watched actor's view turning (Gameplay/Camera.cs)
                 levelAI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
                 lighting.TickZoneLights(session.Tics);       // light zones' fades and effects (Rendering/Lighting.cs)
+                map.Scrollers.Tick(session.Tics);            // scrolling walls and flats (Rendering/Scrollers.cs)
                 hooks.TickAmbience?.Invoke();               // the player's zone's ambient sound (Gameplay/ZoneAmbience.cs)
                 scripts.RunTickHooks();             // the scripts' game.ontick hooks (Scripting/GameScripts.cs)
                 if (session.GameMode != GameMode.Single)

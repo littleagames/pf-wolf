@@ -53,9 +53,10 @@ internal sealed class WallPosts(
     {
         var upper = render.UpperSource ?? render.PostSource;
         QueuePost(render.PostHeight, 0, render.HitStories, render.PostSource, render.PostOfs, upper, render.UpperSource != null ? render.UpperOfs : render.PostOfs,
-            patch: render.PatchSource, patchofs: render.PatchOfs, patchstory: render.PatchStory);
+            patch: render.PatchSource, patchofs: render.PatchOfs, patchstory: render.PatchStory, scrollrow: render.ScrollRow);
         render.UpperSource = null;
         render.PatchSource = null;
+        render.ScrollRow = 0;
 
         //
         // sprites clip against the nearest wall: nothing behind it is taller than it
@@ -74,10 +75,11 @@ internal sealed class WallPosts(
 
     internal void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
         short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false,
-        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0)
+        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0, int scrollrow = 0)
     {
         if (render.PostCount == RenderState.MaxPosts)
             return;
+        render.PostScrollRow[render.PostCount] = scrollrow;
         render.PostPatch[render.PostCount] = patch;
         render.PostPatchOfs[render.PostCount] = patchofs;
         render.PostPatchStory[render.PostCount] = (byte)patchstory;
@@ -106,7 +108,7 @@ internal sealed class WallPosts(
             render.PostCount--;
             DrawPost(render.PixX, render.PostHeights[render.PostCount] >> 3, render.PostFirstStory[render.PostCount], render.PostStories[render.PostCount],
                 render.PostLower[render.PostCount], render.PostLowerOfs[render.PostCount], render.PostUpper[render.PostCount], render.PostUpperOfs[render.PostCount],
-                render.PostLight[render.PostCount], lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]));
+                render.PostLight[render.PostCount], lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]), render.PostScrollRow[render.PostCount]);
             if (render.PostPatch[render.PostCount] is { } patch)
                 DrawPatch(render.PixX, render.PostHeights[render.PostCount] >> 3, render.PostStories[render.PostCount], patch, render.PostPatchOfs[render.PostCount],
                     render.PostPatchStory[render.PostCount], render.PostLight[render.PostCount], lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]));
@@ -341,10 +343,11 @@ internal sealed class WallPosts(
     /// A texture covers a story per 64 texels of its height, from the floor up, and repeats
     /// above that. half is half a story's height in pixels; lowerofs and UpperOfs are the
     /// column to draw, times 64, as the trace finds it across a tile. Each texel is remapped
-    /// through shade from shadeofs (a light row and fade step, see WL_SHADE.cs).
+    /// through shade from shadeofs (a light row and fade step, see WL_SHADE.cs). scrollrow
+    /// moves the texels that many down (a scroller's, Rendering/Scrollers.cs).
     /// </summary>
     internal void DrawPost(int x, int half, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
-        byte[] shade, int shadeofs)
+        byte[] shade, int shadeofs, int scrollrow = 0)
     {
         if (half <= 0) half = 100;
 
@@ -377,9 +380,10 @@ internal sealed class WallPosts(
             {
                 if (t != colt)
                 {
+                    long s = t + scrollrow;     // the texel up the wall that's moved down to here
                     col = shade[shadeofs + (t < GameConstants.TextureSize
-                        ? lowerdata[lowercolumn + lowerheight - 1 - (int)(t % lowerheight)]
-                        : upperdata[uppercolumn + upperheight - 1 - (int)(t % upperheight)])];
+                        ? lowerdata[lowercolumn + lowerheight - 1 - (int)(s % lowerheight)]
+                        : upperdata[uppercolumn + upperheight - 1 - (int)(s % upperheight)])];
                     colt = t;
                 }
                 dest[y * pitch] = col;

@@ -43,6 +43,23 @@ default-map:
   #   1: { light: 70 }                          # a dim room
   #   2: { light: 255, color: "#FF4040" }       # red emergency lighting
   #   3: { light: 200, effect: flicker, low: 120 }   # a failing lamp
+  # Scrolling walls and flats (Midnight Assault's conveyors and waterfalls), per map only, under
+  # maps: NAME: scrollers:, by tag (plane 4): the textures of the tiles with that tag slide along.
+  #   x: texels a tic (64 a tile, 70 tics a second) a wall face moves right as you look at it,
+  #      and a floor or ceiling east; negative the other way (Midnight Assault's fast was 2,
+  #      its medium 0.333)
+  #   y: texels a tic a wall face moves down, and a floor or ceiling south
+  #   walls, floor, ceiling: which surfaces of the tagged tiles scroll (all, left out). Not door
+  #      jambs, doors, lintels, arch undersides or wall patches.
+  #   active: false waits for a switch to start it (default true)
+  # Switches and actor states start, stop and change them as the level is played
+  # (A_StartScroll, A_StopScroll, A_ToggleScroll, A_SetScroll: see mapdefs walls.yaml), and
+  # saves keep them.
+  # maps:
+  #   MAP01:
+  #     scrollers:
+  #       3: { x: 2 }                                   # a conveyor belt
+  #       4: { y: 0.5, floor: false, ceiling: false }   # a waterfall down the walls
 
 signon:
   pic: wolf3d-signon

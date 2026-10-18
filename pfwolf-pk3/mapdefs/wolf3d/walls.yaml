@@ -166,6 +166,13 @@ walls:
     #                        it's at (or going to) light1, else to light1.
     #                        A_SetZoneEffect(zone, effect): none, flicker, pulse or strobe,
     #                        timed as the zone's game-info low, tics and bright-tics.
+    #                        Scroller actions (game-info maps scrollers) take a tag, left out
+    #                        (or "") the switch's own; actor states can run them too, where
+    #                        it's the actor's tag:
+    #                        A_StartScroll([tag]), A_StopScroll([tag]), A_ToggleScroll([tag]):
+    #                        the tag's scroller runs, stops where it is, or the one or the other.
+    #                        A_SetScroll(tag, x, y): its new speeds, texels a tic, and running;
+    #                        a tag with no scroller gets one, on walls, floors and ceilings.
     '21':
         North: ELEV1_1
         South: ELEV1_1

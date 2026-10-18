@@ -138,7 +138,11 @@ internal class MapManager
         this.factionManager = factionManager;
         this.session = session;
         this.actorWorld = actorWorld;
+        Scrollers = new Rendering.Scrollers(this);
     }
+
+    /// <summary>The level's scrolling walls and flats, by tag (Rendering/Scrollers.cs)</summary>
+    internal Rendering.Scrollers Scrollers { get; }
 
     // What the actors use of the game, taken when the first actor is made: it's built after the
     // map (it needs the map). Null in tests that make maps with no world
