@@ -545,7 +545,7 @@ Fat:
 # Fake Hitler (classtypes.fakeobj / enemytypes.en_fake)
 # Attacks with a continuous flamethrower stream (vanilla's T_FakeFire, here
 # A_FireProjectile("Fire")) instead of a gun, and dodges rather than chasing
-# directly (T_Fake).
+# directly (T_Strafe, vanilla's T_Fake).
 # -----------------------------------------------------------------------
 FakeHitler:
   parent: Monster
@@ -596,29 +596,29 @@ FakeHitler:
         frames: [E]
         tics-per-frame: 8
         next-state: Chase
-    Chase: # s_fakechase1..4 / T_Fake (dodges, no direct pursuit)
+    Chase: # s_fakechase1..4 / T_Fake (here T_Strafe: dodges, no direct pursuit)
       - sprite: FAKE
         frames: [A]
         tics-per-frame: 10
-        think: T_Fake
+        think: T_Strafe
       - sprite: FAKE
         frames: [A]
         tics-per-frame: 3
       - sprite: FAKE
         frames: [B]
         tics-per-frame: 8
-        think: T_Fake
+        think: T_Strafe
       - sprite: FAKE
         frames: [C]
         tics-per-frame: 10
-        think: T_Fake
+        think: T_Strafe
       - sprite: FAKE
         frames: [C]
         tics-per-frame: 3
       - sprite: FAKE
         frames: [D]
         tics-per-frame: 8
-        think: T_Fake
+        think: T_Strafe
     Death: # s_fakedie1..6 / A_DeathScream
       - sprite: FAKE
         frames: [F]

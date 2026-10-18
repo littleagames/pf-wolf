@@ -78,7 +78,9 @@ internal record Monster : Actor
         // T_DodgeChase: attacks at random while it has a clear shot, otherwise dodges toward the
         // player, and backs off once within four tiles (vanilla's T_Schabb/T_Gift/T_Fat/T_Will)
         ActorActionRegistry.RegisterFor<Monster>("T_DodgeChase", m => m.DodgeChase());
-        ActorActionRegistry.RegisterFor<Monster>("T_Fake", m => m.FakeChase());
+        // T_Strafe: always dodges about the player, never closing in directly, and attacks at
+        // random (less often than T_DodgeChase) while it has a clear shot (vanilla's T_Fake)
+        ActorActionRegistry.RegisterFor<Monster>("T_Strafe", m => m.Strafe());
         // T_Shoot: a gun volley; `monster.pointblankdamage` adds that much when right beside the
         // player (the Ubermutant's 10, vanilla's T_UShoot)
         ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m =>
@@ -1783,7 +1785,7 @@ internal record Monster : Actor
         }
     }
 
-    internal void FakeChase()
+    internal void Strafe()
     {
         if (CheckLine(this, Target))
         {
