@@ -33,7 +33,7 @@ components:
       - y: 18
       - width: 288
       - height: 116
-  # Who's in, and what they've said: 5 rows of 9 plus 4 (drawn by code: Ui/MultiplayerMenu.cs LobbyPanelY)
+  # Who's in (8 players, two columns of 4), and what they've said: 5 rows of 9 plus 4 (drawn by code: Ui/MultiplayerMenu.cs LobbyPanelY)
   -
     type: "Window"
     params:

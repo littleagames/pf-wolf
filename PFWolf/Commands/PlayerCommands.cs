@@ -22,8 +22,8 @@ internal sealed class PlayerCommands(
     Configuration.GameSettings settings,
     PlayerCommandsHooks hooks)
 {
-    /// <summary>The most players a game can have</summary>
-    internal const int MaxPlayers = 4;
+    /// <summary>The most players a game can have (no more than 8: TicBundle.Left is a bit each in a byte)</summary>
+    internal const int MaxPlayers = 8;
 
     internal void Register()
     {

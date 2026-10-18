@@ -499,8 +499,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     ControlPanelItem[] LobbyMenu = [];
     ControlPanelMenuInfo LobbyItems = null!;
 
-    // The lobby panel's rows: up to PlayerCommands.MaxPlayers players, then the last chat lines
-    const int LobbyPanelX = 24, LobbyPanelY = 138, LobbyPanelRow = 9, LobbyChatLines = 1;
+    // The lobby panel: PlayerCommands.MaxPlayers players in columns of LobbyPanelRows, then the last chat lines
+    const int LobbyPanelX = 24, LobbyPanelY = 138, LobbyPanelRow = 9, LobbyPanelRows = 4, LobbyPanelWidth = 272, LobbyChatLines = 1;
 
     /// <summary>
     /// Waits in a game's lobby: the host sets the game up and starts it once everyone's ready;
@@ -702,24 +702,29 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         if (!host)
             draw.DrawMenuCheckbox(LobbyItems, LobbyMenu, "go", me?.Ready == true);
 
-        // Who's in, and the last thing or two said
+        // Who's in, a column of LobbyPanelRows at a time (with more than that, too narrow to say
+        // "ready": anyone not ready yet is greyed instead), and the last thing or two said
         var panel = new TextStyle(UiFonts.SmallFont, "TEXTCOLOR");
-        int y = LobbyPanelY;
+        int columns = (PlayerCommands.MaxPlayers + LobbyPanelRows - 1) / LobbyPanelRows;
+        int columnWidth = LobbyPanelWidth / columns;
         for (int slot = 0; slot < PlayerCommands.MaxPlayers; slot++)
         {
             var p = session.Players.FirstOrDefault(pl => pl.Slot == slot);
             string text = p == null ? "-"
                 : $"{p.Name}{(slot == 0 ? " (host)" : "")}  {PlayerClassLabel(p.PlayerClass)}"
                   + (teams ? $" ({GameModes.TeamLabel(p.Team)})" : string.IsNullOrEmpty(p.Color) ? "" : $" ({ColorLabel(p.Color)})")
-                  + $"  {(slot == 0 ? "" : p.Ready ? "ready" : "not ready")}";
-            var style = p != null && p.Slot == session.LocalSlot ? new TextStyle(UiFonts.SmallFont, "HIGHLIGHT") : panel;
-            ui.TextAt(LobbyPanelX, y, style).Print(ui.FitText($"{slot + 1}. {text}", 272, UiFonts.SmallFont));
-            y += LobbyPanelRow;
+                  + (columns > 1 || slot == 0 ? "" : $"  {(p.Ready ? "ready" : "not ready")}");
+            var style = p != null && p.Slot == session.LocalSlot ? new TextStyle(UiFonts.SmallFont, "HIGHLIGHT")
+                : p != null && columns > 1 && slot != 0 && !p.Ready ? new TextStyle(UiFonts.SmallFont, "DEACTIVE")
+                : panel;
+            int x = LobbyPanelX + slot / LobbyPanelRows * columnWidth, rowY = LobbyPanelY + slot % LobbyPanelRows * LobbyPanelRow;
+            ui.TextAt(x, rowY, style).Print(ui.FitText($"{slot + 1}. {text}", columnWidth - 4, UiFonts.SmallFont));
         }
+        int y = LobbyPanelY + Math.Min(PlayerCommands.MaxPlayers, LobbyPanelRows) * LobbyPanelRow;
 
         foreach (var line in session.Chat.TakeLast(LobbyChatLines))
         {
-            ui.TextAt(LobbyPanelX, y, new TextStyle(UiFonts.SmallFont, "READCOLOR")).Print(ui.FitText(Shown(line), 272, UiFonts.SmallFont));
+            ui.TextAt(LobbyPanelX, y, new TextStyle(UiFonts.SmallFont, "READCOLOR")).Print(ui.FitText(Shown(line), LobbyPanelWidth, UiFonts.SmallFont));
             y += LobbyPanelRow;
         }
 
