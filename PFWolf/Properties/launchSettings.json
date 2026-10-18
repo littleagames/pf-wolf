@@ -2,6 +2,12 @@
   "profiles": {
     "PFWolf": {
       "commandName": "Project"
+    },
+    "PFWolf (demotest)": {
+      "commandName": "Executable",
+      "executablePath": "D:\\projects\\Wolf3D\\PFWolf\\pf-wolf\\PFWolf\\bin\\x64\\Release\\net10.0\\PFWolf.exe",
+      "workingDirectory": "D:\\projects\\Wolf3D\\PFWolf\\pf-wolf\\PFWolf\\bin\\x64\\Release\\net10.0",
+      "commandLineArgs": "--nowait --exec \"perf 1; demotest; perf; quit\""
     }
   }
 }
