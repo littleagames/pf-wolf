@@ -45,9 +45,10 @@
 #    FirstSighting applies once an enemy notices the player (source speed
 #    is the `speed` property below, i.e. SPDPATROL=512 or SPDDOG=1500).
 # 5. Reaction delay (how many tics an enemy waits after first spotting the
-#    player before acting, from SightPlayer) and other pure-behavior details
-#    that don't fit the properties schema are left as comments rather than
-#    invented property keys.
+#    player before acting, from SightPlayer) is `monster.reactiondelay:
+#    [base, divisor]`: base plus random()/divisor tics. Other pure-behavior
+#    details that don't fit the properties schema are left as comments
+#    rather than invented property keys.
 # 6. SS drop either a MachineGun or a Clip depending on the player's current
 #    best weapon (KillActor): `dropitem: DroppedClip` plus `dropweapon: MachineGun`,
 #    which replaces the dropitem while the player has nothing as good.
@@ -172,7 +173,7 @@ Guard:
     "attacksound": "guard/attack" # was "NAZIFIRE" (generic soldier gunfire)
     "deathsound": "guard/death"
     "dropitem": "DroppedClip"
-    # Reaction delay after first sighting: 1 + random()/4 tics.
+    "monster.reactiondelay": [1, 4] # tics after first sighting: 1 + random()/4
 
 # -----------------------------------------------------------------------
 # Officer (classtypes.officerobj / enemytypes.en_officer)
@@ -281,7 +282,7 @@ Officer:
     "attacksound": "officer/attack" # was "NAZIFIRE" (generic soldier gunfire)
     "deathsound": "officer/death"
     "dropitem": "DroppedClip"
-    # Reaction delay after first sighting: fixed 2 tics.
+    "monster.reactiondelay": [2] # tics after first sighting: a fixed 2
 
 # -----------------------------------------------------------------------
 # SS (classtypes.ssobj / enemytypes.en_ss)
@@ -425,7 +426,7 @@ SS:
     # SS are better shots: T_Shoot halves their effective distance penalty
     # (dist = dist * 2 / 3) when rolling to hit the player.
     "monster.sharpshooter": true
-    # Reaction delay after first sighting: 1 + random()/6 tics.
+    "monster.reactiondelay": [1, 6] # tics after first sighting: 1 + random()/6
 
 # -----------------------------------------------------------------------
 # Mutant (classtypes.mutantobj / enemytypes.en_mutant)
@@ -544,7 +545,7 @@ Mutant:
     "attacksound": "mutant/attack" # was "NAZIFIRE" (generic soldier gunfire); no seesound in source
     "deathsound": "mutant/death"
     "dropitem": "DroppedClip"
-    # Reaction delay after first sighting: 1 + random()/6 tics.
+    "monster.reactiondelay": [1, 6] # tics after first sighting: 1 + random()/6
 
 # -----------------------------------------------------------------------
 # Dog (classtypes.dogobj / enemytypes.en_dog)
@@ -663,7 +664,7 @@ Dog:
     # No dropitem -- KillActor has no case for dogobj.
     # Attack is melee only: T_Bite deals random()>>4 damage (chance 180/256)
     # when within MINACTORDIST of the player.
-    # Reaction delay after first sighting: 1 + random()/8 tics.
+    "monster.reactiondelay": [1, 8] # tics after first sighting: 1 + random()/8
 
 # -----------------------------------------------------------------------
 # DeadGuard -- pre-placed corpse decoration (mapdefs/wolf3d/decorations.yaml

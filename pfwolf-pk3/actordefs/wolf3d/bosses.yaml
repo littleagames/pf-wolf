@@ -42,9 +42,10 @@
 #    is the `speed` property below; all of these use SPDPATROL=512 except
 #    Real Hitler, which is born already fast).
 # 5. Reaction delay (how many tics an enemy waits after first spotting the
-#    player before acting, from SightPlayer) and other pure-behavior details
-#    that don't fit the properties schema are left as comments rather than
-#    invented property keys.
+#    player before acting, from SightPlayer) is `monster.reactiondelay:
+#    [base, divisor]`; these bosses have none, which is vanilla's fixed 1 tic.
+#    Other pure-behavior details that don't fit the properties schema are
+#    left as comments rather than invented property keys.
 # 6. Not included here: the BJ-victory end-of-episode cutscene actor
 #    (SpawnBJVictory / s_bjrun*/s_bjjump*) and the standalone death-cam
 #    actor (s_deathcam) -- neither is an enemy.

@@ -856,21 +856,14 @@ internal record Monster : Actor
 
     // How long (tics) an actor takes to react once it has noticed the player: its
     // `monster.reactiondelay: [base, divisor]`, base plus a random 0-255 over divisor (no divisor,
-    // or 0, for none). Wolf3D's grunts keep their vanilla delays without one.
+    // or 0, for none). Without one, a fixed tic (as vanilla's bosses).
     private short GetReactionDelay()
     {
         var delay = PropertyInts("monster.reactiondelay");
-        if (delay.Count > 0)
-            return (short)(delay[0] + (delay.Count > 1 && delay[1] > 0 ? NextRandom() / delay[1] : 0));
+        if (delay.Count == 0)
+            return 1;
 
-        return Name switch
-        {
-            "Guard" => (short)(1 + NextRandom() / 4),
-            "Officer" => 2,
-            "Mutant" or "SS" => (short)(1 + NextRandom() / 6),
-            "Dog" => (short)(1 + NextRandom() / 8),
-            _ => 1, // bosses
-        };
+        return (short)(delay[0] + (delay.Count > 1 && delay[1] > 0 ? NextRandom() / delay[1] : 0));
     }
 
     /// <summary>
