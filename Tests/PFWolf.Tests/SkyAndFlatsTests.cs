@@ -35,7 +35,11 @@ public class SkyAndFlatsTests
         _lighting = new Lighting(null!, video, null!, new LightingHooks(() => 0, () => { }, _ => { }));
         _lighting.SetShading(null);
         var actorLights = new ActorLights(null!, null!, _lighting, new GameSession());
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null);
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
+        {
+            // No level is loaded: an open one with no walls, which DrawFlats reads where a tile has no flat
+            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+        };
         _sky = new SkyAndFlats(null!, null!, video, _map, _lighting, actorLights, _render, new GameSession(), _ => null);
     }
 
