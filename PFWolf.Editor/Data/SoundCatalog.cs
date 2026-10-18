@@ -109,14 +109,14 @@ public static class SoundCatalog
             var used = uses.GetValueOrDefault(display, []);
 
             if (assets.Exists<Wolf3dDigitizedAudio>(name) || assets.Exists<SoundFileAsset>(name))
-                entries.Add(Asset(SoundKind.Digitized, display, Origins(content, name, nameof(Wolf3dDigitizedAudio), nameof(SoundFileAsset)),
+                entries.Add(Asset(SoundKind.Digitized, display, Origins(content, name, AssetTypes(SoundKind.Digitized)),
                     used, assets.Exists<SoundFileAsset>(name)));
             if (assets.Exists<AdLibSound>(name))
-                entries.Add(Asset(SoundKind.AdLib, display, Origins(content, name, nameof(AdLibSound)), used, false));
+                entries.Add(Asset(SoundKind.AdLib, display, Origins(content, name, AssetTypes(SoundKind.AdLib)), used, false));
             if (assets.Exists<PcSound>(name))
-                entries.Add(Asset(SoundKind.PcSpeaker, display, Origins(content, name, nameof(PcSound)), used, false));
+                entries.Add(Asset(SoundKind.PcSpeaker, display, Origins(content, name, AssetTypes(SoundKind.PcSpeaker)), used, false));
             if (assets.Exists<Wolf3dImfAudio>(name) || assets.Exists<MusicFileAsset>(name))
-                entries.Add(Asset(SoundKind.Music, display, Origins(content, name, nameof(Wolf3dImfAudio), nameof(MusicFileAsset)),
+                entries.Add(Asset(SoundKind.Music, display, Origins(content, name, AssetTypes(SoundKind.Music)),
                     used, assets.Exists<MusicFileAsset>(name)));
         }
 
@@ -129,6 +129,19 @@ public static class SoundCatalog
                 Source = origins.LastOrDefault(origin => origin.Action != AssetOrigin.LeftOut)?.Source ?? "",
             };
     }
+
+    /// <summary>
+    /// The asset types a kind of sound is, the game's own first and then the file that plays in its
+    /// place; none for a sound-seq entry, which is YAML
+    /// </summary>
+    public static string[] AssetTypes(SoundKind kind) => kind switch
+    {
+        SoundKind.Digitized => [nameof(Wolf3dDigitizedAudio), nameof(SoundFileAsset)],
+        SoundKind.AdLib => [nameof(AdLibSound)],
+        SoundKind.PcSpeaker => [nameof(PcSound)],
+        SoundKind.Music => [nameof(Wolf3dImfAudio), nameof(MusicFileAsset)],
+        _ => [],
+    };
 
     // The game's own asset first, then the file that plays in its place: that one wins
     private static List<AssetOrigin> Origins(GameContent content, string name, params string[] types)

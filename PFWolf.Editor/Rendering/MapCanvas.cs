@@ -26,8 +26,8 @@ public sealed class TileEventArgs(int x, int y) : EventArgs
 /// <summary>
 /// A level from above: walls and doors in their textures, things as their sprites, and the
 /// other planes (flats, heights, tags, light zones) as numbered overlays. The left button works
-/// the tools (through the <see cref="Controller"/>); the wheel zooms around the pointer, and
-/// dragging with the middle or right button pans.
+/// the tools (through the <see cref="Controller"/>); the wheel zooms around the pointer (with Shift
+/// it scrolls across, with Alt up and down), and dragging with the middle or right button pans.
 /// </summary>
 public sealed class MapCanvas : Control
 {
@@ -74,6 +74,9 @@ public sealed class MapCanvas : Control
     public event EventHandler<string>? ToolKeyPressed;
 
     private const double MinZoom = 2, MaxZoom = 128;
+
+    // How far a wheel notch scrolls the map with Shift or Alt held, in pixels
+    private const double WheelScroll = 64;
 
     // Screen pixels per tile, and where the map's top left corner is on screen
     private double _zoom = 12;
@@ -685,6 +688,20 @@ public sealed class MapCanvas : Control
     {
         base.OnPointerWheelChanged(e);
         var position = e.GetPosition(this);
+
+        // Shift scrolls across, Alt up and down (a sideways wheel or touchpad scrolls across too)
+        bool across = e.KeyModifiers.HasFlag(KeyModifiers.Shift) || e.Delta.Y == 0;
+        if (across || e.KeyModifiers.HasFlag(KeyModifiers.Alt))
+        {
+            // Some mice and drivers send a Shift+wheel turn as a sideways one already
+            double turn = e.Delta.Y != 0 ? e.Delta.Y : e.Delta.X;
+            _origin += across ? new Vector(turn * WheelScroll, 0) : new Vector(0, turn * WheelScroll);
+            InvalidateVisual();
+            UpdateHover(position);
+            e.Handled = true;
+            return;
+        }
+
         var zoom = Math.Clamp(_zoom * Math.Pow(1.2, e.Delta.Y), MinZoom, MaxZoom);
 
         // Keep the point under the pointer where it is

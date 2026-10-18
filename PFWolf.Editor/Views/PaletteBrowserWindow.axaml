@@ -25,13 +25,19 @@
 
     <!-- Every palette -->
     <DockPanel DockPanel.Dock="Left" Width="230" Margin="8,8,0,8">
-      <TextBlock DockPanel.Dock="Top" Text="Palettes" FontWeight="SemiBold" Margin="0,0,0,4" />
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+        <TextBlock Text="Palettes" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding CountText}" Opacity="0.7" FontSize="12" VerticalAlignment="Center" />
+      </Grid>
+      <ComboBox DockPanel.Dock="Top" ItemsSource="{Binding Shows}" SelectedItem="{Binding SelectedShow}" HorizontalAlignment="Stretch"
+                Margin="0,0,0,6" ToolTip.Tip="In use: game-info or the movies draw in it (the game palette always is); From the mods: not pfwolf.pk3's or the data files'" />
       <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
         <ListBox.ContextMenu>
           <ContextMenu>
             <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
             <MenuItem Header="Save to…" Command="{Binding SaveToCommand}" />
             <MenuItem Header="Revert all" Command="{Binding RevertAllCommand}" />
+            <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" />
             <Separator />
             <MenuItem Header="Import…" Click="Import" />
             <MenuItem Header="Export">

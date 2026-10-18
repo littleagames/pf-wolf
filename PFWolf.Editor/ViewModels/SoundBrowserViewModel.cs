@@ -101,8 +101,48 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection), nameof(IsSequence))]
-    [NotifyCanExecuteChangedFor(nameof(PlayCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PlayCommand), nameof(DeleteCommand))]
     private SoundItem? _selectedItem;
+
+    /// <summary>What was last done (a delete), for the bar at the bottom</summary>
+    [ObservableProperty] private string _status = "";
+
+    /// <summary>Asks a yes-or-no question (title, message, the yes button's label)</summary>
+    public Func<string, string, string, Task<bool>>? Confirm { get; set; }
+
+    /// <summary>A sound or song was taken out of its mod (the editor loads the game again)</summary>
+    public event EventHandler? Deleted;
+
+    // The mod file a sound or song plays from: its own file in sounds/ or music/ (a mod's
+    // AUDIOT holds many, and isn't one to delete); null for the game's own and sound-seq entries
+    private ModEntry? ModFileOf(SoundItem item)
+        => _content?.ModFileOf(item.Name, SoundCatalog.AssetTypes(item.Entry.Kind)) is { } file && file.IsIn("sounds", "music") ? file : null;
+
+    private bool CanDelete => SelectedItem is { } item && ModFileOf(item) != null;
+
+    /// <summary>Takes the sound or song picked out of its mod (pfwolf.pk3's and the data files' are read-only)</summary>
+    [RelayCommand(CanExecute = nameof(CanDelete))]
+    private async Task DeleteAsync()
+    {
+        if (SelectedItem is not { } item || ModFileOf(item) is not { } file || Confirm == null)
+            return;
+        Stop();
+        var after = item.Entry.Origins.Count > 1 ? $"The {item.Name} it played in place of plays again."
+            : item.Entry.Uses.Count > 0 ? $"Nothing else is named {item.Name}: what plays it will play nothing."
+            : "Nothing plays it.";
+        if (!await Confirm($"Delete {item.Name}", Editing.ModFiles.DeleteQuestion(file.ModPath, file.EntryPath, after), "Delete"))
+            return;
+        try
+        {
+            Editing.ModFiles.Delete(file.ModPath, file.EntryPath);
+            Status = $"Deleted {file.EntryPath} from {file.ModName}";
+            Deleted?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Status = $"Couldn't delete {item.Name}: {e.Message}";
+        }
+    }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(GoToUseCommand))]

@@ -39,6 +39,9 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
     public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
 
+    /// <summary>Asks a yes-or-no question (title, message, the yes button's label)</summary>
+    public Func<string, string, string, Task<bool>>? Confirm { get; set; }
+
     /// <summary>A picture for a name: a texture's, or a class's sprite (FieldHint.Class); null when there's none</summary>
     public Func<FieldHint, string, Avalonia.Media.Imaging.Bitmap?>? Art { get; set; }
 
@@ -153,6 +156,15 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         Status = $"Saved {string.Join(" and ", places)}." + string.Concat(notes.Select(note => " " + note + "."));
         if (modPath != null)
             SavedToMod?.Invoke(this, modPath);
+        DefinitionsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>A mod's file was deleted: the kinds and files are read again without it</summary>
+    public void FileDeleted(string place)
+    {
+        _sets.Clear();
+        NeedsReload = true;
+        Status = $"Deleted {place}.";
         DefinitionsChanged?.Invoke(this, EventArgs.Empty);
     }
 

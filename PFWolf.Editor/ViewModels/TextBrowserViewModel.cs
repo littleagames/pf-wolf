@@ -46,8 +46,14 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
     /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
     public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
 
+    /// <summary>Asks a yes-or-no question (title, message, the yes button's label)</summary>
+    public Func<string, string, string, Task<bool>>? Confirm { get; set; }
+
     /// <summary>A text was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? Saved;
+
+    /// <summary>A text was taken out of its mod (the editor loads the game again)</summary>
+    public event EventHandler? Deleted;
 
     public ObservableCollection<TextItem> Items { get; } = [];
     public ObservableCollection<string> Origins { get; } = [];
@@ -62,7 +68,7 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(SaveToCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(SaveToCommand), nameof(DeleteCommand))]
     private TextItem? _selectedItem;
 
     /// <summary>The text shown, as changed in the box</summary>
@@ -356,6 +362,7 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
         {
             var path = TextCatalog.Save(folder, item.Name, text);
             _saved[item.Name] = (text, folder);
+            DeleteCommand.NotifyCanExecuteChanged();
             _original = text;
             IsChanged = false;
             Status = $"Saved {path}" + (item.Entry.Uses.Count == 0
@@ -368,6 +375,52 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
         {
             Status = $"Couldn't save {item.Name}: {e.Message}";
             return false;
+        }
+    }
+
+    // A text made here and never saved: in no mod yet
+    private bool IsUnsavedNew(TextItem item) => item.Entry.Source == "new" && !_saved.ContainsKey(item.Name);
+
+    // The mod file a text is in: the one it was saved to, else the one the game reads (null for the game's own)
+    private ModEntry? ModFileOf(TextItem item)
+        => _saved.TryGetValue(item.Name, out var saved) ? new ModEntry(saved.Folder, TextCatalog.EntryPath(item.Name))
+            : _content?.ModFileOf(item.Name, nameof(TextAsset)) is { } file && file.IsIn("texts") ? file : null;
+
+    /// <summary>A text picked that's a mod's (the game's own are read-only), or one new here</summary>
+    private bool CanDelete => SelectedItem is { } item && (IsUnsavedNew(item) || ModFileOf(item) != null);
+
+    /// <summary>Takes the text picked out of its mod (one new here and never saved is just dropped)</summary>
+    [RelayCommand(CanExecute = nameof(CanDelete))]
+    private async Task DeleteAsync()
+    {
+        if (SelectedItem is not { } item)
+            return;
+        if (IsUnsavedNew(item))
+        {
+            _all.Remove(item);
+            IsChanged = false;
+            Refilter();
+            Status = $"Dropped {item.Name}, which was never saved";
+            return;
+        }
+
+        if (ModFileOf(item) is not { } file || Confirm == null)
+            return;
+        var after = item.Entry.Origins.Count > 1 ? $"The {item.Name} it replaced shows again."
+            : item.Entry.Uses.Count > 0 ? $"Nothing else is named {item.Name}: {string.Join(", ", item.Entry.Uses)} will have no text."
+            : "Nothing shows it.";
+        if (!await Confirm($"Delete {item.Name}", Editing.ModFiles.DeleteQuestion(file.ModPath, file.EntryPath, after), "Delete"))
+            return;
+        try
+        {
+            Editing.ModFiles.Delete(file.ModPath, file.EntryPath);
+            _saved.Remove(item.Name);
+            Status = $"Deleted {file.EntryPath} from {file.ModName}";
+            Deleted?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Status = $"Couldn't delete {item.Name}: {e.Message}";
         }
     }
 

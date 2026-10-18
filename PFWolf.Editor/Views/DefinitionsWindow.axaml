@@ -77,6 +77,8 @@
                   <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
                   <MenuItem Header="Revert" Command="{Binding RevertCommand}" />
                   <MenuItem Header="Go to the problem" Command="{Binding GoToProblemCommand}" IsVisible="{Binding HasProblem}" />
+                  <Separator IsVisible="{Binding !IsBaseFile}" />
+                  <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" IsVisible="{Binding !IsBaseFile}" />
                   <Separator IsVisible="{Binding IsBaseFile}" />
                   <MenuItem Header="Copy to mod" IsVisible="{Binding IsBaseFile}" IsEnabled="{Binding CanCopyToMod}">
                     <MenuItem Header="As an empty file" Command="{Binding CopyToModCommand}" CommandParameter="empty" />

@@ -44,8 +44,14 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
     /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
     public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
 
+    /// <summary>Asks a yes-or-no question (title, message, the yes button's label)</summary>
+    public Func<string, string, string, Task<bool>>? Confirm { get; set; }
+
     /// <summary>A script was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? Saved;
+
+    /// <summary>A script was taken out of its mod (the editor loads the game again)</summary>
+    public event EventHandler? Deleted;
 
     /// <summary>Asks the window to select a line of the script (1 for the first): a problem or an action picked</summary>
     public event EventHandler<int>? SelectLine;
@@ -64,7 +70,7 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(SaveToCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(SaveToCommand), nameof(DeleteCommand))]
     private ScriptListItem? _selectedItem;
 
     /// <summary>The script shown, as changed in the box</summary>
@@ -418,6 +424,7 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
         {
             var path = ScriptCatalog.Save(folder, entryPath, text);
             _saved[item.Name] = (text, folder, entryPath);
+            DeleteCommand.NotifyCanExecuteChanged();
             _original = text;
             IsChanged = false;
             FindDefinitions();
@@ -433,6 +440,51 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
         {
             Status = $"Couldn't save {item.Name}: {e.Message}";
             return false;
+        }
+    }
+
+    // A script made here and never saved: in no mod yet
+    private bool IsUnsavedNew(ScriptListItem item) => item.Entry.Source == "new" && !_saved.ContainsKey(item.Name);
+
+    /// <summary>A script picked that's a mod's (pfwolf.pk3's are read-only), or one new here</summary>
+    private bool CanDelete => SelectedItem is { } item && (IsUnsavedNew(item) || SaveTargetOf(item).Folder != null);
+
+    /// <summary>Takes the script picked out of its mod (one new here and never saved is just dropped)</summary>
+    [RelayCommand(CanExecute = nameof(CanDelete))]
+    private async Task DeleteAsync()
+    {
+        if (SelectedItem is not { } item)
+            return;
+        if (IsUnsavedNew(item))
+        {
+            _all.Remove(item);
+            _drafts.Remove(item.Name);
+            IsChanged = false;
+            OnPropertyChanged(nameof(HasNoScripts));
+            Refilter();
+            Status = $"Dropped {item.Name}.lua, which was never saved";
+            return;
+        }
+
+        var (folder, entryPath) = SaveTargetOf(item);
+        if (folder == null || entryPath == null || Confirm == null)
+            return;
+        var after = item.Entry.Origins.Count > 1 ? $"The {item.Name}.lua it was used in place of runs again."
+            : Actions.Any(action => action.HasCallers) ? "Actordefs states call its actions, and will find nothing to run."
+            : "Nothing calls its actions.";
+        if (!await Confirm($"Delete {item.Name}.lua", Editing.ModFiles.DeleteQuestion(folder, entryPath, after), "Delete"))
+            return;
+        try
+        {
+            Editing.ModFiles.Delete(folder, entryPath);
+            _saved.Remove(item.Name);
+            _drafts.Remove(item.Name);
+            Status = $"Deleted {entryPath} from {Path.GetFileName(folder.TrimEnd('\\', '/'))}";
+            Deleted?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Status = $"Couldn't delete {item.Name}: {e.Message}";
         }
     }
 

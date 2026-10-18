@@ -100,6 +100,17 @@ public sealed class PaletteDocument
         return true;
     }
 
+    /// <summary>Back to the colors as loaded, with no changes left to save or undo (its file was deleted)</summary>
+    public void Discard()
+    {
+        Colors = (PaletteColor[])Loaded.Clone();
+        _saved = Loaded;
+        _undo.Clear();
+        _redo.Clear();
+        _runningEdit = null;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>Writes it to {folder}/palettes/NAME.pal and marks it saved; returns the file's path</summary>
     public string Save(string folder)
     {

@@ -96,6 +96,14 @@ public static class ModFiles
     public static void Delete(string modPath, params string[] entryPaths) => Change(modPath, [], entryPaths);
 
     /// <summary>
+    /// What a Delete asks before it takes a file out of its mod: <paramref name="after"/> says
+    /// what the game does without it, and a pk3's backup is named
+    /// </summary>
+    public static string DeleteQuestion(string modPath, string entryPath, string after)
+        => $"Take {entryPath} out of {Path.GetFileName(modPath.TrimEnd('\\', '/'))}? {after}"
+           + (IsArchive(modPath) ? $"\n\nThe pk3's last version is kept as {Path.GetFileName(modPath)}{BackupExtension}." : "");
+
+    /// <summary>
     /// Writes some files into the mod and takes others out, as one change to a pk3 (a rename is
     /// the new file written and the old one taken out); returns where the first written went
     /// </summary>

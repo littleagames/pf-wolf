@@ -79,7 +79,7 @@ public sealed partial class YamlFilesViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection), nameof(IsReadOnly), nameof(ReadOnlyText), nameof(FileTitle), nameof(FileWhat),
         nameof(CanCopyToMod), nameof(CopyToModText), nameof(IsBaseFile))]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(DeleteCommand))]
     private YamlFileItem? _selectedItem;
 
     /// <summary>The file's text, as changed in the box</summary>
@@ -368,6 +368,30 @@ public sealed partial class YamlFilesViewModel : ObservableObject
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             _owner.Status = $"Couldn't make {entryPath}: {e.Message}";
+        }
+    }
+
+    /// <summary>A mod's file picked (pfwolf.pk3's own are read-only)</summary>
+    private bool CanDelete => SelectedItem is { IsBase: false };
+
+    /// <summary>Takes the mod's file picked out of its mod</summary>
+    [RelayCommand(CanExecute = nameof(CanDelete))]
+    private async Task DeleteAsync()
+    {
+        if (SelectedItem is not { ModPath: { } mod } item || _owner.Confirm == null)
+            return;
+        var after = item.What != null ? $"The game won't read its {item.What} any more." : "The game doesn't read it.";
+        if (!await _owner.Confirm($"Delete {item.EntryPath}", Editing.ModFiles.DeleteQuestion(mod, item.EntryPath, after), "Delete"))
+            return;
+        try
+        {
+            Editing.ModFiles.Delete(mod, item.EntryPath);
+            IsChanged = false;
+            _owner.FileDeleted($"{item.SourceName}: {item.EntryPath}");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            _owner.Status = $"Couldn't delete {item.EntryPath}: {e.Message}";
         }
     }
 

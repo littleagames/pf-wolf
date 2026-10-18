@@ -798,8 +798,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         var after = under
             ? $"The {name} it replaced shows again."
             : entry.Uses.Count > 0 ? $"Nothing else is named {name}: {UsesText(entry)} will show nothing." : "Nothing uses it.";
-        if (!await Confirm($"Delete {name}", $"Take {file.EntryPath} out of {Path.GetFileName(file.ModPath.TrimEnd('\\', '/'))}? {after}"
-                + (ModFiles.IsArchive(file.ModPath) ? $"\n\nThe pk3's last version is kept as {Path.GetFileName(file.ModPath)}{ModFiles.BackupExtension}." : ""), "Delete"))
+        if (!await Confirm($"Delete {name}", ModFiles.DeleteQuestion(file.ModPath, file.EntryPath, after), "Delete"))
             return;
         await Make(_ => ArtFiles.Delete(file, entry.Kind, name), null);
     }

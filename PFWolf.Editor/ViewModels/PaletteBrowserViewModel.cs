@@ -40,6 +40,9 @@ public sealed record PreviewKindOption(ArtKind Kind, string Label)
 public sealed partial class PaletteBrowserViewModel : ObservableObject
 {
     private GameContent? _content;
+    // Every palette, and those listed (Items) as Show picks them
+    private List<PaletteListItem> _all = [];
+    private HashSet<string> _modSources = new(StringComparer.OrdinalIgnoreCase);
     private PaletteColor[]? _copied;
     private IndexedPicture? _preview;
     // Set while the color fields are filled from the palette, so they don't edit it back
@@ -48,13 +51,31 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
     public PaletteBrowserViewModel()
     {
         _selectedPreviewKind = PreviewKinds[0];
+        _selectedShow = Shows[0];
     }
 
     /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
     public Func<string, Task<string?>>? PickMod { get; set; }
 
+    /// <summary>Asks a yes-or-no question (title, message, the yes button's label)</summary>
+    public Func<string, string, string, Task<bool>>? Confirm { get; set; }
+
     /// <summary>A palette was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? Saved;
+
+    /// <summary>A palette was taken out of its mod (the editor loads the game again)</summary>
+    public event EventHandler? Deleted;
+
+    public IReadOnlyList<ArtShowOption> Shows { get; } =
+    [
+        new(ArtShow.Everything, "Everything"),
+        new(ArtShow.InUse, "In use"),
+        new(ArtShow.NotInUse, "Not in use"),
+        new(ArtShow.FromMods, "From the mods"),
+    ];
+
+    [ObservableProperty] private ArtShowOption _selectedShow;
+    [ObservableProperty] private string _countText = "";
 
     /// <summary>The game palette's colors changed (an edit, undo, revert or import): the editor redraws in them</summary>
     public event EventHandler<PaletteColor[]>? GamePaletteChanged;
@@ -77,7 +98,7 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(SaveToCommand), nameof(RevertAllCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(SaveToCommand), nameof(RevertAllCommand), nameof(DeleteCommand))]
     private PaletteListItem? _selectedItem;
 
     [ObservableProperty]
@@ -126,15 +147,16 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
     public (int From, int To) Run => (Math.Min(Anchor, Current), Math.Max(Anchor, Current));
 
     /// <summary>Palettes with changes nobody saved</summary>
-    public IEnumerable<PaletteDocument> DirtyDocuments => Items.Select(item => item.Document).Where(document => document.IsDirty);
+    public IEnumerable<PaletteDocument> DirtyDocuments => _all.Select(item => item.Document).Where(document => document.IsDirty);
 
     /// <summary>Lists the palettes of a newly loaded game (edits to the old one's are dropped), keeping the one picked if it's still there</summary>
     public void Load(GameContent? content)
     {
         _content = content;
         var picked = SelectedItem?.Name;
-        foreach (var item in Items)
+        foreach (var item in _all)
             item.Document.Changed -= OnDocumentChanged;
+        _all = [];
         Items.Clear();
         SelectedItem = null;
 
@@ -144,23 +166,50 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
             {
                 var document = new PaletteDocument(entry.Name, entry.Colors, content.ModPathOf(entry.Name, nameof(Palette)));
                 document.Changed += OnDocumentChanged;
-                Items.Add(new PaletteListItem(entry, document));
+                _all.Add(new PaletteListItem(entry, document));
             }
+            _modSources = content.Assets.LoadedMods.Select(mod => mod.Source.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             Title = $"Palettes - {content.Title}";
         }
         else
+        {
+            _modSources = [];
             Title = "Palettes";
+        }
 
         FillPreviewNames();
+        Refilter();
         SelectedItem = Items.FirstOrDefault(item => item.Name.Equals(picked, StringComparison.OrdinalIgnoreCase)) ?? Items.FirstOrDefault();
-        Status = content == null ? "" : $"{Items.Count} palettes";
+        Status = content == null ? "" : $"{_all.Count} palettes";
     }
 
     /// <summary>Shows a palette by name</summary>
     public void Show(string name)
     {
-        if (Items.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } item)
-            SelectedItem = item;
+        if (_all.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is not { } item)
+            return;
+        if (!Items.Contains(item))
+            SelectedShow = Shows[0];
+        SelectedItem = item;
+    }
+
+    partial void OnSelectedShowChanged(ArtShowOption value) => Refilter();
+
+    // Lists the palettes Show picks: in use (the game palette always is), not, or the mods' own
+    private void Refilter()
+    {
+        var selected = SelectedItem;
+        Items.Clear();
+        foreach (var item in _all.Where(item => SelectedShow.Show switch
+                 {
+                     ArtShow.InUse => item.Entry.IsGamePalette || item.Entry.Uses.Count > 0,
+                     ArtShow.NotInUse => !item.Entry.IsGamePalette && item.Entry.Uses.Count == 0,
+                     ArtShow.FromMods => _modSources.Contains(item.Entry.Source),
+                     _ => true,
+                 }))
+            Items.Add(item);
+        CountText = Items.Count == _all.Count ? $"{Items.Count} palettes" : $"{Items.Count} of {_all.Count} palettes";
+        SelectedItem = selected != null && Items.Contains(selected) ? selected : Items.FirstOrDefault();
     }
 
     partial void OnSelectedItemChanged(PaletteListItem? value)
@@ -185,7 +234,7 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
 
     private void OnDocumentChanged(object? sender, EventArgs e)
     {
-        if (Items.FirstOrDefault(item => item.Document == sender) is { } item)
+        if (_all.FirstOrDefault(item => item.Document == sender) is { } item)
         {
             item.IsDirty = item.Document.IsDirty;
             if (item.Entry.IsGamePalette)
@@ -480,6 +529,7 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
         try
         {
             var path = document.Save(folder);
+            DeleteCommand.NotifyCanExecuteChanged();
             Status = $"Saved {path}";
             Saved?.Invoke(this, folder);
             return true;
@@ -488,6 +538,43 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
         {
             Status = $"Couldn't save {document.Name}: {e.Message}";
             return false;
+        }
+    }
+
+    // The mod file a palette is in: the one the game reads it from, or the one it was saved to since
+    private ModEntry? ModFileOf(PaletteListItem item)
+    {
+        if (item.Document.SaveFolder is not { } folder)
+            return null;
+        if (_content?.ModFileOf(item.Name, nameof(Palette)) is not { } loaded || !Definitions.DefinitionFile.SameMod(loaded.ModPath, folder))
+            return new ModEntry(folder, PaletteCatalog.EntryPath(item.Name));
+        return loaded.IsIn("palettes") ? loaded : null;
+    }
+
+    private bool CanDelete => SelectedItem is { } item && ModFileOf(item) != null;
+
+    /// <summary>Takes the palette picked out of its mod (pfwolf.pk3's and the data files' are read-only)</summary>
+    [RelayCommand(CanExecute = nameof(CanDelete))]
+    private async Task DeleteAsync()
+    {
+        if (SelectedItem is not { } item || ModFileOf(item) is not { } file || Confirm == null)
+            return;
+        var after = item.Entry.Origins.Count(origin => origin.Action != PFWolf.Loaders.AssetOrigin.LeftOut) > 1 ? $"The {item.Name} it replaced is used again."
+            : item.Entry.Uses.Count > 0 || item.Entry.IsGamePalette ? $"Nothing else is named {item.Name}, and the game draws in it."
+            : "Nothing draws in it.";
+        if (!await Confirm($"Delete {item.Name}", ModFiles.DeleteQuestion(file.ModPath, file.EntryPath, after), "Delete"))
+            return;
+        try
+        {
+            ModFiles.Delete(file.ModPath, file.EntryPath);
+            // Its edits go with it, so loading the game again doesn't ask to save them
+            item.Document.Discard();
+            Status = $"Deleted {file.EntryPath} from {file.ModName}";
+            Deleted?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Status = $"Couldn't delete {item.Name}: {e.Message}";
         }
     }
 

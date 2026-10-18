@@ -11,6 +11,20 @@ public sealed record MapEntry(string Name, string Title)
     public override string ToString() => string.IsNullOrWhiteSpace(Title) ? Name : $"{Name}  {Title}";
 }
 
+/// <summary>Where a file is in a mod (a folder or a pk3): "texts/end1.txt"</summary>
+public sealed record ModEntry(string ModPath, string EntryPath)
+{
+    /// <summary>The mod's file or folder name</summary>
+    public string ModName => Path.GetFileName(ModPath.TrimEnd('\\', '/'));
+
+    /// <summary>
+    /// Whether it's somewhere in one of these folders of the mod ("texts"): a file of its own, not
+    /// one of a mod's data files (AUDIOT, VSWAP) that holds many assets
+    /// </summary>
+    public bool IsIn(params string[] folders)
+        => folders.Any(folder => EntryPath.Replace('\\', '/').StartsWith(folder + "/", StringComparison.OrdinalIgnoreCase));
+}
+
 /// <summary>
 /// A game's assets as the engine sees them: pfwolf.pk3, the mods over it and the game's data
 /// files beneath, merged by PFWolf.Common's AssetManager. Loaded from a PFWolf folder.
@@ -128,18 +142,23 @@ public sealed class GameContent
     public string? ModPathOf(string mapName) => ModPathOf(mapName, nameof(MapAsset));
 
     /// <summary>The mod (a folder or a pk3) an asset of this type comes from, or null when it's the game's own</summary>
-    public string? ModPathOf(string assetName, string assetType)
+    public string? ModPathOf(string assetName, string assetType) => ModFileOf(assetName, assetType)?.ModPath;
+
+    /// <summary>
+    /// The mod file (a folder's or a pk3's) the asset the game uses comes from, of the first of these
+    /// types and then the ones that play in its place; null when it's the game's own
+    /// </summary>
+    public ModEntry? ModFileOf(string assetName, params string[] assetTypes)
     {
-        var origin = Assets.FindAssetOrigins(assetName)
-            .Where(asset => asset.Type == assetType)
-            .SelectMany(asset => asset.Origins)
+        var found = Assets.FindAssetOrigins(assetName).ToList();
+        var origin = assetTypes
+            .SelectMany(type => found.Where(asset => asset.Type == type).SelectMany(asset => asset.Origins))
             .LastOrDefault(origin => origin.Action != AssetOrigin.LeftOut);
         if (origin == null)
             return null;
 
-        return Assets.LoadedMods
-            .LastOrDefault(mod => mod.Source.Name.Equals(origin.Source, StringComparison.OrdinalIgnoreCase))
-            ?.FullPath;
+        var mod = Assets.LoadedMods.LastOrDefault(mod => mod.Source.Name.Equals(origin.Source, StringComparison.OrdinalIgnoreCase));
+        return mod != null ? new ModEntry(mod.FullPath, origin.Path) : null;
     }
 
     /// <summary>Whether the mods hold a level of this name, or the game does</summary>

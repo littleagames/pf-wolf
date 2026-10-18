@@ -76,7 +76,10 @@ public static class TextCatalog
     /// place of the text of that name, or as a new one. Returns where it went.
     /// </summary>
     public static string Save(string modPath, string name, string text)
-        => Editing.ModFiles.Write(modPath, ($"texts/{name.ToLowerInvariant()}.txt", System.Text.Encoding.ASCII.GetBytes(text)));
+        => Editing.ModFiles.Write(modPath, (EntryPath(name), System.Text.Encoding.ASCII.GetBytes(text)));
+
+    /// <summary>Where saving puts a text in a mod: texts/name.txt</summary>
+    public static string EntryPath(string name) => $"texts/{name.ToLowerInvariant()}.txt";
 
     /// <summary>What's wrong with a name for a new text, or null when it will do</summary>
     public static string? CheckNewName(GameContent content, string name)

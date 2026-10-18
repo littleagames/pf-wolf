@@ -34,6 +34,7 @@
           <MenuItem Header="Revert" Command="{Binding RevertCommand}" />
           <Separator />
           <MenuItem Header="New…" Command="{Binding NewTextCommand}" InputGesture="Ctrl+N" />
+          <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" />
         </ContextMenu>
       </ListBox.ContextMenu>
       <ListBox.Styles>

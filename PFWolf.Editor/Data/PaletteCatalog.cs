@@ -291,5 +291,8 @@ public static class PaletteCatalog
     /// it in place of the palette of that name. Returns where it went.
     /// </summary>
     public static string Save(string modPath, string name, IReadOnlyList<PaletteColor> colors)
-        => Editing.ModFiles.Write(modPath, ($"palettes/{name.ToLowerInvariant()}.pal", ToRaw(colors)));
+        => Editing.ModFiles.Write(modPath, (EntryPath(name), ToRaw(colors)));
+
+    /// <summary>Where saving puts a palette in a mod: palettes/name.pal</summary>
+    public static string EntryPath(string name) => $"palettes/{name.ToLowerInvariant()}.pal";
 }

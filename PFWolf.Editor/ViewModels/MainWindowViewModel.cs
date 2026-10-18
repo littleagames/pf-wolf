@@ -279,6 +279,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _artBrowser.Status = status ?? "";
     }
 
+    // A browser took a file out of a mod: the game is loaded again without it, back on the level
+    // that was open, and the browser still says what it did
+    private async Task ReloadAfterDelete(Func<string> status, Action<string> setStatus)
+    {
+        var (said, before, level) = (status(), Content, SelectedMap?.Name);
+        if (CanLoad)
+            await LoadAsync();
+        if (Content == before || Content == null)
+        {
+            setStatus(said + "  (load the game again to see it)");
+            return;
+        }
+        if (Maps.FirstOrDefault(map => map.Name.Equals(level, StringComparison.OrdinalIgnoreCase)) is { } map)
+            SelectedMap = map;
+        setStatus(said);
+    }
+
     // A game loaded again: the browsers list its pictures (the old ones' bitmaps are gone) and sounds
     partial void OnArtChanged(ArtCache? value)
     {
@@ -318,6 +335,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
                 Art = (hint, name) => hint == Definitions.FieldHint.Class ? Art?.ThingSprite(name) : Art?.Texture(name),
             };
             _definitions.SavedToMod += (_, folder) => AddModFolder(folder);
@@ -384,8 +402,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
             };
             _textBrowser.Saved += (_, folder) => AddModFolder(folder);
+            _textBrowser.Deleted += async (_, _) => await ReloadAfterDelete(() => _textBrowser.Status, status => _textBrowser.Status = status);
             _textBrowser.Load(Content);
         }
         Dialogs.ShowTextBrowser(_textBrowser);
@@ -410,8 +430,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
             };
             _scriptBrowser.Saved += (_, folder) => AddModFolder(folder);
+            _scriptBrowser.Deleted += async (_, _) => await ReloadAfterDelete(() => _scriptBrowser.Status, status => _scriptBrowser.Status = status);
             // An action's caller: the actor class in the Definitions window, opened at the state's frame
             _scriptBrowser.ShowCaller += (_, caller) =>
             {
@@ -442,8 +464,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _paletteBrowser = new PaletteBrowserViewModel
             {
                 PickMod = PickModToSaveIn,
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
             };
             _paletteBrowser.Saved += (_, folder) => AddModFolder(folder);
+            _paletteBrowser.Deleted += async (_, _) => await ReloadAfterDelete(() => _paletteBrowser.Status, status => _paletteBrowser.Status = status);
             _paletteBrowser.GamePaletteChanged += (_, colors) => QueueRecolor(colors);
             _paletteBrowser.Load(Content);
         }
@@ -533,7 +557,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (_soundBrowser == null)
         {
-            _soundBrowser = new SoundBrowserViewModel();
+            _soundBrowser = new SoundBrowserViewModel
+            {
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+            };
+            _soundBrowser.Deleted += async (_, _) => await ReloadAfterDelete(() => _soundBrowser.Status, status => _soundBrowser.Status = status);
             _soundBrowser.Load(Content);
             if (Document?.Properties.Music is { Length: > 0 } music)
                 _soundBrowser.Show(SoundKind.Music, music);
@@ -839,7 +867,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             EditTool.Fill => "Click to fill",
             EditTool.Pick => "Click a tile to pick what's on it",
             _ => "",
-        } + " · middle or right drag: pan · wheel: zoom · Home: fit";
+        } + " · middle or right drag: pan · wheel: zoom (Shift/Alt: scroll) · Home: fit";
 
     // The selection or the paste changed: what the options bar, the status bar and the Edit menu offer
     private void OnToolStateChanged()
