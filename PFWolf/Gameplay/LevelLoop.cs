@@ -80,7 +80,9 @@ internal sealed class LevelLoop(
 
         do
         {
+            FrameProfiler.BeginFrame();
             polling.PollControls();
+            FrameProfiler.Mark(FrameProfiler.Section.Input);
 
             // With con_pause on, an open console freezes the world but keeps drawing it.
             // CalcTics still advances LastTimeCount each frame, so no time builds up to be
@@ -117,7 +119,9 @@ internal sealed class LevelLoop(
 
                 // Every actor lives in map._actors. The player is at its head, so it still
                 // thinks before every enemy, projectile and the BJ-victory actor.
+                FrameProfiler.Mark(FrameProfiler.Section.World);       // doors, pushwalls and switches
                 map.DoActors(session.Tics);
+                FrameProfiler.Mark(FrameProfiler.Section.Actors);
                 floorDamage.Tick();                     // floors that hurt (Gameplay/FloorDamage.cs)
                 foreach (var p in session.Players)    // pickups each player walked onto (Rendering/PlayerView.cs)
                 {
@@ -144,6 +148,7 @@ internal sealed class LevelLoop(
             }
 
             hooks.UpdateAutomap();
+            FrameProfiler.Mark(FrameProfiler.Section.World);
 
             frame.ThreeDRefresh();
 

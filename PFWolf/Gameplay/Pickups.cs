@@ -60,12 +60,12 @@ internal sealed class Pickups(
         // floor, unless it's flagged ALWAYSPICKUP.
         if (builtActor.Properties.TryGetValue("inventory.amount", out var amount)
             && !stats.TryApplyInventory(builtActor, Convert.ToInt32(amount))
-            && !builtActor.Flags.Contains("INVENTORY.ALWAYSPICKUP", StringComparer.OrdinalIgnoreCase))
+            && !builtActor.HasFlag("INVENTORY.ALWAYSPICKUP"))
         {
             return;
         }
 
-        if (builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
+        if (builtActor.HasFlag("COUNTITEM"))
             session.GameState.TreasureCount++;
 
         builtActor.RunState("Pickup");

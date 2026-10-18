@@ -118,7 +118,15 @@ internal record Actor : Thinker
     }
 
     /// <summary>Whether its actordefs `flags:` include <paramref name="flag"/> (any case)</summary>
-    internal bool HasFlag(string flag) => Flags.Contains(flag, StringComparer.OrdinalIgnoreCase);
+    internal bool HasFlag(string flag)
+    {
+        // A loop over the set itself: asked of every actor every tic, and LINQ's Contains with
+        // a comparer would box an enumerator each time
+        foreach (var f in Flags)
+            if (f.Equals(flag, StringComparison.OrdinalIgnoreCase))
+                return true;
+        return false;
+    }
 
     /// <summary>A property as a list of strings: one value, or each in a list; empty when it isn't set</summary>
     internal List<string> PropertyStrings(string key) =>

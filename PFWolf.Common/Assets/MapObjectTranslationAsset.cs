@@ -358,7 +358,14 @@ public record MapTextureTranslation
     public List<string> Flip { get; init; } = [];
 
     /// <summary>Whether the face ("north", "south", "east" or "west") is drawn mirrored (<see cref="Flip"/>)</summary>
-    public bool IsFlipped(string face) => Flip.Contains(face, StringComparer.OrdinalIgnoreCase);
+    public bool IsFlipped(string face)
+    {
+        // A plain loop: the renderer asks for every wall column it draws
+        foreach (var flipped in Flip)
+            if (flipped.Equals(face, StringComparison.OrdinalIgnoreCase))
+                return true;
+        return false;
+    }
 
     /// <summary>
     /// Doors only: the inventory item class (e.g. "GoldKey") the player must carry to open
@@ -441,7 +448,7 @@ public record MapTextureTranslation
     /// <summary>Walls only: makes this wall an outlet enemies come out of (Blake Stone's electro-aliens).</summary>
     public MapOutletTranslation? Outlet { get; init; }
 
-    public static MapTextureTranslation None => new(); // TODO: Missing texture
+    public static MapTextureTranslation None { get; } = new(); // TODO: Missing texture
 }
 
 /// <summary>

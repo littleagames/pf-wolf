@@ -17,6 +17,20 @@ internal class VisibleObject
     public int WorldX, WorldY;                  // where it stands (global units), for its light
     public Assets.SpriteTranslation? Translation;   // its colors remapped (Managers/TranslationManager.cs), or null
     public double Z;                            // drawn this many texels higher than its art puts it (Actor.Z)
+
+    /// <summary>Back to as it was made, to be used again</summary>
+    public void Reset()
+    {
+        TileX = TileY = 0;
+        ViewX = ViewHeight = 0;
+        ShapeNum = null!;
+        Flags = default;
+        WallSprite = null;
+        Bright = Cloaked = false;
+        WorldX = WorldY = 0;
+        Translation = null;
+        Z = 0;
+    }
 }
 
 internal enum ButtonType

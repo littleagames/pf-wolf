@@ -43,11 +43,11 @@ internal static class WallSprites
     internal const string WallSpriteOffsetProperty = "wallsprite.offset";
 
     internal static bool IsWallSprite(Entities.Actors.Actor actor) =>
-        actor.Flags.Contains(WallSpriteFlag, StringComparer.OrdinalIgnoreCase);
+        actor.HasFlag(WallSpriteFlag);
 
     /// <summary>A WALLSPRITE.PASSABLE panel: nothing moving is stopped by it</summary>
     internal static bool IsPassable(Entities.Actors.Actor actor) =>
-        actor.Flags.Contains(WallSpritePassableFlag, StringComparer.OrdinalIgnoreCase);
+        actor.HasFlag(WallSpritePassableFlag);
 
     /// <summary>
     /// A panel with health (a window, a curtain) that's been destroyed, so it's no longer
@@ -185,7 +185,7 @@ internal sealed class WallSpriteBlocking(MapManager map)
                 continue;
             if (WallSprites.IsPassable(actor) || WallSprites.IsBroken(actor))
                 continue;
-            if (!player && actor.Flags.Contains(WallSprites.WallSpriteProjectileThroughFlag, StringComparer.OrdinalIgnoreCase))
+            if (!player && actor.HasFlag(WallSprites.WallSpriteProjectileThroughFlag))
                 continue;
             if (!WallSprites.BoxHitsWallSprite(span, x, y, size))
                 continue;
@@ -206,7 +206,7 @@ internal sealed class WallSpriteBlocking(MapManager map)
         {
             if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
                 continue;
-            if (!WallSprites.IsWallSprite(actor) || actor.Flags.Contains(WallSprites.WallSpriteShootThroughFlag, StringComparer.OrdinalIgnoreCase)
+            if (!WallSprites.IsWallSprite(actor) || actor.HasFlag(WallSprites.WallSpriteShootThroughFlag)
                 || WallSprites.IsBroken(actor))
                 continue;
             if (WallSprites.GetWallSpriteSpan(actor) is { } span && WallSprites.LineHitsWallSprite(span, x1, y1, x2, y2))

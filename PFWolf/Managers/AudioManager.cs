@@ -1,6 +1,7 @@
 using NukedOPL3Sharp;
 using OpenTK.Audio.OpenAL;
 using SDL2;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using PFWolf.Assets;
 using PFWolf.Assets.Sounds;
@@ -744,30 +745,77 @@ internal class AudioManager
         ALC.CloseDevice(_device);
     }
 
-    private static int CreateBuffer(Wolf3dDigitizedAudio sound)
+    // Sounds' samples made ahead of time, off the game's thread (PrerenderSounds): an AdLib sound
+    // takes milliseconds to play through the OPL emulator, enough to drop a frame the first time
+    // it's heard. Each is taken out as its buffer is made.
+    private readonly ConcurrentDictionary<Asset, Array> _prerendered = new(ReferenceEqualityComparer.Instance);
+
+    /// <summary>
+    /// Starts making every sound's samples in the background, so none is made while the game is
+    /// being played. Call once the assets are loaded; a sound played before its turn is made then.
+    /// </summary>
+    public void PrerenderSounds()
+    {
+        if (!IsActive)
+            return;
+        var assets = _assetManager.Value;
+        var adLib = assets.GetAll<AdLibSound>();
+        var digitized = assets.GetAll<Wolf3dDigitizedAudio>();
+        var pc = assets.GetAll<PcSound>();
+        Task.Run(() =>
+        {
+            // the slowest to make first
+            foreach (var sound in adLib)
+                Prerender(sound, sound.ToMono8);
+            foreach (var sound in digitized)
+                Prerender(sound, () => sound.ToPcm16(44100));
+            foreach (var sound in pc)
+                Prerender(sound, sound.ToMono8);
+        });
+    }
+
+    private void Prerender(Asset sound, Func<Array> render)
+    {
+        if (_isDisposed)
+            return;
+        try
+        {
+            _prerendered.TryAdd(sound, render());
+        }
+        catch (Exception)
+        {
+            // left to fail as it's played, where it's reported
+        }
+    }
+
+    // The sound's samples: made ahead, else now
+    private T Samples<T>(Asset sound, Func<T> render) where T : class =>
+        _prerendered.TryRemove(sound, out var data) && data is T samples ? samples : render();
+
+    private int CreateBuffer(Wolf3dDigitizedAudio sound)
     {
         var buffer = AL.GenBuffer();
-        var data = sound.ToPcm16(44100);
+        var data = Samples(sound, () => sound.ToPcm16(44100));
         AL.BufferData(buffer, ALFormat.Mono16, data, 44100);
         return buffer;
     }
-    private static int CreateBuffer(SoundFileAsset sound)
+    private int CreateBuffer(SoundFileAsset sound)
     {
         var buffer = AL.GenBuffer();
         AL.BufferData(buffer, ALFormat.Mono16, sound.Samples, sound.SampleRate);
         return buffer;
     }
-    private static int CreateBuffer(AdLibSound sound)
+    private int CreateBuffer(AdLibSound sound)
     {
         var buffer = AL.GenBuffer();
-        var data = sound.ToMono8();
+        var data = Samples(sound, sound.ToMono8);
         AL.BufferData(buffer, ALFormat.Mono8, data, 44100);
         return buffer;
     }
-    private static int CreateBuffer(PcSound sound)
+    private int CreateBuffer(PcSound sound)
     {
         var buffer = AL.GenBuffer();
-        var data = sound.ToMono8();
+        var data = Samples(sound, sound.ToMono8);
         AL.BufferData(buffer, ALFormat.Mono8, data, 44100);
         return buffer;
     }

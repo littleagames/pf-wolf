@@ -1116,7 +1116,7 @@ internal class MapManager
         // AMBUSH actors (the bosses, the Pac-Man ghosts) are always spawned ambush-ready,
         // whatever the floor tile beneath them, unlike grunts, which only ambush when placed
         // on an ambush tile.
-        var alwaysAmbush = builtActor.Flags.Contains("AMBUSH", StringComparer.OrdinalIgnoreCase);
+        var alwaysAmbush = builtActor.HasFlag("AMBUSH");
         var hasHealth = builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal));
 
         if (!hasHealth && builtActor.Properties.ContainsKey("speed"))
@@ -1141,7 +1141,7 @@ internal class MapManager
                 session.GameState.KillTotal++;
 
             // Points only for the first kill (Monster.Kill clears it)
-            if (builtActor.Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
+            if (builtActor.HasFlag("POINTSONCE"))
                 builtActor.RuntimeFlags |= ObjFlags.Bonus;
 
             if (alwaysAmbush)
@@ -1194,7 +1194,7 @@ internal class MapManager
 
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
         // (Gameplay/Pickups.cs) bumps TreasureCount on pickup off the same flag.
-        if (!session.LoadedGame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
+        if (!session.LoadedGame && builtActor.HasFlag("COUNTITEM"))
             session.GameState.TreasureTotal++;
 
         //if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
@@ -1404,7 +1404,7 @@ internal class MapManager
         foreach (var actor in _actors)
         {
             if (!actor.IsRemoved && actor.TileX == tilex && actor.TileY == tiley
-                && actor.Flags.Contains("PATROLPOINT", StringComparer.OrdinalIgnoreCase))
+                && actor.HasFlag("PATROLPOINT"))
                 return actor;
         }
         return null;
@@ -1451,7 +1451,7 @@ internal class MapManager
     /// (Blake Stone's hanging turrets and electro-spheres, which things pass under or through)
     /// </summary>
     internal static bool IsSolidActor(Entities.Actors.Actor actor) =>
-        actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && !actor.Flags.Contains("NOTSOLID", StringComparer.OrdinalIgnoreCase);
+        actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && !actor.HasFlag("NOTSOLID");
 
     /// <summary>
     /// Creates a fresh pawn for a player, replacing any they had, at the head of _actors after
@@ -1502,7 +1502,8 @@ internal class MapManager
     private void FindCombatants()
     {
         Combatants.Clear();
-        var sides = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var sides = _combatantSides;
+        sides.Clear();
         foreach (var actor in _actors)
         {
             if (actor is Entities.Actors.Monster monster && !actor.IsRemoved && actor.Faction != null
@@ -1513,8 +1514,17 @@ internal class MapManager
             }
         }
 
+        HasRivalries = sides.Count > 1 && AnyRivals(sides);
+    }
+
+    // The sides FindCombatants found, kept to be filled again each frame
+    private readonly HashSet<string> _combatantSides = new(StringComparer.OrdinalIgnoreCase);
+
+    // Apart from FindCombatants, so the lambdas' closure is only made with two sides or more
+    private bool AnyRivals(HashSet<string> sides)
+    {
         var table = factionManager.Value.Table;
-        HasRivalries = sides.Count > 1 && sides.Any(side => sides.Any(other => table.IsHostile(side, other)));
+        return sides.Any(side => sides.Any(other => table.IsHostile(side, other)));
     }
 
     internal void DoActors(uint tics)

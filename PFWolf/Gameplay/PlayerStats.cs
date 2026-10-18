@@ -41,7 +41,7 @@ internal sealed class PlayerStats(
         const string AlwaysGrin = "WEAPON.ALWAYSGRIN";
         var given = item.Properties.TryGetValue("weapongiver.weapon", out var weapon) ? weapon?.ToString() : null;
         if (string.IsNullOrEmpty(pickupSound)
-            || !(item.Flags.Contains(AlwaysGrin, StringComparer.OrdinalIgnoreCase)
+            || !(item.HasFlag(AlwaysGrin)
                 || given != null && inventory.CreateActor(given)?.Flags.Contains(AlwaysGrin, StringComparer.OrdinalIgnoreCase) == true))
             return;
 

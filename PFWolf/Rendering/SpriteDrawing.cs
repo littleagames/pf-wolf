@@ -141,7 +141,7 @@ internal sealed class SpriteDrawing(
         ob.ViewHeight = (ushort)(render.HeightNumerator / (nx >> 8));
     }
 
-    internal readonly Dictionary<string, bool> DirectionalSpriteCache = [];
+    internal readonly Dictionary<(string, string), bool> DirectionalSpriteCache = [];
 
     // There's no per-frame "rotate" flag in the actordefs schema -- the engine infers it
     // from how many sprite variants actually exist. Walk-cycle sprites (e.g. GARDB1..B8)
@@ -151,12 +151,14 @@ internal sealed class SpriteDrawing(
     // the game's own single view (multiplayer.pk3's shooting guards, GARDF2..F8 beside GARDF0).
     internal bool HasDirectionalSprites(string sprite, string frameLetter)
     {
-        var cacheKey = $"{sprite}{frameLetter}";
-        if (DirectionalSpriteCache.TryGetValue(cacheKey, out var cached))
+        if (DirectionalSpriteCache.TryGetValue((sprite, frameLetter), out var cached))
             return cached;
 
-        var hasRotations = Enumerable.Range(1, 8).Any(r => hooks.SpriteExists($"{sprite}{frameLetter}{r}"));
-        DirectionalSpriteCache[cacheKey] = hasRotations;
+        var names = Entities.Actors.ActorStateFrame.ShapeNames(sprite, frameLetter);
+        bool hasRotations = false;
+        for (int r = 1; r <= 8 && !hasRotations; r++)       // no lambda: its closure would be made on every call
+            hasRotations = hooks.SpriteExists(names[r]);
+        DirectionalSpriteCache[(sprite, frameLetter)] = hasRotations;
         return hasRotations;
     }
 
@@ -167,17 +169,21 @@ internal sealed class SpriteDrawing(
     /// </summary>
     internal string ActorShapeName(string sprite, string frameLetter, Entities.Actors.Actor actor)
     {
-        var single = $"{sprite}{frameLetter}0";
+        var names = Entities.Actors.ActorStateFrame.ShapeNames(sprite, frameLetter);
+        var single = names[0];
         if (!HasDirectionalSprites(sprite, frameLetter))
             return single;
 
-        var view = $"{sprite}{frameLetter}{CalcRotate(actor)}";
+        var view = names[CalcRotate(actor)];
         return hooks.SpriteExists(view) || !hooks.SpriteExists(single) ? view : single;
     }
 
     /// <summary>The picture of a frame seen from the front: view 1, else its single view</summary>
-    internal string FrontShapeName(string sprite, string frameLetter) =>
-        hooks.SpriteExists($"{sprite}{frameLetter}1") ? $"{sprite}{frameLetter}1" : $"{sprite}{frameLetter}0";
+    internal string FrontShapeName(string sprite, string frameLetter)
+    {
+        var names = Entities.Actors.ActorStateFrame.ShapeNames(sprite, frameLetter);
+        return hooks.SpriteExists(names[1]) ? names[1] : names[0];
+    }
 
     internal int CalcRotate(Entities.Actors.Actor ob)
     {
@@ -186,7 +192,7 @@ internal sealed class SpriteDrawing(
         // A projectile (Rocket, the Death Knight's HeavyRocket) has no Dir -- it flies at an
         // arbitrary angle -- so it rotates by its heading. So does the player's body.
         int angle;
-        if (ob.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase) || hooks.IsPlayerBody(ob))
+        if (ob.HasFlag("PROJECTILE") || hooks.IsPlayerBody(ob))
             angle = (viewangle - 180) - ob.Angle;
         else if (AimAngle(ob) is { } facing)
             angle = (viewangle - 180) - facing;
@@ -257,7 +263,10 @@ internal sealed class SpriteDrawing(
             else if (actor == looker)
                 continue;                                               // the one looked through
 
-            VisibleObject visptr_val = new VisibleObject();
+            // The slot's entry from an earlier frame, filled in afresh: not one made for each
+            // thing each frame. It's only kept (visptr moves on) if the thing's drawn.
+            VisibleObject visptr_val = VisList[visptr] ??= new VisibleObject();
+            visptr_val.Reset();
             visptr_val.Translation = translation;
             if (actor.CurrentState == null)
                 continue;

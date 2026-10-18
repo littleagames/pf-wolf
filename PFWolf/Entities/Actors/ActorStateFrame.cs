@@ -27,6 +27,23 @@ internal class ActorStateFrame
     public string GetShapeName(ObjDir dir)
     {
         var frame = dir == ObjDir.NoDir ? 0 : (int)dir;
-        return $"{Sprite}{FrameLetter}{frame}";
+        return ShapeNames(Sprite, FrameLetter)[frame];
     }
+
+    private static readonly Dictionary<(string, string), string[]> _shapeNames = [];
+
+    /// <summary>
+    /// A frame's picture names, view 0 (its single view) to 8: "GARDA0" to "GARDA8". Made once,
+    /// as the renderer asks for them every frame for everything it draws.
+    /// </summary>
+    public static string[] ShapeNames(string sprite, string frameLetter)
+    {
+        if (!_shapeNames.TryGetValue((sprite, frameLetter), out var names))
+            _shapeNames[(sprite, frameLetter)] = names = MakeShapeNames(sprite, frameLetter);
+        return names;
+    }
+
+    // Apart from ShapeNames, whose every call would otherwise make the lambda's closure
+    private static string[] MakeShapeNames(string sprite, string frameLetter) =>
+        Enumerable.Range(0, 9).Select(view => $"{sprite}{frameLetter}{view}").ToArray();
 }

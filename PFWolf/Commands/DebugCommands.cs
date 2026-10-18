@@ -31,6 +31,7 @@ internal sealed class DebugCommands(
             complete: (_, i) => i == 0 ? map.GetActors().Select(a => a.Name) : []);
         console.Register("maps", "Lists the levels that map can warp to.", "maps", MapsCommand);
         console.Register("fps", "Toggles the frame rate counter.", "fps [0|1]", FpsCommand, complete: Values("0", "1"));
+        console.Register("perf", "Times each part of every frame from now on (1), stops (0), or shows what's been timed (no argument).", "perf [0|1]", PerfCommand, complete: Values("0", "1"));
         console.Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", SlowMoCommand);
         console.Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", VblsCommand);
         console.Register("fade", "Fades the view out to black and back in, to try a fade style.",
@@ -140,6 +141,19 @@ internal sealed class DebugCommands(
 
         if (map.Player != null)
             console.Print($"Current map is {session.GameState.MapOn}");
+    }
+
+    internal void PerfCommand(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            foreach (var line in Rendering.FrameProfiler.Report().Split('\n'))
+                console.Print(line.TrimEnd('\r'));
+            return;
+        }
+        Rendering.FrameProfiler.Enabled = Toggle(args, Rendering.FrameProfiler.Enabled);
+        Rendering.FrameProfiler.Reset();
+        console.Print(Rendering.FrameProfiler.Enabled ? "Frame timing ON" : "Frame timing OFF");
     }
 
     internal void FpsCommand(string[] args)

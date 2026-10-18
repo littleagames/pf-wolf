@@ -1,4 +1,4 @@
-﻿using PFWolf.Assets;
+using PFWolf.Assets;
 using PFWolf.Exceptions;
 using PFWolf.Loaders;
 
@@ -64,7 +64,7 @@ public class AssetManager
         foreach (var kvp in assets)
         {
             if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
+                SetAsset(kvp.Key, kvp.Value);
         }
 
         var rawDataMap = FindInGamePackIfAny<RawDataMapAsset>("raw-data-map");
@@ -128,7 +128,7 @@ public class AssetManager
     {
         _gamePackId = gamePackId;
         foreach (var (name, asset) in assets)
-            _assets[GetKey(name, asset.GetType().Name)] = asset;
+            SetAsset(GetKey(name, asset.GetType().Name), asset);
         BuildAnimations();
     }
 
@@ -204,7 +204,7 @@ public class AssetManager
 
         foreach (var (key, animation) in built)
         {
-            _assets[key] = animation;
+            SetAsset(key, animation);
             if (!_origins.TryGetValue(key, out var origins))
                 _origins[key] = origins = [];
             origins.Add(new AssetOrigin("animdefs", key.Substring(key.IndexOf(':') + 1), "animated"));
@@ -305,7 +305,7 @@ public class AssetManager
         origins.InsertRange(0, history);
 
         if (!_assets.ContainsKey(key))
-            _assets[key] = asset;
+            SetAsset(key, asset);
     }
 
     /// <summary>
@@ -434,6 +434,9 @@ public class AssetManager
         => _assets.Keys.Select(key => key.Substring(key.IndexOf(':') + 1)).Distinct();
 
     /// <summary>The Lua scripts (scripts/*.lua in pfwolf.pk3 and the mods), in the order they run</summary>
+    /// <summary>Every asset of this type, under whatever name</summary>
+    public IReadOnlyList<T> GetAll<T>() where T : Asset => _assets.Values.OfType<T>().Distinct().ToList();
+
     public IReadOnlyList<ScriptAsset> GetScripts() => _assets.Values.OfType<ScriptAsset>().OrderBy(script => script.Order).ToList();
 
     /// <summary>How many differently named assets there are of any of these types</summary>
@@ -452,8 +455,14 @@ public class AssetManager
         if (string.IsNullOrWhiteSpace(assetName))
             return false;
 
-        return _assets.ContainsKey(GetKey(assetName, typeof(T).Name));
+        // Asked every frame (whether a sprite has views, the mapdefs): remembered as asked for
+        if (_exists.TryGetValue((typeof(T), assetName), out var exists))
+            return exists;
+        return _exists[(typeof(T), assetName)] = _assets.ContainsKey(GetKey(assetName, typeof(T).Name));
     }
+
+    // What Exists answered for a type and name as given; forgotten whenever an asset is added
+    private readonly Dictionary<(Type, string), bool> _exists = [];
 
     /// <summary>
     /// The asset of this name; for an animation, its frame showing now by <see cref="AnimationClock"/>
@@ -508,18 +517,37 @@ public class AssetManager
             return null;
         }
 
+        // The renderer looks names up many times a frame: remembered as asked for, so the
+        // lowercased key isn't built again each time
+        if (_found.TryGetValue((typeof(T), assetName), out var cached))
+            return cached;
+
         var key = GetKey(assetName, assetType);
 
         if (_assets.TryGetValue(key, out var foundAsset))
+        {
+            _found[(typeof(T), assetName)] = foundAsset;
             return foundAsset;
+        }
 
         // Once per asset: the renderer looks up a missing wall texture every frame
         if (_reportedMissing.Add(key))
             WarningLog.Write($"Asset not found: {assetName} (Type: {assetType})");
+        _found[(typeof(T), assetName)] = null;
         return null;
     }
 
     private readonly HashSet<string> _reportedMissing = [];
+
+    // What FindAsset found (or didn't) for a type and name as given; forgotten whenever an asset is added
+    private readonly Dictionary<(Type, string), Asset?> _found = [];
+
+    private void SetAsset(string key, Asset asset)
+    {
+        _assets[key] = asset;
+        _found.Clear();
+        _exists.Clear();
+    }
 
     /// <summary>The running game pack ("wolf3d", "spear")</summary>
     public string GamePackId => _gamePackId;
@@ -534,14 +562,24 @@ public class AssetManager
     /// Finds an asset belonging to the running game pack, e.g. "alias" -> "wolf3d/alias"
     /// </summary>
     public T? FindInGamePack<T>(string assetName) where T : Asset
-        => Find<T>($"{_gamePackId}/{assetName}");
+        => Find<T>(GamePackName(assetName));
 
     /// <summary>
     /// The running game pack's asset, or null without a warning: for files a game can go
     /// without (a standalone game may have no status bar, raw-data-map or language strings)
     /// </summary>
     public T? FindInGamePackIfAny<T>(string assetName) where T : Asset
-        => Exists<T>($"{_gamePackId}/{assetName}") ? FindInGamePack<T>(assetName) : null;
+        => Exists<T>(GamePackName(assetName)) ? FindInGamePack<T>(assetName) : null;
+
+    // "wolf3d/mapdefs" for "mapdefs", made once: the renderer asks for the mapdefs many times a frame
+    private string GamePackName(string assetName)
+    {
+        if (!_gamePackNames.TryGetValue((_gamePackId, assetName), out var name))
+            _gamePackNames[(_gamePackId, assetName)] = name = $"{_gamePackId}/{assetName}";
+        return name;
+    }
+
+    private readonly Dictionary<(string, string), string> _gamePackNames = [];
 
     /// <summary>
     /// Palette asset name the running release uses (its game-palette in gamepack-info)

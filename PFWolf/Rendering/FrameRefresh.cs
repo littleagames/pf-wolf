@@ -176,11 +176,13 @@ internal sealed class FrameRefresh(
         lighting.UpdateLightGrid();
         actorLights.CastActorLights();
         map.AnimateFlats(session.GameState.TimeCount);     // animated floors and ceilings, on the level's clock as walls are
+        FrameProfiler.Mark(FrameProfiler.Section.Lights);
 
         //
         // follow the walls from there to the right, drawing as we go
         //
         skyAndFlats.VGAClearScreen();
+        FrameProfiler.Mark(FrameProfiler.Section.Flats);
 
         render.MarkSeen = camera.OnPlayer;     // the automap only learns what the player sees
         weather.SetupWeather();
@@ -188,12 +190,14 @@ internal sealed class FrameRefresh(
 
         if (render.MarkSeen)
             map.MarkSeenFromSpotvis();      // floor the rays crossed, for the automap
+        FrameProfiler.Mark(FrameProfiler.Section.Walls);
 
         //
         // draw all the scaled images
         //
         spriteDrawing.DrawScaleds();                  // draw scaled stuff
         playerView.PlayerSight();                  // what the player sees, when the camera is elsewhere
+        FrameProfiler.Mark(FrameProfiler.Section.Sprites);
 
         // Looking through a scope, its picture takes the weapon in hand's place
         var scope = hooks.ScopePicture();
@@ -205,9 +209,11 @@ internal sealed class FrameRefresh(
 
         if (scope != null)
             hooks.DrawScope(scope);
+        FrameProfiler.Mark(FrameProfiler.Section.Weapon);
 
         // For the next save's thumbnail, before the automap or console is drawn over the view
         video.KeepViewCopy(render.ViewScreenX, render.ViewScreenY, render.ViewWidth, render.ViewHeight);
+        FrameProfiler.Mark(FrameProfiler.Section.ViewCopy);
 
         //
         // show screen and time last cycle
@@ -244,7 +250,9 @@ internal sealed class FrameRefresh(
             }
 
             hooks.DrawConsole();
+            FrameProfiler.Mark(FrameProfiler.Section.Overlays);
             video.Update();
+            FrameProfiler.Mark(FrameProfiler.Section.Present);
         }
 
         if (FpsCounter)

@@ -399,6 +399,7 @@ internal static partial class GameHost
             // Animated pictures in menus and the status bar play in real time; the view's walls,
             // flats and sky go by the level's clock instead (WorldTexture)
             AssetManager.AnimationClock = () => (int)GameEngineManager.GetTimeCount();
+            AudioManager.PrerenderSounds();     // in the background, so no sound is first made mid-game
         }
         catch (DataFilesException e)
         {

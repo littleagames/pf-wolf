@@ -197,7 +197,7 @@ internal sealed class Lighting(
 
     /// <summary>Whether an actor's frame is drawn unshaded: its state has the bright modifier, or the actor the BRIGHT flag.</summary>
     internal static bool IsBright(Entities.Actors.Actor actor) =>
-        actor.CurrentState?.Bright == true || actor.Flags.Contains("bright", StringComparer.OrdinalIgnoreCase);
+        actor.CurrentState?.Bright == true || actor.HasFlag("bright");
 
     internal void InitLevelShading(MapInfo? mapInfo)
     {

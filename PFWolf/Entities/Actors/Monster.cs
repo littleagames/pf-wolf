@@ -216,7 +216,7 @@ internal record Monster : Actor
                     if (!Hidden || !PlayerTileInView(pawn))
                     {
                         // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
-                        if (Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
+                        if (HasFlag("TOUCHDAMAGE"))
                             TakeDamage(pawn, (int)(Tics * 2), this);
 
                         OnBumpedPlayer();
@@ -344,7 +344,7 @@ internal record Monster : Actor
                 // without opening it. Don't set doornumtile for them: TryWalk would give
                 // them a "waiting on door" Distance, which T_Ghosts doesn't handle (its
                 // move loop then never ends).
-                if (Flags.Contains("PHASEDOORS", StringComparer.OrdinalIgnoreCase))
+                if (HasFlag("PHASEDOORS"))
                     return 2;
 
                 // NOLOCKEDDOORS actors (Blake Stone's) don't open a door that needs a key, and
@@ -1333,7 +1333,7 @@ internal record Monster : Actor
 
         // POINTSONCE actors (Spectres, which come back) only pay out the first time;
         // Bonus is set at spawn and cleared here, as in the original
-        if (!Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
+        if (!HasFlag("POINTSONCE"))
             GivePoints(Convert.ToInt32(points));
         else if (RuntimeFlags.HasFlag(ObjFlags.Bonus))
         {

@@ -49,12 +49,17 @@ internal static class ActorActionRegistry
     internal static Type? NeededClass(string? actionCall) =>
         string.IsNullOrWhiteSpace(actionCall) ? null : _neededClass.GetValueOrDefault(Parse(actionCall).Name);
 
+    private static readonly Dictionary<string, (string Name, string[] Args)> _parsed = [];
+
     internal static void Invoke(string? actionCall, Actor actor)
     {
         if (string.IsNullOrWhiteSpace(actionCall))
             return;
 
-        var (name, args) = Parse(actionCall);
+        // Every actor's think runs every tic: each call is parsed once (handlers only read the args)
+        if (!_parsed.TryGetValue(actionCall, out var parsed))
+            _parsed[actionCall] = parsed = Parse(actionCall);
+        var (name, args) = parsed;
         if (_actions.TryGetValue(name, out var action))
         {
             action(actor, args);
