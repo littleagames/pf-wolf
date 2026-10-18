@@ -1,0 +1,10 @@
+# Merged into Spear of Destiny's game-info.yaml (and its demo's), after gamepacks/wolf3d/'s,
+# since Spear is built on Wolf3D: Wolf3D's arenas are made of Wolf3D's walls, so Spear has none,
+# as when they were pfwolf.pk3's (its own game-info gives its own maps whole).
+maps:
+  DM01: !remove
+  DM02: !remove
+  DM03: !remove
+  DM04: !remove
+  HE01: !remove
+  PH01: !remove

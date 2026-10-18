@@ -1,0 +1,8 @@
+# Merged into the Wolfenstein 3D Shareware's game-info.yaml, after gamepacks/wolf3d/'s (its
+# base pack's): DM01-DM04 are taken out again, as the shareware's own game-info did when the
+# arenas were pfwolf.pk3's. HE01 and PH01 stay, as they did then.
+maps:
+  DM01: !remove
+  DM02: !remove
+  DM03: !remove
+  DM04: !remove

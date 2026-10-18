@@ -492,7 +492,10 @@ public class PfWolfPk3Loader
     /// <summary>
     /// Loads the mods' files after everything in pfwolf.pk3. Mods keep everything at their root
     /// and apply to whichever game pack is running, so their data files load as if they were in
-    /// the running pack's folders (see GetModEntryPath). A file that can't be read is left out.
+    /// the running pack's folders (see GetModEntryPath). A mod for several games can also keep
+    /// one game's files in that pack's folder (gamepacks/wolf3d/game-info.yaml, maps/wolf3d/,
+    /// sprites/wolf3d/): those load only for that pack and the packs built on it, after the
+    /// mod's root files, the farthest base pack's first. A file that can't be read is left out.
     /// </summary>
     private void LoadModEntries(IReadOnlyList<IAssetSource> modSources)
     {
@@ -505,23 +508,87 @@ public class PfWolfPk3Loader
         foreach (var source in modSources)
         {
             var skippedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var entries = new List<(AssetSourceEntry Entry, string FullName)>();
+            var packEntries = Enumerable.Range(0, _basePackIds.Count + 1).Select(_ => new List<(AssetSourceEntry, string)>()).ToList();
             foreach (var path in source.EntryPaths)
             {
                 var entry = new AssetSourceEntry(source, path);
-                var fullName = GetModEntryPath(entry, skippedFolders);
-                if (fullName == null)
+                var packFolder = GetModPackFolder(path);
+                if (packFolder == null)
+                {
+                    var fullName = GetModEntryPath(entry, skippedFolders);
+                    if (fullName != null)
+                        entries.Add((entry, fullName));
+                    continue;
+                }
+
+                // Another game's folder: not for this one
+                var (folder, pack, packPath) = packFolder.Value;
+                var depth = pack.Equals(_gamePackId, StringComparison.OrdinalIgnoreCase)
+                    ? _basePackIds.Count
+                    : _basePackIds.FindIndex(id => id.Equals(pack, StringComparison.OrdinalIgnoreCase)) is var i and >= 0 ? _basePackIds.Count - 1 - i : -1;
+                if (depth < 0)
                     continue;
 
+                var packEntryName = folder == "gamepacks/" ? GetModPackFileName(source, pack, packPath, skippedFolders) : path;
+                if (packEntryName != null)
+                    packEntries[depth].Add((entry, packEntryName));
+            }
+
+            foreach (var (entry, fullName) in entries.Concat(packEntries.SelectMany(group => group)))
+            {
                 try
                 {
                     LoadEntry(entry, fullName, isMod: true);
                 }
                 catch (Exception e)
                 {
-                    Warn($"{source.Name}: {path} can't be loaded, so it's left out: {e.Message}");
+                    Warn($"{source.Name}: {entry.FullName} can't be loaded, so it's left out: {e.Message}");
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// For a mod's file in one game's folder (gamepacks/wolf3d/game-info.yaml, maps/wolf3d/DM01.wad,
+    /// sprites/wolf3d/X.png), that folder, the pack, and the path inside the pack's folder. Null
+    /// for any other file, including a subfolder of maps/ or sprites/ not named after a game pack.
+    /// </summary>
+    private (string Folder, string Pack, string Path)? GetModPackFolder(string path)
+    {
+        foreach (var folder in (string[])["gamepacks/", "maps/", "sprites/"])
+        {
+            if (!path.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var packFolderEnd = path.IndexOf('/', folder.Length);
+            if (packFolderEnd < 0)
+                return null;
+
+            var pack = path.Substring(folder.Length, packFolderEnd - folder.Length);
+            if (!_packIds.Contains(pack))
+                return null;
+            return (folder, pack, path.Substring(packFolderEnd + 1));
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Where a mod's gamepacks/{pack}/ file loads: the files a mod could keep at its root
+    /// (game-info.yaml, colors.yaml, ...) and language/*.yaml, as in the running pack's folder.
+    /// Anything else there is warned about once and left out.
+    /// </summary>
+    private string? GetModPackFileName(IAssetSource source, string pack, string rest, HashSet<string> skippedFolders)
+    {
+        if (ModRootGamePackFiles.Contains(rest))
+            return $"gamepacks/{_gamePackId}/{rest.ToLowerInvariant()}";
+        if (rest.StartsWith("language/", StringComparison.OrdinalIgnoreCase) && rest.IndexOf('/', "language/".Length) < 0)
+            return $"gamepacks/{_gamePackId}/language/{rest.Substring("language/".Length)}";
+
+        WarnOnce(source, skippedFolders, $"gamepacks/{pack}/{rest}",
+            $"a mod's gamepacks/{pack}/ holds only {string.Join(", ", ModRootGamePackFiles)} and language/");
+        return null;
     }
 
     /// <summary>
@@ -566,8 +633,10 @@ public class PfWolfPk3Loader
                 return folder + rest;
 
             case "gamepacks/":
+                // (gamepacks/{a known pack}/ was taken by GetModPackFolder)
                 WarnOnce(entry.Source, skippedFolders, folder,
-                    "mods keep game-info.yaml, colors.yaml and the rest at their root, for whichever game is running");
+                    "mods keep game-info.yaml, colors.yaml and the rest at their root, for whichever game is running, "
+                    + "or in gamepacks/{pack}/ for one game");
                 return null;
 
             default:

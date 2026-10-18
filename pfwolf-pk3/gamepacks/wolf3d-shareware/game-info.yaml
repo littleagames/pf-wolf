@@ -21,7 +21,8 @@ episodes:
 clusters: { 2: !remove , 3: !remove , 4: !remove , 5: !remove , 6: !remove }
 
 # Episode 1's floors (MAP01-MAP10) are Wolf3D's; the other episodes' aren't in the shareware
-# data, and neither are the deathmatch arenas
+# data (the deathmatch arenas are the Multiplayer mod's, which takes DM01-DM04 out again in its
+# gamepacks/wolf3d-shareware/game-info.yaml)
 maps:
   {
     MAP11: !remove , MAP12: !remove , MAP13: !remove , MAP14: !remove , MAP15: !remove ,
@@ -34,5 +35,4 @@ maps:
     MAP46: !remove , MAP47: !remove , MAP48: !remove , MAP49: !remove , MAP50: !remove ,
     MAP51: !remove , MAP52: !remove , MAP53: !remove , MAP54: !remove , MAP55: !remove ,
     MAP56: !remove , MAP57: !remove , MAP58: !remove , MAP59: !remove , MAP60: !remove ,
-    DM01: !remove , DM02: !remove , DM03: !remove , DM04: !remove ,
   }

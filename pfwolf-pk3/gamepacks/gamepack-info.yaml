@@ -20,7 +20,11 @@
 #   menudefs             a pack's own menu (menudefs/{pack}/NAME.yaml) is used in place of the
 #                        shared one; menus don't merge
 # A mod's files (it can't carry menudefs) merge key by key all the way down, whichever they are,
-# a class without extend too. Lists are always replaced whole. At any level a merge reaches, a
+# a class without extend too. A mod keeps them at its root, for whichever game is running; a mod
+# for several games can keep one game's own in gamepacks/{pack}/ (game-info.yaml and the other
+# root files, language/), maps/{pack}/ and sprites/{pack}/, which load only for that pack and
+# the packs built on it, after the root ones (multiplayer-pk3's Wolf3D arenas do this).
+# Lists are always replaced whole. At any level a merge reaches, a
 # value can be tagged:
 #   key: !remove         takes the key out (a class, a property, a state, a map, a setting...)
 #   key: !replace        followed by its own value: replaces what's there whole rather than

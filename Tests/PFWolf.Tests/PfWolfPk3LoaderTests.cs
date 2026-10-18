@@ -294,7 +294,8 @@ public class PfWolfPk3LoaderTests
             ["actordefs/sub/a.yaml"] = "A: {}\n",
             ["actordefs/sub/b.yaml"] = "B: {}\n",
             ["menudefs/sub/main-menu.yaml"] = "x: 1\n",     // a mod's menus go directly in menudefs/
-            ["gamepacks/alpha/game-info.yaml"] = "x: 1\n",
+            ["gamepacks/nopack/game-info.yaml"] = "x: 1\n",  // not a game pack
+            ["gamepacks/alpha/sub/x.yaml"] = "x: 1\n",       // not a file a pack folder holds
             ["readme.txt"] = "not an asset",
         });
 
@@ -302,10 +303,51 @@ public class PfWolfPk3LoaderTests
         var loader = new PfWolfPk3Loader([BasePk3()], "alpha", "alpha", [mod]);
 
         // Assert
-        Assert.That(loader.Warnings, Has.Count.EqualTo(3));
+        Assert.That(loader.Warnings, Has.Count.EqualTo(4));
         Assert.That(loader.Warnings, Has.Exactly(1).Contains("actordefs/sub/"));
         Assert.That(loader.Warnings, Has.Exactly(1).Contains("menudefs/sub/"));
-        Assert.That(loader.Warnings, Has.Exactly(1).Contains("gamepacks/"));
+        Assert.That(loader.Warnings, Has.Exactly(1).Contains("gamepacks/ is left out"));
+        Assert.That(loader.Warnings, Has.Exactly(1).Contains("gamepacks/alpha/sub/x.yaml"));
+    }
+
+    [Test]
+    public void A_Mods_Pack_Folder_Loads_Only_For_That_Pack_And_Those_Built_On_It()
+    {
+        // Arrange: root strings for every game, then alpha's and gamma's own
+        var mod = new MemoryAssetSource("mymod", new()
+        {
+            ["gamepacks/alpha/language/en-us.yaml"] = "BYE: alpha mod bye\n",
+            ["language/en-us.yaml"] = "BYE: mod bye\nHELLO: mod hello\n",
+            ["gamepacks/gamma/language/en-us.yaml"] = "HELLO: gamma mod hello\n",
+        });
+
+        // Act
+        var alpha = new PfWolfPk3Loader([BasePk3()], "alpha", "alpha", [mod]);
+        var beta = new PfWolfPk3Loader([BasePk3()], "beta", "beta", [mod]);
+        var gamma = new PfWolfPk3Loader([BasePk3()], "gamma", "gamma", [mod]);
+
+        // Assert: the pack's own file wins over the root one, whatever order they're listed in
+        Assert.That(Strings(alpha, "alpha/language/en-us")["BYE"], Is.EqualTo("alpha mod bye"));
+        Assert.That(Strings(alpha, "alpha/language/en-us")["HELLO"], Is.EqualTo("mod hello"));
+        Assert.That(Strings(beta, "beta/language/en-us")["BYE"], Is.EqualTo("alpha mod bye"));
+        Assert.That(Strings(gamma, "gamma/language/en-us")["BYE"], Is.EqualTo("mod bye"));
+        Assert.That(Strings(gamma, "gamma/language/en-us")["HELLO"], Is.EqualTo("gamma mod hello"));
+        Assert.That(alpha.Warnings.Concat(beta.Warnings).Concat(gamma.Warnings), Is.Empty);
+    }
+
+    [Test]
+    public void A_Mods_Maps_In_A_Pack_Folder_Load_Only_For_That_Pack()
+    {
+        // Arrange (levels load when first used, so the bytes needn't be a real one)
+        var mod = new MemoryAssetSource("mymod", [], new() { ["maps/gamma/ARENA.wad"] = [0] });
+
+        // Act
+        var alpha = new PfWolfPk3Loader([BasePk3()], "alpha", "alpha", [mod]);
+        var gamma = new PfWolfPk3Loader([BasePk3()], "gamma", "gamma", [mod]);
+
+        // Assert
+        Assert.That(gamma.GetAssetOrigins().Keys, Has.Some.Contains("arena"));
+        Assert.That(alpha.GetAssetOrigins().Keys, Has.None.Contains("arena"));
     }
 
     [Test]

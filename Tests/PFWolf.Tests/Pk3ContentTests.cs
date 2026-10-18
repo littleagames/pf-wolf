@@ -28,6 +28,11 @@ public class Pk3ContentTests
     private static PfWolfPk3Loader Load(string pack, string release) =>
         new([new DirectoryAssetSource(TestPaths.Pk3SourceFolder())], pack, release);
 
+    // With the Multiplayer mod (multiplayer-pk3), which has Wolf3D's arenas
+    private static PfWolfPk3Loader LoadWithMultiplayer(string pack, string release) =>
+        new([new DirectoryAssetSource(TestPaths.Pk3SourceFolder())], pack, release,
+            [new DirectoryAssetSource(Path.Combine(TestPaths.RepoRoot(), "multiplayer-pk3"))]);
+
     [TestCaseSource(nameof(GameCases))]
     public void Every_Game_Packs_Files_Load_Without_Warnings(string pack, string release)
     {
@@ -109,7 +114,7 @@ public class Pk3ContentTests
     public void Every_Wolf3d_Deathmatch_Arena_Has_A_Map_With_Starts()
     {
         // Arrange
-        var loader = Load("wolf3d", "wolf3d");
+        var loader = LoadWithMultiplayer("wolf3d", "wolf3d");
         var gameInfo = loader.Load<GameInfoAsset>("wolf3d/game-info");
         var mapdefs = loader.Load<MapObjectTranslationAsset>("wolf3d/mapdefs");
         var arenas = gameInfo.Maps.Where(m => m.Value.Deathmatch).Select(m => m.Key).ToList();
@@ -139,13 +144,30 @@ public class Pk3ContentTests
         Assert.That(problems, Is.Empty);
     }
 
+    [TestCase("wolf3d", "wolf3d", new[] { "DM01", "DM02", "DM03", "DM04", "HE01", "PH01" })]
+    [TestCase("wolf3d-shareware", "wolf3d-shareware", new[] { "HE01", "PH01" })]
+    [TestCase("wolf3d-apogee", "wolf3d-apogee", new[] { "DM01", "DM02", "DM03", "DM04", "HE01", "PH01" })]
+    [TestCase("spear", "spear", new string[0])]
+    [TestCase("spear-demo", "spear-demo", new string[0])]
+    public void Wolf3ds_Arenas_Come_With_The_Multiplayer_Mod_Only(string pack, string release, string[] withMod)
+    {
+        // Act
+        var plain = Load(pack, release).Load<GameInfoAsset>($"{pack}/game-info");
+        var modded = LoadWithMultiplayer(pack, release).Load<GameInfoAsset>($"{pack}/game-info");
+
+        // Assert
+        Assert.That(plain.Maps.Where(m => m.Value.Deathmatch), Is.Empty);
+        Assert.That(modded.Maps.Where(m => m.Value.Deathmatch).Select(m => m.Key), Is.EquivalentTo(withMod));
+    }
+
     [TestCase("wolf3d", "wolf3d")]
     [TestCase("spear", "spear")]
+    [TestCase("wolf3d-shareware", "wolf3d-shareware")]
+    [TestCase("wolf3d-apogee", "wolf3d-apogee")]
     public void Multiplayer_Pk3_Loads_As_A_Mod_And_Its_Actors_Hang_Together(string pack, string release)
     {
         // Act
-        var loader = new PfWolfPk3Loader([new DirectoryAssetSource(TestPaths.Pk3SourceFolder())], pack, release,
-            [new DirectoryAssetSource(Path.Combine(TestPaths.RepoRoot(), "multiplayer-pk3"))]);
+        var loader = LoadWithMultiplayer(pack, release);
         var problems = ActorProblems(loader, pack);
         var weapons = loader.Load<ActorTranslationAsset>($"{pack}/actordefs").Actors.Keys;
 

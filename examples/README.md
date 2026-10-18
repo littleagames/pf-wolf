@@ -216,8 +216,8 @@ keeping the version before each save as `NAME.pk3.bak`.
   when several do. A mod that adds games loads only in them, and it gets its own settings, saves
   and screenshots folder (`%APPDATA%\PFWolf\standalone-demo`).
 - Its files load in its own pack's folders, which start empty: no `actordefs/wolf3d`,
-  `mapdefs/wolf3d` or `gamepacks/wolf3d` files, and none of Wolf3D's deathmatch arenas or player
-  sprites (pfwolf.pk3 keeps those in `maps/wolf3d/` and `sprites/wolf3d/`). Only what's shared
+  `mapdefs/wolf3d` or `gamepacks/wolf3d` files, and none of Wolf3D's player sprites (pfwolf.pk3
+  keeps those in `sprites/wolf3d/`). Only what's shared
   comes along: `actordefs/native.yaml` (Inventory, Ammo, Health, Weapon...), `language/`,
   `sounds/sound-seq.yaml` (whose Wolf3D sound names the mod points at its own sounds) and the
   menus in `menudefs/`.
@@ -534,9 +534,12 @@ time limit are on the Rules screen. What each one is, in short:
   mutants), with breaks between when the dead come back. Everyone dead at once ends it.
 
 The arenas are game-info maps with `deathmatch: true` (made by `examples/tools/make-deathmatch-maps.ps1`).
+Wolf3D's are the Multiplayer mod's (`multiplayer-pk3/maps/wolf3d/` and
+`multiplayer-pk3/gamepacks/wolf3d/game-info.yaml`: DM01 Four Corners, DM02-DM04, HE01, PH01), so
+without the mod every mode starts on an episode, as Co-op does.
 An arena with no `modes:` list is one for every mode but Heist: the modes find spots for their
 flags, points and spawns on any map. `modes: [heist, team-deathmatch]` makes it an arena for those
-only (pfwolf-pk3's HE01, The Vault). Map things for them (pfwolf-pk3 `mapdefs/wolf3d`), all optional:
+only (HE01, The Vault). Map things for them (pfwolf-pk3 `mapdefs/wolf3d`), all optional:
 
 - 430-433 red team starts and 434-437 blue (facing north, east, south, west)
 - 440 red's flag, 441 blue's flag, 442 a control point, 443 a spot the hill can be,

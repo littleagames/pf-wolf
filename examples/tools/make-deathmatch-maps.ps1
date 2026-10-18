@@ -1,16 +1,30 @@
-# Builds Wolf3D's deathmatch arenas, pfwolf-pk3/maps/wolf3d/DM01.wad to DM04.wad (and HE01 for
-# Heist, PH01 for Prop Hunt), from the layouts drawn below. Run it after changing a layout:
+# Builds Wolf3D's deathmatch arenas, the Multiplayer mod's multiplayer-pk3/maps/wolf3d/DM01.wad
+# to DM04.wad (and HE01 for Heist, PH01 for Prop Hunt), from the layouts drawn below. Run it
+# after changing a layout:
 #
 #   powershell -ExecutionPolicy Bypass -File examples/tools/make-deathmatch-maps.ps1
 #
 # Each arena is drawn as its top-left quarter and mirrored across, then down, so every side
 # is the same (the last column and row are the middle ones, not repeated). The middle tile is
-# the level's own player start, which a deathmatch never uses but a level needs.
+# the level's own player start, which a deathmatch never uses but a level needs (an arena with
+# `Start` puts it there instead).
 #
 # Each level is an ECWolf binary map (a WAD holding a marker lump and a WDC3.1 PLANES lump)
-# with PFWolf's six planes; only walls/floors and objects are used. The arenas are listed in
-# gamepacks/wolf3d/game-info.yaml with `deathmatch: true` (and `modes:` for one made for some
-# modes only, as HE01 is for Heist). -Show prints each whole layout.
+# with PFWolf's six planes; walls/floors, objects and (for an arena with `Zones`) light zones
+# are used. The arenas are listed in multiplayer-pk3/gamepacks/wolf3d/game-info.yaml with
+# `deathmatch: true` (and `modes:` for one made for some modes only, as HE01 is for Heist).
+# -Show prints each whole layout.
+#
+# Besides `Walls`, an arena can give:
+#   Folder         the pk3 source folder it's written into (default multiplayer-pk3)
+#   QuadrantWalls  a character whose wall differs by quarter: @(NW, NE, SW, SE)
+#   Pushwalls      a character that's a pushwall in the wall of another (a QuadrantWalls one)
+#   Sided          a character whose thing differs by half: @(west, east)
+#   Start          @(x, y) of the level's own start, when the middle tile is taken
+#   Zones          the quarter's light zones, drawn like the layout (plane 5), and
+#   ZoneIds        what each of their characters is: a zone id, or @(NW, NE, SW, SE)
+# 45 degree walls are drawn 7 9 1 3 (where the solid corner is, as on a number pad: NW, NE, SW,
+# SE) in the arena's 'D' wall; mirroring turns them to match.
 
 param([switch]$Show)
 
@@ -66,30 +80,15 @@ $Common['b'] = @(0, 58)             # barrel
 $Common['w'] = @(0, 60)             # well
 $Common['e'] = @(0, 68)             # stove
 $Common['r'] = @(0, 69)             # rack
+# multiplayer-pk3's ammo (mapdefs/things.yaml), for arenas in that mod
+$Common['u'] = @(0, 424)            # gas can
+$Common['z'] = @(0, 422)            # rockets
+# 45 degree wall markers (mapdefs/wolf3d/diagonals.yaml), by the number-pad character
+$Diagonals = @{ '7' = 400; '9' = 401; '1' = 402; '3' = 403 }
+$Pushwall = 98                      # mapdefs/wolf3d/triggers.yaml
 
 # Walls: '#' each arena's own wall, '%' and '&' its others
 $Arenas = @(
-    @{
-        Name = 'DM01'; Title = 'The Courtyard'
-        Walls = @{ '#' = 1; '%' = 3 }                   # grey stone, grey stone with a flag
-        Quarter = @(
-            '###############'
-            '#v.........m...'
-            '#..............'
-            '#..#####%#####-'
-            '#..#...........'
-            '#..#.>.........'
-            '#..#...........'
-            '#+.#..o.....o..'
-            '#..#...........'
-            '#..#.....L.....'
-            '#.m#..o...h....'
-            '#..#...........'
-            '#..#.......M...'
-            '#..#...........'
-            '#..|.....+....P'
-        )
-    }
     @{
         Name = 'DM02'; Title = 'Cellblock'
         Walls = @{ '#' = 8; '%' = 9 }                   # blue stone
@@ -202,6 +201,95 @@ $Arenas = @(
             '#.....f.......P'
         )
     }
+    # Four Corners, DM01: the whole 64x64. A
+    # base in each corner, each its own wall (steel, wood, grey stone, blue stone), two starts
+    # in each. From each base, one hall to the joint room it shares with its neighbour (north
+    # and south, two machine guns each) and one to a corner of the arena, where a chaingun sits
+    # in the middle behind four 45 degree cover blocks that hide it from the halls. A pushwall
+    # in each base's south (north) wall opens a long passage to a vault: the flamethrower on
+    # the west side, the rocket launcher on the east. Brown stone around the edges, red brick
+    # in the arena. Light zones: tinted bases, dim halls, dark passages, a flickering vault, a
+    # dim arena with a bright middle (multiplayer-pk3/gamepacks/wolf3d/game-info.yaml).
+    # Hashtable keys ignore case, so 'D', 'C', 'F' and 'W' here hide 'd', 'c', 'f' and 'w'.
+    @{
+        Name = 'DM01'; Title = 'Four Corners'
+        Walls = @{ '#' = 17; '%' = 44; 'D' = 17 }      # red brick, brown stone; cover in red brick
+        QuadrantWalls = @{ 'C' = @(15, 12, 1, 8) }      # steel, wood, grey stone, blue stone
+        Pushwalls = @{ '*' = 'C' }
+        Sided = @{ 'F' = @(421, 420); 'W' = @(424, 422) } # flamethrower + gas west, rocket launcher + rockets east
+        Start = @(31, 30)                               # the chaingun has the middle
+        Quarter = @(
+            'CCCCCCCCCCCCC########%%%%%%%%%%%'
+            'C...........C########%..........'
+            'C........m..C########%.......m..'
+            'C..v........C%%%%%%%%%...m......'
+            'C...........|...................'
+            'C.....L.....C..............M...L'
+            'C...........C%%%%%%%%%..........'
+            'C.....h.....C########%...m......'
+            'C........<..C########%.......m..'
+            'C.m.........C########%..........'
+            'C...........C########%%%%%%%%%%%'
+            'C...........C###################'
+            'CCC*CCCCC-CCC###################'
+            '%...%###%..%####################'
+            '%.%.%###%..%%%%%%%%%%###########'
+            '%.%%%###%...........%###########'
+            '%.%#####%...........%###########'
+            '%.%#####%%%%%%%%%#..############'
+            '%.%###############..............'
+            '%.%###############..............'
+            '%.%###############..L........m..'
+            '%.%%%%%%%%%%%%%###..............'
+            '%.............%###......+......L'
+            '%%%%%%%%%%%%%.%###.....3D1......'
+            '###%..........%###....mDDDz.....'
+            '###%.%%%%%%%%%%###.....9D7......'
+            '%%%%.%%%%#########......u.......'
+            '%.......%#########..............'
+            '%...+...%#########..............'
+            '%.W...W.%#########..h...........'
+            '%.......%#########..............'
+            '%...F...%#########.............G'
+        )
+        # b base, h halls (and their doors), j joint rooms, s secret passages, w vaults, a arena,
+        # c the arena's bright middle
+        ZoneIds = @{ 'b' = @(1, 2, 3, 4); 'h' = 5; 'j' = 6; 's' = 7; 'w' = 8; 'a' = 9; 'c' = 10 }
+        Zones = @(
+            '................................'
+            '.bbbbbbbbbbb..........jjjjjjjjjj'
+            '.bbbbbbbbbbb..........jjjjjjjjjj'
+            '.bbbbbbbbbbb..........jjjjjjjjjj'
+            '.bbbbbbbbbbbhhhhhhhhhhjjjjjjjjjj'
+            '.bbbbbbbbbbb.hhhhhhhhhjjjjjjjjjj'
+            '.bbbbbbbbbbb..........jjjjjjjjjj'
+            '.bbbbbbbbbbb..........jjjjjjjjjj'
+            '.bbbbbbbbbbb..........jjjjjjjjjj'
+            '.bbbbbbbbbbb..........jjjjjjjjjj'
+            '.bbbbbbbbbbb....................'
+            '.bbbbbbbbbbb....................'
+            '...s.....h......................'
+            '.sss.....hh.....................'
+            '.s.s.....hh.....................'
+            '.s.......hhhhhhhhhhh............'
+            '.s.......hhhhhhhhhhh............'
+            '.s................hh............'
+            '.s................aaaaaaaaaaaaaa'
+            '.s................aaaaaaaaaaaaaa'
+            '.s................aaaaaaaaaaaaaa'
+            '.s................aaaaaaaaaaaaaa'
+            '.sssssssssssss....aaaaaaaaaaaaaa'
+            '.............s....aaaaaaaaaaaaaa'
+            '....ssssssssss....aaaaaaaaaaaaaa'
+            '....s.............aaaaaaaaaaaaaa'
+            '....s.............aaaaaaaaaaaaaa'
+            '.wwwwwww..........aaaaaaaaaaaaaa'
+            '.wwwwwww..........aaaaaaaaaaaaaa'
+            '.wwwwwww..........aaaaaaaaaaaccc'
+            '.wwwwwww..........aaaaaaaaaaaccc'
+            '.wwwwwww..........aaaaaaaaaaaccc'
+        )
+    }
 )
 
 $Size = 64
@@ -210,20 +298,27 @@ $AreaStart = 108                    # area 1 (mapdefs/wolf3d/floors.yaml: area n
 $AreaCount = 36
 
 function Swap([string]$line, [char]$a, [char]$b) {
-    -join ($line.ToCharArray() | ForEach-Object { if ($_ -eq $a) { $b } elseif ($_ -eq $b) { $a } else { $_ } })
+    # -ceq: 'b' (a barrel) mustn't swap as 'B' (a blue team start) does
+    -join ($line.ToCharArray() | ForEach-Object { if ($_ -ceq $a) { $b } elseif ($_ -ceq $b) { $a } else { $_ } })
 }
 
-# The whole arena from its top-left quarter: mirrored right (west/east starts swap), then down
-# (north/south starts swap)
+# The whole arena from its top-left quarter: mirrored right (west/east starts swap, and 45
+# degree walls), then down (north/south starts swap, and 45 degree walls)
 function Expand([string[]]$quarter) {
     $width = $quarter[0].Length
     foreach ($row in $quarter) { if ($row.Length -ne $width) { throw "Row '$row' isn't $width wide" } }
     $rows = foreach ($row in $quarter) {
         $right = -join $row.Substring(0, $width - 1).ToCharArray()[($width - 2)..0]
-        $row + (Swap (Swap (Swap $right '<' '>') 'R' 'B') 'q' 'Q')
+        $row + (Swap (Swap (Swap (Swap (Swap $right '<' '>') 'R' 'B') 'q' 'Q') '7' '9') '1' '3')
     }
-    $bottom = for ($i = $rows.Count - 2; $i -ge 0; $i--) { Swap $rows[$i] '^' 'v' }
+    $bottom = for ($i = $rows.Count - 2; $i -ge 0; $i--) { Swap (Swap (Swap $rows[$i] '^' 'v') '7' '1') '9' '3' }
     @($rows) + @($bottom)
+}
+
+# Which quarter (0 NW, 1 NE, 2 SW, 3 SE) a tile of a width x height layout is in; the middle
+# column and row count as west and north
+function Quarter([int]$x, [int]$y, [int]$width, [int]$height) {
+    ([int]($x -gt ($width - 1) / 2)) + 2 * [int]($y -gt ($height - 1) / 2)
 }
 
 function Write-Arena($arena) {
@@ -243,9 +338,31 @@ function Write-Arena($arena) {
     for ($y = 0; $y -lt $height; $y++) {
         for ($x = 0; $x -lt $width; $x++) {
             $ch = $layout[$y][$x]
+            $s = [string]$ch
             $i = ($top + $y) * $Size + $left + $x
-            if ($arena.Walls.ContainsKey([string]$ch)) {
-                $planes[0][$i] = $arena.Walls[[string]$ch]
+            $quarter = Quarter $x $y $width $height
+            if ($arena.Walls.ContainsKey($s)) {
+                $planes[0][$i] = $arena.Walls[$s]
+                continue
+            }
+            if ($arena.QuadrantWalls -and $arena.QuadrantWalls.ContainsKey($s)) {
+                $planes[0][$i] = $arena.QuadrantWalls[$s][$quarter]
+                continue
+            }
+            if ($arena.Pushwalls -and $arena.Pushwalls.ContainsKey($s)) {
+                $planes[0][$i] = $arena.QuadrantWalls[$arena.Pushwalls[$s]][$quarter]
+                $planes[1][$i] = $Pushwall
+                continue
+            }
+            if ($Diagonals.ContainsKey($s)) {
+                $planes[0][$i] = $arena.Walls['D']
+                $planes[1][$i] = $Diagonals[$s]
+                continue
+            }
+            if ($arena.Sided -and $arena.Sided.ContainsKey($s)) {
+                $planes[0][$i] = 0
+                $planes[1][$i] = $arena.Sided[$s][[int]($x -gt ($width - 1) / 2)]
+                $floor[$x, $y] = $true
                 continue
             }
             if (!$Common.ContainsKey($ch)) { throw "$($arena.Name): unknown character '$ch' at $x,$y" }
@@ -283,6 +400,27 @@ function Write-Arena($arena) {
         }
     }
 
+    if ($arena.Start) {
+        $i = ($top + $arena.Start[1]) * $Size + $left + $arena.Start[0]
+        if ($planes[1][$i] -ne 0 -or $planes[0][$i] -lt $AreaStart) { throw "$($arena.Name): the start isn't on an empty floor tile" }
+        $planes[1][$i] = $Common['P'][1]
+    }
+
+    # Light zones (plane 5)
+    if ($arena.Zones) {
+        $zones = Expand $arena.Zones
+        if ($zones.Count -ne $height -or $zones[0].Length -ne $width) { throw "$($arena.Name): Zones isn't the layout's size" }
+        for ($y = 0; $y -lt $height; $y++) {
+            for ($x = 0; $x -lt $width; $x++) {
+                $s = [string]$zones[$y][$x]
+                if ($s -eq '.') { continue }
+                if (!$arena.ZoneIds.ContainsKey($s)) { throw "$($arena.Name): unknown zone '$s' at $x,$y" }
+                $id = $arena.ZoneIds[$s]
+                $planes[5][($top + $y) * $Size + $left + $x] = if ($id -is [array]) { $id[(Quarter $x $y $width $height)] } else { $id }
+            }
+        }
+    }
+
     # PLANES: "WDC3.1", map count, plane count, name length, name, width, height, then the planes
     $ms = New-Object IO.MemoryStream
     $bw = New-Object IO.BinaryWriter $ms
@@ -316,13 +454,13 @@ function Write-Arena($arena) {
     }
     $w.Flush()
 
-    $path = Join-Path $mapsDir "$($arena.Name).wad"
+    $folder = if ($arena.Folder) { $arena.Folder } else { 'multiplayer-pk3' }
+    $mapsDir = Join-Path $PSScriptRoot "..\..\$folder\maps\wolf3d"
+    New-Item -ItemType Directory -Force $mapsDir | Out-Null
+    $path = Join-Path (Resolve-Path $mapsDir).Path "$($arena.Name).wad"
     [IO.File]::WriteAllBytes($path, $out.ToArray())
     "Wrote ${path}: $($arena.Title), ${width}x$height, $areas area(s)"
     if ($Show) { $layout; '' }
 }
 
-$mapsDir = Join-Path $PSScriptRoot '..\..\pfwolf-pk3\maps\wolf3d'
-New-Item -ItemType Directory -Force $mapsDir | Out-Null
-$mapsDir = (Resolve-Path $mapsDir).Path
 foreach ($arena in $Arenas) { Write-Arena $arena }
