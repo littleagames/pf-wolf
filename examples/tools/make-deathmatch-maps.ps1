@@ -202,8 +202,8 @@ $Arenas = @(
         )
     }
     # Four Corners, DM01: the whole 64x64. A
-    # base in each corner, each its own wall (steel, wood, grey stone, blue stone), two starts
-    # in each. From each base, one hall to the joint room it shares with its neighbour (north
+    # base in each corner, each its own wall (steel, wood, grey stone, blue stone), four starts
+    # in each (16 in all). From each base, one hall to the joint room it shares with its neighbour (north
     # and south, two machine guns each) and one to a corner of the arena, where a chaingun sits
     # in the middle behind four 45 degree cover blocks that hide it from the halls. A pushwall
     # in each base's south (north) wall opens a long passage to a vault: the flamethrower on
@@ -221,7 +221,7 @@ $Arenas = @(
         Quarter = @(
             'CCCCCCCCCCCCC########%%%%%%%%%%%'
             'C...........C########%..........'
-            'C........m..C########%.......m..'
+            'C........m<.C########%.......m..'
             'C..v........C%%%%%%%%%...m......'
             'C...........|...................'
             'C.....L.....C..............M...L'
@@ -229,7 +229,7 @@ $Arenas = @(
             'C.....h.....C########%...m......'
             'C........<..C########%.......m..'
             'C.m.........C########%..........'
-            'C...........C########%%%%%%%%%%%'
+            'C...^.......C########%%%%%%%%%%%'
             'C...........C###################'
             'CCC*CCCCC-CCC###################'
             '%...%###%..%####################'
