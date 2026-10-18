@@ -106,7 +106,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
     // A BlakeMonster that came out of an outlet keeps its tile (SeekX/SeekY, plus one), so each
     // outlet knows how many of its own are about; of any other class, every one about counts
     private int OutletCount(Outlet outlet) =>
-        _map.GetActors().Count(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(ObjFlags.Shootable) && a.Name == outlet.Spec.Class
+        _map.GetActors().Count(a => !a.IsRemoved && a.RuntimeFlags.Has(ObjFlags.Shootable) && a.Name == outlet.Spec.Class
             && (a is not BlakeMonster b || b.SeekX == outlet.X + 1 && b.SeekY == outlet.Y + 1));
 
     private void TickOutlets()
@@ -289,7 +289,7 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
             if (dist >= chosenDist)
                 continue;
 
-            if (ob.RuntimeFlags.HasFlag(ObjFlags.AttackMode))
+            if (ob.RuntimeFlags.Has(ObjFlags.AttackMode))
             {
                 ob.RuntimeFlags &= ~ObjFlags.Friendly;
                 continue;

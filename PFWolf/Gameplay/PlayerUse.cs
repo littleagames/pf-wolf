@@ -332,8 +332,8 @@ internal sealed class PlayerUse(
         {
             if (actor.IsRemoved || actor is Entities.Actors.PlayerPawn || !actor.ResolvedStates.ContainsKey("Use"))
                 continue;
-            if (actor is Entities.Actors.Monster && (!actor.RuntimeFlags.HasFlag(ObjFlags.Shootable)
-                || actor.RuntimeFlags.HasFlag(ObjFlags.AttackMode)))
+            if (actor is Entities.Actors.Monster && (!actor.RuntimeFlags.Has(ObjFlags.Shootable)
+                || actor.RuntimeFlags.Has(ObjFlags.AttackMode)))
                 continue;
 
             long dx = actor.X - player.X, dy = player.Y - actor.Y;     // y grows southward

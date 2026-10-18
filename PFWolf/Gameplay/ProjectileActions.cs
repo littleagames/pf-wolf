@@ -144,7 +144,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         return map.Players.Any(pawn => session.IsTargetable(pawn) && Reach(pawn, x, y) <= reach)
             || map.GetActors().Any(a => !a.IsRemoved && a is not Entities.Actors.PlayerPawn && !ReferenceEquals(a, ob)
                 && !string.Equals(a.Name, ob.Name, StringComparison.OrdinalIgnoreCase)
-                && a.RuntimeFlags.HasFlag(ObjFlags.Shootable) && Reach(a, x, y) <= reach);
+                && a.RuntimeFlags.Has(ObjFlags.Shootable) && Reach(a, x, y) <= reach);
     }
 
     /// <summary>

@@ -86,7 +86,7 @@ internal sealed class DebugCommands(
     {
         var actors = map.GetActors();
         int enemies = actors.Count(MapManager.IsEnemy);
-        int alive = actors.Count(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
+        int alive = actors.Count(a => MapManager.IsEnemy(a) && a.RuntimeFlags.Has(ObjFlags.Shootable));
         int active = actors.Count(a => a.Active != ActiveType.No);
 
         console.Print($"Doors: {doors.DoorNum}");

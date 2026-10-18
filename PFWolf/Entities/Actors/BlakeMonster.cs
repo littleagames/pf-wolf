@@ -68,7 +68,7 @@ internal partial record BlakeMonster : Monster
     // last chased doesn't flinch again
     protected override bool OnHurt(int oldHitpoints) =>
         WoundActor(oldHitpoints)
-        || Properties.ContainsKey("monster.painattack") && RuntimeFlags.HasFlag(ObjFlags.LockedState);
+        || Properties.ContainsKey("monster.painattack") && RuntimeFlags.Has(ObjFlags.LockedState);
 
     // ... and a `monster.painattack` actor now and then shoots straight back, and can't be
     // stunned again until it next chases
@@ -245,7 +245,7 @@ internal partial record BlakeMonster : Monster
     /// </summary>
     internal void WaitToWake()
     {
-        if (!RuntimeFlags.HasFlag(ObjFlags.Visible) || Temp3 <= 0 || Temp3 == 255 * 60)
+        if (!RuntimeFlags.Has(ObjFlags.Visible) || Temp3 <= 0 || Temp3 == 255 * 60)
             return;
         if (Temp2 > Tics)
         {
@@ -311,16 +311,16 @@ internal partial record BlakeMonster : Monster
                     else
                     {
                         ChangeShootMode();
-                        if (!RuntimeFlags.HasFlag(ObjFlags.ShootMode))
+                        if (!RuntimeFlags.Has(ObjFlags.ShootMode))
                             Ammo >>= 1;      // closing in lasts half as long
                     }
                 }
 
                 int chance = nearAttack || shootMode
-                    ? (RuntimeFlags.HasFlag(ObjFlags.ShootMode) ? 300 : 0)
+                    ? (RuntimeFlags.Has(ObjFlags.ShootMode) ? 300 : 0)
                     : (int)((Tics << 4) / dist);
 
-                if (NextRandom() < chance && Ammo != 0 && !RuntimeFlags.HasFlag(ObjFlags.Interrogated))
+                if (NextRandom() < chance && Ammo != 0 && !RuntimeFlags.Has(ObjFlags.Interrogated))
                 {
                     DoAttack();
                     return;
@@ -382,7 +382,7 @@ internal partial record BlakeMonster : Monster
     /// </summary>
     private void ChangeShootMode()
     {
-        if (RuntimeFlags.HasFlag(ObjFlags.ShootMode))
+        if (RuntimeFlags.Has(ObjFlags.ShootMode))
         {
             RuntimeFlags &= ~ObjFlags.ShootMode;
             Ammo = (short)(60 + NextRandom() % 60);
@@ -467,14 +467,14 @@ internal partial record BlakeMonster : Monster
 
         if (reason != 0)
         {
-            if (!RuntimeFlags.HasFlag(ObjFlags.RunAway))
+            if (!RuntimeFlags.Has(ObjFlags.RunAway))
             {
                 Temp3 = 0;
                 RuntimeFlags |= ObjFlags.RunAway;
                 Speed += RunAwaySpeed;
             }
         }
-        else if (RuntimeFlags.HasFlag(ObjFlags.RunAway))
+        else if (RuntimeFlags.Has(ObjFlags.RunAway))
         {
             RuntimeFlags &= ~ObjFlags.RunAway;
             Speed -= RunAwaySpeed;
@@ -550,7 +550,7 @@ internal partial record BlakeMonster : Monster
         int maxHealth = MapManager.GetScaledHealth(this);
 
         // Out of the player's area and sight, it cheats
-        if (Player.AreaNumber != AreaNumber && !RuntimeFlags.HasFlag(ObjFlags.Visible))
+        if (Player.AreaNumber != AreaNumber && !RuntimeFlags.Has(ObjFlags.Visible))
         {
             if (Ammo == 0)
                 Ammo += 8;
@@ -593,7 +593,7 @@ internal partial record BlakeMonster : Monster
                 }
 
                 // Else maybe head for it
-                if (!RuntimeFlags.HasFlag(ObjFlags.RunToStatic)
+                if (!RuntimeFlags.Has(ObjFlags.RunToStatic)
                     && ((reason & RrAmmo) != 0 && ammoGain > 0 || (reason & RrHealth) != 0 && healthGain > 0))
                 {
                     RuntimeFlags |= ObjFlags.RunToStatic;
@@ -607,7 +607,7 @@ internal partial record BlakeMonster : Monster
         // Running for a door out of the room, when the room joins the player's
         if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] != 0)
         {
-            if (RuntimeFlags.HasFlag(ObjFlags.RunToStatic))
+            if (RuntimeFlags.Has(ObjFlags.RunToStatic))
                 return false;   // already heading somewhere
 
             var doors = new List<int>();
@@ -629,7 +629,7 @@ internal partial record BlakeMonster : Monster
                 RuntimeFlags |= ObjFlags.RunToStatic;
             }
         }
-        else if (RuntimeFlags.HasFlag(ObjFlags.RunToStatic))
+        else if (RuntimeFlags.Has(ObjFlags.RunToStatic))
         {
             // What it was after is gone, or it's far off: off to a corner
             SeekX = 0;
@@ -829,7 +829,7 @@ internal partial record BlakeMonster : Monster
     /// <summary>The think on Death frames: the body slides back a step each tic until it's gone its distance or hits something</summary>
     internal void BlowBack()
     {
-        if (!RuntimeFlags.HasFlag(ObjFlags.Sliding))
+        if (!RuntimeFlags.Has(ObjFlags.Sliding))
             return;
 
         int step = Math.Min((int)Temp3, SlideSpeed);
@@ -893,7 +893,7 @@ internal partial record BlakeMonster : Monster
     {
         // Asked twice, or half the time anyway, it turns mean
         string list;
-        if (RuntimeFlags.HasFlag(ObjFlags.MustAttack) || (NextRandom() & 1) != 0)
+        if (RuntimeFlags.Has(ObjFlags.MustAttack) || (NextRandom() & 1) != 0)
         {
             RuntimeFlags &= ~ObjFlags.Friendly;
             RuntimeFlags |= ObjFlags.Interrogated;

@@ -193,7 +193,7 @@ internal partial record BlakeMonster
 
         if (Math.Abs(TileX - Target.TileX) > 1 || Math.Abs(TileY - Target.TileY) > 1)
         {
-            if (!RuntimeFlags.HasFlag(ObjFlags.Visible) || NextRandom() < 40 || Temp2 == 5)
+            if (!RuntimeFlags.Has(ObjFlags.Visible) || NextRandom() < 40 || Temp2 == 5)
             {
                 RuntimeFlags &= ~ObjFlags.Shootable;
                 Temp2 = 0;
@@ -286,7 +286,7 @@ internal partial record BlakeMonster
     /// </summary>
     internal void SteamVent()
     {
-        if (!RuntimeFlags.HasFlag(ObjFlags.Visible))
+        if (!RuntimeFlags.Has(ObjFlags.Visible))
             return;
         if (Temp3 == 0)
         {
@@ -341,7 +341,7 @@ internal partial record BlakeMonster
     /// <summary>A_SelfDestruct: the actor dies, with its points (the floating bomb, reaching the player, blows itself up)</summary>
     internal void SelfDestruct()
     {
-        if (!RuntimeFlags.HasFlag(ObjFlags.Shootable))
+        if (!RuntimeFlags.Has(ObjFlags.Shootable))
             return;
         Hitpoints = 0;
         Kill(null);
@@ -367,7 +367,7 @@ internal partial record BlakeMonster
     {
         if (args.Length == 0)
             return;
-        int left = MapManager.GetActors().Count(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
+        int left = MapManager.GetActors().Count(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.Has(ObjFlags.Shootable));
         HudMessageManager.Show(Managers.HudMessageKind.Other, args[0], args.ElementAtOrDefault(1),
             new Dictionary<char, string> { ['n'] = left.ToString() });
     }
@@ -375,7 +375,7 @@ internal partial record BlakeMonster
     /// <summary>A_VictoryIfLast: the level is won once none of this actor's class still stands (the last projection generator)</summary>
     internal void VictoryIfLast()
     {
-        if (!MapManager.GetActors().Any(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.Shootable)))
+        if (!MapManager.GetActors().Any(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.Has(ObjFlags.Shootable)))
             PlayState = PlayState.Victorious;
     }
 

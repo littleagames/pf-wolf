@@ -61,7 +61,7 @@ internal sealed class PlayerAttacks(
         {
             if (actor == null || !actor.ResolvedStates.ContainsKey("Chase")) continue;
             if (factions.IsAlly(session.Player, actor)) continue;     // the player's side: shots pass them by
-            if (actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && actor.RuntimeFlags.HasFlag(ObjFlags.Visible)
+            if (actor.RuntimeFlags.Has(ObjFlags.Shootable) && actor.RuntimeFlags.Has(ObjFlags.Visible)
                 && Math.Abs(actor.ViewX - hooks.CenterX()) < hooks.ShootDelta())
             {
                 candidates.Add(actor);
@@ -89,7 +89,7 @@ internal sealed class PlayerAttacks(
         foreach (var actor in map.GetActors())
         {
             bool enemy = actor is Entities.Actors.Monster && !actor.IsRemoved && actor.ResolvedStates.ContainsKey("Chase")
-                && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && !factions.IsAlly(shooter, actor);
+                && actor.RuntimeFlags.Has(ObjFlags.Shootable) && !factions.IsAlly(shooter, actor);
             bool rival = actor is Entities.Actors.PlayerPawn pawn && pawn.State.Health > 0
                 && session.AreRivals(shooter.State, pawn.State);     // no friendly fire in a team game
             if (!enemy && !rival && hooks.IsDecoy?.Invoke(actor) != true)

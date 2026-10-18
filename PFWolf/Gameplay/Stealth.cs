@@ -164,8 +164,8 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
         var playerstate = session.PlayerState;
         foreach (var monster in map.GetActors().OfType<Entities.Actors.Monster>().ToList())
         {
-            if (monster.IsRemoved || monster.Suspicion <= 0 || monster.RuntimeFlags.HasFlag(ObjFlags.AttackMode)
-                || !monster.RuntimeFlags.HasFlag(ObjFlags.Shootable) || !monster.RuntimeFlags.HasFlag(ObjFlags.Visible))
+            if (monster.IsRemoved || monster.Suspicion <= 0 || monster.RuntimeFlags.Has(ObjFlags.AttackMode)
+                || !monster.RuntimeFlags.Has(ObjFlags.Shootable) || !monster.RuntimeFlags.Has(ObjFlags.Visible))
                 continue;
             if (!hooks.InSight(monster))
                 continue;
@@ -233,7 +233,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     // Any living enemy going after someone (the original's CheckIfActorsAwake)
     bool EnemiesAfterThePlayers() =>
         map.GetActors().OfType<Entities.Actors.Monster>()
-            .Any(m => !m.IsRemoved && m.Hitpoints > 0 && m.RuntimeFlags.HasFlag(ObjFlags.AttackMode));
+            .Any(m => !m.IsRemoved && m.Hitpoints > 0 && m.RuntimeFlags.Has(ObjFlags.AttackMode));
 
     IEnumerable<string> DisguiseItems() =>
         session.PlayerState.Items.Where(item => item.Value > 0 && IsTrue(inventory.GetProperty(item.Key, "inventory.disguise")))

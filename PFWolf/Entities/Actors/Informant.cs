@@ -40,13 +40,13 @@ internal record Informant : BlakeMonster
         string? said = null;
 
         // Asked again, it hands over what it has
-        if (RuntimeFlags.HasFlag(ObjFlags.Interrogated))
+        if (RuntimeFlags.Has(ObjFlags.Interrogated))
         {
             var gifts = PropertyStrings("talk.gifts");
             var giftMessages = PropertyStrings("talk.giftmessages");
             foreach (var (flag, index) in new[] { (ObjFlags.HasAmmo, 0), (ObjFlags.HasTokens, 1) })
             {
-                if (!RuntimeFlags.HasFlag(flag) || index >= gifts.Count
+                if (!RuntimeFlags.Has(flag) || index >= gifts.Count
                     || InventoryManager.CreateActor(gifts[index]) is not Inventory gift || !CouldTakeInventory(gift))
                     continue;
                 int amount = gift.Properties.TryGetValue("inventory.amount", out var a) ? Convert.ToInt32(a) : 1;

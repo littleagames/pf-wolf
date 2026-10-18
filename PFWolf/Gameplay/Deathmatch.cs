@@ -125,7 +125,17 @@ internal sealed class Deathmatch(
     internal readonly List<IMatchObjective> MatchObjectives = [];
 
     /// <summary>The mode being played's objective, if it has one</summary>
-    internal IMatchObjective? Objective => MatchObjectives.FirstOrDefault(o => o.Mode == session.GameMode);
+    internal IMatchObjective? Objective
+    {
+        get
+        {
+            // A loop: asked every tic, and the lambda would make a delegate each time
+            foreach (var objective in MatchObjectives)
+                if (objective.Mode == session.GameMode)
+                    return objective;
+            return null;
+        }
+    }
 
     // Items taken, to come back
     internal readonly List<ItemRespawn> ItemRespawns = [];

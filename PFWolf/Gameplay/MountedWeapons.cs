@@ -134,7 +134,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         x is > 0 and < MapManager.MapSize - 1 && y is > 0 and < MapManager.MapSize - 1
         && map.TileMap[x, y] == 0 && map.ActorAt[x, y] == null
         && !map.GetActors().Any(a => !a.IsRemoved && a.TileX == x && a.TileY == y && a is not Entities.Actors.PlayerPawn
-            && (a.RuntimeFlags.HasFlag(ObjFlags.Shootable) || a.Flags.Contains("SOLID")));
+            && (a.RuntimeFlags.Has(ObjFlags.Shootable) || a.Flags.Contains("SOLID")));
 
     /// <summary>The tiles to step off onto, in turn: behind, to either side, then in front (ExitMountedWeapon)</summary>
     internal static IEnumerable<(int X, int Y)> ExitTiles(int x, int y, ControlDir facing) => facing switch

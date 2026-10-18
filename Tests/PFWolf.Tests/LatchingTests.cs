@@ -124,8 +124,8 @@ public class LatchingTests
         Assert.That(playerstate.LatchFrom, Is.EqualTo("Pistol"));
         Assert.That(playerstate.MoveSlowdown, Is.EqualTo(10));
         Assert.That(_session.PlayerInput.IsHeld(ButtonType.Attack), Is.True);
-        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.Shootable), Is.False);
-        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.NonMark), Is.True);
+        Assert.That(_dog.RuntimeFlags.Has(ObjFlags.Shootable), Is.False);
+        Assert.That(_dog.RuntimeFlags.Has(ObjFlags.NonMark), Is.True);
         Assert.That(_dog.CurrentState!.StateName, Is.EqualTo("Latched"));
     }
 
@@ -225,8 +225,8 @@ public class LatchingTests
 
         // Assert
         Assert.That(_playerHurts, Is.Empty);
-        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.Shootable), Is.True);
-        Assert.That(_dog.RuntimeFlags.HasFlag(ObjFlags.NonMark), Is.False);
+        Assert.That(_dog.RuntimeFlags.Has(ObjFlags.Shootable), Is.True);
+        Assert.That(_dog.RuntimeFlags.Has(ObjFlags.NonMark), Is.False);
         Assert.That(_dog.CurrentState!.StateName, Is.EqualTo("Chase"));
     }
 

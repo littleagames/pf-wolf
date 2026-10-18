@@ -157,7 +157,7 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
 
     /// <summary>The level's living enemies (any of them: a wave's, or the map's own with monsters on)</summary>
     int AliveEnemies() =>
-        Map.GetActors().Count(a => a is Monster && !a.IsRemoved && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
+        Map.GetActors().Count(a => a is Monster && !a.IsRemoved && a.RuntimeFlags.Has(ObjFlags.Shootable));
 
     /// <summary>One of a wave's enemies comes in, hunting, at a spawn out of the players' way: whether one did</summary>
     bool SpawnEnemy(string className)

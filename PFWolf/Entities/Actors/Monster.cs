@@ -209,7 +209,7 @@ internal record Monster : Actor
                 {
                     // An ally walking after a player (or out of their way) is only stopped
                     // getting nearer them, not moving off past or away from them
-                    if (RuntimeFlags.HasFlag(ObjFlags.Following)
+                    if (RuntimeFlags.Has(ObjFlags.Following)
                         && Math.Max(deltax, deltay) >= Math.Max(Math.Abs(X - pawn.X), Math.Abs(Y - pawn.Y)))
                         continue;
 
@@ -222,7 +222,7 @@ internal record Monster : Actor
                         OnBumpedPlayer();
 
                         // Walking after a player (or out of their way), it waits once it's up against one
-                        if (RuntimeFlags.HasFlag(ObjFlags.Following))
+                        if (RuntimeFlags.Has(ObjFlags.Following))
                             StopWalking();
                         return;
                     }
@@ -532,7 +532,7 @@ internal record Monster : Actor
     /// </summary>
     internal bool BeforeThink(uint tics)
     {
-        if (!RuntimeFlags.HasFlag(ObjFlags.AttackMode))
+        if (!RuntimeFlags.Has(ObjFlags.AttackMode))
             return false;
 
         if (!HasFoe)
@@ -589,14 +589,14 @@ internal record Monster : Actor
     /// <summary>Whether it goes about with the players (Follows)</summary>
     internal bool Follows
     {
-        get => RuntimeFlags.HasFlag(ObjFlags.Follows);
+        get => RuntimeFlags.Has(ObjFlags.Follows);
         set
         {
             if (value)
                 RuntimeFlags |= ObjFlags.Follows;
             else
             {
-                if (RuntimeFlags.HasFlag(ObjFlags.Following))
+                if (RuntimeFlags.Has(ObjFlags.Following))
                     StopWalking();
                 RuntimeFlags &= ~ObjFlags.Follows;
             }
@@ -627,7 +627,7 @@ internal record Monster : Actor
     /// </summary>
     internal bool ThinkInstead(uint tics)
     {
-        if (RuntimeFlags.HasFlag(ObjFlags.AttackMode) || !RuntimeFlags.HasFlag(ObjFlags.Shootable))
+        if (RuntimeFlags.Has(ObjFlags.AttackMode) || !RuntimeFlags.Has(ObjFlags.Shootable))
             return false;
 
         // `monster.follow`: it falls in with a player on its side once it sees them
@@ -636,7 +636,7 @@ internal record Monster : Actor
         if (!Follows)
             return false;
 
-        bool walking = RuntimeFlags.HasFlag(ObjFlags.Following);
+        bool walking = RuntimeFlags.Has(ObjFlags.Following);
         if (walking && CheckSight())
         {
             // Someone to go after: that comes first
@@ -661,7 +661,7 @@ internal record Monster : Actor
     /// <summary>A player walked into it standing by: it steps a couple of tiles out of their way</summary>
     internal void ShovedBy(PlayerPawn pawn)
     {
-        if (!Follows || RuntimeFlags.HasFlag(ObjFlags.AttackMode) || _stepAside != null || !IsAllyOf(pawn))
+        if (!Follows || RuntimeFlags.Has(ObjFlags.AttackMode) || _stepAside != null || !IsAllyOf(pawn))
             return;
 
         // To one side of the way they face (two tiles if there's room), else straight away from them
@@ -787,7 +787,7 @@ internal record Monster : Actor
     /// </summary>
     internal void SetFaction(string? faction, bool follow = false)
     {
-        bool alive = RuntimeFlags.HasFlag(ObjFlags.Shootable);
+        bool alive = RuntimeFlags.Has(ObjFlags.Shootable);
         bool counted = alive && CountsAsKill;
         Faction = faction;
         if (alive && counted != CountsAsKill)
@@ -811,11 +811,11 @@ internal record Monster : Actor
     /// </summary>
     internal bool IsTargetable(Actor actor) => actor is PlayerPawn pawn
         ? IsTargetable(pawn)
-        : !actor.IsRemoved && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable);
+        : !actor.IsRemoved && actor.RuntimeFlags.Has(ObjFlags.Shootable);
 
     /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: PlayerView.InViewOf)</summary>
     private bool SeenByThePlayers() =>
-        GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.Visible) : SeenByAPlayer(this);
+        GameMode == GameMode.Single ? RuntimeFlags.Has(ObjFlags.Visible) : SeenByAPlayer(this);
 
     /// <summary>Hurts the actor it's after: a player as their enemies' shots do, anything else as the player's shots</summary>
     protected void HurtTarget(int points)
@@ -838,7 +838,7 @@ internal record Monster : Actor
     /// </summary>
     private bool TargetSeesMe() => Target switch
     {
-        PlayerPawn pawn => GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.Visible) : InViewOf(pawn, this),
+        PlayerPawn pawn => GameMode == GameMode.Single ? RuntimeFlags.Has(ObjFlags.Visible) : InViewOf(pawn, this),
         Monster monster => monster.CanSee(this),
         _ => false,
     };
@@ -850,7 +850,7 @@ internal record Monster : Actor
     private bool TargetIsRunning() => Target switch
     {
         PlayerPawn pawn => pawn.State.ThrustSpeed >= RunSpeed,
-        Monster monster => monster.RuntimeFlags.HasFlag(ObjFlags.AttackMode) && monster.Dir != ObjDir.NoDir,
+        Monster monster => monster.RuntimeFlags.Has(ObjFlags.AttackMode) && monster.Dir != ObjDir.NoDir,
         _ => false,
     };
 
@@ -879,7 +879,7 @@ internal record Monster : Actor
         if (HasFlag("BLIND"))
             return false;
 
-        if (RuntimeFlags.HasFlag(ObjFlags.AttackMode))
+        if (RuntimeFlags.Has(ObjFlags.AttackMode))
             GameEngineManager.Quit("An actor in ATTACKMODE called SightPlayer!");
 
         if (Temp2 != 0)
@@ -898,7 +898,7 @@ internal record Monster : Actor
             if (World.Stealth?.Overlooks(this) == true)
                 return false;
 
-            if (RuntimeFlags.HasFlag(ObjFlags.Ambush))
+            if (RuntimeFlags.Has(ObjFlags.Ambush))
             {
                 if (!CheckSight())
                     return false;
@@ -956,7 +956,7 @@ internal record Monster : Actor
         ObjDir tdir;
         ObjDir turnaround;
 
-        if (RuntimeFlags.HasFlag(ObjFlags.FirstAttack))
+        if (RuntimeFlags.Has(ObjFlags.FirstAttack))
         {
             turnaround = ObjDir.NoDir;
             RuntimeFlags &= ~ObjFlags.FirstAttack;
@@ -1335,7 +1335,7 @@ internal record Monster : Actor
         // Bonus is set at spawn and cleared here, as in the original
         if (!HasFlag("POINTSONCE"))
             GivePoints(Convert.ToInt32(points));
-        else if (RuntimeFlags.HasFlag(ObjFlags.Bonus))
+        else if (RuntimeFlags.Has(ObjFlags.Bonus))
         {
             GivePoints(Convert.ToInt32(points));
             RuntimeFlags &= ~ObjFlags.Bonus;
@@ -1409,7 +1409,7 @@ internal record Monster : Actor
         if (!(attacker is PlayerPawn && PlayerWeaponIsSilent()))
             MadeNoise = true;
 
-        if (!RuntimeFlags.HasFlag(ObjFlags.AttackMode))
+        if (!RuntimeFlags.Has(ObjFlags.AttackMode))
             damage <<= 1;
 
         int oldHitpoints = Hitpoints;
@@ -1433,7 +1433,7 @@ internal record Monster : Actor
         if (OnHurt(oldHitpoints))
             return;
 
-        if (!RuntimeFlags.HasFlag(ObjFlags.AttackMode) && NoticesWhenHurt)
+        if (!RuntimeFlags.Has(ObjFlags.AttackMode) && NoticesWhenHurt)
             FirstSighting();
 
         // `monster.damagestates: [full, 3/4, 1/2, 1/4]` (the floating bomb, which looks more
@@ -1491,7 +1491,7 @@ internal record Monster : Actor
             return;
 
         // A friendly patroller only looks for the player once there's been a noise
-        if ((!RuntimeFlags.HasFlag(ObjFlags.Friendly) || MadeNoise) && SightPlayer())
+        if ((!RuntimeFlags.Has(ObjFlags.Friendly) || MadeNoise) && SightPlayer())
             return;
 
         if (Dir == ObjDir.NoDir)

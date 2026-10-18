@@ -105,7 +105,16 @@ internal sealed class PlayerBodies(
             ? body : null;
 
     /// <summary>Whether an actor is one of the players' bodies (they turn by their Angle, like a projectile)</summary>
-    internal bool IsPlayerBody(Entities.Actors.Actor actor) => session.Players.Any(p => ReferenceEquals(p.Body, actor));
+    internal bool IsPlayerBody(Entities.Actors.Actor actor) => BodyOwner(actor) != null;
+
+    // The player whose body the actor is, if any: a loop, as it's asked for every sprite drawn
+    private PlayerState? BodyOwner(Entities.Actors.Actor actor)
+    {
+        foreach (var p in session.Players)
+            if (ReferenceEquals(p.Body, actor))
+                return p;
+        return null;
+    }
 
     /// <summary>
     /// The sprite to draw for an actor's frame: its own, except a player's body, which shows their
@@ -119,13 +128,13 @@ internal sealed class PlayerBodies(
         var state = actor.CurrentState!;
 
         // Carrying a flag: its sprite in place of the Spawn one, frame by frame where it has it
-        if (session.Players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is { CarrySprite: { } carry, BodyHoldsWeapon: true }
+        if (BodyOwner(actor) is { CarrySprite: { } carry, BodyHoldsWeapon: true }
             && actor.ResolvedStates.TryGetValue("Spawn", out var bodySpawn)
             && string.Equals(state.Sprite, bodySpawn.Sprite, StringComparison.OrdinalIgnoreCase)
             && SpriteExists(spriteDrawing.ActorShapeName(carry, state.FrameLetter, actor)))
             return carry;
 
-        if (session.Players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is not { Weapon: { } weapon, BodyHoldsWeapon: true }
+        if (BodyOwner(actor) is not { Weapon: { } weapon, BodyHoldsWeapon: true }
             || !actor.ResolvedStates.TryGetValue("Spawn", out var spawn)
             || !string.Equals(state.Sprite, spawn.Sprite, StringComparison.OrdinalIgnoreCase)
             || inventory.GetStringProperty(weapon, "weapon.bodysprite") is not { Length: > 0 } swap)

@@ -38,7 +38,7 @@ internal sealed class FloorDamage(MapManager map, GameSession session, FloorDama
 
         foreach (var monster in map.GetActors().OfType<Entities.Actors.Monster>().ToList())
         {
-            if (!monster.IsRemoved && monster.Hitpoints > 0 && monster.RuntimeFlags.HasFlag(ObjFlags.Shootable)
+            if (!monster.IsRemoved && monster.Hitpoints > 0 && monster.RuntimeFlags.Has(ObjFlags.Shootable)
                 && DamageAt(flats, monster.TileX, monster.TileY, before, now) is { Enemies: true } damage)
                 hooks.HurtMonster(monster, damage.Amount);
         }

@@ -16,7 +16,7 @@ internal sealed class ConsoleTargets(
     internal List<Entities.Actors.Monster> ChosenActors(string? className)
     {
         var living = map.GetActors().OfType<Entities.Actors.Monster>()
-            .Where(m => !m.IsRemoved && m.RuntimeFlags.HasFlag(ObjFlags.Shootable));
+            .Where(m => !m.IsRemoved && m.RuntimeFlags.Has(ObjFlags.Shootable));
         var chosen = className != null
             ? living.Where(m => m.Name.Equals(className, StringComparison.OrdinalIgnoreCase)).ToList()
             : living.OrderBy(m => Math.Max(Math.Abs(m.X - session.Player.X), Math.Abs(m.Y - session.Player.Y))).Take(1).ToList();

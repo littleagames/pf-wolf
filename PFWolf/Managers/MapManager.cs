@@ -91,8 +91,35 @@ internal class MapManager
     internal Entities.Actors.PlayerPawn? Player => session.PlayerState.Pawn;
 
     /// <summary>Every player's pawn on this level, in player order</summary>
-    internal IEnumerable<Entities.Actors.PlayerPawn> Players =>
-        session.Players.Select(p => p.Pawn).OfType<Entities.Actors.PlayerPawn>();
+    internal IReadOnlyList<Entities.Actors.PlayerPawn> Players
+    {
+        get
+        {
+            // Asked many times a tic: the same array while the pawns are the same, a new one
+            // (never the old one changed, which someone may be going through) when they aren't
+            var players = session.Players;
+            int count = 0;
+            bool same = true;
+            foreach (var p in players)
+            {
+                if (p.Pawn is not { } pawn)
+                    continue;
+                same &= count < _pawns.Length && ReferenceEquals(_pawns[count], pawn);
+                count++;
+            }
+            if (same && count == _pawns.Length)
+                return _pawns;
+
+            var pawns = new Entities.Actors.PlayerPawn[count];
+            count = 0;
+            foreach (var p in players)
+                if (p.Pawn is { } pawn)
+                    pawns[count++] = pawn;
+            return _pawns = pawns;
+        }
+    }
+
+    private Entities.Actors.PlayerPawn[] _pawns = [];
 
     // Drops every player's pawn (the level's actors are going)
     private void ForgetPawns()
@@ -1426,11 +1453,11 @@ internal class MapManager
     /// <summary>True if a living (Shootable) actor occupies the tile -- corpses don't count.</summary>
     /// <summary>The living (Shootable) actors on a tile</summary>
     internal IEnumerable<Entities.Actors.Monster> ShootableActorsAt(int tilex, int tiley) =>
-        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.TileX == tilex && a.TileY == tiley && a.RuntimeFlags.HasFlag(ObjFlags.Shootable));
+        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.TileX == tilex && a.TileY == tiley && a.RuntimeFlags.Has(ObjFlags.Shootable));
 
     /// <summary>The living (Shootable) actors within <paramref name="reach"/> (global units, each way) of a point, nearest first</summary>
     internal IEnumerable<Entities.Actors.Monster> ShootableActorsNear(int x, int y, long reach) =>
-        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(ObjFlags.Shootable)
+        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.RuntimeFlags.Has(ObjFlags.Shootable)
                 && Math.Abs((long)a.X - x) <= reach && Math.Abs((long)a.Y - y) <= reach)
             .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
 
@@ -1451,7 +1478,7 @@ internal class MapManager
     /// (Blake Stone's hanging turrets and electro-spheres, which things pass under or through)
     /// </summary>
     internal static bool IsSolidActor(Entities.Actors.Actor actor) =>
-        actor.RuntimeFlags.HasFlag(ObjFlags.Shootable) && !actor.HasFlag("NOTSOLID");
+        actor.RuntimeFlags.Has(ObjFlags.Shootable) && !actor.HasFlag("NOTSOLID");
 
     /// <summary>
     /// Creates a fresh pawn for a player, replacing any they had, at the head of _actors after
@@ -1507,7 +1534,7 @@ internal class MapManager
         foreach (var actor in _actors)
         {
             if (actor is Entities.Actors.Monster monster && !actor.IsRemoved && actor.Faction != null
-                && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable))
+                && actor.RuntimeFlags.Has(ObjFlags.Shootable))
             {
                 Combatants.Add(monster);
                 sides.Add(actor.Faction);
@@ -1612,13 +1639,13 @@ internal class MapManager
     /// <summary>Puts a living or dead enemy in ActorAt[] where it stands, as DoActor did after its think</summary>
     internal void MarkActorTile(Entities.Actors.Monster ob)
     {
-        if (ob.RuntimeFlags.HasFlag(ObjFlags.NeverMark))
+        if (ob.RuntimeFlags.Has(ObjFlags.NeverMark))
             return;
 
         ref var spot = ref ActorAt[ob.TileX, ob.TileY];
         if (spot is Wall or BlockingActor)
             return;                 // never on a wall or a solid thing (or a wall sprite's tile)
-        if (ob.RuntimeFlags.HasFlag(ObjFlags.NonMark) && spot != null)
+        if (ob.RuntimeFlags.Has(ObjFlags.NonMark) && spot != null)
             return;                 // a corpse only takes an empty tile
         spot = ob.Mark;
     }

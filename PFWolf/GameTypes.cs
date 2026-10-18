@@ -370,6 +370,15 @@ internal enum ObjFlags
     // next free bit is   0x00400000
 }
 
+internal static class ObjFlagsExtensions
+{
+    /// <summary>
+    /// Whether every bit of <paramref name="flag"/> is set, as Enum.HasFlag. That boxes both values
+    /// in code the JIT hasn't optimized yet, which every actor's think is for its first runs.
+    /// </summary>
+    internal static bool Has(this ObjFlags flags, ObjFlags flag) => (flags & flag) == flag;
+}
+
 internal class LevelRatio
 {
     public short Kill, Secret, Treasure;

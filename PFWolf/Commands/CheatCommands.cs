@@ -326,7 +326,7 @@ internal sealed class CheatCommands(
     {
         // Snapshot first: Kill can drop items, which adds to the actor list.
         var enemies = mapManager.GetActors().OfType<Entities.Actors.Monster>()
-            .Where(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(ObjFlags.Shootable))
+            .Where(a => MapManager.IsEnemy(a) && a.RuntimeFlags.Has(ObjFlags.Shootable))
             .ToList();
 
         foreach (var enemy in enemies)

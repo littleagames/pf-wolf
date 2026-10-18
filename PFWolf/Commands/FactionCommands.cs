@@ -39,7 +39,7 @@ internal sealed class FactionCommands(
             foreach (var actor in map.GetActors())
             {
                 bool alive = actor is Entities.Actors.PlayerPawn pawn ? pawn.State.Health > 0
-                    : actor is Entities.Actors.Monster && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable);
+                    : actor is Entities.Actors.Monster && actor.RuntimeFlags.Has(ObjFlags.Shootable);
                 if (alive && !actor.IsRemoved && actor.Faction != null)
                     members[actor.Faction] = members.GetValueOrDefault(actor.Faction) + 1;
             }
