@@ -26,11 +26,26 @@ maps:
       9: { light: 130 }                                 # arena
       10: { light: 255 }                                # the arena's middle (chaingun)
   DM02:
-    name: "Cellblock"
+    name: "Hell's Highways"
     deathmatch: true
     floor-number: 2
-    music: SUSPENSE
+    music: ULTIMATE
     cluster: 1
+    # Walls are 2 stories; the lane walls, fire walls and arches 3 (plane 3: the generator's Heights)
+    wall-height: 2
+    # graphics/HHSKY.png, drawn above the horizon in place of the ceiling
+    sky: HHSKY
+    floor-color: "#3C1C10"
+    zones:
+      1: { light: 200, color: "#C8D8FF" }               # west base (grey stone), cool
+      2: { light: 200, color: "#C8D8FF" }               # east base (blue stone), cool
+      3: { light: 170, color: "#FFB080" }               # outer lanes, fiery
+      4: { light: 150, color: "#FF9A8A" }               # middle lane, red
+      5: { light: 255 }                                 # the middle (rocket launcher)
+      6: { light: 110 }                                 # connectors and base corridors
+      7: { light: 220 }                                 # armories (chaingun)
+      8: { light: 40 }                                  # secret passages
+      9: { light: 160, effect: flicker, low: 60 }       # stashes
   DM03:
     name: "Wooden Halls"
     deathmatch: true

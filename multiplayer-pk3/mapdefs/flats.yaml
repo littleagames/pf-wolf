@@ -1,0 +1,6 @@
+# Ceiling flats (merged over pfwolf-pk3's mapdefs/wolf3d/flats.yaml): DM02 Hell's Highways puts 17
+# on the arches over its fire wall alcoves, so their undersides are red brick like the lane wall
+# around them (an arch underside is otherwise the wall ending its run: the fire wall behind it)
+flats:
+  ceiling:
+    17: BRICK1

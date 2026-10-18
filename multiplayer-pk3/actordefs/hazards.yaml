@@ -1,0 +1,51 @@
+# Arena hazards. A fire wall's shooter stands inside its wall (mapdefs/wolf3d/things.yaml,
+# `in-wall: true`) and fires a fireball out of the face it faces every second and a half, seen
+# or not: in a netgame every machine fires it on the same tic, and a player learns its beat.
+# Drawn as nothing (TNT1); nothing to shoot.
+
+# The fireball: Fake Hitler's flame (FIRE), glowing. A_Projectile(min, max) is its damage on a
+# hit; HURTMONSTERS burns enemies too (monsters on), BURSTONPLAYER bursts on whoever it hits.
+HighwayFireball:
+  flags: [PROJECTILE, HURTMONSTERS, BURSTONPLAYER]
+  states:
+    Spawn:
+      - sprite: FIRE
+        frames: [A, B]
+        tics-per-frame: 6
+        modifiers: [bright]
+        think: A_Projectile(3, 10)
+    Death:
+      - sprite: BOOM
+        frames: [A, B]
+        tics-per-frame: 6
+        modifiers: [bright]
+      - sprite: BOOM
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        action: A_Remove
+  properties:
+    "speed": 4608 # 1/65536 tile a tic: a little over half a rocket's (8192), so it can be dodged
+    "attacksound": "flame/fire"
+    "deathsound": "missile/hit"
+    "light.intensity": 160
+    "light.radius": 2
+    "light.color": "#FF8030"
+
+# Straight out of its face every 105 tics (a second and a half)
+FireWallShooter:
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 105
+        next-state: Fire
+    Fire:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnProjectile("HighwayFireball")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 105
+        next-state: Fire

@@ -1,0 +1,8 @@
+# The fire wall, End of Destiny's (its wall 65, textures/EOD065_1 and _2): DM02 Hell's Highways
+# sets it in the outer lanes' walls with a FireWallShooter inside (mapdefs/things.yaml)
+walls:
+    '65':
+        North: EOD065_1
+        South: EOD065_1
+        East: EOD065_2
+        West: EOD065_2

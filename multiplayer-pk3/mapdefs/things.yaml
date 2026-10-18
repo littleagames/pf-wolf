@@ -15,3 +15,9 @@ things:
   424:
     class: Gas
     angles: 0
+  # Fire wall shooters (actordefs/hazards.yaml), standing inside a wall (the fire wall, 65:
+  # mapdefs/walls.yaml) and firing out of the face their angle points out of: east, north, west, south
+  445: { class: FireWallShooter, angles: 0, in-wall: true }
+  446: { class: FireWallShooter, angles: 90, in-wall: true }
+  447: { class: FireWallShooter, angles: 180, in-wall: true }
+  448: { class: FireWallShooter, angles: 270, in-wall: true }

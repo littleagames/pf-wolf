@@ -535,7 +535,7 @@ time limit are on the Rules screen. What each one is, in short:
 
 The arenas are game-info maps with `deathmatch: true` (made by `examples/tools/make-deathmatch-maps.ps1`).
 Wolf3D's are the Multiplayer mod's (`multiplayer-pk3/maps/wolf3d/` and
-`multiplayer-pk3/gamepacks/wolf3d/game-info.yaml`: DM01 Four Corners, DM02-DM04, HE01, PH01), so
+`multiplayer-pk3/gamepacks/wolf3d/game-info.yaml`: DM01 Four Corners, DM02 Hell's Highways, DM03-DM04, HE01, PH01), so
 without the mod every mode starts on an episode, as Co-op does.
 An arena with no `modes:` list is one for every mode but Heist: the modes find spots for their
 flags, points and spawns on any map. `modes: [heist, team-deathmatch]` makes it an arena for those

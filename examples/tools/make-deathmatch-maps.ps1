@@ -18,9 +18,16 @@
 # Besides `Walls`, an arena can give:
 #   Folder         the pk3 source folder it's written into (default multiplayer-pk3)
 #   QuadrantWalls  a character whose wall differs by quarter: @(NW, NE, SW, SE)
-#   Pushwalls      a character that's a pushwall in the wall of another (a QuadrantWalls one)
+#   Pushwalls      a character that's a pushwall in the wall of another (a Walls or QuadrantWalls one)
+#   Shooters       a character that's a wall with a thing inside it (mapdefs `in-wall: true`), by
+#                  thing number, the wall being ShooterWall: '(' and ')' swap top to bottom, so
+#                  one facing north in the quarter faces south in the mirrored half
 #   Sided          a character whose thing differs by half: @(west, east)
 #   Start          @(x, y) of the level's own start, when the middle tile is taken
+#   Heights        a character's height in stories (plane 3), for walls taller than the level's
+#                  `wall-height` (game-info); on a floor character (':', ';') it's an arch overhead
+#   Ceilings       a character's ceiling flat (mapdefs flats `ceiling:` index, plane 2's high
+#                  byte); on an arch, its underside
 #   Zones          the quarter's light zones, drawn like the layout (plane 5), and
 #   ZoneIds        what each of their characters is: a zone id, or @(NW, NE, SW, SE)
 # 45 degree walls are drawn 7 9 1 3 (where the solid corner is, as on a number pad: NW, NE, SW,
@@ -35,6 +42,8 @@ $ErrorActionPreference = 'Stop'
 # A Dictionary, not a hashtable: hashtables don't tell 'm' from 'M'.
 $Common = New-Object 'System.Collections.Generic.Dictionary[char,int[]]'
 $Common['.'] = @(0, 0)              # floor
+$Common[':'] = @(0, 0)              # floor under an arch (its height is the arena's Heights)
+$Common[';'] = @(0, 0)              # another, for an arch with its own underside (the arena's Ceilings)
 $Common['|'] = @(90, 0)             # door, in a wall running north-south
 $Common['-'] = @(91, 0)             # door, in a wall running east-west
 $Common['^'] = @(0, 410)            # deathmatch starts, facing north, east, south, west
@@ -89,25 +98,101 @@ $Pushwall = 98                      # mapdefs/wolf3d/triggers.yaml
 
 # Walls: '#' each arena's own wall, '%' and '&' its others
 $Arenas = @(
+    # Hell's Highways, DM02: the whole 64x64, three lanes between a base on the west and one on
+    # the east (each its own wall: grey stone, blue stone). The outer lanes (5 wide) run the whole
+    # width past fire walls (EoD's, multiplayer-pk3 mapdefs/walls.yaml; 1 story, each at the back
+    # of a 1-tile alcove under an arch) that shoot across them, to a
+    # flamethrower in the middle of each; the middle lane (7 wide) runs from base mouth to base
+    # mouth under four arches, to the rocket launcher in the very middle behind 45 degree cover.
+    # Two connectors a side join the lanes past an armory (chaingun). Secret passages through the
+    # solid blocks (pushwalls in the outer lanes', middle lane's and bases' walls) lead to stash
+    # rooms. Lane walls are 3 stories, the rest 2 (game-info wall-height), under a sky; light
+    # zones: cool bases, fiery outer lanes, a red middle lane with a bright middle, dim
+    # connectors, bright armories, dark passages, flickering stashes.
     @{
-        Name = 'DM02'; Title = 'Cellblock'
-        Walls = @{ '#' = 8; '%' = 9 }                   # blue stone
+        Name = 'DM02'; Title = "Hell's Highways"
+        Walls = @{ '#' = 44; '%' = 17; 'D' = 19 }        # brown stone, red brick; cover in purple
+        QuadrantWalls = @{ 'C' = @(1, 8, 1, 8) }        # grey stone (west base), blue stone (east)
+        Pushwalls = @{ '*' = '%'; '$' = 'C' }
+        Shooters = @{ '(' = 446; ')' = 448 }            # fire wall shooters (multiplayer-pk3 mapdefs/things.yaml), firing north / south
+        ShooterWall = 65                                # the fire wall (multiplayer-pk3 mapdefs/walls.yaml)
+        # The fire walls are 1 story, set back in alcoves whose arch (';': red brick, from the
+        # lane wall beside it, and underneath, ceiling flat 17 in multiplayer-pk3's
+        # mapdefs/flats.yaml) hides the stories above them
+        Heights = @{ '%' = 3; '*' = 3; '(' = 1; ')' = 1; ':' = 3; ';' = 3 }
+        Ceilings = @{ ';' = 17 }
+        Sided = @{ 'F' = @(421, 421); 'W' = @(420, 420) } # flamethrower, rocket launcher
+        Start = @(31, 29)                               # the rocket launcher has the middle
         Quarter = @(
-            '###############'
-            '#....#.........'
-            '#.v..#....L....'
-            '#..m.|...v.....'
-            '#....#......+..'
-            '##-###.%%%%%%%-'
-            '#....#.%.......'
-            '#....#.%.o...o.'
-            '#.v..#.%.......'
-            '#....#.%...G...'
-            '#.+..#.%.......'
-            '#....#.%.o...o.'
-            '#..h.#.%.......'
-            '#....#.%.......'
-            '#.m....|......P'
+            '################################'
+            '#...............................'
+            '#.....h.........u...............'
+            '#.>..........D......D..........F'
+            '#........................u......'
+            '#...............................'
+            '#...%%%%%%%%*%%%%;%%%%..%%%;%%%%'
+            '#...%%%%%%%%...%%(%%%%..%%%(%%%%'
+            '#...%%%%%%%%.%.%%%%%%%..%%%%%%%%'
+            '#.v.%%%%%%%%%%.%%%%%%%..%%%%%%%%'
+            '#...%%%%%%%%%.....%%%%.m%%%%%%%%'
+            '#...%%%%%%%%%z.u..%%%%..%%%%%%%%'
+            '#...%%%%%%%%%.+..z%%%%..%%%%%%%%'
+            '#...%%%%%%%%%.....%%%%..%%%%%%%%'
+            '#...%%%%%%%%%%%%.%%%%%..%%%.....'
+            '#...%%%%%%%%%%%%.%%%%%..%%%.L...'
+            '#...%%%%%%%%%%%%.%%%%%.......+.G'
+            '#...%%%%%%%%%%%%.%%%%%..%%%.....'
+            '#...%%%%%%%%%%%%.%%%%%..%%%.....'
+            '#...CCCCCC%%%%%%.%%%%%..%%%%%%%%'
+            '#........C%%%%%%.%%%%%..%%%%%%%%'
+            '#........C.......%%%%%..%%%%%%%%'
+            '#..>...m.C.%%%%%.%%%%%..%%%%%%%%'
+            '#........$..%%%%.%%%%%..%%%%%%%%'
+            '#....M...C%%%%%%.%%%%%..%%%%%%%%'
+            '#........C%%%%%..%%%%%..%%%%%%%%'
+            '#...L....C%%%%%..%%%%%..%%%%%%%%'
+            '#........C%%%%%*%%%%%%..%%%%%%%%'
+            '#.....>..C....:.........:......z'
+            '#.............:.........:...3...'
+            '#.+...........:...z.....:.......'
+            '#.............:.........:.z.D..W'
+        )
+        # b bases, o outer lanes, m middle lane, c its middle, k connectors and corridors,
+        # a armories, s secret passages, t stashes
+        ZoneIds = @{ 'b' = @(1, 2, 1, 2); 'o' = 3; 'm' = 4; 'c' = 5; 'k' = 6; 'a' = 7; 's' = 8; 't' = 9 }
+        Zones = @(
+            '................................'
+            '.ooooooooooooooooooooooooooooooo'
+            '.ooooooooooooooooooooooooooooooo'
+            '.ooooooooooooooooooooooooooooooo'
+            '.ooooooooooooooooooooooooooooooo'
+            '.ooooooooooooooooooooooooooooooo'
+            '.kkk.............o....kk...o....'
+            '.kkk........sss.......kk........'
+            '.kkk........s.s.......kk........'
+            '.kkk..........s.......kk........'
+            '.kkk.........ttttt....kk........'
+            '.kkk.........ttttt....kk........'
+            '.kkk.........ttttt....kk........'
+            '.kkk.........ttttt....kk........'
+            '.kkk............s.....kk...aaaaa'
+            '.kkk............s.....kk...aaaaa'
+            '.kkk............s.....kkkkkaaaaa'
+            '.kkk............s.....kk...aaaaa'
+            '.kkk............s.....kk...aaaaa'
+            '.kkk............s.....kk........'
+            '.bbbbbbbb.......s.....kk........'
+            '.bbbbbbbb.sssssss.....kk........'
+            '.bbbbbbbb.s.....s.....kk........'
+            '.bbbbbbbb.ss....s.....kk........'
+            '.bbbbbbbb.......s.....kk........'
+            '.bbbbbbbb......ss.....kk........'
+            '.bbbbbbbb......ss.....kk........'
+            '.bbbbbbbb.............kk........'
+            '.bbbbbbbb.mmmmmmmmmmmmmmmmmmmmmm'
+            '.bbbbbbbbmmmmmmmmmmmmmmmmmmccccc'
+            '.bbbbbbbbmmmmmmmmmmmmmmmmmmccccc'
+            '.bbbbbbbbmmmmmmmmmmmmmmmmmmccccc'
         )
     }
     @{
@@ -303,7 +388,7 @@ function Swap([string]$line, [char]$a, [char]$b) {
 }
 
 # The whole arena from its top-left quarter: mirrored right (west/east starts swap, and 45
-# degree walls), then down (north/south starts swap, and 45 degree walls)
+# degree walls), then down (north/south starts swap, 45 degree walls, and shooters)
 function Expand([string[]]$quarter) {
     $width = $quarter[0].Length
     foreach ($row in $quarter) { if ($row.Length -ne $width) { throw "Row '$row' isn't $width wide" } }
@@ -311,7 +396,7 @@ function Expand([string[]]$quarter) {
         $right = -join $row.Substring(0, $width - 1).ToCharArray()[($width - 2)..0]
         $row + (Swap (Swap (Swap (Swap (Swap $right '<' '>') 'R' 'B') 'q' 'Q') '7' '9') '1' '3')
     }
-    $bottom = for ($i = $rows.Count - 2; $i -ge 0; $i--) { Swap (Swap (Swap $rows[$i] '^' 'v') '7' '1') '9' '3' }
+    $bottom = for ($i = $rows.Count - 2; $i -ge 0; $i--) { Swap (Swap (Swap (Swap $rows[$i] '^' 'v') '7' '1') '9' '3') '(' ')' }
     @($rows) + @($bottom)
 }
 
@@ -341,6 +426,8 @@ function Write-Arena($arena) {
             $s = [string]$ch
             $i = ($top + $y) * $Size + $left + $x
             $quarter = Quarter $x $y $width $height
+            if ($arena.Heights -and $arena.Heights.ContainsKey($s)) { $planes[3][$i] = $arena.Heights[$s] }
+            if ($arena.Ceilings -and $arena.Ceilings.ContainsKey($s)) { $planes[2][$i] = $arena.Ceilings[$s] -shl 8 }
             if ($arena.Walls.ContainsKey($s)) {
                 $planes[0][$i] = $arena.Walls[$s]
                 continue
@@ -350,8 +437,14 @@ function Write-Arena($arena) {
                 continue
             }
             if ($arena.Pushwalls -and $arena.Pushwalls.ContainsKey($s)) {
-                $planes[0][$i] = $arena.QuadrantWalls[$arena.Pushwalls[$s]][$quarter]
+                $in = $arena.Pushwalls[$s]
+                $planes[0][$i] = if ($arena.QuadrantWalls -and $arena.QuadrantWalls.ContainsKey($in)) { $arena.QuadrantWalls[$in][$quarter] } else { $arena.Walls[$in] }
                 $planes[1][$i] = $Pushwall
+                continue
+            }
+            if ($arena.Shooters -and $arena.Shooters.ContainsKey($s)) {
+                $planes[0][$i] = $arena.ShooterWall
+                $planes[1][$i] = $arena.Shooters[$s]
                 continue
             }
             if ($Diagonals.ContainsKey($s)) {
