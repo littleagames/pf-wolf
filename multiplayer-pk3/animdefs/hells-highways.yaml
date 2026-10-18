@@ -1,0 +1,23 @@
+# DM02 Hell's Highways' sky (game-info `sky: HHSKY`): smoke drifting, the horizon breathing,
+# flames licking and embers rising, a loop of 16 frames (graphics/HHSKY1-16.png, made by
+# examples/tools/make-hells-highways-sky.ps1), about 2.3 seconds. On the level's clock: it stops
+# while paused.
+HHSKY:
+  tics: 10
+  frames:
+    - HHSKY1
+    - HHSKY2
+    - HHSKY3
+    - HHSKY4
+    - HHSKY5
+    - HHSKY6
+    - HHSKY7
+    - HHSKY8
+    - HHSKY9
+    - HHSKY10
+    - HHSKY11
+    - HHSKY12
+    - HHSKY13
+    - HHSKY14
+    - HHSKY15
+    - HHSKY16
