@@ -70,7 +70,12 @@ internal static class AssetManagerExtensions
         return metadata;
     }
 
-    [Obsolete]
+    /// <summary>
+    /// The actordefs classes: the shared ones, then the running pack's. Built fresh on every call,
+    /// not cached like menus and text: ActorMetadata.CreateActor merges a class's parents into its
+    /// ActorData and hands the actor that data's properties, so callers that build actors often
+    /// keep their own copy (MapManager, InventoryManager) rather than share one.
+    /// </summary>
     public static ActorMetadata GetActorMetadata(this AssetManager assets)
     {
         try
