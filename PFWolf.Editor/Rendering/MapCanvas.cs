@@ -23,6 +23,16 @@ public sealed class TileEventArgs(int x, int y) : EventArgs
     public bool IsNone => X < 0;
 }
 
+/// <summary>Drawn over a <see cref="MapCanvas"/>'s level (the demo browser's replay)</summary>
+public interface IMapOverlay
+{
+    /// <summary>Draws over the level: <paramref name="toScreen"/> turns a spot in tiles into the canvas's pixels</summary>
+    void Render(DrawingContext context, Func<double, double, Point> toScreen, double zoom);
+
+    /// <summary>Something drawn changed: the canvas draws again</summary>
+    event EventHandler? Changed;
+}
+
 /// <summary>
 /// A level from above: walls and doors in their textures, things as their sprites, and the
 /// other planes (flats, heights, tags, light zones) as numbered overlays. The left button works
@@ -43,11 +53,12 @@ public sealed class MapCanvas : Control
     public static readonly StyledProperty<bool> ShowGridProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowGrid), true);
     public static readonly StyledProperty<Camera3D?> CameraProperty = AvaloniaProperty.Register<MapCanvas, Camera3D?>(nameof(Camera));
     public static readonly StyledProperty<bool> ShowCameraProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowCamera));
+    public static readonly StyledProperty<IMapOverlay?> OverlayProperty = AvaloniaProperty.Register<MapCanvas, IMapOverlay?>(nameof(Overlay));
 
     static MapCanvas()
     {
         AffectsRender<MapCanvas>(TilesProperty, ArtProperty, ShowWallsProperty, ShowThingsProperty, ShowFlatsProperty,
-            ShowHeightsProperty, ShowTagsProperty, ShowZonesProperty, ShowGridProperty, ShowCameraProperty);
+            ShowHeightsProperty, ShowTagsProperty, ShowZonesProperty, ShowGridProperty, ShowCameraProperty, OverlayProperty);
         FocusableProperty.OverrideDefaultValue<MapCanvas>(true);
         ClipToBoundsProperty.OverrideDefaultValue<MapCanvas>(true);
     }
@@ -66,6 +77,9 @@ public sealed class MapCanvas : Control
     /// <summary>The 3D view's camera, drawn on the map while <see cref="ShowCamera"/> is set; V puts it on the tile under the pointer</summary>
     public Camera3D? Camera { get => GetValue(CameraProperty); set => SetValue(CameraProperty, value); }
     public bool ShowCamera { get => GetValue(ShowCameraProperty); set => SetValue(ShowCameraProperty, value); }
+
+    /// <summary>Drawn over the level, under the hover box</summary>
+    public IMapOverlay? Overlay { get => GetValue(OverlayProperty); set => SetValue(OverlayProperty, value); }
 
     /// <summary>The pointer moved onto another tile, or off the map</summary>
     public event EventHandler<TileEventArgs>? TileHovered;
@@ -139,6 +153,37 @@ public sealed class MapCanvas : Control
                 old.Changed -= OnCameraChanged;
             if (change.NewValue is Camera3D camera)
                 camera.Changed += OnCameraChanged;
+        }
+        else if (change.Property == OverlayProperty)
+        {
+            if (change.OldValue is IMapOverlay old)
+                old.Changed -= OnControllerChanged;
+            if (change.NewValue is IMapOverlay overlay)
+                overlay.Changed += OnControllerChanged;
+        }
+    }
+
+    /// <summary>A spot in tiles on screen</summary>
+    private Point ToScreen(double x, double y) => new(_origin.X + x * _zoom, _origin.Y + y * _zoom);
+
+    /// <summary>
+    /// Scrolls so a spot (in tiles) is in view, when it's near the edge or off it, zoomed in
+    /// enough to follow it (the whole level is too small to)
+    /// </summary>
+    public void KeepInView(double x, double y)
+    {
+        if (Bounds.Width <= 0 || Tiles == null)
+            return;
+        if (_fitPending)
+            Fit();
+        const double FollowZoom = 16;
+        var point = ToScreen(x, y);
+        double margin = Math.Min(Bounds.Width, Bounds.Height) * 0.2;
+        if (_zoom < FollowZoom || point.X < margin || point.Y < margin || point.X > Bounds.Width - margin || point.Y > Bounds.Height - margin)
+        {
+            _zoom = Math.Max(_zoom, FollowZoom);
+            _origin = new Point(Bounds.Width / 2 - x * _zoom, Bounds.Height / 2 - y * _zoom);
+            InvalidateVisual();
         }
     }
 
@@ -224,6 +269,7 @@ public sealed class MapCanvas : Control
         }
 
         context.DrawRectangle(null, MapEdgePen, new Rect(_origin, new Size(tiles.Width * _zoom, tiles.Height * _zoom)));
+        Overlay?.Render(context, ToScreen, _zoom);
         if (Controller?.Selection is { } selection)
             DrawSelection(context, selection, x0, y0, x1, y1);
         if (_hover.X >= 0)

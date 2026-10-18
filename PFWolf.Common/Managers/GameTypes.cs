@@ -199,6 +199,32 @@ public static class GameTypes
     };
 
     /// <summary>
+    /// The game's own folder under %APPDATA%\PFWolf, for its settings, saves and recorded demos
+    /// ("Wolfenstein3D"); a game a mod adds goes by its pack id
+    /// </summary>
+    public static string UserFolderName(GameSelection game) => game.Type switch
+    {
+        null => SafeFolderName(game.PackId),
+        GameType.SpearOfDestiny => "SpearOfDestiny",
+        GameType.BlakeStone => "BlakeStone",
+        GameType.PlanetStrike => "PlanetStrike",
+        GameType.WolfShareware => "Wolfenstein3DShareware",
+        GameType.SpearDemo => "SpearOfDestinyDemo",
+        _ => "Wolfenstein3D",       // Apogee's release too: the same game, so the same settings
+    };
+
+    /// <summary>Where the game records demos (DEMO0.dmo...) unless --demodir says otherwise</summary>
+    public static string DemosFolder(GameSelection game)
+        => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", UserFolderName(game), "demos");
+
+    private static string SafeFolderName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var safe = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim('.', ' ');
+        return safe.Length == 0 ? "Game" : safe;
+    }
+
+    /// <summary>
     /// Every game pack name the engine knows about
     /// </summary>
     public static IEnumerable<string> KnownGamePackIds => Enum.GetValues<GameType>().Select(GetGamePackId);

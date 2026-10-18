@@ -48,8 +48,11 @@ internal static partial class GameHost
     internal static void PlayDemo(int demonumber) => demos.PlayDemo(demonumber);
     internal static bool DemoExists(int demonumber) => demos.DemoExists(demonumber);
 
-    // playdemo, demotest and recorddemo (Commands/DemoCommands.cs)
+    // playdemo, demotest, demotrace and recorddemo (Commands/DemoCommands.cs)
     static DemoCommands demoCommands = null!;       // made in InitServices
+
+    // What demotrace writes down as a demo plays (Gameplay/DemoTracer.cs)
+    static DemoTracer demoTracer = null!;       // made in InitServices
 
     /// <summary>Set while demotest runs: demos play without waiting, and each prints its report as it ends</summary>
     internal static bool DemoTesting { get => demoCommands.DemoTesting; set => demoCommands.DemoTesting = value; }
@@ -236,7 +239,8 @@ internal static partial class GameHost
 
     static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, HudMessageManager, MapManager,
         frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
-        new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick()));
+        new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick(),
+            () => demoTracer.AfterFrame()));
 
     // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
     static ZoneAmbience? _zoneAmbience;

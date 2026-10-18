@@ -303,13 +303,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (_recoloring)
         {
             if (value != null)
+            {
                 _artBrowser?.Recolor(value);
+                _demoBrowser?.Recolor(value);
+            }
             _textBrowser?.Recolor();
             return;
         }
 
         _artBrowser?.Load(Content, value);
         _soundBrowser?.Load(Content);
+        _demoBrowser?.Load(Content, value);
         _paletteBrowser?.Load(Content);
         _textBrowser?.Load(Content);
         _scriptBrowser?.Load(Content);
@@ -567,6 +571,32 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 _soundBrowser.Show(SoundKind.Music, music);
         }
         Dialogs.ShowSoundBrowser(_soundBrowser);
+    }
+
+    //
+    // The demo browser
+    //
+
+    private DemoBrowserViewModel? _demoBrowser;
+
+    /// <summary>Opens the demo browser, on the first demo the first time</summary>
+    [RelayCommand]
+    private void ShowDemos()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_demoBrowser == null)
+        {
+            _demoBrowser = new DemoBrowserViewModel
+            {
+                // The game plays the demos to trace them, as Play starts it: from its folder, with the mods
+                GameToRun = () => Content == null ? null
+                    : (Path.Combine(GameFolder, OperatingSystem.IsWindows() ? "PFWolf.exe" : "PFWolf"), GameFolder, Mods.ToList()),
+            };
+            _demoBrowser.Load(Content, Art);
+        }
+        Dialogs.ShowDemoBrowser(_demoBrowser);
     }
 
     /// <summary>Picks what uses a picture in the browser (a wall, a door, a flat, a thing) to put down</summary>

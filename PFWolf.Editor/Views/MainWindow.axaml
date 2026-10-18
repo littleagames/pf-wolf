@@ -28,6 +28,7 @@
     <KeyBinding Gesture="F2" Command="{Binding ShowTextsCommand}" />
     <KeyBinding Gesture="F11" Command="{Binding ShowDefinitionsCommand}" />
     <KeyBinding Gesture="F12" Command="{Binding ShowScriptsCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding ShowDemosCommand}" />
   </Window.KeyBindings>
 
   <Window.Styles>
@@ -164,6 +165,8 @@
                   ToolTip.Tip="The help screens, end texts and briefings, each article page as the game shows it, with what's wrong with it" />
         <MenuItem Header="S_cripts…" Command="{Binding ShowScriptsCommand}" InputGesture="F12"
                   ToolTip.Tip="The Lua scripts the game runs (scripts/*.lua), with the actions they give, what calls them and what's wrong with them" />
+        <MenuItem Header="De_mos…" Command="{Binding ShowDemosCommand}" InputGesture="Ctrl+Shift+D"
+                  ToolTip.Tip="The game's and recorded demos: the controls along time, and, played by the game, where the player and everyone else went" />
         <Separator />
         <MenuItem Header="_Definitions…" Command="{Binding ShowDefinitionsCommand}" InputGesture="F11"
                   ToolTip.Tip="Game info, game packs, actor classes and map definitions, in fields or as YAML, saved into a mod (pfwolf.pk3 is read-only)" />

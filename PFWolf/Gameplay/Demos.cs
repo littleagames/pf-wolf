@@ -44,22 +44,17 @@ internal sealed class Demos(
     GameSession session,
     DemosHooks hooks)
 {
-    internal void PlayDemo(int demonumber)
+    /// <summary>
+    /// Plays demo <paramref name="demonumber"/>: one recorded with that number, else the game's
+    /// own; or <paramref name="data"/> when given (demotrace's file), numbered as asked
+    /// </summary>
+    internal void PlayDemo(int demonumber, byte[]? data = null)
     {
         short length;
 
-        // A demo recorded with that number plays in place of the game's own
-        var recorded = ReadRecordedDemo(demonumber);
-        if (recorded != null)
-            demo.DemoData = recorded;
-        else
-        {
-            var demoAsset = assets.Find<DemoAsset>($"demo{demonumber}");
-            if (demoAsset == null)
-                return;
-
-            demo.DemoData = demoAsset.RawData;
-        }
+        if ((data ?? DemoData(demonumber)) is not { } found)
+            return;
+        demo.DemoData = found;
         demo.DemoPtr = 0;
 
         // id's header: the floor in the first episode (0 = MAP01), a 16-bit length counting the
@@ -99,6 +94,10 @@ internal sealed class Demos(
         music.StopMusic();
         audio.StopAll();
     }
+
+    /// <summary>Demo <paramref name="demonumber"/>'s data: one recorded with that number plays in place of the game's own</summary>
+    internal byte[]? DemoData(int demonumber)
+        => ReadRecordedDemo(demonumber) ?? assets.Find<DemoAsset>($"demo{demonumber}")?.RawData;
 
     internal const int MaxDemoSize = 8192;
 

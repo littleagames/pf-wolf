@@ -102,6 +102,20 @@ public partial class MainWindow : Window, IEditorDialogs
             _soundBrowser.Activate();
     }
 
+    private DemoBrowserWindow? _demoBrowser;
+
+    public void ShowDemoBrowser(DemoBrowserViewModel browser)
+    {
+        if (_demoBrowser == null)
+        {
+            _demoBrowser = new DemoBrowserWindow { DataContext = browser };
+            _demoBrowser.Closed += (_, _) => _demoBrowser = null;
+            _demoBrowser.Show(this);
+        }
+        else
+            _demoBrowser.Activate();
+    }
+
     private PaletteBrowserWindow? _paletteBrowser;
 
     public void ShowPaletteBrowser(PaletteBrowserViewModel browser)

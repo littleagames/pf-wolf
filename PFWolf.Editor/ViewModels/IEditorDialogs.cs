@@ -84,6 +84,9 @@ public interface IEditorDialogs
     /// <summary>Shows the sound browser beside the editor, or brings it to the front</summary>
     void ShowSoundBrowser(SoundBrowserViewModel browser);
 
+    /// <summary>Shows the demo browser beside the editor, or brings it to the front</summary>
+    void ShowDemoBrowser(DemoBrowserViewModel browser);
+
     /// <summary>Shows the palette browser beside the editor, or brings it to the front</summary>
     void ShowPaletteBrowser(PaletteBrowserViewModel browser);
 

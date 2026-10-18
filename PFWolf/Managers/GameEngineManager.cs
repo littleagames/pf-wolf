@@ -81,23 +81,7 @@ internal class GameEngineManager
     /// so games don't share them. Wolf3D keeps the folder it has always used; a game a mod adds
     /// has one named after it.
     /// </summary>
-    private string GameDataFolderName => Game.Type switch
-    {
-        null => SafeFolderName(Game.PackId),
-        GameType.SpearOfDestiny => "SpearOfDestiny",
-        GameType.BlakeStone => "BlakeStone",
-        GameType.PlanetStrike => "PlanetStrike",
-        GameType.WolfShareware => "Wolfenstein3DShareware",
-        GameType.SpearDemo => "SpearOfDestinyDemo",
-        _ => "Wolfenstein3D",       // Apogee's release too: the same game, so the same settings
-    };
-
-    private static string SafeFolderName(string name)
-    {
-        var invalid = Path.GetInvalidFileNameChars();
-        var safe = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim('.', ' ');
-        return safe.Length == 0 ? "Game" : safe;
-    }
+    private string GameDataFolderName => GameTypes.UserFolderName(Game);
 
     /// <summary>
     /// Every game pack name the engine knows about: PFWolf's own, and those the running game's

@@ -11,6 +11,7 @@ namespace PFWolf.Gameplay;
 /// <param name="AutosavePending">Whether the level asked for an autosave</param>
 /// <param name="AutoSaveGame">Makes it, now there's a picture of the level for it</param>
 /// <param name="TickAmbience">The player's zone's ambient sound (Gameplay/ZoneAmbience.cs)</param>
+/// <param name="AfterThinking">demotrace: writes down the frame just played (Gameplay/DemoTracer.cs)</param>
 internal sealed record LevelLoopHooks(
     Func<bool> DemoTesting,
     Action<uint> TickPlayerBodies,
@@ -18,7 +19,8 @@ internal sealed record LevelLoopHooks(
     Action UpdateAutomap,
     Func<bool> AutosavePending,
     Action AutoSaveGame,
-    Action? TickAmbience = null);
+    Action? TickAmbience = null,
+    Action? AfterThinking = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -145,6 +147,7 @@ internal sealed class LevelLoop(
 
                 video.UpdatePaletteShifts(session.Tics);
                 hudMessages.Tick((int)session.Tics);
+                hooks.AfterThinking?.Invoke();
             }
 
             hooks.UpdateAutomap();

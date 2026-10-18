@@ -263,7 +263,8 @@ internal static partial class GameHost
         saveCommands = new SaveCommands(_consoleManager, GameEngineManager, gameSaves, playScreen, Session);
         midGameJoin = MakeMidGameJoin();
         demos = MakeDemos();
-        demoCommands = new DemoCommands(_consoleManager, MapManager, demos, DemoBuffer, Session);
+        demoTracer = new DemoTracer(MapManager, doors, pushWalls, Session);
+        demoCommands = new DemoCommands(_consoleManager, MapManager, demos, DemoBuffer, Session, demoTracer);
         menuDefs = new MenuDefs(AssetManager, GameEngineManager, _graphicManager, AudioManager, ui);
         jukebox = new Jukebox(_inputManager, _videoManager, AudioManager, menuDrawing, menuLoop, menuDefs);
         RegisterMenuDefs();

@@ -2,13 +2,14 @@ using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf.Commands;
 
-/// <summary>Demos from the console: playdemo, demotest (the regression check) and recorddemo</summary>
+/// <summary>Demos from the console: playdemo, demotest (the regression check), demotrace (the editor's) and recorddemo</summary>
 internal sealed class DemoCommands(
     ConsoleManager console,
     MapManager map,
     Demos demoPlayback,
     DemoBuffer demo,
-    GameSession session)
+    GameSession session,
+    DemoTracer? tracer = null)
 {
     internal void Register()
     {
@@ -18,6 +19,9 @@ internal sealed class DemoCommands(
         console.Register("demotest", "Plays demos (all of them, or those given) back to back without waiting, and prints how each ended: score, kills, where the player and every actor finished. For checking a change to the game hasn't changed how it plays; run it from --exec.",
             "demotest [0-9 ...]", DemoTestCommand, Solo,
             complete: (_, _) => Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).Select(n => n.ToString()));
+        console.Register("demotrace", "Plays a demo (a number, or a .dmo file) through without waiting and writes down, frame by frame, where the player and every actor, door and pushwall went, for the editor's demo browser. Run it from --exec.",
+            "demotrace <0-9|file.dmo> <trace file>", DemoTraceCommand, Solo,
+            complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(demoPlayback.DemoExists).Select(n => n.ToString()) : []);
         console.Register("recorddemo", "Records a demo on a level, on the hardest skill, until the level ends or you die; saves it as that demo number, or asks for one. Ends the game in progress first.",
             "recorddemo <MAP##> [0-9]", RecordDemoCommand, Solo,
             complete: (_, i) => i switch
@@ -71,6 +75,77 @@ internal sealed class DemoCommands(
         finally
         {
             DemoTesting = false;
+        }
+    }
+
+    internal void DemoTraceCommand(string[] args)
+    {
+        const string usage = "usage: demotrace <0-9|file.dmo> <trace file>";
+        if (args.Length < 2 || tracer == null)
+            throw new ArgumentException(usage);
+        if (session.InGame)
+        {
+            console.Print("demotrace runs from the title or --exec, not during a game");
+            return;
+        }
+
+        // A number is the game's demo (or the one recorded with that number); else a file
+        int demonumber = -1;
+        byte[]? data;
+        string label;
+        if (args[0].Length == 1 && int.TryParse(args[0], out var number))
+        {
+            demonumber = number;
+            data = demoPlayback.DemoData(number);
+            label = args[0];
+        }
+        else
+        {
+            try
+            {
+                data = File.ReadAllBytes(args[0]);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+            {
+                Console.WriteLine($"demotrace: couldn't read {args[0]}: {e.Message}");
+                return;
+            }
+            label = Path.GetFileName(args[0]).Replace(' ', '_');
+        }
+        if (data == null)
+        {
+            Console.WriteLine($"demotrace {args[0]}: no such demo");
+            return;
+        }
+
+        var parsed = PFWolf.Assets.Demos.DemoFile.Parse(data);
+        try
+        {
+            using var writer = new StreamWriter(args[1]);
+            tracer.Begin(writer, label, parsed.MapName, parsed.Frames.Count);
+            session.PlayState = PlayState.StillPlaying;
+            DemoTesting = true;
+            try
+            {
+                demoPlayback.PlayDemo(demonumber, data);
+            }
+            finally
+            {
+                DemoTesting = false;
+            }
+
+            // Out of data is the usual end; a demo can also end the level, or the player
+            bool played = tracer.Frames > 0;
+            var how = !played ? "not-played"
+                : session.PlayState == PlayState.Completed && demo.DemoPtr + 3 > demo.LastDemoPtr ? "out-of-data"
+                : session.PlayState.ToString().ToLowerInvariant();
+            tracer.End(how, played ? DemoTestReport(demonumber) : "");
+            Console.WriteLine($"demotrace {label}: {how}, written to {args[1]}");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            tracer.End("failed", "");
+            Console.WriteLine($"demotrace: couldn't write {args[1]}: {e.Message}");
         }
     }
 
