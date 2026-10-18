@@ -53,8 +53,9 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         int which;
         MapInfo? mapInfo = null;
         EpisodeInfo? episodeInfo = null;
-        // Episode, then class (only when there's a choice), then skill; Esc steps back one
-        bool chooseClass = ClassMenu.Length > 1;
+        // Episode, then class (only when there's a choice and game-info's class-menu allows it),
+        // then skill; Esc steps back one
+        bool chooseClass = ClassMenu.Length > 1 && engine.GetGameInfo().ClassMenu;
         string? playerClass = null;
 
         // A game with one episode (Spear) has no episode menu: straight to the class or difficulty menu

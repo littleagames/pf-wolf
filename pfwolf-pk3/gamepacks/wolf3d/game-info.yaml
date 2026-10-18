@@ -142,6 +142,7 @@ skills:
 # see actordefs player.yaml), keyed by class, in menu order. The first is the default. Left out,
 # or with only one, there's no choosing and the game is played as that class (else Player).
 #   name, pic-name: the class menu's text and picture
+# class-menu: false keeps them for the multiplayer lobby's "Play as" only (default true).
 # player-classes:
 #   Player:
 #     name: "B.J. Blazkowicz"

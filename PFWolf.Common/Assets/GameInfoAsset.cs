@@ -12,6 +12,13 @@ public record GameInfoAsset : Asset
     public Dictionary<string, PlayerClassInfo> PlayerClasses { get; init; } = [];
 
     /// <summary>
+    /// Whether a single-player new game asks which of the player-classes to play as (default
+    /// true). False keeps them for the multiplayer lobby's "Play as" only; new games are then
+    /// played as the first.
+    /// </summary>
+    public bool ClassMenu { get; init; } = true;
+
+    /// <summary>
     /// The colors a player can pick to be seen in, playing with others: translations from
     /// translations.yaml, which recolor the player's sprites, in menu order. The first is the
     /// default; none means players are seen in their class's own colors.

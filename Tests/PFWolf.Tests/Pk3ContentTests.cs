@@ -162,6 +162,20 @@ public class Pk3ContentTests
 
     [TestCase("wolf3d", "wolf3d")]
     [TestCase("spear", "spear")]
+    public void Multiplayer_Mods_Classes_Are_For_The_Lobby_Only(string pack, string release)
+    {
+        // Act
+        var plain = Load(pack, release).Load<GameInfoAsset>($"{pack}/game-info");
+        var modded = LoadWithMultiplayer(pack, release).Load<GameInfoAsset>($"{pack}/game-info");
+
+        // Assert
+        Assert.That((plain.PlayerClasses.Count, plain.ClassMenu), Is.EqualTo((0, true)));
+        Assert.That(modded.PlayerClasses.Count, Is.GreaterThan(1));
+        Assert.That(modded.ClassMenu, Is.False);
+    }
+
+    [TestCase("wolf3d", "wolf3d")]
+    [TestCase("spear", "spear")]
     [TestCase("wolf3d-shareware", "wolf3d-shareware")]
     [TestCase("wolf3d-apogee", "wolf3d-apogee")]
     public void Multiplayer_Pk3_Loads_As_A_Mod_And_Its_Actors_Hang_Together(string pack, string release)
