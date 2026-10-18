@@ -83,7 +83,6 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("T_Fake", m => m.FakeChase());
         ActorActionRegistry.RegisterFor<Monster>("T_FakeFire", m => m.ThrowFire());
         ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m => m.Shoot());
-        ActorActionRegistry.RegisterFor<Monster>("A_HitlerMorph", m => m.HitlerMorph());
         // A_Morph("Class"[, "keep"]): becomes another enemy where it stands (a boss's next
         // phase); the new one is shootable at its own health and speed and already chasing. This
         // one leaves the level, or with "keep" stays as it is (a corpse, as Mecha Hitler's armor)
@@ -2024,18 +2023,6 @@ internal record Monster : Actor
         RuntimeFlags &= ~(ObjFlags.AttackMode | ObjFlags.NonMark);
         Dir = ObjDir.NoDir;
         SetState("Spawn");
-    }
-
-    internal void HitlerMorph()
-    {
-        var newActor = MapManager.SpawnMorphedEnemy("RealHitler", this);
-        if (newActor == null)
-            return;
-
-        newActor.Speed = SpdPatrol * 5;
-
-        if (!LoadedGame && newActor is Monster { CountsAsKill: true })
-            GameState.KillTotal++;
     }
 
     /// <summary>A_Morph: the enemy of class args[0] takes its place (see RegisterActions)</summary>

@@ -1240,9 +1240,6 @@ internal class MapManager
     private static int ReadIntProperty(Entities.Actors.Actor actor, string key, int fallback) =>
         actor.Properties.TryGetValue(key, out var value) ? Convert.ToInt32(value) : fallback;
 
-    // Runtime enemy-to-enemy morph (A_HitlerMorph, Monster.HitlerMorph): spawns a new enemy
-    // already in its Chase state at the dying source actor's exact position/facing, rather
-    // than going through the tile/mapdefs-driven SpawnThing path.
     /// <summary>
     /// SpawnNewObj's first countdown for a new actor's frame: a random part of the frame's tics
     /// (none for a frame that holds). Demos keep v1.4's 0 to tics-1, which can end the frame on
@@ -1257,6 +1254,9 @@ internal class MapManager
         return (short)(session.DemoRecord || session.DemoPlayback ? count : count + 1);
     }
 
+    // Runtime enemy-to-enemy morph (A_Morph, Monster.Morph): spawns a new enemy already in its
+    // Chase state at the dying source actor's exact position/facing, rather than going through
+    // the tile/mapdefs-driven SpawnThing path.
     internal Entities.Actors.Actor? SpawnMorphedEnemy(string className, Entities.Actors.Actor source)
     {
         var actorMetaData = assetManager.Value.GetActorMetadata();
@@ -1273,7 +1273,7 @@ internal class MapManager
         builtActor.Distance = source.Distance;
         builtActor.Dir = source.Dir;
         builtActor.AreaNumber = source.AreaNumber;
-        // Hitler stuck-with-nodir fix (Monster's A_HitlerMorph): the morphed
+        // Hitler stuck-with-nodir fix (vanilla's A_HitlerMorph): the morphed
         // actor must remain markable even if the dying source had NonMark set.
         builtActor.RuntimeFlags = (source.RuntimeFlags & ~ObjFlags.NonMark) | ObjFlags.Shootable;
         builtActor.Hitpoints = GetScaledHealth(builtActor);

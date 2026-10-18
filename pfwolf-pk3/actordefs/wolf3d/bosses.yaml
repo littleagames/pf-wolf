@@ -655,8 +655,8 @@ FakeHitler:
 
 # -----------------------------------------------------------------------
 # Mecha Hitler (classtypes.mechahitlerobj / enemytypes.en_hitler)
-# On death, morphs into Real Hitler (A_HitlerMorph) rather than actually
-# dying outright.
+# On death, morphs into Real Hitler (A_Morph, keeping the armor as a corpse)
+# rather than actually dying outright.
 # -----------------------------------------------------------------------
 MechaHitler:
   parent: Monster
@@ -720,7 +720,7 @@ MechaHitler:
         frames: [D]
         tics-per-frame: 8
         think: T_Chase
-    Death: # s_mechadie1..4 / A_DeathScream, A_HitlerMorph
+    Death: # s_mechadie1..4 / A_DeathScream, A_HitlerMorph (here A_Morph)
       - sprite: MECH
         frames: [H]
         tics-per-frame: 10
@@ -731,7 +731,7 @@ MechaHitler:
       - sprite: MECH
         frames: [J]
         tics-per-frame: 10
-        action: A_HitlerMorph
+        action: 'A_Morph("RealHitler", "keep")'
       - sprite: MECH
         frames: [K]
         tics-per-frame: -1
@@ -751,20 +751,20 @@ MechaHitler:
     # Played by A_ActiveSound while he chases, only while in an area connected to the player
     "activesound": "hitler/active"
     # No dropitem -- KillActor has no PlaceItemType call for
-    # mechahitlerobj (A_HitlerMorph spawns RealHitler in its place instead).
+    # mechahitlerobj (A_Morph spawns RealHitler in its place instead).
     # Reaction delay after first sighting: fixed 1 tic.
 
 # -----------------------------------------------------------------------
 # Real Hitler (classtypes.realhitlerobj) -- not in enemytypes; spawned
-# only by A_HitlerMorph when Mecha Hitler's suit is destroyed, already in
-# the Chase state at 5x speed. Hitpoints come from a separate hardcoded
-# array in A_HitlerMorph, not from `starthitpoints`.
+# only by Mecha Hitler's A_Morph when his suit is destroyed, already in
+# the Chase state at 5x speed. Hitpoints come from its own health.* below
+# (vanilla's separate array in A_HitlerMorph), not from `starthitpoints`.
 # -----------------------------------------------------------------------
 RealHitler:
   parent: Monster
   flags: [AMBUSH]
   states:
-    # Only present so the actor initializes cleanly; A_HitlerMorph spawns
+    # Only present so the actor initializes cleanly; A_Morph spawns
     # directly into Chase and never uses this state in practice.
     Spawn:
       - sprite: HTLR
@@ -869,7 +869,7 @@ RealHitler:
     "health.easy": 700
     "health.normal": 800
     "health.hard": 900
-    "speed": 2560 # SPDPATROL * 5, set directly by A_HitlerMorph
+    "speed": 2560 # SPDPATROL * 5, vanilla's A_HitlerMorph speed (A_Morph uses this)
     "monster.chasespeedmultiplier": 5 # applied again if FirstSighting ever re-triggers
     "points": 5000
     "seesound": "hitler/sight" # inferred, was "DIE" (shared with Mecha Hitler)
