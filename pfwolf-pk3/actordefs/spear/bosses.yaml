@@ -103,7 +103,8 @@ TransGrosse:
     "attacksound": "guard/attack" # vanilla Spear's T_Shoot plays NAZIFIRE for its bosses
     "dropitem": "GoldKey"
 
-# MAP16. Chases like Trans Grosse; its volley also hurts at point-blank range (T_UShoot).
+# MAP16. Chases like Trans Grosse; its volley also hurts at point-blank range (vanilla's
+# T_UShoot: T_Shoot with monster.pointblankdamage).
 Ubermutant:
   parent: Monster
   flags: [AMBUSH]
@@ -143,23 +144,23 @@ Ubermutant:
       - sprite: UBER
         frames: [F]
         tics-per-frame: 12
-        action: T_UShoot
+        action: T_Shoot
       - sprite: UBER
         frames: [G]
         tics-per-frame: 12
-        action: T_UShoot
+        action: T_Shoot
       - sprite: UBER
         frames: [H]
         tics-per-frame: 12
-        action: T_UShoot
+        action: T_Shoot
       - sprite: UBER
         frames: [G]
         tics-per-frame: 12
-        action: T_UShoot
+        action: T_Shoot
       - sprite: UBER
         frames: [F]
         tics-per-frame: 12
-        action: T_UShoot
+        action: T_Shoot
       - sprite: UBER
         frames: [E]
         tics-per-frame: 12
@@ -194,13 +195,14 @@ Ubermutant:
     "health.easy": 1150
     "health.normal": 1250
     "health.hard": 1400
+    "monster.pointblankdamage": 10 # T_Shoot's extra hurt when right beside the player
     "monster.chasespeed": 3000
     "points": 5000
     "deathsound": "uber/death"
     "attacksound": "guard/attack" # vanilla Spear's T_Shoot plays NAZIFIRE for its bosses
     "dropitem": "GoldKey"
 
-# MAP10. Dodges and backs off (T_Will); opens each volley with a rocket.
+# MAP10. Dodges and backs off (T_DodgeChase, vanilla's T_Will); opens each volley with a rocket.
 Wilhelm:
   parent: Monster
   flags: [AMBUSH]
@@ -214,25 +216,25 @@ Wilhelm:
       - sprite: WILL
         frames: [A]
         tics-per-frame: 10
-        think: T_Will
+        think: T_DodgeChase
       - sprite: WILL
         frames: [A]
         tics-per-frame: 3
       - sprite: WILL
         frames: [B]
         tics-per-frame: 8
-        think: T_Will
+        think: T_DodgeChase
       - sprite: WILL
         frames: [C]
         tics-per-frame: 10
-        think: T_Will
+        think: T_DodgeChase
       - sprite: WILL
         frames: [C]
         tics-per-frame: 3
       - sprite: WILL
         frames: [D]
         tics-per-frame: 8
-        think: T_Will
+        think: T_DodgeChase
     Attack: # s_willshoot1..6
       - sprite: WILL
         frames: [E]
@@ -292,7 +294,7 @@ Wilhelm:
     "attacksound": "guard/attack" # vanilla Spear's T_Shoot plays NAZIFIRE for its bosses
     "dropitem": "GoldKey"
 
-# MAP18. Dodges and backs off (T_Will); each volley fires two rockets angled either side of
+# MAP18. Dodges and backs off (T_DodgeChase, vanilla's T_Will); each volley fires two rockets angled either side of
 # the player, each with a burst from its guns.
 DeathKnight:
   parent: Monster
@@ -307,25 +309,25 @@ DeathKnight:
       - sprite: DKNT
         frames: [A]
         tics-per-frame: 10
-        think: T_Will
+        think: T_DodgeChase
       - sprite: DKNT
         frames: [A]
         tics-per-frame: 3
       - sprite: DKNT
         frames: [B]
         tics-per-frame: 8
-        think: T_Will
+        think: T_DodgeChase
       - sprite: DKNT
         frames: [C]
         tics-per-frame: 10
-        think: T_Will
+        think: T_DodgeChase
       - sprite: DKNT
         frames: [C]
         tics-per-frame: 3
       - sprite: DKNT
         frames: [D]
         tics-per-frame: 8
-        think: T_Will
+        think: T_DodgeChase
     Attack: # s_deathshoot1..5
       - sprite: DKNT
         frames: [E]
@@ -390,7 +392,7 @@ DeathKnight:
     "attacksound": "guard/attack" # vanilla Spear's T_Shoot plays NAZIFIRE for its bosses
     "dropitem": "GoldKey"
 
-# MAP21. Dodges and backs off (T_Will); fires sparks until it tires after three, then catches
+# MAP21. Dodges and backs off (T_DodgeChase, vanilla's T_Will); fires sparks until it tires after three, then catches
 # its breath. Its death wins the game.
 AngelOfDeath:
   parent: Monster
@@ -405,25 +407,25 @@ AngelOfDeath:
       - sprite: ANGL
         frames: [A]
         tics-per-frame: 10
-        think: T_Will
+        think: T_DodgeChase
       - sprite: ANGL
         frames: [A]
         tics-per-frame: 3
       - sprite: ANGL
         frames: [B]
         tics-per-frame: 8
-        think: T_Will
+        think: T_DodgeChase
       - sprite: ANGL
         frames: [C]
         tics-per-frame: 10
-        think: T_Will
+        think: T_DodgeChase
       - sprite: ANGL
         frames: [C]
         tics-per-frame: 3
       - sprite: ANGL
         frames: [D]
         tics-per-frame: 8
-        think: T_Will
+        think: T_DodgeChase
     Attack: # s_angelshoot1
       - sprite: ANGL
         frames: [E]
@@ -438,7 +440,7 @@ AngelOfDeath:
       - sprite: ANGL
         frames: [E]
         tics-per-frame: 10
-        action: A_Relaunch
+        action: A_Relaunch(3, "Tired") # tired after the third spark, else back to Chase half the time
     Tired: # s_angeltired..7
       - sprite: ANGL
         frames: [G]

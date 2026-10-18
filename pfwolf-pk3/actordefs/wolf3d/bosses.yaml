@@ -251,8 +251,8 @@ Gretel:
 
 # -----------------------------------------------------------------------
 # Dr. Schabbs (classtypes.schabbobj / enemytypes.en_schabbs)
-# Uses a custom dodge/retreat think (T_Schabb) instead of plain T_Chase,
-# and throws a Needle projectile rather than shooting.
+# Uses the dodge/retreat think (T_DodgeChase, vanilla's T_Schabb) instead
+# of plain T_Chase, and throws a Needle projectile rather than shooting.
 # -----------------------------------------------------------------------
 Schabbs:
   parent: Monster
@@ -264,38 +264,38 @@ Schabbs:
         tics-per-frame: -1
         think: T_Stand
     # No Pain state.
-    Attack: # s_schabbshoot1..2 / T_SchabbThrow
+    Attack: # s_schabbshoot1..2 / T_SchabbThrow (here A_FireProjectile)
       - sprite: SHAB
         frames: [E]
         tics-per-frame: 30
       - sprite: SHAB
         frames: [F]
         tics-per-frame: 10
-        action: T_SchabbThrow
+        action: A_FireProjectile("Needle")
         next-state: Chase
-    Chase: # s_schabbchase1..4 / T_Schabb (dodges/retreats, throws needles)
+    Chase: # s_schabbchase1..4 / T_Schabb (here T_DodgeChase: dodges/retreats, throws needles)
       - sprite: SHAB
         frames: [A]
         tics-per-frame: 10
-        think: T_Schabb
+        think: T_DodgeChase
       - sprite: SHAB
         frames: [A]
         tics-per-frame: 3
       - sprite: SHAB
         frames: [B]
         tics-per-frame: 8
-        think: T_Schabb
+        think: T_DodgeChase
       - sprite: SHAB
         frames: [C]
         tics-per-frame: 10
-        think: T_Schabb
+        think: T_DodgeChase
       - sprite: SHAB
         frames: [C]
         tics-per-frame: 3
       - sprite: SHAB
         frames: [D]
         tics-per-frame: 8
-        think: T_Schabb
+        think: T_DodgeChase
     # Single-frame state used elsewhere to trigger the end-of-level death
     # camera sequence before playing the real death animation.
     DeathCam:
@@ -345,7 +345,8 @@ Schabbs:
 
 # -----------------------------------------------------------------------
 # Otto Giftmacher (classtypes.giftobj / enemytypes.en_gift)
-# Same dodge/retreat pattern as Schabbs (T_Gift), but throws a Rocket.
+# Same dodge/retreat pattern as Schabbs (T_DodgeChase, vanilla's T_Gift),
+# but throws a Rocket.
 # -----------------------------------------------------------------------
 Gift:
   parent: Monster
@@ -357,38 +358,38 @@ Gift:
         tics-per-frame: -1
         think: T_Stand
     # No Pain state.
-    Attack: # s_giftshoot1..2 / T_GiftThrow
+    Attack: # s_giftshoot1..2 / T_GiftThrow (here A_FireProjectile)
       - sprite: GIFT
         frames: [E]
         tics-per-frame: 30
       - sprite: GIFT
         frames: [F]
         tics-per-frame: 10
-        action: T_GiftThrow
+        action: A_FireProjectile("Rocket")
         next-state: Chase
-    Chase: # s_giftchase1..4 / T_Gift (dodges/retreats, throws rockets)
+    Chase: # s_giftchase1..4 / T_Gift (here T_DodgeChase: dodges/retreats, throws rockets)
       - sprite: GIFT
         frames: [A]
         tics-per-frame: 10
-        think: T_Gift
+        think: T_DodgeChase
       - sprite: GIFT
         frames: [A]
         tics-per-frame: 3
       - sprite: GIFT
         frames: [B]
         tics-per-frame: 8
-        think: T_Gift
+        think: T_DodgeChase
       - sprite: GIFT
         frames: [C]
         tics-per-frame: 10
-        think: T_Gift
+        think: T_DodgeChase
       - sprite: GIFT
         frames: [C]
         tics-per-frame: 3
       - sprite: GIFT
         frames: [D]
         tics-per-frame: 8
-        think: T_Gift
+        think: T_DodgeChase
     DeathCam:
       - sprite: GIFT
         frames: [A]
@@ -427,7 +428,7 @@ Gift:
     "monster.chasespeedmultiplier": 3
     "points": 5000
     "seesound": "gift/sight" # inferred, was "EINE"
-    "attacksound": "missile/fire" # T_GiftThrow plays "MISSILEFIRE"
+    "attacksound": "missile/fire" # vanilla's T_GiftThrow played "MISSILEFIRE" (A_FireProjectile plays the Rocket's own)
     "deathsound": "gift/death"
     # No dropitem -- KillActor has no PlaceItemType call for giftobj.
     # Sets gamestate.killx/killy to the player's position on death.
@@ -435,8 +436,8 @@ Gift:
 
 # -----------------------------------------------------------------------
 # General Fettgesicht (classtypes.fatobj / enemytypes.en_fat)
-# Same dodge/retreat pattern (T_Fat), throws a Rocket, then also fires a
-# regular shot (T_Shoot) later in the same attack.
+# Same dodge/retreat pattern (T_DodgeChase, vanilla's T_Fat), throws a
+# Rocket, then also fires a regular shot (T_Shoot) later in the same attack.
 # -----------------------------------------------------------------------
 Fat:
   parent: Monster
@@ -448,14 +449,14 @@ Fat:
         tics-per-frame: -1
         think: T_Stand
     # No Pain state.
-    Attack: # s_fatshoot1..6 / T_GiftThrow then T_Shoot
+    Attack: # s_fatshoot1..6 / T_GiftThrow (here A_FireProjectile) then T_Shoot
       - sprite: FATF
         frames: [E]
         tics-per-frame: 30
       - sprite: FATF
         frames: [F]
         tics-per-frame: 10
-        action: T_GiftThrow
+        action: A_FireProjectile("Rocket")
       - sprite: FATF
         frames: [G]
         tics-per-frame: 10
@@ -473,29 +474,29 @@ Fat:
         tics-per-frame: 10
         action: T_Shoot
         next-state: Chase
-    Chase: # s_fatchase1..4 / T_Fat (dodges/retreats)
+    Chase: # s_fatchase1..4 / T_Fat (here T_DodgeChase: dodges/retreats)
       - sprite: FATF
         frames: [A]
         tics-per-frame: 10
-        think: T_Fat
+        think: T_DodgeChase
       - sprite: FATF
         frames: [A]
         tics-per-frame: 3
       - sprite: FATF
         frames: [B]
         tics-per-frame: 8
-        think: T_Fat
+        think: T_DodgeChase
       - sprite: FATF
         frames: [C]
         tics-per-frame: 10
-        think: T_Fat
+        think: T_DodgeChase
       - sprite: FATF
         frames: [C]
         tics-per-frame: 3
       - sprite: FATF
         frames: [D]
         tics-per-frame: 8
-        think: T_Fat
+        think: T_DodgeChase
     DeathCam:
       - sprite: FATF
         frames: [A]
@@ -542,8 +543,9 @@ Fat:
 
 # -----------------------------------------------------------------------
 # Fake Hitler (classtypes.fakeobj / enemytypes.en_fake)
-# Attacks with a continuous flamethrower stream (T_FakeFire) instead of a
-# gun, and dodges rather than chasing directly (T_Fake).
+# Attacks with a continuous flamethrower stream (vanilla's T_FakeFire, here
+# A_FireProjectile("Fire")) instead of a gun, and dodges rather than chasing
+# directly (T_Fake).
 # -----------------------------------------------------------------------
 FakeHitler:
   parent: Monster
@@ -561,35 +563,35 @@ FakeHitler:
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8
-        action: T_FakeFire
+        action: A_FireProjectile("Fire")
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8
-        action: T_FakeFire
+        action: A_FireProjectile("Fire")
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8
-        action: T_FakeFire
+        action: A_FireProjectile("Fire")
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8
-        action: T_FakeFire
+        action: A_FireProjectile("Fire")
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8
-        action: T_FakeFire
+        action: A_FireProjectile("Fire")
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8
-        action: T_FakeFire
+        action: A_FireProjectile("Fire")
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8
-        action: T_FakeFire
+        action: A_FireProjectile("Fire")
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8
-        action: T_FakeFire
+        action: A_FireProjectile("Fire")
       - sprite: FAKE
         frames: [E]
         tics-per-frame: 8

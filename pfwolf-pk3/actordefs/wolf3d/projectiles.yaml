@@ -3,10 +3,11 @@
 #
 # Supporting projectile / FX actors spawned by the boss attacks in
 # actordefs/wolf3d/bosses.yaml. None of these are placed on maps directly;
-# they're only ever created at runtime by T_GiftThrow (Gift/Fat),
-# T_SchabbThrow (Schabbs), T_FakeFire (Fake Hitler), or the A_Projectile
-# think that moves them once spawned. A_Projectile(min, max) is the damage
-# range on a player hit.
+# they're only ever created at runtime by A_FireProjectile (Gift/Fat's
+# rockets, Schabbs' needles, Fake Hitler's fire: vanilla's T_GiftThrow,
+# T_SchabbThrow and T_FakeFire), at their `speed` (0x2000 without one), and
+# moved by the A_Projectile think once spawned. A_Projectile(min, max) is
+# the damage range on a player hit.
 #
 # This mirrors the actordefs/wolf3d/{decorations,ammo,weapons}.yaml schema
 # (states: sprite/frames/tics-per-frame/think/action/next-state, plus a flat
@@ -35,7 +36,7 @@
 # Scripting/GameScripts.cs and examples/README.md) for its ring of fireballs.
 # =============================================================================
 
-# Thrown by Gift/Fat (T_GiftThrow); trails Smoke, explodes (its Death state)
+# Thrown by Gift/Fat (A_FireProjectile); trails Smoke, explodes (its Death state)
 # on impact with a wall, or damages the player directly on contact.
 Rocket:
   flags: [PROJECTILE]
@@ -79,7 +80,7 @@ Smoke:
         tics-per-frame: 3
         action: A_Remove # legacy s_smoke4 had no next state, which removed the object
 
-# Thrown by Schabbs (T_SchabbThrow); no wall-impact effect, just vanishes.
+# Thrown by Schabbs (A_FireProjectile); no wall-impact effect, just vanishes.
 # Damage on player hit: (random()>>3) + 20.
 Needle:
   flags: [PROJECTILE]
@@ -104,7 +105,7 @@ Needle:
   properties:
     "attacksound": "schabbs/throw" # was "SCHABBSTHROW"
 
-# Fake Hitler's flamethrower stream (T_FakeFire); one spawned per Attack
+# Fake Hitler's flamethrower stream (A_FireProjectile); one spawned per Attack
 # frame, forming a continuous line toward the player.
 # Damage on player hit: random()>>3 (no floor added, unlike Rocket/Needle).
 Fire:
@@ -121,3 +122,4 @@ Fire:
         think: A_Projectile(0, 31)
   properties:
     "attacksound": "flame/fire" # was "FLAMETHROWER"
+    "speed": 4608 # 0x1200, slower than the rockets' and needles' 0x2000

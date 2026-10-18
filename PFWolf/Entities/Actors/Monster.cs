@@ -75,14 +75,17 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("T_DogChase", m => m.DogChase());
         ActorActionRegistry.RegisterFor<Monster>("T_Bite", m => m.Bite());
         ActorActionRegistry.RegisterFor<Monster>("T_Ghosts", m => m.GhostChase());
-        ActorActionRegistry.RegisterFor<Monster>("T_Schabb", m => m.DodgeAndRetreat("Attack"));
-        ActorActionRegistry.RegisterFor<Monster>("T_SchabbThrow", m => m.ThrowNeedle());
-        ActorActionRegistry.RegisterFor<Monster>("T_Gift", m => m.DodgeAndRetreat("Attack"));
-        ActorActionRegistry.RegisterFor<Monster>("T_GiftThrow", m => m.ThrowRocket());
-        ActorActionRegistry.RegisterFor<Monster>("T_Fat", m => m.DodgeAndRetreat("Attack"));
+        // T_DodgeChase: attacks at random while it has a clear shot, otherwise dodges toward the
+        // player, and backs off once within four tiles (vanilla's T_Schabb/T_Gift/T_Fat/T_Will)
+        ActorActionRegistry.RegisterFor<Monster>("T_DodgeChase", m => m.DodgeChase());
         ActorActionRegistry.RegisterFor<Monster>("T_Fake", m => m.FakeChase());
-        ActorActionRegistry.RegisterFor<Monster>("T_FakeFire", m => m.ThrowFire());
-        ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m => m.Shoot());
+        // T_Shoot: a gun volley; `monster.pointblankdamage` adds that much when right beside the
+        // player (the Ubermutant's 10, vanilla's T_UShoot)
+        ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m =>
+        {
+            m.Shoot();
+            m.PointBlankHit();
+        });
         // A_Morph("Class"[, "keep"]): becomes another enemy where it stands (a boss's next
         // phase); the new one is shootable at its own health and speed and already chasing. This
         // one leaves the level, or with "keep" stays as it is (a corpse, as Mecha Hitler's armor)
@@ -101,12 +104,12 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("A_Follow", (m, args) =>
             m.Follows = !args.Any(a => a.Trim().Equals("off", StringComparison.OrdinalIgnoreCase)));
 
-        // Spear of Destiny's bosses
-        ActorActionRegistry.RegisterFor<Monster>("T_Will", m => m.DodgeAndRetreat("Attack"));
-        ActorActionRegistry.RegisterFor<Monster>("T_UShoot", m => m.UberShoot());
         ActorActionRegistry.RegisterFor<Monster>("A_FireProjectile", (m, args) => m.FireProjectile(args));
+        // A volley of several shots (the Angel's sparks): A_StartAttack starts the count, and
+        // A_Relaunch(count, "TiredState"[, "BreakOffState"]) after each shot goes to TiredState
+        // once count are fired, else breaks off to BreakOffState (default Chase) half the time
         ActorActionRegistry.RegisterFor<Monster>("A_StartAttack", m => m.StartAttack());
-        ActorActionRegistry.RegisterFor<Monster>("A_Relaunch", m => m.Relaunch());
+        ActorActionRegistry.RegisterFor<Monster>("A_Relaunch", (m, args) => m.Relaunch(args));
         ActorActionRegistry.RegisterFor<Monster>("A_Dormant", m => m.Dormant());
     }
 
@@ -1720,9 +1723,9 @@ internal record Monster : Actor
         }
     }
 
-    // Shared dodge/retreat AI for Schabbs/Gift/Fat: keeps a shot lined up when possible,
-    // otherwise dodges toward the player (or runs, once very close).
-    private void DodgeAndRetreat(string attackState)
+    // T_DodgeChase (Schabbs, Gift, Fat, Wilhelm, the Death Knight, the Angel): keeps a shot lined
+    // up when possible, otherwise dodges toward the player (or runs, once very close).
+    internal void DodgeChase()
     {
         var dx = Math.Abs(TileX - Target.TileX);
         var dy = Math.Abs(TileY - Target.TileY);
@@ -1734,7 +1737,7 @@ internal record Monster : Actor
             Hidden = false;
             if (NextRandom() < (Tics << 3))
             {
-                SetState(attackState);
+                SetState("Attack");
                 return;
             }
             dodge = true;
@@ -1890,34 +1893,17 @@ internal record Monster : Actor
             PlaySoundAtActor(sound, newobj);
     }
 
-    // Each plays the thrown projectile's attacksound (projectiles.yaml)
-    internal void ThrowNeedle() =>
-        ThrowProjectile("Needle", 0x2000);
-
-    internal void ThrowRocket() =>
-        ThrowProjectile("Rocket", 0x2000);
-
-    internal void ThrowFire() =>
-        ThrowProjectile("Fire", 0x1200);
-
-    /*
-    =============================================================================
-    SPEAR OF DESTINY BOSSES (ported from wl_act2.cpp's SPEAR section)
-    =============================================================================
-    */
-
-    // Wilhelm, the Death Knight and the Angel chase like Schabbs: attack when there's a clear
-    // shot, otherwise dodge toward the player, and back off once within four tiles
-
-    // The Ubermutant's volley: a normal shot, plus 10 more damage when right beside the player
-    internal void UberShoot()
+    // T_Shoot's `monster.pointblankdamage` (the Ubermutant's 10): that much more damage when
+    // right beside the player, whether or not the volley itself went off
+    internal void PointBlankHit()
     {
-        Shoot();
+        if (PropertyInt("monster.pointblankdamage", 0) is not (> 0 and var damage))
+            return;
 
         var dx = Math.Abs(TileX - Target.TileX);
         var dy = Math.Abs(TileY - Target.TileY);
         if (Math.Max(dx, dy) <= 1)
-            HurtTarget(10);
+            HurtTarget(damage);
     }
 
     /// <summary>
@@ -1952,20 +1938,26 @@ internal record Monster : Actor
     int? RuntimeActorProperty(string className, string key) =>
         InventoryManager.GetProperty(className, key) is { } value && int.TryParse(value.ToString(), out var n) ? n : null;
 
-    // The Angel's spark volley: A_StartAttack starts the count, A_Relaunch follows each spark and
-    // either tires the Angel out after the third, breaks off at random, or goes again
+    // A volley (see RegisterActions): A_StartAttack starts the count, A_Relaunch follows each
+    // shot and either tires it out after the last, breaks off at random, or goes again
     internal void StartAttack() => Temp1 = 0;
 
-    internal void Relaunch()
+    internal void Relaunch(string[] args)
     {
-        if (++Temp1 == 3)
+        if (args.Length < 2 || !int.TryParse(args[0].Trim(), out var count) || string.IsNullOrWhiteSpace(args[1]))
         {
-            SetState("Tired");
+            Console.WriteLine($"A_Relaunch ({Name}): give a shot count and a state, as A_Relaunch(3, \"Tired\").");
+            return;
+        }
+
+        if (++Temp1 == count)
+        {
+            SetState(args[1].Trim());
             return;
         }
 
         if ((NextRandom() & 1) != 0)
-            SetState("Chase");
+            SetState(args.Length > 2 && !string.IsNullOrWhiteSpace(args[2]) ? args[2].Trim() : "Chase");
     }
 
 
