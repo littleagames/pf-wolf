@@ -202,9 +202,13 @@ internal sealed class Lighting(
     internal void InitLevelShading(MapInfo? mapInfo)
     {
         var defaultMap = engine.GetGameInfo().DefaultMap;
+        _levelMapInfo = mapInfo;
         LevelZones = ResolveZones(mapInfo, defaultMap);
         SetShading(ResolveShading(mapInfo, defaultMap));
     }
+
+    // The level's map, for A_SetShading("on") to put its own shading back
+    MapInfo? _levelMapInfo;
 
     internal const int LightCellShift = 3;
     internal const int LightCells = 1 << LightCellShift;                    // cells a tile, each way
@@ -424,6 +428,13 @@ internal sealed class Lighting(
       A_SetZoneEffect(zone, effect)                 none, flicker, pulse or strobe, timed as
                                                     the zone's game-info low, tics, bright-tics
 
+    And for the whole level (End of Destiny's light switches, wl_shade.cpp lightson):
+
+      A_SetShading(off | on | toggle)               off takes the level's shading (its fade
+                                                    and light) away, its zones' lights staying;
+                                                    on puts back the map's own. Not kept in a
+                                                    saved game: a script can set it again
+
     =============================================================================
     */
 
@@ -438,6 +449,33 @@ internal sealed class Lighting(
         Both("A_SetZoneLight", SetZoneLightAction);
         Both("A_ToggleZoneLight", ToggleZoneLightAction);
         Both("A_SetZoneEffect", SetZoneEffectAction);
+        Both("A_SetShading", SetShadingAction);
+    }
+
+    internal bool SetShadingAction(string name, string[] args)
+    {
+        var mode = args.ElementAtOrDefault(0)?.Trim().ToLowerInvariant();
+        bool on = mode switch
+        {
+            "on" => true,
+            "off" => false,
+            "toggle" => LevelShading == null,
+            _ => Warn(),
+        };
+        if (mode is not ("on" or "off" or "toggle"))
+            return false;
+
+        var shading = on ? ResolveShading(_levelMapInfo, engine.GetGameInfo().DefaultMap) : null;
+        if (shading == LevelShading)
+            return false;
+        SetShading(shading);
+        return true;
+
+        bool Warn()
+        {
+            Console.WriteLine($"{name}: say off, on or toggle, as {name}(\"off\").");
+            return false;
+        }
     }
 
     internal bool SetZoneLightAction(string name, string[] args)

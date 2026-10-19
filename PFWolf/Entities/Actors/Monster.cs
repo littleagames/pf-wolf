@@ -1194,7 +1194,15 @@ internal record Monster : Actor
             return;
 
         PlayActorSound(this, "seesound");
+        StartChasing();
+    }
 
+    /// <summary>
+    /// After the player from now on, as one that's seen them (FirstSighting, without its sound):
+    /// the Chase state, the chase speed, and attacking. A_SpawnEnemy's "alert" spawns them so.
+    /// </summary>
+    internal void StartChasing()
+    {
         SetState("Chase");
 
         // Chasing is faster than patrolling: either a set speed (the Ubermutant's 3000) or a

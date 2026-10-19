@@ -209,9 +209,10 @@ internal partial record BlakeMonster : Monster
     */
 
     /// <summary>
-    /// A_SpawnEnemy("ScanAlien"[, "chase"][, "count"]): an enemy appears on this actor's tile, as if
-    /// placed by the map but not added to the kill total; with chase, it's already after the player;
-    /// with count, it's added to the kill total too (End of Destiny's SpawnTriggeredActors, SpawnBaron)
+    /// A_SpawnEnemy("ScanAlien"[, "chase" | "alert"][, "count"]): an enemy appears on this actor's
+    /// tile, as if placed by the map but not added to the kill total; with chase, it's already after
+    /// the player; with alert, after them at its chase speed and attacking, as one that's seen them
+    /// (End of Destiny's SpawnTriggeredActors); with count, it's added to the kill total too
     /// </summary>
     internal void SpawnEnemy(string[] args)
     {
@@ -234,7 +235,13 @@ internal partial record BlakeMonster : Monster
         spawned.Y = Y;
         spawned.AreaNumber = AreaNumber;
         spawned.Faction = FactionManager.InheritedFaction(spawned, this);
-        if (args.Skip(1).Any(a => a.Trim().Equals("chase", StringComparison.OrdinalIgnoreCase)) && spawned.ResolvedStates.ContainsKey("Chase"))
+        bool Has(string option) => args.Skip(1).Any(a => a.Trim().Equals(option, StringComparison.OrdinalIgnoreCase));
+        if (Has("alert") && spawned is Monster alerted && spawned.ResolvedStates.ContainsKey("Chase"))
+        {
+            alerted.StartChasing();
+            spawned.Dir = ObjDir.NoDir;
+        }
+        else if (Has("chase") && spawned.ResolvedStates.ContainsKey("Chase"))
         {
             spawned.SetState("Chase");
             spawned.Dir = ObjDir.NoDir;

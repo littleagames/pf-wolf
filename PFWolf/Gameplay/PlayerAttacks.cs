@@ -239,6 +239,11 @@ internal sealed class PlayerAttacks(
     /// One shot that hits the closest target in its sights, with a clear line to it, for min..max
     /// whatever the distance, never missing (Midnight Assault's FireBullet, as its zoomed sniper
     /// rifle's 400-499). Silent: no one hears it.
+    /// <para/>
+    /// The weapon in hand can change what a hit does (End of Destiny's stealth rifle):
+    /// `weapon.spares` names an actor flag (BOSS) whose holders it doesn't hurt at all, and with
+    /// `weapon.killrange` (tiles) a hit within that range kills outright, and one beyond it does
+    /// nothing.
     /// </summary>
     internal void FireBullet(int min, int max, bool silent)
     {
@@ -249,6 +254,19 @@ internal sealed class PlayerAttacks(
         var closest = FindShootCandidates().FirstOrDefault().Actor;
         if (closest == null || !lineOfSight.CheckLine(closest))
             return;
+
+        if (session.PlayerState.Weapon is { } weapon)
+        {
+            if (inventory.GetStringProperty(weapon, "weapon.spares") is { Length: > 0 } spared && closest.HasFlag(spared))
+                return;
+            if (inventory.GetIntProperty(weapon, "weapon.killrange", 0) is > 0 and var killRange)
+            {
+                int dist = Math.Max(Math.Abs(closest.TileX - session.Player.TileX), Math.Abs(closest.TileY - session.Player.TileY));
+                if (dist <= killRange && closest is Entities.Actors.Monster victim)
+                    HitShotTarget(victim, (uint)Math.Max((int)victim.Hitpoints, 1));
+                return;
+            }
+        }
 
         int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
         HitShotTarget(closest, PlayerDamage(damage));
