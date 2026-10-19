@@ -65,7 +65,7 @@ public class PfWolfPk3Loader
     /// </summary>
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
-        "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
+        "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "statusbar-fullscreen.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
         "movies.yaml", "factions.yaml", "translations.yaml",
     };
 
@@ -192,7 +192,9 @@ public class PfWolfPk3Loader
                 yaml => new TranslationsAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, List<string>>>(yaml)));
             return;
         }
-        if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("statusbar.yaml", StringComparison.OrdinalIgnoreCase))
+        // statusbar-fullscreen.yaml: the layout drawn over the view while it's full screen (view size 21)
+        if (fullName.StartsWith("gamepacks/") && (entry.Name.Equals("statusbar.yaml", StringComparison.OrdinalIgnoreCase)
+            || entry.Name.Equals("statusbar-fullscreen.yaml", StringComparison.OrdinalIgnoreCase)))
         {
             var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
             LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,

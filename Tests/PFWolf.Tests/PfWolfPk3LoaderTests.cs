@@ -156,6 +156,32 @@ public class PfWolfPk3LoaderTests
     }
 
     [Test]
+    public void A_Mods_Full_Screen_Status_Bar_Loads_From_Its_Root_Beside_The_Status_Bar()
+    {
+        // Arrange
+        var pk3 = new MemoryAssetSource("pfwolf.pk3", new()
+        {
+            ["gamepacks/gamepack-info.yaml"] = GamePackInfo,
+            ["gamepacks/alpha/statusbar.yaml"] = "score: { x: 1 }\n",
+        });
+        var mod = new MemoryAssetSource("mod.pk3", new()
+        {
+            ["modinfo.yaml"] = "name: Mod\nversion: \"1\"\n",
+            ["statusbar-fullscreen.yaml"] = "health: { x: 40 }\nkeys:\n  key-pics: { GoldKey: HUDKEY1 }\n",
+        });
+
+        // Act
+        var loader = new PfWolfPk3Loader([pk3], "alpha", "alpha", [mod]);
+
+        // Assert
+        var fullScreen = loader.Load<StatusBarAsset>("alpha/statusbar-fullscreen");
+        Assert.That(fullScreen.Get("health")!.X, Is.EqualTo(40));
+        Assert.That(fullScreen.Get("keys")!.KeyPics["GoldKey"], Is.EqualTo("HUDKEY1"));
+        Assert.That(loader.Load<StatusBarAsset>("alpha/statusbar").Get("score")!.X, Is.EqualTo(1));
+        Assert.That(loader.Warnings, Is.Empty);
+    }
+
+    [Test]
     public void Extend_Changes_A_Base_Packs_Class_And_Can_Take_Parts_Away()
     {
         // Arrange

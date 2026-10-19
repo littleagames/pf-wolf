@@ -43,29 +43,67 @@ internal sealed class StatusBarDrawing(
     int TopLines => StatusBar.Get("top")?.Height ?? 0;
 
     /// <summary>
-    /// Whether the status bar's parts aren't drawn now: with the view full screen, or for a
-    /// player other than this machine's (the bar is the local player's). A bar drawn over the
-    /// view (overlay) is drawn only with the frame (DrawingOverlay), as the view under it is.
+    /// Whether the status bar's parts aren't drawn now: with the view full screen and no
+    /// full-screen layout, or for a player other than this machine's (the bar is the local
+    /// player's). A bar drawn over the view (overlay) is drawn only with the frame
+    /// (DrawingOverlay), as the view under it is.
     /// </summary>
-    internal bool StatusBarHidden => (settings.ViewSize == 21 && session.InGame) || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
+    internal bool StatusBarHidden => NoBarInFullScreen || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
 
-    /// <summary>Whether the status bar is drawn over the view every frame (statusbar.yaml background overlay)</summary>
-    internal bool IsOverlay => StatusBar.Get("background")?.Overlay == true;
+    /// <summary>Whether the view is full screen in a game (view size 21)</summary>
+    internal bool FullScreen => settings.ViewSize == 21 && session.InGame;
+
+    /// <summary>With the view full screen, whether there's no status bar at all (no statusbar-fullscreen.yaml)</summary>
+    internal bool NoBarInFullScreen => FullScreen && FullScreenLayout == null;
+
+    /// <summary>
+    /// Whether the status bar is drawn over the view every frame: statusbar.yaml background
+    /// overlay, or the full-screen layout while the view is full screen
+    /// </summary>
+    internal bool IsOverlay => StatusBar.Get("background")?.Overlay == true || (FullScreen && FullScreenLayout != null);
 
     /// <summary>Set while a frame draws an overlay status bar's parts (PlayScreen.DrawStatusOverlay)</summary>
     internal bool DrawingOverlay { get; set; }
 
-    private StatusBarAsset? statusbar;
+    private StatusBarAsset? statusbar, fullscreenbar;
+    private bool fullscreenbarLooked;
     internal static readonly StatusBarAsset NoStatusBar = new();
 
     /// <summary>
-    /// The game pack's status bar layout (statusbar.yaml); empty if it has none. Only a layout
-    /// that was found is kept, so a look before the assets are loaded doesn't stick.
+    /// The layout the parts are drawn from now: the full-screen one (statusbar-fullscreen.yaml)
+    /// while the view is full screen and the game pack has one, else the status bar's
+    /// (<see cref="BarLayout"/>). Setting it sets the status bar's.
     /// </summary>
     internal StatusBarAsset StatusBar
     {
-        get => statusbar ?? (statusbar = assets?.FindInGamePackIfAny<StatusBarAsset>("statusbar")) ?? NoStatusBar;
+        get => FullScreen && FullScreenLayout is { } fullscreen ? fullscreen : BarLayout;
         set => statusbar = value;       // a layout of a test's own
+    }
+
+    /// <summary>
+    /// The game pack's status bar layout (statusbar.yaml), whatever the view size; empty if it has
+    /// none. Only a layout that was found is kept, so a look before the assets are loaded doesn't
+    /// stick. The play area goes by this one (PlayArea).
+    /// </summary>
+    internal StatusBarAsset BarLayout => statusbar ?? (statusbar = assets?.FindInGamePackIfAny<StatusBarAsset>("statusbar")) ?? NoStatusBar;
+
+    /// <summary>
+    /// The game pack's layout for a full-screen view (statusbar-fullscreen.yaml), or null: drawn
+    /// over the view every frame, as an overlay bar is. Looked for once in a game, when the
+    /// assets are loaded.
+    /// </summary>
+    internal StatusBarAsset? FullScreenLayout
+    {
+        get
+        {
+            if (!fullscreenbarLooked && session.InGame)
+            {
+                fullscreenbar ??= assets?.FindInGamePackIfAny<StatusBarAsset>("statusbar-fullscreen");
+                fullscreenbarLooked = assets != null;
+            }
+            return fullscreenbar;
+        }
+        set => (fullscreenbar, fullscreenbarLooked) = (value, true);    // a layout of a test's own
     }
 
     /// <summary>Draws a picture at a status bar position (320x200 pixels from its top left corner).</summary>
@@ -240,7 +278,10 @@ internal sealed class StatusBarDrawing(
                 continue;
             }
 
-            var pic = inventory.GetStringProperty(key, has ? "key.statusbarpic" : "key.statusbaremptypic");
+            // key-pics: the layout's own picture for each key, shown only while it's carried
+            var pic = layout.KeyPics.Count > 0
+                ? (has ? layout.KeyPics.GetValueOrDefault(key) : null)
+                : inventory.GetStringProperty(key, has ? "key.statusbarpic" : "key.statusbaremptypic");
             if (!string.IsNullOrEmpty(pic))
                 graphics.DrawPic(pic, x, StatusBarTop(layout) + y);
         }
@@ -554,7 +595,7 @@ internal sealed class StatusBarDrawing(
     string? infoareashown;
 
     /// <summary>Whether the status bar has an info area showing now</summary>
-    internal bool HasInfoArea => StatusBar.Get("info-area") != null && !(settings.ViewSize == 21 && session.InGame);
+    internal bool HasInfoArea => StatusBar.Get("info-area") != null && !NoBarInFullScreen;
 
     internal void DrawInfoArea(bool force)
     {
@@ -624,7 +665,7 @@ internal sealed class StatusBarDrawing(
     /// <summary>Moves the heart monitor on by this tic's time, redrawing it as it changes</summary>
     internal void UpdateHeartMonitor()
     {
-        if (StatusBar.Get("heart-monitor") == null || (settings.ViewSize == 21 && session.InGame))
+        if (StatusBar.Get("heart-monitor") == null || NoBarInFullScreen)
             return;
         ecgscrolltics += (int)session.Tics;
         hearttics += (int)session.Tics;

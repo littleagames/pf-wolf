@@ -65,6 +65,35 @@ public class StatusBarOverlayTests
         Assert.That(new Rig(overlay: false).Bar.StatusBarHidden, Is.False);
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void A_Full_Screen_Layout_Is_Drawn_Over_The_Full_Screen_View(bool overlay)
+    {
+        // Arrange
+        var rig = new Rig(overlay);
+        var fullScreen = new StatusBarAsset(new Dictionary<string, StatusBarElement>
+        {
+            ["background"] = new() { Height = 32 },
+            ["health"] = new() { X = 40 },
+        });
+        rig.Bar.FullScreenLayout = fullScreen;
+
+        // Act / Assert: the bar's own layout until the view is full screen
+        Assert.That(rig.Bar.StatusBar.Get("health"), Is.Null);
+        rig.FullScreen = true;
+        Assert.That(rig.Bar.StatusBar, Is.SameAs(fullScreen));
+        Assert.That(rig.Bar.IsOverlay, Is.True);
+        Assert.That(rig.Bar.StatusBarHidden, Is.True);          // only with the frame
+        rig.Bar.DrawingOverlay = true;
+        Assert.That(rig.Bar.StatusBarHidden, Is.False);
+
+        // the play area still goes by the bar's own layout
+        Assert.That(rig.Area.StatusLines, Is.EqualTo(overlay ? 0 : 40));
+        Assert.That(rig.Area.OverlayBar, Is.EqualTo(overlay));
+        rig.FullScreen = false;
+        Assert.That(rig.Bar.StatusBar.Get("health"), Is.Null);
+    }
+
     [TestCase(false, 15, 15)]
     [TestCase(true, 15, 20)]     // no bordered views under a bar over the view
     [TestCase(true, 21, 21)]

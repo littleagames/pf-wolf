@@ -3,7 +3,8 @@ namespace PFWolf.Assets;
 /// <summary>
 /// A game pack's status bar layout (gamepacks/{pack}/statusbar.yaml): its background and where
 /// each part is drawn on it, by part name. A pack that builds on a base-pack starts from its
-/// layout; the pack's own parts replace them one by one.
+/// layout; the pack's own parts replace them one by one. statusbar-fullscreen.yaml is a layout
+/// of the same parts drawn over the view while it's full screen (view size 21), as an overlay bar.
 /// </summary>
 public record StatusBarAsset : Asset
 {
@@ -224,6 +225,12 @@ public class StatusBarElement
 
     /// <summary>weapon-corner: the picture for each weapon, by its class</summary>
     public Dictionary<string, string> WeaponPics { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// keys: the picture for each key, by its class, in place of its key.statusbarpic; a key
+    /// that isn't carried, or isn't listed, shows nothing (a full-screen HUD's keys)
+    /// </summary>
+    public Dictionary<string, string> KeyPics { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>radar: shown as its item runs out while zoomed in (a $NAME language key or the text)</summary>
     public string? EmptyMessage { get; set; }

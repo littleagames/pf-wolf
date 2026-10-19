@@ -31,7 +31,7 @@ internal sealed class PlayScreen(
 {
     internal void DrawPlayScreen()
     {
-        if (statusBar.StatusBar.Get("background") is { Pic: { Length: > 0 } statusbarpic, Overlay: false } background)
+        if (statusBar.BarLayout.Get("background") is { Pic: { Length: > 0 } statusbarpic, Overlay: false } background)
         {
             statusBar.FillBarSides(background, atTop: false, playArea.StatusLines);
             using var _ = video.UseUiOrigin(UiAnchor.Bottom);
@@ -73,12 +73,13 @@ internal sealed class PlayScreen(
 
     /// <summary>
     /// A status bar drawn over the view (statusbar.yaml background overlay): its picture, if it
-    /// has one, and every part, over the frame just drawn. Nothing for a bar of its own, or with
-    /// the view full screen.
+    /// has one, and every part, over the frame just drawn; with the view full screen, the
+    /// full-screen layout's (statusbar-fullscreen.yaml). Nothing for a bar of its own, nor with
+    /// the view full screen and no full-screen layout.
     /// </summary>
     internal void DrawStatusOverlay()
     {
-        if (!statusBar.IsOverlay || !session.InGame || settings.ViewSize == 21)
+        if (!statusBar.IsOverlay || !session.InGame)
             return;
         statusBar.DrawingOverlay = true;
         try
@@ -111,7 +112,7 @@ internal sealed class PlayScreen(
         {
             // Beside the status bar: from each screen edge to the border's sides into the picture.
             // A bar with no border (Blake Stone's) keeps its side-color there instead.
-            int sides = statusBar.StatusBar.Get("border") is { } border ? video.ScreenX(border.Sides) : 0;
+            int sides = statusBar.BarLayout.Get("border") is { } border ? video.ScreenX(border.Sides) : 0;
             int top = video.ScreenYAboveBottom(playArea.StatusLines);
             if (sides > 0 && playArea.StatusLines > 0)
             {
@@ -195,7 +196,7 @@ internal sealed class PlayScreen(
     {
         video.BarScaledCoord(0, playArea.PlayAreaTop, video.ScreenWidth, playArea.PlayAreaHeight, color);
 
-        foreach (var rect in statusBar.StatusBar.Get("border")?.Rects ?? [])
+        foreach (var rect in statusBar.BarLayout.Get("border")?.Rects ?? [])
         {
             if (rect.Count != 4)
                 continue;

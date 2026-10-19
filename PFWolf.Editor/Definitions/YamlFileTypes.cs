@@ -14,7 +14,7 @@ public static class YamlFileTypes
     /// <summary>Files a mod keeps at its root that pfwolf.pk3 keeps in gamepacks/{pack}/</summary>
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
-        "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
+        "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "statusbar-fullscreen.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
         "movies.yaml", "factions.yaml", "translations.yaml",
     };
 
@@ -129,6 +129,7 @@ public static class YamlFileTypes
                 "factions.yaml" => "factions",
                 "translations.yaml" => "color translations",
                 "statusbar.yaml" => "status bar",
+                "statusbar-fullscreen.yaml" => "full-screen status bar",
                 "sound-seq.yaml" => "sounds",
                 "intermission.yaml" => "intermission",
                 "presenter.yaml" => "presenter",
@@ -246,7 +247,7 @@ public static class YamlFileTypes
             "fonts.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, FontDefinition>>(yaml),
             "hud-messages.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, HudMessageStyleDefinition>>(yaml),
             "translations.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, List<string>>>(yaml),
-            "statusbar.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, StatusBarElement>>(yaml),
+            "statusbar.yaml" or "statusbar-fullscreen.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, StatusBarElement>>(yaml),
             "sound-seq.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<SoundSequenceAsset>(yaml),
             "intermission.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<IntermissionAsset>(yaml),
             "presenter.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<PresenterAsset>(yaml),
