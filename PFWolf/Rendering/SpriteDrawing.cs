@@ -43,6 +43,9 @@ internal sealed class SpriteDrawing(
 {
     internal VisibleObject[] VisList = new VisibleObject[GameConstants.MaxVisible];
 
+    /// <summary>Where moving things are drawn between tics (Rendering/FrameInterpolation.cs); unset, where they are</summary>
+    internal FrameInterpolation? Interpolation { get; set; }
+
     /*
 ========================
 =
@@ -112,14 +115,21 @@ internal sealed class SpriteDrawing(
     // Computes an actor's screen-space hit-testing/scale data (ViewX/TransX/ViewHeight) from
     // the fixed-point X/Y that Monster's movement code maintains, so enemies,
     // projectiles and the BJ-victory actor can be both rendered and (enemies) shot at.
-    internal void TransformActor(Entities.Actors.Actor ob) =>
-        TransformActorFrom(ob, render.ViewX, render.ViewY, render.ViewSin, render.ViewCos);
+    // Between tics, from where it's drawn this frame (Rendering/FrameInterpolation.cs).
+    internal void TransformActor(Entities.Actors.Actor ob)
+    {
+        var (x, y) = Interpolation?.PositionOf(ob) ?? (ob.X, ob.Y);
+        TransformActorAt(ob, x, y, render.ViewX, render.ViewY, render.ViewSin, render.ViewCos);
+    }
 
     /// <summary>TransformActor from a view other than this frame's (the player's, see PlayerSight)</summary>
-    internal void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos)
+    internal void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos) =>
+        TransformActorAt(ob, ob.X, ob.Y, fromx, fromy, fromsin, fromcos);
+
+    void TransformActorAt(Entities.Actors.Actor ob, int atx, int aty, int fromx, int fromy, int fromsin, int fromcos)
     {
-        var gx = ob.X - fromx;
-        var gy = ob.Y - fromy;
+        var gx = atx - fromx;
+        var gy = aty - fromy;
 
         var gxt = MathUtils.FixedMul(gx, fromcos);
         var gyt = MathUtils.FixedMul(gy, fromsin);

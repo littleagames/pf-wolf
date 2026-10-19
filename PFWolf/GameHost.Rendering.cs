@@ -87,6 +87,9 @@ internal static partial class GameHost
 
     static RayTrace MakeRayTrace() => new(MapManager, doors, pushWalls, wallPosts, wallHits, Render);
 
+    // Where things are drawn between tics, with an uncapped frame rate (Rendering/FrameInterpolation.cs)
+    static FrameInterpolation frameInterpolation = null!;     // made in InitServices
+
     // The sprites and the weapon in hand (Rendering/SpriteDrawing.cs)
     static SpriteDrawing spriteDrawing = null!;     // made in InitServices
 

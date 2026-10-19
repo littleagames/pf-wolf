@@ -196,13 +196,16 @@ internal static partial class GameHost
         wallPosts = MakeWallPosts();
         wallHits = MakeWallHits();
         rayTrace = MakeRayTrace();
+        frameInterpolation = new FrameInterpolation(MapManager, Session);
         spriteDrawing = MakeSpriteDrawing();
+        spriteDrawing.Interpolation = frameInterpolation;
         playerBodies = new PlayerBodies(AssetManager, MapManager, InventoryManager, spriteDrawing, Session);
         playerView = MakePlayerView();
         levelEditCommands = new LevelEditCommands(_consoleManager, AssetManager, MapManager, lighting, actorLights, weather, skyAndFlats, Render,
             consoleTargets, Session);
         factionCommands = new FactionCommands(_consoleManager, AssetManager, MapManager, FactionManager, TranslationManager, consoleTargets, Session);
         frameRefresh = MakeFrameRefresh();
+        frameRefresh.Interpolation = frameInterpolation;
         inputPolling = MakeInputPolling();
         automapInput = MakeAutomapInput();
         statusBarDrawing = MakeStatusBarDrawing();

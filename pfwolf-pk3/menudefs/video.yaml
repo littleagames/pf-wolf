@@ -31,7 +31,7 @@ components:
       - x: 16
       - y: 57
       - width: 288
-      - height: 97
+      - height: 110
 # Values are drawn by code. Fullscreen, window size, resolution and VSync ask to be kept
 # once changed, and go back after a few seconds if nobody answers.
 menu-items:
@@ -62,6 +62,12 @@ menu-items:
       id: "vsync"
       type: "ToggleMenuItem"
       text: "$STR_VSYNC"
+      enabled: true
+  # Drawing as often as the display shows, everything between its tics (vid_uncapped); off is 70 a second
+  -
+      id: "uncapped"
+      type: "ToggleMenuItem"
+      text: "$STR_UNCAPPED"
       enabled: true
   -
       id: "aspect"

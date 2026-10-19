@@ -21,5 +21,6 @@ menu-items:
   - { id: "render-scale", type: "ChoiceMenuItem", text: "RESOLUTION", enabled: true }
   - { id: "ui-scale", type: "ChoiceMenuItem", text: "UI SCALE", enabled: true }
   - { id: "vsync", type: "ToggleMenuItem", text: "VSYNC", enabled: true }
+  - { id: "uncapped", type: "ToggleMenuItem", text: "UNCAPPED FPS", enabled: true }
   - { id: "aspect", type: "ToggleMenuItem", text: "ASPECT RATIO", enabled: true }
   - { id: "filter", type: "ChoiceMenuItem", text: "SCALE FILTER", enabled: true }

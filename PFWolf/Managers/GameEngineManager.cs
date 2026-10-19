@@ -168,6 +168,17 @@ internal class GameEngineManager
         MatchWindow = 1,
     }
 
+    /// <summary>The frame rate settings, appended after the Game Options</summary>
+    [Flags]
+    private enum FrameRateFlags : byte
+    {
+        None = 0,
+        Classic = 1,        // vid_uncapped 0: once a tic batch, at most 70 a second
+    }
+
+    /// <summary>The highest vid_maxfps kept</summary>
+    internal const int MaxFrameRate = 1000;
+
     /// <summary>The `msg_enabled` setting, as saved in config.cfg</summary>
     private enum HudMessagesSetting : byte
     {
@@ -422,6 +433,19 @@ internal class GameEngineManager
                 config.GameOptions = new GameOptionSetting[count];
                 for (int i = 0; i < count; i++)
                     config.GameOptions[i] = (GameOptionSetting)br.ReadByte();
+            }
+
+            // The frame rate: uncapped unless the classic flag's set (so older configs come up
+            // uncapped, the default), and the most frames a second, 0 for the display's rate
+            if (stream.Position < stream.Length)
+            {
+                var flags = (FrameRateFlags)br.ReadByte();
+                int maxFps = br.ReadUInt16();
+                config.Video = config.Video with
+                {
+                    Uncapped = !flags.HasFlag(FrameRateFlags.Classic),
+                    MaxFps = Math.Clamp(maxFps, 0, MaxFrameRate),
+                };
             }
         }
 
@@ -685,6 +709,10 @@ internal class GameEngineManager
         bw.Write((byte)GameOption.Count);
         for (int i = 0; i < (int)GameOption.Count; i++)
             bw.Write((byte)FromChoice(settings.Options.Choice((GameOption)i)));
+
+        var video = videoManager.Settings;
+        bw.Write((byte)(video.Uncapped ? FrameRateFlags.None : FrameRateFlags.Classic));
+        bw.Write((ushort)Math.Clamp(video.MaxFps, 0, MaxFrameRate));
     }
 
     /// <summary>

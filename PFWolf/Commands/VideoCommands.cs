@@ -20,8 +20,13 @@ internal sealed class VideoCommands(ConsoleManager console, VideoManager video, 
         console.Register("vid_uiscale", "How big the menus, text and status bar are: screen pixels to each of their 320x200 pixels (2.5 is fine), or auto for the most whole number that fits.",
             "vid_uiscale <n|auto>", VidUiScaleCommand, complete: Values("auto", "1", "1.5", "2", "2.5", "3", "4"));
         console.Register("vid_window", "The window's size when it isn't fullscreen.", "vid_window <width> <height>", VidWindowCommand);
-        console.Register("vid_vsync", "Waits for the display's refresh before showing each frame.", "vid_vsync [0|1]",
+        console.Register("vid_vsync", "Waits for the display's refresh before showing each frame: in fullscreen, and in a window with vid_uncapped on (a window doesn't tear, and there the 70 fps loop stutters waiting on it).", "vid_vsync [0|1]",
             args => ApplyVideo(s => s with { VSync = Toggle(args, s.VSync) }), complete: Values("0", "1"));
+        console.Register("vid_uncapped", "Draws the view as often as the display shows it, everything placed between its tics (1), or once a tic, at most 70 a second, as the original (0).",
+            "vid_uncapped [0|1]", args => ApplyVideo(s => s with { Uncapped = Toggle(args, s.Uncapped) }), complete: Values("0", "1"));
+        console.Register("vid_maxfps", "With vid_uncapped and no vsync, the most frames a second; 0 is the display's refresh rate.", "vid_maxfps <n|0>",
+            args => ApplyVideo(s => s with { MaxFps = args.Length > 0 ? ParseInt(args[0], 0, GameEngineManager.MaxFrameRate) : s.MaxFps }),
+            complete: Values("0", "60", "120", "144", "165", "240"));
         console.Register("vid_aspect", "Shows the picture at 4:3, the shape it had on a CRT (1), or with square pixels (0).",
             "vid_aspect [0|1]", args => ApplyVideo(s => s with { AspectCorrect = Toggle(args, s.AspectCorrect) }),
             complete: Values("0", "1"));
@@ -51,7 +56,7 @@ internal sealed class VideoCommands(ConsoleManager console, VideoManager video, 
         var effective = VideoSettings.FormatScale(s.EffectiveUiScale);
         var ui = s.UiScale <= 0 ? $"auto ({effective})" : effective;
         console.Print($"{s.RenderWidth}x{s.RenderHeight} ({size}) in a {shown}, ui scale {ui}");
-        console.Print($"vsync {(s.VSync ? 1 : 0)}  aspect {(s.AspectCorrect ? 1 : 0)}  filter {s.Filter.ToString().ToLowerInvariant()}");
+        console.Print($"vsync {(s.VSync ? 1 : 0)}{(s.VSync && !s.PresentsInVSync ? " (fullscreen only)" : "")}  uncapped {(s.Uncapped ? 1 : 0)}  maxfps {(s.MaxFps > 0 ? s.MaxFps.ToString() : "display")}  aspect {(s.AspectCorrect ? 1 : 0)}  filter {s.Filter.ToString().ToLowerInvariant()}");
     }
 
     private void VidWindowCommand(string[] args)

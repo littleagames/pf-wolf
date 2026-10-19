@@ -39,6 +39,17 @@ internal static class FrameProfiler
     private static int _frames, _slowFrames, _gcStart0, _gcStart1, _gcStart2;
     private static readonly double TicksToMs = 1000.0 / Stopwatch.Frequency;
 
+    /// <summary>The tics the frame being timed runs (set once they're worked out)</summary>
+    internal static int Tics;
+
+    // How many frames ran 0, 1, 2 and 3+ tics; the slow frames (over SlowMs), latest last
+    private static readonly int[] _ticCounts = new int[4];
+    private static readonly Queue<string> _slow = new();
+    private static long _enabledAt;
+    private static int _gcFrame0, _gcFrame1, _gcFrame2;
+    private static TimeSpan _gcPause;
+    internal static double SlowMs = 25;
+
     internal static void Reset()
     {
         Array.Clear(_total);
@@ -51,6 +62,9 @@ internal static class FrameProfiler
         _gcStart2 = GC.CollectionCount(2);
         _frameStart = 0;
         _sampler?.Sampled.Clear();
+        Array.Clear(_ticCounts);
+        _slow.Clear();
+        _enabledAt = Stopwatch.GetTimestamp();
     }
 
     /// <summary>A new frame starts here: the last one, if any, is added up</summary>
@@ -76,10 +90,36 @@ internal static class FrameProfiler
             }
             _allocTotal += alloc - _allocStart;
             _frames++;
+            _ticCounts[Math.Clamp(Tics, 0, 3)]++;
+            bool collected = GC.CollectionCount(0) != _gcFrame0;
+            if (length * TicksToMs > SlowMs || collected)
+                NoteSlowFrame(now, length);
         }
+        _gcFrame0 = GC.CollectionCount(0);
+        _gcFrame1 = GC.CollectionCount(1);
+        _gcFrame2 = GC.CollectionCount(2);
+        _gcPause = GC.GetTotalPauseDuration();
         Array.Clear(_frame);
         _frameStart = _mark = now;
         _allocStart = _allocMark = alloc;
+    }
+
+    // A frame that took long enough to be seen: when, how long, its tics, any collection during
+    // it, and the parts that took a millisecond or more. Printed at once (stdout) and kept for the report.
+    private static void NoteSlowFrame(long now, long length)
+    {
+        var text = new StringBuilder($"perf {(length * TicksToMs > SlowMs ? "slow" : "gc  ")}:{(now - _enabledAt) * TicksToMs / 1000,7:F2}s {length * TicksToMs,6:F1} ms, {Tics} tics");
+        int gc0 = GC.CollectionCount(0) - _gcFrame0, gc1 = GC.CollectionCount(1) - _gcFrame1, gc2 = GC.CollectionCount(2) - _gcFrame2;
+        if (gc0 + gc1 + gc2 > 0)
+            text.Append($", GC {gc0}/{gc1}/{gc2} paused {(GC.GetTotalPauseDuration() - _gcPause).TotalMilliseconds:F1}");
+        for (int i = 0; i < Count; i++)
+            if (_frame[i] * TicksToMs >= 1)
+                text.Append($", {(Section)i} {_frame[i] * TicksToMs:F1}");
+        var line = text.ToString();
+        Console.WriteLine(line);
+        _slow.Enqueue(line);
+        if (_slow.Count > 12)
+            _slow.Dequeue();
     }
 
     /// <summary>The time since the last mark was spent on <paramref name="section"/></summary>
@@ -104,6 +144,9 @@ internal static class FrameProfiler
         for (int i = 0; i < Count; i++)
             text.AppendLine($"  {(Section)i,-9} avg {_total[i] * TicksToMs / _frames,6:F3} ms  worst {_max[i] * TicksToMs,7:F2} ms  alloc {_alloc[i] / _frames,7} bytes/frame");
         text.Append($"  alloc {_allocTotal / _frames} bytes/frame, GCs gen0 {GC.CollectionCount(0) - _gcStart0} gen1 {GC.CollectionCount(1) - _gcStart1} gen2 {GC.CollectionCount(2) - _gcStart2}");
+        text.Append($"\n  tics per frame: 0 x{_ticCounts[0]}, 1 x{_ticCounts[1]}, 2 x{_ticCounts[2]}, 3+ x{_ticCounts[3]}");
+        foreach (var line in _slow)
+            text.Append($"\n  {line}");
         if (_sampler is { } sampler)
             foreach (var (type, bytes) in sampler.Sampled.OrderByDescending(s => s.Value).Take(8))
                 text.Append($"\n  allocated: {type} ~{bytes / 1024} KB");

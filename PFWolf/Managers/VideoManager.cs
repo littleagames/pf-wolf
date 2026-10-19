@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using PFWolf.Assets;
@@ -162,7 +162,7 @@ internal class VideoManager
 
     /// <summary>
     /// Switches to another video mode while the game runs, rebuilding only what the change
-    /// touches: a new render scale means a new, blank screen buffer, and VSync a new renderer.
+    /// touches: a new render scale means a new, blank screen buffer, and vsync going on or off a new renderer.
     /// If SDL can't make the switch, the previous mode is put back and this returns false.
     /// Either way the caller should draw the screen again.
     /// </summary>
@@ -223,6 +223,16 @@ internal class VideoManager
             : (ScreenWidth, ScreenHeight);
     }
 
+    /// <summary>How many times a second the display the window is on refreshes (60 when SDL can't say)</summary>
+    internal int RefreshRate()
+    {
+        int display = Math.Max(0, SDL.SDL_GetWindowDisplayIndex(WindowHandle));
+        return SDL.SDL_GetCurrentDisplayMode(display, out var mode) == 0 && mode.refresh_rate > 0 ? mode.refresh_rate : 60;
+    }
+
+    /// <summary>Whether presenting a frame waits for the display (vsync is on and applies, and there's a display)</summary>
+    internal bool PresentWaits => Settings.PresentsInVSync && !Headless;
+
     /// <summary>The largest window that fits on that display, clear of taskbars and with its frame showing.</summary>
     internal (int Width, int Height) GetLargestWindowSize()
     {
@@ -236,7 +246,7 @@ internal class VideoManager
     {
         bool newWindowMode = rebuildAll || to.Fullscreen != from.Fullscreen
             || (!to.Fullscreen && (to.WindowWidth != from.WindowWidth || to.WindowHeight != from.WindowHeight));
-        bool newRenderer = rebuildAll || to.VSync != from.VSync;
+        bool newRenderer = rebuildAll || to.PresentsInVSync != from.PresentsInVSync;
         // A new UI scale keeps the buffer's size, but everything on it needs drawing again too
         bool newSurfaces = rebuildAll || to.RenderWidth != from.RenderWidth || to.RenderHeight != from.RenderHeight
             || to.EffectiveUiScale != from.EffectiveUiScale;
@@ -287,7 +297,7 @@ internal class VideoManager
     private bool CreateRenderer(VideoSettings settings)
     {
         var flags = Headless ? SDL.SDL_RendererFlags.SDL_RENDERER_SOFTWARE : SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED;
-        if (settings.VSync && !Headless)
+        if (settings.PresentsInVSync && !Headless)
             flags |= SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC;
 
         Renderer = SDL.SDL_CreateRenderer(WindowHandle, -1, flags);

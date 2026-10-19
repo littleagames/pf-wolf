@@ -94,6 +94,21 @@ internal sealed class FrameRefresh(
             session.Tics = GameConstants.MaxTics;
     }
 
+    /// <summary>How many tics are due now that haven't been run (what CalcTics would find), without waiting</summary>
+    internal int TicsDue() => (int)((SDL.SDL_GetTicks() * 7) / 100) - LastTimeCount;
+
+    // The offset from the high-resolution clock to SDL_GetTicks' milliseconds: the largest
+    // SDL's whole milliseconds have been ahead of it, which closes in on the true one from below
+    double clockOffset = double.NegativeInfinity;
+
+    /// <summary>The time in tics, finer than SDL_GetTicks' whole milliseconds: how far the frame is through a tic</summary>
+    internal double NowInTics()
+    {
+        double ms = System.Diagnostics.Stopwatch.GetTimestamp() * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+        clockOffset = Math.Max(clockOffset, SDL.SDL_GetTicks() - ms);
+        return (ms + clockOffset) * 7 / 100;
+    }
+
     /*
     ====================
     =
@@ -120,21 +135,40 @@ internal sealed class FrameRefresh(
         render.CenterY = (short)(render.BaseCenterY + offset);
     }
 
+    /// <summary>Where moving things are drawn between tics (Rendering/FrameInterpolation.cs); unset, where they are</summary>
+    internal FrameInterpolation? Interpolation { get; set; }
+
     internal void Setup3DView()
     {
         var camera = session.Camera;
-        render.ViewAngle = camera.Angle;
-        render.MidAngle = (short)(render.ViewAngle * (GameConstants.FineAngles / GameConstants.Angles));
+        var pose = Interpolation?.CameraPose() ?? new ViewPose(camera.X, camera.Y, camera.Angle, camera.Pitch, camera.EyeZ);
 
-        render.ViewPitch = camera.Pitch;
-        render.ViewEyeZ = Math.Clamp(camera.EyeZ, GameConstants.MinEye, GameConstants.MaxEye);
+        render.ViewPitch = pose.Pitch;
+        render.ViewEyeZ = Math.Clamp(pose.EyeZ, GameConstants.MinEye, GameConstants.MaxEye);
         SetupPitch();
 
-        render.ViewSin = TrigTables.SinTable[render.ViewAngle];
-        render.ViewCos = TrigTables.CosTable[render.ViewAngle];
+        if (pose.Angle == Math.Floor(pose.Angle))
+        {
+            // a whole degree, as every tic leaves it: the tables, as the original
+            render.ViewAngle = (short)pose.Angle;
+            render.MidAngle = (short)(render.ViewAngle * (GameConstants.FineAngles / GameConstants.Angles));
+            render.ViewSin = TrigTables.SinTable[render.ViewAngle];
+            render.ViewCos = TrigTables.CosTable[render.ViewAngle];
+        }
+        else
+        {
+            // between tics: the ray trace's fine angles are tenths of a degree, and sin and cos
+            // come from the angle itself
+            int fine = (int)Math.Round(pose.Angle * (GameConstants.FineAngles / GameConstants.Angles)) % GameConstants.FineAngles;
+            render.MidAngle = (short)fine;
+            render.ViewAngle = (short)(fine / (GameConstants.FineAngles / GameConstants.Angles));
+            double radians = fine * (2 * Math.PI / GameConstants.FineAngles);
+            render.ViewSin = (int)Math.Round(Math.Sin(radians) * MapConstants.Global1);
+            render.ViewCos = (int)Math.Round(Math.Cos(radians) * MapConstants.Global1);
+        }
 
-        render.ViewX = camera.X - MathUtils.FixedMul(render.FocalLength, render.ViewCos);
-        render.ViewY = camera.Y + MathUtils.FixedMul(render.FocalLength, render.ViewSin);
+        render.ViewX = pose.X - MathUtils.FixedMul(render.FocalLength, render.ViewCos);
+        render.ViewY = pose.Y + MathUtils.FixedMul(render.FocalLength, render.ViewSin);
 
         render.FocalTx = (short)(render.ViewX >> (int)MapConstants.TileShift);
         render.FocalTy = (short)(render.ViewY >> (int)MapConstants.TileShift);

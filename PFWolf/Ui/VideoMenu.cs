@@ -4,7 +4,7 @@ using PFWolf.Extensions;
 namespace PFWolf.Ui;
 
 /// <summary>
-/// The Video menu (menudefs/video): FullScreen, VSync and aspect checkboxes, and the window
+/// The Video menu (menudefs/video): FullScreen, VSync, uncapped frame rate and aspect checkboxes, and the window
 /// size, resolution, UI scale and filter stepped through with left/right (or Enter). A change
 /// that could leave the screen unreadable asks to be kept, and goes back if it isn't.
 /// </summary>
@@ -37,6 +37,11 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
                 case "vsync":
                     loop.ShootSnd();
                     ChangeVideo(settings with { VSync = !settings.VSync });
+                    break;
+
+                case "uncapped":
+                    loop.ShootSnd();
+                    ChangeVideo(settings with { Uncapped = !settings.Uncapped });
                     break;
 
                 case "aspect":
@@ -75,6 +80,7 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
 
         draw.DrawMenuCheckbox(Info, Items, "fullscreen", settings.Fullscreen);
         draw.DrawMenuCheckbox(Info, Items, "vsync", settings.VSync);
+        draw.DrawMenuCheckbox(Info, Items, "uncapped", settings.Uncapped);
         draw.DrawMenuCheckbox(Info, Items, "aspect", settings.AspectCorrect);
         draw.DrawMenuChoice(Info, Items, "window-size", $"{settings.WindowWidth}x{settings.WindowHeight}");
         draw.DrawMenuChoice(Info, Items, "render-scale", settings.MatchWindow

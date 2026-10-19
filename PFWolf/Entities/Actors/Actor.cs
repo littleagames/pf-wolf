@@ -90,6 +90,10 @@ internal record Actor : Thinker
     public byte TileX { get; internal set; }
     public byte TileY { get; internal set; }
 
+    // Where it was before the last batch of tics, and which batch that was, for drawing it between
+    // tics (Rendering/FrameInterpolation.cs). Only the drawing reads them; not saved.
+    internal int PrevX, PrevY, PrevBatch;
+
     // Runtime combat/AI bookkeeping (Shootable, Ambush, AttackMode, etc. --
     // GameTypes.cs's ObjFlags), distinct from the static, YAML-declared `Flags` above.
     public ObjFlags RuntimeFlags { get; internal set; }

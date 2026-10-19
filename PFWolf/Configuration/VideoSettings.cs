@@ -57,6 +57,23 @@ internal sealed record VideoSettings
 
     public bool VSync { get; init; } = true;
 
+    /// <summary>
+    /// Drawing the view as often as the display shows it, everything placed between its last two
+    /// tics (docs/uncapped-framerate-plan.md); off draws once a tic batch, at most 70 a second.
+    /// </summary>
+    public bool Uncapped { get; init; } = true;
+
+    /// <summary>With Uncapped and no vsync, the most frames a second; 0 is the display's refresh rate</summary>
+    public int MaxFps { get; init; }
+
+    /// <summary>
+    /// Whether presenting waits for the display: VSync, in FullScreen, or in a window with
+    /// Uncapped on. In a window the desktop composites, which doesn't tear, and with the 70 Hz
+    /// loop waiting on it fights the game's own pacing (FrameRefresh.CalcTics): Present
+    /// stalls for a few frames now and then. Uncapped has no such wait to fight.
+    /// </summary>
+    public bool PresentsInVSync => VSync && (Fullscreen || Uncapped);
+
     /// <summary>Shows the 320x200 picture at 4:3, the shape it had on a CRT, instead of with square pixels.</summary>
     public bool AspectCorrect { get; init; }
 
