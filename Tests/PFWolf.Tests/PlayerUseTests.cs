@@ -42,7 +42,26 @@ public class PlayerUseTests
               - sprite: PRIS
                 frames: [B]
                 tics-per-frame: -1
+        Radio:
+          properties:
+            usehint: take
+            usehint.except: Collected
+          states:
+            Spawn:
+              - sprite: RADI
+                frames: [A]
+                tics-per-frame: -1
+            Use:
+              - sprite: RADI
+                frames: [B]
+                tics-per-frame: -1
+            Collected:
+              - sprite: RADI
+                frames: [B]
+                tics-per-frame: -1
         LogBook:
+          properties:
+            usehint: take
           states:
             Spawn:
               - sprite: LOGB
@@ -202,6 +221,76 @@ public class PlayerUseTests
         // Assert: once, for slot 6
         Assert.That(Detonations, Is.EqualTo(1));
         Assert.That(_use.HeldUsableItem(_ => true), Is.EqualTo("A_TestUseDetonator"));
+    }
+
+    // At the map's east edge, facing out of it: no tile ahead to give a hint, so the actors' show alone
+    private void FaceOffTheMap()
+    {
+        var pawn = _session.Player;
+        (pawn.TileX, pawn.TileY) = (MapConstants.ClassicMapSize - 1, 10);
+        (pawn.X, pawn.Y) = ((MapConstants.ClassicMapSize - 1) * Tile + Tile / 2, 10 * Tile + Tile / 2);
+        pawn.Angle = 0;
+        _session.PlayerState.Health = 100;
+    }
+
+    [Test]
+    public void An_Actor_There_To_Be_Used_Gives_Its_Use_Hint()
+    {
+        // Arrange: a log book underfoot (usehint: take), and a prisoner with none
+        FaceOffTheMap();
+        var book = _inventory.CreateActor("LogBook")!;
+        (book.X, book.Y) = (_session.Player.X, _session.Player.Y);
+        book.SetState(book.ResolvedStates["Spawn"]);
+        _map.GetActors().AddLast(book);
+
+        // Act / Assert
+        Assert.That(_use.UseHint(null), Is.EqualTo("take"));
+        _map.GetActors().Remove(book);
+        Assert.That(_use.UseHint(null), Is.Null);
+    }
+
+    [Test]
+    public void No_Use_Hint_On_A_State_Its_Usehint_Except_Names()
+    {
+        // Arrange: a radio underfoot (usehint: take, except once Collected)
+        FaceOffTheMap();
+        var radio = _inventory.CreateActor("Radio")!;
+        (radio.X, radio.Y) = (_session.Player.X, _session.Player.Y);
+        radio.SetState(radio.ResolvedStates["Spawn"]);
+        _map.GetActors().AddLast(radio);
+
+        // Act / Assert
+        Assert.That(_use.UseHint(null), Is.EqualTo("take"));
+        radio.SetState(radio.ResolvedStates["Collected"]);
+        Assert.That(_use.UseHint(null), Is.Null);
+    }
+
+    [Test]
+    public void No_Use_Hint_For_The_Dead()
+    {
+        FaceOffTheMap();
+        _session.PlayerState.Health = 0;
+        Assert.That(_use.UseHint(null), Is.Null);
+    }
+
+    [TestCase(0, 0, true)]          // facing the same way: its back is to the player
+    [TestCase(20, 0, true)]
+    [TestCase(345, 10, true)]       // across east: 25 apart
+    [TestCase(340, 10, false)]      // 30 apart is too far round
+    [TestCase(45, 0, false)]
+    [TestCase(180, 0, false)]       // facing them
+    public void An_Enemy_Facing_Within_30_Degrees_Of_The_Player_Has_Its_Back_To_Them(int enemy, int player, bool back)
+    {
+        Assert.That(PlayerAttacks.BackTurned(enemy, player), Is.EqualTo(back));
+    }
+
+    [TestCase(180, 0, true)]
+    [TestCase(150, 0, true)]
+    [TestCase(130, 0, false)]
+    [TestCase(0, 0, false)]
+    public void An_Enemy_Facing_Within_40_Degrees_Of_The_Player_Faces_Them(int enemy, int player, bool faces)
+    {
+        Assert.That(PlayerAttacks.FacesPlayer(enemy, player), Is.EqualTo(faces));
     }
 
     [Test]

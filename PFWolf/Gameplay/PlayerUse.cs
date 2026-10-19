@@ -213,45 +213,31 @@ internal sealed class PlayerUse(
         return true;
     }
 
-    internal void PressUse()
+    /// <summary>The tile the player faces, by the nearest of the four directions, and that direction</summary>
+    internal static (int X, int Y, ControlDir Dir) FacingTile(Entities.Actors.Actor player)
     {
         const int ANGLES = GameConstants.Angles;
+        if (player.Angle < ANGLES / 8 || player.Angle > 7 * ANGLES / 8)
+            return (player.TileX + 1, player.TileY, ControlDir.East);
+        if (player.Angle < 3 * ANGLES / 8)
+            return (player.TileX, player.TileY - 1, ControlDir.North);
+        if (player.Angle < 5 * ANGLES / 8)
+            return (player.TileX - 1, player.TileY, ControlDir.West);
+        return (player.TileX, player.TileY + 1, ControlDir.South);
+    }
+
+    internal void PressUse()
+    {
         var playerinput = session.PlayerInput;
         var player = session.Player;
-        int checkx, checky, cmdtile;
-        ControlDir dir;
+        int cmdtile;
 
         // Nothing's used with something latched on (Gameplay/Latching.cs)
         if (session.PlayerState.Latch != null)
             return;
 
-        //
         // find which cardinal direction the player is facing
-        //
-        if (player.Angle < ANGLES / 8 || player.Angle > 7 * ANGLES / 8)
-        {
-            checkx = player.TileX + 1;
-            checky = player.TileY;
-            dir = ControlDir.East;
-        }
-        else if (player.Angle < 3 * ANGLES / 8)
-        {
-            checkx = player.TileX;
-            checky = player.TileY - 1;
-            dir = ControlDir.North;
-        }
-        else if (player.Angle < 5 * ANGLES / 8)
-        {
-            checkx = player.TileX - 1;
-            checky = player.TileY;
-            dir = ControlDir.West;
-        }
-        else
-        {
-            checkx = player.TileX;
-            checky = player.TileY + 1;
-            dir = ControlDir.South;
-        }
+        var (checkx, checky, dir) = FacingTile(player);
 
         // Manning a mounted gun, a fresh press (not while firing) steps them off it (Gameplay/MountedWeapons.cs)
         if (!playerinput.IsHeld(ButtonType.Use) && !playerinput.IsPressed(ButtonType.Attack) && hooks.Dismount())
@@ -321,12 +307,19 @@ internal sealed class PlayerUse(
     /// </summary>
     internal bool TryUseActor()
     {
-        const int ANGLES = GameConstants.Angles;
         var playerinput = session.PlayerInput;
-        var player = session.Player;
-        if (playerinput.IsHeld(ButtonType.Use))
+        if (playerinput.IsHeld(ButtonType.Use) || UsableActor() is not { } chosen)
             return false;
+        playerinput.SetHeld(ButtonType.Use, true);
+        chosen.SetState("Use");
+        return true;
+    }
 
+    /// <summary>The actor the use key would use now (see TryUseActor), or null</summary>
+    internal Entities.Actors.Actor? UsableActor()
+    {
+        const int ANGLES = GameConstants.Angles;
+        var player = session.Player;
         const long Reach = MapConstants.TileGlobal * 3 / 2;
         Entities.Actors.Actor? chosen = null;
         long best = Reach;
@@ -351,12 +344,72 @@ internal sealed class PlayerUse(
 
             (chosen, best) = (actor, dist);
         }
+        return chosen;
+    }
 
-        if (chosen == null)
+    /*
+    =============================================================================
+
+    USE HINTS
+
+    What the use key would do, shown as a hint (statusbar.yaml use-hint draws it by name:
+    Midnight Assault's indicators, CheckFacingTile). Looked for as the use key looks: a use
+    trigger on the tile the player faces (its `hint`), a patch on it, the wall itself, then an
+    actor there to be used (its `usehint`, but not on a state its `usehint.except` names: an
+    emptied uniform rack). A patch or wall that's a switch only gives its hint from a side it
+    can be used from. Last, the weapon in hand's `weapon.backhint` while an enemy
+    in its reach is unaware with its back turned (Gameplay/PlayerAttacks.cs BackstabTarget), or
+    its `weapon.facehint` while one faces the player (Midnight Assault's stealth kill and papers).
+
+    =============================================================================
+    */
+
+    // On a state its `usehint.except` names (one, or a list): a radio already listened to, an
+    // empty uniform rack, which can still be used but give no hint
+    static bool OnExceptedState(Entities.Actors.Actor actor)
+    {
+        if (actor.CurrentState?.StateName is not { } state || !actor.Properties.TryGetValue("usehint.except", out var except) || except == null)
             return false;
-        playerinput.SetHeld(ButtonType.Use, true);
-        chosen.SetState("Use");
-        return true;
+        var names = except is IEnumerable<object> list ? list.Select(o => o?.ToString() ?? "")
+            : except.ToString()!.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return names.Any(name => name.Equals(state, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>The hint the use key's target gives now (see USE HINTS), or null for none</summary>
+    internal string? UseHint(PlayerAttacks? attacks)
+    {
+        var player = session.Player;
+        if (player == null || session.PlayerState.Health <= 0 || session.PlayerState.Latch != null)
+            return null;
+
+        string? hint = null;
+        var (x, y, dir) = FacingTile(player);
+        if (map.InMap(x, y))
+        {
+            int tile = map.TileMap[x, y];
+            var data = map.GetMapData();
+            if (map.GetTrigger(x, y) is { IsWalkOver: false, Hint.Length: > 0 } trigger)
+                hint = trigger.Hint;
+            else if ((tile & BitDoor) == 0 && (tile & ~BitWall) != 0 && map.GetPatch(x, y) is var id and > 0
+                && data.Patches.TryGetValue(id, out var patch) && patch.Hint.Length > 0
+                && (patch.Switch == null || PatchSwitchAt(x, y, dir) != null))
+                hint = patch.Hint;
+            else if ((tile & BitDoor) == 0 && data.Walls.TryGetValue(tile & ~BitWall, out var wall) && wall.Hint.Length > 0
+                && (wall.Switch == null || wall.Switch.UsableFrom(dir)))
+                hint = wall.Hint;
+        }
+        if (hint == null && UsableActor() is { } actor && actor.Properties.TryGetValue("usehint", out var usehint)
+            && usehint?.ToString() is { Length: > 0 } actorHint && !OnExceptedState(actor))
+            hint = actorHint;
+
+        if (attacks != null && session.PlayerState.Weapon is { } weapon)
+        {
+            if (inventory.GetStringProperty(weapon, "weapon.backhint") is { Length: > 0 } back && attacks.BackstabTarget() != null)
+                hint = back;
+            else if (inventory.GetStringProperty(weapon, "weapon.facehint") is { Length: > 0 } face && attacks.FacingTarget() != null)
+                hint = face;
+        }
+        return hint;
     }
 
     /// <summary>

@@ -327,7 +327,8 @@ internal static partial class GameHost
     static StatusBarDrawing MakeStatusBarDrawing() =>
         new(GameEngineManager, AssetManager, _videoManager, _graphicManager, InventoryManager, AudioManager,
             HudMessageManager, ui, Session, Settings, new StatusBarHooks(GetMapDisplayName, WrapText,
-                p => deathmatch?.Objective?.MostHealth(p), () => LevelTimer.TicsLeft));
+                p => deathmatch?.Objective?.MostHealth(p), () => LevelTimer.TicsLeft,
+                () => Session.InGame ? playerUse.UseHint(playerAttacks) : null));
 
     static void DrawKeys() => statusBarDrawing.DrawKeys();
     static void DrawScore() => statusBarDrawing.DrawScore();

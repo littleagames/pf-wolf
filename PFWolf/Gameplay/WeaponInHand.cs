@@ -188,9 +188,14 @@ internal sealed class WeaponInHand(
             return;
         }
 
-        // Zoomed in through a scope, a weapon with a ZoomFire state fires that (Gameplay/WeaponZoom.cs)
+        // Zoomed in through a scope, a weapon with a ZoomFire state fires that (Gameplay/WeaponZoom.cs);
+        // a weapon with a Backstab state swings that at an unaware enemy's back (Midnight Assault's
+        // knife: Cmd_Fire's stealth kill frames)
         if (session.PlayerInput.IsFreshPress(ButtonType.Attack))
-            StartState(weapon, playerstate.ZoomMode == ZoomMode.Zoomed && weapon.ResolvedStates.ContainsKey("ZoomFire") ? "ZoomFire" : "Fire",
+            StartState(weapon,
+                playerstate.ZoomMode == ZoomMode.Zoomed && weapon.ResolvedStates.ContainsKey("ZoomFire") ? "ZoomFire"
+                : weapon.ResolvedStates.ContainsKey("Backstab") && attacks?.BackstabTarget() != null ? "Backstab"
+                : "Fire",
                 ButtonType.Attack);
     }
 

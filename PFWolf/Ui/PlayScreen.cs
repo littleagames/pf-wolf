@@ -62,6 +62,7 @@ internal sealed class PlayScreen(
         weapons.DrawWeaponSlots();
         statusBar.DrawPowerMeter();
         statusBar.DrawLevelTimer();
+        statusBar.DrawUseHint();
         statusBar.DrawHeartMonitor(force: true);
         statusBar.DrawRadarGauge();
         if (statusBar.StatusBar.Get("radar") is { } radar && radarDrawing.Shows(radar))

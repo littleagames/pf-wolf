@@ -63,6 +63,24 @@ public class StatusBarDrawingTests
         Assert.That(bar.HasInfoArea, Is.False);
     }
 
+    [TestCase(0, 0)]
+    [TestCase(15, 0)]
+    [TestCase(16, 1)]
+    [TestCase(48, 3)]       // the last picture
+    [TestCase(64, 2)]       // then back down
+    [TestCase(80, 1)]
+    [TestCase(96, 0)]       // and round again
+    public void A_Use_Hints_Pictures_Go_Back_And_Forth(int time, int frame)
+    {
+        Assert.That(StatusBarDrawing.HintFrame(time, 16, 4), Is.EqualTo(frame));
+    }
+
+    [Test]
+    public void A_Single_Picture_Hint_Doesnt_Animate()
+    {
+        Assert.That(StatusBarDrawing.HintFrame(1234, 16, 1), Is.Zero);
+    }
+
     [Test]
     public void Doesnt_Grin_Without_A_Pickup_Sound()
     {

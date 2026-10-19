@@ -283,6 +283,12 @@ public record MapPatchTranslation
     /// <summary>Makes the patch a switch the player can use (see <see cref="MapSwitchTranslation"/>)</summary>
     public MapSwitchTranslation? Switch { get; init; }
 
+    /// <summary>
+    /// The use hint shown while the player faces it (statusbar.yaml use-hint's hints, by name:
+    /// Midnight Assault's switch and take icons); a switch's only from a side it can be used from
+    /// </summary>
+    public string Hint { get; init; } = "";
+
     /// <summary>Whether it's on the face ("north", "south", "east" or "west")</summary>
     public bool IsOn(string face) => Sides.Count == 0 || Sides.Contains(face, StringComparer.OrdinalIgnoreCase);
 }
@@ -335,6 +341,9 @@ public record MapTriggerTranslation
     /// there (a ladder, a teleport's marker), solid or not by its own flags.
     /// </summary>
     public string Class { get; set; } = "";
+
+    /// <summary>A use trigger's use hint, shown while the player faces its tile (statusbar.yaml use-hint's hints, by name)</summary>
+    public string Hint { get; set; } = "";
 }
 
 public record MapActorTranslation
@@ -510,6 +519,12 @@ public record MapTextureTranslation
 
     /// <summary>Walls only: makes this wall a switch the player can use.</summary>
     public MapSwitchTranslation? Switch { get; init; }
+
+    /// <summary>
+    /// Walls only: the use hint shown while the player faces it (statusbar.yaml use-hint's
+    /// hints, by name); a switch's only from a side it can be used from
+    /// </summary>
+    public string Hint { get; init; } = "";
 
     /// <summary>Walls only: makes this wall an outlet enemies come out of (Blake Stone's electro-aliens).</summary>
     public MapOutletTranslation? Outlet { get; init; }

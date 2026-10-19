@@ -139,16 +139,66 @@ internal sealed class PlayerAttacks(
             hooks.PlayPlayerSound(sound);
     }
 
+    // How far in front a knife reaches (vanilla's KnifeAttack: 1.5 tiles)
+    const long KnifeReach = 0x18000L;
+
     internal void KnifeAttack(Entities.Actors.Actor ob)
     {
         PlayAttackSound();
 
-        var closest = FindShootCandidates().FirstOrDefault(c => c.Depth <= 0x18000L).Actor;
+        var closest = FindShootCandidates().FirstOrDefault(c => c.Depth <= KnifeReach).Actor;
         if (closest == null)
             return; // missed
 
+        // A weapon with weapon.backstab kills an enemy outright from behind while it's unaware
+        // (Midnight Assault's knife: KnifeAttack's "insta-kill if back-stabbed")
+        if (closest is Entities.Actors.Monster target && WeaponIs("weapon.backstab") && BackTurned(target))
+        {
+            HitShotTarget(target, (uint)Math.Max((int)target.Hitpoints, 1));
+            return;
+        }
+
         HitShotTarget(closest, PlayerDamage(session.Random.RndT() >> 4));
     }
+
+    // Whether the weapon in hand has a true flag property
+    bool WeaponIs(string property) =>
+        session.PlayerState.Weapon is { } weapon && inventory.GetProperty(weapon, property) is { } value
+        && (value is true || bool.TryParse(value.ToString(), out var b) && b);
+
+    // The nearest enemy in the knife's reach, if it isn't going after anyone (AttackMode)
+    Entities.Actors.Monster? UnawareInReach() =>
+        FindShootCandidates().FirstOrDefault(c => c.Depth <= KnifeReach).Actor is Entities.Actors.Monster monster
+        && !monster.RuntimeFlags.Has(ObjFlags.AttackMode) && monster.Hitpoints > 0 ? monster : null;
+
+    // Degrees between two facings, 0 to 180
+    static int Apart(int a, int b)
+    {
+        int d = ((a - b) % 360 + 360) % 360;
+        return Math.Min(d, 360 - d);
+    }
+
+    bool BackTurned(Entities.Actors.Monster monster) => BackTurned(ProjectileActions.FacingAngle(monster), session.Player.Angle);
+
+    /// <summary>An enemy facing within 30 degrees of the way the player does has its back to them</summary>
+    internal static bool BackTurned(int enemyFacing, int playerAngle) => Apart(enemyFacing, playerAngle) < 30;
+
+    /// <summary>An enemy facing within 40 degrees of straight at the player faces them</summary>
+    internal static bool FacesPlayer(int enemyFacing, int playerAngle) => Apart(enemyFacing, playerAngle + 180) < 40;
+
+    /// <summary>
+    /// The enemy a blow would stab in the back now: the nearest in the knife's reach, unaware of
+    /// the player, with its back to them (Midnight Assault's CheckForAttackState); null if none
+    /// </summary>
+    internal Entities.Actors.Monster? BackstabTarget() =>
+        UnawareInReach() is { } monster && BackTurned(monster) ? monster : null;
+
+    /// <summary>
+    /// The enemy in the knife's reach that's unaware and facing the player (within 40 degrees):
+    /// one papers could be shown to (CheckForAttackState); null if none
+    /// </summary>
+    internal Entities.Actors.Monster? FacingTarget() =>
+        UnawareInReach() is { } monster && FacesPlayer(ProjectileActions.FacingAngle(monster), session.Player.Angle) ? monster : null;
 
     // A player attack's damage, scaled by the class's player.damagedealt
     internal uint PlayerDamage(int damage) => (uint)Math.Round(damage * hooks.DamageDealt());

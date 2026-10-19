@@ -11,11 +11,13 @@ namespace PFWolf.Ui;
 /// look), else null: the face then goes by their share of it
 /// </param>
 /// <param name="LevelTicsLeft">Tics left on a level against the clock, -1 for one that isn't (Gameplay/LevelTimer.cs)</param>
+/// <param name="UseHint">The use hint that applies now, by name, or null (Gameplay/PlayerUse.cs USE HINTS)</param>
 internal sealed record StatusBarHooks(
     Func<string, string> MapDisplayName,
     Func<string, string, int, List<string>> WrapText,
     Func<Entities.PlayerState, int?>? MostHealth = null,
-    Func<int>? LevelTicsLeft = null);
+    Func<int>? LevelTicsLeft = null,
+    Func<string?>? UseHint = null);
 
 /// <summary>
 /// The status bar (statusbar.yaml): its layout and the parts drawn from the player's state --
@@ -423,6 +425,32 @@ internal sealed class StatusBarDrawing(
         int seconds = (left + 69) / 70;
         string minutes = (seconds / 60).ToString().PadLeft(Math.Max(element.Digits, 1));
         DrawStatusText(element, $"{element.Prefix}{minutes}:{seconds % 60:00}{element.Suffix}", font, element.Color ?? StatusBar.Get("numbers")?.Color ?? "White");
+    }
+
+    /// <summary>
+    /// The use hint (statusbar.yaml use-hint): while what the use key would act on gives a hint
+    /// that the part has pictures for, one of them at x, y, back and forth frame-tics apiece on
+    /// the level's clock (Midnight Assault's DrawIndicators)
+    /// </summary>
+    internal void DrawUseHint()
+    {
+        if (StatusBarHidden) return;
+        if (StatusBar.Get("use-hint") is not { } element || hooks.UseHint?.Invoke() is not { Length: > 0 } hint
+            || !element.Hints.TryGetValue(hint, out var pics) || pics.Count == 0)
+            return;
+        var pic = pics[HintFrame(session.GameState.TimeCount, Math.Max(element.FrameTics, 1), pics.Count)];
+        using var _ = StatusBarOrigin(element);
+        graphics.DrawPic(pic, element.X, StatusBarTop(element) + element.Y);
+    }
+
+    /// <summary>Which of count pictures shows at a time: 0 up to the last and back down, tics apiece</summary>
+    internal static int HintFrame(int time, int tics, int count)
+    {
+        if (count <= 1)
+            return 0;
+        int period = 2 * count - 2;
+        int step = time / tics % period;
+        return step < count ? step : period - step;
     }
 
     /// <summary>The level's name (statusbar.yaml location), as GetMapDisplayName gives it</summary>

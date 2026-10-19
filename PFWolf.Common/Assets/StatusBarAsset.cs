@@ -230,6 +230,16 @@ public class StatusBarElement
 
     /// <summary>level-timer-label: the text drawn by the level timer (a $NAME language key or the text)</summary>
     public string? Text { get; set; }
+
+    /// <summary>
+    /// use-hint: each hint's pictures by name (the names walls, patches, use triggers, actors'
+    /// usehint and weapons' backhint/facehint give), drawn at x, y while it applies. Several
+    /// pictures animate, frame-tics each, back and forth (Midnight Assault's indicators)
+    /// </summary>
+    public Dictionary<string, List<string>> Hints { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>use-hint: tics each of a hint's pictures shows</summary>
+    public int FrameTics { get; set; } = 16;
 }
 
 /// <summary>An ammo gauge's colors while fewer than <see cref="Below"/> of its segments are unlit</summary>
