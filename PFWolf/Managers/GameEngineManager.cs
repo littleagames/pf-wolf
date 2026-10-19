@@ -786,13 +786,26 @@ internal class GameEngineManager
     internal static void DelayTics(int wolfticks)
     {
         if (wolfticks > 0)
-            SDL.SDL_Delay((uint)((wolfticks * 100) / 7));
+            DelayMs((uint)((wolfticks * 100) / 7));
     }
 
+    // How long a wait sleeps between letting the window's messages through
+    const uint PumpSliceMs = 10;
+
+    /// <summary>
+    /// Waits, keeping the window alive: its messages are let through every few milliseconds
+    /// (SDL_PumpEvents), so a long wait (WaitVBL's victory frames, a delay before a picture)
+    /// doesn't leave it unresponsive. What was pressed stays queued for the input to read.
+    /// </summary>
     internal static void DelayMs(uint millis)
     {
-        if (millis > 0)
-            SDL.SDL_Delay(millis);
+        while (millis > 0)
+        {
+            uint slice = Math.Min(millis, PumpSliceMs);
+            SDL.SDL_Delay(slice);
+            SDL.SDL_PumpEvents();
+            millis -= slice;
+        }
     }
 
     internal static void WaitVBL(uint a) => DelayMs((a) * 8);

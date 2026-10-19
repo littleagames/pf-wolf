@@ -16,7 +16,7 @@ namespace PFWolf.Entities.Actors;
 /// the names the actordefs use (`think: T_Chase`), and run on the actor itself; subclasses
 /// (Blake Stone's, for one) override them.
 /// </summary>
-internal record Monster : Actor
+internal partial record Monster : Actor
 {
     // What a monster uses of the game, through its world (Entities/Actors/ActorWorld.cs)
     private protected GameEngineManager GameEngineManager => World.Engine;
@@ -123,6 +123,8 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("A_StartAttack", m => m.StartAttack());
         ActorActionRegistry.RegisterFor<Monster>("A_Relaunch", (m, args) => m.Relaunch(args));
         ActorActionRegistry.RegisterFor<Monster>("A_Dormant", (m, args) => m.Dormant(args));
+        // T_Scan("AttackState"): a turret's watch (Monster.Turret.cs)
+        ActorActionRegistry.RegisterFor<Monster>("T_Scan", (m, args) => m.Scan(args));
     }
 
     /// <summary>
@@ -193,11 +195,57 @@ internal record Monster : Actor
     }
 
     // Reached the middle of the tile it was walking to (EoD's CheckEnemyTile): what's there can
-    // move it on (ActorWorld.TileArrived, an A_Warp pad), and it picks its next way from there
+    // move it on (ActorWorld.TileArrived, an A_Warp pad), it takes what lies where it ends up
+    // (Monster.Pickups.cs), and it picks its next way from there
     private void ArriveOnTile()
     {
         RecenterOnTile();
         World?.TileArrived?.Invoke(this);
+        TakePickups();
+    }
+
+    // The way on after a tile, chasing: towards the player (or dodging), or while the level has its
+    // enemies wander (MapManager.MonstersWander), straight on until something's in the way
+    private void SelectChaseOrWanderDir(bool dodge)
+    {
+        if (MapManager.MonstersWander)
+            SelectWanderDir();
+        else if (dodge)
+            SelectDodgeDir();
+        else
+            SelectChaseDir();
+    }
+
+    /// <summary>
+    /// Wandering (End of Destiny's SelectLootDir, Greed's looters): on the way it was going; on
+    /// its first move after noticing the player, back the way it came; where it can't go on,
+    /// east, north, west or south, whichever is open first, but not straight back
+    /// </summary>
+    internal void SelectWanderDir()
+    {
+        if (RuntimeFlags.Has(ObjFlags.FirstAttack))
+        {
+            RuntimeFlags &= ~ObjFlags.FirstAttack;
+            if (Dir != ObjDir.NoDir)
+            {
+                Dir = Opposite[(byte)Dir];
+                if (TryWalk())
+                    return;
+            }
+        }
+        else if (Dir != ObjDir.NoDir && TryWalk())
+            return;
+
+        var back = Dir == ObjDir.NoDir ? ObjDir.NoDir : Opposite[(byte)Dir];
+        foreach (var dir in new[] { ObjDir.East, ObjDir.North, ObjDir.West, ObjDir.South })
+        {
+            if (dir == back)
+                continue;
+            Dir = dir;
+            if (TryWalk())
+                return;
+        }
+        Dir = ObjDir.NoDir;
     }
 
     /*
@@ -1864,7 +1912,7 @@ internal record Monster : Actor
 
         if (Dir == ObjDir.NoDir)
         {
-            if (dodge) SelectDodgeDir(); else SelectChaseDir();
+            SelectChaseOrWanderDir(dodge);
             if (Dir == ObjDir.NoDir)
                 return;
         }
@@ -1892,7 +1940,7 @@ internal record Monster : Actor
             ArriveOnTile();
             move -= Distance;
 
-            if (dodge) SelectDodgeDir(); else SelectChaseDir();
+            SelectChaseOrWanderDir(dodge);
 
             if (Dir == ObjDir.NoDir)
                 return;
@@ -2026,7 +2074,7 @@ internal record Monster : Actor
 
         if (Dir == ObjDir.NoDir)
         {
-            if (dodge) SelectDodgeDir(); else SelectChaseDir();
+            SelectChaseOrWanderDir(dodge);
             if (Dir == ObjDir.NoDir)
                 return;
         }

@@ -63,6 +63,26 @@ internal sealed class HubActions(
         Entities.MapTriggerRegistry.Register("A_Warp", WarpAction);
         if (mapManager?.World is { } world)
             world.TileArrived = WarpMonster;
+
+        // A_SetMonsterWander(on | off): the level's enemies wander rather than chase
+        // (MapManager.MonstersWander); A_ClearMonsterBlocks([monsters | bosses]): the blocktile
+        // markers of that kind (monsters when left out) stop keeping enemies off (Greed's gong)
+        Both("A_SetMonsterWander", args =>
+        {
+            var mode = args.ElementAtOrDefault(0)?.Trim().ToLowerInvariant();
+            if (mode is not ("on" or "off"))
+            {
+                Console.WriteLine("A_SetMonsterWander: say on or off.");
+                return false;
+            }
+            bool was = mapManager.MonstersWander;
+            mapManager.MonstersWander = mode == "on";
+            return was != mapManager.MonstersWander;
+        });
+        Both("A_ClearMonsterBlocks", args =>
+            mapManager.ClearMonsterBlocks(MapManager.BlockKind(args.ElementAtOrDefault(0) ?? "monsters") is var kind
+                && kind != MapManager.MonsterBlock.None ? kind : MapManager.MonsterBlock.Monsters));
+
         Entities.MapTriggerRegistry.Register("A_VictoryRun", VictoryRunAction);
         Entities.Actors.ActorActionRegistry.Register("T_VictoryRun", ThinkVictoryRun);
 
@@ -76,6 +96,14 @@ internal sealed class HubActions(
         // next floor
         Entities.MapTriggerRegistry.Register("A_DropDetonator", DropDetonatorAction);
     }
+
+    // An action for switches and actors alike
+    static void Both(string name, Func<string[], bool> action)
+    {
+        Entities.MapTriggerRegistry.Register(name, (_, args) => action(args));
+        Entities.Actors.ActorActionRegistry.Register(name, (Entities.Actors.Actor _, string[] args) => action(args));
+    }
+
     bool FloorSelectAction(Entities.TriggerActivation trigger, string[] args)
     {
         if (elevatorScreens.Elevator is not { } elevator)

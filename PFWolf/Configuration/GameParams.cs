@@ -1,4 +1,4 @@
-﻿namespace PFWolf.Configuration;
+namespace PFWolf.Configuration;
 
 using CommandLine;
 
@@ -13,7 +13,7 @@ internal class GameParams
     [Option("demodir", Required = false, HelpText = "Directory where recorded demos are kept (and played ahead of the game's own). Default in %APPDATA%.")]
     public string DemoDir { get; set; } = "";
 
-    [Option("nowait", Required = false, HelpText = "Don't wait at the signon screen or show the intro screens; with --exec, for scripted runs.")]
+    [Option("nowait", Required = false, HelpText = "Don't wait at the signon screen or show the intro screens or level briefings; with --exec, for scripted runs.")]
     public bool NoWait { get; set; }
 
     /// <summary>Read before parsing, by Startup.ConsoleWindow: here so the parser accepts it</summary>

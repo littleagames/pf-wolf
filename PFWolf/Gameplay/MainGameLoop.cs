@@ -154,8 +154,9 @@ internal sealed class MainGameLoop(
             // A level being entered, not one loaded or restarted after dying, saves itself
             hooks.SetAutosavePending(!session.LoadedGame && !died && !(session.DemoPlayback || session.DemoRecord) && !session.NetGame);
 
-            // Its briefing first (game-info briefing; Midnight Assault's missions)
-            if (ShowsBriefing(levelStart, warped, (session.DemoPlayback || session.DemoRecord), session.NetGame)
+            // Its briefing first (game-info briefing; Midnight Assault's missions), unless the run's
+            // scripted (--nowait), where nothing should wait on a key
+            if (!GameHost.NoWait && ShowsBriefing(levelStart, warped, (session.DemoPlayback || session.DemoRecord), session.NetGame)
                 && engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var enteredMap)
                 && BriefingFor(enteredMap, session.GameState.Entrance) is { Length: > 0 } briefing)
             {
