@@ -46,6 +46,14 @@ internal sealed class TimedSwitches(MapManager map, GameSession session)
         pending.Add(new TimedSwitch(x, y, patch, from, to, tag, dir, sw.ResetActions, map.TileMap) { TicsLeft = sw.ResetTics });
     }
 
+    /// <summary>A loaded game's switches still waiting to turn back (SaveGames/PlayerSaveState.cs), on the level just rebuilt</summary>
+    internal void Restore(IEnumerable<SaveGames.SavedTimedSwitch> saved)
+    {
+        pending.Clear();
+        foreach (var t in saved)
+            pending.Add(new TimedSwitch(t.X, t.Y, t.Patch, t.From, t.To, t.Tag, t.Dir, t.Actions, map.TileMap) { TicsLeft = t.TicsLeft });
+    }
+
     /// <summary>Each tic: those whose time is up turn back. Ones from an earlier load of the level are dropped.</summary>
     internal void Tick(uint tics)
     {

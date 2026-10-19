@@ -40,6 +40,9 @@ internal sealed record ActorSnapshot
     public bool Cloaked { get; init; }
     public string? Faction { get; init; }
     public string? Translation { get; init; }
+    public double Z { get; init; }
+    public double ZSpeed { get; init; }
+    public int Suspicion { get; init; }
 
     public static ActorSnapshot Capture(Actor actor)
     {
@@ -79,6 +82,9 @@ internal sealed record ActorSnapshot
             Cloaked = actor.Cloaked,
             Faction = actor.Faction,
             Translation = actor.Translation,
+            Z = actor.Z,
+            ZSpeed = actor.ZSpeed,
+            Suspicion = (actor as Monster)?.Suspicion ?? 0,       // Gameplay/Stealth.cs
         };
     }
 
@@ -117,6 +123,10 @@ internal sealed record ActorSnapshot
         actor.Cloaked = Cloaked;
         actor.Faction = Faction;
         actor.Translation = Translation;
+        actor.Z = Z;
+        actor.ZSpeed = ZSpeed;
+        if (actor is Monster monster)
+            monster.Suspicion = Suspicion;
         actor.SyncPosition();
     }
 
@@ -157,6 +167,9 @@ internal sealed record ActorSnapshot
         bw.Write(Cloaked);
         bw.Write(Faction ?? "");
         bw.Write(Translation ?? "");
+        bw.Write(Z);
+        bw.Write(ZSpeed);
+        bw.Write(Suspicion);
     }
 
     public static ActorSnapshot Read(BinaryReader br)
@@ -198,6 +211,9 @@ internal sealed record ActorSnapshot
             Cloaked = br.ReadBoolean(),
             Faction = br.ReadString() is { Length: > 0 } faction ? faction : null,
             Translation = br.ReadString() is { Length: > 0 } translation ? translation : null,
+            Z = br.ReadDouble(),
+            ZSpeed = br.ReadDouble(),
+            Suspicion = br.ReadInt32(),
         };
     }
 

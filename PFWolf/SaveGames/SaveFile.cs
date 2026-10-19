@@ -57,7 +57,9 @@ internal static class SaveFile
     // 27: the level's scrollers (scrolling walls and flats), after the light zones.
     // 28: the level's width and height ahead of its tile grid (levels needn't be 64x64).
     // 29: the entrance the level was entered by, at the end of GameState.
-    internal const int SaveVersion = 29;
+    // 30: actors' height, fall and suspicion; the player's gun, latch, ride, stealth, kill chain
+    //     and timed switches at the end (PlayerSaveState).
+    internal const int SaveVersion = 30;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

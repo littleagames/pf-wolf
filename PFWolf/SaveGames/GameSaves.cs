@@ -199,7 +199,14 @@ internal sealed class GameSaves(
 
         DiskFlopAnim(x, y);
         hubs.WriteHubState(bw);
+
+        // The gun they're manning, what's latched on, what they ride, going unseen, their kill
+        // chain and the timed switches still counting down
+        PlayerSaveState.Capture(session.PlayerState, mapManager.GetSavedActors(), TimedSwitches?.Pending ?? []).Write(bw);
     }
+
+    /// <summary>The timed switches waiting to turn back (Gameplay/TimedSwitches.cs), kept in a save</summary>
+    internal Gameplay.TimedSwitches? TimedSwitches { get; init; }
 
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
     internal sealed record SaveGameData(
@@ -210,7 +217,8 @@ internal sealed class GameSaves(
         LevelBody Body,
         Entities.Actors.ActorSnapshot? Weapon,
         int WeaponCharge,
-        HubState Hubs);
+        HubState Hubs,
+        PlayerSaveState Extras);
 
     internal SaveGameData ReadSaveBody(BinaryReader br)
     {
@@ -232,7 +240,8 @@ internal sealed class GameSaves(
             levelBodies.ReadLevelBody(br),
             Weapon: br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null,
             WeaponCharge: br.ReadInt32(),
-            Hubs: Hubs.ReadHubState(br));
+            Hubs: Hubs.ReadHubState(br),
+            Extras: PlayerSaveState.Read(br));
     }
 
     /// <summary>
@@ -303,8 +312,10 @@ internal sealed class GameSaves(
         levelSetup.SetupGameLevel();
 
         DiskFlopAnim(x, y);
-        levelBodies.ApplyLevelBody(data.Body);
+        var actors = levelBodies.ApplyLevelBody(data.Body);
         hubs.RestoreHubState(data.Hubs);
+        data.Extras.ApplyTo(session.PlayerState, actors);
+        TimedSwitches?.Restore(data.Extras.TimedSwitches);
 
         // The weapon picks up where it was (mid-attack, say).
         session.PlayerState.WeaponSprite = null;

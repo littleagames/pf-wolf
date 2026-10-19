@@ -321,7 +321,10 @@ internal static partial class GameHost
                 // CHANGE "READ THIS!" TO NORMAL COLOR
                 //
                 FindMenuItem(MainMenu, "readthis")?.Active = 1;
-            }));
+            }))
+    {
+        TimedSwitches = TimedSwitches,
+    };
 
     static bool AutosavePending { get => gameSaves.AutosavePending; set => gameSaves.AutosavePending = value; }
 
