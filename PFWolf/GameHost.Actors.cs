@@ -311,6 +311,15 @@ internal static partial class GameHost
         () => MapManager.GetMapData().Flats,
         (x, y) => MapManager.FlatTextureName(x, y, ceiling: false)));
 
+    // Kills in quick succession (Gameplay/KillChains.cs): their messages and prizes
+    static KillChains? _killChains;
+    static KillChains KillChains => _killChains ??= new KillChains(Session, new KillChainHooks(
+        () => GameEngineManager.GetGameInfo().KillChain,
+        message => HudMessageManager.Show(HudMessageKind.Lock, message),
+        item => InventoryManager.Has(item),
+        (x, y, item) => MapManager.SpawnThing(x, y, item),
+        points => playerStats.HealSelf(points)));
+
     // Disguise and going unseen (Gameplay/Stealth.cs): enemies' suspicion, papers, the uniform
     static Stealth? _stealth;
     static Stealth Stealth => _stealth ??= new Stealth(MapManager, InventoryManager, playerWeapons, Session,

@@ -144,13 +144,18 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
         return false;
     }
 
-    /// <summary>A kill by a player: counted as unseen while they're unseen, with a stealth-kill weapon or a zoomed scope</summary>
-    internal void Killed(Entities.Actors.PlayerPawn killer)
+    /// <summary>
+    /// A kill by a player: counted as unseen while they're unseen, with a stealth-kill weapon or a
+    /// zoomed scope; true if it was
+    /// </summary>
+    internal bool Killed(Entities.Actors.PlayerPawn killer)
     {
         var state = killer.State;
-        if (state.Undetected && (state.ZoomMode == ZoomMode.Zoomed
-            || state.Weapon is { } weapon && IsTrue(inventory.GetProperty(weapon, "weapon.stealthkill"))))
-            state.StealthKills++;
+        if (!state.Undetected || state.ZoomMode != ZoomMode.Zoomed
+            && !(state.Weapon is { } weapon && IsTrue(inventory.GetProperty(weapon, "weapon.stealthkill"))))
+            return false;
+        state.StealthKills++;
+        return true;
     }
 
     /// <summary>

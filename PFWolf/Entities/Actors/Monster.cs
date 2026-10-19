@@ -1544,8 +1544,11 @@ internal record Monster : Actor
         if (CountsAsKill && !Properties.ContainsKey("monster.becomes"))
         {
             GameState.KillCount++;
-            if (killedBy is PlayerPawn unseen)
-                World.Stealth?.Killed(unseen);      // a knife or a scope's kill, unseen (Gameplay/Stealth.cs)
+            if (killedBy is PlayerPawn player)
+            {
+                bool unseen = World.Stealth?.Killed(player) == true;    // a knife or a scope's kill, unseen (Gameplay/Stealth.cs)
+                World.KillChains?.Killed(this, player.State, tilex, tiley, unseen);
+            }
         }
         RuntimeFlags &= ~(ObjFlags.Shootable | ObjFlags.Friendly);
         RuntimeFlags |= ObjFlags.NonMark;

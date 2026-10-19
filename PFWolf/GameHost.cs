@@ -331,7 +331,10 @@ internal static partial class GameHost
         // as it joins the level, taking it (lazily, through the services) once actors are made
         actorWorld = new Entities.Actors.ActorWorld(GameEngineManager, AssetManager, AudioManager, InventoryManager,
             HudMessageManager, MapManager, FactionManager, lineOfSight, doors, positionalSounds, actorSounds, hudMessageDrawing,
-            playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, LevelAI, Stealth, Objectives, Session);
+            playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, LevelAI, Stealth, Objectives, Session)
+        {
+            KillChains = KillChains,
+        };
 
         // TODO: Remove circular dependencies here
     }

@@ -17,7 +17,8 @@ internal sealed record StatusBarHooks(
     Func<string, string, int, List<string>> WrapText,
     Func<Entities.PlayerState, int?>? MostHealth = null,
     Func<int>? LevelTicsLeft = null,
-    Func<string?>? UseHint = null);
+    Func<string?>? UseHint = null,
+    Func<IEnumerable<(int Left, int Full)>>? HealthBars = null);
 
 /// <summary>
 /// The status bar (statusbar.yaml): its layout and the parts drawn from the player's state --
@@ -443,6 +444,41 @@ internal sealed class StatusBarDrawing(
         using var _ = StatusBarOrigin(element);
         graphics.DrawPic(pic, element.X, StatusBarTop(element) + element.Y);
     }
+
+    /// <summary>
+    /// Health bars (statusbar.yaml enemy-health, Midnight Assault's DrawEnemyHealthHUDMeters): for
+    /// up to count of the enemies with `healthbar: true` that are after someone, a box-color frame
+    /// at x, y (each spacing lines below the last) round a bar width wide at full health and
+    /// height high, in the first of its levels whose below is more than the bar's width (else its
+    /// color); and while any show, the enemy-health-label part's text.
+    /// </summary>
+    internal void DrawEnemyHealth()
+    {
+        if (StatusBarHidden) return;
+        if (StatusBar.Get("enemy-health") is not { } element || hooks.HealthBars?.Invoke() is not { } bars)
+            return;
+        int shown = 0, height = Math.Max(element.Height ?? 2, 1);
+        using (StatusBarOrigin(element))
+        {
+            int top = StatusBarTop(element) + element.Y;
+            foreach (var (left, full) in bars.Take(Math.Max(element.Count, 1)))
+            {
+                int y = top + shown++ * element.Spacing;
+                int width = HealthBarWidth(left, full, element.Width);
+                video.Bar(element.X, y, element.Width + 2, height + 2, element.BoxColor ?? "Black");
+                var color = element.Levels.FirstOrDefault(level => width < level.Below)?.Lit.FirstOrDefault() ?? element.Color ?? "White";
+                if (width > 0)
+                    video.Bar(element.X + 1, y + 1, width, height, color);
+            }
+        }
+        if (shown > 0 && StatusBar.Get("enemy-health-label") is { Text: { Length: > 0 } label } labelPart
+            && (labelPart.Font ?? StatusBar.Get("numbers")?.Font) is { Length: > 0 } font)
+            DrawStatusText(labelPart, hudMessages.Localize(label), font, labelPart.Color ?? "White");
+    }
+
+    /// <summary>A health bar's width: its share of the full width for the health left, rounded down</summary>
+    internal static int HealthBarWidth(int left, int full, int width) =>
+        full <= 0 ? 0 : Math.Clamp((int)(width * (left / (double)full)), 0, width);
 
     /// <summary>Which of count pictures shows at a time: 0 up to the last and back down, tics apiece</summary>
     internal static int HintFrame(int time, int tics, int count)

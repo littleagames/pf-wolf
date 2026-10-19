@@ -63,6 +63,7 @@ internal sealed class PlayScreen(
         statusBar.DrawPowerMeter();
         statusBar.DrawLevelTimer();
         statusBar.DrawUseHint();
+        statusBar.DrawEnemyHealth();
         statusBar.DrawHeartMonitor(force: true);
         statusBar.DrawRadarGauge();
         if (statusBar.StatusBar.Get("radar") is { } radar && radarDrawing.Shows(radar))

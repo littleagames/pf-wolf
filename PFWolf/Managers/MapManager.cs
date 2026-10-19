@@ -1562,6 +1562,17 @@ internal class MapManager
         return actor.Properties.TryGetValue("health", out var flat) ? (short)Convert.ToInt32(flat) : (short)0;
     }
 
+    /// <summary>
+    /// The health bars to show (statusbar.yaml enemy-health): the health left and full health of
+    /// each living enemy whose class has `healthbar: true` and that has noticed someone, in the
+    /// level's order (Midnight Assault's tank and commanders)
+    /// </summary>
+    internal IEnumerable<(int Left, int Full)> HealthBars() =>
+        _actors.OfType<Entities.Actors.Monster>()
+            .Where(m => !m.IsRemoved && m.Hitpoints > 0 && m.RuntimeFlags.Has(ObjFlags.Shootable | ObjFlags.AttackMode)
+                && m.Properties.TryGetValue("healthbar", out var bar) && (bar is true || bool.TryParse(bar?.ToString(), out var b) && b))
+            .Select(m => ((int)m.Hitpoints, (int)GetScaledHealth(m)));
+
     internal bool ValidArea(int x) => (x) >= Floors.AreaTile && (x) < (Floors.AreaTile + Floors.NumAreas);
 
     /// <summary>The area on a tile, or -1 for none (off the map, or a floor code that isn't an area)</summary>

@@ -221,6 +221,12 @@ public record GameInfoAsset : Asset
     public StealthInfo Stealth { get; init; } = new();
 
     /// <summary>
+    /// Kills in quick succession (Gameplay/KillChains.cs): how close together they count, the
+    /// messages and the prizes by the chain's length. None when unset.
+    /// </summary>
+    public KillChainInfo KillChain { get; init; } = new();
+
+    /// <summary>
     /// The skill (a key in skills) demos are recorded and played back on; the hardest (last)
     /// one when unset. A demo only replays right on the skill it was recorded on.
     /// </summary>
@@ -1144,6 +1150,26 @@ public record StealthInfo
 
     /// <summary>Tiles away (either way) past which a disguised player is ignored</summary>
     public int Range { get; init; } = 10;
+}
+
+/// <summary>
+/// Game-info `kill-chain:` (Gameplay/KillChains.cs). Messages are text or $language keys. Each
+/// prize is an item class dropped where the kill was, "Item if Weapon" only while the player
+/// holds that weapon (nothing otherwise), or "heal N" to heal the player N points.
+/// </summary>
+public record KillChainInfo
+{
+    /// <summary>Tics after a kill within which the next one carries the chain on (Midnight Assault's 50); 0 for no chains</summary>
+    public int Tics { get; init; }
+
+    /// <summary>Shown from a chain of two kills on, one each; the last for any longer chain</summary>
+    public List<string> Messages { get; init; } = [];
+
+    /// <summary>From a chain of two kills on, one each, the last for any longer: a prize picked at random from it</summary>
+    public List<List<string>> Prizes { get; init; } = [];
+
+    /// <summary>A kill made unseen (Gameplay/Stealth.cs) gives the prize of a chain of 1 (none) up to this many, at random; 0 for none</summary>
+    public int StealthPrize { get; init; }
 }
 
 /// <summary>

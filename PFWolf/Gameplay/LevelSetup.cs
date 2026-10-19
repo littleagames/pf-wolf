@@ -61,6 +61,7 @@ internal sealed class LevelSetup(
                 p.FaceTimes = 0;
                 p.LastAttacker = null;
                 (p.Undetected, p.StealthKills, p.SuspicionMeter, p.SuspicionPending) = (true, 0, 0, 0);   // Gameplay/Stealth.cs
+                (p.KillChain, p.KillChainAt) = (0, 0);      // Gameplay/KillChains.cs
             }
         }
 

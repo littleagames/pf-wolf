@@ -59,4 +59,7 @@ internal sealed class ActorWorld(
 
     /// <summary>The level objectives (Gameplay/Objectives.cs): an `objective` actor's death completes one</summary>
     internal Gameplay.Objectives? Objectives => objectives;
+
+    /// <summary>Kills in quick succession (Gameplay/KillChains.cs): a player's kill carries their chain on</summary>
+    internal Gameplay.KillChains? KillChains { get; init; }
 }

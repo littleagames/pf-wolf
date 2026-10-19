@@ -110,6 +110,10 @@ internal sealed class PlayerState
     public bool Undetected = true;
     public int StealthKills;
     public int SuspicionMeter, SuspicionPending;
+
+    // A kill chain (Gameplay/KillChains.cs): how many kills in quick succession, and the level's
+    // clock (GameState.TimeCount) at the last
+    public int KillChain, KillChainAt;
     public double Pitch;                    // looking up (positive) or down, in degrees
     public int EyeZ = GameConstants.EyeDefault;   // eye height, in texels above the floor
 

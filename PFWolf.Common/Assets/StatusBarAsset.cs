@@ -35,7 +35,7 @@ public class StatusBarElement
     /// <summary>background: the picture drawn across the bottom of the screen</summary>
     public string? Pic { get; set; }
 
-    /// <summary>background: how many 320x200 pixel lines the status bar takes from the view</summary>
+    /// <summary>background: how many 320x200 pixel lines the status bar takes from the view; enemy-health: each bar's height</summary>
     public int? Height { get; set; }
 
     /// <summary>
@@ -66,7 +66,7 @@ public class StatusBarElement
     /// <summary>lives: the sound played when the player is given an extra life</summary>
     public string? Sound { get; set; }
 
-    /// <summary>keys: pixels between one key slot and the next, downwards</summary>
+    /// <summary>keys: pixels between one key slot and the next, downwards; enemy-health: between one bar and the next</summary>
     public int Spacing { get; set; }
 
     /// <summary>
@@ -151,7 +151,7 @@ public class StatusBarElement
     public string? Ready { get; set; }
     public string? Wait { get; set; }
 
-    /// <summary>ammo-gauge: the strip's width, how many segments it has and each one's height (lines)</summary>
+    /// <summary>ammo-gauge: the strip's width, how many segments it has and each one's height (lines); enemy-health: a bar's width at full health</summary>
     public int Width { get; set; } = 8;
     public int Segments { get; set; } = 20;
     public int SegmentHeight { get; set; } = 2;
@@ -162,7 +162,7 @@ public class StatusBarElement
     /// </summary>
     public List<StatusBarGaugeLevel> Levels { get; set; } = [];
 
-    /// <summary>heart-monitor: the trace's pictures ({0:00} the segment number) and how many across, each width wide</summary>
+    /// <summary>heart-monitor: the trace's pictures ({0:00} the segment number) and how many across, each width wide; enemy-health: the most bars shown</summary>
     public string? SegmentPic { get; set; }
     public int Count { get; set; } = 6;
     public int SegmentWidth { get; set; } = 8;
