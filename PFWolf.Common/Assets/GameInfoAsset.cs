@@ -631,6 +631,15 @@ public record DefaultMapInfo
     public string? Sky { get; init; } = null;
 
     /// <summary>
+    /// Graphic (or wall texture) drawn below the horizon in place of the floor color, showing
+    /// where no floor flat is drawn (Midnight Assault's floor parallax); null for none
+    /// </summary>
+    public string? FloorSky { get; init; } = null;
+
+    /// <summary>The floor sky drawn upside down, a reflection of a sky in water</summary>
+    public bool FloorSkyMirror { get; init; }
+
+    /// <summary>
     /// Texture on every floor tile the flat plane doesn't give one (see mapdefs flats); null
     /// leaves them the floor color
     /// </summary>
@@ -1244,6 +1253,18 @@ public record MapInfo
     /// Graphic (or wall texture) drawn in place of the ceiling color; null uses the default map's
     /// </summary>
     public string? Sky { get; init; } = null;
+
+    /// <summary>
+    /// Graphic (or wall texture) drawn below the horizon in place of the floor color, showing
+    /// where no floor flat is drawn: the land below a bridge, water under the shore (Midnight
+    /// Assault's floor parallax). It runs down from the horizon, turning with the view as the sky
+    /// does; with floor-sky-mirror it's drawn upside down from the horizon, a reflection. Null
+    /// uses the default map's ("none" for none).
+    /// </summary>
+    public string? FloorSky { get; init; } = null;
+
+    /// <summary>The floor sky drawn upside down from the horizon (a sky reflected in water)</summary>
+    public bool FloorSkyMirror { get; init; }
 
     /// <summary>
     /// Texture for floor tiles the flat plane doesn't give one; null uses the default map's

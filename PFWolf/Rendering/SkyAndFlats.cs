@@ -5,8 +5,8 @@ namespace PFWolf.Rendering;
 
 /// <summary>
 /// What's behind the walls: the ceiling and floor colors (game-info's, else the map's, else the
-/// default map's), shaded row by row; a level's sky above the horizon; and the textured floor
-/// and ceiling flats drawn over them before the walls.
+/// default map's), shaded row by row; a level's sky above the horizon and floor sky below it;
+/// and the textured floor and ceiling flats drawn over them before the walls.
 /// </summary>
 /// <param name="worldTexture">A wall texture by name, an animated one's frame by the level's clock</param>
 internal sealed class SkyAndFlats(
@@ -52,47 +52,72 @@ internal sealed class SkyAndFlats(
     const int SkyCircle = 1024;         // sky pixels all the way round: a 256 wide picture shows 4 times
 
     internal string? LevelSky;   // the level's sky graphic (or wall texture), null for none
-    Asset? skysource;            // the picture or texture skycolumns holds (an animation's frame)
-    byte[] skycolumns = [];      // its pixels, column by column
-    int skywidth, skyheight;
 
-    /// <summary>
-    /// Makes skycolumns hold the level's sky (an animated one's frame by the level's clock);
-    /// false if it has none, or it can't be found.
-    /// </summary>
-    bool LoadSky()
+    /*
+    A level can have a floor sky too (game-info floor-sky: Midnight Assault's floor parallax):
+    a picture drawn below the horizon in place of the floor color, behind the floor flats, so
+    it shows where a floor tile has none -- the valley below a bridge, the water off the shore.
+    It runs down from the horizon (its top row there), stretched to the view's lower half
+    looking straight ahead, and turns with the view as the sky does. Mirrored, it's drawn
+    upside down from the horizon instead: a sky reflected in water.
+    */
+    internal string? LevelFloorSky;      // the level's floor sky graphic (or wall texture), null for none
+    internal bool FloorSkyMirror;        // drawn upside down from the horizon
+
+    readonly SkyPicture sky = new(), floorsky = new();
+
+    /// <summary>A sky's picture, column by column (an animated one's frame by the level's clock)</summary>
+    sealed class SkyPicture
     {
-        if (string.IsNullOrEmpty(LevelSky))
-            return false;
+        Asset? source;                // the picture or texture Columns holds (an animation's frame)
+        internal byte[] Columns = [];
+        internal int Width, Height;
 
-        Asset? source = assets.Exists<GraphicAsset>(LevelSky)
-            ? assets.Find<GraphicAsset>(LevelSky, session.GameState.TimeCount)
-            : worldTexture(LevelSky);
-        if (ReferenceEquals(source, skysource))
-            return skycolumns.Length > 0;
-
-        skysource = source;
-        skycolumns = [];
-
-        if (source is GraphicAsset { Width: > 0, Height: > 0 } pic)
+        /// <summary>Holds the named picture or wall texture's pixels; false if there's none, or it can't be found</summary>
+        internal bool Load(string? name, AssetManager? assets, Func<string, TextureAsset?> worldTexture, int clock)
         {
-            // pictures are stored row by row
-            skywidth = pic.Width;
-            skyheight = pic.Height;
-            skycolumns = new byte[skywidth * skyheight];
-            for (int x = 0; x < skywidth; x++)
-                for (int y = 0; y < skyheight; y++)
-                    skycolumns[x * skyheight + y] = pic.RawData[y * skywidth + x];
-        }
-        else if (source is TextureAsset texture && texture.RawData.Length >= texture.Width * texture.Height)
-        {
-            // wall textures already are column by column
-            skywidth = texture.Width;
-            skyheight = texture.Height;
-            skycolumns = texture.RawData;
-        }
+            if (string.IsNullOrEmpty(name) || name.Equals("none", StringComparison.OrdinalIgnoreCase))
+                return false;
 
-        return skycolumns.Length > 0;
+            Asset? found = assets != null && assets.Exists<GraphicAsset>(name)
+                ? assets.Find<GraphicAsset>(name, clock)
+                : worldTexture(name);
+            if (ReferenceEquals(found, source))
+                return Columns.Length > 0;
+
+            source = found;
+            Columns = [];
+
+            if (found is GraphicAsset { Width: > 0, Height: > 0 } pic)
+            {
+                // pictures are stored row by row
+                Width = pic.Width;
+                Height = pic.Height;
+                Columns = new byte[Width * Height];
+                for (int x = 0; x < Width; x++)
+                    for (int y = 0; y < Height; y++)
+                        Columns[x * Height + y] = pic.RawData[y * Width + x];
+            }
+            else if (found is TextureAsset texture && texture.RawData.Length >= texture.Width * texture.Height)
+            {
+                // wall textures already are column by column
+                Width = texture.Width;
+                Height = texture.Height;
+                Columns = texture.RawData;
+            }
+
+            return Columns.Length > 0;
+        }
+    }
+
+    // The column of a sky picture this view column shows: angles grow to the left, and the picture runs left to right
+    int SkyColumn(int x, SkyPicture picture)
+    {
+        int angle = (render.MidAngle + render.PixelAngle[x]) % GameConstants.Ang360;
+        if (angle < 0)
+            angle += GameConstants.Ang360;
+        int u = (int)((long)(GameConstants.Ang360 - 1 - angle) * SkyCircle / GameConstants.Ang360 % picture.Width);
+        return u * picture.Height;
     }
 
     void DrawSky()
@@ -104,18 +129,37 @@ internal sealed class SkyAndFlats(
             byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
             for (int x = 0; x < render.ViewWidth; x++)
             {
-                int angle = (render.MidAngle + render.PixelAngle[x]) % GameConstants.Ang360;
-                if (angle < 0)
-                    angle += GameConstants.Ang360;
-
-                // angles grow to the left, and the picture runs left to right
-                int u = (int)((long)(GameConstants.Ang360 - 1 - angle) * SkyCircle / GameConstants.Ang360 % skywidth);
-                int column = u * skyheight;
-
+                int column = SkyColumn(x, sky);
                 for (int y = 0; y < render.CenterY; y++)
                 {
-                    int row = (y - render.CenterY + render.BaseCenterY) * skyheight / render.BaseCenterY;
-                    dest[y * pitch + x] = skycolumns[column + Math.Max(row, 0)];
+                    int row = (y - render.CenterY + render.BaseCenterY) * sky.Height / render.BaseCenterY;
+                    dest[y * pitch + x] = sky.Columns[column + Math.Max(row, 0)];
+                }
+            }
+        }
+    }
+
+    /// <summary>Holds the level's floor sky; false if it has none, or it can't be found</summary>
+    internal bool LoadFloorSky() => floorsky.Load(LevelFloorSky, assets, worldTexture, session.GameState.TimeCount);
+
+    // The floor sky over the rows below the horizon: its top row at the horizon running down, or
+    // mirrored, its bottom row at the horizon running up to its top at the bottom of the view
+    internal void DrawFloorSky()
+    {
+        int pitch = (int)video.BufferPitch;
+        int last = floorsky.Height - 1;
+
+        unsafe
+        {
+            byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
+            for (int x = 0; x < render.ViewWidth; x++)
+            {
+                int column = SkyColumn(x, floorsky);
+                for (int y = Math.Max((int)render.CenterY, 0); y < render.ViewHeight; y++)
+                {
+                    int below = (y - render.CenterY) * floorsky.Height / render.BaseCenterY;
+                    int row = FloorSkyMirror ? last - below : below;
+                    dest[y * pitch + x] = floorsky.Columns[column + Math.Clamp(row, 0, last)];
                 }
             }
         }
@@ -135,7 +179,8 @@ internal sealed class SkyAndFlats(
 
         var destIndex = render.Vbuf;
         int y;
-        bool sky = LoadSky();
+        bool sky = this.sky.Load(LevelSky, assets, worldTexture, session.GameState.TimeCount);
+        bool floorsky = LoadFloorSky();
         unsafe
         {
             byte* dest = (byte*)render.VbufPtr;// + destIndex;
@@ -156,23 +201,29 @@ internal sealed class SkyAndFlats(
                 }
             }
 
-            for (; y < render.ViewHeight; y++, destIndex += (int)video.BufferPitch)
+            if (floorsky)
+                DrawFloorSky();
+            else
             {
-                byte color = lighting.LightRow[FlatRowShadeOffset(y, FloorHalves) + floorColor];
-                for (var v = 0; v < render.ViewWidth; v++)
-                    dest[destIndex + v] = color;
+                for (; y < render.ViewHeight; y++, destIndex += (int)video.BufferPitch)
+                {
+                    byte color = lighting.LightRow[FlatRowShadeOffset(y, FloorHalves) + floorColor];
+                    for (var v = 0; v < render.ViewWidth; v++)
+                        dest[destIndex + v] = color;
+                }
             }
         }
 
         // In light zones or actors' light, even the plain colors change from place to place, so
-        // they're cast too. A sky stays behind the ceiling flats, showing where there are none.
-        bool floorflats = map.HasFloorFlats || lighting.HasZones || actorLights.HasLights;
+        // they're cast too. A sky stays behind the ceiling flats, and a floor sky behind the floor
+        // flats, showing where there are none.
+        bool floorflats = map.HasFloorFlats || (lighting.HasZones || actorLights.HasLights) && !floorsky;
         bool ceilingflats = map.HasCeilingFlats || (lighting.HasZones || actorLights.HasLights) && !sky;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
             if (floorflats)
-                DrawFlats(map.FloorFlat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, false,
+                DrawFlats(map.FloorFlat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, floorsky,
                     map.Scrollers.AnyFloors ? map.Scrollers.FloorX : null, map.Scrollers.FloorY);
             if (ceilingflats)
                 DrawFlats(map.CeilingFlat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky,

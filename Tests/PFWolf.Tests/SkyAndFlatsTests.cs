@@ -123,6 +123,70 @@ public class SkyAndFlatsTests
             }
     }
 
+    // A floor sky five rows tall whose row r is color 10 + r, in every column
+    private SkyAndFlats FloorSkyView(bool mirror)
+    {
+        var picture = new TextureAsset { Width = 64, Height = 5, RawData = new byte[64 * 5] };
+        for (int u = 0; u < 64; u++)
+            for (int r = 0; r < 5; r++)
+                picture.RawData[u * 5 + r] = (byte)(10 + r);
+        var video = new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        {
+            BufferPitch = Width,
+            YLookup = Enumerable.Range(0, Height).Select(y => (uint)(y * Width)).ToArray(),
+        };
+        return new SkyAndFlats(null!, null!, video, _map, _lighting, new ActorLights(null!, null!, _lighting, new GameSession()),
+            _render, new GameSession(), name => name == "RIVER" ? picture : null)
+        {
+            LevelFloorSky = "RIVER",
+            FloorSkyMirror = mirror,
+        };
+    }
+
+    [TestCase(false, new byte[] { 10, 11, 12, 13, 14 })]   // its top row at the horizon, running down
+    [TestCase(true, new byte[] { 14, 13, 12, 11, 10 })]    // mirrored: its bottom row at the horizon
+    public void A_Floor_Sky_Fills_The_View_Below_The_Horizon(bool mirror, byte[] rows)
+    {
+        // Arrange
+        var view = FloorSkyView(mirror);
+
+        // Act
+        Assert.That(view.LoadFloorSky(), Is.True);
+        view.DrawFloorSky();
+
+        // Assert: above the horizon as it was; below, the floor sky's rows in every column
+        Assert.That(Enumerable.Range(0, Height / 2).All(y => Enumerable.Range(0, Width).All(x => At(x, y) == 1)), Is.True);
+        for (int y = Height / 2; y < Height; y++)
+            Assert.That(Enumerable.Range(0, Width).Select(x => At(x, y)), Is.All.EqualTo(rows[y - Height / 2]), $"row {y}");
+    }
+
+    [Test]
+    public void No_Floor_Sky_Or_None_Loads_Nothing()
+    {
+        var view = FloorSkyView(mirror: false);
+        view.LevelFloorSky = "none";
+        Assert.That(view.LoadFloorSky(), Is.False);
+        view.LevelFloorSky = null;
+        Assert.That(view.LoadFloorSky(), Is.False);
+    }
+
+    [Test]
+    public void Where_A_Floor_Tile_Has_No_Flat_The_Floor_Sky_Shows()
+    {
+        // Arrange: the floor sky drawn, then no flats anywhere, drawn over it with the sky behind
+        var view = FloorSkyView(mirror: false);
+        view.LoadFloorSky();
+        view.DrawFloorSky();
+        var sky = (byte[])_screen.Clone();
+
+        // Act
+        view.SetupFlatColumns();
+        view.DrawFlats(new TextureAsset?[MapConstants.ClassicMapArea], 3, Height / 2, Height - 1, view.FloorHalves, behind: true);
+
+        // Assert
+        Assert.That(_screen, Is.EqualTo(sky));
+    }
+
     [Test]
     public void A_Flats_See_Through_Pixels_Leave_What_Is_There()
     {

@@ -9,6 +9,12 @@ default-map:
   # doesn't give one; left out, those tiles keep the colors above. Also settable per map.
   # default-floor: FLOOR1
   # default-ceiling: CEIL1
+  # A sky above the horizon in place of the ceiling color (sky: a picture or wall texture), and
+  # a floor sky below it in place of the floor color (floor-sky), each showing where no flat is
+  # drawn. The floor sky runs down from the horizon (the land below a bridge), or with
+  # floor-sky-mirror: true upside down from it (a sky reflected in water). Also settable per map.
+  # sky: NightSky
+  # floor-sky: RiverValley
   # Distance shading, also settable per map (each value a map leaves out comes from here).
   # Left out on both, levels aren't shaded. The sky is never shaded; a state with
   # `modifiers: [bright]` (or an actor with the bright flag) is drawn at full light.

@@ -88,6 +88,10 @@ internal sealed class LevelSetup(
         map.LevelWallStories = Math.Clamp(mapInfo?.WallHeight ?? map.LevelDefaults.WallStories ?? engine.GetGameInfo().DefaultMap.WallHeight,
             1, GameConstants.MaxWallStories);
         skyAndFlats.LevelSky = mapInfo?.Sky ?? map.LevelDefaults.Sky ?? engine.GetGameInfo().DefaultMap.Sky;
+        // the floor sky and how it's drawn come together, from the map or else the default map
+        (skyAndFlats.LevelFloorSky, skyAndFlats.FloorSkyMirror) = mapInfo?.FloorSky is { } floorSky
+            ? (floorSky, mapInfo.FloorSkyMirror)
+            : (engine.GetGameInfo().DefaultMap.FloorSky, engine.GetGameInfo().DefaultMap.FloorSkyMirror);
         weather.SetWeather(mapInfo?.Weather ?? engine.GetGameInfo().DefaultMap.Weather);
         map.BuildFlats(mapInfo?.DefaultFloor ?? engine.GetGameInfo().DefaultMap.DefaultFloor,
             mapInfo?.DefaultCeiling ?? engine.GetGameInfo().DefaultMap.DefaultCeiling);
