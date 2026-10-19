@@ -117,15 +117,26 @@ internal class InventoryManager
 
     /// <summary>
     /// `inventory.maxamount` for the item's type, unless the player class's `player.maxamount`
-    /// (item: amount) names that type. Zero or less means "uncapped", matching how the
+    /// (item: amount) names that type, or the player holds a backpack (a BackpackItem) and the
+    /// type has an `ammo.backpackmaxamount`. Zero or less means "uncapped", matching how the
     /// actordefs mark non-stacking base classes such as Health.
     /// </summary>
     public int GetMaxAmount(string item)
     {
         var type = GetItemType(item);
-        var max = PlayerMaxAmount(type) ?? Metadata.GetIntProperty(type, "inventory.maxamount", 1);
+        var max = PlayerMaxAmount(type) ?? BackpackMaxAmount(type) ?? Metadata.GetIntProperty(type, "inventory.maxamount", 1);
         return max > 0 ? max : int.MaxValue;
     }
+
+    /// <summary>The native class a backpack derives from: holding one raises the caps</summary>
+    internal const string BackpackClass = "BackpackItem";
+
+    /// <summary>Whether the acting player holds a backpack (a BackpackItem class)</summary>
+    public bool HasBackpack() => _items.Keys.Any(item => DerivesFrom(item, BackpackClass));
+
+    // An item type's cap with a backpack held (`ammo.backpackmaxamount`), else null
+    private int? BackpackMaxAmount(string type) =>
+        Metadata.GetIntProperty(type, "ammo.backpackmaxamount", 0) is > 0 and var max && HasBackpack() ? max : null;
 
     // The player class's cap for an item type; its keys may name any class of that type (ClipBox for Clip)
     private int? PlayerMaxAmount(string type)

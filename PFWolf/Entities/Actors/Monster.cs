@@ -122,7 +122,7 @@ internal record Monster : Actor
         // once count are fired, else breaks off to BreakOffState (default Chase) half the time
         ActorActionRegistry.RegisterFor<Monster>("A_StartAttack", m => m.StartAttack());
         ActorActionRegistry.RegisterFor<Monster>("A_Relaunch", (m, args) => m.Relaunch(args));
-        ActorActionRegistry.RegisterFor<Monster>("A_Dormant", m => m.Dormant());
+        ActorActionRegistry.RegisterFor<Monster>("A_Dormant", (m, args) => m.Dormant(args));
     }
 
     /// <summary>
@@ -2233,8 +2233,10 @@ internal record Monster : Actor
 
 
     // A dead Spectre comes back once nothing is in the way: the player isn't right on top of
-    // it, and the tiles it covers hold no wall, door, blocking object or live enemy
-    internal void Dormant()
+    // it, and the tiles it covers hold no wall, door, blocking object or live enemy. As Spear's,
+    // it comes back with the health it died with (any hit kills it again); A_Dormant("heal")
+    // gives it its full health back (End of Destiny's T_ResFlags)
+    internal void Dormant(string[]? args = null)
     {
         foreach (var pawn in MapManager.Players)
         {
@@ -2259,6 +2261,8 @@ internal record Monster : Actor
         RuntimeFlags |= ObjFlags.Ambush | ObjFlags.Shootable;
         RuntimeFlags &= ~(ObjFlags.AttackMode | ObjFlags.NonMark);
         Dir = ObjDir.NoDir;
+        if (args?.Any(a => a.Trim().Equals("heal", StringComparison.OrdinalIgnoreCase)) == true)
+            Hitpoints = MapManager.GetScaledHealth(this);
         SetState("Spawn");
     }
 

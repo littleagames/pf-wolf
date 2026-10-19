@@ -321,9 +321,35 @@ internal sealed class PlayerStats(
                 return true;
             case Entities.Actors.Powerup:
                 return GivePowerup(item.Name);
+            case Entities.Actors.BackpackItem:
+                return GiveBackpack(item.Name);
             default:
                 return true;
         }
+    }
+
+    /// <summary>
+    /// A backpack (BackpackItem): held from now on (to the next death or a new game, as an item
+    /// with inventory.interhubamount 1), every item type's cap is its `ammo.backpackmaxamount`
+    /// where it has one (InventoryManager.GetMaxAmount), and each type with an
+    /// `ammo.backpackamount` is given that much. Another one only gives the ammo.
+    /// </summary>
+    internal bool GiveBackpack(string backpack)
+    {
+        bool got = inventory.Give(backpack, 1) > 0;
+        var types = inventory.GetClassesDerivedFrom("Inventory")
+            .Select(inventory.GetItemType)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        foreach (var type in types)
+        {
+            int amount = inventory.GetIntProperty(type, "ammo.backpackamount", 0);
+            if (amount <= 0)
+                continue;
+            got |= inventory.FindClass(type, "Ammo") != null ? weapons.GiveAmmo(type, amount) > 0 : inventory.Give(type, amount) > 0;
+        }
+        weapons.DrawAmmo();
+        return got;
     }
 
     /*

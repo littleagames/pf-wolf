@@ -12,8 +12,9 @@ namespace PFWolf.Ui;
 /// <param name="DrawHighScores">The high scores screen</param>
 /// <param name="DrawTitle">The title pictures</param>
 /// <param name="DrawText">A screen's presenter text, printed into its window</param>
+/// <param name="TitlePalette">game-info's title-palette: a title screen's palette when it names none</param>
 internal sealed record TitleScreenHooks(Func<int, bool> DemoExists, Func<int, bool> PlayDemo, Action ClearMargins,
-    Action DrawHighScores, Action DrawTitle, Action<TitleTextInfo> DrawText);
+    Action DrawHighScores, Action DrawTitle, Action<TitleTextInfo> DrawText, Func<string?>? TitlePalette = null);
 
 /*
 =============================================================================
@@ -140,7 +141,8 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
                 hooks.DrawText(text);
 
             video.Update();
-            FadeInWithPalette(screen.Palette);
+            // a title screen with no palette of its own has the title's (game-info title-palette), as the built-in loop's
+            FadeInWithPalette(!string.IsNullOrEmpty(screen.Palette) ? screen.Palette : screen.Title ? hooks.TitlePalette?.Invoke() : null);
 
             if (!string.IsNullOrEmpty(screen.FizzlePic))
             {

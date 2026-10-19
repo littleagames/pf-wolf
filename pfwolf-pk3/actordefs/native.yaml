@@ -93,6 +93,17 @@ ScoreItem:
   properties:
     "inventory.amount": 1
 
+# A backpack (End of Destiny's): held from when it's picked up until a death or a new game.
+# Meanwhile each item type's cap is its "ammo.backpackmaxamount" where it has one, and picking it
+# up gives each type its "ammo.backpackamount" (another one only gives that).
+BackpackItem:
+  parent: Inventory
+  flags: [INVENTORY.ALWAYSPICKUP]
+  properties:
+    "inventory.amount": 1
+    "inventory.maxamount": 1
+    "inventory.interhubamount": 1
+
 # A timed power-up (End of Destiny's god mode and Knife Fury), held as the tics it has left: each
 # one picked up adds its duration. While it runs it can make the player unhurt (invulnerable),
 # put a weapon in their hand that kills with every blow (weapon, weaponkills; the one they had

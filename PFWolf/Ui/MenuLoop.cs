@@ -44,7 +44,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
             draw.DrawMenuBar(item_i, items, which, true);
         else
         {
-            graphics.DrawPic("c_cursor1", x, y);
+            draw.DrawGunPic("c_cursor1", x, y);
             if (RedrawItem != 0)
                 draw.PrintMenuItem(item_i, items, which, MenuDrawing.MenuItemColor(items[which], true));
         }
@@ -88,7 +88,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                         timer = 70;
                     }
 
-                    graphics.DrawPic(shape, x, y);
+                    draw.DrawGunPic(shape, x, y);
                 }
                 routine?.Invoke(which);
                 video.Update();
@@ -326,7 +326,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
     //
     internal void DrawHalfStep(int x, int y)
     {
-        graphics.DrawPic("c_cursor1", x, y);
+        draw.DrawGunPic("c_cursor1", x, y);
         video.Update();
         audio.Play("menu/move1");
         GameEngineManager.DelayMs(8 * 100 / 7);
@@ -343,7 +343,7 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         {
             video.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
             y = item_i.RowY(which) - 2;
-            graphics.DrawPic("c_cursor1", x, y);
+            draw.DrawGunPic("c_cursor1", x, y);
             draw.PrintMenuItem(item_i, items, which, MenuDrawing.MenuItemColor(items[which], true));
         }
 

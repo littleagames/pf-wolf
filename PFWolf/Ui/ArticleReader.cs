@@ -289,8 +289,7 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        var alias = assets.FindInGamePack<AliasAsset>("alias");
-        alias.ArtExtern.TryGetValue(ParseNumber(), out picName);
+        picName = ArtPicture(ParseNumber());
         RipToEOL();
     }
 
@@ -299,10 +298,25 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        var alias = assets.FindInGamePack<AliasAsset>("alias");
-        alias.ArtExtern.TryGetValue(ParseNumber(), out picName);
+        picName = ArtPicture(ParseNumber());
         picdelay = ParseNumber();
         RipToEOL();
+    }
+
+    bool _noAliasTold;
+
+    // A ^G/^T command's picture number as alias.yaml's art-extern names it; none (the command
+    // draws nothing) when it doesn't, or when the game has no alias.yaml, which is said once
+    private string? ArtPicture(int number)
+    {
+        if (assets.FindInGamePack<AliasAsset>("alias") is { } alias)
+            return alias.ArtExtern.TryGetValue(number, out var name) ? name : null;
+        if (!_noAliasTold)
+        {
+            _noAliasTold = true;
+            Console.WriteLine($"A text's picture {number} (^G/^T) has no name: the game has no alias.yaml, so its pictures are left out.");
+        }
+        return null;
     }
 /*
 =====================
@@ -332,7 +346,8 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
         //
         // draw pic
         //
-        graphics.DrawPic(picName, picx & ~7, picy);
+        if (picName != null)
+            graphics.DrawPic(picName, picx & ~7, picy);
     }
 
     /*
@@ -537,6 +552,8 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
 
             case 'G':               // ^Gyyy,xxx,ppp draws graphic
                 ParsePicCommand();
+                if (picName == null)
+                    break;              // no picture by that number: the text goes on without it
                 graphics.DrawPic(picName, picx & ~7, picy);
                 var graphicAsset = assets.Find<GraphicAsset>(picName);
                 if (graphicAsset == null)

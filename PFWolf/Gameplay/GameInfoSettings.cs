@@ -22,6 +22,7 @@ internal sealed class GameInfoSettings
     internal int? DeathDropHeight;
     internal int DeathDropSpeed = 1;
     internal double WeaponScale = 1;    // game-info weapon-scale
+    internal bool MenuGun = true;       // game-info menu-cursor (none: no gun)
 
     internal static GameInfoSettings Read(GameInfoAsset gameInfo)
     {
@@ -40,7 +41,19 @@ internal sealed class GameInfoSettings
         settings.WeaponScale = Math.Clamp(gameInfo.WeaponScale ?? 1, 0.1, 2);
         settings.LevelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
         settings.LevelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
+        settings.MenuGun = gameInfo.MenuCursor?.Trim().ToLowerInvariant() switch
+        {
+            null or "" or "gun" => true,
+            "none" => false,
+            var other => Warn(other),
+        };
         return settings;
+
+        static bool Warn(string value)
+        {
+            Console.WriteLine($"Unknown menu-cursor '{value}' in game-info (gun or none); using the gun");
+            return true;
+        }
     }
 
     private static int? ParseFadeTics(int? value, string key)

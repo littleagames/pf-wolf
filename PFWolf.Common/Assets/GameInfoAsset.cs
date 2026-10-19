@@ -156,6 +156,12 @@ public record GameInfoAsset : Asset
     public double? WeaponScale { get; init; }
 
     /// <summary>
+    /// The menus' gun cursor (c_cursor1/c_cursor2): "none" leaves it out, the chosen item shown
+    /// by its color alone (End of Destiny's HIDEMENUSTUFF). Left out, the gun.
+    /// </summary>
+    public string? MenuCursor { get; init; }
+
+    /// <summary>
     /// Whether the weapon in hand bobs as the player walks forwards or back, as Planet Strike's
     /// (default false)
     /// </summary>

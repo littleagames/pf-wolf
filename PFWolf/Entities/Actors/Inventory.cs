@@ -45,3 +45,9 @@ internal record Powerup : Inventory
 {
 
 }
+
+// A backpack: held, it raises item caps to their ammo.backpackmaxamount (PlayerStats.GiveBackpack)
+internal record BackpackItem : Inventory
+{
+
+}

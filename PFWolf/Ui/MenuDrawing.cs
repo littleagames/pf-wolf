@@ -202,7 +202,14 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
 
         x = iteminfo.X & -8;    // same column HandleMenu draws and erases the gun in
         y = iteminfo.RowY(iteminfo.CurPos) - 2;
-        graphics.DrawPic("c_cursor1", x, y);
+        DrawGunPic("c_cursor1", x, y);
+    }
+
+    /// <summary>The gun cursor's shape, unless game-info's menu-cursor is none</summary>
+    internal void DrawGunPic(string shape, int x, int y)
+    {
+        if (settings().MenuGun)
+            graphics.DrawPic(shape, x, y);
     }
 
     /// <summary>
