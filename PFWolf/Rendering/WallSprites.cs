@@ -17,7 +17,9 @@ internal readonly record struct WallSpriteSpan(double X1, double Y1, double X2, 
 /// of a billboard -- fences, gates and grilles. Its map `angles` (actor.Dir) is the way the
 /// front of the panel faces: 0/180 face east/west (a north-south panel), 90/270 face
 /// north/south (an east-west panel), and the four diagonals stand the panel corner to corner.
-/// The back shows the sprite mirrored.
+/// The back shows the sprite mirrored, unless it has the WALLSPRITE.TWOSIDED flag: then it
+/// reads the same way round from either side (the same picture on both, as Midnight Assault's
+/// panels without FL_MIRROR).
 ///
 /// The `WallSprite.offset` property moves the panel off the tile centre toward its front, in
 /// texels (64 to a tile): 32 puts an axis-aligned panel on the tile edge. The panel is always
@@ -40,6 +42,7 @@ internal static class WallSprites
     internal const string WallSpriteShootThroughFlag = "WALLSPRITE.SHOOTTHROUGH";
     internal const string WallSpriteProjectileThroughFlag = "WALLSPRITE.PROJECTILETHROUGH";
     internal const string WallSpritePassableFlag = "WALLSPRITE.PASSABLE";
+    internal const string WallSpriteTwoSidedFlag = "WALLSPRITE.TWOSIDED";
     internal const string WallSpriteOffsetProperty = "wallsprite.offset";
 
     internal static bool IsWallSprite(Entities.Actors.Actor actor) =>
@@ -48,6 +51,17 @@ internal static class WallSprites
     /// <summary>A WALLSPRITE.PASSABLE panel: nothing moving is stopped by it</summary>
     internal static bool IsPassable(Entities.Actors.Actor actor) =>
         actor.HasFlag(WallSpritePassableFlag);
+
+    /// <summary>A WALLSPRITE.TWOSIDED panel: from behind it reads the same way round, not mirrored</summary>
+    internal static bool IsTwoSided(Entities.Actors.Actor actor) =>
+        actor.HasFlag(WallSpriteTwoSidedFlag);
+
+    /// <summary>
+    /// Whether a point (the view) is behind a panel: on the other side from its front, where its
+    /// columns run right to left. The span runs from its front's left end (the columns' first).
+    /// </summary>
+    internal static bool SeenFromBehind(WallSpriteSpan span, double x, double y) =>
+        (span.X2 - span.X1) * (y - span.Y1) - (span.Y2 - span.Y1) * (x - span.X1) < 0;
 
     /// <summary>
     /// A panel with health (a window, a curtain) that's been destroyed, so it's no longer

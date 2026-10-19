@@ -38,6 +38,32 @@ public class WallSpritesTests
     }
 
     [Test]
+    public void A_Negative_Offset_Sets_It_Back_Toward_Its_Back()
+    {
+        // Act: facing south, set back to the tile's north edge (the bridge's south trusses)
+        var span = WallSprites.GetWallSpriteSpan(Fence(ObjDir.South, offset: -32))!.Value;
+
+        // Assert: still read west to east from the south
+        Assert.That(span, Is.EqualTo(new WallSpriteSpan(10 * Tile, 10 * Tile, 11 * Tile, 10 * Tile)));
+    }
+
+    [TestCase(12, 10.5, false)]     // in front of an east-facing panel
+    [TestCase(9, 10.5, true)]       // behind it
+    [TestCase(11, 9.5, false)]      // off to one side, still in front
+    public void A_View_Is_Behind_A_Panel_On_The_Other_Side_From_Its_Front(double x, double y, bool behind)
+    {
+        var span = WallSprites.GetWallSpriteSpan(Fence(ObjDir.East))!.Value;
+        Assert.That(WallSprites.SeenFromBehind(span, x * Tile, y * Tile), Is.EqualTo(behind));
+    }
+
+    [Test]
+    public void Twosided_Is_A_Flag()
+    {
+        Assert.That(WallSprites.IsTwoSided(Fence(ObjDir.East)), Is.False);
+        Assert.That(WallSprites.IsTwoSided(Fence(ObjDir.East, null, WallSprites.WallSpriteTwoSidedFlag)), Is.True);
+    }
+
+    [Test]
     public void A_Diagonal_Panel_Stands_Corner_To_Corner()
     {
         var span = WallSprites.GetWallSpriteSpan(Fence(ObjDir.NorthEast))!.Value;

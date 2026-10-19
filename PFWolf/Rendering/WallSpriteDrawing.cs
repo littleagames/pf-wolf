@@ -8,7 +8,7 @@ namespace PFWolf.Rendering;
 /// the panel (WallSprites), which gives the sprite column that shows there and how far away it
 /// is -- measured along the view, as CalcHeight measures walls, so a panel and a wall at the
 /// same spot are the same height. The texture is pinned to the panel, so from behind it comes
-/// out mirrored.
+/// out mirrored, unless the panel is WALLSPRITE.TWOSIDED.
 /// </summary>
 /// <param name="floorRow">The screen row the floor is on for something half high (WL_DRAW's FloorRow)</param>
 internal sealed class WallSpriteDrawing(
@@ -97,6 +97,10 @@ internal sealed class WallSpriteDrawing(
         double ex = span.X2 - span.X1, ey = span.Y2 - span.Y1;
         double cos = render.ViewCos / 65536.0, sin = render.ViewSin / 65536.0;
 
+        // A two-sided panel turns its picture round for the view from behind, so it reads as
+        // from the front
+        bool turned = WallSprites.IsTwoSided(vis.WallSprite) && WallSprites.SeenFromBehind(span, render.ViewX, render.ViewY);
+
         for (int x = 0; x < render.ViewWidth; x++)
         {
             double dx = wallspriteraydx[x], dy = wallspriteraydy[x];
@@ -126,6 +130,8 @@ internal sealed class WallSpriteDrawing(
 
             // Stretched across the panel, so only its offset's height counts: that row on the floor
             int column = Math.Min((int)(t * spriteAsset.Width), spriteAsset.Width - 1);
+            if (turned)
+                column = spriteAsset.Width - 1 - column;
             int top = floorRow(half) - SpriteScaler.TexelsToPixels(spriteAsset.Origin.Y, half);
             scaler.ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, GameConstants.TextureSize / 2), spriteAsset, column,
                 vis.Bright ? Lighting.NoShade : lighting.LightAt(map.TileIndexOrNone(vis.TileX, vis.TileY), vis.WorldX, vis.WorldY),
