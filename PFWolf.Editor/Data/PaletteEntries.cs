@@ -44,6 +44,8 @@ public static class PaletteEntries
             var details = door.Vertical ? "vertical" : "horizontal";
             if (!string.IsNullOrEmpty(door.Lock))
                 details += $", {door.Lock}";
+            if (door.Locks.Count > 0)
+                details += $", {string.Join(" + ", door.Locks)}";
             entries.Add(new PaletteEntry((ushort)id, "Doors", $"{id}  Door, {details}", Texture: door.Vertical ? door.East : door.North));
         }
 

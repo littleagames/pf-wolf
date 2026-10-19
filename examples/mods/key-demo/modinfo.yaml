@@ -1,0 +1,4 @@
+name: Key Demo
+version: "1.0"
+description: A small level (replacing Floor 1) with four keys (red and blue beside gold and silver) and doors that need two of them, any two, or all four.
+game-packs: [wolf3d]

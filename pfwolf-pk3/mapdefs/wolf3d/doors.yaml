@@ -7,6 +7,11 @@
 #                        East/West faces are the door, North/South the slot beside it); left out,
 #                        it runs east-west
 #   lock:                An inventory class (e.g. GoldKey) the player must carry to open the door
+#   locks:               Several inventory classes (e.g. [GoldKey, SilverKey]) the player must
+#                        carry all of to open the door, or locks-needed of them (any) if it's
+#                        given; on top of lock if the door has both. Short of one, its key's
+#                        "key.lockedmessage" is shown, unless locks-needed is less than all of
+#                        them ("This door is locked."), so give such doors a lock-message
 #   lock-message:        Shown when the player tries the door without it (a $NAME language key or
 #                        the text); left out, the lock item's "key.lockedmessage" is used
 #   lock-message-style:  The hud-messages.yaml style for it; left out, the lock item's

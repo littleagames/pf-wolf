@@ -1,0 +1,41 @@
+# The demo's doors (see the fields atop pfwolf-pk3's mapdefs/wolf3d/doors.yaml). Instead of
+# one `lock:` item, each has `locks:`, several items the player must carry: all of them, or
+# `locks-needed` of them (any). Keys aren't used up (no takes-key), so the same keys open
+# every door.
+doors:
+    # The silver key's room: the red key and the blue key, both. Without a lock-message, trying
+    # it short of one shows that key's own "key.lockedmessage" ("You need the blue key...")
+    '80':
+        open-sound: doors/open
+        close-sound: doors/close
+        Vertical: true
+        East: DOOR3_2
+        West: DOOR3_2
+        North: SLOT1_1
+        South: SLOT1_1
+        locks: [RedKey, BlueKey]
+        automap-color: '#FF00FF'
+    # The exit: all four keys
+    '81':
+        open-sound: doors/open
+        close-sound: doors/close
+        North: DOOR3_1
+        South: DOOR3_1
+        East: SLOT1_2
+        West: SLOT1_2
+        locks: [GoldKey, SilverKey, RedKey, BlueKey]
+        lock-message: $NEEDALLKEYS
+        automap-color: '#00FF00'
+    # The blue key's room: any two of the four
+    '82':
+        open-sound: doors/open
+        close-sound: doors/close
+        Vertical: true
+        East: DOOR3_2
+        West: DOOR3_2
+        North: SLOT1_1
+        South: SLOT1_1
+        locks: [GoldKey, SilverKey, RedKey, BlueKey]
+        locks-needed: 2
+        lock-message: $NEEDANYTWOKEYS
+        automap-color: '#00FFFF'

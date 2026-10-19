@@ -1,0 +1,14 @@
+# Four key slots in a 2x2 block, as End of Destiny's status bar has them: gold and silver in
+# Wolf3D's column (slots 0 and 1), red and blue in a second column 8 pixels to its right
+# (slots 2 and 3). That column takes the weapon box's left edge, so the weapon moves right to
+# the middle of what's left (End of Destiny's own bar picture has room for x 264; on Wolf3D's,
+# 264 would paint over the box's right edge).
+keys:
+  x: 240
+  y: 4
+  spacing: 16
+  rows: 2
+  column-spacing: 8
+weapon:
+  x: 260
+  y: 8

@@ -12,7 +12,9 @@
 #                Wolf3D's bar has no room for armor (actordefs BasicArmor), so it has none
 #   face:        BJ's face: faces by health, dead, killed-by and grin (see below)
 #   keys:        the first key slot; each key's slot (actordefs key.statusbarslot) is `spacing`
-#                pixels below the one before
+#                pixels below the one before (`spacing-x` to the right). With `rows`, a column
+#                holds that many slots and the next column starts `column-spacing` (8) to the
+#                right: rows: 2 makes slots 2 and 3 a second column beside 0 and 1
 #   weapon:      the weapon in hand's icon (actordefs inventory.icon)
 background:
   pic: statusbar

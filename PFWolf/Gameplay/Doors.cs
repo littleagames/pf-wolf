@@ -81,10 +81,15 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         doorobj.Vertical = vertical;
         doorobj.Action = DoorAction.Closed;
         doorobj.Xlat = doorXlat;
-        // A mapdefs door-locks object on the door's tile locks it in place of its own lock
-        doorobj.MapLock = map.GetMapData().DoorLocks.TryGetValue(map.MapSpot(tilex, tiley, 1), out var tileLock)
-            ? tileLock
-            : doorXlat.Lock;
+        // A mapdefs door-locks object on the door's tile locks it in place of its own lock(s)
+        if (map.GetMapData().DoorLocks.TryGetValue(map.MapSpot(tilex, tiley, 1), out var tileLock))
+            doorobj.MapLock = tileLock;
+        else
+        {
+            doorobj.MapLock = doorXlat.Lock;
+            doorobj.MapLocks = doorXlat.Locks;
+            doorobj.LocksNeeded = doorXlat.LocksNeeded;
+        }
         DoorObjList[LastDoorObj] = doorobj;
 
         map.ActorAt[tilex, tiley] = new Door(DoorNum);// (uint)(DoorNum | GameConstants.BitDoor);   // consider it a solid wall
@@ -245,21 +250,26 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         }
 
         // The required key comes from the map: a door-locks object on the door's tile, else the
-        // door's mapdef entry (doors.yaml `lock:`)
-        var lockItem = DoorObjList[door].Lock;
-        if (!string.IsNullOrEmpty(lockItem))
+        // door's mapdef entry (doors.yaml `lock:`, and `locks:` for several)
+        if (DoorObjList[door].IsLocked)
         {
-            if (!inventory.Has(lockItem))
+            var needed = ItemsToOpen(DoorObjList[door], out var missing);
+            if (needed == null)
             {
-                if (DoorObjList[door].Position == 0)
-                    RefuseLocked(lockItem, xlat.LockedSound, xlat.LockMessage, xlat.LockMessageStyle);
+                // Short of a door that takes only some of its locks, no one key's message fits
+                var d = DoorObjList[door];
+                var message = xlat.LockMessage.Length == 0 && missing != d.Lock && d.LocksRequired < d.MapLocks.Count
+                    ? "$LOCKEDDOOR" : xlat.LockMessage;
+                if (d.Position == 0)
+                    RefuseLocked(missing, xlat.LockedSound, message, xlat.LockMessageStyle);
                 return;
             }
 
-            // A takes-key door uses the item up and stays unlocked
+            // A takes-key door uses the items up and stays unlocked
             if (xlat.TakesKey)
             {
-                inventory.Take(lockItem, 1);
+                foreach (var item in needed)
+                    inventory.Take(item, 1);
                 DoorObjList[door].Unlocked = true;
                 hooks.DrawKeys();
             }
@@ -278,6 +288,43 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         }
     }
 
+
+    /// <summary>
+    /// The items a locked door opens with from what the player carries: its lock, and the first
+    /// <see cref="DoorObject.LocksRequired"/> of its locks they have. Null when they're short;
+    /// <paramref name="missing"/> is then the first item they lack (its lock, else one of its
+    /// locks), whose locked message and sound are used.
+    /// </summary>
+    internal List<string>? ItemsToOpen(DoorObject door, out string missing)
+    {
+        missing = "";
+        var items = new List<string>();
+        if (door.Lock.Length > 0)
+        {
+            if (!inventory.Has(door.Lock))
+            {
+                missing = door.Lock;
+                return null;
+            }
+            items.Add(door.Lock);
+        }
+
+        int required = door.LocksRequired, carried = 0;
+        foreach (var item in door.MapLocks)
+        {
+            if (carried == required)
+                break;
+            if (inventory.Has(item))
+            {
+                items.Add(item);
+                carried++;
+            }
+            else if (missing.Length == 0)
+                missing = item;
+        }
+
+        return carried < required ? null : items;
+    }
 
     /// <summary>
     /// Whether the player is on a one-way door's opens-from side (or in line with it); always
@@ -299,7 +346,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     internal static string DoorFace(DoorObject door, string face)
     {
         var xlat = door.Xlat;
-        if (!string.IsNullOrEmpty(door.Lock) && xlat.Locked != null)
+        if (door.IsLocked && xlat.Locked != null)
         {
             var locked = xlat.Locked.Side(face);
             if (locked.Length > 0)

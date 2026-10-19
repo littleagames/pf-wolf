@@ -511,7 +511,7 @@ public sealed class LevelMesh
     /// </summary>
     private string DoorFace(MapTextureTranslation door, int x, int y, string face)
     {
-        bool locked = !string.IsNullOrEmpty(door.Lock) || _tiles.Content.MapDefs.DoorLocks.ContainsKey(_tiles[1, x, y]);
+        bool locked = !string.IsNullOrEmpty(door.Lock) || door.Locks.Count > 0 ||_tiles.Content.MapDefs.DoorLocks.ContainsKey(_tiles[1, x, y]);
         if (locked && door.Locked?.Side(face) is { Length: > 0 } lockedFace)
             return lockedFace;
 

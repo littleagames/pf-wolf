@@ -1,0 +1,8 @@
+# The new keys' object-plane ids (gold and silver are Wolf3D's own 43 and 44)
+things:
+  500:
+    class: RedKey
+    angles: 0
+  501:
+    class: BlueKey
+    angles: 0

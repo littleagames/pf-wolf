@@ -1,0 +1,8 @@
+$GOTREDKEY: "Picked up the red key."
+$GOTBLUEKEY: "Picked up the blue key."
+$NEEDREDKEY: "You need the red key to open this door."
+$NEEDBLUEKEY: "You need the blue key to open this door."
+$SWITCHNEEDREDKEY: "You need the red key to use this switch."
+$SWITCHNEEDBLUEKEY: "You need the blue key to use this switch."
+$NEEDANYTWOKEYS: "You need two keys - any two - to open this door."
+$NEEDALLKEYS: "You need all four keys to open this door."

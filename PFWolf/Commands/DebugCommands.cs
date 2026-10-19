@@ -93,8 +93,12 @@ internal sealed class DebugCommands(
         for (int i = 0; i < doors.DoorNum; i++)
         {
             var door = doors.DoorObjList[i];
-            if (!string.IsNullOrEmpty(door.Lock))
-                console.Print($"  locked ({door.Lock}) at {door.TileX},{door.TileY}");
+            if (door.IsLocked)
+            {
+                var needs = door.MapLocks.Count == 0 ? door.Lock
+                    : $"{door.LocksRequired} of {string.Join(", ", door.MapLocks)}" + (door.Lock.Length > 0 ? $" + {door.Lock}" : "");
+                console.Print($"  locked ({needs}) at {door.TileX},{door.TileY}");
+            }
         }
         console.Print($"Actors: {actors.Count}  active: {active}");
         console.Print($"Enemies: {enemies}  alive: {alive}");

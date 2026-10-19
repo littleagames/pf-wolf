@@ -349,7 +349,7 @@ internal record Monster : Actor
 
                 // NOLOCKEDDOORS actors (Blake Stone's) don't open a door that needs a key, and
                 // NODOORS ones (its liquid alien and electro-spheres) none at all
-                if (HasFlag("NODOORS") || HasFlag("NOLOCKEDDOORS") && DoorObjects[door.DoorNumber].Lock.Length > 0)
+                if (HasFlag("NODOORS") || HasFlag("NOLOCKEDDOORS") && DoorObjects[door.DoorNumber].IsLocked)
                     return 0;
 
                 doornumtile = door.DoorNumber;

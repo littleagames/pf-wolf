@@ -642,7 +642,7 @@ internal partial record BlakeMonster : Monster
     private bool DoorLeadsOutOf(int door, int area)
     {
         var d = DoorObjects[door];
-        if (d.Lock.Length > 0)
+        if (d.IsLocked)
             return false;
 
         int x = d.TileX, y = d.TileY;
@@ -750,7 +750,7 @@ internal partial record BlakeMonster : Monster
                 return false;
             case Door door:
                 return HasFlag("PHASEDOORS")
-                    || !HasFlag("NODOORS") && (!HasFlag("NOLOCKEDDOORS") || DoorObjects[door.DoorNumber].Lock.Length == 0);
+                    || !HasFlag("NODOORS") && (!HasFlag("NOLOCKEDDOORS") || !DoorObjects[door.DoorNumber].IsLocked);
             default:
                 return !MapManager.IsShootableActorAt(x, y);
         }

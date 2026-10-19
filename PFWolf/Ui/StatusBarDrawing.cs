@@ -213,7 +213,9 @@ internal sealed class StatusBarDrawing(
         using var _ = StatusBarOrigin(layout);
         foreach (var (key, slot, has) in keys)
         {
-            int x = layout.X + layout.SpacingX * slot, y = layout.Y + layout.Spacing * slot;
+            // rows: the slots fill a column of that many, then the next one along
+            int row = layout.Rows > 0 ? slot % layout.Rows : slot, column = layout.Rows > 0 ? slot / layout.Rows : 0;
+            int x = layout.X + layout.SpacingX * row + layout.ColumnSpacing * column, y = layout.Y + layout.Spacing * row;
 
             // size: a colored square for each key ("key.statusbarcolor" / "key.statusbaremptycolor")
             if (layout.Size.Count == 2)

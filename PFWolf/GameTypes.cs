@@ -205,10 +205,18 @@ internal class DoorObject
     public bool Held;                  // opened by a switch to stay open, until something closes it
     public MapTextureTranslation Xlat = MapTextureTranslation.None;
     public string MapLock = "";        // the lock from the map: a door-locks object on its tile, else its doors.yaml lock
+    public List<string> MapLocks = []; // the doors.yaml locks it needs several of (none with a door-locks object)
+    public int LocksNeeded;            // how many of MapLocks it needs (all of them when 0)
     public bool Unlocked;              // a takes-key door the player has opened with its lock item
 
-    /// <summary>The item the door needs to open, empty when it needs none</summary>
+    /// <summary>The item the door needs to open, empty when it needs none (or only needs <see cref="MapLocks"/>)</summary>
     public string Lock => Unlocked ? "" : MapLock;
+
+    /// <summary>Whether the door needs any item to open: its <see cref="Lock"/> or its <see cref="MapLocks"/></summary>
+    public bool IsLocked => !Unlocked && (MapLock.Length > 0 || MapLocks.Count > 0);
+
+    /// <summary>How many of <see cref="MapLocks"/> open the door: <see cref="LocksNeeded"/>, or all of them</summary>
+    public int LocksRequired => LocksNeeded > 0 && LocksNeeded < MapLocks.Count ? LocksNeeded : MapLocks.Count;
 
     /// <summary>
     /// Whether the door has slid out of the way at along (0..0xffff across the tile). A sliding

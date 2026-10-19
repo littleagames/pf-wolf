@@ -373,6 +373,10 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         var details = new List<string> { door.Vertical ? "vertical" : "horizontal", door.Vertical ? door.East : door.North };
         if (!string.IsNullOrEmpty(door.Lock))
             details.Add($"locked: {door.Lock}");
+        if (door.Locks.Count > 0)
+            details.Add(door.LocksNeeded > 0 && door.LocksNeeded < door.Locks.Count
+                ? $"needs {door.LocksNeeded} of: {string.Join(", ", door.Locks)}"
+                : $"needs all of: {string.Join(", ", door.Locks)}");
         if (!string.IsNullOrEmpty(door.OpensFrom))
             details.Add($"opens from the {door.OpensFrom}");
         return string.Join(", ", details);

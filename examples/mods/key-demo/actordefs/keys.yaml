@@ -1,0 +1,37 @@
+# The demo's two new keys, beside Wolf3D's gold and silver ones (pfwolf-pk3's
+# actordefs/native.yaml). A key is any class descended from Key: carrying one is what opens a
+# door that names it (this mod's mapdefs/doors.yaml). Each is the gold key's sprite drawn
+# through a color translation (this mod's translations.yaml), so no new sprites are needed.
+#
+# On the status bar each shows "key.statusbarpic" while carried (this mod's graphics/, drawn by
+# examples/tools/make-key-demo.ps1), else Key's empty slot. Gold and silver keep slots 0 and 1;
+# this mod's statusbar.yaml puts slots 2 and 3 in a second column beside them.
+RedKey:
+  parent: Key
+  properties:
+    translation: red-key
+    "inventory.pickupmessage": "$GOTREDKEY"
+    "key.lockedmessage": "$NEEDREDKEY"
+    "key.switchlockedmessage": "$SWITCHNEEDREDKEY"
+    "key.statusbarpic": "redkey"
+    "key.statusbarslot": 2
+  states:
+    Spawn:
+      - sprite: GKEY
+        frames: [A]
+        tics-per-frame: -1
+
+BlueKey:
+  parent: Key
+  properties:
+    translation: blue-key
+    "inventory.pickupmessage": "$GOTBLUEKEY"
+    "key.lockedmessage": "$NEEDBLUEKEY"
+    "key.switchlockedmessage": "$SWITCHNEEDBLUEKEY"
+    "key.statusbarpic": "bluekey"
+    "key.statusbarslot": 3
+  states:
+    Spawn:
+      - sprite: GKEY
+        frames: [A]
+        tics-per-frame: -1

@@ -374,6 +374,19 @@ public record MapTextureTranslation
     public string Lock { get; init; } = "";
 
     /// <summary>
+    /// Doors only: several inventory items that lock this door together, such as two or all four
+    /// of a level's keys. The player needs <see cref="LocksNeeded"/> of them (all of them when
+    /// that's 0), on top of <see cref="Lock"/> if it has one too.
+    /// </summary>
+    public List<string> Locks { get; init; } = [];
+
+    /// <summary>
+    /// Doors only: how many of <see cref="Locks"/> the player must carry to open the door (any of
+    /// them). 0, or more than there are, needs all of them.
+    /// </summary>
+    public int LocksNeeded { get; init; }
+
+    /// <summary>
     /// Doors only: what's shown when the player tries this door without its <see cref="Lock"/>
     /// item (a $NAME language key or the text itself). Empty uses the lock item's
     /// `key.lockedmessage`.

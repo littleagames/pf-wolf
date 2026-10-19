@@ -135,6 +135,15 @@ public class StatusBarElement
     /// <summary>keys: pixels between one key slot and the next, rightwards (spacing is downwards)</summary>
     public int SpacingX { get; set; }
 
+    /// <summary>
+    /// keys: how many slots go in one column (0: all of them); slot <see cref="Rows"/> starts the
+    /// next column, <see cref="ColumnSpacing"/> pixels to the right, as End of Destiny's 2x2 block
+    /// </summary>
+    public int Rows { get; set; }
+
+    /// <summary>keys: pixels between one column of slots and the next (with <see cref="Rows"/>)</summary>
+    public int ColumnSpacing { get; set; } = 8;
+
     /// <summary>keys: [width, height] of a colored square per key ("key.statusbarcolor" / "key.statusbaremptycolor") in place of pictures</summary>
     public List<int> Size { get; set; } = [];
 

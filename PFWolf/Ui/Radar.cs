@@ -155,7 +155,7 @@ internal sealed class Radar(
         {
             var d = doors.DoorObjList[tile & ~GameConstants.BitDoor];
             // As bstone: a door with a lock (none once a key has unlocked it) is locked, open or shut
-            color = !string.IsNullOrEmpty(d.Lock) ? locked
+            color = d.IsLocked ? locked
                 : d.Action == DoorAction.Closed ? door
                 : floor;
         }

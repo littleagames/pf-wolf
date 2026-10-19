@@ -128,7 +128,7 @@ public sealed class TileRemap
 
     // Everything about a door but its faces and the way it runs
     private static bool LikeDoor(MapTextureTranslation a, MapTextureTranslation b)
-        => a.Lock == b.Lock && a.LockMessage == b.LockMessage && a.LockMessageStyle == b.LockMessageStyle
+        => a.Lock == b.Lock && a.Locks.SequenceEqual(b.Locks) && a.LocksNeeded == b.LocksNeeded && a.LockMessage == b.LockMessage && a.LockMessageStyle == b.LockMessageStyle
            && a.AutomapColor == b.AutomapColor && a.LockedSound == b.LockedSound && a.OpenSound == b.OpenSound
            && a.CloseSound == b.CloseSound && a.TakesKey == b.TakesKey && a.Split == b.Split
            && a.WrongSideMessage == b.WrongSideMessage && a.WrongSideSound == b.WrongSideSound;

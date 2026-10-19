@@ -1,0 +1,4 @@
+# Merged into the game pack's game-info.yaml: messages on by default, so pickups and locked
+# doors say what they need (the player can still turn them off in Options -> Game Options)
+setting-defaults:
+  messages: true
