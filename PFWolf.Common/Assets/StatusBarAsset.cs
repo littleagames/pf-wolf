@@ -113,6 +113,18 @@ public class StatusBarElement
     /// <summary>Any part: placed on the top status bar (statusbar.yaml top) instead of the bottom one</summary>
     public bool Top { get; set; }
 
+    /// <summary>
+    /// Any part: on a screen wider than 320x200, the side its 320 pixels line up with: left or
+    /// right (flush with that screen edge) or center. Left out, the background's pin-edges decides.
+    /// </summary>
+    public string? Pin { get; set; }
+
+    /// <summary>
+    /// background: on a screen wider than 320x200, each part without a pin of its own lines up
+    /// with the nearer screen edge: left with x under 160, else right (a HUD drawn over the view)
+    /// </summary>
+    public bool PinEdges { get; set; }
+
     /// <summary>Numbers: text drawn before and after the number, e.g. "FLOOR: " or "%"</summary>
     public string Prefix { get; set; } = "";
     public string Suffix { get; set; } = "";

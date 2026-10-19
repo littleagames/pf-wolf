@@ -116,8 +116,10 @@ internal sealed class StatusBarDrawing(
     /// <summary>Draws a picture at the named part of the status bar, if the layout has it.</summary>
     internal void StatusDrawPic(string picName, string part)
     {
-        if (StatusBar.Get(part) is { } element)
-            StatusDrawPic(picName, element.X, element.Y);
+        if (StatusBar.Get(part) is not { } element)
+            return;
+        using var _ = StatusBarOrigin(element);
+        graphics.DrawPic(picName, element.X, StatusBarTop(element) + element.Y);
     }
 
     internal void StatusDrawFace(string picName) => StatusDrawPic(picName, "face");
@@ -195,7 +197,20 @@ internal sealed class StatusBarDrawing(
     /// disposed, so the bars stay at the top and bottom of a screen taller than 320x200.
     /// </summary>
     internal VideoManager.UiOriginScope StatusBarOrigin(Assets.StatusBarElement element) =>
-        video.UseUiOrigin(element.Top ? UiAnchor.Top : UiAnchor.Bottom);
+        video.UseUiOrigin(element.Top ? UiAnchor.Top : UiAnchor.Bottom, PinSide(element));
+
+    /// <summary>
+    /// The side of a wide screen a part lines up with (statusbar.yaml pin): its own pin, else with
+    /// the background's pin-edges the nearer edge by its x, else centered
+    /// </summary>
+    internal UiSide PinSide(Assets.StatusBarElement element) => element.Pin?.ToLowerInvariant() switch
+    {
+        "left" => UiSide.Left,
+        "right" => UiSide.Right,
+        "center" => UiSide.Center,
+        _ when StatusBar.Get("background")?.PinEdges == true => element.X < 160 ? UiSide.Left : UiSide.Right,
+        _ => UiSide.Center,
+    };
 
     /// <summary>Draws a part that a number can sit on (statusbar.yaml behind)</summary>
     internal void DrawStatusPart(string part)

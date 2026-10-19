@@ -17,6 +17,14 @@ internal enum UiAnchor
     Bottom,
 }
 
+/// <summary>Which side of a screen wider than the 320x200 layout it lines up with: centered, or flush left or right.</summary>
+internal enum UiSide
+{
+    Center,
+    Left,
+    Right,
+}
+
 internal class VideoManager
 {
     /// <summary>The video mode in use; change it with ApplyVideoSettings.</summary>
@@ -421,8 +429,24 @@ internal class VideoManager
     /// </summary>
     internal UiOriginScope UseUiOrigin(UiAnchor anchor)
     {
-        var scope = new UiOriginScope(this, uiAnchor, uiY);
+        var scope = new UiOriginScope(this, uiAnchor, uiY, UiX);
         SetUiOrigin(anchor);
+        return scope;
+    }
+
+    /// <summary>
+    /// As <see cref="UseUiOrigin(UiAnchor)"/>, and across: flush with the screen's left or right
+    /// edge rather than centered, so a HUD's corners stay in the screen's corners on a wide screen
+    /// </summary>
+    internal UiOriginScope UseUiOrigin(UiAnchor anchor, UiSide side)
+    {
+        var scope = UseUiOrigin(anchor);
+        UiX = side switch
+        {
+            UiSide.Left => 0,
+            UiSide.Right => ScreenWidth - ToScreenLength(VideoSettings.BaseWidth),
+            _ => UiX,
+        };
         return scope;
     }
 
@@ -433,18 +457,19 @@ internal class VideoManager
     /// </summary>
     internal UiOriginScope UseUiOriginAboveBottom(int bottomLines)
     {
-        var scope = new UiOriginScope(this, uiAnchor, uiY);
+        var scope = new UiOriginScope(this, uiAnchor, uiY, UiX);
         SetUiOrigin(UiAnchor.Center);
         uiY = (ScreenYAboveBottom(bottomLines) - ToScreenLength(VideoSettings.BaseHeight - bottomLines)) / 2;
         return scope;
     }
 
-    internal readonly struct UiOriginScope(VideoManager video, UiAnchor anchor, int y) : IDisposable
+    internal readonly struct UiOriginScope(VideoManager video, UiAnchor anchor, int y, int x) : IDisposable
     {
         public void Dispose()
         {
             video.SetUiOrigin(anchor);
             video.uiY = y;
+            video.UiX = x;
         }
     }
 
