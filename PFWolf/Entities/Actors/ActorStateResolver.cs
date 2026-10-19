@@ -87,7 +87,63 @@ internal static class ActorStateResolver
             };
         }
 
+        AddRaiseFromDeath(firstFrameByGroup);
         return firstFrameByGroup;
+    }
+
+    /// <summary>The state a corpse brought back by a reviver plays (Monster.Rise)</summary>
+    internal const string RaiseState = "Raise";
+
+    // How long a raise shows a frame that held forever dying (the corpse's own), in tics
+    private const short RaiseHoldTics = 8;
+
+    /// <summary>
+    /// For a class that dies (a Death state) but has no Raise state of its own, a Raise made of
+    /// its Death frames backwards, as DOOM's monsters get up: each for as long as it showed
+    /// dying, without the death's actions, the corpse's own frame only when it's all there is.
+    /// Its last frame runs A_Resume (Monster.Resume: back to chasing or standing), and then
+    /// goes to Spawn should that do nothing.
+    /// </summary>
+    internal static void AddRaiseFromDeath(Dictionary<string, ActorStateFrame> states)
+    {
+        if (states.ContainsKey(RaiseState) || !states.TryGetValue("Death", out var death))
+            return;
+
+        var dying = new List<ActorStateFrame>();
+        var seen = new HashSet<ActorStateFrame>();
+        for (var frame = death; frame != null && frame.StateName == "Death" && seen.Add(frame); frame = frame.Next)
+        {
+            dying.Add(frame);
+            if (frame.HoldsForever)
+                break;
+        }
+        if (dying.Count > 1 && dying[^1].HoldsForever)
+            dying.RemoveAt(dying.Count - 1);        // the corpse is showing it already
+
+        ActorStateFrame? first = null, previous = null;
+        for (int i = dying.Count - 1; i >= 0; i--)
+        {
+            var from = dying[i];
+            var frame = new ActorStateFrame
+            {
+                StateName = RaiseState,
+                Sprite = from.Sprite,
+                FrameLetter = from.FrameLetter,
+                TicTime = from.TicTime > 0 ? from.TicTime : RaiseHoldTics,
+                Modifiers = from.Modifiers,
+                Light = from.Light,
+                Action = i == 0 ? "A_Resume" : null,
+            };
+            if (previous != null)
+                previous.Next = frame;
+            first ??= frame;
+            previous = frame;
+        }
+
+        if (first == null || previous == null)
+            return;
+        previous.Next = states.GetValueOrDefault("Spawn", previous);
+        states[RaiseState] = first;
     }
 
     private static short ToTicTime(float ticsPerFrame) =>

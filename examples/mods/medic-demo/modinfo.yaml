@@ -1,0 +1,4 @@
+name: Medic Demo
+version: "1.0"
+description: A level (replacing Floor 1) where medics bring their fallen comrades back to life, as DOOM's Arch-Vile does, and a medic of your own keeps your squad going.
+game-packs: [wolf3d]

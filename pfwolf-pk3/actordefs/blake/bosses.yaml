@@ -4,9 +4,10 @@
 # them are in mapdefs/blake/bosses.yaml.
 
 # The aliens: built like the rest (actordefs/blake/aliens.yaml), shooting from range; each leaves
-# the floor's gold access card
+# the floor's gold access card. No reviver brings one back (NOREVIVE).
 BlakeBoss:
   parent: BlakeAlien
+  flags: [NOREVIVE]
   properties:
     "dropitem": "GoldCard"
     "attacksound": "bs/atkcharged"
@@ -259,7 +260,7 @@ AcidShot:
 # -----------------------------------------------------------------------
 Goldfire:
   parent: BlakeEnemy
-  flags: [NOTCOUNTED]
+  flags: [NOTCOUNTED, NOREVIVE]
   properties:
     "tag": "$BS_GOLDFIRE"
     "health.baby": 50

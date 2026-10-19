@@ -204,7 +204,7 @@ Goldfire:
 # the game, once he's done dying.
 GoldfireMorphed:
   parent: BlakeEnemy
-  flags: [NOTCOUNTED]
+  flags: [NOTCOUNTED, NOREVIVE]
   properties:
     "tag": "$BS_GOLDFIRE"
     "health.baby": 4000

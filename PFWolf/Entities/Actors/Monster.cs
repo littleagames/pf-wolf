@@ -106,6 +106,16 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("A_Follow", (m, args) =>
             m.Follows = !args.Any(a => a.Trim().Equals("off", StringComparison.OrdinalIgnoreCase)));
 
+        // Reviving fallen allies (see REVIVING): T_ReviveChase / T_ReviveStand are T_Chase and
+        // T_Stand that first look for a corpse of its side to bring back; A_Revive([count][,
+        // radius]) brings them back (count a number or "min-max"); A_Resume, after a heal or a
+        // raise, chases whoever it's after, or stands. A_Resume is any actor's, as every class
+        // that dies gets a Raise state ending in it (ActorStateResolver.AddRaiseFromDeath).
+        ActorActionRegistry.RegisterFor<Monster>("T_ReviveChase", m => m.ReviveChase());
+        ActorActionRegistry.RegisterFor<Monster>("T_ReviveStand", m => m.ReviveStand());
+        ActorActionRegistry.RegisterFor<Monster>("A_Revive", (m, args) => m.Revive(args));
+        ActorActionRegistry.Register("A_Resume", actor => (actor as Monster)?.Resume());
+
         ActorActionRegistry.RegisterFor<Monster>("A_FireProjectile", (m, args) => m.FireProjectile(args));
         // A volley of several shots (the Angel's sparks): A_StartAttack starts the count, and
         // A_Relaunch(count, "TiredState"[, "BreakOffState"]) after each shot goes to TiredState
@@ -141,7 +151,20 @@ internal record Monster : Actor
                 Console.WriteLine($"Actor '{name}' runs {ActorActionRegistry.Parse(needs.Call!).Name} but isn't a {needs.Class.Name}: give it `parent: {needs.Class.Name}` (or a class descended from it).");
             else if (actor is not Monster && actor.Properties.Keys.Any(k => k == "health" || k.StartsWith("health.", StringComparison.Ordinal)))
                 Console.WriteLine($"Actor '{name}' has health but isn't a Monster: give it `parent: Monster` (or a class descended from it).");
+
+            if (actor is Monster reviver)
+                reviver.CheckReviveProperties();
         }
+    }
+
+    // Warns about a `monster.revive.count` or `monster.revive.radius` that makes no sense
+    private void CheckReviveProperties()
+    {
+        var count = PropertyStrings("monster.revive.count");
+        if (count.Count > 0 && (count.Count > 2 || ParseCountRange(string.Join("-", count)) == null))
+            Console.WriteLine($"Actor '{Name}': monster.revive.count should be a number, [min, max] or \"min-max\" (0 or more), not {string.Join(", ", count)}; reviving 1.");
+        if (Properties.TryGetValue("monster.revive.radius", out var radius) && !TryParseTiles(radius?.ToString(), out _))
+            Console.WriteLine($"Actor '{Name}': monster.revive.radius should be a number of tiles, not {radius}; using {DefaultReviveRadius}.");
     }
 
     // The way back from each direction, and the diagonal between two (east/west, then
@@ -627,7 +650,7 @@ internal record Monster : Actor
     /// </summary>
     internal bool ThinkInstead(uint tics)
     {
-        if (RuntimeFlags.Has(ObjFlags.AttackMode) || !RuntimeFlags.Has(ObjFlags.Shootable))
+        if (RuntimeFlags.Has(ObjFlags.AttackMode) || !RuntimeFlags.Has(ObjFlags.Shootable) || IsBusyReviving)
             return false;
 
         // `monster.follow`: it falls in with a player on its side once it sees them
@@ -778,6 +801,225 @@ internal record Monster : Actor
         }
         return Dir != ObjDir.NoDir;
     }
+
+    /*
+    =============================================================================
+    REVIVING: bringing fallen allies back, as DOOM's Arch-Vile
+    =============================================================================
+
+    A reviver (think T_ReviveChase in place of T_Chase, T_ReviveStand in place of T_Stand)
+    looks out for the corpses of its own side, or a side it counts its ally (factions.yaml),
+    within `monster.revive.radius` tiles (default 2) that it can see. Finding one, it goes to
+    its `monster.revive.state` (default Heal), whose A_Revive brings back
+    `monster.revive.count` of them, nearest first (default 1; [min, max] or "min-max" for a
+    random number in that range), playing its `revivesound`; with no such state, it revives
+    them there and then. A revived actor has its full health back and plays its Raise state
+    (its class's own, else its Death backwards: ActorStateResolver.AddRaiseFromDeath), whose
+    A_Resume sends it after whoever its reviver was fighting (or anyone it sees), else back to
+    standing. It's off the kill count again (killed once more, it counts once more), drops its
+    items again, and is worth no points the second time.
+
+    Not every corpse comes back: not a NOREVIVE class's (the bosses), one with a death cam, one
+    still to become something else (`monster.becomes`), one sliding, or one in a doorway or
+    with something alive (or a player) on its tile.
+    */
+    private const string DefaultReviveState = "Heal";
+    private const double DefaultReviveRadius = 2;
+
+    // Its `monster.revive.state`
+    private string ReviveState =>
+        Properties.TryGetValue("monster.revive.state", out var state) && state?.ToString() is { Length: > 0 } name ? name : DefaultReviveState;
+
+    // Whether it's getting up, or bringing someone back: following the players waits
+    private bool IsBusyReviving => CurrentState?.StateName is { } state
+        && (state == ActorStateResolver.RaiseState || state.Equals(ReviveState, StringComparison.OrdinalIgnoreCase));
+
+    internal void ReviveChase()
+    {
+        if (!TryStartReviving())
+            Chase();
+    }
+
+    internal void ReviveStand()
+    {
+        if (!TryStartReviving())
+            Stand();
+    }
+
+    // With a corpse to bring back in reach, it goes to its revive state (or, without one,
+    // revives there and then): true when it did
+    private bool TryStartReviving()
+    {
+        if (GameState.VictoryFlag || !Revivables(ReviveRadius()).Any())
+            return false;
+
+        if (ResolvedStates.TryGetValue(ReviveState, out var heal))
+            SetState(heal);
+        else
+            Revive([]);
+        return true;
+    }
+
+    /// <summary>
+    /// A_Revive([count][, radius]): brings back up to count corpses of its side (a number, or
+    /// "min-max" for a random number in that range) within radius tiles that it can see, nearest
+    /// first; its `monster.revive.count` and `monster.revive.radius` for those not given
+    /// </summary>
+    internal void Revive(string[] args)
+    {
+        var (min, max) = ReviveCount();
+        if (args.Length > 0 && args[0].Trim().Length > 0)
+        {
+            if (ParseCountRange(args[0]) is { } given)
+                (min, max) = given;
+            else
+                Console.WriteLine($"A_Revive ({Name}): '{args[0].Trim()}' isn't a count (a number, or \"min-max\").");
+        }
+
+        double radius = ReviveRadius();
+        if (args.Length > 1 && args[1].Trim().Length > 0)
+        {
+            if (TryParseTiles(args[1], out var givenRadius))
+                radius = givenRadius;
+            else
+                Console.WriteLine($"A_Revive ({Name}): '{args[1].Trim()}' isn't a radius in tiles.");
+        }
+
+        int count = max > min ? min + NextRandom() % (max - min + 1) : min;
+        int revived = 0;
+        foreach (var corpse in Revivables(radius))
+        {
+            if (revived >= count)
+                break;
+            corpse.Rise(this);
+            revived++;
+        }
+
+        if (revived > 0)
+            PlayActorSound(this, "revivesound");
+    }
+
+    // The corpses it could bring back within radius tiles, nearest first (checked as it goes
+    // through them, so one risen stops another on its tile coming up too)
+    private IEnumerable<Monster> Revivables(double radius) =>
+        MapManager.CorpsesNear(X, Y, (long)(radius * MapConstants.TileGlobal)).Where(corpse => corpse.CanBeRevivedBy(this));
+
+    // Whether it's a corpse that the reviver can bring back where it lies
+    private bool CanBeRevivedBy(Monster reviver) =>
+        !ReferenceEquals(this, reviver) && !IsRemoved
+        && !RuntimeFlags.Has(ObjFlags.Shootable) && !RuntimeFlags.Has(ObjFlags.Sliding)
+        && CurrentState is { HoldsForever: true, StateName: var state } && IsDeathState(state)
+        && !HasFlag("NOREVIVE") && !ResolvedStates.ContainsKey("DeathCam") && !Properties.ContainsKey("monster.becomes")
+        && reviver.IsAllyOf(this) && HasRoomToRise() && reviver.CheckLine(reviver, this);
+
+    // Death, XDeath and the damage types' Death.(type) (Monster.ChooseDeathState)
+    private static bool IsDeathState(string state) =>
+        state == "Death" || state == "XDeath" || state.StartsWith("Death.", StringComparison.Ordinal);
+
+    // Whether its tile is clear to get up on: open floor (not a doorway), no one alive on it, and
+    // no player standing over it
+    private bool HasRoomToRise()
+    {
+        if (MapManager.TileMap[TileX, TileY] != 0 || MapManager.ActorAt[TileX, TileY] is not (null or ActorMark)
+            || MapManager.IsShootableActorAt(TileX, TileY))
+            return false;
+
+        long centerX = (TileX << (int)MapConstants.TileShift) + MapConstants.TileGlobal / 2;
+        long centerY = (TileY << (int)MapConstants.TileShift) + MapConstants.TileGlobal / 2;
+        foreach (var pawn in MapManager.Players)
+        {
+            if (IsTargetable(pawn) && Math.Abs(pawn.X - centerX) <= MinActorDist && Math.Abs(pawn.Y - centerY) <= MinActorDist)
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Brought back by <paramref name="reviver"/> (or by nothing in particular, null): its full
+    /// health back, on its tile again, off the kill count, and getting up (its Raise state)
+    /// </summary>
+    internal void Rise(Monster? reviver)
+    {
+        Hitpoints = MapManager.GetScaledHealth(this);
+        RuntimeFlags &= ~(ObjFlags.NonMark | ObjFlags.AttackMode | ObjFlags.FirstAttack | ObjFlags.Following | ObjFlags.Ambush);
+        RuntimeFlags |= ObjFlags.Shootable | ObjFlags.Revived;
+        RecenterOnTile();
+        Dir = ObjDir.NoDir;
+        Distance = 0;
+        Temp2 = 0;
+        _stepAside = null;
+        Speed = PropertyInt("speed", SpdPatrol);
+
+        // It takes up the fight its reviver is in
+        _target = reviver is { } by && by.RuntimeFlags.Has(ObjFlags.AttackMode) && by.TargetIfAny is { } foe && IsHostileTo(foe) ? foe : null;
+
+        MapManager.MarkActorTile(this);
+        if (CountsAsKill && GameState.KillCount > 0)
+            GameState.KillCount--;
+
+        if (ResolvedStates.TryGetValue(ActorStateResolver.RaiseState, out var raise))
+            SetState(raise);
+        else
+            Resume();
+    }
+
+    /// <summary>
+    /// A_Resume, after a heal or a raise: on with the chase it's in; else after whoever it was
+    /// brought back to fight, or anyone it sees; else back to standing
+    /// </summary>
+    internal void Resume()
+    {
+        if (RuntimeFlags.Has(ObjFlags.AttackMode))
+        {
+            GoTo("Chase");
+            return;
+        }
+
+        if (_target is { } foe && IsStillTarget(foe) && IsHostileTo(foe) || CheckSight())
+        {
+            FirstSighting();
+            return;
+        }
+
+        Speed = PropertyInt("speed", SpdPatrol);
+        GoTo("Spawn");
+    }
+
+    // Goes to exactly the named state's first frame, from an action too (JumpTo)
+    private void GoTo(string stateName)
+    {
+        if (ResolvedStates.TryGetValue(stateName, out var frame))
+            JumpTo(frame);
+    }
+
+    // `monster.revive.count`: a number, [min, max] or "min-max"; 1 when it isn't set (or makes no sense)
+    private (int Min, int Max) ReviveCount()
+    {
+        var values = PropertyStrings("monster.revive.count");
+        var text = values.Count > 1 ? values[0] + "-" + values[1] : values.FirstOrDefault();
+        return text != null && ParseCountRange(text) is { } range ? range : (1, 1);
+    }
+
+    // `monster.revive.radius`, in tiles
+    private double ReviveRadius() =>
+        Properties.TryGetValue("monster.revive.radius", out var value) && TryParseTiles(value?.ToString(), out var radius)
+            ? radius : DefaultReviveRadius;
+
+    /// <summary>A count: "2" (just that many) or "1-3" (from 1 to 3), not below 0; null when it isn't one</summary>
+    internal static (int Min, int Max)? ParseCountRange(string text)
+    {
+        var parts = text.Split('-', 2, StringSplitOptions.TrimEntries);
+        if (!int.TryParse(parts[0], out var min) || min < 0)
+            return null;
+        int max = min;
+        if (parts.Length == 2 && (!int.TryParse(parts[1], out max) || max < min))
+            return null;
+        return (min, max);
+    }
+
+    private static bool TryParseTiles(string? text, out double tiles) =>
+        double.TryParse(text?.Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out tiles)
+        && tiles >= 0;
 
     /// <summary>
     /// Puts it on another side (A_SetFaction, a script's actor.faction, the setfaction command):
@@ -1255,9 +1497,10 @@ internal record Monster : Actor
         }
         MapManager.UnmarkActorTile(TileX, TileY);
 
-        // Points for the player's kills (and a trap's), not for one enemy killing another
+        // Points for the player's kills (and a trap's), not for one enemy killing another, nor
+        // for killing one again that a reviver brought back
         var killedBy = attacker?.Shooter ?? attacker;
-        if (killedBy is not Monster)
+        if (killedBy is not Monster && !RuntimeFlags.Has(ObjFlags.Revived))
             AwardKillPoints();
         if (killedBy is PlayerPawn killer)
             killer.State.Kills++;       // for the scoreboard, with others (a missile's: who fired it)

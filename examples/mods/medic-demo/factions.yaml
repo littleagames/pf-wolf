@@ -1,0 +1,9 @@
+# Laid over pfwolf-pk3's gamepacks/wolf3d/factions.yaml (allies, the player's side, drawn
+# green; axis, the enemies), which says how factions work at its top. No new sides: just how
+# each side's medics look, by class (class-translations, the mod's translations.yaml), so you
+# can tell a medic from a guard, and yours from theirs.
+factions:
+  allies:
+    class-translations: { Medic: allies-medic }
+  axis:
+    class-translations: { Medic: medic-white, Surgeon: surgeon-red }

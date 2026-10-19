@@ -522,6 +522,70 @@ The rules are at the top of pfwolf-pk3's `gamepacks/wolf3d/translations.yaml`:
 - In the console, `translations` lists them; with cheats on, `settranslation <name|none> [class]`
   and `playercolor <name|none> [n]` try them out.
 
+## Medic Demo (`mods/medic-demo`)
+
+A level that replaces Floor 1 (Wolfenstein 3D only) where medics bring their fallen comrades
+back to life, as DOOM's Arch-Vile does: one fights like the guard it's built on, but when a
+corpse of its own side lies close by, it stops to heal it, and the corpse gets up again. It's
+YAML, a level and a small script.
+
+```
+PFWolf.exe --file medic-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The start room:** your squad, two guards in your green, and a medic of your own in a
+  paler green. They follow you about (as in the Faction Demo); your medic brings back a
+  squadmate who falls, so keep it alive.
+- **The guard post:** four guards, and a medic in a white coat behind them. Kill a guard and
+  the medic heals the guard back up, glowing green, a few seconds later. Take the medic out first.
+- **The ward:** eight guards round the field surgeon, in a red gown, who brings back one to
+  three at a time from four tiles away.
+- **The exit room,** past the ward.
+
+The first time each kind of medic heals someone, a message says so.
+
+### What's in it
+
+- `actordefs/medic-demo.yaml`: `Medic` (a `Guard` whose `Spawn` and `Chase` states think
+  `T_ReviveStand` and `T_ReviveChase`, with a `Heal` state running `A_Revive` and `A_Resume`),
+  `SquadMedic` (a `Medic` on the allies' side, following you), `SquadGuard`, and `Surgeon` (an
+  `Officer` built the same way, with `monster.revive.count: [1, 3]` and
+  `monster.revive.radius: 4`).
+- `factions.yaml`: no new sides, just how each side's medics are drawn (`class-translations`).
+- `translations.yaml`: `medic-white`, `allies-medic` and `surgeon-red`.
+- `mapdefs/things.yaml`: objects 550 (a medic), 551 (your medic), 552 (one of your squad) and
+  553 (the surgeon).
+- `scripts/medic-demo.lua`: a hint as the level starts, and `A_MedicHint`, which the `Heal`
+  states run, saying who's healing the first time.
+- `game-info.yaml`: turns messages over the view on, and dims the level a little so a medic's
+  glow as it heals (its `Heal` state's `light:`) shows.
+- `maps/MAP01.wad`: the level, built by `tools/make-medic-demo-map.ps1` from an ASCII layout:
+
+  ```
+  powershell -ExecutionPolicy Bypass -File examples/tools/make-medic-demo-map.ps1
+  ```
+
+### Reviving
+
+Any `Monster` class can revive; nothing about it is tied to the demo's medics:
+
+- `think: T_ReviveChase` in place of `T_Chase` (and `T_ReviveStand` in place of `T_Stand`, to
+  heal while it isn't fighting) has it look for a corpse first: one of its own side, or of a
+  side its side counts as an ally (`factions.yaml`), that it can see within
+  `monster.revive.radius` tiles (default 2; fractions are fine). Finding one, it goes to its
+  `Heal` state (`monster.revive.state` names another; with none, it revives on the spot).
+- `A_Revive` brings back `monster.revive.count` corpses, nearest first, and plays its
+  `revivesound`. The count is one at a time by default; `[1, 3]` or `"1-3"` makes it a random
+  number in that range each time. `A_Revive("1-3", 4)` gives a count and radius of its own.
+- `A_Resume` ends the `Heal` state: back to the fight it's in, or to standing.
+- The revived get up by playing their `Death` frames backwards (a class's own `Raise` state
+  replaces that), with full health, and join their reviver's fight. They come off the kill
+  count until killed again, drop their items again, but score nothing the second time.
+- No one rises from a doorway, or with someone alive (or you) standing on the corpse. Classes
+  with `flags: [NOREVIVE]` never come back; every boss in the base games has it.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

@@ -375,7 +375,8 @@ internal enum ObjFlags
     Sliding = 0x00200000,        // a corpse sliding back from the shot that killed it (T_BlowBack)
     Follows = 0x00400000,        // an ally that follows the players about (Monster.Follows: `monster.follow`, A_SetFaction "follow")
     Following = 0x00800000,      // ... walking after them now, or out of their way (Monster.ThinkInstead)
-    // next free bit is   0x00400000
+    Revived = 0x01000000,        // brought back from the dead by a reviver (Monster.Rise): no points killed again
+    // next free bit is   0x02000000
 }
 
 internal static class ObjFlagsExtensions

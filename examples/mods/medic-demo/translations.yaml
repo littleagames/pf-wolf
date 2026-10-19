@@ -1,0 +1,11 @@
+# Laid over pfwolf-pk3's gamepacks/wolf3d/translations.yaml (whose top says how translations
+# work). A guard's tan uniform shares its colors with his face (the skin ramp, 198:223), so as
+# the allies' green does, these recolor 207:223 everywhere but the face's own 198:206 only
+# below the head ("below 10": rows under the sprite's first ten drawn).
+#
+#   medic-white   an axis medic: a guard in a white coat
+#   allies-medic  your squad's medic: your side's green (the allies' 102:111), only paler
+#   surgeon-red   the field surgeon: an officer's grey uniform (16:31) as a red surgical gown
+medic-white: ["207:223=[255,255,255]:[110,110,120]", "198:206=[255,255,255]:[220,220,230] below 10"]
+allies-medic: ["207:223=96:105", "198:206=96:98 below 10"]
+surgeon-red: ["16:31=34:46"]

@@ -28,33 +28,34 @@ points at something that already exists to record from.
 | 13 | "Switches that do things" | Wall switches opening doors/walls, spawning actors | `examples/mods/switch-demo` |
 | 14 | "Multiple pushwalls at once" | Several moving pushwalls | needs a map |
 | 15 | "Guards vs SS" | Faction infighting, recoloured followers | `examples/mods/faction-demo` |
-| 16 | "Fireball traps with Lua" | Scripted fireball wall | `examples/mods/fireball-demo` |
-| 17 | "Pick your class" | Player classes with different speed/damage/armor | class menu |
-| 18 | "Play as a dog" | Play-as-enemies in the multiplayer lobby | multiplayer.pk3 |
-| 19 | "Spectate the AI" | Camera / `spectate` command | any map |
-| 20 | "Pickup messages" | In-game HUD messages, obituaries | Options → Messages |
+| 16 | "Medics that raise the dead" | Arch-Vile-style revivers: kill the guards, the medic brings them back | `examples/mods/medic-demo` |
+| 17 | "Fireball traps with Lua" | Scripted fireball wall | `examples/mods/fireball-demo` |
+| 18 | "Pick your class" | Player classes with different speed/damage/armor | class menu |
+| 19 | "Play as a dog" | Play-as-enemies in the multiplayer lobby | multiplayer.pk3 |
+| 20 | "Spectate the AI" | Camera / `spectate` command | any map |
+| 21 | "Pickup messages" | In-game HUD messages, obituaries | Options → Messages |
 
 ### Multiplayer
 | # | Hook | What to show | Ready demo |
 |---|------|--------------|------------|
-| 21 | "Wolf3D deathmatch" | 4-player DM arenas | multiplayer.pk3 maps |
-| 22 | "Prop Hunt in Wolf3D" | Hiding as a lamp/barrel, hunters searching | PH01 |
-| 23 | "Capture the flag" | CTF / TDM / KOTH / Domination / Heist / Horde | HE01 + mode maps |
-| 24 | "Co-op Wolf3D" | Co-op with mid-game join | lobby |
+| 22 | "Wolf3D deathmatch" | 4-player DM arenas | multiplayer.pk3 maps |
+| 23 | "Prop Hunt in Wolf3D" | Hiding as a lamp/barrel, hunters searching | PH01 |
+| 24 | "Capture the flag" | CTF / TDM / KOTH / Domination / Heist / Horde | HE01 + mode maps |
+| 25 | "Co-op Wolf3D" | Co-op with mid-game join | lobby |
 
 ### Games and compatibility
 | # | Hook | What to show | Ready demo |
 |---|------|--------------|------------|
-| 25 | "Blake Stone in a Wolf3D port" | Blake Stone + Planet Strike running | `--game` blake packs |
-| 26 | "Every version of Wolf3D" | Shareware, Apogee, Activision, Spear, Spear demo | game selection |
-| 27 | "Perfect demo playback" | Original demos frame-identical to vanilla | side-by-side with Wolf4SDL |
+| 26 | "Blake Stone in a Wolf3D port" | Blake Stone + Planet Strike running | `--game` blake packs |
+| 27 | "Every version of Wolf3D" | Shareware, Apogee, Activision, Spear, Spear demo | game selection |
+| 28 | "Perfect demo playback" | Original demos frame-identical to vanilla | side-by-side with Wolf4SDL |
 
 ### Tools
 | # | Hook | What to show | Ready demo |
 |---|------|--------------|------------|
-| 28 | "Edit a map, hit Play" | Editor → Play via `--warp` | editor |
-| 29 | "3D view in the editor" | Editor split view with OpenGL 3D | editor |
-| 30 | "Pixel-edit a texture" | Art browser + pixel editor, save into a mod | editor F6 |
+| 29 | "Edit a map, hit Play" | Editor → Play via `--warp` | editor |
+| 30 | "3D view in the editor" | Editor split view with OpenGL 3D | editor |
+| 31 | "Pixel-edit a texture" | Art browser + pixel editor, save into a mod | editor F6 |
 
 ## Long-form videos
 

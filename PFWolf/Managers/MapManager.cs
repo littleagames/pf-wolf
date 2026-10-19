@@ -1527,6 +1527,12 @@ internal class MapManager
                 && Math.Abs((long)a.X - x) <= reach && Math.Abs((long)a.Y - y) <= reach)
             .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
 
+    /// <summary>The dead (no longer Shootable) enemies within <paramref name="reach"/> (global units, each way) of a point, nearest first</summary>
+    internal IEnumerable<Entities.Actors.Monster> CorpsesNear(int x, int y, long reach) =>
+        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && !a.RuntimeFlags.Has(ObjFlags.Shootable)
+                && Math.Abs((long)a.X - x) <= reach && Math.Abs((long)a.Y - y) <= reach)
+            .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
+
     /// <summary>True if a living (Shootable) actor that's in the way occupies the tile</summary>
     internal bool IsShootableActorAt(int tilex, int tiley)
     {

@@ -121,6 +121,89 @@ public class ActorStateResolverTests
     }
 
     [Test]
+    public void A_Class_That_Dies_Gets_Up_By_Its_Death_Frames_Backwards()
+    {
+        // Act
+        var states = Resolve("""
+                Spawn:
+                  - sprite: GARD
+                    frames: [A]
+                    tics-per-frame: -1
+                Death:
+                  - sprite: GARD
+                    frames: [K]
+                    tics-per-frame: 15
+                    action: A_DeathScream
+                  - sprite: GARD
+                    frames: [L, M]
+                    tics-per-frame: 12
+                  - sprite: GARD
+                    frames: [N]
+                    tics-per-frame: -1
+            """);
+
+        // Assert: the corpse's own frame left out, no death scream, and A_Resume at the end,
+        // with Spawn after it
+        var frames = Walk(states[ActorStateResolver.RaiseState]);
+        Assert.That(frames.Select(f => f.FrameLetter), Is.EqualTo(new[] { "M", "L", "K" }));
+        Assert.That(frames.Select(f => (int)f.TicTime), Is.EqualTo(new[] { 12, 12, 15 }));
+        Assert.That(frames.Select(f => f.Action), Is.EqualTo(new[] { null, null, "A_Resume" }));
+        Assert.That(frames[^1].Next, Is.SameAs(states["Spawn"]));
+    }
+
+    [Test]
+    public void A_Death_Of_One_Held_Frame_Gets_Up_On_It()
+    {
+        // Act
+        var states = Resolve("""
+                Death:
+                  - sprite: BARL
+                    frames: [B]
+                    tics-per-frame: -1
+            """);
+
+        // Assert
+        var raise = states[ActorStateResolver.RaiseState];
+        Assert.That(raise.FrameLetter, Is.EqualTo("B"));
+        Assert.That(raise.TicTime, Is.GreaterThan(0));
+        Assert.That(raise.Action, Is.EqualTo("A_Resume"));
+    }
+
+    [Test]
+    public void A_Raise_State_Of_Its_Own_Is_Kept()
+    {
+        // Act
+        var states = Resolve("""
+                Death:
+                  - sprite: GARD
+                    frames: [K, N]
+                    tics-per-frame: 10
+                Raise:
+                  - sprite: GARD
+                    frames: [Z]
+                    tics-per-frame: 5
+            """);
+
+        // Assert
+        Assert.That(Walk(states[ActorStateResolver.RaiseState]).Select(f => f.FrameLetter), Is.EqualTo(new[] { "Z" }));
+    }
+
+    [Test]
+    public void A_Class_That_Never_Dies_Gets_No_Raise()
+    {
+        // Act
+        var states = Resolve("""
+                Spawn:
+                  - sprite: LAMP
+                    frames: [A]
+                    tics-per-frame: -1
+            """);
+
+        // Assert
+        Assert.That(states.Keys, Is.EquivalentTo(new[] { "Spawn" }));
+    }
+
+    [Test]
     public void Stop_Freezes_On_The_Last_Frame()
     {
         // Act

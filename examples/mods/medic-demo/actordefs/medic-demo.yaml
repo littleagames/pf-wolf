@@ -1,0 +1,149 @@
+# The level's own actors, built on Wolf3D's guards and officers (actordefs/wolf3d/guards.yaml).
+#
+# A medic fights like the guard it's built on, but brings back the fallen of its own side (and
+# of sides its side counts as allies, factions.yaml), as DOOM's Arch-Vile does. Its thinks do it:
+#   T_ReviveStand  in place of T_Stand: standing, it looks out for a corpse to bring back first
+#   T_ReviveChase  in place of T_Chase: so does it in a fight
+# Finding a corpse of its side it can see within monster.revive.radius tiles, it goes to its
+# Heal state (monster.revive.state names another), where A_Revive brings back
+# monster.revive.count of them, nearest first, and plays its revivesound:
+#   monster.revive.count: 1         one at a time (the default)
+#   monster.revive.count: [1, 3]    a random number from 1 to 3 each time ("1-3" works too)
+#   monster.revive.radius: 2        in tiles, fractions allowed (the default 2)
+# A_Revive("1-3", 4) gives a count and radius of its own instead. A_Resume, at the end of the
+# Heal state, sends it back to the fight (or to standing, with no one to fight).
+#
+# The revived get up by playing their Death frames backwards (a class can have a Raise state of
+# its own instead), with their full health, and join their reviver's fight. They're off the kill
+# count until killed again, drop their items again, but aren't worth any points the second time.
+# Corpses that never come back: bosses (flags: [NOREVIVE], which any class can use), one in a
+# doorway, and one with someone alive (or you) standing on it.
+#
+#   Medic       an axis medic: a guard in a white coat (factions.yaml's class-translations),
+#               glowing green as it heals
+#   SquadMedic  your squad's medic (allies, following you about like the squad), drawn a paler
+#               green than the squad
+#   SquadGuard  one of your squad: on the allies' side, following you once it's seen you
+#   Surgeon     the axis field surgeon: an officer in a red gown who brings back 1 to 3 at a
+#               time from 4 tiles away
+
+Medic:
+  parent: Guard
+  properties:
+    "tag": "Medic"
+    "points": 200
+    "monster.revive.count": 1
+    "monster.revive.radius": 2
+    "revivesound": "misc/medkit_pkup"
+  states:
+    Spawn:
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: -1
+        think: T_ReviveStand
+    Chase: # the guard's, with T_ReviveChase
+      - sprite: GARD
+        frames: [B]
+        tics-per-frame: 10
+        think: T_ReviveChase
+      - sprite: GARD
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: GARD
+        frames: [C]
+        tics-per-frame: 8
+        think: T_ReviveChase
+      - sprite: GARD
+        frames: [D]
+        tics-per-frame: 10
+        think: T_ReviveChase
+      - sprite: GARD
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: GARD
+        frames: [E]
+        tics-per-frame: 8
+        think: T_ReviveChase
+    # Kneels to it (stands, here), glows green as the corpse gets up, then carries on
+    Heal:
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 10
+        action: A_MedicHint
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 30
+        modifiers: [bright]
+        light: { intensity: 220, radius: 2, color: "#60FF80" }
+        action: A_Revive
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 10
+        action: A_Resume
+
+SquadMedic:
+  parent: Medic
+  properties:
+    "tag": "Squad Medic"
+    "faction": allies
+    "monster.follow": true
+
+SquadGuard:
+  parent: Guard
+  properties:
+    "faction": allies
+    "monster.follow": true
+
+Surgeon:
+  parent: Officer
+  properties:
+    "tag": "Field Surgeon"
+    "health": 60
+    "points": 600
+    "monster.revive.count": [1, 3]
+    "monster.revive.radius": 4
+    "revivesound": "misc/medkit_pkup"
+  states:
+    Spawn:
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: -1
+        think: T_ReviveStand
+    Chase: # the officer's, with T_ReviveChase
+      - sprite: OFFI
+        frames: [B]
+        tics-per-frame: 10
+        think: T_ReviveChase
+      - sprite: OFFI
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: OFFI
+        frames: [C]
+        tics-per-frame: 8
+        think: T_ReviveChase
+      - sprite: OFFI
+        frames: [D]
+        tics-per-frame: 10
+        think: T_ReviveChase
+      - sprite: OFFI
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: OFFI
+        frames: [E]
+        tics-per-frame: 8
+        think: T_ReviveChase
+    Heal:
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 10
+        action: A_MedicHint
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 40
+        modifiers: [bright]
+        light: { intensity: 180, radius: 3, color: "#FF6060" }
+        action: A_Revive
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 10
+        action: A_Resume

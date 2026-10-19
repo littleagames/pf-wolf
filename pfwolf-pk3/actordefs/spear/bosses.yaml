@@ -3,11 +3,12 @@
 # and the gold key dropped by all but the Angel (KillActor). Where a death frame waits out the
 # death scream, it uses the longer timing the original used with digitized sound.
 # AMBUSH: spawned ready to attack as soon as they see the player, whatever the floor tile.
+# NOREVIVE: a reviver (a mod's medic: T_ReviveChase / A_Revive) never brings one back.
 
 # MAP05. Stands, chases, and fires volleys like Hans.
 TransGrosse:
   parent: Monster
-  flags: [AMBUSH]
+  flags: [AMBUSH, NOREVIVE]
   states:
     Spawn: # s_transstand
       - sprite: TRNS
@@ -107,7 +108,7 @@ TransGrosse:
 # T_UShoot: T_Shoot with monster.pointblankdamage).
 Ubermutant:
   parent: Monster
-  flags: [AMBUSH]
+  flags: [AMBUSH, NOREVIVE]
   states:
     Spawn: # s_uberstand
       - sprite: UBER
@@ -205,7 +206,7 @@ Ubermutant:
 # MAP10. Dodges and backs off (T_DodgeChase, vanilla's T_Will); opens each volley with a rocket.
 Wilhelm:
   parent: Monster
-  flags: [AMBUSH]
+  flags: [AMBUSH, NOREVIVE]
   states:
     Spawn: # s_willstand
       - sprite: WILL
@@ -298,7 +299,7 @@ Wilhelm:
 # the player, each with a burst from its guns.
 DeathKnight:
   parent: Monster
-  flags: [AMBUSH]
+  flags: [AMBUSH, NOREVIVE]
   states:
     Spawn: # s_deathstand
       - sprite: DKNT
@@ -396,7 +397,7 @@ DeathKnight:
 # its breath. Its death wins the game.
 AngelOfDeath:
   parent: Monster
-  flags: [AMBUSH]
+  flags: [AMBUSH, NOREVIVE]
   states:
     Spawn: # s_angelstand
       - sprite: ANGL
@@ -521,7 +522,7 @@ AngelOfDeath:
 # through doors without opening them (PHASEDOORS) and hurt the player on contact (TOUCHDAMAGE).
 Spectre:
   parent: Monster
-  flags: [AMBUSH, POINTSONCE, PHASEDOORS, TOUCHDAMAGE]
+  flags: [AMBUSH, NOREVIVE, POINTSONCE, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn: # s_spectrewait1..4
       - sprite: SPCT

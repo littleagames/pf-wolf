@@ -1,0 +1,9 @@
+# The level's own things (examples/tools/make-medic-demo-map.ps1 places them): the medics, the
+# field surgeon and your squad (actordefs/medic-demo.yaml). The medic and the surgeon are on
+# the axis side, as every Wolf3D enemy is (pfwolf-pk3's gamepacks/wolf3d/factions.yaml); a
+# thing's `faction:` could put one on another side, and it would revive that side instead.
+things:
+  550: { class: Medic, angles: 270 }
+  551: { class: SquadMedic, angles: 90 }
+  552: { class: SquadGuard, angles: 90 }
+  553: { class: Surgeon, angles: 270 }
