@@ -353,6 +353,7 @@ internal class MapManager
                 && badpatchswitches.Add(id))
                 Console.WriteLine($"mapdefs patch {id}'s switch goes to {patchSwitch.To}, which isn't a patch; it won't change when used");
 
+        bool entranceStart = false;     // the start of the entrance the level's entered by has been found
         for (int y = 0; y < MapHeight; y++)
         {
             for (int x = 0; x < MapWidth; x++)
@@ -390,7 +391,9 @@ internal class MapManager
                 }
 
                 // The player pawn is created after the map loads (LevelLoop.InitActorList), so
-                // only note where it starts; with several starts, the last one scanned wins.
+                // only note where it starts; with several starts, the last one scanned wins. An
+                // entrance's start (mapdefs entrance) wins over them when the level is entered
+                // by it (GameState.Entrance), and is passed over otherwise.
                 if (data.PlayerStarts.TryGetValue(objtile, out var startXlat))
                 {
                     int team = Array.FindIndex(Gameplay.GameModes.TeamNames, t => t.Equals(startXlat.Team, StringComparison.OrdinalIgnoreCase));
@@ -398,7 +401,15 @@ internal class MapManager
                         TeamStarts[team].Add(new MapPlayerStart(x, y, startXlat.Angles));
                     else if (startXlat.Deathmatch)
                         DeathmatchStarts.Add(new MapPlayerStart(x, y, startXlat.Angles));
-                    else
+                    else if (startXlat.Entrance.Length > 0)
+                    {
+                        if (startXlat.Entrance.Equals(session.GameState.Entrance, StringComparison.OrdinalIgnoreCase))
+                        {
+                            PlayerStart = new MapPlayerStart(x, y, startXlat.Angles);
+                            entranceStart = true;
+                        }
+                    }
+                    else if (!entranceStart)
                         PlayerStart = new MapPlayerStart(x, y, startXlat.Angles);
                     continue;
                 }

@@ -96,6 +96,7 @@ internal sealed class HubActions(
             ? new PendingMapChange(map, false, 0, 0, 0, WaitTics: 0)
             : new PendingMapChange(map, true, session.Player.X, session.Player.Y, session.Player.Angle, WaitTics: 0, ElevatorWall: panelWall));
         session.GameState.MapOn = map;
+        session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
         session.PlayState = PlayState.Warped;
         return true;
     }
@@ -132,6 +133,7 @@ internal sealed class HubActions(
 
             hooks.SetPendingMapChange(new PendingMapChange(map, true, session.Player.X, session.Player.Y, session.Player.Angle, WaitTics: 0));
             session.GameState.MapOn = map;
+            session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
             session.PlayState = PlayState.Warped;
             return true;
         }

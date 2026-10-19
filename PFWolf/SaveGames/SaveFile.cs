@@ -56,7 +56,8 @@ internal static class SaveFile
     // 26: the level objectives (done and total of each), after the wall patches.
     // 27: the level's scrollers (scrolling walls and flats), after the light zones.
     // 28: the level's width and height ahead of its tile grid (levels needn't be 64x64).
-    internal const int SaveVersion = 28;
+    // 29: the entrance the level was entered by, at the end of GameState.
+    internal const int SaveVersion = 29;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

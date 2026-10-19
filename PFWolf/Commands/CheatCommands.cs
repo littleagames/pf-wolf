@@ -226,6 +226,7 @@ internal sealed class CheatCommands(
             ?? throw new ArgumentException($"no map \"{args[0]}\"; type \"maps\" for a list");
 
         session.GameState.MapOn = map;
+        session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
         session.PlayState = PlayState.Warped;
     }
 

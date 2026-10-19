@@ -120,6 +120,10 @@ internal class GameState
     public int PlayTime;                // tics since the game began, over every level
     public bool VictoryFlag;            // set during victory animations
 
+    // The entrance the level was entered by (game-info next-entrance; mapdefs player starts'
+    // entrance), "" for its own start: kept through a death, as the level starts there again
+    public string Entrance = "";
+
     private static string? ReadWeapon(BinaryReader br)
     {
         var name = br.ReadString();
@@ -156,6 +160,7 @@ internal class GameState
         p.KillX = br.ReadInt32();
         p.KillY = br.ReadInt32();
         game.VictoryFlag = br.ReadBoolean();
+        game.Entrance = br.ReadString();
         return (game, p);
     }
 
@@ -187,6 +192,7 @@ internal class GameState
         bw.Write(p.KillX);
         bw.Write(p.KillY);
         bw.Write(VictoryFlag);
+        bw.Write(Entrance ?? "");
     }
 }
 

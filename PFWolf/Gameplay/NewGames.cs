@@ -54,6 +54,7 @@ internal sealed class NewGames(
         playersManager.StartPlayer(playerClass ?? NewGamePlayerClass ?? classes.DefaultPlayerClass);
         session.GameState.Cluster = mapInfo.Cluster;
         session.GameState.MapOn = epInfo.StartMap;
+        session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
 
         session.GameChosen = true;
     }

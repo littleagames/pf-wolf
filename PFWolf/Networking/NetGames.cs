@@ -121,6 +121,7 @@ internal sealed class NetGames(
             && gameInfo.Maps.TryGetValue(start.Settings.Map, out var arena) && arena.IsArenaFor(mode.Id()))
         {
             game.GameState.MapOn = start.Settings.Map;
+            game.GameState.Entrance = "";       // by no entrance in particular: the level's own start
             game.GameState.Cluster = arena.Cluster;
         }
 

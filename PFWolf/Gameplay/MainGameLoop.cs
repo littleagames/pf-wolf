@@ -107,6 +107,12 @@ internal sealed class MainGameLoop(
     internal static bool ShowsBriefing(string levelStart, bool warped, bool demo, bool netGame) =>
         levelStart == "new" && !warped && !demo && !netGame;
 
+    /// <summary>A level's briefing: its entrance-briefings' for the entrance it's entered by, else its own</summary>
+    internal static string? BriefingFor(MapInfo map, string? entrance) =>
+        !string.IsNullOrEmpty(entrance)
+        && map.EntranceBriefings.FirstOrDefault(e => e.Key.Equals(entrance, StringComparison.OrdinalIgnoreCase)).Value is { Length: > 0 } briefing
+            ? briefing : map.Briefing;
+
     // A won level's debriefing (game-info debriefing), outside a demo or a game with others
     void ShowDebriefing(MapInfo map)
     {
@@ -151,7 +157,7 @@ internal sealed class MainGameLoop(
             // Its briefing first (game-info briefing; Midnight Assault's missions)
             if (ShowsBriefing(levelStart, warped, (session.DemoPlayback || session.DemoRecord), session.NetGame)
                 && engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var enteredMap)
-                && enteredMap.Briefing is { Length: > 0 } briefing)
+                && BriefingFor(enteredMap, session.GameState.Entrance) is { Length: > 0 } briefing)
             {
                 hooks.ShowText(briefing);
                 playScreen.DrawPlayScreen();        // the article covered the screen
@@ -294,6 +300,9 @@ internal sealed class MainGameLoop(
                     }
 
                     session.GameState.MapOn = nextMap;      // the secret exit falls back to next if there's no secret-next
+                    // and is entered by the way game-info says (next-entrance: a start of its own)
+                    session.GameState.Entrance = (session.PlayState == PlayState.SecretLevel && leftInfo.SecretNext != null
+                        ? leftInfo.SecretNextEntrance : leftInfo.NextEntrance) ?? "";
                     break;
 
                 case PlayState.Died:

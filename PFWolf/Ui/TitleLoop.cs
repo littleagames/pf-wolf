@@ -254,6 +254,7 @@ internal sealed class TitleLoop(
 
         hooks.NewGame(warp.Difficulty, warp.Episode, gameInfo.Maps[warp.Map]);
         session.GameState.MapOn = warp.Map;
+        session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
         Console.WriteLine($"Warping to {warp.Map}, skill {warp.Difficulty + 1}");
         return true;
     }

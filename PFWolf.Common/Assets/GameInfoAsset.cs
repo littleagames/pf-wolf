@@ -1219,6 +1219,17 @@ public record MapInfo
     public string? SecretNext { get; init; } = null;
 
     /// <summary>
+    /// The entrance the next level (or the secret one) is entered by: its mapdefs player start
+    /// with that entrance, and its entrance-briefings' briefing (Midnight Assault's Laboratories
+    /// leading into Base by its other way in). Null: the level's own start.
+    /// </summary>
+    public string? NextEntrance { get; init; } = null;
+    public string? SecretNextEntrance { get; init; } = null;
+
+    /// <summary>The briefing shown in place of <see cref="Briefing"/> when the level is entered by an entrance, by its name</summary>
+    public Dictionary<string, string> EntranceBriefings { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Text (or a $language key) that makes leaving this level end the game, as the Spear of
     /// Destiny demo's last floor does: the intermission, then this message, then the high scores.
     /// The game isn't won, so there's no victory.

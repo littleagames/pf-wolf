@@ -49,6 +49,7 @@ internal sealed class PlayerActions(
         var keepPosition = args.Skip(1).Any(a => a.Equals("keep-position", StringComparison.OrdinalIgnoreCase));
         hooks.SetPendingMapChange(new PendingMapChange(map, keepPosition, session.Player.X, session.Player.Y, session.Player.Angle));
         session.GameState.MapOn = map;
+        session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
         session.PlayState = PlayState.Warped;
     }
 
