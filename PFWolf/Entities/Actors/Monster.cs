@@ -258,6 +258,10 @@ internal record Monster : Actor
         Distance -= move;
     }
 
+    // A monster blocker on the tile keeps it off: any (blocktile: monsters), or a BOSS (bosses)
+    // (Midnight Assault's BLOCK_ENEMIES and BLOCK_BOSSES, CHECKSIDE/CHECKDIAG)
+    bool Blocked(int x, int y) => MapManager.BlocksMonster(x, y, HasFlag("BOSS"));
+
     internal bool TryWalk()
     {
         int doornumtile = -1;
@@ -268,6 +272,7 @@ internal record Monster : Actor
         switch (Dir)
         {
             case ObjDir.North:
+                if (Blocked(TileX, TileY - 1)) return false;
                 r = CheckSide(TileX, TileY - 1, ref doornumtile);
                 if (r == 0) return false;
                 if (r == 1) return true;
@@ -275,6 +280,7 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.NorthEast:
+                if (Blocked(TileX + 1, TileY - 1) || Blocked(TileX + 1, TileY) || Blocked(TileX, TileY - 1)) return false;
                 if (!CheckDiag(TileX + 1, TileY - 1)) return false;
                 if (!CheckDiag(TileX + 1, TileY)) return false;
                 if (!CheckDiag(TileX, TileY - 1)) return false;
@@ -282,6 +288,7 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.East:
+                if (Blocked(TileX + 1, TileY)) return false;
                 r = CheckSide(TileX + 1, TileY, ref doornumtile);
                 if (r == 0) return false;
                 if (r == 1) return true;
@@ -289,6 +296,7 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.SouthEast:
+                if (Blocked(TileX + 1, TileY + 1) || Blocked(TileX + 1, TileY) || Blocked(TileX, TileY + 1)) return false;
                 if (!CheckDiag(TileX + 1, TileY + 1)) return false;
                 if (!CheckDiag(TileX + 1, TileY)) return false;
                 if (!CheckDiag(TileX, TileY + 1)) return false;
@@ -296,6 +304,7 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.South:
+                if (Blocked(TileX, TileY + 1)) return false;
                 r = CheckSide(TileX, TileY + 1, ref doornumtile);
                 if (r == 0) return false;
                 if (r == 1) return true;
@@ -303,6 +312,7 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.SouthWest:
+                if (Blocked(TileX - 1, TileY + 1) || Blocked(TileX - 1, TileY) || Blocked(TileX, TileY + 1)) return false;
                 if (!CheckDiag(TileX - 1, TileY + 1)) return false;
                 if (!CheckDiag(TileX - 1, TileY)) return false;
                 if (!CheckDiag(TileX, TileY + 1)) return false;
@@ -310,6 +320,7 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.West:
+                if (Blocked(TileX - 1, TileY)) return false;
                 r = CheckSide(TileX - 1, TileY, ref doornumtile);
                 if (r == 0) return false;
                 if (r == 1) return true;
@@ -317,6 +328,7 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.NorthWest:
+                if (Blocked(TileX - 1, TileY - 1) || Blocked(TileX - 1, TileY) || Blocked(TileX, TileY - 1)) return false;
                 if (!CheckDiag(TileX - 1, TileY - 1)) return false;
                 if (!CheckDiag(TileX - 1, TileY)) return false;
                 if (!CheckDiag(TileX, TileY - 1)) return false;

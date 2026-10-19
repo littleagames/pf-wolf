@@ -501,6 +501,67 @@ internal class MapManager
 
     internal record MapHint(int Message, byte Area);
 
+    /*
+    Tiles enemies can't walk onto, though players can (Midnight Assault's BLOCK_ENEMIES 501 and
+    BLOCK_BOSSES 502): an object-plane thing whose class has `blocktile: monsters` keeps every
+    monster off its tile, `blocktile: bosses` only those with the BOSS flag. Such a thing is
+    never spawned; its tile is marked as the map is read, so a loaded game has it too.
+    */
+
+    /// <summary>A tile's monster blocker: none, every monster, or bosses only. Indexed <see cref="TileIndex"/>.</summary>
+    internal enum MonsterBlock : byte { None, Monsters, Bosses }
+
+    private MonsterBlock[] monsterblocks = new MonsterBlock[MapConstants.ClassicMapArea];
+
+    /// <summary>Whether a monster (a boss, or any) can't walk onto a tile: its blocktile marker keeps it off</summary>
+    internal bool BlocksMonster(int x, int y, bool boss) =>
+        InMap(x, y) && TileIndex(x, y) < monsterblocks.Length && monsterblocks[TileIndex(x, y)] switch
+        {
+            MonsterBlock.Monsters => true,
+            MonsterBlock.Bosses => boss,
+            _ => false,
+        };
+
+    /// <summary>Marks a tile's monster blocker (as the map's blocktile things do)</summary>
+    internal void SetMonsterBlock(int x, int y, MonsterBlock block)
+    {
+        if (monsterblocks.Length != MapArea)
+            monsterblocks = new MonsterBlock[MapArea];
+        if (InMap(x, y))
+            monsterblocks[TileIndex(x, y)] = block;
+    }
+
+    // The things whose class has a `blocktile` mark their tiles (MonsterBlock)
+    private void ReadMonsterBlocks(ushort[] objects)
+    {
+        monsterblocks = new MonsterBlock[MapArea];
+        var things = GetMapData().Things;
+        if (things.Count == 0)
+            return;
+        var metadata = assetManager.Value.GetActorMetadata();
+        var kinds = new Dictionary<int, MonsterBlock>();
+        for (int i = 0; i < MapArea && i < objects.Length; i++)
+        {
+            int id = objects[i];
+            if (id == 0)
+                continue;
+            if (!kinds.TryGetValue(id, out var kind))
+            {
+                kind = things.TryGetValue(id, out var thing) && metadata.TryGetProperty(thing.Class, "blocktile", out var value)
+                    ? BlockKind(value?.ToString()) : MonsterBlock.None;
+                kinds[id] = kind;
+            }
+            monsterblocks[i] = kind;
+        }
+    }
+
+    internal static MonsterBlock BlockKind(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        "monsters" or "enemies" => MonsterBlock.Monsters,
+        "bosses" => MonsterBlock.Bosses,
+        _ => MonsterBlock.None,
+    };
+
     /// <summary>
     /// The map's hints (map-info `hint:<text>` codes), by text: each the message's number in the
     /// text and the room it's in (0xff for none), in map order. Read with the map, so not saved.
@@ -524,6 +585,7 @@ internal class MapManager
         Hints = new(StringComparer.OrdinalIgnoreCase);
 
         var objects = mapsegs[1];
+        ReadMonsterBlocks(objects);
         var links = new Dictionary<int, ushort>();      // linked tile -> its tag
         if (fillFlats)          // a fresh level: a restored one has its tags already
             LinkObjectPlaneSwitches(objects, links);
@@ -1138,6 +1200,9 @@ internal class MapManager
         var actorMetaData = assetManager.Value.GetActorMetadata();
 
         if (!actorMetaData.Actors.TryGetValue(thing.Class, out var actor))
+            return null;
+        // A monster blocker only marks its tile (ReadMonsterBlocks); there's nothing to spawn
+        if (actorMetaData.TryGetProperty(thing.Class, "blocktile", out var blocktile) && BlockKind(blocktile?.ToString()) != MonsterBlock.None)
             return null;
         var builtActor = Joining(actorMetaData.CreateActor(thing.Class, actor)); // TODO: Should this just create objects?
         if (builtActor == null)
