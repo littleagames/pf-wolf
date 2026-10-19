@@ -524,6 +524,29 @@ internal class MapManager
 
     private MonsterBlock[] monsterblocks = new MonsterBlock[MapConstants.ClassicMapArea];
 
+    // Docks (Gameplay/Vehicles.cs): an object-plane thing whose class has `docktile: true`
+    // marks where a vehicle can't go and its rider gets off. Never spawned, marked as the map's read.
+    private bool[] docks = new bool[MapConstants.ClassicMapArea];
+
+    /// <summary>Whether a tile is a dock, where a vehicle can't go and its rider gets off</summary>
+    internal bool IsDock(int x, int y) => InMap(x, y) && TileIndex(x, y) < docks.Length && docks[TileIndex(x, y)];
+
+    /// <summary>Marks a tile a dock (as the map's docktile things do)</summary>
+    internal void SetDock(int x, int y, bool dock)
+    {
+        if (docks.Length != MapArea)
+            docks = new bool[MapArea];
+        if (InMap(x, y))
+            docks[TileIndex(x, y)] = dock;
+    }
+
+    // A class that only marks its tile (blocktile, docktile) is never spawned
+    static bool MarksTileOnly(Assets.ActorMetadata metadata, string className) =>
+        metadata.TryGetProperty(className, "blocktile", out var blocktile) && BlockKind(blocktile?.ToString()) != MonsterBlock.None
+        || metadata.TryGetProperty(className, "docktile", out var docktile) && IsTrue(docktile);
+
+    static bool IsTrue(object? value) => value is true || bool.TryParse(value?.ToString(), out var b) && b;
+
     /// <summary>Whether a monster (a boss, or any) can't walk onto a tile: its blocktile marker keeps it off</summary>
     internal bool BlocksMonster(int x, int y, bool boss) =>
         InMap(x, y) && TileIndex(x, y) < monsterblocks.Length && monsterblocks[TileIndex(x, y)] switch
@@ -546,11 +569,12 @@ internal class MapManager
     private void ReadMonsterBlocks(ushort[] objects)
     {
         monsterblocks = new MonsterBlock[MapArea];
+        docks = new bool[MapArea];
         var things = GetMapData().Things;
         if (things.Count == 0)
             return;
         var metadata = assetManager.Value.GetActorMetadata();
-        var kinds = new Dictionary<int, MonsterBlock>();
+        var kinds = new Dictionary<int, (MonsterBlock Block, bool Dock)>();
         for (int i = 0; i < MapArea && i < objects.Length; i++)
         {
             int id = objects[i];
@@ -558,11 +582,14 @@ internal class MapManager
                 continue;
             if (!kinds.TryGetValue(id, out var kind))
             {
-                kind = things.TryGetValue(id, out var thing) && metadata.TryGetProperty(thing.Class, "blocktile", out var value)
-                    ? BlockKind(value?.ToString()) : MonsterBlock.None;
+                kind = things.TryGetValue(id, out var thing)
+                    ? (metadata.TryGetProperty(thing.Class, "blocktile", out var value) ? BlockKind(value?.ToString()) : MonsterBlock.None,
+                       metadata.TryGetProperty(thing.Class, "docktile", out var dock) && IsTrue(dock))
+                    : (MonsterBlock.None, false);
                 kinds[id] = kind;
             }
-            monsterblocks[i] = kind;
+            monsterblocks[i] = kind.Block;
+            docks[i] = kind.Dock;
         }
     }
 
@@ -1212,8 +1239,8 @@ internal class MapManager
 
         if (!actorMetaData.Actors.TryGetValue(thing.Class, out var actor))
             return null;
-        // A monster blocker only marks its tile (ReadMonsterBlocks); there's nothing to spawn
-        if (actorMetaData.TryGetProperty(thing.Class, "blocktile", out var blocktile) && BlockKind(blocktile?.ToString()) != MonsterBlock.None)
+        // A monster blocker or a dock only marks its tile (ReadMonsterBlocks); there's nothing to spawn
+        if (MarksTileOnly(actorMetaData, thing.Class))
             return null;
         var builtActor = Joining(actorMetaData.CreateActor(thing.Class, actor)); // TODO: Should this just create objects?
         if (builtActor == null)
@@ -1481,6 +1508,26 @@ internal class MapManager
 
         _actors.AddLast(builtActor);
         return builtActor;
+    }
+
+    /// <summary>
+    /// A_Replace: the actor becomes one of another class where it stands, facing the same way
+    /// with its tag; what its tile's blocking was goes with it, and the new one blocks as its
+    /// class does (a closed gate opened). Null, and nothing changed, if there's no such class.
+    /// </summary>
+    internal Entities.Actors.Actor? ReplaceActor(Entities.Actors.Actor old, string className)
+    {
+        if (!IsActorClass(className))
+            return null;
+        int x = old.TileX, y = old.TileY;
+        MarkForRemoval(old);
+        if (ActorAt[x, y] is BlockingActor)
+            ActorAt[x, y] = null;
+        int angles = old.Dir == ObjDir.NoDir ? -1 : (int)old.Dir * 45;
+        var replaced = SpawnThing(x, y, new MapActorTranslation { Class = className, Angles = angles }, countKill: false);
+        if (replaced != null)
+            replaced.Tag = old.Tag;
+        return replaced;
     }
 
     private ActorMetadata RuntimeActorMetadata => _runtimeActorMetadata ??= assetManager.Value.GetActorMetadata();

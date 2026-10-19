@@ -86,6 +86,11 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
             messages.Show(Managers.HudMessageKind.Lock, args[0], args.ElementAtOrDefault(1));
             return true;
         });
+        Entities.Actors.ActorActionRegistry.Register("A_Message", (Entities.Actors.Actor _, string[] args) =>
+        {
+            if (args.Length > 0)
+                messages.Show(Managers.HudMessageKind.Lock, args[0], args.ElementAtOrDefault(1));
+        });
 
         // A_Vend("FoodToken", "FoodUnitMeal", "no-money message", "full message"[, "out-of-order
         // message", uses code]): a vending machine (Blake Stone's food units). The item would do

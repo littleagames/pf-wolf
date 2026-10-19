@@ -371,7 +371,8 @@ internal sealed class StatusBarDrawing(
     internal void DrawPowerMeter()
     {
         if (StatusBarHidden) return;
-        int power = session.PlayerState.WeaponPower > 0 ? session.PlayerState.WeaponPower : session.PlayerState.SuspicionMeter;
+        var p = session.PlayerState;
+        int power = p.WeaponPower > 0 ? p.WeaponPower : p.Vehicle != null ? p.VehicleThrottle : p.SuspicionMeter;
         if (power <= 0 || StatusBar.Get("power-meter") is not { } meter)
             return;
         using var _ = StatusBarOrigin(meter);

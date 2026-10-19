@@ -12,13 +12,17 @@ namespace PFWolf.Gameplay;
 /// <param name="ExitAllowed">Whether the level can be left (its blocks-exit objectives done); saying why not if not</param>
 /// <param name="ModeUse">The match mode's own use, with nothing ahead to use: true if it took the press (Prop Hunt's disguises)</param>
 /// <param name="Message">Shows the acting player a message (a $NAME language key or the text)</param>
+/// <param name="LeaveVehicle">Gets the player off what they're riding: true if they were riding (Gameplay/Vehicles.cs)</param>
+/// <param name="VehicleHint">Riding, the use hint (getting off at a dock beside them), else null</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
     Action<string, int>? CompleteObjective = null,
     Func<bool>? ExitAllowed = null,
     Func<bool>? ModeUse = null,
-    Action<string>? Message = null);
+    Action<string>? Message = null,
+    Func<bool>? LeaveVehicle = null,
+    Func<string?>? VehicleHint = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -246,6 +250,17 @@ internal sealed class PlayerUse(
             return;
         }
 
+        // Riding, use gets them off at a dock beside them, and does nothing else (Gameplay/Vehicles.cs)
+        if (session.PlayerState.Vehicle != null)
+        {
+            if (!playerinput.IsHeld(ButtonType.Use))
+            {
+                playerinput.SetHeld(ButtonType.Use, true);
+                hooks.LeaveVehicle?.Invoke();
+            }
+            return;
+        }
+
         cmdtile = map.TileMap[checkx, checky];
         if (map.GetTrigger(checkx, checky) is { IsWalkOver: false } trigger)
         {
@@ -381,6 +396,8 @@ internal sealed class PlayerUse(
         var player = session.Player;
         if (player == null || session.PlayerState.Health <= 0 || session.PlayerState.Latch != null)
             return null;
+        if (session.PlayerState.Vehicle != null)
+            return hooks.VehicleHint?.Invoke();       // riding, only getting off (Gameplay/Vehicles.cs)
 
         string? hint = null;
         var (x, y, dir) = FacingTile(player);

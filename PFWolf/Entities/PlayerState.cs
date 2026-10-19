@@ -90,6 +90,12 @@ internal sealed class PlayerState
     public Actors.Actor? Mount;
     public string? MountGun, MountFrom, MountMap;
 
+    // Riding a vehicle (Gameplay/Vehicles.cs): the class of the thing boarded (put back where
+    // they get off), the map it's on, its speed (global units a tic) and that as a share of its
+    // top speed for the HUD meter
+    public string? Vehicle, VehicleMap;
+    public int VehicleSpeed, VehicleThrottle;
+
     // Something latched on (Gameplay/Latching.cs): who, the struggle it puts in their hands, the
     // weapon they had picked before, the map, how many times they've struck at it, and how many
     // times slower they move

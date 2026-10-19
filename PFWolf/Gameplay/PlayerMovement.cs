@@ -12,13 +12,15 @@ namespace PFWolf.Gameplay;
 /// <param name="WallSpriteHit">The wall sprite panel the player's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
 /// <param name="WallSpriteMoveFrom">Where a move starts, so a panel the player already overlaps there doesn't block it</param>
 /// <param name="ActivateTrigger">Runs a mapdefs trigger (a walk-over one, stepped onto)</param>
+/// <param name="Throttle">Riding a vehicle, a tic's forward/back control: how far it carries them (Gameplay/Vehicles.cs)</param>
 internal sealed record PlayerMovementHooks(
     Func<string, double> PlayerFactor,
     Func<double> MaxPitch,
     Action<string> PlayPlayerSound,
     Func<int, int, int, int, int, int, long, WallSpriteSpan?> WallSpriteHit,
     Action<int, int> WallSpriteMoveFrom,
-    Action<MapTriggerTranslation, int, int, ControlDir> ActivateTrigger);
+    Action<MapTriggerTranslation, int, int, ControlDir> ActivateTrigger,
+    Func<int, uint, int>? Throttle = null);
 
 /// <summary>
 /// The acting player's movement: turning, looking up and down, walking and strafing from their
@@ -56,9 +58,11 @@ internal sealed class PlayerMovement(
 
         playerstate.ThrustSpeed = 0;
 
-        // Manning a mounted gun, they turn but don't move (Gameplay/MountedWeapons.cs); with
-        // something latched on, they move that many times slower (Gameplay/Latching.cs)
-        bool mounted = playerstate.Mount != null;
+        // Manning a mounted gun, they turn but don't move (Gameplay/MountedWeapons.cs), nor
+        // riding, where the vehicle carries them (Gameplay/Vehicles.cs); with something latched
+        // on, they move that many times slower (Gameplay/Latching.cs)
+        bool riding = playerstate.Vehicle != null;
+        bool mounted = playerstate.Mount != null || riding;
         int slowdown = Math.Max(playerstate.MoveSlowdown, 1);
         void Move(int moveAngle, int speed)
         {
@@ -155,6 +159,16 @@ internal sealed class PlayerMovement(
         }
 
         //
+        // riding: forward and back are the throttle, and the vehicle carries them the way they face
+        //
+        if (riding)
+        {
+            if (hooks.Throttle?.Invoke(playerinput.ControlY, tics) is > 0 and var carry)
+                Thrust(ob.Angle, carry);
+            return;
+        }
+
+        //
         // forward/backwards move
         //
         if (playerinput.ControlY < 0)
@@ -242,10 +256,15 @@ internal sealed class PlayerMovement(
         //
         // check for solid walls
         //
+        bool riding = session.PlayerState.Vehicle != null;
         for (y = yl; y <= yh; y++)
         {
             for (x = xl; x <= xh; x++)
             {
+                // a vehicle can't go onto a dock (Gameplay/Vehicles.cs)
+                if (riding && map.IsDock((int)x, (int)y))
+                    return false;
+
                 check = map.ActorAt[x, y];
                 if (check != null && check is not ActorMark)       // enemies are checked below
                 {

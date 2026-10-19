@@ -50,7 +50,7 @@ internal static partial class GameHost
             PlayerFactor, MaxPitch, PlayPlayerSound,
             (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: true),
             (x, y) => (WallSpriteFromX, WallSpriteFromY) = (x, y),
-            ActivateTrigger));
+            ActivateTrigger, (controlY, tics) => Vehicles.Throttle(controlY, tics)));
 
     static ControlDir FacingDir(int angle) => PlayerMovement.FacingDir(angle);
 
@@ -139,6 +139,21 @@ internal static partial class GameHost
                 ShowTextInLevel(args[0].Replace("{tag}", ob.Tag.ToString()));
         });
         ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => MountedWeapons.Mount(ob, args));
+        ActorActionRegistry.Register("A_Board", (Entities.Actors.Actor ob, string[] args) => Vehicles.Board(ob, args));     // Gameplay/Vehicles.cs
+        // A_Replace("Class"): becomes one of another class where it stands, facing the same way
+        // (Midnight Assault's gates: a lock clipped off, a gate opened)
+        ActorActionRegistry.Register("A_Replace", (Entities.Actors.Actor ob, string[] args) =>
+        {
+            if (args.Length == 0 || MapManager.ReplaceActor(ob, args[0].Trim()) == null)
+                Console.WriteLine($"A_Replace ({ob.Name}): there's no actordefs class \"{args.ElementAtOrDefault(0)}\".");
+        });
+        // A_JumpIfInventory("Item", "State"): goes to the state if the acting player holds the item
+        // (a locked gate the wire clippers open)
+        ActorActionRegistry.Register("A_JumpIfInventory", (Entities.Actors.Actor ob, string[] args) =>
+        {
+            if (args.Length >= 2 && InventoryManager.Has(args[0].Trim()) && ob.ResolvedStates.TryGetValue(args[1].Trim(), out var frame))
+                ob.JumpTo(frame);
+        });
         ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => Latching.LatchBite(m, args));
         ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => Latching.LatchHurt(ob));
         ActorActionRegistry.Register("A_ShakeOff", (Entities.Actors.Actor ob, string[] args) => Latching.ShakeOff(ob, args));
@@ -235,7 +250,7 @@ internal static partial class GameHost
             new PlayerUseHooks(PlayPlayerSound, () => MountedWeapons.TryDismount(),
                 (objective, amount) => Objectives.Complete(objective, amount), () => Objectives.ExitAllowed(),
                 () => deathmatch.Objective?.PlayerUse() == true,
-                message => HudMessageManager.Show(HudMessageKind.Lock, message)));
+                message => HudMessageManager.Show(HudMessageKind.Lock, message), () => Vehicles.TryLeave(), () => Vehicles.Hint()));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
@@ -251,6 +266,7 @@ internal static partial class GameHost
             {
                 WeaponZoom.Tick(reloading);
                 MountedWeapons.Tick();          // let off a gun they're no longer manning (dying, a load, a new level)
+                Vehicles.Tick();                // and off a vehicle (dying, a new level)
                 Latching.Tick();                // and out of a struggle that's over
                 Stealth.Tick();                 // the suspicion meter
             },
@@ -266,6 +282,12 @@ internal static partial class GameHost
     static MountedWeapons? _mountedWeapons;
     static MountedWeapons MountedWeapons => _mountedWeapons ??= new MountedWeapons(MapManager, InventoryManager, playerWeapons, Session,
         new MountedWeaponsHooks(PlayPlayerSound, message => HudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0)));
+
+    // Vehicles the player rides (Gameplay/Vehicles.cs): A_Board, the throttle, docks
+    static Vehicles? _vehicles;
+    static Vehicles Vehicles => _vehicles ??= new Vehicles(MapManager, InventoryManager, Session,
+        new VehiclesHooks(PlayPlayerSound, message => HudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0),
+            (x, y, vehicle) => MapManager.SpawnThing(x, y, vehicle)));
 
     // Things that latch onto the player (Gameplay/Latching.cs): A_LatchBite, and striking them off
     static Latching? _latching;
