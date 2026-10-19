@@ -69,6 +69,8 @@ internal sealed class Weather(
         // The view's own random numbers, never the game's: demos and net games don't see them
         int count = Math.Clamp(info.Count, 0, MaxWeather);
         var random = new Random();
+        varyRandom = random;
+        StartAmount(info, random.NextDouble());
         weatherseed = random.Next();
         weatherz = new float[count];
         weatherphase = new float[count];
@@ -80,6 +82,60 @@ internal sealed class Weather(
             weatherspeed[i] = 0.75f + random.NextSingle() * 0.5f;     // 75% to 125% of fall-speed
         }
     }
+
+    //
+    // VARIABLE WEATHER (WeatherInfo.Vary, End of Destiny's InitializeWeatherState and
+    // PollWeatherChange): the share of the particles that fall, and which way it's going. Kept on
+    // the level's clock as the frames come, not saved: a loaded game starts it afresh.
+    //
+    internal double Amount = 1;             // the share of count falling now
+    internal int AmountChange;              // +1 thickening, -1 thinning, 0 steady
+    int varyFrom = -1;                      // the level's clock when the amount was last brought up to date
+    double varyCheckTics;                   // tics to the next chance to start changing
+    Random varyRandom = new();
+
+    /// <summary>The amount a level starts with, from a roll of 0 to 1: none, some (5 to 25 in 100) or all</summary>
+    internal void StartAmount(WeatherInfo info, double roll)
+    {
+        AmountChange = 0;
+        varyFrom = -1;
+        varyCheckTics = info.VaryEvery * 70;
+        Amount = !info.Vary ? 1 : roll < 0.4 ? 0 : roll < 0.6 ? 0.05 + varyRandom.NextDouble() * 0.2 : 1;
+    }
+
+    /// <summary>Brings the amount up to the level's clock: its chances to start changing, and the change itself</summary>
+    internal void UpdateAmount(WeatherInfo info, int time)
+    {
+        if (!info.Vary)
+            return;
+        if (varyFrom < 0 || time < varyFrom)
+        {
+            varyFrom = time;
+            return;
+        }
+        int tics = time - varyFrom;
+        varyFrom = time;
+        if (tics <= 0)
+            return;
+
+        varyCheckTics -= tics;
+        while (varyCheckTics <= 0)
+        {
+            varyCheckTics += Math.Max(info.VaryEvery, 1) * 70;
+            if (varyRandom.NextDouble() < info.VaryChance)
+                AmountChange = Amount <= 0 ? 1 : Amount >= 1 ? -1 : varyRandom.Next(2) == 0 ? -1 : 1;
+        }
+
+        if (AmountChange != 0)
+        {
+            Amount = Math.Clamp(Amount + AmountChange * info.VaryRate * tics / 70.0, 0, 1);
+            if (Amount is 0 or 1)
+                AmountChange = 0;
+        }
+    }
+
+    // Particle i's place, 0 to 1, in an even spread over the set (the golden ratio's steps)
+    internal static double SpreadPlace(int i) => i * 0.6180339887498949 % 1.0;
 
     // How far across particle i's box is, in global units: the near ones' is smaller
     int WeatherBox(WeatherInfo info, int i) => i < weatherz.Length * NearShare
@@ -253,16 +309,20 @@ internal sealed class Weather(
         if (!WeatherOn || LevelWeather is not { } info)
             return;
 
-        int count = weatherz.Length;
-        if (weatherdrops.Length < count * 2)
+        int all = weatherz.Length;
+        if (weatherdrops.Length < all * 2)
         {
-            weatherdrops = new WeatherDrop[count * 2];      // each drop, and its splash
-            weatherkeys = new int[count * 2];
+            weatherdrops = new WeatherDrop[all * 2];      // each drop, and its splash
+            weatherkeys = new int[all * 2];
         }
 
         bool snow = info.Kind.Equals("snow", StringComparison.OrdinalIgnoreCase);
         bool splashes = !snow && info.Splashes;
         int time = session.GameState.TimeCount;
+
+        // as much of it as is falling now (variable weather): every particle has a place 0 to 1 in an
+        // even spread across the set (near and far alike), and those placed below the amount fall
+        UpdateAmount(info, time);
         long maxdist = (long)Math.Clamp(info.Distance, 1, 32) * MapConstants.TileGlobal;
 
         // Below the ceiling, if any tile has a ceiling flat it could show over; otherwise up past the tallest walls
@@ -279,8 +339,10 @@ internal sealed class Weather(
         var dim = video.GetLightRow(Lighting.LightLevels - 1, Lighting.LightLevels, Lighting.FadeSteps, 0, 0, 0);
         int maxstreak = Math.Max(render.ViewHeight / 4, 4);     // a streak right by the view is cut to this many rows
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < all; i++)
         {
+            if (Amount < 1 && SpreadPlace(i) >= Amount)
+                continue;
             int box = WeatherBox(info, i);
             long originx = session.Camera.X - box / 2, originy = session.Camera.Y - box / 2;
 

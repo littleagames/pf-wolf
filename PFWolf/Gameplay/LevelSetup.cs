@@ -93,6 +93,8 @@ internal sealed class LevelSetup(
         (skyAndFlats.LevelFloorSky, skyAndFlats.FloorSkyMirror) = mapInfo?.FloorSky is { } floorSky
             ? (floorSky, mapInfo.FloorSkyMirror)
             : (engine.GetGameInfo().DefaultMap.FloorSky, engine.GetGameInfo().DefaultMap.FloorSkyMirror);
+        skyAndFlats.SetGeneratedSky(mapInfo?.StarSky ?? engine.GetGameInfo().DefaultMap.StarSky,
+            mapInfo?.CloudSky ?? engine.GetGameInfo().DefaultMap.CloudSky);
         weather.SetWeather(mapInfo?.Weather ?? engine.GetGameInfo().DefaultMap.Weather);
         map.BuildFlats(mapInfo?.DefaultFloor ?? engine.GetGameInfo().DefaultMap.DefaultFloor,
             mapInfo?.DefaultCeiling ?? engine.GetGameInfo().DefaultMap.DefaultCeiling);

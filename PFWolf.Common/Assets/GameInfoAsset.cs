@@ -642,6 +642,12 @@ public record DefaultMapInfo
     /// </summary>
     public string? Sky { get; init; } = null;
 
+    /// <summary>A star sky above the horizon in place of a sky picture (and behind clouds); null for none</summary>
+    public StarSkyInfo? StarSky { get; init; } = null;
+
+    /// <summary>Clouds drifting over the sky (or the ceiling color); null for none</summary>
+    public CloudSkyInfo? CloudSky { get; init; } = null;
+
     /// <summary>
     /// Graphic (or wall texture) drawn below the horizon in place of the floor color, showing
     /// where no floor flat is drawn (Midnight Assault's floor parallax); null for none
@@ -679,6 +685,53 @@ public record DefaultMapInfo
     /// override these value by value
     /// </summary>
     public Dictionary<int, ZoneInfo> Zones { get; init; } = [];
+}
+
+/// <summary>
+/// A night sky of stars, drawn above the horizon in place of a sky picture (Wolf4SDL's
+/// wl_atmos DrawStarSky, End of Destiny's sky levels): stars all around, nearer ones brighter,
+/// turning with the view, on black; and a moon in one direction
+/// </summary>
+public record StarSkyInfo
+{
+    /// <summary>How many stars</summary>
+    public int Stars { get; init; } = 500;
+
+    /// <summary>The brightest star's palette index; fainter ones are the next 15 (Wolf3D's white to dark grey)</summary>
+    public int Color { get; init; } = 15;
+
+    /// <summary>The moon, in the direction of moon-angle (degrees, 0 east, counterclockwise); false for none</summary>
+    public bool Moon { get; init; } = true;
+
+    public double MoonAngle { get; init; } = 45;
+
+    /// <summary>What's behind the stars: a color name, #RRGGBB or palette index</summary>
+    public string Background { get; init; } = "0";
+}
+
+/// <summary>
+/// Clouds drifting high over the level (Wolf4SDL's wl_cloudsky, End of Destiny's sky levels):
+/// a cloud picture made from a seed, as wl_cloudsky makes it, on a plane four stories above the
+/// eye, moving the way angle says at speed. Drawn over a star sky (or the ceiling color), which
+/// shows through where its colors say none.
+/// </summary>
+public record CloudSkyInfo
+{
+    /// <summary>The cloud picture's seed (wl_cloudsky's: any number makes its own clouds)</summary>
+    public uint Seed { get; init; } = 626;
+
+    /// <summary>How fast they move, in global units a tic (65536 a tile)</summary>
+    public int Speed { get; init; } = 100;
+
+    /// <summary>Which way they move, in degrees</summary>
+    public int Angle { get; init; } = 200;
+
+    /// <summary>
+    /// Palette indices the cloud picture's values map to, darkest cloud first in wl_cloudsky's
+    /// order; "none" leaves that much of it see-through. End of Destiny's: 31, 30, 29, 28, then
+    /// three see-through.
+    /// </summary>
+    public List<string> Colors { get; init; } = ["31", "30", "29", "28", "none", "none", "none"];
 }
 
 /// <summary>
@@ -747,6 +800,23 @@ public record WeatherInfo
 
     /// <summary>How far away, in tiles, they're drawn</summary>
     public int Distance { get; init; } = 8;
+
+    /// <summary>
+    /// The amount falling changes as the level's played (End of Destiny's variable weather): it
+    /// starts with none (40 in 100), some (20 in 100) or all of count (40 in 100); every
+    /// vary-every seconds there's a vary-chance it starts to thicken or thin (whichever it can,
+    /// else either), by vary-rate of count a second, until it's all or none
+    /// </summary>
+    public bool Vary { get; init; }
+
+    /// <summary>Seconds between the chances for the amount to start changing</summary>
+    public double VaryEvery { get; init; } = 20;
+
+    /// <summary>The chance each time, 0 to 1</summary>
+    public double VaryChance { get; init; } = 0.2;
+
+    /// <summary>How fast it changes, as a share of count a second</summary>
+    public double VaryRate { get; init; } = 0.02;
 }
 
 /// <summary>
@@ -1335,6 +1405,12 @@ public record MapInfo
     /// Graphic (or wall texture) drawn in place of the ceiling color; null uses the default map's
     /// </summary>
     public string? Sky { get; init; } = null;
+
+    /// <summary>A star sky above the horizon in place of a sky picture (and behind clouds); null for none</summary>
+    public StarSkyInfo? StarSky { get; init; } = null;
+
+    /// <summary>Clouds drifting over the sky (or the ceiling color); null for none</summary>
+    public CloudSkyInfo? CloudSky { get; init; } = null;
 
     /// <summary>
     /// Graphic (or wall texture) drawn below the horizon in place of the floor color, showing

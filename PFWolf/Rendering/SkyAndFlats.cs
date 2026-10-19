@@ -9,7 +9,7 @@ namespace PFWolf.Rendering;
 /// and the textured floor and ceiling flats drawn over them before the walls.
 /// </summary>
 /// <param name="worldTexture">A wall texture by name, an animated one's frame by the level's clock</param>
-internal sealed class SkyAndFlats(
+internal sealed partial class SkyAndFlats(
     GameEngineManager engine,
     AssetManager assets,
     VideoManager video,
@@ -189,13 +189,17 @@ internal sealed class SkyAndFlats(
         var destIndex = render.Vbuf;
         int y;
         bool sky = this.sky.Load(LevelSky, assets, worldTexture, session.GameState.TimeCount);
+        bool generated = !sky && HasGeneratedSky;     // a star or cloud sky (SkyAndFlats.Generated.cs)
         bool floorsky = LoadFloorSky();
         unsafe
         {
             byte* dest = (byte*)render.VbufPtr;// + destIndex;
-            if (sky)
+            if (sky || generated)
             {
-                DrawSky();
+                if (generated)
+                    DrawGeneratedSky(ceilingColor);
+                else
+                    DrawSky();
                 y = render.CenterY;
                 destIndex += render.CenterY * (int)video.BufferPitch;
             }
@@ -227,7 +231,7 @@ internal sealed class SkyAndFlats(
         // they're cast too. A sky stays behind the ceiling flats, and a floor sky behind the floor
         // flats, showing where there are none.
         bool floorflats = map.HasFloorFlats || (lighting.HasZones || actorLights.HasLights) && !floorsky;
-        bool ceilingflats = map.HasCeilingFlats || (lighting.HasZones || actorLights.HasLights) && !sky;
+        bool ceilingflats = map.HasCeilingFlats || (lighting.HasZones || actorLights.HasLights) && !sky && !generated;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
@@ -235,7 +239,7 @@ internal sealed class SkyAndFlats(
                 DrawFlats(map.FloorFlat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, floorsky,
                     map.Scrollers.AnyFloors ? map.Scrollers.FloorX : null, map.Scrollers.FloorY);
             if (ceilingflats)
-                DrawFlats(map.CeilingFlat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky,
+                DrawFlats(map.CeilingFlat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky || generated,
                     map.Scrollers.AnyCeilings ? map.Scrollers.CeilingX : null, map.Scrollers.CeilingY);
         }
     }
