@@ -970,6 +970,19 @@ public record EpisodeInfo
     public string? LockedName { get; init; }
 
     /// <summary>
+    /// "level-select": the maps the player can start the episode from, picked on a "Choose
+    /// Level" menu after this one (menudefs new-level) in this order; none starts at start-map.
+    /// A map that starts-locked is greyed out (as its locked-name) until its name is unlocked.
+    /// </summary>
+    public List<string> LevelSelect { get; init; } = [];
+
+    /// <summary>
+    /// "level-select-after": the level menu only shows once this name is unlocked (Midnight
+    /// Assault's campaign, once it's been finished); until then the episode starts at start-map
+    /// </summary>
+    public string? LevelSelectAfter { get; init; }
+
+    /// <summary>
     /// Graphic asset that is used to display on the episode menu
     /// </summary>
     public string PicName { get; init; } = null!;
@@ -1213,6 +1226,18 @@ public record MapInfo
     /// "Episode X, Floor Y" (just "Floor Y" in a single-episode game)
     /// </summary>
     public string? Name { get; init; }
+
+    /// <summary>"select-name": the level's row on an episode's level select menu; its name when unset</summary>
+    public string? SelectName { get; init; }
+
+    /// <summary>
+    /// "starts-locked": on an episode's level select menu, the level is greyed out and can't be
+    /// picked until its name is unlocked (A_Unlock, Lua game.unlock or the unlock command)
+    /// </summary>
+    public bool StartsLocked { get; init; }
+
+    /// <summary>"locked-name": the level's row while it's locked (text or $LANGUAGE key)</summary>
+    public string? LockedName { get; init; }
 
     /// <summary>
     /// Who made the level (or a $language key), for crediting a map pack's authors: the

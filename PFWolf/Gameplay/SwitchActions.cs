@@ -86,10 +86,11 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
             messages.Show(Managers.HudMessageKind.Lock, args[0], args.ElementAtOrDefault(1));
             return true;
         });
-        Entities.Actors.ActorActionRegistry.Register("A_Message", (Entities.Actors.Actor _, string[] args) =>
+        // An actor's fills in its {tag} and counts (Gameplay/ActorText.cs)
+        Entities.Actors.ActorActionRegistry.Register("A_Message", (Entities.Actors.Actor ob, string[] args) =>
         {
             if (args.Length > 0)
-                messages.Show(Managers.HudMessageKind.Lock, args[0], args.ElementAtOrDefault(1));
+                messages.Show(Managers.HudMessageKind.Lock, ActorText.Expand(messages.Localize(args[0]), ob, inventory), args.ElementAtOrDefault(1));
         });
 
         // A_Vend("FoodToken", "FoodUnitMeal", "no-money message", "full message"[, "out-of-order

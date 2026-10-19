@@ -122,21 +122,31 @@ internal static partial class GameHost
         Entities.MapTriggerRegistry.Register("A_CompleteObjective", (_, args) => { if (args.Length == 0) return false; Objectives.Complete(args[0], Amount(args)); return true; });
         Entities.MapTriggerRegistry.Register("A_AddObjective", (_, args) => { if (args.Length == 0) return false; Objectives.Add(args[0], Amount(args)); return true; });
         // A_Unlock("name"[, "message"]): unlocks a name for good (Gameplay/Unlocks.cs: a starts-locked
-        // episode's key), showing the message if it wasn't already
-        static void UnlockWithMessage(string[] args)
+        // episode's key, or level's name), showing the message if it wasn't already. An actor's
+        // fills in its {tag} and counts (Gameplay/ActorText.cs): a numbered dog tag's "DT0{tag}"
+        static void UnlockWithMessage(string[] args, Func<string, string> expand)
         {
-            if (args.Length > 0 && Unlock(args[0]) && args.Length > 1 && args[1].Length > 0)
-                HudMessageManager.Show(HudMessageKind.Lock, args[1]);
+            if (args.Length > 0 && Unlock(expand(args[0])) && args.Length > 1 && args[1].Length > 0)
+                HudMessageManager.Show(HudMessageKind.Lock, expand(HudMessageManager.Localize(args[1])));
         }
-        ActorActionRegistry.Register("A_Unlock", (Entities.Actors.Actor _, string[] args) => UnlockWithMessage(args));
-        Entities.MapTriggerRegistry.Register("A_Unlock", (_, args) => { if (args.Length == 0) return false; UnlockWithMessage(args); return true; });
+        ActorActionRegistry.Register("A_Unlock", (Entities.Actors.Actor ob, string[] args) =>
+            UnlockWithMessage(args, text => ActorText.Expand(text, ob, InventoryManager)));
+        Entities.MapTriggerRegistry.Register("A_Unlock", (_, args) => { if (args.Length == 0) return false; UnlockWithMessage(args, text => text); return true; });
+        // A_JumpIfUnlocked("name", "State"): goes to the state if the name's unlocked ({tag} and
+        // counts filled in): a dog tag found before, greyed out
+        ActorActionRegistry.Register("A_JumpIfUnlocked", (Entities.Actors.Actor ob, string[] args) =>
+        {
+            if (args.Length >= 2 && Unlocks.IsUnlocked(ActorText.Expand(args[0], ob, InventoryManager))
+                && ob.ResolvedStates.TryGetValue(args[1].Trim(), out var frame))
+                ob.JumpTo(frame);
+        });
         // A_ShowText("name"): a text shown as an article in the middle of the level, then back to
         // it (Midnight Assault's log books and radios); {tag} in the name is the actor's tag, so
         // each one placed can show its own page ("LOG{tag}")
         ActorActionRegistry.Register("A_ShowText", (Entities.Actors.Actor ob, string[] args) =>
         {
             if (args.Length > 0 && args[0].Length > 0)
-                ShowTextInLevel(args[0].Replace("{tag}", ob.Tag.ToString()));
+                ShowTextInLevel(ActorText.Expand(args[0], ob, InventoryManager));
         });
         ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => MountedWeapons.Mount(ob, args));
         ActorActionRegistry.Register("A_Board", (Entities.Actors.Actor ob, string[] args) => Vehicles.Board(ob, args));     // Gameplay/Vehicles.cs

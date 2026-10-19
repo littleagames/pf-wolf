@@ -193,6 +193,9 @@ internal static partial class GameHost
         (NewEmenu, NewEitems) = LoadMenu("new-episode");
         (NewMenu, NewItems) = LoadMenu("new-game");
         (ClassMenu, ClassItems) = LoadMenu("new-class");
+        // An episode's level select (game-info level-select), its rows made as it's shown
+        if (AssetManager.GetMenu("new-level") != null)
+            (newGameMenu.LevelMenu, newGameMenu.LevelItems) = LoadMenu("new-level");
 
         (MusicMenu, MusicItems) = LoadMenu("jukebox");
         // Only the songs the game has (the shareware has 10 of the 27)

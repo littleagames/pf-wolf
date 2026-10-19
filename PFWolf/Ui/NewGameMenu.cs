@@ -7,16 +7,37 @@ namespace PFWolf.Ui;
 internal sealed record PlayerClassChoice(string Class, string? PicName);
 
 /// <summary>
-/// New Game: the episode (none to choose with only one), the class (only when there's a
-/// choice), then the skill, Esc stepping back one; then the episode's briefing, if it has one
+/// New Game: the episode (none to choose with only one), its level (only for an episode with a
+/// level select now), the class (only when there's a choice), then the skill, Esc stepping back
+/// one; then the episode's briefing, if it has one
 /// </summary>
 /// <param name="startGame">Starts the new game: its skill, episode, first map and class</param>
 /// <param name="episodeOpen">Whether an episode can be picked: not starts-locked, or unlocked since (Gameplay/Unlocks.cs)</param>
+/// <param name="levelSelect">Whether an episode has a level select now (Unlocks.HasLevelSelect)</param>
+/// <param name="levelOpen">Whether a level can be picked on it: not starts-locked, or unlocked since</param>
 internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
     GraphicManager graphics, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, TextPresenter presenter,
     InventoryManager inventory, GameSession session, Action<short, EpisodeInfo, MapInfo?, string?> startGame, Func<List<string>> playerClasses,
-    Func<EpisodeInfo, bool> episodeOpen)
+    Func<EpisodeInfo, bool> episodeOpen, Func<EpisodeInfo, bool>? levelSelect = null, Func<string, MapInfo, bool>? levelOpen = null)
 {
+    /// <summary>
+    /// The level select's rows for an episode: each of its level-select maps the game has, by
+    /// select-name (else name, else the map's own), greyed out as its locked-name while it isn't
+    /// open. Each row's data is the map's name.
+    /// </summary>
+    internal static ControlPanelItem[] LevelRows(EpisodeInfo episode, IReadOnlyDictionary<string, MapInfo> maps,
+        Func<string, MapInfo, bool> open, Func<string, string> text) =>
+        episode.LevelSelect
+            .Where(maps.ContainsKey)
+            .Select(name =>
+            {
+                var map = maps[name];
+                bool isOpen = open(name, map);
+                var shown = !isOpen && map.LockedName is { Length: > 0 } lockedName ? lockedName : map.SelectName ?? map.Name ?? name;
+                return new ControlPanelItem((short)(isOpen ? 1 : 0), text(shown), null, name);
+            })
+            .ToArray();
+
     /// <summary>
     /// Greys out the episodes that aren't open yet (starts-locked and not unlocked), named by their
     /// locked-name if they have one, and moves the cursor off one onto the first that's open
@@ -47,6 +68,8 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     internal ControlPanelMenuInfo NewItems = null!;
     internal ControlPanelItem[] ClassMenu = [];
     internal ControlPanelMenuInfo ClassItems = null!;
+    internal ControlPanelItem[] LevelMenu = [];
+    internal ControlPanelMenuInfo? LevelItems;
     internal int Run()
     {
         var language = assets.GetText("en-us");
@@ -137,6 +160,45 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
                 return 0;
             }
 
+        // The episode's level, on its level select (Midnight Assault's Dog Tag and Challenge
+        // Missions): only the open ones can be picked; Esc goes back to the episodes
+        bool chooseLevel = LevelItems != null && levelSelect?.Invoke(episodeInfo!) == true;
+        string? startMap = null;
+    levelpart:
+        if (chooseLevel)
+        {
+            var maps = engine.GetGameInfo().Maps;
+            LevelMenu = LevelRows(episodeInfo!, maps, levelOpen ?? ((_, _) => true), name => name.ToLanguageText(language));
+            LevelItems!.Amount = (short)LevelMenu.Length;
+            if (LevelItems.CurPos < 0 || LevelItems.CurPos >= LevelMenu.Length || LevelMenu[LevelItems.CurPos].Active == 0)
+                LevelItems.CurPos = (short)Math.Max(Array.FindIndex(LevelMenu, row => row.Active != 0), 0);
+            if (!LevelMenu.Any(row => row.Active != 0))
+            {
+                audio.Play("player/usefail");
+                draw.Message("No level is unlocked!");
+                input.ClearKeysDown();
+                input.Ack();
+                draw.MenuFadeOut();
+                if (singleEpisode)
+                    return 0;
+                goto firstpart;
+            }
+
+            draw.MenuFadeOut();
+            DrawNewLevel();
+            which = loop.HandleMenu(LevelItems, LevelMenu, null);
+            if (which < 0)
+            {
+                draw.MenuFadeOut();
+                if (singleEpisode)
+                    return 0;
+                goto firstpart;
+            }
+            startMap = (string)LevelMenu[which].Data!;
+            mapInfo = maps[startMap];
+            loop.ShootSnd();
+        }
+
     classpart:
         if (chooseClass)
         {
@@ -146,6 +208,8 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
             if (which < 0)
             {
                 draw.MenuFadeOut();
+                if (chooseLevel)
+                    goto levelpart;
                 if (singleEpisode)
                     return 0;
                 goto firstpart;
@@ -163,6 +227,8 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         {
             if (chooseClass)
                 goto classpart;
+            if (chooseLevel)
+                goto levelpart;
             draw.MenuFadeOut();
             if (singleEpisode)
                 return 0;
@@ -180,7 +246,8 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         }
 
         // The game starts, the control panel leaves, and "Read This!" goes back to its normal color
-        startGame((short)which, episodeInfo, mapInfo, playerClass);     // one menu item per skill, in order
+        // one menu item per skill, in order; a level picked is where the episode starts
+        startGame((short)which, startMap == null ? episodeInfo : episodeInfo with { StartMap = startMap }, mapInfo, playerClass);
         draw.MenuFadeOut();
 
         return 0;
@@ -215,6 +282,15 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         if (NewEitems.SelectionPic is { } at && w >= 0 && w < NewEmenu.Length
             && NewEmenu[w].Data is EpisodeInfo { PicName: { Length: > 0 } pic })
             graphics.DrawPic(pic, at.X, at.Y);
+    }
+
+    internal void DrawNewLevel()
+    {
+        defs.DrawMenuComponents("new-level");
+        draw.DrawMenu(LevelItems!, LevelMenu);
+        video.Update();
+        draw.MenuFadeIn();
+        menuInput.WaitKeyUp();
     }
 
     internal void DrawNewGame()

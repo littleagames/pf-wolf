@@ -1513,7 +1513,9 @@ internal class MapManager
     /// <summary>
     /// A_Replace: the actor becomes one of another class where it stands, facing the same way
     /// with its tag; what its tile's blocking was goes with it, and the new one blocks as its
-    /// class does (a closed gate opened). Null, and nothing changed, if there's no such class.
+    /// class does (a closed gate opened). An item the level's total counted (COUNTITEM) is taken
+    /// off it, as it can no longer be had (a dog tag found before, greyed out), and the new one
+    /// counted if it's one. Null, and nothing changed, if there's no such class.
     /// </summary>
     internal Entities.Actors.Actor? ReplaceActor(Entities.Actors.Actor old, string className)
     {
@@ -1521,6 +1523,8 @@ internal class MapManager
             return null;
         int x = old.TileX, y = old.TileY;
         MarkForRemoval(old);
+        if (!session.LoadedGame && old.HasFlag("COUNTITEM") && session.GameState.TreasureTotal > 0)
+            session.GameState.TreasureTotal--;
         if (ActorAt[x, y] is BlockingActor)
             ActorAt[x, y] = null;
         int angles = old.Dir == ObjDir.NoDir ? -1 : (int)old.Dir * 45;
