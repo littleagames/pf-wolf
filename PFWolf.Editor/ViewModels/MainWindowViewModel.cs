@@ -44,6 +44,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Mods.Add(mod);
         RefreshModGames();
         _selectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(settings.Game, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
+        Mods.CollectionChanged += (_, _) => UpdateModsReload();
 
         Controller.ValuePicked += (_, value) => SelectValue(value);
         Controller.NewExtraThing = NewExtraThing;
@@ -151,6 +152,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RemoveModCommand))]
     private string? _selectedMod;
+
+    // The mods the game was last loaded with (null before it's loaded): the banner shows while the list differs
+    private List<string>? _loadedMods;
+
+    /// <summary>The banner over the editor: the mods have changed since the game loaded, so it needs loading again</summary>
+    [ObservableProperty]
+    private string? _modsReloadMessage;
 
     public ObservableCollection<MapItem> Maps { get; } = [];
 
@@ -761,6 +769,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             await ShowLoadingStep();
 
             Status = $"{content.Title}: {content.Maps.Count} levels" + mods.Count switch { 0 => "", 1 => ", 1 mod", _ => $", {mods.Count} mods" };
+            _loadedMods = mods;
+            UpdateModsReload();
             SaveSettings();
         }
         catch (Exception e) when (e is DataFilesException or FileNotFoundException or InvalidDataException or IOException
@@ -1783,6 +1793,36 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Mods.Add(path);
             RefreshModGames();
         }
+    }
+
+    // Says which mods were added or taken out since the game loaded (or that their order changed), or nothing
+    private void UpdateModsReload()
+    {
+        if (_loadedMods == null || Mods.SequenceEqual(_loadedMods, StringComparer.OrdinalIgnoreCase))
+        {
+            ModsReloadMessage = null;
+            return;
+        }
+
+        static string Names(IEnumerable<string> mods) => string.Join(", ", mods.Select(mod => Path.GetFileName(mod.TrimEnd('\\', '/'))));
+        var added = Mods.Except(_loadedMods, StringComparer.OrdinalIgnoreCase).ToList();
+        var removed = _loadedMods.Except(Mods, StringComparer.OrdinalIgnoreCase).ToList();
+        var changes = new List<string>();
+        if (added.Count > 0)
+            changes.Add($"added {Names(added)}");
+        if (removed.Count > 0)
+            changes.Add($"took out {Names(removed)}");
+        if (changes.Count == 0)
+            changes.Add("changed their order");
+        ModsReloadMessage = $"The mods have changed ({string.Join("; ", changes)}). Load the game again for the editor to use them.";
+    }
+
+    /// <summary>Hides the banner until the mods change again</summary>
+    [RelayCommand]
+    private void DismissModsReload()
+    {
+        _loadedMods = Mods.ToList();
+        ModsReloadMessage = null;
     }
 
     private bool CanRemoveMod => SelectedMod != null;

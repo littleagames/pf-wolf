@@ -183,6 +183,18 @@
       </MenuItem>
     </Menu>
 
+    <!-- The mods changed since the game loaded: it needs loading again to use them -->
+    <Border DockPanel.Dock="Top" Padding="10,6" Background="#40F0B030" BorderBrush="#C0F0B030" BorderThickness="0,0,0,1"
+            IsVisible="{Binding ModsReloadMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+        <TextBlock Grid.Column="0" Text="⟳" FontSize="16" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding ModsReloadMessage}" TextWrapping="Wrap" VerticalAlignment="Center" />
+        <Button Grid.Column="2" Content="Load the game again" Command="{Binding LoadCommand}" Classes="accent" />
+        <Button Grid.Column="3" Content="✕" Command="{Binding DismissModsReloadCommand}" Background="Transparent"
+                ToolTip.Tip="Hide this until the mods change again" />
+      </Grid>
+    </Border>
+
     <!-- The game: its folder, which game, and loading it -->
     <Border DockPanel.Dock="Top" Padding="8,6" BorderThickness="0,1,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
