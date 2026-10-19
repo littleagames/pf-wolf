@@ -450,7 +450,7 @@ internal sealed class SpriteDrawing(
         {
             int height = (int)((render.ViewHeight + 1) * hooks.WeaponScale());
             scaler.SimpleScaleShape(render.ViewWidth / 2, shape, height,
-                session.PlayerState.WeaponSprite != null && Lighting.IsBright(session.PlayerState.WeaponSprite) ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(session.Player.TileX, session.Player.TileY), session.Player.X, session.Player.Y),
+                session.PlayerState.WeaponSprite != null && Lighting.IsBright(session.PlayerState.WeaponSprite) ? Lighting.NoShade : lighting.LightAt(map.TileIndexOrNone(session.Player.TileX, session.Player.TileY), session.Player.X, session.Player.Y),
                 ((render.ViewHeight + 1) >> 1) - (height >> 1) + weaponBob.Drop(render.ViewHeight));
         }
 

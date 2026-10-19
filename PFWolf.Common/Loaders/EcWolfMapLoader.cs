@@ -12,8 +12,8 @@ namespace PFWolf.Loaders;
 ///   uint16s, uncompressed, all little-endian.
 /// The planes are the same as GAMEMAPS': walls, objects, then ECWolf's floor and ceiling
 /// flats; a fourth holds PFWolf's wall heights (ECWolf reads it as its info plane), a fifth
-/// PFWolf's tags and a sixth its light zones. A map
-/// written in ECWolf's text format (TEXTMAP, UWMF) isn't read yet.
+/// PFWolf's tags and a sixth its light zones. A map written in ECWolf's text format (a TEXTMAP
+/// lump, UWMF) is read by LoadUwmf.
 /// </summary>
 public static class EcWolfMapLoader
 {
@@ -29,7 +29,7 @@ public static class EcWolfMapLoader
 
         var mapLump = lumps[1];
         if (mapLump.Name.Equals("TEXTMAP", StringComparison.OrdinalIgnoreCase))
-            throw new NotSupportedException("it's a UWMF (TEXTMAP) map, which PFWolf can't read yet");
+            return LoadUwmf(mapLump.Data);
         if (!mapLump.Name.Equals(PlanesLump, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException($"its map lump is {mapLump.Name}, not PLANES");
 
@@ -47,18 +47,37 @@ public static class EcWolfMapLoader
     }
 
     /// <summary>
+    /// A UWMF level (a TEXTMAP lump, or a maps/NAME.uwmf file): read, but not yet turned into
+    /// planes, which needs the running game's mapdefs (AssetManager does it; see UwmfTranslator)
+    /// </summary>
+    public static MapAsset LoadUwmf(byte[] textmap)
+    {
+        var uwmf = Uwmf.UwmfReader.Read(textmap);
+        if (MapConstants.CheckMapSize(uwmf.Width, uwmf.Height) is { } badSize)
+            throw new InvalidDataException(badSize);
+        return new MapAsset
+        {
+            Name = uwmf.Name,
+            Width = (ushort)uwmf.Width,
+            Height = (ushort)uwmf.Height,
+            Format = MapFormat.Uwmf,
+            Uwmf = uwmf,
+        };
+    }
+
+    /// <summary>
     /// A WDC map as a level: the fourth plane (ECWolf's info plane) holds PFWolf's wall heights,
     /// the fifth its tags and the sixth its light zones; planes past them are left out, and
     /// missing ones are empty
     /// </summary>
     public static MapAsset ToMapAsset(WdcMap map)
     {
-        if (map.Width != MapConstants.MapSize || map.Height != MapConstants.MapSize)
-            throw new InvalidDataException($"it's {map.Width}x{map.Height}; PFWolf maps are {MapConstants.MapSize}x{MapConstants.MapSize}");
+        if (MapConstants.CheckMapSize(map.Width, map.Height) is { } badSize)
+            throw new InvalidDataException(badSize);
 
         var mapData = new ushort[MapConstants.LevelPlanes][];
         for (var plane = 0; plane < MapConstants.LevelPlanes; plane++)
-            mapData[plane] = plane < map.Planes.Length ? (ushort[])map.Planes[plane].Clone() : new ushort[MapConstants.MapArea];
+            mapData[plane] = plane < map.Planes.Length ? (ushort[])map.Planes[plane].Clone() : new ushort[map.Width * map.Height];
 
         return new MapAsset
         {
@@ -68,6 +87,18 @@ public static class EcWolfMapLoader
             MapData = mapData,
         };
     }
+
+    /// <summary>
+    /// A map as a UWMF maps/NAME.wad (its marker lump, TEXTMAP, ENDMAP), written through the
+    /// running game's mapdefs (see Uwmf.UwmfWriter)
+    /// </summary>
+    public static byte[] SaveUwmf(MapAsset map, string markerName, MapObjectTranslationAsset mapdefs, Action<string>? warn = null)
+        => WadFile.Write(
+        [
+            new WadFile.Lump(markerName, []),
+            new WadFile.Lump("TEXTMAP", Encoding.UTF8.GetBytes(Uwmf.UwmfWriter.Write(map, mapdefs, warn))),
+            new WadFile.Lump("ENDMAP", []),
+        ]);
 
     /// <summary>A map as maps/NAME.wad, with <paramref name="markerName"/> as its marker lump</summary>
     public static byte[] Save(MapAsset map, string markerName)

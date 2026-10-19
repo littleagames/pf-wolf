@@ -216,7 +216,7 @@ internal sealed class Projectiles(
         {
             for (x = xl; x <= xh; x++)
             {
-                if (x < 0 || y < 0 || x >= MapConstants.MapSize || y >= MapConstants.MapSize)
+                if (!map.InMap(x, y))
                     return false;
                 check = map.ActorAt[x, y];
                 if (check is not (null or ActorMark))     // only walls and solid things

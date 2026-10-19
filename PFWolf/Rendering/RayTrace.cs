@@ -86,7 +86,7 @@ internal sealed class RayTrace(
             render.YTile = (short)(render.FocalTy + render.YTileStep);
 
             render.TexDelta = 0;
-            render.HitTile = Lighting.TileIndex(render.FocalTx, render.FocalTy);
+            render.HitTile = map.TileIndexOrNone(render.FocalTx, render.FocalTy);
             render.ColumnHit = render.PastWall = render.ArchOpen = false;
             render.ColumnTallest = 0;
             render.ColumnTop = render.ViewHeight;

@@ -5,8 +5,17 @@ namespace PFWolf.Editor.Editing;
 /// <summary>One tile of one plane changing value</summary>
 public readonly record struct TileChange(int Plane, int Index, ushort Before, ushort After);
 
-/// <summary>Changes made together, undone together: a paint stroke, a fill, a paste</summary>
-public sealed record EditStep(string Description, IReadOnlyList<TileChange> Changes);
+/// <summary>The level's size and planes before and after a resize</summary>
+public sealed record MapResize(ushort OldWidth, ushort OldHeight, ushort[][] OldPlanes, ushort NewWidth, ushort NewHeight, ushort[][] NewPlanes);
+
+/// <summary>The level's extra things (MapAsset.ExtraThings) before and after a change to them</summary>
+public sealed record ExtraThingsChange(IReadOnlyList<MapThing> Before, IReadOnlyList<MapThing> After);
+
+/// <summary>
+/// Changes made together, undone together: a paint stroke, a fill, a paste; a resize, which
+/// swaps the whole level's size and planes; or a change to its extra things
+/// </summary>
+public sealed record EditStep(string Description, IReadOnlyList<TileChange> Changes, MapResize? Resize = null, ExtraThingsChange? Extras = null);
 
 /// <summary>
 /// A level being edited: its own copy of the planes, with undo and redo. Nothing changes the
@@ -84,7 +93,20 @@ public sealed class MapDocument
     /// <summary>The mod (a folder or a pk3) the level was last saved to (or came from), or null for none yet</summary>
     public string? SaveFolder { get; set; }
 
-    public bool IsDirty => _savedAt != _undo.Count || PropertiesDirty || !InGameInfo;
+    public bool IsDirty => _savedAt != _undo.Count || PropertiesDirty || !InGameInfo || _formatChanged;
+
+    // The save format was changed since the last save
+    private bool _formatChanged;
+
+    /// <summary>The format the level saves in (MapFiles.Save): UWMF text, or binary planes</summary>
+    public void SetFormat(MapFormat format)
+    {
+        if (Map.Format == format)
+            return;
+        Map.Format = format;
+        _formatChanged = true;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
     public bool CanUndo => _undo.Count > 0;
     public bool CanRedo => _redo.Count > 0;
     public string? UndoDescription => _undo.Count > 0 ? _undo[^1].Description : null;
@@ -107,7 +129,7 @@ public sealed class MapDocument
 
     internal void Commit(EditStep step)
     {
-        if (step.Changes.Count == 0)
+        if (step.Changes.Count == 0 && step.Resize == null && step.Extras == null)
             return;
 
         // A step after undoing can never get back to a save made before the undo
@@ -120,6 +142,51 @@ public sealed class MapDocument
 
     internal void RaiseChanged() => Changed?.Invoke(this, EventArgs.Empty);
 
+    /// <summary>
+    /// Makes the level <paramref name="width"/> x <paramref name="height"/> tiles, its planes now
+    /// <paramref name="planes"/>, as one undo step
+    /// </summary>
+    /// <param name="extras">The extra things as they are on the resized level (moved with it); null: as they were</param>
+    public void Resize(string description, int width, int height, ushort[][] planes, IReadOnlyList<MapThing>? extras = null)
+    {
+        var resize = new MapResize(Map.Width, Map.Height, Map.MapData, (ushort)width, (ushort)height, planes);
+        var extrasChange = extras == null ? null : new ExtraThingsChange([.. Map.ExtraThings], [.. extras]);
+        SetSize(resize.NewWidth, resize.NewHeight, resize.NewPlanes);
+        if (extras != null)
+            Map.ExtraThings = [.. extras];
+        Commit(new EditStep(description, [], resize, extrasChange));
+    }
+
+    /// <summary>
+    /// The level's extra things (things the object plane can't hold: off a tile's middle, a
+    /// second on a tile) are now <paramref name="after"/>, as one undo step back to
+    /// <paramref name="before"/>; nothing when they're the same. A level with any saves as UWMF.
+    /// </summary>
+    public void ChangeExtraThings(string description, IReadOnlyList<MapThing> before, IReadOnlyList<MapThing> after)
+    {
+        Map.ExtraThings = [.. after];
+        if (before.SequenceEqual(after))
+        {
+            RaiseChanged();
+            return;
+        }
+        Commit(new EditStep(description, [], Extras: new ExtraThingsChange([.. before], [.. after])));
+    }
+
+    /// <summary>Shows the extra things as <paramref name="things"/> without an undo step (a drag in progress)</summary>
+    public void PreviewExtraThings(IReadOnlyList<MapThing> things)
+    {
+        Map.ExtraThings = [.. things];
+        RaiseChanged();
+    }
+
+    private void SetSize(ushort width, ushort height, ushort[][] planes)
+    {
+        Map.Width = width;
+        Map.Height = height;
+        Map.MapData = planes;
+    }
+
     public void Undo()
     {
         if (_undo.Count == 0)
@@ -129,6 +196,10 @@ public sealed class MapDocument
         _undo.RemoveAt(_undo.Count - 1);
         for (int i = step.Changes.Count - 1; i >= 0; i--)
             Map.MapData[step.Changes[i].Plane][step.Changes[i].Index] = step.Changes[i].Before;
+        if (step.Resize is { } resize)
+            SetSize(resize.OldWidth, resize.OldHeight, resize.OldPlanes);
+        if (step.Extras is { } extras)
+            Map.ExtraThings = [.. extras.Before];
         _redo.Add(step);
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -140,6 +211,10 @@ public sealed class MapDocument
 
         var step = _redo[^1];
         _redo.RemoveAt(_redo.Count - 1);
+        if (step.Resize is { } resize)
+            SetSize(resize.NewWidth, resize.NewHeight, resize.NewPlanes);
+        if (step.Extras is { } extras)
+            Map.ExtraThings = [.. extras.After];
         foreach (var change in step.Changes)
             Map.MapData[change.Plane][change.Index] = change.After;
         _undo.Add(step);
@@ -150,6 +225,7 @@ public sealed class MapDocument
     public void MarkSaved()
     {
         _savedAt = _undo.Count;
+        _formatChanged = false;
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

@@ -306,11 +306,11 @@ internal sealed class PlayerMovement(
         //
         if (yl > 0)
             yl--;
-        if (yh < MapManager.MapSize - 1)
+        if (yh < map.MapHeight - 1)
             yh++;
         if (xl > 0)
             xl--;
-        if (xh < MapManager.MapSize - 1)
+        if (xh < map.MapWidth - 1)
             xh++;
 
         for (y = yl; y <= yh; y++)

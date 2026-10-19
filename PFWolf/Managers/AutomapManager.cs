@@ -1,3 +1,5 @@
+using PFWolf.Constants;
+
 namespace PFWolf.Managers;
 
 /// <summary>How the automap draws the level.</summary>
@@ -111,9 +113,10 @@ internal class AutomapManager(Configuration.GameSettings? settings = null)
 
     /// <summary>
     /// Moves the view by a distance in virtual pixels along the screen's axes (so "up" is up the
-    /// screen even when the map is turned), and switches to pan mode.
+    /// screen even when the map is turned), and switches to pan mode. It stays over a level of
+    /// <paramref name="mapWidth"/> x <paramref name="mapHeight"/> tiles.
     /// </summary>
-    internal void Pan(float screenDx, float screenDy)
+    internal void Pan(float screenDx, float screenDy, int mapWidth = MapConstants.ClassicMapSize, int mapHeight = MapConstants.ClassicMapSize)
     {
         if (screenDx == 0 && screenDy == 0)
             return;
@@ -125,8 +128,8 @@ internal class AutomapManager(Configuration.GameSettings? settings = null)
         CenterX += (screenDx * cos + screenDy * sin) / Zoom;
         CenterY += (-screenDx * sin + screenDy * cos) / Zoom;
 
-        CenterX = Math.Clamp(CenterX, 0, MapManager.MapSize);
-        CenterY = Math.Clamp(CenterY, 0, MapManager.MapSize);
+        CenterX = Math.Clamp(CenterX, 0, mapWidth);
+        CenterY = Math.Clamp(CenterY, 0, mapHeight);
     }
 
     /// <summary>Recenters on the player and returns to follow mode.</summary>

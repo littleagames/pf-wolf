@@ -240,6 +240,8 @@ public sealed class MapCanvas : Control
             for (int y = y0; y <= y1; y++)
                 for (int x = x0; x <= x1; x++)
                     DrawTile(context, tiles, x, y);
+            if (ShowThings)
+                DrawExtraThings(context, tiles);
         }
 
         // Flats are drawn in place of the floor (DrawTile); here only their numbers
@@ -334,6 +336,34 @@ public sealed class MapCanvas : Control
     }
 
     private Rect TileRect(int x, int y) => new(_origin.X + x * _zoom, _origin.Y + y * _zoom, _zoom, _zoom);
+
+    private static readonly IPen ExtraThingPen = new Pen(new SolidColorBrush(Color.FromRgb(120, 200, 255)), 1.5);
+    private static readonly IPen PickedExtraThingPen = new Pen(Brushes.White, 2.5);
+
+    /// <summary>
+    /// A UWMF level's things the object plane can't hold (MapAsset.ExtraThings): each where it
+    /// stands, its sprite (or a dot) in a blue ring, so they show apart from the plane's; the one
+    /// the free-thing tool has picked in a white ring, with the way it faces
+    /// </summary>
+    private void DrawExtraThings(DrawingContext context, MapTiles tiles)
+    {
+        var things = tiles.Map.ExtraThings;
+        int picked = Controller?.Tool == EditTool.FreeThing ? Controller.SelectedExtra : -1;
+        for (int i = 0; i < things.Count; i++)
+        {
+            var thing = things[i];
+            var rect = new Rect(_origin.X + (thing.X - 0.5) * _zoom, _origin.Y + (thing.Y - 0.5) * _zoom, _zoom, _zoom);
+            if (!rect.Intersects(new Rect(Bounds.Size)))
+                continue;
+            if (_zoom >= 6 && Art?.ThingSprite(thing.Class) is { } sprite)
+                context.DrawImage(sprite, new Rect(sprite.Size), rect);
+            else
+                context.DrawEllipse(ThingDotBrush, null, rect.Center, rect.Width * 0.2, rect.Height * 0.2);
+            if (_zoom >= 10 && tiles.Content.IsRotating(thing.Class))
+                context.DrawGeometry(thing.Patrol ? PatrolBrush : FacingBrush, null, FacingMark(rect, thing.Angle));
+            context.DrawEllipse(null, i == picked ? PickedExtraThingPen : ExtraThingPen, rect.Center, rect.Width * 0.45, rect.Height * 0.45);
+        }
+    }
 
     private void DrawTile(DrawingContext context, MapTiles tiles, int x, int y)
     {
@@ -654,12 +684,12 @@ public sealed class MapCanvas : Control
 
         if (point.Properties.IsLeftButtonPressed && Controller != null && !e.KeyModifiers.HasFlag(KeyModifiers.Alt))
         {
-            var (x, y) = TileAt(position);
+            var (x, y) = SpotAt(position);
             _toolDown = true;
             e.Pointer.Capture(this);
             Controller.SelectMode = SelectModeFor(e.KeyModifiers);
             Controller.Constrain = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-            Controller.Press(x, y);
+            Controller.PressAt(x, y);
         }
         else
         {
@@ -707,9 +737,9 @@ public sealed class MapCanvas : Control
         UpdateHover(position);
         if (Controller != null && (_toolDown || Controller.IsPasting))
         {
-            var (x, y) = TileAt(position);
+            var (x, y) = SpotAt(position);
             Controller.Constrain = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-            Controller.Move(x, y);
+            Controller.MoveAt(x, y);
         }
     }
 
@@ -725,6 +755,10 @@ public sealed class MapCanvas : Control
         => modifiers.HasFlag(KeyModifiers.Shift) ? SelectMode.Add
             : modifiers.HasFlag(KeyModifiers.Control) ? SelectMode.Subtract
             : SelectMode.Replace;
+
+    /// <summary>Where a point is on the level, in tiles with their fractions (which may be off it)</summary>
+    private (double X, double Y) SpotAt(Point position)
+        => ((position.X - _origin.X) / _zoom, (position.Y - _origin.Y) / _zoom);
 
     /// <summary>The tile under a point, which may be off the level</summary>
     private (int X, int Y) TileAt(Point position)

@@ -323,7 +323,7 @@ internal sealed class Missiles(
             {
                 int nx = x + dx, ny = y + dy;
                 if (Math.Abs(nx - cx) > radius || Math.Abs(ny - cy) > radius
-                    || nx < 0 || ny < 0 || nx >= MapManager.MapSize || ny >= MapManager.MapSize
+                    || !map.InMap(nx, ny)
                     || !seen.Add((nx, ny)) || IsSolidForBlast(nx, ny))
                     continue;
                 open.Enqueue((nx, ny));

@@ -129,7 +129,38 @@ public class AssetManager
         _gamePackId = gamePackId;
         foreach (var (name, asset) in assets)
             SetAsset(GetKey(name, asset.GetType().Name), asset);
+        TranslateUwmfLevels();
         BuildAnimations();
+    }
+
+    /// <summary>
+    /// Turns the UWMF levels read into planes, through the running game's mapdefs (which are
+    /// only known once every pk3 is in); one that can't be is left out, with a warning, as are
+    /// the parts of one the mapdefs can't make anything of
+    /// </summary>
+    private void TranslateUwmfLevels()
+    {
+        var mapdefs = FindInGamePackIfAny<MapObjectTranslationAsset>("mapdefs") ?? new MapObjectTranslationAsset();
+        foreach (var (key, asset) in _assets.ToList())
+        {
+            if (asset is not MapAsset { NeedsTranslation: true } level)
+                continue;
+
+            var name = key[(key.IndexOf(':') + 1)..].ToUpperInvariant();
+            try
+            {
+                var translated = Loaders.Uwmf.UwmfTranslator.ToMapAsset(level.Uwmf!, mapdefs, warning => ModWarnings.Add($"{name}: {warning}"));
+                level.MapData = translated.MapData;
+                level.LocalDefs = translated.LocalDefs;
+                level.ExtraThings = translated.ExtraThings;
+                level.Defaults = translated.Defaults;
+            }
+            catch (InvalidDataException e)
+            {
+                ModWarnings.Add($"{name} (UWMF) can't be played, so it's left out: {e.Message}");
+                _assets.Remove(key);
+            }
+        }
     }
 
     /// <summary>The kinds of asset an animation's frames can be</summary>
@@ -350,6 +381,8 @@ public class AssetManager
 
         foreach (var (name, level) in levels)
             AddBeneathPk3s(GetKey(name, nameof(MapAsset)), level.Map, level.History);
+
+        TranslateUwmfLevels();
 
         // Levels game-info sends the player to that nothing supplied
         var gameInfo = FindInGamePackIfAny<GameInfoAsset>("game-info");

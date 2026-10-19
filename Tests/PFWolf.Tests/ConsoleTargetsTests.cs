@@ -16,9 +16,9 @@ public class ConsoleTargetsTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session, null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
-            MapWidth = MapManager.MapSize, MapHeight = MapManager.MapSize,
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            MapWidth = MapConstants.ClassicMapSize, MapHeight = MapConstants.ClassicMapSize,
         };
         _session.PlayerState.Pawn = new Entities.Actors.PlayerPawn
         {

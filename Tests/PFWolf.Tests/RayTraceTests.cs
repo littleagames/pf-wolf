@@ -17,8 +17,8 @@ public class RayTraceTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
-            Spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
-            Seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],
+            Spotvis = new bool[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            Seen = new SeenFlags[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
         _trace = new RayTrace(_map, null!, null!, null!, null!, _render);

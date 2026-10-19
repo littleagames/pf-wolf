@@ -141,7 +141,7 @@ internal sealed class HubActions(
             value = mapManager.MapSpot(trigger.TileX + 1, trigger.TileY, 1);
 
         int x = value >> 8, y = value & 0xff;
-        if (x >= MapManager.MapSize || y >= MapManager.MapSize)
+        if (!mapManager.InMap(x, y))
             return false;
         session.Player.SetPosition(x, y);
         movement.Thrust(0, 0);
@@ -208,7 +208,7 @@ internal sealed class HubActions(
 
     /// <summary>Whether the player can stand on a tile: on the map, no wall or door, nothing solid or alive on it</summary>
     bool IsOpenForPlayer(int x, int y) =>
-        x > 0 && y > 0 && x < MapManager.MapSize - 1 && y < MapManager.MapSize - 1
+        x > 0 && y > 0 && x < mapManager.MapWidth - 1 && y < mapManager.MapHeight - 1
         && mapManager.TileMap[x, y] == 0
         && mapManager.ActorAt[x, y] == null
         && !mapManager.IsShootableActorAt(x, y);
@@ -286,7 +286,7 @@ internal sealed class HubActions(
         // Starting behind the player can be inside a wall: it runs on out of it, and only a wall
         // it runs into stops it
         bool IsWall(int x, int y) => mapManager.TileMap[x, y] != 0 && (mapManager.TileMap[x, y] & GameConstants.BitDoor) == 0;
-        bool blocked = tx < 0 || ty < 0 || tx >= MapManager.MapSize || ty >= MapManager.MapSize
+        bool blocked = !mapManager.InMap(tx, ty)
             || (IsWall(tx, ty) && !IsWall(ob.TileX, ob.TileY));
         if (!blocked)
         {

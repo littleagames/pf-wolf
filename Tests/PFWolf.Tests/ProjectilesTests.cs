@@ -23,8 +23,8 @@ public class ProjectilesTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         _wallSpriteInTheWay = false;
         _projectiles = new Projectiles(_map, null!, _session, new ProjectileHooks(
@@ -125,7 +125,7 @@ public class ProjectilesTests
     public void The_Death_Cam_Can_Never_Stand_Off_The_Map()
     {
         Assert.That(_projectiles.CheckPosition(-Tile, 10 * Tile), Is.False);
-        Assert.That(_projectiles.CheckPosition(MapManager.MapSize * Tile, 10 * Tile), Is.False);
+        Assert.That(_projectiles.CheckPosition(MapConstants.ClassicMapSize * Tile, 10 * Tile), Is.False);
     }
 
     [Test]

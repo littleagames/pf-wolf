@@ -54,7 +54,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
     /// <summary>Works whatever is on tile (x, y). True when it found an actor or thing there, or nothing at all.</summary>
     internal bool OperateSmartSwitch(int x, int y, SmartSwitchOp op)
     {
-        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
+        if (!map.InMap(x, y))
             return true;
 
         int tile = map.TileMap[x, y];

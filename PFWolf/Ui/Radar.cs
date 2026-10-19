@@ -120,7 +120,7 @@ internal sealed class Radar(
             {
                 string color = unmapped;
                 int mx = (int)Math.Floor(lmx), my = (int)Math.Floor(lmy);
-                if (mx >= 0 && mx < MapManager.MapSize && my >= 0 && my < MapManager.MapSize)
+                if (map.InMap(mx, my))
                 {
                     if (!drawnplayer && mx == session.Player.TileX && my == session.Player.TileY)
                     {

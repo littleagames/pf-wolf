@@ -6,9 +6,27 @@ public static class MapConstants
     public const long Global1 = (1L << 16);
     public const long TileGlobal = Global1;
 
-    public const int MapShift = 6;
-    public const int MapSize = (1 << MapShift);
-    public const int MapArea = MapSize * MapSize;
+    /// <summary>
+    /// Wolf3D's map size, each way: what GAMEMAPS levels are and what a new level starts as. A
+    /// level can be any width and height from <see cref="MinMapSize"/> to <see cref="MaxMapSize"/>.
+    /// </summary>
+    public const int ClassicMapSize = 64;
+    public const int ClassicMapArea = ClassicMapSize * ClassicMapSize;
+
+    /// <summary>The smallest a level can be each way: a wall round one open tile</summary>
+    public const int MinMapSize = 3;
+
+    /// <summary>The largest a level can be each way: an actor's tile coordinates are bytes</summary>
+    public const int MaxMapSize = 256;
+
+    /// <summary>The most doors a level can have (the game keeps a door's number below its wall bits)</summary>
+    public const int MaxDoors = 256;
+
+    /// <summary>Why a level of this size can't be loaded, or null when it can</summary>
+    public static string? CheckMapSize(int width, int height) =>
+        width is >= MinMapSize and <= MaxMapSize && height is >= MinMapSize and <= MaxMapSize
+            ? null
+            : $"it's {width}x{height}; PFWolf levels are {MinMapSize} to {MaxMapSize} tiles each way";
 
     /// <summary>Wall ids on plane 0 are 1 to this; the game keeps its wall and door flags above them</summary>
     public const int MaxWallId = 255;

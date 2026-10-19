@@ -1,3 +1,5 @@
+using PFWolf.Assets;
+
 namespace PFWolf.Editor.Editing;
 
 public enum EditTool
@@ -14,6 +16,8 @@ public enum EditTool
     Ellipse,
     Room,
     Stamp,
+    /// <summary>Places, picks up and moves a level's extra things (MapAsset.ExtraThings) anywhere, off the tile grid</summary>
+    FreeThing,
 }
 
 /// <summary>A rotate or flip, and what became of the values on the tiles that point somewhere</summary>
@@ -55,6 +59,7 @@ public sealed class ToolController
             if (_document != null)
                 _document.Changed += OnDocumentChanged;
             Selection = null;
+            SelectedExtra = -1;
             _pasting = null;
             RaiseChanged();
         }
@@ -311,8 +316,148 @@ public sealed class ToolController
         _last = (x, y);
     }
 
+    /*
+    =============================================================================
+
+                                    FREE THINGS
+
+    A UWMF level's extra things (MapAsset.ExtraThings) stand anywhere, not on the object plane:
+    off a tile's middle, or a second on a tile. The free-thing tool puts the palette's thing down
+    where it's clicked (snapped to an eighth of a tile, or the tile's middle with Shift), picks
+    one up and drags it, and turns (the rotate and flip keys) or deletes the one picked.
+
+    =============================================================================
+    */
+
+    /// <summary>The extra thing the free-thing tool has picked (its place in the level's extra things), or -1</summary>
+    public int SelectedExtra { get; private set; } = -1;
+
+    /// <summary>
+    /// What the free-thing tool puts down: the palette's thing as an extra thing (where it goes is
+    /// set on placing), or null when the palette's value isn't a thing
+    /// </summary>
+    public Func<MapThing?>? NewExtraThing { get; set; }
+
+    /// <summary>How near (in tiles) a click has to be to an extra thing to pick it up</summary>
+    public const double ExtraReach = 0.35;
+
+    // A drag of an extra thing: the extra things as it found them, and where the pointer was on the thing
+    private List<MapThing>? _extrasBefore;
+    private (double X, double Y) _grab;
+    private bool _extraMoved;
+
+    /// <summary>A spot snapped to an eighth of a tile, or with <paramref name="middle"/> to its tile's middle</summary>
+    public static double Snap(double value, bool middle) => middle ? Math.Floor(value) + 0.5 : Math.Round(value * 8) / 8;
+
+    /// <summary>The extra thing nearest (x, y) within reach (its place in the list), or -1</summary>
+    public static int ExtraAt(IReadOnlyList<MapThing> things, double x, double y)
+    {
+        int nearest = -1;
+        double best = ExtraReach * ExtraReach;
+        for (int i = things.Count - 1; i >= 0; i--)
+        {
+            double dx = things[i].X - x, dy = things[i].Y - y, d = dx * dx + dy * dy;
+            if (d <= best)
+                (best, nearest) = (d, i);
+        }
+        return nearest;
+    }
+
+    /// <summary>The button goes down at (x, y), in tiles with their fractions: the free-thing tool's own, else the tile's</summary>
+    public void PressAt(double x, double y)
+    {
+        if (Tool != EditTool.FreeThing)
+        {
+            Press((int)Math.Floor(x), (int)Math.Floor(y));
+            return;
+        }
+        if (_document is not { } document || !document.Contains((int)Math.Floor(x), (int)Math.Floor(y)))
+            return;
+
+        var things = document.Map.ExtraThings;
+        int hit = ExtraAt(things, x, y);
+        if (hit >= 0)
+        {
+            // Pick it up to drag
+            SelectedExtra = hit;
+            _extrasBefore = [.. things];
+            _grab = (x - things[hit].X, y - things[hit].Y);
+            _extraMoved = false;
+            _pressed = true;
+        }
+        else if (NewExtraThing?.Invoke() is { } template)
+        {
+            var placed = template with { X = Snap(x, Constrain), Y = Snap(y, Constrain) };
+            document.ChangeExtraThings($"Place {template.Class}", things, [.. things, placed]);
+            SelectedExtra = document.Map.ExtraThings.Count - 1;
+        }
+        else
+            SelectedExtra = -1;
+        RaiseChanged();
+    }
+
+    /// <summary>The pointer moves to (x, y), in tiles with their fractions: the free-thing tool's drag, else the tile's</summary>
+    public void MoveAt(double x, double y)
+    {
+        if (Tool != EditTool.FreeThing)
+        {
+            Move((int)Math.Floor(x), (int)Math.Floor(y));
+            return;
+        }
+        if (_document is not { } document || _extrasBefore == null || SelectedExtra < 0 || SelectedExtra >= _extrasBefore.Count)
+            return;
+
+        // Kept on the level
+        double nx = Math.Clamp(Snap(x - _grab.X, Constrain), 0, document.Width - 0.01);
+        double ny = Math.Clamp(Snap(y - _grab.Y, Constrain), 0, document.Height - 0.01);
+        var things = new List<MapThing>(_extrasBefore);
+        if ((things[SelectedExtra].X, things[SelectedExtra].Y) == (nx, ny) && !_extraMoved)
+            return;
+        things[SelectedExtra] = things[SelectedExtra] with { X = nx, Y = ny };
+        _extraMoved = true;
+        document.PreviewExtraThings(things);
+    }
+
+    // Ends a drag of an extra thing: one undo step if it moved
+    private void ReleaseExtra()
+    {
+        if (_extrasBefore == null)
+            return;
+        if (_extraMoved && _document != null)
+            _document.ChangeExtraThings("Move thing", _extrasBefore, _document.Map.ExtraThings);
+        _extrasBefore = null;
+        _extraMoved = false;
+    }
+
+    /// <summary>Takes the extra thing picked off the level; false when none is</summary>
+    public bool DeleteExtra()
+    {
+        if (_document is not { } document || SelectedExtra < 0 || SelectedExtra >= document.Map.ExtraThings.Count)
+            return false;
+        var things = document.Map.ExtraThings;
+        var thing = things[SelectedExtra];
+        document.ChangeExtraThings($"Delete {thing.Class}", things, things.Where((_, i) => i != SelectedExtra).ToList());
+        SelectedExtra = -1;
+        RaiseChanged();
+        return true;
+    }
+
+    // Turns the extra thing picked the way a rotate or flip turns things; false when none is
+    private bool TransformExtra(TileTransform transform)
+    {
+        if (_document is not { } document || Tool != EditTool.FreeThing || SelectedExtra < 0 || SelectedExtra >= document.Map.ExtraThings.Count)
+            return false;
+        var things = document.Map.ExtraThings;
+        var turned = new List<MapThing>(things);
+        turned[SelectedExtra] = things[SelectedExtra] with { Angle = TileTransforms.Angle(transform, things[SelectedExtra].Angle) };
+        document.ChangeExtraThings(TileTransforms.Describe(transform), things, turned);
+        RaiseChanged();
+        return true;
+    }
+
     public void Release()
     {
+        ReleaseExtra();
         _pressed = false;
         _moving = null;
         _movingFrom = null;
@@ -442,6 +587,8 @@ public sealed class ToolController
     /// <summary>Clears the selection: open floor on plane 0, nothing on the others</summary>
     public void Delete(string description = "Delete")
     {
+        if (Tool == EditTool.FreeThing && DeleteExtra())
+            return;
         if (_document == null || Selection is not { } selection)
             return;
         using var edit = _document.BeginEdit(description);
@@ -529,7 +676,8 @@ public sealed class ToolController
 
     /// <summary>Whether there's something to rotate or flip: a paste being placed, the stamp, or the selection</summary>
     public bool CanTransform => _document != null && !_pressed
-        && (_pasting != null || (Tool == EditTool.Stamp && _clipboard != null) || Selection != null);
+        && (_pasting != null || (Tool == EditTool.Stamp && _clipboard != null) || Selection != null
+            || (Tool == EditTool.FreeThing && SelectedExtra >= 0));
 
     /// <summary>
     /// Rotates or flips the paste being placed, or else the selection's tiles where they are
@@ -538,6 +686,8 @@ public sealed class ToolController
     public void Transform(TileTransform transform)
     {
         if (_document is not { } document || !CanTransform)
+            return;
+        if (_pasting == null && TransformExtra(transform))
             return;
 
         var remap = MakeRemap?.Invoke(transform);
@@ -583,8 +733,10 @@ public sealed class ToolController
     /// <summary>Esc: drops a paste or a drag in progress, else the selection</summary>
     public void Escape()
     {
-        if (_edit != null)
+        if (_edit != null || _extrasBefore != null)
             CancelGesture();
+        else if (SelectedExtra >= 0)
+            SelectedExtra = -1;
         else
             Selection = null;
         RaiseChanged();
@@ -626,6 +778,13 @@ public sealed class ToolController
     {
         _edit?.Cancel();
         _edit = null;
+        if (_extrasBefore != null)
+        {
+            // A drag of an extra thing: back where it was
+            _document?.PreviewExtraThings(_extrasBefore);
+            _extrasBefore = null;
+            _extraMoved = false;
+        }
         _pasting = null;
         _moving = null;
         _movingFrom = null;
@@ -652,7 +811,13 @@ public sealed class ToolController
     /// <summary>Something the tools show changed (the brush's size, the tool): the views draw again</summary>
     public void Refresh() => RaiseChanged();
 
-    private void OnDocumentChanged(object? sender, EventArgs e) => RaiseChanged();
+    private void OnDocumentChanged(object? sender, EventArgs e)
+    {
+        // An undo may have taken the extra thing picked away
+        if (_document != null && SelectedExtra >= _document.Map.ExtraThings.Count)
+            SelectedExtra = -1;
+        RaiseChanged();
+    }
 
     private void RaiseChanged() => Changed?.Invoke(this, EventArgs.Empty);
 }

@@ -343,6 +343,13 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     internal static string OverheadColor(TeleporterLayout? layout, string name, int fallback) =>
         (layout?.Colors.TryGetValue(name, out var c) == true ? c : fallback).ToString();
 
+    // The teleporter's overhead map is this many pixels each way: a pixel a tile on a 64x64 level,
+    // a larger one's tiles sampled down to fit
+    const int OverheadSize = MapConstants.ClassicMapSize;
+
+    // The level's tile under an overhead pixel, each way
+    int OverheadTile(int pixel, int levelSize) => levelSize <= OverheadSize ? pixel : pixel * levelSize / OverheadSize;
+
     /// <summary>The level as the player has seen it, 64x64 palette colors (north up), for the teleporter</summary>
     internal byte[] CaptureOverhead()
     {
@@ -351,15 +358,16 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
         string unmapped = OverheadColor(layout, "unmapped", 82), floor = OverheadColor(layout, "floor", 85),
             door = OverheadColor(layout, "door", 88), locked = OverheadColor(layout, "locked", 24);
 
-        var image = new byte[64 * 64];
-        for (int y = 0; y < 64; y++)
+        var image = new byte[OverheadSize * OverheadSize];
+        for (int py = 0; py < OverheadSize; py++)
         {
-            for (int x = 0; x < 64; x++)
+            for (int px = 0; px < OverheadSize; px++)
             {
+                int x = OverheadTile(px, mapManager.MapWidth), y = OverheadTile(py, mapManager.MapHeight);
                 byte color = background;
-                if (x < MapManager.MapSize && y < MapManager.MapSize && mapManager.Seen[x, y] != SeenFlags.None)
+                if (mapManager.InMap(x, y) && mapManager.Seen[x, y] != SeenFlags.None)
                     color = byte.Parse(hooks.TileColor(x, y, unmapped, floor, door, locked));
-                image[y * 64 + x] = color;
+                image[py * OverheadSize + px] = color;
             }
         }
         return image;
@@ -421,13 +429,17 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
             var o = layout.Overhead;
             if (floors.TryGetValue(floor, out var map) && hubs.FloorOverheads.TryGetValue(map, out var image) && !locked)
             {
-                for (int y = 0; y < 64; y++)
-                    for (int x = 0; x < 64; x++)
-                        video.Bar(o.X + x, o.Y + y, 1, 1, image[y * 64 + x].ToString());
+                for (int y = 0; y < OverheadSize; y++)
+                    for (int x = 0; x < OverheadSize; x++)
+                        video.Bar(o.X + x, o.Y + y, 1, 1, image[y * OverheadSize + x].ToString());
                 if (floor == current)
                 {
                     int px = session.Player.TileX, py = session.Player.TileY;
-                    if (px < 64 && py < 64)
+                    if (mapManager.MapWidth > OverheadSize)
+                        px = px * OverheadSize / mapManager.MapWidth;
+                    if (mapManager.MapHeight > OverheadSize)
+                        py = py * OverheadSize / mapManager.MapHeight;
+                    if (px < OverheadSize && py < OverheadSize)
                         video.Bar(o.X + px, o.Y + py, 1, 1, OverheadColor(layout, "player", 240));
                 }
             }

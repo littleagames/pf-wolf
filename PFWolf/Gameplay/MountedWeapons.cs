@@ -131,7 +131,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
 
     // Nothing in the way: no wall or door, and nothing solid or shootable standing there
     bool IsOpen(int x, int y) =>
-        x is > 0 and < MapManager.MapSize - 1 && y is > 0 and < MapManager.MapSize - 1
+        x > 0 && x < map.MapWidth - 1 && y > 0 && y < map.MapHeight - 1
         && map.TileMap[x, y] == 0 && map.ActorAt[x, y] == null
         && !map.GetActors().Any(a => !a.IsRemoved && a.TileX == x && a.TileY == y && a is not Entities.Actors.PlayerPawn
             && (a.RuntimeFlags.Has(ObjFlags.Shootable) || a.Flags.Contains("SOLID")));

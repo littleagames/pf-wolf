@@ -72,6 +72,16 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(TargetText))]
     private SaveTarget? _saveTarget;
 
+    /// <summary>
+    /// The level being edited's own definitions and extra things, as YAML to read (its "This
+    /// level's own" tab; LevelOwnDefinitions): they're the level's, kept in its file, not a mod's
+    /// </summary>
+    [ObservableProperty] private string _levelOwnText = "# No level is open.";
+
+    /// <summary>The level being edited (or none): its own definitions show in their tab</summary>
+    public void ShowLevel(PFWolf.Assets.MapAsset? map, string? levelName)
+        => LevelOwnText = map == null ? "# No level is open." : Editing.LevelOwnDefinitions.Describe(map, levelName ?? map.Name);
+
     [ObservableProperty] private string _title = "Definitions";
     [ObservableProperty] private string _status = "";
 

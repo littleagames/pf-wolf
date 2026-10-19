@@ -81,7 +81,7 @@ internal sealed class LevelBodies(
             AreaByPlayer: SaveFile.ReadExactly(br, numareas),
             PushWalls: Enumerable.Range(0, br.ReadCount()).Select(_ => MovingPushWall.Read(br)).ToList(),
             LastAttacker: br.ReadInt32(),
-            Seen: SaveFile.ReadExactly(br, MapManager.MapArea),
+            Seen: SaveFile.ReadExactly(br, level.TileMap.Length),
             Zones: lighting.ReadZoneLights(br),
             Scrollers: Scrollers.Read(br));
     }

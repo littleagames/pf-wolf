@@ -64,10 +64,6 @@ internal enum SeenFlags : byte
 
 internal class MapManager
 {
-    internal const int MapShift = MapConstants.MapShift;
-    internal const int MapSize = MapConstants.MapSize;
-    internal const int MapArea = MapConstants.MapArea;
-
     public const int NumMaps = 60;
     public const int MapPlanes = MapConstants.MapPlanes;
 
@@ -148,21 +144,39 @@ internal class MapManager
     // map (it needs the map). Null in tests that make maps with no world
     private readonly Lazy<Entities.Actors.ActorWorld>? actorWorld;
 
-    internal ushort MapWidth, MapHeight;
-    internal ushort[,] TileMap;
+    /// <summary>
+    /// The level's size in tiles (MapConstants.MinMapSize to MaxMapSize each way; Wolf3D's are
+    /// 64x64). Every per-tile array is [MapWidth, MapHeight], and every per-tile list is indexed
+    /// <see cref="TileIndex"/>, row by row like the planes.
+    /// </summary>
+    internal ushort MapWidth = MapConstants.ClassicMapSize, MapHeight = MapConstants.ClassicMapSize;
+
+    /// <summary>How many tiles the level has</summary>
+    internal int MapArea => MapWidth * MapHeight;
+
+    /// <summary>A tile's place in the planes and the other per-tile lists: row by row</summary>
+    internal int TileIndex(int x, int y) => y * MapWidth + x;
+
+    /// <summary>Whether a tile is on the level</summary>
+    internal bool InMap(int x, int y) => (uint)x < MapWidth && (uint)y < MapHeight;
+
+    /// <summary>A tile's <see cref="TileIndex"/>, or -1 when it's off the level</summary>
+    internal int TileIndexOrNone(int x, int y) => InMap(x, y) ? y * MapWidth + x : -1;
+
+    internal ushort[,] TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
     /// <summary>
     /// Each wall tile's shape: Square, or a 45 degree diagonal from a mapdefs diagonal marker on
     /// the object plane. Not saved: it's rebuilt from the planes whenever they're loaded or restored.
     /// </summary>
-    internal WallShape[,] WallShapes = new WallShape[MapSize, MapSize];
+    internal WallShape[,] WallShapes = new WallShape[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
     /// <summary>
     /// Each tile's wall height in stories from the height plane (plane 3), or 0 where it has
     /// none and the map's default applies (see <see cref="WallStories"/>). Rebuilt from the
     /// planes whenever they're loaded or restored, like <see cref="WallShapes"/>.
     /// </summary>
-    internal byte[,] StoryMap = new byte[MapSize, MapSize];
+    internal byte[,] StoryMap = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
     private int maxtilestories;
 
     /// <summary>
@@ -170,7 +184,7 @@ internal class MapManager
     /// plane 0 (MapConstants.PatchShift), which LoadMap takes off into here, so plane 0 holds only
     /// the tiles' own codes. Saved with the level.
     /// </summary>
-    internal byte[,] PatchMap = new byte[MapSize, MapSize];
+    internal byte[,] PatchMap = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
     internal const int HeightPlane = MapConstants.HeightPlane;
 
@@ -198,31 +212,31 @@ internal class MapManager
     /// <summary>
     /// Each tile's floor and ceiling texture: its flat plane indices through the mapdefs flats
     /// table, else the map's default-floor and default-ceiling; null where there's none (the
-    /// floor or ceiling color shows). Indexed (y &lt;&lt; MapShift) + x. Flats don't move, so these
+    /// floor or ceiling color shows). Indexed <see cref="TileIndex"/>. Flats don't move, so these
     /// are only built when a level is loaded or restored; an animated flat's tiles are set to its
     /// frame each frame (AnimateFlats).
     /// </summary>
-    internal TextureAsset?[] FloorFlat = new TextureAsset?[MapArea], CeilingFlat = new TextureAsset?[MapArea];
+    internal TextureAsset?[] FloorFlat = new TextureAsset?[MapConstants.ClassicMapArea], CeilingFlat = new TextureAsset?[MapConstants.ClassicMapArea];
 
     // The tiles whose floor or ceiling is an animation (animdefs), with it
     private readonly List<(int Index, AnimatedAsset<TextureAsset> Animation)> animatedfloors = [], animatedceilings = [];
 
     /// <summary>Whether any tile has a floor flat, or a ceiling flat.</summary>
     internal bool HasFloorFlats, HasCeilingFlats;
-    internal bool[,] Spotvis;
-    internal Actor?[,] ActorAt;
+    internal bool[,] Spotvis = new bool[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
+    internal Actor?[,] ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
     /// <summary>
     /// What the player has seen of this level, for the automap: floor the view rays have crossed
     /// and the wall faces they've hit. Unlike spotvis it lasts for the whole level, and it's saved.
     /// </summary>
-    internal SeenFlags[,] Seen;
+    internal SeenFlags[,] Seen = new SeenFlags[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
     /// <summary>Adds the floor tiles visible this frame (spotvis, after the walls are traced) to <see cref="Seen"/>.</summary>
     internal void MarkSeenFromSpotvis()
     {
-        for (int x = 0; x < MapSize; x++)
-            for (int y = 0; y < MapSize; y++)
+        for (int x = 0; x < MapWidth; x++)
+            for (int y = 0; y < MapHeight; y++)
                 if (Spotvis[x, y])
                     Seen[x, y] |= SeenFlags.Floor;
     }
@@ -230,18 +244,18 @@ internal class MapManager
     /// <summary>The seen map as one byte per tile, column by column, for save games.</summary>
     internal byte[] GetSeenBytes()
     {
-        var bytes = new byte[MapSize * MapSize];
-        for (int x = 0; x < MapSize; x++)
-            for (int y = 0; y < MapSize; y++)
-                bytes[x * MapSize + y] = (byte)Seen[x, y];
+        var bytes = new byte[MapArea];
+        for (int x = 0; x < MapWidth; x++)
+            for (int y = 0; y < MapHeight; y++)
+                bytes[x * MapHeight + y] = (byte)Seen[x, y];
         return bytes;
     }
 
     internal void SetSeenBytes(byte[] bytes)
     {
-        for (int x = 0; x < MapSize; x++)
-            for (int y = 0; y < MapSize; y++)
-                Seen[x, y] = (SeenFlags)bytes[x * MapSize + y];
+        for (int x = 0; x < MapWidth; x++)
+            for (int y = 0; y < MapHeight; y++)
+                Seen[x, y] = (SeenFlags)bytes[x * MapHeight + y];
     }
 
     public ushort GetTile(int x, int y, int plane)
@@ -273,6 +287,11 @@ internal class MapManager
         if (mapAsset == null)
             throw new Exception($"Map not found {mapName}");
 
+        // A UWMF level's own walls, doors, flats and triggers, over the game's mapdefs while it's played
+        _levelMapData = mapAsset.LocalDefs != null ? PackMapData().With(mapAsset.LocalDefs) : null;
+        LevelDefaults = mapAsset.Defaults;
+        if (MapConstants.CheckMapSize(mapAsset.Width, mapAsset.Height) is { } badSize)
+            throw new Exception($"Map {mapName} can't be played: {badSize}");
         MapWidth = mapAsset.Width;
         MapHeight = mapAsset.Height;
         // Clone each plane: SpawnDoor and other setup code mutate mapsegs in place
@@ -301,10 +320,10 @@ internal class MapManager
     ffDataBottomLeft  = MAPSPOT(0,   MXX, 0); MAPSPOT(0,   MXX, 0) = MAPSPOT(0,       MXX - 1, 0);
 #endif
 
-        TileMap = new ushort[MapSize, MapSize]; // wall values only
-        Spotvis = new bool[MapSize, MapSize];
-        Seen = new SeenFlags[MapSize, MapSize];
-        ActorAt = new Actor?[MapSize, MapSize];
+        TileMap = new ushort[MapWidth, MapHeight]; // wall values only
+        Spotvis = new bool[MapWidth, MapHeight];
+        Seen = new SeenFlags[MapWidth, MapHeight];
+        ActorAt = new Actor?[MapWidth, MapHeight];
 
         // Every actor lives in _actors and nothing else clears this list, so reloading a level
         // (death with lives left, replaying a level in a new game, etc.) would otherwise pile
@@ -357,7 +376,7 @@ internal class MapManager
 
                 // TODO: SpawnDoor
 
-                if (infotiles[y * MapSize + x])
+                if (infotiles[TileIndex(x, y)])
                     continue;
 
                 // Things only stand on open floor: an object-plane value on a wall or door is
@@ -396,10 +415,46 @@ internal class MapManager
             }
         }
 
+        SpawnExtraThings(mapName, mapAsset.ExtraThings);
         SealEdge(mapName, data);
         BuildWallShapes();
         BuildWallHeights();
         ZonesVersion++;
+    }
+
+    private readonly HashSet<string> missingclasses = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The things the object plane can't hold (a UWMF level's: a second on a tile, one off a
+    /// tile's middle, one on skills min-skill can't say, or a class with no mapdefs code), by
+    /// class, after the plane's own
+    /// </summary>
+    private void SpawnExtraThings(string mapName, IReadOnlyList<MapThing> things)
+    {
+        foreach (var thing in things)
+        {
+            if (!thing.OnSkill(_difficulty) || !InMap(thing.TileX, thing.TileY))
+                continue;
+
+            var actor = SpawnThing(thing.TileX, thing.TileY,
+                new MapActorTranslation { Class = thing.Class, Angles = thing.Angle, Patrol = thing.Patrol ? 1 : 0 });
+            if (actor == null)
+            {
+                if (missingclasses.Add(thing.Class))
+                    Console.WriteLine($"{mapName}: thing class {thing.Class} isn't an actor (actordefs); it's left out");
+                continue;
+            }
+            if (thing.Ambush)
+                actor.RuntimeFlags |= ObjFlags.Ambush;
+
+            // Off its tile's middle: where the level puts it (a patroller is on its way already)
+            bool centered = Math.Abs(thing.X - thing.TileX - 0.5) < 0.01 && Math.Abs(thing.Y - thing.TileY - 0.5) < 0.01;
+            if (!centered && !thing.Patrol)
+            {
+                actor.X = (int)(thing.X * MapConstants.TileGlobal);
+                actor.Y = (int)(thing.Y * MapConstants.TileGlobal);
+            }
+        }
     }
 
     /// <summary>
@@ -440,9 +495,9 @@ internal class MapManager
 
     /// <summary>
     /// Object-plane tiles that hold map info (mapdefs map-info) or its value, rather than a
-    /// thing. Indexed (y &lt;&lt; MapShift) + x. Rebuilt with the planes, so it isn't saved.
+    /// thing. Indexed <see cref="TileIndex"/>. Rebuilt with the planes, so it isn't saved.
     /// </summary>
-    private bool[] infotiles = new bool[MapArea];
+    private bool[] infotiles = new bool[MapConstants.ClassicMapArea];
 
     internal record MapHint(int Message, byte Area);
 
@@ -490,7 +545,7 @@ internal class MapManager
                 // code that isn't a room; 0xff when it's on a wall or door (a general hint)
                 int spot = mapsegs[0][i];
                 bool onWall = IsWallId(spot) && GetMapData().Walls.ContainsKey(spot) || GetMapData().Doors.ContainsKey(spot);
-                byte area = onWall ? (byte)0xff : SpawnArea(i % MapSize, i / MapSize);
+                byte area = onWall ? (byte)0xff : SpawnArea(i % MapWidth, i / MapWidth);
                 if (!Hints.TryGetValue(hintText, out var list))
                     Hints[hintText] = list = [];
                 list.Add(new MapHint(objects[i] & 0xff, area));
@@ -570,7 +625,7 @@ internal class MapManager
         if (x <= 0 || y <= 0 || x >= MapWidth - 1 || y >= MapHeight - 1)
             return;
 
-        int target = (y << MapShift) + x;
+        int target = TileIndex(x, y);
         if (!links.TryGetValue(target, out var tag))
         {
             tag = (ushort)(FirstLinkTag - links.Values.Distinct().Count());
@@ -582,11 +637,11 @@ internal class MapManager
                 int spot = open.Dequeue();
                 links[spot] = tag;
                 mapsegs[TagPlane][spot] = tag;
-                int sx = spot & (MapSize - 1), sy = spot >> MapShift;
+                int sx = spot % MapWidth, sy = spot / MapWidth;
                 foreach (var (dx, dy) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
                 {
                     int nx = sx + dx, ny = sy + dy;
-                    int next = (ny << MapShift) + nx;
+                    int next = TileIndex(nx, ny);
                     if (nx >= 0 && ny >= 0 && nx < MapWidth && ny < MapHeight
                         && linked.Contains(mapsegs[1][next]) && seen.Add(next))
                         open.Enqueue(next);
@@ -620,7 +675,7 @@ internal class MapManager
     /// </summary>
     private void BuildWallHeights()
     {
-        StoryMap = new byte[MapSize, MapSize];
+        StoryMap = new byte[MapWidth, MapHeight];
         maxtilestories = 0;
 
         for (int y = 0; y < MapHeight; y++)
@@ -707,11 +762,11 @@ internal class MapManager
     /// </summary>
     private void SplitPatches()
     {
-        PatchMap = new byte[MapSize, MapSize];
+        PatchMap = new byte[MapWidth, MapHeight];
         var plane = mapsegs[0];
         for (int i = 0; i < plane.Length && i < MapArea; i++)
         {
-            PatchMap[i % MapSize, i / MapSize] = (byte)(plane[i] >> MapConstants.PatchShift);
+            PatchMap[i % MapWidth, i / MapWidth] = (byte)(plane[i] >> MapConstants.PatchShift);
             plane[i] &= MapConstants.Plane0CodeMask;
         }
     }
@@ -800,7 +855,7 @@ internal class MapManager
         for (int y = 0; y < MapHeight; y++)
             for (int x = 0; x < MapWidth; x++)
             {
-                int i = (y << MapShift) + x;
+                int i = TileIndex(x, y);
                 FloorFlat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: false)), i, animatedfloors);
                 CeilingFlat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: true)), i, animatedceilings);
                 HasFloorFlats |= FloorFlat[i] != null;
@@ -869,23 +924,23 @@ internal class MapManager
     =============================================================================
     */
 
-    // Per tile ((y << MapShift) + x): the textures changed on it, from -> to
+    // Per tile (TileIndex): the textures changed on it, from -> to
     private Dictionary<int, Dictionary<string, string>> texturechanges = [];
 
     /// <summary>The level's objectives (game-info objectives) by name: how many are done, of how many. Saved with the level.</summary>
     internal Dictionary<string, ObjectiveCount> ObjectiveCounts = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Per tile ((y &lt;&lt; MapShift) + x): the level tic it last changed, 0 for never.</summary>
-    internal int[] AnimStart = new int[MapArea];
+    /// <summary>Per tile (<see cref="TileIndex"/>): the level tic it last changed, 0 for never.</summary>
+    internal int[] AnimStart = new int[MapConstants.ClassicMapArea];
 
     /// <summary>The texture a tile shows in place of <paramref name="name"/> (itself, unless A_ChangeTexture swapped it).</summary>
     internal string ChangedTexture(int x, int y, string name)
-        => texturechanges.Count == 0 || !texturechanges.TryGetValue((y << MapShift) + x, out var changes)
+        => texturechanges.Count == 0 || !texturechanges.TryGetValue(TileIndex(x, y), out var changes)
             ? name
             : changes.GetValueOrDefault(name, name);
 
     /// <summary>Notes a tile changed at level tic <paramref name="tic"/>: an animation that plays once on it starts over.</summary>
-    internal void RestartAnimations(int x, int y, int tic) => AnimStart[(y << MapShift) + x] = tic;
+    internal void RestartAnimations(int x, int y, int tic) => AnimStart[TileIndex(x, y)] = tic;
 
     /// <summary>
     /// Makes a tile show <paramref name="to"/> where it showed <paramref name="from"/> (as it is
@@ -894,7 +949,7 @@ internal class MapManager
     /// </summary>
     internal void ChangeTexture(int x, int y, string from, string to, int tic)
     {
-        int i = (y << MapShift) + x;
+        int i = TileIndex(x, y);
         if (!texturechanges.TryGetValue(i, out var changes))
             texturechanges[i] = changes = new(StringComparer.OrdinalIgnoreCase);
 
@@ -939,17 +994,17 @@ internal class MapManager
         }
     }
 
-    internal static (int[] Starts, Dictionary<int, Dictionary<string, string>> Changes) ReadTextureChanges(BinaryReader br)
+    internal static (int[] Starts, Dictionary<int, Dictionary<string, string>> Changes) ReadTextureChanges(BinaryReader br, int mapArea)
     {
-        static int Tile(BinaryReader br)
+        int Tile(BinaryReader br)
         {
             int i = br.ReadInt32();
-            if (i is < 0 or >= MapArea)
+            if (i < 0 || i >= mapArea)
                 throw new InvalidDataException($"Bad tile {i} in the texture changes.");
             return i;
         }
 
-        var starts = new int[MapArea];
+        var starts = new int[mapArea];
         for (int n = br.ReadCount(); n > 0; n--)
             starts[Tile(br)] = br.ReadInt32();
 
@@ -996,7 +1051,7 @@ internal class MapManager
     private void BuildWallShapes()
     {
         var diagonals = GetMapData().Diagonals;
-        WallShapes = new WallShape[MapSize, MapSize];
+        WallShapes = new WallShape[MapWidth, MapHeight];
 
         for (int y = 0; y < MapHeight; y++)
             for (int x = 0; x < MapWidth; x++)
@@ -1389,27 +1444,34 @@ internal class MapManager
     /// <summary>The area on a tile, or -1 for none (off the map, or a floor code that isn't an area)</summary>
     internal int AreaAt(int x, int y)
     {
-        if (x < 0 || y < 0 || x >= MapSize || y >= MapSize)
+        if (!InMap(x, y))
             return -1;
         int spot = MapSpot(x, y, 0);
         return ValidArea(spot) ? spot - Floors.AreaTile : -1;
     }
 
-    internal int MapSpot(int x, int y, int plane) => (mapsegs[(plane)][((y) << MapShift) + (x)]);
+    internal int MapSpot(int x, int y, int plane) => mapsegs[plane][y * MapWidth + x];
     internal void SetMapSpot(int x, int y, int plane, ushort value)
     {
-        (mapsegs[(plane)][((y) << MapShift) + (x)]) = value;
+        mapsegs[plane][y * MapWidth + x] = value;
     }
 
     // A game with no mapdefs (a stand-alone game whose mapdefs/ were taken out): its levels are
     // open floor, sealed at the edge, with the player in the middle
     private static readonly MapObjectTranslationAsset NoMapData = new();
 
-    internal MapObjectTranslationAsset GetMapData()
-    {
-        //var mapSpecific = assetManager.Value.Find<MapObjectTranslationAsset>("map01/mapdefs");
-        return assetManager.Value.FindInGamePackIfAny<MapObjectTranslationAsset>("mapdefs") ?? NoMapData;
-    }
+    // The loaded level's mapdefs with its own definitions over them (MapAsset.LocalDefs), or null
+    // when it has none and the game's are used as they are
+    private MapObjectTranslationAsset? _levelMapData;
+
+    /// <summary>What the loaded level's file says about it (sky, wall height), under its game-info entry</summary>
+    internal MapLevelDefaults LevelDefaults { get; private set; } = new();
+
+    /// <summary>The mapdefs the loaded level is read through: the game's, with the level's own over them</summary>
+    internal MapObjectTranslationAsset GetMapData() => _levelMapData ?? PackMapData();
+
+    private MapObjectTranslationAsset PackMapData()
+        => assetManager.Value.FindInGamePackIfAny<MapObjectTranslationAsset>("mapdefs") ?? NoMapData;
 
     internal void RemoveActor(Entities.Actors.Inventory builtActor)
     {
@@ -1692,9 +1754,11 @@ internal class MapManager
                 bw.Write(spot);
         }
 
-        for (int x = 0; x < MapSize; x++)
+        bw.Write(MapWidth);
+        bw.Write(MapHeight);
+        for (int x = 0; x < MapWidth; x++)
         {
-            for (int y = 0; y < MapSize; y++)
+            for (int y = 0; y < MapHeight; y++)
             {
                 bw.Write(TileMap[x, y]);
                 switch (ActorAt[x, y])
@@ -1736,8 +1800,8 @@ internal class MapManager
 
         WriteTextureChanges(bw);
 
-        for (int x = 0; x < MapSize; x++)
-            for (int y = 0; y < MapSize; y++)
+        for (int x = 0; x < MapWidth; x++)
+            for (int y = 0; y < MapHeight; y++)
                 bw.Write(PatchMap[x, y]);
 
         bw.Write(ObjectiveCounts.Count);
@@ -1760,11 +1824,17 @@ internal class MapManager
                 planes[i][j] = br.ReadUInt16();
         }
 
-        var tiles = new ushort[MapSize, MapSize];
-        var blocking = new Actor?[MapSize, MapSize];
-        for (int x = 0; x < MapSize; x++)
+        int width = br.ReadUInt16(), height = br.ReadUInt16();
+        if (MapConstants.CheckMapSize(width, height) is { } badSize)
+            throw new InvalidDataException($"The saved level is the wrong size: {badSize}.");
+        if (planes.Any(plane => plane.Length != width * height))
+            throw new InvalidDataException($"The saved level's planes aren't {width}x{height}.");
+
+        var tiles = new ushort[width, height];
+        var blocking = new Actor?[width, height];
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < MapSize; y++)
+            for (int y = 0; y < height; y++)
             {
                 tiles[x, y] = br.ReadUInt16();
                 blocking[x, y] = (SavedTile)br.ReadByte() switch
@@ -1784,11 +1854,11 @@ internal class MapManager
             actors.Add(Entities.Actors.ActorSnapshot.Read(br));
         var links = actors.Select(_ => (Target: br.ReadInt32(), Shooter: br.ReadInt32())).ToList();
 
-        var (starts, changes) = ReadTextureChanges(br);
+        var (starts, changes) = ReadTextureChanges(br, width * height);
 
-        var patches = new byte[MapSize, MapSize];
-        for (int x = 0; x < MapSize; x++)
-            for (int y = 0; y < MapSize; y++)
+        var patches = new byte[width, height];
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
                 patches[x, y] = br.ReadByte();
 
         var objectives = new Dictionary<string, ObjectiveCount>(StringComparer.OrdinalIgnoreCase);
@@ -1810,7 +1880,8 @@ internal class MapManager
             return $"Map \"{mapName}\" was not found.";
 
         if (level.Planes.Length != mapAsset.MapData.Length
-            || level.Planes.Where((plane, i) => plane.Length != mapAsset.MapData[i].Length).Any())
+            || level.Planes.Where((plane, i) => plane.Length != mapAsset.MapData[i].Length).Any()
+            || level.TileMap.GetLength(0) != mapAsset.Width || level.TileMap.GetLength(1) != mapAsset.Height)
             return $"Map \"{mapName}\" has changed since the game was saved.";
 
         if (level.Actors.Count(a => a.IsPlayer) != 1)

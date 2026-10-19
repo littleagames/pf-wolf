@@ -20,8 +20,8 @@ public class ActorLightsTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         ActorLights? lights = null;
@@ -44,7 +44,7 @@ public class ActorLightsTests
 
     // The light added to the cell in the middle of a tile
     private int AddedAt(int x, int y) =>
-        _lighting.CellAdd[(((y << Lighting.LightCellShift) + Lighting.LightCells / 2) << Lighting.GridShift) + (x << Lighting.LightCellShift) + Lighting.LightCells / 2];
+        _lighting.CellAdd[(((y << Lighting.LightCellShift) + Lighting.LightCells / 2) << 9) + (x << Lighting.LightCellShift) + Lighting.LightCells / 2];
 
     private void Dim() => _lighting.SetShading(new ShadingSettings("#000000", 0, 16, 0, 64));
 
@@ -138,7 +138,7 @@ public class ActorLightsTests
         _lights.CastActorLights();
 
         // Assert
-        int middle = (((10 << Lighting.LightCellShift) + 4) << Lighting.GridShift) + (10 << Lighting.LightCellShift) + 4;
+        int middle = (((10 << Lighting.LightCellShift) + 4) << 9) + (10 << Lighting.LightCellShift) + 4;
         Assert.That(_lighting.CellTint[middle], Is.Not.Zero);
     }
 

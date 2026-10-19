@@ -23,8 +23,28 @@ public sealed record ShadingValues(string FadeColor, double FadeStart, double Fa
 /// </summary>
 public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperties>? properties = null)
 {
-    private MapObjectTranslationAsset Defs => content.MapDefs;
-    private MapFloorsTranslation Floors => content.MapDefs.Floors;
+    private MapObjectTranslationAsset? _defs, _defsFrom;
+    private MapObjectTranslationAsset? _defsOver;
+
+    /// <summary>
+    /// The mapdefs the level is read through: the game's, with the level's own over them (a UWMF
+    /// level's walls, doors and flats the game's mapdefs have nothing like), as the game reads it
+    /// </summary>
+    public MapObjectTranslationAsset Defs
+    {
+        get
+        {
+            if (_defs == null || !ReferenceEquals(_defsFrom, content.MapDefs) || !ReferenceEquals(_defsOver, map.LocalDefs))
+            {
+                _defs = content.MapDefs.With(map.LocalDefs);
+                _defsFrom = content.MapDefs;
+                _defsOver = map.LocalDefs;
+            }
+            return _defs;
+        }
+    }
+
+    private MapFloorsTranslation Floors => Defs.Floors;
 
     public GameContent Content => content;
     public MapAsset Map => map;
@@ -68,7 +88,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     public const int MaxStories = 8;
 
     /// <summary>How tall the level's walls are, in stories, unless a tile says otherwise</summary>
-    public int LevelStories => Math.Clamp(Properties.WallHeight ?? content.DefaultMapInfo.WallHeight, 1, MaxStories);
+    public int LevelStories => Math.Clamp(Properties.WallHeight ?? map.Defaults.WallStories ?? content.DefaultMapInfo.WallHeight, 1, MaxStories);
 
     /// <summary>How tall a tile's wall is: its height-plane value when that's 1 to 8, else the level's (MapManager.WallStories)</summary>
     public int Stories(int x, int y) => this[MapConstants.HeightPlane, x, y] is var stories and >= 1 and <= MaxStories ? stories : LevelStories;
@@ -77,7 +97,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     public bool IsArch(int x, int y) => KindAt(x, y) == TileKind.Floor && this[MapConstants.HeightPlane, x, y] is > 1 and <= MaxStories;
 
     /// <summary>The level's sky picture name (game-info sky), or null for its ceiling color</summary>
-    public string? Sky => (Properties.Sky ?? content.DefaultMapInfo.Sky) is { Length: > 0 } sky ? sky : null;
+    public string? Sky => (Properties.Sky ?? map.Defaults.Sky ?? content.DefaultMapInfo.Sky) is { Length: > 0 } sky ? sky : null;
 
     /// <summary>
     /// The level's distance fade and light, each value from its game-info entry, else the default
@@ -292,6 +312,13 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         int obj = this[1, x, y];
         if (obj != 0)
             yield return $"Object {obj}: {ObjectText(x, y, obj)}";
+
+        // A UWMF level's things the object plane can't hold
+        foreach (var extra in map.ExtraThings.Where(t => t.TileX == x && t.TileY == y))
+        {
+            var skills = extra.Skills == MapThing.AllSkills ? "" : $", skills {string.Join(",", Enumerable.Range(1, 4).Where(s => (extra.Skills & (1 << (s - 1))) != 0))}";
+            yield return $"Thing {extra.Class} at {extra.X:0.##},{extra.Y:0.##} facing {extra.Angle}{(extra.Patrol ? ", patrols" : "")}{(extra.Ambush ? ", ambush" : "")}{skills} (the level's own, not on the object plane)";
+        }
 
         int flat = this[MapConstants.FlatPlane, x, y];
         if (flat != 0)

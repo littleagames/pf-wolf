@@ -1,3 +1,4 @@
+using PFWolf.Constants;
 using System.Text;
 using PFWolf.Assets;
 using PFWolf.Loaders;
@@ -12,7 +13,7 @@ public class EcWolfMapLoaderTests
         var data = new ushort[MapManager.LevelPlanes][];
         for (int plane = 0; plane < data.Length; plane++)
         {
-            data[plane] = new ushort[MapManager.MapArea];
+            data[plane] = new ushort[MapConstants.ClassicMapArea];
             if (plane < planesInUse)
             {
                 for (int i = 0; i < data[plane].Length; i++)
@@ -22,8 +23,8 @@ public class EcWolfMapLoaderTests
 
         return new MapAsset
         {
-            Width = MapManager.MapSize,
-            Height = MapManager.MapSize,
+            Width = MapConstants.ClassicMapSize,
+            Height = MapConstants.ClassicMapSize,
             Name = name,
             MapData = data,
         };
@@ -90,13 +91,18 @@ public class EcWolfMapLoaderTests
     }
 
     [Test]
-    public void Load_Refuses_A_Textmap()
+    public void Load_Reads_A_Textmap_For_The_Mapdefs_To_Turn_Into_Planes()
     {
-        // Arrange
+        // Arrange: UWMF with no planemap, which can't be made a level
         var wad = WadFile.Write([new("MAP01", []), new("TEXTMAP", Encoding.ASCII.GetBytes("namespace = \"Wolf3D\";"))]);
 
-        // Act / Assert
-        Assert.Throws<NotSupportedException>(() => EcWolfMapLoader.Load(wad));
+        // Act
+        var map = EcWolfMapLoader.Load(wad);
+
+        // Assert
+        Assert.That((map.Format, map.NeedsTranslation), Is.EqualTo((PFWolf.Assets.MapFormat.Uwmf, true)));
+        Assert.That(() => PFWolf.Loaders.Uwmf.UwmfTranslator.ToMapAsset(map.Uwmf!, new PFWolf.Assets.MapObjectTranslationAsset()),
+            Throws.InstanceOf<InvalidDataException>().With.Message.Contains("planemap"));
     }
 
     [Test]
@@ -107,12 +113,12 @@ public class EcWolfMapLoaderTests
     }
 
     [Test]
-    public void Load_Refuses_Another_Map_Size()
+    public void Load_Refuses_A_Map_Past_The_Largest_Size()
     {
         // Arrange
-        var map = MakeMap("Small", 1);
-        map.Width = 32;
-        map.Height = 32;
+        var map = MakeMap("Huge", 1);
+        map.Width = 300;
+        map.Height = 4;
 
         // Act / Assert
         Assert.Throws<InvalidDataException>(() => EcWolfMapLoader.Load(EcWolfMapLoader.Save(map, "MAP01")));

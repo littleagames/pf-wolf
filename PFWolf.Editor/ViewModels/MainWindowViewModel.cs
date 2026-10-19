@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Editing;
@@ -45,6 +46,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _selectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(settings.Game, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
 
         Controller.ValuePicked += (_, value) => SelectValue(value);
+        Controller.NewExtraThing = NewExtraThing;
         Controller.Changed += (_, _) => OnToolStateChanged();
         Controller.Transformed += (_, report) => OnTransformed(report);
 
@@ -117,6 +119,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
         new(EditTool.Stamp, "Stamp", "T",
             "Puts what's copied (Ctrl+C) down around the pointer at each click; a drag lays copies side by side. ] [ Shift+H Shift+V turn the stamp.",
             EditorIcons.Stamp),
+        new(EditTool.FreeThing, "Free thing", "G",
+            "Puts the thing picked in the palette (things, plane 1) anywhere, off the tile grid: snapped to an eighth of a tile, Shift to the tile's middle. "
+            + "Click one of these (ringed in blue) to pick it up and drag it; ] [ Shift+H Shift+V turn it, Delete takes it away. "
+            + "They're the level's own extra things, so a level with any saves as UWMF.",
+            EditorIcons.FreeThing),
         new(EditTool.Pick, "Pick", "I", "Click a tile to pick what's on it into the palette (an eyedropper).", EditorIcons.Pick, GroupStart: true),
     ];
 
@@ -347,7 +354,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Mods.CollectionChanged += (_, _) => _definitions.SetMods(Mods.ToList());
             _definitions.Load(Content, Mods.ToList());
         }
+        ShowLevelOwnDefinitions();
         Dialogs.ShowDefinitions(_definitions);
+    }
+
+    // The definitions window's "This level's own" tab, kept to the level being edited (its own
+    // definitions and extra things change with an undo, a free-thing edit, another level)
+    private (MapDocument? Document, IReadOnlyList<MapThing>? Extras, MapObjectTranslationAsset? Defs) _levelOwnShown;
+
+    private void ShowLevelOwnDefinitions()
+    {
+        if (_definitions == null)
+            return;
+        var shown = (Document, (IReadOnlyList<MapThing>?)Document?.Map.ExtraThings, Document?.Map.LocalDefs);
+        if (shown == _levelOwnShown)
+            return;
+        _levelOwnShown = shown;
+        _definitions.ShowLevel(Document?.Map, Document?.AssetName.ToUpperInvariant());
     }
 
     /// <summary>Opens the definitions window on the mapdefs entry of what the palette has picked</summary>
@@ -763,10 +786,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Controller.Document = Document;
         var document = Document;
         Tiles = document != null && Content != null ? new MapTiles(Content, document.Map, () => document.Properties) : null;
+        if (document?.Map.LocalDefs != null || _paletteHadLevelDefs)
+            BuildPalette();     // its own walls, doors and flats in the palette (or no longer)
+        _paletteHadLevelDefs = document?.Map.LocalDefs != null;
+        OnPropertyChanged(nameof(SaveAsUwmf));
         PlaceCameraAtStart();
         HoverInfo = "";
         OnPropertyChanged(nameof(PlaneHint));
         EditPropertiesCommand.NotifyCanExecuteChanged();
+        ResizeMapCommand.NotifyCanExecuteChanged();
         CheckLevelCommand.NotifyCanExecuteChanged();
         Checks.Clear();
     }
@@ -910,6 +938,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     // The selection or the paste changed: what the options bar, the status bar and the Edit menu offer
     private void OnToolStateChanged()
     {
+        ShowLevelOwnDefinitions();
         OnPropertyChanged(nameof(ShowsOutlineOption));
         OnPropertyChanged(nameof(ShowsWandOption));
         OnPropertyChanged(nameof(ShowsBrushOptions));
@@ -1070,7 +1099,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         if (!HasPalette)
             return SelectedPlane.Plane == MapConstants.FlatPlane ? $"{value} (floor {value & 0xff}, ceiling {value >> 8})" : value.ToString();
-        if (SelectedPlane.Plane == 1 && Content?.MapDefs.Things.TryGetValue(value, out var thing) == true)
+        if (SelectedPlane.Plane == 1 && LevelDefs?.Things.TryGetValue(value, out var thing) == true)
         {
             var details = new List<string> { PaletteEntries.Facing(thing.Angles) };
             if (thing.Patrol != 0)
@@ -1223,20 +1252,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
         HasThingOptions = false;
         if (Content is { } content)
         {
-            Controller.EraseValue = p => PaletteEntries.EraseValue(content.MapDefs, p);
-            Controller.MakeRemap = transform => new TileRemap(content.MapDefs, transform, content.IsWallSprite);
-            Controller.IsBlank = (p, value) => IsBlank(content.MapDefs, p, value);
+            // The game's mapdefs, with a UWMF level's own walls, doors and flats over them
+            var defs = LevelDefs ?? content.MapDefs;
+            Controller.EraseValue = p => PaletteEntries.EraseValue(defs, p);
+            Controller.MakeRemap = transform => new TileRemap(defs, transform, content.IsWallSprite);
+            Controller.IsBlank = (p, value) => IsBlank(defs, p, value);
             (Controller.Combine, Controller.Read) = plane != 0 ? (null, null)
-                : SelectedPlane.Patches ? PaletteEntries.PatchLayer(content.MapDefs) : PaletteEntries.TileLayer(content.MapDefs);
-            _thingVariants = PaletteEntries.ThingVariants(content.MapDefs);
+                : SelectedPlane.Patches ? PaletteEntries.PatchLayer(defs) : PaletteEntries.TileLayer(defs);
+            _thingVariants = PaletteEntries.ThingVariants(defs);
             if (plane == MapConstants.FlatPlane)
             {
                 _syncing = true;
-                FillFlatOptions(FlatFloorOptions, content.MapDefs.Flats.Floor);
-                FillFlatOptions(FlatCeilingOptions, content.MapDefs.Flats.Ceiling);
+                FillFlatOptions(FlatFloorOptions, defs.Flats.Floor);
+                FillFlatOptions(FlatCeilingOptions, defs.Flats.Ceiling);
                 _syncing = false;
             }
-            _allPaletteItems = (SelectedPlane.Patches ? PaletteEntries.Patches(content.MapDefs) : PaletteEntries.ForPlane(content.MapDefs, plane))
+            _allPaletteItems = (SelectedPlane.Patches ? PaletteEntries.Patches(defs) : PaletteEntries.ForPlane(defs, plane))
                 .Select(entry => new PaletteItem(entry, PaletteIcon(entry)))
                 .ToList();
         }
@@ -1284,7 +1315,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PaletteFilter = "";
 
         // A thing: its class, set to this code's facing, skill and patrolling
-        if (SelectedPlane.Plane == 1 && Content?.MapDefs.Things.TryGetValue(value, out var thing) == true
+        if (SelectedPlane.Plane == 1 && LevelDefs?.Things.TryGetValue(value, out var thing) == true
             && _thingVariants.TryGetValue(thing.Class, out var variants))
         {
             SelectedPaletteItem = PaletteItems.FirstOrDefault(item => item.Entry.ThingClass == thing.Class);
@@ -1334,6 +1365,49 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private bool HasDocument => Document != null;
 
+    /// <summary>The mapdefs the level being edited is read through: the game's, with its own over them (MapTiles.Defs)</summary>
+    private MapObjectTranslationAsset? LevelDefs => Tiles?.Defs;
+
+    /// <summary>
+    /// What the free-thing tool puts down: the palette's thing (on the things plane) with its
+    /// facing, patrol and skills, or null, with a word in the status bar, when there's none
+    /// </summary>
+    private MapThing? NewExtraThing()
+    {
+        if (SelectedPlane.Plane == 1 && LevelDefs?.Things.TryGetValue(Controller.Value, out var thing) == true)
+            return new MapThing(thing.Class, 0, 0, thing.Angles, Patrol: thing.Patrol != 0,
+                Skills: MapThing.AllSkills & ~((1 << Math.Clamp(thing.MinSkill, 0, 3)) - 1));
+        Status = "The free-thing tool puts down the thing picked in the palette: pick one on the things plane (plane 1)";
+        return null;
+    }
+
+    // Whether the palette was last built with a level's own definitions in it
+    private bool _paletteHadLevelDefs;
+
+    /// <summary>
+    /// Whether the level saves as UWMF text (a TEXTMAP in maps/NAME.wad, or maps/NAME.uwmf when the
+    /// mod has it that way), else as binary planes. New levels are UWMF; a level keeps the format
+    /// it was read in until this is changed.
+    /// </summary>
+    public bool SaveAsUwmf
+    {
+        get => Document?.Map.Format == MapFormat.Uwmf;
+        set
+        {
+            if (Document is not { } document || value == SaveAsUwmf)
+                return;
+            if (!value && (document.Map.LocalDefs != null || document.Map.ExtraThings.Count > 0))
+            {
+                Status = "This level has walls, doors, flats or things of its own, which only UWMF can hold; it stays UWMF";
+                OnPropertyChanged();
+                return;
+            }
+            document.SetFormat(value ? MapFormat.Uwmf : MapFormat.Planes);
+            Status = value ? "The level saves as UWMF text from now on" : "The level saves as binary planes (WDC3.1) from now on";
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Saves the level to its mod (a folder or a pk3), asking for one the first time</summary>
     [RelayCommand(CanExecute = nameof(HasDocument))]
     private async Task SaveAsync()
@@ -1359,8 +1433,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Controller.CancelGesture();
         try
         {
-            var path = MapFiles.Save(document, folder);
-            Status = $"Saved {path}";
+            var path = MapFiles.Save(document, folder, Content?.MapDefs ?? new MapObjectTranslationAsset(),
+                warning => Problems.Add($"Saving {document.AssetName.ToUpperInvariant()} as UWMF: {warning}"));
+            Status = $"Saved {path} ({(document.Map.Format == MapFormat.Uwmf ? "UWMF" : "binary planes")})";
+            OnPropertyChanged(nameof(SaveAsUwmf));
 
             if (AddModFolder(folder))
                 Status += "; it's in the mods now, so the next load reads it";
@@ -1387,8 +1463,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (name == null)
             return;
 
+        var sizeText = await Dialogs.AskText("New level",
+            $"Size, width x height ({MapConstants.MinMapSize} to {MapConstants.MaxMapSize} tiles each way; Wolf3D's levels are 64x64):",
+            $"{MapConstants.ClassicMapSize}x{MapConstants.ClassicMapSize}", MapResizing.CheckSize);
+        if (sizeText == null || MapResizing.ParseSize(sizeText) is not var (width, height))
+            return;
+
         var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MaxWallId).DefaultIfEmpty(1).Min());
-        var map = MapFiles.NewMap(name.ToUpperInvariant(), wall, PaletteEntries.EraseValue(content.MapDefs, 0));
+        var map = MapFiles.NewMap(name.ToUpperInvariant(), wall, PaletteEntries.EraseValue(content.MapDefs, 0), width, height);
         AddNewDocument(name.ToUpperInvariant(), map);
         Status = $"New level {map.Name}: saving it into a mod lists it in the mod's game-info too (warp there with the map command)";
     }
@@ -1533,6 +1615,38 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Status = "Changed the level properties: saving the level writes them into the mod's game-info.yaml";
         }
         OnPropertyChanged(nameof(PlaneHint));
+    }
+
+    /// <summary>
+    /// A new width and height for the level, one undo step: what's there stays round the corner,
+    /// edge or middle picked (cut off where it no longer fits), new tiles are wall
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(HasDocument))]
+    private async Task ResizeMapAsync()
+    {
+        if (Document is not { } document || Content is not { } content || Dialogs == null)
+            return;
+
+        var sizeText = await Dialogs.AskText("Resize level",
+            $"New size, width x height ({MapConstants.MinMapSize} to {MapConstants.MaxMapSize} tiles each way). It's {document.Width}x{document.Height} now:",
+            $"{document.Width}x{document.Height}", MapResizing.CheckSize);
+        if (sizeText == null || MapResizing.ParseSize(sizeText) is not var (width, height))
+            return;
+
+        var anchorText = await Dialogs.AskText("Resize level",
+            $"What stays where it is: {string.Join(", ", MapResizing.AnchorNames)}:", "center",
+            text => MapResizing.ParseAnchor(text) == null ? $"One of {string.Join(", ", MapResizing.AnchorNames)}." : null);
+        if (anchorText == null || MapResizing.ParseAnchor(anchorText) is not { } anchor)
+            return;
+        if (width == document.Width && height == document.Height)
+            return;
+
+        var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MaxWallId).DefaultIfEmpty(1).Min());
+        SelectNone();
+        document.Resize($"Resize to {width}x{height}", width, height, MapResizing.Resized(document.Map, width, height, anchor, wall),
+            document.Map.ExtraThings.Count > 0 ? MapResizing.ResizedExtras(document.Map, width, height, anchor) : null);
+        FitView();
+        Status = $"Resized {document.AssetName.ToUpperInvariant()} to {width}x{height} (Undo puts it back); new tiles are wall";
     }
 
     /// <summary>What the last level check found</summary>

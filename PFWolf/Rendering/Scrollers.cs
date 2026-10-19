@@ -60,12 +60,12 @@ internal sealed class Scrollers(MapManager map)
     /// <summary>The level's scrollers by tag</summary>
     internal Dictionary<int, ScrollerState> Level = [];
 
-    // Each tile's offsets, indexed (y << MapShift) + x: a wall's column (0-63, texels to the right
+    // Each tile's offsets, indexed MapManager.TileIndex: a wall's column (0-63, texels to the right
     // the face has moved) and row (texels down), and a floor's and ceiling's east and south (global
     // units within a tile). All 0 on a tile no scroller moves.
-    internal readonly int[] WallColumn = new int[MapConstants.MapArea], WallRow = new int[MapConstants.MapArea];
-    internal readonly int[] FloorX = new int[MapConstants.MapArea], FloorY = new int[MapConstants.MapArea];
-    internal readonly int[] CeilingX = new int[MapConstants.MapArea], CeilingY = new int[MapConstants.MapArea];
+    internal int[] WallColumn = new int[MapConstants.ClassicMapArea], WallRow = new int[MapConstants.ClassicMapArea];
+    internal int[] FloorX = new int[MapConstants.ClassicMapArea], FloorY = new int[MapConstants.ClassicMapArea];
+    internal int[] CeilingX = new int[MapConstants.ClassicMapArea], CeilingY = new int[MapConstants.ClassicMapArea];
 
     /// <summary>Some tile's walls, floor or ceiling are moved: only then do the renderer's look-ups matter</summary>
     internal bool AnyWalls, AnyFloors, AnyCeilings;
@@ -103,6 +103,17 @@ internal sealed class Scrollers(MapManager map)
     {
         bool had = AnyWalls || AnyFloors || AnyCeilings;
         AnyWalls = AnyFloors = AnyCeilings = false;
+        if (WallColumn.Length != map.MapArea)
+        {
+            // a level of another size: new (clear) offsets for its tiles
+            WallColumn = new int[map.MapArea];
+            WallRow = new int[map.MapArea];
+            FloorX = new int[map.MapArea];
+            FloorY = new int[map.MapArea];
+            CeilingX = new int[map.MapArea];
+            CeilingY = new int[map.MapArea];
+            had = false;
+        }
         if (Level.Count == 0)
         {
             if (had)
@@ -111,12 +122,12 @@ internal sealed class Scrollers(MapManager map)
         }
 
         const int GlobalPerTexel = (int)MapConstants.TileGlobal / TextureSize;
-        for (int y = 0; y < MapConstants.MapSize; y++)
-            for (int x = 0; x < MapConstants.MapSize; x++)
+        for (int y = 0; y < map.MapHeight; y++)
+            for (int x = 0; x < map.MapWidth; x++)
             {
-                int i = (y << MapConstants.MapShift) + x;
+                int i = map.TileIndex(x, y);
                 ScrollerState? scroller = null;
-                if (x < map.MapWidth && y < map.MapHeight && map.GetTag(x, y) is var tag and not 0)
+                if (map.GetTag(x, y) is var tag and not 0)
                     Level.TryGetValue(tag, out scroller);
 
                 int column = 0, row = 0, east = 0, south = 0;
@@ -157,7 +168,7 @@ internal sealed class Scrollers(MapManager map)
     /// </summary>
     internal int Column(int tilex, int tiley, int texture)
     {
-        if (!AnyWalls || Lighting.TileIndex(tilex, tiley) is not (>= 0 and var i) || WallColumn[i] == 0)
+        if (!AnyWalls || map.TileIndexOrNone(tilex, tiley) is not (>= 0 and var i) || WallColumn[i] == 0)
             return texture;
         int column = ((texture >> GameConstants.TextureShift) - WallColumn[i]) & (TextureSize - 1);
         return column << GameConstants.TextureShift;
@@ -165,7 +176,7 @@ internal sealed class Scrollers(MapManager map)
 
     /// <summary>How many texels down a wall tile's faces have moved (0 if no scroller moves them)</summary>
     internal int Row(int tilex, int tiley) =>
-        AnyWalls && Lighting.TileIndex(tilex, tiley) is >= 0 and var i ? WallRow[i] : 0;
+        AnyWalls && map.TileIndexOrNone(tilex, tiley) is >= 0 and var i ? WallRow[i] : 0;
 
     /*
     =============================================================================

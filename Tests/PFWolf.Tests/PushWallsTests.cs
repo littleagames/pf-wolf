@@ -89,7 +89,7 @@ public class PushWallsTests
     public void A_Wall_Off_The_Map_Isnt_Read()
     {
         // Arrange
-        var wall = new MovingPushWall { X = (ushort)MapManager.MapSize, Y = 1 };
+        var wall = new MovingPushWall { X = (ushort)MapConstants.MaxMapSize, Y = 1 };
         using var stream = new MemoryStream();
         wall.Write(new BinaryWriter(stream));
         stream.Position = 0;

@@ -172,7 +172,7 @@ internal partial record BlakeMonster : Monster
             RuntimeFlags |= ObjFlags.Friendly;
 
         // The 0xFA value east of it on the object plane, if there is one
-        int east = tilex + 1 < MapManager.MapSize ? MapManager.MapSpot(tilex + 1, tiley, 1) : 0;
+        int east = tilex + 1 < MapManager.MapWidth ? MapManager.MapSpot(tilex + 1, tiley, 1) : 0;
         int? mapValue = (east & 0xff00) == 0xfa00 ? east & 0xff : null;
 
         // A sleeper's wake delay (T_WaitToWake), in tics: the map's value in seconds, else a
@@ -519,16 +519,20 @@ internal partial record BlakeMonster : Monster
         deltay = Target.TileY - TileY;
     }
 
-    // A running actor with nowhere better to go heads for one of these
-    private static readonly byte[] SeekPointX = [32, 63, 32, 1];
-    private static readonly byte[] SeekPointY = [1, 63, 32, 1];
-
+    // A running actor with nowhere better to go heads for one of these: the middle of the top
+    // edge, the far corner, the middle and the near corner (32,1; 63,63; 32,32; 1,1 on a 64 map)
     private void GetCornerSeek()
     {
         int point = NextRandom() & 3;
         RuntimeFlags &= ~ObjFlags.RunToStatic;
-        SeekX = SeekPointX[point];
-        SeekY = SeekPointY[point];
+        int width = MapManager.MapWidth, height = MapManager.MapHeight;
+        (SeekX, SeekY) = point switch
+        {
+            0 => ((byte)(width / 2), (byte)1),
+            1 => ((byte)(width - 1), (byte)(height - 1)),
+            2 => ((byte)(width / 2), (byte)(height / 2)),
+            _ => ((byte)1, (byte)1),
+        };
     }
 
     /// <summary>
@@ -739,7 +743,7 @@ internal partial record BlakeMonster : Monster
             return false;
 
         int x = TileX + dx, y = TileY + dy;
-        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
+        if (!MapManager.InMap(x, y))
             return false;
         if (dx != 0 && dy != 0)
             return CheckDiag(x, y) && CheckDiag(TileX + dx, TileY) && CheckDiag(TileX, TileY + dy);
@@ -854,7 +858,7 @@ internal partial record BlakeMonster : Monster
         foreach (var (cx, cy) in new[] { (nx - size, ny - size), (nx + size, ny - size), (nx - size, ny + size), (nx + size, ny + size) })
         {
             int tx = cx >> (int)MapConstants.TileShift, ty = cy >> (int)MapConstants.TileShift;
-            if (tx < 0 || ty < 0 || tx >= MapManager.MapSize || ty >= MapManager.MapSize)
+            if (!MapManager.InMap(tx, ty))
                 return false;
             switch (MapManager.ActorAt[tx, ty])
             {

@@ -209,18 +209,40 @@ internal sealed class Lighting(
     internal const int LightCellShift = 3;
     internal const int LightCells = 1 << LightCellShift;                    // cells a tile, each way
     internal const int CellGlobalShift = MapConstants.TileShift - LightCellShift;    // global units to cells
-    internal const int GridShift = MapManager.MapShift + LightCellShift;
-    internal const int GridSize = 1 << GridShift;                           // cells across the map
     internal const int MaxLightLevel = LightLevels - 1;
 
-    // Each tile's base light, indexed (y << MapShift) + x like the flats: a light level, and a
-    // tint (an index in tints)
-    internal readonly byte[] TileLevel = new byte[MapManager.MapArea], TileTint = new byte[MapManager.MapArea];
+    // Cells across and down the level: LightCells a tile each way (SizeToLevel)
+    internal int GridWidth { get; private set; } = MapConstants.ClassicMapSize << LightCellShift;
+    internal int GridHeight { get; private set; } = MapConstants.ClassicMapSize << LightCellShift;
 
-    // Light levels added to each cell, indexed (y << GridShift) + x in cells; the most of them any
-    // one light added, and that light's tint (0: none, the tile's own)
-    internal readonly byte[] CellAdd = new byte[GridSize * GridSize];
-    internal readonly byte[] CellStrong = new byte[GridSize * GridSize], CellTint = new byte[GridSize * GridSize];
+    // Each tile's base light, indexed MapManager.TileIndex like the flats: a light level, and a
+    // tint (an index in tints)
+    internal byte[] TileLevel = new byte[MapConstants.ClassicMapArea], TileTint = new byte[MapConstants.ClassicMapArea];
+
+    // Light levels added to each cell, indexed cy * GridWidth + cx; the most of them any one light
+    // added, and that light's tint (0: none, the tile's own)
+    internal byte[] CellAdd = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
+    internal byte[] CellStrong = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)], CellTint = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
+
+    /// <summary>The cell (x, y in cells) in CellAdd, CellStrong and CellTint</summary>
+    internal int CellIndex(int cx, int cy) => cy * GridWidth + cx;
+
+    /// <summary>Sizes the tiles' and cells' lights to the level loaded, if it's another size (cleared).</summary>
+    internal void SizeToLevel()
+    {
+        int gridWidth = map.MapWidth << LightCellShift, gridHeight = map.MapHeight << LightCellShift;
+        if (TileLevel.Length == map.MapArea && gridWidth == GridWidth && gridHeight == GridHeight)
+            return;
+
+        GridWidth = gridWidth;
+        GridHeight = gridHeight;
+        TileLevel = new byte[map.MapArea];
+        TileTint = new byte[map.MapArea];
+        CellAdd = new byte[gridWidth * gridHeight];
+        CellStrong = new byte[gridWidth * gridHeight];
+        CellTint = new byte[gridWidth * gridHeight];
+        GridDirty = true;
+    }
 
     // The tints in use (0 is none), and each one's light rows by level, made as they're needed
     internal readonly List<(byte R, byte G, byte B)> Tints = [];
@@ -261,8 +283,7 @@ internal sealed class Lighting(
     internal byte[] RowOf(int tint, int level) => TintRows[tint][level] ??= LevelRow(level, Tints[tint]);
 
     /// <summary>The index of a tile in TileLevel and TileTint, or -1 off the map.</summary>
-    internal static int TileIndex(int x, int y) =>
-        (uint)x < MapManager.MapSize && (uint)y < MapManager.MapSize ? (y << MapManager.MapShift) + x : -1;
+    internal int TileIndex(int x, int y) => map.TileIndexOrNone(x, y);
 
     /// <summary>
     /// The light row at a point (global units): the base light of a tile (a TileIndex; off the
@@ -277,9 +298,9 @@ internal sealed class Lighting(
 
         int level = TileLevel[tile], tint = TileTint[tile];
         long cx = gx >> CellGlobalShift, cy = gy >> CellGlobalShift;
-        if ((ulong)cx < GridSize && (ulong)cy < GridSize)
+        if ((ulong)cx < (ulong)GridWidth && (ulong)cy < (ulong)GridHeight)
         {
-            long cell = (cy << GridShift) + cx;
+            long cell = cy * GridWidth + cx;
             level += CellAdd[cell];
             if (CellTint[cell] != 0)
                 tint = CellTint[cell];
@@ -294,20 +315,20 @@ internal sealed class Lighting(
     /// <summary>Brings the tiles' base lights up to date with the zone plane and the zones; called before each frame.</summary>
     internal void UpdateLightGrid()
     {
+        SizeToLevel();
         if (!GridDirty && GridVersion == map.ZonesVersion)
             return;
         GridDirty = false;
         GridVersion = map.ZonesVersion;
 
         HasZones = false;
-        for (int y = 0; y < MapManager.MapSize; y++)
-            for (int x = 0; x < MapManager.MapSize; x++)
+        for (int y = 0; y < map.MapHeight; y++)
+            for (int x = 0; x < map.MapWidth; x++)
             {
-                int i = (y << MapManager.MapShift) + x;
+                int i = map.TileIndex(x, y);
                 TileLevel[i] = (byte)AmbientLevel;
                 TileTint[i] = 0;
-                if (x < map.MapWidth && y < map.MapHeight
-                    && map.GetZone(x, y) is var id and not 0
+                if (map.GetZone(x, y) is var id and not 0
                     && LevelZones.TryGetValue(id, out var zone) && zone.RowLevel >= 0)
                 {
                     TileLevel[i] = (byte)zone.RowLevel;

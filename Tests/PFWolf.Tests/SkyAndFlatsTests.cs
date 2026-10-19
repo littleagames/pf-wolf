@@ -38,7 +38,7 @@ public class SkyAndFlatsTests
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
             // No level is loaded: an open one with no walls, which DrawFlats reads where a tile has no flat
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         _sky = new SkyAndFlats(null!, null!, video, _map, _lighting, actorLights, _render, new GameSession(), _ => null);
     }
@@ -71,7 +71,7 @@ public class SkyAndFlatsTests
     {
         // Arrange: every tile's floor color 7
         var stone = new TextureAsset { Width = 64, Height = 64, RawData = Enumerable.Repeat((byte)7, 64 * 64).ToArray() };
-        var flats = Enumerable.Repeat<TextureAsset?>(stone, MapManager.MapArea).ToArray();
+        var flats = Enumerable.Repeat<TextureAsset?>(stone, MapConstants.ClassicMapArea).ToArray();
 
         // Act
         _sky.SetupFlatColumns();
@@ -87,7 +87,7 @@ public class SkyAndFlatsTests
     {
         // Act: no flats anywhere, and no light zones or actor light to recolor it
         _sky.SetupFlatColumns();
-        _sky.DrawFlats(new TextureAsset?[MapManager.MapArea], 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
+        _sky.DrawFlats(new TextureAsset?[MapConstants.ClassicMapArea], 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
 
         // Assert
         Assert.That(_screen.All(pixel => pixel == 1), Is.True);
@@ -102,10 +102,10 @@ public class SkyAndFlatsTests
         for (int u = 0; u < 64; u++)
             for (int v = 0; v < 64; v++)
                 ramp.RawData[u * 64 + v] = (byte)(u * 2 + v % 2 == SkyAndFlats.FlatMask ? 0 : u * 2 + v % 2);
-        var flats = Enumerable.Repeat<TextureAsset?>(ramp, MapManager.MapArea).ToArray();
-        var none = new int[MapManager.MapArea];
-        var scrollx = Enumerable.Repeat(east * 1024, MapManager.MapArea).ToArray();
-        var scrolly = Enumerable.Repeat(south * 1024, MapManager.MapArea).ToArray();
+        var flats = Enumerable.Repeat<TextureAsset?>(ramp, MapConstants.ClassicMapArea).ToArray();
+        var none = new int[MapConstants.ClassicMapArea];
+        var scrollx = Enumerable.Repeat(east * 1024, MapConstants.ClassicMapArea).ToArray();
+        var scrolly = Enumerable.Repeat(south * 1024, MapConstants.ClassicMapArea).ToArray();
         _sky.SetupFlatColumns();
         _sky.DrawFlats(flats, 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false, none, none);
         var still = (byte[])_screen.Clone();
@@ -131,7 +131,7 @@ public class SkyAndFlatsTests
 
         // Act
         _sky.SetupFlatColumns();
-        _sky.DrawFlats(Enumerable.Repeat<TextureAsset?>(grate, MapManager.MapArea).ToArray(), 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
+        _sky.DrawFlats(Enumerable.Repeat<TextureAsset?>(grate, MapConstants.ClassicMapArea).ToArray(), 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
 
         // Assert
         Assert.That(_screen.All(pixel => pixel == 1), Is.True);

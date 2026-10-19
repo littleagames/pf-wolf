@@ -1,3 +1,4 @@
+using PFWolf.Constants;
 namespace PFWolf.Tests;
 
 public class PlayerDeathTests
@@ -17,8 +18,8 @@ public class PlayerDeathTests
         // Arrange
         var map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, new GameSession(), null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         var session = new GameSession { Tics = 5 };
         var death = new PlayerDeath(null!, null!, null!, null!, null!, new InventoryManager(ActorDefs.Metadata(Yaml)), null!, map,

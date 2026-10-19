@@ -33,6 +33,59 @@ public record MapObjectTranslationAsset : Asset
     /// to one of them tags the whole group touching it (Blake Stone's barriers)
     /// </summary>
     public List<int> LinkedThings { get; internal set; } = [];
+
+    /// <summary>How UWMF levels' names and numbers are read for this game (mapdefs uwmf.yaml)</summary>
+    public MapUwmfTranslation Uwmf { get; internal set; } = new();
+
+    /// <summary>
+    /// These mapdefs with a level's own definitions laid over them (each entry replacing the one of
+    /// its code), and its area count where it gives one
+    /// </summary>
+    public MapObjectTranslationAsset With(MapObjectTranslationAsset? local)
+    {
+        if (local == null)
+            return this;
+
+        static Dictionary<int, T> Merged<T>(Dictionary<int, T> under, Dictionary<int, T> over)
+        {
+            var merged = new Dictionary<int, T>(under);
+            foreach (var (key, value) in over)
+                merged[key] = value;
+            return merged;
+        }
+
+        return this with
+        {
+            Things = Merged(Things, local.Things),
+            Walls = Merged(Walls, local.Walls),
+            Doors = Merged(Doors, local.Doors),
+            PlayerStarts = Merged(PlayerStarts, local.PlayerStarts),
+            Triggers = Merged(Triggers, local.Triggers),
+            Diagonals = Merged(Diagonals, local.Diagonals),
+            Patches = Merged(Patches, local.Patches),
+            Flats = Flats with { Floor = Merged(Flats.Floor, local.Flats.Floor), Ceiling = Merged(Flats.Ceiling, local.Flats.Ceiling) },
+            Floors = local.Floors.AreaCount is { } count ? Floors with { AreaCount = count } : Floors,
+        };
+    }
+}
+
+/// <summary>
+/// How a game reads UWMF levels (ECWolf's text format): the ECWolf class names its things use
+/// that this game's actordefs call something else, and the classes Door_Open's lock numbers
+/// stand for. A name not listed is the class's own.
+/// </summary>
+public record MapUwmfTranslation
+{
+    /// <summary>ECWolf class name to this game's (WolfensteinSS: SS)</summary>
+    public Dictionary<string, string> Classes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Door_Open's lock argument (arg3) to the inventory class that opens the door (1: GoldKey)</summary>
+    public Dictionary<int, string> Locks { get; set; } = new();
+
+    /// <summary>The game's class for a UWMF thing type</summary>
+    public string ClassFor(string type) =>
+        Classes.TryGetValue(type, out var name) ? name
+        : Classes.FirstOrDefault(c => c.Key.Equals(type, StringComparison.OrdinalIgnoreCase)).Value ?? type;
 }
 
 /// <summary>

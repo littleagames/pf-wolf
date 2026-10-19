@@ -76,8 +76,8 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
         var doorobj = new DoorObject();
         doorobj.Position = 0;              // doors start out fully closed
-        doorobj.TileX = (sbyte)tilex;
-        doorobj.TileY = (sbyte)tiley;
+        doorobj.TileX = (byte)tilex;
+        doorobj.TileY = (byte)tiley;
         doorobj.Vertical = vertical;
         doorobj.Action = DoorAction.Closed;
         doorobj.Xlat = doorXlat;
@@ -126,7 +126,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     /// </summary>
     private void MarkDoorSide(int x, int y)
     {
-        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
+        if (!map.InMap(x, y))
             return;
         if (map.TileMap[x, y] is > 0 and < GameConstants.BitWall)
             map.TileMap[x, y] |= GameConstants.BitWall;

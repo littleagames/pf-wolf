@@ -21,9 +21,9 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
             "playsound <name>", PlaySoundCommand);
         console.Register("changemus", "Plays a song, from a pk3's music/ folder or the game's own; with no name, shows what's playing. A song that ends stops instead of looping with 'once'.",
             "changemus [name] [once]", ChangeMusCommand, complete: (_, i) => i == 1 ? ["once"] : []);
-        console.Register("exportmap", "Writes a level, or all of them, as ECWolf binary maps (NAME.wad) for a mod's maps/ folder: to the exports folder, or the folder given.",
-            "exportmap <MAP##|all> [folder]", ExportMapCommand,
-            complete: (_, i) => i == 0 ? ["all", .. engine.GetGameInfo().Maps.Keys] : []);
+        console.Register("exportmap", "Writes a level, or all of them, as ECWolf maps (NAME.wad) for a mod's maps/ folder: binary planes, or UWMF text with 'uwmf'; to the exports folder, or the folder given.",
+            "exportmap <MAP##|all> [folder] [uwmf]", ExportMapCommand,
+            complete: (_, i) => i == 0 ? ["all", .. engine.GetGameInfo().Maps.Keys] : i == 2 ? ["uwmf"] : []);
     }
 
     private void ModsCommand(string[] args)
@@ -101,13 +101,17 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
     private void ExportMapCommand(string[] args)
     {
         if (args.Length == 0)
-            throw new ArgumentException("usage: exportmap <MAP##|all> [folder]");
+            throw new ArgumentException("usage: exportmap <MAP##|all> [folder] [uwmf]");
 
         var mapNames = args[0].Equals("all", StringComparison.OrdinalIgnoreCase)
             ? engine.GetGameInfo().Maps.Keys.ToList()
             : [args[0]];
-        var folder = args.Length > 1 ? args[1] : engine.ConfigDirectories.ExportsDirectory;
+        // "uwmf" last, or in place of the folder
+        bool uwmf = args.Length > 1 && args[^1].Equals("uwmf", StringComparison.OrdinalIgnoreCase);
+        var folderArgs = uwmf ? args[1..^1] : args[1..];
+        var folder = folderArgs.Length > 0 ? folderArgs[0] : engine.ConfigDirectories.ExportsDirectory;
         Directory.CreateDirectory(folder);
+        var mapdefs = assets.FindInGamePackIfAny<MapObjectTranslationAsset>("mapdefs") ?? new MapObjectTranslationAsset();
 
         var written = 0;
         foreach (var mapName in mapNames)
@@ -120,7 +124,12 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
                 continue;
             }
 
-            File.WriteAllBytes(Path.Combine(folder, $"{mapName.ToUpperInvariant()}.wad"), EcWolfMapLoader.Save(map, mapName));
+            if (!uwmf && (map.LocalDefs != null || map.ExtraThings.Count > 0))
+                console.Print($"{mapName}: its own walls, doors, flats or extra things don't fit in binary planes; export it with 'uwmf' to keep them");
+            var file = uwmf
+                ? EcWolfMapLoader.SaveUwmf(map, mapName.ToUpperInvariant(), mapdefs, warning => console.Print($"{mapName}: {warning}"))
+                : EcWolfMapLoader.Save(map, mapName);
+            File.WriteAllBytes(Path.Combine(folder, $"{mapName.ToUpperInvariant()}.wad"), file);
             written++;
         }
 

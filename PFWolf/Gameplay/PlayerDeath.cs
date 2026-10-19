@@ -262,8 +262,7 @@ internal sealed class PlayerDeath(
             // Off the map with nowhere clear on the way (a boss dying right beside the killer starts
             // the search behind them, as vanilla's does, which then runs into the wall there): from the
             // killer's own spot
-            if ((camx >> MapConstants.TileShift) is < 0 or >= MapConstants.MapSize
-                || (camy >> MapConstants.TileShift) is < 0 or >= MapConstants.MapSize)
+            if (!map.InMap(camx >> MapConstants.TileShift, camy >> MapConstants.TileShift))
             {
                 (camx, camy) = (session.PlayerState.KillX, session.PlayerState.KillY);
                 break;

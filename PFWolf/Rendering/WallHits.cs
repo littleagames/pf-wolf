@@ -260,7 +260,7 @@ internal sealed class WallHits(
     /// </summary>
     internal TextureAsset? WorldTexture(string name, int tilex, int tiley)
         => assets.Find<TextureAsset>(map.ChangedTexture(tilex, tiley, name), session.GameState.TimeCount,
-            map.AnimStart[(tiley << MapManager.MapShift) + tilex]);
+            map.AnimStart[map.TileIndex(tilex, tiley)]);
 
 
     /// <summary>

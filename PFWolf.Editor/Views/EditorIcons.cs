@@ -29,6 +29,10 @@ public static class EditorIcons
     public static Geometry Scatter { get; } = Parse(
         "M4,4 H7 V7 H4 Z M11,3 H14 V6 H11 Z M18,6 H21 V9 H18 Z M7,11 H10 V14 H7 Z M15,12 H18 V15 H15 Z "
         + "M3,18 H6 V21 H3 Z M11,18 H14 V21 H11 Z M19,18 H22 V21 H19 Z");
+    // A thing (a dot) inside a ring, off the corner of a tile
+    public static Geometry FreeThing { get; } = Parse(
+        "M2,2 H11 V4 H4 V11 H2 Z M15,9 A6,6 0 1 1 15,21 A6,6 0 1 1 15,9 Z M15,11 A4,4 0 1 0 15,19 A4,4 0 1 0 15,11 Z "
+        + "M15,13 A2,2 0 1 1 15,17 A2,2 0 1 1 15,13 Z");
     public static Geometry Pick { get; } = Parse("M15,3 L21,9 L18,12 L12,6 Z M12.5,8.5 L15.5,11.5 L7,20 L4,20 L4,17 Z");
 
     // Commands

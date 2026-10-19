@@ -19,18 +19,18 @@ public class ScrollersTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, new GameSession(), null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            MapWidth = MapManager.MapSize, MapHeight = MapManager.MapSize,
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            MapWidth = MapConstants.ClassicMapSize, MapHeight = MapConstants.ClassicMapSize,
         };
         // empty planes, as a loaded level has
         typeof(MapManager).GetField("mapsegs", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapManager.MapArea]).ToArray());
+            .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
         _scrollers = _map.Scrollers;
     }
 
     private void Init(Dictionary<int, ScrollerInfo> scrollers) => _scrollers.InitLevel(new MapInfo { Scrollers = scrollers });
 
-    private static int Tile(int x, int y) => (y << MapConstants.MapShift) + x;
+    private static int Tile(int x, int y) => (y << 6) + x;
 
     [Test]
     public void A_Running_Scroller_Moves_Its_Tagged_Tiles_By_Its_Speed_A_Tic()

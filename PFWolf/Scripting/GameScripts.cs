@@ -297,14 +297,14 @@ internal sealed class GameScripts(
         game["tag"] = new LuaFunction("game.tag", (c, _) =>
         {
             int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
-            if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
+            if (!map.InMap(x, y))
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.tag: {x},{y} isn't a tile on the map", 1);
             return new(c.Return(map.GetTag(x, y)));
         });
         game["patch"] = new LuaFunction("game.patch", (c, _) =>
         {
             int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
-            if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
+            if (!map.InMap(x, y))
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.patch: {x},{y} isn't a tile on the map", 1);
             return new(c.Return(map.GetPatch(x, y)));
         });

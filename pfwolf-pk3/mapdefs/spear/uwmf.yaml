@@ -1,0 +1,13 @@
+# UWMF class names for Spear of Destiny, over Wolf3D's (mapdefs/wolf3d/uwmf.yaml): the things
+# ECWolf's Spear translation (wadsrc/static/xlat/spear.txt) gives other classes than Wolf3D's.
+uwmf:
+  classes:
+    BrownColumn: MarblePillar
+    CageWithGore: BloodyCage
+    CageWithSkulls: CageWithGibs
+    CowCarcass: CowSkull
+    RedCeilingLight: RedLight
+    SatanStatue: AngelStatue
+    Skewer: SkullOnStick
+    TruckRear: Truck
+    WellWithBlood: BloodyWell

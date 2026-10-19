@@ -1,3 +1,4 @@
+using PFWolf.Constants;
 using System.Text;
 using PFWolf.Exceptions;
 using PFWolf.Loaders;
@@ -8,7 +9,7 @@ namespace PFWolf.Tests;
 public class Wolf3dMapFileLoaderTests
 {
     private const ushort RlewTag = 0xABCD;
-    private const int PlaneBytes = MapManager.MapArea * sizeof(ushort);
+    private const int PlaneBytes = MapConstants.ClassicMapArea * sizeof(ushort);
 
     // A loader with no levels, for its decompression routines
     private static Wolf3dMapFileLoader EmptyLoader() => new(BitConverter.GetBytes(RlewTag), []);
@@ -85,12 +86,12 @@ public class Wolf3dMapFileLoaderTests
     // plane 1 only RLEW-compressed (as Blake Stone's MAPTEMP), plane 2 empty
     private static (byte[] MapHead, byte[] GameMaps) BuildMapPair(ushort plane0Fill, ushort plane1Fill, string name)
     {
-        var rlew0 = Words(RlewTag, MapManager.MapArea, plane0Fill);
+        var rlew0 = Words(RlewTag, MapConstants.ClassicMapArea, plane0Fill);
         // The Carmack-expanded data starts with the RLEW data's expanded length
         var carmack = Words((ushort)PlaneBytes).Concat(rlew0).ToArray();
         byte[] chunk0 = [.. Words((ushort)carmack.Length), .. carmack];
 
-        byte[] chunk1 = [.. Words((ushort)PlaneBytes), .. Words(RlewTag, MapManager.MapArea, plane1Fill)];
+        byte[] chunk1 = [.. Words((ushort)PlaneBytes), .. Words(RlewTag, MapConstants.ClassicMapArea, plane1Fill)];
 
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
@@ -107,8 +108,8 @@ public class Wolf3dMapFileLoaderTests
         bw.Write((ushort)chunk0.Length);
         bw.Write((ushort)chunk1.Length);
         bw.Write((ushort)0);
-        bw.Write((ushort)MapManager.MapSize);
-        bw.Write((ushort)MapManager.MapSize);
+        bw.Write((ushort)MapConstants.ClassicMapSize);
+        bw.Write((ushort)MapConstants.ClassicMapSize);
         var nameBytes = new byte[16];
         Encoding.ASCII.GetBytes(name).CopyTo(nameBytes, 0);
         bw.Write(nameBytes);
@@ -131,7 +132,7 @@ public class Wolf3dMapFileLoaderTests
         // Assert
         Assert.That(map.Name, Is.EqualTo("Test Map"));
         Assert.That(map.MapData, Has.Length.EqualTo(MapManager.LevelPlanes));
-        Assert.That(map.MapData[0], Has.Length.EqualTo(MapManager.MapArea).And.All.EqualTo(1));
+        Assert.That(map.MapData[0], Has.Length.EqualTo(MapConstants.ClassicMapArea).And.All.EqualTo(1));
         Assert.That(map.MapData[1], Has.All.EqualTo(2));
         for (int plane = 2; plane < MapManager.LevelPlanes; plane++)
             Assert.That(map.MapData[plane], Has.All.EqualTo(0), $"plane {plane}");

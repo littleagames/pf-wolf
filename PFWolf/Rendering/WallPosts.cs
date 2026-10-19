@@ -31,7 +31,7 @@ internal sealed class WallPosts(
     internal void EnterTileLight(int x, int y)
     {
         if (map.TileMap[x, y] == 0)
-            render.HitTile = Lighting.TileIndex(x, y);
+            render.HitTile = map.TileIndexOrNone(x, y);
     }
 
     // Half a light cell, in global units
@@ -157,7 +157,7 @@ internal sealed class WallPosts(
             {
                 double nx = numerator / (render.CenterY - y - 0.5);
                 long px = (long)(render.ViewX + nx * stepx), py = (long)(render.ViewY + nx * stepy);
-                var light = lighting.LightAt(Lighting.TileIndex((int)(px >> MapConstants.TileShift), (int)(py >> MapConstants.TileShift)), px, py);
+                var light = lighting.LightAt(map.TileIndexOrNone((int)(px >> MapConstants.TileShift), (int)(py >> MapConstants.TileShift)), px, py);
                 int shadeofs = lighting.ShadeOffset((long)nx);
                 if (data == null)
                 {
@@ -253,7 +253,7 @@ internal sealed class WallPosts(
         render.ArchUnderFlat = false;
         if (map.MapSpot(tilex, tiley, MapManager.FlatPlane) >> 8 == 0)
             return;
-        var flat = map.CeilingFlat[(tiley << MapManager.MapShift) + tilex];
+        var flat = map.CeilingFlat[map.TileIndex(tilex, tiley)];
         if (flat == null)
             return;
         render.ArchUnderside = flat;

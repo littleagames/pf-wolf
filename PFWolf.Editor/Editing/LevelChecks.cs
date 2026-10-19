@@ -35,7 +35,7 @@ public static class LevelChecks
     public static List<LevelProblem> Run(MapTiles tiles, bool inGameInfo)
     {
         var problems = new List<LevelProblem>();
-        var defs = tiles.Content.MapDefs;
+        var defs = tiles.Defs;
 
         if (!inGameInfo)
             problems.Add(new(CheckSeverity.Warning, "game-info doesn't list this level: only the map command gets there, and finishing it stops the game; saving the level lists it in the mod's game-info"));
@@ -46,6 +46,8 @@ public static class LevelChecks
         var unknownObjects = new Dictionary<int, (int X, int Y, int Count)>();
         var unknownPatches = new Dictionary<int, (int X, int Y, int Count)>();
         var brokenThings = new Dictionary<string, (int X, int Y, int Count)>();
+        int doors = 0;
+        (int X, int Y) firstPastDoorLimit = (-1, -1);
         for (int y = 0; y < tiles.Height; y++)
         {
             for (int x = 0; x < tiles.Width; x++)
@@ -63,7 +65,11 @@ public static class LevelChecks
                     CheckObject(tiles, problems, unknownObjects, brokenThings, x, y, obj, kind);
 
                 if (kind == TileKind.Door)
+                {
                     CheckDoor(tiles, problems, x, y);
+                    if (++doors == MapConstants.MaxDoors + 1)
+                        firstPastDoorLimit = (x, y);
+                }
 
                 if (tiles.Patch(x, y) is var patch and not 0)
                     CheckPatch(tiles, problems, unknownPatches, x, y, patch, kind);
@@ -73,6 +79,10 @@ public static class LevelChecks
                     problems.Add(new(CheckSeverity.Warning, $"height {height}: walls are 1 to 8 stories, so it's the level's height", x, y));
             }
         }
+
+        if (doors > MapConstants.MaxDoors)
+            problems.Add(new(CheckSeverity.Error, $"{doors} doors: the game takes {MapConstants.MaxDoors} at most, and stops on this one",
+                firstPastDoorLimit.X, firstPastDoorLimit.Y));
 
         if (starts.Count == 0)
             problems.Add(new(CheckSeverity.Error, "no player start"));
@@ -113,7 +123,7 @@ public static class LevelChecks
     private static void CheckObject(MapTiles tiles, List<LevelProblem> problems, Dictionary<int, (int, int, int)> unknown,
         Dictionary<string, (int, int, int)> broken, int x, int y, int obj, TileKind kind)
     {
-        var defs = tiles.Content.MapDefs;
+        var defs = tiles.Defs;
         bool solid = kind is TileKind.Wall or TileKind.Door;
 
         if (defs.Things.TryGetValue(obj, out var thing))
@@ -147,7 +157,7 @@ public static class LevelChecks
             problems.Add(new(CheckSeverity.Warning, $"patch {patch} is on {(kind == TileKind.Door ? "a door" : "open floor")}: patches only go on walls, so it's left out", x, y));
             return;
         }
-        if (!tiles.Content.MapDefs.Patches.TryGetValue(patch, out var def))
+        if (!tiles.Defs.Patches.TryGetValue(patch, out var def))
         {
             Count(unknown, patch, x, y);
             return;

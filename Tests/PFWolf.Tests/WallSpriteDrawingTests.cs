@@ -17,7 +17,7 @@ public class WallSpriteDrawingTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
-            Spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
+            Spotvis = new bool[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         // Looking east from the middle of tile (10, 10)
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, new byte[256])

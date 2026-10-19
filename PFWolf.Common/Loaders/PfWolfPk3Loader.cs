@@ -410,6 +410,9 @@ public class PfWolfPk3Loader
             // level of that name, or a new one for game-info to send the player to
             if (entry.Name.EndsWith(".wad", StringComparison.OrdinalIgnoreCase))
                 AddReference(assetName, () => EcWolfMapLoader.Load(entry.Open().ToArray()));
+            // maps/NAME.uwmf: a UWMF level as a plain text file (a TEXTMAP outside a WAD)
+            else if (entry.Name.EndsWith(".uwmf", StringComparison.OrdinalIgnoreCase))
+                AddReference(assetName, () => EcWolfMapLoader.LoadUwmf(entry.Open().ToArray()));
             else if (fullName.IndexOf('/', "maps/".Length) < 0)
                 _mapDataFiles.Add(entry);       // maybe half of a GAMEMAPS/MAPHEAD pair (FindMapFilePair)
             return;

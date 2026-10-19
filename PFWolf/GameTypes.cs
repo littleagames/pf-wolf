@@ -197,7 +197,7 @@ internal enum DoorAction
 
 internal class DoorObject
 {
-    public sbyte TileX, TileY;
+    public byte TileX, TileY;
     public bool Vertical;
     public DoorAction Action;
     public short TicCount;

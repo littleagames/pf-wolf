@@ -12,9 +12,9 @@ internal static class EditorMaps
     {
         var planes = new ushort[MapConstants.LevelPlanes][];
         for (int p = 0; p < planes.Length; p++)
-            planes[p] = new ushort[MapConstants.MapArea];
+            planes[p] = new ushort[MapConstants.ClassicMapArea];
         Array.Fill(planes[0], (ushort)100);
-        return new MapAsset { Width = MapConstants.MapSize, Height = MapConstants.MapSize, Name = name, MapData = planes };
+        return new MapAsset { Width = MapConstants.ClassicMapSize, Height = MapConstants.ClassicMapSize, Name = name, MapData = planes };
     }
 
     /// <summary>A level game-info lists, with nothing set in its entry</summary>

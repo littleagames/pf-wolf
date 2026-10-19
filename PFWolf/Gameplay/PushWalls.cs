@@ -39,7 +39,7 @@ internal sealed class MovingPushWall
             Dir = (ControlDir)br.ReadByte(),
             Tile = br.ReadUInt16(),
         };
-        if (wall.X >= MapManager.MapSize || wall.Y >= MapManager.MapSize || (int)wall.Dir > (int)ControlDir.West)
+        if (wall.X >= MapConstants.MaxMapSize || wall.Y >= MapConstants.MaxMapSize || (int)wall.Dir > (int)ControlDir.West)
             throw new InvalidDataException($"Bad moving pushwall at {wall.X},{wall.Y}.");
         return wall;
     }

@@ -16,8 +16,8 @@ public class HubActionsTests
         _session = new GameSession { Tics = 10 };
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session, null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         _actions = new HubActions(null!, _map, null!, null!, null!, null!, null!, null!, null!, null!, null!, _session,
             new HubActionsHooks(_ => { }, (_, _) => { }));

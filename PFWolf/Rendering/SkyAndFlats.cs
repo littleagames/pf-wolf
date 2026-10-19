@@ -246,10 +246,10 @@ internal sealed class SkyAndFlats(
                     long px = render.ViewX + (nx * flatdirx[x] >> 16);
                     long py = render.ViewY + (nx * flatdiry[x] >> 16);
                     long tilex = px >> MapConstants.TileShift, tiley = py >> MapConstants.TileShift;
-                    if ((ulong)tilex >= MapManager.MapSize || (ulong)tiley >= MapManager.MapSize)
+                    if ((ulong)tilex >= map.MapWidth || (ulong)tiley >= map.MapHeight)
                         continue;
 
-                    long tile = (tiley << MapManager.MapShift) + tilex;
+                    long tile = tiley * map.MapWidth + tilex;
                     var texture = flats[tile];
 
                     // A wall's tile rarely has a flat, but the rows just past its face (where its post
@@ -257,7 +257,7 @@ internal sealed class SkyAndFlats(
                     if (texture == null && map.TileMap[tilex, tiley] != 0
                         && FlatBeforeWall(flatdirx[x], flatdiry[x], ref px, ref py, ref tilex, ref tiley))
                     {
-                        tile = (tiley << MapManager.MapShift) + tilex;
+                        tile = tiley * map.MapWidth + tilex;
                         texture = flats[tile];
                     }
 
@@ -321,7 +321,7 @@ internal sealed class SkyAndFlats(
             tiley += diry > 0 ? -1 : 1;
             py = diry > 0 ? top - 1 : top + tilesize;
         }
-        return (ulong)tilex < MapManager.MapSize && (ulong)tiley < MapManager.MapSize;
+        return (ulong)tilex < map.MapWidth && (ulong)tiley < map.MapHeight;
     }
 
     // ShadeOffset for screen row y of a floor or ceiling halves half stories from the eye (as DrawFlats)

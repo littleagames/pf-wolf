@@ -70,7 +70,7 @@ internal sealed class AutomapInput(
             if (IsAutomapKeyDown(AutomapAction.PanDown)) pany += pan;
             if (IsAutomapKeyDown(AutomapAction.PanLeft)) panx -= pan;
             if (IsAutomapKeyDown(AutomapAction.PanRight)) panx += pan;
-            automap.Pan(panx, pany);
+            automap.Pan(panx, pany, map.MapWidth, map.MapHeight);
         }
 
         automap.Update(session.Player.X / (float)MapConstants.TileGlobal, session.Player.Y / (float)MapConstants.TileGlobal, session.Player.Angle);
@@ -126,7 +126,7 @@ internal sealed class AutomapInput(
         if (input.IsButtonPressed(ButtonType.StrafeRight))
             dx += strafe;
 
-        automap.Pan(dx * AutomapPanSpeed / GameConstants.BaseMove, dy * AutomapPanSpeed / GameConstants.BaseMove);
+        automap.Pan(dx * AutomapPanSpeed / GameConstants.BaseMove, dy * AutomapPanSpeed / GameConstants.BaseMove, map.MapWidth, map.MapHeight);
 
         polling.ControlX = polling.ControlY = polling.ControlStrafe = 0;
         input.SetButtonPressed(ButtonType.StrafeLeft, false);

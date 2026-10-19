@@ -118,18 +118,19 @@ public class Wolf3dMapFileLoader
     {
         int pos, compressed;
         var level = _levels[mapnum] ?? throw new PfWolfMapException($"There's no level {mapnum + 1}");
-        if (level.Width != MapConstants.MapSize || level.Height != MapConstants.MapSize)
-            throw new PfWolfMapException($"CA_CacheMap: Map not {MapConstants.MapSize}*{MapConstants.MapSize}!");
+        if (MapConstants.CheckMapSize(level.Width, level.Height) is { } badSize)
+            throw new PfWolfMapException($"CA_CacheMap: {badSize}");
 
         //
         // load the planes into the allready allocated buffers
         //
-        var size = MapConstants.MapArea * sizeof(ushort);
+        int area = level.Width * level.Height;
+        var size = area * sizeof(ushort);
 
         // GAMEMAPS has three planes; the height, tag and zone planes after them are left empty
         UInt16[][] mapsegs = new ushort[MapConstants.LevelPlanes][];
         for (var plane = 0; plane < MapConstants.LevelPlanes; plane++)
-            mapsegs[plane] = new ushort[MapConstants.MapArea];
+            mapsegs[plane] = new ushort[area];
 
         using (var fs = new MemoryStream(_gameMaps))
         using (BinaryReader br = new BinaryReader(fs))

@@ -85,7 +85,7 @@ public sealed class DemoOverlay : IMapOverlay
         }
     }
 
-    private string? WallTexture(int id) => Tiles?.Content.MapDefs.Walls.TryGetValue(id, out var wall) == true ? wall.North : null;
+    private string? WallTexture(int id) => Tiles?.Defs.Walls.TryGetValue(id, out var wall) == true ? wall.North : null;
 
     private void DrawWall(DrawingContext context, string? texture, Rect rect)
     {

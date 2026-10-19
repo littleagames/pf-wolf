@@ -25,7 +25,8 @@ public class AutomapInputTests
         var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, _session, null!);
         _polling = new InputPolling(_input, _console, _automap, _controls, new ControlSettings(), frame, new DemoBuffer(), _session,
             new InputPollingHooks(() => false, () => false, () => true, () => { }));
-        _keys = new AutomapInput(_input, _console, _automap, null!, _controls, new ControlSettings(), _polling, _session);
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null);
+        _keys = new AutomapInput(_input, _console, _automap, map, _controls, new ControlSettings(), _polling, _session);
     }
 
     private static readonly InputCode KeyF = InputCode.FromKey(ScanCodes.F);

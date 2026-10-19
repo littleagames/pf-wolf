@@ -36,10 +36,10 @@ internal static class GameConstants
 
     internal const int MaxActors = 150;
     internal const int MaxStats = 400;
-    // A door tile in TileMap is BitDoor | its number: 128 doors (Wolf3D allowed 64; Midnight
-    // Assault's Wolf4SDL raised it to 128). A door test must still come before the door-side
-    // (BitWall) test, should MaxDoors ever pass BitWall.
-    internal const int MaxDoors = 128;
+    // A door tile in TileMap is BitDoor | its number: 256 doors, for levels up to 256x256 (Wolf3D
+    // allowed 64; Midnight Assault's Wolf4SDL raised it to 128). Door numbers stay below BitWall,
+    // so a door tile never looks like a door-side (BitWall) one.
+    internal const int MaxDoors = Constants.MapConstants.MaxDoors;
     internal const int MaxVisible = 250;
 
     internal const int NumberChars = 9;

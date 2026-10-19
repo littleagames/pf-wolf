@@ -84,9 +84,10 @@ internal sealed class LevelSetup(
         if (engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var mapInfo))
             session.GameState.Cluster = mapInfo.Cluster;
 
-        map.LevelWallStories = Math.Clamp(mapInfo?.WallHeight ?? engine.GetGameInfo().DefaultMap.WallHeight,
+        // The level's game-info entry, then what its own file says (a UWMF level's), then the default map's
+        map.LevelWallStories = Math.Clamp(mapInfo?.WallHeight ?? map.LevelDefaults.WallStories ?? engine.GetGameInfo().DefaultMap.WallHeight,
             1, GameConstants.MaxWallStories);
-        skyAndFlats.LevelSky = mapInfo?.Sky ?? engine.GetGameInfo().DefaultMap.Sky;
+        skyAndFlats.LevelSky = mapInfo?.Sky ?? map.LevelDefaults.Sky ?? engine.GetGameInfo().DefaultMap.Sky;
         weather.SetWeather(mapInfo?.Weather ?? engine.GetGameInfo().DefaultMap.Weather);
         map.BuildFlats(mapInfo?.DefaultFloor ?? engine.GetGameInfo().DefaultMap.DefaultFloor,
             mapInfo?.DefaultCeiling ?? engine.GetGameInfo().DefaultMap.DefaultCeiling);

@@ -1,0 +1,41 @@
+# How UWMF levels (ECWolf's text format: a TEXTMAP in maps/NAME.wad, or maps/NAME.uwmf) are read
+# for this game. A level's tiles, sectors, zones and things are matched to the walls, doors,
+# flats, areas and things in these mapdefs by their textures and classes (see
+# docs/uwmf-and-large-maps-plan.md); what has no match becomes the level's own.
+#   classes:  ECWolf's class names for things whose actordefs class here is called something
+#             else (ECWolf name: PFWolf name). A level in the "PFWolf" namespace uses PFWolf's
+#             names and isn't read through these.
+#   locks:    Door_Open's lock argument (arg3): the inventory class that opens the door
+#
+# Taken from ECWolf's own Wolf3D translation (wadsrc/static/xlat/wolf3d.txt): the class each
+# object-plane code becomes there, against the class it is in these mapdefs.
+uwmf:
+  classes:
+    BareTable: Table
+    Blood: PoolOfBlood
+    Bones1: Bones
+    BunkBed: Bed
+    CallApogee: Aardwolf
+    ChestofJewels: ChestOfJewels
+    EmptyWell: Well
+    FatFace: Fat
+    GreenBarrel: OilDrum
+    HangedMan: HangingSkeleton
+    HangingCage: EmptyCage
+    KitchenStuff: Utensils
+    Medikit: FirstAidKit
+    OneUp: ExtraLife
+    Pots: UtensilsBlue
+    SkeletonCage: CageWithSkeleton
+    SkeletonFlat: Skeleton
+    Spears: Rack
+    SuitOfArmor: Armor
+    Trans: TransGrosse
+    UberMutant: Ubermutant
+    Vines: Vine
+    Well: WellWithWater
+    WhitePillar: WhiteColumn
+    WolfensteinSS: SS
+  locks:
+    1: GoldKey
+    2: SilverKey

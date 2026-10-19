@@ -1,3 +1,4 @@
+using PFWolf.Constants;
 using PFWolf.Assets;
 using PFWolf.Entities.Actors;
 using PFWolf.Enums;
@@ -23,8 +24,8 @@ public class TimedSwitchesTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         var pawn = new PlayerPawn { State = _session.PlayerState };
         pawn.SetPosition(10, 10);
@@ -92,7 +93,7 @@ public class TimedSwitchesTests
     {
         // Arrange: the level loads again (a death, a saved game)
         Throw(10);
-        _map.TileMap = new ushort[MapManager.MapSize, MapManager.MapSize];
+        _map.TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
         _map.TileMap[11, 10] = SwitchOn;
 
         // Act

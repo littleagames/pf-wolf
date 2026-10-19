@@ -9,7 +9,7 @@ public class MapImportTests
 {
     // A WDC .map file: "WDC3.1", map count, plane count, name length, then each map's name,
     // width, height and planes; tile i of plane p of map m is m * 10000 + p * 1000 + i % 97
-    private static byte[] WdcFile(int maps, int planes, int size = MapConstants.MapSize, string name = "Imported")
+    private static byte[] WdcFile(int maps, int planes, int size = MapConstants.ClassicMapSize, string name = "Imported")
     {
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
@@ -67,11 +67,12 @@ public class MapImportTests
     }
 
     [Test]
-    public void Check_Refuses_Another_Size()
+    public void Check_Refuses_A_Size_A_Level_Cant_Be()
     {
-        var map = WdcMapFile.Read(WdcFile(1, 2, size: 32))[0];
+        var map = WdcMapFile.Read(WdcFile(1, 2, size: 2))[0];
 
-        Assert.That(MapImport.Check(map), Does.Contain("32x32"));
+        Assert.That(MapImport.Check(map), Does.Contain("2x2"));
+        Assert.That(MapImport.Check(WdcMapFile.Read(WdcFile(1, 2, size: 32))[0]), Is.Null);
         Assert.That(MapImport.Check(WdcMapFile.Read(WdcFile(1, 2))[0]), Is.Null);
     }
 
@@ -123,7 +124,7 @@ public class MapImportTests
         Assert.That(map.MapData, Has.Length.EqualTo(MapConstants.LevelPlanes));
         Assert.That(map.MapData[1], Is.EqualTo(source.Planes[1]));
         Assert.That(map.MapData[0][0], Is.EqualTo(1));
-        Assert.That(map.MapData[0][MapConstants.MapSize + 1], Is.EqualTo(107));
+        Assert.That(map.MapData[0][MapConstants.ClassicMapSize + 1], Is.EqualTo(107));
         Assert.That(map.MapData[2], Has.All.EqualTo(0));
     }
 

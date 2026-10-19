@@ -22,9 +22,9 @@ public class PlayerViewTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
-            Spotvis = new bool[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            Spotvis = new bool[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         var doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         var lineOfSight = new LineOfSight(_map, doors, _session, (_, _, _, _) => false);

@@ -178,7 +178,7 @@ internal sealed class Weather(
             return true;
         if (tile != 0)
             return z < map.WallStories(x, y) * GameConstants.TextureSize;
-        if (map.CeilingFlat[(y << MapManager.MapShift) + x] != null)
+        if (map.CeilingFlat[map.TileIndex(x, y)] != null)
             return true;
         return isArch(x, y) && z < map.StoryMap[x, y] * GameConstants.TextureSize;
     }
@@ -219,7 +219,7 @@ internal sealed class Weather(
     // Its color at (gx, gy), nx along the view: in the light there, and dimmed toward black with distance (to half)
     byte WeatherColor(byte basecolor, byte[] dim, long gx, long gy, long nx, long maxdist)
     {
-        byte color = lighting.LightAt(Lighting.TileIndex((int)(gx >> MapConstants.TileShift), (int)(gy >> MapConstants.TileShift)), gx, gy)
+        byte color = lighting.LightAt(map.TileIndexOrNone((int)(gx >> MapConstants.TileShift), (int)(gy >> MapConstants.TileShift)), gx, gy)
             [lighting.ShadeOffset(nx) + basecolor];
         int step = (int)(nx * (Lighting.FadeSteps / 2) / maxdist);
         return dim[Math.Min(step, Lighting.FadeSteps - 1) * 256 + color];

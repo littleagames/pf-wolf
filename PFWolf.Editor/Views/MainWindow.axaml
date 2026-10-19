@@ -151,6 +151,10 @@
       <MenuItem Header="_Level">
         <MenuItem Header="Level _properties…" Command="{Binding EditPropertiesCommand}" InputGesture="F4"
                   ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones" />
+        <MenuItem Header="Save as _UWMF" ToggleType="CheckBox" IsChecked="{Binding SaveAsUwmf}"
+                  ToolTip.Tip="Saves the level as UWMF text (ECWolf's TEXTMAP), which holds everything; off, as binary planes (WDC3.1). New levels are UWMF" />
+        <MenuItem Header="_Resize level…" Command="{Binding ResizeMapCommand}"
+                  ToolTip.Tip="A new width and height (3 to 256 tiles each way), keeping a corner, an edge or the middle where it is" />
         <MenuItem Header="_Check level" Command="{Binding CheckLevelCommand}" InputGesture="F7"
                   ToolTip.Tip="Player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
       </MenuItem>

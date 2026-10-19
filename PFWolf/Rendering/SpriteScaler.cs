@@ -119,14 +119,14 @@ internal sealed class SpriteScaler(
         xcenter = sprite.ViewX - TexelsToPixels(originx, height);
         toppix = RaisedTop(floorRow(height), originy, sprite.Z, height);
 
-        byte[] shade = sprite.Bright ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(sprite.TileX, sprite.TileY), sprite.WorldX, sprite.WorldY);
+        byte[] shade = sprite.Bright ? Lighting.NoShade : lighting.LightAt(lighting.TileIndex(sprite.TileX, sprite.TileY), sprite.WorldX, sprite.WorldY);
         int shadeofs = sprite.Bright ? 0 : lighting.ShadeOffsetForHeight(sprite.ViewHeight);
 
         // A cloaked sprite (Planet Strike's) darkens what's behind it, through shade level 16 as
         // bstone's shading[0x1000 | pixel] does
         if (sprite.Cloaked)
         {
-            shade = lighting.LightAt(Lighting.TileIndex(sprite.TileX, sprite.TileY), sprite.WorldX, sprite.WorldY);
+            shade = lighting.LightAt(lighting.TileIndex(sprite.TileX, sprite.TileY), sprite.WorldX, sprite.WorldY);
             shadeofs = Math.Min(16 * 256, shade.Length - 256);
         }
 

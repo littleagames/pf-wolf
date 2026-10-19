@@ -679,7 +679,7 @@ internal record Monster : Actor
 
     // Open floor nothing stands on (nor the player shoving it)
     private bool OpenForStep(int x, int y, PlayerPawn shover) =>
-        x is > 0 and < MapManager.MapSize - 1 && y is > 0 and < MapManager.MapSize - 1
+        x > 0 && x < MapManager.MapWidth - 1 && y > 0 && y < MapManager.MapHeight - 1
         && MapManager.TileMap[x, y] == 0 && MapManager.ActorAt[x, y] is null
         && !(shover.TileX == x && shover.TileY == y);
 
@@ -1521,7 +1521,7 @@ internal record Monster : Actor
                 break;
             }
 
-            if (TileX > MapManager.MapSize || TileY > MapManager.MapSize)
+            if (TileX > MapManager.MapWidth || TileY > MapManager.MapHeight)
                 GameEngineManager.Quit($"T_Path hit a wall at {TileX},{TileY}, dir {Dir}");
 
             RecenterOnTile();

@@ -22,8 +22,8 @@ public static class MapImport
     /// <summary>Why a level of the file can't be imported, or null when it can</summary>
     public static string? Check(WdcMap map)
     {
-        if (map.Width != MapConstants.MapSize || map.Height != MapConstants.MapSize)
-            return $"{Label(map)} is {map.Width}x{map.Height}; PFWolf levels are {MapConstants.MapSize}x{MapConstants.MapSize}.";
+        if (MapConstants.CheckMapSize(map.Width, map.Height) is { } badSize)
+            return $"{Label(map)} can't be imported: {badSize}.";
         if (map.Planes.Length == 0)
             return $"{Label(map)} has no planes.";
         return null;
@@ -37,16 +37,19 @@ public static class MapImport
     /// <summary>The planes the file has that a level can take, each onto the same plane</summary>
     public static IEnumerable<int> ImportablePlanes(WdcMap map) => Enumerable.Range(0, Math.Min(map.Planes.Length, MapConstants.LevelPlanes));
 
-    /// <summary>Puts the planes onto the level as one undo step; returns how many tiles changed</summary>
+    /// <summary>
+    /// Puts the planes onto the level as one undo step; returns how many tiles changed. A file
+    /// level of another size goes at the level's top left, as much of it as fits.
+    /// </summary>
     public static int Apply(MapDocument document, WdcMap source, IReadOnlyList<PlaneImport> planes, string description)
     {
         var edit = document.BeginEdit(description);
         int changed = 0;
         foreach (var (from, to) in planes)
         {
-            for (int y = 0; y < document.Height; y++)
+            for (int y = 0; y < Math.Min(document.Height, source.Height); y++)
             {
-                for (int x = 0; x < document.Width; x++)
+                for (int x = 0; x < Math.Min(document.Width, source.Width); x++)
                 {
                     var value = source.Planes[from][y * source.Width + x];
                     if (document[to, x, y] != value)
@@ -65,7 +68,7 @@ public static class MapImport
     /// </summary>
     public static MapAsset NewLevel(string title, WdcMap source, IReadOnlyList<PlaneImport> planes, ushort wall, ushort floor)
     {
-        var map = MapFiles.NewMap(title, wall, floor);
+        var map = MapFiles.NewMap(title, wall, floor, source.Width, source.Height);
         foreach (var (from, to) in planes)
             map.MapData[to] = (ushort[])source.Planes[from].Clone();
         return map;

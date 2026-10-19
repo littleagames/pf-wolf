@@ -30,7 +30,8 @@ public class LightingTests
     }
 
     private Lighting Lighting(VideoManager? video = null) =>
-        new(null!, video ?? GreyVideo(), null!, new LightingHooks(() => 0, () => { }, _actorTicks.Add));
+        new(null!, video ?? GreyVideo(), new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null),
+            new LightingHooks(() => 0, () => { }, _actorTicks.Add));
 
     [SetUp]
     public void Clear() => _actorTicks.Clear();
@@ -66,7 +67,7 @@ public class LightingTests
 
         // Assert
         Assert.That(lighting.Shading, Is.False);
-        Assert.That(lighting.LightAt(Rendering.Lighting.TileIndex(5, 5), 5 * Tile, 5 * Tile), Is.SameAs(Rendering.Lighting.NoShade));
+        Assert.That(lighting.LightAt(lighting.TileIndex(5, 5), 5 * Tile, 5 * Tile), Is.SameAs(Rendering.Lighting.NoShade));
         Assert.That(lighting.ShadeOffset(100 * Tile), Is.Zero);
     }
 
@@ -110,8 +111,8 @@ public class LightingTests
 
         // Act / Assert
         Assert.That(lighting.LightAt(-1, 0, 0), Is.SameAs(lighting.LightRow));
-        Assert.That(Rendering.Lighting.TileIndex(-1, 0), Is.EqualTo(-1));
-        Assert.That(Rendering.Lighting.TileIndex(MapManager.MapSize, 0), Is.EqualTo(-1));
+        Assert.That(lighting.TileIndex(-1, 0), Is.EqualTo(-1));
+        Assert.That(lighting.TileIndex(MapConstants.ClassicMapSize, 0), Is.EqualTo(-1));
     }
 
     [Test]

@@ -234,6 +234,48 @@ public sealed class LevelMesh
                 }
             }
         }
+
+        foreach (var thing in _tiles.Map.ExtraThings)
+            AddExtraThing(thing);
+    }
+
+    /// <summary>
+    /// A UWMF level's extra thing (MapAsset.ExtraThings): its sprite where it stands, off the
+    /// tile grid as the game places it; a wall sprite stays on its tile's panel
+    /// </summary>
+    private void AddExtraThing(MapThing thing)
+    {
+        int x = thing.TileX, y = thing.TileY;
+        if (x < 0 || y < 0 || x >= _tiles.Width || y >= _tiles.Height)
+            return;
+
+        var content = _tiles.Content;
+        if (content.BrokenThingReason(thing.Class) != null)
+        {
+            AddMarker(x, y, BrokenColor);
+            return;
+        }
+        var sprite = content.ThingSprite(thing.Class);
+        if (sprite is not { Width: > 0, Height: > 0 })
+            return;
+
+        float width = sprite.Width / (float)TextureAsset.StorySize, height = sprite.Height / (float)TextureAsset.StorySize;
+        var texture = new TextureRef(TextureSource.Sprite, thing.Class);
+        var thingRef = new SurfaceRef(SurfaceKind.Thing, x, y);
+        var (originX, originY) = sprite.Origin;
+        float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize;
+        float shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize;
+
+        if (content.IsWallSprite(thing.Class))
+            AddWallSprite(x, y, thing.Angle, content.WallSpriteOffset(thing.Class), width, height, lift, texture, thingRef);
+        else
+        {
+            Billboards.Add(new Billboard
+            {
+                Base = new Vector3((float)thing.X, lift, (float)thing.Y), Shift = shift, Width = width, Height = height, Texture = texture, Ref = thingRef,
+                Color = Light(x, y),
+            });
+        }
     }
 
     //
@@ -511,7 +553,7 @@ public sealed class LevelMesh
     /// </summary>
     private string DoorFace(MapTextureTranslation door, int x, int y, string face)
     {
-        bool locked = !string.IsNullOrEmpty(door.Lock) || door.Locks.Count > 0 ||_tiles.Content.MapDefs.DoorLocks.ContainsKey(_tiles[1, x, y]);
+        bool locked = !string.IsNullOrEmpty(door.Lock) || door.Locks.Count > 0 ||_tiles.Defs.DoorLocks.ContainsKey(_tiles[1, x, y]);
         if (locked && door.Locked?.Side(face) is { Length: > 0 } lockedFace)
             return lockedFace;
 

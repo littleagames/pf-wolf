@@ -25,7 +25,7 @@ namespace PFWolf.Rendering;
 /// </summary>
 internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting, GameSession session)
 {
-    const int LightCellCount = Lighting.LightCells, LightCellShift = Lighting.LightCellShift, GridShift = Lighting.GridShift;
+    const int LightCellCount = Lighting.LightCells, LightCellShift = Lighting.LightCellShift;
     const int CellGlobalShift = Lighting.CellGlobalShift, MaxLightLevel = Lighting.MaxLightLevel;
     const int HalfCell = 1 << (CellGlobalShift - 1);
 
@@ -40,7 +40,8 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     internal readonly Dictionary<string, byte[]> ColorTintTables = new(StringComparer.OrdinalIgnoreCase);
 
     readonly List<int> casttiles = [];           // the tiles whose cells have light added this frame
-    readonly int[] caststamp = new int[MapManager.MapArea], visitstamp = new int[MapManager.MapArea];
+    int[] caststamp = new int[MapConstants.ClassicMapArea], visitstamp = new int[MapConstants.ClassicMapArea];
+    int castwidth = MapConstants.ClassicMapSize;       // the level width casttiles and the stamps are for
     int castframe, castvisit;
     readonly Queue<(int X, int Y)> castqueue = new();
     internal bool HasLights;                              // some cell has light added this frame
@@ -247,12 +248,22 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     /// <summary>Clears last frame's actor light from the grid and adds this frame's; called before each frame.</summary>
     internal void CastActorLights()
     {
+        // A level of another size: the grid starts afresh, and so do the tiles lit on it
+        lighting.SizeToLevel();
+        if (caststamp.Length != map.MapArea || castwidth != map.MapWidth)
+        {
+            caststamp = new int[map.MapArea];
+            visitstamp = new int[map.MapArea];
+            castwidth = map.MapWidth;
+            casttiles.Clear();
+        }
+
         foreach (int tile in casttiles)
         {
-            int x = tile & (MapManager.MapSize - 1), y = tile >> MapManager.MapShift;
+            int x = tile % castwidth, y = tile / castwidth;
             for (int cy = 0; cy < LightCellCount; cy++)
             {
-                int start = (((y << LightCellShift) + cy) << GridShift) + (x << LightCellShift);
+                int start = lighting.CellIndex(x << LightCellShift, (y << LightCellShift) + cy);
                 Array.Clear(lighting.CellAdd, start, LightCellCount);
                 Array.Clear(lighting.CellStrong, start, LightCellCount);
                 Array.Clear(lighting.CellTint, start, LightCellCount);
@@ -283,11 +294,11 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             return;
 
         int tx = lx >> MapConstants.TileShift, ty = ly >> MapConstants.TileShift;
-        if (Lighting.TileIndex(tx, ty) < 0)
+        if (map.TileIndexOrNone(tx, ty) < 0)
             return;
 
         castvisit++;
-        visitstamp[Lighting.TileIndex(tx, ty)] = castvisit;
+        visitstamp[map.TileIndexOrNone(tx, ty)] = castvisit;
         castqueue.Enqueue((tx, ty));
         while (castqueue.Count > 0)
         {
@@ -299,7 +310,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
 
             foreach (var (nx, ny) in new[] { (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1) })
             {
-                int next = Lighting.TileIndex(nx, ny);
+                int next = map.TileIndexOrNone(nx, ny);
                 if (next < 0 || visitstamp[next] == castvisit || !LightEnters(nx, ny) || !TileInReach(nx, ny, lx, ly, r))
                     continue;
                 visitstamp[next] = castvisit;
@@ -336,7 +347,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             int sy = (int)((fromy + dy * i / steps) >> MapConstants.TileShift);
             if ((sx, sy) == (startx, starty) || (sx, sy) == (x, y))
                 continue;
-            if (Lighting.TileIndex(sx, sy) < 0 || !LightPasses(sx, sy))
+            if (map.TileIndexOrNone(sx, sy) < 0 || !LightPasses(sx, sy))
                 return false;
         }
         return true;
@@ -371,7 +382,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     // none at r. Where it's the strongest light, the cell takes its tint, paler as it falls off.
     void LightCells(int x, int y, int lx, int ly, long r, float levels, byte[]? tints)
     {
-        int tile = Lighting.TileIndex(x, y);
+        int tile = map.TileIndexOrNone(x, y);
         if (caststamp[tile] != castframe)
         {
             caststamp[tile] = castframe;
@@ -396,7 +407,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
                 if (add <= 0)
                     continue;
 
-                int i = (cy << GridShift) + cx;
+                int i = lighting.CellIndex(cx, cy);
                 lighting.CellAdd[i] = (byte)Math.Min(lighting.CellAdd[i] + add, MaxLightLevel);
                 if (add > lighting.CellStrong[i])
                 {

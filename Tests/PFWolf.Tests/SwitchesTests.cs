@@ -27,7 +27,8 @@ public class SwitchesTests
     public void A_Smart_Switch_Aimed_Off_The_Map_Works_Nothing_But_Counts_As_Done(int x, int y)
     {
         // Arrange: off the map, nothing is looked at
-        var switches = new SmartSwitches(null!, null!, null!, (_, _, _) => Assert.Fail("no switch should be thrown"));
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null);
+        var switches = new SmartSwitches(map, null!, null!, (_, _, _) => Assert.Fail("no switch should be thrown"));
 
         // Act / Assert
         Assert.That(switches.OperateSmartSwitch(x, y, SmartSwitchOp.Toggle), Is.True);

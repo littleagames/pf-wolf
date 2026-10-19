@@ -1,3 +1,4 @@
+using PFWolf.Constants;
 using PFWolf.Entities.Actors;
 
 namespace PFWolf.Tests;
@@ -14,9 +15,9 @@ public class AutomapDrawingTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
-            Seen = new SeenFlags[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            Seen = new SeenFlags[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         _automap = new AutomapDrawing(null!, null!, null!, null!, null!, _map, null!, null!, null!, null!, null!, _session,
             new AutomapHooks(() => (0, 0, 320, 160), map => map, tics => "", () => []));
@@ -56,7 +57,7 @@ public class AutomapDrawingTests
     public void Off_The_Map_Is_Wall()
     {
         Assert.That(_automap.IsAutomapWall(-1, 0), Is.True);
-        Assert.That(_automap.IsAutomapWall(0, MapManager.MapSize), Is.True);
+        Assert.That(_automap.IsAutomapWall(0, MapConstants.ClassicMapSize), Is.True);
     }
 
     [Test]
@@ -113,8 +114,8 @@ public class RadarTests
         // Arrange
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
@@ -141,8 +142,8 @@ public class RadarTests
         // Arrange: a gold-key door, closed
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession(), null)
         {
-            TileMap = new ushort[MapManager.MapSize, MapManager.MapSize],
-            ActorAt = new Actor?[MapManager.MapSize, MapManager.MapSize],
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);

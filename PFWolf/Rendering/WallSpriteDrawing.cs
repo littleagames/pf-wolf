@@ -128,7 +128,7 @@ internal sealed class WallSpriteDrawing(
             int column = Math.Min((int)(t * spriteAsset.Width), spriteAsset.Width - 1);
             int top = floorRow(half) - SpriteScaler.TexelsToPixels(spriteAsset.Origin.Y, half);
             scaler.ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, GameConstants.TextureSize / 2), spriteAsset, column,
-                vis.Bright ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(vis.TileX, vis.TileY), vis.WorldX, vis.WorldY),
+                vis.Bright ? Lighting.NoShade : lighting.LightAt(map.TileIndexOrNone(vis.TileX, vis.TileY), vis.WorldX, vis.WorldY),
                 vis.Bright ? 0 : lighting.ShadeOffsetForHeight(height), translation: vis.Translation);
         }
     }

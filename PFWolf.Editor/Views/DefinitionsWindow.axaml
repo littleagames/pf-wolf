@@ -59,6 +59,12 @@
       <TabItem x:Name="GamePacksTab" Header="Game packs">
         <v:EntryEditorView DataContext="{Binding GamePacks}" />
       </TabItem>
+      <TabItem x:Name="LevelOwnTab" Header="This level's own"
+               ToolTip.Tip="The open level's own walls, doors, flats, triggers and extra things (a UWMF level's), read-only">
+        <TextBox Text="{Binding LevelOwnText}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+                 FontFamily="Cascadia Mono,Consolas,Menlo,monospace" Margin="0,8,0,8"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+      </TabItem>
       <TabItem x:Name="FilesTab" Header="YAML files">
         <DockPanel DataContext="{Binding Files}" x:DataType="vm:YamlFilesViewModel">
           <!-- Every file -->

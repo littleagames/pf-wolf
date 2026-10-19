@@ -161,8 +161,8 @@ internal sealed class AutomapDrawing(
     /// <summary>A faint one-pixel line along every tile edge of the map that reaches the view, under everything else.</summary>
     void DrawAutomapGrid(AutomapView view)
     {
-        var (first, last) = AutomapReach(view.CenterX, view);
-        var (firstY, lastY) = AutomapReach(view.CenterY, view);
+        var (first, last) = AutomapReach(view.CenterX, map.MapWidth, view);
+        var (firstY, lastY) = AutomapReach(view.CenterY, map.MapHeight, view);
         string color = AutomapColor("AutomapGrid");
 
         for (int x = first; x <= last + 1; x++)
@@ -175,10 +175,10 @@ internal sealed class AutomapDrawing(
     /// The tiles along one axis that can reach the view: within half its diagonal of the center,
     /// whichever way the map is turned, and on the map.
     /// </summary>
-    (int First, int Last) AutomapReach(float center, AutomapView view)
+    (int First, int Last) AutomapReach(float center, int size, AutomapView view)
     {
         float reach = MathF.Sqrt(view.ClipWidth * view.ClipWidth + view.ClipHeight * view.ClipHeight) / 2 / view.TileSize + 1;
-        return (Math.Max(0, (int)MathF.Floor(center - reach)), Math.Min(MapManager.MapSize - 1, (int)MathF.Ceiling(center + reach)));
+        return (Math.Max(0, (int)MathF.Floor(center - reach)), Math.Min(size - 1, (int)MathF.Ceiling(center + reach)));
     }
 
     /// <summary>
@@ -187,8 +187,8 @@ internal sealed class AutomapDrawing(
     /// </summary>
     void DrawAutomapWalls(AutomapView view, bool reveal)
     {
-        var (firstX, lastX) = AutomapReach(view.CenterX, view);
-        var (firstY, lastY) = AutomapReach(view.CenterY, view);
+        var (firstX, lastX) = AutomapReach(view.CenterX, map.MapWidth, view);
+        var (firstY, lastY) = AutomapReach(view.CenterY, map.MapHeight, view);
 
         string color = AutomapColor("AutomapWall");
         const SeenFlags allFaces = SeenFlags.NorthFace | SeenFlags.SouthFace | SeenFlags.WestFace | SeenFlags.EastFace
@@ -558,7 +558,7 @@ internal sealed class AutomapDrawing(
     /// </summary>
     internal bool IsAutomapWall(int x, int y)
     {
-        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
+        if (!map.InMap(x, y))
             return true;
 
         int tile = map.TileMap[x, y];
@@ -573,7 +573,7 @@ internal sealed class AutomapDrawing(
     {
         if (!IsAutomapWall(x, y))
             return false;
-        if (x < 0 || y < 0 || x >= MapManager.MapSize || y >= MapManager.MapSize)
+        if (!map.InMap(x, y))
             return true;
 
         return (Diagonals.DiagonalSolidEdges(map.WallShapes[x, y]) & edge) != 0;
@@ -598,14 +598,14 @@ internal sealed class AutomapDrawing(
 
     // Filled each frame so the per-pixel loop never looks anything up by name: the textures of each
     // seen wall tile's four faces, and which seen door (index + 1) a tile holds.
-    readonly AutomapFaces[,] automapWalls = new AutomapFaces[MapManager.MapSize, MapManager.MapSize];
+    AutomapFaces[,] automapWalls = new AutomapFaces[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
     /// <summary>The textures on a wall tile's four faces, as the automap draws them</summary>
     readonly record struct AutomapFaces(byte[]? North, byte[]? South, byte[]? East, byte[]? West)
     {
         public bool Any => North != null || South != null || East != null || West != null;
     }
-    readonly int[,] automapDoorAt = new int[MapManager.MapSize, MapManager.MapSize];
+    int[,] automapDoorAt = new int[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
     byte[]?[] automapDoorTextures = [];
 
     /// <summary>A wall texture's pixels, or null if it's missing or not 64x64.</summary>
@@ -649,9 +649,14 @@ internal sealed class AutomapDrawing(
         // what each tile shows this frame
         //
         var wallTextures = new Dictionary<int, AutomapFaces>();
-        for (int x = 0; x < MapManager.MapSize; x++)
+        if (automapWalls.GetLength(0) != map.MapWidth || automapWalls.GetLength(1) != map.MapHeight)
         {
-            for (int y = 0; y < MapManager.MapSize; y++)
+            automapWalls = new AutomapFaces[map.MapWidth, map.MapHeight];
+            automapDoorAt = new int[map.MapWidth, map.MapHeight];
+        }
+        for (int x = 0; x < map.MapWidth; x++)
+        {
+            for (int y = 0; y < map.MapHeight; y++)
             {
                 automapWalls[x, y] = default;
                 automapDoorAt[x, y] = 0;
@@ -756,7 +761,7 @@ internal sealed class AutomapDrawing(
             return -1;
 
         int tx = (int)mx, ty = (int)my;
-        if (tx >= MapManager.MapSize || ty >= MapManager.MapSize)
+        if (tx >= map.MapWidth || ty >= map.MapHeight)
             return -1;
 
         float fx = mx - tx, fy = my - ty;
