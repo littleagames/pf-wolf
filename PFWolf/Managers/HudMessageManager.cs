@@ -35,11 +35,14 @@ internal enum HudMessageKind : byte
     Obituary,
 }
 
-internal sealed class HudMessage(string text, HudMessageStyle style)
+internal sealed class HudMessage(string text, HudMessageStyle style, string? key = null)
 {
-    public string Text { get; } = text;
+    public string Text { get; set; } = text;
     public HudMessageStyle Style { get; } = style;
     public int TicsLeft { get; set; } = style.Duration;
+
+    /// <summary>A message kept up to date in its place (ShowKeyed: a countdown), or null</summary>
+    public string? Key { get; } = key;
 }
 
 /// <summary>
@@ -128,7 +131,7 @@ internal class HudMessageManager
             return;
 
         var style = FindStyle(string.IsNullOrWhiteSpace(styleName) ? KindStyle(kind) : styleName);
-        messages.RemoveAll(m => m.Style.Position == style.Position && m.Text == text);
+        messages.RemoveAll(m => m.Style.Position == style.Position && m.Text == text && m.Key == null);
         messages.Add(new HudMessage(text, style));
 
         var stack = messages.Where(m => m.Style.Position == style.Position).ToList();
@@ -136,6 +139,39 @@ internal class HudMessageManager
             messages.Remove(stack[i]);
 
         consoleManager.Value.Print(text);
+    }
+
+    /// <summary>
+    /// Shows <paramref name="text"/> as the message with this <paramref name="key"/>: a new one
+    /// joins its stack as Show's do, and one already up has its text and time renewed where it
+    /// is (a countdown: power-ups' timers, a script's clock). It's shown with messages off too,
+    /// and not printed to the console. Null or empty text takes it down.
+    /// </summary>
+    internal void ShowKeyed(string key, string? text, string? styleName = null)
+    {
+        text = string.IsNullOrEmpty(text) ? null : Localize(text).Trim();
+        var current = messages.FirstOrDefault(m => m.Key == key);
+        if (string.IsNullOrEmpty(text))
+        {
+            if (current != null)
+                messages.Remove(current);
+            return;
+        }
+
+        var style = FindStyle(styleName);
+        if (current != null && current.Style == style)
+        {
+            current.Text = text;
+            current.TicsLeft = style.Duration;
+            return;
+        }
+        if (current != null)
+            messages.Remove(current);
+        messages.Add(new HudMessage(text, style, key));
+
+        var stack = messages.Where(m => m.Style.Position == style.Position).ToList();
+        for (int i = 0; i < stack.Count - Math.Max(style.MaxLines, 1); i++)
+            messages.Remove(stack[i]);
     }
 
     /// <summary>The text for a $NAME language key; anything else as it is</summary>

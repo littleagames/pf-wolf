@@ -21,6 +21,11 @@ internal sealed class MapLoadouts(InventoryManager inventory, PlayerWeapons weap
             using var _ = session.ActAs(p);
             ApplyToActing(loadout);
         }
+
+        // The status bar was drawn before the level was set up (GameLoop's DrawPlayScreen), with
+        // what the player had then: its weapon and ammo show the loadout's
+        weapons.DrawWeapon();
+        weapons.DrawAmmo();
     }
 
     void ApplyToActing(MapLoadout loadout)

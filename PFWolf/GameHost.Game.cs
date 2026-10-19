@@ -248,6 +248,14 @@ internal static partial class GameHost
         () => GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.TimeLimit : 0,
         () =>
         {
+            // A level that time-limit-completes is got through by lasting (End of Destiny's)
+            if (GameState.MapOn is { } timedMap && GameEngineManager.GetGameInfo().Maps.TryGetValue(timedMap, out var timedInfo)
+                && timedInfo.TimeLimitCompletes)
+            {
+                PlayState = PlayState.Completed;
+                return;
+            }
+
             // Time's up: every player still standing dies, with nothing to blame
             foreach (var p in Session.Players.Where(p => p.Health > 0).ToList())
             {

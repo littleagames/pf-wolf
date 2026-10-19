@@ -556,8 +556,18 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
 
         hooks.GameWon();
 
-        hooks.EndText();
-        EndScreens(cluster);
+        // The end text, then the ending's pictures; or the other way round (game-info cluster
+        // end-text-last: End of Destiny's EndSpear)
+        if (cluster.EndTextLast)
+        {
+            EndScreens(cluster);
+            hooks.EndText();
+        }
+        else
+        {
+            hooks.EndText();
+            EndScreens(cluster);
+        }
     }
 
     /// <summary>

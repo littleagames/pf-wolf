@@ -173,9 +173,18 @@ internal sealed class SkyAndFlats(
         // game-info's colors for the map, else the map's own (mapdefs map-info), else the default map's
         byte ceilingColor = mapInfo?.CeilingColor is { } ceiling ? video.ParseColorOr(ceiling, 0x1d)
             : map.MapCeilingColor ?? video.ParseColorOr(gameInfo.DefaultMap.CeilingColor, 0x1d);
-        CeilingColor = ceilingColor;
         byte floorColor = mapInfo?.FloorColor is { } floor ? video.ParseColorOr(floor, 0x19)
             : map.MapFloorColor ?? video.ParseColorOr(gameInfo.DefaultMap.FloorColor, 0x19);
+
+        // A_Warp's "swapcolors" has the second pair showing (each left out keeps the first)
+        if (map.AltFlatColors)
+        {
+            if (mapInfo?.AltCeilingColor is { } altCeiling)
+                ceilingColor = video.ParseColorOr(altCeiling, ceilingColor);
+            if (mapInfo?.AltFloorColor is { } altFloor)
+                floorColor = video.ParseColorOr(altFloor, floorColor);
+        }
+        CeilingColor = ceilingColor;
 
         var destIndex = render.Vbuf;
         int y;

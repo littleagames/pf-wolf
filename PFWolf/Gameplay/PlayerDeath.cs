@@ -150,8 +150,20 @@ internal sealed class PlayerDeath(
         audio.StopAll();
         session.PlayerState.EyeZ = classes.StandingEyeZ(session.PlayerState);      // back on their feet for the restart
 
-        // A life less, unless the game has none to lose (game-info lives: false, Midnight Assault)
+        // On a level against the clock that time-limit-completes (End of Destiny's), dying gets
+        // through it: the level's completed, the player's health back to full and no life lost
         var gameInfo = engine.GetGameInfo();
+        if (gameInfo.Maps.TryGetValue(session.GameState.MapOn, out var mapInfo) && mapInfo.TimeLimit > 0 && mapInfo.TimeLimitCompletes)
+        {
+            session.PlayerState.Health = classes.StartingHealth;
+            session.PlayerState.WeaponSprite = null;
+            statusBar.DrawHealth();
+            statusBar.DrawFace();
+            session.PlayState = PlayState.Completed;
+            return;
+        }
+
+        // A life less, unless the game has none to lose (game-info lives: false, Midnight Assault)
         if (gameInfo.Lives)
             session.PlayerState.Lives--;
 

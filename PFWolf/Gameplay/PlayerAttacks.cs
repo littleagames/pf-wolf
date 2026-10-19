@@ -133,9 +133,13 @@ internal sealed class PlayerAttacks(
     internal const int DecoyShare = 4;
 
     // The weapon in hand's `attacksound`.
+    // A power-up that put the weapon in hand can have its own (powerup.attacksound: Knife Fury's swish).
     internal void PlayAttackSound()
     {
-        if (session.PlayerState.Weapon != null && inventory.GetStringProperty(session.PlayerState.Weapon, "attacksound") is { Length: > 0 } sound)
+        if (Powerups.ForWeapon(inventory, session.PlayerState.Weapon) is { } powerup
+            && inventory.GetStringProperty(powerup, "powerup.attacksound") is { Length: > 0 } powerupSound)
+            hooks.PlayPlayerSound(powerupSound);
+        else if (session.PlayerState.Weapon != null && inventory.GetStringProperty(session.PlayerState.Weapon, "attacksound") is { Length: > 0 } sound)
             hooks.PlayPlayerSound(sound);
     }
 
@@ -150,11 +154,39 @@ internal sealed class PlayerAttacks(
         if (closest == null)
             return; // missed
 
+        // A power-up's weapon that kills with every blow (powerup.weaponkills: End of Destiny's Knife
+        // Fury), the death its powerup.damagetype's
+        if (closest is Entities.Actors.Monster victim && Powerups.ForWeapon(inventory, session.PlayerState.Weapon) is { } fury
+            && Powerups.Flag(inventory, fury, "powerup.weaponkills"))
+        {
+            victim.BlowType = inventory.GetStringProperty(fury, "powerup.damagetype") is { Length: > 0 } furyType ? furyType : null;
+            try
+            {
+                HitShotTarget(victim, (uint)Math.Max((int)victim.Hitpoints, 1));
+            }
+            finally
+            {
+                victim.BlowType = null;
+            }
+            return;
+        }
+
         // A weapon with weapon.backstab kills an enemy outright from behind while it's unaware
         // (Midnight Assault's knife: KnifeAttack's "insta-kill if back-stabbed")
         if (closest is Entities.Actors.Monster target && WeaponIs("weapon.backstab") && BackTurned(target))
         {
-            HitShotTarget(target, (uint)Math.Max((int)target.Hitpoints, 1));
+            // its own damage type, for the death it dies (weapon.backstabtype, Backstab when not set:
+            // Monster DEATH STATES); End of Destiny's are stealth kills
+            target.BlowType = session.PlayerState.Weapon is { } weapon && inventory.GetStringProperty(weapon, "weapon.backstabtype") is { Length: > 0 } type
+                ? type : "Backstab";
+            try
+            {
+                HitShotTarget(target, (uint)Math.Max((int)target.Hitpoints, 1));
+            }
+            finally
+            {
+                target.BlowType = null;
+            }
             return;
         }
 

@@ -62,4 +62,7 @@ internal sealed class ActorWorld(
 
     /// <summary>Kills in quick succession (Gameplay/KillChains.cs): a player's kill carries their chain on</summary>
     internal Gameplay.KillChains? KillChains { get; init; }
+
+    /// <summary>An enemy walking (chasing, patrolling, dodging) has reached the middle of a tile: A_Warp's pads send it on</summary>
+    internal Action<Monster>? TileArrived { get; set; }
 }

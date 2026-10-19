@@ -102,7 +102,14 @@ internal sealed class StatusBarDrawing(
             DrawStatusPart(behind);
         ClearBox(element);
         if (hide)
+        {
+            // With no box to clear, blanks over its digits, as Wolf3D's LatchNumber drew
+            // N_BLANKPIC: a number hidden after it was shown (only-with-ammo) goes
+            if (element.Box.Count != 4 && element.Behind is not { Length: > 0 } && element.Digits > 0)
+                DrawStatusText(element, element.Prefix + new string(' ', element.Digits) + element.Suffix, font,
+                    element.Color ?? numbers?.Color ?? "White");
             return;
+        }
 
         // digits 0: as long as the number is, else right-aligned in that many (its last digits if longer)
         string str = number.ToString();
@@ -175,6 +182,8 @@ internal sealed class StatusBarDrawing(
         string? pic;
         if (Grinning && !string.IsNullOrEmpty(face.Grin))
             pic = face.Grin;
+        else if (session.PlayerState.Health != 0 && Gameplay.Powerups.Face(inventory, session.PlayerState.FaceFrame) is { } powerupFace)
+            pic = powerupFace;      // a power-up's own (End of Destiny's god mode face)
         else if (session.PlayerState.Health != 0)
         {
             int health = session.PlayerState.Health;

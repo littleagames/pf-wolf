@@ -39,3 +39,9 @@ internal record ScoreItem : Inventory
 {
 
 }
+
+// A timed power-up (Gameplay/Powerups.cs): held as the tics it has left
+internal record Powerup : Inventory
+{
+
+}

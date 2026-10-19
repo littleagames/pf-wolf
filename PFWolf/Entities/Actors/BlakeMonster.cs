@@ -209,8 +209,9 @@ internal partial record BlakeMonster : Monster
     */
 
     /// <summary>
-    /// A_SpawnEnemy("ScanAlien"[, "chase"]): an enemy appears on this actor's tile, as if placed
-    /// by the map but not added to the kill total; with chase, it's already after the player
+    /// A_SpawnEnemy("ScanAlien"[, "chase"][, "count"]): an enemy appears on this actor's tile, as if
+    /// placed by the map but not added to the kill total; with chase, it's already after the player;
+    /// with count, it's added to the kill total too (End of Destiny's SpawnTriggeredActors, SpawnBaron)
     /// </summary>
     internal void SpawnEnemy(string[] args)
     {
@@ -221,7 +222,8 @@ internal partial record BlakeMonster : Monster
         }
 
         var spawned = MapManager.SpawnThing(TileX, TileY,
-            new Assets.MapActorTranslation { Class = args[0], Angles = Dir == ObjDir.NoDir ? -1 : (int)Dir * 45 }, countKill: false);
+            new Assets.MapActorTranslation { Class = args[0], Angles = Dir == ObjDir.NoDir ? -1 : (int)Dir * 45 },
+            countKill: args.Skip(1).Any(a => a.Trim().Equals("count", StringComparison.OrdinalIgnoreCase)));
         if (spawned == null)
         {
             Console.WriteLine($"A_SpawnEnemy: \"{args[0]}\" isn't an actor.");
@@ -232,7 +234,7 @@ internal partial record BlakeMonster : Monster
         spawned.Y = Y;
         spawned.AreaNumber = AreaNumber;
         spawned.Faction = FactionManager.InheritedFaction(spawned, this);
-        if (args.Skip(1).Any(a => a.Equals("chase", StringComparison.OrdinalIgnoreCase)) && spawned.ResolvedStates.ContainsKey("Chase"))
+        if (args.Skip(1).Any(a => a.Trim().Equals("chase", StringComparison.OrdinalIgnoreCase)) && spawned.ResolvedStates.ContainsKey("Chase"))
         {
             spawned.SetState("Chase");
             spawned.Dir = ObjDir.NoDir;

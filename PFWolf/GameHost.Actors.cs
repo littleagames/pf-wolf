@@ -70,7 +70,7 @@ internal static partial class GameHost
 
     static PlayerStats MakePlayerStats() =>
         new(GameEngineManager, AssetManager, _videoManager, InventoryManager, statusBarDrawing, playerClassRules, playerWeapons, Session,
-            Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound));
+            Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound, HudMessageManager.ShowKeyed));
 
     internal static List<string> PlayerClasses() => playerClassRules.PlayerClasses();
     internal static string DefaultPlayerClass => playerClassRules.DefaultPlayerClass;

@@ -192,6 +192,14 @@ internal record Monster : Actor
         Y = (int)((TileY << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
     }
 
+    // Reached the middle of the tile it was walking to (EoD's CheckEnemyTile): what's there can
+    // move it on (ActorWorld.TileArrived, an A_Warp pad), and it picks its next way from there
+    private void ArriveOnTile()
+    {
+        RecenterOnTile();
+        World?.TileArrived?.Invoke(this);
+    }
+
     /*
     =============================================================================
     MOVEMENT / COLLISION (ported from WL_STATE.C)
@@ -785,7 +793,7 @@ internal record Monster : Actor
                 break;
             }
 
-            RecenterOnTile();
+            ArriveOnTile();
             move -= Distance;
             Distance = 0;
 
@@ -1439,7 +1447,8 @@ internal record Monster : Actor
 
       Death.<Type>  the killing blow's damage type, when the class has that state: the
                     attacker's `damagetype` (a missile's, a blast's, a monster's), or for a
-                    player's shot or blow their weapon's `weapon.damagetype`. Death.Fire,
+                    player's shot or blow their weapon's `weapon.damagetype` (a back-stab's,
+                    `weapon.backstabtype`, Backstab when unset). Death.Fire,
                     Death.Melee, Death.Stealth... (any case)
       XDeath        an overkill: a killing blow of at least `death.gibdamage`, or health left
                     below -`death.gibhealth`; with `death.gibtypes: [...]`, only by those types
@@ -1450,9 +1459,17 @@ internal record Monster : Actor
     =============================================================================
     */
 
+    /// <summary>
+    /// The damage type of the blow being dealt now, when the attacker alone doesn't say it (a
+    /// back-stab: weapon.backstabtype); set around that one blow
+    /// </summary>
+    internal string? BlowType;
+
     /// <summary>The killing blow's damage type: see DEATH STATES; null for none</summary>
     internal string? KillingDamageType(Entities.Actors.Actor? attacker)
     {
+        if (BlowType is { Length: > 0 } blow)
+            return blow;
         if (attacker is PlayerPawn pawn)
             return pawn.State.Weapon is { Length: > 0 } weapon ? InventoryManager.GetStringProperty(weapon, "weapon.damagetype") : null;
         return attacker?.Properties.TryGetValue("damagetype", out var type) == true && type?.ToString() is { Length: > 0 } name ? name : null;
@@ -1782,7 +1799,7 @@ internal record Monster : Actor
             if (TileX > MapManager.MapWidth || TileY > MapManager.MapHeight)
                 GameEngineManager.Quit($"T_Path hit a wall at {TileX},{TileY}, dir {Dir}");
 
-            RecenterOnTile();
+            ArriveOnTile();
             move -= Distance;
 
             SelectPathDir();
@@ -1864,7 +1881,7 @@ internal record Monster : Actor
                 break;
             }
 
-            RecenterOnTile();
+            ArriveOnTile();
             move -= Distance;
 
             if (dodge) SelectDodgeDir(); else SelectChaseDir();
@@ -1908,7 +1925,7 @@ internal record Monster : Actor
                 break;
             }
 
-            RecenterOnTile();
+            ArriveOnTile();
             move -= Distance;
 
             SelectDodgeDir();
@@ -1968,7 +1985,7 @@ internal record Monster : Actor
                 break;
             }
 
-            RecenterOnTile();
+            ArriveOnTile();
             move -= Distance;
 
             SelectChaseDir();
@@ -2025,7 +2042,7 @@ internal record Monster : Actor
                 break;
             }
 
-            RecenterOnTile();
+            ArriveOnTile();
             move -= Distance;
 
             if (dist < 4) SelectRunDir();
@@ -2068,7 +2085,7 @@ internal record Monster : Actor
                 break;
             }
 
-            RecenterOnTile();
+            ArriveOnTile();
             move -= Distance;
 
             SelectDodgeDir();

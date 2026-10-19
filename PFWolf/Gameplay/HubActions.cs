@@ -60,6 +60,9 @@ internal sealed class HubActions(
         Entities.MapTriggerRegistry.Register("A_FloorSelect", FloorSelectAction);
         Entities.MapTriggerRegistry.Register("A_Teleport", TeleportAction);
         Entities.MapTriggerRegistry.Register("A_TeleportTag", TeleportTagAction);
+        Entities.MapTriggerRegistry.Register("A_Warp", WarpAction);
+        if (mapManager?.World is { } world)
+            world.TileArrived = WarpMonster;
         Entities.MapTriggerRegistry.Register("A_VictoryRun", VictoryRunAction);
         Entities.Actors.ActorActionRegistry.Register("T_VictoryRun", ThinkVictoryRun);
 
@@ -206,6 +209,107 @@ internal sealed class HubActions(
         session.Player.SetPosition(to.X, to.Y);
         movement.Thrust(0, 0);
         return true;
+    }
+
+    /// <summary>
+    /// A_Warp([facing][, "sound"][, "telefrag"][, "swapcolors"][, "fizzle"][, "monsters"]): a
+    /// one-way teleporter pad (End of Destiny's, wl_agent.cpp WarpPlayer). Any number of pads
+    /// lead to one exit: the tile with the pad's tag that has no A_Warp trigger of its own. The
+    /// player comes out there facing east, north, west or south (left out: as they were), and
+    /// the sound plays as they go.
+    /// <list type="bullet">
+    /// <item>"telefrag" kills whatever's alive on the exit and on the next tile the way they face</item>
+    /// <item>"swapcolors" swaps the level's ceiling and floor colors with game-info's
+    /// alt-ceiling-color and alt-floor-color, back and forth each time (for the level: a saved
+    /// game loads with the first pair)</item>
+    /// <item>"fizzle" fizzles the view in again, as from a death</item>
+    /// <item>"monsters": an enemy walking onto the pad goes too (CheckEnemyTile), playing the
+    /// sound where it was, unless the exit is taken</item>
+    /// </list>
+    /// Give the trigger `activation: walk` and `repeat: true`.
+    /// </summary>
+    bool WarpAction(Entities.TriggerActivation trigger, string[] args)
+    {
+        var warp = WarpArgs.Parse(args);
+        if (WarpExit(trigger.TileX, trigger.TileY, trigger.Tag) is not { } to)
+        {
+            Console.WriteLine($"A_Warp at ({trigger.TileX},{trigger.TileY}): no tile with tag {trigger.Tag} but pads to come out on.");
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(warp.Sound))
+            audio.Play(warp.Sound);
+        if (warp.SwapColors)
+            mapManager.AltFlatColors = !mapManager.AltFlatColors;
+
+        if (warp.Telefrag)
+        {
+            var (dx, dy) = warp.Step;
+            foreach (var (x, y) in new[] { (to.X, to.Y), (to.X + dx, to.Y + dy) }.Distinct())
+            {
+                if (!mapManager.InMap(x, y))
+                    continue;
+                foreach (var victim in mapManager.ShootableActorsAt(x, y).ToList())
+                {
+                    victim.BlowType = "Telefrag";
+                    try
+                    {
+                        victim.Kill(session.Player);
+                    }
+                    finally
+                    {
+                        victim.BlowType = null;
+                    }
+                }
+            }
+        }
+
+        session.Player.SetPosition(to.X, to.Y);
+        if (warp.Angle is { } angle)
+            session.Player.Angle = angle;
+        movement.Thrust(0, 0);
+        if (warp.Fizzle)
+            session.FizzleIn = true;
+        return true;
+    }
+
+    /// <summary>An enemy has reached the middle of a tile (Monster.ArriveOnTile): on an A_Warp pad that takes "monsters", it goes to the exit</summary>
+    internal void WarpMonster(Entities.Actors.Monster ob)
+    {
+        if (mapManager.GetTrigger(ob.TileX, ob.TileY) is not { } trigger || !trigger.IsWalkOver)
+            return;
+        var (name, args) = Entities.Actors.ActorActionRegistry.Parse(trigger.Action);
+        if (name != "A_Warp")
+            return;
+        var warp = WarpArgs.Parse(args);
+        if (!warp.Monsters)
+            return;
+
+        ushort tag = mapManager.GetTag(ob.TileX, ob.TileY);
+        if (WarpExit(ob.TileX, ob.TileY, tag) is not { } to
+            || (session.Player.TileX == to.X && session.Player.TileY == to.Y)
+            || mapManager.ShootableActorsAt(to.X, to.Y).Any(a => !ReferenceEquals(a, ob)))
+            return;
+
+        if (!string.IsNullOrEmpty(warp.Sound))
+            hooks.PlaySoundAt(warp.Sound, ob);
+        ob.TileX = (byte)to.X;
+        ob.TileY = (byte)to.Y;
+        ob.RecenterOnTile();
+        if (mapManager.ValidArea(mapManager.MapSpot(to.X, to.Y, 0)))
+            ob.AreaNumber = (byte)(mapManager.MapSpot(to.X, to.Y, 0) - mapManager.Floors.AreaTile);
+        if (warp.Dir is { } dir)
+            ob.Dir = dir;
+        ob.SyncPosition();
+    }
+
+    /// <summary>Where A_Warp's pads with this tag lead: the (last, row by row) tile with the tag that isn't a pad</summary>
+    (int X, int Y)? WarpExit(int padX, int padY, ushort tag)
+    {
+        if (tag == 0)
+            return null;
+        return WarpArgs.ExitOf(mapManager.TaggedTiles(tag).Where(t => (t.X, t.Y) != (padX, padY)),
+            t => mapManager.GetTrigger(t.X, t.Y) is { } other && Entities.Actors.ActorActionRegistry.Parse(other.Action).Name == "A_Warp");
     }
 
     /// <summary>Whether the player can stand on a tile: on the map, no wall or door, nothing solid or alive on it</summary>

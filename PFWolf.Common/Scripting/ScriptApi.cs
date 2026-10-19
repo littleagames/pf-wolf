@@ -51,7 +51,7 @@ public static class ScriptApi
         Fn("tics", "game.tics()", "The tics this frame moves the world on (usually 1 or 2)"),
         Fn("map", "game.map()", "The level's map name (MAP01)"),
         Fn("skill", "game.skill()", "The skill being played, 0 for the easiest"),
-        Fn("message", "game.message(text[, style])", "Shows a message (a $NAME language key or the text), in the style for locked doors unless one is named"),
+        Fn("message", "game.message(text[, style[, key]])", "Shows a message (a $NAME language key or the text), in the style for locked doors unless one is named. With a key it is that key's message, kept up to date in its place (a clock each second), shown with messages off and not printed; nil text takes it down"),
         Fn("ambient", "game.ambient(sound)", "Loops a sound at the listener as the ambience, in place of the one there was; nil stops it. Asking for the one playing changes nothing, so it can be asked every tick"),
         Fn("objective", "game.objective(name)", "How many of a level objective (game-info objectives) are done, and of how many: two numbers, 0 and 0 for one the level hasn't"),
         Fn("unlock", "game.unlock(name)", "Unlocks a name from game to game (progress.cfg): a starts-locked episode's key, or a script's own name. True if it wasn't already; a demo playing back unlocks nothing"),
@@ -177,7 +177,7 @@ public static class ScriptApi
     ];
 
     /// <summary>The switch actions game.trigger can't run: they work on a switch's own tile</summary>
-    public static IReadOnlyList<string> OwnTileActions { get; } = ["A_PushWall", "A_Vend", "A_SmartSwitch", "A_FloorSelect", "A_Teleport", "A_TeleportTag"];
+    public static IReadOnlyList<string> OwnTileActions { get; } = ["A_PushWall", "A_Vend", "A_SmartSwitch", "A_FloorSelect", "A_Teleport", "A_TeleportTag", "A_Warp"];
 
     private static ScriptApiEntry Fn(string name, string signature, string summary) => new(ScriptApiKind.GameFunction, name, signature, summary, "game");
 

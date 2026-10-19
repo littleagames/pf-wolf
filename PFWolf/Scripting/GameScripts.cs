@@ -373,7 +373,12 @@ internal sealed class GameScripts(
         });
         game["message"] = new LuaFunction("game.message", (c, _) =>
         {
-            hudMessages.Show(Managers.HudMessageKind.Lock, StringArg(c, 0), OptionalString(c, 1));
+            // With a key: the message with that key, kept up to date where it is (a clock), shown with messages
+            // off too and not printed; nil or empty text takes it down
+            if (OptionalString(c, 2) is { Length: > 0 } key)
+                hudMessages.ShowKeyed(key, OptionalString(c, 0), OptionalString(c, 1));
+            else
+                hudMessages.Show(Managers.HudMessageKind.Lock, StringArg(c, 0), OptionalString(c, 1));
             return new(c.Return());
         });
         host.Globals["game"] = game;
@@ -508,6 +513,7 @@ internal sealed class GameScripts(
         ["A_FloorSelect"] = "",
         ["A_Teleport"] = "",
         ["A_TeleportTag"] = "",
+        ["A_Warp"] = "",
     };
 
     // 0 to count - 1 from the game's random numbers: one draw for up to 256, more beyond

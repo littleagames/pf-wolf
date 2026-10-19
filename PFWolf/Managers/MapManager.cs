@@ -611,6 +611,12 @@ internal class MapManager
     internal byte? MapFloorColor { get; private set; }
 
     /// <summary>
+    /// The level shows game-info's alt-ceiling-color and alt-floor-color now (A_Warp
+    /// "swapcolors"). For the level only: a saved game loads with the first pair.
+    /// </summary>
+    internal bool AltFlatColors { get; set; }
+
+    /// <summary>
     /// Reads the map-info codes on the object plane (mapdefs map-info): marks their tiles in
     /// <see cref="infotiles"/>, takes the map's colors, and with <paramref name="fillFlats"/>
     /// gives its flats to every flat plane tile still at 0. As in Blake Stone, only a map's first
@@ -620,6 +626,7 @@ internal class MapManager
     {
         infotiles = new bool[MapArea];
         MapCeilingColor = MapFloorColor = null;
+        AltFlatColors = false;
         Hints = new(StringComparer.OrdinalIgnoreCase);
 
         var objects = mapsegs[1];

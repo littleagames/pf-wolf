@@ -57,6 +57,7 @@ internal sealed class PlayerThink(
             playerinput.Drop();
 
         stats.UpdateFace();
+        stats.TickPowerups();
         statusBar.UpdateHeartMonitor();
         hooks.UpdateRadar();
 

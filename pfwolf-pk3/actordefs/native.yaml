@@ -92,7 +92,32 @@ ScoreItem:
   flags: [COUNTITEM]
   properties:
     "inventory.amount": 1
-    
+
+# A timed power-up (End of Destiny's god mode and Knife Fury), held as the tics it has left: each
+# one picked up adds its duration. While it runs it can make the player unhurt (invulnerable),
+# put a weapon in their hand that kills with every blow (weapon, weaponkills; the one they had
+# comes back when it ends, if they still hold it), show its own face on the status bar (face:
+# a pic, or a list the face's look-around goes through), count down on screen (timerstyle: a
+# hud-messages style, as m:ss), keep the screen lit (flash), and play endsound when it's over.
+# A level change or a death ends it.
+Powerup:
+  parent: Inventory
+  flags: [INVENTORY.ALWAYSPICKUP]
+  properties:
+    "inventory.amount": 1
+    "inventory.maxamount": 1000000
+    "inventory.interhubamount": 0
+    "powerup.duration": 2100        # tics (30 seconds)
+    "powerup.invulnerable": false
+    "powerup.weapon": ""
+    "powerup.weaponkills": false
+    "powerup.damagetype": ""        # the death a weaponkills blow gives (Monster DEATH STATES)
+    "powerup.attacksound": ""       # played in place of the weapon's attacksound
+    "powerup.face": ""
+    "powerup.timerstyle": ""
+    "powerup.flash": false
+    "powerup.endsound": ""
+
 Weapon:
   parent: Inventory
   properties:

@@ -442,12 +442,28 @@ internal sealed class PlayerUse(
             hooks.Message?.Invoke(message);
     }
 
-    /// <summary>The `inventory.usenone` message of the item class a slot's key uses, if it has one</summary>
+    /// <summary>
+    /// The `inventory.usenone` message of the item class a slot's key uses, if it has one; else,
+    /// when the player has no weapon in that slot at all, a `weapon.notheld` message of one of the
+    /// slot's weapons (End of Destiny's "You don't have this weapon"). A weapon held but out of
+    /// ammo says nothing.
+    /// </summary>
     internal string? NoneHeldMessage(int slot) =>
         inventory.GetClassesDerivedFrom("Inventory")
             .Where(item => inventory.GetIntProperty(item, "inventory.useslot", -1) == slot)
             .Select(item => inventory.GetStringProperty(item, "inventory.usenone"))
+            .FirstOrDefault(message => !string.IsNullOrEmpty(message))
+        ?? NotHeldMessage(slot);
+
+    string? NotHeldMessage(int slot)
+    {
+        var inSlot = inventory.GetClassesDerivedFrom("Weapon")
+            .Where(weapon => inventory.GetIntProperty(weapon, "weapon.slot", -1) == slot).ToList();
+        if (inSlot.Any(inventory.Has))
+            return null;
+        return inSlot.Select(weapon => inventory.GetStringProperty(weapon, "weapon.notheld"))
             .FirstOrDefault(message => !string.IsNullOrEmpty(message));
+    }
 
     /// <summary>
     /// Use held with nothing ahead to use or talk to: every `inventory.useholdtics` tics of it,

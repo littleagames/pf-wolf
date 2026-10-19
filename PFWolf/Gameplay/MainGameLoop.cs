@@ -307,6 +307,13 @@ internal sealed class MainGameLoop(
 
                 case PlayState.Died:
                     death.Died();
+
+                    // A death that gets through a timed level (map time-limit-completes)
+                    if (session.PlayState == PlayState.Completed)
+                    {
+                        hooks.LevelWon?.Invoke(session.PlayState);
+                        goto case PlayState.Completed;
+                    }
                     died = true;                    // don't "get psyched!"
 
                     if (session.PlayerState.Lives > -1)

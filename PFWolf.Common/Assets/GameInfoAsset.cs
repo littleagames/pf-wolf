@@ -1024,6 +1024,12 @@ public record ClusterInfo
     public string? EndText { get; init; }
 
     /// <summary>
+    /// The end-text comes after the end-screens rather than before them (End of Destiny's
+    /// EndSpear: the pictures, then ENDART1)
+    /// </summary>
+    public bool EndTextLast { get; init; }
+
+    /// <summary>
     /// #RRGGBB the game slowly fades to when the cluster is won, and the victory frames fade
     /// out to; black when unset
     /// </summary>
@@ -1307,6 +1313,14 @@ public record MapInfo
     public string? CeilingColor { get; init; } = null;
 
     /// <summary>
+    /// The second pair of colors, swapped with the first by A_Warp's "swapcolors" (End of
+    /// Destiny's teleporters, levelinfo floor2/ceiling2): each warp swaps them back and forth.
+    /// Left out, the swap keeps the first one.
+    /// </summary>
+    public string? AltFloorColor { get; init; } = null;
+    public string? AltCeilingColor { get; init; } = null;
+
+    /// <summary>
     /// How many 64 unit stories tall the walls are; null uses the default map's
     /// </summary>
     public int? WallHeight { get; init; } = null;
@@ -1362,6 +1376,13 @@ public record MapInfo
     /// what's left. 0 (the default) for no limit.
     /// </summary>
     public int TimeLimit { get; init; }
+
+    /// <summary>
+    /// With a time-limit: the time running out, or the player dying before it does, completes the
+    /// level instead (End of Destiny's timed levels): they go on to the next with their health
+    /// back to full and no life lost
+    /// </summary>
+    public bool TimeLimitCompletes { get; init; }
 
     /// <summary>
     /// The status bar's radar shows on this map, where statusbar.yaml's radar is maps-only

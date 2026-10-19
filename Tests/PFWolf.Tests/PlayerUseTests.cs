@@ -30,6 +30,13 @@ public class PlayerUseTests
             "inventory.useslot": 9
             "inventory.use": A_TestUseMedkit
             "inventory.usenone": "You do not have any medkits."
+        Weapon:
+          parent: Inventory
+        Rifle:
+          parent: Weapon
+          properties:
+            "weapon.slot": 7
+            "weapon.notheld": "You don't have this weapon"
         Monster: {}
         Prisoner:
           parent: Monster
@@ -315,6 +322,23 @@ public class PlayerUseTests
 
         // Assert
         Assert.That(messages, Is.EqualTo(new[] { "You do not have any medkits." }));
+    }
+
+    [Test]
+    public void A_Weapon_Slots_Key_Says_So_Without_The_Weapon()
+    {
+        // Arrange
+        var messages = new List<string>();
+        var use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session,
+            new PlayerUseHooks(_ => { }, () => false, Message: messages.Add));
+
+        // Act: the rifle's slot without it, then with it (out of ammo, say: nothing to say)
+        use.UseSlotItem(7);
+        _inventory.Give("Rifle", 1);
+        use.UseSlotItem(7);
+
+        // Assert
+        Assert.That(messages, Is.EqualTo(new[] { "You don't have this weapon" }));
     }
 
     [Test]

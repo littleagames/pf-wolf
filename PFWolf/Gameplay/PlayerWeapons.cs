@@ -302,7 +302,8 @@ internal sealed class PlayerWeapons(
         var gotWeapon = inventory.Give(weaponName, 1) > 0;
 
         var newBest = BestWeapon();
-        if (newBest != null && newBest != oldBest)
+        // (not while a power-up holds a weapon in hand: End of Destiny's Knife Fury)
+        if (newBest != null && newBest != oldBest && !Powerups.HoldsAWeapon(inventory))
             session.PlayerState.Weapon = session.PlayerState.ChosenWeapon = newBest;
 
         DrawWeapon();

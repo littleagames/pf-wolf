@@ -8,10 +8,12 @@ namespace PFWolf.Gameplay;
 /// <param name="SkillDamageTaken">The skill's share of the damage the player takes (the easiest's 0.25)</param>
 /// <param name="PlayerDies">The acting player died with others playing: the rest play on</param>
 /// <param name="PlayPlayerSound">A sound the acting player makes</param>
+/// <param name="ShowTimer">Shows (or with null text takes down) the message with a key, in a style (HudMessageManager.ShowKeyed): a power-up's timer</param>
 internal sealed record PlayerStatsHooks(
     Func<double> SkillDamageTaken,
     Action PlayerDies,
-    Action<string> PlayPlayerSound);
+    Action<string> PlayPlayerSound,
+    Action<string, string?, string?>? ShowTimer = null);
 
 /// <summary>
 /// The acting player's health, armor, lives and score: taking damage, healing, putting on
@@ -118,6 +120,8 @@ internal sealed class PlayerStats(
             points = points * Math.Max(inventory.GetIntProperty(gun, "weapon.mountdamage", 100), 0) / 100;
 
         int godmode = session.GodMode;
+        if (godmode == 0 && Powerups.Invulnerable(inventory))
+            godmode = 2;                // unhurt, without the red flash (End of Destiny's god mode)
         if (godmode == 0)
         {
             // Armor takes its share of the hit off its points, as far as they go
@@ -315,8 +319,99 @@ internal sealed class PlayerStats(
             case Entities.Actors.ScoreItem:
                 GivePoints(amount);
                 return true;
+            case Entities.Actors.Powerup:
+                return GivePowerup(item.Name);
             default:
                 return true;
+        }
+    }
+
+    /*
+    ===============
+    =
+    = POWER-UPS (Gameplay/Powerups.cs)
+    =
+    ===============
+    */
+
+    // The weapon each player had before a power-up put another in their hand, back in it when that ends
+    readonly Dictionary<Entities.PlayerState, string?> _weaponBeforePowerup = [];
+
+    /// <summary>Starts a power-up, or adds its duration to what's left of it; false for one with none</summary>
+    internal bool GivePowerup(string powerup)
+    {
+        int duration = inventory.GetIntProperty(powerup, "powerup.duration", 0);
+        if (duration <= 0)
+            return false;
+
+        if (inventory.GetStringProperty(powerup, "powerup.weapon") is { Length: > 0 } weapon && inventory.Has(weapon))
+        {
+            if (!Powerups.HoldsAWeapon(inventory))
+                _weaponBeforePowerup[PlayerState] = PlayerState.Weapon;
+            if (PlayerState.Weapon != weapon)
+            {
+                PlayerState.Weapon = PlayerState.ChosenWeapon = weapon;
+                weapons.DrawWeapon();
+                weapons.DrawAmmo();
+            }
+        }
+
+        inventory.Give(powerup, duration);
+        ShowPowerupTimers();
+        statusBar.DrawFace();
+        return true;
+    }
+
+    /// <summary>Each tic of the acting player's think: their power-ups' time runs down, and those that run out end</summary>
+    internal void TickPowerups()
+    {
+        var running = Powerups.Running(inventory).ToList();
+        if (running.Count == 0)
+            return;
+
+        foreach (var powerup in running)
+        {
+            inventory.Take(powerup, Math.Min((int)session.Tics, inventory.GetCount(powerup)));
+            if (inventory.Has(powerup))
+            {
+                if (Powerups.Flag(inventory, powerup, "powerup.flash") && session.ActingIsLocal)
+                    video.StartBonusFlash();
+                continue;
+            }
+            EndPowerup(powerup);
+        }
+        ShowPowerupTimers();
+    }
+
+    void EndPowerup(string powerup)
+    {
+        if (inventory.GetStringProperty(powerup, "powerup.endsound") is { Length: > 0 } sound)
+            hooks.PlayPlayerSound(sound);
+
+        // The weapon it put in hand goes back to the one before, if it's still the one held
+        if (inventory.GetStringProperty(powerup, "powerup.weapon") is { Length: > 0 } weapon && !Powerups.HoldsAWeapon(inventory)
+            && _weaponBeforePowerup.Remove(PlayerState, out var before)
+            && string.Equals(PlayerState.Weapon, weapon, StringComparison.OrdinalIgnoreCase)
+            && before != null && before != weapon && inventory.Has(before) && weapons.CanFire(before))
+        {
+            PlayerState.Weapon = PlayerState.ChosenWeapon = before;
+            weapons.DrawWeapon();
+            weapons.DrawAmmo();
+        }
+        statusBar.DrawFace();
+    }
+
+    // The local player's power-up timers (powerup.timerstyle), kept up to date: gone once one's over
+    void ShowPowerupTimers()
+    {
+        if (hooks.ShowTimer == null || !session.ActingIsLocal)
+            return;
+        foreach (var powerup in inventory.GetClassesDerivedFrom(Powerups.BaseClass))
+        {
+            if (inventory.GetStringProperty(powerup, "powerup.timerstyle") is not { Length: > 0 } style)
+                continue;
+            int left = inventory.GetCount(powerup);
+            hooks.ShowTimer(Powerups.TimerKey(powerup), left > 0 ? Powerups.TimerText(left) : null, style);
         }
     }
 }
