@@ -24,7 +24,13 @@ public record IntermissionAsset : Asset
 
     /// <summary>
     /// Where each value goes, by name: floor, time, par, bonus, kill, secret, treasure, and the
-    /// level's name and author (game-info's map name and author; no author, nothing drawn)
+    /// level's name and author (game-info's map name and author; no author, nothing drawn).
+    /// After the treasure ratio, in the order they're listed, more can be counted up:
+    /// objective.NAME (a level objective's done of total, game-info objectives: Midnight
+    /// Assault's intel and Kilroys) and stealth (stealth kills of the level's kills, shown only
+    /// when it was finished unseen with stealth kills or no kills at all, as Midnight Assault's).
+    /// They're percentages, 100 when there was nothing to do, or done/total with count: true (a
+    /// count of nothing isn't shown).
     /// </summary>
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -108,12 +114,16 @@ public record IntermissionPic
     public int Y { get; set; }
 }
 
-/// <summary>Text on the level-end screen: a $NAME language key or the text, at (x, y)</summary>
+/// <summary>
+/// Text on the level-end screen: a $NAME language key or the text, at (x, y). With only-with,
+/// drawn only when that value is shown (stealth, objective.NAME), e.g. its name and "%".
+/// </summary>
 public record IntermissionLabel
 {
     public string Text { get; set; } = "";
     public int X { get; set; }
     public int Y { get; set; }
+    public string? OnlyWith { get; set; }
 }
 
 /// <summary>
@@ -128,6 +138,9 @@ public record IntermissionValue
     public int? Center { get; set; }
     public int Y { get; set; }
     public string? Format { get; set; }
+
+    /// <summary>objective.NAME, stealth: shown as done/total, counted up, not as a percentage</summary>
+    public bool Count { get; set; }
 }
 
 /// <summary>The sounds of the ratio and time bonus tally. Any left out are silent.</summary>

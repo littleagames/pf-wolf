@@ -130,6 +130,14 @@ internal static partial class GameHost
         }
         ActorActionRegistry.Register("A_Unlock", (Entities.Actors.Actor _, string[] args) => UnlockWithMessage(args));
         Entities.MapTriggerRegistry.Register("A_Unlock", (_, args) => { if (args.Length == 0) return false; UnlockWithMessage(args); return true; });
+        // A_ShowText("name"): a text shown as an article in the middle of the level, then back to
+        // it (Midnight Assault's log books and radios); {tag} in the name is the actor's tag, so
+        // each one placed can show its own page ("LOG{tag}")
+        ActorActionRegistry.Register("A_ShowText", (Entities.Actors.Actor ob, string[] args) =>
+        {
+            if (args.Length > 0 && args[0].Length > 0)
+                ShowTextInLevel(args[0].Replace("{tag}", ob.Tag.ToString()));
+        });
         ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => MountedWeapons.Mount(ob, args));
         ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => Latching.LatchBite(m, args));
         ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => Latching.LatchHurt(ob));
@@ -226,7 +234,8 @@ internal static partial class GameHost
         new(MapManager, AudioManager, InventoryManager, doors, LevelAI, TimedSwitches, Session,
             new PlayerUseHooks(PlayPlayerSound, () => MountedWeapons.TryDismount(),
                 (objective, amount) => Objectives.Complete(objective, amount), () => Objectives.ExitAllowed(),
-                () => deathmatch.Objective?.PlayerUse() == true));
+                () => deathmatch.Objective?.PlayerUse() == true,
+                message => HudMessageManager.Show(HudMessageKind.Lock, message)));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);

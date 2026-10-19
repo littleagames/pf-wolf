@@ -158,9 +158,16 @@ internal static partial class GameHost
         viewSetup.SetFocalExcursion(viewQuake.Update((int)Session.Tics, rumble) + zoom);
     }
 
-    /// <summary>A_Quake(min[, max]): shakes the view, at a power (0-200) rolled from min to max (Midnight Assault's blasts)</summary>
+    /// <summary>
+    /// A_Quake(min[, max][, "near"]): shakes the view, at a power (0-200) rolled from min to max
+    /// (Midnight Assault's blasts). With "near", only while the actor's area is joined to the
+    /// player's, as Midnight Assault's tank rumbled only when it could be heard (A_TankTrackSound)
+    /// </summary>
     static void Quake(Entities.Actors.Actor ob, string[] args)
     {
+        if (args.Any(a => a.Trim().Equals("near", StringComparison.OrdinalIgnoreCase))
+            && ob.AreaNumber < MapManager.Floors.NumAreas && Session.Areas.AreaByPlayer[ob.AreaNumber] == 0)
+            return;
         int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
         int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
         viewQuake.Start(max > min ? Random.Shared.Next(min, max + 1) : min);

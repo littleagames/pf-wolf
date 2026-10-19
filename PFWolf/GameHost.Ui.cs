@@ -327,19 +327,39 @@ internal static partial class GameHost
     static StatusBarDrawing MakeStatusBarDrawing() =>
         new(GameEngineManager, AssetManager, _videoManager, _graphicManager, InventoryManager, AudioManager,
             HudMessageManager, ui, Session, Settings, new StatusBarHooks(GetMapDisplayName, WrapText,
-                p => deathmatch?.Objective?.MostHealth(p)));
+                p => deathmatch?.Objective?.MostHealth(p), () => LevelTimer.TicsLeft));
 
     static void DrawKeys() => statusBarDrawing.DrawKeys();
     static void DrawScore() => statusBarDrawing.DrawScore();
 
     // ==== Radar ==================================================================================
 
+    /// <summary>
+    /// A text shown as an article in the middle of a level (A_ShowText, game.showtext: Midnight
+    /// Assault's log books and radios), then back to the level as from the control panel: the
+    /// play screen redrawn and the clock not counting the time spent reading. Not in a demo or a
+    /// game with others, where the level can't stop for one player.
+    /// </summary>
+    internal static void ShowTextInLevel(string name)
+    {
+        if (DemoPlayback || DemoRecord || Session.NetGame)
+            return;
+        _automapManager.Close();
+        AudioManager.StopAll();
+        _videoManager.FadeOut();
+        articleReader.ShowText(name);
+        if (Settings.ViewSize != 21)
+            DrawPlayScreen();
+        LastTimeCount = (int)GameEngineManager.GetTimeCount();
+    }
+
     // The status bar's radar (Ui/Radar.cs)
     static Radar radar = null!;     // made in InitServices
 
     static Radar MakeRadar() =>
         new(MapManager, InventoryManager, _inputManager, HudMessageManager, _videoManager, _graphicManager,
-            statusBarDrawing, doors, Session, Settings);
+            statusBarDrawing, doors, Session, Settings,
+            () => GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && info.Radar);
 
     internal static void UpdateRadar() => radar.UpdateRadar();
     static string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked) =>

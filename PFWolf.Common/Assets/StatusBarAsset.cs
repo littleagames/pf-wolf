@@ -200,9 +200,25 @@ public class StatusBarElement
     public int ZoomY { get; set; }
 
     /// <summary>
+    /// radar: turned so the way the player faces is up (Planet Strike's); false keeps north up,
+    /// the player in the middle, as Midnight Assault's corner map
+    /// </summary>
+    public bool Rotate { get; set; } = true;
+
+    /// <summary>radar: living enemies on seen tiles are shown at every zoom, not only zoomed in</summary>
+    public bool Enemies { get; set; }
+
+    /// <summary>
+    /// radar: shown only on the maps whose game-info says radar: true (Midnight Assault's
+    /// Stealth Challenge), not on every level
+    /// </summary>
+    public bool MapsOnly { get; set; }
+
+    /// <summary>
     /// radar: its colors (palette indices, color names or #RRGGBB) by what's there: unmapped,
-    /// floor, door, locked, player, key, enemy. weapon-slots: current (the weapon in hand's
-    /// slot), held (a slot with a weapon held) and empty.
+    /// floor, door, locked, player, key, enemy, or an enemy's class name for that class's own
+    /// (Midnight Assault's officers). weapon-slots: current (the weapon in hand's slot), held (a
+    /// slot with a weapon held) and empty.
     /// </summary>
     public Dictionary<string, string> Colors { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -211,6 +227,9 @@ public class StatusBarElement
 
     /// <summary>radar: shown as its item runs out while zoomed in (a $NAME language key or the text)</summary>
     public string? EmptyMessage { get; set; }
+
+    /// <summary>level-timer-label: the text drawn by the level timer (a $NAME language key or the text)</summary>
+    public string? Text { get; set; }
 }
 
 /// <summary>An ammo gauge's colors while fewer than <see cref="Below"/> of its segments are unlit</summary>

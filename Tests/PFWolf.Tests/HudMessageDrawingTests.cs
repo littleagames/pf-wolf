@@ -68,6 +68,20 @@ public class HudMessageDrawingTests
     }
 
     [Test]
+    public void The_Players_Own_Blast_Says_They_Blew_Themselves_Up()
+    {
+        // Arrange: a rocket of theirs, with no obituary of its own
+        var rocket = new Entities.Actors.Monster { Name = "Rocket", Shooter = _session.Player };
+        _session.PlayerState.LastAttacker = rocket;
+
+        // Act
+        _drawing.ShowObituary();
+
+        // Assert: not "killed by Player" (no language file here, so the key itself)
+        Assert.That(_messages.Messages.Single().Text, Does.Contain("OB_SELF"));
+    }
+
+    [Test]
     public void An_Actors_Tag_Is_Its_Own_Else_Its_Classes_Else_Its_Name()
     {
         var tagged = new Entities.Actors.Monster { Name = "Rocket" };

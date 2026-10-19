@@ -240,7 +240,28 @@ internal static partial class GameHost
     static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, HudMessageManager, MapManager,
         frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
         new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick(),
-            () => demoTracer.AfterFrame()));
+            () => demoTracer.AfterFrame(), () => LevelTimer.Tick()));
+
+    // A level against the clock (Gameplay/LevelTimer.cs): game-info map time-limit
+    static LevelTimer? _levelTimer;
+    static LevelTimer LevelTimer => _levelTimer ??= new LevelTimer(Session, new LevelTimerHooks(
+        () => GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.TimeLimit : 0,
+        () =>
+        {
+            // Time's up: every player still standing dies, with nothing to blame
+            foreach (var p in Session.Players.Where(p => p.Health > 0).ToList())
+            {
+                using var _ = Session.ActAs(p);
+                p.LastAttacker = null;
+                p.Health = 0;
+                statusBarDrawing.DrawHealth();
+                if (Session.GameMode == GameMode.Single)
+                    PlayState = PlayState.Died;
+                else
+                    PlayerDies();
+            }
+        },
+        () => { if (!statusBarDrawing.IsOverlay) statusBarDrawing.DrawLevelTimer(); }));
 
     // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
     static ZoneAmbience? _zoneAmbience;
@@ -250,7 +271,8 @@ internal static partial class GameHost
         () => Session.Player is { } pawn ? (pawn.TileX, pawn.TileY) : null,
         (x, y) => MapManager.GetZone(x, y),
         () => Stealth.WearingDisguise(Session.PlayerState),
-        AudioManager.SetAmbient));
+        AudioManager.SetAmbient,
+        () => Session.PlayerState.Undetected));
 
     // ==== WL_DEF =================================================================================
 
@@ -384,6 +406,7 @@ internal static partial class GameHost
             Unlock = Unlock,
             IsUnlocked = name => Unlocks.IsUnlocked(name),
             Record = map => LevelRecords.Get(map),
+            ShowText = ShowTextInLevel,
         };
 
     // The script API's tests install it with no services: it's made then

@@ -763,8 +763,15 @@ public record ZoneInfo
     /// </summary>
     public string? Ambient { get; init; }
 
-    /// <summary>Played in place of ambient while the player's in disguise (Midnight Assault's piano bar)</summary>
+    /// <summary>Played in place of ambient while the player's in disguise</summary>
     public string? AmbientDisguised { get; init; }
+
+    /// <summary>
+    /// Played in place of ambient while no enemy has noticed the player yet on the level
+    /// (Gameplay/Stealth.cs: Midnight Assault's piano bar, its stealthActive); in disguise,
+    /// ambient-disguised comes first
+    /// </summary>
+    public string? AmbientUndetected { get; init; }
 
     /// <summary>
     /// Whether it says anything about light. A zone with only ambient sound isn't a light zone:
@@ -1264,6 +1271,20 @@ public record MapInfo
     /// enemy to notice the player ends it, as a death, with game-info stealth's caught message
     /// </summary>
     public bool StealthOnly { get; init; }
+
+    /// <summary>
+    /// Seconds the level gives the player (Midnight Assault's Timed Challenge: 600), counted on
+    /// the level's own clock, so it starts again with the level (after a death too) and a saved
+    /// game keeps what's left. When it's up the player dies. statusbar.yaml's level-timer shows
+    /// what's left. 0 (the default) for no limit.
+    /// </summary>
+    public int TimeLimit { get; init; }
+
+    /// <summary>
+    /// The status bar's radar shows on this map, where statusbar.yaml's radar is maps-only
+    /// (Midnight Assault's Stealth Challenge, whose map of what's been seen stays on screen)
+    /// </summary>
+    public bool Radar { get; init; }
 
     /// <summary>
     /// What the player has as the level starts afresh (a new game, the level before, a death),

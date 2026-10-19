@@ -121,7 +121,8 @@ internal static partial class GameHost
         GameWon: () => { FindMenuItem(MainMenu, "savegame")?.Active = 0; },
         EndText: EndText,
         MapDisplayName: GetMapDisplayName,
-        NewUnlocks: () => Unlocks.TakeNews());
+        NewUnlocks: () => Unlocks.TakeNews(),
+        Objective: name => MapManager.ObjectiveCounts.TryGetValue(name, out var count) ? (count.Done, count.Total) : null);
 
     // game-info's intro and title-loop screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)

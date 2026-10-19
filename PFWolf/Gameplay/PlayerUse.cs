@@ -11,12 +11,14 @@ namespace PFWolf.Gameplay;
 /// <param name="CompleteObjective">So many more of a level objective are done (a switch with `objective`: Gameplay/Objectives.cs)</param>
 /// <param name="ExitAllowed">Whether the level can be left (its blocks-exit objectives done); saying why not if not</param>
 /// <param name="ModeUse">The match mode's own use, with nothing ahead to use: true if it took the press (Prop Hunt's disguises)</param>
+/// <param name="Message">Shows the acting player a message (a $NAME language key or the text)</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
     Action<string, int>? CompleteObjective = null,
     Func<bool>? ExitAllowed = null,
-    Func<bool>? ModeUse = null);
+    Func<bool>? ModeUse = null,
+    Action<string>? Message = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -357,12 +359,25 @@ internal sealed class PlayerUse(
         return true;
     }
 
-    /// <summary>An empty weapon slot's key uses an item held for that slot (`inventory.useslot`, `inventory.use`)</summary>
+    /// <summary>
+    /// An empty weapon slot's key uses an item held for that slot (`inventory.useslot`,
+    /// `inventory.use`). With none held, the slot's item class says so if it has an
+    /// `inventory.usenone` message (Midnight Assault's "You do not have any medkits.")
+    /// </summary>
     internal void UseSlotItem(int slot)
     {
         if (HeldUsableItem(item => inventory.GetIntProperty(item, "inventory.useslot", -1) == slot) is { } action)
             UseItemAction(action);
+        else if (NoneHeldMessage(slot) is { } message)
+            hooks.Message?.Invoke(message);
     }
+
+    /// <summary>The `inventory.usenone` message of the item class a slot's key uses, if it has one</summary>
+    internal string? NoneHeldMessage(int slot) =>
+        inventory.GetClassesDerivedFrom("Inventory")
+            .Where(item => inventory.GetIntProperty(item, "inventory.useslot", -1) == slot)
+            .Select(item => inventory.GetStringProperty(item, "inventory.usenone"))
+            .FirstOrDefault(message => !string.IsNullOrEmpty(message));
 
     /// <summary>
     /// Use held with nothing ahead to use or talk to: every `inventory.useholdtics` tics of it,

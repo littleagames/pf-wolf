@@ -24,6 +24,12 @@ public class PlayerUseTests
             "inventory.use": A_TestUseDetonator
         RedKey:
           parent: Inventory
+        Medkit:
+          parent: Inventory
+          properties:
+            "inventory.useslot": 9
+            "inventory.use": A_TestUseMedkit
+            "inventory.usenone": "You do not have any medkits."
         Monster: {}
         Prisoner:
           parent: Monster
@@ -204,6 +210,22 @@ public class PlayerUseTests
         _use.UseSlotItem(6);
         _use.UseHeldItem();
         Assert.That(Detonations, Is.Zero);
+    }
+
+    [Test]
+    public void A_Slots_Key_With_None_Held_Says_So_If_The_Item_Has_A_Message()
+    {
+        // Arrange
+        var messages = new List<string>();
+        var use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session,
+            new PlayerUseHooks(_ => { }, () => false, Message: messages.Add));
+
+        // Act: the medkit's slot, then the detonator's (no message)
+        use.UseSlotItem(9);
+        use.UseSlotItem(6);
+
+        // Assert
+        Assert.That(messages, Is.EqualTo(new[] { "You do not have any medkits." }));
     }
 
     [Test]

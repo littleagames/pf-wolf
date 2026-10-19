@@ -8,7 +8,12 @@ namespace PFWolf.Ui;
 /// (the automap's seen tiles). It always shows at 1x; zooming in (2x, 4x: radar zoom in and
 /// out) uses up its item, the radar's power, and shows enemies. When the power runs out it
 /// goes back to 1x. (bstone also shows MovingWalls at 4x; not done.)
+///
+/// Midnight Assault's corner map (ma_automap.c) is one too: north up (rotate: false), enemies
+/// shown at 1x (enemies: true), and only on the maps that ask for it (maps-only, game-info map
+/// radar: the Stealth Challenge).
 /// </summary>
+/// <param name="mapShowsRadar">Whether the level's game-info turns a maps-only radar on (map radar)</param>
 internal sealed class Radar(
     MapManager map,
     InventoryManager inventory,
@@ -19,8 +24,13 @@ internal sealed class Radar(
     StatusBarDrawing statusBar,
     Doors doors,
     GameSession session,
-    Configuration.GameSettings settings)
+    Configuration.GameSettings settings,
+    Func<bool>? mapShowsRadar = null)
 {
+    /// <summary>Whether the radar shows now: not with the view full screen, and a maps-only one only on a map that turns it on</summary>
+    internal bool Shows(Assets.StatusBarElement radar) =>
+        !(settings.ViewSize == 21 && session.InGame) && (!radar.MapsOnly || mapShowsRadar?.Invoke() == true);
+
     /// <summary>The radar's zoom: 0 for 1x, 1 for 2x, 2 for 4x</summary>
     internal int RadarZoom;
 
@@ -30,7 +40,7 @@ internal sealed class Radar(
     /// <summary>Each tic: the radar's zoom keys, its power going while it's zoomed in, and the radar drawn</summary>
     internal void UpdateRadar()
     {
-        if (statusBar.StatusBar.Get("radar") is not { } radar || (settings.ViewSize == 21 && session.InGame))
+        if (statusBar.StatusBar.Get("radar") is not { } radar || !Shows(radar))
             return;
 
         int power = string.IsNullOrEmpty(radar.Item) ? 0 : inventory.GetCount(radar.Item);
@@ -89,17 +99,48 @@ internal sealed class Radar(
         double radius = radar.Tiles / 2.0 / scale;
         int diameter = (int)(radius * 2);
 
-        // Keys lying about, and (zoomed in) living enemies, by tile
+        // Keys lying about, and (zoomed in, or always with enemies) living enemies, by tile, in
+        // their class's own color if the radar gives one
         var keys = new HashSet<int>();
-        var enemies = new HashSet<int>();
+        var enemies = new Dictionary<int, string>();
         foreach (var thing in map.GetActors())
         {
             if (thing.IsRemoved || thing == session.Player)
                 continue;
             if (inventory.FindClass(thing.Name, "Key") != null)
                 keys.Add(thing.TileX << 8 | thing.TileY);
-            else if (scale > 1 && thing.Hitpoints > 0 && MapManager.IsEnemy(thing))
-                enemies.Add(thing.TileX << 8 | thing.TileY);
+            else if ((scale > 1 || radar.Enemies) && thing.Hitpoints > 0 && thing.RuntimeFlags.Has(ObjFlags.Shootable) && MapManager.IsEnemy(thing))
+                enemies[thing.TileX << 8 | thing.TileY] = radar.Colors.GetValueOrDefault(thing.Name) ?? enemy;
+        }
+
+        // What a tile shows: the player, else what's been seen of it, else unmapped
+        string TileColor(int mx, int my, ref bool drawnplayer)
+        {
+            if (!map.InMap(mx, my))
+                return unmapped;
+            if (!drawnplayer && mx == session.Player.TileX && my == session.Player.TileY)
+            {
+                drawnplayer = true;
+                return playerColor;
+            }
+            if (map.Seen[mx, my] == SeenFlags.None)
+                return unmapped;
+            string color = RadarTileColor(mx, my, unmapped, floor, door, locked);
+            if (keys.Contains(mx << 8 | my))
+                color = key;
+            return enemies.GetValueOrDefault(mx << 8 | my) ?? color;
+        }
+
+        if (!radar.Rotate)
+        {
+            // North up, the player's tile in the middle (Midnight Assault's DrawAutomap)
+            bool drawn = false;
+            int half = diameter / 2;
+            for (int x = 0; x < diameter; x++)
+                for (int y = 0; y < diameter; y++)
+                    video.Bar(radar.X + x * scale, top + radar.Y + y * scale, scale, scale,
+                        TileColor(session.Player.TileX - half + x, session.Player.TileY - half + y, ref drawn));
+            return;
         }
 
         // The map turned so the player's facing is up, as bstone walks it
@@ -118,25 +159,7 @@ internal sealed class Radar(
             double lmx = baselmx, lmy = baselmy;
             for (int y = 0; y < diameter; y++)
             {
-                string color = unmapped;
-                int mx = (int)Math.Floor(lmx), my = (int)Math.Floor(lmy);
-                if (map.InMap(mx, my))
-                {
-                    if (!drawnplayer && mx == session.Player.TileX && my == session.Player.TileY)
-                    {
-                        color = playerColor;
-                        drawnplayer = true;
-                    }
-                    else if (map.Seen[mx, my] != SeenFlags.None)
-                    {
-                        color = RadarTileColor(mx, my, unmapped, floor, door, locked);
-                        if (keys.Contains(mx << 8 | my))
-                            color = key;
-                        if (enemies.Contains(mx << 8 | my))
-                            color = enemy;
-                    }
-                }
-
+                string color = TileColor((int)Math.Floor(lmx), (int)Math.Floor(lmy), ref drawnplayer);
                 video.Bar(radar.X + x * scale, top + radar.Y + y * scale, scale, scale, color);
                 lmx += xinc;
                 lmy += yinc;

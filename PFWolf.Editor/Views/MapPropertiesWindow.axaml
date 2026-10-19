@@ -82,8 +82,8 @@
 
         <TextBlock Classes="heading" Text="Zones (plane 5)" />
         <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12"
-                   Text="Tiles with a zone's id on plane 5 are lit by it. Light 0-255; color #RRGGBB tints it; an effect moves between low and the light every tics (70 a second). Ambient is a sound looped while the player is in the zone (none: silence), Disguised the one played instead in disguise; a zone with only those keeps the level's light." />
-        <Grid ColumnDefinitions="60,70,100,100,60,60,80,140,140,Auto" ColumnSpacing="6" Margin="0,4,0,0">
+                   Text="Tiles with a zone's id on plane 5 are lit by it. Light 0-255; color #RRGGBB tints it; an effect moves between low and the light every tics (70 a second). Ambient is a sound looped while the player is in the zone (none: silence), Disguised the one played instead in disguise, Unseen while no enemy has noticed the player yet; a zone with only those keeps the level's light." />
+        <Grid ColumnDefinitions="60,70,100,100,60,60,80,140,140,140,Auto" ColumnSpacing="6" Margin="0,4,0,0">
           <TextBlock Grid.Column="0" Text="Id" Opacity="0.7" />
           <TextBlock Grid.Column="1" Text="Light" Opacity="0.7" />
           <TextBlock Grid.Column="2" Text="Color" Opacity="0.7" />
@@ -93,11 +93,12 @@
           <TextBlock Grid.Column="6" Text="Bright tics" Opacity="0.7" />
           <TextBlock Grid.Column="7" Text="Ambient" Opacity="0.7" />
           <TextBlock Grid.Column="8" Text="Disguised" Opacity="0.7" />
+          <TextBlock Grid.Column="9" Text="Unseen" Opacity="0.7" />
         </Grid>
         <ItemsControl ItemsSource="{Binding Zones}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:ZoneRow">
-              <Grid ColumnDefinitions="60,70,100,100,60,60,80,140,140,Auto" ColumnSpacing="6" Margin="0,2">
+              <Grid ColumnDefinitions="60,70,100,100,60,60,80,140,140,140,Auto" ColumnSpacing="6" Margin="0,2">
                 <TextBox Grid.Column="0" Text="{Binding Id}" />
                 <TextBox Grid.Column="1" Text="{Binding Light}" />
                 <TextBox Grid.Column="2" Text="{Binding Color}" PlaceholderText="white" />
@@ -107,7 +108,8 @@
                 <TextBox Grid.Column="6" Text="{Binding BrightTics}" />
                 <TextBox Grid.Column="7" Text="{Binding Ambient}" />
                 <TextBox Grid.Column="8" Text="{Binding AmbientDisguised}" />
-                <Button Grid.Column="9" Content="Remove"
+                <TextBox Grid.Column="9" Text="{Binding AmbientUndetected}" />
+                <Button Grid.Column="10" Content="Remove"
                         Command="{Binding $parent[ItemsControl].((vm:MapPropertiesViewModel)DataContext).RemoveZoneCommand}"
                         CommandParameter="{Binding}" />
               </Grid>

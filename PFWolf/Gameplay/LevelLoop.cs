@@ -12,6 +12,7 @@ namespace PFWolf.Gameplay;
 /// <param name="AutoSaveGame">Makes it, now there's a picture of the level for it</param>
 /// <param name="TickAmbience">The player's zone's ambient sound (Gameplay/ZoneAmbience.cs)</param>
 /// <param name="AfterThinking">demotrace: writes down the frame just played (Gameplay/DemoTracer.cs)</param>
+/// <param name="TickLevelTimer">A level against the clock (Gameplay/LevelTimer.cs)</param>
 internal sealed record LevelLoopHooks(
     Func<bool> DemoTesting,
     Action<uint> TickPlayerBodies,
@@ -20,7 +21,8 @@ internal sealed record LevelLoopHooks(
     Func<bool> AutosavePending,
     Action AutoSaveGame,
     Action? TickAmbience = null,
-    Action? AfterThinking = null);
+    Action? AfterThinking = null,
+    Action? TickLevelTimer = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -138,6 +140,7 @@ internal sealed class LevelLoop(
                 map.DoActors(session.Tics);
                 FrameProfiler.Mark(FrameProfiler.Section.Actors);
                 floorDamage.Tick();                     // floors that hurt (Gameplay/FloorDamage.cs)
+                hooks.TickLevelTimer?.Invoke();         // a level against the clock (Gameplay/LevelTimer.cs)
                 foreach (var p in session.Players)    // pickups each player walked onto (Rendering/PlayerView.cs)
                 {
                     if (p.Pawn is { } pawn && session.IsTargetable(pawn))

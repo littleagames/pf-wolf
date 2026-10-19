@@ -8,8 +8,9 @@ namespace PFWolf.Gameplay;
 ZONE AMBIENCE
 
 A sound looped, unplaced, while the player is in a zone (the zone plane, as light zones are):
-game-info's default-map or a map's `zones:` give a zone `ambient: <sound>`, and
-`ambient-disguised: <sound>` to play instead while the player wears a disguise (Gameplay/Stealth.cs).
+game-info's default-map or a map's `zones:` give a zone `ambient: <sound>`,
+`ambient-disguised: <sound>` to play instead while the player wears a disguise, and
+`ambient-undetected: <sound>` while no enemy has noticed them yet (Gameplay/Stealth.cs).
 `ambient: none` is silence. Stepping into a zone with no ambient leaves what's playing as it is,
 so a door or a light zone between two areas doesn't cut the sound off. A map's zone takes each
 value it leaves out from the default map's zone of the same id.
@@ -26,20 +27,22 @@ sound, the channel is left to scripts. Midnight Assault's area ambience (DoAmbie
 /// <param name="ZoneAt">The zone plane's id at a tile</param>
 /// <param name="InDisguise">Whether the local player is wearing a disguise</param>
 /// <param name="SetAmbient">Loops a sound on the ambient channel, or stops it with null</param>
+/// <param name="Undetected">Whether no enemy has noticed the local player yet on the level</param>
 internal sealed record ZoneAmbienceHooks(
     Func<MapInfo?> Map,
     Func<DefaultMapInfo> DefaultMap,
     Func<(int X, int Y)?> PlayerTile,
     Func<int, int, int> ZoneAt,
     Func<bool> InDisguise,
-    Action<string?> SetAmbient);
+    Action<string?> SetAmbient,
+    Func<bool>? Undetected = null);
 
 internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
 {
     const string None = "none";
 
     string? level;                  // the map the zones below are for
-    Dictionary<int, (string? Sound, string? Disguised)> zones = [];
+    Dictionary<int, ZoneSounds> zones = [];
     string? current;                // what's playing: the last ambient zone's sound
 
     /// <summary>Each tic of the level: the player's zone's sound on the ambient channel</summary>
@@ -53,7 +56,9 @@ internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
 
         if (hooks.PlayerTile() is { } tile && zones.TryGetValue(hooks.ZoneAt(tile.X, tile.Y), out var zone))
         {
-            var sound = zone.Disguised is { Length: > 0 } disguised && hooks.InDisguise() ? disguised : zone.Sound;
+            var sound = zone.Disguised is { Length: > 0 } disguised && hooks.InDisguise() ? disguised
+                : zone.Undetected is { Length: > 0 } undetected && hooks.Undetected?.Invoke() == true ? undetected
+                : zone.Sound;
             current = string.Equals(sound, None, StringComparison.OrdinalIgnoreCase) ? null : sound;
         }
         hooks.SetAmbient(current);
@@ -71,18 +76,22 @@ internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
     }
 
     /// <summary>The zones with an ambient sound: each value a map's zone leaves out comes from the default map's</summary>
-    internal static Dictionary<int, (string? Sound, string? Disguised)> Resolve(MapInfo? map, DefaultMapInfo defaultMap)
+    internal static Dictionary<int, ZoneSounds> Resolve(MapInfo? map, DefaultMapInfo defaultMap)
     {
-        var result = new Dictionary<int, (string?, string?)>();
+        var result = new Dictionary<int, ZoneSounds>();
         var mapZones = map?.Zones ?? [];
         foreach (var id in defaultMap.Zones.Keys.Union(mapZones.Keys))
         {
             ZoneInfo? own = mapZones.GetValueOrDefault(id), fallback = defaultMap.Zones.GetValueOrDefault(id);
             var sound = own?.Ambient ?? fallback?.Ambient;
             var disguised = own?.AmbientDisguised ?? fallback?.AmbientDisguised;
-            if (sound != null || disguised != null)
-                result[id] = (sound, disguised);
+            var undetected = own?.AmbientUndetected ?? fallback?.AmbientUndetected;
+            if (sound != null || disguised != null || undetected != null)
+                result[id] = new ZoneSounds(sound, disguised, undetected);
         }
         return result;
     }
 }
+
+/// <summary>A zone's ambient sounds: as usual, in disguise, and while unnoticed</summary>
+internal readonly record struct ZoneSounds(string? Sound, string? Disguised, string? Undetected);

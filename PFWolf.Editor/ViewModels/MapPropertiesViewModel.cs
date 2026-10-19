@@ -20,6 +20,7 @@ public sealed partial class ZoneRow : ObservableObject
     [ObservableProperty] private string _brightTics = "";
     [ObservableProperty] private string _ambient = "";
     [ObservableProperty] private string _ambientDisguised = "";
+    [ObservableProperty] private string _ambientUndetected = "";
 
     public static IReadOnlyList<string> Effects { get; } = ["", "flicker", "pulse", "strobe"];
 }
@@ -74,7 +75,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
             {
                 Id = zone.Id.ToString(CultureInfo.InvariantCulture), Light = Text(zone.Light), Color = zone.Color ?? "", Effect = zone.Effect ?? "",
                 Low = Text(zone.Low), Tics = Text(zone.Tics), BrightTics = Text(zone.BrightTics),
-                Ambient = zone.Ambient ?? "", AmbientDisguised = zone.AmbientDisguised ?? "",
+                Ambient = zone.Ambient ?? "", AmbientDisguised = zone.AmbientDisguised ?? "", AmbientUndetected = zone.AmbientUndetected ?? "",
             });
         }
         foreach (var scroller in properties.Scrollers)
@@ -167,7 +168,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                     throw new FormatException($"there are two zone {id}s");
                 zones.Add(new ZoneProperties(id, Int(row.Light, $"zone {id}'s light", 0, 255), Color(row.Color, $"zone {id}'s color"),
                     Optional(row.Effect), Int(row.Low, $"zone {id}'s low", 0, 255), Int(row.Tics, $"zone {id}'s tics", 1, 100000),
-                    Int(row.BrightTics, $"zone {id}'s bright tics", 1, 100000), Optional(row.Ambient), Optional(row.AmbientDisguised)));
+                    Int(row.BrightTics, $"zone {id}'s bright tics", 1, 100000), Optional(row.Ambient), Optional(row.AmbientDisguised),
+                    Optional(row.AmbientUndetected)));
             }
 
             var scrollers = new List<ScrollerProperties>();

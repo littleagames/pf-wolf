@@ -55,6 +55,7 @@ public class StatusBarDrawingTests
             bar.DrawTopBar();
             bar.DrawLocation();
             bar.DrawRadarGauge();
+            bar.DrawLevelTimer();
             bar.DrawInfoArea(force: true);
             bar.UpdateHeartMonitor();
             bar.DrawHeartMonitor(force: true);

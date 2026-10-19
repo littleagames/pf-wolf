@@ -10,10 +10,12 @@ namespace PFWolf.Ui;
 /// The most health a player can have for now, where the match mode says (a Prop Hunt prop's
 /// look), else null: the face then goes by their share of it
 /// </param>
+/// <param name="LevelTicsLeft">Tics left on a level against the clock, -1 for one that isn't (Gameplay/LevelTimer.cs)</param>
 internal sealed record StatusBarHooks(
     Func<string, string> MapDisplayName,
     Func<string, string, int, List<string>> WrapText,
-    Func<Entities.PlayerState, int?>? MostHealth = null);
+    Func<Entities.PlayerState, int?>? MostHealth = null,
+    Func<int>? LevelTicsLeft = null);
 
 /// <summary>
 /// The status bar (statusbar.yaml): its layout and the parts drawn from the player's state --
@@ -393,6 +395,34 @@ internal sealed class StatusBarDrawing(
         var font = element.Font ?? StatusBar.Get("numbers")?.Font;
         if (!string.IsNullOrEmpty(font) && inventory.GetStringProperty(weapon, "tag") is { Length: > 0 } tag)
             DrawStatusText(element, hudMessages.Localize(tag), font, element.Color ?? "White");
+    }
+
+    /// <summary>
+    /// On a level against the clock (game-info map time-limit), the time left (statusbar.yaml
+    /// level-timer) as minutes:seconds, the minutes right-aligned in its digits, and its label
+    /// (level-timer-label: text). Nothing on a level that isn't timed, nor once the time's up, as
+    /// Midnight Assault's DrawLevelTimer.
+    /// </summary>
+    internal void DrawLevelTimer()
+    {
+        if (StatusBarHidden) return;
+        int left = hooks.LevelTicsLeft?.Invoke() ?? -1;
+        if (left < 0)
+            return;
+        if (StatusBar.Get("level-timer-label") is { Text: { Length: > 0 } label } labelPart)
+        {
+            ClearBox(labelPart);
+            if (left > 0 && (labelPart.Font ?? StatusBar.Get("numbers")?.Font) is { Length: > 0 } labelFont)
+                DrawStatusText(labelPart, hudMessages.Localize(label), labelFont, labelPart.Color ?? "White");
+        }
+        if (StatusBar.Get("level-timer") is not { } element)
+            return;
+        ClearBox(element);
+        if (left == 0 || (element.Font ?? StatusBar.Get("numbers")?.Font) is not { Length: > 0 } font)
+            return;
+        int seconds = (left + 69) / 70;
+        string minutes = (seconds / 60).ToString().PadLeft(Math.Max(element.Digits, 1));
+        DrawStatusText(element, $"{element.Prefix}{minutes}:{seconds % 60:00}{element.Suffix}", font, element.Color ?? StatusBar.Get("numbers")?.Color ?? "White");
     }
 
     /// <summary>The level's name (statusbar.yaml location), as GetMapDisplayName gives it</summary>

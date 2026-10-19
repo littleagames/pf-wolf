@@ -91,8 +91,9 @@ internal sealed class HudMessageDrawing(
     /// <summary>
     /// Says what killed the player (session.PlayerState.LastAttacker): its `obituary` in its `obituarystyle` (or
     /// game-info's for obituaries). A
-    /// projectile without an obituary of its own is put down to whoever fired it. A killer with
-    /// none says "killed by", and no killer at all (the `hurt` command) that the player died.
+    /// projectile without an obituary of its own is put down to whoever fired it, and the
+    /// player's own (a rocket's blast) says they blew themselves up. A killer with none says
+    /// "killed by", and no killer at all (the `hurt` command) that the player died.
     /// %o in the text is the player's tag and %k the killer's (the shooter's, for a projectile).
     /// </summary>
     internal void ShowObituary()
@@ -100,7 +101,9 @@ internal sealed class HudMessageDrawing(
         var killer = session.PlayerState.LastAttacker;
         var source = killer?.Shooter != null && !killer.Properties.ContainsKey("obituary") ? killer.Shooter : killer;
 
-        string text = source == null ? "$OB_DIED" : PropertyText(source, "obituary") ?? "$OB_KILLED";
+        string text = source == null ? "$OB_DIED"
+            : ReferenceEquals(source, session.Player) ? "$OB_SELF"
+            : PropertyText(source, "obituary") ?? "$OB_KILLED";
         string? style = source == null ? null : PropertyText(source, "obituarystyle");
 
         hudMessages.Show(HudMessageKind.Obituary, text, style, new Dictionary<char, string>

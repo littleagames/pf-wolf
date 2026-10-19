@@ -14,8 +14,24 @@ namespace PFWolf.Ui;
 /// <param name="EndText">The won game's end text</param>
 /// <param name="MapDisplayName">A map's name as the game shows it (PlayScreen.GetMapDisplayName)</param>
 /// <param name="NewUnlocks">Whether anything's been unlocked since the last tally (Gameplay/Unlocks.cs TakeNews)</param>
+/// <param name="Objective">A level objective's done and total (Gameplay/Objectives.cs), null for one the level hasn't</param>
 internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> GiveEveryone, Action DrawScore, Action DrawPlayBorder,
-    Action GameWon, Action EndText, Func<string, string> MapDisplayName, Func<bool>? NewUnlocks = null);
+    Action GameWon, Action EndText, Func<string, string> MapDisplayName, Func<bool>? NewUnlocks = null,
+    Func<string, (int Done, int Total)?>? Objective = null);
+
+/// <summary>
+/// One of the level-end screen's tallies after the treasure ratio (intermission.yaml
+/// objective.NAME, stealth): done of total, shown as a percentage or as done/total
+/// </summary>
+internal readonly record struct ExtraTally(string Name, int Done, int Total, bool AsCount)
+{
+    /// <summary>Where it counts up to: done, or its percentage (100 with nothing to do)</summary>
+    internal int Target => AsCount ? Done : Total > 0 ? Done * 100 / Total : 100;
+
+    internal string Text(int value) => AsCount ? $"{value}/{Total}" : value.ToString();
+
+    internal bool Perfect => AsCount ? Done >= Total : Target >= 100;
+}
 
 /// <summary>
 /// The level-end screen (intermission.yaml): the floor, time and par, the time bonus and the
@@ -84,10 +100,12 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
 
         var gameInfo = engine.GetGameInfo();
         var mapInfo = gameInfo.Maps[session.GameState.MapOn];
+        var extras = ExtraTallies();
         //if (session.GameState.MapOn < LRpack)
         {
             foreach (var label in Intermission.Labels ?? [])
-                ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
+                if (label.OnlyWith is not { Length: > 0 } with || extras.Any(e => e.Name.Equals(with, StringComparison.OrdinalIgnoreCase)))
+                    ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
             WriteValue("bonus", "0");
             WriteValue("floor", mapInfo.FloorNumber.ToString());
             WriteValue("name", hooks.MapDisplayName(session.GameState.MapOn));
@@ -261,6 +279,13 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             while (audio.IsAnySoundPlaying())
                 BjBreathe();
 
+            //
+            // OBJECTIVES AND STEALTH (Midnight Assault's intel, stealth kills and Kilroys)
+            //
+            foreach (var extra in extras)
+                if (!CountUp(extra, PAUSE_MS))
+                    goto done;
+
 
             //
             // JUMP STRAIGHT HERE IF KEY PRESSED
@@ -274,6 +299,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
 
             tempstr = tr.ToString();
             WriteValue("treasure", tempstr);
+
+            foreach (var extra in extras)
+                WriteValue(extra.Name, extra.Text(extra.Target));
 
             bonus = LevelBonus(timeleft, PAR_AMOUNT, PERCENT100AMT, kr, sr, tr);
 
@@ -353,6 +381,63 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             ? new Entities.Color { Alpha = 255 }
             : Entities.Color.FromHexRGBA(cluster.VictoryFadeColor);
 
+    /// <summary>
+    /// The tallies after the treasure ratio that show for this level, in the order intermission.yaml
+    /// lists them: each objective.NAME (a count of nothing isn't shown), and stealth when the level
+    /// was finished unseen with stealth kills, or with none killed of some there (Midnight
+    /// Assault's showStealthStats)
+    /// </summary>
+    internal List<ExtraTally> ExtraTallies() =>
+        ExtraTallies(Intermission.Values, hooks.Objective, session.PlayerState, session.GameState);
+
+    internal static List<ExtraTally> ExtraTallies(Dictionary<string, IntermissionValue> values,
+        Func<string, (int Done, int Total)?>? objective, Entities.PlayerState player, GameState game)
+    {
+        var tallies = new List<ExtraTally>();
+        foreach (var (name, value) in values)
+        {
+            if (name.StartsWith("objective.", StringComparison.OrdinalIgnoreCase))
+            {
+                var counts = objective?.Invoke(name["objective.".Length..]);
+                if (value.Count && counts is not { Total: > 0 })
+                    continue;
+                tallies.Add(new ExtraTally(name, counts?.Done ?? 0, counts?.Total ?? 0, value.Count));
+            }
+            else if (name.Equals("stealth", StringComparison.OrdinalIgnoreCase)
+                && player.Undetected && (player.StealthKills > 0 || (game.KillCount == 0 && game.KillTotal > 0)))
+                tallies.Add(new ExtraTally(name, player.StealthKills, game.KillTotal, value.Count));
+        }
+        return tallies;
+    }
+
+    // Counts a tally up in place with the ratios' sounds, as the kill ratio does; false if a key cut it short
+    bool CountUp(ExtraTally tally, uint pauseMs)
+    {
+        for (int i = 0; i <= tally.Target; i++)
+        {
+            WriteValue(tally.Name, tally.Text(i));
+            if ((i % 10) == 0)
+                PlayIntermissionSound(Intermission.Sounds.Tally);
+            video.Update();
+            while (audio.IsAnySoundPlaying())
+                BjBreathe();
+            if (input.CheckAck())
+                return false;
+        }
+        if (tally.Perfect || tally.Target == 0)
+        {
+            GameEngineManager.DelayMs(pauseMs);
+            audio.StopAll();
+            PlayIntermissionSound(tally.Perfect ? Intermission.Sounds.Perfect : Intermission.Sounds.None);
+        }
+        else
+            PlayIntermissionSound(Intermission.Sounds.TallyDone);
+        video.Update();
+        while (audio.IsAnySoundPlaying())
+            BjBreathe();
+        return true;
+    }
+
     /// <summary>A level's kill, secret and treasure ratios in percent; one with none of something is 0</summary>
     internal static (int Kill, int Secret, int Treasure) Ratios(GameState gamestate)
     {
@@ -425,7 +510,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         var origin = video.UseUiOriginAboveBottom(playArea.StatusLines);
 
         // intermission.yaml victory
-        foreach (var label in screen.Labels)
+        foreach (var label in screen.Labels.Where(label => string.IsNullOrEmpty(label.OnlyWith)))     // no level tallies here
             ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
         foreach (var pic in screen.Pics)
             graphics.DrawPic(pic.Pic, pic.X, pic.Y);

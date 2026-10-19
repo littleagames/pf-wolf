@@ -62,6 +62,9 @@ internal sealed class GameScripts(
     /// <summary>game.record: a map's best (Gameplay/LevelRecords.cs), null if never finished</summary>
     internal Func<string, Gameplay.LevelResult?> Record { get; init; } = _ => null;
 
+    /// <summary>game.showtext: a text shown as an article in the middle of the level (A_ShowText)</summary>
+    internal Action<string> ShowText { get; init; } = _ => { };
+
     /// <summary>The scripts' Lua state, once any have loaded (or the lua command has made one)</summary>
     internal ScriptHost? Scripts => _scripts;
 
@@ -362,6 +365,12 @@ internal sealed class GameScripts(
         // (progress.cfg: Gameplay/Unlocks.cs)
         game["unlock"] = new LuaFunction("game.unlock", (c, _) => new(c.Return(Unlock(StringArg(c, 0)))));
         game["unlocked"] = new LuaFunction("game.unlocked", (c, _) => new(c.Return(IsUnlocked(StringArg(c, 0)))));
+        // game.showtext(name): a text shown as an article, then back to the level (A_ShowText)
+        game["showtext"] = new LuaFunction("game.showtext", (c, _) =>
+        {
+            ShowText(StringArg(c, 0));
+            return new(c.Return());
+        });
         game["message"] = new LuaFunction("game.message", (c, _) =>
         {
             hudMessages.Show(Managers.HudMessageKind.Lock, StringArg(c, 0), OptionalString(c, 1));

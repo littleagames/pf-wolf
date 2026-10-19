@@ -58,6 +58,7 @@ public static class ScriptApi
         Fn("record", "game.record(map)", "The best done on a map from game to game (records.cfg), as game.onlevelend's result: kills, killtotal, secrets, secrettotal, items, itemtotal, time, par, underpar, undetected, stealthkills, objectives. Nil if it's never been finished"),
         Fn("onlevelend", "game.onlevelend(function(map, result) ... end)", "Adds a hook called as a level's finished (exit, secret exit or the game won), before the tally: result is what the finish came to (as game.record's, with exit: \"exit\", \"secret\" or \"victory\"). Anything it unlocks is told on the tally"),
         Fn("unlocked", "game.unlocked(name)","Whether a name has been unlocked (game.unlock, A_Unlock or the unlock command), in this game or an earlier one"),
+        Fn("showtext", "game.showtext(name)", "Shows a text (texts/, in the help article format) as an article, then goes back to the level, its clock not counting the reading (A_ShowText). Not in a demo or a game with others"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> ActorFields { get; } =

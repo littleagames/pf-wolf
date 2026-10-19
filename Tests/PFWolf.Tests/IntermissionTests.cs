@@ -20,6 +20,60 @@ public class IntermissionTests
         Assert.That(IntermissionScreen.Ratios(new GameState()), Is.EqualTo((0, 0, 0)));
     }
 
+    // Midnight Assault's extra lines: intel (a percentage), stealth kills, Kilroys (done/total)
+    private static readonly Dictionary<string, IntermissionValue> ExtraValues = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["kill"] = new(),
+        ["objective.intel"] = new(),
+        ["stealth"] = new(),
+        ["objective.kilroys"] = new() { Count = true },
+    };
+
+    private static (int Done, int Total)? Objectives(string name) => name switch
+    {
+        "intel" => (3, 4),
+        "kilroys" => (1, 2),
+        _ => null,
+    };
+
+    [Test]
+    public void Objectives_And_Stealth_Are_Tallied_In_Their_Order()
+    {
+        // Arrange: finished unseen, two stealth kills of five
+        var player = new Entities.PlayerState { Undetected = true, StealthKills = 2 };
+        var game = new GameState { KillCount = 2, KillTotal = 5 };
+
+        // Act
+        var tallies = IntermissionScreen.ExtraTallies(ExtraValues, Objectives, player, game);
+
+        // Assert
+        Assert.That(tallies.Select(t => (t.Name, t.Target, t.Text(t.Target))), Is.EqualTo(new[]
+        {
+            ("objective.intel", 75, "75"),
+            ("stealth", 40, "40"),
+            ("objective.kilroys", 1, "1/2"),
+        }));
+    }
+
+    [TestCase(true, 0, 0, 5, true)]         // unseen, nobody killed: shown (0%)
+    [TestCase(true, 0, 3, 5, false)]        // unseen, but killed without stealth
+    [TestCase(false, 2, 2, 5, false)]       // seen
+    [TestCase(true, 0, 0, 0, false)]        // nobody there to kill
+    public void Stealth_Kills_Show_Only_For_A_Level_Done_Unseen(bool undetected, int stealthKills, int kills, int total, bool shown)
+    {
+        var player = new Entities.PlayerState { Undetected = undetected, StealthKills = stealthKills };
+        var game = new GameState { KillCount = (short)kills, KillTotal = (short)total };
+        var tallies = IntermissionScreen.ExtraTallies(ExtraValues, Objectives, player, game);
+        Assert.That(tallies.Any(t => t.Name == "stealth"), Is.EqualTo(shown));
+    }
+
+    [Test]
+    public void A_Percentage_With_Nothing_To_Do_Is_100_And_A_Count_Of_Nothing_Isnt_Shown()
+    {
+        var tallies = IntermissionScreen.ExtraTallies(ExtraValues, _ => null, new Entities.PlayerState(), new GameState());
+        Assert.That(tallies.Select(t => (t.Name, t.Target)), Is.EqualTo(new[] { ("objective.intel", 100) }));
+    }
+
     [TestCase(0, 0, 0, 0, 0)]
     [TestCase(30, 99, 99, 99, 3000)]            // 30 seconds under par at 100 a second
     [TestCase(0, 100, 50, 99, 10000)]           // one perfect ratio

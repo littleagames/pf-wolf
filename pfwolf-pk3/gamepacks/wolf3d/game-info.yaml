@@ -37,6 +37,8 @@ default-map:
   #            without one leaves what's playing (Gameplay/ZoneAmbience.cs). A zone with only
   #            ambient keys isn't a light zone: its tiles keep the level's light.
   #   ambient-disguised: played in place of ambient while the player wears a disguise
+  #   ambient-undetected: played in place of ambient while no enemy has noticed the player
+  #            yet on the level (after ambient-disguised, when both apply)
   # Switches and actor states change zones as the level is played (A_SetZoneLight,
   # A_ToggleZoneLight, A_SetZoneEffect: see mapdefs walls.yaml), and saves keep them.
   # zones:
