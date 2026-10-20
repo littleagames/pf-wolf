@@ -134,7 +134,7 @@ internal static partial class GameHost
         IsUnlocked: name => Unlocks.IsUnlocked(name),
         CountsAllKills: () => GameEngineManager.GetGameInfo().Stealth.UnseenNoKillsCountsAll);
 
-    // game-info's intro and title-loop screens, and Blake Stone's movies (Ui/TitleScreens.cs,
+    // game-info's title-sequence screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)
     static MoviePlayer moviePlayer = null!;     // made in InitServices
     static TitleScreens titleScreens = null!;

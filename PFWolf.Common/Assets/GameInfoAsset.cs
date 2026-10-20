@@ -1,4 +1,6 @@
-﻿namespace PFWolf.Assets;
+﻿using YamlDotNet.Serialization;
+
+namespace PFWolf.Assets;
 
 public record GameInfoAsset : Asset
 {
@@ -67,17 +69,14 @@ public record GameInfoAsset : Asset
     /// </summary>
     public string? IntroMusic { get; init; }
 
-    /// <summary>
-    /// Screens shown once as the game starts (Ui/TitleScreens.cs), in place of Wolf3D's
-    /// notice and PG-13 screen; a key skips the one it's pressed on
-    /// </summary>
-    public List<TitleScreenInfo> Intro { get; init; } = [];
+    /// <summary>The screens from the signon to the menu: the intro, then the title loop</summary>
+    public TitleSequenceInfo TitleSequence { get; init; } = new();
 
-    /// <summary>
-    /// Screens shown over and over until a key goes to the menu, in place of Wolf3D's title,
-    /// credits, high scores and demo. Played to intro-music when nothing else is playing.
-    /// </summary>
-    public List<TitleScreenInfo> TitleLoop { get; init; } = [];
+    /// <summary>The old top-level intro: and title-loop:, read only to warn that they've moved under title-sequence</summary>
+    [YamlMember(Alias = "intro")]
+    public object? OldIntro { get; init; }
+    [YamlMember(Alias = "title-loop")]
+    public object? OldTitleLoop { get; init; }
 
     public string? HighScoresMusic { get; init; }
 
@@ -547,12 +546,73 @@ public record HighScoreLabel
 }
 
 /// <summary>
-/// One of game-info's intro or title-loop screens. It's a movie, a demo, or else drawn from a
+/// game-info's title-sequence: the screens from the signon to the menu (Ui/TitleScreens.cs)
+/// </summary>
+public record TitleSequenceInfo
+{
+    /// <summary>Screens shown once as the game starts; a key goes to the next one unless a screen's on-key says otherwise</summary>
+    public List<TitleScreenInfo> Intro { get; init; } = [];
+
+    /// <summary>
+    /// Screens shown over and over until a key goes to the menu (unless a screen's on-key says
+    /// otherwise). Played to intro-music when nothing else is playing.
+    /// </summary>
+    public List<TitleScreenInfo> Loop { get; init; } = [];
+}
+
+/// <summary>What a key does on a title-sequence screen (its on-key)</summary>
+public enum TitleKeyAction
+{
+    /// <summary>Goes on to the next screen (the intro's default)</summary>
+    Next,
+
+    /// <summary>Leaves for the menu (the loop's default)</summary>
+    Menu,
+
+    /// <summary>Skips the rest of the intro into the loop</summary>
+    EndIntro,
+
+    /// <summary>Completes the screen's effect (its fizzle) and holds on; a key after that does the list's default</summary>
+    Finish,
+
+    /// <summary>Keys do nothing: the screen runs its full time</summary>
+    Ignore,
+}
+
+public static class TitleKeyActions
+{
+    /// <summary>The on-key names, as written in game-info</summary>
+    public static readonly IReadOnlyDictionary<string, TitleKeyAction> Names = new Dictionary<string, TitleKeyAction>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["next"] = TitleKeyAction.Next,
+        ["menu"] = TitleKeyAction.Menu,
+        ["end-intro"] = TitleKeyAction.EndIntro,
+        ["finish"] = TitleKeyAction.Finish,
+        ["ignore"] = TitleKeyAction.Ignore,
+    };
+
+    /// <summary>The action an on-key names; false for an unset or unknown one</summary>
+    public static bool TryParse(string? name, out TitleKeyAction action)
+    {
+        action = default;
+        return !string.IsNullOrWhiteSpace(name) && Names.TryGetValue(name.Trim(), out action);
+    }
+}
+
+/// <summary>
+/// One of game-info's title-sequence screens. It's a movie, a demo, or else drawn from a
 /// background color, the high scores, the title, a picture and presenter text (each when set,
 /// in that order), then held for its seconds or until its music ends.
 /// </summary>
 public record TitleScreenInfo
 {
+    /// <summary>
+    /// What a key does here (next, menu, end-intro, finish, ignore); the list's default when
+    /// unset (next in the intro, menu in the loop). A movie has no effect to finish, so there
+    /// finish does the default; a demo always ends on a key, so there ignore does too.
+    /// </summary>
+    public string? OnKey { get; init; }
+
     /// <summary>A movie to play (gamepack-info's JamMovieFileLoader names them)</summary>
     public string? Movie { get; init; }
 
@@ -598,7 +658,10 @@ public record TitleScreenInfo
     /// <summary>#RRGGBB the screen fades to when it's done, before black (Blake Stone's red flash)</summary>
     public string? FadeTo { get; init; }
 
-    /// <summary>A picture the screen fizzles over to once it's faded in, before it's held (Planet Strike's title)</summary>
+    /// <summary>
+    /// A picture the screen fizzles over to once it's faded in, before it's held (Planet Strike's
+    /// title). A key during the fizzle does the screen's on-key: finish shows the picture at once.
+    /// </summary>
     public string? FizzlePic { get; init; }
 
     /// <summary>Tics the fizzle takes</summary>

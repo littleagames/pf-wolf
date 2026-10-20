@@ -374,7 +374,7 @@ public static class SoundCatalog
             Add(gameInfo.IntroMusic, "The title, demo loop and menus");
             Add(gameInfo.HighScoresMusic, "The high scores");
             Add(gameInfo.MenuMusic, "The menus");
-            foreach (var screen in gameInfo.Intro.Concat(gameInfo.TitleLoop))
+            foreach (var screen in gameInfo.TitleSequence.Intro.Concat(gameInfo.TitleSequence.Loop))
                 Add(screen.Music, "A title screen");
             foreach (var (number, cluster) in gameInfo.Clusters)
                 Add(cluster.VictoryMusic, $"Cluster {number}'s victory");

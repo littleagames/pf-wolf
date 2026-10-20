@@ -127,13 +127,13 @@ internal sealed class TitleLoop(
         {
             // --host or --join: straight to the lobby, with the menu's music
         }
-        else if (gameInfo.Intro.Count > 0)
+        else if (gameInfo.TitleSequence.Intro.Count > 0)
         {
             // The game pack's own intro (Blake Stone's), which starts its own music
             if (engine.GameParams.NoWait)
                 audio.PlayMusic(hooks.IntroSong());
             else
-                titleScreens.RunTitleScreens(gameInfo.Intro, titleLoop: false);
+                titleScreens.RunTitleScreens(gameInfo.TitleSequence.Intro, TitleKeyAction.Next);
         }
         else
         {
@@ -162,15 +162,16 @@ internal sealed class TitleLoop(
             }
             demos.PlayPendingDemo();
 
-            while (!engine.GameParams.NoWait && gameInfo.TitleLoop.Count > 0)
+            var loop = gameInfo.TitleSequence.Loop;
+            while (!engine.GameParams.NoWait && loop.Count > 0)
             {
                 if (string.IsNullOrEmpty(audio.CurrentMusicTrack))
                     audio.PlayMusic(hooks.IntroSong());
-                if (titleScreens.RunTitleScreens(gameInfo.TitleLoop, titleLoop: true))
+                if (titleScreens.RunTitleScreens(loop, TitleKeyAction.Menu) == TitleKeyAction.Menu)
                     break;
             }
 
-            while (!engine.GameParams.NoWait && gameInfo.TitleLoop.Count == 0)
+            while (!engine.GameParams.NoWait && loop.Count == 0)
             {
                 //
                 // title page

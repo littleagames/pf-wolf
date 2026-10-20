@@ -153,11 +153,12 @@ public static partial class NewMod
             "# Until a key goes to the menu: the title, then the high scores\n" +
             "title-pics:\n" +
             "  - SDTITLE\n" +
-            "title-loop:\n" +
-            "  - title: true\n" +
-            "    seconds: 8\n" +
-            "  - high-scores: true\n" +
-            "    seconds: 6\n" +
+            "title-sequence:\n" +
+            "  loop:\n" +
+            "    - title: true\n" +
+            "      seconds: 8\n" +
+            "    - high-scores: true\n" +
+            "      seconds: 6\n" +
             "\n" +
             "# No music until it has some (an empty name keeps the shared menus from asking for Wolf3D's)\n" +
             "menu-music: \"\"\n" +

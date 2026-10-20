@@ -1,7 +1,7 @@
 # Blake Stone: Planet Strike where it differs from Aliens of Gold: laid over
 # gamepacks/blake/game-info.yaml (the release's base-pack). Anything not here is Aliens of
 # Gold's, and `!replace` gives Planet Strike its own whole block in place of Aliens of Gold's
-# rather than merging into it. (Lists, such as intro, are always replaced whole.)
+# rather than merging into it. (Lists, such as title-sequence's intro, are always replaced whole.)
 
 # Planet Strike's weapon sprites fill more of their 64x64 than Aliens of Gold's, so bstone draws
 # them 88 high where AOG's are 128 (the 3D view's height)
@@ -22,45 +22,48 @@ high-scores-music: HISCORE
 # The control panel's music, in place of each menu's (blake's menudefs play Aliens of Gold's)
 menu-music: LASTLAFF
 
-# As the game starts (bstone's PreDemo): Apogee from and to blue, to the end of its fanfare, the
-# JAM logo movie, then the PC-13 rating
-intro:
-  - pic: ApogeeLogo
-    palette: Extra2PAL
-    fade-from: "#6474D4"
-    music: APOGFNFM
-    music-loop: false
-    until-music-ends: true
-    seconds: 6            # with music off
-    fade-to: "#6474D4"
-  - movie: IntroMovie
-    music: PLOT
-  - background: "20"
-    pic: ParentalWarning
-    y: 64
-    seconds: 2
+title-sequence:
+  # As the game starts (bstone's PreDemo): Apogee from and to blue, to the end of its fanfare,
+  # the JAM logo movie, then the PC-13 rating
+  intro:
+    - pic: ApogeeLogo
+      palette: Extra2PAL
+      fade-from: "#6474D4"
+      music: APOGFNFM
+      music-loop: false
+      until-music-ends: true
+      seconds: 6            # with music off
+      fade-to: "#6474D4"
+    - movie: IntroMovie
+      music: PLOT
+    - background: "20"
+      pic: ParentalWarning
+      y: 64
+      seconds: 2
 
-# Until a key is pressed (bstone's DemoLoop): the title (fizzling over to its second picture,
-# which has the copyright lines), the credits on the menu screen, then the high scores
-title-loop:
-  - pic: TITLE1
-    palette: Extra3PAL
-    fizzle-pic: TITLE2
-    seconds: 6
-  - pic: LincScreen
-    text:
-      script: CreditsText
-      x1: 38
-      y1: 28
-      x2: 281
-      y2: 170
-      font: 2
-      color: 175
-      background: 2
-      light: 133
-    seconds: 6
-  - high-scores: true
-    seconds: 9
+  # Until a key is pressed (bstone's DemoLoop): the title (fizzling over to its second picture,
+  # which has the copyright lines), the credits on the menu screen, then the high scores. A key
+  # during the fizzle finishes it; a key after that goes to the menu.
+  loop:
+    - pic: TITLE1
+      palette: Extra3PAL
+      fizzle-pic: TITLE2
+      on-key: finish
+      seconds: 6
+    - pic: LincScreen
+      text:
+        script: CreditsText
+        x1: 38
+        y1: 28
+        x2: 281
+        y2: 170
+        font: 2
+        color: 175
+        background: 2
+        light: 133
+      seconds: 6
+    - high-scores: true
+      seconds: 9
 
 # One mission: areas 0 to 19 (MAP01-MAP20) and four secret areas (MAP21-MAP24), all kept as
 # they're left. It starts in area 0, after its briefing.

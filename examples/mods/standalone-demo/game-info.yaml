@@ -19,11 +19,12 @@ signon:
 # Until a key goes to the menu: the title, then the high scores
 title-pics:
   - SDTITLE
-title-loop:
-  - title: true
-    seconds: 8
-  - high-scores: true
-    seconds: 6
+title-sequence:
+  loop:
+    - title: true
+      seconds: 8
+    - high-scores: true
+      seconds: 6
 
 # No music: an empty name keeps the menus from asking for the shared menus' WONDERIN
 menu-music: ""

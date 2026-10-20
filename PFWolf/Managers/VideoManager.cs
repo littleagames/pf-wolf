@@ -1279,10 +1279,12 @@ internal class VideoManager
     /// <summary>
     /// Changes what's on screen over to what's been drawn in the screen buffer since, within a
     /// rectangle (screen pixels), over <paramref name="tics"/> tics. The palette style has nothing
-    /// to step between here, so it just shows the new frame.
+    /// to step between here, so it just shows the new frame. When <paramref name="cutShort"/>
+    /// turns true (asked once a tic), the new frame is shown at once; returns whether it did.
     /// </summary>
-    internal void Transition(FadeStyle style, int x1, int y1, int width, int height, uint tics)
+    internal bool Transition(FadeStyle style, int x1, int y1, int width, int height, uint tics, Func<bool>? cutShort = null)
     {
+        bool wasCutShort = false;
         if (style != FadeStyle.Palette)
         {
             var from = CaptureScreen();
@@ -1298,10 +1300,11 @@ internal class VideoManager
                 Height = height,
                 ScaleFactor = TransitionBlockSize,
             };
-            RunTransition(style, canvas, tics);
+            wasCutShort = RunTransition(style, canvas, tics, cutShort);
         }
 
         Update(ScreenBuffer);
+        return wasCutShort;
     }
 
     /// <summary>
@@ -1367,8 +1370,11 @@ internal class VideoManager
         ToIsSolid = toIsSolid,
     };
 
-    /// <summary>Runs a transition to the end, putting each step on screen once a tic.</summary>
-    private void RunTransition(FadeStyle style, TransitionCanvas canvas, uint tics)
+    /// <summary>
+    /// Runs a transition to the end, putting each step on screen once a tic, or jumps to the end
+    /// when <paramref name="cutShort"/> turns true; returns whether it did.
+    /// </summary>
+    private bool RunTransition(FadeStyle style, TransitionCanvas canvas, uint tics, Func<bool>? cutShort = null)
     {
         ScreenTransition transition = style switch
         {
@@ -1381,15 +1387,22 @@ internal class VideoManager
         uint start = GameEngineManager.GetTimeCount();
         uint frame = start;
 
+        bool wasCutShort = false;
         while (true)
         {
-            double progress = tics == 0 ? 1 : (double)(GameEngineManager.GetTimeCount() - start) / tics;
+            double progress = tics == 0 || wasCutShort ? 1 : (double)(GameEngineManager.GetTimeCount() - start) / tics;
             bool done = transition.Draw(canvas, Math.Min(progress, 1));
 
             PresentPixels(canvas.Output);
 
             if (done)
-                return;
+                return wasCutShort;
+
+            if (cutShort?.Invoke() == true)
+            {
+                wasCutShort = true;
+                continue;       // draw the rest straight away
+            }
 
             frame++;
             GameEngineManager.DelayTics((int)(frame - GameEngineManager.GetTimeCount()));        // don't go too fast

@@ -94,8 +94,8 @@ public static class PaletteCatalog
                     number++;
                 }
             }
-            Screens(info.Intro, "Intro screen");
-            Screens(info.TitleLoop, "Title loop screen");
+            Screens(info.TitleSequence.Intro, "Intro screen");
+            Screens(info.TitleSequence.Loop, "Title loop screen");
 
             foreach (var (number, cluster) in info.Clusters.OrderBy(cluster => cluster.Key))
             {

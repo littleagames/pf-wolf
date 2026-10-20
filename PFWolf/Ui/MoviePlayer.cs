@@ -20,10 +20,11 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
 
     /// <summary>
     /// Plays a JAM movie (bstone's movie_play): frames at least frame-tics apart, faded in and out
-    /// where the movie says. A key or button ends it (fading out if it had faded in). Returns
-    /// whether it was cut short that way; a movie that isn't there is skipped.
+    /// where the movie says. A key or button ends it (fading out if it had faded in), unless
+    /// it's not <paramref name="skippable"/>. Returns whether it was cut short that way; a movie
+    /// that isn't there is skipped.
     /// </summary>
-    internal bool PlayMovie(string name)
+    internal bool PlayMovie(string name, bool skippable = true)
     {
         if (!assets.Exists<JamMovieAsset>(name) || assets.Find<JamMovieAsset>(name) is not { } movie)
             return false;
@@ -64,7 +65,13 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
 
                 case "PA":
                     if (chunk.Data.Length >= 2)
-                        input.UserInput(BitConverter.ToUInt16(chunk.Data, 0));
+                    {
+                        uint pause = BitConverter.ToUInt16(chunk.Data, 0);
+                        if (skippable)
+                            input.UserInput(pause);
+                        else
+                            WaitTics(pause);
+                    }
                     input.ClearKeysDown();
                     input.ClearLastKey();
                     break;
@@ -86,7 +93,7 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
                     lastFrame = GameEngineManager.GetTimeCount();
 
                     menuInput.ReadAnyControl(out var ci);
-                    if (!video.ScreenFaded && (ci.Button0 || ci.Button1 || input.GetLastKeyPressed() != ScanCodes.None))
+                    if (skippable && !video.ScreenFaded && (ci.Button0 || ci.Button1 || input.GetLastKeyPressed() != ScanCodes.None))
                     {
                         skipped = true;
                         if (everFaded)
@@ -105,6 +112,17 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
         audio.StopAll();
         input.ClearKeysDown();
         return skipped;
+    }
+
+    /// <summary>Waits the tics out, keeping the window answering, whatever's pressed</summary>
+    void WaitTics(uint tics)
+    {
+        uint start = GameEngineManager.GetTimeCount();
+        while (GameEngineManager.GetTimeCount() - start < tics)
+        {
+            input.ProcessEvents();
+            GameEngineManager.DelayMs(5);
+        }
     }
 
     /// <summary>
