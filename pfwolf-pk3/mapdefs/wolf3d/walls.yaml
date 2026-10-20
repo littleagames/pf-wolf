@@ -140,6 +140,9 @@ walls:
     #                        every tagged wall north/east/south/west (left out or "": the way
     #                        the player faces); their tag goes with them.
     #                        A_SetWall(id): turns the tagged walls into wall id.
+    #                        A_SetPatch(to[, from, ...]): the tagged walls' patches become
+    #                        patch to (0 takes them off); with froms, only those showing one
+    #                        of them. An actor's (its Use state) works on its own map tag.
     #                        A_ChangeTexture("FROM", "TO"): the switch's own tile (tagged or
     #                        not) and the tagged ones show texture TO where they showed FROM:
     #                        wall and door faces, floors and ceilings. TO can be an animation

@@ -169,7 +169,7 @@ public static class ScriptApi
     /// </summary>
     public static IReadOnlyList<string> TriggerActions { get; } =
     [
-        "A_OpenDoor", "A_CloseDoor", "A_ToggleDoor", "A_MoveWall", "A_SetWall", "A_ChangeTexture",
+        "A_OpenDoor", "A_CloseDoor", "A_ToggleDoor", "A_MoveWall", "A_SetWall", "A_SetPatch", "A_ChangeTexture",
         "A_Activate", "A_Deactivate", "A_ToggleActive", "A_Message", "A_GiveInventory", "A_SpawnItem", "A_SetLight", "A_LightOff",
         "A_SetZoneLight", "A_ToggleZoneLight", "A_SetZoneEffect", "A_SetShading", "A_SetMonsterWander", "A_ClearMonsterBlocks", "A_StartScroll", "A_StopScroll", "A_ToggleScroll", "A_SetScroll",
         "A_UnlockFloor", "A_DropDetonator",

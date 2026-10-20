@@ -49,6 +49,9 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         // A_SetWall(id): turns the tagged walls into wall id (walls.yaml), e.g. lights on a
         // panel coming on
         MapTriggerRegistry.Register("A_SetWall", SetWallAction);
+        // A_SetPatch(to[, from, ...]): the tagged walls' patches become patch `to` (an actor's: its own tag)
+        MapTriggerRegistry.Register("A_SetPatch", (trigger, args) => SetPatch(trigger.Tag, args));
+        Entities.Actors.ActorActionRegistry.Register("A_SetPatch", (Entities.Actors.Actor ob, string[] args) => SetPatch(ob.Tag, args));
 
         // A_ChangeTexture("FROM", "TO"): the switch's own tile and the tagged ones show texture TO
         // wherever they showed FROM: wall and door faces, floors and ceilings. TO can be an animation
@@ -316,6 +319,38 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         {
             // keeping the door-side mark on a wall beside a door
             map.TileMap[x, y] = (ushort)(id | (map.TileMap[x, y] & GameConstants.BitWall));
+            map.RestartAnimations(x, y, session.GameState.TimeCount);
+            any = true;
+        }
+        return any;
+    }
+
+    /// <summary>
+    /// A_SetPatch(to[, from, ...]): the patches on the walls with the tag (a switch's, or an
+    /// actor's own map tag) become patch `to` (0 takes them off); with froms, only those showing
+    /// one of them. Midnight Assault's projector: its slide wall goes blank as the film's taken.
+    /// </summary>
+    internal bool SetPatch(ushort tag, string[] args)
+    {
+        var data = map.GetMapData();
+        if (!int.TryParse(args.ElementAtOrDefault(0), out var to) || to is < 0 or > 255 || to > 0 && !data.Patches.ContainsKey(to))
+        {
+            Console.WriteLine($"A_SetPatch: '{args.ElementAtOrDefault(0)}' isn't a patches.yaml patch id (or 0).");
+            return false;
+        }
+        var from = args.Skip(1).Select(a => int.TryParse(a, out var id) ? id : -1).Where(id => id > 0).ToHashSet();
+        if (tag == 0)
+            return false;
+
+        bool any = false;
+        foreach (var (x, y) in map.TaggedTiles(tag))
+        {
+            int patch = map.GetPatch(x, y);
+            int tile = map.TileMap[x, y];
+            if (patch == 0 || patch == to || (tile & GameConstants.BitDoor) != 0 || (tile & ~GameConstants.BitWall) == 0
+                || from.Count > 0 && !from.Contains(patch))
+                continue;
+            map.SetPatch(x, y, (byte)to);
             map.RestartAnimations(x, y, session.GameState.TimeCount);
             any = true;
         }
