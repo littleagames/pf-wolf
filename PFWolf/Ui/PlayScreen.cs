@@ -287,6 +287,7 @@ internal sealed class PlayScreen(
         int boxY = (video.ScreenYAboveBottom(playArea.StatusLines) - video.ToScreenLength(48)) / 2;
         if (assets.Exists<GraphicAsset>("getpsyched"))     // a standalone game may have none
             graphics.DrawPicScaledCoord("getpsyched", boxX, boxY);
+        DrawLevelStartText();
 
         video.Update();
         video.FadeIn();
@@ -298,6 +299,31 @@ internal sealed class PlayScreen(
 
         DrawPlayBorder();
         video.Update();
+    }
+
+    /// <summary>
+    /// game-info's level-start-text over the "get psyched" screen: each line centred across the
+    /// 320-wide layout, the first 2 down and each next under the one before unless it says its own
+    /// y; %m is the level's name (End of Destiny's PreloadGraphics: "Now entering" and the name)
+    /// </summary>
+    void DrawLevelStartText()
+    {
+        var lines = engine.GetGameInfo().LevelStartText;
+        if (lines.Count == 0)
+            return;
+
+        string name = GetMapDisplayName(session.GameState.MapOn);
+        int y = 2;
+        foreach (var line in lines)
+        {
+            string text = line.Text.Replace("%m", name);
+            graphics.MeasureText(text.Length > 0 ? text : " ", line.Font, out int width, out int height);
+            if (line.Y is { } at)
+                y = at;
+            if (text.Length > 0)
+                graphics.DrawText((320 - width) / 2, y, text, new Fonts.TextStyle(line.Font, line.Color));
+            y += height;
+        }
     }
 
     /// <summary>

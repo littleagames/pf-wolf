@@ -245,6 +245,13 @@ public record GameInfoAsset : Asset
     public string? LevelStartMessage { get; init; }
 
     /// <summary>
+    /// Lines of text over the "get psyched" screen, each centred, the first at the top (2 down)
+    /// and each next one under it (End of Destiny's "Now entering" and the level's name). %m in a
+    /// line is the level's name as the player sees it. None: the picture alone, as Wolf3D's.
+    /// </summary>
+    public List<LevelStartLine> LevelStartText { get; init; } = [];
+
+    /// <summary>
     /// A presenter script (a VGAGRAPH text) shown in presenter.yaml's message box when an episode
     /// with an end-briefing is won, before the briefing
     /// </summary>
@@ -748,6 +755,19 @@ public record DefaultMapInfo
     /// override these value by value
     /// </summary>
     public Dictionary<int, ZoneInfo> Zones { get; init; } = [];
+}
+
+/// <summary>A line of game-info level-start-text: its text (%m the level's name), font and color</summary>
+public record LevelStartLine
+{
+    public string Text { get; init; } = "";
+    public string Font { get; init; } = "SmallFont";
+
+    /// <summary>A color name from colors.yaml, #RRGGBB or a palette index</summary>
+    public string Color { get; init; } = "White";
+
+    /// <summary>How far down it is, in 320x200 pixels; left out, under the line before (the first 2 down)</summary>
+    public int? Y { get; init; }
 }
 
 /// <summary>
