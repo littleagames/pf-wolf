@@ -23,19 +23,15 @@ sound, the channel is left to scripts. Midnight Assault's area ambience (DoAmbie
 */
 /// <param name="Map">Its game-info map (null for none)</param>
 /// <param name="DefaultMap">Game-info's default map</param>
-/// <param name="PlayerTile">The local player's tile, or null when there's none</param>
 /// <param name="ZoneAt">The zone plane's id at a tile</param>
 /// <param name="InDisguise">Whether the local player is wearing a disguise</param>
 /// <param name="SetAmbient">Loops a sound on the ambient channel, or stops it with null</param>
-/// <param name="Undetected">Whether no enemy has noticed the local player yet on the level</param>
 internal sealed record ZoneAmbienceHooks(
     Func<MapInfo?> Map,
     Func<DefaultMapInfo> DefaultMap,
-    Func<(int X, int Y)?> PlayerTile,
     Func<int, int, int> ZoneAt,
     Func<bool> InDisguise,
-    Action<string?> SetAmbient,
-    Func<bool>? Undetected = null);
+    Action<string?> SetAmbient);
 
 internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
 {
@@ -54,10 +50,10 @@ internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
         if (zones.Count == 0)
             return;
 
-        if (hooks.PlayerTile() is { } tile && zones.TryGetValue(hooks.ZoneAt(tile.X, tile.Y), out var zone))
+        if (session.Player is { } pawn && zones.TryGetValue(hooks.ZoneAt(pawn.TileX, pawn.TileY), out var zone))
         {
             var sound = zone.Disguised is { Length: > 0 } disguised && hooks.InDisguise() ? disguised
-                : zone.Undetected is { Length: > 0 } undetected && hooks.Undetected?.Invoke() == true ? undetected
+                : zone.Undetected is { Length: > 0 } undetected && session.PlayerState.Undetected ? undetected
                 : zone.Sound;
             current = string.Equals(sound, None, StringComparison.OrdinalIgnoreCase) ? null : sound;
         }

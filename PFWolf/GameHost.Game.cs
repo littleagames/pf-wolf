@@ -284,11 +284,9 @@ internal static partial class GameHost
     static ZoneAmbience ZoneAmbience => _zoneAmbience ??= new ZoneAmbience(Session, new ZoneAmbienceHooks(
         () => GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info : null,
         () => GameEngineManager.GetGameInfo().DefaultMap,
-        () => Session.Player is { } pawn ? (pawn.TileX, pawn.TileY) : null,
         (x, y) => MapManager.GetZone(x, y),
         () => Stealth.WearingDisguise(Session.PlayerState),
-        AudioManager.SetAmbient,
-        () => Session.PlayerState.Undetected));
+        AudioManager.SetAmbient));
 
     // ==== WL_DEF =================================================================================
 

@@ -28,7 +28,6 @@ public class ZoneAmbienceTests
 
     // The level being played (the session's map)
     private string? _map { get => _session.GameState.MapOn; set => _session.GameState.MapOn = value!; }
-    private (int X, int Y)? _tile;
     private int[,] _zones = null!;
     private bool _disguised;
     private List<string?> _asked = null!;
@@ -40,19 +39,20 @@ public class ZoneAmbienceTests
         _info = YamlDataEntryLoader.Deserialize<GameInfoAsset>(GameInfo);
         _session = new GameSession();
         _map = "MAP01";
-        _tile = (0, 0);
+        _session.PlayerState.Pawn = new Entities.Actors.PlayerPawn { State = _session.PlayerState };
+        _session.Player.SetPosition(0, 0);
         _zones = new int[8, 1];
         for (int x = 0; x < 8; x++)
             _zones[x, 0] = x;           // tile x is in zone x
         _disguised = false;
         _asked = [];
         _ambience = new ZoneAmbience(_session, new ZoneAmbienceHooks(() => _map != null && _info.Maps.TryGetValue(_map, out var map) ? map : null, () => _info.DefaultMap,
-            () => _tile, (x, y) => _zones[x, y], () => _disguised, _asked.Add));
+            (x, y) => _zones[x, y], () => _disguised, _asked.Add));
     }
 
     private string? StepTo(int x)
     {
-        _tile = (x, 0);
+        _session.Player.SetPosition(x, 0);
         _ambience.Tick();
         return _asked[^1];
     }

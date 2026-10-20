@@ -8,12 +8,12 @@ namespace PFWolf.Ui;
 /// The high scores: drawn (game-info high-scores lays them out), and a new one ranked and named;
 /// or each episode's best in their place (high-scores episodes)
 /// </summary>
-/// <param name="scores">The table (GameHost.Scores, which InitHighScores can replace)</param>
+/// <param name="settings">Its table (Scores, which GameHost.InitHighScores can replace)</param>
 /// <param name="floorScore">The last floor's rating, 0 to 300 (Blake Stone's mission ratio)</param>
 /// <param name="levelRecord">A map's best (records.cfg), for the episodes' rows</param>
 internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio,
     VideoManager video, GraphicManager graphics, MenuDrawing draw, MenuDefs defs, UiText ui, LineInput lineInput,
-    GameSession session, Func<HighScore[]> scores, Func<int> floorScore, Func<string, Gameplay.LevelResult?>? levelRecord = null)
+    GameSession session, Configuration.GameSettings settings, Func<int> floorScore, Func<string, Gameplay.LevelResult?>? levelRecord = null)
 {
     private HighScoresInfo HighScoresLayout => engine.GetGameInfo().HighScores;
 
@@ -48,7 +48,7 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
             return;
         }
 
-        var table = scores();
+        var table = settings.Scores;
         for (int i = 0; i < table.Length; i++)
         {
             HighScore s = table[i];
@@ -153,7 +153,7 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
         int floor = gameInfo.Maps.TryGetValue(gamestate.MapOn, out var mapInfo) ? mapInfo.FloorNumber : 1;
 
         var myscore = NewScore(score, won, floor, gamestate.Cluster, floorScore());
-        var table = scores();
+        var table = settings.Scores;
         int n = HighScore.Insert(table, myscore);
 
         audio.PlayMusic(gameInfo.HighScoresMusic ?? "");     // StartCPMusic(HIGHSCORESSONG)

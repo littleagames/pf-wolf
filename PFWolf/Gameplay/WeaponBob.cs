@@ -4,11 +4,12 @@ namespace PFWolf.Gameplay;
 // (bstone 3d_agent.cpp HandleWeaponBounce). It springs between two points while the player moves
 // forwards or back and settles back to the middle when they stop. Only the local player's view
 // has it, and it's never saved: a level or loaded game starts it at rest.
-internal sealed class WeaponBob
+internal sealed class WeaponBob(Configuration.GameSettings? settings = null)
 {
-    // The Game Options weaponbob setting (its default from game-info), asked each frame
-    internal Func<bool> EnabledSource = () => false;
-    internal bool Enabled { get => EnabledSource(); set => EnabledSource = () => value; }
+    // The Game Options weaponbob setting (its default from game-info), asked each frame; set
+    // outright, it stays so (tests)
+    private bool? enabled;
+    internal bool Enabled { get => enabled ?? settings?.Options.WeaponBob ?? false; set => enabled = value; }
 
     // In bstone's 200-line pixels: where the weapon swings between, and how far it may overshoot
     private const double BobMax = 10, BobMid = 6, BobMin = 2;

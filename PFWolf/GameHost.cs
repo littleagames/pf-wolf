@@ -291,7 +291,7 @@ internal static partial class GameHost
         articleReader = new ArticleReader(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
             _graphicManager, menuInput, Session, textPresenter);
         highScoresScreen = new HighScoresScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
-            _graphicManager, menuDrawing, menuDefs, ui, lineInput, Session, () => Scores, FloorScore, map => LevelRecords.Get(map));
+            _graphicManager, menuDrawing, menuDefs, ui, lineInput, Session, Settings, FloorScore, map => LevelRecords.Get(map));
         intermissionScreen = new IntermissionScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
             _graphicManager, menuDrawing, ui, Session, playArea, MakeIntermissionHooks());
         loadSaveScreen = new LoadSaveScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
@@ -543,7 +543,7 @@ internal static partial class GameHost
     internal static int? DeathDropHeight => gameInfoSettings.DeathDropHeight;
     internal static int DeathDropSpeed => gameInfoSettings.DeathDropSpeed;
     internal static double WeaponScale => gameInfoSettings.WeaponScale;
-    internal static readonly WeaponBob WeaponBob = new();
+    internal static readonly WeaponBob WeaponBob = new(Settings);
 
     private static void ReadFadeStyles()
     {
@@ -552,7 +552,6 @@ internal static partial class GameHost
         _videoManager.FadeTics = gameInfoSettings.ScreenFadeTics;
         // The Game Options settings' defaults, before config.cfg's choices are read
         Settings.Options.UseGameDefaults(GameEngineManager.GetGameInfo());
-        WeaponBob.EnabledSource = () => Settings.Options.WeaponBob;
     }
 
     // From the signon through the title loop to the games it starts (Ui/TitleLoop.cs)
