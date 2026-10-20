@@ -81,6 +81,7 @@ public class AssetManager
             progress?.Invoke("Reading the levels");
             LoadLevels(pfWolfBasePk3Loader, rawDataMap?.Maps ?? [], headerFile: null, dataFile: null);
             ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
+            BuildCroppedGraphics();
             BuildAnimations();
             return;
         }
@@ -120,18 +121,154 @@ public class AssetManager
         LoadMovies(gamePackInfo.FindFileLoader(gameReleaseId, "JamMovieFileLoader")?.Movies);
 
         ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
+        BuildCroppedGraphics();
         BuildAnimations();
     }
 
-    /// <summary>For the tests: these assets (by name) in place of loading any, then their animations</summary>
+    /// <summary>For the tests: these assets (by name) in place of loading any, then their crops and animations</summary>
     internal void UseAssets(string gamePackId, IEnumerable<(string Name, Asset Asset)> assets)
     {
         _gamePackId = gamePackId;
         foreach (var (name, asset) in assets)
             SetAsset(GetKey(name, asset.GetType().Name), asset);
         TranslateUwmfLevels();
+        BuildCroppedGraphics();
         BuildAnimations();
     }
+
+    /// <summary>What's wrong with graphicdefs' pictures, by name: left out, or cropped past their source</summary>
+    public IReadOnlyDictionary<string, string> CropProblems => _cropProblems;
+    private readonly Dictionary<string, string> _cropProblems = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Turns graphicdefs' crops into pictures, once every other asset is in (the data files'
+    /// sprites and walls are sources too), and before the animations, which can use them as
+    /// frames. A crop replaces a picture of its name, which can be its own source. Sources are
+    /// looked up before any crop is added, so a source is never another crop.
+    /// </summary>
+    internal void BuildCroppedGraphics()
+    {
+        var definitions = new Dictionary<string, GraphicDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in new[] { "graphicdefs", $"{_gamePackId}/graphicdefs" })
+            if (Exists<GraphicDefinitionsAsset>(name))
+                foreach (var (graphic, definition) in Find<GraphicDefinitionsAsset>(name)!.Graphics)
+                    definitions[graphic] = definition;
+
+        _cropProblems.Clear();
+        var built = new List<(string Key, GraphicDefinition Definition, GraphicAsset Graphic)>();
+        foreach (var (name, definition) in definitions)
+        {
+            void Problem(string problem)
+            {
+                WarningLog.Write($"Picture {name} (graphicdefs): {problem}");
+                _cropProblems[name] = _cropProblems.TryGetValue(name, out var earlier) ? $"{earlier}; {problem}" : problem;
+            }
+
+            if (CropOf(definition, Problem) is { } graphic)
+                built.Add((GetKey(name, nameof(GraphicAsset)), definition, graphic));
+        }
+
+        foreach (var (key, definition, graphic) in built)
+        {
+            SetAsset(key, graphic);
+            if (!_origins.TryGetValue(key, out var origins))
+                _origins[key] = origins = [];
+            origins.Add(new AssetOrigin("graphicdefs", key.Substring(key.IndexOf(':') + 1), $"cropped from {definition.Source}"));
+        }
+    }
+
+    // A graphicdefs crop as a picture, or null (with the problem) when it can't be made
+    private GraphicAsset? CropOf(GraphicDefinition definition, Action<string> problem)
+    {
+        if (string.IsNullOrWhiteSpace(definition.Source))
+        {
+            problem("it has no source, so it's left out");
+            return null;
+        }
+        if (definition.Width <= 0 || definition.Height <= 0)
+        {
+            problem($"its width and height have to be more than 0 (it's {definition.Width}x{definition.Height}), so it's left out");
+            return null;
+        }
+
+        var kind = definition.Kind?.Trim().ToLowerInvariant();
+        if (kind is not (null or "" or GraphicDefinition.SpriteKind or GraphicDefinition.TextureKind or GraphicDefinition.GraphicKind))
+        {
+            problem($"kind '{definition.Kind}' isn't sprite, texture or graphic, so it's left out");
+            return null;
+        }
+
+        // The source, as the kind given, else the first kind it is: sprite, texture, graphic
+        var name = definition.Source.Trim();
+        bool any = string.IsNullOrEmpty(kind);
+        CropSource? source =
+            (any || kind == GraphicDefinition.SpriteKind) && _assets.GetValueOrDefault(GetKey(name, nameof(SpriteAsset))) is SpriteAsset sprite
+                ? CropSource.From(sprite)
+            : (any || kind == GraphicDefinition.TextureKind) && _assets.GetValueOrDefault(GetKey(name, nameof(TextureAsset))) is TextureAsset texture
+                ? CropSource.From(texture)
+            : (any || kind == GraphicDefinition.GraphicKind) && _assets.GetValueOrDefault(GetKey(name, nameof(GraphicAsset))) is GraphicAsset graphic
+                ? CropSource.From(graphic)
+            : null;
+        if (source is not { } from)
+        {
+            problem(any
+                ? $"there's no sprite, texture or picture named {name}, so it's left out"
+                : $"there's no {kind} named {name}, so it's left out");
+            return null;
+        }
+
+        int x = definition.X, y = definition.Y, width = definition.Width, height = definition.Height;
+        if (x >= from.Width || y >= from.Height || x + width <= 0 || y + height <= 0)
+        {
+            problem($"{x},{y} {width}x{height} is outside {name} ({from.Width}x{from.Height}), so it's left out");
+            return null;
+        }
+        if (x < 0 || y < 0 || x + width > from.Width || y + height > from.Height)
+            problem($"{x},{y} {width}x{height} runs past the edge of {name} ({from.Width}x{from.Height}); what's past it is see-through");
+
+        byte? background = null;
+        if (!string.IsNullOrWhiteSpace(definition.Background))
+        {
+            background = PaletteIndexOf(definition.Background.Trim());
+            if (background == null)
+                problem($"background '{definition.Background}' isn't a color name, #RRGGBB or palette index, so see-through pixels stay see-through");
+        }
+
+        return from.Crop(x, y, width, height, background);
+    }
+
+    /// <summary>
+    /// A color as a palette index: a palette index as it is, else a #RRGGBB or colors.yaml name
+    /// as the closest of the game's palette; null when it's none of those, or there's no palette
+    /// </summary>
+    private byte? PaletteIndexOf(string color)
+    {
+        if (byte.TryParse(color, out var index))
+            return index;
+
+        Color? rgb = null;
+        if (color.StartsWith('#'))
+        {
+            try { rgb = Color.FromHexRGBA(color); }
+            catch (Exception e) when (e is ArgumentException or FormatException) { return null; }
+        }
+        else if (FindInGamePackIfAny<ColorThemeAsset>("colors")?.Colors is { } colors)
+            rgb = colors.FirstOrDefault(named => named.Key.Equals(color, StringComparison.OrdinalIgnoreCase)).Value;
+
+        return rgb is { } found && GamePalette() is { Colors.Length: > 0 } palette
+            ? palette.ClosestIndex(found.Red, found.Green, found.Blue)
+            : null;
+    }
+
+    // The running release's palette, or null when it isn't known (the tests' own assets)
+    private Palette? GamePalette()
+    {
+        if (!Exists<GamePackInfoAsset>("gamepack-info"))
+            return null;
+        var name = Find<GamePackInfoAsset>("gamepack-info")!.GetGamePalette(_gameReleaseId);
+        return Exists<Palette>(name) ? Find<Palette>(name) : null;
+    }
+
 
     /// <summary>
     /// Turns the UWMF levels read into planes, through the running game's mapdefs (which are

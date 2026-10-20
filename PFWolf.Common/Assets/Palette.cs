@@ -7,6 +7,20 @@ public record Palette : Asset
     {
     }
 
+    /// <summary>The index of the color nearest to an RGB color (the first, of equally near ones)</summary>
+    public byte ClosestIndex(byte r, byte g, byte b)
+    {
+        int bestIndex = 0, bestDistance = int.MaxValue;
+        for (int i = 0; i < Colors.Length && bestDistance > 0; i++)
+        {
+            int dr = r - Colors[i].Red, dg = g - Colors[i].Green, db = b - Colors[i].Blue;
+            int distance = dr * dr + dg * dg + db * db;
+            if (distance < bestDistance)
+                (bestIndex, bestDistance) = (i, distance);
+        }
+        return (byte)bestIndex;
+    }
+
     public void MakeRemap(PaletteColor[] palette, ref byte[] paletteMap, int paletteSize)
     {
         if (palette == null || paletteMap == null || paletteSize <= 0 || palette.Length < paletteSize || Colors == null || Colors.Length < paletteSize)

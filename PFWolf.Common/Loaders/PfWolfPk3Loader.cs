@@ -48,7 +48,7 @@ public class PfWolfPk3Loader
     /// in maps/wolf3d/ and sprites/wolf3d/, so a game that isn't built on it (a standalone one)
     /// doesn't get them. Demos too: demos/wolf3d/DEMO4.dmo is only Wolf3D's (a demo names its map by number).
     /// </summary>
-    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "animdefs/", "menudefs/", "maps/", "sprites/", "scripts/", "demos/"];
+    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "animdefs/", "graphicdefs/", "menudefs/", "maps/", "sprites/", "scripts/", "demos/"];
 
     /// <summary>
     /// Picture folders whose subfolders are only for keeping files in order (sprites/guards/,
@@ -283,6 +283,17 @@ public class PfWolfPk3Loader
             var uniqueName = GetPackUniqueAssetName(fullName);
             LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,
                 yaml => new AnimationDefinitionsAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, AnimationDefinition>>(yaml)));
+            return;
+        }
+
+        if (fullName.StartsWith("graphicdefs/"))
+        {
+            // graphicdefs/*.yaml -> "graphicdefs", every pack's; graphicdefs/{pack}/*.yaml ->
+            // "{pack}/graphicdefs", whose pictures replace the shared ones of the same name
+            // (AssetManager.BuildCroppedGraphics)
+            var uniqueName = GetPackUniqueAssetName(fullName);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,
+                yaml => new GraphicDefinitionsAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, GraphicDefinition>>(yaml)));
             return;
         }
 
@@ -625,11 +636,12 @@ public class PfWolfPk3Loader
             case "actordefs/":
             case "mapdefs/":
             case "animdefs/":
+            case "graphicdefs/":
             case "language/":
                 if (rest.Contains('/'))
                 {
                     WarnOnce(entry.Source, skippedFolders, path.Substring(0, path.LastIndexOf('/') + 1),
-                        "mods keep these files directly in actordefs/, mapdefs/, animdefs/ and language/, without subfolders");
+                        "mods keep these files directly in actordefs/, mapdefs/, animdefs/, graphicdefs/ and language/, without subfolders");
                     return null;
                 }
                 return folder == "language/"

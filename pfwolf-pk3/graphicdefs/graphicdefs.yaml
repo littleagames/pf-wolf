@@ -1,0 +1,25 @@
+# Cropped pictures: each entry makes a picture by cutting a rectangle out of a sprite, wall or
+# other picture. It's an ordinary picture of exactly width by height, used by name anywhere a
+# picture is (menus, the status bar, intermissions, player.face), and drawn at its own size.
+#
+# graphicdefs/*.yaml are every game pack's; graphicdefs/{pack}/*.yaml are that pack's own, and
+# replace a shared picture of the same name. A mod keeps its files directly in graphicdefs/;
+# they merge into the running pack's, and `NAME: !remove` takes one out.
+#
+#   GUARDHEAD:                      # the picture's name
+#     source: GARDA1                # a sprite (VSWAP, sprites/), wall (VSWAP, textures/, flats/) or picture (graphics/)
+#     kind: sprite                  # optional: sprite, texture or graphic; without it, the first of those named source
+#     x: 20                         # the crop's top left corner in the source, in pixels
+#     y: 2
+#     width: 24                     # the picture's size
+#     height: 32
+#     background: "#004040"         # optional: fills the pixels that don't show (a colors.yaml name, #RRGGBB or palette index)
+#
+# Pixels that don't show in the source (a sprite's, a masked wall's) don't show in the picture
+# either, unless background fills them; nor does any part of the crop past the source's edge.
+# A picture drawn over another (the status bar face over the last one) shows the old one through
+# them, so give it a background there.
+#
+# A crop can take its own source's name (FACE1A: source FACE1A) to replace that picture
+# everywhere. Sources are always the assets themselves, never other crops or animations;
+# animdefs animations can use crops as frames.
