@@ -262,7 +262,8 @@ internal static partial class GameHost
                 () => deathmatch.Objective?.PlayerUse() == true,
                 message => HudMessageManager.Show(HudMessageKind.Lock, message), () => Vehicles.TryLeave(), () => Vehicles.Hint(),
                 () => Objectives.ExitBlock(),
-                (text, style) => HudMessageManager.ShowKeyed("facing", text, style ?? HudMessageManager.KindStyle(HudMessageKind.Lock))));
+                (text, style) => HudMessageManager.ShowKeyed("facing", text, style ?? HudMessageManager.KindStyle(HudMessageKind.Lock)),
+                name => Unlock(name)));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);

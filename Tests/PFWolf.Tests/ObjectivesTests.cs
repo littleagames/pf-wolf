@@ -108,6 +108,27 @@ public class ObjectivesTests
     }
 
     [Test]
+    public void Switches_Done_Before_The_Level_Count_As_Done()
+    {
+        // Arrange: two Kilroys still to draw, and one drawn in an earlier game (shown drawn already)
+        _switches.AddRange([new MapSwitchTranslation { To = 2, Objective = "kilroys" }, new MapSwitchTranslation { To = 2, Objective = "kilroys" }]);
+
+        // Act
+        _objectives.CountLevel(announce: false, doneBefore: ["kilroys", " "]);
+
+        // Assert
+        Assert.That((_objectives.Count("kilroys").Done, _objectives.Count("kilroys").Total), Is.EqualTo((1, 3)));
+    }
+
+    [TestCase("{map}-kilroy-{tag}", "CAMP01", 3, "CAMP01-kilroy-3")]
+    [TestCase("{MAP}:{Tag}", "DT02", 12, "DT02:12")]
+    [TestCase("plain", "CAMP01", 3, "plain")]
+    public void A_Switches_Unlock_Name_Fills_In_The_Map_And_Tag(string pattern, string map, int tag, string expected)
+    {
+        Assert.That(PlayerUse.SwitchUnlockName(pattern, map, (ushort)tag), Is.EqualTo(expected));
+    }
+
+    [Test]
     public void Exit_Block_Says_Why_Without_Showing_It()
     {
         // Arrange

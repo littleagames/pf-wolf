@@ -78,7 +78,7 @@ internal static partial class GameHost
     static LevelSetup MakeLevelSetup() => new(GameEngineManager, MapManager, Render, skyAndFlats, weather, lighting, doors, pushWalls,
         deathmatch, playersManager, playerClassRules, levelLoop, WeaponBob, LevelAI, Session,
         new LevelSetupHooks(() => CurrentSkill,
-            loadout => MapLoadouts.Apply(loadout), () => Objectives.CountLevel(announce: !DemoPlayback && !DemoRecord)));
+            loadout => MapLoadouts.Apply(loadout), () => Objectives.CountLevel(announce: !DemoPlayback && !DemoRecord, playerUse.ShowUnlockedSwitches(name => Unlocks.IsUnlocked(name)))));
 
     // Level objectives (Gameplay/Objectives.cs): sabotage targets, goal enemies
     static Objectives? _objectives;

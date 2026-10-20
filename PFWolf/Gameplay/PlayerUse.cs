@@ -16,6 +16,7 @@ namespace PFWolf.Gameplay;
 /// <param name="VehicleHint">Riding, the use hint (getting off at a dock beside them), else null</param>
 /// <param name="ExitBlock">Whether the objectives keep the level shut, and their refused message (Objectives.ExitBlock)</param>
 /// <param name="ShowFacing">Keeps the facing message up (text, style): renewed each tic, it lasts while it's faced</param>
+/// <param name="Unlock">Unlocks a name for good (a thrown switch's `unlock`: Gameplay/Unlocks.cs)</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
@@ -26,7 +27,8 @@ internal sealed record PlayerUseHooks(
     Func<bool>? LeaveVehicle = null,
     Func<string?>? VehicleHint = null,
     Func<(bool Blocked, string? Message)>? ExitBlock = null,
-    Action<string, string?>? ShowFacing = null);
+    Action<string, string?>? ShowFacing = null,
+    Action<string>? Unlock = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -104,6 +106,8 @@ internal sealed class PlayerUse(
             timedSwitches.Thrown(wallSwitch, tilex, tiley, patch: false, from, wallSwitch.To, tag, dir);     // reset-tics: it turns back
             if (wallSwitch.Objective is { Length: > 0 } objective && thrown > 0)
                 hooks.CompleteObjective?.Invoke(objective, thrown);     // a sabotage target (Gameplay/Objectives.cs)
+            if (thrown > 0)
+                UnlockFor(wallSwitch, tag);
         }
 
         if (!string.IsNullOrEmpty(wallSwitch.Sound))
@@ -198,6 +202,54 @@ internal sealed class PlayerUse(
             timedSwitches.Thrown(patchSwitch, tilex, tiley, patch: true, from, to, tag, dir);     // reset-tics: it turns back
         if (patchSwitch.Objective is { Length: > 0 } objective)
             hooks.CompleteObjective?.Invoke(objective, thrown);         // a sabotage target (Gameplay/Objectives.cs)
+        UnlockFor(patchSwitch, tag);
+    }
+
+    // A thrown switch's `unlock` name, for good (a Kilroy drawn)
+    void UnlockFor(MapSwitchTranslation sw, ushort tag)
+    {
+        if (sw.Unlock.Length > 0 && !session.DemoPlayback)
+            hooks.Unlock?.Invoke(SwitchUnlockName(sw.Unlock, session.GameState.MapOn, tag));
+    }
+
+    /// <summary>A switch's `unlock` name with {map} and {tag} filled in</summary>
+    internal static string SwitchUnlockName(string pattern, string? mapName, ushort tag) =>
+        pattern.Replace("{map}", mapName ?? "", StringComparison.OrdinalIgnoreCase)
+            .Replace("{tag}", tag.ToString(), StringComparison.OrdinalIgnoreCase).Trim();
+
+    /// <summary>
+    /// As the level starts afresh: each switch (a wall's or a patch's) with `unlock` and
+    /// `unlocked-to` whose name is unlocked already is shown as its unlocked-to wall or patch;
+    /// returns the objectives they're each one done of (Objectives.CountLevel's doneBefore).
+    /// Midnight Assault's Kilroys drawn in an earlier game, "Kilroy was here".
+    /// </summary>
+    internal List<string> ShowUnlockedSwitches(Func<string, bool> unlocked)
+    {
+        var done = new List<string>();
+        var data = map.GetMapData();
+        var mapName = session.GameState.MapOn;
+        for (int y = 0; y < map.MapHeight; y++)
+            for (int x = 0; x < map.MapWidth; x++)
+            {
+                int tile = map.TileMap[x, y];
+                if (tile != 0 && (tile & BitDoor) == 0 && data.Walls.TryGetValue(tile & ~BitWall, out var wall)
+                    && wall.Switch is { Unlock.Length: > 0, UnlockedTo: > 0 and < BitWall } wallSwitch
+                    && data.Walls.ContainsKey(wallSwitch.UnlockedTo) && unlocked(SwitchUnlockName(wallSwitch.Unlock, mapName, map.GetTag(x, y))))
+                {
+                    map.TileMap[x, y] = (ushort)(wallSwitch.UnlockedTo | (tile & BitWall));
+                    if (wallSwitch.Objective.Length > 0)
+                        done.Add(wallSwitch.Objective);
+                }
+                if (map.GetPatch(x, y) is var id and > 0 && data.Patches.TryGetValue(id, out var patch)
+                    && patch.Switch is { Unlock.Length: > 0, UnlockedTo: > 0 and <= 255 } patchSwitch
+                    && data.Patches.ContainsKey(patchSwitch.UnlockedTo) && unlocked(SwitchUnlockName(patchSwitch.Unlock, mapName, map.GetTag(x, y))))
+                {
+                    map.SetPatch(x, y, (byte)patchSwitch.UnlockedTo);
+                    if (patchSwitch.Objective.Length > 0)
+                        done.Add(patchSwitch.Objective);
+                }
+            }
+        return done;
     }
 
     /// <summary>

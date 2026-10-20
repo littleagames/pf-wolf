@@ -634,6 +634,20 @@ public record MapSwitchTranslation
     public string Objective { get; init; } = "";
 
     /// <summary>
+    /// A name unlocked for good when the switch is thrown (Gameplay/Unlocks.cs: progress.cfg),
+    /// {map} and {tag} filled in with the level's map and the switch tile's tag, e.g.
+    /// "{map}-kilroy-{tag}": Midnight Assault's Kilroys, remembered from game to game. Empty: none.
+    /// </summary>
+    public string Unlock { get; init; } = "";
+
+    /// <summary>
+    /// "unlocked-to": as the level starts afresh, a switch whose <see cref="Unlock"/> name is
+    /// unlocked already is shown as this wall or patch id instead, its objective counted done (a
+    /// Kilroy drawn in an earlier game, "Kilroy was here"). 0: it's left as it is.
+    /// </summary>
+    public int UnlockedTo { get; init; }
+
+    /// <summary>
     /// How the switch finds what it works besides its tag. "object-plane": the switch tile's
     /// object-plane value is a tile's x (high byte) and y (low byte) on this floor, and the
     /// switch shares that tile's tag, as a map-info tag-link would give it (Planet Strike's

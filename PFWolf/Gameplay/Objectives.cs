@@ -42,12 +42,20 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
     /// Counts the level's objectives as it starts afresh: its switches' and actors' (the actors
     /// already spawned); with <paramref name="announce"/>, each one's start message
     /// </summary>
-    internal void CountLevel(bool announce)
+    /// <param name="doneBefore">Objectives one of which is done already as the level starts, once for each (a Kilroy drawn in an earlier game)</param>
+    internal void CountLevel(bool announce, IEnumerable<string>? doneBefore = null)
     {
         map.ObjectiveCounts.Clear();
         foreach (var sw in hooks.Switches())
             if (sw.Objective is { Length: > 0 } name)
                 Add(name, 1);
+        foreach (var name in doneBefore ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                continue;
+            Add(name, 1);
+            map.ObjectiveCounts[name.Trim()].Done++;
+        }
         foreach (var actor in map.GetActors())
             if (!actor.IsRemoved && ObjectiveOf(actor) is { } name && actor is not Entities.Actors.Monster { Hitpoints: <= 0 })
                 Add(name, 1);
