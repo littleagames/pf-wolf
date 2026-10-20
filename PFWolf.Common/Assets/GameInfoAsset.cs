@@ -1470,6 +1470,13 @@ public record MapInfo
     /// <summary>An article shown once the level's won: after its level-end screen, or before the victory tally of a cluster it ends</summary>
     public string? Debriefing { get; init; } = null;
 
+    /// <summary>
+    /// The pictures the level-end screen's BJ (intermission.yaml bj) breathes through for this
+    /// level, in place of his own, at his place and pace: Midnight Assault's three photos of each
+    /// level (LevelPhotoAnimate)
+    /// </summary>
+    public List<string> IntermissionPics { get; init; } = [];
+
     public int FloorNumber { get; init; }
     public int ParTime { get; init; } = 0;
     public string Music { get; init; } = null!;

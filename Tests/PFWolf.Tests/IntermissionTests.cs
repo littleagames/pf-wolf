@@ -318,4 +318,44 @@ public class HighScoreRankingTests
         // Assert
         Assert.That((score.Score, (int)score.Completed, (int)score.Episode, (int)score.Ratio), Is.EqualTo((1234, completed, episode, ratio)));
     }
+
+    [Test]
+    public void BJ_Breathes_Through_The_Levels_Own_Pictures_Where_It_Has_Them()
+    {
+        // Arrange: Midnight Assault's photos of a level, in place of BJ's own
+        var bj = new IntermissionBj { Pics = ["L_GUY", "L_GUY2"] };
+        var photos = new MapInfo { IntermissionPics = ["L_CAMP01_1", "L_CAMP01_2", "L_CAMP01_3"] };
+
+        // Act / Assert
+        Assert.That(IntermissionScreen.BreathPics(bj, photos), Is.EqualTo(new[] { "L_CAMP01_1", "L_CAMP01_2", "L_CAMP01_3" }));
+        Assert.That(IntermissionScreen.BreathPics(bj, new MapInfo()), Is.EqualTo(new[] { "L_GUY", "L_GUY2" }));
+        Assert.That(IntermissionScreen.BreathPics(null, photos), Is.Empty);      // no bj: nowhere to show them
+    }
+
+    [Test]
+    public void The_Backdrop_Photos_And_Colors_Read_From_Their_Files()
+    {
+        // Act
+        var screen = Loaders.YamlDataEntryLoader.Deserialize<IntermissionAsset>("""
+            color: Black
+            value-color: "#A01414"
+            value-background-pic: L_BACKDROP
+            pics:
+              - { pic: L_BACKDROP, x: 0, y: 0 }
+            bj: { x: 37, y: 50, breath-tics: 25 }
+            labels:
+              - { text: "%", x: 270, y: 102, color: "#A01414" }
+            """);
+        var gameInfo = Loaders.YamlDataEntryLoader.Deserialize<GameInfoAsset>("""
+            maps:
+              CAMP01: { intermission-pics: [L_CAMP01_1, L_CAMP01_2, L_CAMP01_3] }
+            """);
+
+        // Assert
+        Assert.That((screen.ValueColor, screen.ValueBackgroundPic), Is.EqualTo(("#A01414", "L_BACKDROP")));
+        Assert.That(screen.Pics!.Select(p => p.Pic), Is.EqualTo(new[] { "L_BACKDROP" }));
+        Assert.That((screen.Bj!.X, screen.Bj.Y, screen.Bj.BreathTics), Is.EqualTo((37, 50, 25)));
+        Assert.That(screen.Labels![0].Color, Is.EqualTo("#A01414"));
+        Assert.That(gameInfo.Maps["CAMP01"].IntermissionPics, Has.Count.EqualTo(3));
+    }
 }

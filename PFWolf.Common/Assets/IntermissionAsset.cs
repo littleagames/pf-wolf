@@ -16,7 +16,16 @@ public record IntermissionAsset : Asset
     /// <summary>The text's color: a color name, #RRGGBB or palette index</summary>
     public string? Color { get; set; }
 
-    /// <summary>BJ, breathing</summary>
+    /// <summary>
+    /// The numbers' color where it isn't the text's: a color name, #RRGGBB or palette index
+    /// (Midnight Assault's dark red figures beside black labels)
+    /// </summary>
+    public string? ValueColor { get; set; }
+
+    /// <summary>Pictures drawn as the screen opens, under BJ and the text (Midnight Assault's case folder)</summary>
+    public List<IntermissionPic>? Pics { get; set; }
+
+    /// <summary>BJ, breathing; a level's game-info intermission-pics in place of his pics</summary>
     public IntermissionBj? Bj { get; set; }
 
     /// <summary>The text drawn as the screen opens</summary>
@@ -42,6 +51,13 @@ public record IntermissionAsset : Asset
     /// number pictures can be.
     /// </summary>
     public string? ValueBackground { get; set; }
+
+    /// <summary>
+    /// One of pics redrawn (from its place) under each number's place before it's drawn, in place
+    /// of a value-background color: numbers counting up over a backdrop (Midnight Assault's
+    /// VWB_DrawPicMask of L_BACKDROPPIC)
+    /// </summary>
+    public string? ValueBackgroundPic { get; set; }
 
     public IntermissionSounds Sounds { get; set; } = new();
 
@@ -127,6 +143,9 @@ public record IntermissionLabel
     public int X { get; set; }
     public int Y { get; set; }
     public string? OnlyWith { get; set; }
+
+    /// <summary>Its own color, in place of the screen's (Midnight Assault's "%" in the figures' red)</summary>
+    public string? Color { get; set; }
 }
 
 /// <summary>

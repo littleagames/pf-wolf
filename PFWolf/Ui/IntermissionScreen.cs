@@ -99,17 +99,20 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         //
         input.ClearKeysDown();
         input.StartAck();
+        var gameInfo = engine.GetGameInfo();
+        var mapInfo = gameInfo.Maps[session.GameState.MapOn];
+        foreach (var pic in Intermission.Pics ?? [])
+            graphics.DrawPic(pic.Pic, pic.X, pic.Y);
+        breathPics = BreathPics(Intermission.Bj, mapInfo);
         bjWhich = 0;
         DrawBJ();
 
-        var gameInfo = engine.GetGameInfo();
-        var mapInfo = gameInfo.Maps[session.GameState.MapOn];
         var extras = ExtraTallies();
         //if (session.GameState.MapOn < LRpack)
         {
             foreach (var label in Intermission.Labels ?? [])
                 if (label.OnlyWith is not { Length: > 0 } with || extras.Any(e => e.Name.Equals(with, StringComparison.OrdinalIgnoreCase)))
-                    ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
+                    ui.TextAt(label.X, label.Y, LabelStyle(label)).Print(label.Text.ToLanguageText(language));
             WriteValue("bonus", "0");
             WriteValue("floor", mapInfo.FloorNumber.ToString());
             WriteValue("name", hooks.MapDisplayName(session.GameState.MapOn));
@@ -169,6 +172,10 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             //
             // KILL RATIO
             //
+            // (each ratio counted up only where the layout shows it: Midnight Assault's has no
+            // treasure, its dog tags' own pictures in the original)
+            if (!Intermission.Values.ContainsKey("kill"))
+                goto secretRatio;
             ratio = kr;
             for (i = 0; i <= ratio; i++)
             {
@@ -209,6 +216,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             //
             // SECRET RATIO
             //
+        secretRatio:
+            if (!Intermission.Values.ContainsKey("secret"))
+                goto treasureRatio;
             ratio = sr;
             for (i = 0; i <= ratio; i++)
             {
@@ -248,6 +258,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             //
             // TREASURE RATIO
             //
+        treasureRatio:
+            if (!Intermission.Values.ContainsKey("treasure"))
+                goto extraTallies;
             ratio = tr;
             for (i = 0; i <= ratio; i++)
             {
@@ -286,6 +299,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             //
             // OBJECTIVES AND STEALTH (Midnight Assault's intel, stealth kills and Kilroys)
             //
+        extraTallies:
             foreach (var extra in extras)
                 if (!CountUp(extra, PAUSE_MS))
                     goto done;
@@ -568,7 +582,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         var extras = VictoryTallies(screen.Values, ClusterFloors(session.LevelRatios, maps, session.GameState.Cluster), hooks.Item);
         foreach (var label in screen.Labels.Where(label => string.IsNullOrEmpty(label.OnlyWith)
             || extras.Any(extra => extra.Name.Equals(label.OnlyWith, StringComparison.OrdinalIgnoreCase))))
-            ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
+            ui.TextAt(label.X, label.Y, LabelStyle(label)).Print(label.Text.ToLanguageText(language));
         foreach (var pic in screen.Pics)
             graphics.DrawPic(pic.Pic, pic.X, pic.Y);
         (min, sec, kr, sr, tr) = ClusterTotals(session.LevelRatios, maps, session.GameState.Cluster);
@@ -698,16 +712,17 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     //
     // The first breath comes sooner, once per run, as in the original
     int bjWhich = 0, bjMax = 10;
+    List<string> breathPics = [];
     internal void BjBreathe()
     {
         GameEngineManager.DelayMs(5);
 
-        if (Intermission.Bj is not { Pics.Count: > 1 } bj)
+        if (Intermission.Bj is not { } bj || breathPics.Count < 2)
             return;
 
         if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bjMax)
         {
-            bjWhich = (bjWhich + 1) % bj.Pics.Count;
+            bjWhich = (bjWhich + 1) % breathPics.Count;
             DrawBJ();
             video.Update();
             lastBreathTime = (int)GameEngineManager.GetTimeCount();
@@ -718,9 +733,20 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// <summary>BJ on the level-end screen (intermission.yaml bj), in his current breath</summary>
     private void DrawBJ()
     {
-        if (Intermission.Bj is { Pics.Count: > 0 } bj)
-            graphics.DrawPic(bj.Pics[bjWhich % bj.Pics.Count], bj.X, bj.Y);
+        if (Intermission.Bj is { } bj && breathPics.Count > 0)
+            graphics.DrawPic(breathPics[bjWhich % breathPics.Count], bj.X, bj.Y);
     }
+
+    /// <summary>
+    /// What BJ breathes through on a level's end screen: the level's game-info intermission-pics
+    /// (Midnight Assault's photos of it), else his own; none without a bj
+    /// </summary>
+    internal static List<string> BreathPics(IntermissionBj? bj, MapInfo map) =>
+        bj == null ? [] : map.IntermissionPics.Count > 0 ? map.IntermissionPics : bj.Pics;
+
+    /// <summary>A label's style: the screen's, in its own color if it has one</summary>
+    private TextStyle LabelStyle(IntermissionLabel label) =>
+        IntermissionTextStyle with { Color = label.Color ?? IntermissionTextStyle.Color };
 
     /// <summary>The level-end screen's text style: intermission.yaml's font and color, else the intermission font's</summary>
     internal TextStyle IntermissionTextStyle =>
@@ -736,20 +762,36 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     {
         if (!values.TryGetValue(name, out var value))
             return;
-        var style = IntermissionTextStyle;
+        var style = IntermissionTextStyle with { Color = Intermission.ValueColor ?? IntermissionTextStyle.Color };
         text = FormatValue(value, text, format => format.ToLanguageText(assets.GetText("en-us")));
         ui.MeasureText(text, style.Font, out int width, out int height);
         int x = ValueX(value, width);
 
-        // intermission.yaml value-background: the number drawn before goes first
-        if (Intermission.ValueBackground is { Length: > 0 } background)
+        // intermission.yaml value-background-pic (that part of the picture) or value-background
+        // (the color): the number drawn before goes first
+        if (!string.IsNullOrEmpty(Intermission.ValueBackgroundPic) || !string.IsNullOrEmpty(Intermission.ValueBackground))
         {
+            bool levelEnd = ReferenceEquals(values, Intermission.Values);
             if (valueAreas.TryGetValue((values, name), out var last))
-                video.Bar(last.X, last.Y, last.Width, last.Height, background);
-            video.Bar(x, value.Y, width, height, background);
+                ClearValueArea(last.X, last.Y, last.Width, last.Height, levelEnd);
+            ClearValueArea(x, value.Y, width, height, levelEnd);
             valueAreas[(values, name)] = (x, value.Y, width, height);
         }
         ui.TextAt(x, value.Y, style).Print(text);
+    }
+
+    // A number's place back to the level-end screen's backdrop picture (value-background-pic, as
+    // it lies on the screen: pics) or the value-background color
+    private void ClearValueArea(int x, int y, int width, int height, bool levelEnd)
+    {
+        if (levelEnd && Intermission.ValueBackgroundPic is { Length: > 0 } picName)
+        {
+            var pic = Intermission.Pics?.FirstOrDefault(p => p.Pic.Equals(picName, StringComparison.OrdinalIgnoreCase));
+            int picX = pic?.X ?? 0, picY = pic?.Y ?? 0;
+            graphics.DrawPicRegion(picName, x - picX, y - picY, width, height, x, y);
+        }
+        else if (Intermission.ValueBackground is { Length: > 0 } background)
+            video.Bar(x, y, width, height, background);
     }
 
     /// <summary>A value put in its format (a language key or text, {0} for the value); as it is with none</summary>
