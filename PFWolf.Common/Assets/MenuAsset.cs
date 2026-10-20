@@ -107,6 +107,55 @@ public record MenuAsset : Asset
     public bool? SpacerRows { get; init; }
     public MenuPoint? SelectionPic { get; init; }
     public MenuPoint? CheckboxOffset { get; init; }
+
+    /// <summary>
+    /// new-episode and new-level: the highlighted episode's or level's best (records.cfg) in a
+    /// window beside the list, as Midnight Assault's DrawEpisodeStats and DrawLevelStats
+    /// </summary>
+    public MenuStatsPanel? StatsPanel { get; init; }
+}
+
+/// <summary>
+/// "stats-panel": a window (x, y, width, height) with a title and lines of the highlighted
+/// level's best, or the episode's levels' (their times added up, their percentages averaged with a
+/// level never finished counting as nothing, their counts added up). Text starts at x + margin,
+/// the title at title-x, each line line-height below the last, its value at value-x.
+/// </summary>
+public record MenuStatsPanel
+{
+    public int X { get; init; }
+    public int Y { get; init; }
+    public int Width { get; init; } = 104;
+    public int Height { get; init; } = 64;
+    public string WindowColor { get; init; } = "BKGDCOLOR";
+    public int Margin { get; init; } = 8;
+    public int Top { get; init; } = 4;
+    public string Font { get; init; } = "SmallFont";
+    public string Color { get; init; } = "TEXTCOLOR";
+
+    /// <summary>The title (text or a $language key), at title-x, in title-color</summary>
+    public string Title { get; init; } = "";
+    public int TitleX { get; init; } = 32;
+    public string TitleColor { get; init; } = "HIGHLIGHT";
+
+    public int LineHeight { get; init; } = 12;
+    public int ValueX { get; init; } = 64;
+    public List<MenuStatsLine> Lines { get; init; } = [];
+}
+
+/// <summary>
+/// A stats-panel line: its label (text or a $language key) and value: time (h:mm:ss), kill,
+/// secret (percentages), or objective.NAME, a percentage, or with count: true the number done.
+/// With hide-empty, an objective line shows only where there's any of it (the campaign's Kilroys).
+/// value-x moves the value from the panel's (the time's sits further left).
+/// </summary>
+public record MenuStatsLine
+{
+    public string Label { get; init; } = "";
+    public string Value { get; init; } = "";
+    public bool Count { get; init; }
+    public bool HideEmpty { get; init; }
+    public int? ValueX { get; init; }
 }
 
 /// <summary>

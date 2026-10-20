@@ -18,8 +18,33 @@ internal sealed record PlayerClassChoice(string Class, string? PicName);
 internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
     GraphicManager graphics, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, TextPresenter presenter,
     InventoryManager inventory, GameSession session, Action<short, EpisodeInfo, MapInfo?, string?> startGame, Func<List<string>> playerClasses,
-    Func<EpisodeInfo, bool> episodeOpen, Func<EpisodeInfo, bool>? levelSelect = null, Func<string, MapInfo, bool>? levelOpen = null)
+    Func<EpisodeInfo, bool> episodeOpen, Func<EpisodeInfo, bool>? levelSelect = null, Func<string, MapInfo, bool>? levelOpen = null,
+    Func<string, Gameplay.LevelResult?>? levelRecord = null)
 {
+    // The menu's stats-panel (menudefs), for the episode or level on row w (Ui/LevelStatsPanel.cs)
+    void DrawStats(string menu, int w, Func<int, LevelStats?> statsFor)
+    {
+        if (levelRecord == null || assets.GetMenu(menu)?.StatsPanel is not { } panel || statsFor(w) is not { } stats)
+            return;
+        var language = assets.GetText("en-us");
+        LevelStatsPanel.Draw(panel, stats, graphics, draw, text => text.ToLanguageText(language));
+    }
+
+    LevelStats? EpisodeStats(int w) =>
+        w >= 0 && w < NewEmenu.Length && NewEmenu[w].Data is EpisodeInfo episode
+            ? LevelStatsPanel.Episode([.. LevelStatsPanel.EpisodeLevels(episode, engine.GetGameInfo().Maps).Select(map => levelRecord!(map))])
+            : null;
+
+    LevelStats? LevelStatsAt(int w) =>
+        w >= 0 && w < LevelMenu.Length && LevelMenu[w].Data is string map ? LevelStatsPanel.Of(levelRecord!(map)) : null;
+
+    void DrawEpisodeRow(int w)
+    {
+        if (NewEitems.SelectionPic != null)
+            DrawNewEpisodePic(w);
+        DrawStats("new-episode", w, EpisodeStats);
+    }
+
     /// <summary>
     /// The level select's rows for an episode: each of its level-select maps the game has, by
     /// select-name (else name, else the map's own), greyed out as its locked-name while it isn't
@@ -112,7 +137,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         DrawNewEpisode();
         do
         {
-            which = loop.HandleMenu(NewEitems, NewEmenu, NewEitems.SelectionPic != null ? DrawNewEpisodePic : null);
+            which = loop.HandleMenu(NewEitems, NewEmenu, DrawEpisodeRow);
             switch (which)
             {
                 case -1:
@@ -186,7 +211,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
 
             draw.MenuFadeOut();
             DrawNewLevel();
-            which = loop.HandleMenu(LevelItems, LevelMenu, null);
+            which = loop.HandleMenu(LevelItems, LevelMenu, w => DrawStats("new-level", w, LevelStatsAt));
             if (which < 0)
             {
                 draw.MenuFadeOut();
@@ -270,6 +295,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
                     graphics.DrawPic(episode.PicName, NewEitems.X + 32, MenuDrawing.MenuItemY(NewEitems, i));
             }
         }
+        DrawStats("new-episode", NewEitems.CurPos, EpisodeStats);
 
         video.Update();
         draw.MenuFadeIn();
@@ -288,6 +314,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     {
         defs.DrawMenuComponents("new-level");
         draw.DrawMenu(LevelItems!, LevelMenu);
+        DrawStats("new-level", LevelItems!.CurPos, LevelStatsAt);
         video.Update();
         draw.MenuFadeIn();
         menuInput.WaitKeyUp();

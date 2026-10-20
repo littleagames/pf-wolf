@@ -69,6 +69,9 @@ internal class MenuMetadata
     /// <summary>Where a toggle item's CheckBox goes from its text's left and top (default -24, 3)</summary>
     public Assets.MenuPoint? CheckboxOffset { get; set; }
 
+    /// <summary>new-episode and new-level: the highlighted one's best beside the list (Ui/LevelStatsPanel.cs)</summary>
+    public Assets.MenuStatsPanel? StatsPanel { get; set; }
+
     internal static MenuMetadata? BuildFromAsset(MenuAsset asset)
     {
         if (asset is null) return null;
