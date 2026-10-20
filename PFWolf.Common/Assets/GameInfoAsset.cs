@@ -452,6 +452,69 @@ public record HighScoresInfo
 
     /// <summary>Where the ratio column ends (Blake Stone's mission ratio); no column when 0</summary>
     public int RatioRight { get; init; }
+
+    /// <summary>
+    /// In place of the score table, a row for each of these episodes with its levels' bests from
+    /// records.cfg (Midnight Assault's awards); a finished game then has no name to type, the
+    /// screen is just shown
+    /// </summary>
+    public HighScoresEpisodes? Episodes { get; init; }
+}
+
+/// <summary>
+/// The high scores as each episode's best (Midnight Assault's DrawAwardsScreen): its name, its
+/// levels' times added up, and lines of its stats as a menu stats-panel has them (percentages
+/// averaged with a level never finished as nothing); the incomplete text in their place where
+/// none of its levels has been finished. Names and labels are in the screen's color, the time and
+/// values in value-color.
+/// </summary>
+public record HighScoresEpisodes
+{
+    /// <summary>The rows, top first</summary>
+    public List<HighScoresEpisodeRow> Rows { get; init; } = [];
+
+    /// <summary>Top of the first row</summary>
+    public int Y { get; init; } = 54;
+
+    public int RowHeight { get; init; } = 40;
+    public int NameX { get; init; } = 20;
+
+    /// <summary>Where the time goes (h:mm:ss); no time when below 0</summary>
+    public int TimeX { get; init; } = 152;
+
+    public int LabelX { get; init; } = 222;
+    public int ValueX { get; init; } = 280;
+
+    /// <summary>The time's and the values' color; the screen's when unset</summary>
+    public string? ValueColor { get; init; }
+
+    /// <summary>The stats, each a label and a value (as a stats-panel line's) at y from the row's top</summary>
+    public List<HighScoresEpisodeLine> Lines { get; init; } = [];
+
+    /// <summary>Shown at label-x for an episode none of whose levels has been finished</summary>
+    public string Incomplete { get; init; } = "Incomplete";
+}
+
+public record HighScoresEpisodeRow
+{
+    /// <summary>The episode (game-info episodes key)</summary>
+    public string Episode { get; init; } = "";
+
+    /// <summary>The name shown; the episode's own when unset</summary>
+    public string? Name { get; init; }
+}
+
+public record HighScoresEpisodeLine
+{
+    public string Label { get; init; } = "";
+
+    /// <summary>time, kill, secret or objective.NAME (its percentage; with count, how many)</summary>
+    public string Value { get; init; } = "";
+
+    public bool Count { get; init; }
+
+    /// <summary>From the row's top</summary>
+    public int Y { get; init; }
 }
 
 public record HighScoreDefault

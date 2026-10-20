@@ -4,12 +4,16 @@ using PFWolf.Fonts;
 
 namespace PFWolf.Ui;
 
-/// <summary>The high scores: drawn (game-info high-scores lays them out), and a new one ranked and named</summary>
+/// <summary>
+/// The high scores: drawn (game-info high-scores lays them out), and a new one ranked and named;
+/// or each episode's best in their place (high-scores episodes)
+/// </summary>
 /// <param name="scores">The table (GameHost.Scores, which InitHighScores can replace)</param>
 /// <param name="floorScore">The last floor's rating, 0 to 300 (Blake Stone's mission ratio)</param>
+/// <param name="levelRecord">A map's best (records.cfg), for the episodes' rows</param>
 internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio,
     VideoManager video, GraphicManager graphics, MenuDrawing draw, MenuDefs defs, UiText ui, LineInput lineInput,
-    GameSession session, Func<HighScore[]> scores, Func<int> floorScore)
+    GameSession session, Func<HighScore[]> scores, Func<int> floorScore, Func<string, Gameplay.LevelResult?>? levelRecord = null)
 {
     private HighScoresInfo HighScoresLayout => engine.GetGameInfo().HighScores;
 
@@ -36,6 +40,13 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
         foreach (var label in layout.Labels)
             ui.TextAt(label.X, label.Y, style with { Font = label.Font ?? style.Font, Color = label.Color ?? style.Color })
                 .Print(label.Text.ToLanguageText(language));
+
+        if (layout.Episodes is { } episodes)
+        {
+            DrawEpisodes(episodes, style, text => text.ToLanguageText(language));
+            video.Update();
+            return;
+        }
 
         var table = scores();
         for (int i = 0; i < table.Length; i++)
@@ -81,13 +92,63 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
         video.Update();
     }
 
+    // Each episode's best in place of the table (see HighScoresEpisodes)
+    private void DrawEpisodes(HighScoresEpisodes layout, TextStyle style, Func<string, string> text)
+    {
+        var gameInfo = engine.GetGameInfo();
+        var valueStyle = style with { Color = layout.ValueColor ?? style.Color };
+        for (int i = 0; i < layout.Rows.Count; i++)
+        {
+            var row = layout.Rows[i];
+            int y = layout.Y + layout.RowHeight * i;
+            gameInfo.Episodes.TryGetValue(row.Episode, out var episode);
+            ui.TextAt(layout.NameX, y, style).Print(text(row.Name ?? episode?.Name ?? row.Episode));
+
+            var best = episode != null && levelRecord != null
+                ? EpisodeBest([.. LevelStatsPanel.EpisodeLevels(episode, gameInfo.Maps).Select(levelRecord)])
+                : null;
+            if (best == null)
+            {
+                ui.TextAt(layout.LabelX, y, style).Print(text(layout.Incomplete));
+                continue;
+            }
+
+            if (layout.TimeX >= 0)
+                ui.TextAt(layout.TimeX, y, valueStyle).Print(LevelStatsPanel.Text(new MenuStatsLine { Value = "time" }, best)!);
+            foreach (var line in layout.Lines)
+            {
+                ui.TextAt(layout.LabelX, y + line.Y, style).Print(text(line.Label));
+                ui.TextAt(layout.ValueX, y + line.Y, valueStyle).Print(LineText(line, best));
+            }
+        }
+    }
+
+    /// <summary>An episode's levels' bests together; null when none of them has been finished</summary>
+    internal static LevelStats? EpisodeBest(IReadOnlyList<Gameplay.LevelResult?> records) =>
+        records.Any(r => r != null) ? LevelStatsPanel.Episode(records) : null;
+
+    /// <summary>A line's value as the episodes' rows show it</summary>
+    internal static string LineText(HighScoresEpisodeLine line, LevelStats stats) =>
+        LevelStatsPanel.Text(new MenuStatsLine { Value = line.Value, Count = line.Count }, stats) ?? "";
+
     /// <summary>
     /// Ranks the score among the high scores, and has a name typed for it if it made the list.
     /// The level recorded is the current map's floor number, marked as won when <paramref name="won"/>.
+    /// With the episodes' bests in place of the table (high-scores episodes), they're just shown.
     /// </summary>
     internal void CheckHighScore(int score, bool won)
     {
         var gameInfo = engine.GetGameInfo();
+        if (gameInfo.HighScores.Episodes != null)
+        {
+            audio.PlayMusic(gameInfo.HighScoresMusic ?? "");
+            DrawHighScores();
+            video.FadeIn();
+            input.ClearKeysDown();
+            input.UserInput(500);
+            return;
+        }
+
         var gamestate = session.GameState;
         int floor = gameInfo.Maps.TryGetValue(gamestate.MapOn, out var mapInfo) ? mapInfo.FloorNumber : 1;
 

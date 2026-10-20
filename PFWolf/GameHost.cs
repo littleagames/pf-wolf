@@ -288,7 +288,7 @@ internal static partial class GameHost
         articleReader = new ArticleReader(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
             _graphicManager, menuInput, Session, textPresenter);
         highScoresScreen = new HighScoresScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
-            _graphicManager, menuDrawing, menuDefs, ui, lineInput, Session, () => Scores, FloorScore);
+            _graphicManager, menuDrawing, menuDefs, ui, lineInput, Session, () => Scores, FloorScore, map => LevelRecords.Get(map));
         intermissionScreen = new IntermissionScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
             _graphicManager, menuDrawing, ui, Session, playArea, MakeIntermissionHooks());
         loadSaveScreen = new LoadSaveScreen(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
