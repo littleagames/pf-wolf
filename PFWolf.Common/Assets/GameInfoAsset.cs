@@ -252,6 +252,12 @@ public record GameInfoAsset : Asset
     public List<LevelStartLine> LevelStartText { get; init; } = [];
 
     /// <summary>
+    /// How long the "get psyched" screen holds, in tics (70 a second), unless a key's pressed:
+    /// Wolf3D's 70 when unset (Midnight Assault's "Now entering..." held 3 seconds)
+    /// </summary>
+    public int? LevelStartTics { get; init; }
+
+    /// <summary>
     /// A presenter script (a VGAGRAPH text) shown in presenter.yaml's message box when an episode
     /// with an end-briefing is won, before the briefing
     /// </summary>
@@ -757,7 +763,7 @@ public record DefaultMapInfo
     public Dictionary<int, ZoneInfo> Zones { get; init; } = [];
 }
 
-/// <summary>A line of game-info level-start-text: its text (%m the level's name), font and color</summary>
+/// <summary>A line of game-info level-start-text: its text (a $language key or the text; %m the level's name), font and color</summary>
 public record LevelStartLine
 {
     public string Text { get; init; } = "";

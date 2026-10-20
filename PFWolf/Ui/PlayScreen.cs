@@ -294,12 +294,15 @@ internal sealed class PlayScreen(
 
         //      PM_Preload (PreloadUpdate);
         PreloadUpdate(10, 10, boxX, boxY, 28 * 8, 48);
-        input.UserInput(70);
+        input.UserInput((uint)LevelStartTics(engine.GetGameInfo()));
         video.FadeOut();
 
         DrawPlayBorder();
         video.Update();
     }
+
+    /// <summary>How long the "get psyched" screen holds: game-info level-start-tics, else Wolf3D's 70</summary>
+    internal static int LevelStartTics(GameInfoAsset gameInfo) => gameInfo.LevelStartTics is > 0 and var tics ? tics : 70;
 
     /// <summary>
     /// game-info's level-start-text over the "get psyched" screen: each line centred across the
@@ -313,10 +316,11 @@ internal sealed class PlayScreen(
             return;
 
         string name = GetMapDisplayName(session.GameState.MapOn);
+        var language = assets.GetText("en-us");
         int y = 2;
         foreach (var line in lines)
         {
-            string text = line.Text.Replace("%m", name);
+            string text = line.Text.ToLanguageText(language).Replace("%m", name);
             graphics.MeasureText(text.Length > 0 ? text : " ", line.Font, out int width, out int height);
             if (line.Y is { } at)
                 y = at;
