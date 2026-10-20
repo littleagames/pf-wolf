@@ -20,3 +20,22 @@ which also removed the old hard-coded 4-Mutant fallback that hung those games).
 - Check: the test suite passes, and a headless run (`--game blake --nowait --cheats --warp MAP01
   --exec "wait 10; god 2; addplayer; gamemode horde 1; wait 900; match; quit"`, SDL drivers set
   to dummy) shows "Wave 1: N left", not "No Horde waves in this game".
+
+## Missing digitized sounds
+
+Some digitized sounds never play: the game prints `Asset not found: <NAME> (Type:
+Wolf3dDigitizedAudio)` when they're asked for. Seen 2026-10-17 during a play-through (older than
+the code cleanup, not caused by it):
+
+- `DSPLDETH`, the player's death scream (Wolf3D, on dying)
+- `DSSCBATK`, Schabbs' attack (Wolf3D E2M9)
+- `DSAGLATK`, the Angel of Death's attack (Spear, the last floor)
+
+- Find out whether the sound is really missing from the game's VSWAP digitized sounds, or whether
+  its name doesn't match the one sound-seq/actordefs ask for (pfwolf-pk3 `sound-seq.yaml`, the
+  digitized sound list in gamepack-info, `Wolf3dDigitizedAudio`). Wolf3D's own `DIGIMAP` plays a
+  death scream and Schabbs' and the Angel's attacks, so the data is there.
+- Check the rest of Wolf3D's and Spear's digitized sounds for the same problem while there.
+- Check: `--game wolf3d --nowait --cheats --warp MAP01 --exec "wait 10; hurt 200; wait 100; quit"`
+  (SDL drivers set to dummy) no longer prints `Asset not found: DSPLDETH`, and the death scream is
+  heard in a normal run.
