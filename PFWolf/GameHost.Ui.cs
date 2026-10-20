@@ -363,8 +363,7 @@ internal static partial class GameHost
 
     static Radar MakeRadar() =>
         new(MapManager, InventoryManager, _inputManager, HudMessageManager, _videoManager, _graphicManager,
-            statusBarDrawing, doors, Session, Settings,
-            () => GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && info.Radar);
+            statusBarDrawing, doors, Session, Settings, currentMapInfo);
 
     internal static void UpdateRadar() => radar.UpdateRadar();
     static string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked) =>

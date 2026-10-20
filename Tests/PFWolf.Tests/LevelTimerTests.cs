@@ -6,16 +6,22 @@ namespace PFWolf.Tests;
 public class LevelTimerTests
 {
     private GameSession _session = null!;
-    private int _limit, _timeUps, _secondChanges;
+    private GameInfoAsset _info = null!;
+    private int _timeUps, _secondChanges;
+
+    // The level's game-info time limit, in seconds
+    private int _limit { set => _info.Maps["MAP01"] = new MapInfo { TimeLimit = value }; }
     private LevelTimer _timer = null!;
 
     [SetUp]
     public void SetUp()
     {
         _session = new GameSession { PlayState = PlayState.StillPlaying };
+        _session.GameState.MapOn = "MAP01";
+        _info = new GameInfoAsset();
         _session.PlayerState.Health = 100;
         (_limit, _timeUps, _secondChanges) = (0, 0, 0);
-        _timer = new LevelTimer(_session, new LevelTimerHooks(() => _limit, () => _timeUps++, () => _secondChanges++));
+        _timer = new LevelTimer(_session, new CurrentMapInfo(_session, () => _info), new LevelTimerHooks(() => _timeUps++, () => _secondChanges++));
     }
 
     [Test]

@@ -346,10 +346,9 @@ internal static partial class GameHost
 
     // Disguise and going unseen (Gameplay/Stealth.cs): enemies' suspicion, papers, the uniform
     static Stealth? _stealth;
-    static Stealth Stealth => _stealth ??= new Stealth(MapManager, InventoryManager, playerWeapons, Session,
+    static Stealth Stealth => _stealth ??= new Stealth(MapManager, InventoryManager, playerWeapons, Session, currentMapInfo,
         new StealthHooks(
             () => GameEngineManager.GetGameInfo().Stealth,
-            () => Session.GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && info.StealthOnly,
             message => HudMessageManager.Show(HudMessageKind.Lock, message),
             PlayPlayerSound,
             playerAttacks.PlayAttackSound,

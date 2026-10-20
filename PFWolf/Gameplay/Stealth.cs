@@ -34,7 +34,6 @@ already after them (stealth `alert`).
 */
 
 /// <param name="Settings">Game-info stealth</param>
-/// <param name="StealthOnly">Whether the level is a stealth-only one (game-info map stealth-only)</param>
 /// <param name="ShowMessage">A message to the acting player (text or a $language key)</param>
 /// <param name="PlaySound">A sound the acting player makes</param>
 /// <param name="PlayAttackSound">The weapon in hand's attacksound (the papers' rustle)</param>
@@ -42,14 +41,14 @@ already after them (stealth `alert`).
 /// <param name="Caught">The acting player is caught by the actor: the mission's failed, as a death</param>
 internal sealed record StealthHooks(
     Func<StealthInfo> Settings,
-    Func<bool> StealthOnly,
     Action<string> ShowMessage,
     Action<string> PlaySound,
     Action PlayAttackSound,
     Func<Entities.Actors.Actor, bool> InSight,
     Action<Entities.Actors.Actor> Caught);
 
-internal sealed class Stealth(MapManager map, InventoryManager inventory, PlayerWeapons weapons, GameSession session, StealthHooks hooks)
+internal sealed class Stealth(MapManager map, InventoryManager inventory, PlayerWeapons weapons, GameSession session, CurrentMapInfo currentMap,
+    StealthHooks hooks)
 {
     const int Tile = 1 << (int)Constants.MapConstants.TileShift;
 
@@ -121,7 +120,7 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
 
         using var _ = session.ActAs(pawn.State);
         var playerstate = session.PlayerState;
-        if (hooks.StealthOnly())
+        if (currentMap.Map?.StealthOnly == true)
         {
             if (playerstate.Health > 0)
             {

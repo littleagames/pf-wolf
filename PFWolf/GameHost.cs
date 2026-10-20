@@ -31,6 +31,9 @@ internal static partial class GameHost
     // Who's playing, the acting player, tics, GameState and the camera (Gameplay/GameSession.cs)
     internal static readonly GameSession Session = new();
 
+    // The map being played's game-info entry (Gameplay/CurrentMapInfo.cs)
+    static readonly CurrentMapInfo currentMapInfo = new(Session, () => GameEngineManager.GetGameInfo());
+
     // What the actors use of the game (Entities/Actors/ActorWorld.cs), built last in InitServices
     static Entities.Actors.ActorWorld actorWorld = null!;
 

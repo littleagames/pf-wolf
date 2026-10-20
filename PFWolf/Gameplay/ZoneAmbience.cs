@@ -21,19 +21,15 @@ sound, the channel is left to scripts. Midnight Assault's area ambience (DoAmbie
 
 =============================================================================
 */
-/// <param name="Map">Its game-info map (null for none)</param>
-/// <param name="DefaultMap">Game-info's default map</param>
 /// <param name="ZoneAt">The zone plane's id at a tile</param>
 /// <param name="InDisguise">Whether the local player is wearing a disguise</param>
 /// <param name="SetAmbient">Loops a sound on the ambient channel, or stops it with null</param>
 internal sealed record ZoneAmbienceHooks(
-    Func<MapInfo?> Map,
-    Func<DefaultMapInfo> DefaultMap,
     Func<int, int, int> ZoneAt,
     Func<bool> InDisguise,
     Action<string?> SetAmbient);
 
-internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
+internal sealed class ZoneAmbience(GameSession session, CurrentMapInfo currentMap, ZoneAmbienceHooks hooks)
 {
     const string None = "none";
 
@@ -65,7 +61,7 @@ internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
     {
         bool had = zones.Count > 0;
         level = map;
-        zones = Resolve(hooks.Map(), hooks.DefaultMap());
+        zones = Resolve(currentMap.Map, currentMap.Default);
         current = null;
         if (had)
             hooks.SetAmbient(null);

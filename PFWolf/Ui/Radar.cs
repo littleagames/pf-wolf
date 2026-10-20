@@ -13,7 +13,7 @@ namespace PFWolf.Ui;
 /// shown at 1x (enemies: true), and only on the maps that ask for it (maps-only, game-info map
 /// radar: the Stealth Challenge).
 /// </summary>
-/// <param name="mapShowsRadar">Whether the level's game-info turns a maps-only radar on (map radar)</param>
+/// <param name="currentMap">The level's game-info: a maps-only radar shows where it says (map radar)</param>
 internal sealed class Radar(
     MapManager map,
     InventoryManager inventory,
@@ -25,11 +25,11 @@ internal sealed class Radar(
     Doors doors,
     GameSession session,
     Configuration.GameSettings settings,
-    Func<bool>? mapShowsRadar = null)
+    CurrentMapInfo? currentMap = null)
 {
     /// <summary>Whether the radar shows now: not with the view full screen, and a maps-only one only on a map that turns it on</summary>
     internal bool Shows(Assets.StatusBarElement radar) =>
-        !(settings.ViewSize == 21 && session.InGame) && (!radar.MapsOnly || mapShowsRadar?.Invoke() == true);
+        !(settings.ViewSize == 21 && session.InGame) && (!radar.MapsOnly || currentMap?.Map?.Radar == true);
 
     /// <summary>The radar's zoom: 0 for 1x, 1 for 2x, 2 for 4x</summary>
     internal int RadarZoom;

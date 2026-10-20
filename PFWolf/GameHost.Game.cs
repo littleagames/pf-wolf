@@ -252,8 +252,7 @@ internal static partial class GameHost
 
     // A level against the clock (Gameplay/LevelTimer.cs): game-info map time-limit
     static LevelTimer? _levelTimer;
-    static LevelTimer LevelTimer => _levelTimer ??= new LevelTimer(Session, new LevelTimerHooks(
-        () => GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.TimeLimit : 0,
+    static LevelTimer LevelTimer => _levelTimer ??= new LevelTimer(Session, currentMapInfo, new LevelTimerHooks(
         () =>
         {
             // A level that time-limit-completes is got through by lasting (End of Destiny's)
@@ -281,9 +280,7 @@ internal static partial class GameHost
 
     // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
     static ZoneAmbience? _zoneAmbience;
-    static ZoneAmbience ZoneAmbience => _zoneAmbience ??= new ZoneAmbience(Session, new ZoneAmbienceHooks(
-        () => GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info : null,
-        () => GameEngineManager.GetGameInfo().DefaultMap,
+    static ZoneAmbience ZoneAmbience => _zoneAmbience ??= new ZoneAmbience(Session, currentMapInfo, new ZoneAmbienceHooks(
         (x, y) => MapManager.GetZone(x, y),
         () => Stealth.WearingDisguise(Session.PlayerState),
         AudioManager.SetAmbient));

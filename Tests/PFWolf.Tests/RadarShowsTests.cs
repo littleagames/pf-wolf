@@ -5,9 +5,15 @@ namespace PFWolf.Tests;
 /// <summary>When the status bar's radar shows (Ui/Radar.cs Shows): maps-only, Midnight Assault's corner map</summary>
 public class RadarShowsTests
 {
-    private static Radar Radar(bool mapSaysRadar, bool fullScreen = false) =>
-        new(null!, null!, null!, null!, null!, null!, null!, null!, new GameSession { InGame = true },
-            new Configuration.GameSettings { ViewSize = fullScreen ? 21 : 19 }, () => mapSaysRadar);
+    private static Radar Radar(bool mapSaysRadar, bool fullScreen = false)
+    {
+        // On MAP01, whose game-info entry says whether it has a radar
+        var session = new GameSession { InGame = true };
+        session.GameState.MapOn = "MAP01";
+        var info = new GameInfoAsset { Maps = { ["MAP01"] = new MapInfo { Radar = mapSaysRadar } } };
+        return new(null!, null!, null!, null!, null!, null!, null!, null!, session,
+            new Configuration.GameSettings { ViewSize = fullScreen ? 21 : 19 }, new CurrentMapInfo(session, () => info));
+    }
 
     [Test]
     public void A_Radar_For_Every_Map_Shows_Everywhere()

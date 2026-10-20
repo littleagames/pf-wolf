@@ -76,7 +76,10 @@ public class StealthTests
     private PlayerPawn _pawn = null!;
     private List<string> _messages = null!, _sounds = null!;
     private List<Entities.Actors.Actor> _caught = null!;
-    private bool _stealthOnly;
+    private GameInfoAsset _info = null!;
+
+    // Whether the level is a stealth-only one (its game-info map stealth-only)
+    private bool _stealthOnly { set => _info.Maps["MAP01"] = new MapInfo { StealthOnly = value }; }
     private int _papersRustles;
 
     [SetUp]
@@ -103,10 +106,11 @@ public class StealthTests
         var bar = new StatusBarDrawing(null!, null, null!, null!, _inventory, null!, null!, null!, _session,
             new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
         var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
+        _info = new GameInfoAsset();
+        _session.GameState.MapOn = "MAP01";
         (_messages, _sounds, _caught, _stealthOnly, _papersRustles) = ([], [], [], false, 0);
-        _stealth = new Stealth(_map, _inventory, weapons, _session, new StealthHooks(
+        _stealth = new Stealth(_map, _inventory, weapons, _session, new CurrentMapInfo(_session, () => _info), new StealthHooks(
             () => new StealthInfo { Suspected = "Suspected", Blown = "Blown", Lost = "Lost", Caught = "Caught", Alert = "Alert" },
-            () => _stealthOnly,
             _messages.Add,
             _sounds.Add,
             () => _papersRustles++,

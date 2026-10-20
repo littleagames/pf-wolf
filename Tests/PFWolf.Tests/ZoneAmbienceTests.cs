@@ -46,7 +46,7 @@ public class ZoneAmbienceTests
             _zones[x, 0] = x;           // tile x is in zone x
         _disguised = false;
         _asked = [];
-        _ambience = new ZoneAmbience(_session, new ZoneAmbienceHooks(() => _map != null && _info.Maps.TryGetValue(_map, out var map) ? map : null, () => _info.DefaultMap,
+        _ambience = new ZoneAmbience(_session, new CurrentMapInfo(_session, () => _info), new ZoneAmbienceHooks(
             (x, y) => _zones[x, y], () => _disguised, _asked.Add));
     }
 

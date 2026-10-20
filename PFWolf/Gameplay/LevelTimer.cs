@@ -1,9 +1,8 @@
 namespace PFWolf.Gameplay;
 
-/// <param name="TimeLimit">The level's game-info time-limit in seconds (0 for none)</param>
 /// <param name="TimeUp">Kills the players: the time's run out</param>
 /// <param name="SecondChanged">The time left shown has changed (a status bar that isn't redrawn every frame redraws it)</param>
-internal sealed record LevelTimerHooks(Func<int> TimeLimit, Action TimeUp, Action? SecondChanged = null);
+internal sealed record LevelTimerHooks(Action TimeUp, Action? SecondChanged = null);
 
 /// <summary>
 /// A level against the clock (game-info map `time-limit`: Midnight Assault's Timed Challenge,
@@ -11,7 +10,7 @@ internal sealed record LevelTimerHooks(Func<int> TimeLimit, Action TimeUp, Actio
 /// starts again with the level, after a death too, and a saved game keeps what's left. When it
 /// runs out the player dies.
 /// </summary>
-internal sealed class LevelTimer(GameSession session, LevelTimerHooks hooks)
+internal sealed class LevelTimer(GameSession session, CurrentMapInfo currentMap, LevelTimerHooks hooks)
 {
     int shownSeconds = -1;
 
@@ -20,7 +19,7 @@ internal sealed class LevelTimer(GameSession session, LevelTimerHooks hooks)
     {
         get
         {
-            int limit = hooks.TimeLimit();
+            int limit = currentMap.Map?.TimeLimit ?? 0;     // game-info map time-limit, in seconds
             return limit > 0 ? Math.Max(limit * 70 - session.GameState.TimeCount, 0) : -1;
         }
     }
