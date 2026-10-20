@@ -156,7 +156,7 @@ internal sealed class MainGameLoop(
 
             // Its briefing first (game-info briefing; Midnight Assault's missions), unless the run's
             // scripted (--nowait), where nothing should wait on a key
-            if (!GameHost.NoWait && ShowsBriefing(levelStart, warped, (session.DemoPlayback || session.DemoRecord), session.NetGame)
+            if (!engine.GameParams.NoWait && ShowsBriefing(levelStart, warped, (session.DemoPlayback || session.DemoRecord), session.NetGame)
                 && engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var enteredMap)
                 && BriefingFor(enteredMap, session.GameState.Entrance) is { Length: > 0 } briefing)
             {

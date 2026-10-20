@@ -7,11 +7,9 @@ using PFWolf.Startup;
 namespace PFWolf.Ui;
 
 /// <summary>What the title loop needs from the game</summary>
-/// <param name="NoWait">--nowait: no signon key, intro screens or title loop</param>
 /// <param name="IntroSong">The title's music</param>
 /// <param name="NewGame">Starts a game on a skill, from a map (GameHost.NewGame)</param>
 internal sealed record TitleLoopHooks(
-    Func<bool> NoWait,
     Func<string> IntroSong,
     Action<short, EpisodeInfo, MapInfo> NewGame);
 
@@ -98,7 +96,7 @@ internal sealed class TitleLoop(
         {
             video.Update();
 
-            if (!hooks.NoWait())
+            if (!engine.GameParams.NoWait)
                 GameEngineManager.WaitVBL(3 * 70);
         }
         else
@@ -108,7 +106,7 @@ internal sealed class TitleLoop(
 
             video.Update();
 
-            if (!hooks.NoWait())
+            if (!engine.GameParams.NoWait)
                 input.Ack();
 
             video.Bar(0, 189, 300, 11, "Maroon");
@@ -132,19 +130,19 @@ internal sealed class TitleLoop(
         else if (gameInfo.Intro.Count > 0)
         {
             // The game pack's own intro (Blake Stone's), which starts its own music
-            if (hooks.NoWait())
+            if (engine.GameParams.NoWait)
                 audio.PlayMusic(hooks.IntroSong());
             else
                 titleScreens.RunTitleScreens(gameInfo.Intro, titleLoop: false);
         }
         else
         {
-            if (!hooks.NoWait() && gameInfo.NonSharewareNotice)
+            if (!engine.GameParams.NoWait && gameInfo.NonSharewareNotice)
                 titleScreens.NonShareware();
 
             audio.PlayMusic(hooks.IntroSong());
 
-            if (!hooks.NoWait() && assets.Exists<GraphicAsset>("pg13"))    // a standalone game may have none
+            if (!engine.GameParams.NoWait && assets.Exists<GraphicAsset>("pg13"))    // a standalone game may have none
                 titleScreens.Pg13();
         }
 
@@ -164,7 +162,7 @@ internal sealed class TitleLoop(
             }
             demos.PlayPendingDemo();
 
-            while (!hooks.NoWait() && gameInfo.TitleLoop.Count > 0)
+            while (!engine.GameParams.NoWait && gameInfo.TitleLoop.Count > 0)
             {
                 if (string.IsNullOrEmpty(audio.CurrentMusicTrack))
                     audio.PlayMusic(hooks.IntroSong());
@@ -172,7 +170,7 @@ internal sealed class TitleLoop(
                     break;
             }
 
-            while (!hooks.NoWait() && gameInfo.TitleLoop.Count == 0)
+            while (!engine.GameParams.NoWait && gameInfo.TitleLoop.Count == 0)
             {
                 //
                 // title page
@@ -238,7 +236,7 @@ internal sealed class TitleLoop(
         mainGameLoop.GameLoop();
         if (session.NetGame)
             netGames.EndNetGame();       // a game with others is over: leave it (Networking/NetGames.cs)
-        if (!hooks.NoWait())
+        if (!engine.GameParams.NoWait)
         {
             video.FadeOut();
             audio.PlayMusic(hooks.IntroSong());

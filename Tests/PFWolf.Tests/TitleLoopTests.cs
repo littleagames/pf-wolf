@@ -4,7 +4,7 @@ public class TitleLoopTests
 {
     private static TitleLoop Make() =>
         new(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, new WarpRequest(),
-            new GameSession(), new TitleLoopHooks(() => true, () => "INTRO", (_, _, _) => Assert.Fail("no game")));
+            new GameSession(), new TitleLoopHooks(() => "INTRO", (_, _, _) => Assert.Fail("no game")));
 
     [Test]
     public void With_No_Game_Started_Or_Loaded_None_Is_Played()
