@@ -77,8 +77,6 @@ signon:
   # color (HIGHLIGHT), warning-color (READHCOLOR), background (BKGDCOLOR). Left out, none is printed.
   text-area: { x: 16, y: 79, width: 290, height: 101 }
 
-non-shareware-notice: true
-
 # pushwall-distance: 2      # tiles a pushwall slides, unless something stops it sooner (2 when left out)
 
 # Drawn stacked top to bottom
@@ -88,6 +86,62 @@ title-pics:
 intro-music: NAZI_NOR
 high-scores-music: ROSTER
 menu-fade-color: "#AE0000"
+
+# The screens from the signon to the menu: the intro once, then the loop round and round until
+# a key goes to the menu (Tab held as it does records a demo instead). A child pack or mod that
+# gives intro or loop replaces that whole list; the other is kept.
+#
+# Each screen is one of
+#   movie: NAME           a Blake Stone JAM movie
+#   demo: true            the next of the game's DEMO0-DEMO9 (none: the screen is left out)
+# or else drawn from these, each when set, in this order:
+#   background: COLOR     fills the screen (a color name, #RRGGBB or palette index), or
+#   menu-background: true the control panel's backdrop (menu-backdrop) or border color
+#   stripe: Y             the menu's stripe across the screen at y
+#   high-scores: true     the high scores table
+#   title: true           title-pics, faded in with title-palette
+#   pic: NAME, x:, y:     a picture (one the game hasn't got leaves the screen out)
+#   lines: [{ text, x, y, color, font }]   text; color is a name (HIGHLIGHT), #RRGGBB or
+#                         index, font the menu's LargeFont unless given; \n starts a new line at x
+#   text: { script, x1, y1, x2, y2, font, color, background, light, dark, shadow }
+#                         a VGAGRAPH presenter text, printed into that window
+#   fizzle-pic: NAME, fizzle-tics: 70   fizzled over the screen once it's faded in
+# and held for
+#   seconds: N            that long (0: not at all), or
+#   until-music-ends: true   until its music ends (seconds, when music is off), or
+#   wait-for-key: true    until a key, however long
+# with
+#   palette: NAME         its own palette (the game palette, or title-palette for the title)
+#   music: NAME, music-loop: false, stop-music: true   what plays from this screen on
+#   fade-from: "#RRGGBB", fade-to: "#RRGGBB"   fades to that color before it shows / after
+#   on-key: ACTION        what a key does here: next (go on to the next screen, the intro's
+#                         default), menu (the loop's default), end-intro (skip the rest of the
+#                         intro), finish (end the fizzle at once and hold on; the next key does
+#                         the default) or ignore (keys do nothing; a demo still ends)
+title-sequence:
+  intro:
+    # id's notice that this isn't shareware, until a key
+    - menu-background: true
+      stripe: 10
+      lines:
+        - { text: "Attention", x: 110, y: 15, color: READHCOLOR }
+        - { text: "This game is NOT shareware.\nPlease do not distribute it.\nThanks.\n\n        Id Software", x: 40, y: 60, color: HIGHLIGHT }
+      wait-for-key: true
+    # The rating screen, as the title music starts
+    - background: Light Blue
+      pic: pg13
+      x: 216
+      y: 110
+      music: NAZI_NOR
+      seconds: 7
+  loop:
+    - title: true
+      seconds: 15
+    - pic: credits
+      seconds: 10
+    - high-scores: true
+      seconds: 10
+    - demo: true
 
 # Fade styles are palette, fizzle, melt or mosaic, each lasting its -tics (70 a second)
 screen-fade-style: palette

@@ -15,8 +15,6 @@ default-map:
 signon:
   press-a-key: false
 
-non-shareware-notice: false
-
 title-pics:
   - Title
 

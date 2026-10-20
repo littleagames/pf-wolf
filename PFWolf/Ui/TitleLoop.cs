@@ -15,9 +15,10 @@ internal sealed record TitleLoopHooks(
 
 /// <summary>
 /// From the signon to the end: the signon screen (SignonScreen, FinishSignon), then the title
-/// loop (DemoLoop): the intro or title pictures, credits, high scores and demos round and round
-/// until a key brings up the menu, and the game the menu (or --warp, --host, --join, a demo
-/// request) starts (RunStartedGame).
+/// loop (DemoLoop): game-info's title-sequence, its intro once and then its loop (title,
+/// credits, high scores and demos) round and round until a key brings up the menu
+/// (Ui/TitleScreens.cs), and the game the menu (or --warp, --host, --join, a demo request)
+/// starts (RunStartedGame).
 /// </summary>
 internal sealed class TitleLoop(
     GameEngineManager engine,
@@ -29,7 +30,6 @@ internal sealed class TitleLoop(
     UiText ui,
     SignonPanel signonPanel,
     TitleScreens titleScreens,
-    HighScoresScreen highScores,
     Demos demos,
     NetGames netGames,
     QuickKeys quickKeys,
@@ -73,20 +73,6 @@ internal sealed class TitleLoop(
         }
     }
 
-    /// <summary>
-    /// Fades the title in with its own palette (game-info title-palette), or the game palette.
-    /// The next screen's fade-in puts the game palette back.
-    /// </summary>
-    internal void FadeInTitle()
-    {
-        var paletteName = engine.GetGameInfo().TitlePalette;
-        var palette = string.IsNullOrEmpty(paletteName) ? null : assets.Find<Palette>(paletteName);
-        if (palette == null)
-            video.FadeIn();
-        else
-            video.FadeIn(new GamePalette { Colors = palette.ToSDLColors() }, 30);
-    }
-
     /// <param name="startupLines">What startup printed, shown as warnings in the signon's text area</param>
     internal void FinishSignon(List<string> startupLines)
     {
@@ -127,24 +113,13 @@ internal sealed class TitleLoop(
         {
             // --host or --join: straight to the lobby, with the menu's music
         }
-        else if (gameInfo.TitleSequence.Intro.Count > 0)
+        else if (!engine.GameParams.NoWait && gameInfo.TitleSequence.Intro.Count > 0)
         {
-            // The game pack's own intro (Blake Stone's), which starts its own music
-            if (engine.GameParams.NoWait)
-                audio.PlayMusic(hooks.IntroSong());
-            else
-                titleScreens.RunTitleScreens(gameInfo.TitleSequence.Intro, TitleKeyAction.Next);
+            // game-info's intro (Wolf3D's notice and PG-13, Blake Stone's logos), which starts its own music
+            titleScreens.RunTitleScreens(gameInfo.TitleSequence.Intro, TitleKeyAction.Next, out _);
         }
         else
-        {
-            if (!engine.GameParams.NoWait && gameInfo.NonSharewareNotice)
-                titleScreens.NonShareware();
-
             audio.PlayMusic(hooks.IntroSong());
-
-            if (!engine.GameParams.NoWait && assets.Exists<GraphicAsset>("pg13"))    // a standalone game may have none
-                titleScreens.Pg13();
-        }
 
         while (true)
         {
@@ -162,64 +137,21 @@ internal sealed class TitleLoop(
             }
             demos.PlayPendingDemo();
 
+            // game-info's title loop (title, credits, high scores, demos) round and round until a
+            // key goes to the menu. One with nothing the game can show goes straight there.
             var loop = gameInfo.TitleSequence.Loop;
             while (!engine.GameParams.NoWait && loop.Count > 0)
             {
                 if (string.IsNullOrEmpty(audio.CurrentMusicTrack))
                     audio.PlayMusic(hooks.IntroSong());
-                if (titleScreens.RunTitleScreens(loop, TitleKeyAction.Menu) == TitleKeyAction.Menu)
+                if (titleScreens.RunTitleScreens(loop, TitleKeyAction.Menu, out bool showedAny) == TitleKeyAction.Menu || !showedAny)
                     break;
-            }
-
-            while (!engine.GameParams.NoWait && loop.Count == 0)
-            {
-                //
-                // title page
-                //
-                DrawTitle();
-                video.Update();
-                FadeInTitle();
-
-                if (input.UserInput(Timing.TickBase * 15))
-                    break;
-                video.FadeOut();
-
-                //
-                // credits page
-                //
-                ClearMargins();
-                graphics.DrawPic("credits", 0, 0);
-                video.Update();
-                video.FadeIn();
-                if (input.UserInput(Timing.TickBase * 10))
-                    break;
-                video.FadeOut();
-
-                //
-                // high scores
-                //
-                highScores.DrawHighScores();
-                video.Update();
-                video.FadeIn();
-
-                if (input.UserInput(Timing.TickBase * 10))
-                    break;
-
-                //
-                // demo
-                //
-                demos.PlayDemo(titleScreens.TakeNextTitleDemo());
-                if (session.PlayState == PlayState.Abort)
-                    break;
-                video.FadeOut();
-                if (video.HasMargins)
-                    video.ClearScreen(0x00); // 0x00 = Black
-                audio.PlayMusic(hooks.IntroSong());
             }
 
             video.FadeOut();
 
-            if (input.IsKeyDown(ScanCodes.Tab))
+            // Tab held as the loop is left records a demo (Wolf3D's)
+            if (titleScreens.LeftHoldingTab || input.IsKeyDown(ScanCodes.Tab))
                 demos.RecordDemo();
             else
                 quickKeys.OpenControlPanel(0);

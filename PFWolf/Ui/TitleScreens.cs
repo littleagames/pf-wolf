@@ -1,6 +1,7 @@
 using PFWolf.Assets;
 using PFWolf.Extensions;
 using PFWolf.Entities;
+using PFWolf.Fonts;
 using PFWolf.Managers;
 
 namespace PFWolf.Ui;
@@ -22,11 +23,11 @@ internal sealed record TitleScreenHooks(Func<int, bool> DemoExists, Func<int, bo
                                 TITLE SCREENS
 
 game-info's title-sequence: its intro (shown once as the game starts) and loop (shown over and
-over until a key is pressed, then the menu): lists of screens, each a picture, a movie, a page
-of presenter text or the high scores, faded in with its palette and held for a time. A key does
-the screen's on-key: by default it skips an intro screen, and in the loop goes to the menu.
-Without them, a game pack gets Wolf3D's: the notice, PG-13, then title, credits, high scores
-and a demo.
+over until a key is pressed, then the menu): lists of screens, each a picture, a movie, a demo,
+lines of text, a page of presenter text or the high scores, faded in with its palette and held
+for a time. A key does the screen's on-key: by default it skips an intro screen, and in the loop
+goes to the menu. Wolf3D's notice, PG-13, title, credits, high scores and demos are all
+gamepacks/wolf3d's title-sequence.
 
 =============================================================================
 */
@@ -34,42 +35,11 @@ and a demo.
 internal sealed class TitleScreens(VideoManager video, AudioManager audio, InputManager input, GraphicManager graphics,
     AssetManager assets, MenuDrawing draw, UiText ui, MoviePlayer movies, TitleScreenHooks hooks)
 {
-    /// <summary>Wolf3D's notice that the game isn't shareware (game-info non-shareware-notice)</summary>
-    internal void NonShareware()
-    {
-        video.FadeOut();
-
-        draw.ClearMScreen();
-        draw.DrawStripes(10);
-
-        ui.TextAt(110, 15, UiFonts.MenuStyle("READHCOLOR")).Print("Attention");
-
-        var notice = ui.TextAt(40, 60, UiFonts.MenuStyle("HIGHLIGHT"));
-        notice.Print("This game is NOT shareware.\n");
-        notice.Print("Please do not distribute it.\n");
-        notice.Print("Thanks.\n\n");
-
-        notice.Print("        Id Software\n");
-
-        video.Update();
-        video.FadeIn();
-        input.Ack();
-    }
-
-    /// <summary>Wolf3D's PG-13 rating screen</summary>
-    internal void Pg13()
-    {
-        video.FadeOut();
-        video.FillScreen("Light Blue");     // background
-
-        graphics.DrawPic("pg13", 216, 110);
-        video.Update();
-
-        video.FadeIn();
-        input.UserInput(Timing.TickBase * 7);
-
-        video.FadeOut();
-    }
+    /// <summary>
+    /// Whether Tab was held as the last screen was left with a key: the title loop then records
+    /// a demo rather than opening the menu (Wolf3D's), and the screens have cleared the keys by then
+    /// </summary>
+    internal bool LeftHoldingTab { get; private set; }
 
     /// <summary>The demo the title loop plays next</summary>
     int nextTitleDemo;
@@ -96,20 +66,23 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     /// <summary>
     /// Shows the screens in turn, until a key does menu or end-intro (which it says) or they've
     /// all been shown (null). <paramref name="listDefault"/> is what a key does on a screen
-    /// with no on-key: next in the intro, menu in the loop.
+    /// with no on-key: next in the intro, menu in the loop. <paramref name="showedAny"/> is false
+    /// when every screen was left out (pictures the game hasn't got).
     /// </summary>
-    internal TitleKeyAction? RunTitleScreens(List<TitleScreenInfo> screens, TitleKeyAction listDefault)
+    internal TitleKeyAction? RunTitleScreens(List<TitleScreenInfo> screens, TitleKeyAction listDefault, out bool showedAny)
     {
+        showedAny = false;
         foreach (var screen in screens)
         {
-            var ended = RunTitleScreen(screen, KeyActionFor(screen, listDefault), listDefault);
+            var ended = RunTitleScreen(screen, KeyActionFor(screen, listDefault), listDefault, out bool shown);
+            showedAny |= shown;
             if (ended is TitleKeyAction.Menu or TitleKeyAction.EndIntro)
                 return ended;
         }
         return null;
     }
 
-    /// <summary>on-key values already warned about, so a loop doesn't warn each time round</summary>
+    /// <summary>on-key values and missing pictures already warned about, so a loop doesn't warn each time round</summary>
     readonly HashSet<string> warnedOnKeys = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>What a key does on the screen: its on-key, or the list's default</summary>
@@ -136,11 +109,24 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     }
 
     /// <summary>
-    /// Shows one title screen. Returns what the key that ended it does (next, menu or
-    /// end-intro), or null if nothing did.
+    /// Shows one title screen (<paramref name="shown"/>, unless it's left out). Returns what the
+    /// key that ended it does (next, menu or end-intro), or null if nothing did.
     /// </summary>
-    TitleKeyAction? RunTitleScreen(TitleScreenInfo screen, TitleKeyAction onKey, TitleKeyAction listDefault)
+    TitleKeyAction? RunTitleScreen(TitleScreenInfo screen, TitleKeyAction onKey, TitleKeyAction listDefault, out bool shown)
     {
+        // A game with no demos, or without the picture (a mod's replaced graphics with no PG-13), leaves the screen out
+        int demoNumber = screen.Demo ? TakeNextTitleDemo() : -1;
+        if (screen.Demo)
+            shown = hooks.DemoExists(demoNumber);
+        else
+        {
+            shown = string.IsNullOrEmpty(screen.Pic) || !string.IsNullOrEmpty(screen.Movie) || assets.Exists<GraphicAsset>(screen.Pic);
+            if (!shown && warnedOnKeys.Add("pic:" + screen.Pic))
+                Console.WriteLine($"title-sequence screen with pic '{screen.Pic}' left out: the game has no such picture");
+        }
+        if (!shown)
+            return null;
+
         if (!string.IsNullOrEmpty(screen.FadeFrom))
             video.FadeOut(Color.FromHexRGBA(screen.FadeFrom), 20);
 
@@ -153,24 +139,39 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
         var keyEnds = onKey is TitleKeyAction.Finish or TitleKeyAction.Ignore ? listDefault : onKey;
 
         bool pressed;
+        string? resumeMusic = null;
         if (!string.IsNullOrEmpty(screen.Movie))
             pressed = movies.PlayMovie(screen.Movie, skippable: onKey != TitleKeyAction.Ignore);
         else if (screen.Demo)
         {
-            pressed = hooks.PlayDemo(TakeNextTitleDemo());
+            // The demo plays its level's music; what was playing comes back after, unless a key ended it
+            var playing = audio.CurrentMusicTrack;
+            pressed = hooks.PlayDemo(demoNumber);
+            if (!pressed && !string.IsNullOrEmpty(playing))
+                resumeMusic = playing;
         }
         else
         {
-            if (!string.IsNullOrEmpty(screen.Background))
+            // Drawn behind what's on screen, so the last screen (the signon) has to fade out first
+            if (!video.ScreenFaded)
+                video.FadeOut();
+
+            if (screen.MenuBackground)
+                draw.ClearMScreen();
+            else if (!string.IsNullOrEmpty(screen.Background))
                 video.FillScreen(screen.Background);
             else
                 hooks.ClearMargins();
+            if (screen.Stripe is { } stripeY)
+                draw.DrawStripes(stripeY);
             if (screen.HighScores)
                 hooks.DrawHighScores();
             if (screen.Title)
                 hooks.DrawTitle();
             if (!string.IsNullOrEmpty(screen.Pic))
                 graphics.DrawPic(screen.Pic, screen.X, screen.Y);
+            foreach (var line in screen.Lines)
+                ui.TextAt(line.X, line.Y, new TextStyle(line.Font ?? UiFonts.MenuFont, line.Color)).Print(line.Text);
             if (screen.Text is { } text)
                 hooks.DrawText(text);
 
@@ -200,13 +201,17 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             }
 
             if (!pressed)
-                pressed = WaitOnTitleScreen(screen, ignoreKeys: onKey == TitleKeyAction.Ignore);
+                pressed = WaitOnTitleScreen(screen, ignoreKeys: onKey == TitleKeyAction.Ignore && !screen.WaitForKey);
         }
 
         if (!string.IsNullOrEmpty(screen.FadeTo))
             video.FadeOut(Color.FromHexRGBA(screen.FadeTo), 20);
         if (!video.ScreenFaded)
             video.FadeOut();
+        if (resumeMusic != null)
+            audio.PlayMusic(resumeMusic);
+
+        LeftHoldingTab = pressed && input.IsKeyDown(ScanCodes.Tab);
         input.ClearKeysDown();
         return pressed ? keyEnds : null;
     }
@@ -229,12 +234,19 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     }
 
     /// <summary>
-    /// Holds a screen for its seconds, or until its music ends; true if a key ended it (never
-    /// when <paramref name="ignoreKeys"/>)
+    /// Holds a screen for its seconds, until its music ends or until a key; true if a key ended
+    /// it (never when <paramref name="ignoreKeys"/>)
     /// </summary>
     bool WaitOnTitleScreen(TitleScreenInfo screen, bool ignoreKeys)
     {
         input.StartAck();
+        if (screen.WaitForKey)
+        {
+            while (!KeyPressed())
+                GameEngineManager.DelayMs(5);
+            return true;
+        }
+
         if (screen.UntilMusicEnds && audio.IsMusicPlaying)
         {
             while (audio.IsMusicPlaying)

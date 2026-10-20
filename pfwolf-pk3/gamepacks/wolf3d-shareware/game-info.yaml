@@ -2,8 +2,15 @@
 # (the release's base-pack), which says what each setting does; anything not here is Wolf3D's,
 # and `!remove` takes one of Wolf3D's out.
 
-# Shareware: no "This game is NOT shareware" notice
-non-shareware-notice: false
+# Shareware: no "This game is NOT shareware" notice, only the rating screen (Wolf3D's loop)
+title-sequence:
+  intro:
+    - background: Light Blue
+      pic: pg13
+      x: 216
+      y: 110
+      music: NAZI_NOR
+      seconds: 7
 
 # Wolf3D's layout, but the level column is a plain floor number: one episode, so no "E1/L"
 high-scores:

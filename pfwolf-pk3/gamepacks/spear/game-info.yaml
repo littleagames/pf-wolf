@@ -23,8 +23,15 @@ menu-stripe:
   line-y: 23
   line-color: Black
 
-# Spear was never shareware
-non-shareware-notice: !remove
+# Spear was never shareware: no notice, only the rating screen (Wolf3D's loop)
+title-sequence:
+  intro:
+    - background: Light Blue
+      pic: pg13
+      x: 216
+      y: 110
+      music: XTOWER2
+      seconds: 7
 
 # id's Spear layout: the title picture carries the column headings, the rows are in the big
 # font, and a game won shows the Spear in place of its floor

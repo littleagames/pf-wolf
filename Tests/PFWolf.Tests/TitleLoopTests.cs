@@ -3,7 +3,7 @@ namespace PFWolf.Tests;
 public class TitleLoopTests
 {
     private static TitleLoop Make() =>
-        new(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, new WarpRequest(),
+        new(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, new WarpRequest(),
             new GameSession(), new TitleLoopHooks(() => "INTRO", (_, _, _) => Assert.Fail("no game")));
 
     [Test]

@@ -335,7 +335,7 @@ internal static partial class GameHost
             _graphicManager, _fontManager, ui, () => MouseEnabled, () => Scripts?.Loaded.Count ?? 0);
 
         titleLoop = new TitleLoop(GameEngineManager, AssetManager, _videoManager, _graphicManager, _inputManager, AudioManager, ui,
-            signonPanel, titleScreens, highScoresScreen, demos, netGames, quickKeys, mainGameLoop, cheatCommands, warpRequest, Session,
+            signonPanel, titleScreens, demos, netGames, quickKeys, mainGameLoop, cheatCommands, warpRequest, Session,
             new TitleLoopHooks(() => IntroSong,
                 (skill, episode, map) => NewGame(skill, episode, map)));
 

@@ -139,6 +139,34 @@ public class TitleSequenceTests
     }
 
     [Test]
+    public void Wolf3Ds_Intro_Is_The_Notice_Then_The_Rating_And_Its_Loop_Ends_In_A_Demo()
+    {
+        // Act
+        var sequence = ReadPack("wolf3d").TitleSequence;
+
+        // Assert
+        var notice = sequence.Intro[0];
+        Assert.That((notice.MenuBackground, notice.Stripe, notice.WaitForKey), Is.EqualTo((true, (int?)10, true)));
+        Assert.That(notice.Lines.Select(line => (line.X, line.Y, line.Color)), Is.EqualTo(new[] { (110, 15, "READHCOLOR"), (40, 60, "HIGHLIGHT") }));
+        Assert.That(notice.Lines[1].Text, Does.StartWith("This game is NOT shareware.\nPlease do not distribute it.\n"));
+        Assert.That((sequence.Intro[1].Pic, sequence.Intro[1].Background, sequence.Intro[1].Music), Is.EqualTo(("pg13", "Light Blue", "NAZI_NOR")));
+        Assert.That(sequence.Loop.Select(screen => (screen.Title, screen.Pic, screen.HighScores, screen.Demo, screen.Seconds)),
+            Is.EqualTo(new[] { (true, (string?)null, false, false, 15.0), (false, "credits", false, false, 10.0), (false, null, true, false, 10.0), (false, null, false, true, 0.0) }));
+    }
+
+    [TestCase("wolf3d-shareware", "NAZI_NOR")]
+    [TestCase("spear", "XTOWER2")]
+    public void Packs_That_Were_Never_Sold_As_Registered_Show_Only_The_Rating_And_Keep_Wolf3Ds_Loop(string pack, string music)
+    {
+        // Act
+        var sequence = ReadPack("wolf3d", pack).TitleSequence;
+
+        // Assert
+        Assert.That(sequence.Intro.Select(screen => (screen.Pic, screen.Music)), Is.EqualTo(new[] { ("pg13", music) }));
+        Assert.That(sequence.Loop, Is.EqualTo(ReadPack("wolf3d").TitleSequence.Loop).Using<TitleScreenInfo>((a, b) => a.Pic == b.Pic && a.Title == b.Title && a.Demo == b.Demo));
+    }
+
+    [Test]
     public void The_Standalone_Demo_Has_A_Title_Loop()
     {
         // Act

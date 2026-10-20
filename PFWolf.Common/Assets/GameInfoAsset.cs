@@ -50,11 +50,6 @@ public record GameInfoAsset : Asset
     public int? PushwallDistance { get; init; }
 
     /// <summary>
-    /// Show the "This game is NOT shareware" notice before the title (Wolf3D's registered versions)
-    /// </summary>
-    public bool NonSharewareNotice { get; init; }
-
-    /// <summary>
     /// Title screen graphics, drawn stacked top to bottom (Spear's title is two halves)
     /// </summary>
     public List<string> TitlePics { get; init; } = [];
@@ -601,8 +596,10 @@ public static class TitleKeyActions
 
 /// <summary>
 /// One of game-info's title-sequence screens. It's a movie, a demo, or else drawn from a
-/// background color, the high scores, the title, a picture and presenter text (each when set,
-/// in that order), then held for its seconds or until its music ends.
+/// background color (or the menu's background and stripe), the high scores, the title, a
+/// picture, lines of text and presenter text (each when set, in that order), then held for its
+/// seconds, until its music ends or until a key. A screen whose picture the game doesn't have
+/// is left out.
 /// </summary>
 public record TitleScreenInfo
 {
@@ -621,6 +618,15 @@ public record TitleScreenInfo
 
     /// <summary>Fills the screen first: a color name, #RRGGBB or palette index</summary>
     public string? Background { get; init; }
+
+    /// <summary>Draws the control panel's background (menu-backdrop, or its border color) in place of a background</summary>
+    public bool MenuBackground { get; init; }
+
+    /// <summary>Draws the menu's stripe (game-info menu-stripe) across the screen at this y</summary>
+    public int? Stripe { get; init; }
+
+    /// <summary>Text printed at points on the screen (Wolf3D's non-shareware notice)</summary>
+    public List<TitleLineInfo> Lines { get; init; } = [];
 
     public bool HighScores { get; init; }
 
@@ -652,6 +658,9 @@ public record TitleScreenInfo
     /// <summary>Stays up until the music ends (when music is on), unless a key is pressed</summary>
     public bool UntilMusicEnds { get; init; }
 
+    /// <summary>Stays up until a key is pressed, however long (its seconds are ignored, and so is on-key ignore)</summary>
+    public bool WaitForKey { get; init; }
+
     /// <summary>#RRGGBB the screen fades to before it's shown (Blake Stone's blue)</summary>
     public string? FadeFrom { get; init; }
 
@@ -666,6 +675,20 @@ public record TitleScreenInfo
 
     /// <summary>Tics the fizzle takes</summary>
     public int FizzleTics { get; init; } = 70;
+}
+
+/// <summary>Text printed on a title screen from x, y; a \n in it comes back to x on the next line</summary>
+public record TitleLineInfo
+{
+    public string Text { get; init; } = "";
+    public int X { get; init; }
+    public int Y { get; init; }
+
+    /// <summary>The font; the menu font (LargeFont) when unset</summary>
+    public string? Font { get; init; }
+
+    /// <summary>A color name (such as the menus' HIGHLIGHT), #RRGGBB or palette index</summary>
+    public string Color { get; init; } = "HIGHLIGHT";
 }
 
 /// <summary>Presenter text on a title screen: a VGAGRAPH text, its window and colors (palette indices)</summary>
