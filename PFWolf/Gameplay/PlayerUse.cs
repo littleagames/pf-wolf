@@ -14,6 +14,8 @@ namespace PFWolf.Gameplay;
 /// <param name="Message">Shows the acting player a message (a $NAME language key or the text)</param>
 /// <param name="LeaveVehicle">Gets the player off what they're riding: true if they were riding (Gameplay/Vehicles.cs)</param>
 /// <param name="VehicleHint">Riding, the use hint (getting off at a dock beside them), else null</param>
+/// <param name="ExitBlock">Whether the objectives keep the level shut, and their refused message (Objectives.ExitBlock)</param>
+/// <param name="ShowFacing">Keeps the facing message up (text, style): renewed each tic, it lasts while it's faced</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
@@ -22,7 +24,9 @@ internal sealed record PlayerUseHooks(
     Func<bool>? ModeUse = null,
     Action<string>? Message = null,
     Func<bool>? LeaveVehicle = null,
-    Func<string?>? VehicleHint = null);
+    Func<string?>? VehicleHint = null,
+    Func<(bool Blocked, string? Message)>? ExitBlock = null,
+    Action<string, string?>? ShowFacing = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -215,6 +219,37 @@ internal sealed class PlayerUse(
 
         audio.WaitSoundDone();
         return true;
+    }
+
+    /// <summary>
+    /// Each tic: the facing message of the use trigger on the tile the player faces (its
+    /// `facing-message`, Midnight Assault's "Press Use to Exit Level"), kept up while they face
+    /// it. An exit (A_Exit, A_SecretExit) the objectives keep shut says why instead, with its
+    /// refused message ("2 items left to sabotage to exit level."), as the original's
+    /// CheckFacingTile. Only for the local player, alive and not riding.
+    /// </summary>
+    internal void ShowFacingMessage()
+    {
+        if (!session.ActingIsLocal || session.Player is not { } player || session.PlayerState.Health <= 0
+            || session.PlayerState.Vehicle != null || hooks.ShowFacing == null)
+            return;
+        var (x, y, _) = FacingTile(player);
+        if (!map.InMap(x, y) || map.GetTrigger(x, y) is not { IsWalkOver: false, FacingMessage.Length: > 0 } trigger)
+            return;
+        if (FacingText(trigger, hooks.ExitBlock?.Invoke() ?? (false, null)) is { } text)
+            hooks.ShowFacing(text, trigger.FacingStyle.Length > 0 ? trigger.FacingStyle : null);
+    }
+
+    /// <summary>
+    /// What a use trigger's facing message says: its own, or for an exit the objectives keep shut
+    /// their refused message (nothing if they have none)
+    /// </summary>
+    internal static string? FacingText(MapTriggerTranslation trigger, (bool Blocked, string? Message) exitBlock)
+    {
+        var action = trigger.Action.TrimStart();
+        bool exit = action.StartsWith("A_Exit", StringComparison.OrdinalIgnoreCase)
+            || action.StartsWith("A_SecretExit", StringComparison.OrdinalIgnoreCase);
+        return exit && exitBlock.Blocked ? exitBlock.Message : trigger.FacingMessage;
     }
 
     /// <summary>The tile the player faces, by the nearest of the four directions, and that direction</summary>

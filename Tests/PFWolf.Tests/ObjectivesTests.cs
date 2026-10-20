@@ -108,6 +108,31 @@ public class ObjectivesTests
     }
 
     [Test]
+    public void Exit_Block_Says_Why_Without_Showing_It()
+    {
+        // Arrange
+        _switches.AddRange([Panel(), Panel()]);
+        _objectives.CountLevel(announce: false);
+        int shown = _messages.Count;
+
+        // Act / Assert
+        Assert.That(_objectives.ExitBlock(), Is.EqualTo((true, (string?)"2 left to sabotage.")));
+        Assert.That(_messages, Has.Count.EqualTo(shown));
+        _objectives.Complete("sabotage", 2);
+        Assert.That(_objectives.ExitBlock(), Is.EqualTo((false, (string?)null)));
+    }
+
+    [TestCase("A_Exit", true, "2 left", "2 left")]                 // a shut exit says why
+    [TestCase("A_SecretExit", true, "2 left", "2 left")]
+    [TestCase("A_Exit", false, null, "Press Use to Exit Level")]   // an open one, its own
+    [TestCase("A_PushWall", true, "2 left", "Press Use to Exit Level")]   // not an exit
+    public void A_Use_Triggers_Facing_Message(string action, bool blocked, string? refused, string expected)
+    {
+        var trigger = new MapTriggerTranslation { Action = action, FacingMessage = "Press Use to Exit Level" };
+        Assert.That(PlayerUse.FacingText(trigger, (blocked, refused)), Is.EqualTo(expected));
+    }
+
+    [Test]
     public void A_Targets_Death_Completes_One_And_The_Last_Can_Jump()
     {
         // Arrange: two targets, one with a Goal state to go to once all are down

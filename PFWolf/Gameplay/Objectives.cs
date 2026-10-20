@@ -107,15 +107,25 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
     /// </summary>
     internal bool ExitAllowed()
     {
+        var (blocked, message) = ExitBlock();
+        if (message != null)
+            hooks.ShowMessage(message);
+        return !blocked;
+    }
+
+    /// <summary>
+    /// Whether a blocks-exit objective keeps the level from being left, and its refused message
+    /// (how many are left) if it has one; nothing's shown
+    /// </summary>
+    internal (bool Blocked, string? Message) ExitBlock()
+    {
         foreach (var (name, count) in map.ObjectiveCounts)
         {
             if (count.Left == 0 || Info(name) is not { BlocksExit: true } info)
                 continue;
-            if (info.Refused is { Length: > 0 } refused)
-                hooks.ShowMessage(Format(refused, count.Left));
-            return false;
+            return (true, info.Refused is { Length: > 0 } refused ? Format(refused, count.Left) : null);
         }
-        return true;
+        return (false, null);
     }
 
     /// <summary>The automap's stats lines for the level's objectives</summary>

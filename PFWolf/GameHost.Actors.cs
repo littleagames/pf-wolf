@@ -260,7 +260,9 @@ internal static partial class GameHost
             new PlayerUseHooks(PlayPlayerSound, () => MountedWeapons.TryDismount(),
                 (objective, amount) => Objectives.Complete(objective, amount), () => Objectives.ExitAllowed(),
                 () => deathmatch.Objective?.PlayerUse() == true,
-                message => HudMessageManager.Show(HudMessageKind.Lock, message), () => Vehicles.TryLeave(), () => Vehicles.Hint()));
+                message => HudMessageManager.Show(HudMessageKind.Lock, message), () => Vehicles.TryLeave(), () => Vehicles.Hint(),
+                () => Objectives.ExitBlock(),
+                (text, style) => HudMessageManager.ShowKeyed("facing", text, style ?? HudMessageManager.KindStyle(HudMessageKind.Lock))));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
@@ -279,6 +281,7 @@ internal static partial class GameHost
                 Vehicles.Tick();                // and off a vehicle (dying, a new level)
                 Latching.Tick();                // and out of a struggle that's over
                 Stealth.Tick();                 // the suspicion meter
+                playerUse.ShowFacingMessage();  // a use trigger's facing-message (the exits')
             },
             () => deathmatch.Objective?.IsWaiting(Session.PlayerState) == true));
 

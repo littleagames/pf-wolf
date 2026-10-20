@@ -351,6 +351,16 @@ public record MapTriggerTranslation
 
     /// <summary>A use trigger's use hint, shown while the player faces its tile (statusbar.yaml use-hint's hints, by name)</summary>
     public string Hint { get; set; } = "";
+
+    /// <summary>
+    /// "facing-message": a use trigger's message, kept up while the player faces its tile (a $NAME
+    /// language key or the text: Midnight Assault's "Press Use to Exit Level"). For an exit
+    /// (A_Exit, A_SecretExit) the objectives keep shut, their refused message shows instead.
+    /// </summary>
+    public string FacingMessage { get; set; } = "";
+
+    /// <summary>"facing-style": the hud-messages.yaml style the facing message shows in; the locked-door one when unset</summary>
+    public string FacingStyle { get; set; } = "";
 }
 
 public record MapActorTranslation
