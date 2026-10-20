@@ -24,6 +24,9 @@ public enum DefinitionKind
 
     /// <summary>The game pack's factions.yaml (a mod's at its root): the sides actors are on, and how each treats the others</summary>
     Factions,
+
+    /// <summary>graphicdefs/: pictures cut out of sprites, walls and other pictures</summary>
+    Graphics,
 }
 
 public static class DefinitionKinds
@@ -37,6 +40,7 @@ public static class DefinitionKinds
         DefinitionKind.Actors => "Actors",
         DefinitionKind.Animations => "Animations",
         DefinitionKind.Factions => "Factions",
+        DefinitionKind.Graphics => "Cropped pictures",
         _ => "Map definitions",
     };
 
@@ -69,6 +73,7 @@ public static class DefinitionKinds
         DefinitionKind.Actors => "actordefs/",
         DefinitionKind.MapDefs => "mapdefs/",
         DefinitionKind.Animations => "animdefs/",
+        DefinitionKind.Graphics => "graphicdefs/",
         _ => null,
     };
 
@@ -104,6 +109,9 @@ public static class DefinitionKinds
                 break;
             case DefinitionKind.Animations:
                 YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, AnimationDefinition>>(yaml);
+                break;
+            case DefinitionKind.Graphics:
+                YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, GraphicDefinition>>(yaml);
                 break;
             case DefinitionKind.Factions:
                 YamlDataEntryLoader.DeserializeQuietly<FactionsAsset>(yaml);

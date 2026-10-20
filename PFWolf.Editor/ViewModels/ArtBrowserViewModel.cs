@@ -265,6 +265,8 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     /// <summary>Where a change to the picture shown goes</summary>
     public string FileText => IsAnimation
         ? "Its frames are pictures of their own (change those); animdefs says how it plays (Definitions, F11: Animations)"
+        : IsCrop
+        ? "Cut from another picture (change that); graphicdefs says where (Definitions, F11: Cropped pictures)"
         : ModFile != null
             ? $"In {ModFile}: changes are saved there"
             : SelectedItem != null ? "The game's own: a change puts a picture of the same name in a mod" : "";
@@ -288,8 +290,8 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(UseInPaletteCommand))]
     private ArtItem? _selectedItem;
 
-    /// <summary>Replace… applies: a picture is picked that isn't an animation</summary>
-    public bool CanReplace => HasSelection && !IsAnimation;
+    /// <summary>Replace… applies: a picture is picked that isn't an animation or a crop</summary>
+    public bool CanReplace => HasSelection && !IsAnimation && !IsCrop;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PreviewWidth), nameof(PreviewHeight))]
@@ -320,6 +322,12 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
 
     /// <summary>The animation picked is an animation (animdefs): its pictures are its frames', which are edited as themselves</summary>
     public bool IsAnimation => SelectedItem?.Entry.Animation != null;
+
+    /// <summary>
+    /// The picture picked is cut from another (graphicdefs): its pixels are its source's, and a
+    /// mod's picture of its name would be cut over, so it's changed through those
+    /// </summary>
+    public bool IsCrop => SelectedItem?.Entry.Crop != null;
 
     /// <summary>The frame shown while it isn't playing; picking one stops it</summary>
     [ObservableProperty]
@@ -484,6 +492,13 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
                 details += $"\nAn animation (animdefs): {animation.Frames.Count} frames, {animation.TotalTics} tics ({animation.TotalTics / 70.0:0.##} s), "
                            + (animation.Loops ? "over and over" : "once, holding the last frame (the preview starts it over)")
                            + ". The map and 3D view show its first frame. Its frames are edited as themselves: double-click one to go to it.";
+            }
+            if (entry.Crop is { } crop)
+            {
+                details += $"\nCut from {crop.Source?.ToUpperInvariant()} at {crop.X}, {crop.Y} (graphicdefs)"
+                           + (string.IsNullOrWhiteSpace(crop.Background) ? "" : $", see-through pixels filled with {crop.Background}");
+                if (_content?.Assets.CropProblems.GetValueOrDefault(entry.Name) is { } problem)
+                    details += $"\n⚠ {problem}";
             }
             return details;
         }
@@ -663,6 +678,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         SelectedFrame = null;
         Frames.Clear();
         OnPropertyChanged(nameof(IsAnimation));
+        OnPropertyChanged(nameof(IsCrop));
         EditPixelsCommand.NotifyCanExecuteChanged();
         EditOutsideCommand.NotifyCanExecuteChanged();
         if (value == null)
@@ -720,6 +736,8 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     {
         if (_content == null || !ArtFiles.Exists(_content, kind, name))
             return null;
+        if (kind == ArtKind.Picture && _content.Assets.Crops.GetValueOrDefault(name) is { } crop)
+            return $"graphicdefs cuts {name.ToUpperInvariant()} from {crop.Source?.ToUpperInvariant()}, and that's used over a picture of the name: this one won't show.";
         var from = ArtCatalog.Origins(_content, name, ArtFiles.AssetType(kind)).LastOrDefault(origin => origin.Action != PFWolf.Loaders.AssetOrigin.LeftOut)?.Source;
         return $"It replaces the {name.ToUpperInvariant()} the game has{(from != null ? $" (from {from})" : "")}.";
     }
@@ -741,6 +759,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         if (entry.Animation != null)
         {
             Status = $"{entry.Name} is an animation: replace its frames (double-click one to go to it)";
+            return;
+        }
+        if (entry.Crop is { } crop)
+        {
+            Status = $"{entry.Name} is cut from {crop.Source?.ToUpperInvariant()}: replace that, or change where it's cut in Definitions (F11)";
             return;
         }
         var name = CurrentAssetName;
@@ -808,7 +831,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     //
 
     /// <summary>A picture that can be drawn on or replaced: picked, and not an animation (its frames are)</summary>
-    private bool CanEditPicture => HasSelection && !IsAnimation;
+    private bool CanEditPicture => HasSelection && !IsAnimation && !IsCrop;
 
     /// <summary>Opens the picture shown in the pixel editor</summary>
     [RelayCommand(CanExecute = nameof(CanEditPicture))]

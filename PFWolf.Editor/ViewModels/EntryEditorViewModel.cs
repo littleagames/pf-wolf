@@ -163,7 +163,8 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 
     public bool HasSelection => SelectedItem != null;
     public bool HasError => Error.Length > 0;
-    public bool CanAddEntries => Kind is DefinitionKind.GamePackInfo or DefinitionKind.MapDefs or DefinitionKind.Actors or DefinitionKind.Animations;
+    public bool CanAddEntries => Kind is DefinitionKind.GamePackInfo or DefinitionKind.MapDefs or DefinitionKind.Actors or DefinitionKind.Animations
+        or DefinitionKind.Graphics;
 
     /// <summary>What New… can make, when it's asked (mapdefs: its tables of entries, walls, doors, things...); empty when there's one kind</summary>
     public IReadOnlyList<NewEntryChoice> NewChoices { get; }
@@ -270,6 +271,14 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                     detail = "⚠ " + detail;
                 return (detail, count > 0 ? _owner.Art?.Invoke(FieldHint.Texture, names[0]!) : null);
             }
+            case DefinitionKind.Graphics:
+            {
+                // "GARDA1 20,2 24x32", the picture it makes as its picture; one the game left out says so
+                var detail = $"{Field("source")} {Field("x") ?? "0"},{Field("y") ?? "0"} {Field("width") ?? "?"}x{Field("height") ?? "?"}";
+                if (_owner.Content?.Assets.CropProblems.ContainsKey(entry.Name) == true)
+                    detail = "⚠ " + detail;
+                return (detail, _owner.Art?.Invoke(FieldHint.Picture, entry.Name));
+            }
             default:
                 return ("", null);
         }
@@ -280,6 +289,9 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         DefinitionKind.MapDefs => DefinitionSchemas.MapDefs.Field(entry.Path[0])?.Description,
         // What the game made of it when it loaded
         DefinitionKind.Animations => _owner.Content?.Assets.AnimationProblems.GetValueOrDefault(entry.Name) is { } problem
+            ? $"When the game loaded: {problem}"
+            : null,
+        DefinitionKind.Graphics => _owner.Content?.Assets.CropProblems.GetValueOrDefault(entry.Name) is { } problem
             ? $"When the game loaded: {problem}"
             : null,
         _ => null,
@@ -307,6 +319,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         DefinitionKind.GamePackInfo => "games",
         DefinitionKind.Actors => "classes",
         DefinitionKind.Animations => "animations",
+        DefinitionKind.Graphics => "pictures",
         _ => "entries",
     };
 
@@ -390,6 +403,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             ? path.Count > 1 && table.Type == FieldType.Dictionary ? table.Item! : table
             : FieldSchema.For(typeof(object), path[0]),
         DefinitionKind.Animations => DefinitionSchemas.Animation,
+        DefinitionKind.Graphics => DefinitionSchemas.Graphic,
         _ => DefinitionSchemas.Actor,
     };
 
@@ -654,6 +668,25 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                 };
                 break;
             }
+            case DefinitionKind.Graphics:
+            {
+                var name = await _owner.AskText("New cropped picture", "Its name (as menus, the status bar and player.face use it; a picture's own name replaces it everywhere):", "",
+                    candidate => candidate.Trim().Length == 0 || candidate.Trim().Any(c => char.IsWhiteSpace(c) || c is '/' or '\\' or ':')
+                        ? "A name without spaces, slashes or colons"
+                        : YamlNodes.Get(merged, [candidate.Trim()]) != null ? $"There's a {candidate.Trim()} already" : null);
+                if (name == null)
+                    return;
+                path = [name.Trim().ToUpperInvariant()];
+                value = new YamlMappingNode
+                {
+                    { "source", "" },
+                    { "x", "0" },
+                    { "y", "0" },
+                    { "width", "64" },
+                    { "height", "64" },
+                };
+                break;
+            }
             default:
             {
                 var name = await _owner.AskText("New class", "Its name (as mapdefs and other classes name it):", "",
@@ -857,4 +890,5 @@ public static class DefinitionSchemas
     public static FieldSchema MapDefs { get; } = FieldSchema.For(typeof(MapObjectTranslationAsset));
     public static FieldSchema Actor { get; } = ActorSchema.Build();
     public static FieldSchema Animation { get; } = AnimationSchema.Build();
+    public static FieldSchema Graphic { get; } = GraphicSchema.Build();
 }

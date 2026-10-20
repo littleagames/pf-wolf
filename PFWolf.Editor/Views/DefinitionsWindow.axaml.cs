@@ -5,7 +5,7 @@ using PFWolf.Editor.ViewModels;
 
 namespace PFWolf.Editor.Views;
 
-/// <summary>The definitions window: game info, game packs, actors and map definitions in fields, and every YAML file as text</summary>
+/// <summary>The definitions window: game info, game packs, actors, map definitions, animations and cropped pictures in fields, and every YAML file as text</summary>
 public partial class DefinitionsWindow : Window
 {
     private DefinitionsViewModel? _viewModel;
@@ -46,6 +46,7 @@ public partial class DefinitionsWindow : Window
         Definitions.DefinitionKind.GamePackInfo => GamePacksTab,
         Definitions.DefinitionKind.Actors => ActorsTab,
         Definitions.DefinitionKind.Animations => AnimationsTab,
+        Definitions.DefinitionKind.Graphics => GraphicsTab,
         Definitions.DefinitionKind.Factions => FactionsTab,
         _ => MapDefsTab,
     };
@@ -58,6 +59,7 @@ public partial class DefinitionsWindow : Window
         : Tabs.SelectedItem == ActorsTab ? _viewModel.Actors
         : Tabs.SelectedItem == MapDefsTab ? _viewModel.MapDefs
         : Tabs.SelectedItem == AnimationsTab ? _viewModel.Animations
+        : Tabs.SelectedItem == GraphicsTab ? _viewModel.Graphics
         : Tabs.SelectedItem == FactionsTab ? _viewModel.Factions
         : Tabs.SelectedItem == GamePacksTab ? _viewModel.GamePacks
         : null;
@@ -67,7 +69,7 @@ public partial class DefinitionsWindow : Window
     {
         if (_viewModel == null || e.Source != Tabs)
             return;
-        foreach (var editor in new[] { _viewModel.GameInfo, _viewModel.Actors, _viewModel.MapDefs, _viewModel.Animations, _viewModel.Factions, _viewModel.GamePacks })
+        foreach (var editor in new[] { _viewModel.GameInfo, _viewModel.Actors, _viewModel.MapDefs, _viewModel.Animations, _viewModel.Graphics, _viewModel.Factions, _viewModel.GamePacks })
         {
             if (editor != ShownEditor)
                 editor.Deactivate();

@@ -355,7 +355,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
                 Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
-                Art = (hint, name) => hint == Definitions.FieldHint.Class ? Art?.ThingSprite(name) : Art?.Texture(name),
+                Art = (hint, name) => hint switch
+                {
+                    Definitions.FieldHint.Class => Art?.ThingSprite(name),
+                    Definitions.FieldHint.Picture => Art?.Whole(Data.ArtKind.Picture, name),
+                    _ => Art?.Texture(name),
+                },
             };
             _definitions.SavedToMod += (_, folder) => AddModFolder(folder);
             _definitions.ReloadRequested += async (_, _) => await LoadAsync();

@@ -53,6 +53,10 @@
       <TabItem x:Name="AnimationsTab" Header="Animations">
         <v:EntryEditorView DataContext="{Binding Animations}" />
       </TabItem>
+      <TabItem x:Name="GraphicsTab" Header="Cropped pictures"
+               ToolTip.Tip="graphicdefs: pictures cut out of sprites, walls and other pictures">
+        <v:EntryEditorView DataContext="{Binding Graphics}" />
+      </TabItem>
       <TabItem x:Name="FactionsTab" Header="Factions">
         <v:EntryEditorView DataContext="{Binding Factions}" />
       </TabItem>

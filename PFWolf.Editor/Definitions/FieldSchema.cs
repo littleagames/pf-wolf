@@ -47,6 +47,8 @@ public enum FieldHint
     Faction,
     /// <summary>A sprite color translation (translations.yaml)</summary>
     Translation,
+    /// <summary>A sprite (GARDA1), wall texture or picture by its own name: what graphicdefs crops</summary>
+    Art,
 }
 
 /// <summary>

@@ -136,6 +136,10 @@ public class AssetManager
         BuildAnimations();
     }
 
+    /// <summary>The pictures graphicdefs made, by name, with the definition each was cut by</summary>
+    public IReadOnlyDictionary<string, GraphicDefinition> Crops => _crops;
+    private readonly Dictionary<string, GraphicDefinition> _crops = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>What's wrong with graphicdefs' pictures, by name: left out, or cropped past their source</summary>
     public IReadOnlyDictionary<string, string> CropProblems => _cropProblems;
     private readonly Dictionary<string, string> _cropProblems = new(StringComparer.OrdinalIgnoreCase);
@@ -154,6 +158,7 @@ public class AssetManager
                 foreach (var (graphic, definition) in Find<GraphicDefinitionsAsset>(name)!.Graphics)
                     definitions[graphic] = definition;
 
+        _crops.Clear();
         _cropProblems.Clear();
         var built = new List<(string Key, GraphicDefinition Definition, GraphicAsset Graphic)>();
         foreach (var (name, definition) in definitions)
@@ -165,7 +170,10 @@ public class AssetManager
             }
 
             if (CropOf(definition, Problem) is { } graphic)
+            {
                 built.Add((GetKey(name, nameof(GraphicAsset)), definition, graphic));
+                _crops[name] = definition;
+            }
         }
 
         foreach (var (key, definition, graphic) in built)

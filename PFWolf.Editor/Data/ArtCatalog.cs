@@ -40,6 +40,9 @@ public sealed record ArtEntry(ArtKind Kind, string Name, int Width, int Height, 
     /// <summary>For an animdefs animation, its frames; null for a picture that isn't one</summary>
     public ArtAnimation? Animation { get; init; }
 
+    /// <summary>For a graphicdefs picture, how it's cut from its source; null for a picture that isn't one</summary>
+    public GraphicDefinition? Crop { get; init; }
+
     /// <summary>The asset shown for the entry: the picture itself, or a rotating frame's first side</summary>
     public string AssetName => Rotations.Count > 0 ? Rotations[0] : Name;
 
@@ -106,6 +109,19 @@ public static class ArtCatalog
     {
         var uses = Uses(content);
         var spriteUses = SpriteUses(content);
+
+        // A cropped picture's source is used by it: a sprite by its frame, as the browser lists sprites
+        foreach (var (name, crop) in content.Assets.Crops.OrderBy(crop => crop.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            var source = crop.Source?.Trim().ToUpperInvariant() ?? "";
+            var use = new ArtUse($"Cropped picture {name.ToUpperInvariant()}");
+            var (table, key) = content.Assets.Exists<SpriteAsset>(source) && crop.Kind is null or "" or GraphicDefinition.SpriteKind
+                ? (spriteUses, SpriteFrame(source) ?? source)
+                : (uses, source);
+            if (!table.TryGetValue(key, out var list))
+                table[key] = list = [];
+            list.Add(use);
+        }
         var entries = new List<ArtEntry>();
         var spriteNames = new List<string>();
 
@@ -125,8 +141,13 @@ public static class ArtCatalog
                 spriteNames.Add(display);
             if (content.Find<GraphicAsset>(name) is { } picture)
             {
+                var animation = ArtAnimation.Of(content, name, picture: true);
                 entries.Add(new ArtEntry(ArtKind.Picture, display, picture.Width, picture.Height, Origins(content, name, nameof(GraphicAsset)),
-                    uses.GetValueOrDefault(display, [])) { Animation = ArtAnimation.Of(content, name, picture: true) });
+                    uses.GetValueOrDefault(display, []))
+                {
+                    Animation = animation,
+                    Crop = animation == null ? content.Assets.Crops.GetValueOrDefault(name) : null,
+                });
             }
         }
 
@@ -241,6 +262,23 @@ public static class ArtCatalog
             var animation = ArtAnimation.Of(content, name, picture: false) ?? ArtAnimation.Of(content, name, picture: true);
             for (int i = 0; i < (animation?.Frames.Count ?? 0); i++)
                 Add(animation!.Frames[i].Name, new ArtUse($"Animation {name.ToUpperInvariant()}, frame {i + 1}"));
+        }
+
+        // Status bar faces actordefs gives: a player class's own (player.face...) and a power-up's
+        string[] faceProperties = ["player.face", "player.facegrin", "player.faceouch", "player.facedead", "powerup.face"];
+        foreach (var (className, actor) in content.Actors.OrderBy(actor => actor.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            foreach (var property in faceProperties)
+            {
+                IEnumerable<string?> pics = actor.Properties.FirstOrDefault(p => p.Key.Equals(property, StringComparison.OrdinalIgnoreCase)).Value switch
+                {
+                    string one => [one],
+                    IEnumerable<object> list => list.Select(pic => pic?.ToString()),
+                    _ => [],
+                };
+                foreach (var pic in pics)
+                    Add(pic, new ArtUse($"{className}'s {property}"));
+            }
         }
 
         var defaults = content.DefaultMapInfo;

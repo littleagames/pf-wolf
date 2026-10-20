@@ -34,6 +34,9 @@ public sealed class DefinitionSuggestions
             FieldHint.Sprite => assets.AssetNames.Where(name => !name.Contains('/') && name.Length > 2 && char.IsDigit(name[^1]) && char.IsLetter(name[^2])
                                                                 && assets.Exists<SpriteAsset>(name))
                 .Select(name => name[..^2].ToUpperInvariant()),
+            FieldHint.Art => assets.AssetNames.Where(name => !name.Contains('/')
+                                                             && (assets.Exists<SpriteAsset>(name) || assets.Exists<TextureAsset>(name) || assets.Exists<GraphicAsset>(name)))
+                .Select(name => name.ToUpperInvariant()),
             FieldHint.Music => content.MusicNames,
             FieldHint.Map => content.Maps.Select(map => map.Name.ToUpperInvariant()),
             FieldHint.Font => assets.AssetNames.Where(name => !name.Contains('/') && assets.Exists<FontAsset>(name)),

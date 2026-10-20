@@ -31,6 +31,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         MapDefs = new EntryEditorViewModel(this, DefinitionKind.MapDefs);
         Animations = new EntryEditorViewModel(this, DefinitionKind.Animations);
         Factions = new EntryEditorViewModel(this, DefinitionKind.Factions);
+        Graphics = new EntryEditorViewModel(this, DefinitionKind.Graphics);
     }
 
     /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
@@ -42,7 +43,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>Asks a yes-or-no question (title, message, the yes button's label)</summary>
     public Func<string, string, string, Task<bool>>? Confirm { get; set; }
 
-    /// <summary>A picture for a name: a texture's, or a class's sprite (FieldHint.Class); null when there's none</summary>
+    /// <summary>A picture for a name: a texture's, a picture's (FieldHint.Picture), or a class's sprite (FieldHint.Class); null when there's none</summary>
     public Func<FieldHint, string, Avalonia.Media.Imaging.Bitmap?>? Art { get; set; }
 
     public EntryEditorViewModel GameInfo { get; }
@@ -51,6 +52,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     public EntryEditorViewModel MapDefs { get; }
     public EntryEditorViewModel Animations { get; }
     public EntryEditorViewModel Factions { get; }
+    public EntryEditorViewModel Graphics { get; }
 
     /// <summary>Something was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? SavedToMod;
@@ -181,7 +183,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>The definitions were saved: the tabs show them again</summary>
     public event EventHandler? DefinitionsChanged;
 
-    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, Factions, GamePacks];
+    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, Graphics, Factions, GamePacks];
 
     /// <summary>
     /// What's changed here and not saved (definitions in the tabs, the file in the YAML tab), as
@@ -216,6 +218,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
             DefinitionKind.GamePackInfo => GamePacks,
             DefinitionKind.Actors => Actors,
             DefinitionKind.Animations => Animations,
+            DefinitionKind.Graphics => Graphics,
             DefinitionKind.Factions => Factions,
             _ => MapDefs,
         };
