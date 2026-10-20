@@ -597,9 +597,9 @@ public static class TitleKeyActions
 /// <summary>
 /// One of game-info's title-sequence screens. It's a movie, a demo, or else drawn from a
 /// background color (or the menu's background and stripe), the high scores, the title, a
-/// picture, lines of text and presenter text (each when set, in that order), then held for its
-/// seconds, until its music ends or until a key. A screen whose picture the game doesn't have
-/// is left out.
+/// picture, more pictures, lines of text and presenter text (each when set, in that order), then
+/// held for its seconds, until its music ends or until a key. A screen whose picture the game
+/// doesn't have is left out.
 /// </summary>
 public record TitleScreenInfo
 {
@@ -636,6 +636,12 @@ public record TitleScreenInfo
     public string? Pic { get; init; }
     public int X { get; init; }
     public int Y { get; init; }
+
+    /// <summary>
+    /// More pictures, drawn in order after <see cref="Pic"/> (Midnight Assault's credits page);
+    /// one the game hasn't got is skipped, not the screen
+    /// </summary>
+    public List<TitlePicInfo> Pics { get; init; } = [];
 
     /// <summary>Presenter text printed into a window</summary>
     public TitleTextInfo? Text { get; init; }
@@ -675,6 +681,14 @@ public record TitleScreenInfo
 
     /// <summary>Tics the fizzle takes</summary>
     public int FizzleTics { get; init; } = 70;
+}
+
+/// <summary>A picture drawn on a title screen with its top left corner at x, y</summary>
+public record TitlePicInfo
+{
+    public string Pic { get; init; } = "";
+    public int X { get; init; }
+    public int Y { get; init; }
 }
 
 /// <summary>Text printed on a title screen from x, y; a \n in it comes back to x on the next line</summary>

@@ -101,6 +101,7 @@ menu-fade-color: "#AE0000"
 #   high-scores: true     the high scores table
 #   title: true           title-pics, faded in with title-palette
 #   pic: NAME, x:, y:     a picture (one the game hasn't got leaves the screen out)
+#   pics: [{ pic, x, y }] more pictures, drawn in turn (one the game hasn't got is skipped)
 #   lines: [{ text, x, y, color, font }]   text; color is a name (HIGHLIGHT), #RRGGBB or
 #                         index, font the menu's LargeFont unless given; \n starts a new line at x
 #   text: { script, x1, y1, x2, y2, font, color, background, light, dark, shadow }

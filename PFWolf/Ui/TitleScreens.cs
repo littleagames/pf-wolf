@@ -205,7 +205,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
         return pressed ? keyEnds : null;
     }
 
-    /// <summary>A drawn screen's background, high scores, title, picture and text, each when set</summary>
+    /// <summary>A drawn screen's background, high scores, title, pictures and text, each when set</summary>
     void DrawScreen(TitleScreenInfo screen)
     {
         if (screen.MenuBackground)
@@ -222,18 +222,21 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             hooks.DrawTitle();
         if (!string.IsNullOrEmpty(screen.Pic))
             graphics.DrawPic(screen.Pic, screen.X, screen.Y);
+        foreach (var pic in screen.Pics)
+            graphics.DrawPic(pic.Pic, pic.X, pic.Y);
         foreach (var line in screen.Lines)
             ui.TextAt(line.X, line.Y, new TextStyle(line.Font ?? UiFonts.MenuFont, line.Color)).Print(line.Text);
         if (screen.Text is { } text)
             hooks.DrawText(text);
     }
 
-    /// <summary>Whether the screen's picture, or its title's, is an animdefs animation</summary>
+    /// <summary>Whether any of the screen's pictures, or its title's, is an animdefs animation</summary>
     bool IsAnimated(TitleScreenInfo screen)
     {
-        static bool Named(string? name) => !string.IsNullOrEmpty(name);
-        return (Named(screen.Pic) && assets.FindAnimation<GraphicAsset>(screen.Pic!) != null)
-            || (screen.Title && (hooks.TitlePics?.Invoke() ?? []).Any(pic => Named(pic) && assets.FindAnimation<GraphicAsset>(pic) != null));
+        bool Animated(string? name) => !string.IsNullOrEmpty(name) && assets.FindAnimation<GraphicAsset>(name) != null;
+        return Animated(screen.Pic)
+            || screen.Pics.Any(pic => Animated(pic.Pic))
+            || (screen.Title && (hooks.TitlePics?.Invoke() ?? []).Any(Animated));
     }
 
     /// <summary>Whether a key or button has been pressed since StartAck</summary>
