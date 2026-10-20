@@ -330,7 +330,8 @@ internal static partial class GameHost
                 DrawHighScores,
                 DrawTitle,
                 DrawTitleText,
-                () => GameEngineManager.GetGameInfo().TitlePalette));
+                () => GameEngineManager.GetGameInfo().TitlePalette,
+                () => GameEngineManager.GetGameInfo().TitlePics));
         signonPanel = new SignonPanel(GameEngineManager, AssetManager, _videoManager, _inputManager, AudioManager,
             _graphicManager, _fontManager, ui, () => MouseEnabled, () => Scripts?.Loaded.Count ?? 0);
 

@@ -14,8 +14,10 @@ namespace PFWolf.Ui;
 /// <param name="DrawTitle">The title pictures</param>
 /// <param name="DrawText">A screen's presenter text, printed into its window</param>
 /// <param name="TitlePalette">game-info's title-palette: a title screen's palette when it names none</param>
+/// <param name="TitlePics">game-info's title-pics, to tell whether the title is animated</param>
 internal sealed record TitleScreenHooks(Func<int, bool> DemoExists, Func<int, bool> PlayDemo, Action ClearMargins,
-    Action DrawHighScores, Action DrawTitle, Action<TitleTextInfo> DrawText, Func<string?>? TitlePalette = null);
+    Action DrawHighScores, Action DrawTitle, Action<TitleTextInfo> DrawText, Func<string?>? TitlePalette = null,
+    Func<IEnumerable<string>>? TitlePics = null);
 
 /*
 =============================================================================
@@ -156,25 +158,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             if (!video.ScreenFaded)
                 video.FadeOut();
 
-            if (screen.MenuBackground)
-                draw.ClearMScreen();
-            else if (!string.IsNullOrEmpty(screen.Background))
-                video.FillScreen(screen.Background);
-            else
-                hooks.ClearMargins();
-            if (screen.Stripe is { } stripeY)
-                draw.DrawStripes(stripeY);
-            if (screen.HighScores)
-                hooks.DrawHighScores();
-            if (screen.Title)
-                hooks.DrawTitle();
-            if (!string.IsNullOrEmpty(screen.Pic))
-                graphics.DrawPic(screen.Pic, screen.X, screen.Y);
-            foreach (var line in screen.Lines)
-                ui.TextAt(line.X, line.Y, new TextStyle(line.Font ?? UiFonts.MenuFont, line.Color)).Print(line.Text);
-            if (screen.Text is { } text)
-                hooks.DrawText(text);
-
+            DrawScreen(screen);
             video.Update();
             // a title screen with no palette of its own has the title's (game-info title-palette), as the built-in loop's
             FadeInWithPalette(!string.IsNullOrEmpty(screen.Palette) ? screen.Palette : screen.Title ? hooks.TitlePalette?.Invoke() : null);
@@ -200,8 +184,13 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
                 }
             }
 
+            // An animated picture (animdefs) plays on as the screen's held: it's drawn again each
+            // tic. Not over a fizzled picture, which the redraw would cover.
+            Action? animate = string.IsNullOrEmpty(screen.FizzlePic) && IsAnimated(screen)
+                ? () => { DrawScreen(screen); video.Update(); }
+                : null;
             if (!pressed)
-                pressed = WaitOnTitleScreen(screen, ignoreKeys: onKey == TitleKeyAction.Ignore && !screen.WaitForKey);
+                pressed = WaitOnTitleScreen(screen, ignoreKeys: onKey == TitleKeyAction.Ignore && !screen.WaitForKey, animate);
         }
 
         if (!string.IsNullOrEmpty(screen.FadeTo))
@@ -214,6 +203,37 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
         LeftHoldingTab = pressed && input.IsKeyDown(ScanCodes.Tab);
         input.ClearKeysDown();
         return pressed ? keyEnds : null;
+    }
+
+    /// <summary>A drawn screen's background, high scores, title, picture and text, each when set</summary>
+    void DrawScreen(TitleScreenInfo screen)
+    {
+        if (screen.MenuBackground)
+            draw.ClearMScreen();
+        else if (!string.IsNullOrEmpty(screen.Background))
+            video.FillScreen(screen.Background);
+        else
+            hooks.ClearMargins();
+        if (screen.Stripe is { } stripeY)
+            draw.DrawStripes(stripeY);
+        if (screen.HighScores)
+            hooks.DrawHighScores();
+        if (screen.Title)
+            hooks.DrawTitle();
+        if (!string.IsNullOrEmpty(screen.Pic))
+            graphics.DrawPic(screen.Pic, screen.X, screen.Y);
+        foreach (var line in screen.Lines)
+            ui.TextAt(line.X, line.Y, new TextStyle(line.Font ?? UiFonts.MenuFont, line.Color)).Print(line.Text);
+        if (screen.Text is { } text)
+            hooks.DrawText(text);
+    }
+
+    /// <summary>Whether the screen's picture, or its title's, is an animdefs animation</summary>
+    bool IsAnimated(TitleScreenInfo screen)
+    {
+        static bool Named(string? name) => !string.IsNullOrEmpty(name);
+        return (Named(screen.Pic) && assets.FindAnimation<GraphicAsset>(screen.Pic!) != null)
+            || (screen.Title && (hooks.TitlePics?.Invoke() ?? []).Any(pic => Named(pic) && assets.FindAnimation<GraphicAsset>(pic) != null));
     }
 
     /// <summary>Whether a key or button has been pressed since StartAck</summary>
@@ -235,15 +255,27 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
 
     /// <summary>
     /// Holds a screen for its seconds, until its music ends or until a key; true if a key ended
-    /// it (never when <paramref name="ignoreKeys"/>)
+    /// it (never when <paramref name="ignoreKeys"/>). <paramref name="animate"/>, when given,
+    /// draws the screen again; it's called once a tic.
     /// </summary>
-    bool WaitOnTitleScreen(TitleScreenInfo screen, bool ignoreKeys)
+    bool WaitOnTitleScreen(TitleScreenInfo screen, bool ignoreKeys, Action? animate = null)
     {
+        uint lastTic = GameEngineManager.GetTimeCount();
+        void Wait()
+        {
+            GameEngineManager.DelayMs(5);
+            if (animate != null && GameEngineManager.GetTimeCount() != lastTic)
+            {
+                lastTic = GameEngineManager.GetTimeCount();
+                animate();
+            }
+        }
+
         input.StartAck();
         if (screen.WaitForKey)
         {
             while (!KeyPressed())
-                GameEngineManager.DelayMs(5);
+                Wait();
             return true;
         }
 
@@ -253,7 +285,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             {
                 if (KeyPressed() && !ignoreKeys)
                     return true;
-                GameEngineManager.DelayMs(5);
+                Wait();
             }
             return false;
         }
@@ -263,7 +295,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
         {
             if (KeyPressed() && !ignoreKeys)
                 return true;
-            GameEngineManager.DelayMs(5);
+            Wait();
         }
         return false;
     }
