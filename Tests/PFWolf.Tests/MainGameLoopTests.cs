@@ -26,4 +26,25 @@ public class MainGameLoopTests
         // Assert
         Assert.That(loop.PendingMapChange, Is.Null);
     }
+
+    [Test]
+    public void A_Map_That_Ends_The_Game_Is_Read_From_Game_Info()
+    {
+        // Act
+        var gameInfo = Loaders.YamlDataEntryLoader.Deserialize<Assets.GameInfoAsset>("""
+            maps:
+              DT01: { ends-game: true }
+              DT02: {}
+            """);
+
+        // Assert
+        Assert.That(MainGameLoop.LeavingEndsGame(gameInfo.Maps["DT01"]), Is.True);
+        Assert.That(MainGameLoop.LeavingEndsGame(gameInfo.Maps["DT02"]), Is.False);
+    }
+
+    [Test]
+    public void An_End_Message_Ends_The_Game_Too()
+    {
+        Assert.That(MainGameLoop.LeavingEndsGame(new Assets.MapInfo { EndMessage = "The demo's over" }), Is.True);
+    }
 }

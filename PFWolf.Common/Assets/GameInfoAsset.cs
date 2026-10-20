@@ -1433,6 +1433,13 @@ public record MapInfo
     public string? EndMessage { get; init; } = null;
 
     /// <summary>
+    /// Leaving this level ends the game, though it isn't won: its intermission and debriefing,
+    /// then the high scores, with no victory (Midnight Assault's Dog Tag, Challenge and
+    /// Completionist missions, each a game of its own). An end-message does too.
+    /// </summary>
+    public bool EndsGame { get; init; }
+
+    /// <summary>
     /// An article (a text, in Wolf3D's help text format: ^P pages, ^C colors, ^G pictures) shown
     /// before the level, as Midnight Assault's mission briefings were: when it's entered afresh,
     /// not when it's loaded, returned to or restarted after dying, nor in a demo or a game with

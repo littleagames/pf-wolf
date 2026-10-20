@@ -265,7 +265,7 @@ internal sealed class MainGameLoop(
                     // exit) ends its cluster, as the victory tile does
                     var leftInfo = engine.GetGameInfo().Maps[session.GameState.MapOn];
                     var nextMap = session.PlayState == PlayState.SecretLevel ? leftInfo.SecretNext ?? leftInfo.Next : leftInfo.Next;
-                    if (string.IsNullOrEmpty(nextMap) && string.IsNullOrEmpty(leftInfo.EndMessage))
+                    if (string.IsNullOrEmpty(nextMap) && !LeavingEndsGame(leftInfo))
                     {
                         session.PlayState = PlayState.Victorious;
                         goto case PlayState.Victorious;
@@ -288,13 +288,15 @@ internal sealed class MainGameLoop(
                     if (settings.ViewSize == 21) playScreen.DrawPlayScreen();
                     foreach (var p in session.Players) p.OldScore = p.Score;
 
-                    // The Spear demo's last floor: its message ends the game (shown at the end of
-                    // the intermission), then the high scores
-                    if (!string.IsNullOrEmpty(leftInfo.EndMessage))
+                    // A level that ends the game unwon (map ends-game: a Midnight Assault mission;
+                    // the Spear demo's last floor, its end-message shown at the end of the
+                    // intermission): then the high scores
+                    if (LeavingEndsGame(leftInfo))
                     {
                         died = true;                // don't "get psyched!" next time
                         video.FadeOut();
                         audio.StopAll();
+                        MenuDefs.FindMenuItem(controlPanel.MainMenu, "savegame")?.Active = 0;
                         highScores.CheckHighScore(session.PlayerState.Score, won: false);
                         controlPanel.EnableViewScoresMenuItem();
                         return;
@@ -388,4 +390,7 @@ internal sealed class MainGameLoop(
             }
         } while (true);
     }
+
+    /// <summary>Whether leaving the level ends the game unwon (map ends-game, or an end-message)</summary>
+    internal static bool LeavingEndsGame(MapInfo map) => map.EndsGame || !string.IsNullOrEmpty(map.EndMessage);
 }
