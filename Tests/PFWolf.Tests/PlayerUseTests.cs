@@ -66,6 +66,19 @@ public class PlayerUseTests
               - sprite: RADI
                 frames: [B]
                 tics-per-frame: -1
+        BeatenCommander:
+          properties:
+            usemessage: Press Use to apprehend
+            usemessage.style: EndLevel
+          states:
+            Spawn:
+              - sprite: CMMG
+                frames: [H]
+                tics-per-frame: -1
+            Use:
+              - sprite: CMMG
+                frames: [H]
+                tics-per-frame: -1
         LogBook:
           properties:
             usehint: take
@@ -270,6 +283,22 @@ public class PlayerUseTests
         Assert.That(_use.UseHint(null), Is.EqualTo("take"));
         radio.SetState(radio.ResolvedStates["Collected"]);
         Assert.That(_use.UseHint(null), Is.Null);
+    }
+
+    [Test]
+    public void An_Actor_There_To_Be_Used_Gives_Its_Use_Message()
+    {
+        // Arrange: the beaten Commander underfoot (usemessage, in the end-level style)
+        FaceOffTheMap();
+        var commander = _inventory.CreateActor("BeatenCommander")!;
+        (commander.X, commander.Y) = (_session.Player.X, _session.Player.Y);
+        commander.SetState(commander.ResolvedStates["Spawn"]);
+        _map.GetActors().AddLast(commander);
+
+        // Act / Assert
+        Assert.That(_use.FacingMessage(_session.Player), Is.EqualTo(((string?)"Press Use to apprehend", (string?)"EndLevel")));
+        _map.GetActors().Remove(commander);
+        Assert.That(_use.FacingMessage(_session.Player), Is.EqualTo(((string?)null, (string?)null)));
     }
 
     [Test]

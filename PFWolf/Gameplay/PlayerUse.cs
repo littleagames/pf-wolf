@@ -226,18 +226,29 @@ internal sealed class PlayerUse(
     /// `facing-message`, Midnight Assault's "Press Use to Exit Level"), kept up while they face
     /// it. An exit (A_Exit, A_SecretExit) the objectives keep shut says why instead, with its
     /// refused message ("2 items left to sabotage to exit level."), as the original's
-    /// CheckFacingTile. Only for the local player, alive and not riding.
+    /// CheckFacingTile. Else the `usemessage` of the actor the use key would use (in its
+    /// `usemessage.style`; not on a state its usehint.except names): the beaten Commander's
+    /// "Press Use to apprehend the Commander". Only for the local player, alive and not riding.
     /// </summary>
     internal void ShowFacingMessage()
     {
         if (!session.ActingIsLocal || session.Player is not { } player || session.PlayerState.Health <= 0
             || session.PlayerState.Vehicle != null || hooks.ShowFacing == null)
             return;
+        if (FacingMessage(player) is ({ Length: > 0 } text, var style))
+            hooks.ShowFacing(text, style is { Length: > 0 } ? style : null);
+    }
+
+    /// <summary>The facing message there is now, and its style (see ShowFacingMessage); null text for none</summary>
+    internal (string? Text, string? Style) FacingMessage(Entities.Actors.Actor player)
+    {
         var (x, y, _) = FacingTile(player);
-        if (!map.InMap(x, y) || map.GetTrigger(x, y) is not { IsWalkOver: false, FacingMessage.Length: > 0 } trigger)
-            return;
-        if (FacingText(trigger, hooks.ExitBlock?.Invoke() ?? (false, null)) is { } text)
-            hooks.ShowFacing(text, trigger.FacingStyle.Length > 0 ? trigger.FacingStyle : null);
+        if (map.InMap(x, y) && map.GetTrigger(x, y) is { IsWalkOver: false, FacingMessage.Length: > 0 } trigger)
+            return (FacingText(trigger, hooks.ExitBlock?.Invoke() ?? (false, null)), trigger.FacingStyle);
+        if (UsableActor() is { } actor && !OnExceptedState(actor)
+            && actor.Properties.TryGetValue("usemessage", out var message) && message?.ToString() is { Length: > 0 } text)
+            return (text, actor.Properties.TryGetValue("usemessage.style", out var style) ? style?.ToString() : null);
+        return (null, null);
     }
 
     /// <summary>
