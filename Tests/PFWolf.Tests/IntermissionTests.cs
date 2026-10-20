@@ -125,6 +125,51 @@ public class IntermissionTests
     }
 
     [Test]
+    public void The_Victory_Tallies_Average_Or_Add_Up_The_Floors_Objectives_And_Count_Items()
+    {
+        // Arrange: intel half done on one floor, none on the other (100%); 2 of 3 Kilroys and 1 of 2;
+        // 4 of 9 dog tags held
+        var values = new Dictionary<string, IntermissionValue>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["objective.intel"] = new(),
+            ["objective.kilroys"] = new() { Count = true },
+            ["objective.sabotage"] = new() { Count = true },
+            ["item.DogTag"] = new() { Count = true },
+            ["item.Nothing"] = new() { Count = true },
+        };
+        var floors = new List<LevelRatio>
+        {
+            new() { Objectives = { ["intel"] = (1, 2), ["kilroys"] = (2, 3) } },
+            new() { Objectives = { ["kilroys"] = (1, 2) } },
+        };
+
+        // Act
+        var tallies = IntermissionScreen.VictoryTallies(values, floors, name => name == "DogTag" ? (4, 9) : null);
+
+        // Assert: no sabotage anywhere, and no such item, isn't shown
+        Assert.That(tallies.Select(t => (t.Name, t.Text(t.Target))), Is.EqualTo(new[]
+        {
+            ("objective.intel", "75"),
+            ("objective.kilroys", "3/5"),
+            ("item.DogTag", "4/9"),
+        }));
+    }
+
+    [Test]
+    public void A_Level_Ratio_Keeps_Its_Objectives_In_A_Save()
+    {
+        var ratio = new LevelRatio { Kill = 50, Secret = 25, Treasure = 10, Time = 99, Objectives = { ["intel"] = (3, 4) } };
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+            ratio.Write(bw);
+        ms.Position = 0;
+        var back = LevelRatio.Read(new BinaryReader(ms));
+
+        Assert.That((back.Kill, back.Secret, back.Treasure, back.Time), Is.EqualTo(((short)50, (short)25, (short)10, 99)));
+        Assert.That(back.Objectives["INTEL"], Is.EqualTo((3, 4)));
+    }
+
+    [Test]
     public void A_Value_With_No_Format_Is_Drawn_As_It_Is()
     {
         Assert.That(IntermissionScreen.FormatValue(new IntermissionValue(), "Ann", _ => "unused"), Is.EqualTo("Ann"));

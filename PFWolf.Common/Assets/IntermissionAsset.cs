@@ -30,7 +30,8 @@ public record IntermissionAsset : Asset
     /// Assault's intel and Kilroys) and stealth (stealth kills of the level's kills, shown only
     /// when it was finished unseen with stealth kills or no kills at all, as Midnight Assault's).
     /// They're percentages, 100 when there was nothing to do, or done/total with count: true (a
-    /// count of nothing isn't shown).
+    /// count of nothing isn't shown). item.NAME is how many of an inventory item the player holds
+    /// of its inventory.maxamount, as done/total.
     /// </summary>
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -79,7 +80,9 @@ public record IntermissionBj
 
 /// <summary>
 /// The victory screen: its pictures and text, and where the won cluster's total time and
-/// average ratios go (values time, kill, secret, treasure)
+/// average ratios go (values time, kill, secret, treasure). objective.NAME is the cluster's
+/// levels' average percentage of it, or with count: true their done of total; item.NAME as on
+/// the level-end screen. A label with only-with shows with its value.
 /// </summary>
 public record VictoryScreen
 {

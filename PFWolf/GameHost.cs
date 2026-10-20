@@ -122,7 +122,11 @@ internal static partial class GameHost
         EndText: EndText,
         MapDisplayName: GetMapDisplayName,
         NewUnlocks: () => Unlocks.TakeNews(),
-        Objective: name => MapManager.ObjectiveCounts.TryGetValue(name, out var count) ? (count.Done, count.Total) : null);
+        Objective: name => MapManager.ObjectiveCounts.TryGetValue(name, out var count) ? (count.Done, count.Total) : null,
+        Objectives: () => MapManager.ObjectiveCounts.Select(o => (o.Key, o.Value.Done, o.Value.Total)).ToList(),
+        Item: name => InventoryManager.FindClass(name, "Inventory") is { } item
+            ? (InventoryManager.GetCount(item), InventoryManager.GetIntProperty(item, "inventory.maxamount", 0))
+            : null);
 
     // game-info's intro and title-loop screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)

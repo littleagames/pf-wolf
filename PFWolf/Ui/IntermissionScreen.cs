@@ -15,9 +15,13 @@ namespace PFWolf.Ui;
 /// <param name="MapDisplayName">A map's name as the game shows it (PlayScreen.GetMapDisplayName)</param>
 /// <param name="NewUnlocks">Whether anything's been unlocked since the last tally (Gameplay/Unlocks.cs TakeNews)</param>
 /// <param name="Objective">A level objective's done and total (Gameplay/Objectives.cs), null for one the level hasn't</param>
+/// <param name="Objectives">All the level's objectives' done and total, kept with its ratios for the victory tally</param>
+/// <param name="Item">How many of an inventory item the player holds and its inventory.maxamount; null for no such item</param>
 internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> GiveEveryone, Action DrawScore, Action DrawPlayBorder,
     Action GameWon, Action EndText, Func<string, string> MapDisplayName, Func<bool>? NewUnlocks = null,
-    Func<string, (int Done, int Total)?>? Objective = null);
+    Func<string, (int Done, int Total)?>? Objective = null,
+    Func<IEnumerable<(string Name, int Done, int Total)>>? Objectives = null,
+    Func<string, (int Held, int Max)?>? Item = null);
 
 /// <summary>
 /// One of the level-end screen's tallies after the treasure ratio (intermission.yaml
@@ -325,7 +329,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                 Kill = (short)kr,
                 Secret = (short)sr,
                 Treasure = (short)tr,
-                Time = min * 60 + sec
+                Time = min * 60 + sec,
+                Objectives = (hooks.Objectives?.Invoke() ?? [])
+                    .ToDictionary(o => o.Name, o => (o.Done, o.Total), StringComparer.OrdinalIgnoreCase),
             };
 
             // TODO This should be set up as different LevelCompleted "screens"???
@@ -388,10 +394,11 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// Assault's showStealthStats)
     /// </summary>
     internal List<ExtraTally> ExtraTallies() =>
-        ExtraTallies(Intermission.Values, hooks.Objective, session.PlayerState, session.GameState);
+        ExtraTallies(Intermission.Values, hooks.Objective, session.PlayerState, session.GameState, hooks.Item);
 
     internal static List<ExtraTally> ExtraTallies(Dictionary<string, IntermissionValue> values,
-        Func<string, (int Done, int Total)?>? objective, Entities.PlayerState player, GameState game)
+        Func<string, (int Done, int Total)?>? objective, Entities.PlayerState player, GameState game,
+        Func<string, (int Held, int Max)?>? item = null)
     {
         var tallies = new List<ExtraTally>();
         foreach (var (name, value) in values)
@@ -406,6 +413,49 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             else if (name.Equals("stealth", StringComparison.OrdinalIgnoreCase)
                 && player.Undetected && (player.StealthKills > 0 || (game.KillCount == 0 && game.KillTotal > 0)))
                 tallies.Add(new ExtraTally(name, player.StealthKills, game.KillTotal, value.Count));
+            else if (ItemTally(name, item) is { } held)
+                tallies.Add(held);
+        }
+        return tallies;
+    }
+
+    /// <summary>item.NAME: how many of an inventory item the player holds of its inventory.maxamount, as done/total (Midnight Assault's dog tags, 3/9)</summary>
+    static ExtraTally? ItemTally(string name, Func<string, (int Held, int Max)?>? item) =>
+        name.StartsWith("item.", StringComparison.OrdinalIgnoreCase) && item?.Invoke(name["item.".Length..]) is { Max: > 0 } counts
+            ? new ExtraTally(name, counts.Held, counts.Max, AsCount: true)
+            : null;
+
+    /// <summary>
+    /// The victory screen's tallies past time, kill, secret and treasure, in the order
+    /// intermission.yaml lists them, over the won cluster's levels: objective.NAME as the
+    /// levels' average percentage (a level without it counts 100%, as its own tally would), or
+    /// with count: true as the levels' done of their total (none at all isn't shown); item.NAME
+    /// as on the level-end screen (Midnight Assault's intel, Kilroys and dog tags)
+    /// </summary>
+    internal static List<ExtraTally> VictoryTallies(Dictionary<string, IntermissionValue> values, List<LevelRatio> floors,
+        Func<string, (int Held, int Max)?>? item)
+    {
+        var tallies = new List<ExtraTally>();
+        foreach (var (name, value) in values)
+        {
+            if (name.StartsWith("objective.", StringComparison.OrdinalIgnoreCase))
+            {
+                var objective = name["objective.".Length..];
+                var counts = floors.Select(f => f.Objectives.TryGetValue(objective, out var c) ? c : (Done: 0, Total: 0)).ToList();
+                if (value.Count)
+                {
+                    int total = counts.Sum(c => c.Total);
+                    if (total > 0)
+                        tallies.Add(new ExtraTally(name, counts.Sum(c => c.Done), total, AsCount: true));
+                }
+                else if (counts.Count > 0)
+                {
+                    int average = counts.Sum(c => c.Total > 0 ? c.Done * 100 / c.Total : 100) / counts.Count;
+                    tallies.Add(new ExtraTally(name, average, 100, AsCount: false));
+                }
+            }
+            else if (ItemTally(name, item) is { } held)
+                tallies.Add(held);
         }
         return tallies;
     }
@@ -467,10 +517,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     internal static (int Min, int Sec, int Kill, int Secret, int Treasure) ClusterTotals(
         Dictionary<string, LevelRatio> levelRatios, Dictionary<string, MapInfo> maps, int cluster)
     {
-        var floors = levelRatios
-            .Where(lr => maps.TryGetValue(lr.Key, out var map) && map.Cluster == cluster)
-            .Select(lr => lr.Value)
-            .ToList();
+        var floors = ClusterFloors(levelRatios, maps, cluster);
 
         int sec = floors.Sum(f => f.Time);
         int kr = 0, sr = 0, tr = 0;
@@ -488,6 +535,13 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             min = sec = 99;
         return (min, sec, kr, sr, tr);
     }
+
+    /// <summary>The ratios of the won cluster's floors this game completed</summary>
+    internal static List<LevelRatio> ClusterFloors(Dictionary<string, LevelRatio> levelRatios, Dictionary<string, MapInfo> maps, int cluster) =>
+        levelRatios
+            .Where(lr => maps.TryGetValue(lr.Key, out var map) && map.Cluster == cluster)
+            .Select(lr => lr.Value)
+            .ToList();
 
     internal void Victory()
     {
@@ -509,12 +563,15 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         // Laid out in the screen above the status bar, until the end text and screens take over
         var origin = video.UseUiOriginAboveBottom(playArea.StatusLines);
 
-        // intermission.yaml victory
-        foreach (var label in screen.Labels.Where(label => string.IsNullOrEmpty(label.OnlyWith)))     // no level tallies here
+        // intermission.yaml victory; a label only-with a tally shows with it
+        var maps = engine.GetGameInfo().Maps;
+        var extras = VictoryTallies(screen.Values, ClusterFloors(session.LevelRatios, maps, session.GameState.Cluster), hooks.Item);
+        foreach (var label in screen.Labels.Where(label => string.IsNullOrEmpty(label.OnlyWith)
+            || extras.Any(extra => extra.Name.Equals(label.OnlyWith, StringComparison.OrdinalIgnoreCase))))
             ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
         foreach (var pic in screen.Pics)
             graphics.DrawPic(pic.Pic, pic.X, pic.Y);
-        (min, sec, kr, sr, tr) = ClusterTotals(session.LevelRatios, engine.GetGameInfo().Maps, session.GameState.Cluster);
+        (min, sec, kr, sr, tr) = ClusterTotals(session.LevelRatios, maps, session.GameState.Cluster);
 
         WriteValue(screen.Values, "time", $"{min:00}:{sec:00}");
         video.Update();
@@ -522,6 +579,8 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         WriteValue(screen.Values, "kill", kr.ToString());
         WriteValue(screen.Values, "secret", sr.ToString());
         WriteValue(screen.Values, "treasure", tr.ToString());
+        foreach (var extra in extras)
+            WriteValue(screen.Values, extra.Name, extra.Text(extra.Target));
         if (hooks.NewUnlocks?.Invoke() == true)
             WriteValue(screen.Values, "unlocked", "");
 

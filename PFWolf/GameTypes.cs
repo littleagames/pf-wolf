@@ -399,13 +399,22 @@ internal class LevelRatio
     public short Kill, Secret, Treasure;
     public int Time;
 
-    public static LevelRatio Read(BinaryReader br) => new()
+    /// <summary>The level's objectives (game-info objectives) as it ended: done of total, by name, for the victory tally</summary>
+    public Dictionary<string, (int Done, int Total)> Objectives { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public static LevelRatio Read(BinaryReader br)
     {
-        Kill = br.ReadInt16(),
-        Secret = br.ReadInt16(),
-        Treasure = br.ReadInt16(),
-        Time = br.ReadInt32(),
-    };
+        var ratio = new LevelRatio
+        {
+            Kill = br.ReadInt16(),
+            Secret = br.ReadInt16(),
+            Treasure = br.ReadInt16(),
+            Time = br.ReadInt32(),
+        };
+        for (int i = br.ReadInt32(); i > 0; i--)
+            ratio.Objectives[br.ReadString()] = (br.ReadInt32(), br.ReadInt32());
+        return ratio;
+    }
 
     public void Write(BinaryWriter bw)
     {
@@ -413,5 +422,12 @@ internal class LevelRatio
         bw.Write(Secret);
         bw.Write(Treasure);
         bw.Write(Time);
+        bw.Write(Objectives.Count);
+        foreach (var (name, (done, total)) in Objectives)
+        {
+            bw.Write(name);
+            bw.Write(done);
+            bw.Write(total);
+        }
     }
 }

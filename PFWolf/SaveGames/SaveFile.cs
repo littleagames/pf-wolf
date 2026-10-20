@@ -59,7 +59,8 @@ internal static class SaveFile
     // 29: the entrance the level was entered by, at the end of GameState.
     // 30: actors' height, fall and suspicion; the player's gun, latch, ride, stealth, kill chain
     //     and timed switches at the end (PlayerSaveState).
-    internal const int SaveVersion = 30;
+    // 31: each level ratio ends with the level's objectives' done and total (the victory tally).
+    internal const int SaveVersion = 31;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage
