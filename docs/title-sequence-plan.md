@@ -1,5 +1,32 @@
 # Title sequence plan: every game's front end from game-info
 
+## Status (2026-10-20): done
+
+- Phase 1 (8b45ac2) and phase 2 (3c4778d) are done. Phase 3's docs are the comment block above
+  `title-sequence` in gamepacks/wolf3d/game-info.yaml.
+- **Checked in the game:**
+  - Wolf3D: notice until a key, PG-13, title 15 s, credits 10 s, high scores 10 s, demo, a key
+    in the demo opens the menu, and Tab on a drawn screen opens the demo-level prompt.
+  - Spear: PG-13, then the title in TITLEPAL.
+  - Planet Strike: the first key finishes the fizzle and the second opens the menu.
+- **Not checked:** wolf3d-shareware and spear-demo (no data files here), Blake AOG's intro
+  (only its YAML moved), and an unskippable movie (`on-key: ignore`).
+- **Differences from the plan below:**
+  - `music-after` was dropped. The music playing before a demo always comes back after it,
+    unless a key ended the demo.
+  - A screen whose `pic` is missing is left out with a one-time warning. A `demo` screen in a
+    game with no demos is left out too. A loop with nothing it can show goes to the menu.
+  - `stripes: N` became `menu-background: true` plus `stripe: Y`, since the backdrop and the
+    stripe are separate.
+  - Every drawn screen fades out what's on screen first, which the notice needs after the
+    signon.
+  - Tab-to-record now works for every pack. Before, Blake's loop cleared the keys first.
+  - On a demo, `ignore` and `finish` act as the list's default, because a demo always ends on
+    a key.
+  - The old top-level `intro:` / `title-loop:` keys print a startup warning.
+- **Not built:** a list editor in the editor's Definitions window. The screens are edited in
+  the raw YAML tab.
+
 Goal: the screens from the signon to the menu (the intro shown once, then the title loop that
 goes round until a key) come from a game-info `title-sequence:` block for every game pack
 (Wolf3D and its variants, Spear and the Spear demo, Blake Stone, Planet Strike). A key press can
