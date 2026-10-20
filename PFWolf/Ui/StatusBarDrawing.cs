@@ -122,7 +122,13 @@ internal sealed class StatusBarDrawing(
         graphics.DrawPic(picName, element.X, StatusBarTop(element) + element.Y);
     }
 
-    internal void StatusDrawFace(string picName) => StatusDrawPic(picName, "face");
+    /// <summary>A face picture at the face part, over its box (statusbar.yaml box) so the last face goes</summary>
+    internal void StatusDrawFace(string picName)
+    {
+        if (StatusBar.Get("face") is { } face)
+            ClearBox(face);
+        StatusDrawPic(picName, "face");
+    }
 
     /// <summary>
     /// A number right-aligned in the named part's digits, blanking the rest; a number too long
@@ -230,27 +236,73 @@ internal sealed class StatusBarDrawing(
     internal void DrawFace()
     {
         if (StatusBarHidden) return;
-        if (StatusBar.Get("face") is not { } face) return;
+        if (FacePic() is { Length: > 0 } pic)
+            StatusDrawFace(pic);
+    }
 
-        string? pic;
-        if (Grinning && !string.IsNullOrEmpty(face.Grin))
-            pic = face.Grin;
-        else if (session.PlayerState.Health != 0 && Gameplay.Powerups.Face(inventory, session.PlayerState.FaceFrame) is { } powerupFace)
-            pic = powerupFace;      // a power-up's own (End of Destiny's god mode face)
-        else if (session.PlayerState.Health != 0)
+    /// <summary>
+    /// The face picture to show now, or null for none. A player class with its own face
+    /// (actordefs player.face) shows that at every health, and its player.facegrin and
+    /// player.facedead where it has them, else its face; a power-up's face still comes first.
+    /// </summary>
+    internal string? FacePic()
+    {
+        if (StatusBar.Get("face") is not { } face) return null;
+
+        var player = session.PlayerState;
+        var classFace = ClassFace("player.face");
+        if (Grinning && (classFace != null ? ClassFace("player.facegrin") ?? classFace : face.Grin) is { Length: > 0 } grin)
+            return grin;
+        if (player.Health != 0 && Gameplay.Powerups.Face(inventory, player.FaceFrame) is { } powerupFace)
+            return powerupFace;     // a power-up's own (End of Destiny's god mode face)
+        if (player.Health != 0 && classFace != null)
+            return classFace;
+        if (player.Health != 0)
         {
-            int health = session.PlayerState.Health;
-            if (hooks.MostHealth?.Invoke(session.PlayerState) is > 0 and var most)
+            int health = player.Health;
+            if (hooks.MostHealth?.Invoke(player) is > 0 and var most)
                 health = Math.Max(1, health * 100 / most);
             var faces = face.Faces.OrderByDescending(f => f.Health).ToList();
             var pics = (faces.FirstOrDefault(f => health >= f.Health) ?? faces.LastOrDefault())?.Pics;
-            pic = pics is { Count: > 0 } ? pics[session.PlayerState.FaceFrame % pics.Count] : null;
+            return pics is { Count: > 0 } ? pics[player.FaceFrame % pics.Count] : null;
         }
-        else
-            pic = session.PlayerState.LastAttacker != null && face.KilledBy.TryGetValue(session.PlayerState.LastAttacker.Name, out var killedBy) ? killedBy : face.Dead;
+        if (classFace != null)
+            return ClassFace("player.facedead") ?? classFace;
+        return player.LastAttacker != null && face.KilledBy.TryGetValue(player.LastAttacker.Name, out var killedBy) ? killedBy : face.Dead;
+    }
 
-        if (!string.IsNullOrEmpty(pic))
-            StatusDrawFace(pic);
+    /// <summary>
+    /// The face shown on a hit hard enough to wince (statusbar.yaml ouch, ouch-damage): a player
+    /// class with its own face shows its player.faceouch, or doesn't wince without one; null for none
+    /// </summary>
+    internal string? OuchPic()
+    {
+        if (ClassFace("player.face") != null)
+            return ClassFace("player.faceouch");
+        return StatusBar.Get("face")?.Ouch is { Length: > 0 } ouch ? ouch : null;
+    }
+
+    /// <summary>
+    /// One of the player class's face properties (player.face and the rest), its part in the
+    /// mode's first (PlayerState.RoleClass): a picture name, or a list that the face looks
+    /// around through; null when neither says
+    /// </summary>
+    string? ClassFace(string key)
+    {
+        var player = session.PlayerState;
+        foreach (var playerClass in new[] { player.RoleClass, player.PlayerClass })
+        {
+            if (string.IsNullOrEmpty(playerClass))
+                continue;
+            switch (inventory.GetProperty(playerClass, key))
+            {
+                case string { Length: > 0 } pic:
+                    return pic;
+                case IList<object> { Count: > 0 } pics:
+                    return pics[Math.Abs(player.FaceFrame) % pics.Count]?.ToString();
+            }
+        }
+        return null;
     }
 
     internal void DrawHealth()

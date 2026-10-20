@@ -157,14 +157,16 @@ internal sealed class PlayerStats(
         statusBar.DrawArmor();
         statusBar.DrawFace();
 
-        // A heavy hit makes BJ wince (Spear of Destiny); demos rely on the face's count restarting.
-        // Vanilla only restarted it with the status bar showing; here it always does, so how a
-        // demo plays doesn't depend on the view size.
-        if (statusBar.StatusBar.Get("face") is { Ouch.Length: > 0 } face && points > face.OuchDamage
-            && PlayerState.Health != 0 && godmode == 0 && assets.Exists<Assets.GraphicAsset>(face.Ouch))
+        // A heavy hit makes BJ wince (Spear of Destiny), or a player class with its own face
+        // (player.faceouch); demos rely on the face's count restarting. Vanilla only restarted it
+        // with the status bar showing; here it always does, so how a demo plays doesn't depend on
+        // the view size.
+        if (statusBar.StatusBar.Get("face") is { } face && points > face.OuchDamage
+            && PlayerState.Health != 0 && godmode == 0
+            && statusBar.OuchPic() is { } ouch && assets.Exists<Assets.GraphicAsset>(ouch))
         {
             if (!(settings.ViewSize == 21) && session.ActingIsLocal)
-                statusBar.StatusDrawFace(face.Ouch);
+                statusBar.StatusDrawFace(ouch);
             PlayerState.FaceCount = 0;
         }
     }

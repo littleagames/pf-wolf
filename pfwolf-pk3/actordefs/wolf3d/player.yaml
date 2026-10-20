@@ -90,3 +90,11 @@ Player:
     # The only weapons the class picks up (or classes descended from them), and only the ammo
     # they use; every other weapon and ammo stays on the floor. Left out: any.
     # "player.weapons": [Knife, Pistol]
+    # The class's own status bar face, in place of statusbar.yaml's faces by health: a picture,
+    # or a list the face looks around through, at every health (graphicdefs can crop one from a
+    # sprite). facegrin, facedead and faceouch (a hard hit) are shown where given; without them
+    # the face stays. A power-up's face (powerup.face) still comes first. Left out: statusbar.yaml's.
+    # "player.face": [GUARDHEAD8, GUARDHEAD1, GUARDHEAD2]
+    # "player.facegrin": GUARDSHOOT
+    # "player.facedead": GUARDDEAD
+    # "player.faceouch": GUARDPAIN

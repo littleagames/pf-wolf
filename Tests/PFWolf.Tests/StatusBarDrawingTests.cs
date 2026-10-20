@@ -86,4 +86,98 @@ public class StatusBarDrawingTests
     {
         Assert.That(Bar(new GameSession()).Grinning, Is.False);
     }
+
+    // Player has no face of its own; Guard does, Elite inherits it, Dog gives only a face
+    private const string ClassesYaml = """
+        Player:
+          properties:
+            "player.maxhealth": 100
+        GuardPlayer:
+          parent: Player
+          properties:
+            "player.face": [GUARDLEFT, GUARDAHEAD, GUARDRIGHT]
+            "player.facedead": GUARDDEAD
+            "player.faceouch": GUARDPAIN
+        ElitePlayer:
+          parent: GuardPlayer
+        DogPlayer:
+          parent: Player
+          properties:
+            "player.face": DOGHEAD
+        """;
+
+    private static (StatusBarDrawing Bar, Entities.PlayerState Player) FaceBar(string playerClass, int health = 100)
+    {
+        var session = new GameSession();
+        var bar = new StatusBarDrawing(null!, null, null!, null!, new InventoryManager(ActorDefs.Metadata(ClassesYaml)), null!, null!, null!,
+            session, new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
+        var face = new Assets.StatusBarElement
+        {
+            Faces = [new() { Health = 50, Pics = ["FACE1A", "FACE1B", "FACE1C"] }, new() { Health = 1, Pics = ["FACE2A"] }],
+            Dead = "FACE8A",
+            Ouch = "OUCH",
+        };
+        bar.StatusBar = new Assets.StatusBarAsset(new() { ["face"] = face });
+        session.PlayerState.PlayerClass = playerClass;
+        session.PlayerState.Health = (short)health;
+        return (bar, session.PlayerState);
+    }
+
+    [Test]
+    public void A_Class_Without_A_Face_Shows_The_Layouts_By_Health()
+    {
+        // Arrange
+        var (bar, player) = FaceBar("Player", health: 20);
+        player.FaceFrame = 2;
+
+        // Act / Assert
+        Assert.That(bar.FacePic(), Is.EqualTo("FACE2A"));
+        player.Health = 0;
+        Assert.That(bar.FacePic(), Is.EqualTo("FACE8A"));
+        Assert.That(bar.OuchPic(), Is.EqualTo("OUCH"));
+    }
+
+    [TestCase(100, 0, "GUARDLEFT")]
+    [TestCase(100, 2, "GUARDRIGHT")]
+    [TestCase(5, 1, "GUARDAHEAD")]       // the same at any health
+    [TestCase(0, 1, "GUARDDEAD")]
+    public void A_Class_Face_Looks_Around_At_Every_Health(int health, int frame, string pic)
+    {
+        // Arrange
+        var (bar, player) = FaceBar("GuardPlayer", health);
+        player.FaceFrame = (short)frame;
+
+        // Act / Assert
+        Assert.That(bar.FacePic(), Is.EqualTo(pic));
+    }
+
+    [Test]
+    public void A_Class_Face_Is_Inherited()
+    {
+        // Act / Assert
+        Assert.That(FaceBar("ElitePlayer").Bar.FacePic(), Is.EqualTo("GUARDLEFT"));
+    }
+
+    [Test]
+    public void A_Class_Face_Without_Its_Own_Dead_Or_Ouch_Keeps_Its_Face()
+    {
+        // Arrange
+        var (bar, _) = FaceBar("DogPlayer", health: 0);
+
+        // Act / Assert: not BJ's dead face or wince
+        Assert.That(bar.FacePic(), Is.EqualTo("DOGHEAD"));
+        Assert.That(bar.OuchPic(), Is.Null);
+        Assert.That(FaceBar("GuardPlayer").Bar.OuchPic(), Is.EqualTo("GUARDPAIN"));
+    }
+
+    [Test]
+    public void The_Part_In_The_Mode_Has_Its_Face_First()
+    {
+        // Arrange: a Guard playing the part of a dog
+        var (bar, player) = FaceBar("GuardPlayer");
+        player.RoleClass = "DogPlayer";
+
+        // Act / Assert
+        Assert.That(bar.FacePic(), Is.EqualTo("DOGHEAD"));
+    }
 }
