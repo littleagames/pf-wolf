@@ -78,11 +78,12 @@ internal sealed class LevelSetup(
         deathmatch.DeathmatchLevelSetup();         // with or without its enemies (Gameplay/Deathmatch.cs)
         //int mapnum = GameState.MapOn + 10 * GameState.cluster;
         map.LoadMap(session.GameState.MapOn, session.GameState.Difficulty, hooks.CurrentSkill().EnemyHealth,
-            engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var loadingMap) ? loadingMap.FloorNumber : -1);
+            CurrentMapInfo.For(session, engine.GetGameInfo())?.FloorNumber ?? -1);
 
         // The cluster follows the map, however it was reached: a new game, the next/secret
         // level, a map-change trigger or the console's "map" warp
-        if (engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var mapInfo))
+        var mapInfo = CurrentMapInfo.For(session, engine.GetGameInfo());
+        if (mapInfo != null)
             session.GameState.Cluster = mapInfo.Cluster;
 
         // The level's game-info entry, then what its own file says (a UWMF level's), then the default map's

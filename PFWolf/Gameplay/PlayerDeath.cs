@@ -153,7 +153,7 @@ internal sealed class PlayerDeath(
         // On a level against the clock that time-limit-completes (End of Destiny's), dying gets
         // through it: the level's completed, the player's health back to full and no life lost
         var gameInfo = engine.GetGameInfo();
-        if (gameInfo.Maps.TryGetValue(session.GameState.MapOn, out var mapInfo) && mapInfo.TimeLimit > 0 && mapInfo.TimeLimitCompletes)
+        if (CurrentMapInfo.For(session, gameInfo) is { TimeLimit: > 0, TimeLimitCompletes: true })
         {
             session.PlayerState.Health = classes.StartingHealth;
             session.PlayerState.WeaponSprite = null;

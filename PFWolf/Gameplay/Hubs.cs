@@ -74,7 +74,7 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
     }
 
     internal int CurrentFloorNumber() =>
-        engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var info) ? info.FloorNumber : 0;
+        CurrentMapInfo.For(session, engine.GetGameInfo())?.FloorNumber ?? 0;
 
     /// <summary>Whether a floor is open in the teleporter: been on, or unlocked</summary>
     internal bool FloorOpen(string map) => VisitedMaps.Contains(map) || UnlockedMaps.Contains(map);

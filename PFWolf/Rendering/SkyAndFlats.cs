@@ -168,7 +168,7 @@ internal sealed partial class SkyAndFlats(
     internal void VGAClearScreen()
     {
         var gameInfo = engine.GetGameInfo();
-        gameInfo.Maps.TryGetValue(session.GameState.MapOn, out var mapInfo);
+        var mapInfo = CurrentMapInfo.For(session, gameInfo);
 
         // game-info's colors for the map, else the map's own (mapdefs map-info), else the default map's
         byte ceilingColor = mapInfo?.CeilingColor is { } ceiling ? video.ParseColorOr(ceiling, 0x1d)

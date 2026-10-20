@@ -10,8 +10,11 @@ namespace PFWolf.Gameplay;
 internal sealed class CurrentMapInfo(GameSession session, Func<GameInfoAsset> gameInfo)
 {
     /// <summary>The map being played's entry; null when it has none</summary>
-    internal MapInfo? Map =>
-        session.GameState.MapOn is { } map && gameInfo().Maps.TryGetValue(map, out var info) ? info : null;
+    internal MapInfo? Map => For(session, gameInfo());
+
+    /// <summary>The map being played's entry in that game info; null when it has none</summary>
+    internal static MapInfo? For(GameSession session, GameInfoAsset gameInfo) =>
+        session.GameState.MapOn is { } map && gameInfo.Maps.TryGetValue(map, out var info) ? info : null;
 
     /// <summary>What every map has unless its own entry says otherwise (game-info default-map)</summary>
     internal DefaultMapInfo Default => gameInfo().DefaultMap;

@@ -157,7 +157,7 @@ internal sealed class MainGameLoop(
             // Its briefing first (game-info briefing; Midnight Assault's missions), unless the run's
             // scripted (--nowait), where nothing should wait on a key
             if (!engine.GameParams.NoWait && ShowsBriefing(levelStart, warped, (session.DemoPlayback || session.DemoRecord), session.NetGame)
-                && engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var enteredMap)
+                && CurrentMapInfo.For(session, engine.GetGameInfo()) is { } enteredMap
                 && BriefingFor(enteredMap, session.GameState.Entrance) is { Length: > 0 } briefing)
             {
                 hooks.ShowText(briefing);
@@ -365,7 +365,7 @@ internal sealed class MainGameLoop(
 
                     if (settings.ViewSize == 21) playScreen.DrawPlayScreen();
                     // The won level's debriefing first (a Midnight Assault mission's), then the tally
-                    if (engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var wonMap))
+                    if (CurrentMapInfo.For(session, engine.GetGameInfo()) is { } wonMap)
                         ShowDebriefing(wonMap);
                     // A cluster with a victory-fade-color fades to it slowly, as Spear does when the Angel falls
                     var wonCluster = intermission.WonCluster();

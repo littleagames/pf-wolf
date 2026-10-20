@@ -68,7 +68,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     internal string? FloorSelectScreen(ElevatorAsset elevator)
     {
         var floors = ElevatorFloors(elevator);
-        int current = engine.GetGameInfo().Maps.TryGetValue(session.GameState.MapOn, out var mapInfo) ? mapInfo.FloorNumber : 0;
+        int current = CurrentMapInfo.For(session, engine.GetGameInfo())?.FloorNumber ?? 0;
         bool Open(int floor) => floors.TryGetValue(floor, out var m) && hubs.VisitedMaps.Contains(m);
         int lastOpen = Enumerable.Range(1, elevator.Buttons).Where(Open).DefaultIfEmpty(0).Max();
 
