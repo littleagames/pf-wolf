@@ -126,7 +126,10 @@ internal static partial class GameHost
         Objectives: () => MapManager.ObjectiveCounts.Select(o => (o.Key, o.Value.Done, o.Value.Total)).ToList(),
         Item: name => InventoryManager.FindClass(name, "Inventory") is { } item
             ? (InventoryManager.GetCount(item), InventoryManager.GetIntProperty(item, "inventory.maxamount", 0))
-            : null);
+            : null,
+        PreviousRecord: () => PreviousLevelRecord,
+        IsUnlocked: name => Unlocks.IsUnlocked(name),
+        CountsAllKills: () => GameEngineManager.GetGameInfo().Stealth.UnseenNoKillsCountsAll);
 
     // game-info's intro and title-loop screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)

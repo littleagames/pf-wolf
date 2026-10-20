@@ -17,11 +17,17 @@ namespace PFWolf.Ui;
 /// <param name="Objective">A level objective's done and total (Gameplay/Objectives.cs), null for one the level hasn't</param>
 /// <param name="Objectives">All the level's objectives' done and total, kept with its ratios for the victory tally</param>
 /// <param name="Item">How many of an inventory item the player holds and its inventory.maxamount; null for no such item</param>
+/// <param name="PreviousRecord">The finished level's best before this finish (records.cfg), for the silver stars</param>
+/// <param name="IsUnlocked">Whether a name's unlocked (progress.cfg), for intermission.yaml unlock-pics</param>
+/// <param name="CountsAllKills">game-info stealth unseen-no-kills-counts-all</param>
 internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> GiveEveryone, Action DrawScore, Action DrawPlayBorder,
     Action GameWon, Action EndText, Func<string, string> MapDisplayName, Func<bool>? NewUnlocks = null,
     Func<string, (int Done, int Total)?>? Objective = null,
     Func<IEnumerable<(string Name, int Done, int Total)>>? Objectives = null,
-    Func<string, (int Held, int Max)?>? Item = null);
+    Func<string, (int Held, int Max)?>? Item = null,
+    Func<Gameplay.LevelResult?>? PreviousRecord = null,
+    Func<string, bool>? IsUnlocked = null,
+    Func<bool>? CountsAllKills = null);
 
 /// <summary>
 /// One of the level-end screen's tallies after the treasure ratio (intermission.yaml
@@ -309,6 +315,12 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             // JUMP STRAIGHT HERE IF KEY PRESSED
             //
         done:
+            // A level finished unseen: its line (intermission.yaml stealth-bonus); with game-info
+            // stealth unseen-no-kills-counts-all, an infiltration counts every kill
+            DrawStealthBonus();
+            if (hooks.CountsAllKills?.Invoke() == true && UnseenNoKills(session.PlayerState, session.GameState))
+                kr = 100;
+
             tempstr = kr.ToString();
             WriteValue("kill", tempstr);
 
@@ -332,6 +344,16 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             // Midnight Assault's "New Levels Unlocked!")
             if (hooks.NewUnlocks?.Invoke() == true)
                 WriteValue("unlocked", "");
+
+            // Midnight Assault's dog tags across the top, and its reward stars
+            DrawUnlockPics(mapInfo);
+            DrawStars(new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["kill"] = kr, ["secret"] = sr, ["treasure"] = tr,
+            }.Concat(extras.Where(e => e.Name.StartsWith("objective.", StringComparison.OrdinalIgnoreCase))
+                .Select(e => KeyValuePair.Create(e.Name, e.Total > 0 ? e.Done * 100 / e.Total : 100)))
+                .ToDictionary(StringComparer.OrdinalIgnoreCase),
+                mapInfo.ParTime > 0 && session.GameState.TimeCount < mapInfo.ParTime * 70, session.GameState.TimeCount);
 
             //
             // SAVE RATIO INFORMATION FOR ENDGAME
@@ -743,6 +765,95 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// </summary>
     internal static List<string> BreathPics(IntermissionBj? bj, MapInfo map) =>
         bj == null ? [] : map.IntermissionPics.Count > 0 ? map.IntermissionPics : bj.Pics;
+
+    /// <summary>A level-end star: none, silver (bettered the level's best) or gold (perfect)</summary>
+    internal enum Star { None, Silver, Gold }
+
+    /// <summary>
+    /// A ratio's star (intermission.yaml stars): gold at 100%, silver above the level's best
+    /// before (none finished before counts as 0%)
+    /// </summary>
+    internal static Star RatioStar(int percent, int? before) =>
+        percent >= 100 ? Star.Gold : percent > (before ?? 0) ? Star.Silver : Star.None;
+
+    /// <summary>The time's star: gold under par, silver quicker than the level's best before (or with none before)</summary>
+    internal static Star TimeStar(bool underPar, int tics, Gameplay.LevelResult? before) =>
+        underPar ? Star.Gold : before is not { Time: > 0 } || tics < before.Time ? Star.Silver : Star.None;
+
+    /// <summary>A value's percentage in a level's record (an objective with nothing to do is 100%); null for no record</summary>
+    internal static int? RecordPercent(Gameplay.LevelResult? record, string name)
+    {
+        static int Percent(int done, int total) => total > 0 ? done * 100 / total : 0;
+        if (record == null)
+            return null;
+        if (name.StartsWith("objective.", StringComparison.OrdinalIgnoreCase))
+            return record.Objectives.TryGetValue(name["objective.".Length..], out var o) ? (o.Total > 0 ? o.Done * 100 / o.Total : 100) : 0;
+        return name.ToLowerInvariant() switch
+        {
+            "kill" => Percent(record.Kills, record.KillTotal),
+            "secret" => Percent(record.Secrets, record.SecretTotal),
+            "treasure" => Percent(record.Items, record.ItemTotal),
+            _ => 0,
+        };
+    }
+
+    // intermission.yaml stars: each at its place, by the level's best before this finish
+    private void DrawStars(Dictionary<string, int> percents, bool underPar, int tics)
+    {
+        if (Intermission.Stars is not { } stars)
+            return;
+        var before = hooks.PreviousRecord?.Invoke();
+        foreach (var (name, place) in stars.At)
+        {
+            var star = name.Equals("time", StringComparison.OrdinalIgnoreCase) ? TimeStar(underPar, tics, before)
+                : percents.TryGetValue(name, out var percent) ? RatioStar(percent, RecordPercent(before, name))
+                : Star.None;
+            if (star != Star.None)
+                graphics.DrawPic(star == Star.Gold ? stars.Gold : stars.Silver, place.X, place.Y);
+        }
+    }
+
+    // intermission.yaml unlock-pics: a picture for each unlock, as it's unlocked or not
+    private void DrawUnlockPics(MapInfo map)
+    {
+        if (Intermission.UnlockPics is not { } row || (row.Clusters.Count > 0 && !row.Clusters.Contains(map.Cluster)))
+            return;
+        for (int i = 0; i < row.Unlocks.Count; i++)
+            graphics.DrawPic(hooks.IsUnlocked?.Invoke(row.Unlocks[i]) == true ? row.Unlocked : row.Locked, row.X + i * row.StepX, row.Y);
+    }
+
+    // intermission.yaml stealth-bonus: the line for a level finished unseen, and its sound
+    private void DrawStealthBonus()
+    {
+        if (Intermission.StealthBonus is not { } bonus
+            || StealthBonusText(bonus, session.PlayerState, session.GameState) is not { Length: > 0 } text)
+            return;
+        var style = new TextStyle(bonus.Font ?? IntermissionTextStyle.Font, bonus.Color ?? IntermissionTextStyle.Color);
+        ui.CenteredText(0, 320, bonus.Y, style).CPrint(text.ToLanguageText(assets.GetText("en-us")));
+        PlayIntermissionSound(bonus.Sound);
+    }
+
+    /// <summary>Finished unseen without killing anyone, of some there (Midnight Assault's infiltration)</summary>
+    internal static bool UnseenNoKills(Entities.PlayerState player, GameState game) =>
+        player.Undetected && game.KillCount == 0 && game.KillTotal > 0;
+
+    /// <summary>
+    /// The stealth bonus line for how the level was finished unseen (the original's order: every
+    /// enemy killed unseen, none killed, every kill unseen with some left); null when it wasn't,
+    /// or had no stealth tally
+    /// </summary>
+    internal static string? StealthBonusText(IntermissionStealthBonus bonus, Entities.PlayerState player, GameState game)
+    {
+        if (!player.Undetected || !(player.StealthKills > 0 || UnseenNoKills(player, game)))
+            return null;
+        if (player.StealthKills == game.KillTotal)
+            return bonus.AllKills;
+        if (UnseenNoKills(player, game))
+            return bonus.NoKills;
+        if (player.StealthKills == game.KillCount && game.KillCount < game.KillTotal)
+            return bonus.SomeKills;
+        return null;
+    }
 
     /// <summary>A label's style: the screen's, in its own color if it has one</summary>
     private TextStyle LabelStyle(IntermissionLabel label) =>

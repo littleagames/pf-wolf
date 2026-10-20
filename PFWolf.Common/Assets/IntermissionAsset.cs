@@ -59,6 +59,15 @@ public record IntermissionAsset : Asset
     /// </summary>
     public string? ValueBackgroundPic { get; set; }
 
+    /// <summary>Stars beside the figures once they're all shown (Midnight Assault's reward stars)</summary>
+    public IntermissionStars? Stars { get; set; }
+
+    /// <summary>A row of pictures, one for each of some unlocks, as it's unlocked or not (Midnight Assault's dog tags)</summary>
+    public IntermissionUnlockPics? UnlockPics { get; set; }
+
+    /// <summary>A line under the tally for a level finished unseen (Midnight Assault's stealth bonus)</summary>
+    public IntermissionStealthBonus? StealthBonus { get; set; }
+
     public IntermissionSounds Sounds { get; set; } = new();
 
     public IntermissionScoring Scoring { get; set; } = new();
@@ -123,6 +132,59 @@ public record DeathCamScreen
 
     /// <summary>Tics (70 a second) the text stays up before the replay, unless a key is pressed</summary>
     public int HoldTics { get; set; }
+}
+
+/// <summary>
+/// Stars beside the level-end screen's figures once they're all shown: gold where one's perfect
+/// (time: under par; a ratio or objective: 100%), silver where it betters the level's best before
+/// this finish (records.cfg; time: quicker; a level never finished before has nothing to better).
+/// at: where each goes, by value name (time, kill, secret, treasure, objective.NAME).
+/// </summary>
+public record IntermissionStars
+{
+    public string Gold { get; set; } = "";
+    public string Silver { get; set; } = "";
+    public Dictionary<string, IntermissionPlace> At { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>
+/// A row of pictures once the tally's shown, one for each of the unlocks in turn from (x, y),
+/// step-x apart: unlocked's picture if it's unlocked (progress.cfg), else locked's. clusters:
+/// only on those clusters' levels; on every level when left out.
+/// </summary>
+public record IntermissionUnlockPics
+{
+    public List<string> Unlocks { get; set; } = [];
+    public string Unlocked { get; set; } = "";
+    public string Locked { get; set; } = "";
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int StepX { get; set; }
+    public List<int> Clusters { get; set; } = [];
+}
+
+/// <summary>
+/// A line centred at y once the tally's shown, for a level finished unseen with a stealth tally
+/// (stealth kills, or none killed of some there), with its sound: all-kills when every enemy was
+/// killed unseen, no-kills when none was killed, some-kills when every kill was unseen but some
+/// were left. Texts are $language keys or the text.
+/// </summary>
+public record IntermissionStealthBonus
+{
+    public int Y { get; set; }
+    public string? Font { get; set; }
+    public string? Color { get; set; }
+    public string? Sound { get; set; }
+    public string AllKills { get; set; } = "";
+    public string NoKills { get; set; } = "";
+    public string SomeKills { get; set; } = "";
+}
+
+/// <summary>A place on the screen</summary>
+public record IntermissionPlace
+{
+    public int X { get; set; }
+    public int Y { get; set; }
 }
 
 /// <summary>A picture at (x, y)</summary>

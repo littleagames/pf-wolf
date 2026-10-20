@@ -319,6 +319,11 @@ public class HighScoreRankingTests
         Assert.That((score.Score, (int)score.Completed, (int)score.Episode, (int)score.Ratio), Is.EqualTo((1234, completed, episode, ratio)));
     }
 
+}
+
+/// <summary>The level-end screen's pictures, stars and stealth line (Midnight Assault's)</summary>
+public class LevelEndScreenTests
+{
     [Test]
     public void BJ_Breathes_Through_The_Levels_Own_Pictures_Where_It_Has_Them()
     {
@@ -357,5 +362,103 @@ public class HighScoreRankingTests
         Assert.That((screen.Bj!.X, screen.Bj.Y, screen.Bj.BreathTics), Is.EqualTo((37, 50, 25)));
         Assert.That(screen.Labels![0].Color, Is.EqualTo("#A01414"));
         Assert.That(gameInfo.Maps["CAMP01"].IntermissionPics, Has.Count.EqualTo(3));
+    }
+
+    [TestCase(100, 40, "Gold")]
+    [TestCase(60, 40, "Silver")]     // bettered the level's best
+    [TestCase(40, 40, "None")]
+    [TestCase(10, null, "Silver")]   // never finished before: anything bettered it
+    [TestCase(0, null, "None")]
+    public void A_Ratio_Earns_Gold_At_100_And_Silver_For_A_New_Best(int percent, int? before, string star)
+    {
+        Assert.That(IntermissionScreen.RatioStar(percent, before).ToString(), Is.EqualTo(star));
+    }
+
+    [Test]
+    public void The_Time_Earns_Gold_Under_Par_And_Silver_When_Quicker_Than_Ever()
+    {
+        var best = new Gameplay.LevelResult { Time = 700 };
+
+        Assert.That(IntermissionScreen.TimeStar(underPar: true, 9999, best), Is.EqualTo(IntermissionScreen.Star.Gold));
+        Assert.That(IntermissionScreen.TimeStar(underPar: false, 600, best), Is.EqualTo(IntermissionScreen.Star.Silver));
+        Assert.That(IntermissionScreen.TimeStar(underPar: false, 800, best), Is.EqualTo(IntermissionScreen.Star.None));
+        Assert.That(IntermissionScreen.TimeStar(underPar: false, 800, null), Is.EqualTo(IntermissionScreen.Star.Silver));
+    }
+
+    [Test]
+    public void A_Records_Percentages_Are_As_The_Tally_Shows_Them()
+    {
+        // Arrange
+        var record = new Gameplay.LevelResult
+        {
+            Kills = 3, KillTotal = 4, Secrets = 0, SecretTotal = 0,
+            Objectives = new(StringComparer.OrdinalIgnoreCase) { ["intel"] = (1, 2), ["kilroys"] = (0, 0) },
+        };
+
+        // Act / Assert: none of a ratio's 0, an objective with none to do 100
+        Assert.That(IntermissionScreen.RecordPercent(record, "kill"), Is.EqualTo(75));
+        Assert.That(IntermissionScreen.RecordPercent(record, "secret"), Is.EqualTo(0));
+        Assert.That(IntermissionScreen.RecordPercent(record, "objective.intel"), Is.EqualTo(50));
+        Assert.That(IntermissionScreen.RecordPercent(record, "objective.kilroys"), Is.EqualTo(100));
+        Assert.That(IntermissionScreen.RecordPercent(null, "kill"), Is.Null);
+    }
+
+    private static readonly IntermissionStealthBonus Bonus = new() { AllKills = "all", NoKills = "none", SomeKills = "some" };
+
+    [TestCase(true, 5, 5, 5, "all")]      // every enemy killed unseen
+    [TestCase(true, 0, 0, 5, "none")]     // none killed
+    [TestCase(true, 2, 2, 5, "some")]     // every kill unseen, some left
+    [TestCase(true, 1, 2, 5, null)]       // a kill that wasn't unseen
+    [TestCase(false, 0, 0, 5, null)]      // seen
+    [TestCase(true, 0, 0, 0, null)]       // nobody to kill: no stealth tally
+    public void The_Stealth_Bonus_Line_Is_The_Originals(bool undetected, int stealthKills, int kills, int killTotal, string? line)
+    {
+        // Arrange
+        var player = new Entities.PlayerState { Undetected = undetected, StealthKills = stealthKills };
+        var game = new GameState { KillCount = (short)kills, KillTotal = (short)killTotal };
+
+        // Act / Assert
+        Assert.That(IntermissionScreen.StealthBonusText(Bonus, player, game), Is.EqualTo(line));
+    }
+
+    [Test]
+    public void Only_An_Unseen_Run_Without_Kills_Of_Some_There_Is_An_Infiltration()
+    {
+        Assert.That(IntermissionScreen.UnseenNoKills(new Entities.PlayerState { Undetected = true }, new GameState { KillTotal = 3 }), Is.True);
+        Assert.That(IntermissionScreen.UnseenNoKills(new Entities.PlayerState { Undetected = true }, new GameState { KillCount = 1, KillTotal = 3 }), Is.False);
+        Assert.That(IntermissionScreen.UnseenNoKills(new Entities.PlayerState { Undetected = false }, new GameState { KillTotal = 3 }), Is.False);
+    }
+
+    [Test]
+    public void The_Stars_Dog_Tags_And_Stealth_Line_Read_From_Their_Files()
+    {
+        // Act
+        var screen = Loaders.YamlDataEntryLoader.Deserialize<IntermissionAsset>("""
+            stars:
+              gold: L_GOLDSTAR
+              silver: L_SILVERSTAR
+              at:
+                time: { x: 278, y: 85 }
+                objective.intel: { x: 278, y: 127 }
+            unlock-pics:
+              unlocks: [DT01, DT02]
+              unlocked: L_DT_FOUND
+              locked: L_DT_NOTFOUND
+              x: 152
+              y: 40
+              step-x: 13
+              clusters: [1]
+            stealth-bonus:
+              y: 188
+              sound: misc/stealth_bonus
+              no-kills: "$STR_STEALTHNOKILLS"
+            """);
+        var gameInfo = Loaders.YamlDataEntryLoader.Deserialize<GameInfoAsset>("stealth: { unseen-no-kills-counts-all: true }");
+
+        // Assert
+        Assert.That(screen.Stars!.At["objective.intel"], Is.EqualTo(new IntermissionPlace { X = 278, Y = 127 }));
+        Assert.That((screen.UnlockPics!.Unlocks.Count, screen.UnlockPics.StepX, screen.UnlockPics.Clusters.Single()), Is.EqualTo((2, 13, 1)));
+        Assert.That((screen.StealthBonus!.Y, screen.StealthBonus.Sound, screen.StealthBonus.NoKills), Is.EqualTo((188, "misc/stealth_bonus", "$STR_STEALTHNOKILLS")));
+        Assert.That(gameInfo.Stealth.UnseenNoKillsCountsAll, Is.True);
     }
 }

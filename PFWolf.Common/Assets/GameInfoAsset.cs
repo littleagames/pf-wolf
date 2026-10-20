@@ -1328,6 +1328,13 @@ public record StealthInfo
 
     /// <summary>Tiles away (either way) past which a disguised player is ignored</summary>
     public int Range { get; init; } = 10;
+
+    /// <summary>
+    /// A level finished unseen without killing anyone, of some there, counts every kill: its kill
+    /// ratio shows 100% at the end of the tally and its record has them all (Midnight Assault's
+    /// "Infiltration successful!")
+    /// </summary>
+    public bool UnseenNoKillsCountsAll { get; init; }
 }
 
 /// <summary>

@@ -106,9 +106,11 @@ internal static partial class GameHost
     /// </summary>
     static void LevelWon(PlayState how)
     {
+        PreviousLevelRecord = null;
         if (DemoPlayback || GameState.MapOn is not { Length: > 0 } map)
             return;
         var result = CurrentLevelResult(map);
+        PreviousLevelRecord = LevelRecords.Get(map);
         LevelRecords.Record(map, result);
         gameScripts.RunLevelEndHooks(map, result, how switch
         {
@@ -118,13 +120,19 @@ internal static partial class GameHost
         });
     }
 
+    /// <summary>The finished level's best before this finish bettered it (the level-end screen's silver stars)</summary>
+    internal static LevelResult? PreviousLevelRecord { get; private set; }
+
     /// <summary>What the level being played has come to so far</summary>
     internal static LevelResult CurrentLevelResult(string map)
     {
-        int par = GameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.ParTime : 0;
+        var gameInfo = GameEngineManager.GetGameInfo();
+        int par = gameInfo.Maps.TryGetValue(map, out var info) ? info.ParTime : 0;
+        // game-info stealth unseen-no-kills-counts-all: an infiltration counts every kill
+        bool allKills = gameInfo.Stealth.UnseenNoKillsCountsAll && IntermissionScreen.UnseenNoKills(Session.PlayerState, GameState);
         return new LevelResult
         {
-            Kills = GameState.KillCount, KillTotal = GameState.KillTotal,
+            Kills = allKills ? GameState.KillTotal : GameState.KillCount, KillTotal = GameState.KillTotal,
             Secrets = GameState.SecretCount, SecretTotal = GameState.SecretTotal,
             Items = GameState.TreasureCount, ItemTotal = GameState.TreasureTotal,
             Time = GameState.TimeCount,
