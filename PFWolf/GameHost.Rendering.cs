@@ -125,7 +125,7 @@ internal static partial class GameHost
             },
             () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole,
             () => ScreenshotPending, () => ScreenshotPending = false, TakeScreenshot, UpdateViewQuake,
-            () => WeaponZoom.ScopePicture(), DrawScope));
+            () => WeaponZoom.ScopePicture(), DrawScope, () => Session.LocalPlayer.CinematicTics > 0));
 
     // A scope's picture over the whole screen (the original's H_SNIPERSCOPE at 0, 0), with black
     // past its edges on a screen wider or taller than it, so nothing outside the scope shows

@@ -1554,7 +1554,7 @@ internal class MapManager
         MarkForRemoval(old);
         if (!session.LoadedGame && old.HasFlag("COUNTITEM") && session.GameState.TreasureTotal > 0)
             session.GameState.TreasureTotal--;
-        if (ActorAt[x, y] is BlockingActor)
+        if (ActorAt[x, y] is BlockingActor || ActorAt[x, y] is ActorMark mark && ReferenceEquals(mark.Who, old))
             ActorAt[x, y] = null;
         int angles = old.Dir == ObjDir.NoDir ? -1 : (int)old.Dir * 45;
         var replaced = SpawnThing(x, y, new MapActorTranslation { Class = className, Angles = angles }, countKill: false);

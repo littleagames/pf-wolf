@@ -71,6 +71,9 @@ internal partial record Monster : Actor
     {
         ActorActionRegistry.RegisterFor<Monster>("T_Stand", m => m.Stand());
         ActorActionRegistry.RegisterFor<Monster>("T_Path", m => m.Patrol());
+        // Running off to a marker (see RETREATING): Midnight Assault's Commander between phases
+        ActorActionRegistry.RegisterFor<Monster>("A_RetreatTo", (m, args) => m.RetreatTo(args));
+        ActorActionRegistry.RegisterFor<Monster>("T_Retreat", m => m.Retreat());
         ActorActionRegistry.RegisterFor<Monster>("T_Chase", m => m.Chase());
         ActorActionRegistry.RegisterFor<Monster>("T_DogChase", m => m.DogChase());
         ActorActionRegistry.RegisterFor<Monster>("T_Bite", m => m.Bite());
@@ -1945,6 +1948,188 @@ internal partial record Monster : Actor
             if (Dir == ObjDir.NoDir)
                 return;
         }
+    }
+
+    /*
+    =============================================================================
+
+                                    RETREATING
+
+    A_RetreatTo("Class"[, tag[, speed]]) sends a monster off to the nearest actor of that class
+    (with that tag, if given: a marker the map places), at that speed if given; it can't be
+    shot on the way. T_Retreat runs it there by the shortest open way (doors opened as it
+    reaches them; another monster in the way it waits behind), and once it's within 3 tiles
+    each way it's put on the spot and goes to its Retreated state (Midnight Assault's
+    Commander, running off between phases to come back as the next: T_Retreat,
+    SelectRetreatDir). With no way there at all, or no goal (a game loaded mid-run), it's put
+    there at once.
+
+    =============================================================================
+    */
+
+    // Its retreat's goal tile (A_RetreatTo); -1 for none
+    internal int RetreatX = -1, RetreatY = -1;
+
+    /// <summary>A_RetreatTo: see RETREATING</summary>
+    internal void RetreatTo(string[] args)
+    {
+        var className = args.ElementAtOrDefault(0)?.Trim() ?? "";
+        ushort? tag = ushort.TryParse(args.ElementAtOrDefault(1), out var t) && t > 0 ? t : null;
+        var goal = MapManager.GetActors()
+            .Where(a => !a.IsRemoved && a.Name.Equals(className, StringComparison.OrdinalIgnoreCase) && (tag == null || a.Tag == tag))
+            .OrderBy(a => Math.Max(Math.Abs(a.TileX - TileX), Math.Abs(a.TileY - TileY)))
+            .FirstOrDefault();
+        if (goal == null)
+        {
+            Console.WriteLine($"A_RetreatTo ({Name}): there's no \"{className}\"{(tag != null ? $" with tag {tag}" : "")} to go to.");
+            (RetreatX, RetreatY) = (-1, -1);
+            return;
+        }
+
+        (RetreatX, RetreatY) = (goal.TileX, goal.TileY);
+        if (int.TryParse(args.ElementAtOrDefault(2), out var speed) && speed > 0)
+            Speed = speed;
+        RuntimeFlags &= ~ObjFlags.Shootable;        // out of reach on its way
+        Dir = ObjDir.NoDir;
+    }
+
+    bool NearRetreat => Math.Abs(RetreatX - TileX) <= 3 && Math.Abs(RetreatY - TileY) <= 3;
+
+    /// <summary>T_Retreat: see RETREATING</summary>
+    internal void Retreat()
+    {
+        if (GameState.VictoryFlag)
+            return;
+        if (RetreatX < 0 || NearRetreat)
+        {
+            ArriveFromRetreat();
+            return;
+        }
+
+        if (Dir == ObjDir.NoDir)
+        {
+            if (!SelectRetreatDir())
+                return;
+            if (Dir == ObjDir.NoDir)
+                return;
+        }
+
+        var move = (int)(Speed * Tics);
+        while (move != 0)
+        {
+            if (Distance < 0)
+            {
+                OpenDoor(-Distance - 1);
+                if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
+                    return;
+                Distance = (int)MapConstants.TileGlobal;
+                if (!(DemoRecord || DemoPlayback))
+                    TryWalk();
+            }
+
+            if (move < Distance)
+            {
+                MoveObj(move);
+                break;
+            }
+
+            ArriveOnTile();
+            move -= Distance;
+            if (NearRetreat)
+            {
+                ArriveFromRetreat();
+                return;
+            }
+            if (!SelectRetreatDir() || Dir == ObjDir.NoDir)
+                return;
+        }
+    }
+
+    // On the spot (its retreat's goal, if it has one), then its Retreated state
+    void ArriveFromRetreat()
+    {
+        if (RetreatX >= 0)
+        {
+            MapManager.UnmarkActorTile(TileX, TileY);
+            SetPosition(RetreatX, RetreatY);        // its think marks it there again, as it lives
+        }
+        (RetreatX, RetreatY) = (-1, -1);
+        Dir = ObjDir.NoDir;
+        if (ResolvedStates.ContainsKey("Retreated"))
+            SetState("Retreated");
+    }
+
+    /// <summary>
+    /// The next step toward its retreat's goal: of the four ways, the one nearest by the open
+    /// way there that it can walk (none: it waits a turn). False, having put it there, when
+    /// there's no way there at all.
+    /// </summary>
+    bool SelectRetreatDir()
+    {
+        Dir = ObjDir.NoDir;
+        var steps = RetreatSteps(RetreatX, RetreatY);
+        int here = steps[TileX, TileY];
+        if (here < 0)
+        {
+            Console.WriteLine($"T_Retreat ({Name}): no way from {TileX},{TileY} to {RetreatX},{RetreatY}; it's put there.");
+            ArriveFromRetreat();
+            return false;
+        }
+
+        (ObjDir Dir, int Dx, int Dy)[] ways = [(ObjDir.East, 1, 0), (ObjDir.North, 0, -1), (ObjDir.West, -1, 0), (ObjDir.South, 0, 1)];
+        foreach (var way in ways
+            .Where(w => InMap(TileX + w.Dx, TileY + w.Dy) && steps[TileX + w.Dx, TileY + w.Dy] is >= 0 and var n && n < here)
+            .OrderBy(w => steps[TileX + w.Dx, TileY + w.Dy]))
+        {
+            Dir = way.Dir;
+            if (TryWalk())
+                return true;
+        }
+        Dir = ObjDir.NoDir;
+        return true;
+    }
+
+    bool InMap(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MapWidth && y < MapManager.MapHeight;
+
+    /// <summary>
+    /// Steps from each tile to (gx, gy) by the open way, four ways, through doors but not walls,
+    /// solid things or a monster blocker it's kept off; -1 where there's no way
+    /// </summary>
+    int[,] RetreatSteps(int gx, int gy)
+    {
+        int w = MapManager.MapWidth, h = MapManager.MapHeight;
+        var steps = new int[w, h];
+        for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+                steps[x, y] = -1;
+        if (!InMap(gx, gy))
+            return steps;
+
+        bool Open(int x, int y)
+        {
+            if (!InMap(x, y) || Blocked(x, y))
+                return false;
+            var tile = MapManager.TileMap[x, y];
+            if (tile != 0 && (tile & GameConstants.BitDoor) == 0)
+                return false;
+            return MapManager.ActorAt[x, y] is not BlockingActor;
+        }
+
+        var queue = new Queue<(int X, int Y)>();
+        steps[gx, gy] = 0;
+        queue.Enqueue((gx, gy));
+        while (queue.Count > 0)
+        {
+            var (x, y) = queue.Dequeue();
+            foreach (var (nx, ny) in new[] { (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1) })
+            {
+                if (!InMap(nx, ny) || steps[nx, ny] >= 0 || !((nx, ny) == (TileX, TileY) || Open(nx, ny)))
+                    continue;
+                steps[nx, ny] = steps[x, y] + 1;
+                queue.Enqueue((nx, ny));
+            }
+        }
+        return steps;
     }
 
     internal void DogChase()

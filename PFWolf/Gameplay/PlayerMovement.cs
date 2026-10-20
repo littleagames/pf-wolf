@@ -60,9 +60,10 @@ internal sealed class PlayerMovement(
 
         // Manning a mounted gun, they turn but don't move (Gameplay/MountedWeapons.cs), nor
         // riding, where the vehicle carries them (Gameplay/Vehicles.cs); with something latched
-        // on, they move that many times slower (Gameplay/Latching.cs)
+        // on, they move that many times slower (Gameplay/Latching.cs); watching a cutscene
+        // (A_Cinematic) they turn but don't move either
         bool riding = playerstate.Vehicle != null;
-        bool mounted = playerstate.Mount != null || riding;
+        bool mounted = playerstate.Mount != null || riding || playerstate.CinematicTics > 0;
         int slowdown = Math.Max(playerstate.MoveSlowdown, 1);
         void Move(int moveAngle, int speed)
         {

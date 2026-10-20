@@ -19,6 +19,7 @@ namespace PFWolf.Rendering;
 /// <param name="UpdateViewQuake">Moves any quake on and sets the view's focal length for it and a scope's zoom (Rendering/ViewQuake.cs)</param>
 /// <param name="ScopePicture">The scope's picture while the player looks through one (Gameplay/WeaponZoom.cs), else null</param>
 /// <param name="DrawScope">Draws it over the screen, in place of the weapon in hand</param>
+/// <param name="Cinematic">Whether the local player is watching a cutscene (A_Cinematic): no weapon in hand, black bars top and bottom</param>
 internal sealed record FrameRefreshHooks(
     Func<FadeStyle> LevelFadeStyle,
     Func<int> LevelFadeTics,
@@ -33,7 +34,8 @@ internal sealed record FrameRefreshHooks(
     Func<string> TakeScreenshot,
     Action UpdateViewQuake,
     Func<string?> ScopePicture,
-    Action<string> DrawScope);
+    Action<string> DrawScope,
+    Func<bool>? Cinematic = null);
 
 /// <summary>
 /// One frame of the 3D view: the tics since the last (CalcTics), the view from the camera
@@ -233,9 +235,12 @@ internal sealed class FrameRefresh(
         playerView.PlayerSight();                  // what the player sees, when the camera is elsewhere
         FrameProfiler.Mark(FrameProfiler.Section.Sprites);
 
-        // Looking through a scope, its picture takes the weapon in hand's place
-        var scope = hooks.ScopePicture();
-        if (scope == null)
+        // Looking through a scope, its picture takes the weapon in hand's place; watching a
+        // cutscene, there's none, and black bars cover the top and bottom thirty lines of 200
+        // (Midnight Assault's inCinematic)
+        bool cinematic = hooks.Cinematic?.Invoke() == true;
+        var scope = cinematic ? null : hooks.ScopePicture();
+        if (scope == null && !cinematic)
             spriteDrawing.DrawPlayerWeapon();    // draw player's hands
 
         video.UnlockSurface();
@@ -243,6 +248,12 @@ internal sealed class FrameRefresh(
 
         if (scope != null)
             hooks.DrawScope(scope);
+        if (cinematic)
+        {
+            int bar = render.ViewHeight * 30 / 200;
+            video.BarScaledCoord(render.ViewScreenX, render.ViewScreenY, render.ViewWidth, bar, "Black");
+            video.BarScaledCoord(render.ViewScreenX, render.ViewScreenY + render.ViewHeight - bar, render.ViewWidth, bar, "Black");
+        }
         FrameProfiler.Mark(FrameProfiler.Section.Weapon);
 
         // For the next save's thumbnail, before the automap or console is drawn over the view

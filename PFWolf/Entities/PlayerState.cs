@@ -96,6 +96,10 @@ internal sealed class PlayerState
     public string? Vehicle, VehicleMap;
     public int VehicleSpeed, VehicleThrottle;
 
+    // Watching a cutscene (A_Cinematic): tics left, while they can turn but not walk, their
+    // weapon isn't drawn and black bars cover the top and bottom of the view
+    public int CinematicTics;
+
     // Something latched on (Gameplay/Latching.cs): who, the struggle it puts in their hands, the
     // weapon they had picked before, the map, how many times they've struck at it, and how many
     // times slower they move

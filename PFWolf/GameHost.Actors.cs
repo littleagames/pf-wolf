@@ -150,6 +150,14 @@ internal static partial class GameHost
         });
         ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => MountedWeapons.Mount(ob, args));
         ActorActionRegistry.Register("A_Board", (Entities.Actors.Actor ob, string[] args) => Vehicles.Board(ob, args));     // Gameplay/Vehicles.cs
+        // A_Cinematic(tics): every player watches a cutscene that long: they turn but don't walk, with no
+        // weapon in hand and black bars top and bottom (Midnight Assault's inCinematic, the Commander's retreats)
+        ActorActionRegistry.Register("A_Cinematic", (Entities.Actors.Actor _, string[] args) =>
+        {
+            if (int.TryParse(args.ElementAtOrDefault(0), out var tics) && tics > 0)
+                foreach (var p in PlayerStates)
+                    p.CinematicTics = Math.Max(p.CinematicTics, tics);
+        });
         // A_Replace("Class"): becomes one of another class where it stands, facing the same way
         // (Midnight Assault's gates: a lock clipped off, a gate opened)
         ActorActionRegistry.Register("A_Replace", (Entities.Actors.Actor ob, string[] args) =>
@@ -282,6 +290,8 @@ internal static partial class GameHost
                 Vehicles.Tick();                // and off a vehicle (dying, a new level)
                 Latching.Tick();                // and out of a struggle that's over
                 Stealth.Tick();                 // the suspicion meter
+                if (Session.PlayerState.CinematicTics > 0)     // a cutscene running out (A_Cinematic)
+                    Session.PlayerState.CinematicTics = Math.Max(Session.PlayerState.CinematicTics - (int)Session.Tics, 0);
                 playerUse.ShowFacingMessage();  // a use trigger's facing-message (the exits')
             },
             () => deathmatch.Objective?.IsWaiting(Session.PlayerState) == true));
