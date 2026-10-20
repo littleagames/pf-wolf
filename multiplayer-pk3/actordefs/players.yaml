@@ -46,6 +46,11 @@ GuardPlayer:
   properties:
     "tag": "Guard"
     "deathsound": "guard/death"
+    # The status bar face (graphicdefs/faces.yaml)
+    "player.face": [GUARDFACE8, GUARDFACE1, GUARDFACE2]
+    "player.facegrin": GUARDGRIN
+    "player.faceouch": GUARDOUCH
+    "player.facedead": GUARDDEAD
 
 OfficerPlayer:
   parent: "Player"
@@ -80,6 +85,10 @@ OfficerPlayer:
   properties:
     "tag": "Officer"
     "deathsound": "officer/death"
+    "player.face": [OFFICERFACE8, OFFICERFACE1, OFFICERFACE2]
+    "player.facegrin": OFFICERGRIN
+    "player.faceouch": OFFICEROUCH
+    "player.facedead": OFFICERDEAD
 
 # The SS stands feet together (W); A to D is its walk
 SSPlayer:
@@ -115,6 +124,10 @@ SSPlayer:
   properties:
     "tag": "SS Guard"
     "deathsound": "wolfss/death"
+    "player.face": [SSFACE8, SSFACE1, SSFACE2]
+    "player.facegrin": SSGRIN
+    "player.faceouch": SSOUCH
+    "player.facedead": SSDEAD
 
 MutantPlayer:
   parent: "Player"
@@ -149,6 +162,10 @@ MutantPlayer:
   properties:
     "tag": "Mutant"
     "deathsound": "mutant/death"
+    "player.face": [MUTANTFACE8, MUTANTFACE1, MUTANTFACE2]
+    "player.facegrin": MUTANTGRIN
+    "player.faceouch": MUTANTOUCH
+    "player.facedead": MUTANTDEAD
 
 # The dog has no stand or pain frames: it stands, and flinches, on its first walk frame. E to G
 # is its leap and bite.
@@ -185,6 +202,10 @@ DogPlayer:
   properties:
     "tag": "Dog"
     "deathsound": "dog/death"
+    # No pain frame, so no player.faceouch: it doesn't wince
+    "player.face": [DOGFACE8, DOGFACE1, DOGFACE2]
+    "player.facegrin": DOGGRIN
+    "player.facedead": DOGDEAD
     # Eyes a quarter of a story up, not half (texels, 64 a story)
     "player.eyeheight": 16
     # Bites, and never picks up a weapon or ammo

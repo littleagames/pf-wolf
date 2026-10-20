@@ -1,0 +1,44 @@
+# The enemy player classes' status bar faces (actordefs/players.yaml player.face and the rest):
+# each a 24x32 bust, the size of B.J.'s face, cut from the enemy's own sprite on the grey B.J.'s
+# faces have behind them. The face looks around through three of the standing frame's sides
+# (8, 1 and 2), grins with its attack frame, winces with its pain frame and shows its first death
+# frame once dead. The dog has no pain frame, so it doesn't wince.
+
+# Guard
+GUARDFACE8: { source: GARDA8, x: 19, y: 13, width: 24, height: 32, background: "#484848" }
+GUARDFACE1: { source: GARDA1, x: 19, y: 13, width: 24, height: 32, background: "#484848" }
+GUARDFACE2: { source: GARDA2, x: 19, y: 13, width: 24, height: 32, background: "#484848" }
+GUARDGRIN:  { source: GARDG0, x: 20, y: 14, width: 24, height: 32, background: "#484848" }
+GUARDOUCH:  { source: GARDI0, x: 24, y: 14, width: 24, height: 32, background: "#484848" }
+GUARDDEAD:  { source: GARDK0, x: 23, y: 9, width: 24, height: 32, background: "#484848" }
+
+# Officer
+OFFICERFACE8: { source: OFFIA8, x: 20, y: 10, width: 24, height: 32, background: "#484848" }
+OFFICERFACE1: { source: OFFIA1, x: 20, y: 10, width: 24, height: 32, background: "#484848" }
+OFFICERFACE2: { source: OFFIA2, x: 20, y: 10, width: 24, height: 32, background: "#484848" }
+OFFICERGRIN:  { source: OFFIG0, x: 17, y: 13, width: 24, height: 32, background: "#484848" }
+OFFICEROUCH:  { source: OFFII0, x: 22, y: 13, width: 24, height: 32, background: "#484848" }
+OFFICERDEAD:  { source: OFFIK0, x: 16, y: 11, width: 24, height: 32, background: "#484848" }
+
+# SS
+SSFACE8: { source: SSWVW8, x: 20, y: 6, width: 24, height: 32, background: "#484848" }
+SSFACE1: { source: SSWVW1, x: 20, y: 6, width: 24, height: 32, background: "#484848" }
+SSFACE2: { source: SSWVW2, x: 20, y: 6, width: 24, height: 32, background: "#484848" }
+SSGRIN:  { source: SSWVF0, x: 18, y: 7, width: 24, height: 32, background: "#484848" }
+SSOUCH:  { source: SSWVH0, x: 22, y: 9, width: 24, height: 32, background: "#484848" }
+SSDEAD:  { source: SSWVJ0, x: 22, y: 15, width: 24, height: 32, background: "#484848" }
+
+# Mutant
+MUTANTFACE8: { source: MTNTA8, x: 20, y: 15, width: 24, height: 32, background: "#484848" }
+MUTANTFACE1: { source: MTNTA1, x: 20, y: 15, width: 24, height: 32, background: "#484848" }
+MUTANTFACE2: { source: MTNTA2, x: 20, y: 15, width: 24, height: 32, background: "#484848" }
+MUTANTGRIN:  { source: MTNTG0, x: 20, y: 16, width: 24, height: 32, background: "#484848" }
+MUTANTOUCH:  { source: MTNTJ0, x: 20, y: 22, width: 24, height: 32, background: "#484848" }
+MUTANTDEAD:  { source: MTNTL0, x: 20, y: 16, width: 24, height: 32, background: "#484848" }
+
+# Dog: its head is lower down, and off to the side it faces
+DOGFACE8: { source: DOGYA8, x: 28, y: 28, width: 24, height: 32, background: "#484848" }
+DOGFACE1: { source: DOGYA1, x: 20, y: 28, width: 24, height: 32, background: "#484848" }
+DOGFACE2: { source: DOGYA2, x: 12, y: 28, width: 24, height: 32, background: "#484848" }
+DOGGRIN:  { source: DOGYF0, x: 14, y: 18, width: 24, height: 32, background: "#484848" }
+DOGDEAD:  { source: DOGYH0, x: 11, y: 30, width: 24, height: 32, background: "#484848" }
