@@ -12,7 +12,12 @@ namespace PFWolf.DocGen;
 /// <param name="ModPath">Where a mod keeps it; null when mods can't carry it</param>
 /// <param name="BasePath">Where pfwolf.pk3 keeps it ({pack} is the game pack's id)</param>
 /// <param name="Schema">Its fields</param>
-public sealed record DefinitionFile(string Id, string Title, string Summary, string? ModPath, string? BasePath, Func<FieldSchema> Schema);
+/// <param name="Api">
+/// Things that are called or typed (actions, script functions, commands, options), each with its
+/// signature, shown as entries of their own rather than a table of fields
+/// </param>
+public sealed record DefinitionFile(string Id, string Title, string Summary, string? ModPath, string? BasePath, Func<FieldSchema> Schema,
+    bool Api = false);
 
 /// <summary>
 /// The YAML files the game reads definitions from, and the types it reads them as (as
@@ -37,13 +42,13 @@ public static class DefinitionFiles
         new("actor-flags", "Actor flags", "The flags an actor class can have under flags:, and what each does.",
             "actordefs/*.yaml", "actordefs/{pack}/*.yaml", ActorFlags.Schema),
         new("actions", "Actions", "The thinks and actions actor states and map switches can run, and what each does.",
-            "actordefs/*.yaml", "actordefs/{pack}/*.yaml", GameActions.Schema),
+            "actordefs/*.yaml", "actordefs/{pack}/*.yaml", GameActions.Schema, Api: true),
         new("scripting", "Lua scripting", "What a mod's Lua scripts can use: the game table, actors' fields and methods, and Lua's own functions.",
-            "scripts/*.lua", null, Scripting.ScriptApi.Schema),
+            "scripts/*.lua", null, Scripting.ScriptApi.Schema, Api: true),
         new("console", "Console commands", "The commands the in-game console runs, and what each does.",
-            null, null, ConsoleCommandsSchema.Build),
+            null, null, ConsoleCommandsSchema.Build, Api: true),
         new("command-line", "Command-line options", "The options PFWolf starts with: the game, mods, a level to warp to, video, and more.",
-            null, null, CommandLineSchema.Build),
+            null, null, CommandLineSchema.Build, Api: true),
         new("mapdefs", "mapdefs/*.yaml", "What each value on a map's planes is: walls, doors, things, floors and more.",
             "mapdefs/*.yaml", "mapdefs/{pack}/*.yaml", () => FieldSchema.For(typeof(MapObjectTranslationAsset))),
         new("animdefs", "animdefs/*.yaml", "Animated textures and pictures.",

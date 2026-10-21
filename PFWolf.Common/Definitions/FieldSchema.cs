@@ -100,6 +100,12 @@ public sealed class FieldSchema
 
     public FieldHint Hint { get; }
 
+    /// <summary>
+    /// How it's written when it's called or typed rather than set (`A_Jump(chance, "State")`,
+    /// `map &lt;MAP##&gt;`): an action, a script function, a command or an option. Null for a field.
+    /// </summary>
+    public string? Signature { get; private init; }
+
     /// <summary>A Dictionary's key type (int for the mapdefs tables)</summary>
     public Type? KeyType { get; }
 
@@ -133,6 +139,10 @@ public sealed class FieldSchema
     public static FieldSchema Value(string key, FieldType type, string? description, string? defaultText = null, FieldHint hint = FieldHint.None,
         IReadOnlyList<string>? choices = null)
         => new(key, LabelFor(key), description, type, typeof(string), choices ?? (type == FieldType.Boolean ? ["true", "false"] : []), defaultText, hint);
+
+    /// <summary>An entry of a hand-made reference of things that are called or typed: how it's written, and what it does</summary>
+    public static FieldSchema Callable(string name, string signature, string description)
+        => new(name, name, description, FieldType.Text, typeof(string), [], null, FieldHint.None) { Signature = signature };
 
     /// <summary>A field of a hand-made schema: named fields of its own</summary>
     public static FieldSchema Record(string key, string? description, IReadOnlyList<FieldSchema> fields)

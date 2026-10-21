@@ -35,6 +35,8 @@ internal sealed class SchemaExporter(string fileId)
             node["default"] = schema.Default;
         if (schema.Hint != FieldHint.None)
             node["hint"] = schema.Hint.ToString().ToLowerInvariant();
+        if (schema.Signature != null)
+            node["signature"] = schema.Signature;
 
         switch (schema.Type)
         {

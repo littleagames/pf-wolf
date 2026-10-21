@@ -196,7 +196,7 @@ public static class ScriptApi
         ]);
 
     private static FieldSchema Section(string key, string description, IReadOnlyList<ScriptApiEntry> entries) =>
-        FieldSchema.Record(key, description, [.. entries.Select(entry => FieldSchema.Value(entry.Name, FieldType.Text, $"`{entry.Signature}`: {entry.Summary.TrimEnd('.')}."))]);
+        FieldSchema.Record(key, description, [.. entries.Select(entry => FieldSchema.Callable(entry.Name, entry.Signature, $"{entry.Summary.TrimEnd('.')}."))]);
 
     private static ScriptApiEntry Fn(string name, string signature, string summary) => new(ScriptApiKind.GameFunction, name, signature, summary, "game");
 

@@ -17,7 +17,7 @@ internal static class ConsoleCommandsSchema
         [.. GameHost.ConsoleCommandList().Select(Field)]);
 
     internal static FieldSchema Field(ConsoleCommand command) =>
-        FieldSchema.Value(command.Name, FieldType.Text, Describe(command));
+        FieldSchema.Callable(command.Name, command.Usage, Describe(command));
 
     internal static string Describe(ConsoleCommand command)
     {
@@ -30,6 +30,6 @@ internal static class ConsoleCommandsSchema
             notes.Add("Only in a level.");
         if (command.Flags.HasFlag(ConsoleCommandFlags.SinglePlayer) && !command.Flags.HasFlag(ConsoleCommandFlags.Cheat))
             notes.Add("Not in a game with others.");
-        return string.Join(" ", [$"`{command.Usage}`: {command.Help.TrimEnd('.')}.", .. notes]);
+        return string.Join(" ", [$"{command.Help.TrimEnd('.')}.", .. notes]);
     }
 }

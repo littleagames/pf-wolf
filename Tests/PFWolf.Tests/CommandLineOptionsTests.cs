@@ -65,4 +65,18 @@ public class CommandLineOptionsTests
         Assert.That(types["--file"], Is.EqualTo(Definitions.FieldType.List));
         Assert.That(types["--warp"], Is.EqualTo(Definitions.FieldType.Text));
     }
+
+    [TestCase("--cheats", "--cheats")]
+    [TestCase("--skill", "--skill <n>")]
+    [TestCase("--file", "--file <path>...")]
+    [TestCase("--warp", "--warp <text>")]
+    [TestCase("mods", "<mods...>")]
+    public void The_Signature_Shows_What_It_Takes(string key, string signature)
+    {
+        // Arrange
+        var option = Options.Single(o => o.Key == key);
+
+        // Act / Assert
+        Assert.That(CommandLineSchema.Signature(option.Key, option.Type), Is.EqualTo(signature));
+    }
 }

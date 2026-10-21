@@ -47,6 +47,27 @@ public class DocGenTests
         Assert.That(exporter.Undocumented, Is.Empty, "give these properties doc comments");
     }
 
+    // A page of things that are called or typed shows each one's signature: every entry has one,
+    // and only those pages do
+    [TestCaseSource(nameof(Files))]
+    public void Api_Pages_And_Only_They_Have_Signatures(DefinitionFile file)
+    {
+        // Act
+        var entries = Entries(new SchemaExporter(file.Id).Export(file.Schema())).ToList();
+
+        // Assert
+        if (file.Api)
+            Assert.That(entries.Where(e => e["signature"] == null).Select(e => (string?)e["key"]), Is.Empty);
+        else
+            Assert.That(entries.Where(e => e["signature"] != null).Select(e => (string?)e["key"]), Is.Empty);
+    }
+
+    // The fields that aren't records themselves (an api page's entries), however deep
+    private static IEnumerable<JsonObject> Entries(JsonObject node) =>
+        node["fields"] is JsonArray fields
+            ? fields.OfType<JsonObject>().SelectMany(f => f["type"]?.GetValue<string>() == "record" ? Entries(f) : [f])
+            : [];
+
     // The fields in a record, and in the records, lists and dictionaries inside it
     private static int CountFields(JsonObject node)
     {

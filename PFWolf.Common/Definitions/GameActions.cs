@@ -197,7 +197,7 @@ public static class GameActions
     public static FieldSchema Schema() => FieldSchema.Record("actions",
         "The thinks (T_, run every tic) and actions (A_, run once) an actordefs state can run (`think: T_Chase`, `action: A_PlaySound(\"x\")`), "
         + "and the actions a mapdefs switch or trigger can run (`actions:`). Arguments in [brackets] can be left out.",
-        [.. All.Select(a => FieldSchema.Value(a.Name, FieldType.Text, Describe(a)))]);
+        [.. All.Select(a => FieldSchema.Callable(a.Name, a.Signature, Describe(a)))]);
 
     static string Describe(GameAction action)
     {
@@ -207,6 +207,6 @@ public static class GameActions
             Switch => "switches and triggers",
             _ => action.Needs != null ? $"actor states of a {action.Needs} (`parent: {action.Needs}`)" : "actor states",
         };
-        return $"`{action.Signature}`: {action.Description.TrimEnd('.')}. Runs from {from}.";
+        return $"{action.Description.TrimEnd('.')}. Runs from {from}.";
     }
 }

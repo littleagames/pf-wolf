@@ -75,7 +75,7 @@ public class ConsoleCommandListTests
         var text = ConsoleCommandsSchema.Describe(map);
 
         // Assert
-        Assert.That(text, Is.EqualTo("`map <MAP##>`: Warps to a level. Also `warp`. A cheat. Only in a level."));
+        Assert.That(text, Is.EqualTo("Warps to a level. Also `warp`. A cheat. Only in a level."));
     }
 
     // Every [ and < closed, in order

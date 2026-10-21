@@ -39,6 +39,7 @@ foreach (var file in DefinitionFiles.All)
         ["summary"] = file.Summary,
         ["modPath"] = file.ModPath,
         ["basePath"] = file.BasePath,
+        ["layout"] = file.Api ? "api" : "fields",
         ["root"] = exporter.Export(file.Schema()),
     });
     undocumented.AddRange(exporter.Undocumented);
