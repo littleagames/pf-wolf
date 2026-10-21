@@ -112,7 +112,7 @@ public class YamlKeyTests
                     var keyPath = path.Length == 0 ? key : $"{path}.{key}";
                     if (schema.Field(key) is { } field)
                         Check(value, field, keyPath, file, problems);
-                    else if (!Unresolved.Contains($"{file} {keyPath}"))
+                    else
                         problems.Add($"{file}:{keyNode.Start.Line}: {keyPath} isn't read ({Owner(schema)} has no {key})");
                 }
                 break;
@@ -128,17 +128,6 @@ public class YamlKeyTests
                 break;
         }
     }
-
-    // Keys known not to be read, waiting on a decision rather than a fix (file, then key path). Take
-    // one out once it's settled; anything else unread still fails.
-    private static readonly HashSet<string> Unresolved =
-    [
-        // An `id` on three actor classes: ActorData has none and nothing reads it. Not mapdefs thing
-        // numbers either (110, 141 and 156 are Wolf3D's Guard, Dog and Officer there).
-        "pfwolf-pk3/actordefs/wolf3d/decorations.yaml HangingSkeleton2.id",
-        "pfwolf-pk3/actordefs/wolf3d/weapons.yaml BlueAK47.id",
-        "pfwolf-pk3/actordefs/wolf3d/weapons.yaml BlueGatlingGunUpgrade.id",
-    ];
 
     // The keys StateDataNodeDeserializer reads from an actor state's frame, hyphens left out
     // ("frame" too, for "frames"). A frame of { goto: State } has nothing else.

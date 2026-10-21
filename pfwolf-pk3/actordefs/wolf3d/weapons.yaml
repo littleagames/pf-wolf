@@ -191,7 +191,6 @@ MachineGun:
         next-state: Ready
 
 BlueAK47:
-  id: 141
   parent: "MachineGun"
   properties:
     "attacksound": "weapon/blueak47/attack"
@@ -345,7 +344,6 @@ GatlingGunUpgrade:
         tics-per-frame: -1
 
 BlueGatlingGunUpgrade:
-  id: 156
   parent: "GatlingGunUpgrade"
   properties:
     "inventory.pickupsound": "weapon/bluegatling/pickup"

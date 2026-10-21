@@ -148,7 +148,6 @@ HangingSkeleton:
         tics-per-frame: -1
 
 HangingSkeleton2:
-  id: 110
   parent: HangingSkeleton
   states:
     Spawn:
