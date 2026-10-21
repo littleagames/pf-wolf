@@ -12,7 +12,7 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
 {
     internal void Register()
     {
-        console.Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", ModsCommand);
+        console.Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, anything wrong with them, and where the mod catalog is.", "mods", ModsCommand);
         console.Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
             "assetinfo <name>", AssetInfoCommand, complete: (_, i) => i == 0 ? assets.AssetNames : []);
         console.Register("anims", "Lists the animations (animdefs): what they animate, how long they run, and whether they loop; with a name, its frames too.",
@@ -42,6 +42,8 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
 
         foreach (var warning in assets.ModWarnings)
             console.Print(warning);
+        if (Ui.ModCatalog.Url is { } catalog)
+            console.Print($"More mods: {catalog}");
     }
 
     private void AssetInfoCommand(string[] args)

@@ -18,6 +18,10 @@
 	<Copyright>Copyright (c) 2026 Little A Games</Copyright>
 	<ApplicationIcon>..\icons\pfwolf.ico</ApplicationIcon>
   </PropertyGroup>
+	<!-- The docs site's mod catalog, which the Mods menu opens in a browser (Ui/ModCatalog.cs) -->
+	<ItemGroup>
+		<AssemblyMetadata Include="ModCatalog" Value="https://www.littleagames.com/pf-wolf/docs/mods/" />
+	</ItemGroup>
 	<!-- The SDL window's icon (VideoManager.SetWindowIcon); the source art is icons/pfwolf.svg -->
 	<ItemGroup>
 		<EmbeddedResource Include="..\icons\pfwolf-64.png" LogicalName="pfwolf-icon.png" />

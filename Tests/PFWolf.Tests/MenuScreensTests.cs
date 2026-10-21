@@ -215,15 +215,32 @@ public class TitleScreensTests
 
 public class ModsMenuTests
 {
-    [TestCase(0, false, 9, 1)]
-    [TestCase(9, false, 9, 1)]          // a full page, no "More mods..."
-    [TestCase(10, true, 8, 2)]          // the last row is "More mods..."
-    [TestCase(16, true, 8, 2)]
-    [TestCase(17, true, 8, 3)]
-    public void Mods_Are_Paged_With_A_Row_Kept_For_More(int count, bool paged, int perPage, int pages)
+    // The last row is always "Find more mods online..."
+    [TestCase(0, false, 8, 1)]
+    [TestCase(8, false, 8, 1)]          // a full page, no "More mods..."
+    [TestCase(9, true, 7, 2)]           // the row before the catalog's is "More mods..."
+    [TestCase(14, true, 7, 2)]
+    [TestCase(15, true, 7, 3)]
+    public void Mods_Are_Paged_With_Rows_Kept_For_More_And_The_Catalog(int count, bool paged, int perPage, int pages)
     {
         Assert.That(ModsMenu.Paged(count), Is.EqualTo(paged));
         Assert.That(ModsMenu.PerPage(count), Is.EqualTo(perPage));
         Assert.That(ModsMenu.PageCount(count), Is.EqualTo(pages));
+    }
+
+    [Test]
+    public void The_Catalog_Is_On_The_Docs_Site()
+    {
+        // Act / Assert: PFWolf.csproj's ModCatalog
+        Assert.That(ModCatalog.Url, Is.EqualTo("https://www.littleagames.com/pf-wolf/docs/mods/"));
+    }
+
+    [TestCase("https://www.littleagames.com/pf-wolf/docs/mods/", "www.littleagames.com\n/pf-wolf/docs/mods/")]
+    [TestCase("https://example.com", "example.com")]
+    [TestCase("http://example.com/", "example.com/")]
+    public void The_Catalogs_Address_Is_Shown_Without_Its_Scheme_And_Split_Before_Its_Path(string url, string shown)
+    {
+        // Act / Assert
+        Assert.That(ModCatalog.ShortText(url), Is.EqualTo(shown));
     }
 }

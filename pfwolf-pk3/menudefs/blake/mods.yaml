@@ -1,5 +1,5 @@
 # Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/mods.yaml
-# One row per mod, its checkbox before its name
+# One row per mod, its checkbox before its name, and last "Find more mods online..."
 music: "MEETINGA"
 type: "blake-menu"
 position: { x: 40, y: 51 }

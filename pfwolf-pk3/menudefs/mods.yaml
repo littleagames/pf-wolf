@@ -5,8 +5,9 @@ position:
   x: 24
   y: 51
 indent: 48
-# One row per pk3, zip or folder in the mods folder, checked when mods.cfg switches it on;
-# past 9 they come a page at a time, with a "More mods" row
+# One row per pk3, zip or folder in the mods folder, checked when mods.cfg switches it on, and
+# last "Find more mods online..." (the mod catalog, in a browser); past 8 they come a page at a
+# time, with a "More mods" row
 items-source: "mods"
 components:
   -

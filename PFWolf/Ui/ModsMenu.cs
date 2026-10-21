@@ -7,7 +7,8 @@ namespace PFWolf.Ui;
 /// <summary>
 /// The Mods screen: a CheckBox for each pk3, zip and folder in the mods folder. The ones
 /// switched on are saved to mods.cfg on the way out, and as they only load when the game
-/// starts, it offers to restart.
+/// starts, it offers to restart. Its last row opens the mod catalog (ModCatalog) in a browser,
+/// and with no mods to switch on it offers to.
 /// </summary>
 internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
     MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, UiText ui, GameSession session)
@@ -30,8 +31,10 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
             : string.IsNullOrWhiteSpace(Mod.Info.Version) ? Mod.DisplayName : $"{Mod.DisplayName} {Mod.Info.Version}";
     }
 
-    // Rows the menu's window holds; with more mods than that, the last row is "More mods..."
+    // Rows the menu's window holds. The last is "Find more mods online...", and with more mods
+    // than the rest hold, the one before it "More mods..."
     internal const int ModsPageSize = 9;
+    private const int ModRows = ModsPageSize - 1;
     // From the text's left edge to the window's right edge, less a margin
     private const int ModNameWidth = 224;
 
@@ -41,10 +44,10 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
     internal ControlPanelMenuInfo Info = null!;
 
     /// <summary>Whether that many mods need more than one page</summary>
-    internal static bool Paged(int count) => count > ModsPageSize;
+    internal static bool Paged(int count) => count > ModRows;
 
-    /// <summary>Mods on a page: all its rows, less one for "More mods..." when there are pages</summary>
-    internal static int PerPage(int count) => Paged(count) ? ModsPageSize - 1 : ModsPageSize;
+    /// <summary>Mods on a page: the rows the catalog's leaves, less one for "More mods..." when there are pages</summary>
+    internal static int PerPage(int count) => Paged(count) ? ModRows - 1 : ModRows;
 
     internal static int PageCount(int count) => Math.Max(1, (count + PerPage(count) - 1) / PerPage(count));
 
@@ -60,13 +63,24 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
         modMenuEntries = LoadModMenuEntries(configPath, out var missingConfigLines);
         var before = ModsSwitchedOn();
 
+        // Nothing to switch on: say so, and offer the catalog
         if (!ModsPaged && !modMenuEntries.Any(entry => entry.Loadable))
         {
+            var none = (modMenuEntries.Count == 0 ? "$STR_MODS_NONE" : "$STR_MODS_NONEFORGAME").ToLanguageText(language);
             defs.DrawMenuComponents("mods");
-            draw.Message((modMenuEntries.Count == 0 ? "$STR_MODS_NONE" : "$STR_MODS_NONEFORGAME").ToLanguageText(language));
-            draw.MenuFadeIn();
-            input.ClearKeysDown();
-            input.Ack();
+            if (ModCatalog.Url == null)
+            {
+                draw.Message(none);
+                draw.MenuFadeIn();
+                input.ClearKeysDown();
+                input.Ack();
+            }
+            else
+            {
+                draw.MenuFadeIn();
+                if (loop.Confirm($"{none}\n\n{"$STR_MODS_FINDONLINE".ToLanguageText(language)}") != 0)
+                    OpenCatalog();
+            }
             draw.MenuFadeOut();
             return 0;
         }
@@ -90,6 +104,12 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
                 LoadModsPage();
                 DrawModsMenu();
                 audio.Play("menu/move1");
+            }
+            else if (Items[which].Id == "catalog")
+            {
+                loop.ShootSnd();
+                OpenCatalog();
+                DrawModsMenu();
             }
             else if (Items[which].Data is ModMenuEntry entry)
             {
@@ -183,8 +203,25 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
 
         if (ModsPaged)
             rows = rows.Append(new ControlPanelItem(1, "$STR_MODS_MORE".ToLanguageText(language), null) { Id = "more" });
+        if (ModCatalog.Url != null)
+            rows = rows.Append(new ControlPanelItem(1, "$STR_MODS_CATALOG".ToLanguageText(language), null) { Id = "catalog" });
 
         return rows.ToArray();
+    }
+
+    /// <summary>
+    /// Opens the mod catalog in the player's browser, and says so (in full screen it can open
+    /// behind the game), or where it is when no browser could be started
+    /// </summary>
+    private void OpenCatalog()
+    {
+        var language = assets.GetText("en-us");
+        var where = ModCatalog.ShortText(ModCatalog.Url!);
+        draw.Message(ModCatalog.Open()
+            ? "$STR_MODS_CATALOG_OPENED".ToLanguageText(language)
+            : $"{"$STR_MODS_CATALOG_NOBROWSER".ToLanguageText(language)}\n{where}");
+        input.ClearKeysDown();
+        input.Ack();
     }
 
     private void DrawModsMenu()
