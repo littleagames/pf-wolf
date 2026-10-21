@@ -46,7 +46,7 @@ PFWolf.exe --file my-first-mod
 ```
 
 `--file` finds a mod by name in the `mods` folder (or give it a full path). You can also switch
-it on in **Options → Mods**. Open the console with the <kbd>`</kbd> key and type `mods`. It
+it on in **Options → Mods**. Open the console with the <kbd>~</kbd> key (left of <kbd>1</kbd>) and type `mods`. It
 lists **My First Mod 1.0 by Your name**, and would say if anything were wrong with it.
 
 ## 3. Darken the levels
