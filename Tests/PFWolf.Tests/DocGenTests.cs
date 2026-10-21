@@ -43,6 +43,7 @@ public class DocGenTests
     [TestCase("hud-messages")]
     [TestCase("movies")]
     [TestCase("intermission")]
+    [TestCase("elevator")]
     public void Every_Field_Of_A_Documented_File_Is_Described(string fileId)
     {
         // Arrange
