@@ -21,10 +21,7 @@ internal partial record BlakeMonster : Monster
     /// <summary>The thinks and actions only a BlakeMonster can run, by their actordefs names.</summary>
     internal static void RegisterActions()
     {
-        // Its chase and shot are Monster's T_Chase and T_Shoot, overridden; these older names
-        // still work for actordefs written before
-        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlakeChase", m => m.Chase());
-        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlakeShoot", m => m.Shoot());
+        // Its chase and shot are Monster's T_Chase and T_Shoot, overridden
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlowBack", m => m.BlowBack());
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_Wounded", m => m.Wounded());
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_WaitToWake", m => m.WaitToWake());
@@ -112,9 +109,7 @@ internal partial record BlakeMonster : Monster
     Thinks and actions (actordefs `think:` / `action:`):
       T_Chase        chase: closes in dodging, shoots only while it has ammo, and (with
                      `monster.shootmode`) takes turns at shooting and closing in
-                     (T_BlakeChase still works too)
       T_Shoot        a hitscan shot; SMART actors use up their ammo and alert the area
-                     (T_BlakeShoot still works too)
       T_BlowBack     on Death frames: the body slides back from the shot that killed it
       T_Wounded      on a held Wounded frame: lies there, then gets up (Recover) once the player
                      is more than a tile away

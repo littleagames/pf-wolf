@@ -151,11 +151,9 @@ public static partial class NewMod
             "  text-area: { x: 18, y: 46, width: 284, height: 134 }\n" +
             "\n" +
             "# Until a key goes to the menu: the title, then the high scores\n" +
-            "title-pics:\n" +
-            "  - SDTITLE\n" +
             "title-sequence:\n" +
             "  loop:\n" +
-            "    - title: true\n" +
+            "    - pics: [{ pic: SDTITLE }]\n" +
             "      seconds: 8\n" +
             "    - high-scores: true\n" +
             "      seconds: 6\n" +
@@ -165,8 +163,7 @@ public static partial class NewMod
             "\n" +
             "# The high scores in the game's own fonts, with no pictures, and the table a new player starts with\n" +
             "high-scores:\n" +
-            "  pic: \"\"\n" +
-            "  headers: []\n" +
+            "  pics: []\n" +
             "  labels:\n" +
             "    - { text: \"High scores\", x: 92, y: 30, font: LargeFont, color: READHCOLOR }\n" +
             "    - { text: \"Name\", x: 32, y: 62, color: READCOLOR }\n" +

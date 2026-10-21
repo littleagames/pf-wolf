@@ -60,18 +60,15 @@ internal sealed class GameOptions
     /// <summary>Turns a setting over, which makes it the player's choice from then on</summary>
     internal void Toggle(GameOption option) => choices[(int)option] = !this[option];
 
-    /// <summary>
-    /// Takes the game pack's defaults from game-info setting-defaults. The older weapon-bob and
-    /// hud-messages enabled keys still count where setting-defaults leaves the setting out.
-    /// </summary>
+    /// <summary>Takes the game pack's defaults from game-info setting-defaults</summary>
     internal void UseGameDefaults(GameInfoAsset gameInfo)
     {
         var d = gameInfo.SettingDefaults ?? new SettingDefaultsInfo();
         gameDefaults[(int)GameOption.Look] = d.Look;
-        gameDefaults[(int)GameOption.Messages] = d.Messages ?? gameInfo.HudMessages?.Enabled;
+        gameDefaults[(int)GameOption.Messages] = d.Messages;
         gameDefaults[(int)GameOption.AutomapStats] = d.AutomapStats;
         gameDefaults[(int)GameOption.Autosave] = d.Autosave;
-        gameDefaults[(int)GameOption.WeaponBob] = d.WeaponBob ?? gameInfo.WeaponBob;
+        gameDefaults[(int)GameOption.WeaponBob] = d.WeaponBob;
         gameDefaults[(int)GameOption.AlwaysRun] = d.AlwaysRun;
         gameDefaults[(int)GameOption.Crosshair] = d.Crosshair;
     }

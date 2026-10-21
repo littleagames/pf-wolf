@@ -1,6 +1,4 @@
-﻿using YamlDotNet.Serialization;
-
-namespace PFWolf.Assets;
+﻿namespace PFWolf.Assets;
 
 public record GameInfoAsset : Asset
 {
@@ -50,28 +48,12 @@ public record GameInfoAsset : Asset
     public int? PushwallDistance { get; init; }
 
     /// <summary>
-    /// Title screen graphics, drawn stacked top to bottom (Spear's title is two halves)
-    /// </summary>
-    public List<string> TitlePics { get; init; } = [];
-
-    /// <summary>
-    /// Palette the title fades in with, when it isn't drawn in the game palette (Spear's TITLEPAL)
-    /// </summary>
-    public string? TitlePalette { get; init; }
-
-    /// <summary>
     /// Music for the title, demo loop and control panel
     /// </summary>
     public string? IntroMusic { get; init; }
 
     /// <summary>The screens from the signon to the menu: the intro, then the title loop</summary>
     public TitleSequenceInfo TitleSequence { get; init; } = new();
-
-    /// <summary>The old top-level intro: and title-loop:, read only to warn that they've moved under title-sequence</summary>
-    [YamlMember(Alias = "intro")]
-    public object? OldIntro { get; init; }
-    [YamlMember(Alias = "title-loop")]
-    public object? OldTitleLoop { get; init; }
 
     public string? HighScoresMusic { get; init; }
 
@@ -154,12 +136,6 @@ public record GameInfoAsset : Asset
     /// by its color alone (End of Destiny's HIDEMENUSTUFF). Left out, the gun.
     /// </summary>
     public string? MenuCursor { get; init; }
-
-    /// <summary>
-    /// Whether the weapon in hand bobs as the player walks forwards or back, as Planet Strike's
-    /// (default false)
-    /// </summary>
-    public bool? WeaponBob { get; init; }
 
     /// <summary>
     /// What the Game Options menu's settings are before the player changes them: a mod can turn
@@ -335,7 +311,7 @@ public record SettingDefaultsInfo
     /// <summary>Whether the player can look up and down at all: keys, stick and mouse look (default true)</summary>
     public bool? Look { get; init; }
 
-    /// <summary>Messages over the view (default hud-messages enabled, else false)</summary>
+    /// <summary>Messages over the view (default false)</summary>
     public bool? Messages { get; init; }
 
     /// <summary>The automap's level name, kills, treasure, secrets and time (default true)</summary>
@@ -344,7 +320,7 @@ public record SettingDefaultsInfo
     /// <summary>Each new level saving itself as it starts (default true)</summary>
     public bool? Autosave { get; init; }
 
-    /// <summary>The weapon in hand bobbing as the player walks (default weapon-bob, else false)</summary>
+    /// <summary>The weapon in hand bobbing as the player walks (default false; Planet Strike's true)</summary>
     public bool? WeaponBob { get; init; }
 
     /// <summary>Running without holding Run; holding it walks (default false)</summary>
@@ -354,11 +330,9 @@ public record SettingDefaultsInfo
     public bool? Crosshair { get; init; }
 }
 
+/// <summary>The style each kind of message over the view is shown in (whether they're on is setting-defaults messages)</summary>
 public record HudMessagesInfo
 {
-    /// <summary>Whether messages are shown before the player turns them on or off (msg_enabled)</summary>
-    public bool Enabled { get; init; }
-
     /// <summary>The style for an item's pickup message</summary>
     public string PickupStyle { get; init; } = "Default";
 
@@ -375,15 +349,14 @@ public record HudMessagesInfo
 /// </summary>
 public record HighScoresInfo
 {
-    public string Pic { get; init; } = "HighScores";
-    public int PicX { get; init; } = 48;
-    public int PicY { get; init; }
-
     /// <summary>
-    /// Column heading pictures (Spear's are part of its title picture)
+    /// The pictures drawn over the stripes (or frame), in order: Wolf3D's title and column
+    /// headings by default (Spear's headings are part of its title picture); none for a screen
+    /// headed by labels alone
     /// </summary>
-    public List<PicPlacement> Headers { get; init; } =
+    public List<PicPlacement> Pics { get; init; } =
     [
+        new() { Pic = "HighScores", X = 48, Y = 0 },
         new() { Pic = "C_Name", X = 4 * 8, Y = 68 },
         new() { Pic = "C_Level", X = 20 * 8, Y = 68 },
         new() { Pic = "C_Score", X = 28 * 8, Y = 68 },
@@ -441,7 +414,7 @@ public record HighScoresInfo
 
     /// <summary>
     /// A menudef whose components are drawn as the screen's frame (Blake Stone's LINC terminal),
-    /// in place of the menu stripes and title picture; its pic and headers are still drawn
+    /// in place of the menu stripes; its pics are still drawn
     /// </summary>
     public string? Frame { get; init; }
 
@@ -596,10 +569,9 @@ public static class TitleKeyActions
 
 /// <summary>
 /// One of game-info's title-sequence screens. It's a movie, a demo, or else drawn from a
-/// background color (or the menu's background and stripe), the high scores, the title, a
-/// picture, more pictures, lines of text and presenter text (each when set, in that order), then
-/// held for its seconds, until its music ends or until a key. A screen whose picture the game
-/// doesn't have is left out.
+/// background color (or the menu's background and stripe), the high scores, pictures, lines of
+/// text and presenter text (each when set, in that order), then held for its seconds, until its
+/// music ends or until a key. A screen with pictures the game has none of is left out.
 /// </summary>
 public record TitleScreenInfo
 {
@@ -630,18 +602,12 @@ public record TitleScreenInfo
 
     public bool HighScores { get; init; }
 
-    /// <summary>Draws game-info's title-pics</summary>
-    public bool Title { get; init; }
-
-    public string? Pic { get; init; }
-    public int X { get; init; }
-    public int Y { get; init; }
-
     /// <summary>
-    /// More pictures, drawn in order after <see cref="Pic"/> (Midnight Assault's credits page);
-    /// one the game hasn't got is skipped, not the screen
+    /// Pictures drawn in order, each with its top left corner at x, y (Spear's title is two
+    /// halves, Midnight Assault's credits page several pictures). One the game hasn't got is
+    /// skipped; when it has none of them, the screen is left out.
     /// </summary>
-    public List<TitlePicInfo> Pics { get; init; } = [];
+    public List<PicPlacement> Pics { get; init; } = [];
 
     /// <summary>Presenter text printed into a window</summary>
     public TitleTextInfo? Text { get; init; }
@@ -681,14 +647,6 @@ public record TitleScreenInfo
 
     /// <summary>Tics the fizzle takes</summary>
     public int FizzleTics { get; init; } = 70;
-}
-
-/// <summary>A picture drawn on a title screen with its top left corner at x, y</summary>
-public record TitlePicInfo
-{
-    public string Pic { get; init; } = "";
-    public int X { get; init; }
-    public int Y { get; init; }
 }
 
 /// <summary>Text printed on a title screen from x, y; a \n in it comes back to x on the next line</summary>
@@ -762,9 +720,10 @@ public record MenuMessageInfo
     public string Lo { get; init; } = "Black";
 }
 
+/// <summary>A picture drawn with its top left corner at x, y</summary>
 public record PicPlacement
 {
-    public string Pic { get; init; } = null!;
+    public string Pic { get; init; } = "";
     public int X { get; init; }
     public int Y { get; init; }
 }
@@ -1149,7 +1108,7 @@ public record ArticleInfo
     public string Background { get; init; } = "BACKCOLOR";
 
     /// <summary>Pictures drawn on every page, before the text: Wolf3D's help window by default, or one full-screen picture</summary>
-    public List<ArticlePicture> Frame { get; init; } =
+    public List<PicPlacement> Frame { get; init; } =
     [
         new() { Pic = "h_topwindow", X = 0, Y = 0 },
         new() { Pic = "h_leftwindow", X = 0, Y = 8 },
@@ -1168,13 +1127,6 @@ public record ArticleInfo
 
     /// <summary>The lines of text a page has between its margins</summary>
     public int TextRows => Math.Max((ScreenHeight - Margins.Top - Margins.Bottom) / FontHeight, 1);
-}
-
-public record ArticlePicture
-{
-    public string Pic { get; init; } = "";
-    public int X { get; init; }
-    public int Y { get; init; }
 }
 
 public record ArticleMargins

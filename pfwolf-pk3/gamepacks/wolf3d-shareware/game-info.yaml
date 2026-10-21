@@ -6,9 +6,7 @@
 title-sequence:
   intro:
     - background: Light Blue
-      pic: pg13
-      x: 216
-      y: 110
+      pics: [{ pic: pg13, x: 216, y: 110 }]
       music: NAZI_NOR
       seconds: 7
 

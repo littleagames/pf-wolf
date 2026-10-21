@@ -28,6 +28,9 @@ public class TitleSequenceTests
     // Only KeyActionFor is used, which needs none of the managers
     private static TitleScreens MakeScreens() => new(null!, null!, null!, null!, null!, null!, null!, null!, null!);
 
+    /// <summary>A screen's first picture, if it has any</summary>
+    private static string? FirstPic(TitleScreenInfo screen) => screen.Pics.FirstOrDefault()?.Pic;
+
     [Test]
     public void The_Intro_And_Loop_Are_Read_From_Title_Sequence()
     {
@@ -35,37 +38,33 @@ public class TitleSequenceTests
         var info = Parse("""
             title-sequence:
               intro:
-                - pic: LOGO
+                - pics: [{ pic: LOGO }]
                   on-key: end-intro
               loop:
-                - title: true
+                - pics: [{ pic: TOP }, { pic: BOTTOM, y: 80 }]
+                  palette: TITLEPAL
                   seconds: 8
                 - high-scores: true
             """);
 
         // Assert
-        Assert.That(info.TitleSequence.Intro.Select(screen => (screen.Pic, screen.OnKey)), Is.EqualTo(new[] { ("LOGO", "end-intro") }));
-        Assert.That(info.TitleSequence.Loop.Select(screen => (screen.Title, screen.HighScores, screen.Seconds)),
-            Is.EqualTo(new[] { (true, false, 8.0), (false, true, 0.0) }));
-        Assert.That((info.OldIntro, info.OldTitleLoop), Is.EqualTo(((object?)null, (object?)null)));
+        Assert.That(info.TitleSequence.Intro.Select(screen => (FirstPic(screen), screen.OnKey)), Is.EqualTo(new[] { ("LOGO", "end-intro") }));
+        Assert.That(info.TitleSequence.Loop[0].Pics.Select(pic => (pic.Pic, pic.X, pic.Y)), Is.EqualTo(new[] { ("TOP", 0, 0), ("BOTTOM", 0, 80) }));
+        Assert.That(info.TitleSequence.Loop.Select(screen => (screen.Palette, screen.HighScores, screen.Seconds)),
+            Is.EqualTo(new[] { ("TITLEPAL", false, 8.0), (null, true, 0.0) }));
     }
 
     [Test]
-    public void The_Old_Top_Level_Lists_Are_Noticed_But_Not_Used()
+    public void A_Screen_Is_Left_Out_Only_When_The_Game_Has_None_Of_Its_Pics()
     {
-        // Act
-        var info = Parse("""
-            intro:
-              - pic: LOGO
-            title-loop:
-              - title: true
-            """);
+        // Arrange
+        var has = new HashSet<string> { "credits" };
+        TitleScreenInfo Screen(params string[] pics) => new() { Pics = [.. pics.Select(pic => new PicPlacement { Pic = pic })] };
 
-        // Assert
-        Assert.That(info.OldIntro, Is.Not.Null);
-        Assert.That(info.OldTitleLoop, Is.Not.Null);
-        Assert.That(info.TitleSequence.Intro, Is.Empty);
-        Assert.That(info.TitleSequence.Loop, Is.Empty);
+        // Act / Assert
+        Assert.That(TitleScreens.CanShowPics(Screen(), has.Contains), Is.True);
+        Assert.That(TitleScreens.CanShowPics(Screen("pg13"), has.Contains), Is.False);
+        Assert.That(TitleScreens.CanShowPics(Screen("pg13", "credits"), has.Contains), Is.True);
     }
 
     [TestCase("next", TitleKeyAction.Next)]
@@ -134,7 +133,7 @@ public class TitleSequenceTests
         // Assert: Planet Strike's lists replace Aliens of Gold's whole, inside title-sequence too
         var title = info.TitleSequence.Loop[0];
         Assert.That((title.FizzlePic, title.OnKey), Is.EqualTo(("TITLE2", "finish")));
-        Assert.That(info.TitleSequence.Intro.Select(screen => screen.Pic ?? screen.Movie),
+        Assert.That(info.TitleSequence.Intro.Select(screen => FirstPic(screen) ?? screen.Movie),
             Is.EqualTo(new[] { "ApogeeLogo", "IntroMovie", "ParentalWarning" }));
     }
 
@@ -149,21 +148,46 @@ public class TitleSequenceTests
         Assert.That((notice.MenuBackground, notice.Stripe, notice.WaitForKey), Is.EqualTo((true, (int?)10, true)));
         Assert.That(notice.Lines.Select(line => (line.X, line.Y, line.Color)), Is.EqualTo(new[] { (110, 15, "READHCOLOR"), (40, 60, "HIGHLIGHT") }));
         Assert.That(notice.Lines[1].Text, Does.StartWith("This game is NOT shareware.\nPlease do not distribute it.\n"));
-        Assert.That((sequence.Intro[1].Pic, sequence.Intro[1].Background, sequence.Intro[1].Music), Is.EqualTo(("pg13", "Light Blue", "NAZI_NOR")));
-        Assert.That(sequence.Loop.Select(screen => (screen.Title, screen.Pic, screen.HighScores, screen.Demo, screen.Seconds)),
-            Is.EqualTo(new[] { (true, (string?)null, false, false, 15.0), (false, "credits", false, false, 10.0), (false, null, true, false, 10.0), (false, null, false, true, 0.0) }));
+        var rating = sequence.Intro[1];
+        Assert.That((rating.Pics.Single(), rating.Background, rating.Music), Is.EqualTo((new PicPlacement { Pic = "pg13", X = 216, Y = 110 }, "Light Blue", "NAZI_NOR")));
+        Assert.That(sequence.Loop.Select(screen => (FirstPic(screen), screen.HighScores, screen.Demo, screen.Seconds)),
+            Is.EqualTo(new[] { ("Title", false, false, 15.0), ("credits", false, false, 10.0), (null, true, false, 10.0), (null, false, true, 0.0) }));
     }
 
     [TestCase("wolf3d-shareware", "NAZI_NOR")]
     [TestCase("spear", "XTOWER2")]
-    public void Packs_That_Were_Never_Sold_As_Registered_Show_Only_The_Rating_And_Keep_Wolf3Ds_Loop(string pack, string music)
+    public void Packs_That_Were_Never_Sold_As_Registered_Show_Only_The_Rating(string pack, string music)
     {
         // Act
         var sequence = ReadPack("wolf3d", pack).TitleSequence;
 
         // Assert
-        Assert.That(sequence.Intro.Select(screen => (screen.Pic, screen.Music)), Is.EqualTo(new[] { ("pg13", music) }));
-        Assert.That(sequence.Loop, Is.EqualTo(ReadPack("wolf3d").TitleSequence.Loop).Using<TitleScreenInfo>((a, b) => a.Pic == b.Pic && a.Title == b.Title && a.Demo == b.Demo));
+        Assert.That(sequence.Intro.Select(screen => (FirstPic(screen), screen.Music)), Is.EqualTo(new[] { ("pg13", music) }));
+    }
+
+    [Test]
+    public void The_Shareware_Keeps_Wolf3Ds_Loop()
+    {
+        // Act
+        var loop = ReadPack("wolf3d", "wolf3d-shareware").TitleSequence.Loop;
+
+        // Assert
+        Assert.That(loop, Is.EqualTo(ReadPack("wolf3d").TitleSequence.Loop)
+            .Using<TitleScreenInfo>((a, b) => a.Pics.SequenceEqual(b.Pics) && a.HighScores == b.HighScores && a.Demo == b.Demo));
+    }
+
+    [Test]
+    public void Spears_Loop_Is_Wolf3Ds_With_Its_Two_Half_Title_In_Its_Own_Palette()
+    {
+        // Act
+        var loop = ReadPack("wolf3d", "spear").TitleSequence.Loop;
+        var wolf3d = ReadPack("wolf3d").TitleSequence.Loop;
+
+        // Assert
+        Assert.That(loop[0].Pics.Select(pic => (pic.Pic, pic.Y)), Is.EqualTo(new[] { ("Title1", 0), ("Title2", 80) }));
+        Assert.That(loop[0].Palette, Is.EqualTo("TITLEPAL"));
+        Assert.That(loop.Skip(1), Is.EqualTo(wolf3d.Skip(1))
+            .Using<TitleScreenInfo>((a, b) => a.Pics.SequenceEqual(b.Pics) && a.HighScores == b.HighScores && a.Demo == b.Demo && a.Seconds == b.Seconds));
     }
 
     [Test]

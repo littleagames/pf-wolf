@@ -55,24 +55,6 @@ internal sealed class TitleLoop(
             video.ClearScreen(0);
     }
 
-    /// <summary>
-    /// The game-info title-pics, each drawn below the one before
-    /// </summary>
-    internal void DrawTitle()
-    {
-        ClearMargins();
-        int y = 0;
-        foreach (var pic in engine.GetGameInfo().TitlePics)
-        {
-            var graphic = assets.Find<GraphicAsset>(pic);
-            if (graphic == null)
-                continue;
-
-            graphics.DrawPic(pic, 0, y);
-            y += graphic.Height;
-        }
-    }
-
     /// <param name="startupLines">What startup printed, shown as warnings in the signon's text area</param>
     internal void FinishSignon(List<string> startupLines)
     {

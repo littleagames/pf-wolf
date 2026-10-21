@@ -15,9 +15,6 @@ default-map:
 signon:
   press-a-key: false
 
-title-pics:
-  - Title
-
 # The title loop's music when it's come back to from the menu or a game (the intro leaves its own
 # playing the first time)
 intro-music: MEETINGA
@@ -27,12 +24,12 @@ title-sequence:
   # As the game starts (bstone's PreDemo): the anti-piracy notice from and to dark blue, Apogee
   # to the end of its fanfare, the JAM logo movie, then the PC-13 rating, out through red
   intro:
-    - pic: NonShareware
+    - pics: [{ pic: NonShareware }]
       palette: Extra1PAL
       fade-from: "#000064"
       seconds: 20
       fade-to: "#000064"
-    - pic: ApogeeLogo
+    - pics: [{ pic: ApogeeLogo }]
       palette: Extra2PAL
       music: APOGFNFM
       music-loop: false
@@ -41,18 +38,17 @@ title-sequence:
     - movie: IntroMovie
       music: GOLDA
     - background: "20"
-      pic: ParentalWarning
-      y: 64
+      pics: [{ pic: ParentalWarning, y: 64 }]
       seconds: 2
       fade-to: "#9C0000"
 
   # Until a key is pressed (bstone's DemoLoop): the title, the credits on the menu screen, then
   # the high scores
   loop:
-    - pic: Title
+    - pics: [{ pic: Title }]
       palette: Extra3PAL
       seconds: 6
-    - pic: LincScreen
+    - pics: [{ pic: LincScreen }]
       text:
         script: CreditsText
         x1: 38
@@ -86,8 +82,7 @@ help-text: HelpText
 # game's last floor rating as its mission ratio
 high-scores:
   frame: high-scores
-  pic: ""
-  headers: []
+  pics: []
   labels:
     - { text: "NAME", x: 86, y: 60, color: "86" }
     - { text: "SCORE", x: 175, y: 60, color: "86" }
@@ -145,9 +140,10 @@ death-hold-tics: 100
 level-fade-style: fizzle
 level-fade-tics: 20
 
+# Blake Stone always shows its pickup and door messages
+setting-defaults:
+  messages: true
 hud-messages:
-  # Blake Stone always shows its pickup and door messages
-  enabled: true
   pickup-style: Default
   lock-style: Default
   obituary-style: Obituary

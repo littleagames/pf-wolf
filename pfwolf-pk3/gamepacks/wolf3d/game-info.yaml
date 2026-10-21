@@ -79,10 +79,6 @@ signon:
 
 # pushwall-distance: 2      # tiles a pushwall slides, unless something stops it sooner (2 when left out)
 
-# Drawn stacked top to bottom
-title-pics:
-  - Title
-
 intro-music: NAZI_NOR
 high-scores-music: ROSTER
 menu-fade-color: "#AE0000"
@@ -99,22 +95,21 @@ menu-fade-color: "#AE0000"
 #   menu-background: true the control panel's backdrop (menu-backdrop) or border color
 #   stripe: Y             the menu's stripe across the screen at y
 #   high-scores: true     the high scores table
-#   title: true           title-pics, faded in with title-palette
-#   pic: NAME, x:, y:     a picture (one the game hasn't got leaves the screen out)
-#   pics: [{ pic, x, y }] more pictures, drawn in turn (one the game hasn't got is skipped)
+#   pics: [{ pic, x, y }] pictures, drawn in turn at x, y (each 0 when left out); one the game
+#                         hasn't got is skipped, and a screen with none it has is left out
 #   lines: [{ text, x, y, color, font }]   text; color is a name (HIGHLIGHT), #RRGGBB or
 #                         index, font the menu's LargeFont unless given; \n starts a new line at x
 #   text: { script, x1, y1, x2, y2, font, color, background, light, dark, shadow }
 #                         a VGAGRAPH presenter text, printed into that window
 #   fizzle-pic: NAME, fizzle-tics: 70   fizzled over the screen once it's faded in
-#                         (a pic or title-pic that's an animdefs animation plays on while the
-#                         screen is held, but not under a fizzle-pic)
+#                         (a pic that's an animdefs animation plays on while the screen is
+#                         held, but not under a fizzle-pic)
 # and held for
 #   seconds: N            that long (0: not at all), or
 #   until-music-ends: true   until its music ends (seconds, when music is off), or
 #   wait-for-key: true    until a key, however long
 # with
-#   palette: NAME         its own palette (the game palette, or title-palette for the title)
+#   palette: NAME         its own palette (the game palette when left out)
 #   music: NAME, music-loop: false, stop-music: true   what plays from this screen on
 #   fade-from: "#RRGGBB", fade-to: "#RRGGBB"   fades to that color before it shows / after
 #   on-key: ACTION        what a key does here: next (go on to the next screen, the intro's
@@ -132,15 +127,13 @@ title-sequence:
       wait-for-key: true
     # The rating screen, as the title music starts
     - background: Light Blue
-      pic: pg13
-      x: 216
-      y: 110
+      pics: [{ pic: pg13, x: 216, y: 110 }]
       music: NAZI_NOR
       seconds: 7
   loop:
-    - title: true
+    - pics: [{ pic: Title }]
       seconds: 15
-    - pic: credits
+    - pics: [{ pic: credits }]
       seconds: 10
     - high-scores: true
       seconds: 10
@@ -170,10 +163,10 @@ extra-life-score: 40000
 # until they set it back with the console's `default` (e.g. `freelook default`).
 #   look:          looking up and down at all: the look keys, a controller's right stick and
 #                  mouse look (freelook; m_look stays the player's separate mouse choice)
-#   messages:      messages over the view (msg_enabled; hud-messages enabled below still works)
+#   messages:      messages over the view (msg_enabled), in hud-messages' styles below
 #   automap-stats: the automap's level name, kills, treasure, secrets and time (am_stats)
 #   autosave:      each new level saves itself as it starts (autosave)
-#   weapon-bob:    the weapon in hand bobs as the player walks (weaponbob; a top-level weapon-bob still works)
+#   weapon-bob:    the weapon in hand bobs as the player walks (weaponbob)
 #   always-run:    running without holding Run, which then walks (alwaysrun)
 #   crosshair:     a crosshair in the middle of the view (crosshair), in crosshair-color
 # setting-defaults:
@@ -186,11 +179,10 @@ extra-life-score: 40000
 #   crosshair: false
 # crosshair-color: White      # a color name, #RRGGBB or palette index
 
-# Messages over the view (styles in hud-messages.yaml). enabled is whether they're on before
-# the player chooses (msg_enabled; setting-defaults messages wins); off keeps the original
-# game's quiet screen. Each kind's style is used when the item, door or killer doesn't name its own.
+# The styles (hud-messages.yaml) messages over the view are shown in, when they're on
+# (setting-defaults messages; off by default, the original game's quiet screen). Each kind's
+# style is used when the item, door or killer doesn't name its own.
 hud-messages:
-  enabled: false
   pickup-style: Default
   lock-style: Center
   obituary-style: Obituary

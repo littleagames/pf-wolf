@@ -7,12 +7,6 @@ signon:
   pic: spear-signon
   press-a-key: false
 
-# Drawn stacked top to bottom
-title-pics:
-  - Title1
-  - Title2
-title-palette: TITLEPAL
-
 intro-music: XTOWER2
 high-scores-music: XAWARD
 menu-fade-color: "#0000CE"
@@ -23,22 +17,28 @@ menu-stripe:
   line-y: 23
   line-color: Black
 
-# Spear was never shareware: no notice, only the rating screen (Wolf3D's loop)
+# Spear was never shareware: no notice, only the rating screen. The loop is Wolf3D's with
+# Spear's title: two halves (id's draws the second 80 down) in its own palette.
 title-sequence:
   intro:
     - background: Light Blue
-      pic: pg13
-      x: 216
-      y: 110
+      pics: [{ pic: pg13, x: 216, y: 110 }]
       music: XTOWER2
       seconds: 7
+  loop:
+    - pics: [{ pic: Title1 }, { pic: Title2, y: 80 }]
+      palette: TITLEPAL
+      seconds: 15
+    - pics: [{ pic: credits }]
+      seconds: 10
+    - high-scores: true
+      seconds: 10
+    - demo: true
 
 # id's Spear layout: the title picture carries the column headings, the rows are in the big
 # font, and a game won shows the Spear in place of its floor
 high-scores:
-  pic: HighScores
-  pic-x: 0
-  headers: []
+  pics: [{ pic: HighScores }]
   font: LargeFont
   color: HIGHLIGHT
   name-x: 16

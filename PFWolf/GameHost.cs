@@ -328,10 +328,7 @@ internal static partial class GameHost
                 demonumber => { PlayDemo(demonumber); return PlayState == PlayState.Abort; },
                 ClearMargins,
                 DrawHighScores,
-                DrawTitle,
-                DrawTitleText,
-                () => GameEngineManager.GetGameInfo().TitlePalette,
-                () => GameEngineManager.GetGameInfo().TitlePics));
+                DrawTitleText));
         signonPanel = new SignonPanel(GameEngineManager, AssetManager, _videoManager, _inputManager, AudioManager,
             _graphicManager, _fontManager, ui, () => MouseEnabled, () => Scripts?.Loaded.Count ?? 0);
 
@@ -563,7 +560,6 @@ internal static partial class GameHost
 
     private static void SignonScreen() => titleLoop.SignonScreen();
     internal static void ClearMargins() => titleLoop.ClearMargins();
-    private static void DrawTitle() => titleLoop.DrawTitle();
     private static void FinishSignon(List<string> startupLines) => titleLoop.FinishSignon(startupLines);
     private static void DemoLoop() => titleLoop.DemoLoop();
     static void ApplyPendingWarpStart() => titleLoop.ApplyPendingWarpStart();

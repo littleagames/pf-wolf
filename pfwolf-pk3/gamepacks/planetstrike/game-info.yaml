@@ -11,9 +11,6 @@ weapon-scale: 0.6875
 setting-defaults:
   weapon-bob: true
 
-title-pics:
-  - TITLE1
-
 # The title loop's music when it's come back to from the menu or a game (bstone's MENUSONG);
 # the intro leaves the title music (PLOT) playing the first time
 intro-music: LASTLAFF
@@ -26,7 +23,7 @@ title-sequence:
   # As the game starts (bstone's PreDemo): Apogee from and to blue, to the end of its fanfare,
   # the JAM logo movie, then the PC-13 rating
   intro:
-    - pic: ApogeeLogo
+    - pics: [{ pic: ApogeeLogo }]
       palette: Extra2PAL
       fade-from: "#6474D4"
       music: APOGFNFM
@@ -37,20 +34,19 @@ title-sequence:
     - movie: IntroMovie
       music: PLOT
     - background: "20"
-      pic: ParentalWarning
-      y: 64
+      pics: [{ pic: ParentalWarning, y: 64 }]
       seconds: 2
 
   # Until a key is pressed (bstone's DemoLoop): the title (fizzling over to its second picture,
   # which has the copyright lines), the credits on the menu screen, then the high scores. A key
   # during the fizzle finishes it; a key after that goes to the menu.
   loop:
-    - pic: TITLE1
+    - pics: [{ pic: TITLE1 }]
       palette: Extra3PAL
       fizzle-pic: TITLE2
       on-key: finish
       seconds: 6
-    - pic: LincScreen
+    - pics: [{ pic: LincScreen }]
       text:
         script: CreditsText
         x1: 38

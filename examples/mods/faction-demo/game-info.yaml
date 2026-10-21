@@ -1,6 +1,5 @@
 # Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
 # turned them off in Options), so the level's hints, the prisoners' thanks and word of an ally
-# killed show. The message fields are described under hud-messages in pfwolf-pk3's
-# gamepacks/wolf3d/game-info.yaml.
-hud-messages:
-  enabled: true
+# killed show. setting-defaults is described in pfwolf-pk3's gamepacks/wolf3d/game-info.yaml.
+setting-defaults:
+  messages: true

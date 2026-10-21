@@ -34,19 +34,6 @@ public class GameOptionsTests
     }
 
     [Test]
-    public void The_Older_Game_Info_Keys_Still_Give_Defaults()
-    {
-        // Arrange
-        var options = new GameOptions();
-
-        // Act
-        options.UseGameDefaults(new GameInfoAsset { WeaponBob = true, HudMessages = new HudMessagesInfo { Enabled = true } });
-
-        // Assert
-        Assert.That((options.WeaponBob, options.Messages), Is.EqualTo((true, true)));
-    }
-
-    [Test]
     public void The_Players_Choice_Wins_Until_It_Goes_Back_To_Default()
     {
         // Arrange

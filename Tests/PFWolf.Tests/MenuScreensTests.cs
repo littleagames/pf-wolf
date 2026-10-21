@@ -180,7 +180,7 @@ public class TitleScreensTests
 {
     private static TitleScreens WithDemos(params int[] demos) =>
         new(null!, null!, null!, null!, null!, null!, null!, null!,
-            new TitleScreenHooks(demos.Contains, _ => false, () => { }, () => { }, () => { }, _ => { }));
+            new TitleScreenHooks(demos.Contains, _ => false, () => { }, () => { }, _ => { }));
 
     [Test]
     public void The_Title_Loop_Plays_The_Four_Demos_In_Turn()

@@ -1,10 +1,9 @@
 # Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
 # turned them off in Options), so the level's hints show; and the level a little dim, so a
-# medic's glow as it heals (its Heal state's light:) shows. The message fields are described
-# under hud-messages, the shading fields under default-map, in pfwolf-pk3's
-# gamepacks/wolf3d/game-info.yaml.
-hud-messages:
-  enabled: true
+# medic's glow as it heals (its Heal state's light:) shows. setting-defaults and the shading
+# fields under default-map are described in pfwolf-pk3's gamepacks/wolf3d/game-info.yaml.
+setting-defaults:
+  messages: true
 
 maps:
   MAP01:

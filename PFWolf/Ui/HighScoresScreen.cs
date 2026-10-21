@@ -32,10 +32,8 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
             draw.DrawStripes(10);
         }
 
-        if (!string.IsNullOrEmpty(layout.Pic))      // pic: "" for none (labels can head the screen)
-            graphics.DrawPic(layout.Pic, layout.PicX, layout.PicY);
-        foreach (var header in layout.Headers)
-            graphics.DrawPic(header.Pic, header.X, header.Y);
+        foreach (var pic in layout.Pics)        // pics: [] for none (labels can head the screen)
+            graphics.DrawPic(pic.Pic, pic.X, pic.Y);
         var language = assets.GetText("en-us");
         foreach (var label in layout.Labels)
             ui.TextAt(label.X, label.Y, style with { Font = label.Font ?? style.Font, Color = label.Color ?? style.Color })

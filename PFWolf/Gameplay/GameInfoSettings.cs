@@ -47,8 +47,6 @@ internal sealed class GameInfoSettings
             "none" => false,
             var other => Warn(other),
         };
-        if (gameInfo.OldIntro != null || gameInfo.OldTitleLoop != null)
-            Console.WriteLine("game-info intro: and title-loop: are now title-sequence: { intro: [...], loop: [...] }; the old lists are ignored");
         return settings;
 
         static bool Warn(string value)

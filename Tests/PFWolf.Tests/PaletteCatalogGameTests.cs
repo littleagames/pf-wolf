@@ -66,7 +66,7 @@ public class PaletteCatalogGameTests
 
         // Assert: the data files' palettes are listed, each with the picture drawn in it
         Assert.That(entries, Does.ContainKey("TITLEPAL"));
-        Assert.That(entries["TITLEPAL"].Uses.Select(use => use.Label), Has.Some.EqualTo("The title screen"));
+        Assert.That(entries["TITLEPAL"].Uses.Select(use => use.Label), Has.Some.EqualTo("Title loop screen 1 (Title1)"));
         Assert.That(entries["TITLEPAL"].Uses.Select(use => use.Picture), Has.Some.Not.Null);
         Assert.That(entries.Values.Where(entry => entry.Name.StartsWith("END")).SelectMany(entry => entry.Uses), Has.Some.Matches<PaletteUse>(use => use.Picture != null));
     }

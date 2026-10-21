@@ -23,7 +23,12 @@
   - Tab-to-record now works for every pack. Before, Blake's loop cleared the keys first.
   - On a demo, `ignore` and `finish` act as the list's default, because a demo always ends on
     a key.
-  - The old top-level `intro:` / `title-loop:` keys print a startup warning.
+  - The old top-level `intro:` / `title-loop:` keys printed a startup warning; since the cleanup
+    below they're ignored like any other unknown key.
+- **Cleanup (2026-10-20, later):** a screen's pictures are only its `pics:` list. `pic`/`x`/`y`,
+  `title: true`, and the top-level `title-pics` and `title-palette` are gone. Spear's title is
+  `pics: [{ pic: Title1 }, { pic: Title2, y: 80 }]` with `palette: TITLEPAL`, in its own loop. A
+  screen is left out when the game has none of its pics.
 - **Not built:** a list editor in the editor's Definitions window. The screens are edited in
   the raw YAML tab.
 

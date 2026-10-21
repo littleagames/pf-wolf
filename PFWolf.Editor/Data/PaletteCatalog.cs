@@ -83,14 +83,14 @@ public static class PaletteCatalog
         var info = content.GameInfo;
         if (info != null)
         {
-            Add(info.TitlePalette, new PaletteUse("The title screen", info.TitlePics.FirstOrDefault()));
             void Screens(IEnumerable<TitleScreenInfo> screens, string label)
             {
                 int number = 1;
                 foreach (var screen in screens)
                 {
-                    var what = screen.Pic ?? (screen.Title ? info.TitlePics.FirstOrDefault() : null) ?? screen.Movie;
-                    Add(screen.Palette, new PaletteUse(what != null ? $"{label} {number} ({what})" : $"{label} {number}", screen.Pic ?? (screen.Title ? info.TitlePics.FirstOrDefault() : null)));
+                    var pic = screen.Pics.FirstOrDefault()?.Pic;
+                    var what = pic ?? screen.Movie;
+                    Add(screen.Palette, new PaletteUse(what != null ? $"{label} {number} ({what})" : $"{label} {number}", pic));
                     number++;
                 }
             }

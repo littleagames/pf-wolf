@@ -11,13 +11,9 @@ namespace PFWolf.Ui;
 /// <param name="PlayDemo">Plays a demo; true if a key ended it</param>
 /// <param name="ClearMargins">Blanks the screen round the 320x200 layout</param>
 /// <param name="DrawHighScores">The high scores screen</param>
-/// <param name="DrawTitle">The title pictures</param>
 /// <param name="DrawText">A screen's presenter text, printed into its window</param>
-/// <param name="TitlePalette">game-info's title-palette: a title screen's palette when it names none</param>
-/// <param name="TitlePics">game-info's title-pics, to tell whether the title is animated</param>
 internal sealed record TitleScreenHooks(Func<int, bool> DemoExists, Func<int, bool> PlayDemo, Action ClearMargins,
-    Action DrawHighScores, Action DrawTitle, Action<TitleTextInfo> DrawText, Func<string?>? TitlePalette = null,
-    Func<IEnumerable<string>>? TitlePics = null);
+    Action DrawHighScores, Action<TitleTextInfo> DrawText);
 
 /*
 =============================================================================
@@ -116,15 +112,16 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     /// </summary>
     TitleKeyAction? RunTitleScreen(TitleScreenInfo screen, TitleKeyAction onKey, TitleKeyAction listDefault, out bool shown)
     {
-        // A game with no demos, or without the picture (a mod's replaced graphics with no PG-13), leaves the screen out
+        // A game with no demos, or with none of the pictures (a mod's replaced graphics with no PG-13), leaves the screen out
         int demoNumber = screen.Demo ? TakeNextTitleDemo() : -1;
         if (screen.Demo)
             shown = hooks.DemoExists(demoNumber);
         else
         {
-            shown = string.IsNullOrEmpty(screen.Pic) || !string.IsNullOrEmpty(screen.Movie) || assets.Exists<GraphicAsset>(screen.Pic);
-            if (!shown && warnedOnKeys.Add("pic:" + screen.Pic))
-                Console.WriteLine($"title-sequence screen with pic '{screen.Pic}' left out: the game has no such picture");
+            shown = !string.IsNullOrEmpty(screen.Movie) || CanShowPics(screen, name => assets.Exists<GraphicAsset>(name));
+            var names = string.Join(", ", screen.Pics.Select(pic => pic.Pic));
+            if (!shown && warnedOnKeys.Add("pics:" + names))
+                Console.WriteLine($"title-sequence screen with pics {names} left out: the game has none of them");
         }
         if (!shown)
             return null;
@@ -160,8 +157,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
 
             DrawScreen(screen);
             video.Update();
-            // a title screen with no palette of its own has the title's (game-info title-palette), as the built-in loop's
-            FadeInWithPalette(!string.IsNullOrEmpty(screen.Palette) ? screen.Palette : screen.Title ? hooks.TitlePalette?.Invoke() : null);
+            FadeInWithPalette(screen.Palette);
 
             pressed = false;
             if (!string.IsNullOrEmpty(screen.FizzlePic))
@@ -205,7 +201,11 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
         return pressed ? keyEnds : null;
     }
 
-    /// <summary>A drawn screen's background, high scores, title, pictures and text, each when set</summary>
+    /// <summary>Whether a drawn screen is shown for its pictures: it has none, or the game has one of them</summary>
+    internal static bool CanShowPics(TitleScreenInfo screen, Func<string, bool> picExists) =>
+        screen.Pics.Count == 0 || screen.Pics.Any(pic => picExists(pic.Pic));
+
+    /// <summary>A drawn screen's background, high scores, pictures and text, each when set</summary>
     void DrawScreen(TitleScreenInfo screen)
     {
         if (screen.MenuBackground)
@@ -218,10 +218,6 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             draw.DrawStripes(stripeY);
         if (screen.HighScores)
             hooks.DrawHighScores();
-        if (screen.Title)
-            hooks.DrawTitle();
-        if (!string.IsNullOrEmpty(screen.Pic))
-            graphics.DrawPic(screen.Pic, screen.X, screen.Y);
         foreach (var pic in screen.Pics)
             graphics.DrawPic(pic.Pic, pic.X, pic.Y);
         foreach (var line in screen.Lines)
@@ -230,14 +226,9 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             hooks.DrawText(text);
     }
 
-    /// <summary>Whether any of the screen's pictures, or its title's, is an animdefs animation</summary>
-    bool IsAnimated(TitleScreenInfo screen)
-    {
-        bool Animated(string? name) => !string.IsNullOrEmpty(name) && assets.FindAnimation<GraphicAsset>(name) != null;
-        return Animated(screen.Pic)
-            || screen.Pics.Any(pic => Animated(pic.Pic))
-            || (screen.Title && (hooks.TitlePics?.Invoke() ?? []).Any(Animated));
-    }
+    /// <summary>Whether any of the screen's pictures is an animdefs animation</summary>
+    bool IsAnimated(TitleScreenInfo screen) =>
+        screen.Pics.Any(pic => !string.IsNullOrEmpty(pic.Pic) && assets.FindAnimation<GraphicAsset>(pic.Pic) != null);
 
     /// <summary>Whether a key or button has been pressed since StartAck</summary>
     bool KeyPressed()
