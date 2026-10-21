@@ -183,6 +183,62 @@ In the editor, the **Wall patches** layer (in the plane list) puts patches on wa
 changing the walls, and its palette lists the mapdefs patches. In game, `where` shows the patch
 on the wall you face; with cheats on, `patch <0-255>` puts one on it.
 
+## Key Demo (`mods/key-demo`)
+
+A small level that replaces Floor 1 (Wolfenstein 3D only) with two keys of its own, red and
+blue, beside Wolf3D's gold and silver, and doors that need more than one key: two particular
+ones, any two, or all four.
+
+```
+PFWolf.exe --file key-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+You start in a hall with the red key and the gold key lying in it, and three doors:
+
+- **West:** any two of the four keys. The two in the hall open it, and the blue key is inside.
+- **East:** the red key and the blue key, both. Try it short of one and it says which: each
+  key's own locked message. The silver key is inside.
+- **North:** all four keys, to the exit room and its elevator switch.
+
+The keys aren't used up, so the same ones open every door. The status bar shows all four, in a
+2×2 block where Wolf3D's has one column, and on the automap each door has a color of its own.
+
+### What's in it
+
+- `actordefs/keys.yaml`: `RedKey` and `BlueKey`. A key is any class descended from `Key`
+  (pfwolf-pk3's `actordefs/native.yaml`); carrying one is what opens a door that names it. Each
+  is the gold key's sprite drawn through a color translation, so it needs no sprites, with its
+  pickup and locked messages (`key.lockedmessage`, and `key.switchlockedmessage` for a locked
+  switch), and its status bar picture and slot (`key.statusbarpic`, `key.statusbarslot`).
+- `mapdefs/doors.yaml`: doors 80-82. In place of one `lock:` item, each has `locks:`, the items
+  it needs: all of them, or `locks-needed` of them (any). A door can have a `lock-message` of its
+  own (the any-two and all-four doors do). Without one, a door that needs all its keys shows the
+  missing key's message, and one that needs only some a plain locked message. Every door field
+  is described at the top of pfwolf-pk3's `mapdefs/wolf3d/doors.yaml`.
+- `mapdefs/things.yaml`: objects 500 (the red key) and 501 (the blue key). Gold and silver are
+  Wolf3D's own 43 and 44.
+- `translations.yaml`: `red-key` and `blue-key`, the gold key's sprite desaturated and tinted,
+  keeping its shading.
+- `statusbar.yaml`: the key slots as two rows and two columns (`rows`, `column-spacing`), with
+  the weapon moved right to make room. Gold and silver keep slots 0 and 1.
+- `graphics/redkey.png`, `graphics/bluekey.png`: the keys' status bar pictures.
+- `language/en-us.yaml`: the pickup and locked messages.
+- `game-info.yaml`: turns messages over the view on, so pickups and locked doors say what they
+  need.
+- `maps/MAP01.wad`: the level.
+
+The status bar pictures and the level are made by `tools/make-key-demo.ps1` (the layout is an
+ASCII drawing in it, and the pictures are drawn pixel by pixel). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-key-demo.ps1
+```
+
+In game, with cheats on, `give RedKey` (or any key class) hands you a key, and `give keys`
+every one there is.
+
 ## Standalone Demo (`mods/standalone-demo`)
 
 A tiny game of its own that **needs no other game's files**: no WL6, SOD or any other data
