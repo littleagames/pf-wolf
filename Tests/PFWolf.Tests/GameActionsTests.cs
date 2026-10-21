@@ -56,6 +56,17 @@ public class GameActionsTests
     }
 
     [Test]
+    public void Groups_Have_Titles_Of_Their_Own_And_Actions()
+    {
+        // Act
+        var titles = GameActions.Groups.Select(g => g.Title).ToList();
+
+        // Assert
+        Assert.That(titles, Is.Unique);
+        Assert.That(GameActions.Groups.Where(g => g.Actions.Count == 0).Select(g => g.Title), Is.Empty);
+    }
+
+    [Test]
     public void Only_Actor_Actions_Need_A_Class()
     {
         // Act

@@ -14,7 +14,15 @@ internal static class ConsoleCommandsSchema
         + "goes in \"double quotes\". The same commands run from autoexec.cfg in the config folder at startup, from exec, from key binds "
         + "(bind), and from the --exec command line option. A cheat runs only once cheats are on (--cheats, or Shift+Alt+Backspace), "
         + "never in a game with others. Arguments in [brackets] can be left out.",
-        [.. GameHost.ConsoleCommandList().Select(Field)]);
+        [.. Grouped()]);
+
+    // Each group (as GameHost.RegisterConsoleCommands has them, in its order), its commands by name
+    static IEnumerable<FieldSchema> Grouped()
+    {
+        var commands = GameHost.ConsoleCommandList();
+        return GameHost.ConsoleCommandGroups().Select(group =>
+            FieldSchema.Group(group, null, [.. commands.Where(c => c.Group == group).Select(Field)]));
+    }
 
     internal static FieldSchema Field(ConsoleCommand command) =>
         FieldSchema.Callable(command.Name, command.Usage, Describe(command));

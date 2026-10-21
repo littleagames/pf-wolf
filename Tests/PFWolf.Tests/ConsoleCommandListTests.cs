@@ -21,6 +21,27 @@ public class ConsoleCommandListTests
     }
 
     [Test]
+    public void Each_Is_In_A_Group()
+    {
+        // Act: one registered outside GameHost.RegisterConsoleCommands' groups has none
+        var ungrouped = Commands.Where(c => c.Group.Length == 0).Select(c => c.Name);
+
+        // Assert
+        Assert.That(ungrouped, Is.Empty);
+        Assert.That(GameHost.ConsoleCommandGroups(), Is.Unique);
+    }
+
+    [Test]
+    public void The_Documentation_Has_Every_Command_Once()
+    {
+        // Act
+        var documented = ConsoleCommandsSchema.Build().Fields.SelectMany(group => group.Fields).Select(entry => entry.Key);
+
+        // Assert
+        Assert.That(documented, Is.EquivalentTo(Commands.Select(c => c.Name)));
+    }
+
+    [Test]
     public void Each_Has_Help_As_A_Sentence()
     {
         // Act

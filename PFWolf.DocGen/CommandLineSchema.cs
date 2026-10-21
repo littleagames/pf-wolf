@@ -15,7 +15,19 @@ internal static class CommandLineSchema
         "Start PFWolf as `PFWolf.exe [options] [mods...]`, for example `PFWolf.exe --game spear --warp MAP02 --skill 4`, or "
         + "`PFWolf.exe --nowait --cheats --warp MAP01 --exec \"god; give all\"` for a scripted run. Mods dropped on the exe arrive as mods. "
         + "--help lists the options.",
-        [.. Options().Select(option => FieldSchema.Callable(option.Key, Signature(option.Key, option.Type), option.Help))]);
+        [.. Groups.Select(group => FieldSchema.Group(group.Title, null,
+            [.. Options().Where(option => group.Options.Contains(option.Key)).Select(option => FieldSchema.Callable(option.Key, Signature(option.Key, option.Type), option.Help))]))]);
+
+    /// <summary>The options by what they're for, as the page groups them (CommandLineOptionsTests: each option in one)</summary>
+    internal static IReadOnlyList<(string Title, string[] Options)> Groups { get; } =
+    [
+        ("The game and mods", ["--game", "--file", "mods"]),
+        ("Starting play", ["--warp", "--skill", "--start", "--nowait", "--exec", "--cheats"]),
+        ("Playing with others", ["--host", "--join", "--port", "--name"]),
+        ("Video", ["--fullscreen", "--windowed", "--res", "--scale"]),
+        ("Folders", ["--configdir", "--savedir", "--demodir"]),
+        ("Other", ["--console"]),
+    ];
 
     /// <summary>Each option (--game) and the bare mods, in the order GameParams has them</summary>
     internal static IEnumerable<(string Key, FieldType Type, string Help)> Options()

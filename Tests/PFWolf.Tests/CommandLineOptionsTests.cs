@@ -66,6 +66,16 @@ public class CommandLineOptionsTests
         Assert.That(types["--warp"], Is.EqualTo(Definitions.FieldType.Text));
     }
 
+    [Test]
+    public void Each_Option_Is_In_One_Group()
+    {
+        // Act
+        var grouped = CommandLineSchema.Groups.SelectMany(group => group.Options).ToList();
+
+        // Assert
+        Assert.That(grouped, Is.EquivalentTo(Options.Select(o => o.Key)), "CommandLineSchema.Groups");
+    }
+
     [TestCase("--cheats", "--cheats")]
     [TestCase("--skill", "--skill <n>")]
     [TestCase("--file", "--file <path>...")]

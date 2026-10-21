@@ -28,7 +28,11 @@ internal record ConsoleCommand(
     Action<string[]> Run,
     ConsoleCommandFlags Flags = ConsoleCommandFlags.None,
     string[]? Aliases = null,
-    ConsoleCompleter? Complete = null);
+    ConsoleCompleter? Complete = null)
+{
+    /// <summary>What it's for, as the documentation groups the commands ("Cheats"): the console's <see cref="ConsoleManager.Group"/> as it was registered</summary>
+    public string Group { get; init; } = "";
+}
 
 /// <summary>
 /// The in-game command console: a registry of named commands, a scrollback buffer of output lines
@@ -104,8 +108,27 @@ internal class ConsoleManager
     internal IEnumerable<ConsoleCommand> Commands =>
         _commands.Values.Distinct().OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The group the commands registered from now on are in (GameHost.RegisterConsoleCommands sets each in turn)</summary>
+    internal string Group
+    {
+        get => _group;
+        set
+        {
+            _group = value;
+            if (!_groups.Contains(value))
+                _groups.Add(value);
+        }
+    }
+    private string _group = "";
+    private readonly List<string> _groups = [];
+
+    /// <summary>The groups, in the order they were first registered into</summary>
+    internal IReadOnlyList<string> Groups => _groups;
+
     internal void Register(ConsoleCommand command)
     {
+        if (command.Group.Length == 0)
+            command = command with { Group = _group };
         _commands[command.Name] = command;
         foreach (var alias in command.Aliases ?? [])
             _commands[alias] = command;

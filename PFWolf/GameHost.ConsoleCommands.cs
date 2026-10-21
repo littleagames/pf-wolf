@@ -21,17 +21,28 @@ internal static partial class GameHost
         _consoleManager.PlayingWithOthers = () => NetGame;
         _consoleManager.LevelLoaded = () => MapManager.Player != null;
 
+        // Each group's commands, for the documentation (each set before its commands register)
+        void Group(string name) => _consoleManager.Group = name;
+
         // the console itself, binds and controls, video, messages and assets (Commands/)
+        Group("The console");
         new CoreCommands(_consoleManager, GameEngineManager.GetConfigFilePath).Register();
+        Register("quit", "Quits the game immediately.", "quit", _ => GameEngineManager.Quit(""));
+        Group("Keys and controls");
         new BindCommands(_consoleManager, Controls, ControlSettings).Register();
+        Group("Video");
         new VideoCommands(_consoleManager, _videoManager, RedrawAfterVideoChange).Register();
+        Group("Messages");
         new MessageCommands(_consoleManager, HudMessageManager).Register();
+        Group("Game options");
         new GameOptionCommands(_consoleManager, Settings.Options).Register();     // freelook, am_stats, autosave, weaponbob, alwaysrun, crosshair
+        Group("Mods, sounds and music");
         new AssetCommands(_consoleManager, AssetManager, AudioManager, GameEngineManager).Register();
 
         //
         // automap
         //
+        Group("The automap");
         Register("automap", "Opens or closes the automap.", "automap", _ => ToggleAutomap(), InLevel);
         Register("am_style", "How the automap draws the level: wall textures and sprites, or flat colors.",
             "am_style [graphic|color]", AmStyleCommand, complete: Values("graphic", "color"));
@@ -43,31 +54,42 @@ internal static partial class GameHost
             complete: Values("0", "1"));
 
         //
-        // messages over the view
+        // games with others
+        //
+        Group("Playing with others");
         netCommands.Register();     // net_find, net_portcheck, net_status, scoreboard (Commands/NetCommands.cs)
 
         //
         // cheats (the old Tab debug keys, plus a few new ones)
         //
+        Group("Cheats");
         cheatCommands.Register();       // god, NoClip, give, map, exitlevel, tp, killall, diag, summon, pitch, eyeheight, hurt, PlayerClass (Commands/CheatCommands.cs)
+        Group("Information and debugging");
         debugCommands.Register();       // overhead, where, count, actors, maps, fps, slowmo, vbls, fade, screenshot (Commands/DebugCommands.cs)
+        Group("Factions and colors");
         factionCommands.Register();     // factions, setfaction, settranslation, translations, playercolor (Commands/FactionCommands.cs)
+        Group("Changing the level");
         levelEditCommands.Register();       // WallHeight, sky, weather, fog, light(s), zone*, height, tag, patch, flat(s) (Commands/LevelEditCommands.cs)
+        Group("Players, views and game modes");
         Register("spectate", "Watches through another actor's eyes while you play on: the next or previous enemy (default next), the next of a class, or back to the player. Not saved; each level starts on the player.",
             "spectate [next|prev|player|<class>]", SpectateCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["next", "prev", "player", .. SpectateCandidates().Select(a => a.Name).Distinct()] : []);
         playerCommands.Register();      // addplayer, controlplayer, GameMode (Commands/PlayerCommands.cs)
 
         //
-        // debugging aids and information
+        // scripts, unlocks, demos and saves
         //
+        Group("Scripts");
         Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", ScriptsCommand);
         Register("lua", "Runs Lua in the scripts' state (`me` is the player). Strings take 'single quotes'; separate statements with spaces, not ;.",
             "lua <code>", LuaCommand, Cheat);
+        Group("Unlocks and records");
         new Commands.UnlockCommands(_consoleManager, Unlocks, LevelRecords).Register();     // unlock, lock, records (Commands/UnlockCommands.cs)
+        Group("Demos");
         demoCommands.Register();        // playdemo, demotest, recorddemo (Commands/DemoCommands.cs)
+        Group("Saved games");
         saveCommands.Register();        // saves, save, load (Commands/SaveCommands.cs)
-        Register("quit", "Quits the game immediately.", "quit", _ => GameEngineManager.Quit(""));
+        Group("");      // anything registered later, elsewhere, isn't in one
     }
 
     /// <summary>
@@ -80,6 +102,13 @@ internal static partial class GameHost
             InitServices();
         RegisterConsoleCommands();
         return [.. _consoleManager.Commands];
+    }
+
+    /// <summary>The console commands' groups, in the order they register (ConsoleCommandList's first)</summary>
+    internal static IReadOnlyList<string> ConsoleCommandGroups()
+    {
+        ConsoleCommandList();
+        return [.. _consoleManager.Groups.Where(group => group.Length > 0)];
     }
 
     // The cheats (Commands/CheatCommands.cs)

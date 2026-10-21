@@ -106,6 +106,13 @@ public sealed class FieldSchema
     /// </summary>
     public string? Signature { get; private init; }
 
+    /// <summary>
+    /// A record that only gathers entries of a reference under a heading ("The weapon in hand"):
+    /// they keep their own names, rather than being named within it as a record's fields are
+    /// (Lua's game.random)
+    /// </summary>
+    public bool IsGroup { get; private init; }
+
     /// <summary>A Dictionary's key type (int for the mapdefs tables)</summary>
     public Type? KeyType { get; }
 
@@ -143,6 +150,10 @@ public sealed class FieldSchema
     /// <summary>An entry of a hand-made reference of things that are called or typed: how it's written, and what it does</summary>
     public static FieldSchema Callable(string name, string signature, string description)
         => new(name, name, description, FieldType.Text, typeof(string), [], null, FieldHint.None) { Signature = signature };
+
+    /// <summary>A heading over some of a reference's entries (see <see cref="IsGroup"/>)</summary>
+    public static FieldSchema Group(string title, string? description, IReadOnlyList<FieldSchema> entries)
+        => new(title, title, description, FieldType.Record, typeof(object), [], null, FieldHint.None) { _fields = entries, IsGroup = true };
 
     /// <summary>A field of a hand-made schema: named fields of its own</summary>
     public static FieldSchema Record(string key, string? description, IReadOnlyList<FieldSchema> fields)

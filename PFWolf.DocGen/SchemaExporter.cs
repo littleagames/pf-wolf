@@ -37,6 +37,8 @@ internal sealed class SchemaExporter(string fileId)
             node["hint"] = schema.Hint.ToString().ToLowerInvariant();
         if (schema.Signature != null)
             node["signature"] = schema.Signature;
+        if (schema.IsGroup)
+            node["group"] = true;
 
         switch (schema.Type)
         {
@@ -68,7 +70,7 @@ internal sealed class SchemaExporter(string fileId)
                 foreach (var field in schema.Fields)
                 {
                     var fieldPath = path.Length == 0 ? field.Key : $"{path}.{field.Key}";
-                    if (field.Description == null)
+                    if (field.Description == null && !field.IsGroup)     // a group is only a heading
                         Undocumented.Add($"{fileId}: {fieldPath} ({(schema.ClrType == typeof(object) ? "hand-made schema" : schema.ClrType.Name)})");
                     fields.Add(Export(field, fieldPath));
                 }

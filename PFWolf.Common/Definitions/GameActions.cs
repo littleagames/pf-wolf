@@ -22,6 +22,9 @@ public sealed record GameAction(string Name, ActionUse Use, string Signature, st
     public bool IsThink => Name.StartsWith("T_", StringComparison.Ordinal);
 }
 
+/// <summary>Thinks and actions that are for the same kind of thing (the weapon in hand's)</summary>
+public sealed record ActionGroup(string Title, IReadOnlyList<GameAction> Actions);
+
 /// <summary>
 /// The thinks and actions the engine registers, for the documentation and the tests that keep it in
 /// step with the code (a name the engine registers that isn't here, or one here it doesn't
@@ -32,10 +35,10 @@ public static class GameActions
     const ActionUse Actor = ActionUse.Actor, Switch = ActionUse.Switch, Both = ActionUse.Actor | ActionUse.Switch;
     const string Monster = "Monster", BlakeMonster = "BlakeMonster";
 
-    /// <summary>Every think and action, by name</summary>
-    public static IReadOnlyList<GameAction> All { get; } =
+    /// <summary>The thinks and actions by what they're for, as the documentation groups them</summary>
+    public static IReadOnlyList<ActionGroup> Groups { get; } =
     [
-        // Enemies' thinks
+        new("Enemies' thinks", [
         new("T_Stand", Actor, "T_Stand", "Stands guard, waiting to see or hear the player (Wolf3D's)", Monster),
         new("T_Path", Actor, "T_Path", "Patrols, turning at the patrol points, until it sees or hears the player (Wolf3D's)", Monster),
         new("T_Chase", Actor, "T_Chase", "Goes after the player, attacking now and then while it has a clear shot (Wolf3D's)", Monster),
@@ -59,7 +62,8 @@ public static class GameActions
         new("T_SecurityLight", Actor, "T_SecurityLight", "A security light's think: once there's been a noise where the player can hear it, it starts flashing (its Alert state)", BlakeMonster),
         new("T_SteamVent", Actor, "T_SteamVent", "A steam vent's think: while the player can see it, it counts down and lets off steam (its Release state), then waits up to 34 seconds for the next", BlakeMonster),
 
-        // Enemies' actions
+        ]),
+        new("Enemies' actions", [
         new("A_FireProjectile", Actor, "A_FireProjectile(\"HRocket\"[, offset[, \"shoot\"]])", "Launches a projectile at the player, turned by the offset in Angles units; with \"shoot\", also fires a gun volley (T_Shoot), as the Death Knight does with each rocket", Monster),
         new("A_StartAttack", Actor, "A_StartAttack", "Starts counting a volley of several shots (the Angel's sparks); see A_Relaunch", Monster),
         new("A_Relaunch", Actor, "A_Relaunch(count, \"TiredState\"[, \"BreakOffState\"])", "After each shot of a volley: once count are fired it goes to TiredState, else half the time it breaks off to BreakOffState (Chase when left out)", Monster),
@@ -82,7 +86,8 @@ public static class GameActions
         new("A_VictoryIfLast", Actor, "A_VictoryIfLast", "The level is won once none of its class still stands (the last projection generator)", BlakeMonster),
         new("A_FireSpread", Actor, "A_FireSpread(\"SpectorShot\", chance, health, lowchance, offset, ...)", "A projectile at the player and, chance times in 256 (lowchance below that health), one either side at each offset in Angles units too (Goldfire, morphed)", BlakeMonster),
 
-        // Any actor
+        ]),
+        new("Any actor", [
         new("A_DeathScream", Actor, "A_DeathScream", "Plays its `deathsound` from where it is (one picked at random from a list)"),
         new("A_ActiveSound", Actor, "A_ActiveSound", "Plays its `activesound` (Mecha Hitler's stomp), only where the player can hear it: in an area joined to theirs"),
         new("A_PlaySound", Actor, "A_PlaySound(\"sound\"[, \"positional\"])", "Plays a sound, not placed in the world; with \"positional\", from where it is"),
@@ -110,7 +115,8 @@ public static class GameActions
         new("A_WarpSiteGone", Actor, "A_WarpSiteGone", "A warp site's actor has warped out: the wait for the next starts"),
         new("A_WarpSitesOff", Actor, "A_WarpSitesOff", "No more come: the level's warp sites go (Goldfire, morphed)"),
 
-        // Projectiles, effects and jumps
+        ]),
+        new("Projectiles, effects and jumps", [
         new("A_Projectile", Actor, "A_Projectile(min[, max])", "A projectile's think: flies along its angle; hitting the player deals min..max (just min without a max), and with the HURTMONSTERS flag so does hitting an enemy"),
         new("A_SpawnProjectile", Actor, "A_SpawnProjectile(\"Fireball\"[, angle[, \"relative\" | \"absolute\" | \"aim\"]])", "Fires a projectile (an actor whose think is A_Projectile), at the angle in degrees, positive turning left: relative (the default) to the way it faces, absolute from east, or aim: at the nearest player, turned by the angle. The projectile's `speed`, `speed.random` and `spread` apply, and its `attacksound` plays."),
         new("A_SpawnThing", Actor, "A_SpawnThing(\"Smoke\"[, chance])", "Spawns the class where it is (a rocket's smoke trail); with a chance, only that many times in 256"),
@@ -126,7 +132,8 @@ public static class GameActions
         new("A_UnblockTile", Actor, "A_UnblockTile", "Its tile no longer blocks (if a solid thing was all that blocked it)"),
         new("A_ShockNearby", Actor, "A_ShockNearby(damage, distance, chance[, \"sound\"])", "A think for something that zaps the player within distance tiles of it: each tic, a chance in 256 of a shock for damage, with the sound from where it is"),
 
-        // The weapon in hand
+        ]),
+        new("The weapon in hand", [
         new("A_WeaponReady", Actor, "A_WeaponReady", "The Ready state's every-tic action: falls back to the best weapon that can fire when out of ammo, reloads an empty (or, on reload, not full) magazine, and starts the Fire state on a fresh press of fire"),
         new("A_GunAttack", Actor, "A_GunAttack([near, mid, far])", "One hitscan shot from the weapon in hand, if there's ammo (and charge) for it: a hit deals a random 0-255 divided by near within 2 tiles, mid within 4 and far beyond (4, 6, 6)"),
         new("A_FireBullet", Actor, "A_FireBullet(min[, max[, \"silent\"]])", "One shot at the closest target in the weapon's sights, for min..max whatever the distance; with \"silent\", it alerts no one. Ammo and charge as A_GunAttack."),
@@ -135,7 +142,8 @@ public static class GameActions
         new("A_ReFire", Actor, "A_ReFire", "Fire still held and a round ready: back to the Hold state (or Fire, for a weapon without one)"),
         new("A_Reload", Actor, "A_Reload([rounds[, \"state\"]])", "Loads the weapon in hand's magazine from its ammo, all that fits or that many rounds; given a state, it goes there while the magazine still has room and there's ammo left (a shotgun's shell-by-shell loop)"),
 
-        // Cutscenes and the player
+        ]),
+        new("Cutscenes and the player", [
         new("T_BJRun", Actor, "T_BJRun", "The victory cutscene: BJ walks the patrol arrows toward the exit", Monster),
         new("T_BJJump", Actor, "T_BJJump", "The victory cutscene: BJ's jump", Monster),
         new("T_BJDone", Actor, "T_BJDone", "The victory cutscene is over: the level ends"),
@@ -144,7 +152,8 @@ public static class GameActions
         new("T_DeathCam", Actor, "T_DeathCam", "The player's think on its DeathCam state: animates the banner"),
         new("T_PlayerDead", Actor, "T_PlayerDead", "A dead player's think: turning to face their killer, sinking, and waiting to come back"),
 
-        // Switches and triggers
+        ]),
+        new("Switches and triggers", [
         new("A_PushWall", Switch, "A_PushWall([\"moving sound\"][, \"blocked sound\"][, \"direction\", \"message\"])", "Pushes the switch's own wall away from the player; either sound left out is silent. With a direction (north, east, south or west) it only moves that way: pushed from another side, it shows the message and plays the blocked sound instead."),
         new("A_Exit", Switch, "A_Exit", "Ends the level, going to the secret level when the player stands on the floors' secret-exit code; it waits for the switch's sound to finish, and refuses while a blocks-exit level objective has any left"),
         new("A_SecretExit", Switch, "A_SecretExit", "Ends the level, going to the secret level; as A_Exit otherwise"),
@@ -168,7 +177,8 @@ public static class GameActions
         new("A_VictoryRun", Switch, "A_VictoryRun(\"Class\", wall)", "The player has reached the way out (Blake Stone's win floor): the view turns toward the map's first tile of the wall (the shuttle), and the class runs past the player that way (T_VictoryRun)"),
         new("A_DropDetonator", Switch, "A_DropDetonator(\"ArmedClass\", \"CubeClass\", \"ItemClass\"[, range])", "The fission detonator, dropped by its slot key beside the floor's security cube with the next floor still locked, which takes one ItemClass from the inventory; it goes off a few seconds later, breaking the cube, whose death unlocks the next floor"),
 
-        // Both
+        ]),
+        new("Actors and switches alike", [
         new("A_Message", Both, "A_Message(\"text\"[, \"style\"])", "Shows a message (a $NAME language key, or the text), in the style for locked doors unless one is named; an actor's fills in its {tag} and counts"),
         new("A_GiveInventory", Both, "A_GiveInventory(\"Item\"[, amount])", "Gives the player an inventory item, as picking it up would, with its pickup sound and message; amount left out is the item's own. From a switch, refused (with the use-fail sound) when it would do nothing."),
         new("A_SetPatch", Both, "A_SetPatch(to[, from, ...])", "The tagged walls' patches become patch `to` (0 takes them off); with froms, only those showing one of them. An actor's works on its own map tag."),
@@ -188,7 +198,11 @@ public static class GameActions
         new("A_CompleteObjective", Both, "A_CompleteObjective(\"name\"[, n])", "One (or n) more of a level objective done, with its progress message (and its done message for the last)"),
         new("A_AddObjective", Both, "A_AddObjective(\"name\"[, n])", "One (or n) more of a level objective to do"),
         new("A_Unlock", Both, "A_Unlock(\"name\"[, \"message\"])", "Unlocks a name for good (a starts-locked episode's key, or a level's name), showing the message if it wasn't already; an actor's fills in its {tag} and counts (a numbered dog tag's \"DT0{tag}\")"),
+        ]),
     ];
+
+    /// <summary>Every think and action, by name</summary>
+    public static IReadOnlyList<GameAction> All { get; } = [.. Groups.SelectMany(group => group.Actions)];
 
     /// <summary>A think or action by its name (case matters, as it does to the engine)</summary>
     public static GameAction? Find(string name) => All.FirstOrDefault(a => a.Name == name);
@@ -197,7 +211,7 @@ public static class GameActions
     public static FieldSchema Schema() => FieldSchema.Record("actions",
         "The thinks (T_, run every tic) and actions (A_, run once) an actordefs state can run (`think: T_Chase`, `action: A_PlaySound(\"x\")`), "
         + "and the actions a mapdefs switch or trigger can run (`actions:`). Arguments in [brackets] can be left out.",
-        [.. All.Select(a => FieldSchema.Callable(a.Name, a.Signature, Describe(a)))]);
+        [.. Groups.Select(group => FieldSchema.Group(group.Title, null, [.. group.Actions.Select(a => FieldSchema.Callable(a.Name, a.Signature, Describe(a)))]))]);
 
     static string Describe(GameAction action)
     {
