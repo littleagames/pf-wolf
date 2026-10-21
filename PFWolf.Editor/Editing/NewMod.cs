@@ -105,11 +105,14 @@ public static partial class NewMod
     {
         var name = Quote(request.Name);
         var files = new List<(string, string)>();
+        // The mod's id, which other mods' dependencies name it by: a stand-alone game's is its game id
+        var id = string.IsNullOrWhiteSpace(request.GameId) ? "" : $"id: {request.GameId}\n";
 
         if (!request.IsStandalone)
         {
             files.Add(("modinfo.yaml",
                 $"name: {name}\n" +
+                id +
                 "version: \"1.0\"\n" +
                 $"description: \"A mod for {request.BasePack}\"\n" +
                 "# The games it loads in (and the games built on them)\n" +
@@ -119,6 +122,7 @@ public static partial class NewMod
 
         files.Add(("modinfo.yaml",
             $"name: {name}\n" +
+            id +
             "version: \"1.0\"\n" +
             "description: \"A stand-alone game\"\n"));
         files.Add(("gamepack-info.yaml",

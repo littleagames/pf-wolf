@@ -21,6 +21,31 @@ public record ModInfo
 
     /// <summary>Game packs the mod is made for ("wolf3d", "spear"); it loads in any when unset</summary>
     public List<string>? GamePacks { get; init; }
+
+    /// <summary>
+    /// The mod's id, which other mods' dependencies and the mod catalog know it by ("moody-lights");
+    /// left out, its file or folder name without the extension
+    /// </summary>
+    public string? Id { get; init; }
+
+    /// <summary>
+    /// The PFWolf versions it's made for, as a range: comparisons a version must all pass
+    /// (">=0.8.0 &lt;0.9.0"; also &gt;, &lt;= and =), or a version alone for it and every later
+    /// one ("0.8.0"). Run on another, it still loads, with a warning. Any version when unset.
+    /// </summary>
+    public string? Pfwolf { get; init; }
+
+    /// <summary>
+    /// The ids of other mods it needs: it isn't loaded unless they all are too. The load order
+    /// stays the player's, so a mod that changes what another adds goes after it.
+    /// </summary>
+    public List<string>? Dependencies { get; init; }
+
+    /// <summary>Its license, for the mod catalog: an SPDX id ("CC-BY-4.0", "MIT") or a sentence</summary>
+    public string? License { get; init; }
+
+    /// <summary>Pictures of it, for the mod catalog: PNG or JPEG files in the mod ("screenshots/hall.png")</summary>
+    public List<string>? Screenshots { get; init; }
 }
 
 /// <summary>
@@ -59,6 +84,47 @@ public class ModSource
 
     /// <summary>modinfo.yaml's name, or else the file or folder name</summary>
     public string DisplayName => string.IsNullOrWhiteSpace(Info.Name) ? Source.Name : Info.Name;
+
+    /// <summary>modinfo.yaml's id, or else the file or folder name without the extension</summary>
+    public string Id => string.IsNullOrWhiteSpace(Info.Id)
+        ? Path.GetFileNameWithoutExtension(FullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+        : Info.Id.Trim();
+
+    /// <summary>
+    /// A warning when modinfo.yaml's pfwolf range leaves out <paramref name="engineVersion"/> (or
+    /// can't be read), or null: the mod loads either way
+    /// </summary>
+    public string? EngineVersionWarning(Version engineVersion)
+    {
+        if (string.IsNullOrWhiteSpace(Info.Pfwolf))
+            return null;
+        if (!VersionRange.TryParse(Info.Pfwolf, out var range))
+            return $"Mod '{DisplayName}': its pfwolf range \"{Info.Pfwolf}\" can't be read (as \">=0.8.0 <0.9.0\", or \"0.8.0\" for it and later); loading it anyway";
+        return range.Includes(engineVersion)
+            ? null
+            : $"Mod '{DisplayName}' is made for PFWolf {Info.Pfwolf}, not {VersionRange.Format(engineVersion)}; loading it anyway, but it may not work";
+    }
+
+    /// <summary>
+    /// The mods whose dependencies are all among them, in their order. One that needs a mod that
+    /// isn't there is left out (with a warning), and so, in turn, is one that needs that one.
+    /// </summary>
+    public static List<ModSource> WithDependenciesMet(IReadOnlyList<ModSource> mods, List<string> warnings)
+    {
+        var kept = mods.ToList();
+        while (true)
+        {
+            var ids = kept.Select(mod => mod.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var unmet = kept.FirstOrDefault(mod => (mod.Info.Dependencies ?? []).Any(id => !ids.Contains(id.Trim())));
+            if (unmet == null)
+                return kept;
+
+            var missing = (unmet.Info.Dependencies ?? []).Select(id => $"'{id.Trim()}'").Where(id => !ids.Contains(id.Trim('\''))).Distinct().ToList();
+            var named = missing.Count == 1 ? $"{missing[0]}, which isn't loaded" : $"{string.Join(", ", missing[..^1])} and {missing[^1]}, which aren't loaded";
+            warnings.Add($"Mod '{unmet.DisplayName}' needs {named}, so it isn't loaded either");
+            kept.Remove(unmet);
+        }
+    }
 
     /// <summary>The mods/ folder beside the exe</summary>
     public static string ModsFolder => Path.Combine(AppContext.BaseDirectory, "mods");

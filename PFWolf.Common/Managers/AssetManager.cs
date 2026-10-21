@@ -35,6 +35,12 @@ public class AssetManager
     /// <summary>What went wrong finding or loading the mods</summary>
     public List<string> ModWarnings { get; } = [];
 
+    /// <summary>
+    /// The engine's version, which mods' modinfo.yaml pfwolf ranges are checked against; null
+    /// (the editor, tests) leaves them unchecked
+    /// </summary>
+    public Version? EngineVersion { get; set; }
+
     /// <param name="gamePackId">The running game pack ("wolf3d", "spear"), whose gamepacks/ assets override the shared ones</param>
     /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml ("wolf3d-apogee")</param>
     /// <param name="modPaths">Mods to load over pfwolf.pk3, in load order: paths, or names in the mods folder</param>
@@ -553,7 +559,7 @@ public class AssetManager
 
     /// <summary>
     /// Finds and opens the mods to load, leaving out any that are missing, repeated, can't be
-    /// read or aren't for this game pack (each with a warning)
+    /// read, aren't for this game pack or need a mod that isn't loaded (each with a warning)
     /// </summary>
     /// <param name="opened">Called with every mod that opened, before they're picked by game pack</param>
     private List<ModSource> OpenMods(IEnumerable<string> modPaths, string gamePackId, Action<List<ModSource>> opened)
@@ -587,6 +593,14 @@ public class AssetManager
 
             mods.Add(mod);
         }
+
+        // A mod made for other PFWolf versions loads anyway, with a warning; one whose
+        // dependencies aren't all loaded doesn't
+        if (EngineVersion != null)
+            foreach (var mod in mods)
+                if (mod.EngineVersionWarning(EngineVersion) is { } warning)
+                    ModWarnings.Add(warning);
+        mods = ModSource.WithDependenciesMet(mods, ModWarnings);
 
         foreach (var warning in ModWarnings)
             WarningLog.Write(warning);

@@ -281,6 +281,7 @@ public class ModFilesTests
         // Assert
         Assert.That(mod.Source.EntryPaths, Is.EqualTo(new[] { "modinfo.yaml" }));
         Assert.That(mod.Info.Name, Is.EqualTo("Spear Mod"));
+        Assert.That(mod.Info.Id, Is.EqualTo("spear-mod"));
         Assert.That(mod.HasGames, Is.False);
         Assert.That(mod.IsForGamePack("spear", ["wolf3d"]), Is.True);
         Assert.That(mod.IsForGamePack("wolf3d", []), Is.False);
