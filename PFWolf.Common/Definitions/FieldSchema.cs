@@ -323,13 +323,21 @@ public static class DocComments
         return Load(type.Assembly).GetValueOrDefault(name);
     }
 
-    /// <summary>A field's summary as plain text, or null when it has none (or isn't PFWolf.Common's)</summary>
+    /// <summary>A field's summary as plain text, or null when it has none</summary>
     public static string? Summary(FieldInfo field)
     {
-        if (field.DeclaringType is not { } type || type.Assembly != typeof(DocComments).Assembly)
+        if (field.DeclaringType is not { } type)
             return null;
-        return Load(type.Assembly).GetValueOrDefault($"F:{type.FullName?.Replace('+', '.')}.{field.Name}");
+        var name = $"F:{type.FullName?.Replace('+', '.')}.{field.Name}";
+        return type.Assembly == typeof(DocComments).Assembly ? Load(type.Assembly).GetValueOrDefault(name) : Outside.GetValueOrDefault(name);
     }
+
+    // What the definitions' fields of types from outside PFWolf.Common say, as they've no doc comments of ours
+    private static readonly Dictionary<string, string> Outside = new()
+    {
+        ["F:System.Numerics.Vector2.X"] = "Across, in pixels",
+        ["F:System.Numerics.Vector2.Y"] = "Down, in pixels",
+    };
 
     /// <summary>A type's summary as plain text, or null when it has none (or isn't PFWolf.Common's)</summary>
     public static string? TypeSummary(Type type)
