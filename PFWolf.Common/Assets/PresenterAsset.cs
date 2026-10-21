@@ -30,8 +30,13 @@ public record PresenterAsset : Asset
 /// </summary>
 public record PresenterShape
 {
+    /// <summary>A picture, drawn at its own size</summary>
     public string? Pic { get; set; }
+
+    /// <summary>A sprite (GARDA1), drawn 64x64 with what's behind showing through its see-through parts</summary>
     public string? Sprite { get; set; }
+
+    /// <summary>A wall texture, drawn 64x64</summary>
     public string? Wall { get; set; }
 }
 
@@ -41,14 +46,25 @@ public record PresenterShape
 /// </summary>
 public record PresenterMessageBox
 {
+    /// <summary>The box's left edge, in 320x200 pixels</summary>
     public int X { get; set; }
+
+    /// <summary>The box's top edge (152: over the status bar)</summary>
     public int Y { get; set; } = 152;
+
+    /// <summary>The box's width</summary>
     public int Width { get; set; } = 320;
+
+    /// <summary>The box's height</summary>
     public int Height { get; set; } = 48;
 
     /// <summary>The bevel's light edge, face and dark edge</summary>
     public int Hi { get; set; } = 0x85;
+
+    /// <summary>The box's face, behind the text</summary>
     public int Med { get; set; } = 0x82;
+
+    /// <summary>The bevel's dark edge, and the text's shadow</summary>
     public int Lo { get; set; } = 0x80;
 
     /// <summary>The text's color until the script changes it</summary>
@@ -64,17 +80,31 @@ public record PresenterMessageBox
 /// </summary>
 public record PresenterBriefing
 {
+    /// <summary>Pictures drawn first, framing the window</summary>
     public List<IntermissionPic> Pics { get; set; } = [];
 
     /// <summary>The window's corners</summary>
     public int X1 { get; set; } = 8;
+
+    /// <summary>The window's top edge</summary>
     public int Y1 { get; set; } = 8;
+
+    /// <summary>The window's right edge</summary>
     public int X2 { get; set; } = 311;
+
+    /// <summary>The window's bottom edge</summary>
     public int Y2 { get; set; } = 175;
 
+    /// <summary>The window's color, filled in first, and behind the help line (a script's ^BC changes it)</summary>
     public int Background { get; set; }
+
+    /// <summary>The light top and left edges of boxes the script draws (^LC changes it)</summary>
     public int Light { get; set; }
+
+    /// <summary>The dark bottom and right edges of boxes the script draws (^DC changes it)</summary>
     public int Dark { get; set; }
+
+    /// <summary>The color of shadowed text's shadow and boxes' drop shadows, the help line's and page numbers' too (^SC changes it)</summary>
     public int Shadow { get; set; }
 
     /// <summary>The font number the text starts in</summary>
@@ -85,10 +115,14 @@ public record PresenterBriefing
 
     /// <summary>The font number and color of the help line and page numbers</summary>
     public int InfoFont { get; set; }
+
+    /// <summary>The help line's and page numbers' color</summary>
     public int InfoColor { get; set; }
 
     /// <summary>Where "PAGE n OF m" goes; none when left out</summary>
     public int? PageX { get; set; }
+
+    /// <summary>The top of "PAGE n OF m"</summary>
     public int PageY { get; set; }
 
     /// <summary>The music while it's up; none keeps what's playing</summary>
