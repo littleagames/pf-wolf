@@ -42,5 +42,5 @@ key by key: give only what you change, and what you leave out keeps the game's v
 ## Learn from the examples
 
 The PFWolf repository has example mods in [`examples/mods`](../../examples/mods), each
-explained in its [README](../../examples/README.md). Moody Lights is a good first one: a few
-YAML files, no maps or pictures.
+explained in its [README](../../examples/README.md). To make one of your own, start with the
+[Your first mod](./tutorials/first-mod) tutorial: a few YAML files, no maps or pictures.
