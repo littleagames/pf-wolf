@@ -22,6 +22,9 @@ internal static class ActorActionRegistry
     /// <summary>Whether a think or action of that name has a handler (a built-in one, or a script's)</summary>
     internal static bool IsRegistered(string name) => _actions.ContainsKey(name);
 
+    /// <summary>Every think and action's name (for the tests, against Definitions.GameActions)</summary>
+    internal static IEnumerable<string> Names => _actions.Keys;
+
     // The class each name registered with RegisterFor needs, and the actor classes already
     // warned about running one without being that class
     private static readonly Dictionary<string, Type> _neededClass = [];

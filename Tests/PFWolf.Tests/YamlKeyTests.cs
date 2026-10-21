@@ -169,8 +169,25 @@ public class YamlKeyTests
                 problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} isn't read (a goto is read only on a frame of its own)");
             else if (normalized != "goto" && !FrameKeys.Contains(normalized))
                 problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} isn't read (a state's frame has no {key})");
+            else if (normalized is "action" or "think" && frame.Children[keyNode] is YamlScalarNode { Value: { Length: > 0 } call }
+                && !IsActorAction(ActionName(call)))
+                problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} {ActionName(call)} isn't run (no actor state action {ActionName(call)}: Definitions/GameActions.cs, or a script's)");
         }
     }
+
+    private static string ActionName(string call) => call.Split('(')[0].Trim();
+
+    // An action the engine runs on actor states, or one a mod's script defines (a global
+    // function A_Freed(self)). The weapons' Select and Deselect states are never entered
+    // (Gameplay/WeaponInHand.cs), so their A_Raise and A_Lower have never been given a handler.
+    private static bool IsActorAction(string name) =>
+        GameActions.Find(name)?.Use.HasFlag(ActionUse.Actor) == true || ScriptActions.Value.Contains(name) || name is "A_Raise" or "A_Lower";
+
+    private static readonly Lazy<HashSet<string>> ScriptActions = new(() =>
+        [.. Sources(TestPaths.RepoRoot())
+            .SelectMany(source => Directory.EnumerateFiles(source.Folder, "*.lua", SearchOption.AllDirectories))
+            .SelectMany(file => System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), @"^\s*function\s+(?<name>[AT]_\w+)\s*\(", System.Text.RegularExpressions.RegexOptions.Multiline))
+            .Select(m => m.Groups["name"].Value)]);
 
     private static string Owner(FieldSchema schema) => schema.ClrType == typeof(object) ? schema.Label : schema.ClrType.Name;
 }
