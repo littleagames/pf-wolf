@@ -70,6 +70,18 @@ internal static partial class GameHost
         Register("quit", "Quits the game immediately.", "quit", _ => GameEngineManager.Quit(""));
     }
 
+    /// <summary>
+    /// Every console command, once each (aliases with it), by name: for the documentation
+    /// (PFWolf.DocGen) and the tests. Off the game, it builds the managers first; nothing is run.
+    /// </summary>
+    internal static IReadOnlyList<ConsoleCommand> ConsoleCommandList()
+    {
+        if (_consoleManager is null)
+            InitServices();
+        RegisterConsoleCommands();
+        return [.. _consoleManager.Commands];
+    }
+
     // The cheats (Commands/CheatCommands.cs)
     static CheatCommands cheatCommands = null!;     // made in InitServices
 

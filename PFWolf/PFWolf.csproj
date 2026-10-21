@@ -44,6 +44,8 @@
 	</ItemGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="PFWolf.Tests" />
+		<!-- The console commands, for the documentation (GameHost.ConsoleCommandList) -->
+		<InternalsVisibleTo Include="PFWolf.DocGen" />
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="..\pfwolf-pk3\**\*">

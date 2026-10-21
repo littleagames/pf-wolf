@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Writes schema.json: every definition file the game reads and every field in it, from the
-       asset types and their doc comments (PFWolf.Common), for the documentation site -->
+       asset types and their doc comments (PFWolf.Common), and the engine's console commands as it
+       registers them (PFWolf), for the documentation site -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -13,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PFWolf.Common\PFWolf.Common.csproj" />
+    <ProjectReference Include="..\PFWolf\PFWolf.csproj" />
   </ItemGroup>
 
   <ItemGroup>
