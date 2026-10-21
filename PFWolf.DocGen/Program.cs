@@ -6,17 +6,20 @@ using PFWolf.DocGen;
 
 // PFWolf.DocGen --out <dir>: writes <dir>/schema.json, every definition file and its fields, for
 // the documentation site (its docs-site/README.md describes the format), and says how many
-// fields have no description yet
+// fields have no description yet. --undocumented [file id] lists them (all files, or just one).
 
 var outDir = "docs-out";
+string? listUndocumented = null;
 for (int i = 0; i < args.Length; i++)
 {
     if (args[i] == "--out" && i + 1 < args.Length)
         outDir = args[++i];
+    else if (args[i] == "--undocumented")
+        listUndocumented = i + 1 < args.Length && !args[i + 1].StartsWith("--") ? args[++i] : "";
     else
     {
         Console.Error.WriteLine($"Unknown argument: {args[i]}");
-        Console.Error.WriteLine("Usage: PFWolf.DocGen [--out <dir>]");
+        Console.Error.WriteLine("Usage: PFWolf.DocGen [--out <dir>] [--undocumented [file id]]");
         return 1;
     }
 }
@@ -59,4 +62,9 @@ File.WriteAllText(path, schema.ToJsonString(new JsonSerializerOptions
 Console.WriteLine($"Wrote {path}: PFWolf {engineVersion}, {files.Count} files");
 if (undocumented.Count > 0)
     Console.WriteLine($"{undocumented.Count} fields have no description yet (doc comments on their properties give them one)");
+if (listUndocumented != null)
+{
+    foreach (var field in undocumented.Where(field => listUndocumented.Length == 0 || field.StartsWith($"{listUndocumented}: ")))
+        Console.WriteLine($"  {field}");
+}
 return 0;

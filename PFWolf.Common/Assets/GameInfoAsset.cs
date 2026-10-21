@@ -2,7 +2,13 @@
 
 public record GameInfoAsset : Asset
 {
+    /// <summary>
+    /// What every level has unless its maps entry says otherwise: floor and ceiling colors, wall
+    /// height, skies, flats, weather, shading and light zones
+    /// </summary>
     public DefaultMapInfo DefaultMap { get; init; } = new();
+
+    /// <summary>The skills by id (the name demo-skill gives), easiest first, as the New Game menu lists them</summary>
     public Dictionary<string, SkillInfo> Skills { get; init; } = [];
 
     /// <summary>
@@ -28,9 +34,22 @@ public record GameInfoAsset : Asset
     /// <summary>The waves of enemies a multiplayer Horde game sends at the players</summary>
     public HordeInfo Horde { get; init; } = new();
 
+    /// <summary>The New Game menu's episodes by id (the name A_Unlock unlocks), in menu order</summary>
     public Dictionary<string, EpisodeInfo> Episodes { get; init; } = [];
+
+    /// <summary>
+    /// What's shown when a cluster is won, by its number (the one its maps' cluster gives). A
+    /// cluster is a group of levels, as an episode is in Wolf3D.
+    /// </summary>
     public Dictionary<int, ClusterInfo> Clusters { get; init; } = [];
+
+    /// <summary>The levels by map name (MAP01): where each one leads, its music, colors and the rest</summary>
     public Dictionary<string, MapInfo> Maps { get; init; } = [];
+
+    /// <summary>
+    /// The questions asked when the player quits (text or $language keys), one picked at random
+    /// as Wolf3D picked from its nine. With one, it's always that one; with none, the question has no text.
+    /// </summary>
     public List<string> EndStrings { get; init; } = [];
 
     /// <summary>
@@ -39,6 +58,7 @@ public record GameInfoAsset : Asset
     /// </summary>
     public Dictionary<string, WeatherInfo> WeatherTypes { get; init; } = [];
 
+    /// <summary>The signon screen shown as the game starts up</summary>
     public SignonInfo Signon { get; init; } = new();
 
     /// <summary>
@@ -55,6 +75,7 @@ public record GameInfoAsset : Asset
     /// <summary>The screens from the signon to the menu: the intro, then the title loop</summary>
     public TitleSequenceInfo TitleSequence { get; init; } = new();
 
+    /// <summary>Music for the high scores screen</summary>
     public string? HighScoresMusic { get; init; }
 
     /// <summary>
@@ -291,7 +312,10 @@ public record GameInfoAsset : Asset
 /// </summary>
 public record MenuStripeInfo
 {
+    /// <summary>How tall the band is, in pixels</summary>
     public int Height { get; init; } = 24;
+
+    /// <summary>The band's color: a color name, #RRGGBB or palette index</summary>
     public string Color { get; init; } = "Black";
 
     /// <summary>
@@ -299,6 +323,7 @@ public record MenuStripeInfo
     /// </summary>
     public int LineY { get; init; } = 22;
 
+    /// <summary>The line's color</summary>
     public string LineColor { get; init; } = "STRIPE";
 }
 
@@ -362,7 +387,10 @@ public record HighScoresInfo
         new() { Pic = "C_Score", X = 28 * 8, Y = 68 },
     ];
 
+    /// <summary>The rows' font</summary>
     public string Font { get; init; } = "SmallFont";
+
+    /// <summary>The rows' color</summary>
     public string Color { get; init; } = "White";
 
     /// <summary>
@@ -370,6 +398,7 @@ public record HighScoresInfo
     /// </summary>
     public int RowY { get; init; } = 76;
 
+    /// <summary>Where the names start</summary>
     public int NameX { get; init; } = 4 * 8;
 
     /// <summary>
@@ -377,6 +406,7 @@ public record HighScoresInfo
     /// </summary>
     public int LevelRight { get; init; } = 22 * 8;
 
+    /// <summary>The level is written E#/L#, its episode first; false for the level number alone</summary>
     public bool ShowEpisode { get; init; } = true;
 
     /// <summary>
@@ -384,6 +414,7 @@ public record HighScoresInfo
     /// </summary>
     public string? WonPic { get; init; }
 
+    /// <summary>Where the score ends (scores are right-aligned)</summary>
     public int ScoreRight { get; init; } = 34 * 8 - 8;
 
     /// <summary>
@@ -456,13 +487,19 @@ public record HighScoresEpisodes
     /// <summary>Top of the first row</summary>
     public int Y { get; init; } = 54;
 
+    /// <summary>Pixels from one row's top to the next</summary>
     public int RowHeight { get; init; } = 40;
+
+    /// <summary>Where the episode's name goes</summary>
     public int NameX { get; init; } = 20;
 
     /// <summary>Where the time goes (h:mm:ss); no time when below 0</summary>
     public int TimeX { get; init; } = 152;
 
+    /// <summary>Where the stats' labels go</summary>
     public int LabelX { get; init; } = 222;
+
+    /// <summary>Where the stats' values go</summary>
     public int ValueX { get; init; } = 280;
 
     /// <summary>The time's and the values' color; the screen's when unset</summary>
@@ -486,30 +523,48 @@ public record HighScoresEpisodeRow
 
 public record HighScoresEpisodeLine
 {
+    /// <summary>The stat's label</summary>
     public string Label { get; init; } = "";
 
     /// <summary>time, kill, secret or objective.NAME (its percentage; with count, how many)</summary>
     public string Value { get; init; } = "";
 
+    /// <summary>Shows how many rather than a percentage</summary>
     public bool Count { get; init; }
 
     /// <summary>From the row's top</summary>
     public int Y { get; init; }
 }
 
+/// <summary>A score a new player's high score table starts with</summary>
 public record HighScoreDefault
 {
+    /// <summary>The name shown</summary>
     public string Name { get; init; } = "";
+
+    /// <summary>The score</summary>
     public int Score { get; init; } = 10000;
+
+    /// <summary>The level (floor number) it was reached on</summary>
     public int Level { get; init; } = 1;
 }
 
+/// <summary>Text drawn on the high scores screen, such as a column heading</summary>
 public record HighScoreLabel
 {
+    /// <summary>The text, or a $language key</summary>
     public string Text { get; init; } = "";
+
+    /// <summary>Where it starts across, in 320x200 pixels</summary>
     public int X { get; init; }
+
+    /// <summary>Where it starts down, in 320x200 pixels</summary>
     public int Y { get; init; }
+
+    /// <summary>Its font; the rows' when left out</summary>
     public string? Font { get; init; }
+
+    /// <summary>Its color; the rows' when left out</summary>
     public string? Color { get; init; }
 }
 
@@ -600,6 +655,7 @@ public record TitleScreenInfo
     /// <summary>Text printed at points on the screen (Wolf3D's non-shareware notice)</summary>
     public List<TitleLineInfo> Lines { get; init; } = [];
 
+    /// <summary>Draws the high scores table</summary>
     public bool HighScores { get; init; }
 
     /// <summary>
@@ -652,8 +708,13 @@ public record TitleScreenInfo
 /// <summary>Text printed on a title screen from x, y; a \n in it comes back to x on the next line</summary>
 public record TitleLineInfo
 {
+    /// <summary>The text</summary>
     public string Text { get; init; } = "";
+
+    /// <summary>Where it starts across, in 320x200 pixels</summary>
     public int X { get; init; }
+
+    /// <summary>Where it starts down, in 320x200 pixels</summary>
     public int Y { get; init; }
 
     /// <summary>The font; the menu font (LargeFont) when unset</summary>
@@ -666,16 +727,37 @@ public record TitleLineInfo
 /// <summary>Presenter text on a title screen: a VGAGRAPH text, its window and colors (palette indices)</summary>
 public record TitleTextInfo
 {
+    /// <summary>The VGAGRAPH text to present</summary>
     public string Script { get; init; } = "";
+
+    /// <summary>The window's left edge, in 320x200 pixels</summary>
     public int X1 { get; init; }
+
+    /// <summary>The window's top edge</summary>
     public int Y1 { get; init; }
+
+    /// <summary>The window's right edge</summary>
     public int X2 { get; init; } = 319;
+
+    /// <summary>The window's bottom edge</summary>
     public int Y2 { get; init; } = 199;
+
+    /// <summary>The font number (presenter.yaml fonts) the text starts in</summary>
     public int Font { get; init; }
+
+    /// <summary>The text's color until the script changes it</summary>
     public int Color { get; init; }
+
+    /// <summary>The window's color, filled in first (a script's ^BC changes it)</summary>
     public int Background { get; init; }
+
+    /// <summary>The light top and left edges of boxes the script draws (^LC changes it)</summary>
     public int Light { get; init; }
+
+    /// <summary>The dark bottom and right edges of boxes the script draws (^DC changes it)</summary>
     public int Dark { get; init; }
+
+    /// <summary>The color of shadowed text's shadow and boxes' drop shadows (^SC changes it)</summary>
     public int Shadow { get; init; }
 }
 
@@ -686,17 +768,40 @@ public record TitleTextInfo
 /// </summary>
 public record LoseScreenInfo
 {
+    /// <summary>The full-screen picture the window is on; a black screen when left out</summary>
     public string? Pic { get; init; }
+
+    /// <summary>The VGAGRAPH text typed out</summary>
     public string Script { get; init; } = "";
+
+    /// <summary>The window's left edge, in 320x200 pixels</summary>
     public int X1 { get; init; }
+
+    /// <summary>The window's top edge</summary>
     public int Y1 { get; init; }
+
+    /// <summary>The window's right edge</summary>
     public int X2 { get; init; } = 319;
+
+    /// <summary>The window's bottom edge</summary>
     public int Y2 { get; init; } = 199;
+
+    /// <summary>The font number (presenter.yaml fonts) the text starts in</summary>
     public int Font { get; init; }
+
+    /// <summary>The text's color until the script changes it</summary>
     public int Color { get; init; }
+
+    /// <summary>The window's color, filled in first (a script's ^BC changes it)</summary>
     public int Background { get; init; }
+
+    /// <summary>The light top and left edges of boxes the script draws (^LC changes it)</summary>
     public int Light { get; init; }
+
+    /// <summary>The dark bottom and right edges of boxes the script draws (^DC changes it)</summary>
     public int Dark { get; init; }
+
+    /// <summary>The color of shadowed text's shadow and boxes' drop shadows (^SC changes it)</summary>
     public int Shadow { get; init; }
 
     /// <summary>Tics between letters</summary>
@@ -712,24 +817,41 @@ public record LoseScreenInfo
 /// </summary>
 public record MenuMessageInfo
 {
+    /// <summary>The text's font</summary>
     public string Font { get; init; } = "LargeFont";
+
+    /// <summary>The text's color</summary>
     public string Color { get; init; } = "White";
+
+    /// <summary>The text's shadow, one pixel right and down</summary>
     public string Shadow { get; init; } = "Black";
+
+    /// <summary>The bevel's light edge</summary>
     public string Hi { get; init; } = "White";
+
+    /// <summary>The box's face, behind the text</summary>
     public string Med { get; init; } = "Grey";
+
+    /// <summary>The bevel's dark edge</summary>
     public string Lo { get; init; } = "Black";
 }
 
 /// <summary>A picture drawn with its top left corner at x, y</summary>
 public record PicPlacement
 {
+    /// <summary>The picture</summary>
     public string Pic { get; init; } = "";
+
+    /// <summary>Its left edge, in 320x200 pixels</summary>
     public int X { get; init; }
+
+    /// <summary>Its top edge, in 320x200 pixels</summary>
     public int Y { get; init; }
 }
 
 public record SignonInfo
 {
+    /// <summary>The full-screen picture shown while the game starts up</summary>
     public string? Pic { get; init; }
 
     /// <summary>
@@ -747,24 +869,42 @@ public record SignonInfo
 /// <summary>Where the signon's startup info goes, in 320x200 coordinates, and its colors</summary>
 public record SignonTextArea
 {
+    /// <summary>The area's left edge</summary>
     public int X { get; init; }
+
+    /// <summary>The area's top edge</summary>
     public int Y { get; init; }
+
+    /// <summary>The area's width</summary>
     public int Width { get; init; }
+
+    /// <summary>The area's height</summary>
     public int Height { get; init; }
 
+    /// <summary>The startup info's font</summary>
     public string Font { get; init; } = "SmallFont";
-    // Each line's name ("Video:"), its value, and the warnings
+
+    /// <summary>The color of each line's name ("Video:")</summary>
     public string LabelColor { get; init; } = "TEXTCOLOR";
+
+    /// <summary>The color of each line's value</summary>
     public string Color { get; init; } = "HIGHLIGHT";
+
+    /// <summary>The color of the warnings</summary>
     public string WarningColor { get; init; } = "READHCOLOR";
-    // The area's own color on the pic, which the text is drawn over
+
+    /// <summary>The area's own color on the pic, which the text is drawn over</summary>
     public string Background { get; init; } = "BKGDCOLOR";
 }
 
 public record DefaultMapInfo
 {
     // Wolf3D's, for a game-info that doesn't say (a new stand-alone game's)
+
+    /// <summary>#RRGGBB below the horizon, where no floor flat or floor sky is drawn</summary>
     public string FloorColor { get; init; } = "#717171";
+
+    /// <summary>#RRGGBB above the horizon, where no ceiling flat or sky is drawn</summary>
     public string CeilingColor { get; init; } = "#383838";
 
     /// <summary>
@@ -825,7 +965,10 @@ public record DefaultMapInfo
 /// <summary>A line of game-info level-start-text: its text (a $language key or the text; %m the level's name), font and color</summary>
 public record LevelStartLine
 {
+    /// <summary>The text, or a $language key; %m in it is the level's name</summary>
     public string Text { get; init; } = "";
+
+    /// <summary>Its font</summary>
     public string Font { get; init; } = "SmallFont";
 
     /// <summary>A color name from colors.yaml, #RRGGBB or a palette index</summary>
@@ -851,6 +994,7 @@ public record StarSkyInfo
     /// <summary>The moon, in the direction of moon-angle (degrees, 0 east, counterclockwise); false for none</summary>
     public bool Moon { get; init; } = true;
 
+    /// <summary>The moon's direction, in degrees: 0 east, counterclockwise</summary>
     public double MoonAngle { get; init; } = 45;
 
     /// <summary>What's behind the stars: a color name, #RRGGBB or palette index</summary>
@@ -1082,7 +1226,13 @@ public record ShadingInfo
 /// </summary>
 public record SkillInfo
 {
+    /// <summary>The skill's text on the New Game menu, or a $language key</summary>
     public string Name { get; init; } = null!;
+
+    /// <summary>
+    /// The picture shown beside the skills while this one is highlighted (Wolf3D's faces), at the
+    /// menu's selection-pic when it has one
+    /// </summary>
     public string PicName { get; init; } = null!;
 
     /// <summary>How much of the damage the player is dealt they take (default 1; the easiest skill's 0.25)</summary>
@@ -1131,9 +1281,16 @@ public record ArticleInfo
 
 public record ArticleMargins
 {
+    /// <summary>Pixels clear above the text</summary>
     public int Top { get; init; } = 16;
+
+    /// <summary>Pixels clear below the text</summary>
     public int Bottom { get; init; } = 32;
+
+    /// <summary>Pixels clear left of the text</summary>
     public int Left { get; init; } = 16;
+
+    /// <summary>Pixels clear right of the text</summary>
     public int Right { get; init; } = 16;
 }
 
@@ -1141,9 +1298,17 @@ public record ArticlePageNumber
 {
     /// <summary>false leaves it out</summary>
     public bool Show { get; init; } = true;
+
+    /// <summary>Where it starts across, in 320x200 pixels</summary>
     public int X { get; init; } = 213;
+
+    /// <summary>Where it starts down, in 320x200 pixels</summary>
     public int Y { get; init; } = 183;
+
+    /// <summary>Its color (a colors.yaml name)</summary>
     public string Color { get; init; } = "Dark Yellow";
+
+    /// <summary>How it's written: {0} is the page, {1} how many there are</summary>
     public string Format { get; init; } = "pg {0} of {1}";
 
     public string Text(int page, int pages) => Format.Replace("{0}", page.ToString()).Replace("{1}", pages.ToString());
@@ -1152,7 +1317,13 @@ public record ArticlePageNumber
 /// <summary>A class in game-info's player-classes: how the class menu shows it</summary>
 public record PlayerClassInfo
 {
+    /// <summary>
+    /// The class's text on the class menu, or a $language key; left out, the class's tag
+    /// property (the name obituaries use), else its class name
+    /// </summary>
     public string? Name { get; init; }
+
+    /// <summary>The picture shown beside the class menu while this class is highlighted; none when left out</summary>
     public string? PicName { get; init; }
 }
 
@@ -1271,8 +1442,13 @@ public record ClusterInfo
 
 public record VictoryFrameInfo
 {
+    /// <summary>The picture</summary>
     public string Pic { get; init; } = null!;
+
+    /// <summary>Its left edge, in 320x200 pixels</summary>
     public int X { get; init; }
+
+    /// <summary>Its top edge, in 320x200 pixels</summary>
     public int Y { get; init; }
 
     /// <summary>
@@ -1283,6 +1459,7 @@ public record VictoryFrameInfo
 
 public record EndScreenInfo
 {
+    /// <summary>The full-screen picture</summary>
     public string Pic { get; init; } = null!;
 
     /// <summary>
@@ -1296,9 +1473,10 @@ public record EndScreenInfo
     /// </summary>
     public List<string> Captions { get; init; } = [];
 
-    // Caption colors are looked up in the game palette's theme, but drawn in the screen's own
-    // palette, so a raw palette index ("208") is usually what's wanted
-
+    /// <summary>
+    /// The captions' color. Color names are looked up in the game palette but drawn in the
+    /// screen's own, so a palette index ("208") is usually what's wanted.
+    /// </summary>
     public string CaptionColor { get; init; } = "White";
 
     /// <summary>
@@ -1306,8 +1484,10 @@ public record EndScreenInfo
     /// </summary>
     public int CaptionY { get; init; } = 180;
 
+    /// <summary>The color the caption area is cleared to, from caption-y to the bottom</summary>
     public string CaptionBackground { get; init; } = "0";
 
+    /// <summary>How long each caption stays up unless a key is pressed, in tics (70 a second)</summary>
     public int CaptionTics { get; init; } = 700;
 }
 
@@ -1446,6 +1626,7 @@ public record HordeInfo
 /// <summary>A Horde wave: the enemies it sends, by actordefs class</summary>
 public record HordeWave
 {
+    /// <summary>The enemies the wave sends: actordefs class, then how many</summary>
     public Dictionary<string, int> Enemies { get; init; } = [];
 }
 
@@ -1496,7 +1677,14 @@ public record MapInfo
             : Deathmatch && mode is "deathmatch" or "team-deathmatch" or "ctf" or "domination" or "king-of-the-hill" or "horde" or "prop-hunt";
 
     //public string Current { get; set; }
+
+    /// <summary>
+    /// The level the exit leads to. Left out, leaving this level wins its cluster (a boss floor),
+    /// as the victory tile does, unless it ends the game (end-message, ends-game).
+    /// </summary>
     public string Next { get; init; } = null!;
+
+    /// <summary>The level the secret exit leads to; left out, the secret exit goes to next</summary>
     public string? SecretNext { get; init; } = null;
 
     /// <summary>
@@ -1505,6 +1693,8 @@ public record MapInfo
     /// leading into Base by its other way in). Null: the level's own start.
     /// </summary>
     public string? NextEntrance { get; init; } = null;
+
+    /// <summary>The entrance secret-next is entered by, as next-entrance is for next</summary>
     public string? SecretNextEntrance { get; init; } = null;
 
     /// <summary>The briefing shown in place of <see cref="Briefing"/> when the level is entered by an entrance, by its name</summary>
@@ -1542,12 +1732,29 @@ public record MapInfo
     /// </summary>
     public List<string> IntermissionPics { get; init; } = [];
 
+    /// <summary>
+    /// The level's floor number: the status bar and level-end screen show it, a level with no
+    /// name is called "Episode X, Floor Y" (or "Floor Y") by it, and elevators find a cluster's
+    /// floors by it. 0 or less: a level with no name is called by its map name.
+    /// </summary>
     public int FloorNumber { get; init; }
+
+    /// <summary>The par time in seconds, shown on the level-end screen; finishing sooner earns a time bonus</summary>
     public int ParTime { get; init; } = 0;
+
+    /// <summary>The music the level plays</summary>
     public string Music { get; init; } = null!;
+
+    /// <summary>
+    /// The cluster (a clusters key) the level is in: its levels' tallies are added up and its
+    /// ending shown when it's won, and it's the episode number in the level's name when it has none
+    /// </summary>
     public short Cluster { get; init; }
 
+    /// <summary>#RRGGBB below the horizon, where no floor flat or floor sky is drawn; left out, default-map's</summary>
     public string? FloorColor { get; init; } = null;
+
+    /// <summary>#RRGGBB above the horizon, where no ceiling flat or sky is drawn; left out, default-map's</summary>
     public string? CeilingColor { get; init; } = null;
 
     /// <summary>
@@ -1556,6 +1763,8 @@ public record MapInfo
     /// Left out, the swap keeps the first one.
     /// </summary>
     public string? AltFloorColor { get; init; } = null;
+
+    /// <summary>The second ceiling color, swapped in with alt-floor-color by A_Warp's "swapcolors"</summary>
     public string? AltCeilingColor { get; init; } = null;
 
     /// <summary>

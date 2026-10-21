@@ -9,7 +9,10 @@ internal sealed class SchemaExporter(string fileId)
     // The record types being exported, outermost first, so a type inside itself stops there
     private readonly List<Type> _records = [];
 
-    /// <summary>Where each field with no description is ("game-info: default-map.shading.light")</summary>
+    /// <summary>
+    /// Where each field with no description is, and the type its property is on
+    /// ("game-info: default-map.shading.light (MapShading)")
+    /// </summary>
     public List<string> Undocumented { get; } = [];
 
     public JsonObject Export(FieldSchema schema) => Export(schema, "");
@@ -19,8 +22,6 @@ internal sealed class SchemaExporter(string fileId)
         var description = schema.Description;
         if (description == null && schema.Type == FieldType.Record && path.Length == 0)
             description = DocComments.TypeSummary(schema.ClrType);
-        if (description == null && schema.Key.Length > 0)
-            Undocumented.Add($"{fileId}: {path}");
 
         var node = new JsonObject
         {
@@ -61,9 +62,15 @@ internal sealed class SchemaExporter(string fileId)
                 }
 
                 _records.Add(schema.ClrType);
-                node["fields"] = new JsonArray(schema.Fields
-                    .Select(field => (JsonNode?)Export(field, path.Length == 0 ? field.Key : $"{path}.{field.Key}"))
-                    .ToArray());
+                var fields = new JsonArray();
+                foreach (var field in schema.Fields)
+                {
+                    var fieldPath = path.Length == 0 ? field.Key : $"{path}.{field.Key}";
+                    if (field.Description == null)
+                        Undocumented.Add($"{fileId}: {fieldPath} ({(schema.ClrType == typeof(object) ? "hand-made schema" : schema.ClrType.Name)})");
+                    fields.Add(Export(field, fieldPath));
+                }
+                node["fields"] = fields;
                 _records.RemoveAt(_records.Count - 1);
                 break;
         }

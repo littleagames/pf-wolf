@@ -32,18 +32,27 @@ public class DocGenTests
         Assert.That(ids, Is.Unique);
     }
 
-    [Test]
-    public void Every_Modinfo_Field_Is_Described()
+    // The files whose every field is described: add one here once its doc comments are written,
+    // so a field added later without one fails
+    [TestCase("modinfo")]
+    [TestCase("game-info")]
+    [TestCase("factions")]
+    [TestCase("actordefs")]
+    [TestCase("animdefs")]
+    [TestCase("graphicdefs")]
+    [TestCase("hud-messages")]
+    [TestCase("movies")]
+    public void Every_Field_Of_A_Documented_File_Is_Described(string fileId)
     {
         // Arrange
-        var file = DefinitionFiles.All.Single(file => file.Id == "modinfo");
+        var file = DefinitionFiles.All.Single(file => file.Id == fileId);
         var exporter = new SchemaExporter(file.Id);
 
         // Act
         exporter.Export(file.Schema());
 
         // Assert
-        Assert.That(exporter.Undocumented, Is.Empty);
+        Assert.That(exporter.Undocumented, Is.Empty, "give these properties doc comments");
     }
 
     // The fields in a record, and in the records, lists and dictionaries inside it
