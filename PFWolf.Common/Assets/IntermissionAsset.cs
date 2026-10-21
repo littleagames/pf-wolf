@@ -68,8 +68,10 @@ public record IntermissionAsset : Asset
     /// <summary>A line under the tally for a level finished unseen (Midnight Assault's stealth bonus)</summary>
     public IntermissionStealthBonus? StealthBonus { get; set; }
 
+    /// <summary>The sounds of the tally as the time bonus and ratios count up</summary>
     public IntermissionSounds Sounds { get; set; } = new();
 
+    /// <summary>The bonus points added to the score: for time under par, and for perfect ratios</summary>
     public IntermissionScoring Scoring { get; set; } = new();
 
     /// <summary>The screen shown when a cluster is won, in the same font and color</summary>
@@ -95,8 +97,13 @@ public record IntermissionScoring
 /// <summary>BJ on the level-end screen: drawn at (x, y), turning to the next pic every breath-tics</summary>
 public record IntermissionBj
 {
+    /// <summary>His left edge, in 320x200 pixels</summary>
     public int X { get; set; }
+
+    /// <summary>His top edge, in 320x200 pixels</summary>
     public int Y { get; set; }
+
+    /// <summary>The pictures he turns through, in order, starting again after the last (Wolf3D's L_GUY, L_GUY2)</summary>
     public List<string> Pics { get; set; } = [];
 
     /// <summary>Tics (70 a second) between one pic and the next</summary>
@@ -114,14 +121,20 @@ public record VictoryScreen
     /// <summary>The music while the screen is up; none keeps what was playing</summary>
     public string? Music { get; set; }
 
+    /// <summary>Pictures drawn over the labels (Wolf3D's L_BJWINS)</summary>
     public List<IntermissionPic> Pics { get; set; } = [];
+
+    /// <summary>The screen's text</summary>
     public List<IntermissionLabel> Labels { get; set; } = [];
+
+    /// <summary>Where each of the won cluster's values goes, by name (time, kill, secret, treasure...)</summary>
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>The death cam's text, drawn over the faded view</summary>
 public record DeathCamScreen
 {
+    /// <summary>The text ("Let's see that again!")</summary>
     public List<IntermissionLabel> Labels { get; set; } = [];
 
     /// <summary>
@@ -142,8 +155,13 @@ public record DeathCamScreen
 /// </summary>
 public record IntermissionStars
 {
+    /// <summary>The picture for a perfect figure</summary>
     public string Gold { get; set; } = "";
+
+    /// <summary>The picture for a figure that betters the level's best</summary>
     public string Silver { get; set; } = "";
+
+    /// <summary>Where each figure's star goes (its top left corner), by value name</summary>
     public Dictionary<string, IntermissionPlace> At { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
@@ -154,12 +172,25 @@ public record IntermissionStars
 /// </summary>
 public record IntermissionUnlockPics
 {
+    /// <summary>The unlock names, one picture each, left to right</summary>
     public List<string> Unlocks { get; set; } = [];
+
+    /// <summary>The picture for one that's unlocked</summary>
     public string Unlocked { get; set; } = "";
+
+    /// <summary>The picture for one that isn't yet</summary>
     public string Locked { get; set; } = "";
+
+    /// <summary>The first picture's left edge, in 320x200 pixels</summary>
     public int X { get; set; }
+
+    /// <summary>The pictures' top edge, in 320x200 pixels</summary>
     public int Y { get; set; }
+
+    /// <summary>Pixels from one picture's left edge to the next</summary>
     public int StepX { get; set; }
+
+    /// <summary>The clusters whose levels show the row; every level when left out</summary>
     public List<int> Clusters { get; set; } = [];
 }
 
@@ -171,27 +202,48 @@ public record IntermissionUnlockPics
 /// </summary>
 public record IntermissionStealthBonus
 {
+    /// <summary>The line's top edge, in 320x200 pixels</summary>
     public int Y { get; set; }
+
+    /// <summary>Its font; the screen's when left out</summary>
     public string? Font { get; set; }
+
+    /// <summary>Its color; the screen's when left out</summary>
     public string? Color { get; set; }
+
+    /// <summary>Played as the line shows; silent when left out</summary>
     public string? Sound { get; set; }
+
+    /// <summary>The line when every enemy was killed unseen</summary>
     public string AllKills { get; set; } = "";
+
+    /// <summary>The line when no one was killed</summary>
     public string NoKills { get; set; } = "";
+
+    /// <summary>The line when every kill was unseen but some enemies were left</summary>
     public string SomeKills { get; set; } = "";
 }
 
 /// <summary>A place on the screen</summary>
 public record IntermissionPlace
 {
+    /// <summary>Across, in 320x200 pixels</summary>
     public int X { get; set; }
+
+    /// <summary>Down, in 320x200 pixels</summary>
     public int Y { get; set; }
 }
 
 /// <summary>A picture at (x, y)</summary>
 public record IntermissionPic
 {
+    /// <summary>The picture</summary>
     public string Pic { get; set; } = "";
+
+    /// <summary>Its left edge, in 320x200 pixels</summary>
     public int X { get; set; }
+
+    /// <summary>Its top edge, in 320x200 pixels</summary>
     public int Y { get; set; }
 }
 
@@ -201,9 +253,16 @@ public record IntermissionPic
 /// </summary>
 public record IntermissionLabel
 {
+    /// <summary>The text, or a $NAME language key; \n starts a new line</summary>
     public string Text { get; set; } = "";
+
+    /// <summary>Its left edge, in 320x200 pixels</summary>
     public int X { get; set; }
+
+    /// <summary>Its top edge, in 320x200 pixels</summary>
     public int Y { get; set; }
+
+    /// <summary>A value name (stealth, objective.NAME): the label is drawn only when that value is shown</summary>
     public string? OnlyWith { get; set; }
 
     /// <summary>Its own color, in place of the screen's (Midnight Assault's "%" in the figures' red)</summary>
@@ -217,10 +276,19 @@ public record IntermissionLabel
 /// </summary>
 public record IntermissionValue
 {
+    /// <summary>Its left edge, when it has no right or center</summary>
     public int X { get; set; }
+
+    /// <summary>Its right edge, so a number counting up stays in place (over center and x)</summary>
     public int? Right { get; set; }
+
+    /// <summary>Its middle (over x)</summary>
     public int? Center { get; set; }
+
+    /// <summary>Its top edge, in 320x200 pixels</summary>
     public int Y { get; set; }
+
+    /// <summary>A text the value is put in, with {0} where it goes ("by {0}"); without {0}, the value follows it</summary>
     public string? Format { get; set; }
 
     /// <summary>objective.NAME, stealth: shown as done/total, counted up, not as a percentage</summary>
