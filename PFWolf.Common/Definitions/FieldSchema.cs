@@ -217,13 +217,14 @@ public sealed class FieldSchema
         return new FieldSchema(key, label, description, FieldType.Record, underlying, [], null, hint, recordType: underlying);
     }
 
-    // The properties the YAML sets, with their defaults from a new instance
+    // The properties the YAML sets, and the public fields (a menu's position, a Vector2's X and Y),
+    // with their defaults from a new instance
     private static List<FieldSchema> RecordFields(Type type)
     {
         object? instance = null;
         try
         {
-            if (type.GetConstructor(System.Type.EmptyTypes) != null)
+            if (type.IsValueType || type.GetConstructor(System.Type.EmptyTypes) != null)
                 instance = Activator.CreateInstance(type);
         }
         catch (TargetInvocationException)
@@ -242,6 +243,17 @@ public sealed class FieldSchema
             var defaultText = instance == null ? null : DefaultText(property.GetValue(instance));
             var hint = HintFor(property.Name);
             fields.Add(For(propertyType, key, LabelFor(key), DocComments.Summary(property), defaultText, hint));
+        }
+
+        // YamlDotNet sets public fields as it does properties
+        foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (field.IsInitOnly || field.GetCustomAttribute<YamlIgnoreAttribute>() != null)
+                continue;
+
+            var key = field.GetCustomAttribute<YamlMemberAttribute>()?.Alias ?? HyphenatedNamingConvention.Instance.Apply(field.Name);
+            var defaultText = instance == null ? null : DefaultText(field.GetValue(instance));
+            fields.Add(For(field.FieldType, key, LabelFor(key), DocComments.Summary(field), defaultText, HintFor(field.Name)));
         }
         return fields;
     }
@@ -309,6 +321,14 @@ public static class DocComments
             return null;
         var name = $"P:{type.FullName?.Replace('+', '.')}.{property.Name}";
         return Load(type.Assembly).GetValueOrDefault(name);
+    }
+
+    /// <summary>A field's summary as plain text, or null when it has none (or isn't PFWolf.Common's)</summary>
+    public static string? Summary(FieldInfo field)
+    {
+        if (field.DeclaringType is not { } type || type.Assembly != typeof(DocComments).Assembly)
+            return null;
+        return Load(type.Assembly).GetValueOrDefault($"F:{type.FullName?.Replace('+', '.')}.{field.Name}");
     }
 
     /// <summary>A type's summary as plain text, or null when it has none (or isn't PFWolf.Common's)</summary>
