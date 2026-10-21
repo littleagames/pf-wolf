@@ -148,20 +148,10 @@ public class YamlKeyTests
     {
         foreach (var item in flags.Children)
         {
-            if (item is YamlScalarNode { Value: { } flag } && ActorFlags.Find(flag) == null && !UnresolvedFlags.Contains(flag.TrimStart('~')))
+            if (item is YamlScalarNode { Value: { } flag } && ActorFlags.Find(flag) == null)
                 problems.Add($"{file}:{item.Start.Line}: {path} {flag} isn't checked (no actor flag {flag}: Definitions/ActorFlags.cs)");
         }
     }
-
-    // Actor flags known not to be checked, waiting on a decision rather than a fix. Take one out
-    // once it's settled; any other unchecked flag still fails.
-    private static readonly HashSet<string> UnresolvedFlags = new(StringComparer.OrdinalIgnoreCase)
-    {
-        // ECWolf's weapon flags, whose jobs are done otherwise: the bob is game-wide (game-info
-        // weapon-bob), only ALWAYSGRIN makes the face grin, a weapon fires again only with
-        // A_ReFire, and a punch makes no noise (weapon.silent quiets a gun)
-        "WEAPON.DONTBOB", "WEAPON.NOGRIN", "WEAPON.NOAUTOFIRE", "WEAPON.NOALERT",
-    };
 
     // The keys StateDataNodeDeserializer reads from an actor state's frame, hyphens left out
     // ("frame" too, for "frames"). A frame of { goto: State } has nothing else.

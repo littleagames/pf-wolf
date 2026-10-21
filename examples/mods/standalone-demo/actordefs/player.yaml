@@ -23,7 +23,6 @@ Blaster:
     "weapon.ammouse1": 1
     "weapon.ammogive1": 10
     "attacksound": "standalone/blaster"
-  flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
   states:
     Select:
       - sprite: TNT1

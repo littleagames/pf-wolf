@@ -4,7 +4,6 @@
 # supply of charge units (items.yaml ChargeUnit); picking one up gives 6 of them.
 BlakeWeapon:
   parent: "Weapon"
-  flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
   states:
     Select:
       - sprite: TNT1
@@ -31,7 +30,6 @@ AutoChargePistol:
     "weapon.silent": true            # its shots alert no one
     "weapon.knockback": 4096         # how far (1/65536 tile) a body it kills slides back
     "attacksound": "bs/atkautocharge"
-  flags: [WEAPON.NOAUTOFIRE]
   states:
     Ready:
       - sprite: ACPG
@@ -73,7 +71,7 @@ SlowFireProtector:
     "weapon.selectionorder": 1900
     "weapon.knockback": 8192
     "attacksound": "bs/atkcharged"
-  flags: [WEAPON.NOAUTOFIRE, INVENTORY.ALWAYSPICKUP]
+  flags: [INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
       - sprite: SFPP

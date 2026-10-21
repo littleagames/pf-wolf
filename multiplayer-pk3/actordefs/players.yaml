@@ -223,7 +223,6 @@ DogBite:
     "weapon.ammouse1": 0
     "weapon.selectionorder": 3800
     "attacksound": "dog/attack"
-  flags: [WEAPON.NOAUTOFIRE, WEAPON.NOALERT]
   states:
     Ready:
       - sprite: TNT1

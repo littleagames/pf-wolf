@@ -23,7 +23,6 @@ PropHands:
     "inventory.type": PropHands
     "weapon.slot": 1
     "weapon.selectionorder": 9000
-  flags: [WEAPON.NOAUTOFIRE, WEAPON.NOALERT, WEAPON.NOGRIN, WEAPON.DONTBOB]
   states:
     Select:
       - sprite: TNT1

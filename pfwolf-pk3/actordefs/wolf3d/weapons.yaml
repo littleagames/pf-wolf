@@ -15,7 +15,6 @@ WolfWeapon:
     "weapon.ammotype1": "Clip"
     "weapon.ammouse1": 1
     "weapon.ammogive1": 6
-  flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
   states:
     Select:
       - sprite: TNT1
@@ -40,7 +39,6 @@ Knife:
     "weapon.ammouse1": 0
     "weapon.selectionorder": 3700
     "attacksound": "weapon/knife/attack"
-  flags: [WEAPON.NOAUTOFIRE, WEAPON.NOALERT]
   states:
     Ready:
       - sprite: KNIF
@@ -94,7 +92,6 @@ Pistol:
     "weapon.bodysprite": PLPS
     "weapon.selectionorder": 1900
     "attacksound": "weapon/pistol/attack"
-  flags: [WEAPON.NOAUTOFIRE]
   states:
     Ready:
       - sprite: PISG
