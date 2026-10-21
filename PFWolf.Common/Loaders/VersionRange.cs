@@ -4,7 +4,7 @@ namespace PFWolf.Loaders;
 
 /// <summary>
 /// A range of PFWolf versions, as modinfo.yaml's pfwolf gives it: comparisons separated by
-/// spaces, each of which a version must pass (">=0.8.0 &lt;0.9.0"), or a version alone, for it
+/// spaces, each of which a version must pass (">=0.8.0 &lt;0.9.0", or ">= 0.8.0 &lt; 0.9.0"), or a version alone, for it
 /// and every later one ("0.8.0"). A version is up to three numbers separated by dots, the
 /// missing ones 0 ("0.8" is 0.8.0); a leading v and anything from a - or + on ("0.8.0-alpha")
 /// are left off.
@@ -21,9 +21,14 @@ public sealed class VersionRange
     public static bool TryParse(string text, out VersionRange range)
     {
         range = new VersionRange([]);
-        var parts = text.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
+        var words = text.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0)
             return false;
+
+        // An operator written apart from its version (">= 0.8.0") goes with the word after it
+        var parts = new List<string>();
+        for (int i = 0; i < words.Length; i++)
+            parts.Add(Operators.Contains(words[i]) && i + 1 < words.Length ? words[i] + words[++i] : words[i]);
 
         var comparisons = new List<(string, Version)>();
         foreach (var part in parts)

@@ -411,8 +411,10 @@ internal static partial class GameHost
         var configMods = ModsConfig.Read(GameEngineManager.GetConfigFilePath(ModsConfig.FileName));
         try
         {
-            // Mods' modinfo.yaml pfwolf ranges are checked against this build's version (PFWolf.csproj)
+            // Mods' modinfo.yaml pfwolf ranges are checked against this build's version (PFWolf.csproj),
+            // and a mod without the mods it needs isn't loaded
             AssetManager.EngineVersion = typeof(GameHost).Assembly.GetName().Version;
+            AssetManager.LeaveOutUnmetDependencies = true;
             AssetManager.Load(GameEngineManager.GamePackId, GameEngineManager.GameReleaseId, configMods.Concat(modPaths));
             // Animated pictures in menus and the status bar play in real time; the view's walls,
             // flats and sky go by the level's clock instead (WorldTexture)

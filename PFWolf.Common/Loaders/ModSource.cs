@@ -108,23 +108,48 @@ public class ModSource
     /// <summary>
     /// The mods whose dependencies are all among them, in their order. One that needs a mod that
     /// isn't there is left out (with a warning), and so, in turn, is one that needs that one.
+    /// Without <paramref name="leaveOut"/> (the editor, where a mod is opened to be worked on
+    /// without what it needs) each is only warned about, and they're all kept. Two mods with one
+    /// id are warned about too: either would do for a mod that needs it.
     /// </summary>
-    public static List<ModSource> WithDependenciesMet(IReadOnlyList<ModSource> mods, List<string> warnings)
+    public static List<ModSource> WithDependenciesMet(IReadOnlyList<ModSource> mods, List<string> warnings, bool leaveOut = true)
     {
+        foreach (var same in mods.GroupBy(mod => mod.Id, StringComparer.OrdinalIgnoreCase).Where(group => group.Count() > 1))
+            warnings.Add($"Mods {Listed(same.Select(mod => $"'{mod.DisplayName}'").ToList())} all have the id '{same.Key}', so a mod that needs it can't tell them apart");
+
         var kept = mods.ToList();
         while (true)
         {
             var ids = kept.Select(mod => mod.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var unmet = kept.FirstOrDefault(mod => (mod.Info.Dependencies ?? []).Any(id => !ids.Contains(id.Trim())));
+            List<string> Missing(ModSource mod) =>
+                (mod.Info.Dependencies ?? []).Select(id => id.Trim()).Where(id => !ids.Contains(id)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+            if (!leaveOut)
+            {
+                foreach (var mod in kept)
+                    if (Missing(mod) is { Count: > 0 } absent)
+                        warnings.Add($"Mod '{mod.DisplayName}' needs {Needed(absent)}");
+                return kept;
+            }
+
+            var unmet = kept.FirstOrDefault(mod => Missing(mod).Count > 0);
             if (unmet == null)
                 return kept;
-
-            var missing = (unmet.Info.Dependencies ?? []).Select(id => $"'{id.Trim()}'").Where(id => !ids.Contains(id.Trim('\''))).Distinct().ToList();
-            var named = missing.Count == 1 ? $"{missing[0]}, which isn't loaded" : $"{string.Join(", ", missing[..^1])} and {missing[^1]}, which aren't loaded";
-            warnings.Add($"Mod '{unmet.DisplayName}' needs {named}, so it isn't loaded either");
+            warnings.Add($"Mod '{unmet.DisplayName}' needs {Needed(Missing(unmet))}, so it isn't loaded either");
             kept.Remove(unmet);
         }
     }
+
+    // 'a', which isn't loaded; 'a' and 'b', which aren't loaded
+    private static string Needed(List<string> ids)
+    {
+        var quoted = ids.Select(id => $"'{id}'").ToList();
+        return quoted.Count == 1 ? $"{quoted[0]}, which isn't loaded" : $"{Listed(quoted)}, which aren't loaded";
+    }
+
+    // a; a and b; a, b and c
+    private static string Listed(List<string> items) =>
+        items.Count == 1 ? items[0] : $"{string.Join(", ", items[..^1])} and {items[^1]}";
 
     /// <summary>The mods/ folder beside the exe</summary>
     public static string ModsFolder => Path.Combine(AppContext.BaseDirectory, "mods");

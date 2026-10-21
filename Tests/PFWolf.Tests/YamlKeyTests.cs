@@ -203,23 +203,35 @@ public class YamlKeyTests
             else if (normalized != "goto" && !FrameKeys.Contains(normalized))
                 problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} isn't read (a state's frame has no {key})");
             else if (normalized is "action" or "think" && frame.Children[keyNode] is YamlScalarNode { Value: { Length: > 0 } call }
-                && !IsActorAction(ActionName(call)))
-                problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} {ActionName(call)} isn't run (no actor state action {ActionName(call)}: Definitions/GameActions.cs, or a script's)");
+                && !IsActorAction(ActionName(call), file))
+                problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} {ActionName(call)} isn't run (no actor state action {ActionName(call)}: Definitions/GameActions.cs, or its mod's or pfwolf-pk3's script's)");
         }
     }
 
     private static string ActionName(string call) => call.Split('(')[0].Trim();
 
-    // An action the engine runs on actor states, or one a mod's script defines (a global
-    // function A_Freed(self))
-    private static bool IsActorAction(string name) =>
-        GameActions.Find(name)?.Use.HasFlag(ActionUse.Actor) == true || ScriptActions.Value.Contains(name);
+    // An action the engine runs on actor states, or one a script defines (a global function
+    // A_Freed(self)) in the file's own mod or in pfwolf-pk3, which is always loaded: another
+    // mod's needn't be
+    private static bool IsActorAction(string name, string file)
+    {
+        if (GameActions.Find(name)?.Use.HasFlag(ActionUse.Actor) == true)
+            return true;
+        var own = ScriptActions.Value.Keys.Where(source => file.StartsWith(source + "/", StringComparison.OrdinalIgnoreCase));
+        return own.Append("pfwolf-pk3").Any(source => ScriptActions.Value.TryGetValue(source, out var actions) && actions.Contains(name));
+    }
 
-    private static readonly Lazy<HashSet<string>> ScriptActions = new(() =>
-        [.. Sources(TestPaths.RepoRoot())
-            .SelectMany(source => Directory.EnumerateFiles(source.Folder, "*.lua", SearchOption.AllDirectories))
-            .SelectMany(file => System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), @"^\s*function\s+(?<name>[AT]_\w+)\s*\(", System.Text.RegularExpressions.RegexOptions.Multiline))
-            .Select(m => m.Groups["name"].Value)]);
+    // Each source's script actions, by its folder from the repository root (pfwolf-pk3, examples/mods/fireball-demo)
+    private static readonly Lazy<Dictionary<string, HashSet<string>>> ScriptActions = new(() =>
+    {
+        var root = TestPaths.RepoRoot();
+        return Sources(root).ToDictionary(
+            source => Path.GetRelativePath(root, source.Folder).Replace('\\', '/'),
+            source => Directory.EnumerateFiles(source.Folder, "*.lua", SearchOption.AllDirectories)
+                .SelectMany(file => System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), @"^\s*function\s+(?<name>[AT]_\w+)\s*\(", System.Text.RegularExpressions.RegexOptions.Multiline))
+                .Select(m => m.Groups["name"].Value)
+                .ToHashSet());
+    });
 
     private static string Owner(FieldSchema schema) => schema.ClrType == typeof(object) ? schema.Label : schema.ClrType.Name;
 }

@@ -40,6 +40,8 @@ public class ModInfoTests
     [TestCase("=0.8.0", "0.8.0", true)]
     [TestCase("=0.8.0", "0.8.1", false)]
     [TestCase("v0.8.0-alpha", "0.8.0", true)]
+    [TestCase(">= 0.8.0 < 0.9.0", "0.8.5", true)]
+    [TestCase(">= 0.8.0 < 0.9.0", "0.9.0", false)]
     public void A_Range_Includes_The_Versions_It_Should(string range, string version, bool included)
     {
         // Act
@@ -53,6 +55,7 @@ public class ModInfoTests
     [TestCase("")]
     [TestCase("latest")]
     [TestCase(">=0.8.0 <")]
+    [TestCase(">= <0.9")]
     [TestCase("0.8.0.1")]
     [TestCase("~0.8")]
     public void A_Range_That_Isnt_One_Isnt_Read(string range)
@@ -114,6 +117,37 @@ public class ModInfoTests
         // Assert: ids match whatever their case
         Assert.That(kept, Is.EqualTo(new[] { addon, baseMod }));
         Assert.That(warnings, Is.Empty);
+    }
+
+    [Test]
+    public void In_The_Editor_A_Mod_Missing_A_Dependency_Is_Kept_And_Warned_About()
+    {
+        // Arrange: an add-on opened without the mod it builds on
+        var addon = Mod("addon", "name: Addon\ndependencies: [base-mod]\n");
+        var warnings = new List<string>();
+
+        // Act
+        var kept = ModSource.WithDependenciesMet([addon], warnings, leaveOut: false);
+
+        // Assert
+        Assert.That(kept, Is.EqualTo(new[] { addon }));
+        Assert.That(warnings, Is.EqualTo(new[] { "Mod 'Addon' needs 'base-mod', which isn't loaded" }));
+    }
+
+    [Test]
+    public void Two_Mods_With_One_Id_Are_Warned_About()
+    {
+        // Arrange: an old folder and a new pk3 of the same mod, by its id
+        var old = Mod("elite-old", "name: Elite Old\nid: elite-guards\n");
+        var current = Mod("elite-new", "name: Elite New\nid: Elite-Guards\n");
+        var warnings = new List<string>();
+
+        // Act
+        var kept = ModSource.WithDependenciesMet([old, current], warnings);
+
+        // Assert: both load, as before
+        Assert.That(kept, Is.EqualTo(new[] { old, current }));
+        Assert.That(warnings, Is.EqualTo(new[] { "Mods 'Elite Old' and 'Elite New' all have the id 'elite-guards', so a mod that needs it can't tell them apart" }));
     }
 
     [Test]

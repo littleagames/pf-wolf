@@ -94,17 +94,19 @@ internal static partial class GameHost
 
     /// <summary>
     /// Every console command, once each (aliases with it), by name: for the documentation
-    /// (PFWolf.DocGen) and the tests. Off the game, it builds the managers first; nothing is run.
+    /// (PFWolf.DocGen) and the tests. Off the game, it builds the managers and registers the
+    /// commands the first time (the game has done both as it started); nothing is run.
     /// </summary>
     internal static IReadOnlyList<ConsoleCommand> ConsoleCommandList()
     {
         if (_consoleManager is null)
             InitServices();
-        RegisterConsoleCommands();
+        if (!_consoleManager.Commands.Any())
+            RegisterConsoleCommands();
         return [.. _consoleManager.Commands];
     }
 
-    /// <summary>The console commands' groups, in the order they register (ConsoleCommandList's first)</summary>
+    /// <summary>The console commands' groups, in the order they register</summary>
     internal static IReadOnlyList<string> ConsoleCommandGroups()
     {
         ConsoleCommandList();

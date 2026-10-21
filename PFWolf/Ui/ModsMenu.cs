@@ -31,10 +31,10 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
             : string.IsNullOrWhiteSpace(Mod.Info.Version) ? Mod.DisplayName : $"{Mod.DisplayName} {Mod.Info.Version}";
     }
 
-    // Rows the menu's window holds. The last is "Find more mods online...", and with more mods
-    // than the rest hold, the one before it "More mods..."
+    // Rows the menu's window holds. The last is "Find more mods online..." (in a build that names
+    // the catalog), and with more mods than the rest hold, the one before it "More mods..."
     internal const int ModsPageSize = 9;
-    private const int ModRows = ModsPageSize - 1;
+    private static int ModRows => ModCatalog.Url != null ? ModsPageSize - 1 : ModsPageSize;
     // From the text's left edge to the window's right edge, less a margin
     private const int ModNameWidth = 224;
 
@@ -46,7 +46,7 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
     /// <summary>Whether that many mods need more than one page</summary>
     internal static bool Paged(int count) => count > ModRows;
 
-    /// <summary>Mods on a page: the rows the catalog's leaves, less one for "More mods..." when there are pages</summary>
+    /// <summary>Mods on a page: the rows the catalog's (if any) leaves, less one for "More mods..." when there are pages</summary>
     internal static int PerPage(int count) => Paged(count) ? ModRows - 1 : ModRows;
 
     internal static int PageCount(int count) => Math.Max(1, (count + PerPage(count) - 1) / PerPage(count));

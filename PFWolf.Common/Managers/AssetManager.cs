@@ -41,6 +41,13 @@ public class AssetManager
     /// </summary>
     public Version? EngineVersion { get; set; }
 
+    /// <summary>
+    /// Whether a mod whose modinfo.yaml dependencies aren't all loaded is left out (the game);
+    /// otherwise it's only warned about (the editor, which opens a mod to work on it, without
+    /// what it needs if need be)
+    /// </summary>
+    public bool LeaveOutUnmetDependencies { get; set; }
+
     /// <param name="gamePackId">The running game pack ("wolf3d", "spear"), whose gamepacks/ assets override the shared ones</param>
     /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml ("wolf3d-apogee")</param>
     /// <param name="modPaths">Mods to load over pfwolf.pk3, in load order: paths, or names in the mods folder</param>
@@ -559,7 +566,8 @@ public class AssetManager
 
     /// <summary>
     /// Finds and opens the mods to load, leaving out any that are missing, repeated, can't be
-    /// read, aren't for this game pack or need a mod that isn't loaded (each with a warning)
+    /// read, aren't for this game pack or (in the game) need a mod that isn't loaded, each with a
+    /// warning
     /// </summary>
     /// <param name="opened">Called with every mod that opened, before they're picked by game pack</param>
     private List<ModSource> OpenMods(IEnumerable<string> modPaths, string gamePackId, Action<List<ModSource>> opened)
@@ -594,13 +602,13 @@ public class AssetManager
             mods.Add(mod);
         }
 
-        // A mod made for other PFWolf versions loads anyway, with a warning; one whose
-        // dependencies aren't all loaded doesn't
+        // A mod made for other PFWolf versions loads anyway, with a warning; in the game, one
+        // whose dependencies aren't all loaded doesn't
         if (EngineVersion != null)
             foreach (var mod in mods)
                 if (mod.EngineVersionWarning(EngineVersion) is { } warning)
                     ModWarnings.Add(warning);
-        mods = ModSource.WithDependenciesMet(mods, ModWarnings);
+        mods = ModSource.WithDependenciesMet(mods, ModWarnings, LeaveOutUnmetDependencies);
 
         foreach (var warning in ModWarnings)
             WarningLog.Write(warning);
