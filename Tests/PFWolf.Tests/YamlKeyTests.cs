@@ -178,10 +178,9 @@ public class YamlKeyTests
     private static string ActionName(string call) => call.Split('(')[0].Trim();
 
     // An action the engine runs on actor states, or one a mod's script defines (a global
-    // function A_Freed(self)). The weapons' Select and Deselect states are never entered
-    // (Gameplay/WeaponInHand.cs), so their A_Raise and A_Lower have never been given a handler.
+    // function A_Freed(self))
     private static bool IsActorAction(string name) =>
-        GameActions.Find(name)?.Use.HasFlag(ActionUse.Actor) == true || ScriptActions.Value.Contains(name) || name is "A_Raise" or "A_Lower";
+        GameActions.Find(name)?.Use.HasFlag(ActionUse.Actor) == true || ScriptActions.Value.Contains(name);
 
     private static readonly Lazy<HashSet<string>> ScriptActions = new(() =>
         [.. Sources(TestPaths.RepoRoot())

@@ -8,8 +8,8 @@ namespace PFWolf.Gameplay;
 /// player sprite: Ready loops on A_WeaponReady until fire is pressed, Fire (and Hold) play the
 /// attack, and the attack actions (A_GunAttack, A_CustomPunch, A_ReFire) run as their frames
 /// end. It's an ordinary Entities.Actors.Actor of the weapon class, ticked by MapManager.DoActor
-/// but never placed in the world. Switching weapons is instant, as in Wolf3D, so the Select and
-/// Deselect states are never entered.
+/// but never placed in the world. Switching weapons is instant, as in Wolf3D (holstering one
+/// and raising the next is a plan: docs/dev/todo.md).
 /// </summary>
 internal sealed class WeaponInHand(
     InventoryManager inventory,

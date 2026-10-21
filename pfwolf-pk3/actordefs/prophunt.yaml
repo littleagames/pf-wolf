@@ -24,18 +24,6 @@ PropHands:
     "weapon.slot": 1
     "weapon.selectionorder": 9000
   states:
-    Select:
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 1
-        action: A_Raise
-        next-state: Select
-    Deselect:
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 1
-        action: A_Lower
-        next-state: Deselect
     Ready:
       - sprite: TNT1
         frames: [A]

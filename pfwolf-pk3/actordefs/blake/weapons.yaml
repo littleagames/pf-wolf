@@ -4,19 +4,6 @@
 # supply of charge units (items.yaml ChargeUnit); picking one up gives 6 of them.
 BlakeWeapon:
   parent: "Weapon"
-  states:
-    Select:
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 1
-        action: A_Raise
-        next-state: Select
-    Deselect:
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 1
-        action: A_Lower
-        next-state: Deselect
 
 # Uses no ammo, but takes 50 tics to charge between shots (the status bar's wait/ready light)
 AutoChargePistol:

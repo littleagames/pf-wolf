@@ -24,18 +24,6 @@ Blaster:
     "weapon.ammogive1": 10
     "attacksound": "standalone/blaster"
   states:
-    Select:
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 1
-        action: A_Raise
-        next-state: Select
-    Deselect:
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 1
-        action: A_Lower
-        next-state: Deselect
     Ready:
       - sprite: BLST
         frames: [A]

@@ -15,19 +15,6 @@ WolfWeapon:
     "weapon.ammotype1": "Clip"
     "weapon.ammouse1": 1
     "weapon.ammogive1": 6
-  states:
-    Select:
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 1
-        action: A_Raise
-        next-state: Select
-    Deselect:
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 1
-        action: A_Lower
-        next-state: Deselect
 
 Knife:
   parent: "WolfWeapon"

@@ -5,9 +5,8 @@ namespace PFWolf.Entities.Actors;
 /// <summary>
 /// Dispatches the `Action`/`Think` name strings carried on <see cref="ActorStateFrame"/> (parsed
 /// from actordefs YAML, e.g. `A_GiveInventory("Clip", 25)`) to real C# handlers. Handlers are
-/// registered by name at startup; an unregistered name is logged and skipped rather than
-/// throwing, since some action names authored today (e.g. the weapons' A_Raise/A_Lower) don't
-/// have a handler wired up yet.
+/// registered by name at startup; an unregistered name (a mod's misspelling) is logged and
+/// skipped rather than throwing.
 /// </summary>
 internal static class ActorActionRegistry
 {
