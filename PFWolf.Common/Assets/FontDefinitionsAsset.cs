@@ -38,8 +38,10 @@ public class ShadowDefinition
 /// </summary>
 public class GradientDefinition
 {
+    /// <summary>Percent toward white (positive) or black (negative) at the glyphs' top row</summary>
     public int Top { get; set; } = 40;
 
+    /// <summary>Percent toward white (positive) or black (negative) at the glyphs' bottom row</summary>
     public int Bottom { get; set; } = -40;
 }
 

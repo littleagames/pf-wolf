@@ -32,27 +32,12 @@ public class DocGenTests
         Assert.That(ids, Is.Unique);
     }
 
-    // The files whose every field is described: add one here once its doc comments are written,
-    // so a field added later without one fails
-    [TestCase("modinfo")]
-    [TestCase("game-info")]
-    [TestCase("factions")]
-    [TestCase("actordefs")]
-    [TestCase("animdefs")]
-    [TestCase("graphicdefs")]
-    [TestCase("hud-messages")]
-    [TestCase("movies")]
-    [TestCase("intermission")]
-    [TestCase("elevator")]
-    [TestCase("menudefs")]
-    [TestCase("statusbar")]
-    [TestCase("mapdefs")]
-    [TestCase("gamepack-info")]
-    [TestCase("presenter")]
-    public void Every_Field_Of_A_Documented_File_Is_Described(string fileId)
+    // Every field of every definition file has a description, so the documentation has one for
+    // each: a property added without a doc comment fails here
+    [TestCaseSource(nameof(Files))]
+    public void Every_Field_Is_Described(DefinitionFile file)
     {
         // Arrange
-        var file = DefinitionFiles.All.Single(file => file.Id == fileId);
         var exporter = new SchemaExporter(file.Id);
 
         // Act
