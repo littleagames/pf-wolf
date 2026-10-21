@@ -357,8 +357,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
                 Art = (hint, name) => hint switch
                 {
-                    Definitions.FieldHint.Class => Art?.ThingSprite(name),
-                    Definitions.FieldHint.Picture => Art?.Whole(Data.ArtKind.Picture, name),
+                    FieldHint.Class => Art?.ThingSprite(name),
+                    FieldHint.Picture => Art?.Whole(Data.ArtKind.Picture, name),
                     _ => Art?.Texture(name),
                 },
             };

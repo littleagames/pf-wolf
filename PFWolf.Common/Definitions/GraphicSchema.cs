@@ -1,6 +1,6 @@
 using PFWolf.Assets;
 
-namespace PFWolf.Editor.Definitions;
+namespace PFWolf.Definitions;
 
 /// <summary>
 /// A graphicdefs picture's fields: a rectangle cut out of a sprite, wall or picture

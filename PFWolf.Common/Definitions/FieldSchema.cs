@@ -7,7 +7,7 @@ using PFWolf.Assets;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace PFWolf.Editor.Definitions;
+namespace PFWolf.Definitions;
 
 /// <summary>What a field holds, which picks how it's edited</summary>
 public enum FieldType
@@ -309,6 +309,14 @@ public static class DocComments
             return null;
         var name = $"P:{type.FullName?.Replace('+', '.')}.{property.Name}";
         return Load(type.Assembly).GetValueOrDefault(name);
+    }
+
+    /// <summary>A type's summary as plain text, or null when it has none (or isn't PFWolf.Common's)</summary>
+    public static string? TypeSummary(Type type)
+    {
+        if (type.Assembly != typeof(DocComments).Assembly)
+            return null;
+        return Load(type.Assembly).GetValueOrDefault($"T:{type.FullName?.Replace('+', '.')}");
     }
 
     private static Dictionary<string, string> Load(Assembly assembly)

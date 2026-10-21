@@ -1,6 +1,6 @@
 using PFWolf.Assets;
 
-namespace PFWolf.Editor.Definitions;
+namespace PFWolf.Definitions;
 
 /// <summary>
 /// An animdefs animation's fields. Its frames are names, { name, tics } mappings or a last

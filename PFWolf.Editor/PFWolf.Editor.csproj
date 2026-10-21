@@ -51,6 +51,11 @@
     <ProjectReference Include="..\PFWolf.Common\PFWolf.Common.csproj" />
   </ItemGroup>
 
+  <!-- The definitions' field schemas (FieldSchema, ActorSchema...) live in PFWolf.Common, shared with PFWolf.DocGen -->
+  <ItemGroup>
+    <Using Include="PFWolf.Definitions" />
+  </ItemGroup>
+
   <!-- What New mod's stand-alone game starts with (Editing/NewMod.cs): the example game's art,
        sounds, definitions and level. NewMod writes its own gamepack-info, modinfo and game-info. -->
   <!-- The script browser's Lua highlighting (Rendering/LuaHighlighting) -->

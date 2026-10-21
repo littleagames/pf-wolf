@@ -7,9 +7,16 @@ namespace PFWolf.Loaders;
 /// </summary>
 public record ModInfo
 {
+    /// <summary>The mod's name as the game shows it (the signon screen, the mods console command); left out, its file or folder name</summary>
     public string? Name { get; init; }
+
+    /// <summary>The mod's own version ("1.0"), listed after its name by the mods console command</summary>
     public string? Version { get; init; }
+
+    /// <summary>Who made the mod, listed after its name by the mods console command</summary>
     public string? Author { get; init; }
+
+    /// <summary>What the mod does, in a sentence or two</summary>
     public string? Description { get; init; }
 
     /// <summary>Game packs the mod is made for ("wolf3d", "spear"); it loads in any when unset</summary>

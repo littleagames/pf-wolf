@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\PFWolf\PFWolf.csproj" />
     <ProjectReference Include="..\..\PFWolf.Editor\PFWolf.Editor.csproj" />
+    <ProjectReference Include="..\..\PFWolf.DocGen\PFWolf.DocGen.csproj" />
   </ItemGroup>
 
 </Project>

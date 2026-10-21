@@ -1,4 +1,4 @@
-namespace PFWolf.Editor.Definitions;
+namespace PFWolf.Definitions;
 
 /// <summary>
 /// An actordefs class's fields. ActorData is read by hand (its states are frames, gotos or
