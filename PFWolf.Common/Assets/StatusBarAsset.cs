@@ -30,7 +30,10 @@ public record StatusBarAsset : Asset
 /// </summary>
 public class StatusBarElement
 {
+    /// <summary>Where the part goes across, from the status bar's left edge (its left edge, or as align says)</summary>
     public int X { get; set; }
+
+    /// <summary>Where the part goes down, from the status bar's top edge</summary>
     public int Y { get; set; }
 
     /// <summary>background: the picture drawn across the bottom of the screen</summary>
@@ -127,6 +130,8 @@ public class StatusBarElement
 
     /// <summary>Numbers: text drawn before and after the number, e.g. "FLOOR: " or "%"</summary>
     public string Prefix { get; set; } = "";
+
+    /// <summary>Numbers: text drawn after the number, e.g. "%"</summary>
     public string Suffix { get; set; } = "";
 
     /// <summary>Numbers and location: left (x is the left edge, the default), right (x is the right edge) or center (x is the middle)</summary>
@@ -134,6 +139,8 @@ public class StatusBarElement
 
     /// <summary>Numbers: [x, y, width, height] filled with box-color before the number is drawn, so the old one goes</summary>
     public List<int> Box { get; set; } = [];
+
+    /// <summary>Numbers: the color the box is filled with; enemy-health: each bar's frame (Black when left out)</summary>
     public string? BoxColor { get; set; }
 
     /// <summary>Numbers: another part (weapon) drawn first, under the number</summary>
@@ -162,11 +169,17 @@ public class StatusBarElement
 
     /// <summary>charge: the pictures for a charging weapon (weapon.chargetics) ready to fire, and charging</summary>
     public string? Ready { get; set; }
+
+    /// <summary>charge: the picture while the weapon is still charging</summary>
     public string? Wait { get; set; }
 
     /// <summary>ammo-gauge: the strip's width, how many segments it has and each one's height (lines); enemy-health: a bar's width at full health</summary>
     public int Width { get; set; } = 8;
+
+    /// <summary>ammo-gauge, radar-gauge: how many segments the strip has, top to bottom</summary>
     public int Segments { get; set; } = 20;
+
+    /// <summary>ammo-gauge, radar-gauge: each segment's height, in lines (a color per line from its level)</summary>
     public int SegmentHeight { get; set; } = 2;
 
     /// <summary>
@@ -177,19 +190,35 @@ public class StatusBarElement
 
     /// <summary>heart-monitor: the trace's pictures ({0:00} the segment number) and how many across, each width wide; enemy-health: the most bars shown</summary>
     public string? SegmentPic { get; set; }
+
+    /// <summary>heart-monitor: how many trace segments across; enemy-health: the most bars shown at once</summary>
     public int Count { get; set; } = 6;
+
+    /// <summary>heart-monitor: pixels from one trace segment to the next</summary>
     public int SegmentWidth { get; set; } = 8;
 
     /// <summary>heart-monitor: tics between trace scrolls, and between heart beats</summary>
     public int ScrollTics { get; set; } = 7;
+
+    /// <summary>heart-monitor: tics from one heart beat to the next (70 a second): half shown good, half off</summary>
     public int PulseTics { get; set; } = 70;
 
     /// <summary>heart-monitor: the heart, beating (good, then off) above bad-below health, else bad; off when dead</summary>
     public int HeartX { get; set; }
+
+    /// <summary>heart-monitor: the heart's top edge</summary>
     public int HeartY { get; set; }
+
+    /// <summary>heart-monitor: the heart at bad-below health or more, beating: shown, then heart-off, every pulse-tics</summary>
     public string? HeartGood { get; set; }
+
+    /// <summary>heart-monitor: the heart below bad-below health, shown steadily rather than beating</summary>
     public string? HeartBad { get; set; }
+
+    /// <summary>heart-monitor: the picture between beats, and once the player is dead</summary>
     public string? HeartOff { get; set; }
+
+    /// <summary>heart-monitor: the health below which the heart beats bad</summary>
     public int BadBelow { get; set; } = 40;
 
     /// <summary>
@@ -209,7 +238,11 @@ public class StatusBarElement
 
     /// <summary>radar: the zoom picture for each zoom (1x, 2x, 4x), drawn at zoom-x, zoom-y</summary>
     public List<string> ZoomPics { get; set; } = [];
+
+    /// <summary>radar: the zoom picture's left edge</summary>
     public int ZoomX { get; set; }
+
+    /// <summary>radar: the zoom picture's top edge</summary>
     public int ZoomY { get; set; }
 
     /// <summary>
@@ -264,14 +297,25 @@ public class StatusBarElement
 /// <summary>An ammo gauge's colors while fewer than <see cref="Below"/> of its segments are unlit</summary>
 public class StatusBarGaugeLevel
 {
+    /// <summary>
+    /// ammo-gauge, radar-gauge: the level applies while fewer segments than this are unlit;
+    /// enemy-health: while a bar is narrower than this. Left out, always.
+    /// </summary>
     public int Below { get; set; } = int.MaxValue;
+
+    /// <summary>The colors of a lit segment, one per line, repeated down it (an enemy-health bar uses the first)</summary>
     public List<string> Lit { get; set; } = [];
+
+    /// <summary>The colors of an unlit segment, one per line; the unlit ones are at the top</summary>
     public List<string> Dim { get; set; } = [];
 }
 
 /// <summary>One of the face part's faces: from this health up, the pics it looks around through.</summary>
 public class StatusBarFace
 {
+    /// <summary>The least health this face is shown at</summary>
     public int Health { get; set; }
+
+    /// <summary>The pictures the face looks around through (Wolf3D's second looks ahead)</summary>
     public List<string> Pics { get; set; } = [];
 }

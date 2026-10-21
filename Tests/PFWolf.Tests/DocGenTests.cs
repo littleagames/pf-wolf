@@ -45,6 +45,7 @@ public class DocGenTests
     [TestCase("intermission")]
     [TestCase("elevator")]
     [TestCase("menudefs")]
+    [TestCase("statusbar")]
     public void Every_Field_Of_A_Documented_File_Is_Described(string fileId)
     {
         // Arrange
