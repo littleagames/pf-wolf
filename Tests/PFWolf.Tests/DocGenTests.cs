@@ -47,6 +47,7 @@ public class DocGenTests
     [TestCase("menudefs")]
     [TestCase("statusbar")]
     [TestCase("mapdefs")]
+    [TestCase("gamepack-info")]
     public void Every_Field_Of_A_Documented_File_Is_Described(string fileId)
     {
         // Arrange

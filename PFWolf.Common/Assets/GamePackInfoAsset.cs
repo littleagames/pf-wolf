@@ -211,51 +211,110 @@ public record GamePackInfoAsset : Asset
             : throw new KeyNotFoundException($"No '{releaseId}' entry in gamepacks/gamepack-info.yaml");
 }
 
+/// <summary>A data file in the game folder</summary>
 public record FileReference
 {
+    /// <summary>The file's name (audiohed.wl6)</summary>
     public string? File { get; init; }
+
+    /// <summary>
+    /// The file's md5, telling this release's files from another version's with the same names
+    /// (wolf3d's and wolf3d-apogee's); a file that doesn't match is another version, refused
+    /// with strict-md5
+    /// </summary>
     public string? Md5 { get; init; }
 }
 
+/// <summary>
+/// The files one of the data file loaders reads. Which it uses depends on the loader: the audio
+/// and map loaders a header and data (audiohed and audiot, maphead and gamemaps), the VGA loader
+/// a dict, header and data (vgadict, vgahead, vgagraph), the VSWAP loader data, and the JAM
+/// movie loader movies.
+/// </summary>
 public record FileLoaderDetails
 {
+    /// <summary>The header file: where each chunk is in the data file</summary>
     public FileReference? Header { get; init; }
+
+    /// <summary>The data file itself</summary>
     public FileReference? Data { get; init; }
+
+    /// <summary>The VGA loader's dictionary file (vgadict), its pictures' compression table</summary>
     public FileReference? Dict { get; init; }
+
+    /// <summary>A raw-data-map's name (wolf3d-apogee-map); the game doesn't read it yet</summary>
     public string? Map { get; init; }
-    // "font-count": Wolf3DVgaFileLoader's number of font chunks after STRUCTPIC, which the file
-    // itself doesn't record (2 when left out, as in Wolf3D and Spear; Blake Stone has 5)
+
+    /// <summary>
+    /// "font-count": Wolf3DVgaFileLoader's number of font chunks after STRUCTPIC, which the file
+    /// itself doesn't record (2 when left out, as in Wolf3D and Spear; Blake Stone has 5)
+    /// </summary>
     public int? FontCount { get; init; }
-    // JamMovieFileLoader's movie files, by the name the game plays them by (Blake Stone's
-    // IntroMovie: ianim.bs6)
+
+    /// <summary>
+    /// JamMovieFileLoader's movie files, by the name the game plays them by (Blake Stone's
+    /// IntroMovie: ianim.bs6). The game goes without one that's missing.
+    /// </summary>
     public Dictionary<string, FileReference>? Movies { get; init; }
 }
 
+/// <summary>A release's data files, the ones the game folder has to hold to play it</summary>
 public record FilePack
 {
+    /// <summary>
+    /// The release's files, as the game names them ("Wolfenstein 3D v1.4 (Apogee)"): in place of
+    /// the title when it says what's running, and when its files aren't there
+    /// </summary>
     public string? Description { get; init; }
-    // "strict-md5": data files whose md5 isn't the one given are refused, for a release whose
-    // other versions are laid out differently (the shareware: v1.0-1.2 aren't v1.4's layout)
+
+    /// <summary>
+    /// "strict-md5": data files whose md5 isn't the one given are refused, for a release whose
+    /// other versions are laid out differently (the shareware: v1.0-1.2 aren't v1.4's layout)
+    /// </summary>
     public bool StrictMd5 { get; init; }
-    // Each item is a mapping from loader-type name -> details, preserving the YAML shape:
+
+    /// <summary>
+    /// The files each loader reads, by the loader's name: Wolf3DAudioFileLoader,
+    /// Wolf3DMapFileLoader, Wolf3DVgaFileLoader, Wolf3DVswapFileLoader, JamMovieFileLoader
+    /// </summary>
     public Dictionary<string, FileLoaderDetails> FileLoaders { get; init; } = [];
 }
 
 public record GamePack
 {
+    /// <summary>The game's name ("Spear of Destiny")</summary>
     public string? Title { get; init; }
-    // "game-info"
+
+    /// <summary>
+    /// "game-info": a game-info asset's name (wolf3d-game-info); the game doesn't read it, and
+    /// finds the pack's game-info.yaml in gamepacks/{pack}/
+    /// </summary>
     public string? GameInfo { get; init; }
-    // "game-palette"
+
+    /// <summary>
+    /// "game-palette": the palette the game is drawn in (palettes/NAME.pal: wolfpal); left out,
+    /// the nearest base pack's
+    /// </summary>
     public string? GamePalette { get; init; }
-    // "base-pack": game pack whose actordefs/mapdefs/gamepacks files this one starts from,
-    // overriding them with its own; that pack's own base-pack comes before it, and so on.
-    // (Every file in mapdefs/{pack}/ is loaded; there's no list.)
+
+    /// <summary>
+    /// "base-pack": game pack whose actordefs/mapdefs/gamepacks files this one starts from,
+    /// overriding them with its own; that pack's own base-pack comes before it, and so on.
+    /// (Every file in mapdefs/{pack}/ is loaded; there's no list.) A stand-alone game is built
+    /// on standalone, which has no data files.
+    /// </summary>
     public string? BasePack { get; init; }
-    // "menus-like": a pack whose menudefs game-packs entries this one's menus take as their own
-    // (that pack alone, not its base packs), without starting from its files: a standalone game
-    // that wants the Apogee release's "Read This!" names wolf3d-apogee
+
+    /// <summary>
+    /// "menus-like": a pack whose menudefs game-packs entries this one's menus take as their own
+    /// (that pack alone, not its base packs), without starting from its files: a standalone game
+    /// that wants the Apogee release's "Read This!" names wolf3d-apogee
+    /// </summary>
     public string? MenusLike { get; init; }
-    // "file-pack"
+
+    /// <summary>
+    /// "file-pack": the data files the release plays from; left out, the nearest base pack's, and
+    /// with none along the way, none at all (everything comes from the pk3s)
+    /// </summary>
     public FilePack? FilePack { get; init; }
 }
