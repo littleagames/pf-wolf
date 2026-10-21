@@ -7,7 +7,7 @@ namespace PFWolf.Gameplay;
 /// <summary>
 /// Writes down a demo as it plays, for the editor's demo browser (demotrace,
 /// Commands/DemoCommands.cs): the player every frame, and every actor, door, pushwall and tile
-/// as it changes. The format is PFWolf.Assets.Demos.DemoTrace's (docs/demo-viewer-plan.md).
+/// as it changes. The format is PFWolf.Assets.Demos.DemoTrace's (docs/dev/demo-viewer-plan.md).
 /// </summary>
 internal sealed class DemoTracer(MapManager map, Doors doors, PushWalls pushWalls, GameSession session)
 {

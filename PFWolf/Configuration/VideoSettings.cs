@@ -59,7 +59,7 @@ internal sealed record VideoSettings
 
     /// <summary>
     /// Drawing the view as often as the display shows it, everything placed between its last two
-    /// tics (docs/uncapped-framerate-plan.md); off draws once a tic batch, at most 70 a second.
+    /// tics (docs/dev/uncapped-framerate-plan.md); off draws once a tic batch, at most 70 a second.
     /// </summary>
     public bool Uncapped { get; init; } = true;
 

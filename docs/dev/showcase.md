@@ -86,7 +86,7 @@ Ordered so a player can stop early and a modder keeps reading.
 
 - **Getting started** — install, game data, game selection, command-line options
 - **Playing** — controls + controller, options menus, saves, console commands
-- **Multiplayer** — hosting/joining, modes, Prop Hunt, online play (`docs/online-play.md`)
+- **Multiplayer** — hosting/joining, modes, Prop Hunt, online play (`docs/manual/online-play.md`)
 - **Modding basics** — pk3 structure, loading mods, merge rules, `!remove`/`!replace`
 - **Content reference** — game-info, gamepack-info, actordefs, weapons, player classes,
   walls/floors/mapdefs, factions, translations, animdefs, fonts, hud-messages, weather,

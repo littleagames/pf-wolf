@@ -1,7 +1,7 @@
 # How UWMF levels (ECWolf's text format: a TEXTMAP in maps/NAME.wad, or maps/NAME.uwmf) are read
 # for this game. A level's tiles, sectors, zones and things are matched to the walls, doors,
 # flats, areas and things in these mapdefs by their textures and classes (see
-# docs/uwmf-and-large-maps-plan.md); what has no match becomes the level's own.
+# docs/dev/uwmf-and-large-maps-plan.md); what has no match becomes the level's own.
 #   classes:  ECWolf's class names for things whose actordefs class here is called something
 #             else (ECWolf name: PFWolf name). A level in the "PFWolf" namespace uses PFWolf's
 #             names and isn't read through these.

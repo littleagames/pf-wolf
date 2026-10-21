@@ -33,7 +33,7 @@ public readonly record struct TraceEvent(int Frame, TraceEventKind Kind, string 
 /// <summary>
 /// What the game wrote down playing a demo (`demotrace`, Commands/DemoCommands.cs): the player
 /// every frame, and every actor, door, pushwall and tile as it changed. The format is
-/// docs/demo-viewer-plan.md's; lines it doesn't know are skipped.
+/// docs/dev/demo-viewer-plan.md's; lines it doesn't know are skipped.
 /// </summary>
 public sealed class DemoTrace
 {

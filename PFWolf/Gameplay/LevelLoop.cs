@@ -223,7 +223,7 @@ internal sealed class LevelLoop(
     /*
     ====================
     =
-    = Uncapped frame rate (docs/uncapped-framerate-plan.md)
+    = Uncapped frame rate (docs/dev/uncapped-framerate-plan.md)
     =
     = The world still thinks in 70 Hz tics, but frames are drawn as often as the display shows
     = them, everything placed between its last two tics (Rendering/FrameInterpolation.cs). Demos,
