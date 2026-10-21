@@ -29,7 +29,7 @@ public static class ActorSchema
                 "true: it changes the class of its name loaded before it (a base pack's, say) rather than replacing it: its properties and states replace those of the same name, and its flags are added (~FLAG takes one away)",
                 defaultText: "false"),
             FieldSchema.Value("radius", FieldType.Integer, "How far it reaches from its middle, for bumping into things"),
-            FieldSchema.List("flags", "Its flags (SHOOTABLE, COUNTKILL...), its parents' as well. NODISGUISE: a decoration no Prop Hunt prop can look like (a puddle flat on the floor)",
+            FieldSchema.List("flags", "Its flags (SOLID, AMBUSH, NOTCOUNTED...), its parents' as well (~FLAG takes one away). The actor flags reference lists each one.",
                 FieldSchema.Value("flag", FieldType.Text, null, hint: FieldHint.Flag), inline: true),
             FieldSchema.Entries("properties",
                 "Its properties by name (health, speed, inventory.amount...), its parents' as well unless it sets them. The actor properties reference lists each one.",

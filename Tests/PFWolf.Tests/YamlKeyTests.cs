@@ -112,6 +112,8 @@ public class YamlKeyTests
                     var keyPath = path.Length == 0 ? key : $"{path}.{key}";
                     if (schema.ClrType == typeof(ActorData) && key.Equals("properties", StringComparison.OrdinalIgnoreCase) && value is YamlMappingNode properties)
                         CheckActorProperties(properties, keyPath, file, problems);
+                    else if (schema.ClrType == typeof(ActorData) && key.Equals("flags", StringComparison.OrdinalIgnoreCase) && value is YamlSequenceNode flags)
+                        CheckActorFlags(flags, keyPath, file, problems);
                     else if (schema.Field(key) is { } field)
                         Check(value, field, keyPath, file, problems);
                     else
@@ -140,6 +142,26 @@ public class YamlKeyTests
                 problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} isn't read (no actor property {key}: Definitions/ActorProperties.cs)");
         }
     }
+
+    // An actor class's flags: each one the engine checks (Definitions/ActorFlags.cs); ~FLAG takes one away
+    private static void CheckActorFlags(YamlSequenceNode flags, string path, string file, List<string> problems)
+    {
+        foreach (var item in flags.Children)
+        {
+            if (item is YamlScalarNode { Value: { } flag } && ActorFlags.Find(flag) == null && !UnresolvedFlags.Contains(flag.TrimStart('~')))
+                problems.Add($"{file}:{item.Start.Line}: {path} {flag} isn't checked (no actor flag {flag}: Definitions/ActorFlags.cs)");
+        }
+    }
+
+    // Actor flags known not to be checked, waiting on a decision rather than a fix. Take one out
+    // once it's settled; any other unchecked flag still fails.
+    private static readonly HashSet<string> UnresolvedFlags = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // ECWolf's weapon flags, whose jobs are done otherwise: the bob is game-wide (game-info
+        // weapon-bob), only ALWAYSGRIN makes the face grin, a weapon fires again only with
+        // A_ReFire, and a punch makes no noise (weapon.silent quiets a gun)
+        "WEAPON.DONTBOB", "WEAPON.NOGRIN", "WEAPON.NOAUTOFIRE", "WEAPON.NOALERT",
+    };
 
     // The keys StateDataNodeDeserializer reads from an actor state's frame, hyphens left out
     // ("frame" too, for "frames"). A frame of { goto: State } has nothing else.
