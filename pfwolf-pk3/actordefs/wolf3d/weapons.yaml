@@ -15,7 +15,6 @@ WolfWeapon:
     "weapon.ammotype1": "Clip"
     "weapon.ammouse1": 1
     "weapon.ammogive1": 6
-    "weapon.yadjust": 19
   flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
   states:
     Select:

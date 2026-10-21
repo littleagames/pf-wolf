@@ -136,19 +136,10 @@ public class YamlKeyTests
     {
         foreach (var keyNode in properties.Children.Keys)
         {
-            if (keyNode is YamlScalarNode { Value: { } key } && ActorProperties.Find(key) == null && !Unresolved.Contains(key))
+            if (keyNode is YamlScalarNode { Value: { } key } && ActorProperties.Find(key) == null)
                 problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} isn't read (no actor property {key}: Definitions/ActorProperties.cs)");
         }
     }
-
-    // Actor properties known not to be read, waiting on a decision rather than a fix. Take one
-    // out once it's settled; any other unread property still fails.
-    private static readonly HashSet<string> Unresolved = new(StringComparer.OrdinalIgnoreCase)
-    {
-        // ECWolf/ZDoom's weapon bob and offset, and a second ammo give and a backpack boost: nothing reads them
-        "weapon.bobrangex", "weapon.bobrangey", "weapon.bobspeed", "weapon.bobstyle", "weapon.yadjust",
-        "weapon.ammogive2", "ammo.backpackboostamount",
-    };
 
     // The keys StateDataNodeDeserializer reads from an actor state's frame, hyphens left out
     // ("frame" too, for "frames"). A frame of { goto: State } has nothing else.

@@ -4,8 +4,6 @@
 # supply of charge units (items.yaml ChargeUnit); picking one up gives 6 of them.
 BlakeWeapon:
   parent: "Weapon"
-  properties:
-    "weapon.yadjust": 19
   flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
   states:
     Select:

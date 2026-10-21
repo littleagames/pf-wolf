@@ -121,7 +121,6 @@ public static class ActorProperties
         Int("weapon.slot", "The slot key (1-9, 0) that picks it; none: only next and previous weapon reach it"),
         Int("weapon.selectionorder", "How good it is: lower is better (the one put in hand, the one picked when ammo runs out)"),
         Text("weapon.ammotype1", "The ammo item it fires", hint: FieldHint.Class),
-        Text("weapon.ammotype2", "A second ammo item, taken with the first by a map's take-weapons", hint: FieldHint.Class),
         Int("weapon.ammouse1", "Ammo a shot costs (0: it needs none, as the knife)"),
         Int("weapon.ammogive1", "Ammo picking it up gives"),
         Text("weapon.magazine", "The item its loaded rounds are held as: shots come out of it, and A_Reload fills it from the ammo", hint: FieldHint.Class),

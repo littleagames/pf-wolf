@@ -43,7 +43,7 @@ internal sealed class MapLoadouts(InventoryManager inventory, PlayerWeapons weap
                 .OfType<string>().Where(m => m.Length > 0)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             var fired = weaponClasses
-                .SelectMany(w => new[] { inventory.GetStringProperty(w, "weapon.ammotype1"), inventory.GetStringProperty(w, "weapon.ammotype2") })
+                .Select(w => inventory.GetStringProperty(w, "weapon.ammotype1"))
                 .OfType<string>().Where(a => a.Length > 0 && !magazines.Contains(a))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var (item, count) in playerstate.Items.ToList())

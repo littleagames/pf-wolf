@@ -22,7 +22,6 @@ Blaster:
     "weapon.ammotype1": Cell
     "weapon.ammouse1": 1
     "weapon.ammogive1": 10
-    "weapon.yadjust": 19
     "attacksound": "standalone/blaster"
   flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
   states:
