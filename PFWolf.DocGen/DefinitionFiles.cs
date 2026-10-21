@@ -32,6 +32,8 @@ public static class DefinitionFiles
             "factions.yaml", "gamepacks/{pack}/factions.yaml", () => FieldSchema.For(typeof(FactionsAsset))),
         new("actordefs", "actordefs/*.yaml", "Actor classes: the player, enemies, items, decorations and projectiles.",
             "actordefs/*.yaml", "actordefs/{pack}/*.yaml", () => FieldSchema.Entries("", "Actor classes by name", ActorSchema.Build())),
+        new("actor-properties", "Actor properties", "The properties an actor class can set under properties:, and what each does.",
+            "actordefs/*.yaml", "actordefs/{pack}/*.yaml", ActorProperties.Schema),
         new("mapdefs", "mapdefs/*.yaml", "What each value on a map's planes is: walls, doors, things, floors and more.",
             "mapdefs/*.yaml", "mapdefs/{pack}/*.yaml", () => FieldSchema.For(typeof(MapObjectTranslationAsset))),
         new("animdefs", "animdefs/*.yaml", "Animated textures and pictures.",

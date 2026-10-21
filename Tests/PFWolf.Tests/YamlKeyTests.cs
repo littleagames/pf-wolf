@@ -110,7 +110,9 @@ public class YamlKeyTests
                     if (keyNode is not YamlScalarNode { Value: { } key })
                         continue;
                     var keyPath = path.Length == 0 ? key : $"{path}.{key}";
-                    if (schema.Field(key) is { } field)
+                    if (schema.ClrType == typeof(ActorData) && key.Equals("properties", StringComparison.OrdinalIgnoreCase) && value is YamlMappingNode properties)
+                        CheckActorProperties(properties, keyPath, file, problems);
+                    else if (schema.Field(key) is { } field)
                         Check(value, field, keyPath, file, problems);
                     else
                         problems.Add($"{file}:{keyNode.Start.Line}: {keyPath} isn't read ({Owner(schema)} has no {key})");
@@ -128,6 +130,25 @@ public class YamlKeyTests
                 break;
         }
     }
+
+    // An actor class's properties: each one the engine reads (Definitions/ActorProperties.cs)
+    private static void CheckActorProperties(YamlMappingNode properties, string path, string file, List<string> problems)
+    {
+        foreach (var keyNode in properties.Children.Keys)
+        {
+            if (keyNode is YamlScalarNode { Value: { } key } && ActorProperties.Find(key) == null && !Unresolved.Contains(key))
+                problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} isn't read (no actor property {key}: Definitions/ActorProperties.cs)");
+        }
+    }
+
+    // Actor properties known not to be read, waiting on a decision rather than a fix. Take one
+    // out once it's settled; any other unread property still fails.
+    private static readonly HashSet<string> Unresolved = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // ECWolf/ZDoom's weapon bob and offset, and a second ammo give and a backpack boost: nothing reads them
+        "weapon.bobrangex", "weapon.bobrangey", "weapon.bobspeed", "weapon.bobstyle", "weapon.yadjust",
+        "weapon.ammogive2", "ammo.backpackboostamount",
+    };
 
     // The keys StateDataNodeDeserializer reads from an actor state's frame, hyphens left out
     // ("frame" too, for "frames"). A frame of { goto: State } has nothing else.

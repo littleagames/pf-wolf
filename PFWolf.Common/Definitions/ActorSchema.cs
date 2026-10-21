@@ -32,7 +32,7 @@ public static class ActorSchema
             FieldSchema.List("flags", "Its flags (SHOOTABLE, COUNTKILL...), its parents' as well. NODISGUISE: a decoration no Prop Hunt prop can look like (a puddle flat on the floor)",
                 FieldSchema.Value("flag", FieldType.Text, null, hint: FieldHint.Flag), inline: true),
             FieldSchema.Entries("properties",
-                "Its properties by name (health, speed, inventory.amount...), its parents' as well unless it sets them. On a decoration, prophunt.health is the most health (1-100) a Prop Hunt prop has looking like it; left out, it goes by the radius: 50, up to 100 at 32",
+                "Its properties by name (health, speed, inventory.amount...), its parents' as well unless it sets them. The actor properties reference lists each one.",
                 FieldSchema.Value("property", FieldType.Text, null)),
             FieldSchema.Entries("states", "Its states by name (Spawn, See, Death...): each a list of frames",
                 FieldSchema.List("state", null, frame)),
