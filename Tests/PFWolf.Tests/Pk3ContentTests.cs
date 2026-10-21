@@ -53,6 +53,21 @@ public class Pk3ContentTests
         Assert.That(problems, Is.Empty);
     }
 
+    [Test]
+    public void Wolf3Ds_Death_Cam_Settings_Are_Read()
+    {
+        // Arrange: the key is death-cam; a misspelt one (deathcam) is skipped without a word
+        var path = Path.Combine(TestPaths.Pk3SourceFolder(), "gamepacks", "wolf3d", "intermission.yaml");
+
+        // Act
+        var intermission = YamlDataEntryLoader.Deserialize<IntermissionAsset>(File.ReadAllText(path));
+
+        // Assert
+        Assert.That(intermission.DeathCam, Is.Not.Null);
+        Assert.That(intermission.DeathCam!.Labels, Is.Not.Empty);
+        Assert.That(intermission.DeathCam.HoldTics, Is.GreaterThan(0));
+    }
+
     // What's wrong with the loaded actordefs' classes: a parent or next-state that isn't there,
     // or a class that can't be created. As AssetManager.GetActorMetadata builds them.
     private static List<string> ActorProblems(PfWolfPk3Loader loader, string pack)

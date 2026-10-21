@@ -62,12 +62,12 @@ sounds:
   perfect: misc/100percent
   none: misc/no_bonus
 
-# deathcam: the text over the faded view before a boss's death is replayed (A_StartDeathCam),
+# death-cam: the text over the faded view before a boss's death is replayed (A_StartDeathCam),
 # in the same font and color. labels as above.
 #   pause-ms:   milliseconds after the boss dies before the view fades, and after the replay
 #               before the level ends
 #   hold-tics:  how long the text stays up (70 a second) before the replay, unless a key is pressed
-deathcam:
+death-cam:
   pause-ms: 800
   hold-tics: 300
   labels:
