@@ -2,17 +2,40 @@ namespace PFWolf.Assets;
 
 public record MapObjectTranslationAsset : Asset
 {
+    /// <summary>
+    /// Things by object-plane (plane 1) value: the enemies, items and decorations placed on the
+    /// tiles that have it
+    /// </summary>
     public Dictionary<int, MapActorTranslation> Things { get; internal set; } = new();
+
+    /// <summary>
+    /// Walls by plane 0 value (1 to 255): every tile with one listed is a solid wall, with these
+    /// textures. A plane 0 value that isn't a wall or a door is open floor (floors).
+    /// </summary>
     public Dictionary<int, MapTextureTranslation> Walls { get; internal set; } = new();
+
+    /// <summary>
+    /// Doors by plane 0 value: the two faces across the doorway are the door (east and west for a
+    /// vertical one, north and south otherwise), the other two the jambs on the walls beside it
+    /// </summary>
     public Dictionary<int, MapTextureTranslation> Doors { get; internal set; } = new();
+
+    /// <summary>The object-plane values the player starts the level on, facing their angles</summary>
     public Dictionary<int, MapPlayerStartTranslation> PlayerStarts { get; internal set; } = new();
+
+    /// <summary>Object-plane values the player sets off, by using or walking onto their tile (a pushwall, an exit)</summary>
     public Dictionary<int, MapTriggerTranslation> Triggers { get; internal set; } = new();
+
+    /// <summary>Object-plane values that turn the wall tile under them into a 45 degree wall</summary>
     public Dictionary<int, MapDiagonalTranslation> Diagonals { get; internal set; } = new();
 
     /// <summary>Wall patches by id (1 to 255): the high byte of a wall tile's plane 0 value (MapConstants.PatchShift)</summary>
     public Dictionary<int, MapPatchTranslation> Patches { get; internal set; } = new();
 
+    /// <summary>The floor and ceiling textures for the flat plane (plane 2), and the floors that hurt</summary>
     public MapFlatsTranslation Flats { get; internal set; } = new();
+
+    /// <summary>What the plane 0 values that are open floor mean: the area codes, ambush and secret exit</summary>
     public MapFloorsTranslation Floors { get; internal set; } = new();
 
     /// <summary>
@@ -206,7 +229,10 @@ public record MapActorCodeTranslation
 /// </summary>
 public record MapFlatsTranslation
 {
+    /// <summary>The floor textures by index (a flat-plane value's low byte)</summary>
     public Dictionary<int, string> Floor { get; set; } = new();
+
+    /// <summary>The ceiling textures by index (a flat-plane value's high byte)</summary>
     public Dictionary<int, string> Ceiling { get; set; } = new();
 
     /// <summary>
@@ -226,6 +252,7 @@ public record MapFlatsTranslation
 /// <summary>A damaging floor (flats damage): <see cref="Amount"/> every <see cref="Tics"/> tics to each player and enemy on it</summary>
 public record MapFloorDamage
 {
+    /// <summary>The health taken each time it hurts</summary>
     public int Amount { get; init; }
 
     /// <summary>How often it hurts, in tics (the original's DAMAGE_INTERVAL, 20)</summary>
@@ -242,6 +269,10 @@ public record MapFloorDamage
 /// </summary>
 public record MapDiagonalTranslation
 {
+    /// <summary>
+    /// The solid corner (SolidNW, SolidNE, SolidSW or SolidSE): its two tile edges stay square
+    /// faces, and the diagonal between the other two corners is the angled face
+    /// </summary>
     public Enums.WallShape Shape { get; set; }
 
     /// <summary>The diagonal face's texture. Empty means the wall's own North texture.</summary>
@@ -365,9 +396,19 @@ public record MapTriggerTranslation
 
 public record MapActorTranslation
 {
+    /// <summary>The actordefs class placed</summary>
     public string Class { get; set; } = "";
+
+    /// <summary>The way it faces: 0 east, 90 north, 180 west, 270 south</summary>
     public int Angles { get; set; }
+
+    /// <summary>0: it starts in its Spawn state, standing; 1: in its Path state, patrolling (when its class has one)</summary>
     public int Patrol { get; set; }
+
+    /// <summary>
+    /// The easiest skill it's placed on, by the skill's place in game-info skills (0 the first:
+    /// Wolf3D's 0 baby, 1 easy, 2 medium, 3 hard). On easier skills, else is placed instead.
+    /// </summary>
     public int MinSkill { get; set; }
 
     /// <summary>
@@ -399,9 +440,19 @@ public record MapActorTranslation
 
 public record MapTextureTranslation
 {
+    /// <summary>
+    /// The texture on the north face, seen from the tile north of it. On a wall, a face left out
+    /// shows the opposite one (south falls back on north, west on east, and the other way round).
+    /// </summary>
     public string North { get; init; } = "";
+
+    /// <summary>The texture on the south face, seen from the tile south of it</summary>
     public string South { get; init; } = "";
+
+    /// <summary>The texture on the east face, seen from the tile east of it (Wolf3D's darker side)</summary>
     public string East { get; init; } = "";
+
+    /// <summary>The texture on the west face, seen from the tile west of it</summary>
     public string West { get; init; } = "";
 
     /// <summary>
