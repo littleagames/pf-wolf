@@ -11,6 +11,7 @@ Step by step, from an empty folder to a working mod.
 | --- | --- |
 | [Your first mod](./first-mod) | Darker levels lit by their own lamps: three YAML files |
 | [A new enemy](./new-enemy) | An elite guard: a class built on the guard, a uniform of its own, on the levels |
+| [Your first script](./first-script) | Lua that counts the elite guards down, and an action of your own |
 
 ## The example mods
 
