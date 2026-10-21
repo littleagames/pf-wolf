@@ -104,6 +104,33 @@ public class ScriptApiTests
     }
 
     [Test]
+    public void Nothing_In_The_Sandbox_Is_Left_Off_The_Lists()
+    {
+        // Arrange
+        var host = EngineHost();
+        var listed = ScriptApi.Globals.Select(entry => entry.Name)
+            .Concat(ScriptApi.Libraries.Select(entry => entry.Name))
+            .Concat(ScriptApi.LibraryMembers.Select(entry => $"{entry.Library}.{entry.Name}"))
+            .Concat(ScriptApi.Game.Select(entry => $"game.{entry.Name}"))
+            .ToHashSet();
+
+        // Act: each global, and each member of a library table
+        var found = new List<string>();
+        foreach (var (key, value) in host.Globals)
+        {
+            var name = key.Read<string>();
+            found.Add(name);
+            if (name != "_G" && value.TryRead<LuaTable>(out var library))
+                foreach (var (member, _) in library)
+                    found.Add($"{name}.{member.Read<string>()}");
+        }
+        var unlisted = found.Where(name => !listed.Contains(name)).ToList();
+
+        // Assert
+        Assert.That(unlisted, Is.Empty, "add these to PFWolf.Common's ScriptApi, or take them out of the sandbox (ScriptHost)");
+    }
+
+    [Test]
     public void The_Trigger_Actions_Are_The_Engines_Switch_Actions()
     {
         // Arrange

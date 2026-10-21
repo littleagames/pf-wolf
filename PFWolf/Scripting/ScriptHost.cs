@@ -50,13 +50,17 @@ internal sealed partial class ScriptHost
         _state.OpenMathLibrary();
         _state.OpenBitwiseLibrary();
 
-        foreach (var name in new[] { "dofile", "loadfile", "load", "loadstring", "require", "collectgarbage" })
+        // Also math.random's own state, a global of the library's, and string.dump, whose code
+        // nothing is left to load
+        foreach (var name in new[] { "dofile", "loadfile", "load", "loadstring", "require", "collectgarbage", "__lua_mathematics_library_random_instance" })
             Globals[name] = LuaValue.Nil;
         if (Globals["math"].TryRead<LuaTable>(out var math))
         {
             math["random"] = LuaValue.Nil;
             math["randomseed"] = LuaValue.Nil;
         }
+        if (Globals["string"].TryRead<LuaTable>(out var strings))
+            strings["dump"] = LuaValue.Nil;
 
         Globals["print"] = new LuaFunction("print", (context, _) =>
         {

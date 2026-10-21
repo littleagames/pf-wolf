@@ -38,6 +38,8 @@ public static class DefinitionFiles
             "actordefs/*.yaml", "actordefs/{pack}/*.yaml", ActorFlags.Schema),
         new("actions", "Actions", "The thinks and actions actor states and map switches can run, and what each does.",
             "actordefs/*.yaml", "actordefs/{pack}/*.yaml", GameActions.Schema),
+        new("scripting", "Lua scripting", "What a mod's Lua scripts can use: the game table, actors' fields and methods, and Lua's own functions.",
+            "scripts/*.lua", null, Scripting.ScriptApi.Schema),
         new("mapdefs", "mapdefs/*.yaml", "What each value on a map's planes is: walls, doors, things, floors and more.",
             "mapdefs/*.yaml", "mapdefs/{pack}/*.yaml", () => FieldSchema.For(typeof(MapObjectTranslationAsset))),
         new("animdefs", "animdefs/*.yaml", "Animated textures and pictures.",

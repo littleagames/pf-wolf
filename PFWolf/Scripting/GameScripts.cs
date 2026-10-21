@@ -17,22 +17,9 @@ namespace PFWolf.Scripting;
 /// It's called with the actor (self) and the state's arguments, numbers as numbers. A built-in
 /// action of the same name wins (the script's is ignored, with a warning).
 ///
-/// What the scripts get, besides Lua's basic, string, table, math and bit32 libraries:
-///   an actor's fields: name, x, y (in tiles: a tile's middle is n + 0.5), TileX, TileY, angle
-///     (degrees, 0 east, 90 north: the way it faces, or a projectile flies), health, speed,
-///     z (how much higher it's drawn, in texels), state, tag, inwall, removed, isplayer, shooter
-///     (who fired a projectile), temp1..temp3 (whole numbers kept in saved games: a script's own
-///     state for the actor belongs there). temp1..temp3, angle, speed and z can be set.
-///   its methods: jump(state), spawnprojectile(class[, angle[, mode]]), spawn(class),
-///     playsound(sound[, positional]), property(key), hasflag(flag), distanceto(other),
-///     angleto(other), cansee(player[, tiles]), nearestplayer(), remove()
-///   game.random([m[, n]]), game.players(), game.actors([class]), game.tagged(tag[, class]),
-///     game.taggedtiles(tag) (each {x, y}), game.tag(x, y), game.trigger(tag, action, ...) (a
-///     switch action on a tag: game.trigger(3, "A_OpenDoor", "hold")), game.time(), game.tics(), game.map(), game.skill(),
-///     game.message(text[, style]), game.objective(name) (a level objective's done and total),
-///     game.ambient(sound) / game.ambient(nil) (a looping ambience
-///     at the listener, swapped or stopped), and the hooks game.onlevel(fn) and game.ontick(fn) (HOOKS below)
-/// and print, to the console.
+/// What the scripts get, the game table and an actor's fields and methods besides what Lua's
+/// basic, string, table, math and bit32 libraries leave in, is listed (and documented) in
+/// PFWolf.Common's Scripting/ScriptApi.cs; ScriptApiTests holds that list to what's here.
 ///
 /// Scripts must leave the outcome to the game's own random numbers (game.random) and to what's
 /// on the actors, so that demos, network games and saved games come out the same: Lua globals

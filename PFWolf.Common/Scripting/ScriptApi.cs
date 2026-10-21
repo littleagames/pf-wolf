@@ -1,3 +1,5 @@
+using PFWolf.Definitions;
+
 namespace PFWolf.Scripting;
 
 /// <summary>What a script can use, by where it's reached</summary>
@@ -121,6 +123,8 @@ public static class ScriptApi
         Global("rawset", "rawset(t, key, value)", "Sets a table's value, without its metatable"),
         Global("rawequal", "rawequal(a, b)", "Whether two values are the same, without metatables"),
         Global("rawlen", "rawlen(v)", "A table's or string's length, without its metatable"),
+        Global("_G", "_G", "The table of globals (the scripts all share it)"),
+        Global("_VERSION", "_VERSION", "The Lua version, \"Lua 5.2\""),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> Libraries { get; } =
@@ -150,6 +154,8 @@ public static class ScriptApi
             ("exp", "math.exp(x)", "e to the power x"), ("log", "math.log(x[, base])", "Its logarithm"), ("sin", "math.sin(x)", "Sine (radians)"),
             ("cos", "math.cos(x)", "Cosine (radians)"), ("tan", "math.tan(x)", "Tangent (radians)"), ("asin", "math.asin(x)", "Arc sine, in radians"),
             ("acos", "math.acos(x)", "Arc cosine, in radians"), ("atan", "math.atan(x)", "Arc tangent, in radians"), ("atan2", "math.atan2(y, x)", "The angle of (x, y), in radians"),
+            ("sinh", "math.sinh(x)", "Hyperbolic sine"), ("cosh", "math.cosh(x)", "Hyperbolic cosine"), ("tanh", "math.tanh(x)", "Hyperbolic tangent"),
+            ("frexp", "math.frexp(x)", "Its mantissa and exponent: x = m × 2^e"), ("ldexp", "math.ldexp(m, e)", "m × 2^e"),
             ("deg", "math.deg(x)", "Radians in degrees"), ("rad", "math.rad(x)", "Degrees in radians"), ("pi", "math.pi", "π"), ("huge", "math.huge", "Infinity")),
         .. Members("bit32", ("band", "bit32.band(...)", "Bitwise and"), ("bor", "bit32.bor(...)", "Bitwise or"), ("bxor", "bit32.bxor(...)", "Bitwise exclusive or"),
             ("bnot", "bit32.bnot(x)", "Bitwise not"), ("btest", "bit32.btest(...)", "Whether the and of them isn't 0"), ("lshift", "bit32.lshift(x, n)", "Shifted left"),
@@ -163,21 +169,34 @@ public static class ScriptApi
             "or", "repeat", "return", "then", "true", "until", "while", "self" }
             .Select(word => new ScriptApiEntry(ScriptApiKind.Keyword, word, word, "Lua"))];
 
-    /// <summary>
-    /// The switch actions game.trigger runs (mapdefs/wolf3d/walls.yaml describes them at wall
-    /// 21), less those that work on a switch's own tile, which a script hasn't got
-    /// </summary>
-    public static IReadOnlyList<string> TriggerActions { get; } =
-    [
-        "A_OpenDoor", "A_CloseDoor", "A_ToggleDoor", "A_MoveWall", "A_SetWall", "A_SetPatch", "A_ChangeTexture",
-        "A_Activate", "A_Deactivate", "A_ToggleActive", "A_Message", "A_GiveInventory", "A_SpawnItem", "A_SetLight", "A_LightOff",
-        "A_SetZoneLight", "A_ToggleZoneLight", "A_SetZoneEffect", "A_SetShading", "A_SetMonsterWander", "A_ClearMonsterBlocks", "A_StartScroll", "A_StopScroll", "A_ToggleScroll", "A_SetScroll",
-        "A_UnlockFloor", "A_DropDetonator",
-        "A_VictoryTile", "A_Exit", "A_SecretExit", "A_VictoryRun", "A_CompleteObjective", "A_AddObjective", "A_Unlock",
-    ];
-
     /// <summary>The switch actions game.trigger can't run: they work on a switch's own tile</summary>
     public static IReadOnlyList<string> OwnTileActions { get; } = ["A_PushWall", "A_Vend", "A_SmartSwitch", "A_FloorSelect", "A_Teleport", "A_TeleportTag", "A_Warp"];
+
+    /// <summary>
+    /// The switch actions game.trigger runs (Definitions/GameActions.cs's), less those that work
+    /// on a switch's own tile, which a script hasn't got
+    /// </summary>
+    public static IReadOnlyList<string> TriggerActions { get; } =
+        [.. GameActions.All.Where(a => a.Use.HasFlag(ActionUse.Switch) && !OwnTileActions.Contains(a.Name)).Select(a => a.Name)];
+
+    /// <summary>The scripting API for the documentation: a record of the game table, an actor's fields and methods, and Lua's names, each its own field</summary>
+    public static FieldSchema Schema() => FieldSchema.Record("scripting",
+        "Scripts (scripts/*.lua, in pfwolf.pk3 and each mod) run at startup, in load order, in one sandboxed Lua 5.2 state. "
+        + "A global function whose name starts with A_ or T_ becomes an action or think actordefs states can run like a built-in one "
+        + "(`function A_FireRing(self, projectile, count) ... end`, then `action: A_FireRing(\"Fireball\", 8)`): it's called with the actor "
+        + "and the state's arguments, numbers as numbers, and a built-in action of the same name wins. Leave chance to game.random and keep "
+        + "state on the actors (temp1..temp3): Lua's globals aren't saved, and demos and network games must come out the same.",
+        [
+            Section("game", "The game table: the level, its actors and tags, switch actions, hooks, time and messages", Game),
+            Section("actor", "An actor (self in an action, or what game.actors and the like return): its fields, actor.NAME", ActorFields),
+            Section("actor-methods", "An actor's methods, actor:NAME(...)", ActorMethods),
+            Section("globals", "Lua's basic functions the sandbox leaves in (no load, require, dofile, io or os)", Globals),
+            .. Libraries.Where(library => library.Name != "game")
+                .Select(library => Section(library.Name, library.Summary, [.. LibraryMembers.Where(member => member.Library == library.Name)])),
+        ]);
+
+    private static FieldSchema Section(string key, string description, IReadOnlyList<ScriptApiEntry> entries) =>
+        FieldSchema.Record(key, description, [.. entries.Select(entry => FieldSchema.Value(entry.Name, FieldType.Text, $"`{entry.Signature}`: {entry.Summary.TrimEnd('.')}."))]);
 
     private static ScriptApiEntry Fn(string name, string signature, string summary) => new(ScriptApiKind.GameFunction, name, signature, summary, "game");
 

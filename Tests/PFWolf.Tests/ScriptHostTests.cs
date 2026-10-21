@@ -24,6 +24,8 @@ public class ScriptHostTests
     [TestCase("package")]
     [TestCase("math.random")]
     [TestCase("math.randomseed")]
+    [TestCase("__lua_mathematics_library_random_instance")]
+    [TestCase("string.dump")]
     public void What_Reaches_Outside_The_Game_Is_Not_There(string global)
     {
         // Arrange
