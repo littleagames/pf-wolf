@@ -42,6 +42,8 @@ public static class DefinitionFiles
             "scripts/*.lua", null, Scripting.ScriptApi.Schema),
         new("console", "Console commands", "The commands the in-game console runs, and what each does.",
             null, null, ConsoleCommandsSchema.Build),
+        new("command-line", "Command-line options", "The options PFWolf starts with: the game, mods, a level to warp to, video, and more.",
+            null, null, CommandLineSchema.Build),
         new("mapdefs", "mapdefs/*.yaml", "What each value on a map's planes is: walls, doors, things, floors and more.",
             "mapdefs/*.yaml", "mapdefs/{pack}/*.yaml", () => FieldSchema.For(typeof(MapObjectTranslationAsset))),
         new("animdefs", "animdefs/*.yaml", "Animated textures and pictures.",

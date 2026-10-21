@@ -4,13 +4,13 @@ using CommandLine;
 
 internal class GameParams
 {
-    [Option("configdir", Required = false, HelpText = "Directory where the configuration settings are located. Default in %APPDATA%.")]
+    [Option("configdir", Required = false, HelpText = "Directory where the configuration settings are located (config.cfg, binds.cfg, autoexec.cfg). Default: %APPDATA%\\PFWolf\\<game>\\configs.")]
     public string ConfigDir { get; set; } = "";
 
-    [Option("savedir", Required = false, HelpText = "Directory where the game saves are located. Default in %APPDATA%.")]
+    [Option("savedir", Required = false, HelpText = "Directory where the game saves are located. Default: %APPDATA%\\PFWolf\\<game>\\savegames.")]
     public string SavesDir { get; set; } = "";
 
-    [Option("demodir", Required = false, HelpText = "Directory where recorded demos are kept (and played ahead of the game's own). Default in %APPDATA%.")]
+    [Option("demodir", Required = false, HelpText = "Directory where recorded demos are kept (and played ahead of the game's own). Default: %APPDATA%\\PFWolf\\<game>\\demos.")]
     public string DemoDir { get; set; } = "";
 
     [Option("nowait", Required = false, HelpText = "Don't wait at the signon screen or show the intro screens or level briefings; with --exec, for scripted runs.")]
@@ -23,7 +23,9 @@ internal class GameParams
     [Option("exec", Required = false, HelpText = "Console commands to run once the game has started, separated by ';'.")]
     public string Exec { get; set; } = "";
 
-    [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default), spear, blake or planetstrike.")]
+    // GameTypes.KnownGamePackIds, which CommandLineOptionsTests holds this to
+    [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default), wolf3d-apogee, wolf3d-shareware, spear, spear-demo, blake, planetstrike, "
+        + "or a game a mod on the command line adds. Without that game's data files here, the one whose files are.")]
     public string Game { get; set; } = "";
 
     [Option("cheats", Required = false, HelpText = "Turn on the cheat commands and debug keys from the start.")]
@@ -67,7 +69,7 @@ internal class GameParams
     [Option("windowed", Required = false, HelpText = "Start in a window (wins over --fullscreen).")]
     public bool Windowed { get; set; }
 
-    [Option("res", Required = false, HelpText = "Window size, e.g. 960x600.")]
+    [Option("res", Required = false, HelpText = "Window size, e.g. 960x600 (at least 320x200).")]
     public string Resolution { get; set; } = "";
 
     [Option("scale", Required = false, HelpText = "Draw at 320x200 times this (1-8): sharper, not bigger.")]
