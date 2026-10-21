@@ -68,7 +68,6 @@ standalone:
 
 wolf3d:
   title: Wolfenstein 3D
-  game-info: wolf3d-game-info
   game-palette: wolfpal
   # The GT/id/Activision v1.4 files: their VGAGRAPH is gfxv_wl6.h's layout, which wolf3d's
   # raw-data-map and alias.yaml follow. (Apogee v1.4's has the same audio, maps and VSWAP, but
@@ -83,7 +82,6 @@ wolf3d:
         data:
           file: audiot.wl6
           md5: 2385b488b18f8721633e5b2bdf054853
-        map: wolf3d-apogee-map
       Wolf3DMapFileLoader:
         header:
           file: maphead.wl6
@@ -91,7 +89,6 @@ wolf3d:
         data:
           file: gamemaps.wl6
           md5: a4e73706e100dc0cadfb02d23de46481
-        map: wolf3d-apogee-map
       Wolf3DVgaFileLoader:
         dict:
           file: vgadict.wl6
@@ -102,12 +99,10 @@ wolf3d:
         data:
           file: vgagraph.wl6
           md5: f18b07d6ba988b8505415f7446235366
-        map: wolf3d-apogee-map
       Wolf3DVswapFileLoader:
         data:
           file: vswap.wl6
           md5: a6d901dfb455dfac96db5e4705837cdb
-        map: wolf3d-apogee-map
 
 wolf3d-apogee:
   title: Wolfenstein 3D
@@ -129,7 +124,6 @@ wolf3d-apogee:
         data:
           file: audiot.wl6
           md5: 2385b488b18f8721633e5b2bdf054853
-        map: wolf3d-apogee-map
       Wolf3DMapFileLoader:
         header:
           file: maphead.wl6
@@ -137,7 +131,6 @@ wolf3d-apogee:
         data:
           file: gamemaps.wl6
           md5: a4e73706e100dc0cadfb02d23de46481
-        map: wolf3d-apogee-map
       Wolf3DVgaFileLoader:
         dict:
           file: vgadict.wl6
@@ -148,12 +141,10 @@ wolf3d-apogee:
         data:
           file: vgagraph.wl6
           md5: 4e96d7b4e89a5b3a4beeebf5d7d87eb7
-        map: wolf3d-apogee-map
       Wolf3DVswapFileLoader:
         data:
           file: vswap.wl6
           md5: a6d901dfb455dfac96db5e4705837cdb
-        map: wolf3d-apogee-map
 
 wolf3d-shareware:
   title: "Wolfenstein 3D Shareware"
@@ -174,7 +165,6 @@ wolf3d-shareware:
         data:
           file: audiot.wl1
           md5: 4b6109e957b584e4ad7f376961f3887e
-        map: wolf3d-apogee-map
       Wolf3DMapFileLoader:
         header:
           file: maphead.wl1
@@ -182,7 +172,6 @@ wolf3d-shareware:
         data:
           file: gamemaps.wl1
           md5: 30fecd7cce6bc70402651ec922d2da3d
-        map: wolf3d-apogee-map
       Wolf3DVgaFileLoader:
         dict:
           file: vgadict.wl1
@@ -193,12 +182,10 @@ wolf3d-shareware:
         data:
           file: vgagraph.wl1
           md5: 74decb641b1a4faed173e10ab744bff0
-        map: wolf3d-apogee-map
       Wolf3DVswapFileLoader:
         data:
           file: vswap.wl1
           md5: 6efa079414b817c97db779cecfb081c9
-        map: wolf3d-apogee-map
 spear:
   title: "Spear of Destiny"
   game-palette: spearpal
@@ -214,7 +201,6 @@ spear:
         data:
           file: audiot.sod
           md5: 10020fce0f04d21bd07b1b5b951c360a
-        map: spear-map
       Wolf3DMapFileLoader:
         header:
           file: maphead.sod
@@ -222,7 +208,6 @@ spear:
         data:
           file: gamemaps.sod
           md5: 04f16534235b4b57fc379d5709f88f4a
-        map: spear-map
       Wolf3DVgaFileLoader:
         dict:
           file: vgadict.sod
@@ -233,12 +218,10 @@ spear:
         data:
           file: vgagraph.sod
           md5: 3b85f170098fb48d91d8bedd0cac4e0d
-        map: spear-map
       Wolf3DVswapFileLoader:
         data:
           file: vswap.sod
           md5: b1dac0a8786c7cdbb09331a4eba00652
-        map: spear-map
 spear-demo:
   title: "Spear of Destiny Demo"
   game-palette: spearpal
@@ -256,7 +239,6 @@ spear-demo:
         data:
           file: audiot.sdm
           md5: fcde1333c941229f4dd6ca099fcfe616
-        map: spear-map
       Wolf3DMapFileLoader:
         header:
           file: maphead.sdm
@@ -264,7 +246,6 @@ spear-demo:
         data:
           file: gamemaps.sdm
           md5: 4eb2f538aab6e4061dadbc3b73837762
-        map: spear-map
       Wolf3DVgaFileLoader:
         dict:
           file: vgadict.sdm
@@ -275,12 +256,10 @@ spear-demo:
         data:
           file: vgagraph.sdm
           md5: 1cc5ceb8e43c0c0030cf552fc8ae9d0d
-        map: spear-map
       Wolf3DVswapFileLoader:
         data:
           file: vswap.sdm
           md5: 35afda760bea840b547d686a930322dc
-        map: spear-map
 blake-aog:
   title: "Blake Stone: Aliens of Gold"
   game-palette: blake
@@ -295,7 +274,6 @@ blake-aog:
         data:
           file: audiot.bs6
           md5: 144a201ef4bd5bd9989dc61d9250eeac
-        map: blake-aog-map
       Wolf3DMapFileLoader:
         header:
           file: maphead.bs6
@@ -303,7 +281,6 @@ blake-aog:
         data:
           file: maptemp.bs6
           md5: 897af42e172bf6d68954c111d1625bd8
-        map: blake-aog-map
       Wolf3DVgaFileLoader:
         dict:
           file: vgadict.bs6
@@ -315,12 +292,10 @@ blake-aog:
           file: vgagraph.bs6
           md5: 6089a1cbe454cdf5022b3c115bcd2e9d
         font-count: 5
-        map: blake-aog-map
       Wolf3DVswapFileLoader:
         data:
           file: vswap.bs6
           md5: 5e7d5862fda72a1b2874301c01491aac
-        map: blake-aog-map
       # JAM's movies, by the names game-info and movies.yaml play them by
       JamMovieFileLoader:
         movies:
@@ -348,7 +323,6 @@ blake-ps:
         data:
           file: audiot.vsi
           md5: ce0ba53c4c41d0256896b1075653366e
-        map: blake-ps-map
       Wolf3DMapFileLoader:
         header:
           file: maphead.vsi
@@ -356,7 +330,6 @@ blake-ps:
         data:
           file: maptemp.vsi
           md5: 9dcbeab5d5c123455ae3c24964956b22
-        map: blake-ps-map
       Wolf3DVgaFileLoader:
         dict:
           file: vgadict.vsi
@@ -368,12 +341,10 @@ blake-ps:
           file: vgagraph.vsi
           md5: ad57bd602ac4e571dd4101fe52b35807
         font-count: 5
-        map: blake-ps-map
       Wolf3DVswapFileLoader:
         data:
           file: vswap.vsi
           md5: 24827f8b2920acc60bab0e57b6e9937e
-        map: blake-ps-map
       # JAM's movies: the logo, and the ending
       JamMovieFileLoader:
         movies:

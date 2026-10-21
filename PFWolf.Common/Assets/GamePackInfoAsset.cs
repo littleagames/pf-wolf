@@ -242,9 +242,6 @@ public record FileLoaderDetails
     /// <summary>The VGA loader's dictionary file (vgadict), its pictures' compression table</summary>
     public FileReference? Dict { get; init; }
 
-    /// <summary>A raw-data-map's name (wolf3d-apogee-map); the game doesn't read it yet</summary>
-    public string? Map { get; init; }
-
     /// <summary>
     /// "font-count": Wolf3DVgaFileLoader's number of font chunks after STRUCTPIC, which the file
     /// itself doesn't record (2 when left out, as in Wolf3D and Spear; Blake Stone has 5)
@@ -284,12 +281,6 @@ public record GamePack
 {
     /// <summary>The game's name ("Spear of Destiny")</summary>
     public string? Title { get; init; }
-
-    /// <summary>
-    /// "game-info": a game-info asset's name (wolf3d-game-info); the game doesn't read it, and
-    /// finds the pack's game-info.yaml in gamepacks/{pack}/
-    /// </summary>
-    public string? GameInfo { get; init; }
 
     /// <summary>
     /// "game-palette": the palette the game is drawn in (palettes/NAME.pal: wolfpal); left out,
