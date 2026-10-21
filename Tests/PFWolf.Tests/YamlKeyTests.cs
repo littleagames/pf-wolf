@@ -110,6 +110,8 @@ public class YamlKeyTests
                     if (keyNode is not YamlScalarNode { Value: { } key })
                         continue;
                     var keyPath = path.Length == 0 ? key : $"{path}.{key}";
+                    if (IsSwitchActionField(schema.ClrType, key))
+                        CheckSwitchActions(value, keyPath, file, problems);
                     if (schema.ClrType == typeof(ActorData) && key.Equals("properties", StringComparison.OrdinalIgnoreCase) && value is YamlMappingNode properties)
                         CheckActorProperties(properties, keyPath, file, problems);
                     else if (schema.ClrType == typeof(ActorData) && key.Equals("flags", StringComparison.OrdinalIgnoreCase) && value is YamlSequenceNode flags)
@@ -140,6 +142,37 @@ public class YamlKeyTests
         {
             if (keyNode is YamlScalarNode { Value: { } key } && ActorProperties.Find(key) == null)
                 problems.Add($"{file}:{keyNode.Start.Line}: {path}.{key} isn't read (no actor property {key}: Definitions/ActorProperties.cs)");
+            else if (keyNode is YamlScalarNode { Value: { } use } && use.Equals("inventory.use", StringComparison.OrdinalIgnoreCase))
+                CheckSwitchActions(properties.Children[keyNode], $"{path}.{use}", file, problems);
+        }
+    }
+
+    // The mapdefs fields that hold switch actions, run through MapTriggerRegistry: a trigger's
+    // action, a wall's or patch's switch actions and reset-actions, and the floor codes' triggers
+    // (an item's inventory.use is run the same way: CheckActorProperties)
+    private static bool IsSwitchActionField(Type record, string key)
+    {
+        var normalized = key.Replace("-", "").ToLowerInvariant();
+        return (record == typeof(MapTriggerTranslation) && normalized == "action")
+            || (record == typeof(MapSwitchTranslation) && normalized is "actions" or "resetactions")
+            || (record == typeof(MapFloorsTranslation) && normalized == "triggers");
+    }
+
+    // Each action call (one, a list of them, or a mapping's values) is one the engine runs from
+    // switches and triggers (Definitions/GameActions.cs); unlike an actor's, a script can't add one
+    private static void CheckSwitchActions(YamlNode node, string path, string file, List<string> problems)
+    {
+        IEnumerable<YamlNode> calls = node switch
+        {
+            YamlSequenceNode list => list.Children,
+            YamlMappingNode mapping => mapping.Children.Values,
+            _ => [node],
+        };
+        foreach (var call in calls)
+        {
+            if (call is YamlScalarNode { Value: { Length: > 0 } text }
+                && GameActions.Find(ActionName(text))?.Use.HasFlag(ActionUse.Switch) != true)
+                problems.Add($"{file}:{call.Start.Line}: {path} {ActionName(text)} isn't run (no switch action {ActionName(text)}: Definitions/GameActions.cs)");
         }
     }
 
