@@ -10,8 +10,9 @@ namespace PFWolf.Definitions;
 /// <param name="Default">What the engine uses when it's left out; null when that's nothing</param>
 /// <param name="Hint">What a text names (a sound, a class...)</param>
 /// <param name="Item">What a list's items, or a map's values, are</param>
+/// <param name="Needs">The actor class that reads it (`parent:` one of them), or null for any actor</param>
 public sealed record ActorProperty(string Name, FieldType Type, string Description, string? Default = null,
-    FieldHint Hint = FieldHint.None, FieldType Item = FieldType.Text)
+    FieldHint Hint = FieldHint.None, FieldType Item = FieldType.Text, string? Needs = null)
 {
     /// <summary>Whether the name is a pattern: "health.SKILL" stands for health.normal, health.hard...</summary>
     public bool IsPattern => Name.EndsWith(".SKILL", StringComparison.Ordinal);
@@ -31,14 +32,14 @@ public static class ActorProperties
         Text("tag", "Its name in messages: an obituary's %o, the class menu (a $NAME language key or the name)"),
         Int("health", "Its health. An enemy on a skill whose game-info enemy-health names another property (health.normal) takes that one instead, when it has it."),
         Int("health.SKILL", "Its health on a skill: the property a game-info skill's enemy-health names (health.baby, health.easy, health.normal, health.hard)"),
-        Int("speed", "How fast it moves, in 1/65536 tile a tic: a monster's walking speed, a projectile's flight (0x2000 when left out)"),
+        Int("speed", "How fast it moves, in 1/65536 tile a tic: a monster's walking speed, a projectile's flight. Left out: 512 for an enemy, 1500 for a mover with no health (the Pac-Man ghosts), 0x2000 for an A_SpawnProjectile or A_FireProjectile projectile, 0x1C00 for an A_FireMissile missile"),
         Int("speed.random", "A projectile: up to this much more speed, at random"),
         Int("spread", "A projectile: aimed up to this many degrees either side, at random"),
         Int("points", "The score for killing it"),
         Text("faction", "The side it's on (factions.yaml), unless a mapdefs thing gives its own", hint: FieldHint.Faction),
         Text("translation", "The sprite color translation it's drawn through (translations.yaml), unless a mapdefs thing gives its own", hint: FieldHint.Translation),
         Text("damagetype", "The kind of blow it deals (a missile's, a blast's, a monster's), for the death its victim dies (a Death.TYPE state)"),
-        Int("knockback", "How far a body it kills slides back, in 1/65536 tile (an explosion's); 0x5000 when left out"),
+        Int("knockback", "How far a BlakeMonster body it kills slides back, in 1/65536 tile (an explosion's); 0x5000 when left out. Other enemies don't slide."),
         Text("obituary", "The message when it kills the player (a $NAME language key or the text; %o is the player's tag)"),
         Text("obituarystyle", "The hud-messages.yaml style its obituary is shown in; game-info's obituary-style when left out"),
         Text("objective", "A level objective (game-info objectives) it's one of: it counts toward the level's total, and its death completes one"),
@@ -61,10 +62,10 @@ public static class ActorProperties
         Text("attacksound", "Played as it attacks; a weapon's as the player fires it", hint: FieldHint.Sound),
         Text("deathsound", "Played as it dies (the player's when the player dies; a missile's as it hits)", hint: FieldHint.Sound),
         Text("activesound", "Played by A_ActiveSound while it chases, only in an area connected to the player's (Mecha Hitler's stomp)", hint: FieldHint.Sound),
-        Text("meleesound", "Played as it strikes up close", hint: FieldHint.Sound),
-        Text("woundsound", "Played as it goes down wounded", hint: FieldHint.Sound),
+        Text("meleesound", "Played as it strikes up close", hint: FieldHint.Sound, needs: BlakeMonster),
+        Text("woundsound", "Played as it goes down wounded", hint: FieldHint.Sound, needs: BlakeMonster),
         Text("revivesound", "Played as it revives a fallen ally (monster.revive)", hint: FieldHint.Sound),
-        Text("touchsound", "Played as it zaps the player it touches (monster.touchdamage)", hint: FieldHint.Sound),
+        Text("touchsound", "Played as it zaps the player it touches (monster.touchdamage)", hint: FieldHint.Sound, needs: BlakeMonster),
         Text("bouncesound", "A missile: played as it bounces", hint: FieldHint.Sound),
 
         // Missiles in the air
@@ -129,7 +130,7 @@ public static class ActorProperties
         Int("weapon.chargetics", "It fires only with a full charge, and takes this many tics to charge again (Blake Stone's auto charge pistol)"),
         Text("weapon.damagetype", "The kind of blow its shots deal, for the death the victim dies (a Death.TYPE state)"),
         Text("weapon.backstabtype", "The kind of blow a back-stab with it deals", "Backstab"),
-        Int("weapon.knockback", "How far a body it kills slides back, in 1/65536 tile; none when left out"),
+        Int("weapon.knockback", "How far a BlakeMonster body it kills slides back, in 1/65536 tile; none when left out. Other enemies don't slide."),
         Bool("weapon.silent", "Its shots alert no one"),
         Bool("weapon.stealthkill", "Kills made unseen with it count as stealth kills (the knife)"),
         Text("weapon.spares", "An actor flag (BOSS) whose holders it doesn't hurt at all", hint: FieldHint.Flag),
@@ -192,23 +193,23 @@ public static class ActorProperties
         Text("monster.blastedby", "The missile class whose blast breaks it (sends it to its Death state)", hint: FieldHint.Class),
         Text("monster.becomes", "A sleeper: the enemy it becomes, which is the kill rather than it", hint: FieldHint.Class),
         Int("monster.floordeath", "On this floor (game-info floor-number) it isn't killed but goes to its FloorDeath state (Goldfire's morph)"),
-        List("monster.floorhealth", "[floor, times]: that many times its health on that floor", item: FieldType.Integer),
+        List("monster.floorhealth", "[floor, times]: that many times its health on that floor", item: FieldType.Integer, needs: BlakeMonster),
         Bool("monster.follow", "It falls in with a player on its side once it sees them"),
         Text("monster.disguise", "How it takes a disguised player: fooled (never suspects them: the dog) or seesthrough (notices them as ever)"),
         Text("monster.papersfail", "It isn't fooled by the papers, and says so (the officer)"),
-        List("monster.ammo", "Shots it starts with: one number, or [min, max] at random; out of them, a SMART actor runs", item: FieldType.Integer),
-        Bool("monster.shootmode", "It takes turns at shooting and closing in (Blake Stone's aliens)"),
-        Int("monster.painattack", "Hurt, the chance in 256 it shoots straight back"),
-        List("monster.woundstages", "[n, ...]: one is picked; each 1/(n+1) of its health lost puts it down wounded", item: FieldType.Integer),
-        List("monster.wakedelay", "A sleeper's wake delay: [min, max] seconds at random (the map's value wins); 0 wakes it only when shot, 255 never", item: FieldType.Integer),
-        Bool("monster.wakeprotected", "A sleeper on a timer can't be shot awake (the gurney mutant)"),
-        Int("monster.attackrange", "It doesn't attack past this many tiles (the floating bomb's 1)"),
-        Int("monster.attackmindist", "It doesn't attack closer than this many tiles"),
-        Int("monster.attackchance", "It attacks only this many times in 256 it could", "256"),
-        Text("monster.bounce", "It bounces: horizontal, vertical or diagonal (straight until blocked, then back)", "diagonal"),
-        Int("monster.touchdamage", "Within a tile of the player it zaps them for this much"),
-        Int("monster.healthgain", "On an item: a SMART enemy standing on it takes it, for this much health"),
-        Int("monster.ammogain", "On an item: a SMART enemy out of ammo standing on it takes it, for this many shots"),
+        List("monster.ammo", "Shots it starts with: one number, or [min, max] at random; out of them, a SMART actor runs", item: FieldType.Integer, needs: BlakeMonster),
+        Bool("monster.shootmode", "It takes turns at shooting and closing in (Blake Stone's aliens)", needs: BlakeMonster),
+        Int("monster.painattack", "Hurt, the chance in 256 it shoots straight back", needs: BlakeMonster),
+        List("monster.woundstages", "[n, ...]: one is picked; each 1/(n+1) of its health lost puts it down wounded", item: FieldType.Integer, needs: BlakeMonster),
+        List("monster.wakedelay", "A sleeper's wake delay: [min, max] seconds at random (the map's value wins); 0 wakes it only when shot, 255 never", item: FieldType.Integer, needs: BlakeMonster),
+        Bool("monster.wakeprotected", "A sleeper on a timer can't be shot awake (the gurney mutant)", needs: BlakeMonster),
+        Int("monster.attackrange", "It doesn't attack past this many tiles (the floating bomb's 1)", needs: BlakeMonster),
+        Int("monster.attackmindist", "It doesn't attack closer than this many tiles", needs: BlakeMonster),
+        Int("monster.attackchance", "It attacks only this many times in 256 it could", "256", needs: BlakeMonster),
+        Text("monster.bounce", "It bounces: horizontal, vertical or diagonal (straight until blocked, then back)", "diagonal", needs: BlakeMonster),
+        Int("monster.touchdamage", "Within a tile of the player it zaps them for this much", needs: BlakeMonster),
+        Int("monster.healthgain", "On an item: a SMART enemy (a BlakeMonster) standing on it takes it, for this much health"),
+        Int("monster.ammogain", "On an item: a SMART enemy (a BlakeMonster) out of ammo standing on it takes it, for this many shots"),
         Text("monster.revive.state", "A reviver: the state it revives allies in (its A_Revive)", "Heal"),
         Text("monster.revive.count", "A reviver: how many it brings back at once, nearest first: a number, or [min, max] or \"min-max\" at random", "1"),
         Number("monster.revive.radius", "A reviver: how far off, in tiles, it looks for fallen allies", "2"),
@@ -220,11 +221,11 @@ public static class ActorProperties
         Text("monster.pickup.state", "On an item: it goes to this state of its own as an enemy takes it, and stays unless it removes itself"),
 
         // Talking (Blake Stone)
-        Text("talk.header", "Shown over what it says when talked to (a $NAME language key or the text)"),
+        Text("talk.header", "Shown over what it says when talked to (a $NAME language key or the text)", needs: BlakeMonster),
         Text("talk.style", "The hud-messages.yaml style what it says is shown in"),
-        Text("talk.sound", "Played as it's talked to", hint: FieldHint.Sound),
-        Text("talk.friendly", "The VGAGRAPH text its friendly sayings come from"),
-        Text("talk.hostile", "The VGAGRAPH text its hostile sayings come from"),
+        Text("talk.sound", "Played as it's talked to", hint: FieldHint.Sound, needs: BlakeMonster),
+        Text("talk.friendly", "The VGAGRAPH text its friendly sayings come from", needs: BlakeMonster),
+        Text("talk.hostile", "The VGAGRAPH text its hostile sayings come from", needs: BlakeMonster),
         Text("talk.hints", "An informant: the VGAGRAPH text its hints come from"),
         List("talk.gifts", "An informant talked to again: the items it gives, one a time", hint: FieldHint.Class),
         List("talk.giftmessages", "What it says giving each of its gifts"),
@@ -261,27 +262,37 @@ public static class ActorProperties
         "The properties an actordefs class can set (`properties:`), by name. A class has its parents' unless it sets them.",
         [.. All.Select(Field)]);
 
-    private static FieldSchema Field(ActorProperty p) => p.Type switch
+    private static FieldSchema Field(ActorProperty p)
     {
-        FieldType.List => FieldSchema.List(p.Name, p.Description, FieldSchema.Value("item", p.Item, null, hint: p.Hint), defaultText: p.Default),
-        FieldType.Dictionary => FieldSchema.Entries(p.Name, p.Description, FieldSchema.Value("amount", p.Item, null)),
-        _ => FieldSchema.Value(p.Name, p.Type, p.Description, p.Default, p.Hint),
-    };
+        var description = Describe(p.Description, p.Needs);
+        return p.Type switch
+        {
+            FieldType.List => FieldSchema.List(p.Name, description, FieldSchema.Value("item", p.Item, null, hint: p.Hint), defaultText: p.Default),
+            FieldType.Dictionary => FieldSchema.Entries(p.Name, description, FieldSchema.Value("amount", p.Item, null)),
+            _ => FieldSchema.Value(p.Name, p.Type, description, p.Default, p.Hint),
+        };
+    }
 
-    private static ActorProperty Text(string name, string description, string? defaultText = null, FieldHint hint = FieldHint.None) =>
-        new(name, FieldType.Text, description, defaultText, hint);
+    /// <summary>A property's or flag's description, with the class it needs, as the actions reference says it (GameActions.Describe)</summary>
+    internal static string Describe(string description, string? needs) =>
+        needs == null ? description : $"{description.TrimEnd('.')}. Only for a {needs} (`parent: {needs}`).";
 
-    private static ActorProperty Int(string name, string description, string? defaultText = null) =>
-        new(name, FieldType.Integer, description, defaultText);
+    private const string BlakeMonster = "BlakeMonster";
+
+    private static ActorProperty Text(string name, string description, string? defaultText = null, FieldHint hint = FieldHint.None, string? needs = null) =>
+        new(name, FieldType.Text, description, defaultText, hint, Needs: needs);
+
+    private static ActorProperty Int(string name, string description, string? defaultText = null, string? needs = null) =>
+        new(name, FieldType.Integer, description, defaultText, Needs: needs);
 
     private static ActorProperty Number(string name, string description, string? defaultText = null) =>
         new(name, FieldType.Number, description, defaultText);
 
-    private static ActorProperty Bool(string name, string description) =>
-        new(name, FieldType.Boolean, description, "false");
+    private static ActorProperty Bool(string name, string description, string? needs = null) =>
+        new(name, FieldType.Boolean, description, "false", Needs: needs);
 
-    private static ActorProperty List(string name, string description, string? defaultText = null, FieldHint hint = FieldHint.None, FieldType item = FieldType.Text) =>
-        new(name, FieldType.List, description, defaultText, hint, item);
+    private static ActorProperty List(string name, string description, string? defaultText = null, FieldHint hint = FieldHint.None, FieldType item = FieldType.Text, string? needs = null) =>
+        new(name, FieldType.List, description, defaultText, hint, item, needs);
 
     private static ActorProperty Map(string name, string description, FieldType item) =>
         new(name, FieldType.Dictionary, description, null, FieldHint.None, item);
