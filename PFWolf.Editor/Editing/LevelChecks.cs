@@ -120,6 +120,7 @@ public static class LevelChecks
             problems.Add(new(CheckSeverity.Warning, $"patch {value} isn't in the mapdefs patches, so nothing's drawn ({count} {Tiles(count)})", x, y));
 
         CheckTags(tiles, problems);
+        CheckLevelCodes(tiles, problems, mapName);
         CheckZones(tiles, problems);
         CheckWeather(tiles, problems);
         if (starts.Count > 0)
@@ -243,6 +244,116 @@ public static class LevelChecks
 
         foreach (var (tag, tiles2) in tagged.Where(tag => !switchTags.Contains(tag.Key)))
             problems.Add(new(CheckSeverity.Warning, $"tag {tag} is on {tiles2.Count} {Tiles(tiles2.Count)}, but no switch has it", tiles2[0].X, tiles2[0].Y));
+    }
+
+    /// <summary>
+    /// Blake Stone's map-info codes and links: a code with no tile after it for its value, a
+    /// second level-wide code (only the first counts), a hint past the end of its text, a link to
+    /// a tile with nothing it can work, a teleporter to a floor the mission doesn't have, and a
+    /// mission floor with no way off it
+    /// </summary>
+    private static void CheckLevelCodes(MapTiles tiles, List<LevelProblem> problems, string? mapName)
+    {
+        var defs = tiles.Defs;
+        var firstOfKind = new Dictionary<string, (int X, int Y)>(StringComparer.OrdinalIgnoreCase);
+        var moreOfKind = new Dictionary<string, (int X, int Y, int Count)>(StringComparer.OrdinalIgnoreCase);
+        for (int y = 0; y < tiles.Height; y++)
+        {
+            for (int x = 0; x < tiles.Width; x++)
+            {
+                if (tiles.IsValueTile(x, y))
+                    continue;
+                int obj = tiles[1, x, y];
+                if (tiles.MapInfoKind(obj) is { } kind)
+                {
+                    if (MapInfoCodes.HasValue(kind) && x + 1 >= tiles.Width)
+                        problems.Add(new(CheckSeverity.Warning, $"a {kind} code on the level's east edge has no tile after it for its value", x, y));
+                    if (LevelCodes.IsLevelWide(kind))
+                    {
+                        if (firstOfKind.ContainsKey(kind))
+                            Count(moreOfKind, kind, x, y);
+                        else
+                            firstOfKind[kind] = (x, y);
+                    }
+                    if (MapInfoCodes.HintText(kind) is { } text && tiles.Content.HintMessages(text) is { Count: > 0 } messages
+                        && (obj & 0xff) is var number && (number < 1 || number > messages.Count))
+                        problems.Add(new(CheckSeverity.Warning, $"hint {number} of {text}, which has {messages.Count}, so it's never said", x, y));
+                    if ((obj & 0xff00) == 0xf400 && IsTeleporter(tiles, x, y) && !HasFloor(tiles, mapName, obj & 0xff))
+                        problems.Add(new(CheckSeverity.Warning, $"a teleporter to floor {obj & 0xff}, which the mission doesn't have, so it does nothing", x, y));
+                }
+
+                if (tiles.LinkFrom(x, y) is not { OnThisFloor: true } link)
+                    continue;
+                if (link.ToX >= tiles.Width || link.ToY >= tiles.Height)
+                    problems.Add(new(CheckSeverity.Warning, $"{link.Description} to ({link.ToX}, {link.ToY}), off the level", x, y));
+                else if (LinkTargetProblem(tiles, link) is { } problem)
+                    problems.Add(new(CheckSeverity.Warning, $"{link.Description} to ({link.ToX}, {link.ToY}): {problem}", x, y));
+            }
+        }
+
+        // Blake Stone changes the colors as the player walks onto a later one; the game here takes only the first
+        foreach (var (kind, (x, y, count)) in moreOfKind)
+            problems.Add(new(CheckSeverity.Warning,
+                $"{count} more {kind} {(count == 1 ? "code" : "codes")}: the game takes only the first, at ({firstOfKind[kind].X}, {firstOfKind[kind].Y}), "
+                + "so these do nothing (Blake Stone changes to them as the player walks onto them)", x, y));
+
+        CheckWayOff(tiles, problems, mapName);
+    }
+
+    // What's wrong with what a link points at, or null when it's something the link can work
+    private static string? LinkTargetProblem(MapTiles tiles, ObjectLink link)
+    {
+        int x = link.ToX, y = link.ToY;
+        var kind = tiles.KindAt(x, y);
+        switch (link.Kind)
+        {
+            case ObjectLinkKind.Teleport:
+                return kind is TileKind.Floor ? null : "not open floor, so the player can't come out there";
+            case ObjectLinkKind.TagLink:
+            case ObjectLinkKind.SwitchLink:
+                // A barrier (or what's joined to one), a door or another switch
+                return tiles.Thing(x, y) != null || kind == TileKind.Door || tiles.IsSwitch(x, y) ? null : "there's nothing there for the switch to work";
+            default:
+                // A smart switch works a door, a wall switch or an actor
+                return tiles.Thing(x, y) != null || kind == TileKind.Door || tiles.IsSwitch(x, y) ? null : "there's nothing there to work";
+        }
+    }
+
+    private static bool IsTeleporter(MapTiles tiles, int x, int y)
+        => tiles.SwitchesAt(x, y).Any(sw => sw.Actions.Any(action => action.StartsWith("A_Teleport", StringComparison.OrdinalIgnoreCase)));
+
+    // Whether the level's cluster has a floor of that number (a teleporter's 0xF4nn), as HubActions finds it
+    private static bool HasFloor(MapTiles tiles, string? mapName, int floor)
+    {
+        if (mapName == null || tiles.Content.GameInfo is not { } gameInfo || tiles.Content.MapInfoOf(mapName) is not { } info)
+            return true;
+        return gameInfo.Maps.Values.Any(map => map.Cluster == info.Cluster && map.FloorNumber == floor && !string.IsNullOrEmpty(map.Music));
+    }
+
+    /// <summary>
+    /// A mission floor (a hub cluster's) needs a way off it: an elevator or teleporter panel
+    /// (A_FloorSelect), a teleporter wall, or a floor code that ends the mission
+    /// </summary>
+    private static void CheckWayOff(MapTiles tiles, List<LevelProblem> problems, string? mapName)
+    {
+        if (mapName == null || tiles.Content.GameInfo is not { } gameInfo || tiles.Content.MapInfoOf(mapName) is not { } info
+            || !gameInfo.Clusters.TryGetValue(info.Cluster, out var cluster) || !cluster.Hub
+            || tiles.Content.Maps.FirstOrDefault(map => map.Name.Equals(mapName, StringComparison.OrdinalIgnoreCase)) is { Unused: true })
+            return;
+
+        var triggers = tiles.Defs.Floors.Triggers ?? [];
+        for (int y = 0; y < tiles.Height; y++)
+        {
+            for (int x = 0; x < tiles.Width; x++)
+            {
+                if (tiles.SwitchesAt(x, y).Any(sw => sw.Actions.Any(action => action.StartsWith("A_FloorSelect", StringComparison.OrdinalIgnoreCase)
+                                                                            || action.StartsWith("A_Teleport", StringComparison.OrdinalIgnoreCase)
+                                                                            || action.StartsWith("A_Exit", StringComparison.OrdinalIgnoreCase)))
+                    || triggers.TryGetValue(tiles[0, x, y], out var action) && action.StartsWith("A_Victory", StringComparison.OrdinalIgnoreCase))
+                    return;
+            }
+        }
+        problems.Add(new(CheckSeverity.Warning, "no way off this floor: no elevator or teleporter panel, teleporter wall or way out"));
     }
 
     private static void CheckZones(MapTiles tiles, List<LevelProblem> problems)

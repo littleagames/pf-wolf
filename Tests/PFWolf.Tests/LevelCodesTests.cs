@@ -181,6 +181,31 @@ public class LevelCodesTests
     }
 
     [Test]
+    public void The_Checks_Find_A_Second_Level_Code_And_A_Link_To_Nothing()
+    {
+        // Arrange: two colors codes, and a smart switch working an empty tile then a puddle
+        var (document, tiles) = Level();
+        EditorMaps.Set(document, 1, 0, 0, 0xFE00);
+        EditorMaps.Set(document, 1, 1, 0, 0x0102);
+        EditorMaps.Set(document, 1, 10, 10, 0xFE00);
+        EditorMaps.Set(document, 1, 11, 10, 0x0304);
+        EditorMaps.Set(document, 0, 5, 5, SmartSwitch);
+        EditorMaps.Set(document, 1, 5, 5, LevelCodes.Tile(20, 20));
+        EditorMaps.Set(document, 0, 6, 5, SmartSwitch);
+        EditorMaps.Set(document, 1, 6, 5, LevelCodes.Tile(21, 20));
+        EditorMaps.Set(document, 1, 21, 20, Puddle);
+
+        // Act
+        var problems = LevelChecks.Run(tiles, inGameInfo: true).Select(problem => problem.ToString()).ToList();
+
+        // Assert
+        Assert.That(problems, Has.One.Contains("1 more ceiling-floor-colors code: the game takes only the first, at (0, 0)"));
+        Assert.That(problems, Has.One.Contains("smart switch to (20, 20): there's nothing there to work"));
+        Assert.That(problems, Has.None.Contains("(21, 20)"));
+        Assert.That(problems, Has.None.Contains("isn't in the mapdefs"), "codes, values and links are known");
+    }
+
+    [Test]
     public void A_Low_Byte_Code_Has_No_Value_Tile()
     {
         // Arrange: a teleporter's floor code (0xF4nn) keeps its value in its own low byte

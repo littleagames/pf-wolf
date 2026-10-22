@@ -1,6 +1,6 @@
 # Blake Stone editor plan: editing Aliens of Gold and Planet Strike levels
 
-## Status (2026-10-22): in progress on feature/editor/blake-stone-support
+## Status (2026-10-22): all four phases done on feature/editor/blake-stone-support (not pushed)
 
 - **Phase 1 (done):** `blake` and `planetstrike` are in the game list and load with no
   problems. The level list names hub floors "M1 F2" (unused slots "M1 —", dimmed, with the map
@@ -28,7 +28,7 @@
   value in the tile after it. The tools keep pairs together (ToolController.Pairs): a value tile
   is never painted over, a code painted over or erased takes its value with it, and Delete on a
   selection clears the value of a code in it. Moving a selection doesn't move a value left
-  outside it (the checks find that). The map draws a badge on code tiles (C colors, F flats, H
+  outside it (see Follow-up). The map draws a badge on code tiles (C colors, F flats, H
   hint, L link, V value, # other) and "+" on value tiles, and link lines: all of them with Tags
   shown, else those to and from the tile under the pointer. Tests: LevelCodesTests. Checked by
   eye (UI Automation, no mouse): the panel, the colors and hint dialogs with the level's values,
@@ -47,6 +47,22 @@
   presenter.yaml stay in the Definitions window's raw YAML tab. Tests: GameInfoFileTests.
   **Not checked by eye:** the properties dialog's new fields (Avalonia's menu bar isn't
   reachable through UI Automation; the dialog is F4).
+- **Phase 4 (done):** LevelChecks for map-info codes and links: a code at the east edge with no
+  tile for its value; more codes of a level-wide kind than the first (one warning per level:
+  Blake Stone changes the colors as the player walks onto a later 0xFE code, which PFWolf
+  doesn't do, so they do nothing); a hint past the end of its text; a teleporter (0xF4nn) to a
+  floor the mission doesn't have; a link off the level or to a tile with nothing it can work (a
+  teleporter's to anything but open floor); a mission floor with no elevator or teleporter
+  panel, teleporter wall or way out. On the stock levels these give warnings only (AOG: the
+  extra colors codes, 5 tag-links to nothing; PS: 7 smart switches and 1 switch link to nothing).
+  Play (F5) needed no change: `--warp` goes straight onto the floor, skipping the briefing, with
+  the level-start message. **Checked by eye:** Play from the editor into AOG floor 1 (MAP02) and
+  Planet Strike floor 2 (MAP03), and an edited AOG floor 1 (its colors code changed through the
+  code form, its flats code deleted, saved as a mod's maps/MAP02.wad) warped into with
+  `--file`: the game shows the new red ceiling and green floor, so the engine plays a mod's
+  .wad over MAPTEMP. **Not checked:** warping into a hub floor after another floor of the same
+  mission was played in the same run (Risk 1); a level saved from the editor's own Save (the
+  test mod was written by the same MapFiles.Save the editor uses).
 
 Goal: the editor opens Blake Stone: Aliens of Gold (`blake`) and Planet Strike (`planetstrike`)
 the way it opens Wolf3D and Spear today, and a modder can edit their levels in full: map-info
@@ -164,6 +180,13 @@ as `maps/MAPnn.wad` in a mod and played with F5. As with Wolf3D, the editor neve
 
 ## Follow-up (not this work)
 
+- Engine: bstone's linked doors (a door's object value is the next door's x,y: they open and
+  close together, CheckLinkedDoors) and its walk-on color changes (a later 0xFE code on a floor
+  tile changes the ceiling and floor colors as the player steps onto it). The editor reads and
+  checks both but PFWolf plays neither.
+- Moving (or pasting) a selection that holds a code but not its value tile leaves the value
+  behind, and the code takes whatever is east of where it lands as its value; no check catches
+  that yet. Moving the pair together, or widening the selection to take it, would.
 - A JAM movie viewer in the art or sound browser.
 - Field editors for elevator.yaml and presenter.yaml in the Definitions window.
 - Raw data file mods for Blake (docs/dev/raw-data-mods-plan.md): the same generator works for
