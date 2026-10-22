@@ -55,6 +55,37 @@ public class ActorMetadataTests
         Assert.That(key.Properties["inventory.maxamount"].ToString(), Is.EqualTo("1"));
     }
 
+    [TestCase("Drum", 32)]
+    [TestCase("LyingDrum", 32)]       // none of its own: its parent's
+    [TestCase("SmallDrum", 16)]       // its own, over its parent's
+    [TestCase("Lamp", 20)]            // its own, over a root's none
+    [TestCase("TallLamp", 20)]        // its parent's, the nearest that gives one
+    public void CreateActor_Takes_The_Nearest_Radius(string className, int radius)
+    {
+        // Arrange
+        var metadata = ActorDefs.Metadata("""
+            Decoration: {}
+            Drum:
+              radius: 32
+            LyingDrum:
+              parent: Drum
+            SmallDrum:
+              parent: Drum
+              radius: 16
+            Lamp:
+              parent: Decoration
+              radius: 20
+            TallLamp:
+              parent: Lamp
+            """);
+
+        // Act
+        var actor = metadata.CreateActor(className, metadata.Actors[className]);
+
+        // Assert
+        Assert.That(actor.Radius, Is.EqualTo(radius));
+    }
+
     [Test]
     public void CreateActor_Inherits_Flags_And_States()
     {

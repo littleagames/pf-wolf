@@ -68,7 +68,7 @@ internal class ActorMetadata
             }
 
             // The stack enumerates root-first, so Reverse() walks the actor, its parent, then
-            // up to the root. Properties and states only fill keys that are still missing, so
+            // up to the root. Properties and states (and a radius) only fill what's still missing, so
             // the nearest ancestor has to go first: Key's "inventory.interhubamount" must
             // beat Inventory's, not the other way round.
             foreach (var ancestor in ancestorChain.Reverse())
@@ -151,6 +151,10 @@ internal class ActorMetadata
     // nearest ancestor to the root so the closest definition wins.
     private static void MergeInheritedMembers(ActorData source, ActorData target)
     {
+        if (target.Radius == 0)
+            target.Radius = source.Radius;      // the nearest that gives one
+
+
         foreach (var kvp in source.Properties)
         {
             if (!target.Properties.ContainsKey(kvp.Key))
@@ -166,9 +170,6 @@ internal class ActorMetadata
 
     private static void MergeActorProperties(ActorData source, ActorData target)
     {
-        if (target.Radius != 0)
-            target.Radius = source.Radius; // TODO: this overwrites the target
-
         target.Flags.UnionWith(source.Flags);
     }
 }
