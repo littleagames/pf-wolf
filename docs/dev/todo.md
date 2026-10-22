@@ -84,22 +84,3 @@ the catalog, get one on its own.
   PFWolf". Decide whether a bundled entry gives the link itself or it's worked out from the tag.
 - Check: the release has a `.pk3` for each example; each loads with `--file <id>.pk3` on that
   release (`mods` lists it, nothing warned); the catalog's links download them.
-
-## The converter's draft notes atop the Wolf3D actordefs
-
-pfwolf-pk3's YAML comments no longer explain fields: on 2026-10-21 every field explanation moved
-into the code's docs (and so the reference), and the rules (how files combine, player classes,
-built-in classes, sprite colors, factions) into docs/manual, each checked against the code, with
-the comments left as pointers. A new comment that explains what a key means belongs in the code's
-doc comments, Definitions/ or the manual instead.
-
-What's left is different: the converter's notes atop `actordefs/wolf3d/guards.yaml`,
-`bosses.yaml`, `ghosts.yaml` and `projectiles.yaml` ("DRAFT - converted from WL_ACT2.C ...
-please double check").
-
-- Check each class in those files against the original (WL_ACT2.C, WL_DEF.H): speeds, health by
-  skill, states and tics, sounds, drops.
-- Fix what's wrong, then take the DRAFT notes out, keeping only what says where the numbers came
-  from.
-- Check: the test suite passes, and a headless play-through of E1M1 and a boss level behaves as
-  before.

@@ -117,7 +117,7 @@ internal sealed class DebugCommands(
 
             var line = new StringBuilder($"{actor.Name} at {actor.TileX},{actor.TileY}");
             if (actor.CurrentState != null)
-                line.Append($"  state {actor.CurrentState.StateName}");
+                line.Append($"  state {actor.CurrentState.StateName} ({actor.CurrentState.Sprite}{actor.CurrentState.FrameLetter})");
             if (MapManager.IsEnemy(actor))
                 line.Append($"  hp {actor.Hitpoints}");
             if (actor.Active != ActiveType.No)
