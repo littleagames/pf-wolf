@@ -29,7 +29,7 @@ public static class DefinitionFiles
     [
         new("modinfo", "modinfo.yaml", "About the mod: its name, version, author and the games it's made for.",
             "modinfo.yaml", null, () => FieldSchema.For(typeof(ModInfo))),
-        new("gamepack-info", "gamepack-info.yaml", "The games (game packs) there are. A mod's adds games of its own; it can't change pfwolf.pk3's.",
+        new("gamepack-info", "gamepack-info.yaml", "The games (game packs) there are. A mod's adds games of its own; it can't change pfwolf.pk3's. How a game's files combine with those of the games it's built on is in the manual's How files combine.",
             "gamepack-info.yaml", "gamepacks/gamepack-info.yaml", () => Entries("Games by id", typeof(GamePack))),
         new("game-info", "game-info.yaml", "The game's episodes, levels, skills, screens and game-wide settings.",
             "game-info.yaml", "gamepacks/{pack}/game-info.yaml", () => FieldSchema.For(typeof(GameInfoAsset))),

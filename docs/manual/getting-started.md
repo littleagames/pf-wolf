@@ -26,7 +26,7 @@ A mod is a folder, a `.zip` or a `.pk3` with the game's data files in it. There 
 
 A mod uses the same folders as the game's own `pfwolf.pk3`. Its files are laid over the game's,
 key by key: give only what you change, and what you leave out keeps the game's value. A key tagged
-`!remove` takes one out.
+`!remove` takes one out. [How files combine](./combining-files) has the rest.
 
 | Path | What it holds |
 | --- | --- |

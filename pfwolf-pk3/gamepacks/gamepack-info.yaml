@@ -1,65 +1,8 @@
-# The game packs, by release. A release with a `base-pack` starts from that pack's actordefs,
-# mapdefs, menudefs and gamepacks files (and its base pack's, and so on), loaded under its own
-# pack's names; its own files are then laid over them, and a mod's files over all of that.
-#
-# How the YAML files combine, file over file (a pack's over its base pack's, or several files of
-# one asset, such as actordefs/wolf3d/guards.yaml and bosses.yaml):
-#   game-info            key by key, all the way down: a pack gives only what it changes
-#   actordefs            class by class: a class replaces one of the same name whole, unless it
-#                        says `extend: true`, when it changes that one instead: its properties
-#                        and states replace those of the same name, its flags are added to the
-#                        class's (written ~FLAG, one is taken away), and its parent and radius,
-#                        when given, replace the class's
-#   mapdefs              entry by entry in each table (things:, walls:, doors:, ...)
-#   sound-seq, intermission, presenter, elevator
-#                        entry by entry in each section (sound-info:, values:, ...)
-#   language, colors, fonts, hud-messages, statusbar, movies, raw-data-map
-#                        entry by entry (a string, a color, a font, a status bar part, ...)
-#   alias, sounds/sound-seq.yaml
-#                        the later file replaces the earlier whole
-#   menudefs             a pack's own menu (menudefs/{pack}/NAME.yaml) is used in place of the
-#                        shared one; menus don't merge
-# A mod's files (it can't carry menudefs) merge key by key all the way down, whichever they are,
-# a class without extend too. A mod keeps them at its root, for whichever game is running; a mod
-# for several games can keep one game's own in gamepacks/{pack}/ (game-info.yaml and the other
-# root files, language/), maps/{pack}/ and sprites/{pack}/, which load only for that pack and
-# the packs built on it, after the root ones (multiplayer-pk3's Wolf3D arenas do this).
-# Lists are always replaced whole. At any level a merge reaches, a
-# value can be tagged:
-#   key: !remove         takes the key out (a class, a property, a state, a map, a setting...)
-#   key: !replace        followed by its own value: replaces what's there whole rather than
-#                        merging into it (spear's game-info gives its own maps: this way)
-# Where files merge, a key that's left out keeps what's there; to put a setting back to its
-# default, !remove it.
-#
-# To start a table fresh, with none of what's there, !replace it with your own entries (or
-# !remove it to leave it empty). A mod with its own levels in place of the game's, in its
-# game-info.yaml:
-#   skills: !replace
-#     NORMAL: { name: "Normal" }
-#   demo-skill: NORMAL          # the game's own names one of the skills just taken out
-#   episodes: !replace
-#     EP01: { name: "My Episode", start-map: MAP01 }
-#   clusters: !remove
-#   maps: !replace
-#     MAP01: { name: "My First Level", floor-number: 1 }
-# The same works in any table a merge reaches, such as mapdefs' things: or a class's states:.
-# Only a file's top level (actordefs' classes, language's strings, ...) has nothing to tag;
-# remove those one by one.
-#
-# A release with no file-pack plays the nearest base pack's data files; with none along the way it
-# has no data files at all, and everything it has comes from the pk3s.
-#
-# Mods can add games of their own: a gamepack-info.yaml at a mod's root lists them as here (it
-# can't change the ones below). A standalone game, which needs no game's data files, is built on
-# `standalone`:
-#   my-game:
-#     title: My Game
-#     base-pack: standalone
-# --game my-game --file my-game.pk3 runs it, and so does the mod on its own (dropped on the exe).
-# Its files load in my-game's folders, so it starts from nothing: no actordefs, mapdefs or
-# gamepacks files but its own (and the shared ones directly in actordefs/, language/, sounds/ and
-# menudefs/, the menus every game starts from).
+# The game packs, by release. What each key means is in the gamepack-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/gamepack-info
+# How a pack's files combine with its base pack's and the mods', !remove and !replace, and how a
+# mod adds a standalone game of its own, are in the manual:
+# https://www.littleagames.com/pf-wolf/docs/latest/manual/combining-files
 
 standalone:
   title: PFWolf
@@ -149,9 +92,8 @@ wolf3d-apogee:
 wolf3d-shareware:
   title: "Wolfenstein 3D Shareware"
   game-palette: wolfpal
-  # Episode 1 of Wolf3D: starts from wolf3d's actordefs, mapdefs, menudefs and gamepacks files;
-  # wolf3d-shareware's own files are laid over them (see the top). Its data has the v1.4 layout, with what
-  # shareware leaves out as empty chunks, so wolf3d's raw-data-map fits it.
+  # Episode 1 of Wolf3D. Its data has the v1.4 layout, with what shareware leaves out as empty
+  # chunks, so wolf3d's raw-data-map fits it.
   base-pack: wolf3d
   file-pack:
     description: Wolfenstein 3D v1.4 Shareware
@@ -189,7 +131,6 @@ wolf3d-shareware:
 spear:
   title: "Spear of Destiny"
   game-palette: spearpal
-  # Starts from wolf3d's files; spear's own are laid over them (see the top)
   base-pack: wolf3d
   file-pack:
     description: Spear of Destiny
@@ -225,8 +166,7 @@ spear:
 spear-demo:
   title: "Spear of Destiny Demo"
   game-palette: spearpal
-  # Spear's first two floors: starts from spear's files (and so from wolf3d's, which spear is
-  # built on); spear-demo's own are laid over them (see the top)
+  # Spear's first two floors
   base-pack: spear
   file-pack:
     description: Spear of Destiny Demo
@@ -310,8 +250,6 @@ blake-aog:
 blake-ps:
   title: "Blake Stone: Planet Strike"
   game-palette: blake
-  # Starts from blake's actordefs, mapdefs, menudefs and gamepacks files; planetstrike's own
-  # are laid over them (see the top)
   base-pack: blake
   file-pack:
     description: Blake Stone - Planet Strike

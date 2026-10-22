@@ -1,7 +1,8 @@
 # Wolfenstein 3D. The packs built on it (spear, wolf3d-shareware, wolf3d-apogee, spear-demo
 # through spear) start from this file, and theirs change only what differs; a mod's
-# game-info.yaml works the same way (gamepacks/gamepack-info.yaml: how files combine, !remove,
-# !replace). What each setting does is in the game-info reference:
+# game-info.yaml works the same way. How files combine (and !remove, !replace) is in the manual:
+# https://www.littleagames.com/pf-wolf/docs/latest/manual/combining-files
+# What each setting does is in the game-info reference:
 # https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 default-map:
   ceiling-color: "#383838"

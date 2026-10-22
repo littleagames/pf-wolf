@@ -102,9 +102,14 @@ never reached the reference; it now exports a nested record's type summary too (
 of a list's or dictionary's items, else `about`, which the website shows under the section's
 heading).
 
+Then `gamepacks/gamepack-info.yaml`, whose header was rules more than fields: how files combine,
+`!remove` and `!replace`, standalone games. Those went to a manual page of their own,
+`docs/manual/combining-files.md`, checked against the loader (its table had missed factions,
+translations, animdefs, graphicdefs and `demos/{pack}/`, and said a mod can't carry menudefs,
+which it can since menu hooks).
+
 Left to do the same way, the files with the most explanation of fields:
 
-- `gamepacks/gamepack-info.yaml` (base-pack, menus-like, file-pack, strict-md5, `!remove`)
 - `gamepacks/wolf3d/fonts.yaml`, `intermission.yaml`, `actordefs/wolf3d/player.yaml`,
   `actordefs/native.yaml`
 - the tops of `mapdefs/wolf3d/doors.yaml` and `patches.yaml`, `animdefs/animdefs.yaml`,

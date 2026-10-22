@@ -1,8 +1,7 @@
 # Every light decoration gives off colored light (the light.* properties in the docs' Actor
-# properties reference). Mod YAML merges into the base actors key by
-# key (a key tagged !remove takes one out; see pfwolf-pk3's gamepacks/gamepack-info.yaml), so
-# these only add properties; the sprites and states stay as they were (except
-# BareLightBulb's, whose sprite is now drawn at full light).
+# properties reference). Mod YAML merges into the base actors key by key (a key tagged !remove
+# takes one out; the manual's How files combine), so these only add properties; the sprites and
+# states stay as they were (except BareLightBulb's, whose sprite is now drawn at full light).
 # Light only shows where the level is darker than full light: game-info.yaml dims it.
 
 # Ceiling lamps: a steady pool of warm white light (CeilingLight2 inherits it). A green tint
