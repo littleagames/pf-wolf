@@ -15,8 +15,10 @@ public record MapObjectTranslationAsset : Asset
     public Dictionary<int, MapTextureTranslation> Walls { get; internal set; } = new();
 
     /// <summary>
-    /// Doors by plane 0 value: the two faces across the doorway are the door (east and west for a
-    /// vertical one, north and south otherwise), the other two the jambs on the walls beside it
+    /// Doors by plane 0 value (every tile with one of these values is a door): the two faces
+    /// across the doorway are the door (east and west for a vertical one, north and south
+    /// otherwise), the other two the jambs on the walls beside it. A jamb texture from a pk3 with
+    /// clear pixels is drawn over the wall's own face, which shows through them.
     /// </summary>
     public Dictionary<int, MapTextureTranslation> Doors { get; internal set; } = new();
 
@@ -506,7 +508,9 @@ public record MapTextureTranslation
     /// <summary>
     /// Doors only: several inventory items that lock this door together, such as two or all four
     /// of a level's keys. The player needs <see cref="LocksNeeded"/> of them (all of them when
-    /// that's 0), on top of <see cref="Lock"/> if it has one too.
+    /// that's 0), on top of <see cref="Lock"/> if it has one too. Short of one, its key's
+    /// `key.lockedmessage` is shown, unless locks-needed is less than all of them: then it's
+    /// "This door is locked.", so give such a door a lock-message.
     /// </summary>
     public List<string> Locks { get; init; } = [];
 
@@ -542,10 +546,10 @@ public record MapTextureTranslation
     /// </summary>
     public string LockedSound { get; init; } = "";
 
-    /// <summary>Doors only: played from the door as it starts to open, when the player can hear it</summary>
+    /// <summary>Doors only: played from the door as it starts to open, when the player can hear it (in an area connected to theirs)</summary>
     public string OpenSound { get; init; } = "";
 
-    /// <summary>Doors only: played from the door as it starts to close, when the player can hear it</summary>
+    /// <summary>Doors only: played from the door as it starts to close, when the player can hear it (in an area connected to theirs)</summary>
     public string CloseSound { get; init; } = "";
 
     /// <summary>

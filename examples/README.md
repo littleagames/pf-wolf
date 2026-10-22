@@ -219,7 +219,7 @@ The keys aren't used up, so the same ones open every door. The status bar shows 
   it needs: all of them, or `locks-needed` of them (any). A door can have a `lock-message` of its
   own (the any-two and all-four doors do). Without one, a door that needs all its keys shows the
   missing key's message, and one that needs only some a plain locked message. Every door field
-  is described at the top of pfwolf-pk3's `mapdefs/wolf3d/doors.yaml`.
+  is in the [mapdefs reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs).
 - `mapdefs/things.yaml`: objects 500 (the red key) and 501 (the blue key). Gold and silver are
   Wolf3D's own 43 and 44.
 - `translations.yaml`: `red-key` and `blue-key`, the gold key's sprite desaturated and tinted,

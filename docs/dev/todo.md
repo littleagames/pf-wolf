@@ -110,7 +110,7 @@ which it can since menu hooks).
 
 Left to do the same way, the files with the most explanation of fields:
 
-- the tops of `mapdefs/wolf3d/doors.yaml` and `patches.yaml`, `animdefs/animdefs.yaml`,
+- the tops of `mapdefs/wolf3d/patches.yaml`, `animdefs/animdefs.yaml`,
   `gamepacks/wolf3d/translations.yaml` and `factions.yaml` (the last two are rules as much as
   fields: keep what isn't a field's meaning, say where an actor's faction or translation comes
   from, in the code's type docs or the manual)

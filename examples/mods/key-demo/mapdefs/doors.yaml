@@ -1,4 +1,5 @@
-# The demo's doors (see the fields atop pfwolf-pk3's mapdefs/wolf3d/doors.yaml). Instead of
+# The demo's doors (the fields are in the mapdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs). Instead of
 # one `lock:` item, each has `locks:`, several items the player must carry: all of them, or
 # `locks-needed` of them (any). Keys aren't used up (no takes-key), so the same keys open
 # every door.

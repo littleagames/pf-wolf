@@ -1,4 +1,5 @@
-# Doors by map tile number (see mapdefs/wolf3d/doors.yaml for the settings all doors share). As
+# Doors by map tile number (the settings are in the mapdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs). As
 # bstone has them: each kind comes in a pair, the even tile running north-south (vertical) and the
 # odd one east-west; the faces beside a door are its kind's door jamb; bio-tech, metal, office and
 # space doors make the hi-tech door sounds.
