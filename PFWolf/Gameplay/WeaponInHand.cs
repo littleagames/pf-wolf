@@ -271,6 +271,7 @@ internal sealed class WeaponInHand(
         Entities.Actors.ActorActionRegistry.Register("A_WeaponReady", WeaponReady);
         Entities.Actors.ActorActionRegistry.Register("A_GunAttack", GunAttack);
         Entities.Actors.ActorActionRegistry.Register("A_FireBullet", FireBullet);
+        Entities.Actors.ActorActionRegistry.Register("A_FirePellets", FirePellets);
         Entities.Actors.ActorActionRegistry.Register("A_HoldCharge", HoldCharge);
         Entities.Actors.ActorActionRegistry.Register("A_CustomPunch", CustomPunch);
         Entities.Actors.ActorActionRegistry.Register("A_ReFire", ReFire);
@@ -370,6 +371,23 @@ internal sealed class WeaponInHand(
         int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
         bool silent = args.Skip(2).Any(a => a.Trim().Equals("silent", StringComparison.OrdinalIgnoreCase));
         attacks.FireBullet(min, max, silent);
+        weapons.UseAmmo();
+    }
+
+    /// <summary>
+    /// A_FirePellets(count, spread, min, max[, range[, height]]): a shotgun's pellets, each on a
+    /// line of its own (Gameplay/PlayerAttacks.cs PELLETS); range in tiles (64 when left out),
+    /// height the texels a pellet's puff can be drawn up or down (16). Ammo and charge as A_GunAttack.
+    /// </summary>
+    internal void FirePellets(Entities.Actors.Actor weapon, string[] args)
+    {
+        if (!weapons.IsLoaded(session.PlayerState.Weapon) || !weapons.TakeCharge())
+            return;
+        int Int(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var v) ? v : fallback;
+        double Number(int i, double fallback) => args.Length > i && double.TryParse(args[i], System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
+        int min = Int(2, 0);
+        attacks.FirePellets(Int(0, 10), Int(1, 5), min, Int(3, min), Number(4, 64), Number(5, 16));
         weapons.UseAmmo();
     }
 

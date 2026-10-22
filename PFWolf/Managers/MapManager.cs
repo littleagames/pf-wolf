@@ -1540,6 +1540,22 @@ internal class MapManager
     }
 
     /// <summary>
+    /// An effect of the class at a point (global coordinates), as SpawnAtActor puts one at an
+    /// actor (a shot's puff where it struck), taking its side from that actor; null if there's no
+    /// such class
+    /// </summary>
+    internal Entities.Actors.Actor? SpawnAt(string className, int x, int y, Entities.Actors.Actor source)
+    {
+        var spawned = SpawnAtActor(className, source);
+        if (spawned == null)
+            return null;
+        spawned.SetPosition(x >> MapConstants.TileShift, y >> MapConstants.TileShift);
+        spawned.X = x;
+        spawned.Y = y;
+        return spawned;
+    }
+
+    /// <summary>
     /// A_Replace: the actor becomes one of another class where it stands, facing the same way
     /// with its tag; what its tile's blocking was goes with it, and the new one blocks as its
     /// class does (a closed gate opened). An item the level's total counted (COUNTITEM) is taken

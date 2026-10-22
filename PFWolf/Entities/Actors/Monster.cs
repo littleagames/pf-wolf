@@ -2374,6 +2374,26 @@ internal partial record Monster : Actor
             int damage = dist < 2 ? NextRandom() >> 2 : dist < 4 ? NextRandom() >> 3 : NextRandom() >> 4;
             HurtTarget(damage);
         }
+        else
+            MissPuff();
+    }
+
+    /// <summary>
+    /// A shot that missed: its `monster.puff` (an actordefs class) where it struck, the line from
+    /// it past the player, turned 2 to 6 degrees either way, meeting a wall or a door that isn't
+    /// open (Midnight Assault's enemy bullets, traced as the player's are); none on a wall with
+    /// walls.yaml `puffs: false`. No puff, and no random numbers drawn, without one.
+    /// </summary>
+    void MissPuff()
+    {
+        if (!Properties.TryGetValue("monster.puff", out var cls) || cls?.ToString() is not { Length: > 0 } puff)
+            return;
+        double toTarget = Math.Atan2(Y - Target.Y, Target.X - X) * 180 / Math.PI;
+        int turn = 2 + NextRandom() % 5;
+        double angle = toTarget + (NextRandom() > 127 ? -turn : turn);
+        var trace = World.LineOfSight.TraceShot(X, Y, angle);
+        if (trace.End == ShotEnd.Wall)
+            MapManager.SpawnAt(puff, trace.X, trace.Y, this);
     }
 
     // Spawns a projectile actor (Needle/Rocket/Fire, actordefs/wolf3d/projectiles.yaml) at the

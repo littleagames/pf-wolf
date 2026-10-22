@@ -4,13 +4,13 @@ using PFWolf.Loaders;
 
 namespace PFWolf.Tests;
 
-/// <summary>Where a player's shot leaves its puff (Gameplay/PlayerAttacks.cs HIT PUFFS), and the grenade's floor check</summary>
+/// <summary>Where a shot leaves its puff (LineOfSight.TraceShot, Gameplay/PlayerAttacks.cs HIT PUFFS), and the grenade's floor check</summary>
 public class HitPuffTests
 {
     private const int Tile = 1 << MapConstants.TileShift;
 
     private MapManager _map = null!;
-    private PlayerAttacks _attacks = null!;
+    private LineOfSight _sight = null!;
 
     [SetUp]
     public void MakeLevel()
@@ -23,7 +23,7 @@ public class HitPuffTests
         };
         typeof(MapManager).GetField("mapsegs", BindingFlags.NonPublic | BindingFlags.Instance)!
             .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
-        _attacks = new PlayerAttacks(_map, null!, null!, null!, session, null!);
+        _sight = new LineOfSight(_map, null!, session, (_, _, _, _) => false);
     }
 
     // The middle of a tile, in global coordinates
@@ -38,17 +38,58 @@ public class HitPuffTests
         _map.TileMap[wallx, wally] = 1;
 
         // Act
-        var at = _attacks.ShotWallPoint(Mid(10), Mid(10), angle);
+        var trace = _sight.TraceShot(Mid(10), Mid(10), angle);
 
         // Assert
-        Assert.That(at, Is.Not.Null);
-        Assert.That((at!.Value.X >> MapConstants.TileShift, at.Value.Y >> MapConstants.TileShift), Is.EqualTo((tilex, tiley)));
+        Assert.That(trace.End, Is.EqualTo(ShotEnd.Wall));
+        Assert.That((trace.X >> MapConstants.TileShift, trace.Y >> MapConstants.TileShift), Is.EqualTo((tilex, tiley)));
     }
 
     [Test]
     public void A_Shot_That_Leaves_The_Map_Puffs_Nowhere()
     {
-        Assert.That(_attacks.ShotWallPoint(Mid(10), Mid(10), 0), Is.Null);
+        Assert.That(_sight.TraceShot(Mid(10), Mid(10), 0).End, Is.EqualTo(ShotEnd.Edge));
+    }
+
+    [Test]
+    public void A_Pellet_Out_Of_Range_Stops_Short_Of_The_Wall()
+    {
+        // Arrange: a wall 9 tiles east, the shotgun's 6 tiles of range
+        _map.TileMap[19, 10] = 1;
+
+        // Act
+        var trace = _sight.TraceShot(Mid(10), Mid(10), 0, 6 * Tile);
+
+        // Assert
+        Assert.That(trace.End, Is.EqualTo(ShotEnd.Reach));
+        Assert.That(trace.X >> MapConstants.TileShift, Is.EqualTo(16));
+    }
+
+    [Test]
+    public void Something_In_The_Way_Stops_A_Shot_Where_It_Is()
+    {
+        // Arrange: a wall 9 tiles east, something 3 tiles east
+        _map.TileMap[19, 10] = 1;
+
+        // Act
+        var trace = _sight.TraceShot(Mid(10), Mid(10), 0, stopAt: (x, _) => x >> MapConstants.TileShift == 13);
+
+        // Assert
+        Assert.That((trace.End, trace.X >> MapConstants.TileShift), Is.EqualTo((ShotEnd.Stopped, 13)));
+    }
+
+    [Test]
+    public void A_Diagonal_Shot_Meets_The_Wall_On_Its_Line()
+    {
+        // Arrange: a wall 4 tiles north-east
+        _map.TileMap[14, 6] = 1;
+
+        // Act
+        var trace = _sight.TraceShot(Mid(10), Mid(10), 45);
+
+        // Assert
+        Assert.That(trace.End, Is.EqualTo(ShotEnd.Wall));
+        Assert.That((trace.X >> MapConstants.TileShift, trace.Y >> MapConstants.TileShift), Is.EqualTo((13, 7)).Or.EqualTo((14, 7)).Or.EqualTo((13, 6)));
     }
 
     [TestCase(0.0, null, true)]

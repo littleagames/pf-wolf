@@ -1,3 +1,5 @@
+using PFWolf.Constants;
+
 namespace PFWolf.Gameplay;
 
 /// <summary>
@@ -24,6 +26,46 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
 
     /// <summary>How far open a door is (0 shut, 0xffff open); shut for no such door</summary>
     internal int DoorPosition(int door) => door >= 0 && door < doors.DoorObjList.Length ? (int)doors.DoorObjList[door].Position : 0;
+
+    // The step a shot's line is followed in, and how far a shot goes at most
+    internal const int ShotStep = 0x1000;
+    internal const int ShotReach = 64 << MapConstants.TileShift;
+
+    /// <summary>
+    /// Follows a shot's line from (x, y) at the angle (degrees, east 0, north 90) a step at a
+    /// time, until a wall, a door that isn't open, the map's edge or its reach (global units);
+    /// <paramref name="stopAt"/> can stop it sooner, at a point (something in its way). Where it
+    /// stopped (a step short of a wall) and why: <see cref="ShotEnd.NoPuffs"/> for a wall with
+    /// walls.yaml `puffs: false`.
+    /// </summary>
+    internal ShotTrace TraceShot(int x, int y, double angle, int reach = ShotReach, Func<int, int, bool>? stopAt = null)
+    {
+        double rad = angle * Math.PI / 180;
+        int stepx = (int)Math.Round(Math.Cos(rad) * ShotStep), stepy = -(int)Math.Round(Math.Sin(rad) * ShotStep);
+        int px = x, py = y;
+        for (int travelled = 0; travelled < reach; travelled += ShotStep)
+        {
+            int nx = px + stepx, ny = py + stepy;
+            int tx = nx >> MapConstants.TileShift, ty = ny >> MapConstants.TileShift;
+            if (tx < 0 || ty < 0 || tx >= map.MapWidth || ty >= map.MapHeight)
+                return new ShotTrace(ShotEnd.Edge, px, py);
+            int tile = map.TileMap[tx, ty];
+            if ((tile & GameConstants.BitDoor) != 0)
+            {
+                if (DoorPosition(tile & ~GameConstants.BitDoor) < 0x8000)
+                    return new ShotTrace(ShotEnd.Wall, px, py);
+            }
+            else if (tile != 0)
+            {
+                bool puffs = !(map.GetMapData().Walls.TryGetValue(tile & ~GameConstants.BitWall, out var wall) && wall.Puffs == false);
+                return new ShotTrace(puffs ? ShotEnd.Wall : ShotEnd.NoPuffs, px, py);
+            }
+            (px, py) = (nx, ny);
+            if (stopAt?.Invoke(px, py) == true)
+                return new ShotTrace(ShotEnd.Stopped, px, py);
+        }
+        return new ShotTrace(ShotEnd.Reach, px, py);
+    }
 
     /// <summary>Whether there's a clear line from an actor to another (a player, or any actor)</summary>
     internal bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.Actor to) => CheckLine(ob.X, ob.Y, to);
@@ -181,3 +223,9 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
 
     internal const long MinSight = 0x18000L;
 }
+
+/// <summary>Why a traced shot stopped (LineOfSight.TraceShot)</summary>
+internal enum ShotEnd { Wall, NoPuffs, Edge, Reach, Stopped }
+
+/// <summary>Where a traced shot stopped, and why</summary>
+internal readonly record struct ShotTrace(ShotEnd End, int X, int Y);

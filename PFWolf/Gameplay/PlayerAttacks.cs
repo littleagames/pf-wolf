@@ -246,7 +246,8 @@ internal sealed class PlayerAttacks(
     hits nothing, misses or is blocked leaves the weapon's `weapon.puff` where the line it was
     fired along meets a wall, or a door that isn't open; none on a wall with walls.yaml
     `puffs: false` (the original's jungle, forest and horizon), nor past the map's edge. A
-    weapon without `weapon.puff` leaves none, as Wolf3D's.
+    weapon without `weapon.puff` leaves none, as Wolf3D's. The shotgun's pellets
+    (A_FirePellets) each leave their own, each at a height of its own.
 
     =============================================================================
     */
@@ -254,78 +255,130 @@ internal sealed class PlayerAttacks(
     // How far a puff is put out in front of a target, toward the shooter
     const int HitPuffOut = 0x6000;
 
-    // The step a shot's line is followed in, and how far it goes at most
-    const int ShotStep = 0x1000;
-    const int ShotReach = 64 * 0x10000;
-
-    /// <summary>A hit's puff: the target's `hitpuff`, between it and the shooter</summary>
-    internal void HitPuff(Entities.Actors.Actor target)
+    /// <summary>A hit's puff: the target's `hitpuff`, between it and the shooter (or at a point), so high</summary>
+    internal void HitPuff(Entities.Actors.Actor target, (int X, int Y)? at = null, double z = 0)
     {
-        if (target.Properties.TryGetValue("hitpuff", out var cls) && cls?.ToString() is { Length: > 0 } puff
-            && !puff.Equals("none", StringComparison.OrdinalIgnoreCase))
+        if (!target.Properties.TryGetValue("hitpuff", out var cls) || cls?.ToString() is not { Length: > 0 } puff
+            || puff.Equals("none", StringComparison.OrdinalIgnoreCase))
+            return;
+        if (at == null)
         {
             var player = session.Player;
             long dx = player.X - target.X, dy = player.Y - target.Y;
             long dist = Math.Max(Math.Max(Math.Abs(dx), Math.Abs(dy)), 1);
             int out_ = (int)Math.Min(HitPuffOut, dist / 2);
-            SpawnPuff(puff, target.X + (int)(dx * out_ / dist), target.Y + (int)(dy * out_ / dist));
+            at = (target.X + (int)(dx * out_ / dist), target.Y + (int)(dy * out_ / dist));
         }
+        SpawnPuff(puff, at.Value.X, at.Value.Y, z);
     }
 
-    /// <summary>A shot that hit nothing: the weapon's `weapon.puff` where its line meets a wall</summary>
-    internal void MissPuff()
+    /// <summary>A shot that hit nothing: the weapon's `weapon.puff` where its line meets a wall, so high</summary>
+    internal void MissPuff(double? angle = null, int reach = LineOfSight.ShotReach, double z = 0)
     {
-        if (session.PlayerState.Weapon is not { } weapon || inventory.GetStringProperty(weapon, "weapon.puff") is not { Length: > 0 } puff)
+        if (WeaponPuff() is not { } puff)
             return;
         var player = session.Player;
-        if (ShotWallPoint(player.X, player.Y, player.Angle) is { } at)
-            SpawnPuff(puff, at.X, at.Y);
+        var trace = lineOfSight.TraceShot(player.X, player.Y, angle ?? player.Angle, reach);
+        if (trace.End == ShotEnd.Wall)
+            SpawnPuff(puff, trace.X, trace.Y, z);
     }
 
-    /// <summary>
-    /// Where a shot fired from (x, y) at the angle (degrees, east 0, north 90) meets a wall or a
-    /// door not open, a step short of it; null past the map's edge, beyond reach, or at a wall
-    /// that takes no puffs
-    /// </summary>
-    internal (int X, int Y)? ShotWallPoint(int x, int y, int angle)
-    {
-        double rad = angle * Math.PI / 180;
-        int stepx = (int)Math.Round(Math.Cos(rad) * ShotStep), stepy = -(int)Math.Round(Math.Sin(rad) * ShotStep);
-        int px = x, py = y;
-        for (int travelled = 0; travelled < ShotReach; travelled += ShotStep)
-        {
-            int nx = px + stepx, ny = py + stepy;
-            int tx = nx >> MapConstants.TileShift, ty = ny >> MapConstants.TileShift;
-            if (tx < 0 || ty < 0 || tx >= map.MapWidth || ty >= map.MapHeight)
-                return null;
-            int tile = map.TileMap[tx, ty];
-            if ((tile & GameConstants.BitDoor) != 0)
-            {
-                int door = tile & ~GameConstants.BitDoor;
-                if (lineOfSight.DoorPosition(door) < 0x8000)
-                    return (px, py);
-            }
-            else if (tile != 0)
-            {
-                var data = map.GetMapData();
-                return data.Walls.TryGetValue(tile & ~GameConstants.BitWall, out var wall) && wall.Puffs == false ? null : (px, py);
-            }
-            (px, py) = (nx, ny);
-        }
-        return null;
-    }
+    string? WeaponPuff() =>
+        session.PlayerState.Weapon is { } weapon && inventory.GetStringProperty(weapon, "weapon.puff") is { Length: > 0 } puff ? puff : null;
 
-    // A puff of that class at the point (global coordinates)
-    void SpawnPuff(string className, int x, int y)
+    // A puff of that class at the point (global coordinates), so many texels up or down
+    void SpawnPuff(string className, int x, int y, double z = 0)
     {
-        if (map.SpawnAtActor(className, session.Player) is not { } puff)
+        if (map.SpawnAt(className, x, y, session.Player) is not { } puff)
         {
             Console.WriteLine($"Hit puff: '{className}' isn't an actor.");
             return;
         }
-        puff.SetPosition(x >> MapConstants.TileShift, y >> MapConstants.TileShift);
-        puff.X = x;
-        puff.Y = y;
+        puff.Z = z;
+    }
+
+    /*
+    =============================================================================
+
+                                  PELLETS
+
+    A_FirePellets(count, spread, min, max[, range[, height]]): the shotgun (Midnight Assault's
+    FireShotgunBullets: 10 pellets, 5 degrees, 20-44, 6 tiles). The pellets fly from the
+    player at the closest target in the sights with a clear line (the original's assisted aim),
+    or straight ahead with none, each turned by up to `spread` whole degrees either way at random.
+    Each follows its own line, out to `range` tiles: the first enemy it passes close to (within
+    the original's ENEMYCOLSIZE) takes min..max, rolled once for the whole shot as the original
+    did, and leaves its `hitpuff` there; a pellet that meets a wall first leaves the weapon's
+    `weapon.puff`; one that goes out of range leaves nothing. Every puff is drawn up or down by
+    up to `height` texels at random (16, the original's random height for a many-shot weapon).
+
+    =============================================================================
+    */
+
+    // How close a pellet passes to an enemy to hit it, and to another player (the original's)
+    const int EnemyColSize = 0x5000, PlayerColSize = 0x3000;
+
+    internal void FirePellets(int count, int spread, int min, int max, double rangeTiles, double height)
+    {
+        PlayAttackSound();
+        if (!PlayerWeaponIsSilent())
+            session.MadeNoise = true;
+
+        var player = session.Player;
+        var aim = FindShootCandidates().Select(c => c.Actor).FirstOrDefault(a => lineOfSight.CheckLine(a));
+        double baseAngle = aim != null ? AngleTo(player, aim) : player.Angle;
+        int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
+        int reach = (int)(rangeTiles * (1 << MapConstants.TileShift));
+
+        for (int i = 0; i < count; i++)
+        {
+            int turn = spread > 0 ? session.Random.RndT() % (spread + 1) : 0;
+            double angle = baseAngle + (session.Random.RndT() > 127 ? -turn : turn);
+            double z = height > 0 ? (session.Random.RndT() / 255.0 * 2 - 1) * height : 0;
+
+            Entities.Actors.Actor? hit = null;
+            var trace = lineOfSight.TraceShot(player.X, player.Y, angle, reach, (x, y) => (hit = PelletTarget(x, y)) != null);
+            if (hit != null)
+            {
+                HitShotTarget(hit, PlayerDamage(damage));
+                HitPuff(hit, (trace.X, trace.Y), z);
+            }
+            else if (trace.End == ShotEnd.Wall && WeaponPuff() is { } puff)
+                SpawnPuff(puff, trace.X, trace.Y, z);
+        }
+    }
+
+    // What a pellet at the point hits: a living enemy it passes close to (not on the player's
+    // side), or with others playing a rival player; null for none
+    Entities.Actors.Actor? PelletTarget(int x, int y)
+    {
+        var shooter = session.Player;
+        foreach (var actor in map.GetActors())
+        {
+            if (actor.IsRemoved || actor == shooter)
+                continue;
+            int size;
+            if (actor is Entities.Actors.Monster monster)
+            {
+                if (!monster.RuntimeFlags.Has(ObjFlags.Shootable) || monster.Hitpoints <= 0 || factions.IsAlly(shooter, monster))
+                    continue;
+                size = EnemyColSize;
+            }
+            else if (actor is Entities.Actors.PlayerPawn pawn && pawn.State.Health > 0 && session.AreRivals(shooter.State, pawn.State))
+                size = PlayerColSize;
+            else
+                continue;
+            if (Math.Abs(x - actor.X) < size && Math.Abs(y - actor.Y) < size)
+                return actor;
+        }
+        return null;
+    }
+
+    // Degrees from one actor to another (east 0, north 90)
+    static double AngleTo(Entities.Actors.Actor from, Entities.Actors.Actor to)
+    {
+        double angle = Math.Atan2(from.Y - to.Y, to.X - from.X) * 180 / Math.PI;
+        return angle < 0 ? angle + 360 : angle;
     }
 
     /// <summary>

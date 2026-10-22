@@ -188,6 +188,7 @@ public static class ActorProperties
         Int("monster.chasespeedmultiplier", "Without a chasespeed: its speed is multiplied by this once it's after someone"),
         List("monster.reactiondelay", "Tics before it reacts on first seeing someone: [base, divisor], base plus a random 0-255 over divisor (no divisor: none)", "1", item: FieldType.Integer),
         Bool("monster.sharpshooter", "A better shot: it counts the distance to the player as two thirds of it (SS, Hans)"),
+        Text("monster.puff", "An actor class left where its shot at the player misses and strikes a wall or a door that isn't open, past the player (Midnight Assault's bullet puff); none on a wall with walls.yaml puffs: false"),
         Int("monster.pointblankdamage", "T_Shoot's extra damage right beside the player (the Ubermutant's 10)"),
         List("monster.damagestates", "States it goes to by the health it has left, in place of Pain: [full, 3/4, 1/2, 1/4]"),
         Bool("monster.painonce", "It only flinches at its first hit"),
