@@ -1,5 +1,6 @@
-# The demo's animations (see pfwolf-pk3's animdefs/animdefs.yaml for the fields). Both are made
-# of the game's own elevator lever textures, so the demo needs no art of its own.
+# The demo's animations (the fields are in the animdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/animdefs). Both are made of the
+# game's own elevator lever textures, so the demo needs no art of its own.
 
 # Station 3's lever, once thrown (wall 55): it sticks for half a second before it goes up, and
 # stays up. It plays once from when the switch turns into wall 55.

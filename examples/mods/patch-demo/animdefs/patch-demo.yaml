@@ -1,5 +1,5 @@
-# The alarm lamp patch (patch 4): off, then lit, round and round (see pfwolf-pk3's
-# animdefs/animdefs.yaml for the fields)
+# The alarm lamp patch (patch 4): off, then lit, round and round (the fields are in the animdefs
+# reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/animdefs)
 PDALARM:
   tics: 20
   frames: [PDALRM1, PDALRM2]

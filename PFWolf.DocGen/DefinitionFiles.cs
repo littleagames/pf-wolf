@@ -51,7 +51,7 @@ public static class DefinitionFiles
             null, null, CommandLineSchema.Build, Api: true),
         new("mapdefs", "mapdefs/*.yaml", "What each value on a map's planes is: walls, doors, things, floors and more.",
             "mapdefs/*.yaml", "mapdefs/{pack}/*.yaml", () => FieldSchema.For(typeof(MapObjectTranslationAsset))),
-        new("animdefs", "animdefs/*.yaml", "Animated textures and pictures.",
+        new("animdefs", "animdefs/*.yaml", "Animated textures and pictures. animdefs/*.yaml are every game's; animdefs/{pack}/*.yaml are that game's own, and replace a shared animation of the same name. A mod keeps its files directly in animdefs/, merged into the running game's.",
             "animdefs/*.yaml", "animdefs/{pack}/*.yaml", () => FieldSchema.Entries("", "Animations by name", AnimationSchema.Build())),
         new("graphicdefs", "graphicdefs/*.yaml", "Pictures cut out of sprites, walls and other pictures.",
             "graphicdefs/*.yaml", "graphicdefs/{pack}/*.yaml", () => FieldSchema.Entries("", "Pictures by name", GraphicSchema.Build())),

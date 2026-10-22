@@ -56,7 +56,8 @@ The exit room has the usual elevator switch, now just a switch whose action is `
   field is in the docs' [mapdefs reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs),
   and every action in the [Actions reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/actions).
 - `animdefs/switch-demo.yaml`: the two lever animations, made of the game's own lever
-  textures. Animations are described in `pfwolf-pk3/animdefs/animdefs.yaml`.
+  textures. Animations are in the
+  [animdefs reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/animdefs).
 - `mapdefs/things.yaml`: object 500, a `SwitchLightOff`, and 501, the light room's
   `FlickeringLamp`.
 - `actordefs/demo-lights.yaml`: `FlickeringLamp`, a floor lamp with an amber, flickering

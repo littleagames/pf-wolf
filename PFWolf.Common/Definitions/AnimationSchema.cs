@@ -10,7 +10,11 @@ namespace PFWolf.Definitions;
 public static class AnimationSchema
 {
     public static FieldSchema Build()
-        => FieldSchema.Record("animation", "An animation: a name that walls, doors, flats, skies and pictures use like a texture or picture, which shows its frames one after another",
+        => FieldSchema.Record("animation",
+            "An animation: a name that walls, doors, flats, skies and pictures (menus, the status bar) use like a texture or picture, which shows its frames one after another. "
+            + "It can take the name of one of its own frames (GSTONEA1: frames [GSTONEA1, ...]) to animate a texture everywhere it's used; frames are always the textures and pictures themselves, never other animations. "
+            + "Walls, doors, flats and skies go by the level's clock: every tile showing an animation is on the same frame, and they stop while the game is paused. "
+            + "Pictures go by real time, and change whenever the screen they're on is drawn again. The automap shows a wall's first frame.",
         [
             FieldSchema.Value("tics", FieldType.Integer,
                 "How long each frame shows, in tics (70 a second), unless the frame gives its own", defaultText: AnimationDefinition.DefaultTics.ToString()),
