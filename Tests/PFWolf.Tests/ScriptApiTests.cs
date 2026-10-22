@@ -143,4 +143,14 @@ public class ScriptApiTests
         Assert.That(ScriptApi.TriggerActions.Concat(ScriptApi.OwnTileActions), Is.EquivalentTo(engine));
         Assert.That(ScriptApi.OwnTileActions, Is.EquivalentTo(GameScripts.OwnTileActions.Keys));
     }
+
+    [Test]
+    public void Game_Trigger_Names_Every_Action_It_Cant_Run()
+    {
+        // Act
+        var trigger = ScriptApi.Game.Single(function => function.Name == "trigger");
+
+        // Assert: its help lists them by hand
+        Assert.That(ScriptApi.OwnTileActions, Has.All.Matches<string>(action => trigger.Summary.Contains(action, StringComparison.Ordinal)));
+    }
 }

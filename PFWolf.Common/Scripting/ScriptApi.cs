@@ -41,12 +41,16 @@ public static class ScriptApi
     [
         Fn("random", "game.random([m[, n]])", "The game's random numbers (the same on every machine and demo run): 0-255, 1 to m, or m to n"),
         Fn("players", "game.players()", "The players in the game who can be aimed at, as a list of actors"),
-        Fn("actors", "game.actors([class])", "Every actor on the level, or those of a class, in the order they think"),
-        Fn("tagged", "game.tagged(tag[, class])", "The actors with that tag on the map's tag plane (as switches find them), or those of a class"),
+        Fn("actors", "game.actors([class])", "Every actor on the level, in the order they think, or those of a class (that class itself: not the classes built on it)"),
+        Fn("tagged", "game.tagged(tag[, class])", "The actors with that tag on the map's tag plane (as switches find them), or those of a class (that class itself)"),
         Fn("taggedtiles", "game.taggedtiles(tag)", "The tiles with that tag, each {x, y}: tagged doors and walls"),
         Fn("tag", "game.tag(x, y)", "A tile's tag, 0 for none"),
         Fn("patch", "game.patch(x, y)", "The patch (mapdefs patches) on a wall tile, 0 for none"),
-        Fn("trigger", "game.trigger(tag, action, ...)", "Runs a switch action on a tag, as a switch with it would: game.trigger(3, \"A_OpenDoor\", \"hold\"). True if it did anything"),
+        Fn("trigger", "game.trigger(tag, action, ...)",
+            "Runs a switch action on a tag, as a switch with it would, used by the first player: game.trigger(3, \"A_OpenDoor\", \"hold\"), "
+            + "or the whole call in one string, game.trigger(3, 'A_OpenDoor(\"hold\")'). True if it did anything (false with no player on the level). "
+            + "Not the actions that work on a switch's own tile, which a script hasn't got: A_PushWall (A_MoveWall pushes tagged walls), A_Vend, "
+            + "A_SmartSwitch, A_FloorSelect, A_Teleport, A_TeleportTag and A_Warp are an error"),
         Fn("onlevel", "game.onlevel(function(reason, map) ... end)", "Adds a hook run as each level starts; reason is \"new\", \"returned\", \"restarted\" or \"loaded\". Add hooks at a script's top level"),
         Fn("ontick", "game.ontick(function(tics) ... end)", "Adds a hook run each frame the world moves, with the tics that went by (70 a second). Add hooks at a script's top level"),
         Fn("time", "game.time()", "The level's time in tics (70 a second), as saved games keep it"),
@@ -58,9 +62,9 @@ public static class ScriptApi
         Fn("objective", "game.objective(name)", "How many of a level objective (game-info objectives) are done, and of how many: two numbers, 0 and 0 for one the level hasn't"),
         Fn("unlock", "game.unlock(name)", "Unlocks a name from game to game (progress.cfg): a starts-locked episode's key, or a script's own name. True if it wasn't already; a demo playing back unlocks nothing"),
         Fn("record", "game.record(map)", "The best done on a map from game to game (records.cfg), as game.onlevelend's result: kills, killtotal, secrets, secrettotal, items, itemtotal, time, par, underpar, undetected, stealthkills, objectives. Nil if it's never been finished"),
-        Fn("onlevelend", "game.onlevelend(function(map, result) ... end)", "Adds a hook called as a level's finished (exit, secret exit or the game won), before the tally: result is what the finish came to (as game.record's, with exit: \"exit\", \"secret\" or \"victory\"). Anything it unlocks is told on the tally"),
+        Fn("onlevelend", "game.onlevelend(function(map, result) ... end)", "Adds a hook called as a level's finished (exit, secret exit or the game won), before the tally: result is what the finish came to (as game.record's, with exit: \"exit\", \"secret\" or \"victory\"). Anything it unlocks is told on the tally. Not called while a demo plays back"),
         Fn("unlocked", "game.unlocked(name)","Whether a name has been unlocked (game.unlock, A_Unlock or the unlock command), in this game or an earlier one"),
-        Fn("showtext", "game.showtext(name)", "Shows a text (texts/, in the help article format) as an article, then goes back to the level, its clock not counting the reading (A_ShowText). Not in a demo or a game with others"),
+        Fn("showtext", "game.showtext(name)", "Shows a text (texts/, in the help article format) as an article, then goes back to the level, its clock not counting the reading (A_ShowText). It does nothing while a demo plays or records, or in a game with others"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> ActorFields { get; } =
@@ -81,18 +85,19 @@ public static class ScriptApi
         Field("isplayer", "Whether it's a player"),
         Field("shooter", "For a projectile, the actor that fired it"),
         Field("faction", "The side it's on (factions.yaml), nil for none; set it to change sides (the kill total follows)", settable: true),
-        Field("follows", "Whether it goes about with the players on its side (monster.follow, A_SetFaction \"follow\")", settable: true),
+        Field("follows", "Whether it goes about with the players on its side (monster.follow, A_SetFaction \"follow\"); only an enemy can, and setting it on anything else does nothing", settable: true),
         Field("translation", "The color translation it's drawn through (translations.yaml), nil for its own colors; set nil for its faction's", settable: true),
-        Field("temp1", "A whole number of its own, kept in saved games: a script's state for the actor", settable: true),
-        Field("temp2", "A whole number of its own, kept in saved games", settable: true),
-        Field("temp3", "A whole number of its own, kept in saved games", settable: true),
+        Field("temp1", "A whole number of its own, -32768 to 32767, kept in saved games: a script's state for the actor. Set, it's rounded and kept within that", settable: true),
+        Field("temp2", "A whole number of its own, -32768 to 32767, kept in saved games", settable: true),
+        Field("temp3", "A whole number of its own, -32768 to 32767, kept in saved games", settable: true),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> ActorMethods { get; } =
     [
-        Method("jump", "actor:jump(state)", "Goes to a state of its actordefs class; false if it hasn't got one"),
-        Method("spawnprojectile", "actor:spawnprojectile(class[, angle[, \"relative\"|\"absolute\"|\"aim\"]])", "Fires a projectile, returning it: relative to its facing (the default), absolute from east, or aimed at the nearest player"),
-        Method("spawn", "actor:spawn(class)", "Spawns an actor where it is, returning it"),
+        Method("jump", "actor:jump(state)", "Goes to a state of its actordefs class, on its first frame; false if it hasn't got one. From inside one of its own actions, it goes there once the action is done"),
+        Method("spawnprojectile", "actor:spawnprojectile(class[, angle[, \"relative\"|\"absolute\"|\"aim\"]])",
+            "Fires a projectile, returning it (nil if there's no such class), at the angle in degrees, positive turning left: relative to its facing (the default), absolute from east, or aimed at the nearest player and turned by the angle (A_SpawnProjectile)"),
+        Method("spawn", "actor:spawn(class)", "Spawns an actor where it is, returning it (nil if there's no such class)"),
         Method("playsound", "actor:playsound(sound[, positional])", "Plays a sound from where it is (positional false: not placed in the world)"),
         Method("property", "actor:property(key)", "An actordefs property: numbers as numbers, lists as tables, nil if it hasn't got it"),
         Method("hasflag", "actor:hasflag(flag)", "Whether its class has an actordefs flag"),
@@ -100,7 +105,7 @@ public static class ScriptApi
         Method("angleto", "actor:angleto(other)", "The angle to another actor, in degrees, from where it looks out (a wall's face)"),
         Method("cansee", "actor:cansee(player[, tiles])", "Whether there's a clear line to a player (within that many tiles); one in a wall sees only out of its face"),
         Method("nearestplayer", "actor:nearestplayer()", "The nearest player who can be aimed at, or nil"),
-        Method("remove", "actor:remove()", "Takes it off the level"),
+        Method("remove", "actor:remove()", "Takes it off the level (not a player: removing one does nothing)"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> Globals { get; } =

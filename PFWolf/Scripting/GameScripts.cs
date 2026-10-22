@@ -387,7 +387,7 @@ internal sealed class GameScripts(
         paused), after the actors, with the tics that went by (70 a second; usually 1 or 2).
     game.onlevelend(function(map, result) ... end): called as a level's finished (its exit, a
         secret exit or the game won; not dying or leaving), before the tally, once its record is
-        kept (game.record). result has kills, KillTotal, secrets, SecretTotal, items, itemtotal,
+        kept (game.record). result has kills, killtotal, secrets, secrettotal, items, itemtotal,
         time (tics), par (seconds, 0 for none), underpar, undetected, stealthkills, objectives
         ({name = {done = n, total = n}}) and exit ("exit", "secret" or "victory"). It's the
         place to game.unlock what the finish earned: anything unlocked is told on the tally.
