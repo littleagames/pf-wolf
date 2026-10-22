@@ -756,22 +756,24 @@ sprites:
     - ESPRG0
     - ESPRH0
     - ESPRI0
+    # The genetic guard's frames are lettered as Aliens of Gold's are (the same chunks, in the
+    # same order), since its states are AOG's: G skipped, the dead frame Q
     - GENGA0    # Walk
     - GENGB0
     - GENGC0
     - GENGD0
     - GENGE0    # Attack (Melee)
     - GENGF0
-    - GENGG0
-    - GENGP0    # Dead
-    - GENGL0    # Death
-    - GENGM0
+    - GENGH0
+    - GENGQ0    # Dead
+    - GENGM0    # Death
     - GENGN0
     - GENGO0
-    - GENGK0    # Pain
-    - GENGH0    # Attack (Shoot)
-    - GENGI0
+    - GENGP0
+    - GENGL0    # Pain (the first death frame too)
+    - GENGI0    # Attack (Shoot)
     - GENGJ0
+    - GENGK0
     - MSENA0    # Walk
     - MSENB0
     - MSENC0

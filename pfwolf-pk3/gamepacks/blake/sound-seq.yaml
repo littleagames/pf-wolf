@@ -395,3 +395,9 @@ sound-info:
     alias: bs/health1
   misc/w_pkup:
     alias: bs/getpistol
+  # Horde's and Prop Hunt's announcements (Gameplay/MatchModes): a wave or round starting, and
+  # one won (Wolf3D's "Yeah!" and its perfect-ratio sound)
+  misc/yeah:
+    alias: bs/warpin
+  misc/100percent:
+    alias: bs/extra_man

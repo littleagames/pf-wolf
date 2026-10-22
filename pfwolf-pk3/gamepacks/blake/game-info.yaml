@@ -167,6 +167,20 @@ skills:
     pic-name: C_Hard
     enemy-health: health.hard
 
+# Horde (multiplayer): ordinary hostile enemies both Blake Stone and Planet Strike have, from the
+# rent-a-cops up to SWAT guards. No scientists, informants, turrets, canisters or bosses.
+horde:
+  waves:
+    - enemies: { RentACop: 4 }
+    - enemies: { RentACop: 4, ProGuard: 2 }
+    - enemies: { ProGuard: 4, GeneticGuard: 2 }
+    - enemies: { GeneticGuard: 3, MutantHuman1: 3 }
+    - enemies: { ProGuard: 3, MutantHuman1: 3, SwatGuard: 2 }
+  grow: 1
+  break-seconds: 10
+  spawn-tics: 35
+  max-alive: 10
+
 # Each mission is 15 MAPTEMP slots: floor 0 (reached by teleporter) to floor 10, then four slots
 # the game never uses. A mission starts on floor 1, after its briefing; the elevator (walls.yaml
 # A_FloorSelect, elevator.yaml) goes between floors 1 to 10, and the mission ends on the way out

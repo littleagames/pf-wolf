@@ -2,24 +2,23 @@
 
 Ideas and follow-ups for later, newest last. Move an item out (or delete it) once it's done.
 
-## Horde waves for Blake Stone and Planet Strike
+## Planet Strike classes drawing Aliens of Gold frames it hasn't got
 
-Horde (co-op multiplayer: waves of enemies from game-info `horde: waves:`) is only offered in a
-game whose game-info lists waves. Wolf3D, Spear and the shareware/demo packs inherit Wolf3D's;
-Blake Stone and Planet Strike have none, so the lobby leaves Horde out there (commit a95e437,
-which also removed the old hard-coded 4-Mutant fallback that hung those games).
+Planet Strike starts from Aliens of Gold's actordefs and mapdefs (`base-pack: blake`), so it has
+every AOG class and the map objects that place them. Four draw sprite frames Planet Strike's
+VSWAP hasn't got (found 2026-10-22, while checking Horde's genetic guards, whose frames were
+lettered differently in the two raw-data-maps and are now the same):
 
-- Add a `horde:` block to `pfwolf-pk3/gamepacks/blake/game-info.yaml`, shaped like Wolf3D's
-  (`waves` of `enemies: { Class: count }`, `grow`, `break-seconds`, `spawn-tics`, `max-alive`).
-  Planet Strike's game-info is a diff over Blake's, so it inherits the block; give it its own only
-  if Blake's classes aren't all there.
-- Use ordinary hostile enemies from `actordefs/blake/` (and `actordefs/planetstrike/`): no
-  informants, scientists, machines, `monster.becomes` sleepers or NOTCOUNTED crates. Ramp up over
-  about 5 waves, with a tougher class in the later ones.
-- Content only: no C# changes expected.
-- Check: the test suite passes, and a headless run (`--game blake --nowait --cheats --warp MAP01
-  --exec "wait 10; god 2; addplayer; gamemode horde 1; wait 900; match; quit"`, SDL drivers set
-  to dummy) shows "Wave 1: N left", not "No Horde waves in this game".
+- `GreenCard` (`GCRDA`) and `GoldCard` (`OCRDA`): objects 57 and 59, the crates holding
+  them (447, 449, 465, 467, 483, 485), and doors.yaml's locks 57 and 59
+- `ProjectionGenerator` (`EXDE` A-M): object 177
+- `SecurityLight`'s alert frame (`SUCLB`; Planet Strike's light is `SECLB`): object 160
+
+- Find out whether any of Planet Strike's levels place them (if none does, they're harmless; say
+  so in `actordefs/planetstrike/`), and if some do, what bstone draws there for PS
+  (`3d_main.cpp` initialize_sprites, its `is_ps()` branch), and give Planet Strike the frames
+  or classes of its own.
+- Check: in each level that places one, the object shows (no `Asset not found` for a sprite).
 
 ## Holstering and raising weapons (A_Lower, A_Raise)
 
