@@ -147,6 +147,31 @@ public class WeaponInHandTests
                 frames: [A]
                 tics-per-frame: 1
                 next-state: Ready
+        HolsteredDry:
+          parent: Holstered
+          properties:
+            "weapon.ammotype1": Clip
+            "weapon.ammouse1": 1
+          states:
+            Ready:
+              - sprite: HOLD
+                frames: [A]
+                tics-per-frame: 1
+                action: Test_WeaponReadyInHand
+                next-state: Ready
+        NoLower:
+          parent: Weapon
+          states:
+            Ready:
+              - sprite: NOLG
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Ready
+            Deselect:
+              - sprite: NOLG
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Deselect
         """;
 
     private sealed class Rig
@@ -337,6 +362,39 @@ public class WeaponInHandTests
 
         // Assert
         Assert.That(first.CurrentState!.StateName, Is.EqualTo(WeaponInHand.DeselectState));
+    }
+
+    [Test]
+    public void Out_Of_Ammo_In_Ready_The_Weapon_Goes_Down_And_Fires_Nothing()
+    {
+        // Arrange: a dry gun whose Ready runs A_WeaponReady, fire pressed as its frame ends
+        var rig = new Rig("Holstered2", "HolsteredDry") { InHand = "HolsteredDry" };
+        Entities.Actors.ActorActionRegistry.Register("Test_WeaponReadyInHand", rig.Hand.WeaponReady);
+        var dry = rig.Sprite;
+        rig.Session.PlayerInput.SetPressed(ButtonType.Attack, true);
+        dry.TicCount = 0;
+
+        // Act: inside its own action the fallback weapon's taken, and its Deselect is a jump
+        // still to land
+        dry.AdvanceFrames();
+
+        // Assert: it lands on Deselect, not on Fire from the press
+        Assert.That(rig.InHand, Is.EqualTo("Holstered2"));
+        Assert.That(dry.CurrentState!.StateName, Is.EqualTo(WeaponInHand.DeselectState));
+    }
+
+    [Test]
+    public void A_Deselect_That_Never_Lowers_Is_Passed_Over()
+    {
+        // Arrange
+        var rig = new Rig("NoLower", "Holstered2") { InHand = "NoLower" };
+        _ = rig.Sprite;
+
+        // Act: its Deselect has no A_Lower to ever take it down
+        rig.InHand = "Holstered2";
+
+        // Assert: so it changes at once, and the next comes up
+        Assert.That((rig.Sprite.Name, rig.Sprite.CurrentState!.StateName), Is.EqualTo(("Holstered2", WeaponInHand.SelectState)));
     }
 
     [Test]

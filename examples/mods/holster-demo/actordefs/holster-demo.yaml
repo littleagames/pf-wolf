@@ -40,3 +40,33 @@ GatlingGun:
       - { sprite: CHGG, frames: [A], tics-per-frame: 1, action: A_Lower(4), next-state: Deselect }
     Select:
       - { sprite: CHGG, frames: [A], tics-per-frame: 1, action: A_Raise(4), next-state: Select }
+
+# The weapons built on these (a mod's second knife and blue guns) inherit their states, so each
+# gets its own picture going down and coming up, not its parent's
+Knife2:
+  states:
+    Deselect:
+      - { sprite: KNF2, frames: [A], tics-per-frame: 1, action: A_Lower(12), next-state: Deselect }
+    Select:
+      - { sprite: KNF2, frames: [A], tics-per-frame: 1, action: A_Raise(12), next-state: Select }
+
+BluePistol:
+  states:
+    Deselect:
+      - { sprite: BPSG, frames: [A], tics-per-frame: 1, action: A_Lower, next-state: Deselect }
+    Select:
+      - { sprite: BPSG, frames: [A], tics-per-frame: 1, action: A_Raise, next-state: Select }
+
+BlueAK47:
+  states:
+    Deselect:
+      - { sprite: BAKG, frames: [A], tics-per-frame: 1, action: A_Lower, next-state: Deselect }
+    Select:
+      - { sprite: BAKG, frames: [A], tics-per-frame: 1, action: A_Raise, next-state: Select }
+
+BlueGatlingGun:
+  states:
+    Deselect:
+      - { sprite: BGTG, frames: [A], tics-per-frame: 1, action: A_Lower(4), next-state: Deselect }
+    Select:
+      - { sprite: BGTG, frames: [A], tics-per-frame: 1, action: A_Raise(4), next-state: Select }

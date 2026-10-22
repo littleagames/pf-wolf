@@ -129,6 +129,7 @@ internal class AudioManager
         if (enabled == value)
             return;
         enabled = value;
+        _variants.Clear();      // a sound may play from another device now
         if (!value)
             StopAll();
     }
@@ -412,21 +413,34 @@ internal class AudioManager
 
         // A variant the game hasn't got is normal (Wolf3D has no digitized ammo pickup, so the
         // AdLib one plays, as id's did); a sound with none of its variants is worth a warning.
+        // Which variant plays is worked out once a sound, until a device is switched on or off.
+        if (!_variants.TryGetValue(name, out var variant))
+        {
+            _variantExists ??= VariantExists;
+            variant = _variants[name] = BestVariant(soundProfile, _digitizedSoundEnabled, _adLibSoundEnabled, _pcSoundEnabled, _variantExists);
+            if (variant == null && BestVariant(soundProfile, true, true, true, _variantExists) == null && _reportedSilent.Add(name))
+                WarningLog.Write($"Sound {name} has nothing to play: this game has none of {string.Join(", ",
+                    new[] { soundProfile.Digitized, soundProfile.AdLib, soundProfile.PC }.Where(v => !string.IsNullOrWhiteSpace(v)))}");
+        }
+        return variant is { } chosen ? FindBuffer(chosen.Device, chosen.Asset) : null;
+    }
+
+    // The variant each sound (by its name past any random pick or alias) plays on the devices
+    // switched on: emptied when one is switched (SetSoundDevice)
+    private readonly Dictionary<string, (SoundDevice Device, string Asset)?> _variants = new(StringComparer.OrdinalIgnoreCase);
+    private Func<SoundDevice, string, bool>? _variantExists;
+
+    // Whether the game has a variant: BestVariant's question, kept as one delegate
+    private bool VariantExists(SoundDevice device, string asset)
+    {
         var game = _assetManager.Value;
-        bool Exists(SoundDevice device, string asset) => device switch
+        return device switch
         {
             SoundDevice.File => game.Exists<SoundFileAsset>(asset),
             SoundDevice.Digitized => game.Exists<Wolf3dDigitizedAudio>(asset),
             SoundDevice.AdLib => game.Exists<AdLibSound>(asset),
             _ => game.Exists<PcSound>(asset),
         };
-
-        if (BestVariant(soundProfile, _digitizedSoundEnabled, _adLibSoundEnabled, _pcSoundEnabled, Exists) is { } variant)
-            return FindBuffer(variant.Device, variant.Asset);
-        if (BestVariant(soundProfile, true, true, true, Exists) == null && _reportedSilent.Add(name))
-            WarningLog.Write($"Sound {name} has nothing to play: this game has none of {string.Join(", ",
-                new[] { soundProfile.Digitized, soundProfile.AdLib, soundProfile.PC }.Where(v => !string.IsNullOrWhiteSpace(v)))}");
-        return null;
     }
 
     /// <summary>Where a sound's variant comes from</summary>

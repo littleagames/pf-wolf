@@ -65,8 +65,9 @@ internal sealed class PlayerThink(
         // and fire is kept for cutting the reload short (WeaponInHand.TickWeapon); only the
         // weapon can't be changed (PlayerWeapons.CheckWeaponChange). So is putting a weapon away
         // or bringing one up (Deselect, Select), but there fire does nothing and the change waits.
+        bool ready = weaponInHand.IsWeaponReady();      // first: it may start a weapon going down
         bool switching = WeaponInHand.IsSwitching(session.PlayerState.WeaponSprite);
-        if (weaponInHand.IsWeaponReady() || WeaponInHand.IsReloading(session.PlayerState.WeaponSprite) || switching)
+        if (ready || WeaponInHand.IsReloading(session.PlayerState.WeaponSprite) || switching)
         {
             if (switching)
             {

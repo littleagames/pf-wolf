@@ -78,44 +78,37 @@ internal sealed class WeaponInHand(
             }
             else if (same)
                 return old;
-            else if (JumpWeaponState(old, DeselectState))
-            {
-                playerstate.WeaponLowered = 0;
-                return old;
-            }
+            else if (Switches(old, DeselectState, "A_Lower") && JumpWeaponState(old, DeselectState))
+                return old;                     // goes on from where it is: 0, up, or as far as a Deselect it left got it
         }
 
         var sprite = WeaponSprite = inventory.CreateActor(playerstate.Weapon);
         if (sprite == null)
             return null;
+        playerstate.WeaponLowered = 0;
 
         // A weapon picked up mid-attack takes over the attack where it had got to, as vanilla's
         // T_Attack carried on through the new weapon's attackinfo; otherwise it starts Ready
-        if (old != null && sprite.ResolvedStates.ContainsKey(SelectState))
+        if (old != null && Switches(sprite, SelectState, "A_Raise"))
             BringUp(sprite, armed: true);
         else if (old != null && old.CurrentState?.StateName != DeselectState
                  && AttackStep(old) is { } step && AttackFrame(sprite, step) is { } frame)
         {
             sprite.CurrentState = frame;
             sprite.TicCount = old.TicCount;
-            playerstate.WeaponLowered = 0;
         }
-        else
-        {
-            if (sprite.ResolvedStates.TryGetValue(WeaponReadyState, out var ready))
-                sprite.ArmState(ready);
-            playerstate.WeaponLowered = 0;
-        }
+        else if (sprite.ResolvedStates.TryGetValue(WeaponReadyState, out var ready))
+            sprite.ArmState(ready);
         return sprite;
     }
 
-    // A weapon starting up from out of sight: on its Select state, or Ready without one
+    // A weapon starting up from out of sight: on its Select state, or Ready without a working one
     void BringUp(Entities.Actors.Actor weapon, bool armed)
     {
         var playerstate = session.PlayerState;
-        var state = weapon.ResolvedStates.TryGetValue(SelectState, out var select) ? select
-            : weapon.ResolvedStates.GetValueOrDefault(WeaponReadyState);
-        playerstate.WeaponLowered = select != null ? LoweredFully : 0;
+        bool select = Switches(weapon, SelectState, "A_Raise");
+        var state = weapon.ResolvedStates.GetValueOrDefault(select ? SelectState : WeaponReadyState);
+        playerstate.WeaponLowered = select ? LoweredFully : 0;
         if (state == null)
             return;
         if (armed)
@@ -124,9 +117,35 @@ internal sealed class WeaponInHand(
             weapon.JumpTo(state);
     }
 
+    /// <summary>
+    /// Whether the weapon has a Deselect (or Select) state that runs A_Lower (A_Raise), so it goes
+    /// down (comes up) and gets there. One without the action would hold the weapon there for good,
+    /// so it's left out, the change made at once, with a warning (once a class and state).
+    /// </summary>
+    static bool Switches(Entities.Actors.Actor weapon, string state, string action)
+    {
+        if (!weapon.ResolvedStates.TryGetValue(state, out var frame))
+            return false;
+        for (int guard = 0; frame != null && frame.StateName == state && guard < 64; frame = frame.Next, guard++)
+        {
+            if (frame.Action is { Length: > 0 } call && Entities.Actors.ActorActionRegistry.Parse(call).Name == action)
+                return true;
+        }
+        if (warnedSwitches.Add($"{weapon.Name}:{state}"))
+            WarningLog.Write($"Weapon {weapon.Name}: its {state} state never runs {action}, so it's left out and the weapon changes at once");
+        return false;
+    }
+
+    static readonly HashSet<string> warnedSwitches = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Whether the weapon is being put away or brought up (its Deselect or Select state)</summary>
     internal static bool IsSwitching(Entities.Actors.Actor? weapon) =>
         weapon?.CurrentState?.StateName is DeselectState or SelectState;
+
+    // Whether the sprite is of the weapon the player has: one that isn't is on its way out (its
+    // Deselect may be a jump that hasn't landed yet, from inside one of its own actions)
+    bool IsInHand(Entities.Actors.Actor weapon) =>
+        string.Equals(weapon.Name, session.PlayerState.Weapon, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// A_Lower([speed]): takes the weapon in hand that much further down (6 when left out), until
@@ -228,9 +247,14 @@ internal sealed class WeaponInHand(
         JumpWeaponState(weapon, state);
     }
 
-    /// <summary>The shape to draw for the weapon in hand, or null for none.</summary>
+    /// <summary>
+    /// The shape to draw for the weapon in hand, or null for none. Drawn as the tics left it: the
+    /// view is drawn more often than the game ticks, and not on every machine, so drawing it
+    /// mustn't move it on (SyncWeaponSprite starts a weapon going down or coming up).
+    /// </summary>
     internal string? WeaponShapeName() =>
-        SyncWeaponSprite()?.CurrentState is { Sprite.Length: > 0 } state && state.Sprite != "TNT1"     // TNT1: nothing in hand to see
+        session.PlayerState.Weapon != null
+        && WeaponSprite?.CurrentState is { Sprite.Length: > 0 } state && state.Sprite != "TNT1"     // TNT1: nothing in hand to see
             ? $"{state.Sprite}{state.FrameLetter}0" : null;
 
     /// <summary>Puts the weapon on the named state, if it has one; returns whether it did.</summary>
@@ -265,8 +289,9 @@ internal sealed class WeaponInHand(
     /// </summary>
     internal void WeaponReady(Entities.Actors.Actor weapon)
     {
-        // A weapon going down or coming up (a Deselect or Select state that runs it) does nothing
-        if (IsSwitching(weapon))
+        // A weapon going down or coming up (a Deselect or Select state that runs it), or on its
+        // way out, does nothing
+        if (IsSwitching(weapon) || !IsInHand(weapon))
             return;
 
         var playerstate = session.PlayerState;
@@ -277,9 +302,10 @@ internal sealed class WeaponInHand(
             weapons.DrawWeapon();
 
             // A press now fires the weapon taken up (as vanilla, where the knife came out as the
-            // last attack ended), so carry on with its sprite rather than this one; a weapon
-            // being put away (Deselect) fires nothing
-            if (SyncWeaponSprite() is not { } taken || IsSwitching(taken))
+            // last attack ended), so carry on with its sprite rather than this one. A weapon
+            // being put away fires nothing: here, inside its own action, its Deselect is a jump
+            // that lands once the action's done, so it's still this sprite, of another weapon.
+            if (SyncWeaponSprite() is not { } taken || IsSwitching(taken) || !IsInHand(taken))
                 return;
             weapon = taken;
         }

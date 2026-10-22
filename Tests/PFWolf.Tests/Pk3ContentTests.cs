@@ -70,19 +70,22 @@ public class Pk3ContentTests
 
     // A game's sprites: its data files' (raw-data-map.yaml's, by chunk) and pfwolf-pk3's sprites/
     // pictures. Planet Strike starts from Aliens of Gold's classes and map objects, so a class one
-    // game draws can name frames the other lettered differently, or hasn't got.
-    [TestCase("wolf3d", "wolf3d")]
-    [TestCase("spear", "spear")]
-    [TestCase("blake", "blake-aog")]
-    [TestCase("planetstrike", "blake-ps")]
+    // game draws can name frames the other lettered differently, or hasn't got; the shareware and
+    // demo data files have fewer sprites than the full games whose classes they use. Classes
+    // count when a map places them, a Horde wave sends them, or a class that counts names them
+    // (a property, as a drop or an ammo type, or an action's argument, as a projectile).
+    [TestCaseSource(nameof(GameCases))]
     public void Every_Class_A_Game_Places_Draws_Frames_It_Has(string pack, string release)
     {
         // Arrange
         var loader = Load(pack, release);
         var metadata = Metadata(loader, pack);
-        var placed = loader.Load<MapObjectTranslationAsset>($"{pack}/mapdefs").Things.Values
-            .Select(thing => thing.Class).Where(metadata.Actors.ContainsKey).Distinct().ToList();
-        var sprites = File.ReadAllLines(Path.Combine(TestPaths.Pk3SourceFolder(), "gamepacks", pack, "raw-data-map.yaml"))
+        var placed = Spawned(metadata, loader.Load<MapObjectTranslationAsset>($"{pack}/mapdefs").Things.Values
+            .Select(thing => thing.Class)
+            .Concat(loader.Load<GameInfoAsset>($"{pack}/game-info").Horde.Waves.SelectMany(wave => wave.Enemies.Keys)));
+        var sprites = new[] { pack }.Concat(PfWolfPk3Loader.ReadBasePackIds(new DirectoryAssetSource(TestPaths.Pk3SourceFolder()), release))
+            .Select(id => Path.Combine(TestPaths.Pk3SourceFolder(), "gamepacks", id, "raw-data-map.yaml"))
+            .Where(File.Exists).SelectMany(File.ReadAllLines)      // a shareware or demo pack's sprites are its base pack's
             .Select(line => line.Split('#')[0].Trim(' ', '-')).Where(name => name.Length == 6)
             .Concat(Directory.GetFiles(Path.Combine(TestPaths.Pk3SourceFolder(), "sprites"), "*", SearchOption.AllDirectories)
                 .Select(Path.GetFileNameWithoutExtension).OfType<string>())
@@ -105,6 +108,31 @@ public class Pk3ContentTests
 
         // Assert
         Assert.That(problems, Is.Empty);
+    }
+
+    // The classes among those given, and every class they name in turn: in a property (theirs or
+    // a parent's) or as an argument to a state's action or think
+    private static List<string> Spawned(ActorMetadata metadata, IEnumerable<string> classes)
+    {
+        var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var queue = new Queue<string>(classes.Where(metadata.Actors.ContainsKey));
+        while (queue.TryDequeue(out var className))
+        {
+            if (!found.Add(className))
+                continue;
+            for (var name = className; !string.IsNullOrEmpty(name) && metadata.Actors.TryGetValue(name, out var data); name = data.Parent)
+            {
+                var named = data.Properties.Values.SelectMany(value => value is IEnumerable<object> list ? list : [value])
+                    .Select(value => value?.ToString() ?? "")
+                    .Concat(data.States.Values.SelectMany(frames => frames.OfType<ActorStatesData>())
+                        .SelectMany(frames => new[] { frames.Action, frames.Think })
+                        .Where(call => !string.IsNullOrWhiteSpace(call))
+                        .SelectMany(call => Entities.Actors.ActorActionRegistry.Parse(call).Args.Select(arg => arg.Trim('"'))));
+                foreach (var other in named.Where(metadata.Actors.ContainsKey))
+                    queue.Enqueue(other);
+            }
+        }
+        return [.. found];
     }
 
     // The game's actor classes, the shared ones and then its own, as AssetManager.GetActorMetadata builds them
