@@ -27,8 +27,8 @@
   the tile codes: picking one asks for its value once, then Paint puts the code down with its
   value in the tile after it. The tools keep pairs together (ToolController.Pairs): a value tile
   is never painted over, a code painted over or erased takes its value with it, and Delete on a
-  selection clears the value of a code in it. Moving a selection doesn't move a value left
-  outside it (see Follow-up). The map draws a badge on code tiles (C colors, F flats, H
+  selection clears the value of a code in it. Since the follow-ups, copying and moving a
+  selection take a pair's other half too. The map draws a badge on code tiles (C colors, F flats, H
   hint, L link, V value, # other) and "+" on value tiles, and link lines: all of them with Tags
   shown, else those to and from the tile under the pointer. Tests: LevelCodesTests. Checked by
   eye (UI Automation, no mouse): the panel, the colors and hint dialogs with the level's values,
@@ -178,16 +178,37 @@ as `maps/MAPnn.wad` in a mod and played with F5. As with Wolf3D, the editor neve
 3. **Cross-floor links.** F8 links to another floor are skipped by the engine. The editor can
    only show them as "on floor xx" without a line.
 
+## Follow-ups done (2026-10-22, the user picked these four)
+
+- **Linked doors (9c4701a):** doors.yaml `link: object-plane` on all of Blake's doors. A door's
+  object value, when it isn't its card, names the next door; opening or closing one works the
+  next, unlocking it, along the chain (each door once, so a loop stops), as bstone's
+  CheckLinkedDoors. AOG uses them for double doors, airlocks and trap rows (floor 8's eight
+  cells open together from one smart switch). A `doors` console command lists the level's doors
+  (state, lock, link) and opens or closes one. The editor draws door links and checks they lead
+  to a door. **Checked:** LinkedDoorsTests, including the real AOG floor 8 headless (all nine
+  cell doors opening).
+- **Walk-on color changes (2f6b9b4):** the player stepping onto a ceiling-floor-colors code on
+  open floor (exactly 0xFE00) gives the level the colors after it, as bstone's Thrust does: AOG
+  darkens corridors a step at a time this way. The level's colors and A_Warp's swapped colors
+  are saved with the level (save version 32); `where` shows them. The editor calls these codes
+  walk-on changes, and only warns about extra colors codes that can't be stepped onto.
+  **Checked:** WalkOnColorsTests, and in the game on AOG floor 4 (MAP05): walking east down the
+  corridor at y 15 changed the ceiling from 66 to 65, walking back to 66, and a save made on the
+  darker tile loaded with 65. Not visible there, since that level's ceiling is a flat.
+- **Code pairs on copy, move and delete (9d82a3b):** copy, cut, drag, arrow-key moves and
+  Delete take the other half of any pair the selection holds half of, and the selection grows
+  to show it. Rotating or flipping a selection still can't keep a pair (its value would no
+  longer be east of it): the transform's report counts those as paired, as before.
+- **JAM movies in the art browser:** a Movies kind lists the game's movies (AOG's four;
+  Planet Strike has two, not looked at) with their frames, played at the game's speed (movies.yaml frame-tics,
+  with the pauses), in the movie's own palette, with what plays each (the title sequence, an
+  episode's end movie). The frame decoder moved to PFWolf.Common (JamMovieAsset.DrawFrame), so
+  the game and the editor share it. Read-only; fades and sounds aren't previewed. **Checked by
+  eye:** the four AOG movies listed and playing.
+
 ## Follow-up (not this work)
 
-- Engine: bstone's linked doors (a door's object value is the next door's x,y: they open and
-  close together, CheckLinkedDoors) and its walk-on color changes (a later 0xFE code on a floor
-  tile changes the ceiling and floor colors as the player steps onto it). The editor reads and
-  checks both but PFWolf plays neither.
-- Moving (or pasting) a selection that holds a code but not its value tile leaves the value
-  behind, and the code takes whatever is east of where it lands as its value; no check catches
-  that yet. Moving the pair together, or widening the selection to take it, would.
-- A JAM movie viewer in the art or sound browser.
 - Field editors for elevator.yaml and presenter.yaml in the Definitions window.
 - Raw data file mods for Blake (docs/dev/raw-data-mods-plan.md): the same generator works for
   `.bs6` and `.vsi` files.
