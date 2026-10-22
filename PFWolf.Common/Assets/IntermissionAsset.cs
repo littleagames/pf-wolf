@@ -40,7 +40,10 @@ public record IntermissionAsset : Asset
     /// when it was finished unseen with stealth kills or no kills at all, as Midnight Assault's).
     /// They're percentages, 100 when there was nothing to do, or done/total with count: true (a
     /// count of nothing isn't shown). item.NAME is how many of an inventory item the player holds
-    /// of its inventory.maxamount, as done/total.
+    /// of its inventory.maxamount, as done/total. unlocked is shown, as its format alone (Midnight
+    /// Assault's "New Levels Unlocked!"), when something's been unlocked since the last tally
+    /// (A_Unlock, game.unlock). A value left out isn't shown, and a kill, secret or treasure ratio
+    /// left out isn't counted, so it earns no perfect bonus.
     /// </summary>
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -87,7 +90,10 @@ public record IntermissionAsset : Asset
 /// <summary>The level-end bonus. Any left out is 0.</summary>
 public record IntermissionScoring
 {
-    /// <summary>Points for each second the level was finished under par</summary>
+    /// <summary>
+    /// Points for each second the level was finished under par; the tally sound plays every
+    /// time-bonus / 10 seconds as it counts up
+    /// </summary>
     public int? TimeBonus { get; set; }
 
     /// <summary>Points for each ratio (kill, secret, treasure) at 100%</summary>
@@ -113,12 +119,15 @@ public record IntermissionBj
 /// <summary>
 /// The victory screen: its pictures and text, and where the won cluster's total time and
 /// average ratios go (values time, kill, secret, treasure). objective.NAME is the cluster's
-/// levels' average percentage of it, or with count: true their done of total; item.NAME as on
-/// the level-end screen. A label with only-with shows with its value.
+/// levels' average percentage of it, or with count: true their done of total; item.NAME and
+/// unlocked as on the level-end screen. A label with only-with shows with its value.
 /// </summary>
 public record VictoryScreen
 {
-    /// <summary>The music while the screen is up; none keeps what was playing</summary>
+    /// <summary>
+    /// The music while the screen is up; none keeps what was playing. The won cluster's own
+    /// victory-music (game-info clusters) plays over its victory-frames before this screen.
+    /// </summary>
     public string? Music { get; set; }
 
     /// <summary>Pictures drawn over the labels (Wolf3D's L_BJWINS)</summary>
@@ -310,6 +319,6 @@ public record IntermissionSounds
     /// <summary>A ratio finished at 0%</summary>
     public string? None { get; set; }
 
-    /// <summary>Milliseconds of silence, the tally cut off, before <see cref="Perfect"/> or <see cref="None"/></summary>
+    /// <summary>Milliseconds of silence, the tally cut off, before perfect or none (left out: no pause)</summary>
     public int? PauseMs { get; set; }
 }

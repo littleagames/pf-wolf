@@ -1,6 +1,7 @@
-# The level-end and victory screens (see pfwolf.pk3's gamepacks/wolf3d/intermission.yaml for
-# every setting). A standalone game has none of Wolf3D's: without this file a level ends on a
-# blank screen. The text is in the mod's own LargeFont.
+# The level-end and victory screens (every setting is in the intermission reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/intermission). A standalone game
+# has none of Wolf3D's: without this file a level ends on a blank screen. The text is in the
+# mod's own LargeFont.
 font: LargeFont
 color: HIGHLIGHT
 
