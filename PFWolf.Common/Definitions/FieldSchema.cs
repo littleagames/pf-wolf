@@ -284,9 +284,9 @@ public sealed class FieldSchema
         null => null,
         string text => text.Length > 0 ? text : null,
         bool flag => flag ? "true" : "false",
+        char c => c == '\0' ? null : c.ToString(),     // before IFormattable, which char is too
         IFormattable number when value is not Enum => number.ToString(null, CultureInfo.InvariantCulture),
         Enum choice => choice.ToString(),
-        char c => c == '\0' ? null : c.ToString(),
         IDictionary => null,
         IEnumerable items when value is not string => items.Cast<object?>().Select(DefaultText).ToList() is { Count: > 0 } list ? string.Join(", ", list) : null,
         _ => null,

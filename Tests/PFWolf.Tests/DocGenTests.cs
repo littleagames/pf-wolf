@@ -82,6 +82,21 @@ public class DocGenTests
         Assert.That((string?)shading["about"], Does.Contain("The sky is never shaded"));
     }
 
+    // An unset char (an episode's key) has no default, not a NUL in the page
+    [Test]
+    public void An_Unset_Char_Has_No_Default()
+    {
+        // Arrange
+        var gameInfo = DefinitionFiles.All.Single(file => file.Id == "game-info");
+
+        // Act
+        var root = new SchemaExporter(gameInfo.Id).Export(gameInfo.Schema());
+        var key = Field(Field(root, "episodes")["item"]!.AsObject(), "key");
+
+        // Assert
+        Assert.That(key["default"], Is.Null);
+    }
+
     private static JsonObject Field(JsonObject record, string key) =>
         record["fields"]!.AsArray().OfType<JsonObject>().Single(field => (string?)field["key"] == key);
 
