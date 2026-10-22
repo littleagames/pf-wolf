@@ -93,6 +93,26 @@ public sealed class ToolController
     /// <summary>What goes in the tile after a code the tools put down that keeps its value there (null: as it is)</summary>
     public ushort? PairValue { get; set; }
 
+    /// <summary>
+    /// The selection with the other half of any code and value pair it holds half of (on the
+    /// object plane, or every plane), so copying, moving or clearing it never splits one
+    /// </summary>
+    private TileSelection WithPairs(TileSelection selection)
+    {
+        if (Pairs is not { } pairs || !(CopyAllPlanes || Plane == 1))
+            return selection;
+
+        var halves = new List<(int X, int Y)>();
+        foreach (var (x, y) in selection.Tiles)
+        {
+            if (pairs.HasValueTile(x, y) && !selection.Contains(x + 1, y))
+                halves.Add((x + 1, y));
+            if (pairs.IsValueTile(x, y) && !selection.Contains(x - 1, y))
+                halves.Add((x - 1, y));
+        }
+        return halves.Count == 0 ? selection : TileSelection.FromTiles(selection.Tiles.Concat(halves).Distinct())!;
+    }
+
     // Puts a value down on the plane being edited, through Combine, keeping codes with their values
     private void Put(MapEdit edit, int x, int y, ushort value)
     {
@@ -273,7 +293,8 @@ public sealed class ToolController
             case EditTool.Select:
                 if (SelectMode == SelectMode.Replace && Selection is { } selection && selection.Contains(x, y))
                 {
-                    // Drag the selection's contents somewhere else
+                    // Drag the selection's contents somewhere else, a code's value tile with it
+                    selection = Selection = WithPairs(selection);
                     _moving = TileClip.Copy(document, selection, CopyAllPlanes ? null : Plane);
                     _movingFrom = selection;
                     _edit = document.BeginEdit("Move");
@@ -602,6 +623,7 @@ public sealed class ToolController
     {
         if (_document != null && Selection is { } selection)
         {
+            selection = Selection = WithPairs(selection);
             _clipboard = TileClip.Copy(_document, selection, CopyAllPlanes ? null : Plane);
             RaiseChanged();
         }
@@ -629,6 +651,7 @@ public sealed class ToolController
             return;
         if (_document == null || Selection is not { } selection)
             return;
+        selection = WithPairs(selection);
         using var edit = _document.BeginEdit(description);
         Clear(edit, selection, CopyAllPlanes ? null : Plane, withValues: true);
     }
@@ -696,6 +719,7 @@ public sealed class ToolController
             return;
 
         int? plane = CopyAllPlanes ? null : Plane;
+        selection = WithPairs(selection);
         var clip = TileClip.Copy(document, selection, plane);
         using (var edit = document.BeginEdit("Move"))
         {

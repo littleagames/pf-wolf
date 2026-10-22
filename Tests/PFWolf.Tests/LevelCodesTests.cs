@@ -211,6 +211,47 @@ public class LevelCodesTests
         Assert.That(problems, Has.None.Contains("isn't in the mapdefs"), "codes, values and links are known");
     }
 
+    [TestCase(3, 3)]        // the code
+    [TestCase(4, 3)]        // its value
+    public void Moving_Half_A_Pair_Moves_All_Of_It(int x, int y)
+    {
+        // Arrange: a colors code at (3, 3) and its value at (4, 3); one of them selected
+        var (document, tiles) = Level();
+        EditorMaps.Set(document, 1, 3, 3, 0xFE00);
+        EditorMaps.Set(document, 1, 4, 3, 0x0102);
+        var tools = Tools(document, tiles, 0);
+        tools.Tool = EditTool.Select;
+        tools.Press(x, y);
+        tools.Release();
+
+        // Act: two tiles down
+        tools.Nudge(0, 2);
+
+        // Assert
+        Assert.That((document[1, 3, 5], document[1, 4, 5]), Is.EqualTo(((ushort)0xFE00, (ushort)0x0102)));
+        Assert.That((document[1, 3, 3], document[1, 4, 3]), Is.EqualTo(((ushort)0, (ushort)0)));
+        Assert.That(tools.Selection!.Contains(3, 5) && tools.Selection.Contains(4, 5));
+    }
+
+    [Test]
+    public void Copying_A_Code_Copies_Its_Value()
+    {
+        // Arrange
+        var (document, tiles) = Level();
+        EditorMaps.Set(document, 1, 3, 3, 0xFE00);
+        EditorMaps.Set(document, 1, 4, 3, 0x0102);
+        var tools = Tools(document, tiles, 0);
+        tools.Tool = EditTool.Select;
+        tools.Press(3, 3);
+        tools.Release();
+
+        // Act
+        tools.Copy();
+
+        // Assert
+        Assert.That(tools.ClipboardSize, Is.EqualTo((2, 1)));
+    }
+
     [Test]
     public void A_Low_Byte_Code_Has_No_Value_Tile()
     {
