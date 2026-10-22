@@ -14,7 +14,7 @@ public class ActorPropertiesTests
     // A property name passed to one of the ways the code reads properties (the first string
     // argument), or a constant holding one (FactionManager.PropertyName)
     private static readonly Regex PropertyRead = new(
-        @"(?:(?<![\w.])Int|GetIntProperty|GetStringProperty|GetProperty|TryGetProperty|PropertyInts?|PropertyStrings|PropertyBool|PropertyDouble|PropertyText|RuntimeActorProperty|PlayActorSound|playActorSound|ClassFace|(?<!Has)Flag|PlayerFactor|PickupText|PickupInt|PickupFlag|Properties\s*\.\s*(?:TryGetValue|ContainsKey|GetValueOrDefault|Remove))\s*\([^;""]*?""(?<name>[A-Za-z][\w.\-]*)""" +
+        @"(?:(?<![\w.])Int|GetIntProperty|GetStringProperty|GetProperty|TryGetProperty|PropertyInts?|PropertyStrings|PropertyBool|PropertyDouble|PropertyText|RuntimeActorProperty|PlayActorSound|playActorSound|ClassFace|Classes|(?<!Has)Flag|PlayerFactor|PickupText|PickupInt|PickupFlag|Properties\s*\.\s*(?:TryGetValue|ContainsKey|GetValueOrDefault|Remove))\s*\([^;""]*?""(?<name>[A-Za-z][\w.\-]*)""" +
         @"|const string \w*Propert\w*\s*=\s*""(?<name>[\w.\-]+)""");
 
     // Names those calls take that aren't actor properties: Lua's actor methods (GameScripts.cs),

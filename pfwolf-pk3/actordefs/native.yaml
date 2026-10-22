@@ -1,6 +1,7 @@
-# Any item can be kept from some player classes (actordefs player.yaml): "inventory.restrictedto"
-# lists the only classes that pick it up, "inventory.forbiddento" ones that don't. A class
-# descended from a listed one counts as listed. Either can be a list or a single class.
+# The classes every game starts from, each standing for something the engine does in code. What
+# each brings is in the manual: https://www.littleagames.com/pf-wolf/docs/latest/manual/built-in-classes
+# Their properties are in the actor properties reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/actor-properties
 Inventory:
   properties:
     "inventory.amount": 1
@@ -27,15 +28,6 @@ Health:
     "inventory.maxamount": 0
     "inventory.pickupsound": "misc/health_pkup"
 
-# Armor, as Doom's: the player has armor points, and each hit takes armor.savepercent of its
-# damage off them instead of health until they run out.
-#   armor.saveamount:    an armor's points; it's only picked up when the player has fewer, and
-#                        replaces their armor (points and savepercent) outright
-#   armor.savepercent:   how much of each hit it absorbs, 0-100
-#   armor.maxsaveamount: makes it a bonus instead: adds saveamount, up to this many, keeping the
-#                        armor the player has (or taking this savepercent when they have none)
-# The Player class's player.maxarmor caps them all. None of Wolf3D's items are armor (its Armor
-# is the suit of armor decoration).
 BasicArmor:
   parent: Inventory
   properties:
@@ -47,16 +39,9 @@ Key:
   properties:
     "inventory.pickupsound": "misc/k_pkup"
     "inventory.interhubamount": 0
-    # Shown when the player tries a door this key locks (doors.yaml `lock:`) without it,
-    # unless the door has its own lock-message. "key.lockedmessagestyle" can name a
-    # hud-messages.yaml style for it; left out, game-info's lock-style is used.
     "key.lockedmessage": "$LOCKEDDOOR"
-    # The same for a switch this key locks (walls.yaml switch lock:)
     "key.switchlockedmessage": "$LOCKEDSWITCH"
-    # Played then too, unless the door or switch has its own locked-sound
     "key.lockedsound": "player/usefail"
-    # A key with a "key.statusbarslot" (0 at the top, 16 pixels apart) is shown on the status
-    # bar: "key.statusbarpic" while carried, else "key.statusbaremptypic".
     "key.statusbaremptypic": "nokey"
 
 
@@ -93,9 +78,6 @@ ScoreItem:
   properties:
     "inventory.amount": 1
 
-# A backpack (End of Destiny's): held from when it's picked up until a death or a new game.
-# Meanwhile each item type's cap is its "ammo.backpackmaxamount" where it has one, and picking it
-# up gives each type its "ammo.backpackamount" (another one only gives that).
 BackpackItem:
   parent: Inventory
   flags: [INVENTORY.ALWAYSPICKUP]
@@ -104,13 +86,6 @@ BackpackItem:
     "inventory.maxamount": 1
     "inventory.interhubamount": 1
 
-# A timed power-up (End of Destiny's god mode and Knife Fury), held as the tics it has left: each
-# one picked up adds its duration. While it runs it can make the player unhurt (invulnerable),
-# put a weapon in their hand that kills with every blow (weapon, weaponkills; the one they had
-# comes back when it ends, if they still hold it), show its own face on the status bar (face:
-# a pic, or a list the face's look-around goes through), count down on screen (timerstyle: a
-# hud-messages style, as m:ss), keep the screen lit (flash), and play endsound when it's over.
-# A level change or a death ends it.
 Powerup:
   parent: Inventory
   flags: [INVENTORY.ALWAYSPICKUP]
@@ -118,12 +93,12 @@ Powerup:
     "inventory.amount": 1
     "inventory.maxamount": 1000000
     "inventory.interhubamount": 0
-    "powerup.duration": 2100        # tics (30 seconds)
+    "powerup.duration": 2100        # 30 seconds
     "powerup.invulnerable": false
     "powerup.weapon": ""
     "powerup.weaponkills": false
-    "powerup.damagetype": ""        # the death a weaponkills blow gives (Monster DEATH STATES)
-    "powerup.attacksound": ""       # played in place of the weapon's attacksound
+    "powerup.damagetype": ""
+    "powerup.attacksound": ""
     "powerup.face": ""
     "powerup.timerstyle": ""
     "powerup.flash": false
@@ -137,14 +112,8 @@ Weapon:
     weapon.ammogive1: 0
     weapon.ammouse1: 0
 
-# An actor that moves, sees, fights and dies (Entities.Actors.Monster): anything with health,
-# or whose states use an enemy's thinks and actions (T_Chase, T_Shoot, A_FireProjectile, ...),
-# needs it as an ancestor. It adds nothing of its own here; the class is what it brings.
 Monster: {}
 
-# Blake Stone's and Planet Strike's enemies and machines (Entities.Actors.BlakeMonster): a
-# Monster with their ways of chasing, shooting, running, being wounded and talked to, and the
-# thinks and actions that go with them (its own T_Chase and T_Shoot, T_Bounce, A_Melee, ...).
 BlakeMonster:
   parent: Monster
 
