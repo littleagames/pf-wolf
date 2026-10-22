@@ -1,4 +1,5 @@
-# The new keys' colors (see pfwolf-pk3's gamepacks/wolf3d/translations.yaml): the gold key's
+# The new keys' colors (the ranges are in the translations reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/translations): the gold key's
 # sprite desaturated, then tinted, keeping its shading
 red-key: ["1:254=%[0,0,0]:[2,0.25,0.25]"]
 blue-key: ["1:254=%[0,0,0]:[0.4,0.7,2]"]

@@ -1,5 +1,6 @@
-# Laid over pfwolf-pk3's gamepacks/wolf3d/translations.yaml (whose top says how translations
-# work). A guard's tan uniform shares its colors with his face (the skin ramp, 198:223), so as
+# Laid over pfwolf-pk3's gamepacks/wolf3d/translations.yaml (how translations work is in the
+# translations reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/translations).
+# A guard's tan uniform shares its colors with his face (the skin ramp, 198:223), so as
 # the allies' green does, these recolor 207:223 everywhere but the face's own 198:206 only
 # below the head ("below 10": rows under the sprite's first ten drawn).
 #

@@ -110,7 +110,7 @@ which it can since menu hooks).
 
 Left to do the same way, the files with the most explanation of fields:
 
-- the tops of `gamepacks/wolf3d/translations.yaml` and `factions.yaml` (the last two are rules as much as
+- the top of `gamepacks/wolf3d/factions.yaml` (rules as much as
   fields: keep what isn't a field's meaning, say where an actor's faction or translation comes
   from, in the code's type docs or the manual)
 

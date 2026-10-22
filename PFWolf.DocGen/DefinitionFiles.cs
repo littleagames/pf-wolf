@@ -61,7 +61,12 @@ public static class DefinitionFiles
             "fonts.yaml", "gamepacks/{pack}/fonts.yaml", () => Entries("Fonts by name", typeof(FontDefinition))),
         new("hud-messages", "hud-messages.yaml", "How on-screen messages look.",
             "hud-messages.yaml", "gamepacks/{pack}/hud-messages.yaml", () => Entries("Message styles by name", typeof(HudMessageStyleDefinition))),
-        new("translations", "translations.yaml", "Sprite color translations: recolorings of the palette.",
+        new("translations", "translations.yaml", "Sprite color translations by name, each a list of ranges (ZDoom's) that recolor a sprite's palette indices as it's drawn. Every index starts as itself, and each range then recolors some, from the index's own color in the palette rather than what an earlier range made of it. "
+            + "\"208:223=144:159\" puts those indices onto these, spread evenly (either way round); one index on its own (\"15=31\") is a range of one. "
+            + "\"208:223=[255,0,0]:[64,0,0]\" puts them onto a gradient between two colors (0-255 each), the nearest palette color to each step; \"#FF0000:#400000\" works too. "
+            + "\"1:254=%[0,0,0]:[2,0,0]\" desaturates: each index's own lightness picks the color between the two (each 0 to 2, 1 being full), keeping its shading. "
+            + "A range ending \"below N\" only recolors from N rows below the sprite's top (its first row with anything drawn) down, for colors a sprite wears on its head and its body both. "
+            + "Which translation an actor is drawn through is in the manual's Sprite colors.",
             "translations.yaml", "gamepacks/{pack}/translations.yaml", () => Entries("Translations by name", typeof(List<string>))),
         new("statusbar", "statusbar.yaml", "The status bar's layout. statusbar-fullscreen.yaml is laid out the same way, for the full-screen view.",
             "statusbar.yaml", "gamepacks/{pack}/statusbar.yaml", () => Entries("Status bar elements by name", typeof(StatusBarElement))),

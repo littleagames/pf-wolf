@@ -570,7 +570,9 @@ Every actor is on a side, a faction. The rules are written at the top of pfwolf-
   with cheats on, `setfaction <faction> [class]` moves the nearest enemy (or a class) over.
 
 A translation recolors a sprite as it's drawn, so one set of sprites can come in several colors.
-The rules are at the top of pfwolf-pk3's `gamepacks/wolf3d/translations.yaml`:
+The rules are in the
+[translations reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/translations)
+and the manual's [Sprite colors](https://www.littleagames.com/pf-wolf/docs/latest/manual/sprite-colors):
 
 - Each is a list of ZDoom-style ranges: `"207:223=101:111"` (palette indices onto others),
   `"96:111=[255,0,0]:[64,0,0]"` (onto a gradient) or `"1:254=%[0,0,0]:[2,0,0]"` (desaturated,
