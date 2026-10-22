@@ -16,11 +16,7 @@ public enum ActionUse
 /// <param name="Signature">How it's called, its arguments in [brackets] when they can be left out</param>
 /// <param name="Description">What it does</param>
 /// <param name="Needs">The actor class it needs (`parent:` one of them), or null for any actor</param>
-public sealed record GameAction(string Name, ActionUse Use, string Signature, string Description, string? Needs = null)
-{
-    /// <summary>A think (T_): run every tic the actor is on the state, rather than once as it starts</summary>
-    public bool IsThink => Name.StartsWith("T_", StringComparison.Ordinal);
-}
+public sealed record GameAction(string Name, ActionUse Use, string Signature, string Description, string? Needs = null);
 
 /// <summary>Thinks and actions that are for the same kind of thing (the weapon in hand's)</summary>
 public sealed record ActionGroup(string Title, IReadOnlyList<GameAction> Actions);
@@ -211,8 +207,10 @@ public static class GameActions
 
     /// <summary>The thinks and actions as a record's fields, for the documentation (each its own field, by name)</summary>
     public static FieldSchema Schema() => FieldSchema.Record("actions",
-        "The thinks (T_, run every tic) and actions (A_, run once) an actordefs state can run (`think: T_Chase`, `action: A_PlaySound(\"x\")`), "
-        + "and the actions a mapdefs switch or trigger can run (`actions:`). Arguments in [brackets] can be left out.",
+        "What an actordefs frame can run (`think: T_Chase`, `action: A_PlaySound(\"x\")`), and the actions a mapdefs switch or trigger can run (`actions:`). "
+        + "Where it's written decides when it runs, not its name: as a frame's think it runs every tic the frame shows, as its action once, as the frame ends. "
+        + "Most T_ ones are made to be thinks and most A_ ones actions, but not all: the guard's `action: T_Shoot` fires once, and a projectile flies by `think: A_Projectile`. "
+        + "Arguments in [brackets] can be left out.",
         [.. Groups.Select(group => FieldSchema.Group(group.Title, null, [.. group.Actions.Select(a => FieldSchema.Callable(a.Name, a.Signature, Describe(a)))]))]);
 
     static string Describe(GameAction action)
