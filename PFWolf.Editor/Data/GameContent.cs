@@ -5,8 +5,12 @@ using PFWolf.Managers;
 
 namespace PFWolf.Editor.Data;
 
-/// <summary>A level the game's game-info plays, or one only the data files have</summary>
-public sealed record MapEntry(string Name, string Title)
+/// <summary>
+/// A level the game's game-info plays, or one only the data files have. <paramref name="Label"/>
+/// is what the level list calls it in place of its name, for a hub game's floors ("M1 F2"; empty
+/// for others), and <paramref name="Unused"/> marks a hub mission's slot the game never plays.
+/// </summary>
+public sealed record MapEntry(string Name, string Title, string Label = "", bool Unused = false)
 {
     public override string ToString() => string.IsNullOrWhiteSpace(Title) ? Name : $"{Name}  {Title}";
 }
@@ -291,6 +295,43 @@ public sealed class GameContent
     public IReadOnlyList<string> TranslationNames =>
         Assets.FindInGamePackIfAny<TranslationsAsset>("translations")?.Translations.Keys.Order(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
 
+    private readonly Dictionary<string, List<string>> _hintMessages = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// A hint text's messages (Blake Stone's InformantHints): the text split at its "^XX"s, its
+    /// formatting codes left out, as the game's BlakeMonster.HintMessages reads it
+    /// </summary>
+    public IReadOnlyList<string> HintMessages(string textName)
+    {
+        if (_hintMessages.TryGetValue(textName, out var cached))
+            return cached;
+
+        var messages = new List<string>();
+        if (Find<TextAsset>(textName) is { } asset)
+        {
+            var parts = asset.ToText().Split("^XX");
+            foreach (var part in parts.Take(parts.Length - 1))     // after the last ^XX is only the end
+            {
+                var text = System.Text.RegularExpressions.Regex.Replace(part, @"\^[A-Z]{2}[0-9A-Fa-f]{0,2}", "");
+                messages.Add(string.Join("\n", text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Select(line => line.Trim())).Trim('\n'));
+            }
+        }
+        return _hintMessages[textName] = messages;
+    }
+
+    /// <summary>
+    /// Whether the game ever goes to a level: game-info starts an episode there or names it as
+    /// another level's next or secret next (an unlisted level only the map command reaches is left out)
+    /// </summary>
+    public bool IsLevelGoneTo(string mapName)
+    {
+        if (GameInfo == null)
+            return true;
+        bool Named(string? name) => name?.Equals(mapName, StringComparison.OrdinalIgnoreCase) == true;
+        return GameInfo.Episodes.Values.Any(episode => Named(episode.StartMap))
+               || GameInfo.Maps.Values.Any(map => Named(map.Next) || Named(map.SecretNext));
+    }
+
     /// <summary>The names of every music asset, for the level properties</summary>
     public IReadOnlyList<string> MusicNames { get; private set; } = [];
 
@@ -316,7 +357,17 @@ public sealed class GameContent
         foreach (var (name, info) in GameInfo?.Maps ?? [])
         {
             if (seen.Add(name) && FindMap(name) is { } map)
-                maps.Add(new MapEntry(name, MapTitle(info.Name, map)));
+            {
+                // A hub mission's floor (Blake Stone's) goes by its mission and floor; a slot of
+                // the mission that's no floor (nothing goes to it, and it goes nowhere) is unused
+                if (GameInfo!.Clusters.TryGetValue(info.Cluster, out var cluster) && cluster.Hub)
+                {
+                    bool unused = info.FloorNumber == 0 && string.IsNullOrEmpty(info.Next) && !IsLevelGoneTo(name);
+                    maps.Add(new MapEntry(name, MapTitle(info.Name, map), unused ? $"M{info.Cluster} —" : $"M{info.Cluster} F{info.FloorNumber}", unused));
+                }
+                else
+                    maps.Add(new MapEntry(name, MapTitle(info.Name, map)));
+            }
         }
 
         foreach (var name in Assets.AssetNames.Where(name => Assets.Exists<MapAsset>(name) && !seen.Contains(name)).Order(StringComparer.OrdinalIgnoreCase))

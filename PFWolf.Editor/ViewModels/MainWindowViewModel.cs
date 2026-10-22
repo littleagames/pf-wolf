@@ -61,8 +61,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public ToolController Controller { get; } = new();
 
     /// <summary>
-    /// Wolf3D and Spear for now; Blake Stone's games come later. Then the games the mods add
-    /// (stand-alone games, which need no data files); the first choice picks one of those too.
+    /// PFWolf's own games (Wolf3D, Spear and Blake Stone's, with their variants), then the games
+    /// the mods add (stand-alone games, which need no data files); the first choice picks one of
+    /// those too.
     /// </summary>
     public ObservableCollection<GameChoice> GameChoices { get; } =
     [
@@ -72,6 +73,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         new("wolf3d-shareware", "Wolfenstein 3D (shareware)"),
         new("spear", "Spear of Destiny"),
         new("spear-demo", "Spear of Destiny (demo)"),
+        new("blake", "Blake Stone: Aliens of Gold"),
+        new("planetstrike", "Blake Stone: Planet Strike"),
     ];
 
     /// <summary>PFWolf's own games, which a new mod can be made for</summary>
@@ -759,7 +762,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
             Maps.Clear();
             foreach (var map in content.Maps)
-                Maps.Add(new MapItem(map.Name, map.Title));
+                Maps.Add(new MapItem(map.Name, map.Title, map.Label, map.Unused));
 
             // The rest is on this thread: each step is shown before it starts
             LoadingStep = "Drawing the palette's pictures";
@@ -1679,7 +1682,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (Tiles == null || Document == null)
             return;
 
-        foreach (var problem in LevelChecks.Run(Tiles, Document.InGameInfo))
+        foreach (var problem in LevelChecks.Run(Tiles, Document.InGameInfo, Document.AssetName))
             Checks.Add(problem);
         int errors = Checks.Count(problem => problem.Severity == CheckSeverity.Error);
         Status = Checks.Count == 0

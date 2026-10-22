@@ -43,6 +43,12 @@ public sealed record MapProperties
     public string? DefaultCeiling { get; init; }
     public string? Weather { get; init; }
 
+    /// <summary>The level's floor in its mission (game-info floor-number: Blake Stone's 0 to 10), which elevators and map-info links go by</summary>
+    public int? FloorNumber { get; init; }
+
+    /// <summary>The cluster (game-info clusters key) the level is in: a Blake Stone mission</summary>
+    public int? Cluster { get; init; }
+
     // Shading
     public string? FadeColor { get; init; }
     public double? FadeStart { get; init; }
@@ -70,6 +76,8 @@ public sealed record MapProperties
         DefaultFloor = info.DefaultFloor,
         DefaultCeiling = info.DefaultCeiling,
         Weather = info.Weather,
+        FloorNumber = info.FloorNumber,
+        Cluster = info.Cluster == 0 ? null : info.Cluster,
         FadeColor = info.Shading?.FadeColor,
         FadeStart = info.Shading?.FadeStart,
         FadeEnd = info.Shading?.FadeEnd,

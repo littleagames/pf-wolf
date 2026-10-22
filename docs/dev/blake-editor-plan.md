@@ -1,25 +1,41 @@
 # Blake Stone editor plan: editing Aliens of Gold and Planet Strike levels
 
-## Status (2026-10-22): plan only
+## Status (2026-10-22): in progress on feature/editor/blake-stone-support
 
-Nothing is built. The open questions are listed below.
+- **Phase 1 (done):** `blake` and `planetstrike` are in the game list and load with no
+  problems. The level list names hub floors "M1 F2" (unused slots "M1 —", dimmed, with the map
+  name as a tooltip). The status bar decodes map-info codes (colors with their RGB, flats by
+  name, hints with their text, transporter floors, food-unit uses) and the links object-plane
+  values make (MapTiles.Links.cs: tag-links, `link: object-plane` switches, smart switch floor
+  codes, A_Teleport walls, `link: east` actor codes). A value tile is never read as a thing,
+  as in the game. Level checks: no errors on any stock AOG or Planet Strike level. Door locks
+  on doors aren't "things on a door" any more; other door values (bstone's linked doors, which
+  PFWolf doesn't do) are one warning per level; plane 0 value 0 is a warning; "no player start"
+  is a warning on a level nothing in game-info goes to. Planet Strike's outside filler, plane 0
+  value 64, is now a solid wall in mapdefs/planetstrike/walls.yaml, as bstone has it. Tests:
+  AOG and PS levels round-trip through `.wad`, LevelChecksGameTests for both, and
+  BlakeEditorGameTests (links, map-info text, level labels, every thing shows). Checked by eye:
+  the editor opens AOG with the new level names.
 
 Goal: the editor opens Blake Stone: Aliens of Gold (`blake`) and Planet Strike (`planetstrike`)
 the way it opens Wolf3D and Spear today, and a modder can edit their levels in full: map-info
 codes, barrier and smart-switch links, transporters and warps, hub floors. The levels are saved
 as `maps/MAPnn.wad` in a mod and played with F5. As with Wolf3D, the editor never writes MAPTEMP.
 
-## Open questions
+## Decisions (2026-10-22)
 
-- **Level names in the list.** "Mission 2 · Floor 5  TECHNICAL PLANNING OFFICES" from episodes +
-  `floor-number`, or game-info's name alone as now? The unused slots (four per mission) could be
-  hidden or shown dimmed.
-- **Map-info code editing UI.** One "Level codes" panel listing every code on the level, or
-  per-tile editing from the properties of the hovered/selected tile, or both?
-- **Where new map-info codes go.** Blake puts them in the object plane's top row. The editor
-  could place new ones there by itself (first free pair), or let the modder place them by hand.
-- **Fidelity of the 3D view.** Match the game's shading exactly, or show flat lighting with the
-  right colors and flats?
+- **Level names in the list:** mission and floor, then the name: "M1 F2  TECHNICAL PLANNING
+  OFFICES", from episodes and `floor-number`. A mission's unused slots (no floor number, which
+  nothing in game-info goes to) come at the end of the mission, dimmed: "M1 —  Mission 1 unused
+  slot 11".
+- **Editing map-info codes:** both ways. A "Level codes" panel lists every code on the level with
+  its value decoded (click to go there, edit in place), and the selected tile's code can be
+  edited from a dialog.
+- **Where new codes go:** level-wide codes (ceiling/floor colors, flats) go by themselves into the
+  first free pair of the object plane's top row, as Blake's levels have them. Codes that belong
+  to a tile (hints, transporters, warps, links) are placed by hand.
+- **3D view lighting:** the right colors, flats and split doors, with the existing distance
+  shading (the inverse fade curve applied). The game's lighting tables aren't ported.
 
 ## Where things stand
 

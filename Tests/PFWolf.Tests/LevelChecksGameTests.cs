@@ -19,6 +19,8 @@ public class LevelChecksGameTests
 
     [TestCase("wolf3d", "")]
     [TestCase("spear", "")]
+    [TestCase("blake", "")]
+    [TestCase("planetstrike", "")]
     [TestCase("wolf3d", "examples/mods/switch-demo")]
     [TestCase("wolf3d", "examples/mods/fireball-demo")]
     public void The_Games_Own_Levels_Have_No_Errors(string game, string mod)
@@ -52,7 +54,7 @@ public class LevelChecksGameTests
         {
             var map = content.FindMap(entry.Name)!;
             var info = content.MapInfoOf(entry.Name);
-            foreach (var problem in LevelChecks.Run(new MapTiles(content, map, () => MapProperties.From(info)), info != null))
+            foreach (var problem in LevelChecks.Run(new MapTiles(content, map, () => MapProperties.From(info)), info != null, entry.Name))
             {
                 TestContext.Out.WriteLine($"{entry.Name} {problem}");
                 if (problem.Severity == CheckSeverity.Error)

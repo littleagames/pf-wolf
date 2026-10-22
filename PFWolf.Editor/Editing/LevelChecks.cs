@@ -32,7 +32,8 @@ public static class LevelChecks
         ["A_OpenDoor", "A_CloseDoor", "A_ToggleDoor", "A_MoveWall", "A_SetWall", "A_Activate", "A_Deactivate", "A_SmartSwitch"];
 
     /// <param name="inGameInfo">Whether game-info lists the level</param>
-    public static List<LevelProblem> Run(MapTiles tiles, bool inGameInfo)
+    /// <param name="mapName">The level's name (MAP01), to tell whether the game ever goes there; null: it does</param>
+    public static List<LevelProblem> Run(MapTiles tiles, bool inGameInfo, string? mapName = null)
     {
         var problems = new List<LevelProblem>();
         var defs = tiles.Defs;
@@ -46,6 +47,7 @@ public static class LevelChecks
         var unknownObjects = new Dictionary<int, (int X, int Y, int Count)>();
         var unknownPatches = new Dictionary<int, (int X, int Y, int Count)>();
         var brokenThings = new Dictionary<string, (int X, int Y, int Count)>();
+        var unusedDoorValues = new Dictionary<int, (int X, int Y, int Count)>();
         int doors = 0;
         (int X, int Y) firstPastDoorLimit = (-1, -1);
         for (int y = 0; y < tiles.Height; y++)
@@ -61,7 +63,9 @@ public static class LevelChecks
                 if (tiles.PlayerStart(x, y) is { Deathmatch: false })
                     starts.Add((x, y));
 
-                if (obj != 0)
+                if (obj != 0 && kind == TileKind.Door && !defs.DoorLocks.ContainsKey(obj))
+                    Count(unusedDoorValues, 0, x, y);
+                else if (obj != 0)
                     CheckObject(tiles, problems, unknownObjects, brokenThings, x, y, obj, kind);
 
                 if (kind == TileKind.Door)
@@ -85,7 +89,13 @@ public static class LevelChecks
                 firstPastDoorLimit.X, firstPastDoorLimit.Y));
 
         if (starts.Count == 0)
-            problems.Add(new(CheckSeverity.Error, "no player start"));
+        {
+            // A level the game never goes to (Blake Stone's unused slots) can do without one
+            if (mapName == null || tiles.Content.IsLevelGoneTo(mapName))
+                problems.Add(new(CheckSeverity.Error, "no player start"));
+            else
+                problems.Add(new(CheckSeverity.Warning, "no player start (game-info never goes to this level, so it's only the map command's problem)"));
+        }
         else if (starts.Count > 1)
         {
             foreach (var (x, y) in starts.Take(starts.Count - 1))
@@ -93,7 +103,15 @@ public static class LevelChecks
         }
 
         foreach (var (value, (x, y, count)) in unknownFloor)
-            problems.Add(new(CheckSeverity.Error, $"plane 0 value {value} isn't a wall, door or floor code in the mapdefs ({count} {Tiles(count)})", x, y));
+        {
+            // 0 is nothing at all: the game takes it as open floor, as it does any value it doesn't know
+            if (value == 0)
+                problems.Add(new(CheckSeverity.Warning, $"plane 0 value 0 isn't a floor code, so it's open floor in no area ({count} {Tiles(count)})", x, y));
+            else
+                problems.Add(new(CheckSeverity.Error, $"plane 0 value {value} isn't a wall, door or floor code in the mapdefs ({count} {Tiles(count)})", x, y));
+        }
+        foreach (var (_, (x, y, count)) in unusedDoorValues)
+            problems.Add(new(CheckSeverity.Warning, $"{count} {(count == 1 ? "door holds an object value" : "doors hold object values")} that {(count == 1 ? "isn't a door lock" : "aren't door locks")}, which the game doesn't use", x, y));
         foreach (var (value, (x, y, count)) in unknownObjects)
             problems.Add(new(CheckSeverity.Warning, $"object code {value} isn't in the mapdefs, so nothing's placed ({count} {Tiles(count)})", x, y));
         foreach (var (reason, (x, y, count)) in brokenThings)
@@ -125,6 +143,10 @@ public static class LevelChecks
     {
         var defs = tiles.Defs;
         bool solid = kind is TileKind.Wall or TileKind.Door;
+
+        // Data for the tile west of it (a map-info value, a link's target), whatever it looks like
+        if (tiles.IsValueTile(x, y) || kind == TileKind.Door && defs.DoorLocks.ContainsKey(obj))
+            return;
 
         if (defs.Things.TryGetValue(obj, out var thing))
         {
@@ -200,7 +222,7 @@ public static class LevelChecks
         {
             for (int x = 0; x < tiles.Width; x++)
             {
-                var switches = Switches(tiles, x, y).ToList();
+                var switches = tiles.SwitchesAt(x, y).ToList();
                 if (switches.Count == 0)
                     continue;
 
@@ -253,7 +275,7 @@ public static class LevelChecks
             for (int x = 0; x < tiles.Width; x++)
             {
                 if (tiles[MapConstants.TagPlane, x, y] is var tag and not 0
-                    && Switches(tiles, x, y).Any(sw => sw.Actions.Any(action => WallMovingActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase)))))
+                    && tiles.SwitchesAt(x, y).Any(sw => sw.Actions.Any(action => WallMovingActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase)))))
                     movedTags.Add(tag);
             }
         }

@@ -47,6 +47,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         IReadOnlyList<string> maps, IReadOnlyList<string>? weather = null)
     {
         MapName = mapName;
+        _loaded = properties;
         Defaults = defaults;
         MusicNames = music;
         MapNames = maps;
@@ -88,6 +89,9 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
             });
         }
     }
+
+    // What the dialog doesn't edit is kept as it was
+    private readonly MapProperties _loaded;
 
     public string MapName { get; }
     public string Title => $"{MapName} properties";
@@ -197,6 +201,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 DefaultFloor = Optional(DefaultFloor),
                 DefaultCeiling = Optional(DefaultCeiling),
                 Weather = WeatherName(Weather),
+                FloorNumber = _loaded.FloorNumber,
+                Cluster = _loaded.Cluster,
                 FadeColor = Color(FadeColor, "fade color"),
                 FadeStart = Double(FadeStart, "fade start"),
                 FadeEnd = Double(FadeEnd, "fade end"),

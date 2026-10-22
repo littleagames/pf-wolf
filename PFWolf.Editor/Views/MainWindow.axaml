@@ -339,7 +339,7 @@
         </ListBox.ContextMenu>
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:MapItem">
-            <TextBlock Text="{Binding Display}" />
+            <TextBlock Text="{Binding Display}" Opacity="{Binding Opacity}" ToolTip.Tip="{Binding ToolTip}" />
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>

@@ -159,3 +159,10 @@ walls:
         South: PLNEMBL1
         East: PLNEMBL2
         West: PLNEMBL2
+    # What every level fills its outside with: below bstone's AREATILE, so a solid wall there,
+    # though nothing ever sees it (its VSWAP pages are the first two flats)
+    '64':
+        North: F_GRYBIG
+        South: F_GRYBIG
+        East: F_SQNORM
+        West: F_SQNORM

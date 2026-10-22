@@ -21,7 +21,7 @@ public sealed record ShadingValues(string FadeColor, double FadeStart, double Fa
 /// Reads a level's planes the way the game does when it loads one (MapManager.LoadMap): which
 /// plane 0 values are walls, doors and floor codes, and what each object-plane value places
 /// </summary>
-public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperties>? properties = null)
+public sealed partial class MapTiles(GameContent content, MapAsset map, Func<MapProperties>? properties = null)
 {
     private MapObjectTranslationAsset? _defs, _defsFrom;
     private MapObjectTranslationAsset? _defsOver;
@@ -247,9 +247,24 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
             return "secret exit";
         if (Floors.Triggers?.TryGetValue(tile, out var action) == true)
             return $"trigger {action}";
-        if (Floors.ActorCodes?.ContainsKey(tile) == true)
-            return "enemy code";
+        if (Floors.ActorCodes?.TryGetValue(tile, out var actorCode) == true)
+            return $"enemy code: {ActorCodeText(actorCode)}";
         return null;
+    }
+
+    /// <summary>What a floors actor-code does to the enemy on it ("drops RedCard, cloaked")</summary>
+    public static string ActorCodeText(MapActorCodeTranslation code)
+    {
+        var parts = new List<string>();
+        if (code.Drop.Length > 0)
+            parts.Add($"drops {code.Drop}");
+        if (code.Cloak)
+            parts.Add("cloaked");
+        if (code.Ambush)
+            parts.Add("ambush");
+        if (code.Link.Length > 0)
+            parts.Add($"its death works the tile the value {code.Link} of it names");
+        return parts.Count > 0 ? string.Join(", ", parts) : "nothing";
     }
 
     public MapTextureTranslation? Wall(int x, int y)
@@ -258,15 +273,25 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
     public MapTextureTranslation? Door(int x, int y)
         => Defs.Doors.GetValueOrDefault(this[0, x, y]);
 
-    /// <summary>The thing placed on the tile; things only stand on open floor, as in the game</summary>
-    /// <summary>The thing placed on the tile: on open floor, or (an `in-wall` one) on a wall</summary>
+    /// <summary>
+    /// The thing placed on the tile: on open floor, or (an `in-wall` one) on a wall, as in the
+    /// game; not on a tile whose value is data for the tile west of it (<see cref="IsValueTile"/>)
+    /// </summary>
     public MapActorTranslation? Thing(int x, int y)
         => Defs.Things.GetValueOrDefault(this[1, x, y]) is { } thing && KindAt(x, y) switch
         {
             TileKind.Door => false,
             TileKind.Wall => thing.InWall,
             _ => true,
-        } ? thing : null;
+        } && !IsValueTile(x, y) ? thing : null;
+
+    /// <summary>
+    /// Whether the tile's object-plane value is data for the tile west of it: a map-info code's
+    /// value, or the target of a link made there (an enemy code's, a teleporter's 0xF5 code)
+    /// </summary>
+    public bool IsValueTile(int x, int y)
+        => x > 0 && this[1, x, y] != 0
+           && (MapInfoKind(this[1, x - 1, y]) is { } kind && MapInfoCodes.HasValue(kind) || LinkFrom(x - 1, y) is { } link && link.ValueX == x);
 
     public MapPlayerStartTranslation? PlayerStart(int x, int y)
         => Defs.PlayerStarts.GetValueOrDefault(this[1, x, y]);
@@ -276,7 +301,8 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
 
     /// <summary>
     /// Whether the mapdefs know the tile's object-plane value (0 is nothing, so known): a thing,
-    /// diagonal, player start, trigger, door lock or map-info code, or the value after a map-info code
+    /// diagonal, player start, trigger, door lock or map-info code, or data something reads (the
+    /// value after a map-info code, a link's tile: <see cref="ValueUse"/>)
     /// </summary>
     public bool ObjectKnown(int x, int y)
     {
@@ -285,8 +311,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
             || Defs.Triggers.ContainsKey(obj) || Defs.DoorLocks.ContainsKey(obj) || Defs.MapInfo.ContainsKey(obj >> 8))
             return true;
 
-        // The tile after a map-info code holds that code's value
-        return x > 0 && Defs.MapInfo.TryGetValue(this[1, x - 1, y] >> 8, out var info) && MapInfoCodes.HasValue(info);
+        return ValueUse(x, y) != null;
     }
 
     /// <summary>A diagonal marker, which only shapes a wall</summary>
@@ -339,6 +364,11 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
 
     private string ObjectText(int x, int y, int obj)
     {
+        // The value of a code or link west of it, whatever the value itself might look like
+        if (IsValueTile(x, y))
+            return LinkFrom(x - 1, y) is { } westLink && westLink.ValueX == x
+                ? $"the value of the {westLink.Description} west of it: {LinkText(westLink)}"
+                : $"{ValueUse(x, y)}: 0x{obj:X4}, {MapInfoText(x - 1, y, this[1, x - 1, y], MapInfoKind(this[1, x - 1, y])!)}";
         if (Thing(x, y) is { } thing)
         {
             var details = new List<string> { thing.Class };
@@ -358,12 +388,20 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
             return $"{trigger.Action} ({trigger.Activation}{(trigger.Secret ? ", secret" : "")})";
         if (Diagonal(x, y) is { } diagonal)
             return $"diagonal {diagonal.Shape}";
-        if (Defs.MapInfo.TryGetValue(obj >> 8, out var info))
-            return $"map info: {info}";
-        if (Defs.DoorLocks.TryGetValue(obj, out var item))
+        if (LinkFrom(x, y) is { } link)
+            return LinkText(link);
+        if (MapInfoKind(obj) is { } info)
+            return MapInfoText(x, y, obj, info);
+        if (KindAt(x, y) == TileKind.Door && Defs.DoorLocks.TryGetValue(obj, out var item))
             return $"door lock: {item}";
+        if (KindAt(x, y) == TileKind.Door)
+            return $"not a door lock, so the game doesn't use it ({obj >> 8}, {obj & 0xff} as a tile)";
+        if (ValueUse(x, y) is { } use)
+            return use;
         if (Defs.Things.ContainsKey(obj))
             return "a thing, but on a wall or door, so it isn't placed (only `in-wall` ones go on walls)";
+        if (Defs.DoorLocks.TryGetValue(obj, out var lockItem))
+            return $"door lock ({lockItem}), but not on a door";
         return "not in the mapdefs";
     }
 

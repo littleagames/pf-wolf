@@ -44,6 +44,8 @@ public class MapRoundTripTests
 
     [TestCase("GAMEMAPS.WL6", "MAPHEAD.WL6")]
     [TestCase("GAMEMAPS.SOD", "MAPHEAD.SOD")]
+    [TestCase("MAPTEMP.BS6", "MAPHEAD.BS6")]
+    [TestCase("MAPTEMP.VSI", "MAPHEAD.VSI")]
     [Category("GameData")]
     public void Every_Game_Level_Saves_And_Loads_Back_Unchanged(string gameMaps, string mapHead)
     {
