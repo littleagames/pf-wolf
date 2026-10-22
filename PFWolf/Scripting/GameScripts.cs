@@ -88,6 +88,9 @@ internal sealed class GameScripts(
     // The actions the scripts gave, by name, for the scripts command
     readonly List<string> scriptActions = [];
 
+    // The actor fields scripts have read that there aren't, each told once
+    readonly HashSet<string> unknownFieldsTold = new(StringComparer.Ordinal);
+
     void RunScriptAction(string function, Entities.Actors.Actor actor, string[] args)
     {
         var values = new LuaValue[args.Length + 1];
@@ -188,9 +191,19 @@ internal sealed class GameScripts(
                 "temp1" => c.Return(self.Temp1),
                 "temp2" => c.Return(self.Temp2),
                 "temp3" => c.Return(self.Temp3),
-                _ => c.Return(methods.TryGetValue(key, out var method) ? method : LuaValue.Nil),
+                _ when methods.TryGetValue(key, out var method) => c.Return(method),
+                _ => UnknownField(c, key),
             });
         });
+
+        // A field an actor hasn't got (a typo: actor.hp) reads as nil, as Lua's own tables do, but
+        // is told on the console, once a name, so the nil isn't a mystery further on
+        int UnknownField(LuaFunctionExecutionContext c, string key)
+        {
+            if (unknownFieldsTold.Add(key))
+                host.Print($"Script: an actor has no {key}, so it reads as nil (the scripting reference lists an actor's fields and methods)");
+            return c.Return(LuaValue.Nil);
+        }
         meta["__newindex"] = new LuaFunction("actor field", (c, _) =>
         {
             var self = ActorArg(c, 0);

@@ -40,6 +40,9 @@ internal sealed partial class ScriptHost
 
     public LuaTable Globals => _state.Environment;
 
+    /// <summary>Prints where the scripts' print goes (the game's console), as a warning about a script</summary>
+    public void Print(string text) => _print(text);
+
     public ScriptHost(Action<string> print)
     {
         _print = print;

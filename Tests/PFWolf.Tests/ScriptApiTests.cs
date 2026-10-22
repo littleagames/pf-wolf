@@ -50,8 +50,27 @@ public class ScriptApiTests
         // Act
         host.Execute($"for _, name in ipairs({{{names}}}) do print(name, type(a[name])) end print('nothere', type(a.nothere))");
 
+        // Assert: less the warning for nothere (told once, so only if no test has read it before)
+        Assert.That(_printed.Where(line => !line.StartsWith("Script: ", StringComparison.Ordinal)),
+            Is.EqualTo(ScriptApi.ActorMethods.Select(method => $"{method.Name}\tfunction").Append("nothere\tnil")));
+    }
+
+    [Test]
+    public void A_Field_An_Actor_Hasnt_Got_Reads_As_Nil_And_Is_Told_Once()
+    {
+        // Arrange: a typo of health, read three times
+        var host = EngineHost();
+        host.Globals["a"] = Scripting.LuaActor.Of(new EntityActor { Name = "Thing" });
+
+        // Act
+        host.Execute("for i = 1, 3 do print(a.helth == nil) end");
+
         // Assert
-        Assert.That(_printed, Is.EqualTo(ScriptApi.ActorMethods.Select(method => $"{method.Name}\tfunction").Append("nothere\tnil")));
+        Assert.That(_printed, Is.EqualTo(new[]
+        {
+            "Script: an actor has no helth, so it reads as nil (the scripting reference lists an actor's fields and methods)",
+            "true", "true", "true",
+        }));
     }
 
     [Test]

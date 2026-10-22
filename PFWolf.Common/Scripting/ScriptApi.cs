@@ -193,7 +193,8 @@ public static class ScriptApi
         + "state on the actors (temp1..temp3): Lua's globals aren't saved, and demos and network games must come out the same.",
         [
             Section("game", "The game table: the level, its actors and tags, switch actions, hooks, time and messages", Game),
-            Section("actor", "An actor (self in an action, or what game.actors and the like return): its fields, actor.NAME", ActorFields),
+            Section("actor", "An actor (self in an action, or what game.actors and the like return): its fields, actor.NAME. "
+                + "A field it hasn't got (a typo: actor.hp) reads as nil, and the console says so, once a name; setting one is an error", ActorFields),
             Section("actor-methods", "An actor's methods, actor:NAME(...)", ActorMethods),
             Section("globals", "Lua's basic functions the sandbox leaves in (no load, require, dofile, io or os)", Globals),
             .. Libraries.Where(library => library.Name != "game")
