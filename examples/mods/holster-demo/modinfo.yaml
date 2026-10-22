@@ -1,0 +1,4 @@
+name: Holster Demo
+version: "1.0"
+description: Changing weapons puts the one in hand away and brings the next one up, instead of swapping them at once.
+game-packs: [wolf3d]

@@ -1,0 +1,42 @@
+# Wolf3D's weapons put away and brought up as they're changed, ZDoom-style. Mod YAML merges into
+# the base actors key by key, so each weapon only gains two states; the rest stays as it was.
+#
+# Deselect plays when the weapon in hand is changed from: A_Lower takes it down a step each time
+# it runs (6 of 96 when given no speed), and once it's off the view the next weapon comes in.
+# Select plays when a weapon is changed to: A_Raise brings it up a step each time, and goes on to
+# Ready once it's all the way up. A one-tic frame that loops runs them once a tic. While a weapon
+# goes down or comes up, fire does nothing and another change waits.
+#
+# The actions reference has both:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/actions
+
+# The knife is quick to put away and draw: 12 a tic, 8 tics each way
+Knife:
+  states:
+    Deselect:
+      - { sprite: KNIF, frames: [A], tics-per-frame: 1, action: A_Lower(12), next-state: Deselect }
+    Select:
+      - { sprite: KNIF, frames: [A], tics-per-frame: 1, action: A_Raise(12), next-state: Select }
+
+# The pistol and machine gun at the usual speed: 16 tics each way
+Pistol:
+  states:
+    Deselect:
+      - { sprite: PISG, frames: [A], tics-per-frame: 1, action: A_Lower, next-state: Deselect }
+    Select:
+      - { sprite: PISG, frames: [A], tics-per-frame: 1, action: A_Raise, next-state: Select }
+
+MachineGun:
+  states:
+    Deselect:
+      - { sprite: MCHG, frames: [A], tics-per-frame: 1, action: A_Lower, next-state: Deselect }
+    Select:
+      - { sprite: MCHG, frames: [A], tics-per-frame: 1, action: A_Raise, next-state: Select }
+
+# The gatling gun is heavy: 4 a tic, 24 tics each way
+GatlingGun:
+  states:
+    Deselect:
+      - { sprite: CHGG, frames: [A], tics-per-frame: 1, action: A_Lower(4), next-state: Deselect }
+    Select:
+      - { sprite: CHGG, frames: [A], tics-per-frame: 1, action: A_Raise(4), next-state: Select }

@@ -79,6 +79,7 @@ internal sealed class PlayerState
     public string? GrinSound;               // the pickup sound the face grins through
     public int FaceCount, FaceTimes;
     public Actors.Actor? WeaponSprite;      // the weapon in hand, run through its states
+    public int WeaponLowered;               // how far the weapon in hand is put away, 0 (up) to WeaponInHand.LoweredFully; never saved
     public int WeaponCharge;                // tics until a weapon.chargetics weapon can fire again
     public int ZoomLevel;                   // a scope's zoom, 0 to 100 (Gameplay/WeaponZoom.cs)
     public Gameplay.ZoomMode ZoomMode;      // zooming in, zoomed, zooming out or not

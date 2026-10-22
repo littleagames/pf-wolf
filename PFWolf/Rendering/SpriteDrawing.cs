@@ -445,13 +445,15 @@ internal sealed class SpriteDrawing(
 
         // The frame the weapon's states are on (Gameplay/WeaponInHand.cs), in the light of the
         // player's tile but not faded: it's at arm's length. Scaled by game-info weapon-scale, it
-        // still stands on the view's bottom edge (less any weapon-bob)
+        // still stands on the view's bottom edge (less any weapon-bob, and lower while it's being
+        // put away or brought up: A_Lower, A_Raise)
         if (hooks.WeaponShapeName() is { } shape)
         {
             int height = (int)((render.ViewHeight + 1) * hooks.WeaponScale());
+            int lowered = session.PlayerState.WeaponLowered * height / Gameplay.WeaponInHand.LoweredFully;
             scaler.SimpleScaleShape(render.ViewWidth / 2, shape, height,
                 session.PlayerState.WeaponSprite != null && Lighting.IsBright(session.PlayerState.WeaponSprite) ? Lighting.NoShade : lighting.LightAt(map.TileIndexOrNone(session.Player.TileX, session.Player.TileY), session.Player.X, session.Player.Y),
-                ((render.ViewHeight + 1) >> 1) - (height >> 1) + weaponBob.Drop(render.ViewHeight));
+                ((render.ViewHeight + 1) >> 1) - (height >> 1) + weaponBob.Drop(render.ViewHeight) + lowered);
         }
 
         hooks.DrawCrosshair?.Invoke();

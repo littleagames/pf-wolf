@@ -141,6 +141,8 @@ public static class GameActions
         new("A_CustomPunch", Actor, "A_CustomPunch", "A knife or punch at what's right in front of the player, for 0-15 (its arguments aren't read yet)"),
         new("A_ReFire", Actor, "A_ReFire", "Fire still held and a round ready: back to the Hold state (or Fire, for a weapon without one)"),
         new("A_Reload", Actor, "A_Reload([rounds[, \"state\"]])", "Loads the weapon in hand's magazine from its ammo, all that fits or that many rounds; given a state, it goes there while the magazine still has room and there's ammo left (a shotgun's shell-by-shell loop)"),
+        new("A_Lower", Actor, "A_Lower([speed])", "The Deselect state's action, on a short frame that loops: takes the weapon being put away speed further down (6 when left out, of 96), and once it's off the view the weapon changed to comes in. A weapon with a Deselect state is put away like this before every change; fire does nothing meanwhile, and another change waits."),
+        new("A_Raise", Actor, "A_Raise([speed])", "The Select state's action, on a short frame that loops: brings the weapon coming in speed further up (6 when left out, of 96), and once it's all the way up goes to its Ready state. A weapon with a Select state comes in like this whenever it's changed to; a first weapon (a new level, a loaded game) is simply up."),
 
         ]),
         new("Cutscenes and the player", [

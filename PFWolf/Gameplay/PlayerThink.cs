@@ -63,10 +63,18 @@ internal sealed class PlayerThink(
 
         // Reloading is like being ready, as the original Midnight Assault's T_Reload: use works,
         // and fire is kept for cutting the reload short (WeaponInHand.TickWeapon); only the
-        // weapon can't be changed (PlayerWeapons.CheckWeaponChange)
-        if (weaponInHand.IsWeaponReady() || WeaponInHand.IsReloading(session.PlayerState.WeaponSprite))
+        // weapon can't be changed (PlayerWeapons.CheckWeaponChange). So is putting a weapon away
+        // or bringing one up (Deselect, Select), but there fire does nothing and the change waits.
+        bool switching = WeaponInHand.IsSwitching(session.PlayerState.WeaponSprite);
+        if (weaponInHand.IsWeaponReady() || WeaponInHand.IsReloading(session.PlayerState.WeaponSprite) || switching)
         {
-            weapons.CheckWeaponChange();
+            if (switching)
+            {
+                if (playerinput.IsFreshPress(ButtonType.Attack))
+                    playerinput.SetPressed(ButtonType.Attack, false);
+            }
+            else
+                weapons.CheckWeaponChange();
             hooks.UpdateZoom(WeaponInHand.IsReloading(session.PlayerState.WeaponSprite));
 
             if (playerinput.IsPressed(ButtonType.Use))

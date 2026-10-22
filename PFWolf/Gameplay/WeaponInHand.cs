@@ -8,8 +8,12 @@ namespace PFWolf.Gameplay;
 /// player sprite: Ready loops on A_WeaponReady until fire is pressed, Fire (and Hold) play the
 /// attack, and the attack actions (A_GunAttack, A_CustomPunch, A_ReFire) run as their frames
 /// end. It's an ordinary Entities.Actors.Actor of the weapon class, ticked by MapManager.DoActor
-/// but never placed in the world. Switching weapons is instant, as in Wolf3D (holstering one
-/// and raising the next is a plan: docs/dev/todo.md).
+/// but never placed in the world.
+///
+/// Switching weapons is instant, as in Wolf3D, unless the weapons say otherwise: one with a
+/// Deselect state plays it first (A_Lower takes it down off the view), and one with a Select
+/// state comes in on it (A_Raise brings it up, then on to Ready). While a weapon goes down or
+/// comes up, fire does nothing and another switch waits, as in ZDoom.
 /// </summary>
 internal sealed class WeaponInHand(
     InventoryManager inventory,
@@ -20,6 +24,17 @@ internal sealed class WeaponInHand(
     Action registerMissileActions)
 {
     internal const string WeaponReadyState = "Ready";
+    internal const string SelectState = "Select", DeselectState = "Deselect";
+
+    /// <summary>
+    /// How far down a weapon goes to be put away, in ZDoom's units (WEAPONBOTTOM less WEAPONTOP:
+    /// 96, drawn as the weapon's full height): A_Lower and A_Raise move it 6 a tic unless told
+    /// otherwise, so a weapon goes down or comes up in 16 tics
+    /// </summary>
+    internal const int LoweredFully = 96;
+
+    /// <summary>A_Lower's and A_Raise's step when they're given none</summary>
+    internal const int DefaultSwitchSpeed = 6;
 
     // The weapon in hand's actor is the acting player's
     Entities.Actors.Actor? WeaponSprite
@@ -29,34 +44,115 @@ internal sealed class WeaponInHand(
     }
 
     /// <summary>
-    /// Makes the weapon sprite match <c>PlayerState.weapon</c>: a new weapon in hand starts on its
-    /// Ready state (dropping whatever the old one was doing); no weapon means no sprite.
+    /// Makes the weapon sprite match <c>PlayerState.weapon</c>; no weapon means no sprite. A new
+    /// weapon starts on its Ready state, unless the old one has a Deselect state, which it plays
+    /// first, and then the new one comes in on its Select state if it has one. A weapon coming up
+    /// gets all the way before a change is looked at. A first weapon (a new level, a loaded game)
+    /// is simply up.
     /// </summary>
     internal Entities.Actors.Actor? SyncWeaponSprite()
     {
         var playerstate = session.PlayerState;
         if (playerstate.Weapon == null)
+        {
+            playerstate.WeaponLowered = 0;
             return WeaponSprite = null;
-
-        if (WeaponSprite != null && string.Equals(WeaponSprite.Name, playerstate.Weapon, StringComparison.OrdinalIgnoreCase))
-            return WeaponSprite;
+        }
 
         var old = WeaponSprite;
-        WeaponSprite = inventory.CreateActor(playerstate.Weapon);
-        if (WeaponSprite == null)
+        if (old != null)
+        {
+            bool same = string.Equals(old.Name, playerstate.Weapon, StringComparison.OrdinalIgnoreCase);
+            var state = old.CurrentState?.StateName;
+            if (state == SelectState)
+                return old;                     // coming up: finishes first
+            if (state == DeselectState)
+            {
+                if (playerstate.WeaponLowered < LoweredFully)
+                    return old;                 // still going down
+                if (same)
+                {
+                    BringUp(old, armed: false); // taken back as it went: it comes up again
+                    return old;
+                }
+            }
+            else if (same)
+                return old;
+            else if (JumpWeaponState(old, DeselectState))
+            {
+                playerstate.WeaponLowered = 0;
+                return old;
+            }
+        }
+
+        var sprite = WeaponSprite = inventory.CreateActor(playerstate.Weapon);
+        if (sprite == null)
             return null;
 
         // A weapon picked up mid-attack takes over the attack where it had got to, as vanilla's
         // T_Attack carried on through the new weapon's attackinfo; otherwise it starts Ready
-        if (old != null && AttackStep(old) is { } step && AttackFrame(WeaponSprite, step) is { } frame)
+        if (old != null && sprite.ResolvedStates.ContainsKey(SelectState))
+            BringUp(sprite, armed: true);
+        else if (old != null && old.CurrentState?.StateName != DeselectState
+                 && AttackStep(old) is { } step && AttackFrame(sprite, step) is { } frame)
         {
-            WeaponSprite.CurrentState = frame;
-            WeaponSprite.TicCount = old.TicCount;
+            sprite.CurrentState = frame;
+            sprite.TicCount = old.TicCount;
+            playerstate.WeaponLowered = 0;
         }
-        else if (WeaponSprite.ResolvedStates.TryGetValue(WeaponReadyState, out var ready))
-            WeaponSprite.ArmState(ready);
-        return WeaponSprite;
+        else
+        {
+            if (sprite.ResolvedStates.TryGetValue(WeaponReadyState, out var ready))
+                sprite.ArmState(ready);
+            playerstate.WeaponLowered = 0;
+        }
+        return sprite;
     }
+
+    // A weapon starting up from out of sight: on its Select state, or Ready without one
+    void BringUp(Entities.Actors.Actor weapon, bool armed)
+    {
+        var playerstate = session.PlayerState;
+        var state = weapon.ResolvedStates.TryGetValue(SelectState, out var select) ? select
+            : weapon.ResolvedStates.GetValueOrDefault(WeaponReadyState);
+        playerstate.WeaponLowered = select != null ? LoweredFully : 0;
+        if (state == null)
+            return;
+        if (armed)
+            weapon.ArmState(state);
+        else
+            weapon.JumpTo(state);
+    }
+
+    /// <summary>Whether the weapon is being put away or brought up (its Deselect or Select state)</summary>
+    internal static bool IsSwitching(Entities.Actors.Actor? weapon) =>
+        weapon?.CurrentState?.StateName is DeselectState or SelectState;
+
+    /// <summary>
+    /// A_Lower([speed]): takes the weapon in hand that much further down (6 when left out), until
+    /// it's off the view; then the weapon being changed to comes in. A Deselect state's action,
+    /// on a frame of a tic or so that loops.
+    /// </summary>
+    internal void Lower(Entities.Actors.Actor weapon, string[] args)
+    {
+        var playerstate = session.PlayerState;
+        playerstate.WeaponLowered = Math.Min(playerstate.WeaponLowered + SwitchSpeed(args), LoweredFully);
+    }
+
+    /// <summary>
+    /// A_Raise([speed]): brings the weapon in hand that much further up (6 when left out); once
+    /// it's all the way up it goes to its Ready state. A Select state's action, on a looping frame.
+    /// </summary>
+    internal void Raise(Entities.Actors.Actor weapon, string[] args)
+    {
+        var playerstate = session.PlayerState;
+        playerstate.WeaponLowered = Math.Max(playerstate.WeaponLowered - SwitchSpeed(args), 0);
+        if (playerstate.WeaponLowered == 0)
+            JumpWeaponState(weapon, WeaponReadyState);
+    }
+
+    static int SwitchSpeed(string[] args) =>
+        args.Length > 0 && int.TryParse(args[0], out var speed) && speed > 0 ? speed : DefaultSwitchSpeed;
 
     /// <summary>How many timed frames into its attack (from Fire's first) a weapon is, or null when it isn't attacking</summary>
     internal static int? AttackStep(Entities.Actors.Actor weapon)
@@ -155,6 +251,8 @@ internal sealed class WeaponInHand(
         Entities.Actors.ActorActionRegistry.Register("A_CustomPunch", CustomPunch);
         Entities.Actors.ActorActionRegistry.Register("A_ReFire", ReFire);
         Entities.Actors.ActorActionRegistry.Register("A_Reload", Reload);
+        Entities.Actors.ActorActionRegistry.Register("A_Lower", Lower);
+        Entities.Actors.ActorActionRegistry.Register("A_Raise", Raise);
         registerMissileActions();
     }
 
@@ -167,6 +265,10 @@ internal sealed class WeaponInHand(
     /// </summary>
     internal void WeaponReady(Entities.Actors.Actor weapon)
     {
+        // A weapon going down or coming up (a Deselect or Select state that runs it) does nothing
+        if (IsSwitching(weapon))
+            return;
+
         var playerstate = session.PlayerState;
         var inHand = weapons.CanFire(playerstate.ChosenWeapon) ? playerstate.ChosenWeapon : weapons.BestWeapon(canFire: true);
         if (inHand != null && inHand != playerstate.Weapon)
@@ -175,8 +277,9 @@ internal sealed class WeaponInHand(
             weapons.DrawWeapon();
 
             // A press now fires the weapon taken up (as vanilla, where the knife came out as the
-            // last attack ended), so carry on with its sprite rather than this one
-            if (SyncWeaponSprite() is not { } taken)
+            // last attack ended), so carry on with its sprite rather than this one; a weapon
+            // being put away (Deselect) fires nothing
+            if (SyncWeaponSprite() is not { } taken || IsSwitching(taken))
                 return;
             weapon = taken;
         }

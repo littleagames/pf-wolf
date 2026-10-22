@@ -500,6 +500,27 @@ PFWolf.exe --file moody-lights
 Your weapon's muzzle flashes light the dark too. To try other values without restarting,
 use `light 0-255` and `fog` in the console (cheats on), and `lights` to list each light.
 
+## Holster Demo (`mods/holster-demo`)
+
+Changing weapons puts the one in hand away and brings the next one up, as in Doom, instead of
+swapping them at once. It's one YAML file adding two states to Wolfenstein 3D's four weapons.
+
+```
+PFWolf.exe --file holster-demo
+```
+
+- `actordefs/holster-demo.yaml`: a `Deselect` and a `Select` state for the knife, pistol,
+  machine gun and gatling gun, each a one-tic frame of the weapon's Ready picture that loops.
+  `A_Lower` in Deselect takes the weapon down a step each tic, and once it's off the view the
+  next weapon comes in on its Select state, where `A_Raise` brings it up and then goes to
+  Ready. The step is 6 of 96 when left out (16 tics each way); the knife's is 12 and the
+  gatling gun's 4, so one is quick to draw and the other heavy.
+
+While a weapon goes down or comes up, fire does nothing and another change waits until it's
+up. A weapon without the two states still changes at once, so a mod can give them to some
+weapons and not others. A new level or a loaded game starts with the weapon up. Both actions
+are in the [actions reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/actions).
+
 ## Faction Demo (`mods/faction-demo`)
 
 A level that replaces Floor 1 (Wolfenstein 3D only) where it isn't just you against everyone:

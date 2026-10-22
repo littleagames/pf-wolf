@@ -112,6 +112,41 @@ public class WeaponInHandTests
                 frames: [B, C]
                 tics-per-frame: 6
                 next-state: Ready
+        Holstered:
+          parent: Weapon
+          properties:
+            "weapon.slot": 5
+          states:
+            Ready:
+              - sprite: HOLG
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Ready
+            Fire:
+              - sprite: HOLG
+                frames: [B]
+                tics-per-frame: 6
+                next-state: Ready
+            Deselect:
+              - sprite: HOLG
+                frames: [A]
+                tics-per-frame: 1
+                action: A_Lower
+                next-state: Deselect
+            Select:
+              - sprite: HOLG
+                frames: [A]
+                tics-per-frame: 1
+                action: A_Raise
+                next-state: Select
+        Holstered2:
+          parent: Holstered
+          states:
+            Ready:
+              - sprite: HL2G
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Ready
         """;
 
     private sealed class Rig
@@ -138,6 +173,170 @@ public class WeaponInHandTests
         }
 
         public Entities.Actors.Actor Sprite => Hand.SyncWeaponSprite()!;
+
+        public int Lowered => Session.PlayerState.WeaponLowered;
+
+        // A_Lower or A_Raise as a looping one-tic frame runs them: once a tic, the times given
+        public void Lower(int tics, params string[] args)
+        {
+            for (int i = 0; i < tics; i++)
+                Hand.Lower(Sprite, args);
+        }
+
+        public void Raise(int tics, params string[] args)
+        {
+            for (int i = 0; i < tics; i++)
+                Hand.Raise(Sprite, args);
+        }
+    }
+
+    [Test]
+    public void A_Weapon_With_A_Deselect_State_Goes_Down_Before_The_Next_Comes_Up()
+    {
+        // Arrange
+        var rig = new Rig("Holstered", "Holstered2") { InHand = "Holstered" };
+        var first = rig.Sprite;
+
+        // Act / Assert: changed to the other, the first goes down 6 a tic, 16 tics in all
+        rig.InHand = "Holstered2";
+        Assert.That(rig.Sprite, Is.SameAs(first));
+        Assert.That(first.CurrentState!.StateName, Is.EqualTo(WeaponInHand.DeselectState));
+        rig.Lower(15);
+        Assert.That((rig.Sprite, rig.Lowered), Is.EqualTo((first, 90)));
+        rig.Lower(1);
+        Assert.That(rig.Lowered, Is.EqualTo(WeaponInHand.LoweredFully));
+
+        // off the view, the second comes in from the bottom on its Select state, and up in 16 tics
+        var second = rig.Sprite;
+        Assert.That(second.Name, Is.EqualTo("Holstered2"));
+        Assert.That(second.CurrentState!.StateName, Is.EqualTo(WeaponInHand.SelectState));
+        Assert.That(rig.Lowered, Is.EqualTo(WeaponInHand.LoweredFully));
+        rig.Raise(15);
+        Assert.That(second.CurrentState!.StateName, Is.EqualTo(WeaponInHand.SelectState));
+        rig.Raise(1);
+        Assert.That((second.CurrentState!.StateName, rig.Lowered), Is.EqualTo((WeaponInHand.WeaponReadyState, 0)));
+    }
+
+    [Test]
+    public void A_Lower_And_A_Raise_Take_A_Speed()
+    {
+        // Arrange
+        var rig = new Rig("Holstered", "Holstered2") { InHand = "Holstered" };
+        _ = rig.Sprite;
+        rig.InHand = "Holstered2";
+        _ = rig.Sprite;
+
+        // Act / Assert: 24 a tic is 4 tics down and 4 up
+        rig.Lower(3, "24");
+        Assert.That(rig.Lowered, Is.EqualTo(72));
+        rig.Lower(1, "24");
+        Assert.That(rig.Sprite.Name, Is.EqualTo("Holstered2"));
+        rig.Raise(4, "24");
+        Assert.That(rig.Sprite.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
+    }
+
+    [Test]
+    public void Weapons_Without_The_States_Change_At_Once()
+    {
+        // Arrange
+        var rig = new Rig("Pistol", "MachineGun") { InHand = "Pistol" };
+        _ = rig.Sprite;
+
+        // Act
+        rig.InHand = "MachineGun";
+
+        // Assert
+        Assert.That(rig.Sprite.Name, Is.EqualTo("MachineGun"));
+        Assert.That((rig.Sprite.CurrentState!.StateName, rig.Lowered), Is.EqualTo((WeaponInHand.WeaponReadyState, 0)));
+    }
+
+    [Test]
+    public void Each_Weapons_Own_States_Decide_Its_Half_Of_The_Change()
+    {
+        // Arrange
+        var rig = new Rig("Pistol", "Holstered") { InHand = "Pistol" };
+        _ = rig.Sprite;
+
+        // Act / Assert: the pistol has no Deselect, so it's gone at once; the next has a Select
+        rig.InHand = "Holstered";
+        Assert.That((rig.Sprite.Name, rig.Sprite.CurrentState!.StateName), Is.EqualTo(("Holstered", WeaponInHand.SelectState)));
+
+        // and back: it goes down, and the pistol, with no Select, is up at once
+        rig.Raise(16);
+        rig.InHand = "Pistol";
+        rig.Lower(16);
+        Assert.That((rig.Sprite.Name, rig.Sprite.CurrentState!.StateName, rig.Lowered), Is.EqualTo(("Pistol", WeaponInHand.WeaponReadyState, 0)));
+    }
+
+    [Test]
+    public void A_Change_While_A_Weapon_Comes_Up_Waits_Until_It_Is_Up()
+    {
+        // Arrange: the second on its way up
+        var rig = new Rig("Holstered", "Holstered2") { InHand = "Holstered" };
+        _ = rig.Sprite;
+        rig.InHand = "Holstered2";
+        rig.Lower(16);
+        var second = rig.Sprite;
+
+        // Act: changed back halfway up
+        rig.Raise(8);
+        rig.InHand = "Holstered";
+
+        // Assert: still coming up, then going down again
+        Assert.That((rig.Sprite, second.CurrentState!.StateName), Is.EqualTo((second, WeaponInHand.SelectState)));
+        Assert.That(WeaponInHand.IsSwitching(second), Is.True);
+        rig.Raise(8);
+        Assert.That((rig.Sprite, second.CurrentState!.StateName), Is.EqualTo((second, WeaponInHand.DeselectState)));
+    }
+
+    [Test]
+    public void A_Weapon_Taken_Back_As_It_Goes_Down_Comes_Up_Again()
+    {
+        // Arrange
+        var rig = new Rig("Holstered", "Holstered2") { InHand = "Holstered" };
+        var first = rig.Sprite;
+        rig.InHand = "Holstered2";
+        _ = rig.Sprite;
+        rig.Lower(8);
+
+        // Act
+        rig.InHand = "Holstered";
+        rig.Lower(8);
+
+        // Assert
+        Assert.That((rig.Sprite, first.CurrentState!.StateName), Is.EqualTo((first, WeaponInHand.SelectState)));
+    }
+
+    [Test]
+    public void A_First_Weapon_Is_Simply_Up_And_A_Change_Mid_Attack_Puts_It_Away()
+    {
+        // Arrange: a new level or a loaded game, the weapon's first sprite
+        var rig = new Rig("Holstered", "Holstered2") { InHand = "Holstered" };
+
+        // Act / Assert
+        var first = rig.Sprite;
+        Assert.That((first.CurrentState!.StateName, rig.Lowered), Is.EqualTo((WeaponInHand.WeaponReadyState, 0)));
+
+        WeaponInHand.JumpWeaponState(first, "Fire");
+        rig.InHand = "Holstered2";
+        Assert.That((rig.Sprite, first.CurrentState!.StateName), Is.EqualTo((first, WeaponInHand.DeselectState)));
+    }
+
+    [Test]
+    public void A_Weapon_Going_Down_Fires_Nothing()
+    {
+        // Arrange: a press of fire as the first goes down
+        var rig = new Rig("Holstered", "Holstered2") { InHand = "Holstered" };
+        var first = rig.Sprite;
+        rig.InHand = "Holstered2";
+        _ = rig.Sprite;
+        rig.Session.PlayerInput.SetPressed(ButtonType.Attack, true);
+
+        // Act: Ready's action on the weapon going down
+        rig.Hand.WeaponReady(first);
+
+        // Assert
+        Assert.That(first.CurrentState!.StateName, Is.EqualTo(WeaponInHand.DeselectState));
     }
 
     [Test]
