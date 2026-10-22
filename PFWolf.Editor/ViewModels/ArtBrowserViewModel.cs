@@ -140,6 +140,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         (ArtKind.Flat, "Flats"),
         (ArtKind.Sprite, "Sprites"),
         (ArtKind.Picture, "Pictures"),
+        (ArtKind.Movie, "Movies"),
     ];
 
     public ObservableCollection<ArtKindOption> Kinds { get; } = [.. KindLabels.Select(kind => new ArtKindOption(kind.Kind, kind.Label))];
@@ -197,6 +198,8 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         {
             if (SelectedItem == null)
                 return "";
+            if (SelectedItem.Entry.Kind == ArtKind.Movie)
+                return "In its own palette (movies.yaml palette), else the game palette, as the game plays it";
             var shown = ShownPalette;
             if (SelectedPalette.IsAutomatic)
                 return shown != null ? $"In {shown.Name}, the palette the game shows it in" : "In the game palette";
@@ -263,7 +266,9 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     public bool HasModFile => ModFile != null;
 
     /// <summary>Where a change to the picture shown goes</summary>
-    public string FileText => IsAnimation
+    public string FileText => SelectedItem?.Entry.Kind == ArtKind.Movie
+        ? "One of the game's movie files (gamepack-info's JamMovieFileLoader): the editor only plays it"
+        : IsAnimation
         ? "Its frames are pictures of their own (change those); animdefs says how it plays (Definitions, F11: Animations)"
         : IsCrop
         ? "Cut from another picture (change that); graphicdefs says where (Definitions, F11: Cropped pictures)"
@@ -450,6 +455,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     {
         if (SelectedItem?.Entry is not { } entry)
             return;
+        if (entry.Kind == ArtKind.Movie)
+        {
+            Status = $"{frame.Name} is only in the movie, not a picture of its own";
+            return;
+        }
         // A frame with the animation's own name is the animation's entry; its picture is the first frame
         if (frame.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase))
         {
@@ -487,7 +497,12 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
                 var stories = (double)entry.Height / Math.Max(1, entry.Width);
                 details += $", {stories:0.##} stories tall";
             }
-            if (entry.Animation is { } animation)
+            if (entry.Kind == ArtKind.Movie && entry.Animation is { } movie)
+            {
+                details += $"\nA JAM movie: {movie.Frames.Count} frames, {movie.TotalTics} tics ({movie.TotalTics / 70.0:0.##} s) as the game plays it "
+                           + "(movies.yaml frame-tics, with its pauses); the preview leaves out its fades and sounds.";
+            }
+            else if (entry.Animation is { } animation)
             {
                 details += $"\nAn animation (animdefs): {animation.Frames.Count} frames, {animation.TotalTics} tics ({animation.TotalTics / 70.0:0.##} s), "
                            + (animation.Loops ? "over and over" : "once, holding the last frame (the preview starts it over)")
@@ -509,6 +524,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         ArtKind.Texture => "Wall texture",
         ArtKind.Flat => "Flat",
         ArtKind.Sprite => "Sprite",
+        ArtKind.Movie => "Movie",
         _ => "Picture",
     };
 

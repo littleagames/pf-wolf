@@ -36,6 +36,23 @@ public class ArtCatalogGameTests
     }
 
     [Test]
+    public void Blake_Stones_Movies_Are_Listed_With_Their_Frames_And_Who_Plays_Them()
+    {
+        // Arrange
+        var content = Load("blake");
+
+        // Act
+        var movies = ArtCatalog.Build(content).Where(entry => entry.Kind == ArtKind.Movie).ToList();
+
+        // Assert
+        TestContext.Out.WriteLine(string.Join(", ", movies.Select(movie => $"{movie.Name} {movie.Animation!.Frames.Count} frames, {movie.Animation.TotalTics} tics")));
+        Assert.That(movies.Select(movie => movie.Name), Is.SupersetOf(new[] { "INTROMOVIE", "ENDMOVIE", "SHUTTLEMOVIE", "GOLDFIREMOVIE" }));
+        Assert.That(movies, Has.All.Matches<ArtEntry>(movie => movie.Animation is { Frames.Count: > 1, Loops: false } && movie.Width == 320 && movie.Height == 200));
+        Assert.That(movies.Single(movie => movie.Name == "SHUTTLEMOVIE").Uses.Select(use => use.Label), Has.Some.Contains("end movie"));
+        Assert.That(movies.Single(movie => movie.Name == "INTROMOVIE").Uses.Select(use => use.Label), Has.Some.Contains("intro"));
+    }
+
+    [Test]
     public void The_Switch_Demos_Animations_Are_Listed_With_Their_Frames()
     {
         // Arrange

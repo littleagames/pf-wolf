@@ -13,6 +13,8 @@ public enum ArtKind
     Sprite,
     /// <summary>A VGA graphic or a pack's graphics/ picture: title screens, the status bar, menus</summary>
     Picture,
+    /// <summary>A JAM movie (Blake Stone's IANIM and the rest): its frames play as an animation, read-only</summary>
+    Movie,
 }
 
 /// <summary>
@@ -151,6 +153,24 @@ public static class ArtCatalog
             }
         }
 
+        // A JAM movie: its frames, each up as long as the game holds it (movies.yaml frame-tics, and its pauses)
+        var movies = content.Assets.FindInGamePackIfAny<MoviesAsset>("movies");
+        foreach (var name in content.Assets.AssetNames.Where(content.Assets.Exists<JamMovieAsset>).Order(StringComparer.OrdinalIgnoreCase))
+        {
+            if (content.Find<JamMovieAsset>(name) is not { } movie)
+                continue;
+            var info = movies?.Movies.FirstOrDefault(entry => entry.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).Value ?? new MovieInfo();
+            var display = name.ToUpperInvariant();
+            var tics = movie.FrameTics(info.FrameTics);
+            if (tics.Count == 0)
+                continue;
+            entries.Add(new ArtEntry(ArtKind.Movie, display, JamMovieAsset.ScreenWidth, JamMovieAsset.ScreenHeight,
+                Origins(content, name, nameof(JamMovieAsset)), MovieUses(content, name))
+            {
+                Animation = new ArtAnimation(tics.Select((frameTics, i) => ($"{display} {i + 1}", frameTics)).ToList(), Loops: false),
+            });
+        }
+
         // A rotating frame's sides make one entry
         foreach (var (name, rotations) in GroupRotations(spriteNames))
         {
@@ -207,6 +227,22 @@ public static class ArtCatalog
     /// <summary>Whether a pack file is somewhere in the flats/ folder ("flats/FLOOR1.png", "flats/tech/FLOOR2.png"), not textures/</summary>
     public static bool IsFlatPath(string path)
         => path.Replace('\\', '/').StartsWith("flats/", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>What plays a movie: game-info's title sequence and the episodes' end movies</summary>
+    public static List<ArtUse> MovieUses(GameContent content, string movie)
+    {
+        var uses = new List<ArtUse>();
+        if (content.GameInfo is not { } gameInfo)
+            return uses;
+        bool Is(string? name) => name?.Equals(movie, StringComparison.OrdinalIgnoreCase) == true;
+        if (gameInfo.TitleSequence.Intro.Any(screen => Is(screen.Movie)))
+            uses.Add(new ArtUse("The intro (game-info title-sequence)"));
+        if (gameInfo.TitleSequence.Loop.Any(screen => Is(screen.Movie)))
+            uses.Add(new ArtUse("The title loop (game-info title-sequence)"));
+        foreach (var (key, episode) in gameInfo.Episodes.Where(episode => Is(episode.Value.EndMovie)))
+            uses.Add(new ArtUse($"Episode {key}'s end movie"));
+        return uses;
+    }
 
     /// <summary>Textures and pictures by name: the walls, doors, patches and flats of mapdefs, and game-info's skies and default flats</summary>
     public static Dictionary<string, List<ArtUse>> Uses(GameContent content)

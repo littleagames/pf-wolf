@@ -44,6 +44,7 @@ public static class ArtFiles
     {
         ArtKind.Sprite => nameof(SpriteAsset),
         ArtKind.Picture => nameof(GraphicAsset),
+        ArtKind.Movie => nameof(JamMovieAsset),
         _ => nameof(TextureAsset),
     };
 
@@ -52,6 +53,7 @@ public static class ArtFiles
     {
         ArtKind.Sprite => content.Assets.Exists<SpriteAsset>(name),
         ArtKind.Picture => content.Assets.Exists<GraphicAsset>(name),
+        ArtKind.Movie => content.Assets.Exists<JamMovieAsset>(name),
         _ => content.Assets.Exists<TextureAsset>(name),
     };
 

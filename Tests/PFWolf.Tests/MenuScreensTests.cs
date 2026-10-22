@@ -142,7 +142,7 @@ public class MoviePlayerTests
         byte[] data = [7, .. Run(2, 1, 2, 3), .. End];
 
         // Act
-        MoviePlayer.DrawMovieFrame(screen, data, fill: true);
+        Assets.JamMovieAsset.DrawFrame(screen, data, fill: true);
 
         // Assert
         Assert.That(screen, Is.EqualTo(new byte[] { 7, 7, 1, 2, 3, 7, 7, 7, 7, 7 }));
@@ -156,7 +156,7 @@ public class MoviePlayerTests
         byte[] data = [.. Run(0, 9), .. Run(4, 8, 8), .. End];
 
         // Act
-        MoviePlayer.DrawMovieFrame(screen, data, fill: false);
+        Assets.JamMovieAsset.DrawFrame(screen, data, fill: false);
 
         // Assert
         Assert.That(screen, Is.EqualTo(new byte[] { 9, 5, 5, 5, 8, 8 }));
@@ -169,7 +169,7 @@ public class MoviePlayerTests
         var screen = new byte[4];
 
         // Act
-        MoviePlayer.DrawMovieFrame(screen, [.. Run(2, 1, 2, 3, 4), .. End], fill: false);
+        Assets.JamMovieAsset.DrawFrame(screen, [.. Run(2, 1, 2, 3, 4), .. End], fill: false);
 
         // Assert
         Assert.That(screen, Is.EqualTo(new byte[] { 0, 0, 1, 2 }));

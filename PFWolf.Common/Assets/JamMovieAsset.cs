@@ -31,6 +31,70 @@ public record JamMovieAsset : Asset
                 break;
         }
     }
+
+    /// <summary>
+    /// How long each frame (GR chunk) stays up, in tics (70 a second), as the game plays it:
+    /// <paramref name="frameTics"/> (movies.yaml frame-tics), and a pause (PA chunk) after a
+    /// frame added to it. Without drawing any.
+    /// </summary>
+    public List<int> FrameTics(int frameTics)
+    {
+        var tics = new List<int>();
+        foreach (var chunk in Chunks)
+        {
+            if (chunk.Code == "GR")
+                tics.Add(Math.Max(frameTics, 1));
+            else if (chunk.Code == "PA" && chunk.Data.Length >= 2 && tics.Count > 0)
+                tics[^1] += BitConverter.ToUInt16(chunk.Data, 0);
+            else if (chunk.Code == "XX")
+                break;
+        }
+        return tics;
+    }
+
+    /// <summary>Every frame as the screen shows it, 320x200 palette indices row by row, first to last</summary>
+    public List<byte[]> DrawFrames()
+    {
+        var frames = new List<byte[]>();
+        var screen = new byte[ScreenWidth * ScreenHeight];
+        foreach (var chunk in Chunks)
+        {
+            if (chunk.Code == "XX")
+                break;
+            if (chunk.Code != "GR")
+                continue;
+            DrawFrame(screen, chunk.Data, fill: frames.Count == 0);
+            frames.Add((byte[])screen.Clone());
+        }
+        return frames;
+    }
+
+    /// <summary>
+    /// Draws a frame (a GR chunk) into the screen: runs of pixels, each its byte offset into the
+    /// screen and length, until one marked 0. The movie's first frame starts with the color to
+    /// fill the screen with first (<paramref name="fill"/>).
+    /// </summary>
+    public static void DrawFrame(byte[] screen, byte[] data, bool fill)
+    {
+        int pos = 0;
+        if (fill && data.Length > 0)
+            Array.Fill(screen, data[pos++]);
+
+        while (pos + 6 <= data.Length)
+        {
+            int opt = BitConverter.ToUInt16(data, pos);
+            if (opt == 0)
+                break;
+            int offset = BitConverter.ToUInt16(data, pos + 2);
+            int length = BitConverter.ToUInt16(data, pos + 4);
+            pos += 6;
+
+            int copied = Math.Min(length, Math.Min(data.Length - pos, screen.Length - offset));
+            if (copied > 0)
+                Array.Copy(data, pos, screen, offset, copied);
+            pos += length;
+        }
+    }
 }
 
 /// <summary>

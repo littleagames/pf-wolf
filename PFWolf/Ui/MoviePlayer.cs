@@ -77,7 +77,7 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
                     break;
 
                 case "GR":
-                    DrawMovieFrame(screen, chunk.Data, fill);
+                    JamMovieAsset.DrawFrame(screen, chunk.Data, fill);
                     fill = false;
                     video.MemToScreen(screen, JamMovieAsset.ScreenWidth, JamMovieAsset.ScreenHeight, 0, 0);
                     video.Update();
@@ -125,30 +125,4 @@ internal sealed class MoviePlayer(AssetManager assets, VideoManager video, Input
         }
     }
 
-    /// <summary>
-    /// Draws a movie frame into the screen: runs of pixels, each its byte offset into the screen
-    /// and length, until one marked 0. The movie's first frame starts with the color to fill the
-    /// screen with first.
-    /// </summary>
-    internal static void DrawMovieFrame(byte[] screen, byte[] data, bool fill)
-    {
-        int pos = 0;
-        if (fill && data.Length > 0)
-            Array.Fill(screen, data[pos++]);
-
-        while (pos + 6 <= data.Length)
-        {
-            int opt = BitConverter.ToUInt16(data, pos);
-            if (opt == 0)
-                break;
-            int offset = BitConverter.ToUInt16(data, pos + 2);
-            int length = BitConverter.ToUInt16(data, pos + 4);
-            pos += 6;
-
-            int copied = Math.Min(length, Math.Min(data.Length - pos, screen.Length - offset));
-            if (copied > 0)
-                Array.Copy(data, pos, screen, offset, copied);
-            pos += length;
-        }
-    }
 }

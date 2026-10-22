@@ -90,6 +90,10 @@ public sealed class ArtCache(GameContent content) : IDisposable
         if (_whole.TryGetValue(key, out var bitmap))
             return bitmap;
 
+        // A movie shows its first frame
+        if (kind == ArtKind.Movie)
+            return _whole[key] = MovieFrames(name) is [var first, ..] ? first : null;
+
         Asset? asset = kind switch
         {
             ArtKind.Texture or ArtKind.Flat => content.Find<TextureAsset>(name),
@@ -109,6 +113,9 @@ public sealed class ArtCache(GameContent content) : IDisposable
     /// </summary>
     public IReadOnlyList<Bitmap?> AnimationFrames(ArtKind kind, string name)
     {
+        if (kind == ArtKind.Movie)
+            return MovieFrames(name);
+
         IEnumerable<Asset> frames = kind == ArtKind.Picture
             ? content.Assets.FindAnimation<GraphicAsset>(name)?.Frames.Select(frame => (Asset)frame.Asset) ?? []
             : kind is ArtKind.Texture or ArtKind.Flat
@@ -121,6 +128,24 @@ public sealed class ArtCache(GameContent content) : IDisposable
                 _frames[frame] = bitmap = MakeWhole(kind, frame);
             return bitmap;
         }).ToList();
+    }
+
+    private readonly Dictionary<string, IReadOnlyList<Bitmap?>> _movies = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A JAM movie's frames, drawn in the palette movies.yaml gives it (else the game's); empty when there's no such movie</summary>
+    private IReadOnlyList<Bitmap?> MovieFrames(string name)
+    {
+        if (_movies.TryGetValue(name, out var cached))
+            return cached;
+        if (content.Find<JamMovieAsset>(name) is not { } movie)
+            return _movies[name] = [];
+
+        var info = content.Assets.FindInGamePackIfAny<MoviesAsset>("movies")?.Movies
+            .FirstOrDefault(entry => entry.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).Value;
+        IReadOnlyList<PaletteColor> palette = !string.IsNullOrEmpty(info?.Palette) && content.Find<Palette>(info.Palette) is { } own ? own.Colors : content.Palette;
+        return _movies[name] = movie.DrawFrames()
+            .Select(screen => (Bitmap?)Render(new IndexedPicture(JamMovieAsset.ScreenWidth, JamMovieAsset.ScreenHeight, screen, null), palette))
+            .ToList();
     }
 
     private Bitmap? MakeWhole(ArtKind kind, Asset? asset)
