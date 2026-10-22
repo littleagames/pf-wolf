@@ -282,14 +282,21 @@ public record MapDiagonalTranslation
 }
 
 /// <summary>
-/// A wall patch: a picture with see-through pixels (palette index 0xFF) drawn over a wall's face,
-/// such as a sign, a switch or a crack, so one wall can carry any decoration. A wall tile gets
-/// one by the high byte of its plane 0 value (MapConstants.PatchShift); it moves with the wall
-/// when it's pushed. Patches on doors and open floor are ignored.
+/// A wall patch, by id (1 to 255): a picture with see-through pixels (palette index 0xFF, or a
+/// PNG's transparent ones) drawn over a wall's face, such as a sign, a switch or a crack, so one
+/// wall can carry any decoration. A wall tile gets one by the high byte of its plane 0 value
+/// (wall id + patch id × 256); it moves with the wall when it's pushed. Patches on doors and open
+/// floor are ignored. The `patch` console command shows or sets one.
 /// </summary>
 public record MapPatchTranslation
 {
-    /// <summary>The picture: a texture as wide as a wall's (any height), or an animdefs animation</summary>
+    /// <summary>
+    /// The picture: a texture as wide as a wall's and any height (a textures/ PNG or a VSWAP
+    /// texture), or an animdefs animation. It's lit and shaded as the wall's own texture is, but
+    /// not mirrored on a flipped face. 64 rows cover a story, from its floor up, so a 128-row
+    /// picture covers two; one shorter than 64 rows sits at the bottom of its story. Not drawn on
+    /// a door's jambs.
+    /// </summary>
     public string Texture { get; init; } = "";
 
     /// <summary>
@@ -313,7 +320,14 @@ public record MapPatchTranslation
     /// </summary>
     public int Story { get; init; } = 1;
 
-    /// <summary>Makes the patch a switch the player can use (see <see cref="MapSwitchTranslation"/>)</summary>
+    /// <summary>
+    /// Makes the patch a switch the player can use from a face it's on, before the wall's own
+    /// switch, written as a wall's switch is. With neither to nor remove it stays as it is. It
+    /// only changes when one of its actions went off (or it has none): A_GiveInventory to a
+    /// player with no use for the item doesn't count, so a first aid kit stays on the wall until
+    /// it's needed. Other patches with the same tag that are either way of the switch change
+    /// with it.
+    /// </summary>
     public MapSwitchTranslation? Switch { get; init; }
 
     /// <summary>

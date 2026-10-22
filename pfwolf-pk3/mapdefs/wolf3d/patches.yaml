@@ -1,32 +1,6 @@
-# Wall patches by id (1 to 255): a picture drawn over a wall's face, its see-through pixels
-# (palette index 0xFF, or transparent in a PNG) showing the wall behind, so one wall can carry
-# any sign, switch or crack. A wall tile gets one by the high byte of its plane 0 value
-# (plane 0 = wall id + patch id * 256); it goes with the wall when the wall is pushed. Patches
-# on doors and open floor are ignored. The `patch` console command shows or sets one.
-#   texture:  the picture, as wide as a wall texture and any height (a textures/ PNG or a VSWAP
-#             texture), or an animdefs animation. It's lit, shaded and mirrored as the wall's
-#             own texture is. 64 rows cover a story, from its floor up, so a 128-row picture
-#             covers two; one shorter than 64 rows sits at the bottom of its story. Not drawn on
-#             the face of a door's frame toward the door.
-#   sides:    the faces it's on, e.g. [south] (a face is named the way it looks out: the north
-#             face is seen from the tile north of the wall); left out, all four
-#   story:    the story of a tall wall it's on, 1 (the bottom one, the default) and up; 0 repeats
-#             it on every story, as the wall's texture does
-#   switch:   makes it a switch the player can use from a face it's on, before the wall's own
-#             switch, as a walls.yaml switch block (sides, sound, lock..., actions on the
-#             tile's tag), except:
-#               to:      the patch id it turns into (a toggle when that one's switch comes back)
-#               remove:  true: it comes off the wall once used (works once; an item taken)
-#             Left both out, it stays as it is. It only changes when one of its actions went
-#             off (or it has none): A_GiveInventory to a player with no use for the item doesn't
-#             count, so a first aid kit stays on the wall until it's needed. Other patches
-#             with the same tag that are either way of the switch change with it.
-#             Patch switches often use these actions, which walls' switches can too:
-#               A_GiveInventory("Item"[, amount]): gives the player an actordefs inventory item
-#                 as picking it up would (its sound and message); refused when it would do
-#                 nothing (health full, no room for the ammo)
-#               A_SpawnItem("Class"): puts a thing on the floor in front of the switch, where
-#                 the player stands to use it (so they pick up an item they can take)
+# Wall patches by id (1 to 255): pictures drawn over a wall's face. Wolf3D has none; what each
+# key means is in the mapdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs
 # e.g.
 #   12: { texture: FIRSTAID, sides: [south], switch: { remove: true, actions: [A_GiveInventory("FirstAidKit")] } }
 patches: {}

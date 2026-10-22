@@ -1,4 +1,5 @@
-# The demo's wall patches (every field is described in pfwolf-pk3's mapdefs/wolf3d/patches.yaml).
+# The demo's wall patches (every field is in the mapdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs).
 # A wall tile gets one by its plane 0 value: wall id + patch id * 256. The pictures are the
 # mod's textures/ (made by examples/tools/make-patch-demo.ps1).
 patches:

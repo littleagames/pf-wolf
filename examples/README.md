@@ -168,8 +168,8 @@ It replaces Floor 1 like the Switch Demo does, so switch on only one of them at 
 
 ### What's in it
 
-- `mapdefs/patches.yaml`: the patches, 1 to 10. Every field is described in
-  `pfwolf-pk3/mapdefs/wolf3d/patches.yaml`.
+- `mapdefs/patches.yaml`: the patches, 1 to 10. Every field is in the
+  [mapdefs reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs).
 - `textures/`: the patch pictures, as PNGs with clear backgrounds (clear pixels are see-through).
 - `animdefs/patch-demo.yaml`: the alarm lamp's two frames.
 - `maps/MAP01.wad`: the level. **A wall's patch is the high byte of its plane 0 value**: wall
