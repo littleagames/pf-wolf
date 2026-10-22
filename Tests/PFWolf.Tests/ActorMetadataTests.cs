@@ -86,6 +86,38 @@ public class ActorMetadataTests
         Assert.That(actor.Radius, Is.EqualTo(radius));
     }
 
+    [TestCase(false, "B", 5)]          // a jump (A_Jump, A_ReFire, self:jump) lands on the state's first frame
+    [TestCase(true, "C", 5 + 7)]       // SetState, as id's NewState from an action: on from its second, with the first's tics
+    public void A_State_Changed_From_An_Action_Lands_As_The_Change_Says(bool setState, string frame, int tics)
+    {
+        // Arrange: Spawn's action sends the actor to Away as its frame ends
+        var action = setState ? "Test_SetStateAway" : "Test_JumpAway";
+        ActorActionRegistry.Register(action, actor =>
+        {
+            if (setState)
+                actor.SetState("Away");
+            else
+                actor.JumpTo(actor.ResolvedStates["Away"]);
+        });
+        var metadata = ActorDefs.Metadata($$"""
+            Thing:
+              states:
+                Spawn:
+                  - { sprite: THNG, frames: [A], tics-per-frame: 1, action: {{action}} }
+                Away:
+                  - { sprite: THNG, frames: [B], tics-per-frame: 5 }
+                  - { sprite: THNG, frames: [C], tics-per-frame: 7 }
+            """);
+        var thing = metadata.CreateActor("Thing", metadata.Actors["Thing"]);
+
+        // Act
+        thing.TicCount = 0;
+        thing.AdvanceFrames();
+
+        // Assert
+        Assert.That((thing.CurrentState!.FrameLetter, (int)thing.TicCount), Is.EqualTo((frame, tics)));
+    }
+
     [Test]
     public void CreateActor_Inherits_Flags_And_States()
     {

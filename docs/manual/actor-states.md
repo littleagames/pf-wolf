@@ -58,9 +58,12 @@ So an action on a 1-tic frame that loops runs every tic, and an action on a -1 f
 as the frame never ends. To do something as an actor arrives somewhere, put the action on a 0-tic
 frame first.
 
-An action can send the actor to another state (`A_ReFire`, a script's `self:jump("Fire")`). That
-happens once the action is done: the actor goes to the first frame of that state rather than the
-next frame of this one.
+An action can send the actor to another state (`A_Jump`, `A_ReFire`, a script's
+`self:jump("Fire")`). That happens once the action is done: the actor goes to the first frame of
+that state rather than the next frame of this one. A few of the enemies' own actions change state
+the way id's games did instead: the actor carries on from that state's second frame, which shows
+for both frames' tics. After `A_Relaunch`, the state it goes to starts that way, its first frame
+never seen.
 
 ## How a state ends
 
