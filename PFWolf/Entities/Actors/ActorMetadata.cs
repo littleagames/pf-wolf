@@ -21,6 +21,10 @@ internal class ActorMetadata
 
     internal Entities.Actors.Actor CreateActor(string name, ActorData actor)
     {
+        // A class's own properties and flags, the first time it's made (before its parents' are
+        // merged in), to be checked against the kind of actor it turns out to be
+        List<string>? ownSettings = _settingsChecked.Add(name) ? [.. actor.Properties.Keys, .. actor.Flags] : null;
+
         var actorType = Type.GetType($"PFWolf.Entities.Actors.{name}");
         if (!string.IsNullOrWhiteSpace(actor.Parent))
         {
@@ -103,8 +107,31 @@ internal class ActorMetadata
         if (spawnState != null)
             actorInstance.ArmState(spawnState);
 
+        if (ownSettings != null)
+            foreach (var (setting, needs) in MisplacedSettings(ownSettings, actorInstance))
+                WarningLog.Write(MisplacedMessage(name, setting, needs));
+
         return actorInstance;
     }
+
+    // The classes whose own properties and flags are checked
+    private readonly HashSet<string> _settingsChecked = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The properties and flags among <paramref name="settings"/> that only another kind of actor
+    /// reads (a BlakeMonster's monster.attackrange, SMART), each with the class it needs: on
+    /// <paramref name="actor"/> they do nothing. A ~FLAG, taking one away, is never misplaced.
+    /// </summary>
+    internal static IEnumerable<(string Setting, string Needs)> MisplacedSettings(IEnumerable<string> settings, Entities.Actors.Actor actor) =>
+        from setting in settings
+        where !setting.StartsWith('~')
+        let needs = Definitions.ActorProperties.Find(setting)?.Needs ?? Definitions.ActorFlags.Find(setting)?.Needs
+        where needs != null && !(Type.GetType($"PFWolf.Entities.Actors.{needs}") is { } type && type.IsInstanceOfType(actor))
+        select (setting, needs);
+
+    /// <summary>The warning for a property or flag that does nothing on its class</summary>
+    internal static string MisplacedMessage(string className, string setting, string needs) =>
+        $"Actor {className}: {setting} is only for a {needs} (parent: {needs}), so it does nothing here";
 
     /// <summary>
     /// Looks a property up on the named actor, falling back through its parent chain, without

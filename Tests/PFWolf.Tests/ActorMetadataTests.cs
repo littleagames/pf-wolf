@@ -152,6 +152,52 @@ public class ActorMetadataTests
     }
 
     [Test]
+    public void A_BlakeMonster_Setting_On_Another_Enemy_Is_Warned_Of_Once_Where_Its_Written()
+    {
+        // Arrange: a Wolf3D-style guard given a BlakeMonster's range and flag (and a ~flag, which
+        // takes one away and is fine), its child, and a BlakeMonster with the same, which reads them
+        var metadata = ActorDefs.Metadata("""
+            Monster: {}
+            BlakeMonster:
+              parent: Monster
+            Guard:
+              parent: Monster
+              flags: [SMART, ~STEPBACK]
+              properties:
+                "monster.attackrange": 3
+                health: 25
+            Officer:
+              parent: Guard
+            Alien:
+              parent: BlakeMonster
+              flags: [SMART]
+              properties:
+                "monster.attackrange": 3
+            """);
+        var warnings = new List<string>();
+        var sink = PFWolf.WarningLog.Sink;
+        PFWolf.WarningLog.Sink = warnings.Add;
+
+        // Act: each made twice, as two spawns would
+        try
+        {
+            foreach (var name in new[] { "Officer", "Guard", "Alien", "Guard", "Officer", "Alien" })
+                metadata.CreateActor(name, metadata.Actors[name]);
+        }
+        finally
+        {
+            PFWolf.WarningLog.Sink = sink;
+        }
+
+        // Assert
+        Assert.That(warnings, Is.EquivalentTo(new[]
+        {
+            "Actor Guard: monster.attackrange is only for a BlakeMonster (parent: BlakeMonster), so it does nothing here",
+            "Actor Guard: SMART is only for a BlakeMonster (parent: BlakeMonster), so it does nothing here",
+        }));
+    }
+
+    [Test]
     public void CreateActor_Inherits_Flags_And_States()
     {
         // Arrange

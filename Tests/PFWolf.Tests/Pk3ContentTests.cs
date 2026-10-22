@@ -171,6 +171,7 @@ public class Pk3ContentTests
             }
 
             Entities.Actors.Actor actor;
+            List<string> ownSettings = [.. data.Properties.Keys, .. data.Flags];     // before its parents' are merged in
             try
             {
                 actor = metadata.CreateActor(className, data);
@@ -204,6 +205,10 @@ public class Pk3ContentTests
             foreach (var (state, entries) in actor.States)
                 foreach (var modifier in Entities.Actors.ActorStateResolver.UnknownModifiers(entries))
                     problems.Add(Entities.Actors.ActorStateResolver.UnknownModifierMessage(className, state, modifier));
+
+            // A property or flag only another kind of actor reads (a BlakeMonster's, on a Wolf3D enemy)
+            foreach (var (setting, needs) in ActorMetadata.MisplacedSettings(ownSettings, actor))
+                problems.Add(ActorMetadata.MisplacedMessage(className, setting, needs));
         }
         return problems;
     }

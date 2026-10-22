@@ -275,7 +275,7 @@ public static class ActorProperties
 
     /// <summary>A property's or flag's description, with the class it needs, as the actions reference says it (GameActions.Describe)</summary>
     internal static string Describe(string description, string? needs) =>
-        needs == null ? description : $"{description.TrimEnd('.')}. Only for a {needs} (`parent: {needs}`).";
+        needs == null ? description : $"{description.TrimEnd('.')}. Only for a {needs} (`parent: {needs}`): on any other actor it does nothing, and the game warns of it.";
 
     private const string BlakeMonster = "BlakeMonster";
 
