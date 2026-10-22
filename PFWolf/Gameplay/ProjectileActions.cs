@@ -28,6 +28,25 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         Entities.Actors.ActorActionRegistry.Register("A_JumpIfPlayerWithin", JumpIfPlayerWithin);
         Entities.Actors.ActorActionRegistry.Register("A_JumpIfActorWithin", JumpIfActorWithin);
         Entities.Actors.ActorActionRegistry.Register("A_JumpIfInSight", JumpIfInSight);
+        Entities.Actors.ActorActionRegistry.Register("A_JumpIfOnFloor", JumpIfOnFloor);
+    }
+
+    /// <summary>
+    /// A_JumpIfOnFloor("State"): goes to the state when its height (Z) is down at its `zfloor`
+    /// (0 when unset): Midnight Assault's grenade, blowing up lower where it lay on the floor
+    /// </summary>
+    void JumpIfOnFloor(Entities.Actors.Actor ob, string[] args)
+    {
+        if (args.Length > 0 && IsOnFloor(ob))
+            JumpToState(ob, args[0], "A_JumpIfOnFloor");
+    }
+
+    /// <summary>Whether an actor's height is down at its `zfloor` (0 when unset)</summary>
+    internal static bool IsOnFloor(Entities.Actors.Actor ob)
+    {
+        double floor = ob.Properties.TryGetValue("zfloor", out var f) && double.TryParse(f?.ToString(),
+            System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var z) ? z : 0;
+        return ob.Z <= floor + 0.5;
     }
 
     // Just beyond a wall's face for a projectile's box (ProjectileTryMove: ProjSize either way)

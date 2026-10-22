@@ -503,6 +503,12 @@ public record MapTextureTranslation
     /// </summary>
     public List<string> Flip { get; init; } = [];
 
+    /// <summary>
+    /// Walls only: false leaves no bullet puff where a player's shot strikes it (a weapon's
+    /// `weapon.puff`): Midnight Assault's jungle, forest and horizon. Left out, it takes them.
+    /// </summary>
+    public bool? Puffs { get; init; }
+
     /// <summary>Whether the face ("north", "south", "east" or "west") is drawn mirrored (<see cref="Flip"/>)</summary>
     public bool IsFlipped(string face)
     {

@@ -73,6 +73,7 @@ public static class ActorProperties
         Number("zspeed", "A missile: how fast its height rises as it's fired"),
         Number("gravity", "A missile: how much its rising speed drops each tic, in texels a tic"),
         Number("zfloor", "A missile: the height it stops falling at, and stays (where its art meets the floor)"),
+        Text("hitpuff", "An actor class left just in front of it when a player's shot hits it (Midnight Assault's blood puff); none (or \"none\") leaves nothing"),
 
         // Dying
         Text("dropitem", "The item class it leaves when it dies", hint: FieldHint.Class),
@@ -135,6 +136,7 @@ public static class ActorProperties
         Bool("weapon.stealthkill", "Kills made unseen with it count as stealth kills (the knife)"),
         Text("weapon.spares", "An actor flag (BOSS) whose holders it doesn't hurt at all", hint: FieldHint.Flag),
         Int("weapon.killrange", "A hit within this many tiles kills outright, and one beyond it does nothing"),
+        Text("weapon.puff", "An actor class left where a shot that hits nothing strikes a wall or a door that isn't open (Midnight Assault's bullet puff); none on a wall with walls.yaml puffs: false"),
         Text("weapon.bodysprite", "In a game with others: the sprite the player's body is drawn with while it's in hand (PLKN)", hint: FieldHint.Sprite),
         Text("weapon.backhint", "The use hint shown while an enemy faces away within reach (a back-stab)"),
         Text("weapon.facehint", "The use hint shown while an enemy faces the player within reach (the papers, a stealth kill)"),

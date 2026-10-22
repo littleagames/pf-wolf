@@ -22,6 +22,9 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
     // there's a clear line from any actor to the player (the player's own sight uses it too).
     internal bool CheckLine(Entities.Actors.Actor ob) => CheckLine(ob, session.Player);
 
+    /// <summary>How far open a door is (0 shut, 0xffff open); shut for no such door</summary>
+    internal int DoorPosition(int door) => door >= 0 && door < doors.DoorObjList.Length ? (int)doors.DoorObjList[door].Position : 0;
+
     /// <summary>Whether there's a clear line from an actor to another (a player, or any actor)</summary>
     internal bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.Actor to) => CheckLine(ob.X, ob.Y, to);
 

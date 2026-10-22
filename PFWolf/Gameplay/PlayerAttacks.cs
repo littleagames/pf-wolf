@@ -235,6 +235,99 @@ internal sealed class PlayerAttacks(
     // A player attack's damage, scaled by the class's player.damagedealt
     internal uint PlayerDamage(int damage) => (uint)Math.Round(damage * hooks.DamageDealt());
 
+    /*
+    =============================================================================
+
+                                  HIT PUFFS
+
+    Something to see where a player's gunshot lands (Midnight Assault's SpawnBloodPuff and
+    SpawnBulletPuff). A hit leaves the target's `hitpuff` (an actordefs class: blood for a
+    soldier, crumbs for a tombstone; nothing for one without) just in front of it. A shot that
+    hits nothing, misses or is blocked leaves the weapon's `weapon.puff` where the line it was
+    fired along meets a wall, or a door that isn't open; none on a wall with walls.yaml
+    `puffs: false` (the original's jungle, forest and horizon), nor past the map's edge. A
+    weapon without `weapon.puff` leaves none, as Wolf3D's.
+
+    =============================================================================
+    */
+
+    // How far a puff is put out in front of a target, toward the shooter
+    const int HitPuffOut = 0x6000;
+
+    // The step a shot's line is followed in, and how far it goes at most
+    const int ShotStep = 0x1000;
+    const int ShotReach = 64 * 0x10000;
+
+    /// <summary>A hit's puff: the target's `hitpuff`, between it and the shooter</summary>
+    internal void HitPuff(Entities.Actors.Actor target)
+    {
+        if (target.Properties.TryGetValue("hitpuff", out var cls) && cls?.ToString() is { Length: > 0 } puff
+            && !puff.Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            var player = session.Player;
+            long dx = player.X - target.X, dy = player.Y - target.Y;
+            long dist = Math.Max(Math.Max(Math.Abs(dx), Math.Abs(dy)), 1);
+            int out_ = (int)Math.Min(HitPuffOut, dist / 2);
+            SpawnPuff(puff, target.X + (int)(dx * out_ / dist), target.Y + (int)(dy * out_ / dist));
+        }
+    }
+
+    /// <summary>A shot that hit nothing: the weapon's `weapon.puff` where its line meets a wall</summary>
+    internal void MissPuff()
+    {
+        if (session.PlayerState.Weapon is not { } weapon || inventory.GetStringProperty(weapon, "weapon.puff") is not { Length: > 0 } puff)
+            return;
+        var player = session.Player;
+        if (ShotWallPoint(player.X, player.Y, player.Angle) is { } at)
+            SpawnPuff(puff, at.X, at.Y);
+    }
+
+    /// <summary>
+    /// Where a shot fired from (x, y) at the angle (degrees, east 0, north 90) meets a wall or a
+    /// door not open, a step short of it; null past the map's edge, beyond reach, or at a wall
+    /// that takes no puffs
+    /// </summary>
+    internal (int X, int Y)? ShotWallPoint(int x, int y, int angle)
+    {
+        double rad = angle * Math.PI / 180;
+        int stepx = (int)Math.Round(Math.Cos(rad) * ShotStep), stepy = -(int)Math.Round(Math.Sin(rad) * ShotStep);
+        int px = x, py = y;
+        for (int travelled = 0; travelled < ShotReach; travelled += ShotStep)
+        {
+            int nx = px + stepx, ny = py + stepy;
+            int tx = nx >> MapConstants.TileShift, ty = ny >> MapConstants.TileShift;
+            if (tx < 0 || ty < 0 || tx >= map.MapWidth || ty >= map.MapHeight)
+                return null;
+            int tile = map.TileMap[tx, ty];
+            if ((tile & GameConstants.BitDoor) != 0)
+            {
+                int door = tile & ~GameConstants.BitDoor;
+                if (lineOfSight.DoorPosition(door) < 0x8000)
+                    return (px, py);
+            }
+            else if (tile != 0)
+            {
+                var data = map.GetMapData();
+                return data.Walls.TryGetValue(tile & ~GameConstants.BitWall, out var wall) && wall.Puffs == false ? null : (px, py);
+            }
+            (px, py) = (nx, ny);
+        }
+        return null;
+    }
+
+    // A puff of that class at the point (global coordinates)
+    void SpawnPuff(string className, int x, int y)
+    {
+        if (map.SpawnAtActor(className, session.Player) is not { } puff)
+        {
+            Console.WriteLine($"Hit puff: '{className}' isn't an actor.");
+            return;
+        }
+        puff.SetPosition(x >> MapConstants.TileShift, y >> MapConstants.TileShift);
+        puff.X = x;
+        puff.Y = y;
+    }
+
     /// <summary>
     /// One shot that hits the closest target in its sights, with a clear line to it, for min..max
     /// whatever the distance, never missing (Midnight Assault's FireBullet, as its zoomed sniper
@@ -253,7 +346,10 @@ internal sealed class PlayerAttacks(
 
         var closest = FindShootCandidates().FirstOrDefault().Actor;
         if (closest == null || !lineOfSight.CheckLine(closest))
+        {
+            MissPuff();
             return;
+        }
 
         if (session.PlayerState.Weapon is { } weapon)
         {
@@ -270,6 +366,7 @@ internal sealed class PlayerAttacks(
 
         int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
         HitShotTarget(closest, PlayerDamage(damage));
+        HitPuff(closest);
     }
 
     // near, mid, far: what a random 0-255 is divided by for a hit within 2 tiles, within 4, and
@@ -292,10 +389,11 @@ internal sealed class PlayerAttacks(
         // it only ever gives the single closest actor one shot at passing CheckLine)
         //
         var closest = FindShootCandidates().FirstOrDefault().Actor;
-        if (closest == null)
-            return; // no targets, missed
-        if (!lineOfSight.CheckLine(closest))
+        if (closest == null || !lineOfSight.CheckLine(closest))
+        {
+            MissPuff();     // no target, or none in the clear: the shot hits the wall
             return;
+        }
 
         //
         // hit something
@@ -311,10 +409,14 @@ internal sealed class PlayerAttacks(
         else
         {
             if ((session.Random.RndT() / 12) < dist)           // missed
+            {
+                MissPuff();
                 return;
+            }
             damage = session.Random.RndT() / far;
         }
 
         HitShotTarget(closest, PlayerDamage(damage));
+        HitPuff(closest);
     }
 }
