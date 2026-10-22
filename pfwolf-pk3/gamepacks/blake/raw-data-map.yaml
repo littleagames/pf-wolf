@@ -664,7 +664,7 @@ sprites:
     - EXDEL0    # Explosive Device? (Unused?)
     - EXDEM0    # Pain?
     - SECLA0    # Off
-    - SUCLB0    # On
+    - SECLB0    # On
     - PODAA0    # Egg
     - PODAB0    # Hatch
     - PODAC0    # POD Alien

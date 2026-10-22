@@ -2,24 +2,6 @@
 
 Ideas and follow-ups for later, newest last. Move an item out (or delete it) once it's done.
 
-## Planet Strike classes drawing Aliens of Gold frames it hasn't got
-
-Planet Strike starts from Aliens of Gold's actordefs and mapdefs (`base-pack: blake`), so it has
-every AOG class and the map objects that place them. Four draw sprite frames Planet Strike's
-VSWAP hasn't got (found 2026-10-22, while checking Horde's genetic guards, whose frames were
-lettered differently in the two raw-data-maps and are now the same):
-
-- `GreenCard` (`GCRDA`) and `GoldCard` (`OCRDA`): objects 57 and 59, the crates holding
-  them (447, 449, 465, 467, 483, 485), and doors.yaml's locks 57 and 59
-- `ProjectionGenerator` (`EXDE` A-M): object 177
-- `SecurityLight`'s alert frame (`SUCLB`; Planet Strike's light is `SECLB`): object 160
-
-- Find out whether any of Planet Strike's levels place them (if none does, they're harmless; say
-  so in `actordefs/planetstrike/`), and if some do, what bstone draws there for PS
-  (`3d_main.cpp` initialize_sprites, its `is_ps()` branch), and give Planet Strike the frames
-  or classes of its own.
-- Check: in each level that places one, the object shows (no `Asset not found` for a sprite).
-
 ## Holstering and raising weapons (A_Lower, A_Raise)
 
 Switching weapons is instant, as in Wolf3D and Blake Stone (`Gameplay/WeaponInHand.cs`

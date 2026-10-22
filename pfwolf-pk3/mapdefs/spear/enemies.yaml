@@ -8,3 +8,17 @@ things:
   142: { class: Ubermutant,   angles: 0, patrol: 0, min-skill: 0 }
   143: { class: Wilhelm,      angles: 0, patrol: 0, min-skill: 0 }
   161: { class: DeathKnight,  angles: 0, patrol: 0, min-skill: 0 }
+
+  # Wolf3D's bosses and Pac-Man ghosts, which Spear's ScanInfoPlane leaves out (#ifndef SPEAR) and
+  # whose sprites Spear's data files haven't got: those numbers place nothing in Spear
+  214: !remove    # Hans
+  197: !remove    # Gretel
+  215: !remove    # Giftmacher
+  179: !remove    # Fettgesicht
+  196: !remove    # Schabbs
+  160: !remove    # Fake Hitler
+  178: !remove    # Mecha Hitler
+  224: !remove    # Blinky
+  225: !remove    # Clyde
+  226: !remove    # Pinky
+  227: !remove    # Inky

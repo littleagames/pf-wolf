@@ -332,7 +332,7 @@ SecurityLight:
       - { sprite: SECL, frames: [A], tics-per-frame: -1, think: T_SecurityLight }
     Alert:
       - { sprite: SECL, frames: [A], tics-per-frame: 20 }
-      - { sprite: SUCL, frames: [B], tics-per-frame: 20, modifiers: [bright] }
+      - { sprite: SECL, frames: [B], tics-per-frame: 20, modifiers: [bright] }
 
 # A floor grate (and a wall pipe) that lets off steam now and then while Blake can see it
 SteamGrate:

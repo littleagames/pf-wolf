@@ -68,9 +68,47 @@ public class Pk3ContentTests
         Assert.That(intermission.DeathCam.HoldTics, Is.GreaterThan(0));
     }
 
-    // What's wrong with the loaded actordefs' classes: a parent or next-state that isn't there,
-    // or a class that can't be created. As AssetManager.GetActorMetadata builds them.
-    private static List<string> ActorProblems(PfWolfPk3Loader loader, string pack)
+    // A game's sprites: its data files' (raw-data-map.yaml's, by chunk) and pfwolf-pk3's sprites/
+    // pictures. Planet Strike starts from Aliens of Gold's classes and map objects, so a class one
+    // game draws can name frames the other lettered differently, or hasn't got.
+    [TestCase("wolf3d", "wolf3d")]
+    [TestCase("spear", "spear")]
+    [TestCase("blake", "blake-aog")]
+    [TestCase("planetstrike", "blake-ps")]
+    public void Every_Class_A_Game_Places_Draws_Frames_It_Has(string pack, string release)
+    {
+        // Arrange
+        var loader = Load(pack, release);
+        var metadata = Metadata(loader, pack);
+        var placed = loader.Load<MapObjectTranslationAsset>($"{pack}/mapdefs").Things.Values
+            .Select(thing => thing.Class).Where(metadata.Actors.ContainsKey).Distinct().ToList();
+        var sprites = File.ReadAllLines(Path.Combine(TestPaths.Pk3SourceFolder(), "gamepacks", pack, "raw-data-map.yaml"))
+            .Select(line => line.Split('#')[0].Trim(' ', '-')).Where(name => name.Length == 6)
+            .Concat(Directory.GetFiles(Path.Combine(TestPaths.Pk3SourceFolder(), "sprites"), "*", SearchOption.AllDirectories)
+                .Select(Path.GetFileNameWithoutExtension).OfType<string>())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        Assert.That(placed, Is.Not.Empty);
+
+        // Act: each frame of each state, in any of its views (0 for one alone, 1-8 turning)
+        var problems = new List<string>();
+        foreach (var className in placed)
+        {
+            var actor = metadata.CreateActor(className, metadata.Actors[className]);
+            var missing = actor.States.Values.SelectMany(entries => entries.OfType<ActorStatesData>())
+                .Where(frames => frames.Sprite is { Length: > 0 } && frames.Sprite != "TNT1")
+                .SelectMany(frames => frames.Frames.Select(letter => $"{frames.Sprite}{letter}"))
+                .Where(frame => !Enumerable.Range(0, 9).Any(view => sprites.Contains($"{frame}{view}")))
+                .Distinct().ToList();
+            if (missing.Count > 0)
+                problems.Add($"{className}: {string.Join(" ", missing)}");
+        }
+
+        // Assert
+        Assert.That(problems, Is.Empty);
+    }
+
+    // The game's actor classes, the shared ones and then its own, as AssetManager.GetActorMetadata builds them
+    private static ActorMetadata Metadata(PfWolfPk3Loader loader, string pack)
     {
         var metadata = new ActorMetadata();
         foreach (var name in new[] { "actordefs", $"{pack}/actordefs" })
@@ -84,6 +122,14 @@ public class Pk3ContentTests
                 // a pack with no actordefs of its own
             }
         }
+        return metadata;
+    }
+
+    // What's wrong with the loaded actordefs' classes: a parent or next-state that isn't there,
+    // or a class that can't be created. As AssetManager.GetActorMetadata builds them.
+    private static List<string> ActorProblems(PfWolfPk3Loader loader, string pack)
+    {
+        var metadata = Metadata(loader, pack);
 
         Assert.That(metadata.Actors.Keys, Does.Contain("Inventory").And.Contain("Monster"), "the shared actordefs should load");
 
