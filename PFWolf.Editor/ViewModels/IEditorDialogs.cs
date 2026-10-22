@@ -43,6 +43,9 @@ public sealed record ReplaceSetup(
 /// <summary>What to replace with what, and where</summary>
 public sealed record ReplaceRequest(ushort From, ushort To, bool SelectionOnly);
 
+/// <summary>A code form's answers, one number per field; <see cref="PickOnMap"/>: its target tile is to be clicked on the map</summary>
+public sealed record CodeAnswer(int[] Values, bool PickOnMap);
+
 /// <summary>The questions the editor asks, which the window answers with its dialogs</summary>
 public interface IEditorDialogs
 {
@@ -74,6 +77,9 @@ public interface IEditorDialogs
 
     /// <summary>Asks which value to replace with which, in the selection or the level; null when cancelled</summary>
     Task<ReplaceRequest?> AskReplace(ReplaceSetup setup);
+
+    /// <summary>Asks a level code's questions (its value, floor, hint, target); null when cancelled</summary>
+    Task<CodeAnswer?> AskCode(CodeForm form);
 
     /// <summary>Shows the level properties dialog; true when it's closed with OK (and the properties build)</summary>
     Task<bool> EditProperties(MapPropertiesViewModel properties);

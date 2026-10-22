@@ -16,6 +16,24 @@
   AOG and PS levels round-trip through `.wad`, LevelChecksGameTests for both, and
   BlakeEditorGameTests (links, map-info text, level labels, every thing shows). Checked by eye:
   the editor opens AOG with the new level names.
+- **Phase 2 (done):** Editing/LevelCodes.cs lists the level's codes and links and builds a form
+  for each kind (colors and flats as palette and flats-table choices, a tag-link's floor and
+  target, a hint picked by its message, a low byte for 0xF4/0xFA/0xFC, a link's target tile).
+  The Level codes panel (bottom, shown for games whose mapdefs have map-info) lists them; picking
+  one goes to it; Edit… (Ctrl+E, also Level menu: the picked code, else the tile under the
+  pointer), Delete, and Colors…/Flats…, which edit the level's code or put a new one in the
+  first free pair of the top row. "Pick on the map…" in a link's form takes the next click on
+  the map as the target (Esc leaves it). The object plane's palette has a Level codes group of
+  the tile codes: picking one asks for its value once, then Paint puts the code down with its
+  value in the tile after it. The tools keep pairs together (ToolController.Pairs): a value tile
+  is never painted over, a code painted over or erased takes its value with it, and Delete on a
+  selection clears the value of a code in it. Moving a selection doesn't move a value left
+  outside it (the checks find that). The map draws a badge on code tiles (C colors, F flats, H
+  hint, L link, V value, # other) and "+" on value tiles, and link lines: all of them with Tags
+  shown, else those to and from the tile under the pointer. Tests: LevelCodesTests. Checked by
+  eye (UI Automation, no mouse): the panel, the colors and hint dialogs with the level's values,
+  going to a code, the link lines on AOG floor 1, the palette's code entries setting up Paint.
+  **Not checked by eye:** painting a code and picking a target with a real click.
 
 Goal: the editor opens Blake Stone: Aliens of Gold (`blake`) and Planet Strike (`planetstrike`)
 the way it opens Wolf3D and Spear today, and a modder can edit their levels in full: map-info

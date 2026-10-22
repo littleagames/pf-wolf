@@ -469,6 +469,82 @@ public partial class MainWindow : Window, IEditorDialogs
         return answer;
     }
 
+    public async Task<CodeAnswer?> AskCode(Editing.CodeForm form)
+    {
+        // A drop-down where the field has choices, else a number
+        var inputs = new List<Func<string?>>();
+        var rows = new StackPanel { Spacing = 6 };
+        foreach (var field in form.Fields)
+        {
+            Control input;
+            if (field.Choices is { Count: > 0 } choices)
+            {
+                var combo = new ComboBox
+                {
+                    ItemsSource = choices,
+                    SelectedItem = choices.FirstOrDefault(choice => Editing.CodeField.Parse(choice) == field.Initial) ?? choices[0],
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    MaxDropDownHeight = 400,
+                };
+                inputs.Add(() => combo.SelectedItem as string);
+                input = combo;
+            }
+            else
+            {
+                var number = new NumericUpDown { Value = field.Initial, Minimum = field.Min, Maximum = field.Max, Increment = 1, FormatString = "0", MinWidth = 140 };
+                inputs.Add(() => number.Value?.ToString("0", System.Globalization.CultureInfo.InvariantCulture));
+                input = number;
+            }
+            rows.Children.Add(new DockPanel
+            {
+                Children = { DockLeft(new TextBlock { Text = field.Label, Width = 110, VerticalAlignment = VerticalAlignment.Center }), input },
+            });
+        }
+
+        var error = new TextBlock { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
+        var ok = new Button { Content = "OK", IsDefault = true, Classes = { "accent" } };
+        var pick = new Button { Content = "Pick on the map…", IsVisible = form.PicksTile };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        var dialog = MakeDialog(form.Title, new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                new TextBlock { Text = form.Description, TextWrapping = TextWrapping.Wrap },
+                rows,
+                error,
+                Buttons(ok, pick, cancel),
+            },
+        });
+        dialog.Width = 520;
+
+        CodeAnswer? answer = null;
+        void Finish(bool pickOnMap)
+        {
+            var values = new int[form.Fields.Count];
+            for (int i = 0; i < values.Length; i++)
+            {
+                // The target's x and y needn't be right when it's to be picked
+                bool target = pickOnMap && i >= values.Length - 2;
+                var text = inputs[i]();
+                if (!target && form.Fields[i].Check(text) is { } problem)
+                {
+                    error.Text = problem + ".";
+                    return;
+                }
+                values[i] = Editing.CodeField.Parse(text) ?? 0;
+            }
+            answer = new CodeAnswer(values, pickOnMap);
+            dialog.Close();
+        }
+        ok.Click += (_, _) => Finish(false);
+        pick.Click += (_, _) => Finish(true);
+        cancel.Click += (_, _) => dialog.Close();
+
+        await dialog.ShowDialog(DialogOwner);
+        return answer;
+    }
+
     public async Task<ReplaceRequest?> AskReplace(ReplaceSetup setup)
     {
         var from = new ComboBox

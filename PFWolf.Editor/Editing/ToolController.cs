@@ -83,9 +83,36 @@ public sealed class ToolController
     /// <summary>The part of a tile's value the layer being edited holds, for the eyedropper and fill. Null: all of it.</summary>
     public Func<ushort, ushort>? Read { get; set; }
 
-    // Puts a value down on the plane being edited, through Combine
+    /// <summary>
+    /// The level's codes whose value is in the tile after them (Blake Stone's map-info codes and
+    /// links), which the tools keep together: a value tile is left alone, and a code put over or
+    /// taken away takes its value with it. Null: none.
+    /// </summary>
+    public IObjectPairs? Pairs { get; set; }
+
+    /// <summary>What goes in the tile after a code the tools put down that keeps its value there (null: as it is)</summary>
+    public ushort? PairValue { get; set; }
+
+    // Puts a value down on the plane being edited, through Combine, keeping codes with their values
     private void Put(MapEdit edit, int x, int y, ushort value)
-        => edit.Set(Plane, x, y, Combine is { } combine && edit.Document.Contains(x, y) ? combine(edit.Document[Plane, x, y], value) : value);
+    {
+        var document = edit.Document;
+        var put = Combine is { } combine && document.Contains(x, y) ? combine(document[Plane, x, y], value) : value;
+        if (Pairs is not { } pairs || !document.Contains(x, y))
+        {
+            edit.Set(Plane, x, y, put);
+            return;
+        }
+
+        if (Plane == 1 && pairs.IsValueTile(x, y))
+            return;
+        bool hadValueTile = pairs.HasValueTile(x, y);
+        edit.Set(Plane, x, y, put);
+        if (Plane == 1 && PairValue is { } pairValue && pairs.HasValueTile(x, y))
+            edit.Set(1, x + 1, y, pairValue);
+        else if (hadValueTile && !pairs.HasValueTile(x, y))
+            edit.Set(1, x + 1, y, 0);
+    }
 
     private ushort ReadAt(MapDocument document, int x, int y)
         => Read is { } read ? read(document[Plane, x, y]) : document[Plane, x, y];
@@ -162,10 +189,21 @@ public sealed class ToolController
     /// <summary>The eyedropper picked a value from the level</summary>
     public event EventHandler<ushort>? ValuePicked;
 
+    /// <summary>The next click picks a tile for something else (a link's target) in place of the tool, once</summary>
+    public Action<int, int>? PickTile { get; set; }
+
     public void Press(int x, int y)
     {
         if (_document is not { } document || !document.Contains(x, y))
             return;
+
+        if (PickTile is { } pick)
+        {
+            PickTile = null;
+            pick(x, y);
+            RaiseChanged();
+            return;
+        }
 
         _pressed = true;
         _anchor = _last = (x, y);
@@ -592,7 +630,7 @@ public sealed class ToolController
         if (_document == null || Selection is not { } selection)
             return;
         using var edit = _document.BeginEdit(description);
-        Clear(edit, selection, CopyAllPlanes ? null : Plane);
+        Clear(edit, selection, CopyAllPlanes ? null : Plane, withValues: true);
     }
 
     /// <summary>Clears one tile on the plane being edited (Delete over the 3D view)</summary>
@@ -792,8 +830,15 @@ public sealed class ToolController
         _pressed = false;
     }
 
-    private void Clear(MapEdit edit, TileSelection selection, int? plane)
+    private void Clear(MapEdit edit, TileSelection selection, int? plane, bool withValues = false)
     {
+        // A code cleared takes its value with it, though its value tile is outside the selection
+        if (withValues && plane == null && Pairs is { } pairs)
+        {
+            foreach (var (x, y) in selection.Tiles.Where(tile => pairs.HasValueTile(tile.X, tile.Y)).ToList())
+                edit.Set(1, x + 1, y, 0);
+        }
+
         for (int p = 0; p < edit.Document.Planes; p++)
         {
             if (plane != null && plane != p)

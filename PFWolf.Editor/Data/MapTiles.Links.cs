@@ -40,8 +40,13 @@ public sealed record ObjectLink(ObjectLinkKind Kind, int X, int Y, int ValueX, i
     };
 }
 
-public sealed partial class MapTiles
+public sealed partial class MapTiles : Editing.IObjectPairs
 {
+    /// <summary>Whether the tile holds a code or makes a link whose value is in the tile after it (see <see cref="IsValueTile"/>)</summary>
+    public bool HasValueTile(int x, int y)
+        => x + 1 < Width
+           && (MapInfoKind(this[1, x, y]) is { } kind && MapInfoCodes.HasValue(kind) || LinkFrom(x, y) is { } link && link.ValueX == x + 1);
+
     /// <summary>Switch and trigger actions that read their tile's object-plane value as data, not as a thing</summary>
     private static readonly string[] ValueReadingActions = ["A_SmartSwitch", "A_Teleport", "A_Vend"];
 

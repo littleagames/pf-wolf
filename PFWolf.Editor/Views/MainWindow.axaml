@@ -10,6 +10,7 @@
 
   <Window.KeyBindings>
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+E" Command="{Binding EditCodeCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
     <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
     <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
@@ -157,6 +158,15 @@
                   ToolTip.Tip="A new width and height (3 to 256 tiles each way), keeping a corner, an edge or the middle where it is" />
         <MenuItem Header="_Check level" Command="{Binding CheckLevelCommand}" InputGesture="F7"
                   ToolTip.Tip="Player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
+        <Separator IsVisible="{Binding HasLevelCodes}" />
+        <MenuItem Header="_Edit code…" Command="{Binding EditCodeCommand}" InputGesture="Ctrl+E" IsVisible="{Binding HasLevelCodes}"
+                  ToolTip.Tip="The map-info code or link on the tile under the pointer (or picked in Level codes): its value, floor, hint or target" />
+        <MenuItem Header="De_lete code" Command="{Binding DeleteCodeCommand}" IsVisible="{Binding HasLevelCodes}"
+                  ToolTip.Tip="Takes the code or link off the tile under the pointer (or picked in Level codes), with its value" />
+        <MenuItem Header="Level c_olors…" Command="{Binding SetLevelColorsCommand}" IsVisible="{Binding HasColorCode}"
+                  ToolTip.Tip="The level's ceiling and floor colors code: the one it has, else a new one in the top row" />
+        <MenuItem Header="Level _flats…" Command="{Binding SetLevelFlatsCommand}" IsVisible="{Binding HasFlatsCode}"
+                  ToolTip.Tip="The level's ceiling and floor flats code: the one it has, else a new one in the top row" />
       </MenuItem>
       <MenuItem Header="_Resources">
         <MenuItem Header="_Textures and sprites…" Command="{Binding ShowArtCommand}" InputGesture="F6"
@@ -318,6 +328,26 @@
         </TextBlock>
       </Expander.Header>
       <ListBox ItemsSource="{Binding Checks}" SelectedItem="{Binding SelectedCheck}" Height="160" />
+    </Expander>
+
+    <Expander DockPanel.Dock="Bottom" HorizontalAlignment="Stretch" Padding="0" IsExpanded="{Binding LevelCodesExpanded}"
+              IsVisible="{Binding HasLevelCodes}">
+      <Expander.Header>
+        <TextBlock>
+          <Run Text="Level codes" /><Run Text="  (map-info codes and links: pick one to go to it)" Foreground="Gray" />
+        </TextBlock>
+      </Expander.Header>
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Spacing="6" Margin="8,0,0,0">
+          <Button Content="Edit…" Command="{Binding EditCodeCommand}" HorizontalAlignment="Stretch" ToolTip.Tip="Ctrl+E" />
+          <Button Content="Delete" Command="{Binding DeleteCodeCommand}" HorizontalAlignment="Stretch" />
+          <Button Content="Colors…" Command="{Binding SetLevelColorsCommand}" IsVisible="{Binding HasColorCode}" HorizontalAlignment="Stretch"
+                  ToolTip.Tip="The level's ceiling and floor colors (a new code goes in the top row)" />
+          <Button Content="Flats…" Command="{Binding SetLevelFlatsCommand}" IsVisible="{Binding HasFlatsCode}" HorizontalAlignment="Stretch"
+                  ToolTip.Tip="The level's ceiling and floor flats (a new code goes in the top row)" />
+        </StackPanel>
+        <ListBox ItemsSource="{Binding LevelCodeList}" SelectedItem="{Binding SelectedLevelCode}" Height="160" />
+      </DockPanel>
     </Expander>
 
     <!-- Levels and mods -->

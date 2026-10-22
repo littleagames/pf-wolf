@@ -119,8 +119,15 @@ public static class PaletteEntries
         foreach (var (id, diagonal) in defs.Diagonals.OrderBy(diagonal => diagonal.Key))
             entries.Add(new PaletteEntry((ushort)id, "Diagonals", $"Diagonal {diagonal.Shape}  ({id})"));
 
+        // Map-info codes that belong to a tile (the level-wide ones are set from the Level codes panel)
+        foreach (var (high, kind, label) in Editing.LevelCodes.Kinds(defs).Where(code => !Editing.LevelCodes.IsLevelWide(code.Kind)))
+            entries.Add(new PaletteEntry((ushort)(high << 8), LevelCodeGroup, label));
+
         return entries;
     }
+
+    /// <summary>The object plane palette's group of map-info codes, which ask for their value when picked</summary>
+    public const string LevelCodeGroup = "Level codes";
 
     /// <summary>Each thing class's object-plane codes, lowest first: one per facing, skill and patrolling it comes in</summary>
     public static Dictionary<string, List<ThingVariant>> ThingVariants(MapObjectTranslationAsset defs)

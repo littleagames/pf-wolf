@@ -254,6 +254,10 @@ public sealed class MapCanvas : Control
             DrawSwitchLinks(context, tiles);
         }
 
+        // Links object-plane values make: all of them with the tags, else those of the tile under the pointer
+        if (ShowTags || ShowThings && _hover.X >= 0)
+            DrawObjectLinks(context, tiles, all: ShowTags);
+
         // Everything that shares the tag of the tile under the pointer
         if (_hover.X >= 0 && tiles[MapConstants.TagPlane, _hover.X, _hover.Y] is var hoverTag and not 0
             && tiles.TaggedTiles().TryGetValue(hoverTag, out var sameTag))
@@ -452,6 +456,17 @@ public sealed class MapCanvas : Control
             if (thing.MinSkill > 0 && _zoom >= 16)
                 DrawBadge(context, rect, (thing.MinSkill + 1).ToString(CultureInfo.InvariantCulture) + "+", SkillBadgeBrush, bottom: true);
         }
+        else if (tiles.IsValueTile(x, y))
+        {
+            // The value of the code or link west of it
+            if (_zoom >= 12)
+                DrawBadge(context, rect, "+", CodeBadgeBrush, bottom: true);
+        }
+        else if (tiles.MapInfoKind(tiles[1, x, y]) is { } code)
+        {
+            if (_zoom >= 12)
+                DrawBadge(context, rect, CodeGlyph(code), CodeBadgeBrush, bottom: true);
+        }
         else if (tiles.PlayerStart(x, y) is { } start)
             context.DrawGeometry(StartBrush, null, Arrow(rect, start.Angles));
         else if (tiles.Trigger(x, y) is not null)
@@ -463,6 +478,55 @@ public sealed class MapCanvas : Control
         if (ShowWalls && _zoom >= 12 && tiles.IsAmbush(x, y))
             DrawBadge(context, rect, "A", AmbushBadgeBrush, bottom: false);
     }
+
+    /// <summary>A map-info code's badge letter: colors, flats, a link, a hint, a value, or other</summary>
+    private static string CodeGlyph(string kind)
+    {
+        if (Assets.MapInfoCodes.HintText(kind) != null)
+            return "H";
+        return kind.ToLowerInvariant() switch
+        {
+            Assets.MapInfoCodes.CeilingFloorColors => "C",
+            Assets.MapInfoCodes.CeilingFloorFlats => "F",
+            Assets.MapInfoCodes.TagLink => "L",
+            Assets.MapInfoCodes.Value => "V",
+            _ => "#",
+        };
+    }
+
+    /// <summary>
+    /// A line from each tile that names another by its object-plane value (a switch link, a smart
+    /// switch, a teleporter, an enemy's link) to that tile: all of them, or only those to and from
+    /// the tile under the pointer
+    /// </summary>
+    private void DrawObjectLinks(DrawingContext context, MapTiles tiles, bool all)
+    {
+        foreach (var link in tiles.Links())
+        {
+            if (!link.OnThisFloor || link.ToX >= tiles.Width || link.ToY >= tiles.Height)
+                continue;
+            bool hovered = (link.X, link.Y) == _hover || (link.ToX, link.ToY) == _hover || (link.ValueX, link.ValueY) == _hover;
+            if (!all && !hovered)
+                continue;
+
+            var pen = hovered ? LinkHoverPen : LinkPens[(int)link.Kind % LinkPens.Length];
+            var to = TileRect(link.ToX, link.ToY).Center;
+            context.DrawLine(pen, TileRect(link.X, link.Y).Center, to);
+            context.DrawEllipse(pen.Brush, null, to, 3, 3);
+        }
+    }
+
+    // A color for each kind of link (ObjectLinkKind's order), and the one for those of the tile under the pointer
+    private static readonly IPen[] LinkPens =
+    [
+        new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 140, 60)), 2),
+        new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 100, 200)), 2),
+        new Pen(new SolidColorBrush(Color.FromArgb(150, 120, 220, 120)), 1.5),
+        new Pen(new SolidColorBrush(Color.FromArgb(200, 120, 160, 255)), 2),
+        new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 80, 80)), 2),
+    ];
+    private static readonly IPen LinkHoverPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 255, 255)), 2.5);
+    private static readonly IBrush CodeBadgeBrush = new SolidColorBrush(Color.FromArgb(210, 40, 110, 150));
 
     /// <summary>A small labelled box in a corner of the tile</summary>
     private void DrawBadge(DrawingContext context, Rect rect, string label, IBrush background, bool bottom)

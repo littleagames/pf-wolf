@@ -838,6 +838,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (Maps.FirstOrDefault(item => item.Name.Equals(document.AssetName, StringComparison.OrdinalIgnoreCase)) is { } item)
             item.IsDirty = document.IsDirty;
+        if (LevelCodesExpanded && ReferenceEquals(document, Document))
+            RefreshLevelCodes();
         OnPropertyChanged(nameof(WindowTitle));
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
@@ -1060,7 +1062,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectNone() => Controller.Escape();
+    private void SelectNone()
+    {
+        // Esc while a link's target is being picked stops that first
+        if (!CancelTilePick())
+            Controller.Escape();
+    }
 
     [RelayCommand(CanExecute = nameof(HasDocument))]
     private void InvertSelection() => Controller.InvertSelection();
@@ -1166,6 +1173,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
 
         Controller.Value = value.Entry.Value;
+        Controller.PairValue = null;
+        if (value.Entry.Group == PaletteEntries.LevelCodeGroup && SelectedPlane.Plane == 1)
+        {
+            HasThingOptions = false;
+            _ = PickCodeEntry(value.Entry);
+            return;
+        }
         if (value.Entry.ThingClass is { } thingClass && SelectedPlane.Plane == 1
             && _thingVariants.TryGetValue(thingClass, out var variants) && variants.Count > 1)
             ShowThingOptions(variants, variants[0]);
