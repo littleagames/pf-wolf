@@ -57,7 +57,7 @@ public static class DefinitionFiles
             "graphicdefs/*.yaml", "graphicdefs/{pack}/*.yaml", () => FieldSchema.Entries("", "Pictures by name", GraphicSchema.Build())),
         new("colors", "colors.yaml", "Named colors for the menus, automap and other screens.",
             "colors.yaml", "gamepacks/{pack}/colors.yaml", () => Entries("Colors by name: #RRGGBB or a palette index", typeof(string))),
-        new("fonts", "fonts.yaml", "The game's fonts.",
+        new("fonts", "fonts.yaml", "The game's fonts, by name. A font not listed is looked up as a Wolf3D font of that name (a VGAGRAPH chunk or a file in fonts/).",
             "fonts.yaml", "gamepacks/{pack}/fonts.yaml", () => Entries("Fonts by name", typeof(FontDefinition))),
         new("hud-messages", "hud-messages.yaml", "How on-screen messages look.",
             "hud-messages.yaml", "gamepacks/{pack}/hud-messages.yaml", () => Entries("Message styles by name", typeof(HudMessageStyleDefinition))),

@@ -1,6 +1,7 @@
 # The fonts, from picture sheets in graphics/ (made by examples/tools/make-standalone-demo.ps1):
-# a standalone game has no VGAGRAPH to take Wolf3D's from. See pfwolf.pk3's
-# gamepacks/wolf3d/fonts.yaml for the settings. The menus print in SmallFont and LargeFont.
+# a standalone game has no VGAGRAPH to take Wolf3D's from. The settings are in the fonts
+# reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/fonts
+# The menus print in SmallFont and LargeFont.
 SmallFont:
   type: sheet
   image: SDFONTS

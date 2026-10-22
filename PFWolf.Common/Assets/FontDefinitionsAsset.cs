@@ -71,7 +71,12 @@ public class GlowDefinition
     public int Strength { get; set; } = 50;
 }
 
-/// <summary>One font in fonts.yaml</summary>
+/// <summary>
+/// One font in fonts.yaml. Shadows, outlines and glows reach past the letters and paint over
+/// whatever is next to the text, such as the border of a tight box round it: keep them small on
+/// fonts used in boxes. They're drawn as the glyphs' silhouettes, so a picture glyph needs
+/// see-through pixels (a PNG's, or transparent) or it casts a filled box.
+/// </summary>
 public class FontDefinition
 {
     /// <summary>
@@ -83,8 +88,9 @@ public class FontDefinition
     public string Type { get; set; } = "vga";
 
     /// <summary>
-    /// vga: the font chunk's name in raw-data-map, or a font file's name in fonts/; defaults to
-    /// the font's own name
+    /// vga: the font chunk's name in raw-data-map, or a font file's name in fonts/ (Wolf3D's font
+    /// format, or WDC's .wsf); defaults to the font's own name. A file in fonts/ named like a
+    /// chunk (SmallFont.fnt) replaces the chunk.
     /// </summary>
     public string? Source { get; set; }
 
@@ -96,10 +102,17 @@ public class FontDefinition
     /// </summary>
     public GradientDefinition? Gradient { get; set; }
 
-    /// <summary>Any type: a border in one color around each glyph</summary>
+    /// <summary>
+    /// Any type: a border in one color around each glyph. Characters don't move further apart,
+    /// so outlines fill the gaps between them.
+    /// </summary>
     public OutlineDefinition? Outline { get; set; }
 
-    /// <summary>Any type: a halo round the glyphs fading into the background</summary>
+    /// <summary>
+    /// Any type: a halo round the glyphs fading into the background color behind the text (the
+    /// text style's, such as BKGDCOLOR in menus). It's drawn in solid colors, so over a picture it
+    /// covers it rather than showing it through.
+    /// </summary>
     public GlowDefinition? Glow { get; set; }
 
     /// <summary>sheet: the picture holding the characters</summary>
@@ -114,7 +127,10 @@ public class FontDefinition
     /// </summary>
     public int FirstChar { get; set; } = 32;
 
-    /// <summary>sheet: each character moves along by its own width, not the cell's</summary>
+    /// <summary>
+    /// sheet: each character moves along by its own width plus spacing, not the cell's. A blank
+    /// cell is left out, except a space, which moves along space-width (else half a cell).
+    /// </summary>
     public bool Proportional { get; set; }
 
     /// <summary>sheet, proportional: the gap after each character; defaults to 1</summary>
@@ -144,7 +160,10 @@ public class FontDefinition
     /// <summary>graphic: a picture for a character, as well as or instead of the pattern's</summary>
     public Dictionary<string, string> Glyphs { get; set; } = [];
 
-    /// <summary>graphic, sheet: how far a character moves along, where it isn't the cell width</summary>
+    /// <summary>
+    /// graphic, sheet: how far a character moves along, where it isn't the usual. In a graphic
+    /// font, a character given here with no picture is a blank that wide.
+    /// </summary>
     public Dictionary<string, int> Advances { get; set; } = [];
 
     /// <summary>
@@ -153,7 +172,7 @@ public class FontDefinition
     /// </summary>
     public int? CellWidth { get; set; }
 
-    /// <summary>graphic, sheet: glyph height; defaults to the tallest picture</summary>
+    /// <summary>graphic, sheet: glyph height; defaults to the tallest picture (a sheet's, the cell height)</summary>
     public int? Height { get; set; }
 
     /// <summary>graphic, sheet: distance between lines; defaults to the height</summary>
@@ -162,6 +181,6 @@ public class FontDefinition
     /// <summary>graphic, sheet: how far a character without a glyph moves along; defaults to the space's, or the cell width</summary>
     public int? SpaceWidth { get; set; }
 
-    /// <summary>graphic, sheet: lower case letters use the upper case glyphs</summary>
+    /// <summary>Any type: lower case letters use the upper case glyphs (Blake Stone's small font has only capitals)</summary>
     public bool UpperCase { get; set; }
 }

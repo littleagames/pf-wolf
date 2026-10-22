@@ -1,4 +1,5 @@
-# Fonts text can be printed in, by name (see gamepacks/wolf3d/fonts.yaml for every setting).
+# Fonts text can be printed in, by name (every setting is in the fonts reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/fonts).
 # Blake Stone's VGAGRAPH has five fonts, Font1 to Font5:
 #   Font1  10 high, its glyphs 31 codes below their characters (code 32 is "?", 34 is "A"),
 #          so it can't print plain text
