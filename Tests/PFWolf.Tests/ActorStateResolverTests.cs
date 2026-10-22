@@ -45,6 +45,59 @@ public class ActorStateResolverTests
     }
 
     [Test]
+    public void A_Next_State_Before_The_Last_Entry_Is_Passed_Over_And_Told()
+    {
+        // Arrange: Fire's first entry names Ready, but the second entry's frames follow it
+        var actors = ActorDefs.Parse("""
+            Thing:
+              states:
+                Ready:
+                  - { sprite: GUNG, frames: [A], tics-per-frame: 1 }
+                Fire:
+                  - { sprite: GUNG, frames: [B], tics-per-frame: 6, next-state: Ready }
+                  - { sprite: GUNG, frames: [C], tics-per-frame: 6, next-state: Ready }
+            """);
+        var ignored = new List<string>();
+
+        // Act
+        var states = ActorStateResolver.Resolve(actors["Thing"].States,
+            (state, _, marker) => ignored.Add(ActorStateResolver.IgnoredMessage("Thing", state, marker)));
+
+        // Assert: B goes on to C, and only the first entry's next-state is told of
+        Assert.That(states["Fire"].Next!.FrameLetter, Is.EqualTo("C"));
+        Assert.That(states["Fire"].Next!.Next, Is.SameAs(states["Ready"]));
+        Assert.That(ignored, Is.EqualTo(new[]
+        {
+            "Actor Thing: in its Fire state, next-state (or goto) Ready isn't on the state's last entry, so it's never reached: the frames after it play instead",
+        }));
+    }
+
+    [Test]
+    public void Endings_Where_They_Belong_Are_Not_Told()
+    {
+        // Arrange: a state that loops by itself, one with a goto, one with a stop
+        var actors = ActorDefs.Parse("""
+            Thing:
+              states:
+                Spawn:
+                  - { sprite: LAMP, frames: [A, B], tics-per-frame: 5 }
+                See:
+                  - { sprite: GARD, frames: [A], tics-per-frame: 5 }
+                  - goto: Spawn
+                Death:
+                  - { sprite: GARD, frames: [K], tics-per-frame: 5 }
+                  - stop
+            """);
+        var ignored = new List<string>();
+
+        // Act
+        ActorStateResolver.Resolve(actors["Thing"].States, (state, _, _) => ignored.Add(state));
+
+        // Assert
+        Assert.That(ignored, Is.Empty);
+    }
+
+    [Test]
     public void A_Group_With_No_Ending_Loops_To_Its_First_Frame()
     {
         // Act

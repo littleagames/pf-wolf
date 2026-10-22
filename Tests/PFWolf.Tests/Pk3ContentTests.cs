@@ -195,8 +195,34 @@ public class Pk3ContentTests
                         problems.Add($"{className}: {state} goes to {target}, which it has no state called");
                 }
             }
+
+            // A next-state, goto, stop or loop that's never reached (not on its state's last entry)
+            Entities.Actors.ActorStateResolver.Resolve(actor.States,
+                (state, _, marker) => problems.Add(Entities.Actors.ActorStateResolver.IgnoredMessage(className, state, marker)));
         }
         return problems;
+    }
+
+    [Test]
+    public void Every_Example_Mods_States_End_Where_They_Can_Be_Reached()
+    {
+        // Arrange: each example mod's and the Multiplayer mod's actordefs files, as written
+        var root = TestPaths.RepoRoot();
+        var files = Directory.GetDirectories(Path.Combine(root, "examples", "mods")).Append(Path.Combine(root, "multiplayer-pk3"))
+            .Select(mod => Path.Combine(mod, "actordefs")).Where(Directory.Exists)
+            .SelectMany(folder => Directory.GetFiles(folder, "*.yaml", SearchOption.AllDirectories))
+            .ToList();
+        Assert.That(files, Is.Not.Empty);
+
+        // Act
+        var problems = new List<string>();
+        foreach (var file in files)
+            foreach (var (className, data) in ActorDefs.Parse(File.ReadAllText(file)))
+                Entities.Actors.ActorStateResolver.Resolve(data.States, (state, _, marker) =>
+                    problems.Add($"{Path.GetRelativePath(root, file)}: {Entities.Actors.ActorStateResolver.IgnoredMessage(className, state, marker)}"));
+
+        // Assert
+        Assert.That(problems, Is.Empty);
     }
 
     [Test]

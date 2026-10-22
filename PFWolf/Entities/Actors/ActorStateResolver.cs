@@ -9,15 +9,19 @@ namespace PFWolf.Entities.Actors;
 /// </summary>
 internal static class ActorStateResolver
 {
-    internal static Dictionary<string, ActorStateFrame> Resolve(Dictionary<string, List<StateData>> states)
+    /// <param name="ignored">Told of each next-state, goto, stop or loop that's never reached, as
+    /// the state's name, its entries and the marker: one on an entry before the last, which the
+    /// next entry's frames follow instead</param>
+    internal static Dictionary<string, ActorStateFrame> Resolve(Dictionary<string, List<StateData>> states,
+        Action<string, List<StateData>, StateData>? ignored = null)
     {
         var firstFrameByGroup = new Dictionary<string, ActorStateFrame>();
 
         // Where a control marker (Stop/Loop/Goto) falls relative to the frame it follows.
         // Resolved in a second pass once every group's first frame is known, so a marker in
         // one group (e.g. Attack -> Goto "Chase") can reference another group regardless of
-        // dictionary iteration order.
-        var pendingMarkers = new List<(ActorStateFrame? AfterFrame, string Group, StateData Marker)>();
+        // dictionary iteration order. Implied: the loop a state without a marker at its end gets.
+        var pendingMarkers = new List<(ActorStateFrame? AfterFrame, string Group, StateData Marker, bool Implied)>();
 
         foreach (var (groupName, entries) in states)
         {
@@ -52,7 +56,7 @@ internal static class ActorStateResolver
                     // trailing Stop/Loop/Goto marker. Same resolution, just a different
                     // authoring shape -- a self-referencing NextState is how content loops.
                     if (!string.IsNullOrEmpty(frameData.NextState) && previous != null)
-                        pendingMarkers.Add((previous, groupName, new GoToStateData(frameData.NextState)));
+                        pendingMarkers.Add((previous, groupName, new GoToStateData(frameData.NextState), false));
                 }
                 else
                 {
@@ -60,7 +64,7 @@ internal static class ActorStateResolver
                     // a marker that a later frame in the same list falls through to (e.g. a
                     // conditional action like A_JumpIf) is a runtime decision this step doesn't
                     // support yet, so the plain linear fallthrough wins instead.
-                    pendingMarkers.Add((previous, groupName, entry));
+                    pendingMarkers.Add((previous, groupName, entry, false));
                 }
             }
 
@@ -70,13 +74,19 @@ internal static class ActorStateResolver
             // what Next points to, since DoActor never re-consults Next on such a frame. An
             // explicit Stop still means "freeze on this exact frame", distinct from this default.
             if (previous != null && entries.Count > 0 && entries[^1] is ActorStatesData)
-                pendingMarkers.Add((previous, groupName, new LoopStateData()));
+                pendingMarkers.Add((previous, groupName, new LoopStateData(), true));
         }
 
-        foreach (var (afterFrame, group, marker) in pendingMarkers)
+        foreach (var (afterFrame, group, marker, implied) in pendingMarkers)
         {
             if (afterFrame == null || afterFrame.Next != null)
-                continue; // nothing to attach to, or a later frame already linked past this point
+            {
+                // nothing to attach to, or a later frame (or an earlier marker) already linked
+                // past this point: one the content wrote is then never reached
+                if (afterFrame != null && !implied)
+                    ignored?.Invoke(group, states[group], marker);
+                continue;
+            }
 
             afterFrame.Next = marker switch
             {
@@ -90,6 +100,15 @@ internal static class ActorStateResolver
         AddRaiseFromDeath(firstFrameByGroup);
         return firstFrameByGroup;
     }
+
+    /// <summary>The warning for a marker Resolve found is never reached</summary>
+    internal static string IgnoredMessage(string className, string state, StateData marker) =>
+        $"Actor {className}: in its {state} state, " + marker switch
+        {
+            GoToStateData goTo => $"next-state (or goto) {goTo.NextState}",
+            StopStateData => "stop",
+            _ => "loop",
+        } + " isn't on the state's last entry, so it's never reached: the frames after it play instead";
 
     /// <summary>The state a corpse brought back by a reviver plays (Monster.Rise)</summary>
     internal const string RaiseState = "Raise";

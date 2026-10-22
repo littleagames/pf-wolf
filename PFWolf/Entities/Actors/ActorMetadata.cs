@@ -135,10 +135,17 @@ internal class ActorMetadata
         if (_resolvedStatesCache.TryGetValue(name, out var cached))
             return cached;
 
-        var resolved = ActorStateResolver.Resolve(actor.States);
+        var resolved = ActorStateResolver.Resolve(actor.States, (state, entries, marker) =>
+        {
+            if (_warnedStates.Add(entries))
+                WarningLog.Write(ActorStateResolver.IgnoredMessage(name, state, marker));
+        });
         _resolvedStatesCache[name] = resolved;
         return resolved;
     }
+
+    // The state lists warned about: a class shares its parent's, so a mistake in one is told once
+    private readonly HashSet<List<StateData>> _warnedStates = new(ReferenceEqualityComparer.Instance);
 
     // Fills properties and states the target doesn't already have. Callers walk from the
     // nearest ancestor to the root so the closest definition wins.
