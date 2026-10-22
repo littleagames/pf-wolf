@@ -1,6 +1,6 @@
 ---
 title: Factions
-order: 6
+order: 7
 ---
 
 # Factions
