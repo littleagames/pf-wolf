@@ -85,40 +85,21 @@ the catalog, get one on its own.
 - Check: the release has a `.pk3` for each example; each loads with `--file <id>.pk3` on that
   release (`mods` lists it, nothing warned); the catalog's links download them.
 
-## One place for each explanation (the rest of pfwolf-pk3's YAML comments)
+## The converter's draft notes atop the Wolf3D actordefs
 
-The docs site's reference is generated from the code (PFWolf.DocGen: the asset types' doc
-comments, Definitions/), so an explanation of a field written again in a pfwolf-pk3 YAML comment
-is a second copy to keep up. On 2026-10-21 two were moved: the switch block at wall 21 in
-`mapdefs/wolf3d/walls.yaml` and the actor lights atop `actordefs/wolf3d/decorations.yaml`. Each
-fact only the comment had went into the code's docs first (MapSwitchTranslation, GameActions,
-ActorProperties, ActorSchema; the code had a switch's lock message wrong), the comment became a
-pointer to the reference, and what pointed at the comment (examples/README.md, the example mods,
-the editor's script hover and completion) was pointed at the reference instead.
+pfwolf-pk3's YAML comments no longer explain fields: on 2026-10-21 every field explanation moved
+into the code's docs (and so the reference), and the rules (how files combine, player classes,
+built-in classes, sprite colors, factions) into docs/manual, each checked against the code, with
+the comments left as pointers. A new comment that explains what a key means belongs in the code's
+doc comments, Definitions/ or the manual instead.
 
-`gamepacks/wolf3d/game-info.yaml` followed. Its comments explained nested records (a zone, a
-scroller, a title screen) whose types' summaries DocGen had only used for a file's root, so they
-never reached the reference; it now exports a nested record's type summary too (the description
-of a list's or dictionary's items, else `about`, which the website shows under the section's
-heading).
+What's left is different: the converter's notes atop `actordefs/wolf3d/guards.yaml`,
+`bosses.yaml`, `ghosts.yaml` and `projectiles.yaml` ("DRAFT - converted from WL_ACT2.C ...
+please double check").
 
-Then `gamepacks/gamepack-info.yaml`, whose header was rules more than fields: how files combine,
-`!remove` and `!replace`, standalone games. Those went to a manual page of their own,
-`docs/manual/combining-files.md`, checked against the loader (its table had missed factions,
-translations, animdefs, graphicdefs and `demos/{pack}/`, and said a mod can't carry menudefs,
-which it can since menu hooks).
-
-Left to do the same way, the files with the most explanation of fields:
-
-- the top of `gamepacks/wolf3d/factions.yaml` (rules as much as
-  fields: keep what isn't a field's meaning, say where an actor's faction or translation comes
-  from, in the code's type docs or the manual)
-
-For each: diff the comment's facts against what the reference already says; put the missing ones
-in the code's doc comments (checked against the code, as the wall-21 one showed the YAML can be
-the right one); make the comment a pointer; grep for what points at it (`described in`, `at the
-top of`, the file's name) and repoint. Not field docs, and not part of this: the converter's notes
-atop `actordefs/wolf3d/guards.yaml`, `bosses.yaml`, `ghosts.yaml` and `projectiles.yaml` ("DRAFT -
-converted from WL_ACT2.C ... please double check"), which want checking and trimming of their own.
-- Check: the test suite passes (DocGenTests: every field still described); the reference shows
-  what the comments said.
+- Check each class in those files against the original (WL_ACT2.C, WL_DEF.H): speeds, health by
+  skill, states and tics, sounds, drops.
+- Fix what's wrong, then take the DRAFT notes out, keeping only what says where the numbers came
+  from.
+- Check: the test suite passes, and a headless play-through of E1M1 and a boss level behaves as
+  before.

@@ -22,7 +22,7 @@ An actor is drawn through one translation at most: the first of these that it ha
    disguised Prop Hunt prop is drawn as its decoration is.
 3. **Its faction's.** An enemy with health on a faction is drawn through that faction's
    `class-translations` entry for its class (or the nearest class it descends from), else the
-   faction's `translation`.
+   faction's `translation`. See [Factions](./factions).
 
 Projectiles, and anything else without health, aren't drawn through a faction's colors.
 

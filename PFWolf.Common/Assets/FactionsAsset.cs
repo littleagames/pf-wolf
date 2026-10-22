@@ -3,7 +3,7 @@ namespace PFWolf.Assets;
 /// <summary>How one faction treats another's members</summary>
 public enum FactionRelation
 {
-    /// <summary>Goes after them on sight</summary>
+    /// <summary>Goes after them on sight, and they're who its shots and projectiles are for</summary>
     Hostile,
 
     /// <summary>Leaves them be, unless they hurt it</summary>

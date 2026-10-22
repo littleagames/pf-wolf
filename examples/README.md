@@ -550,8 +550,8 @@ On the automap your side shows in cyan, and your followers always show.
 
 ### Factions and color translations
 
-Every actor is on a side, a faction. The rules are written at the top of pfwolf-pk3's
-`gamepacks/wolf3d/factions.yaml`; in short:
+Every actor is on a side, a faction. The rules are in the manual's
+[Factions](https://www.littleagames.com/pf-wolf/docs/latest/manual/factions); in short:
 
 - An actor's faction is a map thing's `faction:` (mapdefs `things`), else its class's
   `faction` property, else the game pack's `player-faction` (for a player) or
