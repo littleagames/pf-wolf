@@ -105,77 +105,10 @@ walls:
         South: BRIKEGL1
         East: BRIKEGL2
         West: BRIKEGL2
-    # The elevator switch. A switch block makes a wall one the player can use, like a door:
-    #   to:                  the wall id it turns into (the switch thrown); left out, it stays
-    #                        as it is. If that wall has a switch of its own (back to this one,
-    #                        say), it's a toggle; if not, it's thrown once. Other switches
-    #                        with the same tag that are this wall or its `to` wall flip with
-    #                        it (their actions don't run), so linked switches stay in step.
-    #   sides:               the faces it can be used from, e.g. [east, west] (using it while
-    #                        facing east presses its west face); left out, any
-    #   sound:               played as it's thrown
-    #   lock:                an inventory item (e.g. GoldKey) needed to use it; lock-message,
-    #                        lock-message-style and locked-sound work as on doors.yaml doors,
-    #                        falling back to the key's "key.switchlockedmessage"
-    #   reset-tics:          it turns back by itself this many tics after it's thrown (with the
-    #                        linked switches thrown with it), running its reset-actions (say,
-    #                        A_CloseDoor). Make its `to` a wall that isn't a switch, so it can't
-    #                        be used meanwhile.
-    #   objective:           a level objective (game-info objectives) it's one of: each wall with
-    #                        it counts toward the level's total, and throwing it does one
-    #                        (Midnight Assault's sabotage targets)
-    #   actions:             action calls run in order, acting on whatever shares the switch
-    #                        tile's tag (map plane 4). Write one with arguments as a block list
-    #                        item ("- A_Foo(1, 2)"): a comma breaks up a [flow, list].
-    #                        A_Exit ends the level (to the secret level when standing on the
-    #                        floors' secret-exit code); A_SecretExit always goes to the secret
-    #                        level. Both wait for the switch's sound to finish, and both refuse
-    #                        while a blocks-exit level objective has any left.
-    #                        A_CompleteObjective("name", [n]), A_AddObjective("name", [n]): one
-    #                        (or n) more of a level objective done, or to do.
-    #                        A_OpenDoor("hold"), A_CloseDoor, A_ToggleDoor("hold"): the tagged
-    #                        doors, whatever their lock; with hold, opened doors stay open
-    #                        until something closes them.
-    #                        A_MoveWall(direction, "moving sound", "blocked sound"): pushes
-    #                        every tagged wall north/east/south/west (left out or "": the way
-    #                        the player faces); their tag goes with them.
-    #                        A_SetWall(id): turns the tagged walls into wall id.
-    #                        A_SetPatch(to[, from, ...]): the tagged walls' patches become
-    #                        patch to (0 takes them off); with froms, only those showing one
-    #                        of them. An actor's (its Use state) works on its own map tag.
-    #                        A_ChangeTexture("FROM", "TO"): the switch's own tile (tagged or
-    #                        not) and the tagged ones show texture TO where they showed FROM:
-    #                        wall and door faces, floors and ceilings. TO can be an animation
-    #                        (animdefs/animdefs.yaml); one that plays once starts as it changes,
-    #                        as it does on a switch that turns into a wall showing one.
-    #                        A_Activate, A_Deactivate: the tagged actors (tagged by the tile
-    #                        they spawn on) go to their Active / Inactive state, e.g.
-    #                        SwitchLight in actordefs decorations.
-    #                        A_SetLight(intensity, [radius], [color]): gives the tagged actors
-    #                        this light (0-255, radius in tiles, #RRGGBB or "none"; radius or
-    #                        color left out keep theirs); with no arguments, their own light
-    #                        back. A_LightOff: puts their light out. Actor states can run both
-    #                        too, on the actor itself (see actordefs decorations light.*).
-    #                        A_GiveInventory("Item", [amount]): gives the player an item, as
-    #                        picking it up would. A_SpawnItem("Class"): puts a thing on the
-    #                        floor in front of the switch. See patches.yaml.
-    #                        The switch's own tile is never a target, though it has the tag.
-    #                        Light zone actions name their zone (plane 5), not a tag; actor
-    #                        states can run them too:
-    #                        A_SetZoneLight(zone, light, [tics], [color]): fades the zone to
-    #                        light (0-255) over tics (left out: at once); color #RRGGBB tints
-    #                        it, "none" takes the tint off, left out keeps it.
-    #                        A_ToggleZoneLight(zone, light1, light2, [tics]): to light2 if
-    #                        it's at (or going to) light1, else to light1.
-    #                        A_SetZoneEffect(zone, effect): none, flicker, pulse or strobe,
-    #                        timed as the zone's game-info low, tics and bright-tics.
-    #                        Scroller actions (game-info maps scrollers) take a tag, left out
-    #                        (or "") the switch's own; actor states can run them too, where
-    #                        it's the actor's tag:
-    #                        A_StartScroll([tag]), A_StopScroll([tag]), A_ToggleScroll([tag]):
-    #                        the tag's scroller runs, stops where it is, or the one or the other.
-    #                        A_SetScroll(tag, x, y): its new speeds, texels a tic, and running;
-    #                        a tag with no scroller gets one, on walls, floors and ceilings.
+    # The elevator switch. A switch block makes a wall one the player can use, like a door. What
+    # each of its fields does is in the docs' mapdefs reference (from MapSwitchTranslation in
+    # PFWolf.Common), and every action it can run in the Actions reference (Definitions/GameActions.cs):
+    # https://www.littleagames.com/pf-wolf/docs/latest/reference/
     '21':
         North: ELEV1_1
         South: ELEV1_1

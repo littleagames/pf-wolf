@@ -92,13 +92,19 @@ public static partial class ScriptHover
         if (sources.Classes.Contains(value, StringComparer.OrdinalIgnoreCase))
             return new HoverInfo($"\"{value}\"", "An actordefs class", "class");
         if (ScriptApi.TriggerActions.Contains(value))
-            return new HoverInfo($"\"{value}\"", "A switch action game.trigger runs (mapdefs/wolf3d/walls.yaml describes them at wall 21)", "switch action");
+            return new HoverInfo($"\"{value}\"", SwitchActionText(value), "switch action");
         if (ScriptApi.OwnTileActions.Contains(value))
             return new HoverInfo($"\"{value}\"", "A switch action that works on the switch's own tile: game.trigger can't run it", "switch action");
         if (sources.States.Contains(value, StringComparer.Ordinal))
             return new HoverInfo($"\"{value}\"", "A state of actordefs classes", "state");
         return null;
     }
+
+    /// <summary>A switch action game.trigger runs, as the actions reference has it: how it's called, and what it does</summary>
+    internal static string SwitchActionText(string name) =>
+        PFWolf.Definitions.GameActions.Find(name) is { } action
+            ? $"A switch action game.trigger runs. {action.Signature}: {action.Description.TrimEnd('.')}."
+            : "A switch action game.trigger runs";
 
     // What the game's sandbox takes out, so a script that uses it fails there
     private static HoverInfo? Missing(string word) => word switch

@@ -53,14 +53,17 @@ The exit room has the usual elevator switch, now just a switch whose action is `
 ### What's in it
 
 - `mapdefs/walls.yaml`: the switch walls (ids 50-67), each with its `switch:` block. Every
-  field and action is described at wall 21 in `pfwolf-pk3/mapdefs/wolf3d/walls.yaml`.
+  field is in the docs' [mapdefs reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs),
+  and every action in the [Actions reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/actions).
 - `animdefs/switch-demo.yaml`: the two lever animations, made of the game's own lever
   textures. Animations are described in `pfwolf-pk3/animdefs/animdefs.yaml`.
 - `mapdefs/things.yaml`: object 500, a `SwitchLightOff`, and 501, the light room's
   `FlickeringLamp`.
 - `actordefs/demo-lights.yaml`: `FlickeringLamp`, a floor lamp with an amber, flickering
-  light. Actor lights are described in `pfwolf-pk3/actordefs/wolf3d/decorations.yaml` (and
-  the switch actions `A_SetLight` / `A_LightOff` at wall 21 in `mapdefs/wolf3d/walls.yaml`).
+  light. Actor lights are the `light.*` properties in the docs'
+  [Actor properties](https://www.littleagames.com/pf-wolf/docs/latest/reference/actor-properties)
+  (and the switch actions `A_SetLight` / `A_LightOff` in the
+  [Actions reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/actions)).
 - `game-info.yaml`: merged into the game's own; it gives the level its light zones (the
   dark room, and the hall with the alarm's strobe timing) and the scroll room's scrollers.
   The zone and scroller fields are described under `default-map` in
@@ -412,7 +415,8 @@ What a script can use:
 `game.trigger(tag, action, ...)` runs a switch action on a tag, as a switch with that tag
 would: `game.trigger(3, "A_OpenDoor", "hold")`, or the whole call as walls.yaml has it,
 `game.trigger(3, 'A_OpenDoor("hold")')`. It returns whether the action did anything. The
-actions are the ones listed at wall 21 in `pfwolf-pk3/mapdefs/wolf3d/walls.yaml` (doors,
+actions are the switch actions in the docs'
+[Actions reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/actions) (doors,
 `A_MoveWall`, `A_SetWall`, `A_ChangeTexture`, `A_Activate`/`A_Deactivate`, light zones,
 `A_Message`, `A_Exit`...). It acts as if the first player had used the switch (their facing is
 `A_MoveWall`'s direction when none is given). A script has no switch tile of its own, so

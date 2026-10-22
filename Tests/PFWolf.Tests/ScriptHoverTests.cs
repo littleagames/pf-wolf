@@ -86,6 +86,16 @@ public class ScriptHoverTests
     }
 
     [Test]
+    public void A_Switch_Action_Says_How_Its_Called_And_What_It_Does()
+    {
+        // Act: from the actions reference (Definitions/GameActions.cs)
+        var info = Over("game.trigger(1, 'A_OpenDoor')", "OpenDoor");
+
+        // Assert
+        Assert.That(info!.Summary, Does.Contain("A_OpenDoor([\"hold\"])").And.Contain("Opens the tagged doors"));
+    }
+
+    [Test]
     public void A_Switch_Action_Game_Trigger_Cannot_Run_Says_So()
     {
         Assert.That(Over("game.trigger(1, 'A_PushWall')", "PushWall")!.Summary, Does.Contain("can't run it"));

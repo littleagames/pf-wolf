@@ -653,7 +653,7 @@ public record MapSwitchTranslation
 
     /// <summary>
     /// Shown when it's used without its <see cref="Lock"/> item (a $NAME language key or the
-    /// text itself). Empty uses the lock item's `key.lockedmessage`.
+    /// text itself). Empty uses the lock item's `key.switchlockedmessage`, else that it's locked.
     /// </summary>
     public string LockMessage { get; init; } = "";
 
@@ -663,7 +663,14 @@ public record MapSwitchTranslation
     /// <summary>Played when it's used without its <see cref="Lock"/> item. Empty uses the lock item's `key.lockedsound`.</summary>
     public string LockedSound { get; init; } = "";
 
-    /// <summary>The action calls to run, in order, e.g. `A_Exit`.</summary>
+    /// <summary>
+    /// The action calls to run, in order (`A_Exit`; every switch action is in the actions
+    /// reference). They act on whatever shares the switch tile's tag (map plane 4); tag 0 is no
+    /// tag, so an untagged switch's find nothing. The switch's own tile is never a target, though
+    /// it has the tag, except for A_ChangeTexture, which changes it tagged or not. Write a call
+    /// with arguments as a block list item (`- A_SetScroll(7, 0, 4)`): in a [flow, list] its
+    /// commas would split it.
+    /// </summary>
     public List<string> Actions { get; init; } = [];
 
     /// <summary>

@@ -84,3 +84,35 @@ the catalog, get one on its own.
   PFWolf". Decide whether a bundled entry gives the link itself or it's worked out from the tag.
 - Check: the release has a `.pk3` for each example; each loads with `--file <id>.pk3` on that
   release (`mods` lists it, nothing warned); the catalog's links download them.
+
+## One place for each explanation (the rest of pfwolf-pk3's YAML comments)
+
+The docs site's reference is generated from the code (PFWolf.DocGen: the asset types' doc
+comments, Definitions/), so an explanation of a field written again in a pfwolf-pk3 YAML comment
+is a second copy to keep up. On 2026-10-21 two were moved: the switch block at wall 21 in
+`mapdefs/wolf3d/walls.yaml` and the actor lights atop `actordefs/wolf3d/decorations.yaml`. Each
+fact only the comment had went into the code's docs first (MapSwitchTranslation, GameActions,
+ActorProperties, ActorSchema; the code had a switch's lock message wrong), the comment became a
+pointer to the reference, and what pointed at the comment (examples/README.md, the example mods,
+the editor's script hover and completion) was pointed at the reference instead.
+
+Left to do the same way, the files with the most explanation of fields:
+
+- `gamepacks/wolf3d/game-info.yaml` (about 170 comment lines: default-map, setting-defaults,
+  skills, hud-messages and the rest; the example mods' game-info files point at it)
+- `gamepacks/gamepack-info.yaml` (base-pack, menus-like, file-pack, strict-md5, `!remove`)
+- `gamepacks/wolf3d/fonts.yaml`, `intermission.yaml`, `actordefs/wolf3d/player.yaml`,
+  `actordefs/native.yaml`
+- the tops of `mapdefs/wolf3d/doors.yaml` and `patches.yaml`, `animdefs/animdefs.yaml`,
+  `gamepacks/wolf3d/translations.yaml` and `factions.yaml` (the last two are rules as much as
+  fields: keep what isn't a field's meaning, say where an actor's faction or translation comes
+  from, in the code's type docs or the manual)
+
+For each: diff the comment's facts against what the reference already says; put the missing ones
+in the code's doc comments (checked against the code, as the wall-21 one showed the YAML can be
+the right one); make the comment a pointer; grep for what points at it (`described in`, `at the
+top of`, the file's name) and repoint. Not field docs, and not part of this: the converter's notes
+atop `actordefs/wolf3d/guards.yaml`, `bosses.yaml`, `ghosts.yaml` and `projectiles.yaml` ("DRAFT -
+converted from WL_ACT2.C ... please double check"), which want checking and trimming of their own.
+- Check: the test suite passes (DocGenTests: every field still described); the reference shows
+  what the comments said.

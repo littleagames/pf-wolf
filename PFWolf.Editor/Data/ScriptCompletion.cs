@@ -96,7 +96,7 @@ public static partial class ScriptCompletion
         if (ClassArgument().IsMatch(head))
             return sources.Classes.Select(name => new CompletionOption(name, name, "An actordefs class", "class"));
         if (TriggerArgument().IsMatch(head))
-            return ScriptApi.TriggerActions.Select(name => new CompletionOption(name, name, "A switch action (mapdefs/wolf3d/walls.yaml describes them at wall 21)", "switch action"));
+            return ScriptApi.TriggerActions.Select(name => new CompletionOption(name, name, ScriptHover.SwitchActionText(name), "switch action"));
         if (JumpArgument().IsMatch(head))
             return sources.States.Select(name => new CompletionOption(name, name, "A state an actordefs class has", "state"));
         if (FlagArgument().IsMatch(head))

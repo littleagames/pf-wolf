@@ -235,7 +235,7 @@ public static class ActorProperties
         Int("warpsite.quickfloor", "On this floor (game-info floor-number) it warps in after a second"),
 
         // Light (Entities/Actors/ActorLight.cs)
-        Int("light.intensity", "Light it gives off, 0-255 (as zone light: 255 is full); none when left out, unless a state's light gives some"),
+        Int("light.intensity", "Light it gives off, 0-255 (as zone light: 255 is full); none when left out, unless a state's light gives some. It spreads through open floor and open doors, not walls, and only shows where the level is darker than full light (game-info shading, or a dim light zone). A_SetLight and A_LightOff change it as it plays"),
         Number("light.radius", "How far its light reaches, in tiles", "2"),
         Text("light.color", "#RRGGBB its light tints what it lights; white when left out", hint: FieldHint.Color),
         Text("light.effect", "none, flicker, pulse or strobe, as for light zones", "none"),

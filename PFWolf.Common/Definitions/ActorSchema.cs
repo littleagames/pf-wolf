@@ -18,7 +18,8 @@ public static class ActorSchema
                 FieldSchema.Value("action", FieldType.Text, "Called once as the frame starts (A_Shoot)"),
                 FieldSchema.Value("next-state", FieldType.Text, "The state that follows the last frame; left out, the next frame in the list"),
                 FieldSchema.List("modifiers", "Frame modifiers (bright, fast...)", FieldSchema.Value("modifier", FieldType.Text, null), inline: true),
-                FieldSchema.Value("light", FieldType.Text, "A light the actor gives off while the frame shows (see halo lights)"),
+                FieldSchema.Value("light", FieldType.Text,
+                    "The actor's light while the frame shows, in place of its light.* properties: none (or off) for none, an intensity (200) for its light that bright, or { intensity, radius, color } with any of them, the rest its own"),
                 FieldSchema.Value("goto", FieldType.Text, "Written on its own ({ goto: Spawn }): goes on to that state"),
             ]);
 

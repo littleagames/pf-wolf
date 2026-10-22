@@ -1,5 +1,5 @@
-# The demo's switches (see the switch block's fields at wall 21 in pfwolf-pk3's
-# mapdefs/wolf3d/walls.yaml). Each switch's actions act on whatever shares its tile's tag on the
+# The demo's switches (a switch block's fields are in the docs' mapdefs reference, and its
+# actions in the Actions reference). Each switch's actions act on whatever shares its tile's tag on the
 # map's tag plane: tags 1 to 5 here, one per station. Off switches show the elevator's lever
 # down (ELEV1_2), thrown ones lever up (ELEV2_2).
 walls:

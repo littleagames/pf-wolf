@@ -164,7 +164,7 @@ public static class GameActions
         new("A_MoveWall", Switch, "A_MoveWall([direction][, \"moving sound\"][, \"blocked sound\"])", "Pushes every tagged wall north, east, south or west, or (left out or \"\") the way the player faces; the blocked sound plays when none of them could move. Their tag goes with them, so they can be moved again."),
         new("A_SetWall", Switch, "A_SetWall(id)", "Turns the tagged walls into wall id (walls.yaml), e.g. lights on a panel coming on"),
         new("A_ChangeTexture", Switch, "A_ChangeTexture(\"FROM\", \"TO\")", "The switch's own tile and the tagged ones show texture TO wherever they showed FROM: wall and door faces, floors and ceilings. TO can be an animation (animdefs); one that plays once starts as it's changed."),
-        new("A_Activate", Switch, "A_Activate", "The tagged actors go to their Active state (a light coming on); actors without one are left alone"),
+        new("A_Activate", Switch, "A_Activate", "The tagged actors (by the tag on the tile each spawned on) go to their Active state (a light coming on); actors without one are left alone"),
         new("A_Deactivate", Switch, "A_Deactivate", "The tagged actors go to their Inactive state; actors without one are left alone"),
         new("A_ToggleActive", Switch, "A_ToggleActive", "Each tagged actor on its Inactive state (or one named Inactive..., such as an InactiveIdle it starts on) goes Active, the rest Inactive"),
         new("A_SpawnItem", Switch, "A_SpawnItem(\"Class\")", "Puts a thing (an item, or any actordefs class) on the floor in front of the switch, on the side it was used from (from a script, where the player is)"),
