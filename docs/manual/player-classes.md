@@ -1,6 +1,6 @@
 ---
 title: Player classes
-order: 3
+order: 4
 ---
 
 # Player classes

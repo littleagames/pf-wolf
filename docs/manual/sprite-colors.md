@@ -1,6 +1,6 @@
 ---
 title: Sprite colors
-order: 6
+order: 7
 ---
 
 # Sprite colors

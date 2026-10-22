@@ -1,6 +1,6 @@
 ---
 title: Weapon states
-order: 5
+order: 6
 ---
 
 # Weapon states
@@ -12,7 +12,8 @@ weapon in hand: the engine plays them the way ZDoom plays a weapon, and draws th
 over the view. A weapon's states only ever run in the player's hand. The ones it has as a pickup
 on the map (`Spawn`) are an ordinary actor's.
 
-The state rules are an actor's. A frame's `action` runs as the frame ends, a state without a
+The state rules are an actor's ([Actor states](./actor-states) has them all). A frame's `action`
+runs as the frame ends, a state without a
 `next-state` loops back to its own first frame, and a frame with 0 tics ends the moment it's
 entered. The frame is drawn from its sprite's view 0 (`PISGA0`). Sprite `TNT1` draws nothing.
 
