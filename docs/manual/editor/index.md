@@ -15,9 +15,15 @@ stand-alone games mods add. Blake Stone's games aren't in it yet.
 
 | Page | What it's for |
 | --- | --- |
-| [Editing levels](./levels) | The map: planes, the palette, the tools, level properties, checks, saving |
+| [Editing levels](./levels) | The map: planes, the palette, the tools, level properties, checks, playing it |
 | [The 3D view](./3d-view) | The level in 3D beside the map, and editing in it |
-| [Playing a level](./levels#playing-a-level) | F5 starts PFWolf on the level you're editing |
+| [Textures and sprites](./art) | Every picture, what uses it, and the pixel editor (F6) |
+| [Sounds and music](./sounds) | Every sound and song, to listen to (F8) |
+| [Palettes](./palettes) | Every palette, to look at and change (F9) |
+| [Texts](./texts) | The help screens, end texts and briefings, page by page (F2) |
+| [Scripts](./scripts) | The Lua the game runs, with what it gives and what calls it (F12) |
+| [Demos](./demos) | The demos, and where everyone went in them (Ctrl+Shift+D) |
+| [Definitions](./definitions) | The definition files, in fields or as YAML (F11) |
 
 ## Loading a game
 

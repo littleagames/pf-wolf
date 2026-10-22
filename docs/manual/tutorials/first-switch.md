@@ -84,8 +84,8 @@ open a door, move a wall, change a wall further off. They find it by its **tag**
 map's fifth plane: a switch acts on whatever shares its tile's tag. `A_OpenDoor` opens the doors
 with the switch's tag, `A_SetWall(51)` turns the walls with its tag into wall 51, and so on.
 
-Tags are set on the map itself, so they need a map editor (or the scripts the example mods' levels
-are made with). Floor 1 has no tags, which is why this switch uses an action that needs none.
+Tags are set on the map itself, so they need a map editor (in PFWolf Editor, the tags plane:
+[Editing levels](../editor/levels#planes)), or the scripts the example mods' levels are made with. Floor 1 has no tags, which is why this switch uses an action that needs none.
 
 Being a wall id, this switch is every skeleton cell in the game, not only Floor 1's. A mod with a
 level of its own would give its switch a new wall id, used only where it's placed.

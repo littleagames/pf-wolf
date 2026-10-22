@@ -82,6 +82,8 @@ Run `PFWolf.exe` from a folder with the game's data files (for example `VSWAP.WL
 - [Tutorials](docs/manual/tutorials/index.md): your first mod, script, switch, enemy and weapon
 - [How files combine](docs/manual/combining-files.md): the merge rules for mods
 - [Example mods](examples/README.md): what each mod in `examples/mods` shows
+- [The editor](docs/manual/editor/index.md): loading a game, editing levels, the 3D view and each
+  browser
 - Manual pages: [weapons](docs/manual/weapons.md), [player classes](docs/manual/player-classes.md),
   [actor states](docs/manual/actor-states.md), [built-in classes](docs/manual/built-in-classes.md),
   [factions](docs/manual/factions.md), [sprite colors](docs/manual/sprite-colors.md)

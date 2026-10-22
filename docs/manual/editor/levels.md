@@ -47,7 +47,7 @@ On planes 0 and 1 the palette lists what the mapdefs define, with its picture: w
 floor codes, the patches, or the things. *Find in the palette* narrows it down. Picking a thing
 shows which way it **faces**, the **skill** it's on from, and whether it **patrols**: the palette
 puts down the code with those, or the nearest the mapdefs have. Right-clicking an entry opens its
-mapdefs entry, or a thing's actor class, in the [definitions window](#definitions).
+mapdefs entry, or a thing's actor class, in the [definitions window](./definitions).
 
 The other planes take a number: type it, or **Next unused** for a tag or zone not on the level
 yet. On the flats plane, the floor and ceiling flats are picked by name. Under the number is what
@@ -143,9 +143,3 @@ a mistake (warnings). Picking one goes to its tile:
 PFWolf on it with the mods, on the skill picked beside the button. **Play from here** (Shift+F5
 over the map) starts on the tile under the pointer instead of the player start; the button starts
 on the selection.
-
-## Definitions
-
-**Resources → Definitions…** (F11) edits the definition files (game-info, the game packs, actor
-classes, mapdefs and the rest) as fields or as YAML, saved into a mod; pfwolf.pk3's own are read
-only. The [definitions reference](../../reference/) has every field.
