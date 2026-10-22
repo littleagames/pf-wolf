@@ -498,7 +498,7 @@ internal static partial class GameHost
     // Made in InitServices. Registering only binds the handlers, so a test that lists the action
     // names (ScriptApiTests) can register them before any services exist: then they're made here.
     static SwitchActions MakeSwitchActions() => new(AudioManager, MapManager, InventoryManager, HudMessageManager, doors, pushWalls, Session,
-        new SwitchHooks(CouldTakeInventory, TryApplyInventory));
+        new SwitchHooks(CouldTakeInventory, TryApplyInventory, () => _videoManager.StartBonusFlash()));
     static SmartSwitches MakeSmartSwitches() => new(MapManager, doors, Session, (wallSwitch, x, y) => UseSwitch(wallSwitch, x, y, FacingDir(Player.Angle)));
 
     private static void RegisterSwitchActions() => (switchActions ??= MakeSwitchActions()).Register();

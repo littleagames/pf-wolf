@@ -6,7 +6,9 @@ namespace PFWolf.Gameplay;
 /// <summary>What the switch actions need from the player's code</summary>
 /// <param name="CouldTakeInventory">Whether the player could take an item (it would do something)</param>
 /// <param name="TryApplyInventory">Gives the player an item, so many of it: false if it did nothing</param>
-internal sealed record SwitchHooks(Func<Entities.Actors.Inventory, bool> CouldTakeInventory, Func<Entities.Actors.Inventory, int, bool> TryApplyInventory);
+/// <param name="BonusFlash">The screen's pickup flash, for an item given as if picked up</param>
+internal sealed record SwitchHooks(Func<Entities.Actors.Inventory, bool> CouldTakeInventory, Func<Entities.Actors.Inventory, int, bool> TryApplyInventory,
+    Action? BonusFlash = null);
 
 internal sealed class SwitchActions(AudioManager audio, MapManager map, InventoryManager inventory, HudMessageManager messages,
     Doors doors, PushWalls pushWalls, GameSession session, SwitchHooks hooks)
@@ -106,7 +108,8 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         MapTriggerRegistry.Register("A_Vend", VendAction);
 
         // A_GiveInventory("Item"[, amount]): gives the player who set it off an inventory item
-        // (actordefs), as picking it up would, with its pickup sound and message; amount left out
+        // (actordefs), as picking it up would, with its pickup sound, message and the screen's
+        // flash (Midnight Assault's keys on walls); amount left out
         // is the item's own. Refused, with the use-fail sound, when it would do nothing (health
         // full, no room for the ammo), so a patch switch giving it stays as it is.
         MapTriggerRegistry.Register("A_GiveInventory", GiveInventoryTrigger);
@@ -133,6 +136,8 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         }
 
         AnnouncePickup(item);
+        if (session.ActingIsLocal)
+            hooks.BonusFlash?.Invoke();
         return true;
     }
 
