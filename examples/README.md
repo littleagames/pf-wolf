@@ -514,7 +514,9 @@ PFWolf.exe --file holster-demo
   `A_Lower` in Deselect takes the weapon down a step each tic, and once it's off the view the
   next weapon comes in on its Select state, where `A_Raise` brings it up and then goes to
   Ready. The step is 6 of 96 when left out (16 tics each way); the knife's is 12 and the
-  gatling gun's 4, so one is quick to draw and the other heavy.
+  gatling gun's 4, so one is quick to draw and the other heavy. The second knife and the blue
+  guns, built on those four, get the states too, with their own pictures (they'd inherit their
+  parents', and go down as the plain weapon).
 
 While a weapon goes down or comes up, fire does nothing and another change waits until it's
 up. A weapon without the two states still changes at once, so a mod can give them to some

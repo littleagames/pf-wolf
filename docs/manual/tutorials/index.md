@@ -13,6 +13,7 @@ Step by step, from an empty folder to a working mod.
 | [A new enemy](./new-enemy) | An elite guard: a class built on the guard, a uniform of its own, on the levels |
 | [Your first script](./first-script) | Lua that counts the elite guards down, and an action of your own |
 | [Your first switch](./first-switch) | A wall that turns the lights on and off, and what tags are for |
+| [A new weapon](./new-weapon) | A pistol that fires in bursts: states of its own, a slot shared, put away and brought up |
 
 ## The example mods
 
@@ -30,4 +31,5 @@ with PFWolf, in the game's `mods` folder, ready to switch on.
 | Faction Demo | Sides that fight each other, followers, color translations |
 | Medic Demo | Enemies that revive their fallen |
 | Key Demo | More keys, and doors that need two of them, any two, or all four |
+| Holster Demo | Weapons put away and brought up as they're changed |
 | Standalone Demo | A game of its own, with none of Wolfenstein 3D's files |
