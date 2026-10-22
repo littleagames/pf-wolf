@@ -1,68 +1,25 @@
-# Wolfenstein 3D, and where each game-info setting is described. The packs built on it (spear,
-# wolf3d-shareware, wolf3d-apogee, spear-demo through spear) start from this file, and theirs
-# change only what differs; a mod's game-info.yaml works the same way. See
-# gamepacks/gamepack-info.yaml for how files combine, and for !remove and !replace.
+# Wolfenstein 3D. The packs built on it (spear, wolf3d-shareware, wolf3d-apogee, spear-demo
+# through spear) start from this file, and theirs change only what differs; a mod's
+# game-info.yaml works the same way (gamepacks/gamepack-info.yaml: how files combine, !remove,
+# !replace). What each setting does is in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 default-map:
   ceiling-color: "#383838"
   floor-color: "#717171"
-  # Textures on every floor and ceiling tile the flat plane (plane 2, see mapdefs flats.yaml)
-  # doesn't give one; left out, those tiles keep the colors above. Also settable per map.
+  # Some of what's left out here, as examples (each also settable per map):
   # default-floor: FLOOR1
   # default-ceiling: CEIL1
-  # A sky above the horizon in place of the ceiling color (sky: a picture or wall texture), and
-  # a floor sky below it in place of the floor color (floor-sky), each showing where no flat is
-  # drawn. The floor sky runs down from the horizon (the land below a bridge), or with
-  # floor-sky-mirror: true upside down from it (a sky reflected in water). Also settable per map.
   # sky: NightSky
   # floor-sky: RiverValley
-  # Distance shading, also settable per map (each value a map leaves out comes from here).
-  # Left out on both, levels aren't shaded. The sky is never shaded; a state with
-  # `modifiers: [bright]` (or an actor with the bright flag) is drawn at full light.
-  #   fade-color: #RRGGBB the view fades toward with distance: black for night, grey for fog (default #000000)
-  #   fade-start: tiles away, along the view, the fade starts (default 0)
-  #   fade-end:   tiles away it reaches max-fade (default 16)
-  #   max-fade:   percent toward fade-color at fade-end and beyond (default 100)
-  #   light:      light everywhere, 0 (black) to 255 (full, the default)
   # shading:
   #   fade-color: "#000000"
   #   fade-start: 2
   #   fade-end: 20
-  # Light zones, also settable per map (a map's zone takes each value it leaves out from the
-  # zone of the same id here). A tile's zone is its value on plane 5 (0: none, the level's
-  # light). Walls take the light of the tile they're seen from, floors and ceilings their
-  # own tile's, sprites the tile they're on. Distance still fades zones as shading says.
-  #   light: 0 (black) to 255 (full, the default)
-  #   color: #RRGGBB the light is tinted with (default white: no tint)
-  #   effect: none (default), flicker (jumps between low and the light at random, up to tics
-  #           apart), pulse (glows down to low and back every tics) or strobe (the light for
-  #           bright-tics, then low, every tics)
-  #   low: the effect's dark end, 0-255 (default half the light)
-  #   tics: the effect's timing, 70 a second (default flicker 8, pulse 70, strobe 35)
-  #   bright-tics: how long a strobe stays at the light (default 5)
-  #   ambient: a sound looped, unplaced, while the player is in the zone (none: silence); a zone
-  #            without one leaves what's playing (Gameplay/ZoneAmbience.cs). A zone with only
-  #            ambient keys isn't a light zone: its tiles keep the level's light.
-  #   ambient-disguised: played in place of ambient while the player wears a disguise
-  #   ambient-undetected: played in place of ambient while no enemy has noticed the player
-  #            yet on the level (after ambient-disguised, when both apply)
-  # Switches and actor states change zones as the level is played (A_SetZoneLight,
-  # A_ToggleZoneLight, A_SetZoneEffect: see mapdefs walls.yaml), and saves keep them.
   # zones:
   #   1: { light: 70 }                          # a dim room
   #   2: { light: 255, color: "#FF4040" }       # red emergency lighting
   #   3: { light: 200, effect: flicker, low: 120 }   # a failing lamp
-  # Scrolling walls and flats (Midnight Assault's conveyors and waterfalls), per map only, under
-  # maps: NAME: scrollers:, by tag (plane 4): the textures of the tiles with that tag slide along.
-  #   x: texels a tic (64 a tile, 70 tics a second) a wall face moves right as you look at it,
-  #      and a floor or ceiling east; negative the other way (Midnight Assault's fast was 2,
-  #      its medium 0.333)
-  #   y: texels a tic a wall face moves down, and a floor or ceiling south
-  #   walls, floor, ceiling: which surfaces of the tagged tiles scroll (all, left out). Not door
-  #      jambs, doors, lintels, arch undersides or wall patches.
-  #   active: false waits for a switch to start it (default true)
-  # Switches and actor states start, stop and change them as the level is played
-  # (A_StartScroll, A_StopScroll, A_ToggleScroll, A_SetScroll: see mapdefs walls.yaml), and
-  # saves keep them.
+  # Scrollers are per map only:
   # maps:
   #   MAP01:
   #     scrollers:
@@ -72,50 +29,14 @@ default-map:
 signon:
   pic: wolf3d-signon
   press-a-key: true
-  # The pic's open area, where the startup info is printed (engine, game, mods, video, input,
-  # sound, content and any warnings). Optional: font (SmallFont), label-color (TEXTCOLOR),
-  # color (HIGHLIGHT), warning-color (READHCOLOR), background (BKGDCOLOR). Left out, none is printed.
   text-area: { x: 16, y: 79, width: 290, height: 101 }
 
-# pushwall-distance: 2      # tiles a pushwall slides, unless something stops it sooner (2 when left out)
+# pushwall-distance: 2
 
 intro-music: NAZI_NOR
 high-scores-music: ROSTER
 menu-fade-color: "#AE0000"
 
-# The screens from the signon to the menu: the intro once, then the loop round and round until
-# a key goes to the menu (Tab held as it does records a demo instead). A child pack or mod that
-# gives intro or loop replaces that whole list; the other is kept.
-#
-# Each screen is one of
-#   movie: NAME           a Blake Stone JAM movie
-#   demo: true            the next of the game's DEMO0-DEMO9 (none: the screen is left out)
-# or else drawn from these, each when set, in this order:
-#   background: COLOR     fills the screen (a color name, #RRGGBB or palette index), or
-#   menu-background: true the control panel's backdrop (menu-backdrop) or border color
-#   stripe: Y             the menu's stripe across the screen at y
-#   high-scores: true     the high scores table
-#   pics: [{ pic, x, y }] pictures, drawn in turn at x, y (each 0 when left out); one the game
-#                         hasn't got is skipped, and a screen with none it has is left out
-#   lines: [{ text, x, y, color, font }]   text; color is a name (HIGHLIGHT), #RRGGBB or
-#                         index, font the menu's LargeFont unless given; \n starts a new line at x
-#   text: { script, x1, y1, x2, y2, font, color, background, light, dark, shadow }
-#                         a VGAGRAPH presenter text, printed into that window
-#   fizzle-pic: NAME, fizzle-tics: 70   fizzled over the screen once it's faded in
-#                         (a pic that's an animdefs animation plays on while the screen is
-#                         held, but not under a fizzle-pic)
-# and held for
-#   seconds: N            that long (0: not at all), or
-#   until-music-ends: true   until its music ends (seconds, when music is off), or
-#   wait-for-key: true    until a key, however long
-# with
-#   palette: NAME         its own palette (the game palette when left out)
-#   music: NAME, music-loop: false, stop-music: true   what plays from this screen on
-#   fade-from: "#RRGGBB", fade-to: "#RRGGBB"   fades to that color before it shows / after
-#   on-key: ACTION        what a key does here: next (go on to the next screen, the intro's
-#                         default), menu (the loop's default), end-intro (skip the rest of the
-#                         intro), finish (end the fizzle at once and hold on; the next key does
-#                         the default) or ignore (keys do nothing; a demo still ends)
 title-sequence:
   intro:
     # id's notice that this isn't shareware, until a key
@@ -139,36 +60,23 @@ title-sequence:
       seconds: 10
     - demo: true
 
-# Fade styles are palette, fizzle, melt or mosaic, each lasting its -tics (70 a second)
 screen-fade-style: palette
-# screen-fade-tics: 60    # when set, every screen fade takes this long instead of its own length
+# screen-fade-tics: 60
 menu-fade-style: palette
 menu-fade-tics: 20
 death-fade-style: fizzle
 death-fade-tics: 70
-death-fade-color: Maroon    # what the view fades to when the player dies
-death-turn-speed: 2         # degrees a tic the dead player turns to face their killer
-death-hold-tics: 100        # how long the color stays up after the fade (a key skips it)
-# death-drop-height: 8      # Doom-style: the dead player's view drops to this many texels above the floor
-#                           # (64 a story, 32 standing; 4-60) while turning; left out, it doesn't drop
-# death-drop-speed: 1       # texels a tic the view drops
+death-fade-color: Maroon
+death-turn-speed: 2
+death-hold-tics: 100
+# death-drop-height: 8
+# death-drop-speed: 1
 level-fade-style: fizzle
 level-fade-tics: 20
 
-# An extra life each time the score passes another this many points (0 or left out: never)
 extra-life-score: 40000
 
-# Options → Game Options before the player changes them; a mod can set any of these. Left out,
-# each keeps the engine's default (shown). The player's own choice, once made, wins over these
-# until they set it back with the console's `default` (e.g. `freelook default`).
-#   look:          looking up and down at all: the look keys, a controller's right stick and
-#                  mouse look (freelook; m_look stays the player's separate mouse choice)
-#   messages:      messages over the view (msg_enabled), in hud-messages' styles below
-#   automap-stats: the automap's level name, kills, treasure, secrets and time (am_stats)
-#   autosave:      each new level saves itself as it starts (autosave)
-#   weapon-bob:    the weapon in hand bobs as the player walks (weaponbob)
-#   always-run:    running without holding Run, which then walks (alwaysrun)
-#   crosshair:     a crosshair in the middle of the view (crosshair), in crosshair-color
+# The engine's defaults, which a mod can change:
 # setting-defaults:
 #   look: true
 #   messages: false
@@ -177,22 +85,14 @@ extra-life-score: 40000
 #   weapon-bob: false
 #   always-run: false
 #   crosshair: false
-# crosshair-color: White      # a color name, #RRGGBB or palette index
+# crosshair-color: White
 
-# The styles (hud-messages.yaml) messages over the view are shown in, when they're on
-# (setting-defaults messages; off by default, the original game's quiet screen). Each kind's
-# style is used when the item, door or killer doesn't name its own.
 hud-messages:
   pickup-style: Default
   lock-style: Center
   obituary-style: Obituary
 
-# The skills, easiest first, as the New Game menu lists them. A skill's place here (0 for the
-# first) is what saves record and what mapdefs min-skill compares against.
-#   name, pic-name: the menu's text and face picture
-#   damage-taken:   how much of the damage the player is dealt they take (left out: 1)
-#   enemy-health:   the actordefs property enemies take their health from (e.g. health.normal);
-#                   an enemy without it, or a skill without one, uses the enemy's plain health
+# Easiest first: a skill's place here is what saves record
 skills:
   BABY:
     name: "Can I play, Daddy?"
@@ -212,25 +112,14 @@ skills:
     pic-name: C_HARD
     enemy-health: health.hard
 
-# The classes a new game can be played as (actordefs Player, or classes with Player as a parent;
-# see actordefs player.yaml), keyed by class, in menu order. The first is the default. Left out,
-# or with only one, there's no choosing and the game is played as that class (else Player).
-#   name, pic-name: the class menu's text and picture
-# class-menu: false keeps them for the multiplayer lobby's "Play as" only (default true).
+# Left out, so Wolf3D is played as Player with no choosing:
 # player-classes:
 #   Player:
 #     name: "B.J. Blazkowicz"
 
-# The colors a player picks to be seen in by the others, playing with others (the lobby's Color):
-# translations (translations.yaml) recoloring the player's sprites, in menu order; the first is
-# the default. "green" is the player sprites' own shirt.
+# "green" is the player sprites' own shirt
 player-colors: [green, red, blue, yellow, cyan, magenta, gray, brown]
 
-# Horde (multiplayer): the waves of enemies sent at the players, first to last, each its classes
-# and how many of each. Past the last, each wave is the last again with `grow` more of each
-# class; every player past the first brings half as many again. Between waves there's a break
-# of `break-seconds`, when dead players come back; `spawn-tics` apart they come in, at most
-# `max-alive` of a wave alive at once.
 horde:
   waves:
     - enemies: { Mutant: 4 }
@@ -243,15 +132,9 @@ horde:
   spawn-tics: 35
   max-alive: 12
 
-# The skill demos are recorded and played back on (left out: the hardest). A demo only replays
-# right on the skill it was recorded on, and id's were recorded on HARD.
+# id's demos were recorded on HARD
 demo-skill: HARD
 
-# The page articles (Read This, end texts) are laid out on, 320x200: the screen filled with
-# background, the frame's pictures drawn in order, the text between the margins (lines of 10
-# pixels, in text-color until a ^C) and the page number ({0} the page, {1} how many; show: false
-# leaves it out). Each value left out is these, Wolf3D's help window; a game can frame its pages
-# with one full-screen picture instead (frame: [ { pic: HELPBACK, x: 0, y: 0 } ]).
 article:
   background: BACKCOLOR
   frame:
@@ -263,10 +146,6 @@ article:
   text-color: Black
   page-number: { x: 213, y: 183, color: "Dark Yellow", format: "pg {0} of {1}" }
 
-# The New Game menu's episodes. Besides these keys, an episode can have locked-message (listed,
-# but picking it shows that text: the shareware's), or starts-locked: true (greyed out, as its
-# locked-name if it has one, until its key is unlocked for good by A_Unlock("EP02"), Lua
-# game.unlock or the unlock command; kept in progress.cfg)
 episodes:
   EP01:
     name: "Episode 1\nEscape from Wolfenstein"

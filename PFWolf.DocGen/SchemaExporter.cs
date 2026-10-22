@@ -19,9 +19,17 @@ internal sealed class SchemaExporter(string fileId)
 
     private JsonObject Export(FieldSchema schema, string path)
     {
+        // A record's type has its own summary (what a zone or a title screen is): the description
+        // of one that has none (the file's root, a list's or dictionary's items), else its about
         var description = schema.Description;
-        if (description == null && schema.Type == FieldType.Record && path.Length == 0)
-            description = DocComments.TypeSummary(schema.ClrType);
+        string? about = null;
+        if (schema.Type == FieldType.Record && DocComments.TypeSummary(schema.ClrType) is { } summary)
+        {
+            if (description == null)
+                description = summary;
+            else if (summary != description)
+                about = summary;
+        }
 
         var node = new JsonObject
         {
@@ -31,6 +39,8 @@ internal sealed class SchemaExporter(string fileId)
         };
         if (description != null)
             node["description"] = description;
+        if (about != null)
+            node["about"] = about;
         if (schema.Default != null)
             node["default"] = schema.Default;
         if (schema.Hint != FieldHint.None)

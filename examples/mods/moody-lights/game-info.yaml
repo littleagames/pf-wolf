@@ -1,7 +1,7 @@
 # Merged into the game pack's game-info.yaml: every level is dim, and fades to black in the
 # distance, so the light decorations (actordefs/moody-lights.yaml) light the rooms around
-# them. The shading fields are described under default-map in pfwolf-pk3's
-# gamepacks/wolf3d/game-info.yaml. A map can still set its own (maps: MAPxx: shading:).
+# them. A map can still set its own (maps: MAPxx: shading:). The shading fields are in the
+# game-info reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 default-map:
   shading:
     fade-color: "#000000"

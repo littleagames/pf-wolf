@@ -136,8 +136,9 @@ public static partial class NewMod
             "  # mod's palettes/ (the editor's palette browser edits it there)\n" +
             $"  game-palette: {DefaultPalette}\n"));
         files.Add(("game-info.yaml",
-            "# The whole game-info: a stand-alone game has none to start from. See pfwolf.pk3's\n" +
-            "# gamepacks/wolf3d/game-info.yaml for what each setting does.\n" +
+            "# The whole game-info: a stand-alone game has none to start from. What each setting\n" +
+            "# does is in the game-info reference:\n" +
+            "# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info\n" +
             "default-map:\n" +
             "  ceiling-color: \"#303848\"\n" +
             "  floor-color: \"#5A5048\"\n" +

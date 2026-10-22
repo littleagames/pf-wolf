@@ -1,7 +1,7 @@
 # Merged into the game pack's game-info.yaml: the demo level's light zones (the map's zone
-# plane, plane 5; see the zones notes under default-map in pfwolf-pk3's
-# gamepacks/wolf3d/game-info.yaml), which stations 6 and 7 change as the level is played, and
-# its scrollers, which stations 8 and 9 work.
+# plane, plane 5), which stations 6 and 7 change as the level is played, and its scrollers,
+# which stations 8 and 9 work. Both are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 maps:
   MAP01:
     zones:
@@ -10,8 +10,8 @@ maps:
       # The hall: full light. Station 7's alarm tints it red and strobes it down to low,
       # bright for bright-tics of every tics (70 a second)
       2: { light: 255, low: 90, tics: 40, bright-tics: 20 }
-    # The scroll room's scrollers, by tag (the tag plane, plane 4; see the scrollers notes in
-    # pfwolf-pk3's gamepacks/wolf3d/game-info.yaml), in texels a tic. Stations 8 and 9 work them.
+    # The scroll room's scrollers, by tag (the tag plane, plane 4), in texels a tic. Stations 8
+    # and 9 work them.
     scrollers:
       # The conveyor: its floor runs east
       6: { x: 2, walls: false, ceiling: false }

@@ -1,7 +1,8 @@
 # Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
 # turned them off in Options), so the level's hints show; and the level a little dim, so a
 # medic's glow as it heals (its Heal state's light:) shows. setting-defaults and the shading
-# fields under default-map are described in pfwolf-pk3's gamepacks/wolf3d/game-info.yaml.
+# fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 setting-defaults:
   messages: true
 

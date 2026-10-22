@@ -1,5 +1,5 @@
-# The whole game-info: a standalone game has no other to start from. See pfwolf.pk3's
-# gamepacks/wolf3d/game-info.yaml for what each setting does.
+# The whole game-info: a standalone game has no other to start from. What each setting does is
+# in the game-info reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 default-map:
   ceiling-color: "#303848"
   floor-color: "#5A5048"

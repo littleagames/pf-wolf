@@ -66,8 +66,8 @@ The exit room has the usual elevator switch, now just a switch whose action is `
   [Actions reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/actions)).
 - `game-info.yaml`: merged into the game's own; it gives the level its light zones (the
   dark room, and the hall with the alarm's strobe timing) and the scroll room's scrollers.
-  The zone and scroller fields are described under `default-map` in
-  `pfwolf-pk3/gamepacks/wolf3d/game-info.yaml`.
+  The zone and scroller fields are in the
+  [game-info reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info).
 - `maps/MAP01.wad`: the level, an ECWolf binary map with PFWolf's six planes. It's built
   by `tools/make-switch-demo-map.ps1` from an ASCII layout; edit the layout there and run
   it again to change the level:

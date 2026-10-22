@@ -1,6 +1,6 @@
 # Merged into the game pack's game-info.yaml: the gauntlet is a little dim, so the fireballs'
-# glow (light.* on Fireball) shows. The shading fields are described under default-map in
-# pfwolf-pk3's gamepacks/wolf3d/game-info.yaml.
+# glow (light.* on Fireball) shows. The shading fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 maps:
   MAP01:
     shading:

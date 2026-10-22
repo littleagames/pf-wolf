@@ -62,6 +62,29 @@ public class DocGenTests
             Assert.That(entries.Where(e => e["signature"] != null).Select(e => (string?)e["key"]), Is.Empty);
     }
 
+    // What a nested record's type is (its summary) reaches the reference: as the description of a
+    // dictionary's entries, which have none of their own, and beside a field's own as its about
+    [Test]
+    public void Nested_Records_Carry_Their_Types_Summary()
+    {
+        // Arrange
+        var gameInfo = DefinitionFiles.All.Single(file => file.Id == "game-info");
+
+        // Act
+        var root = new SchemaExporter(gameInfo.Id).Export(gameInfo.Schema());
+        var defaultMap = Field(root, "default-map");
+        var zone = Field(defaultMap, "zones")["item"]!;
+        var shading = Field(defaultMap, "shading");
+
+        // Assert
+        Assert.That((string?)zone["description"], Does.Contain("plane 5"));
+        Assert.That((string?)shading["description"], Does.StartWith("Distance shading"));
+        Assert.That((string?)shading["about"], Does.Contain("The sky is never shaded"));
+    }
+
+    private static JsonObject Field(JsonObject record, string key) =>
+        record["fields"]!.AsArray().OfType<JsonObject>().Single(field => (string?)field["key"] == key);
+
     // The fields that aren't records themselves (an api page's entries), however deep
     private static IEnumerable<JsonObject> Entries(JsonObject node) =>
         node["fields"] is JsonArray fields

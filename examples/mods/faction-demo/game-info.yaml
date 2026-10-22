@@ -1,5 +1,6 @@
 # Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
 # turned them off in Options), so the level's hints, the prisoners' thanks and word of an ally
-# killed show. setting-defaults is described in pfwolf-pk3's gamepacks/wolf3d/game-info.yaml.
+# killed show. setting-defaults is in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 setting-defaults:
   messages: true

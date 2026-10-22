@@ -1,6 +1,5 @@
 # Spear of Destiny demo: Spear's first two floors. Laid over gamepacks/spear/game-info.yaml
-# (and so over gamepacks/wolf3d/game-info.yaml, which says what each setting does); anything
-# not here is Spear's.
+# (and so over gamepacks/wolf3d/game-info.yaml); anything not here is Spear's.
 
 # Only its first two floors, with no win to reach
 maps: !replace

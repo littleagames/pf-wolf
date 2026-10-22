@@ -96,10 +96,14 @@ ActorProperties, ActorSchema; the code had a switch's lock message wrong), the c
 pointer to the reference, and what pointed at the comment (examples/README.md, the example mods,
 the editor's script hover and completion) was pointed at the reference instead.
 
+`gamepacks/wolf3d/game-info.yaml` followed. Its comments explained nested records (a zone, a
+scroller, a title screen) whose types' summaries DocGen had only used for a file's root, so they
+never reached the reference; it now exports a nested record's type summary too (the description
+of a list's or dictionary's items, else `about`, which the website shows under the section's
+heading).
+
 Left to do the same way, the files with the most explanation of fields:
 
-- `gamepacks/wolf3d/game-info.yaml` (about 170 comment lines: default-map, setting-defaults,
-  skills, hud-messages and the rest; the example mods' game-info files point at it)
 - `gamepacks/gamepack-info.yaml` (base-pack, menus-like, file-pack, strict-md5, `!remove`)
 - `gamepacks/wolf3d/fonts.yaml`, `intermission.yaml`, `actordefs/wolf3d/player.yaml`,
   `actordefs/native.yaml`

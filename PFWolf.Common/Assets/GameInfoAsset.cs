@@ -13,7 +13,8 @@ public record GameInfoAsset : Asset
 
     /// <summary>
     /// The classes a new game can be played as, keyed by actordefs class (Player or one with
-    /// Player as a parent), in menu order. The first is the default; none means Player.
+    /// Player as a parent), in menu order. The first is the default; none means Player. With
+    /// none or one there's no choosing: the game is played as that class.
     /// </summary>
     public Dictionary<string, PlayerClassInfo> PlayerClasses { get; init; } = [];
 
@@ -93,7 +94,9 @@ public record GameInfoAsset : Asset
     // tics (70 a second) beside it; a palette fade takes a step every 2 tics or so.
 
     /// <summary>
-    /// How the screen fades out and back in between screens (default palette)
+    /// How the screen fades out and back in between screens (default palette). Every fade style
+    /// here is palette, fizzle, melt or mosaic, and each -tics beside one is its length in tics
+    /// (70 a second).
     /// </summary>
     public string? ScreenFadeStyle { get; init; }
 
@@ -329,29 +332,34 @@ public record MenuStripeInfo
 
 /// <summary>
 /// game-info setting-defaults: the Game Options menu's settings before the player chooses. null
-/// keeps the engine's default (given with each).
+/// keeps the engine's default (given with each). The player's own choice, once made, wins over
+/// these until they set it back with the setting's console command and `default` (`freelook
+/// default`); each setting's command is given with it.
 /// </summary>
 public record SettingDefaultsInfo
 {
-    /// <summary>Whether the player can look up and down at all: keys, stick and mouse look (default true)</summary>
+    /// <summary>
+    /// Whether the player can look up and down at all: the look keys, a controller's right stick
+    /// and mouse look (default true; freelook. m_look stays the player's separate mouse choice)
+    /// </summary>
     public bool? Look { get; init; }
 
-    /// <summary>Messages over the view (default false)</summary>
+    /// <summary>Messages over the view, in hud-messages' styles (default false; msg_enabled)</summary>
     public bool? Messages { get; init; }
 
-    /// <summary>The automap's level name, kills, treasure, secrets and time (default true)</summary>
+    /// <summary>The automap's level name, kills, treasure, secrets and time (default true; am_stats)</summary>
     public bool? AutomapStats { get; init; }
 
-    /// <summary>Each new level saving itself as it starts (default true)</summary>
+    /// <summary>Each new level saving itself as it starts (default true; autosave)</summary>
     public bool? Autosave { get; init; }
 
-    /// <summary>The weapon in hand bobbing as the player walks (default false; Planet Strike's true)</summary>
+    /// <summary>The weapon in hand bobbing as the player walks (default false, Planet Strike's true; weaponbob)</summary>
     public bool? WeaponBob { get; init; }
 
-    /// <summary>Running without holding Run; holding it walks (default false)</summary>
+    /// <summary>Running without holding Run; holding it walks (default false; alwaysrun)</summary>
     public bool? AlwaysRun { get; init; }
 
-    /// <summary>A crosshair in the middle of the view (default false)</summary>
+    /// <summary>A crosshair in the middle of the view, in crosshair-color (default false; crosshair)</summary>
     public bool? Crosshair { get; init; }
 }
 
@@ -569,7 +577,10 @@ public record HighScoreLabel
 }
 
 /// <summary>
-/// game-info's title-sequence: the screens from the signon to the menu (Ui/TitleScreens.cs)
+/// game-info's title-sequence: the screens from the signon to the menu (Ui/TitleScreens.cs): the
+/// intro once, then the loop round and round until a key goes to the menu (Tab held as it does
+/// records a demo instead). A child pack or mod that gives intro or loop replaces that whole
+/// list, as lists always are; the other is kept.
 /// </summary>
 public record TitleSequenceInfo
 {
@@ -640,7 +651,9 @@ public record TitleScreenInfo
     /// <summary>A movie to play (gamepack-info's JamMovieFileLoader names them)</summary>
     public string? Movie { get; init; }
 
-    /// <summary>Plays the next demo</summary>
+    /// <summary>
+    /// Plays the next demo the game has of DEMO0-DEMO9, in turn; with none, the screen is left out
+    /// </summary>
     public bool Demo { get; init; }
 
     /// <summary>Fills the screen first: a color name, #RRGGBB or palette index</summary>
@@ -661,7 +674,8 @@ public record TitleScreenInfo
     /// <summary>
     /// Pictures drawn in order, each with its top left corner at x, y (Spear's title is two
     /// halves, Midnight Assault's credits page several pictures). One the game hasn't got is
-    /// skipped; when it has none of them, the screen is left out.
+    /// skipped; when it has none of them, the screen is left out. A picture that's an animdefs
+    /// animation plays on while the screen is held, but not under a fizzle-pic.
     /// </summary>
     public List<PicPlacement> Pics { get; init; } = [];
 
@@ -680,10 +694,10 @@ public record TitleScreenInfo
     /// <summary>Stops the music as the screen shows</summary>
     public bool StopMusic { get; init; }
 
-    /// <summary>How long the screen stays up, unless a key is pressed</summary>
+    /// <summary>How long the screen stays up, unless a key is pressed (0, the default: not held at all)</summary>
     public double Seconds { get; init; }
 
-    /// <summary>Stays up until the music ends (when music is on), unless a key is pressed</summary>
+    /// <summary>Stays up until the music ends, unless a key is pressed; with music off, for its seconds</summary>
     public bool UntilMusicEnds { get; init; }
 
     /// <summary>Stays up until a key is pressed, however long (its seconds are ignored, and so is on-key ignore)</summary>
@@ -1112,8 +1126,12 @@ public record WeatherInfo
 }
 
 /// <summary>
-/// How the tiles of a light zone (those with its id on the zone plane, plane 5) are lit, in
-/// place of the level's light. Distance still fades them as the level's shading says.
+/// How the tiles of a light zone (those with its id on the zone plane, plane 5; 0 is no zone,
+/// the level's light) are lit, in place of the level's light. Walls take the light of the tile
+/// they're seen from, floors and ceilings their own tile's, sprites the tile they're on.
+/// Distance still fades them as the level's shading says. Switches and actor states change
+/// zones as the level is played (A_SetZoneLight, A_ToggleZoneLight, A_SetZoneEffect), and saved
+/// games keep the changes.
 /// </summary>
 public record ZoneInfo
 {
@@ -1166,8 +1184,10 @@ public record ZoneInfo
 /// <summary>
 /// How the textures of the tiles with its tag (the tag plane, plane 4) slide along, as Midnight
 /// Assault's scrolling walls and flats: conveyor belts, waterfalls, moving water. Speeds are in
-/// texels a tic (64 a tile, 70 tics a second); negative goes the other way. Switches and actor
-/// states start, stop and re-speed it (A_StartScroll, A_StopScroll, A_ToggleScroll, A_SetScroll).
+/// texels a tic (64 a tile, 70 tics a second; Midnight Assault's fast was 2, its medium 0.333);
+/// negative goes the other way. Set per map only (maps: NAME: scrollers:). Switches and actor
+/// states start, stop and re-speed it (A_StartScroll, A_StopScroll, A_ToggleScroll, A_SetScroll),
+/// and saved games keep the changes.
 /// </summary>
 public record ScrollerInfo
 {
@@ -1177,7 +1197,7 @@ public record ScrollerInfo
     /// <summary>On a wall face, down; on a floor or ceiling, south</summary>
     public double Y { get; init; }
 
-    /// <summary>Whether the faces of tagged walls scroll (not door jambs, doors or wall patches)</summary>
+    /// <summary>Whether the faces of tagged walls scroll (not door jambs, doors, lintels, arch undersides or wall patches)</summary>
     public bool Walls { get; init; } = true;
 
     /// <summary>Whether the floor flats of tagged tiles scroll</summary>
@@ -1193,7 +1213,8 @@ public record ScrollerInfo
 /// <summary>
 /// How a level is shaded: everything is dimmed to its light, then fades toward the fade color
 /// with distance. Each value left out comes from the default map's shading, else the default
-/// here. A level with neither map nor default map shading isn't shaded.
+/// here. A level with neither map nor default map shading isn't shaded. The sky is never shaded,
+/// and a frame with the bright modifier (or an actor with the bright flag) is drawn at full light.
 /// </summary>
 public record ShadingInfo
 {
@@ -1850,15 +1871,15 @@ public record MapInfo
     public MapLoadout? Loadout { get; init; }
 
     /// <summary>
-    /// Distance shading; each value left out uses the default map's (see ShadingInfo)
+    /// Distance shading; each value left out uses the default map's
     /// </summary>
     public ShadingInfo? Shading { get; init; } = null;
 
     /// <summary>
-    /// Light zones by zone id; each value left out uses the default map's zone of that id (see ZoneInfo)
+    /// Light zones by zone id; each value left out uses the default map's zone of that id
     /// </summary>
     public Dictionary<int, ZoneInfo>? Zones { get; init; } = null;
 
-    /// <summary>Scrolling walls and flats by tag (the tag plane's value; see ScrollerInfo)</summary>
+    /// <summary>Scrolling walls and flats by tag (the tag plane's value)</summary>
     public Dictionary<int, ScrollerInfo>? Scrollers { get; init; } = null;
 }
