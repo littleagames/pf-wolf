@@ -18,7 +18,7 @@ public static class ActorSchema
                 FieldSchema.Value("action", FieldType.Text, "Called once as the frame ends, before the next one shows (A_Shoot); a 0-tic frame's is called as soon as it's entered"),
                 FieldSchema.Value("next-state", FieldType.Text,
                     "The state that follows the last frame. Only the state's last entry can have one: the frames of an entry before it go on to the next entry's. Left out of the last entry, the state loops back to its own first frame"),
-                FieldSchema.List("modifiers", "Frame modifiers: bright, drawn at full light, unshaded (the BRIGHT flag does it for every frame). There are no others yet, and any other word is ignored.",
+                FieldSchema.List("modifiers", "Frame modifiers: bright, drawn at full light, unshaded (the BRIGHT flag does it for every frame). There are no others yet: any other word is ignored, with a warning as the game loads.",
                     FieldSchema.Value("modifier", FieldType.Text, null), inline: true),
                 FieldSchema.Value("light", FieldType.Text,
                     "The actor's light while the frame shows, in place of its light.* properties: none (or off) for none, an intensity (200) for its light that bright, or { intensity, radius, color } with any of them, the rest its own"),

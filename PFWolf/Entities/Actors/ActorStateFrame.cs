@@ -15,7 +15,11 @@ internal class ActorStateFrame
 
     // The "bright" modifier: the frame is drawn at full light, unshaded
     private bool? _bright;
-    public bool Bright => _bright ??= Modifiers.Contains("bright", StringComparer.OrdinalIgnoreCase);
+    public bool Bright => _bright ??= Modifiers.Contains(BrightModifier, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The frame modifiers the engine reads (the actordefs reference's modifiers); any other is ignored, with a warning</summary>
+    internal const string BrightModifier = "bright";
+    internal static readonly IReadOnlySet<string> KnownModifiers = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { BrightModifier };
 
     // The state's `light:`, overriding the actor's light on this frame; null keeps the actor's
     public StateLight? Light { get; init; }

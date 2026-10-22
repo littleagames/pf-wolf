@@ -140,12 +140,18 @@ internal class ActorMetadata
             if (_warnedStates.Add(entries))
                 WarningLog.Write(ActorStateResolver.IgnoredMessage(name, state, marker));
         });
+        foreach (var (state, entries) in actor.States)
+            if (_modifiersChecked.Add(entries))
+                foreach (var modifier in ActorStateResolver.UnknownModifiers(entries))
+                    WarningLog.Write(ActorStateResolver.UnknownModifierMessage(name, state, modifier));
         _resolvedStatesCache[name] = resolved;
         return resolved;
     }
 
-    // The state lists warned about: a class shares its parent's, so a mistake in one is told once
+    // The state lists warned about, and those whose modifiers are checked: a class shares its
+    // parent's, so a mistake in one is told once
     private readonly HashSet<List<StateData>> _warnedStates = new(ReferenceEqualityComparer.Instance);
+    private readonly HashSet<List<StateData>> _modifiersChecked = new(ReferenceEqualityComparer.Instance);
 
     // Fills properties and states the target doesn't already have. Callers walk from the
     // nearest ancestor to the root so the closest definition wins.

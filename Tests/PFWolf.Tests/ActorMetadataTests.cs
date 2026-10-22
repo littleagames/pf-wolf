@@ -119,6 +119,39 @@ public class ActorMetadataTests
     }
 
     [Test]
+    public void A_Modifier_That_Does_Nothing_Is_Warned_Of_Once_For_All_Its_Classes()
+    {
+        // Arrange: two lamps share their parent's Spawn, with its fast
+        var metadata = ActorDefs.Metadata("""
+            Lamp:
+              states:
+                Spawn:
+                  - { sprite: LAMP, frames: [A, B], tics-per-frame: 5, modifiers: [bright, fast] }
+            RedLamp:
+              parent: Lamp
+            BlueLamp:
+              parent: Lamp
+            """);
+        var warnings = new List<string>();
+        var sink = PFWolf.WarningLog.Sink;
+        PFWolf.WarningLog.Sink = warnings.Add;
+
+        // Act
+        try
+        {
+            foreach (var name in new[] { "RedLamp", "BlueLamp", "Lamp" })
+                metadata.CreateActor(name, metadata.Actors[name]);
+        }
+        finally
+        {
+            PFWolf.WarningLog.Sink = sink;
+        }
+
+        // Assert
+        Assert.That(warnings, Is.EqualTo(new[] { "Actor RedLamp: in its Spawn state, the modifier fast does nothing (bright is the only one)" }));
+    }
+
+    [Test]
     public void CreateActor_Inherits_Flags_And_States()
     {
         // Arrange

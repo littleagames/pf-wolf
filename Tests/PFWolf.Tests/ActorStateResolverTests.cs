@@ -73,6 +73,27 @@ public class ActorStateResolverTests
     }
 
     [Test]
+    public void Modifiers_Other_Than_Bright_Are_Told_Once_Each()
+    {
+        // Arrange: bright in either case, and fast twice
+        var actors = ActorDefs.Parse("""
+            Thing:
+              states:
+                Spawn:
+                  - { sprite: LAMP, frames: [A], tics-per-frame: 5, modifiers: [Bright, fast] }
+                  - { sprite: LAMP, frames: [B], tics-per-frame: 5, modifiers: [bright, FAST, brigth] }
+            """);
+
+        // Act
+        var unknown = ActorStateResolver.UnknownModifiers(actors["Thing"].States["Spawn"]).ToList();
+
+        // Assert
+        Assert.That(unknown, Is.EqualTo(new[] { "fast", "brigth" }));
+        Assert.That(ActorStateResolver.UnknownModifierMessage("Thing", "Spawn", "fast"),
+            Is.EqualTo("Actor Thing: in its Spawn state, the modifier fast does nothing (bright is the only one)"));
+    }
+
+    [Test]
     public void Endings_Where_They_Belong_Are_Not_Told()
     {
         // Arrange: a state that loops by itself, one with a goto, one with a stop

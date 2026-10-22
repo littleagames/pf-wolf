@@ -199,12 +199,17 @@ public class Pk3ContentTests
             // A next-state, goto, stop or loop that's never reached (not on its state's last entry)
             Entities.Actors.ActorStateResolver.Resolve(actor.States,
                 (state, _, marker) => problems.Add(Entities.Actors.ActorStateResolver.IgnoredMessage(className, state, marker)));
+
+            // A frame modifier the engine doesn't read
+            foreach (var (state, entries) in actor.States)
+                foreach (var modifier in Entities.Actors.ActorStateResolver.UnknownModifiers(entries))
+                    problems.Add(Entities.Actors.ActorStateResolver.UnknownModifierMessage(className, state, modifier));
         }
         return problems;
     }
 
     [Test]
-    public void Every_Example_Mods_States_End_Where_They_Can_Be_Reached()
+    public void Every_Example_Mods_States_Are_Read_As_Written()
     {
         // Arrange: each example mod's and the Multiplayer mod's actordefs files, as written
         var root = TestPaths.RepoRoot();
@@ -218,8 +223,13 @@ public class Pk3ContentTests
         var problems = new List<string>();
         foreach (var file in files)
             foreach (var (className, data) in ActorDefs.Parse(File.ReadAllText(file)))
+            {
                 Entities.Actors.ActorStateResolver.Resolve(data.States, (state, _, marker) =>
                     problems.Add($"{Path.GetRelativePath(root, file)}: {Entities.Actors.ActorStateResolver.IgnoredMessage(className, state, marker)}"));
+                foreach (var (state, entries) in data.States)
+                    foreach (var modifier in Entities.Actors.ActorStateResolver.UnknownModifiers(entries))
+                        problems.Add($"{Path.GetRelativePath(root, file)}: {Entities.Actors.ActorStateResolver.UnknownModifierMessage(className, state, modifier)}");
+            }
 
         // Assert
         Assert.That(problems, Is.Empty);
