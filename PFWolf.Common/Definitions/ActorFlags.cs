@@ -3,7 +3,8 @@ namespace PFWolf.Definitions;
 /// <summary>An actordefs flag the engine checks (a class's `flags:`), and what it does</summary>
 /// <param name="Name">The flag, as the YAML writes it (any case)</param>
 /// <param name="Description">What it does</param>
-public sealed record ActorFlag(string Name, string Description);
+/// <param name="Needs">The actor class that checks it (`parent:` one of them), or null for any actor</param>
+public sealed record ActorFlag(string Name, string Description, string? Needs = null);
 
 /// <summary>
 /// The actordefs flags the engine checks, for the documentation and the tests that keep the YAML
@@ -12,6 +13,8 @@ public sealed record ActorFlag(string Name, string Description);
 /// </summary>
 public static class ActorFlags
 {
+    const string BlakeMonster = "BlakeMonster";
+
     /// <summary>Every flag, by name</summary>
     public static IReadOnlyList<ActorFlag> All { get; } =
     [
@@ -20,9 +23,9 @@ public static class ActorFlags
         new("BOSS", "A boss: kept off blocktile: bosses tiles, and spared by a weapon with weapon.spares: BOSS. No class in pfwolf.pk3 has it."),
         new("BRIGHT", "Drawn at full light, unshaded, in every state (a frame's bright modifier does it for one frame)"),
         new("BURSTONPLAYER", "A projectile: bursts on the player (or enemy) it hits, going to its Death state, as on a wall (Blake Stone's spit and shots)"),
-        new("CHASEDIR", "Closes in straight, without dodging (Blake Stone's floating bomb)"),
+        new("CHASEDIR", "Closes in straight, without dodging (Blake Stone's floating bomb)", BlakeMonster),
         new("COUNTITEM", "Treasure: counts toward the level's treasure ratio"),
-        new("FRIENDLY", "Starts friendly: patrolling, it only looks for the player after a noise (Blake Stone's scientists)"),
+        new("FRIENDLY", "Starts friendly: patrolling, it only looks for the player after a noise (Blake Stone's scientists)", BlakeMonster),
         new("HURTMONSTERS", "A projectile: hurts the enemies it flies into too, not only players, never its shooter (a trap's fireball)"),
         new("INVENTORY.ALWAYSPICKUP", "Picked up even when it gives the player nothing (health at full, a key already held), rather than left on the floor"),
         new("KEEPTILEONDEATH", "Dying, it keeps the tile it holds rather than moving to the one it's over (Mecha Hitler, so the Hitler it becomes doesn't jump a tile)"),
@@ -34,15 +37,15 @@ public static class ActorFlags
         new("NOTICEWHENSEEN", "Notices the player as soon as the player can see it (Blake Stone's aliens)"),
         new("NOTSOLID", "Doesn't block while it lives: the player and actors pass under or through it (hanging turrets, electro-spheres)"),
         new("PATROLPOINT", "A patrol point (the arrows): a patroller reaching its tile turns the way it points"),
-        new("PATROLTURNS", "A patroller that's blocked turns aside rather than stopping"),
+        new("PATROLTURNS", "A patroller that's blocked turns aside rather than stopping", BlakeMonster),
         new("PHASEDOORS", "Drifts straight through doors without opening them (ghosts, Spectres)"),
         new("POINTSONCE", "Its points are paid only for the first kill (Spectres, which come back)"),
         new("PROJECTILE", "A projectile: its sprite turns by its heading rather than the way it walks, and no Prop Hunt prop can look like it"),
-        new("RANDOMTURN", "A PATROLTURNS patroller also turns now and then at random"),
-        new("SMART", "Runs for supplies or a door while out of ammo, at half health or less, or after turning mean when talked to (rent-a-cops, pro guards, scientists)"),
+        new("RANDOMTURN", "A PATROLTURNS patroller also turns now and then at random", BlakeMonster),
+        new("SMART", "Runs for supplies or a door while out of ammo, at half health or less, or after turning mean when talked to (rent-a-cops, pro guards, scientists)", BlakeMonster),
         new("SOLID", "Its whole tile is blocked to the player, enemies and projectiles (barrels, pillars, tables), and the automap marks it"),
         new("STATIONARY", "Never moves"),
-        new("STEPBACK", "Walking into the player, it heads back to the tile it came from"),
+        new("STEPBACK", "Walking into the player, it heads back to the tile it came from", BlakeMonster),
         new("TALKATIVE", "Can be talked to: use, facing it, close by (Blake Stone's scientists)"),
         new("TOUCHDAMAGE", "Hurts the player on contact (ghosts, Spectres)"),
         new("WALLSPRITE", "Drawn as a flat panel standing in its tile, facing its map angles, instead of a billboard (fences, gates, grilles); it blocks along its line"),
@@ -64,5 +67,5 @@ public static class ActorFlags
     /// <summary>The flags as a record's fields, for the documentation (each its own field, by name)</summary>
     public static FieldSchema Schema() => FieldSchema.Record("flags",
         "The flags an actordefs class can have (`flags: [SOLID, AMBUSH]`). A class has its parents' as well; ~FLAG takes one of them away.",
-        [.. All.Select(f => FieldSchema.Value(f.Name, FieldType.Boolean, f.Description))]);
+        [.. All.Select(f => FieldSchema.Value(f.Name, FieldType.Boolean, ActorProperties.Describe(f.Description, f.Needs)))]);
 }
