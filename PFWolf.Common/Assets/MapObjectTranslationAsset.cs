@@ -597,6 +597,14 @@ public record MapTextureTranslation
     /// </summary>
     public bool Split { get; init; }
 
+    /// <summary>
+    /// Doors only: "object-plane": the door's object-plane value (when it isn't a door-locks
+    /// card) is the next door's tile, x in the high byte and y in the low one (Blake Stone's
+    /// linked doors). Opening or closing this one opens or closes that one, unlocking it, and so
+    /// on along the chain. Empty: none.
+    /// </summary>
+    public string Link { get; init; } = "";
+
     /// <summary>Doors only: shown when the player tries a one-way door from the wrong side (a $NAME language key or the text)</summary>
     public string WrongSideMessage { get; init; } = "";
 

@@ -214,6 +214,7 @@ internal class DoorObject
     public List<string> MapLocks = []; // the doors.yaml locks it needs several of (none with a door-locks object)
     public int LocksNeeded;            // how many of MapLocks it needs (all of them when 0)
     public bool Unlocked;              // a takes-key door the player has opened with its lock item
+    public int LinkX = -1, LinkY = -1; // the next door's tile in a chain of linked doors (doors.yaml link: object-plane), -1 for none
 
     /// <summary>The item the door needs to open, empty when it needs none (or only needs <see cref="MapLocks"/>)</summary>
     public string Lock => Unlocked ? "" : MapLock;

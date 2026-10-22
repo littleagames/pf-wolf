@@ -69,6 +69,11 @@ internal static class HeadlessGame
     /// </summary>
     public static (int ExitCode, List<string> Output) Run(string workFolder, string gamePack, string commands,
         TimeSpan timeout, params string[] mods)
+        => Run(workFolder, gamePack, commands, timeout, [], mods);
+
+    /// <summary>The same, with more of the game's command line (--warp MAP09, say) before the mods</summary>
+    public static (int ExitCode, List<string> Output) Run(string workFolder, string gamePack, string commands,
+        TimeSpan timeout, IReadOnlyList<string> extraArgs, params string[] mods)
     {
         var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
         Assert.That(File.Exists(exe), Is.True, $"{exe} wasn't built beside the tests");
@@ -88,6 +93,7 @@ internal static class HeadlessGame
             "--demodir", Path.Combine(workFolder, "demos"),
             "--exec", commands,
         };
+        args.AddRange(extraArgs);
         foreach (var mod in mods)
             args.AddRange(["--file", mod]);
         foreach (var arg in args)
@@ -101,7 +107,9 @@ internal static class HeadlessGame
         if (!process.WaitForExit(timeout))
         {
             process.Kill(entireProcessTree: true);
-            Assert.Fail($"The game didn't finish within {timeout.TotalMinutes} minutes");
+            process.WaitForExit();
+            var last = (stdout.Result + stderr.Result).Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries).TakeLast(20);
+            Assert.Fail($"The game didn't finish within {timeout.TotalMinutes} minutes. Its last output:{Environment.NewLine}{string.Join(Environment.NewLine, last)}");
         }
 
         var output = (stdout.Result + stderr.Result)

@@ -524,6 +524,7 @@ public sealed class MapCanvas : Control
         new Pen(new SolidColorBrush(Color.FromArgb(150, 120, 220, 120)), 1.5),
         new Pen(new SolidColorBrush(Color.FromArgb(200, 120, 160, 255)), 2),
         new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 80, 80)), 2),
+        new Pen(new SolidColorBrush(Color.FromArgb(200, 80, 230, 230)), 2),
     ];
     private static readonly IPen LinkHoverPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 255, 255)), 2.5);
     private static readonly IBrush CodeBadgeBrush = new SolidColorBrush(Color.FromArgb(210, 40, 110, 150));

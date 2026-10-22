@@ -27,6 +27,8 @@ internal sealed class DebugCommands(
         console.Register("overhead", "Shows the raw and filtered map overview.", "overhead", OverheadCommand, Cheat | InLevel);
         console.Register("where", "Shows the player's position and what's at their tile.", "where", WhereCommand, InLevel, aliases: ["pos"]);
         console.Register("count", "Counts doors and actors.", "count", CountCommand, InLevel);
+        console.Register("doors", "Lists the level's doors (tile, state, lock, linked door), or opens or closes the one at a tile.",
+            "doors [open|close <tilex> <tiley>]", DoorsCommand, InLevel, complete: (_, i) => i == 0 ? ["open", "close"] : []);
         console.Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", ActorsCommand, InLevel,
             complete: (_, i) => i == 0 ? map.GetActors().Select(a => a.Name) : []);
         console.Register("maps", "Lists the levels that map can warp to.", "maps", MapsCommand);
@@ -80,6 +82,33 @@ internal sealed class DebugCommands(
 
         int zone = map.GetZone(x, y);
         console.Print($"light zone (plane 5): {zone} ({targets.DescribeZone(zone)})");
+    }
+
+    internal void DoorsCommand(string[] args)
+    {
+        if (args.Length >= 3 && (args[0].Equals("open", StringComparison.OrdinalIgnoreCase) || args[0].Equals("close", StringComparison.OrdinalIgnoreCase)))
+        {
+            if (!int.TryParse(args[1], out var x) || !int.TryParse(args[2], out var y) || !map.InMap(x, y)
+                || (map.TileMap[x, y] & GameConstants.BitDoor) == 0)
+            {
+                console.Print($"There's no door at {string.Join(",", args.Skip(1).Take(2))}");
+                return;
+            }
+            int door = map.TileMap[x, y] & ~GameConstants.BitDoor;
+            if (args[0].Equals("open", StringComparison.OrdinalIgnoreCase))
+                doors.OpenDoor(door);
+            else
+                doors.CloseDoor(door);
+            return;
+        }
+
+        for (int i = 0; i < doors.LastDoorObj; i++)
+        {
+            var d = doors.DoorObjList[i];
+            var link = d.LinkX >= 0 ? $"  linked to {d.LinkX},{d.LinkY}" : "";
+            var lockText = d.IsLocked ? $"  locked ({(d.Lock.Length > 0 ? d.Lock : string.Join("+", d.MapLocks))})" : "";
+            console.Print($"door {i} at {d.TileX},{d.TileY}: {d.Action}{lockText}{link}");
+        }
     }
 
     internal void CountCommand(string[] args)

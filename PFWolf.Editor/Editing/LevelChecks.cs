@@ -63,7 +63,7 @@ public static class LevelChecks
                 if (tiles.PlayerStart(x, y) is { Deathmatch: false })
                     starts.Add((x, y));
 
-                if (obj != 0 && kind == TileKind.Door && !defs.DoorLocks.ContainsKey(obj))
+                if (obj != 0 && kind == TileKind.Door && !defs.DoorLocks.ContainsKey(obj) && tiles.LinkFrom(x, y) == null)
                     Count(unusedDoorValues, 0, x, y);
                 else if (obj != 0)
                     CheckObject(tiles, problems, unknownObjects, brokenThings, x, y, obj, kind);
@@ -309,6 +309,8 @@ public static class LevelChecks
         {
             case ObjectLinkKind.Teleport:
                 return kind is TileKind.Floor ? null : "not open floor, so the player can't come out there";
+            case ObjectLinkKind.DoorLink:
+                return kind is TileKind.Door ? null : "not a door, so nothing opens with it";
             case ObjectLinkKind.TagLink:
             case ObjectLinkKind.SwitchLink:
                 // A barrier (or what's joined to one), a door or another switch

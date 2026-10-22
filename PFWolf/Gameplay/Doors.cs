@@ -90,6 +90,12 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             doorobj.MapLocks = doorXlat.Locks;
             doorobj.LocksNeeded = doorXlat.LocksNeeded;
         }
+
+        // A linked door's object-plane value that isn't its card is the next door's tile (bstone's CheckLinkedDoors)
+        int value = map.MapSpot(tilex, tiley, 1);
+        if (doorXlat.Link.Equals("object-plane", StringComparison.OrdinalIgnoreCase) && value != 0
+            && !map.GetMapData().DoorLocks.ContainsKey(value))
+            (doorobj.LinkX, doorobj.LinkY) = (value >> 8, value & 0xff);
         DoorObjList[LastDoorObj] = doorobj;
 
         map.ActorAt[tilex, tiley] = new Door(DoorNum);// (uint)(DoorNum | GameConstants.BitDoor);   // consider it a solid wall
@@ -147,6 +153,43 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             DoorObjList[door].TicCount = 0;         // reset open time
         else
             DoorObjList[door].Action = DoorAction.Opening;  // start it opening
+        WorkLinkedDoor(door, open: true);
+    }
+
+    // The doors a chain of linked doors has worked so far, so a chain that loops stops; null outside one
+    private HashSet<int>? _linkedWorked;
+
+    /// <summary>
+    /// Opens or closes the next door of a linked door's chain (doors.yaml link: object-plane),
+    /// unlocking it, which works the one after it in turn, as bstone's CheckLinkedDoors: each
+    /// door once, however the chain loops
+    /// </summary>
+    private void WorkLinkedDoor(int door, bool open)
+    {
+        var from = DoorObjList[door];
+        if (from.LinkX <= 0 || from.LinkY <= 0 || !map.InMap(from.LinkX, from.LinkY))
+            return;
+        int tile = map.TileMap[from.LinkX, from.LinkY];
+        if ((tile & GameConstants.BitDoor) == 0 || (tile & ~GameConstants.BitDoor) is var next && next >= LastDoorObj)
+            return;
+
+        bool first = _linkedWorked == null;
+        _linkedWorked ??= [door];
+        try
+        {
+            if (!_linkedWorked.Add(next))
+                return;
+            DoorObjList[next].Unlocked = true;
+            if (open)
+                OpenDoor(next);
+            else
+                CloseDoor(next);
+        }
+        finally
+        {
+            if (first)
+                _linkedWorked = null;
+        }
     }
 
     /*
@@ -220,6 +263,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         // make the door space solid
         //
         map.ActorAt[tilex, tiley] = new Door(door);// (uint)(door | GameConstants.BitDoor);
+        WorkLinkedDoor(door, open: false);
     }
 
     /*

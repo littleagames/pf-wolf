@@ -16,6 +16,8 @@ public enum ObjectLinkKind
     Teleport,
     /// <summary>A floors actor-code with `link: east`: the enemy's death works the tile the value east of it names</summary>
     ActorLink,
+    /// <summary>A door whose doors.yaml entry has `link: object-plane`: it opens and closes the door its value names</summary>
+    DoorLink,
 }
 
 /// <summary>
@@ -36,6 +38,7 @@ public sealed record ObjectLink(ObjectLinkKind Kind, int X, int Y, int ValueX, i
         ObjectLinkKind.SwitchLink => "switch link (by its own value)",
         ObjectLinkKind.SmartSwitch => "smart switch",
         ObjectLinkKind.Teleport => "teleporter",
+        ObjectLinkKind.DoorLink => "linked door",
         _ => "enemy's death link",
     };
 }
@@ -71,6 +74,13 @@ public sealed partial class MapTiles : Editing.IObjectPairs
         }
 
         var tileKind = KindAt(x, y);
+        if (tileKind == TileKind.Door)
+        {
+            // Its value, when it isn't the door's card, is the next door of its chain
+            return Door(x, y)!.Link.Equals("object-plane", StringComparison.OrdinalIgnoreCase) && !Defs.DoorLocks.ContainsKey(obj)
+                ? new ObjectLink(ObjectLinkKind.DoorLink, x, y, x, y, obj >> 8, obj & 0xff)
+                : null;
+        }
         if (tileKind == TileKind.Wall)
         {
             var switches = SwitchesAt(x, y).ToList();
