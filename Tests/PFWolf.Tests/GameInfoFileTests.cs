@@ -33,6 +33,19 @@ public class GameInfoFileTests
     }
 
     [Test]
+    public void A_Floor_Number_And_Cluster_Are_Written_And_Read_Back()
+    {
+        // Act
+        var text = GameInfoFile.Apply(null, "MAP17", new MapProperties { Name = "Floor", FloorNumber = 1, Cluster = 2 }, ["name", "floor-number", "cluster"]);
+        var info = Parse(text).Maps["MAP17"];
+
+        // Assert
+        Assert.That(text, Is.EqualTo("maps:\n  MAP17:\n    name: \"Floor\"\n    floor-number: 1\n    cluster: 2\n"));
+        Assert.That((info.FloorNumber, info.Cluster), Is.EqualTo((1, (short)2)));
+        Assert.That((MapProperties.From(info).FloorNumber, MapProperties.From(info).Cluster), Is.EqualTo(((int?)1, (int?)2)));
+    }
+
+    [Test]
     public void Scrollers_Are_Written_With_Only_What_Differs_From_The_Defaults_And_Read_Back()
     {
         // Arrange

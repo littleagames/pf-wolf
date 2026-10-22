@@ -76,7 +76,8 @@ public sealed record MapProperties
         DefaultFloor = info.DefaultFloor,
         DefaultCeiling = info.DefaultCeiling,
         Weather = info.Weather,
-        FloorNumber = info.FloorNumber,
+        // game-info can't tell floor 0 from none: both are left to the default, 0
+        FloorNumber = info.FloorNumber == 0 ? null : info.FloorNumber,
         Cluster = info.Cluster == 0 ? null : info.Cluster,
         FadeColor = info.Shading?.FadeColor,
         FadeStart = info.Shading?.FadeStart,
@@ -110,6 +111,8 @@ public sealed record MapProperties
         Check("default-floor", DefaultFloor == other.DefaultFloor);
         Check("default-ceiling", DefaultCeiling == other.DefaultCeiling);
         Check("weather", Weather == other.Weather);
+        Check("floor-number", FloorNumber == other.FloorNumber);
+        Check("cluster", Cluster == other.Cluster);
         Check("shading", FadeColor == other.FadeColor && FadeStart == other.FadeStart && FadeEnd == other.FadeEnd
                          && MaxFade == other.MaxFade && Light == other.Light);
         Check("zones", Zones.SequenceEqual(other.Zones));

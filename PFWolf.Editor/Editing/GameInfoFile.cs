@@ -18,7 +18,7 @@ public static class GameInfoFile
     /// <summary>The game-info keys the editor writes, in the order it writes them</summary>
     public static readonly IReadOnlyList<string> Keys =
     [
-        "name", "music", "next", "secret-next", "par-time", "floor-color", "ceiling-color", "wall-height",
+        "name", "music", "next", "secret-next", "par-time", "floor-number", "cluster", "floor-color", "ceiling-color", "wall-height",
         "sky", "default-floor", "default-ceiling", "weather", "shading", "zones", "scrollers",
     ];
 
@@ -231,6 +231,8 @@ public static class GameInfoFile
         "default-floor" => Quote(properties.DefaultFloor),
         "default-ceiling" => Quote(properties.DefaultCeiling),
         "weather" => Quote(properties.Weather),
+        "floor-number" => Number(properties.FloorNumber),
+        "cluster" => Number(properties.Cluster),
         _ => null,
     };
 

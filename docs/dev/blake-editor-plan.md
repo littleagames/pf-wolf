@@ -34,6 +34,19 @@
   eye (UI Automation, no mouse): the panel, the colors and hint dialogs with the level's values,
   going to a code, the link lines on AOG floor 1, the palette's code entries setting up Paint.
   **Not checked by eye:** painting a code and picking a target with a real click.
+- **Phase 3 (done):** MapTiles reads a level's colors and flats as the game does: game-info's
+  colors for the level, else its first ceiling-floor-colors code's (palette indices to RGB),
+  else the default map's; a flat-plane 0 takes the first ceiling-floor-flats code's value. The
+  map's flats and the 3D view follow (checked by eye: AOG floor 1's 3D view shows its octagon
+  floor and panel ceiling, which were flat gray before). Split doors look the same as others
+  while closed, and the editor only shows doors closed; locked door faces and the inverse fade
+  curve were already in the 3D view. Level properties: Floor number and Cluster fields,
+  written to the mod's game-info as `floor-number` and `cluster` (floor 0 reads as empty, since
+  game-info can't tell it from none). A new mod for Blake is a modinfo with `game-packs:
+  [blake]`, editing the game's own levels, so it needs nothing more. elevator.yaml and
+  presenter.yaml stay in the Definitions window's raw YAML tab. Tests: GameInfoFileTests.
+  **Not checked by eye:** the properties dialog's new fields (Avalonia's menu bar isn't
+  reachable through UI Automation; the dialog is F4).
 
 Goal: the editor opens Blake Stone: Aliens of Gold (`blake`) and Planet Strike (`planetstrike`)
 the way it opens Wolf3D and Spear today, and a modder can edit their levels in full: map-info

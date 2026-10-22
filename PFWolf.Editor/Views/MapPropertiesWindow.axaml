@@ -32,7 +32,13 @@
                    Text="Saved into the mod's game-info.yaml with the level. A field left empty uses the default map's value (shown faded)." />
 
         <TextBlock Classes="heading" Text="The level" />
-        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+          <TextBlock Classes="label" Grid.Row="5" Text="Floor number" />
+          <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding FloorNumber}" PlaceholderText="0"
+                   ToolTip.Tip="The level's floor in its mission or episode (&quot;Floor Y&quot; in its name when it has none); Blake Stone's elevators, teleporters and map-info links go by it" />
+          <TextBlock Classes="label" Grid.Row="6" Text="Cluster" />
+          <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Cluster}" PlaceholderText="{Binding ClusterHint}"
+                   ToolTip.Tip="The game-info cluster the level is in (a Blake Stone mission, a hub of floors kept as they're left)" />
           <TextBlock Classes="label" Grid.Row="0" Text="Name" />
           <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name}" PlaceholderText="Episode X, Floor Y" />
           <TextBlock Classes="label" Grid.Row="1" Text="Music" />

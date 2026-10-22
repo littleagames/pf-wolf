@@ -66,7 +66,7 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
     /// </summary>
     public string? FloorFlat(int x, int y)
     {
-        int index = this[MapConstants.FlatPlane, x, y] & 0xff;
+        int index = FlatValue(x, y) & 0xff;
         if (Defs.Flats.Floor.TryGetValue(index, out var flat))
             return flat;
         return Properties.DefaultFloor ?? content.DefaultMapInfo.DefaultFloor;
@@ -75,15 +75,56 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
     /// <summary>The texture a tile's ceiling shows, like <see cref="FloorFlat"/>: null for the ceiling color</summary>
     public string? CeilingFlat(int x, int y)
     {
-        int index = this[MapConstants.FlatPlane, x, y] >> 8;
+        int index = FlatValue(x, y) >> 8;
         if (Defs.Flats.Ceiling.TryGetValue(index, out var flat))
             return flat;
         return Properties.DefaultCeiling ?? content.DefaultMapInfo.DefaultCeiling;
     }
 
-    /// <summary>The level's floor and ceiling colors (#RRGGBB), from its game-info entry or the default map's</summary>
-    public string? FloorColor => Properties.FloorColor ?? content.DefaultMapInfo.FloorColor;
-    public string? CeilingColor => Properties.CeilingColor ?? content.DefaultMapInfo.CeilingColor;
+    /// <summary>
+    /// A tile's flats as the game loads them: its flat-plane value, else (at 0) the level's own
+    /// ceiling-floor-flats code's (MapManager.ReadMapInfo fills those tiles with it)
+    /// </summary>
+    public int FlatValue(int x, int y)
+        => this[MapConstants.FlatPlane, x, y] is var value and not 0 ? value : CodeValues.Flats ?? 0;
+
+    /// <summary>
+    /// The level's floor and ceiling colors (#RRGGBB): its game-info entry's, else its own
+    /// ceiling-floor-colors code's (Blake Stone's), else the default map's, as the game picks them
+    /// </summary>
+    public string? FloorColor => Properties.FloorColor ?? CodeValues.Floor ?? content.DefaultMapInfo.FloorColor;
+    public string? CeilingColor => Properties.CeilingColor ?? CodeValues.Ceiling ?? content.DefaultMapInfo.CeilingColor;
+
+    // The level's own colors and flats (the first ceiling-floor-colors and -flats codes): read once, until the level changes
+    private (string? Ceiling, string? Floor, int? Flats)? _codeValues;
+
+    /// <summary>The level changed: its colors and flats codes are read again</summary>
+    public void ForgetCodeValues() => _codeValues = null;
+
+    private (string? Ceiling, string? Floor, int? Flats) CodeValues => _codeValues ??= ReadCodeValues();
+
+    private (string?, string?, int?) ReadCodeValues()
+    {
+        if (Defs.MapInfo.Count == 0)
+            return (null, null, null);
+
+        string? ceiling = null, floor = null;
+        int? flats = null;
+        foreach (var kind in new[] { MapInfoCodes.CeilingFloorColors, MapInfoCodes.CeilingFloorFlats })
+        {
+            if (LevelCodes.FirstOfKind(this, kind) is not { } code || code.X + 1 >= Width)
+                continue;
+            int value = this[1, code.X + 1, code.Y];
+            if (kind == MapInfoCodes.CeilingFloorFlats)
+                flats = value;
+            else
+                (ceiling, floor) = (PaletteHex(value >> 8), PaletteHex(value & 0xff));
+        }
+        return (ceiling, floor, flats);
+    }
+
+    private string? PaletteHex(int index)
+        => index < content.Palette.Length ? $"#{content.Palette[index].Red:X2}{content.Palette[index].Green:X2}{content.Palette[index].Blue:X2}" : null;
 
     public const int MaxStories = 8;
 
@@ -161,7 +202,7 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
     /// its <see cref="CeilingFlat"/> when the flat-plane ceiling index isn't 0, else null (WallPosts.UseArchCeilingFlat)
     /// </summary>
     public string? ArchCeilingFlat(int x, int y)
-        => this[MapConstants.FlatPlane, x, y] >> 8 == 0 ? null : CeilingFlat(x, y);
+        => FlatValue(x, y) >> 8 == 0 ? null : CeilingFlat(x, y);
 
     /// <summary>
     /// An arch face's texture (its face "north", "south", "east" or "west"): that face of the wall

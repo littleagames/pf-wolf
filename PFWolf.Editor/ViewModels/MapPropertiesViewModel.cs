@@ -47,7 +47,6 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         IReadOnlyList<string> maps, IReadOnlyList<string>? weather = null)
     {
         MapName = mapName;
-        _loaded = properties;
         Defaults = defaults;
         MusicNames = music;
         MapNames = maps;
@@ -65,6 +64,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         _defaultFloor = properties.DefaultFloor ?? "";
         _defaultCeiling = properties.DefaultCeiling ?? "";
         _weather = properties.Weather ?? "";
+        _floorNumber = Text(properties.FloorNumber);
+        _cluster = Text(properties.Cluster);
         _fadeColor = properties.FadeColor ?? "";
         _fadeStart = Text(properties.FadeStart);
         _fadeEnd = Text(properties.FadeEnd);
@@ -90,9 +91,6 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         }
     }
 
-    // What the dialog doesn't edit is kept as it was
-    private readonly MapProperties _loaded;
-
     public string MapName { get; }
     public string Title => $"{MapName} properties";
     public DefaultMapInfo Defaults { get; }
@@ -114,7 +112,12 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     [ObservableProperty] private string _defaultFloor;
     [ObservableProperty] private string _defaultCeiling;
     [ObservableProperty] private string _weather;
+    [ObservableProperty] private string _floorNumber;
+    [ObservableProperty] private string _cluster;
     [ObservableProperty] private string _fadeColor;
+
+    /// <summary>The cluster field's placeholder: none means the level isn't in one</summary>
+    public string ClusterHint => "none";
     [ObservableProperty] private string _fadeStart;
     [ObservableProperty] private string _fadeEnd;
     [ObservableProperty] private string _maxFade;
@@ -201,8 +204,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 DefaultFloor = Optional(DefaultFloor),
                 DefaultCeiling = Optional(DefaultCeiling),
                 Weather = WeatherName(Weather),
-                FloorNumber = _loaded.FloorNumber,
-                Cluster = _loaded.Cluster,
+                FloorNumber = Int(FloorNumber, "floor number", 0, 255),
+                Cluster = Int(Cluster, "cluster", 1, short.MaxValue),
                 FadeColor = Color(FadeColor, "fade color"),
                 FadeStart = Double(FadeStart, "fade start"),
                 FadeEnd = Double(FadeEnd, "fade end"),

@@ -838,6 +838,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (Maps.FirstOrDefault(item => item.Name.Equals(document.AssetName, StringComparison.OrdinalIgnoreCase)) is { } item)
             item.IsDirty = document.IsDirty;
+        if (ReferenceEquals(document, Document))
+            Tiles?.ForgetCodeValues();
         if (LevelCodesExpanded && ReferenceEquals(document, Document))
             RefreshLevelCodes();
         OnPropertyChanged(nameof(WindowTitle));
