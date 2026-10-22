@@ -98,6 +98,8 @@ public sealed class DefinitionSet
     {
         DefinitionKind.GameInfo => [($"{packId}/game-info", nameof(GameInfoAsset), "")],
         DefinitionKind.Factions => [($"{packId}/factions", nameof(FactionsAsset), "")],
+        DefinitionKind.Elevator => [($"{packId}/elevator", nameof(ElevatorAsset), "")],
+        DefinitionKind.Presenter => [($"{packId}/presenter", nameof(PresenterAsset), "")],
         DefinitionKind.Actors =>
         [
             ("actordefs", nameof(ActorTranslationAsset), DefinitionFile.SharedLayer),
@@ -178,6 +180,9 @@ public sealed class DefinitionSet
                     YamlTree.DeepMerge(target, tree);
                     break;
                 case DefinitionKind.MapDefs:
+                case DefinitionKind.Elevator:
+                case DefinitionKind.Presenter:
+                    // a pack's own replace its base pack's two keys down (a section's fields), as the loader does
                     if (file.IsBase)
                         YamlTree.MergeLevels(target, tree, 2);
                     else

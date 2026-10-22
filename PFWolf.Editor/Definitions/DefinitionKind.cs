@@ -27,6 +27,12 @@ public enum DefinitionKind
 
     /// <summary>graphicdefs/: pictures cut out of sprites, walls and other pictures</summary>
     Graphics,
+
+    /// <summary>The game pack's elevator.yaml (a mod's at its root): Blake Stone's floor-select panel and Planet Strike's teleporter map</summary>
+    Elevator,
+
+    /// <summary>The game pack's presenter.yaml (a mod's at its root): the text presenter's fonts, shapes and sounds, the message box and the briefing window</summary>
+    Presenter,
 }
 
 public static class DefinitionKinds
@@ -41,20 +47,25 @@ public static class DefinitionKinds
         DefinitionKind.Animations => "Animations",
         DefinitionKind.Factions => "Factions",
         DefinitionKind.Graphics => "Cropped pictures",
+        DefinitionKind.Elevator => "Elevator",
+        DefinitionKind.Presenter => "Presenter",
         _ => "Map definitions",
     };
 
     /// <summary>
-    /// Whether the kind is one file read as one record (game-info, factions), listed by its
-    /// sections (its fields), set or not, rather than by entries
+    /// Whether the kind is one file read as one record (game-info, factions, the elevator, the
+    /// presenter), listed by its sections (its fields), set or not, rather than by entries
     /// </summary>
-    public static bool IsSections(DefinitionKind kind) => kind is DefinitionKind.GameInfo or DefinitionKind.Factions;
+    public static bool IsSections(DefinitionKind kind)
+        => kind is DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter;
 
     /// <summary>The record a sections kind's file is read as</summary>
     public static Type? SectionsType(DefinitionKind kind) => kind switch
     {
         DefinitionKind.GameInfo => typeof(GameInfoAsset),
         DefinitionKind.Factions => typeof(FactionsAsset),
+        DefinitionKind.Elevator => typeof(ElevatorAsset),
+        DefinitionKind.Presenter => typeof(PresenterAsset),
         _ => null,
     };
 
@@ -64,6 +75,19 @@ public static class DefinitionKinds
         DefinitionKind.GameInfo => "game-info.yaml",
         DefinitionKind.GamePackInfo => "gamepack-info.yaml",
         DefinitionKind.Factions => "factions.yaml",
+        DefinitionKind.Elevator => "elevator.yaml",
+        DefinitionKind.Presenter => "presenter.yaml",
+        _ => null,
+    };
+
+    /// <summary>
+    /// The game pack's asset a game-pack file of a kind loads into ("elevator": blake/elevator),
+    /// for the kinds only some games have; null for the rest, which every game has
+    /// </summary>
+    public static string? PackAsset(DefinitionKind kind) => kind switch
+    {
+        DefinitionKind.Elevator => "elevator",
+        DefinitionKind.Presenter => "presenter",
         _ => null,
     };
 
@@ -115,6 +139,12 @@ public static class DefinitionKinds
                 break;
             case DefinitionKind.Factions:
                 YamlDataEntryLoader.DeserializeQuietly<FactionsAsset>(yaml);
+                break;
+            case DefinitionKind.Elevator:
+                YamlDataEntryLoader.DeserializeQuietly<ElevatorAsset>(yaml);
+                break;
+            case DefinitionKind.Presenter:
+                YamlDataEntryLoader.DeserializeQuietly<PresenterAsset>(yaml);
                 break;
             default:
                 YamlDataEntryLoader.DeserializeQuietly<MapObjectTranslationAsset>(yaml);

@@ -32,6 +32,8 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         Animations = new EntryEditorViewModel(this, DefinitionKind.Animations);
         Factions = new EntryEditorViewModel(this, DefinitionKind.Factions);
         Graphics = new EntryEditorViewModel(this, DefinitionKind.Graphics);
+        Elevator = new EntryEditorViewModel(this, DefinitionKind.Elevator);
+        Presenter = new EntryEditorViewModel(this, DefinitionKind.Presenter);
     }
 
     /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
@@ -53,6 +55,18 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     public EntryEditorViewModel Animations { get; }
     public EntryEditorViewModel Factions { get; }
     public EntryEditorViewModel Graphics { get; }
+    public EntryEditorViewModel Elevator { get; }
+    public EntryEditorViewModel Presenter { get; }
+
+    /// <summary>Whether the game has an elevator.yaml (Blake Stone's), so its tab shows</summary>
+    public bool HasElevator => HasPackFile(DefinitionKind.Elevator);
+
+    /// <summary>Whether the game has a presenter.yaml (Blake Stone's), so its tab shows</summary>
+    public bool HasPresenter => HasPackFile(DefinitionKind.Presenter);
+
+    // The running pack has the file (from pfwolf.pk3, a base pack or a mod)
+    private bool HasPackFile(DefinitionKind kind)
+        => Content != null && DefinitionKinds.PackAsset(kind) is { } asset && Content.Assets.AssetNames.Contains($"{Content.PackId}/{asset}", StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Something was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? SavedToMod;
@@ -104,6 +118,8 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         Title = content == null ? "Definitions" : $"Definitions - {content.Title}";
         SetMods(mods);
         Files.Refresh();
+        OnPropertyChanged(nameof(HasElevator));
+        OnPropertyChanged(nameof(HasPresenter));
         Reloaded?.Invoke(this, EventArgs.Empty);
     }
 
@@ -183,7 +199,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>The definitions were saved: the tabs show them again</summary>
     public event EventHandler? DefinitionsChanged;
 
-    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, Graphics, Factions, GamePacks];
+    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, Graphics, Factions, Elevator, Presenter, GamePacks];
 
     /// <summary>
     /// What's changed here and not saved (definitions in the tabs, the file in the YAML tab), as
@@ -220,6 +236,8 @@ public sealed partial class DefinitionsViewModel : ObservableObject
             DefinitionKind.Animations => Animations,
             DefinitionKind.Graphics => Graphics,
             DefinitionKind.Factions => Factions,
+            DefinitionKind.Elevator => Elevator,
+            DefinitionKind.Presenter => Presenter,
             _ => MapDefs,
         };
         ShowTabRequested?.Invoke(this, kind);

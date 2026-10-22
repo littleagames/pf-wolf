@@ -60,6 +60,14 @@
       <TabItem x:Name="FactionsTab" Header="Factions">
         <v:EntryEditorView DataContext="{Binding Factions}" />
       </TabItem>
+      <TabItem x:Name="ElevatorTab" Header="Elevator" IsVisible="{Binding HasElevator}"
+               ToolTip.Tip="elevator.yaml: Blake Stone's floor-select panel, or Planet Strike's teleporter map">
+        <v:EntryEditorView DataContext="{Binding Elevator}" />
+      </TabItem>
+      <TabItem x:Name="PresenterTab" Header="Presenter" IsVisible="{Binding HasPresenter}"
+               ToolTip.Tip="presenter.yaml: the text presenter's fonts, shapes and sounds, the message box and the briefing window">
+        <v:EntryEditorView DataContext="{Binding Presenter}" />
+      </TabItem>
       <TabItem x:Name="GamePacksTab" Header="Game packs">
         <v:EntryEditorView DataContext="{Binding GamePacks}" />
       </TabItem>

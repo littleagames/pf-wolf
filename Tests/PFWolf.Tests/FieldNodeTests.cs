@@ -204,6 +204,8 @@ public class FieldNodeGameTests
 
     [TestCase("wolf3d")]
     [TestCase("spear")]
+    [TestCase("blake")]
+    [TestCase("planetstrike")]
     public void Every_Definition_Builds_Back_Unchanged(string game)
     {
         // Arrange
@@ -213,7 +215,7 @@ public class FieldNodeGameTests
         foreach (var kind in DefinitionKinds.All)
         {
             var set = DefinitionSet.Load(content, kind);
-            var entries = kind == DefinitionKind.GameInfo
+            var entries = DefinitionKinds.IsSections(kind)
                 ? set.Merged.Children.Keys.OfType<YamlScalarNode>().Select(key => (IReadOnlyList<string>)[key.Value!])
                 : set.Entries(baseOnly: false).Select(entry => entry.Path);
 
@@ -222,7 +224,8 @@ public class FieldNodeGameTests
                 var value = set.ValueOf(path, baseOnly: false);
                 var schema = kind switch
                 {
-                    DefinitionKind.GameInfo => DefinitionSchemas.GameInfo.Field(path[0]),
+                    DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter
+                        => DefinitionSchemas.Sections(kind)!.Field(path[0]),
                     DefinitionKind.GamePackInfo => DefinitionSchemas.GamePack,
                     DefinitionKind.Actors => DefinitionSchemas.Actor,
                     DefinitionKind.Animations => DefinitionSchemas.Animation,
@@ -230,7 +233,7 @@ public class FieldNodeGameTests
                 };
 
                 // Act
-                var node = new FieldNode(schema, path[^1], value, null, null, context, isEntry: kind != DefinitionKind.GameInfo);
+                var node = new FieldNode(schema, path[^1], value, null, null, context, isEntry: !DefinitionKinds.IsSections(kind));
                 OpenAll(node);
                 var errors = new List<string>();
                 var built = node.Build(errors);

@@ -15,7 +15,7 @@ public static class YamlFileTypes
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
         "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "statusbar-fullscreen.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
-        "movies.yaml", "factions.yaml", "translations.yaml",
+        "movies.yaml", "factions.yaml", "translations.yaml", "presenter.yaml", "elevator.yaml",
     };
 
     public static bool IsYaml(string entryPath)
@@ -168,6 +168,10 @@ public static class YamlFileTypes
             return DefinitionKind.GameInfo;
         if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/factions.yaml", StringComparison.OrdinalIgnoreCase))
             return DefinitionKind.Factions;
+        if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/elevator.yaml", StringComparison.OrdinalIgnoreCase))
+            return DefinitionKind.Elevator;
+        if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/presenter.yaml", StringComparison.OrdinalIgnoreCase))
+            return DefinitionKind.Presenter;
         if (path.StartsWith("actordefs/", StringComparison.OrdinalIgnoreCase))
             return DefinitionKind.Actors;
         if (path.StartsWith("mapdefs/", StringComparison.OrdinalIgnoreCase))

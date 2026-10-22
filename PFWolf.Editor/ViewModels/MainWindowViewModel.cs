@@ -745,20 +745,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         string folder = GameFolder, game = SelectedGame.Id;
         var mods = Mods.ToList();
+        ArtCache? oldArt = null;
         try
         {
             // The loading thread's steps come back here to be shown
             IProgress<string> progress = new Progress<string>(step => LoadingStep = step);
             var content = await Task.Run(() => GameContent.Load(folder, game, mods, progress.Report));
 
-            var oldArt = Art;
+            oldArt = Art;
             Document = null;
             Controller.Document = null;
             Tiles = null;
             _documents.Clear();
             Content = content;
             Art = new ArtCache(content);
-            oldArt?.Dispose();
 
             Maps.Clear();
             foreach (var map in content.Maps)
@@ -791,6 +791,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             IsLoading = false;
             LoadingStep = "";
+
+            // The old game's pictures go once nothing shows them: the palette keeps its old ones
+            // until it's built again, and the window can draw (and measure them) in between
+            if (oldArt != null && !ReferenceEquals(oldArt, Art))
+                Dispatcher.UIThread.Post(oldArt.Dispose, DispatcherPriority.Background);
         }
     }
 

@@ -113,6 +113,36 @@ public class DefinitionSetGameTests
             Assert.That((merged.Maps[name].Next, merged.Maps[name].Music, merged.Maps[name].ParTime), Is.EqualTo((map.Next, map.Music, map.ParTime)), name);
     }
 
+    [TestCase("blake")]
+    [TestCase("planetstrike")]
+    public void Merged_Elevator_And_Presenter_Read_As_The_Games(string game)
+    {
+        // Arrange: Planet Strike's are blake's with its own over them
+        var content = Load(game);
+
+        // Act
+        var elevatorSet = DefinitionSet.Load(content, DefinitionKind.Elevator);
+        var presenterSet = DefinitionSet.Load(content, DefinitionKind.Presenter);
+        var elevator = YamlDataEntryLoader.DeserializeQuietly<ElevatorAsset>(YamlTree.ToText(elevatorSet.Merged));
+        var presenter = YamlDataEntryLoader.DeserializeQuietly<PresenterAsset>(YamlTree.ToText(presenterSet.Merged));
+
+        // Assert
+        var loadedElevator = content.Assets.FindInGamePack<ElevatorAsset>("elevator")!;
+        var loadedPresenter = content.Assets.FindInGamePack<PresenterAsset>("presenter")!;
+        Assert.That(elevatorSet.Files, Is.Not.Empty);
+        Assert.That(elevatorSet.Files.Concat(presenterSet.Files).Where(file => file.Error != null), Is.Empty);
+        Assert.That((elevator.Style, elevator.Buttons, elevator.UnlockItem, elevator.Prompt),
+            Is.EqualTo((loadedElevator.Style, loadedElevator.Buttons, loadedElevator.UnlockItem, loadedElevator.Prompt)));
+        Assert.That(elevator.ButtonLayout, Is.EqualTo(loadedElevator.ButtonLayout));
+        Assert.That(elevator.Teleporter?.Floors.Count, Is.EqualTo(loadedElevator.Teleporter?.Floors.Count));
+        Assert.That(presenter.Fonts, Is.EqualTo(loadedPresenter.Fonts));
+        Assert.That(presenter.Shapes.Keys, Is.EquivalentTo(loadedPresenter.Shapes.Keys));
+        Assert.That(presenter.MessageBox, Is.EqualTo(loadedPresenter.MessageBox));
+        var noPics = new List<IntermissionPic>();
+        Assert.That(presenter.Briefing with { Pics = noPics }, Is.EqualTo(loadedPresenter.Briefing! with { Pics = noPics }));
+        Assert.That(presenter.Briefing!.Pics.Count, Is.EqualTo(loadedPresenter.Briefing.Pics.Count));
+    }
+
     [TestCase("wolf3d")]
     [TestCase("spear")]
     public void Merged_Factions_Read_As_The_Games(string game)
@@ -166,6 +196,43 @@ public class DefinitionSetGameTests
         // Assert
         Assert.That(set.Files, Has.Count.EqualTo(1));
         Assert.That(set.Entries(baseOnly: true).Select(entry => entry.Name), Is.SupersetOf(new[] { "standalone", "wolf3d", "spear", "wolf3d-shareware" }));
+    }
+
+    [Test]
+    public void A_Mods_Elevator_And_Presenter_Are_Laid_Over_The_Games()
+    {
+        // Arrange
+        var mod = Path.Combine(Path.GetTempPath(), "pfwolf-defs-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(mod);
+        try
+        {
+            var content = Load("blake");
+            var elevatorSet = DefinitionSet.Load(content, DefinitionKind.Elevator);
+            var presenterSet = DefinitionSet.Load(content, DefinitionKind.Presenter);
+            var box = (YamlMappingNode)YamlNodes.Clone(presenterSet.ValueOf(["message-box"], baseOnly: false)!);
+            YamlNodes.Set(box, ["text-color"], new YamlScalarNode("31"));
+
+            // Act
+            DefinitionSaver.Save(elevatorSet.PlanWrite(["message-tics"], new YamlScalarNode("99"), mod));
+            DefinitionSaver.Save(presenterSet.PlanWrite(["message-box"], box, mod));
+            var reloaded = Load("blake", mod);
+
+            // Assert: the mod's root files give only what changed, and the rest stays the game's
+            Assert.That(File.ReadAllText(Path.Combine(mod, "elevator.yaml")), Is.EqualTo("message-tics: 99\n"));
+            Assert.That(File.ReadAllText(Path.Combine(mod, "presenter.yaml")), Does.Not.Contain("width"));
+            var elevator = reloaded.Assets.FindInGamePack<ElevatorAsset>("elevator")!;
+            var presenter = reloaded.Assets.FindInGamePack<PresenterAsset>("presenter")!;
+            var before = content.Assets.FindInGamePack<PresenterAsset>("presenter")!;
+            Assert.That(elevator.MessageTics, Is.EqualTo(99));
+            Assert.That(elevator.ButtonLayout, Is.EqualTo(content.Assets.FindInGamePack<ElevatorAsset>("elevator")!.ButtonLayout));
+            Assert.That(presenter.MessageBox, Is.EqualTo(before.MessageBox! with { TextColor = 31 }));
+            Assert.That(presenter.Fonts, Is.EqualTo(before.Fonts));
+            Assert.That(reloaded.Assets.ModWarnings, Is.Empty);
+        }
+        finally
+        {
+            Directory.Delete(mod, recursive: true);
+        }
     }
 
     [Test]

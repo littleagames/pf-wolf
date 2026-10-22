@@ -389,10 +389,11 @@ public sealed partial class FieldNode : ObservableObject
             case FieldKind.Text or FieldKind.Choice:
             {
                 var text = Text.Trim();
+                // Left as it was: the value itself, spaces round it and an empty one too (Blake Stone's high score names)
+                if (_original is YamlScalarNode original && (original.Value ?? "").Trim() == text)
+                    return YamlNodes.Clone(original);
                 if (text.Length == 0)
                     return IsEntry ? new YamlScalarNode("") : null;
-                if (_original is YamlScalarNode original && original.Value == text)
-                    return YamlNodes.Clone(original);
                 var scalar = Scalar(text, Schema!, errors);
                 // Quoted as it was ("#383838" stays in double quotes), so the file's line changes only in its value
                 if (_original is YamlScalarNode { Style: ScalarStyle.SingleQuoted or ScalarStyle.DoubleQuoted } quoted)

@@ -66,7 +66,7 @@ public class PfWolfPk3Loader
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
         "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "statusbar-fullscreen.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
-        "movies.yaml", "factions.yaml", "translations.yaml",
+        "movies.yaml", "factions.yaml", "translations.yaml", "presenter.yaml", "elevator.yaml",
     };
 
     /// <summary>

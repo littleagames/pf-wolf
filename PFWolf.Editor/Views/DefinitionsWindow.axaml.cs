@@ -48,6 +48,8 @@ public partial class DefinitionsWindow : Window
         Definitions.DefinitionKind.Animations => AnimationsTab,
         Definitions.DefinitionKind.Graphics => GraphicsTab,
         Definitions.DefinitionKind.Factions => FactionsTab,
+        Definitions.DefinitionKind.Elevator => ElevatorTab,
+        Definitions.DefinitionKind.Presenter => PresenterTab,
         _ => MapDefsTab,
     };
 
@@ -61,6 +63,8 @@ public partial class DefinitionsWindow : Window
         : Tabs.SelectedItem == AnimationsTab ? _viewModel.Animations
         : Tabs.SelectedItem == GraphicsTab ? _viewModel.Graphics
         : Tabs.SelectedItem == FactionsTab ? _viewModel.Factions
+        : Tabs.SelectedItem == ElevatorTab ? _viewModel.Elevator
+        : Tabs.SelectedItem == PresenterTab ? _viewModel.Presenter
         : Tabs.SelectedItem == GamePacksTab ? _viewModel.GamePacks
         : null;
 
@@ -69,7 +73,8 @@ public partial class DefinitionsWindow : Window
     {
         if (_viewModel == null || e.Source != Tabs)
             return;
-        foreach (var editor in new[] { _viewModel.GameInfo, _viewModel.Actors, _viewModel.MapDefs, _viewModel.Animations, _viewModel.Graphics, _viewModel.Factions, _viewModel.GamePacks })
+        foreach (var editor in new[] { _viewModel.GameInfo, _viewModel.Actors, _viewModel.MapDefs, _viewModel.Animations, _viewModel.Graphics, _viewModel.Factions,
+                     _viewModel.Elevator, _viewModel.Presenter, _viewModel.GamePacks })
         {
             if (editor != ShownEditor)
                 editor.Deactivate();

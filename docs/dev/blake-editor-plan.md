@@ -207,8 +207,19 @@ as `maps/MAPnn.wad` in a mod and played with F5. As with Wolf3D, the editor neve
   the game and the editor share it. Read-only; fades and sounds aren't previewed. **Checked by
   eye:** the four AOG movies listed and playing.
 
+- **Elevator and Presenter tabs in the Definitions window:** elevator.yaml and presenter.yaml
+  are edited in fields like game-info's (every section, set or not, with its docs), shown only
+  for games that have them. A mod couldn't carry these files before: they're now root files a
+  mod lays over the pack's (elevator.yaml, presenter.yaml), so a save writes only what changed
+  into the mod. **Checked:** DefinitionSetGameTests (the merge reads as the game's for AOG and
+  Planet Strike; a mod's message-tics and message box text color load over the game's),
+  FieldNodeTests round-trip every definition of AOG and Planet Strike; by eye, the two tabs on
+  AOG (button-layout, briefing) and hidden on Wolf3D. Found and fixed on the way: a field left
+  as it was dropped an empty value or the spaces round it (Blake's high-score names), and
+  reloading the game could crash the editor (the old pictures were let go of while the palette
+  still showed them).
+
 ## Follow-up (not this work)
 
-- Field editors for elevator.yaml and presenter.yaml in the Definitions window.
 - Raw data file mods for Blake (docs/dev/raw-data-mods-plan.md): the same generator works for
   `.bs6` and `.vsi` files.
