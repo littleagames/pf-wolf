@@ -1,4 +1,5 @@
-# Playing as one of the enemies: player classes (pfwolf-pk3 actordefs/wolf3d/player.yaml) that
+# Playing as one of the enemies: player classes (the manual's Player classes:
+# https://www.littleagames.com/pf-wolf/docs/latest/manual/player-classes) that
 # look like a Guard, Officer, SS, Mutant or Dog to the other players (and the camera, spectating).
 # Picked in the lobby's "Play as" (game-info.yaml player-classes; class-menu: false keeps them
 # out of single player's new-game menu).

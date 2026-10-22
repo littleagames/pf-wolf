@@ -1,28 +1,8 @@
-# The player's class data. The player actor itself is built in code (Entities.Actors.PlayerPawn,
-# named "Player"); only these properties are read from here.
-#
-# Player classes: a class with `parent: "Player"` overrides only the properties it gives and
-# inherits the rest. game-info's player-classes lists the ones a new game can be played as.
-#   Commando:
-#     parent: "Player"
-#     properties:
-#       "player.maxhealth": 75
-#       "player.damagedealt": 1.25
-#       "player.maxamount":
-#         Clip: 150
+# The player's class. How the player, player classes and the states other players see work is
+# in the manual: https://www.littleagames.com/pf-wolf/docs/latest/manual/player-classes
+# What each property does is in the actor properties reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/actor-properties
 Player:
-  # What other players (and the camera, spectating) see of a player: never placed on the map,
-  # just drawn where the player is (Gameplay/PlayerBodies.cs TickPlayerBodies). Spawn standing still,
-  # See walking, Missile while their weapon fires, Pain (or Pain1, by whether their health is
-  # odd or even) when hurt, Death once dead. A to K turn with the player (8 views); L to O are
-  # seen from the front only. Don't give it a Chase state: that makes an actor an enemy.
-  # The weapon in hand's weapon.bodysprite (weapons.yaml) is drawn in place of the Spawn
-  # sprite, PLMP, wherever a frame uses it: PLKN with the knife, PLPS the pistol, PLCG the
-  # gatling gun. PLMP (the machine gun) is what shows when a weapon doesn't name one (or its
-  # sprite lacks the frame); frames with another sprite (PLAY's death frames) stay the same
-  # whatever's held. A class with states of its own whose Spawn sprite isn't PLMP (looking like
-  # a Guard, say) keeps its sprites whatever it holds; give it every state, as one it leaves out
-  # is Player's.
   states:
     Spawn:
       - sprite: PLMP
@@ -55,45 +35,26 @@ Player:
         frames: [O]
         tics-per-frame: -1
   properties:
-    # The player's name in messages: %o in an obituary
     "tag": "B.J. Blazkowicz"
-    # Played when the player dies, as enemies' deathsound is
     "deathsound": "player/death"
-    # A new game's (and a respawn's) inventory: item: amount. The best weapon given
-    # (lowest weapon.selectionorder) is the one in hand. A BasicArmor class (native.yaml) is put on.
     "player.startitem":
       Knife: 1
       Pistol: 1
       Clip: 8
-    # A new game's (and a respawn's) health, and a new game's lives
     "player.starthealth": 100
     "player.startlives": 3
-    # The most health and lives the player can have. A health item heals up to its own
-    # inventory.maxamount when it has one (blood and gibs only help when nearly dead), else to here.
     "player.maxhealth": 100
     "player.maxlives": 9
-    # Damage factors: the player's attacks do damagedealt times as much, and they take
-    # damagetaken times as much (on top of the skill's damage-taken). Left out: 1.
+    # Left out here, as examples:
     # "player.damagedealt": 1
     # "player.damagetaken": 1
-    # Item caps (item: amount) in place of the items' own inventory.maxamount; any class of
-    # an item type names it (ClipBox for Clip)
     # "player.maxamount":
     #   Clip: 99
-    # Movement speed factors: forwardmove forwards and back, sidemove strafing (left out: 1)
     # "player.forwardmove": 1
     # "player.sidemove": 1
-    # The most armor points the player can have (left out: only each armor's own amount)
     # "player.maxarmor": 200
-    # How high the eyes are standing, in texels (64 a story; left out: 32, half way up)
     # "player.eyeheight": 32
-    # The only weapons the class picks up (or classes descended from them), and only the ammo
-    # they use; every other weapon and ammo stays on the floor. Left out: any.
     # "player.weapons": [Knife, Pistol]
-    # The class's own status bar face, in place of statusbar.yaml's faces by health: a picture,
-    # or a list the face looks around through, at every health (graphicdefs can crop one from a
-    # sprite). facegrin, facedead and faceouch (a hard hit) are shown where given; without them
-    # the face stays. A power-up's face (powerup.face) still comes first. Left out: statusbar.yaml's.
     # "player.face": [GUARDHEAD8, GUARDHEAD1, GUARDHEAD2]
     # "player.facegrin": GUARDSHOOT
     # "player.facedead": GUARDDEAD

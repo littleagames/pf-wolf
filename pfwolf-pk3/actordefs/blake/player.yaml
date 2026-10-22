@@ -1,5 +1,6 @@
-# Blake Stone's player (see actordefs/wolf3d/player.yaml for every property): he starts with the
-# auto charge pistol and 8 charge units (bstone's STARTAMMO).
+# Blake Stone's player (every property is in the actor properties reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/actor-properties): he starts with
+# the auto charge pistol and 8 charge units (bstone's STARTAMMO).
 Player:
   properties:
     "tag": "Blake Stone"
