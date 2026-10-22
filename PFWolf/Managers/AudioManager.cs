@@ -24,7 +24,7 @@ internal class AudioManager
     private readonly ALDevice _device;
     private readonly ALContext _context;
 
-    // Keyed by variant ("digi:NAME", "adlib:NAME", "pc:NAME"), since the same sound can play
+    // Keyed by variant ("Digitized:name", "AdLib:name", ...), since the same sound can play
     // from a different device once one is switched off.
     private readonly Dictionary<string, int> _buffers = [];
     // The running pack's own sound sequences, found on first use (empty when it has none)
@@ -410,36 +410,70 @@ internal class AudioManager
         if (soundProfile == null)
             return null;
 
-        // Best variant first, skipping devices that are switched off. With none left, it's silent.
-        return (_digitizedSoundEnabled ? FindDigitizedBuffer(soundProfile.Digitized) : null)
-            ?? (_adLibSoundEnabled ? FindBuffer<AdLibSound>("adlib", soundProfile.AdLib, CreateBuffer) : null)
-            ?? (_pcSoundEnabled ? FindBuffer<PcSound>("pc", soundProfile.PC, CreateBuffer) : null);
+        // A variant the game hasn't got is normal (Wolf3D has no digitized ammo pickup, so the
+        // AdLib one plays, as id's did); a sound with none of its variants is worth a warning.
+        var game = _assetManager.Value;
+        bool Exists(SoundDevice device, string asset) => device switch
+        {
+            SoundDevice.File => game.Exists<SoundFileAsset>(asset),
+            SoundDevice.Digitized => game.Exists<Wolf3dDigitizedAudio>(asset),
+            SoundDevice.AdLib => game.Exists<AdLibSound>(asset),
+            _ => game.Exists<PcSound>(asset),
+        };
+
+        if (BestVariant(soundProfile, _digitizedSoundEnabled, _adLibSoundEnabled, _pcSoundEnabled, Exists) is { } variant)
+            return FindBuffer(variant.Device, variant.Asset);
+        if (BestVariant(soundProfile, true, true, true, Exists) == null && _reportedSilent.Add(name))
+            WarningLog.Write($"Sound {name} has nothing to play: this game has none of {string.Join(", ",
+                new[] { soundProfile.Digitized, soundProfile.AdLib, soundProfile.PC }.Where(v => !string.IsNullOrWhiteSpace(v)))}");
+        return null;
     }
 
-    // A pk3's sound file (sounds/NAME.ogg) wins over the game's own digitized sound of that name
-    private int? FindDigitizedBuffer(string? assetName)
-        => !string.IsNullOrWhiteSpace(assetName) && _assetManager.Value.Exists<SoundFileAsset>(assetName)
-            ? FindBuffer<SoundFileAsset>("file", assetName, CreateBuffer)
-            : FindBuffer<Wolf3dDigitizedAudio>("digi", assetName, CreateBuffer);
+    /// <summary>Where a sound's variant comes from</summary>
+    internal enum SoundDevice { File, Digitized, AdLib, PC }
 
-    // The cached buffer for one variant of a sound, created on first use; null when the sound
-    // has no such variant.
-    private int? FindBuffer<T>(string device, string? assetName, Func<T, int> createBuffer) where T : Asset
+    /// <summary>
+    /// The variant of a sound that plays: its digitized one (a pk3's sounds/NAME.ogg before the
+    /// game's own digitized sound of that name), else its AdLib one, else its PC speaker one,
+    /// each only with its device switched on and when the game has it. Null: nothing plays.
+    /// </summary>
+    internal static (SoundDevice Device, string Asset)? BestVariant(SoundProfile profile, bool digitized, bool adLib, bool pc,
+        Func<SoundDevice, string, bool> exists)
     {
-        if (string.IsNullOrWhiteSpace(assetName))
-            return null;
+        bool Has(SoundDevice device, string? asset) => !string.IsNullOrWhiteSpace(asset) && exists(device, asset);
 
+        if (digitized && Has(SoundDevice.File, profile.Digitized))
+            return (SoundDevice.File, profile.Digitized!);
+        if (digitized && Has(SoundDevice.Digitized, profile.Digitized))
+            return (SoundDevice.Digitized, profile.Digitized!);
+        if (adLib && Has(SoundDevice.AdLib, profile.AdLib))
+            return (SoundDevice.AdLib, profile.AdLib!);
+        if (pc && Has(SoundDevice.PC, profile.PC))
+            return (SoundDevice.PC, profile.PC!);
+        return null;
+    }
+
+    // The sounds already warned about having nothing to play
+    private readonly HashSet<string> _reportedSilent = new(StringComparer.OrdinalIgnoreCase);
+
+    // The cached buffer for one variant of a sound, created on first use
+    private int? FindBuffer(SoundDevice device, string assetName)
+    {
         var key = $"{device}:{assetName.ToLowerInvariant()}";
         if (_buffers.TryGetValue(key, out var buffer))
             return buffer;
 
-        var sound = _assetManager.Value.Find<T>(assetName);
-        if (sound == null)
-            return null;
-
-        buffer = createBuffer(sound);
-        _buffers[key] = buffer;
-        return buffer;
+        var assets = _assetManager.Value;
+        int? created = device switch
+        {
+            SoundDevice.File => assets.Find<SoundFileAsset>(assetName) is { } file ? CreateBuffer(file) : null,
+            SoundDevice.Digitized => assets.Find<Wolf3dDigitizedAudio>(assetName) is { } digi ? CreateBuffer(digi) : null,
+            SoundDevice.AdLib => assets.Find<AdLibSound>(assetName) is { } adlib ? CreateBuffer(adlib) : null,
+            _ => assets.Find<PcSound>(assetName) is { } speaker ? CreateBuffer(speaker) : null,
+        };
+        if (created is int made)
+            _buffers[key] = made;
+        return created;
     }
 
     // Sources are recycled round-robin, so each play must reset positioning: positional sounds

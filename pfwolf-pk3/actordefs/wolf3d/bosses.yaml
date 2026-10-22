@@ -11,8 +11,8 @@
 #     the engine's general ones here, which any actor can use: T_DodgeChase, T_Strafe,
 #     A_FireProjectile, A_ActiveSound, A_Morph, A_PlaySound.
 #   - The second death frame of Schabbs, Giftmacher, Fettgesicht and Hitler lasts 140 tics,
-#     so the death scream plays out. id's spawners set that only with digitized sound on, and
-#     5 tics without; PFWolf always has digitized sound.
+#     so the digitized death scream plays out. id's spawners set that with digitized sound on,
+#     and 5 tics with it off; PFWolf holds it 140 tics either way.
 # =============================================================================
 
 # -----------------------------------------------------------------------

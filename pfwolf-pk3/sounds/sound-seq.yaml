@@ -53,8 +53,8 @@ sound-info:
     digitized: DSAMMOUP
     adlib: ALAMMOUP
     pc: PCAMMOUP
-  # Spear's ammo box has its own AdLib/PC sound but no digitized one; Wolf3D has no box
-  # sound at all, so its digitized ammo pickup stands in when digitized sound is on.
+  # Spear's ammo box has its own AdLib and PC speaker sounds. Neither game has a digitized ammo
+  # pickup, so DSAMMOUP is for a mod's sounds/DSAMMOUP file; Wolf3D places no ammo box.
   misc/ammobox_pkup:
     digitized: DSAMMOUP
     adlib: ALAMMOBX
