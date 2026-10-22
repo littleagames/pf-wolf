@@ -119,7 +119,11 @@ public record MapUwmfTranslation
 /// </summary>
 public static class MapInfoCodes
 {
-    /// <summary>The next tile's high byte is the ceiling's palette index and its low byte the floor's</summary>
+    /// <summary>
+    /// The next tile's high byte is the ceiling's palette index and its low byte the floor's: the
+    /// first one gives the level its colors, and the player stepping onto one on open floor (its
+    /// own low byte 0) changes them to its
+    /// </summary>
     public const string CeilingFloorColors = "ceiling-floor-colors";
 
     /// <summary>

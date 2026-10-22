@@ -1,7 +1,9 @@
 # Object-plane values that tell the engine about the map rather than placing a thing, keyed by
 # the value's high byte (so 254 is any value from 0xFE00 to 0xFEFF). Each kind:
 #   ceiling-floor-colors:  the tile after it (east) holds the ceiling's palette index in its high
-#                          byte and the floor's in its low byte; game-info's colors for the map win
+#                          byte and the floor's in its low byte; game-info's colors for the map win.
+#                          The player stepping onto one on open floor (exactly the code, low byte 0)
+#                          changes the colors to its, as Blake Stone does on the fly
 #   ceiling-floor-flats:   the tile after it holds the ceiling's flats.yaml index in its high byte
 #                          and the floor's in its low byte, given to every flat plane tile at 0
 #   value:                 not a thing, and nor is the tile after it, which holds its value

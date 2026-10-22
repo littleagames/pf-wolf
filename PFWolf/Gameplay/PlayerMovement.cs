@@ -237,6 +237,9 @@ internal sealed class PlayerMovement(
             Entities.MapTriggerRegistry.Invoke(floorAction, new Entities.TriggerActivation(player.TileX, player.TileY,
                 FacingDir(player.Angle), player, map.GetTag(player.TileX, player.TileY)));
         }
+        // else a map-info colors code there (Blake Stone's): the level's colors change to it
+        else if (player.TileX != oldtilex || player.TileY != oldtiley)
+            map.StepOntoColorsCode(player.TileX, player.TileY);
     }
 
     internal bool TryMove(Entities.Actors.Actor ob)

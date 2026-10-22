@@ -60,7 +60,8 @@ internal static class SaveFile
     // 30: actors' height, fall and suspicion; the player's gun, latch, ride, stealth, kill chain
     //     and timed switches at the end (PlayerSaveState).
     // 31: each level ratio ends with the level's objectives' done and total (the victory tally).
-    internal const int SaveVersion = 31;
+    // 32: the level's own colors (map-info, as last stepped onto) and A_Warp's swap, at the end of the level.
+    internal const int SaveVersion = 32;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

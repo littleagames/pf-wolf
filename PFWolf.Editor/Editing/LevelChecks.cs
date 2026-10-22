@@ -270,10 +270,11 @@ public static class LevelChecks
                         problems.Add(new(CheckSeverity.Warning, $"a {kind} code on the level's east edge has no tile after it for its value", x, y));
                     if (LevelCodes.IsLevelWide(kind))
                     {
-                        if (firstOfKind.ContainsKey(kind))
-                            Count(moreOfKind, kind, x, y);
-                        else
+                        // A later colors code on open floor changes the colors as the player steps onto it
+                        if (!firstOfKind.ContainsKey(kind))
                             firstOfKind[kind] = (x, y);
+                        else if (!tiles.IsWalkOnColors(x, y))
+                            Count(moreOfKind, kind, x, y);
                     }
                     if (MapInfoCodes.HintText(kind) is { } text && tiles.Content.HintMessages(text) is { Count: > 0 } messages
                         && (obj & 0xff) is var number && (number < 1 || number > messages.Count))
@@ -291,11 +292,11 @@ public static class LevelChecks
             }
         }
 
-        // Blake Stone changes the colors as the player walks onto a later one; the game here takes only the first
         foreach (var (kind, (x, y, count)) in moreOfKind)
             problems.Add(new(CheckSeverity.Warning,
                 $"{count} more {kind} {(count == 1 ? "code" : "codes")}: the game takes only the first, at ({firstOfKind[kind].X}, {firstOfKind[kind].Y}), "
-                + "so these do nothing (Blake Stone changes to them as the player walks onto them)", x, y));
+                + "so these do nothing" + (kind.Equals(MapInfoCodes.CeilingFloorColors, StringComparison.OrdinalIgnoreCase)
+                    ? " (one on open floor, its low byte 0, changes the colors as the player steps onto it)" : ""), x, y));
 
         CheckWayOff(tiles, problems, mapName);
     }

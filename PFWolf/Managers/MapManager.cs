@@ -627,15 +627,35 @@ internal class MapManager
     /// </summary>
     internal Dictionary<string, List<MapHint>> Hints { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The map's own ceiling and floor colors (a map-info ceiling-floor-colors code), as palette indices.</summary>
-    internal byte? MapCeilingColor { get; private set; }
-    internal byte? MapFloorColor { get; private set; }
+    /// <summary>
+    /// The map's own ceiling and floor colors, as palette indices: its first map-info
+    /// ceiling-floor-colors code's as it loads, then the last one the player stepped onto
+    /// (<see cref="StepOntoColorsCode"/>). Saved with the level.
+    /// </summary>
+    internal byte? MapCeilingColor { get; set; }
+    internal byte? MapFloorColor { get; set; }
 
     /// <summary>
     /// The level shows game-info's alt-ceiling-color and alt-floor-color now (A_Warp
-    /// "swapcolors"). For the level only: a saved game loads with the first pair.
+    /// "swapcolors"). Saved with the level.
     /// </summary>
     internal bool AltFlatColors { get; set; }
+
+    /// <summary>
+    /// The player stepped onto (x, y): a ceiling-floor-colors code there (exactly the code, its
+    /// low byte 0) gives the level the colors in the tile after it, as Blake Stone changes them
+    /// on the fly (bstone's Thrust)
+    /// </summary>
+    internal void StepOntoColorsCode(int x, int y)
+    {
+        int code = MapSpot(x, y, 1);
+        if (code == 0 || (code & 0xff) != 0 || x + 1 >= MapWidth
+            || !GetMapData().MapInfo.TryGetValue(code >> 8, out var kind) || !kind.Equals(MapInfoCodes.CeilingFloorColors, StringComparison.OrdinalIgnoreCase))
+            return;
+        int value = MapSpot(x + 1, y, 1);
+        MapCeilingColor = (byte)(value >> 8);
+        MapFloorColor = (byte)(value & 0xff);
+    }
 
     /// <summary>
     /// Reads the map-info codes on the object plane (mapdefs map-info): marks their tiles in

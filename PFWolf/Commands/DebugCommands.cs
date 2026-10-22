@@ -76,6 +76,8 @@ internal sealed class DebugCommands(
 
         console.Print($"flats: floor {map.FlatName(x, y, false)}  ceiling {map.FlatName(x, y, true)}  "
             + $"(plane 2: {map.MapSpot(x, y, MapManager.FlatPlane)})");
+        if (map.MapCeilingColor is { } ceiling)
+            console.Print($"the map's own colors (map-info): ceiling {ceiling}  floor {map.MapFloorColor}{(map.AltFlatColors ? "  (swapped for the alt colors)" : "")}");
 
         console.Print($"tags (plane 4): tile {map.GetTag(x, y)}  faced tile {fx},{fy}: {map.GetTag(fx, fy)}");
         console.Print($"faced tile {fx},{fy}: {targets.DescribePatch(map.GetPatch(fx, fy))}");

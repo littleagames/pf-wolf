@@ -151,6 +151,15 @@ public sealed partial class MapTiles : Editing.IObjectPairs
         return null;
     }
 
+    /// <summary>
+    /// A ceiling-floor-colors code (exactly the code, its low byte 0) on open floor, which changes
+    /// the level's colors as the player steps onto it (MapManager.StepOntoColorsCode); the level's
+    /// first code of the kind also gives it its colors as it loads
+    /// </summary>
+    public bool IsWalkOnColors(int x, int y)
+        => this[1, x, y] is var code && (code & 0xff) == 0 && KindAt(x, y) == TileKind.Floor
+           && MapInfoKind(code) is { } kind && kind.Equals(MapInfoCodes.CeilingFloorColors, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>The map-info kind of a code (by its high byte), or null when it isn't one</summary>
     public string? MapInfoKind(int value) => value != 0 && Defs.MapInfo.TryGetValue(value >> 8, out var kind) ? kind : null;
 
@@ -176,7 +185,15 @@ public sealed partial class MapTiles : Editing.IObjectPairs
         int low = obj & 0xff;
         int? next = x + 1 < Width ? this[1, x + 1, y] : null;
         if (kind.Equals(MapInfoCodes.CeilingFloorColors, StringComparison.OrdinalIgnoreCase))
-            return next is { } colors ? $"ceiling color {PaletteText(colors >> 8)}, floor color {PaletteText(colors & 0xff)} (the tile east holds them)" : "colors, but no tile east of it to hold them";
+        {
+            if (next is not { } colors)
+                return "colors, but no tile east of it to hold them";
+            var text = $"ceiling color {PaletteText(colors >> 8)}, floor color {PaletteText(colors & 0xff)} (the tile east holds them)";
+            bool first = Editing.LevelCodes.FirstOfKind(this, kind) == (x, y);
+            return IsWalkOnColors(x, y)
+                ? (first ? "the level's colors, and again as the player steps here: " : "as the player steps here, the colors change to ") + text
+                : first ? text : "not the level's first, and not on open floor, so it does nothing: " + text;
+        }
         if (kind.Equals(MapInfoCodes.CeilingFloorFlats, StringComparison.OrdinalIgnoreCase))
             return next is { } flats ? $"ceiling flat {FlatText(Defs.Flats.Ceiling, flats >> 8)}, floor flat {FlatText(Defs.Flats.Floor, flats & 0xff)} (the tile east holds them)" : "flats, but no tile east of it to hold them";
         if (kind.Equals(MapInfoCodes.TagLink, StringComparison.OrdinalIgnoreCase))

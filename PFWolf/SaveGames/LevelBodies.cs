@@ -13,7 +13,10 @@ internal sealed record LevelBody(
     int LastAttacker,
     byte[] Seen,
     Dictionary<int, ZoneState> Zones,
-    Dictionary<int, ScrollerState> Scrollers);
+    Dictionary<int, ScrollerState> Scrollers,
+    byte? CeilingColor,
+    byte? FloorColor,
+    bool AltFlatColors);
 
 /// <summary>
 /// The level as it stands: written into a save, kept for a hub level that's been left, and sent
@@ -30,8 +33,8 @@ internal sealed class LevelBodies(
     /// <summary>
     /// The level as it stands, as a save holds it and as a hub keeps a level that's been left:
     /// the map and its actors (MapManager.WriteLevelState), then doors, area connections, the
-    /// moving MovingWalls, the player's last attacker, the automap's seen tiles, the light zones and
-    /// the scrollers.
+    /// moving MovingWalls, the player's last attacker, the automap's seen tiles, the light zones,
+    /// the scrollers and the level's own colors (map-info, as stepped onto, and A_Warp's swap).
     /// </summary>
     internal void WriteLevelBody(BinaryWriter bw)
     {
@@ -57,6 +60,11 @@ internal sealed class LevelBodies(
 
         lighting.WriteZoneLights(bw);
         map.Scrollers.Write(bw);
+
+        bw.Write(map.MapCeilingColor.HasValue);
+        bw.Write(map.MapCeilingColor ?? 0);
+        bw.Write(map.MapFloorColor ?? 0);
+        bw.Write(map.AltFlatColors);
     }
 
     internal LevelBody ReadLevelBody(BinaryReader br)
@@ -74,16 +82,19 @@ internal sealed class LevelBodies(
         if (numareas != map.Floors.NumAreas)
             throw new InvalidDataException($"It was saved with {numareas} map areas; this game has {map.Floors.NumAreas}.");
 
-        return new LevelBody(
-            level,
-            doors,
-            AreaConnect: SaveFile.ReadExactly(br, numareas * numareas).ToFixedArray(numareas, numareas),
-            AreaByPlayer: SaveFile.ReadExactly(br, numareas),
-            PushWalls: Enumerable.Range(0, br.ReadCount()).Select(_ => MovingPushWall.Read(br)).ToList(),
-            LastAttacker: br.ReadInt32(),
-            Seen: SaveFile.ReadExactly(br, level.TileMap.Length),
-            Zones: lighting.ReadZoneLights(br),
-            Scrollers: Scrollers.Read(br));
+        var areaConnect = SaveFile.ReadExactly(br, numareas * numareas).ToFixedArray(numareas, numareas);
+        var areaByPlayer = SaveFile.ReadExactly(br, numareas);
+        var pushWallList = Enumerable.Range(0, br.ReadCount()).Select(_ => MovingPushWall.Read(br)).ToList();
+        var lastAttacker = br.ReadInt32();
+        var seen = SaveFile.ReadExactly(br, level.TileMap.Length);
+        var zones = lighting.ReadZoneLights(br);
+        var scrollers = Scrollers.Read(br);
+        bool hasColors = br.ReadBoolean();
+        byte ceiling = br.ReadByte(), floor = br.ReadByte();
+        bool alt = br.ReadBoolean();
+
+        return new LevelBody(level, doors, areaConnect, areaByPlayer, pushWallList, lastAttacker, seen, zones, scrollers,
+            hasColors ? ceiling : null, hasColors ? floor : null, alt);
     }
 
     /// <summary>
@@ -107,6 +118,9 @@ internal sealed class LevelBodies(
 
         session.Areas.AreaConnect = body.AreaConnect;
         session.Areas.AreaByPlayer = body.AreaByPlayer;
+        map.MapCeilingColor = body.CeilingColor;
+        map.MapFloorColor = body.FloorColor;
+        map.AltFlatColors = body.AltFlatColors;
 
         // copies, so a hub level's kept body isn't moved along with the live walls
         pushWalls.MovingWalls.Clear();
