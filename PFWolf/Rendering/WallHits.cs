@@ -205,9 +205,7 @@ internal sealed class WallHits(
             return;
         render.PostSource = doorTextureAsset;
         render.PostOfs = texture;
-        SetLintelPost(door, render.YIntercept, render.XTileStep == -1);
-
-        posts.ScalePost();
+        posts.ScalePost(UnderLintel(door, render.YIntercept, render.XTileStep == -1));
     }
 
     internal void HitHorizDoor()
@@ -230,9 +228,7 @@ internal sealed class WallHits(
             return;
         render.PostSource = doorTextureAsset;
         render.PostOfs = texture;
-        SetLintelPost(door, render.XIntercept, render.YTileStep == 1);
-
-        posts.ScalePost();
+        posts.ScalePost(UnderLintel(door, render.XIntercept, render.YTileStep == 1));
     }
 
     /*
@@ -240,9 +236,10 @@ internal sealed class WallHits(
     =
     = Tall walls
     =
-    = Above the first story, a door is capped by a lintel on the door plane, as tall as the
-    = door tile and textured like the wall the door is set into. It is there whether the door
-    = is shut or not: the trace queues an open door's lintel as it passes through.
+    = Above the first story, a door's tile is capped like an arch (WallPosts.OpenDoorArch): a
+    = lintel flush with the wall the door is set into, as tall as the door tile, with an underside
+    = over the doorway. The trace opens it as it enters the tile, shut door or not; a shut door
+    = ends it at the door plane and is drawn one story high under it.
     =
     ====================
     */
@@ -325,69 +322,27 @@ internal sealed class WallHits(
         return WorldTexture(mapTexture.WallFace(face), tilex, tiley);
     }
 
-    // The lintel column where the trace meets the door plane at along (y for a vertical door, x
-    // for a horizontal one); flip mirrors it like the wall faces seen from the same side
-
-    // Caps the door post being drawn with its lintel (the door texture again if it has no wall)
-    internal void SetLintelPost(DoorObject door, int along, bool flip)
-    {
-        if (render.HitStories == 1)
-            return;
-        var lintel = LintelTexture(door, out bool mirrored);
-        render.UpperSource = lintel ?? render.PostSource;
-        render.UpperOfs = WallPosts.LintelColumn(along, lintel != null && mirrored ? !flip : flip);
-    }
-
     /// <summary>
-    /// Notes the lintel of the door the trace is passing through, meeting its plane at
-    /// (planex, planey), in the column's queue. Nothing to do for a one story door.
+    /// For the shut door the trace just met at its plane, along it at along (y for a vertical door,
+    /// x for a horizontal one): how many of its stories to draw. Under its lintel (the arch the
+    /// trace opened on entering the tile), the arch ends here and the door is one story; with no
+    /// wall to cap it, the door texture carries on up (flip mirrors it as the wall faces seen
+    /// from the same side). 0 draws them all.
     /// </summary>
-    internal void NoteLintel(DoorObject door, int planex, int planey)
+    internal int UnderLintel(DoorObject door, int along, bool flip)
     {
-        int stories = map.WallStories(door.TileX, door.TileY);
-        if (stories == 1)
-            return;
-
-        var texture = LintelTexture(door, out bool mirrored);
-        if (texture == null)
-            return;                     // set into nothing: leave the view above it open
-
-        short height = posts.HeightAt(planex, planey);
-        int ofs = door.Vertical
-            ? WallPosts.LintelColumn(planey, (render.XTileStep == -1) != mirrored)
-            : WallPosts.LintelColumn(planex, (render.YTileStep == 1) != mirrored);
-        posts.QueuePost(height, 1, stories, texture, ofs, texture, ofs, light: posts.WallLight(planex, planey));
-    }
-
-    /// <summary>
-    /// When the view starts inside a door tile, the trace never enters it, so check whether this
-    /// column meets the door plane ahead of the view point.
-    /// </summary>
-    internal void NoteFocalLintel(int xstep, int ystep)
-    {
-        var door = doors.DoorObjList[map.TileMap[render.FocalTx, render.FocalTy] & ~GameConstants.BitDoor];
-        const int HALFTILE = (int)MapConstants.TileGlobal / 2;
-
-        if (door.Vertical)
+        if (render.ArchOpen)
         {
-            int planex = (render.FocalTx << MapConstants.TileShift) + HALFTILE;
-            int dist = (planex - render.ViewX) * render.XTileStep;
-            if (dist <= 0)
-                return;                 // the plane is behind the view
-            int planey = render.ViewY + MathUtils.FixedMul(ystep, dist);
-            if (planey >> MapConstants.TileShift == render.FocalTy)
-                NoteLintel(door, planex, planey);
+            posts.CloseArch(render.XIntercept, render.YIntercept);
+            return 1;
         }
-        else
+        if (render.HitStories > 1)
         {
-            int planey = (render.FocalTy << MapConstants.TileShift) + HALFTILE;
-            int dist = (planey - render.ViewY) * render.YTileStep;
-            if (dist <= 0)
-                return;
-            int planex = render.ViewX + MathUtils.FixedMul(xstep, dist);
-            if (planex >> MapConstants.TileShift == render.FocalTx)
-                NoteLintel(door, planex, planey);
+            var lintel = LintelTexture(door, out bool mirrored);
+            render.UpperSource = lintel ?? render.PostSource;
+            render.UpperOfs = WallPosts.LintelColumn(along, lintel != null && mirrored ? !flip : flip);
         }
+        return 0;
     }
 
     /*

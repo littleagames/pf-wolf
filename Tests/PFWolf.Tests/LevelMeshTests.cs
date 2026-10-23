@@ -236,6 +236,47 @@ public class LevelMeshTests
     }
 
     [Test]
+    public void A_Lintel_Is_Flush_With_The_Wall_With_An_Underside_Over_The_Doorway()
+    {
+        // Arrange: a 2-story horizontal door between two walls
+        var document = Room();
+        EditorMaps.Set(document, 0, 9, 10, Wall);
+        EditorMaps.Set(document, 0, 11, 10, Wall);
+        EditorMaps.Set(document, 0, 10, 10, HorizontalDoor);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 2);
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert: the lintels on the tile's north and south edges, not the door plane, and under
+        // them the face of the wall beside the door that looks into the doorway, one story up
+        var north = At(mesh, SurfaceKind.Door, 10, 10, Face.North).Single(s => s.Points.Min(p => p.Y) == 1);
+        var south = At(mesh, SurfaceKind.Door, 10, 10, Face.South).Single(s => s.Points.Min(p => p.Y) == 1);
+        Assert.That(north.Points.All(p => p.Z == 10));
+        Assert.That(south.Points.All(p => p.Z == 11));
+        var underside = At(mesh, SurfaceKind.Door, 10, 10, Face.Bottom).Single();
+        Assert.That(underside.Points.All(p => p.Y == 1));
+        Assert.That(underside.Texture.Name, Is.EqualTo("WALLEW"));
+        Assert.That(Vector3.Dot(underside.Normal, -Vector3.UnitY), Is.EqualTo(1).Within(1e-5));
+    }
+
+    [Test]
+    public void A_Door_Set_Into_No_Wall_Carries_On_Up()
+    {
+        // Arrange: a 2-story door standing alone in the room
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, HorizontalDoor);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 2);
+
+        // Act
+        var door = At(Build(document), SurfaceKind.Door, 10, 10).ToList();
+
+        // Assert: the door texture up to story 2 on the door plane, and no underside
+        Assert.That(door.Where(s => s.Points.Min(p => p.Y) == 1).All(s => s.Texture.Name == "DOOR" && s.Points.All(p => p.Z == 10.5f)));
+        Assert.That(door.Any(s => s.Ref.Face == Face.Bottom), Is.False);
+    }
+
+    [Test]
     public void Floors_Face_Up_And_Ceilings_Down_At_The_Level_Height()
     {
         // Arrange

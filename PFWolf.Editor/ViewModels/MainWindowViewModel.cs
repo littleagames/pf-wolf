@@ -1965,6 +1965,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             SurfaceKind.Wall when surface.Ref.Face == Face.Top => "top of the wall",
             SurfaceKind.Wall => $"{surface.Ref.Face.ToString().ToLowerInvariant()} face",
+            SurfaceKind.Door when surface.Ref.Face == Face.Bottom => "under the door's lintel",
+            SurfaceKind.Door when surface.Ref.Face == Face.Top => "top of the door's lintel",
             SurfaceKind.Door => $"door, {surface.Ref.Face.ToString().ToLowerInvariant()} side",
             SurfaceKind.Floor => "floor",
             SurfaceKind.Ceiling => "ceiling",

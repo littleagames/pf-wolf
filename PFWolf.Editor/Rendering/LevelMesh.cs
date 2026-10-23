@@ -215,8 +215,9 @@ public sealed class LevelMesh
                         break;
 
                     case TileKind.Door:
-                        AddDoor(x, y);
-                        AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceiling, null);
+                        bool lintel = AddDoor(x, y, ceilingColor);
+                        // A lintel at least as high as the ceiling hides it, as an arch does
+                        AddFloorAndCeiling(x, y, floorColor, ceilingColor, !lintel || _tiles.Stories(x, y) < ceiling ? ceiling : null, null);
                         break;
 
                     case TileKind.Unknown:
@@ -508,10 +509,12 @@ public sealed class LevelMesh
     // Doors
     //
 
-    private void AddDoor(int x, int y)
+    /// <summary>A door, and above its first story the lintel over it; true when that's capped like an arch (<see cref="AddLintel"/>)</summary>
+    private bool AddDoor(int x, int y, Vector4 ceilingColor)
     {
         var door = _tiles.Door(x, y)!;
         int stories = _tiles.Stories(x, y);
+        bool lintel = stories > 1 && AddLintel(x, y, door.Vertical, stories, ceilingColor);
 
         if (door.Vertical)
         {
@@ -521,13 +524,12 @@ public sealed class LevelMesh
             Vector4 westLight = FaceLight(x, y, Face.West), eastLight = FaceLight(x, y, Face.East);
             AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 0, 1, DoorFace(door, x, y, "west"), westLight);
             AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 0, 1, DoorFace(door, x, y, "east"), eastLight, 1, 0);
-            if (stories > 1)
+            if (stories > 1 && !lintel)
             {
-                var fallback = DoorFace(door, x, y, "west");
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories,
-                    LintelTexture(x, y, true, "west") ?? fallback, westLight);
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories,
-                    LintelTexture(x, y, true, "east") ?? fallback, eastLight);
+                // Set into no wall: the door carries on up (WallHits.UnderLintel)
+                var texture = DoorFace(door, x, y, "west");
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories, texture, westLight);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories, texture, eastLight);
             }
         }
         else
@@ -536,15 +538,60 @@ public sealed class LevelMesh
             Vector4 northLight = FaceLight(x, y, Face.North), southLight = FaceLight(x, y, Face.South);
             AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 0, 1, DoorFace(door, x, y, "north"), northLight, 1, 0);
             AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 0, 1, DoorFace(door, x, y, "south"), southLight);
-            if (stories > 1)
+            if (stories > 1 && !lintel)
             {
-                var fallback = DoorFace(door, x, y, "north");
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories,
-                    LintelTexture(x, y, false, "north") ?? fallback, northLight);
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories,
-                    LintelTexture(x, y, false, "south") ?? fallback, southLight);
+                var texture = DoorFace(door, x, y, "north");
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories, texture, northLight);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories, texture, southLight);
             }
         }
+        return lintel;
+    }
+
+    /// <summary>
+    /// Above a door's first story, its tile capped like an arch (WallPosts.OpenDoorArch): on its
+    /// open sides a lintel flush with the wall the door is set into, and an underside over the
+    /// doorway, from its ceiling flat or else the wall beside it; false when it's set into no wall
+    /// </summary>
+    private bool AddLintel(int x, int y, bool vertical, int stories, Vector4 ceilingColor)
+    {
+        Face[] open = vertical ? [Face.West, Face.East] : [Face.North, Face.South];
+        var faces = open.Select(face => (Face: face, Texture: LintelTexture(x, y, vertical, FaceName(face)))).ToList();
+        if (faces.All(face => face.Texture == null))
+            return false;
+
+        foreach (var (face, texture) in faces)
+        {
+            var (nx, ny) = Step(x, y, face);
+            if (texture == null || !InMap(nx, ny))
+                continue;
+
+            // Hidden by an arch or wall in front as tall, as an arch's face
+            float bottom = 1;
+            if (_tiles.IsArch(nx, ny) || _tiles.KindAt(nx, ny) == TileKind.Wall && CoversEdge(nx, ny, Opposite(face)))
+            {
+                bottom = Math.Max(1, _tiles.Stories(nx, ny));
+                if (bottom >= stories)
+                    continue;
+            }
+
+            var (a, b) = Edge(x, y, face);
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, face), a, b, bottom, stories, texture, Light(nx, ny));
+        }
+
+        // The face of the wall beside the door that looks into the doorway (WallPosts.DoorArchUndersideTexture)
+        var underside = (vertical
+            ? _tiles.Wall(x, y - 1)?.WallFace("south") ?? _tiles.Wall(x, y + 1)?.WallFace("north")
+            : _tiles.Wall(x - 1, y)?.WallFace("east") ?? _tiles.Wall(x + 1, y)?.WallFace("west"))
+            ?? faces.First(face => face.Texture != null).Texture!;
+        var light = Light(x, y);
+        float undersideStories = TextureStories(underside);
+        var topTexture = Texture(underside);
+        var flat = _tiles.ArchCeilingFlat(x, y);
+        AddFlat(new SurfaceRef(SurfaceKind.Door, x, y, Face.Bottom), Corners(x, y), 1, up: false,
+            flat != null ? Flat(flat, ceilingColor) : topTexture, light, flat != null ? 1 : undersideStories);
+        AddFlat(new SurfaceRef(SurfaceKind.Door, x, y, Face.Top), Corners(x, y), stories, up: true, topTexture, TopShade * light, undersideStories);
+        return true;
     }
 
     /// <summary>

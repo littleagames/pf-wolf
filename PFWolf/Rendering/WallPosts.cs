@@ -49,10 +49,11 @@ internal sealed class WallPosts(
     }
 
 
-    internal void ScalePost()
+    // drawn: how many stories to draw, if not all HitStories (a door under its lintel draws one)
+    internal void ScalePost(int drawn = 0)
     {
         var upper = render.UpperSource ?? render.PostSource;
-        QueuePost(render.PostHeight, 0, render.HitStories, render.PostSource, render.PostOfs, upper, render.UpperSource != null ? render.UpperOfs : render.PostOfs,
+        QueuePost(render.PostHeight, 0, drawn > 0 ? drawn : render.HitStories, render.PostSource, render.PostOfs, upper, render.UpperSource != null ? render.UpperOfs : render.PostOfs,
             patch: render.PatchSource, patchofs: render.PatchOfs, patchstory: render.PatchStory, scrollrow: render.ScrollRow);
         render.UpperSource = null;
         render.PatchSource = null;
@@ -185,7 +186,8 @@ internal sealed class WallPosts(
     = second story up to that height, that can be walked under. The trace opens one as it
     = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
     = Its faces take the texture of a wall beside it, and its underside the tile's ceiling flat
-    = (a non-zero flat-plane ceiling index), else the wall's texture too.
+    = (a non-zero flat-plane ceiling index), else the wall's texture too. A door's tile above
+    = one story is capped the same way, its lintel flush with the wall the door is set into.
     =
     ====================
     */
@@ -203,16 +205,54 @@ internal sealed class WallPosts(
         // else at either end of the run across it (a face on the end of a run, entered along it)
         int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
         var face = SeenFace(vertical);
-        render.ArchTexture = ArchEndTexture(tilex, tiley, -dx, -dy, face, out bool mirrored) ?? ArchEndTexture(tilex, tiley, dx, dy, face, out mirrored)
+        var texture = ArchEndTexture(tilex, tiley, -dx, -dy, face, out bool mirrored) ?? ArchEndTexture(tilex, tiley, dx, dy, face, out mirrored)
             ?? ArchEndTexture(tilex, tiley, -dy, -dx, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dy, dx, face, out mirrored);
-        if (render.ArchTexture == null)
+        if (texture == null)
             return;                     // nothing to texture it from: leave it open
 
+        StartArch(tilex, tiley, map.StoryMap[tilex, tiley], texture, mirrored, ArchUndersideTexture(tilex, tiley), edgex, edgey, vertical);
+    }
+
+    /// <summary>
+    /// The trace enters a door tile at (TileX, TileY) as OpenArch enters an arch. Above the first
+    /// story, a door is capped like an arch: faces flush with the wall the door is set into (the
+    /// lintel) and an underside over the doorway, up to where the trace leaves the tile or meets a
+    /// shut door (WallHits.HitVertDoor). doorVertical: the door runs north to south.
+    /// </summary>
+    internal void OpenDoorArch(int tilex, int tiley, bool doorVertical, int edgex, int edgey, bool vertical)
+    {
+        int stories = map.WallStories(tilex, tiley);
+        if (stories == 1)
+            return;
+
+        // the wall on either side in line with the door
+        int dx = doorVertical ? 0 : 1, dy = doorVertical ? 1 : 0;
+        var face = SeenFace(vertical);
+        var texture = wallTexture(tilex - dx, tiley - dy, face, out bool mirrored) ?? wallTexture(tilex + dx, tiley + dy, face, out mirrored);
+        if (texture == null)
+            return;                     // set into nothing: a shut door carries on up (WallHits.SetLintelPost)
+
+        StartArch(tilex, tiley, stories, texture, mirrored, DoorArchUndersideTexture(tilex, tiley, doorVertical), edgex, edgey, vertical);
+    }
+
+    /// <summary>
+    /// The texture under a door's lintel, the same whichever way the trace enters: the face of the
+    /// wall beside the door that looks into the doorway, as the wall above its jamb shows it
+    /// </summary>
+    internal TextureAsset? DoorArchUndersideTexture(int tilex, int tiley, bool doorVertical) => doorVertical
+        ? wallTexture(tilex, tiley - 1, "south", out _) ?? wallTexture(tilex, tiley + 1, "north", out _)
+        : wallTexture(tilex - 1, tiley, "east", out _) ?? wallTexture(tilex + 1, tiley, "west", out _);
+
+    // Opens an arch stories high on (TileX, TileY), its face texture entered across (edgex, edgey)
+    void StartArch(int tilex, int tiley, int stories, TextureAsset texture, bool mirrored, TextureAsset? underside,
+        int edgex, int edgey, bool vertical)
+    {
+        render.ArchTexture = texture;
         render.ArchOpen = true;
         render.ArchLight = WallLight(edgex, edgey);
-        render.ArchUnderside = ArchUndersideTexture(tilex, tiley) ?? render.ArchTexture;
+        render.ArchUnderside = underside ?? texture;
         UseArchCeilingFlat(tilex, tiley);
-        render.ArchStories = map.StoryMap[tilex, tiley];
+        render.ArchStories = stories;
         render.ArchHeight = HeightAt(edgex, edgey);
         render.ArchOfs = vertical
             ? LintelColumn(edgey, (render.XTileStep == -1) != mirrored)
@@ -261,16 +301,27 @@ internal sealed class WallPosts(
     }
 
     // The view starts under an arch: there's no face, only the underside from above the view
-    internal void OpenFocalArch()
+    internal void OpenFocalArch() =>
+        StartFocalArch(map.StoryMap[render.FocalTx, render.FocalTy], ArchUndersideTexture(render.FocalTx, render.FocalTy));
+
+    // The view starts in a door's tile, under its lintel (OpenDoorArch)
+    internal void OpenFocalDoorArch(bool doorVertical)
     {
-        render.ArchUnderside = ArchUndersideTexture(render.FocalTx, render.FocalTy);
+        int stories = map.WallStories(render.FocalTx, render.FocalTy);
+        if (stories > 1)
+            StartFocalArch(stories, DoorArchUndersideTexture(render.FocalTx, render.FocalTy, doorVertical));
+    }
+
+    void StartFocalArch(int stories, TextureAsset? underside)
+    {
+        render.ArchUnderside = underside;
         if (render.ArchUnderside == null)
             return;                     // as OpenArch: nothing to texture it from
         UseArchCeilingFlat(render.FocalTx, render.FocalTy);
         render.ArchTexture = render.NoTexture;
         render.ArchOpen = true;
         render.ArchLight = lighting.LightAt(render.HitTile, render.ViewX, render.ViewY);
-        render.ArchStories = map.StoryMap[render.FocalTx, render.FocalTy];
+        render.ArchStories = stories;
         render.ArchHeight = short.MaxValue;
         render.ArchOfs = 0;
     }

@@ -162,7 +162,7 @@ internal sealed class RayTrace(
             }
             else if ((map.TileMap[render.FocalTx, render.FocalTy] & GameConstants.BitDoor) != 0)
             {
-                hits.NoteFocalLintel(xstep, ystep);
+                posts.OpenFocalDoorArch(doors.DoorObjList[map.TileMap[render.FocalTx, render.FocalTy] & ~GameConstants.BitDoor].Vertical);
             }
             else if (posts.IsArch(render.FocalTx, render.FocalTy))
             {
@@ -240,13 +240,12 @@ internal sealed class RayTrace(
                 // intersected at, and check to see if the door is open past that point
                 //
                 var door = doors.DoorObjList[render.TileHit & ~GameConstants.BitDoor];
+                posts.OpenDoorArch(render.XTile, render.YIntTile, door.Vertical, posts.VertEdge, render.YIntercept, true);
                 yinttemp = render.YIntercept + (ystep >> 1);    // add halfstep to current intercept position
                 int planex = (int)((render.XTile << (int)MapConstants.TileShift) + (MapConstants.TileGlobal / 2));
 
                 if (door.Action == DoorAction.Open)
                 {
-                    if (yinttemp >> MapConstants.TileShift == render.YIntTile)
-                        hits.NoteLintel(door, planex, yinttemp);
                     PassVert(ystep); // door is open, continue tracing
                     return false;
                 }
@@ -268,7 +267,6 @@ internal sealed class RayTrace(
                     //
                     if (door.OpenAt(yinttemp))
                     {
-                        hits.NoteLintel(door, planex, yinttemp);
                         PassVert(ystep);
                         return false;
                     }
@@ -485,13 +483,12 @@ internal sealed class RayTrace(
                 // intersected at, and check to see if the door is open past that point
                 //
                 var door = doors.DoorObjList[render.TileHit & ~GameConstants.BitDoor];
+                posts.OpenDoorArch(render.XIntTile, render.YTile, door.Vertical, render.XIntercept, posts.HorizEdge, false);
                 xinttemp = render.XIntercept + (xstep >> 1);    // add half step to current intercept position
                 int planey = (int)((render.YTile << (int)MapConstants.TileShift) + (MapConstants.TileGlobal / 2));
 
                 if (door.Action == (byte)DoorAction.Open)
                 {
-                    if ((xinttemp >> MapConstants.TileShift) == render.XIntTile)
-                        hits.NoteLintel(door, xinttemp, planey);
                     PassHoriz(xstep); // door is open, continue tracing
                     return false;
                 }
@@ -513,7 +510,6 @@ internal sealed class RayTrace(
                     //
                     if (door.OpenAt(xinttemp))
                     {
-                        hits.NoteLintel(door, xinttemp, planey);
                         PassHoriz(xstep);
                         return false;
                     }
