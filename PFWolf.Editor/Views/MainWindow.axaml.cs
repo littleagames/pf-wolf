@@ -657,7 +657,7 @@ public partial class MainWindow : Window, IEditorDialogs
         [PFWolf.Loaders.DataFileKind.AudioHed] = "where each sound is in AUDIOT (about 1 KB)",
         [PFWolf.Loaders.DataFileKind.AudioT] = "PC speaker and AdLib sounds, and the music",
         [PFWolf.Loaders.DataFileKind.MapHead] = "where each level is in GAMEMAPS (about 400 bytes)",
-        [PFWolf.Loaders.DataFileKind.GameMaps] = "the levels (starts with TED5v1.0)",
+        [PFWolf.Loaders.DataFileKind.GameMaps] = "the levels (starts with TED5v1.0, WDC or CED, the editor that saved it)",
     };
 
     /// <summary>

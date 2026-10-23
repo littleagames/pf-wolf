@@ -399,6 +399,22 @@ public class RawDataModGeneratorTests
         Assert.That(content.Palette[5], Is.EqualTo(new PaletteColor(0, 0, 255)).Using<PaletteColor>((a, b) => a.Red == b.Red && a.Green == b.Green && a.Blue == b.Blue));
     }
 
+    [TestCase("TED5v1.0")]
+    [TestCase("WDC3.1")]
+    [TestCase("CED0.7:Mapfile was edited with ChaosEdit (www.chaos-software.de.vu)")]
+    public void Levels_Are_Told_By_The_Banner_Of_The_Editor_That_Saved_Them(string banner)
+    {
+        // Arrange
+        var file = Path.Combine(_workFolder, "FOXTROT7.WL6");
+        File.WriteAllBytes(file, [.. System.Text.Encoding.ASCII.GetBytes(banner), .. new byte[256]]);
+
+        // Act
+        var guesses = DataFileSniffer.Guess([file]);
+
+        // Assert
+        Assert.That(guesses, Is.EquivalentTo(new Dictionary<DataFileKind, string> { [DataFileKind.GameMaps] = file }));
+    }
+
     [Test]
     [Category("GameData")]
     public void Data_Files_Named_Anything_Are_Told_Apart_By_What_Is_In_Them()
