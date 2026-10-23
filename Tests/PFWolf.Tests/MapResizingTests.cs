@@ -1,5 +1,7 @@
+using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Editor.Editing;
+using PFWolf.Editor.ViewModels;
 
 namespace PFWolf.Tests;
 
@@ -119,5 +121,50 @@ public class MapResizingTests
         Assert.That(map.MapData[0][39 * 90 + 89], Is.EqualTo(1));
         Assert.That(map.MapData[0][20 * 90 + 45], Is.EqualTo(107));
         Assert.That(map.MapData[5], Has.Length.EqualTo(90 * 40));
+    }
+
+    [Test]
+    public void The_Size_Fields_Start_On_The_Level_And_Keep_The_Middle()
+    {
+        // Act
+        var size = new MapSizeViewModel(64, 64);
+
+        // Assert
+        Assert.That(size.IsChanged, Is.False);
+        Assert.That(size.Anchor, Is.EqualTo(MapAnchor.Center));
+        Assert.That(size.Build(), Is.EqualTo((64, 64)));
+    }
+
+    [Test]
+    public void The_Size_Fields_Take_A_Non_Square_Size_And_An_Anchor()
+    {
+        // Arrange
+        var size = new MapSizeViewModel(64, 64);
+
+        // Act
+        size.Width = 128;
+        size.Height = 40;
+        size.AnchorIndex = (int)MapAnchor.TopRight;
+
+        // Assert
+        Assert.That(size.IsChanged, Is.True);
+        Assert.That(size.Build(), Is.EqualTo((128, 40)));
+        Assert.That(size.Anchor, Is.EqualTo(MapAnchor.TopRight));
+        Assert.That(size.Summary, Does.Contain("128x40").And.Contain("top-right"));
+    }
+
+    [Test]
+    public void The_Properties_Dialog_Refuses_A_Size_Past_The_Limits()
+    {
+        // Arrange
+        var size = new MapSizeViewModel(64, 64) { Width = 300 };
+        var dialog = new MapPropertiesViewModel("MAP01", new MapProperties(), new DefaultMapInfo(), [], [], size: size);
+
+        // Act
+        var properties = dialog.Build();
+
+        // Assert
+        Assert.That(properties, Is.Null);
+        Assert.That(dialog.Error, Does.Contain("256"));
     }
 }

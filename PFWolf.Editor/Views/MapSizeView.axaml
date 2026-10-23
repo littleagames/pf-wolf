@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PFWolf.Editor.ViewModels"
+             x:Class="PFWolf.Editor.Views.MapSizeView"
+             x:DataType="vm:MapSizeViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="ListBox.anchors ListBoxItem">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="1" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="Auto,24,*" RowDefinitions="Auto,Auto">
+    <Grid ColumnDefinitions="Auto,8,110,16,Auto,8,110" VerticalAlignment="Top">
+      <TextBlock Grid.Column="0" Text="Width" VerticalAlignment="Center" />
+      <NumericUpDown Grid.Column="2" Value="{Binding Width}" Minimum="{x:Static vm:MapSizeViewModel.Minimum}"
+                     Maximum="{x:Static vm:MapSizeViewModel.Maximum}" Increment="1" FormatString="0"
+                     ToolTip.Tip="Tiles west to east (3 to 256)" />
+      <TextBlock Grid.Column="4" Text="Height" VerticalAlignment="Center" />
+      <NumericUpDown Grid.Column="6" Value="{Binding Height}" Minimum="{x:Static vm:MapSizeViewModel.Minimum}"
+                     Maximum="{x:Static vm:MapSizeViewModel.Maximum}" Increment="1" FormatString="0"
+                     ToolTip.Tip="Tiles north to south (3 to 256)" />
+    </Grid>
+
+    <StackPanel Grid.Column="2" Spacing="4" IsEnabled="{Binding IsChanged}">
+      <TextBlock Text="Keep in place" Opacity="0.7" FontSize="12" />
+      <ListBox Classes="anchors" ItemsSource="{x:Static vm:MapSizeViewModel.AnchorGlyphs}" SelectedIndex="{Binding AnchorIndex}"
+               HorizontalAlignment="Left" Background="Transparent"
+               ToolTip.Tip="Which corner, edge or the middle of the level stays where it is: the level grows or is cut off on the other sides">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Columns="3" />
+          </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+      </ListBox>
+    </StackPanel>
+
+    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Summary}" TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,6,0,0" />
+  </Grid>
+</UserControl>

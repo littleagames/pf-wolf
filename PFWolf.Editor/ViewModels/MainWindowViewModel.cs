@@ -182,7 +182,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private MapTiles? _tiles;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(WindowTitle))]
+    [NotifyPropertyChangedFor(nameof(WindowTitle), nameof(LevelSize))]
     [NotifyCanExecuteChangedFor(nameof(UndoCommand), nameof(RedoCommand), nameof(SaveCommand), nameof(SaveAsCommand),
         nameof(PlayCommand), nameof(PlayHereCommand))]
     private MapDocument? _document;
@@ -732,6 +732,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ? "PFWolf Editor"
         : $"{Document.AssetName.ToUpperInvariant()}{(Document.IsDirty ? " *" : "")} - PFWolf Editor";
 
+    /// <summary>The level's width x height, at the status bar's end; empty with no level open</summary>
+    public string LevelSize => Document is { } document ? $"{document.Width} × {document.Height}" : "";
+
     private IEnumerable<MapDocument> DirtyDocuments => _documents.Values.Where(document => document.IsDirty);
 
     /// <summary>Loads the game in the game folder, with the mods, and shows its first level</summary>
@@ -851,6 +854,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (LevelCodesExpanded && ReferenceEquals(document, Document))
             RefreshLevelCodes();
         OnPropertyChanged(nameof(WindowTitle));
+        OnPropertyChanged(nameof(LevelSize));
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
         if (_hover3D is var (hit, target))
@@ -1646,8 +1650,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (Document is not { } document || Content is not { } content || Dialogs == null)
             return;
 
+        var size = new MapSizeViewModel(document.Width, document.Height);
         var dialog = new MapPropertiesViewModel(document.AssetName.ToUpperInvariant(), document.Properties, content.DefaultMapInfo,
-            content.MusicNames, Maps.Select(map => map.Name.ToUpperInvariant()).ToList(), content.WeatherNames);
+            content.MusicNames, Maps.Select(map => map.Name.ToUpperInvariant()).ToList(), content.WeatherNames, size);
         if (!await Dialogs.EditProperties(dialog) || dialog.Build() is not { } properties)
             return;
 
@@ -1656,6 +1661,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             document.SetProperties(properties);
             Status = "Changed the level properties: saving the level writes them into the mod's game-info.yaml";
         }
+        if (size.IsChanged)
+            Resize(document, content, size);
         OnPropertyChanged(nameof(PlaneHint));
     }
 
@@ -1669,24 +1676,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (Document is not { } document || Content is not { } content || Dialogs == null)
             return;
 
-        var sizeText = await Dialogs.AskText("Resize level",
-            $"New size, width x height ({MapConstants.MinMapSize} to {MapConstants.MaxMapSize} tiles each way). It's {document.Width}x{document.Height} now:",
-            $"{document.Width}x{document.Height}", MapResizing.CheckSize);
-        if (sizeText == null || MapResizing.ParseSize(sizeText) is not var (width, height))
-            return;
+        var size = new MapSizeViewModel(document.Width, document.Height);
+        if (await Dialogs.AskResize(document.AssetName.ToUpperInvariant(), size) && size.IsChanged)
+            Resize(document, content, size);
+    }
 
-        var anchorText = await Dialogs.AskText("Resize level",
-            $"What stays where it is: {string.Join(", ", MapResizing.AnchorNames)}:", "center",
-            text => MapResizing.ParseAnchor(text) == null ? $"One of {string.Join(", ", MapResizing.AnchorNames)}." : null);
-        if (anchorText == null || MapResizing.ParseAnchor(anchorText) is not { } anchor)
-            return;
-        if (width == document.Width && height == document.Height)
-            return;
-
+    private void Resize(MapDocument document, GameContent content, MapSizeViewModel size)
+    {
+        var (width, height) = size.Build();
         var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MaxWallId).DefaultIfEmpty(1).Min());
         SelectNone();
-        document.Resize($"Resize to {width}x{height}", width, height, MapResizing.Resized(document.Map, width, height, anchor, wall),
-            document.Map.ExtraThings.Count > 0 ? MapResizing.ResizedExtras(document.Map, width, height, anchor) : null);
+        document.Resize($"Resize to {width}x{height}", width, height, MapResizing.Resized(document.Map, width, height, size.Anchor, wall),
+            document.Map.ExtraThings.Count > 0 ? MapResizing.ResizedExtras(document.Map, width, height, size.Anchor) : null);
         FitView();
         Status = $"Resized {document.AssetName.ToUpperInvariant()} to {width}x{height} (Undo puts it back); new tiles are wall";
     }

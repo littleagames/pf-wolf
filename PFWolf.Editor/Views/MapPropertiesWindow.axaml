@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:views="using:PFWolf.Editor.Views"
         x:Class="PFWolf.Editor.Views.MapPropertiesWindow"
         x:DataType="vm:MapPropertiesViewModel"
         Title="{Binding Title}"
@@ -51,6 +52,13 @@
           <TextBlock Classes="label" Grid.Row="4" Text="Par time (seconds)" />
           <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ParTime}" />
         </Grid>
+
+        <StackPanel IsVisible="{Binding HasSize}" Spacing="4">
+          <TextBlock Classes="heading" Text="Size (tiles)" />
+          <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12"
+                     Text="Part of the level itself, not game-info: OK resizes it (Level → Resize level…, Ctrl+R, does just this)." />
+          <views:MapSizeView DataContext="{Binding Size}" />
+        </StackPanel>
 
         <TextBlock Classes="heading" Text="How it looks" />
         <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">

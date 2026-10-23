@@ -821,6 +821,39 @@ public partial class MainWindow : Window, IEditorDialogs
         return answer;
     }
 
+    public async Task<bool> AskResize(string levelName, MapSizeViewModel size)
+    {
+        var error = new TextBlock { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap, IsVisible = false };
+        var ok = new Button { Content = "Resize", IsDefault = true, Classes = { "accent" } };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        var dialog = MakeDialog($"Resize {levelName}", new StackPanel
+        {
+            Spacing = 12,
+            Children = { new MapSizeView { DataContext = size }, error, Buttons(ok, cancel) },
+        });
+        dialog.Width = 520;
+
+        var answer = false;
+        ok.Click += (_, _) =>
+        {
+            try
+            {
+                size.Build();
+                answer = true;
+                dialog.Close();
+            }
+            catch (FormatException e)
+            {
+                error.Text = char.ToUpperInvariant(e.Message[0]) + e.Message[1..] + ".";
+                error.IsVisible = true;
+            }
+        };
+        cancel.Click += (_, _) => dialog.Close();
+
+        await dialog.ShowDialog(DialogOwner);
+        return answer;
+    }
+
     public async Task<UnsavedChoice> AskUnsaved(string message)
     {
         var save = new Button { Content = "Save", IsDefault = true, Classes = { "accent" } };

@@ -98,6 +98,9 @@ public interface IEditorDialogs
     /// <summary>Asks a level code's questions (its value, floor, hint, target); null when cancelled</summary>
     Task<CodeAnswer?> AskCode(CodeForm form);
 
+    /// <summary>Asks for the level's new width and height and what stays in place; true when it's closed with a size that builds</summary>
+    Task<bool> AskResize(string levelName, MapSizeViewModel size);
+
     /// <summary>Shows the level properties dialog; true when it's closed with OK (and the properties build)</summary>
     Task<bool> EditProperties(MapPropertiesViewModel properties);
 

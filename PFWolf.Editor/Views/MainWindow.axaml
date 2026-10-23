@@ -19,6 +19,7 @@
     <KeyBinding Gesture="Ctrl+I" Command="{Binding ImportMapCommand}" />
     <KeyBinding Gesture="Ctrl+H" Command="{Binding ReplaceCommand}" />
     <KeyBinding Gesture="F4" Command="{Binding EditPropertiesCommand}" />
+    <KeyBinding Gesture="Ctrl+R" Command="{Binding ResizeMapCommand}" />
     <KeyBinding Gesture="F7" Command="{Binding CheckLevelCommand}" />
     <KeyBinding Gesture="F5" Command="{Binding PlayCommand}" />
     <KeyBinding Gesture="Shift+F5" Command="{Binding PlayHereCommand}" />
@@ -156,8 +157,8 @@
                   ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones" />
         <MenuItem Header="Save as _UWMF" ToggleType="CheckBox" IsChecked="{Binding SaveAsUwmf}"
                   ToolTip.Tip="Saves the level as UWMF text (ECWolf's TEXTMAP), which holds everything; off, as binary planes (WDC3.1). New levels are UWMF" />
-        <MenuItem Header="_Resize level…" Command="{Binding ResizeMapCommand}"
-                  ToolTip.Tip="A new width and height (3 to 256 tiles each way), keeping a corner, an edge or the middle where it is" />
+        <MenuItem Header="_Resize level…" Command="{Binding ResizeMapCommand}" InputGesture="Ctrl+R"
+                  ToolTip.Tip="A new width and height (3 to 256 tiles each way), keeping a corner, an edge or the middle where it is; Level properties has them too" />
         <MenuItem Header="_Check level" Command="{Binding CheckLevelCommand}" InputGesture="F7"
                   ToolTip.Tip="Player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
         <Separator IsVisible="{Binding HasLevelCodes}" />
@@ -306,10 +307,13 @@
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <StackPanel Spacing="2">
         <TextBlock Text="{Binding HoverInfo}" TextTrimming="CharacterEllipsis" MinHeight="18" />
-        <Grid ColumnDefinitions="3*,2*" ColumnSpacing="16">
+        <Grid ColumnDefinitions="3*,2*,Auto" ColumnSpacing="16">
           <TextBlock Text="{Binding Status}" Opacity="0.7" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Status}" />
           <TextBlock Grid.Column="1" Text="{Binding ToolHint}" Opacity="0.55" TextTrimming="CharacterEllipsis"
                      TextAlignment="Right" ToolTip.Tip="{Binding ToolHint}" />
+          <Button Grid.Column="2" Content="{Binding LevelSize}" IsVisible="{Binding LevelSize, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Command="{Binding ResizeMapCommand}"
+                  Padding="6,0" Background="Transparent" BorderThickness="0" Opacity="0.7"
+                  ToolTip.Tip="The level's width x height in tiles; click (or Ctrl+R) to resize it" />
         </Grid>
       </StackPanel>
     </Border>

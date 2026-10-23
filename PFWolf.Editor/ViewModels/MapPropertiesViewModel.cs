@@ -44,9 +44,10 @@ public sealed partial class ScrollerRow : ObservableObject
 public sealed partial class MapPropertiesViewModel : ObservableObject
 {
     public MapPropertiesViewModel(string mapName, MapProperties properties, DefaultMapInfo defaults, IReadOnlyList<string> music,
-        IReadOnlyList<string> maps, IReadOnlyList<string>? weather = null)
+        IReadOnlyList<string> maps, IReadOnlyList<string>? weather = null, MapSizeViewModel? size = null)
     {
         MapName = mapName;
+        Size = size;
         Defaults = defaults;
         MusicNames = music;
         MapNames = maps;
@@ -96,6 +97,10 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     public DefaultMapInfo Defaults { get; }
     public IReadOnlyList<string> MusicNames { get; }
     public IReadOnlyList<string> MapNames { get; }
+
+    /// <summary>The level's width and height (not game-info: OK resizes the level); null leaves them off the dialog</summary>
+    public MapSizeViewModel? Size { get; }
+    public bool HasSize => Size != null;
 
     /// <summary>The kinds of weather a level can have (built in and game-info weather-types), and none</summary>
     public IReadOnlyList<string> WeatherNames { get; }
@@ -167,6 +172,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     {
         try
         {
+            Size?.Build();
+
             var zones = new List<ZoneProperties>();
             foreach (var row in Zones)
             {
