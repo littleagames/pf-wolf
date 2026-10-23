@@ -15,19 +15,16 @@ internal struct CompiledShape
 
     public CompiledShape(byte[] data)
     {
-        var offset = 0;
-        LeftPix = BitConverter.ToUInt16(data);
-        offset += sizeof(ushort);
+        LeftPix = BitConverter.ToUInt16(data, 0);
+        RightPix = BitConverter.ToUInt16(data, 2);
 
-        RightPix = BitConverter.ToUInt16(data.Skip(offset).ToArray());
-        offset += sizeof(ushort);
-
-        DataOfs = new ushort[64];
-        for (int i = 0; i < 64; i++)
-        {
-            DataOfs[i] = BitConverter.ToUInt16(data.Skip(offset).ToArray());
-            offset += sizeof(ushort);
-        }
+        // The table holds one entry per drawn column, not a fixed 64: the
+        // column commands start right after it, so a narrow sprite can be
+        // shorter than 4 + 64 * 2 bytes (e.g. a 45-byte, 16-column one)
+        int columns = Math.Max(0, RightPix - LeftPix + 1);
+        DataOfs = new ushort[columns];
+        for (int i = 0; i < columns; i++)
+            DataOfs[i] = BitConverter.ToUInt16(data, 4 + i * sizeof(ushort));
     }
 }
 
