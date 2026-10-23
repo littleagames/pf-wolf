@@ -7,7 +7,24 @@ namespace PFWolf.Managers;
 /// <summary>A raw data mod's files, written but not yet saved: texts by path in the mod, and the data files to copy in</summary>
 /// <param name="Texts">The YAML files and the report, by their path in the mod ("gamepack-info.yaml", "mapdefs/walls.yaml")</param>
 /// <param name="DataFiles">The mod's data files (full paths), copied to the mod's root under the same names</param>
-public sealed record RawDataModFiles(IReadOnlyDictionary<string, string> Texts, IReadOnlyList<string> DataFiles, string Report);
+public sealed record RawDataModFiles(IReadOnlyDictionary<string, string> Texts, IReadOnlyList<string> DataFiles, string Report)
+{
+    /// <summary>Files that aren't text, by their path in the mod (the palette)</summary>
+    public IReadOnlyDictionary<string, byte[]> Binaries { get; init; } = new Dictionary<string, byte[]>();
+}
+
+/// <summary>A palette for a raw data mod (the one its exe had), read from a palette file</summary>
+/// <param name="FileName">The file it was read from, for the report</param>
+/// <param name="How">How it was read ("JASC-PAL", "raw, 6-bit VGA values…")</param>
+public sealed record RawDataModPalette(string FileName, PaletteColor[] Colors, string How)
+{
+    /// <summary>Reads a palette file (PaletteFile.Read: raw, .act, JASC-PAL, GIMP); throws InvalidDataException or IOException</summary>
+    public static RawDataModPalette FromFile(string path)
+    {
+        var (colors, how) = PaletteFile.Read(File.ReadAllBytes(path));
+        return new RawDataModPalette(Path.GetFileName(path), colors, how);
+    }
+}
 
 /// <summary>
 /// Writes a raw data mod from its matched files (RawDataModGenerator.Match): a gamepack-info.yaml
@@ -28,7 +45,10 @@ public static partial class RawDataModWriter
     /// <param name="title">The game's title</param>
     /// <param name="previousRawDataMap">The mod's raw-data-map.yaml from the last time (run again after
     /// the files were edited): a new or changed chunk whose [hash] it gives keeps the name it has there</param>
-    public static RawDataModFiles Write(RawDataMatch match, string gameId, string title, string? previousRawDataMap = null)
+    /// <param name="palette">The mod's own palette (its exe's), written as palettes/NAME.pal for the
+    /// base game's game-palette; null keeps the base game's</param>
+    public static RawDataModFiles Write(RawDataMatch match, string gameId, string title, string? previousRawDataMap = null,
+        RawDataModPalette? palette = null)
     {
         var kept = previousRawDataMap == null ? [] : KeptNames(previousRawDataMap);
         match = WithKeptNames(match, kept);
@@ -49,9 +69,13 @@ public static partial class RawDataModWriter
         if (walls != null)
             texts["mapdefs/walls.yaml"] = walls;
 
-        var report = Report(match, gameId, title, texts.Keys, wallIds, gone);
+        var binaries = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        if (palette != null)
+            binaries[PaletteFile.EntryPath(match.GamePalette)] = PaletteFile.ToRaw(palette.Colors);
+
+        var report = Report(match, gameId, title, texts.Keys.Concat(binaries.Keys), wallIds, gone, palette);
         texts[ReportFileName] = report;
-        return new RawDataModFiles(texts, match.ModFiles.Files.ToList(), report);
+        return new RawDataModFiles(texts, match.ModFiles.Files.ToList(), report) { Binaries = binaries };
     }
 
     /// <summary>
@@ -141,11 +165,9 @@ public static partial class RawDataModWriter
     public static List<string> Save(RawDataModFiles files, string modFolder, bool overwrite)
     {
         modFolder = Path.GetFullPath(modFolder);
-        var targets = files.Texts.Keys.Select(path => Path.Combine(modFolder, path.Replace('/', Path.DirectorySeparatorChar)))
-            .Concat(files.DataFiles.Select(file => Path.Combine(modFolder, Path.GetFileName(file))))
-            .ToList();
         var copies = files.DataFiles.Where(file => !SamePath(Path.GetDirectoryName(Path.GetFullPath(file))!, modFolder)).ToList();
-        var clashes = files.Texts.Keys.Select(path => Path.Combine(modFolder, path.Replace('/', Path.DirectorySeparatorChar)))
+        string Target(string path) => Path.Combine(modFolder, path.Replace('/', Path.DirectorySeparatorChar));
+        var clashes = files.Texts.Keys.Concat(files.Binaries.Keys).Select(Target)
             .Concat(copies.Select(file => Path.Combine(modFolder, Path.GetFileName(file))))
             .Where(File.Exists)
             .ToList();
@@ -155,9 +177,13 @@ public static partial class RawDataModWriter
         Directory.CreateDirectory(modFolder);
         foreach (var (path, text) in files.Texts)
         {
-            var target = Path.Combine(modFolder, path.Replace('/', Path.DirectorySeparatorChar));
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.WriteAllText(target, text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            Directory.CreateDirectory(Path.GetDirectoryName(Target(path))!);
+            File.WriteAllText(Target(path), text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+        foreach (var (path, data) in files.Binaries)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(Target(path))!);
+            File.WriteAllBytes(Target(path), data);
         }
         foreach (var file in copies)
             File.Copy(file, Path.Combine(modFolder, Path.GetFileName(file)), overwrite: true);
@@ -392,7 +418,8 @@ public static partial class RawDataModWriter
         return ids.Count == 0 ? (null, ids) : (text.ToString(), ids);
     }
 
-    private static string Report(RawDataMatch match, string gameId, string title, IEnumerable<string> written, List<int> wallIds, List<string> gone)
+    private static string Report(RawDataMatch match, string gameId, string title, IEnumerable<string> written, List<int> wallIds, List<string> gone,
+        RawDataModPalette? palette)
     {
         var text = new StringBuilder();
         text.AppendLine($"{title} ({gameId}): a raw data mod built on {match.BasePackId} ({match.BaseReleaseId})");
@@ -423,11 +450,14 @@ public static partial class RawDataModWriter
         }
         if (wallIds.Count > 0)
             text.AppendLine($"New wall ids in mapdefs/walls.yaml: {string.Join(", ", wallIds)}");
+        if (palette != null)
+            text.AppendLine($"Palette: {PaletteFile.EntryPath(match.GamePalette)} (in place of {match.BasePackId}'s {match.GamePalette}), from {palette.FileName} ({palette.How})");
         text.AppendLine();
         text.AppendLine("Written: " + string.Join(", ", written.Order(StringComparer.OrdinalIgnoreCase)));
         text.AppendLine();
         text.AppendLine("Not in the data files, so still the base game's until you change them in game-info.yaml or actordefs: "
-            + "the palette, level music, par times, ceiling colors, episode and level names, and any new enemies, items or wall "
+            + (palette == null ? "the palette (a palette file given here puts the mod's own in), " : "")
+            + "level music, par times, ceiling colors, episode and level names, and any new enemies, items or wall "
             + "behaviour the mod's exe had.");
         return text.ToString();
     }

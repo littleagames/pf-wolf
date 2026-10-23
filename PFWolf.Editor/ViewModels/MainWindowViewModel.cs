@@ -1954,8 +1954,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
             files = await Task.Run(() =>
             {
                 Directory.SetCurrentDirectory(GameFolder);
+                var palette = request.PaletteFile != null ? RawDataModPalette.FromFile(request.PaletteFile) : null;
                 var match = RawDataModGenerator.Match(request.DataFolder, request.Base.ReleaseId);
-                return RawDataModWriter.Write(match, request.GameId, request.Title, File.Exists(previous) ? File.ReadAllText(previous) : null);
+                return RawDataModWriter.Write(match, request.GameId, request.Title, File.Exists(previous) ? File.ReadAllText(previous) : null, palette);
             });
 
             var clashes = RawDataModWriter.Save(files, request.ModFolder, overwrite: false);

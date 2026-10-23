@@ -28,6 +28,14 @@ import into a mod), which becomes optional phase 5 here. Branch `feature/editor/
     600 chunks (now "over 99%"); the report didn't wrap; the game list read "Bunker TC
     (Bunker TC)"; the art browser called a new chunk "the game's own". Also added a From data
     files… button beside New mod…, and a typed folder path is looked at as soon as it exists.
+- **The mod's own palette (2026-10-23):** optional in the dialog (Palette, Browse…, with how it
+  read and a swatch of its colors) and as `--make-mod --palette <file>`.
+  - Left empty, the one palette file in the data folder is used if there is exactly one.
+  - Read by `PaletteFile.Read` (moved to PFWolf.Common from the editor's PaletteCatalog): raw
+    768 bytes, 6-bit VGA or 0-255, Adobe .act, JASC-PAL and GIMP .gpl.
+  - Written as `palettes/<the base game's game-palette>.pal` (wolfpal), and named in the report.
+  - Checked on screen with a red/blue-swapped JASC palette: picked up by itself, swatch shown,
+    the mod's game drawn in it. `--make-mod` picked it up too.
 - **Not checked:** see the "(never tried)" items in docs/dev/manual-testing.md 1.14 and 2.17.
   - No real WDC/ChaosEdit mod has been tried, and no Spear, Blake or Planet Strike files have
     been through the generator.

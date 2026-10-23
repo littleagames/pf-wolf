@@ -28,6 +28,8 @@ internal static class StartupArgs
             gameParams.MakeMod = Path.GetFullPath(gameParams.MakeMod);
         if (!string.IsNullOrWhiteSpace(gameParams.Out))
             gameParams.Out = Path.GetFullPath(gameParams.Out);
+        if (!string.IsNullOrWhiteSpace(gameParams.Palette))
+            gameParams.Palette = Path.GetFullPath(gameParams.Palette);
         return (gameParams, modPaths);
     }
 }

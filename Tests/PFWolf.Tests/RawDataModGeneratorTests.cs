@@ -336,6 +336,70 @@ public class RawDataModGeneratorTests
     }
 
     [Test]
+    public void The_Mods_Own_Palette_Goes_In_As_The_Game_Palette()
+    {
+        // Arrange
+        var match = new RawDataMatch("wolf3d", "wolf3d", new GamePack(), new FilePack(), new DataFileSet(), BaseFilesFound: true,
+            [new SectionMatch(ChunkSection.Sprites, ["S0"], [new NamedChunk(0, "S0", ChunkMatch.Same, "1", 0)])], "STRUCTPIC", FontCount: 2)
+        {
+            GamePalette = "wolfpal",
+        };
+        var colors = Enumerable.Range(0, 256).Select(i => new PaletteColor((byte)i, 0, (byte)(255 - i))).ToArray();
+        var mod = Path.Combine(_workFolder, "mod");
+
+        // Act
+        var files = RawDataModWriter.Write(match, "my-mod", "My Mod", palette: new RawDataModPalette("TC.PAL", colors, "JASC-PAL"));
+        RawDataModWriter.Save(files, mod, overwrite: false);
+        var without = RawDataModWriter.Write(match, "my-mod", "My Mod");
+
+        // Assert
+        Assert.That(File.ReadAllBytes(Path.Combine(mod, "palettes", "wolfpal.pal")), Is.EqualTo(PaletteFile.ToRaw(colors)));
+        Assert.That(files.Report, Does.Contain("Palette: palettes/wolfpal.pal").And.Contain("from TC.PAL (JASC-PAL)"));
+        Assert.That(files.Report, Does.Not.Contain("the palette (a palette file"));
+        Assert.That(without.Binaries, Is.Empty);
+        Assert.That(without.Report, Does.Contain("the palette (a palette file"));
+    }
+
+    [Test]
+    public void The_One_Palette_File_Beside_The_Data_Files_Is_Found()
+    {
+        // Arrange
+        var one = Directory.CreateDirectory(Path.Combine(_workFolder, "one")).FullName;
+        File.WriteAllText(Path.Combine(one, "GAMEPAL.PAL"), "JASC-PAL\r\n0100\r\n256\r\n1 2 3\r\n");
+        File.WriteAllText(Path.Combine(one, "README.PAL"), "not a palette");
+        var two = Directory.CreateDirectory(Path.Combine(_workFolder, "two")).FullName;
+        File.WriteAllBytes(Path.Combine(two, "A.PAL"), new byte[768]);
+        File.WriteAllBytes(Path.Combine(two, "B.ACT"), new byte[772]);
+
+        // Act / Assert
+        Assert.That(RawDataModGenerator.FindPaletteFile(one), Is.EqualTo(Path.Combine(one, "GAMEPAL.PAL")));
+        Assert.That(RawDataModGenerator.FindPaletteFile(two), Is.Null, "which of the two isn't for it to say");
+        Assert.That(RawDataModPalette.FromFile(Path.Combine(one, "GAMEPAL.PAL")).Colors[0], Is.EqualTo(new PaletteColor(1, 2, 3)));
+    }
+
+    [Test]
+    [Category("GameData")]
+    public void A_Made_Mod_With_Its_Own_Palette_Is_Drawn_In_It()
+    {
+        // Arrange: the stock VSWAP and a palette with every color the same blue
+        var data = GameFolderWithWl6();
+        var source = Directory.CreateDirectory(Path.Combine(_workFolder, "source")).FullName;
+        File.Copy(Path.Combine(data, "VSWAP.WL6"), Path.Combine(source, "VSWAP.WL6"));
+        File.WriteAllBytes(Path.Combine(source, "GAMEPAL.PAL"), Enumerable.Repeat(new byte[] { 0, 0, 63 }, 256).SelectMany(rgb => rgb).ToArray());
+        var mod = Path.Combine(_workFolder, "blue-mod");
+
+        // Act
+        var match = RawDataModGenerator.Match(source, "wolf3d");
+        var palette = RawDataModPalette.FromFile(RawDataModGenerator.FindPaletteFile(source)!);
+        RawDataModWriter.Save(RawDataModWriter.Write(match, "blue-mod", "Blue Mod", palette: palette), mod, overwrite: false);
+        var content = PFWolf.Editor.Data.GameContent.Load(data, "", [mod]);
+
+        // Assert
+        Assert.That(palette.How, Does.Contain("6-bit"));
+        Assert.That(content.Palette[5], Is.EqualTo(new PaletteColor(0, 0, 255)).Using<PaletteColor>((a, b) => a.Red == b.Red && a.Green == b.Green && a.Blue == b.Blue));
+    }
+
+    [Test]
     public void A_Game_Id_Is_Made_From_The_Title()
     {
         Assert.That(RawDataModWriter.GameIdFrom("My Mod: Part 2!"), Is.EqualTo("my-mod-part-2"));

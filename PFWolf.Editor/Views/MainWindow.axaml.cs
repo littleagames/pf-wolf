@@ -429,12 +429,73 @@ public partial class MainWindow : Window, IEditorDialogs
         var found = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
         var title = new TextBox();
         var target = new TextBox();
+        var palette = new TextBox { Watermark = "Optional: the mod's own palette (.pal, .act, .gpl)" };
+        var browsePalette = new Button { Content = "Browse…" };
+        const string noPalette = "Left empty, the game keeps the palette of the one it's built on (a classic mod's exe may have had its own).";
+        var paletteNote = new TextBlock { Text = noPalette, TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
+        var swatch = new Avalonia.Controls.Primitives.UniformGrid { Columns = 32, IsVisible = false, HorizontalAlignment = HorizontalAlignment.Left };
         var error = new TextBlock { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
         var ok = new Button { Content = "Make it", IsDefault = true, Classes = { "accent" }, IsEnabled = false };
         var cancel = new Button { Content = "Cancel", IsCancel = true };
 
-        // The title and mod folder follow the data folder's name until typed over, as in New mod
-        string followedTitle = "", followedTarget = "";
+        // The palette file: how it reads, and its colors
+        PFWolf.Managers.RawDataModPalette? ReadPalette(out string? problem)
+        {
+            problem = null;
+            var path = palette.Text?.Trim() ?? "";
+            if (path.Length == 0)
+                return null;
+            try
+            {
+                return PFWolf.Managers.RawDataModPalette.FromFile(path);
+            }
+            catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException)
+            {
+                problem = $"The palette can't be read: {e.Message}";
+                return null;
+            }
+        }
+        void ShowPalette()
+        {
+            swatch.Children.Clear();
+            var read = ReadPalette(out var problem);
+            swatch.IsVisible = read != null;
+            paletteNote.Text = problem ?? (read != null ? $"Read as {read.How}: it goes in as the game palette." : noPalette);
+            foreach (var color in read?.Colors ?? [])
+                swatch.Children.Add(new Border { Width = 15, Height = 15, Background = new SolidColorBrush(Avalonia.Media.Color.FromRgb(color.Red, color.Green, color.Blue)) });
+        }
+        palette.TextChanged += (_, _) =>
+        {
+            var path = palette.Text?.Trim() ?? "";
+            if (path.Length == 0 || File.Exists(path))
+                ShowPalette();
+            else
+            {
+                // Still being typed, most likely: no colors until it's a file
+                swatch.Children.Clear();
+                swatch.IsVisible = false;
+                paletteNote.Text = "There's no file there.";
+            }
+        };
+        palette.LostFocus += (_, _) => ShowPalette();
+        browsePalette.Click += async (_, _) =>
+        {
+            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "The mod's palette",
+                SuggestedStartLocation = await FolderOrNull(folder.Text?.Trim() ?? ""),
+                FileTypeFilter =
+                [
+                    new FilePickerFileType("Palettes (pal, act, gpl)") { Patterns = ["*.pal", "*.act", "*.gpl"] },
+                    new FilePickerFileType("Any file") { Patterns = ["*"] },
+                ],
+            });
+            if (files is [var file, ..] && file.TryGetLocalPath() is { } local)
+                palette.Text = local;
+        };
+
+        // The title, mod folder and palette follow the data folder until typed over, as in New mod
+        string followedTitle = "", followedTarget = "", followedPalette = "";
         void Look()
         {
             var path = folder.Text?.Trim() ?? "";
@@ -443,6 +504,8 @@ public partial class MainWindow : Window, IEditorDialogs
                 title.Text = followedTitle = name;
             if ((target.Text ?? "") == followedTarget)
                 target.Text = followedTarget = name.Length > 0 ? Path.Combine(modsFolder, name) : "";
+            if ((palette.Text ?? "") == followedPalette)
+                palette.Text = followedPalette = PFWolf.Managers.RawDataModGenerator.FindPaletteFile(path) ?? "";
 
             IReadOnlyList<PFWolf.Managers.BaseCandidate> candidates = [];
             try
@@ -508,6 +571,10 @@ public partial class MainWindow : Window, IEditorDialogs
                 game,
                 new TextBlock { Text = "Title:" },
                 title,
+                new TextBlock { Text = "Palette:" },
+                new DockPanel { Children = { DockRight(browsePalette), palette } },
+                paletteNote,
+                swatch,
                 new TextBlock
                 {
                     Text = "Mod folder (the data files are copied in; made here again later, the names given since are kept):",
@@ -526,18 +593,20 @@ public partial class MainWindow : Window, IEditorDialogs
             var gameTitle = title.Text?.Trim() ?? "";
             var modFolder = target.Text?.Trim() ?? "";
             var candidate = game.SelectedIndex >= 0 && game.SelectedIndex < _rawDataCandidates.Count ? _rawDataCandidates[game.SelectedIndex] : null;
+            var paletteRead = ReadPalette(out var paletteProblem);
             var problem = candidate == null ? "Pick a folder of data files a game PFWolf plays has."
                 : gameTitle.Length == 0 ? "Give the game a title."
                 : modFolder.Length == 0 ? "Pick the mod folder."
                 : Editing.ModFiles.IsArchive(modFolder) ? "A raw data mod is a folder, not a pk3."
-                : null;
+                : paletteProblem;
             if (problem != null)
             {
                 error.Text = problem;
                 return;
             }
 
-            answer = new RawDataModRequest(folder.Text!.Trim(), candidate!, gameTitle, PFWolf.Managers.RawDataModWriter.GameIdFrom(gameTitle), Path.GetFullPath(modFolder));
+            answer = new RawDataModRequest(folder.Text!.Trim(), candidate!, gameTitle, PFWolf.Managers.RawDataModWriter.GameIdFrom(gameTitle), Path.GetFullPath(modFolder),
+                paletteRead != null ? Path.GetFullPath(palette.Text!.Trim()) : null);
             dialog.Close();
         };
         cancel.Click += (_, _) => dialog.Close();

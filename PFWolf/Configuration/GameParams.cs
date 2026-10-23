@@ -65,6 +65,10 @@ internal class GameParams
     [Option("title", Required = false, HelpText = "With --make-mod: the game's title. Default: the data folder's name.")]
     public string Title { get; set; } = "";
 
+    [Option("palette", Required = false, HelpText = "With --make-mod: the mod's own palette (what its exe had), put in as the game palette: "
+        + "a raw 768-byte palette (6-bit VGA or 0-255), .act, JASC-PAL or GIMP .gpl. Default: the base game's, or the one palette file in the folder.")]
+    public string Palette { get; set; } = "";
+
     [Option("overwrite", Required = false, HelpText = "With --make-mod: write over the mod's files when it's made already (running it again after editing the data files).")]
     public bool Overwrite { get; set; }
 

@@ -48,9 +48,11 @@ public sealed record CodeAnswer(int[] Values, bool PickOnMap);
 
 /// <summary>
 /// What the New mod from data files dialog answers: the folder of data files, the game they're
-/// built on, the game's title and id, and the mod folder to write
+/// built on, the game's title and id, the mod folder to write, and the mod's own palette file
+/// (null: the base game's palette)
 /// </summary>
-public sealed record RawDataModRequest(string DataFolder, PFWolf.Managers.BaseCandidate Base, string Title, string GameId, string ModFolder);
+public sealed record RawDataModRequest(string DataFolder, PFWolf.Managers.BaseCandidate Base, string Title, string GameId, string ModFolder,
+    string? PaletteFile = null);
 
 /// <summary>The questions the editor asks, which the window answers with its dialogs</summary>
 public interface IEditorDialogs

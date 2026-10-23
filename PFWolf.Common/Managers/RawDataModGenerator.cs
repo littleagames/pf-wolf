@@ -294,6 +294,29 @@ public static class RawDataModGenerator
     }
 
     /// <summary>
+    /// The palette file a folder of data files comes with (a .pal, .act or .gpl that reads as a
+    /// palette), when it has just one; null otherwise
+    /// </summary>
+    public static string? FindPaletteFile(string dataFolder)
+    {
+        if (!Directory.Exists(dataFolder))
+            return null;
+        var palettes = Directory.GetFiles(dataFolder).Where(PaletteFile.HasPaletteExtension).Where(file =>
+        {
+            try
+            {
+                PaletteFile.Read(File.ReadAllBytes(file));
+                return true;
+            }
+            catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }).ToList();
+        return palettes.Count == 1 ? palettes[0] : null;
+    }
+
+    /// <summary>
     /// A BaseCandidate's share as a person reads it: "100%" only when every chunk is the same
     /// ("over 99%" for two new walls out of 600, which would round up to it)
     /// </summary>
