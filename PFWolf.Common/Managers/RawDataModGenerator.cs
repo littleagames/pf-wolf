@@ -37,7 +37,8 @@ public sealed record SectionMatch(ChunkSection Section, IReadOnlyList<string> Ba
 /// <summary>A base game a raw data mod's files may be built on, and how well they match it</summary>
 /// <param name="Share">Of the mod's chunks, the share the same as one of the base game's (0 to 1); null with the base game's files not there</param>
 /// <param name="NamesMatched">How many of the mod's data files have the base game's own file names (vswap.wl6)</param>
-public sealed record BaseCandidate(string PackId, string ReleaseId, string Title, double? Share, int NamesMatched, DataFileSet ModFiles);
+/// <param name="Sniffed">How many were told by what's in them, not by their names (FOXTROT1.WL6): worth checking</param>
+public sealed record BaseCandidate(string PackId, string ReleaseId, string Title, double? Share, int NamesMatched, DataFileSet ModFiles, int Sniffed = 0);
 
 /// <summary>
 /// The raw data mod generator (docs/dev/raw-data-mods-plan.md): reads a folder of data files
@@ -48,16 +49,16 @@ public sealed record BaseCandidate(string PackId, string ReleaseId, string Title
 public static class RawDataModGenerator
 {
     /// <summary>The data file loaders' file kinds, by the names a release's files have without their extension</summary>
-    private static readonly (string Loader, string Part, string[] Stems)[] FileKinds =
+    private static readonly (DataFileKind Kind, string Loader, string Part, string[] Stems)[] FileKinds =
     [
-        ("Wolf3DVswapFileLoader", "data", ["VSWAP"]),
-        ("Wolf3DVgaFileLoader", "dict", ["VGADICT"]),
-        ("Wolf3DVgaFileLoader", "header", ["VGAHEAD"]),
-        ("Wolf3DVgaFileLoader", "data", ["VGAGRAPH"]),
-        ("Wolf3DAudioFileLoader", "header", ["AUDIOHED"]),
-        ("Wolf3DAudioFileLoader", "data", ["AUDIOT"]),
-        ("Wolf3DMapFileLoader", "header", ["MAPHEAD"]),
-        ("Wolf3DMapFileLoader", "data", ["GAMEMAPS", "MAPTEMP"]),
+        (DataFileKind.Vswap, "Wolf3DVswapFileLoader", "data", ["VSWAP"]),
+        (DataFileKind.VgaDict, "Wolf3DVgaFileLoader", "dict", ["VGADICT"]),
+        (DataFileKind.VgaHead, "Wolf3DVgaFileLoader", "header", ["VGAHEAD"]),
+        (DataFileKind.VgaGraph, "Wolf3DVgaFileLoader", "data", ["VGAGRAPH"]),
+        (DataFileKind.AudioHed, "Wolf3DAudioFileLoader", "header", ["AUDIOHED"]),
+        (DataFileKind.AudioT, "Wolf3DAudioFileLoader", "data", ["AUDIOT"]),
+        (DataFileKind.MapHead, "Wolf3DMapFileLoader", "header", ["MAPHEAD"]),
+        (DataFileKind.GameMaps, "Wolf3DMapFileLoader", "data", ["GAMEMAPS", "MAPTEMP"]),
     ];
 
     /// <summary>
@@ -66,7 +67,9 @@ public static class RawDataModGenerator
     /// chunks are the same as theirs (when their files are in the game folder), then by how many
     /// file names match theirs exactly. The working folder must be the game folder (pfwolf.pk3).
     /// </summary>
-    public static List<BaseCandidate> DetectBase(string dataFolder)
+    /// <param name="files">Which file is which, as the modder said (Which file is which…); null:
+    /// by their names, else by what's in them</param>
+    public static List<BaseCandidate> DetectBase(string dataFolder, DataFileSet? files = null)
     {
         var info = ReadGamePackInfo();
         var modChunks = new Dictionary<int, DataFileChunks?>();
@@ -77,9 +80,11 @@ public static class RawDataModGenerator
             if (!info.GamePacks.TryGetValue(release, out var pack) || info.GetFilePack(release) is not { } filePack)
                 continue;
 
-            var modFiles = FindDataFiles(dataFolder, filePack, out var namesMatched);
+            var sniffed = 0;
+            var modFiles = files ?? FindDataFiles(dataFolder, filePack, out sniffed);
             if (!modFiles.Files.Any())
                 continue;
+            var namesMatched = NamesMatched(modFiles, filePack);
 
             double? share = null;
             var baseFiles = BaseDataFiles(filePack);
@@ -98,7 +103,7 @@ public static class RawDataModGenerator
             }
 
             candidates.Add(new BaseCandidate(GameTypes.GetGamePackId(type), release,
-                filePack.Description ?? pack.Title ?? release, share, namesMatched, modFiles));
+                filePack.Description ?? pack.Title ?? release, share, namesMatched, modFiles, sniffed));
         }
 
         return candidates
@@ -109,44 +114,54 @@ public static class RawDataModGenerator
 
     /// <summary>
     /// The mod's data files a release's file-pack would read, by its file names in
-    /// <paramref name="dataFolder"/>, else the same names with another extension (VSWAP.MOD); null
-    /// for one the folder doesn't have (the game folder's is played)
+    /// <paramref name="dataFolder"/>, else the same names with another extension (VSWAP.MOD), else
+    /// (FOXTROT1.WL6) by what's in them (DataFileSniffer); null for one the folder doesn't have
+    /// (the game folder's is played)
     /// </summary>
-    public static DataFileSet FindDataFiles(string dataFolder, FilePack filePack, out int namesMatched)
+    /// <param name="sniffed">How many were told by what's in them, not by their names: the modder should check those</param>
+    public static DataFileSet FindDataFiles(string dataFolder, FilePack filePack, out int sniffed)
     {
         var files = Directory.Exists(dataFolder) ? Directory.GetFiles(dataFolder) : [];
-        var found = new Dictionary<(string, string), string>();
-        namesMatched = 0;
-        foreach (var (loader, part, stems) in FileKinds)
+        var found = new DataFileSet();
+        foreach (var (kind, loader, part, stems) in FileKinds)
         {
             var name = FileName(filePack, loader, part);
-            var exact = name == null ? null : files.FirstOrDefault(file => Path.GetFileName(file).Equals(name, StringComparison.OrdinalIgnoreCase));
-            if (exact != null)
-            {
-                found[(loader, part)] = exact;
-                namesMatched++;
-                continue;
-            }
-
-            var stem = files.FirstOrDefault(file => stems.Contains(Path.GetFileNameWithoutExtension(file), StringComparer.OrdinalIgnoreCase));
-            if (stem != null)
-                found[(loader, part)] = stem;
+            var match = files.FirstOrDefault(file => name != null && Path.GetFileName(file).Equals(name, StringComparison.OrdinalIgnoreCase))
+                        ?? files.FirstOrDefault(file => stems.Contains(Path.GetFileNameWithoutExtension(file), StringComparer.OrdinalIgnoreCase));
+            found = found.With(kind, match);
         }
 
-        string? Found(string loader, string part) => found.GetValueOrDefault((loader, part));
-        return new DataFileSet(
-            Found("Wolf3DVswapFileLoader", "data"),
-            Found("Wolf3DVgaFileLoader", "dict"), Found("Wolf3DVgaFileLoader", "header"), Found("Wolf3DVgaFileLoader", "data"),
-            Found("Wolf3DAudioFileLoader", "header"), Found("Wolf3DAudioFileLoader", "data"),
-            Found("Wolf3DMapFileLoader", "header"), Found("Wolf3DMapFileLoader", "data"));
+        // The kinds no file is named for, from the files no kind took
+        sniffed = 0;
+        var left = files.Except(found.Files, StringComparer.OrdinalIgnoreCase).ToList();
+        foreach (var (kind, file) in DataFileSniffer.Guess(left))
+        {
+            if (found[kind] != null)
+                continue;
+            found = found.With(kind, file);
+            sniffed++;
+        }
+        return found;
     }
+
+    /// <summary>The files a folder of data files has, as Which file is which… lists them: by name, with their sizes</summary>
+    public static List<(string File, long Size)> FolderFiles(string dataFolder)
+        => Directory.Exists(dataFolder)
+            ? Directory.GetFiles(dataFolder).Order(StringComparer.OrdinalIgnoreCase).Select(file => (file, new FileInfo(file).Length)).ToList()
+            : [];
+
+    // How many of the mod's files have the release's own names (vswap.wl6)
+    private static int NamesMatched(DataFileSet files, FilePack filePack)
+        => FileKinds.Count(kind => files[kind.Kind] is { } file && FileName(filePack, kind.Loader, kind.Part) is { } name
+                                   && Path.GetFileName(file).Equals(name, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Names every chunk of the mod's files against the base game's: its raw-data-map, its doors
     /// (the last wall pages), and its own data files in the game folder when they're there. The
     /// working folder must be the game folder.
     /// </summary>
-    public static RawDataMatch Match(string dataFolder, string baseReleaseId)
+    /// <param name="files">Which file is which, as the modder said; null: FindDataFiles</param>
+    public static RawDataMatch Match(string dataFolder, string baseReleaseId, DataFileSet? files = null)
     {
         var info = ReadGamePackInfo();
         var filePack = info.GetFilePack(baseReleaseId)
@@ -159,7 +174,7 @@ public static class RawDataModGenerator
         var mapDefs = defs.FindInGamePackIfAny<MapObjectTranslationAsset>("mapdefs");
 
         var fontCount = FontCount(info, baseReleaseId);
-        var modFiles = FindDataFiles(dataFolder, filePack, out _);
+        var modFiles = files ?? FindDataFiles(dataFolder, filePack, out _);
         var mod = DataFileChunks.Read(modFiles, fontCount);
         var baseFiles = BaseDataFiles(filePack);
         var stock = TryRead(baseFiles, fontCount);

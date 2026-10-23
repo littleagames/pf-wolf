@@ -38,6 +38,36 @@ public sealed record DataFileSet(
 {
     public IEnumerable<string> Files =>
         new[] { Vswap, VgaDict, VgaHead, VgaGraph, AudioHed, AudioT, MapHead, GameMaps }.OfType<string>();
+
+    /// <summary>The file of one kind, or null</summary>
+    public string? this[DataFileKind kind] => kind switch
+    {
+        DataFileKind.Vswap => Vswap,
+        DataFileKind.VgaDict => VgaDict,
+        DataFileKind.VgaHead => VgaHead,
+        DataFileKind.VgaGraph => VgaGraph,
+        DataFileKind.AudioHed => AudioHed,
+        DataFileKind.AudioT => AudioT,
+        DataFileKind.MapHead => MapHead,
+        _ => GameMaps,
+    };
+
+    /// <summary>The set with one kind's file put in (null takes it out)</summary>
+    public DataFileSet With(DataFileKind kind, string? file) => kind switch
+    {
+        DataFileKind.Vswap => this with { Vswap = file },
+        DataFileKind.VgaDict => this with { VgaDict = file },
+        DataFileKind.VgaHead => this with { VgaHead = file },
+        DataFileKind.VgaGraph => this with { VgaGraph = file },
+        DataFileKind.AudioHed => this with { AudioHed = file },
+        DataFileKind.AudioT => this with { AudioT = file },
+        DataFileKind.MapHead => this with { MapHead = file },
+        _ => this with { GameMaps = file },
+    };
+
+    /// <summary>The kinds with a file, and that file</summary>
+    public IEnumerable<(DataFileKind Kind, string File)> Assigned
+        => DataFileSniffer.Kinds.Where(kind => this[kind] != null).Select(kind => (kind, this[kind]!));
 }
 
 /// <summary>

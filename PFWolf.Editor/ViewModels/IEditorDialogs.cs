@@ -54,6 +54,9 @@ public sealed record CodeAnswer(int[] Values, bool PickOnMap);
 public sealed record RawDataModRequest(string DataFolder, PFWolf.Managers.BaseCandidate Base, string Title, string GameId, string ModFolder,
     string? PaletteFile = null);
 
+/// <summary>Finds the games a folder of data files may be built on, with which file is which (null: by their names, else contents)</summary>
+public delegate IReadOnlyList<PFWolf.Managers.BaseCandidate> DetectRawDataBase(string dataFolder, PFWolf.Loaders.DataFileSet? files);
+
 /// <summary>The questions the editor asks, which the window answers with its dialogs</summary>
 public interface IEditorDialogs
 {
@@ -61,7 +64,7 @@ public interface IEditorDialogs
     /// Asks for a folder of raw data files, the game they're built on (from <paramref name="detect"/>,
     /// best first), a title and the mod folder; null when cancelled
     /// </summary>
-    Task<RawDataModRequest?> AskRawDataMod(string modsFolder, Func<string, IReadOnlyList<PFWolf.Managers.BaseCandidate>> detect);
+    Task<RawDataModRequest?> AskRawDataMod(string modsFolder, DetectRawDataBase detect);
 
     /// <summary>Shows a page of text to read (a report), until it's closed</summary>
     Task ShowText(string title, string text);

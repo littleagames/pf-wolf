@@ -28,6 +28,10 @@ internal static class StartupArgs
             gameParams.MakeMod = Path.GetFullPath(gameParams.MakeMod);
         if (!string.IsNullOrWhiteSpace(gameParams.Out))
             gameParams.Out = Path.GetFullPath(gameParams.Out);
+        // (--data-file's FILE is taken in the data folder when it's only a name, else from where the game started)
+        gameParams.DataFiles = gameParams.DataFiles
+            .Select(pair => pair.Split('=', 2) is [var kind, var file] && file.IndexOfAny(['\\', '/']) >= 0 ? $"{kind}={Path.GetFullPath(file)}" : pair)
+            .ToList();
         if (!string.IsNullOrWhiteSpace(gameParams.Palette))
             gameParams.Palette = Path.GetFullPath(gameParams.Palette);
         return (gameParams, modPaths);

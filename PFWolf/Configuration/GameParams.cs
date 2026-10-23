@@ -65,6 +65,10 @@ internal class GameParams
     [Option("title", Required = false, HelpText = "With --make-mod: the game's title. Default: the data folder's name.")]
     public string Title { get; set; } = "";
 
+    [Option("data-file", Required = false, HelpText = "With --make-mod: which file is one of the data files, when it isn't named as the game names them, "
+        + "as KIND=FILE (VSWAP=FOXTROT1.WL6; kinds VSWAP, VGADICT, VGAHEAD, VGAGRAPH, AUDIOHED, AUDIOT, MAPHEAD, GAMEMAPS). Default: by name, else by what's in them.")]
+    public IEnumerable<string> DataFiles { get; set; } = [];
+
     [Option("palette", Required = false, HelpText = "With --make-mod: the mod's own palette (what its exe had), put in as the game palette: "
         + "a raw 768-byte palette (6-bit VGA or 0-255), .act, JASC-PAL or GIMP .gpl. Default: the base game's, or the one palette file in the folder.")]
     public string Palette { get; set; } = "";

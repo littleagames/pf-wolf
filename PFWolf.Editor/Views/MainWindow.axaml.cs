@@ -421,12 +421,16 @@ public partial class MainWindow : Window, IEditorDialogs
         return answer;
     }
 
-    public async Task<RawDataModRequest?> AskRawDataMod(string modsFolder, Func<string, IReadOnlyList<PFWolf.Managers.BaseCandidate>> detect)
+    public async Task<RawDataModRequest?> AskRawDataMod(string modsFolder, DetectRawDataBase detect)
     {
         var folder = new TextBox { Watermark = "The mod's VSWAP, VGAGRAPH… folder" };
         var browse = new Button { Content = "Browse…" };
         var game = new ComboBox { MinWidth = 300, IsEnabled = false };
         var found = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
+        var whichIsWhich = new Button { Content = "Which file is which…", IsEnabled = false, Margin = new Thickness(0, 2, 0, 0) };
+        // Which file is which, once the modder has said; null: by their names, else by what's in them
+        PFWolf.Loaders.DataFileSet? assigned = null;
+        string askedFor = "";
         var title = new TextBox();
         var target = new TextBox();
         var palette = new TextBox { Watermark = "Optional: the mod's own palette (.pal, .act, .gpl)" };
@@ -510,7 +514,7 @@ public partial class MainWindow : Window, IEditorDialogs
             IReadOnlyList<PFWolf.Managers.BaseCandidate> candidates = [];
             try
             {
-                candidates = Directory.Exists(path) ? detect(path) : [];
+                candidates = Directory.Exists(path) ? detect(path, assigned) : [];
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or KeyNotFoundException)
             {
@@ -520,12 +524,35 @@ public partial class MainWindow : Window, IEditorDialogs
                 $"{candidate.Title}: " + (candidate.Share is { } share ? $"{PFWolf.Managers.RawDataModGenerator.ShareText(share)} the same" : "its files aren't here to compare"))).ToList();
             game.SelectedIndex = candidates.Count > 0 ? 0 : -1;
             game.IsEnabled = ok.IsEnabled = candidates.Count > 0;
+            whichIsWhich.IsEnabled = Directory.Exists(path);
+            var sniffed = candidates.Count > 0 && assigned == null ? candidates[0].Sniffed : 0;
             found.Text = candidates.Count == 0
-                ? (path.Length == 0 ? "" : "No data files of a game PFWolf plays are there.")
-                : "Its files: " + string.Join(", ", candidates[0].ModFiles.Files.Select(Path.GetFileName))
-                  + ". The rest come from the game's own files in the PFWolf folder.";
+                ? (path.Length == 0 ? "" : "No data files of a game PFWolf plays are there by name or by what's in them: say which file is which.")
+                : "Its files: " + string.Join(", ", candidates[0].ModFiles.Assigned.Select(file => $"{Path.GetFileName(file.File)} ({PFWolf.Loaders.DataFileSniffer.StemOf(file.Kind)})"))
+                  + (candidates[0].ModFiles.Assigned.Count() < PFWolf.Loaders.DataFileSniffer.Kinds.Count ? ". The rest come from the game's own files in the PFWolf folder." : ".")
+                  + (sniffed > 0 ? $" {sniffed} of them told by what's in them, not their names: check which file is which." : "");
             _rawDataCandidates = candidates;
+
+            // Files not named as the game names them: ask which is which, once per folder
+            if (Directory.Exists(path) && assigned == null && askedFor != path
+                && (sniffed > 0 || candidates.Count == 0 && Directory.EnumerateFiles(path).Any()))
+            {
+                askedFor = path;
+                Avalonia.Threading.Dispatcher.UIThread.Post(async () => await AskWhich());
+            }
         }
+
+        async Task AskWhich()
+        {
+            var path = folder.Text?.Trim() ?? "";
+            var current = assigned ?? (_rawDataCandidates.Count > 0 ? _rawDataCandidates[0].ModFiles : new PFWolf.Loaders.DataFileSet());
+            if (await AskDataFiles(path, current) is { } answer)
+            {
+                assigned = answer;
+                Look();
+            }
+        }
+        whichIsWhich.Click += async (_, _) => await AskWhich();
         // Looked at when the folder field is left, or as soon as what's typed (or pasted) is a folder
         string looked = "";
         void LookIfNew()
@@ -533,6 +560,7 @@ public partial class MainWindow : Window, IEditorDialogs
             if ((folder.Text ?? "") != looked)
             {
                 looked = folder.Text ?? "";
+                assigned = null;        // another folder: by its names again
                 Look();
             }
         }
@@ -567,6 +595,7 @@ public partial class MainWindow : Window, IEditorDialogs
                 new TextBlock { Text = "Data files:" },
                 new DockPanel { Children = { DockRight(browse), folder } },
                 found,
+                whichIsWhich,
                 new TextBlock { Text = "Built on:" },
                 game,
                 new TextBlock { Text = "Title:" },
@@ -617,6 +646,119 @@ public partial class MainWindow : Window, IEditorDialogs
     }
 
     private IReadOnlyList<PFWolf.Managers.BaseCandidate> _rawDataCandidates = [];
+
+    // What each data file holds, for the Which file is which… rows
+    private static readonly Dictionary<PFWolf.Loaders.DataFileKind, string> DataFileRoles = new()
+    {
+        [PFWolf.Loaders.DataFileKind.Vswap] = "walls, sprites and digitized sounds (the biggest, often over 1 MB)",
+        [PFWolf.Loaders.DataFileKind.VgaDict] = "the pictures' compression table (about 1 KB)",
+        [PFWolf.Loaders.DataFileKind.VgaHead] = "where each picture is in VGAGRAPH (a few hundred bytes)",
+        [PFWolf.Loaders.DataFileKind.VgaGraph] = "pictures, fonts, help and end texts",
+        [PFWolf.Loaders.DataFileKind.AudioHed] = "where each sound is in AUDIOT (about 1 KB)",
+        [PFWolf.Loaders.DataFileKind.AudioT] = "PC speaker and AdLib sounds, and the music",
+        [PFWolf.Loaders.DataFileKind.MapHead] = "where each level is in GAMEMAPS (about 400 bytes)",
+        [PFWolf.Loaders.DataFileKind.GameMaps] = "the levels (starts with TED5v1.0)",
+    };
+
+    /// <summary>
+    /// Which file is which: a row per kind of data file, each picking one of the folder's files
+    /// (with its size, and what it looks like by what's in it) or none (the game's own); null when
+    /// cancelled
+    /// </summary>
+    private async Task<PFWolf.Loaders.DataFileSet?> AskDataFiles(string folder, PFWolf.Loaders.DataFileSet current)
+    {
+        var files = PFWolf.Managers.RawDataModGenerator.FolderFiles(folder);
+        var looksLike = PFWolf.Loaders.DataFileSniffer.Guess(files.Select(file => file.File))
+            .ToDictionary(guess => guess.Value, guess => guess.Key, StringComparer.OrdinalIgnoreCase);
+        string Label(string file, long size)
+            => $"{Path.GetFileName(file)}   {size:N0} bytes"
+               + (looksLike.TryGetValue(file, out var kind) ? $"   · looks like {PFWolf.Loaders.DataFileSniffer.StemOf(kind)}" : "");
+        const string none = "(none: the game's own)";
+        var choices = new List<string> { none };
+        choices.AddRange(files.Select(file => Label(file.File, file.Size)));
+
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), RowSpacing = 6, ColumnSpacing = 10 };
+        var boxes = new Dictionary<PFWolf.Loaders.DataFileKind, ComboBox>();
+        var row = 0;
+        foreach (var kind in PFWolf.Loaders.DataFileSniffer.Kinds)
+        {
+            grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            var label = new StackPanel
+            {
+                Children =
+                {
+                    new TextBlock { Text = PFWolf.Loaders.DataFileSniffer.StemOf(kind), FontWeight = FontWeight.SemiBold },
+                    new TextBlock { Text = DataFileRoles[kind], Opacity = 0.7, FontSize = 11, TextWrapping = TextWrapping.Wrap, MaxWidth = 200 },
+                },
+            };
+            var index = current[kind] is { } chosen ? files.FindIndex(file => file.File.Equals(chosen, StringComparison.OrdinalIgnoreCase)) + 1 : 0;
+            var box = new ComboBox { ItemsSource = choices, SelectedIndex = Math.Max(0, index), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetRow(label, row);
+            Grid.SetRow(box, row);
+            Grid.SetColumn(box, 1);
+            grid.Children.Add(label);
+            grid.Children.Add(box);
+            boxes[kind] = box;
+            row++;
+        }
+
+        var error = new TextBlock { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
+        var ok = new Button { Content = "OK", IsDefault = true, Classes = { "accent" } };
+        var guess = new Button { Content = "Guess again" };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        var dialog = MakeDialog("Which file is which", new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = $"Which of {Path.GetFileName(folder.TrimEnd('\\', '/'))}'s files is each of the game's data files? A classic mod may have "
+                           + "renamed them (FOXTROT1.WL6 for VSWAP.WL6). The sizes, and what each looks like by what's in it, help tell. "
+                           + "One the mod doesn't have comes from the game's own files.",
+                    TextWrapping = TextWrapping.Wrap,
+                },
+                grid,
+                error,
+                Buttons(guess, ok, cancel),
+            },
+        });
+        dialog.Width = 720;
+
+        guess.Click += (_, _) =>
+        {
+            error.Text = "";
+            foreach (var (kind, box) in boxes)
+                box.SelectedIndex = looksLike.FirstOrDefault(entry => entry.Value == kind).Key is { } file
+                    ? files.FindIndex(f => f.File.Equals(file, StringComparison.OrdinalIgnoreCase)) + 1
+                    : 0;
+        };
+
+        PFWolf.Loaders.DataFileSet? answer = null;
+        ok.Click += (_, _) =>
+        {
+            var set = new PFWolf.Loaders.DataFileSet();
+            foreach (var (kind, box) in boxes)
+                set = set.With(kind, box.SelectedIndex > 0 ? files[box.SelectedIndex - 1].File : null);
+            var twice = set.Assigned.GroupBy(file => file.File, StringComparer.OrdinalIgnoreCase).FirstOrDefault(group => group.Count() > 1);
+            if (twice != null)
+            {
+                error.Text = $"{Path.GetFileName(twice.Key)} can't be both {string.Join(" and ", twice.Select(file => PFWolf.Loaders.DataFileSniffer.StemOf(file.Kind)))}.";
+                return;
+            }
+            if (!set.Files.Any())
+            {
+                error.Text = "Pick at least one of the mod's files.";
+                return;
+            }
+            answer = set;
+            dialog.Close();
+        };
+        cancel.Click += (_, _) => dialog.Close();
+
+        await dialog.ShowDialog(DialogOwner);
+        return answer;
+    }
 
     public async Task ShowText(string title, string text)
     {

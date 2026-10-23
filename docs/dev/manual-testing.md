@@ -524,6 +524,9 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       browsed to fills the base list, title and mod folder follow its name, Make it shows the
       report and loads the game; again on the same mod folder asks to write over and keeps the
       names. **(never tried)** Browse… (the folder picker) and the base list's other choices.
+- [ ] New mod from data files… with renamed files (FOXTROT1.WL6...): Which file is which… opens by
+      itself, sizes and "looks like" shown, a file can't be picked twice, the made mod plays.
+      **(never tried)** a real mod's renamed files (Spear's, Blake's); a mod with only some files.
 - [ ] New mod from data files… Palette: a .pal beside the data files fills it in, with a swatch;
       the mod's game is drawn in it. **(never tried)** Palette Browse…, a raw VGA palette and an
       .act; a palette that won't read stops Make it with its reason.

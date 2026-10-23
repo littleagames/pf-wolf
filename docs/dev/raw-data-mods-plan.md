@@ -36,6 +36,21 @@ import into a mod), which becomes optional phase 5 here. Branch `feature/editor/
   - Written as `palettes/<the base game's game-palette>.pal` (wolfpal), and named in the report.
   - Checked on screen with a red/blue-swapped JASC palette: picked up by itself, swatch shown,
     the mod's game drawn in it. `--make-mod` picked it up too.
+- **Data files under other names (2026-10-23):** for files like FOXTROT1.WL6 for VSWAP.WL6.
+  - `DataFileSniffer` (PFWolf.Common) tells the kinds apart by what's in them:
+    - GAMEMAPS by "TED5v1.0", MAPHEAD by its RLEW tag and offsets, VSWAP by its page table.
+    - VGADICT by being 1020–1024 bytes.
+    - VGAHEAD/AUDIOHED as rising offset tables whose last offset is VGAGRAPH's/AUDIOT's size.
+  - `FindDataFiles` uses it for the kinds no file is named for; `BaseCandidate.Sniffed` counts
+    those.
+  - The dialog's Which file is which… screen has a row per kind. Each row picks one of the
+    folder's files, shown with its size and what it looks like, or none (the game's own). It has
+    Guess again, refuses one file for two kinds, and opens by itself once per folder when
+    anything was told by contents (or nothing was found).
+  - `--make-mod --data-file KIND=FILE` does the same from the command line, and lists the files it
+    took.
+  - Checked on screen with the WL6 files as FOXTROT1–8.WL6: all eight guessed right, the
+    duplicate refused, and the made mod loads.
 - **Not checked:** see the "(never tried)" items in docs/dev/manual-testing.md 1.14 and 2.17.
   - No real WDC/ChaosEdit mod has been tried, and no Spear, Blake or Planet Strike files have
     been through the generator.

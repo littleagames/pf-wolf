@@ -28,11 +28,42 @@ internal static class MakeModCommand
             }
 
             var candidates = RawDataModGenerator.DetectBase(dataFolder);
+
+            // --data-file KIND=FILE says which file is which, over what the names and contents say
+            if (gameParams.DataFiles.Any())
+            {
+                var assigned = candidates.Count > 0 ? candidates[0].ModFiles : new DataFileSet();
+                foreach (var pair in gameParams.DataFiles)
+                {
+                    var parts = pair.Split('=', 2, StringSplitOptions.TrimEntries);
+                    if (parts.Length != 2 || !Enum.TryParse<DataFileKind>(parts[0], ignoreCase: true, out var kind))
+                    {
+                        output.WriteLine($"--data-file {pair}: give it as KIND=FILE, KIND one of {string.Join(", ", DataFileSniffer.Kinds.Select(DataFileSniffer.StemOf))}");
+                        return 1;
+                    }
+                    var file = Path.IsPathRooted(parts[1]) ? parts[1] : Path.Combine(dataFolder, parts[1]);
+                    if (!File.Exists(file))
+                    {
+                        output.WriteLine($"--data-file {pair}: there's no {file}");
+                        return 1;
+                    }
+                    assigned = assigned.With(kind, Path.GetFullPath(file));
+                }
+                candidates = RawDataModGenerator.DetectBase(dataFolder, assigned);
+            }
+
             if (candidates.Count == 0)
             {
-                output.WriteLine($"--make-mod: {dataFolder} has none of the data files (VSWAP, VGAGRAPH, AUDIOT, GAMEMAPS...) a game PFWolf plays has");
+                output.WriteLine($"--make-mod: {dataFolder} has none of the data files (VSWAP, VGAGRAPH, AUDIOT, GAMEMAPS...) a game PFWolf plays has, "
+                                 + "by name or by what's in them; --data-file KIND=FILE says which file is which");
                 return 1;
             }
+
+            output.WriteLine("The data files:");
+            foreach (var (kind, file) in candidates[0].ModFiles.Assigned)
+                output.WriteLine($"  {DataFileSniffer.StemOf(kind),-9} {Path.GetFileName(file)} ({new FileInfo(file).Length:N0} bytes)");
+            if (candidates[0].Sniffed > 0)
+                output.WriteLine($"  ({candidates[0].Sniffed} told by what's in them, not their names: --data-file KIND=FILE puts another in place)");
 
             output.WriteLine("The games the files may be built on, best first:");
             foreach (var candidate in candidates)
@@ -53,7 +84,7 @@ internal static class MakeModCommand
             var palette = paletteFile != null ? RawDataModPalette.FromFile(paletteFile) : null;
 
             output.WriteLine($"Building on {release}; the game is {gameId} (\"{title}\"), written to {modFolder}");
-            var match = RawDataModGenerator.Match(dataFolder, release);
+            var match = RawDataModGenerator.Match(dataFolder, release, candidates.First(candidate => candidate.ReleaseId == release).ModFiles);
             // Run again on a mod made before: the names given since are kept
             var previous = Path.Combine(modFolder, "raw-data-map.yaml");
             var files = RawDataModWriter.Write(match, gameId, title, File.Exists(previous) ? File.ReadAllText(previous) : null, palette);

@@ -1938,10 +1938,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         // The generator reads pfwolf.pk3 and the base game's files from the working folder, as the game does
-        IReadOnlyList<BaseCandidate> Detect(string folder)
+        IReadOnlyList<BaseCandidate> Detect(string folder, PFWolf.Loaders.DataFileSet? files)
         {
             Directory.SetCurrentDirectory(GameFolder);
-            return RawDataModGenerator.DetectBase(folder);
+            return RawDataModGenerator.DetectBase(folder, files);
         }
 
         if (await Dialogs.AskRawDataMod(Path.Combine(GameFolder, "mods"), Detect) is not { } request)
@@ -1956,7 +1956,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 Directory.SetCurrentDirectory(GameFolder);
                 var palette = request.PaletteFile != null ? RawDataModPalette.FromFile(request.PaletteFile) : null;
-                var match = RawDataModGenerator.Match(request.DataFolder, request.Base.ReleaseId);
+                var match = RawDataModGenerator.Match(request.DataFolder, request.Base.ReleaseId, request.Base.ModFiles);
                 return RawDataModWriter.Write(match, request.GameId, request.Title, File.Exists(previous) ? File.ReadAllText(previous) : null, palette);
             });
 

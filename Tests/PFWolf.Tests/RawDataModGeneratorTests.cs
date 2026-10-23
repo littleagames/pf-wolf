@@ -400,6 +400,90 @@ public class RawDataModGeneratorTests
     }
 
     [Test]
+    [Category("GameData")]
+    public void Data_Files_Named_Anything_Are_Told_Apart_By_What_Is_In_Them()
+    {
+        // Arrange: the WL6 files under names that say nothing, and a text file
+        var data = GameFolderWithWl6();
+        var mod = Directory.CreateDirectory(Path.Combine(_workFolder, "foxtrot")).FullName;
+        var renamed = new Dictionary<string, DataFileKind>
+        {
+            ["FOXTROT1.WL6"] = DataFileKind.Vswap, ["FOXTROT2.WL6"] = DataFileKind.VgaDict, ["FOXTROT3.WL6"] = DataFileKind.VgaHead,
+            ["FOXTROT4.WL6"] = DataFileKind.VgaGraph, ["FOXTROT5.WL6"] = DataFileKind.AudioHed, ["FOXTROT6.WL6"] = DataFileKind.AudioT,
+            ["FOXTROT7.WL6"] = DataFileKind.MapHead, ["FOXTROT8.WL6"] = DataFileKind.GameMaps,
+        };
+        foreach (var (name, kind) in renamed)
+            File.Copy(Path.Combine(data, DataFileSniffer.StemOf(kind) + ".WL6"), Path.Combine(mod, name));
+        File.WriteAllText(Path.Combine(mod, "README.TXT"), "Operation Foxtrot");
+
+        // Act
+        var guesses = DataFileSniffer.Guess(Directory.GetFiles(mod));
+        var candidates = RawDataModGenerator.DetectBase(mod);
+        var match = RawDataModGenerator.Match(mod, "wolf3d", candidates[0].ModFiles);
+        var made = Path.Combine(_workFolder, "foxtrot-mod");
+        RawDataModWriter.Save(RawDataModWriter.Write(match, "foxtrot", "Foxtrot"), made, overwrite: false);
+        var content = PFWolf.Editor.Data.GameContent.Load(data, "", [made]);
+
+        // Assert
+        Assert.That(guesses.ToDictionary(guess => Path.GetFileName(guess.Value), guess => guess.Key), Is.EquivalentTo(renamed));
+        Assert.That(candidates[0].ReleaseId, Is.EqualTo("wolf3d"));
+        Assert.That(candidates[0].Sniffed, Is.EqualTo(8));
+        Assert.That(candidates[0].Share, Is.EqualTo(1.0));
+        Assert.That(File.ReadAllText(Path.Combine(made, "gamepack-info.yaml")), Does.Contain("data: { file: FOXTROT1.WL6"));
+        Assert.That(content.PackId, Is.EqualTo("foxtrot"));
+        Assert.That(content.HasMap("MAP01"), Is.True);
+        Assert.That(content.Find<TextureAsset>("GSTONEA1"), Is.Not.Null);
+    }
+
+    [Test]
+    [Category("GameData")]
+    public void The_Modder_Says_Which_File_Is_Which_Over_The_Guess()
+    {
+        // Arrange: a VSWAP under another name, and an explicit set naming it
+        var data = GameFolderWithWl6();
+        var mod = Directory.CreateDirectory(Path.Combine(_workFolder, "mod")).FullName;
+        File.Copy(Path.Combine(data, "VSWAP.WL6"), Path.Combine(mod, "PAGES.DAT"));
+        var files = new DataFileSet().With(DataFileKind.Vswap, Path.Combine(mod, "PAGES.DAT"));
+
+        // Act
+        var candidates = RawDataModGenerator.DetectBase(mod, files);
+
+        // Assert
+        Assert.That(candidates[0].ModFiles, Is.EqualTo(files));
+        Assert.That(candidates[0].Sniffed, Is.Zero, "said, not guessed");
+        Assert.That(RawDataModGenerator.FolderFiles(mod), Is.EqualTo(new[] { (Path.Combine(mod, "PAGES.DAT"), new FileInfo(Path.Combine(data, "VSWAP.WL6")).Length) }));
+    }
+
+    [Test]
+    [Category("GameData")]
+    public void The_Command_Line_Takes_Which_File_Is_Which()
+    {
+        // Arrange
+        var data = GameFolderWithWl6();
+        var source = Directory.CreateDirectory(Path.Combine(_workFolder, "Odd TC")).FullName;
+        File.Copy(Path.Combine(data, "VSWAP.WL6"), Path.Combine(source, "PAGES.DAT"));
+        var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
+        var start = new System.Diagnostics.ProcessStartInfo(exe)
+        {
+            WorkingDirectory = _workFolder, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true,
+        };
+        foreach (var arg in new[] { "--make-mod", source, "--data-file", "VSWAP=PAGES.DAT", "--out", Path.Combine(_workFolder, "out") })
+            start.ArgumentList.Add(arg);
+        start.Environment["SDL_VIDEODRIVER"] = "dummy";
+
+        // Act
+        using var process = System.Diagnostics.Process.Start(start)!;
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        Assert.That(process.WaitForExit(TimeSpan.FromMinutes(2)), Is.True);
+        var output = stdout.Result + process.StandardError.ReadToEnd();
+
+        // Assert
+        Assert.That(process.ExitCode, Is.Zero, output);
+        Assert.That(output, Does.Contain("VSWAP     PAGES.DAT"));
+        Assert.That(File.ReadAllText(Path.Combine(_workFolder, "out", "gamepack-info.yaml")), Does.Contain("file: PAGES.DAT"));
+    }
+
+    [Test]
     public void A_Game_Id_Is_Made_From_The_Title()
     {
         Assert.That(RawDataModWriter.GameIdFrom("My Mod: Part 2!"), Is.EqualTo("my-mod-part-2"));
