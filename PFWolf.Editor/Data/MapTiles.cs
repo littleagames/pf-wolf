@@ -355,6 +355,38 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         return ValueUse(x, y) != null;
     }
 
+    /// <summary>
+    /// The mapdefs entries the tile's values could be but the mapdefs don't have (what the map
+    /// marks red): a plane 0 value as a wall (1 to MaxWallId) or a door, or a floor code (the
+    /// floors table, which isn't by id); a patch the wall has; an object-plane value as a thing,
+    /// trigger, player start or (on a wall) a diagonal
+    /// </summary>
+    public IEnumerable<(string Table, int Id)> MissingDefinitions(int x, int y)
+    {
+        int tile = this[0, x, y];
+        if (tile != 0 && KindAt(x, y) == TileKind.Unknown)
+        {
+            if (tile <= MapConstants.MaxWallId)
+                yield return ("walls", tile);
+            yield return ("doors", tile);
+            yield return ("floors", tile);
+        }
+
+        int patch = Patch(x, y);
+        if (patch != 0 && !Defs.Patches.ContainsKey(patch))
+            yield return ("patches", patch);
+
+        if (!ObjectKnown(x, y))
+        {
+            int obj = this[1, x, y];
+            yield return ("things", obj);
+            yield return ("triggers", obj);
+            yield return ("player-starts", obj);
+            if (KindAt(x, y) == TileKind.Wall)
+                yield return ("diagonals", obj);
+        }
+    }
+
     /// <summary>A diagonal marker, which only shapes a wall</summary>
     public MapDiagonalTranslation? Diagonal(int x, int y)
         => KindAt(x, y) == TileKind.Wall ? Defs.Diagonals.GetValueOrDefault(this[1, x, y]) : null;

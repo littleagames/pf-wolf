@@ -417,6 +417,46 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _definitions?.ShowEntry(Definitions.DefinitionKind.MapDefs, path);
     }
 
+    /// <summary>
+    /// The map right-click menu's Create in mapdefs items for a tile: an entry for each of its
+    /// values the mapdefs don't know, in each table it could go in (a wall or a door, a thing or a trigger...)
+    /// </summary>
+    public IReadOnlyList<(string Header, string Table, int Id)> MissingDefinitionsAt(int x, int y)
+    {
+        if (Tiles is not { } tiles || x < 0 || y < 0 || x >= tiles.Width || y >= tiles.Height)
+            return [];
+        return tiles.MissingDefinitions(x, y).Select(missing => (missing.Table switch
+        {
+            "walls" => $"Wall {missing.Id}",
+            "doors" => $"Door {missing.Id}",
+            "floors" => $"Floor code {missing.Id} (the floors codes)…",
+            "patches" => $"Patch {missing.Id}",
+            "things" => $"Thing {missing.Id}",
+            "triggers" => $"Trigger {missing.Id}",
+            "player-starts" => $"Player start {missing.Id}",
+            "diagonals" => $"Diagonal {missing.Id}",
+            _ => $"{missing.Table} {missing.Id}",
+        }, missing.Table, missing.Id)).ToList();
+    }
+
+    /// <summary>
+    /// Opens the definitions window on a new mapdefs entry for a value the map has that they don't
+    /// know (the floors codes for a floor code: they're ranges, not entries by number)
+    /// </summary>
+    public void CreateInMapDefs(string table, int id)
+    {
+        ShowDefinitions();
+        if (_definitions == null)
+            return;
+        if (table == "floors")
+        {
+            _definitions.ShowEntry(Definitions.DefinitionKind.MapDefs, ["floors"]);
+            _definitions.Status = $"{id} isn't a floor code: take area-start or area-count to it, or make it the ambush or secret-exit code, or a trigger";
+        }
+        else
+            _definitions.NewMapDefsEntry(table, id);
+    }
+
     private bool PaletteHasClass => SelectedPaletteItem?.Entry.ThingClass != null;
 
     /// <summary>Opens the definitions window on the actordefs class of the thing the palette has picked</summary>

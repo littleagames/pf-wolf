@@ -523,7 +523,8 @@
                    ShowTags="{Binding ShowTags}" ShowZones="{Binding ShowZones}"
                    ShowGrid="{Binding ShowGrid}"
                    Camera="{Binding Camera}" ShowCamera="{Binding Show3D}"
-                   TileHovered="OnTileHovered" ToolKeyPressed="OnToolKeyPressed" />
+                   TileHovered="OnTileHovered" ToolKeyPressed="OnToolKeyPressed"
+                   TileContextRequested="OnTileContextRequested" />
       <GridSplitter Grid.Column="1" Width="5" ResizeDirection="Columns" IsVisible="{Binding Show3D}"
                     Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
       <Panel Grid.Column="2" IsVisible="{Binding Show3D}">

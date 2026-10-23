@@ -37,7 +37,8 @@ public interface IMapOverlay
 /// A level from above: walls and doors in their textures, things as their sprites, and the
 /// other planes (flats, heights, tags, light zones) as numbered overlays. The left button works
 /// the tools (through the <see cref="Controller"/>); the wheel zooms around the pointer (with Shift
-/// it scrolls across, with Alt up and down), and dragging with the middle or right button pans.
+/// it scrolls across, with Alt up and down), and dragging with the middle or right button pans;
+/// a right click without a drag asks for the tile's menu (<see cref="TileContextRequested"/>).
 /// </summary>
 public sealed class MapCanvas : Control
 {
@@ -84,6 +85,9 @@ public sealed class MapCanvas : Control
     /// <summary>The pointer moved onto another tile, or off the map</summary>
     public event EventHandler<TileEventArgs>? TileHovered;
 
+    /// <summary>The right button was clicked on a tile (pressed and let go without panning)</summary>
+    public event EventHandler<TileEventArgs>? TileContextRequested;
+
     /// <summary>A tool's key letter was pressed over the map</summary>
     public event EventHandler<string>? ToolKeyPressed;
 
@@ -100,6 +104,9 @@ public sealed class MapCanvas : Control
     // Panning with the middle or right button
     private Point? _dragStart;
     private Point _dragOrigin;
+    // The right button is down and hasn't moved past ClickSlop pixels yet: let go, it's a click
+    private bool _rightClick;
+    private const double ClickSlop = 4;
     // The left button is down, working a tool
     private bool _toolDown;
     private (int X, int Y) _hover = (-1, -1);
@@ -761,6 +768,7 @@ public sealed class MapCanvas : Control
             // Middle or right button (or Alt with the left): pan
             _dragStart = position;
             _dragOrigin = _origin;
+            _rightClick = point.Properties.IsRightButtonPressed;
             e.Pointer.Capture(this);
         }
         e.Handled = true;
@@ -774,8 +782,17 @@ public sealed class MapCanvas : Control
             _toolDown = false;
             Controller?.Release();
         }
+
+        // A right press that didn't pan: the tile's right-click menu
+        bool menu = _rightClick && e.InitialPressMouseButton == MouseButton.Right;
+        _rightClick = false;
         _dragStart = null;
         e.Pointer.Capture(null);
+        if (menu && Tiles is { } tiles && TileAt(e.GetPosition(this)) is var (x, y) && x >= 0 && y >= 0 && x < tiles.Width && y < tiles.Height)
+        {
+            TileContextRequested?.Invoke(this, new TileEventArgs(x, y));
+            e.Handled = true;
+        }
     }
 
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
@@ -787,6 +804,7 @@ public sealed class MapCanvas : Control
             Controller?.Release();
         }
         _dragStart = null;
+        _rightClick = false;
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -795,7 +813,10 @@ public sealed class MapCanvas : Control
         var position = e.GetPosition(this);
         if (_dragStart is { } start)
         {
-            _origin = _dragOrigin + (position - start);
+            var moved = position - start;
+            if (Math.Abs(moved.X) > ClickSlop || Math.Abs(moved.Y) > ClickSlop)
+                _rightClick = false;
+            _origin = _dragOrigin + moved;
             InvalidateVisual();
         }
 

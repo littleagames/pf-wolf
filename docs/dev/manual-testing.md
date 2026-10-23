@@ -515,6 +515,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** Right-click on every list selects the row under the pointer first.
 - [ ] **(never tried)** Right-click → Delete in each browser: confirm dialog, mod files only,
       the browser reloads.
+- [ ] **(never tried)** Map grid: a right-drag still pans and shows no menu; a right click shows
+      Create in mapdefs (greyed out on a tile with nothing unknown). On a red plane-0 tile it
+      offers Wall/Door/Floor code, on a red "?" thing Thing/Trigger/Player start (plus Diagonal on
+      a wall), and on a "?" patch badge the Patch. Picking one opens F11 on a new entry with that
+      number (an existing one is just shown); Floor code opens floors. Save it into a mod and the
+      red mark goes away.
 
 ## 2.17 New mod
 

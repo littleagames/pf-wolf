@@ -248,6 +248,14 @@ public sealed partial class DefinitionsViewModel : ObservableObject
             Status = $"{YamlNodes.Describe(path)} has no {string.Join(" ", fieldPath)}";
     }
 
+    /// <summary>Starts a mapdefs entry for a map value they don't know, in the mapdefs tab (or shows the one there is)</summary>
+    public void NewMapDefsEntry(string table, int id)
+    {
+        ShowTabRequested?.Invoke(this, DefinitionKind.MapDefs);
+        MapDefs.Activate();
+        MapDefs.NewMapDefsEntry(table, id);
+    }
+
     /// <summary>Shows a file in the YAML tab, at a definition's line</summary>
     public void ShowYaml(DefinitionFile file, IReadOnlyList<string> path)
     {

@@ -621,14 +621,12 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             case DefinitionKind.MapDefs:
             {
                 var table = choice ?? SelectedItem?.Entry.Path[0] ?? "things";
-                if (NewChoices.FirstOrDefault(known => known.Key.Equals(table, StringComparison.OrdinalIgnoreCase)) is not { } picked)
+                if (TableAsNamed(table, merged) is not { } named)
                 {
                     _owner.Status = $"{table} isn't a table of entries: pick walls, doors, things... from New…";
                     return;
                 }
-                // Named as the files name it, so it's listed with the table's others
-                table = merged.Children.Keys.OfType<YamlScalarNode>().Select(key => key.Value)
-                    .FirstOrDefault(name => picked.Key.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? picked.Key;
+                table = named;
                 var used = (YamlNodes.Get(merged, [table]) as YamlMappingNode)?.Children.Keys.OfType<YamlScalarNode>()
                     .Select(key => int.TryParse(key.Value, out var id) ? id : -1).ToHashSet() ?? [];
                 var free = FreeId(table, used);
@@ -703,6 +701,45 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             }
         }
 
+        StartNewEntry(path, value);
+    }
+
+    /// <summary>
+    /// A mapdefs table's name as the files name it (so a new entry is listed with the table's
+    /// others), or null when it isn't one New… can add to
+    /// </summary>
+    private string? TableAsNamed(string table, YamlMappingNode merged)
+    {
+        if (NewChoices.FirstOrDefault(known => known.Key.Equals(table, StringComparison.OrdinalIgnoreCase)) is not { } picked)
+            return null;
+        return merged.Children.Keys.OfType<YamlScalarNode>().Select(key => key.Value)
+            .FirstOrDefault(name => picked.Key.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? picked.Key;
+    }
+
+    /// <summary>
+    /// Starts a new mapdefs entry for a map value the mapdefs don't know (the map's right-click
+    /// Create in mapdefs): New… with its table and number picked; one there already is just shown
+    /// </summary>
+    public void NewMapDefsEntry(string table, int id)
+    {
+        if (Kind != DefinitionKind.MapDefs || _owner.Set(Kind) is not { } set)
+            return;
+        var merged = set.Merged;
+        if (TableAsNamed(table, merged) is not { } named)
+        {
+            _owner.Status = $"{table} isn't a table of entries";
+            return;
+        }
+
+        IReadOnlyList<string> path = [named, id.ToString(CultureInfo.InvariantCulture)];
+        if (Select(path))
+            return;
+        StartNewEntry(path, new YamlMappingNode());
+    }
+
+    // Lists a new definition, open to fill in and selected
+    private void StartNewEntry(IReadOnlyList<string> path, YamlNode value)
+    {
         var entry = new DefinitionEntry(path, path[^1], Kind == DefinitionKind.MapDefs ? path[0] : "new");
         var item = new EntryItem(entry, true, DescriptionOf(entry));
         var root = new FieldNode(SchemaFor(path), path[^1], value, null, null, _context, isEntry: true);

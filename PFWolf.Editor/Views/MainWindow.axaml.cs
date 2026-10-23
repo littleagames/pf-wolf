@@ -228,6 +228,26 @@ public partial class MainWindow : Window, IEditorDialogs
 
     private void OnTileHovered(object? sender, TileEventArgs e) => ViewModel.Hover(e.X, e.Y);
 
+    /// <summary>The map's right-click menu: Create in mapdefs, for the tile's values they don't know</summary>
+    private void OnTileContextRequested(object? sender, TileEventArgs e)
+    {
+        var missing = ViewModel.MissingDefinitionsAt(e.X, e.Y);
+        var create = new MenuItem
+        {
+            Header = missing.Count > 0 ? "Create in mapdefs" : "Create in mapdefs (the mapdefs know all of this tile)",
+            IsEnabled = missing.Count > 0,
+            [ToolTip.TipProperty] = "Opens the definitions window on a new mapdefs entry for it, to fill in and save into a mod",
+            ItemsSource = missing.Select(item =>
+            {
+                var choice = new MenuItem { Header = item.Header };
+                choice.Click += (_, _) => ViewModel.CreateInMapDefs(item.Table, item.Id);
+                return choice;
+            }).ToList(),
+        };
+        var menu = new ContextMenu { ItemsSource = new[] { create } };
+        menu.Open(Canvas);
+    }
+
     private void ExitEditor(object? sender, RoutedEventArgs e) => Close();
 
     private void OnToolKeyPressed(object? sender, string key) => ViewModel.SelectToolByKey(key);
