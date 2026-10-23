@@ -400,7 +400,7 @@ public class RawDataModGeneratorTests
     }
 
     [TestCase("TED5v1.0")]
-    [TestCase("WDC3.1")]
+    [TestCase("TED6v1.0")]
     [TestCase("CED0.7:Mapfile was edited with ChaosEdit (www.chaos-software.de.vu)")]
     public void Levels_Are_Told_By_The_Banner_Of_The_Editor_That_Saved_Them(string banner)
     {
@@ -413,6 +413,20 @@ public class RawDataModGeneratorTests
 
         // Assert
         Assert.That(guesses, Is.EquivalentTo(new Dictionary<DataFileKind, string> { [DataFileKind.GameMaps] = file }));
+    }
+
+    [Test]
+    public void A_Wdc_Map_Export_Is_Not_Taken_For_The_Levels()
+    {
+        // Arrange
+        var file = Path.Combine(_workFolder, "Map - 0.map");
+        File.WriteAllBytes(file, [.. System.Text.Encoding.ASCII.GetBytes("WDC3.1"), .. new byte[256]]);
+
+        // Act
+        var guesses = DataFileSniffer.Guess([file]);
+
+        // Assert
+        Assert.That(guesses, Does.Not.ContainKey(DataFileKind.GameMaps));
     }
 
     [Test]

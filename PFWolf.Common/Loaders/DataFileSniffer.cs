@@ -18,7 +18,7 @@ public enum DataFileKind
 /// <summary>
 /// Tells which data file is which by what's in it, for a raw data mod whose files aren't named
 /// VSWAP, GAMEMAPS... (FOXTROT1.WL6): GAMEMAPS starts with its editor's banner ("TED5v1.0", WDC's
-/// or ChaosEdit's "CED0.7:..."); MAPHEAD with an RLEW tag
+/// "TED6v1.0" or ChaosEdit's "CED0.7:..."); MAPHEAD with an RLEW tag
 /// and level offsets; VSWAP with a page table that fits the file; VGADICT is 255 Huffman nodes
 /// (1020-1024 bytes); VGAHEAD and AUDIOHED are rising offset tables (3 and 4 bytes) whose last
 /// offset is their data file's size, which pairs them with VGAGRAPH and AUDIOT.
@@ -76,9 +76,9 @@ public static class DataFileSniffer
         return guesses;
     }
 
-    // The banner of the editor that saved it: TED5 (id's, "TED5v1.0"), WDC or ChaosEdit
-    // ("CED0.7:Mapfile was edited with ChaosEdit...")
-    private static readonly string[] GameMapsBanners = ["TED5", "WDC", "CED"];
+    // The banner of the editor that saved it: TED5 (id's, "TED5v1.0"), WDC ("TED6v1.0") or
+    // ChaosEdit ("CED0.7:Mapfile was edited with ChaosEdit..."); not "WDC3.1", WDC's .map export
+    private static readonly string[] GameMapsBanners = ["TED5", "TED6", "CED"];
 
     private static bool LooksLikeGameMaps(byte[] head)
         => head.Length >= 4 && GameMapsBanners.Any(banner => Encoding.ASCII.GetString(head, 0, banner.Length) == banner);
