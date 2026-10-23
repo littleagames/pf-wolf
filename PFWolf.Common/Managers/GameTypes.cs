@@ -225,6 +225,16 @@ public static class GameTypes
     }
 
     /// <summary>
+    /// The release key in gamepack-info.yaml of one of PFWolf's own game packs ("blake" ->
+    /// "blake-aog"), or null for a pack it doesn't know
+    /// </summary>
+    public static string? ReleaseIdOfPack(string gamePackId)
+        => Enum.GetValues<GameType>()
+            .Where(type => GetGamePackId(type).Equals(gamePackId.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Select(type => GetReleaseId(type))
+            .FirstOrDefault();
+
+    /// <summary>
     /// Every game pack name the engine knows about
     /// </summary>
     public static IEnumerable<string> KnownGamePackIds => Enum.GetValues<GameType>().Select(GetGamePackId);

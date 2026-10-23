@@ -19,6 +19,9 @@ public class DirectoryAssetSource : IAssetSource
 
     public string Name => Path.GetFileName(_rootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 
+    /// <summary>The folder's full path</summary>
+    public string RootPath => _rootPath;
+
     public IReadOnlyList<string> EntryPaths { get; }
 
     public MemoryStream Open(string entryPath)

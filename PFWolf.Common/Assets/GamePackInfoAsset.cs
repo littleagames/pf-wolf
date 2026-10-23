@@ -83,8 +83,29 @@ public record GamePackInfoAsset : Asset
     /// (a mod's game built on wolf3d plays wolf3d's files). Null when none has one, as for a
     /// standalone game, which has every asset in its pk3s.
     /// </summary>
-    public FilePack? GetFilePack(string releaseId)
-        => WithBasePacks(releaseId).Select(gamePack => gamePack.FilePack).FirstOrDefault(filePack => filePack != null);
+    public FilePack? GetFilePack(string releaseId) => FilePackOwner(releaseId)?.FilePack;
+
+    // The pack whose file-pack the release plays from: its own, else the nearest base pack's
+    private GamePack? FilePackOwner(string releaseId)
+        => WithBasePacks(releaseId).FirstOrDefault(gamePack => gamePack.FilePack != null);
+
+    /// <summary>
+    /// The folder of the mod whose game gives the release's file-pack, where its data files are
+    /// looked for first; null when the file-pack is pfwolf.pk3's (or a pk3 mod's)
+    /// </summary>
+    public string? GetDataFolder(string releaseId) => FilePackOwner(releaseId)?.ModFolder;
+
+    /// <summary>
+    /// Where one of the release's data files is: in the folder of the mod whose game gives the
+    /// file-pack when it's there (a raw data mod's VSWAP.WL6), else the name as given, which is
+    /// the game folder's (the working folder)
+    /// </summary>
+    public string ResolveDataFile(string releaseId, string file)
+    {
+        if (GetDataFolder(releaseId) is { } folder && File.Exists(Path.Combine(folder, file)))
+            return Path.Combine(folder, file);
+        return file;
+    }
 
     /// <summary>Whether a release plays from data files in the game folder (one built on standalone doesn't)</summary>
     public bool HasDataFiles(string releaseId) => GetFilePack(releaseId) != null;
@@ -95,10 +116,20 @@ public record GamePackInfoAsset : Asset
         yield return GetGamePack(releaseId);
         foreach (var basePack in GetBasePackChain(releaseId))
         {
-            if (GamePacks.TryGetValue(basePack, out var gamePack))
+            if (FindBasePack(basePack) is { } gamePack)
                 yield return gamePack;
         }
     }
+
+    /// <summary>
+    /// A base-pack's entry: the one of its name, else the release of one of PFWolf's own packs of
+    /// that name (base-pack: blake is the blake-aog release), so a mod's game can be built on any
+    /// pack by its folder name
+    /// </summary>
+    private GamePack? FindBasePack(string basePack)
+        => GamePacks.TryGetValue(basePack, out var gamePack) ? gamePack
+            : PFWolf.Managers.GameTypes.ReleaseIdOfPack(basePack) is { } release && GamePacks.TryGetValue(release, out gamePack) ? gamePack
+            : null;
 
     /// <summary>
     /// A data file a release's file-pack gives one of its loaders,
@@ -110,7 +141,7 @@ public record GamePackInfoAsset : Asset
         if (string.IsNullOrWhiteSpace(file))
             throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml is missing a file name for {loaderName}");
 
-        return file;
+        return ResolveDataFile(releaseId, file);
     }
 
     /// <summary>A release's file-pack entry for one of its loaders, or null when it has none</summary>
@@ -133,7 +164,7 @@ public record GamePackInfoAsset : Asset
     public List<string> FindMissingDataFiles(string releaseId)
         => DataFiles(releaseId, includeMaps: false)
             .Select(file => file.File!)
-            .Where(file => !File.Exists(file))
+            .Where(file => !File.Exists(ResolveDataFile(releaseId, file)))
             .ToList();
 
     /// <summary>
@@ -142,9 +173,10 @@ public record GamePackInfoAsset : Asset
     /// </summary>
     public List<string> FindMismatchedDataFiles(string releaseId)
         => DataFiles(releaseId, includeMaps: true)
-            .Where(file => !string.IsNullOrWhiteSpace(file.Md5) && File.Exists(file.File))
-            .Where(file => !Md5Of(file.File!).Equals(file.Md5!.Trim(), StringComparison.OrdinalIgnoreCase))
-            .Select(file => file.File!)
+            .Select(file => (Path: ResolveDataFile(releaseId, file.File!), file.Md5))
+            .Where(file => !string.IsNullOrWhiteSpace(file.Md5) && File.Exists(file.Path))
+            .Where(file => !Md5Of(file.Path).Equals(file.Md5!.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Select(file => file.Path)
             .ToList();
 
     /// <summary>
@@ -166,7 +198,8 @@ public record GamePackInfoAsset : Asset
             .Where(file => !string.IsNullOrWhiteSpace(file?.File))
             .Select(file => file!);
 
-    private static string Md5Of(string path)
+    /// <summary>A file's md5 as gamepack-info writes it (upper-case hex)</summary>
+    public static string Md5Of(string path)
     {
         using var stream = File.OpenRead(path);
         return Convert.ToHexString(System.Security.Cryptography.MD5.HashData(stream));
@@ -185,7 +218,7 @@ public record GamePackInfoAsset : Asset
                && !chain.Contains(basePack, StringComparer.OrdinalIgnoreCase))
         {
             chain.Add(basePack);
-            basePack = GamePacks.TryGetValue(basePack, out var next) ? next.BasePack : null;
+            basePack = FindBasePack(basePack)?.BasePack;
         }
 
         return chain;
@@ -308,4 +341,12 @@ public record GamePack
     /// with none along the way, none at all (everything comes from the pk3s)
     /// </summary>
     public FilePack? FilePack { get; init; }
+
+    /// <summary>
+    /// The folder of the mod that adds this game, where its file-pack's data files are looked for
+    /// before the game folder (a raw data mod); null for pfwolf.pk3's games and a pk3 mod's. Not
+    /// read from the YAML: ModSource sets it.
+    /// </summary>
+    [YamlDotNet.Serialization.YamlIgnore]
+    public string? ModFolder { get; init; }
 }

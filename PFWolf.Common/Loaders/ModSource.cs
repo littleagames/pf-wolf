@@ -235,16 +235,23 @@ public class ModSource
         return new ModSource(fullPath, source, info, ReadGames(source, warnings));
     }
 
-    /// <summary>The games a mod's root gamepack-info.yaml adds, or null when it has none or it can't be read</summary>
+    /// <summary>
+    /// The games a mod's root gamepack-info.yaml adds, or null when it has none or it can't be
+    /// read. A folder mod's games look for their data files in the folder first (ModFolder).
+    /// </summary>
     public static GamePackInfoAsset? ReadGames(IAssetSource source, List<string> warnings)
     {
+        var modFolder = (source as DirectoryAssetSource)?.RootPath;
         var path = source.EntryPaths.FirstOrDefault(entry => entry.Equals(GamePackInfoFileName, StringComparison.OrdinalIgnoreCase));
         if (path == null)
             return null;
 
         try
         {
-            return new GamePackInfoAsset(YamlDataEntryLoader.Read<Dictionary<string, GamePack>>(source.Open(path)) ?? []);
+            var games = YamlDataEntryLoader.Read<Dictionary<string, GamePack>>(source.Open(path)) ?? [];
+            if (modFolder != null)
+                games = games.ToDictionary(game => game.Key, game => game.Value with { ModFolder = modFolder });
+            return new GamePackInfoAsset(games);
         }
         catch (Exception e)
         {

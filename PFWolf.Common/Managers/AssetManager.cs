@@ -52,7 +52,11 @@ public class AssetManager
     /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml ("wolf3d-apogee")</param>
     /// <param name="modPaths">Mods to load over pfwolf.pk3, in load order: paths, or names in the mods folder</param>
     /// <param name="progress">Told each step as it starts ("Reading the levels"), for a loading screen; on this thread</param>
-    public void Load(string gamePackId, string gameReleaseId, IEnumerable<string> modPaths, Action<string>? progress = null)
+    /// <param name="definitionsOnly">Only pfwolf.pk3's and the mods' files (raw-data-map, mapdefs,
+    /// gamepack-info...), none of the data files, which needn't be there: for reading a pack's
+    /// definitions (the raw data mod generator)</param>
+    public void Load(string gamePackId, string gameReleaseId, IEnumerable<string> modPaths, Action<string>? progress = null,
+        bool definitionsOnly = false)
     {
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
@@ -79,6 +83,9 @@ public class AssetManager
             if (!_assets.ContainsKey(kvp.Key))
                 SetAsset(kvp.Key, kvp.Value);
         }
+
+        if (definitionsOnly)
+            return;
 
         var rawDataMap = FindInGamePackIfAny<RawDataMapAsset>("raw-data-map");
 
@@ -131,7 +138,7 @@ public class AssetManager
                 DataFileWarning(DataFile("Wolf3DVswapFileLoader", d => d.Data))),
             DataFile("Wolf3DVswapFileLoader", d => d.Data));
 
-        LoadMovies(gamePackInfo.FindFileLoader(gameReleaseId, "JamMovieFileLoader")?.Movies);
+        LoadMovies(gamePackInfo.FindFileLoader(gameReleaseId, "JamMovieFileLoader")?.Movies, file => gamePackInfo.ResolveDataFile(gameReleaseId, file));
 
         ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
         BuildCroppedGraphics();
@@ -427,9 +434,12 @@ public class AssetManager
         var filePack = gamePackInfo.GetFilePack(gameReleaseId);
         var release = filePack?.Description ?? gamePack.Title ?? gameReleaseId;
 
+        var dataFolder = gamePackInfo.GetDataFolder(gameReleaseId);
         var missing = gamePackInfo.FindMissingDataFiles(gameReleaseId);
         if (missing.Count > 0)
-            throw new DataFilesException($"{release}: these data files aren't in the game folder: {string.Join(", ", missing)}");
+            throw new DataFilesException(dataFolder != null
+                ? $"{release}: these data files are neither in {dataFolder} nor in the game folder: {string.Join(", ", missing)}"
+                : $"{release}: these data files aren't in the game folder: {string.Join(", ", missing)}");
 
         if (filePack?.StrictMd5 == true)
         {
@@ -438,17 +448,24 @@ public class AssetManager
                 throw new DataFilesException(
                     $"These data files aren't {release}'s, the only version that can be played: {string.Join(", ", mismatched)}");
         }
+        else if (dataFolder != null)
+        {
+            // A raw data mod's files edited again since its raw-data-map was made: names may be off
+            foreach (var file in gamePackInfo.FindMismatchedDataFiles(gameReleaseId))
+                WarningLog.Write($"{file} has changed since its gamepack-info.yaml and raw-data-map.yaml were made: run the generator again (--make-mod) if its names are off");
+        }
     }
 
     /// <summary>
     /// The release's JAM movies (Blake Stone's), by the names its file-pack gives them. One
     /// that's missing or can't be read is left out, and the game goes on without it.
     /// </summary>
-    private void LoadMovies(Dictionary<string, FileReference>? movies)
+    private void LoadMovies(Dictionary<string, FileReference>? movies, Func<string, string> resolve)
     {
         foreach (var (name, file) in movies ?? [])
         {
-            if (string.IsNullOrWhiteSpace(file.File) || !File.Exists(file.File))
+            var path = string.IsNullOrWhiteSpace(file.File) ? null : resolve(file.File);
+            if (path == null || !File.Exists(path))
             {
                 WarningLog.Write($"Movie {name}: {file.File} isn't there, so it won't play");
                 continue;
@@ -456,11 +473,11 @@ public class AssetManager
 
             try
             {
-                AddDataFileAssets(new Dictionary<string, Asset> { [name] = new JamMovieAsset(File.ReadAllBytes(file.File)) }, file.File);
+                AddDataFileAssets(new Dictionary<string, Asset> { [name] = new JamMovieAsset(File.ReadAllBytes(path)) }, path);
             }
             catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
             {
-                WarningLog.Write($"Movie {name}: {file.File} can't be read, so it won't play: {e.Message}");
+                WarningLog.Write($"Movie {name}: {path} can't be read, so it won't play: {e.Message}");
             }
         }
     }
@@ -522,7 +539,10 @@ public class AssetManager
             AddPair(Wolf3dMapFileLoader.FromFiles(headerFile!, dataFile!), dataFile!.ToLowerInvariant(), name => name,
                 warning => ModWarnings.Add($"{dataFile}: {warning}"));
 
-        var pk3Pair = headerFile != null && dataFile != null ? pk3Loader.FindMapFilePair(headerFile, dataFile) : null;
+        // (named as the release names them: a raw data mod's file names come resolved to its folder)
+        var pk3Pair = headerFile != null && dataFile != null
+            ? pk3Loader.FindMapFilePair(Path.GetFileName(headerFile), Path.GetFileName(dataFile))
+            : null;
         if (pk3Pair is { } pair)
         {
             var where = $"{pair.Data.Source.Name}: {pair.Data.FullName}";
