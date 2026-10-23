@@ -332,6 +332,11 @@ public sealed class GameContent
                || GameInfo.Maps.Values.Any(map => Named(map.Next) || Named(map.SecretNext));
     }
 
+    /// <summary>A raw data mod's chunks still under the generator's made-up names (RawDataMapFile.NamesToGive), read once</summary>
+    public IReadOnlyDictionary<string, ModEntry> ChunksToName => _chunksToName ??= RawDataMapFile.NamesToGive(this);
+
+    private Dictionary<string, ModEntry>? _chunksToName;
+
     /// <summary>The names of every music asset, for the level properties</summary>
     public IReadOnlyList<string> MusicNames { get; private set; } = [];
 

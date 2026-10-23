@@ -1,10 +1,42 @@
 # Raw data mods plan: playing WDC/ChaosEdit data files with a generated raw-data-map
 
-## Status (2026-10-22): planned, not started
+## Status (2026-10-22): phases 1–4 done, 5–6 not started
 
-The decisions are made (below) and the phases are ready to build. Nothing is built. This takes
-over phases 1–2 of the classic-mod-import plan (the 2026-10-12 discussion of a one-way import
-into a mod), which becomes optional phase 5 here.
+This takes over phases 1–2 of the classic-mod-import plan (the 2026-10-12 discussion of a one-way
+import into a mod), which becomes optional phase 5 here. Branch `feature/editor/raw-mod-data`.
+
+- **Phases 1–2** (09fcf1db): mod-folder data files, md5 warning, `DataFileChunks`,
+  `RawDataModGenerator.Match` / `MatchSection` / `DetectBase`.
+- **Phase 3** (cb1d7643): `RawDataModWriter`, `PFWolf --make-mod`.
+- **Phase 4**: the editor's File → New mod from data files…, re-runs keeping names (also
+  through `--make-mod --overwrite`), the art browser's Show → Needs a name and Name…, and the
+  level check for unnamed walls.
+- **Checked:**
+  - Tests: `RawDataModTests` and `RawDataModGeneratorTests`, 21 of them, most needing the WL6
+    files.
+  - By hand: `--make-mod` on renamed copies of the WL6 VSWAP/GAMEMAPS/MAPHEAD, then all 4 Wolf3D
+    demos play headless with the made mod loaded.
+- **Not checked:** see the "(never tried)" items in docs/dev/manual-testing.md 1.14 and 2.17.
+  - No real WDC/ChaosEdit mod has been tried, and no Spear, Blake or Planet Strike files have
+    been through the generator.
+  - The editor dialog and the art browser's Name… haven't been looked at on screen.
+  - Pics added to VGAGRAPH are only tested on made-up parts (no test VGAGRAPH writer), so the
+    `alias.yaml` remapping hasn't run on real files.
+- **Differences from the phases below:**
+  - **No game-info.yaml stub:** a mod game inherits the base game's game-info, so the exe-side
+    to-do list is in the report (`raw-data-mod.txt`) instead.
+  - **The levels' pair stays at the mod's root:** the file-pack names it and it's looked for in
+    the mod folder first, so it isn't moved to `maps/`.
+  - **New wall ids** are written only for page pairs that are new, moved or changed, past the
+    base game's walls and outside its door and floor codes.
+  - **Base packs resolve by pack name:** `base-pack: blake` / `planetstrike` now find the
+    blake-aog / blake-ps entries (`GamePackInfoAsset.FindBasePack`), so a mod game on Blake gets
+    its whole base-pack chain.
+  - **Tied base detection:** with only files the Wolf3D releases share (VSWAP, GAMEMAPS), wolf3d
+    and wolf3d-apogee tie at 100% and wolf3d is picked. `--base` or the dialog changes it.
+  - **The sound browser has no Name… yet:** sounds and music still have to be renamed in
+    raw-data-map.yaml by hand.
+  - **No test writers for VGAGRAPH or AUDIOT.** VSWAP's is in the tests (`TestVswap`).
 
 Goal: a classic mod made by editing the raw data files (VSWAP, VGAGRAPH/VGAHEAD/VGADICT,
 AUDIOHED/AUDIOT, MAPHEAD/GAMEMAPS, with WDC or ChaosEdit) plays in PFWolf as a mod, without

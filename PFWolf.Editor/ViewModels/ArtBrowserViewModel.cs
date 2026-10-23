@@ -71,6 +71,8 @@ public enum ArtShow
     InUse,
     NotInUse,
     FromMods,
+    /// <summary>A raw data mod's new chunks still under their made-up names (WALL0098)</summary>
+    NeedsName,
 }
 
 public sealed record ArtShowOption(ArtShow Show, string Label)
@@ -151,7 +153,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         new(ArtShow.InUse, "In use"),
         new(ArtShow.NotInUse, "Not in use"),
         new(ArtShow.FromMods, "From the mods"),
+        new(ArtShow.NeedsName, "Needs a name"),
     ];
+
+    // A raw data mod's chunks its raw-data-map.yaml still marks to name, with that mod
+    private Dictionary<string, ModEntry> _toName = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<ArtBackgroundOption> Backgrounds { get; } =
     [
@@ -292,7 +298,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection), nameof(Preview), nameof(PreviewWidth), nameof(PreviewHeight), nameof(Details), nameof(CanReplace))]
-    [NotifyCanExecuteChangedFor(nameof(UseInPaletteCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UseInPaletteCommand), nameof(NameChunkCommand))]
     private ArtItem? _selectedItem;
 
     /// <summary>Replace… applies: a picture is picked that isn't an animation or a crop</summary>
@@ -548,6 +554,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
             _modSources = content.Assets.LoadedMods.Select(mod => mod.Source.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             Title = $"Textures and sprites - {content.Title}";
         }
+        _toName = content?.ChunksToName.ToDictionary(StringComparer.OrdinalIgnoreCase) ?? new(StringComparer.OrdinalIgnoreCase);
 
         // The kinds with how many there are of each
         var kindPicked = SelectedKind?.Kind;
@@ -674,6 +681,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
                 ArtShow.InUse => entry.Uses.Count > 0,
                 ArtShow.NotInUse => entry.Uses.Count == 0,
                 ArtShow.FromMods => _modSources.Contains(entry.Source),
+                ArtShow.NeedsName => _toName.ContainsKey(entry.Name),
                 _ => true,
             };
 
@@ -824,6 +832,28 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
             ?? (ArtFiles.Exists(content, entry.Kind, typed) ? $"The game has a {typed.ToUpperInvariant()} already." : null));
         if (newName != null)
             await Make(_ => ArtFiles.Rename(file, entry.Kind, newName), null);
+    }
+
+    private bool CanNameChunk => SelectedItem != null && _toName.ContainsKey(SelectedItem.Entry.Name);
+
+    /// <summary>
+    /// Names a raw data mod's new chunk (WALL0098) in its raw-data-map.yaml, and in the mapdefs
+    /// walls the generator gave it; the picture is still read from the data file
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanNameChunk))]
+    private async Task NameChunkAsync()
+    {
+        if (_content is not { } content || SelectedItem?.Entry is not { } entry || AskText == null
+            || !_toName.TryGetValue(entry.Name, out var file))
+            return;
+        var name = entry.Name;
+        var newName = await AskText($"Name {name}", $"A name for {name}, a chunk of the raw data mod's data files, in {file.ModName}'s "
+            + $"{file.EntryPath} (and the mapdefs walls made for it). Other definitions that use it by name don't follow.", name, typed =>
+            ArtFiles.CheckName(typed)
+            ?? (typed.Equals(name, StringComparison.OrdinalIgnoreCase) ? "That's its name now." : null)
+            ?? (ArtFiles.Exists(content, entry.Kind, typed) ? $"The game has a {typed.ToUpperInvariant()} already." : null));
+        if (newName != null)
+            await Make(_ => RawDataMapFile.Rename(file, entry.Kind, name, newName.ToUpperInvariant()), null);
     }
 
     /// <summary>Takes the mod's picture shown out of its mod (the game's own of that name shows again)</summary>

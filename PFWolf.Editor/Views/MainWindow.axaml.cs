@@ -421,6 +421,136 @@ public partial class MainWindow : Window, IEditorDialogs
         return answer;
     }
 
+    public async Task<RawDataModRequest?> AskRawDataMod(string modsFolder, Func<string, IReadOnlyList<PFWolf.Managers.BaseCandidate>> detect)
+    {
+        var folder = new TextBox { Watermark = "The folder with the mod's VSWAP, VGAGRAPH, AUDIOT, GAMEMAPS… files" };
+        var browse = new Button { Content = "Browse…" };
+        var game = new ComboBox { MinWidth = 300, IsEnabled = false };
+        var found = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
+        var title = new TextBox();
+        var target = new TextBox();
+        var error = new TextBlock { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
+        var ok = new Button { Content = "Make it", IsDefault = true, Classes = { "accent" }, IsEnabled = false };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+
+        // The title and mod folder follow the data folder's name until typed over, as in New mod
+        string followedTitle = "", followedTarget = "";
+        void Look()
+        {
+            var path = folder.Text?.Trim() ?? "";
+            var name = Path.GetFileName(path.TrimEnd('\\', '/'));
+            if ((title.Text ?? "") == followedTitle)
+                title.Text = followedTitle = name;
+            if ((target.Text ?? "") == followedTarget)
+                target.Text = followedTarget = name.Length > 0 ? Path.Combine(modsFolder, name) : "";
+
+            IReadOnlyList<PFWolf.Managers.BaseCandidate> candidates = [];
+            try
+            {
+                candidates = Directory.Exists(path) ? detect(path) : [];
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or KeyNotFoundException)
+            {
+                error.Text = e.Message;
+            }
+            game.ItemsSource = candidates.Select(candidate => new GameChoice(candidate.ReleaseId,
+                $"{candidate.Title}: " + (candidate.Share is { } share ? $"{share:P0} the same" : "its files aren't here to compare"))).ToList();
+            game.SelectedIndex = candidates.Count > 0 ? 0 : -1;
+            game.IsEnabled = ok.IsEnabled = candidates.Count > 0;
+            found.Text = candidates.Count == 0
+                ? (path.Length == 0 ? "" : "No data files of a game PFWolf plays are there.")
+                : "Its files: " + string.Join(", ", candidates[0].ModFiles.Files.Select(Path.GetFileName))
+                  + ". The rest come from the game's own files in the PFWolf folder.";
+            _rawDataCandidates = candidates;
+        }
+        folder.LostFocus += (_, _) => Look();
+        browse.Click += async (_, _) =>
+        {
+            var picked = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "The folder of data files" });
+            if (picked is [var chosen, ..] && chosen.TryGetLocalPath() is { } local)
+            {
+                folder.Text = local;
+                Look();
+            }
+        };
+
+        var dialog = MakeDialog("New mod from data files", new StackPanel
+        {
+            Spacing = 8,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Makes a mod folder that plays a classic mod's edited data files as they are. Their chunks get the names of the "
+                           + "game they're built on where they're its own (or replace its own); new ones get names like WALL0106 to change "
+                           + "in the mod's raw-data-map.yaml.",
+                    TextWrapping = TextWrapping.Wrap,
+                },
+                new TextBlock { Text = "Data files:" },
+                new DockPanel { Children = { DockRight(browse), folder } },
+                found,
+                new TextBlock { Text = "Built on:" },
+                game,
+                new TextBlock { Text = "Title:" },
+                title,
+                new TextBlock { Text = "Mod folder (the data files are copied in; made here again later, the names given since are kept):" },
+                target,
+                error,
+                Buttons(ok, cancel),
+            },
+        });
+        dialog.Width = 540;
+
+        RawDataModRequest? answer = null;
+        ok.Click += (_, _) =>
+        {
+            var gameTitle = title.Text?.Trim() ?? "";
+            var modFolder = target.Text?.Trim() ?? "";
+            var candidate = game.SelectedIndex >= 0 && game.SelectedIndex < _rawDataCandidates.Count ? _rawDataCandidates[game.SelectedIndex] : null;
+            var problem = candidate == null ? "Pick a folder of data files a game PFWolf plays has."
+                : gameTitle.Length == 0 ? "Give the game a title."
+                : modFolder.Length == 0 ? "Pick the mod folder."
+                : Editing.ModFiles.IsArchive(modFolder) ? "A raw data mod is a folder, not a pk3."
+                : null;
+            if (problem != null)
+            {
+                error.Text = problem;
+                return;
+            }
+
+            answer = new RawDataModRequest(folder.Text!.Trim(), candidate!, gameTitle, PFWolf.Managers.RawDataModWriter.GameIdFrom(gameTitle), Path.GetFullPath(modFolder));
+            dialog.Close();
+        };
+        cancel.Click += (_, _) => dialog.Close();
+        dialog.Opened += (_, _) => folder.Focus();
+
+        await dialog.ShowDialog(DialogOwner);
+        return answer;
+    }
+
+    private IReadOnlyList<PFWolf.Managers.BaseCandidate> _rawDataCandidates = [];
+
+    public async Task ShowText(string title, string text)
+    {
+        var close = new Button { Content = "Close", IsDefault = true, IsCancel = true, Classes = { "accent" } };
+        var dialog = MakeDialog(title, new StackPanel
+        {
+            Spacing = 8,
+            Children =
+            {
+                new TextBox
+                {
+                    Text = text, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap,
+                    FontFamily = new FontFamily("Cascadia Mono,Consolas,monospace"), Height = 360,
+                },
+                Buttons(close),
+            },
+        });
+        dialog.Width = 680;
+        close.Click += (_, _) => dialog.Close();
+        await dialog.ShowDialog(DialogOwner);
+    }
+
     private static Control DockLeft(Control control)
     {
         DockPanel.SetDock(control, Dock.Left);

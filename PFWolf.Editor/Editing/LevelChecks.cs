@@ -48,6 +48,8 @@ public static class LevelChecks
         var unknownPatches = new Dictionary<int, (int X, int Y, int Count)>();
         var brokenThings = new Dictionary<string, (int X, int Y, int Count)>();
         var unusedDoorValues = new Dictionary<int, (int X, int Y, int Count)>();
+        var unnamedWalls = new Dictionary<int, (int X, int Y, int Count)>();
+        var toName = tiles.Content.ChunksToName;
         int doors = 0;
         (int X, int Y) firstPastDoorLimit = (-1, -1);
         for (int y = 0; y < tiles.Height; y++)
@@ -59,6 +61,9 @@ public static class LevelChecks
 
                 if (kind == TileKind.Unknown)
                     Count(unknownFloor, tile, x, y);
+                else if (toName.Count > 0 && kind == TileKind.Wall && tiles.Wall(x, y) is { } wall
+                         && new[] { wall.North, wall.South, wall.East, wall.West }.Any(toName.ContainsKey))
+                    Count(unnamedWalls, tile, x, y);
 
                 if (tiles.PlayerStart(x, y) is { Deathmatch: false })
                     starts.Add((x, y));
@@ -116,6 +121,13 @@ public static class LevelChecks
             problems.Add(new(CheckSeverity.Warning, $"object code {value} isn't in the mapdefs, so nothing's placed ({count} {Tiles(count)})", x, y));
         foreach (var (reason, (x, y, count)) in brokenThings)
             problems.Add(new(CheckSeverity.Warning, $"{reason}, so nothing shows ({count} {Tiles(count)})", x, y));
+        foreach (var (value, (x, y, count)) in unnamedWalls)
+        {
+            var wall = defs.Walls[value];
+            var names = new[] { wall.North, wall.South, wall.East, wall.West }.Where(toName.ContainsKey).Distinct(StringComparer.OrdinalIgnoreCase);
+            problems.Add(new(CheckSeverity.Warning, $"wall {value} shows {string.Join(" and ", names)}, which the raw data mod hasn't named yet "
+                + $"(the art browser's Name… does it) ({count} {Tiles(count)})", x, y));
+        }
         foreach (var (value, (x, y, count)) in unknownPatches)
             problems.Add(new(CheckSeverity.Warning, $"patch {value} isn't in the mapdefs patches, so nothing's drawn ({count} {Tiles(count)})", x, y));
 

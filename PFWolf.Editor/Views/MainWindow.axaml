@@ -67,6 +67,8 @@
         <Separator />
         <MenuItem Header="New _mod…" Command="{Binding NewModCommand}"
                   ToolTip.Tip="A new pk3: a stand-alone game (needing no other game's files) or a mod of one of PFWolf's games" />
+        <MenuItem Header="New mod from _data files…" Command="{Binding NewRawDataModCommand}"
+                  ToolTip.Tip="A mod folder playing WDC/ChaosEdit-edited data files (VSWAP, VGAGRAPH, AUDIOT, GAMEMAPS): names their chunks against the game they're built on, new ones marked to name. Again on the same mod folder after editing the files keeps the names given since." />
         <MenuItem Header="Add mod _pk3…" Click="AddModFile" />
         <MenuItem Header="Add mod _folder…" Click="AddModFolder" />
         <Separator />
@@ -385,6 +387,7 @@
             <MenuItem Header="Remove" Command="{Binding RemoveModCommand}" />
             <Separator />
             <MenuItem Header="New mod…" Command="{Binding NewModCommand}" />
+            <MenuItem Header="New mod from data files…" Command="{Binding NewRawDataModCommand}" />
             <MenuItem Header="Add pk3…" Click="AddModFile" />
             <MenuItem Header="Add folder…" Click="AddModFolder" />
           </ContextMenu>

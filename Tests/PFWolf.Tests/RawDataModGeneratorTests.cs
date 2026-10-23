@@ -256,6 +256,86 @@ public class RawDataModGeneratorTests
     }
 
     [Test]
+    public void Run_Again_A_Mod_Keeps_The_Names_Given_Since_And_Says_What_Went()
+    {
+        // Arrange: last time PIC0001 (hash abcd...) was renamed BOSSPIC, and a chunk now gone was GONEPIC
+        var match = new RawDataMatch("wolf3d", "wolf3d", new GamePack(), new FilePack(), new DataFileSet(), BaseFilesFound: true,
+        [
+            new SectionMatch(ChunkSection.Pics, ["P0"],
+                [new NamedChunk(0, "P0", ChunkMatch.Same, "1111", 0), new NamedChunk(1, "PIC0001", ChunkMatch.New, "abcdef0123456789ff", null)]),
+        ], "STRUCTPIC", FontCount: 0) { GamePalette = "wolfpal" };
+        const string previous = """
+            graphics:
+                - STRUCTPIC
+                - P0
+                - BOSSPIC  # new [abcdef0123456789]
+                - "GONE PIC"  # new [9999999999999999]
+            """;
+
+        // Act
+        var files = RawDataModWriter.Write(match, "my-mod", "My Mod", previous);
+
+        // Assert
+        Assert.That(RawDataModWriter.KeptNames(previous), Is.EqualTo(new Dictionary<string, string>
+        {
+            ["abcdef0123456789"] = "BOSSPIC",
+            ["9999999999999999"] = "GONE PIC",
+        }));
+        Assert.That(files.Texts["raw-data-map.yaml"], Does.Contain("- BOSSPIC  # new [abcdef0123456789]"));
+        Assert.That(files.Report, Does.Not.Contain("To name").And.Contain("No longer in the data files (named last time): GONE PIC"));
+    }
+
+    [Test]
+    public void A_Chunk_Is_Named_On_Its_Line_And_In_The_Walls_Made_For_It()
+    {
+        // Arrange
+        const string map = "walls:\n    - GSTONEA1\n    - WALL0098  # new: name this [0123456789abcdef]\n    - \"WALL0099\"  # new: name this [fedcba9876543210]\n";
+        const string walls = "walls:\n    '50':\n        North: WALL0098\n        East: WALL0099  # dark\n        West: WALL00980\n";
+
+        // Act
+        var renamed = RawDataModWriter.RenameChunk(map, "wall0098", "BUNKER1");
+        var renamedWalls = RawDataModWriter.RenameValues(walls, "WALL0098", "BUNKER1");
+
+        // Assert
+        Assert.That(RawDataModWriter.NamesToGive(map), Is.EqualTo(new[] { "WALL0098", "WALL0099" }));
+        Assert.That(renamed, Does.Contain("    - BUNKER1  # new [0123456789abcdef]\n"));
+        Assert.That(RawDataModWriter.NamesToGive(renamed!), Is.EqualTo(new[] { "WALL0099" }));
+        Assert.That(RawDataModWriter.KeptNames(renamed!)["0123456789abcdef"], Is.EqualTo("BUNKER1"), "a run after keeps it");
+        Assert.That(RawDataModWriter.RenameChunk(map, "NOPE", "X"), Is.Null);
+        Assert.That(renamedWalls, Does.Contain("North: BUNKER1\n").And.Contain("East: WALL0099  # dark").And.Contain("West: WALL00980"));
+    }
+
+    [Test]
+    [Category("GameData")]
+    public void The_Editor_Lists_The_Chunks_To_Name_And_Names_One()
+    {
+        // Arrange: a made mod with one new wall id
+        var data = GameFolderWithWl6();
+        var source = Directory.CreateDirectory(Path.Combine(_workFolder, "source")).FullName;
+        var pages = TestVswap.Read(Path.Combine(data, "VSWAP.WL6"));
+        pages.InsertWalls(pages.SpriteStart - 8, Enumerable.Repeat((byte)7, 4096).ToArray(), Enumerable.Repeat((byte)8, 4096).ToArray());
+        pages.Write(Path.Combine(source, "VSWAP.WL6"));
+        var mod = Path.Combine(_workFolder, "made-mod");
+        var match = RawDataModGenerator.Match(source, "wolf3d");
+        RawDataModWriter.Save(RawDataModWriter.Write(match, "made-mod", "Made Mod"), mod, overwrite: false);
+        var added = match[ChunkSection.Walls]!.BaseNames.Count - 8;
+        var placeholder = $"WALL{added:0000}";
+
+        // Act
+        var content = PFWolf.Editor.Data.GameContent.Load(data, "", [mod]);
+        var toName = PFWolf.Editor.Data.RawDataMapFile.NamesToGive(content);
+        PFWolf.Editor.Data.RawDataMapFile.Rename(toName[placeholder], PFWolf.Editor.Data.ArtKind.Texture, placeholder, "BUNKER1").Apply();
+        var reloaded = PFWolf.Editor.Data.GameContent.Load(data, "", [mod]);
+
+        // Assert
+        Assert.That(toName.Keys, Is.EquivalentTo(new[] { placeholder, $"WALL{added + 1:0000}" }));
+        Assert.That(reloaded.Find<TextureAsset>("BUNKER1")!.RawData[0], Is.EqualTo(7));
+        Assert.That(reloaded.Find<TextureAsset>(placeholder), Is.Null);
+        Assert.That(reloaded.MapDefs.Walls[added / 2 + 1].North, Is.EqualTo("BUNKER1"));
+        Assert.That(PFWolf.Editor.Data.RawDataMapFile.NamesToGive(reloaded).Keys, Is.EquivalentTo(new[] { $"WALL{added + 1:0000}" }));
+    }
+
+    [Test]
     public void A_Game_Id_Is_Made_From_The_Title()
     {
         Assert.That(RawDataModWriter.GameIdFrom("My Mod: Part 2!"), Is.EqualTo("my-mod-part-2"));

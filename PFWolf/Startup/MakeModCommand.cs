@@ -50,7 +50,9 @@ internal static class MakeModCommand
 
             output.WriteLine($"Building on {release}; the game is {gameId} (\"{title}\"), written to {modFolder}");
             var match = RawDataModGenerator.Match(dataFolder, release);
-            var files = RawDataModWriter.Write(match, gameId, title);
+            // Run again on a mod made before: the names given since are kept
+            var previous = Path.Combine(modFolder, "raw-data-map.yaml");
+            var files = RawDataModWriter.Write(match, gameId, title, File.Exists(previous) ? File.ReadAllText(previous) : null);
             var clashes = RawDataModWriter.Save(files, modFolder, gameParams.Overwrite);
             if (clashes.Count > 0 && !gameParams.Overwrite)
             {

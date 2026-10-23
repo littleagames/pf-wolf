@@ -16,7 +16,7 @@ public sealed record RawDataModFiles(IReadOnlyDictionary<string, string> Texts, 
 /// new chunks marked for the modder to name; alias.yaml when VGAGRAPH's chunk numbers moved;
 /// mapdefs walls for wall ids the base game doesn't have; a modinfo.yaml; and a report.
 /// </summary>
-public static class RawDataModWriter
+public static partial class RawDataModWriter
 {
     /// <summary>The report's file name in the mod</summary>
     public const string ReportFileName = "raw-data-mod.txt";
@@ -26,8 +26,15 @@ public static class RawDataModWriter
 
     /// <param name="gameId">The mod's game's id (its pack id: settings, saves and --game go by it)</param>
     /// <param name="title">The game's title</param>
-    public static RawDataModFiles Write(RawDataMatch match, string gameId, string title)
+    /// <param name="previousRawDataMap">The mod's raw-data-map.yaml from the last time (run again after
+    /// the files were edited): a new or changed chunk whose [hash] it gives keeps the name it has there</param>
+    public static RawDataModFiles Write(RawDataMatch match, string gameId, string title, string? previousRawDataMap = null)
     {
+        var kept = previousRawDataMap == null ? [] : KeptNames(previousRawDataMap);
+        match = WithKeptNames(match, kept);
+        var gone = kept.Where(entry => !match.Sections.Any(section => section.Chunks.Any(chunk => Short(chunk.Hash) == entry.Key)))
+            .Select(entry => entry.Value).ToList();
+
         var texts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["modinfo.yaml"] = ModInfo(gameId, title, match),
@@ -42,9 +49,88 @@ public static class RawDataModWriter
         if (walls != null)
             texts["mapdefs/walls.yaml"] = walls;
 
-        var report = Report(match, gameId, title, texts.Keys, wallIds);
+        var report = Report(match, gameId, title, texts.Keys, wallIds, gone);
         texts[ReportFileName] = report;
         return new RawDataModFiles(texts, match.ModFiles.Files.ToList(), report);
+    }
+
+    /// <summary>
+    /// The names a raw-data-map.yaml this wrote gives its new and changed chunks, by the [hash] at
+    /// the end of their lines (as the modder may have renamed them since)
+    /// </summary>
+    public static Dictionary<string, string> KeptNames(string rawDataMap)
+    {
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (System.Text.RegularExpressions.Match line in KeptLine().Matches(rawDataMap))
+            names.TryAdd(line.Groups["hash"].Value, Unquote(line.Groups["name"].Value));
+        return names;
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^\s*-\s*(?<name>""(?:[^""\\]|\\.)*""|[^\s#]+)\s*#[^\n\[]*\[(?<hash>[0-9A-Fa-f]+)\]", System.Text.RegularExpressions.RegexOptions.Multiline)]
+    private static partial System.Text.RegularExpressions.Regex KeptLine();
+
+    /// <summary>The names a raw-data-map.yaml this wrote still marks for the modder to name</summary>
+    public static List<string> NamesToGive(string rawDataMap)
+        => ListLine().Matches(rawDataMap)
+            .Where(line => line.Groups["comment"].Value.Contains(NameThis, StringComparison.Ordinal))
+            .Select(line => Unquote(line.Groups["name"].Value))
+            .ToList();
+
+    /// <summary>
+    /// raw-data-map.yaml with a chunk's name changed (its line no longer marked to name); null
+    /// when no line of it names <paramref name="oldName"/>
+    /// </summary>
+    public static string? RenameChunk(string rawDataMap, string oldName, string newName)
+    {
+        var renamed = false;
+        var text = ListLine().Replace(rawDataMap, line =>
+        {
+            if (renamed || !Unquote(line.Groups["name"].Value).Equals(oldName, StringComparison.OrdinalIgnoreCase))
+                return line.Value;
+            renamed = true;
+            var comment = line.Groups["comment"].Value.Replace(NameThis, "new", StringComparison.Ordinal);
+            return $"{line.Groups["lead"].Value}{Quote(newName)}{(comment.Length > 0 ? "  " + comment : "")}";
+        });
+        return renamed ? text : null;
+    }
+
+    /// <summary>
+    /// A definitions file (mapdefs walls.yaml) with every value that is exactly <paramref name="oldName"/>
+    /// ("North: WALL0098") changed to <paramref name="newName"/>
+    /// </summary>
+    public static string RenameValues(string yaml, string oldName, string newName)
+        => System.Text.RegularExpressions.Regex.Replace(yaml,
+            $@"(?<=:[ \t]*)""?{System.Text.RegularExpressions.Regex.Escape(oldName)}""?(?=[ \t]*(#.*)?\r?$)",
+            Quote(newName), System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^(?<lead>[ \t]*-[ \t]*)(?<name>""(?:[^""\\\r\n]|\\.)*""|[^\s#]+)[ \t]*(?<comment>#[^\r\n]*)?(?=\r?$)", System.Text.RegularExpressions.RegexOptions.Multiline)]
+    private static partial System.Text.RegularExpressions.Regex ListLine();
+
+    private static string Unquote(string name)
+        => name.StartsWith('"') && name.EndsWith('"') && name.Length >= 2
+            ? name[1..^1].Replace("\\\"", "\"").Replace("\\\\", "\\")
+            : name;
+
+    // The new and changed chunks named as the last raw-data-map named them, where that name isn't taken
+    private static RawDataMatch WithKeptNames(RawDataMatch match, Dictionary<string, string> kept)
+    {
+        if (kept.Count == 0)
+            return match;
+
+        var sections = match.Sections.Select(section =>
+        {
+            var used = section.Chunks.Select(chunk => chunk.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var chunks = section.Chunks.Select(chunk =>
+            {
+                if (chunk.Match is not (ChunkMatch.New or ChunkMatch.Changed) || !kept.TryGetValue(Short(chunk.Hash), out var name)
+                    || name.Equals(chunk.Name, StringComparison.OrdinalIgnoreCase) || used.Contains(name))
+                    return chunk;
+                used.Add(name);
+                return chunk with { Name = name };
+            }).ToList();
+            return section with { Chunks = chunks };
+        }).ToList();
+        return match with { Sections = sections };
     }
 
     /// <summary>
@@ -206,13 +292,18 @@ public static class RawDataModWriter
         if (section == null)
             yield break;
         foreach (var chunk in section.Chunks)
-            yield return (chunk.Name, Comment(chunk));
+            yield return (chunk.Name, Comment(chunk, part));
         for (int i = section.Chunks.Count; i < section.BaseNames.Count; i++)
             yield return (section.BaseNames[i], null);
     }
 
-    private static string? Comment(NamedChunk chunk) => chunk.Match switch
+    /// <summary>Whether a chunk still has the made-up name it was given, for the modder to change</summary>
+    public static bool NeedsName(NamedChunk chunk, ChunkSection section)
+        => chunk.Match == ChunkMatch.New && chunk.Name.Equals(DataFileChunks.PlaceholderName(section, chunk.Index), StringComparison.OrdinalIgnoreCase);
+
+    private static string? Comment(NamedChunk chunk, ChunkSection section) => chunk.Match switch
     {
+        ChunkMatch.New when !NeedsName(chunk, section) => $"new [{Short(chunk.Hash)}]",
         ChunkMatch.New => $"{NameThis} [{Short(chunk.Hash)}]",
         ChunkMatch.Changed => $"changed [{Short(chunk.Hash)}]",
         ChunkMatch.Moved => "moved",
@@ -301,7 +392,7 @@ public static class RawDataModWriter
         return ids.Count == 0 ? (null, ids) : (text.ToString(), ids);
     }
 
-    private static string Report(RawDataMatch match, string gameId, string title, IEnumerable<string> written, List<int> wallIds)
+    private static string Report(RawDataMatch match, string gameId, string title, IEnumerable<string> written, List<int> wallIds, List<string> gone)
     {
         var text = new StringBuilder();
         text.AppendLine($"{title} ({gameId}): a raw data mod built on {match.BasePackId} ({match.BaseReleaseId})");
@@ -319,9 +410,11 @@ public static class RawDataModWriter
                 + $"{section.CountOf(ChunkMatch.Changed),7}  {section.CountOf(ChunkMatch.ByPosition),8}  {section.CountOf(ChunkMatch.New),3}  {section.CountOf(ChunkMatch.Empty),5}");
         text.AppendLine();
 
-        var toName = match.Sections.SelectMany(section => section.Chunks.Where(chunk => chunk.Match == ChunkMatch.New)).Select(chunk => chunk.Name).ToList();
+        var toName = match.Sections.SelectMany(section => section.Chunks.Where(chunk => NeedsName(chunk, section.Section))).Select(chunk => chunk.Name).ToList();
         if (toName.Count > 0)
             text.AppendLine($"To name in raw-data-map.yaml ({toName.Count}): {string.Join(", ", toName)}");
+        if (gone.Count > 0)
+            text.AppendLine($"No longer in the data files (named last time): {string.Join(", ", gone)}");
         if (match[ChunkSection.Maps] is { } maps)
         {
             var changed = maps.Chunks.Where(chunk => chunk.Match is ChunkMatch.Changed or ChunkMatch.New).Select(chunk => chunk.Name).ToList();

@@ -46,9 +46,24 @@ public sealed record ReplaceRequest(ushort From, ushort To, bool SelectionOnly);
 /// <summary>A code form's answers, one number per field; <see cref="PickOnMap"/>: its target tile is to be clicked on the map</summary>
 public sealed record CodeAnswer(int[] Values, bool PickOnMap);
 
+/// <summary>
+/// What the New mod from data files dialog answers: the folder of data files, the game they're
+/// built on, the game's title and id, and the mod folder to write
+/// </summary>
+public sealed record RawDataModRequest(string DataFolder, PFWolf.Managers.BaseCandidate Base, string Title, string GameId, string ModFolder);
+
 /// <summary>The questions the editor asks, which the window answers with its dialogs</summary>
 public interface IEditorDialogs
 {
+    /// <summary>
+    /// Asks for a folder of raw data files, the game they're built on (from <paramref name="detect"/>,
+    /// best first), a title and the mod folder; null when cancelled
+    /// </summary>
+    Task<RawDataModRequest?> AskRawDataMod(string modsFolder, Func<string, IReadOnlyList<PFWolf.Managers.BaseCandidate>> detect);
+
+    /// <summary>Shows a page of text to read (a report), until it's closed</summary>
+    Task ShowText(string title, string text);
+
     /// <summary>
     /// A mod to save in: one of <paramref name="loadedMods"/>, or another folder or pk3 picked
     /// now; null when none is picked

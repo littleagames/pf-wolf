@@ -9,6 +9,7 @@ using PFWolf.Editor.Editing;
 using PFWolf.Editor.Rendering;
 using PFWolf.Editor.Views;
 using PFWolf.Exceptions;
+using PFWolf.Managers;
 
 namespace PFWolf.Editor.ViewModels;
 
@@ -1915,6 +1916,72 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (!IsLoading && Content != null)
                 Status = $"Made {request.Path}; saving puts what's changed in it (the last version kept as {Path.GetFileName(request.Path)}{ModFiles.BackupExtension})";
         }
+    }
+
+    /// <summary>
+    /// Makes a raw data mod (docs/dev/raw-data-mods-plan.md): a mod folder playing WDC-edited data
+    /// files, their chunks named against the game they're built on. Made again in the same folder,
+    /// it keeps the names given since. It's added to the mods, and the editor loads its game.
+    /// </summary>
+    [RelayCommand]
+    private async Task NewRawDataModAsync()
+    {
+        if (Dialogs == null)
+            return;
+        if (!File.Exists(Path.Combine(GameFolder, AssetManager.BasePk3FileName)))
+        {
+            Status = $"Pick the folder PFWolf is in first: the base game's names come from its {AssetManager.BasePk3FileName}";
+            return;
+        }
+
+        // The generator reads pfwolf.pk3 and the base game's files from the working folder, as the game does
+        IReadOnlyList<BaseCandidate> Detect(string folder)
+        {
+            Directory.SetCurrentDirectory(GameFolder);
+            return RawDataModGenerator.DetectBase(folder);
+        }
+
+        if (await Dialogs.AskRawDataMod(Path.Combine(GameFolder, "mods"), Detect) is not { } request)
+            return;
+
+        RawDataModFiles files;
+        try
+        {
+            Status = $"Reading {request.DataFolder}…";
+            var previous = Path.Combine(request.ModFolder, "raw-data-map.yaml");
+            files = await Task.Run(() =>
+            {
+                Directory.SetCurrentDirectory(GameFolder);
+                var match = RawDataModGenerator.Match(request.DataFolder, request.Base.ReleaseId);
+                return RawDataModWriter.Write(match, request.GameId, request.Title, File.Exists(previous) ? File.ReadAllText(previous) : null);
+            });
+
+            var clashes = RawDataModWriter.Save(files, request.ModFolder, overwrite: false);
+            if (clashes.Count > 0)
+            {
+                if (!await Dialogs.Confirm("New mod from data files",
+                        $"{request.ModFolder} already has {string.Join(", ", clashes.Select(Path.GetFileName))}. Write over them? "
+                        + "(The names given in its raw-data-map.yaml are kept.)", "Write over"))
+                    return;
+                RawDataModWriter.Save(files, request.ModFolder, overwrite: true);
+            }
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or KeyNotFoundException
+                                      or ArgumentException or PFWolf.Exceptions.PfWolfFileLoaderException
+                                      or PFWolf.Exceptions.PfWolfGraphicException or PFWolf.Exceptions.PfWolfMapException)
+        {
+            Status = "Couldn't make the mod.";
+            Problems.Add($"New mod from data files {request.DataFolder}: {e.Message}");
+            return;
+        }
+
+        AddMod(request.ModFolder);
+        SelectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(request.GameId, StringComparison.OrdinalIgnoreCase)) ?? SelectedGame;
+        SaveSettings();
+        Status = $"Made {request.ModFolder}";
+        await Dialogs.ShowText($"{request.Title}: raw data mod", files.Report);
+        if (CanLoad)
+            await LoadAsync();
     }
 
     /// <summary>Shows what's on the tile under the pointer</summary>

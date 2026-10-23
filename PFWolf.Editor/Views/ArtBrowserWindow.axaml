@@ -191,6 +191,8 @@
                 ToolTip.Tip="Puts a PNG or BMP in its place: over its file in its mod, or, for the game's own, as a file of the same name in a mod" />
         <Button Content="Rename…" Command="{Binding RenameCommand}"
                 ToolTip.Tip="Renames its file in its mod (only a mod's own pictures)" />
+        <Button Content="Name…" Command="{Binding NameChunkCommand}"
+                ToolTip.Tip="Names a raw data mod's new chunk (WALL0098...) in its raw-data-map.yaml (Show: Needs a name lists them)" />
         <Button Content="Delete" Command="{Binding DeleteCommand}"
                 ToolTip.Tip="Takes its file out of its mod (only a mod's own pictures); the game's own of that name shows again" />
         <Button Content="Edit pixels" Command="{Binding EditPixelsCommand}"
@@ -221,6 +223,7 @@
           <MenuItem Header="Edit outside" Command="{Binding EditOutsideCommand}" />
           <MenuItem Header="Replace…" Click="ReplacePicture" IsEnabled="{Binding CanReplace}" />
           <MenuItem Header="Rename…" Command="{Binding RenameCommand}" />
+          <MenuItem Header="Name…" Command="{Binding NameChunkCommand}" />
           <MenuItem Header="Delete" Command="{Binding DeleteCommand}" />
         </ContextMenu>
       </ListBox.ContextMenu>

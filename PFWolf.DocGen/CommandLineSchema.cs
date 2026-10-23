@@ -26,6 +26,7 @@ internal static class CommandLineSchema
         ("Playing with others", ["--host", "--join", "--port", "--name"]),
         ("Video", ["--fullscreen", "--windowed", "--res", "--scale"]),
         ("Folders", ["--configdir", "--savedir", "--demodir"]),
+        ("Making a raw data mod", ["--make-mod", "--base", "--out", "--title", "--overwrite"]),
         ("Other", ["--console"]),
     ];
 

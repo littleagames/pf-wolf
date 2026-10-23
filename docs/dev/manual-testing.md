@@ -321,6 +321,12 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 - [ ] Stand-alone game (SA): boots with no Wolf3D data, plays MAP01.
 - [ ] **(never tried)** A mod game built on `wolf3d`; two game mods at once; saves and
       multiplayer in a stand-alone game.
+- [ ] **(never tried)** A real WDC/ChaosEdit mod through `--make-mod <folder>`: the base game it
+      picks, the report, then `--file` the made mod and play a few levels (new walls, sprites,
+      pics and sounds by their placeholder names; an edited data file gives the "changed since"
+      warning).
+- [ ] **(never tried)** `--make-mod` on Spear, Blake and Planet Strike files; `--overwrite` after
+      renaming chunks keeps the names.
 
 ## 1.15 Multiplayer
 
@@ -514,6 +520,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 
 - [ ] File → New mod… → stand-alone game: it plays at once in PFWolf.
 - [ ] File → New mod… → mod of Wolf3D / Spear / Blake: modinfo only, levels editable.
+- [ ] **(never tried)** File → New mod from data files…: browse to a folder (the base list
+      fills), title and mod folder follow its name, Make it shows the report and loads the game;
+      again on the same mod folder asks to write over and keeps the names.
+- [ ] **(never tried)** Art browser: Show → Needs a name lists the made-up names; Name… renames one
+      (raw-data-map.yaml and mapdefs walls follow); a level using an unnamed wall gets the check
+      warning.
 
 ---
 
