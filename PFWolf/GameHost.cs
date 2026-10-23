@@ -430,7 +430,7 @@ internal static partial class GameHost
             AssetManager.AnimationClock = () => (int)GameEngineManager.GetTimeCount();
             AudioManager.PrerenderSounds();     // in the background, so no sound is first made mid-game
         }
-        catch (DataFilesException e)
+        catch (Exception e) when (e is DataFilesException or DataFileReadException)
         {
             // Nothing is set up yet to shut down, and there are no settings to keep
             Console.Error.WriteLine(e.Message);

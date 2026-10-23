@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using PFWolf.Assets;
+using PFWolf.Exceptions;
 
 namespace PFWolf.Loaders;
 
@@ -93,8 +94,8 @@ public sealed class DataFileChunks
     public bool Contains(string hash) => _sections.Values.Any(chunks => chunks.Any(chunk => chunk.Hash == hash));
 
     /// <summary>
-    /// Reads the files the set has. A file that can't be read throws (InvalidDataException,
-    /// PfWolfFileLoaderException...): a raw data mod's file has to be read whole.
+    /// Reads the files the set has. A file that can't be read throws a DataFileReadException
+    /// naming it: a raw data mod's file has to be read whole.
     /// </summary>
     /// <param name="fontCount">VGAGRAPH's number of font chunks (the release's file-pack font-count: 2, Blake Stone 5)</param>
     public static DataFileChunks Read(DataFileSet files, int fontCount)
@@ -102,7 +103,8 @@ public sealed class DataFileChunks
         var chunks = new DataFileChunks();
         if (files.Vswap != null)
         {
-            var assets = new Wolf3dVswapFileLoader(files.Vswap).GetAssets([], [], []);
+            var assets = DataFileReadException.Reading(DataFileKind.Vswap, files.Vswap,
+                () => new Wolf3dVswapFileLoader(files.Vswap).GetAssets([], [], []));
             chunks.Add(assets, "WALL", ChunkSection.Walls);
             chunks.Add(assets, "SPR", ChunkSection.Sprites);
             chunks.Add(assets, "DIGI", ChunkSection.DigitizedSounds);
@@ -110,7 +112,8 @@ public sealed class DataFileChunks
 
         if (files.VgaHead != null && files.VgaGraph != null && files.VgaDict != null)
         {
-            var assets = new Wolf3dVgaFileLoader(files.VgaHead, files.VgaGraph, files.VgaDict, fontCount).GetAssets([]);
+            var assets = DataFileReadException.Reading(DataFileKind.VgaGraph, files.VgaGraph,
+                () => new Wolf3dVgaFileLoader(files.VgaHead, files.VgaGraph, files.VgaDict, fontCount).GetAssets([]), files.VgaHead, files.VgaDict);
             chunks.Add(assets, "FONT", ChunkSection.Fonts);
             chunks.Add(assets, "PIC", ChunkSection.Pics);
             chunks.Add(assets, "EXTERN", ChunkSection.Externs);
@@ -120,7 +123,8 @@ public sealed class DataFileChunks
 
         if (files.AudioHed != null && files.AudioT != null)
         {
-            var assets = new Wolf3dAudioFileLoader(files.AudioT, files.AudioHed).GetAssets([], []);
+            var assets = DataFileReadException.Reading(DataFileKind.AudioT, files.AudioT,
+                () => new Wolf3dAudioFileLoader(files.AudioT, files.AudioHed).GetAssets([], []), files.AudioHed);
             chunks.Add(assets, "PCSND", ChunkSection.PcSounds);
             chunks.Add(assets, "ALSND", ChunkSection.AdLibSounds);
             chunks.Add(assets, "DSSND", ChunkSection.DigiSounds);
@@ -128,7 +132,8 @@ public sealed class DataFileChunks
         }
 
         if (files.MapHead != null && files.GameMaps != null)
-            chunks.Add(Wolf3dMapFileLoader.FromFiles(files.MapHead, files.GameMaps).GetAssets([]), "MAP", ChunkSection.Maps, firstNumber: 1);
+            chunks.Add(DataFileReadException.Reading(DataFileKind.GameMaps, files.GameMaps,
+                () => Wolf3dMapFileLoader.FromFiles(files.MapHead, files.GameMaps).GetAssets([]), files.MapHead), "MAP", ChunkSection.Maps, firstNumber: 1);
 
         foreach (var section in chunks._sections.Values)
             section.Sort((a, b) => a.Index.CompareTo(b.Index));

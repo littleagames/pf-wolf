@@ -110,12 +110,12 @@ public class AssetManager
 
         progress?.Invoke("Reading the sounds and music");
 
-        var audioLoader = new Wolf3dAudioFileLoader(
-            DataFile("Wolf3DAudioFileLoader", d => d.Data),
-            DataFile("Wolf3DAudioFileLoader", d => d.Header));
-        AddDataFileAssets(audioLoader.GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? [],
-                DataFileWarning(DataFile("Wolf3DAudioFileLoader", d => d.Data))),
-            DataFile("Wolf3DAudioFileLoader", d => d.Data));
+        var audioT = DataFile("Wolf3DAudioFileLoader", d => d.Data);
+        var audioHed = DataFile("Wolf3DAudioFileLoader", d => d.Header);
+        AddDataFileAssets(DataFileReadException.Reading(DataFileKind.AudioT, audioT,
+                () => new Wolf3dAudioFileLoader(audioT, audioHed).GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? [], DataFileWarning(audioT)),
+                audioHed),
+            audioT);
 
         progress?.Invoke("Reading the levels");
         LoadLevels(pfWolfBasePk3Loader, rawDataMap?.Maps ?? [],
@@ -124,19 +124,21 @@ public class AssetManager
 
         progress?.Invoke("Reading the pictures");
         // numFonts isn't stored in the VGAGRAPH file itself, so the file-pack gives it (font-count)
-        var vgaGraphicLoader = new Wolf3dVgaFileLoader(
-            DataFile("Wolf3DVgaFileLoader", d => d.Header),
-            DataFile("Wolf3DVgaFileLoader", d => d.Data),
-            DataFile("Wolf3DVgaFileLoader", d => d.Dict),
-            numFonts: gamePackInfo.GetFileLoader(gameReleaseId, "Wolf3DVgaFileLoader").FontCount ?? 2);
-        AddDataFileAssets(vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? [], DataFileWarning(DataFile("Wolf3DVgaFileLoader", d => d.Data))),
-            DataFile("Wolf3DVgaFileLoader", d => d.Data));
+        var vgaHead = DataFile("Wolf3DVgaFileLoader", d => d.Header);
+        var vgaGraph = DataFile("Wolf3DVgaFileLoader", d => d.Data);
+        var vgaDict = DataFile("Wolf3DVgaFileLoader", d => d.Dict);
+        var fontCount = gamePackInfo.GetFileLoader(gameReleaseId, "Wolf3DVgaFileLoader").FontCount ?? 2;
+        AddDataFileAssets(DataFileReadException.Reading(DataFileKind.VgaGraph, vgaGraph,
+                () => new Wolf3dVgaFileLoader(vgaHead, vgaGraph, vgaDict, fontCount).GetAssets(rawDataMap?.Graphics ?? [], DataFileWarning(vgaGraph)),
+                vgaHead, vgaDict),
+            vgaGraph);
 
         progress?.Invoke("Reading the walls and sprites");
-        var vswapLoader = new Wolf3dVswapFileLoader(DataFile("Wolf3DVswapFileLoader", d => d.Data));
-        AddDataFileAssets(vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? [],
-                DataFileWarning(DataFile("Wolf3DVswapFileLoader", d => d.Data))),
-            DataFile("Wolf3DVswapFileLoader", d => d.Data));
+        var vswap = DataFile("Wolf3DVswapFileLoader", d => d.Data);
+        AddDataFileAssets(DataFileReadException.Reading(DataFileKind.Vswap, vswap,
+                () => new Wolf3dVswapFileLoader(vswap).GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? [],
+                    DataFileWarning(vswap))),
+            vswap);
 
         LoadMovies(gamePackInfo.FindFileLoader(gameReleaseId, "JamMovieFileLoader")?.Movies, file => gamePackInfo.ResolveDataFile(gameReleaseId, file));
 
@@ -536,8 +538,10 @@ public class AssetManager
 
         var ownPair = File.Exists(headerFile) && File.Exists(dataFile);
         if (ownPair)
-            AddPair(Wolf3dMapFileLoader.FromFiles(headerFile!, dataFile!), dataFile!.ToLowerInvariant(), name => name,
-                warning => ModWarnings.Add($"{dataFile}: {warning}"));
+            DataFileReadException.Reading(DataFileKind.GameMaps, dataFile!,
+                () => AddPair(Wolf3dMapFileLoader.FromFiles(headerFile!, dataFile!), dataFile!.ToLowerInvariant(), name => name,
+                    warning => ModWarnings.Add($"{dataFile}: {warning}")),
+                headerFile!);
 
         // (named as the release names them: a raw data mod's file names come resolved to its folder)
         var pk3Pair = headerFile != null && dataFile != null

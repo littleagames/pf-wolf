@@ -390,8 +390,7 @@ public static class RawDataModGenerator
         {
             return DataFileChunks.Read(files, fontCount);
         }
-        catch (Exception e) when (e is IOException or InvalidDataException or PfWolfFileLoaderException or PfWolfGraphicException
-                                      or PfWolfMapException or IndexOutOfRangeException or ArgumentException)
+        catch (DataFileReadException)
         {
             return null;
         }

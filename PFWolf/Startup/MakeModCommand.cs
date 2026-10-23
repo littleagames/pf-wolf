@@ -102,7 +102,7 @@ internal static class MakeModCommand
             return 0;
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or KeyNotFoundException
-                                      or ArgumentException or PfWolfFileLoaderException or PfWolfGraphicException or PfWolfMapException)
+                                      or ArgumentException or DataFileReadException or PfWolfFileLoaderException or PfWolfGraphicException or PfWolfMapException)
         {
             output.WriteLine($"--make-mod: {e.Message}");
             return 1;

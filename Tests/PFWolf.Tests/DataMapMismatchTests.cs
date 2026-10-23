@@ -54,6 +54,59 @@ public class DataMapMismatchTests
     }
 
     [Test]
+    public void VgaGraph_Counts_Its_Pics_Whatever_StructPic_Says_Its_Size_Is()
+    {
+        // Arrange: STRUCTPIC's size longword as ChaosEdit writes it (the compressed size, 397 in
+        // Trench Warfare), which id's code never read
+        var graph = PatchedCopy(Wl6("VGAGRAPH.WL6"), 0, 397);
+
+        // Act
+        var assets = new Wolf3dVgaFileLoader(Wl6("VGAHEAD.WL6"), graph, Wl6("VGADICT.WL6"), numFonts: 2).GetAssets([]);
+
+        // Assert
+        Assert.That(assets.Values.OfType<PFWolf.Assets.GraphicAsset>().Count(), Is.EqualTo(132));
+    }
+
+    [Test]
+    public void VgaGraph_Leaves_Out_A_Chunk_It_Cannot_Read_And_Says_Which()
+    {
+        // Arrange: the last extern's size longword is garbage (as a modded game's own chunk can be)
+        var head = File.ReadAllBytes(Wl6("VGAHEAD.WL6"));
+        int lastChunk = head.Length / 3 - 2;
+        int offset = head[lastChunk * 3] | (head[lastChunk * 3 + 1] << 8) | (head[lastChunk * 3 + 2] << 16);
+        var graph = PatchedCopy(Wl6("VGAGRAPH.WL6"), offset, 226179952);
+        var warnings = new List<string>();
+
+        // Act
+        var assets = new Wolf3dVgaFileLoader(Wl6("VGAHEAD.WL6"), graph, Wl6("VGADICT.WL6"), numFonts: 2).GetAssets([], warnings.Add);
+
+        // Assert
+        Assert.That(assets.Values.OfType<PFWolf.Assets.GraphicAsset>().Count(), Is.EqualTo(132));
+        Assert.That(warnings, Has.One.Contains($"(chunk {lastChunk}) can't be read, so it's left out"));
+    }
+
+    // A temporary copy of a file with an int32 written at an offset
+    private static string PatchedCopy(string file, int offset, int value)
+    {
+        var bytes = File.ReadAllBytes(file);
+        BitConverter.GetBytes(value).CopyTo(bytes, offset);
+        var copy = Path.Combine(Path.GetTempPath(), $"pfwolf-{Guid.NewGuid():N}-{Path.GetFileName(file)}");
+        File.WriteAllBytes(copy, bytes);
+        _copies.Add(copy);
+        return copy;
+    }
+
+    private static readonly List<string> _copies = [];
+
+    [TearDown]
+    public void DeleteCopies()
+    {
+        foreach (var copy in _copies)
+            File.Delete(copy);
+        _copies.Clear();
+    }
+
+    [Test]
     public void AudioT_Names_The_Sounds_By_Kind_And_The_Songs_Past_The_Map()
     {
         // Arrange

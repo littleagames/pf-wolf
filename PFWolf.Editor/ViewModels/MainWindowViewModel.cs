@@ -787,7 +787,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             UpdateModsReload();
             SaveSettings();
         }
-        catch (Exception e) when (e is DataFilesException or FileNotFoundException or InvalidDataException or IOException
+        catch (Exception e) when (e is DataFilesException or DataFileReadException or FileNotFoundException or InvalidDataException or IOException
                                       or KeyNotFoundException or PfWolfMapException or UnauthorizedAccessException)
         {
             Status = "Couldn't load the game.";
@@ -1971,7 +1971,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or KeyNotFoundException
-                                      or ArgumentException or PFWolf.Exceptions.PfWolfFileLoaderException
+                                      or ArgumentException or DataFileReadException or PFWolf.Exceptions.PfWolfFileLoaderException
                                       or PFWolf.Exceptions.PfWolfGraphicException or PFWolf.Exceptions.PfWolfMapException)
         {
             Status = "Couldn't make the mod.";

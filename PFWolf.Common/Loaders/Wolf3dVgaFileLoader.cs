@@ -112,15 +112,51 @@ public class Wolf3dVgaFileLoader
             GetGrChunkLength(fs, br, StructPic);
             byte[] compseg = br.ReadBytes(chunkcomplen);
 
-            // The STRUCTPIC chunk's decompressed length (chunkexplen) tells us exactly how
-            // many pics the file describes, so NUMPICS never needs to be hard-coded.
-            numPics = chunkexplen / (sizeof(ushort) * 2);
-            var dest = HuffExpand(compseg, chunkexplen, grhuffman);
-            pictable = StructHelpers.BytesToStructArray<PicTableEntry>(dest);
+            // id's code never reads STRUCTPIC's length (it expands NUMPICS entries), so editors
+            // write anything there: ChaosEdit puts the compressed size, and an entry for every
+            // chunk with zeros past the pics. So the table is expanded until its data runs out,
+            // and the pics are the entries up to the last that fits its chunk (NUMPICS isn't
+            // hard-coded either way).
+            var dest = HuffExpandUntilSourceExhausted(compseg, grhuffman);
+            numPics = CountPics(dest, fs, br);
+            pictable = StructHelpers.BytesToStructArray<PicTableEntry>(dest[..(numPics * PicTableEntrySize)]);
 
             CacheGraphicChunks(fs, br);
         }
     }
+    private const int PicTableEntrySize = sizeof(short) * 2;
+
+    // Far past any real chunk (the biggest are 320x200 pics), so a garbage size isn't allocated
+    private const int MaxChunkSize = 1024 * 1024;
+
+    // Chunks that wouldn't read, and why
+    private readonly Dictionary<int, string> unreadableChunks = [];
+
+    // How many of the pic table's entries are pics: trailing ones that are empty, have no chunk,
+    // or aren't the size of their chunk (a pic's chunk expands to width x height bytes) are padding
+    private int CountPics(byte[] table, FileStream fs, BinaryReader br)
+    {
+        int count = Math.Min(table.Length / PicTableEntrySize, numChunks - StartPics);
+        while (count > 0 && !FitsItsChunk(count - 1))
+            count--;
+        return count;
+
+        bool FitsItsChunk(int pic)
+        {
+            int width = BitConverter.ToInt16(table, pic * PicTableEntrySize);
+            int height = BitConverter.ToInt16(table, pic * PicTableEntrySize + sizeof(short));
+            if (width <= 0 || height <= 0)
+                return false;
+            var pos = GrFilePos(StartPics + pic);
+            if (pos < 0)
+                return true; // a sparse chunk: nothing to measure it by
+            if (pos + sizeof(int) > fs.Length)
+                return false;
+            fs.Seek(pos, SeekOrigin.Begin);
+            return br.ReadInt32() == width * height;
+        }
+    }
+
     private void GetGrChunkLength(FileStream fs, BinaryReader br, int chunk)
     {
         fs.Seek(GrFilePos(chunk), SeekOrigin.Begin);
@@ -171,10 +207,20 @@ public class Wolf3dVgaFileLoader
                 bufferseg[i] = br.ReadByte();
             }
 
-            ExpandGrChunk(chunk, bufferseg);
+            // A chunk that won't read (a modded game's own data, which its exe knew how to
+            // read) is left out, and GetAssets says so, rather than the whole file
+            try
+            {
+                ExpandGrChunk(chunk, bufferseg);
 
-            if (chunk >= StartPics && chunk < StartExterns)
-                DeplaneGrChunk(chunk);
+                if (chunk >= StartPics && chunk < StartExterns)
+                    DeplaneGrChunk(chunk);
+            }
+            catch (Exception e) when (e is PfWolfGraphicException or IndexOutOfRangeException or ArgumentException)
+            {
+                grsegs[chunk] = null!;
+                unreadableChunks[chunk] = e.Message;
+            }
         }
     }
 
@@ -203,6 +249,8 @@ public class Wolf3dVgaFileLoader
         // everything else has an explicit size longword
         //
         var expanded = BitConverter.ToInt32(source, 0);
+        if (expanded <= 0 || expanded > MaxChunkSize)
+            throw new PfWolfGraphicException($"its size longword says {expanded} bytes, which can't be right: it may not have one.");
         grsegs[chunk] = HuffExpand(source.Skip(sizeof(int)).ToArray(), expanded, grhuffman);
     }
 
@@ -403,12 +451,21 @@ public class Wolf3dVgaFileLoader
         var picNames = new DataMapNames(dataMap.Skip(StartPics).Take(mapPics).ToList(), "pics", "PIC");
         var externNames = new DataMapNames(mapTile8 >= 0 ? dataMap[(mapTile8 + 1)..] : [], "externs", "EXTERN");
 
+        void LeftOut(int chunk, Func<string> name)
+        {
+            if (unreadableChunks.TryGetValue(chunk, out var why))
+                warn?.Invoke($"{name()} (chunk {chunk}) can't be read, so it's left out: {why}");
+        }
+
         // fonts
         for (int h = 0; h < numFonts; h++)
         {
             var data = grsegs[StartFont + h];
             if (data == null)
+            {
+                LeftOut(StartFont + h, () => fontNames.NameAt(StartFont + h, h));
                 continue;
+            }
             assets[fontNames.NameAt(StartFont + h, h).ToLowerInvariant()] = new FontAsset(data);
         }
 
@@ -417,13 +474,19 @@ public class Wolf3dVgaFileLoader
         {
             var data = grsegs[StartPics + j];
             if (data == null)
+            {
+                LeftOut(StartPics + j, () => picNames.NameAt(j));
                 continue;
+            }
             assets[picNames.NameAt(j).ToLowerInvariant()] = new GraphicAsset(data, pictable[j].Width, pictable[j].Height);
         }
 
         // Tile8
+        var tile8Name = mapTile8 >= 0 ? dataMap[mapTile8] : "Tile8";
         if (StartTile8 < numChunks && grsegs[StartTile8] != null)
-            assets[(mapTile8 >= 0 ? dataMap[mapTile8] : "Tile8").ToLowerInvariant()] = new Tile8Asset(grsegs[StartTile8]);
+            assets[tile8Name.ToLowerInvariant()] = new Tile8Asset(grsegs[StartTile8]);
+        else
+            LeftOut(StartTile8, () => tile8Name);
 
         // Externs: which ones a release has, and in what order, differs (Wolf3D: screens, help text,
         // demos, end texts; Spear: screens, palettes, demos, end text), so go by their data map names:
@@ -433,7 +496,10 @@ public class Wolf3dVgaFileLoader
         {
             var data = grsegs[chunk];
             if (data == null)
+            {
+                LeftOut(chunk, () => externNames.NameAt(e));
                 continue;
+            }
             var name = externNames.NameAt(e);
             if (IsSkippedExtern(name))
                 continue;

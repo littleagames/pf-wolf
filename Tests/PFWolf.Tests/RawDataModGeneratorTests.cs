@@ -399,6 +399,25 @@ public class RawDataModGeneratorTests
         Assert.That(content.Palette[5], Is.EqualTo(new PaletteColor(0, 0, 255)).Using<PaletteColor>((a, b) => a.Red == b.Red && a.Green == b.Green && a.Blue == b.Blue));
     }
 
+    [Test]
+    public void A_Data_File_That_Cannot_Be_Read_Is_Named_With_The_Files_Read_With_It()
+    {
+        // Arrange: a VGAHEAD whose size isn't a whole number of 3-byte offsets
+        string File(string name, int size)
+        {
+            var path = Path.Combine(_workFolder, name);
+            System.IO.File.WriteAllBytes(path, new byte[size]);
+            return path;
+        }
+        var files = new DataFileSet(VgaDict: File("FOXTROT6.WL6", 1024), VgaHead: File("FOXTROT4.WL6", 4), VgaGraph: File("FOXTROT5.WL6", 16));
+
+        // Act
+        var error = Assert.Throws<PFWolf.Exceptions.DataFileReadException>(() => DataFileChunks.Read(files, fontCount: 2));
+
+        // Assert
+        Assert.That(error!.Message, Does.StartWith("FOXTROT5.WL6 (VGAGRAPH, read with FOXTROT4.WL6 and FOXTROT6.WL6) can't be read: "));
+    }
+
     [TestCase("TED5v1.0")]
     [TestCase("TED6v1.0")]
     [TestCase("CED0.7:Mapfile was edited with ChaosEdit (www.chaos-software.de.vu)")]
