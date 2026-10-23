@@ -176,7 +176,13 @@ public static class RawDataModGenerator
         }
 
         return new RawDataMatch(packId, baseReleaseId, info.GetGamePack(baseReleaseId), filePack, modFiles,
-            stock != null, sections, rawDataMap.Graphics.FirstOrDefault() ?? "STRUCTPIC", fontCount);
+            stock != null, sections, rawDataMap.Graphics.FirstOrDefault() ?? "STRUCTPIC", fontCount)
+        {
+            DataFolder = Path.GetFullPath(dataFolder),
+            GamePalette = info.GetGamePalette(baseReleaseId),
+            BaseAlias = defs.FindInGamePackIfAny<AliasAsset>("alias"),
+            BaseMapDefs = mapDefs,
+        };
     }
 
     /// <summary>
@@ -354,4 +360,16 @@ public sealed record RawDataMatch(string BasePackId, string BaseReleaseId, GameP
     bool BaseFilesFound, IReadOnlyList<SectionMatch> Sections, string FirstGraphicName, int FontCount)
 {
     public SectionMatch? this[ChunkSection section] => Sections.FirstOrDefault(match => match.Section == section);
+
+    /// <summary>The folder the mod's data files were read from</summary>
+    public string DataFolder { get; init; } = "";
+
+    /// <summary>The base game's game-palette</summary>
+    public string GamePalette { get; init; } = "";
+
+    /// <summary>The base game's alias.yaml, whose chunk numbers move when pics are put in</summary>
+    public AliasAsset? BaseAlias { get; init; }
+
+    /// <summary>The base game's mapdefs: its wall ids, doors and floor codes</summary>
+    public MapObjectTranslationAsset? BaseMapDefs { get; init; }
 }

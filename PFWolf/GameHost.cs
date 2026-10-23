@@ -402,6 +402,15 @@ internal static partial class GameHost
         var (gameParams, modPaths) = StartupArgs.Parse(args, Console.Error);
         GameFolder.Use();
 
+        // --make-mod writes a raw data mod and quits, without a window (Startup/MakeModCommand.cs)
+        if (!string.IsNullOrWhiteSpace(gameParams.MakeMod))
+        {
+            startupOutput?.Stop();
+            startupOutput = null;
+            Environment.ExitCode = MakeModCommand.Run(gameParams, Console.Out);
+            return;
+        }
+
         InitServices();
         GameEngineManager.Init(gameParams, modPaths);
         SetNetParams(gameParams);     // --host, --join, --port, --name (Networking/NetGames.cs)

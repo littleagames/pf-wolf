@@ -22,6 +22,12 @@ internal static class StartupArgs
         });
         var gameParams = parser.ParseArguments<GameParams>(args).Value ?? new GameParams();
         var modPaths = gameParams.Files.Concat(gameParams.Paths).Select(ModSource.FullPathIfExists).ToList();
+
+        // --make-mod's folders mean the folder the game was started in, too
+        if (!string.IsNullOrWhiteSpace(gameParams.MakeMod))
+            gameParams.MakeMod = Path.GetFullPath(gameParams.MakeMod);
+        if (!string.IsNullOrWhiteSpace(gameParams.Out))
+            gameParams.Out = Path.GetFullPath(gameParams.Out);
         return (gameParams, modPaths);
     }
 }

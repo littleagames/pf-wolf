@@ -220,6 +220,117 @@ public class RawDataModGeneratorTests
         Assert.That(candidates[0].ModFiles.Vswap, Is.EqualTo(Path.Combine(mod, "VSWAP.MOD")));
     }
 
+    [Test]
+    public void The_Raw_Data_Map_Gives_Only_The_Lists_That_Differ_And_Alias_Follows_Moved_Pics()
+    {
+        // Arrange: a pic put in before P1, which the help texts draw as chunk 4
+        NamedChunk Named(int index, string name, ChunkMatch match, int? from = null) => new(index, name, match, "abcdef0123456789ff", from ?? index);
+        var match = new RawDataMatch("wolf3d", "wolf3d", new GamePack(), new FilePack(), new DataFileSet(), BaseFilesFound: true,
+        [
+            new SectionMatch(ChunkSection.Sprites, ["S0"], [Named(0, "S0", ChunkMatch.Same)]),
+            new SectionMatch(ChunkSection.Fonts, ["F0"], [Named(0, "F0", ChunkMatch.Same)]),
+            new SectionMatch(ChunkSection.Pics, ["P0", "P1"],
+                [Named(0, "P0", ChunkMatch.Same), new NamedChunk(1, "PIC0001", ChunkMatch.New, "abcdef0123456789ff", null), Named(2, "P1", ChunkMatch.Moved, 1)]),
+            new SectionMatch(ChunkSection.Tile8, ["Tile8"], [Named(0, "Tile8", ChunkMatch.Same)]),
+            new SectionMatch(ChunkSection.Externs, ["E0"], [Named(0, "E0", ChunkMatch.Moved)]),
+        ], "STRUCTPIC", FontCount: 1)
+        {
+            GamePalette = "wolfpal",
+            BaseAlias = new AliasAsset { ArtExtern = new() { [3] = "P1", [9] = "GONE" } },
+        };
+
+        // Act
+        var files = RawDataModWriter.Write(match, "my-mod", "My Mod");
+        var rawDataMap = files.Texts["raw-data-map.yaml"];
+        var parsed = YamlDataEntryLoader.Deserialize<RawDataMapAsset>(rawDataMap);
+        var alias = YamlDataEntryLoader.Deserialize<AliasAsset>(files.Texts["alias.yaml"]);
+
+        // Assert
+        Assert.That(parsed.Sprites, Is.Empty, "unchanged: the base game's");
+        Assert.That(parsed.Graphics, Is.EqualTo(new[] { "STRUCTPIC", "F0", "P0", "PIC0001", "P1", "Tile8", "E0" }));
+        Assert.That(rawDataMap, Does.Contain("PIC0001  # new: name this [abcdef0123456789]"));
+        Assert.That(alias.ArtExtern, Is.EqualTo(new Dictionary<int, string> { [4] = "P1" }));
+        Assert.That(files.Texts["alias.yaml"], Does.Contain("# 9: GONE"));
+        Assert.That(files.Texts["gamepack-info.yaml"], Does.Contain("my-mod:").And.Contain("base-pack: wolf3d").And.Contain("game-palette: wolfpal"));
+        Assert.That(files.Report, Does.Contain("PIC0001"));
+    }
+
+    [Test]
+    public void A_Game_Id_Is_Made_From_The_Title()
+    {
+        Assert.That(RawDataModWriter.GameIdFrom("My Mod: Part 2!"), Is.EqualTo("my-mod-part-2"));
+        Assert.That(RawDataModWriter.GameIdFrom("???"), Is.EqualTo("raw-data-mod"));
+    }
+
+    [Test]
+    [Category("GameData")]
+    public void A_Made_Mod_Loads_With_Its_New_Walls_Named_And_Given_Wall_Ids()
+    {
+        // Arrange: two new wall pages (one wall id's pair) before the doors
+        var data = GameFolderWithWl6();
+        var source = Directory.CreateDirectory(Path.Combine(_workFolder, "source")).FullName;
+        var pages = TestVswap.Read(Path.Combine(data, "VSWAP.WL6"));
+        pages.InsertWalls(pages.SpriteStart - 8, Enumerable.Repeat((byte)7, 4096).ToArray(), Enumerable.Repeat((byte)8, 4096).ToArray());
+        pages.Write(Path.Combine(source, "VSWAP.WL6"));
+        var mod = Path.Combine(_workFolder, "made-mod");
+
+        // Act
+        var match = RawDataModGenerator.Match(source, "wolf3d");
+        var files = RawDataModWriter.Write(match, "made-mod", "Made Mod");
+        var clashes = RawDataModWriter.Save(files, mod, overwrite: false);
+        var content = PFWolf.Editor.Data.GameContent.Load(data, "", [mod]);
+        var again = RawDataModWriter.Save(files, mod, overwrite: false);
+
+        // Assert
+        var added = match[ChunkSection.Walls]!.BaseNames.Count - 8;
+        Assert.That(clashes, Is.Empty);
+        Assert.That(again, Is.Not.Empty, "the second time, it's there already");
+        Assert.That(File.Exists(Path.Combine(mod, "VSWAP.WL6")), Is.True, "the data file copied in");
+        Assert.That(content.PackId, Is.EqualTo("made-mod"));
+        Assert.That(content.Find<TextureAsset>($"WALL{added:0000}")!.RawData[0], Is.EqualTo(7));
+        Assert.That(content.Find<TextureAsset>("DOOR1_1"), Is.Not.Null);
+        Assert.That(content.MapDefs.Walls[added / 2 + 1].North, Is.EqualTo($"WALL{added:0000}"));
+        Assert.That(content.MapDefs.Walls[added / 2 + 1].East, Is.EqualTo($"WALL{added + 1:0000}"));
+        Assert.That(content.MapDefs.Doors, Is.Not.Empty, "wolf3d's doors still there");
+        Assert.That(content.HasMap("MAP01"), Is.True);
+    }
+
+    [Test]
+    [Category("GameData")]
+    public void The_Game_Makes_A_Mod_From_The_Command_Line()
+    {
+        // Arrange
+        var data = GameFolderWithWl6();
+        var source = Directory.CreateDirectory(Path.Combine(_workFolder, "My TC")).FullName;
+        File.Copy(Path.Combine(data, "VSWAP.WL6"), Path.Combine(source, "VSWAP.WL6"));
+        var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
+        Assert.That(File.Exists(exe), Is.True, $"{exe} wasn't built beside the tests");
+        var start = new System.Diagnostics.ProcessStartInfo(exe)
+        {
+            WorkingDirectory = _workFolder,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        foreach (var arg in new[] { "--make-mod", source, "--out", Path.Combine(_workFolder, "out") })
+            start.ArgumentList.Add(arg);
+        start.Environment["SDL_VIDEODRIVER"] = "dummy";
+        start.Environment["SDL_AUDIODRIVER"] = "dummy";
+
+        // Act
+        using var process = System.Diagnostics.Process.Start(start)!;
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        Assert.That(process.WaitForExit(TimeSpan.FromMinutes(2)), Is.True, "didn't quit");
+        var output = stdout.Result + stderr.Result;
+
+        // Assert
+        Assert.That(process.ExitCode, Is.Zero, output);
+        Assert.That(output, Does.Contain("Building on wolf3d").And.Contain("my-tc"));
+        Assert.That(File.ReadAllText(Path.Combine(_workFolder, "out", "gamepack-info.yaml")), Does.Contain("my-tc:"));
+        Assert.That(File.Exists(Path.Combine(_workFolder, "out", "raw-data-map.yaml")), Is.False, "nothing differs from wolf3d's names");
+    }
+
     private static readonly string[] Wl6Files =
         ["AUDIOHED.WL6", "AUDIOT.WL6", "MAPHEAD.WL6", "GAMEMAPS.WL6", "VGADICT.WL6", "VGAHEAD.WL6", "VGAGRAPH.WL6", "VSWAP.WL6"];
 

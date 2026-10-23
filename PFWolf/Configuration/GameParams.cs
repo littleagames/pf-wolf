@@ -52,6 +52,22 @@ internal class GameParams
     [Option("name", Required = false, HelpText = "Your name in games with others (saved for next time).")]
     public string Name { get; set; } = "";
 
+    [Option("make-mod", Required = false, HelpText = "Make a raw data mod from this folder of WDC/ChaosEdit-edited data files (VSWAP, VGAGRAPH, AUDIOT, GAMEMAPS...): "
+        + "writes its gamepack-info.yaml and raw-data-map.yaml (new chunks marked to name) and a report, then quits. See --base, --out, --title.")]
+    public string MakeMod { get; set; } = "";
+
+    [Option("base", Required = false, HelpText = "With --make-mod: the game the files are built on (wolf3d, wolf3d-apogee, spear, blake...). Default: the one they match best.")]
+    public string Base { get; set; } = "";
+
+    [Option("out", Required = false, HelpText = "With --make-mod: the mod folder to write (the data files are copied in). Default: mods\\<the data folder's name>.")]
+    public string Out { get; set; } = "";
+
+    [Option("title", Required = false, HelpText = "With --make-mod: the game's title. Default: the data folder's name.")]
+    public string Title { get; set; } = "";
+
+    [Option("overwrite", Required = false, HelpText = "With --make-mod: write over the mod's files when it's made already (running it again after editing the data files).")]
+    public bool Overwrite { get; set; }
+
     [Option("file", Required = false, HelpText = "Mods to load over pfwolf.pk3: pk3 or zip files, or folders, found as given or in the mods folder. Later ones win.")]
     public IEnumerable<string> Files { get; set; } = [];
 
