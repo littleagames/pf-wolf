@@ -91,7 +91,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         foreach (var mod in PFWolf.Loaders.ModSource.OpenGameMods(Mods))
             foreach (var (id, game) in mod.Games!.GamePacks)
                 if (GameChoices.All(choice => !choice.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
-                    GameChoices.Add(new GameChoice(id, $"{game.Title ?? id} ({mod.DisplayName})", FromMod: true));
+                    GameChoices.Add(new GameChoice(id, (game.Title ?? id).Equals(mod.DisplayName, StringComparison.OrdinalIgnoreCase)
+                        ? mod.DisplayName
+                        : $"{game.Title ?? id} ({mod.DisplayName})", FromMod: true));
 
         if (picked != null)
             SelectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(picked, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];

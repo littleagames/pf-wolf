@@ -426,9 +426,9 @@ public static partial class RawDataModWriter
         text.AppendLine();
         text.AppendLine("Written: " + string.Join(", ", written.Order(StringComparer.OrdinalIgnoreCase)));
         text.AppendLine();
-        text.AppendLine("Not in the data files, so still the base game's until you change them in game-info.yaml or actordefs:");
-        text.AppendLine("  the palette, level music, par times, ceiling colors, episode and level names, and any new");
-        text.AppendLine("  enemies, items or wall behaviour the mod's exe had.");
+        text.AppendLine("Not in the data files, so still the base game's until you change them in game-info.yaml or actordefs: "
+            + "the palette, level music, par times, ceiling colors, episode and level names, and any new enemies, items or wall "
+            + "behaviour the mod's exe had.");
         return text.ToString();
     }
 

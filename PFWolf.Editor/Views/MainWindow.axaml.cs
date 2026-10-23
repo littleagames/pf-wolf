@@ -423,7 +423,7 @@ public partial class MainWindow : Window, IEditorDialogs
 
     public async Task<RawDataModRequest?> AskRawDataMod(string modsFolder, Func<string, IReadOnlyList<PFWolf.Managers.BaseCandidate>> detect)
     {
-        var folder = new TextBox { Watermark = "The folder with the mod's VSWAP, VGAGRAPH, AUDIOT, GAMEMAPS… files" };
+        var folder = new TextBox { Watermark = "The mod's VSWAP, VGAGRAPH… folder" };
         var browse = new Button { Content = "Browse…" };
         var game = new ComboBox { MinWidth = 300, IsEnabled = false };
         var found = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
@@ -454,7 +454,7 @@ public partial class MainWindow : Window, IEditorDialogs
                 error.Text = e.Message;
             }
             game.ItemsSource = candidates.Select(candidate => new GameChoice(candidate.ReleaseId,
-                $"{candidate.Title}: " + (candidate.Share is { } share ? $"{share:P0} the same" : "its files aren't here to compare"))).ToList();
+                $"{candidate.Title}: " + (candidate.Share is { } share ? $"{PFWolf.Managers.RawDataModGenerator.ShareText(share)} the same" : "its files aren't here to compare"))).ToList();
             game.SelectedIndex = candidates.Count > 0 ? 0 : -1;
             game.IsEnabled = ok.IsEnabled = candidates.Count > 0;
             found.Text = candidates.Count == 0
@@ -463,14 +463,29 @@ public partial class MainWindow : Window, IEditorDialogs
                   + ". The rest come from the game's own files in the PFWolf folder.";
             _rawDataCandidates = candidates;
         }
-        folder.LostFocus += (_, _) => Look();
+        // Looked at when the folder field is left, or as soon as what's typed (or pasted) is a folder
+        string looked = "";
+        void LookIfNew()
+        {
+            if ((folder.Text ?? "") != looked)
+            {
+                looked = folder.Text ?? "";
+                Look();
+            }
+        }
+        folder.LostFocus += (_, _) => LookIfNew();
+        folder.TextChanged += (_, _) =>
+        {
+            if (Directory.Exists(folder.Text?.Trim()))
+                LookIfNew();
+        };
         browse.Click += async (_, _) =>
         {
             var picked = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "The folder of data files" });
             if (picked is [var chosen, ..] && chosen.TryGetLocalPath() is { } local)
             {
                 folder.Text = local;
-                Look();
+                LookIfNew();
             }
         };
 
@@ -493,7 +508,11 @@ public partial class MainWindow : Window, IEditorDialogs
                 game,
                 new TextBlock { Text = "Title:" },
                 title,
-                new TextBlock { Text = "Mod folder (the data files are copied in; made here again later, the names given since are kept):" },
+                new TextBlock
+                {
+                    Text = "Mod folder (the data files are copied in; made here again later, the names given since are kept):",
+                    TextWrapping = TextWrapping.Wrap,
+                },
                 target,
                 error,
                 Buttons(ok, cancel),
@@ -540,7 +559,7 @@ public partial class MainWindow : Window, IEditorDialogs
             {
                 new TextBox
                 {
-                    Text = text, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap,
+                    Text = text, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
                     FontFamily = new FontFamily("Cascadia Mono,Consolas,monospace"), Height = 360,
                 },
                 Buttons(close),

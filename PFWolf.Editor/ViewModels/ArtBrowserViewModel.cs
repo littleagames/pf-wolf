@@ -280,6 +280,8 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         ? "Cut from another picture (change that); graphicdefs says where (Definitions, F11: Cropped pictures)"
         : ModFile != null
             ? $"In {ModFile}: changes are saved there"
+            : SelectedItem != null && _toName.TryGetValue(SelectedItem.Entry.Name, out var rawFile)
+            ? $"A new chunk of {rawFile.ModName}'s data files, under the name the generator made up: Name… gives it one in its {rawFile.EntryPath}"
             : SelectedItem != null ? "The game's own: a change puts a picture of the same name in a mod" : "";
 
     // The sprite's offset, as its PNG's grAb chunk gives it

@@ -520,12 +520,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 
 - [ ] File → New mod… → stand-alone game: it plays at once in PFWolf.
 - [ ] File → New mod… → mod of Wolf3D / Spear / Blake: modinfo only, levels editable.
-- [ ] **(never tried)** File → New mod from data files…: browse to a folder (the base list
-      fills), title and mod folder follow its name, Make it shows the report and loads the game;
-      again on the same mod folder asks to write over and keeps the names.
-- [ ] **(never tried)** Art browser: Show → Needs a name lists the made-up names; Name… renames one
-      (raw-data-map.yaml and mapdefs walls follow); a level using an unnamed wall gets the check
-      warning.
+- [ ] File → New mod from data files… (or From data files… under the mods): a folder typed or
+      browsed to fills the base list, title and mod folder follow its name, Make it shows the
+      report and loads the game; again on the same mod folder asks to write over and keeps the
+      names. **(never tried)** Browse… (the folder picker) and the base list's other choices.
+- [ ] Art browser: Show → Needs a name lists the made-up names; Name… renames one
+      (raw-data-map.yaml and mapdefs walls follow); a level using an unnamed wall gets the F7
+      check warning.
 
 ---
 

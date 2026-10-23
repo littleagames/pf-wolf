@@ -16,10 +16,22 @@ import into a mod), which becomes optional phase 5 here. Branch `feature/editor/
     files.
   - By hand: `--make-mod` on renamed copies of the WL6 VSWAP/GAMEMAPS/MAPHEAD, then all 4 Wolf3D
     demos play headless with the made mod loaded.
+  - On screen (2026-10-22, driven through UI Automation): a WL6 VSWAP with two walls put in
+    before the doors.
+    - The dialog finds the base and makes the mod, and the report is right.
+    - The mod's game loads, with wall 50 in the palette.
+    - Show → Needs a name lists both new walls; Name… renamed one, and the files and browser
+      followed.
+    - F7 warned about the unnamed one on a painted tile.
+    - Running the dialog again into the same folder asked to write over and kept the name.
+  - Fixed after looking: the mod folder label didn't wrap; "100%" showed for 2 new walls in about
+    600 chunks (now "over 99%"); the report didn't wrap; the game list read "Bunker TC
+    (Bunker TC)"; the art browser called a new chunk "the game's own". Also added a From data
+    files… button beside New mod…, and a typed folder path is looked at as soon as it exists.
 - **Not checked:** see the "(never tried)" items in docs/dev/manual-testing.md 1.14 and 2.17.
   - No real WDC/ChaosEdit mod has been tried, and no Spear, Blake or Planet Strike files have
     been through the generator.
-  - The editor dialog and the art browser's Name… haven't been looked at on screen.
+  - The dialog's Browse… folder picker hasn't been tried.
   - Pics added to VGAGRAPH are only tested on made-up parts (no test VGAGRAPH writer), so the
     `alias.yaml` remapping hasn't run on real files.
 - **Differences from the phases below:**

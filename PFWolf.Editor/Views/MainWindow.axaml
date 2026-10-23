@@ -401,6 +401,8 @@
       <WrapPanel Grid.Row="5" Orientation="Horizontal" ItemSpacing="6" LineSpacing="4" Margin="0,4,0,0">
         <Button Content="New mod…" Command="{Binding NewModCommand}"
                 ToolTip.Tip="A new pk3: a stand-alone game (needing no other game's files) or a mod of one of PFWolf's games" />
+        <Button Content="From data files…" Command="{Binding NewRawDataModCommand}"
+                ToolTip.Tip="A mod folder playing WDC/ChaosEdit-edited data files (VSWAP, VGAGRAPH, AUDIOT, GAMEMAPS)" />
         <Button Content="Add pk3…" Click="AddModFile" />
         <Button Content="Add folder…" Click="AddModFolder" />
         <Button Content="Remove" Command="{Binding RemoveModCommand}" />

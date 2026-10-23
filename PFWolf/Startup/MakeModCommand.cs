@@ -37,7 +37,7 @@ internal static class MakeModCommand
             output.WriteLine("The games the files may be built on, best first:");
             foreach (var candidate in candidates)
                 output.WriteLine($"  {candidate.ReleaseId,-18} {candidate.Title}: "
-                    + (candidate.Share is { } share ? $"{share:P0} of its chunks the same" : "its data files aren't in the game folder to compare")
+                    + (candidate.Share is { } share ? $"{RawDataModGenerator.ShareText(share)} of its chunks the same" : "its data files aren't in the game folder to compare")
                     + $", {candidate.NamesMatched} file names the same");
 
             var release = BaseRelease(gameParams.Base, candidates, output);

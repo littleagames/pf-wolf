@@ -293,6 +293,13 @@ public static class RawDataModGenerator
         return count;
     }
 
+    /// <summary>
+    /// A BaseCandidate's share as a person reads it: "100%" only when every chunk is the same
+    /// ("over 99%" for two new walls out of 600, which would round up to it)
+    /// </summary>
+    public static string ShareText(double share)
+        => share >= 1 ? "100%" : share >= 0.99 ? "over 99%" : $"{Math.Floor(share * 100)}%";
+
     /// <summary>PFWolf's own pack id of a release ("blake-aog" -> "blake")</summary>
     public static string PackIdOf(string releaseId)
         => Enum.GetValues<GameType>().Where(type => GameTypes.GetReleaseId(type) == releaseId).Select(GameTypes.GetGamePackId).FirstOrDefault()
