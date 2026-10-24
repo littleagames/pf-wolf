@@ -270,6 +270,9 @@ internal sealed class Missiles(
     /// tile, a quarter of it two tiles out, a ninth at three. playermax:N caps what a player takes
     /// of it (the original's quarter of the most).
     /// </summary>
+    /// <summary>The damage type a blast deals when its source gives none (A_Explode)</summary>
+    internal const string BlastDamageType = "Blast";
+
     internal void Explode(Entities.Actors.Actor ob, string[] args)
     {
         int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
@@ -302,11 +305,26 @@ internal sealed class Missiles(
         {
             var (x, y) = open.Dequeue();
 
-            // a player's blast leaves their side's be (no friendly fire)
+            // a player's blast leaves their side's be (no friendly fire). A blast whose source
+            // gives no damagetype deals Blast, for a Death.Blast state (Planet Strike's detonator,
+            // set off by another's blast a moment later)
             foreach (var target in map.ShootableActorsAt(x, y).ToList())
                 if (!ReferenceEquals(target, ob) && !(shooter != null && factions.IsAlly(shooter, target))
                     && DamageTo(target) is > 0 and var hit)
-                    target.Damage(shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
+                {
+                    bool typed = target.BlowType == null && !ob.Properties.ContainsKey("damagetype");
+                    if (typed)
+                        target.BlowType = BlastDamageType;
+                    try
+                    {
+                        target.Damage(shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
+                    }
+                    finally
+                    {
+                        if (typed)
+                            target.BlowType = null;
+                    }
+                }
 
             foreach (var pawn in blasted.Where(p => p.TileX == x && p.TileY == y))
                 if (Math.Min(DamageTo(pawn), playerMax) is > 0 and var hit)

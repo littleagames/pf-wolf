@@ -185,6 +185,13 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] **(never tried)** High-score name entry with a placing score (ratio column).
 - [ ] Weapon charge after save/load.
 - [ ] Charge packs give 1–8 units, the message says how many.
+- [ ] Elevator panel: the floor's overhead map (seen tiles, keys, Blake); **(never tried)** a
+      hidden area in the darker green.
+- [ ] Elevator stats: total points rises with kills and treasure (`count` shows Points).
+      **(never tried)** an informant at 97–99% points saying where an enemy or treasure is left.
+- [ ] Flickering lights: on for seconds, then a flicker. **(never tried)** lamps by eye on a
+      dark floor (lit a little, not unshaded).
+- [ ] **(never tried)** A water puddle only drunk at 15 health or less, healing past 16.
 - [ ] Help pages (Instructions): ^AN animations (posts, arcs, turret, transport, guards) run
       while the page is up.
 - [ ] Quit, End Game and new-game questions in bstone's words.
@@ -208,6 +215,9 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       locked or one-way door left shut, a blown door after save/load.
 - [ ] **(partly checked)** No firing while Goldfire morphs; firing again once he's morphed.
 - [ ] Radar at 4x shows pushwalls seen beside somewhere seen (cyan), not at 1x or 2x.
+- [ ] Help pages and story: Planet Strike's own pictures (keys 6 and 7, cannon, detonator,
+      the story's pictures, the cube animation).
+- [ ] **(partly checked)** A detonator caught in another's blast goes off 20 tics later.
 
 ## 1.11 Rendering features
 

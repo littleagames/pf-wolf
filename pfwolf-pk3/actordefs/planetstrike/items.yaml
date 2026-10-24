@@ -47,7 +47,7 @@ ChargeUnit:
         frames: [A]
         tics-per-frame: -1
 
-# bstone gives 1 to 8 units at random; a fixed 4 until pickups can give random amounts
+# Planet Strike swaps the two charge sprites
 ChargePack:
   extend: true
   states:

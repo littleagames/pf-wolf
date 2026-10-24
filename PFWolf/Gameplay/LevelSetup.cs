@@ -56,6 +56,7 @@ internal sealed class LevelSetup(
             session.GameState.SecretCount =
             session.GameState.KillCount =
             session.GameState.TreasureCount = 0;
+            session.GameState.PointsCount = session.GameState.PointsTotal = 0;
             pushWalls.ClearPushWalls();
             foreach (var p in session.Players)
             {

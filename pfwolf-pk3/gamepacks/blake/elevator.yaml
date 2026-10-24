@@ -56,5 +56,12 @@ prompt: ElevatorPressNumber
 
 stats: { x: 167, y: 92, font: 2, color: 175 }
 
+# The floor's overhead map, as bstone's (ShowOverhead of the whole map): what's been seen, walls
+# and the unseen alike dark, open doors as floor, hidden areas darker, keys lying about and Blake
+overhead:
+  x: 14
+  y: 71
+  colors: { background: 6, unmapped: 6, floor: 85, hidden: 82, door: 88, locked: 24, key: 243, player: 240 }
+
 button-sound: bs/elev_button
 message-tics: 210

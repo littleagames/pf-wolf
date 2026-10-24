@@ -1104,7 +1104,10 @@ internal partial record Monster : Actor
         bool counted = alive && CountsAsKill;
         Faction = faction;
         if (alive && counted != CountsAsKill)
+        {
             GameState.KillTotal += (short)(CountsAsKill ? 1 : -1);
+            GameState.PointsTotal += (CountsAsKill ? 1 : -1) * MapManager.KillWorth(this);
+        }
 
         if (follow)
             Follows = true;
@@ -1620,6 +1623,7 @@ internal partial record Monster : Actor
         if (CountsAsKill && !Properties.ContainsKey("monster.becomes"))
         {
             GameState.KillCount++;
+            GameState.PointsCount += PropertyInt("points", 0);     // toward the points ratio (Blake Stone's)
             if (killedBy is PlayerPawn player)
             {
                 bool unseen = World.Stealth?.Killed(player) == true;    // a knife or a scope's kill, unseen (Gameplay/Stealth.cs)
@@ -2547,7 +2551,10 @@ internal partial record Monster : Actor
         // As a map spawn of it would: its own speed, and a kill to count unless it's NOTCOUNTED
         newActor.Speed = newActor.PropertyInt("speed", SpdPatrol);
         if (!LoadedGame && newActor is Monster { CountsAsKill: true })
+        {
             GameState.KillTotal++;
+            GameState.PointsTotal += MapManager.KillWorth(newActor);
+        }
 
         if (!args.Skip(1).Any(a => a.Trim().Equals("keep", StringComparison.OrdinalIgnoreCase)))
             MapManager.MarkForRemoval(this);

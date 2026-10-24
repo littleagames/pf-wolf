@@ -30,32 +30,30 @@ in `docs/dev/manual-testing.md` §1.9–1.10, not here. Fixed since the list was
 charge pack, the quit and menu questions, ^AN animations, the lose screen's scrolling, the warp
 out and in, no firing during Goldfire's morph, the shootable detonator, door blasts and the
 radar's pushwalls, and security lights hearing a noise for a tic longer (bstone's `alerted`).
+Then (2026-10-24): Planet Strike's help-page shapes, the points ratio (points earned out of what
+the floor's counted enemies and treasure are worth), the random flickering light, lamps lit a
+little (`lighten`) rather than drawn unshaded, the water puddle's 15-health rule, the detonator
+caught in a blast waiting 20 tics (Death.Blast), the informant's last-points hint, and the
+elevator panel's overhead map.
 
 **Aliens of Gold: gameplay**
-- WaterPuddle's max amount is a fixed 16 (`items.yaml`).
-- Lamps are drawn full-bright; bstone only lightens them by 12 shade levels
-  (`actordefs/blake/decorations.yaml`, `bright` flags).
-- Score items count toward the treasure ratio, and the "points" ratio is the treasure ratio.
-- FlickeringLight uses a fixed pattern; bstone's is random: 4–13 seconds on, a few dim tics
-  (`actordefs/blake/machines.yaml`).
 - Outlet and Goldfire warp-site timers aren't saved: `LevelAI` re-rolls them when a level is
   set up, including after a load (`PFWolf/Managers/LevelAI.cs`).
 - Actors aren't kept off area-0 elevator floors.
-- The informant's points-% hint is missing (room hints, gifts and the kill warning are done).
 - The electro-alien, Goldfire and the liquid alien's attack timing are simplified; compare with
   bstone.
+- The lamps' `lighten` 6 is a conversion of bstone's -12 of 64 shade levels to our 32 fade
+  steps; check it by eye against bstone on a dark floor.
 
 **Aliens of Gold: level flow and UI**
 - Text presenter: no `^DS` display strings or `^PM` music by number. None of the game's texts
   use them.
-- Planet Strike's help pages use its own `^SH` shape numbers past AOG's (211 on: detonator,
-  automapper, promo pictures); presenter.yaml only has AOG's.
 - Blake Stone's shareware data (`.BS1`) isn't supported.
-- Check whether bstone's AOG elevator shows an overhead map; `gamepacks/blake/elevator.yaml`
-  sets none up.
-- Compare the Blake menus with the real game, screen by screen.
+- Menus: laid out as bstone's (positions, spacing, cursors checked against 3d_menu.cpp). Ours
+  has Video, Messages, Automap Stats and Mods in Game Options; bstone's Switches submenu
+  (lighting, REBA attack info, show ceilings, show floors) isn't there.
 
 **Planet Strike**
-- A detonator caught in another blast goes off at once; bstone's waits the blast's damage in
-  tics (20). Only the fission detonator blasts doors, as in bstone.
-- Check whether the walled-in barrier switches are just how the maps were built.
+- 82 of its 93 barrier switch walls have no open floor beside them, in bstone's data too: they're
+  thrown from afar (floor triggers 158-160, an enemy's death linked by floor code 79), which
+  already works. Nothing to do.

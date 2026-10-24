@@ -38,6 +38,7 @@ public static class ActorProperties
         Int("points", "The score for killing it"),
         Text("faction", "The side it's on (factions.yaml), unless a mapdefs thing gives its own", hint: FieldHint.Faction),
         Text("translation", "The sprite color translation it's drawn through (translations.yaml), unless a mapdefs thing gives its own", hint: FieldHint.Translation),
+        Int("lighten", "On a shaded level, how many fade steps (of 32) less it darkens with distance: a lamp lit a little, where the bright flag draws it unshaded"),
         Text("damagetype", "The kind of blow it deals (a missile's, a blast's, a monster's), for the death its victim dies (a Death.TYPE state)"),
         Int("knockback", "How far a BlakeMonster body it kills slides back, in 1/65536 tile (an explosion's); 0x5000 when left out. Other enemies don't slide."),
         Text("obituary", "The message when it kills the player (a $NAME language key or the text; %o is the player's tag)"),
@@ -89,6 +90,7 @@ public static class ActorProperties
 
         // Items
         Int("inventory.amount", "How many of it picking it up gives (points, for treasure)"),
+        Int("health.takenbelow", "A health item: only picked up while the player's health is this or less (Blake Stone's water puddle: 15)"),
         List("inventory.randomamount", "[min, max]: picking it up gives a random amount from min to max instead (Blake Stone's charge pack)", item: FieldType.Integer),
         Int("inventory.maxamount", "The most of it the player can carry; a magazine's: the clip size"),
         Int("inventory.interhubamount", "How much of it the player keeps going to the next level (0: none, as keys)"),

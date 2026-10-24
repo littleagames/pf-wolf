@@ -75,6 +75,11 @@ internal record Informant : BlakeMonster
     /// </summary>
     private string? Hint()
     {
+        // Just short of all the floor's points (97-99%), it says where an enemy left to kill
+        // is, or else treasure left to take (bstone's informant)
+        if (LastPointsHint() is { } lastPoints)
+            return lastPoints;
+
         var listName = PropertyStrings("talk.hints").FirstOrDefault();
         if (string.IsNullOrEmpty(listName))
             return null;
@@ -98,4 +103,34 @@ internal record Informant : BlakeMonster
             SeekY = (byte)(NextRandom() % general.Count);
         return HintText(listName, general[SeekY].Message);
     }
+
+    /// <summary>
+    /// With the floor's points ratio at 97 to 99%: where the first enemy still to count as a kill
+    /// is ($BS_HINT_ENEMY), else the first treasure still lying about ($BS_HINT_TREASURE), else
+    /// $BS_HINT_ALLTREASURE; each with the tile, and the player's own after it. Null otherwise.
+    /// </summary>
+    private string? LastPointsHint()
+    {
+        int total = GameState.PointsTotal;
+        int percent = total == 0 ? 100 : GameState.PointsCount * 100 / total;
+        if (percent <= 96 || percent >= 100)
+            return null;
+
+        var actors = MapManager.GetActors().Where(a => !a.IsRemoved).ToList();
+        static string Where(Actor a) => $"{a.TileX},{a.TileY}";
+        var player = Where(Player);
+
+        string text;
+        if (actors.OfType<Monster>().FirstOrDefault(m => m.CountsAsKill && m.RuntimeFlags.Has(ObjFlags.Shootable)) is { } enemy)
+            text = string.Format(HudMessageManager.Localize("$BS_HINT_ENEMY"), ActorTag(enemy), Where(enemy), player);
+        else if (actors.OfType<Inventory>().FirstOrDefault(i => i.HasFlag("COUNTITEM")) is { } treasure)
+            text = string.Format(HudMessageManager.Localize("$BS_HINT_TREASURE"), SpacedName(ActorTag(treasure)), Where(treasure), player);
+        else
+            text = HudMessageManager.Localize("$BS_HINT_ALLTREASURE");
+        return text.ToUpperInvariant();
+    }
+
+    // A class name as words (MoneyBag: Money Bag), for a thing with no tag of its own
+    private static string SpacedName(string name) =>
+        System.Text.RegularExpressions.Regex.Replace(name, "(?<=[a-z])(?=[A-Z])", " ");
 }

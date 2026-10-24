@@ -493,16 +493,30 @@ internal class MapManager
             Console.WriteLine($"{mapName}: {sealedTiles} tiles round the map's edge aren't mapdefs walls or doors; they're made solid");
     }
 
-    /// <summary>Turns the hidden area codes on plane 0 into the plain area codes (mapdefs floors hidden-area-start).</summary>
+    /// <summary>
+    /// Turns the hidden area codes on plane 0 into the plain area codes (mapdefs floors
+    /// hidden-area-start), keeping which tiles were hidden (<see cref="IsHiddenArea"/>)
+    /// </summary>
     private void UnhideAreas()
     {
+        var plane = mapsegs[0];
+        hiddenTiles = new bool[plane.Length];
         if (Floors.HiddenAreaTile <= 0)
             return;
 
-        var plane = mapsegs[0];
         for (int i = 0; i < plane.Length; i++)
-            plane[i] = (ushort)Floors.Unhidden(plane[i]);
+        {
+            var plain = (ushort)Floors.Unhidden(plane[i]);
+            hiddenTiles[i] = plain != plane[i];
+            plane[i] = plain;
+        }
     }
+
+    // Tiles whose area was a hidden one (UnhideAreas), indexed TileIndex
+    private bool[] hiddenTiles = [];
+
+    /// <summary>Whether a tile is in a hidden area (Blake Stone's rooms kept off the automap's "exposed areas")</summary>
+    internal bool IsHiddenArea(int x, int y) => InMap(x, y) && TileIndex(x, y) is var i && i < hiddenTiles.Length && hiddenTiles[i];
 
     /// <summary>
     /// Object-plane tiles that hold map info (mapdefs map-info) or its value, rather than a
@@ -1376,7 +1390,10 @@ internal class MapManager
             // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
             // and nor do those that aren't kills (Monster.IsKill: NOTCOUNTED ones, informants)
             if (countKill && !session.LoadedGame && (builtActor is not Entities.Actors.Monster m || m.CountsAsKill))
+            {
                 session.GameState.KillTotal++;
+                session.GameState.PointsTotal += KillWorth(builtActor);
+            }
 
             // Points only for the first kill (Monster.Kill clears it)
             if (builtActor.HasFlag("POINTSONCE"))
@@ -1433,7 +1450,10 @@ internal class MapManager
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
         // (Gameplay/Pickups.cs) bumps TreasureCount on pickup off the same flag.
         if (!session.LoadedGame && builtActor.HasFlag("COUNTITEM"))
+        {
             session.GameState.TreasureTotal++;
+            session.GameState.PointsTotal += ItemWorth(builtActor);
+        }
 
         //if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
         //{
@@ -1483,6 +1503,23 @@ internal class MapManager
     /// (none for a frame that holds). Demos keep v1.4's 0 to tics-1, which can end the frame on
     /// the first tic; otherwise 1 to tics, Wolf4SDL's fix for that (Chris' "moonwalk" fix).
     /// </summary>
+    /// <summary>
+    /// The points a counted enemy adds to the level's points total: its `points`, or for a
+    /// sleeper the enemy it becomes (`monster.becomes`), which is the kill (bstone's total_points)
+    /// </summary>
+    internal int KillWorth(Entities.Actors.Actor actor)
+    {
+        if (actor.Properties.TryGetValue("monster.becomes", out var becomes) && becomes?.ToString() is { Length: > 0 } className
+            && assetManager.Value.GetActorMetadata().Actors.TryGetValue(className, out var data)
+            && data.Properties.TryGetValue("points", out var worth))
+            return Convert.ToInt32(worth);
+        return actor.Properties.TryGetValue("points", out var points) ? Convert.ToInt32(points) : 0;
+    }
+
+    /// <summary>The points a counted treasure item adds to the level's points total: what picking it up gives</summary>
+    internal static int ItemWorth(Entities.Actors.Actor item) =>
+        item is Entities.Actors.ScoreItem && item.Properties.TryGetValue("inventory.amount", out var amount) ? Convert.ToInt32(amount) : 0;
+
     internal short SpawnTicCount(Entities.Actors.ActorStateFrame? frame)
     {
         if (frame == null || frame.HoldsForever || frame.TicTime <= 0)
@@ -1589,7 +1626,10 @@ internal class MapManager
         int x = old.TileX, y = old.TileY;
         MarkForRemoval(old);
         if (!session.LoadedGame && old.HasFlag("COUNTITEM") && session.GameState.TreasureTotal > 0)
+        {
             session.GameState.TreasureTotal--;
+            session.GameState.PointsTotal = Math.Max(session.GameState.PointsTotal - ItemWorth(old), 0);
+        }
         if (ActorAt[x, y] is BlockingActor || ActorAt[x, y] is ActorMark mark && ReferenceEquals(mark.Who, old))
             ActorAt[x, y] = null;
         int angles = old.Dir == ObjDir.NoDir ? -1 : (int)old.Dir * 45;

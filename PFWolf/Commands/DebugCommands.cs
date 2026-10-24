@@ -134,7 +134,7 @@ internal sealed class DebugCommands(
         }
         console.Print($"Actors: {actors.Count}  active: {active}");
         console.Print($"Enemies: {enemies}  alive: {alive}");
-        console.Print($"Kills: {session.GameState.KillCount}/{session.GameState.KillTotal}  Secrets: {session.GameState.SecretCount}/{session.GameState.SecretTotal}  Treasure: {session.GameState.TreasureCount}/{session.GameState.TreasureTotal}");
+        console.Print($"Kills: {session.GameState.KillCount}/{session.GameState.KillTotal}  Secrets: {session.GameState.SecretCount}/{session.GameState.SecretTotal}  Treasure: {session.GameState.TreasureCount}/{session.GameState.TreasureTotal}  Points: {session.GameState.PointsCount}/{session.GameState.PointsTotal}");
     }
 
     internal void ActorsCommand(string[] args)

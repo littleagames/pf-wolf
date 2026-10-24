@@ -13,6 +13,7 @@ internal class VisibleObject
     public ObjFlags Flags;
     public Entities.Actors.Actor? WallSprite;   // drawn as a panel (Rendering/WallSprites.cs), not a billboard
     public bool Bright;                         // drawn unshaded (Lighting.IsBright)
+    public int Lighten;                         // fade steps less shading with distance (Lighting.Lighten)
     public bool Cloaked;                        // drawn as a dark shimmer of what's behind it (Actor.Cloaked)
     public int WorldX, WorldY;                  // where it stands (global units), for its light
     public Assets.SpriteTranslation? Translation;   // its colors remapped (Managers/TranslationManager.cs), or null
@@ -27,6 +28,7 @@ internal class VisibleObject
         Flags = default;
         WallSprite = null;
         Bright = Cloaked = false;
+        Lighten = 0;
         WorldX = WorldY = 0;
         Translation = null;
         Z = 0;
@@ -124,6 +126,10 @@ internal class GameState
     // entrance), "" for its own start: kept through a death, as the level starts there again
     public string Entrance = "";
 
+    // The points the level's counted enemies and treasure are worth, and those earned from them
+    // so far (Blake Stone's points ratio, bstone's total_points and accum_points)
+    public int PointsCount, PointsTotal;
+
     private static string? ReadWeapon(BinaryReader br)
     {
         var name = br.ReadString();
@@ -161,6 +167,8 @@ internal class GameState
         p.KillY = br.ReadInt32();
         game.VictoryFlag = br.ReadBoolean();
         game.Entrance = br.ReadString();
+        game.PointsCount = br.ReadInt32();
+        game.PointsTotal = br.ReadInt32();
         return (game, p);
     }
 
@@ -193,6 +201,8 @@ internal class GameState
         bw.Write(p.KillY);
         bw.Write(VictoryFlag);
         bw.Write(Entrance ?? "");
+        bw.Write(PointsCount);
+        bw.Write(PointsTotal);
     }
 }
 

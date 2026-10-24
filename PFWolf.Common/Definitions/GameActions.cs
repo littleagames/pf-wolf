@@ -56,6 +56,7 @@ public static class GameActions
         new("T_LiquidStand", Actor, "T_LiquidStand", "The liquid alien standing up: it shoots (its Shoot state) now and then, up to five times, else sinks back (its Fall state) when the player can't see it, sometimes anyway, and after its fifth shot", BlakeMonster),
         new("T_Seek", Actor, "T_Seek", "A turret's think: facing the player (within its eighth of the circle, 15 tiles, in a clear line), it fires (its Attack state), more likely the nearer they are; else a turning one turns a step every half second (a STATIONARY one keeps facing its way)", BlakeMonster),
         new("T_SecurityLight", Actor, "T_SecurityLight", "A security light's think: once there's been a noise where the player can hear it, it starts flashing (its Alert state)", BlakeMonster),
+        new("T_FlickerLight", Actor, "T_FlickerLight", "A flickering light's think, on each of its frames: lit (Spawn) for seconds at a time, then a burst of its Dim1 and Dim2 frames", BlakeMonster),
         new("T_SteamVent", Actor, "T_SteamVent", "A steam vent's think: while the player can see it, it counts down and lets off steam (its Release state), then waits up to 34 seconds for the next", BlakeMonster),
 
         ]),

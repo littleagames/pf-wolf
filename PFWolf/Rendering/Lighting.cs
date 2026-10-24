@@ -199,6 +199,13 @@ internal sealed class Lighting(
     internal static bool IsBright(Entities.Actors.Actor actor) =>
         actor.CurrentState?.Bright == true || actor.HasFlag("bright");
 
+    /// <summary>
+    /// How many fade steps (of <see cref="FadeSteps"/>) less an actor darkens with distance: its
+    /// `lighten` (Blake Stone's lamps, lit a little rather than drawn unshaded)
+    /// </summary>
+    internal static int Lighten(Entities.Actors.Actor actor) =>
+        actor.Properties.TryGetValue("lighten", out var steps) ? Convert.ToInt32(steps) : 0;
+
     internal void InitLevelShading(MapInfo? mapInfo)
     {
         var defaultMap = engine.GetGameInfo().DefaultMap;

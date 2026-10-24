@@ -199,7 +199,7 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
     =============================================================================
     */
 
-    internal static int Ratio(int got, int total) => total == 0 ? 100 : got * 100 / total;
+    internal static int Ratio(int got, int total) => total == 0 ? 100 : Math.Min(got * 100 / total, 100);
 
     internal int InformantsAlive() =>
         mapManager.GetActors().Count(a => !a.IsRemoved && a is Entities.Actors.Informant
@@ -208,7 +208,7 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
     /// <summary>Points, informants and enemies, as (got, total) for the level in play</summary>
     internal (int Got, int Total)[] FloorStats() =>
     [
-        (session.GameState.TreasureCount, session.GameState.TreasureTotal),
+        (session.GameState.PointsCount, session.GameState.PointsTotal),
         (InformantsAlive(), InformantTotal),
         (session.GameState.KillCount, session.GameState.KillTotal),
     ];

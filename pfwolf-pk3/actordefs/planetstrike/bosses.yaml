@@ -171,8 +171,9 @@ SecurityCube:
 
 # A dropped fission detonator: it flashes for four seconds, then goes off, blowing open the
 # closed doors around it (A_BlastDoors: bstone's BlastNearDoors) and breaking a security cube
-# within two tiles. Shot, or caught in a blast, it goes off at once. It doesn't block the way,
-# and isn't on the side of the player who drops it (no "your ally was killed").
+# within two tiles. Shot, it goes off at once; caught in another blast, 20 tics later, as bstone's.
+# It doesn't block the way, and isn't on the side of the player who drops it (no "your ally was
+# killed").
 PlasmaDetonatorArmed:
   parent: BlakeMonster
   flags: [NOTCOUNTED, STATIONARY, NOTSOLID]
@@ -186,6 +187,8 @@ PlasmaDetonatorArmed:
     # (only so it can be shot)
     Chase:
       - { sprite: DBOM, frames: [A], tics-per-frame: -1 }
+    Death.Blast:
+      - { sprite: DBOM, frames: [B], tics-per-frame: 20, next-state: Death }
     Death:
       - { sprite: PEXP, frames: [A], tics-per-frame: 0, action: 'A_BlastDoors("DoorExplosion")' }
       - { sprite: PEXP, frames: [A], tics-per-frame: 4, action: 'A_PlaySound("bs/explode2", "positional")', modifiers: [bright] }

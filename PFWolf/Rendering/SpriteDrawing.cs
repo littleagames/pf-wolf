@@ -281,6 +281,7 @@ internal sealed class SpriteDrawing(
             if (actor.CurrentState == null)
                 continue;
             visptr_val.Bright = lighting.Shading && Lighting.IsBright(actor);
+            visptr_val.Lighten = lighting.Shading ? Lighting.Lighten(actor) : 0;
 
             // A marker with no sprite (a patrol point) takes no VisList slot. Inventory still
             // goes through below, where touching it is what picks it up.

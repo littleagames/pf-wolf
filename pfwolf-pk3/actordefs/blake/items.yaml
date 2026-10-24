@@ -183,13 +183,12 @@ WaterBowl:
         tics-per-frame: 0
         action: A_SpawnThing("EmptyWaterBowl")
 
-# Only drunk from when nearly dead: bstone takes it at 15 health or less. A health item heals up
-# to its maxamount and isn't taken at or above it, so this one stops at 16.
+# Only drunk from when nearly dead, at 15 health or less, as bstone's
 WaterPuddle:
   parent: Health
   properties:
     "inventory.amount": 5
-    "inventory.maxamount": 16
+    "health.takenbelow": 15
     "inventory.pickupsound": "bs/health1"
     "inventory.pickupmessage": "$BS_GOTPUDDLE"
   states:
@@ -326,7 +325,8 @@ XylanOrb:
     "inventory.amount": 5000
     "inventory.pickupsound": "bs/bonus4"
     "inventory.pickupmessage": "$BS_GOTXYLANORB"
-  flags: [COUNTITEM, bright]
+    "lighten": 6          # lit a little, as bstone's lamps
+  flags: [COUNTITEM]
   states:
     Spawn:
       - sprite: XORB

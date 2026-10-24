@@ -1,0 +1,32 @@
+# Planet Strike's text presenter: Aliens of Gold's (gamepacks/blake/presenter.yaml) with what
+# its own texts draw besides, from bstone's Planet Strike shape and animation tables (jm_tp.cpp).
+# Shapes and animations are numbered as there (^SH0d6 is 214).
+
+shapes:
+  37: { wall: TELEMAP2 }      # the teleporter wall, where Aliens of Gold has its elevator panel
+  53: { sprite: CUBEA0 }      # the security cube, where Aliens of Gold has its projection generator
+  214: { pic: H_KL }
+  216: { sprite: DBOMA0 }     # fission detonator
+  217: { sprite: AUTOA0 }     # automapper
+  218: { pic: H_STARPT }      # the story's pictures
+  219: { pic: H_BOSS }
+  220: { pic: H_TPLAN }
+  221: { pic: H_SOLSYS }
+  222: { pic: H_AOGEND }
+  223: { pic: H_GFLOGO }
+  224: { pic: H_BLAKEH }
+  225: { pic: H_PORJFD }
+  228: { sprite: APCPA0 }     # anti-plasma cannon
+  229: { pic: H_KPLUS }
+  230: { sprite: DBOMA0 }
+  236: { pic: H_KMINUS }
+  237: { pic: H_K6 }
+  238: { pic: H_KTILDE }
+  239: { pic: AUTOMP1X }
+  240: { pic: AUTOMP2X }
+  241: { pic: AUTOMP4X }
+
+animations:
+  6: { sprites: [VPSTA0, VPSTB0, VPSTC0, VPSTD0, VPSTE0, VPSTF0, VPSTG0, VPSTH0], tics: 20, rebound: true }   # v-post
+  7: { sprites: [VSPKA0, VSPKB0, VSPKC0, VSPKD0, VSPKE0, VSPKF0, VSPKG0, VSPKH0], tics: 20, rebound: true }   # v-spike
+  8: { sprites: [CUBEA0, CUBEB0, CUBEC0, CUBED0, CUBEE0, CUBEF0, CUBEG0, CUBEH0, CUBEI0, CUBEJ0], tics: 10 }   # security cube

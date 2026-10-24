@@ -82,6 +82,8 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
         }
         if (elevator.Panel is { } panel)
             graphics.DrawPic(panel.Pic, panel.X, panel.Y);
+        if (elevator.Overhead is { } overhead)
+            video.MemToScreen(CaptureOverhead(overhead.Colors, markThings: true), OverheadSize, OverheadSize, overhead.X, overhead.Y);
         if (!string.IsNullOrEmpty(elevator.Prompt) && presenter.PresenterScript(elevator.Prompt) is { } prompt)
             presenter.PresenterMessageBox(prompt);
 
@@ -351,12 +353,24 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     int OverheadTile(int pixel, int levelSize) => levelSize <= OverheadSize ? pixel : pixel * levelSize / OverheadSize;
 
     /// <summary>The level as the player has seen it, 64x64 palette colors (north up), for the teleporter</summary>
-    internal byte[] CaptureOverhead()
+    internal byte[] CaptureOverhead() => CaptureOverhead(Elevator?.Teleporter?.Colors, markThings: false);
+
+    /// <summary>
+    /// The level as the player has seen it, 64x64 palette colors (north up), in the colors given
+    /// by name (background, unmapped, floor, door, locked); with <paramref name="markThings"/>,
+    /// keys lying about (key) and the player (player) too
+    /// </summary>
+    byte[] CaptureOverhead(IReadOnlyDictionary<string, int>? colors, bool markThings)
     {
-        var layout = Elevator?.Teleporter;
-        byte background = (byte)int.Parse(OverheadColor(layout, "background", 0x52));
-        string unmapped = OverheadColor(layout, "unmapped", 82), floor = OverheadColor(layout, "floor", 85),
-            door = OverheadColor(layout, "door", 88), locked = OverheadColor(layout, "locked", 24);
+        string Color(string name, int fallback) => (colors?.TryGetValue(name, out var c) == true ? c : fallback).ToString();
+        byte background = byte.Parse(Color("background", 0x52));
+        string unmapped = Color("unmapped", 82), floor = Color("floor", 85), door = Color("door", 88), locked = Color("locked", 24);
+        byte key = byte.Parse(Color("key", 0xf3)), player = byte.Parse(Color("player", 0xf0));
+        string? hidden = colors?.ContainsKey("hidden") == true ? Color("hidden", 0) : null;
+
+        var keys = !markThings ? [] : mapManager.GetActors()
+            .Where(a => !a.IsRemoved && inventory.FindClass(a.Name, "Key") != null)
+            .Select(a => (a.TileX, a.TileY)).ToHashSet();
 
         var image = new byte[OverheadSize * OverheadSize];
         for (int py = 0; py < OverheadSize; py++)
@@ -366,7 +380,15 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
                 int x = OverheadTile(px, mapManager.MapWidth), y = OverheadTile(py, mapManager.MapHeight);
                 byte color = background;
                 if (mapManager.InMap(x, y) && mapManager.Seen[x, y] != SeenFlags.None)
-                    color = byte.Parse(hooks.TileColor(x, y, unmapped, floor, door, locked));
+                {
+                    // Open floor in a hidden area (Blake Stone's) shows in its own color
+                    var tile = hooks.TileColor(x, y, unmapped, floor, door, locked);
+                    if (hidden != null && tile == floor && mapManager.IsHiddenArea(x, y))
+                        tile = hidden;
+                    color = keys.Contains(((byte)x, (byte)y)) ? key : byte.Parse(tile);
+                }
+                if (markThings && x == session.Player.TileX && y == session.Player.TileY)
+                    color = player;
                 image[py * OverheadSize + px] = color;
             }
         }

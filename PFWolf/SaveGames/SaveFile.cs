@@ -62,7 +62,8 @@ internal static class SaveFile
     // 31: each level ratio ends with the level's objectives' done and total (the victory tally).
     // 32: the level's own colors (map-info, as last stepped onto) and A_Warp's swap, at the end of the level.
     // 33: whether each door has been blown open for good (A_BlastDoors), after unlocked.
-    internal const int SaveVersion = 33;
+    // 34: the level's points earned and total (Blake Stone's points ratio), at the end of GameState.
+    internal const int SaveVersion = 34;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

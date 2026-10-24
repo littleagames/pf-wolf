@@ -38,6 +38,9 @@ public record ElevatorAsset : Asset
     /// <summary>Where the floor's stats go: the left of the bars and the top of the first</summary>
     public ElevatorStats? Stats { get; set; }
 
+    /// <summary>The floor's overhead map on the panel, as the player has seen it; none when left out</summary>
+    public ElevatorOverhead? Overhead { get; set; }
+
     /// <summary>Played as a button is pressed</summary>
     public string? ButtonSound { get; set; }
 
@@ -53,6 +56,22 @@ public record ElevatorAsset : Asset
 
     /// <summary>The teleporter map's layout, for style: teleporter (Planet Strike)</summary>
     public TeleporterLayout? Teleporter { get; set; }
+}
+
+/// <summary>
+/// The floor's overhead map on the elevator panel (bstone's ShowOverhead with the whole map):
+/// a pixel a tile, north up, of what the player has seen, with keys lying about and the player
+/// </summary>
+public record ElevatorOverhead
+{
+    /// <summary>The map's top left corner</summary>
+    public int X { get; set; }
+
+    /// <summary>The map's top edge</summary>
+    public int Y { get; set; }
+
+    /// <summary>Palette indices by name: background (unseen), unmapped (walls), floor, hidden (floor in a hidden area), door, locked, key, player</summary>
+    public Dictionary<string, int> Colors { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>Two bevelled boxes, the inner one pressed in: an outer one from (x, y) and an inner one inset by inset-x, inset-y</summary>

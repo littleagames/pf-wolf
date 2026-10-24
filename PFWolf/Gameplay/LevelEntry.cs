@@ -74,6 +74,8 @@ internal sealed class LevelEntry(
             bw.Write((int)session.GameState.SecretTotal);
             bw.Write((int)session.GameState.TreasureCount);
             bw.Write((int)session.GameState.TreasureTotal);
+            bw.Write(session.GameState.PointsCount);
+            bw.Write(session.GameState.PointsTotal);
             bw.Write(hubs.InformantTotal);
             hooks.WriteLevelBody(bw);
         }
@@ -86,7 +88,7 @@ internal sealed class LevelEntry(
         if (!hubs.HubLevels.TryGetValue(map, out var data))
             return false;
 
-        int timeCount, killCount, killTotal, secretCount, secretTotal, treasureCount, treasureTotal, informants;
+        int timeCount, killCount, killTotal, secretCount, secretTotal, treasureCount, treasureTotal, pointsCount, pointsTotal, informants;
         SaveGames.LevelBody body;
         try
         {
@@ -98,6 +100,8 @@ internal sealed class LevelEntry(
             secretTotal = br.ReadInt32();
             treasureCount = br.ReadInt32();
             treasureTotal = br.ReadInt32();
+            pointsCount = br.ReadInt32();
+            pointsTotal = br.ReadInt32();
             informants = br.ReadInt32();
             body = hooks.ReadLevelBody(br);
 
@@ -125,6 +129,8 @@ internal sealed class LevelEntry(
         session.GameState.SecretTotal = (short)secretTotal;
         session.GameState.TreasureCount = (short)treasureCount;
         session.GameState.TreasureTotal = (short)treasureTotal;
+        session.GameState.PointsCount = pointsCount;
+        session.GameState.PointsTotal = pointsTotal;
         hubs.InformantTotal = informants;
         session.PlayerState.WeaponSprite = null;
         return true;

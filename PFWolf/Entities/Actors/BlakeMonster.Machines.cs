@@ -21,6 +21,7 @@ internal partial record BlakeMonster
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_LiquidStand", m => m.LiquidStand());
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_Seek", m => m.Seek());
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_SecurityLight", m => m.SecurityLight());
+        ActorActionRegistry.RegisterFor<BlakeMonster>("T_FlickerLight", m => m.FlickerLight());
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_SteamVent", m => m.SteamVent());
         ActorActionRegistry.RegisterFor<BlakeMonster>("A_HurtPlayerHere", (m, args) => m.HurtPlayerHere(args));
         ActorActionRegistry.RegisterFor<BlakeMonster>("A_HoldNearPlayer", (m, args) => m.HoldNearPlayer(args));
@@ -272,6 +273,39 @@ internal partial record BlakeMonster
 
     =============================================================================
     */
+
+    /// <summary>
+    /// A flickering light's think (bstone's flickerlightobj), on each of its frames: it starts
+    /// lit for 2 to 4 seconds, then flickers, each step a dim frame (Dim1 or Dim2) for 2 or 3
+    /// tics, until one time in 16 it comes back on (Spawn) for 4 to 13 seconds. Temp2 is the
+    /// tics left; Temp1 is set once it's begun.
+    /// </summary>
+    internal void FlickerLight()
+    {
+        if (Temp1 == 0)
+        {
+            Temp1 = 1;
+            Temp2 = (short)((2 + NextRandom() % 3) * 60);
+            return;
+        }
+        if (Tics < Temp2)
+        {
+            Temp2 -= (short)Tics;
+            return;
+        }
+
+        bool lit = CurrentState?.StateName == "Spawn";
+        if (lit || (NextRandom() & 15) != 0)
+        {
+            SetState((NextRandom() & 1) == 0 ? "Dim1" : "Dim2");
+            Temp2 = (short)(2 + NextRandom() % 2);
+        }
+        else
+        {
+            SetState("Spawn");
+            Temp2 = (short)((4 + NextRandom() % 10) * 60);
+        }
+    }
 
     /// <summary>
     /// A security light's think: once there's been a noise where the player can hear it, it

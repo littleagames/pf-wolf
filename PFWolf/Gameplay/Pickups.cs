@@ -50,6 +50,12 @@ internal sealed class Pickups(
 
         // An item the player can't take (health at 100, a key already held) stays on the
         // floor, unless it's flagged ALWAYSPICKUP.
+        // A health item taken only when the player's that low (Blake Stone's water puddle, at
+        // 15 or less); it then heals as any other
+        if (builtActor is Health && builtActor.Properties.TryGetValue("health.takenbelow", out var below)
+            && session.PlayerState.Health > Convert.ToInt32(below))
+            return;
+
         int? given = null;
         if (builtActor.Properties.TryGetValue("inventory.amount", out var amount))
         {
@@ -59,7 +65,10 @@ internal sealed class Pickups(
         }
 
         if (builtActor.HasFlag("COUNTITEM"))
+        {
             session.GameState.TreasureCount++;
+            session.GameState.PointsCount += MapManager.ItemWorth(builtActor);
+        }
 
         builtActor.RunState("Pickup");
 
