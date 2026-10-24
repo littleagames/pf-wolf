@@ -50,11 +50,12 @@ internal sealed class Pickups(
 
         // An item the player can't take (health at 100, a key already held) stays on the
         // floor, unless it's flagged ALWAYSPICKUP.
-        if (builtActor.Properties.TryGetValue("inventory.amount", out var amount)
-            && !stats.TryApplyInventory(builtActor, Convert.ToInt32(amount))
-            && !builtActor.HasFlag("INVENTORY.ALWAYSPICKUP"))
+        int? given = null;
+        if (builtActor.Properties.TryGetValue("inventory.amount", out var amount))
         {
-            return;
+            given = PickupAmount(builtActor, Convert.ToInt32(amount));
+            if (!stats.TryApplyInventory(builtActor, given.Value) && !builtActor.HasFlag("INVENTORY.ALWAYSPICKUP"))
+                return;
         }
 
         if (builtActor.HasFlag("COUNTITEM"))
@@ -68,12 +69,14 @@ internal sealed class Pickups(
             stats.GrinAtPickup(builtActor, pickupSound?.ToString());
         }
 
-        // Shown over the view in the item's message style (hud-messages.yaml), or game-info's for pickups
+        // Shown over the view in the item's message style (hud-messages.yaml), or game-info's for
+        // pickups; %a in it is how much it gave
         if (builtActor.Properties.TryGetValue("inventory.pickupmessage", out var pickupMessage))
         {
             builtActor.Properties.TryGetValue("inventory.pickupmessagestyle", out var pickupMessageStyle);
             if (session.ActingIsLocal)
-                hudMessages.Show(HudMessageKind.Pickup, pickupMessage?.ToString(), pickupMessageStyle?.ToString());
+                hudMessages.Show(HudMessageKind.Pickup, pickupMessage?.ToString(), pickupMessageStyle?.ToString(),
+                    given is { } count ? new Dictionary<char, string> { ['a'] = count.ToString() } : null);
         }
 
         if (session.ActingIsLocal)
@@ -90,5 +93,19 @@ internal sealed class Pickups(
 
         //check.ShapeNum = "";                   // remove from list
         map.RemoveActor(builtActor);
+    }
+
+    /// <summary>
+    /// How much an item gives: its `inventory.randomamount` [min, max] when it has one (Blake
+    /// Stone's charge pack, 1 to 8 units), from the game's random table; else its amount
+    /// </summary>
+    internal int PickupAmount(Inventory item, int amount)
+    {
+        var bounds = item.PropertyInts("inventory.randomamount");
+        if (bounds.Count != 2 || bounds[1] < bounds[0])
+            return amount;
+        // One roll spread across the range, as bstone's 1 + (US_RndT() & 7) for 1 to 8
+        int span = bounds[1] - bounds[0] + 1;
+        return bounds[0] + session.Random.RndT() * span / 256;
     }
 }

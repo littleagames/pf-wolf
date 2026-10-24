@@ -7,7 +7,8 @@ namespace PFWolf.Ui;
 /// of the tiles around the player, turned so the way they face is up, of what they've seen
 /// (the automap's seen tiles). It always shows at 1x; zooming in (2x, 4x: radar zoom in and
 /// out) uses up its item, the radar's power, and shows enemies. When the power runs out it
-/// goes back to 1x. (bstone also shows MovingWalls at 4x; not done.)
+/// goes back to 1x. Zoomed all the way in, a radar with a `pushwall` color shows the pushwalls
+/// seen beside somewhere seen (bstone's show_pwalls_on_automap).
 ///
 /// Midnight Assault's corner map (ma_automap.c) is one too: north up (rotate: false), enemies
 /// shown at 1x (enemies: true), and only on the maps that ask for it (maps-only, game-info map
@@ -98,6 +99,7 @@ internal sealed class Radar(
         int scale = 1 << RadarZoom;
         double radius = radar.Tiles / 2.0 / scale;
         int diameter = (int)(radius * 2);
+        string? pushwall = RadarZoom >= 2 && RadarZoom == radar.ZoomPics.Count - 1 ? radar.Colors.GetValueOrDefault("pushwall") : null;
 
         // Keys lying about, and (zoomed in, or always with enemies) living enemies, by tile, in
         // their class's own color if the radar gives one
@@ -128,7 +130,10 @@ internal sealed class Radar(
             string color = RadarTileColor(mx, my, unmapped, floor, door, locked);
             if (keys.Contains(mx << 8 | my))
                 color = key;
-            return enemies.GetValueOrDefault(mx << 8 | my) ?? color;
+            color = enemies.GetValueOrDefault(mx << 8 | my) ?? color;
+            if (pushwall != null && IsPushWall(mx, my) && SeenBeside(mx, my))
+                color = pushwall;
+            return color;
         }
 
         if (!radar.Rotate)
@@ -167,6 +172,22 @@ internal sealed class Radar(
             baselmx += yinc;
             baselmy -= xinc;
         }
+    }
+
+    // A pushwall still in place: a wall whose trigger pushes it
+    bool IsPushWall(int x, int y) =>
+        map.TileMap[x, y] != 0 && (map.TileMap[x, y] & GameConstants.BitDoor) == 0
+        && map.GetTrigger(x, y) is { } trigger && Entities.Actors.ActorActionRegistry.Parse(trigger.Action).Name == "A_PushWall";
+
+    // Whether a tile next to it (not another pushwall) has been seen
+    bool SeenBeside(int x, int y)
+    {
+        for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -1; dy <= 1; dy++)
+                if ((dx != 0 || dy != 0) && map.InMap(x + dx, y + dy)
+                    && map.Seen[x + dx, y + dy] != SeenFlags.None && !IsPushWall(x + dx, y + dy))
+                    return true;
+        return false;
     }
 
     // What a seen tile shows as: open floor, a door (closed, or locked), or a wall (as unmapped)

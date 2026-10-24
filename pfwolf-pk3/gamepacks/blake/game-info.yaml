@@ -720,6 +720,3 @@ maps:
 
 end-strings:
   - $BS_ENDSTR1
-  - $BS_ENDSTR2
-  - $BS_ENDSTR3
-  - $BS_ENDSTR4

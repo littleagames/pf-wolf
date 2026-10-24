@@ -94,3 +94,4 @@ radar:
     player: "240"
     key: "243"
     enemy: "41"
+    pushwall: "121"     # at 4x: a pushwall seen beside somewhere seen

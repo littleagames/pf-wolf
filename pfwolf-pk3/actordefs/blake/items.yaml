@@ -214,11 +214,12 @@ ChargeUnit:
         frames: [A]
         tics-per-frame: -1
 
-# bstone gives 1 to 8 units at random; a fixed 4 until pickups can give random amounts
+# 1 to 8 units at random, as bstone's; its message says how many
 ChargePack:
   parent: ChargeUnit
   properties:
     "inventory.amount": 4
+    "inventory.randomamount": [1, 8]
     "inventory.pickupmessage": "$BS_GOTCHARGEPACK"
   states:
     Spawn:

@@ -76,6 +76,11 @@ internal sealed class LevelLoop(
         input.CenterMouse();
 
         hudMessages.Clear();     // nothing left over from the last level, life or saved game
+        if (session.LevelStartHudMessage is { } arriving)
+        {
+            hudMessages.Show(HudMessageKind.Other, arriving);
+            session.LevelStartHudMessage = null;
+        }
 
         if (session.DemoPlayback)
             input.StartAck();

@@ -109,7 +109,8 @@ internal sealed class DebugCommands(
             var d = doors.DoorObjList[i];
             var link = d.LinkX >= 0 ? $"  linked to {d.LinkX},{d.LinkY}" : "";
             var lockText = d.IsLocked ? $"  locked ({(d.Lock.Length > 0 ? d.Lock : string.Join("+", d.MapLocks))})" : "";
-            console.Print($"door {i} at {d.TileX},{d.TileY}: {d.Action}{lockText}{link}");
+            var jammed = d.Jammed ? "  blown open" : "";
+            console.Print($"door {i} at {d.TileX},{d.TileY}: {d.Action}{jammed}{lockText}{link}");
         }
     }
 

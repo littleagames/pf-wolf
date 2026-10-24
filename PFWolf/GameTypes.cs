@@ -214,6 +214,7 @@ internal class DoorObject
     public List<string> MapLocks = []; // the doors.yaml locks it needs several of (none with a door-locks object)
     public int LocksNeeded;            // how many of MapLocks it needs (all of them when 0)
     public bool Unlocked;              // a takes-key door the player has opened with its lock item
+    public bool Jammed;                // blown open for good (A_BlastDoors): open and unlocked, it never closes
     public int LinkX = -1, LinkY = -1; // the next door's tile in a chain of linked doors (doors.yaml link: object-plane), -1 for none
 
     /// <summary>The item the door needs to open, empty when it needs none (or only needs <see cref="MapLocks"/>)</summary>
@@ -256,6 +257,7 @@ internal class DoorObject
         Position = br.ReadUInt16();
         Held = br.ReadBoolean();
         Unlocked = br.ReadBoolean();
+        Jammed = br.ReadBoolean();
     }
 
     public void WriteState(BinaryWriter bw)
@@ -265,6 +267,7 @@ internal class DoorObject
         bw.Write(Position);
         bw.Write(Held);
         bw.Write(Unlocked);
+        bw.Write(Jammed);
     }
 }
 

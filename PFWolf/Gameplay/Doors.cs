@@ -149,6 +149,8 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     */
     internal void OpenDoor(int door)
     {
+        if (DoorObjList[door].Jammed)
+            return;
         if (DoorObjList[door].Action == (byte)DoorAction.Open)
             DoorObjList[door].TicCount = 0;         // reset open time
         else
@@ -210,6 +212,8 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         tilex = DoorObjList[door].TileX;
         tiley = DoorObjList[door].TileY;
 
+        if (DoorObjList[door].Jammed)               // blown open for good
+            return;
         if (map.ActorAt[tilex, tiley] is Actor)     // an enemy (or its corpse) in the doorway
             return;
 
@@ -436,7 +440,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
     internal void DoorOpen(int door)
     {
-        if (DoorObjList[door].Held)
+        if (DoorObjList[door].Held || DoorObjList[door].Jammed)
             return;
 
         if ((DoorObjList[door].TicCount += (short)session.Tics) >= OpenTics)
@@ -453,8 +457,6 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
     internal void DoorOpening(int door)
     {
-        uint area1, area2;
-        //word* map;
         int position;
 
         position = DoorObjList[door].Position;
@@ -463,34 +465,10 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             //
             // door is just starting to open, so connect the areas
             //
-            var door_tilex = DoorObjList[door].TileX;
-            var door_tiley = DoorObjList[door].TileY;
-
-            if (DoorObjList[door].Vertical)
+            if (ConnectDoorAreas(door) is { } area1
+                && session.Areas.AreaByPlayer[area1] != 0 && DoorObjList[door].Xlat.OpenSound is { Length: > 0 } openSound)
             {
-                area1 = (uint)map.MapSpot(door_tilex + 1, door_tiley, 0);
-                area2 = (uint)map.MapSpot(door_tilex - 1, door_tiley, 0);
-            }
-            else
-            {
-                area1 = (uint)map.MapSpot(door_tilex, door_tiley - 1, 0);
-                area2 = (uint)map.MapSpot(door_tilex, door_tiley + 1, 0);
-            }
-            area1 -= (uint)map.Floors.AreaTile;
-            area2 -= (uint)map.Floors.AreaTile;
-
-            if (area1 < map.Floors.NumAreas && area2 < map.Floors.NumAreas)
-            {
-                session.Areas.AreaConnect[area1, area2]++;
-                session.Areas.AreaConnect[area2, area1]++;
-
-                if (map.Players.Any(pawn => pawn.AreaNumber < map.Floors.NumAreas))
-                    ConnectAreas();
-
-                if (session.Areas.AreaByPlayer[area1] != 0 && DoorObjList[door].Xlat.OpenSound is { Length: > 0 } openSound)
-                {
-                    hooks.PlaySoundAt(openSound, DoorObjList[door].TileX, DoorObjList[door].TileY);  // JAB
-                }
+                hooks.PlaySoundAt(openSound, DoorObjList[door].TileX, DoorObjList[door].TileY);  // JAB
             }
         }
 
@@ -510,6 +488,65 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         }
 
         DoorObjList[door].Position = (ushort)position;
+    }
+
+    /// <summary>
+    /// Joins the areas either side of a door that's starting to open: the first of them, or null
+    /// when either side isn't an area
+    /// </summary>
+    uint? ConnectDoorAreas(int door)
+    {
+        uint area1, area2;
+        var door_tilex = DoorObjList[door].TileX;
+        var door_tiley = DoorObjList[door].TileY;
+
+        if (DoorObjList[door].Vertical)
+        {
+            area1 = (uint)map.MapSpot(door_tilex + 1, door_tiley, 0);
+            area2 = (uint)map.MapSpot(door_tilex - 1, door_tiley, 0);
+        }
+        else
+        {
+            area1 = (uint)map.MapSpot(door_tilex, door_tiley - 1, 0);
+            area2 = (uint)map.MapSpot(door_tilex, door_tiley + 1, 0);
+        }
+        area1 -= (uint)map.Floors.AreaTile;
+        area2 -= (uint)map.Floors.AreaTile;
+
+        if (area1 >= map.Floors.NumAreas || area2 >= map.Floors.NumAreas)
+            return null;
+
+        session.Areas.AreaConnect[area1, area2]++;
+        session.Areas.AreaConnect[area2, area1]++;
+
+        if (map.Players.Any(pawn => pawn.AreaNumber < map.Floors.NumAreas))
+            ConnectAreas();
+        return area1;
+    }
+
+    /// <summary>
+    /// Blows a door open for good, if it can be (bstone's TryBlastDoor): one that's at most half
+    /// open, isn't locked and isn't one-way. It's open at once, unlocked, and never closes again.
+    /// True when it was.
+    /// </summary>
+    internal bool BlastDoor(int door)
+    {
+        var d = DoorObjList[door];
+        if (d.Jammed || d.IsLocked || d.Xlat.OpensFrom.Length > 0 || d.Position >= 0x8000)
+            return false;
+
+        // A door still shut has its areas joined now, as one starting to open does
+        if (d.Position == 0)
+            ConnectDoorAreas(door);
+
+        d.Position = 0xffff;
+        d.Action = DoorAction.Open;
+        d.TicCount = 0;
+        d.Held = false;
+        d.Unlocked = true;
+        d.Jammed = true;
+        map.ActorAt[d.TileX, d.TileY] = null;
+        return true;
     }
 
     /*

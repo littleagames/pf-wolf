@@ -26,11 +26,12 @@ the catalog, get one on its own.
 Checked against the code on 2026-10-23. bstone's source (the behaviour reference) is at
 `D:\projects\Wolf3D\wolf4sdl sources\bstone-master`. Whether the goal is exact parity or just
 "plays right" is still undecided, and that decides how many of these matter. Untested items are
-in `docs/dev/manual-testing.md` §1.9–1.10, not here.
+in `docs/dev/manual-testing.md` §1.9–1.10, not here. Fixed since the list was made: the random
+charge pack, the quit and menu questions, ^AN animations, the lose screen's scrolling, the warp
+out and in, no firing during Goldfire's morph, the shootable detonator, door blasts and the
+radar's pushwalls.
 
 **Aliens of Gold: gameplay**
-- ChargePack always gives 4 charge units; bstone gives a random 1–8. Needs random pickup
-  amounts in the engine (`pfwolf-pk3/actordefs/blake/items.yaml`, ChargePack).
 - WaterPuddle's max amount is a fixed 16 (`items.yaml`).
 - Lamps are drawn full-bright; bstone only lightens them by 12 shade levels
   (`actordefs/blake/decorations.yaml`, `bright` flags).
@@ -39,30 +40,26 @@ in `docs/dev/manual-testing.md` §1.9–1.10, not here.
   (`actordefs/blake/machines.yaml`).
 - Outlet and Goldfire warp-site timers aren't saved: `LevelAI` re-rolls them when a level is
   set up, including after a load (`PFWolf/Managers/LevelAI.cs`).
-- "Alerted" is treated the same as `MadeNoise`.
+- Security lights go off on `MadeNoise`, which lasts only the tic it's made in. bstone's
+  `alerted` is set with it but counts down over two tics, so a light that thinks before the
+  noise's maker in the actor list still sees it next tic; ours can miss it
+  (`BlakeMonster.Machines.cs`, T_SecurityLight). bstone also never reads `alerted_areanum`.
 - Actors aren't kept off area-0 elevator floors.
 - The informant's points-% hint is missing (room hints, gifts and the kill warning are done).
 - The electro-alien, Goldfire and the liquid alien's attack timing are simplified; compare with
   bstone.
 
 **Aliens of Gold: level flow and UI**
-- Text presenter: no `^AN` animations (help screens), `^DS` display strings, `^PM` music, or
-  scaled sprite/wall shapes. The header comment in `PFWolf/Ui/TextPresenter.cs` still lists
-  `^PS` as not done; it is done.
-- The lose screen's Goldfire transmission clears its text box instead of scrolling it
-  (`TextPresenter.cs`, `PresenterFlags.ScrollRegion`).
-- No warp-in effect when arriving on a floor.
-- Quit messages are placeholders (`gamepacks/blake/language/en-us.yaml`, `$BS_ENDSTR*`).
+- Text presenter: no `^DS` display strings or `^PM` music by number. None of the game's texts
+  use them.
+- Planet Strike's help pages use its own `^SH` shape numbers past AOG's (211 on: detonator,
+  automapper, promo pictures); presenter.yaml only has AOG's.
 - Blake Stone's shareware data (`.BS1`) isn't supported.
 - Check whether bstone's AOG elevator shows an overhead map; `gamepacks/blake/elevator.yaml`
   sets none up.
 - Compare the Blake menus with the real game, screen by screen.
 
 **Planet Strike**
-- The player can still fire during Goldfire's morph; bstone blocks shots then (`noShots`).
-- The fission detonator can't be shot.
-- Explosions don't blast nearby doors (bstone's `BlastNearDoors`). `DoorRubble` (object 487)
-  is only a decoration, and the PlasmaDetonatorArmed comment in
-  `actordefs/planetstrike/bosses.yaml` says it does more than it does.
-- The radar doesn't show pushwalls at 4x zoom (`PFWolf/Ui/Radar.cs`).
+- A detonator caught in another blast goes off at once; bstone's waits the blast's damage in
+  tics (20). Only the fission detonator blasts doors, as in bstone.
 - Check whether the walled-in barrier switches are just how the maps were built.

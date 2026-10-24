@@ -180,9 +180,17 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       electro-aliens, liquid alien, Goldfire warp.
 - [ ] **(never tried)** Security light alert, steam damage, oozes, the five bosses other than the
       spider.
-- [ ] **(never tried)** End movie after a real win; lose screen ("Goldfire Transmission").
+- [ ] **(never tried)** End movie after a real win.
+- [ ] Lose screen ("Goldfire Transmission") typed out, scrolling up as it fills.
 - [ ] **(never tried)** High-score name entry with a placing score (ratio column).
-- [ ] Weapon charge after save/load (known: resets).
+- [ ] Weapon charge after save/load.
+- [ ] Charge packs give 1–8 units, the message says how many.
+- [ ] Help pages (Instructions): ^AN animations (posts, arcs, turret, transport, guards) run
+      while the page is up.
+- [ ] Quit, End Game and new-game questions in bstone's words.
+- [ ] Warp walls: on the same floor (MAP21 60,39) "transporting out", the view turns away and
+      fizzles out, then "transporting..." where it leads; to another floor (MAP01 13,7) the
+      same, arriving on the new floor. **(never tried)** Saving right after a warp.
 
 ## 1.10 Planet Strike (PS)
 
@@ -193,6 +201,13 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Cloaked cyborg shimmer and hit frame.
 - [ ] **(never tried)** Door triggers 158–160 (smart switches) in play.
 - [ ] Teleporter, detonator, gold morph, ending.
+- [ ] Shooting a dropped detonator sets it off at once (and breaks the cube); no "your ally"
+      message.
+- [ ] A detonator blows the closed doors round it open for good (`doors` says "blown open");
+      **(never tried)** by eye: the doorway's explosion and the rubble left half the time, a
+      locked or one-way door left shut, a blown door after save/load.
+- [ ] **(partly checked)** No firing while Goldfire morphs; firing again once he's morphed.
+- [ ] Radar at 4x shows pushwalls seen beside somewhere seen (cyan), not at 1x or 2x.
 
 ## 1.11 Rendering features
 

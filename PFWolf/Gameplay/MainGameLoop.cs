@@ -9,9 +9,11 @@ namespace PFWolf.Gameplay;
 /// A map switch asked for by A_ChangeMap (Spear's pickup), an elevator or a teleporter:
 /// GameLoop waits WaitTics (Spear lets the pickup sound play out), loads the map without an
 /// intermission and, with KeepPosition, puts the player back where they stood, facing the
-/// same way. With ElevatorWall, they're then moved into the elevator by that panel wall.
+/// same way. With ElevatorWall, they're then moved into the elevator by that panel wall. With
+/// WarpIn, the new map comes up with Blake Stone's warp in (a teleporter wall to another floor).
 /// </summary>
-internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, short Angle, int WaitTics = 150, int ElevatorWall = 0);
+internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, short Angle, int WaitTics = 150, int ElevatorWall = 0,
+    bool WarpIn = false);
 
 /// <summary>What the game's main loop needs from the game</summary>
 /// <param name="SetAutosavePending">The level saves itself once it's drawn</param>
@@ -23,6 +25,7 @@ internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, sh
 /// <param name="ShowLevelStartMessage">A game's level start message (Blake Stone)</param>
 /// <param name="ShowText">Shows a text as an article (a map's briefing or debriefing: Ui/ArticleReader.cs)</param>
 /// <param name="LevelWon">A level's finished (its exit, a secret exit or the game won), before the tally: its record and the scripts' game.onlevelend hooks</param>
+/// <param name="WarpIn">Blake Stone's warp in, as a map switched to by a teleporter comes up (Gameplay/HubActions.cs)</param>
 internal sealed record MainGameLoopHooks(
     Action<bool> SetAutosavePending,
     Func<bool> EnterLevel,
@@ -32,7 +35,8 @@ internal sealed record MainGameLoopHooks(
     Action<int, int, int> AlignPlayerInElevator,
     Action<string> ShowLevelStartMessage,
     Action<string> ShowText,
-    Action<PlayState>? LevelWon = null);
+    Action<PlayState>? LevelWon = null,
+    Action? WarpIn = null);
 
 /// <summary>
 /// The game from its first level to its end (GameLoop): each level entered, played and left,
@@ -140,6 +144,7 @@ internal sealed class MainGameLoop(
 
             session.GameChosen = false;
             string levelStart = "loaded";
+            bool warpIn = warped && PendingMapChange?.WarpIn == true && !session.LoadedGame;
             if (!session.LoadedGame)
             {
                 bool kept = hooks.EnterLevel();   // a kept hub level as it was left, or the map afresh (Gameplay/LevelEntry.cs)
@@ -179,6 +184,8 @@ internal sealed class MainGameLoop(
                 warped = false;                 // an A_ChangeMap switch loads silently, no "get psyched!"
                 if (!string.IsNullOrEmpty(levelStartMessage))
                     hooks.ShowLevelStartMessage(levelStartMessage);
+                if (warpIn)
+                    hooks.WarpIn?.Invoke();     // a teleporter's: the view fizzles in (Gameplay/HubActions.cs)
             }
             else if (!died)
                 playScreen.PreloadGraphics();             // TODO: Let this do something useful!

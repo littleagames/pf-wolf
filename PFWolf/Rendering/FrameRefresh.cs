@@ -94,6 +94,21 @@ internal sealed class FrameRefresh(
             session.Tics = GameConstants.MaxTics;
     }
 
+    /// <summary>Fills the 3D view with a color in the screen buffer, without showing it</summary>
+    internal void FillView(string color) =>
+        video.BarScaledCoord(render.ViewScreenX, render.ViewScreenY, render.ViewWidth, render.ViewHeight, color);
+
+    /// <summary>
+    /// The 3D view fizzles out to a color over tics (Blake Stone's warp out); the next refresh
+    /// starts the timing afresh
+    /// </summary>
+    internal void FizzleViewOut(string color, uint tics)
+    {
+        FillView(color);
+        video.Transition(FadeStyle.Fizzle, render.ViewScreenX, render.ViewScreenY, render.ViewWidth, render.ViewHeight, tics);
+        LastTimeCount = (int)GameEngineManager.GetTimeCount();
+    }
+
     /// <summary>How many tics are due now that haven't been run (what CalcTics would find), without waiting</summary>
     internal int TicsDue() => (int)((SDL.SDL_GetTicks() * 7) / 100) - LastTimeCount;
 

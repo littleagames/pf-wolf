@@ -37,7 +37,7 @@ internal sealed class MidGameJoin(
     ===============
     */
 
-    internal const int NetStateVersion = 11;    // 11: actors' height, fall and suspicion (save v30); 10: the level's entrance in the game state (save v29); 9: the level's size in the level body (save v28); 8: the level body's scrollers (save v27); 7: Prop Hunt's hide and hunt times; 6: each player's Prop Hunt disguise and part; 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
+    internal const int NetStateVersion = 12;    // 12: each door's jammed flag in the level body (save v33); 11: actors' height, fall and suspicion (save v30); 10: the level's entrance in the game state (save v29); 9: the level's size in the level body (save v28); 8: the level body's scrollers (save v27); 7: Prop Hunt's hide and hunt times; 6: each player's Prop Hunt disguise and part; 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save

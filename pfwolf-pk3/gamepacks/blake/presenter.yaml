@@ -98,6 +98,23 @@ shapes:
   212: { pic: MasterCard }
   213: { pic: FaxPic }
 
+# What ^ANnn animates (nn in hex: ^AN24 is 36), from bstone's animation table: sprites drawn at
+# 64x64 one after another while the page is up, each for tics; rebound goes back and forth. Only
+# the ones the help pages use are here; 6 to 8 are Planet Strike's.
+animations:
+  4: { sprites: [RENTB8, RENTC8, RENTD8, RENTE8], tics: 20 }    # sector patrol walking
+  5: { sprites: [TURRA1, TURRA2, TURRA3, TURRA4, TURRA5, TURRA6, TURRA7, TURRA8], tics: 20 }   # turret turning
+  6: { sprites: [VPSTA0, VPSTB0, VPSTC0, VPSTD0, VPSTE0, VPSTF0, VPSTG0, VPSTH0], tics: 20, rebound: true }   # v-post
+  7: { sprites: [VSPKA0, VSPKB0, VSPKC0, VSPKD0, VSPKE0, VSPKF0, VSPKG0, VSPKH0], tics: 20, rebound: true }   # v-spike
+  8: { sprites: [CUBEA0, CUBEB0, CUBEC0, CUBED0, CUBEE0, CUBEF0, CUBEG0, CUBEH0, CUBEI0, CUBEJ0], tics: 10 }   # security cube
+  9: { sprites: [GSCIB8, GSCIC8, GSCID8, GSCIE8], tics: 20 }    # bio-technician walking
+  13: { sprites: [PROGB8, PROGC8, PROGD8, PROGE8], tics: 20 }   # STAR sentinel walking
+  24: { sprites: [SWATB8, SWATC8, SWATD8, SWATE8], tics: 20 }   # STAR trooper walking
+  36: { sprites: [ELCPA0, ELCPB0, ELCPC0], tics: 10 }           # barrier post
+  37: { sprites: [ELCKA0, ELCKB0, ELCKC0], tics: 10 }           # arc barrier
+  38: { sprites: [GSCTA1, GSCTA2, GSCTA3, GSCTA4, GSCTA5, GSCTA6, GSCTA7, GSCTA8], tics: 10 }   # volatile transport turning
+  39: { sprites: [FSCTA1, FSCTA2, FSCTA3, FSCTA4, FSCTA5, FSCTA6, FSCTA7, FSCTA8], tics: 8 }    # PerScan drone turning
+
 # What ^PSnn plays: Blake Stone's sounds by their place in its sound list (bstone's audio.h)
 sounds:
   65: bs/goldsternlaugh

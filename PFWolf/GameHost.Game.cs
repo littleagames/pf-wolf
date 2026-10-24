@@ -33,7 +33,7 @@ internal static partial class GameHost
         netPlay, gameScripts, hubs, controlPanel, intermissionScreen, highScoresScreen, textPresenter, moviePlayer, Session,
         Settings, new MainGameLoopHooks(on => AutosavePending = on, EnterLevel, LeaveLevel,
             MarkLevelStart, ApplyPendingWarpStart, AlignPlayerInElevator, ShowLevelStartMessage, name => articleReader.ShowText(name),
-            LevelWon));
+            LevelWon, () => hubActions.WarpIn(newLevel: true)));
 
     static PendingMapChange? PendingMapChange { get => mainGameLoop.PendingMapChange; set => mainGameLoop.PendingMapChange = value; }
 

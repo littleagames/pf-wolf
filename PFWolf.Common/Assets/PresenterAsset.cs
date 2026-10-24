@@ -14,6 +14,9 @@ public record PresenterAsset : Asset
     /// <summary>What a script's ^SHnnn draws, by its (hex) number</summary>
     public Dictionary<int, PresenterShape> Shapes { get; set; } = [];
 
+    /// <summary>What a script's ^ANnn animates where it stands while the page is up, by its (hex) number</summary>
+    public Dictionary<int, PresenterAnimation> Animations { get; set; } = [];
+
     /// <summary>The sound a script's ^PSnn plays, by its (hex) number</summary>
     public Dictionary<int, string> Sounds { get; set; } = [];
 
@@ -38,6 +41,22 @@ public record PresenterShape
 
     /// <summary>A wall texture, drawn 64x64</summary>
     public string? Wall { get; set; }
+}
+
+/// <summary>
+/// A shape a script animates (bstone's piAnimTable): sprites drawn 64x64 one after another, over
+/// and over while the page is up
+/// </summary>
+public record PresenterAnimation
+{
+    /// <summary>The frames, in order (RENTB8, RENTC8...)</summary>
+    public List<string> Sprites { get; set; } = [];
+
+    /// <summary>Tics each frame shows for</summary>
+    public int Tics { get; set; } = 20;
+
+    /// <summary>Back and forth (first to last, then back to the first) instead of round from the first again</summary>
+    public bool Rebound { get; set; }
 }
 
 /// <summary>

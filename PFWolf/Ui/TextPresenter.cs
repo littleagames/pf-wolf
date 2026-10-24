@@ -82,8 +82,9 @@ JAM Productions' text presenter, as Blake Stone uses it for its briefings, eleva
 and message boxes (bstone jm_tp.cpp). A script is text with ^ codes, two letters and a fixed
 number of hex digits (^FC3a sets the color, ^CE centers the line, ^EP ends a page, ^XX the
 script). Lines word wrap within the region; a line of nothing but codes takes no room.
-Fonts and shapes come from gamepacks/{pack}/presenter.yaml. Not done: animations (^AN),
-display strings (^DS), music and sounds by number (^PM, ^PS) and scaled sprite or wall shapes.
+Fonts, shapes, animations (^AN, run while a page waits) and sounds come from
+gamepacks/{pack}/presenter.yaml. Not done: display strings (^DS) and music by number (^PM),
+which none of Blake Stone's texts use.
 
 =============================================================================
 */
@@ -226,6 +227,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
         tppos = 0;
         pi.PageNum = 0;
+        tpanims.Clear();
 
         tpfontnumber = pi.Font;
         tpfont = PresenterFont(tpfontnumber);
@@ -355,9 +357,13 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             tpcurx = tpxl;
             if (tp.Flags.HasFlag(PresenterFlags.ScrollRegion) && tpcury + TpFontHeight * 2 > tpyh)
             {
-                // No scrolling yet: start again at the top of a cleared region
-                video.Bar(tpxl, tpyl, tpxh - tpxl + 1, tpyh - tpyl + 1, tpbg.ToString());
-                tpcury = tpyl;
+                // The next line won't fit: the region scrolls up a line, and it goes where the
+                // last one was
+                int line = TpFontHeight + TpShadowed;
+                video.ScreenToScreen(tpxl, tpyl + line, tpxh - tpxl + 1, tpyh - tpyl + 1 - line, tpxl, tpyl);
+                video.Bar(tpcurx, tpcury, tpxh - tpxl + 1 + Margin * 2, tpyh - tpcury + 1, tpbg.ToString());
+                if (tpcury + TpFontHeight > tpyh)
+                    tpcury = tpyh - TpFontHeight + 1 - TpShadowed;
             }
             else if (tp.CustomLineHeight > 0)
                 tpcury += tp.CustomLineHeight + TpShadowed;
@@ -417,6 +423,8 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                                 int digits = TpCodeDigits(sub);
                                 if (sub == "SH")
                                     length += TpBoxAroundShape(-1, -1, ShapePic(TpValueAt(s + 3, 3)));
+                                else if (sub == "AN")
+                                    length += TpBoxAroundShape(-1, -1, AnimationFrames(TpValueAt(s + 3, 2)).FirstOrDefault());
                                 s += 3 + digits;
                             }
                             else
@@ -432,6 +440,16 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
                 case "SH":
                     TpDrawShape(tpcurx, tpcury, ShapePic(value));
+                    break;
+
+                case "AN":
+                    // Its first frame, and it's animated where it stands while the page waits (TpAnimatePage)
+                    if (Presenter.Animations.TryGetValue(value, out var animation))
+                    {
+                        var frames = AnimationFrames(value);
+                        tpanims.Add(new TpAnim(animation, frames, tpcurx, tpcury, tpbg));
+                        TpDrawShape(tpcurx, tpcury, frames.FirstOrDefault());
+                    }
                     break;
 
                 case "HC":
@@ -563,7 +581,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                     video.Update();
                     break;
 
-                // ^ZZ, ^HI, and those not done (^AN, ^DS, ^PM, ^PS): nothing
+                // ^ZZ, ^HI, and those not done (^DS, ^PM): nothing
             }
         }
 
@@ -598,8 +616,8 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         {
             if (!string.IsNullOrEmpty(shape.Pic) && assets.Find<GraphicAsset>(shape.Pic) is { } pic)
                 found = new TpShape(pic.RawData, null, pic.Width, pic.Height, true);
-            else if (!string.IsNullOrEmpty(shape.Sprite) && assets.Find<SpriteAsset>(shape.Sprite) is { } sprite)
-                found = new TpShape(sprite.RawData, sprite.OpacityMask, sprite.Width, sprite.Height, false);
+            else if (!string.IsNullOrEmpty(shape.Sprite))
+                found = SpriteShape(shape.Sprite);
             else if (!string.IsNullOrEmpty(shape.Wall) && assets.Find<TextureAsset>(shape.Wall) is { } wall)
             {
                 // Walls are kept column by column
@@ -615,6 +633,76 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
         tpShapes[number] = found;
         return found;
+    }
+
+    /// <summary>A sprite as a shape, or null if there's no such sprite</summary>
+    TpShape? SpriteShape(string name) =>
+        assets.Find<SpriteAsset>(name) is { } sprite ? new TpShape(sprite.RawData, sprite.OpacityMask, sprite.Width, sprite.Height, false) : null;
+
+    readonly Dictionary<int, List<TpShape?>> tpAnimFrames = [];
+
+    /// <summary>The frames of presenter.yaml's animation <paramref name="number"/>: none if it has no such animation</summary>
+    List<TpShape?> AnimationFrames(int number)
+    {
+        if (!tpAnimFrames.TryGetValue(number, out var frames))
+            tpAnimFrames[number] = frames = Presenter.Animations.TryGetValue(number, out var animation)
+                ? animation.Sprites.Select(SpriteShape).ToList() : [];
+        return frames;
+    }
+
+    /// <summary>A ^AN animation on the page: where it's drawn, the window's color behind it then, and its frame</summary>
+    sealed class TpAnim(PresenterAnimation animation, List<TpShape?> frames, int x, int y, int background)
+    {
+        public readonly PresenterAnimation Animation = animation;
+        public readonly List<TpShape?> Frames = frames;
+        public readonly int X = x, Y = y, Background = background;
+        public int Frame, Step = 1, Delay;
+    }
+
+    readonly List<TpAnim> tpanims = [];
+    uint tpanimTime;
+
+    /// <summary>
+    /// Moves the page's animations on by the tics since the last call, each to its next frame once
+    /// its frame's had its tics (bstone's TP_AnimatePage). True if any was drawn.
+    /// </summary>
+    bool TpAnimatePage()
+    {
+        uint now = GameEngineManager.GetTimeCount();
+        int tics = (int)(now - tpanimTime);
+        tpanimTime = now;
+        if (tics <= 0)
+            return false;
+
+        bool drawn = false;
+        foreach (var anim in tpanims)
+        {
+            if (anim.Frames.Count == 0 || (anim.Delay += tics) < anim.Animation.Tics)
+                continue;
+
+            anim.Delay = 0;
+            anim.Frame += anim.Step;
+            if (anim.Frame >= anim.Frames.Count || anim.Frame < 0)
+            {
+                if (anim.Animation.Rebound)
+                {
+                    anim.Step = -anim.Step;
+                    anim.Frame = Math.Clamp(anim.Frame + anim.Step, 0, anim.Frames.Count - 1);
+                }
+                else
+                    anim.Frame = 0;
+            }
+
+            // The last frame wiped (a sprite's see-through parts would show it), then the next
+            if (anim.Frames[anim.Frame] is not { } shape)
+                continue;
+            video.Bar(anim.X, anim.Y, shape.Width, shape.Height, anim.Background.ToString());
+            int curx = tpcurx;
+            TpDrawShape(anim.X, anim.Y, shape);
+            tpcurx = curx;
+            drawn = true;
+        }
+        return drawn;
     }
 
     /// <summary>Draws a shape at the print position (pictures snap to 8 pixels across) and moves past it</summary>
@@ -764,9 +852,12 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
         input.ClearKeysDown();
         tpflags |= upReleased | downReleased;
+        tpanimTime = GameEngineManager.GetTimeCount();
         while (true)
         {
             GameEngineManager.DelayMs(5);
+            if (TpAnimatePage())
+                video.Update();
             menuInput.ReadAnyControl(out var ci);
             var dir = ci.Dir;
             if (input.IsKeyDown(ScanCodes.PgUp))
@@ -815,6 +906,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             }
         }
 
+        tpanims.Clear();        // the next page starts its own
         if ((tpflags & presenting) == 0)
         {
             input.ClearKeysDown();

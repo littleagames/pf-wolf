@@ -18,6 +18,11 @@ public class PickupsTests
           parent: Health
           properties:
             "inventory.amount": 25
+        RandomKit:
+          parent: Health
+          properties:
+            "inventory.amount": 4
+            "inventory.randomamount": [1, 8]
         CustomInventory:
           parent: Inventory
         Cross:
@@ -98,6 +103,27 @@ public class PickupsTests
         // Assert
         Assert.That(rig.Session.PlayerState.Health, Is.EqualTo(75));
         Assert.That(rig.OnTheFloor(medikit), Is.False);
+    }
+
+    [Test]
+    public void A_Random_Amount_Is_Within_Its_Range_And_Varies()
+    {
+        // Arrange
+        var rig = new Rig();
+        var kit = rig.Item("RandomKit");
+
+        // Act: a whole turn of the random table
+        var amounts = Enumerable.Range(0, 256).Select(_ => rig.Pickups.PickupAmount(kit, 4)).ToList();
+
+        // Assert: each of 1 to 8 comes up, and nothing else
+        Assert.That(amounts.Distinct().Order(), Is.EqualTo(Enumerable.Range(1, 8)));
+    }
+
+    [Test]
+    public void Without_A_Random_Amount_The_Amount_Is_Given()
+    {
+        var rig = new Rig();
+        Assert.That(rig.Pickups.PickupAmount(rig.Item("Medikit"), 25), Is.EqualTo(25));
     }
 
     [Test]

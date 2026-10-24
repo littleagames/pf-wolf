@@ -152,7 +152,6 @@ internal sealed class HubActions(
         if (value == 0)
             return false;
 
-        audio.Play("bs/warpin");
         if ((value & 0xff00) == 0xf400)
         {
             int floor = value & 0xff;
@@ -162,7 +161,9 @@ internal sealed class HubActions(
             if (map == null || map.Equals(session.GameState.MapOn, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            hooks.SetPendingMapChange(new PendingMapChange(map, true, session.Player.X, session.Player.Y, session.Player.Angle, WaitTics: 0));
+            // The warp out, and the new floor comes up with the warp in (WarpIn)
+            WarpOut();
+            hooks.SetPendingMapChange(new PendingMapChange(map, true, session.Player.X, session.Player.Y, session.Player.Angle, WaitTics: 0, WarpIn: true));
             session.GameState.MapOn = map;
             session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
             session.PlayState = PlayState.Warped;
@@ -176,9 +177,57 @@ internal sealed class HubActions(
         int x = value >> 8, y = value & 0xff;
         if (!mapManager.InMap(x, y))
             return false;
+        WarpOut();
         session.Player.SetPosition(x, y);
         movement.Thrust(0, 0);
+        WarpIn();
         return true;
+    }
+
+    /// <summary>
+    /// Blake Stone's warp out (bstone's Warped): "transporting out", the weapon put away, the
+    /// view turned to face away from the warp wall and fizzled to black, then a moment's wait
+    /// (100 tics, or a key)
+    /// </summary>
+    void WarpOut()
+    {
+        hudMessages.Show(HudMessageKind.Other, "$BS_TRANSPORTINGOUT");
+        var weapon = session.PlayerState.Weapon;
+        session.PlayerState.Weapon = null;      // nothing in hand while it lasts
+        try
+        {
+            frame.ThreeDRefresh();
+            frame.CalcTics();
+
+            // Round to the way away from the one faced, as bstone's ((dir + 4) % 8 >> 1) * 90
+            int octant = (session.Player.Angle + 22) % GameConstants.Angles / 45;
+            RotateView(((octant + 4) % 8 >> 1) * 90, 2);
+
+            audio.Play("bs/warpin");
+            frame.FizzleViewOut("Black", 70);
+            input.ClearKeysDown();
+            input.UserInput(100);
+        }
+        finally
+        {
+            session.PlayerState.Weapon = weapon;
+        }
+        input.ClearKeysDown();
+    }
+
+    /// <summary>
+    /// Blake Stone's warp in (bstone's DrawWarpIn): "transporting...", the view black, and the
+    /// next frame fizzles in from it. On a new level, the message waits for its play to start.
+    /// </summary>
+    internal void WarpIn(bool newLevel = false)
+    {
+        if (newLevel)
+            session.LevelStartHudMessage = "$BS_TRANSPORTING";
+        else
+            hudMessages.Show(HudMessageKind.Other, "$BS_TRANSPORTING");
+        frame.FillView("Black");
+        audio.Play("bs/warpin");
+        session.FizzleIn = true;
     }
 
     /// <summary>
@@ -507,6 +556,12 @@ internal sealed class HubActions(
         var dropped = mapManager.SpawnAtActor(armed, session.Player);
         if (dropped == null)
             return false;
+        // One with health (Planet Strike's) can be shot: it goes off at once
+        if (dropped is Entities.Actors.Monster && dropped.Properties.ContainsKey("health"))
+        {
+            dropped.Hitpoints = mapManager.GetScaledHealth(dropped);
+            dropped.RuntimeFlags |= ObjFlags.Shootable;
+        }
         inventory.Take(itemClass, 1);
         Say("$PS_DETONATORDROPPED");
         hooks.PlaySoundAt("bs/robot_servo", dropped);

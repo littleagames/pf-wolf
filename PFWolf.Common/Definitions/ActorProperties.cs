@@ -89,11 +89,12 @@ public static class ActorProperties
 
         // Items
         Int("inventory.amount", "How many of it picking it up gives (points, for treasure)"),
+        List("inventory.randomamount", "[min, max]: picking it up gives a random amount from min to max instead (Blake Stone's charge pack)", item: FieldType.Integer),
         Int("inventory.maxamount", "The most of it the player can carry; a magazine's: the clip size"),
         Int("inventory.interhubamount", "How much of it the player keeps going to the next level (0: none, as keys)"),
         Text("inventory.type", "The item it's held as: its variants (ClipBox, BlueClip) fill the one stack (Clip)", hint: FieldHint.Class),
         Text("inventory.icon", "A weapon's picture on the status bar", hint: FieldHint.Picture),
-        Text("inventory.pickupmessage", "Shown as it's picked up (a $NAME language key or the text)"),
+        Text("inventory.pickupmessage", "Shown as it's picked up (a $NAME language key or the text); %a in it is how much it gave"),
         Text("inventory.pickupmessagestyle", "The hud-messages.yaml style its pickup message is shown in; game-info's pickup-style when left out"),
         Text("inventory.pickupsound", "Played as it's picked up", hint: FieldHint.Sound),
         Bool("inventory.disguise", "Worn, it's a disguise (Gameplay/Stealth.cs): an enemy only suspects the unseen player"),

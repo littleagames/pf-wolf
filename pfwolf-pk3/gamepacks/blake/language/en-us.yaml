@@ -2,11 +2,10 @@
 # game's own (bstone's 3d_msgs.cpp and 3d_act1.cpp); they show over the view until Blake Stone's
 # status bar info area is built.
 
-# Quit messages (game-info end-strings): placeholders
-$BS_ENDSTR1: "Are you sure you want\nto quit?"
-$BS_ENDSTR2: "Goldfire is still out\nthere. Quit anyway?"
-$BS_ENDSTR3: "The mission isn't over,\nBlake. Quit anyway?"
-$BS_ENDSTR4: "Leaving so soon?"
+# The menus' questions, as bstone's (3d_menu.cpp): Blake Stone has one quit message
+$BS_ENDSTR1: "      Quit to DOS?\n Are you sure (Y or N)?"
+$ENDGAMESTR: "    End current game?\n Are you sure (Y or N)?"
+$CURGAME: "   Continuing past this\n  point will end the game\n you're currently playing.\n\n Start a NEW game? (Y/N)"
 
 # Doors
 $BS_DOORONEWAY: "Door locked from this side."
@@ -28,8 +27,8 @@ $BS_GOTSANDWICH: "Food: sandwich"
 $BS_GOTCANDY: "Food: candy bar"
 $BS_GOTWATER: "Food: fresh water"
 $BS_GOTPUDDLE: "Food: water puddle"
-$BS_GOTCHARGEUNIT: "Weapon: energy pack"
-$BS_GOTCHARGEPACK: "Weapon: energy pack"
+$BS_GOTCHARGEUNIT: "Weapon: energy pack (%a units)"
+$BS_GOTCHARGEPACK: "Weapon: energy pack (%a units)"
 $BS_GOTTOKEN: "Food token: 1 credit"
 $BS_GOTTOKENS5: "Food token: 5 credits"
 $BS_GOTMONEYBAG: "Bonus: money bag"
@@ -93,7 +92,9 @@ $BS_BIOMECHGUARDIAN: "Bio-mech guardian"
 $BS_GOLDFIRE: "Dr. Goldfire"
 $BS_GENERATORSLEFT: "PROJECTION GENERATOR\nDESTROYED!\n\n- %n REMAINING -\nDESTROY THEM TO WIN!"
 
-# Level flow (presenter.yaml, elevator.yaml)
+# Level flow (presenter.yaml, elevator.yaml); warp walls (A_Teleport)
+$BS_TRANSPORTINGOUT: "TRANSPORTING OUT"
+$BS_TRANSPORTING: "TRANSPORTING..."
 $BS_BRIEFINGHELP: " UP / DN - PAGES       ENTER - CONTINUES         ESC - EXITS"
 $BS_PAGESHELP: "           UP / DN - PAGES            ESC - EXITS"
 

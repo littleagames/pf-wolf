@@ -112,6 +112,26 @@ internal static partial class GameHost
         // A_MakeNoise: a noise, as a shot's: enemies in the areas joined to the player's come
         // (Midnight Assault's lights coming on: MadeNoise)
         ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => MadeNoise = true);
+        // A_PlayerFire("off" | "on"): the player's weapon can't fire, or can again (Goldfire
+        // morphing: bstone's noShots); a level starts with it on
+        ActorActionRegistry.Register("A_PlayerFire", (Entities.Actors.Actor _, string[] args) =>
+            Session.NoShots = args.ElementAtOrDefault(0)?.Trim().Equals("off", StringComparison.OrdinalIgnoreCase) == true);
+        // A_BlastDoors(["Class"]): the doors on and around the actor's tile that are at most half
+        // open, unlocked and not one-way are blown open for good (bstone's BlastNearDoors, Planet
+        // Strike's fission detonator), with one of the class put in each (its explosion)
+        ActorActionRegistry.Register("A_BlastDoors", (Entities.Actors.Actor ob, string[] args) =>
+        {
+            var effect = args.ElementAtOrDefault(0)?.Trim();
+            for (int x = ob.TileX - 1; x <= ob.TileX + 1; x++)
+                for (int y = ob.TileY - 1; y <= ob.TileY + 1; y++)
+                {
+                    if (!MapManager.InMap(x, y) || (MapManager.TileMap[x, y] & GameConstants.BitDoor) == 0)
+                        continue;
+                    int door = MapManager.TileMap[x, y] & ~GameConstants.BitDoor;
+                    if (door < doors.LastDoorObj && doors.BlastDoor(door) && !string.IsNullOrEmpty(effect))
+                        MapManager.SpawnThing(x, y, new Assets.MapActorTranslation { Class = effect }, countKill: false);
+                }
+        });
 
         // Level objectives (Gameplay/Objectives.cs): A_CompleteObjective("name"[, n]) and
         // A_AddObjective("name"[, n]), from an actor or a switch; A_JumpIfObjectiveDone("name", "State")

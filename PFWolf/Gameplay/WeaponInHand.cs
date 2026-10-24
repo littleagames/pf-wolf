@@ -219,6 +219,10 @@ internal sealed class WeaponInHand(
         if (SyncWeaponSprite() is not { } sprite)
             return;
 
+        // Firing's off (session.NoShots): an attack under way stops, back on Ready (bstone's T_Attack)
+        if (session.NoShots && !IsSwitching(sprite) && IsInHand(sprite) && !IsWeaponReady())
+            JumpWeaponState(sprite, WeaponReadyState);
+
         // Fire cuts a reload short once a round is in (the original Midnight Assault's T_Reload),
         // so a shotgun loading shell by shell can shoot between them
         if (IsReloading(sprite) && weapons.IsLoaded(session.PlayerState.Weapon)
@@ -310,6 +314,10 @@ internal sealed class WeaponInHand(
                 return;
             weapon = taken;
         }
+
+        // Firing's off (session.NoShots: Goldfire morphing)
+        if (session.NoShots)
+            return;
 
         if (weapons.CanReload(playerstate.Weapon) && weapon.ResolvedStates.ContainsKey(ReloadState)
             && (!weapons.IsLoaded(playerstate.Weapon) || session.PlayerInput.IsFreshPress(ButtonType.Reload)))

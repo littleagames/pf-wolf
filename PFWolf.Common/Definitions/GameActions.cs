@@ -90,6 +90,8 @@ public static class GameActions
         new("A_Taunt", Actor, "A_Taunt(\"a\", \"b\", ...)", "One of the sounds at random, as the acting player's, heard by everyone else from where they stand (a Prop Hunt prop's fire)"),
         new("A_Quake", Actor, "A_Quake(min[, max][, \"near\"])", "Shakes the view, at a power (0-200) rolled from min to max; with \"near\", only while its area is joined to the player's"),
         new("A_MakeNoise", Actor, "A_MakeNoise", "A noise, as a shot's: enemies in the areas joined to the player's come"),
+        new("A_PlayerFire", Actor, "A_PlayerFire(\"off\" | \"on\")", "The player's weapon can't fire, or can again (Goldfire morphing); a level starts with it on"),
+        new("A_BlastDoors", Actor, "A_BlastDoors([\"Class\"])", "Blows open for good the doors on and round its tile that are at most half open, unlocked and not one-way, putting one of the class in each (the fission detonator)"),
         new("A_Victory", Actor, "A_Victory", "Ends the game in victory (the Angel of Death's last death frame)"),
         new("A_StartDeathCam", Actor, "A_StartDeathCam", "Starts the death cam on this boss's death, replaying it once the player has seen the message"),
         new("A_GiveExtraMan", Actor, "A_GiveExtraMan", "Gives the player an extra life"),

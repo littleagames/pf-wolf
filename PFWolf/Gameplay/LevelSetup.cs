@@ -44,6 +44,7 @@ internal sealed class LevelSetup(
         }
         session.Camera.FollowPlayer();              // through the player's eyes
         weaponBob.Init();
+        session.NoShots = false;                    // the weapon can fire (A_PlayerFire)
 
         if (!session.LoadedGame)
         {

@@ -174,6 +174,15 @@ internal sealed class GameSession
     /// <summary>true when shooting or screaming: enemies in the player's areas hear it this tic</summary>
     internal bool MadeNoise;
 
+    /// <summary>
+    /// The player's weapon can't fire (A_PlayerFire("off"): Goldfire morphing, bstone's noShots).
+    /// Cleared as a level starts.
+    /// </summary>
+    internal bool NoShots;
+
+    /// <summary>A message shown as the level's play starts, after the last level's are cleared (Blake Stone's "transporting...")</summary>
+    internal string? LevelStartHudMessage;
+
     /// <summary>How the level's going: playing on, died, completed, warped...</summary>
     internal PlayState PlayState;
 

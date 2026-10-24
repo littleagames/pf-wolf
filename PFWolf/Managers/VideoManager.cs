@@ -611,6 +611,46 @@ internal class VideoManager
         UnlockSurface(ScreenBuffer);
     }
 
+    /// <summary>
+    /// Copies a rectangle of the 320x200 layout to another place in it (VL_ScreenToScreen): a
+    /// region of text scrolled up a line. The places may overlap.
+    /// </summary>
+    public void ScreenToScreen(int x, int y, int width, int height, int destX, int destY)
+    {
+        int sx = ScreenX(x), sy = ScreenY(y);
+        int sw = ScreenX(x + width) - sx, sh = ScreenY(y + height) - sy;
+        int dx = ScreenX(destX), dy = ScreenY(destY);
+
+        // Cut down to what's on the screen at both ends
+        int left = Math.Max(0, Math.Max(-sx, -dx));
+        sx += left; dx += left; sw -= left;
+        int top = Math.Max(0, Math.Max(-sy, -dy));
+        sy += top; dy += top; sh -= top;
+        sw = Math.Min(sw, Math.Min(ScreenWidth - sx, ScreenWidth - dx));
+        sh = Math.Min(sh, Math.Min(ScreenHeight - sy, ScreenHeight - dy));
+        if (sw <= 0 || sh <= 0)
+            return;
+
+        IntPtr destPtr = LockSurface(ScreenBuffer);
+        if (destPtr == IntPtr.Zero) return;
+
+        unsafe
+        {
+            byte* buffer = (byte*)destPtr;
+            // Row order that doesn't copy over rows not yet copied
+            bool upward = dy <= sy;
+            for (int i = 0; i < sh; i++)
+            {
+                int row = upward ? i : sh - 1 - i;
+                var from = new Span<byte>(buffer + YLookup[sy + row] + sx, sw);
+                var to = new Span<byte>(buffer + YLookup[dy + row] + dx, sw);
+                from.CopyTo(to);
+            }
+        }
+
+        UnlockSurface(ScreenBuffer);
+    }
+
     /// <summary>Cuts a rectangle (screen pixels) down to the part on the screen; false if none of it is.</summary>
     private bool ClipToScreen(ref int x, ref int y, ref int width, ref int height)
     {
