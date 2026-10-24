@@ -174,6 +174,9 @@ internal sealed class GameSession
     /// <summary>true when shooting or screaming: enemies in the player's areas hear it this tic</summary>
     internal bool MadeNoise;
 
+    /// <summary>A noise was made last tic (bstone's `alerted` counting down): security lights still hear it</summary>
+    internal bool NoiseLastTic;
+
     /// <summary>
     /// The player's weapon can't fire (A_PlayerFire("off"): Goldfire morphing, bstone's noShots).
     /// Cleared as a level starts.

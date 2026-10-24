@@ -134,6 +134,7 @@ internal sealed class LevelLoop(
                 //
                 // actor thinking
                 //
+                session.NoiseLastTic = session.MadeNoise;
                 session.MadeNoise = false;
                 doors.MoveDoors();
                 pushWalls.MovePWalls();

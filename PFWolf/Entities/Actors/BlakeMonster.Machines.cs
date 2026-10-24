@@ -273,10 +273,15 @@ internal partial record BlakeMonster
     =============================================================================
     */
 
-    /// <summary>A security light's think: once there's been a noise where the player can hear it, it starts flashing (Alert)</summary>
+    /// <summary>
+    /// A security light's think: once there's been a noise where the player can hear it, it
+    /// starts flashing (Alert). A noise made this tic or the last counts (bstone's `alerted`,
+    /// which outlasts `madenoise` by a tic), so a light that thinks before the noise's maker
+    /// still sees it.
+    /// </summary>
     internal void SecurityLight()
     {
-        if (MadeNoise && (AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0))
+        if ((MadeNoise || World.Session.NoiseLastTic) && (AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0))
             SetState("Alert");
     }
 

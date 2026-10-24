@@ -29,7 +29,7 @@ Checked against the code on 2026-10-23. bstone's source (the behaviour reference
 in `docs/dev/manual-testing.md` §1.9–1.10, not here. Fixed since the list was made: the random
 charge pack, the quit and menu questions, ^AN animations, the lose screen's scrolling, the warp
 out and in, no firing during Goldfire's morph, the shootable detonator, door blasts and the
-radar's pushwalls.
+radar's pushwalls, and security lights hearing a noise for a tic longer (bstone's `alerted`).
 
 **Aliens of Gold: gameplay**
 - WaterPuddle's max amount is a fixed 16 (`items.yaml`).
@@ -40,10 +40,6 @@ radar's pushwalls.
   (`actordefs/blake/machines.yaml`).
 - Outlet and Goldfire warp-site timers aren't saved: `LevelAI` re-rolls them when a level is
   set up, including after a load (`PFWolf/Managers/LevelAI.cs`).
-- Security lights go off on `MadeNoise`, which lasts only the tic it's made in. bstone's
-  `alerted` is set with it but counts down over two tics, so a light that thinks before the
-  noise's maker in the actor list still sees it next tic; ours can miss it
-  (`BlakeMonster.Machines.cs`, T_SecurityLight). bstone also never reads `alerted_areanum`.
 - Actors aren't kept off area-0 elevator floors.
 - The informant's points-% hint is missing (room hints, gifts and the kill warning are done).
 - The electro-alien, Goldfire and the liquid alien's attack timing are simplified; compare with

@@ -45,6 +45,7 @@ internal sealed class LevelSetup(
         session.Camera.FollowPlayer();              // through the player's eyes
         weaponBob.Init();
         session.NoShots = false;                    // the weapon can fire (A_PlayerFire)
+        session.NoiseLastTic = false;               // no noise carried over from the last level
 
         if (!session.LoadedGame)
         {
