@@ -64,6 +64,9 @@ $BS_INTERROGATE: "INTERROGATE:"
 $BS_INTERROGATE_INFORMANT: "INTERROGATE: INFORMANT"
 $BS_INFORMANT_AMMO: "HEY BLAKE,\nTAKE MY CHARGE PACK!"
 $BS_INFORMANT_TOKENS: "HEY BLAKE,\nTAKE MY FOOD TOKENS!"
+# Who's attacking (game-info attack-message, %k the attacker), as bstone's REBA attack info
+$BS_ATTACKING: "ATTACKING:\n%k"
+
 # An informant's hint with the floor's points at 97-99% ({0} what, {1} its tile, {2} the player's)
 $BS_HINT_ENEMY: "There is\n{0}\nat {1}  ({2})"
 $BS_HINT_TREASURE: "There is a\n{0}\nat {1}  ({2})"

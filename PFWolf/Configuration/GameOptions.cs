@@ -12,6 +12,10 @@ internal enum GameOption : byte
     WeaponBob,
     AlwaysRun,
     Crosshair,
+    Lighting,           // levels shaded (fog, night, light zones); off draws everything at full light
+    AttackInfo,         // who's attacking shown as a message (game-info attack-message: Blake Stone's REBA)
+    ShowCeilings,       // ceiling flats drawn; off draws the plain ceiling color
+    ShowFloors,         // floor flats drawn; off draws the plain floor color
     Count,
 }
 
@@ -30,6 +34,10 @@ internal sealed class GameOptions
         GameOption.Look => true,
         GameOption.AutomapStats => true,
         GameOption.Autosave => true,
+        GameOption.Lighting => true,
+        GameOption.AttackInfo => true,
+        GameOption.ShowCeilings => true,
+        GameOption.ShowFloors => true,
         _ => false,
     };
 
@@ -43,6 +51,10 @@ internal sealed class GameOptions
         GameOption.WeaponBob => "weaponbob",
         GameOption.AlwaysRun => "alwaysrun",
         GameOption.Crosshair => "crosshair",
+        GameOption.Lighting => "r_lighting",
+        GameOption.AttackInfo => "msg_attackinfo",
+        GameOption.ShowCeilings => "r_ceilings",
+        GameOption.ShowFloors => "r_floors",
         _ => throw new ArgumentOutOfRangeException(nameof(option)),
     };
 
@@ -71,6 +83,10 @@ internal sealed class GameOptions
         gameDefaults[(int)GameOption.WeaponBob] = d.WeaponBob;
         gameDefaults[(int)GameOption.AlwaysRun] = d.AlwaysRun;
         gameDefaults[(int)GameOption.Crosshair] = d.Crosshair;
+        gameDefaults[(int)GameOption.Lighting] = d.Lighting;
+        gameDefaults[(int)GameOption.AttackInfo] = d.AttackInfo;
+        gameDefaults[(int)GameOption.ShowCeilings] = d.ShowCeilings;
+        gameDefaults[(int)GameOption.ShowFloors] = d.ShowFloors;
     }
 
     // Shorthands for the code that asks
@@ -81,4 +97,8 @@ internal sealed class GameOptions
     internal bool WeaponBob => this[GameOption.WeaponBob];
     internal bool AlwaysRun => this[GameOption.AlwaysRun];
     internal bool Crosshair => this[GameOption.Crosshair];
+    internal bool Lighting => this[GameOption.Lighting];
+    internal bool AttackInfo => this[GameOption.AttackInfo];
+    internal bool ShowCeilings => this[GameOption.ShowCeilings];
+    internal bool ShowFloors => this[GameOption.ShowFloors];
 }

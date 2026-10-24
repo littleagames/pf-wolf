@@ -7,7 +7,8 @@ namespace PFWolf.Rendering;
 /// <param name="HeightNumerator">The view's height numerator (CalcHeight), to turn a height back into a distance</param>
 /// <param name="ClearColorTints">Forgets the actor lights' color tints (the tints they name are gone)</param>
 /// <param name="TickActorLights">Runs the actors' lights for this tic's worth of time (Rendering/ActorLights.cs)</param>
-internal sealed record LightingHooks(Func<int> HeightNumerator, Action ClearColorTints, Action<uint> TickActorLights);
+/// <param name="LightingOn">The Lighting setting (r_lighting): off, nothing is shaded; null for always on</param>
+internal sealed record LightingHooks(Func<int> HeightNumerator, Action ClearColorTints, Action<uint> TickActorLights, Func<bool>? LightingOn = null);
 
 /// <summary>
 /// SHADING: the view is drawn in palette indices, so shading remaps them, Doom colormap style. A
@@ -110,8 +111,10 @@ internal sealed class Lighting(
     internal void RebuildShading()
     {
         var s = LevelShading ?? NoFade;
-        // any zone at all, since its light can change as the level is played
-        Shading = s.MaxFade > 0 || s.Light < 255 || LevelZones.Count > 0;
+        // any zone at all, since its light can change as the level is played; nothing with the
+        // Lighting setting off
+        lightingOn = hooks.LightingOn?.Invoke() ?? true;
+        Shading = lightingOn && (s.MaxFade > 0 || s.Light < 255 || LevelZones.Count > 0);
         LightRow = NoShade;
         foreach (var zone in LevelZones.Values)
             zone.RowLevel = -1;
@@ -356,8 +359,15 @@ internal sealed class Lighting(
         Enum.TryParse(name, ignoreCase: true, out effect) && Enum.IsDefined(effect);
 
     /// <summary>Runs the zones' fades and effects for this tic's worth of time.</summary>
+    // The Lighting setting as RebuildShading last found it
+    private bool lightingOn = true;
+
     internal void TickZoneLights(uint tics)
     {
+        // The Lighting setting switched (the Game Options menu, r_lighting): shade, or stop, now
+        if ((hooks.LightingOn?.Invoke() ?? true) != lightingOn)
+            RebuildShading();
+
         foreach (var zone in LevelZones.Values)
             zone.Tick((int)tics, ZoneRandom);
         UpdateZoneLevels();

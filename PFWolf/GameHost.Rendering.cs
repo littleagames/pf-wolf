@@ -80,7 +80,11 @@ internal static partial class GameHost
     static SkyAndFlats skyAndFlats = null!;     // made in InitServices
 
     static SkyAndFlats MakeSkyAndFlats() =>
-        new(GameEngineManager, AssetManager, _videoManager, MapManager, lighting, actorLights, Render, Session, WorldTexture);
+        new(GameEngineManager, AssetManager, _videoManager, MapManager, lighting, actorLights, Render, Session, WorldTexture)
+        {
+            ShowCeilings = () => Settings.Options.ShowCeilings,
+            ShowFloors = () => Settings.Options.ShowFloors,
+        };
 
     // The ray trace (Rendering/RayTrace.cs)
     static RayTrace rayTrace = null!;       // made in InitServices
@@ -200,7 +204,7 @@ internal static partial class GameHost
 
     static Lighting MakeLighting() =>
         new(GameEngineManager, _videoManager, MapManager,
-            new LightingHooks(() => HeightNumerator, () => ColorTintTables.Clear(), TickActorLights));
+            new LightingHooks(() => HeightNumerator, () => ColorTintTables.Clear(), TickActorLights, () => Settings.Options.Lighting));
 
     private static void RegisterZoneLightActions() => (lighting ??= MakeLighting()).RegisterZoneLightActions();
 

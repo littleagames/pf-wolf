@@ -70,7 +70,15 @@ internal static partial class GameHost
 
     static PlayerStats MakePlayerStats() =>
         new(GameEngineManager, AssetManager, _videoManager, InventoryManager, statusBarDrawing, playerClassRules, playerWeapons, Session,
-            Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound, HudMessageManager.ShowKeyed));
+            Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound, HudMessageManager.ShowKeyed, ShowAttacker));
+
+    // game-info attack-message, %k the attacker (Blake Stone's REBA "attacking:")
+    static void ShowAttacker(Entities.Actors.Actor attacker)
+    {
+        if (GameEngineManager.GetGameInfo().AttackMessage is { Length: > 0 } message)
+            HudMessageManager.Show(HudMessageKind.Other, message, null,
+                new Dictionary<char, string> { ['k'] = hudMessageDrawing.ActorTag(attacker) });
+    }
 
     internal static List<string> PlayerClasses() => playerClassRules.PlayerClasses();
     internal static string DefaultPlayerClass => playerClassRules.DefaultPlayerClass;

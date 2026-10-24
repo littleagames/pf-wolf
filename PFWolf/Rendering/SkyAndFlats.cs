@@ -35,6 +35,14 @@ internal sealed partial class SkyAndFlats(
 
     internal byte CeilingColor;           // this frame's ceiling color, for arch undersides too
 
+    /// <summary>The Show Ceilings and Show Floors settings (r_ceilings, r_floors): off, the flats aren't drawn, only the plain colors</summary>
+    internal Func<bool> ShowCeilings { get; init; } = () => true;
+    internal Func<bool> ShowFloors { get; init; } = () => true;
+
+    // A level's worth of no flats, for flats switched off
+    TextureAsset?[] noFlats = [];
+    TextureAsset?[] NoFlats(int length) => noFlats.Length == length ? noFlats : noFlats = new TextureAsset?[length];
+
     /*
     ====================
     =
@@ -230,16 +238,18 @@ internal sealed partial class SkyAndFlats(
         // In light zones or actors' light, even the plain colors change from place to place, so
         // they're cast too. A sky stays behind the ceiling flats, and a floor sky behind the floor
         // flats, showing where there are none.
-        bool floorflats = map.HasFloorFlats || (lighting.HasZones || actorLights.HasLights) && !floorsky;
-        bool ceilingflats = map.HasCeilingFlats || (lighting.HasZones || actorLights.HasLights) && !sky && !generated;
+        // With Show Floors or Show Ceilings off (Blake Stone's switches), that side's flats aren't drawn
+        bool showFloors = ShowFloors(), showCeilings = ShowCeilings();
+        bool floorflats = map.HasFloorFlats && showFloors || (lighting.HasZones || actorLights.HasLights) && !floorsky;
+        bool ceilingflats = map.HasCeilingFlats && showCeilings || (lighting.HasZones || actorLights.HasLights) && !sky && !generated;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
             if (floorflats)
-                DrawFlats(map.FloorFlat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, floorsky,
+                DrawFlats(showFloors ? map.FloorFlat : NoFlats(map.FloorFlat.Length), floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, floorsky,
                     map.Scrollers.AnyFloors ? map.Scrollers.FloorX : null, map.Scrollers.FloorY);
             if (ceilingflats)
-                DrawFlats(map.CeilingFlat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky || generated,
+                DrawFlats(showCeilings ? map.CeilingFlat : NoFlats(map.CeilingFlat.Length), ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky || generated,
                     map.Scrollers.AnyCeilings ? map.Scrollers.CeilingX : null, map.Scrollers.CeilingY);
         }
     }

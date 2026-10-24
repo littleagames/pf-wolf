@@ -36,10 +36,11 @@ little (`lighten`) rather than drawn unshaded, the water puddle's 15-health rule
 caught in a blast waiting 20 tics (Death.Blast), the informant's last-points hint, and the
 elevator panel's overhead map.
 
+Then (2026-10-24, later): outlet and warp-site timers saved with the level, enemies kept off
+the elevators' area 0 (floors monster-keep-out), and bstone's Game Switches (lighting, REBA
+attack info, show ceilings, show floors) as Game Options settings on a Blake Switches screen.
+
 **Aliens of Gold: gameplay**
-- Outlet and Goldfire warp-site timers aren't saved: `LevelAI` re-rolls them when a level is
-  set up, including after a load (`PFWolf/Managers/LevelAI.cs`).
-- Actors aren't kept off area-0 elevator floors.
 - The electro-alien, Goldfire and the liquid alien's attack timing are simplified; compare with
   bstone.
 - The lamps' `lighten` 6 is a conversion of bstone's -12 of 64 shade levels to our 32 fade
@@ -49,9 +50,9 @@ elevator panel's overhead map.
 - Text presenter: no `^DS` display strings or `^PM` music by number. None of the game's texts
   use them.
 - Blake Stone's shareware data (`.BS1`) isn't supported.
-- Menus: laid out as bstone's (positions, spacing, cursors checked against 3d_menu.cpp). Ours
-  has Video, Messages, Automap Stats and Mods in Game Options; bstone's Switches submenu
-  (lighting, REBA attack info, show ceilings, show floors) isn't there.
+- Menus: laid out as bstone's (positions, spacing, cursors checked against 3d_menu.cpp). Game
+  Options adds Video and Mods; Game Switches adds the engine's own settings after bstone's four.
+  The attack message is text only (bstone's shows the attacker's ^AN picture too).
 
 **Planet Strike**
 - 82 of its 93 barrier switch walls have no open floor beside them, in bstone's data too: they're

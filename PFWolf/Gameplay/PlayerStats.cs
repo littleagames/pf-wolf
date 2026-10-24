@@ -9,11 +9,13 @@ namespace PFWolf.Gameplay;
 /// <param name="PlayerDies">The acting player died with others playing: the rest play on</param>
 /// <param name="PlayPlayerSound">A sound the acting player makes</param>
 /// <param name="ShowTimer">Shows (or with null text takes down) the message with a key, in a style (HudMessageManager.ShowKeyed): a power-up's timer</param>
+/// <param name="ShowAttacker">Shows who's attacking the local player (game-info attack-message), with Attack Info on</param>
 internal sealed record PlayerStatsHooks(
     Func<double> SkillDamageTaken,
     Action PlayerDies,
     Action<string> PlayPlayerSound,
-    Action<string, string?, string?>? ShowTimer = null);
+    Action<string, string?, string?>? ShowTimer = null,
+    Action<Entities.Actors.Actor>? ShowAttacker = null);
 
 /// <summary>
 /// The acting player's health, armor, lives and score: taking damage, healing, putting on
@@ -103,6 +105,10 @@ internal sealed class PlayerStats(
     internal void TakeDamage(int points, Entities.Actors.Actor attacker)
     {
         PlayerState.LastAttacker = attacker;
+        // Who it was, with Attack Info on (Blake Stone's REBA, bstone's TakeDamage)
+        // (a shot's: whoever fired it)
+        if ((attacker as Monster ?? attacker?.Shooter as Monster) is { } foe && session.ActingIsLocal && settings.Options.AttackInfo)
+            hooks.ShowAttacker?.Invoke(foe);
         ApplyDamageToPlayer(points);
     }
 

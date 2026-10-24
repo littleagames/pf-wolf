@@ -63,7 +63,8 @@ internal static class SaveFile
     // 32: the level's own colors (map-info, as last stepped onto) and A_Warp's swap, at the end of the level.
     // 33: whether each door has been blown open for good (A_BlastDoors), after unlocked.
     // 34: the level's points earned and total (Blake Stone's points ratio), at the end of GameState.
-    internal const int SaveVersion = 34;
+    // 35: the wall outlets' and warp sites' waits and the floor drop, at the end of the level (LevelAI).
+    internal const int SaveVersion = 35;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

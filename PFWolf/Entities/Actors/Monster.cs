@@ -326,6 +326,10 @@ internal partial record Monster : Actor
         int doornumtile = -1;
         int r;
 
+        // On a floor enemies are kept out of (Blake Stone's elevator), it stays put, as bstone's TryWalk
+        if (MapManager.InMonsterKeepOut(TileX, TileY))
+            return false;
+
         // Straight moves can open a door on the way (CheckSide; NODOORS actors such as
         // Wolf3D's dogs and fake Hitlers can't), diagonal ones need all three tiles clear
         switch (Dir)

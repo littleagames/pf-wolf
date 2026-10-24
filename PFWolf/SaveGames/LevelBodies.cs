@@ -16,7 +16,8 @@ internal sealed record LevelBody(
     Dictionary<int, ScrollerState> Scrollers,
     byte? CeilingColor,
     byte? FloorColor,
-    bool AltFlatColors);
+    bool AltFlatColors,
+    LevelAIState AI);
 
 /// <summary>
 /// The level as it stands: written into a save, kept for a hub level that's been left, and sent
@@ -28,13 +29,15 @@ internal sealed class LevelBodies(
     Doors doorObjects,
     PushWalls pushWalls,
     Lighting lighting,
+    LevelAI levelAI,
     GameSession session)
 {
     /// <summary>
     /// The level as it stands, as a save holds it and as a hub keeps a level that's been left:
     /// the map and its actors (MapManager.WriteLevelState), then doors, area connections, the
     /// moving MovingWalls, the player's last attacker, the automap's seen tiles, the light zones,
-    /// the scrollers and the level's own colors (map-info, as stepped onto, and A_Warp's swap).
+    /// the scrollers, the level's own colors (map-info, as stepped onto, and A_Warp's swap) and
+    /// the wall outlets' and warp sites' waits (Managers/LevelAI.cs).
     /// </summary>
     internal void WriteLevelBody(BinaryWriter bw)
     {
@@ -65,6 +68,7 @@ internal sealed class LevelBodies(
         bw.Write(map.MapCeilingColor ?? 0);
         bw.Write(map.MapFloorColor ?? 0);
         bw.Write(map.AltFlatColors);
+        levelAI.WriteState(bw);
     }
 
     internal LevelBody ReadLevelBody(BinaryReader br)
@@ -92,9 +96,10 @@ internal sealed class LevelBodies(
         bool hasColors = br.ReadBoolean();
         byte ceiling = br.ReadByte(), floor = br.ReadByte();
         bool alt = br.ReadBoolean();
+        var ai = LevelAI.ReadState(br);
 
         return new LevelBody(level, doors, areaConnect, areaByPlayer, pushWallList, lastAttacker, seen, zones, scrollers,
-            hasColors ? ceiling : null, hasColors ? floor : null, alt);
+            hasColors ? ceiling : null, hasColors ? floor : null, alt, ai);
     }
 
     /// <summary>
@@ -114,6 +119,7 @@ internal sealed class LevelBodies(
             doorObjects.DoorObjList[i].Position = body.Doors[i].Position;
             doorObjects.DoorObjList[i].Held = body.Doors[i].Held;
             doorObjects.DoorObjList[i].Unlocked = body.Doors[i].Unlocked;
+            doorObjects.DoorObjList[i].Jammed = body.Doors[i].Jammed;
         }
 
         session.Areas.AreaConnect = body.AreaConnect;
@@ -136,6 +142,8 @@ internal sealed class LevelBodies(
         lighting.RestoreZoneLights(body.Zones);
         // copies, as the pushwalls, so a hub level's kept body doesn't scroll along with the live level
         map.Scrollers.Restore(body.Scrollers.ToDictionary(s => s.Key, s => s.Value.Clone()));
+
+        levelAI.ApplyState(body.AI);     // its warp sites found again among the restored actors
 
         session.PlayerState.LastAttacker = body.LastAttacker >= 0 && body.LastAttacker < actors.Count ? actors[body.LastAttacker] : null;
         session.PlayerState.FaceTimes = 0;

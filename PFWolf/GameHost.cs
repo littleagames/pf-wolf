@@ -197,7 +197,7 @@ internal static partial class GameHost
         hubs = new Hubs(GameEngineManager, MapManager, Session);
         projectileActions = MakeProjectileActions();
         lighting = MakeLighting();
-        levelBodies = new LevelBodies(MapManager, doors, pushWalls, lighting, Session);
+        levelBodies = new LevelBodies(MapManager, doors, pushWalls, lighting, LevelAI, Session);
         consoleTargets = new ConsoleTargets(MapManager, lighting, Session);
         actorLights = MakeActorLights();
         weather = MakeWeather();

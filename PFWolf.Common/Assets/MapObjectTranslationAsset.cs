@@ -195,6 +195,12 @@ public record MapFloorsTranslation
     public int? HiddenAreaStart { get; set; }
 
     /// <summary>
+    /// Areas (counted from 0, as area-start is area 0) enemies never walk onto, and can't walk
+    /// off once they're on one: Blake Stone's elevators, area 0 (bstone's ElevatorFloor)
+    /// </summary>
+    public List<int>? MonsterKeepOut { get; set; }
+
+    /// <summary>
     /// Floor codes that set off a trigger action (MapTriggerRegistry, e.g. A_VictoryRun) when
     /// the player steps onto them: Blake Stone's way out
     /// </summary>

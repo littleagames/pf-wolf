@@ -241,6 +241,9 @@ clusters:
 # Shown over the status bar as each floor loads (a presenter script)
 level-start-message: "^ST1^CEGet Ready, Blake!\r^XX"
 
+# Who's attacking Blake, in the info area while the Game Switches' REBA Attack Info is on
+attack-message: "$BS_ATTACKING"
+
 # Shown over the status bar when the mission is won, before its end briefing
 mission-won-message: MissionCompleteText
 

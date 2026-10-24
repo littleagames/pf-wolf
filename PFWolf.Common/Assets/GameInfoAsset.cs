@@ -239,6 +239,12 @@ public record GameInfoAsset : Asset
     public string? LevelStartMessage { get; init; }
 
     /// <summary>
+    /// Shown when an enemy hurts the player, while the Attack Info setting is on (Blake Stone's
+    /// REBA "attacking:"): a $NAME language key or the text, %k the attacker's tag. None when left out.
+    /// </summary>
+    public string? AttackMessage { get; init; }
+
+    /// <summary>
     /// Lines of text over the "get psyched" screen, each centred, the first at the top (2 down)
     /// and each next one under it (End of Destiny's "Now entering" and the level's name). %m in a
     /// line is the level's name as the player sees it. None: the picture alone, as Wolf3D's.
@@ -361,6 +367,18 @@ public record SettingDefaultsInfo
 
     /// <summary>A crosshair in the middle of the view, in crosshair-color (default false; crosshair)</summary>
     public bool? Crosshair { get; init; }
+
+    /// <summary>Levels shaded with their fog, night and light zones; off, everything at full light (default true; r_lighting)</summary>
+    public bool? Lighting { get; init; }
+
+    /// <summary>Who's attacking the player shown as game-info's attack-message (default true; msg_attackinfo)</summary>
+    public bool? AttackInfo { get; init; }
+
+    /// <summary>Ceiling flats drawn; off, the plain ceiling color (default true; r_ceilings)</summary>
+    public bool? ShowCeilings { get; init; }
+
+    /// <summary>Floor flats drawn; off, the plain floor color (default true; r_floors)</summary>
+    public bool? ShowFloors { get; init; }
 }
 
 /// <summary>The style each kind of message over the view is shown in (whether they're on is setting-defaults messages)</summary>

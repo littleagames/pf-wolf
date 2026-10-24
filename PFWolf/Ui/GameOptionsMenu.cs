@@ -24,6 +24,10 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
         ("weaponbob", GameOption.WeaponBob),
         ("alwaysrun", GameOption.AlwaysRun),
         ("crosshair", GameOption.Crosshair),
+        ("lighting", GameOption.Lighting),
+        ("attackinfo", GameOption.AttackInfo),
+        ("ceilings", GameOption.ShowCeilings),
+        ("floors", GameOption.ShowFloors),
     ];
 
     internal int Run()

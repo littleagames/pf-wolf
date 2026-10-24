@@ -18,6 +18,10 @@ internal sealed class GameOptionCommands(ConsoleManager console, GameOptions opt
         Add(GameOption.WeaponBob, "Whether the weapon in hand bobs as you walk.");
         Add(GameOption.AlwaysRun, "Whether you run without holding Run; holding it then walks.");
         Add(GameOption.Crosshair, "Whether a crosshair is drawn in the middle of the view.");
+        Add(GameOption.Lighting, "Whether levels are shaded (fog, night, light zones); 0 draws everything at full light.");
+        Add(GameOption.AttackInfo, "Whether who's attacking you is shown as a message (game-info attack-message: Blake Stone's REBA).");
+        Add(GameOption.ShowCeilings, "Whether ceiling flats are drawn; 0 draws the plain ceiling color.");
+        Add(GameOption.ShowFloors, "Whether floor flats are drawn; 0 draws the plain floor color.");
     }
 
     void Add(GameOption option, string help)

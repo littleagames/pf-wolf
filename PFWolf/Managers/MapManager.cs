@@ -16,6 +16,9 @@ internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, in
     /// <summary>Floor codes that do something to the enemy standing on them (MapFloorsTranslation.ActorCodes)</summary>
     public IReadOnlyDictionary<int, Assets.MapActorCodeTranslation> ActorCodes { get; init; } = new Dictionary<int, Assets.MapActorCodeTranslation>();
 
+    /// <summary>Areas (from 0) enemies never walk onto, nor off once on them (MapFloorsTranslation.MonsterKeepOut)</summary>
+    public IReadOnlySet<int> MonsterKeepOut { get; init; } = new HashSet<int>();
+
     /// <summary>
     /// No floor codes at all (mapdefs with no floors, as in a new stand-alone game): no tile is
     /// an area, so every enemy hears and wakes as though it were in the player's area
@@ -39,6 +42,7 @@ internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, in
         {
             Triggers = floors.Triggers ?? new Dictionary<int, string>(),
             ActorCodes = floors.ActorCodes ?? new Dictionary<int, Assets.MapActorCodeTranslation>(),
+            MonsterKeepOut = (floors.MonsterKeepOut ?? []).ToHashSet(),
         };
     }
 
@@ -561,14 +565,21 @@ internal class MapManager
 
     static bool IsTrue(object? value) => value is true || bool.TryParse(value?.ToString(), out var b) && b;
 
-    /// <summary>Whether a monster (a boss, or any) can't walk onto a tile: its blocktile marker keeps it off</summary>
+    /// <summary>
+    /// Whether a monster (a boss, or any) can't walk onto a tile: its blocktile marker keeps it
+    /// off, or it's in one of the floors' monster-keep-out areas (Blake Stone's elevators)
+    /// </summary>
     internal bool BlocksMonster(int x, int y, bool boss) =>
-        InMap(x, y) && TileIndex(x, y) < monsterblocks.Length && monsterblocks[TileIndex(x, y)] switch
+        InMap(x, y) && (InMonsterKeepOut(x, y) || TileIndex(x, y) < monsterblocks.Length && monsterblocks[TileIndex(x, y)] switch
         {
             MonsterBlock.Monsters => true,
             MonsterBlock.Bosses => boss,
             _ => false,
-        };
+        });
+
+    /// <summary>Whether a tile is in one of the floors' monster-keep-out areas (bstone's ElevatorFloor)</summary>
+    internal bool InMonsterKeepOut(int x, int y) =>
+        _floors is { MonsterKeepOut.Count: > 0 } floors && AreaAt(x, y) is >= 0 and var area && floors.MonsterKeepOut.Contains(area);
 
     /// <summary>Marks a tile's monster blocker (as the map's blocktile things do)</summary>
     internal void SetMonsterBlock(int x, int y, MonsterBlock block)

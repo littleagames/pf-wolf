@@ -1,0 +1,30 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/game-options.yaml
+# Game Switches: bstone's four (lighting, REBA attack info, ceilings, floors), then the engine's
+# own on/off settings. Lights go 16 left of their text, as bstone's switches do.
+music: "MEETINGA"
+type: "blake-menu"
+position: { x: 111, y: 53 }
+indent: 0
+row-height: 9
+font: "SmallFont"
+item-shadow: "1"
+cursor: { x: 87, y-offset: -1, width: 132, height: 9, color: "82", erase-color: "2", flash-tics: 40 }
+checkbox-offset: { x: -16, y: -1 }
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "GAME SWITCHES" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }
+menu-items:
+  - { id: "lighting", type: "ToggleMenuItem", text: "LIGHTING", short-key: L, enabled: true }
+  - { id: "attackinfo", type: "ToggleMenuItem", text: "REBA ATTACK INFO", short-key: R, enabled: true }
+  - { id: "ceilings", type: "ToggleMenuItem", text: "SHOW CEILINGS", short-key: C, enabled: true }
+  - { id: "floors", type: "ToggleMenuItem", text: "SHOW FLOORS", short-key: F, enabled: true }
+  - { id: "messages", type: "ToggleMenuItem", text: "MESSAGES", short-key: M, enabled: true }
+  - { id: "automapstats", type: "ToggleMenuItem", text: "AUTOMAP STATS", short-key: A, enabled: true }
+  - { id: "alwaysrun", type: "ToggleMenuItem", text: "ALWAYS RUN", short-key: U, enabled: true }
+  - { id: "freelook", type: "ToggleMenuItem", text: "LOOK UP AND DOWN", short-key: K, enabled: true }
+  - { id: "weaponbob", type: "ToggleMenuItem", text: "WEAPON BOB", short-key: B, enabled: true }
+  - { id: "crosshair", type: "ToggleMenuItem", text: "CROSSHAIR", short-key: H, enabled: true }
+  - { id: "autosave", type: "ToggleMenuItem", text: "AUTOSAVE", short-key: S, enabled: true }

@@ -1,5 +1,6 @@
 # Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/options.yaml
-# Game options (no Change View: Blake Stone's view is a fixed size); the Messages and Automap Stats lights go 16 left of their text, as bstone's switches do
+# Game options (no Change View: Blake Stone's view is a fixed size): Sound, Controls and the
+# Game Switches (game-options.yaml), as bstone's, then Video and Mods
 music: "MEETINGA"
 type: "blake-menu"
 position: { x: 111, y: 70 }
@@ -18,7 +19,6 @@ components:
 menu-items:
   - { id: "sound", type: "MenuSwitcher", text: "SOUND", short-key: S, enabled: true, action: "CP_Sound" }
   - { id: "control", type: "MenuSwitcher", text: "CONTROLS", short-key: C, enabled: true, action: "CP_Control" }
+  - { id: "gameoptions", type: "MenuSwitcher", text: "SWITCHES", short-key: W, enabled: true, action: "CP_GameOptions" }
   - { id: "video", type: "MenuSwitcher", text: "VIDEO", short-key: V, enabled: true, action: "CP_Video" }
-  - { id: "messages", type: "ToggleMenuItem", text: "MESSAGES", short-key: M, enabled: true }
-  - { id: "automapstats", type: "ToggleMenuItem", text: "AUTOMAP STATS", short-key: A, enabled: true }
   - { id: "mods", type: "MenuSwitcher", text: "MODS", short-key: M, enabled: true, action: "CP_Mods" }

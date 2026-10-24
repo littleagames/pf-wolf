@@ -192,6 +192,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Flickering lights: on for seconds, then a flicker. **(never tried)** lamps by eye on a
       dark floor (lit a little, not unshaded).
 - [ ] **(never tried)** A water puddle only drunk at 15 health or less, healing past 16.
+- [ ] Game Options → Switches: Lighting off (no shading), Show Floors / Show Ceilings off (plain
+      colors), REBA Attack Info ("ATTACKING:" and the enemy when hit). **(never tried)** Show
+      Ceilings by eye; the switches kept in config.cfg after a restart.
+- [ ] **(never tried)** Enemies never step onto an elevator floor (area 0), nor off one.
+- [ ] **(never tried)** Wall outlets and Goldfire's warp-in keep their timers through a save and load.
 - [ ] Help pages (Instructions): ^AN animations (posts, arcs, turret, transport, guards) run
       while the page is up.
 - [ ] Quit, End Game and new-game questions in bstone's words.

@@ -3,6 +3,9 @@ using PFWolf.Entities.Actors;
 
 namespace PFWolf.Managers;
 
+/// <summary>What a level body keeps of <see cref="LevelAI"/> (LevelAI.WriteState)</summary>
+internal sealed record LevelAIState(int[] OutletDelays, int WarpWait, int WarpLast, int WarpChosen, bool WarpFirst, bool FloorDropGiven);
+
 /// <summary>
 /// What the level does on its own, rather than any one actor (GameHost builds it, for the level loop and setup, the player and the actors):
 /// enemies coming out of wall outlets (mapdefs walls `outlet:`), Goldfire warping in at his spawn
@@ -20,6 +23,47 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         _floorDropGiven = false;
         InitOutlets();
         InitWarpSites();
+    }
+
+    /// <summary>
+    /// What a level body keeps of it (save, hub level, mid-game join): each outlet's wait, the
+    /// warp sites' wait and choice, and whether the floor drop's been given
+    /// </summary>
+    internal void WriteState(BinaryWriter bw)
+    {
+        bw.Write(_outlets.Count);
+        foreach (var outlet in _outlets)
+            bw.Write(outlet.Delay);
+        bw.Write(_warpWait);
+        bw.Write(_warpLast);
+        bw.Write(_warpChosen);
+        bw.Write(_warpFirst);
+        bw.Write(_floorDropGiven);
+    }
+
+    internal static LevelAIState ReadState(BinaryReader br)
+    {
+        var delays = new int[br.ReadCount()];
+        for (int i = 0; i < delays.Length; i++)
+            delays[i] = br.ReadInt32();
+        return new LevelAIState(delays, br.ReadInt32(), br.ReadInt32(), br.ReadInt32(), br.ReadBoolean(), br.ReadBoolean());
+    }
+
+    /// <summary>
+    /// Puts back what a level body kept, once its actors are restored: the warp sites are found
+    /// again among them (the level was built afresh, then its saved actors put in their place)
+    /// </summary>
+    internal void ApplyState(LevelAIState state)
+    {
+        InitWarpSites();
+        if (state.OutletDelays.Length == _outlets.Count)
+            for (int i = 0; i < _outlets.Count; i++)
+                _outlets[i].Delay = state.OutletDelays[i];
+        _warpWait = state.WarpWait;
+        _warpLast = state.WarpLast < _warpSites.Count ? state.WarpLast : -1;
+        _warpChosen = state.WarpChosen < _warpSites.Count ? state.WarpChosen : -1;
+        _warpFirst = state.WarpFirst;
+        _floorDropGiven = state.FloorDropGiven;
     }
 
     /// <summary>Runs the level's outlets and warp sites, once a tic (PlayLoop)</summary>
