@@ -4,6 +4,7 @@
 # shootable within two tiles for 50-177 (not the player).
 PlasmaGrenade:
   properties:
+    "attackinfo": "$BS_ATTACK_BLAST"
     "speed": 7168            # bstone's SPDPROJ, in 1/65536 tile a tic
     "speed.random": 3584     # up to half as fast again
   flags: [bright]

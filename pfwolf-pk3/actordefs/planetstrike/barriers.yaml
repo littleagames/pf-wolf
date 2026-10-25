@@ -9,6 +9,8 @@
 # barriers extend blake's (`extend: true`): only the states given here differ.
 
 ArcBarrier:
+  properties:
+    "attackinfo": "$BS_ATTACK_ARC"
   extend: true
   states:
     Spawn:
@@ -69,6 +71,8 @@ PostBarrierOff:
 
 # --- V-spikes: up (H) blocks; switched, they sink (Inactive) or rise (Active)
 VSpikeBarrier:
+  properties:
+    "attackinfo": "$BS_ATTACK_SPIKE"
   parent: BlakeMonster
   radius: 32
   flags: [SOLID]
@@ -171,6 +175,8 @@ VSpikeCycle:
 
 # --- V-posts: the same, as posts
 VPostBarrier:
+  properties:
+    "attackinfo": "$BS_ATTACK_POST"
   parent: BlakeMonster
   radius: 32
   flags: [SOLID]

@@ -9,6 +9,12 @@ fonts: [Presenter1, Presenter1, Presenter2, Presenter3, Presenter4]
 # use are here: the briefings' mission pictures, the instructions' keys and items, the story's
 # pictures and the ordering info's logos.
 shapes:
+  # What's attacking (actordefs attackinfo): ooze, the transport, the drone, the generator, a blast
+  0: { sprite: OOZ1A0 }
+  114: { sprite: GSCTA8 }
+  122: { sprite: EXDEA0 }
+  139: { sprite: EXPLC0 }
+  140: { sprite: OOZ2A0 }
   # Items and machines (the instructions)
   1: { sprite: RCRDA0 }
   6: { sprite: CHGUA0 }
@@ -100,14 +106,33 @@ shapes:
   213: { pic: FaxPic }
 
 # What ^ANnn animates (nn in hex: ^AN24 is 36), from bstone's animation table: sprites drawn at
-# 64x64 one after another while the page is up, each for tics; rebound goes back and forth. Only
-# the ones the help pages use are here (Planet Strike's own are in its presenter.yaml).
+# 64x64 one after another while the page is up (37x37 in the status bar's info area), each for
+# tics; rebound goes back and forth. The ones the help pages and the attack messages (actordefs
+# attackinfo) use are here; Planet Strike's own are in its presenter.yaml.
 animations:
   4: { sprites: [RENTB8, RENTC8, RENTD8, RENTE8], tics: 20 }    # sector patrol walking
   5: { sprites: [TURRA1, TURRA2, TURRA3, TURRA4, TURRA5, TURRA6, TURRA7, TURRA8], tics: 20 }   # turret turning
   9: { sprites: [GSCIB8, GSCIC8, GSCID8, GSCIE8], tics: 20 }    # bio-technician walking
+  10: { sprites: [PODAE0, PODAF0, PODAG0, PODAH0], tics: 20 }   # pod alien
+  11: { sprites: [ELCAD0, ELCAE0, ELCAF0, ELCAG0], tics: 20 }   # electro-alien
+  12: { sprites: [ESPRA0, ESPRB0, ESPRC0], tics: 20 }           # electro-sphere
   13: { sprites: [PROGB8, PROGC8, PROGD8, PROGE8], tics: 20 }   # STAR sentinel walking
+  14: { sprites: [GENGA0, GENGB0, GENGC0, GENGD0], tics: 20 }   # genetic guard
+  15: { sprites: [MSENA0, MSENB0, MSENC0, MSEND0], tics: 20 }   # mech-sentinel
+  16: { sprites: [MHUMA0, MHUMB0, MHUMC0, MHUMD0], tics: 20 }   # mutant human
+  18: { sprites: [CNTAF0, CNTAG0, CNTAH0, CNTAI0], tics: 20 }   # large canister alien
+  20: { sprites: [CNSAF0, CNSAG0, CNSAH0, CNSAI0], tics: 20 }   # small canister alien
+  22: { sprites: [MGURF0, MGURG0, MGURH0, MGURI0], tics: 20 }   # gurney mutant
+  23: { sprites: [LIQAA0, LIQAB0, LIQAC0], tics: 20 }           # liquid alien
   24: { sprites: [SWATB8, SWATC8, SWATD8, SWATE8], tics: 20 }   # STAR trooper walking
+  25: { sprites: [DGLDB8, DGLDC8, DGLDD8, DGLDE8], tics: 20 }   # Dr. Goldfire
+  29: { sprites: [ELCKA0, ELCKB0, ELCKC0], tics: 20 }           # arc barrier
+  30: { sprites: [MSUPA0, MSUPB0, MSUPC0, MSUPD0], tics: 20 }   # spider mutant
+  31: { sprites: [BBSTA0, BBSTB0, BBSTC0, BBSTD0], tics: 20 }   # breather beast
+  32: { sprites: [CYBWA0, CYBWB0, CYBWC0, CYBWD0], tics: 20 }   # cyborg warrior
+  33: { sprites: [REPWA0, REPWB0, REPWC0, REPWD0], tics: 20 }   # reptilian warrior
+  34: { sprites: [ADRGA0, ADRGB0, ADRGC0, ADRGD0], tics: 20 }   # acid dragon
+  35: { sprites: [BIOMA0, BIOMB0, BIOMC0, BIOMD0], tics: 20 }   # bio-mech guardian
   36: { sprites: [ELCPA0, ELCPB0, ELCPC0], tics: 10 }           # barrier post
   37: { sprites: [ELCKA0, ELCKB0, ELCKC0], tics: 10 }           # arc barrier
   38: { sprites: [GSCTA1, GSCTA2, GSCTA3, GSCTA4, GSCTA5, GSCTA6, GSCTA7, GSCTA8], tics: 10 }   # volatile transport turning

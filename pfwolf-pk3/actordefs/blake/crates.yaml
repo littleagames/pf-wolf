@@ -6,6 +6,7 @@ BlakeCrate:
   parent: Monster
   flags: [NOTCOUNTED, STATIONARY]
   properties:
+    "attackinfo": "$BS_ATTACK_BLAST"
     "health": 1
     "deathsound": ["bs/explode1", "bs/explode2"]
     "switched": kill      # a smart switch on its tile blows it up (Gameplay/SmartSwitches.cs)

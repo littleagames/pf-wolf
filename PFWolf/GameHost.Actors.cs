@@ -72,10 +72,13 @@ internal static partial class GameHost
         new(GameEngineManager, AssetManager, _videoManager, InventoryManager, statusBarDrawing, playerClassRules, playerWeapons, Session,
             Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound, HudMessageManager.ShowKeyed, ShowAttacker));
 
-    // game-info attack-message, %k the attacker (Blake Stone's REBA "attacking:")
+    // The attacker's attackinfo, else game-info attack-message; %k the attacker (Blake Stone's
+    // REBA "attacking:", which has its picture: an info area script, Ui/TextPresenter.cs)
     static void ShowAttacker(Entities.Actors.Actor attacker)
     {
-        if (GameEngineManager.GetGameInfo().AttackMessage is { Length: > 0 } message)
+        var message = attacker.PropertyStrings("attackinfo").FirstOrDefault() is { Length: > 0 } own ? own
+            : GameEngineManager.GetGameInfo().AttackMessage;
+        if (!string.IsNullOrEmpty(message))
             HudMessageManager.Show(HudMessageKind.Other, message, null,
                 new Dictionary<char, string> { ['k'] = hudMessageDrawing.ActorTag(attacker) });
     }

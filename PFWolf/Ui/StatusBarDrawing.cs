@@ -18,7 +18,18 @@ internal sealed record StatusBarHooks(
     Func<Entities.PlayerState, int?>? MostHealth = null,
     Func<int>? LevelTicsLeft = null,
     Func<string?>? UseHint = null,
-    Func<IEnumerable<(int Left, int Full)>>? HealthBars = null);
+    Func<IEnumerable<(int Left, int Full)>>? HealthBars = null,
+    InfoScriptHooks? InfoScripts = null);
+
+/// <summary>
+/// The info area's messages with presenter codes (Ui/TextPresenter.cs THE STATUS BAR'S INFO AREA):
+/// drawn at a place in a font (name), color, shadow and background; their animation moved on
+/// (true when it drew); and taken away
+/// </summary>
+internal sealed record InfoScriptHooks(
+    Action<string, int, int, string, int, int, int> Draw,
+    Func<bool> Tick,
+    Action Clear);
 
 /// <summary>
 /// The status bar (statusbar.yaml): its layout and the parts drawn from the player's state --
@@ -673,8 +684,19 @@ internal sealed class StatusBarDrawing(
         string text = messages.Count > 0
             ? string.Join("\n", messages.Select(m => m.Text))
             : IdleText(area.IdleText);
+
+        // The newest message with presenter codes is shown on its own (Blake Stone's, with its
+        // shapes and animation: Ui/TextPresenter.cs)
+        var script = messages.Count > 0 && hooks.InfoScripts != null && TextPresenter.IsInfoScript(messages[^1].Text) ? messages[^1] : null;
         if (!force && text == infoareashown)
+        {
+            if (script != null)
+            {
+                using var animOrigin = StatusBarOrigin(area);
+                hooks.InfoScripts!.Tick();
+            }
             return;
+        }
         infoareashown = text;
 
         using var origin = StatusBarOrigin(area);
@@ -683,6 +705,14 @@ internal sealed class StatusBarDrawing(
             graphics.DrawPic(area.Pic, area.Box.ElementAtOrDefault(0), top + area.Box.ElementAtOrDefault(1));
         else if (area.Box.Count == 4)
             video.Bar(area.Box[0], top + area.Box[1], area.Box[2], area.Box[3], area.BoxColor ?? "Black");
+
+        hooks.InfoScripts?.Clear();
+        if (script != null)
+        {
+            hooks.InfoScripts!.Draw(script.Text, area.X, top + area.Y, area.Font ?? script.Style.Font,
+                int.TryParse(area.Color, out var c) ? c : 0xa6, area.ScriptShadow, area.ScriptBackground);
+            return;
+        }
 
         var font = area.Font ?? messages.FirstOrDefault()?.Style.Font ?? UiFonts.SmallFont;
         string color = area.Color ?? "White";

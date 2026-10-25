@@ -391,7 +391,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     internal static int TpCodeDigits(string code) => code switch
     {
         "SX" or "RX" or "SY" or "RY" or "FN" or "ST" or "BX" or "SP" or "SB" => 1,
-        "FC" or "BC" or "SC" or "LC" or "DC" or "AX" or "AY" or "HC" or "AN" or "DS" or "PM" or "PS" => 2,
+        "FC" or "BC" or "SC" or "LC" or "DC" or "AX" or "AY" or "HC" or "AN" or "DS" or "PM" or "PS" or "BG" => 2,
         "LM" or "RM" or "PX" or "PY" or "SH" => 3,
         _ => 0,
     };
@@ -959,6 +959,167 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
         tpfont = oldFont;
         tpfontcolor = oldColor;
+    }
+
+    /*
+    =============================================================================
+
+                            THE STATUS BAR'S INFO AREA
+
+    A message in Blake Stone's info area can be a little script of its own (bstone's
+    DrawInfoArea): ^SH draws a shape and ^AN starts an animation, a sprite shrunk into a box
+    (BoxSize square, on the background color) with the text going on to its right; ^FC sets
+    the text color, ^BG the box's, ^LM the left margin (fff: here) and ^DM puts it back. Text
+    is printed a line at a time, with a shadow, a line break (\r or \n) starting the next line
+    at the left margin. One animation runs while the message is up (TickInfoScript).
+
+    =============================================================================
+    */
+
+    /// <summary>A shape's box in the info area, each way</summary>
+    const int InfoBoxSize = 37;
+
+    // The info area message's animation: what it is, where, and when it next moves on
+    TpAnim? infoAnim;
+    uint infoAnimTime;
+
+    /// <summary>Whether a message is an info area script: it has ^ codes</summary>
+    internal static bool IsInfoScript(string text) =>
+        text.Length > 3 && text.IndexOf(Control) is var i && i >= 0 && i + 2 < text.Length && char.IsLetter(text[i + 1]);
+
+    /// <summary>
+    /// Draws an info area script at (x, y): text in font, color and shadow (palette indices),
+    /// shapes on background
+    /// </summary>
+    internal void DrawInfoScript(string script, int x, int y, Fonts.Font font, int color, int shadow, int background)
+    {
+        infoAnim = null;
+        int left = x, cx = x, cy = y, fontColor = color, back = background;
+        int lineHeight = font.Height;
+        int pos = 0;
+        while (pos < script.Length)
+        {
+            if (script[pos] == Control && pos + 2 < script.Length)
+            {
+                var code = $"{char.ToUpperInvariant(script[pos + 1])}{char.ToUpperInvariant(script[pos + 2])}";
+                int digits = TpCodeDigits(code);
+                int value = 0;
+                for (int i = 0; i < digits && pos + 3 + i < script.Length; i++)
+                    value = value << 4 | (Uri.IsHexDigit(script[pos + 3 + i]) ? Uri.FromHex(script[pos + 3 + i]) : 0);
+                pos += 3 + digits;
+
+                switch (code)
+                {
+                    case "AN":
+                        if (Presenter.Animations.TryGetValue(value, out var animation))
+                        {
+                            var frames = AnimationFrames(value);
+                            infoAnim = new TpAnim(animation, frames, cx, cy, back);
+                            infoAnimTime = GameEngineManager.GetTimeCount();
+                            DrawInfoShape(cx, cy, frames.FirstOrDefault(), back);
+                            cx += InfoBoxSize;
+                            left = cx;
+                        }
+                        break;
+                    case "SH":
+                        if (ShapePic(value) is { } shape)
+                        {
+                            cx += DrawInfoShape(cx, cy, shape, back);
+                            left = cx;
+                        }
+                        break;
+                    case "FC": fontColor = value; break;
+                    case "BG": back = value; break;
+                    case "DM": left = x; break;
+                    case "LM": left = value == 0xfff ? cx : value; break;
+                }
+                continue;
+            }
+
+            // A line, up to a break or a code
+            int end = pos;
+            while (end < script.Length && script[end] is not ('\r' or '\n' or Control))
+                end++;
+            var line = script[pos..end];
+            if (line.Length > 0)
+            {
+                graphics.DrawText(cx + 1, cy + 1, line, font, shadow.ToString());
+                graphics.DrawText(cx, cy, line, font, fontColor.ToString());
+            }
+            int printed = font.Measure(line);
+            pos = end;
+
+            // a line break (\r\n is one), or a space after the line, is passed over
+            bool lineBreak = pos < script.Length && script[pos] is '\r' or '\n';
+            if (pos < script.Length && script[pos] == '\r' && pos + 1 < script.Length && script[pos + 1] == '\n')
+                pos++;
+            if (pos < script.Length && script[pos] is ' ' or '\r' or '\n')
+                pos++;
+
+            // A code goes on from the end of the text; anything else starts the next line
+            if (lineBreak || pos >= script.Length || script[pos] != Control)
+            {
+                cx = left;
+                cy += lineHeight;
+            }
+            else
+                cx += printed;
+        }
+    }
+
+    /// <summary>Takes the info area's animation away (a message without one has replaced it)</summary>
+    internal void ClearInfoScript() => infoAnim = null;
+
+    /// <summary>
+    /// Moves the info area's animation on to its next frame once its frame's had its tics
+    /// (bstone's AnimatePage); true when it drew one
+    /// </summary>
+    internal bool TickInfoScript()
+    {
+        if (infoAnim is not { Frames.Count: > 0 } anim)
+            return false;
+        uint now = GameEngineManager.GetTimeCount();
+        anim.Delay += (int)(now - infoAnimTime);
+        infoAnimTime = now;
+        if (anim.Delay < anim.Animation.Tics)
+            return false;
+
+        anim.Delay = 0;
+        anim.Frame = (anim.Frame + 1) % anim.Frames.Count;
+        DrawInfoShape(anim.X, anim.Y, anim.Frames[anim.Frame], anim.Background);
+        return true;
+    }
+
+    /// <summary>
+    /// Draws a shape in the info area: a sprite or wall shrunk into its box on the background, a
+    /// picture at its own size (8 pixels across). Its width.
+    /// </summary>
+    int DrawInfoShape(int x, int y, TpShape? shape, int background)
+    {
+        if (shape == null)
+            return 0;
+        if (shape.IsPic)
+        {
+            x = (x + 7) & ~7;
+            video.MemToScreen(shape.Pixels, shape.Width, shape.Height, x, y);
+            return shape.Width;
+        }
+
+        // Shrunk to the box, as bstone's vid_draw_ui_sprite at 37
+        const int size = InfoBoxSize;
+        var pixels = new byte[size * size];
+        var mask = shape.Mask == null ? null : new byte[size * size];
+        for (int j = 0; j < size; j++)
+            for (int i = 0; i < size; i++)
+            {
+                int src = j * shape.Height / size * shape.Width + i * shape.Width / size;
+                pixels[j * size + i] = shape.Pixels[src];
+                if (mask != null)
+                    mask[j * size + i] = shape.Mask![src];
+            }
+        video.Bar(x, y, size, size, background.ToString());
+        video.MemToScreen(pixels, size, size, x, y + 1, mask);
+        return size;
     }
 
     /*

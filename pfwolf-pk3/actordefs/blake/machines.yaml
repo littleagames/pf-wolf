@@ -12,6 +12,7 @@ ElectroAlien:
   parent: BlakeEnemy
   flags: [NOTCOUNTED, NOTICEWHENSEEN, bright]
   properties:
+    "attackinfo": "$BS_ATTACK_ELECTRO"
     "tag": "$BS_ELECTROALIEN"
     "health.baby": 18
     "health.easy": 37
@@ -62,6 +63,7 @@ ElectroSphere:
   parent: BlakeMonster
   flags: [NOTSOLID, NODOORS, bright]
   properties:
+    "attackinfo": "$BS_ATTACK_SPHERE"
     "tag": "$BS_ELECTROSPHERE"
     "health": 1
     "points": 2055
@@ -98,6 +100,7 @@ LiquidAlien:
   parent: BlakeEnemy
   flags: [NOTICEWHENSEEN, NODOORS]
   properties:
+    "attackinfo": "$BS_ATTACK_LIQUID"
     "tag": "$BS_LIQUIDALIEN"
     "health.baby": 47
     "health.easy": 66
@@ -156,6 +159,7 @@ HangingTurret:
   parent: BlakeMonster
   flags: [NOTSOLID]
   properties:
+    "attackinfo": "$BS_ATTACK_TURRET"
     "tag": "$BS_TURRET"
     "health.baby": 6
     "health.easy": 9
@@ -195,6 +199,7 @@ FloatingBomb:
   parent: BlakeEnemy
   flags: [CHASEDIR]
   properties:
+    "attackinfo": "$BS_ATTACK_DRONE"
     "tag": "$BS_FLOATINGBOMB"
     "health.baby": 20
     "health.easy": 40
@@ -247,6 +252,7 @@ VolatileTransport:
   parent: BlakeEnemy
   flags: [BLIND]
   properties:
+    "attackinfo": "$BS_ATTACK_TRANSPORT"
     "tag": "$BS_VOLATILETRANSPORT"
     "health.baby": 17
     "health.easy": 25
@@ -292,6 +298,7 @@ ProjectionGenerator:
   parent: BlakeMonster
   flags: [STATIONARY, bright]
   properties:
+    "attackinfo": "$BS_ATTACK_GENERATOR"
     "tag": "$BS_GENERATOR"
     "health.baby": 150
     "health.easy": 175
@@ -380,14 +387,20 @@ FlickeringLight:
     Dim2:
       - { sprite: ARCL, frames: [C], tics-per-frame: -1, think: T_FlickerLight }
 
-# Ooze: standing in it now and then hurts
+# Ooze: standing in it now and then hurts (A_HurtPlayerHere, a BlakeMonster's)
 GreenOoze:
+  parent: BlakeMonster
+  properties:
+    "attackinfo": "$BS_ATTACK_GREENOOZE"
   states:
     Spawn:
       - { sprite: OOZ1, frames: [A, B], tics-per-frame: 30 }
       - { sprite: OOZ1, frames: [C], tics-per-frame: 30, think: "A_HurtPlayerHere(4, 32)" }
 
 BlackOoze:
+  parent: BlakeMonster
+  properties:
+    "attackinfo": "$BS_ATTACK_BLACKOOZE"
   states:
     Spawn:
       - { sprite: OOZ2, frames: [A, B], tics-per-frame: 30 }

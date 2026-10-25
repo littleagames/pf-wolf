@@ -40,11 +40,17 @@ Then (2026-10-24, later): outlet and warp-site timers saved with the level, enem
 the elevators' area 0 (floors monster-keep-out), and bstone's Game Switches (lighting, REBA
 attack info, show ceilings, show floors) as Game Options settings on a Blake Switches screen.
 
+Then (2026-10-24, last): the attack info shows each attacker's own bstone message with its
+animated picture (actordefs `attackinfo`, info area ^AN/^SH/^FC/^BG/^DM/^LM), ooze hurts again
+(it now parents BlakeMonster for A_HurtPlayerHere), and the lamps' `lighten` 6 checked against
+bstone's shading: AOG's shade_max 51 / normalshade_div 6 is the same inverse curve as our
+fade-start 4.52 / max-fade 80, and -12 of 63 levels is 6 of our 31 steps. A lamp is only a little
+brighter than an unlit sprite in bstone too.
+
 **Aliens of Gold: gameplay**
 - The electro-alien, Goldfire and the liquid alien's attack timing are simplified; compare with
   bstone.
-- The lamps' `lighten` 6 is a conversion of bstone's -12 of 64 shade levels to our 32 fade
-  steps; check it by eye against bstone on a dark floor.
+- Explosions are drawn bright; bstone's are EXPLOSION_SHADING (-52), nearly but not quite.
 
 **Aliens of Gold: level flow and UI**
 - Text presenter: no `^DS` display strings or `^PM` music by number. None of the game's texts
@@ -52,7 +58,6 @@ attack info, show ceilings, show floors) as Game Options settings on a Blake Swi
 - Blake Stone's shareware data (`.BS1`) isn't supported.
 - Menus: laid out as bstone's (positions, spacing, cursors checked against 3d_menu.cpp). Game
   Options adds Video and Mods; Game Switches adds the engine's own settings after bstone's four.
-  The attack message is text only (bstone's shows the attacker's ^AN picture too).
 
 **Planet Strike**
 - 82 of its 93 barrier switch walls have no open floor beside them, in bstone's data too: they're

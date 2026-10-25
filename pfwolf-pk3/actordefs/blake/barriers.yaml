@@ -6,6 +6,8 @@
 # The arc barrier also shocks a player within 1.375 tiles of it now and then: a 1 in 16 chance
 # each tic, for 4 points.
 ArcBarrier:
+  properties:
+    "attackinfo": "$BS_ATTACK_ARC"
   radius: 32
   flags: [SOLID]
   states:

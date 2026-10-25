@@ -332,7 +332,15 @@ internal static partial class GameHost
             HudMessageManager, ui, Session, Settings, new StatusBarHooks(GetMapDisplayName, WrapText,
                 p => deathmatch?.Objective?.MostHealth(p), () => LevelTimer.TicsLeft,
                 () => Session.InGame ? playerUse.UseHint(playerAttacks) : null,
-                () => Session.InGame ? MapManager.HealthBars() : []));
+                () => Session.InGame ? MapManager.HealthBars() : [],
+                new InfoScriptHooks(
+                    (script, x, y, font, color, shadow, back) =>
+                    {
+                        if (_fontManager.Find(font) is { } f)
+                            textPresenter.DrawInfoScript(script, x, y, f, color, shadow, back);
+                    },
+                    () => textPresenter.TickInfoScript(),
+                    () => textPresenter.ClearInfoScript())));
 
     static void DrawKeys() => statusBarDrawing.DrawKeys();
     static void DrawScore() => statusBarDrawing.DrawScore();

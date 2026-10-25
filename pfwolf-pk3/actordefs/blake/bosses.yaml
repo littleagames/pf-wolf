@@ -15,6 +15,7 @@ BlakeBoss:
 SpiderMutant:
   parent: BlakeBoss
   properties:
+    "attackinfo": "$BS_ATTACK_SPIDER"
     "tag": "$BS_SPIDERMUTANT"
     "health.baby": 800
     "health.easy": 1000
@@ -51,6 +52,7 @@ SpiderMutant:
 BreatherBeast:
   parent: BlakeBoss
   properties:
+    "attackinfo": "$BS_ATTACK_BREATHER"
     "tag": "$BS_BREATHERBEAST"
     "health.baby": 850
     "health.easy": 1250
@@ -88,6 +90,7 @@ BreatherBeast:
 CyborgWarrior:
   parent: BlakeBoss
   properties:
+    "attackinfo": "$BS_ATTACK_CYBORG"
     "tag": "$BS_CYBORGWARRIOR"
     "health.baby": 900
     "health.easy": 1500
@@ -124,6 +127,7 @@ CyborgWarrior:
 ReptilianWarrior:
   parent: BlakeBoss
   properties:
+    "attackinfo": "$BS_ATTACK_REPTILIAN"
     "tag": "$BS_REPTILIANWARRIOR"
     "health.baby": 950
     "health.easy": 1750
@@ -160,6 +164,7 @@ ReptilianWarrior:
 AcidDragon:
   parent: BlakeBoss
   properties:
+    "attackinfo": "$BS_ATTACK_DRAGON"
     "tag": "$BS_ACIDDRAGON"
     "health.baby": 1000
     "health.easy": 2000
@@ -196,6 +201,7 @@ AcidDragon:
 BioMechGuardian:
   parent: BlakeBoss
   properties:
+    "attackinfo": "$BS_ATTACK_BIOMECH"
     "tag": "$BS_BIOMECHGUARDIAN"
     "health.baby": 1050
     "health.easy": 2500
@@ -262,6 +268,7 @@ Goldfire:
   parent: BlakeEnemy
   flags: [NOTCOUNTED, NOREVIVE]
   properties:
+    "attackinfo": "$BS_ATTACK_GOLDFIRE"
     "tag": "$BS_GOLDFIRE"
     "health.baby": 50
     "health.easy": 63

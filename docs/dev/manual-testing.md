@@ -189,8 +189,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       hidden area in the darker green.
 - [ ] Elevator stats: total points rises with kills and treasure (`count` shows Points).
       **(never tried)** an informant at 97–99% points saying where an enemy or treasure is left.
-- [ ] Flickering lights: on for seconds, then a flicker. **(never tried)** lamps by eye on a
-      dark floor (lit a little, not unshaded).
+- [ ] Flickering lights: on for seconds, then a flicker. Lamps lit a little (side by side with
+      an unlit and a bright copy, AOG floor 1: a small difference, as bstone's math gives).
+- [ ] Attack info: a bio-tech's animated picture beside "ATTACKING: BIO-TECH". **(never tried)**
+      other enemies' pictures and texts (bosses, ooze, arc barrier, explosions, Planet Strike's
+      own), and standing in ooze hurting.
 - [ ] **(never tried)** A water puddle only drunk at 15 health or less, healing past 16.
 - [ ] Game Options → Switches: Lighting off (no shading), Show Floors / Show Ceilings off (plain
       colors), REBA Attack Info ("ATTACKING:" and the enemy when hit). **(never tried)** Show

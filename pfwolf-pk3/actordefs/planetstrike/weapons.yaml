@@ -50,6 +50,7 @@ AntiPlasmaCannon:
 # hurting everything shootable within two tiles for 50-177, and again for 80-334 (not the player).
 AntiPlasmaShot:
   properties:
+    "attackinfo": "$BS_ATTACK_ANTIPLASMA"
     "speed": 7168            # bstone's SPDPROJ, in 1/65536 tile a tic
     "speed.random": 3584     # up to half as fast again
   flags: [bright]

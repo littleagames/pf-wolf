@@ -20,6 +20,7 @@ RentACop:
   parent: BlakeEnemy
   flags: [SMART]
   properties:
+    "attackinfo": "$BS_ATTACK_RENTACOP"
     "tag": "$BS_RENTACOP"
     "health.baby": 6
     "health.easy": 9
@@ -137,6 +138,7 @@ ProGuard:
   parent: BlakeEnemy
   flags: [SMART]
   properties:
+    "attackinfo": "$BS_ATTACK_PROGUARD"
     "tag": "$BS_PROGUARD"
     "health.baby": 43
     "health.easy": 63
@@ -266,6 +268,7 @@ ProGuard:
 SwatGuard:
   parent: BlakeEnemy
   properties:
+    "attackinfo": "$BS_ATTACK_SWAT"
     "tag": "$BS_SWATGUARD"
     "health.baby": 88
     "health.easy": 112
@@ -423,6 +426,7 @@ Scientist:
   parent: BlakeEnemy
   flags: [SMART, FRIENDLY, RANDOMTURN, TALKATIVE]
   properties:
+    "attackinfo": "$BS_ATTACK_SCIENTIST"
     "tag": "$BS_SCIENTIST"
     "health.baby": 6
     "health.easy": 9

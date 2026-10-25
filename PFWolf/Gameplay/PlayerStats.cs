@@ -105,9 +105,12 @@ internal sealed class PlayerStats(
     internal void TakeDamage(int points, Entities.Actors.Actor attacker)
     {
         PlayerState.LastAttacker = attacker;
-        // Who it was, with Attack Info on (Blake Stone's REBA, bstone's TakeDamage)
-        // (a shot's: whoever fired it)
-        if ((attacker as Monster ?? attacker?.Shooter as Monster) is { } foe && session.ActingIsLocal && settings.Options.AttackInfo)
+        // Who it was, with Attack Info on (Blake Stone's REBA, bstone's TakeDamage): what hit them
+        // when it has an attackinfo of its own (a blast, ooze, a barrier), else an enemy, or
+        // whoever fired the shot
+        var foe = attacker?.Properties.ContainsKey("attackinfo") == true ? attacker
+            : attacker as Monster ?? attacker?.Shooter as Monster;
+        if (foe != null && session.ActingIsLocal && settings.Options.AttackInfo)
             hooks.ShowAttacker?.Invoke(foe);
         ApplyDamageToPlayer(points);
     }

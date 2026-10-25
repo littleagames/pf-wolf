@@ -227,6 +227,12 @@ public class StatusBarElement
     /// </summary>
     public string? IdleText { get; set; }
 
+    /// <summary>info-area: a message with presenter codes (Blake Stone's): its text's shadow, a palette index (default 4)</summary>
+    public int ScriptShadow { get; set; } = 0x04;
+
+    /// <summary>info-area: a message with presenter codes: what its shapes are drawn on, a palette index (default 1)</summary>
+    public int ScriptBackground { get; set; } = 0x01;
+
     /// <summary>
     /// gauge (radar-gauge): the inventory item whose count it shows, out of its max amount;
     /// radar: the item that powers its zoom (used up while zoomed in)
