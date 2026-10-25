@@ -77,7 +77,7 @@ BreatherBeast:
     Attack:
       - { sprite: BBST, frames: [E], tics-per-frame: 10 }
       - { sprite: BBST, frames: [F], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: BBST, frames: [G], tics-per-frame: 10, next-state: Chase }
+      - { sprite: BBST, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
     Death:
       - { sprite: BBST, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
       - { sprite: BBST, frames: [I], tics-per-frame: 20, think: T_BlowBack }
@@ -115,7 +115,7 @@ CyborgWarrior:
     Attack:
       - { sprite: CYBW, frames: [E], tics-per-frame: 10 }
       - { sprite: CYBW, frames: [F], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: CYBW, frames: [G], tics-per-frame: 10, next-state: Chase }
+      - { sprite: CYBW, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
     Death:
       - { sprite: CYBW, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
       - { sprite: CYBW, frames: [I], tics-per-frame: 20, think: T_BlowBack }
@@ -152,7 +152,7 @@ ReptilianWarrior:
     Attack:
       - { sprite: REPW, frames: [E], tics-per-frame: 10 }
       - { sprite: REPW, frames: [F], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: REPW, frames: [G], tics-per-frame: 10, next-state: Chase }
+      - { sprite: REPW, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
     Death:
       - { sprite: REPW, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
       - { sprite: REPW, frames: [I], tics-per-frame: 20, think: T_BlowBack }
@@ -226,7 +226,7 @@ BioMechGuardian:
     Attack:
       - { sprite: BIOM, frames: [E], tics-per-frame: 10 }
       - { sprite: BIOM, frames: [F], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: BIOM, frames: [G], tics-per-frame: 10, next-state: Chase }
+      - { sprite: BIOM, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
     Death:
       - { sprite: BIOM, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
       - { sprite: BIOM, frames: [I], tics-per-frame: 20, think: T_BlowBack }
@@ -299,11 +299,11 @@ Goldfire:
     Attack:
       - { sprite: DGLD, frames: [F], tics-per-frame: 20 }
       - { sprite: DGLD, frames: [G], tics-per-frame: 20, action: T_Shoot }
-      - { sprite: DGLD, frames: [H], tics-per-frame: 10 }
+      - { sprite: DGLD, frames: [H], tics-per-frame: 10, modifiers: [lighten(5)] }
       - { sprite: DGLD, frames: [G], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: DGLD, frames: [H], tics-per-frame: 10 }
+      - { sprite: DGLD, frames: [H], tics-per-frame: 10, modifiers: [lighten(5)] }
       - { sprite: DGLD, frames: [G], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: DGLD, frames: [H], tics-per-frame: 10, next-state: Chase }
+      - { sprite: DGLD, frames: [H], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
     Chase:
       - { sprite: DGLD, frames: [B], tics-per-frame: 10, think: T_Chase }
       - { sprite: DGLD, frames: [B], tics-per-frame: 3 }

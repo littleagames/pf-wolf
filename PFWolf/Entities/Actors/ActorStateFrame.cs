@@ -17,9 +17,21 @@ internal class ActorStateFrame
     private bool? _bright;
     public bool Bright => _bright ??= Modifiers.Contains(BrightModifier, StringComparer.OrdinalIgnoreCase);
 
+    // The "lighten(N)" modifier: the frame darkens N fade steps less with distance, as the
+    // actor's `lighten` property (Blake Stone's explosions, nearly unshaded); 0 when it has none
+    private int? _lighten;
+    public int Lighten => _lighten ??= Modifiers.Select(LightenSteps).FirstOrDefault(steps => steps > 0);
+
     /// <summary>The frame modifiers the engine reads (the actordefs reference's modifiers); any other is ignored, with a warning</summary>
     internal const string BrightModifier = "bright";
     internal static readonly IReadOnlySet<string> KnownModifiers = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { BrightModifier };
+
+    internal static bool IsKnownModifier(string modifier) => KnownModifiers.Contains(modifier) || LightenSteps(modifier) > 0;
+
+    // lighten(N)'s N, else 0
+    static int LightenSteps(string modifier) =>
+        modifier.StartsWith("lighten(", StringComparison.OrdinalIgnoreCase) && modifier.EndsWith(')')
+            && int.TryParse(modifier.AsSpan(8, modifier.Length - 9), out var steps) ? Math.Max(steps, 0) : 0;
 
     // The state's `light:`, overriding the actor's light on this frame; null keeps the actor's
     public StateLight? Light { get; init; }

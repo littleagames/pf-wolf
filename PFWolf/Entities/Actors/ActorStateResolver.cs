@@ -113,11 +113,11 @@ internal static class ActorStateResolver
     /// <summary>A state's frame modifiers the engine doesn't read (fast, a misspelt bright), each once</summary>
     internal static IEnumerable<string> UnknownModifiers(List<StateData> entries) =>
         entries.OfType<ActorStatesData>().SelectMany(frames => frames.Modifiers)
-            .Where(modifier => !ActorStateFrame.KnownModifiers.Contains(modifier)).Distinct(StringComparer.OrdinalIgnoreCase);
+            .Where(modifier => !ActorStateFrame.IsKnownModifier(modifier)).Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The warning for a modifier the engine doesn't read</summary>
     internal static string UnknownModifierMessage(string className, string state, string modifier) =>
-        $"Actor {className}: in its {state} state, the modifier {modifier} does nothing (bright is the only one)";
+        $"Actor {className}: in its {state} state, the modifier {modifier} does nothing (bright and lighten(N) are the only ones)";
 
     /// <summary>The state a corpse brought back by a reviver plays (Monster.Rise)</summary>
     internal const string RaiseState = "Raise";

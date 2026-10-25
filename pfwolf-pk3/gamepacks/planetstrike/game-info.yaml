@@ -74,7 +74,10 @@ episodes: !replace
 clusters: !replace
   1: { hub: true }
 
-# Area names are the game's own (its LEVEL_DESCS text); music is bstone's songs table
+# Area names are the game's own (its LEVEL_DESCS text); music is bstone's songs table. Lighting is
+# bstone's for the area number mod 6 (shade_max 36/51/62/63/18/52 over normal shade divisor
+# 1/6/3/4/1/2): fade-start 4.52 x (divisor / 6) x (51 / shade_max) tiles, max-fade shade_max / 63.
+# Areas 1, 7, 13 and 19 have Aliens of Gold's (the default map's).
 maps: !replace
   MAP01:
     name: "TRANSPORT ARRIVAL AREA"
@@ -82,6 +85,7 @@ maps: !replace
     floor-number: 0
     cluster: 1
     music: MAJMIN
+    shading: { fade-start: 1.07, max-fade: 57 }
   MAP02:
     name: "BIO-TECH LABS"
     next: MAP03
@@ -94,30 +98,35 @@ maps: !replace
     floor-number: 2
     cluster: 1
     music: MOURNING
+    shading: { fade-start: 1.86, max-fade: 98 }
   MAP04:
     name: "RADIATION CONTAINMENT"
     next: MAP05
     floor-number: 3
     cluster: 1
     music: LURKING
+    shading: { fade-start: 2.44, max-fade: 100 }
   MAP05:
     name: "TRAINEE QUARTERS"
     next: MAP06
     floor-number: 4
     cluster: 1
     music: CIRCLES
+    shading: { fade-start: 2.13, max-fade: 29 }
   MAP06:
     name: "SECURITY SECTION"
     next: MAP07
     floor-number: 5
     cluster: 1
     music: TIME
+    shading: { fade-start: 1.48, max-fade: 83 }
   MAP07:
     name: "REHABILITATION AREAS"
     next: MAP08
     floor-number: 6
     cluster: 1
     music: TOHELL
+    shading: { fade-start: 1.07, max-fade: 57 }
   MAP08:
     name: "WEAPONS TRAINING"
     next: MAP09
@@ -130,30 +139,35 @@ maps: !replace
     floor-number: 8
     cluster: 1
     music: GIVING
+    shading: { fade-start: 1.86, max-fade: 98 }
   MAP10:
     name: "COMMUNICATIONS"
     next: MAP11
     floor-number: 9
     cluster: 1
     music: HARTBEAT
+    shading: { fade-start: 2.44, max-fade: 100 }
   MAP11:
     name: "MUTANT HOLDING CHAMBERS"
     next: MAP12
     floor-number: 10
     cluster: 1
     music: MOURNING
+    shading: { fade-start: 2.13, max-fade: 29 }
   MAP12:
     name: "CRYOGENICS LABS"
     next: MAP13
     floor-number: 11
     cluster: 1
     music: MAJMIN
+    shading: { fade-start: 1.48, max-fade: 83 }
   MAP13:
     name: "ENGINEERING SECTOR"
     next: MAP14
     floor-number: 12
     cluster: 1
     music: VACCINAP
+    shading: { fade-start: 1.07, max-fade: 57 }
   MAP14:
     name: "HIGH SECURITY AREA"
     next: MAP15
@@ -166,30 +180,35 @@ maps: !replace
     floor-number: 14
     cluster: 1
     music: MONASTRY
+    shading: { fade-start: 1.86, max-fade: 98 }
   MAP16:
     name: "BIO MATERIALS STORAGE"
     next: MAP17
     floor-number: 15
     cluster: 1
     music: TOMBP
+    shading: { fade-start: 2.44, max-fade: 100 }
   MAP17:
     name: "CREW QUARTERS"
     next: MAP18
     floor-number: 16
     cluster: 1
     music: DARKNESS
+    shading: { fade-start: 2.13, max-fade: 29 }
   MAP18:
     name: "MUTANT ISOLATION AREA"
     next: MAP19
     floor-number: 17
     cluster: 1
     music: MOURNING
+    shading: { fade-start: 1.48, max-fade: 83 }
   MAP19:
     name: "CRYO TESTING CHAMBERS"
     next: MAP20
     floor-number: 18
     cluster: 1
     music: SERPENT
+    shading: { fade-start: 1.07, max-fade: 57 }
   MAP20:
     name: "GOLDFIRE'S LAIR"
     floor-number: 19
@@ -200,18 +219,22 @@ maps: !replace
     floor-number: 20
     cluster: 1
     music: CATACOMB
+    shading: { fade-start: 1.86, max-fade: 98 }
   MAP22:
     name: "PLASMA TEST AREAS"
     floor-number: 21
     cluster: 1
     music: PLOT
+    shading: { fade-start: 2.44, max-fade: 100 }
   MAP23:
     name: "BIO MECHANICS LABS"
     floor-number: 22
     cluster: 1
     music: GIVING
+    shading: { fade-start: 2.13, max-fade: 29 }
   MAP24:
     name: "CYBORG REPAIR BAYS"
     floor-number: 23
     cluster: 1
     music: VACCINAP
+    shading: { fade-start: 1.48, max-fade: 83 }

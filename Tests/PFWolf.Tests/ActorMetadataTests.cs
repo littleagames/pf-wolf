@@ -148,7 +148,7 @@ public class ActorMetadataTests
         }
 
         // Assert
-        Assert.That(warnings, Is.EqualTo(new[] { "Actor RedLamp: in its Spawn state, the modifier fast does nothing (bright is the only one)" }));
+        Assert.That(warnings, Is.EqualTo(new[] { "Actor RedLamp: in its Spawn state, the modifier fast does nothing (bright and lighten(N) are the only ones)" }));
     }
 
     [Test]

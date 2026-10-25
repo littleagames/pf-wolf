@@ -47,10 +47,17 @@ bstone's shading: AOG's shade_max 51 / normalshade_div 6 is the same inverse cur
 fade-start 4.52 / max-fade 80, and -12 of 63 levels is 6 of our 31 steps. A lamp is only a little
 brighter than an unlit sprite in bstone too.
 
+Then (2026-10-24, after that): the electro-alien fires a stream of bolts (bstone runs its T_Shoot
+as a think, so one a tic for 14 tics); Goldfire and the liquid alien were checked and already
+match bstone. Lighting as bstone's `lighting` field: a state modifier `lighten(N)`; explosions
+(floating bomb, transport, turret, generator, security cube) lighten(26) for bstone's
+EXPLOSION_SHADING, the bomb's and transport's dying back; a hitscan shooter's frame after it
+fires lighten(5) (T_Shoot's -10); the generator and security cube lit as lamps (lighten 6)
+rather than bright. Planet Strike's floors take bstone's per-floor shading (area number mod 6)
+instead of all having Aliens of Gold's.
+
 **Aliens of Gold: gameplay**
-- The electro-alien, Goldfire and the liquid alien's attack timing are simplified; compare with
-  bstone.
-- Explosions are drawn bright; bstone's are EXPLOSION_SHADING (-52), nearly but not quite.
+- Nothing known.
 
 **Aliens of Gold: level flow and UI**
 - Text presenter: no `^DS` display strings or `^PM` music by number. None of the game's texts

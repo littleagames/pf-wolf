@@ -73,24 +73,38 @@ public class ActorStateResolverTests
     }
 
     [Test]
-    public void Modifiers_Other_Than_Bright_Are_Told_Once_Each()
+    public void Modifiers_Other_Than_Bright_And_Lighten_Are_Told_Once_Each()
     {
-        // Arrange: bright in either case, and fast twice
+        // Arrange: bright in either case, lighten with a number, fast twice and lighten without one
         var actors = ActorDefs.Parse("""
             Thing:
               states:
                 Spawn:
-                  - { sprite: LAMP, frames: [A], tics-per-frame: 5, modifiers: [Bright, fast] }
-                  - { sprite: LAMP, frames: [B], tics-per-frame: 5, modifiers: [bright, FAST, brigth] }
+                  - { sprite: LAMP, frames: [A], tics-per-frame: 5, modifiers: [Bright, fast, lighten(26)] }
+                  - { sprite: LAMP, frames: [B], tics-per-frame: 5, modifiers: [bright, FAST, brigth, lighten(x)] }
             """);
 
         // Act
         var unknown = ActorStateResolver.UnknownModifiers(actors["Thing"].States["Spawn"]).ToList();
 
         // Assert
-        Assert.That(unknown, Is.EqualTo(new[] { "fast", "brigth" }));
+        Assert.That(unknown, Is.EqualTo(new[] { "fast", "brigth", "lighten(x)" }));
         Assert.That(ActorStateResolver.UnknownModifierMessage("Thing", "Spawn", "fast"),
-            Is.EqualTo("Actor Thing: in its Spawn state, the modifier fast does nothing (bright is the only one)"));
+            Is.EqualTo("Actor Thing: in its Spawn state, the modifier fast does nothing (bright and lighten(N) are the only ones)"));
+    }
+
+    [Test]
+    public void A_Frames_Lighten_Is_Its_Modifiers_Number()
+    {
+        // Arrange
+        ActorStateFrame Frame(params string[] modifiers) =>
+            new() { StateName = "Death", Sprite = "BOOM", FrameLetter = "A", TicTime = 5, Modifiers = [.. modifiers] };
+
+        // Act / Assert
+        Assert.That(Frame("bright", "lighten(26)").Lighten, Is.EqualTo(26));
+        Assert.That(Frame("LIGHTEN(5)").Lighten, Is.EqualTo(5));
+        Assert.That(Frame("bright").Lighten, Is.Zero);
+        Assert.That(Frame("lighten(-3)").Lighten, Is.Zero);
     }
 
     [Test]

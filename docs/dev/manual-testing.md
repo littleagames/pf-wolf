@@ -194,6 +194,13 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Attack info: a bio-tech's animated picture beside "ATTACKING: BIO-TECH". **(never tried)**
       other enemies' pictures and texts (bosses, ooze, arc barrier, explosions, Planet Strike's
       own), and standing in ooze hurting.
+- [ ] **(never tried)** An electro-alien firing a stream of bolts (about 14) each volley.
+- [ ] **(never tried)** Explosions (floating bomb, transport, turret, generator) unshaded at a
+      distance and the bomb's and transport's fading back as they burn; a generator lit a little
+      before it blows; a distant guard a little brighter just after firing.
+- [ ] Planet Strike's floors lit as bstone's per floor: area 0 from 1.07 tiles up to 57%
+      (`fog`), area 3 to black far off. **(never tried)** the others by eye against bstone; a
+      security cube's explosion slightly shaded on areas 2-3.
 - [ ] **(never tried)** A water puddle only drunk at 15 health or less, healing past 16.
 - [ ] Game Options → Switches: Lighting off (no shading), Show Floors / Show Ceilings off (plain
       colors), REBA Attack Info ("ATTACKING:" and the enemy when hit). **(never tried)** Show
