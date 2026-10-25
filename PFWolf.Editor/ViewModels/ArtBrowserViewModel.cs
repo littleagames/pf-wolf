@@ -233,8 +233,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     {
         var picked = SelectedPalette;
         ForgetRecolored();
-        Palettes.Clear();
-        Palettes.Add(AutomaticPalette);
+        // The picker's pick stays in the list throughout: taking it out (Clear) makes the
+        // ComboBox's two-way binding write null back into SelectedPalette
+        SelectedPalette = AutomaticPalette;
+        while (Palettes.Count > 1)
+            Palettes.RemoveAt(Palettes.Count - 1);
         _ownPalettes = new(StringComparer.OrdinalIgnoreCase);
         if (content != null)
         {
