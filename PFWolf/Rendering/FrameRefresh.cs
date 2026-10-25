@@ -241,6 +241,9 @@ internal sealed class FrameRefresh(
             map.MarkSeenFromSpotvis();      // floor the rays crossed, for the automap
         FrameProfiler.Mark(FrameProfiler.Section.Walls);
 
+        skyAndFlats.DrawLevelFlats();       // into the rows the walls left
+        FrameProfiler.Mark(FrameProfiler.Section.Flats);
+
         //
         // draw all the scaled images
         //

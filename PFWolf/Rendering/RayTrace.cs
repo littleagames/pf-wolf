@@ -24,6 +24,7 @@ internal sealed class RayTrace(
         int xinttemp = 0, yinttemp = 0;                            // holds temporary intercept position
         uint xpartial = 0, ypartial = 0;
         int pwallposnorm=0, pwallposinv=0, pwallposi=0;           // holds modified PWall.Pos
+        render.SizeCovers(render.ViewWidth);
 
         for (render.PixX = 0; render.PixX < render.ViewWidth; render.PixX++)
         {

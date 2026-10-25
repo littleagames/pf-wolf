@@ -104,6 +104,9 @@ internal sealed class WallPosts(
         if (weather.WeatherOn)
             weather.NoteOccluders();            // what hides rain and snow in this column (Weather.cs)
 
+        if (render.PixX < render.CoverCount.Length)
+            render.CoverCount[render.PixX] = 0;
+
         while (render.PostCount > 0)
         {
             render.PostCount--;
@@ -134,6 +137,7 @@ internal sealed class WallPosts(
         if (from > to)
             return;
         int pitch = (int)video.BufferPitch;
+        render.Cover(x, from, to);
 
         unsafe
         {
@@ -412,6 +416,7 @@ internal sealed class WallPosts(
         int y = Math.Min(bottom, render.ViewHeight - 1);
         if (top < 0) top = 0;
         if (y < top) return;
+        render.Cover(x, top, y);
 
         long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
         long t = num / half + firststory * GameConstants.TextureSize;

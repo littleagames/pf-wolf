@@ -90,8 +90,39 @@ internal sealed class RenderState
     internal readonly int[] PostPatchOfs = new int[MaxPosts];
     internal readonly byte[] PostPatchStory = new byte[MaxPosts];
 
+    //
+    // the rows each column's walls painted (DrawPost, DrawUnderside), as top and bottom row pairs:
+    // the flats are cast after the walls, only into the rows left (SkyAndFlats.DrawFlats)
+    //
+    internal const int MaxCovers = 2 * MaxPosts;     // a post and its arch's underside each
+    internal int[] CoverCount = [];
+    internal int[] CoverTop = [], CoverBottom = [];    // column x's are from x * MaxCovers
+
+    /// <summary>Makes room for the covers of a view width columns across</summary>
+    internal void SizeCovers(int width)
+    {
+        if (CoverCount.Length >= width)
+            return;
+        CoverCount = new int[width];
+        CoverTop = new int[width * MaxCovers];
+        CoverBottom = new int[width * MaxCovers];
+    }
+
+    /// <summary>Column x's walls painted rows top to bottom (outside WallRefresh, with no room made, not kept)</summary>
+    internal void Cover(int x, int top, int bottom)
+    {
+        if ((uint)x >= (uint)CoverCount.Length)
+            return;
+        int n = CoverCount[x];
+        if (n == MaxCovers)
+            return;                     // can't happen: a column draws at most MaxPosts posts
+        CoverTop[x * MaxCovers + n] = top;
+        CoverBottom[x * MaxCovers + n] = bottom;
+        CoverCount[x] = n + 1;
+    }
+
     internal int HitTile = -1;
-    internal short PostHeight;          // the height (as WallHeight) of the post ScalePost queues
+    internal short PostHeight;         // the height (as WallHeight) of the post ScalePost queues
     internal int HitStories;            // how many stories tall the wall the trace just hit is
     internal bool ColumnHit;            // this column's trace has hit a wall: WallHeight is set
     internal int ColumnTallest;         // the most stories of any wall it has hit

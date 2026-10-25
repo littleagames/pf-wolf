@@ -217,8 +217,7 @@ internal sealed partial class SkyAndFlats(
                 for (y = 0; y < render.CenterY; y++, destIndex += (int)video.BufferPitch)
                 {
                     byte color = lighting.LightRow[FlatRowShadeOffset(y, CeilingHalves) + ceilingColor];
-                    for (var v = 0; v < render.ViewWidth; v++)
-                        dest[destIndex + v] = color;
+                    new Span<byte>(dest + destIndex, render.ViewWidth).Fill(color);
                 }
             }
 
@@ -229,27 +228,42 @@ internal sealed partial class SkyAndFlats(
                 for (; y < render.ViewHeight; y++, destIndex += (int)video.BufferPitch)
                 {
                     byte color = lighting.LightRow[FlatRowShadeOffset(y, FloorHalves) + floorColor];
-                    for (var v = 0; v < render.ViewWidth; v++)
-                        dest[destIndex + v] = color;
+                    new Span<byte>(dest + destIndex, render.ViewWidth).Fill(color);
                 }
             }
         }
 
+        frameFloorColor = floorColor;
+        skyBehind = sky || generated;
+        floorSkyBehind = floorsky;
+    }
+
+    // What VGAClearScreen drew this frame, for DrawLevelFlats: the floor color, and whether a sky
+    // or floor sky is behind the flats
+    byte frameFloorColor;
+    bool skyBehind, floorSkyBehind;
+
+    /// <summary>
+    /// Casts the floor and ceiling flats over what VGAClearScreen drew, after the walls (WallRefresh),
+    /// into only the rows they left: a wall's rows would just be drawn over.
+    /// </summary>
+    internal void DrawLevelFlats()
+    {
         // In light zones or actors' light, even the plain colors change from place to place, so
         // they're cast too. A sky stays behind the ceiling flats, and a floor sky behind the floor
         // flats, showing where there are none.
         // With Show Floors or Show Ceilings off (Blake Stone's switches), that side's flats aren't drawn
         bool showFloors = ShowFloors(), showCeilings = ShowCeilings();
-        bool floorflats = map.HasFloorFlats && showFloors || (lighting.HasZones || actorLights.HasLights) && !floorsky;
-        bool ceilingflats = map.HasCeilingFlats && showCeilings || (lighting.HasZones || actorLights.HasLights) && !sky && !generated;
+        bool floorflats = map.HasFloorFlats && showFloors || (lighting.HasZones || actorLights.HasLights) && !floorSkyBehind;
+        bool ceilingflats = map.HasCeilingFlats && showCeilings || (lighting.HasZones || actorLights.HasLights) && !skyBehind;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
             if (floorflats)
-                DrawFlats(showFloors ? map.FloorFlat : NoFlats(map.FloorFlat.Length), floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, floorsky,
+                DrawFlats(showFloors ? map.FloorFlat : NoFlats(map.FloorFlat.Length), frameFloorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, floorSkyBehind,
                     map.Scrollers.AnyFloors ? map.Scrollers.FloorX : null, map.Scrollers.FloorY);
             if (ceilingflats)
-                DrawFlats(showCeilings ? map.CeilingFlat : NoFlats(map.CeilingFlat.Length), ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky || generated,
+                DrawFlats(showCeilings ? map.CeilingFlat : NoFlats(map.CeilingFlat.Length), CeilingColor, 0, render.CenterY - 1, CeilingHalves, skyBehind,
                     map.Scrollers.AnyCeilings ? map.Scrollers.CeilingX : null, map.Scrollers.CeilingY);
         }
     }
@@ -260,9 +274,9 @@ internal sealed partial class SkyAndFlats(
     = Flats
     =
     = Textured floors and ceilings, from the flat plane as ECWolf has them. They're drawn over
-    = the floor and ceiling colors before the walls, row by row: every pixel in a row is the
-    = same distance away along the view, so each is textured from where its view ray meets the
-    = floor (or ceiling), one texture per tile.
+    = the floor and ceiling colors after the walls, into the rows of each column the walls left
+    = (RenderState's covers): every pixel in a row is the same distance away along the view, so
+    = each is textured from where its view ray meets the floor (or ceiling), one texture per tile.
     =
     ====================
     */
@@ -301,8 +315,20 @@ internal sealed partial class SkyAndFlats(
     internal void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves, bool behind,
         int[]? scrollx = null, int[]? scrolly = null)
     {
+        if (from > to)
+            return;
         int pitch = (int)video.BufferPitch;
         double numerator = render.HeightNumerator * 32.0 * halves;
+
+        // this is every pixel of the floor or ceiling, so what the loop reads is kept in locals
+        int width = render.ViewWidth;
+        long viewx = render.ViewX, viewy = render.ViewY;
+        ulong mapwidth = map.MapWidth, mapheight = map.MapHeight;
+        bool shaded = lighting.Shading;
+        bool fillbare = (lighting.HasZones || actorLights.HasLights) && !behind;    // tiles with no texture are cast too
+        long[] dirxs = flatdirx, dirys = flatdiry;
+        StartCovers(width, from);
+        int[] blocktop = blockTop, blockbottom = blockBottom;
 
         unsafe
         {
@@ -310,28 +336,46 @@ internal sealed partial class SkyAndFlats(
             for (int y = from; y <= to; y++)
             {
                 // the row half a story (times halves) above or below the horizon at this distance
-                double rowsfromcenter = Math.Abs(y + 0.5 - render.CenterY);
-                long nx = (long)(numerator / rowsfromcenter);
+                long nx = (long)(numerator / Math.Abs(y + 0.5 - render.CenterY));
                 int shadeofs = lighting.ShadeOffset(nx);
                 byte* row = dest + y * pitch;
 
-                for (int x = 0; x < render.ViewWidth; x++)
+                // what's kept from the tile, and the light cell, the last pixel was on
+                long lasttile = -1;
+                TextureAsset? lasttexture = null;
+                byte[] data = [];
+                bool square = false, inwall = false;
+                long lightcx = -1, lightcy = -1, lighttile = -1;
+                byte[] light = Lighting.NoShade;
+
+                for (int x = 0; x < width; x++)
                 {
-                    long px = render.ViewX + (nx * flatdirx[x] >> 16);
-                    long py = render.ViewY + (nx * flatdiry[x] >> 16);
-                    long tilex = px >> MapConstants.TileShift, tiley = py >> MapConstants.TileShift;
-                    if ((ulong)tilex >= map.MapWidth || (ulong)tiley >= map.MapHeight)
+                    // a row the walls painted here is theirs
+                    if (y >= blocktop[x] && (y <= blockbottom[x] || NextCover(x, y)))
                         continue;
 
-                    long tile = tiley * map.MapWidth + tilex;
-                    var texture = flats[tile];
+                    long px = viewx + (nx * dirxs[x] >> 16);
+                    long py = viewy + (nx * dirys[x] >> 16);
+                    long tilex = px >> MapConstants.TileShift, tiley = py >> MapConstants.TileShift;
+                    if ((ulong)tilex >= mapwidth || (ulong)tiley >= mapheight)
+                        continue;
+
+                    long tile = tiley * (long)mapwidth + tilex;
+                    if (tile != lasttile)
+                    {
+                        lasttile = tile;
+                        lasttexture = flats[tile];
+                        data = lasttexture?.RawData ?? [];
+                        square = lasttexture is { Width: GameConstants.TextureSize, Height: GameConstants.TextureSize };
+                        inwall = lasttexture == null && map.TileMap[tilex, tiley] != 0;
+                    }
+                    var texture = lasttexture;
 
                     // A wall's tile rarely has a flat, but the rows just past its face (where its post
                     // rounds short of the true edge) land on it: they take the tile the ray came from
-                    if (texture == null && map.TileMap[tilex, tiley] != 0
-                        && FlatBeforeWall(flatdirx[x], flatdiry[x], ref px, ref py, ref tilex, ref tiley))
+                    if (inwall && FlatBeforeWall(dirxs[x], dirys[x], ref px, ref py, ref tilex, ref tiley))
                     {
-                        tile = tiley * map.MapWidth + tilex;
+                        tile = tiley * (long)mapwidth + tilex;
                         texture = flats[tile];
                     }
 
@@ -347,22 +391,109 @@ internal sealed partial class SkyAndFlats(
                         }
                         int u = (int)(tx >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
                         int v = (int)(ty >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
-                        int height = texture.Height;
-                        pixel = texture.RawData[u * texture.Width / GameConstants.TextureSize * height + v * height / GameConstants.TextureSize];
+                        pixel = square && texture == lasttexture
+                            ? data[(u << GameConstants.TextureShift) | v]
+                            : FlatTexel(texture, u, v);
                     }
 
                     // No texture, or a see-through pixel (FlatMask, as sprites have): the color, or
                     // the sky, shows
-                    if (texture == null || pixel == FlatMask)
-                    {
-                        if ((lighting.HasZones || actorLights.HasLights) && !behind)
-                            row[x] = lighting.LightAt((int)tile, px, py)[shadeofs + color];
+                    bool bare = texture == null || pixel == FlatMask;
+                    if (bare && !fillbare)
                         continue;
-                    }
+                    if (bare)
+                        pixel = color;
 
-                    row[x] = lighting.LightAt((int)tile, px, py)[shadeofs + pixel];
+                    // unshaded, the light is NoShade from 0: the pixel itself
+                    if (shaded)
+                    {
+                        // the light's the same over a light cell (Lighting.LightAt)
+                        long cx = px >> Lighting.CellGlobalShift, cy = py >> Lighting.CellGlobalShift;
+                        if (cx != lightcx || cy != lightcy || tile != lighttile)
+                        {
+                            lightcx = cx;
+                            lightcy = cy;
+                            lighttile = tile;
+                            light = lighting.LightAt((int)tile, px, py);
+                        }
+                        pixel = light[shadeofs + pixel];
+                    }
+                    row[x] = pixel;
                 }
             }
+        }
+    }
+
+    // A flat's texel u across and v down a tile (0-63), of any size of texture
+    static byte FlatTexel(TextureAsset texture, int u, int v)
+    {
+        int height = texture.Height;
+        return texture.RawData[u * texture.Width / GameConstants.TextureSize * height + v * height / GameConstants.TextureSize];
+    }
+
+    //
+    // The covers (RenderState: the rows each column's walls painted) DrawFlats is going down past:
+    // each column's, sorted by top, and the first that doesn't end above the row it's on (a top
+    // of int.MaxValue when there are no more)
+    //
+    int[] blockTop = [], blockBottom = [], blockIndex = [];
+
+    // Sorts each column's covers, and finds the first that doesn't end above row from
+    void StartCovers(int width, int from)
+    {
+        if (blockTop.Length < width)
+        {
+            blockTop = new int[width];
+            blockBottom = new int[width];
+            blockIndex = new int[width];
+        }
+        bool traced = render.CoverCount.Length >= width;
+        for (int x = 0; x < width; x++)
+        {
+            if (traced)
+                SortCovers(x);
+            blockIndex[x] = -1;
+            blockTop[x] = blockBottom[x] = -1;      // ends above every row: NextCover finds the first
+            NextCover(x, from);
+        }
+    }
+
+    /// <summary>
+    /// Moves column x on to its first cover that doesn't end above row y; true if that one has
+    /// row y in it (it's painted), false if it starts lower or there's none left.
+    /// </summary>
+    bool NextCover(int x, int y)
+    {
+        int count = x < render.CoverCount.Length ? render.CoverCount[x] : 0;
+        int first = x * RenderState.MaxCovers, i = blockIndex[x];
+        while (++i < count && render.CoverBottom[first + i] < y) { }
+        blockIndex[x] = i;
+        if (i >= count)
+        {
+            blockTop[x] = blockBottom[x] = int.MaxValue;
+            return false;
+        }
+        blockTop[x] = render.CoverTop[first + i];
+        blockBottom[x] = render.CoverBottom[first + i];
+        return blockTop[x] <= y;
+    }
+
+    // Sorts column x's covers by top
+    void SortCovers(int x)
+    {
+        int[] tops = render.CoverTop, bottoms = render.CoverBottom;
+        int first = x * RenderState.MaxCovers, last = first + render.CoverCount[x];
+        for (int i = first + 1; i < last; i++)
+        {
+            int top = tops[i], bottom = bottoms[i];
+            int j = i;
+            for (; j > first && tops[j - 1] > top; j--)
+            {
+                tops[j] = tops[j - 1];
+                bottoms[j] = bottoms[j - 1];
+            }
+            tops[j] = top;
+            bottoms[j] = bottom;
         }
     }
 

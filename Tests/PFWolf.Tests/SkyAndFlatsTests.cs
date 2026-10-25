@@ -83,6 +83,28 @@ public class SkyAndFlatsTests
     }
 
     [Test]
+    public void Rows_The_Walls_Painted_Are_Left_As_They_Are()
+    {
+        // Arrange: every tile's floor color 7; column 2's walls painted the bottom row and rows 0
+        // to 4 (noted out of order), column 5's rows 3 to 9 (the whole floor), the rest nothing
+        var stone = new TextureAsset { Width = 64, Height = 64, RawData = Enumerable.Repeat((byte)7, 64 * 64).ToArray() };
+        var flats = Enumerable.Repeat<TextureAsset?>(stone, MapConstants.ClassicMapArea).ToArray();
+        _render.SizeCovers(Width);
+        _render.Cover(2, 9, 9);
+        _render.Cover(2, 0, 4);
+        _render.Cover(5, 3, 9);
+
+        // Act
+        _sky.SetupFlatColumns();
+        _sky.DrawFlats(flats, 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
+
+        // Assert: the near rows are the flat, but where the walls painted
+        Assert.That((At(1, 8), At(1, 9)), Is.EqualTo(((byte)7, (byte)7)));
+        Assert.That((At(2, 8), At(2, 9)), Is.EqualTo(((byte)7, (byte)1)));
+        Assert.That((At(5, 8), At(5, 9)), Is.EqualTo(((byte)1, (byte)1)));
+    }
+
+    [Test]
     public void Where_A_Tile_Has_No_Flat_The_Color_Under_It_Stays()
     {
         // Act: no flats anywhere, and no light zones or actor light to recolor it
