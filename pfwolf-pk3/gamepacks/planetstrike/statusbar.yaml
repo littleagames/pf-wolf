@@ -44,7 +44,7 @@ ammo:
   digits: 0
   suffix: "%"
   align: right
-  font: BlakeHud
+  font: BlakeNumbers
   color: "157"
   behind: weapon-corner
 

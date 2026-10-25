@@ -131,14 +131,19 @@ internal class HudMessageManager
             return;
 
         var style = FindStyle(string.IsNullOrWhiteSpace(styleName) ? KindStyle(kind) : styleName);
-        messages.RemoveAll(m => m.Style.Position == style.Position && m.Text == text && m.Key == null);
+        bool alreadyUp = messages.RemoveAll(m => m.Style.Position == style.Position && m.Text == text && m.Key == null) > 0;
         messages.Add(new HudMessage(text, style));
 
         var stack = messages.Where(m => m.Style.Position == style.Position).ToList();
         for (int i = 0; i < stack.Count - Math.Max(style.MaxLines, 1); i++)
             messages.Remove(stack[i]);
 
-        consoleManager.Value.Print(text);
+        // An info area script (Blake Stone's attack info, again with every hit) goes there as its
+        // words alone, and not again while it's still up
+        if (!Ui.TextPresenter.IsInfoScript(text))
+            consoleManager.Value.Print(text);
+        else if (!alreadyUp)
+            consoleManager.Value.Print(Ui.TextPresenter.InfoScriptText(text));
     }
 
     /// <summary>

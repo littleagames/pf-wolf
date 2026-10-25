@@ -143,6 +143,9 @@ public class StatusBarElement
     /// <summary>Numbers: the color the box is filled with; enemy-health: each bar's frame (Black when left out)</summary>
     public string? BoxColor { get; set; }
 
+    /// <summary>Numbers: a picture drawn side by side across the box in place of box-color</summary>
+    public string? BoxPic { get; set; }
+
     /// <summary>Numbers: another part (weapon) drawn first, under the number</summary>
     public string? Behind { get; set; }
 

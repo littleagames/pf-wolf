@@ -16,8 +16,8 @@
 #   info-area:      where messages in an `anchor: Status` style (hud-messages.yaml) are written:
 #                   pic drawn at box's corner, text from x, y within size [width, height], and
 #                   idle-text while there are none
-# Numbers also take prefix, suffix, align (left, right, center), box with box-color (cleared
-# first), behind (a part drawn first, under it) and digits 0 (no padding). Keys take spacing-x
+# Numbers also take prefix, suffix, align (left, right, center), box with box-color or box-pic
+# (cleared first: the color, or the picture side by side across it), behind (a part drawn first, under it) and digits 0 (no padding). Keys take spacing-x
 # (rightwards) and size [width, height] for squares in each key's "key.statusbarcolor" /
 # "key.statusbaremptycolor".
 background:
@@ -73,17 +73,18 @@ health:
   digits: 0
   suffix: "%"
   align: right
-  font: BlakeHud
+  font: BlakeNumbers
   color: "157"
+  # bstone redraws three ECG grid pieces under it
   box: [144, 32, 24, 8]
-  box-color: Black
+  box-pic: EcgGridPiece
 ammo:
   x: 230
   y: 38
   digits: 0
   suffix: "%"
   align: right
-  font: BlakeHud
+  font: BlakeNumbers
   color: "157"
   behind: weapon
   only-with-ammo: true

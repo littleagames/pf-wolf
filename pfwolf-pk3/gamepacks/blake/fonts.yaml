@@ -40,12 +40,18 @@ StatusNumbers:
     "9": N_9
   cell-width: 8
 
-# The status bars' small print: Font3, as bstone prints them (fontnumber 2)
+# The status bars' small print: Font3, as bstone prints them (fontnumber 2). The top bar's with
+# a black shadow (bstone's ShPrint, shadow color 0); the health and ammo numbers plain
+# (VW_DrawPropString)
 BlakeHud:
   type: vga
   source: Font3
   upper-case: true      # Font3 has only capitals
-  shadow: { x: 1, y: 1, color: "4" }
+  shadow: { x: 1, y: 1, color: "0" }
+BlakeNumbers:
+  type: vga
+  source: Font3
+  upper-case: true
 
 # The text presenter's fonts by number (presenter.yaml): bstone's font n is Font(n+1). Plain,
 # as the presenter draws its own shadows (^ST1)

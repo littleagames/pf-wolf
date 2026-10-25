@@ -987,6 +987,23 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     internal static bool IsInfoScript(string text) =>
         text.Length > 3 && text.IndexOf(Control) is var i && i >= 0 && i + 2 < text.Length && char.IsLetter(text[i + 1]);
 
+    /// <summary>An info area script's words alone, its lines joined by spaces (for the console's history)</summary>
+    internal static string InfoScriptText(string script)
+    {
+        var text = new System.Text.StringBuilder();
+        for (int pos = 0; pos < script.Length; pos++)
+        {
+            if (script[pos] == Control && pos + 2 < script.Length)
+            {
+                var code = $"{char.ToUpperInvariant(script[pos + 1])}{char.ToUpperInvariant(script[pos + 2])}";
+                pos += 2 + TpCodeDigits(code);
+                continue;
+            }
+            text.Append(script[pos]);
+        }
+        return string.Join(" ", text.ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    }
+
     /// <summary>
     /// Draws an info area script at (x, y): text in font, color and shadow (palette indices),
     /// shapes on background
@@ -1041,10 +1058,11 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             while (end < script.Length && script[end] is not ('\r' or '\n' or Control))
                 end++;
             var line = script[pos..end];
+            // bstone's shadow, then the text: plain, without the font's own shadow on either
             if (line.Length > 0)
             {
-                graphics.DrawText(cx + 1, cy + 1, line, font, shadow.ToString());
-                graphics.DrawText(cx, cy, line, font, fontColor.ToString());
+                font.Draw(video, cx + 1, cy + 1, line, shadow.ToString(), Fonts.FontShadow.None, font.Gradient);
+                font.Draw(video, cx, cy, line, fontColor.ToString(), Fonts.FontShadow.None, font.Gradient);
             }
             int printed = font.Measure(line);
             pos = end;

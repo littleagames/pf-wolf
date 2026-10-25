@@ -191,7 +191,7 @@ internal sealed class StatusBarDrawing(
     }
 
     /// <summary>
-    /// Fills a part's box (statusbar.yaml box, box-color) so what it showed before goes; not on a
+    /// Fills a part's box (statusbar.yaml box, box-color or box-pic) so what it showed before goes; not on a
     /// bar drawn over the view (overlay), where the frame under it is drawn afresh
     /// </summary>
     internal void ClearBox(Assets.StatusBarElement element)
@@ -199,8 +199,15 @@ internal sealed class StatusBarDrawing(
         if (element.Box.Count != 4 || IsOverlay)
             return;
         using var _ = StatusBarOrigin(element);
-        video.Bar(element.Box[0], StatusBarTop(element) + element.Box[1], element.Box[2], element.Box[3],
-            element.BoxColor ?? "Black");
+        int top = StatusBarTop(element) + element.Box[1];
+        // box-pic: the picture across it, side by side (Blake Stone's ECG grid pieces under the health)
+        if (!string.IsNullOrEmpty(element.BoxPic) && graphics.PicSize(element.BoxPic) is { Width: > 0 } piece)
+        {
+            for (int x = element.Box[0]; x < element.Box[0] + element.Box[2]; x += piece.Width)
+                graphics.DrawPic(element.BoxPic, x, top);
+            return;
+        }
+        video.Bar(element.Box[0], top, element.Box[2], element.Box[3], element.BoxColor ?? "Black");
     }
 
     /// <summary>A text's width in a font, in 320x200 pixels</summary>

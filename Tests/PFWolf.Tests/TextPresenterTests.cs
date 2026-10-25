@@ -47,4 +47,16 @@ public class TextPresenterTests
     {
         Assert.That(TextPresenter.TpCodeDigits(code), Is.EqualTo(digits));
     }
+
+    [Test]
+    public void An_Info_Scripts_Words_Are_Its_Text_Without_Codes()
+    {
+        // Arrange: bstone's attack info for an electro-alien
+        const string script = "^AN0B^FC17\n  ATTACKING:\n^FCA6 HIGH ENERGY\n PLASMA ALIEN";
+
+        // Act / Assert
+        Assert.That(TextPresenter.IsInfoScript(script), Is.True);
+        Assert.That(TextPresenter.IsInfoScript("Food token: 1 credit"), Is.False);
+        Assert.That(TextPresenter.InfoScriptText(script), Is.EqualTo("ATTACKING: HIGH ENERGY PLASMA ALIEN"));
+    }
 }

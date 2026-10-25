@@ -194,7 +194,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Attack info: a bio-tech's animated picture beside "ATTACKING: BIO-TECH". **(never tried)**
       other enemies' pictures and texts (bosses, ooze, arc barrier, explosions, Planet Strike's
       own), and standing in ooze hurting.
-- [ ] **(never tried)** An electro-alien firing a stream of bolts (about 14) each volley.
+- [ ] Status bar text as bstone's: health and ammo numbers plain (no shadow) with the ECG grid
+      behind the health; the attack info's text with one shadow; the console keeps "ATTACKING:
+      ..." as words, once while it's up. **(never tried)** Planet Strike's ammo number and the
+      top bar's black shadow by eye.
+- [ ] An electro-alien firing a stream of bolts (about 14) each volley.
 - [ ] **(never tried)** Explosions (floating bomb, transport, turret, generator) unshaded at a
       distance and the bomb's and transport's fading back as they burn; a generator lit a little
       before it blows; a distant guard a little brighter just after firing.
