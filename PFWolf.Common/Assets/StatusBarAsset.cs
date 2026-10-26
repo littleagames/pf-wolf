@@ -240,6 +240,12 @@ public class StatusBarElement
     /// </summary>
     public string? IdleText { get; set; }
 
+    /// <summary>
+    /// info-area: shown in place of idle-text as a game starts and after a death, until the first
+    /// message (Blake Stone's "R.E.B.A. ... ALL SYSTEMS READY.")
+    /// </summary>
+    public string? ReadyText { get; set; }
+
     /// <summary>info-area: a message with presenter codes (Blake Stone's): its text's shadow, a palette index (default 4)</summary>
     public int ScriptShadow { get; set; } = 0x04;
 

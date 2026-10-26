@@ -178,6 +178,10 @@ internal sealed class MainGameLoop(
             }
             else music.StartMusic();
 
+            // A new game, or a life after dying, starts with the info area's ready-text (Blake
+            // Stone's "ALL SYSTEMS READY."); a level gone on to doesn't
+            statusBar.ShowingReadyText = died || session.ShowQuickInstructions;
+
             var levelStartMessage = engine.GetGameInfo().LevelStartMessage;
             if (warped)
             {

@@ -204,6 +204,9 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] A new mission's first floor: "You must find the RED access card..." over the view, then
       with "Press a key." after ~2 seconds; not after loading a game. **(never tried)** Planet
       Strike's (area 0) text.
+- [ ] The info area says "R.E.B.A. / AGENT: BLAKE STONE / ALL SYSTEMS READY." as a game starts
+      and after a death, until the first message; then "NO MESSAGES.". **(never tried)** going
+      on to the next floor keeps "NO MESSAGES.".
 - [ ] Info area messages laid out as bstone's (centered lines, item picture, colored heading):
       seen for NO MESSAGES, a food token (TOKENS: 01), the slow fire protector, interrogating
       an informant (hint indented, gift) and the killed-informant warning. **(never tried)** the

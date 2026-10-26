@@ -15,7 +15,8 @@
 #                   heart-x, heart-y beating every pulse-tics, heart-bad below bad-below health
 #   info-area:      where messages in an `anchor: Status` style (hud-messages.yaml) are written:
 #                   pic drawn at box's corner, text from x, y within size [width, height], and
-#                   idle-text while there are none
+#                   idle-text while there are none (ready-text in its place as a game starts and
+#                   after a death, until the first message)
 # Numbers also take prefix, suffix, align (left, right, center), box with box-color, box-pic or
 # box-fill (cleared first: the color, the picture side by side across it, or with box-fill: bar
 # that piece of the bar's own picture), behind (a part drawn first, under it) and digits 0 (no padding). Keys take spacing-x
@@ -141,3 +142,4 @@ info-area:
   font: BlakeInfo
   color: "166"
   idle-text: "$BS_NOMESSAGES"
+  ready-text: "$BS_REBAREADY"

@@ -697,6 +697,12 @@ internal sealed class StatusBarDrawing(
 
     string? infoareashown;
 
+    /// <summary>
+    /// Whether the info area shows its ready-text in place of its idle-text: set as a game starts
+    /// and after a death (bstone's DrawPlayScreen(true)), until the first message
+    /// </summary>
+    internal bool ShowingReadyText { get; set; }
+
     /// <summary>Whether the status bar has an info area showing now</summary>
     internal bool HasInfoArea => StatusBar.Get("info-area") != null && !NoBarInFullScreen;
 
@@ -706,9 +712,11 @@ internal sealed class StatusBarDrawing(
             return;
 
         var messages = hudMessages.Messages.Where(m => m.Style.Anchor == Managers.HudAnchor.Status).ToList();
+        if (messages.Count > 0)
+            ShowingReadyText = false;       // the first message ends the ready text for good
         string text = messages.Count > 0
             ? ItemCounts(string.Join("\n", messages.Select(m => m.Text)))
-            : IdleText(area.IdleText);
+            : IdleText(ShowingReadyText && !string.IsNullOrEmpty(area.ReadyText) ? area.ReadyText : area.IdleText);
 
         // The newest message with presenter codes is shown on its own (Blake Stone's, with its
         // shapes and animation: Ui/TextPresenter.cs), as is idle text with them

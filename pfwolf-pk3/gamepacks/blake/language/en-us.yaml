@@ -53,6 +53,9 @@ $BS_FOODUNITSNACK: "^FCA6\n FOOD UNIT DISPENSES\n SOMETHING RESEMBLING\n        
 $BS_BARRIERON: "^FCA6\n\n  ACTIVATING BARRIER"
 $BS_BARRIEROFF: "^FCA6\n\n DEACTIVATING BARRIER"
 
+# The info area as a game starts and after a death, until the first message (bstone's
+# DrawPlayScreen(true))
+$BS_REBAREADY: "^FCA6R.E.B.A.\nAGENT: BLAKE STONE\nALL SYSTEMS READY."
 # The status bar's info area with no messages (bstone's DisplayNoMoMsgs)
 $BS_NOMESSAGES: "^FCA6\n    NO MESSAGES.^FCA8\n    FOOD TOKENS: {FoodToken}"
 $BS_OUTOFORDER: "^FCA6\n\n   FOOD UNIT MACHINE\n    IS OUT OF ORDER."
