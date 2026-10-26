@@ -21,6 +21,11 @@ signon:
 intro-music: MEETINGA
 high-scores-music: LEVELA
 
+# The menus' music (bstone's MENUSONG) in place of the menudefs' own, so the shared multiplayer
+# menus Blake Stone has no copies of don't ask for Wolf3D's WONDERIN. A menu with no music (the
+# high scores) still leaves what's playing alone.
+menu-music: MEETINGA
+
 title-sequence:
   # As the game starts (bstone's PreDemo): the anti-piracy notice from and to dark blue, Apogee
   # to the end of its fanfare, the JAM logo movie, then the PC-13 rating, out through red

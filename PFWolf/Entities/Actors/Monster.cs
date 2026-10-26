@@ -154,7 +154,7 @@ internal partial record Monster : Actor
                 .FirstOrDefault(n => n.Class != null && !n.Class.IsInstanceOfType(actor));
             if (needs.Class != null)
                 Console.WriteLine($"Actor '{name}' runs {ActorActionRegistry.Parse(needs.Call!).Name} but isn't a {needs.Class.Name}: give it `parent: {needs.Class.Name}` (or a class descended from it).");
-            else if (actor is not Monster && actor.Properties.Keys.Any(k => k == "health" || k.StartsWith("health.", StringComparison.Ordinal)))
+            else if (actor is not Monster && actor.Properties.Keys.Any(Definitions.ActorProperties.IsHealthKey))
                 Console.WriteLine($"Actor '{name}' has health but isn't a Monster: give it `parent: Monster` (or a class descended from it).");
 
             if (actor is Monster reviver)

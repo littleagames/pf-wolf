@@ -76,6 +76,16 @@ public class ActorPropertiesTests
         Assert.That(names, Is.Unique);
     }
 
+    [TestCase("health", true)]
+    [TestCase("health.normal", true)]
+    [TestCase("health.takenbelow", false)]
+    [TestCase("healthbar", false)]
+    [TestCase("points", false)]
+    public void Health_Is_The_Health_Property_Or_A_Skills(string key, bool health)
+    {
+        Assert.That(ActorProperties.IsHealthKey(key), Is.EqualTo(health));
+    }
+
     [TestCase("health.normal", "health.SKILL")]
     [TestCase("HEALTH.hard", "health.SKILL")]
     [TestCase("health", "health")]

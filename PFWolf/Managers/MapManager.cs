@@ -1380,7 +1380,7 @@ internal class MapManager
         // whatever the floor tile beneath them, unlike grunts, which only ambush when placed
         // on an ambush tile.
         var alwaysAmbush = builtActor.HasFlag("AMBUSH");
-        var hasHealth = builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal));
+        var hasHealth = builtActor.Properties.Keys.Any(Definitions.ActorProperties.IsHealthKey);
 
         if (!hasHealth && builtActor.Properties.ContainsKey("speed"))
         {

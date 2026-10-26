@@ -255,6 +255,13 @@ public static class ActorProperties
     ];
 
     /// <summary>A property by its name, ignoring case; health.normal and the like find health.SKILL</summary>
+    /// <summary>
+    /// Whether a property gives an actor health: "health", or a skill's ("health.normal"), not a
+    /// health item's own setting ("health.takenbelow")
+    /// </summary>
+    public static bool IsHealthKey(string key) =>
+        key == "health" || key.StartsWith("health.", StringComparison.Ordinal) && Find(key) is { IsPattern: true };
+
     public static ActorProperty? Find(string name)
     {
         var exact = All.FirstOrDefault(p => !p.IsPattern && p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));

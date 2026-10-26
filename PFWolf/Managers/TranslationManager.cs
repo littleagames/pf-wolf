@@ -105,7 +105,7 @@ internal class TranslationManager
     private bool HasHealth(Entities.Actors.Actor actor)
     {
         if (!withHealth.TryGetValue(actor.Name, out var has))
-            withHealth[actor.Name] = has = actor.Properties.Keys.Any(k => k == "health" || k.StartsWith("health.", StringComparison.Ordinal));
+            withHealth[actor.Name] = has = actor.Properties.Keys.Any(PFWolf.Definitions.ActorProperties.IsHealthKey);
         return has;
     }
 

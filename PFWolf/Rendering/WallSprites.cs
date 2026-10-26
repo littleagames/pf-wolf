@@ -69,7 +69,7 @@ internal static class WallSprites
     /// </summary>
     internal static bool IsBroken(Entities.Actors.Actor actor) =>
         actor is Entities.Actors.Monster && !actor.RuntimeFlags.Has(ObjFlags.Shootable)
-        && actor.Properties.Keys.Any(k => k == "health" || k.StartsWith("health.", StringComparison.Ordinal));
+        && actor.Properties.Keys.Any(Definitions.ActorProperties.IsHealthKey);
 
     /// <summary>Which way a facing's panel runs across the tile, for messages.</summary>
     internal static string WallSpriteAxis(ObjDir dir) => dir switch
