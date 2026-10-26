@@ -53,7 +53,16 @@ internal sealed class HudMessageDrawing(
             var lines = new List<(string Text, HudMessageStyle Style, int Width, int Height)>();
             foreach (var message in stack)
             {
-                foreach (var line in WrapText(message.Text, message.Style.Font, areaW))
+                // An info area message here (no status bar showing): its item counts filled in,
+                // and a script (Blake Stone's, with its codes) as its words alone
+                var text = message.Text;
+                if (message.Style.Anchor == HudAnchor.Status)
+                {
+                    text = statusBar.ItemCounts(text);
+                    if (TextPresenter.IsInfoScript(text))
+                        text = TextPresenter.InfoScriptText(text);
+                }
+                foreach (var line in WrapText(text, message.Style.Font, areaW))
                 {
                     ui.MeasureText(line, message.Style.Font, out int w, out int h);
                     lines.Add((line, message.Style, w, h));

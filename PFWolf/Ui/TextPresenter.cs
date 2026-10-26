@@ -1135,8 +1135,10 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                 if (mask != null)
                     mask[j * size + i] = shape.Mask![src];
             }
+        // a line down, as bstone draws it, its last line left off so it stays in the box (below
+        // it is the bar's frame, which clearing the info area doesn't redraw)
         video.Bar(x, y, size, size, background.ToString());
-        video.MemToScreen(pixels, size, size, x, y + 1, mask);
+        video.MemToScreen(pixels, size, size - 1, x, y + 1, mask);
         return size;
     }
 

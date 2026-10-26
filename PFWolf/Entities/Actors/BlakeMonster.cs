@@ -951,8 +951,9 @@ internal partial record BlakeMonster : Monster
     }
 
     /// <summary>
-    /// A VGAGRAPH text's messages, split at its "^XX"s, with line breaks kept and its formatting
-    /// codes (^FC color and the like) left out
+    /// A VGAGRAPH text's messages, split at its "^XX"s, as bstone's LoadMsg takes them: the line
+    /// breaks after a ^XX passed over, and the rest kept as laid out for the status bar's info
+    /// area (the spaces before a line, ^FC colors and the like)
     /// </summary>
     private List<string> HintMessages(string listName)
     {
@@ -964,12 +965,7 @@ internal partial record BlakeMonster : Monster
         {
             var parts = asset.ToText().Split("^XX");
             foreach (var part in parts.Take(parts.Length - 1))     // after the last ^XX is only the end
-            {
-                var text = System.Text.RegularExpressions.Regex.Replace(part, @"\^[A-Z]{2}[0-9A-Fa-f]{0,2}", "");
-                text = string.Join("\n", text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Select(l => l.Trim()))
-                    .Trim('\n');
-                messages.Add(text);
-            }
+                messages.Add(part.Replace("\r\n", "\n").Replace('\r', '\n').TrimStart('\n').TrimEnd());
         }
         else
             Console.WriteLine($"Hint text \"{listName}\" wasn't found");

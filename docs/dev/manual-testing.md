@@ -201,6 +201,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       ..." as words, once while it's up. **(never tried)** Planet Strike's ammo number and the
       top bar's black shadow by eye.
 - [ ] An electro-alien firing a stream of bolts (about 14) each volley.
+- [ ] Info area messages laid out as bstone's (centered lines, item picture, colored heading):
+      seen for NO MESSAGES, a food token (TOKENS: 01), the slow fire protector, interrogating
+      an informant (hint indented, gift) and the killed-informant warning. **(never tried)** the
+      door, barrier, food unit, generator, transporting and Planet Strike detonator/teleporter
+      messages, and the status bar hidden (they show as plain words over the view).
 - [ ] **(never tried)** The auto charge pistol on WAIT: fire does nothing (no animation, flash or
       sound); held through, it fires as soon as READY lights.
 - [ ] **(never tried)** Doors beside a floor trigger join their rooms: mission 2 floor 1's doors

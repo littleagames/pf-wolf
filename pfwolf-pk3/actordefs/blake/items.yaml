@@ -99,7 +99,7 @@ Ham:
     "inventory.amount": 20
     "monster.healthgain": 12     # a running enemy on it eats it, for this much
     "inventory.pickupsound": "bs/health1"
-    "inventory.pickupmessage": "$BS_GOTMEAT"
+    "inventory.pickupmessage": "$BS_GOTHAM"
   states:
     Spawn:
       - sprite: HAMM

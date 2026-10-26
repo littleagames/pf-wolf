@@ -707,12 +707,14 @@ internal sealed class StatusBarDrawing(
 
         var messages = hudMessages.Messages.Where(m => m.Style.Anchor == Managers.HudAnchor.Status).ToList();
         string text = messages.Count > 0
-            ? string.Join("\n", messages.Select(m => m.Text))
+            ? ItemCounts(string.Join("\n", messages.Select(m => m.Text)))
             : IdleText(area.IdleText);
 
         // The newest message with presenter codes is shown on its own (Blake Stone's, with its
-        // shapes and animation: Ui/TextPresenter.cs)
-        var script = messages.Count > 0 && hooks.InfoScripts != null && TextPresenter.IsInfoScript(messages[^1].Text) ? messages[^1] : null;
+        // shapes and animation: Ui/TextPresenter.cs), as is idle text with them
+        string? script = hooks.InfoScripts == null ? null
+            : messages.Count > 0 ? (TextPresenter.IsInfoScript(messages[^1].Text) ? ItemCounts(messages[^1].Text) : null)
+            : TextPresenter.IsInfoScript(text) ? text : null;
         if (!force && text == infoareashown)
         {
             if (script != null)
@@ -734,7 +736,7 @@ internal sealed class StatusBarDrawing(
         hooks.InfoScripts?.Clear();
         if (script != null)
         {
-            hooks.InfoScripts!.Draw(script.Text, area.X, top + area.Y, area.Font ?? script.Style.Font,
+            hooks.InfoScripts!.Draw(script, area.X, top + area.Y, area.Font ?? messages.LastOrDefault()?.Style.Font ?? UiFonts.SmallFont,
                 int.TryParse(area.Color, out var c) ? c : 0xa6, area.ScriptShadow, area.ScriptBackground);
             return;
         }
@@ -764,14 +766,15 @@ internal sealed class StatusBarDrawing(
     }
 
     // The idle text, with each {Item} the count of that inventory item
-    string IdleText(string? idle)
-    {
-        if (string.IsNullOrEmpty(idle))
-            return "";
-        var text = hudMessages.Localize(idle);
-        return System.Text.RegularExpressions.Regex.Replace(text, @"\{(\w+)\}",
-            m => inventory.GetCount(m.Groups[1].Value).ToString());
-    }
+    string IdleText(string? idle) => string.IsNullOrEmpty(idle) ? "" : ItemCounts(hudMessages.Localize(idle));
+
+    /// <summary>
+    /// Text with each {Item} the count of that inventory item, {Item:00} in a .NET number format
+    /// (Blake Stone's "TOKENS: 05")
+    /// </summary>
+    internal string ItemCounts(string text) =>
+        text.Contains('{') ? System.Text.RegularExpressions.Regex.Replace(text, @"\{(\w+)(?::([^}]+))?\}",
+            m => inventory.GetCount(m.Groups[1].Value).ToString(m.Groups[2].Success ? m.Groups[2].Value : null)) : text;
 
     /*
     The heart monitor, as Blake Stone's: a trace scrolling left across count segments, a blip

@@ -17,6 +17,11 @@ shapes:
   140: { sprite: OOZ2A0 }
   # Items and machines (the instructions)
   1: { sprite: RCRDA0 }
+  2: { sprite: YCRDA0 }
+  3: { sprite: GCRDA0 }
+  4: { sprite: BCRDA0 }
+  5: { sprite: OCRDA0 }
+  19: { sprite: WPUDA0 }
   6: { sprite: CHGUA0 }
   7: { sprite: SFPPA0 }
   8: { sprite: RAWPA0 }

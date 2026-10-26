@@ -1,56 +1,61 @@
-# Blake Stone text, added to the shared language/en-us.yaml. Pickup and door messages follow the
-# game's own (bstone's 3d_msgs.cpp and 3d_act1.cpp); they show over the view until Blake Stone's
-# status bar info area is built.
+# Blake Stone text, added to the shared language/en-us.yaml. The status bar info area's messages
+# are the game's own (bstone's 3d_msgs.cpp, 3d_act1.cpp, 3d_act2.cpp, 3d_agent.cpp), laid out as
+# it lays them out: info area scripts (Ui/TextPresenter.cs DrawInfoScript), \n for bstone's \r, the
+# spaces before a line centering it, ^SHnnn the item's picture (presenter.yaml shapes), ^FCnn the
+# text's color (57 a heading, A6 the text). One with no picture or color starts with ^FCA6 (the
+# area's own color, so nothing changes) to be a script, which keeps its line breaks and spaces.
+# {Item:00} is the count of that item, in two digits; %a and %n are filled in by what shows them.
 
 # The menus' questions, as bstone's (3d_menu.cpp): Blake Stone has one quit message
 $BS_ENDSTR1: "      Quit to DOS?\n Are you sure (Y or N)?"
 $ENDGAMESTR: "    End current game?\n Are you sure (Y or N)?"
 $CURGAME: "   Continuing past this\n  point will end the game\n you're currently playing.\n\n Start a NEW game? (Y/N)"
 
-# Doors
-$BS_DOORONEWAY: "Door locked from this side."
-$BS_REDDENIED: "Red level access denied!"
-$BS_YELLOWDENIED: "Yellow level access denied!"
-$BS_GREENDENIED: "Green level access denied!"
-$BS_BLUEDENIED: "Blue level access denied!"
-$BS_GOLDDENIED: "Gold level access denied!"
+# Doors (bstone's od_ messages)
+$BS_DOORONEWAY: "^FCA6\n\n   DOOR LOCKED FROM\n      THIS SIDE."
+$BS_REDDENIED: "^FCA6\n\n      RED LEVEL\n    ACCESS DENIED!"
+$BS_YELLOWDENIED: "^FCA6\n\n     YELLOW LEVEL\n    ACCESS DENIED!"
+$BS_GREENDENIED: "^FCA6\n\n     GREEN LEVEL\n    ACCESS DENIED!"
+$BS_BLUEDENIED: "^FCA6\n\n      BLUE LEVEL\n    ACCESS DENIED!"
+$BS_GOLDDENIED: "^FCA6\n\n      GOLD LEVEL\n    ACCESS DENIED!"
 
-# Pickups
-$BS_GOTREDCARD: "Access card: red level"
-$BS_GOTYELLOWCARD: "Access card: yellow level"
-$BS_GOTGREENCARD: "Access card: green level"
-$BS_GOTBLUECARD: "Access card: blue level"
-$BS_GOTGOLDCARD: "Access card: gold level"
-$BS_GOTFIRSTAID: "Health: first aid kit"
-$BS_GOTMEAT: "Food: raw meat"
-$BS_GOTSANDWICH: "Food: sandwich"
-$BS_GOTCANDY: "Food: candy bar"
-$BS_GOTWATER: "Food: fresh water"
-$BS_GOTPUDDLE: "Food: water puddle"
-$BS_GOTCHARGEUNIT: "Weapon: energy pack (%a units)"
-$BS_GOTCHARGEPACK: "Weapon: energy pack (%a units)"
-$BS_GOTTOKEN: "Food token: 1 credit"
-$BS_GOTTOKENS5: "Food token: 5 credits"
-$BS_GOTMONEYBAG: "Bonus: money bag"
-$BS_GOTLOOT: "Bonus: loot"
-$BS_GOTGOLD: "Bonus: gold bars"
-$BS_GOTXYLANORB: "Bonus: xylan orb"
-$BS_GOTSLOWFIRE: "Weapon: slow fire protector"
-$BS_GOTRAPIDASSAULT: "Weapon: rapid assault weapon"
-$BS_GOTDUALNEUTRON: "Weapon: dual neutron disrupter"
-$BS_GOTPLASMADISCHARGE: "Weapon: plasma discharge unit"
+# Pickups (bstone's bonus_msg)
+$BS_GOTREDCARD: "^SH001^FC57\n\n ACCESS CARD:\n^FCA6  RED LEVEL"
+$BS_GOTYELLOWCARD: "^SH002^FC57\n\n ACCESS CARD:\n^FCA6 YELLOW LEVEL"
+$BS_GOTGREENCARD: "^SH003^FC57\n\n ACCESS CARD:\n^FCA6 GREEN LEVEL"
+$BS_GOTBLUECARD: "^SH004^FC57\n\n ACCESS CARD:\n^FCA6  BLUE LEVEL"
+$BS_GOTGOLDCARD: "^SH005^FC57\n\n ACCESS CARD:\n^FCA6  GOLD LEVEL"
+$BS_GOTFIRSTAID: "^SH00A^FC57\n\n   HEALTH:\n^FCA6  FIRST AID\n     KIT"
+$BS_GOTMEAT: "^SH010^FC57\n\n    FOOD:\n^FCA6  RAW MEAT"
+$BS_GOTHAM: "^SH011^FC57\n\n    FOOD:\n^FCA6  RAW MEAT"
+$BS_GOTSANDWICH: "^SH089^FC57\n\n    FOOD:\n^FCA6  SANDWICH"
+$BS_GOTCANDY: "^SH088^FC57\n\n    FOOD:\n^FCA6  CANDY BAR"
+$BS_GOTWATER: "^SH012^FC57\n\n    FOOD:\n^FCA6 FRESH WATER"
+$BS_GOTPUDDLE: "^SH013^FC57\n\n    FOOD:\n^FCA6 WATER PUDDLE"
+$BS_GOTCHARGEUNIT: "^SH006^FC57\n   WEAPON:\n^FCA6 ENERGY PACK\n   (%a UNITS)"
+$BS_GOTCHARGEPACK: "^SH006^FC57\n   WEAPON:\n^FCA6 ENERGY PACK\n   (%a UNITS)"
+$BS_GOTTOKEN: "^SH020^FC57\n  FOOD TOKEN:\n^FCA6   1 CREDIT\n\n  TOKENS: {FoodToken:00}"
+$BS_GOTTOKENS5: "^SH021^FC57\n  FOOD TOKEN:\n^FCA6   5 CREDITS\n  TOKENS: {FoodToken:00}"
+$BS_GOTMONEYBAG: "^SH00C^FC57\n\n    BONUS:\n^FCA6  MONEY BAG"
+$BS_GOTLOOT: "^SH00D^FC57\n\n    BONUS:\n^FCA6    LOOT"
+$BS_GOTGOLD: "^SH00E^FC57\n\n    BONUS:\n^FCA6  GOLD BARS"
+$BS_GOTXYLANORB: "^SH00F^FC57\n\n    BONUS:\n^FCA6  XYLAN ORB"
+$BS_GOTSLOWFIRE: "^SH007^FC57\n\n   WEAPON:\n^FCA6  SLOW FIRE\n  PROTECTOR"
+$BS_GOTRAPIDASSAULT: "^SH008^FC57\n\n   WEAPON:\n^FCA6 RAPID ASSAULT\n   WEAPON"
+$BS_GOTDUALNEUTRON: "^SH009^FC57\n\n   WEAPON:\n^FCA6 DUAL NEUTRON\n   DISRUPTER"
+$BS_GOTPLASMADISCHARGE: "^SH08A^FC57\n   WEAPON:\n^FCA6   PLASMA\n DISCHARGE\n    UNIT"
 
 # Food units and barrier switches
-$BS_NOTHUNGRY: "Can't eat now, not hungry."
-$BS_NOTOKENS: "You don't have any food tokens!"
-$BS_FOODUNITDRINK: "Food unit dispenses a cold beverage."
-$BS_FOODUNITSNACK: "Food unit dispenses something resembling food."
-$BS_BARRIERON: "Activating barrier"
-$BS_BARRIEROFF: "Deactivating barrier"
+$BS_NOTHUNGRY: "^FCA6\n\n    CAN'T EAT NOW,\n     NOT HUNGRY."
+$BS_NOTOKENS: "^FCA6\n\n  YOU DON'T HAVE ANY\n     FOOD TOKENS!"
+$BS_FOODUNITDRINK: "^FCA6\n\n FOOD UNIT DISPENSES\n  A COLD BEVERAGE."
+$BS_FOODUNITSNACK: "^FCA6\n FOOD UNIT DISPENSES\n SOMETHING RESEMBLING\n        FOOD."
+$BS_BARRIERON: "^FCA6\n\n  ACTIVATING BARRIER"
+$BS_BARRIEROFF: "^FCA6\n\n DEACTIVATING BARRIER"
 
-# The status bar's info area with no messages ({FoodToken} is how many the player has)
-$BS_NOMESSAGES: "No messages.\nFood tokens: {FoodToken}"
-$BS_OUTOFORDER: "Food unit machine is out of order."
+# The status bar's info area with no messages (bstone's DisplayNoMoMsgs)
+$BS_NOMESSAGES: "^FCA6\n    NO MESSAGES.^FCA8\n    FOOD TOKENS: {FoodToken}"
+$BS_OUTOFORDER: "^FCA6\n\n   FOOD UNIT MACHINE\n    IS OUT OF ORDER."
 
 # Guards and bio-techs (actordefs/blake/enemies.yaml)
 $BS_RENTACOP: "Rent-a-cop"
@@ -59,13 +64,14 @@ $BS_SWATGUARD: "SWAT guard"
 $BS_SCIENTIST: "Bio-tech"
 $BS_INFORMANT: "Informant"
 
-# Talking to bio-techs (the hint itself is the game's own text)
-$BS_INTERROGATE: "INTERROGATE:"
-$BS_INTERROGATE_INFORMANT: "INTERROGATE: INFORMANT"
-$BS_INFORMANT_AMMO: "HEY BLAKE,\nTAKE MY CHARGE PACK!"
-$BS_INFORMANT_TOKENS: "HEY BLAKE,\nTAKE MY FOOD TOKENS!"
-# Who's attacking (game-info attack-message, %k the attacker), as bstone's REBA attack info
-$BS_ATTACKING: "ATTACKING:\n%k"
+# Talking to bio-techs (bstone's Interrogate: the header, two lines down, then what's said; the
+# hint itself is the game's own text)
+$BS_INTERROGATE: "^FCA6INTERROGATE:"
+$BS_INTERROGATE_INFORMANT: "^FCA6INTERROGATE: ^FC3AINFORMANT^FCA6"
+$BS_INFORMANT_AMMO: " HEY BLAKE,\n TAKE MY CHARGE PACK!"
+$BS_INFORMANT_TOKENS: " HEY BLAKE,\n TAKE MY FOOD TOKENS!"
+# Who's attacking (game-info attack-message, %k the attacker) for one with no attackinfo of its own
+$BS_ATTACKING: "^FC17\n\n  ATTACKING:\n^FCA6 %k"
 # Each attacker's own (actordefs attackinfo), bstone's actor_info messages: info area scripts,
 # ^ANnn its animation (presenter.yaml) or ^SHnnn its picture, ^FC the text's color
 $BS_ATTACK_RENTACOP: "^AN04^FC17\n\n  ATTACKING:\n^FCA6SECTOR PATROL"
@@ -99,9 +105,9 @@ $BS_ATTACK_BIOMECH: "^AN23^FC17\n  ATTACKING:\n^FCA6   BIO-MECH\n   GUARDIAN"
 $BS_ATTACK_GENERATOR: "^SH07A^FC17\n  ATTACKING:\n^FCA6  PROJECTION\n  GENERATOR\n  EXPLOSION"
 
 # An informant's hint with the floor's points at 97-99% ({0} what, {1} its tile, {2} the player's)
-$BS_HINT_ENEMY: "There is\n{0}\nat {1}  ({2})"
-$BS_HINT_TREASURE: "There is a\n{0}\nat {1}  ({2})"
-$BS_HINT_TREASURES: "There are {0}\nat {1}  ({2})"
+$BS_HINT_ENEMY: " There is\n{0}\n at {1}  ({2})"
+$BS_HINT_TREASURE: " There is a\n {0}\n at {1}  ({2})"
+$BS_HINT_TREASURES: " There are {0}\n at {1}  ({2})"
 
 # Treasure (actordefs/blake/items.yaml tags), as bstone's informants name it
 $BS_MONEYBAG: "Money Bag"
@@ -111,8 +117,9 @@ $BS_GOLDBARS2: "Two Gold Bars"
 $BS_GOLDBARS3: "Three Gold Bars"
 $BS_GOLDBARS5: "Five Gold Bars"
 $BS_XYLANORB: "Xylan Orb"
-$BS_HINT_ALLTREASURE: "You have collected\nall treasures"
-$BS_KILLEDINFORMANT: "YOU JUST SHOT AN\nINFORMANT!\nONLY SHOOT BIO-TECHS\nTHAT SHOOT AT YOU!"
+$BS_HINT_ALLTREASURE: " You have collected\n all treasures"
+# (bstone's tabs, drawn no width, as nothing)
+$BS_KILLEDINFORMANT: "^FC39  YOU JUST SHOT AN\n    INFORMANT!\n^FC79 ONLY SHOOT BIO-TECHS\n  THAT SHOOT AT YOU!\n^FC19    DO NOT SHOOT\n    INFORMANTS!!"
 
 # Mutants and aliens (actordefs/blake/aliens.yaml)
 $BS_GENETICGUARD: "Genetic guard"
@@ -138,11 +145,11 @@ $BS_REPTILIANWARRIOR: "Reptilian warrior"
 $BS_ACIDDRAGON: "Acid dragon"
 $BS_BIOMECHGUARDIAN: "Bio-mech guardian"
 $BS_GOLDFIRE: "Dr. Goldfire"
-$BS_GENERATORSLEFT: "PROJECTION GENERATOR\nDESTROYED!\n\n- %n REMAINING -\nDESTROY THEM TO WIN!"
+$BS_GENERATORSLEFT: "^FC57 PROJECTION GENERATOR\n      DESTROYED!\n\n^FCA6   - %n REMAINING -\n DESTROY THEM TO WIN!"
 
 # Level flow (presenter.yaml, elevator.yaml); warp walls (A_Teleport)
-$BS_TRANSPORTINGOUT: "TRANSPORTING OUT"
-$BS_TRANSPORTING: "TRANSPORTING..."
+$BS_TRANSPORTINGOUT: "^FCA6\n\n\n   TRANSPORTING OUT"
+$BS_TRANSPORTING: "^FCA6\n\n    TRANSPORTING..."
 $BS_BRIEFINGHELP: " UP / DN - PAGES       ENTER - CONTINUES         ESC - EXITS"
 $BS_PAGESHELP: "           UP / DN - PAGES            ESC - EXITS"
 
