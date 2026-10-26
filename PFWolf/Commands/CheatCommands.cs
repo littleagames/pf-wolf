@@ -248,7 +248,8 @@ internal sealed class CheatCommands(
     /// <summary>
     /// Moves the player to a tile, facing <paramref name="angle"/> (degrees, 0 east) when given.
     /// Only onto open floor: a solid tile, a door or a blocking object would trap the player, and
-    /// an area number is needed for the sight/sound area bookkeeping.
+    /// an area number is needed for the sight/sound area bookkeeping (a trigger tile's is the
+    /// area beside it).
     /// </summary>
     internal bool TryTeleportPlayer(int x, int y, int? angle, out string problem)
     {
@@ -258,19 +259,27 @@ internal sealed class CheatCommands(
             problem = $"tile {x},{y} is off the level";
             return false;
         }
-        if (mapManager.TileMap[x, y] != 0 || mapManager.ActorAt[x, y] != null
-            || !mapManager.ValidArea(mapManager.MapSpot(x, y, 0)))
+        if (mapManager.TileMap[x, y] != 0 || mapManager.ActorAt[x, y] != null || !IsFloorCode(mapManager.MapSpot(x, y, 0)))
         {
             problem = $"tile {x},{y} is not open floor";
             return false;
         }
 
         session.Player.SetPosition(x, y);
-        session.Player.AreaNumber = (byte)(mapManager.MapSpot(x, y, 0) - mapManager.Floors.AreaTile);
+        session.Player.AreaNumber = mapManager.SpawnArea(x, y);
         if (angle is { } degrees)
             session.Player.Angle = (short)(((degrees % GameConstants.Angles) + GameConstants.Angles) % GameConstants.Angles);
         doors.ConnectAreas();
         return true;
+    }
+
+    // An area's floor code, or one the mapdefs floors give another use (a trigger, an ambush or
+    // actor code, the secret exit), which is open floor in the area beside it
+    bool IsFloorCode(int code)
+    {
+        var floors = mapManager.Floors;
+        return mapManager.ValidArea(code) || floors.Triggers.ContainsKey(code) || floors.ActorCodes.ContainsKey(code)
+            || code == floors.AmbushTile || code == floors.SecretExitTile;
     }
 
     internal void DiagCommand(string[] args)

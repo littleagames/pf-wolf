@@ -79,4 +79,33 @@ public class DoorAreasTests
         Assert.That(_session.Areas.AreaConnect[7, 5], Is.EqualTo(1));
         Assert.That(_session.Areas.AreaConnect[5, 7], Is.EqualTo(1));
     }
+
+    [Test]
+    [Category("GameData")]
+    public void Tp_Onto_A_Door_Trigger_Puts_The_Player_In_The_Area_Beside_It()
+    {
+        // Arrange: AOG mission 2 floor 1, its door trigger at 17,4 (west of the door at 18,4)
+        var workFolder = Path.Combine(Path.GetTempPath(), "pfwolf-doorareas-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(workFolder);
+        try
+        {
+            HeadlessGame.PrepareFolder(workFolder, "blake-aog");
+
+            // Act
+            var (exitCode, output) = HeadlessGame.Run(workFolder, "blake", "wait 10; tp 17 4; where; quit",
+                TimeSpan.FromMinutes(2), extraArgs: ["--warp", "MAP17", "--cheats"]);
+            var where = output.FirstOrDefault(line => line.StartsWith("Tile: 17,4"));
+
+            // Assert
+            Assert.That(exitCode, Is.Zero, string.Join(Environment.NewLine, output.TakeLast(30)));
+            Assert.That(output, Has.Some.EqualTo("Teleported to 17,4"));
+            Assert.That(where, Is.Not.Null, string.Join(Environment.NewLine, output.TakeLast(30)));
+            var area = int.Parse(System.Text.RegularExpressions.Regex.Match(where!, @"Area: (\d+)").Groups[1].Value);
+            Assert.That(area, Is.LessThan(45), "an area of the floor's, not the trigger code's 50");
+        }
+        finally
+        {
+            try { Directory.Delete(workFolder, recursive: true); } catch (IOException) { }
+        }
+    }
 }

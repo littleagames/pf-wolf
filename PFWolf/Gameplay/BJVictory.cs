@@ -107,7 +107,7 @@ internal sealed class BJVictory(MapManager map, GameSession session)
 
         bj.TileY = (byte)(player.TileY + 1);
         bj.SyncPosition();
-        bj.AreaNumber = (byte)(map.MapSpot(bj.TileX, bj.TileY, 0) - map.Floors.AreaTile);
+        bj.AreaNumber = map.SpawnArea(bj.TileX, bj.TileY);
 
         // SpawnNewObj started every actor a random number of tics into its first frame.
         bj.TicCount = map.SpawnTicCount(bj.CurrentState);

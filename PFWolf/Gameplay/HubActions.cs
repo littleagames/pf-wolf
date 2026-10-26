@@ -373,8 +373,8 @@ internal sealed class HubActions(
         ob.TileX = (byte)to.X;
         ob.TileY = (byte)to.Y;
         ob.RecenterOnTile();
-        if (mapManager.ValidArea(mapManager.MapSpot(to.X, to.Y, 0)))
-            ob.AreaNumber = (byte)(mapManager.MapSpot(to.X, to.Y, 0) - mapManager.Floors.AreaTile);
+        // the area there, or beside it when it's a floor code that isn't one (a trigger)
+        ob.AreaNumber = mapManager.SpawnArea(to.X, to.Y);
         if (warp.Dir is { } dir)
             ob.Dir = dir;
         ob.SyncPosition();
