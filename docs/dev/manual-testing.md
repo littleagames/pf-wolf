@@ -565,6 +565,11 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       a wall), and on a "?" patch badge the Patch. Picking one opens F11 on a new entry with that
       number (an existing one is just shown); Floor code opens floors. Save it into a mod and the
       red mark goes away.
+- [ ] **(never tried)** Map grid and 3D view right click → Go to map definition (greyed out on a
+      tile the mapdefs know nothing of): lists the tile's wall/door (or the floors codes), patch,
+      and its object value's thing/player start/trigger/diagonal/door lock/map-info entry; picking
+      one opens F11 on it. In 3D a right-drag still looks around with no menu, and the menu is for
+      the surface clicked (a wall face is the wall's tile, not the floor in front of it).
 
 ## 2.17 New mod
 

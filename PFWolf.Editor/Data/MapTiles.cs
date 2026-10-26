@@ -387,6 +387,49 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         }
     }
 
+    /// <summary>
+    /// The mapdefs entries the tile's values are (the other side of <see cref="MissingDefinitions"/>):
+    /// its wall or door, the floors codes for a floor code (the table isn't by id), its patch, and
+    /// each table that has its object-plane value (map-info by the high byte), unless that value is
+    /// data for the tile west of it
+    /// </summary>
+    public IEnumerable<(string Table, int Id)> KnownDefinitions(int x, int y)
+    {
+        int tile = this[0, x, y];
+        switch (KindAt(x, y))
+        {
+            case TileKind.Wall:
+                yield return ("walls", tile);
+                break;
+            case TileKind.Door:
+                yield return ("doors", tile);
+                break;
+            case TileKind.Floor:
+                yield return ("floors", tile);
+                break;
+        }
+
+        int patch = Patch(x, y);
+        if (patch != 0 && Defs.Patches.ContainsKey(patch))
+            yield return ("patches", patch);
+
+        int obj = this[1, x, y];
+        if (obj == 0 || IsValueTile(x, y))
+            yield break;
+        if (Defs.Things.ContainsKey(obj))
+            yield return ("things", obj);
+        if (Defs.PlayerStarts.ContainsKey(obj))
+            yield return ("player-starts", obj);
+        if (Defs.Triggers.ContainsKey(obj))
+            yield return ("triggers", obj);
+        if (Defs.Diagonals.ContainsKey(obj))
+            yield return ("diagonals", obj);
+        if (Defs.DoorLocks.ContainsKey(obj))
+            yield return ("door-locks", obj);
+        if (MapInfoKind(obj) != null)
+            yield return ("map-info", obj >> 8);
+    }
+
     /// <summary>A diagonal marker, which only shapes a wall</summary>
     public MapDiagonalTranslation? Diagonal(int x, int y)
         => KindAt(x, y) == TileKind.Wall ? Defs.Diagonals.GetValueOrDefault(this[1, x, y]) : null;

@@ -103,4 +103,47 @@ public class MissingDefinitionsTests
         // Assert
         Assert.That(tables, Does.Contain("diagonals"));
     }
+
+    [Test]
+    public void A_Known_Floor_Tile_Goes_To_The_Floors_Codes_And_Its_Thing()
+    {
+        // Arrange
+        var tiles = Tiles(map => map.MapData[1][At(5, 5)] = Puddle);
+
+        // Act
+        var known = tiles.KnownDefinitions(5, 5).ToList();
+
+        // Assert
+        Assert.That(known, Is.EqualTo(new[] { ("floors", (int)Floor), ("things", (int)Puddle) }));
+    }
+
+    [Test]
+    public void A_Known_Wall_Goes_To_Its_Wall_And_Its_Patch()
+    {
+        // Arrange
+        var tiles = Tiles(map => map.MapData[0][At(0, 0)] = (ushort)(Wall | Patch << MapConstants.PatchShift));
+
+        // Act
+        var known = tiles.KnownDefinitions(0, 0).ToList();
+
+        // Assert
+        Assert.That(known, Is.EqualTo(new[] { ("walls", (int)Wall), ("patches", (int)Patch) }));
+    }
+
+    [Test]
+    public void A_Tile_The_Mapdefs_Dont_Know_Has_Nowhere_To_Go()
+    {
+        // Arrange
+        var tiles = Tiles(map =>
+        {
+            map.MapData[0][At(5, 5)] = 60;
+            map.MapData[1][At(5, 5)] = 345;
+        });
+
+        // Act
+        var known = tiles.KnownDefinitions(5, 5).ToList();
+
+        // Assert
+        Assert.That(known, Is.Empty);
+    }
 }

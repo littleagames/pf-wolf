@@ -425,18 +425,38 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         if (Tiles is not { } tiles || x < 0 || y < 0 || x >= tiles.Width || y >= tiles.Height)
             return [];
-        return tiles.MissingDefinitions(x, y).Select(missing => (missing.Table switch
-        {
-            "walls" => $"Wall {missing.Id}",
-            "doors" => $"Door {missing.Id}",
-            "floors" => $"Floor code {missing.Id} (the floors codes)…",
-            "patches" => $"Patch {missing.Id}",
-            "things" => $"Thing {missing.Id}",
-            "triggers" => $"Trigger {missing.Id}",
-            "player-starts" => $"Player start {missing.Id}",
-            "diagonals" => $"Diagonal {missing.Id}",
-            _ => $"{missing.Table} {missing.Id}",
-        }, missing.Table, missing.Id)).ToList();
+        return tiles.MissingDefinitions(x, y).Select(missing => (DefinitionHeader(missing.Table, missing.Id), missing.Table, missing.Id)).ToList();
+    }
+
+    /// <summary>The map right-click menu's Go to map definition items for a tile: each mapdefs entry its values are</summary>
+    public IReadOnlyList<(string Header, string Table, int Id)> KnownDefinitionsAt(int x, int y)
+    {
+        if (Tiles is not { } tiles || x < 0 || y < 0 || x >= tiles.Width || y >= tiles.Height)
+            return [];
+        return tiles.KnownDefinitions(x, y).Select(known => (DefinitionHeader(known.Table, known.Id), known.Table, known.Id)).ToList();
+    }
+
+    private static string DefinitionHeader(string table, int id) => table switch
+    {
+        "walls" => $"Wall {id}",
+        "doors" => $"Door {id}",
+        "floors" => $"Floor code {id} (the floors codes)…",
+        "patches" => $"Patch {id}",
+        "things" => $"Thing {id}",
+        "triggers" => $"Trigger {id}",
+        "player-starts" => $"Player start {id}",
+        "diagonals" => $"Diagonal {id}",
+        "door-locks" => $"Door lock {id}",
+        "map-info" => $"Map-info code {id} (0x{id:X2}xx)",
+        _ => $"{table} {id}",
+    };
+
+    /// <summary>Opens the definitions window on a mapdefs entry a value the map has is (the floors codes for a floor code)</summary>
+    public void GoToMapDefinition(string table, int id)
+    {
+        ShowDefinitions();
+        _definitions?.ShowEntry(Definitions.DefinitionKind.MapDefs,
+            table == "floors" ? ["floors"] : [table, id.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
     }
 
     /// <summary>

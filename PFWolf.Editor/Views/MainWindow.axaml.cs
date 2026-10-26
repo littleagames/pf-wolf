@@ -228,9 +228,26 @@ public partial class MainWindow : Window, IEditorDialogs
 
     private void OnTileHovered(object? sender, TileEventArgs e) => ViewModel.Hover(e.X, e.Y);
 
-    /// <summary>The map's right-click menu: Create in mapdefs, for the tile's values they don't know</summary>
+    /// <summary>
+    /// The map's and the 3D view's right-click menu: Create in mapdefs, for the tile's values they
+    /// don't know, and Go to map definition, for the ones they do
+    /// </summary>
     private void OnTileContextRequested(object? sender, TileEventArgs e)
     {
+        var known = ViewModel.KnownDefinitionsAt(e.X, e.Y);
+        var goTo = new MenuItem
+        {
+            Header = known.Count > 0 ? "Go to map definition" : "Go to map definition (the mapdefs know nothing of this tile)",
+            IsEnabled = known.Count > 0,
+            [ToolTip.TipProperty] = "Opens the definitions window on the mapdefs entry",
+            ItemsSource = known.Select(item =>
+            {
+                var choice = new MenuItem { Header = item.Header };
+                choice.Click += (_, _) => ViewModel.GoToMapDefinition(item.Table, item.Id);
+                return choice;
+            }).ToList(),
+        };
+
         var missing = ViewModel.MissingDefinitionsAt(e.X, e.Y);
         var create = new MenuItem
         {
@@ -244,8 +261,8 @@ public partial class MainWindow : Window, IEditorDialogs
                 return choice;
             }).ToList(),
         };
-        var menu = new ContextMenu { ItemsSource = new[] { create } };
-        menu.Open(Canvas);
+        var menu = new ContextMenu { ItemsSource = new[] { create, goTo } };
+        menu.Open(sender as Control ?? Canvas);
     }
 
     private void ExitEditor(object? sender, RoutedEventArgs e) => Close();

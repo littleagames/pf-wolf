@@ -70,6 +70,13 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     /// <summary>A tool's key letter was pressed over the view (not one used for flying)</summary>
     public event EventHandler<string>? ToolKeyPressed;
 
+    /// <summary>A right click (a press that didn't look around) on a surface: its tile's menu</summary>
+    public event EventHandler<TileEventArgs>? TileContextRequested;
+
+    // The right button is down and hasn't moved past ClickSlop pixels yet: let go, it's a click
+    private Point? _rightClickStart;
+    private const double ClickSlop = 4;
+
     private const int FloatsPerVertex = 11;   // position 3, texture 2, color 4, scroll 2
     private const double TicsPerSecond = 70;     // the game's clock, which scrollers move by
 
@@ -691,7 +698,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         var point = e.GetCurrentPoint(this);
         _shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         if (point.Properties.IsRightButtonPressed)
-            _lookStart = point.Position;
+            _lookStart = _rightClickStart = point.Position;
         else if (point.Properties.IsMiddleButtonPressed)
             _panStart = point.Position;
         else if (point.Properties.IsLeftButtonPressed && Controller is { } controller)
@@ -713,8 +720,16 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        // A right press that didn't look around: the menu of the tile the surface is on
+        bool menu = _rightClickStart != null && e.InitialPressMouseButton == MouseButton.Right;
         EndGesture();
         e.Pointer.Capture(null);
+        if (menu && _hover is { } hit && Tiles is { } tiles
+            && hit.Ref.X >= 0 && hit.Ref.Y >= 0 && hit.Ref.X < tiles.Width && hit.Ref.Y < tiles.Height)
+        {
+            TileContextRequested?.Invoke(this, new TileEventArgs(hit.Ref.X, hit.Ref.Y));
+            e.Handled = true;
+        }
     }
 
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
@@ -725,7 +740,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
 
     private void EndGesture()
     {
-        _lookStart = _panStart = null;
+        _lookStart = _panStart = _rightClickStart = null;
         if (_toolDown)
         {
             _toolDown = false;
@@ -742,6 +757,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         {
             if (_lookStart is { } look)
             {
+                if (_rightClickStart is { } start && (Math.Abs(position.X - start.X) > ClickSlop || Math.Abs(position.Y - start.Y) > ClickSlop))
+                    _rightClickStart = null;
                 var delta = position - look;
                 camera.Yaw -= (float)delta.X * 0.3f;
                 camera.Pitch -= (float)delta.Y * 0.3f;
