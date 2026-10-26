@@ -146,6 +146,13 @@ public class StatusBarElement
     /// <summary>Numbers: a picture drawn side by side across the box in place of box-color</summary>
     public string? BoxPic { get; set; }
 
+    /// <summary>
+    /// Numbers: bar fills the box with that piece of the bar's own picture (top's for a top part,
+    /// else background's), in place of box-color: the text sits on the bar as drawn (Blake Stone's
+    /// top bar)
+    /// </summary>
+    public string? BoxFill { get; set; }
+
     /// <summary>Numbers: another part (weapon) drawn first, under the number</summary>
     public string? Behind { get; set; }
 

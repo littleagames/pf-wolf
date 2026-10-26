@@ -16,8 +16,9 @@
 #   info-area:      where messages in an `anchor: Status` style (hud-messages.yaml) are written:
 #                   pic drawn at box's corner, text from x, y within size [width, height], and
 #                   idle-text while there are none
-# Numbers also take prefix, suffix, align (left, right, center), box with box-color or box-pic
-# (cleared first: the color, or the picture side by side across it), behind (a part drawn first, under it) and digits 0 (no padding). Keys take spacing-x
+# Numbers also take prefix, suffix, align (left, right, center), box with box-color, box-pic or
+# box-fill (cleared first: the color, the picture side by side across it, or with box-fill: bar
+# that piece of the bar's own picture), behind (a part drawn first, under it) and digits 0 (no padding). Keys take spacing-x
 # (rightwards) and size [width, height] for squares in each key's "key.statusbarcolor" /
 # "key.statusbaremptycolor".
 background:
@@ -41,7 +42,7 @@ level:
   font: BlakeHud
   color: "175"
   box: [17, 4, 60, 8]
-  box-color: Black
+  box-fill: bar
 lives:
   top: true
   x: 267
@@ -51,7 +52,7 @@ lives:
   font: BlakeHud
   color: "175"
   box: [267, 4, 50, 8]
-  box-color: Black
+  box-fill: bar
 location:
   top: true
   x: 160

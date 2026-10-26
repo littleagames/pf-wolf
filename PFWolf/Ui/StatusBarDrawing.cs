@@ -191,8 +191,8 @@ internal sealed class StatusBarDrawing(
     }
 
     /// <summary>
-    /// Fills a part's box (statusbar.yaml box, box-color or box-pic) so what it showed before goes; not on a
-    /// bar drawn over the view (overlay), where the frame under it is drawn afresh
+    /// Fills a part's box (statusbar.yaml box, box-color, box-pic or box-fill) so what it showed
+    /// before goes; not on a bar drawn over the view (overlay), where the frame under it is drawn afresh
     /// </summary>
     internal void ClearBox(Assets.StatusBarElement element)
     {
@@ -200,6 +200,14 @@ internal sealed class StatusBarDrawing(
             return;
         using var _ = StatusBarOrigin(element);
         int top = StatusBarTop(element) + element.Box[1];
+        // box-fill bar: that piece of the bar's own picture, where the part lines up with it (not
+        // pinned to a wide screen's edge)
+        if (string.Equals(element.BoxFill, "bar", StringComparison.OrdinalIgnoreCase) && PinSide(element) == UiSide.Center
+            && StatusBar.Get(element.Top ? "top" : "background") is { Pic: { Length: > 0 } bar })
+        {
+            graphics.DrawPicRegion(bar, element.Box[0], element.Box[1], element.Box[2], element.Box[3], element.Box[0], top);
+            return;
+        }
         // box-pic: the picture across it, side by side (Blake Stone's ECG grid pieces under the health)
         if (!string.IsNullOrEmpty(element.BoxPic) && graphics.PicSize(element.BoxPic) is { Width: > 0 } piece)
         {
