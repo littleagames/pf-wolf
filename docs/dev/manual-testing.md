@@ -199,6 +199,8 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       ..." as words, once while it's up. **(never tried)** Planet Strike's ammo number and the
       top bar's black shadow by eye.
 - [ ] An electro-alien firing a stream of bolts (about 14) each volley.
+- [ ] **(never tried)** The auto charge pistol on WAIT: fire does nothing (no animation, flash or
+      sound); held through, it fires as soon as READY lights.
 - [ ] **(never tried)** Doors beside a floor trigger join their rooms: mission 2 floor 1's doors
       at 18,4 and 18,8 (west of them is door trigger 158); enemies through them hear shots, and
       their sound plays when the player's area is joined.

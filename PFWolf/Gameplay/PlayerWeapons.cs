@@ -318,6 +318,10 @@ internal sealed class PlayerWeapons(
     internal int WeaponChargeTics(string? weapon) =>
         weapon == null ? 0 : inventory.GetIntProperty(weapon, "weapon.chargetics", 0);
 
+    /// <summary>Whether the weapon in hand charges between shots and isn't charged yet (its WAIT light)</summary>
+    internal bool IsCharging() =>
+        session.PlayerState.WeaponCharge > 0 && WeaponChargeTics(session.PlayerState.Weapon) > 0;
+
     /// <summary>
     /// Whether the weapon in hand can shoot now as far as its charge goes; if it can and it
     /// charges, starts the next charge (the shot empties it)

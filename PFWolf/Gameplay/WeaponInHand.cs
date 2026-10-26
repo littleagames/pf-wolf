@@ -319,6 +319,11 @@ internal sealed class WeaponInHand(
         if (session.NoShots)
             return;
 
+        // A weapon still charging (weapon.chargetics: Blake Stone's auto charge pistol on WAIT)
+        // doesn't start its attack at all, as bstone's Cmd_Fire: no shot, flash or sound
+        if (weapons.IsCharging())
+            return;
+
         if (weapons.CanReload(playerstate.Weapon) && weapon.ResolvedStates.ContainsKey(ReloadState)
             && (!weapons.IsLoaded(playerstate.Weapon) || session.PlayerInput.IsFreshPress(ButtonType.Reload)))
         {
@@ -420,7 +425,7 @@ internal sealed class WeaponInHand(
     /// <summary>Fire still held and a round ready: back to Hold (or Fire, for a weapon without one).</summary>
     internal void ReFire(Entities.Actors.Actor weapon)
     {
-        if (!session.PlayerInput.IsPressed(ButtonType.Attack) || !weapons.IsLoaded(session.PlayerState.Weapon))
+        if (!session.PlayerInput.IsPressed(ButtonType.Attack) || !weapons.IsLoaded(session.PlayerState.Weapon) || weapons.IsCharging())
             return;
         if (!JumpWeaponState(weapon, "Hold"))
             JumpWeaponState(weapon, "Fire");

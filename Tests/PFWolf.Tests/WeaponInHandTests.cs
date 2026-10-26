@@ -172,6 +172,22 @@ public class WeaponInHandTests
                 frames: [A]
                 tics-per-frame: 1
                 next-state: Deselect
+        ChargePistol:
+          parent: Weapon
+          properties:
+            "weapon.slot": 1
+            "weapon.chargetics": 50
+          states:
+            Ready:
+              - sprite: ACPG
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Ready
+            Fire:
+              - sprite: ACPG
+                frames: [B, C, D, E]
+                tics-per-frame: 6
+                next-state: Ready
         """;
 
     private sealed class Rig
@@ -475,6 +491,25 @@ public class WeaponInHandTests
         // Assert
         Assert.That(sprite.CurrentState!.StateName, Is.EqualTo("Fire"));
         Assert.That(rig.Session.PlayerInput.IsFreshPress(ButtonType.Attack), Is.False);
+    }
+
+    [Test]
+    public void A_Weapon_Still_Charging_Doesnt_Start_Its_Attack()
+    {
+        // Arrange: Blake Stone's auto charge pistol on WAIT, fire pressed
+        var rig = new Rig("ChargePistol") { InHand = "ChargePistol" };
+        var sprite = rig.Sprite;
+        rig.Session.PlayerState.WeaponCharge = 20;
+        rig.Session.PlayerInput.SetPressed(ButtonType.Attack, true);
+
+        // Act
+        rig.Hand.WeaponReady(sprite);
+
+        // Assert: still ready, no animation; once charged, the press fires
+        Assert.That(sprite.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
+        rig.Session.PlayerState.WeaponCharge = 0;
+        rig.Hand.WeaponReady(sprite);
+        Assert.That(sprite.CurrentState!.StateName, Is.EqualTo("Fire"));
     }
 
     [Test]
