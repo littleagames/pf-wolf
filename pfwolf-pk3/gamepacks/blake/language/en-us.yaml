@@ -101,6 +101,16 @@ $BS_ATTACK_GENERATOR: "^SH07A^FC17\n  ATTACKING:\n^FCA6  PROJECTION\n  GENERATOR
 # An informant's hint with the floor's points at 97-99% ({0} what, {1} its tile, {2} the player's)
 $BS_HINT_ENEMY: "There is\n{0}\nat {1}  ({2})"
 $BS_HINT_TREASURE: "There is a\n{0}\nat {1}  ({2})"
+$BS_HINT_TREASURES: "There are {0}\nat {1}  ({2})"
+
+# Treasure (actordefs/blake/items.yaml tags), as bstone's informants name it
+$BS_MONEYBAG: "Money Bag"
+$BS_LOOT: "Loot"
+$BS_GOLDBAR: "Gold Bar"
+$BS_GOLDBARS2: "Two Gold Bars"
+$BS_GOLDBARS3: "Three Gold Bars"
+$BS_GOLDBARS5: "Five Gold Bars"
+$BS_XYLANORB: "Xylan Orb"
 $BS_HINT_ALLTREASURE: "You have collected\nall treasures"
 $BS_KILLEDINFORMANT: "YOU JUST SHOT AN\nINFORMANT!\nONLY SHOOT BIO-TECHS\nTHAT SHOOT AT YOU!"
 

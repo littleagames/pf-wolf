@@ -30,6 +30,7 @@ public static class ActorProperties
     [
         // Any actor
         Text("tag", "Its name in messages: an obituary's %o, the class menu (a $NAME language key or the name)"),
+        Bool("tag.plural", "Its tag names more than one thing (Blake Stone's \"Two Gold Bars\"): an informant's hint says \"There are\" for it"),
         Int("health", "Its health. An enemy on a skill whose game-info enemy-health names another property (health.normal) takes that one instead, when it has it."),
         Int("health.SKILL", "Its health on a skill: the property a game-info skill's enemy-health names (health.baby, health.easy, health.normal, health.hard)"),
         Int("speed", "How fast it moves, in 1/65536 tile a tic: a monster's walking speed, a projectile's flight. Left out: 512 for an enemy, 1500 for a mover with no health (the Pac-Man ghosts), 0x2000 for an A_SpawnProjectile or A_FireProjectile projectile, 0x1C00 for an A_FireMissile missile"),

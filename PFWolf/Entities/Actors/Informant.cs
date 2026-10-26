@@ -124,7 +124,8 @@ internal record Informant : BlakeMonster
         if (actors.OfType<Monster>().FirstOrDefault(m => m.CountsAsKill && m.RuntimeFlags.Has(ObjFlags.Shootable)) is { } enemy)
             text = string.Format(HudMessageManager.Localize("$BS_HINT_ENEMY"), ActorTag(enemy), Where(enemy), player);
         else if (actors.OfType<Inventory>().FirstOrDefault(i => i.HasFlag("COUNTITEM")) is { } treasure)
-            text = string.Format(HudMessageManager.Localize("$BS_HINT_TREASURE"), SpacedName(ActorTag(treasure)), Where(treasure), player);
+            text = string.Format(HudMessageManager.Localize(treasure.PropertyBool("tag.plural") ? "$BS_HINT_TREASURES" : "$BS_HINT_TREASURE"),
+                SpacedName(ActorTag(treasure)), Where(treasure), player);
         else
             text = HudMessageManager.Localize("$BS_HINT_ALLTREASURE");
         return text.ToUpperInvariant();

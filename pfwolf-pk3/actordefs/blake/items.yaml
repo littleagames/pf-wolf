@@ -256,6 +256,7 @@ FoodTokens5:
 MoneyBag:
   parent: ScoreItem
   properties:
+    "tag": "$BS_MONEYBAG"
     "inventory.amount": 100
     "inventory.pickupsound": "bs/bonus1"
     "inventory.pickupmessage": "$BS_GOTMONEYBAG"
@@ -268,6 +269,7 @@ MoneyBag:
 Loot:
   parent: ScoreItem
   properties:
+    "tag": "$BS_LOOT"
     "inventory.amount": 500
     "inventory.pickupsound": "bs/bonus2"
     "inventory.pickupmessage": "$BS_GOTLOOT"
@@ -280,6 +282,7 @@ Loot:
 Gold1:
   parent: ScoreItem
   properties:
+    "tag": "$BS_GOLDBAR"
     "inventory.amount": 250
     "inventory.pickupsound": "bs/bonus3"
     "inventory.pickupmessage": "$BS_GOTGOLD"
@@ -292,6 +295,8 @@ Gold1:
 Gold2:
   parent: Gold1
   properties:
+    "tag": "$BS_GOLDBARS2"
+    "tag.plural": true
     "inventory.amount": 500
   states:
     Spawn:
@@ -302,6 +307,8 @@ Gold2:
 Gold3:
   parent: Gold1
   properties:
+    "tag": "$BS_GOLDBARS3"
+    "tag.plural": true
     "inventory.amount": 750
   states:
     Spawn:
@@ -312,6 +319,8 @@ Gold3:
 GoldBars:
   parent: Gold1
   properties:
+    "tag": "$BS_GOLDBARS5"
+    "tag.plural": true
     "inventory.amount": 1000
   states:
     Spawn:
@@ -322,6 +331,7 @@ GoldBars:
 XylanOrb:
   parent: ScoreItem
   properties:
+    "tag": "$BS_XYLANORB"
     "inventory.amount": 5000
     "inventory.pickupsound": "bs/bonus4"
     "inventory.pickupmessage": "$BS_GOTXYLANORB"
