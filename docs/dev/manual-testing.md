@@ -252,6 +252,8 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       locked or one-way door left shut, a blown door after save/load.
 - [ ] **(partly checked)** No firing while Goldfire morphs; firing again once he's morphed.
 - [ ] Radar at 4x shows pushwalls seen beside somewhere seen (cyan), not at 1x or 2x.
+- [ ] Radar turned so the way you face is up: a thing on the tile ahead shows above you, the
+      room in front at the top; facing east, what's south of you is on the right.
 - [ ] Help pages and story: Planet Strike's own pictures (keys 6 and 7, cannon, detonator,
       the story's pictures, the cube animation).
 - [ ] **(partly checked)** A detonator caught in another's blast goes off 20 tics later.

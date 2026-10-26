@@ -151,9 +151,10 @@ internal sealed class Radar(
         // The map turned so the player's facing is up, as bstone walks it
         double px = session.Player.X / 65536.0, py = session.Player.Y / 65536.0;
         double angle = session.Player.Angle * Math.PI / 180;
-        // The sine with the sign that keeps the way the player faces at the top (checked against
-        // the automap; bstone's own sign put it at the bottom here)
-        double psin = -Math.Sin(angle), pcos = Math.Cos(angle);
+        // bstone's own signs: facing north (90), the top row is py - radius, north of the player,
+        // so the way the player faces is at the top (checked in game: a card on the tile ahead
+        // shows above the player)
+        double psin = Math.Sin(angle), pcos = Math.Cos(angle);
         double baselmx = px + (radius * pcos - radius * psin);
         double baselmy = py - (radius * psin + radius * pcos);
         double xinc = -pcos, yinc = psin;
