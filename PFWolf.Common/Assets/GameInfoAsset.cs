@@ -1778,6 +1778,12 @@ public record MapInfo
     /// </summary>
     public int FloorNumber { get; init; }
 
+    /// <summary>
+    /// The status bar's level text in place of its prefix and number (Blake Stone's "SECRET 1"
+    /// on a secret floor); the floor number when unset
+    /// </summary>
+    public string? LevelLabel { get; init; }
+
     /// <summary>The par time in seconds, shown on the level-end screen; finishing sooner earns a time bonus</summary>
     public int ParTime { get; init; } = 0;
 

@@ -385,8 +385,18 @@ internal sealed class StatusBarDrawing(
         var gameInfo = engine.GetGameInfo();
         var mapInfo = gameInfo.Maps[session.GameState.MapOn];
         //var mapInfo = MapInfoMappings.GameInfo.Maps[session.GameState.MapOn];
-        if (StatusBarHidden) return;
-        LatchNumber("level", mapInfo.FloorNumber);
+        if (StatusBarHidden || StatusBar.Get("level") is not { } element) return;
+
+        // A map's own level-label (a secret floor's "SECRET 1") in place of the prefix and number
+        if (!string.IsNullOrEmpty(mapInfo.LevelLabel))
+        {
+            if ((element.Font ?? StatusBar.Get("numbers")?.Font) is not { Length: > 0 } font)
+                return;
+            ClearBox(element);
+            DrawStatusText(element, hudMessages.Localize(mapInfo.LevelLabel), font, element.Color ?? StatusBar.Get("numbers")?.Color ?? "White");
+            return;
+        }
+        LatchNumber("level", mapInfo.FloorNumber + element.Add);
     }
 
     internal void DrawLives()

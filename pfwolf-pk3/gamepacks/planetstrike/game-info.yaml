@@ -77,7 +77,8 @@ clusters: !replace
 # Area names are the game's own (its LEVEL_DESCS text); music is bstone's songs table. Lighting is
 # bstone's for the area number mod 6 (shade_max 36/51/62/63/18/52 over normal shade divisor
 # 1/6/3/4/1/2): fade-start 4.52 x (divisor / 6) x (51 / shade_max) tiles, max-fade shade_max / 63.
-# Areas 1, 7, 13 and 19 have Aliens of Gold's (the default map's).
+# Areas 1, 7, 13 and 19 have Aliens of Gold's (the default map's). The four secret areas show
+# "SECRET 1" to "SECRET 4" on the top bar (level-label) in place of "AREA: n".
 maps: !replace
   MAP01:
     name: "TRANSPORT ARRIVAL AREA"
@@ -217,24 +218,28 @@ maps: !replace
   MAP21:
     name: "MUTANT PROGRAMMING"
     floor-number: 20
+    level-label: "SECRET 1"
     cluster: 1
     music: CATACOMB
     shading: { fade-start: 1.86, max-fade: 98 }
   MAP22:
     name: "PLASMA TEST AREAS"
     floor-number: 21
+    level-label: "SECRET 2"
     cluster: 1
     music: PLOT
     shading: { fade-start: 2.44, max-fade: 100 }
   MAP23:
     name: "BIO MECHANICS LABS"
     floor-number: 22
+    level-label: "SECRET 3"
     cluster: 1
     music: GIVING
     shading: { fade-start: 2.13, max-fade: 29 }
   MAP24:
     name: "CYBORG REPAIR BAYS"
     floor-number: 23
+    level-label: "SECRET 4"
     cluster: 1
     music: VACCINAP
     shading: { fade-start: 1.48, max-fade: 83 }

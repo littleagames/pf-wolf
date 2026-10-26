@@ -11,6 +11,20 @@
 #                   zoom-pics (1x, 2x, 4x) at zoom-x, zoom-y; zooming in uses up item; colors
 heart-monitor: !remove
 
+# The top bar's "AREA: n", the area's number shown from 1 (bstone's mapon + 1), a pixel left of
+# Aliens of Gold's "FLOOR: n"; a secret area's game-info level-label ("SECRET 1") in its place
+level:
+  top: true
+  x: 16
+  y: 5
+  digits: 0
+  add: 1
+  prefix: "AREA: "
+  font: BlakeHud
+  color: "175"
+  box: [16, 4, 61, 8]
+  box-fill: bar
+
 health:
   x: 128
   y: 10

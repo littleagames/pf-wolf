@@ -255,13 +255,15 @@ mission-won-message: MissionCompleteText
 # Dying puts Blake back as he came onto the floor, less a life
 death-restores-level-start: true
 
-# Floor names are the game's own (its FloorNames text)
+# Floor names are the game's own (its FloorNames text). Each mission's secret floors, 0 and 10,
+# show "SECRET 1" and "SECRET 2" on the top bar (level-label) in place of "FLOOR: n", as bstone's.
 maps:
   # Mission 1
   MAP01:
     name: "SECURITY TRAINING ARENAS"
     next: MAP02
     floor-number: 0
+    level-label: "SECRET 1"
     cluster: 1
     music: INCNRATN
   MAP02:
@@ -321,6 +323,7 @@ maps:
   MAP11:
     name: "SECRET ALIEN CHAMBERS"
     floor-number: 10
+    level-label: "SECRET 2"
     cluster: 1
     music: INCNRATN
   MAP12:
@@ -340,6 +343,7 @@ maps:
     name: "POD ALIEN STORAGE AND TRANSPORT"
     next: MAP17
     floor-number: 0
+    level-label: "SECRET 1"
     cluster: 2
     music: FREEDOMA
   MAP17:
@@ -399,6 +403,7 @@ maps:
   MAP26:
     name: "SECRET STORAGE CHAMBERS"
     floor-number: 10
+    level-label: "SECRET 2"
     cluster: 2
     music: THEME
   MAP27:
@@ -418,6 +423,7 @@ maps:
     name: "SECRET ALIEN TEST ENVIRONMENT"
     next: MAP32
     floor-number: 0
+    level-label: "SECRET 1"
     cluster: 3
     music: LEVELA
   MAP32:
@@ -477,6 +483,7 @@ maps:
   MAP41:
     name: "SECRET NETWORK COMMUNICATIONS NODE"
     floor-number: 10
+    level-label: "SECRET 2"
     cluster: 3
     music: FREEDOMA
   MAP42:
@@ -496,6 +503,7 @@ maps:
     name: "HIDDEN HABITAT STORAGE"
     next: MAP47
     floor-number: 0
+    level-label: "SECRET 1"
     cluster: 4
     music: HIDINGA
   MAP47:
@@ -555,6 +563,7 @@ maps:
   MAP56:
     name: "MUTANT TRANSPORT DECK"
     floor-number: 10
+    level-label: "SECRET 2"
     cluster: 4
     music: RHUMBAAS
   MAP57:
@@ -574,6 +583,7 @@ maps:
     name: "SUB-LUNAR TESTING LABS"
     next: MAP62
     floor-number: 0
+    level-label: "SECRET 1"
     cluster: 5
     music: RACSHUFL
   MAP62:
@@ -633,6 +643,7 @@ maps:
   MAP71:
     name: "MUTANT ISOLATION DECK"
     floor-number: 10
+    level-label: "SECRET 2"
     cluster: 5
     music: THEWAYA
   MAP72:
@@ -652,6 +663,7 @@ maps:
     name: "GOLDFIRE'S MONEY VAULT"
     next: MAP77
     floor-number: 0
+    level-label: "SECRET 1"
     cluster: 6
     music: TIMEA
   MAP77:
@@ -711,6 +723,7 @@ maps:
   MAP86:
     name: "STAR TECHNICAL AND INTELLIGENCE ARCHIVES"
     floor-number: 10
+    level-label: "SECRET 2"
     cluster: 6
     music: INCNRATN
   MAP87:

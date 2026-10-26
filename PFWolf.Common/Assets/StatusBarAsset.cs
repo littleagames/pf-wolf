@@ -153,6 +153,9 @@ public class StatusBarElement
     /// </summary>
     public string? BoxFill { get; set; }
 
+    /// <summary>level: added to the floor number it shows (Planet Strike's areas, shown from 1)</summary>
+    public int Add { get; set; }
+
     /// <summary>Numbers: another part (weapon) drawn first, under the number</summary>
     public string? Behind { get; set; }
 
