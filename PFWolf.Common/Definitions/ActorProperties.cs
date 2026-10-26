@@ -92,9 +92,9 @@ public static class ActorProperties
 
         // Items
         Int("inventory.amount", "How many of it picking it up gives (points, for treasure)"),
-        Int("health.takenbelow", "A health item: only picked up while the player's health is this or less (Blake Stone's water puddle: 15)"),
+        Int("health.takenbelow", "A health item: only picked up while the player's health is this or less (Wolf3D's blood and gibs: 10; Blake Stone's water puddle: 15), then healing as any other, up to the player's max"),
         List("inventory.randomamount", "[min, max]: picking it up gives a random amount from min to max instead (Blake Stone's charge pack)", item: FieldType.Integer),
-        Int("inventory.maxamount", "The most of it the player can carry; a magazine's: the clip size"),
+        Int("inventory.maxamount", "The most of it the player can carry; a magazine's: the clip size. Not a health item's: it heals up to the player's max (health.takenbelow keeps it for the nearly dead)"),
         Int("inventory.interhubamount", "How much of it the player keeps going to the next level (0: none, as keys)"),
         Text("inventory.type", "The item it's held as: its variants (ClipBox, BlueClip) fill the one stack (Clip)", hint: FieldHint.Class),
         Text("inventory.icon", "A weapon's picture on the status bar", hint: FieldHint.Picture),

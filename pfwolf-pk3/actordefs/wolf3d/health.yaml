@@ -104,7 +104,7 @@ PoolOfBlood:
   parent: Health
   properties:
     inventory.amount: 1
-    inventory.maxamount: 11
+    health.takenbelow: 10       # only when nearly dead, as vanilla's GetBonus
     inventory.pickupsound: "misc/slurpie"
     inventory.pickupmessage: "$GOTBLOOD"
   states:
@@ -127,7 +127,7 @@ Gibs:
   parent: Health
   properties:
     inventory.amount: 1
-    inventory.maxamount: 11
+    health.takenbelow: 10       # only when nearly dead, as vanilla's GetBonus
     inventory.pickupsound: "misc/slurpie"
     inventory.pickupmessage: "$GOTGIBS"
   states:

@@ -41,7 +41,7 @@ public class PlayerStatsTests
         Blood:
           parent: Health
           properties:
-            "inventory.maxamount": 10
+            "health.takenbelow": 10
         BasicArmor:
           parent: Inventory
         GreenArmor:
@@ -228,17 +228,26 @@ public class PlayerStatsTests
     }
 
     [Test]
-    public void A_Health_Item_Heals_Up_To_Its_Own_Max()
+    public void A_Health_Item_With_Taken_Below_Only_Helps_The_Nearly_Dead()
     {
         // Arrange
         var rig = new Rig();
-        rig.Player.Health = 5;
+        rig.Player.Health = 10;
 
-        // Act / Assert: blood only helps the nearly dead
-        Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Blood" }, 25), Is.True);
-        Assert.That(rig.Player.Health, Is.EqualTo(10));
+        // Act / Assert: blood at 10 or less, healing as any health item (Wolf3D's gibs: +1 to 11)
+        Assert.That(rig.Stats.CouldTakeInventory(new Health { Name = "Blood" }), Is.True);
+        Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Blood" }, 1), Is.True);
+        Assert.That(rig.Player.Health, Is.EqualTo(11));
         Assert.That(rig.Stats.CouldTakeInventory(new Health { Name = "Blood" }), Is.False);
-        Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Blood" }, 25), Is.False);
+        Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Blood" }, 1), Is.False);
+        Assert.That(rig.Player.Health, Is.EqualTo(11));
+
+        // a puddle's 5 from 15 goes past its taken-below (Blake Stone's water puddle)
+        rig.Player.Health = 8;
+        Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Blood" }, 5), Is.True);
+        Assert.That(rig.Player.Health, Is.EqualTo(13));
+
+        // without one, up to the max
         Assert.That(rig.Stats.TryApplyInventory(new Health { Name = "Medikit" }, 125), Is.True);
         Assert.That(rig.Player.Health, Is.EqualTo(100));
         Assert.That(rig.Stats.CouldTakeInventory(new Health { Name = "Medikit" }), Is.False);

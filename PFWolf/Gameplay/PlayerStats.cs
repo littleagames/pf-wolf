@@ -287,15 +287,18 @@ internal sealed class PlayerStats(
         PlayerState.Weapon = PlayerState.ChosenWeapon = weapons.BestWeapon();
     }
 
-    /// <summary>Whether giving the item would do anything now (a health item, unless health is full); without giving it</summary>
-    internal bool CouldTakeInventory(Inventory item)
-    {
-        if (item is not Entities.Actors.Health)
-            return true;
-        int itemMax = inventory.GetIntProperty(item.Name, "inventory.maxamount", 0);
-        int cap = itemMax > 0 ? Math.Min(itemMax, classes.MaxHealth) : classes.MaxHealth;
-        return PlayerState.Health < cap;
-    }
+    /// <summary>
+    /// Whether giving the item would do anything now: a health item, unless health is full or
+    /// above its `health.takenbelow`; without giving it
+    /// </summary>
+    internal bool CouldTakeInventory(Inventory item) =>
+        item is not Entities.Actors.Health || HealthTakesIt(item);
+
+    // A health item helps: health is under the player's max, and no more than its
+    // `health.takenbelow` when it has one (Wolf3D's blood and gibs, 10; Blake Stone's water puddle, 15)
+    bool HealthTakesIt(Inventory item) =>
+        PlayerState.Health < classes.MaxHealth
+        && (inventory.GetIntProperty(item.Name, "health.takenbelow", -1) is var below && (below < 0 || PlayerState.Health <= below));
 
     /// <summary>
     /// Gives the player <paramref name="amount"/> of <paramref name="item"/>. Returns false
@@ -307,13 +310,10 @@ internal sealed class PlayerStats(
         {
             case Entities.Actors.Health:
             {
-                // A health item's inventory.maxamount is the most it heals to (Wolf3D's blood and
-                // gibs only help when nearly dead); 0 is up to the player's max health
-                int itemMax = inventory.GetIntProperty(item.Name, "inventory.maxamount", 0);
-                int cap = itemMax > 0 ? Math.Min(itemMax, classes.MaxHealth) : classes.MaxHealth;
-                if (PlayerState.Health >= cap)
+                // Up to the player's max health, and only taken at or under its health.takenbelow
+                if (!HealthTakesIt(item))
                     return false;
-                HealSelf(amount, cap);
+                HealSelf(amount, classes.MaxHealth);
                 return true;
             }
             case Entities.Actors.Ammo:
