@@ -15,9 +15,11 @@ default-map:
 
 # How much less things darken with distance (actordefs lighten, the lighten(level) modifier), in
 # fade steps of 32, as bstone's `lighting` (of its 63 shade levels, about half as many of ours).
-# bright (unshaded) needs no entry. `lighten partial-bright 12` in the console retries one live.
+# bright (unshaded) needs no entry; below 0 is darker. `lighten partial-bright 12` in the console
+# retries one live.
 lighten-levels:
   partial-bright: 6     # lamps and lit machines: LAMP_ON_SHADING, -12
+  lamp-dim: -2          # a flickering light's darkest frame: LAMP_ON_SHADING + 16, +4
   explosion: 26         # explosions: EXPLOSION_SHADING, -52 (unshaded on Aliens of Gold's floors)
   muzzle-flash: 5       # a hitscan shooter's frame after it fires: T_Shoot's -10
 

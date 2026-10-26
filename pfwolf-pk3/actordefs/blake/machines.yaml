@@ -385,18 +385,17 @@ WaterDrip:
       - { sprite: AVNT, frames: [F, G, H, I], tics-per-frame: 10 }
 
 # A light that flickers, mostly on: on for 4 to 13 seconds at a time, then a burst of dim
-# frames a few tics each (T_FlickerLight, as bstone's)
+# frames a few tics each (T_FlickerLight, as bstone's). On, it's lit a little as bstone's lamps;
+# dim, it's shaded as anything else, or darker (bstone's LAMP_ON_SHADING + 12 or + 16)
 FlickeringLight:
   parent: BlakeMonster
-  properties:
-    "lighten": partial-bright          # lit a little, as bstone's lamps
   states:
     Spawn:
-      - { sprite: ARCL, frames: [A], tics-per-frame: -1, think: T_FlickerLight }
+      - { sprite: ARCL, frames: [A], tics-per-frame: -1, think: T_FlickerLight, modifiers: [lighten(partial-bright)] }
     Dim1:
       - { sprite: ARCL, frames: [B], tics-per-frame: -1, think: T_FlickerLight }
     Dim2:
-      - { sprite: ARCL, frames: [C], tics-per-frame: -1, think: T_FlickerLight }
+      - { sprite: ARCL, frames: [C], tics-per-frame: -1, think: T_FlickerLight, modifiers: [lighten(lamp-dim)] }
 
 # Ooze: standing in it now and then hurts (A_HurtPlayerHere, a BlakeMonster's)
 GreenOoze:

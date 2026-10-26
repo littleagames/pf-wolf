@@ -56,6 +56,11 @@ fires lighten(5) (T_Shoot's -10); the generator and security cube lit as lamps (
 rather than bright. Planet Strike's floors take bstone's per-floor shading (area number mod 6)
 instead of all having Aliens of Gold's.
 
+Then (2026-10-26): the flickering light's dim frames darken as bstone's (LAMP_ON_SHADING + 12
+or + 16): lit is lighten(partial-bright), the first dim frame plain, the second lighten(lamp-dim),
+-2 steps. A lighten level below 0 is darker; a frame's level counts alone when the actor has no
+`lighten` of its own.
+
 **Aliens of Gold: gameplay**
 - Nothing known.
 

@@ -209,12 +209,22 @@ internal sealed class Lighting(
     /// <summary>
     /// How many fade steps (of <see cref="FadeSteps"/>) less an actor darkens with distance: its
     /// `lighten` (Blake Stone's lamps, lit a little rather than drawn unshaded) or its state's
-    /// lighten(level) modifier (an explosion), whichever is more. A level is a number of steps or
-    /// a game-info lighten-levels name.
+    /// lighten(level) modifier (an explosion), whichever is more when it has both. A level is a
+    /// number of steps or a game-info lighten-levels name; below 0 is darker (a flickering
+    /// light's dim frames).
     /// </summary>
-    internal static int Lighten(Entities.Actors.Actor actor) =>
-        Math.Max(actor.Properties.TryGetValue("lighten", out var level) ? LevelSteps(level?.ToString()) : 0,
-            LevelSteps(actor.CurrentState?.LightenLevel));
+    internal static int Lighten(Entities.Actors.Actor actor)
+    {
+        bool hasOwn = actor.Properties.TryGetValue("lighten", out var level);
+        string? stateLevel = actor.CurrentState?.LightenLevel;
+        if (stateLevel == null)
+            return hasOwn ? LevelSteps(level?.ToString()) : 0;
+        return hasOwn ? Math.Max(LevelSteps(level?.ToString()), LevelSteps(stateLevel)) : LevelSteps(stateLevel);
+    }
+
+    /// <summary>A sprite's shade offset: its distance's, less its lighten's steps, within the level's fade</summary>
+    internal int LightenedShadeOffset(int height, int lighten) =>
+        Math.Clamp(ShadeOffsetForHeight(height) - lighten * 256, 0, MaxFadeStep * 256);
 
     /// <summary>The name that draws something unshaded, as the bright flag does</summary>
     internal const string BrightLevel = "bright";
@@ -234,7 +244,7 @@ internal sealed class Lighting(
     {
         levels.Clear();
         foreach (var (name, steps) in fromGameInfo)
-            levels[name] = Math.Max(steps, 0);
+            levels[name] = steps;
         foreach (var (name, steps) in levelChanges)
             levels[name] = steps;
     }
@@ -242,7 +252,7 @@ internal sealed class Lighting(
     /// <summary>Changes a named lighten level for the rest of the session (the `lighten` command)</summary>
     internal static void ChangeLightenLevel(string name, int steps)
     {
-        levelChanges[name] = levels[name] = Math.Max(steps, 0);
+        levelChanges[name] = levels[name] = steps;
     }
 
     /// <summary>A lighten level's fade steps: a number, a name's (warned of once if there's no such name), else 0</summary>
@@ -251,7 +261,7 @@ internal sealed class Lighting(
         if (string.IsNullOrEmpty(level) || IsBrightLevel(level))
             return 0;
         if (int.TryParse(level, out var steps))
-            return Math.Max(steps, 0);
+            return steps;
         if (levels.TryGetValue(level, out steps))
             return steps;
         if (unknownLevels.Add(level))

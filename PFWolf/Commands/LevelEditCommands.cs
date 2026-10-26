@@ -31,8 +31,8 @@ internal sealed class LevelEditCommands(
         console.Register("fog", "Fades the view toward a color with distance, from start to end tiles away, up to max percent, until the level is left or reloaded; none for no shading.",
             "fog [#RRGGBB|none] [start] [end] [max 0-100]", FogCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["none", "#000000", "#707070"] : []);
-        console.Register("lighten", "Lists the named lighten levels (game-info lighten-levels: how many fade steps less things with that level darken with distance), or sets one for the rest of the session.",
-            $"lighten [name [0-{Lighting.FadeSteps - 1}]]", LightenCommand, Cheat | InLevel,
+        console.Register("lighten", "Lists the named lighten levels (game-info lighten-levels: how many fade steps less things with that level darken with distance; below 0 darker), or sets one for the rest of the session.",
+            $"lighten [name [-{Lighting.FadeSteps - 1}-{Lighting.FadeSteps - 1}]]", LightenCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? Lighting.LightenLevels.Keys : []);
         console.Register("light", "Sets the level's light, 0 (black) to 255 (full), until the level is left or reloaded.",
             "light [0-255]", LightCommand, Cheat | InLevel);
@@ -330,7 +330,7 @@ internal sealed class LevelEditCommands(
         {
             if (Lighting.IsBrightLevel(args[0]))
                 throw new ArgumentException($"{Lighting.BrightLevel} is always unshaded");
-            Lighting.ChangeLightenLevel(args[0], ParseInt(args[1], 0, Lighting.FadeSteps - 1));
+            Lighting.ChangeLightenLevel(args[0], ParseInt(args[1], -(Lighting.FadeSteps - 1), Lighting.FadeSteps - 1));
         }
 
         var shown = Lighting.LightenLevels

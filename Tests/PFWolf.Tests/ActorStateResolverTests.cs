@@ -106,8 +106,33 @@ public class ActorStateResolverTests
         Assert.That(Lighting.LevelSteps(Frame("LIGHTEN(5)").LightenLevel), Is.EqualTo(5));
         Assert.That(Lighting.LevelSteps(Frame("lighten(Partial-Bright)").LightenLevel), Is.EqualTo(6));
         Assert.That(Frame("bright").LightenLevel, Is.Null);
-        Assert.That(Lighting.LevelSteps(Frame("lighten(-3)").LightenLevel), Is.Zero);
+        Assert.That(Lighting.LevelSteps(Frame("lighten(-3)").LightenLevel), Is.EqualTo(-3), "below 0 is darker");
         Assert.That(Frame("lighten(bright)").Bright, "lighten(bright) is the bright modifier");
+    }
+
+    [Test]
+    public void An_Actors_Lighten_Is_Its_Own_Or_Its_Frames_Whichever_Is_More_And_A_Frame_Alone_Can_Darken()
+    {
+        // Arrange
+        ActorStateFrame Frame(params string[] modifiers) =>
+            new() { StateName = "Spawn", Sprite = "ARCL", FrameLetter = "A", TicTime = -1, Modifiers = [.. modifiers] };
+        Lighting.SetLightenLevels(new Dictionary<string, int> { ["partial-bright"] = 6, ["lamp-dim"] = -2, ["muzzle-flash"] = 5 });
+        var lamp = new Monster { Name = "Lamp", Properties = new() { ["lighten"] = "partial-bright" } };
+        var light = new Monster { Name = "FlickeringLight" };
+
+        // Act / Assert: a lamp keeps its own over a weaker frame's
+        lamp.CurrentState = Frame("lighten(muzzle-flash)");
+        Assert.That(Lighting.Lighten(lamp), Is.EqualTo(6));
+        lamp.CurrentState = Frame("lighten(lamp-dim)");
+        Assert.That(Lighting.Lighten(lamp), Is.EqualTo(6));
+
+        // a flickering light's frames: lit, plain, darker
+        light.CurrentState = Frame("lighten(partial-bright)");
+        Assert.That(Lighting.Lighten(light), Is.EqualTo(6));
+        light.CurrentState = Frame();
+        Assert.That(Lighting.Lighten(light), Is.Zero);
+        light.CurrentState = Frame("lighten(lamp-dim)");
+        Assert.That(Lighting.Lighten(light), Is.EqualTo(-2));
     }
 
     [Test]
