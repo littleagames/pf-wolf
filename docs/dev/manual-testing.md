@@ -199,6 +199,9 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       ..." as words, once while it's up. **(never tried)** Planet Strike's ammo number and the
       top bar's black shadow by eye.
 - [ ] An electro-alien firing a stream of bolts (about 14) each volley.
+- [ ] **(never tried)** Doors beside a floor trigger join their rooms: mission 2 floor 1's doors
+      at 18,4 and 18,8 (west of them is door trigger 158); enemies through them hear shots, and
+      their sound plays when the player's area is joined.
 - [ ] **(never tried)** Explosions (floating bomb, transport, turret, generator) unshaded at a
       distance and the bomb's and transport's fading back as they burn; a generator lit a little
       before it blows; a distant guard a little brighter just after firing.

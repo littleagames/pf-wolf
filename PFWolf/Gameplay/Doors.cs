@@ -106,17 +106,17 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         //
         map.TileMap[tilex, tiley] = (ushort)(DoorNum | GameConstants.BitDoor);
         //map = &MapSpot(TileX, TileY, 0);
+        // The door's tile takes the area west (or north) of it: a real area, as bstone's
+        // GetAreaNumber finds one, not a floor code such as a trigger beside it
+        var (sideX, sideY) = vertical ? (tilex - 1, tiley) : (tilex, tiley - 1);
+        map.SetMapSpot(tilex, tiley, 0, (ushort)(map.Floors.AreaTile + Math.Max(AreaNumberAt(sideX, sideY), 0)));
         if (vertical)
         {
-            var map_areanum = map.MapSpot(tilex-1, tiley, 0);
-            map.SetMapSpot(tilex, tiley, 0, (ushort)map_areanum); // set area number
             MarkDoorSide(tilex, tiley - 1);
             MarkDoorSide(tilex, tiley + 1);
         }
         else
         {
-            var map_areanum = map.MapSpot(tilex, tiley-1, 0);
-            map.SetMapSpot(tilex, tiley, 0, (ushort)map_areanum);
             MarkDoorSide(tilex - 1, tiley);
             MarkDoorSide(tilex + 1, tiley);
         }
@@ -124,6 +124,31 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         DoorNum++;
         LastDoorObj++;
     }
+
+    // Where bstone's GetAreaNumber looks when a tile isn't an area itself: beside it, then corners
+    static readonly (int X, int Y)[] AreaSearch = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (1, 1), (-1, 1), (1, -1)];
+
+    /// <summary>
+    /// The area a tile beside a door is in (bstone's GetAreaNumber): its own area code, else the
+    /// first of the tiles round it that has one, else area 0.
+    /// -1 for a wall or a tile off the map. Floor codes that aren't areas (Blake Stone's door
+    /// triggers, an ambush tile) count as none, so a door beside one still finds its area.
+    /// </summary>
+    internal int AreaNumberAt(int x, int y)
+    {
+        if (!map.InMap(x, y) || map.TileMap[x, y] is > 0 and < GameConstants.BitDoor)
+            return -1;
+        if (AreaCodeAt(x, y) is { } area)
+            return area;
+        foreach (var (dx, dy) in AreaSearch)
+            if (map.InMap(x + dx, y + dy) && AreaCodeAt(x + dx, y + dy) is { } near)
+                return near;
+        return 0;
+    }
+
+    // A tile's area from its floor code, or null when the code isn't an area's
+    int? AreaCodeAt(int x, int y) =>
+        map.MapSpot(x, y, 0) is var code && map.ValidArea(code) ? code - map.Floors.AreaTile : null;
 
     /// <summary>
     /// Marks a wall beside a door (BitWall) so it's drawn with the door-side texture. Only a wall
@@ -254,9 +279,9 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         //
         // play door sound if in a connected area
         //
-        area = map.MapSpot(tilex, tiley, 0) - map.Floors.AreaTile;
+        area = AreaCodeAt(tilex, tiley) ?? -1;
 
-        if (session.Areas.AreaByPlayer[area] != 0 && DoorObjList[door].Xlat.CloseSound is { Length: > 0 } closeSound)
+        if (area >= 0 && session.Areas.AreaByPlayer[area] != 0 && DoorObjList[door].Xlat.CloseSound is { Length: > 0 } closeSound)
         {
             hooks.PlaySoundAt(closeSound, DoorObjList[door].TileX, DoorObjList[door].TileY); // JAB
         }
@@ -496,24 +521,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     /// </summary>
     uint? ConnectDoorAreas(int door)
     {
-        uint area1, area2;
-        var door_tilex = DoorObjList[door].TileX;
-        var door_tiley = DoorObjList[door].TileY;
-
-        if (DoorObjList[door].Vertical)
-        {
-            area1 = (uint)map.MapSpot(door_tilex + 1, door_tiley, 0);
-            area2 = (uint)map.MapSpot(door_tilex - 1, door_tiley, 0);
-        }
-        else
-        {
-            area1 = (uint)map.MapSpot(door_tilex, door_tiley - 1, 0);
-            area2 = (uint)map.MapSpot(door_tilex, door_tiley + 1, 0);
-        }
-        area1 -= (uint)map.Floors.AreaTile;
-        area2 -= (uint)map.Floors.AreaTile;
-
-        if (area1 >= map.Floors.NumAreas || area2 >= map.Floors.NumAreas)
+        if (DoorAreas(door) is not var (area1, area2))
             return null;
 
         session.Areas.AreaConnect[area1, area2]++;
@@ -522,6 +530,19 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         if (map.Players.Any(pawn => pawn.AreaNumber < map.Floors.NumAreas))
             ConnectAreas();
         return area1;
+    }
+
+    /// <summary>
+    /// The areas either side of a door, east then west or north then south (bstone's
+    /// doorobj areanumber pair, found as GetAreaNumber finds them); null when either side has none
+    /// </summary>
+    (uint, uint)? DoorAreas(int door)
+    {
+        int x = DoorObjList[door].TileX, y = DoorObjList[door].TileY;
+        var (area1, area2) = DoorObjList[door].Vertical
+            ? (AreaNumberAt(x + 1, y), AreaNumberAt(x - 1, y))
+            : (AreaNumberAt(x, y - 1), AreaNumberAt(x, y + 1));
+        return area1 < 0 || area2 < 0 ? null : ((uint)area1, (uint)area2);
     }
 
     /// <summary>
@@ -559,7 +580,6 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
     internal void DoorClosing(int door)
     {
-        uint area1, area2;
         int position;
         int tilex, tiley;
 
@@ -588,24 +608,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
             DoorObjList[door].Action = DoorAction.Closed;
 
-            var door_tilex = DoorObjList[door].TileX;
-            var door_tiley = DoorObjList[door].TileY;
-
-            if (DoorObjList[door].Vertical)
-            {
-                area1 = (uint)map.MapSpot(door_tilex + 1, door_tiley, 0);
-                area2 = (uint)map.MapSpot(door_tilex - 1, door_tiley, 0);
-            }
-            else
-            {
-                area1 = (uint)map.MapSpot(door_tilex, door_tiley - 1, 0);
-                area2 = (uint)map.MapSpot(door_tilex, door_tiley + 1, 0);
-            }
-
-            area1 -= (uint)map.Floors.AreaTile;
-            area2 -= (uint)map.Floors.AreaTile;
-
-            if (area1 < map.Floors.NumAreas && area2 < map.Floors.NumAreas)
+            if (DoorAreas(door) is var (area1, area2))
             {
                 session.Areas.AreaConnect[area1, area2]--;
                 session.Areas.AreaConnect[area2, area1]--;
