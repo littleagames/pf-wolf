@@ -1,6 +1,6 @@
 # Blake Stone's scenery, from bstone's statinfo table: SOLID ones block the tile, and the lamps
-# its renderer lights darken less with distance (lighten 6: bstone's LAMP_ON_SHADING, 12 of
-# its 64 shade levels). Pickups are in items.yaml; the map numbers that place these are in
+# its renderer lights darken less with distance (lighten partial-bright: bstone's
+# LAMP_ON_SHADING, game-info lighten-levels). Pickups are in items.yaml; the map numbers that place these are in
 # mapdefs/blake/decorations.yaml.
 
 # Containment canister
@@ -28,7 +28,7 @@ FloorLamp:
   radius: 32
   flags: [SOLID]
   properties:
-    "lighten": 6
+    "lighten": partial-bright
   states:
     Spawn:
       - sprite: FLRL
@@ -132,7 +132,7 @@ GeneralTable:
 # Ceiling light
 CeilingLight:
   properties:
-    "lighten": 6
+    "lighten": partial-bright
   states:
     Spawn:
       - sprite: CLT1
@@ -190,7 +190,7 @@ Gurney:
 # Indirect half-sphere light
 IndirectHalfSphere:
   properties:
-    "lighten": 6
+    "lighten": partial-bright
   states:
     Spawn:
       - sprite: IDHS
@@ -290,7 +290,7 @@ HamBone:
 # Video game machine
 VideoGameMachine:
   properties:
-    "lighten": 6
+    "lighten": partial-bright
   states:
     Spawn:
       - sprite: IDSL
@@ -422,7 +422,7 @@ HiTechPost:
 # Ceiling lamp
 CeilingLamp2:
   properties:
-    "lighten": 6
+    "lighten": partial-bright
   states:
     Spawn:
       - sprite: CLT2
@@ -432,7 +432,7 @@ CeilingLamp2:
 # Ceiling lamp
 CeilingLamp3:
   properties:
-    "lighten": 6
+    "lighten": partial-bright
   states:
     Spawn:
       - sprite: CLT3

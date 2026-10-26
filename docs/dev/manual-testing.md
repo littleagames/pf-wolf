@@ -191,6 +191,8 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       **(never tried)** an informant at 97–99% points saying where an enemy or treasure is left.
 - [ ] Flickering lights: on for seconds, then a flicker. Lamps lit a little (side by side with
       an unlit and a bright copy, AOG floor 1: a small difference, as bstone's math gives).
+      `lighten partial-bright N` retunes every lamp live (game-info lighten-levels); with
+      Lighting, Show Floors and Show Ceilings on.
 - [ ] Attack info: a bio-tech's animated picture beside "ATTACKING: BIO-TECH". **(never tried)**
       other enemies' pictures and texts (bosses, ooze, arc barrier, explosions, Planet Strike's
       own), and standing in ooze hurting.

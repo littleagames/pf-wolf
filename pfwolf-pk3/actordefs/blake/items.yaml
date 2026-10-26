@@ -325,7 +325,7 @@ XylanOrb:
     "inventory.amount": 5000
     "inventory.pickupsound": "bs/bonus4"
     "inventory.pickupmessage": "$BS_GOTXYLANORB"
-    "lighten": 6          # lit a little, as bstone's lamps
+    "lighten": partial-bright          # lit a little, as bstone's lamps
   flags: [COUNTITEM]
   states:
     Spawn:

@@ -32,6 +32,13 @@ public record GameInfoAsset : Asset
     /// </summary>
     public List<string> PlayerColors { get; init; } = [];
 
+    /// <summary>
+    /// Named lighten levels (actordefs `lighten` and the lighten(name) frame modifier): fade steps
+    /// (of 32) that something darkens less with distance, by name (Blake Stone's partial-bright
+    /// lamps), so a game tunes them in one place. "bright" is always unshaded and can't be set.
+    /// </summary>
+    public Dictionary<string, int> LightenLevels { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The waves of enemies a multiplayer Horde game sends at the players</summary>
     public HordeInfo Horde { get; init; } = new();
 

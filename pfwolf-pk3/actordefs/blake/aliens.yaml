@@ -50,7 +50,7 @@ GeneticGuard:
     Attack:
       - { sprite: GENG, frames: [I], tics-per-frame: 20 }
       - { sprite: GENG, frames: [J], tics-per-frame: 20, action: T_Shoot }
-      - { sprite: GENG, frames: [K], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
+      - { sprite: GENG, frames: [K], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(muzzle-flash)] }
     Melee:
       - { sprite: GENG, frames: [E], tics-per-frame: 20 }
       - { sprite: GENG, frames: [F], tics-per-frame: 20, action: "A_Melee(220, 1, 31)" }
@@ -95,7 +95,7 @@ MutantHuman1:
     Attack:
       - { sprite: MSEN, frames: [E], tics-per-frame: 10 }
       - { sprite: MSEN, frames: [F], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: MSEN, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
+      - { sprite: MSEN, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(muzzle-flash)] }
     Death:
       - { sprite: MSEN, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
       - { sprite: MSEN, frames: [I], tics-per-frame: 20, think: T_BlowBack }
@@ -272,7 +272,7 @@ GurneyMutant:
     Attack:
       - { sprite: MGUR, frames: [J], tics-per-frame: 10 }
       - { sprite: MGUR, frames: [K], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: MGUR, frames: [L], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
+      - { sprite: MGUR, frames: [L], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(muzzle-flash)] }
     Death:
       - { sprite: MGUR, frames: [M], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
       - { sprite: MGUR, frames: [N], tics-per-frame: 20, think: T_BlowBack }

@@ -31,6 +31,9 @@ internal sealed class LevelEditCommands(
         console.Register("fog", "Fades the view toward a color with distance, from start to end tiles away, up to max percent, until the level is left or reloaded; none for no shading.",
             "fog [#RRGGBB|none] [start] [end] [max 0-100]", FogCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["none", "#000000", "#707070"] : []);
+        console.Register("lighten", "Lists the named lighten levels (game-info lighten-levels: how many fade steps less things with that level darken with distance), or sets one for the rest of the session.",
+            $"lighten [name [0-{Lighting.FadeSteps - 1}]]", LightenCommand, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? Lighting.LightenLevels.Keys : []);
         console.Register("light", "Sets the level's light, 0 (black) to 255 (full), until the level is left or reloaded.",
             "light [0-255]", LightCommand, Cheat | InLevel);
         console.Register("lights", "Lists the actors giving off light (actordefs light.*, A_SetLight), and their light now.",
@@ -319,6 +322,24 @@ internal sealed class LevelEditCommands(
         console.Print(lighting.LevelShading is { MaxFade: > 0 } f
             ? $"Fog: {f.FadeColor} from {f.FadeStart} to {f.FadeEnd} tiles, up to {f.MaxFade}%"
             : "No fog");
+    }
+
+    internal void LightenCommand(string[] args)
+    {
+        if (args.Length > 1)
+        {
+            if (Lighting.IsBrightLevel(args[0]))
+                throw new ArgumentException($"{Lighting.BrightLevel} is always unshaded");
+            Lighting.ChangeLightenLevel(args[0], ParseInt(args[1], 0, Lighting.FadeSteps - 1));
+        }
+
+        var shown = Lighting.LightenLevels
+            .Where(level => args.Length == 0 || level.Key.Equals(args[0], StringComparison.OrdinalIgnoreCase))
+            .OrderBy(level => level.Key).ToList();
+        if (shown.Count == 0)
+            console.Print(args.Length > 0 ? $"No lighten level {args[0]}" : "No lighten levels");
+        foreach (var (name, steps) in shown)
+            console.Print($"{name}: {steps} of {Lighting.FadeSteps - 1} fade steps");
     }
 
     internal void LightCommand(string[] args)

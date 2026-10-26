@@ -38,7 +38,7 @@ public static class ActorProperties
         Int("points", "The score for killing it"),
         Text("faction", "The side it's on (factions.yaml), unless a mapdefs thing gives its own", hint: FieldHint.Faction),
         Text("translation", "The sprite color translation it's drawn through (translations.yaml), unless a mapdefs thing gives its own", hint: FieldHint.Translation),
-        Int("lighten", "On a shaded level, how many fade steps (of 32) less it darkens with distance: a lamp lit a little, where the bright flag draws it unshaded"),
+        Text("lighten", "On a shaded level, how much less it darkens with distance: a number of fade steps (of 32), a game-info lighten-levels name (Blake Stone's partial-bright lamps), or bright for unshaded, as the bright flag"),
         Text("damagetype", "The kind of blow it deals (a missile's, a blast's, a monster's), for the death its victim dies (a Death.TYPE state)"),
         Int("knockback", "How far a BlakeMonster body it kills slides back, in 1/65536 tile (an explosion's); 0x5000 when left out. Other enemies don't slide."),
         Text("attackinfo", "Shown when it hurts the player, while Attack Info is on (a $NAME language key or the text; %k is its tag): Blake Stone's REBA \"attacking:\", a presenter script with its picture. game-info attack-message when left out"),

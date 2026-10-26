@@ -39,7 +39,7 @@ GiantStalker:
     Attack:
       - { sprite: STLK, frames: [E], tics-per-frame: 10 }
       - { sprite: STLK, frames: [F], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: STLK, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
+      - { sprite: STLK, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(muzzle-flash)] }
     Death:
       - { sprite: STLK, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
       - { sprite: STLK, frames: [I], tics-per-frame: 20, think: T_BlowBack }
@@ -109,7 +109,7 @@ ArmoredStalker:
     Attack:
       - { sprite: ARST, frames: [E], tics-per-frame: 10 }
       - { sprite: ARST, frames: [F], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: ARST, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(5)] }
+      - { sprite: ARST, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [lighten(muzzle-flash)] }
     Death:
       - { sprite: ARST, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
       - { sprite: ARST, frames: [I], tics-per-frame: 20, think: T_BlowBack }
@@ -158,19 +158,19 @@ CrawlerBeast:
 # The security cube (bstone's rotating cube, 177, in Aliens of Gold's projection generator's
 # place): it turns, lit as a lamp, and can't be shot. Only a fission detonator's blast breaks
 # it, and that unlocks the next floor in the teleporter. It explodes as bstone's
-# EXPLOSION_SHADING (lighten(26)), shaded a little only on Planet Strike's darkest floors.
+# EXPLOSION_SHADING (lighten(explosion)), shaded a little only on Planet Strike's darkest floors.
 SecurityCube:
   radius: 32
   flags: [SOLID]
   properties:
     "monster.blastedby": PlasmaDetonatorArmed
-    "lighten": 6
+    "lighten": partial-bright
   states:
     Spawn:
       - { sprite: CUBE, frames: [A, B, C, D, E, F, G, H, I, J], tics-per-frame: 5 }
     Death:
-      - { sprite: CUBE, frames: [K], tics-per-frame: 5, action: 'A_PlaySound("bs/explode1", "positional")', modifiers: [lighten(26)] }
-      - { sprite: CUBE, frames: [L, M, N, O, P, Q, R], tics-per-frame: 5, modifiers: [lighten(26)] }
+      - { sprite: CUBE, frames: [K], tics-per-frame: 5, action: 'A_PlaySound("bs/explode1", "positional")', modifiers: [lighten(explosion)] }
+      - { sprite: CUBE, frames: [L, M, N, O, P, Q, R], tics-per-frame: 5, modifiers: [lighten(explosion)] }
       - { sprite: CUBE, frames: [S], tics-per-frame: 0, action: A_UnblockTile }
       - { sprite: CUBE, frames: [S], tics-per-frame: 0, action: A_UnlockFloor }
       - { sprite: CUBE, frames: [S], tics-per-frame: -1 }

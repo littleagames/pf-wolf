@@ -117,7 +117,7 @@ internal static class ActorStateResolver
 
     /// <summary>The warning for a modifier the engine doesn't read</summary>
     internal static string UnknownModifierMessage(string className, string state, string modifier) =>
-        $"Actor {className}: in its {state} state, the modifier {modifier} does nothing (bright and lighten(N) are the only ones)";
+        $"Actor {className}: in its {state} state, the modifier {modifier} does nothing (bright and lighten(level) are the only ones)";
 
     /// <summary>The state a corpse brought back by a reviver plays (Monster.Rise)</summary>
     internal const string RaiseState = "Raise";

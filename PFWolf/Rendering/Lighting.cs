@@ -198,20 +198,70 @@ internal sealed class Lighting(
     internal int ShadeOffsetForHeight(int height) =>
         !Shading ? 0 : ShadeOffset(height > 0 ? (long)hooks.HeightNumerator() * 256 / height : long.MaxValue);
 
-    /// <summary>Whether an actor's frame is drawn unshaded: its state has the bright modifier, or the actor the BRIGHT flag.</summary>
+    /// <summary>
+    /// Whether an actor's frame is drawn unshaded: its state has the bright modifier (or
+    /// lighten(bright)), or the actor the BRIGHT flag (or `lighten: bright`)
+    /// </summary>
     internal static bool IsBright(Entities.Actors.Actor actor) =>
-        actor.CurrentState?.Bright == true || actor.HasFlag("bright");
+        actor.CurrentState?.Bright == true || actor.HasFlag("bright")
+        || actor.Properties.TryGetValue("lighten", out var level) && IsBrightLevel(level?.ToString());
 
     /// <summary>
     /// How many fade steps (of <see cref="FadeSteps"/>) less an actor darkens with distance: its
     /// `lighten` (Blake Stone's lamps, lit a little rather than drawn unshaded) or its state's
-    /// lighten(N) modifier (an explosion), whichever is more
+    /// lighten(level) modifier (an explosion), whichever is more. A level is a number of steps or
+    /// a game-info lighten-levels name.
     /// </summary>
     internal static int Lighten(Entities.Actors.Actor actor) =>
-        Math.Max(actor.Properties.TryGetValue("lighten", out var steps) ? Convert.ToInt32(steps) : 0, actor.CurrentState?.Lighten ?? 0);
+        Math.Max(actor.Properties.TryGetValue("lighten", out var level) ? LevelSteps(level?.ToString()) : 0,
+            LevelSteps(actor.CurrentState?.LightenLevel));
+
+    /// <summary>The name that draws something unshaded, as the bright flag does</summary>
+    internal const string BrightLevel = "bright";
+
+    internal static bool IsBrightLevel(string? level) => string.Equals(level, BrightLevel, StringComparison.OrdinalIgnoreCase);
+
+    // The named lighten levels in use: game-info lighten-levels, with the `lighten` command's changes over them
+    static readonly Dictionary<string, int> levels = new(StringComparer.OrdinalIgnoreCase);
+    static readonly Dictionary<string, int> levelChanges = new(StringComparer.OrdinalIgnoreCase);
+    static readonly HashSet<string> unknownLevels = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The named lighten levels as they are now (game-info's, with any the `lighten` command changed)</summary>
+    internal static IReadOnlyDictionary<string, int> LightenLevels => levels;
+
+    /// <summary>Takes the game's named lighten levels (game-info lighten-levels), keeping the `lighten` command's changes</summary>
+    internal static void SetLightenLevels(IReadOnlyDictionary<string, int> fromGameInfo)
+    {
+        levels.Clear();
+        foreach (var (name, steps) in fromGameInfo)
+            levels[name] = Math.Max(steps, 0);
+        foreach (var (name, steps) in levelChanges)
+            levels[name] = steps;
+    }
+
+    /// <summary>Changes a named lighten level for the rest of the session (the `lighten` command)</summary>
+    internal static void ChangeLightenLevel(string name, int steps)
+    {
+        levelChanges[name] = levels[name] = Math.Max(steps, 0);
+    }
+
+    /// <summary>A lighten level's fade steps: a number, a name's (warned of once if there's no such name), else 0</summary>
+    internal static int LevelSteps(string? level)
+    {
+        if (string.IsNullOrEmpty(level) || IsBrightLevel(level))
+            return 0;
+        if (int.TryParse(level, out var steps))
+            return Math.Max(steps, 0);
+        if (levels.TryGetValue(level, out steps))
+            return steps;
+        if (unknownLevels.Add(level))
+            Console.WriteLine($"Unknown lighten level '{level}': give it in game-info lighten-levels, or use a number of fade steps");
+        return 0;
+    }
 
     internal void InitLevelShading(MapInfo? mapInfo)
     {
+        SetLightenLevels(engine.GetGameInfo().LightenLevels);
         var defaultMap = engine.GetGameInfo().DefaultMap;
         _levelMapInfo = mapInfo;
         LevelZones = ResolveZones(mapInfo, defaultMap);

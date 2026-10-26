@@ -75,36 +75,39 @@ public class ActorStateResolverTests
     [Test]
     public void Modifiers_Other_Than_Bright_And_Lighten_Are_Told_Once_Each()
     {
-        // Arrange: bright in either case, lighten with a number, fast twice and lighten without one
+        // Arrange: bright in either case, lighten with a number and a name, fast twice and lighten with nothing
         var actors = ActorDefs.Parse("""
             Thing:
               states:
                 Spawn:
                   - { sprite: LAMP, frames: [A], tics-per-frame: 5, modifiers: [Bright, fast, lighten(26)] }
-                  - { sprite: LAMP, frames: [B], tics-per-frame: 5, modifiers: [bright, FAST, brigth, lighten(x)] }
+                  - { sprite: LAMP, frames: [B], tics-per-frame: 5, modifiers: [bright, FAST, brigth, lighten(partial-bright), lighten()] }
             """);
 
         // Act
         var unknown = ActorStateResolver.UnknownModifiers(actors["Thing"].States["Spawn"]).ToList();
 
         // Assert
-        Assert.That(unknown, Is.EqualTo(new[] { "fast", "brigth", "lighten(x)" }));
+        Assert.That(unknown, Is.EqualTo(new[] { "fast", "brigth", "lighten()" }));
         Assert.That(ActorStateResolver.UnknownModifierMessage("Thing", "Spawn", "fast"),
-            Is.EqualTo("Actor Thing: in its Spawn state, the modifier fast does nothing (bright and lighten(N) are the only ones)"));
+            Is.EqualTo("Actor Thing: in its Spawn state, the modifier fast does nothing (bright and lighten(level) are the only ones)"));
     }
 
     [Test]
-    public void A_Frames_Lighten_Is_Its_Modifiers_Number()
+    public void A_Frames_Lighten_Level_Is_Its_Modifiers_Number_Or_Name()
     {
         // Arrange
         ActorStateFrame Frame(params string[] modifiers) =>
             new() { StateName = "Death", Sprite = "BOOM", FrameLetter = "A", TicTime = 5, Modifiers = [.. modifiers] };
+        Lighting.SetLightenLevels(new Dictionary<string, int> { ["partial-bright"] = 6 });
 
         // Act / Assert
-        Assert.That(Frame("bright", "lighten(26)").Lighten, Is.EqualTo(26));
-        Assert.That(Frame("LIGHTEN(5)").Lighten, Is.EqualTo(5));
-        Assert.That(Frame("bright").Lighten, Is.Zero);
-        Assert.That(Frame("lighten(-3)").Lighten, Is.Zero);
+        Assert.That(Lighting.LevelSteps(Frame("bright", "lighten(26)").LightenLevel), Is.EqualTo(26));
+        Assert.That(Lighting.LevelSteps(Frame("LIGHTEN(5)").LightenLevel), Is.EqualTo(5));
+        Assert.That(Lighting.LevelSteps(Frame("lighten(Partial-Bright)").LightenLevel), Is.EqualTo(6));
+        Assert.That(Frame("bright").LightenLevel, Is.Null);
+        Assert.That(Lighting.LevelSteps(Frame("lighten(-3)").LightenLevel), Is.Zero);
+        Assert.That(Frame("lighten(bright)").Bright, "lighten(bright) is the bright modifier");
     }
 
     [Test]

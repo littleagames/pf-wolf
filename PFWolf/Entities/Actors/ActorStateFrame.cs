@@ -13,25 +13,36 @@ internal class ActorStateFrame
     public bool HoldsForever => TicTime < 0;
     public List<string> Modifiers { get; init; } = [];
 
-    // The "bright" modifier: the frame is drawn at full light, unshaded
+    // The "bright" modifier (or lighten(bright)): the frame is drawn at full light, unshaded
     private bool? _bright;
-    public bool Bright => _bright ??= Modifiers.Contains(BrightModifier, StringComparer.OrdinalIgnoreCase);
+    public bool Bright => _bright ??= Modifiers.Contains(BrightModifier, StringComparer.OrdinalIgnoreCase)
+        || Rendering.Lighting.IsBrightLevel(LightenLevel);
 
-    // The "lighten(N)" modifier: the frame darkens N fade steps less with distance, as the
-    // actor's `lighten` property (Blake Stone's explosions, nearly unshaded); 0 when it has none
-    private int? _lighten;
-    public int Lighten => _lighten ??= Modifiers.Select(LightenSteps).FirstOrDefault(steps => steps > 0);
+    // The "lighten(level)" modifier: the frame darkens less with distance, as the actor's
+    // `lighten` property (Blake Stone's explosions, nearly unshaded): a number of fade steps or a
+    // game-info lighten-levels name (Lighting.LevelSteps); null when it has none
+    private bool _lightenRead;
+    private string? _lighten;
+    public string? LightenLevel
+    {
+        get
+        {
+            if (!_lightenRead)
+                (_lighten, _lightenRead) = (Modifiers.Select(LightenArgument).FirstOrDefault(level => level != null), true);
+            return _lighten;
+        }
+    }
 
     /// <summary>The frame modifiers the engine reads (the actordefs reference's modifiers); any other is ignored, with a warning</summary>
     internal const string BrightModifier = "bright";
     internal static readonly IReadOnlySet<string> KnownModifiers = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { BrightModifier };
 
-    internal static bool IsKnownModifier(string modifier) => KnownModifiers.Contains(modifier) || LightenSteps(modifier) > 0;
+    internal static bool IsKnownModifier(string modifier) => KnownModifiers.Contains(modifier) || LightenArgument(modifier) != null;
 
-    // lighten(N)'s N, else 0
-    static int LightenSteps(string modifier) =>
+    // lighten(level)'s level, else null
+    static string? LightenArgument(string modifier) =>
         modifier.StartsWith("lighten(", StringComparison.OrdinalIgnoreCase) && modifier.EndsWith(')')
-            && int.TryParse(modifier.AsSpan(8, modifier.Length - 9), out var steps) ? Math.Max(steps, 0) : 0;
+            && modifier[8..^1].Trim() is { Length: > 0 } level ? level : null;
 
     // The state's `light:`, overriding the actor's light on this frame; null keeps the actor's
     public StateLight? Light { get; init; }

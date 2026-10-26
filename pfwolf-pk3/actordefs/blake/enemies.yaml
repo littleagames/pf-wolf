@@ -86,7 +86,7 @@ RentACop:
         frames: [H]
         tics-per-frame: 20
         next-state: Chase
-        modifiers: [lighten(5)]
+        modifiers: [lighten(muzzle-flash)]
     Chase:
       - sprite: RENT
         frames: [B]
@@ -202,7 +202,7 @@ ProGuard:
       - sprite: PROG
         frames: [H]
         tics-per-frame: 10
-        modifiers: [lighten(5)]
+        modifiers: [lighten(muzzle-flash)]
       - sprite: PROG
         frames: [G]
         tics-per-frame: 10
@@ -210,7 +210,7 @@ ProGuard:
       - sprite: PROG
         frames: [H]
         tics-per-frame: 10
-        modifiers: [lighten(5)]
+        modifiers: [lighten(muzzle-flash)]
       - sprite: PROG
         frames: [G]
         tics-per-frame: 10
@@ -219,7 +219,7 @@ ProGuard:
         frames: [H]
         tics-per-frame: 10
         next-state: Chase
-        modifiers: [lighten(5)]
+        modifiers: [lighten(muzzle-flash)]
     Chase:
       - sprite: PROG
         frames: [B]
@@ -339,7 +339,7 @@ SwatGuard:
       - sprite: SWAT
         frames: [H]
         tics-per-frame: 10
-        modifiers: [lighten(5)]
+        modifiers: [lighten(muzzle-flash)]
       - sprite: SWAT
         frames: [G]
         tics-per-frame: 10
@@ -347,7 +347,7 @@ SwatGuard:
       - sprite: SWAT
         frames: [H]
         tics-per-frame: 10
-        modifiers: [lighten(5)]
+        modifiers: [lighten(muzzle-flash)]
       - sprite: SWAT
         frames: [G]
         tics-per-frame: 10
@@ -356,7 +356,7 @@ SwatGuard:
         frames: [H]
         tics-per-frame: 10
         next-state: Chase
-        modifiers: [lighten(5)]
+        modifiers: [lighten(muzzle-flash)]
     Chase:
       - sprite: SWAT
         frames: [B]
@@ -502,7 +502,7 @@ Scientist:
         frames: [H]
         tics-per-frame: 10
         next-state: Chase
-        modifiers: [lighten(5)]
+        modifiers: [lighten(muzzle-flash)]
     Chase:
       - sprite: GSCI
         frames: [B]

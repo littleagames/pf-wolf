@@ -4,12 +4,13 @@
 # ooze. What their thinks and actions do is in Entities/Actors/BlakeMonster.Machines.cs; the map numbers that
 # place them are in mapdefs/blake/machines.yaml. Health is by skill (novice ... veteran).
 #
-# Explosions are lit as bstone's EXPLOSION_SHADING (-52 of 63 shade levels: lighten(26) of our
-# 31 steps, never shaded on Aliens of Gold's floors, a little on Planet Strike's darkest). A
-# floating bomb's and a transport's light dies back as they burn (bstone adds the animation's
-# frame number to it every tic: lighten(20), then (7)); a turret's lasts until its wreck.
-# A hitscan shooter's frame after it fires is lighten(5): bstone's T_Shoot sets -10 as the
-# firing frame ends (as our actions run) and T_Shade clears it as the next one ends.
+# Lit as bstone's `lighting` (the levels are game-info lighten-levels): explosions
+# lighten(explosion), its EXPLOSION_SHADING (never shaded on Aliens of Gold's floors, a little on
+# Planet Strike's darkest). A floating bomb's and a transport's light dies back as they burn
+# (bstone adds the animation's frame number to it every tic: lighten(20), then (7)); a turret's
+# lasts until its wreck. A hitscan shooter's frame after it fires is lighten(muzzle-flash):
+# bstone's T_Shoot sets -10 as the firing frame ends (as our actions run) and T_Shade clears it
+# as the next one ends. Lamps and lit machines are partial-bright (LAMP_ON_SHADING).
 
 # -----------------------------------------------------------------------
 # Electro-alien: comes out of the electro-alien walls (mapdefs walls 24 outlet), and fires
@@ -187,12 +188,12 @@ HangingTurret:
       - { sprite: TURR, frames: [A], tics-per-frame: 3 }
     Attack:
       - { sprite: TURR, frames: [B], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: TURR, frames: [C], tics-per-frame: 20, modifiers: [lighten(5)] }
+      - { sprite: TURR, frames: [C], tics-per-frame: 20, modifiers: [lighten(muzzle-flash)] }
       - { sprite: TURR, frames: [B], tics-per-frame: 10, action: T_Shoot }
-      - { sprite: TURR, frames: [C], tics-per-frame: 20, next-state: Chase, modifiers: [lighten(5)] }
+      - { sprite: TURR, frames: [C], tics-per-frame: 20, next-state: Chase, modifiers: [lighten(muzzle-flash)] }
     Death:
-      - { sprite: TURR, frames: [D], tics-per-frame: 15, action: A_DeathScream, modifiers: [lighten(26)] }
-      - { sprite: TURR, frames: [E, F, G], tics-per-frame: 15, modifiers: [lighten(26)] }
+      - { sprite: TURR, frames: [D], tics-per-frame: 15, action: A_DeathScream, modifiers: [lighten(explosion)] }
+      - { sprite: TURR, frames: [E, F, G], tics-per-frame: 15, modifiers: [lighten(explosion)] }
       - { sprite: TURR, frames: [H], tics-per-frame: -1 }
 
 HangingTurretFixed:
@@ -236,7 +237,7 @@ FloatingBomb:
     Attack:
       - { sprite: FSCT, frames: [A], tics-per-frame: 0, action: A_SelfDestruct }
     Death:
-      - { sprite: FSCT, frames: [E], tics-per-frame: 20, action: A_DeathScream, modifiers: [lighten(26)] }
+      - { sprite: FSCT, frames: [E], tics-per-frame: 20, action: A_DeathScream, modifiers: [lighten(explosion)] }
       - { sprite: FSCT, frames: [F], tics-per-frame: 20, modifiers: [lighten(20)] }
       - { sprite: FSCT, frames: [G], tics-per-frame: 20, action: 'A_Explode(20, 20, 2, "hurtplayer")', modifiers: [lighten(7)] }
       - { sprite: FSCT, frames: [H, I, J, K], tics-per-frame: 20 }
@@ -285,7 +286,7 @@ VolatileTransport:
     Chase:
       - { sprite: GSCT, frames: [A], tics-per-frame: 15, think: T_Path }
     Death:
-      - { sprite: GSCT, frames: [E], tics-per-frame: 20, action: A_DeathScream, modifiers: [lighten(26)] }
+      - { sprite: GSCT, frames: [E], tics-per-frame: 20, action: A_DeathScream, modifiers: [lighten(explosion)] }
       - { sprite: GSCT, frames: [F], tics-per-frame: 20, modifiers: [lighten(20)] }
       - { sprite: GSCT, frames: [G], tics-per-frame: 0, action: 'A_SpawnThing("GreenOoze", 128)', modifiers: [lighten(7)] }
       - { sprite: GSCT, frames: [G], tics-per-frame: 20, action: 'A_Explode(20, 20, 2, "hurtplayer")', modifiers: [lighten(7)] }
@@ -300,14 +301,14 @@ VolatileTransportFixed:
 
 # -----------------------------------------------------------------------
 # Projection generator: destroying them all wins the level. It flinches at its first hit;
-# blowing up, it says how many are left and hurts everything near. Lit as a lamp (lighten 6),
-# then its explosion and wreck as bstone's EXPLOSION_SHADING (lighten(26): never shaded).
+# blowing up, it says how many are left and hurts everything near. Lit as a lamp (partial-bright),
+# then its explosion and wreck as bstone's EXPLOSION_SHADING (lighten(explosion): never shaded).
 # -----------------------------------------------------------------------
 ProjectionGenerator:
   parent: BlakeMonster
   flags: [STATIONARY]
   properties:
-    "lighten": 6
+    "lighten": partial-bright
     "attackinfo": "$BS_ATTACK_GENERATOR"
     "tag": "$BS_GENERATOR"
     "health.baby": 150
@@ -325,17 +326,17 @@ ProjectionGenerator:
     Pain:
       - { sprite: EXDE, frames: [M], tics-per-frame: 23, next-state: Spawn }
     Death:
-      - { sprite: EXDE, frames: [B], tics-per-frame: 0, action: A_DeathScream, modifiers: [lighten(26)] }
-      - { sprite: EXDE, frames: [B], tics-per-frame: 7, action: A_PlaySound("bs/vital_gone"), modifiers: [lighten(26)] }
-      - { sprite: EXDE, frames: [C], tics-per-frame: 7, action: A_CountRemaining("$BS_GENERATORSLEFT"), modifiers: [lighten(26)] }
-      - { sprite: EXDE, frames: [D], tics-per-frame: 7, modifiers: [lighten(26)] }
-      - { sprite: EXDE, frames: [E], tics-per-frame: 0, action: A_CountRemaining("$BS_GENERATORSLEFT"), modifiers: [lighten(26)] }
-      - { sprite: EXDE, frames: [E], tics-per-frame: 7, action: 'A_Explode(35, 50, 2, "hurtplayer")', modifiers: [lighten(26)] }
-      - { sprite: EXDE, frames: [F, G, H, I], tics-per-frame: 7, next-state: Dead, modifiers: [lighten(26)] }
+      - { sprite: EXDE, frames: [B], tics-per-frame: 0, action: A_DeathScream, modifiers: [lighten(explosion)] }
+      - { sprite: EXDE, frames: [B], tics-per-frame: 7, action: A_PlaySound("bs/vital_gone"), modifiers: [lighten(explosion)] }
+      - { sprite: EXDE, frames: [C], tics-per-frame: 7, action: A_CountRemaining("$BS_GENERATORSLEFT"), modifiers: [lighten(explosion)] }
+      - { sprite: EXDE, frames: [D], tics-per-frame: 7, modifiers: [lighten(explosion)] }
+      - { sprite: EXDE, frames: [E], tics-per-frame: 0, action: A_CountRemaining("$BS_GENERATORSLEFT"), modifiers: [lighten(explosion)] }
+      - { sprite: EXDE, frames: [E], tics-per-frame: 7, action: 'A_Explode(35, 50, 2, "hurtplayer")', modifiers: [lighten(explosion)] }
+      - { sprite: EXDE, frames: [F, G, H, I], tics-per-frame: 7, next-state: Dead, modifiers: [lighten(explosion)] }
     # Its wreck, sparking; with it the last, the level is won
     Dead:
-      - { sprite: EXDE, frames: [J], tics-per-frame: 16, action: A_VictoryIfLast, modifiers: [lighten(26)] }
-      - { sprite: EXDE, frames: [K, L], tics-per-frame: 16, modifiers: [lighten(26)] }
+      - { sprite: EXDE, frames: [J], tics-per-frame: 16, action: A_VictoryIfLast, modifiers: [lighten(explosion)] }
+      - { sprite: EXDE, frames: [K, L], tics-per-frame: 16, modifiers: [lighten(explosion)] }
 
 # -----------------------------------------------------------------------
 # Scenery that moves
@@ -388,7 +389,7 @@ WaterDrip:
 FlickeringLight:
   parent: BlakeMonster
   properties:
-    "lighten": 6          # lit a little, as bstone's lamps
+    "lighten": partial-bright          # lit a little, as bstone's lamps
   states:
     Spawn:
       - { sprite: ARCL, frames: [A], tics-per-frame: -1, think: T_FlickerLight }
