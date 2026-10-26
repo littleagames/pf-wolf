@@ -192,9 +192,10 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
 
                                 FLOOR STATS
 
-    Blake Stone's floor ratios, as the elevator shows them: points (here, the treasure taken),
-    informants still alive and enemies destroyed, each a percentage (100 when the floor has
-    none); the floor's score is their sum, out of 300.
+    Blake Stone's floor ratios, as the elevator shows them: points (what the floor's counted
+    enemies and treasure have given, of what they're worth: bstone's accum_points of
+    total_points), informants still alive and enemies destroyed, each a percentage (100 when the
+    floor has none); the floor's score is their sum, out of 300.
 
     =============================================================================
     */
