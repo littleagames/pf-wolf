@@ -5,8 +5,10 @@ namespace PFWolf.Ui;
 
 /// <summary>What drawing the play screen needs from the game</summary>
 /// <param name="PresenterMessageBox">Shows a presenter.yaml message box script (Ui/TextPresenter.cs)</param>
+/// <param name="MessageBox">Shows text in the menus' message box (game-info menu-message), centered in an area that many lines high</param>
 internal sealed record PlayScreenHooks(
-    Action<string> PresenterMessageBox);
+    Action<string> PresenterMessageBox,
+    Action<string, int>? MessageBox = null);
 
 /// <summary>
 /// The screen around the view: the status bar with everything on it (DrawPlayScreen), the view's
@@ -346,6 +348,39 @@ internal sealed class PlayScreen(
         input.UserInput(35);
         video.FadeOut();
         DrawPlayScreen();
+        video.Update();
+    }
+
+    /// <summary>
+    /// game-info's quick-instructions over a new game's first view (bstone's
+    /// ShowQuickInstructions): its text in the menus' message box (bstone's CacheMessage), in the
+    /// middle of the screen between the bars; with no key pressed in its tics, its then text in its
+    /// place until one is. The next frame draws the view over them.
+    /// </summary>
+    internal void ShowQuickInstructions()
+    {
+        if (engine.GameParams.NoWait || engine.GetGameInfo().QuickInstructions is not { Text: { Length: > 0 } first } quick)
+            return;
+        ShowOverView(first);
+        if (!input.UserInput((uint)(quick.Tics ?? 120)) && quick.Then is { Length: > 0 } then)
+        {
+            ShowOverView(then);
+            input.Ack();
+        }
+        input.ClearKeysDown();
+    }
+
+    // A text (texts/ or VGAGRAPH, by name) or the text itself, up to its ^XX, in the message box
+    // over the view: centered in bstone's window from line 16 to 184 (its PrintY is half the
+    // window's 168 lines, less half the text's)
+    void ShowOverView(string text)
+    {
+        if (hooks.MessageBox == null)
+            return;
+        var shown = assets.Exists<TextAsset>(text) ? assets.Find<TextAsset>(text)!.ToText() : text;
+        if (shown.IndexOf("^XX", StringComparison.OrdinalIgnoreCase) is >= 0 and var end)
+            shown = shown[..end];
+        hooks.MessageBox(shown.Replace("\r\n", "\n").Replace('\r', '\n').TrimEnd('\n', ' '), 168);
         video.Update();
     }
 }

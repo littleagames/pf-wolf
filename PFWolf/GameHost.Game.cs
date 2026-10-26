@@ -63,7 +63,7 @@ internal static partial class GameHost
 
     static PlayScreen MakePlayScreen() => new(AssetManager, GameEngineManager, _videoManager, _graphicManager, _inputManager,
         statusBarDrawing, playerWeapons, radar, Render, playArea,
-        Settings, Session, new PlayScreenHooks(PresenterMessageBox));
+        Settings, Session, new PlayScreenHooks(PresenterMessageBox, (text, areaHeight) => menuDrawing.Message(text, areaHeight)));
 
     internal static void DrawPlayScreen() => playScreen.DrawPlayScreen();
     internal static void DrawPlayBorder() => playScreen.DrawPlayBorder();
@@ -248,7 +248,7 @@ internal static partial class GameHost
     static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, HudMessageManager, MapManager,
         frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
         new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick(),
-            () => demoTracer.AfterFrame(), () => LevelTimer.Tick()));
+            () => demoTracer.AfterFrame(), () => LevelTimer.Tick(), () => playScreen.ShowQuickInstructions()));
 
     // A level against the clock (Gameplay/LevelTimer.cs): game-info map time-limit
     static LevelTimer? _levelTimer;

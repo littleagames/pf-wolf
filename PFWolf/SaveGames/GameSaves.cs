@@ -364,6 +364,7 @@ internal sealed class GameSaves(
         if (quick != 0)
         {
             session.LoadedGame = true;
+            session.ShowQuickInstructions = false;    // a new game's, not a loaded one's
             var loaded = LoadTheGame(QuickSavePath, 0, 0);
             session.LoadedGame = false;
             if (!loaded)
@@ -404,6 +405,7 @@ internal sealed class GameSaves(
         Load: (path, x, y) =>
         {
             session.LoadedGame = true;
+            session.ShowQuickInstructions = false;    // a new game's, not a loaded one's
             if (LoadTheGame(path, x, y))
                 return true;
             session.LoadedGame = false;

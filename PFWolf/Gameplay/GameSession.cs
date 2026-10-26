@@ -186,6 +186,12 @@ internal sealed class GameSession
     /// <summary>A message shown as the level's play starts, after the last level's are cleared (Blake Stone's "transporting...")</summary>
     internal string? LevelStartHudMessage;
 
+    /// <summary>
+    /// A new game's first level shows game-info's quick-instructions once its view is up
+    /// (bstone's ShowQuickMsg); cleared once they're shown, or when a game's loaded
+    /// </summary>
+    internal bool ShowQuickInstructions;
+
     /// <summary>How the level's going: playing on, died, completed, warped...</summary>
     internal PlayState PlayState;
 

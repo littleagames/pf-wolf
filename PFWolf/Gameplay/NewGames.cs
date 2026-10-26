@@ -55,6 +55,7 @@ internal sealed class NewGames(
         session.GameState.Cluster = mapInfo.Cluster;
         session.GameState.MapOn = epInfo.StartMap;
         session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
+        session.ShowQuickInstructions = true;   // game-info quick-instructions, once its view is up
 
         session.GameChosen = true;
     }

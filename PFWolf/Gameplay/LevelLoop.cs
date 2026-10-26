@@ -22,7 +22,8 @@ internal sealed record LevelLoopHooks(
     Action AutoSaveGame,
     Action? TickAmbience = null,
     Action? AfterThinking = null,
-    Action? TickLevelTimer = null);
+    Action? TickLevelTimer = null,
+    Action? ShowQuickInstructions = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -190,6 +191,18 @@ internal sealed class LevelLoop(
             hooks.UpdateSoundListener();      // JAB
             if (video.ScreenFaded)
                 video.FadeIn();
+
+            // A new game's quick instructions over its first view (bstone's ShowQuickInstructions);
+            // the time spent reading them isn't played
+            if (session.ShowQuickInstructions)
+            {
+                session.ShowQuickInstructions = false;
+                if (hooks.ShowQuickInstructions != null && !session.DemoPlayback && !session.DemoRecord && !session.NetGame)
+                {
+                    hooks.ShowQuickInstructions();
+                    frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
+                }
+            }
 
             keys.CheckKeys();
 

@@ -1497,8 +1497,8 @@ graphics:
     - ThankYouText
     - CreditsText
     - Need386Text
-    - ElevatorNoCard1
-    - ElevatorNoCard2
+    - QuickInfo1          # bstone's QUICK_INFO1_TEXT: a new game's first words (game-info quick-instructions)
+    - QuickInfo2          # QUICK_INFO2_TEXT: the same, with "Press a key."
     - CorruptLevelText
     - CalibrateJoystick1
     - CalibrateJoystick2

@@ -246,6 +246,12 @@ public record GameInfoAsset : Asset
     public string? LevelStartMessage { get; init; }
 
     /// <summary>
+    /// What a new game's first level says once its view is up, in presenter.yaml's message box
+    /// over the view (Blake Stone's "You must find the RED access card..."); none when unset
+    /// </summary>
+    public QuickInstructionsInfo? QuickInstructions { get; init; }
+
+    /// <summary>
     /// Shown when an enemy hurts the player, while the Attack Info setting is on (Blake Stone's
     /// REBA "attacking:"): a $NAME language key or the text, %k the attacker's tag. None when left out.
     /// </summary>
@@ -321,6 +327,22 @@ public record GameInfoAsset : Asset
     /// Wolf3D window when unset
     /// </summary>
     public MenuMessageInfo? MenuMessage { get; init; }
+}
+
+/// <summary>
+/// A new game's quick instructions (bstone's ShowQuickInstructions): text shown over the first
+/// level's view; with no key pressed in tics, then shown in its place until one is
+/// </summary>
+public record QuickInstructionsInfo
+{
+    /// <summary>The text (a texts/ or VGAGRAPH text, a presenter script) shown first</summary>
+    public string? Text { get; init; }
+
+    /// <summary>The text shown, and waiting for a key, when none's pressed while the first is up (its "Press a key." one); none when unset</summary>
+    public string? Then { get; init; }
+
+    /// <summary>How long the first waits for a key, in tics (default 120)</summary>
+    public int? Tics { get; init; }
 }
 
 /// <summary>

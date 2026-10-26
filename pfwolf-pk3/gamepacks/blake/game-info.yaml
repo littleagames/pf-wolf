@@ -253,6 +253,13 @@ clusters:
 
 # Shown over the status bar as each floor loads (a presenter script)
 level-start-message: "^ST1^CEGet Ready, Blake!\r^XX"
+# A new game's first floor, once it's up: "You must find the RED access card..." over the view;
+# with no key in 120 tics, the same with "Press a key." until one is (bstone's
+# ShowQuickInstructions)
+quick-instructions:
+  text: QuickInfo1
+  then: QuickInfo2
+  tics: 120
 
 # Who's attacking Blake, in the info area while the Game Switches' REBA Attack Info is on
 attack-message: "$BS_ATTACKING"
