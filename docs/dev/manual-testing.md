@@ -229,7 +229,9 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       colors), REBA Attack Info ("ATTACKING:" and the enemy when hit). **(never tried)** Show
       Ceilings by eye; the switches kept in config.cfg after a restart.
 - [ ] **(never tried)** Enemies never step onto an elevator floor (area 0), nor off one.
-- [ ] **(never tried)** Wall outlets and Goldfire's warp-in keep their timers through a save and load.
+- [x] Wall outlets and Goldfire's warp-in keep their timers through a save and load (2026-10-27,
+      headless on AOG MAP04: BlakeLevelAIGameTests; `levelai` shows the waits). **(never tried)**
+      with Goldfire already warped in once (last/chosen site, the later wait).
 - [ ] Help pages (Instructions): ^AN animations (posts, arcs, turret, transport, guards) run
       while the page is up.
 - [ ] Quit, End Game and new-game questions in bstone's words.

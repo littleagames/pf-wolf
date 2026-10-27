@@ -76,11 +76,8 @@ internal partial record BlakeMonster
 
             if (BackToDiagonal())
                 continue;
-            if (CanWalk())
-            {
-                TryWalk();
+            if (CanWalk() && TryWalk())
                 continue;
-            }
 
             // Blocked: a diagonal one tries a right angle either way, then everything goes back
             if (IsDiagonal(Dir))
@@ -101,15 +98,15 @@ internal partial record BlakeMonster
 
     private static bool IsDiagonal(ObjDir dir) => dir is ObjDir.NorthEast or ObjDir.NorthWest or ObjDir.SouthEast or ObjDir.SouthWest;
 
+    // Only a way it really goes counts: TryWalk also keeps it off monster blockers and out of
+    // the elevators' keep-out floor, and a way it didn't go would leave the move loop above
+    // taking nothing off its move
     private bool TryBounceDir(ObjDir dir)
     {
         var old = Dir;
         Dir = dir;
-        if (CanWalk())
-        {
-            TryWalk();
+        if (CanWalk() && TryWalk())
             return true;
-        }
         Dir = old;
         return false;
     }

@@ -66,6 +66,18 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         _floorDropGiven = state.FloorDropGiven;
     }
 
+    /// <summary>The outlets' and warp sites' waits as they are now, a line each (the `levelai` command)</summary>
+    internal IEnumerable<string> Describe()
+    {
+        if (_outlets.Count == 0 && _warpSites.Count == 0)
+            yield return "No wall outlets or warp sites on this level";
+        foreach (var outlet in _outlets)
+            yield return $"Outlet {outlet.X},{outlet.Y} ({outlet.Spec.Class}): {outlet.Delay} tics, {OutletCount(outlet)} about";
+        if (_warpSites.Count > 0)
+            yield return $"Warp sites ({_warpClass}): {_warpSites.Count}, wait {_warpWait} tics, last {_warpLast}, chosen {_warpChosen}, first {_warpFirst}";
+        yield return $"Floor drop given: {_floorDropGiven}";
+    }
+
     /// <summary>Runs the level's outlets and warp sites, once a tic (PlayLoop)</summary>
     internal void Tick()
     {

@@ -61,6 +61,12 @@ or + 16): lit is lighten(partial-bright), the first dim frame plain, the second 
 -2 steps. A lighten level below 0 is darker; a frame's level counts alone when the actor has no
 `lighten` of its own.
 
+Then (2026-10-27): the outlet and warp-site waits checked through a save and load (headless,
+BlakeLevelAIGameTests; the `levelai` cheat shows them). That found a hang: an electro-sphere
+next to an elevator floor (hidden area 0, kept out since 2026-10-24) took a way TryWalk refused
+and its move loop never ended (AOG MAP04). A refused walk now counts as blocked; every AOG and
+Planet Strike floor was run headless for 400 tics without a hang.
+
 **Aliens of Gold: gameplay**
 - Nothing known.
 
