@@ -368,14 +368,20 @@ internal sealed class SpriteDrawing(
                 continue;
             }
 
+            // Whether it's on screen counts for things that stand still too (a Blake Stone steam
+            // vent only lets off steam while it's seen, bstone's FL_VISIBLE)
             if (!map.Spotvis[(int)actor.Position.X, (int)actor.Position.Y])
+            {
+                actor.RuntimeFlags &= ~ObjFlags.Visible;
                 continue;                                               // not visable
+            }
 
             // Picking it up is TouchItems' job (Rendering/PlayerView.cs), not the renderer's
             TransformTile((int)actor.Position.X, (int)actor.Position.Y, ref visptr_val.ViewX, ref visptr_val.ViewHeight);
 
             if (visptr_val.ViewHeight == 0)
                 continue;                                               // to close to the object
+            actor.RuntimeFlags |= ObjFlags.Visible;
             visptr_val.Z = actor.Z;
 
             if (visptr < (GameConstants.MaxVisible - 1))    // don't let it overflow

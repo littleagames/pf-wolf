@@ -67,6 +67,13 @@ next to an elevator floor (hidden area 0, kept out since 2026-10-24) took a way 
 and its move loop never ended (AOG MAP04). A refused walk now counts as blocked; every AOG and
 Planet Strike floor was run headless for 400 tics without a hang.
 
+Then (2026-10-27, later): security lights, steam, ooze and the six mission bosses played headless
+(BlakeMachinesGameTests: each boss sees, hits, dies and drops the gold card). Two fixes: steam
+vents never let off steam, as nothing standing still was ever flagged on screen (the renderer now
+flags any drawn thing, as bstone's FL_VISIBLE); and ooze rolled its 1-in-8 bite every tic of its
+third frame (a think) rather than once a round (now an action), so it hurt about 30 times too
+often.
+
 **Aliens of Gold: gameplay**
 - Nothing known.
 

@@ -178,8 +178,10 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Linked doors (floor 8 cell doors open together), walk-on color changes darken corridors.
 - [ ] Machines: spheres, turrets, crates, floating bomb, generators → victory, outlets spawning
       electro-aliens, liquid alien, Goldfire warp.
-- [ ] **(never tried)** Security light alert, steam damage, oozes, the five bosses other than the
-      spider.
+- [x] Security light alert, steam, oozes, all six mission bosses (2026-10-27, headless:
+      BlakeMachinesGameTests). Steam never hurts (bstone's doesn't); it only puffs while seen.
+      **(never tried)** by hand: a boss fight to the death with real weapons, the bosses' attack
+      info pictures, a level's own steam vents and oozes by eye.
 - [ ] **(never tried)** End movie after a real win.
 - [ ] Lose screen ("Goldfire Transmission") typed out, scrolling up as it fills.
 - [ ] **(never tried)** High-score name entry with a placing score (ratio column).
@@ -196,7 +198,7 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       Lighting, Show Floors and Show Ceilings on.
 - [ ] Attack info: a bio-tech's animated picture beside "ATTACKING: BIO-TECH". **(never tried)**
       other enemies' pictures and texts (bosses, ooze, arc barrier, explosions, Planet Strike's
-      own), and standing in ooze hurting.
+      own). Standing in ooze hurting is tested headless (BlakeMachinesGameTests).
 - [ ] Status bar text as bstone's: health and ammo numbers plain (no shadow) with the ECG grid
       behind the health; the attack info's text with one shadow; the console keeps "ATTACKING:
       ..." as words, once while it's up. **(never tried)** Planet Strike's ammo number and the

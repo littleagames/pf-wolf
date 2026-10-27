@@ -397,7 +397,9 @@ FlickeringLight:
     Dim2:
       - { sprite: ARCL, frames: [C], tics-per-frame: -1, think: T_FlickerLight, modifiers: [lighten(lamp-dim)] }
 
-# Ooze: standing in it now and then hurts (A_HurtPlayerHere, a BlakeMonster's)
+# Ooze: standing in it now and then hurts (A_HurtPlayerHere, a BlakeMonster's): one roll each
+# time round, on its third frame, 1 in 8 for 4 points (bstone's T_SmartThought). An action, not a
+# think, which would roll every tic of the frame.
 GreenOoze:
   parent: BlakeMonster
   properties:
@@ -405,7 +407,7 @@ GreenOoze:
   states:
     Spawn:
       - { sprite: OOZ1, frames: [A, B], tics-per-frame: 30 }
-      - { sprite: OOZ1, frames: [C], tics-per-frame: 30, think: "A_HurtPlayerHere(4, 32)" }
+      - { sprite: OOZ1, frames: [C], tics-per-frame: 30, action: "A_HurtPlayerHere(4, 32)" }
 
 BlackOoze:
   parent: BlakeMonster
@@ -414,4 +416,4 @@ BlackOoze:
   states:
     Spawn:
       - { sprite: OOZ2, frames: [A, B], tics-per-frame: 30 }
-      - { sprite: OOZ2, frames: [C], tics-per-frame: 30, think: "A_HurtPlayerHere(4, 32)" }
+      - { sprite: OOZ2, frames: [C], tics-per-frame: 30, action: "A_HurtPlayerHere(4, 32)" }

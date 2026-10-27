@@ -321,8 +321,7 @@ internal partial record BlakeMonster
     /// seconds) and lets off steam (Release), then waits up to 34 seconds for the next
     /// </summary>
     internal void SteamVent()
-    {
-        if (!RuntimeFlags.Has(ObjFlags.Visible))
+    {        if (!RuntimeFlags.Has(ObjFlags.Visible))
             return;
         if (Temp3 == 0)
         {
@@ -341,8 +340,7 @@ internal partial record BlakeMonster
     internal void HurtPlayerHere(string[] args)
     {
         int damage = args.Length > 0 && int.TryParse(args[0], out var d) ? d : 1;
-        int chance = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 256;
-        if (Player.TileX == TileX && Player.TileY == TileY && NextRandom() < chance)
+        int chance = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 256;        if (Player.TileX == TileX && Player.TileY == TileY && NextRandom() < chance)
             TakeDamage(damage, this);
     }
 
