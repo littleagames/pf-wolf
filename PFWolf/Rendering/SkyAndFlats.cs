@@ -52,7 +52,8 @@ internal sealed partial class SkyAndFlats(
     = behind any ceiling flats (it shows where they're missing or see-through). It's stretched
     = to fill the view above the horizon when looking straight ahead, and repeats around the
     = full circle every SkyCircle pixels, turning with the view but not moving as the player walks. Its bottom stays on the horizon as the view pitches; looking up past its top
-    = shows its top row.
+    = shows its top row's most common color (repeating the row itself would stretch a star on it
+    = into a streak).
     =
     ====================
     */
@@ -80,6 +81,7 @@ internal sealed partial class SkyAndFlats(
         Asset? source;                // the picture or texture Columns holds (an animation's frame)
         internal byte[] Columns = [];
         internal int Width, Height;
+        internal byte TopColor, BottomColor;  // the most common color of the top and bottom rows: what fills past them
 
         /// <summary>Holds the named picture or wall texture's pixels; false if there's none, or it can't be found</summary>
         internal bool Load(string? name, AssetManager? assets, Func<string, TextureAsset?> worldTexture, int clock)
@@ -114,7 +116,25 @@ internal sealed partial class SkyAndFlats(
                 Columns = texture.RawData;
             }
 
+            if (Columns.Length > 0)
+            {
+                TopColor = CommonColor(0);
+                BottomColor = CommonColor(Height - 1);
+            }
             return Columns.Length > 0;
+        }
+
+        // The color most of a row's pixels have (the lowest one on a tie)
+        byte CommonColor(int row)
+        {
+            Span<int> counts = stackalloc int[256];
+            for (int x = 0; x < Width; x++)
+                counts[Columns[x * Height + row]]++;
+            int best = 0;
+            for (int color = 1; color < 256; color++)
+                if (counts[color] > counts[best])
+                    best = color;
+            return (byte)best;
         }
     }
 
@@ -141,7 +161,7 @@ internal sealed partial class SkyAndFlats(
                 for (int y = 0; y < render.CenterY; y++)
                 {
                     int row = (y - render.CenterY + render.BaseCenterY) * sky.Height / render.BaseCenterY;
-                    dest[y * pitch + x] = sky.Columns[column + Math.Max(row, 0)];
+                    dest[y * pitch + x] = row >= 0 ? sky.Columns[column + row] : sky.TopColor;
                 }
             }
         }
@@ -151,11 +171,13 @@ internal sealed partial class SkyAndFlats(
     internal bool LoadFloorSky() => floorsky.Load(LevelFloorSky, assets, worldTexture, session.GameState.TimeCount);
 
     // The floor sky over the rows below the horizon: its top row at the horizon running down, or
-    // mirrored, its bottom row at the horizon running up to its top at the bottom of the view
+    // mirrored, its bottom row at the horizon running up to its top at the bottom of the view.
+    // Looking down past its far edge shows that edge row's most common color, as the sky does
     internal void DrawFloorSky()
     {
         int pitch = (int)video.BufferPitch;
         int last = floorsky.Height - 1;
+        byte beyond = FloorSkyMirror ? floorsky.TopColor : floorsky.BottomColor;
 
         unsafe
         {
@@ -167,7 +189,7 @@ internal sealed partial class SkyAndFlats(
                 {
                     int below = (y - render.CenterY) * floorsky.Height / render.BaseCenterY;
                     int row = FloorSkyMirror ? last - below : below;
-                    dest[y * pitch + x] = floorsky.Columns[column + Math.Clamp(row, 0, last)];
+                    dest[y * pitch + x] = row >= 0 && row <= last ? floorsky.Columns[column + row] : beyond;
                 }
             }
         }

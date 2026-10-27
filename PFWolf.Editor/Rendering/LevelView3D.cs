@@ -84,7 +84,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     private int _program, _viewProjection, _mode, _texture, _eye, _forward, _fog, _fadeColor, _time;
     private int _staticVao, _staticVbo, _dynamicVao, _dynamicVbo;
     // The sky: a picture behind everything, drawn by a pass of its own over the whole view
-    private int _skyProgram, _skyInverse, _skyEye, _skyScale, _skyTanHalf, _skyTexture, _skyVao, _skyVbo;
+    private int _skyProgram, _skyInverse, _skyEye, _skyTop, _skyScale, _skyTanHalf, _skyTexture, _skyVao, _skyVbo;
     private int _white, _missing;
     private readonly Dictionary<TextureRef, int> _glTextures = [];
     private bool _texturesStale;
@@ -188,6 +188,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             _skyProgram = gl.MakeProgram(header + SkyVertexShader, header + SkyFragmentShader, "aPosition");
             _skyInverse = gl.GetUniformLocation(_skyProgram, "uInverseViewProjection");
             _skyEye = gl.GetUniformLocation(_skyProgram, "uEye");
+            _skyTop = gl.GetUniformLocation(_skyProgram, "uTop");
             _skyScale = gl.GetUniformLocation(_skyProgram, "uScale");
             _skyTanHalf = gl.GetUniformLocation(_skyProgram, "uTanHalf");
             _skyTexture = gl.GetUniformLocation(_skyProgram, "uSky");
@@ -415,13 +416,14 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         int id = TextureId(gl, texture);
         if (id == _missing || !Matrix4x4.Invert(viewProjection, out var inverse))
             return;
-        int width = _skyWidths.TryGetValue(sky, out var known) ? known : _skyWidths[sky] = Art?.Pixels(texture)?.Width ?? 1024;
+        var (width, top) = _skyLooks.TryGetValue(sky, out var known) ? known : _skyLooks[sky] = SkyLook(texture);
 
         gl.Disable(Gl.DEPTH_TEST);
         gl.Disable(Gl.CULL_FACE);
         gl.UseProgram(_skyProgram);
         gl.UniformMatrix4(_skyInverse, inverse);
         gl.Uniform3(_skyEye, camera.Position);
+        gl.Uniform3(_skyTop, top);
         gl.Uniform1(_skyScale, 1024f / Math.Max(width, 1));
         gl.Uniform1(_skyTanHalf, MathF.Tan(Camera3D.FieldOfViewY * MathF.PI / 360));
         gl.Uniform1(_skyTexture, 0);
@@ -431,7 +433,25 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.BindVertexArray(0);
     }
 
-    private readonly Dictionary<string, int> _skyWidths = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (int Width, Vector3 Top)> _skyLooks = new(StringComparer.OrdinalIgnoreCase);
+
+    // A sky's width, and the most common color of its top row: what shows above it, as in the game
+    // (repeating the row would stretch a star on it into a streak)
+    private (int Width, Vector3 Top) SkyLook(TextureRef texture)
+    {
+        if (Art?.Pixels(texture) is not { Width: > 0 } pixels)
+            return (1024, Vector3.Zero);
+
+        var counts = new Dictionary<int, int>();
+        for (int x = 0; x < pixels.Width; x++)
+        {
+            int color = BitConverter.ToInt32(pixels.Rgba, x * 4);
+            counts[color] = counts.GetValueOrDefault(color) + 1;
+        }
+        int common = counts.MaxBy(entry => entry.Value).Key;
+        var bytes = BitConverter.GetBytes(common);
+        return (pixels.Width, new Vector3(bytes[0], bytes[1], bytes[2]) / 255f);
+    }
 
     private void EnsureMesh()
     {
@@ -915,6 +935,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         in vec2 vView;
         uniform mat4 uInverseViewProjection;
         uniform vec3 uEye;
+        uniform vec3 uTop;
         uniform float uScale;
         uniform float uTanHalf;
         uniform sampler2D uSky;
@@ -926,8 +947,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             float angle = mod(atan(-way.z, way.x), 6.2831853);
             float u = (1.0 - angle / 6.2831853) * uScale;
             float rise = way.y / max(length(way.xz), 0.00001);
-            float v = clamp(1.0 - rise / uTanHalf, 0.001, 0.999);
-            fragColor = vec4(texture(uSky, vec2(u, v)).rgb, 1.0);
+            float v = 1.0 - rise / uTanHalf;
+            fragColor = v < 0.0 ? vec4(uTop, 1.0) : vec4(texture(uSky, vec2(u, min(v, 0.999))).rgb, 1.0);
         }
         """;
 }
