@@ -239,7 +239,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Quit, End Game and new-game questions in bstone's words.
 - [ ] Warp walls: on the same floor (MAP21 60,39) "transporting out", the view turns away and
       fizzles out, then "transporting..." where it leads; to another floor (MAP01 13,7) the
-      same, arriving on the new floor. **(never tried)** Saving right after a warp.
+      same, arriving on the new floor. **(never tried)** Saving right after a warp. Checked
+      2026-10-27 to another floor (MAP01 13,7, from 13,6): after "Get Ready, Blake!" the new
+      floor's view fizzles in from black with "transporting...". Before that fix it faded in.
+      The info area still shows "transporting out" during the fizzle in; bstone shows
+      "transporting..." by then.
 
 ## 1.10 Planet Strike (PS)
 
@@ -250,8 +254,14 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Cloaked cyborg shimmer and hit frame.
 - [ ] **(never tried)** Door triggers 158–160 (smart switches) in play.
 - [ ] Teleporter, detonator, gold morph, ending.
-- [ ] Shooting a dropped detonator sets it off at once (and breaks the cube); no "your ally"
-      message.
+- [x] The teleporter map warps you out and in, as a warp wall does (bstone's ex_transported).
+      Checked 2026-10-27, floor 0 (panel 29,63) to Bio-Tech Labs: the view fades back in after
+      the map, "transporting out", it turns and fizzles out, "Get Ready, Blake!", then the new
+      floor fizzles in with "transporting...".
+- [x] Shooting a dropped detonator sets it off at once (and breaks the cube); no "your ally"
+      message (2026-10-27, PS floor 1: dropped by the cube at 8,44, shot from 2-3 tiles off
+      well before its timer). It's small and on the floor, so it sits behind the gun when
+      straight ahead.
 - [ ] A detonator blows the closed doors round it open for good (`doors` says "blown open");
       **(never tried)** by eye: the doorway's explosion and the rubble left half the time, a
       locked or one-way door left shut, a blown door after save/load.

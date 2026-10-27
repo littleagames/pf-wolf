@@ -402,7 +402,7 @@ internal static partial class GameHost
     // and the victory run (Gameplay/HubActions.cs)
     static HubActions hubActions = null!;       // made in InitServices (or by RegisterActorActions without it)
 
-    static HubActions MakeHubActions() => new(GameEngineManager, MapManager, AudioManager, _inputManager, InventoryManager,
+    static HubActions MakeHubActions() => new(GameEngineManager, MapManager, AudioManager, _videoManager, _inputManager, InventoryManager,
         HudMessageManager, hubs, elevatorScreens, playScreen, frameRefresh, playerMovement, Session,
         new HubActionsHooks(change => PendingMapChange = change, PlaySoundLocActor));
 

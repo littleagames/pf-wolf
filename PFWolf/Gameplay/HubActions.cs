@@ -43,6 +43,7 @@ internal sealed class HubActions(
     GameEngineManager engine,
     MapManager mapManager,
     AudioManager audio,
+    VideoManager video,
     InputManager input,
     InventoryManager inventory,
     HudMessageManager hudMessages,
@@ -112,7 +113,7 @@ internal sealed class HubActions(
         int panelWall = mapManager.MapSpot(trigger.TileX, trigger.TileY, 0);
 
         // Planet Strike's teleporter map (Ui/ElevatorScreens.cs): the player comes out at the
-        // new floor's start
+        // new floor's start, warped out and in
         bool teleporter = elevator.Style.Equals("teleporter", StringComparison.OrdinalIgnoreCase) && elevator.Teleporter != null;
         var map = teleporter ? elevatorScreens.TeleporterScreen(elevator, elevator.Teleporter!) : elevatorScreens.FloorSelectScreen(elevator);
         if (map == null)
@@ -123,8 +124,15 @@ internal sealed class HubActions(
             return true;
         }
 
+        // The teleporter warps out, and the new floor comes up with the warp in, as a teleporter
+        // wall's (bstone's select_floor ends Planet Strike's with ex_transported)
+        if (teleporter)
+        {
+            playScreen.DrawPlayScreen();
+            WarpOut();
+        }
         hooks.SetPendingMapChange(teleporter
-            ? new PendingMapChange(map, false, 0, 0, 0, WaitTics: 0)
+            ? new PendingMapChange(map, false, 0, 0, 0, WaitTics: 0, WarpIn: true)
             : new PendingMapChange(map, true, session.Player.X, session.Player.Y, session.Player.Angle, WaitTics: 0, ElevatorWall: panelWall));
         session.GameState.MapOn = map;
         session.GameState.Entrance = "";       // by no entrance in particular: the level's own start
@@ -187,7 +195,7 @@ internal sealed class HubActions(
     /// <summary>
     /// Blake Stone's warp out (bstone's Warped): "transporting out", the weapon put away, the
     /// view turned to face away from the warp wall and fizzled to black, then a moment's wait
-    /// (100 tics, or a key)
+    /// (100 tics, or a key). After the teleporter map, which faded out, the view fades back in first.
     /// </summary>
     void WarpOut()
     {
@@ -197,6 +205,8 @@ internal sealed class HubActions(
         try
         {
             frame.ThreeDRefresh();
+            if (video.ScreenFaded)
+                video.FadeIn();
             frame.CalcTics();
 
             // Round to the way away from the one faced, as bstone's ((dir + 4) % 8 >> 1) * 90
@@ -218,6 +228,7 @@ internal sealed class HubActions(
     /// <summary>
     /// Blake Stone's warp in (bstone's DrawWarpIn): "transporting...", the view black, and the
     /// next frame fizzles in from it. On a new level, the message waits for its play to start.
+    /// Used by a teleporter wall and Planet Strike's teleporter map (bstone's ex_transported).
     /// </summary>
     internal void WarpIn(bool newLevel = false)
     {
@@ -226,6 +237,13 @@ internal sealed class HubActions(
         else
             hudMessages.Show(HudMessageKind.Other, "$BS_TRANSPORTING");
         frame.FillView("Black");
+        // A new level's start message faded the screen out: back in, with the view still black,
+        // so the view fizzles in rather than fading
+        if (video.ScreenFaded)
+        {
+            video.Update();
+            video.FadeIn();
+        }
         audio.Play("bs/warpin");
         session.FizzleIn = true;
     }

@@ -74,6 +74,11 @@ flags any drawn thing, as bstone's FL_VISIBLE); and ooze rolled its 1-in-8 bite 
 third frame (a think) rather than once a round (now an action), so it hurt about 30 times too
 often.
 
+Then (2026-10-27, last): Planet Strike's teleporter map warps out and in, as bstone's
+`select_floor` (ex_transported) does; it had just switched floors. A floor arrived at by a warp
+fizzles in from black after "Get Ready, Blake!", where it used to fade in, for warp walls too.
+One difference is left: during that fizzle the info area still says "transporting out".
+
 **Aliens of Gold: gameplay**
 - Nothing known.
 

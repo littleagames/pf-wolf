@@ -19,7 +19,7 @@ public class HubActionsTests
             TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
             ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
-        _actions = new HubActions(null!, _map, null!, null!, null!, null!, null!, null!, null!, null!, null!, _session,
+        _actions = new HubActions(null!, _map, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _session,
             new HubActionsHooks(_ => { }, (_, _) => { }));
     }
 
