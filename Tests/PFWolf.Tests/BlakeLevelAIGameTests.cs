@@ -4,7 +4,8 @@ namespace PFWolf.Tests;
 
 /// <summary>
 /// Blake Stone's wall outlets and Goldfire's warp sites (Managers/LevelAI.cs) in the real game,
-/// headless: their waits through a save and load. Needs the Aliens of Gold data files.
+/// headless: their waits through a save and load, and Planet Strike's Goldfire morph keeping
+/// firing off through one. Needs the Aliens of Gold and Planet Strike data files.
 /// </summary>
 [Category("GameData")]
 public class BlakeLevelAIGameTests
@@ -40,6 +41,36 @@ public class BlakeLevelAIGameTests
             var gone = saved[0] - loaded[0];
             Assert.That(gone, Is.InRange(1, 30), log);
             Assert.That(loaded.Zip(saved, (l, s) => s - l), Has.All.EqualTo(gone), log);
+        }
+        finally
+        {
+            try { Directory.Delete(workFolder, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    [Test]
+    public void Firing_Stays_Off_When_A_Game_Saved_Mid_Morph_Is_Loaded()
+    {
+        // Arrange: PS Goldfire's Lair, Goldfire summoned and killed: he morphs for 140 tics,
+        // and the player can't fire till he's done (A_PlayerFire, bstone's noShots)
+        var workFolder = Path.Combine(Path.GetTempPath(), "pfwolf-noshots-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(workFolder);
+        try
+        {
+            HeadlessGame.PrepareFolder(workFolder, "blake-ps");
+
+            // Act: firing mid-morph, saved there; after the morph; loaded; after the morph again
+            var (exitCode, output) = HeadlessGame.Run(workFolder, "planetstrike",
+                "wait 5; god; summon Goldfire; wait 1; killall; wait 20; levelai; save morph; wait 200; levelai; "
+                + "load morph; wait 2; levelai; actors Goldfire; wait 200; levelai; actors Goldfire; quit",
+                TimeSpan.FromMinutes(2), extraArgs: ["--warp", "MAP20", "--cheats"]);
+            var log = string.Join(Environment.NewLine, output.TakeLast(40));
+            var fire = output.Where(line => line.StartsWith("Player fire: ")).Select(line => line["Player fire: ".Length..]).ToList();
+
+            // Assert: off while he morphs, before the save and after the load; on once he has
+            Assert.That(exitCode, Is.Zero, log);
+            Assert.That(fire, Is.EqualTo(new[] { "off", "on", "off", "on" }), log);
+            Assert.That(output, Has.Some.Matches<string>(line => line.StartsWith("GoldfireMorphed at ")), log);
         }
         finally
         {

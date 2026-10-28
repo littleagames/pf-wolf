@@ -17,7 +17,8 @@ internal sealed record LevelBody(
     byte? CeilingColor,
     byte? FloorColor,
     bool AltFlatColors,
-    LevelAIState AI);
+    LevelAIState AI,
+    bool NoShots);
 
 /// <summary>
 /// The level as it stands: written into a save, kept for a hub level that's been left, and sent
@@ -36,8 +37,9 @@ internal sealed class LevelBodies(
     /// The level as it stands, as a save holds it and as a hub keeps a level that's been left:
     /// the map and its actors (MapManager.WriteLevelState), then doors, area connections, the
     /// moving MovingWalls, the player's last attacker, the automap's seen tiles, the light zones,
-    /// the scrollers, the level's own colors (map-info, as stepped onto, and A_Warp's swap) and
-    /// the wall outlets' and warp sites' waits (Managers/LevelAI.cs).
+    /// the scrollers, the level's own colors (map-info, as stepped onto, and A_Warp's swap), the
+    /// wall outlets' and warp sites' waits (Managers/LevelAI.cs) and whether the player's weapon
+    /// can fire (A_PlayerFire: off while Goldfire morphs).
     /// </summary>
     internal void WriteLevelBody(BinaryWriter bw)
     {
@@ -69,6 +71,7 @@ internal sealed class LevelBodies(
         bw.Write(map.MapFloorColor ?? 0);
         bw.Write(map.AltFlatColors);
         levelAI.WriteState(bw);
+        bw.Write(session.NoShots);
     }
 
     internal LevelBody ReadLevelBody(BinaryReader br)
@@ -97,9 +100,10 @@ internal sealed class LevelBodies(
         byte ceiling = br.ReadByte(), floor = br.ReadByte();
         bool alt = br.ReadBoolean();
         var ai = LevelAI.ReadState(br);
+        bool noShots = br.ReadBoolean();
 
         return new LevelBody(level, doors, areaConnect, areaByPlayer, pushWallList, lastAttacker, seen, zones, scrollers,
-            hasColors ? ceiling : null, hasColors ? floor : null, alt, ai);
+            hasColors ? ceiling : null, hasColors ? floor : null, alt, ai, noShots);
     }
 
     /// <summary>
@@ -144,6 +148,7 @@ internal sealed class LevelBodies(
         map.Scrollers.Restore(body.Scrollers.ToDictionary(s => s.Key, s => s.Value.Clone()));
 
         levelAI.ApplyState(body.AI);     // its warp sites found again among the restored actors
+        session.NoShots = body.NoShots;  // a load mid-morph keeps firing off until Goldfire's done
 
         session.PlayerState.LastAttacker = body.LastAttacker >= 0 && body.LastAttacker < actors.Count ? actors[body.LastAttacker] : null;
         session.PlayerState.FaceTimes = 0;

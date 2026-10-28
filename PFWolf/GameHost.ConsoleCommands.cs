@@ -66,8 +66,13 @@ internal static partial class GameHost
         cheatCommands.Register();       // god, NoClip, give, map, exitlevel, tp, killall, diag, summon, pitch, eyeheight, hurt, PlayerClass (Commands/CheatCommands.cs)
         Group("Information and debugging");
         debugCommands.Register();       // overhead, where, count, actors, maps, fps, slowmo, vbls, fade, screenshot (Commands/DebugCommands.cs)
-        Register("levelai", "Shows the level's wall outlets and warp sites (Blake Stone's): how many tics until the next comes out, and whether the floor's drop has been given.",
-            "levelai", _ => { foreach (var line in LevelAI.Describe()) _consoleManager.Print(line); }, Cheat | InLevel);
+        Register("levelai", "Shows the level's wall outlets and warp sites (Blake Stone's): how many tics until the next comes out, whether the floor's drop has been given, and whether firing's off (Goldfire morphing).",
+            "levelai", _ =>
+            {
+                foreach (var line in LevelAI.Describe())
+                    _consoleManager.Print(line);
+                _consoleManager.Print($"Player fire: {(Session.NoShots ? "off" : "on")}");
+            }, Cheat | InLevel);
         Group("Factions and colors");
         factionCommands.Register();     // factions, setfaction, settranslation, translations, playercolor (Commands/FactionCommands.cs)
         Group("Changing the level");

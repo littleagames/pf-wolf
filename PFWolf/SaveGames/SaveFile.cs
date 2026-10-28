@@ -64,7 +64,8 @@ internal static class SaveFile
     // 33: whether each door has been blown open for good (A_BlastDoors), after unlocked.
     // 34: the level's points earned and total (Blake Stone's points ratio), at the end of GameState.
     // 35: the wall outlets' and warp sites' waits and the floor drop, at the end of the level (LevelAI).
-    internal const int SaveVersion = 35;
+    // 36: whether the player's weapon can fire (NoShots: Goldfire morphing), at the end of the level.
+    internal const int SaveVersion = 36;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

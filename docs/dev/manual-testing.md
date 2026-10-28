@@ -273,8 +273,9 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [x] No firing while Goldfire morphs; firing again once he's morphed. Checked 2026-10-27 on
       PS MAP20 (summoned, `killall`, fire tapped throughout): no shot from his death until
       GoldfireMorphed came on, 139 tics (2 s at 70 a second, as bstone's 60 + 8 x 10), then
-      the first tap fired. **(never tried)** a game saved mid-morph: firing's on again after
-      the load (NoShots isn't saved; bstone doesn't save noShots either).
+      the first tap fired. A game saved mid-morph loads with firing still off until he's done
+      (save v36, headless: BlakeLevelAIGameTests; `levelai` shows "Player fire"); bstone
+      doesn't save its noShots. **(never tried)** by hand, in the window.
 - [ ] Radar at 4x shows pushwalls seen beside somewhere seen (cyan), not at 1x or 2x.
 - [ ] Radar turned so the way you face is up: a thing on the tile ahead shows above you, the
       room in front at the top; facing east, what's south of you is on the right.
