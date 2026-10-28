@@ -5,11 +5,20 @@ internal sealed class LevelMusic(GameEngineManager engine, AudioManager audio, G
 {
     internal string LastMusicChunk = "";
 
+    /// <summary>The song to play in place of the level's own, if the scripts say (game.music, game.onmusic); else the same</summary>
+    internal Func<string, string>? ChooseSong { get; init; }
+
+    // The level's song, or the one the scripts chose
+    string LevelSong()
+    {
+        var song = engine.GetGameInfo().Maps[session.GameState.MapOn].Music;
+        return ChooseSong?.Invoke(song) ?? song;
+    }
+
     internal void StartMusic()
     {
         //audio.SetPaused(true);
-        var gameInfo = engine.GetGameInfo();
-        var song = gameInfo.Maps[session.GameState.MapOn].Music;
+        var song = LevelSong();
         LastMusicChunk = song;
         if (!string.IsNullOrEmpty(song))        // a map with no music keeps quiet
             audio.PlayMusic(LastMusicChunk);
@@ -19,8 +28,7 @@ internal sealed class LevelMusic(GameEngineManager engine, AudioManager audio, G
     // otherwise (after the menu or a loaded game replaced it) starts it over.
     internal void ContinueMusic(int offs)
     {
-        var gameInfo = engine.GetGameInfo();
-        var song = gameInfo.Maps[session.GameState.MapOn].Music;
+        var song = LevelSong();
         LastMusicChunk = song;
         if (string.Equals(audio.CurrentMusicTrack, song, StringComparison.OrdinalIgnoreCase))
             audio.SetPaused(false);

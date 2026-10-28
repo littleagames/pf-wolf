@@ -48,7 +48,7 @@ internal partial record Monster : Actor
     private protected bool CheckDiag(int x, int y) => World.LineOfSight.CheckDiag(x, y);
     private protected DoorObject[] DoorObjects => World.Doors.DoorObjList;
     private protected int LastDoorObject => World.Doors.LastDoorObj;
-    private protected void OpenDoor(int door) => World.Doors.OpenDoor(door);
+    private protected void OpenDoor(int door) => World.Doors.OpenDoor(door, this);
     private protected void SpawnItemAt(string itemClass, int tilex, int tiley) => World.Map.SpawnThing(tilex, tiley, itemClass);
     private protected void PlayActorSound(Actor ob, string key) => World.ActorSounds.PlayActorSound(ob, key);
     private protected void PlaySoundAtActor(string s, Actor ob) => World.PositionalSounds.PlaySoundLocActor(s, ob);
@@ -205,6 +205,7 @@ internal partial record Monster : Actor
         RecenterOnTile();
         World?.TileArrived?.Invoke(this);
         TakePickups();
+        World?.Scripts?.RunEnterHooks(this, TileX, TileY);     // game.onenter
     }
 
     // The way on after a tile, chasing: towards the player (or dodging), or while the level has its
@@ -1036,6 +1037,7 @@ internal partial record Monster : Actor
             SetState(raise);
         else
             Resume();
+        World?.Scripts?.RunReviveHooks(this, reviver);     // game.onrevive
     }
 
     /// <summary>
@@ -1106,6 +1108,7 @@ internal partial record Monster : Actor
     {
         bool alive = RuntimeFlags.Has(ObjFlags.Shootable);
         bool counted = alive && CountsAsKill;
+        var was = Faction;
         Faction = faction;
         if (alive && counted != CountsAsKill)
         {
@@ -1117,6 +1120,9 @@ internal partial record Monster : Actor
             Follows = true;
         else if (Follows && Leader == null && !MapManager.Players.Any(IsAllyOf))
             Follows = false;            // not on the players' side any more
+
+        if (!string.Equals(was, faction, StringComparison.OrdinalIgnoreCase))
+            World?.Scripts?.RunFactionHooks(this, was, faction);     // game.onfactionchange (Scripting/GameScripts.Hooks.cs)
     }
 
     /// <summary>
@@ -1637,7 +1643,10 @@ internal partial record Monster : Actor
             if (killedBy is PlayerPawn player)
             {
                 bool unseen = World.Stealth?.Killed(player) == true;    // a knife or a scope's kill, unseen (Gameplay/Stealth.cs)
-                World.KillChains?.Killed(this, player.State, tilex, tiley, unseen);
+                if (unseen)
+                    World.Scripts?.RunStealthKillHooks(player, this);     // game.onstealthkill
+                if (World.KillChains?.Killed(this, player.State, tilex, tiley, unseen) == true && player.State.KillChain >= 2)
+                    World.Scripts?.RunChainHooks(player, player.State.KillChain);     // game.onchain
             }
         }
         RuntimeFlags &= ~(ObjFlags.Shootable | ObjFlags.Friendly);

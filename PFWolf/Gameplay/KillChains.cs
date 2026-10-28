@@ -39,15 +39,15 @@ internal sealed record KillChainHooks(
 
 internal sealed class KillChains(GameSession session, KillChainHooks hooks)
 {
-    /// <summary>A player's kill of a counted enemy on that tile; unseen if it's a stealth kill</summary>
-    internal void Killed(Entities.Actors.Actor enemy, Entities.PlayerState killer, int tilex, int tiley, bool unseen)
+    /// <summary>A player's kill of a counted enemy on that tile; unseen if it's a stealth kill. True if it was part of a chain (KillChain the count)</summary>
+    internal bool Killed(Entities.Actors.Actor enemy, Entities.PlayerState killer, int tilex, int tiley, bool unseen)
     {
         var settings = hooks.Settings();
         if (settings.Tics <= 0)
-            return;
+            return false;
         string mode = enemy.Properties.TryGetValue("killchain", out var value) ? value?.ToString()?.Trim().ToLowerInvariant() ?? "" : "";
         if (mode == "false")
-            return;
+            return false;
 
         int now = session.GameState.TimeCount;
         int since = now - killer.KillChainAt;
@@ -58,10 +58,11 @@ internal sealed class KillChains(GameSession session, KillChainHooks hooks)
         if (killer.KillChain >= 2 && settings.Messages.Count > 0)
             hooks.ShowMessage(settings.Messages[Math.Min(killer.KillChain - 2, settings.Messages.Count - 1)]);
         if (mode == "noprize")
-            return;
+            return true;
         Prize(settings, killer.KillChain, tilex, tiley);
         if (unseen && settings.StealthPrize > 1)
             Prize(settings, 1 + session.Random.RndT() % settings.StealthPrize, tilex, tiley);
+        return true;
     }
 
     // A chain's prize (none under two kills, or for a chain with an empty list)

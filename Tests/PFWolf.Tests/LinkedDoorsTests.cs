@@ -52,6 +52,28 @@ public class LinkedDoorsTests
     }
 
     [Test]
+    public void A_Script_Can_Keep_A_Door_Shut_And_Is_Told_Who_Opened_It()
+    {
+        // Arrange: a script that keeps door 1 (at 11,10) shut
+        var asked = new List<(int X, int Y, bool Opening, Entities.Actors.Actor? By)>();
+        _doors = new Doors(null!, null!, _map, null!, null!, new GameSession(), new DoorHooks((_, _, _) => { }, () => { },
+            (x, y, opening, by) => { asked.Add((x, y, opening, by)); return x != 11; }));
+        Door(0, null);
+        Door(1, null);
+        var guard = new Entities.Actors.Monster { Name = "Guard" };
+
+        // Act
+        _doors.OpenDoor(0, guard);
+        _doors.OpenDoor(0, guard);      // already opening: not asked again
+        _doors.OpenDoor(1);
+
+        // Assert
+        Assert.That(_doors.DoorObjList[0].Action, Is.EqualTo(DoorAction.Opening));
+        Assert.That(_doors.DoorObjList[1].Action, Is.EqualTo(DoorAction.Closed));
+        Assert.That(asked, Is.EqualTo(new (int, int, bool, Entities.Actors.Actor?)[] { (10, 10, true, guard), (11, 10, true, null) }));
+    }
+
+    [Test]
     public void A_Chain_That_Loops_Works_Each_Door_Once()
     {
         // Arrange: 0 -> 1 -> 2 -> 1, which bstone would follow for ever

@@ -6,7 +6,9 @@ namespace PFWolf.Gameplay;
 /// <summary>What the doors need from the rest of the game</summary>
 /// <param name="PlaySoundAt">Plays a sound from a tile, heard by how far it is from the player</param>
 /// <param name="DrawKeys">Draws the keys on the status bar again (after a takes-key door uses one)</param>
-internal sealed record DoorHooks(Action<string, int, int> PlaySoundAt, Action DrawKeys);
+/// <param name="MayMove">Whether the scripts let a door (its tile) open (true) or close, set going by what (game.ondoor)</param>
+internal sealed record DoorHooks(Action<string, int, int> PlaySoundAt, Action DrawKeys,
+    Func<int, int, bool, Entities.Actors.Actor?, bool>? MayMove = null);
 
 /*
 =============================================================================
@@ -172,14 +174,19 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     =
     =====================
     */
-    internal void OpenDoor(int door)
+    /// <param name="by">What set it going: the player using it, an enemy walking through; null for a switch or a linked door</param>
+    internal void OpenDoor(int door, Entities.Actors.Actor? by = null)
     {
         if (DoorObjList[door].Jammed)
             return;
         if (DoorObjList[door].Action == (byte)DoorAction.Open)
             DoorObjList[door].TicCount = 0;         // reset open time
-        else
+        else if (DoorObjList[door].Action != DoorAction.Opening)
+        {
+            if (hooks?.MayMove?.Invoke(DoorObjList[door].TileX, DoorObjList[door].TileY, true, by) == false)
+                return;                             // a script keeps it shut (game.ondoor)
             DoorObjList[door].Action = DoorAction.Opening;  // start it opening
+        }
         WorkLinkedDoor(door, open: true);
     }
 
@@ -227,7 +234,8 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     =====================
     */
 
-    internal void CloseDoor(int door)
+    /// <param name="by">What set it going: the player using it; null for its own closing, a switch or a linked door</param>
+    internal void CloseDoor(int door, Entities.Actors.Actor? by = null)
     {
         int tilex, tiley, area;
 
@@ -275,6 +283,11 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
                 return;
         }
 
+
+        // A script may keep it open (game.ondoor)
+        if (DoorObjList[door].Action is DoorAction.Open or DoorAction.Opening
+            && hooks?.MayMove?.Invoke(tilex, tiley, false, by) == false)
+            return;
 
         //
         // play door sound if in a connected area
@@ -352,11 +365,11 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         {
             case DoorAction.Closed:
             case DoorAction.Closing:
-                OpenDoor(door);
+                OpenDoor(door, session.Player);
                 break;
             case DoorAction.Open:
             case DoorAction.Opening:
-                CloseDoor(door);
+                CloseDoor(door, session.Player);
                 break;
         }
     }

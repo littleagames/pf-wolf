@@ -6,9 +6,11 @@ namespace PFWolf.Gameplay;
 /// <summary>What the hub clusters' trigger actions need from the game</summary>
 /// <param name="SetPendingMapChange">The map to switch to as the level ends (Gameplay/MainGameLoop.cs)</param>
 /// <param name="PlaySoundAt">Plays a sound from an actor</param>
+/// <param name="Teleported">An actor's been moved across the level from one tile to another (game.onteleport)</param>
 internal sealed record HubActionsHooks(
     Action<PendingMapChange> SetPendingMapChange,
-    Action<string, Entities.Actors.Actor> PlaySoundAt);
+    Action<string, Entities.Actors.Actor> PlaySoundAt,
+    Action<Entities.Actors.Actor, int, int, int, int>? Teleported = null);
 
 /// <summary>
 /// The hub clusters' ways between floors and out, as mapdefs trigger actions: Blake Stone's
@@ -186,9 +188,11 @@ internal sealed class HubActions(
         if (!mapManager.InMap(x, y))
             return false;
         WarpOut();
+        var (fromX, fromY) = (session.Player.TileX, session.Player.TileY);
         session.Player.SetPosition(x, y);
         movement.Thrust(0, 0);
         WarpIn();
+        hooks.Teleported?.Invoke(session.Player, fromX, fromY, x, y);
         return true;
     }
 
@@ -305,8 +309,10 @@ internal sealed class HubActions(
 
         if (!string.IsNullOrEmpty(sound))
             audio.Play(sound);
+        var (fromX, fromY) = (session.Player.TileX, session.Player.TileY);
         session.Player.SetPosition(to.X, to.Y);
         movement.Thrust(0, 0);
+        hooks.Teleported?.Invoke(session.Player, fromX, fromY, to.X, to.Y);
         return true;
     }
 
@@ -363,12 +369,14 @@ internal sealed class HubActions(
             }
         }
 
+        var (fromX, fromY) = (session.Player.TileX, session.Player.TileY);
         session.Player.SetPosition(to.X, to.Y);
         if (warp.Angle is { } angle)
             session.Player.Angle = angle;
         movement.Thrust(0, 0);
         if (warp.Fizzle)
             session.FizzleIn = true;
+        hooks.Teleported?.Invoke(session.Player, fromX, fromY, to.X, to.Y);
         return true;
     }
 
@@ -392,6 +400,7 @@ internal sealed class HubActions(
 
         if (!string.IsNullOrEmpty(warp.Sound))
             hooks.PlaySoundAt(warp.Sound, ob);
+        var (fromX, fromY) = (ob.TileX, ob.TileY);
         ob.TileX = (byte)to.X;
         ob.TileY = (byte)to.Y;
         ob.RecenterOnTile();
@@ -400,6 +409,7 @@ internal sealed class HubActions(
         if (warp.Dir is { } dir)
             ob.Dir = dir;
         ob.SyncPosition();
+        hooks.Teleported?.Invoke(ob, fromX, fromY, to.X, to.Y);
     }
 
     /// <summary>Where A_Warp's pads with this tag lead: the (last, row by row) tile with the tag that isn't a pad</summary>

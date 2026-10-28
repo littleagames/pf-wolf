@@ -27,7 +27,7 @@ namespace PFWolf.Scripting;
 /// </summary>
 /// <param name="translations">The color translations (null where there are none: the API's tests)</param>
 /// <param name="playSoundAt">A sound from where an actor is</param>
-internal sealed class GameScripts(
+internal sealed partial class GameScripts(
     AssetManager assets,
     MapManager map,
     AudioManager audio,
@@ -112,15 +112,16 @@ internal sealed class GameScripts(
         {
             ["jump"] = Method("jump", (c, self) =>
             {
+                ChangesTheGame(c, "actor:jump");
                 var state = StringArg(c, 1);
                 if (!self.ResolvedStates.TryGetValue(state, out var frame))
                     return c.Return(false);
                 self.JumpTo(frame);
                 return c.Return(true);
             }),
-            ["spawnprojectile"] = Method("spawnprojectile", (c, self) => c.Return(LuaActor.Of(
+            ["spawnprojectile"] = Method("spawnprojectile", (c, self) => ChangesTheGame(c, "actor:spawnprojectile") + c.Return(LuaActor.Of(
                 projectileActions.SpawnProjectile(self, StringArg(c, 1), (int)Math.Round(NumberArg(c, 2, 0)), OptionalString(c, 3) ?? "relative")))),
-            ["spawn"] = Method("spawn", (c, self) => c.Return(LuaActor.Of(map.SpawnAtActor(StringArg(c, 1), self)))),
+            ["spawn"] = Method("spawn", (c, self) => ChangesTheGame(c, "actor:spawn") + c.Return(LuaActor.Of(map.SpawnAtActor(StringArg(c, 1), self)))),
             ["playsound"] = Method("playsound", (c, self) =>
             {
                 var sound = StringArg(c, 1);
@@ -157,6 +158,7 @@ internal sealed class GameScripts(
             }),
             ["remove"] = Method("remove", (c, self) =>
             {
+                ChangesTheGame(c, "actor:remove");
                 if (self is not Entities.Actors.PlayerPawn)
                     map.MarkForRemoval(self);
                 return c.Return();
@@ -209,6 +211,7 @@ internal sealed class GameScripts(
         {
             var self = ActorArg(c, 0);
             var key = StringArg(c, 1);
+            ChangesTheGame(c, $"setting an actor's {key}");
             switch (key)
             {
                 case "temp1": self.Temp1 = ShortArg(c, 2); break;
@@ -221,8 +224,12 @@ internal sealed class GameScripts(
                     var faction = OptionalString(c, 2) is { Length: > 0 } side ? side : null;
                     if (self is Entities.Actors.Monster changing)
                         changing.SetFaction(faction);
-                    else
+                    else if (!string.Equals(self.Faction, faction, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var was = self.Faction;
                         self.Faction = faction;
+                        RunFactionHooks(self, was, faction);
+                    }
                     break;
                 case "follows":
                     if (self is Entities.Actors.Monster follower)
@@ -248,6 +255,7 @@ internal sealed class GameScripts(
         var game = new LuaTable();
         game["random"] = new LuaFunction("game.random", (c, _) =>
         {
+            ChangesTheGame(c, "game.random");
             if (c.ArgumentCount == 0)
                 return new(c.Return(session.Random.RndT()));
             int low = c.ArgumentCount > 1 ? (int)NumberArg(c, 0, 1) : 1;
@@ -323,6 +331,7 @@ internal sealed class GameScripts(
         });
         game["trigger"] = new LuaFunction("game.trigger", (c, _) =>
         {
+            ChangesTheGame(c, "game.trigger");
             var tag = TagArg(c, 0);
             var name = StringArg(c, 1);
             string[] args;
@@ -344,18 +353,7 @@ internal sealed class GameScripts(
             var activation = new Entities.TriggerActivation(-1, -1, PlayerMovement.FacingDir(activator.Angle), activator, tag);
             return new(c.Return(Entities.MapTriggerRegistry.Invoke(name, args, activation)));
         });
-        game["onlevel"] = new LuaFunction("game.onlevel", (c, _) => new(c.Return(AddHook(c, host, levelHooks, "game.onlevel"))));
-        game["ontick"] = new LuaFunction("game.ontick", (c, _) => new(c.Return(AddHook(c, host, tickHooks, "game.ontick"))));
-        game["onlevelend"] = new LuaFunction("game.onlevelend", (c, _) => new(c.Return(AddHook(c, host, levelEndHooks, "game.onlevelend"))));
-        game["ondamage"] = new LuaFunction("game.ondamage", (c, _) => new(c.Return(AddHook(c, host, damageHooks, "game.ondamage"))));
-        game["onkill"] = new LuaFunction("game.onkill", (c, _) => new(c.Return(AddHook(c, host, killHooks, "game.onkill"))));
-        game["ontrypickup"] = new LuaFunction("game.ontrypickup", (c, _) => new(c.Return(AddHook(c, host, tryPickupHooks, "game.ontrypickup"))));
-        game["onpickup"] = new LuaFunction("game.onpickup", (c, _) => new(c.Return(AddHook(c, host, pickupHooks, "game.onpickup"))));
-        game["onsecret"] = new LuaFunction("game.onsecret", (c, _) => new(c.Return(AddHook(c, host, secretHooks, "game.onsecret"))));
-        game["onuse"] = new LuaFunction("game.onuse", (c, _) => new(c.Return(AddHook(c, host, useHooks, "game.onuse"))));
-        game["onplayerdeath"] = new LuaFunction("game.onplayerdeath", (c, _) => new(c.Return(AddHook(c, host, playerDeathHooks, "game.onplayerdeath"))));
-        game["onspawn"] = new LuaFunction("game.onspawn", (c, _) => new(c.Return(AddHook(c, host, spawnHooks, "game.onspawn"))));
-        game["onsight"] = new LuaFunction("game.onsight", (c, _) => new(c.Return(AddHook(c, host, sightHooks, "game.onsight"))));
+        InstallHookFunctions(game, host);       // game.onlevel, game.ontick... and what the hooks use (Scripting/GameScripts.Hooks.cs)
         // game.record(map): the best done on a map, from game to game (records.cfg:
         // Gameplay/LevelRecords.cs), as game.onlevelend's result; nil if it's never been finished
         game["record"] = new LuaFunction("game.record", (c, _) =>
@@ -382,11 +380,12 @@ internal sealed class GameScripts(
         // game.unlock(name): unlocks a name from game to game (a starts-locked episode's key, or a
         // script's own), true if it wasn't already; game.unlocked(name): whether it is
         // (progress.cfg: Gameplay/Unlocks.cs)
-        game["unlock"] = new LuaFunction("game.unlock", (c, _) => new(c.Return(Unlock(StringArg(c, 0)))));
+        game["unlock"] = new LuaFunction("game.unlock", (c, _) => new(ChangesTheGame(c, "game.unlock") + c.Return(Unlock(StringArg(c, 0)))));
         game["unlocked"] = new LuaFunction("game.unlocked", (c, _) => new(c.Return(IsUnlocked(StringArg(c, 0)))));
         // game.showtext(name): a text shown as an article, then back to the level (A_ShowText)
         game["showtext"] = new LuaFunction("game.showtext", (c, _) =>
         {
+            ChangesTheGame(c, "game.showtext");
             ShowText(StringArg(c, 0));
             return new(c.Return());
         });
@@ -401,262 +400,6 @@ internal sealed class GameScripts(
             return new(c.Return());
         });
         host.Globals["game"] = game;
-    }
-
-    /*
-    =============================================================================
-    HOOKS
-
-    game.onlevel(function(reason, map) ... end): called as each level starts, once it's built
-    and the players are on it, before its first tic. reason is
-        "new"        the level entered afresh (a new game, the next level, a demo)
-        "returned"   a hub level come back to, as it was left (Blake Stone's floors)
-        "restarted"  the level again after the player died
-        "loaded"     a saved game loaded, or a network game joined. Only this machine runs it,
-                     so it mustn't change the game: it's for rebuilding what the script keeps
-                     in Lua variables, which saves don't hold.
-    game.ontick(function(tics) ... end): called each frame the world moves (not while it's
-        paused), after the actors, with the tics that went by (70 a second; usually 1 or 2).
-    game.onlevelend(function(map, result) ... end): called as a level's finished (its exit, a
-        secret exit or the game won; not dying or leaving), before the tally, once its record is
-        kept (game.record). result has kills, killtotal, secrets, secrettotal, items, itemtotal,
-        time (tics), par (seconds, 0 for none), underpar, undetected, stealthkills, objectives
-        ({name = {done = n, total = n}}) and exit ("exit", "secret" or "victory"). It's the
-        place to game.unlock what the finish earned: anything unlocked is told on the tally.
-        Not called while a demo plays back.
-
-    As things happen on the level (each machine of a network game alike, and a demo as when it
-    was recorded):
-    game.ondamage(function(victim, amount, attacker, type) ... end): an actor or a player about to
-        be hurt, by how much (an enemy's after its doubling while it isn't attacking; a player's
-        after the skill's and class's share, before armor), by what (the projectile, the player
-        or enemy, nil for a floor or a trap) and its damage type (nil for none). Returning a
-        number makes that the amount (0: unhurt, though an enemy still turns on the attacker);
-        each hook gets the amount the one before left.
-    game.onkill(function(victim, killer, type) ... end): an enemy (or any monster) killed, by whom
-        (the one who fired a projectile, rather than the projectile; nil for nothing) and with
-        what damage type. Not players: game.onplayerdeath.
-    game.ontrypickup(function(player, item) ... end): a player walking over an item they may
-        take; returning false leaves it where it is. Asked again each tic they stand on it, and
-        an item they then can't use (ammo full, a key held) stays anyway.
-    game.onpickup(function(player, item, amount) ... end): a player has taken an item, which gave
-        amount (nil for an item with no amount), just before it goes from the level.
-    game.onsecret(function(player, x, y) ... end): a secret found, at that tile.
-    game.onuse(function(player, x, y, dir) ... end): a fresh press of use, facing the tile x, y
-        ("north", "east", "south" or "west" of the player), before the game looks at what's
-        there; returning true says the script used it, and the game does nothing else.
-    game.onplayerdeath(function(player, killer) ... end): a player killed, by what (nil for
-        nothing: time running out, a fall).
-    game.onspawn(function(player, reason) ... end): a player put on the level: as it starts (just
-        before game.onlevel: "new", "returned" or "restarted"; not "loaded"), brought back after
-        dying with others ("respawn"), or joining a network game ("join").
-    game.onsight(function(monster, target) ... end): an enemy noticing its foe (a player, or an
-        actor of a side it fights) and setting off after it.
-
-    Hooks are added when a script loads (at its top level), never later, so that every machine
-    and every demo run has the same ones; each mod's run, in load order. A hook that errors
-    three times is switched off.
-
-    =============================================================================
-    */
-
-    sealed class ScriptHook(LuaValue function, string name)
-    {
-        public LuaValue Function { get; } = function;
-        public string Name { get; } = name;
-        public int Errors { get; set; }
-    }
-
-    readonly List<ScriptHook> levelHooks = [];
-    readonly List<ScriptHook> tickHooks = [];
-    readonly List<ScriptHook> levelEndHooks = [];
-    readonly List<ScriptHook> damageHooks = [];
-    readonly List<ScriptHook> killHooks = [];
-    readonly List<ScriptHook> tryPickupHooks = [];
-    readonly List<ScriptHook> pickupHooks = [];
-    readonly List<ScriptHook> secretHooks = [];
-    readonly List<ScriptHook> useHooks = [];
-    readonly List<ScriptHook> playerDeathHooks = [];
-    readonly List<ScriptHook> spawnHooks = [];
-    readonly List<ScriptHook> sightHooks = [];
-
-    // Errors a hook may have before it's switched off
-    const int HookErrorLimit = 3;
-
-    int AddHook(LuaFunctionExecutionContext c, ScriptHost host, List<ScriptHook> hooks, string what)
-    {
-        var function = Arg(c, 0);
-        if (function.Type != LuaValueType.Function)
-            throw new LuaRuntimeException(c.State, (LuaValue)$"{what} takes a function", 1);
-        if (host.Running == null)
-            throw new LuaRuntimeException(c.State, (LuaValue)$"{what}: hooks are added when a script loads (at its top level), not later", 1);
-        hooks.Add(new ScriptHook(function, $"{what} hook {hooks.Count + 1} ({host.Running})"));
-        return c.Return();
-    }
-
-    /// <summary>
-    /// The scripts' level hooks, as a level starts (GameLoop, PlayDemo, RecordDemo): first their
-    /// spawn hooks for each player on it, unless it was loaded
-    /// </summary>
-    internal void RunLevelHooks(string reason)
-    {
-        if (spawnHooks.Count > 0 && reason != "loaded")
-            foreach (var player in map.Players)
-                RunSpawnHooks(player, reason);
-        RunHooks(levelHooks, [reason, session.GameState.MapOn ?? ""]);
-    }
-
-    /// <summary>
-    /// The scripts' level-end hooks, as a level's finished (before the tally): the map, what this
-    /// finish came to, and how it was left ("exit", "secret" or "victory")
-    /// </summary>
-    internal void RunLevelEndHooks(string map, Gameplay.LevelResult result, string exit)
-    {
-        if (levelEndHooks.Count > 0)
-            RunHooks(levelEndHooks, [map, ResultTable(result, exit)]);
-    }
-
-    /// <summary>A level's result (or record) as Lua sees it, for game.onlevelend and game.record</summary>
-    static LuaTable ResultTable(Gameplay.LevelResult result, string? exit = null)
-    {
-        var objectives = new LuaTable();
-        foreach (var (name, count) in result.Objectives)
-        {
-            var entry = new LuaTable();
-            entry["done"] = count.Done;
-            entry["total"] = count.Total;
-            objectives[name] = entry;
-        }
-
-        var table = new LuaTable();
-        table["kills"] = result.Kills;
-        table["killtotal"] = result.KillTotal;
-        table["secrets"] = result.Secrets;
-        table["secrettotal"] = result.SecretTotal;
-        table["items"] = result.Items;
-        table["itemtotal"] = result.ItemTotal;
-        table["time"] = result.Time;
-        table["par"] = result.Par;
-        table["underpar"] = result.UnderPar;
-        table["undetected"] = result.Undetected;
-        table["stealthkills"] = result.StealthKills;
-        table["objectives"] = objectives;
-        if (exit != null)
-            table["exit"] = exit;
-        return table;
-    }
-
-    /// <summary>The scripts' tick hooks, each frame the world moves (PlayLoop)</summary>
-    internal void RunTickHooks()
-    {
-        if (tickHooks.Count > 0)
-            RunHooks(tickHooks, [session.Tics]);
-    }
-
-    /// <summary>
-    /// The scripts' damage hooks, as an actor or player is about to be hurt (Monster.Damage,
-    /// PlayerStats.ApplyDamageToPlayer): the amount they leave it at, 0 or more
-    /// </summary>
-    internal int RunDamageHooks(Entities.Actors.Actor victim, int amount, Entities.Actors.Actor? attacker, string? type)
-    {
-        if (damageHooks.Count == 0)
-            return amount;
-        LuaValue[] arguments = [LuaActor.Of(victim), amount, LuaActor.Of(attacker), type ?? LuaValue.Nil];
-        RunHooks(damageHooks, arguments, result =>
-        {
-            if (result.TryRead<double>(out var number))
-                arguments[1] = amount = (int)Math.Clamp(Math.Round(number), 0, short.MaxValue);
-            return true;
-        });
-        return amount;
-    }
-
-    /// <summary>The scripts' kill hooks, as a monster's killed (Monster.Kill)</summary>
-    internal void RunKillHooks(Entities.Actors.Actor victim, Entities.Actors.Actor? killer, string? type)
-    {
-        if (killHooks.Count > 0)
-            RunHooks(killHooks, [LuaActor.Of(victim), LuaActor.Of(killer), type ?? LuaValue.Nil]);
-    }
-
-    /// <summary>The scripts' try-pickup hooks, as a player walks over an item (Pickups.GetBonus): false if one leaves it there</summary>
-    internal bool RunTryPickupHooks(Entities.Actors.Actor player, Entities.Actors.Actor item)
-    {
-        if (tryPickupHooks.Count == 0)
-            return true;
-        bool take = true;
-        RunHooks(tryPickupHooks, [LuaActor.Of(player), LuaActor.Of(item)], result => take = !IsFalse(result));
-        return take;
-    }
-
-    /// <summary>The scripts' pickup hooks, as a player has taken an item (Pickups.GetBonus)</summary>
-    internal void RunPickupHooks(Entities.Actors.Actor player, Entities.Actors.Actor item, int? amount)
-    {
-        if (pickupHooks.Count > 0)
-            RunHooks(pickupHooks, [LuaActor.Of(player), LuaActor.Of(item), amount is { } given ? given : LuaValue.Nil]);
-    }
-
-    /// <summary>The scripts' secret hooks, as a secret's found (PlayerUse.ActivateTrigger)</summary>
-    internal void RunSecretHooks(Entities.Actors.Actor player, int x, int y)
-    {
-        if (secretHooks.Count > 0)
-            RunHooks(secretHooks, [LuaActor.Of(player), x, y]);
-    }
-
-    /// <summary>The scripts' use hooks, as use is pressed facing a tile (PlayerUse.PressUse): true if one used it</summary>
-    internal bool RunUseHooks(Entities.Actors.Actor player, int x, int y, ControlDir dir)
-    {
-        if (useHooks.Count == 0)
-            return false;
-        bool used = false;
-        RunHooks(useHooks, [LuaActor.Of(player), x, y, dir.ToString().ToLowerInvariant()], result => !(used = IsTrue(result)));
-        return used;
-    }
-
-    /// <summary>The scripts' player death hooks, as a player's killed (PlayerStats)</summary>
-    internal void RunPlayerDeathHooks(Entities.Actors.Actor player, Entities.Actors.Actor? killer)
-    {
-        if (playerDeathHooks.Count > 0)
-            RunHooks(playerDeathHooks, [LuaActor.Of(player), LuaActor.Of(killer)]);
-    }
-
-    /// <summary>The scripts' spawn hooks, as a player is put on the level (RunLevelHooks, Players)</summary>
-    internal void RunSpawnHooks(Entities.Actors.Actor player, string reason)
-    {
-        if (spawnHooks.Count > 0)
-            RunHooks(spawnHooks, [LuaActor.Of(player), reason]);
-    }
-
-    /// <summary>The scripts' sight hooks, as an enemy notices its foe (Monster.FirstSighting)</summary>
-    internal void RunSightHooks(Entities.Actors.Actor monster, Entities.Actors.Actor? target)
-    {
-        if (sightHooks.Count > 0)
-            RunHooks(sightHooks, [LuaActor.Of(monster), LuaActor.Of(target)]);
-    }
-
-    static bool IsFalse(LuaValue value) => value.Type == LuaValueType.Boolean && !value.Read<bool>();
-
-    static bool IsTrue(LuaValue value) => value.Type == LuaValueType.Boolean && value.Read<bool>();
-
-    // Calls each hook in turn, handing what it returned to `then`, which says (false) when to
-    // stop asking the rest
-    void RunHooks(List<ScriptHook> hooks, LuaValue[] arguments, Func<LuaValue, bool>? then = null)
-    {
-        if (_scripts == null)
-            return;
-        for (int i = 0; i < hooks.Count; i++)
-        {
-            var hook = hooks[i];
-            if (_scripts.Call(hook.Function, hook.Name, arguments, out var result))
-            {
-                if (then != null && !then(result))
-                    return;
-                continue;
-            }
-            if (++hook.Errors < HookErrorLimit)
-                continue;
-            console.Print($"Script {hook.Name} is switched off after {HookErrorLimit} errors");
-            hooks.RemoveAt(i--);
-        }
     }
 
     // Switch actions that work on the switch's own tile rather than its tag, which game.trigger

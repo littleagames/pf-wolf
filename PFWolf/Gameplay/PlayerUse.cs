@@ -19,6 +19,8 @@ namespace PFWolf.Gameplay;
 /// <param name="Unlock">Unlocks a name for good (a thrown switch's `unlock`: Gameplay/Unlocks.cs)</param>
 /// <param name="ScriptUse">The scripts' use of the tile ahead (game.onuse): true if one used it, and nothing else happens</param>
 /// <param name="SecretFound">A secret's been found at a tile (game.onsecret)</param>
+/// <param name="MaySwitch">Whether the scripts let a switch at a tile with a tag be thrown (game.onswitch)</param>
+/// <param name="MayExit">Whether the scripts let an exit ("exit" or "secret") end the level (game.onexit)</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
@@ -32,7 +34,9 @@ internal sealed record PlayerUseHooks(
     Action<string, string?>? ShowFacing = null,
     Action<string>? Unlock = null,
     Func<int, int, ControlDir, bool>? ScriptUse = null,
-    Action<int, int>? SecretFound = null);
+    Action<int, int>? SecretFound = null,
+    Func<int, int, ushort, bool>? MaySwitch = null,
+    Func<string, bool>? MayExit = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -88,6 +92,8 @@ internal sealed class PlayerUse(
 
         var gamestate = session.GameState;
         var tag = map.GetTag(tilex, tiley);
+        if (hooks.MaySwitch?.Invoke(tilex, tiley, tag) == false)
+            return;                 // a script leaves it be (game.onswitch)
         if (wallSwitch.To is > 0 and < BitWall && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
         {
             // flip the switch, keeping the door-side mark on a wall beside a door
@@ -169,10 +175,13 @@ internal sealed class PlayerUse(
         if (RefuseSwitchLock(patchSwitch))
             return;
 
+        var tag = map.GetTag(tilex, tiley);
+        if (hooks.MaySwitch?.Invoke(tilex, tiley, tag) == false)
+            return;                 // a script leaves it be (game.onswitch)
+
         if (!string.IsNullOrEmpty(patchSwitch.Sound))
             hooks.PlayPlayerSound(patchSwitch.Sound);
 
-        var tag = map.GetTag(tilex, tiley);
         var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.Player, tag);
         bool wentOff = patchSwitch.Actions.Count == 0;
         foreach (var action in patchSwitch.Actions)
@@ -271,10 +280,10 @@ internal sealed class PlayerUse(
             return false;
 
         var player = session.Player;
-        if (secret || map.MapSpot(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile)
-            session.PlayState = PlayState.SecretLevel;
-        else
-            session.PlayState = PlayState.Completed;
+        bool toSecret = secret || map.MapSpot(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile;
+        if (hooks.MayExit?.Invoke(toSecret ? "secret" : "exit") == false)
+            return false;           // a script keeps the level going (game.onexit)
+        session.PlayState = toSecret ? PlayState.SecretLevel : PlayState.Completed;
 
         audio.WaitSoundDone();
         return true;

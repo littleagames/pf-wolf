@@ -8,11 +8,13 @@ namespace PFWolf.Gameplay;
 /// <param name="Localize">A message's text ($language keys looked up)</param>
 /// <param name="ShowMessage">Shows a message to the acting player</param>
 /// <param name="Switches">Every switch on the level (a wall's or a patch's), for the objectives they count toward</param>
+/// <param name="Completed">More of an objective's done: its name, done and total (game.onobjective)</param>
 internal sealed record ObjectiveHooks(
     Func<IReadOnlyDictionary<string, ObjectiveInfo>> Settings,
     Func<string, string> Localize,
     Action<string> ShowMessage,
-    Func<IEnumerable<MapSwitchTranslation>> Switches);
+    Func<IEnumerable<MapSwitchTranslation>> Switches,
+    Action<string, int, int>? Completed = null);
 
 /*
 =============================================================================
@@ -97,6 +99,7 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
             hooks.ShowMessage(Format(progress, count.Done, count.Total));
         if (count.Left == 0 && info?.Done is { Length: > 0 } done)
             hooks.ShowMessage(Format(done, count.Done, count.Total));
+        hooks.Completed?.Invoke(name, count.Done, count.Total);
     }
 
     /// <summary>An actor died: if it's an objective's (its `objective` property), one more of it is done</summary>

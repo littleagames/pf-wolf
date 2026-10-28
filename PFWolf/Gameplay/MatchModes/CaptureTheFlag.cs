@@ -111,6 +111,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
             {
                 SendHome(team);
                 Announce($"The {GameModes.TeamLabel(team)} flag went back to base", "misc/end_bonus1");
+                Hooks.Flag?.Invoke("home", null, team);
             }
 
         foreach (var pawn in LivingPawns.ToList())
@@ -127,6 +128,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
                 theirs.State = FlagState.Carried;
                 theirs.Carrier = p.Number;
                 Announce($"{NameOf(p)} has the {GameModes.TeamLabel(other)} flag!", "misc/k_pkup");
+                Hooks.Flag?.Invoke("taken", p, other);
             }
 
             // Sending your own home, where it was dropped
@@ -135,6 +137,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
             {
                 SendHome(own);
                 Announce($"{NameOf(p)} returned the {GameModes.TeamLabel(own)} flag", "misc/end_bonus1");
+                Hooks.Flag?.Invoke("returned", p, own);
             }
 
             // A capture: theirs brought to your base, with yours there
@@ -144,6 +147,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
                 SendHome(other);
                 p.Objective++;
                 Announce($"{NameOf(p)} captured the {GameModes.TeamLabel(other)} flag!", "misc/1up");
+                Hooks.Flag?.Invoke("captured", p, other);
                 Match.AddTeamScore(own, 1);
             }
         }
@@ -173,6 +177,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
         flag.At = (pawn.TileX, pawn.TileY);
         flag.DroppedAt = Session.GameState.TimeCount;
         Announce($"{NameOf(carrier)} dropped the {GameModes.TeamLabel(team)} flag");
+        Hooks.Flag?.Invoke("dropped", carrier, team);
     }
 
     // The flags where they stand or lie, and each carrier drawn with the one they carry

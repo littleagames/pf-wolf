@@ -74,7 +74,9 @@ internal static partial class GameHost
         new(GameEngineManager, AssetManager, _videoManager, InventoryManager, statusBarDrawing, playerClassRules, playerWeapons, Session,
             Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound, HudMessageManager.ShowKeyed, ShowAttacker,
                 (points, attacker, type) => gameScripts.RunDamageHooks(Session.Player, points, attacker, type),
-                killer => gameScripts.RunPlayerDeathHooks(Session.Player, killer)));
+                killer => gameScripts.RunPlayerDeathHooks(Session.Player, killer),
+                (item, amount) => gameScripts.RunGiveHooks(Session.Player, item, amount),
+                (powerup, started) => gameScripts.RunPowerupHooks(Session.Player, powerup, started)));
 
     // The attacker's attackinfo, else game-info attack-message; %k the attacker (Blake Stone's
     // REBA "attacking:", which has its picture: an info area script, Ui/TextPresenter.cs)
@@ -308,7 +310,9 @@ internal static partial class GameHost
                 (text, style) => HudMessageManager.ShowKeyed("facing", text, style ?? HudMessageManager.KindStyle(HudMessageKind.Lock)),
                 name => Unlock(name),
                 (x, y, dir) => gameScripts.RunUseHooks(Session.Player, x, y, dir),
-                (x, y) => gameScripts.RunSecretHooks(Session.Player, x, y)));
+                (x, y) => gameScripts.RunSecretHooks(Session.Player, x, y),
+                (x, y, tag) => gameScripts.RunSwitchHooks(Session.Player, x, y, tag),
+                kind => gameScripts.RunExitHooks(Session.Player, kind)));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
@@ -331,7 +335,9 @@ internal static partial class GameHost
                     Session.PlayerState.CinematicTics = Math.Max(Session.PlayerState.CinematicTics - (int)Session.Tics, 0);
                 playerUse.ShowFacingMessage();  // a use trigger's facing-message (the exits')
             },
-            () => deathmatch.Objective?.IsWaiting(Session.PlayerState) == true));
+            () => deathmatch.Objective?.IsWaiting(Session.PlayerState) == true,
+            (x, y) => gameScripts.RunEnterHooks(Session.Player, x, y),
+            (from, to) => gameScripts.RunWeaponSwitchHooks(Session.Player, from, to)));
 
     internal static void ThinkPlayer(Entities.Actors.Actor ob) => playerThink.ThinkPlayer(ob);
 
@@ -406,7 +412,10 @@ internal static partial class GameHost
                 () => DamageDealt, actor => deathmatch.Objective?.IsDecoy(actor) == true));
 
     static WeaponInHand MakeWeaponInHand() =>
-        new(InventoryManager, MapManager, Session, playerWeapons, playerAttacks, RegisterMissileActions);
+        new(InventoryManager, MapManager, Session, playerWeapons, playerAttacks, RegisterMissileActions)
+        {
+            MayFire = weapon => gameScripts?.RunFireHooks(Session.Player, weapon) != false,
+        };
 
     static void RegisterWeaponActions() => (weaponInHand ??= MakeWeaponInHand()).Register();
 

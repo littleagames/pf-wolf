@@ -32,7 +32,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         // A_OpenDoor(["hold"]): opens the tagged doors; with hold they stay open until closed
         MapTriggerRegistry.Register("A_OpenDoor", (trigger, args) => ForTaggedDoors(trigger, door => SwitchOpenDoor(door, Hold(args))));
         // A_CloseDoor: closes the tagged doors (not on anything standing in the doorway)
-        MapTriggerRegistry.Register("A_CloseDoor", (trigger, _) => ForTaggedDoors(trigger, doors.CloseDoor));
+        MapTriggerRegistry.Register("A_CloseDoor", (trigger, _) => ForTaggedDoors(trigger, door => doors.CloseDoor(door)));
         // A_ToggleDoor(["hold"]): opens the tagged doors that are shut or shutting, closes the rest
         MapTriggerRegistry.Register("A_ToggleDoor", (trigger, args) => ForTaggedDoors(trigger, door =>
         {

@@ -278,6 +278,7 @@ internal sealed class Deathmatch(
             if (!session.AreRivals(rival.State, victim))
                 return;
             rival.State.Frags++;
+            Fragged?.Invoke(victim, rival);
             using (session.ActAs(rival.State))
                 statusBar.DrawScore();
             if (tdm)
@@ -288,6 +289,7 @@ internal sealed class Deathmatch(
         else if (by is PlayerPawn self && self.State == victim)
         {
             victim.Frags--;
+            Fragged?.Invoke(victim, self);
             using (session.ActAs(victim))
                 statusBar.DrawScore();
             if (tdm)
@@ -349,6 +351,12 @@ internal sealed class Deathmatch(
         _ => p.Score,
     };
 
+    /// <summary>A frag's been counted (before the score limit's looked at): the victim, and the player who made it (the victim: one off for killing themselves)</summary>
+    internal Action<Entities.PlayerState, PlayerPawn>? Fragged { get; set; }
+
+    /// <summary>The match is over (game.onmatchend)</summary>
+    internal Action? MatchEnded { get; set; }
+
     /// <summary>The deathmatch is over: the level ends, and the scoreboard shows who won</summary>
     internal void EndMatch()
     {
@@ -356,6 +364,7 @@ internal sealed class Deathmatch(
             return;
         MatchOver = true;
         session.PlayState = PlayState.Abort;
+        MatchEnded?.Invoke();
     }
 
     /// <summary>The team with fewer players in it (red when even), for someone joining a team game</summary>

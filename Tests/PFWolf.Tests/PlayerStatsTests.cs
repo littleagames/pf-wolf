@@ -87,6 +87,7 @@ public class PlayerStatsTests
         public int NetDeaths;
         public Func<int, Entities.Actors.Actor?, string?, int>? DamageHook;
         public readonly List<Entities.Actors.Actor?> Killers = [];
+        public readonly List<(string Item, int Amount)> Given = [];
         public int Deaths => Session.PlayState == PlayState.Died ? 1 : 0;
 
         public Rig(string playerClass = "Player")
@@ -106,7 +107,8 @@ public class PlayerStatsTests
             Stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,
                 new Configuration.GameSettings(), new PlayerStatsHooks(() => Skill, () => NetDeaths++, _ => { },
                     Damage: (points, attacker, type) => DamageHook?.Invoke(points, attacker, type) ?? points,
-                    Died: Killers.Add));
+                    Died: Killers.Add,
+                    Given: (item, amount) => Given.Add((item, amount))));
         }
 
         public Entities.PlayerState Player => Session.PlayerState;
@@ -325,6 +327,15 @@ public class PlayerStatsTests
         var rig = new Rig();
         Assert.That(rig.Stats.TryApplyInventory(new Key { Name = "GoldKey" }, 1), Is.True);
         Assert.That(rig.Stats.TryApplyInventory(new Key { Name = "GoldKey" }, 1), Is.False);
+    }
+
+    [Test]
+    public void Only_What_Was_Given_Is_Told_As_Given()
+    {
+        var rig = new Rig();
+        rig.Stats.TryApplyInventory(new Key { Name = "GoldKey" }, 1);
+        rig.Stats.TryApplyInventory(new Key { Name = "GoldKey" }, 1);
+        Assert.That(rig.Given, Is.EqualTo(new[] { ("GoldKey", 1) }));
     }
 
     [Test]

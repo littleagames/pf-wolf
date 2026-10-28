@@ -136,6 +136,27 @@ public class ScriptHostTests
     }
 
     [Test]
+    public void Calls_Inside_Calls_Stop_At_A_Depth_Before_The_Stack_Runs_Out()
+    {
+        // Arrange: Lua calling the game calling Lua again, for ever (a hook setting itself off)
+        var host = NewHost();
+        host.Globals["again"] = new LuaFunction("again", (c, _) =>
+        {
+            host.Call("A_Again", []);
+            return new(c.Return());
+        });
+        host.Load("depth = 0\nfunction A_Again() depth = depth + 1 again() end\n", "test");
+
+        // Act
+        bool called = host.Call("A_Again", []);
+
+        // Assert: as deep as it may go, the one past it refused, and the rest left to finish
+        Assert.That(called, Is.True);
+        Assert.That(host.Globals["depth"].Read<double>(), Is.EqualTo(ScriptHost.MaxDepth));
+        Assert.That(_printed, Has.Some.Contains($"over {ScriptHost.MaxDepth} deep"));
+    }
+
+    [Test]
     public void Running_Is_Where_The_Top_Level_Code_Came_From_And_Null_In_Calls()
     {
         // Arrange: a function that reports Running each time it's called

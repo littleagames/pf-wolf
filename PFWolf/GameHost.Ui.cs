@@ -400,7 +400,11 @@ internal static partial class GameHost
     static HudMessageDrawing MakeHudMessageDrawing() => new(_videoManager, _graphicManager, InventoryManager, HudMessageManager, ui,
         statusBarDrawing, playersManager, Render, Session);
 
-    internal static void DrawHudMessages() => hudMessageDrawing.DrawHudMessages();
+    internal static void DrawHudMessages()
+    {
+        hudMessageDrawing.DrawHudMessages();
+        gameScripts?.RunHudHooks();         // the scripts' own over the view (game.onhud)
+    }
     internal static void ShowObituary() => hudMessageDrawing.ShowObituary();
     static List<string> WrapText(string text, string font, int width) => hudMessageDrawing.WrapText(text, font, width);
 

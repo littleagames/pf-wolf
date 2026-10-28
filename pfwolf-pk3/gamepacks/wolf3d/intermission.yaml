@@ -29,6 +29,7 @@ values:
   kill: { right: 296, y: 112 }
   secret: { right: 296, y: 128 }
   treasure: { right: 296, y: 144 }
+  script: { center: 160, y: 0 }       # what a script's game.ontally says
 
 scoring:
   time-bonus: 500

@@ -24,6 +24,10 @@ internal sealed partial class ScriptHost
     // Errors shown per function before the rest are kept quiet
     private const int ShownErrors = 3;
 
+    // Calls inside calls a script can set going (a hook whose doings call hooks of their own:
+    // game.onactorspawn spawning); one deeper is an error, before the stack runs out
+    internal const int MaxDepth = 16;
+
     private readonly LuaState _state;
     private readonly Action<string> _print;
     private int _depth;
@@ -166,6 +170,8 @@ internal sealed partial class ScriptHost
         var args = arguments.ToArray();
         try
         {
+            if (_depth >= MaxDepth)
+                throw new OperationCanceledException($"calls inside calls went over {MaxDepth} deep (a hook setting itself off?), so it was stopped");
             var results = Run(() => _state.CallAsync(function, args));
             if (results.Length > 0)
                 result = results[0];

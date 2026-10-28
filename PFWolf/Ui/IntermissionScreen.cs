@@ -20,6 +20,7 @@ namespace PFWolf.Ui;
 /// <param name="PreviousRecord">The finished level's best before this finish (records.cfg), for the silver stars</param>
 /// <param name="IsUnlocked">Whether a name's unlocked (progress.cfg), for intermission.yaml unlock-pics</param>
 /// <param name="CountsAllKills">game-info stealth unseen-no-kills-counts-all</param>
+/// <param name="ScriptText">What the scripts say on the tally (game.ontally), shown at intermission.yaml's `script` value; null for nothing</param>
 internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> GiveEveryone, Action DrawScore, Action DrawPlayBorder,
     Action GameWon, Action EndText, Func<string, string> MapDisplayName, Func<bool>? NewUnlocks = null,
     Func<string, (int Done, int Total)?>? Objective = null,
@@ -27,7 +28,8 @@ internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> Giv
     Func<string, (int Held, int Max)?>? Item = null,
     Func<Gameplay.LevelResult?>? PreviousRecord = null,
     Func<string, bool>? IsUnlocked = null,
-    Func<bool>? CountsAllKills = null);
+    Func<bool>? CountsAllKills = null,
+    Func<string?>? ScriptText = null);
 
 /// <summary>
 /// One of the level-end screen's tallies after the treasure ratio (intermission.yaml
@@ -344,6 +346,8 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             // Midnight Assault's "New Levels Unlocked!")
             if (hooks.NewUnlocks?.Invoke() == true)
                 WriteValue("unlocked", "");
+            if (hooks.ScriptText?.Invoke() is { Length: > 0 } scriptText)
+                WriteValue("script", scriptText);
 
             // Midnight Assault's dog tags across the top, and its reward stars
             DrawUnlockPics(mapInfo);

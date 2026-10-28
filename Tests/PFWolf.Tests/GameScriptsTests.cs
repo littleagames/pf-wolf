@@ -283,6 +283,149 @@ public class GameScriptsTests
     }
 
     [Test]
+    public void A_Hook_On_This_Machine_Alone_Cant_Change_The_Game()
+    {
+        // Arrange
+        var host = Host();
+        host.Load("""
+            game.onhud(function() local n = game.random() end)
+            game.ontick(function() print('tick', game.random() >= 0) end)
+            """, "test.lua");
+        int start = _session.Random.RndIndex;
+
+        // Act
+        _scripts.RunHudHooks();
+        int afterHud = _session.Random.RndIndex;
+        _scripts.RunTickHooks();
+
+        // Assert: refused there, and fine again in a hook every machine runs
+        Assert.That(Printed(), Has.Some.Contains("game.random changes the game, which game.onhud mustn't"));
+        Assert.That(afterHud, Is.EqualTo(start));
+        Assert.That(Printed(), Has.Some.EqualTo("tick\ttrue"));
+    }
+
+    [Test]
+    public void A_Hud_Hook_Draws_From_The_Views_Top_Left_And_Nowhere_Else_Can()
+    {
+        // Arrange: the view at 10,20, 300 by 150
+        var drawn = new List<string>();
+        _scripts = new GameScripts(null!, null!, null!, null!, _console, null, null!, _session, (_, _) => { })
+        {
+            DrawText = (text, x, y, font, color) => drawn.Add($"{text} {x},{y} {font} {color}"),
+            DrawPic = (name, x, y) => drawn.Add($"{name} {x},{y}"),
+            ViewRect = () => (10, 20, 300, 150),
+        };
+        var host = Host();
+        host.Load("""
+            game.onhud(function()
+              local w, h = game.viewsize()
+              game.drawtext('score', 5, 6)
+              game.drawpic('FACE', w - 24, h - 24)
+              game.drawtext('big', 0, 0, 'BigFont', 'Red')
+            end)
+            """, "test.lua");
+
+        // Act
+        _scripts.RunHudHooks();
+        var outside = host.Execute("game.drawtext('no', 0, 0)");
+
+        // Assert
+        Assert.That(drawn, Is.EqualTo(new[] { "score 15,26  ", "FACE 286,146", "big 10,20 BigFont Red" }));
+        Assert.That(outside, Does.Contain("only draws in a game.onhud hook"));
+    }
+
+    [Test]
+    public void The_Levels_Song_Is_The_Scripts_Choice_Until_The_Next_Level()
+    {
+        // Arrange
+        var played = new List<string?>();
+        _scripts = new GameScripts(null!, null!, null!, null!, _console, null, null!, _session, (_, _) => { }) { PlayMusic = played.Add };
+        var host = Host();
+        host.Load("game.onmusic(function(map, song) if song == 'WONDERIN' then return 'SEARCHN' end end)", "test.lua");
+
+        // Act / Assert: the hook's swap, then game.music's song over it, then the level's again
+        Assert.That(_scripts.ChooseSong("WONDERIN"), Is.EqualTo("SEARCHN"));
+        Assert.That(_scripts.ChooseSong("GETTHEM"), Is.EqualTo("GETTHEM"));
+        host.Execute("game.music('POW')");
+        Assert.That(_scripts.ChooseSong("WONDERIN"), Is.EqualTo("POW"));
+        Assert.That(played, Is.EqualTo(new[] { "POW" }));
+        _scripts.RunLevelHooks("new");
+        Assert.That(_scripts.ChooseSong("WONDERIN"), Is.EqualTo("SEARCHN"));
+    }
+
+    [Test]
+    public void The_First_Tally_Text_Is_Shown()
+    {
+        var host = Host();
+        host.Load("""
+            game.ontally(function(map, result) if result.kills == 0 then return nil end end)
+            game.ontally(function(map, result) return map .. ': ' .. result.kills .. ' down' end)
+            game.ontally(function() return 'never' end)
+            """, "test.lua");
+        Assert.That(_scripts.RunTallyHooks("MAP01", new LevelResult { Kills = 7 }, "exit"), Is.EqualTo("MAP01: 7 down"));
+    }
+
+    [Test]
+    public void Time_Up_Seen_To_By_A_Script_Stays_Seen_To_For_The_Level()
+    {
+        // Arrange
+        var host = Host();
+        host.Load("asked = 0 game.ontimeup(function() asked = asked + 1 return true end)", "test.lua");
+
+        // Act / Assert
+        Assert.That(_scripts.RunTimeUpHooks(), Is.True);
+        Assert.That(_scripts.RunTimeUpHooks(), Is.True);
+        Assert.That(host.Globals["asked"].Read<double>(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void A_Script_Command_Runs_With_Its_Words_And_The_Games_Own_Wins()
+    {
+        // Arrange: the game has a command "dup" already
+        _console.Register(new ConsoleCommand("dup", "the game's", "dup", _ => _console.Print("game's dup")));
+        var host = Host();
+        host.Load("""
+            game.command('hello', 'Says hello', function(n, who) print('hello', n + 1, who) end)
+            game.command('dup', 'a clash', function() print('script dup') end)
+            """, "test.lua");
+
+        // Act
+        _scripts.RegisterCommands();
+        _console.Execute("hello 41 world");
+        _console.Execute("dup");
+
+        // Assert
+        Assert.That(Printed(), Has.Some.EqualTo("hello\t42\tworld"));
+        Assert.That(Printed(), Has.Some.EqualTo("game's dup").And.None.EqualTo("script dup"));
+        Assert.That(_console.TryGetCommand("hello", out var command) && command.Group == "Script commands", Is.True);
+    }
+
+    [Test]
+    public void Actors_Are_Told_As_The_Level_Starts_And_At_The_End_Of_The_Tic_They_Came_In()
+    {
+        // Arrange: a level with a guard on it
+        var map = new MapManager(new Lazy<AssetManager>(() => null!), null!, _session, null);
+        map.GetActors().AddLast(new Entities.Actors.Monster { Name = "Guard" });
+        _scripts = new GameScripts(null!, map, null!, null!, _console, null, null!, _session, (_, _) => { });
+        var host = Host();
+        host.Load("game.onactorspawn(function(actor) print('spawn', actor.name) end)", "test.lua");
+        var early = new Entities.Actors.Monster { Name = "Early" };
+        _scripts.ActorAdded(early);         // before the level's started: told with its own, if at all
+
+        // Act
+        _scripts.RunLevelHooks("new");
+        var rocket = new Entities.Actors.Monster { Name = "Rocket" };
+        _scripts.ActorAdded(rocket);
+        var toldBeforeTic = Printed().Count(line => line == "spawn\tRocket");
+        _scripts.RunTickHooks();
+
+        // Assert
+        Assert.That(Printed(), Has.Some.EqualTo("spawn\tGuard").And.None.EqualTo("spawn\tEarly"));
+        Assert.That(toldBeforeTic, Is.Zero);
+        Assert.That(Printed().Count(line => line == "spawn\tRocket"), Is.EqualTo(1));
+    }
+
+    [Test]
     public void The_Scripts_Command_Says_When_None_Are_Loaded()
     {
         _scripts.ScriptsCommand([]);

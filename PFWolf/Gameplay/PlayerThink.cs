@@ -11,8 +11,10 @@ namespace PFWolf.Gameplay;
 /// <param name="InitAreas">Starts the level's area connections afresh, from where the players stand</param>
 /// <param name="UpdateZoom">Moves a scope's zoom on (Gameplay/WeaponZoom.cs), given whether the weapon's reloading</param>
 /// <param name="Waiting">Whether the match mode keeps the acting player still for now (Prop Hunt's hunters while the props hide)</param>
+/// <param name="EnteredTile">The acting player's stepped onto another tile (game.onenter)</param>
+/// <param name="WeaponChanged">The weapon in the acting player's hand has changed, from and to (game.onweaponswitch)</param>
 internal sealed record PlayerThinkHooks(Action UpdateRadar, Func<bool> VictoryRunning, Action InitAreas, Action<bool> UpdateZoom,
-    Func<bool>? Waiting = null);
+    Func<bool>? Waiting = null, Action<int, int>? EnteredTile = null, Action<string, string>? WeaponChanged = null);
 
 /// <summary>
 /// The acting player's think each tic (T_Player): the status bar's face and gauges, changing
@@ -55,6 +57,7 @@ internal sealed class PlayerThink(
         // Kept waiting by the match mode: their controls this frame count for nothing
         if (hooks.Waiting?.Invoke() == true)
             playerinput.Drop();
+        int fromX = player.TileX, fromY = player.TileY;
 
         stats.UpdateFace();
         stats.TickPowerups();
@@ -110,6 +113,17 @@ internal sealed class PlayerThink(
 
         // The weapon's Ready/Fire states (Gameplay/WeaponInHand.cs): starts and plays attacks
         weaponInHand.TickWeapon();
+
+        // The scripts hear of a step onto another tile (or a teleport), and of a weapon changed
+        if (player.TileX != fromX || player.TileY != fromY)
+            hooks.EnteredTile?.Invoke(player.TileX, player.TileY);
+        if (session.PlayerState.Weapon is { } weapon)
+        {
+            var told = session.PlayerState.WeaponToldScripts;
+            session.PlayerState.WeaponToldScripts = weapon;
+            if (told != null && !told.Equals(weapon, StringComparison.OrdinalIgnoreCase))
+                hooks.WeaponChanged?.Invoke(told, weapon);
+        }
     }
 
     internal void VictorySpin()

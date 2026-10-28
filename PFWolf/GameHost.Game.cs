@@ -86,7 +86,8 @@ internal static partial class GameHost
         () => GameEngineManager.GetGameInfo().Objectives,
         text => HudMessageManager.Localize(text),
         message => HudMessageManager.Show(HudMessageKind.Lock, message),
-        LevelSwitches));
+        LevelSwitches,
+        (name, done, total) => gameScripts?.RunObjectiveHooks(name, done, total)));
 
     // What the player has unlocked, from game to game (Gameplay/Unlocks.cs): starts-locked episodes
     static Unlocks? _unlocks;
@@ -107,18 +108,24 @@ internal static partial class GameHost
     static void LevelWon(PlayState how)
     {
         PreviousLevelRecord = null;
+        TallyText = null;
         if (DemoPlayback || GameState.MapOn is not { Length: > 0 } map)
             return;
         var result = CurrentLevelResult(map);
         PreviousLevelRecord = LevelRecords.Get(map);
         LevelRecords.Record(map, result);
-        gameScripts.RunLevelEndHooks(map, result, how switch
+        var exit = how switch
         {
             PlayState.SecretLevel => "secret",
             PlayState.Victorious => "victory",
             _ => "exit",
-        });
+        };
+        gameScripts.RunLevelEndHooks(map, result, exit);
+        TallyText = gameScripts.RunTallyHooks(map, result, exit);
     }
+
+    /// <summary>What the scripts say on the finished level's tally (game.ontally), or null</summary>
+    internal static string? TallyText { get; private set; }
 
     /// <summary>The finished level's best before this finish bettered it (the level-end screen's silver stars)</summary>
     internal static LevelResult? PreviousLevelRecord { get; private set; }
@@ -255,6 +262,10 @@ internal static partial class GameHost
     static LevelTimer LevelTimer => _levelTimer ??= new LevelTimer(Session, currentMapInfo, new LevelTimerHooks(
         () =>
         {
+            // A script may see to it instead (game.ontimeup)
+            if (gameScripts.RunTimeUpHooks())
+                return;
+
             // A level that time-limit-completes is got through by lasting (End of Destiny's)
             if (GameState.MapOn is { } timedMap && GameEngineManager.GetGameInfo().Maps.TryGetValue(timedMap, out var timedInfo)
                 && timedInfo.TimeLimitCompletes)
@@ -398,7 +409,8 @@ internal static partial class GameHost
 
     static HubActions MakeHubActions() => new(GameEngineManager, MapManager, AudioManager, _videoManager, _inputManager, InventoryManager,
         HudMessageManager, hubs, elevatorScreens, playScreen, frameRefresh, playerMovement, Session,
-        new HubActionsHooks(change => PendingMapChange = change, PlaySoundLocActor));
+        new HubActionsHooks(change => PendingMapChange = change, PlaySoundLocActor,
+            (actor, fromX, fromY, toX, toY) => gameScripts.RunTeleportHooks(actor, fromX, fromY, toX, toY)));
 
     internal static bool VictoryRunning { get => hubActions.VictoryRunning; set => hubActions.VictoryRunning = value; }
 
@@ -415,7 +427,23 @@ internal static partial class GameHost
             IsUnlocked = name => Unlocks.IsUnlocked(name),
             Record = map => LevelRecords.Get(map),
             ShowText = ShowTextInLevel,
+            DrawText = (text, x, y, font, color) => _graphicManager.DrawText(x, y, HudMessageManager.Localize(text),
+                new Fonts.TextStyle(font ?? UiFonts.SmallFont, color ?? "White")),
+            DrawPic = (name, x, y) => _graphicManager.DrawPic(name, x, y),
+            ViewRect = ScriptViewRect,
+            PlayMusic = _ =>
+            {
+                if (GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.ContainsKey(map))
+                    levelMusic.StartMusic();        // game.music's song now (ChooseSong), or the level's own again
+            },
         };
+
+    // The 3D view on the screen in the layout pixels text is drawn in (as the HUD messages find it), for game.onhud
+    static (int X, int Y, int Width, int Height) ScriptViewRect()
+    {
+        int x = _videoManager.ToLayoutX(Render.ViewScreenX, roundUp: true), y = _videoManager.ToLayoutY(Render.ViewScreenY, roundUp: true);
+        return (x, y, _videoManager.ToLayoutX(Render.ViewScreenX + Render.ViewWidth) - x, _videoManager.ToLayoutY(Render.ViewScreenY + Render.ViewHeight) - y);
+    }
 
     // The script API's tests install it with no services: it's made then
     internal static void InstallScriptApi(ScriptHost host) => (gameScripts ??= MakeGameScripts()).InstallScriptApi(host);

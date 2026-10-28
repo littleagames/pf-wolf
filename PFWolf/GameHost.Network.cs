@@ -124,7 +124,22 @@ internal static partial class GameHost
 
     static Deathmatch MakeDeathmatch() =>
         new(MapManager, InventoryManager, statusBarDrawing, Session,
-            new DeathmatchHooks(IsFreeFloor, GiveAllKeys));
+            new DeathmatchHooks(IsFreeFloor, GiveAllKeys))
+        {
+            Fragged = (victim, killer) => gameScripts?.RunFragHooks(victim.Pawn, killer),
+            MatchEnded = () => gameScripts?.RunMatchEndHooks(MatchWinner()),
+        };
+
+    // Who won the match, for game.onmatchend: the team ahead, else the player alone with the
+    // most frags; nil for a draw
+    static Lua.LuaValue MatchWinner()
+    {
+        if (Session.IsTeamGame)
+            return deathmatch.LeadingTeam is 0 or 1 ? GameModes.TeamNames[deathmatch.LeadingTeam] : Lua.LuaValue.Nil;
+        var ranked = Session.Players.Where(p => !p.Gone).OrderByDescending(p => p.Frags).ToList();
+        return ranked.Count > 0 && (ranked.Count == 1 || ranked[0].Frags > ranked[1].Frags)
+            ? Scripting.LuaActor.Of(ranked[0].Pawn) : Lua.LuaValue.Nil;
+    }
 
     // Each mode's objective (Gameplay/MatchModes): the one for the mode played runs
     static void AddObjectives()
@@ -145,7 +160,8 @@ internal static partial class GameHost
                 using var _ = Session.ActAs(p);
                 statusBarDrawing.DrawHealth();
                 statusBarDrawing.DrawFace();
-            });
+            },
+            (what, p, team) => gameScripts?.RunFlagHooks(what, p?.Pawn, team));
         deathmatch.MatchObjectives.AddRange(
         [
             new Gameplay.MatchModes.CaptureTheFlag(MapManager, Session, deathmatch, HudMessageManager, hooks),

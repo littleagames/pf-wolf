@@ -63,6 +63,9 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
     // Tiles a pushwall slides: read as it moves, so a loaded game's walls go as far as the game says
     internal int Distance => Math.Clamp(distance?.Invoke() ?? 2, 1, 255);
 
+    /// <summary>Whether the scripts let a pushwall slide from a tile the way given (game.onpushwall)</summary>
+    internal Func<int, int, ControlDir, bool>? MayPush { get; init; }
+
     // The MovingWalls on the move, in the order they were pushed
     internal readonly List<MovingPushWall> MovingWalls = [];
 
@@ -134,6 +137,8 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 audio.Play(blockedSound);
             return false;
         }
+        if (MayPush?.Invoke(checkx, checky, dir) == false)
+            return false;           // a script keeps it where it is
 
         map.TileMap[checkx + dx, checky + dy] = (ushort)oldtile;
         map.ActorAt[checkx + dx, checky + dy] = new Wall(oldtile);

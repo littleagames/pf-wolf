@@ -93,11 +93,51 @@ public class ScriptHookGameTests
         Assert.That(lines.Where(line => line.StartsWith("HEALTH ")), Has.All.EqualTo("HEALTH 100"));
     }
 
+    // Refuses every shot, and prints the guard told as the level starts, steps, hits and the HUD drawn
+    private const string RefusingScript = """
+        local function who(a) return a and a.name or "nil" end
+        game.onactorspawn(function(actor) if actor.name == "Guard" then print("HOOK actorspawn Guard") end end)
+        game.onfire(function(player, weapon) print("HOOK fire " .. who(player) .. " " .. weapon) return false end)
+        game.ondamage(function(victim, amount, attacker)
+          print("HOOK damage " .. who(victim))
+          if victim.isplayer then return 0 end
+        end)
+        game.onenter(function(actor, x, y) if actor.isplayer then print("HOOK enter " .. x .. " " .. y) end end)
+        local shown = false
+        game.onhud(function()
+          local w, h = game.viewsize()
+          game.drawtext("hud", 2, 2)
+          if not shown then print("HOOK hud " .. w .. "x" .. h) shown = true end
+        end)
+        """;
+
+    [Test]
+    public void Shots_A_Script_Refuses_Never_Hit_And_The_Level_Is_Told_What_Moves()
+    {
+        // Arrange: the player facing a guard five tiles east; they walk up to it, then try to shoot it
+        var mod = WriteArena(RefusingScript, (11, PlayerFacingEast), (16, GuardFacingWest));
+        var steps = new[] { new DemoStep(0, 0, -35, 40), new DemoStep(0, 0, 0, 20) }
+            .Concat(Enumerable.Range(0, 6).SelectMany(_ => new[] { new DemoStep(Attack, 0, 0, 10), new DemoStep(0, 0, 0, 20) }))
+            .Append(new DemoStep(0, 0, 0, 70)).ToArray();
+
+        // Act
+        var lines = Play(mod, steps);
+
+        // Assert
+        Assert.That(lines, Has.Some.EqualTo("HOOK actorspawn Guard"));
+        Assert.That(lines, Has.Some.StartsWith("HOOK fire Player "));
+        Assert.That(lines, Has.None.EqualTo("HOOK damage Guard"));
+        Assert.That(lines, Has.Some.StartsWith("HOOK enter 12 32"));
+        Assert.That(lines, Has.Some.StartsWith("HOOK hud "));
+    }
+
     /// <summary>
     /// A mod in the work folder: MAP01 as one room (x 10-22, y 30-34) with the things given along
     /// its middle row (y 32), at their x, and the hook script
     /// </summary>
-    private string WriteArena(params (int X, int Thing)[] things)
+    private string WriteArena(params (int X, int Thing)[] things) => WriteArena(HookScript, things);
+
+    private string WriteArena(string script, params (int X, int Thing)[] things)
     {
         var mod = Path.Combine(_workFolder, "arena");
         Directory.CreateDirectory(Path.Combine(mod, "maps"));
@@ -124,7 +164,7 @@ public class ScriptHookGameTests
             things:
               {{ToughGuardFacingWest}}: { class: ToughGuard, angles: 180 }
             """);
-        File.WriteAllText(Path.Combine(mod, "scripts", "hooks.lua"), HookScript);
+        File.WriteAllText(Path.Combine(mod, "scripts", "hooks.lua"), script);
         return mod;
     }
 

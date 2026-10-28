@@ -67,6 +67,25 @@ public class ObjectivesTests
     }
 
     [Test]
+    public void Each_One_Done_Is_Told_To_The_Scripts()
+    {
+        // Arrange
+        var told = new List<(string, int, int)>();
+        _objectives = new Objectives(_map, new ObjectiveHooks(() => _settings, text => text, _messages.Add, () => _switches,
+            (name, done, total) => told.Add((name, done, total))));
+        _switches.AddRange([Panel(), Panel()]);
+        _objectives.CountLevel(announce: false);
+
+        // Act
+        _objectives.Complete("sabotage");
+        _objectives.Complete("sabotage");
+        _objectives.Complete("sabotage");     // all done already: nothing
+
+        // Assert
+        Assert.That(told, Is.EqualTo(new[] { ("sabotage", 1, 2), ("sabotage", 2, 2) }));
+    }
+
+    [Test]
     public void One_Target_Isnt_Announced_Below_Its_Start_From()
     {
         Target(100);

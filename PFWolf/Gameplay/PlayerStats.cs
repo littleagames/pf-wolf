@@ -12,6 +12,8 @@ namespace PFWolf.Gameplay;
 /// <param name="ShowAttacker">Shows who's attacking the local player (game-info attack-message), with Attack Info on</param>
 /// <param name="Damage">The scripts' say in a hit on the acting player (game.ondamage): the amount, by what and its damage type, to the amount it comes to</param>
 /// <param name="Died">The acting player's been killed, by what if anything (game.onplayerdeath)</param>
+/// <param name="Given">An item's been given to the acting player, so much of it (game.ongive)</param>
+/// <param name="Powerup">A power-up of the acting player's has started (true) or run out (game.onpowerup)</param>
 internal sealed record PlayerStatsHooks(
     Func<double> SkillDamageTaken,
     Action PlayerDies,
@@ -19,7 +21,9 @@ internal sealed record PlayerStatsHooks(
     Action<string, string?, string?>? ShowTimer = null,
     Action<Entities.Actors.Actor>? ShowAttacker = null,
     Func<int, Entities.Actors.Actor?, string?, int>? Damage = null,
-    Action<Entities.Actors.Actor?>? Died = null);
+    Action<Entities.Actors.Actor?>? Died = null,
+    Action<string, int>? Given = null,
+    Action<string, bool>? Powerup = null);
 
 /// <summary>
 /// The acting player's health, armor, lives and score: taking damage, healing, putting on
@@ -341,6 +345,14 @@ internal sealed class PlayerStats(
     /// </summary>
     internal bool TryApplyInventory(Inventory item, int amount)
     {
+        if (!ApplyInventory(item, amount))
+            return false;
+        hooks.Given?.Invoke(item.Name, amount);
+        return true;
+    }
+
+    bool ApplyInventory(Inventory item, int amount)
+    {
         switch (item)
         {
             case Entities.Actors.Health:
@@ -431,6 +443,7 @@ internal sealed class PlayerStats(
         inventory.Give(powerup, duration);
         ShowPowerupTimers();
         statusBar.DrawFace();
+        hooks.Powerup?.Invoke(powerup, true);
         return true;
     }
 
@@ -471,6 +484,7 @@ internal sealed class PlayerStats(
             weapons.DrawAmmo();
         }
         statusBar.DrawFace();
+        hooks.Powerup?.Invoke(powerup, false);
     }
 
     // The local player's power-up timers (powerup.timerstyle), kept up to date: gone once one's over

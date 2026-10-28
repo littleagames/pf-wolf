@@ -21,6 +21,12 @@ internal sealed class PlayerState
     /// <summary>Their actor on the map; null between levels</summary>
     public Actors.PlayerPawn? Pawn;
 
+    /// <summary>
+    /// The weapon the scripts' game.onweaponswitch last saw in their hand (Gameplay/PlayerThink.cs);
+    /// null until it's seen one. Not saved: a loaded game's first is seen without telling
+    /// </summary>
+    public string? WeaponToldScripts;
+
     /// <summary>Their controls each frame</summary>
     public readonly PlayerInput Input = new();
 

@@ -132,7 +132,8 @@ internal static partial class GameHost
             : null,
         PreviousRecord: () => PreviousLevelRecord,
         IsUnlocked: name => Unlocks.IsUnlocked(name),
-        CountsAllKills: () => GameEngineManager.GetGameInfo().Stealth.UnseenNoKillsCountsAll);
+        CountsAllKills: () => GameEngineManager.GetGameInfo().Stealth.UnseenNoKillsCountsAll,
+        ScriptText: () => TallyText);
 
     // game-info's title-sequence screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)
@@ -187,8 +188,11 @@ internal static partial class GameHost
         menuLoop = new MenuLoop(menuDrawing, menuInput, _graphicManager, _videoManager, _inputManager, AudioManager, AssetManager);
         lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
         doors = new Doors(GameEngineManager, AudioManager, MapManager, InventoryManager, HudMessageManager, Session,
-            new DoorHooks(PlaySoundLocTile, DrawKeys));
-        pushWalls = new PushWalls(MapManager, AudioManager, Session, () => GameEngineManager.GetGameInfo().PushwallDistance);
+            new DoorHooks(PlaySoundLocTile, DrawKeys, (x, y, opening, by) => gameScripts?.RunDoorHooks(x, y, opening, by) != false));
+        pushWalls = new PushWalls(MapManager, AudioManager, Session, () => GameEngineManager.GetGameInfo().PushwallDistance)
+        {
+            MayPush = (x, y, dir) => gameScripts?.RunPushWallHooks(Session.Player, x, y, dir) != false,
+        };
         wallSpriteBlocking = new WallSpriteBlocking(MapManager);
         lineOfSight = new LineOfSight(MapManager, doors, Session, WallSpriteBlocksLine);
         LevelAI = new LevelAI(MapManager, lineOfSight, positionalSounds, Session);
@@ -268,7 +272,8 @@ internal static partial class GameHost
         Session.Camera.IsOpenTile = (x, y) => x > 0 && y > 0 && x < MapManager.MapWidth - 1 && y < MapManager.MapHeight - 1
             && MapManager.TileMap[x, y] == 0;
         gameScripts = MakeGameScripts();
-        levelMusic = new LevelMusic(GameEngineManager, AudioManager, Session);
+        MapManager.ActorAdded = gameScripts.ActorAdded;     // game.onactorspawn
+        levelMusic = new LevelMusic(GameEngineManager, AudioManager, Session) { ChooseSong = song => gameScripts.ChooseSong(song) };
         playKeys = MakePlayKeys();
         levelLoop = MakeLevelLoop();
         levelSetup = MakeLevelSetup();
@@ -444,6 +449,7 @@ internal static partial class GameHost
         FactionManager.CheckClasses(AssetManager.GetActorMetadata());
         TranslationManager.CheckDefinitions(AssetManager.GetActorMetadata(), FactionManager.Table);
         RegisterConsoleCommands();
+        gameScripts.RegisterCommands();     // the scripts' own (game.command), once the game's are in
 
         //CheckParameters(args); // Remove
 

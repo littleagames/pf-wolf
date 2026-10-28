@@ -42,7 +42,8 @@ public record IntermissionAsset : Asset
     /// count of nothing isn't shown). item.NAME is how many of an inventory item the player holds
     /// of its inventory.maxamount, as done/total. unlocked is shown, as its format alone (Midnight
     /// Assault's "New Levels Unlocked!"), when something's been unlocked since the last tally
-    /// (A_Unlock, game.unlock). A value left out isn't shown, and a kill, secret or treasure ratio
+    /// (A_Unlock, game.unlock). script is what a script's game.ontally says, when it says anything.
+    /// A value left out isn't shown, and a kill, secret or treasure ratio
     /// left out isn't counted, so it earns no perfect bonus.
     /// </summary>
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);

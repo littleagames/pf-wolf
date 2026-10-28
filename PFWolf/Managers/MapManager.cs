@@ -85,6 +85,12 @@ internal class MapManager
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
+    /// <summary>Goes up each time the level's actors are put on afresh (a map loaded, a level restored): which level it is</summary>
+    internal int LevelSerial { get; private set; }
+
+    /// <summary>An actor has been put on the level as it plays (SpawnThing, SpawnAtActor...): the scripts' game.onactorspawn</summary>
+    internal Action<Entities.Actors.Actor>? ActorAdded { get; set; }
+
     // The acting player's pawn (GameSession.ActAs), held in _actors with every other player's at
     // its head, in player order. Null until CreatePlayer runs for the current level -- LoadMap
     // clears _actors, which drops the previous level's pawns.
@@ -333,6 +339,7 @@ internal class MapManager
         // (death with lives left, replaying a level in a new game, etc.) would otherwise pile
         // the new level's actors on top of the previous load's instead of replacing them.
         _actors.Clear();
+        LevelSerial++;
         ForgetPawns();
         PlayerStart = null;
         DeathmatchStarts.Clear();
@@ -1481,6 +1488,7 @@ internal class MapManager
             ActorAt[tilex, tiley] = new WallSpriteBlocker();
 
         _actors.AddLast(builtActor);
+        ActorAdded?.Invoke(builtActor);
         return builtActor;
     }
 
@@ -1575,6 +1583,7 @@ internal class MapManager
             MarkActorTile(morphed);
 
         _actors.AddLast(builtActor);
+        ActorAdded?.Invoke(builtActor);
         return builtActor;
     }
 
@@ -1604,6 +1613,7 @@ internal class MapManager
         builtActor.Translation = TranslationManager.ClassTranslation(builtActor);
 
         _actors.AddLast(builtActor);
+        ActorAdded?.Invoke(builtActor);
         return builtActor;
     }
 
@@ -2178,6 +2188,7 @@ internal class MapManager
         ZonesVersion++;
 
         _actors.Clear();
+        LevelSerial++;
         ForgetPawns();
 
         // A save is a single player's game: its pawn is the local player's

@@ -11,6 +11,7 @@ namespace PFWolf.Gameplay.MatchModes;
 /// <param name="Rearm">Gives a player their starting loadout afresh (for a new part in the mode: PlayerState.RoleClass), and every key</param>
 /// <param name="Respawn">Brings a player back afresh, dead or alive, at a spot of their team's (a new round)</param>
 /// <param name="ShowHealth">Puts a player's health on their status bar again (it changed by the mode's doing)</param>
+/// <param name="Flag">Capture the flag: what happened to a team's flag ("taken", "dropped", "returned", "home", "captured") and by whom (game.onflag)</param>
 internal sealed record MatchModeHooks(
     Func<int, int, bool> IsOpenFloor,
     Func<int, int, bool> IsFreeFloor,
@@ -18,7 +19,8 @@ internal sealed record MatchModeHooks(
     Action<string> PlaySound,
     Action<Entities.PlayerState>? Rearm = null,
     Action<Entities.PlayerState>? Respawn = null,
-    Action<Entities.PlayerState>? ShowHealth = null);
+    Action<Entities.PlayerState>? ShowHealth = null,
+    Action<string, Entities.PlayerState?, int>? Flag = null);
 
 /// <summary>
 /// What every mode's objective shares: the players in it, where they stand, announcing what's

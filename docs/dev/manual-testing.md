@@ -409,6 +409,16 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       `onsecret` on a pushwall; `onuse` taking a door or switch press; `onplayerdeath` from a
       shot, time running out and being caught (stealth); `onspawn` "restarted", and "respawn" and
       "join" in a netgame.
+- [ ] **(never tried)** The second batch of hooks in real play (`onactorspawn` at level start,
+      `onfire` refusing, `onenter` for the player and `onhud` drawing are covered by
+      ScriptHookGameTests): `ondoor` keeping a door shut against the player and an enemy;
+      `onpushwall` and `onswitch` refusing; `onexit` holding a level open; `onteleport` on
+      A_Warp/A_TeleportTag (and an enemy on a "monsters" pad); `onenter` for enemies; `onrevive`
+      (medic-demo); `onfactionchange` (faction-demo prisoner); `onweaponswitch`, `ongive`,
+      `onpowerup`; `onobjective`, `onchain`, `onstealthkill` (Midnight Assault-style mods);
+      `ontimeup` on a timed level; `onfrag`, `onflag`, `onmatchend` in a netgame; `onmusic`
+      and `game.music` by ear; `ontally` text on the Wolf3D tally (intermission.yaml `script`,
+      top centre) and how it looks; a `game.command` typed in the console.
 
 ## 1.13 Sound and music (by ear)
 

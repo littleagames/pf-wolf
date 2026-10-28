@@ -36,6 +36,12 @@ internal sealed class WeaponInHand(
     /// <summary>A_Lower's and A_Raise's step when they're given none</summary>
     internal const int DefaultSwitchSpeed = 6;
 
+    /// <summary>Whether the scripts let the acting player's attack with a weapon start or go on (game.onfire)</summary>
+    internal Func<string, bool>? MayFire { get; init; }
+
+    // Whether the scripts let the weapon in hand fire now
+    bool ScriptsLetFire() => MayFire == null || session.PlayerState.Weapon is not { } weapon || MayFire(weapon);
+
     // The weapon in hand's actor is the acting player's
     Entities.Actors.Actor? WeaponSprite
     {
@@ -227,7 +233,12 @@ internal sealed class WeaponInHand(
         // so a shotgun loading shell by shell can shoot between them
         if (IsReloading(sprite) && weapons.IsLoaded(session.PlayerState.Weapon)
             && session.PlayerInput.IsFreshPress(ButtonType.Attack))
-            StartState(sprite, "Fire", ButtonType.Attack);
+        {
+            if (ScriptsLetFire())
+                StartState(sprite, "Fire", ButtonType.Attack);
+            else
+                session.PlayerInput.SetHeld(ButtonType.Attack, true);   // refused: not asked again until fire's let go
+        }
 
         map.DoActor(sprite, session.Tics);
     }
@@ -334,7 +345,9 @@ internal sealed class WeaponInHand(
         // Zoomed in through a scope, a weapon with a ZoomFire state fires that (Gameplay/WeaponZoom.cs);
         // a weapon with a Backstab state swings that at an unaware enemy's back (Midnight Assault's
         // knife: Cmd_Fire's stealth kill frames)
-        if (session.PlayerInput.IsFreshPress(ButtonType.Attack))
+        if (session.PlayerInput.IsFreshPress(ButtonType.Attack) && !ScriptsLetFire())
+            session.PlayerInput.SetHeld(ButtonType.Attack, true);       // refused: not asked again until fire's let go
+        else if (session.PlayerInput.IsFreshPress(ButtonType.Attack))
             StartState(weapon,
                 playerstate.ZoomMode == ZoomMode.Zoomed && weapon.ResolvedStates.ContainsKey("ZoomFire") ? "ZoomFire"
                 : weapon.ResolvedStates.ContainsKey("Backstab") && attacks?.BackstabTarget() != null ? "Backstab"
@@ -425,7 +438,8 @@ internal sealed class WeaponInHand(
     /// <summary>Fire still held and a round ready: back to Hold (or Fire, for a weapon without one).</summary>
     internal void ReFire(Entities.Actors.Actor weapon)
     {
-        if (!session.PlayerInput.IsPressed(ButtonType.Attack) || !weapons.IsLoaded(session.PlayerState.Weapon) || weapons.IsCharging())
+        if (!session.PlayerInput.IsPressed(ButtonType.Attack) || !weapons.IsLoaded(session.PlayerState.Weapon) || weapons.IsCharging()
+            || !ScriptsLetFire())
             return;
         if (!JumpWeaponState(weapon, "Hold"))
             JumpWeaponState(weapon, "Fire");
