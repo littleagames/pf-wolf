@@ -46,6 +46,7 @@ public static class ScriptApi
         Fn("taggedtiles", "game.taggedtiles(tag)", "The tiles with that tag, each {x, y}: tagged doors and walls"),
         Fn("tag", "game.tag(x, y)", "A tile's tag, 0 for none"),
         Fn("patch", "game.patch(x, y)", "The patch (mapdefs patches) on a wall tile, 0 for none"),
+        Fn("floor", "game.floor(x, y)", "The texture on a tile's floor (mapdefs flats or the map's default-floor, as A_ChangeTexture left it), nil where the floor color shows"),
         Fn("trigger", "game.trigger(tag, action, ...)",
             "Runs a switch action on a tag, as a switch with it would, used by the first player: game.trigger(3, \"A_OpenDoor\", \"hold\"), "
             + "or the whole call in one string, game.trigger(3, 'A_OpenDoor(\"hold\")'). True if it did anything (false with no player on the level). "
@@ -83,6 +84,7 @@ public static class ScriptApi
         Field("inwall", "Whether it stands inside a wall (mapdefs in-wall: true)"),
         Field("removed", "Whether it's gone from the level"),
         Field("isplayer", "Whether it's a player"),
+        Field("vehicle", "For a player riding a vehicle (Gameplay/Vehicles.cs), the class of what they boarded; nil when they're on foot, and for anything else"),
         Field("shooter", "For a projectile, the actor that fired it"),
         Field("faction", "The side it's on (factions.yaml), nil for none; set it to change sides (the kill total follows)", settable: true),
         Field("follows", "Whether it goes about with the players on its side (monster.follow, A_SetFaction \"follow\"); only an enemy can, and setting it on anything else does nothing", settable: true),

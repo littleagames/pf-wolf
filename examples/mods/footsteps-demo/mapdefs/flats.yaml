@@ -1,0 +1,7 @@
+# The level's two floors (the flat plane, map plane 2: a tile's low byte is its floor), the
+# pictures in flats/. Indices 10 and up, clear of pfwolf.pk3's own 1-3. scripts/footsteps.lua
+# gives each texture its step sound.
+flats:
+  floor:
+    10: FSDIRT
+    11: FSGRATE

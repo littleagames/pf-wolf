@@ -323,6 +323,11 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 - [ ] Level-wide and per-tile floor/ceiling flats; see-through (0xFF) pixels.
 - [ ] **(never tried)** An ECWolf map with flats; flats in Spear; high `vid_scale` frame rate.
 
+**Footsteps** (`footsteps-demo`)
+- [ ] **(never tried)** By ear: stone, dirt and metal steps sound right and sit under the other
+      sounds; the walking and running cadence feels right (`stride` 2.5, `mintics` 12).
+- [ ] **(never tried)** Another player's steps heard from where they are (network game).
+
 **Wall patches + mirrored textures** (`patch-demo`)
 - [ ] Ammo/button/lever/first-aid patches on the right faces; patch switches give items.
 - [ ] **(never tried)** `flip:` mirrored faces (truck sides), patches stay unflipped, lintels and

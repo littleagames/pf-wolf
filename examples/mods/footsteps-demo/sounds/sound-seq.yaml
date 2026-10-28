@@ -1,0 +1,30 @@
+# The footstep sounds scripts/footsteps.lua plays, each a random pick of two so that steps
+# don't all sound the same. The sounds themselves are this folder's .wav files (made by
+# tools/make-footsteps-demo.ps1): sounds/NAME.wav is the digitized sound NAME.
+sound-info:
+  footsteps/default:
+    random:
+      - footsteps/default1
+      - footsteps/default2
+  footsteps/default1:
+    digitized: FSSTEP1
+  footsteps/default2:
+    digitized: FSSTEP2
+
+  footsteps/dirt:
+    random:
+      - footsteps/dirt1
+      - footsteps/dirt2
+  footsteps/dirt1:
+    digitized: FSDIRT1
+  footsteps/dirt2:
+    digitized: FSDIRT2
+
+  footsteps/metal:
+    random:
+      - footsteps/metal1
+      - footsteps/metal2
+  footsteps/metal1:
+    digitized: FSMETAL1
+  footsteps/metal2:
+    digitized: FSMETAL2

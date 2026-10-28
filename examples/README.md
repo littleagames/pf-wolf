@@ -406,10 +406,10 @@ What a script can use:
 
 | | |
 | --- | --- |
-| Actor fields | `name`, `x`, `y` (in tiles; a tile's middle is n + 0.5), `tilex`, `tiley`, `angle` (degrees, 0 east, 90 north: the way it faces, or a projectile flies), `health`, `speed`, `state`, `tag`, `inwall`, `removed`, `isplayer`, `shooter` (who fired a projectile), `temp1`..`temp3` |
+| Actor fields | `name`, `x`, `y` (in tiles; a tile's middle is n + 0.5), `tilex`, `tiley`, `angle` (degrees, 0 east, 90 north: the way it faces, or a projectile flies), `health`, `speed`, `state`, `tag`, `inwall`, `removed`, `isplayer`, `vehicle` (the class of what a player is riding, nil on foot), `shooter` (who fired a projectile), `temp1`..`temp3` |
 | Fields it can set | `temp1`..`temp3` (whole numbers, kept in saved games), `angle`, `speed` |
 | Actor methods | `jump(state)`, `spawnprojectile(class[, angle[, "relative"\|"absolute"\|"aim"]])` (returns the projectile), `spawn(class)`, `playsound(sound[, positional])`, `property(key)`, `hasflag(flag)`, `distanceto(other)` (tiles), `angleto(other)`, `cansee(player[, tiles])`, `nearestplayer()`, `remove()` |
-| `game` | `random()` (0-255), `random(n)` (1 to n), `random(m, n)`, `players()`, `actors([class])` (every actor, or those of a class, in the order they think), `tagged(tag[, class])` (the actors with that tag on the map's tag plane, as switches find them), `taggedtiles(tag)` (the tiles with it, each `{x, y}`: tagged doors and walls), `tag(x, y)` (a tile's tag, 0 for none), `trigger(tag, action, ...)` (below), `time()`, `tics()`, `map()`, `skill()`, `message(text[, style])` |
+| `game` | `random()` (0-255), `random(n)` (1 to n), `random(m, n)`, `players()`, `actors([class])` (every actor, or those of a class, in the order they think), `tagged(tag[, class])` (the actors with that tag on the map's tag plane, as switches find them), `taggedtiles(tag)` (the tiles with it, each `{x, y}`: tagged doors and walls), `tag(x, y)` (a tile's tag, 0 for none), `floor(x, y)` (the texture on a tile's floor, nil where no flat is), `trigger(tag, action, ...)` (below), `time()`, `tics()`, `map()`, `skill()`, `message(text[, style])` |
 | Hooks | `game.onlevel(function(reason, map) ... end)` and `game.ontick(function(tics) ... end)` (below) |
 | Lua | the basic, `string`, `table`, `math` and `bit32` libraries, and `print` (to the console) |
 
@@ -671,6 +671,60 @@ Any `Monster` class can revive; nothing about it is tied to the demo's medics:
   count until killed again, drop their items again, but score nothing the second time.
 - No one rises from a doorway, or with someone alive (or you) standing on the corpse. Classes
   with `flags: [NOREVIVE]` never come back; every boss in the base games has it.
+
+## Footsteps Demo (`mods/footsteps-demo`)
+
+Footsteps as you walk, each floor sounding its own: a Lua script, a few sounds and a hall
+(replacing Floor 1, Wolfenstein 3D only) to try them in. The engine adds nothing for it but
+`game.floor(x, y)`, so a mod can change any of it.
+
+```
+PFWolf.exe --file footsteps-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+Walk east down the hall: plain stone floor (no flat, so the default step), then packed dirt,
+then metal grating over a dark pit, and the elevator at the far end. Your steps change as you
+cross from one to the next. Run and they come quicker.
+
+### What's in it
+
+- `scripts/footsteps.lua`: the footsteps. Each tick (`game.ontick`) it sees how far each
+  player has come and, every `stride` tiles (2.5), plays a step: the sound the `floors` list
+  gives the texture under them (`game.floor`), else the default `sound`. Everything is in its
+  `footsteps` table:
+
+  ```lua
+  footsteps = {
+    enabled = true,
+    sound = "footsteps/default",       -- a floor not listed, or no flat
+    floors = { FSDIRT = "footsteps/dirt", FSGRATE = "footsteps/metal" },
+    stride = 2.5,                      -- tiles between steps
+    mintics = 12,                      -- the fewest tics between two steps
+  }
+  ```
+
+  A mod of your own can carry the script and change the table, or leave this mod switched on
+  and change it from a script of its own, loaded after this one:
+  `footsteps.floors.MYGRATE = "footsteps/metal"`. `footsteps.play(player, sound, floor)` plays
+  each step; replace it to do more with one.
+- `sounds/`: the steps, two of each (`FSSTEP1`/`2` stone, `FSDIRT1`/`2`, `FSMETAL1`/`2`), and
+  `sounds/sound-seq.yaml` naming them: `footsteps/default`, `footsteps/dirt` and
+  `footsteps/metal`, each a random pick of its two so the steps don't all sound alike.
+- `flats/FSDIRT.png`, `flats/FSGRATE.png` and `mapdefs/flats.yaml`: the two floors, flat
+  indices 10 and 11.
+- `maps/MAP01.wad`: the level. A tile's floor is the low byte of its flat plane (plane 2) value.
+
+The sounds (made from noise and sine waves), the floors and the level are all made by
+`tools/make-footsteps-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-footsteps-demo.ps1
+```
+
+In game, `where` shows the floor you're on; with cheats on, `lua print(game.floor(me.tilex, me.tiley))`
+shows what the script sees, and `flat <floor> <ceiling>` changes the one you stand on.
 
 ## Multiplayer modes and arenas
 

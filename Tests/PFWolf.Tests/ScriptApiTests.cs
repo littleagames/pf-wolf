@@ -83,10 +83,26 @@ public class ScriptApiTests
         var names = string.Join(", ", fields.Select(field => $"'{field.Name}'"));
 
         // Act
-        host.Execute($"for _, name in ipairs({{{names}}}) do print(name, a[name] ~= nil or name == 'shooter' or name == 'state' or name == 'faction' or name == 'translation') end");
+        host.Execute($"for _, name in ipairs({{{names}}}) do print(name, a[name] ~= nil or name == 'shooter' or name == 'state' or name == 'faction' or name == 'translation' or name == 'vehicle') end");
 
-        // Assert: shooter, state, faction and translation are nil for an actor that has none, but don't error
+        // Assert: shooter, state, faction, translation and vehicle are nil for an actor that has none, but don't error
         Assert.That(_printed, Is.EqualTo(fields.Select(field => $"{field.Name}\ttrue")));
+    }
+
+    [Test]
+    public void A_Players_Vehicle_Is_What_They_Ride_And_Nil_On_Foot()
+    {
+        // Arrange: a player riding a boat, one on foot, and an actor that isn't a player
+        var host = EngineHost();
+        host.Globals["riding"] = Scripting.LuaActor.Of(new Entities.Actors.PlayerPawn { State = new Entities.PlayerState { Vehicle = "Boat" } });
+        host.Globals["walking"] = Scripting.LuaActor.Of(new Entities.Actors.PlayerPawn { State = new Entities.PlayerState() });
+        host.Globals["thing"] = Scripting.LuaActor.Of(new EntityActor { Name = "Thing" });
+
+        // Act
+        host.Execute("print(riding.vehicle, walking.vehicle, thing.vehicle)");
+
+        // Assert
+        Assert.That(_printed, Is.EqualTo(new[] { "Boat\tnil\tnil" }));
     }
 
     [Test]

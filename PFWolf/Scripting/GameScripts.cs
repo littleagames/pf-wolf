@@ -184,6 +184,7 @@ internal sealed class GameScripts(
                 "inwall" => c.Return(projectileActions.IsInWall(self)),
                 "removed" => c.Return(self.IsRemoved),
                 "isplayer" => c.Return(self is Entities.Actors.PlayerPawn),
+                "vehicle" => c.Return(self is Entities.Actors.PlayerPawn { State.Vehicle: { } vehicle } ? vehicle : LuaValue.Nil),
                 "shooter" => c.Return(LuaActor.Of(self.Shooter)),
                 "faction" => c.Return(self.Faction is { } faction ? faction : LuaValue.Nil),
                 "follows" => c.Return(self is Entities.Actors.Monster { Follows: true }),
@@ -310,6 +311,15 @@ internal sealed class GameScripts(
             if (!map.InMap(x, y))
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.patch: {x},{y} isn't a tile on the map", 1);
             return new(c.Return(map.GetPatch(x, y)));
+        });
+        // game.floor(x, y): the texture on a tile's floor (mapdefs flats, the map's default-floor,
+        // through any A_ChangeTexture), nil where the floor color shows
+        game["floor"] = new LuaFunction("game.floor", (c, _) =>
+        {
+            int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
+            if (!map.InMap(x, y))
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.floor: {x},{y} isn't a tile on the map", 1);
+            return new(c.Return(map.FlatTextureName(x, y, ceiling: false) is { } floor ? floor : LuaValue.Nil));
         });
         game["trigger"] = new LuaFunction("game.trigger", (c, _) =>
         {

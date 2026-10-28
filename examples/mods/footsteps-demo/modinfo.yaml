@@ -1,0 +1,4 @@
+name: Footsteps Demo
+version: "1.0"
+description: Footsteps as you walk, sounding by the floor under you (a Lua script), and a hall (replacing Floor 1) of stone, dirt and metal grating to try them on.
+game-packs: [wolf3d]
