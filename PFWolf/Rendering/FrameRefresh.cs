@@ -282,6 +282,10 @@ internal sealed class FrameRefresh(
 
         if (session.FizzleIn)
         {
+            // The status bar's info area and the messages fizzle in with the view, rather than
+            // the last frame's (a warp's "transporting out") staying up through it
+            hooks.DrawStatusOverlay();
+            hooks.DrawHudMessages();
             video.Transition(hooks.LevelFadeStyle(), 0, 0, video.ScreenWidth, video.ScreenHeight, (uint)hooks.LevelFadeTics());
             session.FizzleIn = false;
 

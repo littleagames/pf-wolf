@@ -242,8 +242,8 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       same, arriving on the new floor. **(never tried)** Saving right after a warp. Checked
       2026-10-27 to another floor (MAP01 13,7, from 13,6): after "Get Ready, Blake!" the new
       floor's view fizzles in from black with "transporting...". Before that fix it faded in.
-      The info area still shows "transporting out" during the fizzle in; bstone shows
-      "transporting..." by then.
+      The info area now shows "transporting..." on the black view and through the fizzle
+      (checked by the PS teleporter, which takes the same warp in); a warp wall's not rechecked.
 
 ## 1.10 Planet Strike (PS)
 

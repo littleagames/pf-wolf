@@ -232,18 +232,22 @@ internal sealed class HubActions(
     /// </summary>
     internal void WarpIn(bool newLevel = false)
     {
+        // On a new level the play loop clears the messages as it starts, then shows this again
         if (newLevel)
+        {
             session.LevelStartHudMessage = "$BS_TRANSPORTING";
-        else
-            hudMessages.Show(HudMessageKind.Other, "$BS_TRANSPORTING");
+            hudMessages.Clear();
+        }
+        hudMessages.Show(HudMessageKind.Other, "$BS_TRANSPORTING");
+
+        // Up on the black view before it fizzles in, in place of "transporting out"
+        playScreen.DrawPlayScreen();
         frame.FillView("Black");
+        video.Update();
         // A new level's start message faded the screen out: back in, with the view still black,
         // so the view fizzles in rather than fading
         if (video.ScreenFaded)
-        {
-            video.Update();
             video.FadeIn();
-        }
         audio.Play("bs/warpin");
         session.FizzleIn = true;
     }

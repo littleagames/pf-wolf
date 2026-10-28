@@ -77,7 +77,8 @@ often.
 Then (2026-10-27, last): Planet Strike's teleporter map warps out and in, as bstone's
 `select_floor` (ex_transported) does; it had just switched floors. A floor arrived at by a warp
 fizzles in from black after "Get Ready, Blake!", where it used to fade in, for warp walls too.
-One difference is left: during that fizzle the info area still says "transporting out".
+The info area says "transporting..." on the black view and through the fizzle, as bstone's
+DrawWarpIn (a fizzle-in frame now draws the info area and messages before it fizzles).
 
 **Aliens of Gold: gameplay**
 - Nothing known.
