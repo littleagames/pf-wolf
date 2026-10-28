@@ -87,7 +87,8 @@ internal static partial class GameHost
         text => HudMessageManager.Localize(text),
         message => HudMessageManager.Show(HudMessageKind.Lock, message),
         LevelSwitches,
-        (name, done, total) => gameScripts?.RunObjectiveHooks(name, done, total)));
+        (name, done, total) => gameScripts?.RunObjectiveHooks(name, done, total),
+        () => destructibleWalls.LevelObjectives()));
 
     // What the player has unlocked, from game to game (Gameplay/Unlocks.cs): starts-locked episodes
     static Unlocks? _unlocks;

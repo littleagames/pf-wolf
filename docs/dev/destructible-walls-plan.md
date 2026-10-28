@@ -2,7 +2,7 @@
 
 Walls that can be broken or taken away during play: shot down by the right weapon, blown out by
 a blast, or made to crumble or vanish by a switch, a floor trigger, an actor's state or a script.
-Planned 2026-10-28 on branch feature/destructible-walls; phase 1 is done (see Status at the end).
+Planned 2026-10-28 on branch feature/destructible-walls; phases 1 and 2 are done (see Status at the end).
 
 ## What there is to build on
 
@@ -182,7 +182,7 @@ no renderer change), and walls that come back (A_RestoreWall).
 
 ## Status
 
-**Phase 1 done (2026-10-28, uncommitted).**
+**Phase 1 done (2026-10-28, committed b8385172).**
 - `MapManager.RemoveWall(x, y, area, arch)` does the tile itself. `Gameplay/DestructibleWalls.cs`
   does the rest:
   - `WhyNot` refuses doors, open floor, moving pushwalls and the map's edge.
@@ -210,3 +210,52 @@ no renderer change), and walls that come back (A_RestoreWall).
 Not checked in play: switch/trigger/actor use of A_RemoveWall, enemies hearing through a joined
 hole, diagonals, door jambs, in-wall shooters, a removed secret pushwall
 (docs/dev/manual-testing.md 1.12).
+
+**Phase 2 done (2026-10-28, uncommitted).**
+- **The block:** `MapDestructibleTranslation` (Common), as `destructible:` on a walls.yaml wall,
+  documented in pfwolf-pk3's mapdefs/wolf3d/walls.yaml header and the docs' mapdefs reference.
+  Its fields: damage-types, health, to, sound, spawn, leaves, floor, ceiling, actions, secret,
+  objective, players-only.
+- **DestructibleWalls:**
+  - `Hurts` checks the damage type case-insensitively, players-only, and that the wall can go.
+  - `Hit` rolls the damage only once the wall takes it, so stock levels draw the same random
+    numbers as before. The damage adds up in `MapManager.WallDamage` until it reaches the health.
+  - `Break` plays the sound, counts the secret and the objective, then either swaps in the `to`
+    wall (keeping the door-side mark and restarting play-once animations, with fresh damage) or
+    removes the wall. Removal sets the floor and ceiling flats and spawns `spawn`. Then the
+    actions run as a switch's would, as the player who broke it.
+  - `HitByMissile` finds the wall the missile's box reached into, a diagonal only on its solid
+    side. `HitByBlast` uses the source's damagetype, else Blast.
+  - `LevelObjectives` feeds Objectives.CountLevel.
+- **Where hits come from:**
+  - Player missiles: Missiles.Missile, through MissileHooks.MissileHitWall.
+  - Enemy projectiles: Projectiles.Projectile, through ProjectileHooks.HitWall.
+  - Blasts: A_Explode collects the wall tiles its spread runs into within the radius. Each is
+    hit once, with falloff measured to the wall's middle.
+  - Player gunshots: GunAttack's two misses, FireBullet's miss and each pellet. ShotTrace now
+    carries the wall tile it struck. A gunshot's wall damage is the roll for that many tiles
+    away, with no miss roll.
+  - The knife: a missed blow traces 1.5 tiles ahead.
+  - The player's damage share (player.damagedealt) applies, as on enemies. The damage type is
+    the weapon's `weapon.damagetype`, else Bullet or Melee.
+- Destructible walls with `secret: true` add to the level's secret total as it loads.
+- Save v37 (WallDamage after the objectives); NetStateVersion 15.
+- Tests: DestructibleWallsTests (types, stages, last stage's secret/objective/sound/actions,
+  floor flat, players-only, missile box, blast type, saved damage).
+- Checked in play in E1M1, with a scratch mod making walls 1-20 destructible:
+  - Pistol shots (health 60, windowed with posted key presses, screenshot) broke the wall.
+  - The knife broke it.
+  - Lua-fired `TestRocket`s (parent Rocket, damagetype Rocket) broke it on the second rocket.
+  - A summoned A_Explode actor beside it (Blast) broke it.
+
+Behaviour to know about:
+- A rocket with a damagetype hits a wall twice when its Death state explodes: once flying
+  into it, once from its own blast, of the same type.
+- `spawn` only happens when the wall is gone, not on a stage change.
+- A secret counts on the stage that has `secret: true`.
+- Not hurt by anything yet: enemies' hitscan (Monster's own MissPuff), a bouncing missile's
+  bounce, Blake Stone's T_Bounce.
+
+Not checked in play: players-only, `to` stages, spawn, actions, floor/ceiling flats, a secret's
+count, objectives, pellets (A_FirePellets), FireBullet, a save mid-damage and loaded back,
+diagonals.

@@ -8,10 +8,14 @@ namespace PFWolf.Gameplay;
 /// <param name="ProjectileTryMove">Whether a projectile can be where it is (not in a wall or a solid thing)</param>
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
+/// <param name="MissileHitWall">A missile that's flown into a wall: the wall takes the damage the roll gives, if its damage type hurts it (Gameplay/DestructibleWalls.cs)</param>
+/// <param name="BlastHitWall">A blast reaching the wall on a tile: the same</param>
 internal sealed record MissileHooks(
     Func<Entities.Actors.Actor, bool> ProjectileTryMove,
     Action<string, Entities.Actors.Actor> PlaySoundAt,
-    Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer);
+    Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer,
+    Action<Entities.Actors.Actor, Func<int>>? MissileHitWall = null,
+    Action<Entities.Actors.Actor, int, int, Func<int>>? BlastHitWall = null);
 
 /// <summary>
 /// The player's weapons can throw missiles (A_FireMissile) that fly until they hit a wall, a
@@ -162,16 +166,23 @@ internal sealed class Missiles(
                 return;
         }
 
+        int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
+        int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
+        int Roll() => max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
         if (victim != null)
         {
-            int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
-            int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
-            int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
+            int damage = Roll();
             if (damage > 0)
             {
                 using var _ = ActAsShooter(ob);
                 HurtByMissile(victim, attacks.PlayerDamage(damage), ob);
             }
+        }
+        else
+        {
+            // a wall: a destructible one its damage type hurts takes it (rolled only then)
+            using var _ = ActAsShooter(ob);
+            hooks.MissileHitWall?.Invoke(ob, () => (int)attacks.PlayerDamage(Roll()));
         }
 
         Detonate(ob);
@@ -300,6 +311,7 @@ internal sealed class Missiles(
 
         var seen = new HashSet<(int, int)> { (cx, cy) };
         var open = new Queue<(int X, int Y)>();
+        var walls = new List<(int X, int Y)>();     // the walls it reaches, each hit once it's spread
         open.Enqueue((cx, cy));
         while (open.Count > 0)
         {
@@ -342,20 +354,43 @@ internal sealed class Missiles(
                 int nx = x + dx, ny = y + dy;
                 if (Math.Abs(nx - cx) > radius || Math.Abs(ny - cy) > radius
                     || !map.InMap(nx, ny)
-                    || !seen.Add((nx, ny)) || IsSolidForBlast(nx, ny))
+                    || !seen.Add((nx, ny)))
                     continue;
+                if (IsSolidForBlast(nx, ny))
+                {
+                    if (map.ActorAt[nx, ny] is Wall)
+                        walls.Add((nx, ny));
+                    continue;
+                }
                 open.Enqueue((nx, ny));
             }
         }
+
+        // the walls round it: a destructible one its damage type hurts takes it (with falloff, as
+        // much as something at the wall's middle would)
+        if (hooks.BlastHitWall != null)
+            foreach (var (x, y) in walls)
+            {
+                int wx = (x << MapConstants.TileShift) + (int)MapConstants.TileGlobal / 2, wy = (y << MapConstants.TileShift) + (int)MapConstants.TileGlobal / 2;
+                hooks.BlastHitWall(ob, x, y, () =>
+                {
+                    int hit = falloff ? BlastFalloffAt(damage, radius, ob.X, ob.Y, wx, wy) : damage;
+                    return shooter != null ? (int)attacks.PlayerDamage(hit) : hit;
+                });
+            }
     }
 
     /// <summary>
     /// A falloff blast's damage to a thing (Midnight Assault's SplashDamage): all of it within a
     /// tile, then divided by the square of the distance in tiles; nothing radius tiles away or more
     /// </summary>
-    internal static int BlastFalloff(int damage, int radius, Entities.Actors.Actor blast, Entities.Actors.Actor target)
+    internal static int BlastFalloff(int damage, int radius, Entities.Actors.Actor blast, Entities.Actors.Actor target) =>
+        BlastFalloffAt(damage, radius, blast.X, blast.Y, target.X, target.Y);
+
+    /// <summary>The same, from a blast at one point (global units) to something at another</summary>
+    internal static int BlastFalloffAt(int damage, int radius, long blastX, long blastY, long targetX, long targetY)
     {
-        double dx = (double)target.X - blast.X, dy = (double)target.Y - blast.Y;
+        double dx = (double)targetX - blastX, dy = (double)targetY - blastY;
         double tiles = Math.Sqrt(dx * dx + dy * dy) / MapConstants.TileGlobal;
         if (tiles >= radius)
             return 0;

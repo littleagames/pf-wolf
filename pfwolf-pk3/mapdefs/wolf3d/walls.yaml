@@ -4,6 +4,20 @@
 # other way round). Wall ids are 1 to 255; any plane 0 value not listed here or in doors.yaml is
 # open floor (see floors.yaml). `flip: [South, West]` draws those faces' textures mirrored left
 # to right (a truck's two sides from one texture, say); a wall patch on a flipped face isn't.
+#
+# A `destructible:` block makes a wall one that breaks (no stock wall has one; a mod adds them).
+# Hits of a damage type it lists add up their damage until it reaches its health (none: the first
+# such hit breaks it). Its fields are in the docs' mapdefs reference (MapDestructibleTranslation):
+#     destructible:
+#         damage-types: [Rocket, Blast]   # a missile's damagetype, Blast, Bullet, Melee...
+#         health: 50
+#         to: 41                          # a more cracked stage; left out, it's gone
+#         sound: world/wallbreak
+#         spawn: [Rubble]                 # put on the floor it leaves
+#         leaves: arch                    # a tall wall keeps its upper stories
+#         actions:                        # run on its tile's tag, as a switch's
+#             - A_OpenDoor
+#         secret: true
 walls:
     '1':
         North: GSTONEA1

@@ -410,7 +410,8 @@ internal static partial class GameHost
     static PlayerAttacks MakePlayerAttacks() =>
         new(MapManager, InventoryManager, FactionManager, lineOfSight, Session,
             new PlayerAttackHooks(PlayerViewOrigin, () => CenterX, () => ShootDelta, TakeDamage, PlayPlayerSound,
-                () => DamageDealt, actor => deathmatch.Objective?.IsDecoy(actor) == true));
+                () => DamageDealt, actor => deathmatch.Objective?.IsDecoy(actor) == true,
+                (x, y, type, damage) => destructibleWalls.Hit(x, y, type, Session.Player, damage)));
 
     static WeaponInHand MakeWeaponInHand() =>
         new(InventoryManager, MapManager, Session, playerWeapons, playerAttacks, RegisterMissileActions)
@@ -544,7 +545,8 @@ internal static partial class GameHost
 
     // Walls taken away as the level's played (Gameplay/DestructibleWalls.cs)
     static DestructibleWalls destructibleWalls = null!;
-    static DestructibleWalls MakeDestructibleWalls() => new(MapManager, doors, Session);
+    static DestructibleWalls MakeDestructibleWalls() => new(MapManager, doors, Session,
+        new DestructibleWallHooks(PlaySoundLocTile, name => Objectives.Complete(name)));
     private static void RegisterDestructibleWallActions() => (destructibleWalls ??= MakeDestructibleWalls()).Register();
 
     // ==== WL_ACT2 ================================================================================
@@ -577,7 +579,7 @@ internal static partial class GameHost
     static Projectiles MakeProjectiles() =>
         new(MapManager, FactionManager, Session, new ProjectileHooks(
             (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: false),
-            PlaySoundLocActor, TakeDamage));
+            PlaySoundLocActor, TakeDamage, (ob, damage) => destructibleWalls.HitByMissile(ob, damage)));
 
     internal static void SpawnThing(Entities.Actors.Actor ob, string[] args) => projectiles.SpawnThing(ob, args);
     internal static void Remove(Entities.Actors.Actor ob) => projectiles.Remove(ob);
@@ -610,7 +612,9 @@ internal static partial class GameHost
 
     static Missiles MakeMissiles() =>
         new(MapManager, FactionManager, doors, playerWeapons, playerAttacks, playerStats, Session,
-            new MissileHooks(ProjectileTryMove, PlaySoundLocActor, TakeDamage));
+            new MissileHooks(ProjectileTryMove, PlaySoundLocActor, TakeDamage,
+                (ob, damage) => destructibleWalls.HitByMissile(ob, damage),
+                (ob, x, y, damage) => destructibleWalls.HitByBlast(ob, x, y, damage)));
 
     static void RegisterMissileActions() => (missiles ??= MakeMissiles()).Register();
 

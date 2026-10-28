@@ -630,6 +630,9 @@ public record MapTextureTranslation
     /// <summary>Walls only: makes this wall a switch the player can use.</summary>
     public MapSwitchTranslation? Switch { get; init; }
 
+    /// <summary>Walls only: makes this wall one that hits of the right damage type break.</summary>
+    public MapDestructibleTranslation? Destructible { get; init; }
+
     /// <summary>
     /// Walls only: the use hint shown while the player faces it (statusbar.yaml use-hint's
     /// hints, by name); a switch's only from a side it can be used from
@@ -640,6 +643,70 @@ public record MapTextureTranslation
     public MapOutletTranslation? Outlet { get; init; }
 
     public static MapTextureTranslation None { get; } = new(); // TODO: Missing texture
+}
+
+/// <summary>
+/// A wall that breaks (Gameplay/DestructibleWalls.cs): hits whose damage type it lists add up
+/// their damage on its tile, and once they reach its <see cref="Health"/> (with none, at the first
+/// such hit) it breaks. Then it plays <see cref="Sound"/>, turns into wall <see cref="To"/> (a more
+/// cracked stage, itself destructible or not) or with none is gone, leaving open floor; puts
+/// <see cref="Spawn"/> on the floor it leaves; and runs <see cref="Actions"/> on its tile's tag.
+/// </summary>
+public record MapDestructibleTranslation
+{
+    /// <summary>
+    /// "damage-types": the damage types that hurt it; nothing else does. A missile's or a
+    /// projectile's is its actordefs `damagetype`; a blast's is its source's, else Blast; a
+    /// player's shot or blow is their weapon's `weapon.damagetype`, else Bullet for a gun and
+    /// Melee for the knife. Any case. Empty: nothing in play breaks it (actions and scripts can).
+    /// </summary>
+    public List<string> DamageTypes { get; init; } = [];
+
+    /// <summary>How much damage it takes to break; 0, the first hit of a type it lists breaks it</summary>
+    public int Health { get; init; }
+
+    /// <summary>
+    /// The wall id (1 to 255) it turns into as it breaks, with its own health and damage types
+    /// (the damage so far goes); 0: it's gone, leaving open floor
+    /// </summary>
+    public int To { get; init; }
+
+    /// <summary>Played from the wall as it breaks. Empty: silent.</summary>
+    public string Sound { get; init; } = "";
+
+    /// <summary>
+    /// The actordefs classes put on its tile once it's gone (rubble, an explosion, something that
+    /// was behind it); none when it turns into another wall
+    /// </summary>
+    public List<string> Spawn { get; init; } = [];
+
+    /// <summary>
+    /// What's left once it's gone: "floor" (the default) or "arch", where a wall taller than a
+    /// story only loses its bottom one and the rest stays up as an arch
+    /// </summary>
+    public string Leaves { get; init; } = "floor";
+
+    /// <summary>The floor flat index (mapdefs flats, plane 2's low byte) its tile gets once it's gone; left out, what plane 2 has</summary>
+    public int? Floor { get; init; }
+
+    /// <summary>The ceiling flat index (plane 2's high byte) its tile gets once it's gone; left out, what plane 2 has</summary>
+    public int? Ceiling { get; init; }
+
+    /// <summary>
+    /// The action calls run as it breaks, as a switch's are (every switch action is in the
+    /// actions reference), on whatever shares its tile's tag (its own tile isn't a target), as
+    /// used by the player who broke it
+    /// </summary>
+    public List<string> Actions { get; init; } = [];
+
+    /// <summary>Counts toward the level's secrets: its tile in the total as the level loads, found as it breaks</summary>
+    public bool Secret { get; init; }
+
+    /// <summary>A level objective (game-info objectives) it's one of: counted as the level starts, one done as it breaks. Empty: none.</summary>
+    public string Objective { get; init; } = "";
+
+    /// <summary>"players-only": only a player's shots, blows, missiles and blasts hurt it, not enemies'</summary>
+    public bool PlayersOnly { get; init; }
 }
 
 /// <summary>

@@ -398,6 +398,14 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       wall with an in-wall shooter removed; a removed secret pushwall counting as found.
 - [ ] A tall wall removed with `arch` (the upper stories stay as an arch) and without.
 
+**Destructible walls** (walls.yaml `destructible:`)
+- [ ] Pistol, knife, an enemy rocket of a listed damage type and a blast break a wall (seen with a
+      scratch mod); a type it doesn't list does nothing.
+- [ ] **(never tried)** Health adding up over several hits, then a save, a load, and the rest of
+      the hits; `to` stages; `spawn` rubble; `actions` opening a tagged door.
+- [ ] **(never tried)** players-only walls ignoring enemy rockets; `secret` adding to the ratio;
+      `objective` counting; floor/ceiling flats left behind; shotgun pellets (A_FirePellets).
+
 **Multi-key doors** (`key-demo`)
 - [ ] **(never tried)** Open doors 80 (red+blue), 81 (all four), 82 (any two) in play; refusal
       messages name the missing key; the 2×2 key block on the status bar.

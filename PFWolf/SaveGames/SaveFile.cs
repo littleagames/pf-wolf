@@ -65,7 +65,8 @@ internal static class SaveFile
     // 34: the level's points earned and total (Blake Stone's points ratio), at the end of GameState.
     // 35: the wall outlets' and warp sites' waits and the floor drop, at the end of the level (LevelAI).
     // 36: whether the player's weapon can fire (NoShots: Goldfire morphing), at the end of the level.
-    internal const int SaveVersion = 36;
+    // 37: the damage destructible walls have taken (a count, then each tile and its damage), after the objectives.
+    internal const int SaveVersion = 37;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

@@ -15,6 +15,10 @@ namespace PFWolf.Gameplay;
 /// Whether the match mode makes a decoration something the acting player's shot can hit, to
 /// their own cost (Prop Hunt's hunters: it might have been a prop)
 /// </param>
+/// <param name="HitWall">
+/// A player's shot or blow striking the wall on a tile, of a damage type: the wall takes the damage
+/// the roll gives if that type hurts it (Gameplay/DestructibleWalls.cs)
+/// </param>
 internal sealed record PlayerAttackHooks(
     Func<(int x, int y, int sin, int cos)> ViewOrigin,
     Func<int> CenterX,
@@ -22,7 +26,8 @@ internal sealed record PlayerAttackHooks(
     Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer,
     Action<string> PlayPlayerSound,
     Func<double> DamageDealt,
-    Func<Entities.Actors.Actor, bool>? IsDecoy = null);
+    Func<Entities.Actors.Actor, bool>? IsDecoy = null,
+    Action<int, int, string, Func<int>>? HitWall = null);
 
 /// <summary>Something a player's shot could hit, and how far in front of them it is (TransX)</summary>
 internal readonly record struct ShotTarget(Entities.Actors.Actor Actor, int Depth);
@@ -152,7 +157,16 @@ internal sealed class PlayerAttacks(
 
         var closest = FindShootCandidates().FirstOrDefault(c => c.Depth <= KnifeReach).Actor;
         if (closest == null)
-            return; // missed
+        {
+            // missed: a wall in reach takes the blow, if it's one the knife breaks
+            if (hooks.HitWall != null)
+            {
+                var player = session.Player;
+                HitWall(lineOfSight.TraceShot(player.X, player.Y, player.Angle, (int)KnifeReach), DestructibleWalls.MeleeType,
+                    () => session.Random.RndT() >> 4);
+            }
+            return;
+        }
 
         // A power-up's weapon that kills with every blow (powerup.weaponkills: End of Destiny's Knife
         // Fury), the death its powerup.damagetype's
@@ -272,19 +286,41 @@ internal sealed class PlayerAttacks(
         SpawnPuff(puff, at.Value.X, at.Value.Y, z);
     }
 
-    /// <summary>A shot that hit nothing: the weapon's `weapon.puff` where its line meets a wall, so high</summary>
-    internal void MissPuff(double? angle = null, int reach = LineOfSight.ShotReach, double z = 0)
+    /// <summary>
+    /// A shot that hit nothing: the weapon's `weapon.puff` where its line meets a wall, so high.
+    /// With <paramref name="wallDamage"/> (the damage at so many tiles away), that wall takes the
+    /// shot if it's one a Bullet (or the weapon's damage type) breaks.
+    /// </summary>
+    internal void MissPuff(double? angle = null, int reach = LineOfSight.ShotReach, double z = 0, Func<int, int>? wallDamage = null)
     {
-        if (WeaponPuff() is not { } puff)
+        var puff = WeaponPuff();
+        if (puff == null && (wallDamage == null || hooks.HitWall == null))
             return;
         var player = session.Player;
         var trace = lineOfSight.TraceShot(player.X, player.Y, angle ?? player.Angle, reach);
-        if (trace.End == ShotEnd.Wall)
+        if (trace.End == ShotEnd.Wall && puff != null)
             SpawnPuff(puff, trace.X, trace.Y, z);
+        if (wallDamage != null)
+            HitWall(trace, DestructibleWalls.BulletType,
+                () => wallDamage(Math.Max(Math.Abs(trace.TileX - player.TileX), Math.Abs(trace.TileY - player.TileY))));
     }
 
     string? WeaponPuff() =>
         session.PlayerState.Weapon is { } weapon && inventory.GetStringProperty(weapon, "weapon.puff") is { Length: > 0 } puff ? puff : null;
+
+    /// <summary>
+    /// The wall a traced shot or blow struck takes it, of the weapon's `weapon.damagetype` (else
+    /// <paramref name="defaultType"/>), if that's a type that breaks it; the damage, scaled as the
+    /// player's is, is only rolled then
+    /// </summary>
+    void HitWall(ShotTrace trace, string defaultType, Func<int> damage)
+    {
+        if (hooks.HitWall == null || trace.End is not (ShotEnd.Wall or ShotEnd.NoPuffs) || trace.TileX < 0)
+            return;
+        var type = session.PlayerState.Weapon is { } weapon && inventory.GetStringProperty(weapon, "weapon.damagetype") is { Length: > 0 } own
+            ? own : defaultType;
+        hooks.HitWall(trace.TileX, trace.TileY, type, () => (int)PlayerDamage(damage()));
+    }
 
     // A puff of that class at the point (global coordinates), so many texels up or down
     void SpawnPuff(string className, int x, int y, double z = 0)
@@ -343,8 +379,12 @@ internal sealed class PlayerAttacks(
                 HitShotTarget(hit, PlayerDamage(damage));
                 HitPuff(hit, (trace.X, trace.Y), z);
             }
-            else if (trace.End == ShotEnd.Wall && WeaponPuff() is { } puff)
-                SpawnPuff(puff, trace.X, trace.Y, z);
+            else
+            {
+                if (trace.End == ShotEnd.Wall && WeaponPuff() is { } puff)
+                    SpawnPuff(puff, trace.X, trace.Y, z);
+                HitWall(trace, DestructibleWalls.BulletType, () => damage);
+            }
         }
     }
 
@@ -397,10 +437,11 @@ internal sealed class PlayerAttacks(
         if (!silent && !PlayerWeaponIsSilent())
             session.MadeNoise = true;
 
+        int Roll() => max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
         var closest = FindShootCandidates().FirstOrDefault().Actor;
         if (closest == null || !lineOfSight.CheckLine(closest))
         {
-            MissPuff();
+            MissPuff(wallDamage: _ => Roll());
             return;
         }
 
@@ -417,8 +458,7 @@ internal sealed class PlayerAttacks(
             }
         }
 
-        int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
-        HitShotTarget(closest, PlayerDamage(damage));
+        HitShotTarget(closest, PlayerDamage(Roll()));
         HitPuff(closest);
     }
 
@@ -441,10 +481,13 @@ internal sealed class PlayerAttacks(
         // failed candidate as excluded, re-scanning always finds the same actor again --
         // it only ever gives the single closest actor one shot at passing CheckLine)
         //
+        // A shot at a wall: the roll for a hit at that distance (no miss roll: walls stand still)
+        int WallDamage(int tiles) => session.Random.RndT() / (tiles < 2 ? near : tiles < 4 ? mid : far);
+
         var closest = FindShootCandidates().FirstOrDefault().Actor;
         if (closest == null || !lineOfSight.CheckLine(closest))
         {
-            MissPuff();     // no target, or none in the clear: the shot hits the wall
+            MissPuff(wallDamage: WallDamage);     // no target, or none in the clear: the shot hits the wall
             return;
         }
 
@@ -463,7 +506,7 @@ internal sealed class PlayerAttacks(
         {
             if ((session.Random.RndT() / 12) < dist)           // missed
             {
-                MissPuff();
+                MissPuff(wallDamage: WallDamage);
                 return;
             }
             damage = session.Random.RndT() / far;

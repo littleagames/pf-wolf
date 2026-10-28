@@ -7,10 +7,12 @@ namespace PFWolf.Gameplay;
 /// <param name="WallSpriteHit">The wall sprite panel a projectile's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
+/// <param name="HitWall">A projectile that's flown into a wall: the wall takes the damage the roll gives, if its damage type hurts it (Gameplay/DestructibleWalls.cs)</param>
 internal sealed record ProjectileHooks(
     Func<int, int, int, int, int, int, long, WallSpriteSpan?> WallSpriteHit,
     Action<string, Entities.Actors.Actor> PlaySoundAt,
-    Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer);
+    Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer,
+    Action<Entities.Actors.Actor, Func<int>>? HitWall = null);
 
 /// <summary>
 /// Enemies' projectiles (Rocket/Smoke/Needle/Fire, actordefs/wolf3d/projectiles.yaml), spawned
@@ -139,8 +141,17 @@ internal sealed class Projectiles(
             && Math.Abs(ob.X - pawn.X) < PROJECTILESIZE && Math.Abs(ob.Y - pawn.Y) < PROJECTILESIZE
             && !factions.IsAlly(ob, pawn));
 
+        var minDamage = args.Length > 0 && int.TryParse(args[0], out var min) ? min : 0;
+        var maxDamage = args.Length > 1 && int.TryParse(args[1], out var max) ? max : minDamage;
+        int Roll() => maxDamage > minDamage
+            ? minDamage + session.Random.RndT() * (maxDamage - minDamage + 1) / 256
+            : minDamage;
+
         if (!ProjectileTryMove(ob))
         {
+            // a destructible wall its damage type hurts takes the hit (rolled only then)
+            hooks.HitWall?.Invoke(ob, Roll);
+
             // A projectile with a Death state (rockets) blows up against the wall with its
             // deathsound, like the legacy switch to s_boom1; the rest (needles, flames, sparks)
             // just vanish
@@ -167,11 +178,7 @@ internal sealed class Projectiles(
 
         if (hit != null || monster != null)
         {       // hit the player (or an enemy)
-            var minDamage = args.Length > 0 && int.TryParse(args[0], out var min) ? min : 0;
-            var maxDamage = args.Length > 1 && int.TryParse(args[1], out var max) ? max : minDamage;
-            damage = maxDamage > minDamage
-                ? minDamage + session.Random.RndT() * (maxDamage - minDamage + 1) / 256
-                : minDamage;
+            damage = Roll();
 
             if (hit != null)
                 hooks.HurtPlayer(hit, damage, ob);

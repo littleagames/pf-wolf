@@ -53,12 +53,12 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
             if ((tile & GameConstants.BitDoor) != 0)
             {
                 if (DoorPosition(tile & ~GameConstants.BitDoor) < 0x8000)
-                    return new ShotTrace(ShotEnd.Wall, px, py);
+                    return new ShotTrace(ShotEnd.Wall, px, py, tx, ty);
             }
             else if (tile != 0)
             {
                 bool puffs = !(map.GetMapData().Walls.TryGetValue(tile & ~GameConstants.BitWall, out var wall) && wall.Puffs == false);
-                return new ShotTrace(puffs ? ShotEnd.Wall : ShotEnd.NoPuffs, px, py);
+                return new ShotTrace(puffs ? ShotEnd.Wall : ShotEnd.NoPuffs, px, py, tx, ty);
             }
             (px, py) = (nx, ny);
             if (stopAt?.Invoke(px, py) == true)
@@ -227,5 +227,5 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
 /// <summary>Why a traced shot stopped (LineOfSight.TraceShot)</summary>
 internal enum ShotEnd { Wall, NoPuffs, Edge, Reach, Stopped }
 
-/// <summary>Where a traced shot stopped, and why</summary>
-internal readonly record struct ShotTrace(ShotEnd End, int X, int Y);
+/// <summary>Where a traced shot stopped, and why; for a wall or a door, its tile (else -1, -1)</summary>
+internal readonly record struct ShotTrace(ShotEnd End, int X, int Y, int TileX = -1, int TileY = -1);

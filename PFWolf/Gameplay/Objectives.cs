@@ -9,12 +9,14 @@ namespace PFWolf.Gameplay;
 /// <param name="ShowMessage">Shows a message to the acting player</param>
 /// <param name="Switches">Every switch on the level (a wall's or a patch's), for the objectives they count toward</param>
 /// <param name="Completed">More of an objective's done: its name, done and total (game.onobjective)</param>
+/// <param name="WallObjectives">The objectives of the level's destructible walls, one for each wall (Gameplay/DestructibleWalls.cs)</param>
 internal sealed record ObjectiveHooks(
     Func<IReadOnlyDictionary<string, ObjectiveInfo>> Settings,
     Func<string, string> Localize,
     Action<string> ShowMessage,
     Func<IEnumerable<MapSwitchTranslation>> Switches,
-    Action<string, int, int>? Completed = null);
+    Action<string, int, int>? Completed = null,
+    Func<IEnumerable<string>>? WallObjectives = null);
 
 /*
 =============================================================================
@@ -25,7 +27,8 @@ Things a level counts and the player completes (Midnight Assault's sabotage targ
 enemies: GameState.sabotagedtotal, endgoaltargetstotal). Game-info `objectives:` names each, with
 its messages and whether the exits wait for it (blocks-exit).
 
-As a level starts afresh each wall or patch whose switch has `objective: name`, and each actor
+As a level starts afresh each wall or patch whose switch has `objective: name`, each destructible
+wall with one (done as it breaks), and each actor
 with an `objective` property, adds one to that objective's total, and the start message says how
 many there are. One's done when such a switch is thrown, such an actor dies, or A_CompleteObjective
 says so (A_AddObjective adds to the total, for a script's own); the progress message says how many
@@ -51,6 +54,8 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
         foreach (var sw in hooks.Switches())
             if (sw.Objective is { Length: > 0 } name)
                 Add(name, 1);
+        foreach (var name in hooks.WallObjectives?.Invoke() ?? [])
+            Add(name, 1);
         foreach (var name in doneBefore ?? [])
         {
             if (string.IsNullOrWhiteSpace(name))

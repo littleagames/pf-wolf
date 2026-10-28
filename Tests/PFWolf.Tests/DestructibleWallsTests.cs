@@ -12,11 +12,38 @@ public class DestructibleWallsTests
     private const int AreaTile = 108;
     private const int SecretTrigger = 98;
     private const int WallId = 12;
+    private const int Cracked = 40, MoreCracked = 41, Glass = 42, Bunker = 43;
     private const ushort Tag = 4;
 
     private MapManager _map = null!;
     private GameSession _session = null!;
     private DestructibleWalls _walls = null!;
+    private readonly List<string> _sounds = [], _objectives = [];
+
+    private static MapObjectTranslationAsset MapData() => new()
+    {
+        Triggers = { [SecretTrigger] = new MapTriggerTranslation { Action = "A_PushWall", Secret = true } },
+        Walls =
+        {
+            [WallId] = new MapTextureTranslation { North = "PLAIN" },
+            // 40 takes 50 rockets' worth before it cracks further into 41, which the next rocket breaks
+            [Cracked] = new MapTextureTranslation
+            {
+                North = "CRACKED",
+                Destructible = new MapDestructibleTranslation { DamageTypes = ["Rocket"], Health = 50, To = MoreCracked, Sound = "world/crack" },
+            },
+            [MoreCracked] = new MapTextureTranslation
+            {
+                North = "CRACKED2",
+                Destructible = new MapDestructibleTranslation
+                {
+                    DamageTypes = ["rocket"], Sound = "world/crumble", Secret = true, Objective = "Sabotage", Actions = ["A_RemoveWall"],
+                },
+            },
+            [Glass] = new MapTextureTranslation { North = "GLASS", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet", "Melee"], Floor = 2 } },
+            [Bunker] = new MapTextureTranslation { North = "BUNKER", Destructible = new MapDestructibleTranslation { DamageTypes = ["Blast"], PlayersOnly = true } },
+        },
+    };
 
     [SetUp]
     public void MakeLevel()
@@ -32,11 +59,12 @@ public class DestructibleWallsTests
             .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
         typeof(MapManager).GetField("_floors", BindingFlags.NonPublic | BindingFlags.Instance)!
             .SetValue(_map, new FloorCodes(AreaTile, 45, 106, -1, 162));
-        typeof(MapManager).GetField("_levelMapData", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .SetValue(_map, new MapObjectTranslationAsset { Triggers = { [SecretTrigger] = new MapTriggerTranslation { Action = "A_PushWall", Secret = true } } });
+        typeof(MapManager).GetField("_levelMapData", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(_map, MapData());
         _session.Areas.Reset(45);
         var doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
-        _walls = new DestructibleWalls(_map, doors, _session);
+        _sounds.Clear();
+        _objectives.Clear();
+        _walls = new DestructibleWalls(_map, doors, _session, new DestructibleWallHooks((sound, x, y) => _sounds.Add($"{sound} {x},{y}"), _objectives.Add));
     }
 
     // Area 5 west of 10,10 and area 7 east of it, the wall between them
@@ -47,11 +75,157 @@ public class DestructibleWallsTests
         Wall(10, 10);
     }
 
-    private void Wall(int x, int y)
+    private void Wall(int x, int y, int id = WallId)
     {
-        _map.SetMapSpot(x, y, 0, WallId);
-        _map.TileMap[x, y] = WallId;
-        _map.ActorAt[x, y] = new Wall(WallId);
+        _map.SetMapSpot(x, y, 0, (ushort)id);
+        _map.TileMap[x, y] = (ushort)id;
+        _map.ActorAt[x, y] = new Wall(id);
+    }
+
+    // A wall of that id between areas 5 and 7, at 10,10
+    private void DestructibleWall(int id)
+    {
+        WallBetweenAreas();
+        Wall(10, 10, id);
+    }
+
+    private static Entities.Actors.Actor Missile(string type, Entities.Actors.Actor? shooter = null, int x = 0, int y = 0)
+    {
+        var missile = new Entities.Actors.Actor { Name = "Missile", X = x, Y = y, Shooter = shooter };
+        missile.Properties["damagetype"] = type;
+        return missile;
+    }
+
+    [Test]
+    public void A_Hit_Of_A_Type_It_Doesnt_List_Does_Nothing_And_Rolls_Nothing()
+    {
+        // Arrange
+        DestructibleWall(Cracked);
+        bool rolled = false;
+
+        // Act
+        bool broke = _walls.Hit(10, 10, "Bullet", new Entities.Actors.PlayerPawn(), () => { rolled = true; return 999; });
+
+        // Assert
+        Assert.That(broke, Is.False);
+        Assert.That(rolled, Is.False);
+        Assert.That(_map.WallDamage, Is.Empty);
+        Assert.That(_map.TileMap[10, 10], Is.EqualTo(Cracked));
+    }
+
+    [Test]
+    public void Hits_Add_Up_To_Its_Health_Then_It_Turns_Into_Its_Next_Stage()
+    {
+        // Arrange
+        DestructibleWall(Cracked);
+        var player = new Entities.Actors.PlayerPawn();
+
+        // Act
+        bool first = _walls.Hit(10, 10, "Rocket", player, () => 30);
+        int taken = _map.WallDamage[_map.TileIndex(10, 10)];
+        bool second = _walls.Hit(10, 10, "ROCKET", player, () => 30);
+
+        // Assert
+        Assert.That((first, taken, second), Is.EqualTo((false, 30, true)));
+        Assert.That(_map.TileMap[10, 10], Is.EqualTo(MoreCracked));
+        Assert.That(_map.ActorAt[10, 10], Is.TypeOf<Wall>());
+        Assert.That(_map.WallDamage, Is.Empty, "the next stage starts afresh");
+        Assert.That(_sounds, Is.EqualTo(new[] { "world/crack 10,10" }));
+    }
+
+    [Test]
+    public void The_Last_Stage_Goes_With_Its_Secret_Objective_And_Actions()
+    {
+        // Arrange: its action (A_RemoveWall) takes the other wall with its tag, at 20,20
+        _walls.Register();
+        DestructibleWall(MoreCracked);
+        Wall(20, 20);
+        _map.SetTag(10, 10, Tag);
+        _map.SetTag(20, 20, Tag);
+        var player = new Entities.Actors.PlayerPawn();
+
+        // Act
+        bool broke = _walls.Hit(10, 10, "Rocket", Missile("Rocket", shooter: player), () => 1);
+
+        // Assert
+        Assert.That(broke, Is.True);
+        Assert.That(_map.TileMap[10, 10], Is.Zero);
+        Assert.That(_session.Areas.AreaConnect[5, 7], Is.EqualTo(1));
+        Assert.That(_session.GameState.SecretCount, Is.EqualTo(1));
+        Assert.That(_objectives, Is.EqualTo(new[] { "Sabotage" }));
+        Assert.That(_sounds, Is.EqualTo(new[] { "world/crumble 10,10" }));
+        Assert.That(_map.TileMap[20, 20], Is.Zero, "its action ran on its tag");
+    }
+
+    [Test]
+    public void A_Wall_Can_Leave_A_Floor_Flat_Of_Its_Own()
+    {
+        // Arrange: the tile's ceiling index 3 is kept
+        DestructibleWall(Glass);
+        _map.SetMapSpot(10, 10, MapManager.FlatPlane, 3 << 8);
+
+        // Act
+        bool broke = _walls.Hit(10, 10, "Bullet", new Entities.Actors.PlayerPawn(), () => 5);
+
+        // Assert
+        Assert.That(broke, Is.True);
+        Assert.That(_map.MapSpot(10, 10, MapManager.FlatPlane), Is.EqualTo(2 | 3 << 8));
+    }
+
+    [Test]
+    public void A_Players_Only_Wall_Takes_No_Hits_From_Enemies()
+    {
+        // Arrange
+        DestructibleWall(Bunker);
+        var enemy = new Entities.Actors.Monster { Name = "Hans" };
+
+        // Act / Assert
+        Assert.That(_walls.Hit(10, 10, "Blast", Missile("Blast", shooter: enemy), () => 10), Is.False);
+        Assert.That(_walls.Hit(10, 10, "Blast", enemy, () => 10), Is.False);
+        Assert.That(_walls.Hit(10, 10, "Blast", Missile("Blast", shooter: new Entities.Actors.PlayerPawn()), () => 10), Is.True);
+    }
+
+    [Test]
+    public void A_Missile_Hits_The_Wall_Its_Box_Reaches_Into()
+    {
+        // Arrange: a rocket just west of 10,10, its box over the wall's west face
+        DestructibleWall(MoreCracked);
+        var rocket = Missile("Rocket", x: (10 << MapConstants.TileShift) - GameConstants.ProjSize / 2, y: (10 << MapConstants.TileShift) + 0x8000);
+
+        // Act
+        bool broke = _walls.HitByMissile(rocket, () => 1);
+
+        // Assert
+        Assert.That(broke, Is.True);
+        Assert.That(_map.TileMap[10, 10], Is.Zero);
+    }
+
+    [Test]
+    public void A_Blast_Without_A_Damage_Type_Of_Its_Own_Deals_Blast()
+    {
+        // Arrange
+        DestructibleWall(Bunker);
+        var grenade = new Entities.Actors.Actor { Name = "Grenade", Shooter = new Entities.Actors.PlayerPawn() };
+
+        // Act / Assert
+        Assert.That(_walls.HitByBlast(grenade, 10, 10, () => 1), Is.True);
+    }
+
+    [Test]
+    public void The_Damage_Walls_Have_Taken_Is_Saved_With_The_Level()
+    {
+        // Arrange
+        DestructibleWall(Cracked);
+        _walls.Hit(10, 10, "Rocket", new Entities.Actors.PlayerPawn(), () => 30);
+        using var stream = new MemoryStream();
+
+        // Act
+        _map.WriteLevelState(new BinaryWriter(stream));
+        stream.Position = 0;
+        var level = MapManager.ReadLevelState(new BinaryReader(stream));
+
+        // Assert
+        Assert.That(level.WallDamage, Is.EqualTo(new Dictionary<int, int> { [_map.TileIndex(10, 10)] = 30 }));
     }
 
     [Test]

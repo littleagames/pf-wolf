@@ -319,6 +319,7 @@ internal class MapManager
         animatedceilings.Clear();
         ClearTextureChanges();
         ObjectiveCounts = new(StringComparer.OrdinalIgnoreCase);     // counted afresh as the level's set up (Gameplay/Objectives.cs)
+        WallDamage = [];
 
 #if USE_FEATUREFLAGS
     const int MXX = MAPSIZE - 1;
@@ -377,6 +378,9 @@ internal class MapManager
                     // solid wall (a door's tile is made a door by SpawnDoor)
                     TileMap[x, y] = (ushort)tile;
                     ActorAt[x, y] = new Wall(tile);// (uint)tile;
+                    // a destructible wall that's a secret counts toward the total (found as it breaks)
+                    if (!session.LoadedGame && data.Walls.TryGetValue(tile, out var wallDef) && wallDef.Destructible is { Secret: true })
+                        session.GameState.SecretTotal++;
                 }
                 else
                 {
@@ -1110,6 +1114,12 @@ internal class MapManager
 
     /// <summary>The level's objectives (game-info objectives) by name: how many are done, of how many. Saved with the level.</summary>
     internal Dictionary<string, ObjectiveCount> ObjectiveCounts = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Per tile (<see cref="TileIndex"/>): the damage a destructible wall there has taken toward its
+    /// health (Gameplay/DestructibleWalls.cs); tiles that have taken none aren't in it. Saved with the level.
+    /// </summary>
+    internal Dictionary<int, int> WallDamage = [];
 
     /// <summary>Per tile (<see cref="TileIndex"/>): the level tic it last changed, 0 for never.</summary>
     internal int[] AnimStart = new int[MapConstants.ClassicMapArea];
@@ -2102,6 +2112,13 @@ internal class MapManager
             bw.Write(count.Done);
             bw.Write(count.Total);
         }
+
+        bw.Write(WallDamage.Count);
+        foreach (var (tile, damage) in WallDamage)
+        {
+            bw.Write(tile);
+            bw.Write(damage);
+        }
     }
 
     /// <summary>Parses what <see cref="WriteLevelState"/> wrote, without touching the loaded level.</summary>
@@ -2156,7 +2173,16 @@ internal class MapManager
         for (int i = br.ReadCount(); i > 0; i--)
             objectives[br.ReadString()] = new ObjectiveCount { Done = br.ReadInt32(), Total = br.ReadInt32() };
 
-        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes, patches, objectives);
+        var wallDamage = new Dictionary<int, int>();
+        for (int i = br.ReadCount(); i > 0; i--)
+        {
+            int tile = br.ReadInt32();
+            if (tile < 0 || tile >= width * height)
+                throw new InvalidDataException($"Bad tile {tile} in the wall damage.");
+            wallDamage[tile] = br.ReadInt32();
+        }
+
+        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes, patches, objectives, wallDamage);
     }
 
     /// <summary>
@@ -2202,6 +2228,7 @@ internal class MapManager
             c => new Dictionary<string, string>(c.Value, StringComparer.OrdinalIgnoreCase));
         ObjectiveCounts = level.Objectives.ToDictionary(o => o.Key, o => new ObjectiveCount { Done = o.Value.Done, Total = o.Value.Total },
             StringComparer.OrdinalIgnoreCase);
+        WallDamage = new Dictionary<int, int>(level.WallDamage);
         ReadMapInfo(fillFlats: false);      // the saved flat plane already has the map's flats
         BuildWallShapes();
         BuildWallHeights();
@@ -2262,7 +2289,8 @@ internal sealed record LevelSnapshot(
     int[] AnimationStarts,
     Dictionary<int, Dictionary<string, string>> TextureChanges,
     byte[,] Patches,
-    Dictionary<string, ObjectiveCount> Objectives);
+    Dictionary<string, ObjectiveCount> Objectives,
+    Dictionary<int, int> WallDamage);
 
 /// <summary>How many of a level objective are done, of how many (Gameplay/Objectives.cs)</summary>
 internal sealed class ObjectiveCount
