@@ -69,19 +69,34 @@ internal sealed class TitleLoop(
         }
         else
         {
-            video.Bar(0, 189, 300, 11, "Maroon");
-            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, "Bright Yellow", "Maroon")).CPrint("Press a key"); // "Oprima una tecla"
+            var background = PromptBackground(0, 189, 300, 11);
+            video.Bar(0, 189, 300, 11, background);
+            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, "Bright Yellow", background)).CPrint("Press a key"); // "Oprima una tecla"
 
             video.Update();
 
             if (!engine.GameParams.NoWait)
                 input.Ack();
 
-            video.Bar(0, 189, 300, 11, "Maroon");
-            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, "Lime", "Maroon")).CPrint("Working..."); // "pensando..."
+            video.Bar(0, 189, 300, 11, background);
+            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, "Lime", background)).CPrint("Working..."); // "pensando..."
 
             video.Update();
         }
+    }
+
+    /// <summary>
+    /// The color the signon pic has most of under the prompt's bar (Wolf3D's is its maroon), so the
+    /// bar blends into whatever pic a game or mod uses
+    /// </summary>
+    private string PromptBackground(int x, int y, int width, int height)
+    {
+        var counts = new int[256];
+        for (int ly = y; ly < y + height; ly++)
+            for (int lx = x; lx < x + width; lx++)
+                counts[video.GetPixel(video.ScreenX(lx), video.ScreenY(ly))]++;
+
+        return Array.IndexOf(counts, counts.Max()).ToString();
     }
 
     internal void DemoLoop()
