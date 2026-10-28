@@ -85,6 +85,8 @@ public class PlayerStatsTests
         public bool Demo { get => Session.DemoPlayback; set => Session.DemoPlayback = value; }
         public double Skill = 1;
         public int NetDeaths;
+        public Func<int, Entities.Actors.Actor?, string?, int>? DamageHook;
+        public readonly List<Entities.Actors.Actor?> Killers = [];
         public int Deaths => Session.PlayState == PlayState.Died ? 1 : 0;
 
         public Rig(string playerClass = "Player")
@@ -102,7 +104,9 @@ public class PlayerStatsTests
             var classes = new PlayerClassRules(null!, Inventory, Session);
             var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(_ => { }));
             Stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,
-                new Configuration.GameSettings(), new PlayerStatsHooks(() => Skill, () => NetDeaths++, _ => { }));
+                new Configuration.GameSettings(), new PlayerStatsHooks(() => Skill, () => NetDeaths++, _ => { },
+                    Damage: (points, attacker, type) => DamageHook?.Invoke(points, attacker, type) ?? points,
+                    Died: Killers.Add));
         }
 
         public Entities.PlayerState Player => Session.PlayerState;
@@ -123,6 +127,68 @@ public class PlayerStatsTests
         Assert.That(rig.Player.Health, Is.EqualTo(70));
         Assert.That(rig.Player.LastAttacker, Is.SameAs(Guard));
         Assert.That(rig.Player.PainTics, Is.EqualTo(10));
+    }
+
+    [Test]
+    public void A_Damage_Hook_Gets_The_Scaled_Amount_And_Changes_It()
+    {
+        // Arrange: the easiest skill's quarter, and a script that doubles what it's given
+        var rig = new Rig { Skill = 0.25 };
+        var seen = new List<(int, Entities.Actors.Actor?)>();
+        rig.DamageHook = (points, attacker, _) => { seen.Add((points, attacker)); return points * 2; };
+
+        // Act
+        rig.Stats.TakeDamage(40, Guard);
+
+        // Assert
+        Assert.That(seen, Is.EqualTo(new[] { (10, (Entities.Actors.Actor?)Guard) }));
+        Assert.That(rig.Player.Health, Is.EqualTo(80));
+    }
+
+    [Test]
+    public void A_Damage_Hook_Of_Nothing_Leaves_The_Player_Unhurt()
+    {
+        // Arrange
+        var rig = new Rig { DamageHook = (_, _, _) => 0 };
+
+        // Act
+        rig.Stats.TakeDamage(200, Guard);
+
+        // Assert
+        Assert.That(rig.Player.Health, Is.EqualTo(100));
+        Assert.That(rig.Player.PainTics, Is.Zero);
+        Assert.That(rig.Killers, Is.Empty);
+    }
+
+    [Test]
+    public void A_Death_Is_Told_Once_With_The_Killer()
+    {
+        // Arrange: with others playing, so the dead player lies there and isn't hurt again
+        var rig = new Rig();
+        rig.Session.SetGameMode(GameMode.Coop);
+
+        // Act
+        rig.Stats.TakeDamage(150, Guard);
+        rig.Stats.TakeDamage(10, Guard);
+
+        // Assert
+        Assert.That(rig.Killers, Is.EqualTo(new Entities.Actors.Actor?[] { Guard }));
+        Assert.That(rig.NetDeaths, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Killed_Outright_Is_A_Death_With_The_Killer_Told()
+    {
+        // Arrange
+        var rig = new Rig();
+
+        // Act: time's up
+        rig.Stats.Kill(null);
+
+        // Assert
+        Assert.That(rig.Player.Health, Is.Zero);
+        Assert.That(rig.Deaths, Is.EqualTo(1));
+        Assert.That(rig.Killers, Is.EqualTo(new Entities.Actors.Actor?[] { null }));
     }
 
     [Test]

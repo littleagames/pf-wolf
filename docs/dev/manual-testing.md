@@ -404,6 +404,11 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 - [ ] Fireball wall, `onlevel` messages, eruption every 840 tics.
 - [ ] **(never tried)** Recording + playing a demo with hooks; hooks in a netgame (join reason
       "loaded"); hub return reason "returned" (Blake).
+- [ ] **(never tried)** Event hooks in real play (`ondamage`/`onkill`/`onsight`/`onspawn` "new" are
+      covered by ScriptHookGameTests): `ontrypickup` refusing an item and `onpickup` amounts;
+      `onsecret` on a pushwall; `onuse` taking a door or switch press; `onplayerdeath` from a
+      shot, time running out and being caught (stealth); `onspawn` "restarted", and "respawn" and
+      "join" in a netgame.
 
 ## 1.13 Sound and music (by ear)
 

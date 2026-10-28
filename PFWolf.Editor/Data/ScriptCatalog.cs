@@ -138,7 +138,7 @@ public static partial class ScriptCatalog
     [GeneratedRegex(@"^\s*(?:function\s+(?<name>[AT]_\w+)\s*\(|(?<name>[AT]_\w+)\s*=\s*function\b)")]
     private static partial Regex ActionDefinition();
 
-    [GeneratedRegex(@"\bgame\s*\.\s*(?<hook>onlevel|ontick)\s*\(")]
+    [GeneratedRegex(@"\bgame\s*\.\s*(?<hook>on[a-z]+)\s*\(")]
     private static partial Regex HookCall();
 
     // What the game's scripts haven't got (Scripting/ScriptHost.cs), and why

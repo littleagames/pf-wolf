@@ -14,7 +14,7 @@ Picking one shows its Lua, with:
 - **Actions it gives**: its global functions named `A_...` or `T_...`, which actordefs states can
   call, each with the states that call it (a click shows that state's frame in the definitions
   window);
-- **Hooks it adds**: its `game.onlevel` and `game.ontick` hooks (not yet its `game.onlevelend` ones);
+- **Hooks it adds**: its `game.on...` hooks (`game.onlevel`, `game.ontick`, `game.onkill`...);
 - what's wrong with it, by line: an error keeps the game from loading the script.
 
 Picking any of these goes to its line.

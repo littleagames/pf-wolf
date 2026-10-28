@@ -15,6 +15,7 @@ namespace PFWolf.Gameplay;
 /// <param name="DeathDropHeight">How low a dead player's view sinks, or null for not at all (game-info death-drop-height)</param>
 /// <param name="DeathDropSpeed">How fast it sinks (game-info death-drop-speed)</param>
 /// <param name="PlayerColor">A player's color as this machine has it: the translation, or null if there's no such one</param>
+/// <param name="Spawned">A player's been put on the level mid-game, and why: "respawn" or "join" (game.onspawn)</param>
 internal sealed record PlayersHooks(
     Action<string, Entities.Actors.Actor> PlaySoundAt,
     Func<Entities.Actors.PlayerPawn, (int x, int y, int angle)> DeathmatchSpot,
@@ -26,7 +27,8 @@ internal sealed record PlayersHooks(
     Func<int> DeathTurnSpeed,
     Func<int?> DeathDropHeight,
     Func<int> DeathDropSpeed,
-    Func<string, string?> PlayerColor);
+    Func<string, string?> PlayerColor,
+    Action<Entities.Actors.PlayerPawn, string>? Spawned = null);
 
 /// <summary>
 /// Everyone in the game coming and going: a new game's players, putting them on a level, a
@@ -286,6 +288,7 @@ internal sealed class Players(
         weapons.DrawWeapon();
         weapons.DrawAmmo();
         statusBar.DrawKeys();
+        hooks.Spawned?.Invoke(player, "respawn");
     }
 
     /// <summary>What messages call a player: their name, else "Player n" (the class's tag, alone)</summary>
@@ -324,10 +327,11 @@ internal sealed class Players(
             Color = hooks.PlayerColor(team >= 0 ? GameModes.TeamNames[team] : join.Color),
         };
         players.Add(p);
+        Entities.Actors.PlayerPawn pawn;
         using (session.ActAs(p))
         {
             StartPlayer(classes.FindPlayerClass(join.PlayerClass) ?? classes.DefaultPlayerClass);
-            var pawn = map.CreatePlayer(p);
+            pawn = map.CreatePlayer(p);
             if (session.IsVersus)
             {
                 var (x, y, angle) = hooks.DeathmatchSpot(pawn);
@@ -346,5 +350,7 @@ internal sealed class Players(
         }
         hooks.ConnectAreas();     // SpawnPlayer started the areas afresh; it's mid-level
         hudMessages.Show(HudMessageKind.Other, $"{join.Name} joined the game");
+        using (session.ActAs(p))
+            hooks.Spawned?.Invoke(pawn, "join");
     }
 }

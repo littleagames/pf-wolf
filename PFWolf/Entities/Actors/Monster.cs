@@ -1253,6 +1253,7 @@ internal partial record Monster : Actor
 
         PlayActorSound(this, "seesound");
         StartChasing();
+        World?.Scripts?.RunSightHooks(this, TargetIfAny);     // game.onsight (Scripting/GameScripts.cs)
     }
 
     /// <summary>
@@ -1532,12 +1533,17 @@ internal partial record Monster : Actor
     internal string? BlowType;
 
     /// <summary>The killing blow's damage type: see DEATH STATES; null for none</summary>
-    internal string? KillingDamageType(Entities.Actors.Actor? attacker)
+    internal string? KillingDamageType(Entities.Actors.Actor? attacker) =>
+        BlowType is { Length: > 0 } blow ? blow : DamageTypeOf(InventoryManager, attacker);
+
+    /// <summary>
+    /// A blow's damage type by what dealt it: a player's weapon's weapon.damagetype, else the
+    /// attacker's own damagetype; null for none
+    /// </summary>
+    internal static string? DamageTypeOf(InventoryManager inventory, Entities.Actors.Actor? attacker)
     {
-        if (BlowType is { Length: > 0 } blow)
-            return blow;
         if (attacker is PlayerPawn pawn)
-            return pawn.State.Weapon is { Length: > 0 } weapon ? InventoryManager.GetStringProperty(weapon, "weapon.damagetype") : null;
+            return pawn.State.Weapon is { Length: > 0 } weapon ? inventory.GetStringProperty(weapon, "weapon.damagetype") : null;
         return attacker?.Properties.TryGetValue("damagetype", out var type) == true && type?.ToString() is { Length: > 0 } name ? name : null;
     }
 
@@ -1636,6 +1642,7 @@ internal partial record Monster : Actor
         }
         RuntimeFlags &= ~(ObjFlags.Shootable | ObjFlags.Friendly);
         RuntimeFlags |= ObjFlags.NonMark;
+        World?.Scripts?.RunKillHooks(this, killedBy, KillingDamageType(attacker));     // game.onkill (Scripting/GameScripts.cs)
     }
 
     /// <summary>
@@ -1753,6 +1760,15 @@ internal partial record Monster : Actor
 
         if (!RuntimeFlags.Has(ObjFlags.AttackMode))
             damage <<= 1;
+
+        // The scripts' say in it (game.ondamage): another amount, 0 for none at all
+        if (World?.Scripts is { } scripts && scripts.RunDamageHooks(this, (int)damage, attacker, KillingDamageType(attacker)) is var hooked
+            && hooked != damage)
+        {
+            if (hooked == 0)
+                return;
+            damage = (uint)hooked;
+        }
 
         int oldHitpoints = Hitpoints;
         Hitpoints -= (short)damage;

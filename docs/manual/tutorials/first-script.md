@@ -124,6 +124,27 @@ yours.
 
 Restart the game, and shoot an elite guard: *Elite guard down: 6 left*.
 
+## 5. Or leave the guard alone
+
+The game also calls hooks as things happen anywhere on the level, so the same message can come
+without touching the elite guard's states at all.
+[`game.onkill`](../../reference/scripting#game-onkill) calls its function with every monster
+killed:
+
+```lua
+game.onkill(function(victim, killer)
+  if victim.name == "EliteGuard" then
+    A_EliteDown(victim)
+  end
+end)
+```
+
+Use this or step 4's state, not both, or the message comes twice. A hook is handy for a class
+you'd rather not copy the states of, or for something about every kill.
+The other hooks work the same way: `game.ondamage`, `game.onpickup`, `game.onsecret`,
+`game.onuse`, `game.onsight`, `game.onspawn`, `game.onplayerdeath` and more; the
+[reference](../../reference/scripting) says when each is called.
+
 ## Trying things out
 
 With cheats on, the console's [`lua`](../../reference/console#lua) command runs Lua in the

@@ -17,6 +17,8 @@ namespace PFWolf.Gameplay;
 /// <param name="ExitBlock">Whether the objectives keep the level shut, and their refused message (Objectives.ExitBlock)</param>
 /// <param name="ShowFacing">Keeps the facing message up (text, style): renewed each tic, it lasts while it's faced</param>
 /// <param name="Unlock">Unlocks a name for good (a thrown switch's `unlock`: Gameplay/Unlocks.cs)</param>
+/// <param name="ScriptUse">The scripts' use of the tile ahead (game.onuse): true if one used it, and nothing else happens</param>
+/// <param name="SecretFound">A secret's been found at a tile (game.onsecret)</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
@@ -28,7 +30,9 @@ internal sealed record PlayerUseHooks(
     Func<string?>? VehicleHint = null,
     Func<(bool Blocked, string? Message)>? ExitBlock = null,
     Action<string, string?>? ShowFacing = null,
-    Action<string>? Unlock = null);
+    Action<string>? Unlock = null,
+    Func<int, int, ControlDir, bool>? ScriptUse = null,
+    Action<int, int>? SecretFound = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -63,7 +67,10 @@ internal sealed class PlayerUse(
             return;
 
         if (trigger.Secret)
+        {
             session.GameState.SecretCount++;
+            hooks.SecretFound?.Invoke(tilex, tiley);
+        }
         if (!trigger.Repeat)
             map.SetMapSpot(tilex, tiley, 1, 0);
     }
@@ -356,6 +363,14 @@ internal sealed class PlayerUse(
                 playerinput.SetHeld(ButtonType.Use, true);
                 hooks.LeaveVehicle?.Invoke();
             }
+            return;
+        }
+
+        // A fresh press: a script may use the tile ahead itself (game.onuse), and then nothing else is
+        if (!playerinput.IsHeld(ButtonType.Use) && hooks.ScriptUse?.Invoke(checkx, checky, dir) == true)
+        {
+            playerinput.SetHeld(ButtonType.Use, true);
+            ResetUseHeld();
             return;
         }
 

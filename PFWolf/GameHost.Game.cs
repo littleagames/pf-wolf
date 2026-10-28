@@ -267,13 +267,7 @@ internal static partial class GameHost
             foreach (var p in Session.Players.Where(p => p.Health > 0).ToList())
             {
                 using var _ = Session.ActAs(p);
-                p.LastAttacker = null;
-                p.Health = 0;
-                statusBarDrawing.DrawHealth();
-                if (Session.GameMode == GameMode.Single)
-                    PlayState = PlayState.Died;
-                else
-                    PlayerDies();
+                playerStats.Kill(null);
             }
         },
         () => { if (!statusBarDrawing.IsOverlay) statusBarDrawing.DrawLevelTimer(); }));

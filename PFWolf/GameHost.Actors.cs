@@ -60,7 +60,9 @@ internal static partial class GameHost
     static Pickups MakePickups() =>
         new(MapManager, _videoManager, HudMessageManager, playerClassRules, playerStats, Session,
             new PickupHooks(PlayPlayerSound, HasWeaponFrom,
-                () => NetRules.ItemRespawn, QueueItemRespawn, item => deathmatch.Objective?.ItemTaken(item)));
+                () => NetRules.ItemRespawn, QueueItemRespawn, item => deathmatch.Objective?.ItemTaken(item),
+                item => gameScripts.RunTryPickupHooks(Session.Player, item),
+                (item, amount) => gameScripts.RunPickupHooks(Session.Player, item, amount)));
 
     internal static void GetBonus(Inventory builtActor) => pickups.GetBonus(builtActor);
     // The player classes' rules (Gameplay/PlayerClassRules.cs) and the acting player's health,
@@ -70,7 +72,9 @@ internal static partial class GameHost
 
     static PlayerStats MakePlayerStats() =>
         new(GameEngineManager, AssetManager, _videoManager, InventoryManager, statusBarDrawing, playerClassRules, playerWeapons, Session,
-            Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound, HudMessageManager.ShowKeyed, ShowAttacker));
+            Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound, HudMessageManager.ShowKeyed, ShowAttacker,
+                (points, attacker, type) => gameScripts.RunDamageHooks(Session.Player, points, attacker, type),
+                killer => gameScripts.RunPlayerDeathHooks(Session.Player, killer)));
 
     // The attacker's attackinfo, else game-info attack-message; %k the attacker (Blake Stone's
     // REBA "attacking:", which has its picture: an info area script, Ui/TextPresenter.cs)
@@ -302,7 +306,9 @@ internal static partial class GameHost
                 message => HudMessageManager.Show(HudMessageKind.Lock, message), () => Vehicles.TryLeave(), () => Vehicles.Hint(),
                 () => Objectives.ExitBlock(),
                 (text, style) => HudMessageManager.ShowKeyed("facing", text, style ?? HudMessageManager.KindStyle(HudMessageKind.Lock)),
-                name => Unlock(name)));
+                name => Unlock(name),
+                (x, y, dir) => gameScripts.RunUseHooks(Session.Player, x, y, dir),
+                (x, y) => gameScripts.RunSecretHooks(Session.Player, x, y)));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
@@ -385,17 +391,7 @@ internal static partial class GameHost
             playerAttacks.PlayAttackSound,
             actor => (actor.AreaNumber >= MapManager.Floors.NumAreas || Session.Areas.AreaByPlayer[actor.AreaNumber] != 0)
                 && lineOfSight.CheckLine(actor),
-            actor =>
-            {
-                // Caught on a stealth-only map: the mission's failed, as a death at their hands
-                Session.PlayerState.LastAttacker = actor;
-                Session.PlayerState.Health = 0;
-                statusBarDrawing.DrawHealth();
-                if (Session.GameMode == GameMode.Single)
-                    PlayState = PlayState.Died;
-                else
-                    PlayerDies();
-            }));
+            actor => playerStats.Kill(actor)));     // caught on a stealth-only map: the mission's failed, as a death at their hands
 
     // ==== PlayerWeapon ===========================================================================
     // The weapon in hand's states (Gameplay/WeaponInHand.cs) and the player's knife and gun
@@ -441,7 +437,8 @@ internal static partial class GameHost
         new(MapManager, AudioManager, _videoManager, InventoryManager, HudMessageManager, statusBarDrawing, playerClassRules, playerStats,
             playerWeapons, playerMovement, playerThink, Session,
             new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, MayRespawn, ShowObituary, ConnectAreas,
-                () => DeathTurnSpeed, () => DeathDropHeight, () => DeathDropSpeed, PlayerColor));
+                () => DeathTurnSpeed, () => DeathDropHeight, () => DeathDropSpeed, PlayerColor,
+                (pawn, reason) => gameScripts.RunSpawnHooks(pawn, reason)));
 
     internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);
     internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);

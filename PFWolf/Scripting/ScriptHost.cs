@@ -150,15 +150,25 @@ internal sealed partial class ScriptHost
     /// Calls a script function (a hook a script gave), named for its error messages; as
     /// Call(name, arguments) otherwise
     /// </summary>
-    public bool Call(LuaValue function, string name, ReadOnlySpan<LuaValue> arguments)
+    public bool Call(LuaValue function, string name, ReadOnlySpan<LuaValue> arguments) =>
+        Call(function, name, arguments, out _);
+
+    /// <summary>
+    /// Calls a script function (a hook a script gave), with what it returned first (nil for
+    /// nothing, or when it fails); as Call(function, name, arguments) otherwise
+    /// </summary>
+    public bool Call(LuaValue function, string name, ReadOnlySpan<LuaValue> arguments, out LuaValue result)
     {
+        result = LuaValue.Nil;
         if (function.Type != LuaValueType.Function)
             return false;
 
         var args = arguments.ToArray();
         try
         {
-            Run(() => _state.CallAsync(function, args));
+            var results = Run(() => _state.CallAsync(function, args));
+            if (results.Length > 0)
+                result = results[0];
             return true;
         }
         catch (Exception e) when (e is LuaRuntimeException or OperationCanceledException)
@@ -172,7 +182,7 @@ internal sealed partial class ScriptHost
     }
 
     // Runs a call to its end, counting its instructions from 0 unless it's inside another call
-    private void Run<T>(Func<ValueTask<T>> call)
+    private T Run<T>(Func<ValueTask<T>> call)
     {
         if (_depth == 0)
             _hooks = 0;
@@ -180,8 +190,7 @@ internal sealed partial class ScriptHost
         try
         {
             var task = call();
-            if (!task.IsCompletedSuccessfully)
-                task.AsTask().GetAwaiter().GetResult();
+            return task.IsCompletedSuccessfully ? task.Result : task.AsTask().GetAwaiter().GetResult();
         }
         finally
         {

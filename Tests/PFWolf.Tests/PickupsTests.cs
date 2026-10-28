@@ -58,6 +58,8 @@ public class PickupsTests
         public bool Died { get => Session.PlayState == PlayState.Died; set => Session.PlayState = value ? PlayState.Died : PlayState.StillPlaying; }
         public readonly List<string> Sounds = [];
         public readonly List<Inventory> Respawning = [];
+        public Func<Inventory, bool>? MayTake;
+        public readonly List<(string Item, int? Amount)> PickedUp = [];
 
         public Rig()
         {
@@ -76,7 +78,8 @@ public class PickupsTests
             var stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,
                 new Configuration.GameSettings(), new PlayerStatsHooks(() => 1, () => { }, _ => { }));
             Pickups = new Pickups(Map, null!, null!, classes, stats, Session,
-                new PickupHooks(Sounds.Add, _ => HasWeapon, () => ItemRespawn, Respawning.Add));
+                new PickupHooks(Sounds.Add, _ => HasWeapon, () => ItemRespawn, Respawning.Add,
+                    MayTake: item => MayTake?.Invoke(item) ?? true, PickedUp: (item, amount) => PickedUp.Add((item.Name, amount))));
         }
 
         // An item lying on the level
@@ -103,6 +106,50 @@ public class PickupsTests
         // Assert
         Assert.That(rig.Session.PlayerState.Health, Is.EqualTo(75));
         Assert.That(rig.OnTheFloor(medikit), Is.False);
+    }
+
+    [Test]
+    public void A_Pickup_Is_Told_With_What_It_Gave()
+    {
+        // Arrange
+        var rig = new Rig();
+        var medikit = rig.Item("Medikit");
+
+        // Act
+        rig.Pickups.GetBonus(medikit);
+
+        // Assert
+        Assert.That(rig.PickedUp, Is.EqualTo(new[] { ("Medikit", (int?)25) }));
+    }
+
+    [Test]
+    public void One_A_Script_Refuses_Stays_And_Gives_Nothing()
+    {
+        // Arrange
+        var rig = new Rig { MayTake = item => item.Name != "Medikit" };
+        var medikit = rig.Item("Medikit");
+
+        // Act
+        rig.Pickups.GetBonus(medikit);
+
+        // Assert
+        Assert.That(rig.OnTheFloor(medikit), Is.True);
+        Assert.That(rig.Session.PlayerState.Health, Is.EqualTo(50));
+        Assert.That(rig.PickedUp, Is.Empty);
+    }
+
+    [Test]
+    public void One_The_Player_Cant_Take_Isnt_Told_As_Taken()
+    {
+        // Arrange: health already full
+        var rig = new Rig();
+        rig.Session.PlayerState.Health = 100;
+
+        // Act
+        rig.Pickups.GetBonus(rig.Item("Medikit"));
+
+        // Assert
+        Assert.That(rig.PickedUp, Is.Empty);
     }
 
     [Test]

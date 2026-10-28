@@ -344,6 +344,7 @@ internal static partial class GameHost
             playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, LevelAI, Stealth, Objectives, Session)
         {
             KillChains = KillChains,
+            Scripts = gameScripts,
         };
 
         // TODO: Remove circular dependencies here

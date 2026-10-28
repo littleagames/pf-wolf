@@ -10,12 +10,16 @@ namespace PFWolf.Gameplay;
 /// <param name="ItemRespawn">Deathmatch: whether items taken come back (the game's rules)</param>
 /// <param name="QueueItemRespawn">Deathmatch: brings an item taken back a while later</param>
 /// <param name="Taken">An item's been taken, by the acting player (Heist's loot: Gameplay/MatchModes)</param>
+/// <param name="MayTake">Whether the scripts let the acting player take an item (game.ontrypickup)</param>
+/// <param name="PickedUp">The acting player's taken an item, which gave so much if it gives an amount (game.onpickup)</param>
 internal sealed record PickupHooks(
     Action<string> PlayPlayerSound,
     Func<Weapon, bool> HasWeaponFrom,
     Func<bool> ItemRespawn,
     Action<Inventory> QueueItemRespawn,
-    Action<Inventory>? Taken = null);
+    Action<Inventory>? Taken = null,
+    Func<Inventory, bool>? MayTake = null,
+    Action<Inventory, int?>? PickedUp = null);
 
 /// <summary>
 /// The acting player picking up an item they walk over: unless their class may not, or they
@@ -46,6 +50,10 @@ internal sealed class Pickups(
 
         // Deathmatch: a weapon stays where it is, so it's only for a player without it yet
         if (session.GameMode.KeepsItems() && builtActor is Weapon weaponPickup && hooks.HasWeaponFrom(weaponPickup))
+            return;
+
+        // A script may keep it on the floor (game.ontrypickup)
+        if (hooks.MayTake?.Invoke(builtActor) == false)
             return;
 
         // An item the player can't take (health at 100 or above a health item's
@@ -87,6 +95,7 @@ internal sealed class Pickups(
             video.StartBonusFlash();
 
         hooks.Taken?.Invoke(builtActor);
+        hooks.PickedUp?.Invoke(builtActor, given);
 
         // Deathmatch (Gameplay/Deathmatch.cs): a weapon stays for everyone else, and anything
         // else comes back a while after it's taken

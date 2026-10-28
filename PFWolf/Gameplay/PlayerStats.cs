@@ -10,12 +10,16 @@ namespace PFWolf.Gameplay;
 /// <param name="PlayPlayerSound">A sound the acting player makes</param>
 /// <param name="ShowTimer">Shows (or with null text takes down) the message with a key, in a style (HudMessageManager.ShowKeyed): a power-up's timer</param>
 /// <param name="ShowAttacker">Shows who's attacking the local player (game-info attack-message), with Attack Info on</param>
+/// <param name="Damage">The scripts' say in a hit on the acting player (game.ondamage): the amount, by what and its damage type, to the amount it comes to</param>
+/// <param name="Died">The acting player's been killed, by what if anything (game.onplayerdeath)</param>
 internal sealed record PlayerStatsHooks(
     Func<double> SkillDamageTaken,
     Action PlayerDies,
     Action<string> PlayPlayerSound,
     Action<string, string?, string?>? ShowTimer = null,
-    Action<Entities.Actors.Actor>? ShowAttacker = null);
+    Action<Entities.Actors.Actor>? ShowAttacker = null,
+    Func<int, Entities.Actors.Actor?, string?, int>? Damage = null,
+    Action<Entities.Actors.Actor?>? Died = null);
 
 /// <summary>
 /// The acting player's health, armor, lives and score: taking damage, healing, putting on
@@ -112,10 +116,11 @@ internal sealed class PlayerStats(
             : attacker as Monster ?? attacker?.Shooter as Monster;
         if (foe != null && session.ActingIsLocal && settings.Options.AttackInfo)
             hooks.ShowAttacker?.Invoke(foe);
-        ApplyDamageToPlayer(points);
+        ApplyDamageToPlayer(points, attacker);
     }
 
-    internal void ApplyDamageToPlayer(int points)
+    /// <summary>Hurts the acting player by <paramref name="points"/>, from <paramref name="attacker"/> (null: a floor, a trap)</summary>
+    internal void ApplyDamageToPlayer(int points, Entities.Actors.Actor? attacker = null)
     {
         if (session.GameState.VictoryFlag)
             return;
@@ -127,6 +132,15 @@ internal sealed class PlayerStats(
         points = (int)(points * Math.Max(hooks.SkillDamageTaken(), 0) * classes.DamageTakenFactor);
         if (PlayerState.Mount != null && PlayerState.MountGun is { } gun)
             points = points * Math.Max(inventory.GetIntProperty(gun, "weapon.mountdamage", 100), 0) / 100;
+
+        // The scripts' say in it (game.ondamage): another amount, 0 for none at all
+        if (hooks.Damage?.Invoke(points, attacker, Monster.DamageTypeOf(inventory, attacker)) is { } hooked && hooked != points)
+        {
+            if (hooked <= 0)
+                return;
+            points = hooked;
+        }
+        bool wasAlive = PlayerState.Health > 0;
 
         int godmode = session.GodMode;
         if (godmode == 0 && Powerups.Invulnerable(inventory))
@@ -153,10 +167,9 @@ internal sealed class PlayerStats(
         if (PlayerState.Health <= 0)
         {
             PlayerState.Health = 0;
-            if (session.GameMode == GameMode.Single)
-                session.PlayState = PlayState.Died;                   // Died(): the level starts again
-            else
-                hooks.PlayerDies();             // the rest play on (Gameplay/Players.cs)
+            Die();
+            if (wasAlive)
+                hooks.Died?.Invoke(attacker);
         }
 
         if (godmode != 2 && session.ActingIsLocal)
@@ -178,6 +191,28 @@ internal sealed class PlayerStats(
                 statusBar.StatusDrawFace(ouch);
             PlayerState.FaceCount = 0;
         }
+    }
+
+    /// <summary>
+    /// The acting player killed outright, by <paramref name="killer"/> (null for nothing): the
+    /// level's time running out, caught on a stealth-only map
+    /// </summary>
+    internal void Kill(Entities.Actors.Actor? killer)
+    {
+        PlayerState.LastAttacker = killer;
+        PlayerState.Health = 0;
+        statusBar.DrawHealth();
+        Die();
+        hooks.Died?.Invoke(killer);
+    }
+
+    // The acting player's dead: alone, the level starts again (Died()); with others, the rest play on (Gameplay/Players.cs)
+    void Die()
+    {
+        if (session.GameMode == GameMode.Single)
+            session.PlayState = PlayState.Died;
+        else
+            hooks.PlayerDies();
     }
 
     /// <summary>
