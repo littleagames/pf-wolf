@@ -1282,6 +1282,27 @@ internal class MapManager
         return marker;
     }
 
+    /// <summary>
+    /// Takes the wall off a tile for good, leaving open floor in <paramref name="area"/> (plane 0),
+    /// as a pushwall leaves the tile it slides off (Gameplay/DestructibleWalls.cs joins the areas
+    /// round it and sees to what was in it). Its diagonal shape, door-side mark and patch go with
+    /// it; its tag, flats and any A_ChangeTexture on its floor stay. With <paramref name="arch"/>,
+    /// a wall taller than a story only loses its bottom one: the rest stays up as an arch.
+    /// </summary>
+    internal void RemoveWall(int x, int y, int area, bool arch)
+    {
+        int stories = WallStories(x, y);
+        if (WallShapes[x, y] != WallShape.Square)
+            SetWallShape(x, y, WallShape.Square);
+
+        TileMap[x, y] = 0;
+        if (ActorAt[x, y] is Wall)
+            ActorAt[x, y] = null;
+        SetMapSpot(x, y, 0, (ushort)(Floors.AreaTile + area));
+        PatchMap[x, y] = 0;
+        SetWallStories(x, y, arch && stories > 1 ? stories : 0);
+    }
+
     internal record MapPlayerStart(int TileX, int TileY, int Angle);
 
     /// <summary>Where the loaded map puts the player (its object-plane player start); null if it has none.</summary>

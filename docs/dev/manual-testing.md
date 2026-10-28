@@ -389,6 +389,15 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       message, toggles, door-frame switches.
 - [ ] **(never tried)** `A_MoveWall` with several tagged walls at once.
 
+**Removing walls** (`removewall`, `A_RemoveWall`)
+- [ ] **(never tried)** A switch and a walk trigger running `A_RemoveWall` on tagged walls; an
+      actor state's (its own tag).
+- [ ] **(never tried)** Walking and shooting through the hole; enemies on the far side hearing
+      shots once it joins two areas; the automap showing open floor there.
+- [ ] **(never tried)** A diagonal wall, a wall beside a door (its jamb), a patched wall and a
+      wall with an in-wall shooter removed; a removed secret pushwall counting as found.
+- [ ] A tall wall removed with `arch` (the upper stories stay as an arch) and without.
+
 **Multi-key doors** (`key-demo`)
 - [ ] **(never tried)** Open doors 80 (red+blue), 81 (all four), 82 (any two) in play; refusal
       messages name the missing key; the 2×2 key block on the status bar.

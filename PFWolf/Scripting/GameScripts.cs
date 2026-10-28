@@ -52,6 +52,9 @@ internal sealed partial class GameScripts(
     /// <summary>game.showtext: a text shown as an article in the middle of the level (A_ShowText)</summary>
     internal Action<string> ShowText { get; init; } = _ => { };
 
+    /// <summary>game.removewall: takes the wall off a tile, an arch left or not (Gameplay/DestructibleWalls.cs); false if it can't go</summary>
+    internal Func<int, int, bool, bool> RemoveWall { get; init; } = (_, _, _) => false;
+
     /// <summary>The scripts' Lua state, once any have loaded (or the lua command has made one)</summary>
     internal ScriptHost? Scripts => _scripts;
 
@@ -347,6 +350,17 @@ internal sealed partial class GameScripts(
             if (!map.InMap(x, y))
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.floor: {x},{y} isn't a tile on the map", 1);
             return new(c.Return(map.FlatTextureName(x, y, ceiling: false) is { } floor ? floor : LuaValue.Nil));
+        });
+        // game.removewall(x, y[, "arch"]): the wall on the tile is gone, as A_RemoveWall takes one;
+        // false where there's none that can go (a door, open floor, the map's edge)
+        game["removewall"] = new LuaFunction("game.removewall", (c, _) =>
+        {
+            ChangesTheGame(c, "game.removewall");
+            int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
+            if (!map.InMap(x, y))
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.removewall: {x},{y} isn't a tile on the map", 1);
+            bool arch = OptionalString(c, 2)?.Equals("arch", StringComparison.OrdinalIgnoreCase) == true;
+            return new(c.Return(RemoveWall(x, y, arch)));
         });
         game["trigger"] = new LuaFunction("game.trigger", (c, _) =>
         {

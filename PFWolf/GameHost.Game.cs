@@ -436,6 +436,7 @@ internal static partial class GameHost
             IsUnlocked = name => Unlocks.IsUnlocked(name),
             Record = map => LevelRecords.Get(map),
             ShowText = ShowTextInLevel,
+            RemoveWall = (x, y, arch) => destructibleWalls.Remove(x, y, arch),
             DrawText = (text, x, y, font, color) => _graphicManager.DrawText(x, y, HudMessageManager.Localize(text),
                 new Fonts.TextStyle(font ?? UiFonts.SmallFont, color ?? "White")),
             DrawPic = (name, x, y) => _graphicManager.DrawPic(name, x, y),

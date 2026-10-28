@@ -254,6 +254,7 @@ internal static partial class GameHost
         (hubActions ??= MakeHubActions()).Register();
         RegisterSwitchActions();    // tag-targeted door and wall actions (Gameplay/SwitchActions.cs)
         RegisterSmartSwitchActions();   // A_SmartSwitch (Gameplay/SmartSwitches.cs)
+        RegisterDestructibleWallActions();  // A_RemoveWall, for switches and actors (Gameplay/DestructibleWalls.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Rendering/Lighting.cs)
         Scrollers.RegisterActions(() => MapManager.Scrollers); // scrolling walls and flats, for switches and actors (Rendering/Scrollers.cs)
         RegisterActorLightActions(); // actors' own lights (Rendering/ActorLights.cs)
@@ -540,6 +541,11 @@ internal static partial class GameHost
 
     private static void RegisterSwitchActions() => (switchActions ??= MakeSwitchActions()).Register();
     private static void RegisterSmartSwitchActions() => (smartSwitches ??= MakeSmartSwitches()).Register();
+
+    // Walls taken away as the level's played (Gameplay/DestructibleWalls.cs)
+    static DestructibleWalls destructibleWalls = null!;
+    static DestructibleWalls MakeDestructibleWalls() => new(MapManager, doors, Session);
+    private static void RegisterDestructibleWallActions() => (destructibleWalls ??= MakeDestructibleWalls()).Register();
 
     // ==== WL_ACT2 ================================================================================
 

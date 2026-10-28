@@ -47,6 +47,7 @@ public static class ScriptApi
         Fn("tag", "game.tag(x, y)", "A tile's tag, 0 for none"),
         Fn("patch", "game.patch(x, y)", "The patch (mapdefs patches) on a wall tile, 0 for none"),
         Fn("floor", "game.floor(x, y)", "The texture on a tile's floor (mapdefs flats or the map's default-floor, as A_ChangeTexture left it), nil where the floor color shows"),
+        Fn("removewall", "game.removewall(x, y[, \"arch\"])", "Takes the wall off a tile for good, as A_RemoveWall does, leaving open floor joined to the floor round it; with \"arch\" a tall wall keeps its upper stories as an arch. False where there's no wall that can go (a door, open floor, a moving pushwall, the map's edge)"),
         Fn("trigger", "game.trigger(tag, action, ...)",
             "Runs a switch action on a tag, as a switch with it would, used by the first player: game.trigger(3, \"A_OpenDoor\", \"hold\"), "
             + "or the whole call in one string, game.trigger(3, 'A_OpenDoor(\"hold\")'). True if it did anything (false with no player on the level). "

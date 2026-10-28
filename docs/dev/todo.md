@@ -94,3 +94,15 @@ DrawWarpIn (a fizzle-in frame now draws the info area and messages before it fiz
 - 82 of its 93 barrier switch walls have no open floor beside them, in bstone's data too: they're
   thrown from afar (floor triggers 158-160, an enemy's death linked by floor code 79), which
   already works. Nothing to do.
+
+## Destructible walls: extras
+
+Left out of the destructible walls work (docs/dev/destructible-walls-plan.md) at the user's
+choice, 2026-10-28:
+
+- A tall wall that drops a story at a time until it's gone (its plane-3 height going down every
+  so many tics; no renderer change).
+- A wall that sinks smoothly into the floor (a sub-story offset in DrawPost; solid until it's
+  down).
+- Walls that come back: A_RestoreWall puts a removed wall back, refused while something stands
+  on the tile.

@@ -5,7 +5,8 @@ namespace PFWolf.Commands;
 
 /// <summary>
 /// Changing the level as it's played, from the console (not saved): its wall height, sky,
-/// weather, fog and light, the light zones, and a tile's height, tag, patch and flats
+/// weather, fog and light, the light zones, and a tile's height, tag, patch and flats; and taking
+/// a wall away (that one is saved: it's as A_RemoveWall would leave it)
 /// </summary>
 internal sealed class LevelEditCommands(
     ConsoleManager console,
@@ -17,7 +18,8 @@ internal sealed class LevelEditCommands(
     SkyAndFlats skyAndFlats,
     RenderState render,
     ConsoleTargets targets,
-    GameSession session)
+    GameSession session,
+    DestructibleWalls? destructibleWalls = null)
 {
     internal void Register()
     {
@@ -55,6 +57,9 @@ internal sealed class LevelEditCommands(
         console.Register("patch", "Shows or sets the patch (mapdefs patches) on a wall tile (default: the one you face); 0 takes it off.",
             "patch [0-255 [tilex tiley]]", PatchCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? map.GetMapData().Patches.Keys.Order().Select(id => id.ToString()) : []);
+        console.Register("removewall", "Takes a wall away (default: the one you face), as A_RemoveWall does; with arch, a tall wall keeps its upper stories as an arch.",
+            "removewall [arch] [tilex tiley]", RemoveWallCommand, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? ["arch"] : []);
         console.Register("flat", "Sets a tile's floor and ceiling flat indices (mapdefs flats) on the flat plane (default: the tile you stand on).",
             "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", FlatCommand, Cheat | InLevel);
         console.Register("flats", "Sets the level's default floor and ceiling textures, for tiles the flat plane doesn't give one (not saved).",
@@ -159,6 +164,21 @@ internal sealed class LevelEditCommands(
         }
 
         console.Print($"Tile {x},{y}: {targets.DescribePatch(map.GetPatch(x, y))}");
+    }
+
+    internal void RemoveWallCommand(string[] args)
+    {
+        bool arch = args.Length > 0 && args[0].Equals("arch", StringComparison.OrdinalIgnoreCase);
+        var tile = arch ? args[1..] : args;
+        if (tile.Length is 1 or > 2 || destructibleWalls == null)
+            throw new ArgumentException("usage: removewall [arch] [tilex tiley]");
+
+        var (x, y) = targets.TileArg(tile, 0);
+        if (destructibleWalls.WhyNot(x, y) is { } why)
+            throw new ArgumentException($"Can't remove it: {why}");
+
+        destructibleWalls.Remove(x, y, arch);
+        console.Print($"Tile {x},{y}: the wall is gone{(map.StoryMap[x, y] > 1 ? $", an arch of {map.StoryMap[x, y]} stories left" : "")}");
     }
 
     internal void FlatCommand(string[] args)

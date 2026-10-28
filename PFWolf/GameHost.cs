@@ -199,6 +199,7 @@ internal static partial class GameHost
         LevelAI = new LevelAI(MapManager, lineOfSight, positionalSounds, Session);
         switchActions = MakeSwitchActions();
         smartSwitches = MakeSmartSwitches();
+        destructibleWalls = MakeDestructibleWalls();
         hubs = new Hubs(GameEngineManager, MapManager, Session);
         projectileActions = MakeProjectileActions();
         lighting = MakeLighting();
@@ -218,7 +219,7 @@ internal static partial class GameHost
         playerBodies = new PlayerBodies(AssetManager, MapManager, InventoryManager, spriteDrawing, Session);
         playerView = MakePlayerView();
         levelEditCommands = new LevelEditCommands(_consoleManager, AssetManager, MapManager, lighting, actorLights, weather, skyAndFlats, Render,
-            consoleTargets, Session);
+            consoleTargets, Session, destructibleWalls);
         factionCommands = new FactionCommands(_consoleManager, AssetManager, MapManager, FactionManager, TranslationManager, consoleTargets, Session);
         frameRefresh = MakeFrameRefresh();
         frameRefresh.Interpolation = frameInterpolation;
