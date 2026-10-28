@@ -565,7 +565,12 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
 
                 case "PA":
                     video.Update();
-                    GameEngineManager.DelayTics(30);
+                    for (var paused = GameEngineManager.GetTimeCount(); GameEngineManager.GetTimeCount() - paused < 30;)
+                    {
+                        if (video.CycleColors())        // game-info palette-cycles, as bstone's waits
+                            video.Update();
+                        GameEngineManager.DelayMs(5);
+                    }
                     break;
 
                 case "MO":
@@ -812,6 +817,8 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
             var start = GameEngineManager.GetTimeCount();
             while (GameEngineManager.GetTimeCount() - start < delay)
             {
+                if (video.CycleColors())
+                    video.Update();
                 GameEngineManager.DelayMs(5);
                 input.ProcessEvents();
                 if (tp.Flags.HasFlag(PresenterFlags.Abortable) && input.GetLastKeyPressed() != ScanCodes.None)
@@ -856,7 +863,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         while (true)
         {
             GameEngineManager.DelayMs(5);
-            if (TpAnimatePage())
+            if (TpAnimatePage() | video.CycleColors())
                 video.Update();
             menuInput.ReadAnyControl(out var ci);
             var dir = ci.Dir;

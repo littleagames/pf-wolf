@@ -39,6 +39,20 @@ public record GameInfoAsset : Asset
     /// </summary>
     public Dictionary<string, int> LightenLevels { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Runs of palette colors that rotate while the menus, the elevator and teleporter screens and
+    /// the text presenter wait (Blake Stone's CycleColors: the elevator map's player dot flashes
+    /// between colors 240 and 241); none by default
+    /// </summary>
+    public List<PaletteCycleInfo> PaletteCycles { get; init; } = [];
+
+    /// <summary>
+    /// What the automap key shows in its place: a picture with the floor's overhead map and stat
+    /// bars over the view until a key is pressed (Blake Stone's TAB, bstone's PopupAutoMap); null
+    /// for the automap. The automap console command still opens the automap.
+    /// </summary>
+    public StatsPopupInfo? StatsPopup { get; init; }
+
     /// <summary>The waves of enemies a multiplayer Horde game sends at the players</summary>
     public HordeInfo Horde { get; init; } = new();
 
@@ -980,6 +994,12 @@ public record DefaultMapInfo
     public int WallHeight { get; init; } = 1;
 
     /// <summary>
+    /// What a message's {floor-text} says, for a map without its own floor-text (Blake Stone's
+    /// barrier switches' "ON FLOOR {floor}"); null for nothing
+    /// </summary>
+    public string? FloorText { get; init; } = null;
+
+    /// <summary>
     /// Graphic (or wall texture) drawn in place of the ceiling color; null for none
     /// </summary>
     public string? Sky { get; init; } = null;
@@ -1670,6 +1690,47 @@ public record KillChainInfo
 }
 
 /// <summary>
+/// A palette-cycles run: colors first to last move along one place every so many tics, the last
+/// coming round to first
+/// </summary>
+public record PaletteCycleInfo
+{
+    /// <summary>The run's first palette index</summary>
+    public int First { get; init; }
+
+    /// <summary>The run's last palette index</summary>
+    public int Last { get; init; }
+
+    /// <summary>Tics between moves</summary>
+    public int Tics { get; init; } = 10;
+}
+
+/// <summary>
+/// The automap key's popup (game-info stats-popup): pic at x, y, then the overhead map and the
+/// stat bars over it, laid out as the elevator's (gamepacks/{pack}/elevator.yaml overhead, stats)
+/// </summary>
+public record StatsPopupInfo
+{
+    /// <summary>The picture drawn first</summary>
+    public string? Pic { get; init; }
+
+    /// <summary>The picture's left edge, in 320x200 pixels</summary>
+    public int X { get; init; }
+
+    /// <summary>The picture's top edge</summary>
+    public int Y { get; init; }
+
+    /// <summary>
+    /// The level's whole map, north up; with Shift held, the 64 tiles about the player turned so
+    /// the way they face is up. None: no map (Planet Strike's).
+    /// </summary>
+    public ElevatorOverhead? Overhead { get; init; }
+
+    /// <summary>The floor's stat bars, drawn at once</summary>
+    public ElevatorStats? Stats { get; init; }
+}
+
+/// <summary>
 /// Horde (multiplayer): waves of enemies coming at the players, who win by outlasting the
 /// lobby's number of waves (or play on until they all die at once). Each wave sends its
 /// enemies, a few at a time, from the map's horde spawns (mapdefs) or, without any, open floor
@@ -1818,6 +1879,12 @@ public record MapInfo
     /// on a secret floor); the floor number when unset
     /// </summary>
     public string? LevelLabel { get; init; }
+
+    /// <summary>
+    /// What a message's {floor-text} says on this level, in place of default-map's (a $language
+    /// key or the text, with {floor} its floor number): Blake Stone's "ON SECRET FLOOR 1"
+    /// </summary>
+    public string? FloorText { get; init; }
 
     /// <summary>The par time in seconds, shown on the level-end screen; finishing sooner earns a time bonus</summary>
     public int ParTime { get; init; } = 0;

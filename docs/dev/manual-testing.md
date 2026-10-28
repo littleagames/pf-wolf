@@ -215,6 +215,22 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       an informant (hint indented, gift) and the killed-informant warning. **(never tried)** the
       door, barrier, food unit, generator, transporting and Planet Strike detonator/teleporter
       messages, and the status bar hidden (they show as plain words over the view).
+- [ ] Aliens of Gold's idle info area has a blank line above "NO MESSAGES." and above "FOOD
+      TOKENS: n" (matched to DOS screenshots headlessly), and a food token says "FOOD TOKEN: /
+      1 CREDIT" with no count; Planet Strike's keep bstone's tighter idle text and "TOKENS: nn".
+      An AOG barrier switch adds "ON FLOOR n" under (DE)ACTIVATING BARRIER (seen on MAP02, game-info
+      floor-text). **(never tried)** "ON SECRET FLOOR 1/2" on a secret floor's switch, and
+      Planet Strike's in-game (no floor line).
+- [ ] Palette cycling (game-info palette-cycles, bstone's CycleColors): the elevator map's
+      player dot flashes black/white (seen). **(never tried)** keys flashing red on the elevator
+      map, anything cycling in the menus, briefings and Planet Strike's teleporter map, and
+      Wolf3D's menus unchanged (it has no cycles).
+- [ ] TAB's popup map (game-info stats-popup, bstone's PopupAutoMap): Aliens of Gold shows the
+      FloorStats picture with the whole floor map and quick stat bars, Planet Strike the stats
+      only; any key closes it and play goes on (seen for both). The rotated map about Blake was
+      seen with the default flipped. **(never tried)** Shift+TAB with a real keyboard (posted
+      Shift didn't reach the game), a smaller view size's border after closing, the `automap`
+      console command still opening the automap in Blake, and Wolf3D's TAB unchanged.
 - [ ] **(never tried)** The auto charge pistol on WAIT: fire does nothing (no animation, flash or
       sound); held through, it fires as soon as READY lights.
 - [ ] **(never tried)** Doors beside a floor trigger join their rooms: mission 2 floor 1's doors

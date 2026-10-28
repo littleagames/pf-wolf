@@ -57,7 +57,7 @@ teleporter:
     door: 88
     locked: 24
     player: 240
-  stats: { x: 235, y: 138, font: 2, color: 175 }
+  stats: { x: 235, y: 138, font: 2, color: 175, score-gap: 13 }     # bstone's ShowStats: 13 down to the floor's score in Planet Strike
   help: "UP/DN MOVES SELECTOR - ENTER ACTIVATES"
   help-spot: { x: 115, y: 188 }
   help-color: 175

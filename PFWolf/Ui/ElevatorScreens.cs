@@ -155,6 +155,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
 
         while (!done)
         {
+            video.CycleColors();        // the overhead map's player dot flashes (palette-cycles)
             video.Update();
             if (video.ScreenFaded)
                 video.FadeIn();
@@ -259,13 +260,16 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     /// </summary>
     internal void ShowFloorStats(ElevatorAsset elevator)
     {
-        if (elevator.Stats is not { } stats)
-            return;
+        if (elevator.Stats is { } stats)
+            ShowFloorStats(stats, quick: false);
+    }
 
+    /// <summary>The floor's stat bars at once (quick, bstone's ss_quick) or filling up</summary>
+    void ShowFloorStats(ElevatorStats stats, bool quick)
+    {
         var font = presenter.PresenterFont(stats.Font);
         var floor = hubs.FloorStats();
         bool anything = floor.Any(s => s.Total > 0);
-        bool quick = false;
         input.ClearLastKey();
         int by = stats.Y;
 
@@ -279,7 +283,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
             Row(Hubs.Ratio(got, total), total == 0);
             by += 7;
         }
-        by += 5;
+        by += stats.ScoreGap - 7;
         Row(hubs.FloorScore() * 100 / 300, !anything);
         by += 7;
         Row(hubs.MissionRatio(), false);
@@ -358,9 +362,11 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     /// <summary>
     /// The level as the player has seen it, 64x64 palette colors (north up), in the colors given
     /// by name (background, unmapped, floor, door, locked); with <paramref name="markThings"/>,
-    /// keys lying about (key) and the player (player) too
+    /// keys lying about (key) and the player (player) too. <paramref name="aroundPlayer"/>: the
+    /// 64 tiles about the player instead, turned so the way they face is up (bstone's
+    /// ShowOverhead without OV_WHOLE_MAP).
     /// </summary>
-    byte[] CaptureOverhead(IReadOnlyDictionary<string, int>? colors, bool markThings)
+    byte[] CaptureOverhead(IReadOnlyDictionary<string, int>? colors, bool markThings, bool aroundPlayer = false)
     {
         string Color(string name, int fallback) => (colors?.TryGetValue(name, out var c) == true ? c : fallback).ToString();
         byte background = byte.Parse(Color("background", 0x52));
@@ -372,12 +378,22 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
             .Where(a => !a.IsRemoved && inventory.FindClass(a.Name, "Key") != null)
             .Select(a => (a.TileX, a.TileY)).ToHashSet();
 
+        // About the player, bstone's walk: from the corner a radius out, a column at a time
+        const int radius = OverheadSize / 2;
+        double angle = session.Player.Angle * Math.PI / 180, psin = Math.Sin(angle), pcos = Math.Cos(angle);
+        double baseX = session.Player.X / 65536.0 + radius * (pcos - psin);
+        double baseY = session.Player.Y / 65536.0 - radius * (psin + pcos);
+        (int X, int Y) Tile(int px, int py) => aroundPlayer
+            ? ((int)Math.Floor(baseX + px * psin - py * pcos), (int)Math.Floor(baseY + px * pcos + py * psin))
+            : (OverheadTile(px, mapManager.MapWidth), OverheadTile(py, mapManager.MapHeight));
+
         var image = new byte[OverheadSize * OverheadSize];
-        for (int py = 0; py < OverheadSize; py++)
+        bool playerDrawn = false;
+        for (int px = 0; px < OverheadSize; px++)
         {
-            for (int px = 0; px < OverheadSize; px++)
+            for (int py = 0; py < OverheadSize; py++)
             {
-                int x = OverheadTile(px, mapManager.MapWidth), y = OverheadTile(py, mapManager.MapHeight);
+                var (x, y) = Tile(px, py);
                 byte color = background;
                 if (mapManager.InMap(x, y) && mapManager.Seen[x, y] != SeenFlags.None)
                 {
@@ -387,12 +403,49 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
                         tile = hidden;
                     color = keys.Contains(((byte)x, (byte)y)) ? key : byte.Parse(tile);
                 }
-                if (markThings && x == session.Player.TileX && y == session.Player.TileY)
+                if (markThings && !playerDrawn && x == session.Player.TileX && y == session.Player.TileY)
+                {
                     color = player;
+                    playerDrawn = true;     // one pixel, as bstone's
+                }
                 image[py * OverheadSize + px] = color;
             }
         }
         return image;
+    }
+
+    /*
+    =============================================================================
+
+                                THE POPUP MAP
+
+    The automap key in a game with a game-info stats-popup (Blake Stone's TAB,
+    bstone's PopupAutoMap): its picture over the view with the floor's whole map
+    (Shift: the tiles about the player, turned) and stat bars, until a key is
+    pressed, the palette cycles going round meanwhile.
+
+    =============================================================================
+    */
+
+    internal void PopupMap(StatsPopupInfo popup, bool aroundPlayer)
+    {
+        if (!string.IsNullOrEmpty(popup.Pic))
+            graphics.DrawPic(popup.Pic, popup.X, popup.Y);
+        if (popup.Overhead is { } overhead)
+            video.MemToScreen(CaptureOverhead(overhead.Colors, markThings: true, aroundPlayer), OverheadSize, OverheadSize, overhead.X, overhead.Y);
+        if (popup.Stats is { } stats)
+            ShowFloorStats(stats, quick: true);
+        video.Update();
+
+        input.StartAck();
+        do
+        {
+            if (video.CycleColors())
+                video.Update();
+            GameEngineManager.DelayMs(5);
+            input.ProcessEvents();
+        } while (!input.CheckAck());
+        input.ClearKeysDown();
     }
 
     /*
@@ -503,6 +556,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
         bool done = false, statsShown = false;
         while (!done)
         {
+            video.CycleColors();
             video.Update();
             if (video.ScreenFaded)
                 video.FadeIn();

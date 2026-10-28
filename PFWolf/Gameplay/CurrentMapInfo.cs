@@ -18,4 +18,24 @@ internal sealed class CurrentMapInfo(GameSession session, Func<GameInfoAsset> ga
 
     /// <summary>What every map has unless its own entry says otherwise (game-info default-map)</summary>
     internal DefaultMapInfo Default => gameInfo().DefaultMap;
+
+    /// <summary>A message with the map being played's {floor-text} and {floor} filled in (<see cref="FillFloor"/>)</summary>
+    internal string FillFloor(string text, Func<string, string> localize) => FillFloor(text, Map, Default, localize);
+
+    /// <summary>
+    /// <paramref name="text"/> with {floor-text} the map's floor-text (default-map's when it has
+    /// none; nothing when neither has), a $language key put through <paramref name="localize"/>,
+    /// and then {floor} the map's floor number
+    /// </summary>
+    internal static string FillFloor(string text, MapInfo? map, DefaultMapInfo defaults, Func<string, string> localize)
+    {
+        if (!text.Contains("{floor", StringComparison.OrdinalIgnoreCase))
+            return text;
+        if (text.Contains("{floor-text}", StringComparison.OrdinalIgnoreCase))
+        {
+            var floorText = map?.FloorText ?? defaults.FloorText;
+            text = text.Replace("{floor-text}", floorText == null ? "" : localize(floorText), StringComparison.OrdinalIgnoreCase);
+        }
+        return text.Replace("{floor}", (map?.FloorNumber ?? 0).ToString(), StringComparison.OrdinalIgnoreCase);
+    }
 }

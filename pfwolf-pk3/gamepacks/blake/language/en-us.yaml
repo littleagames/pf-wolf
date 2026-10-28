@@ -1,6 +1,7 @@
 # Blake Stone text, added to the shared language/en-us.yaml. The status bar info area's messages
-# are the game's own (bstone's 3d_msgs.cpp, 3d_act1.cpp, 3d_act2.cpp, 3d_agent.cpp), laid out as
-# it lays them out: info area scripts (Ui/TextPresenter.cs DrawInfoScript), \n for bstone's \r, the
+# are the game's own (bstone's 3d_msgs.cpp, 3d_act1.cpp, 3d_act2.cpp, 3d_agent.cpp; bstone's are
+# Planet Strike's, so where Aliens of Gold's BS_AOG.EXE says otherwise it wins here and Planet
+# Strike's language file has its own), laid out as it lays them out: info area scripts (Ui/TextPresenter.cs DrawInfoScript), \n for bstone's \r, the
 # spaces before a line centering it, ^SHnnn the item's picture (presenter.yaml shapes), ^FCnn the
 # text's color (57 a heading, A6 the text). One with no picture or color starts with ^FCA6 (the
 # area's own color, so nothing changes) to be a script, which keeps its line breaks and spaces.
@@ -34,8 +35,9 @@ $BS_GOTWATER: "^SH012^FC57\n\n    FOOD:\n^FCA6 FRESH WATER"
 $BS_GOTPUDDLE: "^SH013^FC57\n\n    FOOD:\n^FCA6 WATER PUDDLE"
 $BS_GOTCHARGEUNIT: "^SH006^FC57\n   WEAPON:\n^FCA6 ENERGY PACK\n   (%a UNITS)"
 $BS_GOTCHARGEPACK: "^SH006^FC57\n   WEAPON:\n^FCA6 ENERGY PACK\n   (%a UNITS)"
-$BS_GOTTOKEN: "^SH020^FC57\n  FOOD TOKEN:\n^FCA6   1 CREDIT\n\n  TOKENS: {FoodToken:00}"
-$BS_GOTTOKENS5: "^SH021^FC57\n  FOOD TOKEN:\n^FCA6   5 CREDITS\n  TOKENS: {FoodToken:00}"
+# (Aliens of Gold's own, from its BS_AOG.EXE; bstone shows Planet Strike's with the count)
+$BS_GOTTOKEN: "^SH020^FC57\n\n FOOD TOKEN:\n^FCA6  1 CREDIT"
+$BS_GOTTOKENS5: "^SH021^FC57\n\n FOOD TOKEN:\n^FCA6  5 CREDITS"
 $BS_GOTMONEYBAG: "^SH00C^FC57\n\n    BONUS:\n^FCA6  MONEY BAG"
 $BS_GOTLOOT: "^SH00D^FC57\n\n    BONUS:\n^FCA6    LOOT"
 $BS_GOTGOLD: "^SH00E^FC57\n\n    BONUS:\n^FCA6  GOLD BARS"
@@ -50,14 +52,20 @@ $BS_NOTHUNGRY: "^FCA6\n\n    CAN'T EAT NOW,\n     NOT HUNGRY."
 $BS_NOTOKENS: "^FCA6\n\n  YOU DON'T HAVE ANY\n     FOOD TOKENS!"
 $BS_FOODUNITDRINK: "^FCA6\n\n FOOD UNIT DISPENSES\n  A COLD BEVERAGE."
 $BS_FOODUNITSNACK: "^FCA6\n FOOD UNIT DISPENSES\n SOMETHING RESEMBLING\n        FOOD."
-$BS_BARRIERON: "^FCA6\n\n  ACTIVATING BARRIER"
-$BS_BARRIEROFF: "^FCA6\n\n DEACTIVATING BARRIER"
+# Aliens of Gold's barrier switches say which floor (bstone's ActivateWallSwitch): {floor-text} is
+# game-info's floor-text, these on a normal floor and on each secret floor
+$BS_BARRIERON: "^FCA6\n\n  ACTIVATING BARRIER\n{floor-text}"
+$BS_BARRIEROFF: "^FCA6\n\n DEACTIVATING BARRIER\n{floor-text}"
+$BS_ONFLOOR: "      ON FLOOR {floor}"
+$BS_ONSECRETFLOOR1: "  ON SECRET FLOOR 1"
+$BS_ONSECRETFLOOR2: "  ON SECRET FLOOR 2"
 
 # The info area as a game starts and after a death, until the first message (bstone's
 # DrawPlayScreen(true))
 $BS_REBAREADY: "^FCA6R.E.B.A.\nAGENT: BLAKE STONE\nALL SYSTEMS READY."
-# The status bar's info area with no messages (bstone's DisplayNoMoMsgs)
-$BS_NOMESSAGES: "^FCA6\n    NO MESSAGES.^FCA8\n    FOOD TOKENS: {FoodToken}"
+# The status bar's info area with no messages (DisplayNoMoMsgs): Aliens of Gold's BS_AOG.EXE
+# leaves a blank line before each line; bstone has Planet Strike's, without
+$BS_NOMESSAGES: "^FCA6\n\n    NO MESSAGES.^FCA8\n\n    FOOD TOKENS: {FoodToken}"
 $BS_OUTOFORDER: "^FCA6\n\n   FOOD UNIT MACHINE\n    IS OUT OF ORDER."
 
 # Guards and bio-techs (actordefs/blake/enemies.yaml)

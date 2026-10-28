@@ -247,7 +247,7 @@ internal static partial class GameHost
         levelMusic, frameRefresh, Session,
         Settings, new PlayKeysHooks(() => NetChatting, NetChatKeys, NetCheckKeys,
             ToggleAutomap, HandleAutomapKey, DrawPlayBorder, DrawPlayBorderSides,
-            OpenControlPanel, DrawPlayScreen));
+            OpenControlPanel, DrawPlayScreen, PopupMap));
 
     // Playing a level, a frame at a time (Gameplay/LevelLoop.cs)
     static LevelLoop levelLoop = null!;     // made in InitServices
@@ -387,6 +387,15 @@ internal static partial class GameHost
 
     // The level's overhead map, as the teleporter shows it
     internal static byte[] CaptureOverhead() => elevatorScreens.CaptureOverhead();
+
+    // The game's popup map (game-info stats-popup) in the automap's place: false when it has none
+    static bool PopupMap(bool aroundPlayer)
+    {
+        if (GameEngineManager.GetGameInfo().StatsPopup is not { } popup)
+            return false;
+        elevatorScreens.PopupMap(popup, aroundPlayer);
+        return true;
+    }
 
     static int FloorScore() => hubs.FloorScore();
 

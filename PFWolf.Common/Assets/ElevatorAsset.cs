@@ -323,8 +323,11 @@ public record ElevatorStats
     /// </summary>
     public int X { get; set; }
 
-    /// <summary>The first bar's top edge; each next one 7 below (the floor's score 5 further)</summary>
+    /// <summary>The first bar's top edge; each next one 7 below (the floor's score score-gap below the enemies')</summary>
     public int Y { get; set; }
+
+    /// <summary>How far below the enemies' bar the floor's score is (Aliens of Gold 12, Planet Strike 13)</summary>
+    public int ScoreGap { get; set; } = 12;
 
     /// <summary>The font number (presenter.yaml fonts) the percentages are printed in</summary>
     public int Font { get; set; }

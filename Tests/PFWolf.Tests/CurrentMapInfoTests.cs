@@ -36,4 +36,37 @@ public class CurrentMapInfoTests
         // Assert
         Assert.That(current.Map?.Radar, Is.True);
     }
+
+    private static readonly Dictionary<string, string> Language = new()
+    {
+        ["$ONFLOOR"] = "ON FLOOR {floor}",
+        ["$SECRET1"] = "ON SECRET FLOOR 1",
+    };
+
+    private static string Localize(string text) => Language.GetValueOrDefault(text, text);
+
+    [TestCase(3, null, "BARRIER\nON FLOOR 3")]
+    [TestCase(0, "$SECRET1", "BARRIER\nON SECRET FLOOR 1")]
+    public void A_Message_Gets_The_Maps_Floor_Text_Else_The_Default_With_Its_Floor_Number(int floor, string? own, string expected)
+    {
+        // Arrange
+        var map = new MapInfo { FloorNumber = floor, FloorText = own };
+        var defaults = new DefaultMapInfo { FloorText = "$ONFLOOR" };
+
+        // Act
+        var text = CurrentMapInfo.FillFloor("BARRIER\n{floor-text}", map, defaults, Localize);
+
+        // Assert
+        Assert.That(text, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void Without_Any_Floor_Text_It_Says_Nothing_And_Other_Braces_Are_Left()
+    {
+        // Act
+        var text = CurrentMapInfo.FillFloor("A{floor-text}B {floor} {tag}", new MapInfo { FloorNumber = 7 }, new DefaultMapInfo(), Localize);
+
+        // Assert
+        Assert.That(text, Is.EqualTo("AB 7 {tag}"));
+    }
 }

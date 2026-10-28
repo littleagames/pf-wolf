@@ -13,6 +13,10 @@ namespace PFWolf.Ui;
 /// <param name="DrawPlayBorderSides">Redraws the border's sides</param>
 /// <param name="ControlPanel">The menu, opened on a key (GameHost.OpenControlPanel)</param>
 /// <param name="DrawPlayScreen">Redraws the play screen after the menu</param>
+/// <param name="PopupMap">
+/// The game's popup map in the automap's place (game-info stats-popup, Ui/ElevatorScreens.cs),
+/// about the player with Shift held: false when it has none
+/// </param>
 internal sealed record PlayKeysHooks(
     Func<bool> NetChatting,
     Action NetChatKeys,
@@ -22,7 +26,8 @@ internal sealed record PlayKeysHooks(
     Action DrawPlayBorder,
     Action DrawPlayBorderSides,
     Action<ScanCodes> ControlPanel,
-    Action DrawPlayScreen);
+    Action DrawPlayScreen,
+    Func<bool, bool>? PopupMap = null);
 
 /// <summary>
 /// The keys during play, once a frame (CheckKeys): the console, the automap, console binds, the
@@ -84,10 +89,20 @@ internal sealed class PlayKeys(
         }
 
         //
-        // automap
+        // automap, or the game's popup map in its place (not with others: it stops the game)
         //
         if (inputManager.IsButtonPressed(ButtonType.Automap) && !inputManager.IsButtonHeld(ButtonType.Automap))
+        {
+            bool shift = inputManager.IsKeyDown(ScanCodes.LShift) || inputManager.IsKeyDown(ScanCodes.RShift);
+            if (!session.NetGame && hooks.PopupMap?.Invoke(shift) == true)
+            {
+                hooks.DrawPlayBorder();
+                frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
+                inputManager.CenterMouse();
+                return;
+            }
             hooks.ToggleAutomap();
+        }
 
         //
         // console binds: run the command bound to each key or button pressed since the last

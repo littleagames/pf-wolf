@@ -32,6 +32,16 @@ $BS_GOTANTIPLASMA: "^SH0E4^FC57\n\n   WEAPON:\n^FCA6 ANTI-PLASMA\n   CANNON"
 # holding Use or with the 7 key)
 $BS_GOTDETONATOR: "^SH0D8^FC57   FISSION\n  DETONATOR\n\n^FCA6HOLD USE OR 7\n   TO DROP"
 
+# Planet Strike's food tokens and idle info area (bstone's bonus_msg24/25, DisplayNoMoMsgs) say
+# how many tokens there are, the idle text without Aliens of Gold's blank lines
+$BS_GOTTOKEN: "^SH020^FC57\n  FOOD TOKEN:\n^FCA6   1 CREDIT\n\n  TOKENS: {FoodToken:00}"
+$BS_GOTTOKENS5: "^SH021^FC57\n  FOOD TOKEN:\n^FCA6   5 CREDITS\n  TOKENS: {FoodToken:00}"
+$BS_NOMESSAGES: "^FCA6\n    NO MESSAGES.^FCA8\n    FOOD TOKENS: {FoodToken}"
+
+# Planet Strike's barrier switches don't say which floor
+$BS_BARRIERON: "^FCA6\n\n  ACTIVATING BARRIER"
+$BS_BARRIEROFF: "^FCA6\n\n DEACTIVATING BARRIER"
+
 # Planet Strike's food units say how many tokens are left (bstone's bevs_msg1, food_msg1)
 $BS_FOODUNITDRINK: "^FCA6\n FOOD UNIT DISPENSES\n  A COLD BEVERAGE.\n\n     TOKENS: {FoodToken:00}"
 $BS_FOODUNITSNACK: "^FCA6\n FOOD UNIT DISPENSES\n  SOMETHING EDIBLE.\n\n     TOKENS: {FoodToken:00}"

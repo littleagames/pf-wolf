@@ -2,6 +2,9 @@
 # changes only what differs (how files combine is in the manual:
 # https://www.littleagames.com/pf-wolf/docs/latest/manual/combining-files).
 default-map:
+  # What barrier switches' messages say of the floor ({floor-text} in a message): each secret
+  # floor has its own
+  floor-text: "$BS_ONFLOOR"
   # A map's own colors (its map-info code, mapdefs/blake/mapinfo.yaml) win over these
   ceiling-color: "#383838"
   floor-color: "#717171"
@@ -22,6 +25,29 @@ lighten-levels:
   lamp-dim: -2          # a flickering light's darkest frame: LAMP_ON_SHADING + 16, +4
   explosion: 26         # explosions: EXPLOSION_SHADING, -52 (unshaded on Aliens of Gold's floors)
   muzzle-flash: 5       # a hitscan shooter's frame after it fires: T_Shoot's -10
+
+# Colors 240-254 rotate while the menus, the elevator and teleporter screens and the briefings
+# wait (bstone's CycleColors): the elevator map's player dot (240) flashes with 241, keys (243)
+# with 242
+palette-cycles:
+  - { first: 240, last: 241, tics: 7 }
+  - { first: 242, last: 243, tics: 15 }
+  - { first: 244, last: 245, tics: 30 }
+  - { first: 246, last: 249, tics: 10 }
+  - { first: 250, last: 254, tics: 12 }
+
+# TAB (the automap key) pops up the floor's map and stats over the view until a key is pressed,
+# as bstone's PopupAutoMap; Shift+TAB shows the tiles about Blake, turned his way. The automap
+# console command still opens the automap. Laid out as the elevator's map and stats (elevator.yaml).
+stats-popup:
+  pic: FloorStats
+  x: 40
+  y: 44
+  overhead:
+    x: 44
+    y: 48
+    colors: { background: 6, unmapped: 6, floor: 85, hidden: 82, door: 88, locked: 24, key: 243, player: 240 }
+  stats: { x: 197, y: 69, font: 2, color: 175 }
 
 signon:
   press-a-key: false
@@ -273,7 +299,8 @@ mission-won-message: MissionCompleteText
 death-restores-level-start: true
 
 # Floor names are the game's own (its FloorNames text). Each mission's secret floors, 0 and 10,
-# show "SECRET 1" and "SECRET 2" on the top bar (level-label) in place of "FLOOR: n", as bstone's.
+# show "SECRET 1" and "SECRET 2" on the top bar (level-label) in place of "FLOOR: n", as bstone's,
+# and barrier switches say "ON SECRET FLOOR n" there (floor-text).
 maps:
   # Mission 1
   MAP01:
@@ -281,6 +308,7 @@ maps:
     next: MAP02
     floor-number: 0
     level-label: "SECRET 1"
+    floor-text: "$BS_ONSECRETFLOOR1"
     cluster: 1
     music: INCNRATN
   MAP02:
@@ -341,6 +369,7 @@ maps:
     name: "SECRET ALIEN CHAMBERS"
     floor-number: 10
     level-label: "SECRET 2"
+    floor-text: "$BS_ONSECRETFLOOR2"
     cluster: 1
     music: INCNRATN
   MAP12:
@@ -361,6 +390,7 @@ maps:
     next: MAP17
     floor-number: 0
     level-label: "SECRET 1"
+    floor-text: "$BS_ONSECRETFLOOR1"
     cluster: 2
     music: FREEDOMA
   MAP17:
@@ -421,6 +451,7 @@ maps:
     name: "SECRET STORAGE CHAMBERS"
     floor-number: 10
     level-label: "SECRET 2"
+    floor-text: "$BS_ONSECRETFLOOR2"
     cluster: 2
     music: THEME
   MAP27:
@@ -441,6 +472,7 @@ maps:
     next: MAP32
     floor-number: 0
     level-label: "SECRET 1"
+    floor-text: "$BS_ONSECRETFLOOR1"
     cluster: 3
     music: LEVELA
   MAP32:
@@ -501,6 +533,7 @@ maps:
     name: "SECRET NETWORK COMMUNICATIONS NODE"
     floor-number: 10
     level-label: "SECRET 2"
+    floor-text: "$BS_ONSECRETFLOOR2"
     cluster: 3
     music: FREEDOMA
   MAP42:
@@ -521,6 +554,7 @@ maps:
     next: MAP47
     floor-number: 0
     level-label: "SECRET 1"
+    floor-text: "$BS_ONSECRETFLOOR1"
     cluster: 4
     music: HIDINGA
   MAP47:
@@ -581,6 +615,7 @@ maps:
     name: "MUTANT TRANSPORT DECK"
     floor-number: 10
     level-label: "SECRET 2"
+    floor-text: "$BS_ONSECRETFLOOR2"
     cluster: 4
     music: RHUMBAAS
   MAP57:
@@ -601,6 +636,7 @@ maps:
     next: MAP62
     floor-number: 0
     level-label: "SECRET 1"
+    floor-text: "$BS_ONSECRETFLOOR1"
     cluster: 5
     music: RACSHUFL
   MAP62:
@@ -661,6 +697,7 @@ maps:
     name: "MUTANT ISOLATION DECK"
     floor-number: 10
     level-label: "SECRET 2"
+    floor-text: "$BS_ONSECRETFLOOR2"
     cluster: 5
     music: THEWAYA
   MAP72:
@@ -681,6 +718,7 @@ maps:
     next: MAP77
     floor-number: 0
     level-label: "SECRET 1"
+    floor-text: "$BS_ONSECRETFLOOR1"
     cluster: 6
     music: TIMEA
   MAP77:
@@ -741,6 +779,7 @@ maps:
     name: "STAR TECHNICAL AND INTELLIGENCE ARCHIVES"
     floor-number: 10
     level-label: "SECRET 2"
+    floor-text: "$BS_ONSECRETFLOOR2"
     cluster: 6
     music: INCNRATN
   MAP87:

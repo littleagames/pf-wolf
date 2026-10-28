@@ -7,8 +7,9 @@ namespace PFWolf.Gameplay;
 /// <param name="CouldTakeInventory">Whether the player could take an item (it would do something)</param>
 /// <param name="TryApplyInventory">Gives the player an item, so many of it: false if it did nothing</param>
 /// <param name="BonusFlash">The screen's pickup flash, for an item given as if picked up</param>
+/// <param name="Level">The map being played's game-info entry, for a message's {floor-text} and {floor}</param>
 internal sealed record SwitchHooks(Func<Entities.Actors.Inventory, bool> CouldTakeInventory, Func<Entities.Actors.Inventory, int, bool> TryApplyInventory,
-    Action? BonusFlash = null);
+    Action? BonusFlash = null, CurrentMapInfo? Level = null);
 
 internal sealed class SwitchActions(AudioManager audio, MapManager map, InventoryManager inventory, HudMessageManager messages,
     Doors doors, PushWalls pushWalls, GameSession session, SwitchHooks hooks)
@@ -83,19 +84,20 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         });
 
         // A_Message("text"[, "style"]): shows a message (a $NAME language key or the text), in
-        // the style for locked doors unless one is named
+        // the style for locked doors unless one is named. {floor-text} and {floor} in it are the
+        // level's (game-info floor-text, floor-number).
         MapTriggerRegistry.Register("A_Message", (_, args) =>
         {
             if (args.Length == 0)
                 return false;
-            messages.Show(Managers.HudMessageKind.Lock, args[0], args.ElementAtOrDefault(1));
+            messages.Show(Managers.HudMessageKind.Lock, FillFloor(messages.Localize(args[0])), args.ElementAtOrDefault(1));
             return true;
         });
-        // An actor's fills in its {tag} and counts (Gameplay/ActorText.cs)
+        // An actor's fills in its {tag} and counts too (Gameplay/ActorText.cs)
         Entities.Actors.ActorActionRegistry.Register("A_Message", (Entities.Actors.Actor ob, string[] args) =>
         {
             if (args.Length > 0)
-                messages.Show(Managers.HudMessageKind.Lock, ActorText.Expand(messages.Localize(args[0]), ob, inventory), args.ElementAtOrDefault(1));
+                messages.Show(Managers.HudMessageKind.Lock, ActorText.Expand(FillFloor(messages.Localize(args[0])), ob, inventory), args.ElementAtOrDefault(1));
         });
 
         // A_Vend("FoodToken", "FoodUnitMeal", "no-money message", "full message"[, "out-of-order
@@ -118,6 +120,9 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         // front of the switch, on the side it was used from (from a script, where the player is)
         MapTriggerRegistry.Register("A_SpawnItem", SpawnItemTrigger);
     }
+
+    // A message with the level's {floor-text} and {floor} (Gameplay/CurrentMapInfo.cs)
+    string FillFloor(string text) => hooks.Level?.FillFloor(text, messages.Localize) ?? text;
 
     private bool GiveInventoryTrigger(TriggerActivation trigger, string[] args)
     {

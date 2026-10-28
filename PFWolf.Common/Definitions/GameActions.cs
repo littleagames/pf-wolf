@@ -182,7 +182,7 @@ public static class GameActions
 
         ]),
         new("Actors and switches alike", [
-        new("A_Message", Both, "A_Message(\"text\"[, \"style\"])", "Shows a message (a $NAME language key, or the text), in the style for locked doors unless one is named; an actor's fills in its {tag} and counts"),
+        new("A_Message", Both, "A_Message(\"text\"[, \"style\"])", "Shows a message (a $NAME language key, or the text), in the style for locked doors unless one is named; {floor-text} and {floor} are the level's (game-info floor-text, floor-number), and an actor's fills in its {tag} and counts"),
         new("A_GiveInventory", Both, "A_GiveInventory(\"Item\"[, amount])", "Gives the player an inventory item, as picking it up would, with its pickup sound and message; amount left out is the item's own. From a switch, refused (with the use-fail sound) when it would do nothing."),
         new("A_SetPatch", Both, "A_SetPatch(to[, from, ...])", "The tagged walls' patches become patch `to` (0 takes them off); with froms, only those showing one of them. An actor's works on its own map tag."),
         new("A_SetLight", Both, "A_SetLight([intensity][, radius][, color])", "Gives the actor (from a switch, the tagged actors) this light: 0-255, radius in tiles, #RRGGBB or \"none\"; radius or color left out keep theirs. With no arguments, its class's light back."),

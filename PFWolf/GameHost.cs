@@ -161,6 +161,7 @@ internal static partial class GameHost
 
         GameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
         _videoManager = serviceProvider.GetRequiredService<VideoManager>();
+        _videoManager.PaletteCycles = () => GameEngineManager.GetGameInfo().PaletteCycles;
         AudioManager = serviceProvider.GetRequiredService<AudioManager>();
         _inputManager = serviceProvider.GetRequiredService<InputManager>();
         _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();

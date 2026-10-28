@@ -19,6 +19,14 @@ high-scores-music: HISCORE
 # The control panel's music, in place of each menu's (blake's menudefs play Aliens of Gold's)
 menu-music: LASTLAFF
 
+# TAB's popup has only the stats (bstone's PopupAutoMap with its map-in-stats switch off, as it
+# starts), the floor's score a line further down than Aliens of Gold's
+stats-popup: !replace
+  pic: FloorStats
+  x: 64
+  y: 44
+  stats: { x: 165, y: 66, font: 2, color: 175, score-gap: 13 }
+
 title-sequence:
   # As the game starts (bstone's PreDemo): Apogee from and to blue, to the end of its fanfare,
   # the JAM logo movie, then the PC-13 rating

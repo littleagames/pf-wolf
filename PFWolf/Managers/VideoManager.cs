@@ -1711,6 +1711,63 @@ internal class VideoManager
         }
     }
 
+    int[] cycleCountdowns = [];
+    uint cycleTime;
+
+    /// <summary>The game-info palette-cycles (set as the game starts); none until then</summary>
+    internal Func<IReadOnlyList<PaletteCycleInfo>> PaletteCycles { get; set; } = () => [];
+
+    /// <summary>
+    /// Moves the game-info palette-cycles runs on by the tics since the last call and shows them,
+    /// as Blake Stone's CycleColors does while a screen waits: call it each time round the wait
+    /// loop, before the screen's update. The palette stays as it's left until it's next set, and
+    /// a faded-out screen is left alone. True when a color moved.
+    /// </summary>
+    internal bool CycleColors()
+    {
+        var cycles = PaletteCycles();
+        if (cycles.Count == 0 || ScreenFaded)
+            return false;
+        uint now = GameEngineManager.GetTimeCount();
+        int tics = (int)Math.Min(now - cycleTime, 10u);     // a new wait counts as a short one
+        cycleTime = now;
+        if (cycleCountdowns.Length != cycles.Count)
+            cycleCountdowns = new int[cycles.Count];
+
+        var palette = (SDL_Color[])CurPal.Clone();
+        if (!CyclePalette(palette, cycles, cycleCountdowns, tics))
+            return false;
+        SetPalette(palette, false);
+        return true;
+    }
+
+    /// <summary>
+    /// One step of the palette cycles (bstone's CycleColors): each run whose countdown the tics
+    /// reach moves its colors along one place, its last to its first, and starts counting its
+    /// tics again; the others count down. True when any color moved.
+    /// </summary>
+    internal static bool CyclePalette<T>(T[] palette, IReadOnlyList<PaletteCycleInfo> cycles, int[] countdowns, int tics)
+    {
+        bool changed = false;
+        for (int i = 0; i < cycles.Count; i++)
+        {
+            var cycle = cycles[i];
+            if (tics < countdowns[i])
+            {
+                countdowns[i] -= tics;
+                continue;
+            }
+            countdowns[i] = cycle.Tics;
+            if (cycle.First < 0 || cycle.Last >= palette.Length || cycle.Last <= cycle.First)
+                continue;
+            var last = palette[cycle.Last];
+            Array.Copy(palette, cycle.First, palette, cycle.First + 1, cycle.Last - cycle.First);
+            palette[cycle.First] = last;
+            changed = true;
+        }
+        return changed;
+    }
+
     internal void FinishPaletteShifts()
     {
         if (palshifted)

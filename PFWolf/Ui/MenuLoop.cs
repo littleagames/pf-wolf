@@ -94,7 +94,11 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
                 video.Update();
             }
             else
+            {
+                if (video.CycleColors())        // game-info palette-cycles, as bstone's HandleMenu
+                    video.Update();
                 GameEngineManager.DelayMs(5);
+            }
 
             menuInput.CheckPause();
 
