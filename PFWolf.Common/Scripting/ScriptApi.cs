@@ -93,6 +93,8 @@ public static class ScriptApi
         Fn("onfrag", "game.onfrag(function(victim, killer) ... end)", "Adds a hook called as a frag is counted in a versus game (killer the victim: one taken off for killing themselves)"),
         Fn("onflag", "game.onflag(function(event, player, team) ... end)", "Adds a hook called as something happens to a capture-the-flag flag of a team (\"red\", \"blue\"): \"taken\", \"dropped\", \"returned\" (by a player of its team), \"home\" (back by itself, player nil) or \"captured\""),
         Fn("onmatchend", "game.onmatchend(function(winner) ... end)", "Adds a hook called as a match is over: the winning team (\"red\", \"blue\"), or in deathmatch the player with the most frags; nil for a draw"),
+        Fn("onchasedir", "game.onchasedir(function(monster, target, mode) ... end)", "Adds a hook asked as an enemy chooses its next way at a tile's middle, while it chases (mode \"chase\"), dodges closing in (\"dodge\"), runs off (\"run\"), wanders (\"wander\") or follows a player (\"follow\"): return a way (\"north\", \"northeast\"... or \"none\" to stand) to send it that way if it can go, else the game chooses; nil leaves it to the game. return monster:pathto(target) finds the way by A*"),
+        Fn("walkable", "game.walkable(x, y[, actor])", "Whether a tile can be walked onto: not a wall or a solid thing, and by an enemy's rules if one's given (the doors it can open, the monster blockers it's kept off). Other actors don't count: they move on"),
         Fn("onhud", "game.onhud(function() ... end)", "Adds a hook called each frame drawn, on this machine alone, over the view: game.drawtext and game.drawpic draw there. It mustn't change the game (game.random, game.trigger, spawning and setting actors' fields are an error)"),
         Fn("onmusic", "game.onmusic(function(map, song) ... end)", "Adds a hook asked, on this machine alone, as the level's song is about to start (or start again after the menu): return a song's name to play that instead"),
         Fn("ontally", "game.ontally(function(map, result) ... end)", "Adds a hook asked, on this machine alone, as a level's finished (result as game.onlevelend's): text returned is shown on the tally (intermission.yaml's script value)"),
@@ -145,6 +147,8 @@ public static class ScriptApi
         Method("cansee", "actor:cansee(player[, tiles])", "Whether there's a clear line to a player (within that many tiles); one in a wall sees only out of its face"),
         Method("nearestplayer", "actor:nearestplayer()", "The nearest player who can be aimed at, or nil"),
         Method("remove", "actor:remove()", "Takes it off the level (not a player: removing one does nothing)"),
+        Method("pathto", "actor:pathto(x, y) or actor:pathto(other)",
+            "The way (\"north\", \"northeast\"...) to go from its tile toward a tile (or another actor's) by the shortest path it can walk, found by A*: through the doors it can open, round walls, solid things and the monster blockers it's kept off, diagonally only past open floor. Nil when it's there, or nowhere it can get to is nearer"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> Globals { get; } =

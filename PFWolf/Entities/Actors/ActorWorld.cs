@@ -63,6 +63,9 @@ internal sealed class ActorWorld(
     /// <summary>Kills in quick succession (Gameplay/KillChains.cs): a player's kill carries their chain on</summary>
     internal Gameplay.KillChains? KillChains { get; init; }
 
+    /// <summary>A* over the level's tiles, for monsters finding their way (Gameplay/Pathfinding.cs)</summary>
+    internal Gameplay.Pathfinder Pathfinder { get; } = new();
+
     /// <summary>The scripts' hooks (Scripting/GameScripts.cs): an actor hurt, killed, noticing its foe; none in the tests</summary>
     internal Scripting.GameScripts? Scripts { get; init; }
 

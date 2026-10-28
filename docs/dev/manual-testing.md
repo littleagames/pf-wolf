@@ -419,6 +419,10 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       `ontimeup` on a timed level; `onfrag`, `onflag`, `onmatchend` in a netgame; `onmusic`
       and `game.music` by ear; `ontally` text on the Wolf3D tally (intermission.yaml `script`,
       top centre) and how it looks; a `game.command` typed in the console.
+- [ ] **(never tried)** A* chasing in real levels (`game.onchasedir` returning `monster:pathto(target)`;
+      ScriptHookGameTests covers one guard round one wall): many enemies at once (frame time with
+      `perf`), locked doors and NOLOCKEDDOORS/NODOORS enemies, dogs (they dodge), Blake Stone's
+      enemies, a 256x256 UWMF level, a pushwall moving across a path, and a netgame staying in step.
 
 ## 1.13 Sound and music (by ear)
 

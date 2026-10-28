@@ -96,6 +96,12 @@ internal sealed partial class GameScripts
         "dropped", "returned" (by a player of its team), "home" (back by itself) or "captured".
     game.onmatchend(function(winner) ... end): a match over: the winning team ("red", "blue"), or
         in deathmatch the player with the most frags; nil for a draw.
+    game.onchasedir(function(monster, target, mode) ... end): an enemy choosing its next way at a
+        tile's middle, while it chases ("chase"), dodges as it closes in ("dodge"), runs off
+        ("run"), wanders ("wander") or walks after the player it follows ("follow"). Returning a
+        way ("north", "northeast"... "none" to stand there) sends it that way if it can go (else
+        the game chooses as ever); nil leaves it to the game. monster:pathto(target) is the way
+        by the shortest open path (A*: Gameplay/Pathfinding.cs).
 
     On this machine alone, for what it shows: these mustn't change the game (game.random,
     game.trigger, spawning, setting an actor's fields and the like are an error in them):
@@ -124,7 +130,7 @@ internal sealed partial class GameScripts
         "onlevel", "ontick", "onlevelend", "ondamage", "onkill", "ontrypickup", "onpickup", "onsecret", "onuse",
         "onplayerdeath", "onspawn", "onsight", "ondoor", "onpushwall", "onswitch", "onenter", "onexit", "onteleport",
         "onactorspawn", "onrevive", "onfactionchange", "onfire", "onweaponswitch", "ongive", "onpowerup",
-        "onobjective", "onchain", "onstealthkill", "ontimeup", "onfrag", "onflag", "onmatchend",
+        "onobjective", "onchain", "onstealthkill", "ontimeup", "onfrag", "onflag", "onmatchend", "onchasedir",
         "onhud", "onmusic", "ontally",
     ];
 
@@ -510,6 +516,33 @@ internal sealed partial class GameScripts
 
     /// <summary>The scripts' match-end hooks, with the winner: a team's name, a player, or nil for a draw</summary>
     internal void RunMatchEndHooks(LuaValue winner) => Tell("onmatchend", () => [winner]);
+
+    /// <summary>Whether any script chooses enemies' ways (game.onchasedir): asked before the arguments are made</summary>
+    internal bool HasChaseDirHooks => Hooks("onchasedir").Count > 0;
+
+    // The ways scripts have given that aren't ways, each told once
+    readonly HashSet<string> badWaysTold = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The scripts' chase-direction hooks, as an enemy chooses its next way (Monster): the first
+    /// way one gives, or null to leave it to the game
+    /// </summary>
+    internal ObjDir? RunChaseDirHooks(Entities.Actors.Actor monster, Entities.Actors.Actor? target, string mode)
+    {
+        if (!HasChaseDirHooks)
+            return null;
+        ObjDir? chosen = null;
+        RunHooks(Hooks("onchasedir"), [LuaActor.Of(monster), LuaActor.Of(target), mode], result =>
+        {
+            if (TextOf(result) is not { } name)
+                return true;
+            chosen = Gameplay.Pathfinder.ParseDir(name);
+            if (chosen == null && badWaysTold.Add(name))
+                console.Print($"Script: game.onchasedir gave \"{name}\", which isn't a way (north, northeast, east... or none)");
+            return chosen == null;
+        });
+        return chosen;
+    }
 
     /*
     -----------------------------------------------------------------------------

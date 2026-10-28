@@ -156,6 +156,16 @@ internal sealed partial class GameScripts(
                 var (x, y) = projectileActions.LookoutPoint(self);
                 return c.Return(LuaActor.Of(projectileActions.NearestPlayer(x, y)));
             }),
+            // actor:pathto(x, y) or actor:pathto(other): the way to go by the shortest open path (A*)
+            ["pathto"] = Method("pathto", (c, self) =>
+            {
+                var (x, y) = Arg(c, 1).TryRead<LuaActor>(out var other)
+                    ? (other.Actor.TileX, other.Actor.TileY)
+                    : ((int)Math.Floor(NumberArg(c, 1, -1)), (int)Math.Floor(NumberArg(c, 2, -1)));
+                var way = self is Entities.Actors.Monster monster ? monster.PathTo(x, y)
+                    : pathfinder.FirstStep(map.MapWidth, map.MapHeight, self.TileX, self.TileY, x, y, OpenTile, OpenDiagonally);
+                return c.Return(way is { } dir ? Gameplay.Pathfinder.DirName(dir) : LuaValue.Nil);
+            }),
             ["remove"] = Method("remove", (c, self) =>
             {
                 ChangesTheGame(c, "actor:remove");
@@ -320,6 +330,15 @@ internal sealed partial class GameScripts(
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.patch: {x},{y} isn't a tile on the map", 1);
             return new(c.Return(map.GetPatch(x, y)));
         });
+        // game.walkable(x, y[, actor]): whether a tile can be walked onto, by that actor's rules
+        // (its doors, the monster blockers it's kept off) or anyone's; other actors don't count
+        game["walkable"] = new LuaFunction("game.walkable", (c, _) =>
+        {
+            int x = (int)Math.Floor(NumberArg(c, 0, -1)), y = (int)Math.Floor(NumberArg(c, 1, -1));
+            bool open = Arg(c, 2).TryRead<LuaActor>(out var walker) && walker.Actor is Entities.Actors.Monster monster
+                ? monster.CanPassTile(x, y) : OpenTile(x, y);
+            return new(c.Return(open));
+        });
         // game.floor(x, y): the texture on a tile's floor (mapdefs flats, the map's default-floor,
         // through any A_ChangeTexture), nil where the floor color shows
         game["floor"] = new LuaFunction("game.floor", (c, _) =>
@@ -414,6 +433,15 @@ internal sealed partial class GameScripts(
         ["A_TeleportTag"] = "",
         ["A_Warp"] = "",
     };
+
+    // A* for actor:pathto from actors that aren't monsters (monsters use their world's, by their own rules)
+    readonly Gameplay.Pathfinder pathfinder = new();
+
+    // A tile anyone could walk onto: on the map, not a wall or a solid thing (a door is open to all)
+    bool OpenTile(int x, int y) => map.InMap(x, y) && map.ActorAt[x, y] is not (Wall or BlockingActor);
+
+    // A tile anyone could step onto diagonally: open floor (no door)
+    bool OpenDiagonally(int x, int y) => map.InMap(x, y) && map.ActorAt[x, y] is null or ActorMark;
 
     // 0 to count - 1 from the game's random numbers: one draw for up to 256, more beyond
     int GameRandom(int count)

@@ -426,6 +426,25 @@ public class GameScriptsTests
     }
 
     [Test]
+    public void A_Chase_Direction_Hook_Gives_The_First_Way_And_A_Bad_One_Is_Told_Once()
+    {
+        // Arrange: the first hook gives a way only while chasing, the second a name that isn't one
+        var host = Host();
+        host.Load("""
+            game.onchasedir(function(monster, target, mode) if mode == 'chase' then return 'NorthEast' end end)
+            game.onchasedir(function(monster, target, mode) return 'sideways' end)
+            """, "test.lua");
+        var guard = new Entities.Actors.Monster { Name = "Guard" };
+
+        // Act / Assert
+        Assert.That(_scripts.HasChaseDirHooks, Is.True);
+        Assert.That(_scripts.RunChaseDirHooks(guard, null, "chase"), Is.EqualTo(ObjDir.NorthEast));
+        Assert.That(_scripts.RunChaseDirHooks(guard, null, "dodge"), Is.Null);
+        Assert.That(_scripts.RunChaseDirHooks(guard, null, "dodge"), Is.Null);
+        Assert.That(Printed().Count(line => line.Contains("\"sideways\", which isn't a way")), Is.EqualTo(1));
+    }
+
+    [Test]
     public void The_Scripts_Command_Says_When_None_Are_Loaded()
     {
         _scripts.ScriptsCommand([]);

@@ -208,6 +208,56 @@ internal partial record Monster : Actor
         World?.Scripts?.RunEnterHooks(this, TileX, TileY);     // game.onenter
     }
 
+    /*
+    =============================================================================
+    FINDING THE WAY (Gameplay/Pathfinding.cs, the scripts' actor:pathto and game.onchasedir)
+    =============================================================================
+    */
+
+    /// <summary>
+    /// Whether it could walk onto a tile by its own rules: not a wall, a solid thing or a monster
+    /// blocker it's kept off; a door it can open or drift through (not a locked one for a
+    /// NOLOCKEDDOORS actor, none for NODOORS). Other actors don't count: they move on.
+    /// </summary>
+    internal bool CanPassTile(int x, int y) => InMap(x, y) && !Blocked(x, y) && MapManager.ActorAt[x, y] switch
+    {
+        null or ActorMark => true,
+        Wall or BlockingActor => false,
+        Door door => HasFlag("PHASEDOORS")
+            || !(HasFlag("NODOORS") || HasFlag("NOLOCKEDDOORS") && DoorObjects[door.DoorNumber].IsLocked),
+        _ => true,
+    };
+
+    /// <summary>Whether it could step onto (or past) a tile diagonally: open floor, as its diagonal walk needs (no door)</summary>
+    internal bool CanPassDiagonally(int x, int y) => InMap(x, y) && !Blocked(x, y) && MapManager.ActorAt[x, y] is null or ActorMark;
+
+    Func<int, int, bool>? _canPass, _canPassDiagonally;
+
+    /// <summary>The way of the eight to go from its tile toward a tile, by the shortest way it can walk (A*); null when it's there or can't get nearer</summary>
+    internal ObjDir? PathTo(int x, int y) =>
+        World.Pathfinder.FirstStep(MapManager.MapWidth, MapManager.MapHeight, TileX, TileY, x, y,
+            _canPass ??= CanPassTile, _canPassDiagonally ??= CanPassDiagonally);
+
+    /// <summary>
+    /// The scripts' say in its next way (game.onchasedir), choosing it in a mode ("chase",
+    /// "dodge", "run", "wander", "follow"): true when the way a script gave is taken (or it's
+    /// told to stand); false, with its way as it was, for the game's own choice
+    /// </summary>
+    private bool ScriptChoosesDir(string mode)
+    {
+        if (World?.Scripts is not { HasChaseDirHooks: true } scripts)
+            return false;
+        var foe = mode == "wander" ? TargetIfAny : Target;
+        if (scripts.RunChaseDirHooks(this, foe, mode) is not { } chosen)
+            return false;
+        var was = Dir;
+        Dir = chosen;
+        if (chosen == ObjDir.NoDir || TryWalk())
+            return true;
+        Dir = was;
+        return false;
+    }
+
     // The way on after a tile, chasing: towards the player (or dodging), or while the level has its
     // enemies wander (MapManager.MonstersWander), straight on until something's in the way
     private void SelectChaseOrWanderDir(bool dodge)
@@ -227,6 +277,8 @@ internal partial record Monster : Actor
     /// </summary>
     internal void SelectWanderDir()
     {
+        if (ScriptChoosesDir("wander"))
+            return;
         if (RuntimeFlags.Has(ObjFlags.FirstAttack))
         {
             RuntimeFlags &= ~ObjFlags.FirstAttack;
@@ -1285,6 +1337,8 @@ internal partial record Monster : Actor
 
     internal void SelectDodgeDir()
     {
+        if (ScriptChoosesDir("dodge"))
+            return;
         int deltax, deltay, i;
         uint absdx, absdy;
         var dirtry = new ObjDir[5];
@@ -1362,6 +1416,8 @@ internal partial record Monster : Actor
 
     internal void SelectChaseDir()
     {
+        if (ScriptChoosesDir(_walkGoal != null ? "follow" : "chase"))
+            return;
         int deltax, deltay;
         var d = new ObjDir[3];
         ObjDir tdir, olddir;
@@ -1447,6 +1503,8 @@ internal partial record Monster : Actor
 
     internal void SelectRunDir()
     {
+        if (ScriptChoosesDir("run"))
+            return;
         int deltax, deltay;
         var d = new ObjDir[3];
         ObjDir tdir;

@@ -131,13 +131,51 @@ public class ScriptHookGameTests
         Assert.That(lines, Has.Some.StartsWith("HOOK hud "));
     }
 
+    // Steers the guard by A* (pathto), keeps the player unhurt, and prints where the guard is twice a second
+    private const string PathScript = """
+        local told = false
+        game.onchasedir(function(monster, target, mode)
+          local way = monster:pathto(target)
+          if not told and way then print("HOOK way " .. mode .. " " .. way) told = true end
+          return way
+        end)
+        game.ondamage(function(victim) if victim.isplayer then return 0 end end)
+        local due = 0
+        game.ontick(function()
+          if game.time() < due then return end
+          due = game.time() + 35
+          for _, guard in ipairs(game.actors("Guard")) do print("GUARD " .. guard.tilex .. " " .. guard.tiley) end
+        end)
+        """;
+
+    [Test]
+    public void A_Guard_Steered_By_Pathto_Goes_Round_A_Wall_To_The_Player()
+    {
+        // Arrange: a wall across the room at x 16 with a gap at its south end (y 34); the player
+        // west of it shoots once, which the guard east of it hears
+        (int, int)[] wall = [(16, 30), (16, 31), (16, 32), (16, 33)];
+        var mod = WriteArena(PathScript, wall, (12, PlayerFacingEast), (20, GuardFacingWest));
+
+        // Act
+        var lines = Play(mod, new DemoStep(0, 0, 0, 20), new DemoStep(Attack, 0, 0, 10), new DemoStep(0, 0, 0, 700));
+
+        // Assert: it chose its way by the path, through the gap, and came out on the player's side
+        var guard = lines.Where(line => line.StartsWith("GUARD ")).Select(line => line.Split(' ')).Select(p => (X: int.Parse(p[1]), Y: int.Parse(p[2]))).ToList();
+        Assert.That(lines, Has.Some.StartsWith("HOOK way chase "));
+        Assert.That(guard, Has.Some.Matches<(int X, int Y)>(at => at.Y == 34 && at.X is >= 15 and <= 17), "it didn't go through the gap");
+        Assert.That(guard, Has.Some.Matches<(int X, int Y)>(at => at.X < 16), "it never got past the wall");
+    }
+
     /// <summary>
     /// A mod in the work folder: MAP01 as one room (x 10-22, y 30-34) with the things given along
     /// its middle row (y 32), at their x, and the hook script
     /// </summary>
     private string WriteArena(params (int X, int Thing)[] things) => WriteArena(HookScript, things);
 
-    private string WriteArena(string script, params (int X, int Thing)[] things)
+    private string WriteArena(string script, params (int X, int Thing)[] things) => WriteArena(script, [], things);
+
+    /// <param name="walls">Tiles of the room made walls</param>
+    private string WriteArena(string script, (int X, int Y)[] walls, params (int X, int Thing)[] things)
     {
         var mod = Path.Combine(_workFolder, "arena");
         Directory.CreateDirectory(Path.Combine(mod, "maps"));
@@ -149,6 +187,8 @@ public class ScriptHookGameTests
         for (int y = 30; y <= 34; y++)
             for (int x = 10; x <= 22; x++)
                 map.MapData[0][y * 64 + x] = 108;       // area 1
+        foreach (var (x, y) in walls)
+            map.MapData[0][y * 64 + x] = 1;
         foreach (var (x, thing) in things)
             map.MapData[1][32 * 64 + x] = (ushort)thing;
         File.WriteAllBytes(Path.Combine(mod, "maps", "MAP01.wad"), EcWolfMapLoader.Save(map, "MAP01"));
@@ -179,7 +219,7 @@ public class ScriptHookGameTests
         Assert.That(exitCode, Is.Zero, log);
         Assert.That(output, Has.None.Contains("Exception").And.None.StartsWith("Script game."), log);     // no hook errors
 
-        var lines = output.Where(line => line.StartsWith("HOOK ") || line.StartsWith("HEALTH ")).ToList();
+        var lines = output.Where(line => line.StartsWith("HOOK ") || line.StartsWith("HEALTH ") || line.StartsWith("GUARD ")).ToList();
         Assert.That(lines, Is.Not.Empty, log);
         foreach (var line in lines)
             TestContext.Out.WriteLine(line);
