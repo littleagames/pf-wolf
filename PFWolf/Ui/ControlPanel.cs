@@ -7,8 +7,9 @@ namespace PFWolf.Ui;
 /// <param name="LoadGame">The Load Game screen (RunLoadGame), 0 for the screen</param>
 /// <param name="EndGame">Ends the game being played: no lives left, died, nobody to turn to</param>
 /// <param name="Random">A random number, 0 to 255, for picking a quit message</param>
+/// <param name="QuitScreens">game-info's title-sequence quit screens, once quitting is confirmed</param>
 internal sealed record ControlPanelHooks(Func<int, int> SaveGame, Func<int, int> LoadGame,
-    Action EndGame, Func<int> Random);
+    Action EndGame, Func<int> Random, Action QuitScreens);
 
 /// <summary>
 /// The control panel (US_ControlPanel): the main menu and what it leads to, the F-keys that
@@ -264,6 +265,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
             audio.SetPaused(true);
             audio.StopAll();
             draw.MenuFadeOut();
+            hooks.QuitScreens();
             engine.Quit("");
             return 0;
         }

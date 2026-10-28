@@ -1,0 +1,10 @@
+# The shareware's presenter, laid over gamepacks/blake/presenter.yaml: v3.0's shape table
+# (bstone's jm_tp.cpp) is Aliens of Gold v1.0's with these added at its end, for the
+# instructions' keys and the ordering info's Planet Strike adverts. (Its other differences are
+# shapes of things the shareware hasn't got, which none of its texts use.)
+shapes:
+  214: { pic: H_L }
+  215: { pic: H_Shift }
+  216: { pic: PSPromo1 }
+  217: { pic: PSPromo2 }
+  218: { pic: PSPromo3 }

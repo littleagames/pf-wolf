@@ -626,11 +626,17 @@ public record HighScoreLabel
 /// <summary>
 /// game-info's title-sequence: the screens from the signon to the menu (Ui/TitleScreens.cs): the
 /// intro once, then the loop round and round until a key goes to the menu (Tab held as it does
-/// records a demo instead). A child pack or mod that gives intro or loop replaces that whole
-/// list, as lists always are; the other is kept.
+/// records a demo instead), and the quit screens after quitting from the menu. A child pack or
+/// mod that gives one of the lists replaces that whole list, as lists always are; the others are kept.
 /// </summary>
 public record TitleSequenceInfo
 {
+    /// <summary>
+    /// Screens shown once the quit question is answered yes, before the game closes (Blake Stone
+    /// v3.0 shareware's order screens); a key goes to the next one. None by default.
+    /// </summary>
+    public List<TitleScreenInfo> Quit { get; init; } = [];
+
     /// <summary>Screens shown once as the game starts; a key goes to the next one unless a screen's on-key says otherwise</summary>
     public List<TitleScreenInfo> Intro { get; init; } = [];
 

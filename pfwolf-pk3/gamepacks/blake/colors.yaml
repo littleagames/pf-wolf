@@ -9,6 +9,9 @@ BORD2COLOR: "#005C00"   # 0x53
 DEACTIVE: "#005C00"     # 0x53, DISABLED_TEXT_COLOR
 BKGDCOLOR: "#0C0C0C"    # 0x02, TERM_BACK_COLOR
 STRIPE: "#003800"
+# What the menus clear the LINC terminal with (bstone's menu_background_color): TERM_BACK_COLOR,
+# but 0x04 on v3.0's LINC screen (blake-shareware's colors.yaml)
+MENUBACK: "#0C0C0C"     # 0x02
 
 # Menu text
 READCOLOR: "#B0D040"    # 0x4A

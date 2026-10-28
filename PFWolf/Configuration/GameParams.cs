@@ -24,7 +24,7 @@ internal class GameParams
     public string Exec { get; set; } = "";
 
     // GameTypes.KnownGamePackIds, which CommandLineOptionsTests holds this to
-    [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default), wolf3d-apogee, wolf3d-shareware, spear, spear-demo, blake, planetstrike, "
+    [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default), wolf3d-apogee, wolf3d-shareware, spear, spear-demo, blake, blake-shareware, planetstrike, "
         + "or a game a mod on the command line adds. Without that game's data files here, the one whose files are.")]
     public string Game { get; set; } = "";
 

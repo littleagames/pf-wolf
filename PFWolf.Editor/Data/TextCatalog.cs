@@ -40,7 +40,7 @@ public static class TextCatalog
         _ => "Text",
     };
 
-    public static bool IsBlake(GameContent content) => content.Game.Type is GameType.BlakeStone or GameType.PlanetStrike;
+    public static bool IsBlake(GameContent content) => content.Game.Type is GameType.BlakeStone or GameType.BlakeShareware or GameType.PlanetStrike;
 
     public static List<TextEntry> Build(GameContent content)
     {

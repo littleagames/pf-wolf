@@ -7,12 +7,12 @@ indent: 0
 row-height: 11
 font: "SmallFont"
 item-shadow: "1"
-cursor: { x: 34, y-offset: 0, width: 120, height: 11, color: "82", erase-color: "2", flash-tics: 40 }
+cursor: { x: 34, y-offset: 0, width: 120, height: 11, color: "82", erase-color: "MENUBACK", flash-tics: 40 }
 checkbox-offset: { x: -16, y: 1 }
 components:
   # The LINC screen (game-info menu-backdrop) with its terminal cleared
-  - { type: "Background", params: [ { color: "2" } ] }
-  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Background", params: [ { color: "MENUBACK" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "MENUBACK" } ] }
   - { type: "Label", params: [ { text: "SOUND" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
   - { type: "Label", params: [ { text: "UP/DN SELECTS - LF/RT CHANGES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }
 menu-items:

@@ -1,3 +1,4 @@
+using PFWolf.Assets;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Editing;
 
@@ -123,6 +124,7 @@ public class BlakeEditorGameTests
     }
 
     [TestCase("blake")]
+    [TestCase("blake-shareware")]
     [TestCase("planetstrike")]
     public void Every_Thing_On_The_Levels_Shows(string game)
     {
@@ -142,5 +144,54 @@ public class BlakeEditorGameTests
 
         // Assert
         Assert.That(broken.Distinct(), Is.Empty);
+    }
+
+    [Test]
+    public void The_Shareware_Has_Every_Sprite_Its_Things_Use()
+    {
+        // Arrange: its VSWAP has only some of the registered game's sprites, so every frame of
+        // what its levels place (and what those spawn, drop or become) must be among them
+        var content = Load("blake-shareware");
+        var classes = new HashSet<string>();
+        var pending = new Queue<string>();
+        void Add(string? name)
+        {
+            if (!string.IsNullOrEmpty(name) && content.Actors.ContainsKey(name) && classes.Add(name))
+                pending.Enqueue(name);
+        }
+        foreach (var entry in content.Maps)
+        {
+            var tiles = Tiles(content, entry.Name);
+            for (int y = 0; y < tiles.Height; y++)
+                for (int x = 0; x < tiles.Width; x++)
+                    Add(tiles.Thing(x, y)?.Class);
+        }
+
+        // Act
+        var missing = new SortedSet<string>();
+        while (pending.TryDequeue(out var name))
+        {
+            for (var cls = name; !string.IsNullOrEmpty(cls) && content.Actors.TryGetValue(cls, out var actor); cls = actor.Parent)
+            {
+                foreach (var value in actor.Properties.Values)
+                    foreach (var word in value is IEnumerable<object> many ? many.Select(v => v?.ToString()) : [value?.ToString()])
+                        Add(word);
+                foreach (var (state, frames) in actor.States)
+                    foreach (var frame in frames.OfType<ActorStatesData>())
+                    {
+                        foreach (var word in (frame.Action ?? "").Split(['(', ')', ',', '"', '\'', ' '], StringSplitOptions.RemoveEmptyEntries))
+                            Add(word);
+                        if (string.IsNullOrEmpty(frame.Sprite) || frame.Sprite == "TNT1" || frame.Sprite.Contains('#'))
+                            continue;
+                        foreach (var letter in frame.Frames)
+                            if (content.Find<SpriteAsset>($"{frame.Sprite}{letter}0") == null && content.Find<SpriteAsset>($"{frame.Sprite}{letter}1") == null)
+                                missing.Add($"{cls}.{state}: {frame.Sprite}{letter}");
+                    }
+            }
+        }
+
+        // Assert
+        TestContext.Out.WriteLine($"{classes.Count} classes: {string.Join(", ", classes.Order())}");
+        Assert.That(missing, Is.Empty);
     }
 }

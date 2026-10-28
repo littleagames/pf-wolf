@@ -1,0 +1,786 @@
+# Blake Stone: Aliens of Gold shareware v3.0 (BS1). Its walls, sounds and music are the
+# registered files' (blake's raw-data-map), but its VSWAP has only the sprites mission 1 needs
+# (bstone's sw sprite table: 553 of the registered 814, each named as blake's raw-data-map names
+# the same picture), and its VGAGRAPH has v3.0's layout: Planet Strike adverts, H_L and H_Shift,
+# the quit screens, and no anti-piracy screen or briefings past mission 1.
+sprites:
+    - HACKA0    # Hello, Hacker!
+    - WPUDA0    # Water Puddle
+    - LUNTA0    # Lunch Table
+    - FICSA0    # Potted Tree
+    - HFECA0    # Half-Eaten Corpse
+    - WFNTA0    # "Water Fountain" (Sink)
+    - PLT1A0    # Potted Plant 1
+    - BVSEA0    # Big Vase
+    - GENTA0    # Generic Table
+    - CLT1A0    # Ceiling Light 1
+    - GENCA0    # Generic Chair
+    - PLT2A0    # Potted Plant 2
+    - SFPPA0    # Slow-Fire SWATector
+    - CHGUA0    # Charge Pack (1-8)
+    - RAWPA0    # Rapid Assault Weapon
+    - DNDPA0    # Dual Neutron Disruptor
+    - FAIDA0    # First Aid Kit
+    - CHRGA0    # Charge Pack (Full)
+    - RCRDA0    # Red Access Card
+    - YCRDA0    # Yellow Access Card
+    - GCRDA0    # Green Access Card
+    - BCRDA0    # Blue Access Card
+    - OCRDA0    # Gold Access Card (Orange)
+    - OCHRA0    # Office Chair
+    - WBWLA0    # Water Bowl
+    - WBWLB0    # - Empty
+    - CKLGA0    # Raw Meat
+    - CKLGB0    # - Eaten
+    - HAMMA0    # Steak
+    - HAMMB0    # -Eaten
+    - PDUPA0    # Plasma Discharge Cannon
+    - IDSLA0    # Large Spotlight
+    - MBAGA0    # Money Bag
+    - LOOTA0    # Loot Chest
+    - GLD5A0    # Gold Bars (x5)
+    - XORBA0    # Xylan Orb
+    - GRPSA0    # "Greek" Post 1
+    - BLPSA0    # Biotech Post
+    - HTPSA0    # High Tech Post
+    - CLT2A0    # Ceiling Light 2
+    - CLT3A0    # Ceiling Light 3
+    - CRT1A0    # Crate 1 (Cardboard)
+    - BDYPA0    # Body Parts 1
+    - BDY2A0    # Body Parts 2
+    - STBLA0    # Cafeteria Table
+    - SCHRA0    # Cafeteria Chair
+    - SSTLA0    # Cafeteria Stool
+    - GLD3A0    # Gold Bars (x3)
+    - GLD2A0    # Gold Bars (x2)
+    - GLD1A0    # Gold Bars (x1)
+    - BRPSA0    # Bronze Post
+    - GRP2A0    # "Greek" Post 2
+    - CON1A0    # Food Token (1)
+    - CON5A0    # Food Token (5)
+    - ACPPA0    # Auto-Charge Pistol
+    - AVNTA0    # Ceiling Vent
+    - AVNTB0    # - Dripping Blood
+    - AVNTC0    # Props and Pickups
+    - AVNTD0    # Props and Pickups
+    - AVNTE0    # Props and Pickups
+    - AVNTF0    # - Dripping Water
+    - AVNTG0    # Props and Pickups
+    - AVNTH0    # Props and Pickups
+    - AVNTI0    # Props and Pickups
+    - ARCLA0    # Arc Light
+    - ARCLB0    # - Flickering Off
+    - ARCLC0    # - Shut Off
+    - GRATA0    # Floor Grate
+    - GRATB0    # - Blowing Smoke
+    - GRATC0    # Props and Pickups
+    - GRATD0    # Props and Pickups
+    - GRATE0    # Props and Pickups
+    - ALCLA0    # Alien Ceiling Light
+    - ALCLB0    # - Dimming
+    - ALCLC0    # Props and Pickups
+    - ALCLD0    # Props and Pickups
+    - ALCLE0    # - Shut Off
+    - RENTA1    # Stand
+    - RENTA2    # Sector Patrol
+    - RENTA3    # Sector Patrol
+    - RENTA4    # Sector Patrol
+    - RENTA5    # Sector Patrol
+    - RENTA6    # Sector Patrol
+    - RENTA7    # Sector Patrol
+    - RENTA8    # Sector Patrol
+    - RENTB1    # Walk 1
+    - RENTB2    # Sector Patrol
+    - RENTB3    # Sector Patrol
+    - RENTB4    # Sector Patrol
+    - RENTB5    # Sector Patrol
+    - RENTB6    # Sector Patrol
+    - RENTB7    # Sector Patrol
+    - RENTB8    # Sector Patrol
+    - RENTC1    # Walk 2
+    - RENTC2    # Sector Patrol
+    - RENTC3    # Sector Patrol
+    - RENTC4    # Sector Patrol
+    - RENTC5    # Sector Patrol
+    - RENTC6    # Sector Patrol
+    - RENTC7    # Sector Patrol
+    - RENTC8    # Sector Patrol
+    - RENTD1    # Walk 3
+    - RENTD2    # Sector Patrol
+    - RENTD3    # Sector Patrol
+    - RENTD4    # Sector Patrol
+    - RENTD5    # Sector Patrol
+    - RENTD6    # Sector Patrol
+    - RENTD7    # Sector Patrol
+    - RENTD8    # Sector Patrol
+    - RENTE1    # Walk 4
+    - RENTE2    # Sector Patrol
+    - RENTE3    # Sector Patrol
+    - RENTE4    # Sector Patrol
+    - RENTE5    # Sector Patrol
+    - RENTE6    # Sector Patrol
+    - RENTE7    # Sector Patrol
+    - RENTE8    # Sector Patrol
+    - RENTJ0    # Death
+    - RENTK0    # Sector Patrol
+    - RENTL0    # Sector Patrol
+    - RENTM0    # Sector Patrol
+    - RENTI0    # Pain
+    - RENTN0    # Dead
+    - RENTF0    # Attack
+    - RENTG0    # Sector Patrol
+    - RENTH0    # Sector Patrol
+    - PROGA1    # Stand
+    - PROGA2    # STAR Sentinel
+    - PROGA3    # STAR Sentinel
+    - PROGA4    # STAR Sentinel
+    - PROGA5    # STAR Sentinel
+    - PROGA6    # STAR Sentinel
+    - PROGA7    # STAR Sentinel
+    - PROGA8    # STAR Sentinel
+    - PROGB1    # Walk 1
+    - PROGB2    # STAR Sentinel
+    - PROGB3    # STAR Sentinel
+    - PROGB4    # STAR Sentinel
+    - PROGB5    # STAR Sentinel
+    - PROGB6    # STAR Sentinel
+    - PROGB7    # STAR Sentinel
+    - PROGB8    # STAR Sentinel
+    - PROGC1    # Walk 2
+    - PROGC2    # STAR Sentinel
+    - PROGC3    # STAR Sentinel
+    - PROGC4    # STAR Sentinel
+    - PROGC5    # STAR Sentinel
+    - PROGC6    # STAR Sentinel
+    - PROGC7    # STAR Sentinel
+    - PROGC8    # STAR Sentinel
+    - PROGD1    # Walk 3
+    - PROGD2    # STAR Sentinel
+    - PROGD3    # STAR Sentinel
+    - PROGD4    # STAR Sentinel
+    - PROGD5    # STAR Sentinel
+    - PROGD6    # STAR Sentinel
+    - PROGD7    # STAR Sentinel
+    - PROGD8    # STAR Sentinel
+    - PROGE1    # Walk 4
+    - PROGE2    # STAR Sentinel
+    - PROGE3    # STAR Sentinel
+    - PROGE4    # STAR Sentinel
+    - PROGE5    # STAR Sentinel
+    - PROGE6    # STAR Sentinel
+    - PROGE7    # STAR Sentinel
+    - PROGE8    # STAR Sentinel
+    - PROGI0    # Death
+    - PROGK0    # STAR Sentinel
+    - PROGL0    # STAR Sentinel
+    - PROGM0    # STAR Sentinel
+    - PROGJ0    # Pain
+    - PROGN0    # Death (Last)
+    - PROGO0    # Dead
+    - PROGF0    # Attack
+    - PROGG0    # STAR Sentinel
+    - PROGH0    # STAR Sentinel
+    - SWATA1    # Stand
+    - SWATA2    # STAR Trooper
+    - SWATA3    # STAR Trooper
+    - SWATA4    # STAR Trooper
+    - SWATA5    # STAR Trooper
+    - SWATA6    # STAR Trooper
+    - SWATA7    # STAR Trooper
+    - SWATA8    # STAR Trooper
+    - SWATB1    # Walk 1
+    - SWATB2    # STAR Trooper
+    - SWATB3    # STAR Trooper
+    - SWATB4    # STAR Trooper
+    - SWATB5    # STAR Trooper
+    - SWATB6    # STAR Trooper
+    - SWATB7    # STAR Trooper
+    - SWATB8    # STAR Trooper
+    - SWATC1    # Walk 2
+    - SWATC2    # STAR Trooper
+    - SWATC3    # STAR Trooper
+    - SWATC4    # STAR Trooper
+    - SWATC5    # STAR Trooper
+    - SWATC6    # STAR Trooper
+    - SWATC7    # STAR Trooper
+    - SWATC8    # STAR Trooper
+    - SWATD1    # Walk 3
+    - SWATD2    # STAR Trooper
+    - SWATD3    # STAR Trooper
+    - SWATD4    # STAR Trooper
+    - SWATD5    # STAR Trooper
+    - SWATD6    # STAR Trooper
+    - SWATD7    # STAR Trooper
+    - SWATD8    # STAR Trooper
+    - SWATE1    # Walk 4
+    - SWATE2    # STAR Trooper
+    - SWATE3    # STAR Trooper
+    - SWATE4    # STAR Trooper
+    - SWATE5    # STAR Trooper
+    - SWATE6    # STAR Trooper
+    - SWATE7    # STAR Trooper
+    - SWATE8    # STAR Trooper
+    - SWATI0    # Pain
+    - SWATO0    # Death
+    - SWATP0    # STAR Trooper
+    - SWATQ0    # STAR Trooper
+    - SWATJ0    # Pain (Duplicate)
+    - SWATR0    # Death (Last)
+    - SWATS0    # Dead
+    - SWATF0    # Attack
+    - SWATG0    # STAR Trooper
+    - SWATH0    # STAR Trooper
+    - SWATK0    # Knocked Down
+    - SWATL0    # STAR Trooper
+    - SWATM0    # STAR Trooper
+    - SWATN0    # STAR Trooper
+    - GSCIA1    # Stand
+    - GSCIA2    # Bio-Technician
+    - GSCIA3    # Bio-Technician
+    - GSCIA4    # Bio-Technician
+    - GSCIA5    # Bio-Technician
+    - GSCIA6    # Bio-Technician
+    - GSCIA7    # Bio-Technician
+    - GSCIA8    # Bio-Technician
+    - GSCIB1    # Walk 1
+    - GSCIB2    # Bio-Technician
+    - GSCIB3    # Bio-Technician
+    - GSCIB4    # Bio-Technician
+    - GSCIB5    # Bio-Technician
+    - GSCIB6    # Bio-Technician
+    - GSCIB7    # Bio-Technician
+    - GSCIB8    # Bio-Technician
+    - GSCIC1    # Walk 2
+    - GSCIC2    # Bio-Technician
+    - GSCIC3    # Bio-Technician
+    - GSCIC4    # Bio-Technician
+    - GSCIC5    # Bio-Technician
+    - GSCIC6    # Bio-Technician
+    - GSCIC7    # Bio-Technician
+    - GSCIC8    # Bio-Technician
+    - GSCID1    # Walk 3
+    - GSCID2    # Bio-Technician
+    - GSCID3    # Bio-Technician
+    - GSCID4    # Bio-Technician
+    - GSCID5    # Bio-Technician
+    - GSCID6    # Bio-Technician
+    - GSCID7    # Bio-Technician
+    - GSCID8    # Bio-Technician
+    - GSCIE1    # Walk 4
+    - GSCIE2    # Bio-Technician
+    - GSCIE3    # Bio-Technician
+    - GSCIE4    # Bio-Technician
+    - GSCIE5    # Bio-Technician
+    - GSCIE6    # Bio-Technician
+    - GSCIE7    # Bio-Technician
+    - GSCIE8    # Bio-Technician
+    - GSCII0    # Pain
+    - GSCIK0    # Death
+    - GSCIL0    # Bio-Technician
+    - GSCIM0    # Bio-Technician
+    - GSCIJ0    # Bio-Technician
+    - GSCIN0    # Bio-Technician
+    - GSCIO0    # Dead
+    - GSCIF0    # Attack
+    - GSCIG0    # Bio-Technician
+    - GSCIH0    # Bio-Technician
+    - DGLDA1    # Stand
+    - DGLDA2    # Dr. Pyrus Goldfire
+    - DGLDA3    # Dr. Pyrus Goldfire
+    - DGLDA4    # Dr. Pyrus Goldfire
+    - DGLDA5    # Dr. Pyrus Goldfire
+    - DGLDA6    # Dr. Pyrus Goldfire
+    - DGLDA7    # Dr. Pyrus Goldfire
+    - DGLDA8    # Dr. Pyrus Goldfire
+    - DGLDB1    # Walk 1
+    - DGLDB2    # Dr. Pyrus Goldfire
+    - DGLDB3    # Dr. Pyrus Goldfire
+    - DGLDB4    # Dr. Pyrus Goldfire
+    - DGLDB5    # Dr. Pyrus Goldfire
+    - DGLDB6    # Dr. Pyrus Goldfire
+    - DGLDB7    # Dr. Pyrus Goldfire
+    - DGLDB8    # Dr. Pyrus Goldfire
+    - DGLDC1    # Walk 2
+    - DGLDC2    # Dr. Pyrus Goldfire
+    - DGLDC3    # Dr. Pyrus Goldfire
+    - DGLDC4    # Dr. Pyrus Goldfire
+    - DGLDC5    # Dr. Pyrus Goldfire
+    - DGLDC6    # Dr. Pyrus Goldfire
+    - DGLDC7    # Dr. Pyrus Goldfire
+    - DGLDC8    # Dr. Pyrus Goldfire
+    - DGLDD1    # Walk 3
+    - DGLDD2    # Dr. Pyrus Goldfire
+    - DGLDD3    # Dr. Pyrus Goldfire
+    - DGLDD4    # Dr. Pyrus Goldfire
+    - DGLDD5    # Dr. Pyrus Goldfire
+    - DGLDD6    # Dr. Pyrus Goldfire
+    - DGLDD7    # Dr. Pyrus Goldfire
+    - DGLDD8    # Dr. Pyrus Goldfire
+    - DGLDE1    # Walk 4
+    - DGLDE2    # Dr. Pyrus Goldfire
+    - DGLDE3    # Dr. Pyrus Goldfire
+    - DGLDE4    # Dr. Pyrus Goldfire
+    - DGLDE5    # Dr. Pyrus Goldfire
+    - DGLDE6    # Dr. Pyrus Goldfire
+    - DGLDE7    # Dr. Pyrus Goldfire
+    - DGLDE8    # Dr. Pyrus Goldfire
+    - DGLDI0    # Pain
+    - DGLDJ0    # Teleport
+    - DGLDK0    # Dr. Pyrus Goldfire
+    - DGLDF0    # Attack
+    - DGLDG0    # Dr. Pyrus Goldfire
+    - DGLDH0    # Dr. Pyrus Goldfire
+    - DGLDL0    # Teleport (Cont.)
+    - DGLDM0    # Dr. Pyrus Goldfire
+    - DGLDN0    # Dr. Pyrus Goldfire
+    - DGLDO0    # Dr. Pyrus Goldfire
+    - DGLDP0    # Dr. Pyrus Goldfire
+    - FSCTA1    # Normal
+    - FSCTA2    # Active PerScan
+    - FSCTA3    # Active PerScan
+    - FSCTA4    # Active PerScan
+    - FSCTA5    # Active PerScan
+    - FSCTA6    # Active PerScan
+    - FSCTA7    # Active PerScan
+    - FSCTA8    # Active PerScan
+    - FSCTE0    # Explode
+    - FSCTF0    # Active PerScan
+    - FSCTG0    # Active PerScan
+    - FSCTH0    # Active PerScan
+    - FSCTI0    # Active PerScan
+    - FSCTJ0    # Active PerScan
+    - FSCTK0    # Active PerScan
+    - FSCTL0    # Dead
+    - EXPLA0    # Generic Explosion
+    - EXPLB0    # Generic Explosion
+    - EXPLC0    # Generic Explosion
+    - EXPLD0    # Generic Explosion
+    - EXPLE0    # Generic Explosion
+    - SECLA0    # Off
+    - SECLB0    # On
+    - PODAA0    # Egg
+    - PODAB0    # Hatch
+    - PODAC0    # POD Alien
+    - PODAD0    # POD Alien
+    - PODAE0    # Walk
+    - PODAF0    # POD Alien
+    - PODAG0    # POD Alien
+    - PODAH0    # POD Alien
+    - PODAI0    # Attack (Melee)
+    - PODAJ0    # POD Alien
+    - PODAK0    # POD Alien
+    - PODAO0    # Pain
+    - PODAP0    # Death
+    - PODAQ0    # POD Alien
+    - PODAR0    # POD Alien
+    - PODAL0    # Attack (Shoot)
+    - PODAM0    # POD Alien
+    - PODAN0    # POD Alien
+    - ELCAA0    # Spawn
+    - ELCAB0    # Electro Alien
+    - ELCAC0    # Electro Alien
+    - ELCAD0    # Walk
+    - ELCAE0    # Electro Alien
+    - ELCAF0    # Electro Alien
+    - ELCAG0    # Electro Alien
+    - ELCAH0    # Pain
+    - ELCAI0    # Attack
+    - ELCAJ0    # Electro Alien
+    - ELCAK0    # Electro Alien
+    - ELCAL0    # Death
+    - ELCAM0    # Electro Alien
+    - ELCAN0    # Electro Alien
+    - ELCSA0    # Missile
+    - ELCSB0    # Electro Alien
+    - ELCSC0    # - Hit
+    - ELCSD0    # Electro Alien
+    - ESPRA0    # Normal
+    - ESPRB0    # Electrosphere
+    - ESPRC0    # Electrosphere
+    - ESPRE0    # Death
+    - ESPRF0    # Electrosphere
+    - ESPRG0    # Electrosphere
+    - ESPRH0    # Electrosphere
+    - ESPRI0    # Electrosphere
+    - GENGA0    # Walk
+    - GENGB0    # Genetic Guard
+    - GENGC0    # Genetic Guard
+    - GENGD0    # Genetic Guard
+    - GENGE0    # Attack (Melee)
+    - GENGF0    # Genetic Guard
+    - GENGH0    # Genetic Guard
+    - GENGQ0    # Dead
+    - GENGM0    # Death
+    - GENGN0    # Genetic Guard
+    - GENGO0    # Genetic Guard
+    - GENGP0    # Genetic Guard
+    - GENGL0    # Pain
+    - GENGI0    # Attack (Shoot)
+    - GENGJ0    # Genetic Guard
+    - GENGK0    # Genetic Guard
+    - MSENA0    # Walk
+    - MSENB0    # Mech Sentinel
+    - MSENC0    # Mech Sentinel
+    - MSEND0    # Mech Sentinel
+    - MSENE0    # Attack
+    - MSENF0    # Mech Sentinel
+    - MSENG0    # Mech Sentinel
+    - MSENM0    # Dead
+    - MSENI0    # Death
+    - MSENJ0    # Mech Sentinel
+    - MSENK0    # Mech Sentinel
+    - MSENL0    # Mech Sentinel
+    - MSENH0    # Pain
+    - MSENN0    # (Unused)
+    - MSENO0    # Mech Sentinel
+    - MSENP0    # Mech Sentinel
+    - CNSAA0    # In Canister
+    - CNSAB0    # Escaping
+    - CNSAC0    # Expirimental Alien Critter
+    - CNSAD0    # Expirimental Alien Critter
+    - CNSAE0    # Empty Canister
+    - CNSAF0    # Walk
+    - CNSAG0    # Expirimental Alien Critter
+    - CNSAH0    # Expirimental Alien Critter
+    - CNSAI0    # Expirimental Alien Critter
+    - CNSAJ0    # Attack (Melee)
+    - CNSAK0    # Expirimental Alien Critter
+    - CNSAL0    # Expirimental Alien Critter
+    - CNSAU0    # Dead
+    - CNSAQ0    # Death
+    - CNSAR0    # Expirimental Alien Critter
+    - CNSAS0    # Expirimental Alien Critter
+    - CNSAT0    # Expirimental Alien Critter
+    - CNSAP0    # Pain
+    - CNSAM0    # Attack (Shoot)
+    - CNSAN0    # Expirimental Alien Critter
+    - CNSAO0    # Expirimental Alien Critter
+    - SPT1A0    # Slime Glob
+    - SPT1B0    # Generic Missiles
+    - SPT1C0    # Generic Missiles
+    - SPT1D0    # - Hit
+    - SPT1E0    # Generic Missiles
+    - SPT1F0    # Generic Missiles
+    - SPT2A0    # Plasma Glob
+    - SPT2B0    # Generic Missiles
+    - SPT2C0    # Generic Missiles
+    - SPT2D0    # - Hit
+    - SPT2E0    # Generic Missiles
+    - SPT2F0    # Generic Missiles
+    - SPT3A0    # Acid Glob
+    - SPT3B0    # Generic Missiles
+    - SPT3C0    # Generic Missiles
+    - SPT3D0    # - Hit
+    - SPT3E0    # Generic Missiles
+    - SPT3F0    # Generic Missiles
+    - TURRA1    # Seek
+    - TURRA2    # Ceiling Turret
+    - TURRA3    # Ceiling Turret
+    - TURRA4    # Ceiling Turret
+    - TURRA5    # Ceiling Turret
+    - TURRA6    # Ceiling Turret
+    - TURRA7    # Ceiling Turret
+    - TURRA8    # Ceiling Turret
+    - TURRB0    # Attack
+    - TURRC0    # Ceiling Turret
+    - TURRD0    # Death
+    - TURRE0    # Ceiling Turret
+    - TURRF0    # Ceiling Turret
+    - TURRG0    # Ceiling Turret
+    - TURRH0    # Dead
+    - ACPGA0    # Auto-Charge Pistol
+    - ACPGB0    # - Fire
+    - ACPGC0    # Weapons
+    - ACPGD0    # Weapons
+    - ACPGE0    # Weapons
+    - SFPGA0    # Slow Fire SWATector
+    - SFPGB0    # - Fire
+    - SFPGC0    # Weapons
+    - SFPGD0    # Weapons
+    - SFPGE0    # Weapons
+    - RAWGA0    # Rapid Assault Weapon
+    - RAWGB0    # - Fire
+    - RAWGC0    # Weapons
+    - RAWGD0    # Weapons
+    - RAWGE0    # Weapons
+    - DNDGA0    # Dual Neutron Disruptor
+    - DNDGB0    # - Fire
+    - DNDGC0    # Weapons
+    - DNDGD0    # Weapons
+    - DNDGE0    # Weapons
+    - PDUGA0    # Plasma Discharge Unit
+    - PDUGB0    # - Fire
+    - PDUGC0    # Weapons
+    - PDUGD0    # Weapons
+    - PDUGE0    # Weapons
+    - GRENA0    # PDU Missile
+    - GRENB0    # Weapons
+    - GRENC0    # Weapons
+    - GREND0    # Weapons
+    - GRENE0    # - Explode
+    - GRENF0    # Weapons
+    - GRENG0    # Weapons
+    - GRENH0    # Weapons
+    - GRENI0    # Weapons
+    - ELCKA0    # On
+    - ELCKB0    # Electric Arc Barrier
+    - ELCKC0    # Electric Arc Barrier
+    - ELCKD0    # Off
+    - ELCPA0    # On
+    - ELCPB0    # Electric Post
+    - ELCPC0    # Electric Post
+    - ELCPD0    # Off
+    - CNDYA0    # Candy Bar
+    - CNDYB0    # - Eaten
+    - SNDWA0    # Sandwich
+    - SNDWB0    # - Eaten
+    - BLKEA0    # Blake (Episode Endings)
+    - BLKEB0    # Blake (Episode Endings)
+    - BLKEC0    # Blake (Episode Endings)
+    - BLKED0    # Blake (Episode Endings)
+    - MSUPA0    # Walk
+    - MSUPB0    # Spider Mutant
+    - MSUPC0    # Spider Mutant
+    - MSUPD0    # Spider Mutant
+    - MSUPE0    # Attack
+    - MSUPF0    # Spider Mutant
+    - MSUPG0    # Spider Mutant
+    - MSUPM0    # Dead
+    - MSUPI0    # Death
+    - MSUPJ0    # Spider Mutant
+    - MSUPK0    # Spider Mutant
+    - MSUPL0    # Spider Mutant
+    - MSUPH0    # Pain
+    - MSPRA0    # Missile
+    - MSPRB0    # Spider Mutant
+    - MSPRC0    # Spider Mutant
+    - MSPRD0    # - Hit
+    - MSPRE0    # Spider Mutant
+    - MSPRF0    # Spider Mutant
+graphics:
+    - STRUCTPIC
+    - Font1
+    - Font2
+    - Font3
+    - Font4
+    - Font5
+    - FloorSelect
+    - FloorButton1
+    - FloorButton2
+    - FloorButton3
+    - FloorButton4
+    - FloorButton5
+    - FloorButton6
+    - FloorButton7
+    - FloorButton8
+    - FloorButton9
+    - FloorButton10
+    - FloorButtonLit1
+    - FloorButtonLit2
+    - FloorButtonLit3
+    - FloorButtonLit4
+    - FloorButtonLit5
+    - FloorButtonLit6
+    - FloorButtonLit7
+    - FloorButtonLit8
+    - FloorButtonLit9
+    - FloorButtonLit10
+    - FloorSelectBar
+    - LincScreen
+    - ApogeeLogo
+    - ParentalWarning
+    - GoldfireScreen
+    - PSPromo1           # Planet Strike adverts (the ordering info's ^SH0d8-0da)
+    - PSPromo2
+    - PSPromo3
+    - FloorStats
+    - H_Alt
+    - H_Ctrl
+    - H_Space
+    - H_Pause
+    - H_Esc
+    - H_LeftArrow
+    - H_UpArrow
+    - H_DownArrow
+    - H_RightArrow
+    - H_Enter
+    - H_Q
+    - H_W
+    - H_E
+    - H_I
+    - H_H
+    - H_1
+    - H_2
+    - H_3
+    - H_4
+    - H_5
+    - H_F1
+    - H_F2
+    - H_F3
+    - H_F4
+    - H_F5
+    - H_F6
+    - H_F7
+    - H_F8
+    - H_F9
+    - H_F10
+    - H_Tab
+    - H_C
+    - H_F
+    - H_P
+    - H_M
+    - H_L
+    - H_Shift
+    - ApogeeLogoSmall
+    - VisaCard
+    - MasterCard
+    - FaxPic
+    - H_TopWindow
+    - H_LeftWindow
+    - H_RightWindow
+    - H_BottomInfo
+    - C_NotSelected      # the menus' checkboxes: off, on, and both highlighted
+    - C_Selected
+    - C_NotSelected_Hi
+    - C_Selected_Hi
+    - C_BabyMode
+    - C_Easy
+    - C_Normal
+    - C_Hard
+    - C_Episode1
+    - C_Episode2
+    - C_Episode3
+    - C_Episode4
+    - C_Episode5
+    - C_Episode6
+    - GoldfireBig
+    - StarSigil
+    - BlakeWithGun
+    - StarInstitute
+    - MedalOfHonor
+    - GoldfireSmall
+    - BlakeWin
+    - ShuttleExplosion
+    - Planets
+    - MousePic
+    - JoystickPic
+    - GravisPadPic
+    - Title
+    - Promo1             # the "order the full game" screens shown on quitting (bstone's ShowPromo)
+    - Promo2
+    - WeaponPic1
+    - WeaponPic2
+    - WeaponPic3
+    - WeaponPic4
+    - WeaponPic5
+    - WaitPic
+    - ReadyPic
+    - N_Blank
+    - N_0
+    - N_1
+    - N_2
+    - N_3
+    - N_4
+    - N_5
+    - N_6
+    - N_7
+    - N_8
+    - N_9
+    - N_R
+    - N_O
+    - N_L
+    - N_Blank2
+    - KeySlotOff
+    - KeySlotOn
+    - EcgHeartGood
+    - EcgHeartBad
+    - EcgGridPiece
+    - AmmoNumBack
+    - EcgSeg00
+    - EcgSeg01
+    - EcgSeg02
+    - EcgSeg03
+    - EcgSeg04
+    - EcgSeg05
+    - EcgSeg06
+    - EcgSeg07
+    - EcgSeg08
+    - EcgSeg09
+    - EcgSeg10
+    - EcgSeg11
+    - EcgSeg12
+    - EcgSeg13
+    - EcgSeg14
+    - EcgSeg15
+    - EcgSeg16
+    - EcgSeg17
+    - EcgSeg18
+    - EcgSeg19
+    - EcgSeg20
+    - EcgSeg21
+    - EcgSeg22
+    - EcgSeg23
+    - EcgSeg24
+    - EcgSeg25
+    - EcgSeg26
+    - EcgSeg27
+    - InfoArea
+    - TopStatusBar
+    - StatusBar
+    - Tile8
+    - Unknown170         # JAM-compressed leftovers no version of the game reads
+    - Extra2PAL
+    - Unknown172
+    - Unknown173
+    - Unknown174
+    - Extra3PAL
+    - OrderScreen
+    - ErrorScreen
+    - BlakeDemo0
+    - BlakeDemo1
+    - BlakeDemo2
+    - InformantHints
+    - NiceScientistHints
+    - MeanScientistHints
+    - Mission1End
+    - Mission1Brief
+    - FloorNames
+    - POWERBAL           # placeholder texts (Planet Strike's POWERBALLTEXT, TICSTEXT, MUSICTEXT, RADARTEXT)
+    - TICSTEXT
+    - MUSTEXT
+    - RADARTEXT
+    - HelpText
+    - StoryText
+    - Transmission
+    - ThankYouText
+    - CreditsText
+    - Need386Text
+    - QuickInfo1          # bstone's QUICK_INFO1_TEXT: a new game's first words (game-info quick-instructions)
+    - QuickInfo2          # QUICK_INFO2_TEXT: the same, with "Press a key."
+    - CorruptLevelText
+    - CalibrateJoystick1
+    - CalibrateJoystick2
+    - OrderingInfoText
+    - ElevatorSelectFloor
+    - ElevatorCardUsed
+    - ElevatorFloorLocked
+    - ElevatorNeedCard
+    - ElevatorPressNumber
+    - MissionCompleteText
+    - ChangeViewSizeText
+    - ModifiedGameText
+    - BADSAVE            # BADSAVEGAME_TEXT
+# MAPTEMP's levels: mission 1's floor 0 (its basement) to floor 10, and one spare slot
+maps:
+    - MAP01
+    - MAP02
+    - MAP03
+    - MAP04
+    - MAP05
+    - MAP06
+    - MAP07
+    - MAP08
+    - MAP09
+    - MAP10
+    - MAP11
+    - MAP12

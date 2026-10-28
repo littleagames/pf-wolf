@@ -320,7 +320,7 @@ internal static partial class GameHost
         mainGameLoop = MakeMainGameLoop();
         quickKeys = new QuickKeys(GameEngineManager, AssetManager, _videoManager, AudioManager, _inputManager, menuDrawing, menuLoop,
             controlPanel, gameSaves, levelMusic, frameRefresh, playScreen, Session,
-            Settings, new QuickKeysHooks(UiRandom));
+            Settings, new QuickKeysHooks(UiRandom, ShowQuitScreens));
         hubActions = MakeHubActions();
         titleScreens = new TitleScreens(_videoManager, AudioManager, _inputManager, _graphicManager, AssetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(

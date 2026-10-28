@@ -1,0 +1,34 @@
+# The shareware's sounds for the enemies it shares with Aliens of Gold: bstone's A_DeathScream
+# picks the first of a class's death sounds every time (the others' digitized versions are
+# empty in the shareware's VSWAP), and a SWAT guard goes down wounded without a sound. Each
+# `extend`s blake's class (actordefs/blake), changing only these.
+RentACop:
+  extend: true
+  properties: { "deathsound": "bs/rentdeath1" }
+ProGuard:
+  extend: true
+  properties: { "deathsound": "bs/proguarddeath" }
+SwatGuard:
+  extend: true
+  properties: { "deathsound": "bs/swatdie", "woundsound": [] }
+Scientist:
+  extend: true
+  properties: { "deathsound": "bs/scientistdeath" }
+Informant:
+  extend: true
+  properties: { "deathsound": "bs/informantdeath" }
+MutantHuman1:
+  extend: true
+  properties: { "deathsound": "bs/explode1" }
+HangingTurret:
+  extend: true
+  properties: { "deathsound": "bs/explode1" }
+FloatingBomb:
+  extend: true
+  properties: { "deathsound": "bs/explode1" }
+VolatileTransport:
+  extend: true
+  properties: { "deathsound": "bs/explode1" }
+BlakeCrate:
+  extend: true
+  properties: { "deathsound": "bs/explode1" }

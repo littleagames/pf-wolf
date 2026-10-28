@@ -93,15 +93,16 @@ Crate1XylanOrb:
   properties:
     "dropitem": "XylanOrb"
 
+# The gore ones leave body parts: ExpCrateShapes' 71 and 74 are statinfo's two SPR_STAT_57s
 Crate1Gore:
   parent: BlakeCrate
   properties:
-    "dropitem": "Gore"
+    "dropitem": "BodyParts"
 
 Crate1Gore2:
   parent: BlakeCrate
   properties:
-    "dropitem": "Gore"
+    "dropitem": "BodyParts"
 
 Crate1RedCard:
   parent: BlakeCrate
@@ -186,12 +187,12 @@ Crate2XylanOrb:
 Crate2Gore:
   parent: BlakeCrate2
   properties:
-    "dropitem": "Gore"
+    "dropitem": "BodyParts"
 
 Crate2Gore2:
   parent: BlakeCrate2
   properties:
-    "dropitem": "Gore"
+    "dropitem": "BodyParts"
 
 Crate2RedCard:
   parent: BlakeCrate2
@@ -276,12 +277,12 @@ Crate3XylanOrb:
 Crate3Gore:
   parent: BlakeCrate3
   properties:
-    "dropitem": "Gore"
+    "dropitem": "BodyParts"
 
 Crate3Gore2:
   parent: BlakeCrate3
   properties:
-    "dropitem": "Gore"
+    "dropitem": "BodyParts"
 
 Crate3RedCard:
   parent: BlakeCrate3

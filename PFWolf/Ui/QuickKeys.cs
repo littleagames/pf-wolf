@@ -5,8 +5,9 @@ namespace PFWolf.Ui;
 
 /// <summary>What the menu keys during play need from the game</summary>
 /// <param name="UiRandom">A random number for show (GameHost.Network.cs)</param>
+/// <param name="QuitScreens">game-info's title-sequence quit screens, once quitting is confirmed</param>
 internal sealed record QuickKeysHooks(
-    Func<int> UiRandom);
+    Func<int> UiRandom, Action QuitScreens);
 
 /// <summary>
 /// The menu from play (OpenControlPanel): F7 to F10 do their thing without the menu while a
@@ -130,6 +131,7 @@ internal sealed class QuickKeys(
                     audio.SetPaused(true);
                     audio.StopAll();
                     draw.MenuFadeOut();
+                    hooks.QuitScreens();
 
                     engine.Quit("");
                 }

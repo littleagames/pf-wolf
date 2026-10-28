@@ -20,7 +20,9 @@ public enum GameType
     [Description("wolf3d-apogee")]
     WolfApogee,
     [Description("spear-demo")]
-    SpearDemo
+    SpearDemo,
+    [Description("blake-shareware")]
+    BlakeShareware
 }
 
 /// <summary>
@@ -77,12 +79,14 @@ public static class GameTypes
     /// first of these whose data files are all in the game folder
     /// </summary>
     private static readonly GameType[] FallbackOrder =
-        [GameType.Wolf3D, GameType.WolfShareware, GameType.SpearOfDestiny, GameType.SpearDemo, GameType.BlakeStone, GameType.PlanetStrike];
+        [GameType.Wolf3D, GameType.WolfShareware, GameType.SpearOfDestiny, GameType.SpearDemo, GameType.BlakeStone, GameType.BlakeShareware,
+         GameType.PlanetStrike];
 
     /// <summary>
     /// The game to run: the one --game asks for when its data files are here, else the first game
     /// whose files are (Wolf3D's shareware first, so asking for Wolf3D with only the shareware's
-    /// files plays that; asking for Spear with only its demo's plays the demo). With none, the one
+    /// files plays that; asking for Spear with only its demo's plays the demo, and Blake Stone with
+    /// only its shareware's plays that). With none, the one
     /// asked for (or Wolf3D), which then says what's missing.
     /// A game's files can be another release's under the same names (Apogee's Wolf3D files are
     /// named as the GT ones wolf3d is for): then that release, which strict-md5 marks, is played.
@@ -145,11 +149,13 @@ public static class GameTypes
             return game;
         }
 
-        // Asked for Wolf3D (or for nothing): its shareware is the closest thing; for Spear, its demo
+        // Asked for Wolf3D (or for nothing): its shareware is the closest thing; for Spear, its
+        // demo; for Blake Stone, its shareware
         var candidates = requested switch
         {
             null or GameType.Wolf3D => FallbackOrder,
             GameType.SpearOfDestiny => [GameType.SpearDemo],
+            GameType.BlakeStone => [GameType.BlakeShareware],
             _ => [],
         };
         foreach (var type in candidates)
@@ -195,6 +201,7 @@ public static class GameTypes
         GameType.WolfShareware => "wolf3d-shareware",
         GameType.WolfApogee => "wolf3d-apogee",
         GameType.SpearDemo => "spear-demo",
+        GameType.BlakeShareware => "blake-shareware",
         _ => "wolf3d",
     };
 
@@ -210,6 +217,7 @@ public static class GameTypes
         GameType.PlanetStrike => "PlanetStrike",
         GameType.WolfShareware => "Wolfenstein3DShareware",
         GameType.SpearDemo => "SpearOfDestinyDemo",
+        GameType.BlakeShareware => "BlakeStoneShareware",
         _ => "Wolfenstein3D",       // Apogee's release too: the same game, so the same settings
     };
 

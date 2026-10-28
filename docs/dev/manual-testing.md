@@ -250,6 +250,18 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       The info area now shows "transporting..." on the black view and through the fizzle
       (checked by the PS teleporter, which takes the same warp in); a warp wall's not rechecked.
 
+### Aliens of Gold v3.0 shareware (`--game blake-shareware`, the BS1 files)
+
+- [x] Intro without the anti-piracy screen, v3.0's LINC screen in the title loop and menus (the
+      terminal cleared in its color 4), missions 2-6 greyed and skipped by the cursor, mission 1's
+      briefing, floor 1 plays; F10 quit shows the two order screens, then closes; Ordering Info's
+      Planet Strike pages. Checked 2026-10-27; `--game blake` with only BS1 files plays it.
+- [ ] **(never tried)** Logoff from the main menu shows the same order screens (same hook as F10).
+- [ ] **(never tried)** Instructions' H_L / H_Shift key pictures; no `--game` with only BS1 files.
+- [ ] **(never tried)** Mission 1 to its end: the shuttle movie, end briefing, high scores.
+- [ ] **(never tried)** By ear: each enemy's one death sound, no SWAT wound sound; the digitized
+      sounds the shareware left empty (8 bytes) stay silent.
+
 ## 1.10 Planet Strike (PS)
 
 - [ ] **(never tried, no demos exist)** A real play-through of the first floors.

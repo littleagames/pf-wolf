@@ -4,9 +4,9 @@
 music: "MEETINGA"
 type: "blake-menu"
 components:
-  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Background", params: [ { color: "MENUBACK" } ] }
   - { type: "Label", params: [ { text: "CUSTOMIZE CONTROLS" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { y: 20 }, { color: "86" }, { shadow-color: "1" } ] }
-  - { type: "Window", params: [ { x: 5 }, { y: 46 }, { width: 310 }, { height: 137 }, { color: "2" } ] }
+  - { type: "Window", params: [ { x: 5 }, { y: 46 }, { width: 310 }, { height: 137 }, { color: "MENUBACK" } ] }
 # The rows, in order. ControlMenuItem binds the control named in "control" (as bindaction and
 # controls.cfg name it); HeaderMenuItem titles a group; BlankMenuItem leaves a gap; the "reset"
 # item puts every control back to its default. Rows can be reordered, renamed or left out.

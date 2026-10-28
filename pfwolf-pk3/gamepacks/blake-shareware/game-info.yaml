@@ -1,0 +1,62 @@
+# Blake Stone: Aliens of Gold v3.0 shareware: mission 1 of Aliens of Gold. Laid over
+# gamepacks/blake/game-info.yaml (the release's base-pack), which says what each setting does;
+# anything not here is Aliens of Gold's, and `!remove` takes one of its settings out.
+
+title-sequence:
+  # bstone's PreDemo without the registered game's anti-piracy notice: Apogee to the end of its
+  # fanfare, the JAM logo movie, then the PC-13 rating, out through red
+  intro:
+    - pics: [{ pic: ApogeeLogo }]
+      palette: Extra2PAL
+      music: APOGFNFM
+      music-loop: false
+      until-music-ends: true
+      seconds: 6            # with music off
+    - movie: IntroMovie
+      music: GOLDA
+    - background: "20"
+      pics: [{ pic: ParentalWarning, y: 64 }]
+      seconds: 2
+      fade-to: "#9C0000"
+  # On quitting (bstone's ShowPromo): the two "order the full game" screens, 20 seconds each
+  # unless a key skips them
+  quit:
+    - pics: [{ pic: Promo1 }]
+      music: HIDINGA
+      seconds: 20
+    - pics: [{ pic: Promo2 }]
+      seconds: 20
+
+# Missions 2-6 are listed, as in the original, but greyed out and can't be picked (bstone's
+# AT_NON_SELECTABLE); the shareware data has only mission 1's floors
+episodes:
+  MISSION2: { starts-locked: true }
+  MISSION3: { starts-locked: true }
+  MISSION4: { starts-locked: true }
+  MISSION5: { starts-locked: true }
+  MISSION6: { starts-locked: true }
+
+clusters: { 2: !remove , 3: !remove , 4: !remove , 5: !remove , 6: !remove }
+
+# Mission 1's floors (MAP01-MAP11) and its spare slot are Aliens of Gold's; the rest aren't in
+# the shareware's MAPTEMP
+maps:
+  {
+    MAP07: { name: "POD STABALIZATION AREA" },     # the shareware's FloorNames spells it so
+    MAP13: !remove , MAP14: !remove , MAP15: !remove , MAP16: !remove , MAP17: !remove ,
+    MAP18: !remove , MAP19: !remove , MAP20: !remove , MAP21: !remove , MAP22: !remove ,
+    MAP23: !remove , MAP24: !remove , MAP25: !remove , MAP26: !remove , MAP27: !remove ,
+    MAP28: !remove , MAP29: !remove , MAP30: !remove , MAP31: !remove , MAP32: !remove ,
+    MAP33: !remove , MAP34: !remove , MAP35: !remove , MAP36: !remove , MAP37: !remove ,
+    MAP38: !remove , MAP39: !remove , MAP40: !remove , MAP41: !remove , MAP42: !remove ,
+    MAP43: !remove , MAP44: !remove , MAP45: !remove , MAP46: !remove , MAP47: !remove ,
+    MAP48: !remove , MAP49: !remove , MAP50: !remove , MAP51: !remove , MAP52: !remove ,
+    MAP53: !remove , MAP54: !remove , MAP55: !remove , MAP56: !remove , MAP57: !remove ,
+    MAP58: !remove , MAP59: !remove , MAP60: !remove , MAP61: !remove , MAP62: !remove ,
+    MAP63: !remove , MAP64: !remove , MAP65: !remove , MAP66: !remove , MAP67: !remove ,
+    MAP68: !remove , MAP69: !remove , MAP70: !remove , MAP71: !remove , MAP72: !remove ,
+    MAP73: !remove , MAP74: !remove , MAP75: !remove , MAP76: !remove , MAP77: !remove ,
+    MAP78: !remove , MAP79: !remove , MAP80: !remove , MAP81: !remove , MAP82: !remove ,
+    MAP83: !remove , MAP84: !remove , MAP85: !remove , MAP86: !remove , MAP87: !remove ,
+    MAP88: !remove , MAP89: !remove , MAP90: !remove ,
+  }

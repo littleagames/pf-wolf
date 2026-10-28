@@ -247,6 +247,53 @@ blake-aog:
             file: sanim.bs6
           GoldfireMovie:
             file: ganim.bs6
+blake-shareware:
+  title: "Blake Stone: Aliens of Gold Shareware"
+  game-palette: blake
+  # Mission 1 of Aliens of Gold: the registered game's walls, sounds and music, with fewer
+  # sprites and v3.0's VGAGRAPH, so its own raw-data-map
+  base-pack: blake
+  file-pack:
+    description: Blake Stone - Aliens of Gold v3.0 Shareware
+    # v1.0 and v2.x's files have other layouts, so only these are taken
+    strict-md5: true
+    file-loaders:
+      Wolf3DAudioFileLoader:
+        header:
+          file: audiohed.bs1
+          md5: 52a203285041846c9fd73e8947a64522
+        data:
+          file: audiot.bs1
+          md5: 144a201ef4bd5bd9989dc61d9250eeac
+      Wolf3DMapFileLoader:
+        header:
+          file: maphead.bs1
+          md5: 4560fb7492c99f9fddde9cc7987fdc77
+        data:
+          file: maptemp.bs1
+          md5: 6532d4062fed1817b440684c41a21fb5
+      Wolf3DVgaFileLoader:
+        dict:
+          file: vgadict.bs1
+          md5: 78ea7678704503dbb453c59bffcb4b98
+        header:
+          file: vgahead.bs1
+          md5: 3d6973e5032bfaadefa6684367a26f77
+        data:
+          file: vgagraph.bs1
+          md5: f5dfd3f330af0274bf87cd08c2513d55
+        font-count: 5
+      Wolf3DVswapFileLoader:
+        data:
+          file: vswap.bs1
+          md5: 35f3d32bad5803b2d69bf3cff92da5ef
+      # The JAM logo, and the shuttle leaving at the end of mission 1
+      JamMovieFileLoader:
+        movies:
+          IntroMovie:
+            file: ianim.bs1
+          ShuttleMovie:
+            file: sanim.bs1
 blake-ps:
   title: "Blake Stone: Planet Strike"
   game-palette: blake

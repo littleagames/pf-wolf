@@ -20,6 +20,7 @@ public class LevelChecksGameTests
     [TestCase("wolf3d", "")]
     [TestCase("spear", "")]
     [TestCase("blake", "")]
+    [TestCase("blake-shareware", "")]
     [TestCase("planetstrike", "")]
     [TestCase("wolf3d", "examples/mods/switch-demo")]
     [TestCase("wolf3d", "examples/mods/fireball-demo")]

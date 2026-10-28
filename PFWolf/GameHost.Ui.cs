@@ -74,7 +74,22 @@ internal static partial class GameHost
             PlayState = PlayState.Died;
             LastAttacker = null;
         },
-        Random: UiRandom);
+        Random: UiRandom,
+        QuitScreens: ShowQuitScreens);
+
+    /// <summary>
+    /// game-info's title-sequence quit screens (Blake Stone v3.0 shareware's order screens, to
+    /// their own music), once quitting is confirmed; --nowait skips them as it does the intro
+    /// </summary>
+    static void ShowQuitScreens()
+    {
+        var screens = GameEngineManager.GetGameInfo().TitleSequence.Quit;
+        if (screens.Count == 0 || GameEngineManager.GameParams.NoWait)
+            return;
+        AudioManager.SetPaused(false);
+        titleScreens.RunTitleScreens(screens, TitleKeyAction.Next, out _);
+        AudioManager.StopAll();
+    }
 
     /// <summary>Starts a game from New Game; the control panel then leaves, and "Read This!" goes back to its normal color</summary>
     static void StartNewGame(short difficulty, EpisodeInfo episode, MapInfo? mapInfo, string? playerClass)

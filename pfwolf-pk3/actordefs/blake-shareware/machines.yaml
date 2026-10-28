@@ -1,0 +1,12 @@
+# The shareware's floating bomb, `extend`ing blake's (actordefs/blake/machines.yaml): its VSWAP
+# has only the undamaged frames, so as in bstone (whose damaged states' sprite offsets come
+# out 0 there) it looks the same however hurt it is
+FloatingBomb:
+  extend: true
+  states:
+    Chase2:
+      - { sprite: FSCT, frames: [A], tics-per-frame: 10, think: T_Chase }
+    Chase3:
+      - { sprite: FSCT, frames: [A], tics-per-frame: 10, think: T_Chase }
+    Chase4:
+      - { sprite: FSCT, frames: [A], tics-per-frame: 10, think: T_Chase }
