@@ -267,9 +267,12 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       message (2026-10-27, PS floor 1: dropped by the cube at 8,44, shot from 2-3 tiles off
       well before its timer). It's small and on the floor, so it sits behind the gun when
       straight ahead.
-- [ ] A detonator blows the closed doors round it open for good (`doors` says "blown open");
-      **(never tried)** by eye: the doorway's explosion and the rubble left half the time, a
-      locked or one-way door left shut, a blown door after save/load.
+- [ ] A detonator blows the closed doors round it open for good (`doors` says "blown open").
+      Checked 2026-10-27 headless on PS MAP01 (`summon PlasmaDetonatorArmed` beside doors): the
+      doors beside two went open for good, one left rubble; the locked door 54,36 stayed shut,
+      and a door two tiles off wasn't touched. Only the detonator blasts doors, as in bstone
+      (its only BlastNearDoors call). **(never tried)** by eye: the doorway's explosion; a
+      one-way door left shut; a blown door after save/load.
 - [x] No firing while Goldfire morphs; firing again once he's morphed. Checked 2026-10-27 on
       PS MAP20 (summoned, `killall`, fire tapped throughout): no shot from his death until
       GoldfireMorphed came on, 139 tics (2 s at 70 a second, as bstone's 60 + 8 x 10), then
