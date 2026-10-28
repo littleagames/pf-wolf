@@ -230,7 +230,12 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Game Options → Switches: Lighting off (no shading), Show Floors / Show Ceilings off (plain
       colors), REBA Attack Info ("ATTACKING:" and the enemy when hit). **(never tried)** Show
       Ceilings by eye; the switches kept in config.cfg after a restart.
-- [ ] **(never tried)** Enemies never step onto an elevator floor (area 0), nor off one.
+- [x] Enemies never step onto an area 0 floor (code 108, bstone's ElevatorFloor), nor off one.
+      Checked 2026-10-27, headless on AOG MAP01 (BlakeKeepOutGameTests): row 18 of the room at
+      6-20,14-22 is all area 0, and the guards chasing the player across it stop at row 19; with
+      the rule off they step onto it. `actors` marks an enemy on such a tile "keep-out", and
+      `where` shows plane 0's code. Area 0 isn't just the elevators: MAP01's start is area 1.
+      **(never tried)** an enemy that starts on area 0 staying put.
 - [x] Wall outlets and Goldfire's warp-in keep their timers through a save and load (2026-10-27,
       headless on AOG MAP04: BlakeLevelAIGameTests; `levelai` shows the waits). **(never tried)**
       with Goldfire already warped in once (last/chosen site, the later wait).

@@ -61,7 +61,8 @@ internal sealed class DebugCommands(
 
         console.Print($"X: {session.Player.X} ({session.Player.X % MapConstants.TileGlobal})  Y: {session.Player.Y} ({session.Player.Y % MapConstants.TileGlobal})  Angle: {session.Player.Angle}");
         console.Print($"Tile: {x},{y}  Area: {session.Player.AreaNumber}  Map: {session.GameState.MapOn}");
-        console.Print($"tilemap: {map.TileMap[x, y]}  plane 1: {map.MapSpot(x, y, 1)}  spotvis: {map.Spotvis[x, y]}");
+        console.Print($"tilemap: {map.TileMap[x, y]}  plane 0: {map.MapSpot(x, y, 0)}{(map.IsHiddenArea(x, y) ? " (hidden)" : "")}"
+            + $"{(map.InMonsterKeepOut(x, y) ? " (enemies kept out)" : "")}  plane 1: {map.MapSpot(x, y, 1)}  spotvis: {map.Spotvis[x, y]}");
         console.Print($"actorat: {map.ActorAt[x, y]?.GetType().Name ?? "(nothing)"}");
 
         var diagonals = new[] { (x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1) }
@@ -156,6 +157,8 @@ internal sealed class DebugCommands(
                 line.Append("  active");
             if (actor.Tag != 0)
                 line.Append($"  tag {actor.Tag}");
+            if (MapManager.IsEnemy(actor) && map.InMonsterKeepOut(actor.TileX, actor.TileY))
+                line.Append("  keep-out");      // on a floor enemies are kept off (Blake Stone's elevators)
             line.Append(targets.WallSpriteDescription(actor));
 
             console.Print(line.ToString());
