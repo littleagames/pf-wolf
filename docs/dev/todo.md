@@ -24,8 +24,8 @@ the catalog, get one on its own.
 ## Blake Stone: where PFWolf still differs from bstone
 
 Checked against the code on 2026-10-23. bstone's source (the behaviour reference) is at
-`D:\projects\Wolf3D\wolf4sdl sources\bstone-master`. Whether the goal is exact parity or just
-"plays right" is still undecided, and that decides how many of these matter. Untested items are
+`D:\projects\Wolf3D\wolf4sdl sources\bstone-master`. The goal (decided 2026-10-27) is parity with
+bstone as far as the engine allows, so every difference below matters. Untested items are
 in `docs/dev/manual-testing.md` §1.9–1.10, not here. Fixed since the list was made: the random
 charge pack, the quit and menu questions, ^AN animations, the lose screen's scrolling, the warp
 out and in, no firing during Goldfire's morph, the shootable detonator, door blasts and the
