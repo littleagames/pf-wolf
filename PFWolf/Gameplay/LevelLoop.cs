@@ -13,6 +13,7 @@ namespace PFWolf.Gameplay;
 /// <param name="TickAmbience">The player's zone's ambient sound (Gameplay/ZoneAmbience.cs)</param>
 /// <param name="AfterThinking">demotrace: writes down the frame just played (Gameplay/DemoTracer.cs)</param>
 /// <param name="TickLevelTimer">A level against the clock (Gameplay/LevelTimer.cs)</param>
+/// <param name="TickWalls">Walls crumbling, breaking once their animation's played (Gameplay/DestructibleWalls.cs)</param>
 internal sealed record LevelLoopHooks(
     Func<bool> DemoTesting,
     Action<uint> TickPlayerBodies,
@@ -23,7 +24,8 @@ internal sealed record LevelLoopHooks(
     Action? TickAmbience = null,
     Action? AfterThinking = null,
     Action? TickLevelTimer = null,
-    Action? ShowQuickInstructions = null);
+    Action? ShowQuickInstructions = null,
+    Action? TickWalls = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -140,6 +142,7 @@ internal sealed class LevelLoop(
                 doors.MoveDoors();
                 pushWalls.MovePWalls();
                 timedSwitches.Tick(session.Tics);       // switches turning back by themselves (Gameplay/TimedSwitches.cs)
+                hooks.TickWalls?.Invoke();              // walls done crumbling break (Gameplay/DestructibleWalls.cs)
 
                 // Every actor lives in map._actors. The player is at its head, so it still
                 // thinks before every enemy, projectile and the BJ-victory actor.

@@ -12,7 +12,10 @@ public class DestructibleWallsTests
     private const int AreaTile = 108;
     private const int SecretTrigger = 98;
     private const int WallId = 12;
-    private const int Cracked = 40, MoreCracked = 41, Glass = 42, Bunker = 43;
+    private const int Cracked = 40, MoreCracked = 41, Glass = 42, Bunker = 43, Crumbly = 44;
+    private const int CrumbleTics = 20;
+    private bool _keepStanding;
+    private readonly List<string> _breaks = [];
     private const ushort Tag = 4;
 
     private MapManager _map = null!;
@@ -42,6 +45,11 @@ public class DestructibleWallsTests
             },
             [Glass] = new MapTextureTranslation { North = "GLASS", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet", "Melee"], Floor = 2 } },
             [Bunker] = new MapTextureTranslation { North = "BUNKER", Destructible = new MapDestructibleTranslation { DamageTypes = ["Blast"], PlayersOnly = true } },
+            [Crumbly] = new MapTextureTranslation
+            {
+                North = "CRUMBLY", East = "CRUMBLY2",
+                Destructible = new MapDestructibleTranslation { DamageTypes = ["Rocket"], Animation = "CRUMBLE", Sound = "world/crumble" },
+            },
         },
     };
 
@@ -64,7 +72,11 @@ public class DestructibleWallsTests
         var doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         _sounds.Clear();
         _objectives.Clear();
-        _walls = new DestructibleWalls(_map, doors, _session, new DestructibleWallHooks((sound, x, y) => _sounds.Add($"{sound} {x},{y}"), _objectives.Add));
+        _breaks.Clear();
+        _keepStanding = false;
+        _walls = new DestructibleWalls(_map, doors, _session, new DestructibleWallHooks((sound, x, y) => _sounds.Add($"{sound} {x},{y}"), _objectives.Add,
+            name => name.Equals("CRUMBLE", StringComparison.OrdinalIgnoreCase) ? CrumbleTics : null,
+            (x, y, wall, type, by) => { _breaks.Add($"{x},{y} {wall} {type ?? "none"}"); return !_keepStanding; }));
     }
 
     // Area 5 west of 10,10 and area 7 east of it, the wall between them
@@ -209,6 +221,184 @@ public class DestructibleWallsTests
 
         // Act / Assert
         Assert.That(_walls.HitByBlast(grenade, 10, 10, () => 1), Is.True);
+    }
+
+    [Test]
+    public void Scripts_Break_Walls_Read_Their_Health_And_Can_Keep_Them_Standing()
+    {
+        // Arrange: a hook that keeps rocket-broken walls standing
+        var console = new ConsoleManager();
+        var scripts = new GameScripts(null!, _map, null!, null!, console, null, null!, _session, (_, _) => { })
+        {
+            BreakWall = (x, y) => x == 10,
+            WallHealth = (x, y) => x == 10 ? 25 : null,
+        };
+        scripts.LuaCommand(["x = 1"]);
+        scripts.Scripts!.Load("game.onwallbreak(function(x, y, wall, type, by) print('break', x, y, wall, type) return type ~= 'Rocket' end)", "test.lua");
+
+        // Act
+        scripts.Scripts.Execute("print(game.breakwall(10, 3), game.breakwall(11, 3), game.wallhealth(10, 3), game.wallhealth(11, 3))");
+        bool rocket = scripts.RunWallBreakHooks(4, 5, 40, "Rocket", null);
+        bool action = scripts.RunWallBreakHooks(4, 5, 40, null, null);
+
+        // Assert
+        Assert.That(console.Scrollback, Has.Some.EqualTo("true\tfalse\t25\tnil"));
+        Assert.That((rocket, action), Is.EqualTo((false, true)));
+        Assert.That(console.Scrollback, Has.Some.EqualTo("break\t4\t5\t40\tRocket"));
+        Assert.That(console.Scrollback, Has.Some.EqualTo("break\t4\t5\t40\tnil"));
+    }
+
+    [Test]
+    public void A_Wall_With_An_Animation_Crumbles_Solid_Until_It_Has_Played()
+    {
+        // Arrange
+        DestructibleWall(Crumbly);
+        _session.GameState.TimeCount = 100;
+
+        // Act: broken, then a tic short of the animation's end
+        bool broke = _walls.Hit(10, 10, "Rocket", new Entities.Actors.PlayerPawn(), () => 1);
+        _session.GameState.TimeCount = 100 + CrumbleTics - 1;
+        _walls.Tick();
+
+        // Assert: crumbling, every face showing the animation, its sound gone off, no more hits
+        Assert.That(broke, Is.True);
+        Assert.That(_walls.IsCrumbling(10, 10), Is.True);
+        Assert.That(_map.TileMap[10, 10], Is.EqualTo(Crumbly));
+        Assert.That((_map.ChangedTexture(10, 10, "CRUMBLY"), _map.ChangedTexture(10, 10, "CRUMBLY2")), Is.EqualTo(("CRUMBLE", "CRUMBLE")));
+        Assert.That(_map.AnimStart[_map.TileIndex(10, 10)], Is.EqualTo(100));
+        Assert.That(_sounds, Is.EqualTo(new[] { "world/crumble 10,10" }));
+        Assert.That(_walls.Hurts(10, 10, "Rocket", null), Is.False);
+
+        // Act: its last tic
+        _session.GameState.TimeCount = 100 + CrumbleTics;
+        _walls.Tick();
+
+        // Assert: gone, its faces' change taken back
+        Assert.That(_walls.IsCrumbling(10, 10), Is.False);
+        Assert.That(_map.TileMap[10, 10], Is.Zero);
+        Assert.That(_map.ChangedTexture(10, 10, "CRUMBLY"), Is.EqualTo("CRUMBLY"));
+    }
+
+    [Test]
+    public void A_Wall_Taken_Away_While_It_Crumbles_Stops_Crumbling()
+    {
+        // Arrange
+        DestructibleWall(Crumbly);
+        _walls.Break(10, 10);
+
+        // Act
+        _walls.Remove(10, 10);
+
+        // Assert
+        Assert.That(_map.CrumblingWalls, Is.Empty);
+        Assert.That(_map.TileMap[10, 10], Is.Zero);
+    }
+
+    [Test]
+    public void A_Script_Can_Keep_A_Wall_Standing_And_The_Damage_Stays()
+    {
+        // Arrange
+        DestructibleWall(Cracked);
+        _keepStanding = true;
+
+        // Act
+        bool broke = _walls.Hit(10, 10, "Rocket", new Entities.Actors.PlayerPawn(), () => 70);
+
+        // Assert
+        Assert.That(broke, Is.False);
+        Assert.That(_map.TileMap[10, 10], Is.EqualTo(Cracked));
+        Assert.That(_map.WallDamage[_map.TileIndex(10, 10)], Is.EqualTo(70));
+        Assert.That(_breaks, Is.EqualTo(new[] { $"10,10 {Cracked} Rocket" }));
+        Assert.That(_sounds, Is.Empty);
+    }
+
+    [Test]
+    public void Health_Left_Counts_Down_And_Is_Nothing_For_A_Plain_Wall()
+    {
+        // Arrange
+        DestructibleWall(Cracked);
+        Wall(20, 20);
+        Wall(30, 30, Glass);
+
+        // Act
+        _walls.Hit(10, 10, "Rocket", null, () => 20);
+
+        // Assert
+        Assert.That((_walls.HealthLeft(10, 10), _walls.HealthLeft(20, 20), _walls.HealthLeft(30, 30)), Is.EqualTo(((int?)30, (int?)null, (int?)1)));
+    }
+
+    [Test]
+    public void A_DamageWall_Without_A_Type_Hurts_Whatever_Types_A_Wall_Lists()
+    {
+        // Arrange: tagged 40 (rockets) and 42 (bullets), and a switch at 20,10
+        _walls.Register();
+        DestructibleWall(Cracked);
+        Wall(30, 30, Glass);
+        _map.SetTag(10, 10, Tag);
+        _map.SetTag(30, 30, Tag);
+        var activation = new Entities.TriggerActivation(20, 10, ControlDir.North, new Entities.Actors.PlayerPawn(), Tag);
+
+        // Act
+        Entities.MapTriggerRegistry.Invoke("A_DamageWall(10, \"Bullet\")", activation);
+        int afterBullets = _map.WallDamage.GetValueOrDefault(_map.TileIndex(10, 10));
+        Entities.MapTriggerRegistry.Invoke("A_DamageWall(10)", activation);
+
+        // Assert: the bullets only broke the glass; the untyped damage reached the rocket wall
+        Assert.That(afterBullets, Is.Zero);
+        Assert.That(_map.TileMap[30, 30], Is.Zero);
+        Assert.That(_map.WallDamage[_map.TileIndex(10, 10)], Is.EqualTo(10));
+    }
+
+    [Test]
+    public void A_BreakWall_Crumbles_A_Plain_Wall_With_The_Animation_Given()
+    {
+        // Arrange
+        _walls.Register();
+        WallBetweenAreas();
+        _map.SetTag(10, 10, Tag);
+        var activation = new Entities.TriggerActivation(20, 10, ControlDir.North, new Entities.Actors.PlayerPawn(), Tag);
+
+        // Act
+        Entities.MapTriggerRegistry.Invoke("A_BreakWall(\"CRUMBLE\", \"world/rumble\")", activation);
+
+        // Assert
+        Assert.That(_walls.IsCrumbling(10, 10), Is.True);
+        Assert.That(_map.ChangedTexture(10, 10, "PLAIN"), Is.EqualTo("CRUMBLE"));
+        Assert.That(_sounds, Is.EqualTo(new[] { "world/rumble 10,10" }));
+        Assert.That(_breaks, Is.EqualTo(new[] { $"10,10 {WallId} none" }));
+    }
+
+    [Test]
+    public void An_Animation_That_Isnt_One_Breaks_The_Wall_At_Once()
+    {
+        // Arrange
+        WallBetweenAreas();
+
+        // Act
+        bool broke = _walls.Break(10, 10, animation: "NOSUCH");
+
+        // Assert
+        Assert.That(broke, Is.True);
+        Assert.That(_map.TileMap[10, 10], Is.Zero);
+        Assert.That(_map.CrumblingWalls, Is.Empty);
+    }
+
+    [Test]
+    public void The_Crumbling_Walls_Are_Saved_With_The_Level()
+    {
+        // Arrange
+        DestructibleWall(Crumbly);
+        _session.GameState.TimeCount = 50;
+        _walls.Break(10, 10);
+        using var stream = new MemoryStream();
+
+        // Act
+        _map.WriteLevelState(new BinaryWriter(stream));
+        stream.Position = 0;
+        var level = MapManager.ReadLevelState(new BinaryReader(stream));
+
+        // Assert
+        Assert.That(level.CrumblingWalls, Is.EqualTo(new[] { new CrumblingWall(10, 10, 50 + CrumbleTics, "CRUMBLE") }));
     }
 
     [Test]

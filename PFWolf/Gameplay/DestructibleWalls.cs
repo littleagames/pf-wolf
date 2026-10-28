@@ -8,7 +8,16 @@ namespace PFWolf.Gameplay;
 /// <summary>What breaking walls needs from the game</summary>
 /// <param name="PlaySoundAt">A sound from a tile</param>
 /// <param name="CompleteObjective">One more of a level objective done (Gameplay/Objectives.cs)</param>
-internal sealed record DestructibleWallHooks(Action<string, int, int>? PlaySoundAt = null, Action<string>? CompleteObjective = null);
+/// <param name="AnimationTics">How long an animdefs animation that plays once lasts, in tics; null for none (or one that loops)</param>
+/// <param name="MayBreak">
+/// Whether a wall may break (game.onwallbreak): its tile, its wall id, the damage type that broke it
+/// (null for an action or a script) and the player behind it (null for none)
+/// </param>
+internal sealed record DestructibleWallHooks(
+    Action<string, int, int>? PlaySoundAt = null,
+    Action<string>? CompleteObjective = null,
+    Func<string, int?>? AnimationTics = null,
+    Func<int, int, int, string?, Entities.Actors.PlayerPawn?, bool>? MayBreak = null);
 
 /*
 =============================================================================
@@ -19,9 +28,11 @@ Walls taken away as the level's played: at once by a switch, a floor trigger, an
 a script (A_RemoveWall, game.removewall, the removewall command), or broken by hits. A walls.yaml
 wall with a `destructible:` block (MapDestructibleTranslation) lists the damage types that hurt it;
 a hit of one of them adds its damage on the wall's tile (MapManager.WallDamage, saved) until the
-wall's health is reached, and it breaks: its sound, then it turns into its `to` wall (a more
-cracked stage) or is gone, leaving open floor joined to the floor round it, with its `spawn` on
-the tile; its actions run on its tile's tag, as a switch's.
+wall's health is reached, and it breaks (as A_BreakWall breaks it): its sound, and its actions
+run on its tile's tag, as a switch's; with an `animation` (animdefs, playing once) it crumbles,
+solid, until that's played (MapManager.CrumblingWalls, saved; Tick); then it turns into its `to`
+wall (a more cracked stage) or is gone, leaving open floor joined to the floor round it, with its
+`spawn` on the tile. A script's game.onwallbreak can keep it standing.
 
 The hits: a missile's or projectile's flying into it (its `damagetype`), a blast reaching it
 (A_Explode: its source's damagetype, else Blast), a player's gunshot striking it (their weapon's
@@ -50,17 +61,53 @@ internal sealed class DestructibleWalls(MapManager map, Doors doors, GameSession
         // map tag). With arch, a tall wall only loses its bottom story, the rest staying up as an arch.
         MapTriggerRegistry.Register("A_RemoveWall", (trigger, args) => RemoveTagged(trigger.Tag, (trigger.TileX, trigger.TileY), Arch(args)));
         Entities.Actors.ActorActionRegistry.Register("A_RemoveWall", (Entities.Actors.Actor ob, string[] args) => RemoveTagged(ob.Tag, null, Arch(args)));
+
+        // A_BreakWall(["animation"][, "sound"]): the tagged walls break as their destructible block
+        // says; one without crumbles with the animation and sound given (left out: gone at once)
+        MapTriggerRegistry.Register("A_BreakWall", (trigger, args) =>
+            ForTagged(trigger.Tag, (trigger.TileX, trigger.TileY), (x, y) => Break(x, y, trigger.Activator as Entities.Actors.PlayerPawn,
+                animation: NonEmpty(args.ElementAtOrDefault(0)), sound: NonEmpty(args.ElementAtOrDefault(1)))));
+        Entities.Actors.ActorActionRegistry.Register("A_BreakWall", (Entities.Actors.Actor ob, string[] args) =>
+            ForTagged(ob.Tag, null, (x, y) => Break(x, y, null, animation: NonEmpty(args.ElementAtOrDefault(0)), sound: NonEmpty(args.ElementAtOrDefault(1)))));
+
+        // A_DamageWall(damage[, "type"]): the tagged destructible walls take that much, as a hit of
+        // the type would deal (left out: whatever types they list), breaking once it's their health
+        MapTriggerRegistry.Register("A_DamageWall", (trigger, args) => DamageTagged(trigger.Tag, (trigger.TileX, trigger.TileY), trigger.Activator, args));
+        Entities.Actors.ActorActionRegistry.Register("A_DamageWall", (Entities.Actors.Actor ob, string[] args) => DamageTagged(ob.Tag, null, ob, args));
     }
 
     static bool Arch(string[] args) => args.Any(a => a.Trim().Equals("arch", StringComparison.OrdinalIgnoreCase));
 
+    static string? NonEmpty(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
     // The walls with the tag, besides the switch's own tile, that can go: false if none did
-    bool RemoveTagged(ushort tag, (int X, int Y)? own, bool arch)
+    bool RemoveTagged(ushort tag, (int X, int Y)? own, bool arch) => ForTagged(tag, own, (x, y) => Remove(x, y, arch));
+
+    // Something done to each wall with the tag that can go, besides the switch's own tile: whether any took it
+    bool ForTagged(ushort tag, (int X, int Y)? own, Func<int, int, bool> act)
     {
         bool any = false;
         foreach (var (x, y) in map.TaggedTiles(tag).Where(t => t != own).ToList())
             if (WhyNot(x, y) == null)
-                any |= Remove(x, y, arch);
+                any |= act(x, y);
+        return any;
+    }
+
+    bool DamageTagged(ushort tag, (int X, int Y)? own, Entities.Actors.Actor? source, string[] args)
+    {
+        if (!int.TryParse(args.ElementAtOrDefault(0), out var damage) || damage <= 0)
+        {
+            Console.WriteLine($"A_DamageWall: '{args.ElementAtOrDefault(0)}' isn't an amount of damage.");
+            return false;
+        }
+        var type = NonEmpty(args.ElementAtOrDefault(1));
+        bool any = false;
+        foreach (var (x, y) in map.TaggedTiles(tag).Where(t => t != own).ToList())
+            if (Hurts(x, y, type, source, anyType: type == null))
+            {
+                Hit(x, y, type, source, () => damage, anyType: type == null);
+                any = true;
+            }
         return any;
     }
 
@@ -130,6 +177,7 @@ internal sealed class DestructibleWalls(MapManager map, Doors doors, GameSession
         }
 
         map.WallDamage.Remove(map.TileIndex(x, y));
+        StopCrumbling(x, y);
         map.RemoveWall(x, y, areas.Count > 0 ? areas[0] : 0, arch);
         JoinAreas(areas);
         return true;
@@ -177,36 +225,55 @@ internal sealed class DestructibleWalls(MapManager map, Doors doors, GameSession
                     yield return objective;
     }
 
-    /// <summary>Whether a hit of that damage type, by that source, hurts the wall on a tile</summary>
-    internal bool Hurts(int x, int y, string? damageType, Entities.Actors.Actor? source) =>
-        damageType is { Length: > 0 } && DestructibleAt(x, y) is { } wall
-        && wall.DamageTypes.Any(type => type.Trim().Equals(damageType, StringComparison.OrdinalIgnoreCase))
+    /// <summary>
+    /// Whether a hit of that damage type (with <paramref name="anyType"/>, whatever it is), by that
+    /// source, hurts the wall on a tile: a destructible wall that lists the type, isn't players-only
+    /// to an enemy's hit, and isn't crumbling already
+    /// </summary>
+    internal bool Hurts(int x, int y, string? damageType, Entities.Actors.Actor? source, bool anyType = false) =>
+        DestructibleAt(x, y) is { } wall
+        && (anyType || damageType is { Length: > 0 } && wall.DamageTypes.Any(type => type.Trim().Equals(damageType, StringComparison.OrdinalIgnoreCase)))
         && (!wall.PlayersOnly || PlayerBehind(source) != null)
-        && WhyNot(x, y) == null;
+        && WhyNot(x, y) == null && !IsCrumbling(x, y);
 
     /// <summary>
     /// A hit on the wall on a tile, of a damage type, by a source (a player, a missile, a blast):
     /// if the type hurts it, <paramref name="damage"/> is rolled and added to what it's taken, and
     /// it breaks once that reaches its health (or at once with none). True if it broke.
     /// </summary>
-    internal bool Hit(int x, int y, string? damageType, Entities.Actors.Actor? source, Func<int> damage)
+    internal bool Hit(int x, int y, string? damageType, Entities.Actors.Actor? source, Func<int> damage, bool anyType = false)
     {
-        if (!Hurts(x, y, damageType, source))
+        if (!Hurts(x, y, damageType, source, anyType))
             return false;
 
         var wall = DestructibleAt(x, y)!;
+        int tile = map.TileIndex(x, y);
+        int taken = 0;
         if (wall.Health > 0)
         {
-            int tile = map.TileIndex(x, y);
-            int taken = map.WallDamage.GetValueOrDefault(tile) + Math.Max(damage(), 0);
+            taken = map.WallDamage.GetValueOrDefault(tile) + Math.Max(damage(), 0);
             if (taken < wall.Health)
             {
                 map.WallDamage[tile] = taken;
                 return false;
             }
         }
-        return Break(x, y, PlayerBehind(source));
+        if (Break(x, y, PlayerBehind(source), damageType))
+            return true;
+        if (taken > 0)
+            map.WallDamage[tile] = taken;       // kept standing (game.onwallbreak): the damage stays
+        return false;
     }
+
+    /// <summary>
+    /// How much more damage the wall on a tile takes before it breaks (its health less what it's
+    /// taken; 1 for one with no health, which any hit of its types breaks); null for a wall that
+    /// isn't destructible
+    /// </summary>
+    internal int? HealthLeft(int x, int y) =>
+        DestructibleAt(x, y) is { } wall
+            ? wall.Health > 0 ? Math.Max(wall.Health - map.WallDamage.GetValueOrDefault(map.TileIndex(x, y)), 0) : 1
+            : null;
 
     /// <summary>
     /// A missile or projectile that's flown into a wall: the first wall its box reaches into (a
@@ -247,50 +314,119 @@ internal sealed class DestructibleWalls(MapManager map, Doors doors, GameSession
         source as Entities.Actors.PlayerPawn ?? source?.Shooter as Entities.Actors.PlayerPawn;
 
     /// <summary>
-    /// Breaks the wall on a tile as its destructible block says: its sound, secret and objective,
-    /// then its `to` wall, or gone (its flats and spawn on the floor left), then its actions, as
-    /// <paramref name="by"/> (else the first player) used a switch there. A wall without a block
-    /// is just gone. False if nothing can break there (<see cref="WhyNot"/>).
+    /// Breaks the wall on a tile as its destructible block says: unless a script's onwallbreak
+    /// keeps it standing, its sound, secret, objective and actions (as <paramref name="by"/>, else
+    /// the first player, used a switch there); then, after its animation if it has one, its `to`
+    /// wall, or gone (its flats and spawn on the floor left). A wall without a block crumbles with
+    /// <paramref name="animation"/> and <paramref name="sound"/> if given, else is just gone. False
+    /// if nothing broke (<see cref="WhyNot"/>, crumbling already, or kept standing).
     /// </summary>
-    internal bool Break(int x, int y, Entities.Actors.PlayerPawn? by = null)
+    internal bool Break(int x, int y, Entities.Actors.PlayerPawn? by = null, string? damageType = null, string? animation = null, string? sound = null)
+    {
+        if (WhyNot(x, y) != null || IsCrumbling(x, y))
+            return false;
+        if (hooks?.MayBreak?.Invoke(x, y, map.TileMap[x, y] & ~GameConstants.BitWall, damageType, by) == false)
+            return false;
+
+        var wall = DestructibleAt(x, y);
+        map.WallDamage.Remove(map.TileIndex(x, y));
+        if ((wall?.Sound is { Length: > 0 } own ? own : sound) is { } playing)
+            hooks?.PlaySoundAt?.Invoke(playing, x, y);
+        if (wall != null)
+        {
+            if (wall.Secret)
+                session.GameState.SecretCount++;
+            if (wall.Objective is { Length: > 0 } objective)
+                hooks?.CompleteObjective?.Invoke(objective);
+            RunActions(wall.Actions, x, y, by);
+        }
+
+        var crumble = wall?.Animation is { Length: > 0 } ownAnimation ? ownAnimation.Trim() : animation;
+        if (crumble != null && WhyNot(x, y) == null)
+        {
+            if (hooks?.AnimationTics?.Invoke(crumble) is > 0 and var tics)
+            {
+                StartCrumbling(x, y, crumble, tics);
+                return true;
+            }
+            Console.WriteLine($"Destructible wall at {x},{y}: '{crumble}' isn't an animdefs animation that plays once; it breaks at once.");
+        }
+
+        Finish(x, y);
+        return true;
+    }
+
+    // What breaking leaves of the wall on a tile, now (its animation over): its `to` wall, or open
+    // floor with its flats and spawn
+    void Finish(int x, int y)
     {
         if (WhyNot(x, y) != null)
-            return false;
+            return;     // an action took it already
         var wall = DestructibleAt(x, y);
-        if (wall == null)
-            return Remove(x, y);
-
-        map.WallDamage.Remove(map.TileIndex(x, y));
-        if (wall.Sound is { Length: > 0 } sound)
-            hooks?.PlaySoundAt?.Invoke(sound, x, y);
-        if (wall.Secret)
-            session.GameState.SecretCount++;
-        if (wall.Objective is { Length: > 0 } objective)
-            hooks?.CompleteObjective?.Invoke(objective);
-
-        if (wall.To is > 0 and < GameConstants.BitWall && map.GetMapData().Walls.ContainsKey(wall.To))
+        if (wall?.To is > 0 and < GameConstants.BitWall && map.GetMapData().Walls.ContainsKey(wall.To))
         {
             // the next stage: the door-side mark kept, as A_SetWall keeps it
             map.TileMap[x, y] = (ushort)(wall.To | (map.TileMap[x, y] & GameConstants.BitWall));
             map.ActorAt[x, y] = new Wall(wall.To);
             map.RestartAnimations(x, y, session.GameState.TimeCount);
-        }
-        else
-        {
-            Remove(x, y, wall.Leaves.Trim().Equals("arch", StringComparison.OrdinalIgnoreCase));
-            if (wall.Floor != null || wall.Ceiling != null)
-            {
-                int flats = map.MapSpot(x, y, MapManager.FlatPlane);
-                int floor = wall.Floor ?? flats & 0xff, ceiling = wall.Ceiling ?? flats >> 8;
-                map.SetFlats(x, y, (ushort)((floor & 0xff) | (ceiling & 0xff) << 8));
-            }
-            foreach (var className in wall.Spawn.Where(c => !string.IsNullOrWhiteSpace(c)))
-                if (map.SpawnThing(x, y, new MapActorTranslation { Class = className.Trim() }, countKill: false) == null)
-                    Console.WriteLine($"Destructible wall at {x},{y}: '{className}' isn't an actor.");
+            return;
         }
 
-        RunActions(wall.Actions, x, y, by);
-        return true;
+        Remove(x, y, wall?.Leaves.Trim().Equals("arch", StringComparison.OrdinalIgnoreCase) == true);
+        if (wall == null)
+            return;
+        if (wall.Floor != null || wall.Ceiling != null)
+        {
+            int flats = map.MapSpot(x, y, MapManager.FlatPlane);
+            int floor = wall.Floor ?? flats & 0xff, ceiling = wall.Ceiling ?? flats >> 8;
+            map.SetFlats(x, y, (ushort)((floor & 0xff) | (ceiling & 0xff) << 8));
+        }
+        foreach (var className in wall.Spawn.Where(c => !string.IsNullOrWhiteSpace(c)))
+            if (map.SpawnThing(x, y, new MapActorTranslation { Class = className.Trim() }, countKill: false) == null)
+                Console.WriteLine($"Destructible wall at {x},{y}: '{className}' isn't an actor.");
+    }
+
+    /// <summary>Whether the wall on a tile is crumbling now</summary>
+    internal bool IsCrumbling(int x, int y) => map.CrumblingWalls.Any(c => c.X == x && c.Y == y);
+
+    // Every face of the wall shows the animation (from now: it plays once) until it's played
+    void StartCrumbling(int x, int y, string animation, int tics)
+    {
+        int now = session.GameState.TimeCount;
+        if (map.GetMapData().Walls.TryGetValue(map.TileMap[x, y] & ~GameConstants.BitWall, out var faces))
+        {
+            var shown = new[] { "north", "south", "east", "west" }.Select(faces.WallFace)
+                .Append(map.GetDiagonal(x, y)?.Texture ?? "")
+                .Where(name => name.Length > 0)
+                .Select(name => map.ChangedTexture(x, y, name))
+                .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (var name in shown)
+                map.ChangeTexture(x, y, name, animation, now);
+        }
+        map.CrumblingWalls.Add(new CrumblingWall(x, y, now + tics, animation));
+    }
+
+    // A wall that stops crumbling (taken away meanwhile, or done): its faces back as they were
+    void StopCrumbling(int x, int y)
+    {
+        foreach (var wall in map.CrumblingWalls.Where(c => c.X == x && c.Y == y).ToList())
+        {
+            map.CrumblingWalls.Remove(wall);
+            map.UndoTextureChanges(x, y, wall.Animation);
+        }
+    }
+
+    /// <summary>Each frame the world moves: the walls whose animation has played break, in the order they started</summary>
+    internal void Tick()
+    {
+        if (map.CrumblingWalls.Count == 0)
+            return;
+        int now = session.GameState.TimeCount;
+        foreach (var wall in map.CrumblingWalls.Where(c => now >= c.EndTic).ToList())
+        {
+            StopCrumbling(wall.X, wall.Y);
+            Finish(wall.X, wall.Y);
+        }
     }
 
     // A broken wall's actions, as if the player who broke it had used a switch on its tile

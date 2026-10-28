@@ -320,6 +320,7 @@ internal class MapManager
         ClearTextureChanges();
         ObjectiveCounts = new(StringComparer.OrdinalIgnoreCase);     // counted afresh as the level's set up (Gameplay/Objectives.cs)
         WallDamage = [];
+        CrumblingWalls = [];
 
 #if USE_FEATUREFLAGS
     const int MXX = MAPSIZE - 1;
@@ -1121,6 +1122,12 @@ internal class MapManager
     /// </summary>
     internal Dictionary<int, int> WallDamage = [];
 
+    /// <summary>
+    /// The walls crumbling now (Gameplay/DestructibleWalls.cs), in the order they started: each
+    /// shows its animation until level tic EndTic, then breaks. Saved with the level.
+    /// </summary>
+    internal List<CrumblingWall> CrumblingWalls = [];
+
     /// <summary>Per tile (<see cref="TileIndex"/>): the level tic it last changed, 0 for never.</summary>
     internal int[] AnimStart = new int[MapConstants.ClassicMapArea];
 
@@ -1150,6 +1157,18 @@ internal class MapManager
         if (!changes.ContainsKey(from))
             changes[from] = to;
         AnimStart[i] = tic;
+    }
+
+    /// <summary>Takes back every change on a tile that shows <paramref name="to"/> (a crumbling wall's animation, once it's broken)</summary>
+    internal void UndoTextureChanges(int x, int y, string to)
+    {
+        int i = TileIndex(x, y);
+        if (!texturechanges.TryGetValue(i, out var changes))
+            return;
+        foreach (var from in changes.Where(c => c.Value.Equals(to, StringComparison.OrdinalIgnoreCase)).Select(c => c.Key).ToList())
+            changes.Remove(from);
+        if (changes.Count == 0)
+            texturechanges.Remove(i);
     }
 
     /// <summary>Rebuilds the flats, after A_ChangeTexture changed some.</summary>
@@ -2119,6 +2138,15 @@ internal class MapManager
             bw.Write(tile);
             bw.Write(damage);
         }
+
+        bw.Write(CrumblingWalls.Count);
+        foreach (var wall in CrumblingWalls)
+        {
+            bw.Write(wall.X);
+            bw.Write(wall.Y);
+            bw.Write(wall.EndTic);
+            bw.Write(wall.Animation);
+        }
     }
 
     /// <summary>Parses what <see cref="WriteLevelState"/> wrote, without touching the loaded level.</summary>
@@ -2182,7 +2210,16 @@ internal class MapManager
             wallDamage[tile] = br.ReadInt32();
         }
 
-        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes, patches, objectives, wallDamage);
+        var crumbling = new List<CrumblingWall>();
+        for (int i = br.ReadCount(); i > 0; i--)
+        {
+            var wall = new CrumblingWall(br.ReadInt32(), br.ReadInt32(), br.ReadInt32(), br.ReadString());
+            if (wall.X < 0 || wall.Y < 0 || wall.X >= width || wall.Y >= height)
+                throw new InvalidDataException($"Bad tile {wall.X},{wall.Y} in the crumbling walls.");
+            crumbling.Add(wall);
+        }
+
+        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes, patches, objectives, wallDamage, crumbling);
     }
 
     /// <summary>
@@ -2229,6 +2266,7 @@ internal class MapManager
         ObjectiveCounts = level.Objectives.ToDictionary(o => o.Key, o => new ObjectiveCount { Done = o.Value.Done, Total = o.Value.Total },
             StringComparer.OrdinalIgnoreCase);
         WallDamage = new Dictionary<int, int>(level.WallDamage);
+        CrumblingWalls = [.. level.CrumblingWalls];
         ReadMapInfo(fillFlats: false);      // the saved flat plane already has the map's flats
         BuildWallShapes();
         BuildWallHeights();
@@ -2290,7 +2328,11 @@ internal sealed record LevelSnapshot(
     Dictionary<int, Dictionary<string, string>> TextureChanges,
     byte[,] Patches,
     Dictionary<string, ObjectiveCount> Objectives,
-    Dictionary<int, int> WallDamage);
+    Dictionary<int, int> WallDamage,
+    List<CrumblingWall> CrumblingWalls);
+
+/// <summary>A wall showing its crumble animation (MapManager.CrumblingWalls) until level tic EndTic, when it breaks</summary>
+internal sealed record CrumblingWall(int X, int Y, int EndTic, string Animation);
 
 /// <summary>How many of a level objective are done, of how many (Gameplay/Objectives.cs)</summary>
 internal sealed class ObjectiveCount

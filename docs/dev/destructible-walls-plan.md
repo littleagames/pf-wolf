@@ -2,7 +2,7 @@
 
 Walls that can be broken or taken away during play: shot down by the right weapon, blown out by
 a blast, or made to crumble or vanish by a switch, a floor trigger, an actor's state or a script.
-Planned 2026-10-28 on branch feature/destructible-walls; phases 1 and 2 are done (see Status at the end).
+Planned 2026-10-28 on branch feature/destructible-walls; phases 1-3 are done (see Status at the end).
 
 ## What there is to build on
 
@@ -211,7 +211,7 @@ Not checked in play: switch/trigger/actor use of A_RemoveWall, enemies hearing t
 hole, diagonals, door jambs, in-wall shooters, a removed secret pushwall
 (docs/dev/manual-testing.md 1.12).
 
-**Phase 2 done (2026-10-28, uncommitted).**
+**Phase 2 done (2026-10-28, committed 5f7b8b87).**
 - **The block:** `MapDestructibleTranslation` (Common), as `destructible:` on a walls.yaml wall,
   documented in pfwolf-pk3's mapdefs/wolf3d/walls.yaml header and the docs' mapdefs reference.
   Its fields: damage-types, health, to, sound, spawn, leaves, floor, ceiling, actions, secret,
@@ -259,3 +259,37 @@ Behaviour to know about:
 Not checked in play: players-only, `to` stages, spawn, actions, floor/ceiling flats, a secret's
 count, objectives, pellets (A_FirePellets), FireBullet, a save mid-damage and loaded back,
 diagonals.
+
+**Phase 3 done (2026-10-28, uncommitted).**
+- **Crumbling.** The block's `animation` names an animdefs animation that plays once. While it
+  plays, the wall stays solid and every face (and a diagonal's) shows it through
+  A_ChangeTexture's per-tile swaps, starting from that tic.
+  - The walls crumbling are in `MapManager.CrumblingWalls` (x, y, end tic, animation), in the
+    order they started.
+  - `DestructibleWalls.Tick`, called from LevelLoop after the timed switches
+    (LevelLoopHooks.TickWalls), finishes each one once its end tic comes: it undoes the face
+    swaps (`MapManager.UndoTextureChanges`), then puts in the `to` stage or removes the wall.
+  - Hits on a crumbling wall do nothing. A_RemoveWall on one stops it at once.
+  - The sound, secret, objective and actions go off when the wall starts to crumble; the removal
+    and `spawn` happen at the end.
+  - A name that isn't a play-once animation breaks the wall at once, with a console warning.
+- **Break order now:** game.onwallbreak (DestructibleWallHooks.MayBreak) can refuse, and the
+  damage stays. Then the sound, secret, objective and actions. Then crumbling, or the finish
+  straight away.
+- **Actions:** `A_BreakWall(["animation"][, "sound"])` uses the block, or the given animation and
+  sound for a wall without one. `A_DamageWall(damage[, "type"])`: with no type, it hurts whatever
+  types the wall lists. Both work from switches and actors.
+- **Console:** `breakwall [tilex tiley]` (cheat).
+- **Lua:** `game.breakwall(x, y)`, `game.wallhealth(x, y)` (1 for a wall without health, nil if
+  it isn't destructible), and the hook `game.onwallbreak(function(x, y, wall, type, by))`.
+- Save v38 (the crumbling walls after the wall damage); NetStateVersion 16.
+- Tests: crumbling and finishing, removal mid-crumble, a script keeping a wall standing,
+  HealthLeft, A_DamageWall with and without a type, A_BreakWall on a plain wall, a bad
+  animation, saved crumbling walls, the Lua functions and hook.
+- Checked headless in E1M1, with the scratch mod's CRUMBLE (GSTONEA1 then BSTCELA1, 35 tics
+  each):
+  - `breakwall` showed both frames in turn while the tile refused `tp`.
+  - A save made 10 tics in, loaded back, kept the wall solid until the end, then it broke.
+
+Not checked in play: A_BreakWall / A_DamageWall from a real switch, the onwallbreak hook in a
+level, a `to` stage after an animation.

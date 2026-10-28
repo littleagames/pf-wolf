@@ -546,7 +546,9 @@ internal static partial class GameHost
     // Walls taken away as the level's played (Gameplay/DestructibleWalls.cs)
     static DestructibleWalls destructibleWalls = null!;
     static DestructibleWalls MakeDestructibleWalls() => new(MapManager, doors, Session,
-        new DestructibleWallHooks(PlaySoundLocTile, name => Objectives.Complete(name)));
+        new DestructibleWallHooks(PlaySoundLocTile, name => Objectives.Complete(name),
+            name => AssetManager.FindAnimation<Assets.TextureAsset>(name) is { Loops: false } animation ? animation.TotalTics : null,
+            (x, y, wall, type, by) => gameScripts?.RunWallBreakHooks(x, y, wall, type, by) != false));
     private static void RegisterDestructibleWallActions() => (destructibleWalls ??= MakeDestructibleWalls()).Register();
 
     // ==== WL_ACT2 ================================================================================

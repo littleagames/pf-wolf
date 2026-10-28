@@ -60,6 +60,8 @@ internal sealed class LevelEditCommands(
         console.Register("removewall", "Takes a wall away (default: the one you face), as A_RemoveWall does; with arch, a tall wall keeps its upper stories as an arch.",
             "removewall [arch] [tilex tiley]", RemoveWallCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["arch"] : []);
+        console.Register("breakwall", "Breaks a wall (default: the one you face) as A_BreakWall does: its destructible block's sound, actions, crumbling animation and next stage; one without is just gone.",
+            "breakwall [tilex tiley]", BreakWallCommand, Cheat | InLevel);
         console.Register("flat", "Sets a tile's floor and ceiling flat indices (mapdefs flats) on the flat plane (default: the tile you stand on).",
             "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", FlatCommand, Cheat | InLevel);
         console.Register("flats", "Sets the level's default floor and ceiling textures, for tiles the flat plane doesn't give one (not saved).",
@@ -179,6 +181,22 @@ internal sealed class LevelEditCommands(
 
         destructibleWalls.Remove(x, y, arch);
         console.Print($"Tile {x},{y}: the wall is gone{(map.StoryMap[x, y] > 1 ? $", an arch of {map.StoryMap[x, y]} stories left" : "")}");
+    }
+
+    internal void BreakWallCommand(string[] args)
+    {
+        if (args.Length is 1 or > 2 || destructibleWalls == null)
+            throw new ArgumentException("usage: breakwall [tilex tiley]");
+
+        var (x, y) = targets.TileArg(args, 0);
+        if (destructibleWalls.WhyNot(x, y) is { } why)
+            throw new ArgumentException($"Can't break it: {why}");
+        if (!destructibleWalls.Break(x, y, session.Player))
+            throw new ArgumentException($"Tile {x},{y}: it didn't break (crumbling already, or a script kept it standing)");
+
+        console.Print(destructibleWalls.IsCrumbling(x, y) ? $"Tile {x},{y}: the wall is crumbling"
+            : map.TileMap[x, y] == 0 ? $"Tile {x},{y}: the wall is gone"
+            : $"Tile {x},{y}: the wall is now wall {map.TileMap[x, y] & ~GameConstants.BitWall}");
     }
 
     internal void FlatCommand(string[] args)

@@ -131,7 +131,7 @@ internal sealed partial class GameScripts
         "onplayerdeath", "onspawn", "onsight", "ondoor", "onpushwall", "onswitch", "onenter", "onexit", "onteleport",
         "onactorspawn", "onrevive", "onfactionchange", "onfire", "onweaponswitch", "ongive", "onpowerup",
         "onobjective", "onchain", "onstealthkill", "ontimeup", "onfrag", "onflag", "onmatchend", "onchasedir",
-        "onhud", "onmusic", "ontally",
+        "onhud", "onmusic", "ontally", "onwallbreak",
     ];
 
     sealed class ScriptHook(LuaValue function, string name)
@@ -413,6 +413,13 @@ internal sealed partial class GameScripts
     /// <summary>The scripts' pushwall hooks, as a pushwall's about to slide (PushWalls.PushWall): false if one keeps it still</summary>
     internal bool RunPushWallHooks(Entities.Actors.Actor player, int x, int y, ControlDir dir) =>
         Allowed("onpushwall", () => [LuaActor.Of(player), x, y, DirName(dir)]);
+
+    /// <summary>
+    /// The scripts' wall-break hooks, as a wall's about to break (Gameplay/DestructibleWalls.cs):
+    /// false if one keeps it standing
+    /// </summary>
+    internal bool RunWallBreakHooks(int x, int y, int wall, string? damageType, Entities.Actors.Actor? by) =>
+        Allowed("onwallbreak", () => [x, y, wall, damageType ?? LuaValue.Nil, LuaActor.Of(by)]);
 
     /// <summary>The scripts' switch hooks, as a switch is about to be thrown (PlayerUse): false if one leaves it be</summary>
     internal bool RunSwitchHooks(Entities.Actors.Actor player, int x, int y, int tag) =>

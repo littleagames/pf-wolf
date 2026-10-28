@@ -13,6 +13,7 @@
 #         health: 50
 #         to: 41                          # a more cracked stage; left out, it's gone
 #         sound: world/wallbreak
+#         animation: WALLCRUMBLE          # animdefs, playing once; solid until it's played
 #         spawn: [Rubble]                 # put on the floor it leaves
 #         leaves: arch                    # a tall wall keeps its upper stories
 #         actions:                        # run on its tile's tag, as a switch's

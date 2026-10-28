@@ -48,6 +48,9 @@ public static class ScriptApi
         Fn("patch", "game.patch(x, y)", "The patch (mapdefs patches) on a wall tile, 0 for none"),
         Fn("floor", "game.floor(x, y)", "The texture on a tile's floor (mapdefs flats or the map's default-floor, as A_ChangeTexture left it), nil where the floor color shows"),
         Fn("removewall", "game.removewall(x, y[, \"arch\"])", "Takes the wall off a tile for good, as A_RemoveWall does, leaving open floor joined to the floor round it; with \"arch\" a tall wall keeps its upper stories as an arch. False where there's no wall that can go (a door, open floor, a moving pushwall, the map's edge)"),
+        Fn("breakwall", "game.breakwall(x, y)", "Breaks the wall on a tile as its walls.yaml destructible block says, as A_BreakWall does (sound, actions, crumbling animation, its to: stage or gone); a wall without one is just gone. False where nothing broke (no wall, crumbling already, or a game.onwallbreak hook kept it)"),
+        Fn("wallhealth", "game.wallhealth(x, y)", "How much more damage the wall on a tile takes before it breaks (its destructible health less what it's taken; 1 for one with no health), nil for a wall that isn't destructible"),
+        Fn("onwallbreak", "game.onwallbreak(function(x, y, wall, type, by) ... end)", "Adds a hook asked as a wall's about to break (a hit's, A_BreakWall's or game.breakwall's): its tile, its wall id, the damage type that broke it (nil for an action or a script) and the player behind it (nil for none). Return false to keep it standing (the damage it's taken stays)"),
         Fn("trigger", "game.trigger(tag, action, ...)",
             "Runs a switch action on a tag, as a switch with it would, used by the first player: game.trigger(3, \"A_OpenDoor\", \"hold\"), "
             + "or the whole call in one string, game.trigger(3, 'A_OpenDoor(\"hold\")'). True if it did anything (false with no player on the level). "

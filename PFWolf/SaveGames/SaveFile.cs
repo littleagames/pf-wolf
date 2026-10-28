@@ -66,7 +66,8 @@ internal static class SaveFile
     // 35: the wall outlets' and warp sites' waits and the floor drop, at the end of the level (LevelAI).
     // 36: whether the player's weapon can fire (NoShots: Goldfire morphing), at the end of the level.
     // 37: the damage destructible walls have taken (a count, then each tile and its damage), after the objectives.
-    internal const int SaveVersion = 37;
+    // 38: the walls crumbling (a count, then each one's x, y, end tic and animation), after the wall damage.
+    internal const int SaveVersion = 38;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

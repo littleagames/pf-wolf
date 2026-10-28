@@ -648,9 +648,10 @@ public record MapTextureTranslation
 /// <summary>
 /// A wall that breaks (Gameplay/DestructibleWalls.cs): hits whose damage type it lists add up
 /// their damage on its tile, and once they reach its <see cref="Health"/> (with none, at the first
-/// such hit) it breaks. Then it plays <see cref="Sound"/>, turns into wall <see cref="To"/> (a more
-/// cracked stage, itself destructible or not) or with none is gone, leaving open floor; puts
-/// <see cref="Spawn"/> on the floor it leaves; and runs <see cref="Actions"/> on its tile's tag.
+/// such hit) it breaks, as A_BreakWall breaks it. Then it plays <see cref="Sound"/> and runs
+/// <see cref="Actions"/> on its tile's tag; shows its <see cref="Animation"/> while it crumbles, if
+/// it has one; then turns into wall <see cref="To"/> (a more cracked stage, itself destructible or
+/// not) or with none is gone, leaving open floor with <see cref="Spawn"/> on it.
 /// </summary>
 public record MapDestructibleTranslation
 {
@@ -673,6 +674,13 @@ public record MapDestructibleTranslation
 
     /// <summary>Played from the wall as it breaks. Empty: silent.</summary>
     public string Sound { get; init; } = "";
+
+    /// <summary>
+    /// An animdefs animation that plays once (ends in stop), shown on every face as it breaks: the
+    /// wall stays solid until it's played, then turns into <see cref="To"/> or is gone. Its
+    /// sound, secret, objective and actions go off as it starts. Empty: it breaks at once.
+    /// </summary>
+    public string Animation { get; init; } = "";
 
     /// <summary>
     /// The actordefs classes put on its tile once it's gone (rubble, an explosion, something that

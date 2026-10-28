@@ -55,6 +55,12 @@ internal sealed partial class GameScripts(
     /// <summary>game.removewall: takes the wall off a tile, an arch left or not (Gameplay/DestructibleWalls.cs); false if it can't go</summary>
     internal Func<int, int, bool, bool> RemoveWall { get; init; } = (_, _, _) => false;
 
+    /// <summary>game.breakwall: breaks the wall on a tile as its destructible block says; false if it didn't</summary>
+    internal Func<int, int, bool> BreakWall { get; init; } = (_, _) => false;
+
+    /// <summary>game.wallhealth: the damage the wall on a tile takes yet before it breaks; null for one that isn't destructible</summary>
+    internal Func<int, int, int?> WallHealth { get; init; } = (_, _) => null;
+
     /// <summary>The scripts' Lua state, once any have loaded (or the lua command has made one)</summary>
     internal ScriptHost? Scripts => _scripts;
 
@@ -361,6 +367,25 @@ internal sealed partial class GameScripts(
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.removewall: {x},{y} isn't a tile on the map", 1);
             bool arch = OptionalString(c, 2)?.Equals("arch", StringComparison.OrdinalIgnoreCase) == true;
             return new(c.Return(RemoveWall(x, y, arch)));
+        });
+        // game.breakwall(x, y): the wall on the tile breaks as its destructible block says (as
+        // A_BreakWall); false where nothing broke
+        game["breakwall"] = new LuaFunction("game.breakwall", (c, _) =>
+        {
+            ChangesTheGame(c, "game.breakwall");
+            int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
+            if (!map.InMap(x, y))
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.breakwall: {x},{y} isn't a tile on the map", 1);
+            return new(c.Return(BreakWall(x, y)));
+        });
+        // game.wallhealth(x, y): how much more damage the wall on the tile takes before it breaks,
+        // nil for one that isn't destructible
+        game["wallhealth"] = new LuaFunction("game.wallhealth", (c, _) =>
+        {
+            int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
+            if (!map.InMap(x, y))
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.wallhealth: {x},{y} isn't a tile on the map", 1);
+            return new(c.Return(WallHealth(x, y) is { } left ? left : LuaValue.Nil));
         });
         game["trigger"] = new LuaFunction("game.trigger", (c, _) =>
         {
