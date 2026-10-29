@@ -344,6 +344,7 @@ internal class MapManager
         LevelSerial++;
         ForgetPawns();
         PlayerStart = null;
+        EntranceStart = false;
         DeathmatchStarts.Clear();
         foreach (var starts in TeamStarts)
             starts.Clear();
@@ -366,7 +367,6 @@ internal class MapManager
                 && badpatchswitches.Add(id))
                 Console.WriteLine($"mapdefs patch {id}'s switch goes to {patchSwitch.To}, which isn't a patch; it won't change when used");
 
-        bool entranceStart = false;     // the start of the entrance the level's entered by has been found
         for (int y = 0; y < MapHeight; y++)
         {
             for (int x = 0; x < MapWidth; x++)
@@ -422,10 +422,10 @@ internal class MapManager
                         if (startXlat.Entrance.Equals(session.GameState.Entrance, StringComparison.OrdinalIgnoreCase))
                         {
                             PlayerStart = new MapPlayerStart(x, y, startXlat.Angles);
-                            entranceStart = true;
+                            EntranceStart = true;
                         }
                     }
-                    else if (!entranceStart)
+                    else if (!EntranceStart)
                         PlayerStart = new MapPlayerStart(x, y, startXlat.Angles);
                     continue;
                 }
@@ -1336,6 +1336,9 @@ internal class MapManager
 
     /// <summary>Where the loaded map puts the player (its object-plane player start); null if it has none.</summary>
     internal MapPlayerStart? PlayerStart { get; private set; }
+
+    /// <summary>Whether <see cref="PlayerStart"/> is the start of the entrance the level's entered by (GameState.Entrance)</summary>
+    internal bool EntranceStart { get; private set; }
 
     /// <summary>The map's deathmatch starts (mapdefs player-starts with `deathmatch: true`), if it has any</summary>
     internal List<MapPlayerStart> DeathmatchStarts { get; } = [];

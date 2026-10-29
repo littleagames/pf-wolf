@@ -49,7 +49,7 @@ internal sealed class ElevatorScreens(GameEngineManager engine, AssetManager ass
     GameSession session, ElevatorHooks hooks)
 {
     ElevatorAsset? elevatorAsset;
-    internal ElevatorAsset? Elevator => elevatorAsset ??= assets.FindInGamePack<ElevatorAsset>("elevator");
+    internal ElevatorAsset? Elevator => elevatorAsset ??= assets.FindInGamePackIfAny<ElevatorAsset>("elevator");     // a hub without one (a mod's) is fine
 
     /// <summary>The cluster's floors, by floor number, that have a button</summary>
     internal Dictionary<int, string> ElevatorFloors(ElevatorAsset elevator)

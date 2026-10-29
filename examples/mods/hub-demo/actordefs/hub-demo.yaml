@@ -1,0 +1,59 @@
+# The emblems: one in each of the hub's levels, and the vault door (this mod's
+# mapdefs/doors.yaml) needs all three. Each is the crown's sprite drawn through a color
+# translation (this mod's translations.yaml), glowing its own color (light.*).
+#
+# Carried items are trimmed to their "inventory.interhubamount" on every level change: keys
+# are 0 (dropped), and an emblem keeps its 1, so it comes back to the hub with you. Locks don't
+# need a Key: any item a door's locks: names opens it, and "key.lockedmessage" is the message the
+# door shows while that item is missing.
+HubEmblem:
+  parent: CustomInventory
+  properties:
+    "inventory.amount": 1
+    "inventory.maxamount": 1
+    "inventory.interhubamount": 1
+    "inventory.pickupsound": "treasure/crown/pickup"
+    "light.intensity": 150
+    "light.radius": 2
+  states:
+    Spawn:
+      - sprite: CRWN
+        frames: [A]
+        tics-per-frame: -1
+
+CellblockEmblem:
+  parent: HubEmblem
+  properties:
+    translation: emblem-blue
+    "light.color": "#4080FF"
+    "inventory.pickupmessage": "$HUB_GOTCELLBLOCK"
+    "key.lockedmessage": "$HUB_NEEDCELLBLOCK"
+
+ArmoryEmblem:
+  parent: HubEmblem
+  properties:
+    translation: emblem-green
+    "light.color": "#40FF60"
+    "inventory.pickupmessage": "$HUB_GOTARMORY"
+    "key.lockedmessage": "$HUB_NEEDARMORY"
+
+ChapelEmblem:
+  parent: HubEmblem
+  properties:
+    translation: emblem-red
+    "light.color": "#FF4040"
+    "inventory.pickupmessage": "$HUB_GOTCHAPEL"
+    "key.lockedmessage": "$HUB_NEEDCHAPEL"
+
+# What shows on the hub's teleport pad (mapdefs/triggers.yaml `class`): Wolf3D's puddle, tinted
+# violet and glowing, pulsing slowly
+HubTeleportPool:
+  parent: Puddle
+  properties:
+    translation: pool-violet
+    "light.intensity": 200
+    "light.radius": 3
+    "light.color": "#B060FF"
+    "light.effect": pulse
+    "light.low": 100
+    "light.tics": 70

@@ -1,0 +1,13 @@
+# The vault door, south of the hub's hall: it needs all three emblems (locks:). Without a
+# lock-message of its own, trying it short of one shows that emblem's "key.lockedmessage" (this
+# mod's actordefs/hub-demo.yaml), so the door says which level you still have to finish.
+doors:
+    '80':
+        open-sound: doors/open
+        close-sound: doors/close
+        North: DOOR3_1
+        South: DOOR3_1
+        East: SLOT1_2
+        West: SLOT1_2
+        locks: [CellblockEmblem, ArmoryEmblem, ChapelEmblem]
+        automap-color: '#FFD700'

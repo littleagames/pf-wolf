@@ -298,6 +298,87 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-key-demo.ps1
 In game, with cheats on, `give RedKey` (or any key class) hands you a key, and `give keys`
 every one there is.
 
+## Hub Demo (`mods/hub-demo`)
+
+A hub level that replaces Floor 1 (Wolfenstein 3D only), with three ways out to three levels of
+its own. Each of those levels comes back to the hub, and the hub is just as you left it.
+
+```
+PFWolf.exe --file hub-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+You start in **The Crossroads**, a hall with three ways out:
+
+- **West:** an elevator to **The Cellblock**: a corridor of cells, the blue emblem in the last one.
+- **East:** an elevator to **The Armory**: guards and dogs, the green emblem among the racks.
+- **North:** through the door, a glowing violet pool. Step onto it for **The Chapel**: a nave of
+  columns, the red emblem at its far end.
+
+Each level's own elevator takes you back to the hub, where you come out the way you went in:
+inside the elevator you took, or beside the pool. There's no tally between them. Bring all three
+emblems to the **vault** south of the hall. Its door won't open short of one, and it says which
+one you still need. Inside are a crown, a chest and the elevator that wins the game.
+
+Everything in the hub's cluster is kept as it was left. Come back to the hub and its doors are as
+you left them. Go back into a level you've been in and you're where you left it (at its
+elevator, if you finished it), with its enemies still dead. Keys are dropped as you change level;
+the emblems aren't.
+
+### What's in it
+
+- `game-info.yaml`: the hub's cluster, 7, with `hub: true` (each level in it is kept as it's
+  left, and left without the tally), and the four levels in it. MAP01, the hub, has no `next`
+  (`next: !remove`), so its vault elevator wins the game. The other three each have `next: MAP01`
+  and a `next-entrance` (`west`, `east`, `north`): the hub's player start they come back to.
+  Every field is in the
+  [game-info reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info).
+- `mapdefs/walls.yaml`: the hub's elevator levers, walls 50-53. Each is a switch whose action is
+  `A_ChangeMap("HUB1")` (or `HUB2`): the level ends and that map comes up, with no tally. Each
+  lever switches to its other half and back, both running the same action, so it flips each time
+  you use it.
+- `mapdefs/triggers.yaml`: the pool, object 610, a walk-over trigger running
+  `A_ChangeMap("HUB3")`. It has `repeat: true`. A trigger that goes off once is cleared from the
+  map, and since the hub is kept, the pool would be gone when you came back.
+- `mapdefs/player.yaml`: the hub's entrance starts, objects 600-602, each with an `entrance:`
+  name. One is used only when the hub is entered by that entrance, and then it wins over where
+  you left the hub. A new game starts on the hub's ordinary start (Wolf3D's 19).
+- `mapdefs/doors.yaml`: the vault door, 80, with `locks:` naming the three emblems.
+- `mapdefs/things.yaml`: objects 620-622, the emblems.
+- `actordefs/hub-demo.yaml`: the emblems (`CustomInventory` with `inventory.interhubamount: 1`,
+  so a level change leaves you yours; a key's is 0) and the pool, `HubTeleportPool`. A lock
+  needn't be a `Key`: any item a door's `locks:` names opens it, and the item's
+  `key.lockedmessage` is what the door says while it's missing. Each emblem is the crown's
+  sprite in a color of its own, with a light of the same color.
+- `translations.yaml`: the emblems' and the pool's colors.
+- `scripts/hub-demo.lua`: a word as a new game starts on the hub, and where each way out goes
+  as you step towards it (each one's floor has a tag, 1-3, on the tag plane).
+- `language/en-us.yaml`: the messages.
+- `maps/MAP01.wad`, `HUB1.wad`, `HUB2.wad`, `HUB3.wad`: the levels. A new level is any name
+  game-info lists (`maps/NAME.wad`).
+
+The levels are made by `tools/make-hub-demo.ps1`, from the ASCII layouts in it. Edit them and
+run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-hub-demo.ps1
+```
+
+### Making a hub of your own
+
+- Put the hub and its levels in one cluster with `hub: true`. Moving to another cluster forgets
+  the kept levels, so a level outside it starts afresh each time.
+- A way out of the hub is a switch or a walk-over trigger running
+  `A_ChangeMap("MAP", ["keep-position"], ["entrance"])`. A trigger needs `repeat: true` to
+  be there when you come back.
+- A way back is an ordinary exit (`A_Exit`) with `next:` the hub, or another `A_ChangeMap`.
+- The entrance (`next-entrance`, or A_ChangeMap's word after the map) picks the player start
+  with that `entrance:` on the level you go to, on a kept level too. With none, a kept level puts
+  you back where you left it.
+- With cheats on, `map HUB2` warps there, and `doors` lists the doors and what opens them. From
+  a script, `game.trigger(0, "A_ChangeMap", "HUB2")` changes the map as a switch would.
+
 ## Standalone Demo (`mods/standalone-demo`)
 
 A tiny game of its own that **needs no other game's files**: no WL6, SOD or any other data

@@ -82,7 +82,10 @@ internal sealed class LevelEntry(
         hubs.HubLevels[hubs.LevelMap] = ms.ToArray();
     }
 
-    /// <summary>Rebuilds a kept hub level as it was left; false if there's none (or it can't be)</summary>
+    /// <summary>
+    /// Rebuilds a kept hub level as it was left, the player where they left it unless they come
+    /// back by an entrance it has a start for; false if there's none (or it can't be)
+    /// </summary>
     internal bool RestoreHubLevel(string map)
     {
         if (!hubs.HubLevels.TryGetValue(map, out var data))
@@ -133,7 +136,21 @@ internal sealed class LevelEntry(
         session.GameState.PointsTotal = pointsTotal;
         hubs.InformantTotal = informants;
         session.PlayerState.WeaponSprite = null;
+
+        // Come back by an entrance (A_ChangeMap's, a level's next-entrance), the player's at its
+        // start rather than where they left: a hub's level returns them by its own way in
+        if (mapManager.EntranceStart && mapManager.PlayerStart is { } start)
+            PutPlayerAt(start);
         return true;
+    }
+
+    void PutPlayerAt(MapManager.MapPlayerStart start)
+    {
+        var player = session.Player;
+        player.SetPosition(start.TileX, start.TileY);
+        player.AreaNumber = mapManager.SpawnArea(start.TileX, start.TileY);
+        player.Angle = (short)((start.Angle % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles);
+        movement.Thrust(0, 0);       // settles the player's tile and area
     }
 
     /// <summary>Remembers the player as they come into the level (GameLoop), for death-restores-level-start</summary>

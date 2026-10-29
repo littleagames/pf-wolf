@@ -1,0 +1,53 @@
+# The hub's two elevators (the fields are in the mapdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs). Each looks like Wolf3D's
+# elevator switch (wall 21), but its lever runs A_ChangeMap: the level ends and the named map
+# comes up, with no tally. Each switches to its other half and back (to:), both halves going to
+# the same map, so the lever flips every time it's used and the elevator can be taken again.
+walls:
+    # The west elevator: The Cellblock
+    '50':
+        North: ELEV1_1
+        South: ELEV1_1
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 51
+            sides: [east, west]
+            sound: switches/elevbutn
+            actions:
+                - A_ChangeMap("HUB1")
+    '51':
+        North: ELEV2_1
+        South: ELEV2_1
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 50
+            sides: [east, west]
+            sound: switches/elevbutn
+            actions:
+                - A_ChangeMap("HUB1")
+
+    # The east elevator: The Armory
+    '52':
+        North: ELEV1_1
+        South: ELEV1_1
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 53
+            sides: [east, west]
+            sound: switches/elevbutn
+            actions:
+                - A_ChangeMap("HUB2")
+    '53':
+        North: ELEV2_1
+        South: ELEV2_1
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 52
+            sides: [east, west]
+            sound: switches/elevbutn
+            actions:
+                - A_ChangeMap("HUB2")

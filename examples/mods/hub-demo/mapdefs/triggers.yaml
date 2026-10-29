@@ -1,0 +1,10 @@
+# The hub's teleport pad (object 610): stepping onto it goes to The Chapel. A trigger can run
+# A_ChangeMap as a switch can. `repeat: true` keeps it: a trigger that goes off once is cleared,
+# and the hub is kept as it was left, so without it the pad would be gone on coming back. Its
+# `class` is what shows on its tile, the glowing pool (this mod's actordefs/hub-demo.yaml).
+triggers:
+  610:
+    action: A_ChangeMap("HUB3")
+    activation: walk
+    repeat: true
+    class: HubTeleportPool

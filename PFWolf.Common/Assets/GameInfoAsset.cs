@@ -1500,9 +1500,11 @@ public record EpisodeInfo
 public record ClusterInfo
 {
     /// <summary>
-    /// The cluster's levels are kept as they were left (Blake Stone's floors): going back to one
-    /// finds it as the player left it, until the game leaves the cluster. Levels are left
-    /// without the level-end screen.
+    /// The cluster's levels are kept as they were left (Blake Stone's floors, or a hub level and
+    /// the levels it leads to): going back to one finds it as the player left it, until the game
+    /// leaves the cluster. Levels are left without the level-end screen. The player comes back
+    /// where they left, unless they come by an entrance the level has a start for (next-entrance,
+    /// or A_ChangeMap's).
     /// </summary>
     public bool Hub { get; init; }
 
@@ -1831,7 +1833,9 @@ public record MapInfo
     /// <summary>
     /// The entrance the next level (or the secret one) is entered by: its mapdefs player start
     /// with that entrance, and its entrance-briefings' briefing (Midnight Assault's Laboratories
-    /// leading into Base by its other way in). Null: the level's own start.
+    /// leading into Base by its other way in). On a hub level kept as it was left, the player
+    /// comes out at that start (back from one of the hub's levels, by its way in). Null: the
+    /// level's own start (on a kept hub level, where the player left it).
     /// </summary>
     public string? NextEntrance { get; init; } = null;
 

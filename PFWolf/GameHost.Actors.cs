@@ -290,7 +290,7 @@ internal static partial class GameHost
     static PlayerActions playerActions = null!;     // made in InitServices (or by RegisterActorActions without it)
 
     static PlayerActions MakePlayerActions() => new(GameEngineManager, AssetManager, playerStats, Session,
-        new PlayerActionsHooks(change => PendingMapChange = change));
+        new PlayerActionsHooks(change => PendingMapChange = change, () => AudioManager?.WaitSoundDone()));
 
     // The weapons as inventory: picking, ammo, giving, the charge (Gameplay/PlayerWeapons.cs)
     static PlayerWeapons playerWeapons = null!;     // made in InitServices

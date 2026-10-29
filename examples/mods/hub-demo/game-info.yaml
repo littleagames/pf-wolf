@@ -1,0 +1,48 @@
+# Merged into the game pack's game-info.yaml (the fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info).
+
+# Messages on by default, so the emblems, the vault door and the hub's elevators say what they
+# are (the player can still turn them off in Options -> Game Options)
+setting-defaults:
+  messages: true
+
+# A hub cluster keeps each of its levels as it was left: coming back to the hub finds its doors
+# as you left them and its enemies still dead, and so does going back into one of its levels.
+# Its levels are left without the level-end tally.
+clusters:
+  7: { hub: true }
+
+maps:
+  # The hub, in Floor 1's place (Episode 1 starts here). It has no next level: its elevators and
+  # teleport pad run A_ChangeMap (this mod's mapdefs/walls.yaml and triggers.yaml), and the
+  # vault's elevator, with no next level to go to, wins the game.
+  MAP01:
+    name: The Crossroads
+    cluster: 7
+    next: !remove
+    secret-next: !remove
+
+  # The hub's three levels. Each one's exit goes back to the hub (next), where the player comes
+  # out by the way they went in (next-entrance: the hub's player start with that entrance, in
+  # this mod's mapdefs/player.yaml).
+  HUB1:
+    name: The Cellblock
+    cluster: 7
+    floor-number: 2
+    music: SEARCHN
+    next: MAP01
+    next-entrance: west
+  HUB2:
+    name: The Armory
+    cluster: 7
+    floor-number: 3
+    music: POW
+    next: MAP01
+    next-entrance: east
+  HUB3:
+    name: The Chapel
+    cluster: 7
+    floor-number: 4
+    music: CORNER
+    next: MAP01
+    next-entrance: north

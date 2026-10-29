@@ -1,0 +1,4 @@
+name: Hub Demo
+version: "1.0"
+description: A hub level (replacing Floor 1) with elevators and a teleport pad to three levels, each of which comes back to it. Bring their three emblems to the vault.
+game-packs: [wolf3d]

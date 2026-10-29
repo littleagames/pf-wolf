@@ -1,0 +1,11 @@
+# The three emblems, one in each of the hub's levels
+things:
+  620:
+    class: CellblockEmblem
+    angles: 0
+  621:
+    class: ArmoryEmblem
+    angles: 0
+  622:
+    class: ChapelEmblem
+    angles: 0

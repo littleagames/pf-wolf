@@ -1,0 +1,7 @@
+# The emblems' and the teleport pool's colors (the ranges are in the translations reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/translations): each sprite
+# desaturated, then tinted, keeping its shading
+emblem-blue: ["1:254=%[0,0,0]:[0.4,0.7,2]"]
+emblem-green: ["1:254=%[0,0,0]:[0.4,1.8,0.5]"]
+emblem-red: ["1:254=%[0,0,0]:[2,0.3,0.3]"]
+pool-violet: ["1:254=%[0,0,0]:[1.4,0.6,2]"]

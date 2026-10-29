@@ -367,8 +367,9 @@ public record MapPlayerStartTranslation
 
     /// <summary>
     /// An entrance's start: used only when the level is entered by that entrance (the level
-    /// before's game-info next-entrance, Midnight Assault's Base from Laboratories), and then
-    /// in place of the level's own start. Empty: the level's own start.
+    /// before's game-info next-entrance, Midnight Assault's Base from Laboratories, or
+    /// A_ChangeMap's entrance), and then in place of the level's own start, even on a hub level
+    /// kept as it was left. Empty: the level's own start.
     /// </summary>
     public string Entrance { get; set; } = "";
 }

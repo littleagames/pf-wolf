@@ -1,0 +1,15 @@
+# The hub's entrance starts: where the player comes out when the hub is entered by that entrance
+# (a level's game-info next-entrance, or A_ChangeMap's third word). Each is only used then; a new
+# game starts on the hub's own start (Wolf3D's 19-22). The hub is kept as it was left, and the
+# player still comes out here rather than where they left it: inside the elevator they took,
+# facing out, or just off the teleport pad.
+player-starts:
+  600:    # back from The Cellblock: in the west elevator, facing east
+    angles: 0
+    entrance: west
+  601:    # back from The Armory: in the east elevator, facing west
+    angles: 180
+    entrance: east
+  602:    # back from The Chapel: south of the teleport pad, facing south
+    angles: 270
+    entrance: north

@@ -517,6 +517,12 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       warning).
 - [ ] **(never tried)** `--make-mod` on Spear, Blake and Planet Strike files; `--overwrite` after
       renaming chunks keeps the names.
+- [ ] **(never tried)** Hub Demo (`--file hub-demo`), played by hand: each elevator lever and the
+      pool go to their level and the lever flips; each level's elevator comes back in the right
+      spot facing out; the emblems survive the trips and the vault door names the missing one,
+      then opens with all three; the vault elevator wins (victory tally, no end text). Also:
+      dying in a level and in the hub, saving and loading mid-hub (kept levels, entrance), and a
+      second trip into a finished level (back at its elevator, enemies still dead).
 
 ## 1.15 Multiplayer
 
