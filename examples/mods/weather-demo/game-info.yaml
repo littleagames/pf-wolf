@@ -1,0 +1,72 @@
+# Merged into the game pack's game-info.yaml: the mod's two kinds of weather, and each level's
+# weather, sky and light. The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+#
+# Every game has rain, heavy-rain, snow and blizzard. weather-types adds kinds of a mod's own
+# (or changes those): speeds are in texels a tic (64 a story, 70 tics a second).
+weather-types:
+  # Snow that comes and goes (End of Destiny's variable weather): it starts with none, some or
+  # all of count, and every 6 seconds there's a 60% chance it starts to thicken or thin, by 15%
+  # of count a second, until it's all or none. Blown hard from the west, in gusts.
+  squalls:
+    kind: snow
+    count: 3000
+    fall-speed: 1.2
+    wind-x: 4
+    wind-y: 1
+    gust: 0.8
+    gust-tics: 160
+    size: 1.5
+    drift: 4
+    color: "#F0F0F8"
+    distance: 6
+    vary: true
+    vary-every: 6
+    vary-chance: 0.6
+    vary-rate: 0.15
+  # Ash from the fires: grey flakes, falling slowly and drifting on a light wind
+  ash:
+    kind: snow
+    count: 1600
+    fall-speed: 0.35
+    wind-x: 1.2
+    gust: 0.5
+    size: 1.2
+    drift: 3
+    color: "#9A9088"
+
+maps:
+  # The castle courtyard at night, in a storm: walls 2 stories tall, dark, with a blue-black fog
+  MAP01:
+    weather: heavy-rain
+    sky: WDSTORM
+    wall-height: 2
+    floor-color: "#303034"
+    shading:
+      light: 110
+      fade-color: "#0C1018"
+      fade-start: 3
+      fade-end: 20
+      max-fade: 80
+  # The farm at dusk: a slate snow sky and snow underfoot, dim enough for the flakes to show
+  MAP02:
+    weather: squalls
+    sky: WDSNOW
+    floor-color: "#A8ACB8"
+    shading:
+      light: 150
+      fade-color: "#30343C"
+      fade-start: 4
+      fade-end: 20
+      max-fade: 70
+  # The burned village: lit by its fires through a red-brown haze
+  MAP03:
+    weather: ash
+    sky: WDSMOKE
+    floor-color: "#2C2624"
+    shading:
+      light: 140
+      fade-color: "#3A1A0C"
+      fade-start: 2
+      fade-end: 14
+      max-fade: 85

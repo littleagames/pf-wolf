@@ -1,0 +1,6 @@
+# The Weather Demo's object-plane ids (810-819 are this mod's)
+things:
+  810:
+    class: PorchLamp
+  811:
+    class: Bonfire

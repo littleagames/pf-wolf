@@ -537,6 +537,12 @@ can reach), not played by hand.
       on the banks don't wade in. Step behind the gun nest (hint), man it facing the yard, fire
       (no ammo used, half damage taken), step off behind it; the yard's enemies flanking through
       the door. Save and load while riding and while manning the gun.
+- [ ] **(never tried)** Weather Demo (`--file weather-demo`), Floors 1-3 by hand: no rain under
+      the porch, the gallery, the arches, the doorways and the elevator room, and its splashes
+      on the courtyard floor only; looking up and down in it; Floor 2's squalls thickening,
+      thinning and stopping over a few minutes (and whether flakes show over the barn's inside
+      walls next to its open side: a headless shot had a few there); Floor 3's fires flickering
+      and the ash on the smoke sky; speed with heavy rain at a high `vid_scale`.
 
 ## 1.15 Multiplayer
 

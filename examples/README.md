@@ -988,6 +988,63 @@ The newer generators share `tools/example-mod-tools.ps1`, which writes the level
 sounds. With cheats on, `lua print(me.vehicle)` shows what you're riding, and `where` the floor,
 tag and things under you.
 
+## Weather Demo (`mods/weather-demo`)
+
+Three short levels that replace Floors 1 to 3 (Wolfenstein 3D only), each with its own
+**weather**: rain, snow that comes and goes, and falling ash, with roofs, arches and doorways it
+doesn't reach. It's YAML and the levels and pictures a script makes; no code.
+
+```
+PFWolf.exe --file weather-demo
+```
+
+It replaces Floor 1 like the other level demos (and Floors 2 and 3 too), so switch on only one
+of them at a time.
+
+- **Floor 1, Night Storm:** a castle courtyard in heavy rain, dark and foggy. You start in the
+  gatehouse, under its roof, looking out at it. Rain doesn't fall on the porch along the north
+  side (roofed, with lamps), in the gallery behind the colonnade's arches, under the arches
+  themselves, in the doorways, or in the elevator room. Look up (`pitch 20` in the console) to
+  see the porch's roof and the arches against the sky.
+- **Floor 2, Snow Squalls:** a farm at dusk in the mod's own `squalls`: snow blown hard from the
+  west that thickens and thins as you play, now and then stopping altogether. You start in the
+  barn, open to the yard on its east side.
+- **Floor 3, Ashfall:** a burned-out village with ash drifting down (the mod's own `ash`), under
+  a sky red with smoke. The fires still burning light the broken walls orange through the haze.
+  The chapel by the exit still has its roof.
+
+### What's in it
+
+- `game-info.yaml`:
+  - `weather-types`: the mod's two kinds. Each is `rain` (streaks) or `snow` (flakes): how many
+    (`count`), how fast they fall and the wind blows them (`fall-speed`, `wind-x`, `wind-y`, in
+    texels a tic), `gust` and `gust-tics` (the wind rising and falling), `size` and `drift` (a
+    flake's size and sway), `length` (a streak's) and `splashes` (rain), `color` and `distance`.
+    `vary` makes the amount change as the level's played (End of Destiny's variable weather):
+    every `vary-every` seconds, a `vary-chance` it starts to thicken or thin by `vary-rate` of
+    `count` a second.
+  - `maps`: each level's `weather` (a built-in kind, `rain`, `heavy-rain`, `snow` or `blizzard`,
+    or one of the mod's), its `sky`, `floor-color` and `shading` (light and fog), and Floor 1's
+    `wall-height` of 2 stories.
+- `actordefs/weather-demo.yaml`: `PorchLamp`, a ceiling light that lights the porch, and
+  `Bonfire`, a fire with a flickering orange light (the `light.*` properties) whose flames are
+  drawn bright.
+- `mapdefs/things.yaml`: objects 810 (the lamp) and 811 (the fire).
+- `graphics/`: the three skies. `sprites/WDFRA0.png`, `WDFRB0.png`: the fire's two frames.
+- `maps/MAP01.wad` to `MAP03.wad`: the levels. A roofed tile is one with a **ceiling flat** (the
+  high byte of its flat plane, plane 2, value): rain and snow never fall under one, even a
+  see-through one. An arch (an open tile with a height on plane 3) covers its tile too.
+
+Everything but the YAML is made by `tools/make-weather-demo.ps1` (the layouts are ASCII drawings
+in it). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-weather-demo.ps1
+```
+
+With cheats on, `weather <name|none>` changes the weather until the level's left (try `weather
+blizzard` on Floor 1), and `fog` and `light` the shading.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

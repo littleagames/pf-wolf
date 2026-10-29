@@ -1,0 +1,4 @@
+name: Weather Demo
+version: "1.0"
+description: Three levels (replacing Floors 1-3) in rain, snow squalls and falling ash, with roofs, arches and doorways to shelter under.
+game-packs: [wolf3d]

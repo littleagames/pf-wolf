@@ -1,0 +1,27 @@
+# The Weather Demo's lights (the light.* properties in the docs' Actor properties reference):
+#   PorchLamp  the castle porch's and gallery's ceiling lights, warm and steady, so the dry
+#              places under the roofs stand out in the storm
+#   Bonfire    a fire still burning in the village: two frames of flames (the mod's sprites),
+#              drawn bright, with a flickering orange light
+PorchLamp:
+  parent: CeilingLight
+  properties:
+    "light.intensity": 200
+    "light.radius": 3
+    "light.color": "#FFD8A0"
+
+Bonfire:
+  properties:
+    "light.intensity": 230
+    "light.radius": 4
+    "light.color": "#FF9040"
+    "light.effect": flicker
+    "light.low": 150
+    "light.tics": 5
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: WDFR
+        frames: [A, B]
+        tics-per-frame: 8
+        modifiers: [bright]
