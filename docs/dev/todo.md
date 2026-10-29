@@ -111,6 +111,11 @@ Worked round in the example mods (2026-10-29), not fixed in the engine:
   doesn't show on Wolf3D's bar. Making the bar an overlay (`background: overlay: true`) redraws
   it every frame, but the view then runs under it and hides the bottom of the weapon. Boat Demo
   and Arsenal Demo leave the meter out; it wants redrawing each tic while the power changes.
+- **Bug: the status bar isn't redrawn after a scope.** The scope picture (`weapon.zoompic`) is
+  drawn over the whole 320x200 screen; zoomed back out, the view comes back but Wolf3D's bar
+  and the view border stay black (only the face, redrawn on its own, shows) until something
+  redraws the whole bar, such as a new level. Seen with Arsenal Demo's rifle (windowed,
+  2026-10-29).
 - **No use hint for getting out of a vehicle on Wolf3D's status bar**: `vehicle.exithint` names
   a statusbar.yaml use-hint, which Wolf3D's bar hasn't got. Boat Demo's script shows a keyed
   message beside a dock instead.

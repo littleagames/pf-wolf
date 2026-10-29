@@ -1,0 +1,4 @@
+name: Arsenal Demo
+version: "1.0"
+description: Four new weapons for Wolfenstein 3D - a shotgun reloaded shell by shell, cooked grenades, a scoped rifle and a silenced pistol - and a range (replacing Floor 1) to try them on.
+game-packs: [wolf3d]

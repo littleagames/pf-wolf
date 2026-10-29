@@ -1,0 +1,4 @@
+# Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
+# turned them off in Options), for the pickups' messages and the rifle's zoom hint.
+setting-defaults:
+  messages: true

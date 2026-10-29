@@ -54,6 +54,39 @@ function Save-CharPicture([string]$Path, [string[]]$Rows, [hashtable]$Colors, [i
     }
 }
 
+# Draws a picture with shapes and saves it as a PNG: $Draw gets the [Drawing.Graphics] (no
+# smoothing, so edges stay hard and snap cleanly to the palette) on a clear background, and can
+# use Add-Poly, Add-Rect and Add-Ellipse below.
+function Save-Drawing([string]$Path, [int]$Width, [int]$Height, [scriptblock]$Draw) {
+    $bitmap = New-Object Drawing.Bitmap $Width, $Height
+    $g = [Drawing.Graphics]::FromImage($bitmap)
+    $g.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::None
+    $g.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::Half
+    $g.Clear([Drawing.Color]::Transparent)
+    & $Draw $g
+    $g.Dispose()
+    New-Item -ItemType Directory -Force (Split-Path $Path) | Out-Null
+    $bitmap.Save($Path, [Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+    "Wrote $Path"
+}
+
+function New-Brush($Rgb) { New-Object Drawing.SolidBrush ([Drawing.Color]::FromArgb(255, $Rgb[0], $Rgb[1], $Rgb[2])) }
+
+# A filled polygon through the points x1, y1, x2, y2, ...
+function Add-Poly([Drawing.Graphics]$G, $Rgb, [double[]]$Points) {
+    $pts = for ($i = 0; $i -lt $Points.Count; $i += 2) { New-Object Drawing.PointF ([single]$Points[$i]), ([single]$Points[$i + 1]) }
+    $G.FillPolygon((New-Brush $Rgb), [Drawing.PointF[]]$pts)
+}
+
+function Add-Rect([Drawing.Graphics]$G, $Rgb, [double]$X, [double]$Y, [double]$W, [double]$H) {
+    $G.FillRectangle((New-Brush $Rgb), [single]$X, [single]$Y, [single]$W, [single]$H)
+}
+
+function Add-Ellipse([Drawing.Graphics]$G, $Rgb, [double]$X, [double]$Y, [double]$W, [double]$H) {
+    $G.FillEllipse((New-Brush $Rgb), [single]$X, [single]$Y, [single]$W, [single]$H)
+}
+
 # A color from r, g, b, each kept within 0-255
 function New-Color([double]$R, [double]$G, [double]$B) {
     [Drawing.Color]::FromArgb(255, [int][Math]::Max(0, [Math]::Min(255, $R)), [int][Math]::Max(0, [Math]::Min(255, $G)),

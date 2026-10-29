@@ -1,0 +1,21 @@
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-arsenal-demo.ps1), by the names
+# its weapons play them by (actordefs/arsenal.yaml)
+sound-info:
+  arsenal/shotgun:
+    digitized: ARSHOT
+  arsenal/pump:
+    digitized: ARPUMP
+  arsenal/shell:
+    digitized: ARSHELL
+  arsenal/throw:
+    digitized: ARTHROW
+  arsenal/boom:
+    digitized: ARBOOM
+  arsenal/clink:
+    digitized: ARCLINK
+  arsenal/quiet:
+    digitized: ARQUIET
+  arsenal/rifle:
+    digitized: ARRIFLE
+  arsenal/zoom:
+    digitized: ARZOOM

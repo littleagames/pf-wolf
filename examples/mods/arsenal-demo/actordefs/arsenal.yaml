@@ -1,0 +1,330 @@
+# The Arsenal Demo's weapons, each showing a part of the weapon system Wolf3D's own four don't
+# use. They follow the game's weapons (pfwolf-pk3 actordefs/wolf3d/weapons.yaml): 70Hz tics,
+# and a frame's action runs as the frame ends. Every action is in the docs' Actions reference.
+#
+#   Shotgun         pellets (A_FirePellets) from a 6-shell tube (weapon.magazine), reloaded a
+#                   shell at a time (A_Reload's loop); fire cuts a reload short once a shell's in
+#   HandGrenade     cooked by holding fire (A_HoldCharge, up to about 1.4 seconds), thrown as
+#                   hard as it was cooked (A_FireMissile "power"); the grenade arcs (gravity),
+#                   bounces off walls and blows up when its fuse runs out (A_Explode)
+#   ScopedRifle     a scope (weapon.zoom: hold the zoom key, Z, to zoom in), and once zoomed in
+#                   it fires its ZoomFire state: a far harder hit (A_FireBullet)
+#   SilencedPistol  weapon.silent: its shots alert no one, so guards round the one it drops
+#                   don't come running
+#
+# Each is in its own slot (7 to 0 here, clear of the multiplayer mod's 5 and 6) and ranked by
+# weapon.selectionorder (lower is better: the pistol's 1900, the gatling gun's 700).
+
+#
+# THE SHOTGUN
+#
+
+Shotgun:
+  parent: WolfWeapon
+  properties:
+    tag: "Shotgun"
+    attacksound: arsenal/shotgun
+    inventory.type: Shotgun
+    inventory.icon: ARICSG
+    inventory.pickupsound: weapon/machine/pickup
+    inventory.pickupmessage: "Picked up a shotgun!"
+    weapon.slot: 7
+    weapon.selectionorder: 900
+    weapon.ammotype1: Shells
+    weapon.ammouse1: 1
+    weapon.ammogive1: 8
+    # Shots come out of the tube; A_Reload fills it from the Shells carried
+    weapon.magazine: ShotgunTube
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: ARSP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: ARSG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      # 7 pellets, up to 6 degrees either side, 6-14 damage each
+      - sprite: ARSG
+        frames: [B]
+        tics-per-frame: 5
+        modifiers: [bright]
+        light: { intensity: 230, radius: 4, color: "#FFE0A0" }
+        action: A_FirePellets(7, 6, 6, 14)
+      - sprite: ARSG
+        frames: [A]
+        tics-per-frame: 8
+      - sprite: ARSG
+        frames: [C]
+        tics-per-frame: 8
+        action: A_PlaySound("arsenal/pump")
+      - sprite: ARSG
+        frames: [A]
+        tics-per-frame: 6
+        next-state: Ready
+    # The tube empty, or reload pressed with room in it: a shell at a time (ReloadLoop goes
+    # round while there's room and shells left), then a pump
+    Reload:
+      - sprite: ARSG
+        frames: [C]
+        tics-per-frame: 8
+        next-state: ReloadLoop
+    ReloadLoop:
+      - sprite: ARSG
+        frames: [C]
+        tics-per-frame: 0
+        action: A_PlaySound("arsenal/shell")
+      - sprite: ARSG
+        frames: [C]
+        tics-per-frame: 14
+        action: A_Reload(1, "ReloadLoop")
+      - sprite: ARSG
+        frames: [A]
+        tics-per-frame: 8
+        action: A_PlaySound("arsenal/pump")
+        next-state: Ready
+
+# The shells loaded in the tube: what the shotgun fires from
+ShotgunTube:
+  parent: Ammo
+  properties:
+    inventory.type: ShotgunTube
+    inventory.maxamount: 6
+
+Shells:
+  parent: Ammo
+  properties:
+    inventory.type: Shells
+    inventory.amount: 8
+    inventory.maxamount: 50
+    inventory.pickupmessage: "Picked up shells."
+  states:
+    Spawn:
+      - sprite: ARSB
+        frames: [A]
+        tics-per-frame: -1
+
+#
+# THE GRENADE
+#
+
+HandGrenade:
+  parent: WolfWeapon
+  properties:
+    tag: "Grenades"
+    attacksound: arsenal/throw
+    inventory.type: HandGrenade
+    inventory.icon: ARICGR
+    inventory.pickupmessage: "Picked up a crate of grenades!"
+    weapon.slot: 8
+    # Worse than the pistol, so picking it up doesn't put it in hand
+    weapon.selectionorder: 2500
+    weapon.ammotype1: Grenades
+    weapon.ammouse1: 1
+    weapon.ammogive1: 3
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: ARGC
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: ARGV
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: ARGV
+        frames: [B]
+        tics-per-frame: 4
+        next-state: Cook
+    # Held, the throw cooks: A_HoldCharge comes back here each tic, the power rising a tic's
+    # worth to 100; let go, it goes on to the throw
+    Cook:
+      - sprite: ARGV
+        frames: [B]
+        tics-per-frame: 1
+        action: A_HoldCharge("Cook", 100)
+      - sprite: ARGV
+        frames: [C]
+        tics-per-frame: 6
+        action: A_FireMissile("ThrownGrenade", 2, "power")
+      - sprite: ARGV
+        frames: [C]
+        tics-per-frame: 12
+      - sprite: ARGV
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Ready
+
+Grenades:
+  parent: Ammo
+  properties:
+    inventory.type: Grenades
+    inventory.amount: 3
+    inventory.maxamount: 12
+    inventory.pickupmessage: "Picked up grenades."
+  states:
+    Spawn:
+      - sprite: ARGB
+        frames: [A]
+        tics-per-frame: -1
+
+# The grenade in flight. z is how high it's drawn over its picture's own place (it's drawn in
+# the middle of its picture), zspeed how fast that rises as it leaves the hand (cooked less, it's
+# thrown softer and lower), gravity how fast that falls away each tic, and zfloor where it rests
+# on the floor. A_Missile's "bounce" turns it back off walls at half speed; an enemy it flies
+# into takes 10-20 and sets it off. Otherwise its fuse is its Spawn frames: about 2.3 seconds.
+ThrownGrenade:
+  flags: [PROJECTILE]
+  properties:
+    speed: 11000
+    z: 0
+    zspeed: 1.3
+    gravity: 0.055
+    zfloor: -28
+    bouncesound: arsenal/clink
+    deathsound: arsenal/boom
+  states:
+    Spawn:
+      - sprite: ARGN
+        frames: [A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B]
+        tics-per-frame: 8
+        think: A_Missile(10, 20, "bounce")
+        next-state: Death
+    # The blast: 40-110 to everything shootable within 2 tiles, less further out ("falloff"),
+    # and the thrower too if they're in it
+    Death:
+      - sprite: AREX
+        frames: [A]
+        tics-per-frame: 4
+        modifiers: [bright]
+        light: { intensity: 255, radius: 5, color: "#FFC070" }
+        action: A_Explode(40, 110, 2, "hurtplayer", "falloff")
+      - sprite: AREX
+        frames: [B]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 220, radius: 4, color: "#FF9040" }
+      - sprite: AREX
+        frames: [C]
+        tics-per-frame: 10
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Remove
+
+#
+# THE SCOPED RIFLE
+#
+
+ScopedRifle:
+  parent: WolfWeapon
+  properties:
+    tag: "Scoped Rifle"
+    attacksound: arsenal/rifle
+    inventory.type: ScopedRifle
+    inventory.icon: ARICRF
+    inventory.pickupsound: weapon/machine/pickup
+    inventory.pickupmessage: "Picked up a scoped rifle! Hold Z to zoom."
+    weapon.slot: 9
+    weapon.selectionorder: 1000
+    weapon.ammotype1: RifleRounds
+    weapon.ammouse1: 1
+    weapon.ammogive1: 10
+    # Up to 4 times closer; the picture over the view; turning 3 times slower zoomed in
+    weapon.zoom: 4
+    weapon.zoompic: ARSCOPE
+    weapon.zoomsound: arsenal/zoom
+    weapon.zoomturn: 3
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: ARRP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: ARRV
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    # From the hip: a hit for 25-50 whatever the distance, then working the bolt
+    Fire:
+      - sprite: ARRV
+        frames: [B]
+        tics-per-frame: 5
+        modifiers: [bright]
+        light: { intensity: 220, radius: 3, color: "#FFF0D0" }
+        action: A_FireBullet(25, 50)
+      - sprite: ARRV
+        frames: [A]
+        tics-per-frame: 35
+        next-state: Ready
+    # Zoomed all the way in: 90-160, enough for an SS at the far end of the range
+    ZoomFire:
+      - sprite: ARRV
+        frames: [B]
+        tics-per-frame: 5
+        action: A_FireBullet(90, 160)
+      - sprite: ARRV
+        frames: [A]
+        tics-per-frame: 35
+        next-state: Ready
+
+RifleRounds:
+  parent: Ammo
+  properties:
+    inventory.type: RifleRounds
+    inventory.amount: 5
+    inventory.maxamount: 30
+    inventory.pickupmessage: "Picked up rifle rounds."
+  states:
+    Spawn:
+      - sprite: ARRA
+        frames: [A]
+        tics-per-frame: -1
+
+#
+# THE SILENCED PISTOL
+#
+
+# The pistol's own ammo (clips), but silent: weapon.silent and A_FireBullet's "silent" both
+# keep the shot from alerting anyone (only a hit enemy knows)
+SilencedPistol:
+  parent: WolfWeapon
+  properties:
+    tag: "Silenced Pistol"
+    attacksound: arsenal/quiet
+    inventory.type: SilencedPistol
+    inventory.icon: ARICSP
+    inventory.pickupmessage: "Picked up a silenced pistol."
+    weapon.slot: 0
+    weapon.selectionorder: 1950
+    weapon.silent: true
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: ARPP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: ARPV
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: ARPV
+        frames: [B]
+        tics-per-frame: 6
+        action: A_FireBullet(15, 40, "silent")
+      - sprite: ARPV
+        frames: [A]
+        tics-per-frame: 12
+        next-state: Ready

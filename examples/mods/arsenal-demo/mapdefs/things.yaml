@@ -1,0 +1,9 @@
+# The Arsenal Demo's pickups, by object-plane id (860-869 are this mod's), for any level to place
+things:
+  860: { class: Shotgun, angles: 0 }
+  861: { class: Shells, angles: 0 }
+  862: { class: HandGrenade, angles: 0 }
+  863: { class: Grenades, angles: 0 }
+  864: { class: ScopedRifle, angles: 0 }
+  865: { class: RifleRounds, angles: 0 }
+  866: { class: SilencedPistol, angles: 0 }

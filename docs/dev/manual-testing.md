@@ -550,6 +550,14 @@ can reach), not played by hand.
       guards staying put on a shot while the others come; the secret elevator going to MAP10
       and MAP10's elevator to Floor 2; the tally's secret count. (Headless: the vault lever's
       four walls were seen sliding together through `game.trigger`, nothing else.)
+- [ ] Arsenal Demo (`--file arsenal-demo`), driven windowed: the shotgun fired from its tube and
+      reloaded a shell on R; a grenade cooked, thrown, landed and blew up (hurting the thrower
+      close by); the rifle zoomed with Z and its zoomed shot killed an SS at the far end; the
+      silenced pistol fired. **(never tried)**: picking each one up in turn and its message;
+      the shotgun's shell-by-shell loop to full and fire cutting it short; grenades bouncing off
+      walls and the throw's distance with a short and a long cook; whether the barracks guards
+      stay put when one is shot with the silenced pistol; the pickups' and icons' looks, and every
+      sound by ear. Known bug: the status bar stays black after zooming out (docs/dev/todo.md).
 
 ## 1.15 Multiplayer
 

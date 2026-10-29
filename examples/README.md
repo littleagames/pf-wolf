@@ -1098,6 +1098,75 @@ The level's tally shows how many secrets you found. With cheats on, `tag` shows 
 tile you face, and `lua game.trigger(1, 'A_MoveWall', 'north')` slides the
 vault walls from the console (a script has no switch tile, so the lever slides with them).
 
+## Arsenal Demo (`mods/arsenal-demo`)
+
+Four new weapons for Wolfenstein 3D, all data: a **shotgun** fed from a tube and reloaded a shell
+at a time, **grenades** you cook before you throw, a **scoped rifle** and a **silenced pistol**.
+And a range to try them on, replacing Floor 1. It's YAML, with the pictures, sounds and level a
+script makes.
+
+```
+PFWolf.exe --file arsenal-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time. The
+weapons themselves work on every level: with cheats on, `give Shotgun`, `give HandGrenade`,
+`give ScopedRifle` or `give SilencedPistol`.
+
+- **The armory,** where you start: the four weapons laid out in a row with their ammo behind them.
+  Their keys are 7 (shotgun), 8 (grenades), 9 (rifle) and 0 (silenced pistol).
+- **The shotgun** fires seven pellets in a spread. It holds six shells in its tube: when the tube
+  runs dry, or you press **R** (reload) with room in it, it loads a shell at a time, and firing
+  cuts the reload short once there's a shell in.
+- **The grenades:** hold fire to cook the throw, let go to throw it; the longer you held it, the
+  harder and further it goes. It arcs, bounces off walls and goes off after a couple of seconds,
+  hurting everything near it, you too if you're close.
+- **The rifle:** hold **Z** (zoom) to look through the scope, up to four times closer, turning
+  slower; let go to stay zoomed, hold it again to zoom out. Zoomed in, its shot hits far harder.
+- **The silenced pistol** uses the pistol's clips, and its shots alert no one.
+- **The range,** north: SS at the far end for the rifle, a knot of guards in the middle for a
+  grenade. **Close quarters,** west: dogs and guards among pillars, for the shotgun. **The
+  barracks,** east: guards facing the walls, for the silenced pistol. The exit is off the range.
+
+### What's in it
+
+- `actordefs/arsenal.yaml`, the weapons, ammo and the grenade (every action is in the docs'
+  [Actions reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/actions)):
+  - `Shotgun`: `A_FirePellets(count, spread, min, max)`, and `weapon.magazine: ShotgunTube`, an
+    `Ammo` holding 6 whose rounds the shots come out of. A weapon with a magazine goes to its
+    `Reload` state when it's empty or on a press of reload; there `A_Reload(1, "ReloadLoop")`
+    loads one shell and goes round again while there's room and shells left.
+  - `HandGrenade`: its `Cook` state's `A_HoldCharge("Cook", 100)` keeps coming back while fire's
+    held, cooking the throw; `A_FireMissile("ThrownGrenade", 2, "power")` throws as hard as it
+    was cooked. `ThrownGrenade` has `z`, `zspeed`, `gravity` and `zfloor` (it arcs and comes to
+    rest on the floor), thinks `A_Missile(10, 20, "bounce")` (off walls at half speed, its
+    `bouncesound`), and when its Spawn frames run out, its Death state's `A_Explode(40, 110, 2,
+    "hurtplayer", "falloff")` blows up.
+  - `ScopedRifle`: `weapon.zoom` (4 times), `weapon.zoompic` (the scope picture, over the whole
+    screen), `weapon.zoomsound`, `weapon.zoomturn`, and a `ZoomFire` state it fires zoomed in:
+    `A_FireBullet(90, 160)` against `Fire`'s `A_FireBullet(25, 50)` from the hip.
+  - `SilencedPistol`: `weapon.silent: true`, and `A_FireBullet(15, 40, "silent")`.
+  - Each has a `weapon.slot`, a `weapon.selectionorder` (lower is better), an `inventory.icon` for
+    the status bar and a `tag` (its name).
+- `mapdefs/things.yaml`: objects 860-866, the weapons and their ammo, for any level to place.
+- `sprites/`: the view frames (`ARSG`, `ARGV`, `ARRV`, `ARPV`: 64x64, drawn at the bottom of the
+  view), the pickups, the grenade (`ARGN`) and its blast (`AREX`). `graphics/`: the four status bar
+  icons (48x24) and the scope (`ARSCOPE`, 320x200, clear in the middle). `sounds/`, named in
+  `sounds/sound-seq.yaml`.
+- `game-info.yaml`: messages over the view on, for the pickups'.
+- `maps/MAP01.wad`: the range.
+
+Everything but the YAML is made by `tools/make-arsenal-demo.ps1`, the pictures drawn with shapes
+(`Save-Drawing` in `tools/example-mod-tools.ps1`). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-arsenal-demo.ps1
+```
+
+Wolf3D's status bar has no room for the shotgun's loaded shells (a status bar `clip` part shows
+them where there's one) and doesn't redraw a `power-meter` while it changes, so the tube's count
+and the grenade's cooking don't show; the ammo number is the shells, grenades or rounds carried.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
