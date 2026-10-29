@@ -1,0 +1,13 @@
+# Wolf3D's status bar has no power meter. This adds one along the bottom of the level, score and
+# lives box: the suspicion meter. When a guard starts wondering about you it's full, and it runs
+# down as your time to show him your papers does. box is [x, y, width, height] from the bar's top
+# left, the width when full; box-fill: bar puts that piece of the bar's own picture back as the
+# meter shrinks. Red while there's time left, yellow once it's under half.
+power-meter:
+  x: 0
+  y: 0
+  box: [10, 33, 94, 3]
+  box-fill: bar
+  color: "#E02020"
+  levels:
+    - { below: 50, lit: ["#E0D020"] }
