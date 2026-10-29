@@ -933,9 +933,8 @@ PFWolf.exe --file boat-demo
 It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
 
 - **The pier,** where you start. The boat's moored beside it: face it and press use to climb in.
-  Riding, forward and back are the throttle (the meter along the bottom of the status bar's
-  level, score and lives box shows it), and turning steers; the boat carries you the way you
-  face, with the current sliding by under you.
+  Riding, forward and back are the throttle and turning steers; the boat carries you the way
+  you face, with the current sliding by under you.
 - **The river** runs east past four guard posts on islands, two each side, who shoot at you as
   you pass. The boat stops at docks (the plank floors); alongside one, press use to step off,
   and the boat stays where you left it. Each post has a dock, with ammo or a first aid kit up
@@ -968,8 +967,6 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 - `scripts/boat-demo.lua`: a `game.ondamage` hook that turns the river's damage to 0 for a player
   riding something (`actor.vehicle`), the hints (`game.onenter`, and while the boat's beside a
   dock, a keyed `game.message` that stays up until it isn't).
-- `statusbar.yaml`: a `power-meter` part, which Wolf3D's bar hasn't got. It shows a vehicle's
-  throttle (and in other mods, a grenade cooking or a guard's suspicion).
 - `game-info.yaml`: the level's sky and grass color, the river's current (a `scrollers` entry for
   its tag, 1, sliding its floor east), and messages over the view on.
 - `flats/`, `graphics/BDSKY.png`, `sprites/` (the boat and the nest) and `sounds/` (the motor, the

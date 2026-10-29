@@ -106,6 +106,11 @@ Worked round in the example mods (2026-10-29), not fixed in the engine:
   docks; a player can walk anywhere the boat goes. Boat Demo makes the river a damaging floor
   and has its script spare a player in the boat (`game.ondamage`). A `blocktile: players` (or a
   vehicle-only floor) would do it properly.
+- **A `power-meter` on a status bar that isn't an overlay never moves.** It's only drawn when
+  the whole bar is (`PlayScreen.DrawStatusParts`), so a boat's throttle or a grenade cooking
+  doesn't show on Wolf3D's bar. Making the bar an overlay (`background: overlay: true`) redraws
+  it every frame, but the view then runs under it and hides the bottom of the weapon. Boat Demo
+  and Arsenal Demo leave the meter out; it wants redrawing each tic while the power changes.
 - **No use hint for getting out of a vehicle on Wolf3D's status bar**: `vehicle.exithint` names
   a statusbar.yaml use-hint, which Wolf3D's bar hasn't got. Boat Demo's script shows a keyed
   message beside a dock instead.

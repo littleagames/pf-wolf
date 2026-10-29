@@ -530,8 +530,8 @@ Each was checked headless (it loads with no warnings, and the parts console comm
 can reach), not played by hand.
 
 - [ ] **(never tried)** Boat Demo (`--file boat-demo`): board the boat from the pier (its use
-      message, the motor sound), the throttle meter on the status bar rising and falling with
-      forward and back, steering down the river, the boat stopping at the docks, the "step onto
+      message, the motor sound), the throttle picking up and dying away with forward and back,
+      steering down the river, the boat stopping at the docks, the "step onto
       the dock" hint beside one, getting off (the thud, the boat left where it was) and back on.
       Fall in on foot: the freezing message and the water hurting; in the boat it doesn't. Guards
       on the banks don't wade in. Step behind the gun nest (hint), man it facing the yard, fire
