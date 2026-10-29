@@ -545,12 +545,14 @@ internal class MapManager
     /*
     Tiles enemies can't walk onto, though players can (Midnight Assault's BLOCK_ENEMIES 501 and
     BLOCK_BOSSES 502): an object-plane thing whose class has `blocktile: monsters` keeps every
-    monster off its tile, `blocktile: bosses` only those with the BOSS flag. Such a thing is
-    never spawned; its tile is marked as the map is read, so a loaded game has it too.
+    monster off its tile, `blocktile: bosses` only those with the BOSS flag. `blocktile: players`
+    keeps players off it on foot, but not riding a vehicle, and `blocktile: all` both monsters and
+    players on foot (water a boat crosses). Such a thing is never spawned; its tile is marked as
+    the map is read, so a loaded game has it too.
     */
 
-    /// <summary>A tile's monster blocker: none, every monster, or bosses only. Indexed <see cref="TileIndex"/>.</summary>
-    internal enum MonsterBlock : byte { None, Monsters, Bosses }
+    /// <summary>A tile's blocker: none, every monster, bosses only, players on foot, or monsters and players on foot. Indexed <see cref="TileIndex"/>.</summary>
+    internal enum MonsterBlock : byte { None, Monsters, Bosses, Players, All }
 
     private MonsterBlock[] monsterblocks = new MonsterBlock[MapConstants.ClassicMapArea];
 
@@ -584,10 +586,14 @@ internal class MapManager
     internal bool BlocksMonster(int x, int y, bool boss) =>
         InMap(x, y) && (InMonsterKeepOut(x, y) || TileIndex(x, y) < monsterblocks.Length && monsterblocks[TileIndex(x, y)] switch
         {
-            MonsterBlock.Monsters => true,
+            MonsterBlock.Monsters or MonsterBlock.All => true,
             MonsterBlock.Bosses => boss,
             _ => false,
         });
+
+    /// <summary>Whether a player on foot can't walk onto a tile: its blocktile marker is `players` or `all`</summary>
+    internal bool BlocksPlayer(int x, int y) =>
+        InMap(x, y) && TileIndex(x, y) < monsterblocks.Length && monsterblocks[TileIndex(x, y)] is MonsterBlock.Players or MonsterBlock.All;
 
     /// <summary>Whether a tile is in one of the floors' monster-keep-out areas (bstone's ElevatorFloor)</summary>
     internal bool InMonsterKeepOut(int x, int y) =>
@@ -655,6 +661,8 @@ internal class MapManager
     {
         "monsters" or "enemies" => MonsterBlock.Monsters,
         "bosses" => MonsterBlock.Bosses,
+        "players" => MonsterBlock.Players,
+        "all" => MonsterBlock.All,
         _ => MonsterBlock.None,
     };
 

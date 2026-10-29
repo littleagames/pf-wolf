@@ -123,6 +123,27 @@ public class PlayerMovementTests
         Assert.That(_movement.TryMove(pawn), Is.False);
     }
 
+    [Test]
+    public void A_Players_Keep_Out_Blocks_On_Foot_But_Not_Riding()
+    {
+        // Arrange: water east only a boat crosses (blocktile: players), the player close to it
+        _map.SetMonsterBlock(11, 10, MapManager.MonsterBlock.Players);
+        var pawn = Player();
+        pawn.X = 11 * Tile - 0x2000;
+
+        try
+        {
+            // Act / Assert
+            Assert.That(_movement.TryMove(pawn), Is.False, "on foot");
+            _session.PlayerState.Vehicle = "Boat";
+            Assert.That(_movement.TryMove(pawn), Is.True, "riding");
+        }
+        finally
+        {
+            _session.PlayerState.Vehicle = null;
+        }
+    }
+
     [TestCase((byte)0, false)]      // just starting off: its back is still at the tile's edge
     [TestCase((byte)32, true)]      // half way across: there's room behind it
     public void A_Pushwalls_Back_Blocks_Only_Where_It_Has_Got_To(byte pos, bool room)

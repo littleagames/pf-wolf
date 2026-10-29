@@ -56,7 +56,7 @@ public static class ActorProperties
         Int("heist.value", "Heist: how far it pulls the rope toward the team that took it; treasure's inventory.amount / 100 when left out"),
         Int("prophunt.health", "A decoration: the most health (1-100) a Prop Hunt prop has looking like it; left out, by its radius (50, up to 100 at 32)"),
         List("spawn.random", "A random spawner: it's one of these classes, picked at random (Blake Stone's bio-techs, half of them informants)", hint: FieldHint.Class),
-        Text("blocktile", "A marker thing: monsters (every monster) or bosses (BOSS actors) can't walk onto its tile; it's never placed itself"),
+        Text("blocktile", "A marker thing: monsters (every monster) or bosses (BOSS actors) can't walk onto its tile, or players (on foot: one riding a vehicle can), or all (monsters and players on foot); it's never placed itself"),
         Bool("docktile", "A marker thing: a vehicle can't go onto its tile, and its rider gets off there; it's never placed itself"),
         Int("vehicle.maxspeed", "A vehicle (A_Board): its top speed, in global units a tic (65536 a tile)", "3000"),
         Int("vehicle.accel", "A vehicle: how much forward adds to its speed each tic", "20"),

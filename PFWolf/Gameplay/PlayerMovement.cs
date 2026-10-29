@@ -265,8 +265,9 @@ internal sealed class PlayerMovement(
         {
             for (x = xl; x <= xh; x++)
             {
-                // a vehicle can't go onto a dock (Gameplay/Vehicles.cs)
-                if (riding && map.IsDock((int)x, (int)y))
+                // a vehicle can't go onto a dock (Gameplay/Vehicles.cs), and a player on foot
+                // not onto a players' blocktile (water only a vehicle crosses)
+                if (riding ? map.IsDock((int)x, (int)y) : map.BlocksPlayer((int)x, (int)y))
                     return false;
 
                 check = map.ActorAt[x, y];
