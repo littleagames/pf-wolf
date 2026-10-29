@@ -302,6 +302,29 @@ public class PlayerUseTests
     }
 
     [Test]
+    public void The_Gun_Being_Manned_Gives_No_Use_Message()
+    {
+        // Arrange: the beaten Commander underfoot stands in for a mounted gun the player's on
+        FaceOffTheMap();
+        var gun = _inventory.CreateActor("BeatenCommander")!;
+        (gun.X, gun.Y) = (_session.Player.X, _session.Player.Y);
+        gun.SetState(gun.ResolvedStates["Spawn"]);
+        _map.GetActors().AddLast(gun);
+        _session.PlayerState.Mount = gun;
+
+        try
+        {
+            // Act / Assert
+            Assert.That(_use.UsableActor(), Is.Null);
+            Assert.That(_use.FacingMessage(_session.Player), Is.EqualTo(((string?)null, (string?)null)));
+        }
+        finally
+        {
+            _session.PlayerState.Mount = null;
+        }
+    }
+
+    [Test]
     public void No_Use_Hint_For_The_Dead()
     {
         FaceOffTheMap();

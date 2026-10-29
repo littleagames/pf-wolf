@@ -464,6 +464,9 @@ internal sealed class PlayerUse(
         {
             if (actor.IsRemoved || actor is Entities.Actors.PlayerPawn || !actor.ResolvedStates.ContainsKey("Use"))
                 continue;
+            // The gun the player's manning stands on their tile; use steps them off it instead
+            if (actor == session.PlayerState.Mount)
+                continue;
             if (actor is Entities.Actors.Monster && (!actor.RuntimeFlags.Has(ObjFlags.Shootable)
                 || actor.RuntimeFlags.Has(ObjFlags.AttackMode)))
                 continue;
