@@ -313,7 +313,8 @@ internal static partial class GameHost
                 (x, y, dir) => gameScripts.RunUseHooks(Session.Player, x, y, dir),
                 (x, y) => gameScripts.RunSecretHooks(Session.Player, x, y),
                 (x, y, tag) => gameScripts.RunSwitchHooks(Session.Player, x, y, tag),
-                kind => gameScripts.RunExitHooks(Session.Player, kind)));
+                kind => gameScripts.RunExitHooks(Session.Player, kind),
+                () => Vehicles.DockMessage()));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);

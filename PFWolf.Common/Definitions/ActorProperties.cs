@@ -65,6 +65,7 @@ public static class ActorProperties
         Text("vehicle.exitsound", "A vehicle: played as its rider steps off onto a dock", hint: FieldHint.Sound),
         Text("vehicle.noexit", "A vehicle: shown when its rider uses it with no dock beside them"),
         Text("vehicle.exithint", "A vehicle: the use hint (statusbar.yaml use-hint's hints, by name) while a dock is beside its rider"),
+        Text("vehicle.dockmessage", "A vehicle: a message kept up while a dock is beside its rider (\"Press Use to step onto the dock\"), for a status bar with no use hint"),
         Int("wallsprite.offset", "A wall sprite: how far its panel sits off the tile's middle toward its front, in texels (32: on the tile's edge)"),
 
         // Its sounds

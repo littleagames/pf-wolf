@@ -21,6 +21,7 @@ namespace PFWolf.Gameplay;
 /// <param name="SecretFound">A secret's been found at a tile (game.onsecret)</param>
 /// <param name="MaySwitch">Whether the scripts let a switch at a tile with a tag be thrown (game.onswitch)</param>
 /// <param name="MayExit">Whether the scripts let an exit ("exit" or "secret") end the level (game.onexit)</param>
+/// <param name="VehicleMessage">Riding, the message kept up while a dock is beside them (vehicle.dockmessage), else null</param>
 internal sealed record PlayerUseHooks(
     Action<string> PlayPlayerSound,
     Func<bool> Dismount,
@@ -36,7 +37,8 @@ internal sealed record PlayerUseHooks(
     Func<int, int, ControlDir, bool>? ScriptUse = null,
     Action<int, int>? SecretFound = null,
     Func<int, int, ushort, bool>? MaySwitch = null,
-    Func<string, bool>? MayExit = null);
+    Func<string, bool>? MayExit = null,
+    Func<string?>? VehicleMessage = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -301,8 +303,15 @@ internal sealed class PlayerUse(
     internal void ShowFacingMessage()
     {
         if (!session.ActingIsLocal || session.Player is not { } player || session.PlayerState.Health <= 0
-            || session.PlayerState.Vehicle != null || hooks.ShowFacing == null)
+            || hooks.ShowFacing == null)
             return;
+        if (session.PlayerState.Vehicle != null)
+        {
+            // riding, only getting off: the vehicle's dock message while a dock's beside them
+            if (hooks.VehicleMessage?.Invoke() is { Length: > 0 } dock)
+                hooks.ShowFacing(dock, null);
+            return;
+        }
         if (FacingMessage(player) is ({ Length: > 0 } text, var style))
             hooks.ShowFacing(text, style is { Length: > 0 } ? style : null);
     }

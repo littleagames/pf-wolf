@@ -19,7 +19,7 @@ whose class has `docktile: true`); use beside one gets them off onto it -- the o
 then the sides, then behind -- with the thing put back where they were, its
 `vehicle.exitmessage` and `vehicle.exitsound`; with no dock beside them, `vehicle.noexit` says
 so. Dying, or another level, ends the ride. `vehicle.exithint` is the use hint while a dock is
-beside them.
+beside them, and `vehicle.dockmessage` a message kept up then (for a status bar with no use hint).
 
 =============================================================================
 */
@@ -127,6 +127,12 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
 
     /// <summary>The use hint while riding: the vehicle's exithint with a dock beside them, else none</summary>
     internal string? Hint() => IsRiding && DockBeside() != null ? Text("vehicle.exithint") : null;
+
+    /// <summary>
+    /// The message kept up while riding with a dock beside them (the vehicle's dockmessage: "Press
+    /// Use to step onto the dock"), for a status bar with no use hint; else none
+    /// </summary>
+    internal string? DockMessage() => IsRiding && DockBeside() != null ? Text("vehicle.dockmessage") : null;
 
     /// <summary>Each think: a ride ends with the player's death or another level</summary>
     internal void Tick()

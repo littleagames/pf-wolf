@@ -17,6 +17,7 @@ public class VehiclesTests
             "vehicle.exitsound": "boat/out"
             "vehicle.noexit": "Nowhere to get out"
             "vehicle.exithint": "BOATOUT"
+            "vehicle.dockmessage": "Use: step onto the dock"
           states:
             Spawn:
               - sprite: BOAT
@@ -102,6 +103,7 @@ public class VehiclesTests
 
         // Act
         Assert.That(_vehicles.Hint(), Is.EqualTo("BOATOUT"));
+        Assert.That(_vehicles.DockMessage(), Is.EqualTo("Use: step onto the dock"));
         bool wasRiding = _vehicles.TryLeave();
 
         // Assert
@@ -127,6 +129,7 @@ public class VehiclesTests
         Assert.That(wasRiding, Is.True);
         Assert.That(_vehicles.IsRiding, Is.True);
         Assert.That(_vehicles.Hint(), Is.Null);
+        Assert.That(_vehicles.DockMessage(), Is.Null);
         Assert.That(_messages, Is.EqualTo(new[] { "Nowhere to get out" }));
         Assert.That(_respawned, Is.Empty);
     }
