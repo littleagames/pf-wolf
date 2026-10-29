@@ -8,8 +8,8 @@
 #                   them off, and the boat is put back where they were.
 #   Dock            a marker on each dock tile (never placed itself): the boat can't go onto it,
 #                   and a rider gets off onto it
-#   KeepEnemiesOut  a marker on each river tile: enemies can't walk onto it (they'd wade out
-#                   after the boat otherwise)
+#   KeepOut         a marker on each river tile: no one walks onto it, enemy or player (the
+#                   boat's how you cross; riding it isn't walking)
 #   GunNest         the sandbagged gun: using it runs A_Mount, putting the player on its tile
 #                   with the NestGun in hand. They can turn but not move, and take half damage
 #                   behind the sandbags; use again steps them off behind it.
@@ -26,6 +26,8 @@ Boat:
     vehicle.exitmessage: "You step onto the dock."
     vehicle.exitsound: boat/dock
     vehicle.noexit: "No dock here: pull alongside one to get out."
+    # Kept up while a dock is beside the boat
+    vehicle.dockmessage: "Press use to step onto the dock"
   flags: [SOLID]
   states:
     Spawn:
@@ -43,13 +45,13 @@ Dock:
   properties:
     docktile: true
 
-KeepEnemiesOut:
+KeepOut:
   properties:
-    blocktile: monsters
+    blocktile: all
 
-# No usemessage: one would stay up while the player mans the gun, standing on its tile.
-# scripts/boat-demo.lua gives the hint as they step behind it.
 GunNest:
+  properties:
+    usemessage: "Press use to man the gun; use again to step off"
   flags: [SOLID]
   states:
     Spawn:

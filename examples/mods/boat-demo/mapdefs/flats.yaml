@@ -1,11 +1,6 @@
 # The level's floors (the flat plane, map plane 2: a tile's low byte is its floor), the
 # pictures in flats/: the river and the docks. Indices 20 and up, clear of pfwolf.pk3's 1-3.
-#
-# damage: the river hurts whoever stands in it, every 20 tics (70 a second), but not enemies.
-# scripts/boat-demo.lua lets a player in the boat off: the boat keeps them out of the water.
 flats:
   floor:
     20: BDWATER
     21: BDDOCK
-  damage:
-    BDWATER: { amount: 4, tics: 20, enemies: false }

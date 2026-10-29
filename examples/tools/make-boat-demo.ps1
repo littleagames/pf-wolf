@@ -178,8 +178,6 @@ $Layout = @(
 $River = 108; $Yard = 109; $ExitRoom = 110
 # Flats (the mod's mapdefs/flats.yaml) and the river's tag (its scroller in game-info)
 $WaterFlat = 20; $DockFlat = 21; $RiverTag = 1
-# The tile behind the gun nest has tag 2: the script's hint shows as the player steps onto it
-$BehindNestTag = 2
 # Things (the mod's mapdefs/things.yaml)
 $Dock = 800; $KeepOut = 801; $Boat = 802; $Nest = 803
 
@@ -189,14 +187,16 @@ $Tiles['w'] = @{ Plane0 = 17 }                                                  
 $Tiles['.'] = @{ Plane0 = $River }
 $Tiles['~'] = @{ Plane0 = $River; Plane1 = $KeepOut; Flat = $WaterFlat; Tag = $RiverTag }
 $Tiles['d'] = @{ Plane0 = $River; Plane1 = $Dock; Flat = $DockFlat }
-$Tiles['b'] = @{ Plane0 = $River; Plane1 = $Boat; Flat = $WaterFlat; Tag = $RiverTag }
+# The boat's mooring: planks under it, as a tile holds one thing and so can't keep the player
+# out too (once the boat's gone, it's somewhere to stand, not river)
+$Tiles['b'] = @{ Plane0 = $River; Plane1 = $Boat; Flat = $DockFlat }
 $Tiles['P'] = @{ Plane0 = $River; Plane1 = 20 }                                         # player start, facing east
 $Tiles['G'] = @{ Plane0 = $River; Plane1 = 111 }                                        # guard facing south
 $Tiles['g'] = @{ Plane0 = $River; Plane1 = 109 }                                        # guard facing north
 $Tiles['a'] = @{ Plane0 = $River; Plane1 = 49 }                                         # ammo
 $Tiles['h'] = @{ Plane0 = $River; Plane1 = 48 }                                         # first aid kit
 $Tiles['N'] = @{ Plane0 = $River; Plane1 = $Nest }                                      # the gun nest
-$Tiles['n'] = @{ Plane0 = $River; Tag = $BehindNestTag }                                # behind it
+$Tiles['n'] = @{ Plane0 = $River }                                                      # behind it
 $Tiles['D'] = @{ Plane0 = 91 }                                                          # door (north-south)
 $Tiles['s'] = @{ Plane0 = $Yard; Plane1 = 127 }                                         # SS facing north
 $Tiles['e'] = @{ Plane0 = $ExitRoom }

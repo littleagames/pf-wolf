@@ -4,7 +4,7 @@ things:
   800:
     class: Dock
   801:
-    class: KeepEnemiesOut
+    class: KeepOut
   802:
     class: Boat
     angles: 0
