@@ -1,0 +1,4 @@
+# The Hazards Demo's suit on the object plane (920-929 are this mod's)
+things:
+  920:
+    class: HazardSuit

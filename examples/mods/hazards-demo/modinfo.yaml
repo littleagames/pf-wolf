@@ -1,0 +1,4 @@
+name: Hazards Demo
+version: "1.0"
+description: Floors that hurt (replacing Floor 1) - animated lava and acid, and electrified water a switch turns off - with a hazard suit a Lua script makes you immune in for 30 seconds.
+game-packs: [wolf3d]

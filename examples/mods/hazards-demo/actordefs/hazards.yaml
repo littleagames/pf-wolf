@@ -1,0 +1,12 @@
+# The hazard suit: an item to pick up. What it does is the script's (scripts/hazards.lua): for
+# 30 seconds after it's taken, the floors don't hurt.
+HazardSuit:
+  parent: CustomInventory
+  properties:
+    inventory.pickupmessage: "Hazard suit! 30 seconds."
+    inventory.pickupsound: misc/k_pkup
+  states:
+    Spawn:
+      - sprite: HZST
+        frames: [A]
+        tics-per-frame: -1

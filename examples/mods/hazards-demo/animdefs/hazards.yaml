@@ -1,0 +1,12 @@
+# The moving floors (the fields are in the animdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/animdefs). A flats entry naming one
+# of these shows it playing; the floors' damage (mapdefs/flats.yaml) goes by these names too.
+HZLAVA:
+  tics: 14
+  frames: [HZLAVA1, HZLAVA2, HZLAVA3]
+HZACID:
+  tics: 20
+  frames: [HZACID1, HZACID2]
+HZSHOCK:
+  tics: 4
+  frames: [HZSHOCK1, HZSHOCK2]

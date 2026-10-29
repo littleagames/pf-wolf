@@ -602,6 +602,11 @@ can reach), not played by hand.
       to about half their starting distance in 30 seconds against the plain guards' two thirds,
       and the hook raised no errors. **(never tried)**: watching a hunter come round the maze's
       corners while a guard sticks in a dead end; the dogs; speed with many hunters at once.
+- [ ] Hazards Demo (`--file hazards-demo`): headless, lava, acid and the live water hurt at their
+      rates; `A_ChangeTexture` turned the water plain; the suit's 30 seconds kept lava from hurting
+      and its countdown showed. **(never tried)**: the switch thrown by hand and back; the
+      animations playing; the warnings on stepping in; picking the suit up (not set by `lua`);
+      saving and loading with the suit on and the current off.
 
 ## 1.15 Multiplayer
 

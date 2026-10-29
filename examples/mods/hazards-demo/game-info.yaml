@@ -1,0 +1,9 @@
+# Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
+# turned them off in Options), and the lava hall lit by the lava: light zone 1 (plane 5) is its
+# tiles, tinted orange
+setting-defaults:
+  messages: true
+maps:
+  MAP01:
+    zones:
+      1: { light: 255, color: "#FFC090" }

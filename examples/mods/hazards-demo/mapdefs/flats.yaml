@@ -1,0 +1,16 @@
+# The level's floors (the flat plane, map plane 2: a tile's low byte is its floor): animations
+# (animdefs/hazards.yaml) and a picture in flats/. Indices 40 and up.
+#
+# damage: by the texture's name as the floor shows it now (an animation by its own name), how
+# much it takes from whoever stands on it, every so many tics (70 a second), and whether enemies
+# are hurt too. The switch turns the channel's HZSHOCK into HZWATER (A_ChangeTexture), which
+# isn't listed, so the current's off.
+flats:
+  floor:
+    40: HZLAVA
+    41: HZACID
+    42: HZSHOCK
+  damage:
+    HZLAVA: { amount: 5, tics: 20 }
+    HZACID: { amount: 3, tics: 12 }
+    HZSHOCK: { amount: 6, tics: 10, enemies: false }

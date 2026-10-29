@@ -1570,6 +1570,51 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-hunters-demo.ps1
 
 With cheats on, `lua print(game.walkable(x, y))` says whether a tile can be walked onto.
 
+## Hazards Demo (`mods/hazards-demo`)
+
+**Floors that hurt**, replacing Floor 1 (Wolfenstein 3D only): animated lava and acid, and
+electrified water a switch turns off, with a hazard suit a script makes you immune in for a while.
+It's YAML, a small script, and the floors and level a script makes.
+
+```
+PFWolf.exe --file hazards-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The lava hall,** lit orange by it: keep to the winding stone path. The lava burns fast.
+- **The acid room,** north: patches of acid that eat at you slowly, and the hazard suit in the far
+  corner. With it, for 30 seconds (counting down at the top right), no floor hurts you.
+- **The channel room,** east: a channel of live water across it. The switch on the near wall turns
+  the current off (and on again); then wade across to the exit.
+- The first step onto each kind of hazard says what it is.
+
+### What's in it
+
+- `mapdefs/flats.yaml`: the floors (40 lava, 41 acid, 42 the live water) and their `damage`: by
+  the texture's name as the floor shows it now, how much it takes every so many tics, and whether
+  enemies are hurt too (`enemies: false` for the water).
+- `animdefs/hazards.yaml`: the lava, acid and live water as animations; a flats entry naming one
+  shows it playing, and its damage goes by its name.
+- `mapdefs/walls.yaml`: the switch (160 and 161), `A_ChangeTexture("HZSHOCK", "HZWATER")` on its
+  tag (the channel's, 1) and back. Plain water (`HZWATER`) has no damage, so the current's off.
+- `scripts/hazards.lua`: the suit (`game.onpickup` notes until when it lasts on the player's
+  `temp1`; `game.ondamage` makes a floor's hurt nothing meanwhile, a floor's having no attacker),
+  the warnings (`game.onenter` and `game.floor`), and the countdown (`game.onhud`).
+- `actordefs/hazards.yaml` and `mapdefs/things.yaml`: the suit, object 920.
+- `game-info.yaml`: the lava hall's light zone (1), tinted orange.
+- `flats/`, `sprites/`, `maps/MAP01.wad`: made by the script below.
+
+The floors, the suit and the level are made by `tools/make-hazards-demo.ps1`. Edit it and run it
+again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-hazards-demo.ps1
+```
+
+With cheats on, `where` shows the floor you're on, and `lua print(game.floor(me.tilex, me.tiley))`
+what the script sees.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

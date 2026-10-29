@@ -1,0 +1,26 @@
+# The switch for the channel's current (a switch block's fields are in the docs' mapdefs
+# reference). Its tag (1) is the channel's: A_ChangeTexture turns the electrified water there
+# into plain water, and back. Off switches show the elevator's lever down, thrown ones up.
+walls:
+    '160':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 161
+            sound: switches/elevbutn
+            actions:
+                - A_ChangeTexture("HZSHOCK", "HZWATER")
+                - A_Message("The current's off.")
+    '161':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 160
+            sound: switches/elevbutn
+            actions:
+                - A_ChangeTexture("HZWATER", "HZSHOCK")
+                - A_Message("The current's on.")
