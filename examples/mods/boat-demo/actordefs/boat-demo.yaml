@@ -1,0 +1,74 @@
+# The Boat Demo's actors. Vehicles and mounted guns are in the engine (Gameplay/Vehicles.cs and
+# Gameplay/MountedWeapons.cs); everything here is properties and states.
+#
+#   Boat            what the player rides: using it from the pier runs its Use state's A_Board,
+#                   and the boat goes, with the player on its tile riding it. Forward and back
+#                   are the throttle (the status bar's meter shows it), turning steers, and it
+#                   carries them the way they face. It stops at the docks; use beside one gets
+#                   them off, and the boat is put back where they were.
+#   Dock            a marker on each dock tile (never placed itself): the boat can't go onto it,
+#                   and a rider gets off onto it
+#   KeepEnemiesOut  a marker on each river tile: enemies can't walk onto it (they'd wade out
+#                   after the boat otherwise)
+#   GunNest         the sandbagged gun: using it runs A_Mount, putting the player on its tile
+#                   with the NestGun in hand. They can turn but not move, and take half damage
+#                   behind the sandbags; use again steps them off behind it.
+#   NestGun         the gun they man: a gatling gun (its pictures and fire) that needs no ammo,
+#                   only ever held while manning the nest (weapon.mounted)
+
+Boat:
+  properties:
+    usemessage: "Press Use to board the boat"
+    # Global units a tic (65536 a tile): its top speed, and how fast forward and back change it
+    vehicle.maxspeed: 3600
+    vehicle.accel: 40
+    vehicle.brake: 90
+    vehicle.exitmessage: "You step onto the dock."
+    vehicle.exitsound: boat/dock
+    vehicle.noexit: "No dock here: pull alongside one to get out."
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: BDBT
+        frames: [A]
+        tics-per-frame: -1
+    Use:
+      - sprite: BDBT
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Board("boat/motor", "Forward and back work the throttle. Steer alongside a dock and press use to get out.")
+        next-state: Spawn
+
+Dock:
+  properties:
+    docktile: true
+
+KeepEnemiesOut:
+  properties:
+    blocktile: monsters
+
+# No usemessage: one would stay up while the player mans the gun, standing on its tile.
+# scripts/boat-demo.lua gives the hint as they step behind it.
+GunNest:
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: BDNS
+        frames: [A]
+        tics-per-frame: -1
+    Use:
+      - sprite: BDNS
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Mount("NestGun", "boat/gunpivot")
+        next-state: Spawn
+
+NestGun:
+  parent: GatlingGun
+  properties:
+    weapon.mounted: true
+    # the share of a hit the player takes while manning it, in percent
+    weapon.mountdamage: 50
+    weapon.mountnoroom: "No room to step off the gun."
+    weapon.ammouse1: 0
+    weapon.ammogive1: 0

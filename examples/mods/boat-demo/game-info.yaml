@@ -1,0 +1,15 @@
+# Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
+# turned them off in Options), for the boat's and the script's hints; and the level's sky,
+# grass and the river's current. The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+setting-defaults:
+  messages: true
+maps:
+  MAP01:
+    # A picture in the mod's graphics/ folder, drawn above the horizon in place of the ceiling
+    sky: BDSKY
+    # Grass, where there's no flat (the river and docks have theirs)
+    floor-color: "#3C5A28"
+    # The river's tiles have tag 1 (the tag plane, plane 4): its floor slides east, 1 texel a tic
+    scrollers:
+      1: { x: 1, walls: false, ceiling: false }

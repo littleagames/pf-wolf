@@ -1,0 +1,4 @@
+name: Boat Demo
+version: "1.0"
+description: A river level (replacing Floor 1) with a boat to ride past the guard posts on its banks and a machine-gun nest to man at the far end.
+game-packs: [wolf3d]

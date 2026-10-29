@@ -1,0 +1,13 @@
+# The Boat Demo's object-plane ids (800-809 are this mod's). The dock and keep-out markers are
+# never placed: they only mark their tiles as the map's read.
+things:
+  800:
+    class: Dock
+  801:
+    class: KeepEnemiesOut
+  802:
+    class: Boat
+    angles: 0
+  803:
+    class: GunNest
+    angles: 0

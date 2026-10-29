@@ -95,6 +95,21 @@ DrawWarpIn (a fizzle-in frame now draws the info area and messages before it fiz
   thrown from afar (floor triggers 158-160, an enemy's death linked by floor code 79), which
   already works. Nothing to do.
 
+## Engine gaps found making the example mods
+
+Worked round in the example mods (2026-10-29), not fixed in the engine:
+
+- **A usable actor's `usemessage` stays up while the player mans it.** `PlayerUse.UsableActor`
+  picks the gun nest under the player (distance 0) while they're on it, so its "Press Use to man
+  the gun" never goes. Boat Demo leaves the message off and has its script give the hint.
+- **Nothing keeps a player on foot out of water the boat can cross.** Vehicles stop only at
+  docks; a player can walk anywhere the boat goes. Boat Demo makes the river a damaging floor
+  and has its script spare a player in the boat (`game.ondamage`). A `blocktile: players` (or a
+  vehicle-only floor) would do it properly.
+- **No use hint for getting out of a vehicle on Wolf3D's status bar**: `vehicle.exithint` names
+  a statusbar.yaml use-hint, which Wolf3D's bar hasn't got. Boat Demo's script shows a keyed
+  message beside a dock instead.
+
 ## Destructible walls: extras
 
 Left out of the destructible walls work (docs/dev/destructible-walls-plan.md) at the user's

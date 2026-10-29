@@ -920,6 +920,74 @@ The pictures are made by `tools/make-grate-doors-demo.ps1`. Edit it and run it a
 powershell -ExecutionPolicy Bypass -File examples/tools/make-grate-doors-demo.ps1
 ```
 
+## Boat Demo (`mods/boat-demo`)
+
+A river level that replaces Floor 1 (Wolfenstein 3D only), to show off **vehicles** and
+**mounted guns**: a boat to ride past the guard posts on the banks, and a machine-gun nest to man
+at the far end. It's YAML, a level, a small script and the art and sounds a script makes.
+
+```
+PFWolf.exe --file boat-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The pier,** where you start. The boat's moored beside it: face it and press use to climb in.
+  Riding, forward and back are the throttle (the meter along the bottom of the status bar's
+  level, score and lives box shows it), and turning steers; the boat carries you the way you
+  face, with the current sliding by under you.
+- **The river** runs east past four guard posts on islands, two each side, who shoot at you as
+  you pass. The boat stops at docks (the plank floors); alongside one, press use to step off,
+  and the boat stays where you left it. Each post has a dock, with ammo or a first aid kit up
+  the bank. Don't swim: the water's freezing, and only the boat keeps you out of it.
+- **The landing** at the east end, and behind the sandbags the **gun nest**, looking over a yard
+  of guards and SS. Face it from behind and press use to man it: you turn but don't move, the
+  gun needs no ammo, and the sandbags take half of every hit. Use again to step off behind it.
+  The yard's enemies will come round through the door beside it too.
+- **The exit room,** past the yard.
+
+### What's in it
+
+- `actordefs/boat-demo.yaml`:
+  - `Boat`, whose `Use` state runs `A_Board("sound", "message")`: the boat goes and you're on its
+    tile, riding it. `vehicle.maxspeed`, `vehicle.accel` and `vehicle.brake` (global units a
+    tic, 65536 a tile) are how fast it goes and how quickly forward and back change that;
+    `vehicle.exitmessage`, `vehicle.exitsound` and `vehicle.noexit` (use with no dock beside
+    you) are what getting off says.
+  - `Dock` (`docktile: true`) and `KeepEnemiesOut` (`blocktile: monsters`): markers that are
+    never placed themselves, only mark their tiles as the map's read. The boat can't go onto a
+    dock, and gets you off onto one; enemies can't walk onto a keep-out tile, so they don't wade
+    after you.
+  - `GunNest`, whose `Use` state runs `A_Mount("NestGun", "sound")`, and `NestGun`, a gatling
+    gun (`parent: GatlingGun`) with `weapon.mounted: true`, `weapon.mountdamage: 50` (the share
+    of a hit you take while on it), `weapon.mountnoroom` and no ammo used. A mounted gun is only
+    ever held while manning it.
+- `mapdefs/things.yaml`: objects 800-803 (the dock and keep-out markers, the boat, the nest).
+- `mapdefs/flats.yaml`: the river and the docks (flat indices 20 and 21), and the river's
+  `damage`: 4 health every 20 tics to whoever stands in it (`enemies: false` spares the guards).
+- `scripts/boat-demo.lua`: a `game.ondamage` hook that turns the river's damage to 0 for a player
+  riding something (`actor.vehicle`), the hints (`game.onenter`, and while the boat's beside a
+  dock, a keyed `game.message` that stays up until it isn't).
+- `statusbar.yaml`: a `power-meter` part, which Wolf3D's bar hasn't got. It shows a vehicle's
+  throttle (and in other mods, a grenade cooking or a guard's suspicion).
+- `game-info.yaml`: the level's sky and grass color, the river's current (a `scrollers` entry for
+  its tag, 1, sliding its floor east), and messages over the view on.
+- `flats/`, `graphics/BDSKY.png`, `sprites/` (the boat and the nest) and `sounds/` (the motor, the
+  dock and the gun swinging round, named in `sounds/sound-seq.yaml`).
+- `maps/MAP01.wad`: the level. Every river tile carries the keep-out marker on the object plane,
+  the water flat and tag 1; every tile of bank next to the water is a dock.
+
+Everything but the YAML and the script is made by `tools/make-boat-demo.ps1` (the layout is an
+ASCII drawing in it). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-boat-demo.ps1
+```
+
+The newer generators share `tools/example-mod-tools.ps1`, which writes the levels, pictures and
+sounds. With cheats on, `lua print(me.vehicle)` shows what you're riding, and `where` the floor,
+tag and things under you.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

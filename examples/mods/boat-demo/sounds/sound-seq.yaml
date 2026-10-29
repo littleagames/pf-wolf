@@ -1,0 +1,9 @@
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-boat-demo.ps1), by the names
+# its actors play them by (actordefs/boat-demo.yaml).
+sound-info:
+  boat/motor:
+    digitized: BDMOTOR
+  boat/dock:
+    digitized: BDTHUD
+  boat/gunpivot:
+    digitized: BDCLACK
