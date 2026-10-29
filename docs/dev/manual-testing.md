@@ -607,6 +607,11 @@ can reach), not played by hand.
       and its countdown showed. **(never tried)**: the switch thrown by hand and back; the
       animations playing; the warnings on stepping in; picking the suit up (not set by `lua`);
       saving and loading with the suit on and the current off.
+- [ ] Music Demo (`--file music-demo`): headless, `changemus` showed the calm song at the start,
+      the fight song with guards chasing, and the calm one again six seconds after they died.
+      **(never tried)**, by ear: the songs themselves and their loops' seams, their loudness
+      against Wolf3D's, the switch mid-song, the generators' hum starting and stopping at the
+      room's edge, and the song after the menu and after loading a game.
 
 ## 1.15 Multiplayer
 

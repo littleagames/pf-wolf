@@ -1,0 +1,4 @@
+name: Music Demo
+version: "1.0"
+description: Music that follows the fight (replacing Floor 1) - a calm song that turns to a fight song when you're hunted, and back - from the mod's own WAV songs and a Lua script, with an ambient hum.
+game-packs: [wolf3d]

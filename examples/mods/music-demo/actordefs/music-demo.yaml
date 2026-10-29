@@ -1,0 +1,14 @@
+# The generator in the generator room: a cabinet, its lamp blinking, drawn bright, with a little
+# green light. Solid.
+Generator:
+  flags: [SOLID]
+  properties:
+    "light.intensity": 120
+    "light.radius": 2
+    "light.color": "#80FF80"
+  states:
+    Spawn:
+      - sprite: DMGN
+        frames: [A, B]
+        tics-per-frame: 35
+        modifiers: [bright]

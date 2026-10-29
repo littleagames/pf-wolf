@@ -1,0 +1,4 @@
+# The Music Demo's generators on the object plane (930-939 are this mod's)
+things:
+  930:
+    class: Generator

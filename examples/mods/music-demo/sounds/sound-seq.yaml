@@ -1,0 +1,5 @@
+# The mod's own sound (sounds/DMHUM.wav, made by examples/tools/make-music-demo.ps1): the
+# generators' hum, which the script loops as the ambience in their room
+sound-info:
+  musicdemo/hum:
+    digitized: DMHUM

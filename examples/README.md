@@ -1615,6 +1615,51 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-hazards-demo.ps1
 With cheats on, `where` shows the floor you're on, and `lua print(game.floor(me.tilex, me.tiley))`
 what the script sees.
 
+## Music Demo (`mods/music-demo`)
+
+**Music that follows the fight**, replacing Floor 1 (Wolfenstein 3D only): a calm song while
+nobody's after you, a fight song as soon as someone is, and the calm one again once it's over,
+from the mod's own songs and a script. It's a level, two songs and a hum the generator script
+writes, and a small script.
+
+```
+PFWolf.exe --file music-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- The level starts to a calm song. Open the door into the courtyard and the guards there come for
+  you: the music turns to a driving fight song.
+- Six seconds after the last of them has stopped chasing you, the calm song comes back.
+- In the generator room, west of the courtyard, the generators hum.
+
+### What's in it
+
+- `music/DMCALM.wav` and `music/DMFIGHT.wav`: the songs. A file in a mod's `music/` (OGG, MP3 or
+  WAV) is a song by that name, played as Wolf3D's own are (and in place of one of the same name).
+  Each loops seamlessly, being whole bars with every note dying away inside them.
+- `scripts/music.lua`:
+  - `game.onmusic(function(map, song) ... end)`, asked as a level's song is about to start (or
+    start again after the menu), on this machine alone: the song it returns plays instead.
+  - `game.ontick`, each tic: whether anything's chasing you (its `state`), and `game.music(song)`
+    to change the song for the rest of the level.
+  - `game.ambient(sound)`: a sound looped as the ambience (nil stops it; asking for the one
+    playing changes nothing, so it's asked each tic): the hum, while you stand on a tile with tag
+    1 (the generator room's).
+- `sounds/DMHUM.wav`, named `musicdemo/hum` in `sounds/sound-seq.yaml`.
+- `actordefs/music-demo.yaml` and `mapdefs/things.yaml`: the generators (object 930), blinking.
+- `maps/MAP01.wad`: the level.
+
+The songs, the hum, the generators and the level are made by `tools/make-music-demo.ps1`: the songs
+written as notes (chords, an arpeggio; a bass line, drums) and synthesized there. Edit it and run
+it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-music-demo.ps1
+```
+
+In the console, `changemus` shows what's playing and `changemus <name>` plays a song.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
