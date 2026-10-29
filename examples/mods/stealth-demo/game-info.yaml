@@ -1,0 +1,22 @@
+# Merged into the game pack's game-info.yaml: the stealth messages and timings, the level's one
+# light zone (its tiles are zone 1 on plane 5, which the script's alarm turns red), and messages
+# over the view on. The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+setting-defaults:
+  messages: true
+
+stealth:
+  # An enemy in uniform range starts to wonder about you: you have suspicion-tics (70 a second)
+  # to show your papers before it decides
+  suspected: "\"You there. Papers!\""
+  blown: "Your cover's blown!"
+  lost: "You've been seen!"
+  alert: "Not now: they're already after you."
+  suspicion-tics: 420
+  # Tiles away (either way) past which a uniformed player is ignored
+  range: 8
+
+maps:
+  MAP01:
+    zones:
+      1: { light: 220 }

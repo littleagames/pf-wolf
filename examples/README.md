@@ -1432,6 +1432,60 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-classes-demo.ps1
 In the console, `playerclass <name>` sets the class new games start as (`playerclass Scout`, then
 `map MAP01`), and with cheats on `hurt` shows your health and armor.
 
+## Stealth Demo (`mods/stealth-demo`)
+
+A guarded compound that replaces Floor 1 (Wolfenstein 3D only), to get through by **stealth**: a
+stolen uniform and papers, the knife from behind, and an alarm if anyone sees through you. It's
+YAML, a level and a small script.
+
+```
+PFWolf.exe --file stealth-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The storeroom,** where you start: a uniform on a coat rack. Use it: you're in uniform, with
+  papers in your pocket (slot 5).
+- **The ring corridor** round the barracks, two guards patrolling it. In uniform, with the papers
+  in hand, a guard who sees you only wonders: "Papers!" Show them (fire) within six seconds and he
+  lets you be. Anything else in hand, or too slow, and your cover's blown.
+- **The barracks:** guards with their backs to the door, and a dog, which doesn't care what you're
+  wearing. The knife kills outright from behind an enemy who doesn't know you're there, and a kill
+  made unseen counts as a silent one.
+- **The checkpoint** north, with an officer. He's not fooled by papers. Get behind him.
+- **The alarm:** the first enemy to notice you sounds it. The lights turn red and strobe and the
+  music changes. At the end, the tally says whether you were ever seen, and how many silent kills.
+
+### What's in it
+
+- `actordefs/stealth-demo.yaml`:
+  - `CoatRack`, whose `Use` state runs `A_Disguise("Uniform", "Papers", "Bare")`: the disguise on,
+    the papers given, the rack to its `Bare` state. It refuses while anyone's after you.
+  - `Uniform` (`inventory.disguise: true`) and `Papers`, a weapon with `weapon.papers: true` whose
+    fire is `A_ShowPapers`.
+  - Changes to Wolf3D's own (merged key by key, so on every level while the mod's on): the knife's
+    `weapon.backstab` and `weapon.stealthkill`, the officer's `monster.papersfail` (what he says),
+    and the dog's `monster.disguise: fooled` (`seesthrough` is the other way).
+- `game-info.yaml`: `stealth:`, its messages (`suspected`, `blown`, `lost`, `alert`), how long a
+  suspicious enemy waits (`suspicion-tics`) and how far it cares (`range`); and the level's light
+  zone (plane 5, zone 1), for the alarm.
+- `scripts/stealth.lua`: `game.onsight` sounds the alarm once (`A_SetZoneLight` and
+  `A_SetZoneEffect` on zone 1 through `game.trigger`, and `game.music`); `game.onstealthkill`
+  says so; `game.ontally` reports `result.undetected` and `result.stealthkills`.
+- `mapdefs/things.yaml`: object 890, the coat rack. `sprites/`, `sounds/`: the rack, the papers
+  in hand and their rustle.
+- `maps/MAP01.wad`: the level. The guards patrol the ring by Wolf3D's patrol arrows (objects 90-97)
+  at its corners.
+
+The pictures, sound and level are made by `tools/make-stealth-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-stealth-demo.ps1
+```
+
+Wolf3D's status bar has no suspicion meter (a statusbar.yaml `power-meter` is it, though Wolf3D's
+bar doesn't redraw one as it changes), so the messages are what tell you.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

@@ -1,0 +1,5 @@
+# The Stealth Demo's coat rack on the object plane (890-899 are this mod's)
+things:
+  890:
+    class: CoatRack
+    angles: 0

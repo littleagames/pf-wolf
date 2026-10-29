@@ -587,6 +587,12 @@ can reach), not played by hand.
       using a field medkit. **(never tried)**: the class menu after the episode; the speeds and
       eye heights by feel; the Heavy's armor taking half (`hurt` shows it) and the vest; the
       faces' grin, wince and death; damagedealt in a fight.
+- [ ] Stealth Demo (`--file stealth-demo`), driven windowed: the coat rack's uniform and papers;
+      seen with the pistol out, the cover blown and the alarm (red strobing lights); with the
+      papers out, a patrolling guard's "Papers!" and, shown them, his walking on. **(never
+      tried)**: the knife's back-stab killing outright and "A silent kill."; the officer refusing
+      the papers; the dog ignoring the uniform; the alarm's music; the tally line; the rack
+      refusing while you're hunted; the guards' patrol loop round the ring.
 
 ## 1.15 Multiplayer
 

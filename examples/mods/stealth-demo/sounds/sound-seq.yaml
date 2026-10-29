@@ -1,0 +1,5 @@
+# The mod's own sound (sounds/SDPAPER.wav, made by examples/tools/make-stealth-demo.ps1): the
+# papers shown
+sound-info:
+  stealth/papers:
+    digitized: SDPAPER

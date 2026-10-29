@@ -1,0 +1,4 @@
+name: Stealth Demo
+version: "1.0"
+description: Get through a guarded compound (replacing Floor 1) in a stolen uniform - show your papers, knife the unwary from behind, and don't set off the alarm.
+game-packs: [wolf3d]

@@ -1,0 +1,78 @@
+# The Stealth Demo's actors, and changes to Wolf3D's own (a mod's actordefs merge into the base
+# game's key by key, so these hold on every level while the mod's on). How stealth works is in
+# the engine's Gameplay/Stealth.cs; every property is in the docs' Actor properties reference.
+
+# The coat rack: use it and you put on the uniform and pocket the papers (A_Disguise), and the
+# rack's left bare. Not while anyone's already after you (game-info stealth `alert`).
+CoatRack:
+  flags: [SOLID]
+  properties:
+    usemessage: "Press Use to put on the uniform"
+  states:
+    Spawn:
+      - sprite: SDRK
+        frames: [A]
+        tics-per-frame: -1
+    Use:
+      - sprite: SDRK
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Disguise("Uniform", "Papers", "Bare")
+        next-state: Spawn
+    Bare:
+      - sprite: SDRK
+        frames: [B]
+        tics-per-frame: -1
+
+# Worn, a disguise: an enemy that sees you only suspects you, while you're still unseen
+Uniform:
+  parent: CustomInventory
+  properties:
+    inventory.disguise: true
+    inventory.pickupmessage: "You're in uniform. Show your papers (slot 5) to anyone who wonders."
+    inventory.pickupsound: misc/k_pkup
+
+# The papers: a "weapon" that fires A_ShowPapers, satisfying every suspicious enemy in sight
+# (but an officer). Slot 5.
+Papers:
+  parent: WolfWeapon
+  properties:
+    tag: "Papers"
+    attacksound: stealth/papers
+    weapon.papers: true
+    weapon.slot: 5
+    weapon.selectionorder: 9000
+    weapon.ammouse1: 0
+    weapon.ammogive1: 0
+  states:
+    Ready:
+      - sprite: SDPP
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: SDPP
+        frames: [B]
+        tics-per-frame: 20
+        action: A_ShowPapers
+      - sprite: SDPP
+        frames: [B]
+        tics-per-frame: 25
+        next-state: Ready
+
+# The knife kills outright from behind an enemy that doesn't know you're there, and a kill
+# made unseen with it counts as a stealth kill
+Knife:
+  properties:
+    weapon.backstab: true
+    weapon.stealthkill: true
+
+# Officers aren't fooled by papers; dogs don't care what you're wearing
+Officer:
+  properties:
+    monster.papersfail: "\"Those papers are forged!\""
+
+Dog:
+  properties:
+    monster.disguise: fooled

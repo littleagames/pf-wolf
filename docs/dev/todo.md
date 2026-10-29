@@ -120,6 +120,9 @@ Worked round in the example mods (2026-10-29), not fixed in the engine:
   abstract, so the class is built as a plain actor: it shows but is never picked up. Mission
   Demo's documents use `CustomInventory`. A warning at load (or building it as CustomInventory)
   would save a mod maker the hunt.
+- **`weapon.backstab` isn't in the actor property list** (PFWolf.Common Definitions/ActorProperties.cs),
+  though `PlayerAttacks` reads it: so the docs' Actor properties reference and the editor's
+  Definitions window don't know it. Stealth Demo's knife uses it.
 - **No use hint for getting out of a vehicle on Wolf3D's status bar**: `vehicle.exithint` names
   a statusbar.yaml use-hint, which Wolf3D's bar hasn't got. Boat Demo's script shows a keyed
   message beside a dock instead.
