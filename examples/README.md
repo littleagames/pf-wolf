@@ -1486,6 +1486,52 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-stealth-demo.ps1
 Wolf3D's status bar has no suspicion meter (a statusbar.yaml `power-meter` is it, though Wolf3D's
 bar doesn't redraw one as it changes), so the messages are what tell you.
 
+## Boss Demo (`mods/boss-demo`)
+
+A **boss fight** in two phases, replacing Floor 1 (Wolfenstein 3D only), with a **health bar**
+drawn by a script. It's YAML, a level, two small pictures and the script.
+
+```
+PFWolf.exe --file boss-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The start room:** first aid and a gatling gun. Through the door, the arena, its pillars your
+  only cover.
+- **The Warden** (Hans Grosse's build, with less health) waits at the far end. Once he's after you,
+  his health bar shows across the top of the view.
+- **At half health he's enraged:** a pause, a roar, and his second phase takes his place, red,
+  quicker, the floor shaking under his steps, firing two rockets with every volley. The bar fills
+  again and the music changes.
+- **Kill him** and the locked door behind him opens on the exit.
+
+### What's in it
+
+- `actordefs/warden.yaml`: `Warden` and `WardenEnraged`, both `parent: Hans`. The first has an
+  `Enrage` state ending in `A_Morph("WardenEnraged")`: the new class takes its place, at its own
+  health, already chasing. The second has its own `translation`, `speed`, an `Attack` of
+  `A_FireProjectile("Rocket", offset)` and a `Chase` whose steps run `A_Quake(min, max, "near")`.
+- `translations.yaml`: `warden-red`, Hans desaturated and tinted.
+- `scripts/boss.lua`:
+  - `game.onactorspawn` notes each phase's full health on it (`temp1`) as it comes in, for the bar.
+  - `game.ondamage`: the hit that takes the Warden to half sends him to `Enrage` (`actor:jump`),
+    changes the music (`game.music`) and leaves him standing (its return value is the damage).
+  - `game.onkill`: the enraged phase dead opens the exit door (`A_OpenDoor` on its tag, through
+    `game.trigger`; it's gold-locked, and no one has the key).
+  - `game.onhud`: the bar, `graphics/BFBAR.png` with `BFSEG.png` drawn a step at a time, and the
+    phase's name.
+- `mapdefs/things.yaml`: object 900, the Warden. `maps/MAP01.wad`: the arena.
+
+The pictures and the level are made by `tools/make-boss-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-boss-demo.ps1
+```
+
+With cheats on, `lua for _,a in ipairs(game.actors('Warden')) do a:jump('Enrage') end` skips to
+the second phase.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

@@ -593,6 +593,11 @@ can reach), not played by hand.
       tried)**: the knife's back-stab killing outright and "A silent kill."; the officer refusing
       the papers; the dog ignoring the uniform; the alarm's music; the tally line; the rack
       refusing while you're hunted; the guards' patrol loop round the ring.
+- [ ] Boss Demo (`--file boss-demo`), driven windowed: the health bar; the gatling gun taking the
+      Warden to half, his enraging into the red phase (rockets, its bar full again); killing it
+      opening the exit. **(never tried)**: the fight played fair (no god mode); the quake on his
+      steps; the music change and back; saving and loading in either phase (the bar's full
+      health is kept on the boss); dying and restarting mid-fight.
 
 ## 1.15 Multiplayer
 

@@ -1,0 +1,4 @@
+name: Boss Demo
+version: "1.0"
+description: A boss fight (replacing Floor 1) in two phases - at half health the Warden turns red, quicker and rocket-firing - with a health bar drawn by a Lua script.
+game-packs: [wolf3d]

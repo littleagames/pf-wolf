@@ -1,0 +1,5 @@
+# The Boss Demo's boss on the object plane (900-909 are this mod's), facing south
+things:
+  900:
+    class: Warden
+    angles: 270

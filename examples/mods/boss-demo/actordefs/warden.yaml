@@ -1,0 +1,83 @@
+# The Boss Demo's boss, in two phases, both built on Wolf3D's Hans Grosse (pfwolf-pk3's
+# actordefs/wolf3d/bosses.yaml): his pictures, sounds and gun.
+#
+#   Warden          phase one: Hans as he is, with less health and no gold key to drop.
+#                   scripts/boss.lua sends him to his Enrage state when he's down to half.
+#   WardenEnraged   phase two: A_Morph puts this in his place, already chasing you, at its own
+#                   (full) health. Drawn red (translations.yaml), faster, its footsteps shaking the
+#                   view (A_Quake), and it fires two rockets with each volley.
+
+Warden:
+  parent: Hans
+  properties:
+    tag: "The Warden"
+    health.baby: 450
+    health.easy: 500
+    health.normal: 600
+    health.hard: 700
+    dropitem: none
+  states:
+    # A pause, a roar, then the next phase takes his place (this one leaves the level)
+    Enrage:
+      - sprite: HANS
+        frames: [A]
+        tics-per-frame: 25
+        action: A_PlaySound("hans/sight")
+      - sprite: HANS
+        frames: [E]
+        tics-per-frame: 1
+        action: A_Morph("WardenEnraged")
+
+WardenEnraged:
+  parent: Hans
+  properties:
+    tag: "The Warden, enraged"
+    translation: warden-red
+    health.baby: 450
+    health.easy: 500
+    health.normal: 600
+    health.hard: 700
+    speed: 900
+    dropitem: none
+  states:
+    # Two rockets either side of you, then a burst from the gun
+    Attack:
+      - sprite: HANS
+        frames: [E]
+        tics-per-frame: 20
+      - sprite: HANS
+        frames: [F]
+        tics-per-frame: 10
+        action: A_FireProjectile("Rocket", -10)
+      - sprite: HANS
+        frames: [G]
+        tics-per-frame: 10
+        action: A_FireProjectile("Rocket", 10)
+      - sprite: HANS
+        frames: [F]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: HANS
+        frames: [E]
+        tics-per-frame: 10
+        next-state: Chase
+    # Each heavy step shakes the view, while you're in his part of the level
+    Chase:
+      - sprite: HANS
+        frames: [A]
+        tics-per-frame: 8
+        think: T_Chase
+      - sprite: HANS
+        frames: [B]
+        tics-per-frame: 6
+        think: T_Chase
+        action: A_Quake(25, 50, "near")
+      - sprite: HANS
+        frames: [C]
+        tics-per-frame: 8
+        think: T_Chase
+      - sprite: HANS
+        frames: [D]
+        tics-per-frame: 6
+        think: T_Chase
+        action: A_Quake(25, 50, "near")

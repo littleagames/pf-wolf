@@ -1,0 +1,4 @@
+# The enraged Warden's colors (the ranges are in the translations reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/translations): Hans's sprite
+# desaturated, then tinted red, keeping its shading
+warden-red: ["1:254=%[0,0,0]:[2,0.35,0.3]"]
