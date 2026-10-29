@@ -74,6 +74,7 @@ public class GameOptionCommandsTests
     [TestCase("freelook", GameOption.Look)]
     [TestCase("am_stats", GameOption.AutomapStats)]
     [TestCase("weaponbob", GameOption.WeaponBob)]
+    [TestCase("weaponbob_sway", GameOption.WeaponBobSway)]
     [TestCase("alwaysrun", GameOption.AlwaysRun)]
     [TestCase("crosshair", GameOption.Crosshair)]
     public void Each_Setting_Goes_Back_To_The_Games_Default(string command, object optionArg)

@@ -84,6 +84,7 @@ extra-life-score: 40000
 #   automap-stats: true
 #   autosave: true
 #   weapon-bob: false
+#   weapon-bob-sway: false
 #   always-run: false
 #   crosshair: false
 # crosshair-color: White

@@ -26,5 +26,6 @@ menu-items:
   - { id: "alwaysrun", type: "ToggleMenuItem", text: "ALWAYS RUN", short-key: U, enabled: true }
   - { id: "freelook", type: "ToggleMenuItem", text: "LOOK UP AND DOWN", short-key: K, enabled: true }
   - { id: "weaponbob", type: "ToggleMenuItem", text: "WEAPON BOB", short-key: B, enabled: true }
+  - { id: "weaponbobsway", type: "ToggleMenuItem", text: "BOB SIDE TO SIDE", short-key: D, enabled: true }
   - { id: "crosshair", type: "ToggleMenuItem", text: "CROSSHAIR", short-key: H, enabled: true }
   - { id: "autosave", type: "ToggleMenuItem", text: "AUTOSAVE", short-key: S, enabled: true }

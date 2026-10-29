@@ -405,6 +405,12 @@ public record SettingDefaultsInfo
     /// <summary>The weapon in hand bobbing as the player walks (default false, Planet Strike's true; weaponbob)</summary>
     public bool? WeaponBob { get; init; }
 
+    /// <summary>
+    /// The weapon bob swinging side to side in an arc, dipping in the middle, as Doom's; off, it
+    /// springs up and down as Planet Strike's (default false; weaponbob_sway)
+    /// </summary>
+    public bool? WeaponBobSway { get; init; }
+
     /// <summary>Running without holding Run; holding it walks (default false; alwaysrun)</summary>
     public bool? AlwaysRun { get; init; }
 

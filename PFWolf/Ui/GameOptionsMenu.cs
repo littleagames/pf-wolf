@@ -22,6 +22,7 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
         ("automapstats", GameOption.AutomapStats),
         ("autosave", GameOption.Autosave),
         ("weaponbob", GameOption.WeaponBob),
+        ("weaponbobsway", GameOption.WeaponBobSway),
         ("alwaysrun", GameOption.AlwaysRun),
         ("crosshair", GameOption.Crosshair),
         ("lighting", GameOption.Lighting),

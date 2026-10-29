@@ -100,9 +100,14 @@ internal sealed class PlayerThink(
                 playerinput.SetPressed(ButtonType.Attack, false);
         }
 
+        int movedFromX = player.X, movedFromY = player.Y;
         movement.ControlMovement(ob);
         if (session.ActingIsLocal)              // only the local player's view bobs
-            weaponBob.Update(playerinput.ControlY, session.Tics);
+        {
+            double moved = Math.Sqrt((double)(player.X - movedFromX) * (player.X - movedFromX)
+                + (double)(player.Y - movedFromY) * (player.Y - movedFromY));
+            weaponBob.Update(playerinput.ControlY, session.Tics, moved, ready);
+        }
         if (gamestate.VictoryFlag)              // watching the BJ actor
             return;
 

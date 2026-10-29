@@ -16,6 +16,7 @@ internal sealed class GameOptionCommands(ConsoleManager console, GameOptions opt
         Add(GameOption.AutomapStats, "Whether the automap shows the level's name, kills, treasure, secrets and time.");
         Add(GameOption.Autosave, "Whether each new level saves itself as it starts, to the Autosave.");
         Add(GameOption.WeaponBob, "Whether the weapon in hand bobs as you walk.");
+        Add(GameOption.WeaponBobSway, "Whether the weapon bob swings side to side, as Doom's; 0 bobs it up and down, as Planet Strike's.");
         Add(GameOption.AlwaysRun, "Whether you run without holding Run; holding it then walks.");
         Add(GameOption.Crosshair, "Whether a crosshair is drawn in the middle of the view.");
         Add(GameOption.Lighting, "Whether levels are shaded (fog, night, light zones); 0 draws everything at full light.");

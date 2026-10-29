@@ -30,6 +30,7 @@ $MENU_GAMEOPTIONS: "Game Options"
 $STR_FREELOOK: "Look Up/Down"
 $STR_AUTOSAVE: "Autosave"
 $STR_WEAPONBOB: "Weapon Bob"
+$STR_WEAPONBOBSWAY: "Bob Side to Side"
 $STR_ALWAYSRUN: "Always Run"
 $STR_CROSSHAIR: "Crosshair"
 

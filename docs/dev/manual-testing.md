@@ -103,6 +103,9 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       run, crosshair) changes the game at once and survives a restart.
 - [ ] "Default" state follows a mod's `setting-defaults` (try `moody-lights` or a scratch mod).
 - [ ] Blake defaults (messages on) and Planet Strike (weapon bob) differ from Wolf3D as intended.
+- [ ] (never tried) Weapon Bob + Bob Side to Side: the weapon swings left and right in an arc,
+      dipping in the middle, wider walking than strafing into a wall, settling when you stop and
+      holding still while firing; the Game Options window fits the extra row in Wolf3D and Blake.
 
 ## 1.6 Wolf3D gameplay (W, then spot-check S)
 
