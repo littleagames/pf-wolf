@@ -85,6 +85,11 @@ internal class ActorMetadata
             }
         }
 
+        // Inventory itself is abstract: a class made straight from it is an item all the same, a
+        // CustomInventory (else it would be a plain actor, never picked up)
+        if (actorType == typeof(Entities.Actors.Inventory))
+            actorType = typeof(Entities.Actors.CustomInventory);
+
         // TODO: Eventually they will move into the pk3 scripts folder
         if (actorType == null || actorType.IsAbstract || !typeof(Entities.Actors.Actor).IsAssignableFrom(actorType))
         {

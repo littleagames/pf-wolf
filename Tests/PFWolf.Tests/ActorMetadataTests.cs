@@ -42,6 +42,28 @@ public class ActorMetadataTests
         """;
 
     [Test]
+    public void A_Class_Made_Straight_From_Inventory_Is_An_Item()
+    {
+        // Arrange: a mod's documents, parent Inventory (abstract in C#)
+        var metadata = ActorDefs.Metadata(Yaml, """
+            Documents:
+              parent: Inventory
+              states:
+                Spawn:
+                  - sprite: DOCS
+                    frames: [A]
+                    tics-per-frame: -1
+            """);
+
+        // Act
+        var documents = metadata.CreateActor("Documents", metadata.Actors["Documents"]);
+
+        // Assert: built as a CustomInventory, which the player picks up
+        Assert.That(documents, Is.InstanceOf<CustomInventory>());
+        Assert.That(documents.Name, Is.EqualTo("Documents"));
+    }
+
+    [Test]
     public void CreateActor_Inherits_Properties_Nearest_First()
     {
         // Arrange
