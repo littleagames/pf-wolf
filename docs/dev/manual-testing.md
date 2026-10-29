@@ -445,6 +445,11 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 **Holster Demo** (`holster-demo`)
 - [ ] Switching weapons lowers the old one and raises the new one.
 
+**Bob Demo** (`bob-demo`)
+- [ ] **(never tried)** By eye, each weapon's style as the README's table says (only the pistol's
+      U and the gatling gun's heave have been screenshotted); `give` the blue guns and Knife2 for
+      the rest; a bogus `weapon.bobstyle` warns once; with Holster Demo on too.
+
 **Camera and spectating**
 - [ ] `spectate`: cycle actors, player body sprite.
 - [ ] **(never tried)** Automap while spectating; save/load while spectating; spectating in Blake.

@@ -311,6 +311,29 @@ internal sealed class PlayerWeapons(
         return gotWeapon || gotAmmo;
     }
 
+    /// <summary>
+    /// How the weapon in hand bobs: weapon.bobstyle (null when it has none, or names no style,
+    /// which is warned of once), and weapon.bobrangex, bobrangey and bobspeed, 1 when left out
+    /// </summary>
+    internal WeaponBobShape BobShape(string? weapon)
+    {
+        if (weapon == null)
+            return WeaponBobShape.Default;
+
+        var name = inventory.GetStringProperty(weapon, "weapon.bobstyle");
+        var style = WeaponBobShape.ParseStyle(name);
+        if (style == null && name != null && warnedBobStyles.Add(weapon))
+            WarningLog.Write($"Actor {weapon}: weapon.bobstyle {name} isn't a bob style (spring, normal, inverse, alpha, inversealpha, smooth, inversesmooth or none)");
+
+        return new(style, BobNumber(weapon, "weapon.bobrangex"), BobNumber(weapon, "weapon.bobrangey"), BobNumber(weapon, "weapon.bobspeed"));
+    }
+
+    private readonly HashSet<string> warnedBobStyles = new(StringComparer.OrdinalIgnoreCase);
+
+    private double BobNumber(string weapon, string key) =>
+        double.TryParse(inventory.GetStringProperty(weapon, key), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : 1;
+
     // The charge (PlayerState.WeaponCharge): tics until the acting player's weapon is charged again; 0 when it's ready
     // (weapon.chargetics)
 

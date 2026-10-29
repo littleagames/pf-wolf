@@ -156,6 +156,10 @@ public static class ActorProperties
         Text("weapon.mountnoroom", "Shown when there's nowhere to step off it"),
         Bool("weapon.latch", "The struggle weapon a latched-on monster puts in hand (A_LatchBite)"),
         Int("weapon.slowmove", "With it in hand, the player moves this many times slower", "1"),
+        Text("weapon.bobstyle", "How it bobs as the player walks, while Weapon Bob is on: spring (Planet Strike's, up and down only), or a side-to-side swing as ZDoom's: normal (Doom's, a round U, lowest in the middle), inverse (a round arch, lowest at the sides), alpha (a pointed arch in straight lines), inversealpha (a V), smooth (a gentler U) or inversesmooth (a gentler arch); or none. Left out, the player's Bob Side to Side setting picks normal or spring"),
+        Number("weapon.bobrangex", "How far it swings side to side, times the usual (a Doom-style bob's 16 of 168 view lines)", "1"),
+        Number("weapon.bobrangey", "How far it dips or springs, times the usual", "1"),
+        Number("weapon.bobspeed", "How fast it bobs, times the usual (a Doom-style swing goes round in 128 tics)", "1"),
 
         // Power-ups
         Int("powerup.duration", "How long it runs, in tics (70 a second); another picked up adds to what's left"),

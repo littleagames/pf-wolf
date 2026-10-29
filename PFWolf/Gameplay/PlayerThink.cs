@@ -106,7 +106,7 @@ internal sealed class PlayerThink(
         {
             double moved = Math.Sqrt((double)(player.X - movedFromX) * (player.X - movedFromX)
                 + (double)(player.Y - movedFromY) * (player.Y - movedFromY));
-            weaponBob.Update(playerinput.ControlY, session.Tics, moved, ready);
+            weaponBob.Update(playerinput.ControlY, session.Tics, moved, ready, weapons.BobShape(session.PlayerState.Weapon));
         }
         if (gamestate.VictoryFlag)              // watching the BJ actor
             return;

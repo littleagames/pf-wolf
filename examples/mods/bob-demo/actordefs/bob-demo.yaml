@@ -1,0 +1,68 @@
+# Each of Wolf3D's weapons bobs its own way as the player walks. Mod YAML merges into the base
+# actors key by key, so each weapon only gains its weapon.bob* properties; the rest stays as it was.
+#
+# weapon.bobstyle is how it moves:
+#   spring         Planet Strike's: up and down only, while walking forwards or back
+#   normal         Doom's: side to side in a round U, lowest in the middle of the swing
+#   inverse        a round arch, lowest at the sides
+#   alpha          a pointed arch, in straight lines
+#   inversealpha   a V, in straight lines
+#   smooth         a gentler U
+#   inversesmooth  a gentler arch
+#   none           still
+# Left out, the player's Bob Side to Side setting picks normal or spring.
+#
+# weapon.bobrangex, bobrangey and bobspeed scale how far across, how far down and how fast it
+# goes: 1 is the usual (a swing 16 of Doom's 168 view lines each way, once round in 128 tics).
+# Swings are as wide as the player is fast, full at a walk, and hold still while the weapon fires.
+#
+# The weapon properties are in the actor properties reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/actor-properties
+
+# The knife: light in the hand, a quick V
+Knife:
+  properties:
+    "weapon.bobstyle": inversealpha
+    "weapon.bobspeed": 1.25
+
+# The pistol: Doom's own
+Pistol:
+  properties:
+    "weapon.bobstyle": normal
+
+# The machine gun: Doom's swing with a gentler dip
+MachineGun:
+  properties:
+    "weapon.bobstyle": smooth
+
+# The gatling gun: heavy, so it barely swings across but heaves up and down, slowly
+GatlingGun:
+  properties:
+    "weapon.bobstyle": inversesmooth
+    "weapon.bobrangex": 0.5
+    "weapon.bobrangey": 1.5
+    "weapon.bobspeed": 0.75
+
+# The weapons built on those four (give Knife2, BluePistol, BlueAK47 or BlueGatlingGun in the
+# console, with cheats on) would inherit their parents' bobs. They get the other styles instead.
+Knife2:
+  properties:
+    "weapon.bobstyle": alpha
+    "weapon.bobspeed": 1.25
+
+BluePistol:
+  properties:
+    "weapon.bobstyle": inverse
+
+# Planet Strike's spring, springing a little further than usual
+BlueAK47:
+  properties:
+    "weapon.bobstyle": spring
+    "weapon.bobrangey": 1.5
+
+# Wide and lazy: twice as far across, at half the pace
+BlueGatlingGun:
+  properties:
+    "weapon.bobstyle": normal
+    "weapon.bobrangex": 2
+    "weapon.bobspeed": 0.5

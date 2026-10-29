@@ -1,0 +1,4 @@
+name: Bob Demo
+version: "1.0"
+description: Each weapon bobs its own way as you walk, showing off every weapon bob style.
+game-packs: [wolf3d]

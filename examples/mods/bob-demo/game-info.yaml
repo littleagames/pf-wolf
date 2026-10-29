@@ -1,0 +1,6 @@
+# Merged into the game pack's game-info.yaml: Weapon Bob starts on, so the weapons' bobs
+# (actordefs/bob-demo.yaml) show without a trip to Game Options. It's only the default: a player
+# who has switched Weapon Bob off themselves keeps it off until they switch it back on (or type
+# weaponbob default in the console).
+setting-defaults:
+  weapon-bob: true

@@ -83,6 +83,19 @@ public class PlayerWeaponsTests
           parent: WeaponGiver
           properties:
             "weapongiver.weapon": ChainGun
+        BobGun:
+          parent: Weapon
+          properties:
+            "weapon.bobstyle": InverseAlpha
+            "weapon.bobrangex": 0.5
+            "weapon.bobrangey": 2
+            "weapon.bobspeed": 1.25
+        BobGunChild:
+          parent: BobGun
+        BadBobGun:
+          parent: Weapon
+          properties:
+            "weapon.bobstyle": wobbly
         """;
 
     private sealed class Rig
@@ -397,5 +410,24 @@ public class PlayerWeaponsTests
         Assert.That(rig.Weapons.TakeCharge(), Is.True);
         Assert.That(rig.Weapons.TakeCharge(), Is.True);
         Assert.That(rig.Session.PlayerState.WeaponCharge, Is.Zero);
+    }
+
+    [TestCase("BobGun")]
+    [TestCase("BobGunChild")]       // inherited
+    public void A_Weapons_Bob_Comes_From_Its_Properties(string weapon)
+    {
+        // Act
+        var shape = new Rig().Weapons.BobShape(weapon);
+
+        // Assert
+        Assert.That(shape, Is.EqualTo(new WeaponBobShape(WeaponBobStyle.InverseAlpha, 0.5, 2, 1.25)));
+    }
+
+    [TestCase("Pistol")]            // none given
+    [TestCase("BadBobGun")]         // no such style
+    [TestCase(null)]                // empty-handed
+    public void Without_A_Bob_Style_The_Players_Setting_Picks(string? weapon)
+    {
+        Assert.That(new Rig().Weapons.BobShape(weapon), Is.EqualTo(WeaponBobShape.Default));
     }
 }

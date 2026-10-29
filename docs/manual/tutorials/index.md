@@ -32,4 +32,5 @@ with PFWolf, in the game's `mods` folder, ready to switch on.
 | Medic Demo | Enemies that revive their fallen |
 | Key Demo | More keys, and doors that need two of them, any two, or all four |
 | Holster Demo | Weapons put away and brought up as they're changed |
+| Bob Demo | Each weapon bobbing its own way: Doom's swing, Planet Strike's spring and ZDoom's styles |
 | Standalone Demo | A game of its own, with none of Wolfenstein 3D's files |

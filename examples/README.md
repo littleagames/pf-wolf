@@ -578,6 +578,38 @@ up. A weapon without the two states still changes at once, so a mod can give the
 weapons and not others. A new level or a loaded game starts with the weapon up. Both actions
 are in the [actions reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/actions).
 
+## Bob Demo (`mods/bob-demo`)
+
+Each weapon bobs its own way as you walk: Doom's swing, Planet Strike's spring and ZDoom's other
+bob styles, one weapon each. It's YAML only.
+
+```
+PFWolf.exe --file bob-demo
+```
+
+- `game-info.yaml`: `setting-defaults` turns Weapon Bob on. If you've switched it off yourself in
+  Game Options, that choice still wins: switch it back on, or type `weaponbob default`.
+- `actordefs/bob-demo.yaml`: `weapon.bobstyle`, and `weapon.bobrangex`, `bobrangey` and
+  `bobspeed` (how far across, how far down and how fast, times the usual), on each weapon.
+
+  | Weapon | Bob |
+  | --- | --- |
+  | `Knife` | `inversealpha`: a quick V |
+  | `Pistol` | `normal`: Doom's round U, lowest in the middle of the swing |
+  | `MachineGun` | `smooth`: a gentler U |
+  | `GatlingGun` | `inversesmooth`: a gentle arch, heavy (half as wide, half again as deep, slower) |
+  | `Knife2` | `alpha`: a pointed arch |
+  | `BluePistol` | `inverse`: a round arch, lowest at the sides |
+  | `BlueAK47` | `spring`: Planet Strike's up and down, springing further |
+  | `BlueGatlingGun` | `normal`, twice as wide at half the pace |
+
+The last four are the weapons built on the first four. They'd inherit their parents' bobs, so
+each gets its own. To try them, turn cheats on and `give` them in the console (`give BluePistol`).
+
+A swing is as wide as you're fast, full at a walk, and holds still while the weapon fires.
+`none` keeps a weapon still. A weapon without `weapon.bobstyle` bobs as the player's **Bob Side
+to Side** setting says: Doom's `normal` when it's on, `spring` when it's off.
+
 ## Faction Demo (`mods/faction-demo`)
 
 A level that replaces Floor 1 (Wolfenstein 3D only) where it isn't just you against everyone:

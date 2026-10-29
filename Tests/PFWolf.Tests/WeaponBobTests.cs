@@ -236,6 +236,107 @@ public class WeaponBobTests
         Assert.That((bob.Across(SwayView), bob.Drop(SwayView)), Is.EqualTo(before));
     }
 
+    // A weapon's own bob (weapon.bobstyle and the rest), full width after walking 64 tics: half
+    // way round, then on another quarter
+    private static WeaponBobShape Shape(string style, double rangeX = 1, double rangeY = 1, double speed = 1)
+        => new(WeaponBobShape.ParseStyle(style), rangeX, rangeY, speed);
+
+    private static (int Across, int Drop) Walked(WeaponBob bob, uint tics, WeaponBobShape shape)
+    {
+        bob.Update(controlY: -100, tics: tics, moved: WalkTic * tics, weaponShape: shape);
+        return (bob.Across(SwayView), bob.Drop(SwayView));
+    }
+
+    [TestCase("normal", -15, 0, 0, 15)]             // a U: lowest in the middle
+    [TestCase("inverse", -15, 15, 0, 0)]            // an arch: lowest at the sides
+    [TestCase("alpha", 0, 0, -15, 15)]              // straight lines, lowest at the sides
+    [TestCase("inversealpha", 0, 15, -15, 0)]       // a V
+    [TestCase("smooth", -15, 0, 0, 15)]
+    [TestCase("inversesmooth", -15, 15, 0, 0)]
+    [TestCase("none", 0, 0, 0, 0)]
+    public void Each_Style_Swings_Its_Own_Way(string style, int halfAcross, int halfDrop, int onAcross, int onDrop)
+    {
+        // Arrange: Planet Strike's setting, which the weapon's own style overrides
+        var bob = EnabledBob();
+
+        // Act
+        var half = Walked(bob, 64, Shape(style));
+        var on = Walked(bob, 32, Shape(style));
+
+        // Assert
+        Assert.That((half, on), Is.EqualTo(((halfAcross, halfDrop), (onAcross, onDrop))));
+    }
+
+    [Test]
+    public void Smooth_Dips_Less_Than_Normal_Part_Way()
+    {
+        // Act: an eighth of the way round from the middle
+        var normal = Walked(SwayBob(), 112, Shape("normal"));
+        var smooth = Walked(SwayBob(), 112, Shape("smooth"));
+
+        // Assert
+        Assert.That(smooth.Drop, Is.LessThan(normal.Drop));
+    }
+
+    [Test]
+    public void A_Weapons_Range_Scales_Its_Swing()
+    {
+        // Act
+        var half = Walked(SwayBob(), 64, Shape("normal", rangeX: 2));
+        var quarter = Walked(SwayBob(), 96, Shape("normal", rangeY: 0.5));
+
+        // Assert
+        Assert.That((half.Across, quarter.Drop), Is.EqualTo((-31, 7)));
+    }
+
+    [Test]
+    public void A_Weapons_Speed_Swings_It_Faster()
+    {
+        // Act: twice as fast, half way round in 32 tics (not yet full width)
+        var (across, _) = Walked(SwayBob(), 32, Shape("normal", speed: 2));
+
+        // Assert
+        Assert.That(across, Is.LessThan(-12));
+    }
+
+    [Test]
+    public void A_Weapons_Spring_Style_Overrides_Sway()
+    {
+        // Act: Bob Side to Side on, but the weapon springs
+        var (across, drop) = Walked(SwayBob(), 4, Shape("spring"));
+
+        // Assert: four tics take it past the top of its swing, as Planet Strike's
+        Assert.That((across, drop), Is.EqualTo((0, 1)));
+    }
+
+    [Test]
+    public void A_Faster_Spring_Gets_There_Sooner()
+    {
+        Assert.That(Walked(EnabledBob(), 2, Shape("spring", speed: 2)).Drop, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void A_Springs_Range_Scales_Its_Drop()
+    {
+        // Act: at rest, it hangs twice as low
+        var bob = EnabledBob();
+        bob.Update(controlY: 0, tics: 1, weaponShape: Shape("spring", rangeY: 2));
+
+        // Assert
+        Assert.That(bob.Drop(ViewHeight), Is.EqualTo(RestDrop * 2));
+    }
+
+    [TestCase("InverseAlpha", true)]
+    [TestCase(" smooth ", true)]
+    [TestCase("wobbly", false)]
+    [TestCase("3", false)]
+    [TestCase("", false)]
+    [TestCase(null, false)]
+    public void Style_Names_Are_Read_In_Any_Case(string? name, bool known)
+    {
+        Assert.That(WeaponBobShape.ParseStyle(name) != null, Is.EqualTo(known));
+    }
+
     [Test]
     public void Init_Puts_The_Sway_Back_At_Rest()
     {

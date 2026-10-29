@@ -176,6 +176,39 @@ own if its sprites differ, or it goes down as its parent.
 The [Holster Demo](../../examples/mods/holster-demo) gives Wolf3D's weapons both states: the knife
 quick at 12 a tic, the gatling gun heavy at 4.
 
+## Bobbing
+
+While the player has **Weapon Bob** on in Game Options, the weapon in hand bobs as they walk.
+`weapon.bobstyle` says how, as ZDoom's `Weapon.BobStyle` does:
+
+| Style | How it moves |
+| --- | --- |
+| `spring` | Planet Strike's: up and down only, while walking forwards or back |
+| `normal` | Doom's: side to side in a round U, lowest in the middle of the swing |
+| `inverse` | A round arch, lowest at the sides |
+| `alpha` | A pointed arch, in straight lines |
+| `inversealpha` | A V, in straight lines |
+| `smooth` | A gentler U |
+| `inversesmooth` | A gentler arch |
+| `none` | Still |
+
+Without `weapon.bobstyle`, the player's **Bob Side to Side** setting picks: `normal` when it's
+on, `spring` when it's off. `weapon.bobrangex`, `weapon.bobrangey` and `weapon.bobspeed` scale
+how far across, how far down and how fast it goes; 1 is the usual, a swing 16 of Doom's 168 view
+lines each way, once round in 128 tics. A swing is as wide as the player is fast (full at a
+walk), and holds still while the weapon fires.
+
+```yaml
+GatlingGun:
+  properties:
+    "weapon.bobstyle": inversesmooth
+    "weapon.bobrangex": 0.5
+    "weapon.bobrangey": 1.5
+    "weapon.bobspeed": 0.75
+```
+
+The [Bob Demo](../../examples/mods/bob-demo) gives each of Wolf3D's weapons a different style.
+
 ## See also
 
 - [Actions](../reference/actions) lists every weapon action and its arguments.
