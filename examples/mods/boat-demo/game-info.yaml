@@ -8,8 +8,9 @@ maps:
   MAP01:
     # A picture in the mod's graphics/ folder, drawn above the horizon in place of the ceiling
     sky: BDSKY
-    # Grass, where there's no flat (the river and docks have theirs)
-    floor-color: "#3C5A28"
+    # Grass, where there's no flat (the river and docks have theirs). A floor color snaps to the
+    # nearest the palette has, and a dull olive comes out grey, so this is one of its own greens.
+    floor-color: "#047100"
     # The river's tiles have tag 1 (the tag plane, plane 4): its floor slides east, 1 texel a tic
     scrollers:
       1: { x: 1, walls: false, ceiling: false }
