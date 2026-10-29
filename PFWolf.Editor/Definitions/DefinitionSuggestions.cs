@@ -46,6 +46,7 @@ public sealed class DefinitionSuggestions
             FieldHint.Weather => content.WeatherNames,
             FieldHint.Faction => content.FactionNames,
             FieldHint.Translation => content.TranslationNames,
+            FieldHint.DamageType => content.DamageTypesDealt,
             _ => [],
         };
         return names.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();

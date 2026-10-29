@@ -102,6 +102,7 @@ public enum MarkerKind
 {
     PushWall,
     Switch,
+    Breakable,
 }
 
 /// <summary>What the pointer is on in the 3D view</summary>
@@ -134,7 +135,7 @@ public sealed class LevelMesh
     /// <summary>Whether some surface scrolls, so the view keeps drawing</summary>
     public bool Scrolls { get; private set; }
 
-    /// <summary>Push walls and switches, for the view to tint</summary>
+    /// <summary>Push walls, switches and breakable walls, for the view to tint</summary>
     public Dictionary<(int X, int Y), MarkerKind> Markers { get; } = [];
 
     private ILookup<(int X, int Y), Surface>? _byTile;
@@ -293,6 +294,8 @@ public sealed class LevelMesh
             Markers[(x, y)] = MarkerKind.PushWall;
         else if (_tiles.IsSwitch(x, y))
             Markers[(x, y)] = MarkerKind.Switch;
+        else if (_tiles.IsBreakable(x, y))
+            Markers[(x, y)] = MarkerKind.Breakable;
 
         foreach (var face in SquareFaces)
         {

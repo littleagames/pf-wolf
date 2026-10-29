@@ -10,9 +10,9 @@ public class LevelChecksTests
 {
     private const ushort Wall = 1, Floor = 107, Ambush = 106, VerticalDoor = 90, HorizontalDoor = 91;
     private const ushort Start = 19, Puddle = 23, PushWall = 98, Diagonal = 400, DoorSwitch = 50, WallSwitch = 51;
-    private const ushort Glass = 60, Lever = 61, BadStage = 62, WalkTrigger = 460;
+    private const ushort Glass = 60, Lever = 61, BadStage = 62, LoopA = 63, LoopB = 64, Plasma = 65, WalkTrigger = 460;
 
-    private static GameContent Content() => GameContent.FromDefinitions(new MapObjectTranslationAsset
+    private static GameContent Content(Dictionary<string, ActorData>? actors = null) => GameContent.FromDefinitions(new MapObjectTranslationAsset
     {
         Walls = new()
         {
@@ -22,6 +22,9 @@ public class LevelChecksTests
             [Glass] = new() { North = "GLASS", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet"] } },
             [Lever] = new() { North = "SW", Switch = new MapSwitchTranslation { Actions = ["A_BreakWall"] } },
             [BadStage] = new() { North = "CRACKED", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet"], To = 99, Animation = "NOSUCH" } },
+            [LoopA] = new() { North = "CRACKED", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet"], To = LoopB } },
+            [LoopB] = new() { North = "CRACKED", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet"], To = LoopA } },
+            [Plasma] = new() { North = "GLASS", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet", "Plasma", "Rocket"], Spawn = ["NoSuchRubble"] } },
         },
         Doors = new()
         {
@@ -37,7 +40,7 @@ public class LevelChecksTests
             [WalkTrigger] = new MapTriggerTranslation { Action = "A_RemoveWall", Activation = "walk" },
         },
         Diagonals = new() { [Diagonal] = new MapDiagonalTranslation { Shape = WallShape.SolidNW } },
-    });
+    }, actors: actors);
 
     /// <summary>A level of open floor walled in all round, with the player starting at (5, 5)</summary>
     private static MapDocument Room()
@@ -395,5 +398,90 @@ public class LevelChecksTests
         Assert.That(messages, Has.Some.Contains($"wall {BadStage} breaks into wall 99").And.Contains("(3 tiles)"));
         Assert.That(messages, Has.Some.Contains("animation NOSUCH isn't an animdefs animation"));
         Assert.That(messages, Has.Some.Contains("on the level's edge it never does").And.Contains("(1 tile)"));
+    }
+
+    [Test]
+    public void Destructible_Stages_That_Go_Round_Are_Warned_About()
+    {
+        // Arrange
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, LoopA);
+
+        // Act
+        var messages = Check(document).Select(problem => problem.Message).ToList();
+
+        // Assert
+        Assert.That(messages, Has.Some.Contains($"wall {LoopA}'s stages go round ({LoopA} → {LoopB} → {LoopA})"));
+    }
+
+    [Test]
+    public void A_Damage_Type_Nothing_Deals_And_A_Spawn_With_No_Class_Are_Warned_About()
+    {
+        // Arrange: a rocket deals Rocket; nothing deals Plasma
+        var rocket = new ActorData();
+        rocket.Properties["damagetype"] = "Rocket";
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Plasma);
+
+        // Act
+        var messages = LevelChecks.Run(new MapTiles(Content(new() { ["Rocket"] = rocket }), document.Map, () => document.Properties), true)
+            .Select(problem => problem.Message).ToList();
+
+        // Assert
+        Assert.That(messages.Single(message => message.Contains("no weapon")), Does.Contain($"wall {Plasma} breaks to Plasma, which"));
+        Assert.That(messages, Has.Some.Contains("leaves NoSuchRubble, which isn't in the actordefs"));
+    }
+
+    [Test]
+    public void Without_Actordefs_Damage_Types_And_Spawns_Are_Not_Checked()
+    {
+        // Arrange
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Plasma);
+
+        // Act
+        var messages = Check(document).Select(problem => problem.Message).ToList();
+
+        // Assert
+        Assert.That(messages, Is.Empty);
+    }
+
+    [Test]
+    public void Switches_Triggers_And_Breakable_Walls_With_Actions_Act_On_Their_Tag()
+    {
+        // Arrange
+        var content = GameContent.FromDefinitions(new MapObjectTranslationAsset
+        {
+            Walls = new()
+            {
+                [Wall] = new() { North = "W" },
+                [Lever] = new() { North = "SW", Switch = new MapSwitchTranslation { Actions = ["A_BreakWall"] } },
+                [Glass] = new() { North = "GLASS", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet"] } },
+                [BadStage] = new() { North = "C", Destructible = new MapDestructibleTranslation { Actions = ["A_RemoveWall"] } },
+            },
+            Floors = new MapFloorsTranslation { AreaStart = Floor, AreaCount = 37, Ambush = Ambush, SecretExit = -1 },
+            Triggers = new()
+            {
+                [PushWall] = new MapTriggerTranslation { Action = "A_PushWall" },
+                [WalkTrigger] = new MapTriggerTranslation { Action = "A_RemoveWall", Activation = "walk" },
+            },
+        });
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Lever);
+        EditorMaps.Set(document, 0, 11, 10, Glass);
+        EditorMaps.Set(document, 0, 12, 10, BadStage);
+        EditorMaps.Set(document, 1, 13, 10, WalkTrigger);
+        EditorMaps.Set(document, 0, 14, 10, Wall);
+        EditorMaps.Set(document, 1, 14, 10, PushWall);
+        var tiles = new MapTiles(content, document.Map, () => document.Properties);
+
+        // Act and assert
+        Assert.That(tiles.ActsOnTag(10, 10), Is.True, "switch");
+        Assert.That(tiles.ActsOnTag(11, 10), Is.False, "breaks with no actions");
+        Assert.That(tiles.ActsOnTag(12, 10), Is.True, "breaks with actions");
+        Assert.That(tiles.ActsOnTag(13, 10), Is.True, "trigger");
+        Assert.That(tiles.ActsOnTag(14, 10), Is.False, "push wall");
+        Assert.That(tiles.IsBreakable(11, 10) && tiles.IsBreakable(12, 10), Is.True);
+        Assert.That(tiles.IsBreakable(10, 10) || tiles.IsBreakable(13, 10), Is.False);
     }
 }

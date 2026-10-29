@@ -256,6 +256,14 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         MapDefs.NewMapDefsEntry(table, id);
     }
 
+    /// <summary>Starts a destructible block on a mapdefs wall, in the mapdefs tab (or shows the one it has)</summary>
+    public void MakeBreakable(int wall)
+    {
+        ShowTabRequested?.Invoke(this, DefinitionKind.MapDefs);
+        MapDefs.Activate();
+        MapDefs.MakeBreakable(wall);
+    }
+
     /// <summary>Shows a file in the YAML tab, at a definition's line</summary>
     public void ShowYaml(DefinitionFile file, IReadOnlyList<string> path)
     {

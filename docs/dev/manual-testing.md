@@ -412,9 +412,12 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 - [ ] `destructible-demo` played through: glass, boards, cracked wall and secret, lever and arch,
       floor trigger, then the elevator (each seen in pieces with posted keys; never in one go
       by hand, nor heard).
-- [ ] **(never tried)** Editor: destructible-demo's MAP01 opened; the status bar's "breaks" text,
-      the palette's "(breaks)", Check Level clean; the Definitions window's walls showing the
-      destructible block with its pickers.
+- [ ] Editor: destructible-demo's MAP01 opened; the status bar's "breaks" text, the palette's
+      "(breaks)", Check Level clean; the "B" badges, the lines from the floor trigger with Tags
+      on, and the orange-red tint in 3D (all seen through UI Automation, not by hand).
+- [ ] Editor: right-click a plain wall → Make breakable…, fill in the block, save it into a
+      mod, play it, and shoot the wall down (the menu was only driven by UI Automation and
+      reverted, never saved or played).
 
 **Multi-key doors** (`key-demo`)
 - [ ] **(never tried)** Open doors 80 (red+blue), 81 (all four), 82 (any two) in play; refusal

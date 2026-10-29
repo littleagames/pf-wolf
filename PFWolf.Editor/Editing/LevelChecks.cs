@@ -212,20 +212,50 @@ public static class LevelChecks
     }
 
     /// <summary>
-    /// A destructible wall (walls.yaml `destructible:`): its `to` has to be a wall, its animation
-    /// one animdefs has (playing once, else it breaks at once), and on the level's edge it never
-    /// breaks. Each reason is told once, with how many tiles it's on.
+    /// A destructible wall (walls.yaml `destructible:`): its `to` has to be a wall, its stages
+    /// can't go round, its animation has to be one animdefs has (playing once, else it breaks at
+    /// once), what it spawns a class, and its damage types ones something in play deals; on the
+    /// level's edge it never breaks. Each reason is told once, with how many tiles it's on.
     /// </summary>
     private static void CheckDestructible(MapTiles tiles, List<LevelProblem> problems, Dictionary<string, (int, int, int)> found,
         int x, int y, int tile, MapDestructibleTranslation destructible)
     {
         if (destructible.To != 0 && !tiles.Defs.Walls.ContainsKey(destructible.To))
             Count(found, $"wall {tile} breaks into wall {destructible.To}, which isn't in the mapdefs walls, so it's gone instead", x, y);
+        else if (StagesRound(tiles.Defs, tile) is { } round)
+            Count(found, $"wall {tile}'s stages go round ({string.Join(" → ", round)}), so it's never gone", x, y);
+        if (tiles.Content.Actors.Count > 0)
+        {
+            foreach (var spawn in destructible.Spawn.Where(spawn => spawn.Length > 0 && !tiles.Content.Actors.ContainsKey(spawn)))
+                Count(found, $"wall {tile} leaves {spawn}, which isn't in the actordefs, so it isn't left", x, y);
+        }
+        var dealt = tiles.Content.DamageTypesDealt;
+        if (dealt.Count > 0 && destructible.DamageTypes.Where(type => !dealt.Contains(type)).ToList() is { Count: > 0 } notDealt)
+            Count(found, $"wall {tile} breaks to {string.Join(" and ", notDealt)}, which no weapon, missile or blast deals, "
+                + "so only actions and scripts break it that way", x, y);
         if (destructible.Animation is { Length: > 0 } animation
             && tiles.Content.Assets.FindAnimation<TextureAsset>(animation) is not { Loops: false })
             Count(found, $"wall {tile}'s animation {animation} isn't an animdefs animation that plays once, so it breaks at once", x, y);
         if (x == 0 || y == 0 || x == tiles.Width - 1 || y == tiles.Height - 1)
             Count(found, $"wall {tile} breaks, but on the level's edge it never does", x, y);
+    }
+
+    /// <summary>
+    /// A wall's stages (its `to`, that one's `to`...) when they come back round to one before,
+    /// from the wall to the one it comes back to; null when they end
+    /// </summary>
+    private static List<int>? StagesRound(MapObjectTranslationAsset defs, int wall)
+    {
+        var stages = new List<int> { wall };
+        for (int next = defs.Walls[wall].Destructible?.To ?? 0;
+             next != 0 && defs.Walls.TryGetValue(next, out var stage);
+             next = stage.Destructible?.To ?? 0)
+        {
+            if (stages.Contains(next))
+                return [.. stages, next];
+            stages.Add(next);
+        }
+        return null;
     }
 
     /// <summary>The switches on a tile: its wall's and its patch's</summary>

@@ -338,5 +338,34 @@ level, a `to` stage after an animation.
   the destructible warnings). LevelChecksGameTests now loads destructible-demo too: no errors,
   no warnings.
 
-Not done: a mark on destructible walls in the editor's 2D map and 3D view (as switches have);
-the editor wasn't opened by hand.
+### Editor follow-up (2026-10-28)
+
+- **Marks:** the 2D map puts a "B" badge on breakable walls (zoomed to 12 px or more), and the
+  3D view's markers tint them orange-red beside push walls (purple) and switches (green).
+  With tags shown, the yellow lines now run from every tile that acts on its tag
+  (MapTiles.ActsOnTag): switches, triggers other than push walls', and breakable walls with
+  actions. Before, only switches had them.
+- **Make breakable…** on the map's and 3D view's right-click menu ("Edit how it breaks…" on a
+  wall that breaks already) opens the wall's mapdefs entry in the Definitions window at its
+  destructible block. A block with nothing set is started as `damage-types: [Bullet]`
+  (EntryEditorViewModel.StartDestructible), to fill in and save into a mod. `damage-types` has
+  its own field hint (FieldHint.DamageType), so it's one line ("Bullet, Melee"), not a row per
+  item.
+- **More level checks:**
+  - Stages that go round (72 → 73 → 72).
+  - A `spawn` class the actordefs don't have.
+  - A damage type nothing deals. GameContent.DamageTypesDealt is Bullet, Melee, Blast and every
+    class's `damagetype` and `weapon.damagetype`.
+  - The last two are skipped when there are no actordefs.
+- **Tests:** FieldNodeTests (the block started, and a block already there left alone) and
+  LevelChecksTests (stages going round, a type nothing deals, a missing spawn, nothing checked
+  without actordefs, ActsOnTag and IsBreakable).
+- **Checked in the editor** (destructible-demo, driven with UI Automation and posted mouse
+  messages):
+  - The badges and the trigger's lines showed.
+  - Level checks stayed at 0.
+  - "Edit how it breaks…" opened wall 70 at its block.
+  - "Make breakable…" started wall 1's block, which was then reverted.
+  - The 3D view tinted the arch walls.
+
+Not checked: clicking by hand; a Make breakable… saved into a mod and played.

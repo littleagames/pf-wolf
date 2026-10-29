@@ -58,7 +58,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     /// <summary>Light the level by its light and light zones and fade it with distance, as the game does</summary>
     public bool ShowShading { get => GetValue(ShowShadingProperty); set => SetValue(ShowShadingProperty, value); }
 
-    /// <summary>Tint push walls and switches</summary>
+    /// <summary>Tint push walls, switches and breakable walls</summary>
     public bool ShowMarkers { get => GetValue(ShowMarkersProperty); set => SetValue(ShowMarkersProperty, value); }
 
     /// <summary>The pointer moved onto another surface, or off them all</summary>
@@ -526,6 +526,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     private static readonly Vector4 SelectionColor = new(0.31f, 0.78f, 1f, 0.3f);
     private static readonly Vector4 PushWallColor = new(0.75f, 0.35f, 1f, 0.35f);
     private static readonly Vector4 SwitchColor = new(0.3f, 1f, 0.45f, 0.35f);
+    private static readonly Vector4 BreakableColor = new(1f, 0.45f, 0.2f, 0.35f);
     private static readonly Vector4 TagColor = new(1f, 0.55f, 0.1f, 0.4f);
     private static readonly Vector2[] SquareUvs = [new(0, 1), new(1, 1), new(1, 0), new(0, 0)];
 
@@ -542,7 +543,12 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         if (ShowMarkers)
         {
             foreach (var ((x, y), kind) in _mesh.Markers)
-                AddTile(vertices, x, y, kind == MarkerKind.PushWall ? PushWallColor : SwitchColor, camera, faces: true);
+                AddTile(vertices, x, y, kind switch
+                {
+                    MarkerKind.PushWall => PushWallColor,
+                    MarkerKind.Switch => SwitchColor,
+                    _ => BreakableColor,
+                }, camera, faces: true);
         }
 
         if (Controller?.Selection is { } selection && Tiles is { } selectedTiles)

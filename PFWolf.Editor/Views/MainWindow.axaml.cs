@@ -261,7 +261,17 @@ public partial class MainWindow : Window, IEditorDialogs
                 return choice;
             }).ToList(),
         };
-        var menu = new ContextMenu { ItemsSource = new[] { create, goTo } };
+        var breakable = ViewModel.BreakableWallAt(e.X, e.Y);
+        var makeBreakable = new MenuItem
+        {
+            Header = breakable is { Breaks: true } ? "Edit how it breaks…" : breakable != null ? "Make breakable…" : "Make breakable… (not a wall the mapdefs know)",
+            IsEnabled = breakable != null,
+            [ToolTip.TipProperty] = "Opens the definitions window on the wall's destructible block, started (breaking to bullets) when it has none, "
+                                    + "to fill in and save into a mod. Every wall of this number breaks the same way.",
+        };
+        if (breakable is { } picked)
+            makeBreakable.Click += (_, _) => ViewModel.MakeBreakable(picked.Wall);
+        var menu = new ContextMenu { ItemsSource = new[] { create, goTo, makeBreakable } };
         menu.Open(sender as Control ?? Canvas);
     }
 

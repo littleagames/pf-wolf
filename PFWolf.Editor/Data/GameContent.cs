@@ -254,6 +254,37 @@ public sealed class GameContent
         return null;
     }
 
+    /// <summary>
+    /// The damage types something in play deals, as a destructible wall's damage-types name them:
+    /// Bullet, Melee and Blast (a gun's, the knife's and a blast's with none of their own), and
+    /// every class's damagetype and weapon.damagetype. Empty when there are no actordefs to look in.
+    /// </summary>
+    public IReadOnlySet<string> DamageTypesDealt
+    {
+        get
+        {
+            if (_damageTypes == null)
+            {
+                _damageTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (_actors.Count > 0)
+                {
+                    _damageTypes.UnionWith(["Bullet", "Melee", "Blast"]);
+                    foreach (var actor in _actors.Values)
+                    {
+                        foreach (var key in new[] { "damagetype", "weapon.damagetype" })
+                        {
+                            if (actor.Properties.TryGetValue(key, out var type) && Convert.ToString(type, System.Globalization.CultureInfo.InvariantCulture) is { Length: > 0 } name)
+                                _damageTypes.Add(name);
+                        }
+                    }
+                }
+            }
+            return _damageTypes;
+        }
+    }
+
+    private HashSet<string>? _damageTypes;
+
     /// <summary>A flat panel standing in its tile (actordefs WALLSPRITE), not a billboard</summary>
     public bool IsWallSprite(string className)
     {

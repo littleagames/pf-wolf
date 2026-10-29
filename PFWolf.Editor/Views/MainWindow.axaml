@@ -132,7 +132,7 @@
         <MenuItem Header="3D: _shading" ToggleType="CheckBox" IsChecked="{Binding Show3DShading}" IsEnabled="{Binding Show3D}"
                   ToolTip.Tip="The level's light, light zones and distance fade, as the game shows them" />
         <MenuItem Header="3D: _markers" ToggleType="CheckBox" IsChecked="{Binding Show3DMarkers}" IsEnabled="{Binding Show3D}"
-                  ToolTip.Tip="Push walls in purple, switches in green; hovering a tagged tile shows everything with its tag in orange" />
+                  ToolTip.Tip="Push walls in purple, switches in green, breakable walls in orange-red; hovering a tagged tile shows everything with its tag in orange" />
         <Separator />
         <MenuItem Header="Fit the _level" Command="{Binding FitViewCommand}" InputGesture="Home" />
       </MenuItem>

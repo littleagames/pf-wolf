@@ -737,6 +737,51 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         StartNewEntry(path, new YamlMappingNode());
     }
 
+    /// <summary>What a wall made breakable here breaks to, to start with: the guns' bullets</summary>
+    public const string StartingDamageType = "Bullet";
+
+    /// <summary>
+    /// The map's right-click Make breakable…: the wall's mapdefs entry with its destructible
+    /// block started (breaking to bullets), opened at it to fill in and save; a wall that breaks
+    /// already is just opened there. False when the mapdefs have no such wall.
+    /// </summary>
+    public bool MakeBreakable(int wall)
+    {
+        if (Kind != DefinitionKind.MapDefs || _owner.Set(Kind) is not { } set || TableAsNamed("walls", set.Merged) is not { } table)
+            return false;
+        if (!Select([table, wall.ToString(CultureInfo.InvariantCulture)]) || SelectedItem is not { } item
+            || !_open.TryGetValue(item.Key, out var open) || open.Root == null || StartDestructible(open.Root) is not { } started)
+        {
+            _owner.Status = $"There's no wall {wall} in the mapdefs walls";
+            return false;
+        }
+
+        _owner.Status = started.Started
+            ? $"Wall {wall} breaks to {StartingDamageType} now: change what breaks it, its health and what it leaves, then save it into a mod"
+            : $"Wall {wall} breaks already: here's its destructible block";
+        SelectedRow = started.Row;
+        return true;
+    }
+
+    /// <summary>
+    /// A wall entry's destructible block, opened, and started (its damage types
+    /// <see cref="StartingDamageType"/>) when nothing in it is set: the row to pick (the damage
+    /// types), and whether it was started. Null when the fields have no such block.
+    /// </summary>
+    public static (FieldNode Row, bool Started)? StartDestructible(FieldNode wall)
+    {
+        wall.EnsureChildren();
+        if (wall.Children.FirstOrDefault(row => row.Key.Equals("destructible", StringComparison.OrdinalIgnoreCase)) is not { IsGroup: true } block)
+            return null;
+        block.EnsureChildren();
+        block.IsExpanded = true;
+        var types = block.Children.FirstOrDefault(row => row.Key.Equals("damage-types", StringComparison.OrdinalIgnoreCase));
+        bool start = block.Build([]) == null && types != null;
+        if (start)
+            types!.Text = StartingDamageType;
+        return (types ?? block, start);
+    }
+
     // Lists a new definition, open to fill in and selected
     private void StartNewEntry(IReadOnlyList<string> path, YamlNode value)
     {

@@ -49,6 +49,8 @@ public enum FieldHint
     Translation,
     /// <summary>A sprite (GARDA1), wall texture or picture by its own name: what graphicdefs crops</summary>
     Art,
+    /// <summary>A kind of blow (Bullet, Melee, Blast, an actordefs damagetype)</summary>
+    DamageType,
 }
 
 /// <summary>
@@ -326,6 +328,8 @@ public sealed class FieldSchema
             return FieldHint.Faction;
         if (name.Contains("translation") || name is "playercolors")
             return FieldHint.Translation;
+        if (name is "damagetypes")
+            return FieldHint.DamageType;
         return FieldHint.None;
     }
 }

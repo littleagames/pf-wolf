@@ -243,6 +243,17 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
     /// <summary>A wall the player uses to set things off (mapdefs walls switch), or one with a patch that's a switch</summary>
     public bool IsSwitch(int x, int y) => Wall(x, y)?.Switch != null || PatchDef(x, y)?.Switch != null;
 
+    /// <summary>A wall that breaks (mapdefs walls destructible): to a hit, or to an action</summary>
+    public bool IsBreakable(int x, int y) => KindAt(x, y) == TileKind.Wall && Wall(x, y)?.Destructible != null;
+
+    /// <summary>
+    /// A tile that acts on everything sharing its tag: a switch, a trigger (not a push wall's) or
+    /// a breakable wall with actions, which runs them as it breaks
+    /// </summary>
+    public bool ActsOnTag(int x, int y)
+        => IsSwitch(x, y) || Trigger(x, y) != null && !IsPushWall(x, y)
+           || IsBreakable(x, y) && Wall(x, y)!.Destructible!.Actions.Count > 0;
+
     public int Width => map.Width;
     public int Height => map.Height;
 

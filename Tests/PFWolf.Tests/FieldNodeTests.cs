@@ -43,6 +43,38 @@ public class FieldNodeTests
     }
 
     [Test]
+    public void Make_Breakable_Starts_A_Walls_Destructible_Block_Breaking_To_Bullets()
+    {
+        // Arrange
+        var node = Fields(typeof(MapTextureTranslation), "North: A\n");
+
+        // Act
+        var started = EntryEditorViewModel.StartDestructible(node);
+
+        // Assert
+        Assert.That(started, Is.Not.Null);
+        Assert.That(started!.Value.Started, Is.True);
+        Assert.That(started.Value.Row.Key, Is.EqualTo("damage-types"));
+        var built = node.Build([]);
+        Assert.That(YamlNodes.Equal(built, YamlTree.Parse("North: A\ndestructible:\n  damage-types: [Bullet]\n")), Is.True, YamlText.Inline(built!));
+    }
+
+    [Test]
+    public void Make_Breakable_Leaves_A_Wall_That_Breaks_Already_As_It_Is()
+    {
+        // Arrange
+        const string wall = "North: A\ndestructible: { damage-types: [Rocket], health: 50 }\n";
+        var node = Fields(typeof(MapTextureTranslation), wall);
+
+        // Act
+        var started = EntryEditorViewModel.StartDestructible(node);
+
+        // Assert
+        Assert.That(started!.Value.Started, Is.False);
+        Assert.That(YamlNodes.Equal(node.Build([]), YamlTree.Parse(wall)), Is.True);
+    }
+
+    [Test]
     public void An_Emptied_Field_Is_Left_Out_And_A_Typed_One_Set()
     {
         // Arrange

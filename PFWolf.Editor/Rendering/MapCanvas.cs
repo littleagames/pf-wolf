@@ -133,6 +133,7 @@ public sealed class MapCanvas : Control
     private static readonly IBrush SkillBadgeBrush = new SolidColorBrush(Color.FromArgb(200, 120, 60, 160));
     private static readonly IBrush AmbushBadgeBrush = new SolidColorBrush(Color.FromArgb(210, 180, 40, 40));
     private static readonly IBrush ZoneBadgeBrush = new SolidColorBrush(Color.FromArgb(170, 30, 30, 30));
+    private static readonly IBrush BreakableBadgeBrush = new SolidColorBrush(Color.FromArgb(220, 190, 110, 30));
     private static readonly IPen WallSpritePen = new Pen(new SolidColorBrush(Color.FromRgb(196, 150, 90)), 3);
     private static readonly IPen WallSpriteTickPen = new Pen(new SolidColorBrush(Color.FromRgb(196, 150, 90)), 2);
     private static readonly IPen SwitchLinkPen = new Pen(new SolidColorBrush(Color.FromArgb(220, 255, 220, 60)), 2);
@@ -414,6 +415,10 @@ public sealed class MapCanvas : Control
                         context.DrawImage(patchPicture, new Rect(patchPicture.Size), rect);
                     else if (tiles.Patch(x, y) != 0 && tiles.PatchDef(x, y) == null && _zoom >= 12)
                         DrawBadge(context, rect, "?", UnknownBrush, bottom: true);     // a patch the mapdefs don't know
+
+                    // A wall that breaks, to a hit or an action
+                    if (_zoom >= 12 && tiles.IsBreakable(x, y))
+                        DrawBadge(context, rect, "B", BreakableBadgeBrush, bottom: false);
                     break;
 
                 case TileKind.Door:
@@ -635,13 +640,16 @@ public sealed class MapCanvas : Control
     private static Color? TryParseColor(string? text)
         => !string.IsNullOrWhiteSpace(text) && Color.TryParse(text.Trim(), out var color) ? color : null;
 
-    /// <summary>A line from each switch to everything that shares its tag: what it sets off</summary>
+    /// <summary>
+    /// A line from each switch, trigger and breakable wall with actions to everything that shares
+    /// its tag: what it sets off
+    /// </summary>
     private void DrawSwitchLinks(DrawingContext context, MapTiles tiles)
     {
         var tagged = tiles.TaggedTiles();
         foreach (var (tag, tagTiles) in tagged)
         {
-            foreach (var (sx, sy) in tagTiles.Where(tile => tiles.IsSwitch(tile.X, tile.Y)))
+            foreach (var (sx, sy) in tagTiles.Where(tile => tiles.ActsOnTag(tile.X, tile.Y)))
             {
                 var from = TileRect(sx, sy).Center;
                 foreach (var (tx, ty) in tagTiles)

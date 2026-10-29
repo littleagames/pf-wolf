@@ -478,6 +478,25 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _definitions.NewMapDefsEntry(table, id);
     }
 
+    /// <summary>
+    /// The wall on a tile the map right-click menu's Make breakable… works on: one the mapdefs
+    /// walls know, and whether it breaks already; null for anything else
+    /// </summary>
+    public (int Wall, bool Breaks)? BreakableWallAt(int x, int y)
+    {
+        if (Tiles is not { } tiles || x < 0 || y < 0 || x >= tiles.Width || y >= tiles.Height
+            || tiles.KindAt(x, y) != TileKind.Wall || tiles.Wall(x, y) is not { } wall)
+            return null;
+        return (tiles[0, x, y], wall.Destructible != null);
+    }
+
+    /// <summary>Opens the definitions window on a wall's destructible block, started for it when it has none</summary>
+    public void MakeBreakable(int wall)
+    {
+        ShowDefinitions();
+        _definitions?.MakeBreakable(wall);
+    }
+
     private bool PaletteHasClass => SelectedPaletteItem?.Entry.ThingClass != null;
 
     /// <summary>Opens the definitions window on the actordefs class of the thing the palette has picked</summary>
