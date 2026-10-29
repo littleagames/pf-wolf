@@ -1,0 +1,11 @@
+# The level's floors and ceilings (the flat plane, map plane 2: a tile's low byte is its floor,
+# its high byte its ceiling), the pictures in flats/. Indices 30 and up. The lattice's clear
+# pixels are see-through: the sky shows between its bars. Where a tile has no ceiling (0), the
+# sky shows.
+flats:
+  floor:
+    30: ATMARB1
+    31: ATMARB2
+  ceiling:
+    30: ATCOFFER
+    31: ATLATTIC

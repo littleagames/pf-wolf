@@ -1,0 +1,4 @@
+name: Architecture Demo
+version: "1.0"
+description: An octagonal atrium (replacing Floor 1) with 45 degree walls, marble floors, a coffered ceiling round a skylight, mirrored signs and a diagonal corridor.
+game-packs: [wolf3d]

@@ -565,6 +565,11 @@ can reach), not played by hand.
       tried)**: playing it through by hand, shooting the radios; the elevator refusing until both
       are done; the tally's "Mission: ..." line; the compass turning as you do; dying and
       restarting (the documents objective added again); saving and loading mid-mission.
+- [ ] Architecture Demo (`--file architecture-demo`): headless shots showed the mosaic diagonal
+      corners, the checkerboard, the lattice and skylight (looking up too), the mirrored arrows
+      pointing east from both sides, and the 45 degree corridor. **(never tried)**: walking the
+      corridor and sliding along its walls, shooting and being shot along it, the automap of
+      the diagonals, and a wide screen.
 
 ## 1.15 Multiplayer
 

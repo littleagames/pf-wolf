@@ -1,0 +1,17 @@
+# The Architecture Demo's walls. Wall ids go up to 255; these are above Wolf3D's 1-63 to show it.
+#   200  sandstone (the diagonal corners too: their angled faces come from mapdefs/diagonals.yaml)
+#   201  a sign pillar: the arrow on its north and south faces. `flip` mirrors the north face, so
+#        the arrow points east from both sides (from the south, east is to your right; from the
+#        north, to your left)
+walls:
+    '200':
+        North: ATSTONE
+        South: ATSTONE
+        East: ATSTONE
+        West: ATSTONE
+    '201':
+        North: ATARROW
+        South: ATARROW
+        East: ATSTONE
+        West: ATSTONE
+        flip: [North]

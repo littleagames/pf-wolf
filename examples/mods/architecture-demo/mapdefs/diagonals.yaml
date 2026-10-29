@@ -1,0 +1,17 @@
+# The atrium's diagonal corners: object-plane markers (820-823, this mod's) that turn the wall
+# under them into a 45 degree wall, its solid corner the one named, the angled face in mosaic.
+# pfwolf-pk3's own 400-403 do the same with the wall's own texture on the face (the corridor
+# uses those). The fields are in the docs' mapdefs reference.
+diagonals:
+  820:
+    shape: SolidNW
+    texture: ATMOSAIC
+  821:
+    shape: SolidNE
+    texture: ATMOSAIC
+  822:
+    shape: SolidSW
+    texture: ATMOSAIC
+  823:
+    shape: SolidSE
+    texture: ATMOSAIC

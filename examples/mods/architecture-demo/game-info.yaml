@@ -1,0 +1,8 @@
+# Merged into the game pack's game-info.yaml: the level's walls 2 stories tall, and the sky over
+# the skylight (drawn behind the ceiling flats: it shows where a tile has none, and through the
+# lattice). The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+maps:
+  MAP01:
+    wall-height: 2
+    sky: ATSKY

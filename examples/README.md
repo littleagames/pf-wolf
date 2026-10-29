@@ -1232,6 +1232,55 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-mission-demo.ps1
 With cheats on, `lua print(game.objective('radios'))` shows an objective's count, and
 `lua game.breakwall(2, 29)` wrecks a radio from the console.
 
+## Architecture Demo (`mods/architecture-demo`)
+
+An octagonal atrium that replaces Floor 1 (Wolfenstein 3D only), to show off the shapes a level
+can have beyond square rooms: **45 degree walls**, **floor and ceiling flats**, a **skylight**,
+**mirrored textures** and **wall ids above 63**. It's YAML, and the textures and level a script
+makes.
+
+```
+PFWolf.exe --file architecture-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The atrium:** two stories of sandstone, its four corners cut off by diagonal walls faced in
+  blue and gold mosaic. The floor is marble laid in a checkerboard, the ceiling coffered wood.
+  In the middle, a ring of wooden lattice round an open skylight over the well: look up
+  (`pitch 20` in the console) to see the sky through it.
+- **The sign pillars:** each has an arrow pointing east, the way out, from both its north and
+  its south side. It's one texture: the north face draws it mirrored.
+- **The corridor** to the exit runs off at 45 degrees, its walls diagonal all the way; walk it
+  and you slide along them.
+
+### What's in it
+
+- `mapdefs/walls.yaml`: wall 200 (sandstone) and 201 (a sign pillar, `flip: [North]`). Wall ids
+  run up to 255.
+- `mapdefs/diagonals.yaml`: markers 820-823, one for each solid corner (`SolidNW`, `SolidNE`,
+  `SolidSW`, `SolidSE`), with a `texture` for the angled face. A marker on the object plane turns
+  the wall under it into a diagonal one; pfwolf-pk3's own 400-403 do the same with the wall's own
+  texture (the corridor uses those).
+- `mapdefs/flats.yaml`: floors 30 and 31 (the marbles) and ceilings 30 (coffered) and 31 (the
+  lattice). A tile's flat plane (plane 2) value is its floor index plus its ceiling index times
+  256; with no ceiling (0) the sky shows. The lattice's clear pixels are see-through.
+- `game-info.yaml`: the level's `wall-height` (2 stories) and `sky`, drawn behind the ceiling
+  flats.
+- `textures/`, `flats/` and `graphics/ATSKY.png`: the pictures, drawn by the script.
+- `maps/MAP01.wad`: the level. The pillars are 1 story (the height plane, plane 3).
+
+Everything but the YAML is made by `tools/make-architecture-demo.ps1` (the layout is an ASCII
+drawing in it). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-architecture-demo.ps1
+```
+
+In game, `where` shows the flats and height of the tile you're on and the one you face; with
+cheats on, `diag` shows or sets a tile's diagonal shape and `flat <floor> <ceiling>` changes the
+flats under you.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
