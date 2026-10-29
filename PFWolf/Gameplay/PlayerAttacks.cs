@@ -111,7 +111,7 @@ internal sealed class PlayerAttacks(
             if (Math.Abs((long)ny) * 5 * (GameConstants.FocalLength + GameConstants.MinDist) >= (long)nx * (GameConstants.ViewGlobal / 2))
                 continue;
 
-            if (!lineOfSight.CheckLine(actor, shooter))
+            if (!lineOfSight.CheckLine(actor, shooter, shot: true))
                 continue;
 
             candidates.Add(new ShotTarget(actor, nx));
@@ -361,7 +361,7 @@ internal sealed class PlayerAttacks(
             session.MadeNoise = true;
 
         var player = session.Player;
-        var aim = FindShootCandidates().Select(c => c.Actor).FirstOrDefault(a => lineOfSight.CheckLine(a));
+        var aim = FindShootCandidates().Select(c => c.Actor).FirstOrDefault(a => lineOfSight.CheckLine(a, shot: true));
         double baseAngle = aim != null ? AngleTo(player, aim) : player.Angle;
         int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
         int reach = (int)(rangeTiles * (1 << MapConstants.TileShift));
@@ -439,7 +439,7 @@ internal sealed class PlayerAttacks(
 
         int Roll() => max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
         var closest = FindShootCandidates().FirstOrDefault().Actor;
-        if (closest == null || !lineOfSight.CheckLine(closest))
+        if (closest == null || !lineOfSight.CheckLine(closest, shot: true))
         {
             MissPuff(wallDamage: _ => Roll());
             return;
@@ -485,9 +485,9 @@ internal sealed class PlayerAttacks(
         int WallDamage(int tiles) => session.Random.RndT() / (tiles < 2 ? near : tiles < 4 ? mid : far);
 
         var closest = FindShootCandidates().FirstOrDefault().Actor;
-        if (closest == null || !lineOfSight.CheckLine(closest))
+        if (closest == null || !lineOfSight.CheckLine(closest, shot: true))
         {
-            MissPuff(wallDamage: WallDamage);     // no target, or none in the clear: the shot hits the wall
+            MissPuff(wallDamage: WallDamage);    // no target, or none in the clear: the shot hits the wall
             return;
         }
 

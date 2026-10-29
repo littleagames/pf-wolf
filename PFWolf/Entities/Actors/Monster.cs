@@ -32,6 +32,9 @@ internal partial record Monster : Actor
     private protected uint Tics => World.Session.Tics;
     private protected int NextRandom() => World.Session.Random.RndT();
     private protected byte[] AreaByPlayer => World.Session.Areas.AreaByPlayer;
+    // AreaByPlayer and on through shut see-through doors, for sight; through shoot-through ones, for shots
+    private protected byte[] AreaSeenByPlayer => World.Session.Areas.AreaSeenByPlayer;
+    private protected byte[] AreaShotByPlayer => World.Session.Areas.AreaShotByPlayer;
     private protected PlayerPawn Player => World.Session.Player;
     private protected PlayerState PlayerState => World.Session.PlayerState;
     private protected PlayerState LocalPlayer => World.Session.LocalPlayer;
@@ -42,9 +45,10 @@ internal partial record Monster : Actor
     private protected bool MadeNoise { get => World.Session.MadeNoise; set => World.Session.MadeNoise = value; }
     private protected PlayState PlayState { get => World.Session.PlayState; set => World.Session.PlayState = value; }
 
-    private protected bool CheckLine(Actor ob) => World.LineOfSight.CheckLine(ob);
-    private protected bool CheckLine(Actor ob, Actor to) => World.LineOfSight.CheckLine(ob, to);
-    private protected bool CheckLine(int fromX, int fromY, Actor to) => World.LineOfSight.CheckLine(fromX, fromY, to);
+    // shot: a line to shoot along, not to see along (Gameplay/LineOfSight.cs)
+    private protected bool CheckLine(Actor ob, bool shot = false) => World.LineOfSight.CheckLine(ob, shot);
+    private protected bool CheckLine(Actor ob, Actor to, bool shot = false) => World.LineOfSight.CheckLine(ob, to, shot);
+    private protected bool CheckLine(int fromX, int fromY, Actor to, bool shot = false) => World.LineOfSight.CheckLine(fromX, fromY, to, shot);
     private protected bool CheckDiag(int x, int y) => World.LineOfSight.CheckDiag(x, y);
     private protected DoorObject[] DoorObjects => World.Doors.DoorObjList;
     private protected int LastDoorObject => World.Doors.LastDoorObj;
@@ -523,7 +527,7 @@ internal partial record Monster : Actor
     /// </summary>
     internal bool CheckSight()
     {
-        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaSeenByPlayer[AreaNumber] == 0)
             return false;
 
         if (!MapManager.HasRivalries)
@@ -1269,8 +1273,10 @@ internal partial record Monster : Actor
         }
         else
         {
-            if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
+            // Seen through a see-through door, but only heard through an open one
+            if (AreaNumber < MapManager.Floors.NumAreas && AreaSeenByPlayer[AreaNumber] == 0)
                 return false;
+            bool heard = MadeNoise && (AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0);
 
             // A disguised player it suspects, or has been shown papers by, it lets be (Gameplay/Stealth.cs)
             if (World.Stealth?.Overlooks(this) == true)
@@ -1286,7 +1292,7 @@ internal partial record Monster : Actor
             {
                 // A NOTICEWHENSEEN actor (Blake Stone's aliens) notices the player once the player can see it
                 bool seen = HasFlag("NOTICEWHENSEEN") && SeenByThePlayers();
-                if (!MadeNoise && !seen && !CheckSight())
+                if (!heard && !seen && !CheckSight())
                     return false;
 
                 // A noise (or being seen) only rouses it when there's someone for it to go after
@@ -1966,7 +1972,7 @@ internal partial record Monster : Actor
 
         var dodge = false;
 
-        if (CheckLine(this, Target))
+        if (CheckLine(this, Target, shot: true))
         {
             Hidden = false;
             var dx = Math.Abs(TileX - Target.TileX);
@@ -2335,7 +2341,7 @@ internal partial record Monster : Actor
         var dist = dx > dy ? dx : dy;
         var dodge = false;
 
-        if (CheckLine(this, Target))
+        if (CheckLine(this, Target, shot: true))
         {
             Hidden = false;
             if (NextRandom() < (Tics << 3))
@@ -2388,7 +2394,7 @@ internal partial record Monster : Actor
 
     internal void Strafe()
     {
-        if (CheckLine(this, Target))
+        if (CheckLine(this, Target, shot: true))
         {
             Hidden = false;
             if (NextRandom() < (Tics << 1))
@@ -2428,10 +2434,10 @@ internal partial record Monster : Actor
 
     internal virtual void Shoot()
     {
-        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaShotByPlayer[AreaNumber] == 0)
             return;
 
-        if (CheckLine(this, Target))
+        if (CheckLine(this, Target, shot: true))
             ShotAtPlayer();
 
         // The shooter's own attacksound (vanilla's per-class switch: SSFIRE, BOSSFIRE, ... and

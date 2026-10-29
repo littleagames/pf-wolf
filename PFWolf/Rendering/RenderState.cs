@@ -98,7 +98,21 @@ internal sealed class RenderState
     internal int[] CoverCount = [];
     internal int[] CoverTop = [], CoverBottom = [];    // column x's are from x * MaxCovers
 
-    /// <summary>Makes room for the covers of a view width columns across</summary>
+    //
+    // the see-through doors each column's trace went on past (a door with a masked texture), nearest
+    // first: drawn among the sprites, after the floor and what's behind them (SeeThroughPosts).
+    // Column x's are from x * MaxSeeThrough; SeeThroughCount is how many are still to draw.
+    //
+    internal const int MaxSeeThrough = 4;
+    internal bool AnySeeThrough;        // this frame's trace queued one
+    internal int[] SeeThroughCount = [];
+    internal short[] SeeThroughHeight = [];
+    internal byte[] SeeThroughStories = [];
+    internal TextureAsset[] SeeThroughLower = [], SeeThroughUpper = [];
+    internal int[] SeeThroughLowerOfs = [], SeeThroughUpperOfs = [];
+    internal byte[][] SeeThroughLight = [];
+
+    /// <summary>Makes room for the covers (and see-through doors) of a view width columns across</summary>
     internal void SizeCovers(int width)
     {
         if (CoverCount.Length >= width)
@@ -106,6 +120,15 @@ internal sealed class RenderState
         CoverCount = new int[width];
         CoverTop = new int[width * MaxCovers];
         CoverBottom = new int[width * MaxCovers];
+
+        SeeThroughCount = new int[width];
+        SeeThroughHeight = new short[width * MaxSeeThrough];
+        SeeThroughStories = new byte[width * MaxSeeThrough];
+        SeeThroughLower = new TextureAsset[width * MaxSeeThrough];
+        SeeThroughUpper = new TextureAsset[width * MaxSeeThrough];
+        SeeThroughLowerOfs = new int[width * MaxSeeThrough];
+        SeeThroughUpperOfs = new int[width * MaxSeeThrough];
+        SeeThroughLight = new byte[width * MaxSeeThrough][];
     }
 
     /// <summary>Column x's walls painted rows top to bottom (outside WallRefresh, with no room made, not kept)</summary>

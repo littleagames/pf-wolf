@@ -248,19 +248,22 @@ internal partial record BlakeMonster
         }
     }
 
-    /// <summary>Whether what it's after is in the actor's eighth of the circle (its facing, 22.5 degrees either side) in a clear line</summary>
+    /// <summary>
+    /// Whether what it's after is in the actor's eighth of the circle (its facing, 22.5 degrees
+    /// either side) in a clear line to fire along (not through a see-through door that isn't shoot-through)
+    /// </summary>
     private bool CheckView()
     {
-        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaShotByPlayer[AreaNumber] == 0)
             return false;
         var target = Target;
         if (Dir == ObjDir.NoDir)
-            return CheckLine(this, target);
+            return CheckLine(this, target, shot: true);
 
         var angle = Math.Atan2(Y - target.Y, target.X - X) * 180 / Math.PI;
         double facing = (int)Dir * 45;
         double diff = Math.Abs((angle - facing + 540) % 360 - 180);
-        return diff <= 22.5 && CheckLine(this, target);
+        return diff <= 22.5 && CheckLine(this, target, shot: true);
     }
 
     /*

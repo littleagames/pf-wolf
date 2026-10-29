@@ -1,0 +1,21 @@
+# The plain doors as barred gates (the fields are in the mapdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs). A door whose pictures
+# have clear pixels (GRATE1 and GRATE2, from textures/) is a see-through door: shut, it shows
+# what's behind it, and enemies see the player through it as through an open door. Shots stop at
+# it, the player's and theirs, unless it's `shoot-through: true`. Projectiles always do.
+doors:
+    '90':
+        open-sound: doors/open
+        close-sound: doors/close
+        Vertical: true
+        East: GRATE2
+        West: GRATE2
+        North: SLOT1_1
+        South: SLOT1_1
+    '91':
+        open-sound: doors/open
+        close-sound: doors/close
+        North: GRATE1
+        South: GRATE1
+        East: SLOT1_2
+        West: SLOT1_2

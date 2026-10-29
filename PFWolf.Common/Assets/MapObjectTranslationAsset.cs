@@ -608,6 +608,14 @@ public record MapTextureTranslation
     public bool Split { get; init; }
 
     /// <summary>
+    /// Doors only: shots go through the door while it's shut, as they do through an open one:
+    /// the player's and enemies' hitscan (projectiles still stop at it). Only for a see-through
+    /// door, one whose face textures have clear pixels: everyone sees through that one anyway,
+    /// but without shoot-through nobody can shoot through it.
+    /// </summary>
+    public bool ShootThrough { get; init; }
+
+    /// <summary>
     /// Doors only: "object-plane": the door's object-plane value (when it isn't a door-locks
     /// card) is the next door's tile, x in the high byte and y in the low one (Blake Stone's
     /// linked doors). Opening or closing this one opens or closes that one, unlocking it, and so

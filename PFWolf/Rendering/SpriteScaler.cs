@@ -7,12 +7,14 @@ namespace PFWolf.Rendering;
 /// clipped to the view and behind the walls in front of it, shaded by the light where it stands.
 /// </summary>
 /// <param name="floorRow">The screen row the floor is on for something half high (WL_DRAW's FloorRow)</param>
+/// <param name="seeThrough">The see-through doors behind a sprite's column, drawn before it</param>
 internal sealed class SpriteScaler(
     AssetManager assets,
     VideoManager video,
     Lighting lighting,
     RenderState render,
-    Func<int, int> floorRow)
+    Func<int, int> floorRow,
+    SeeThroughPosts? seeThrough = null)
 {
     /*
     ===================
@@ -158,6 +160,7 @@ internal sealed class SpriteScaler(
             {
                 if (render.WallHeight[x1] < sprite.ViewHeight)
                 {
+                    seeThrough?.DrawBeyond(x1, sprite.ViewHeight);
                     ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.Cloaked, sprite.Translation);
                 }
 

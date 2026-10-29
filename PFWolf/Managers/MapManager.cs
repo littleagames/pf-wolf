@@ -1979,9 +1979,9 @@ internal class MapManager
             return;
 
         // As the original: an enemy that has never been on screen (nor patrols) does nothing
-        // while its area isn't connected to the player's
+        // while its area isn't connected to the player's (or seen from it through a see-through door)
         if (ob is Entities.Actors.Monster { SleepsOutOfReach: true } && ob.Active == ActiveType.No
-            && ob.AreaNumber < Floors.NumAreas && session.Areas.AreaByPlayer[ob.AreaNumber] == 0)
+            && ob.AreaNumber < Floors.NumAreas && session.Areas.AreaSeenByPlayer[ob.AreaNumber] == 0)
             return;
 
         // It's lifted off its tile while it thinks, and put back on the one it ends up on

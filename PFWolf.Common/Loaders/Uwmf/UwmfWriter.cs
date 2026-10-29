@@ -139,7 +139,7 @@ public static class UwmfWriter
                 block.Add("height", height);
                 _pfwolf = true;
             }
-            if (door.Locks.Count > 0 || door.Split || door.OpensFrom.Length > 0 || door.Locked != null || door.TakesKey)
+            if (door.Locks.Count > 0 || door.Split || door.OpensFrom.Length > 0 || door.Locked != null || door.TakesKey || door.ShootThrough)
                 _pfwolf = true;      // only its id says all of it
             _tiles.Add(block);
             return _tileIndex[key] = _tiles.Count - 1;

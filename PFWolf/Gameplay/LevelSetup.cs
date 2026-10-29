@@ -122,6 +122,7 @@ internal sealed class LevelSetup(
                     doorObjects.SpawnDoor(x, y, doorXlat.Vertical, doorXlat);
             }
         }
+        doorObjects.JoinSeeThroughDoors();
 
         // the mode's flags, control points or waves (Gameplay/Objectives), before the players
         // come in near their team's flag

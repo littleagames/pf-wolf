@@ -75,6 +75,72 @@ public class LineOfSightTests
         Assert.That(CanSeeAlongRow10(), Is.EqualTo(clear));
     }
 
+    // From the middle of tile (5, 10) to a guard in the middle of tile (12, 10), as a shot's line
+    private bool CanShootAlongRow10() =>
+        Sight().CheckLine(Middle(5), Middle(10), new Monster { Name = "Guard", X = Middle(12), Y = Middle(10) }, shot: true);
+
+    // A shut door 0 across the row at x 8
+    private void ShutDoor(bool seeThrough, bool shootThrough = false)
+    {
+        _map.TileMap[8, 10] = GameConstants.BitDoor | 0;
+        _doors.DoorObjList[0] = new DoorObject
+        {
+            TileX = 8, TileY = 10, Vertical = true, SeeThrough = seeThrough,
+            Xlat = new MapTextureTranslation { Vertical = true, ShootThrough = shootThrough },
+        };
+    }
+
+    [Test]
+    public void A_Shut_See_Through_Door_Lets_Sight_Through_But_Not_A_Shot()
+    {
+        // Arrange
+        ShutDoor(seeThrough: true);
+
+        // Act / Assert
+        Assert.That(CanSeeAlongRow10(), Is.True);
+        Assert.That(CanShootAlongRow10(), Is.False);
+    }
+
+    [Test]
+    public void A_Shut_Shoot_Through_Door_Lets_Both_Through()
+    {
+        // Arrange
+        ShutDoor(seeThrough: true, shootThrough: true);
+
+        // Act / Assert
+        Assert.That(CanSeeAlongRow10(), Is.True);
+        Assert.That(CanShootAlongRow10(), Is.True);
+    }
+
+    [Test]
+    public void Shoot_Through_On_A_Door_That_Isnt_Seen_Through_Does_Nothing()
+    {
+        // Arrange
+        ShutDoor(seeThrough: false, shootThrough: true);
+
+        // Act / Assert
+        Assert.That(CanSeeAlongRow10(), Is.False);
+        Assert.That(CanShootAlongRow10(), Is.False);
+    }
+
+    [Test]
+    public void A_Traced_Shot_Goes_On_Through_A_Shut_Shoot_Through_Door_Only()
+    {
+        // Arrange: a map 20 tiles across, so a shot that isn't stopped goes off its east edge
+        _map.MapWidth = 20;
+        _map.MapHeight = MapConstants.ClassicMapSize;
+        ShutDoor(seeThrough: true);
+
+        // Act: east from the middle of tile (5, 10)
+        var stopped = Sight().TraceShot(Middle(5), Middle(10), 0);
+        ShutDoor(seeThrough: true, shootThrough: true);
+        var through = Sight().TraceShot(Middle(5), Middle(10), 0);
+
+        // Assert
+        Assert.That((stopped.End, stopped.TileX), Is.EqualTo((ShotEnd.Wall, 8)));
+        Assert.That(through.End, Is.EqualTo(ShotEnd.Edge));
+    }
+
     [Test]
     public void A_Wall_Sprite_Across_It_Blocks_It()
     {

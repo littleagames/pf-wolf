@@ -55,7 +55,8 @@ internal sealed class FrameRefresh(
     PlayerView playerView,
     RenderState render,
     GameSession session,
-    FrameRefreshHooks hooks)
+    FrameRefreshHooks hooks,
+    SeeThroughPosts? seeThrough = null)
 {
     internal int LastTimeCount;
     internal int FrameOn;
@@ -248,7 +249,8 @@ internal sealed class FrameRefresh(
         // draw all the scaled images
         //
         spriteDrawing.DrawScaleds();                  // draw scaled stuff
-        playerView.PlayerSight();                  // what the player sees, when the camera is elsewhere
+        seeThrough?.DrawRest();                       // see-through doors nearer than every sprite
+        playerView.PlayerSight();                 // what the player sees, when the camera is elsewhere
         FrameProfiler.Mark(FrameProfiler.Section.Sprites);
 
         // Looking through a scope, its picture takes the weapon in hand's place; watching a

@@ -1,4 +1,5 @@
 using System.Reflection;
+using PFWolf.Assets;
 using PFWolf.Constants;
 
 namespace PFWolf.Tests;
@@ -78,6 +79,96 @@ public class DoorAreasTests
         // Assert
         Assert.That(_session.Areas.AreaConnect[7, 5], Is.EqualTo(1));
         Assert.That(_session.Areas.AreaConnect[5, 7], Is.EqualTo(1));
+    }
+
+    // A shut north-south door at 10,10 between area 5 (west) and area 7 (east)
+    private void ShutDoorBetween5And7(bool seeThrough, bool shootThrough = false)
+    {
+        Floor(9, 10, AreaTile + 5);
+        Floor(11, 10, AreaTile + 7);
+        _map.TileMap[10, 10] = (ushort)GameConstants.BitDoor;
+        _doors.DoorObjList[0] = new DoorObject
+        {
+            TileX = 10, TileY = 10, Vertical = true, Action = DoorAction.Closed, SeeThrough = seeThrough,
+            Xlat = new MapTextureTranslation { Vertical = true, ShootThrough = shootThrough },
+        };
+        _doors.LastDoorObj = 1;
+        _doors.JoinSeeThroughDoors();
+    }
+
+    [Test]
+    public void A_Shut_See_Through_Door_Joins_Its_Areas_For_Sight_Only()
+    {
+        // Arrange
+        ShutDoorBetween5And7(seeThrough: true);
+
+        // Act: the player in area 5
+        _session.Areas.ConnectAreas([5], 45);
+
+        // Assert: seen from 7, but not heard or shot from there
+        Assert.That(_session.Areas.AreaByPlayer[7], Is.Zero);
+        Assert.That(_session.Areas.AreaSeenByPlayer[7], Is.EqualTo(1));
+        Assert.That(_session.Areas.AreaShotByPlayer[7], Is.Zero);
+    }
+
+    [Test]
+    public void A_Shut_Shoot_Through_Door_Joins_Them_For_Shots_Too()
+    {
+        // Arrange
+        ShutDoorBetween5And7(seeThrough: true, shootThrough: true);
+
+        // Act
+        _session.Areas.ConnectAreas([5], 45);
+
+        // Assert
+        Assert.That(_session.Areas.AreaByPlayer[7], Is.Zero);
+        Assert.That(_session.Areas.AreaSeenByPlayer[7], Is.EqualTo(1));
+        Assert.That(_session.Areas.AreaShotByPlayer[7], Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Sight_Goes_On_Through_Open_Doors_Past_A_See_Through_One()
+    {
+        // Arrange: area 7 joined to area 8 by an open door
+        ShutDoorBetween5And7(seeThrough: true);
+        _session.Areas.AreaConnect[7, 8] = _session.Areas.AreaConnect[8, 7] = 1;
+
+        // Act
+        _session.Areas.ConnectAreas([5], 45);
+
+        // Assert
+        Assert.That(_session.Areas.AreaSeenByPlayer[8], Is.EqualTo(1));
+        Assert.That(_session.Areas.AreaByPlayer[8], Is.Zero);
+    }
+
+    [Test]
+    public void With_No_See_Through_Doors_Sight_And_Shots_Are_The_Areas_By_The_Player()
+    {
+        // Arrange
+        ShutDoorBetween5And7(seeThrough: false, shootThrough: true);
+
+        // Act
+        _session.Areas.ConnectAreas([5], 45);
+
+        // Assert: the very same array, so nothing changes for the original games
+        Assert.That(_session.Areas.AreaSeenByPlayer, Is.SameAs(_session.Areas.AreaByPlayer));
+        Assert.That(_session.Areas.AreaShotByPlayer, Is.SameAs(_session.Areas.AreaByPlayer));
+    }
+
+    [Test]
+    public void Loaded_Areas_Are_Spread_Through_See_Through_Doors_Again()
+    {
+        // Arrange: a save's areas, laid over the level (LevelBodies.ApplyLevelBody)
+        ShutDoorBetween5And7(seeThrough: true);
+        var loaded = new byte[45];
+        loaded[5] = 1;
+        _session.Areas.AreaByPlayer = loaded;
+
+        // Act
+        _session.Areas.SpreadSight();
+
+        // Assert
+        Assert.That(_session.Areas.AreaSeenByPlayer[7], Is.EqualTo(1));
     }
 
     [Test]

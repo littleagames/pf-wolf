@@ -226,6 +226,13 @@ internal class DoorObject
     public bool Unlocked;              // a takes-key door the player has opened with its lock item
     public bool Jammed;                // blown open for good (A_BlastDoors): open and unlocked, it never closes
     public int LinkX = -1, LinkY = -1; // the next door's tile in a chain of linked doors (doors.yaml link: object-plane), -1 for none
+    public bool SeeThrough;            // its faces are masked textures: sight goes through it shut (Rendering/SeeThroughPosts.cs)
+
+    /// <summary>A see-through door that's doors.yaml shoot-through: shots go through it shut too</summary>
+    public bool ShootThrough => SeeThrough && Xlat.ShootThrough;
+
+    /// <summary>Whether a line gets through the door shut: sight through a see-through door, a shot through a shoot-through one</summary>
+    public bool LetsThrough(bool shot) => shot ? ShootThrough : SeeThrough;
 
     /// <summary>The item the door needs to open, empty when it needs none (or only needs <see cref="MapLocks"/>)</summary>
     public string Lock => Unlocked ? "" : MapLock;

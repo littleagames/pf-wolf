@@ -11,13 +11,15 @@ namespace PFWolf.Rendering;
 /// out mirrored, unless the panel is WALLSPRITE.TWOSIDED.
 /// </summary>
 /// <param name="floorRow">The screen row the floor is on for something half high (WL_DRAW's FloorRow)</param>
+/// <param name="seeThrough">The see-through doors behind a panel's column, drawn before it</param>
 internal sealed class WallSpriteDrawing(
     AssetManager assets,
     MapManager map,
     Lighting lighting,
     RenderState render,
     SpriteScaler scaler,
-    Func<int, int> floorRow)
+    Func<int, int> floorRow,
+    SeeThroughPosts? seeThrough = null)
 {
     // The direction of each column's ray, as fractions of a unit (y grows south)
     double[] wallspriteraydx = [], wallspriteraydy = [];
@@ -132,7 +134,8 @@ internal sealed class WallSpriteDrawing(
             int column = Math.Min((int)(t * spriteAsset.Width), spriteAsset.Width - 1);
             if (turned)
                 column = spriteAsset.Width - 1 - column;
-            int top = floorRow(half) - SpriteScaler.TexelsToPixels(spriteAsset.Origin.Y, half);
+            seeThrough?.DrawBeyond(x, height);
+            int top =floorRow(half) - SpriteScaler.TexelsToPixels(spriteAsset.Origin.Y, half);
             scaler.ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, GameConstants.TextureSize / 2), spriteAsset, column,
                 vis.Bright ? Lighting.NoShade : lighting.LightAt(map.TileIndexOrNone(vis.TileX, vis.TileY), vis.WorldX, vis.WorldY),
                 vis.Bright ? 0 : lighting.LightenedShadeOffset(height, vis.Lighten), translation: vis.Translation);

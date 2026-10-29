@@ -189,7 +189,8 @@ internal static partial class GameHost
         menuLoop = new MenuLoop(menuDrawing, menuInput, _graphicManager, _videoManager, _inputManager, AudioManager, AssetManager);
         lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
         doors = new Doors(GameEngineManager, AudioManager, MapManager, InventoryManager, HudMessageManager, Session,
-            new DoorHooks(PlaySoundLocTile, DrawKeys, (x, y, opening, by) => gameScripts?.RunDoorHooks(x, y, opening, by) != false));
+            new DoorHooks(PlaySoundLocTile, DrawKeys, (x, y, opening, by) => gameScripts?.RunDoorHooks(x, y, opening, by) != false,
+                DoorSeesThrough));
         pushWalls = new PushWalls(MapManager, AudioManager, Session, () => GameEngineManager.GetGameInfo().PushwallDistance)
         {
             MayPush = (x, y, dir) => gameScripts?.RunPushWallHooks(Session.Player, x, y, dir) != false,
@@ -206,6 +207,7 @@ internal static partial class GameHost
         levelBodies = new LevelBodies(MapManager, doors, pushWalls, lighting, LevelAI, Session);
         consoleTargets = new ConsoleTargets(MapManager, lighting, Session);
         actorLights = MakeActorLights();
+        seeThroughPosts = MakeSeeThroughPosts();
         weather = MakeWeather();
         spriteScaler = MakeSpriteScaler();
         wallSpriteDrawing = MakeWallSpriteDrawing();

@@ -129,7 +129,8 @@ internal static partial class GameHost
             },
             () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole,
             () => ScreenshotPending, () => ScreenshotPending = false, TakeScreenshot, UpdateViewQuake,
-            () => WeaponZoom.ScopePicture(), DrawScope));
+            () => WeaponZoom.ScopePicture(), DrawScope),
+        seeThroughPosts);
 
     // A scope's picture over the whole screen (the original's H_SNIPERSCOPE at 0, 0), with black
     // past its edges on a screen wider or taller than it, so nothing outside the scope shows
@@ -187,7 +188,7 @@ internal static partial class GameHost
     // Drawing sprites scaled onto the view (Rendering/SpriteScaler.cs)
     static SpriteScaler spriteScaler = null!;       // made in InitServices
 
-    static SpriteScaler MakeSpriteScaler() => new(AssetManager, _videoManager, lighting, Render, FloorRow);
+    static SpriteScaler MakeSpriteScaler() => new(AssetManager, _videoManager, lighting, Render, FloorRow, seeThroughPosts);
 
     internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs,
         bool cloaked = false, SpriteTranslation? translation = null) =>
@@ -225,7 +226,22 @@ internal static partial class GameHost
     // Rain and snow (Rendering/Weather.cs)
     static Weather weather = null!;     // made in InitServices
 
-    static Weather MakeWeather() => new(GameEngineManager, _videoManager, MapManager, lighting, Render, Session, FloorRow, IsArch);
+    static Weather MakeWeather() => new(GameEngineManager, _videoManager, MapManager, lighting, Render, Session, FloorRow, IsArch, seeThroughPosts);
+
+    // ==== See-through doors ======================================================================
+
+    // Doors with masked textures, drawn among the sprites (Rendering/SeeThroughPosts.cs)
+    static SeeThroughPosts seeThroughPosts = null!;     // made in InitServices
+
+    static SeeThroughPosts MakeSeeThroughPosts() => new(_videoManager, lighting, Render, FloorRow);
+
+    // Whether a door's own faces, or its locked ones, are masked textures: sight goes through it shut
+    static bool DoorSeesThrough(MapTextureTranslation door) =>
+        (door.Vertical ? DoorFacesVertical : DoorFacesHorizontal)
+            .SelectMany(face => new[] { door.WallFace(face), door.Locked?.Side(face) ?? "" })
+            .Any(name => name.Length > 0 && AssetManager.Find<TextureAsset>(name)?.Masked == true);
+
+    static readonly string[] DoorFacesVertical = ["east", "west"], DoorFacesHorizontal = ["north", "south"];
 
     // ==== WallSprites ============================================================================
 
@@ -244,7 +260,7 @@ internal static partial class GameHost
     // Drawing wall sprites (Rendering/WallSpriteDrawing.cs)
     static WallSpriteDrawing wallSpriteDrawing = null!;     // made in InitServices
 
-    static WallSpriteDrawing MakeWallSpriteDrawing() => new(AssetManager, MapManager, lighting, Render, spriteScaler, FloorRow);
+    static WallSpriteDrawing MakeWallSpriteDrawing() => new(AssetManager, MapManager, lighting, Render, spriteScaler, FloorRow, seeThroughPosts);
 
     // ==== Camera =================================================================================
 

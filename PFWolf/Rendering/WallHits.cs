@@ -184,7 +184,9 @@ internal sealed class WallHits(
         posts.ScalePost();
     }
 
-    internal void HitVertDoor()
+    // True when the door is seen through (WallPosts.SeesThrough): it's kept for drawing among the
+    // sprites, and the trace goes on past it
+    internal bool HitVertDoor()
     {
         string doorpage = "";
         int doornumtile;
@@ -202,13 +204,14 @@ internal sealed class WallHits(
 
         var doorTextureAsset = WorldTexture(doorpage, door.TileX, door.TileY);
         if (doorTextureAsset == null)
-            return;
+            return false;
         render.PostSource = doorTextureAsset;
         render.PostOfs = texture;
-        posts.ScalePost(UnderLintel(door, render.YIntercept, render.XTileStep == -1));
+        return DoorPost(door, render.YIntercept, render.XTileStep == -1);
     }
 
-    internal void HitHorizDoor()
+    /// <inheritdoc cref="HitVertDoor"/>
+    internal bool HitHorizDoor()
     {
         string doorpage = "";
         int doornumtile;
@@ -225,10 +228,24 @@ internal sealed class WallHits(
         doorpage = Doors.DoorFace(door, render.YTileStep == 1 ? "north" : "south");
         var doorTextureAsset = WorldTexture(doorpage, door.TileX, door.TileY);
         if (doorTextureAsset == null)
-            return;
+            return false;
         render.PostSource = doorTextureAsset;
         render.PostOfs = texture;
-        posts.ScalePost(UnderLintel(door, render.XIntercept, render.YTileStep == 1));
+        return DoorPost(door, render.XIntercept, render.YTileStep == 1);
+    }
+
+    // Queues the shut door's post, or keeps it for later when it's seen through (true)
+    bool DoorPost(DoorObject door, int along, bool flip)
+    {
+        bool seethrough = posts.SeesThrough(render.PostSource);
+        int drawn = UnderLintel(door, along, flip, seethrough);
+        if (!seethrough)
+        {
+            posts.ScalePost(drawn);
+            return false;
+        }
+        posts.QueueSeeThrough(drawn);
+        return true;
     }
 
     /*
@@ -327,13 +344,15 @@ internal sealed class WallHits(
     /// x for a horizontal one): how many of its stories to draw. Under its lintel (the arch the
     /// trace opened on entering the tile), the arch ends here and the door is one story; with no
     /// wall to cap it, the door texture carries on up (flip mirrors it as the wall faces seen
-    /// from the same side). 0 draws them all.
+    /// from the same side). 0 draws them all. A see-through door leaves the arch open, as an open
+    /// door does: the trace carries on under it.
     /// </summary>
-    internal int UnderLintel(DoorObject door, int along, bool flip)
+    internal int UnderLintel(DoorObject door, int along, bool flip, bool seethrough = false)
     {
         if (render.ArchOpen)
         {
-            posts.CloseArch(render.XIntercept, render.YIntercept);
+            if (!seethrough)
+                posts.CloseArch(render.XIntercept, render.YIntercept);
             return 1;
         }
         if (render.HitStories > 1)

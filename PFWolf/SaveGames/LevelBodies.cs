@@ -128,6 +128,7 @@ internal sealed class LevelBodies(
 
         session.Areas.AreaConnect = body.AreaConnect;
         session.Areas.AreaByPlayer = body.AreaByPlayer;
+        session.Areas.SpreadSight();        // through see-through doors, from the areas just loaded
         map.MapCeilingColor = body.CeilingColor;
         map.MapFloorColor = body.FloorColor;
         map.AltFlatColors = body.AltFlatColors;

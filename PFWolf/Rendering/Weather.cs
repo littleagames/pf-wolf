@@ -15,7 +15,8 @@ namespace PFWolf.Rendering;
 /// A particle isn't drawn under a ceiling flat (any, even one that's all see-through) or an arch,
 /// in a door's tile, or inside a wall below its top. Walls hide it per screen column (the posts
 /// the trace queued, so it shows above a short wall in front of a taller one), and it's drawn in
-/// among the sprites, farthest first.
+/// among the sprites, farthest first. A see-through door farther away in a pixel's column is drawn
+/// before the pixel is (SeeThroughPosts), so the particle shows in front of it.
 /// </summary>
 internal sealed class Weather(
     GameEngineManager engine,
@@ -25,7 +26,8 @@ internal sealed class Weather(
     RenderState render,
     GameSession session,
     Func<int, int> floorRow,
-    Func<int, int, bool> isArch)
+    Func<int, int, bool> isArch,
+    SeeThroughPosts? seeThrough = null)
 {
     internal WeatherInfo? LevelWeather;      // the level's rain or snow, null for none
     internal string? LevelWeatherName;
@@ -499,7 +501,10 @@ internal sealed class Weather(
                         continue;
                     for (int x = Math.Max(px, 0); x < Math.Min(px + drop.Size, render.ViewWidth); x++)
                         if (!Occluded(x, py, key))
+                        {
+                            seeThrough?.DrawBeyond(x, key);
                             dest[py * pitch + x] = drop.Color;
+                        }
                 }
             }
         }
@@ -511,6 +516,9 @@ internal sealed class Weather(
         for (int y = Math.Max(top, 0); y < Math.Min(top + size, render.ViewHeight); y++)
             for (int x = Math.Max(left, 0); x < Math.Min(left + size, render.ViewWidth); x++)
                 if (!Occluded(x, y, height))
+                {
+                    seeThrough?.DrawBeyond(x, height);
                     dest[y * pitch + x] = color;
+                }
     }
 }

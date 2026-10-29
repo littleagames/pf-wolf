@@ -130,7 +130,7 @@ public sealed class TileRemap
     private static bool LikeDoor(MapTextureTranslation a, MapTextureTranslation b)
         => a.Lock == b.Lock && a.Locks.SequenceEqual(b.Locks) && a.LocksNeeded == b.LocksNeeded && a.LockMessage == b.LockMessage && a.LockMessageStyle == b.LockMessageStyle
            && a.AutomapColor == b.AutomapColor && a.LockedSound == b.LockedSound && a.OpenSound == b.OpenSound
-           && a.CloseSound == b.CloseSound && a.TakesKey == b.TakesKey && a.Split == b.Split && a.Link == b.Link
+           && a.CloseSound == b.CloseSound && a.TakesKey == b.TakesKey && a.Split == b.Split && a.Link == b.Link && a.ShootThrough == b.ShootThrough
            && a.WrongSideMessage == b.WrongSideMessage && a.WrongSideSound == b.WrongSideSound;
 
     /// <summary>The patch alike in everything but being on the turned faces</summary>

@@ -7,8 +7,9 @@ namespace PFWolf.Gameplay;
 /// <param name="PlaySoundAt">Plays a sound from a tile, heard by how far it is from the player</param>
 /// <param name="DrawKeys">Draws the keys on the status bar again (after a takes-key door uses one)</param>
 /// <param name="MayMove">Whether the scripts let a door (its tile) open (true) or close, set going by what (game.ondoor)</param>
+/// <param name="SeesThrough">Whether a door's faces are masked textures, so it's seen through shut (Rendering/SeeThroughPosts.cs)</param>
 internal sealed record DoorHooks(Action<string, int, int> PlaySoundAt, Action DrawKeys,
-    Func<int, int, bool, Entities.Actors.Actor?, bool>? MayMove = null);
+    Func<int, int, bool, Entities.Actors.Actor?, bool>? MayMove = null, Func<MapTextureTranslation, bool>? SeesThrough = null);
 
 /*
 =============================================================================
@@ -83,6 +84,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         doorobj.Vertical = vertical;
         doorobj.Action = DoorAction.Closed;
         doorobj.Xlat = doorXlat;
+        doorobj.SeeThrough = hooks?.SeesThrough?.Invoke(doorXlat) == true;
         // A mapdefs door-locks object on the door's tile locks it in place of its own lock(s)
         if (map.GetMapData().DoorLocks.TryGetValue(map.MapSpot(tilex, tiley, 1), out var tileLock))
             doorobj.MapLock = tileLock;
@@ -125,6 +127,20 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
         DoorNum++;
         LastDoorObj++;
+    }
+
+    /// <summary>
+    /// Joins the areas either side of each see-through door for sight (and a shoot-through one for
+    /// shots), shut or not (Gameplay/AreaConnections.cs): once every door on the level is spawned,
+    /// so the area beside one isn't another door's tile still to be given its area
+    /// </summary>
+    internal void JoinSeeThroughDoors()
+    {
+        for (int door = 0; door < LastDoorObj; door++)
+        {
+            if (DoorObjList[door].SeeThrough && DoorAreas(door) is var (area1, area2))
+                session.Areas.JoinThroughDoor(area1, area2, DoorObjList[door].ShootThrough);
+        }
     }
 
     // Where bstone's GetAreaNumber looks when a tile isn't an area itself: beside it, then corners

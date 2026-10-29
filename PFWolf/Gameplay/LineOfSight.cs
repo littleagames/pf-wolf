@@ -5,7 +5,8 @@ namespace PFWolf.Gameplay;
 /// <summary>
 /// Whether one thing can see another: a clear line through the tile map (walls, the solid
 /// half of diagonals, the closed part of doors, and wall sprites' panels); and whether a
-/// diagonal step is blocked
+/// diagonal step is blocked. A shut see-through door (one with masked faces) lets sight
+/// through, but only lets a shot through when it's doors.yaml shoot-through.
 /// </summary>
 /// <param name="wallSpriteBlocks">Whether a wall sprite's panel crosses the line between two points (global coordinates)</param>
 internal sealed class LineOfSight(MapManager map, Doors doors, GameSession session, Func<long, long, long, long, bool> wallSpriteBlocks)
@@ -22,10 +23,14 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
     // SightPlayer, SelectChaseDir/SelectDodgeDir, Kill/Damage, ...) lives on Entities.Actors.Monster.
     // CheckDiag and CheckLine are here, since they aren't tied to a mover: CheckLine is whether
     // there's a clear line from any actor to the player (the player's own sight uses it too).
-    internal bool CheckLine(Entities.Actors.Actor ob) => CheckLine(ob, session.Player);
+    // shot: the line's a shot's, which see-through doors stop unless they're shoot-through
+    internal bool CheckLine(Entities.Actors.Actor ob, bool shot = false) => CheckLine(ob, session.Player, shot);
 
     /// <summary>How far open a door is (0 shut, 0xffff open); shut for no such door</summary>
     internal int DoorPosition(int door) => door >= 0 && door < doors.DoorObjList.Length ? (int)doors.DoorObjList[door].Position : 0;
+
+    // Whether a line (a shot's, if shot) gets through door number door shut
+    bool DoorLetsThrough(uint door, bool shot) => door < doors.DoorObjList.Length && doors.DoorObjList[door] is { } d && d.LetsThrough(shot);
 
     // The step a shot's line is followed in, and how far a shot goes at most
     internal const int ShotStep = 0x1000;
@@ -36,7 +41,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
     /// time, until a wall, a door that isn't open, the map's edge or its reach (global units);
     /// <paramref name="stopAt"/> can stop it sooner, at a point (something in its way). Where it
     /// stopped (a step short of a wall) and why: <see cref="ShotEnd.NoPuffs"/> for a wall with
-    /// walls.yaml `puffs: false`.
+    /// walls.yaml `puffs: false`. It goes on through a shoot-through door.
     /// </summary>
     internal ShotTrace TraceShot(int x, int y, double angle, int reach = ShotReach, Func<int, int, bool>? stopAt = null)
     {
@@ -52,7 +57,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
             int tile = map.TileMap[tx, ty];
             if ((tile & GameConstants.BitDoor) != 0)
             {
-                if (DoorPosition(tile & ~GameConstants.BitDoor) < 0x8000)
+                if (DoorPosition(tile & ~GameConstants.BitDoor) < 0x8000 && !DoorLetsThrough((uint)(tile & ~GameConstants.BitDoor), shot: true))
                     return new ShotTrace(ShotEnd.Wall, px, py, tx, ty);
             }
             else if (tile != 0)
@@ -68,14 +73,15 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
     }
 
     /// <summary>Whether there's a clear line from an actor to another (a player, or any actor)</summary>
-    internal bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.Actor to) => CheckLine(ob.X, ob.Y, to);
+    internal bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.Actor to, bool shot = false) => CheckLine(ob.X, ob.Y, to, shot);
 
     /// <summary>
     /// Whether there's a clear line from a point (global coordinates) to an actor; the point's own
     /// tile isn't checked. A player is aimed at where their last move left them (PlUX/PlUY and
-    /// their tile, as vanilla), anything else at where it is.
+    /// their tile, as vanilla), anything else at where it is. <paramref name="shot"/>: it's a
+    /// shot's line, which a see-through door stops unless it's shoot-through.
     /// </summary>
-    internal bool CheckLine(int fromX, int fromY, Entities.Actors.Actor to)
+    internal bool CheckLine(int fromX, int fromY, Entities.Actors.Actor to, bool shot = false)
     {
         int x1, y1, xt1, yt1, x2, y2, xt2, yt2;
         int x, y;
@@ -159,7 +165,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 value &= ~(uint)GameConstants.BitDoor;
                 intercept = (uint)(yfrac - ystep / 2);
 
-                if (intercept > doors.DoorObjList[value].Position)
+                if (intercept > doors.DoorObjList[value].Position && !DoorLetsThrough(value, shot))
                     return false;
 
             } while (x != xt2);
@@ -213,7 +219,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 value &= ~(uint)GameConstants.BitDoor;
                 intercept = (uint)(xfrac - xstep / 2);
 
-                if (intercept > doors.DoorObjList[value].Position)
+                if (intercept > doors.DoorObjList[value].Position && !DoorLetsThrough(value, shot))
                     return false;
             } while (y != yt2);
         }

@@ -25,6 +25,7 @@ internal sealed class RayTrace(
         uint xpartial = 0, ypartial = 0;
         int pwallposnorm=0, pwallposinv=0, pwallposi=0;           // holds modified PWall.Pos
         render.SizeCovers(render.ViewWidth);
+        render.AnySeeThrough = false;
 
         for (render.PixX = 0; render.PixX < render.ViewWidth; render.PixX++)
         {
@@ -91,6 +92,7 @@ internal sealed class RayTrace(
             render.ColumnHit = render.PastWall = render.ArchOpen = false;
             render.ColumnTallest = 0;
             render.ColumnTop = render.ViewHeight;
+            render.SeeThroughCount[render.PixX] = 0;
             bool focalhit = false;              // hit a wall in the view's own tile: no trace
 
             //
@@ -273,10 +275,19 @@ internal sealed class RayTrace(
                     }
                 }
 
+                int edgex = render.XIntercept, edgey = render.YIntercept;
                 render.YIntercept = yinttemp;
                 render.XIntercept = planex;
 
-                hits.HitVertDoor();
+                if (hits.HitVertDoor())
+                {
+                    // seen through: on past it from where the trace entered, as an open door
+                    render.XIntercept = edgex;
+                    render.YIntercept = edgey;
+                    MarkSeen(hitx, hity, render.XTileStep == 1 ? SeenFlags.WestFace : SeenFlags.EastFace);
+                    PassVert(ystep);
+                    return false;
+                }
             }
             else if (render.TileHit == GameConstants.BitWall)
             {
@@ -516,10 +527,18 @@ internal sealed class RayTrace(
                     }
                 }
 
+                int edgex = render.XIntercept, edgey = render.YIntercept;
                 render.XIntercept = xinttemp;
                 render.YIntercept = planey;
 
-                hits.HitHorizDoor();
+                if (hits.HitHorizDoor())
+                {
+                    render.XIntercept = edgex;
+                    render.YIntercept = edgey;
+                    MarkSeen(hitx, hity, render.YTileStep == 1 ? SeenFlags.NorthFace : SeenFlags.SouthFace);
+                    PassHoriz(xstep);
+                    return false;
+                }
             }
             else if (render.TileHit == GameConstants.BitWall)
             {

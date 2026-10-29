@@ -23,6 +23,8 @@
 #                       the high byte and y in the low one (Blake Stone's linked doors). Opening or
 #                       closing it opens or closes that one too, which is unlocked by it, and so on
 #                       along the chain; a value that's a door-locks card is its lock instead
+#   shoot-through:      true: shots go through it shut, as sight does through a see-through door
+#                       (one whose faces have clear pixels); projectiles still stop at it
 doors:
     # Bio-tech door
     '88': { Vertical: true, East: DBIOU2, West: DBIOU2, North: JAMBIO1, South: JAMBIO1, locked: { East: DBIOL2, West: DBIOL2 }, takes-key: true, split: true, link: object-plane, open-sound: doors/htech_open, close-sound: doors/htech_close }

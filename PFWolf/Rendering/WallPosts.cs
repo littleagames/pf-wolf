@@ -74,6 +74,34 @@ internal sealed class WallPosts(
         render.ColumnTallest = Math.Max(render.ColumnTallest, render.HitStories);
     }
 
+    /// <summary>
+    /// Whether the door the trace just met at its plane, its face texture <paramref name="face"/>,
+    /// is seen through: a masked texture with no wall nearer in the column (one passed while
+    /// looking for taller walls is drawn shut, as it'd show over the wall in front) and room to
+    /// keep it
+    /// </summary>
+    internal bool SeesThrough(TextureAsset face) =>
+        face.Masked && !render.ColumnHit && !render.PastWall
+        && (uint)render.PixX < (uint)render.SeeThroughCount.Length && render.SeeThroughCount[render.PixX] < RenderState.MaxSeeThrough;
+
+    /// <summary>
+    /// Keeps the see-through door the trace just met, as ScalePost would queue it, for
+    /// SeeThroughPosts to draw among the sprites; drawn: how many stories, if not all HitStories
+    /// </summary>
+    internal void QueueSeeThrough(int drawn = 0)
+    {
+        int at = render.PixX * RenderState.MaxSeeThrough + render.SeeThroughCount[render.PixX]++;
+        render.SeeThroughHeight[at] = render.PostHeight;
+        render.SeeThroughStories[at] = (byte)(drawn > 0 ? drawn : render.HitStories);
+        render.SeeThroughLower[at] = render.PostSource;
+        render.SeeThroughLowerOfs[at] = render.PostOfs;
+        render.SeeThroughUpper[at] = render.UpperSource ?? render.PostSource;
+        render.SeeThroughUpperOfs[at] = render.UpperSource != null ? render.UpperOfs : render.PostOfs;
+        render.SeeThroughLight[at] = WallLight(render.XIntercept, render.YIntercept);
+        render.AnySeeThrough = true;
+        render.UpperSource = null;
+    }
+
     internal void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
         short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false,
         TextureAsset? patch = null, int patchofs = 0, int patchstory = 0, int scrollrow = 0)

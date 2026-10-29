@@ -353,6 +353,14 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       arches follow.
 - [ ] **(never tried)** See-through door jambs.
 
+**See-through doors** (`grate-doors-demo`)
+- [ ] **(never tried)** A shut gate shows the room, floor, ceiling and guards behind it; a gate
+      sliding open; two gates in a row; a guard standing in front of a gate and one behind it.
+- [ ] **(never tried)** A guard behind a shut gate sees you, comes and opens it, but doesn't shoot
+      through it; your shots stop at it; with `shoot-through: true` both get through.
+- [ ] **(never tried)** Gates under a tall door's lintel; rain and snow behind and in front of a
+      gate; a gate on the automap; save and load beside one.
+
 **Shading** (`switch-demo` stations 6/7, `moody-lights`)
 - [ ] `fog`, `light`, night levels; zone lights and tints; fade, strobe, pulse, flicker.
 - [ ] **(never tried)** Zone effects set in game-info YAML; actions from actor states; a fade
@@ -619,7 +627,7 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] Split view; camera keys; V puts the camera marker.
 - [ ] Walls, doors, flats, tall walls, sky, wall sprites, patches, extra things.
 - [ ] **(never tried)** Arches, fog, tag highlight under the pointer, patch quads, scroll
-      animation by eye.
+      animation by eye, see-through doors (`grate-doors-demo`) clear between the bars.
 - [ ] Shading and markers toggles.
 - [ ] Blake AOG floor 1: octagon floor + panel ceiling from its codes.
 - [ ] Pick and edit from the 3D view; **(never tried)** clicking an extra thing.

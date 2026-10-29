@@ -366,9 +366,12 @@ public sealed class LevelMesh
             AddFlat(topRef, Corners(x, y), stories, up: true, Texture(wall.North), topColor, TextureStories(wall.North));
     }
 
-    /// <summary>A wall face from a to b (left to right seen from its front) between two heights</summary>
+    /// <summary>
+    /// A wall face from a to b (left to right seen from its front) between two heights; seeThrough:
+    /// its texture's see-through pixels are clear (a see-through door's, Rendering/SeeThroughPosts.cs)
+    /// </summary>
     private void AddWall(SurfaceRef faceRef, Vector2 a, Vector2 b, float bottom, float top, string texture, Vector4 light,
-        float u0 = 0, float u1 = 1, bool twoSided = false, Vector2 scroll = default)
+        float u0 = 0, float u1 = 1, bool twoSided = false, Vector2 scroll = default, bool seeThrough = false)
     {
         // The texture's stories repeat up the wall from the floor
         float stories = TextureStories(texture);
@@ -377,7 +380,7 @@ public sealed class LevelMesh
         {
             Points = [new(a.X, bottom, a.Y), new(b.X, bottom, b.Y), new(b.X, top, b.Y), new(a.X, top, a.Y)],
             Uvs = [new(u0, v0), new(u1, v0), new(u1, v1), new(u0, v1)],
-            Texture = Texture(texture),
+            Texture = seeThrough ? Flat(texture, default) : Texture(texture),
             Color = light,
             Ref = faceRef,
             TwoSided = twoSided,
@@ -525,31 +528,34 @@ public sealed class LevelMesh
             // the north, so one side shows it mirrored, as in the game
             Vector2 north = new(x + 0.5f, y), south = new(x + 0.5f, y + 1);
             Vector4 westLight = FaceLight(x, y, Face.West), eastLight = FaceLight(x, y, Face.East);
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 0, 1, DoorFace(door, x, y, "west"), westLight);
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 0, 1, DoorFace(door, x, y, "east"), eastLight, 1, 0);
+            string westFace = DoorFace(door, x, y, "west"), eastFace = DoorFace(door, x, y, "east");
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 0, 1, westFace, westLight, seeThrough: SeesThrough(westFace));
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 0, 1, eastFace, eastLight, 1, 0, seeThrough: SeesThrough(eastFace));
             if (stories > 1 && !lintel)
             {
                 // Set into no wall: the door carries on up (WallHits.UnderLintel)
-                var texture = DoorFace(door, x, y, "west");
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories, texture, westLight);
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories, texture, eastLight);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories, westFace, westLight, seeThrough: SeesThrough(westFace));
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories, westFace, eastLight, seeThrough: SeesThrough(westFace));
             }
         }
         else
         {
             Vector2 west = new(x, y + 0.5f), east = new(x + 1, y + 0.5f);
             Vector4 northLight = FaceLight(x, y, Face.North), southLight = FaceLight(x, y, Face.South);
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 0, 1, DoorFace(door, x, y, "north"), northLight, 1, 0);
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 0, 1, DoorFace(door, x, y, "south"), southLight);
+            string northFace = DoorFace(door, x, y, "north"), southFace = DoorFace(door, x, y, "south");
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 0, 1, northFace, northLight, 1, 0, seeThrough: SeesThrough(northFace));
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 0, 1, southFace, southLight, seeThrough: SeesThrough(southFace));
             if (stories > 1 && !lintel)
             {
-                var texture = DoorFace(door, x, y, "north");
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories, texture, northLight);
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories, texture, southLight);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories, northFace, northLight, seeThrough: SeesThrough(northFace));
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories, northFace, southLight, seeThrough: SeesThrough(northFace));
             }
         }
         return lintel;
     }
+
+    // A door face with clear pixels (a masked texture from a pk3) is seen through, as in the game
+    private bool SeesThrough(string texture) => _tiles.Content.Find<TextureAsset>(texture) is { Masked: true };
 
     /// <summary>
     /// Above a door's first story, its tile capped like an arch (WallPosts.OpenDoorArch): on its

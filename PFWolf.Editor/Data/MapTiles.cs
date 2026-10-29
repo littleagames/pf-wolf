@@ -579,6 +579,8 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
                 : $"needs all of: {string.Join(", ", door.Locks)}");
         if (!string.IsNullOrEmpty(door.OpensFrom))
             details.Add($"opens from the {door.OpensFrom}");
+        if (door.ShootThrough)
+            details.Add("shoot-through");
         return string.Join(", ", details);
     }
 

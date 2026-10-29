@@ -396,7 +396,7 @@ internal static partial class GameHost
             message => HudMessageManager.Show(HudMessageKind.Lock, message),
             PlayPlayerSound,
             playerAttacks.PlayAttackSound,
-            actor => (actor.AreaNumber >= MapManager.Floors.NumAreas || Session.Areas.AreaByPlayer[actor.AreaNumber] != 0)
+            actor => (actor.AreaNumber >= MapManager.Floors.NumAreas || Session.Areas.AreaSeenByPlayer[actor.AreaNumber] != 0)
                 && lineOfSight.CheckLine(actor),
             actor => playerStats.Kill(actor)));     // caught on a stealth-only map: the mission's failed, as a death at their hands
 

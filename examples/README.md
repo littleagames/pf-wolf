@@ -813,6 +813,32 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-footsteps-demo.ps1
 In game, `where` shows the floor you're on; with cheats on, `lua print(game.floor(me.tilex, me.tiley))`
 shows what the script sees, and `flat <floor> <ceiling>` changes the one you stand on.
 
+## Grate Doors Demo (`mods/grate-doors-demo`)
+
+Wolfenstein 3D's plain doors become barred gates (every level, Wolfenstein 3D only). Shut, you
+see the room behind one through its bars, and the guards in it see you. It's YAML and two
+pictures, no level of its own.
+
+```
+PFWolf.exe --file grate-doors-demo
+```
+
+- `textures/GRATE1.png`, `textures/GRATE2.png`: the gates, drawn on a clear background. A door
+  whose pictures have clear pixels is a see-through door; there's no setting for it.
+- `mapdefs/doors.yaml`: doors 90 and 91 (the plain doors) with the gates in place of
+  `DOOR1_1`/`DOOR1_2`.
+
+A guard behind a shut gate can see you, comes for you and opens it, but can't shoot you
+through it, and you can't shoot it: shots stop at a see-through door unless its doors.yaml
+entry says `shoot-through: true`. Projectiles stop at any shut door. Sounds still only carry
+through an open one.
+
+The pictures are made by `tools/make-grate-doors-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-grate-doors-demo.ps1
+```
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

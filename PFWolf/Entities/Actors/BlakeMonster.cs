@@ -300,7 +300,7 @@ internal partial record BlakeMonster : Monster
 
         if (Ammo != 0)
         {
-            if (CheckLine(this, Target))
+            if (CheckLine(this, Target, shot: true))
             {
                 Hidden = false;
                 int dist = Math.Max(Math.Max(Math.Abs(TileX - Target.TileX), Math.Abs(TileY - Target.TileY)), 1);
@@ -431,9 +431,9 @@ internal partial record BlakeMonster : Monster
         if (smart && Ammo == 0)
             return;
 
-        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaShotByPlayer[AreaNumber] == 0)
             return;
-        if (!CheckLine(this, Target))
+        if (!CheckLine(this, Target, shot: true))
             return;     // what it's after is behind a wall
 
         ShotAtPlayer();

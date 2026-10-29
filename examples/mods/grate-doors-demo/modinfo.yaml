@@ -1,0 +1,4 @@
+name: Grate Doors Demo
+version: "1.0"
+description: Turns Wolfenstein 3D's plain doors into barred gates you can see through, shut or open; the guards behind them can see you too.
+game-packs: [wolf3d]
