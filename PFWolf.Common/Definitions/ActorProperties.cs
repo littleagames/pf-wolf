@@ -58,6 +58,13 @@ public static class ActorProperties
         List("spawn.random", "A random spawner: it's one of these classes, picked at random (Blake Stone's bio-techs, half of them informants)", hint: FieldHint.Class),
         Text("blocktile", "A marker thing: monsters (every monster) or bosses (BOSS actors) can't walk onto its tile; it's never placed itself"),
         Bool("docktile", "A marker thing: a vehicle can't go onto its tile, and its rider gets off there; it's never placed itself"),
+        Int("vehicle.maxspeed", "A vehicle (A_Board): its top speed, in global units a tic (65536 a tile)", "3000"),
+        Int("vehicle.accel", "A vehicle: how much forward adds to its speed each tic", "20"),
+        Int("vehicle.brake", "A vehicle: how much back takes off its speed each tic", "40"),
+        Text("vehicle.exitmessage", "A vehicle: shown as its rider steps off onto a dock"),
+        Text("vehicle.exitsound", "A vehicle: played as its rider steps off onto a dock", hint: FieldHint.Sound),
+        Text("vehicle.noexit", "A vehicle: shown when its rider uses it with no dock beside them"),
+        Text("vehicle.exithint", "A vehicle: the use hint (statusbar.yaml use-hint's hints, by name) while a dock is beside its rider"),
         Int("wallsprite.offset", "A wall sprite: how far its panel sits off the tile's middle toward its front, in texels (32: on the tile's edge)"),
 
         // Its sounds
@@ -135,6 +142,7 @@ public static class ActorProperties
         Text("weapon.magazine", "The item its loaded rounds are held as: shots come out of it, and A_Reload fills it from the ammo", hint: FieldHint.Class),
         Int("weapon.chargetics", "It fires only with a full charge, and takes this many tics to charge again (Blake Stone's auto charge pistol)"),
         Text("weapon.damagetype", "The kind of blow its shots deal, for the death the victim dies (a Death.TYPE state)"),
+        Bool("weapon.backstab", "It kills an enemy outright from behind while the enemy doesn't know the player's there (Midnight Assault's knife)"),
         Text("weapon.backstabtype", "The kind of blow a back-stab with it deals", "Backstab"),
         Int("weapon.knockback", "How far a BlakeMonster body it kills slides back, in 1/65536 tile; none when left out. Other enemies don't slide."),
         Bool("weapon.silent", "Its shots alert no one"),

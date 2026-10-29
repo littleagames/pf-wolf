@@ -120,9 +120,6 @@ Worked round in the example mods (2026-10-29), not fixed in the engine:
   abstract, so the class is built as a plain actor: it shows but is never picked up. Mission
   Demo's documents use `CustomInventory`. A warning at load (or building it as CustomInventory)
   would save a mod maker the hunt.
-- **`weapon.backstab` isn't in the actor property list** (PFWolf.Common Definitions/ActorProperties.cs),
-  though `PlayerAttacks` reads it: so the docs' Actor properties reference and the editor's
-  Definitions window don't know it. Stealth Demo's knife uses it.
 - **Wolf3D's episode menu has room for six episodes.** A mod's seventh (Episode Demo's) is listed
   but runs off the bottom of the menu box, over the footer. Mods can't carry menudefs, so a mod
   can't relayout it; the menu could scroll, or shrink its rows, past six.
