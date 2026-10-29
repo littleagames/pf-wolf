@@ -1,0 +1,8 @@
+# The Hunters Demo's enemies on the object plane (910-919 are this mod's)
+things:
+  910:
+    class: Hunter
+    angles: 0
+  911:
+    class: Tracker
+    angles: 0

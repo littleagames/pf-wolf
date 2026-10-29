@@ -598,6 +598,10 @@ can reach), not played by hand.
       opening the exit. **(never tried)**: the fight played fair (no god mode); the quake on his
       steps; the music change and back; saving and loading in either phase (the bar's full
       health is kept on the boss); dying and restarting mid-fight.
+- [ ] Hunters Demo (`--file hunters-demo`): headless, with everyone set chasing, the hunters closed
+      to about half their starting distance in 30 seconds against the plain guards' two thirds,
+      and the hook raised no errors. **(never tried)**: watching a hunter come round the maze's
+      corners while a guard sticks in a dead end; the dogs; speed with many hunters at once.
 
 ## 1.15 Multiplayer
 

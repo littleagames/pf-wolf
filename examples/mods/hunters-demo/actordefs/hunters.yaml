@@ -1,0 +1,14 @@
+# The Hunters Demo's enemies: a guard and a dog like Wolf3D's own, drawn in their own colors
+# (translations.yaml) so you can tell them apart. Nothing here makes them smarter: the script
+# (scripts/hunters.lua) does, by choosing their way through the maze by A* as they chase.
+Hunter:
+  parent: Guard
+  properties:
+    tag: "Hunter"
+    translation: hunter-orange
+
+Tracker:
+  parent: Dog
+  properties:
+    tag: "Tracker"
+    translation: hunter-orange

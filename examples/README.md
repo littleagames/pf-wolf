@@ -1532,6 +1532,44 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-boss-demo.ps1
 With cheats on, `lua for _,a in ipairs(game.actors('Warden')) do a:jump('Enrage') end` skips to
 the second phase.
 
+## Hunters Demo (`mods/hunters-demo`)
+
+A maze that replaces Floor 1 (Wolfenstein 3D only), where **hunters** find their way to you by
+**A\* pathfinding** chosen by a script, while Wolf3D's own guards and dogs chase you the way they
+always have. It's YAML, a small script and a level a script carves.
+
+```
+PFWolf.exe --file hunters-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- You start in a hall in the middle of the maze. Fire a shot and everything comes for you.
+- **The orange ones** (a guard and a dog, recolored) take the shortest way round the walls to you.
+  **The others** head straight at you as Wolf3D's enemies do, and lose their way in the dead ends.
+- The exit is in the maze's far corner.
+
+### What's in it
+
+- `scripts/hunters.lua`: `game.onchasedir(function(monster, target, mode) ... end)` is asked each
+  time an enemy chasing someone picks its next way, at a tile's middle. Returning a way
+  (`"north"`, `"northeast"`...) sends it that way if it can go; nil leaves it to the game. For the
+  hunters it returns `monster:pathto(target)`: the way along the shortest path it can walk, found
+  by A* (round walls, through doors it can open, diagonally only past open floor). `mode` says why
+  it's choosing: `chase`, `dodge`, `run`, `wander` or `follow`.
+- `actordefs/hunters.yaml`: `Hunter` and `Tracker`, Wolf3D's guard and dog in another color: the
+  script is what makes them hunt. `translations.yaml`: their color.
+- `mapdefs/things.yaml`: objects 910 and 911. `maps/MAP01.wad`: the maze.
+
+The maze is carved by `tools/make-hunters-demo.ps1` (a seeded random walk, so it's the same every
+run; change its `$Seed` for another). Run it again after changing it:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-hunters-demo.ps1
+```
+
+With cheats on, `lua print(game.walkable(x, y))` says whether a tile can be walked onto.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

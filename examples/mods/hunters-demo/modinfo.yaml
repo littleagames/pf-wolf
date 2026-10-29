@@ -1,0 +1,4 @@
+name: Hunters Demo
+version: "1.0"
+description: A maze (replacing Floor 1) where orange hunters find their way to you by A* pathfinding from a Lua script, while ordinary guards and dogs blunder about.
+game-packs: [wolf3d]

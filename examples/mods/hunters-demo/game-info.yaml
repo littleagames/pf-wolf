@@ -1,0 +1,4 @@
+# Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
+# turned them off in Options), for the script's hint as the level starts
+setting-defaults:
+  messages: true
