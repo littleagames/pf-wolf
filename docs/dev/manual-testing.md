@@ -529,14 +529,15 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 Each was checked headless (it loads with no warnings, and the parts console commands and `lua`
 can reach), not played by hand.
 
-- [ ] **(never tried)** Boat Demo (`--file boat-demo`): board the boat from the pier (its use
-      message, the motor sound), the throttle picking up and dying away with forward and back,
-      steering down the river, the boat stopping at the docks, the "step onto
-      the dock" hint beside one, getting off (the thud, the boat left where it was) and back on.
-      Fall in on foot: the freezing message and the water hurting; in the boat it doesn't. Guards
-      on the banks don't wade in. Step behind the gun nest (hint), man it facing the yard, fire
-      (no ammo used, half damage taken), step off behind it; the yard's enemies flanking through
-      the door. Save and load while riding and while manning the gun.
+- [ ] Boat Demo (`--file boat-demo`), driven windowed: boarded from the pier; the throttle meter
+      filling on the status bar; `vehicle.dockmessage` kept up beside the pier; on foot, stopped
+      at the dock's edge, not walking into the river (`blocktile: all`). **(never tried)**: the
+      motor sound, the throttle dying away with back, steering down the river, the boat stopping
+      at the docks, getting off (the thud, the boat left where it was) and back on; standing on
+      the boat's mooring tile once it's gone. Guards on the banks don't wade in. The gun nest's
+      use message going while you man it, facing the yard, fire (no ammo used, half damage
+      taken), step off behind it; the yard's enemies flanking through the door. Save and load
+      while riding and while manning the gun.
 - [ ] **(never tried)** Weather Demo (`--file weather-demo`), Floors 1-3 by hand: no rain under
       the porch, the gallery, the arches, the doorways and the elevator room, and its splashes
       on the courtyard floor only; looking up and down in it; Floor 2's squalls thickening,
@@ -557,14 +558,16 @@ can reach), not played by hand.
       the shotgun's shell-by-shell loop to full and fire cutting it short; grenades bouncing off
       walls and the throw's distance with a short and a long cook; whether the barracks guards
       stay put when one is shot with the silenced pistol; the pickups' and icons' looks, and every
-      sound by ear. Known bug: the status bar stays black after zooming out (docs/dev/todo.md).
+      sound by ear. Seen fixed: the status bar back after zooming out, and the power meter
+      filling green, yellow, red as a grenade cooks.
 - [ ] Mission Demo (`--file mission-demo`): seen working (headless and windowed): the HUD's panel,
       clock and compass; the radios breaking (`game.breakwall`) and counting; the documents
       picked up by walking onto them; "That's everything" once both are done; reinforcements at
       time-up (a scratch mod cut the limit to 6 seconds); the `objectives` command. **(never
       tried)**: playing it through by hand, shooting the radios; the elevator refusing until both
       are done; the tally's "Mission: ..." line; the compass turning as you do; dying and
-      restarting (the documents objective added again); saving and loading mid-mission.
+      restarting (the documents objective added again); saving and loading mid-mission; the
+      documents picked up now they're `parent: Inventory` (were CustomInventory when seen).
 - [ ] Architecture Demo (`--file architecture-demo`): headless shots showed the mosaic diagonal
       corners, the checkerboard, the lattice and skylight (looking up too), the mirrored arrows
       pointing east from both sides, and the 45 degree corridor. **(never tried)**: walking the
@@ -592,7 +595,8 @@ can reach), not played by hand.
       papers out, a patrolling guard's "Papers!" and, shown them, his walking on. **(never
       tried)**: the knife's back-stab killing outright and "A silent kill."; the officer refusing
       the papers; the dog ignoring the uniform; the alarm's music; the tally line; the rack
-      refusing while you're hunted; the guards' patrol loop round the ring.
+      refusing while you're hunted; the guards' patrol loop round the ring; the suspicion meter
+      on the status bar running down while a guard waits for papers.
 - [ ] Boss Demo (`--file boss-demo`), driven windowed: the health bar; the gatling gun taking the
       Warden to half, his enraging into the red phase (rockets, its bar full again); killing it
       opening the exit. **(never tried)**: the fight played fair (no god mode); the quake on his
@@ -613,8 +617,9 @@ can reach), not played by hand.
       against Wolf3D's, the switch mid-song, the generators' hum starting and stopping at the
       room's edge, and the song after the menu and after loading a game.
 - [ ] Episode Demo (`--file episode-demo`): seen windowed: Episode 7 and its picture on the menu
-      (running off its bottom: docs/dev/todo.md), the briefing article before MAP61; each map
-      loads. **(never tried)**: playing the episode through from the menu, the rain on the docks,
+      (scrolled into view, "1 more" marks above and below), the briefing article before MAP61;
+      each map loads. **(never tried)**: a Blake Stone episode menu or a level select long
+      enough to scroll, and the mouse on a scrolled menu. **(never tried)**: playing the episode through from the menu, the rain on the docks,
       the gold key and door, the victory run on MAP63, the tally and the ending text (two pages).
 - [ ] Big Map Demo (`--file bigmap-demo`): headless, the 128x96 UWMF level loads, the streets run
       to the horizon, a house's floor and roof match the pack's flats. **(never tried)**: walking

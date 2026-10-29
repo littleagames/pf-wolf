@@ -95,38 +95,6 @@ DrawWarpIn (a fizzle-in frame now draws the info area and messages before it fiz
   thrown from afar (floor triggers 158-160, an enemy's death linked by floor code 79), which
   already works. Nothing to do.
 
-## Engine gaps found making the example mods
-
-Worked round in the example mods (2026-10-29), not fixed in the engine:
-
-- **A usable actor's `usemessage` stays up while the player mans it.** `PlayerUse.UsableActor`
-  picks the gun nest under the player (distance 0) while they're on it, so its "Press Use to man
-  the gun" never goes. Boat Demo leaves the message off and has its script give the hint.
-- **Nothing keeps a player on foot out of water the boat can cross.** Vehicles stop only at
-  docks; a player can walk anywhere the boat goes. Boat Demo makes the river a damaging floor
-  and has its script spare a player in the boat (`game.ondamage`). A `blocktile: players` (or a
-  vehicle-only floor) would do it properly.
-- **A `power-meter` on a status bar that isn't an overlay never moves.** It's only drawn when
-  the whole bar is (`PlayScreen.DrawStatusParts`), so a boat's throttle or a grenade cooking
-  doesn't show on Wolf3D's bar. Making the bar an overlay (`background: overlay: true`) redraws
-  it every frame, but the view then runs under it and hides the bottom of the weapon. Boat Demo
-  and Arsenal Demo leave the meter out; it wants redrawing each tic while the power changes.
-- **Bug: the status bar isn't redrawn after a scope.** The scope picture (`weapon.zoompic`) is
-  drawn over the whole 320x200 screen; zoomed back out, the view comes back but Wolf3D's bar
-  and the view border stay black (only the face, redrawn on its own, shows) until something
-  redraws the whole bar, such as a new level. Seen with Arsenal Demo's rifle (windowed,
-  2026-10-29).
-- **An actordefs class with `parent: Inventory` silently isn't an item.** The C# `Inventory` is
-  abstract, so the class is built as a plain actor: it shows but is never picked up. Mission
-  Demo's documents use `CustomInventory`. A warning at load (or building it as CustomInventory)
-  would save a mod maker the hunt.
-- **Wolf3D's episode menu has room for six episodes.** A mod's seventh (Episode Demo's) is listed
-  but runs off the bottom of the menu box, over the footer. Mods can't carry menudefs, so a mod
-  can't relayout it; the menu could scroll, or shrink its rows, past six.
-- **No use hint for getting out of a vehicle on Wolf3D's status bar**: `vehicle.exithint` names
-  a statusbar.yaml use-hint, which Wolf3D's bar hasn't got. Boat Demo's script shows a keyed
-  message beside a dock instead.
-
 ## Destructible walls: extras
 
 Left out of the destructible walls work (docs/dev/destructible-walls-plan.md) at the user's

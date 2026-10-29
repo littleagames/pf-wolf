@@ -933,12 +933,12 @@ PFWolf.exe --file boat-demo
 It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
 
 - **The pier,** where you start. The boat's moored beside it: face it and press use to climb in.
-  Riding, forward and back are the throttle and turning steers; the boat carries you the way
-  you face, with the current sliding by under you.
+  Riding, forward and back are the throttle (the meter along the bottom of the status bar) and
+  turning steers; the boat carries you the way you face, with the current sliding by under you.
 - **The river** runs east past four guard posts on islands, two each side, who shoot at you as
   you pass. The boat stops at docks (the plank floors); alongside one, press use to step off,
   and the boat stays where you left it. Each post has a dock, with ammo or a first aid kit up
-  the bank. Don't swim: the water's freezing, and only the boat keeps you out of it.
+  the bank. On foot, the river's off limits: the boat's the only way across.
 - **The landing** at the east end, and behind the sandbags the **gun nest**, looking over a yard
   of guards and SS. Face it from behind and press use to man it: you turn but don't move, the
   gun needs no ammo, and the sandbags take half of every hit. Use again to step off behind it.
@@ -952,27 +952,30 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
     tile, riding it. `vehicle.maxspeed`, `vehicle.accel` and `vehicle.brake` (global units a
     tic, 65536 a tile) are how fast it goes and how quickly forward and back change that;
     `vehicle.exitmessage`, `vehicle.exitsound` and `vehicle.noexit` (use with no dock beside
-    you) are what getting off says.
-  - `Dock` (`docktile: true`) and `KeepEnemiesOut` (`blocktile: monsters`): markers that are
-    never placed themselves, only mark their tiles as the map's read. The boat can't go onto a
-    dock, and gets you off onto one; enemies can't walk onto a keep-out tile, so they don't wade
-    after you.
-  - `GunNest`, whose `Use` state runs `A_Mount("NestGun", "sound")`, and `NestGun`, a gatling
-    gun (`parent: GatlingGun`) with `weapon.mounted: true`, `weapon.mountdamage: 50` (the share
-    of a hit you take while on it), `weapon.mountnoroom` and no ammo used. A mounted gun is only
-    ever held while manning it.
+    you) are what getting off says, and `vehicle.dockmessage` the hint kept up while a dock is
+    beside you.
+  - `Dock` (`docktile: true`) and `KeepOut` (`blocktile: all`): markers that are never placed
+    themselves, only mark their tiles as the map's read. The boat can't go onto a dock, and gets
+    you off onto one; no one walks onto a keep-out tile, enemy or player, so the guards don't
+    wade after you and you don't swim (riding the boat isn't walking). `blocktile: players`
+    would keep out only the player, `monsters` only enemies.
+  - `GunNest`, with a `usemessage`, whose `Use` state runs `A_Mount("NestGun", "sound")`, and
+    `NestGun`, a gatling gun (`parent: GatlingGun`) with `weapon.mounted: true`,
+    `weapon.mountdamage: 50` (the share of a hit you take while on it), `weapon.mountnoroom` and
+    no ammo used. A mounted gun is only ever held while manning it, and its use message isn't
+    shown while you're on it.
 - `mapdefs/things.yaml`: objects 800-803 (the dock and keep-out markers, the boat, the nest).
-- `mapdefs/flats.yaml`: the river and the docks (flat indices 20 and 21), and the river's
-  `damage`: 4 health every 20 tics to whoever stands in it (`enemies: false` spares the guards).
-- `scripts/boat-demo.lua`: a `game.ondamage` hook that turns the river's damage to 0 for a player
-  riding something (`actor.vehicle`), the hints (`game.onenter`, and while the boat's beside a
-  dock, a keyed `game.message` that stays up until it isn't).
+- `mapdefs/flats.yaml`: the river and the docks (flat indices 20 and 21).
+- `scripts/boat-demo.lua`: the word as the level starts (`game.onlevel`).
+- `statusbar.yaml`: a `power-meter` along the bottom of the status bar's level, score and lives
+  box (Wolf3D's has none), which shows the throttle while you ride.
 - `game-info.yaml`: the level's sky and grass color, the river's current (a `scrollers` entry for
   its tag, 1, sliding its floor east), and messages over the view on.
 - `flats/`, `graphics/BDSKY.png`, `sprites/` (the boat and the nest) and `sounds/` (the motor, the
   dock and the gun swinging round, named in `sounds/sound-seq.yaml`).
 - `maps/MAP01.wad`: the level. Every river tile carries the keep-out marker on the object plane,
-  the water flat and tag 1; every tile of bank next to the water is a dock.
+  the water flat and tag 1; every tile of bank next to the water is a dock. The boat's own tile
+  is a plank mooring: a tile holds one thing, so it can't also keep you out once the boat's gone.
 
 Everything but the YAML and the script is made by `tools/make-boat-demo.ps1` (the layout is an
 ASCII drawing in it). Edit it and run it again:
@@ -1120,7 +1123,8 @@ weapons themselves work on every level: with cheats on, `give Shotgun`, `give Ha
   cuts the reload short once there's a shell in.
 - **The grenades:** hold fire to cook the throw, let go to throw it; the longer you held it, the
   harder and further it goes. It arcs, bounces off walls and goes off after a couple of seconds,
-  hurting everything near it, you too if you're close.
+  hurting everything near it, you too if you're close. The meter along the bottom of the status
+  bar fills as it cooks, green, then yellow, then red.
 - **The rifle:** hold **Z** (zoom) to look through the scope, up to four times closer, turning
   slower; let go to stay zoomed, hold it again to zoom out. Zoomed in, its shot hits far harder.
 - **The silenced pistol** uses the pistol's clips, and its shots alert no one.
@@ -1153,6 +1157,9 @@ weapons themselves work on every level: with cheats on, `give Shotgun`, `give Ha
   view), the pickups, the grenade (`ARGN`) and its blast (`AREX`). `graphics/`: the four status bar
   icons (48x24) and the scope (`ARSCOPE`, 320x200, clear in the middle). `sounds/`, named in
   `sounds/sound-seq.yaml`.
+- `statusbar.yaml`: a `power-meter` along the bottom of the level, score and lives box (Wolf3D's
+  status bar has none), its `levels` changing its color as the power rises, and `box-fill: bar`
+  putting the bar's own picture back as it shrinks.
 - `game-info.yaml`: messages over the view on, for the pickups'.
 - `maps/MAP01.wad`: the range.
 
@@ -1164,8 +1171,8 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-arsenal-demo.ps1
 ```
 
 Wolf3D's status bar has no room for the shotgun's loaded shells (a status bar `clip` part shows
-them where there's one) and doesn't redraw a `power-meter` while it changes, so the tube's count
-and the grenade's cooking don't show; the ammo number is the shells, grenades or rounds carried.
+them where there's one), so the tube's count doesn't show; the ammo number is the shells,
+grenades or rounds carried.
 
 ## Mission Demo (`mods/mission-demo`)
 
@@ -1203,8 +1210,7 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 - `mapdefs/walls.yaml`: the radios, walls 144 and 145, whose `destructible:` block has
   `objective: radios`: each counts toward it as the level starts and completes one as it breaks.
 - `actordefs/mission.yaml`: `TargetOfficer`, an officer with the `objective` property (his death
-  completes one); `SecretDocuments`, the documents (a `CustomInventory`: a class made straight
-  from `Inventory` isn't an item); and two invisible markers, the exit for the compass and the
+  completes one); `SecretDocuments`, the documents (`parent: Inventory`); and two invisible markers, the exit for the compass and the
   spots reinforcements come in at.
 - `mapdefs/things.yaml`: objects 880-883.
 - `scripts/mission.lua`, the hooks working together:
@@ -1448,7 +1454,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
   papers in your pocket (slot 5).
 - **The ring corridor** round the barracks, two guards patrolling it. In uniform, with the papers
   in hand, a guard who sees you only wonders: "Papers!" Show them (fire) within six seconds and he
-  lets you be. Anything else in hand, or too slow, and your cover's blown.
+  lets you be. Anything else in hand, or too slow, and your cover's blown. The meter along the
+  bottom of the status bar is the time you have left.
 - **The barracks:** guards with their backs to the door, and a dog, which doesn't care what you're
   wearing. The knife kills outright from behind an enemy who doesn't know you're there, and a kill
   made unseen counts as a silent one.
@@ -1472,6 +1479,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 - `scripts/stealth.lua`: `game.onsight` sounds the alarm once (`A_SetZoneLight` and
   `A_SetZoneEffect` on zone 1 through `game.trigger`, and `game.music`); `game.onstealthkill`
   says so; `game.ontally` reports `result.undetected` and `result.stealthkills`.
+- `statusbar.yaml`: a `power-meter` along the bottom of the status bar (Wolf3D's has none), which
+  shows the suspicion meter while there's no weapon power or vehicle throttle to show.
 - `mapdefs/things.yaml`: object 890, the coat rack. `sprites/`, `sounds/`: the rack, the papers
   in hand and their rustle.
 - `maps/MAP01.wad`: the level. The guards patrol the ring by Wolf3D's patrol arrows (objects 90-97)
@@ -1482,9 +1491,6 @@ The pictures, sound and level are made by `tools/make-stealth-demo.ps1`. Edit it
 ```
 powershell -ExecutionPolicy Bypass -File examples/tools/make-stealth-demo.ps1
 ```
-
-Wolf3D's status bar has no suspicion meter (a statusbar.yaml `power-meter` is it, though Wolf3D's
-bar doesn't redraw one as it changes), so the messages are what tell you.
 
 ## Boss Demo (`mods/boss-demo`)
 
@@ -1701,8 +1707,8 @@ The pictures and levels are made by `tools/make-episode-demo.ps1`. Edit it and r
 powershell -ExecutionPolicy Bypass -File examples/tools/make-episode-demo.ps1
 ```
 
-With cheats on, `map MAP62` goes straight to a level. Wolf3D's episode menu has room for six, so
-the seventh runs off its bottom (mods can't change the menu's layout).
+With cheats on, `map MAP62` goes straight to a level. Wolf3D's episode menu shows six at once, so
+the seventh scrolls into view as the cursor goes down to it.
 
 ## Big Map Demo (`mods/bigmap-demo`)
 
