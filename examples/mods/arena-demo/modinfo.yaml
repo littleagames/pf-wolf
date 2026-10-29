@@ -1,0 +1,4 @@
+name: Arena Demo
+version: "1.0"
+description: A multiplayer arena of its own for Wolfenstein 3D, Twin Keeps - two team keeps facing across an open field, marked for every mode but Heist.
+game-packs: [wolf3d]

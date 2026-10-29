@@ -628,6 +628,10 @@ can reach), not played by hand.
       the status bar, every actor spawns, and the switch's action turns the barrier off. **(never
       tried)**: talking to the bio-techs, buying from the food units, throwing the switch by hand,
       the red card opening Floor 2 on the elevator panel, and the level's colors.
+- [ ] Arena Demo (`--file arena-demo`): headless with `addplayer`, `match` found both flags at
+      their bases, the four control points and the two hill spots. **(never tried)**: picking
+      Twin Keeps in the lobby; a real game over the LAN in each mode (Horde's enemies at the
+      corridors' ends); the team starts and the keeps' colors.
 
 ## 1.15 Multiplayer
 

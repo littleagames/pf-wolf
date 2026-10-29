@@ -1839,6 +1839,50 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-blake-demo.ps1
 With cheats on, `actors` lists who the bio-techs turned out to be, and `lua print(game.trigger(1,
 'A_ToggleActive'))` throws the barrier switch from the console.
 
+## Arena Demo (`mods/arena-demo`)
+
+A **multiplayer arena** of its own for Wolfenstein 3D, *Twin Keeps*, outside the Multiplayer mod:
+two team keeps facing each other across an open field, marked for every mode but Heist. It's a
+level, a sky and a few lines of YAML.
+
+```
+PFWolf.exe --file arena-demo
+```
+
+Host a game and pick Twin Keeps in the lobby (it's an arena, in no episode); with cheats on,
+`map AR01` warps to it to look round alone. See [Multiplayer modes and arenas](#multiplayer-modes-and-arenas)
+below for the modes.
+
+- **The keeps,** red's west and blue's east, roofed and lit in their team's color: each team's
+  starts, its flag's base, and a gatling gun.
+- **The field** between them, open to the sky: two-story blocks for cover, a control point north
+  and south on each side, two spots by the middle where the hill can be, and deathmatch starts.
+- **The corridors** along the north and south edges, machine guns in them; Horde's enemies come
+  in at their ends.
+
+### What's in it
+
+- `game-info.yaml`: `maps: AR01` with `deathmatch: true` (an arena, picked in the lobby) and no
+  `modes:` list (so every mode but Heist; a list names the modes it's for), its sky, colors and
+  the keeps' light zones.
+- `maps/AR01.wad`: the arena. Its multiplayer pieces are pfwolf-pk3's object-plane markers
+  (`mapdefs/wolf3d`): 410-413 deathmatch starts, 430-433 red's starts and 434-437 blue's (facing
+  north, east, south, west), 440 red's flag and 441 blue's, 442 a control point, 443 a spot the
+  hill can be, 444 where Horde's enemies come in. A mode finds what it needs on any arena, and
+  what isn't marked, it places itself.
+- `graphics/ARSKY.png`: the sky.
+
+The arena is made by `tools/make-arena-demo.ps1`: its west half is an ASCII drawing, mirrored for
+the east with red's pieces swapped for blue's. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-arena-demo.ps1
+```
+
+With cheats on, `addplayer` then `gamemode capture-the-flag` (or `domination`,
+`king-of-the-hill`...) tries a mode alone, and `match` shows the score and where each mode's
+pieces are.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

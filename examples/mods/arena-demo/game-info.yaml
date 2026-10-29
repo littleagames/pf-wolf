@@ -1,0 +1,19 @@
+# Merged into the game pack's game-info.yaml: the arena. `deathmatch: true` makes a level an
+# arena, picked by name in the multiplayer lobby rather than reached by an episode (`map AR01`
+# warps to it to try it). With no `modes:` list it's an arena for every mode but Heist; a list
+# (`modes: [capture-the-flag, team-deathmatch]`) makes it one for those only. The fields are in the
+# game-info reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+maps:
+  AR01:
+    name: "Twin Keeps"
+    deathmatch: true
+    floor-number: 1
+    music: ULTIMATE
+    cluster: 1
+    # Walls 1 story; the field's cover 2 (plane 3). The keeps are roofed (ceiling flats).
+    sky: ARSKY
+    floor-color: "#585858"
+    # The keeps lit in their team's color (light zones on plane 5)
+    zones:
+      1: { light: 230, color: "#FFB0A0" }
+      2: { light: 230, color: "#A8C0FF" }
