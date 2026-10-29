@@ -19,6 +19,7 @@ namespace PFWolf.Rendering;
 /// <param name="UpdateViewQuake">Moves any quake on and sets the view's focal length for it and a scope's zoom (Rendering/ViewQuake.cs)</param>
 /// <param name="ScopePicture">The scope's picture while the player looks through one (Gameplay/WeaponZoom.cs), else null</param>
 /// <param name="DrawScope">Draws it over the screen, in place of the weapon in hand</param>
+/// <param name="RedrawPlayScreen">Redraws the status bar and the view's border (the scope covered them)</param>
 internal sealed record FrameRefreshHooks(
     Func<FadeStyle> LevelFadeStyle,
     Func<int> LevelFadeTics,
@@ -33,7 +34,8 @@ internal sealed record FrameRefreshHooks(
     Func<string> TakeScreenshot,
     Action UpdateViewQuake,
     Func<string?> ScopePicture,
-    Action<string> DrawScope);
+    Action<string> DrawScope,
+    Action? RedrawPlayScreen = null);
 
 /// <summary>
 /// One frame of the 3D view: the tics since the last (CalcTics), the view from the camera
@@ -63,6 +65,9 @@ internal sealed class FrameRefresh(
     internal bool FpsCounter = false;
 
     internal int FpsFrames = 0, FpsTime = 0, Fps = 0;
+
+    // Whether the last frame drew a scope over the whole screen, status bar and border too
+    bool scopeDrawn;
 
     /*
 =====================
@@ -222,6 +227,15 @@ internal sealed class FrameRefresh(
         render.Vbuf += (int)render.ScreenOfs;
 
         hooks.UpdateViewQuake();        // the focal length a quake pulses, before the view's set up from it
+
+        // Out of a scope, which covered the whole screen: the status bar and border are drawn
+        // again, before the view (which redrawing the border blacks out)
+        if (scopeDrawn && hooks.ScopePicture() == null)
+        {
+            scopeDrawn = false;
+            hooks.RedrawPlayScreen?.Invoke();
+        }
+
         Setup3DView();
         lighting.UpdateLightGrid();
         actorLights.CastActorLights();
@@ -265,7 +279,10 @@ internal sealed class FrameRefresh(
         render.Vbuf = 0;
 
         if (scope != null)
+        {
             hooks.DrawScope(scope);
+            scopeDrawn = true;
+        }
         if (cinematic)
         {
             int bar = render.ViewHeight * 30 / 200;
