@@ -62,6 +62,7 @@ internal sealed class PlayerThink(
         stats.UpdateFace();
         stats.TickPowerups();
         statusBar.UpdateHeartMonitor();
+        statusBar.UpdatePowerMeter();
         hooks.UpdateRadar();
 
         // Reloading is like being ready, as the original Midnight Assault's T_Reload: use works,

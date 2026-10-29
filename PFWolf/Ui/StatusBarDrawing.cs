@@ -525,8 +525,8 @@ internal sealed class StatusBarDrawing(
     internal void DrawPowerMeter()
     {
         if (StatusBarHidden) return;
-        var p = session.PlayerState;
-        int power = p.WeaponPower > 0 ? p.WeaponPower : p.Vehicle != null ? p.VehicleThrottle : p.SuspicionMeter;
+        int power = MeterPower();
+        powerDrawn = power;
         if (power <= 0 || StatusBar.Get("power-meter") is not { } meter)
             return;
         using var _ = StatusBarOrigin(meter);
@@ -540,6 +540,28 @@ internal sealed class StatusBarDrawing(
             ?? meter.Color ?? "White";
         if (width > 0)
             video.Bar(meter.Box[0], top + meter.Box[1], width, meter.Box[3], color);
+    }
+
+    // The power the meter last showed, so a bar of its own redraws it only as that changes
+    int powerDrawn = -1;
+
+    /// <summary>What the power meter shows: a throw cooking, else a vehicle's throttle, else the suspicion meter</summary>
+    int MeterPower()
+    {
+        var p = session.PlayerState;
+        return p.WeaponPower > 0 ? p.WeaponPower : p.Vehicle != null ? p.VehicleThrottle : p.SuspicionMeter;
+    }
+
+    /// <summary>
+    /// Each tic: the power meter again once its power has changed, its box cleared first
+    /// (box-fill, box-pic or box-color), on a bar of its own; an overlay bar draws it every frame
+    /// </summary>
+    internal void UpdatePowerMeter()
+    {
+        if (IsOverlay || StatusBarHidden || StatusBar.Get("power-meter") is not { } meter || MeterPower() == powerDrawn)
+            return;
+        ClearBox(meter);
+        DrawPowerMeter();
     }
 
     /// <summary>The weapon in hand's name (statusbar.yaml weapon-name): its `tag` (a $NAME language key or the text)</summary>
