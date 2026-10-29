@@ -24,6 +24,7 @@ public class LevelChecksGameTests
     [TestCase("planetstrike", "")]
     [TestCase("wolf3d", "examples/mods/switch-demo")]
     [TestCase("wolf3d", "examples/mods/fireball-demo")]
+    [TestCase("wolf3d", "examples/mods/destructible-demo")]
     public void The_Games_Own_Levels_Have_No_Errors(string game, string mod)
     {
         // Arrange

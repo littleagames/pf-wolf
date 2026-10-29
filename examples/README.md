@@ -187,6 +187,61 @@ In the editor, the **Wall patches** layer (in the plane list) puts patches on wa
 changing the walls, and its palette lists the mapdefs patches. In game, `where` shows the patch
 on the wall you face; with cheats on, `patch <0-255>` puts one on it.
 
+## Destructible Demo (`mods/destructible-demo`)
+
+A hall that replaces Floor 1 (Wolfenstein 3D only), to show off **walls that break**: shot out,
+knifed open, cracked in stages, brought down by a lever or taken away by a floor trigger.
+
+```
+PFWolf.exe --file destructible-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **North:** a row of glass panes. One bullet breaks a pane (`damage-types: [Bullet]`, no
+  health), and the ammo behind them is yours.
+- **West:** boards over a closet. The knife takes them down in a few blows (`[Melee]`, health
+  20), and the first aid kit behind them drops to the floor (`spawn`). There's a chalice in the
+  closet.
+- **East:** a cracked wall. Shoot it or knife it: after 40 damage it cracks further (`to:` the next
+  wall, which has 40 health of its own) and you've found the level's secret; after 40 more it
+  crumbles (`animation`, solid until it's played) and leaves a heap of rubble. The crown's
+  behind it.
+- **South:** a lever. It brings down the stretch of three-story wall beside it (`A_BreakWall` on
+  the lever's tag, 1). That wall lists no damage types, so nothing you shoot hurts it, but its
+  block still says how it breaks: it crumbles and leaves an arch (`leaves: arch`). The bottom
+  story goes and the two above it stay up.
+- **Through the arch:** a corridor. Halfway down it, the floor trigger (`A_RemoveWall`, a walk
+  trigger on tag 2) takes away the wall at its end at once, with no sound or effect, and opens
+  the way to the elevator.
+
+### What's in it
+
+- `mapdefs/walls.yaml`: walls 70-78, with the `destructible:` blocks and the lever's switch.
+  Every field is in the [mapdefs reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs).
+  A wall's `damage-types` say what hurts it: a gun deals Bullet and the knife Melee (unless the
+  weapon has a `weapon.damagetype` of its own), a missile its actordefs `damagetype`, a blast
+  (A_Explode) Blast. With a `health`, hits add up until they reach it.
+- `mapdefs/triggers.yaml`: the floor trigger, object 460.
+- `animdefs/destructible-demo.yaml`: DWCRUMBLE, the crumble, played once.
+- `actordefs/rubble.yaml`: DemoRubble, what a crumbled wall leaves on the floor.
+- `textures/`, `sprites/DWRBA0.png`, `sounds/` (named in `sounds/sound-seq.yaml`): the art and
+  sounds, all drawn and synthesized by the script below.
+- `maps/MAP01.wad`: the level. The lever and the wall it brings down share tag 1 on the tag
+  plane; the floor trigger and the wall it takes away share tag 2.
+
+The art, sounds and level are made by `tools/make-destructible-demo.ps1` (the layout is an ASCII
+drawing in it). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-destructible-demo.ps1
+```
+
+With cheats on, `breakwall` breaks the wall you face as its block says, `removewall` takes it
+away at once (`removewall arch` keeps a tall wall's upper stories), and in a script
+`game.breakwall`, `game.removewall`, `game.wallhealth` and the `game.onwallbreak` hook do the
+same. Switches and actor states can also run `A_DamageWall(damage[, "type"])`.
+
 ## Key Demo (`mods/key-demo`)
 
 A small level that replaces Floor 1 (Wolfenstein 3D only) with two keys of its own, red and

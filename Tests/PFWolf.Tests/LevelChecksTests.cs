@@ -10,6 +10,7 @@ public class LevelChecksTests
 {
     private const ushort Wall = 1, Floor = 107, Ambush = 106, VerticalDoor = 90, HorizontalDoor = 91;
     private const ushort Start = 19, Puddle = 23, PushWall = 98, Diagonal = 400, DoorSwitch = 50, WallSwitch = 51;
+    private const ushort Glass = 60, Lever = 61, BadStage = 62, WalkTrigger = 460;
 
     private static GameContent Content() => GameContent.FromDefinitions(new MapObjectTranslationAsset
     {
@@ -18,6 +19,9 @@ public class LevelChecksTests
             [Wall] = new() { North = "GSTONEA1", East = "GSTONEA2", South = "GSTONEA1", West = "GSTONEA2" },
             [DoorSwitch] = new() { North = "SW", Switch = new MapSwitchTranslation { Actions = ["A_OpenDoor"] } },
             [WallSwitch] = new() { North = "SW", Switch = new MapSwitchTranslation { Actions = ["A_MoveWall(\"east\")"] } },
+            [Glass] = new() { North = "GLASS", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet"] } },
+            [Lever] = new() { North = "SW", Switch = new MapSwitchTranslation { Actions = ["A_BreakWall"] } },
+            [BadStage] = new() { North = "CRACKED", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet"], To = 99, Animation = "NOSUCH" } },
         },
         Doors = new()
         {
@@ -27,7 +31,11 @@ public class LevelChecksTests
         Floors = new MapFloorsTranslation { AreaStart = Floor, AreaCount = 37, Ambush = Ambush, SecretExit = -1 },
         PlayerStarts = new() { [Start] = new MapPlayerStartTranslation { Angles = 90 } },
         Things = new() { [Puddle] = new MapActorTranslation { Class = "Puddle" } },
-        Triggers = new() { [PushWall] = new MapTriggerTranslation { Action = "A_PushWall", Secret = true } },
+        Triggers = new()
+        {
+            [PushWall] = new MapTriggerTranslation { Action = "A_PushWall", Secret = true },
+            [WalkTrigger] = new MapTriggerTranslation { Action = "A_RemoveWall", Activation = "walk" },
+        },
         Diagonals = new() { [Diagonal] = new MapDiagonalTranslation { Shape = WallShape.SolidNW } },
     });
 
@@ -303,5 +311,89 @@ public class LevelChecksTests
 
         // Assert
         Assert.That(problems, Is.Empty);
+    }
+
+    [Test]
+    public void A_Room_Behind_A_Wall_That_Breaks_Is_Reachable()
+    {
+        // Arrange: glass, which bullets break
+        var document = Room();
+        WallOff(document, 30, 30, 34, 34);
+        EditorMaps.Set(document, 0, 30, 32, Glass);
+
+        // Act
+        var problems = Check(document);
+
+        // Assert
+        Assert.That(problems, Is.Empty);
+    }
+
+    [Test]
+    public void A_Room_Behind_A_Wall_A_Lever_Breaks_Is_Reachable()
+    {
+        // Arrange: the lever (A_BreakWall) and the wall it brings down share tag 5
+        var document = Room();
+        WallOff(document, 30, 30, 34, 34);
+        EditorMaps.Set(document, 0, 0, 10, Lever);
+        EditorMaps.Set(document, MapConstants.TagPlane, 0, 10, 5);
+        EditorMaps.Set(document, MapConstants.TagPlane, 30, 32, 5);
+
+        // Act
+        var problems = Check(document);
+
+        // Assert
+        Assert.That(problems, Is.Empty);
+    }
+
+    [Test]
+    public void A_Room_Behind_A_Wall_A_Floor_Trigger_Takes_Away_Is_Reachable()
+    {
+        // Arrange: the walk trigger (A_RemoveWall) and the wall it takes away share tag 6
+        var document = Room();
+        WallOff(document, 30, 30, 34, 34);
+        EditorMaps.Set(document, 1, 10, 10, WalkTrigger);
+        EditorMaps.Set(document, MapConstants.TagPlane, 10, 10, 6);
+        EditorMaps.Set(document, MapConstants.TagPlane, 30, 32, 6);
+
+        // Act
+        var problems = Check(document);
+
+        // Assert
+        Assert.That(problems, Is.Empty);
+    }
+
+    [Test]
+    public void A_Floor_Triggers_Tag_Isnt_One_No_Switch_Has()
+    {
+        // Arrange: a walk trigger (A_RemoveWall) on the floor and the wall it takes away, tag 6
+        var document = Room();
+        EditorMaps.Set(document, 1, 10, 10, WalkTrigger);
+        EditorMaps.Set(document, MapConstants.TagPlane, 10, 10, 6);
+        EditorMaps.Set(document, 0, 20, 20, Wall);
+        EditorMaps.Set(document, MapConstants.TagPlane, 20, 20, 6);
+
+        // Act
+        var problems = Check(document);
+
+        // Assert
+        Assert.That(problems, Is.Empty);
+    }
+
+    [Test]
+    public void A_Destructible_Wall_Breaking_Into_Nothing_Or_With_No_Such_Animation_Is_Warned_About()
+    {
+        // Arrange: two of them, and one on the level's edge
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, BadStage);
+        EditorMaps.Set(document, 0, 12, 10, BadStage);
+        EditorMaps.Set(document, 0, 0, 20, BadStage);
+
+        // Act
+        var messages = Check(document).Select(problem => problem.Message).ToList();
+
+        // Assert
+        Assert.That(messages, Has.Some.Contains($"wall {BadStage} breaks into wall 99").And.Contains("(3 tiles)"));
+        Assert.That(messages, Has.Some.Contains("animation NOSUCH isn't an animdefs animation"));
+        Assert.That(messages, Has.Some.Contains("on the level's edge it never does").And.Contains("(1 tile)"));
     }
 }

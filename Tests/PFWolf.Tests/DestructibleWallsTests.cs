@@ -43,7 +43,7 @@ public class DestructibleWallsTests
                     DamageTypes = ["rocket"], Sound = "world/crumble", Secret = true, Objective = "Sabotage", Actions = ["A_RemoveWall"],
                 },
             },
-            [Glass] = new MapTextureTranslation { North = "GLASS", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet", "Melee"], Floor = 2 } },
+            [Glass] = new MapTextureTranslation { North = "GLASS", Destructible = new MapDestructibleTranslation { DamageTypes = ["Bullet", "Melee"], FloorFlat = 2 } },
             [Bunker] = new MapTextureTranslation { North = "BUNKER", Destructible = new MapDestructibleTranslation { DamageTypes = ["Blast"], PlayersOnly = true } },
             [Crumbly] = new MapTextureTranslation
             {

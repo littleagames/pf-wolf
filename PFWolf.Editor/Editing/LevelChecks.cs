@@ -29,7 +29,8 @@ public static class LevelChecks
 {
     /// <summary>Switch actions that act on whatever shares the switch's tag</summary>
     private static readonly string[] TaggedActions =
-        ["A_OpenDoor", "A_CloseDoor", "A_ToggleDoor", "A_MoveWall", "A_SetWall", "A_Activate", "A_Deactivate", "A_SmartSwitch"];
+        ["A_OpenDoor", "A_CloseDoor", "A_ToggleDoor", "A_MoveWall", "A_SetWall", "A_Activate", "A_Deactivate", "A_SmartSwitch",
+         "A_RemoveWall", "A_BreakWall", "A_DamageWall"];
 
     /// <param name="inGameInfo">Whether game-info lists the level</param>
     /// <param name="mapName">The level's name (MAP01), to tell whether the game ever goes there; null: it does</param>
@@ -49,6 +50,7 @@ public static class LevelChecks
         var brokenThings = new Dictionary<string, (int X, int Y, int Count)>();
         var unusedDoorValues = new Dictionary<int, (int X, int Y, int Count)>();
         var unnamedWalls = new Dictionary<int, (int X, int Y, int Count)>();
+        var destructibleProblems = new Dictionary<string, (int X, int Y, int Count)>();
         var toName = tiles.Content.ChunksToName;
         int doors = 0;
         (int X, int Y) firstPastDoorLimit = (-1, -1);
@@ -82,6 +84,9 @@ public static class LevelChecks
 
                 if (tiles.Patch(x, y) is var patch and not 0)
                     CheckPatch(tiles, problems, unknownPatches, x, y, patch, kind);
+
+                if (kind == TileKind.Wall && tiles.Wall(x, y)?.Destructible is { } destructible)
+                    CheckDestructible(tiles, problems, destructibleProblems, x, y, tile, destructible);
 
                 int height = tiles[MapConstants.HeightPlane, x, y];
                 if (height > 8)
@@ -130,6 +135,8 @@ public static class LevelChecks
         }
         foreach (var (value, (x, y, count)) in unknownPatches)
             problems.Add(new(CheckSeverity.Warning, $"patch {value} isn't in the mapdefs patches, so nothing's drawn ({count} {Tiles(count)})", x, y));
+        foreach (var (reason, (x, y, count)) in destructibleProblems)
+            problems.Add(new(CheckSeverity.Warning, $"{reason} ({count} {Tiles(count)})", x, y));
 
         CheckTags(tiles, problems);
         CheckLevelCodes(tiles, problems, mapName);
@@ -204,6 +211,23 @@ public static class LevelChecks
             problems.Add(new(CheckSeverity.Warning, $"patch {patch} isn't on a face that looks onto open floor, so it never shows", x, y));
     }
 
+    /// <summary>
+    /// A destructible wall (walls.yaml `destructible:`): its `to` has to be a wall, its animation
+    /// one animdefs has (playing once, else it breaks at once), and on the level's edge it never
+    /// breaks. Each reason is told once, with how many tiles it's on.
+    /// </summary>
+    private static void CheckDestructible(MapTiles tiles, List<LevelProblem> problems, Dictionary<string, (int, int, int)> found,
+        int x, int y, int tile, MapDestructibleTranslation destructible)
+    {
+        if (destructible.To != 0 && !tiles.Defs.Walls.ContainsKey(destructible.To))
+            Count(found, $"wall {tile} breaks into wall {destructible.To}, which isn't in the mapdefs walls, so it's gone instead", x, y);
+        if (destructible.Animation is { Length: > 0 } animation
+            && tiles.Content.Assets.FindAnimation<TextureAsset>(animation) is not { Loops: false })
+            Count(found, $"wall {tile}'s animation {animation} isn't an animdefs animation that plays once, so it breaks at once", x, y);
+        if (x == 0 || y == 0 || x == tiles.Width - 1 || y == tiles.Height - 1)
+            Count(found, $"wall {tile} breaks, but on the level's edge it never does", x, y);
+    }
+
     /// <summary>The switches on a tile: its wall's and its patch's</summary>
     private static IEnumerable<MapSwitchTranslation> Switches(MapTiles tiles, int x, int y)
     {
@@ -237,7 +261,13 @@ public static class LevelChecks
             {
                 var switches = tiles.SwitchesAt(x, y).ToList();
                 if (switches.Count == 0)
+                {
+                    // A floor trigger, and a destructible wall with actions, act on their tag as a switch does
+                    if (tiles[MapConstants.TagPlane, x, y] is var own and not 0
+                        && (tiles.Trigger(x, y) != null || tiles.Wall(x, y)?.Destructible is { Actions.Count: > 0 }))
+                        switchTags.Add(own);
                     continue;
+                }
 
                 int tag = tiles[MapConstants.TagPlane, x, y];
                 bool needsTag = switches.Any(sw => sw.Actions.Any(action => TaggedActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase))));
@@ -386,12 +416,13 @@ public static class LevelChecks
         }
     }
 
-    /// <summary>Switch actions that move a tagged wall out of the way or change it</summary>
-    private static readonly string[] WallMovingActions = ["A_MoveWall", "A_SetWall"];
+    /// <summary>Switch actions that move a tagged wall out of the way, change it or take it away</summary>
+    private static readonly string[] WallMovingActions = ["A_MoveWall", "A_SetWall", "A_RemoveWall", "A_BreakWall", "A_DamageWall"];
 
     /// <summary>
     /// The open floor the player can't get to from the start: through floor and doors, and
-    /// through pushwalls, walls a switch moves or changes, and diagonal walls, which open or are half open
+    /// through pushwalls, walls a switch moves, changes or takes away, walls that break to a hit
+    /// (a destructible block with damage types), and diagonal walls, which open or are half open
     /// </summary>
     private static void CheckReach(MapTiles tiles, List<LevelProblem> problems, (int X, int Y) start)
     {
@@ -400,8 +431,10 @@ public static class LevelChecks
         {
             for (int x = 0; x < tiles.Width; x++)
             {
+                // a switch's actions, or a floor trigger's (A_RemoveWall on a walk trigger)
+                var actions = tiles.SwitchesAt(x, y).SelectMany(sw => sw.Actions).Append(tiles.Trigger(x, y)?.Action ?? "");
                 if (tiles[MapConstants.TagPlane, x, y] is var tag and not 0
-                    && tiles.SwitchesAt(x, y).Any(sw => sw.Actions.Any(action => WallMovingActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase)))))
+                    && actions.Any(action => WallMovingActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase))))
                     movedTags.Add(tag);
             }
         }
@@ -410,6 +443,7 @@ public static class LevelChecks
         {
             TileKind.Floor or TileKind.Door => true,
             TileKind.Wall => tiles.Trigger(x, y) != null || tiles.Diagonal(x, y) != null
+                             || tiles.Wall(x, y)?.Destructible is { DamageTypes.Count: > 0 }
                              || (!tiles.IsSwitch(x, y) && movedTags.Contains(tiles[MapConstants.TagPlane, x, y])),
             _ => false,
         };

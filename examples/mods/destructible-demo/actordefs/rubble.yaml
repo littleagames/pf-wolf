@@ -1,0 +1,8 @@
+# The heap of stones a crumbled wall leaves on the floor where it stood (a destructible block's
+# spawn). Not solid, so the way through stays open. Its sprite is the mod's sprites/DWRBA0.png.
+DemoRubble:
+  states:
+    Spawn:
+      - sprite: DWRB
+        frames: [A]
+        tics-per-frame: -1

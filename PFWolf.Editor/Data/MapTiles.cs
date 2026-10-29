@@ -434,13 +434,21 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
     public MapDiagonalTranslation? Diagonal(int x, int y)
         => KindAt(x, y) == TileKind.Wall ? Defs.Diagonals.GetValueOrDefault(this[1, x, y]) : null;
 
+    // What breaks a destructible wall, for the status bar: ", breaks (Bullet, Melee; 40 health)"
+    private static string DestructibleText(MapDestructibleTranslation? destructible) => destructible switch
+    {
+        null => "",
+        { DamageTypes.Count: 0 } => ", breaks (to an action)",
+        _ => $", breaks ({string.Join(", ", destructible.DamageTypes)}{(destructible.Health > 0 ? $"; {destructible.Health} health" : "")})",
+    };
+
     /// <summary>A line per plane saying what's on the tile, for the status bar</summary>
     public IEnumerable<string> Describe(int x, int y)
     {
         int tile = this[0, x, y];
         yield return KindAt(x, y) switch
         {
-            TileKind.Wall => $"Wall {tile}: {Faces(Defs.Walls[tile])}{(Defs.Walls[tile].Switch != null ? ", switch" : "")}",
+            TileKind.Wall => $"Wall {tile}: {Faces(Defs.Walls[tile])}{(Defs.Walls[tile].Switch != null ? ", switch" : "")}{DestructibleText(Defs.Walls[tile].Destructible)}",
             TileKind.Door => $"Door {tile}: {DoorText(Defs.Doors[tile])}",
             TileKind.Floor => $"Floor {tile}: {FloorCode(tile)}",
             _ => $"Plane 0: {tile} (not in the mapdefs)",

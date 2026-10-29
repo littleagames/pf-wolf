@@ -375,10 +375,10 @@ internal sealed class DestructibleWalls(MapManager map, Doors doors, GameSession
         Remove(x, y, wall?.Leaves.Trim().Equals("arch", StringComparison.OrdinalIgnoreCase) == true);
         if (wall == null)
             return;
-        if (wall.Floor != null || wall.Ceiling != null)
+        if (wall.FloorFlat != null || wall.CeilingFlat != null)
         {
             int flats = map.MapSpot(x, y, MapManager.FlatPlane);
-            int floor = wall.Floor ?? flats & 0xff, ceiling = wall.Ceiling ?? flats >> 8;
+            int floor = wall.FloorFlat ?? flats & 0xff, ceiling = wall.CeilingFlat ?? flats >> 8;
             map.SetFlats(x, y, (ushort)((floor & 0xff) | (ceiling & 0xff) << 8));
         }
         foreach (var className in wall.Spawn.Where(c => !string.IsNullOrWhiteSpace(c)))

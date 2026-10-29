@@ -694,11 +694,11 @@ public record MapDestructibleTranslation
     /// </summary>
     public string Leaves { get; init; } = "floor";
 
-    /// <summary>The floor flat index (mapdefs flats, plane 2's low byte) its tile gets once it's gone; left out, what plane 2 has</summary>
-    public int? Floor { get; init; }
+    /// <summary>"floor-flat": the floor flat index (mapdefs flats, plane 2's low byte) its tile gets once it's gone; left out, what plane 2 has</summary>
+    public int? FloorFlat { get; init; }
 
-    /// <summary>The ceiling flat index (plane 2's high byte) its tile gets once it's gone; left out, what plane 2 has</summary>
-    public int? Ceiling { get; init; }
+    /// <summary>"ceiling-flat": the ceiling flat index (plane 2's high byte) its tile gets once it's gone; left out, what plane 2 has</summary>
+    public int? CeilingFlat { get; init; }
 
     /// <summary>
     /// The action calls run as it breaks, as a switch's are (every switch action is in the

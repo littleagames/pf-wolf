@@ -309,9 +309,10 @@ public sealed class FieldSchema
             return FieldHint.Map;
         if (name.EndsWith("sound"))
             return FieldHint.Sound;
-        if (name is "north" or "south" or "east" or "west" or "texture" or "sky" or "defaultfloor" or "defaultceiling" or "floor" or "ceiling")
+        if (name is "north" or "south" or "east" or "west" or "texture" or "sky" or "defaultfloor" or "defaultceiling" or "floor" or "ceiling"
+            or "animation")
             return FieldHint.Texture;
-        if (name is "class" or "else" or "drop" or "lock" or "parent")
+        if (name is "class" or "else" or "drop" or "lock" or "parent" or "spawn")
             return FieldHint.Class;
         if (name.Contains("pic") || name is "menubackdrop" or "frame")
             return FieldHint.Picture;

@@ -364,6 +364,7 @@ public static class SoundCatalog
             Add(wall.Switch?.Sound, $"Switch wall {id}");
             Add(wall.Switch?.LockedSound, $"Switch wall {id} while locked");
             Add(wall.Outlet?.Sound, $"Outlet wall {id}");
+            Add(wall.Destructible?.Sound, $"Wall {id} breaking");
         }
 
         // game-info's music

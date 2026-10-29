@@ -2,7 +2,7 @@
 
 Walls that can be broken or taken away during play: shot down by the right weapon, blown out by
 a blast, or made to crumble or vanish by a switch, a floor trigger, an actor's state or a script.
-Planned 2026-10-28 on branch feature/destructible-walls; phases 1-3 are done (see Status at the end).
+Planned 2026-10-28 on branch feature/destructible-walls; all four phases are done (see Status at the end).
 
 ## What there is to build on
 
@@ -75,8 +75,8 @@ walls:
       sound: world/wallbreak
       spawn: [WallDebris, WallDebris, Explosion]
       leaves: floor            # or arch
-      floor: 2                 # flat indices left (plane 2), optional
-      ceiling: 0
+      floor-flat: 2            # flat indices left (plane 2), optional
+      ceiling-flat: 0
       actions:                 # run with the wall's tag as it breaks, like a switch's
         - A_OpenDoor
       secret: true             # counts toward secrets (total on load, found when it breaks)
@@ -214,7 +214,9 @@ hole, diagonals, door jambs, in-wall shooters, a removed secret pushwall
 **Phase 2 done (2026-10-28, committed 5f7b8b87).**
 - **The block:** `MapDestructibleTranslation` (Common), as `destructible:` on a walls.yaml wall,
   documented in pfwolf-pk3's mapdefs/wolf3d/walls.yaml header and the docs' mapdefs reference.
-  Its fields: damage-types, health, to, sound, spawn, leaves, floor, ceiling, actions, secret,
+  Its fields: damage-types, health, to, sound, spawn, leaves, floor-flat, ceiling-flat (named
+  floor/ceiling until phase 4, when the editor's name hints would have made them texture
+  pickers), actions, secret,
   objective, players-only.
 - **DestructibleWalls:**
   - `Hurts` checks the damage type case-insensitively, players-only, and that the wall can go.
@@ -260,7 +262,7 @@ Not checked in play: players-only, `to` stages, spawn, actions, floor/ceiling fl
 count, objectives, pellets (A_FirePellets), FireBullet, a save mid-damage and loaded back,
 diagonals.
 
-**Phase 3 done (2026-10-28, uncommitted).**
+**Phase 3 done (2026-10-28, committed 6d061e4a).**
 - **Crumbling.** The block's `animation` names an animdefs animation that plays once. While it
   plays, the wall stays solid and every face (and a diagonal's) shows it through
   A_ChangeTexture's per-tile swaps, starting from that tic.
@@ -293,3 +295,48 @@ diagonals.
 
 Not checked in play: A_BreakWall / A_DamageWall from a real switch, the onwallbreak hook in a
 level, a `to` stage after an animation.
+
+**Phase 4 done (2026-10-28, uncommitted).**
+- **examples/mods/destructible-demo**, built by examples/tools/make-destructible-demo.ps1, with
+  original art and sounds drawn and synthesized there:
+  - Textures: DWSTON, DWCRKA/DWCRKB (cracked stages), DWCRMA-C (crumble frames), DWGLAS,
+    DWBORD, DWLEVR/DWLEVD (the lever).
+  - DWRBA0, the rubble sprite.
+  - Four WAVs, named in sounds/sound-seq.yaml.
+  - The level, MAP01.
+  - The hand-written YAML: mapdefs walls 70-78 and trigger 460, animdefs DWCRUMBLE, actordefs
+    DemoRubble.
+- **The demo's rooms:**
+  - Glass panes (Bullet).
+  - Boards (Melee, health 20, spawn FirstAidKit).
+  - A two-stage cracked wall (Bullet/Melee, 40 + 40, the secret on the first stage, then the
+    crumble and rubble).
+  - A lever (A_BreakWall, tag 1) that crumbles a 3-story stretch, leaving an arch.
+  - A walk trigger (A_RemoveWall, tag 2) that opens the way to the elevator.
+  - The stone was first warm sandstone, which mapped onto the palette as grey blotched with
+    orange, so it's grey now.
+- **Played windowed (posted keys, screenshots):**
+  - One bullet broke a pane.
+  - Pistol shots took the cracked wall through both stages and the crumble; the secret counted
+    1/1 and the rubble showed.
+  - The knife broke the boards.
+  - The lever was thrown and the arch stood with rubble under it.
+  - Walking onto the trigger opened the exit room.
+- **Editor:**
+  - LevelChecks: A_RemoveWall/A_BreakWall/A_DamageWall count as tag actions and as wall-moving
+    ones for reach, as do floor triggers' actions. A wall with damage types counts as passable.
+    A floor trigger, or a destructible wall with actions, counts as using its tag.
+  - New warnings: a `to` that isn't a wall, an animation that isn't a play-once animdefs one,
+    and a destructible wall on the level's edge.
+  - The status bar's tile line shows ", breaks (types; health)", and the palette labels walls
+    "(breaks)".
+  - The sound catalog has "Wall N breaking", and the art catalog has "Wall N crumbling".
+  - The Definitions window and the docs' reference pick up the block by reflection. FieldSchema
+    hints `animation` as a texture and `spawn` as a class. The flat fields became
+    `floor-flat`/`ceiling-flat` so they don't get a texture picker.
+- **Tests:** LevelChecksTests (reach behind breaking, lever and floor-trigger walls; trigger tags;
+  the destructible warnings). LevelChecksGameTests now loads destructible-demo too: no errors,
+  no warnings.
+
+Not done: a mark on destructible walls in the editor's 2D map and 3D view (as switches have);
+the editor wasn't opened by hand.

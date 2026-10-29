@@ -37,7 +37,8 @@ public static class PaletteEntries
         // Walls first, as they're what's most often put down; then doors, then the floor codes
         var entries = new List<PaletteEntry>();
         foreach (var (id, wall) in defs.Walls.Where(wall => wall.Key is > 0 and <= MapConstants.MaxWallId).OrderBy(wall => wall.Key))
-            entries.Add(new PaletteEntry((ushort)id, "Walls", $"{id}  {wall.North}{(wall.Switch != null ? "  (switch)" : "")}", Texture: wall.North));
+            entries.Add(new PaletteEntry((ushort)id, "Walls",
+                $"{id}  {wall.North}{(wall.Switch != null ? "  (switch)" : "")}{(wall.Destructible != null ? "  (breaks)" : "")}", Texture: wall.North));
 
         foreach (var (id, door) in defs.Doors.OrderBy(door => door.Key))
         {

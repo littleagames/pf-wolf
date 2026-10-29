@@ -1,0 +1,6 @@
+# The corridor's floor trigger (object plane 460): stepping on it takes away the walls with its
+# tile's tag (2) at once, opening the way to the exit. It goes off once.
+triggers:
+  460:
+    action: A_RemoveWall
+    activation: walk

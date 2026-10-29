@@ -1,0 +1,11 @@
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-destructible-demo.ps1), by the
+# names its walls play them by (mapdefs/walls.yaml).
+sound-info:
+  dwalls/glass:
+    digitized: DWGLASS
+  dwalls/wood:
+    digitized: DWWOOD
+  dwalls/crack:
+    digitized: DWCRACK
+  dwalls/crumble:
+    digitized: DWCRUMB

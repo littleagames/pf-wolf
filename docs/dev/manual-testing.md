@@ -409,6 +409,12 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       finishes (seen headless with `breakwall`).
 - [ ] **(never tried)** A switch running `A_BreakWall` / `A_DamageWall`; a script's
       `game.onwallbreak` keeping a wall standing; a `to` stage after an animation.
+- [ ] `destructible-demo` played through: glass, boards, cracked wall and secret, lever and arch,
+      floor trigger, then the elevator (each seen in pieces with posted keys; never in one go
+      by hand, nor heard).
+- [ ] **(never tried)** Editor: destructible-demo's MAP01 opened; the status bar's "breaks" text,
+      the palette's "(breaks)", Check Level clean; the Definitions window's walls showing the
+      destructible block with its pickers.
 
 **Multi-key doors** (`key-demo`)
 - [ ] **(never tried)** Open doors 80 (red+blue), 81 (all four), 82 (any two) in play; refusal

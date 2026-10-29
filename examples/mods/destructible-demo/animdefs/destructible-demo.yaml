@@ -1,0 +1,13 @@
+# The demo's animation (the fields are in the animdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/animdefs).
+
+# A wall crumbling: holes open up in the stone, wider and wider. It plays once (it ends in
+# stop), shown on every face of a wall whose destructible block names it, and the wall stays
+# solid until it's played; then it's gone.
+DWCRUMBLE:
+  tics: 12
+  frames:
+    - DWCRMA1
+    - DWCRMB1
+    - DWCRMC1
+    - stop

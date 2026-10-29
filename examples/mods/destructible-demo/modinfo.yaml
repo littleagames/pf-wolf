@@ -1,0 +1,4 @@
+name: Destructible Demo
+version: "1.0"
+description: A small level (replacing Floor 1) showing off walls that break - shot out, knifed open, cracked in stages, brought down by a lever or taken away by a floor trigger.
+game-packs: [wolf3d]

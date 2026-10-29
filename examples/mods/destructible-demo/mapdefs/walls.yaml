@@ -1,0 +1,86 @@
+# The demo's walls (every field is in the mapdefs reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs). The textures are the
+# mod's textures/ and its sounds sounds/ (made by examples/tools/make-destructible-demo.ps1).
+#
+# A `destructible:` block makes a wall one that breaks. Its damage-types say what hurts it: a
+# player's gun deals Bullet and the knife Melee (unless the weapon has a weapon.damagetype of its
+# own), a missile its actordefs damagetype, a blast Blast. With a health, hits add up until they
+# reach it; without one, the first hit of a listed type breaks the wall.
+walls:
+  # Glass: one bullet breaks it
+  70:
+    North: DWGLAS1
+    East: DWGLAS2
+    destructible:
+      damage-types: [Bullet]
+      sound: dwalls/glass
+
+  # Boards: the knife takes them down after a few blows, and the first aid kit behind them falls
+  # out onto the floor where they were (spawn)
+  71:
+    North: DWBORD1
+    East: DWBORD2
+    destructible:
+      damage-types: [Melee]
+      health: 20
+      sound: dwalls/wood
+      spawn: [FirstAidKit]
+
+  # A cracked wall that breaks in two stages. 72 takes 40 damage from bullets or the knife and
+  # cracks further (to: 73); it's a secret, found as it first cracks. 73 takes 40 more and then
+  # crumbles (its animation, animdefs/destructible-demo.yaml) into rubble.
+  72:
+    North: DWCRKA1
+    East: DWCRKA2
+    destructible:
+      damage-types: [Bullet, Melee]
+      health: 40
+      to: 73
+      sound: dwalls/crack
+      secret: true
+  73:
+    North: DWCRKB1
+    East: DWCRKB2
+    destructible:
+      damage-types: [Bullet, Melee]
+      health: 40
+      sound: dwalls/crumble
+      animation: DWCRUMBLE
+      spawn: [DemoRubble]
+
+  # Three stories of stone that only the lever (75) brings down: no damage types, so nothing
+  # in play hurts it, but A_BreakWall breaks it as this block says. It crumbles, and leaves an
+  # arch: the bottom story goes, the two above it stay up.
+  74:
+    North: DWSTON1
+    East: DWSTON2
+    destructible:
+      sound: dwalls/crumble
+      animation: DWCRUMBLE
+      leaves: arch
+      spawn: [DemoRubble]
+
+  # The lever: thrown once, it breaks the walls with its tag (1)
+  75:
+    North: DWLEVR1
+    East: DWLEVR2
+    switch:
+      to: 76
+      sides: [north]
+      sound: switches/elevbutn
+      actions:
+        - A_BreakWall
+  76:
+    North: DWLEVD1
+    East: DWLEVD2
+
+  # Plain stone the floor trigger (mapdefs/triggers.yaml) takes away at once, with no block
+  # of its own: A_RemoveWall takes any wall
+  77:
+    North: DWSTON1
+    East: DWSTON2
+
+  # Plain stone
+  78:
+    North: DWSTON1
+    East: DWSTON2

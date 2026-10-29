@@ -265,6 +265,8 @@ public static class ArtCatalog
             var label = wall.Switch != null ? $"Switch wall {id}" : $"Wall {id}";
             foreach (var side in Sides(wall))
                 Add(side.Texture, new ArtUse($"{label}, {side.Name}", target));
+            if (wall.Destructible?.Animation is { Length: > 0 } crumble)
+                Add(crumble, new ArtUse($"Wall {id} crumbling", target));
         }
 
         foreach (var (id, door) in defs.Doors.OrderBy(door => door.Key))
