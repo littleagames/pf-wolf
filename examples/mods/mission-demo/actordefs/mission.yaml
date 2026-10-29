@@ -10,9 +10,8 @@ TargetOfficer:
   properties:
     objective: officers
 
-# (CustomInventory, not Inventory: an Inventory class of its own isn't built as an item)
 SecretDocuments:
-  parent: CustomInventory
+  parent: Inventory
   properties:
     inventory.pickupmessage: "Got the documents!"
     inventory.pickupsound: misc/k_pkup
