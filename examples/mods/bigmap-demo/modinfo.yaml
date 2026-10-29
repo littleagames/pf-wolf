@@ -1,0 +1,4 @@
+name: Big Map Demo
+version: "1.0"
+description: A town 128 tiles by 96 (replacing Floor 1), twice Wolf3D's width, written as a UWMF text map you can open and edit by hand.
+game-packs: [wolf3d]

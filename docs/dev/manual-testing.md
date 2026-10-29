@@ -616,6 +616,10 @@ can reach), not played by hand.
       (running off its bottom: docs/dev/todo.md), the briefing article before MAP61; each map
       loads. **(never tried)**: playing the episode through from the menu, the rain on the docks,
       the gold key and door, the victory run on MAP63, the tally and the ending text (two pages).
+- [ ] Big Map Demo (`--file bigmap-demo`): headless, the 128x96 UWMF level loads, the streets run
+      to the horizon, a house's floor and roof match the pack's flats. **(never tried)**: walking
+      through a house door; the far corner's elevator; the automap of a map this size; speed
+      looking down the long streets; saving and loading on it; opening it in the editor.
 
 ## 1.15 Multiplayer
 

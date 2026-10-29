@@ -1,0 +1,6 @@
+# Merged into the game pack's game-info.yaml: the town's sky, over the streets (the houses have a
+# roof: their sector's ceiling), and its cobbled grey underfoot where there's no flat
+maps:
+  MAP01:
+    sky: BMSKY
+    floor-color: "#585858"

@@ -1704,6 +1704,52 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-episode-demo.ps1
 With cheats on, `map MAP62` goes straight to a level. Wolf3D's episode menu has room for six, so
 the seventh runs off its bottom (mods can't change the menu's layout).
 
+## Big Map Demo (`mods/bigmap-demo`)
+
+A town **128 tiles by 96**, twice Wolf3D's width, replacing Floor 1 (Wolfenstein 3D only), written
+as a **UWMF** level: ECWolf's text map format, which you can open in a text editor. It's a level
+file, a sky and a little YAML.
+
+```
+PFWolf.exe --file bigmap-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- You start in the town's south-west corner. Streets run between blocks of houses (brick and
+  wood), each a room with a door onto the street, some with a guard, most with something to take.
+  Guards and SS walk the streets.
+- At the middle, a plaza with a well. The way out is the house in the far north-east corner.
+
+### What's in it
+
+- `maps/MAP01.uwmf`: the level, in UWMF text (a loose `maps/NAME.uwmf`, or a TEXTMAP in
+  `maps/NAME.wad`). In the `PFWolf` namespace, things go by their actordefs class names
+  (`type = "Guard"`) and a tile or sector by its textures, matched to the game's mapdefs (a tile's
+  `id` names a mapdefs wall). In order:
+  - the header: `namespace`, `name`, `width` and `height` (up to 256 each, not necessarily square);
+  - `tile` blocks: a wall's textures (`texturenorth`...), a door's `offsethorizontal` or
+    `offsetvertical`, its `id`;
+  - `sector` blocks: a floor and ceiling (`texturefloor`, `textureceiling`; none: the floor color
+    and the sky);
+  - `zone` blocks: the areas (rooms for sound and sight);
+  - `planemap`: `{tile, sector, zone}` for every tile, row by row (-1: none);
+  - `thing` blocks: a class at `x`, `y` (a tile's middle is n.5) with its `angle` and skills;
+  - `trigger` blocks: what works on a tile: a door opening (`Door_Open`), the exit
+    (`Exit_Normal`), from which sides.
+- `game-info.yaml`: the sky over the streets, and their floor color.
+- `graphics/BMSKY.png`: the sky.
+
+The level is written by `tools/make-bigmap-demo.ps1` (the houses on a grid, things placed by a
+seeded random walk). Edit it and run it again, or edit `MAP01.uwmf` itself:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-bigmap-demo.ps1
+```
+
+The editor opens and saves UWMF levels too (its default), and resizes a level from Level
+properties (F4) or Ctrl+R. In the game, `exportmap MAP01 <folder> uwmf` writes any level as UWMF.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
