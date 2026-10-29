@@ -1,0 +1,8 @@
+# Merged into the game pack's game-info.yaml: the sky over the yard (the corridor, hall, cell and
+# exit room have ceiling flats, so they're roofed) and grass underfoot where there's no flat.
+# A floor color snaps to the nearest one the palette has: Wolf3D's has few muted greens (a dull
+# olive comes out grey), so this is one of its own.
+maps:
+  MAP01:
+    sky: WSSKY
+    floor-color: "#047100"

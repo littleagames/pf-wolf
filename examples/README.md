@@ -1281,6 +1281,55 @@ In game, `where` shows the flats and height of the tile you're on and the one yo
 cheats on, `diag` shows or sets a tile's diagonal shape and `flat <floor> <ceiling>` changes the
 flats under you.
 
+## Wall Sprites Demo (`mods/wallsprites-demo`)
+
+A stable yard that replaces Floor 1 (Wolfenstein 3D only), full of **wall sprites**: flat panels
+standing in their tiles, drawn across the tile the way they face rather than turning to face
+you, and each letting through what its flags say. It's YAML, and the pictures and level a script
+makes.
+
+```
+PFWolf.exe --file wallsprites-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The stable corridor,** where you start: cobwebs across it. Walk straight through them; they
+  stop nothing.
+- **The hall:** banners hanging across it, the same from either side. You walk through those too,
+  but they hide what's behind them.
+- **The yard,** open to the sky. A chain-link fence and a gate cross it, with guards behind: you
+  can't get past, but you see them through the mesh, and you and they shoot through it (not
+  through the gate). A hedged bed, low enough to see over, and a stretch of fence standing
+  corner to corner across the north-east corner.
+- **The barred window** in the yard's east wall, onto a locked cell with a chest you can see and
+  never reach.
+
+### What's in it
+
+- `actordefs/wallsprites-demo.yaml`: the panels. `flags: [WALLSPRITE]` makes an actor a panel;
+  `WALLSPRITE.SHOOTTHROUGH` lets sight and bullets through, `WALLSPRITE.PROJECTILETHROUGH`
+  projectiles, `WALLSPRITE.PASSABLE` everyone (it's only to look at), and `WALLSPRITE.TWOSIDED`
+  shows its back the same way round as its front (otherwise it's mirrored). `wallsprite.offset`
+  (texels; 32 is the tile edge) moves it toward its front: the bars stand on the edge of their
+  tile, in the wall's gap. Enemies keep out of a panel's whole tile.
+- `mapdefs/things.yaml`: objects 831-839. A panel's `angles` is the way its front faces: 0 or 180
+  stands it north-south, 90 or 270 east-west, 45, 135, 225 or 315 corner to corner. The gate is
+  pfwolf-pk3's own `WoodGate`.
+- `sprites/`: the pictures, 64x64 on clear backgrounds (clear pixels are see-through).
+- `game-info.yaml`: the sky and grass. The corridor, hall, cell and exit room have ceiling flats
+  (pfwolf-pk3's index 3, wood), so the sky shows only over the yard.
+
+Everything but the YAML is made by `tools/make-wallsprites-demo.ps1` (the layout is an ASCII
+drawing in it). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-wallsprites-demo.ps1
+```
+
+With cheats on, `summon <class> [angle] [x y]` stands a panel in the tile you face (`summon
+Banner 90`), and `actors` lists each panel with the span it covers.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

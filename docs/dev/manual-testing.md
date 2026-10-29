@@ -570,6 +570,12 @@ can reach), not played by hand.
       pointing east from both sides, and the 45 degree corridor. **(never tried)**: walking the
       corridor and sliding along its walls, shooting and being shot along it, the automap of
       the diagonals, and a wide screen.
+- [ ] Wall Sprites Demo (`--file wallsprites-demo`): headless shots showed the cobwebs, banners,
+      fence and gate with guards behind, the bars over the cell and the diagonal fence. **(never
+      tried)**: walking through the cobwebs and banners; being stopped by the fence, gate, hedge
+      and bars and sliding along them; shooting the guards through the mesh and over the hedge
+      (and their shooting back), and the gate stopping both; the banners' backs reading the same
+      way round; the panels on the automap.
 
 ## 1.15 Multiplayer
 

@@ -1,0 +1,58 @@
+# The Wall Sprites Demo's panels: `flags: [WALLSPRITE]` draws an actor as a flat panel standing
+# in its tile, across it the way the map thing faces (mapdefs/things.yaml `angles`), seen edge on
+# from the side, instead of a sprite turned to face you. Its back shows the picture mirrored.
+# The flags say what gets through it (all are inherited by a class built on it):
+#   WALLSPRITE.SHOOTTHROUGH       sight and bullets (both ways: the guards shoot through too)
+#   WALLSPRITE.PROJECTILETHROUGH  projectiles (rockets, fireballs)
+#   WALLSPRITE.PASSABLE           everyone: it's only something to see
+#   WALLSPRITE.TWOSIDED           its back reads the same way round as its front, not mirrored
+# `wallsprite.offset` moves it toward its front, in texels (32: on the tile's edge). Enemies keep
+# out of a panel's whole tile.
+
+# Chain-link: blocks the way, not sight or bullets
+ChainFence:
+  flags: [WALLSPRITE, WALLSPRITE.SHOOTTHROUGH]
+  states:
+    Spawn:
+      - sprite: WSCH
+        frames: [A]
+        tics-per-frame: -1
+
+# A low hedge: in the way, but you see and shoot over it
+Hedge:
+  flags: [WALLSPRITE, WALLSPRITE.SHOOTTHROUGH, WALLSPRITE.PROJECTILETHROUGH]
+  states:
+    Spawn:
+      - sprite: WSHD
+        frames: [A]
+        tics-per-frame: -1
+
+# Bars in a window: on the edge of their tile, facing out of the wall gap
+IronBars:
+  flags: [WALLSPRITE, WALLSPRITE.SHOOTTHROUGH]
+  properties:
+    wallsprite.offset: 32
+  states:
+    Spawn:
+      - sprite: WSBR
+        frames: [A]
+        tics-per-frame: -1
+
+# A banner hanging across the hall: walk through it, but it hides what's behind; the same from
+# both sides (it has no writing, but a sign would want that)
+Banner:
+  flags: [WALLSPRITE, WALLSPRITE.PASSABLE, WALLSPRITE.TWOSIDED]
+  states:
+    Spawn:
+      - sprite: WSBN
+        frames: [A]
+        tics-per-frame: -1
+
+# A cobweb: nothing at all stops at it
+Cobweb:
+  flags: [WALLSPRITE, WALLSPRITE.PASSABLE, WALLSPRITE.SHOOTTHROUGH, WALLSPRITE.PROJECTILETHROUGH]
+  states:
+    Spawn:
+      - sprite: WSWB
+        frames: [A]
+        tics-per-frame: -1

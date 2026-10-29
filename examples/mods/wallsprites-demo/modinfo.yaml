@@ -1,0 +1,4 @@
+name: Wall Sprites Demo
+version: "1.0"
+description: A stable yard (replacing Floor 1) of flat panels standing in their tiles - a chain-link fence, hedges, iron bars, banners and cobwebs - each letting different things through.
+game-packs: [wolf3d]

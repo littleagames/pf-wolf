@@ -1,0 +1,12 @@
+# The Wall Sprites Demo's panels on the object plane (830-839 are this mod's). A panel's `angles`
+# is the way its front faces: 0 or 180 stands it north-south (facing east or west), 90 or 270
+# east-west (facing north or south), and 45, 135, 225 or 315 corner to corner. So a class needs
+# a thing for each way it stands.
+things:
+  831: { class: ChainFence, angles: 90 }      # east-west
+  832: { class: ChainFence, angles: 135 }     # corner to corner, the yard's north-east corner
+  833: { class: Hedge, angles: 90 }
+  834: { class: IronBars, angles: 180 }       # on the west edge of its tile, facing the yard
+  835: { class: Banner, angles: 0 }           # north-south, across the east-west hall
+  836: { class: Cobweb, angles: 90 }          # east-west, across the north-south corridor
+  839: { class: WoodGate, angles: 90 }        # pfwolf-pk3's gate (not one that opens)
