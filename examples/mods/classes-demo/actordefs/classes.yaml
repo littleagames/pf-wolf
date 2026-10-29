@@ -1,0 +1,103 @@
+# The Classes Demo's player classes. A class is an actordefs class built on Player (pfwolf-pk3
+# actordefs/wolf3d/player.yaml) that changes its `player.*` properties; game-info.yaml's
+# player-classes offers them on the new game menu (between the episode and the skill). Every
+# property is in the docs' Actor properties reference; the rules are in the manual's
+# Player classes: https://www.littleagames.com/pf-wolf/docs/latest/manual/player-classes
+#
+# Factors multiply the usual: damagedealt (your shots), damagetaken (hits on you, after the
+# skill's share and before armor), forwardmove and sidemove (speed).
+
+# Quick on his feet and a poor target, but frail, and he carries nothing heavier than a machine
+# gun: player.weapons is the only weapons he picks up (and the ammo they use)
+Scout:
+  parent: Player
+  properties:
+    tag: "Scout"
+    player.starthealth: 75
+    player.maxhealth: 75
+    player.forwardmove: 1.4
+    player.sidemove: 1.4
+    player.damagetaken: 1.25
+    player.eyeheight: 30
+    player.weapons: [Knife, Pistol, MachineGun]
+    player.maxamount:
+      Clip: 150
+    player.startitem:
+      Knife: 1
+      Pistol: 1
+      Clip: 30
+    player.face: [OFFICERFACE8, OFFICERFACE1, OFFICERFACE2]
+    player.facegrin: OFFICERGRIN
+    player.faceouch: OFFICEROUCH
+    player.facedead: OFFICERDEAD
+
+# Slow and steady: more health, a machine gun to start with, and armor that takes half of every
+# hit (CombatArmor, a BasicArmor). He stands a little taller.
+Heavy:
+  parent: Player
+  properties:
+    tag: "Heavy"
+    player.starthealth: 150
+    player.maxhealth: 150
+    player.forwardmove: 0.75
+    player.sidemove: 0.75
+    player.damagetaken: 0.9
+    player.eyeheight: 36
+    player.maxarmor: 150
+    player.startitem:
+      Knife: 1
+      Pistol: 1
+      MachineGun: 1
+      Clip: 40
+      CombatArmor: 1
+    player.face: [SSFACE8, SSFACE1, SSFACE2]
+    player.facegrin: SSGRIN
+    player.faceouch: SSOUCH
+    player.facedead: SSDEAD
+
+# The only one who can use a field medkit (MedicKit's inventory.restrictedto), and his shots
+# hurt a little less
+Medic:
+  parent: Player
+  properties:
+    tag: "Medic"
+    player.damagedealt: 0.8
+    player.face: [GUARDFACE8, GUARDFACE1, GUARDFACE2]
+    player.facegrin: GUARDGRIN
+    player.faceouch: GUARDOUCH
+    player.facedead: GUARDDEAD
+
+# Armor (a BasicArmor): saveamount points that take savepercent of each hit, until they're gone.
+# Wolf3D's status bar has no armor number; a statusbar.yaml `armor` part would show one.
+CombatArmor:
+  parent: BasicArmor
+  properties:
+    armor.saveamount: 100
+    armor.savepercent: 50
+
+# The vest on the armory floor: armor for whoever has less
+ArmorVest:
+  parent: BasicArmor
+  properties:
+    armor.saveamount: 100
+    armor.savepercent: 50
+    inventory.pickupmessage: "Picked up an armor vest."
+  states:
+    Spawn:
+      - sprite: CLVS
+        frames: [A]
+        tics-per-frame: -1
+
+# A field medkit: back to full health, but only a medic knows how to use one (anyone else leaves
+# it on the floor)
+MedicKit:
+  parent: FirstAidKit
+  properties:
+    inventory.amount: 100
+    inventory.restrictedto: Medic
+    inventory.pickupmessage: "Field medkit: patched up."
+  states:
+    Spawn:
+      - sprite: CLMK
+        frames: [A]
+        tics-per-frame: -1

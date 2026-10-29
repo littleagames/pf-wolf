@@ -1,0 +1,15 @@
+# Merged into the game pack's game-info.yaml: the classes a new game offers, by actordefs class,
+# each with its name on the menu. With more than one, the new game menu asks which after the
+# episode (the first is the one picked when it's left alone). Messages over the view on, for the
+# pickups' word.
+player-classes:
+  Player:
+    name: "B.J. Blazkowicz"
+  Scout:
+    name: "Scout"
+  Heavy:
+    name: "Heavy"
+  Medic:
+    name: "Medic"
+setting-defaults:
+  messages: true

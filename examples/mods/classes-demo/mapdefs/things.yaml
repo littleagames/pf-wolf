@@ -1,0 +1,6 @@
+# The Classes Demo's pickups on the object plane (870-879 are this mod's)
+things:
+  870:
+    class: MedicKit
+  871:
+    class: ArmorVest

@@ -582,6 +582,11 @@ can reach), not played by hand.
       ammo for a token. **(never tried)**: the second pad pair and both pairs back the other way;
       climbing back down; the fizzle as you warp in; walking the level end to end; saving and
       loading with tokens; the sounds by ear.
+- [ ] Classes Demo (`--file classes-demo`): seen with `playerclass`: each class's start health,
+      the Heavy's face, machine gun and ammo; the Scout passing up the gatling gun; only the Medic
+      using a field medkit. **(never tried)**: the class menu after the episode; the speeds and
+      eye heights by feel; the Heavy's armor taking half (`hurt` shows it) and the vest; the
+      faces' grin, wince and death; damagedealt in a fight.
 
 ## 1.15 Multiplayer
 

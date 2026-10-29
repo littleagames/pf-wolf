@@ -1,0 +1,4 @@
+name: Classes Demo
+version: "1.0"
+description: Three player classes to pick on the new game menu - a fast, frail Scout, an armored Heavy and a Medic - each with its own face, and a proving ground (replacing Floor 1) to try them in.
+game-packs: [wolf3d]

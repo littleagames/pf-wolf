@@ -1382,6 +1382,56 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-teleport-demo.ps1
 With cheats on, `tag` shows the tag of the tile you face, and `lua game.trigger(0,
 'A_GiveInventory', 'VendToken')` hands you a token.
 
+## Classes Demo (`mods/classes-demo`)
+
+Three **player classes** to choose between when you start a new game (Wolfenstein 3D only), each
+with its own health, speed, weapons, armor and face on the status bar, and a proving ground to try
+them in, replacing Floor 1. It's YAML, two pictures and a level.
+
+```
+PFWolf.exe --file classes-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time. Start a
+new game: after the episode, the menu asks which class (B.J. as ever, or one of the three).
+
+- **Scout:** 75 health, quicker on his feet (1.4 times), takes a quarter more from every hit, and
+  carries nothing heavier than a machine gun (he walks past the gatling gun). Up to 150 rounds.
+  An officer's face.
+- **Heavy:** 150 health, slower (0.75), starts with a machine gun and armor that takes half of
+  every hit, and stands a little taller. An SS's face.
+- **Medic:** the only one who can use the field medkits in the infirmary (B.J. and the others
+  leave them on the floor); his shots hurt a little less. A guard's face.
+- **The proving ground:** the infirmary west of the hall, the armory east (an armor vest, a
+  machine gun, the gatling gun), and north a room of guards, SS and dogs before the exit.
+
+### What's in it
+
+- `actordefs/classes.yaml`:
+  - `Scout`, `Heavy` and `Medic`, each `parent: Player` with its own `player.*` properties:
+    `starthealth`, `maxhealth`, `forwardmove`, `sidemove`, `damagetaken`, `damagedealt`
+    (factors of the usual), `eyeheight`, `maxarmor`, `maxamount` (item caps), `startitem` (what
+    a new game starts with), `weapons` (the only weapons it picks up) and `face`, `facegrin`,
+    `faceouch`, `facedead` (its status bar face).
+  - `CombatArmor` and `ArmorVest`: armor, `parent: BasicArmor`, with `armor.saveamount` points
+    taking `armor.savepercent` of each hit. Wolf3D's status bar has no armor number (a
+    statusbar.yaml `armor` part shows one).
+  - `MedicKit`: a first aid kit to full, with `inventory.restrictedto: Medic`
+    (`inventory.forbiddento` is the other way round).
+- `game-info.yaml`: `player-classes`, the classes a new game offers, each with its menu name.
+- `graphicdefs/faces.yaml`: the faces, 24x32 crops of Wolf3D's own enemy sprites.
+- `mapdefs/things.yaml`: objects 870 (the medkit) and 871 (the vest); `sprites/`: their pictures.
+- `maps/MAP01.wad`: the proving ground.
+
+The pictures and the level are made by `tools/make-classes-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-classes-demo.ps1
+```
+
+In the console, `playerclass <name>` sets the class new games start as (`playerclass Scout`, then
+`map MAP01`), and with cheats on `hurt` shows your health and armor.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

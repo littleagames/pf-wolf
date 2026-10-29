@@ -1,0 +1,29 @@
+# The classes' status bar faces (actordefs/classes.yaml player.face and the rest): each a 24x32
+# bust, the size of B.J.'s face, cut from one of Wolf3D's own enemy sprites (a graphicdefs crop:
+# source, x, y, width, height, and the grey B.J.'s faces have behind them). The face looks round
+# through three sides of the standing frame (8, 1 and 2); the attack frame is its grin, the pain
+# frame its wince, the first death frame its face once dead.
+
+# The scout: an officer's face
+OFFICERFACE8: { source: OFFIA8, x: 20, y: 10, width: 24, height: 32, background: "#484848" }
+OFFICERFACE1: { source: OFFIA1, x: 20, y: 10, width: 24, height: 32, background: "#484848" }
+OFFICERFACE2: { source: OFFIA2, x: 20, y: 10, width: 24, height: 32, background: "#484848" }
+OFFICERGRIN:  { source: OFFIG0, x: 17, y: 13, width: 24, height: 32, background: "#484848" }
+OFFICEROUCH:  { source: OFFII0, x: 22, y: 13, width: 24, height: 32, background: "#484848" }
+OFFICERDEAD:  { source: OFFIK0, x: 16, y: 11, width: 24, height: 32, background: "#484848" }
+
+# The heavy: an SS
+SSFACE8: { source: SSWVW8, x: 20, y: 6, width: 24, height: 32, background: "#484848" }
+SSFACE1: { source: SSWVW1, x: 20, y: 6, width: 24, height: 32, background: "#484848" }
+SSFACE2: { source: SSWVW2, x: 20, y: 6, width: 24, height: 32, background: "#484848" }
+SSGRIN:  { source: SSWVF0, x: 18, y: 7, width: 24, height: 32, background: "#484848" }
+SSOUCH:  { source: SSWVH0, x: 22, y: 9, width: 24, height: 32, background: "#484848" }
+SSDEAD:  { source: SSWVJ0, x: 22, y: 15, width: 24, height: 32, background: "#484848" }
+
+# The medic: a guard
+GUARDFACE8: { source: GARDA8, x: 19, y: 13, width: 24, height: 32, background: "#484848" }
+GUARDFACE1: { source: GARDA1, x: 19, y: 13, width: 24, height: 32, background: "#484848" }
+GUARDFACE2: { source: GARDA2, x: 19, y: 13, width: 24, height: 32, background: "#484848" }
+GUARDGRIN:  { source: GARDG0, x: 20, y: 14, width: 24, height: 32, background: "#484848" }
+GUARDOUCH:  { source: GARDI0, x: 24, y: 14, width: 24, height: 32, background: "#484848" }
+GUARDDEAD:  { source: GARDK0, x: 23, y: 9, width: 24, height: 32, background: "#484848" }
