@@ -620,6 +620,10 @@ can reach), not played by hand.
       to the horizon, a house's floor and roof match the pack's flats. **(never tried)**: walking
       through a house door; the far corner's elevator; the automap of a map this size; speed
       looking down the long streets; saving and loading on it; opening it in the editor.
+- [ ] Attract Demo (`--file attract-demo`): seen windowed, the title loop's card and then its demo
+      on MAP64; `demotrace` showed the demo kill both guards and take both treasures. **(never
+      tried)**: the rest of the loop (Wolf3D's title, the scores, its next demo) and round again;
+      a key during the demo opening the menu; the demo in the editor's demo browser.
 
 ## 1.15 Multiplayer
 

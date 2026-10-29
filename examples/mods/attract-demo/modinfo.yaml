@@ -1,0 +1,4 @@
+name: Attract Demo
+version: "1.0"
+description: A title loop of its own - a title card, then a demo of its showcase level, written as input in a script rather than recorded - for Wolfenstein 3D.
+game-packs: [wolf3d]

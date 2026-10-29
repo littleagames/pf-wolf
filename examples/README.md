@@ -1750,6 +1750,50 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-bigmap-demo.ps1
 The editor opens and saves UWMF levels too (its default), and resizes a level from Level
 properties (F4) or Ctrl+R. In the game, `exportmap MAP01 <folder> uwmf` writes any level as UWMF.
 
+## Attract Demo (`mods/attract-demo`)
+
+A **title loop** of its own for Wolfenstein 3D: a title card, then a **demo** of the mod's
+showcase level, the demo written as input by a script rather than recorded. It's YAML, a level, a
+picture and a demo file the script writes.
+
+```
+PFWolf.exe --file attract-demo
+```
+
+Its level is MAP64, a number Wolf3D doesn't use, so it plays alongside the level demos.
+
+- Start PFWolf and leave it at the title: after Wolf3D's intro, the loop shows this mod's card,
+  then plays its demo: B.J. walks up a corridor, shoots two guards with their backs turned, opens
+  the door at its end and takes the treasure beyond. Then Wolf3D's title, the high scores, and
+  Wolf3D's own next demo.
+
+### What's in it
+
+- `demos/DEMO0.dmo`: the demo. A mod's `demos/NAME.dmo` is a demo by that name, and one named
+  DEMO0 to DEMO9 stands in for the game's own of that number. id's demo format is only the
+  player's input: the level (a byte: 63 is MAP64), the length, then a frame (4 tics) at a time,
+  the buttons held, how far they turn and how far forward they move. The engine plays it back
+  exactly, the same every time.
+- `game-info.yaml`:
+  - `maps: MAP64`: the level, so a demo (and `map MAP64`) can name it.
+  - `title-sequence: loop`: the screens shown round and round until a key: the card (`pics`,
+    `seconds`), `demo: true` (the next of DEMO0-9, in turn), Wolf3D's `Title`, `high-scores`. A
+    list replaces the game pack's whole, so the loop is all here; the `intro` before it is
+    Wolf3D's own.
+- `graphics/AMCARD.png`: the card, 320x200. `maps/MAP64.wad`: the showcase.
+
+The card, the level and the demo are made by `tools/make-attract-demo.ps1`: the demo is its list
+of steps (frames, buttons, turn, forward). Change them and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-attract-demo.ps1
+```
+
+then check the demo plays as meant: `demotrace DEMO0 trace.txt` in the console writes where the
+player and everyone else were, frame by frame (and the editor's demo browser, Ctrl+Shift+D, draws
+it on the map). `playdemo DEMO0` watches it. A demo only replays right on the skill it was
+recorded for (game-info `demo-skill`, the hardest when unset), so the level was laid out for that.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

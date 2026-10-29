@@ -1,0 +1,24 @@
+# Merged into the game pack's game-info.yaml: the showcase level, and the title loop that plays
+# its demo. The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+
+# A level of its own, one Wolf3D doesn't have: a demo names its level by number (MAP64 is 63)
+maps:
+  MAP64:
+    floor-number: 1
+    music: GETTHEM
+
+# The screens shown round and round until a key's pressed (the intro before them is Wolf3D's own).
+# A list replaces the game pack's whole, so the loop is all here: this mod's card, then a demo:
+# each demo screen plays the next of DEMO0-DEMO9 in turn, and this mod's demos/DEMO0.dmo stands in
+# for Wolf3D's DEMO0, so ours comes first; then Wolf3D's title and scores and its next demo.
+title-sequence:
+  loop:
+    - pics: [{ pic: AMCARD }]
+      seconds: 6
+    - demo: true
+    - pics: [{ pic: Title }]
+      seconds: 10
+    - high-scores: true
+      seconds: 8
+    - demo: true
