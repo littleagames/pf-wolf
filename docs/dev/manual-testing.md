@@ -624,6 +624,10 @@ can reach), not played by hand.
       on MAP64; `demotrace` showed the demo kill both guards and take both treasures. **(never
       tried)**: the rest of the loop (Wolf3D's title, the scores, its next demo) and round again;
       a key during the demo opening the menu; the demo in the editor's demo browser.
+- [ ] Blake Demo (`--game blake --file blake-demo`, B): headless, the floor loads with its name on
+      the status bar, every actor spawns, and the switch's action turns the barrier off. **(never
+      tried)**: talking to the bio-techs, buying from the food units, throwing the switch by hand,
+      the red card opening Floor 2 on the elevator panel, and the level's colors.
 
 ## 1.15 Multiplayer
 

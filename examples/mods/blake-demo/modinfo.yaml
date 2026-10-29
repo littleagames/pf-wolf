@@ -1,0 +1,4 @@
+name: Blake Demo
+version: "1.0"
+description: A small floor for Blake Stone - Aliens of Gold (replacing Floor 1) built from its own pieces - the elevator panel, bio-techs to talk to, food tokens and food units, an arc barrier and its switch, and the red access card.
+game-packs: [blake]

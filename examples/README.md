@@ -1794,6 +1794,51 @@ player and everyone else were, frame by frame (and the editor's demo browser, Ct
 it on the map). `playdemo DEMO0` watches it. A demo only replays right on the skill it was
 recorded for (game-info `demo-skill`, the hardest when unset), so the level was laid out for that.
 
+## Blake Demo (`mods/blake-demo`)
+
+A mod for **Blake Stone: Aliens of Gold**, not Wolf3D: a small floor that replaces Floor 1, built
+from Blake Stone's own pieces, to show the same mod tools work on another game. It's a level and a
+few lines of YAML.
+
+```
+PFWolf.exe --game blake --file blake-demo
+```
+
+It needs Blake Stone's data files (the BS6 set). Floor 1 keeps its place in the floors' hub, its
+elevator and music.
+
+- **The elevator,** where you arrive. Its panel (the wall beside you) is Blake Stone's floor-select
+  screen; Floor 2 opens with the red access card.
+- **The lobby:** two bio-techs, a scientist or an informant each (at random, as Blake Stone has
+  them): use one to talk. Food tokens to pick up, and two food units in the north wall to spend
+  them at, a snack and a drink. A rent-a-cop.
+- **The corridor** east is shut by an arc barrier. The switch on the lobby wall beside it turns it
+  off.
+- **The card room** beyond: the red access card, guarded.
+
+### What's in it
+
+- `maps/MAP02.wad`: the level, in Blake Stone's mapdefs ids (pfwolf-pk3's `mapdefs/blake`):
+  walls 12, 20 and 22 (institute, metal and elevator walls), 21 the elevator panel, 15 and 18 the
+  food units, 45 the barrier switch (on); door 94 the elevator door; things 20 the player start,
+  118 a bio-tech, 110 a rent-a-cop, 129 a pro guard, 423 a food token, 174 the arc barrier, 55 the
+  red card. Floor code 108 (area 0) is the elevator's, which enemies keep out of. The switch and
+  the barrier share tag 1 on the tag plane, so the switch's `A_ToggleActive` works the barrier
+  (Blake Stone's own maps link them with object-plane codes instead).
+- `game-info.yaml`: Floor 1's name (on the status bar and the elevator panel) and its colors,
+  merged into Blake Stone's game-info.
+- `modinfo.yaml`: `game-packs: [blake]`, so it only loads in Blake Stone.
+
+The level is made by `tools/make-blake-demo.ps1` (the layout is an ASCII drawing in it). Edit it and
+run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-blake-demo.ps1
+```
+
+With cheats on, `actors` lists who the bio-techs turned out to be, and `lua print(game.trigger(1,
+'A_ToggleActive'))` throws the barrier switch from the console.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

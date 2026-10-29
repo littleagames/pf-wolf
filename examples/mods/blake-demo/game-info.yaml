@@ -1,0 +1,9 @@
+# Merged into Blake Stone's game-info.yaml: Floor 1 (MAP02) keeps its place in the floors' hub
+# (cluster 1, floor-number 1, the elevator's floor list) and its music; the mod gives it a name of
+# its own on the elevator panel and the status bar, and its colors (Blake Stone's maps carry
+# theirs in the object plane; game-info's win).
+maps:
+  MAP02:
+    name: "PFWOLF EXAMPLE FLOOR"
+    ceiling-color: "#202838"
+    floor-color: "#585868"
