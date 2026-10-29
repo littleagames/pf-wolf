@@ -1,0 +1,25 @@
+^P
+^C0A
+Dawn
+
+^C00
+You slip out of the tower as the
+sky goes grey, the fortress behind
+you in uproar.
+
+The boat is waiting where it left
+you. By the time anyone thinks to
+look for it, you're far out to sea.
+
+Operation Nightfall is over.
+^P
+^C0A
+About this episode
+
+^C00
+It's the Episode Demo, one of
+PFWolf's example mods: three
+levels, this text and the one you
+saw as it began, and a line in the
+episode menu, all from a mod.
+^E

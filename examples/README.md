@@ -1660,6 +1660,50 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-music-demo.ps1
 
 In the console, `changemus` shows what's playing and `changemus <name>` plays a song.
 
+## Episode Demo (`mods/episode-demo`)
+
+A **seventh episode** for Wolfenstein 3D, *Operation Nightfall*: three short levels, a briefing as
+it starts and an ending after its last, on the episode menu beside id's six. It's YAML, two
+texts, a one-line script, and the pictures and levels a script makes.
+
+```
+PFWolf.exe --file episode-demo
+```
+
+It adds levels (MAP61 to MAP63) rather than replacing any, so it plays alongside the level demos.
+Start a new game and pick Episode 7.
+
+- **The briefing,** shown as an article before the first level.
+- **Floor 1, the Docks:** a night of rain on the dockside, guards among the barrels, a warehouse.
+- **Floor 2, the Fortress:** SS in the corridor, the gold key in one hall, the gold door out of the
+  other.
+- **Floor 3, the Tower:** a courtyard three stories high under the stars; get to the far end and
+  B.J. runs for it, as on Wolf3D's last floors.
+- **The ending:** the tally, then the ending text, two pages.
+
+### What's in it
+
+- `game-info.yaml`:
+  - `episodes: EP07`: its `name` on the menu, its `start-map`, its picture (`pic-name`, 48x24) and
+    its `key`.
+  - `clusters: 7`: the episode's `end-text`, the article after the win tally.
+  - `maps`: MAP61 to MAP63 in order (`next`), their `floor-number`, `par-time`, `music` and
+    `cluster`, and the first's sky, rain and night shading. The last has no `next`.
+- `texts/NFBRIEF.txt` and `texts/NFEND.txt`: the articles, in Wolf3D's help-text format (`^P` a
+  page, `^C` a color, `^E` the end). A text in a mod's `texts/` is a text by that name.
+- `scripts/briefing.lua`: `game.showtext("NFBRIEF")` as MAP61 starts afresh.
+- `graphics/`: the episode's picture and the night sky. `maps/`: the levels. MAP63's way out is
+  object 99, pfwolf-pk3's `A_VictoryTile` trigger.
+
+The pictures and levels are made by `tools/make-episode-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-episode-demo.ps1
+```
+
+With cheats on, `map MAP62` goes straight to a level. Wolf3D's episode menu has room for six, so
+the seventh runs off its bottom (mods can't change the menu's layout).
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

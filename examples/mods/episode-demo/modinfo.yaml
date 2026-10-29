@@ -1,0 +1,4 @@
+name: Episode Demo
+version: "1.0"
+description: A short seventh episode for Wolfenstein 3D, Operation Nightfall - three levels, a briefing as it starts and an ending text - on the episode menu.
+game-packs: [wolf3d]

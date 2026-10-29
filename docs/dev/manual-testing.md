@@ -612,6 +612,10 @@ can reach), not played by hand.
       **(never tried)**, by ear: the songs themselves and their loops' seams, their loudness
       against Wolf3D's, the switch mid-song, the generators' hum starting and stopping at the
       room's edge, and the song after the menu and after loading a game.
+- [ ] Episode Demo (`--file episode-demo`): seen windowed: Episode 7 and its picture on the menu
+      (running off its bottom: docs/dev/todo.md), the briefing article before MAP61; each map
+      loads. **(never tried)**: playing the episode through from the menu, the rain on the docks,
+      the gold key and door, the victory run on MAP63, the tally and the ending text (two pages).
 
 ## 1.15 Multiplayer
 

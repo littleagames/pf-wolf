@@ -1,0 +1,49 @@
+# Merged into the game pack's game-info.yaml: a seventh episode on the episode menu, its own
+# cluster (its end text), and its three levels. The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+episodes:
+  EP07:
+    name: "Episode 7\nOperation Nightfall"
+    start-map: MAP61
+    # A picture in the mod's graphics/ folder, 48x24 as Wolf3D's own episodes' are
+    pic-name: C_EPISODE7
+    key: N
+
+# A cluster groups an episode's levels: its end-text is the article shown after the win tally
+# (texts/NFEND.txt)
+clusters:
+  7:
+    end-text: NFEND
+
+maps:
+  # Night and rain on the docks
+  MAP61:
+    next: MAP62
+    floor-number: 1
+    par-time: 60
+    music: SEARCHN
+    cluster: 7
+    sky: NFSKY
+    weather: rain
+    floor-color: "#2C2C2C"
+    shading:
+      light: 150
+      fade-color: "#080810"
+      fade-start: 4
+      fade-end: 20
+      max-fade: 70
+  MAP62:
+    next: MAP63
+    floor-number: 2
+    par-time: 90
+    music: GETTHEM
+    cluster: 7
+  # The last level: no `next`; its victory floor ends the episode
+  MAP63:
+    floor-number: 3
+    par-time: 60
+    music: WARMARCH
+    cluster: 7
+    sky: NFSKY
+    wall-height: 3
+    floor-color: "#2C2C2C"

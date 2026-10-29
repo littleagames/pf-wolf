@@ -123,6 +123,9 @@ Worked round in the example mods (2026-10-29), not fixed in the engine:
 - **`weapon.backstab` isn't in the actor property list** (PFWolf.Common Definitions/ActorProperties.cs),
   though `PlayerAttacks` reads it: so the docs' Actor properties reference and the editor's
   Definitions window don't know it. Stealth Demo's knife uses it.
+- **Wolf3D's episode menu has room for six episodes.** A mod's seventh (Episode Demo's) is listed
+  but runs off the bottom of the menu box, over the footer. Mods can't carry menudefs, so a mod
+  can't relayout it; the menu could scroll, or shrink its rows, past six.
 - **No use hint for getting out of a vehicle on Wolf3D's status bar**: `vehicle.exithint` names
   a statusbar.yaml use-hint, which Wolf3D's bar hasn't got. Boat Demo's script shows a keyed
   message beside a dock instead.

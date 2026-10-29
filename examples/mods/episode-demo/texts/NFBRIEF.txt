@@ -1,0 +1,17 @@
+^P
+^C0A
+Operation Nightfall
+
+^C00
+Intelligence says the enemy has
+moved its plans into a fortress on
+the coast. Our boat will put you
+ashore at the docks after dark.
+
+Get through the docks and the
+fortress, climb to the tower, and
+get out the far side before dawn.
+
+The rain will cover you on the way
+in. After that, you're on your own.
+^E
