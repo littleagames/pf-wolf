@@ -1,0 +1,41 @@
+# The Teleport Demo's actors:
+#   TelePad, WarpPad  what stands on a pad's tile (its trigger's `class`): a glowing ring, drawn
+#                     bright, with a light. Not solid: you walk onto it.
+#   VendToken         a token for the vending machine, carried up to 5: an Ammo with a type of
+#                     its own, as Blake Stone's food tokens are, so it's counted ("give ammo" fills it)
+TelePad:
+  properties:
+    "light.intensity": 160
+    "light.radius": 2
+    "light.color": "#80C0FF"
+  states:
+    Spawn:
+      - sprite: TPPD
+        frames: [A]
+        tics-per-frame: -1
+        modifiers: [bright]
+
+WarpPad:
+  properties:
+    "light.intensity": 160
+    "light.radius": 2
+    "light.color": "#FFB060"
+  states:
+    Spawn:
+      - sprite: TPWP
+        frames: [A]
+        tics-per-frame: -1
+        modifiers: [bright]
+
+VendToken:
+  parent: Ammo
+  properties:
+    inventory.type: VendToken
+    inventory.amount: 1
+    inventory.maxamount: 5
+    inventory.pickupmessage: "Picked up a token."
+  states:
+    Spawn:
+      - sprite: TPTK
+        frames: [A]
+        tics-per-frame: -1

@@ -1,0 +1,23 @@
+# The Teleport Demo's floor triggers, on the object plane (850-859 are this mod's). `repeat: true`
+# keeps a trigger for good (one that goes off once is cleared); `class` is what stands on its
+# tile to show it's there (actordefs/teleport-demo.yaml).
+triggers:
+  # A pad that leads to the other pad with its tag (the tag plane, plane 4), and back
+  850:
+    action: A_TeleportTag("teleport/zap")
+    activation: walk
+    repeat: true
+    class: TelePad
+  # A ladder end (on the ladder wall's tile): use it and you climb to the other end with its tag;
+  # "beside" puts you on the first open tile next to that one (behind you as you face, then
+  # either side, then ahead), since the other end is a wall too
+  853:
+    action: A_TeleportTag("beside", "teleport/climb")
+    repeat: true
+  # A one-way pad: every pad with a tag leads to the one tile with that tag that isn't a pad.
+  # You come out facing south, fizzling in, and anything standing there is killed (telefrag).
+  852:
+    action: A_Warp("south", "teleport/zap", "telefrag", "fizzle")
+    activation: walk
+    repeat: true
+    class: WarpPad

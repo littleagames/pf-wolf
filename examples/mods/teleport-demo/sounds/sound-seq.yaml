@@ -1,0 +1,8 @@
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-teleport-demo.ps1)
+sound-info:
+  teleport/zap:
+    digitized: TPZAP
+  teleport/climb:
+    digitized: TPCLIMB
+  teleport/vend:
+    digitized: TPVEND

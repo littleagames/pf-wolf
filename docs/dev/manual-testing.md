@@ -576,6 +576,12 @@ can reach), not played by hand.
       and bars and sliding along them; shooting the guards through the mesh and over the hedge
       (and their shooting back), and the gate stopping both; the banners' backs reading the same
       way round; the panels on the automap.
+- [ ] Teleport Demo (`--file teleport-demo`), driven windowed: a pad took me to its partner; the
+      ladder climbed up; a warp pad brought me out in the arena facing south, killing the guard
+      there; the vending machine refused with no token, refused at full ammo, and sold a box of
+      ammo for a token. **(never tried)**: the second pad pair and both pairs back the other way;
+      climbing back down; the fizzle as you warp in; walking the level end to end; saving and
+      loading with tokens; the sounds by ear.
 
 ## 1.15 Multiplayer
 

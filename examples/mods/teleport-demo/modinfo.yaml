@@ -1,0 +1,4 @@
+name: Teleport Demo
+version: "1.0"
+description: Rooms with no doors (replacing Floor 1), joined by teleporter pads, a ladder and one-way warp pads, with a vending machine on the way.
+game-packs: [wolf3d]

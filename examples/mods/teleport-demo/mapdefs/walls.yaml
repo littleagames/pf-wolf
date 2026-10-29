@@ -1,0 +1,21 @@
+# The Teleport Demo's switch walls (a switch block's fields are in the docs' mapdefs reference)
+walls:
+    # A ladder end: just the picture. Climbing it is the use trigger on its tile (object 853,
+    # mapdefs/triggers.yaml), as A_TeleportTag finds the other end by its trigger.
+    '150':
+        North: TPLADDR
+        South: TPLADDR
+        East: TPLADDR
+        West: TPLADDR
+    # The vending machine: a token (VendToken) for a box of ammo; it says so when you have no
+    # token, or can't carry more ammo
+    '151':
+        North: TPVEND
+        South: TPVEND
+        East: TPVEND
+        West: TPVEND
+        switch:
+            to: 151
+            sound: teleport/vend
+            actions:
+                - A_Vend("VendToken", "ClipBox", "You need a token.", "You can't carry any more ammo.")

@@ -1,0 +1,5 @@
+# The Teleport Demo's tokens on the object plane (850-859 are this mod's; 850 and 852 are its
+# triggers, mapdefs/triggers.yaml)
+things:
+  851:
+    class: VendToken

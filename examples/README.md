@@ -1330,6 +1330,58 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-wallsprites-demo.ps
 With cheats on, `summon <class> [angle] [x y]` stands a panel in the tile you face (`summon
 Banner 90`), and `actors` lists each panel with the span it covers.
 
+## Teleport Demo (`mods/teleport-demo`)
+
+A level of rooms with no doors between them, replacing Floor 1 (Wolfenstein 3D only): the only
+ways on are **teleporter pads** in pairs, a **ladder**, and **one-way warp pads**, and on the way a
+**vending machine** trades tokens for ammo. It's YAML, and the pictures, sounds and level a script
+makes.
+
+```
+PFWolf.exe --file teleport-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The start room:** a few tokens lying about, and a blue pad. Step on it and you're on its
+  partner, in a room you couldn't otherwise reach. Step back on and you return.
+- **The island room:** the vending machine in its south wall (use it: a token for a box of ammo,
+  unless you can't carry more), and another pad, to the gallery.
+- **The gallery:** a ladder in its north wall. Use it to climb to the room above.
+- **The warp room,** up the ladder: three orange pads, all one way, into the arena. You come
+  out facing south, fizzling in; the guard standing where you arrive is killed by it.
+- **The arena** and, through its south door, the exit.
+
+### What's in it
+
+- `mapdefs/triggers.yaml`, the floor and wall triggers on the object plane (850-859):
+  - 850, a pad: `A_TeleportTag("sound")`, a walk trigger with `repeat: true` (kept for good) and a
+    `class` standing on it to show it (`TelePad`). It leads to the other trigger with its tag (the
+    tag plane, plane 4) that runs A_TeleportTag too: tags 1 and 2 here, a pair each.
+  - 853, a ladder end, on each ladder wall's tile: a use trigger running `A_TeleportTag("beside",
+    "sound")`, which puts you on the first open tile beside the other end (behind you, then
+    either side, then ahead).
+  - 852, a warp pad: `A_Warp("south", "sound", "telefrag", "fizzle")`. Any number of pads lead to
+    the one tile with their tag (4) that isn't a pad. `telefrag` kills what's standing there;
+    `swapcolors` and `monsters` (enemies use the pad too) are the others it can take.
+- `mapdefs/walls.yaml`: the ladder picture (150), and the vending machine (151), a switch running
+  `A_Vend("VendToken", "ClipBox", "no-token message", "full message")`. With a code (as Blake
+  Stone's machines have) it can also run out.
+- `actordefs/teleport-demo.yaml`: the pads (bright, with a light) and `VendToken`, an `Ammo` with
+  its own `inventory.type`, as Blake Stone's food tokens are.
+- `mapdefs/things.yaml`: object 851, a token.
+- `sprites/`, `textures/` and `sounds/` (named in `sounds/sound-seq.yaml`).
+
+The pictures, sounds and level are made by `tools/make-teleport-demo.ps1`. Edit it and run it
+again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-teleport-demo.ps1
+```
+
+With cheats on, `tag` shows the tag of the tile you face, and `lua game.trigger(0,
+'A_GiveInventory', 'VendToken')` hands you a token.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
