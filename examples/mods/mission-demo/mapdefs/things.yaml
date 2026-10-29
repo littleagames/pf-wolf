@@ -1,0 +1,11 @@
+# The Mission Demo's object-plane ids (880-889 are this mod's)
+things:
+  880:
+    class: TargetOfficer
+    angles: 180
+  881:
+    class: SecretDocuments
+  882:
+    class: MissionExitMarker
+  883:
+    class: ReinforcementSpot

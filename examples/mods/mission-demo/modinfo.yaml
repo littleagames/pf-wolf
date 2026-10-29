@@ -1,0 +1,4 @@
+name: Mission Demo
+version: "1.0"
+description: A timed mission (replacing Floor 1) with objectives - steal the documents, wreck the radios, kill the officers - and a HUD drawn by a Lua script.
+game-packs: [wolf3d]

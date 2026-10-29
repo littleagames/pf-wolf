@@ -558,6 +558,13 @@ can reach), not played by hand.
       walls and the throw's distance with a short and a long cook; whether the barracks guards
       stay put when one is shot with the silenced pistol; the pickups' and icons' looks, and every
       sound by ear. Known bug: the status bar stays black after zooming out (docs/dev/todo.md).
+- [ ] Mission Demo (`--file mission-demo`): seen working (headless and windowed): the HUD's panel,
+      clock and compass; the radios breaking (`game.breakwall`) and counting; the documents
+      picked up by walking onto them; "That's everything" once both are done; reinforcements at
+      time-up (a scratch mod cut the limit to 6 seconds); the `objectives` command. **(never
+      tried)**: playing it through by hand, shooting the radios; the elevator refusing until both
+      are done; the tally's "Mission: ..." line; the compass turning as you do; dying and
+      restarting (the documents objective added again); saving and loading mid-mission.
 
 ## 1.15 Multiplayer
 

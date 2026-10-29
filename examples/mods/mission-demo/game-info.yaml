@@ -1,0 +1,33 @@
+# Merged into the game pack's game-info.yaml: the level's objectives and its time limit, and
+# messages over the view on. The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+setting-defaults:
+  messages: true
+
+# Level objectives, by name: what counts toward each is in the level's definitions (the radios'
+# destructible blocks, the officers' `objective` property; the documents, the script's
+# A_CompleteObjective). Messages fill in each %d in turn. blocks-exit keeps the elevator shut
+# until that one's done.
+objectives:
+  documents:
+    blocks-exit: true
+    progress: "Documents taken."
+    refused: "You haven't got the documents yet."
+    stats: "Documents %d/%d"
+  radios:
+    blocks-exit: true
+    start: "Two radios to wreck in the comms room."
+    progress: "Radio wrecked: %d of %d."
+    done: "Both radios are down. They can't call for help now."
+    refused: "The radios are still working: %d left."
+    stats: "Radios %d/%d"
+  officers:
+    progress: "Officer down: %d of %d."
+    done: "Both officers are dead."
+    stats: "Officers %d/%d"
+
+maps:
+  MAP01:
+    # Seconds on the level's own clock; when they're up, scripts/mission.lua's game.ontimeup
+    # brings in reinforcements rather than the player dying
+    time-limit: 240

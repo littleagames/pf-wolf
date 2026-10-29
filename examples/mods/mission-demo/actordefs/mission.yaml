@@ -1,0 +1,38 @@
+# The Mission Demo's actors:
+#   TargetOfficer      an officer who's one of the level's "officers" objective (`objective`):
+#                      counted as the level starts, done as he dies
+#   SecretDocuments    the documents: an item to pick up; scripts/mission.lua completes the
+#                      "documents" objective as it's taken
+#   MissionExitMarker  nothing to see: marks the exit, for the HUD's compass to point at
+#   ReinforcementSpot  nothing to see: where the script brings SS in when time runs out
+TargetOfficer:
+  parent: Officer
+  properties:
+    objective: officers
+
+# (CustomInventory, not Inventory: an Inventory class of its own isn't built as an item)
+SecretDocuments:
+  parent: CustomInventory
+  properties:
+    inventory.pickupmessage: "Got the documents!"
+    inventory.pickupsound: misc/k_pkup
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: MDDO
+        frames: [A]
+        tics-per-frame: -1
+
+MissionExitMarker:
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: -1
+
+ReinforcementSpot:
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: -1

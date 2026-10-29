@@ -1,0 +1,21 @@
+# The comms room's two radios: destructible walls (every field is in the docs' mapdefs
+# reference). Bullets, the knife or a blast wreck one after 30 damage, and each is one of the
+# level's "radios" objective (game-info.yaml), counted as the level starts and done as it breaks.
+# Wrecked, it's wall 145, which doesn't break any further.
+walls:
+    '144':
+        North: MDRADIO
+        South: MDRADIO
+        East: MDRADIO
+        West: MDRADIO
+        destructible:
+            damage-types: [Bullet, Melee, Blast]
+            health: 30
+            to: 145
+            sound: mission/zap
+            objective: radios
+    '145':
+        North: MDRADIOX
+        South: MDRADIOX
+        East: MDRADIOX
+        West: MDRADIOX

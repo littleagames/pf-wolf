@@ -1,0 +1,5 @@
+# The mod's own sound (sounds/MDZAP.wav, made by examples/tools/make-mission-demo.ps1): a radio
+# shot up (mapdefs/walls.yaml)
+sound-info:
+  mission/zap:
+    digitized: MDZAP

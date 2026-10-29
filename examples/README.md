@@ -1167,6 +1167,71 @@ Wolf3D's status bar has no room for the shotgun's loaded shells (a status bar `c
 them where there's one) and doesn't redraw a `power-meter` while it changes, so the tube's count
 and the grenade's cooking don't show; the ammo number is the shells, grenades or rounds carried.
 
+## Mission Demo (`mods/mission-demo`)
+
+A timed mission that replaces Floor 1 (Wolfenstein 3D only), with **level objectives** and a
+**HUD drawn by a Lua script**: steal the documents, wreck the radios, kill the officers if you
+can, and get out before reinforcements arrive. It's YAML, a level and a script.
+
+```
+PFWolf.exe --file mission-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The HUD,** drawn over the view by the script: the objectives at the bottom left (ticked off
+  green as each is done), the time left at the top right (red in the last 30 seconds), and a
+  compass at the bottom right: an arrow toward the exit and how many tiles away it is.
+- **The comms room,** west: two radio sets in its far wall. Shoot (or knife) each until it's
+  wrecked.
+- **The office,** east: the documents on the desk, and an officer.
+- **The yard,** north: the other officer, and the exit off its east side. The elevator won't go
+  until you have the documents and both radios are wrecked; the officers are optional.
+- **Four minutes.** When they're up you don't die: SS come in at three spots in the yard and
+  head straight for you.
+- At the level's end, the tally says how the mission went, and in the console, `objectives`
+  lists them.
+
+### What's in it
+
+- `game-info.yaml`:
+  - `objectives`: `documents`, `radios` and `officers`, each with its messages (`start`,
+    `progress`, `done`, `refused`, `stats`; each `%d` filled in turn) and whether the exit waits
+    for it (`blocks-exit`).
+  - `maps: MAP01: time-limit: 240`: seconds on the level's own clock (a saved game keeps what's
+    left).
+- `mapdefs/walls.yaml`: the radios, walls 144 and 145, whose `destructible:` block has
+  `objective: radios`: each counts toward it as the level starts and completes one as it breaks.
+- `actordefs/mission.yaml`: `TargetOfficer`, an officer with the `objective` property (his death
+  completes one); `SecretDocuments`, the documents (a `CustomInventory`: a class made straight
+  from `Inventory` isn't an item); and two invisible markers, the exit for the compass and the
+  spots reinforcements come in at.
+- `mapdefs/things.yaml`: objects 880-883.
+- `scripts/mission.lua`, the hooks working together:
+  - `game.onhud`, called each frame on this machine alone: `game.viewsize`, `game.drawpic` (the
+    panel, `graphics/MDPANEL.png`) and `game.drawtext`, with `game.objective(name)` for how many
+    of each are done, `game.time()` for the clock and the player's and the exit marker's places
+    and the player's `angle` for the compass.
+  - `game.onlevel` and `game.onpickup`: the documents are an item the level doesn't count by
+    itself, so the script adds one to do (`game.trigger(0, "A_AddObjective", "documents")`) and
+    completes it when they're taken (`A_CompleteObjective`).
+  - `game.onobjective`: word once everything the exit needs is done.
+  - `game.ontimeup`: returning true sees to the time running out itself; it spawns SS at the
+    markers (`actor:spawn`) and sends them chasing (`actor:jump("Chase")`).
+  - `game.ontally`: text for the tally (intermission.yaml's `script` place).
+  - `game.command`: the `objectives` console command.
+- `textures/MDRADIO.png`, `MDRADIOX.png` (the radio, and wrecked), `sprites/MDDOA0.png` (the
+  documents), `sounds/MDZAP.wav` and `maps/MAP01.wad`.
+
+The pictures, sound and level are made by `tools/make-mission-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-mission-demo.ps1
+```
+
+With cheats on, `lua print(game.objective('radios'))` shows an objective's count, and
+`lua game.breakwall(2, 29)` wrecks a radio from the console.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
