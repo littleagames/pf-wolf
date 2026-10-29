@@ -1,0 +1,6 @@
+# Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
+# turned them off in Options), for the script's word on each secret. Floor 1's secret elevator
+# goes to MAP10, as in Wolf3D (the pack's game-info: MAP01 secret-next: MAP10), which this mod
+# replaces with its bonus room.
+setting-defaults:
+  messages: true

@@ -1,0 +1,19 @@
+# The vault switch, on the hall's north wall. Thrown, it slides the four blue walls beside it
+# (they share its tag, 1, on the map's tag plane) north together, opening the vault. It's
+# thrown once: wall 141, the lever up, has no switch of its own.
+walls:
+    '140':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 141
+            sound: switches/elevbutn
+            actions:
+                - A_MoveWall("north", "world/pushwall")
+    '141':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2

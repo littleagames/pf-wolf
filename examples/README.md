@@ -1045,6 +1045,62 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-weather-demo.ps1
 With cheats on, `weather <name|none>` changes the weather until the level's left (try `weather
 blizzard` on Floor 1), and `fog` and `light` the shading.
 
+## Secrets Demo (`mods/secrets-demo`)
+
+A level that replaces Floor 1 (Wolfenstein 3D only) full of secrets: **pushwalls**, a switch that
+slides **several walls at once**, the **floor codes** that make guards wait in ambush and an
+elevator go to the secret level, and a script that says "Secret 2 of 5" as each is found. It's
+YAML, two levels and a small script.
+
+```
+PFWolf.exe --file secrets-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The hall,** where you start. On its north wall, a lever beside four blue stone walls: throw it
+  and the four slide back together, opening the vault behind them.
+- **The gallery,** west through the door. Three blue walls along its north side are pushwalls,
+  each with treasure behind it. Push them one after another, quickly: they all slide at once.
+  And the dark nook in the gallery's west wall is a secret too, just for stepping into it (a
+  floor trigger), with an extra life for finding it.
+- **The guard room,** east of the hall. Six guards stand with their backs to the door. The three
+  at the back are on the **ambush** floor code: fire a shot and the three at the front turn and
+  come for you, while those three don't stir until they see you.
+- **The secret elevator,** behind the guard room's north wall (one stone there is a pushwall).
+  Its room's floor is the **secret-exit** code, so its switch takes you to Floor 10, the mod's
+  bonus room, instead of Floor 2. Its elevator goes on to Floor 2.
+- **The exit,** up the corridor behind the hall's north door.
+
+### What's in it
+
+- `maps/MAP01.wad`: the level. A pushwall is a wall with object 98 on its tile (pfwolf-pk3's
+  `mapdefs/wolf3d/triggers.yaml`: `A_PushWall`, counted as a secret). The floor codes on plane 0
+  are pfwolf-pk3's `mapdefs/wolf3d/floors.yaml`: areas from 107 (area n is 107 + n), `ambush:
+  106` (the guard deaf until it sees you, its tile then taking a neighbouring area's code) and
+  `secret-exit: 107` (standing on it, the elevator switch goes to the level's `secret-next` in
+  game-info). A mod's `floors.yaml` can change them, for every level it plays.
+- `maps/MAP10.wad`: the bonus room, Floor 10, where Floor 1's `secret-next` goes.
+- `mapdefs/walls.yaml`: the vault lever, wall 140, whose switch runs `A_MoveWall("north",
+  "world/pushwall")`: every wall sharing its tag (1, on the tag plane) moves together, the lever
+  itself left where it is. Thrown, it becomes wall 141 (the lever up), which has no switch.
+- `mapdefs/triggers.yaml`: object 840, the nook's floor trigger: `activation: walk`, `secret:
+  true`, and its action `A_SpawnItem("ExtraLife")`.
+- `scripts/secrets-demo.lua`: `game.onsecret`, called for every secret found (pushwalls and
+  secret triggers alike), counting them on the player's `temp1` (kept in saved games) and saying
+  how many of the level's there are.
+- `game-info.yaml`: turns messages over the view on, for the script's.
+
+The levels are made by `tools/make-secrets-demo.ps1` (ASCII layouts). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-secrets-demo.ps1
+```
+
+The level's tally shows how many secrets you found. With cheats on, `tag` shows the tag of the
+tile you face, and `lua game.trigger(1, 'A_MoveWall', 'north')` slides the
+vault walls from the console (a script has no switch tile, so the lever slides with them).
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

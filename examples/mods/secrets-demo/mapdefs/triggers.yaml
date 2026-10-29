@@ -1,0 +1,7 @@
+# The hidden nook off the gallery (object plane 840): stepping into it is a secret found, and
+# leaves an extra life there. It goes off once.
+triggers:
+  840:
+    action: A_SpawnItem("ExtraLife")
+    activation: walk
+    secret: true

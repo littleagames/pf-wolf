@@ -1,0 +1,4 @@
+name: Secrets Demo
+version: "1.0"
+description: A level (replacing Floor 1) of pushwalls, a hidden switch-worked vault, guards in ambush and a secret elevator to a bonus room, with each secret announced as it's found.
+game-packs: [wolf3d]

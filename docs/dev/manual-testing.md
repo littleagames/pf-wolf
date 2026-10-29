@@ -543,6 +543,13 @@ can reach), not played by hand.
       thinning and stopping over a few minutes (and whether flakes show over the barn's inside
       walls next to its open side: a headless shot had a few there); Floor 3's fires flickering
       and the ash on the smoke sky; speed with heavy rain at a high `vid_scale`.
+- [ ] **(never tried)** Secrets Demo (`--file secrets-demo`): the gallery's three pushwalls
+      pushed quickly so they slide at the same time, side by side (how they draw), and their
+      treasure still there after; saving and loading while they move; the nook's walk trigger
+      (counted as a secret, the extra life appearing); "Secret n of 5" for each; the ambush
+      guards staying put on a shot while the others come; the secret elevator going to MAP10
+      and MAP10's elevator to Floor 2; the tally's secret count. (Headless: the vault lever's
+      four walls were seen sliding together through `game.trigger`, nothing else.)
 
 ## 1.15 Multiplayer
 
