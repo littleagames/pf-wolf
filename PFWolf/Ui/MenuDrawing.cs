@@ -69,13 +69,16 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
 
     /// <summary>
     /// A scrolling menu's marks at its right edge (x): an arrow up by the first row shown and
-    /// one down by the last while there are items above or below, each with how many
+    /// one down by the last while there are items above or below, each with how many (not
+    /// counting blank rows: the episode menu's spacers)
     /// </summary>
-    internal void DrawMenuScrollMarks(ControlPanelMenuInfo item_i, int x)
+    internal void DrawMenuScrollMarks(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int x)
     {
         if (!item_i.Scrolls)
             return;
-        int above = item_i.TopRow, below = item_i.Amount - item_i.TopRow - item_i.VisibleRows;
+        int bottom = Math.Min(item_i.TopRow + item_i.VisibleRows, items.Length);
+        int above = items.Take(item_i.TopRow).Count(item => !string.IsNullOrEmpty(item.Text)),
+            below = items.Skip(bottom).Count(item => !string.IsNullOrEmpty(item.Text));
         var style = new TextStyle(UiFonts.SmallFont, "READCOLOR");
         if (above > 0)
         {

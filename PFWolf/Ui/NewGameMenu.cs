@@ -140,6 +140,11 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
             which = loop.HandleMenu(NewEitems, NewEmenu, DrawEpisodeRow);
             switch (which)
             {
+                case -2:    // scrolled (visible-rows): drawn again where it now starts
+                    DrawNewEpisode(fade: false);
+                    which = 0;
+                    break;
+
                 case -1:
                     draw.MenuFadeOut();
                     return 0;
@@ -211,7 +216,9 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
 
             draw.MenuFadeOut();
             DrawNewLevel();
-            which = loop.HandleMenu(LevelItems, LevelMenu, w => DrawStats("new-level", w, LevelStatsAt));
+            // Scrolled (-2, visible-rows): drawn again where it now starts
+            while ((which = loop.HandleMenu(LevelItems, LevelMenu, w => DrawStats("new-level", w, LevelStatsAt))) == -2)
+                DrawNewLevel(fade: false);
             if (which < 0)
             {
                 draw.MenuFadeOut();
@@ -278,7 +285,11 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         return 0;
     }
 
-    internal void DrawNewEpisode()
+    // Where a scrolling menu's "N more" marks go (its right edge)
+    const int ScrollMarkX = 300;
+
+    /// <param name="fade">False when it's drawn again after scrolling (visible-rows), already faded in</param>
+    internal void DrawNewEpisode(bool fade = true)
     {
         defs.DrawMenuComponents("new-episode");
         draw.DrawMenu(NewEitems, NewEmenu);
@@ -291,13 +302,16 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         {
             for (int i = 0; i < NewEmenu.Length; i++)
             {
-                if (NewEmenu[i].Data is EpisodeInfo episode && !string.IsNullOrEmpty(episode.PicName))
+                if (NewEitems.IsRowVisible(i) && NewEmenu[i].Data is EpisodeInfo episode && !string.IsNullOrEmpty(episode.PicName))
                     graphics.DrawPic(episode.PicName, NewEitems.X + 32, MenuDrawing.MenuItemY(NewEitems, i));
             }
         }
+        draw.DrawMenuScrollMarks(NewEitems, NewEmenu, ScrollMarkX);
         DrawStats("new-episode", NewEitems.CurPos, EpisodeStats);
 
         video.Update();
+        if (!fade)
+            return;
         draw.MenuFadeIn();
         menuInput.WaitKeyUp();
     }
@@ -310,12 +324,16 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
             graphics.DrawPic(pic, at.X, at.Y);
     }
 
-    internal void DrawNewLevel()
+    /// <param name="fade">False when it's drawn again after scrolling (visible-rows), already faded in</param>
+    internal void DrawNewLevel(bool fade = true)
     {
         defs.DrawMenuComponents("new-level");
         draw.DrawMenu(LevelItems!, LevelMenu);
+        draw.DrawMenuScrollMarks(LevelItems!, LevelMenu, ScrollMarkX);
         DrawStats("new-level", LevelItems!.CurPos, LevelStatsAt);
         video.Update();
+        if (!fade)
+            return;
         draw.MenuFadeIn();
         menuInput.WaitKeyUp();
     }

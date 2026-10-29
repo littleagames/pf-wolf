@@ -6,6 +6,8 @@ position:
 indent: 88
 # One item per episode in game-info (name, key and pic-name come from there)
 items-source: "episodes"
+# Six episodes (with the blank row between each) fit the window; more scroll into view with the cursor
+visible-rows: 11
 default-selection: 0
 components:
   -

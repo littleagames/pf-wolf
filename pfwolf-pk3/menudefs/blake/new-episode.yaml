@@ -9,6 +9,8 @@ font: "BlakeSmall"
 item-shadow: "1"
 cursor: { x: 43, y-offset: -2, width: 119, height: 16, color: "82", erase-color: "MENUBACK", flash-tics: 40 }
 items-source: "episodes"
+# Six fit the terminal; more scroll into view with the cursor
+visible-rows: 6
 spacer-rows: false
 selection-pic: { x: 176, y: 72 }
 default-selection: 0

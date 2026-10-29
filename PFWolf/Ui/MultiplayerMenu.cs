@@ -707,7 +707,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         DrawLobbyValue("rules", RulesSummary(settings));
         if (!host)
             draw.DrawMenuCheckbox(LobbyItems, LobbyMenu, "go", me?.Ready == true);
-        draw.DrawMenuScrollMarks(LobbyItems, LobbyScrollMarkX);
+        draw.DrawMenuScrollMarks(LobbyItems, LobbyMenu, LobbyScrollMarkX);
 
         DrawLobbyPlayers(session, teams);
 
