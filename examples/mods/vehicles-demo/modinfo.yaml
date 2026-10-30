@@ -1,0 +1,4 @@
+name: Vehicles Demo
+version: "1.0"
+description: A motor pool level (replacing Floor 1) with a jeep and a tank to drive through a courtyard of guards and into a bunker - reverse, doors, a cannon and running enemies down.
+game-packs: [wolf3d]

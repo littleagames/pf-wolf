@@ -1,0 +1,9 @@
+# The level's floors and ceiling (the flat plane, map plane 2: a tile's low byte is its floor,
+# its high byte its ceiling), the pictures in flats/. Indices 40 and up. Indoors has concrete
+# under a girdered roof; the courtyard has tarmac and no ceiling, so the sky shows.
+flats:
+  floor:
+    40: VDCONC
+    41: VDROAD
+  ceiling:
+    40: VDROOF

@@ -1,0 +1,13 @@
+# Wolf3D's status bar has no power meter. This adds one along the bottom of the level, score and
+# lives box: in the jeep or the tank, it shows the throttle (forward or reverse). box is
+# [x, y, width, height] from the bar's top left, the width at full throttle; box-fill: bar puts
+# that piece of the bar's own picture back as the meter shrinks.
+power-meter:
+  x: 0
+  y: 0
+  box: [10, 33, 94, 3]
+  box-fill: bar
+  # green, then yellow toward full
+  color: "#E0D020"
+  levels:
+    - { below: 70, lit: ["#30C030"] }

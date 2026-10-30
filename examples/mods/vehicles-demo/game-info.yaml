@@ -1,0 +1,10 @@
+# Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
+# turned them off in Options), for the vehicles' hints; and the level's sky, seen over the
+# courtyard. The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+setting-defaults:
+  messages: true
+maps:
+  MAP01:
+    # A picture in the mod's graphics/ folder, drawn above the horizon where there's no ceiling
+    sky: VDSKY

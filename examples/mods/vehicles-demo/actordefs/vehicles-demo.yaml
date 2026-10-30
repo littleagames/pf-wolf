@@ -1,0 +1,127 @@
+# The Vehicles Demo's actors. Vehicles are in the engine (Gameplay/Vehicles.cs); everything here
+# is properties and states. Speeds are global units a tic (65536 a tile).
+#
+#   Jeep        quick and light: forward is the throttle, back brakes and then reverses, and it
+#               coasts to a stop with neither (drag). Use facing a door opens it; anywhere else
+#               gets you out at its side. You keep your own gun, and take most of a hit.
+#   Tank        slow and heavy: the same controls, its cannon in your hands while you're in it
+#               (vehicle.weapon), a quarter of every hit, and anything it runs into at speed is
+#               crushed (vehicle.crushdamage)
+#   TankCannon  the cannon: a shell that bursts where it lands; no ammo, and only ever held in
+#               the tank (weapon.mounted)
+#   TankShell   the shell in flight
+
+Jeep:
+  properties:
+    usemessage: "Press use to drive the jeep"
+    vehicle.maxspeed: 4500
+    vehicle.accel: 60
+    vehicle.brake: 140
+    vehicle.reverse: 1800
+    vehicle.drag: 20
+    vehicle.exitanywhere: true
+    vehicle.exitsound: vehicles/out
+    vehicle.noexit: "No room to get out here."
+    vehicle.damagetaken: 0.75
+    vehicle.crushdamage: 30
+    vehicle.crushsound: vehicles/crunch
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: VDJP
+        frames: [A]
+        tics-per-frame: -1
+    Use:
+      - sprite: VDJP
+        frames: [A]
+        tics-per-frame: 1
+        action: 'A_Board("vehicles/jeep", "Forward and back: throttle, brake and reverse. Use: open a door, or get out.")'
+        next-state: Spawn
+
+Tank:
+  properties:
+    usemessage: "Press use to climb into the tank"
+    vehicle.maxspeed: 2400
+    vehicle.accel: 25
+    vehicle.brake: 70
+    vehicle.reverse: 1200
+    vehicle.drag: 30
+    vehicle.exitanywhere: true
+    vehicle.exitsound: vehicles/out
+    vehicle.noexit: "No room to climb out here."
+    vehicle.weapon: TankCannon
+    vehicle.damagetaken: 0.25
+    vehicle.crushdamage: 200
+    vehicle.crushspeed: 500
+    vehicle.crushsound: vehicles/crunch
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: VDTK
+        frames: [A]
+        tics-per-frame: -1
+    Use:
+      - sprite: VDTK
+        frames: [A]
+        tics-per-frame: 1
+        action: 'A_Board("vehicles/tank", "Fire: the cannon. Run them down. Use: open a door, or climb out.")'
+        next-state: Spawn
+
+TankCannon:
+  parent: WolfWeapon
+  properties:
+    tag: "Tank Cannon"
+    attacksound: vehicles/cannon
+    inventory.icon: VDICCN
+    weapon.mounted: true
+    weapon.ammouse1: 0
+    weapon.ammogive1: 0
+  states:
+    Ready:
+      - sprite: VDCN
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    # A shot, then a second and a half to load the next
+    Fire:
+      - sprite: VDCN
+        frames: [B]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 255, radius: 4, color: "#FFC070" }
+        action: A_FireMissile("TankShell")
+      - sprite: VDCN
+        frames: [A]
+        tics-per-frame: 100
+        next-state: Ready
+
+# Wolf3D's own rocket pictures (ROCK, BOOM) and smoke trail; the burst hurts everything within
+# two tiles, less further out, but not the tank's crew
+TankShell:
+  flags: [PROJECTILE]
+  properties:
+    speed: 16384
+    deathsound: missile/hit
+  states:
+    Spawn:
+      - sprite: ROCK
+        frames: [A]
+        tics-per-frame: 3
+        think: A_Missile(60, 100)
+        action: A_SpawnThing("Smoke")
+    Death:
+      - sprite: BOOM
+        frames: [A]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 255, radius: 5, color: "#FFC080" }
+        action: A_Explode(50, 120, 2, "falloff")
+      - sprite: BOOM
+        frames: [B, C]
+        tics-per-frame: 6
+        modifiers: [bright]
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Remove

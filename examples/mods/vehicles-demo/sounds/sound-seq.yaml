@@ -1,0 +1,13 @@
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-vehicles-demo.ps1), by the
+# names its actors play them by (actordefs/vehicles-demo.yaml).
+sound-info:
+  vehicles/jeep:
+    digitized: VDJEEP
+  vehicles/tank:
+    digitized: VDTANK
+  vehicles/cannon:
+    digitized: VDCANN
+  vehicles/crunch:
+    digitized: VDCRSH
+  vehicles/out:
+    digitized: VDOUT

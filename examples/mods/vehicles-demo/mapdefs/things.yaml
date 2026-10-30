@@ -1,0 +1,8 @@
+# The Vehicles Demo's object-plane ids (940-949 are this mod's)
+things:
+  940:
+    class: Jeep
+    angles: 0
+  941:
+    class: Tank
+    angles: 0
