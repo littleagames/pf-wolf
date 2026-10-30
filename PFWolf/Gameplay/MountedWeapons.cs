@@ -76,7 +76,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         var dir = PlayerMovement.FacingDir(player.Angle);
         foreach (var (x, y) in ExitTiles(player.TileX, player.TileY, dir))
         {
-            if (!IsOpen(x, y))
+            if (!IsOpen(map, x, y))
                 continue;
             player.SetPosition(x, y);
             player.Angle = (short)FacingAngle(dir);
@@ -92,7 +92,8 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
 
     /// <summary>
     /// Each think: one who's no longer on it (dying, a saved game loaded, another level) is let
-    /// off where they are, and a mounted gun no one's manning goes
+    /// off where they are, and a mounted gun no one's manning goes (but a vehicle's, while it's
+    /// ridden: Gameplay/Vehicles.cs)
     /// </summary>
     internal void Tick()
     {
@@ -100,7 +101,7 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         if (IsMounted && (playerstate.Weapon != playerstate.MountGun || playerstate.MountMap != session.GameState.MapOn
             || playerstate.Mount!.IsRemoved))
             Leave();
-        else if (!IsMounted && playerstate.Weapon is { } weapon && IsMountedGun(weapon))
+        else if (!IsMounted && playerstate.Weapon is { } weapon && weapon != playerstate.VehicleGun && IsMountedGun(weapon))
         {
             inventory.Take(weapon, 1);
             playerstate.Weapon = playerstate.ChosenWeapon = weapons.BestWeapon(canFire: true);
@@ -129,8 +130,8 @@ internal sealed class MountedWeapons(MapManager map, InventoryManager inventory,
         weapons.DrawWeapon();
     }
 
-    // Nothing in the way: no wall or door, and nothing solid or shootable standing there
-    bool IsOpen(int x, int y) =>
+    /// <summary>Nothing in the way: no wall or door, and nothing solid or shootable standing there</summary>
+    internal static bool IsOpen(MapManager map, int x, int y) =>
         x > 0 && x < map.MapWidth - 1 && y > 0 && y < map.MapHeight - 1
         && map.TileMap[x, y] == 0 && map.ActorAt[x, y] == null
         && !map.GetActors().Any(a => !a.IsRemoved && a.TileX == x && a.TileY == y && a is not Entities.Actors.PlayerPawn

@@ -74,6 +74,9 @@ public class PlayerStatsTests
           parent: Player
           properties:
             "player.damagetaken": 2
+        Tank:
+          properties:
+            "vehicle.damagetaken": 0.25
         """;
 
     private sealed class Rig
@@ -129,6 +132,20 @@ public class PlayerStatsTests
         Assert.That(rig.Player.Health, Is.EqualTo(70));
         Assert.That(rig.Player.LastAttacker, Is.SameAs(Guard));
         Assert.That(rig.Player.PainTics, Is.EqualTo(10));
+    }
+
+    [Test]
+    public void Riding_A_Vehicle_Takes_Its_Damagetaken_Share()
+    {
+        // Arrange
+        var rig = new Rig();
+        rig.Player.Vehicle = "Tank";
+
+        // Act
+        rig.Stats.TakeDamage(40, Guard);
+
+        // Assert
+        Assert.That(rig.Player.Health, Is.EqualTo(90));
     }
 
     [Test]

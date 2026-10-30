@@ -99,9 +99,11 @@ internal sealed class PlayerState
 
     // Riding a vehicle (Gameplay/Vehicles.cs): the class of the thing boarded (put back where
     // they get off), the map it's on, its speed (global units a tic) and that as a share of its
-    // top speed for the HUD meter
+    // top speed for the HUD meter (less than 0 in reverse); its weapon in hand (vehicle.weapon)
+    // and the weapon they had picked before
     public string? Vehicle, VehicleMap;
     public int VehicleSpeed, VehicleThrottle;
+    public string? VehicleGun, VehicleFrom;
 
     // Watching a cutscene (A_Cinematic): tics left, while they can turn but not walk, their
     // weapon isn't drawn and black bars cover the top and bottom of the view

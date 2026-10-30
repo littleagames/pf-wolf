@@ -38,9 +38,9 @@ internal sealed class PlayerWeapons(
     internal void CheckWeaponChange()
     {
         // Not while reloading, manning a mounted gun or with something latched on, as the original
-        // Midnight Assault's CheckWeaponChange
+        // Midnight Assault's CheckWeaponChange, nor riding a vehicle with a weapon of its own
         if (WeaponInHand.IsReloading(session.PlayerState.WeaponSprite) || session.PlayerState.Mount != null
-            || session.PlayerState.Latch != null)
+            || session.PlayerState.Latch != null || session.PlayerState.VehicleGun != null)
             return;
 
         var usable = OwnedWeapons().Where(CanFire).ToList();

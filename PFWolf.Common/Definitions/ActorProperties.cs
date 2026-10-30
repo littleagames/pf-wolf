@@ -65,7 +65,15 @@ public static class ActorProperties
         Text("vehicle.exitsound", "A vehicle: played as its rider steps off onto a dock", hint: FieldHint.Sound),
         Text("vehicle.noexit", "A vehicle: shown when its rider uses it with no dock beside them"),
         Text("vehicle.exithint", "A vehicle: the use hint (statusbar.yaml use-hint's hints, by name) while a dock is beside its rider"),
-        Text("vehicle.dockmessage", "A vehicle: a message kept up while a dock is beside its rider (\"Press Use to step onto the dock\"), for a status bar with no use hint"),
+        Text("vehicle.dockmessage", "A vehicle: a message kept up while its rider can get off (\"Press Use to step onto the dock\"), for a status bar with no use hint"),
+        Int("vehicle.reverse", "A vehicle: its top speed backwards; back goes on into reverse once it's stopped (0: no reverse)", "0"),
+        Int("vehicle.drag", "A vehicle: how much it slows each tic with neither forward nor back held (0: it holds its speed)", "0"),
+        Bool("vehicle.exitanywhere", "A vehicle: its rider can get off onto any open tile beside it, not only a dock"),
+        Text("vehicle.weapon", "A vehicle: a weapon in its rider's hand while they ride (a tank's cannon), the one they had given back after"),
+        Number("vehicle.damagetaken", "A vehicle: the share of a hit its rider takes (0.25: a quarter)", "1"),
+        Int("vehicle.crushdamage", "A vehicle: how much it hurts an enemy it runs into at speed (each one at most every half second)", "0"),
+        Int("vehicle.crushspeed", "A vehicle: the least speed it crushes at (default a quarter of its top speed)"),
+        Text("vehicle.crushsound", "A vehicle: played as it runs an enemy down", hint: FieldHint.Sound),
         Int("wallsprite.offset", "A wall sprite: how far its panel sits off the tile's middle toward its front, in texels (32: on the tile's edge)"),
 
         // Its sounds

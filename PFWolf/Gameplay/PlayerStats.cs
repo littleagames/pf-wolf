@@ -132,10 +132,14 @@ internal sealed class PlayerStats(
         if (session.GameMode != GameMode.Single && PlayerState.Health <= 0)
             return;
         // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2), then the class's,
-        // then a manned gun's cover (weapon.mountdamage: Gameplay/MountedWeapons.cs)
+        // then a manned gun's cover (weapon.mountdamage: Gameplay/MountedWeapons.cs), or a
+        // vehicle's (vehicle.damagetaken: Gameplay/Vehicles.cs)
         points = (int)(points * Math.Max(hooks.SkillDamageTaken(), 0) * classes.DamageTakenFactor);
         if (PlayerState.Mount != null && PlayerState.MountGun is { } gun)
             points = points * Math.Max(inventory.GetIntProperty(gun, "weapon.mountdamage", 100), 0) / 100;
+        if (PlayerState.Vehicle is { } vehicle && inventory.GetProperty(vehicle, "vehicle.damagetaken") is { } taken
+            && double.TryParse(taken.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var factor))
+            points = (int)(points * Math.Max(factor, 0));
 
         // The scripts' say in it (game.ondamage): another amount, 0 for none at all
         if (hooks.Damage?.Invoke(points, attacker, Monster.DamageTypeOf(inventory, attacker)) is { } hooked && hooked != points)

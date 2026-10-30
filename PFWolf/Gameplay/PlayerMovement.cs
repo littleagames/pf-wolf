@@ -12,7 +12,8 @@ namespace PFWolf.Gameplay;
 /// <param name="WallSpriteHit">The wall sprite panel the player's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
 /// <param name="WallSpriteMoveFrom">Where a move starts, so a panel the player already overlaps there doesn't block it</param>
 /// <param name="ActivateTrigger">Runs a mapdefs trigger (a walk-over one, stepped onto)</param>
-/// <param name="Throttle">Riding a vehicle, a tic's forward/back control: how far it carries them (Gameplay/Vehicles.cs)</param>
+/// <param name="Throttle">Riding a vehicle, a tic's forward/back control: how far it carries them, backwards below 0 (Gameplay/Vehicles.cs)</param>
+/// <param name="Stalled">Riding, the vehicle couldn't move at all: it stops</param>
 internal sealed record PlayerMovementHooks(
     Func<string, double> PlayerFactor,
     Func<double> MaxPitch,
@@ -20,7 +21,8 @@ internal sealed record PlayerMovementHooks(
     Func<int, int, int, int, int, int, long, WallSpriteSpan?> WallSpriteHit,
     Action<int, int> WallSpriteMoveFrom,
     Action<MapTriggerTranslation, int, int, ControlDir> ActivateTrigger,
-    Func<int, uint, int>? Throttle = null);
+    Func<int, uint, int>? Throttle = null,
+    Action? Stalled = null);
 
 /// <summary>
 /// The acting player's movement: turning, looking up and down, walking and strafing from their
@@ -160,12 +162,18 @@ internal sealed class PlayerMovement(
         }
 
         //
-        // riding: forward and back are the throttle, and the vehicle carries them the way they face
+        // riding: forward and back are the throttle, and the vehicle carries them the way they
+        // face (or back, in reverse); one that can't move at all has run into something and stops
         //
         if (riding)
         {
-            if (hooks.Throttle?.Invoke(playerinput.ControlY, tics) is > 0 and var carry)
-                Thrust(ob.Angle, carry);
+            if (hooks.Throttle?.Invoke(playerinput.ControlY, tics) is { } carry and not 0)
+            {
+                var (fromx, fromy) = (ob.X, ob.Y);
+                Thrust(carry > 0 ? ob.Angle : (ob.Angle + ANGLES / 2) % ANGLES, Math.Abs(carry));
+                if (ob.X == fromx && ob.Y == fromy)
+                    hooks.Stalled?.Invoke();
+            }
             return;
         }
 

@@ -373,13 +373,17 @@ internal sealed class PlayerUse(
             return;
         }
 
-        // Riding, use gets them off at a dock beside them, and does nothing else (Gameplay/Vehicles.cs)
+        // Riding, use works a door ahead, else gets them off beside them, and does nothing else
+        // (Gameplay/Vehicles.cs)
         if (session.PlayerState.Vehicle != null)
         {
             if (!playerinput.IsHeld(ButtonType.Use))
             {
                 playerinput.SetHeld(ButtonType.Use, true);
-                hooks.LeaveVehicle?.Invoke();
+                if (map.InMap(checkx, checky) && map.TileMap[checkx, checky] is var door && (door & BitDoor) != 0)
+                    doors.OperateDoor(door & ~BitDoor);
+                else
+                    hooks.LeaveVehicle?.Invoke();
             }
             return;
         }

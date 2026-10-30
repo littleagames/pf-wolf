@@ -50,7 +50,7 @@ internal static partial class GameHost
             PlayerFactor, MaxPitch, PlayPlayerSound,
             (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: true),
             (x, y) => (WallSpriteFromX, WallSpriteFromY) = (x, y),
-            ActivateTrigger, (controlY, tics) => Vehicles.Throttle(controlY, tics)));
+            ActivateTrigger, (controlY, tics) => Vehicles.Throttle(controlY, tics), () => Vehicles.Stalled()));
 
     static ControlDir FacingDir(int angle) => PlayerMovement.FacingDir(angle);
 
@@ -352,11 +352,12 @@ internal static partial class GameHost
     static MountedWeapons MountedWeapons => _mountedWeapons ??= new MountedWeapons(MapManager, InventoryManager, playerWeapons, Session,
         new MountedWeaponsHooks(PlayPlayerSound, message => HudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0)));
 
-    // Vehicles the player rides (Gameplay/Vehicles.cs): A_Board, the throttle, docks
+    // Vehicles the player rides (Gameplay/Vehicles.cs): A_Board, the throttle, docks, its weapon, crushing
     static Vehicles? _vehicles;
     static Vehicles Vehicles => _vehicles ??= new Vehicles(MapManager, InventoryManager, Session,
         new VehiclesHooks(PlayPlayerSound, message => HudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0),
-            (x, y, vehicle) => MapManager.SpawnThing(x, y, vehicle)));
+            (x, y, vehicle) => MapManager.SpawnThing(x, y, vehicle), (monster, damage) => monster.Damage((uint)damage, Session.Player)),
+        playerWeapons);
 
     // Things that latch onto the player (Gameplay/Latching.cs): A_LatchBite, and striking them off
     static Latching? _latching;

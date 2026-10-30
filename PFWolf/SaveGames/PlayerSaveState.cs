@@ -18,7 +18,7 @@ internal sealed record SavedTimedSwitch(int X, int Y, bool Patch, int From, int 
 internal sealed record PlayerSaveState(
     int Mount, string? MountGun, string? MountFrom, string? MountMap,
     int Latch, string? LatchGun, string? LatchFrom, string? LatchMap, int LatchStrikes, int MoveSlowdown,
-    string? Vehicle, string? VehicleMap, int VehicleSpeed, int VehicleThrottle,
+    string? Vehicle, string? VehicleMap, int VehicleSpeed, int VehicleThrottle, string? VehicleGun, string? VehicleFrom,
     bool Undetected, int StealthKills, int SuspicionMeter, int SuspicionPending,
     int KillChain, int KillChainAt,
     List<SavedTimedSwitch> TimedSwitches)
@@ -30,7 +30,7 @@ internal sealed record PlayerSaveState(
         return new PlayerSaveState(
             IndexOf(p.Mount), p.MountGun, p.MountFrom, p.MountMap,
             IndexOf(p.Latch), p.LatchGun, p.LatchFrom, p.LatchMap, p.LatchStrikes, p.MoveSlowdown,
-            p.Vehicle, p.VehicleMap, p.VehicleSpeed, p.VehicleThrottle,
+            p.Vehicle, p.VehicleMap, p.VehicleSpeed, p.VehicleThrottle, p.VehicleGun, p.VehicleFrom,
             p.Undetected, p.StealthKills, p.SuspicionMeter, p.SuspicionPending,
             p.KillChain, p.KillChainAt,
             timed.Select(t => new SavedTimedSwitch(t.X, t.Y, t.Patch, t.From, t.To, t.Tag, t.Dir, [.. t.Actions], t.TicsLeft)).ToList());
@@ -44,6 +44,7 @@ internal sealed record PlayerSaveState(
         (p.Latch, p.LatchGun, p.LatchFrom, p.LatchMap, p.LatchStrikes, p.MoveSlowdown) =
             (At(Latch), LatchGun, LatchFrom, LatchMap, LatchStrikes, Math.Max(MoveSlowdown, 1));
         (p.Vehicle, p.VehicleMap, p.VehicleSpeed, p.VehicleThrottle) = (Vehicle, VehicleMap, VehicleSpeed, VehicleThrottle);
+        (p.VehicleGun, p.VehicleFrom) = (VehicleGun, VehicleFrom);
         (p.Undetected, p.StealthKills, p.SuspicionMeter, p.SuspicionPending) = (Undetected, StealthKills, SuspicionMeter, SuspicionPending);
         (p.KillChain, p.KillChainAt) = (KillChain, KillChainAt);
     }
@@ -53,7 +54,7 @@ internal sealed record PlayerSaveState(
         void Text(string? text) => bw.Write(text ?? "");
         bw.Write(Mount); Text(MountGun); Text(MountFrom); Text(MountMap);
         bw.Write(Latch); Text(LatchGun); Text(LatchFrom); Text(LatchMap); bw.Write(LatchStrikes); bw.Write(MoveSlowdown);
-        Text(Vehicle); Text(VehicleMap); bw.Write(VehicleSpeed); bw.Write(VehicleThrottle);
+        Text(Vehicle); Text(VehicleMap); bw.Write(VehicleSpeed); bw.Write(VehicleThrottle); Text(VehicleGun); Text(VehicleFrom);
         bw.Write(Undetected); bw.Write(StealthKills); bw.Write(SuspicionMeter); bw.Write(SuspicionPending);
         bw.Write(KillChain); bw.Write(KillChainAt);
         bw.Write(TimedSwitches.Count);
@@ -73,7 +74,7 @@ internal sealed record PlayerSaveState(
         return new PlayerSaveState(
             br.ReadInt32(), Text(), Text(), Text(),
             br.ReadInt32(), Text(), Text(), Text(), br.ReadInt32(), br.ReadInt32(),
-            Text(), Text(), br.ReadInt32(), br.ReadInt32(),
+            Text(), Text(), br.ReadInt32(), br.ReadInt32(), Text(), Text(),
             br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadInt32(),
             br.ReadInt32(), br.ReadInt32(),
             [.. Enumerable.Range(0, br.ReadCount()).Select(_ => new SavedTimedSwitch(
