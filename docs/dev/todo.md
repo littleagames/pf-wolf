@@ -86,7 +86,6 @@ DrawWarpIn (a fizzle-in frame now draws the info area and messages before it fiz
 **Aliens of Gold: level flow and UI**
 - Text presenter: no `^DS` display strings or `^PM` music by number. None of the game's texts
   use them.
-- Blake Stone's shareware data (`.BS1`) isn't supported.
 - Menus: laid out as bstone's (positions, spacing, cursors checked against 3d_menu.cpp). Game
   Options adds Video and Mods; Game Switches adds the engine's own settings after bstone's four.
 
