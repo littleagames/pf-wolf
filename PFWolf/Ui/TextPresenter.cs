@@ -83,8 +83,9 @@ and message boxes (bstone jm_tp.cpp). A script is text with ^ codes, two letters
 number of hex digits (^FC3a sets the color, ^CE centers the line, ^EP ends a page, ^XX the
 script). Lines word wrap within the region; a line of nothing but codes takes no room.
 Fonts, shapes, animations (^AN, run while a page waits) and sounds come from
-gamepacks/{pack}/presenter.yaml. Not done: display strings (^DS) and music by number (^PM),
-which none of Blake Stone's texts use.
+gamepacks/{pack}/presenter.yaml. ^DSnn prints display string nn (DisplayStrings: 00 is the
+score, set as the game ends) and ^PMnn plays music nn, its place in raw-data-map's music list;
+none of Blake Stone's own texts use either.
 
 =============================================================================
 */
@@ -119,6 +120,13 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
     bool tpjustifyright;
     readonly int[] tpsavex = new int[CursorSaves + 1], tpsavey = new int[CursorSaves + 1];
     readonly int[] tppagex = new int[2], tppagey = new int[2];
+    int tpmusic;
+
+    /// <summary>
+    /// What ^DSnn prints, by nn (bstone's piStringTable, which has the one): 0 is the score,
+    /// set as the game ends (won or lost) for the end briefing; null prints nothing
+    /// </summary>
+    internal readonly string?[] DisplayStrings = new string?[1];
 
     char TpAt(int i) => i >= 0 && i < tptext.Length ? tptext[i] : '\0';
 
@@ -228,6 +236,7 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         tppos = 0;
         pi.PageNum = 0;
         tpanims.Clear();
+        tpmusic = -1;
 
         tpfontnumber = pi.Font;
         tpfont = PresenterFont(tpfontnumber);
@@ -425,6 +434,8 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                                     length += TpBoxAroundShape(-1, -1, ShapePic(TpValueAt(s + 3, 3)));
                                 else if (sub == "AN")
                                     length += TpBoxAroundShape(-1, -1, AnimationFrames(TpValueAt(s + 3, 2)).FirstOrDefault());
+                                else if (sub == "DS" && DisplayString(TpValueAt(s + 3, 2)) is { } displayed)
+                                    length += tpfont?.Measure(displayed) ?? 0;     // bstone measures the code's digits instead
                                 s += 3 + digits;
                             }
                             else
@@ -563,6 +574,20 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                         audio.Play(sound);
                     break;
 
+                case "DS":
+                    if (DisplayString(value) is { } shown)
+                        TpPresentDisplayString(shown);
+                    break;
+
+                case "PM":
+                    // Once for a run of the same number, as bstone's music_num
+                    if (value != tpmusic && MusicName(value) is { } music)
+                    {
+                        tpmusic = value;
+                        audio.PlayMusic(music);
+                    }
+                    break;
+
                 case "PA":
                     video.Update();
                     for (var paused = GameEngineManager.GetTimeCount(); GameEngineManager.GetTimeCount() - paused < 30;)
@@ -586,12 +611,39 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
                     video.Update();
                     break;
 
-                // ^ZZ, ^HI, and those not done (^DS, ^PM): nothing
+                // ^ZZ and ^HI: nothing
             }
         }
 
         if (TpAt(tppos) == ReturnCode && TpAt(tppos + 1) == '\n' && (tpflags & startOfLine) != 0)
             tppos += 2;
+    }
+
+    string? DisplayString(int number) => number < DisplayStrings.Length ? DisplayStrings[number] : null;
+
+    /// <summary>Music number <paramref name="number"/>: its place in the game's raw-data-map music list; null past its end</summary>
+    string? MusicName(int number) =>
+        assets.FindInGamePackIfAny<RawDataMapAsset>("raw-data-map")?.Music is { } music && number < music.Count ? music[number] : null;
+
+    /// <summary>
+    /// ^DS: a display string presented where the script is, its own codes and all, and then
+    /// the script goes on from after the code (bstone presents it in place)
+    /// </summary>
+    void TpPresentDisplayString(string text)
+    {
+        var script = tptext;
+        int pos = tppos;
+        tptext = text;
+        tppos = 0;
+        while ((tpflags & presenting) != 0 && tppos < tptext.Length)
+        {
+            if (TpAt(tppos) == Control)
+                TpHandleCodes();
+            else
+                TpWrapText();
+        }
+        tptext = script;
+        tppos = pos;
     }
 
     int TpValueAt(int pos, int digits)

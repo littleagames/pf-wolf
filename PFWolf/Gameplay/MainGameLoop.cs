@@ -342,12 +342,14 @@ internal sealed class MainGameLoop(
                     if (!controlPanel.EndedFromMenu && engine.GetGameInfo().LoseScreen is { } loseScreen)
                         presenter.ShowLoseScreen(loseScreen);
                     controlPanel.EndedFromMenu = false;
+                    presenter.DisplayStrings[0] = session.PlayerState.Score.ToString();     // ^DS00, after the lose screen as bstone's
 
                     highScores.CheckHighScore(session.PlayerState.Score, won: false);
                     controlPanel.EnableViewScoresMenuItem();
                     return;
 
                 case PlayState.Victorious:
+                    presenter.DisplayStrings[0] = session.PlayerState.Score.ToString();     // ^DS00 in the end briefing
                     if (hubs.CurrentEpisode()?.EndBriefing is { Length: > 0 } endBriefing)
                     {
                         // Blake Stone: the mission's won message over the status bar, then its

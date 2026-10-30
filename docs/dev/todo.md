@@ -80,12 +80,16 @@ fizzles in from black after "Get Ready, Blake!", where it used to fade in, for w
 The info area says "transporting..." on the black view and through the fizzle, as bstone's
 DrawWarpIn (a fizzle-in frame now draws the info area and messages before it fizzles).
 
+Then (2026-10-29): the text presenter's last two codes, which none of the game's own texts use.
+`^DSnn` prints display string nn in place (00, bstone's only one, is the score, set as the game
+ends, won or lost); `^PMnn` plays music nn, its place in the game's raw-data-map music list, once
+for a run of the same number. One difference on purpose: `^CE` centers a line with `^DS` by the
+string's width, where bstone measures the code's digits.
+
 **Aliens of Gold: gameplay**
 - Nothing known.
 
 **Aliens of Gold: level flow and UI**
-- Text presenter: no `^DS` display strings or `^PM` music by number. None of the game's texts
-  use them.
 - Menus: laid out as bstone's (positions, spacing, cursors checked against 3d_menu.cpp). Game
   Options adds Video and Mods; Game Switches adds the engine's own settings after bstone's four.
 

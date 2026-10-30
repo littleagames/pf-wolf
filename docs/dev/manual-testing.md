@@ -278,6 +278,10 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] **(never tried)** Logoff from the main menu shows the same order screens (same hook as F10).
 - [ ] **(never tried)** Instructions' H_L / H_Shift key pictures; no `--game` with only BS1 files.
 - [ ] **(never tried)** Mission 1 to its end: the shuttle movie, end briefing, high scores.
+- [ ] **(never tried)** A mod's presenter text with `^DS00` (a texts/ end briefing, or game-info
+      level-start-message for the next game): the last game's score printed in place, the text
+      going on after it, and centered with `^CE`. `^PMnn` is play-tested headless
+      (PresenterCodesGameTests); by ear, the song switches.
 - [ ] **(never tried)** By ear: each enemy's one death sound, no SWAT wound sound; the digitized
       sounds the shareware left empty (8 bytes) stay silent.
 
