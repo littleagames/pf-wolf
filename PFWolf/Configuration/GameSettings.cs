@@ -12,7 +12,17 @@ internal sealed class GameSettings
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
     internal readonly ControlSettings ControlSettings = new();
 
+    /// <summary>The high score table played for: config.cfg's, or with mods loaded their own (modscores.dat)</summary>
     internal HighScore[] Scores = HighScore.WolfDefaults();
+
+    /// <summary>The loaded mods' key in modscores.dat (ModScores.KeyFor); empty with no mods, when Scores is config.cfg's</summary>
+    internal string ModScoresKey = "";
+
+    /// <summary>
+    /// With mods loaded, config.cfg's own table as it was read, written back untouched; null
+    /// when there was none to read
+    /// </summary>
+    internal HighScore[]? ConfigScores;
 
     /// <summary>How big the view is, 4 to 21 (21: the whole screen, no status bar)</summary>
     internal int ViewSize;

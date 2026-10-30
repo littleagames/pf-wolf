@@ -245,6 +245,17 @@ internal class GameEngineManager
 
     internal void ReadConfig()
     {
+        // With mods loaded, the high scores are theirs (modscores.dat), not the game's own
+        settings.ModScoresKey = ModScores.KeyFor(assetManager.Value.LoadedMods, Game.ModPath);
+        settings.ConfigScores = null;
+        ReadConfigFile();
+        if (settings.ModScoresKey.Length > 0
+            && ModScores.Read(GetConfigFilePath(ModScores.FileName)).TryGetValue(settings.ModScoresKey, out var modScores))
+            Array.Copy(modScores, settings.Scores, Math.Min(modScores.Length, settings.Scores.Length));
+    }
+
+    private void ReadConfigFile()
+    {
         string configpath = GetConfigFilePath(ConfigFileName);
 
         if (!File.Exists(configpath))
@@ -277,7 +288,10 @@ internal class GameEngineManager
         }
 
         var savedScores = config.ScoreTable ?? config.Scores;
-        Array.Copy(savedScores, settings.Scores, Math.Min(savedScores.Length, settings.Scores.Length));
+        if (settings.ModScoresKey.Length > 0)
+            settings.ConfigScores = savedScores;    // kept whole, though a mod may change the table's size
+        else
+            Array.Copy(savedScores, settings.Scores, Math.Min(savedScores.Length, settings.Scores.Length));
 
         // The controls moved to controls.cfg, which the console runs at startup; config.cfg now
         // only has blanks where they were. A config from before that still has them: take them
@@ -630,6 +644,15 @@ internal class GameEngineManager
                 using var bw = new BinaryWriter(stream);
                 WriteConfigData(bw);
             });
+
+            if (settings.ModScoresKey.Length > 0)
+            {
+                // Read afresh, so other mod sets' tables are kept as they are
+                var path = GetConfigFilePath(ModScores.FileName);
+                var tables = ModScores.Read(path);
+                tables[settings.ModScoresKey] = settings.Scores;
+                ReplaceFile(path, stream => ModScores.Write(stream, tables));
+            }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -649,8 +672,12 @@ internal class GameEngineManager
     private void WriteConfigData(BinaryWriter bw)
     {
         bw.Write(ConfigSignature);
+
+        // With mods loaded, the game's own table goes back as it was read (none, when there was
+        // no config.cfg: an empty table, so the game's defaults show without mods)
+        var scores = settings.ModScoresKey.Length > 0 ? settings.ConfigScores ?? [] : settings.Scores;
         for (int i = 0; i < HighScore.LegacyScoreCount; i++)
-            (i < settings.Scores.Length ? settings.Scores[i] : new HighScore()).Write(bw);
+            (i < scores.Length ? scores[i] : new HighScore()).Write(bw);
 
         bw.Write((byte)0); // sound mode placeholder
         bw.Write((byte)0); // music mode placeholder
@@ -697,8 +724,8 @@ internal class GameEngineManager
         }));
         bw.Write(automapManager.ShowStats);
 
-        bw.Write((byte)settings.Scores.Length);
-        foreach (var s in settings.Scores)
+        bw.Write((byte)scores.Length);
+        foreach (var s in scores)
         {
             s.Write(bw);
             bw.Write(s.Ratio);

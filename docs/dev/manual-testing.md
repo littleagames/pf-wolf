@@ -506,6 +506,9 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 - [ ] `mods/` folder next to the exe; Options → Mods: toggle, paging past 9, other-game mods
       greyed, restart prompt, `mods.cfg` written.
 - [ ] **(never tried)** Options → Mods restart inside a stand-alone game.
+- [ ] **(never tried)** High scores per mod set (`modscores.dat` in the config folder): a score
+      made with a mod shows only with that set of mods (any order), not without mods or with
+      another set; switching the mods off brings back the game's own table from `config.cfg`.
 - [ ] A mod with `key: !remove` takes base keys out.
 - [ ] Mod `texts/` replaces HELPART / an end text; **(never tried)** Blake texts from `texts/`.
 - [ ] Mod `maps/` `.wad` and `.uwmf` levels replace and add levels.
