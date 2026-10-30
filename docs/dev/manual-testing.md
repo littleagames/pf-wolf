@@ -538,16 +538,16 @@ can reach), not played by hand.
       use message going while you man it, facing the yard, fire (no ammo used, half damage
       taken), step off behind it; the yard's enemies flanking through the door. Save and load
       while riding and while manning the gun.
-- [ ] Vehicles Demo (`--file vehicles-demo`): seen headless: both board (through Lua's
-      `actor:jump("Use")`), the tank's cannon in hand with its status bar picture, a shell
-      flying and bursting. **(never tried)**, all of the driving (the screen was locked):
-      the throttle, braking into reverse and the meter in reverse, coasting to a stop (drag),
-      stopping dead at a wall; use opening the motor pool's and the bunker's doors from the
-      seat; getting out at the side (and "No room" boxed in), the vehicle left where it was;
-      not changing weapons in the tank, and the old one back after; a quarter of each hit in the
-      tank; running guards and dogs down (the crunch, only at speed, and in reverse too); dying
-      in the tank (the cannon gone); saving and loading in the tank (save v39 keeps the cannon
-      and the weapon to give back); the sounds by ear.
+- [ ] Vehicles Demo (`--file vehicles-demo`), driven windowed (`tp` to place the vehicle):
+      both board; the jeep's throttle and meter, stopping dead at a wall, braking into reverse
+      (the meter full in reverse), coasting to a stop; use opening the motor pool's door from
+      the seat; running a guard and a dog down (their clips picked up on the way); getting out
+      at the side with the jeep left beside you; in the tank, 2 not changing from the cannon, a
+      shell killing a guard, guards crushed, the pistol back on climbing out; saving in the tank,
+      getting out and loading it again (riding, cannon in hand; out after, the pistol back).
+      **(never tried)**: "No room" boxed in; a quarter of each hit in the tank (god mode was on);
+      crushing in reverse; dying in the tank (the cannon gone); the bunker's door; the sounds by
+      ear. Seen: the use message of the vehicle you just got into stays up a moment.
 - [ ] **(never tried)** Weather Demo (`--file weather-demo`), Floors 1-3 by hand: no rain under
       the porch, the gallery, the arches, the doorways and the elevator room, and its splashes
       on the courtyard floor only; looking up and down in it; Floor 2's squalls thickening,
