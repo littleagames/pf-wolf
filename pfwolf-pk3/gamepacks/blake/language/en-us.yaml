@@ -8,7 +8,7 @@
 # {Item:00} is the count of that item, in two digits; %a and %n are filled in by what shows them.
 
 # The menus' questions, as bstone's (3d_menu.cpp): Blake Stone has one quit message
-$BS_ENDSTR1: "      Quit to DOS?\n Are you sure (Y or N)?"
+$BS_ENDSTR1: "    Quit to Windows?\n Are you sure (Y or N)?"
 $ENDGAMESTR: "    End current game?\n Are you sure (Y or N)?"
 $CURGAME: "   Continuing past this\n  point will end the game\n you're currently playing.\n\n Start a NEW game? (Y/N)"
 
