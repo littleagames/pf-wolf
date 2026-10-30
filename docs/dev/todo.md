@@ -70,9 +70,9 @@ Planet Strike floor was run headless for 400 tics without a hang.
 Then (2026-10-27, later): security lights, steam, ooze and the six mission bosses played headless
 (BlakeMachinesGameTests: each boss sees, hits, dies and drops the gold card). Two fixes: steam
 vents never let off steam, as nothing standing still was ever flagged on screen (the renderer now
-flags any drawn thing, as bstone's FL_VISIBLE); and ooze rolled its 1-in-8 bite every tic of its
-third frame (a think) rather than once a round (now an action), so it hurt about 30 times too
-often.
+flags any drawn thing, as bstone's FL_VISIBLE). Ooze was also made to bite once a round, but
+that misread bstone (2026-10-30): T_SmartThought is the think of a 1-tic state looping on itself,
+so it rolls every frame of the third frame, and ooze is a think again.
 
 Then (2026-10-27, last): Planet Strike's teleporter map warps out and in, as bstone's
 `select_floor` (ex_transported) does; it had just switched floors. A floor arrived at by a warp

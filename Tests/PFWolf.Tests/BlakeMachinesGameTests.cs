@@ -62,13 +62,14 @@ public class BlakeMachinesGameTests
     [TestCase("BlackOoze")]
     public void Standing_In_Ooze_Hurts(string ooze)
     {
-        // Act: under the player, who stands in it for 26 of its 90-tic rounds (4 points, 1 in 8)
-        var output = Play($"summon {ooze} 0 37 54; wait 2400; hurt 1");
+        // Act: under the player, who stands in it for about four of its 90-tic rounds (4 points,
+        // 1 in 8, each tic of its third frame)
+        var output = Play($"summon {ooze} 0 37 54; wait 350; hurt 1");
 
-        // Assert: the 1 from hurt, and a few bites, not one every round (rolling every tic of its
-        // frame, as it once did, would have taken nearly all 100)
+        // Assert: the 1 from hurt, and many bites (a dozen or so), not one a round, which took
+        // under 10 in this time
         var health = output.Single(line => line.StartsWith("Health is "));
-        Assert.That(int.Parse(health.Split(' ', ',')[2]), Is.InRange(60, 98), health);
+        Assert.That(int.Parse(health.Split(' ', ',')[2]), Is.InRange(1, 80), health);
         Assert.That(output, Has.Some.StartsWith("ATTACKING:"), "the REBA shows what hurt");
     }
 
