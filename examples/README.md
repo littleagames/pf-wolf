@@ -988,6 +988,59 @@ The newer generators share `tools/example-mod-tools.ps1`, which writes the level
 sounds. With cheats on, `lua print(me.vehicle)` shows what you're riding, and `where` the floor,
 tag and things under you.
 
+## Vehicles Demo (`mods/vehicles-demo`)
+
+A motor pool level that replaces Floor 1 (Wolfenstein 3D only), to show off **vehicles on land**:
+a quick jeep and a slow, heavy tank with a cannon, to drive through a courtyard of guards and
+into a bunker. It's YAML, a level and the art and sounds a script makes; no code.
+
+```
+PFWolf.exe --file vehicles-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The motor pool,** where you start beside the jeep, with the tank parked further down. Face
+  either one and press use to get in. Forward is the throttle; back brakes, and once you've
+  stopped it reverses; with neither held you coast to a stop. Driving into a wall stops you dead.
+  Use facing a door opens it; use anywhere else gets you out, at the side if there's room.
+- **The jeep** is quick, and you keep your own gun, but you take most of a hit and it only
+  knocks a guard down if you're going fast.
+- **The tank** is slow, but its cannon is in your hands while you're in it (fire for a shell
+  that bursts where it lands, a second and a half to load the next), you take a quarter of every
+  hit, and anything it runs into at speed is crushed. Get out and your own gun's back.
+- **The courtyard,** out under the sky past the motor pool's door: guards and dogs among oil
+  drums. **The bunker** beyond it: SS and an officer, and the way down to the exit.
+
+### What's in it
+
+- `actordefs/vehicles-demo.yaml`:
+  - `Jeep` and `Tank`, whose `Use` states run `A_Board("sound", "message")`, as the Boat Demo's
+    boat. Besides `vehicle.maxspeed`, `vehicle.accel` and `vehicle.brake`: `vehicle.reverse`
+    (the top speed backwards), `vehicle.drag` (how fast it slows with neither held),
+    `vehicle.exitanywhere: true` (get out onto any open tile beside it, no docks needed),
+    `vehicle.damagetaken` (the share of a hit you take inside), and `vehicle.crushdamage`,
+    `vehicle.crushspeed` and `vehicle.crushsound` (running enemies down). The tank's
+    `vehicle.weapon: TankCannon` is in your hands while you ride, and you can't change it.
+  - `TankCannon`, the cannon (`weapon.mounted: true`, so it's never kept, and no ammo), firing
+    `TankShell`: Wolf3D's own rocket pictures and smoke, with an `A_Explode` burst.
+- `mapdefs/things.yaml`: objects 940 (the jeep) and 941 (the tank).
+- `mapdefs/flats.yaml`: concrete and a girdered roof indoors, tarmac under the sky outdoors.
+- `statusbar.yaml`: a `power-meter` along the bottom of the status bar showing the throttle,
+  forward or in reverse.
+- `game-info.yaml`: the sky, and messages over the view on.
+- `flats/`, `graphics/` (the sky and the cannon's status bar picture), `sprites/` (the jeep, the
+  tank and the cannon in your hands) and `sounds/` (both engines, the cannon, the crunch and the
+  door), named in `sounds/sound-seq.yaml`.
+- `maps/MAP01.wad`: the level.
+
+Everything but the YAML is made by `tools/make-vehicles-demo.ps1` (the layout is an ASCII drawing
+in it). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-vehicles-demo.ps1
+```
+
 ## Weather Demo (`mods/weather-demo`)
 
 Three short levels that replace Floors 1 to 3 (Wolfenstein 3D only), each with its own

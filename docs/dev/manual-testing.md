@@ -538,6 +538,16 @@ can reach), not played by hand.
       use message going while you man it, facing the yard, fire (no ammo used, half damage
       taken), step off behind it; the yard's enemies flanking through the door. Save and load
       while riding and while manning the gun.
+- [ ] Vehicles Demo (`--file vehicles-demo`): seen headless: both board (through Lua's
+      `actor:jump("Use")`), the tank's cannon in hand with its status bar picture, a shell
+      flying and bursting. **(never tried)**, all of the driving (the screen was locked):
+      the throttle, braking into reverse and the meter in reverse, coasting to a stop (drag),
+      stopping dead at a wall; use opening the motor pool's and the bunker's doors from the
+      seat; getting out at the side (and "No room" boxed in), the vehicle left where it was;
+      not changing weapons in the tank, and the old one back after; a quarter of each hit in the
+      tank; running guards and dogs down (the crunch, only at speed, and in reverse too); dying
+      in the tank (the cannon gone); saving and loading in the tank (save v39 keeps the cannon
+      and the weapon to give back); the sounds by ear.
 - [ ] **(never tried)** Weather Demo (`--file weather-demo`), Floors 1-3 by hand: no rain under
       the porch, the gallery, the arches, the doorways and the elevator room, and its splashes
       on the courtyard floor only; looking up and down in it; Floor 2's squalls thickening,
