@@ -258,6 +258,45 @@ public class VehiclesTests
     }
 
     [Test]
+    public void An_Enemy_Hurt_And_Moved_After_Being_Run_Down_Is_Still_Spared_A_While()
+    {
+        // Arrange: a dog run down, which then loses health and moves (its record's value changes)
+        BoardTank();
+        var dog = (Monster)_inventory.CreateActor("Dog")!;
+        dog.SetPosition(12, 10);
+        dog.RuntimeFlags |= ObjFlags.Shootable;
+        _map.GetActors().AddLast(dog);
+        _vehicles.Throttle(-1, 5);
+        dog.Hitpoints -= 5;
+        dog.X += 0x100;
+
+        // Act
+        Assert.DoesNotThrow(() => _vehicles.Throttle(-1, 1));
+        Assert.DoesNotThrow(() => _vehicles.Throttle(-1, 40));
+
+        // Assert: once at first, then again once its wait was over
+        Assert.That(_crushed, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public void Running_Down_An_Enemy_That_Drops_Something_Is_Safe()
+    {
+        // Arrange: the dog's death adds an actor to the level, as a guard's dropped clip does
+        BoardTank();
+        var dog = (Monster)_inventory.CreateActor("Dog")!;
+        dog.SetPosition(12, 10);
+        dog.RuntimeFlags |= ObjFlags.Shootable;
+        _map.GetActors().AddLast(dog);
+        var drop = _inventory.CreateActor("Dog")!;
+        var vehicles = new Vehicles(_map, _inventory, _session,       // riding the same tank, its hook dropping something
+            new VehiclesHooks(_ => { }, _ => { }, () => { }, (_, _, _) => { }, (victim, _) => _map.GetActors().AddLast(drop)));
+
+        // Act / Assert
+        Assert.DoesNotThrow(() => vehicles.Throttle(-1, 8));
+        Assert.That(_map.GetActors(), Does.Contain(drop));
+    }
+
+    [Test]
     public void It_Doesnt_Run_Down_An_Enemy_Behind_It()
     {
         // Arrange: a dog a tile behind, going forward at speed

@@ -50,8 +50,9 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
     // How long an enemy run into is spared another crush, in tics
     const int CrushWait = 35;
 
-    // Enemies just run into, and the tics until they can be again
-    readonly Dictionary<Entities.Actors.Monster, int> crushed = [];
+    // Enemies just run into, and the tics until they can be again: by reference, as actors are
+    // records whose value (and hash) changes as they're hurt and move
+    readonly Dictionary<Entities.Actors.Monster, int> crushed = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>Whether the acting player is riding something</summary>
     internal bool IsRiding => session.PlayerState.Vehicle != null;
@@ -159,14 +160,16 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
         double angle = player.Angle * Math.PI / 180 + (carry < 0 ? Math.PI : 0);
         double ax = Math.Cos(angle), ay = -Math.Sin(angle);
         long reach = 0x10000 + Math.Abs(carry) + 0x800;
-        foreach (var actor in map.GetActors())
+        // Found first, then hurt: a death can drop things into the level's actors
+        var victims = map.GetActors().OfType<Entities.Actors.Monster>().Where(monster =>
         {
-            if (actor is not Entities.Actors.Monster monster || monster.IsRemoved || !monster.RuntimeFlags.Has(ObjFlags.Shootable)
-                || crushed.ContainsKey(monster))
-                continue;
+            if (monster.IsRemoved || !monster.RuntimeFlags.Has(ObjFlags.Shootable) || crushed.ContainsKey(monster))
+                return false;
             long dx = monster.X - player.X, dy = monster.Y - player.Y;
-            if (Math.Abs(dx) > reach || Math.Abs(dy) > reach || dx * ax + dy * ay <= 0)
-                continue;
+            return Math.Abs(dx) <= reach && Math.Abs(dy) <= reach && dx * ax + dy * ay > 0;
+        }).ToList();
+        foreach (var monster in victims)
+        {
             crushed[monster] = CrushWait;
             if (Text("vehicle.crushsound") is { } sound)
                 hooks.PlaySound(sound);
