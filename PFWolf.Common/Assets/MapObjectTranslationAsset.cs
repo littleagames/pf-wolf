@@ -778,6 +778,26 @@ public record MapSwitchTranslation
     public string Lock { get; init; } = "";
 
     /// <summary>
+    /// Several inventory items that lock it together, as a door's `locks:` do: the player needs
+    /// <see cref="LocksNeeded"/> of them (all of them when that's 0), on top of <see cref="Lock"/>
+    /// if it has one too. Short of one, its key's `key.switchlockedmessage` is shown, unless
+    /// locks-needed is less than all of them: then it's that the switch is locked, so give such a
+    /// switch a lock-message.
+    /// </summary>
+    public List<string> Locks { get; init; } = [];
+
+    /// <summary>How many of <see cref="Locks"/> the player must carry to use it (any of them). 0, or more than there are, needs all of them.</summary>
+    public int LocksNeeded { get; init; }
+
+    /// <summary>
+    /// Throwing it uses up the items it needed (<see cref="Lock"/> and those of <see cref="Locks"/>
+    /// it took). It's locked again whenever it's this wall or patch again, so a toggle's `to` (with
+    /// no lock of its own) is best switched back to an unlocked copy of this one; a reset-tics
+    /// switch comes back locked.
+    /// </summary>
+    public bool TakesKey { get; init; }
+
+    /// <summary>
     /// Shown when it's used without its <see cref="Lock"/> item (a $NAME language key or the
     /// text itself). Empty uses the lock item's `key.switchlockedmessage`, else that it's locked.
     /// </summary>

@@ -82,20 +82,23 @@ internal sealed class PlayerUse(
     }
 
     /// <summary>
-    /// Throws a switch wall: refused without its lock item, else it turns into its `to` wall,
+    /// Throws a switch wall: refused without its lock items, else it turns into its `to` wall,
     /// plays its sound and runs its actions on whatever shares its tile's tag. The other switches
     /// with its tag that are either way of the same switch flip with it (as Blake Stone's
     /// barrier switches do), without running their actions.
     /// </summary>
     internal void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir)
     {
-        if (RefuseSwitchLock(wallSwitch))
+        var keys = SwitchKeys(wallSwitch);
+        if (keys == null)
             return;
 
         var gamestate = session.GameState;
         var tag = map.GetTag(tilex, tiley);
         if (hooks.MaySwitch?.Invoke(tilex, tiley, tag) == false)
             return;                 // a script leaves it be (game.onswitch)
+        if (wallSwitch.TakesKey && keys.Count > 0)
+            doors.TakeKeys(keys);
         if (wallSwitch.To is > 0 and < BitWall && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
         {
             // flip the switch, keeping the door-side mark on a wall beside a door
@@ -133,13 +136,25 @@ internal sealed class PlayerUse(
             Entities.MapTriggerRegistry.Invoke(action, activation);
     }
 
-    // Refuses a switch the player lacks the lock item for: true if it did
-    internal bool RefuseSwitchLock(MapSwitchTranslation sw)
+    /// <summary>
+    /// The items a switch is used with from what the player carries (its lock, and as many of its
+    /// locks as it needs; none for an unlocked one), or null, refusing it, when they're short.
+    /// Short of a switch that takes only some of its locks, no one key's message fits.
+    /// </summary>
+    internal List<string>? SwitchKeys(MapSwitchTranslation sw)
     {
-        if (string.IsNullOrEmpty(sw.Lock) || inventory.Has(sw.Lock))
-            return false;
-        doors.RefuseLocked(sw.Lock, sw.LockedSound, sw.LockMessage, sw.LockMessageStyle, isSwitch: true);
-        return true;
+        if (sw.Lock.Length == 0 && sw.Locks.Count == 0)
+            return [];
+
+        int required = sw.LocksNeeded > 0 && sw.LocksNeeded < sw.Locks.Count ? sw.LocksNeeded : sw.Locks.Count;
+        var items = Doors.ItemsToOpen(inventory, sw.Lock, sw.Locks, required, out var missing);
+        if (items != null)
+            return items;
+
+        var message = sw.LockMessage.Length == 0 && missing != sw.Lock && required < sw.Locks.Count
+            ? "$LOCKEDSWITCH" : sw.LockMessage;
+        doors.RefuseLocked(missing, sw.LockedSound, message, sw.LockMessageStyle, isSwitch: true);
+        return null;
     }
 
     /// <summary>
@@ -166,15 +181,17 @@ internal sealed class PlayerUse(
     }
 
     /// <summary>
-    /// Throws a patch's switch (patches.yaml): refused without its lock item, else it plays its
+    /// Throws a patch's switch (patches.yaml): refused without its lock items, else it plays its
     /// sound and runs its actions on whatever shares the tile's tag, as a wall's switch does.
     /// Then, unless all its actions came to nothing (an item the player has no room for, say),
-    /// the patch turns into its `to` patch, or comes off with `remove`; and so do the other
-    /// patches with the tag that are either way of the same switch, so linked ones stay in step.
+    /// a takes-key switch uses up its keys and the patch turns into its `to` patch, or comes off
+    /// with `remove`; and so do the other patches with the tag that are either way of the same
+    /// switch, so linked ones stay in step.
     /// </summary>
     internal void UsePatchSwitch(MapSwitchTranslation patchSwitch, int tilex, int tiley, ControlDir dir)
     {
-        if (RefuseSwitchLock(patchSwitch))
+        var keys = SwitchKeys(patchSwitch);
+        if (keys == null)
             return;
 
         var tag = map.GetTag(tilex, tiley);
@@ -190,6 +207,8 @@ internal sealed class PlayerUse(
             wentOff |= Entities.MapTriggerRegistry.Invoke(action, activation);
         if (!wentOff)
             return;
+        if (patchSwitch.TakesKey && keys.Count > 0)
+            doors.TakeKeys(keys);
 
         int from = map.GetPatch(tilex, tiley);
         int to = patchSwitch.Remove ? 0

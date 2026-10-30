@@ -494,7 +494,8 @@ public static class UwmfTranslator
         }
 
         private static bool HasSwitchKeys(UwmfBlock tile) =>
-            tile.Has("switchto") || tile.Has("switchactions") || tile.Has("switchsound") || tile.Has("switchsides") || tile.Has("switchlock");
+            tile.Has("switchto") || tile.Has("switchactions") || tile.Has("switchsound") || tile.Has("switchsides")
+            || tile.Has("switchlock") || tile.Has("switchlocks") || tile.Has("switchtakeskey");
 
         // A tile's own switch (the PFWolf switch keys), or null
         private MapSwitchTranslation? SwitchOf(UwmfBlock tile)
@@ -520,6 +521,9 @@ public static class UwmfTranslator
                 Sides = Split(tile.String("switchsides").ToLowerInvariant(), ','),
                 Sound = tile.String("switchsound"),
                 Lock = tile.String("switchlock"),
+                Locks = Split(tile.String("switchlocks"), ','),
+                LocksNeeded = tile.Int("switchlocksneeded"),
+                TakesKey = tile.Bool("switchtakeskey"),
                 Actions = Split(tile.String("switchactions"), ';'),
             };
         }

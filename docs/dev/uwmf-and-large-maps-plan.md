@@ -155,7 +155,7 @@ extras), and nothing needs a new per-tile list:
 - **tile**: `height` (stories, plane 3), `patch` (a mapdefs patch id, plane 0 high byte),
   `diagonal = "nw"|"ne"|"sw"|"se"` (the plane 1 marker), `flip = "south,west"`, the switch
   keys (`switchto` = another tile entry's index, `switchsides`, `switchsound`, `switchlock`,
-  `switchactions = "A_OpenDoor(); A_Exit()"`) and `id` (the mapdefs wall or door code it is).
+  `switchlocks = "RedKey,BlueKey"`, `switchlocksneeded`, `switchtakeskey`, `switchactions = "A_OpenDoor(); A_Exit()"`) and `id` (the mapdefs wall or door code it is).
   Different heights or patches on the same wall are separate tile entries, as UWMF does for
   anything per-tile.
 - **sector**: `lightzone` (plane 5), `height` on open floor (an arch, plane 3), `flats` (the

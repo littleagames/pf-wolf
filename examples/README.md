@@ -276,6 +276,8 @@ The keys aren't used up, so the same ones open every door. The status bar shows 
   own (the any-two and all-four doors do). Without one, a door that needs all its keys shows the
   missing key's message, and one that needs only some a plain locked message. Every door field
   is in the [mapdefs reference](https://www.littleagames.com/pf-wolf/docs/latest/reference/mapdefs).
+  A wall's or patch's `switch:` block takes the same `lock:`, `locks:` and `locks-needed`, and
+  `takes-key: true` to use the keys up as it's thrown.
 - `mapdefs/things.yaml`: objects 500 (the red key) and 501 (the blue key). Gold and silver are
   Wolf3D's own 43 and 44.
 - `translations.yaml`: `red-key` and `blue-key`, the gold key's sprite desaturated and tinted,

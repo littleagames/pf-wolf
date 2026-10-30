@@ -24,6 +24,8 @@ public class PlayerUseTests
             "inventory.use": A_TestUseDetonator
         RedKey:
           parent: Inventory
+        BlueKey:
+          parent: Inventory
         Medkit:
           parent: Inventory
           properties:
@@ -432,7 +434,28 @@ public class PlayerUseTests
         _inventory.Give("RedKey", 1);
 
         // Act / Assert
-        Assert.That(_use.RefuseSwitchLock(new MapSwitchTranslation()), Is.False);
-        Assert.That(_use.RefuseSwitchLock(new MapSwitchTranslation { Lock = "RedKey" }), Is.False);
+        Assert.That(_use.SwitchKeys(new MapSwitchTranslation()), Is.Empty);
+        Assert.That(_use.SwitchKeys(new MapSwitchTranslation { Lock = "RedKey" }), Is.EqualTo(new[] { "RedKey" }));
+    }
+
+    [Test]
+    public void A_Switch_Locked_By_Two_Keys_Is_Used_With_Both()
+    {
+        // Arrange
+        _inventory.Give("RedKey", 1);
+        _inventory.Give("BlueKey", 1);
+
+        // Act / Assert
+        Assert.That(_use.SwitchKeys(new MapSwitchTranslation { Locks = ["RedKey", "BlueKey"] }), Is.EqualTo(new[] { "RedKey", "BlueKey" }));
+    }
+
+    [Test]
+    public void A_Switch_Needing_Any_One_Of_Its_Locks_Is_Used_With_The_One_Held()
+    {
+        // Arrange
+        _inventory.Give("BlueKey", 1);
+
+        // Act / Assert
+        Assert.That(_use.SwitchKeys(new MapSwitchTranslation { Locks = ["RedKey", "BlueKey"], LocksNeeded = 1 }), Is.EqualTo(new[] { "BlueKey" }));
     }
 }

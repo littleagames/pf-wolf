@@ -370,10 +370,8 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             // A takes-key door uses the items up and stays unlocked
             if (xlat.TakesKey)
             {
-                foreach (var item in needed)
-                    inventory.Take(item, 1);
+                TakeKeys(needed);
                 DoorObjList[door].Unlocked = true;
-                hooks.DrawKeys();
             }
         }
 
@@ -397,22 +395,31 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     /// <paramref name="missing"/> is then the first item they lack (its lock, else one of its
     /// locks), whose locked message and sound are used.
     /// </summary>
-    internal List<string>? ItemsToOpen(DoorObject door, out string missing)
+    internal List<string>? ItemsToOpen(DoorObject door, out string missing) =>
+        ItemsToOpen(inventory, door.Lock, door.MapLocks, door.LocksRequired, out missing);
+
+    /// <summary>
+    /// The items the player opens a lock with from what they carry (a door's, or a switch's):
+    /// <paramref name="lockItem"/> if any, and the first <paramref name="required"/> of
+    /// <paramref name="locks"/> they have. Null when they're short; <paramref name="missing"/> is
+    /// then the first item they lack.
+    /// </summary>
+    internal static List<string>? ItemsToOpen(InventoryManager inventory, string lockItem, List<string> locks, int required, out string missing)
     {
         missing = "";
         var items = new List<string>();
-        if (door.Lock.Length > 0)
+        if (lockItem.Length > 0)
         {
-            if (!inventory.Has(door.Lock))
+            if (!inventory.Has(lockItem))
             {
-                missing = door.Lock;
+                missing = lockItem;
                 return null;
             }
-            items.Add(door.Lock);
+            items.Add(lockItem);
         }
 
-        int required = door.LocksRequired, carried = 0;
-        foreach (var item in door.MapLocks)
+        int carried = 0;
+        foreach (var item in locks)
         {
             if (carried == required)
                 break;
@@ -426,6 +433,14 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         }
 
         return carried < required ? null : items;
+    }
+
+    /// <summary>Uses up the items a takes-key door or switch opened with</summary>
+    internal void TakeKeys(List<string> items)
+    {
+        foreach (var item in items)
+            inventory.Take(item, 1);
+        hooks.DrawKeys();
     }
 
     /// <summary>

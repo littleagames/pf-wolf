@@ -205,6 +205,12 @@ public static class UwmfWriter
                     block.Add("switchsound", own.Sound);
                 if (own.Lock.Length > 0)
                     block.Add("switchlock", own.Lock);
+                if (own.Locks.Count > 0)
+                    block.Add("switchlocks", string.Join(",", own.Locks));
+                if (own.LocksNeeded > 0)
+                    block.Add("switchlocksneeded", own.LocksNeeded);
+                if (own.TakesKey)
+                    block.Add("switchtakeskey", true);
                 if (own.Actions.Count > 0)
                     block.Add("switchactions", string.Join("; ", own.Actions));
             }

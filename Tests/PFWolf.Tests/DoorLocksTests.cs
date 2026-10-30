@@ -114,4 +114,44 @@ public class DoorLocksTests
         Assert.That(defs.Doors[80].Locks, Is.EqualTo(AllFour));
         Assert.That(defs.Doors[80].LocksNeeded, Is.EqualTo(2));
     }
+
+    [Test]
+    public void A_lock_short_of_a_key_names_the_first_one_missing()
+    {
+        Carry("GoldKey", "BlueKey");
+
+        Assert.That(Doors.ItemsToOpen(_inventory, "", AllFour, 4, out var missing), Is.Null);
+        Assert.That(missing, Is.EqualTo("SilverKey"));
+        Assert.That(Doors.ItemsToOpen(_inventory, "RedKey", ["GoldKey"], 1, out missing), Is.Null);
+        Assert.That(missing, Is.EqualTo("RedKey"));
+    }
+
+    [Test]
+    public void Taking_keys_uses_up_only_those_given()
+    {
+        int redraws = 0;
+        var doors = new Doors(null!, null!, null!, _inventory, null!, new GameSession(), new DoorHooks((_, _, _) => { }, () => redraws++));
+        Carry("GoldKey", "RedKey", "BlueKey");
+
+        doors.TakeKeys(["GoldKey", "RedKey"]);
+
+        Assert.That(_inventory.Has("GoldKey") || _inventory.Has("RedKey"), Is.False);
+        Assert.That(_inventory.Has("BlueKey"), Is.True);
+        Assert.That(redraws, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Walls_yaml_reads_a_switchs_locks_and_takes_key()
+    {
+        var defs = PFWolf.Loaders.YamlDataEntryLoader.Deserialize<PFWolf.Assets.MapObjectTranslationAsset>("""
+            walls:
+              '60':
+                North: GRAYSTN1
+                switch: { to: 61, locks: [RedKey, BlueKey], locks-needed: 1, takes-key: true }
+            """);
+        var sw = defs.Walls[60].Switch!;
+        Assert.That(sw.Locks, Is.EqualTo(new[] { "RedKey", "BlueKey" }));
+        Assert.That(sw.LocksNeeded, Is.EqualTo(1));
+        Assert.That(sw.TakesKey, Is.True);
+    }
 }

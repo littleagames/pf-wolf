@@ -399,6 +399,9 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 - [ ] Every station: doors open/close/hold, pushwall move, set wall, lights on/off, locked switch
       message, toggles, door-frame switches.
 - [ ] **(never tried)** `A_MoveWall` with several tagged walls at once.
+- [ ] **(never tried)** A switch with `locks:` (all of them, and `locks-needed` any-N): refused
+      with the first missing key's message, or "locked" for an any-N one; `takes-key: true`
+      using the keys up (status bar redrawn); the same on a patch switch.
 
 **Removing walls** (`removewall`, `A_RemoveWall`)
 - [ ] **(never tried)** A switch and a walk trigger running `A_RemoveWall` on tagged walls; an
