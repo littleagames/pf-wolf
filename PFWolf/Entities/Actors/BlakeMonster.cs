@@ -704,7 +704,9 @@ internal partial record BlakeMonster : Monster
 
         if (Dir != ObjDir.NoDir)
         {
-            TryWalk();
+            // Refused anyway, it stops rather than walk a tile it's not on and snap back
+            if (!TryWalk())
+                Dir = ObjDir.NoDir;
             TryDir = (byte)ObjDir.NoDir;
         }
     }
@@ -749,8 +751,14 @@ internal partial record BlakeMonster : Monster
         int x = TileX + dx, y = TileY + dy;
         if (!MapManager.InMap(x, y))
             return false;
+
+        // Off or onto a floor enemies are kept out of (bstone's ElevatorFloor), or a tile a
+        // blocker marks, as TryWalk refuses: else the patroller walks on a tile and snaps back
+        if (MapManager.InMonsterKeepOut(TileX, TileY) || Blocked(x, y))
+            return false;
         if (dx != 0 && dy != 0)
-            return CheckDiag(x, y) && CheckDiag(TileX + dx, TileY) && CheckDiag(TileX, TileY + dy);
+            return !Blocked(TileX + dx, TileY) && !Blocked(TileX, TileY + dy)
+                && CheckDiag(x, y) && CheckDiag(TileX + dx, TileY) && CheckDiag(TileX, TileY + dy);
 
         switch (MapManager.ActorAt[x, y])
         {

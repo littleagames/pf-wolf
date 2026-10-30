@@ -376,7 +376,7 @@ internal partial record Monster : Actor
 
     // A monster blocker on the tile keeps it off: any (blocktile: monsters), or a BOSS (bosses)
     // (Midnight Assault's BLOCK_ENEMIES and BLOCK_BOSSES, CHECKSIDE/CHECKDIAG)
-    bool Blocked(int x, int y) => MapManager.BlocksMonster(x, y, HasFlag("BOSS"));
+    protected bool Blocked(int x, int y) => MapManager.BlocksMonster(x, y, HasFlag("BOSS"));
 
     internal bool TryWalk()
     {
