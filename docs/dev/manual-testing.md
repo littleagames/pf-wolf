@@ -133,6 +133,9 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Messages on: pickup texts, locked-door texts, obituaries ("killed by %k"), Spear bosses,
       ghosts, **(never tried)** `%o` player name and a door's own `lock-message`.
 - [ ] Cheats: MLI, god mode, warp; turned off in netgames.
+- [ ] **(never tried)** Picking up the gatling gun without the machine gun: key 3 then takes the
+      machine gun (both weapons are given, as in vanilla). MLI gives every weapon, the gatling
+      gun in hand, and with the multiplayer mod loaded no dog bite.
 - [ ] Pause, Esc menu mid-game, End Game.
 
 ## 1.7 Saving and loading

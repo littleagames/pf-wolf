@@ -204,11 +204,8 @@ internal sealed class CheatCommands(
             console.Print($"Gave {inventory.Give(item, amount)} {item}");
     }
 
-    internal void GiveAllWeapons()
-    {
-        foreach (var weapon in weapons.AllWeapons())
-            weapons.TryGiveWeapon(weapon, 0);
-    }
+    internal void GiveAllWeapons() =>
+        weapons.GiveAllWeapons();
 
     internal void GiveAllKeys()
     {

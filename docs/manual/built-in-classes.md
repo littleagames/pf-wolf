@@ -21,7 +21,7 @@ for something the engine does in code, so a class of your own does that by havin
 | `Key` | Opens the doors and switches that name it as their lock, and is lost at a level change. |
 | `ScoreItem` | Treasure: points, counted in the level's treasure ratio. |
 | `Weapon` | A weapon, with its `weapon.*` properties. |
-| `WeaponGiver` | Hands out another weapon (`weapongiver.weapon`). |
+| `WeaponGiver` | Hands out other weapons (`weapongiver.weapon`, a list or one; its ammo goes with the first). |
 | `BasicArmor` | Armor, put on as it's picked up rather than held. |
 | `BackpackItem` | A backpack. |
 | `Powerup` | A timed power-up. |

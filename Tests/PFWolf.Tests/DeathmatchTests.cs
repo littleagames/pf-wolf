@@ -16,6 +16,8 @@ public class DeathmatchTests
           parent: Weapon
         ChainGun:
           parent: Weapon
+        MachineGun:
+          parent: Weapon
         GatlingUpgrade:
           parent: WeaponGiver
           properties:
@@ -178,6 +180,21 @@ public class DeathmatchTests
         upgrade.Properties["weapongiver.weapon"] = "ChainGun";
         Assert.That(rig.Deathmatch.HasWeaponFrom(upgrade), Is.True);
         Assert.That(rig.Deathmatch.HasWeaponFrom(new Weapon { Name = "Pistol" }), Is.False);
+    }
+
+    [Test]
+    public void An_Upgrade_Giving_Several_Weapons_Is_Had_Only_With_All_Of_Them()
+    {
+        // Arrange
+        var rig = new Rig();
+        rig.Inventory.Give("ChainGun", 1);
+        var upgrade = new Weapon { Name = "GatlingUpgrade" };
+        upgrade.Properties["weapongiver.weapon"] = new List<object> { "ChainGun", "MachineGun" };
+
+        // Act / Assert
+        Assert.That(rig.Deathmatch.HasWeaponFrom(upgrade), Is.False);
+        rig.Inventory.Give("MachineGun", 1);
+        Assert.That(rig.Deathmatch.HasWeaponFrom(upgrade), Is.True);
     }
 }
 

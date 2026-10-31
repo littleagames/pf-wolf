@@ -220,6 +220,7 @@ DogBite:
   parent: "WolfWeapon"
   properties:
     "inventory.type": DogBite
+    "inventory.restrictedto": [DogPlayer]       # not one for the MLI cheat to hand out
     "weapon.slot": 1
     "weapon.ammouse1": 0
     "weapon.selectionorder": 3800

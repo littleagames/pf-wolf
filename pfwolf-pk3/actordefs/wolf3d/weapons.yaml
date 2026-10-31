@@ -311,14 +311,16 @@ BlueGatlingGun:
         tics-per-frame: 6
         next-state: Ready
 
+# The map's gatling gun. As in vanilla (where having the best weapon meant having every one
+# below it), it brings the machine gun along; the 6 rounds go with the gatling gun. A mod that
+# wants it to give the gatling gun alone sets "weapongiver.weapon": GatlingGun.
 GatlingGunUpgrade:
   parent: "WeaponGiver"
   properties:
     "inventory.pickupsound": "weapon/gatling/pickup"
     "inventory.pickupmessage": "$GOTGATLINGGUN"
-    "weapongiver.weapon": GatlingGun
+    "weapongiver.weapon": [GatlingGun, MachineGun]
     "weapon.ammogive1": 6
-    "dropitem": [GatlingGun, MachineGun]
   flags: [INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
@@ -330,8 +332,7 @@ BlueGatlingGunUpgrade:
   parent: "GatlingGunUpgrade"
   properties:
     "inventory.pickupsound": "weapon/bluegatling/pickup"
-    "weapongiver.weapon": BlueGatlingGun
-    "dropitem": [BlueGatlingGun, BlueAK47]
+    "weapongiver.weapon": [BlueGatlingGun, BlueAK47]
   states:
     Spawn:
       - sprite: BGUN

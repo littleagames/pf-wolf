@@ -141,9 +141,9 @@ internal sealed class PlayKeys(
                 inventory.Give(key, 1);
             session.PlayerState.Score = 0;
             session.GameState.TimeCount += (int)42000L;
-            // the best weapon there is (the gatling gun)
-            if (weapons.AllWeapons().OrderBy(weapons.WeaponSelectionOrder).FirstOrDefault() is { } bestWeapon)
-                weapons.GiveWeapon(bestWeapon);
+            // every weapon the player's class may have (vanilla gave the next one up, and its best
+            // weapon brought those below along); the best of them is taken in hand
+            weapons.GiveAllWeapons(classes.PlayerClassCanPickUp);
             weapons.GiveAllAmmo(99);
             weapons.DrawWeapon();
             statusBar.DrawHealth();

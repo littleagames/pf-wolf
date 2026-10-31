@@ -21,6 +21,7 @@ PropHands:
   parent: Weapon
   properties:
     "inventory.type": PropHands
+    "inventory.restrictedto": [PropPlayer]      # not one for the MLI cheat to hand out
     "weapon.slot": 1
     "weapon.selectionorder": 9000
   states:

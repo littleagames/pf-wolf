@@ -37,6 +37,16 @@ public class PlayerClassRulesTests
           properties:
             "weapon.ammotype1": Shells
             "weapon.ammouse1": 1
+        WeaponGiver:
+          parent: Weapon
+        PistolUpgrade:
+          parent: WeaponGiver
+          properties:
+            "weapongiver.weapon": [Pistol, Shotgun]
+        ShotgunUpgrade:
+          parent: WeaponGiver
+          properties:
+            "weapongiver.weapon": Shotgun
         SilverKey:
           parent: Inventory
           properties:
@@ -125,6 +135,8 @@ public class PlayerClassRulesTests
     [TestCase("Shotgun", false)]
     [TestCase("ClipBox", true)]             // the pistol's ammo, as a variant of it
     [TestCase("Shells", false)]             // only the shotgun uses them
+    [TestCase("PistolUpgrade", true)]       // a weapon giver goes by the weapon it's for (the first)
+    [TestCase("ShotgunUpgrade", false)]
     [TestCase("SilverKey", false)]          // forbidden to soldiers
     [TestCase("OfficerCap", false)]         // only for officers
     public void A_Soldier_Picks_Up_Only_What_It_May(string item, bool may)

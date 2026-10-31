@@ -83,6 +83,11 @@ public class PlayerWeaponsTests
           parent: WeaponGiver
           properties:
             "weapongiver.weapon": ChainGun
+        LadderUpgrade:
+          parent: WeaponGiver
+          properties:
+            "weapongiver.weapon": [ChainGun, MachineGun, Shotgun]
+            "weapon.ammogive1": 6
         BobGun:
           parent: Weapon
           properties:
@@ -287,6 +292,57 @@ public class PlayerWeaponsTests
 
         // Act / Assert
         Assert.That(rig.Weapons.TryGiveWeapon("Pistol", 6), Is.False);
+    }
+
+    // The pickup as the map spawns it, with the actordefs class's properties
+    private static Entities.Actors.Weapon Pickup(Rig rig, string name)
+    {
+        var pickup = new Entities.Actors.Weapon { Name = name };
+        foreach (var key in new[] { "weapongiver.weapon", "weapon.ammogive1" })
+            if (rig.Inventory.GetProperty(name, key) is { } value)
+                pickup.Properties[key] = value;
+        return pickup;
+    }
+
+    [Test]
+    public void A_Weapon_Giver_Gives_Every_Weapon_In_Its_List_The_Ammo_Going_With_The_First()
+    {
+        // Arrange
+        var rig = new Rig("Knife", "Pistol");
+        rig.InHand = "Pistol";
+        var upgrade = Pickup(rig, "LadderUpgrade");
+
+        // Act: the class can't hold a shotgun
+        bool took = rig.Weapons.TryGiveWeapon(upgrade, w => w != "Shotgun");
+
+        // Assert
+        Assert.That(took, Is.True);
+        Assert.That(rig.Weapons.OwnedWeapons(), Is.EqualTo(new[] { "Knife", "Pistol", "MachineGun", "ChainGun" }));
+        Assert.That(rig.InHand, Is.EqualTo("ChainGun"));
+        Assert.That(rig.Inventory.GetCount("Clip"), Is.EqualTo(6));
+    }
+
+    [Test]
+    public void A_Weapon_Giver_Still_Gives_The_Rest_Of_Its_List_To_Someone_With_The_First()
+    {
+        // Arrange: a save from before the upgrade brought the machine gun along
+        var rig = new Rig("ChainGun");
+        rig.Inventory.Give("Clip", 99);
+        var upgrade = Pickup(rig, "LadderUpgrade");
+
+        // Act / Assert
+        Assert.That(rig.Weapons.TryGiveWeapon(upgrade), Is.True);
+        Assert.That(rig.Inventory.Has("MachineGun"), Is.True);
+        Assert.That(rig.Weapons.TryGiveWeapon(upgrade), Is.False);      // nothing left to give
+    }
+
+    [Test]
+    public void A_Weapon_Givers_Weapons_Are_One_Or_A_List()
+    {
+        Assert.That(PlayerWeapons.GivenWeapons("GatlingUpgrade", "ChainGun"), Is.EqualTo(new[] { "ChainGun" }));
+        Assert.That(PlayerWeapons.GivenWeapons("LadderUpgrade", new List<object> { "ChainGun", "MachineGun" }),
+            Is.EqualTo(new[] { "ChainGun", "MachineGun" }));
+        Assert.That(PlayerWeapons.GivenWeapons("Rifle", null), Is.EqualTo(new[] { "Rifle" }));     // not a giver: the pickup itself
     }
 
     [Test]

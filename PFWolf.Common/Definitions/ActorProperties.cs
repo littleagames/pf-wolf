@@ -129,7 +129,7 @@ public static class ActorProperties
         Int("armor.saveamount", "Armor: the armor points it gives. It's only picked up when the player has fewer, and replaces their armor, points and savepercent, outright."),
         Int("armor.savepercent", "Armor: the share of each hit's damage taken off the armor points instead of health, 0-100"),
         Int("armor.maxsaveamount", "Armor bonus: it adds its saveamount to what the player has, up to this (and player.maxarmor), keeping their savepercent (or giving its own when they have none); without it, armor replaces the player's when it's more"),
-        Text("weapongiver.weapon", "A weapon giver: the weapon it hands out (the gatling upgrade's)", hint: FieldHint.Class),
+        List("weapongiver.weapon", "A weapon giver: the weapons it hands out, a list or one. Its ammo (weapon.ammogive1) goes with the first, the one it's for (the gatling upgrade's [GatlingGun, MachineGun])", hint: FieldHint.Class),
 
         // Keys
         Text("key.lockedmessage", "Shown when the player tries a door this key locks without it, unless the door has its own lock-message"),

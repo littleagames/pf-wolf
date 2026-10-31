@@ -89,6 +89,8 @@ internal sealed class PlayerClassRules(GameEngineManager engine, InventoryManage
             _ => [property.ToString() ?? ""],
         };
 
+        if (inventory.FindClass(item, "WeaponGiver") != null)      // as the weapon it's for (the gatling upgrade: GatlingGun)
+            item = PlayerWeapons.GivenWeapons(item, inventory.GetProperty(item, "weapongiver.weapon"))[0];
         if (inventory.FindClass(item, "Weapon") != null)
             return inventory.FindClass(item, weapons) != null;
         if (inventory.FindClass(item, "Ammo") != null)

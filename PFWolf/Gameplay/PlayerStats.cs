@@ -51,7 +51,7 @@ internal sealed class PlayerStats(
     internal void GrinAtPickup(Inventory item, string? pickupSound)
     {
         const string AlwaysGrin = "WEAPON.ALWAYSGRIN";
-        var given = item.Properties.TryGetValue("weapongiver.weapon", out var weapon) ? weapon?.ToString() : null;
+        var given = item.Properties.ContainsKey("weapongiver.weapon") ? PlayerWeapons.GivenWeapons(item)[0] : null;
         if (string.IsNullOrEmpty(pickupSound)
             || !(item.HasFlag(AlwaysGrin)
                 || given != null && inventory.CreateActor(given)?.Flags.Contains(AlwaysGrin, StringComparer.OrdinalIgnoreCase) == true))
@@ -372,7 +372,7 @@ internal sealed class PlayerStats(
             case Entities.Actors.BasicArmor:
                 return TryGiveArmor(item.Name);
             case Entities.Actors.Weapon weapon:
-                return weapons.TryGiveWeapon(weapon);
+                return weapons.TryGiveWeapon(weapon, classes.PlayerClassUsesItem);
             case Entities.Actors.Key:
                 if (inventory.Give(item.Name, amount) == 0)
                     return false;

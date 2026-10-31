@@ -271,17 +271,42 @@ internal sealed class PlayerWeapons(
     internal void GiveWeapon(string weapon) =>
         TryGiveWeapon(weapon, 6);
 
-    internal bool TryGiveWeapon(Entities.Actors.Weapon pickup)
+    /// <summary>Gives every weapon there is (AllWeapons), without ammo; only those <paramref name="canHold"/> allows when given.</summary>
+    internal void GiveAllWeapons(Func<string, bool>? canHold = null)
     {
-        // A WeaponGiver (e.g. the map's gatling upgrade) names the weapon it hands out.
-        var weaponName = pickup.Properties.TryGetValue("weapongiver.weapon", out var given)
-            ? given.ToString() ?? pickup.Name
-            : pickup.Name;
+        foreach (var weapon in AllWeapons().Where(w => canHold?.Invoke(w) != false))
+            TryGiveWeapon(weapon, 0);
+    }
+
+    /// <summary>
+    /// The weapons a pickup hands out: a WeaponGiver's `weapongiver.weapon`, a list or one
+    /// weapon, the first being the one it's for (the gatling upgrade's [GatlingGun, MachineGun]:
+    /// vanilla's chaingun brought the machine gun along); else the pickup itself
+    /// </summary>
+    internal static List<string> GivenWeapons(string pickup, object? giverWeapons) => giverWeapons switch
+    {
+        string { Length: > 0 } one => [one],
+        IEnumerable<object> list when list.Any() => list.Select(w => w.ToString() ?? "").ToList(),
+        _ => [pickup],
+    };
+
+    internal static List<string> GivenWeapons(Entities.Actors.Actor pickup) =>
+        GivenWeapons(pickup.Name, pickup.Properties.GetValueOrDefault("weapongiver.weapon"));
+
+    // The pickup's ammo goes with the weapon it's for; the rest of a giver's weapons come
+    // without any (vanilla's chaingun gave 6 rounds in all), and only those the player's class
+    // can hold (canHold).
+    internal bool TryGiveWeapon(Entities.Actors.Weapon pickup, Func<string, bool>? canHold = null)
+    {
         var ammoGive = pickup.Properties.TryGetValue("weapon.ammogive1", out var ammo)
             ? Convert.ToInt32(ammo)
             : 0;
 
-        return TryGiveWeapon(weaponName, ammoGive);
+        var given = GivenWeapons(pickup);
+        bool took = TryGiveWeapon(given[0], ammoGive);
+        foreach (var weapon in given.Skip(1).Where(w => canHold?.Invoke(w) != false))
+            took |= TryGiveWeapon(weapon, 0);
+        return took;
     }
 
     // Weapon pickups always come with ammo (vanilla GiveWeapon gave 6) of the weapon's own

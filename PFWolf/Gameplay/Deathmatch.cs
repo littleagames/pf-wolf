@@ -228,14 +228,9 @@ internal sealed class Deathmatch(
         statusBar.DrawKeys();
     }
 
-    /// <summary>Whether the acting player already has the weapon a pickup gives (it then stays, for someone without it)</summary>
-    internal bool HasWeaponFrom(Weapon pickup)
-    {
-        var weaponName = pickup.Properties.TryGetValue("weapongiver.weapon", out var given)
-            ? given.ToString() ?? pickup.Name
-            : pickup.Name;
-        return inventory.Has(weaponName);
-    }
+    /// <summary>Whether the acting player already has every weapon a pickup gives (it then stays, for someone without them)</summary>
+    internal bool HasWeaponFrom(Weapon pickup) =>
+        PlayerWeapons.GivenWeapons(pickup).All(inventory.Has);
 
     /// <summary>An item has just been taken: it comes back where it was after a while</summary>
     internal void QueueItemRespawn(Inventory item) =>
