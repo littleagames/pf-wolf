@@ -814,7 +814,7 @@ internal class AudioManager
         {
             // the slowest to make first
             foreach (var sound in adLib)
-                Prerender(sound, sound.ToMono8);
+                Prerender(sound, sound.ToPcm16);
             foreach (var sound in digitized)
                 Prerender(sound, () => sound.ToPcm16(44100));
             foreach (var sound in pc)
@@ -856,8 +856,8 @@ internal class AudioManager
     private int CreateBuffer(AdLibSound sound)
     {
         var buffer = AL.GenBuffer();
-        var data = Samples(sound, sound.ToMono8);
-        AL.BufferData(buffer, ALFormat.Mono8, data, 44100);
+        var data = Samples(sound, sound.ToPcm16);
+        AL.BufferData(buffer, ALFormat.Mono16, data, 44100);
         return buffer;
     }
     private int CreateBuffer(PcSound sound)

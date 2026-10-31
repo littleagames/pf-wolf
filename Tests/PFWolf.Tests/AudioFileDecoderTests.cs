@@ -212,7 +212,7 @@ public class AudioFileDecoderTests
 
         // Assert: 315 samples a tick at 44100 Hz
         Assert.That(loader.Load<PcSound>("pcdropn").ToMono8(), Has.Length.EqualTo(3 * 315));
-        Assert.That(loader.Load<AdLibSound>("mybeep").ToMono8(), Has.Length.EqualTo(2 * 315 + 44100 / 5));
+        Assert.That(loader.Load<AdLibSound>("mybeep").ToPcm16(), Has.Length.EqualTo(2 * 315 + 44100 / 5));
         Assert.That(loader.GetAssets().Keys, Has.None.StartsWith("soundfileasset:"));
     }
 

@@ -228,7 +228,7 @@ public static class SoundCatalog
             case SoundKind.Digitized when content.Find<Wolf3dDigitizedAudio>(name) is { } digitized:
                 return (digitized.ToPcm16(rate), rate);
             case SoundKind.AdLib when content.Find<AdLibSound>(name) is { } adLib:
-                return (Mono8To16(adLib.ToMono8()), rate);
+                return (adLib.ToPcm16(), rate);
             case SoundKind.PcSpeaker when content.Find<PcSound>(name) is { } pc:
                 return (Mono8To16(pc.ToMono8()), rate);
             default:
