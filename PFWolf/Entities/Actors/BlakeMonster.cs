@@ -18,6 +18,9 @@ internal partial record BlakeMonster : Monster
     /// <summary>Blake Stone's actors keep thinking out of the player's areas (their own wake-up rules apply)</summary>
     internal override bool SleepsOutOfReach => false;
 
+    /// <summary>Facing a diagonal it sees all round, as bstone's CheckSight (it only checks the four straight ways)</summary>
+    private protected override bool ChecksDiagonalFacing => false;
+
     /// <summary>The thinks and actions only a BlakeMonster can run, by their actordefs names.</summary>
     internal static void RegisterActions()
     {

@@ -611,21 +611,27 @@ internal partial record Monster : Actor
                 if (deltax > 0) return false;
                 break;
             case ObjDir.NorthWest:
-                if (!(DemoRecord || DemoPlayback) && deltay > -deltax) return false;
+                if (ChecksDiagonalFacing && deltay > -deltax) return false;
                 break;
             case ObjDir.NorthEast:
-                if (!(DemoRecord || DemoPlayback) && deltay > deltax) return false;
+                if (ChecksDiagonalFacing && deltay > deltax) return false;
                 break;
             case ObjDir.SouthWest:
-                if (!(DemoRecord || DemoPlayback) && deltax > deltay) return false;
+                if (ChecksDiagonalFacing && deltax > deltay) return false;
                 break;
             case ObjDir.SouthEast:
-                if (!(DemoRecord || DemoPlayback) && -deltax > deltay) return false;
+                if (ChecksDiagonalFacing && -deltax > deltay) return false;
                 break;
         }
 
         return CheckLine(this, other);
     }
+
+    /// <summary>
+    /// Whether facing a diagonal it only sees the half in front of it (Wolf4SDL's addition, left
+    /// out in demos so they stay in sync); without, it sees all round, as the DOS games did
+    /// </summary>
+    private protected virtual bool ChecksDiagonalFacing => !(DemoRecord || DemoPlayback);
 
     /*
     =============================================================================
