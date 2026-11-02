@@ -69,9 +69,6 @@ public record IntermissionAsset : Asset
     /// <summary>A row of pictures, one for each of some unlocks, as it's unlocked or not (Midnight Assault's dog tags)</summary>
     public IntermissionUnlockPics? UnlockPics { get; set; }
 
-    /// <summary>A line under the tally for a level finished unseen (Midnight Assault's stealth bonus)</summary>
-    public IntermissionStealthBonus? StealthBonus { get; set; }
-
     /// <summary>The sounds of the tally as the time bonus and ratios count up</summary>
     public IntermissionSounds Sounds { get; set; } = new();
 
@@ -204,36 +201,6 @@ public record IntermissionUnlockPics
     public List<int> Clusters { get; set; } = [];
 }
 
-/// <summary>
-/// A line centred at y once the tally's shown, for a level finished unseen with a stealth tally
-/// (stealth kills, or none killed of some there), with its sound: all-kills when every enemy was
-/// killed unseen, no-kills when none was killed, some-kills when every kill was unseen but some
-/// were left. Texts are $language keys or the text.
-/// </summary>
-public record IntermissionStealthBonus
-{
-    /// <summary>The line's top edge, in 320x200 pixels</summary>
-    public int Y { get; set; }
-
-    /// <summary>Its font; the screen's when left out</summary>
-    public string? Font { get; set; }
-
-    /// <summary>Its color; the screen's when left out</summary>
-    public string? Color { get; set; }
-
-    /// <summary>Played as the line shows; silent when left out</summary>
-    public string? Sound { get; set; }
-
-    /// <summary>The line when every enemy was killed unseen</summary>
-    public string AllKills { get; set; } = "";
-
-    /// <summary>The line when no one was killed</summary>
-    public string NoKills { get; set; } = "";
-
-    /// <summary>The line when every kill was unseen but some enemies were left</summary>
-    public string SomeKills { get; set; } = "";
-}
-
 /// <summary>A place on the screen</summary>
 public record IntermissionPlace
 {
@@ -303,6 +270,12 @@ public record IntermissionValue
 
     /// <summary>objective.NAME, stealth: shown as done/total, counted up, not as a percentage</summary>
     public bool Count { get; set; }
+
+    /// <summary>Its own font, in place of the screen's (a script's line in the small font)</summary>
+    public string? Font { get; set; }
+
+    /// <summary>Its own color, in place of the numbers' (value-color) or the screen's</summary>
+    public string? Color { get; set; }
 }
 
 /// <summary>The sounds of the ratio and time bonus tally. Any left out are silent.</summary>

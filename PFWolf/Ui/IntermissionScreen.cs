@@ -317,9 +317,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             // JUMP STRAIGHT HERE IF KEY PRESSED
             //
         done:
-            // A level finished unseen: its line (intermission.yaml stealth-bonus); with game-info
-            // stealth unseen-no-kills-counts-all, an infiltration counts every kill
-            DrawStealthBonus();
+            // With game-info stealth unseen-no-kills-counts-all, an infiltration counts every kill
             if (hooks.CountsAllKills?.Invoke() == true && UnseenNoKills(session.PlayerState, session.GameState))
                 kr = 100;
 
@@ -347,7 +345,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             if (hooks.NewUnlocks?.Invoke() == true)
                 WriteValue("unlocked", "");
             if (hooks.ScriptText?.Invoke() is { Length: > 0 } scriptText)
-                WriteValue("script", scriptText);
+                WriteValue("script", scriptText.ToLanguageText(language));     // a $language key, or the text
 
             // Midnight Assault's dog tags across the top, and its reward stars
             DrawUnlockPics(mapInfo);
@@ -826,38 +824,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             graphics.DrawPic(hooks.IsUnlocked?.Invoke(row.Unlocks[i]) == true ? row.Unlocked : row.Locked, row.X + i * row.StepX, row.Y);
     }
 
-    // intermission.yaml stealth-bonus: the line for a level finished unseen, and its sound
-    private void DrawStealthBonus()
-    {
-        if (Intermission.StealthBonus is not { } bonus
-            || StealthBonusText(bonus, session.PlayerState, session.GameState) is not { Length: > 0 } text)
-            return;
-        var style = new TextStyle(bonus.Font ?? IntermissionTextStyle.Font, bonus.Color ?? IntermissionTextStyle.Color);
-        ui.CenteredText(0, 320, bonus.Y, style).CPrint(text.ToLanguageText(assets.GetText("en-us")));
-        PlayIntermissionSound(bonus.Sound);
-    }
-
     /// <summary>Finished unseen without killing anyone, of some there (Midnight Assault's infiltration)</summary>
     internal static bool UnseenNoKills(Entities.PlayerState player, GameState game) =>
         player.Undetected && game.KillCount == 0 && game.KillTotal > 0;
-
-    /// <summary>
-    /// The stealth bonus line for how the level was finished unseen (the original's order: every
-    /// enemy killed unseen, none killed, every kill unseen with some left); null when it wasn't,
-    /// or had no stealth tally
-    /// </summary>
-    internal static string? StealthBonusText(IntermissionStealthBonus bonus, Entities.PlayerState player, GameState game)
-    {
-        if (!player.Undetected || !(player.StealthKills > 0 || UnseenNoKills(player, game)))
-            return null;
-        if (player.StealthKills == game.KillTotal)
-            return bonus.AllKills;
-        if (UnseenNoKills(player, game))
-            return bonus.NoKills;
-        if (player.StealthKills == game.KillCount && game.KillCount < game.KillTotal)
-            return bonus.SomeKills;
-        return null;
-    }
 
     /// <summary>A label's style: the screen's, in its own color if it has one</summary>
     private TextStyle LabelStyle(IntermissionLabel label) =>
@@ -877,7 +846,11 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     {
         if (!values.TryGetValue(name, out var value))
             return;
-        var style = IntermissionTextStyle with { Color = Intermission.ValueColor ?? IntermissionTextStyle.Color };
+        var style = IntermissionTextStyle with
+        {
+            Font = value.Font ?? IntermissionTextStyle.Font,
+            Color = value.Color ?? Intermission.ValueColor ?? IntermissionTextStyle.Color,
+        };
         text = FormatValue(value, text, format => format.ToLanguageText(assets.GetText("en-us")));
         ui.MeasureText(text, style.Font, out int width, out int height);
         int x = ValueX(value, width);

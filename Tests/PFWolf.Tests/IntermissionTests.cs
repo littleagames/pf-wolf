@@ -403,24 +403,6 @@ public class LevelEndScreenTests
         Assert.That(IntermissionScreen.RecordPercent(null, "kill"), Is.Null);
     }
 
-    private static readonly IntermissionStealthBonus Bonus = new() { AllKills = "all", NoKills = "none", SomeKills = "some" };
-
-    [TestCase(true, 5, 5, 5, "all")]      // every enemy killed unseen
-    [TestCase(true, 0, 0, 5, "none")]     // none killed
-    [TestCase(true, 2, 2, 5, "some")]     // every kill unseen, some left
-    [TestCase(true, 1, 2, 5, null)]       // a kill that wasn't unseen
-    [TestCase(false, 0, 0, 5, null)]      // seen
-    [TestCase(true, 0, 0, 0, null)]       // nobody to kill: no stealth tally
-    public void The_Stealth_Bonus_Line_Is_The_Originals(bool undetected, int stealthKills, int kills, int killTotal, string? line)
-    {
-        // Arrange
-        var player = new Entities.PlayerState { Undetected = undetected, StealthKills = stealthKills };
-        var game = new GameState { KillCount = (short)kills, KillTotal = (short)killTotal };
-
-        // Act / Assert
-        Assert.That(IntermissionScreen.StealthBonusText(Bonus, player, game), Is.EqualTo(line));
-    }
-
     [Test]
     public void Only_An_Unseen_Run_Without_Kills_Of_Some_There_Is_An_Infiltration()
     {
@@ -430,7 +412,7 @@ public class LevelEndScreenTests
     }
 
     [Test]
-    public void The_Stars_Dog_Tags_And_Stealth_Line_Read_From_Their_Files()
+    public void The_Stars_Dog_Tags_And_A_Values_Own_Style_Read_From_Their_Files()
     {
         // Act
         var screen = Loaders.YamlDataEntryLoader.Deserialize<IntermissionAsset>("""
@@ -448,17 +430,15 @@ public class LevelEndScreenTests
               y: 40
               step-x: 13
               clusters: [1]
-            stealth-bonus:
-              y: 188
-              sound: misc/stealth_bonus
-              no-kills: "$STR_STEALTHNOKILLS"
+            values:
+              script: { center: 160, y: 188, font: SmallFont, color: "#D08000" }
             """);
         var gameInfo = Loaders.YamlDataEntryLoader.Deserialize<GameInfoAsset>("stealth: { unseen-no-kills-counts-all: true }");
 
         // Assert
         Assert.That(screen.Stars!.At["objective.intel"], Is.EqualTo(new IntermissionPlace { X = 278, Y = 127 }));
         Assert.That((screen.UnlockPics!.Unlocks.Count, screen.UnlockPics.StepX, screen.UnlockPics.Clusters.Single()), Is.EqualTo((2, 13, 1)));
-        Assert.That((screen.StealthBonus!.Y, screen.StealthBonus.Sound, screen.StealthBonus.NoKills), Is.EqualTo((188, "misc/stealth_bonus", "$STR_STEALTHNOKILLS")));
+        Assert.That((screen.Values["script"].Font, screen.Values["script"].Color), Is.EqualTo(("SmallFont", "#D08000")));
         Assert.That(gameInfo.Stealth.UnseenNoKillsCountsAll, Is.True);
     }
 }

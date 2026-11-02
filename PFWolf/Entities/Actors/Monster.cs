@@ -2163,77 +2163,26 @@ internal partial record Monster : Actor
     }
 
     /// <summary>
-    /// The next step toward its retreat's goal: of the four ways, the one nearest by the open
-    /// way there that it can walk (none: it waits a turn). False, having put it there, when
-    /// there's no way there at all.
+    /// The next step toward its retreat's goal, by the shortest way it can walk (PathTo, the
+    /// shared A*); taken, it waits a turn (another monster in the way). False, having put it
+    /// there, when it can't get any nearer.
     /// </summary>
     bool SelectRetreatDir()
     {
         Dir = ObjDir.NoDir;
-        var steps = RetreatSteps(RetreatX, RetreatY);
-        int here = steps[TileX, TileY];
-        if (here < 0)
+        if (PathTo(RetreatX, RetreatY) is not { } way)
         {
             Console.WriteLine($"T_Retreat ({Name}): no way from {TileX},{TileY} to {RetreatX},{RetreatY}; it's put there.");
             ArriveFromRetreat();
             return false;
         }
-
-        (ObjDir Dir, int Dx, int Dy)[] ways = [(ObjDir.East, 1, 0), (ObjDir.North, 0, -1), (ObjDir.West, -1, 0), (ObjDir.South, 0, 1)];
-        foreach (var way in ways
-            .Where(w => InMap(TileX + w.Dx, TileY + w.Dy) && steps[TileX + w.Dx, TileY + w.Dy] is >= 0 and var n && n < here)
-            .OrderBy(w => steps[TileX + w.Dx, TileY + w.Dy]))
-        {
-            Dir = way.Dir;
-            if (TryWalk())
-                return true;
-        }
-        Dir = ObjDir.NoDir;
+        Dir = way;
+        if (!TryWalk())
+            Dir = ObjDir.NoDir;
         return true;
     }
 
     bool InMap(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MapWidth && y < MapManager.MapHeight;
-
-    /// <summary>
-    /// Steps from each tile to (gx, gy) by the open way, four ways, through doors but not walls,
-    /// solid things or a monster blocker it's kept off; -1 where there's no way
-    /// </summary>
-    int[,] RetreatSteps(int gx, int gy)
-    {
-        int w = MapManager.MapWidth, h = MapManager.MapHeight;
-        var steps = new int[w, h];
-        for (int x = 0; x < w; x++)
-            for (int y = 0; y < h; y++)
-                steps[x, y] = -1;
-        if (!InMap(gx, gy))
-            return steps;
-
-        bool Open(int x, int y)
-        {
-            if (!InMap(x, y) || Blocked(x, y))
-                return false;
-            var tile = MapManager.TileMap[x, y];
-            if (tile != 0 && (tile & GameConstants.BitDoor) == 0)
-                return false;
-            return MapManager.ActorAt[x, y] is not BlockingActor;
-        }
-
-        var queue = new Queue<(int X, int Y)>();
-        steps[gx, gy] = 0;
-        queue.Enqueue((gx, gy));
-        while (queue.Count > 0)
-        {
-            var (x, y) = queue.Dequeue();
-            foreach (var (nx, ny) in new[] { (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1) })
-            {
-                if (!InMap(nx, ny) || steps[nx, ny] >= 0 || !((nx, ny) == (TileX, TileY) || Open(nx, ny)))
-                    continue;
-                steps[nx, ny] = steps[x, y] + 1;
-                queue.Enqueue((nx, ny));
-            }
-        }
-        return steps;
-    }
 
     internal void DogChase()
     {

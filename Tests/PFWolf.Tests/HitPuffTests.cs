@@ -4,7 +4,7 @@ using PFWolf.Loaders;
 
 namespace PFWolf.Tests;
 
-/// <summary>Where a shot leaves its puff (LineOfSight.TraceShot, Gameplay/PlayerAttacks.cs HIT PUFFS), and the grenade's floor check</summary>
+/// <summary>Where a shot leaves its puff (LineOfSight.TraceShot, Gameplay/PlayerAttacks.cs HIT PUFFS)</summary>
 public class HitPuffTests
 {
     private const int Tile = 1 << MapConstants.TileShift;
@@ -90,19 +90,6 @@ public class HitPuffTests
         // Assert
         Assert.That(trace.End, Is.EqualTo(ShotEnd.Wall));
         Assert.That((trace.X >> MapConstants.TileShift, trace.Y >> MapConstants.TileShift), Is.EqualTo((13, 7)).Or.EqualTo((14, 7)).Or.EqualTo((13, 6)));
-    }
-
-    [TestCase(0.0, null, true)]
-    [TestCase(12.0, null, false)]       // still in the air
-    [TestCase(4.0, "4", true)]          // its own zfloor
-    public void A_Grenade_Is_On_The_Floor_At_Its_Zfloor(double z, string? zfloor, bool onFloor)
-    {
-        // Arrange
-        var grenade = new Entities.Actors.Actor { Name = "ThrownGrenade", Properties = zfloor == null ? [] : new() { ["zfloor"] = zfloor } };
-        typeof(Entities.Actors.Actor).GetProperty("Z")!.SetValue(grenade, z);
-
-        // Act / Assert
-        Assert.That(ProjectileActions.IsOnFloor(grenade), Is.EqualTo(onFloor));
     }
 
     [Test]

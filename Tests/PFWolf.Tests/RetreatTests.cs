@@ -65,6 +65,13 @@ public class RetreatTests
         _map.GetActors().AddLast(_commander);
     }
 
+    // A wall on the tile, as a level's load puts one: in the tile map and in ActorAt
+    private void Wall(int x, int y)
+    {
+        _map.TileMap[x, y] = 1;
+        _map.ActorAt[x, y] = new Wall(1);
+    }
+
     private Entities.Actors.Actor Point(int x, int y, ushort tag)
     {
         var point = _actors.CreateActor("RetreatPoint")!;
@@ -105,8 +112,11 @@ public class RetreatTests
     {
         // Arrange: walled in but for the south; the marker due north, past the wall
         for (int x = 9; x <= 11; x++)
-            _map.TileMap[x, 9] = 1;
-        _map.TileMap[9, 10] = _map.TileMap[11, 10] = 1;
+            Wall(x, 9);
+        Wall(9, 10);
+        Wall(11, 10);
+        Wall(9, 11);        // its corners too, so the way out is straight south
+        Wall(11, 11);
         Point(10, 2, 1);
         _commander.RetreatTo(["RetreatPoint", "1"]);
 
@@ -139,8 +149,12 @@ public class RetreatTests
     {
         // Arrange: boxed in
         for (int x = 9; x <= 11; x++)
-            _map.TileMap[x, 9] = _map.TileMap[x, 11] = 1;
-        _map.TileMap[9, 10] = _map.TileMap[11, 10] = 1;
+        {
+            Wall(x, 9);
+            Wall(x, 11);
+        }
+        Wall(9, 10);
+        Wall(11, 10);
         Point(30, 30, 1);
         _commander.RetreatTo(["RetreatPoint", "1"]);
 
