@@ -78,7 +78,7 @@ internal sealed class UiText(GraphicManager graphics, FontManager fonts)
     private bool xorCursorStatus = false;
     internal void XORICursor(int x, int y, string s, int cursor, TextStyle style)
     {
-        int w = TextWidth(s, style.Font);
+        int w = TextWidth(s[..Math.Clamp(cursor, 0, s.Length)], style.Font);
 
         // Blinks by drawing the cursor glyph in the text color, then in the background color;
         // without a shadow, outline or glow, which would reach past the line and wear away what's there

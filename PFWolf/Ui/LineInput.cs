@@ -76,10 +76,12 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                     case Direction.West:
                         if (cursor != 0)
                         {
-                            // Remove trailing whitespace if cursor is at end of string
-                            //if (s[cursor] == ' ' && s[cursor + 1] == 0)
-                            //    s[cursor] = (char)0;
-                            s = s.TrimEnd();
+                            // Remove a trailing space the cursor is leaving
+                            if (cursor == s.Length - 1 && s[cursor] == ' ')
+                            {
+                                s = s[..cursor];
+                                redraw = true;
+                            }
                             cursor--;
                         }
                         cursormoved = true;
@@ -105,7 +107,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
 
                     case Direction.North:
                         {
-                            if (string.IsNullOrEmpty(s) || s[cursor] == 0)
+                            if (cursor >= s.Length)
                             {
                                 ui.MeasureText(Shown(s), style.Font, out w, out h);
                                 if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
@@ -122,7 +124,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
 
                     case Direction.South:
                         {
-                            if (string.IsNullOrEmpty(s) || s[cursor] == 0)
+                            if (cursor >= s.Length)
                             {
                                 ui.MeasureText(Shown(s), style.Font, out w, out h);
                                 if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
@@ -183,22 +185,19 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         cursormoved = true;
                         break;
                     case ScanCodes.RightArrow:
-                        if (s[cursor] != 0)
+                        if (cursor < s.Length)
                             cursor++;
                         cursormoved = true;
                         break;
                     case ScanCodes.Home:
                         if (cursor > 0)
                         {
-                            cursor--;
-
-                            //
                             // delete trailing whitespace
-                            //
-                            s.TrimEnd();
-                            //while (cursor >= 0 && s[cursor] == ' ' && s[cursor + 1] == '\0')
-                            //    s[cursor--] = '\0';
-
+                            if (cursor == s.Length && s.EndsWith(' '))
+                            {
+                                s = s.TrimEnd(' ');
+                                redraw = true;
+                            }
                             cursor = 0;
                         }
                         cursormoved = true;
@@ -235,9 +234,8 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         break;
 
                     case ScanCodes.Delete:
-                        if (s[cursor] != 0)
+                        if (cursor < s.Length)
                         {
-                            s = s.Substring(0, cursor) + s.Substring(cursor + 1, s.Length - cursor + 1);
                             s = s.Remove(cursor, 1);
                             //s.Remove(cursor, 1);
                             //len = strlen(&s[cursor]) + 1;
@@ -262,7 +260,7 @@ internal sealed class LineInput(GraphicManager graphics, InputManager input, Vid
                         //    s = s.Substring(0, i - 1) + s.Substring(i, s.Length - i); 
                         //s[i] = s[i - 1];
                         //s.Append(txt);
-                        s += txt;
+                        s = s.Insert(cursor, txt.ToString());
                         cursor++;
                         redraw = true;
                     }
