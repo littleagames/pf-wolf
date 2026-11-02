@@ -244,15 +244,14 @@ internal partial record Monster : Actor
 
     /// <summary>
     /// The scripts' say in its next way (game.onchasedir), choosing it in a mode ("chase",
-    /// "dodge", "run", "wander", "follow"): true when the way a script gave is taken (or it's
-    /// told to stand); false, with its way as it was, for the game's own choice
+    /// "dodge", "run", "follow"): true when the way a script gave is taken (or it's told to
+    /// stand); false, with its way as it was, for the game's own choice
     /// </summary>
     private bool ScriptChoosesDir(string mode)
     {
         if (World?.Scripts is not { HasChaseDirHooks: true } scripts)
             return false;
-        var foe = mode == "wander" ? TargetIfAny : Target;
-        if (scripts.RunChaseDirHooks(this, foe, mode) is not { } chosen)
+        if (scripts.RunChaseDirHooks(this, Target, mode) is not { } chosen)
             return false;
         var was = Dir;
         Dir = chosen;
@@ -260,52 +259,6 @@ internal partial record Monster : Actor
             return true;
         Dir = was;
         return false;
-    }
-
-    // The way on after a tile, chasing: towards the player (or dodging), or while the level has its
-    // enemies wander (MapManager.MonstersWander), straight on until something's in the way
-    private void SelectChaseOrWanderDir(bool dodge)
-    {
-        if (MapManager.MonstersWander)
-            SelectWanderDir();
-        else if (dodge)
-            SelectDodgeDir();
-        else
-            SelectChaseDir();
-    }
-
-    /// <summary>
-    /// Wandering (End of Destiny's SelectLootDir, Greed's looters): on the way it was going; on
-    /// its first move after noticing the player, back the way it came; where it can't go on,
-    /// east, north, west or south, whichever is open first, but not straight back
-    /// </summary>
-    internal void SelectWanderDir()
-    {
-        if (ScriptChoosesDir("wander"))
-            return;
-        if (RuntimeFlags.Has(ObjFlags.FirstAttack))
-        {
-            RuntimeFlags &= ~ObjFlags.FirstAttack;
-            if (Dir != ObjDir.NoDir)
-            {
-                Dir = Opposite[(byte)Dir];
-                if (TryWalk())
-                    return;
-            }
-        }
-        else if (Dir != ObjDir.NoDir && TryWalk())
-            return;
-
-        var back = Dir == ObjDir.NoDir ? ObjDir.NoDir : Opposite[(byte)Dir];
-        foreach (var dir in new[] { ObjDir.East, ObjDir.North, ObjDir.West, ObjDir.South })
-        {
-            if (dir == back)
-                continue;
-            Dir = dir;
-            if (TryWalk())
-                return;
-        }
-        Dir = ObjDir.NoDir;
     }
 
     /*
@@ -2018,7 +1971,7 @@ internal partial record Monster : Actor
 
         if (Dir == ObjDir.NoDir)
         {
-            SelectChaseOrWanderDir(dodge);
+            if (dodge) SelectDodgeDir(); else SelectChaseDir();
             if (Dir == ObjDir.NoDir)
                 return;
         }
@@ -2046,7 +1999,7 @@ internal partial record Monster : Actor
             ArriveOnTile();
             move -= Distance;
 
-            SelectChaseOrWanderDir(dodge);
+            if (dodge) SelectDodgeDir(); else SelectChaseDir();
 
             if (Dir == ObjDir.NoDir)
                 return;
@@ -2311,7 +2264,7 @@ internal partial record Monster : Actor
 
         if (Dir == ObjDir.NoDir)
         {
-            SelectChaseOrWanderDir(dodge);
+            if (dodge) SelectDodgeDir(); else SelectChaseDir();
             if (Dir == ObjDir.NoDir)
                 return;
         }

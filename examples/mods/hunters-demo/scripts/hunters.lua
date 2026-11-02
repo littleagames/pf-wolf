@@ -7,7 +7,7 @@
 -- walls, through the doors it can open, along the shortest path it can walk.
 --
 -- Only the Hunter and Tracker classes are given the path; Wolf3D's own guards and dogs are left
--- to their usual ways, for you to compare. Mode is "chase", "dodge", "run", "wander" or
+-- to their usual ways, for you to compare. Mode is "chase", "dodge", "run" or
 -- "follow"; the hunters path to you whenever they're after you (chasing or closing in).
 
 local HUNTERS = { Hunter = true, Tracker = true }

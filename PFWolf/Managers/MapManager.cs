@@ -622,12 +622,6 @@ internal class MapManager
         return any;
     }
 
-    /// <summary>
-    /// The level's enemies wander rather than chase (A_SetMonsterWander: End of Destiny's Greed,
-    /// until the gong): Monster.SelectWanderDir. For the level only, as the monster blockers
-    /// cleared are: a saved game loads without them, for a script to set again.
-    /// </summary>
-    internal bool MonstersWander { get; set; }
 
     // The things whose class has a `blocktile` mark their tiles (MonsterBlock)
     private void ReadMonsterBlocks(ushort[] objects)
@@ -713,7 +707,6 @@ internal class MapManager
         infotiles = new bool[MapArea];
         MapCeilingColor = MapFloorColor = null;
         AltFlatColors = false;
-        MonstersWander = false;
         Hints = new(StringComparer.OrdinalIgnoreCase);
 
         var objects = mapsegs[1];

@@ -247,7 +247,6 @@ public static class ActorProperties
         Int("monster.pickup.uses", "On an item: how many enemies it serves before it goes", "1"),
         List("monster.pickup.classes", "On an item: only these classes (and those built on them) take it", hint: FieldHint.Class),
         Text("monster.pickup.sound", "On an item: played where the enemy takes it", hint: FieldHint.Sound),
-        Text("monster.pickup.state", "On an item: it goes to this state of its own as an enemy takes it, and stays unless it removes itself"),
 
         // Talking (Blake Stone)
         Text("talk.header", "Shown over what it says when talked to (a $NAME language key or the text)", needs: BlakeMonster),

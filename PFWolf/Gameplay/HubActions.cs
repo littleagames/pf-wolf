@@ -67,21 +67,8 @@ internal sealed class HubActions(
         if (mapManager?.World is { } world)
             world.TileArrived = WarpMonster;
 
-        // A_SetMonsterWander(on | off): the level's enemies wander rather than chase
-        // (MapManager.MonstersWander); A_ClearMonsterBlocks([monsters | bosses]): the blocktile
-        // markers of that kind (monsters when left out) stop keeping enemies off (Greed's gong)
-        Both("A_SetMonsterWander", args =>
-        {
-            var mode = args.ElementAtOrDefault(0)?.Trim().ToLowerInvariant();
-            if (mode is not ("on" or "off"))
-            {
-                Console.WriteLine("A_SetMonsterWander: say on or off.");
-                return false;
-            }
-            bool was = mapManager.MonstersWander;
-            mapManager.MonstersWander = mode == "on";
-            return was != mapManager.MonstersWander;
-        });
+        // A_ClearMonsterBlocks([monsters | bosses]): the blocktile markers of that kind (monsters
+        // when left out) stop keeping enemies off (Greed's gong)
         Both("A_ClearMonsterBlocks", args =>
             mapManager.ClearMonsterBlocks(MapManager.BlockKind(args.ElementAtOrDefault(0) ?? "monsters") is var kind
                 && kind != MapManager.MonsterBlock.None ? kind : MapManager.MonsterBlock.Monsters));

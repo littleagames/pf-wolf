@@ -98,7 +98,7 @@ internal sealed partial class GameScripts
         in deathmatch the player with the most frags; nil for a draw.
     game.onchasedir(function(monster, target, mode) ... end): an enemy choosing its next way at a
         tile's middle, while it chases ("chase"), dodges as it closes in ("dodge"), runs off
-        ("run"), wanders ("wander") or walks after the player it follows ("follow"). Returning a
+        ("run") or walks after the player it follows ("follow"). Returning a
         way ("north", "northeast"... "none" to stand there) sends it that way if it can go (else
         the game chooses as ever); nil leaves it to the game. monster:pathto(target) is the way
         by the shortest open path (A*: Gameplay/Pathfinding.cs).

@@ -197,7 +197,6 @@ public static class GameActions
         new("A_StopScroll", Both, "A_StopScroll([tag])", "The tag's scroller stops where it is"),
         new("A_ToggleScroll", Both, "A_ToggleScroll([tag])", "Stops the tag's scroller if it's running, else starts it"),
         new("A_SetScroll", Both, "A_SetScroll(tag, x, y)", "The tag's scroller's new speeds, in texels a tic, and running; a tag the map has no scroller for gets one, on its walls, floors and ceilings"),
-        new("A_SetMonsterWander", Both, "A_SetMonsterWander(on | off)", "The level's enemies wander rather than chase"),
         new("A_ClearMonsterBlocks", Both, "A_ClearMonsterBlocks([monsters | bosses])", "The blocktile markers of that kind (monsters when left out) stop keeping enemies off (Greed's gong)"),
         new("A_UnlockFloor", Both, "A_UnlockFloor", "The cluster's next floor up (by floor number) opens in the teleporter"),
         new("A_CompleteObjective", Both, "A_CompleteObjective(\"name\"[, n])", "One (or n) more of a level objective done, with its progress message (and its done message for the last)"),

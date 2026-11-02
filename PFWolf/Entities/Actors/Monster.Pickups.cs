@@ -14,11 +14,9 @@ to an enemy:
   monster.pickup.uses: n       how many enemies it takes before it goes (1; the death artifact 4)
   monster.pickup.classes: [..] only these classes (and those derived from them) take it
   monster.pickup.sound: name   played where the enemy is
-  monster.pickup.state: name   the item goes to this state of its own (a script can decide what
-                               happens: Greed's enemies taking treasure), and stays unless it
-                               removes itself
 
-An item that heals or kills goes once it's used up. The player picks it up as ever.
+An item that heals or kills goes once it's used up. The player picks it up as ever. Anything
+else an enemy does with what it walks onto is a script's: game.onenter (End of Destiny's Greed).
 
 =============================================================================
 */
@@ -36,8 +34,7 @@ internal partial record Monster
         {
             int heal = PickupInt(item, "monster.pickup.heal");
             bool kill = PickupFlag(item, "monster.pickup.kill");
-            string? state = PickupText(item, "monster.pickup.state");
-            if (heal <= 0 && !kill && state == null)
+            if (heal <= 0 && !kill)
                 continue;
             if (item.Properties.TryGetValue("monster.pickup.classes", out var classes) && classes is IEnumerable<object> list
                 && World.Inventory.FindClass(Name, list.Select(c => c?.ToString() ?? "").ToArray()) == null)
@@ -45,20 +42,14 @@ internal partial record Monster
 
             if (PickupText(item, "monster.pickup.sound") is { } sound)
                 PlaySoundAtActor(sound, this);
-            if (state != null && item.ResolvedStates.ContainsKey(state))
-                item.SetState(state);
-
-            if (heal > 0 || kill)
+            if (heal > 0)
+                Hitpoints += (short)heal;
+            if (++item.Temp1 >= Math.Max(PickupInt(item, "monster.pickup.uses"), 1))
+                MapManager.RemoveActor(item);
+            if (kill)
             {
-                if (heal > 0)
-                    Hitpoints += (short)heal;
-                if (++item.Temp1 >= Math.Max(PickupInt(item, "monster.pickup.uses"), 1))
-                    MapManager.RemoveActor(item);
-                if (kill)
-                {
-                    Kill(null);
-                    return;
-                }
+                Kill(null);
+                return;
             }
         }
     }
