@@ -946,6 +946,18 @@ public record SignonInfo
     /// </summary>
     public bool PressAKey { get; init; }
 
+    /// <summary>The "Press a key" prompt's color (Wolf3D's bright yellow)</summary>
+    public string PromptColor { get; init; } = "Bright Yellow";
+
+    /// <summary>The color of "Working..." once a key's pressed (Wolf3D's lime)</summary>
+    public string WorkingColor { get; init; } = "Lime";
+
+    /// <summary>
+    /// Text at the right end of the prompt's line, in the prompt's color (Midnight Assault's
+    /// version, "v1.00.0"); none when unset
+    /// </summary>
+    public string? Version { get; init; }
+
     /// <summary>
     /// The open area of the pic the startup info (engine, game, mods, video, input, sound,
     /// content, warnings) is printed in; none is printed when left out

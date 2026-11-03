@@ -60,7 +60,8 @@ internal sealed class TitleLoop(
     {
         signonPanel.FinishSignonInfo(startupLines);
 
-        if (!engine.GetGameInfo().Signon.PressAKey)
+        var signon = engine.GetGameInfo().Signon;
+        if (!signon.PressAKey)
         {
             video.Update();
 
@@ -71,7 +72,8 @@ internal sealed class TitleLoop(
         {
             var background = PromptBackground(0, 189, 300, 11);
             video.Bar(0, 189, 300, 11, background);
-            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, "Bright Yellow", background)).CPrint("Press a key"); // "Oprima una tecla"
+            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, signon.PromptColor, background)).CPrint("Press a key"); // "Oprima una tecla"
+            DrawSignonVersion(signon, background);
 
             video.Update();
 
@@ -79,10 +81,20 @@ internal sealed class TitleLoop(
                 input.Ack();
 
             video.Bar(0, 189, 300, 11, background);
-            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, "Lime", background)).CPrint("Working..."); // "pensando..."
+            ui.CenteredText(0, 320, 190, new TextStyle(UiFonts.SmallFont, signon.WorkingColor, background)).CPrint("Working..."); // "pensando..."
+            DrawSignonVersion(signon, background);
 
             video.Update();
         }
+    }
+
+    // game-info signon version: its text ending 5 short of the screen's right edge, on the prompt's line
+    private void DrawSignonVersion(SignonInfo signon, string background)
+    {
+        if (string.IsNullOrEmpty(signon.Version))
+            return;
+        int x = 320 - 5 - ui.TextWidth(signon.Version, UiFonts.SmallFont);
+        ui.TextAt(x, 190, new TextStyle(UiFonts.SmallFont, signon.PromptColor, background)).Print(signon.Version);
     }
 
     /// <summary>
