@@ -68,6 +68,34 @@ public class IntermissionTests
     }
 
     [Test]
+    public void Stats_In_A_Wider_Scope_Are_Tallied_As_Objectives_Are()
+    {
+        // Arrange: the game's intel so far (a count), and its kills (a percentage)
+        var values = new Dictionary<string, IntermissionValue>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["game.objective.intel"] = new() { Count = true },
+            ["episode.kill"] = new(),
+            ["ever.objective.none"] = new() { Count = true },      // nothing to count: not shown
+        };
+        Gameplay.StatValue? Stat(string name) => name switch
+        {
+            "game.objective.intel" => new Gameplay.StatValue(5, 8),
+            "episode.kill" => new Gameplay.StatValue(9, 12),
+            _ => new Gameplay.StatValue(0, 0),
+        };
+
+        // Act
+        var tallies = IntermissionScreen.ExtraTallies(values, _ => null, new Entities.PlayerState(), new GameState(), stat: Stat);
+
+        // Assert
+        Assert.That(tallies.Select(t => (t.Name, t.Text(t.Target))), Is.EqualTo(new[]
+        {
+            ("game.objective.intel", "5/8"),
+            ("episode.kill", "75"),
+        }));
+    }
+
+    [Test]
     public void A_Percentage_With_Nothing_To_Do_Is_100_And_A_Count_Of_Nothing_Isnt_Shown()
     {
         var tallies = IntermissionScreen.ExtraTallies(ExtraValues, _ => null, new Entities.PlayerState(), new GameState());

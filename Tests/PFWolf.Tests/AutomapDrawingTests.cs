@@ -20,7 +20,7 @@ public class AutomapDrawingTests
             Seen = new SeenFlags[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
         };
         _automap = new AutomapDrawing(null!, null!, null!, null!, null!, _map, null!, null!, null!, null!, null!, _session,
-            new AutomapHooks(() => (0, 0, 320, 160), map => map, tics => "", () => []));
+            new AutomapHooks(() => (0, 0, 320, 160), () => []));
     }
 
     [Test]

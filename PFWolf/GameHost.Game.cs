@@ -102,6 +102,20 @@ internal static partial class GameHost
     static LevelRecords? _levelRecords;
     internal static LevelRecords LevelRecords => _levelRecords ??= new LevelRecords(() => GameEngineManager.GetConfigFilePath(LevelRecords.FileName));
 
+    // The stats screens and scripts name: kill, game.objective.intel, item.DogTag... (Gameplay/StatValues.cs)
+    static StatValues? _statValues;
+    internal static StatValues StatValues => _statValues ??= new StatValues(new StatSources(
+        Game: () => GameState,
+        LevelObjectives: () => MapManager.ObjectiveCounts,
+        FinishedLevels: () => Session.LevelRatios,
+        Maps: () => GameEngineManager.GetGameInfo().Maps,
+        Item: name => InventoryManager.FindClass(name, "Inventory") is { } item
+            ? (InventoryManager.GetCount(item), InventoryManager.GetIntProperty(item, "inventory.maxamount", 0))
+            : null,
+        Records: () => LevelRecords.Maps.Select(map => LevelRecords.Get(map)!),
+        MapDisplayName: GetMapDisplayName,
+        FormatTime: FormatPlayTime));
+
     /// <summary>
     /// A level's finished, before its tally: its record is bettered and the scripts' level-end
     /// hooks run (which may unlock what it earned). Not while a demo plays back.
@@ -437,6 +451,9 @@ internal static partial class GameHost
             Unlock = Unlock,
             IsUnlocked = name => Unlocks.IsUnlocked(name),
             Record = map => LevelRecords.Get(map),
+            Stat = name => StatValues.Get(name),
+            AddObjective = (name, amount) => Objectives.Add(name, amount),
+            CompleteObjective = (name, amount) => Objectives.Complete(name, amount),
             ShowText = ShowTextInLevel,
             RemoveWall = (x, y, arch) => destructibleWalls.Remove(x, y, arch),
             BreakWall = (x, y) => destructibleWalls.Break(x, y),

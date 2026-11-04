@@ -435,6 +435,9 @@ internal class LevelRatio
     public short Kill, Secret, Treasure;
     public int Time;
 
+    // The counts the percentages came from, for the stats a game adds up (Gameplay/StatValues.cs)
+    public int KillCount, KillTotal, SecretCount, SecretTotal, TreasureCount, TreasureTotal;
+
     /// <summary>The level's objectives (game-info objectives) as it ended: done of total, by name, for the victory tally</summary>
     public Dictionary<string, (int Done, int Total)> Objectives { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -446,6 +449,12 @@ internal class LevelRatio
             Secret = br.ReadInt16(),
             Treasure = br.ReadInt16(),
             Time = br.ReadInt32(),
+            KillCount = br.ReadInt32(),
+            KillTotal = br.ReadInt32(),
+            SecretCount = br.ReadInt32(),
+            SecretTotal = br.ReadInt32(),
+            TreasureCount = br.ReadInt32(),
+            TreasureTotal = br.ReadInt32(),
         };
         for (int i = br.ReadInt32(); i > 0; i--)
             ratio.Objectives[br.ReadString()] = (br.ReadInt32(), br.ReadInt32());
@@ -458,6 +467,12 @@ internal class LevelRatio
         bw.Write(Secret);
         bw.Write(Treasure);
         bw.Write(Time);
+        bw.Write(KillCount);
+        bw.Write(KillTotal);
+        bw.Write(SecretCount);
+        bw.Write(SecretTotal);
+        bw.Write(TreasureCount);
+        bw.Write(TreasureTotal);
         bw.Write(Objectives.Count);
         foreach (var (name, (done, total)) in Objectives)
         {

@@ -133,7 +133,8 @@ internal static partial class GameHost
         PreviousRecord: () => PreviousLevelRecord,
         IsUnlocked: name => Unlocks.IsUnlocked(name),
         CountsAllKills: () => GameEngineManager.GetGameInfo().Stealth.UnseenNoKillsCountsAll,
-        ScriptText: () => TallyText);
+        ScriptText: () => TallyText,
+        Stat: name => StatValues.Get(name));
 
     // game-info's title-sequence screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)

@@ -53,6 +53,21 @@ public record GameInfoAsset : Asset
     /// </summary>
     public StatsPopupInfo? StatsPopup { get; init; }
 
+    /// <summary>
+    /// The automap's stats (shown with setting-defaults' automap-stats, am_stats), a line each down
+    /// its top-left corner, each from the stats it names (Gameplay/StatValues.cs). By default the
+    /// level's name, its kills, treasure and secrets, each objective's stats line, and the time.
+    /// </summary>
+    public List<AutomapStatsLine> AutomapStatsLines { get; init; } =
+    [
+        new() { Text = "{0}", Values = ["level"], Color = "AutomapTitle" },
+        new() { Text = "$STR_AM_KILLS", Values = ["kill"] },
+        new() { Text = "$STR_AM_TREASURE", Values = ["treasure"] },
+        new() { Text = "$STR_AM_SECRETS", Values = ["secret"] },
+        new() { Objectives = true },
+        new() { Text = "$STR_AM_TIME", Values = ["time"] },
+    ];
+
     /// <summary>The waves of enemies a multiplayer Horde game sends at the players</summary>
     public HordeInfo Horde { get; init; } = new();
 
@@ -1734,6 +1749,40 @@ public record PaletteCycleInfo
 
     /// <summary>Tics between moves</summary>
     public int Tics { get; init; } = 10;
+}
+
+/// <summary>One of the automap's stats lines (game-info automap-stats-lines)</summary>
+public record AutomapStatsLine
+{
+    /// <summary>
+    /// Text or a $language key, filled from <see cref="Values"/>: {0}, {1}... by place, or each %d
+    /// (and %s) in turn, from each value's done and total, or its text (time, level)
+    /// </summary>
+    public string Text { get; init; } = "";
+
+    /// <summary>
+    /// The stats it's filled from: kill, secret, treasure, objective.NAME (each with level.,
+    /// episode., game. or ever. in front for a wider scope), time, level, item.NAME
+    /// </summary>
+    public List<string> Values { get; init; } = [];
+
+    /// <summary>A theme color name, #RRGGBB or palette index; the theme's AutomapStats when unset</summary>
+    public string? Color { get; init; }
+
+    /// <summary>A stat the line shows only with some of: its total at least 1 (or <see cref="MinTotal"/>)</summary>
+    public string? OnlyWith { get; init; }
+
+    /// <summary>
+    /// The least total <see cref="OnlyWith"/>'s stat (or else the first value) must have for the line
+    /// to show: Midnight Assault's target enemies, only with two or more
+    /// </summary>
+    public int MinTotal { get; init; }
+
+    /// <summary>Episodes (game-info episodes' ids) the line shows in, by the level's; every one when empty</summary>
+    public List<string> Episodes { get; init; } = [];
+
+    /// <summary>In place of a line: each level objective's own stats line (game-info objectives' stats), while the level has any</summary>
+    public bool Objectives { get; init; }
 }
 
 /// <summary>

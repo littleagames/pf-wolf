@@ -68,7 +68,8 @@ internal static class SaveFile
     // 37: the damage destructible walls have taken (a count, then each tile and its damage), after the objectives.
     // 38: the walls crumbling (a count, then each one's x, y, end tic and animation), after the wall damage.
     // 39: the vehicle's weapon and the one it replaced (vehicle.weapon), after the vehicle's throttle.
-    internal const int SaveVersion = 39;
+    // 40: each level ratio's kill, secret and treasure counts and totals, after its time.
+    internal const int SaveVersion = 40;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

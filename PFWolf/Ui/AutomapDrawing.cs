@@ -7,14 +7,10 @@ namespace PFWolf.Ui;
 
 /// <summary>What drawing the automap needs from the game</summary>
 /// <param name="View">The 3D view's rectangle on the screen (x, y, width, height): the map is drawn in it</param>
-/// <param name="MapDisplayName">A map's name as the game shows it</param>
-/// <param name="FormatPlayTime">The time on the level, as the stats show it</param>
-/// <param name="ObjectiveStats">The level objectives' stats lines (Gameplay/Objectives.cs)</param>
+/// <param name="StatsLines">The stats lines as they read now, each with its color (null for the theme's AutomapStats): Ui/AutomapStats.cs</param>
 internal sealed record AutomapHooks(
     Func<(int X, int Y, int Width, int Height)> View,
-    Func<string, string> MapDisplayName,
-    Func<int, string> FormatPlayTime,
-    Func<IEnumerable<string>> ObjectiveStats);
+    Func<IEnumerable<(string Text, string? Color)>> StatsLines);
 
 /// <summary>
 /// The automap drawn over the 3D view (AutomapManager has where it's centred, its zoom, style and
@@ -479,9 +475,10 @@ internal sealed class AutomapDrawing(
     internal Func<int>? TopReserved { get; set; }
 
     /// <summary>
-    /// The level's name, then the kills, treasure and secrets found so far out of the level's
-    /// totals and the time on the level, one to a line down the top-left corner of the view
-    /// (under a match's line). Lines that don't fit the view's width or height are left out.
+    /// The stats lines (game-info automap-stats-lines: by default the level's name, then the
+    /// kills, treasure and secrets found so far out of the level's totals, the objectives and the
+    /// time on the level), one to a line down the top-left corner of the view (under a match's
+    /// line). Lines that don't fit the view's width or height are left out.
     /// </summary>
     void DrawAutomapStats(AutomapView view)
     {
@@ -489,15 +486,10 @@ internal sealed class AutomapDrawing(
         if (font == null)
             return;
 
-        (string Text, string Color)[] lines =
-        [
-            (hooks.MapDisplayName(session.GameState.MapOn), AutomapColor("AutomapTitle")),
-            (AutomapText("$STR_AM_KILLS", session.GameState.KillCount, session.GameState.KillTotal), AutomapColor("AutomapStats")),
-            (AutomapText("$STR_AM_TREASURE", session.GameState.TreasureCount, session.GameState.TreasureTotal), AutomapColor("AutomapStats")),
-            (AutomapText("$STR_AM_SECRETS", session.GameState.SecretCount, session.GameState.SecretTotal), AutomapColor("AutomapStats")),
-            .. (hooks.ObjectiveStats?.Invoke() ?? []).Select(line => (line, AutomapColor("AutomapStats"))),     // "Sabotages: 2 of 5"
-            (AutomapText("$STR_AM_TIME", hooks.FormatPlayTime(session.GameState.TimeCount)), AutomapColor("AutomapStats")),
-        ];
+        // A theme color the automap knows (AutomapTitle) goes by the theme, with its fallback
+        var lines = hooks.StatsLines()
+            .Select(line => (line.Text, Color: line.Color == null ? AutomapColor("AutomapStats")
+                : AutomapColorFallbacks.ContainsKey(line.Color) ? AutomapColor(line.Color) : line.Color));
 
         // DrawText and Bar work in 320x200 virtual pixels; the bottom rows are the position line's
         var (left, top, right, viewBottom) = LayoutExtent(view);

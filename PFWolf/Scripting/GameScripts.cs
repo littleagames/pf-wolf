@@ -49,6 +49,15 @@ internal sealed partial class GameScripts(
     /// <summary>game.record: a map's best (Gameplay/LevelRecords.cs), null if never finished</summary>
     internal Func<string, Gameplay.LevelResult?> Record { get; init; } = _ => null;
 
+    /// <summary>game.stat: a stat by name (Gameplay/StatValues.cs), null for one the game doesn't know</summary>
+    internal Func<string, Gameplay.StatValue?> Stat { get; init; } = _ => null;
+
+    /// <summary>game.addobjective: more of a level objective to do (A_AddObjective)</summary>
+    internal Action<string, int> AddObjective { get; init; } = (_, _) => { };
+
+    /// <summary>game.completeobjective: more of a level objective done (A_CompleteObjective)</summary>
+    internal Action<string, int> CompleteObjective { get; init; } = (_, _) => { };
+
     /// <summary>game.showtext: a text shown as an article in the middle of the level (A_ShowText)</summary>
     internal Action<string> ShowText { get; init; } = _ => { };
 
@@ -434,6 +443,28 @@ internal sealed partial class GameScripts(
         {
             var name = StringArg(c, 0);
             return map.ObjectiveCounts.TryGetValue(name, out var count) ? new(c.Return(count.Done, count.Total)) : new(c.Return(0, 0));
+        });
+        // game.addobjective(name[, n]) and game.completeobjective(name[, n]): n (1) more of a level
+        // objective to do, or done, as A_AddObjective and A_CompleteObjective
+        game["addobjective"] = new LuaFunction("game.addobjective", (c, _) =>
+        {
+            ChangesTheGame(c, "game.addobjective");
+            AddObjective(StringArg(c, 0), (int)Math.Round(NumberArg(c, 1, 1)));
+            return new(c.Return());
+        });
+        game["completeobjective"] = new LuaFunction("game.completeobjective", (c, _) =>
+        {
+            ChangesTheGame(c, "game.completeobjective");
+            CompleteObjective(StringArg(c, 0), (int)Math.Round(NumberArg(c, 1, 1)));
+            return new(c.Return());
+        });
+        // game.stat(name): a stat by name, in a scope or not (Gameplay/StatValues.cs): done and
+        // total, or its text (time, level); nil for one the game doesn't know
+        game["stat"] = new LuaFunction("game.stat", (c, _) => Stat(StringArg(c, 0)) switch
+        {
+            { Text: { } text } => new(c.Return(text)),
+            { } value => new(c.Return(value.Done, value.Total)),
+            null => new(c.Return(LuaValue.Nil)),
         });
         // game.unlock(name): unlocks a name from game to game (a starts-locked episode's key, or a
         // script's own), true if it wasn't already; game.unlocked(name): whether it is

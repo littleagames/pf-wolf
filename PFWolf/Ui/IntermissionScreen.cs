@@ -21,6 +21,7 @@ namespace PFWolf.Ui;
 /// <param name="IsUnlocked">Whether a name's unlocked (progress.cfg), for intermission.yaml unlock-pics</param>
 /// <param name="CountsAllKills">game-info stealth unseen-no-kills-counts-all</param>
 /// <param name="ScriptText">What the scripts say on the tally (game.ontally), shown at intermission.yaml's `script` value; null for nothing</param>
+/// <param name="Stat">A stat by name (Gameplay/StatValues.cs), for the tallies in a wider scope: game.objective.intel, episode.kill</param>
 internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> GiveEveryone, Action DrawScore, Action DrawPlayBorder,
     Action GameWon, Action EndText, Func<string, string> MapDisplayName, Func<bool>? NewUnlocks = null,
     Func<string, (int Done, int Total)?>? Objective = null,
@@ -29,7 +30,8 @@ internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> Giv
     Func<Gameplay.LevelResult?>? PreviousRecord = null,
     Func<string, bool>? IsUnlocked = null,
     Func<bool>? CountsAllKills = null,
-    Func<string?>? ScriptText = null);
+    Func<string?>? ScriptText = null,
+    Func<string, Gameplay.StatValue?>? Stat = null);
 
 /// <summary>
 /// One of the level-end screen's tallies after the treasure ratio (intermission.yaml
@@ -368,6 +370,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                 Secret = (short)sr,
                 Treasure = (short)tr,
                 Time = min * 60 + sec,
+                KillCount = session.GameState.KillCount, KillTotal = session.GameState.KillTotal,
+                SecretCount = session.GameState.SecretCount, SecretTotal = session.GameState.SecretTotal,
+                TreasureCount = session.GameState.TreasureCount, TreasureTotal = session.GameState.TreasureTotal,
                 Objectives = (hooks.Objectives?.Invoke() ?? [])
                     .ToDictionary(o => o.Name, o => (o.Done, o.Total), StringComparer.OrdinalIgnoreCase),
             };
@@ -429,14 +434,15 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// The tallies after the treasure ratio that show for this level, in the order intermission.yaml
     /// lists them: each objective.NAME (a count of nothing isn't shown), and stealth when the level
     /// was finished unseen with stealth kills, or with none killed of some there (Midnight
-    /// Assault's showStealthStats)
+    /// Assault's showStealthStats); and a stat in a wider scope (episode., game. or ever. in front:
+    /// Gameplay/StatValues.cs), as an objective is
     /// </summary>
     internal List<ExtraTally> ExtraTallies() =>
-        ExtraTallies(Intermission.Values, hooks.Objective, session.PlayerState, session.GameState, hooks.Item);
+        ExtraTallies(Intermission.Values, hooks.Objective, session.PlayerState, session.GameState, hooks.Item, hooks.Stat);
 
     internal static List<ExtraTally> ExtraTallies(Dictionary<string, IntermissionValue> values,
         Func<string, (int Done, int Total)?>? objective, Entities.PlayerState player, GameState game,
-        Func<string, (int Held, int Max)?>? item = null)
+        Func<string, (int Held, int Max)?>? item = null, Func<string, Gameplay.StatValue?>? stat = null)
     {
         var tallies = new List<ExtraTally>();
         foreach (var (name, value) in values)
@@ -453,9 +459,15 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                 tallies.Add(new ExtraTally(name, player.StealthKills, game.KillTotal, value.Count));
             else if (ItemTally(name, item) is { } held)
                 tallies.Add(held);
+            else if (IsWiderScope(name) && stat?.Invoke(name) is { Text: null } scoped && (!value.Count || scoped.Total > 0))
+                tallies.Add(new ExtraTally(name, scoped.Done, scoped.Total, value.Count));
         }
         return tallies;
     }
+
+    static bool IsWiderScope(string name) =>
+        name.StartsWith("episode.", StringComparison.OrdinalIgnoreCase) || name.StartsWith("game.", StringComparison.OrdinalIgnoreCase)
+        || name.StartsWith("ever.", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>item.NAME: how many of an inventory item the player holds of its inventory.maxamount, as done/total (Midnight Assault's dog tags, 3/9)</summary>
     static ExtraTally? ItemTally(string name, Func<string, (int Held, int Max)?>? item) =>

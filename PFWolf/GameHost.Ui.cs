@@ -306,8 +306,18 @@ internal static partial class GameHost
     static AutomapDrawing MakeAutomapDrawing() =>
         new(AssetManager, _videoManager, _graphicManager, _fontManager, _automapManager, MapManager, FactionManager,
             TranslationManager, doors, pushWalls, spriteDrawing, Session, new AutomapHooks(
-                () => (ViewScreenX, ViewScreenY, ViewWidth, ViewHeight), GetMapDisplayName, FormatPlayTime,
-                () => Objectives.StatsLines()));
+                () => (ViewScreenX, ViewScreenY, ViewWidth, ViewHeight), AutomapStatsLines));
+
+    // game-info automap-stats-lines as they read now (Ui/AutomapStats.cs)
+    static List<(string Text, string? Color)> AutomapStatsLines()
+    {
+        var gameInfo = GameEngineManager.GetGameInfo();
+        var language = AssetManager.GetText("en-us");
+        return AutomapStats.Lines(gameInfo.AutomapStatsLines, StatValues, text => text.ToLanguageText(language),
+            id => gameInfo.Episodes.TryGetValue(id, out var episode) && GameState.MapOn is { } map
+                && LevelStatsPanel.EpisodeLevels(episode, gameInfo.Maps).Contains(map, StringComparer.OrdinalIgnoreCase),
+            () => Objectives.StatsLines());
+    }
 
     internal static void DrawAutomap() => automapDrawing.DrawAutomap();
 
