@@ -1,0 +1,61 @@
+# Planet Strike's Customize Controls: blake's (menudefs/blake/customize.yaml) with its two more
+# weapons and the radar's zoom, and without the heart beat (no heart monitor), as bstone's.
+music: "MEETINGA"
+type: "blake-menu"
+components:
+  - { type: "Background", params: [ { color: "MENUBACK" } ] }
+  - { type: "Label", params: [ { text: "CUSTOMIZE CONTROLS" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { y: 20 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Window", params: [ { x: 5 }, { y: 46 }, { width: 310 }, { height: 137 }, { color: "MENUBACK" } ] }
+menu-items:
+  - { type: "HeaderMenuItem", text: "$STR_CTL_MOVEMENT" }
+  - { type: "ControlMenuItem", control: "moveforward", text: "$STR_CTL_FORWARD" }
+  - { type: "ControlMenuItem", control: "movebackward", text: "$STR_CTL_BACKWARD" }
+  - { type: "ControlMenuItem", control: "turnleft", text: "$STR_CTL_TURNLEFT" }
+  - { type: "ControlMenuItem", control: "turnright", text: "$STR_CTL_TURNRIGHT" }
+  - { type: "ControlMenuItem", control: "strafeleft", text: "$STR_CTL_STRAFELEFT" }
+  - { type: "ControlMenuItem", control: "straferight", text: "$STR_CTL_STRAFERIGHT" }
+  - { type: "ControlMenuItem", control: "strafe", text: "$STR_CTL_STRAFE" }
+  - { type: "ControlMenuItem", control: "quickleft", text: "$STR_CTL_QUICKLEFT" }
+  - { type: "ControlMenuItem", control: "quickright", text: "$STR_CTL_QUICKRIGHT" }
+  - { type: "ControlMenuItem", control: "turnaround", text: "$STR_CTL_TURNAROUND" }
+  - { type: "ControlMenuItem", control: "run", text: "$STR_CTL_RUN" }
+  - { type: "ControlMenuItem", control: "lookup", text: "$STR_CTL_LOOKUP" }
+  - { type: "ControlMenuItem", control: "lookdown", text: "$STR_CTL_LOOKDOWN" }
+  - { type: "ControlMenuItem", control: "centerview", text: "$STR_CTL_CENTERVIEW" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_WEAPONS" }
+  - { type: "ControlMenuItem", control: "attack", text: "$STR_CTL_ATTACK" }
+  # Weapon slot keys pick weapons by their `weapon.slot`; slot 7 drops the fission detonator
+  # (its inventory.useslot), as holding Use does
+  - { type: "ControlMenuItem", control: "slot1", text: "$STR_CTL_BSACP" }
+  - { type: "ControlMenuItem", control: "slot2", text: "$STR_CTL_BSSFP" }
+  - { type: "ControlMenuItem", control: "slot3", text: "$STR_CTL_BSRAW" }
+  - { type: "ControlMenuItem", control: "slot4", text: "$STR_CTL_BSDND" }
+  - { type: "ControlMenuItem", control: "slot5", text: "$STR_CTL_BSPDU" }
+  - { type: "ControlMenuItem", control: "slot6", text: "$STR_CTL_BSAPC" }
+  - { type: "ControlMenuItem", control: "slot7", text: "$STR_CTL_BSFISSION" }
+  - { type: "ControlMenuItem", control: "nextweapon", text: "$STR_CTL_NEXTWEAPON" }
+  - { type: "ControlMenuItem", control: "prevweapon", text: "$STR_CTL_PREVWEAPON" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_ACTION" }
+  - { type: "ControlMenuItem", control: "use", text: "$STR_CTL_USE" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_HUD" }
+  - { type: "ControlMenuItem", control: "automap", text: "$STR_CTL_STATS" }
+  - { type: "ControlMenuItem", control: "radarzoomin", text: "$STR_CTL_RADARZOOMIN" }
+  - { type: "ControlMenuItem", control: "radarzoomout", text: "$STR_CTL_RADARZOOMOUT" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_OPTIONKEYS" }
+  - { type: "ControlMenuItem", control: "toggleattackinfo", text: "$STR_CTL_TGATTACKINFO" }
+  - { type: "ControlMenuItem", control: "togglelighting", text: "$STR_CTL_TGLIGHTING" }
+  - { type: "ControlMenuItem", control: "togglesound", text: "$STR_CTL_TGSOUND" }
+  - { type: "ControlMenuItem", control: "togglemusic", text: "$STR_CTL_TGMUSIC" }
+  - { type: "ControlMenuItem", control: "toggleceilings", text: "$STR_CTL_TGCEILINGS" }
+  - { type: "ControlMenuItem", control: "togglefloors", text: "$STR_CTL_TGFLOORS" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_GAME" }
+  - { type: "ControlMenuItem", control: "esc", text: "$STR_CTL_MENU" }
+  - { type: "ControlMenuItem", control: "pause", text: "$STR_CTL_PAUSE" }
+
+  - { type: "BlankMenuItem" }
+  - { id: "reset", type: "MenuSwitcher", text: "$STR_CTL_RESET", enabled: true }

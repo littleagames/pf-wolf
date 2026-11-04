@@ -42,6 +42,8 @@ public class NetPlayerStateTests
             EyeZ = 40,
             DeadTics = 15,
             DeathAngle = 270,
+            TurnAround = -35,
+            TurnAngle = 180,
         };
         p.Items["Clip"] = 25;
         p.Items["GoldKey"] = 1;
@@ -80,7 +82,8 @@ public class NetPlayerStateTests
         Assert.That((read.ThrustSpeed, read.PlUX, read.PlUY, read.AngleFrac), Is.EqualTo((5000, (ushort)1234, (ushort)4321, (short)13)));
         Assert.That((read.FaceCount, read.FaceTimes, read.WeaponCharge), Is.EqualTo((22, 3, 9)));
         Assert.That((read.Pitch, read.EyeZ, read.DeadTics, read.DeathAngle), Is.EqualTo((-12.5, 40, 15, (short)270)));
-        Assert.That(read.Input.Buttons, Is.EqualTo(0b1010u));
+        Assert.That((read.TurnAround, read.TurnAngle), Is.EqualTo((-35, 180)), "a quick turn under way");
+        Assert.That(read.Input.Buttons, Is.EqualTo(0b1010ul));
         Assert.That(lastAttacker, Is.EqualTo(4));
         Assert.That(weapon, Is.Null);
     }

@@ -1,6 +1,8 @@
 # Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/game-options.yaml
-# Game Switches: bstone's four (lighting, REBA attack info, ceilings, floors), then the engine's
-# own on/off settings. Lights go 16 left of their text, as bstone's switches do.
+# Game Switches: bstone's four (lighting, REBA attack info, ceilings, floors) and its heart beat
+# sound, then the engine's own on/off settings (not automap stats: Tab is the stats popup, so
+# there's no automap). Lights go 16 left of their text, as bstone's switches do. Planet Strike,
+# with no heart monitor, has its own (menudefs/planetstrike/game-options.yaml).
 music: "MEETINGA"
 type: "blake-menu"
 position: { x: 111, y: 53 }
@@ -21,8 +23,8 @@ menu-items:
   - { id: "attackinfo", type: "ToggleMenuItem", text: "REBA ATTACK INFO", short-key: R, enabled: true }
   - { id: "ceilings", type: "ToggleMenuItem", text: "SHOW CEILINGS", short-key: C, enabled: true }
   - { id: "floors", type: "ToggleMenuItem", text: "SHOW FLOORS", short-key: F, enabled: true }
+  - { id: "heartbeat", type: "ToggleMenuItem", text: "HEART BEAT SOUND", short-key: E, enabled: true }
   - { id: "messages", type: "ToggleMenuItem", text: "MESSAGES", short-key: M, enabled: true }
-  - { id: "automapstats", type: "ToggleMenuItem", text: "AUTOMAP STATS", short-key: A, enabled: true }
   - { id: "alwaysrun", type: "ToggleMenuItem", text: "ALWAYS RUN", short-key: U, enabled: true }
   - { id: "freelook", type: "ToggleMenuItem", text: "LOOK UP AND DOWN", short-key: K, enabled: true }
   - { id: "weaponbob", type: "ToggleMenuItem", text: "WEAPON BOB", short-key: B, enabled: true }

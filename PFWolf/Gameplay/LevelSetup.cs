@@ -41,6 +41,7 @@ internal sealed class LevelSetup(
         {
             p.Pitch = 0;                    // each level, and each loaded game, starts looking straight ahead
             p.EyeZ = classes.StandingEyeZ(p);       // from standing height
+            p.TurnAround = 0;               // and with no quick turn left over
         }
         session.Camera.FollowPlayer();              // through the player's eyes
         weaponBob.Init();

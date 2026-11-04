@@ -28,6 +28,23 @@ public class PlayerInputTests
     }
 
     [Test]
+    public void Every_Button_Has_Its_Own_Bit()
+    {
+        // A uint's bits ran out at 32 buttons: 1u << 32 is 1u << 0, so the next would have been Attack
+        Assert.That((int)ButtonType.Count, Is.GreaterThan(32).And.AtMost(64));
+        for (var button = ButtonType.Attack; button < ButtonType.Count; button++)
+        {
+            var cmd = Pressing(button);
+            Assert.That(Enumerable.Range(0, (int)ButtonType.Count).Count(i => cmd.IsDown((ButtonType)i)), Is.EqualTo(1), button.ToString());
+
+            var input = new PlayerInput();
+            input.Begin(cmd);
+            input.Begin(cmd);
+            Assert.That(input.IsHeld(button) && !input.IsFreshPress(button), Is.True, button.ToString());
+        }
+    }
+
+    [Test]
     public void First_Frame_Down_Is_A_Fresh_Press()
     {
         // Arrange

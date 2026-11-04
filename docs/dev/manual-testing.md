@@ -92,6 +92,16 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       right stick turn, **right stick look up/down**, dead zone, pad bindings column, Controller
       Settings page, menu navigation.
 - [ ] **(never tried)** Customize screen rows for look up/down/centre.
+- [ ] B/PS: Customize Controls lists Blake's own rows (weapons by name, Stats, option keys; PS
+      also APC, detonator and radar zoom, no heart beat); seen 2026-11-03 except PS's APC and
+      detonator rows. **(never tried)** rebinding one there and Reset.
+- [ ] B: Quick left / quick right / turn around (bound in Customize): a quarter or half turn at
+      full speed, strafing ignored while it turns; seen 2026-11-03. **(never tried)** held down,
+      in a game with others, and dying mid-turn (the next life starts straight).
+- [ ] B: Option keys (attack info, lighting, sound, music, ceilings, floors, heart beat): each
+      turns its setting over; attack info, music and heart beat say so in the info area, floors
+      and ceilings silently (seen 2026-11-03). **(never tried)** sound key by ear, lighting key,
+      and the heart beat sound itself (Switches → HEART BEAT SOUND, off by default) by ear.
 - [ ] Always Run (Game Options): run without holding, holding Run walks; feels right in play.
 - [ ] Freelook off: pitch stays level for keys, mouse and stick.
 - [ ] Console binds on mouse buttons / wheel / pad buttons fire; automap keys don't also fire

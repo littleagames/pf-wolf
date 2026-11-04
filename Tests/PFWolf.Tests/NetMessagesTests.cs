@@ -18,7 +18,7 @@ public class NetMessagesTests
         return result;
     }
 
-    private static TicCmd Cmd(uint buttons, int x, int y, int strafe, double pitch = 0, bool center = false) =>
+    private static TicCmd Cmd(ulong buttons, int x, int y, int strafe, double pitch = 0, bool center = false) =>
         new() { Buttons = buttons, ControlX = x, ControlY = y, ControlStrafe = strafe, Pitch = pitch, CenterView = center };
 
     [Test]
@@ -152,6 +152,22 @@ public class NetMessagesTests
 
         // Assert
         Assert.That(read, Is.EqualTo(cmd));
+    }
+
+    [Test]
+    public void TicCmd_Round_Trips_Buttons_Past_The_32nd()
+    {
+        // Arrange: the last button there is, and attack
+        var cmd = new TicCmd();
+        cmd.SetDown(ButtonType.Count - 1, true);
+        cmd.SetDown(ButtonType.Attack, true);
+
+        // Act
+        var read = TicCmdCodec.RoundTrip(cmd);
+
+        // Assert
+        Assert.That(read.Buttons, Is.EqualTo(cmd.Buttons));
+        Assert.That(read.IsDown(ButtonType.Count - 1), Is.True);
     }
 
     [Test]

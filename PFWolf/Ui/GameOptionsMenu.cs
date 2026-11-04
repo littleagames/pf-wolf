@@ -29,6 +29,7 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
         ("attackinfo", GameOption.AttackInfo),
         ("ceilings", GameOption.ShowCeilings),
         ("floors", GameOption.ShowFloors),
+        ("heartbeat", GameOption.HeartbeatSound),
     ];
 
     internal int Run()

@@ -19,6 +19,7 @@ public class ControlBindingsTests
     [TestCase("ATTACK")]
     [TestCase("slot1")]
     [TestCase("am_zoomin")]
+    [TestCase("toggleheartbeat")]      // past bit 31 of a TicCmd's buttons
     public void ControlAction_TryParse_Reads_Its_Own_Names(string name)
     {
         // Act
@@ -39,6 +40,8 @@ public class ControlBindingsTests
             "esc", "pause", "strafeleft", "straferight", "moveforward", "movebackward", "turnleft", "turnright",
             "automap", "slot5", "slot6", "slot7", "slot8", "slot9", "slot0", "lookup", "lookdown", "centerview",
             "radarzoomin", "radarzoomout", "reload", "zoom",
+            "quickleft", "quickright", "turnaround", "toggleattackinfo", "togglelighting", "togglesound",
+            "togglemusic", "toggleceilings", "togglefloors", "toggleheartbeat",
             "am_zoomin", "am_zoomout", "am_panup", "am_pandown", "am_panleft", "am_panright", "am_center",
             "am_follow", "am_rotate", "am_style", "am_overlay", "am_grid", "am_stats",
         ];

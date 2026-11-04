@@ -182,18 +182,18 @@ internal sealed class InputPolling(
     }
 
     /// <summary>The buttons pressed this frame, a bit each (bit 0 is Attack)</summary>
-    internal uint LocalButtons()
+    internal ulong LocalButtons()
     {
-        uint buttons = 0;
+        ulong buttons = 0;
         for (int i = 0; i < (int)ButtonType.Count; i++)
         {
             if (inputManager.IsButtonPressed((ButtonType)i))
-                buttons |= 1u << i;
+                buttons |= TicCmd.Bit((ButtonType)i);
         }
 
         // alwaysrun turns Run over, so demos and the other players see it as held
         if (options.AlwaysRun)
-            buttons ^= 1u << (int)ButtonType.Run;
+            buttons ^= TicCmd.Bit(ButtonType.Run);
         return buttons;
     }
 

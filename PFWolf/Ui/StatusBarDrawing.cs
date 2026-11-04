@@ -12,6 +12,7 @@ namespace PFWolf.Ui;
 /// </param>
 /// <param name="LevelTicsLeft">Tics left on a level against the clock, -1 for one that isn't (Gameplay/LevelTimer.cs)</param>
 /// <param name="UseHint">The use hint that applies now, by name, or null (Gameplay/PlayerUse.cs USE HINTS)</param>
+/// <param name="HeartbeatSound">Whether the heart monitor's beats are heard (the s_heartbeat setting)</param>
 internal sealed record StatusBarHooks(
     Func<string, string> MapDisplayName,
     Func<string, string, int, List<string>> WrapText,
@@ -19,7 +20,8 @@ internal sealed record StatusBarHooks(
     Func<int>? LevelTicsLeft = null,
     Func<string?>? UseHint = null,
     Func<IEnumerable<(int Left, int Full)>>? HealthBars = null,
-    InfoScriptHooks? InfoScripts = null);
+    InfoScriptHooks? InfoScripts = null,
+    Func<bool>? HeartbeatSound = null);
 
 /// <summary>
 /// The info area's messages with presenter codes (Ui/TextPresenter.cs THE STATUS BAR'S INFO AREA):
@@ -882,6 +884,9 @@ internal sealed class StatusBarDrawing(
             heart = monitor.HeartBad;
         else if (hearttics >= monitor.PulseTics / 2 || heart == null || heart == monitor.HeartBad)
         {
+            // a beat (off to good, as bstone) is heard with the heartbeat setting on
+            if (heart == monitor.HeartOff && monitor.BeatSound != null && !force && hooks.HeartbeatSound?.Invoke() == true)
+                audio.Play(monitor.BeatSound);
             heart = heart == monitor.HeartGood ? monitor.HeartOff : monitor.HeartGood;
             hearttics = 0;
         }

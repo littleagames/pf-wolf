@@ -248,7 +248,8 @@ internal static partial class GameHost
         levelMusic, frameRefresh, Session,
         Settings, new PlayKeysHooks(() => NetChatting, NetChatKeys, NetCheckKeys,
             ToggleAutomap, HandleAutomapKey, DrawPlayBorder, DrawPlayBorderSides,
-            OpenControlPanel, DrawPlayScreen, PopupMap));
+            OpenControlPanel, DrawPlayScreen, PopupMap,
+            key => HudMessageManager.Show(HudMessageKind.Other, key)));
 
     // Playing a level, a frame at a time (Gameplay/LevelLoop.cs)
     static LevelLoop levelLoop = null!;     // made in InitServices

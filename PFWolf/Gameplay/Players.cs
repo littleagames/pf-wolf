@@ -246,6 +246,7 @@ internal sealed class Players(
         stats.GiveStartingInventory();
         playerstate.Health = classes.StartingHealth;
         playerstate.Pitch = 0;
+        playerstate.TurnAround = 0;
         playerstate.EyeZ = classes.StandingEyeZ(playerstate);
         playerstate.WeaponSprite = null;
         playerstate.WeaponCharge = 0;

@@ -235,6 +235,12 @@ public class StatusBarElement
     public int BadBelow { get; set; } = 40;
 
     /// <summary>
+    /// heart-monitor: the sound each beat makes (as the heart goes good) while the heartbeat
+    /// setting (s_heartbeat, off unless set) is on; none if left out
+    /// </summary>
+    public string? BeatSound { get; set; }
+
+    /// <summary>
     /// info-area: shown while there are no messages for it (a $NAME language key or the text);
     /// {Item} in it is how many of an inventory item the player has, e.g. {FoodToken}
     /// </summary>

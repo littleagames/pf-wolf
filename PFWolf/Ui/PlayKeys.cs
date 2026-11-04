@@ -17,6 +17,7 @@ namespace PFWolf.Ui;
 /// The game's popup map in the automap's place (game-info stats-popup, Ui/ElevatorScreens.cs),
 /// about the player with Shift held: false when it has none
 /// </param>
+/// <param name="ShowMessage">Shows a message (a $NAME language key) whatever the messages setting: the option keys' (Ui/OptionToggleKeys.cs)</param>
 internal sealed record PlayKeysHooks(
     Func<bool> NetChatting,
     Action NetChatKeys,
@@ -27,11 +28,13 @@ internal sealed record PlayKeysHooks(
     Action DrawPlayBorderSides,
     Action<ScanCodes> ControlPanel,
     Action DrawPlayScreen,
-    Func<bool, bool>? PopupMap = null);
+    Func<bool, bool>? PopupMap = null,
+    Action<string>? ShowMessage = null);
 
 /// <summary>
-/// The keys during play, once a frame (CheckKeys): the console, the automap, console binds, the
-/// original's cheat combos, pause, and the F-keys and Esc that open the menu.
+/// The keys during play, once a frame (CheckKeys): the console, the automap, console binds,
+/// Blake Stone's option keys, the original's cheat combos, pause, and the F-keys and Esc that
+/// open the menu.
 /// </summary>
 internal sealed class PlayKeys(
     AssetManager assets,
@@ -54,6 +57,8 @@ internal sealed class PlayKeys(
     Configuration.GameSettings settings,
     PlayKeysHooks hooks)
 {
+    OptionToggleKeys? optionKeys;
+
     internal void CheckKeys()
     {
         var language = assets.GetText("en-us");
@@ -121,6 +126,11 @@ internal sealed class PlayKeys(
             if (!session.DemoRecord && console.Binds.TryGetValue(input, out var boundCommand))
                 console.Execute(boundCommand);
         }
+
+        // Blake Stone's option keys: this machine's settings only, so with others too
+        optionKeys ??= new OptionToggleKeys(inputManager, audio, settings.Options,
+            () => statusBar.StatusBar.Get("heart-monitor")?.BeatSound != null, hooks.ShowMessage ?? (_ => { }));
+        optionKeys.CheckKeys();
 
         scan = inputManager.GetLastKeyPressed();
 

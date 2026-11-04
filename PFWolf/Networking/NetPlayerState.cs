@@ -50,6 +50,8 @@ internal static class NetPlayerState
         bw.Write(p.EyeZ);
         bw.Write(p.DeadTics);
         bw.Write(p.DeathAngle);
+        bw.Write(p.TurnAround);
+        bw.Write(p.TurnAngle);
         bw.Write(p.Input.Buttons);
         bw.Write(p.WeaponSprite != null);
         if (p.WeaponSprite != null)
@@ -100,7 +102,9 @@ internal static class NetPlayerState
         p.EyeZ = br.ReadInt32();
         p.DeadTics = br.ReadInt32();
         p.DeathAngle = br.ReadInt16();
-        p.Input.RestoreButtons(br.ReadUInt32());
+        p.TurnAround = br.ReadInt32();
+        p.TurnAngle = br.ReadInt32();
+        p.Input.RestoreButtons(br.ReadUInt64());
         weapon = br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null;
     }
 }

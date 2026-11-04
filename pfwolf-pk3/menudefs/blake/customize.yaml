@@ -1,6 +1,9 @@
 # Blake Stone's look, in place of menudefs/customize.yaml: the LINC screen with a text title.
 # The list, its column titles and the help lines are drawn by code inside the window (titles at
 # y 48, rows from y 61, 11 apart, help lines at the bottom), so the window stays where it is.
+# Aliens of Gold's controls, grouped as bstone's (3d_menu.cpp): its five weapons, Tab's stats
+# popup and the option keys, and no automap keys (there's no automap). Planet Strike has its own
+# (menudefs/planetstrike/customize.yaml).
 music: "MEETINGA"
 type: "blake-menu"
 components:
@@ -19,44 +22,44 @@ menu-items:
   - { type: "ControlMenuItem", control: "strafeleft", text: "$STR_CTL_STRAFELEFT" }
   - { type: "ControlMenuItem", control: "straferight", text: "$STR_CTL_STRAFERIGHT" }
   - { type: "ControlMenuItem", control: "strafe", text: "$STR_CTL_STRAFE" }
+  - { type: "ControlMenuItem", control: "quickleft", text: "$STR_CTL_QUICKLEFT" }
+  - { type: "ControlMenuItem", control: "quickright", text: "$STR_CTL_QUICKRIGHT" }
+  - { type: "ControlMenuItem", control: "turnaround", text: "$STR_CTL_TURNAROUND" }
   - { type: "ControlMenuItem", control: "run", text: "$STR_CTL_RUN" }
   - { type: "ControlMenuItem", control: "lookup", text: "$STR_CTL_LOOKUP" }
   - { type: "ControlMenuItem", control: "lookdown", text: "$STR_CTL_LOOKDOWN" }
   - { type: "ControlMenuItem", control: "centerview", text: "$STR_CTL_CENTERVIEW" }
 
-  - { type: "HeaderMenuItem", text: "$STR_CTL_ACTION" }
-  - { type: "ControlMenuItem", control: "attack", text: "$STR_CTL_ATTACK" }
-  - { type: "ControlMenuItem", control: "use", text: "$STR_CTL_USE" }
-
   - { type: "HeaderMenuItem", text: "$STR_CTL_WEAPONS" }
-  # Weapon slot keys (slot1-slot9, slot0) pick weapons by their `weapon.slot`; only the four
-  # slots Wolf3D's weapons use are listed.
-  - { type: "ControlMenuItem", control: "slot1", text: "$STR_CTL_KNIFE" }
-  - { type: "ControlMenuItem", control: "slot2", text: "$STR_CTL_PISTOL" }
-  - { type: "ControlMenuItem", control: "slot3", text: "$STR_CTL_MACHINEGUN" }
-  - { type: "ControlMenuItem", control: "slot4", text: "$STR_CTL_CHAINGUN" }
+  - { type: "ControlMenuItem", control: "attack", text: "$STR_CTL_ATTACK" }
+  # Weapon slot keys pick weapons by their `weapon.slot` (actordefs/blake/weapons.yaml)
+  - { type: "ControlMenuItem", control: "slot1", text: "$STR_CTL_BSACP" }
+  - { type: "ControlMenuItem", control: "slot2", text: "$STR_CTL_BSSFP" }
+  - { type: "ControlMenuItem", control: "slot3", text: "$STR_CTL_BSRAW" }
+  - { type: "ControlMenuItem", control: "slot4", text: "$STR_CTL_BSDND" }
+  - { type: "ControlMenuItem", control: "slot5", text: "$STR_CTL_BSPDU" }
   - { type: "ControlMenuItem", control: "nextweapon", text: "$STR_CTL_NEXTWEAPON" }
   - { type: "ControlMenuItem", control: "prevweapon", text: "$STR_CTL_PREVWEAPON" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_ACTION" }
+  - { type: "ControlMenuItem", control: "use", text: "$STR_CTL_USE" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_HUD" }
+  # Tab: the stats popup (game-info stats-popup), with Shift the map about the player
+  - { type: "ControlMenuItem", control: "automap", text: "$STR_CTL_STATS" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_OPTIONKEYS" }
+  - { type: "ControlMenuItem", control: "toggleattackinfo", text: "$STR_CTL_TGATTACKINFO" }
+  - { type: "ControlMenuItem", control: "togglelighting", text: "$STR_CTL_TGLIGHTING" }
+  - { type: "ControlMenuItem", control: "togglesound", text: "$STR_CTL_TGSOUND" }
+  - { type: "ControlMenuItem", control: "togglemusic", text: "$STR_CTL_TGMUSIC" }
+  - { type: "ControlMenuItem", control: "toggleceilings", text: "$STR_CTL_TGCEILINGS" }
+  - { type: "ControlMenuItem", control: "togglefloors", text: "$STR_CTL_TGFLOORS" }
+  - { type: "ControlMenuItem", control: "toggleheartbeat", text: "$STR_CTL_TGHEARTBEAT" }
 
   - { type: "HeaderMenuItem", text: "$STR_CTL_GAME" }
   - { type: "ControlMenuItem", control: "esc", text: "$STR_CTL_MENU" }
   - { type: "ControlMenuItem", control: "pause", text: "$STR_CTL_PAUSE" }
-  - { type: "ControlMenuItem", control: "automap", text: "$STR_CTL_AUTOMAP" }
-
-  - { type: "HeaderMenuItem", text: "$STR_CTL_AUTOMAPKEYS" }
-  - { type: "ControlMenuItem", control: "am_zoomin", text: "$STR_CTL_AMZOOMIN" }
-  - { type: "ControlMenuItem", control: "am_zoomout", text: "$STR_CTL_AMZOOMOUT" }
-  - { type: "ControlMenuItem", control: "am_panup", text: "$STR_CTL_AMPANUP" }
-  - { type: "ControlMenuItem", control: "am_pandown", text: "$STR_CTL_AMPANDOWN" }
-  - { type: "ControlMenuItem", control: "am_panleft", text: "$STR_CTL_AMPANLEFT" }
-  - { type: "ControlMenuItem", control: "am_panright", text: "$STR_CTL_AMPANRIGHT" }
-  - { type: "ControlMenuItem", control: "am_center", text: "$STR_CTL_AMCENTER" }
-  - { type: "ControlMenuItem", control: "am_follow", text: "$STR_CTL_AMFOLLOW" }
-  - { type: "ControlMenuItem", control: "am_rotate", text: "$STR_CTL_AMROTATE" }
-  - { type: "ControlMenuItem", control: "am_style", text: "$STR_CTL_AMSTYLE" }
-  - { type: "ControlMenuItem", control: "am_overlay", text: "$STR_CTL_AMOVERLAY" }
-  - { type: "ControlMenuItem", control: "am_grid", text: "$STR_CTL_AMGRID" }
-  - { type: "ControlMenuItem", control: "am_stats", text: "$STR_CTL_AMSTATS" }
 
   - { type: "BlankMenuItem" }
   - { id: "reset", type: "MenuSwitcher", text: "$STR_CTL_RESET", enabled: true }

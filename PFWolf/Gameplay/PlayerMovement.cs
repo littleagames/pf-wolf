@@ -119,10 +119,12 @@ internal sealed class PlayerMovement(
             Move(angle, (int)(Math.Abs(playerinput.ControlStrafe) * GameConstants.MoveScale * side));
         }
 
+        StartQuickTurn(ob, playerinput, playerstate);
+
         //
-        // side to side move
+        // side to side move (not in the middle of a quick turn, as bstone)
         //
-        if (playerinput.IsPressed(ButtonType.Strafe))
+        if (playerstate.TurnAround == 0 && playerinput.IsPressed(ButtonType.Strafe))
         {
             //
             // strafing
@@ -150,7 +152,12 @@ internal sealed class PlayerMovement(
             //
             // a zoomed scope turns slower (Gameplay/WeaponZoom.cs)
             int angleScale = GameConstants.AngleScale * Math.Max(playerstate.TurnSlowdown, 1);
-            playerstate.AngleFrac += (short)playerinput.ControlX;
+
+            // a quick turn turns as fast as the keys can, whatever else is pressed (bstone ControlMovement)
+            int controlx = playerstate.TurnAround == 0 ? playerinput.ControlX
+                : Math.Sign(playerstate.TurnAround) * 100 * (int)tics;
+
+            playerstate.AngleFrac += (short)controlx;
             angleunits = playerstate.AngleFrac / angleScale;
             playerstate.AngleFrac -= (short)(angleunits * angleScale);
             ob.Angle -= (short)angleunits;
@@ -159,6 +166,19 @@ internal sealed class PlayerMovement(
                 ob.Angle -= ANGLES;
             if (ob.Angle < 0)
                 ob.Angle += ANGLES;
+
+            // once it's gone far enough it ends exactly on the angle it was for
+            if (playerstate.TurnAround != 0)
+            {
+                int left = playerstate.TurnAround - angleunits;
+                if (Math.Sign(left) != Math.Sign(playerstate.TurnAround))
+                {
+                    playerstate.TurnAround = 0;
+                    ob.Angle = (short)playerstate.TurnAngle;
+                }
+                else
+                    playerstate.TurnAround = left;
+            }
         }
 
         //
@@ -191,6 +211,33 @@ internal sealed class PlayerMovement(
                 angle -= ANGLES;
             Move(angle, (int)(playerinput.ControlY * GameConstants.BackMoveScale * forward));          // move backwards
         }
+    }
+
+    /// <summary>
+    /// Starts a quick turn when its button is down and none is under way (bstone CheckKeys):
+    /// a quarter turn left or right, or a half turn (rightwards). Held down, it turns again once
+    /// the last is done.
+    /// </summary>
+    internal static void StartQuickTurn(Entities.Actors.Actor ob, Entities.PlayerInput input, Entities.PlayerState state)
+    {
+        const int ANGLES = GameConstants.Angles;
+        if (state.TurnAround != 0)
+            return;
+
+        // bstone checks them in this order, a later one taking over
+        int degrees = 0;
+        if (input.IsPressed(ButtonType.QuickLeft))
+            degrees = -90;
+        if (input.IsPressed(ButtonType.TurnAround))
+            degrees = 180;
+        if (input.IsPressed(ButtonType.QuickRight))
+            degrees = 90;
+        if (degrees == 0)
+            return;
+
+        // turning right takes the angle down, left up (the angle goes anticlockwise)
+        state.TurnAround = degrees;
+        state.TurnAngle = ((ob.Angle - degrees) % ANGLES + ANGLES) % ANGLES;
     }
 
     internal void Thrust(int angle, int speed)

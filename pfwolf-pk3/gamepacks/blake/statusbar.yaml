@@ -12,7 +12,8 @@
 #                   below is more than the unlit segments: lit and dim are a color per line
 #   heart-monitor:  a heartbeat trace (count segment pictures, segment-pic with {0:00} the
 #                   segment, segment-width apart, scrolling every scroll-tics) and a heart at
-#                   heart-x, heart-y beating every pulse-tics, heart-bad below bad-below health
+#                   heart-x, heart-y beating every pulse-tics, heart-bad below bad-below health;
+#                   beat-sound with each beat while s_heartbeat is on
 #   info-area:      where messages in an `anchor: Status` style (hud-messages.yaml) are written:
 #                   pic drawn at box's corner, text from x, y within size [width, height], and
 #                   idle-text while there are none (ready-text in its place as a game starts and
@@ -132,6 +133,7 @@ heart-monitor:
   heart-bad: EcgHeartBad
   heart-off: EcgGridPiece
   bad-below: 40
+  beat-sound: bs/h_beat
 
 info-area:
   x: 3

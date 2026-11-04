@@ -411,6 +411,9 @@ public record SettingDefaultsInfo
     /// </summary>
     public bool? WeaponBobSway { get; init; }
 
+    /// <summary>The status bar heart monitor's beats heard (heart-monitor beat-sound; default false; s_heartbeat)</summary>
+    public bool? HeartbeatSound { get; init; }
+
     /// <summary>Running without holding Run; holding it walks (default false; alwaysrun)</summary>
     public bool? AlwaysRun { get; init; }
 

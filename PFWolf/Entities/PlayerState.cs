@@ -90,6 +90,11 @@ internal sealed class PlayerState
     public int ZoomLevel;                   // a scope's zoom, 0 to 100 (Gameplay/WeaponZoom.cs)
     public Gameplay.ZoomMode ZoomMode;      // zooming in, zoomed, zooming out or not
     public int TurnSlowdown = 1;            // turning is this many times slower (a zoomed scope's)
+
+    // A quick turn under way (QuickLeft/QuickRight/TurnAround, bstone's gamestate.turn_around):
+    // the degrees still to go (positive turns right, negative left; 0 for none), and the angle
+    // it ends on exactly. Not saved: it's over in half a second
+    public int TurnAround, TurnAngle;
     public int WeaponPower;                 // 0 to 100: how long fire's been held to cook a throw (A_HoldCharge)
 
     // Manning a mounted gun (Gameplay/MountedWeapons.cs): what they're on, the gun it gives them,

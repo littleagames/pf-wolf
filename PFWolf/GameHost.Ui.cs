@@ -355,7 +355,8 @@ internal static partial class GameHost
                             textPresenter.DrawInfoScript(script, x, y, f, color, shadow, back);
                     },
                     () => textPresenter.TickInfoScript(),
-                    () => textPresenter.ClearInfoScript())));
+                    () => textPresenter.ClearInfoScript()),
+                () => Settings.Options.HeartbeatSound));
 
     static void DrawKeys() => statusBarDrawing.DrawKeys();
     static void DrawScore() => statusBarDrawing.DrawScore();

@@ -17,6 +17,7 @@ internal enum GameOption : byte
     ShowCeilings,       // ceiling flats drawn; off draws the plain ceiling color
     ShowFloors,         // floor flats drawn; off draws the plain floor color
     WeaponBobSway,      // the weapon bob swings side to side in an arc (Doom's); off bobs it up and down (Planet Strike's)
+    HeartbeatSound,     // the status bar heart monitor's beats are heard (heart-monitor beat-sound: Blake Stone's)
     Count,
 }
 
@@ -57,6 +58,7 @@ internal sealed class GameOptions
         GameOption.ShowCeilings => "r_ceilings",
         GameOption.ShowFloors => "r_floors",
         GameOption.WeaponBobSway => "weaponbob_sway",
+        GameOption.HeartbeatSound => "s_heartbeat",
         _ => throw new ArgumentOutOfRangeException(nameof(option)),
     };
 
@@ -90,6 +92,7 @@ internal sealed class GameOptions
         gameDefaults[(int)GameOption.ShowCeilings] = d.ShowCeilings;
         gameDefaults[(int)GameOption.ShowFloors] = d.ShowFloors;
         gameDefaults[(int)GameOption.WeaponBobSway] = d.WeaponBobSway;
+        gameDefaults[(int)GameOption.HeartbeatSound] = d.HeartbeatSound;
     }
 
     // Shorthands for the code that asks
@@ -105,4 +108,5 @@ internal sealed class GameOptions
     internal bool ShowCeilings => this[GameOption.ShowCeilings];
     internal bool ShowFloors => this[GameOption.ShowFloors];
     internal bool WeaponBobSway => this[GameOption.WeaponBobSway];
+    internal bool HeartbeatSound => this[GameOption.HeartbeatSound];
 }

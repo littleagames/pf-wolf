@@ -15,7 +15,7 @@ namespace PFWolf.Entities;
 internal sealed class PlayerInput
 {
     TicCmd cmd;
-    uint held;
+    ulong held;
 
     public int ControlX => cmd.ControlX;
     public int ControlY => cmd.ControlY;
@@ -37,14 +37,14 @@ internal sealed class PlayerInput
     public void Reset() => cmd = default;
 
     /// <summary>This frame's buttons as the game has left them (next frame's held ones), to send a player joining mid-game</summary>
-    public uint Buttons => cmd.Buttons;
+    public ulong Buttons => cmd.Buttons;
 
     /// <summary>Puts back the buttons <see cref="Buttons"/> gave, as a player joining mid-game takes the game up</summary>
-    public void RestoreButtons(uint buttons) => cmd = new TicCmd { Buttons = buttons };
+    public void RestoreButtons(ulong buttons) => cmd = new TicCmd { Buttons = buttons };
 
     public bool IsPressed(ButtonType button) => cmd.IsDown(button);
 
-    public bool IsHeld(ButtonType button) => (held & (1u << (int)button)) != 0;
+    public bool IsHeld(ButtonType button) => (held & TicCmd.Bit(button)) != 0;
 
     /// <summary>Down this frame but not the last: a press, not a button held down</summary>
     public bool IsFreshPress(ButtonType button) => IsPressed(button) && !IsHeld(button);
@@ -54,8 +54,8 @@ internal sealed class PlayerInput
     public void SetHeld(ButtonType button, bool isHeld)
     {
         if (isHeld)
-            held |= 1u << (int)button;
+            held |= TicCmd.Bit(button);
         else
-            held &= ~(1u << (int)button);
+            held &= ~TicCmd.Bit(button);
     }
 }

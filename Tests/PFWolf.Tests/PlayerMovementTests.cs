@@ -87,6 +87,93 @@ public class PlayerMovementTests
         Assert.That(pawn.Angle, Is.EqualTo(359));
     }
 
+    // A frame with these buttons down and nothing else
+    private static TicCmd Buttons(params ButtonType[] buttons)
+    {
+        var cmd = new TicCmd();
+        foreach (var button in buttons)
+            cmd.SetDown(button, true);
+        return cmd;
+    }
+
+    // Frames of a tic each, the first with the buttons down, until the quick turn is done
+    private int QuickTurn(PlayerPawn pawn, params ButtonType[] buttons)
+    {
+        _session.Tics = 1;
+        _session.PlayerInput.Begin(Buttons(buttons));
+        _movement.ControlMovement(pawn);
+        int frames = 1;
+        while (_session.PlayerState.TurnAround != 0 && frames < 200)
+        {
+            _session.PlayerInput.Begin(new TicCmd());
+            _movement.ControlMovement(pawn);
+            frames++;
+        }
+        return frames;
+    }
+
+    [TestCase(ButtonType.QuickRight, 90, 0, 18)]
+    [TestCase(ButtonType.QuickLeft, 90, 180, 18)]
+    [TestCase(ButtonType.TurnAround, 90, 270, 36)]
+    [TestCase(ButtonType.QuickRight, 10, 280, 18)]       // wrapping round past east
+    [TestCase(ButtonType.QuickLeft, 350, 80, 18)]
+    public void A_Quick_Turn_Turns_At_Full_Speed_And_Ends_Exactly(object buttonArg, int from, int to, int frames)
+    {
+        // Arrange: 100 ControlX a tic is 5 degrees
+        var pawn = Player();
+        pawn.Angle = (short)from;
+
+        // Act
+        int took = QuickTurn(pawn, (ButtonType)buttonArg);
+
+        // Assert
+        Assert.That(pawn.Angle, Is.EqualTo(to));
+        Assert.That(took, Is.EqualTo(frames));
+    }
+
+    [Test]
+    public void A_Quick_Turn_Goes_On_Without_Its_Button_And_Ignores_Turning_And_Strafing()
+    {
+        // Arrange: a quarter turn right started
+        var pawn = Player();
+        pawn.Angle = 90;
+        var (x, y) = (pawn.X, pawn.Y);
+        _session.Tics = 1;
+        _session.PlayerInput.Begin(Buttons(ButtonType.QuickRight));
+        _movement.ControlMovement(pawn);
+
+        // Act: strafing and turning left as hard as can be
+        var cmd = Buttons(ButtonType.Strafe);
+        cmd.ControlX = -100;
+        _session.PlayerInput.Begin(cmd);
+        _movement.ControlMovement(pawn);
+
+        // Assert: still turning right, not moved sideways
+        Assert.That(pawn.Angle, Is.EqualTo(80));
+        Assert.That((pawn.X, pawn.Y), Is.EqualTo((x, y)));
+    }
+
+    [Test]
+    public void A_Quick_Turn_Held_Down_Turns_Again_Once_Done()
+    {
+        // Arrange
+        var pawn = Player();
+        pawn.Angle = 90;
+        _session.Tics = 1;
+
+        // Act: held for 19 frames, one past the first turn's end
+        for (int i = 0; i < 19; i++)
+        {
+            _session.PlayerInput.Begin(Buttons(ButtonType.QuickLeft));
+            _movement.ControlMovement(pawn);
+        }
+
+        // Assert: the second has begun
+        Assert.That(_session.PlayerState.TurnAround, Is.LessThan(0));
+        Assert.That(_session.PlayerState.TurnAngle, Is.EqualTo(270));
+        Assert.That(pawn.Angle, Is.EqualTo(185));
+    }
+
     [Test]
     public void Looking_Up_And_Down_Stops_At_The_Views_Limit_And_Centers_Again()
     {

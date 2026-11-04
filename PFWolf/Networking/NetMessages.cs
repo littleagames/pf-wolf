@@ -169,7 +169,7 @@ internal static class TicCmdCodec
 
     public static Entities.TicCmd Read(NetDataReader r) => new()
     {
-        Buttons = r.GetUInt(),
+        Buttons = r.GetULong(),
         ControlX = r.GetShort(),
         ControlY = r.GetShort(),
         ControlStrafe = r.GetShort(),

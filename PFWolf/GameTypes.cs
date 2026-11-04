@@ -77,7 +77,22 @@ internal enum ButtonType
     Reload,
     // A scope's zoom (weapon.zoom; Midnight Assault's sniper rifle): held to zoom in, again to zoom out
     Zoom,
+    // Blake Stone's quick turns (bstone's quick_left/quick_right/turn_around): a quarter turn
+    // left or right, or a half turn, made at full turning speed (Gameplay/PlayerMovement.cs)
+    QuickLeft,
+    QuickRight,
+    TurnAround,
+    // Blake Stone's option keys: each turns a setting over and says so (Ui/OptionToggleKeys.cs).
+    // Local only: nothing in the game reads them from a player's commands
+    ToggleAttackInfo,
+    ToggleLighting,
+    ToggleSound,
+    ToggleMusic,
+    ToggleCeilings,
+    ToggleFloors,
+    ToggleHeartbeat,
 
+    // TicCmd.Buttons has a bit for each, so there can be no more than 64
     Count
 };
 

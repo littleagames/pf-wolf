@@ -8,7 +8,7 @@ namespace PFWolf.Entities;
 internal struct TicCmd
 {
     /// <summary>A bit for each <see cref="ButtonType"/> held down (bit 0 is Attack)</summary>
-    public uint Buttons;
+    public ulong Buttons;
 
     /// <summary>
     /// Turning (or sideways with Strafe), forward/back (negative is forwards) and a controller
@@ -32,5 +32,5 @@ internal struct TicCmd
             Buttons &= ~Bit(button);
     }
 
-    static uint Bit(ButtonType button) => 1u << (int)button;
+    internal static ulong Bit(ButtonType button) => 1ul << (int)button;
 }

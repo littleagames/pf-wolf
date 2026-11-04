@@ -23,6 +23,7 @@ internal sealed class GameOptionCommands(ConsoleManager console, GameOptions opt
         Add(GameOption.AttackInfo, "Whether who's attacking you is shown as a message (game-info attack-message: Blake Stone's REBA).");
         Add(GameOption.ShowCeilings, "Whether ceiling flats are drawn; 0 draws the plain ceiling color.");
         Add(GameOption.ShowFloors, "Whether floor flats are drawn; 0 draws the plain floor color.");
+        Add(GameOption.HeartbeatSound, "Whether the status bar heart monitor's beats are heard (heart-monitor beat-sound: Blake Stone's).");
     }
 
     void Add(GameOption option, string help)
