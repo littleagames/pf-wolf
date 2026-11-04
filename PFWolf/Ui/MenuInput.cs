@@ -137,7 +137,9 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
     /// <summary>
     /// Waits for the select and back buttons, Space, Enter and Escape to be let go, so one press
     /// isn't taken again by the next screen. Matters most for a controller, whose buttons are read
-    /// as they are rather than as presses that ClearKeysDown can throw away.
+    /// as they are rather than as presses that ClearKeysDown can throw away. Keys are checked as
+    /// physically held, since a held key's auto-repeat brings it back after a ClearKeysDown (holding
+    /// Escape on the main menu flipped the quit question on and off).
     /// </summary>
     internal void WaitKeyUp()
     {
@@ -150,12 +152,15 @@ internal sealed class MenuInput(InputManager input, AudioManager audio, GameEngi
                ci.Button1 ||
                ci.Button2 ||
                ci.Button3 ||
-               input.IsKeyDown(ScanCodes.Space) ||
-               input.IsKeyDown(ScanCodes.Enter) ||
-               input.IsKeyDown(ScanCodes.Escape);
+               input.IsKeyHeld(ScanCodes.Space) ||
+               input.IsKeyHeld(ScanCodes.Enter) ||
+               input.IsKeyHeld(ScanCodes.Escape);
 
             if (!keyPressed)
+            {
+                input.ClearKeysDown();      // and any repeats that came while waiting
                 break;
+            }
 
             GameEngineManager.DelayMs(5);
         }

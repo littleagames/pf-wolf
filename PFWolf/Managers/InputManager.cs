@@ -228,6 +228,10 @@ internal class InputManager
 
     private bool[] Keyboard = new bool[(int)ScanCodes.Last];
 
+    // Keys physically held, from down/up events only: ClearKeysDown leaves these alone, so waiting
+    // for a key to be let go isn't fooled by a clear that a held key's auto-repeat then undoes.
+    private readonly bool[] keysHeld = new bool[(int)ScanCodes.Last];
+
     // Fresh (non-repeat) key presses in order, for console binds: Keyboard[] only says what's
     // held and LastScan only keeps the latest. Drained by the play loop; cleared with the keys.
     private const int MaxPressedKeys = 32;
@@ -411,6 +415,9 @@ internal class InputManager
     {
         return Keyboard[(int)code];
     }
+
+    /// <summary>Whether the key is physically held, even if ClearKeysDown has since forgotten it.</summary>
+    internal bool IsKeyHeld(ScanCodes code) => keysHeld[(int)code];
 
     /// <summary>Whether a key, mouse button or joystick button is held down right now.</summary>
     internal bool IsInputDown(InputCode code) => code.Device switch
@@ -678,6 +685,12 @@ internal class InputManager
                 break;
 
             case SDL.SDL_EventType.SDL_KEYDOWN:
+                {
+                    var held = MapKey(key);
+                    if (held < ScanCodes.Last)
+                        keysHeld[(int)held] = true;
+                }
+
                 if (key == ScanCodes.ScrollLock || key == ScanCodes.F12)
                 {
                     GrabInput = !GrabInput;
@@ -716,7 +729,10 @@ internal class InputManager
                 key = MapKey(key);
 
                 if (key < ScanCodes.Last)
+                {
                     Keyboard[(int)key] = false;
+                    keysHeld[(int)key] = false;
+                }
                 break;
 
             case SDL.SDL_EventType.SDL_MOUSEWHEEL:
