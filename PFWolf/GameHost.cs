@@ -459,6 +459,10 @@ internal static partial class GameHost
 
         CheckForEpisodes();
 
+        // The game's own default keys (game-info default-controls), before the config's are read over them
+        foreach (var problem in Controls.SetGameDefaults(GameEngineManager.GetGameInfo().DefaultControls))
+            Console.WriteLine($"game-info default-controls: {problem}");
+
         InitGame();
 
         // After the config is read, so these can override its settings: the controls and binds

@@ -252,4 +252,90 @@ public class ControlBindingsTests
         // Assert
         Assert.That(duplicates, Is.Empty);
     }
+
+    [Test]
+    public void Game_Defaults_Replace_A_Listed_Controls_Inputs()
+    {
+        // Arrange
+        var bindings = new ControlBindings();
+        var strafeLeft = ControlAction.Of(ButtonType.StrafeLeft);
+        var slot9 = ControlAction.Of(ButtonType.Slot9);
+
+        // Act: Midnight Assault's A to strafe left and M for the medkit, in place of 9
+        var problems = bindings.SetGameDefaults(new Dictionary<string, List<string>>
+        {
+            ["strafeleft"] = ["A"],
+            ["slot9"] = ["M"],
+        });
+
+        // Assert
+        Assert.That(problems, Is.Empty);
+        Assert.That(bindings.Get(strafeLeft), Is.EqualTo(new[] { InputCode.FromKey(ScanCodes.A) }));
+        Assert.That(bindings.Get(slot9), Is.EqualTo(new[] { InputCode.FromKey(ScanCodes.M) }));
+        Assert.That(bindings.Get(Attack), Does.Contain(InputCode.FromKey(ScanCodes.Control)), "unlisted controls keep the engine's");
+    }
+
+    [Test]
+    public void Game_Defaults_Take_Their_Key_Off_Other_Play_Buttons()
+    {
+        // Arrange
+        var bindings = new ControlBindings();
+        var zoom = ControlAction.Of(ButtonType.Zoom);
+
+        // Act: Z, the engine's zoom key, given to use
+        bindings.SetGameDefaults(new Dictionary<string, List<string>> { ["use"] = ["Z"] });
+
+        // Assert
+        Assert.That(bindings.Get(Use), Is.EqualTo(new[] { InputCode.FromKey(ScanCodes.Z) }));
+        Assert.That(bindings.Get(zoom), Does.Not.Contain(InputCode.FromKey(ScanCodes.Z)));
+    }
+
+    [Test]
+    public void Game_Defaults_Are_What_Reset_Puts_Back()
+    {
+        // Arrange
+        var bindings = new ControlBindings();
+        var strafeLeft = ControlAction.Of(ButtonType.StrafeLeft);
+        bindings.SetGameDefaults(new Dictionary<string, List<string>> { ["strafeleft"] = ["A"] });
+        bindings.Clear(strafeLeft);
+
+        // Act
+        bindings.SetDefaults();
+
+        // Assert
+        Assert.That(bindings.Get(strafeLeft), Is.EqualTo(new[] { InputCode.FromKey(ScanCodes.A) }));
+    }
+
+    [Test]
+    public void Game_Defaults_An_Empty_List_Leaves_A_Control_Unbound()
+    {
+        // Arrange
+        var bindings = new ControlBindings();
+        var lookUp = ControlAction.Of(ButtonType.LookUp);
+
+        // Act
+        bindings.SetGameDefaults(new Dictionary<string, List<string>> { ["lookup"] = [] });
+
+        // Assert
+        Assert.That(bindings.Get(lookUp), Is.Empty);
+    }
+
+    [Test]
+    public void Game_Defaults_Report_And_Leave_Out_What_They_Cant_Read()
+    {
+        // Arrange
+        var bindings = new ControlBindings();
+
+        // Act
+        var problems = bindings.SetGameDefaults(new Dictionary<string, List<string>>
+        {
+            ["fly"] = ["F"],
+            ["use"] = ["Nonsense"],
+            ["attack"] = ["A", "B", "C"],
+        });
+
+        // Assert
+        Assert.That(problems, Has.Count.EqualTo(3));
+        Assert.That(bindings.Get(Attack), Does.Contain(InputCode.FromKey(ScanCodes.Control)), "too many inputs: left as the engine's");
+    }
 }

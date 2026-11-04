@@ -97,6 +97,14 @@ public record GameInfoAsset : Asset
     /// <summary>The screens from the signon to the menu: the intro, then the title loop</summary>
     public TitleSequenceInfo TitleSequence { get; init; } = new();
 
+    /// <summary>
+    /// The game's own default controls, by control name (as bindaction and controls.cfg name them:
+    /// strafeleft, slot9, am_zoomin): each listed control's keys and buttons, as bindaction takes
+    /// them ("A", "Mouse 2", "Pad Y"), in place of the engine's; an empty list leaves it unbound.
+    /// They're what a new player starts with and what Reset puts back.
+    /// </summary>
+    public Dictionary<string, List<string>> DefaultControls { get; init; } = [];
+
     /// <summary>Music for the high scores screen</summary>
     public string? HighScoresMusic { get; init; }
 

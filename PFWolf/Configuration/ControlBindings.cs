@@ -136,27 +136,32 @@ internal sealed class ControlBindings
     /// </summary>
     public List<ControlAction> Set(ControlAction action, int slot, InputCode code)
     {
-        var takenFrom = new List<ControlAction>();
-
-        if (!code.IsNone)
-        {
-            foreach (var other in ControlAction.All)
-            {
-                if (other.IsAutomapKey != action.IsAutomapKey || !IsBound(other, code))
-                    continue;
-
-                for (int s = 0; s < SlotCount; s++)
-                {
-                    if (_slots[other.Index, s] == code)
-                        _slots[other.Index, s] = InputCode.None;
-                }
-
-                if (other != action)
-                    takenFrom.Add(other);
-            }
-        }
-
+        var takenFrom = TakeOffGroup(action, code);
         this[action, slot] = code;
+        return takenFrom;
+    }
+
+    // Takes an input off every action in the action's group (itself included); returns the others
+    private List<ControlAction> TakeOffGroup(ControlAction action, InputCode code)
+    {
+        var takenFrom = new List<ControlAction>();
+        if (code.IsNone)
+            return takenFrom;
+
+        foreach (var other in ControlAction.All)
+        {
+            if (other.IsAutomapKey != action.IsAutomapKey || !IsBound(other, code))
+                continue;
+
+            for (int s = 0; s < SlotCount; s++)
+            {
+                if (_slots[other.Index, s] == code)
+                    _slots[other.Index, s] = InputCode.None;
+            }
+
+            if (other != action)
+                takenFrom.Add(other);
+        }
         return takenFrom;
     }
 
@@ -194,7 +199,67 @@ internal sealed class ControlBindings
     =============================================================================
     */
 
+    // The game's own defaults (game-info default-controls), laid over the engine's
+    private List<(ControlAction Action, InputCode[] Codes)> _gameDefaults = [];
+
+    /// <summary>
+    /// Takes the game's own defaults (game-info default-controls) and puts every control back to
+    /// the defaults with them. Returns what was wrong with them: an unknown control or input, or
+    /// more than a control's slots hold; those are left out.
+    /// </summary>
+    public List<string> SetGameDefaults(IReadOnlyDictionary<string, List<string>> defaults)
+    {
+        var problems = new List<string>();
+        var parsed = new List<(ControlAction, InputCode[])>();
+
+        foreach (var (name, inputs) in defaults)
+        {
+            if (!ControlAction.TryParse(name, out var action))
+            {
+                problems.Add($"unknown control \"{name}\"");
+                continue;
+            }
+
+            var codes = new List<InputCode>();
+            foreach (var input in inputs)
+            {
+                if (InputCode.TryParse(input, out var code) && !code.IsNone)
+                    codes.Add(code.Device == InputDevice.Key ? InputCode.FromKey(InputManager.FoldKey(code.Key)) : code);
+                else
+                    problems.Add($"{name}: unknown key or button \"{input}\"");
+            }
+
+            if (codes.Count(code => !code.IsController) > KeySlots || codes.Count(code => code.IsController) > 1)
+            {
+                problems.Add($"{name}: a control takes up to {KeySlots} keys or mouse buttons and one controller button");
+                continue;
+            }
+            parsed.Add((action, codes.ToArray()));
+        }
+
+        _gameDefaults = parsed;
+        SetDefaults();
+        return problems;
+    }
+
     public void SetDefaults()
+    {
+        SetEngineDefaults();
+
+        // The game's: each listed control has its inputs in place of the engine's, and they're
+        // taken off whatever else in the group had them
+        foreach (var (action, codes) in _gameDefaults)
+        {
+            Clear(action);
+            foreach (var code in codes)
+            {
+                TakeOffGroup(action, code);
+                Add(action, code);
+            }
+        }
+    }
+
+    private void SetEngineDefaults()
     {
         ClearAll();
 
