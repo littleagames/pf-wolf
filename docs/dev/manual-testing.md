@@ -175,6 +175,12 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] **(never tried)** SD: plays to its last level and ends; map end-message; attract loop skips
       missing demos.
 - [ ] Moody Lights's RedLight in Spear is separate (mod is wolf3d-only: check it isn't offered).
+- [ ] I+D easter egg (game-info `menu-easter-eggs`): main menu → View Scores, leave it by
+      pressing I and D together → the id guys picture in its own palette, held until I and D
+      are let go and another key is pressed, then the main menu again. Pressed by hand on a real
+      keyboard: **(never tried)** (tested 2026-11-04 with posted key messages only). **(never
+      tried)** XJAZNAZI playing over it and menu music after (by ear); from the in-game menu (Esc
+      during play), then back to the game; SD has no egg.
 
 ## 1.9 Blake Stone: Aliens of Gold (B)
 

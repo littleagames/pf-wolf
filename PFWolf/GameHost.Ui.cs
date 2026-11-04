@@ -75,7 +75,8 @@ internal static partial class GameHost
             LastAttacker = null;
         },
         Random: UiRandom,
-        QuitScreens: ShowQuitScreens);
+        QuitScreens: ShowQuitScreens,
+        EasterEggScreens: (screens, held) => titleScreens.RunTitleScreens(screens, TitleKeyAction.Next, out _, held));
 
     /// <summary>
     /// game-info's title-sequence quit screens (Blake Stone v3.0 shareware's order screens, to

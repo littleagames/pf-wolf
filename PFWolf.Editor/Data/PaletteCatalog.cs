@@ -96,6 +96,8 @@ public static class PaletteCatalog
             }
             Screens(info.TitleSequence.Intro, "Intro screen");
             Screens(info.TitleSequence.Loop, "Title loop screen");
+            foreach (var egg in info.MenuEasterEggs)
+                Screens(egg.Screens, $"Menu easter egg ({string.Join("+", egg.Keys)}) screen");
 
             foreach (var (number, cluster) in info.Clusters.OrderBy(cluster => cluster.Key))
             {

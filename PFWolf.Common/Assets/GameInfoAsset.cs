@@ -130,6 +130,13 @@ public record GameInfoAsset : Asset
     public string? MenuMusic { get; init; }
 
     /// <summary>
+    /// Secret screens on the main menu (Spear's I+D picture of id): when every one of an egg's
+    /// keys is held as a menu choice is made, its screens are shown, then the main menu comes
+    /// back to its own music. None by default.
+    /// </summary>
+    public List<MenuEasterEggInfo> MenuEasterEggs { get; init; } = [];
+
+    /// <summary>
     /// #RRGGBB the screen fades to when leaving the control panel
     /// </summary>
     public string? MenuFadeColor { get; init; }
@@ -691,6 +698,23 @@ public record TitleSequenceInfo
     /// otherwise). Played to intro-music when nothing else is playing.
     /// </summary>
     public List<TitleScreenInfo> Loop { get; init; } = [];
+}
+
+/// <summary>
+/// One of game-info's menu-easter-eggs: keys that, all held as a main menu choice is made (an
+/// item picked or Esc, as id's Spear checks after HandleMenu), show screens before the choice is
+/// carried out
+/// </summary>
+public record MenuEasterEggInfo
+{
+    /// <summary>The keys to hold, by name as bindaction takes them ("I", "D", "Left Shift")</summary>
+    public List<string> Keys { get; init; } = [];
+
+    /// <summary>
+    /// The screens shown, as title-sequence screens are; a key goes to the next one. The keys
+    /// have to be let go before a key counts, as id's waits for I and D to come up.
+    /// </summary>
+    public List<TitleScreenInfo> Screens { get; init; } = [];
 }
 
 /// <summary>What a key does on a title-sequence screen (its on-key)</summary>

@@ -35,6 +35,17 @@ title-sequence:
       seconds: 10
     - demo: true
 
+# "EASTER EGG FOR SPEAR OF DESTINY!": I and D held as a main menu choice is made (in practice,
+# pressed together to leave View Scores) show the id guys to XJAZNAZI, in their own palette,
+# until a key once I and D are let go
+menu-easter-eggs:
+  - keys: [I, D]
+    screens:
+      - pics: [{ pic: IDGUYS1 }, { pic: IDGUYS2, y: 80 }]
+        palette: IDGUYPAL
+        music: XJAZNAZI
+        wait-for-key: true
+
 # id's Spear layout: the title picture carries the column headings, the rows are in the big
 # font, and a game won shows the Spear in place of its floor
 high-scores:

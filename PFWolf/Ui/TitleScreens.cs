@@ -65,14 +65,17 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     /// Shows the screens in turn, until a key does menu or end-intro (which it says) or they've
     /// all been shown (null). <paramref name="listDefault"/> is what a key does on a screen
     /// with no on-key: next in the intro, menu in the loop. <paramref name="showedAny"/> is false
-    /// when every screen was left out (pictures the game hasn't got).
+    /// when every screen was left out (pictures the game hasn't got). <paramref name="holdUntilReleased"/>,
+    /// when given, says whether keys that brought the screens up are still held: a drawn screen
+    /// waits for them to come up before a key counts (key repeat would end it at once).
     /// </summary>
-    internal TitleKeyAction? RunTitleScreens(List<TitleScreenInfo> screens, TitleKeyAction listDefault, out bool showedAny)
+    internal TitleKeyAction? RunTitleScreens(List<TitleScreenInfo> screens, TitleKeyAction listDefault, out bool showedAny,
+        Func<bool>? holdUntilReleased = null)
     {
         showedAny = false;
         foreach (var screen in screens)
         {
-            var ended = RunTitleScreen(screen, KeyActionFor(screen, listDefault), listDefault, out bool shown);
+            var ended = RunTitleScreen(screen, KeyActionFor(screen, listDefault), listDefault, out bool shown, holdUntilReleased);
             showedAny |= shown;
             if (ended is TitleKeyAction.Menu or TitleKeyAction.EndIntro)
                 return ended;
@@ -110,7 +113,8 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     /// Shows one title screen (<paramref name="shown"/>, unless it's left out). Returns what the
     /// key that ended it does (next, menu or end-intro), or null if nothing did.
     /// </summary>
-    TitleKeyAction? RunTitleScreen(TitleScreenInfo screen, TitleKeyAction onKey, TitleKeyAction listDefault, out bool shown)
+    TitleKeyAction? RunTitleScreen(TitleScreenInfo screen, TitleKeyAction onKey, TitleKeyAction listDefault, out bool shown,
+        Func<bool>? holdUntilReleased)
     {
         // A game with no demos, or with none of the pictures (a mod's replaced graphics with no PG-13), leaves the screen out
         int demoNumber = screen.Demo ? TakeNextTitleDemo() : -1;
@@ -158,6 +162,17 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             DrawScreen(screen);
             video.Update();
             FadeInWithPalette(screen.Palette);
+
+            // id's Spear easter egg: while (Keyboard[sc_I] || Keyboard[sc_D]); before its IN_Ack
+            if (holdUntilReleased != null)
+            {
+                while (holdUntilReleased())
+                {
+                    input.ProcessEvents();
+                    GameEngineManager.DelayMs(5);
+                }
+                input.ClearKeysDown();
+            }
 
             pressed = false;
             if (!string.IsNullOrEmpty(screen.FizzlePic))

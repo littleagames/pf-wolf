@@ -191,6 +191,27 @@ public class TitleSequenceTests
     }
 
     [Test]
+    public void Spears_I_D_Easter_Egg_Shows_The_Id_Guys_In_Their_Palette()
+    {
+        // Act
+        var eggs = ReadPack("wolf3d", "spear").MenuEasterEggs;
+
+        // Assert
+        var egg = eggs.Single();
+        Assert.That(egg.Keys, Is.EqualTo(new[] { "I", "D" }));
+        var screen = egg.Screens.Single();
+        Assert.That(screen.Pics.Select(pic => (pic.Pic, pic.Y)), Is.EqualTo(new[] { ("IDGUYS1", 0), ("IDGUYS2", 80) }));
+        Assert.That((screen.Palette, screen.Music, screen.WaitForKey), Is.EqualTo(("IDGUYPAL", "XJAZNAZI", true)));
+    }
+
+    [TestCase("wolf3d")]
+    [TestCase("wolf3d", "spear", "spear-demo")]
+    public void Wolf3D_And_The_Spear_Demo_Have_No_Menu_Easter_Egg(params string[] packsFromBase)
+    {
+        Assert.That(ReadPack(packsFromBase).MenuEasterEggs, Is.Empty);
+    }
+
+    [Test]
     public void The_Standalone_Demo_Has_A_Title_Loop()
     {
         // Act

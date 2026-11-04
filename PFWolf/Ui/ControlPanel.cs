@@ -1,3 +1,5 @@
+using PFWolf.Assets;
+using PFWolf.Configuration;
 using PFWolf.Extensions;
 
 namespace PFWolf.Ui;
@@ -8,8 +10,9 @@ namespace PFWolf.Ui;
 /// <param name="EndGame">Ends the game being played: no lives left, died, nobody to turn to</param>
 /// <param name="Random">A random number, 0 to 255, for picking a quit message</param>
 /// <param name="QuitScreens">game-info's title-sequence quit screens, once quitting is confirmed</param>
+/// <param name="EasterEggScreens">A menu easter egg's screens, with whether its keys are still held</param>
 internal sealed record ControlPanelHooks(Func<int, int> SaveGame, Func<int, int> LoadGame,
-    Action EndGame, Func<int> Random, Action QuitScreens);
+    Action EndGame, Func<int> Random, Action QuitScreens, Action<List<TitleScreenInfo>, Func<bool>> EasterEggScreens);
 
 /// <summary>
 /// The control panel (US_ControlPanel): the main menu and what it leads to, the F-keys that
@@ -123,6 +126,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         do
         {
             which = loop.HandleMenu(MainItems, MainMenu, null);
+            ShowHeldEasterEgg();
             switch (which < 0 ? "quit" : MenuDefs.SelectedId(MainMenu, which))
             {
                 case "viewscores":
@@ -173,6 +177,65 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         //
         if (session.GameChosen || session.LoadedGame)
             EnableEndGameMenuItem();
+    }
+
+    /// <summary>menu-easter-eggs keys already warned about, so each is told once</summary>
+    readonly HashSet<string> warnedEggKeys = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// "EASTER EGG FOR SPEAR OF DESTINY!" (game-info menu-easter-eggs): with an egg's keys held as
+    /// HandleMenu comes back, its screens, then the main menu again to its own music, before the
+    /// choice is carried out. HandleMenu clears the keys before a picked item's screen runs, as
+    /// id's does, so in practice they're the keys that closed that screen (View Scores, left with
+    /// I and D pressed together).
+    /// </summary>
+    void ShowHeldEasterEgg()
+    {
+        // DOS's Keyboard[] was kept by the keyboard interrupt; here it's as current as the last
+        // events taken, so a D pressed just after the I that ended the screen still counts
+        input.ProcessEvents();
+        var held = HeldEasterEgg(engine.GetGameInfo().MenuEasterEggs, input.IsInputDown, key =>
+        {
+            if (warnedEggKeys.Add(key))
+                Console.WriteLine($"game-info menu-easter-eggs: unknown key '{key}'; that egg can't be shown");
+        });
+        if (held is not { } found)
+            return;
+        var (egg, keys) = found;
+
+        draw.MenuFadeOut();
+        hooks.EasterEggScreens(egg.Screens, () => keys.Any(input.IsInputDown));
+        input.ClearKeysDown();
+
+        DrawMainMenu();
+        audio.PlayMusic(MenuSong);
+        draw.MenuFadeIn();
+    }
+
+    /// <summary>
+    /// The first egg whose keys are all down, with those keys. One with no keys or no screens never
+    /// is, nor is one with a key that can't be read (each told to <paramref name="unknownKey"/>).
+    /// </summary>
+    internal static (MenuEasterEggInfo Egg, List<InputCode> Keys)? HeldEasterEgg(IEnumerable<MenuEasterEggInfo> eggs,
+        Func<InputCode, bool> isDown, Action<string>? unknownKey = null)
+    {
+        foreach (var egg in eggs)
+        {
+            if (egg.Keys.Count == 0 || egg.Screens.Count == 0)
+                continue;
+
+            var keys = new List<InputCode>();
+            foreach (var name in egg.Keys)
+            {
+                if (InputCode.TryParse(name, out var code))
+                    keys.Add(code);
+                else
+                    unknownKey?.Invoke(name);
+            }
+            if (keys.Count == egg.Keys.Count && keys.All(isDown))
+                return (egg, keys);
+        }
+        return null;
     }
 
     internal void DrawMainMenu()

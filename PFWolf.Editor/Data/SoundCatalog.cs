@@ -377,6 +377,9 @@ public static class SoundCatalog
             Add(gameInfo.MenuMusic, "The menus");
             foreach (var screen in gameInfo.TitleSequence.Intro.Concat(gameInfo.TitleSequence.Loop))
                 Add(screen.Music, "A title screen");
+            foreach (var egg in gameInfo.MenuEasterEggs)
+                foreach (var screen in egg.Screens)
+                    Add(screen.Music, $"The menu easter egg ({string.Join("+", egg.Keys)})");
             foreach (var (number, cluster) in gameInfo.Clusters)
                 Add(cluster.VictoryMusic, $"Cluster {number}'s victory");
         }

@@ -21,3 +21,6 @@ maps: !replace
     cluster: 1
 
 clusters: !remove
+
+# id's SPEARDEMO build has no I+D easter egg (nor its pictures)
+menu-easter-eggs: !remove
