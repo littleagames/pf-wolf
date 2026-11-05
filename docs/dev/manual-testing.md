@@ -39,6 +39,17 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Signon screen (W, S): engine version + commit, game, mods, video, input, sound, content
       lines read right; a warning shows on the warning line and the rest are counted.
 - [ ] Window title is the release's title for each pack.
+- [ ] The window opens straight away with the PFWolf icon and a red progress bar on black (no
+      blank white window first), the bar fills while the assets load, then the signon shows in
+      the same window and the title changes from "PFWolf" to the game's.
+- [ ] **(never tried)** The loading bar with Fullscreen on: the screen goes black with the bar,
+      then the signon, without the window flicking between modes.
+- [ ] **(never tried)** The loading bar with several big mods enabled, and on a cold start (just
+      after a reboot): it keeps moving, and Windows never calls the window "Not Responding".
+- [ ] **(never tried)** A missing or bad data file while the loading bar is up: the error box
+      shows and the game quits.
+- [ ] **(never tried)** Clicking the window's close button during the loading bar quits once the
+      signon is up (the click waits in SDL's queue).
 - [ ] **(never tried)** Drag a `.pk3` onto `PFWolf.exe` in Explorer: the game starts with that
       mod (and finds `pfwolf.pk3` though the working folder is elsewhere).
 - [ ] Quitting during startup doesn't overwrite `controls.cfg` / `binds.cfg`.

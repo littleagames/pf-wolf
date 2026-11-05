@@ -20,6 +20,17 @@ public class PngGraphicDataLoader
         var paletteColors = sourcePalette.Colors;
         int paletteSize = paletteColors.Length;
 
+        // A picture uses few colors, so each is matched to the palette once rather than searched
+        // for per pixel
+        var matches = new Dictionary<uint, byte>();
+        byte MatchColor(int r, int g, int b, int a)
+        {
+            uint key = ((uint)a << 24) | ((uint)r << 16) | ((uint)g << 8) | (uint)b;
+            if (!matches.TryGetValue(key, out var index))
+                matches[key] = index = (byte)FindClosestPaletteIndex(r, g, b, a);
+            return index;
+        }
+
         // Helper to find closest palette index
         int FindClosestPaletteIndex(int r, int g, int b, int a)
         {
@@ -48,7 +59,7 @@ public class PngGraphicDataLoader
         for (int i = 0; i < width * height; i++)
         {
             int alpha = pixels[i * 4 + 3];
-            indexedData[i] = (byte)FindClosestPaletteIndex(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2], alpha);
+            indexedData[i] = MatchColor(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2], alpha);
             if (alpha < AlphaOpaqueThreshold)
                 anyClear = true;
             else

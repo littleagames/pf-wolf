@@ -401,6 +401,9 @@ internal static partial class GameHost
     //
     static readonly WarpRequest warpRequest = new();    // --warp, --skill, --start
 
+    // The icon and progress bar the window shows while the assets are read (Ui/LoadingScreen.cs)
+    static readonly LoadingScreen loadingScreen = new();
+
     /// <summary>Runs the game: what Main does (GameHost.cs)</summary>
     internal static void Run(string[] args)
     {
@@ -429,6 +432,11 @@ internal static partial class GameHost
         SetNetParams(gameParams);     // --host, --join, --port, --name (Networking/NetGames.cs)
         warpRequest.SetParams(gameParams);  // --warp, --skill, --start (Gameplay/WarpRequest.cs)
 
+        // The window opens now, as the saved settings have it, to show startup's progress while
+        // the assets are read (Ui/LoadingScreen.cs); InitGame sets it up for the game
+        _videoManager.OpenWindow(GameEngineManager.ReadVideoConfig());
+        loadingScreen.Open(_videoManager.WindowHandle);
+
         // The Mods menu's choices (mods.cfg, per game), then the command line's
         var configMods = ModsConfig.Read(GameEngineManager.GetConfigFilePath(ModsConfig.FileName));
         try
@@ -437,7 +445,8 @@ internal static partial class GameHost
             // and a mod without the mods it needs isn't loaded
             AssetManager.EngineVersion = typeof(GameHost).Assembly.GetName().Version;
             AssetManager.LeaveOutUnmetDependencies = true;
-            AssetManager.Load(GameEngineManager.GamePackId, GameEngineManager.GameReleaseId, configMods.Concat(modPaths));
+            AssetManager.Load(GameEngineManager.GamePackId, GameEngineManager.GameReleaseId, configMods.Concat(modPaths),
+                loadingScreen.Step);
             // Animated pictures in menus and the status bar play in real time; the view's walls,
             // flats and sky go by the level's clock instead (WorldTexture)
             AssetManager.AnimationClock = () => (int)GameEngineManager.GetTimeCount();
@@ -450,6 +459,7 @@ internal static partial class GameHost
             GameEngineManager.Error(e.Message);
             Environment.Exit(1);
         }
+        loadingScreen.Step(LoadingScreen.Starting);
         RegisterActorActions();
         LoadScripts();      // after the built-in actions, which a script's can't replace (Scripting/GameScripts.cs)
         Entities.Actors.Monster.CheckClasses(AssetManager.GetActorMetadata());
@@ -493,6 +503,7 @@ internal static partial class GameHost
     {
         bool didjukebox = false;
         var theme = AssetManager.FindInGamePack<ColorThemeAsset>("colors");
+        loadingScreen.Close();      // the game's renderer takes the window over
         _videoManager.Init(theme, GameEngineManager.ReadVideoConfig());
         _graphicManager.MenuBackdrop = GameEngineManager.GetGameInfo().MenuBackdrop;
         _graphicManager.MenuStripe = GameEngineManager.GetGameInfo().MenuStripe;

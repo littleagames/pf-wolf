@@ -21,8 +21,8 @@ internal class AudioManager
     private const int MusicStreamPrimedBuffers = 2;
     private const int MusicStreamQueueDepth = 6;
 
-    private readonly ALDevice _device;
-    private readonly ALContext _context;
+    private ALDevice _device;
+    private ALContext _context;
 
     // Keyed by variant ("Digitized:name", "AdLib:name", ...), since the same sound can play
     // from a different device once one is switched off.
@@ -136,9 +136,9 @@ internal class AudioManager
 
     // Available sound channels
     private int _nextSource;
-    private readonly int[] _sources;
+    private int[] _sources = [];
 
-    private readonly int _musicSource;
+    private int _musicSource;
     private readonly Lazy<AssetManager> _assetManager;
     private readonly GameSession _session;
     private string _requestedMusicTrack = "";
@@ -151,28 +151,46 @@ internal class AudioManager
     private bool _isPaused;
     private bool _isDisposed;
 
-    // False when OpenAL couldn't be started: the game runs silent and every call here does nothing
-    private readonly bool _isAvailable;
+    // Opening the device takes up to half a second (OpenAL Soft starting its mixer), so it's
+    // opened on another thread while startup reads the assets; the first use of sound waits for
+    // it to be done (Available)
+    private readonly Task _opening;
+
+    // False when OpenAL couldn't be started: the game runs silent and every call here does nothing.
+    // Read through Available, which waits for the device to be opened.
+    private bool _opened;
+
+    private bool Available
+    {
+        get
+        {
+            _opening.GetAwaiter().GetResult();
+            return _opened;
+        }
+    }
 
     /// <summary>Whether sound is working; false when OpenAL couldn't be started (the game runs silent).</summary>
-    public bool IsAvailable => _isAvailable;
+    public bool IsAvailable => Available;
 
-    private bool IsActive => _isAvailable && !_isDisposed;
+    private bool IsActive => Available && !_isDisposed;
 
     public AudioManager(Lazy<AssetManager> assetManager, GameSession session)
     {
         _assetManager = assetManager;
         _session = session;
-        _sources = [];
+        _opening = Task.Run(Open);
+    }
 
+    // The device, its context (current for the whole process, not just this thread) and the sources
+    private void Open()
+    {
         var failure = TryOpenDevice(out _device, out _context);
         if (failure != null)
         {
-            // Startup output is shown on the signon screen
+            // Startup output is shown on the signon screen, which asks IsAvailable first
             Console.WriteLine($"Sound is off: {failure}");
             return;
         }
-        _isAvailable = true;
 
         _sources = AL.GenSources(SourceCount);
         _musicSource = AL.GenSource();
@@ -187,6 +205,7 @@ internal class AudioManager
             AL.Source(source, ALSourcef.MaxDistance, 16.0f);
             AL.Source(source, ALSourcef.RolloffFactor, 0.35f);
         }
+        _opened = true;
     }
 
     private const string OpenALFileName = "OpenAL32.dll";
@@ -732,7 +751,7 @@ internal class AudioManager
         _musicStreamCts = null;
         _musicStreamThread = null;
 
-        if (!_isAvailable)
+        if (!Available)
             return;
         AL.SourceStop(_musicSource);
         AL.GetSource(_musicSource, ALGetSourcei.BuffersQueued, out var queued);
@@ -777,7 +796,7 @@ internal class AudioManager
         if (_isDisposed)
             return;
         _isDisposed = true;
-        if (!_isAvailable)
+        if (!Available)
             return;
         StopMusicStream();
         AL.SourceStop(_musicSource);

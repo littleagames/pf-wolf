@@ -25,6 +25,17 @@ public class PngSpriteDataLoader
         var paletteColors = sourcePalette.Colors;
         int paletteSize = paletteColors.Length;
 
+        // A picture uses few colors, so each is matched to the palette once (a search of every
+        // entry per pixel was most of startup's time spent on pfwolf.pk3's sprites)
+        var matches = new Dictionary<int, byte>();
+        byte MatchColor(int r, int g, int b)
+        {
+            int key = (r << 16) | (g << 8) | b;
+            if (!matches.TryGetValue(key, out var index))
+                matches[key] = index = (byte)FindClosestPaletteIndex(r, g, b);
+            return index;
+        }
+
         // Helper to find closest palette index
         int FindClosestPaletteIndex(int r, int g, int b)
         {
@@ -52,7 +63,7 @@ public class PngSpriteDataLoader
             if (pixels[i * 4 + 3] < AlphaOpaqueThreshold || IsTransparentKey(r, g, b))
                 continue; // leave indexedData/opacityMask at 0 (transparent)
 
-            indexedData[i] = (byte)FindClosestPaletteIndex(r, g, b);
+            indexedData[i] = MatchColor(r, g, b);
             opacityMask[i] = 1;
         }
 

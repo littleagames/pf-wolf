@@ -135,12 +135,43 @@ internal class VideoManager
         InputManager.MouseGrabbed += SetWindowGrab;
     }
 
-    public void Init(ColorThemeAsset? theme, VideoSettings? settings = null)
+    /// <summary>
+    /// Opens the window as the saved settings have it, before the assets are read, so startup
+    /// has somewhere to show its progress (Ui/LoadingScreen.cs). It's named "PFWolf" until
+    /// <see cref="Init"/> knows the game; Init opens it if this wasn't called.
+    /// </summary>
+    public void OpenWindow(VideoSettings? settings = null)
     {
+        if (WindowHandle != IntPtr.Zero)
+            return;
+
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
         {
             throw new PfWolfVideoException("Could not initialize SDL: {error}", SDL.SDL_GetError());
         }
+
+        settings ??= new VideoSettings();
+
+        // SDL's dummy driver (SDL_VIDEODRIVER=dummy: no window, for scripted runs such as the
+        // demotest check) has no OpenGL
+        var flags = Headless ? (SDL.SDL_WindowFlags)0 : SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
+        if (settings.Fullscreen)
+            flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
+        // Shown once something is drawn in it (the loading screen, else Init), not blank white
+        flags |= SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN;
+
+        WindowHandle = SDL.SDL_CreateWindow("PFWolf", SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
+            settings.WindowWidth, settings.WindowHeight, flags);
+        if (WindowHandle == IntPtr.Zero)
+            throw new PfWolfVideoException("Unable to create the window: {0}", SDL.SDL_GetError());
+
+        SetWindowIcon();
+        SDL.SDL_ShowCursor(SDL.SDL_DISABLE);
+    }
+
+    public void Init(ColorThemeAsset? theme, VideoSettings? settings = null)
+    {
+        OpenWindow(settings);
 
         var paletteName = _assetManager.Value.GetGamePaletteName();
         var pal = _assetManager.Value.Find<Palette>(paletteName);
@@ -300,7 +331,7 @@ internal class VideoManager
     }
 
     /// <summary>Running on SDL's dummy video driver: nothing is shown, so no OpenGL, acceleration or vsync</summary>
-    private static bool Headless => SDL.SDL_GetCurrentVideoDriver() == "dummy";
+    internal static bool Headless => SDL.SDL_GetCurrentVideoDriver() == "dummy";
 
     private bool CreateRenderer(VideoSettings settings)
     {
@@ -1838,23 +1869,10 @@ internal class VideoManager
 
     private void InitializeSDLVideo(VideoSettings settings)
     {
+        // The window was opened (OpenWindow) before the game's title was known
         var title = _assetManager.Value.GetGameTitle();
-        if (string.IsNullOrWhiteSpace(title))
-            title = "PFWolf";
-
-        // SDL's dummy driver (SDL_VIDEODRIVER=dummy: no window, for scripted runs such as the
-        // demotest check) has no OpenGL
-        var flags = Headless ? (SDL.SDL_WindowFlags)0 : SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
-        if (settings.Fullscreen)
-            flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
-
-        WindowHandle = SDL.SDL_CreateWindow(title, SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
-            settings.WindowWidth, settings.WindowHeight, flags);
-        if (WindowHandle == IntPtr.Zero)
-            throw new PfWolfVideoException("Unable to create the window: {0}", SDL.SDL_GetError());
-
-        SetWindowIcon();
-        SDL.SDL_ShowCursor(SDL.SDL_DISABLE);
+        SDL.SDL_SetWindowTitle(WindowHandle, string.IsNullOrWhiteSpace(title) ? "PFWolf" : title);
+        SDL.SDL_ShowWindow(WindowHandle);       // already shown when the loading screen drew in it
 
         Array.Copy(GamePal, CurPal, 256);
         settings = ResolveRenderSize(settings);
