@@ -676,6 +676,15 @@ can reach), not played by hand.
       their bases, the four control points and the two hill spots. **(never tried)**: picking
       Twin Keeps in the lobby; a real game over the LAN in each mode (Horde's enemies at the
       corridors' ends); the team starts and the keeps' colors.
+- [ ] Skies Demo (`--file skies-demo`, multiple skies, 2026-11-04): headless screenshots showed
+      the meadow's day sky and the night garden's night sky through their ceilings with the hall's
+      roof between, the lattice over the night sky, the level's dusk sky and the cloud floor sky
+      at the bridge, and `game.trigger(1, 'A_ChangeTexture', 'SDDAY', 'SDNIGHT')` turning the
+      meadow to night (`where` shows each tile's sky). **(never tried)**: throwing the meadow's
+      switch by hand (the zone dimming with it), walking the bridge (the CloudsEdge markers
+      keeping you on it), looking up/down with y-shearing at the tile skies, an animated tile
+      sky, saving and loading after the switch (the sky should stay night), widescreen, and
+      the editor's 3D view of the level (tile-sky ceilings left open).
 
 ## 1.15 Multiplayer
 

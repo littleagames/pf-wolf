@@ -1,0 +1,29 @@
+# The meadow's switch (a switch block's fields are in the docs' mapdefs reference). Its tag (1)
+# is the meadow's: A_ChangeTexture changes a tile's own sky as it does its flats, so the day sky
+# there becomes the night sky, and back, while the meadow's light zone (1) dims and tints blue
+# with it. Off switches show the elevator's lever down, thrown ones up.
+walls:
+    '170':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 171
+            sound: switches/elevbutn
+            actions:
+                - A_ChangeTexture("SDDAY", "SDNIGHT")
+                - A_SetZoneLight(1, 120, 70, "#8898FF")
+                - A_Message("Night falls over the meadow.")
+    '171':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 170
+            sound: switches/elevbutn
+            actions:
+                - A_ChangeTexture("SDNIGHT", "SDDAY")
+                - A_SetZoneLight(1, 255, 70, "none")
+                - A_Message("Day breaks over the meadow.")

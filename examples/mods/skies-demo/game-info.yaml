@@ -1,0 +1,17 @@
+# Merged into the game pack's game-info.yaml: the level's own sky, wall height and light zones.
+# The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+#
+# The level's own sky (dusk) shows only where a tile has no ceiling flat and no sky of its own:
+# over the bridge. The meadow's and night garden's skies are their ceiling indices'
+# (mapdefs/flats.yaml skies).
+maps:
+  MAP01:
+    sky: SDDUSK
+    wall-height: 2
+    floor-color: "#383838"
+    # The meadow (zone 1) in full daylight, which its switch dims; the night garden (zone 2)
+    # in dim, blue moonlight
+    zones:
+      1: { light: 255 }
+      2: { light: 120, color: "#8898FF" }

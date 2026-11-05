@@ -1,0 +1,5 @@
+# The Skies Demo's object-plane ids (950-959 are this mod's). The marker is never placed: it
+# only marks its tile as the map's read.
+things:
+  950:
+    class: CloudsEdge

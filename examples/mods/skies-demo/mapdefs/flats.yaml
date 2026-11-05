@@ -1,0 +1,23 @@
+# The level's floors, ceilings and skies (the flat plane, map plane 2: a tile's low byte is its
+# floor index, its high byte its ceiling index). Merged entry by entry over pfwolf-pk3's table,
+# so its 1 (grey stone) and 3 (wood planks) are used here too.
+#
+# skies: a ceiling index that opens onto a sky of its own (a picture in graphics/, or any wall
+# texture). It shows through the tile's ceiling, turning with the view as the level's sky does,
+# in front of the level's own sky (game-info sky:, which still shows on tiles with no ceiling
+# flat and no sky of their own). A ceiling texture on the same index is drawn over it, its
+# see-through pixels showing the sky; with none, the tile has no ceiling, not even a default-ceiling.
+#
+# floor-skies: the same for a floor index, below the horizon: the clouds under the bridge.
+flats:
+  floor:
+    20: SDGRASS
+  ceiling:
+    # the pergola: a lattice with the night sky through its gaps
+    16: SDLATICE
+  skies:
+    14: SDDAY
+    15: SDNIGHT
+    16: SDNIGHT
+  floor-skies:
+    30: SDCLOUDS

@@ -1,0 +1,4 @@
+name: Skies Demo
+version: "1.0"
+description: One level (replacing Floor 1) under several skies at once - a day meadow and a night garden with a roofed hall between, a switch that brings night to the meadow, and a bridge over the clouds under the level's own dusk sky.
+game-packs: [wolf3d]

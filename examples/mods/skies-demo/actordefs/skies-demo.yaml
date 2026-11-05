@@ -1,0 +1,5 @@
+# The Skies Demo's actor: a marker on each tile of cloud below the bridge. No one walks onto
+# it, enemy or player: the floor sky there is only a picture.
+CloudsEdge:
+  properties:
+    blocktile: all

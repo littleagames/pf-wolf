@@ -1944,6 +1944,55 @@ With cheats on, `addplayer` then `gamemode capture-the-flag` (or `domination`,
 `king-of-the-hill`...) tries a mode alone, and `match` shows the score and where each mode's
 pieces are.
 
+## Skies Demo (`mods/skies-demo`)
+
+**Several skies on one level** (it replaces Floor 1): a ceiling index on the flat plane can open
+onto a sky of its own, so one yard is under a day sky and the next under a night sky, with a
+roof between them. The level's own sky still shows wherever a tile has neither.
+
+```
+PFWolf.exe --file skies-demo
+```
+
+- **The hall** you start in, roofed (wood planks), with wide openings east and west.
+- **The meadow,** west: a day sky, sun and clouds over green hills. The switch on its south wall
+  brings night to the meadow (its sky becomes the night sky and its light dims and goes blue),
+  and day back again.
+- **The night garden,** east: stars and a crescent moon, in dim blue light. Its pergola is a
+  see-through lattice ceiling with the night sky through the gaps.
+- **The sky bridge,** north through the hall's doorway: under the level's own sky (dusk), a
+  narrow bridge over a sea of cloud far below, to the elevator. The clouds are a floor sky of
+  their own; no one can step off the bridge onto them.
+
+### What's in it
+
+- `mapdefs/flats.yaml`: the level's flats and skies. `skies:` gives a ceiling index a sky of its
+  own (14 day, 15 and 16 night); `floor-skies:` does the same for a floor index (30, the
+  clouds). A `ceiling:` texture on the same index is drawn over the sky, its see-through pixels
+  showing it (16, the lattice). An index with a sky of its own gets no default-ceiling.
+- `game-info.yaml`: `sky: SDDUSK`, the level's own sky, behind everything else; the light zones
+  (1 the meadow, 2 the night garden).
+- `mapdefs/walls.yaml`: the switch (170 and 171). `A_ChangeTexture("SDDAY", "SDNIGHT")` on its
+  tag (the meadow's, 1) changes a tile's own sky as it does its flats; `A_SetZoneLight` dims the
+  meadow with it.
+- `actordefs/skies-demo.yaml` and `mapdefs/things.yaml`: `CloudsEdge` (950, `blocktile: all`), a
+  marker on each tile of cloud.
+- `graphics/`: the skies (SDDAY, SDNIGHT, SDDUSK, SDCLOUDS); `flats/`: the grass and the lattice
+  (its clear pixels are see-through).
+
+A tile's own sky is drawn as the level's sky is: it turns with the view and doesn't move as you
+walk, so looking up through two openings side by side shows two different skies at once. It's
+drawn unshaded, as the level's sky is. The editor's 3D view leaves those tiles' ceilings open
+but doesn't draw their skies.
+
+The level is made by `tools/make-skies-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-skies-demo.ps1
+```
+
+With cheats on, `where` shows the ceiling index and sky of the tile you're on.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
