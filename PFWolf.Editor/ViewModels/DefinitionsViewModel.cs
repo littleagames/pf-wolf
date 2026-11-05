@@ -34,6 +34,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         Graphics = new EntryEditorViewModel(this, DefinitionKind.Graphics);
         Elevator = new EntryEditorViewModel(this, DefinitionKind.Elevator);
         Presenter = new EntryEditorViewModel(this, DefinitionKind.Presenter);
+        Particles = new EntryEditorViewModel(this, DefinitionKind.Particles);
     }
 
     /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
@@ -57,6 +58,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     public EntryEditorViewModel Graphics { get; }
     public EntryEditorViewModel Elevator { get; }
     public EntryEditorViewModel Presenter { get; }
+    public EntryEditorViewModel Particles { get; }
 
     /// <summary>Whether the game has an elevator.yaml (Blake Stone's), so its tab shows</summary>
     public bool HasElevator => HasPackFile(DefinitionKind.Elevator);
@@ -199,7 +201,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>The definitions were saved: the tabs show them again</summary>
     public event EventHandler? DefinitionsChanged;
 
-    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, Graphics, Factions, Elevator, Presenter, GamePacks];
+    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, Graphics, Factions, Elevator, Presenter, Particles, GamePacks];
 
     /// <summary>
     /// What's changed here and not saved (definitions in the tabs, the file in the YAML tab), as
@@ -238,6 +240,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
             DefinitionKind.Factions => Factions,
             DefinitionKind.Elevator => Elevator,
             DefinitionKind.Presenter => Presenter,
+            DefinitionKind.Particles => Particles,
             _ => MapDefs,
         };
         ShowTabRequested?.Invoke(this, kind);

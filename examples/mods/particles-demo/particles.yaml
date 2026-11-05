@@ -1,0 +1,172 @@
+# The Particles Demo's particle effects (the fields are in the docs' particles.yaml reference).
+# Particles are only for show: drawn on each machine alone, they can't hurt or block anything,
+# and those in the air aren't saved. Distances are in texels (64 a tile or a story), times in
+# tics (70 a second), speeds in texels a tic. Options > Video > Particles (r_particles) scales
+# how many there are.
+#
+# types: how each kind of particle looks and moves
+# emitters: what throws them out, which way and how fast. A running emitter (an actor's
+# `particles`, a state's `particles:`, A_StartEmitter, a script's game.emitter) throws out
+# `rate` a second; a burst (A_SpawnParticles, game.particles) throws out `count` at once.
+
+types:
+  # Glowing embers rising off the braziers: additive (their light added to what's behind), so
+  # they glow, and fading out as their colors run down to black
+  Ember:
+    shape: dot
+    size: 1
+    size-end: 0.5
+    colors: ["#FFE080", "#FF7000", "#801000", "#000000"]
+    life: 50-90
+    gravity: -0.03
+    drag: 0.02
+    bright: true
+    blend: additive
+    collide: none
+
+  # The braziers' smoke: Wolf3D's own rocket smoke sprite (SMOK A-D), growing, half see-through,
+  # rising slowly and fading out before it reaches the ceiling
+  BrazierSmoke:
+    shape: sprite
+    sprite: SMOK
+    frames: A-D
+    scale: 0.2
+    scale-end: 0.5
+    life: 80-120
+    gravity: -0.004
+    drag: 0.02
+    blend: translucent50
+    fade: true
+    collide: stop
+
+  # Steam out of the grate: white puffs, growing, see-through and fading
+  Steam:
+    shape: dot
+    size: 2
+    size-end: 10
+    colors: ["#FFFFFF", "#D0D0D0"]
+    life: 50-70
+    gravity: -0.02
+    drag: 0.04
+    blend: translucent75
+    fade: true
+    collide: stop
+
+  # The fountain's water: blue streaks thrown up, falling back, splashing where they land
+  Water:
+    shape: streak
+    size: 1
+    colors: ["#E8F4FF", "#80B8FF"]
+    bright: true
+    life: 90
+    gravity: 0.2
+    trail: 1.5
+    collide: die
+    on-death: Splash
+  Droplet:
+    shape: dot
+    size: 0.6
+    color: "#C8E0FF"
+    bright: true
+    life: 10-16
+    gravity: 0.25
+    collide: bounce
+    bounce: 0.3
+
+  # The smoldering barrels' smoke: dark grey, big and slow
+  PotSmoke:
+    shape: dot
+    size: 4
+    size-end: 14
+    colors: ["#707070", "#303030"]
+    life: 90-130
+    gravity: -0.05
+    drag: 0.04
+    blend: translucent
+    fade: true
+    collide: stop
+
+  # A rocket's exhaust: hot at first, then pale smoke left hanging in the air behind it. Solid,
+  # fading out as it goes (translucent grey over the grey stone would hardly show), and bright,
+  # so the dark doesn't hide it
+  Exhaust:
+    shape: dot
+    size: 2.5
+    size-end: 7
+    colors: ["#FFF0C0", "#D8D8D8", "#A8A8A8"]
+    life: 20-32
+    gravity: -0.01
+    drag: 0.08
+    bright: true
+    fade: true
+    collide: none
+
+  # Sparks off a rocket's blast: white-hot streaks that cool to red and bounce
+  Spark:
+    shape: streak
+    size: 0.6
+    colors: ["#FFFFE0", "#FFB030", "#802000", "#000000"]
+    life: 20-40
+    gravity: 0.15
+    drag: 0.01
+    bright: true
+    blend: additive
+    collide: bounce
+    bounce: 0.4
+
+  # Blood (scripts/particles-demo.lua: game.ondamage): drops that stay where they land
+  Blood:
+    shape: square
+    size: 1.5
+    colors: ["#C00000", "#600000"]
+    life: 140
+    gravity: 0.25
+    collide: stop
+  # ...and gibs (game.onkill): bigger lumps that bounce
+  Gib:
+    shape: square
+    size: 3
+    colors: ["#A00000", "#500000"]
+    life: 160
+    gravity: 0.25
+    collide: bounce
+    bounce: 0.3
+
+  # A sparkle as treasure's picked up (game.onpickup)
+  Sparkle:
+    shape: dot
+    size: 1.5
+    size-end: 0.3
+    colors: ["#FFFFFF", "#FFE040", "#000000"]
+    life: 25-40
+    gravity: -0.02
+    bright: true
+    blend: additive
+    collide: none
+
+  # The magic orb's trail (a script's game.emitter, moved round the pillar each tic)
+  Magic:
+    shape: dot
+    size: 1.5
+    size-end: 0.5
+    colors: ["#E0B0FF", "#6020E0", "#000000"]
+    life: 30-50
+    gravity: -0.01
+    bright: true
+    blend: additive
+    collide: none
+
+emitters:
+  BrazierEmbers: { type: Ember, rate: 25, speed: 0.2-0.6, spread: 25, pitch: 90, z: 34, radius: 6, range: 12 }
+  BrazierSmoke: { type: BrazierSmoke, rate: 6, speed: 0.1-0.2, spread: 20, pitch: 90, z: 58, radius: 4, range: 12 }
+  SteamJet: { type: Steam, rate: 30, speed: 0.3-0.6, spread: 12, pitch: 90, z: 2, radius: 10 }
+  FountainJet: { type: Water, rate: 60, speed: 2.6-3.2, spread: 10, pitch: 90, z: 30, radius: 2 }
+  Splash: { type: Droplet, count: 3, speed: 0.4-0.9, spread: 70, pitch: 90, z: 0 }
+  PotSmoke: { type: PotSmoke, rate: 10, speed: 0.1-0.3, spread: 30, pitch: 90, z: 30, radius: 6 }
+  # Out of the back of a flying rocket: angle 180 is behind the way it faces
+  RocketTrail: { type: Exhaust, rate: 140, speed: 0.5-2, angle: 180, spread: 20, z: 32 }
+  RocketBlast: { type: Spark, count: 50, speed: 1.5-3.5, spread: 180, z: 32 }
+  BloodSpray: { type: Blood, count: 12, speed: 0.6-1.8, spread: 50, pitch: 20, z: 36 }
+  Gibs: { type: Gib, count: 16, speed: 1-3, spread: 80, pitch: 60, z: 30 }
+  Sparkle: { type: Sparkle, count: 30, speed: 0.3-1, spread: 180, z: 20, radius: 10 }
+  Orb: { type: Magic, rate: 70, speed: 0.05-0.2, spread: 180, z: 0 }

@@ -1,0 +1,4 @@
+name: Particles Demo
+version: "1.0"
+description: One level (replacing Floor 1) full of particle effects - braziers throwing up embers and smoke, a steam grate with a valve to turn it off, a fountain, barrels that smolder, a rocket gallery with smoke trails and sparks, and Lua blood, gibs, treasure sparkles and a magic orb circling a pillar.
+game-packs: [wolf3d]

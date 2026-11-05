@@ -1,0 +1,5 @@
+# The steam grates' floor (the flat plane's low byte, 40): an iron grating (flats/PDGRATE.png).
+# Merged entry by entry over pfwolf-pk3's table; every other tile has no flat (the floor color).
+flats:
+  floor:
+    40: PDGRATE

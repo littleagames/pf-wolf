@@ -262,6 +262,25 @@ the *emitter* (`e:set{...}` in `game.ontick`), which is cheap.
   particles don't take color translations; Wolf3D's palette has few in-between greys and
   teals, so translucent smoke over a teal door reads mostly grey.
 
+**Phase 5 as built (2026-11-05):**
+
+- `examples/mods/particles-demo` (thing ids 960-964, its generator
+  `examples/tools/make-particles-demo.ps1`, a README section, a manual-testing item): braziers
+  (class `particles`, sprite smoke, additive embers, a light), steam grates (`ParticleEmitter`)
+  with a valve (`A_StopEmitter` / `A_StartEmitter` by tag), a fountain (`on-death` splashes), smoldering
+  barrels (states' `particles:`), a rocket gallery (a trail out of the rocket's back, sparks on
+  impact from `A_SpawnParticles`), and Lua blood, gibs, treasure sparkles, an orb emitter
+  moved round a pillar, and the particle count on the HUD.
+- Editor: a Particles tab in the Definitions window (`DefinitionKind.Particles`, a sections
+  kind like factions: `types` and `emitters`, always shown since mods add it); particles.yaml
+  is a known mod-root file (YamlFileTypes); a level check warns once a class about a placed
+  thing running an emitter particles.yaml hasn't got (`GameContent.EmittersOf`, which follows
+  parents and states); the map draws a pink `*` badge on things that throw particles out. The
+  3D view doesn't show particles.
+- Found while making it: sprite particles right beside the view are now left out (nearer than
+  half a tile); grey translucent smoke over grey stone hardly shows (the demo's rocket trail is
+  solid and fades instead). The brown patches round the braziers are their light, not smoke.
+
 Phases 1–3 give a usable system (solid particles, from YAML, actors and Lua). Phase 4 is what
 makes smoke and magic look good.
 

@@ -1993,6 +1993,65 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-skies-demo.ps1
 
 With cheats on, `where` shows the ceiling index and sky of the tile you're on.
 
+## Particles Demo (`mods/particles-demo`)
+
+**Particle effects** (it replaces Floor 1): a dim hall full of them, from YAML, actor classes,
+a switch and Lua. Particles are only for show: drawn on each machine alone, they can't hurt
+or block anything, and those in the air aren't saved. Options → Video → Particles (Off, Low,
+Medium, High) sets how many there are; the count's at the top left of the view.
+
+```
+PFWolf.exe --file particles-demo
+```
+
+- **The hall** you start in: four braziers throwing up glowing embers and smoke in their own
+  flickering light, two barrels smoldering by turns, and a magic orb circling the blue pillar.
+- **The rocket gallery,** north: a launcher in its west wall fires rockets along it while
+  you're in sight, each with a smoke trail, bursting into sparks on the east wall.
+- **The fountain,** south-west: water thrown up out of a well, splashing where it lands.
+- **The steam grates,** south: steam out of the floor. The valve on the wall behind them
+  shuts it off, and on again.
+- **The treasure nook,** west: crosses that sparkle as they're picked up.
+- **The guard room,** west: guards that bleed when they're hit and leave gibs when they die.
+
+### What's in it
+
+- `particles.yaml`: the particle types (how each looks and moves: shape, size, colors over
+  its life, gravity, drag, what it does on meeting a wall or the floor, how it's blended) and
+  the emitters that throw them out (how many, which way, how fast). Embers and sparks are
+  `additive`, so they glow; the smoke and steam are `translucent` and `fade`; the brazier's
+  smoke is Wolf3D's own rocket smoke sprite (`shape: sprite`, `SMOK` `A-D`, growing with
+  `scale-end`); the water leaves a `Splash` of droplets as it dies (`on-death`).
+- `actordefs/particles-demo.yaml`:
+  - `Brazier` (960): its `particles` property, `BrazierEmbers, BrazierSmoke`, runs all the time.
+  - `SteamVent` (961): pfwolf-pk3's `ParticleEmitter` (an unseen spot) running `SteamJet`.
+  - `Fountain` (962): Wolf3D's well with water, running `FountainJet`.
+  - `SmokePot` (963): Wolf3D's barrel, its two states taking turns, one with `particles:
+    PotSmoke` and one with `particles: none`.
+  - `RocketLauncher` (964, `in-wall: true`) and `TrailRocket`: the rocket's `particles` is its
+    trail (`RocketTrail`, `angle: 180`: out of its back); its Death state stops it
+    (`particles: none`) and bursts into sparks (`A_SpawnParticles("RocketBlast")`).
+- `mapdefs/walls.yaml`: the valve (174 and 175), whose `A_StopEmitter("SteamJet")` and
+  `A_StartEmitter("SteamJet")` work on the actors with its tag (1, the grates'). Saved games
+  keep what they leave.
+- `mapdefs/flats.yaml` and `flats/PDGRATE.png`: the grates' floor; `sprites/PDFR*.png`: the
+  brazier.
+- `scripts/particles-demo.lua`: blood (`game.ondamage`, `victim:particles("BloodSpray", ...)`
+  sprayed away from the attacker), gibs (`game.onkill`), treasure sparkles (`game.onpickup`,
+  `game.particles`), the orb (a `game.emitter` made in `game.onlevel` and moved round the
+  pillar with tag 2 in `game.ontick`) and the count (`game.onhud`, `game.particlecount`).
+
+The level, the brazier and the grate are made by `tools/make-particles-demo.ps1`. Edit it and
+run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-particles-demo.ps1
+```
+
+With cheats on, `emitters` lists the actors running emitters (and why), `particles` the types
+and emitters there are, and `particle Sparkle` throws one out in front of you. In the editor,
+a thing that throws particles out has a pink `*` on the map.
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

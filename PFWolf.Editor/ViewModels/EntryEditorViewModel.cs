@@ -315,7 +315,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 
     private string Noun => Kind switch
     {
-        DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter => "sections",
+        DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter or DefinitionKind.Particles => "sections",
         DefinitionKind.GamePackInfo => "games",
         DefinitionKind.Actors => "classes",
         DefinitionKind.Animations => "animations",
@@ -397,7 +397,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 
     private FieldSchema SchemaFor(IReadOnlyList<string> path) => Kind switch
     {
-        DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter
+        DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter or DefinitionKind.Particles
             => DefinitionSchemas.Sections(Kind)!.Field(path[0]) ?? FieldSchema.For(typeof(object), path[0]),
         DefinitionKind.GamePackInfo => DefinitionSchemas.GamePack,
         DefinitionKind.MapDefs => DefinitionSchemas.MapDefs.Field(path[0]) is { } table
@@ -963,6 +963,7 @@ public static class DefinitionSchemas
     public static FieldSchema Factions { get; } = FieldSchema.For(typeof(FactionsAsset));
     public static FieldSchema Elevator { get; } = FieldSchema.For(typeof(ElevatorAsset));
     public static FieldSchema Presenter { get; } = FieldSchema.For(typeof(PresenterAsset));
+    public static FieldSchema Particles { get; } = FieldSchema.For(typeof(ParticlesAsset));
 
     /// <summary>The record a sections kind's file is (game-info, factions, elevator, presenter), or null for one of entries</summary>
     public static FieldSchema? Sections(DefinitionKind kind) => kind switch
@@ -971,6 +972,7 @@ public static class DefinitionSchemas
         DefinitionKind.Factions => Factions,
         DefinitionKind.Elevator => Elevator,
         DefinitionKind.Presenter => Presenter,
+        DefinitionKind.Particles => Particles,
         _ => null,
     };
     public static FieldSchema GamePack { get; } = FieldSchema.For(typeof(PFWolf.Assets.GamePack));

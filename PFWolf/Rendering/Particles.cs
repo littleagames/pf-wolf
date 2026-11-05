@@ -51,6 +51,7 @@ internal sealed class Particles(
     const int TexelGlobal = (int)MapConstants.TileGlobal / GameConstants.TextureSize;   // global units a texel
     const long NearParticle = MapConstants.TileGlobal / 8;     // nothing's drawn nearer the view than this
     const long FarParticle = 32 * MapConstants.TileGlobal;     // nor farther
+    const long NearSprite = MapConstants.TileGlobal / 2;       // a sprite one nearer than this would smear across the view
     const int RampSteps = 16;                                  // colors a particle goes through over its life
     const double TicsPerSecond = 70;
     const float DoorThreshold = 0xC000;
@@ -1229,6 +1230,8 @@ internal sealed class Particles(
 
             if (type.Shape == PointDrawing.Shape.Sprite && type.Sprites.Length > 0)
             {
+                if (nx < NearSprite)
+                    continue;
                 // Its frame now: frame-tics each, round and round, or spread over its life once
                 int frames = type.Sprites.Length;
                 int frame = type.FrameTics > 0 ? (int)(p.Age / type.FrameTics) % frames : Math.Min((int)(life * frames), frames - 1);

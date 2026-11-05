@@ -142,6 +142,7 @@ public static class LevelChecks
         CheckLevelCodes(tiles, problems, mapName);
         CheckZones(tiles, problems);
         CheckWeather(tiles, problems);
+        CheckEmitters(tiles, problems);
         if (starts.Count > 0)
             CheckReach(tiles, problems, starts[^1]);
 
@@ -156,6 +157,27 @@ public static class LevelChecks
             return;
         if (!WeatherInfo.TypesOf(tiles.Content.GameInfo).ContainsKey(weather))
             problems.Add(new(CheckSeverity.Warning, $"weather '{weather}' isn't a kind game-info's weather-types or the built-in ones have, so the level has none"));
+    }
+
+    // A thing whose class (or a state of it) runs an emitter particles.yaml hasn't got: the game
+    // runs nothing for it, with a warning. Told once a class, at its first thing.
+    private static void CheckEmitters(MapTiles tiles, List<LevelProblem> problems)
+    {
+        var emitters = tiles.Content.Assets.FindInGamePackIfAny<ParticlesAsset>("particles")?.Emitters ?? [];
+        var checkedClasses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (int y = 0; y < tiles.Height; y++)
+        {
+            for (int x = 0; x < tiles.Width; x++)
+            {
+                if (tiles[1, x, y] is var obj and not 0 && tiles.Defs.Things.TryGetValue(obj, out var thing)
+                    && thing.Class is { Length: > 0 } className && checkedClasses.Add(className))
+                {
+                    var missing = tiles.Content.EmittersOf(className).Where(name => !emitters.ContainsKey(name)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    if (missing.Count > 0)
+                        problems.Add(new(CheckSeverity.Warning, $"{className} runs {string.Join(" and ", missing)}, which particles.yaml hasn't got (unless a script's game.defineemitter makes {(missing.Count == 1 ? "it" : "them")}), so {(missing.Count == 1 ? "it throws" : "they throw")} nothing out", x, y));
+                }
+            }
+        }
     }
 
     private static void CheckObject(MapTiles tiles, List<LevelProblem> problems, Dictionary<int, (int, int, int)> unknown,

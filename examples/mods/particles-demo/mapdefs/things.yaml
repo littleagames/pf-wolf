@@ -1,0 +1,7 @@
+# The Particles Demo's object-plane ids (960-969 are this mod's)
+things:
+  960: { class: Brazier, angles: 0 }
+  961: { class: SteamVent, angles: 0 }
+  962: { class: Fountain, angles: 0 }
+  963: { class: SmokePot, angles: 0 }
+  964: { class: RocketLauncher, angles: 0, in-wall: true }

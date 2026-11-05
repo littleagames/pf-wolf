@@ -33,6 +33,9 @@ public enum DefinitionKind
 
     /// <summary>The game pack's presenter.yaml (a mod's at its root): the text presenter's fonts, shapes and sounds, the message box and the briefing window</summary>
     Presenter,
+
+    /// <summary>The game pack's particles.yaml (a mod's at its root): the particle types and emitters</summary>
+    Particles,
 }
 
 public static class DefinitionKinds
@@ -49,6 +52,7 @@ public static class DefinitionKinds
         DefinitionKind.Graphics => "Cropped pictures",
         DefinitionKind.Elevator => "Elevator",
         DefinitionKind.Presenter => "Presenter",
+        DefinitionKind.Particles => "Particles",
         _ => "Map definitions",
     };
 
@@ -57,7 +61,7 @@ public static class DefinitionKinds
     /// presenter), listed by its sections (its fields), set or not, rather than by entries
     /// </summary>
     public static bool IsSections(DefinitionKind kind)
-        => kind is DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter;
+        => kind is DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter or DefinitionKind.Particles;
 
     /// <summary>The record a sections kind's file is read as</summary>
     public static Type? SectionsType(DefinitionKind kind) => kind switch
@@ -66,6 +70,7 @@ public static class DefinitionKinds
         DefinitionKind.Factions => typeof(FactionsAsset),
         DefinitionKind.Elevator => typeof(ElevatorAsset),
         DefinitionKind.Presenter => typeof(PresenterAsset),
+        DefinitionKind.Particles => typeof(ParticlesAsset),
         _ => null,
     };
 
@@ -77,6 +82,7 @@ public static class DefinitionKinds
         DefinitionKind.Factions => "factions.yaml",
         DefinitionKind.Elevator => "elevator.yaml",
         DefinitionKind.Presenter => "presenter.yaml",
+        DefinitionKind.Particles => "particles.yaml",
         _ => null,
     };
 
@@ -145,6 +151,9 @@ public static class DefinitionKinds
                 break;
             case DefinitionKind.Presenter:
                 YamlDataEntryLoader.DeserializeQuietly<PresenterAsset>(yaml);
+                break;
+            case DefinitionKind.Particles:
+                YamlDataEntryLoader.DeserializeQuietly<ParticlesAsset>(yaml);
                 break;
             default:
                 YamlDataEntryLoader.DeserializeQuietly<MapObjectTranslationAsset>(yaml);

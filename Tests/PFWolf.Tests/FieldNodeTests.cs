@@ -256,7 +256,7 @@ public class FieldNodeGameTests
                 var value = set.ValueOf(path, baseOnly: false);
                 var schema = kind switch
                 {
-                    DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter
+                    DefinitionKind.GameInfo or DefinitionKind.Factions or DefinitionKind.Elevator or DefinitionKind.Presenter or DefinitionKind.Particles
                         => DefinitionSchemas.Sections(kind)!.Field(path[0]),
                     DefinitionKind.GamePackInfo => DefinitionSchemas.GamePack,
                     DefinitionKind.Actors => DefinitionSchemas.Actor,

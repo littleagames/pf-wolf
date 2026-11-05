@@ -295,6 +295,39 @@ public sealed class GameContent
 
     private readonly Dictionary<string, bool> _wallSprites = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The particles.yaml emitters an actor class runs: its particles property (its own, else
+    /// its nearest parent's) and the particles: of its states and its parents'
+    /// </summary>
+    public IEnumerable<string> EmittersOf(string className)
+    {
+        bool hasProperty = false;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (var name = className; name != null && seen.Add(name) && _actors.TryGetValue(name, out var data);
+             name = string.IsNullOrEmpty(data.Parent) ? null : data.Parent)
+        {
+            if (!hasProperty && data.Properties.TryGetValue("particles", out var property))
+            {
+                hasProperty = true;
+                foreach (var emitter in StateDataNodeDeserializer.EmitterNames(property))
+                    yield return emitter;
+            }
+            foreach (var frame in data.States.Values.SelectMany(frames => frames).OfType<ActorStatesData>())
+                foreach (var emitter in frame.Particles ?? [])
+                    yield return emitter;
+        }
+    }
+
+    /// <summary>Whether an actor class throws particles out (it runs an emitter): the map marks its things</summary>
+    public bool RunsParticles(string className)
+    {
+        if (!_runsParticles.TryGetValue(className, out var runs))
+            _runsParticles[className] = runs = EmittersOf(className).Any();
+        return runs;
+    }
+
+    private readonly Dictionary<string, bool> _runsParticles = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>How far a wall sprite's panel sits toward its front, in texels (32 = the tile's edge)</summary>
     public int WallSpriteOffset(string className)
         => int.TryParse(Convert.ToString(ClassProperty(className, "wallsprite.offset"), System.Globalization.CultureInfo.InvariantCulture), out var offset)

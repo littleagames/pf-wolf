@@ -1,0 +1,115 @@
+# The Particles Demo's actors. An actor's `particles` property lists the particles.yaml emitters
+# it runs all the time, from where it is and turned by the way it faces; a state's `particles:`
+# runs others in their place while it shows (`none` for none). A_StartEmitter and A_StopEmitter
+# change them as it plays (a switch does it to the actors with its tag), and saved games keep
+# what they leave.
+
+# A brazier: an iron bowl of fire on a stand (the mod's sprites, PDFR), its flames flickering
+# orange light, throwing up embers and smoke
+Brazier:
+  radius: 32
+  flags: [SOLID]
+  properties:
+    particles: BrazierEmbers, BrazierSmoke
+    "light.intensity": 220
+    "light.radius": 3.5
+    "light.color": "#FF9040"
+    "light.effect": flicker
+    "light.low": 160
+    "light.tics": 5
+  states:
+    Spawn:
+      - sprite: PDFR
+        frames: [A, B]
+        tics-per-frame: 8
+        modifiers: [bright]
+
+# A steam grate: nothing to see but its floor (the grate flat) and the steam. pfwolf-pk3's
+# ParticleEmitter is an unseen spot; this one runs SteamJet. The valve on the wall behind the
+# grates (mapdefs/walls.yaml) turns it off and on: they share its tag.
+SteamVent:
+  parent: ParticleEmitter
+  properties:
+    particles: SteamJet
+
+# A fountain: Wolf3D's well with water, its jet thrown up out of it
+Fountain:
+  parent: WellWithWater
+  properties:
+    particles: FountainJet
+
+# A smoldering barrel: Wolf3D's barrel, its states taking turns, a puff of smoke for 2.5
+# seconds (Smolder's particles:), then none for 1.5 (Spawn's)
+SmokePot:
+  parent: Barrel
+  states:
+    Spawn:
+      - sprite: BARL
+        frames: [A]
+        tics-per-frame: 105
+        particles: none
+        next-state: Smolder
+    Smolder:
+      - sprite: BARL
+        frames: [A]
+        tics-per-frame: 175
+        particles: PotSmoke
+        next-state: Spawn
+
+# A rocket with a smoke trail: Wolf3D's rocket (ROCK), its trail particles out of its back
+# (RocketTrail's angle: 180) rather than the Smoke actors the bosses' rockets leave. It bursts
+# into sparks where it hits (A_SpawnParticles), and its trail stops (particles: none).
+TrailRocket:
+  flags: [PROJECTILE]
+  properties:
+    speed: 9000
+    particles: RocketTrail
+    "attacksound": "missile/fire"
+    "deathsound": "missile/hit"
+    "light.intensity": 150
+    "light.radius": 2
+    "light.color": "#FFB040"
+  states:
+    Spawn:
+      - sprite: ROCK
+        frames: [A]
+        tics-per-frame: 3
+        modifiers: [bright]
+        think: A_Projectile(1, 3)
+    Death:
+      - sprite: BOOM
+        frames: [A]
+        tics-per-frame: 6
+        modifiers: [bright]
+        particles: none
+        action: A_SpawnParticles("RocketBlast")
+      - sprite: BOOM
+        frames: [B]
+        tics-per-frame: 6
+        modifiers: [bright]
+        particles: none
+      - sprite: BOOM
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        particles: none
+        action: A_Remove
+
+# The rocket gallery's launcher: inside the west wall (mapdefs in-wall: true), firing out of
+# its face every two seconds while a player is in sight
+RocketLauncher:
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 10
+        action: A_JumpIfInSight("Fire", 30)
+    Fire:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnProjectile("TrailRocket")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 140
+        next-state: Spawn

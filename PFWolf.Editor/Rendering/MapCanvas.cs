@@ -134,6 +134,7 @@ public sealed class MapCanvas : Control
     private static readonly IBrush AmbushBadgeBrush = new SolidColorBrush(Color.FromArgb(210, 180, 40, 40));
     private static readonly IBrush ZoneBadgeBrush = new SolidColorBrush(Color.FromArgb(170, 30, 30, 30));
     private static readonly IBrush BreakableBadgeBrush = new SolidColorBrush(Color.FromArgb(220, 190, 110, 30));
+    private static readonly IBrush ParticlesBadgeBrush = new SolidColorBrush(Color.FromArgb(220, 200, 60, 170));
     private static readonly IPen WallSpritePen = new Pen(new SolidColorBrush(Color.FromRgb(196, 150, 90)), 3);
     private static readonly IPen WallSpriteTickPen = new Pen(new SolidColorBrush(Color.FromRgb(196, 150, 90)), 2);
     private static readonly IPen SwitchLinkPen = new Pen(new SolidColorBrush(Color.FromArgb(220, 255, 220, 60)), 2);
@@ -463,6 +464,10 @@ public sealed class MapCanvas : Control
                 // Nothing to see in the game (a patrol point): the way it points
                 context.DrawGeometry(ThingDotBrush, null, Arrow(rect.Deflate(rect.Width * 0.2), thing.Angles));
             }
+
+            // One that throws particles out (actordefs particles, or a state's)
+            if (_zoom >= 12 && content.RunsParticles(thing.Class))
+                DrawBadge(context, rect, "*", ParticlesBadgeBrush, bottom: false);
 
             // The skills it's on, when it's not on all of them
             if (thing.MinSkill > 0 && _zoom >= 16)

@@ -709,6 +709,16 @@ can reach), not played by hand.
       keeping you on it), looking up/down with y-shearing at the tile skies, an animated tile
       sky, saving and loading after the switch (the sky should stay night), widescreen, and
       the editor's 3D view of the level (tile-sky ceilings left open).
+- [ ] Particles Demo (`--file particles-demo`, particle effects, 2026-11-05): headless
+      screenshots showed the braziers' flames, light, embers and smoke, the steam out of the grates,
+      the fountain's jet, the magic orb's trail round the pillar, a rocket down the gallery with its
+      white smoke trail and light, blood and gibs from `killall` on a summoned guard, and the HUD's
+      particle count; `game.trigger(1, 'A_StopEmitter', 'SteamJet')` stopped the vents (as the
+      valve does) and a save and load kept them stopped. **(never tried)**: throwing the valve by
+      hand and back, shooting the guards (blood each hit, sprayed away from you), picking up the
+      treasure (sparkles), the barrels' smoke coming and going, the rockets' sparks on the east wall
+      up close, Options → Video → Particles Low/Off with the count, uncapped frame rates, and the
+      editor's map of the level (the particle badges on the braziers, vents, fountain and barrels).
 
 ## 1.15 Multiplayer
 

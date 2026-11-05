@@ -100,6 +100,7 @@ public sealed class DefinitionSet
         DefinitionKind.Factions => [($"{packId}/factions", nameof(FactionsAsset), "")],
         DefinitionKind.Elevator => [($"{packId}/elevator", nameof(ElevatorAsset), "")],
         DefinitionKind.Presenter => [($"{packId}/presenter", nameof(PresenterAsset), "")],
+        DefinitionKind.Particles => [($"{packId}/particles", nameof(ParticlesAsset), "")],
         DefinitionKind.Actors =>
         [
             ("actordefs", nameof(ActorTranslationAsset), DefinitionFile.SharedLayer),
@@ -176,6 +177,7 @@ public sealed class DefinitionSet
             {
                 case DefinitionKind.GameInfo:
                 case DefinitionKind.Factions:
+                case DefinitionKind.Particles:
                     // laid over its base pack's all the way down, as the loader does
                     YamlTree.DeepMerge(target, tree);
                     break;

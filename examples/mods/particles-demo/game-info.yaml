@@ -1,0 +1,14 @@
+# Merged into the game pack's game-info.yaml: the level's light. The fields are in the game-info
+# reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+#
+# A dim hall, so the braziers' light and the glowing (bright, additive) particles stand out.
+# The smoke and steam are lit as the level is where they are: darker in the corners.
+maps:
+  MAP01:
+    floor-color: "#2C2C2C"
+    shading:
+      light: 150
+      fade-color: "#000000"
+      fade-start: 4
+      fade-end: 18
+      max-fade: 70

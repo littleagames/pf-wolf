@@ -1,0 +1,26 @@
+# The steam valve (a switch block's fields are in the docs' mapdefs reference). Its tag (1) is
+# the steam grates': A_StopEmitter and A_StartEmitter work on the actors with the switch's tag,
+# the SteamVents on the grates. The steam starts on, the lever up; thrown, it's down.
+walls:
+    '174':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 175
+            sound: switches/elevbutn
+            actions:
+                - A_StopEmitter("SteamJet")
+                - A_Message("The steam is shut off.")
+    '175':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 174
+            sound: switches/elevbutn
+            actions:
+                - A_StartEmitter("SteamJet")
+                - A_Message("The steam hisses back on.")

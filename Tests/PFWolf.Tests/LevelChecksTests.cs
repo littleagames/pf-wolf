@@ -144,6 +144,55 @@ public class LevelChecksTests
     }
 
     [Test]
+    public void A_Thing_Running_An_Emitter_There_Is_None_Of_Is_Warned_About_Once()
+    {
+        // Arrange: two puddles that drip (actordefs particles), with no particles.yaml at all
+        var document = Room();
+        EditorMaps.Set(document, 1, 6, 6, Puddle);
+        EditorMaps.Set(document, 1, 7, 7, Puddle);
+        var actors = new Dictionary<string, ActorData>
+        {
+            ["Puddle"] = ActorDefs.Parse("Puddle:\n  properties:\n    particles: Drips, Mist\n")["Puddle"],
+        };
+
+        // Act
+        var problems = LevelChecks.Run(new MapTiles(Content(actors), document.Map, () => document.Properties), inGameInfo: true);
+
+        // Assert
+        var problem = problems.Single();
+        Assert.That(problem.Severity, Is.EqualTo(CheckSeverity.Warning));
+        Assert.That(problem.Message, Does.Contain("Puddle runs Drips and Mist"));
+        Assert.That((problem.X, problem.Y), Is.EqualTo((6, 6)));
+    }
+
+    [Test]
+    public void A_Class_Runs_Its_Parents_Emitters_And_Its_States()
+    {
+        // Arrange
+        var actors = ActorDefs.Parse("""
+            Torch:
+              properties:
+                particles: Sparks
+            WallTorch:
+              parent: Torch
+              states:
+                Out:
+                  - sprite: TRCH
+                    frames: [A]
+                    tics-per-frame: -1
+                    particles: Smoke
+            """);
+
+        // Act
+        var emitters = Content(actors).EmittersOf("WallTorch").ToList();
+
+        // Assert
+        Assert.That(emitters, Is.EquivalentTo(new[] { "Smoke", "Sparks" }));
+        Assert.That(Content(actors).RunsParticles("WallTorch"), Is.True);
+        Assert.That(Content(actors).RunsParticles("Puddle"), Is.False);
+    }
+
+    [Test]
     public void Unknown_Plane_0_Values_Are_Counted_Once()
     {
         // Arrange

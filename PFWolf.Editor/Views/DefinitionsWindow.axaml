@@ -68,6 +68,10 @@
                ToolTip.Tip="presenter.yaml: the text presenter's fonts, shapes and sounds, the message box and the briefing window">
         <v:EntryEditorView DataContext="{Binding Presenter}" />
       </TabItem>
+      <TabItem x:Name="ParticlesTab" Header="Particles"
+               ToolTip.Tip="particles.yaml: the particle types (how each looks and moves) and the emitters that throw them out">
+        <v:EntryEditorView DataContext="{Binding Particles}" />
+      </TabItem>
       <TabItem x:Name="GamePacksTab" Header="Game packs">
         <v:EntryEditorView DataContext="{Binding GamePacks}" />
       </TabItem>
