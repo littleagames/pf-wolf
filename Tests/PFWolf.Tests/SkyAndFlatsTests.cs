@@ -209,6 +209,79 @@ public class SkyAndFlatsTests
         Assert.That(_screen, Is.EqualTo(sky));
     }
 
+    // A view whose tiles all have ceiling sky DAY (MapManager.TileSkies slot 1): a picture five
+    // rows tall whose row r is color 20 + r, in every column
+    private SkyAndFlats TileSkyView()
+    {
+        var picture = new TextureAsset { Width = 64, Height = 5, RawData = new byte[64 * 5] };
+        for (int u = 0; u < 64; u++)
+            for (int r = 0; r < 5; r++)
+                picture.RawData[u * 5 + r] = (byte)(20 + r);
+        _map.TileSkies.Add("DAY");
+        _map.CeilingSky = Enumerable.Repeat((byte)1, MapConstants.ClassicMapArea).ToArray();
+        _map.HasCeilingSkies = true;
+        var video = new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        {
+            BufferPitch = Width,
+            YLookup = Enumerable.Range(0, Height).Select(y => (uint)(y * Width)).ToArray(),
+        };
+        return new SkyAndFlats(null!, null!, video, _map, _lighting, new ActorLights(null!, null!, _lighting, new GameSession()),
+            _render, new GameSession(), name => name == "DAY" ? picture : null);
+    }
+
+    [Test]
+    public void A_Tiles_Own_Sky_Shows_Through_Its_Ceiling()
+    {
+        // Arrange
+        var view = TileSkyView();
+
+        // Act: no ceiling flats, nothing behind
+        view.SetupFlatColumns();
+        view.LoadTileSkies();
+        view.DrawFlats(new TextureAsset?[MapConstants.ClassicMapArea], 3, 0, Height / 2 - 1, view.CeilingHalves, behind: false,
+            skies: _map.CeilingSky, floor: false);
+
+        // Assert: the near ceiling rows are the sky's rows, stretched to the view above the horizon; below it's as it was
+        for (int y = 0; y < 2; y++)
+            Assert.That(Enumerable.Range(0, Width).Select(x => At(x, y)), Is.All.EqualTo(20 + y), $"row {y}");
+        Assert.That(Enumerable.Range(Height / 2, Height / 2).All(y => Enumerable.Range(0, Width).All(x => At(x, y) == 1)), Is.True);
+    }
+
+    [TestCase((byte)7, (byte)7)]                  // a solid ceiling flat covers the tile's sky
+    [TestCase(SkyAndFlats.FlatMask, (byte)20)]    // its see-through pixels show it
+    public void A_Ceiling_Flat_Is_Drawn_Over_A_Tiles_Own_Sky(byte texel, byte shown)
+    {
+        // Arrange
+        var view = TileSkyView();
+        var lattice = new TextureAsset { Width = 64, Height = 64, RawData = Enumerable.Repeat(texel, 64 * 64).ToArray() };
+
+        // Act
+        view.SetupFlatColumns();
+        view.LoadTileSkies();
+        view.DrawFlats(Enumerable.Repeat<TextureAsset?>(lattice, MapConstants.ClassicMapArea).ToArray(), 3, 0, Height / 2 - 1, view.CeilingHalves,
+            behind: false, skies: _map.CeilingSky, floor: false);
+
+        // Assert
+        Assert.That(Enumerable.Range(0, Width).Select(x => At(x, 0)), Is.All.EqualTo(shown));
+    }
+
+    [Test]
+    public void A_Tile_Sky_That_Cannot_Be_Found_Leaves_The_Ceiling_As_It_Was()
+    {
+        // Arrange: the tiles name a sky there's no picture for
+        var view = TileSkyView();
+        _map.TileSkies[0] = "MISSING";
+
+        // Act
+        view.SetupFlatColumns();
+        view.LoadTileSkies();
+        view.DrawFlats(new TextureAsset?[MapConstants.ClassicMapArea], 3, 0, Height / 2 - 1, view.CeilingHalves, behind: false,
+            skies: _map.CeilingSky, floor: false);
+
+        // Assert
+        Assert.That(_screen.All(pixel => pixel == 1), Is.True);
+    }
+
     [Test]
     public void A_Flats_See_Through_Pixels_Leave_What_Is_There()
     {

@@ -9,6 +9,11 @@
 # to keep them looking as they always have. A level's sky (game-info sky:) is drawn
 # behind the ceiling flats: it shows on tiles with no ceiling flat and through see-through pixels.
 #
+# skies: (by ceiling index) and floor-skies: (by floor index) give a tile a sky of its own, seen
+# through its ceiling (or floor) as the level's sky is, in front of the level's sky: a day yard
+# and a night yard on one level. A ceiling: texture on the same index is drawn over it; with
+# none the tile has no ceiling at all, not even the default. See examples/mods/skies-demo.
+#
 # Keep the whole table in this one file: a mod's flats.yaml merges over it entry by entry.
 flats:
   floor:

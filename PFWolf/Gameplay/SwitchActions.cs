@@ -389,7 +389,9 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         foreach (var (x, y) in tiles)
         {
             var (walls, floor, ceiling) = TileTextures(x, y);
-            bool onFlat = Shows(floor, from) || Shows(ceiling, from);
+            // a tile's own skies change as its flats do (a switch turning day to night)
+            bool onFlat = Shows(floor, from) || Shows(ceiling, from)
+                || Shows(map.TileSkyName(x, y, ceiling: true), from) || Shows(map.TileSkyName(x, y, ceiling: false), from);
             if (!onFlat && !walls.Any(name => Shows(name, from)))
                 continue;
 

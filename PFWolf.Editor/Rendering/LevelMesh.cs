@@ -646,11 +646,13 @@ public sealed class LevelMesh
             scroll: floor != null ? FlatScroll(x, y, scroller => scroller.Floor) : default);
 
         // The sky shows in place of the ceiling color, and behind a ceiling flat's see-through pixels
+        // (a tile's own sky, mapdefs flats skies, leaves it open too: the view shows the level's sky there, if any)
         var top = _tiles.CeilingFlat(x, y);
-        if (ceiling is { } height && (top != null || Sky == null))
+        bool sky = Sky != null || _tiles.CeilingSky(x, y) != null;
+        if (ceiling is { } height && (top != null || !sky))
         {
             AddFlat(new SurfaceRef(SurfaceKind.Ceiling, x, y), polygon, height, up: false,
-                top != null ? Flat(top, Sky == null ? ceilingColor : default) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light,
+                top != null ? Flat(top, !sky ? ceilingColor : default) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light,
                 scroll: top != null ? FlatScroll(x, y, scroller => scroller.Ceiling) : default);
         }
     }

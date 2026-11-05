@@ -69,6 +69,8 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         int index = FlatValue(x, y) & 0xff;
         if (Defs.Flats.Floor.TryGetValue(index, out var flat))
             return flat;
+        if (Defs.Flats.FloorSkies.ContainsKey(index))
+            return null;            // a floor sky of its own: no default floor over it
         return Properties.DefaultFloor ?? content.DefaultMapInfo.DefaultFloor;
     }
 
@@ -78,8 +80,15 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         int index = FlatValue(x, y) >> 8;
         if (Defs.Flats.Ceiling.TryGetValue(index, out var flat))
             return flat;
+        if (Defs.Flats.Skies.ContainsKey(index))
+            return null;            // a sky of its own: no default ceiling over it
         return Properties.DefaultCeiling ?? content.DefaultMapInfo.DefaultCeiling;
     }
+
+    /// <summary>The sky a tile shows through its ceiling of its own (mapdefs flats skies), else null</summary>
+    public string? CeilingSky(int x, int y)
+        => Defs.Flats.Skies.TryGetValue(FlatValue(x, y) >> 8, out var sky) && !string.IsNullOrEmpty(sky)
+            && !sky.Equals("none", StringComparison.OrdinalIgnoreCase) ? sky : null;
 
     /// <summary>
     /// A tile's flats as the game loads them: its flat-plane value, else (at 0) the level's own

@@ -159,12 +159,77 @@ internal sealed partial class SkyAndFlats(
             {
                 int column = SkyColumn(x, sky);
                 for (int y = 0; y < render.CenterY; y++)
-                {
-                    int row = (y - render.CenterY + render.BaseCenterY) * sky.Height / render.BaseCenterY;
-                    dest[y * pitch + x] = row >= 0 ? sky.Columns[column + row] : sky.TopColor;
-                }
+                    dest[y * pitch + x] = SkyPixel(sky, column, y);
             }
         }
+    }
+
+    // A sky's pixel at screen row y (above the horizon), in the picture column starting at column
+    byte SkyPixel(SkyPicture picture, int column, int y)
+    {
+        int row = (y - render.CenterY + render.BaseCenterY) * picture.Height / render.BaseCenterY;
+        return row < 0 ? picture.TopColor : picture.Columns[column + Math.Min(row, picture.Height - 1)];
+    }
+
+    // A floor sky's pixel at screen row y (below the horizon), in the picture column starting at column
+    byte FloorSkyPixel(SkyPicture picture, int column, int y)
+    {
+        int last = picture.Height - 1;
+        int below = (y - render.CenterY) * picture.Height / render.BaseCenterY;
+        int row = FloorSkyMirror ? last - below : below;
+        return row >= 0 && row <= last ? picture.Columns[column + row]
+            : FloorSkyMirror ? picture.TopColor : picture.BottomColor;
+    }
+
+    /*
+    A tile can have a sky of its own (mapdefs flats skies: a ceiling index that opens onto one),
+    seen through its ceiling as the level's sky is, so a level can have a day sky over one yard
+    and a night sky over the next with a roof between. They're drawn with the flats, in front of
+    the level's sky; floor-skies do the same below the horizon. MapManager names them
+    (TileSkies, a tile's CeilingSky or FloorSky being 1 + the index there); each is loaded here
+    each frame (an animated one's frame by the level's clock), with its column for each view column.
+    */
+    readonly List<SkyPicture> tileSkies = [];
+    bool[] tileSkyLoaded = [];
+    int[][] tileSkyColumns = [];
+
+    internal void LoadTileSkies()
+    {
+        int count = map.TileSkies.Count;
+        while (tileSkies.Count < count)
+            tileSkies.Add(new SkyPicture());
+        if (tileSkyLoaded.Length < count)
+        {
+            Array.Resize(ref tileSkyLoaded, count);
+            Array.Resize(ref tileSkyColumns, count);
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            var picture = tileSkies[i];
+            tileSkyLoaded[i] = picture.Load(map.TileSkies[i], assets, worldTexture, session.GameState.TimeCount);
+            if (!tileSkyLoaded[i])
+                continue;
+            var columns = tileSkyColumns[i];
+            if (columns == null || columns.Length != render.ViewWidth)
+                tileSkyColumns[i] = columns = new int[render.ViewWidth];
+            for (int x = 0; x < render.ViewWidth; x++)
+                columns[x] = SkyColumn(x, picture);
+        }
+    }
+
+    // A tile's own sky (slot: its CeilingSky or FloorSky) at view column x, screen row y; false if it can't be found
+    bool TileSkyPixel(int slot, int x, int y, bool floor, out byte pixel)
+    {
+        if ((uint)slot >= (uint)tileSkies.Count || slot >= tileSkyLoaded.Length || !tileSkyLoaded[slot])
+        {
+            pixel = 0;
+            return false;
+        }
+        var picture = tileSkies[slot];
+        int column = tileSkyColumns[slot][x];
+        pixel = floor ? FloorSkyPixel(picture, column, y) : SkyPixel(picture, column, y);
+        return true;
     }
 
     /// <summary>Holds the level's floor sky; false if it has none, or it can't be found</summary>
@@ -176,8 +241,6 @@ internal sealed partial class SkyAndFlats(
     internal void DrawFloorSky()
     {
         int pitch = (int)video.BufferPitch;
-        int last = floorsky.Height - 1;
-        byte beyond = FloorSkyMirror ? floorsky.TopColor : floorsky.BottomColor;
 
         unsafe
         {
@@ -186,11 +249,7 @@ internal sealed partial class SkyAndFlats(
             {
                 int column = SkyColumn(x, floorsky);
                 for (int y = Math.Max((int)render.CenterY, 0); y < render.ViewHeight; y++)
-                {
-                    int below = (y - render.CenterY) * floorsky.Height / render.BaseCenterY;
-                    int row = FloorSkyMirror ? last - below : below;
-                    dest[y * pitch + x] = row >= 0 && row <= last ? floorsky.Columns[column + row] : beyond;
-                }
+                    dest[y * pitch + x] = FloorSkyPixel(floorsky, column, y);
             }
         }
     }
@@ -275,18 +334,23 @@ internal sealed partial class SkyAndFlats(
         // they're cast too. A sky stays behind the ceiling flats, and a floor sky behind the floor
         // flats, showing where there are none.
         // With Show Floors or Show Ceilings off (Blake Stone's switches), that side's flats aren't drawn
+        // A tile's own sky shows whatever the switches say: it's not a texture.
         bool showFloors = ShowFloors(), showCeilings = ShowCeilings();
-        bool floorflats = map.HasFloorFlats && showFloors || (lighting.HasZones || actorLights.HasLights) && !floorSkyBehind;
-        bool ceilingflats = map.HasCeilingFlats && showCeilings || (lighting.HasZones || actorLights.HasLights) && !skyBehind;
+        bool floorflats = map.HasFloorFlats && showFloors || map.HasFloorSkies || (lighting.HasZones || actorLights.HasLights) && !floorSkyBehind;
+        bool ceilingflats = map.HasCeilingFlats && showCeilings || map.HasCeilingSkies || (lighting.HasZones || actorLights.HasLights) && !skyBehind;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
+            if (map.HasFloorSkies || map.HasCeilingSkies)
+                LoadTileSkies();
             if (floorflats)
                 DrawFlats(showFloors ? map.FloorFlat : NoFlats(map.FloorFlat.Length), frameFloorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, floorSkyBehind,
-                    map.Scrollers.AnyFloors ? map.Scrollers.FloorX : null, map.Scrollers.FloorY);
+                    map.Scrollers.AnyFloors ? map.Scrollers.FloorX : null, map.Scrollers.FloorY,
+                    map.HasFloorSkies ? map.FloorSky : null, floor: true);
             if (ceilingflats)
                 DrawFlats(showCeilings ? map.CeilingFlat : NoFlats(map.CeilingFlat.Length), CeilingColor, 0, render.CenterY - 1, CeilingHalves, skyBehind,
-                    map.Scrollers.AnyCeilings ? map.Scrollers.CeilingX : null, map.Scrollers.CeilingY);
+                    map.Scrollers.AnyCeilings ? map.Scrollers.CeilingX : null, map.Scrollers.CeilingY,
+                    map.HasCeilingSkies ? map.CeilingSky : null, floor: false);
         }
     }
 
@@ -333,9 +397,12 @@ internal sealed partial class SkyAndFlats(
     /// and a texture's see-through (FlatMask) pixels, are color, or with no light zones or actor
     /// light, or over the sky (behind), keep what's there. scrollx and scrolly (null: none) are how
     /// far east and south each tile's texture has moved, in global units (Rendering/Scrollers.cs).
+    /// skies (null: none) are the tiles' own skies (MapManager.CeilingSky or FloorSky, loaded by
+    /// LoadTileSkies), shown where a tile has one and no texture or a see-through pixel; floor
+    /// says they're floor skies.
     /// </summary>
     internal void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves, bool behind,
-        int[]? scrollx = null, int[]? scrolly = null)
+        int[]? scrollx = null, int[]? scrolly = null, byte[]? skies = null, bool floor = false)
     {
         if (from > to)
             return;
@@ -418,9 +485,14 @@ internal sealed partial class SkyAndFlats(
                             : FlatTexel(texture, u, v);
                     }
 
-                    // No texture, or a see-through pixel (FlatMask, as sprites have): the color, or
-                    // the sky, shows
+                    // No texture, or a see-through pixel (FlatMask, as sprites have): the tile's own
+                    // sky (unshaded, as the level's is), else the color, or the level's sky, shows
                     bool bare = texture == null || pixel == FlatMask;
+                    if (bare && skies != null && skies[tile] != 0 && TileSkyPixel(skies[tile] - 1, x, y, floor, out pixel))
+                    {
+                        row[x] = pixel;
+                        continue;
+                    }
                     if (bare && !fillbare)
                         continue;
                     if (bare)

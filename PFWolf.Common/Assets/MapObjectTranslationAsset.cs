@@ -88,7 +88,11 @@ public record MapObjectTranslationAsset : Asset
             Triggers = Merged(Triggers, local.Triggers),
             Diagonals = Merged(Diagonals, local.Diagonals),
             Patches = Merged(Patches, local.Patches),
-            Flats = Flats with { Floor = Merged(Flats.Floor, local.Flats.Floor), Ceiling = Merged(Flats.Ceiling, local.Flats.Ceiling) },
+            Flats = Flats with
+            {
+                Floor = Merged(Flats.Floor, local.Flats.Floor), Ceiling = Merged(Flats.Ceiling, local.Flats.Ceiling),
+                Skies = Merged(Flats.Skies, local.Flats.Skies), FloorSkies = Merged(Flats.FloorSkies, local.Flats.FloorSkies),
+            },
             Floors = local.Floors.AreaCount is { } count ? Floors with { AreaCount = count } : Floors,
         };
     }
@@ -246,6 +250,22 @@ public record MapFlatsTranslation
 
     /// <summary>The ceiling textures by index (a flat-plane value's high byte)</summary>
     public Dictionary<int, string> Ceiling { get; set; } = new();
+
+    /// <summary>
+    /// Ceiling indices that open onto a sky of their own (a picture or wall texture), by index: a
+    /// tile with one shows that sky through its ceiling, parallax as the level's sky is, in front
+    /// of the level's sky and color. A <see cref="Ceiling"/> texture on the same index is drawn
+    /// over it (its see-through pixels show this sky); otherwise the tile has no ceiling texture,
+    /// not even the map's default-ceiling.
+    /// </summary>
+    public Dictionary<int, string> Skies { get; set; } = new();
+
+    /// <summary>
+    /// Floor indices that open onto a floor sky of their own, as <see cref="Skies"/> does for
+    /// ceilings: the floor sky shows below the horizon there (a chasm, water), drawn the way the
+    /// level's floor-sky-mirror says.
+    /// </summary>
+    public Dictionary<int, string> FloorSkies { get; set; } = new();
 
     /// <summary>
     /// Floors that hurt whoever stands on them (Midnight Assault's electrified water), by the

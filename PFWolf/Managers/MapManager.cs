@@ -233,6 +233,26 @@ internal class MapManager
 
     /// <summary>Whether any tile has a floor flat, or a ceiling flat.</summary>
     internal bool HasFloorFlats, HasCeilingFlats;
+
+    /// <summary>
+    /// Each tile's own ceiling sky and floor sky (mapdefs flats skies / floor-skies): 1 + its
+    /// index in <see cref="TileSkies"/>, 0 for none. Indexed <see cref="TileIndex"/>; built with the flats.
+    /// </summary>
+    internal byte[] CeilingSky = new byte[MapConstants.ClassicMapArea], FloorSky = new byte[MapConstants.ClassicMapArea];
+
+    /// <summary>The names of the skies tiles show (CeilingSky and FloorSky's), as the tiles name them (after any A_ChangeTexture)</summary>
+    internal readonly List<string> TileSkies = [];
+
+    /// <summary>Whether any tile has a ceiling sky, or a floor sky, of its own.</summary>
+    internal bool HasCeilingSkies, HasFloorSkies;
+
+    private void ClearTileSkies()
+    {
+        CeilingSky = new byte[MapArea];
+        FloorSky = new byte[MapArea];
+        TileSkies.Clear();
+        HasCeilingSkies = HasFloorSkies = false;
+    }
     internal bool[,] Spotvis = new bool[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
     internal Actor?[,] ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
@@ -315,6 +335,7 @@ internal class MapManager
         FloorFlat = new TextureAsset?[MapArea];     // BuildFlats fills these in, once the level's defaults are known
         CeilingFlat = new TextureAsset?[MapArea];
         HasFloorFlats = HasCeilingFlats = false;
+        ClearTileSkies();
         animatedfloors.Clear();
         animatedceilings.Clear();
         ClearTextureChanges();
@@ -1039,6 +1060,24 @@ internal class MapManager
         HasFloorFlats = HasCeilingFlats = false;
         animatedfloors.Clear();
         animatedceilings.Clear();
+        ClearTileSkies();
+
+        // the skies tiles show, each named once
+        var skyslots = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+        byte SkySlot(string? name)
+        {
+            if (name == null)
+                return 0;
+            if (!skyslots.TryGetValue(name, out var slot))
+            {
+                if (TileSkies.Count >= byte.MaxValue)
+                    return 0;
+                TileSkies.Add(name);
+                skyslots[name] = slot = (byte)TileSkies.Count;
+            }
+            return slot;
+        }
+
         for (int y = 0; y < MapHeight; y++)
             for (int x = 0; x < MapWidth; x++)
             {
@@ -1047,7 +1086,28 @@ internal class MapManager
                 CeilingFlat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: true)), i, animatedceilings);
                 HasFloorFlats |= FloorFlat[i] != null;
                 HasCeilingFlats |= CeilingFlat[i] != null;
+                FloorSky[i] = SkySlot(TileSkyName(x, y, ceiling: false));
+                CeilingSky[i] = SkySlot(TileSkyName(x, y, ceiling: true));
+                HasFloorSkies |= FloorSky[i] != 0;
+                HasCeilingSkies |= CeilingSky[i] != 0;
             }
+    }
+
+    /// <summary>
+    /// The sky a tile shows through its ceiling (or floor) of its own: its flat-plane index's
+    /// entry in the mapdefs flats skies (or floor-skies), through any A_ChangeTexture on the
+    /// tile; null for none (the level's sky, if any, shows where there's no ceiling flat)
+    /// </summary>
+    internal string? TileSkyName(int x, int y, bool ceiling)
+    {
+        int spot = MapSpot(x, y, FlatPlane);
+        int index = ceiling ? spot >> 8 : spot & 0xff;
+        var flats = GetMapData().Flats;
+        var table = ceiling ? flats.Skies : flats.FloorSkies;
+        if (!table.TryGetValue(index, out var name) || string.IsNullOrEmpty(name)
+            || name.Equals("none", StringComparison.OrdinalIgnoreCase))
+            return null;
+        return ChangedTexture(x, y, name);
     }
 
     // A tile's flat to start with: an animation's first frame, the tile noted to animate
@@ -1081,10 +1141,13 @@ internal class MapManager
     {
         int spot = MapSpot(x, y, FlatPlane);
         int index = ceiling ? spot >> 8 : spot & 0xff;
-        var table = ceiling ? GetMapData().Flats.Ceiling : GetMapData().Flats.Floor;
+        var flats = GetMapData().Flats;
+        var table = ceiling ? flats.Ceiling : flats.Floor;
         var defaultName = ceiling ? defaultceiling : defaultfloor;
+        // an index that opens onto a sky of its own doesn't get the default
+        bool skyIndex = (ceiling ? flats.Skies : flats.FloorSkies).ContainsKey(index);
         var name = table.TryGetValue(index, out var listed) && FindFlat(listed) != null ? listed
-            : FindFlat(defaultName) != null ? defaultName : null;
+            : !skyIndex && FindFlat(defaultName) != null ? defaultName : null;
         return name == null ? null : ChangedTexture(x, y, name);
     }
 
@@ -1094,7 +1157,9 @@ internal class MapManager
         int spot = MapSpot(x, y, FlatPlane);
         int index = ceiling ? spot >> 8 : spot & 0xff;
         var name = FlatTextureName(x, y, ceiling);
-        return $"{index} {(name != null && FindFlat(name) != null ? name : "(color)")}";
+        var sky = TileSkyName(x, y, ceiling);
+        var shown = name != null && FindFlat(name) != null ? name : sky != null ? null : "(color)";
+        return $"{index} {shown}{(sky == null ? "" : shown == null ? $"sky {sky}" : $" over sky {sky}")}";
     }
 
     /*
