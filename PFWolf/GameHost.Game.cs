@@ -451,6 +451,7 @@ internal static partial class GameHost
         {
             Unlock = Unlock,
             IsUnlocked = name => Unlocks.IsUnlocked(name),
+            ParticleSystem = () => particles,
             Record = map => LevelRecords.Get(map),
             Stat = name => StatValues.Get(name),
             AddObjective = (name, amount) => Objectives.Add(name, amount),

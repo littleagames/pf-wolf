@@ -488,6 +488,7 @@ internal sealed partial class GameScripts(
                 hudMessages.Show(Managers.HudMessageKind.Lock, StringArg(c, 0), OptionalString(c, 1));
             return new(c.Return());
         });
+        InstallParticleApi(game, methods);      // only for show, in any hook (Scripting/GameScripts.Particles.cs)
         host.Globals["game"] = game;
     }
 

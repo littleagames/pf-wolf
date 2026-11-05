@@ -219,6 +219,29 @@ the *emitter* (`e:set{...}` in `game.ontick`), which is cheap.
   with one way to do it instead of two. In the manual's Built-in classes.
 - Console `emitters` lists the actors running emitters and why.
 
+**Phase 3 as built (2026-11-05):**
+
+- `Scripting/GameScripts.Particles.cs`: `game.particles(name, x, y[, z[, changes]])`,
+  `actor:particles(name[, changes])`, `game.emitter(name, x, y[, z[, changes]])` /
+  `game.emitter(name, actor[, changes])`, `game.defineparticle(name, fields)`,
+  `game.defineemitter(name, fields)`, `game.particlecount()`. None calls `ChangesTheGame`, so
+  they work in `game.onhud` and the other local hooks.
+- `changes` and `fields` are tables of an emitter's or its type's fields as particles.yaml
+  names them; `size-end`, `size_end` and `sizeend` all work (hyphens and underscores dropped,
+  any case). Set by reflection over `EmitterInfo` / `ParticleTypeInfo`, so a field added to the
+  YAML is in Lua too. A type changed for one call is read afresh and cached by its changes.
+- The emitter handle is a table of closures: `stop`, `start`, `running`, `moveto`, `set`,
+  `remove` (ScriptApi's new `EmitterMethods`, kind `EmitterMethod`, a section of its own in the
+  scripting reference).
+- **Script emitters belong to a level** (`MapManager.LevelSerial` when made), not cleared at
+  `PlayLoop` start: `game.onlevel` runs before `PlayLoop`, so clearing there would have
+  wiped what it just made. One on an actor goes when the actor's removed.
+- `defineparticle` / `defineemitter` write into a copy of particles.yaml's definitions, kept
+  until the game's closed (scripts run once, at startup); `base` copies another first. Names
+  made this way work everywhere a particles.yaml name does (actordefs, actions, console).
+- Not done: `print(handle)` shows a table; editor autocomplete after `e:` shows actor methods,
+  not the emitter's.
+
 Phases 1–3 give a usable system (solid particles, from YAML, actors and Lua). Phase 4 is what
 makes smoke and magic look good.
 

@@ -91,6 +91,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       state's `particles:` (a barrel smoking once hit, `particles: none` on death); a moving
       actor's trail (a projectile's `particles`, emitter `angle: 180`); emitters out of `range`
       start again as you come near; mid-game join sees the same stopped emitters.
+- [ ] **(never tried)** Particles from Lua: `game.emitter` made in `game.onlevel` comes back after
+      dying and after loading (seen headless for "new" only, 2026-11-05); one on an actor follows it,
+      keeps going on its corpse, and ends when it's removed (a picked-up item); `actor:particles` in `game.ondamage` (blood) and
+      `game.onkill` (gibs); `game.particles` from `game.onhud`; `game.defineparticle` with `base`
+      in a mod's script used by its actordefs `particles`; a multiplayer game with these scripts.
 
 ## 1.4 Controls
 

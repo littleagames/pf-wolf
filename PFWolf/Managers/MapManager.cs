@@ -86,7 +86,7 @@ internal class MapManager
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
     /// <summary>Goes up each time the level's actors are put on afresh (a map loaded, a level restored): which level it is</summary>
-    internal int LevelSerial { get; private set; }
+    internal int LevelSerial { get; set; }       // (set by tests standing for a new level)
 
     /// <summary>An actor has been put on the level as it plays (SpawnThing, SpawnAtActor...): the scripts' game.onactorspawn</summary>
     internal Action<Entities.Actors.Actor>? ActorAdded { get; set; }

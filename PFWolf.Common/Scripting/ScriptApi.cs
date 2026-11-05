@@ -17,6 +17,8 @@ public enum ScriptApiKind
     Library,
     /// <summary>LIBRARY.NAME: string.format, math.floor...</summary>
     LibraryMember,
+    /// <summary>emitter:NAME(...): a running emitter game.emitter made</summary>
+    EmitterMethod,
     /// <summary>A Lua keyword</summary>
     Keyword,
 }
@@ -111,6 +113,20 @@ public static class ScriptApi
         Fn("music", "game.music(song)", "Plays a song now, for the rest of the level (and after the menu); nil plays the level's own again"),
         Fn("command", "game.command(name, help, function(...) ... end)", "Gives the console a command (not while playing with others), called with the words typed after it, numbers as numbers. Add commands at a script's top level; one the game has already wins"),
         Fn("unlocked", "game.unlocked(name)","Whether a name has been unlocked (game.unlock, A_Unlock or the unlock command), in this game or an earlier one"),
+        Fn("particles", "game.particles(name, x, y[, z[, changes]])",
+            "Throws out a burst from a particles.yaml emitter (or of a particle type, every way) at a spot, in tiles, z texels above the floor added to the emitter's own z; "
+            + "changes is a table of the emitter's or its type's fields as particles.yaml writes them ({ count = 20, color = \"#80FF80\", size_end = 4 }). "
+            + "How many were thrown out (fewer at a lower Particles setting). Only for show, so it works in any hook"),
+        Fn("emitter", "game.emitter(name, x, y[, z[, changes]]) or game.emitter(name, actor[, changes])",
+            "Starts a particles.yaml emitter running at a spot, or on an actor (from where it is, turned by the way it faces), with changes as game.particles's; "
+            + "its handle, to stop, move or change it (emitter:stop() and the rest). It runs till the level's over (a new level, a death or a loaded game: "
+            + "make it again in game.onlevel) or its actor's gone, and isn't saved"),
+        Fn("defineparticle", "game.defineparticle(name, fields)",
+            "Makes a particle type of the script's (over particles.yaml's of that name): its fields as particles.yaml writes them, from base's (a type's name) or the defaults: "
+            + "game.defineparticle(\"GreenSpark\", { base = \"Spark\", colors = { \"#C0FFC0\", \"#00A000\" } }). Kept till the game's closed"),
+        Fn("defineemitter", "game.defineemitter(name, fields)",
+            "Makes an emitter of the script's, as game.defineparticle does a type; its type must be one there is. actordefs particles and A_SpawnParticles can name it once it's made"),
+        Fn("particlecount", "game.particlecount()", "How many particles there are now, for a script to throw out fewer when there are many"),
         Fn("showtext", "game.showtext(name)", "Shows a text (texts/, in the help article format) as an article, then goes back to the level, its clock not counting the reading (A_ShowText). It does nothing while a demo plays or records, or in a game with others"),
     ];
 
@@ -154,8 +170,20 @@ public static class ScriptApi
         Method("cansee", "actor:cansee(player[, tiles])", "Whether there's a clear line to a player (within that many tiles); one in a wall sees only out of its face"),
         Method("nearestplayer", "actor:nearestplayer()", "The nearest player who can be aimed at, or nil"),
         Method("remove", "actor:remove()", "Takes it off the level (not a player: removing one does nothing)"),
+        Method("particles", "actor:particles(name[, changes])",
+            "Throws out a burst from a particles.yaml emitter (or of a particle type) where it is, at its height and turned by the way it faces, with changes as game.particles's; how many were thrown out"),
         Method("pathto", "actor:pathto(x, y) or actor:pathto(other)",
             "The way (\"north\", \"northeast\"...) to go from its tile toward a tile (or another actor's) by the shortest path it can walk, found by A*: through the doors it can open, round walls, solid things and the monster blockers it's kept off, diagonally only past open floor. Nil when it's there, or nowhere it can get to is nearer"),
+    ];
+
+    public static IReadOnlyList<ScriptApiEntry> EmitterMethods { get; } =
+    [
+        Emitter("stop", "emitter:stop()", "Stops it throwing particles out (those in the air go on)"),
+        Emitter("start", "emitter:start()", "Starts it again"),
+        Emitter("running", "emitter:running()", "Whether it's running: false once stopped, removed, or its level or actor's gone"),
+        Emitter("moveto", "emitter:moveto(x, y[, z])", "Moves it to a spot, in tiles (z texels up: its own left out); one on an actor stays at the spot from then on"),
+        Emitter("set", "emitter:set(changes)", "Changes its fields, or its type's, as game.particles's changes: emitter:set{ rate = 40, color = \"#FF8000\" }"),
+        Emitter("remove", "emitter:remove()", "Takes it away for good"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> Globals { get; } =
@@ -246,6 +274,7 @@ public static class ScriptApi
             Section("actor", "An actor (self in an action, or what game.actors and the like return): its fields, actor.NAME. "
                 + "A field it hasn't got (a typo: actor.hp) reads as nil, and the console says so, once a name; setting one is an error", ActorFields),
             Section("actor-methods", "An actor's methods, actor:NAME(...)", ActorMethods),
+            Section("emitter-methods", "A running emitter's methods, emitter:NAME(...), on the handle game.emitter returns", EmitterMethods),
             Section("globals", "Lua's basic functions the sandbox leaves in (no load, require, dofile, io or os)", Globals),
             .. Libraries.Where(library => library.Name != "game")
                 .Select(library => Section(library.Name, library.Summary, [.. LibraryMembers.Where(member => member.Library == library.Name)])),
@@ -262,6 +291,8 @@ public static class ScriptApi
     private static ScriptApiEntry Method(string name, string signature, string summary) => new(ScriptApiKind.ActorMethod, name, signature, summary);
 
     private static ScriptApiEntry Global(string name, string signature, string summary) => new(ScriptApiKind.Global, name, signature, summary);
+
+    private static ScriptApiEntry Emitter(string name, string signature, string summary) => new(ScriptApiKind.EmitterMethod, name, signature, summary);
 
     private static IEnumerable<ScriptApiEntry> Members(string library, params (string Name, string Signature, string Summary)[] members)
         => members.Select(member => new ScriptApiEntry(ScriptApiKind.LibraryMember, member.Name, member.Signature, member.Summary, library));

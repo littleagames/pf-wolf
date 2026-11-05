@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using PFWolf.Assets;
 using PFWolf.Configuration;
 using PFWolf.Constants;
@@ -143,7 +144,9 @@ internal sealed class Particles(
     {
         definitions = asset;
         definitionsRead = true;
+        definitionsOwn = false;
         resolved.Clear();
+        changedTypes.Clear();
     }
 
     /// <summary>Clears every particle, and reads the types afresh (their colors are the palette's): a new level, life or loaded game</summary>
@@ -443,7 +446,7 @@ internal sealed class Particles(
                     continue;
 
                 var owed = state.Owed ??= new(StringComparer.OrdinalIgnoreCase);
-                if (view is var (vx, vy) && Math.Max(Math.Abs(actor.X - vx), Math.Abs(actor.Y - vy)) > emitter.Range * MapConstants.TileGlobal)
+                if (view is (int vx, int vy) && Math.Max(Math.Abs(actor.X - vx), Math.Abs(actor.Y - vy)) > emitter.Range * MapConstants.TileGlobal)
                 {
                     owed.Remove(name);      // out of range: nothing piles up to come out at once
                     continue;
@@ -591,6 +594,324 @@ internal sealed class Particles(
         }
     }
 
+    // ---- Scripts' emitters and definitions -----------------------------------------------------
+
+    /// <summary>
+    /// An emitter a script made (game.emitter): an emitter's settings with the script's changes,
+    /// standing somewhere or on an actor. It belongs to the level it was made on (a new level, a
+    /// death or a loaded game ends it: game.onlevel makes it again), and isn't saved.
+    /// </summary>
+    internal sealed class ScriptEmitter
+    {
+        public required EmitterInfo Info;
+        public required ResolvedType Type;
+        public double X, Y, Z;                      // texels, standing on its own
+        public Entities.Actors.Actor? Actor;        // on an actor instead: its spot, Z higher
+        public bool Running = true;
+        public bool Gone;                           // removed, its actor gone, or its level over
+        public int Level;                           // the map's LevelSerial it was made on
+        public double Owed;
+    }
+
+    readonly List<ScriptEmitter> scriptEmitters = [];
+
+    /// <summary>How many emitters scripts have running on the level</summary>
+    internal int ScriptEmitterCount => scriptEmitters.Count;
+
+    /// <summary>
+    /// An emitter (or a particle type, thrown out every way) with a script's changes: its
+    /// emitter fields and its type's, by name as particles.yaml writes them (size-end, or
+    /// size_end, or sizeend). Null, with why told to error, when there's no such name or a
+    /// change can't be made.
+    /// </summary>
+    internal (EmitterInfo Emitter, ResolvedType Type)? WithChanges(string name, IReadOnlyList<(string Key, object? Value)> changes, Action<string> error)
+    {
+        var defs = Definitions;
+        EmitterInfo emitter;
+        if (defs.Emitters.TryGetValue(name, out var named))
+            emitter = named with { };
+        else if (defs.Types.ContainsKey(name))
+            emitter = new EmitterInfo { Type = name };
+        else
+        {
+            error($"particles.yaml has no emitter or particle type {name}");
+            return null;
+        }
+
+        var typeChanges = new List<(string Key, object? Value)>();
+        foreach (var (key, value) in changes)
+        {
+            if (FieldNamed(typeof(EmitterInfo), key) != null)
+            {
+                if (!SetField(emitter, key, value, error))
+                    return null;
+            }
+            else if (FieldNamed(typeof(ParticleTypeInfo), key) != null)
+                typeChanges.Add((key, value));
+            else
+            {
+                error($"an emitter or particle type has no {key}");
+                return null;
+            }
+        }
+
+        if (!defs.Types.TryGetValue(emitter.Type, out var typeInfo))
+        {
+            error($"particles.yaml has no particle type {emitter.Type}");
+            return null;
+        }
+        if (typeChanges.Count == 0)
+            return TypeNamed(emitter.Type) is { } type ? (emitter, type) : null;
+
+        // Changed for this one: read afresh, kept for the next time the same changes are asked for
+        var key2 = emitter.Type + "|" + string.Join("|", typeChanges.Select(c => $"{Normalize(c.Key)}={Describe(c.Value)}"));
+        if (!changedTypes.TryGetValue(key2, out var changed))
+        {
+            var info = typeInfo with { };
+            foreach (var (key, value) in typeChanges)
+                if (!SetField(info, key, value, error))
+                    return null;
+            changed = Resolve(emitter.Type, info, Warn);
+            if (changedTypes.Count > 256)
+                changedTypes.Clear();
+            changedTypes[key2] = changed;
+        }
+        return (emitter, changed);
+    }
+
+    readonly Dictionary<string, ResolvedType> changedTypes = new(StringComparer.OrdinalIgnoreCase);
+
+    static string Describe(object? value) => value switch
+    {
+        null => "",
+        List<string> list => "[" + string.Join(",", list) + "]",
+        IFormattable number => number.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+        _ => value.ToString() ?? "",
+    };
+
+    static string Normalize(string key) => key.Replace("-", "").Replace("_", "").ToLowerInvariant();
+
+    static System.Reflection.PropertyInfo? FieldNamed(Type type, string key)
+    {
+        var wanted = Normalize(key);
+        return type.GetProperties().FirstOrDefault(p => p.CanWrite && p.Name.ToLowerInvariant() == wanted);
+    }
+
+    // Sets an emitter's or type's field from a script's value: a number, a string, a boolean or a list of strings
+    static bool SetField(object target, string key, object? value, Action<string> error)
+    {
+        var property = FieldNamed(target.GetType(), key)!;
+        var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+        try
+        {
+            object? converted = value switch
+            {
+                null when Nullable.GetUnderlyingType(property.PropertyType) != null => null,
+                _ when type == typeof(string) => value switch
+                {
+                    IFormattable number => number.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+                    string text => text,
+                    _ => throw new FormatException("a string or a number"),
+                },
+                _ when type == typeof(double) => value is double d ? d : value is string s
+                    ? double.Parse(s, System.Globalization.CultureInfo.InvariantCulture) : throw new FormatException("a number"),
+                _ when type == typeof(int) => value is double n && n == Math.Floor(n) ? (int)n : throw new FormatException("a whole number"),
+                _ when type == typeof(bool) => value is bool b ? b : throw new FormatException("true or false"),
+                _ when type == typeof(List<string>) => value is List<string> list ? new List<string>(list)
+                    : value is string one ? [one] : throw new FormatException("a list of strings"),
+                _ => throw new FormatException("something it can't take"),
+            };
+            property.SetValue(target, converted);
+            return true;
+        }
+        catch (FormatException e)
+        {
+            error($"{key} should be {e.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// A script's burst (game.particles, actor:particles): an emitter (or type) with its changes,
+    /// at (x, y) texels, z added to its own, facing angle. How many were thrown out; -1 (and why,
+    /// to error) when it can't be.
+    /// </summary>
+    internal int ScriptBurst(string name, IReadOnlyList<(string Key, object? Value)> changes, double x, double y, double z, double angle, Action<string> error)
+    {
+        if (WithChanges(name, changes, error) is not (EmitterInfo emitter, ResolvedType type))
+            return -1;
+        return Emit(emitter, type, x, y, z, angle, ScaledCount(emitter.Count, hooks.Detail()));
+    }
+
+    /// <summary>A script's running emitter (game.emitter), at a spot or on an actor; null (and why, to error) when it can't be</summary>
+    internal ScriptEmitter? StartScriptEmitter(string name, IReadOnlyList<(string Key, object? Value)> changes, Action<string> error,
+        Entities.Actors.Actor? actor = null, double x = 0, double y = 0, double z = 0)
+    {
+        if (WithChanges(name, changes, error) is not (EmitterInfo emitter, ResolvedType type))
+            return null;
+        var made = new ScriptEmitter { Info = emitter, Type = type, Actor = actor, X = x, Y = y, Z = z, Level = map.LevelSerial };
+        scriptEmitters.Add(made);
+        return made;
+    }
+
+    /// <summary>A script's changes to its running emitter (emitter:set): false (and why, to error) when one can't be made</summary>
+    internal bool ChangeScriptEmitter(ScriptEmitter emitter, IReadOnlyList<(string Key, object? Value)> changes, Action<string> error)
+    {
+        // Laid over its settings as they are: read back through WithChanges as a one-off emitter of its own
+        var name = $"\u0001script{RuntimeHelpers.GetHashCode(emitter)}";
+        var defs = WritableDefinitions();
+        defs.Emitters[name] = emitter.Info;
+        try
+        {
+            var changed = WithChanges(name, changes, error);
+            if (changed is not (EmitterInfo info, ResolvedType type))
+                return false;
+            emitter.Info = info;
+            emitter.Type = type;
+            return true;
+        }
+        finally
+        {
+            defs.Emitters.Remove(name);
+        }
+    }
+
+    /// <summary>Takes a script's emitter off the level</summary>
+    internal void RemoveScriptEmitter(ScriptEmitter emitter)
+    {
+        emitter.Gone = true;
+        scriptEmitters.Remove(emitter);
+    }
+
+    // particles.yaml's definitions, copied the first time a script adds to them (the asset's own stay as loaded)
+    ParticlesAsset WritableDefinitions()
+    {
+        if (!definitionsOwn)
+        {
+            var loaded = Definitions;
+            definitions = new ParticlesAsset
+            {
+                Types = new(loaded.Types, StringComparer.OrdinalIgnoreCase),
+                Emitters = new(loaded.Emitters, StringComparer.OrdinalIgnoreCase),
+            };
+            definitionsRead = definitionsOwn = true;
+        }
+        return definitions!;
+    }
+
+    bool definitionsOwn;
+
+    /// <summary>
+    /// game.defineparticle: a particle type of a script's, over particles.yaml's of its name:
+    /// fields as particles.yaml's, from a base type's (base) or the defaults. False (and why, to
+    /// error) when it can't be made.
+    /// </summary>
+    internal bool DefineType(string name, IReadOnlyList<(string Key, object? Value)> fields, Action<string> error)
+    {
+        var defs = WritableDefinitions();
+        ParticleTypeInfo info = new();
+        foreach (var (key, value) in fields)
+        {
+            if (Normalize(key) != "base")
+                continue;
+            if (value is not string baseName || !defs.Types.TryGetValue(baseName, out var source))
+            {
+                error($"base {Describe(value)} isn't a particle type");
+                return false;
+            }
+            info = source with { Colors = [.. source.Colors] };
+        }
+        foreach (var (key, value) in fields)
+        {
+            if (Normalize(key) == "base")
+                continue;
+            if (FieldNamed(typeof(ParticleTypeInfo), key) == null)
+            {
+                error($"a particle type has no {key}");
+                return false;
+            }
+            if (!SetField(info, key, value, error))
+                return false;
+        }
+        defs.Types[name] = info;
+        resolved.Remove(name);
+        changedTypes.Clear();
+        return true;
+    }
+
+    /// <summary>game.defineemitter: an emitter of a script's, as DefineType does a type</summary>
+    internal bool DefineEmitter(string name, IReadOnlyList<(string Key, object? Value)> fields, Action<string> error)
+    {
+        var defs = WritableDefinitions();
+        EmitterInfo info = new();
+        foreach (var (key, value) in fields)
+        {
+            if (Normalize(key) != "base")
+                continue;
+            if (value is not string baseName || !defs.Emitters.TryGetValue(baseName, out var source))
+            {
+                error($"base {Describe(value)} isn't an emitter");
+                return false;
+            }
+            info = source with { };
+        }
+        foreach (var (key, value) in fields)
+        {
+            if (Normalize(key) == "base")
+                continue;
+            if (FieldNamed(typeof(EmitterInfo), key) == null)
+            {
+                error($"an emitter has no {key}");
+                return false;
+            }
+            if (!SetField(info, key, value, error))
+                return false;
+        }
+        if (!defs.Types.ContainsKey(info.Type))
+        {
+            error($"its type {info.Type} isn't a particle type");
+            return false;
+        }
+        defs.Emitters[name] = info;
+        return true;
+    }
+
+    // Scripts' running emitters throw out what they owe; those of an earlier level, or whose actor's gone, are let go
+    void EmitFromScripts(uint tics)
+    {
+        if (scriptEmitters.Count == 0)
+            return;
+        double share = ShareFor(hooks.Detail());
+        var view = hooks.ViewPoint?.Invoke();
+        for (int i = scriptEmitters.Count - 1; i >= 0; i--)
+        {
+            var e = scriptEmitters[i];
+            if (e.Level != map.LevelSerial || e.Actor is { IsRemoved: true })
+            {
+                e.Gone = true;
+                scriptEmitters.RemoveAt(i);
+                continue;
+            }
+            if (!e.Running)
+                continue;
+
+            var (x, y, z) = e.Actor is { } actor
+                ? (actor.X / (double)TexelGlobal, actor.Y / (double)TexelGlobal, actor.Z + e.Z)
+                : (e.X, e.Y, e.Z);
+            if (view is (int vx, int vy) && Math.Max(Math.Abs(x * TexelGlobal - vx), Math.Abs(y * TexelGlobal - vy)) > e.Info.Range * MapConstants.TileGlobal)
+            {
+                e.Owed = 0;
+                continue;
+            }
+
+            double due = e.Owed + Math.Max(e.Info.Rate, 0) * share * tics / TicsPerSecond;
+            int whole = (int)due;
+            e.Owed = due - whole;
+            if (whole > 0)
+                Emit(e.Info, e.Type, x, y, z, e.Actor != null ? Facing(e.Actor) : 0, whole);
+        }
+    }
+
     // ---- Moving --------------------------------------------------------------------------------
 
     /// <summary>Moves every particle on by the tics the game ran, and lets go of those whose time is up</summary>
@@ -603,6 +924,7 @@ internal sealed class Particles(
         }
 
         EmitFromActors(tics);
+        EmitFromScripts(tics);
 
         for (int i = count - 1; i >= 0; i--)
         {
