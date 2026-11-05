@@ -271,7 +271,8 @@ internal static partial class GameHost
     static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, HudMessageManager, MapManager,
         frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
         new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick(),
-            () => demoTracer.AfterFrame(), () => LevelTimer.Tick(), () => playScreen.ShowQuickInstructions(), () => destructibleWalls.Tick()));
+            () => demoTracer.AfterFrame(), () => LevelTimer.Tick(), () => playScreen.ShowQuickInstructions(), () => destructibleWalls.Tick(),
+            particles.Tick, particles.Reset));
 
     // A level against the clock (Gameplay/LevelTimer.cs): game-info map time-limit
     static LevelTimer? _levelTimer;

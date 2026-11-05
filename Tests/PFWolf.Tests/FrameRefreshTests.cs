@@ -24,7 +24,7 @@ public class FrameRefreshTests
             BaseCenterY = 50, CenterY = 50, Scale = 50, FocalLength = 0x5700,
         };
         _session = new GameSession();
-        _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, _session, null!);
+        _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, _session, null!);
     }
 
     [Test]

@@ -232,6 +232,20 @@ internal sealed partial class SkyAndFlats(
         return true;
     }
 
+    /// <summary>
+    /// Whether a tile is open to the sky above: its own sky (mapdefs flats skies), or the level's
+    /// sky where the tile has no ceiling flat. Particles meet no ceiling there.
+    /// </summary>
+    internal bool SkyOver(int x, int y)
+    {
+        int index = map.TileIndexOrNone(x, y);
+        if (index < 0)
+            return true;
+        if (index < map.CeilingSky.Length && map.CeilingSky[index] != 0)
+            return true;
+        return map.CeilingFlat[index] == null && (LevelSky != null || HasGeneratedSky);
+    }
+
     /// <summary>Holds the level's floor sky; false if it has none, or it can't be found</summary>
     internal bool LoadFloorSky() => floorsky.Load(LevelFloorSky, assets, worldTexture, session.GameState.TimeCount);
 

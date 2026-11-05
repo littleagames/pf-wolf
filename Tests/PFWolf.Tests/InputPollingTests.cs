@@ -21,7 +21,7 @@ public class InputPollingTests
         _settings = new ControlSettings();
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
         _session = new GameSession { Tics = 2 };
-        _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, _session, null!);
+        _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, _session, null!);
         _polling = new InputPolling(_input, _console, new AutomapManager(), new ControlBindings(), _settings, _frame,
             new DemoBuffer(), _session,
             new InputPollingHooks(() => false, () => false,

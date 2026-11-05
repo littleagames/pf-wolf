@@ -66,7 +66,7 @@ public class PfWolfPk3Loader
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
         "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "statusbar-fullscreen.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
-        "movies.yaml", "factions.yaml", "translations.yaml", "presenter.yaml", "elevator.yaml",
+        "movies.yaml", "factions.yaml", "translations.yaml", "presenter.yaml", "elevator.yaml", "particles.yaml",
     };
 
     /// <summary>
@@ -182,6 +182,13 @@ public class PfWolfPk3Loader
             // A pack's factions are laid over its base pack's all the way down, as game-info is
             var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
             LoadYaml(entry, uniqueName, isMod, mergeLevels: AllLevels, YamlDataEntryLoader.Deserialize<FactionsAsset>);
+            return;
+        }
+        if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("particles.yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            // A pack's particles are laid over its base pack's all the way down, as factions are
+            var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: AllLevels, YamlDataEntryLoader.Deserialize<ParticlesAsset>);
             return;
         }
         if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("translations.yaml", StringComparison.OrdinalIgnoreCase))

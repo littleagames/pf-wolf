@@ -22,7 +22,7 @@ public class AutomapInputTests
         _controls = new ControlBindings();
         _session = new GameSession { Tics = 2 };
         var render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
-        var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, _session, null!);
+        var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, _session, null!);
         _polling = new InputPolling(_input, _console, _automap, _controls, new ControlSettings(), frame, new DemoBuffer(), _session,
             new InputPollingHooks(() => false, () => false, () => true, () => { }));
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null);

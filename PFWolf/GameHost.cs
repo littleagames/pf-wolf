@@ -209,6 +209,7 @@ internal static partial class GameHost
         consoleTargets = new ConsoleTargets(MapManager, lighting, Session);
         actorLights = MakeActorLights();
         seeThroughPosts = MakeSeeThroughPosts();
+        pointDrawing = MakePointDrawing();
         weather = MakeWeather();
         spriteScaler = MakeSpriteScaler();
         wallSpriteDrawing = MakeWallSpriteDrawing();
@@ -217,6 +218,7 @@ internal static partial class GameHost
         wallHits = MakeWallHits();
         rayTrace = MakeRayTrace();
         frameInterpolation = new FrameInterpolation(MapManager, Session);
+        particles = MakeParticles();
         spriteDrawing = MakeSpriteDrawing();
         spriteDrawing.Interpolation = frameInterpolation;
         playerBodies = new PlayerBodies(AssetManager, MapManager, InventoryManager, spriteDrawing, Session);
@@ -294,7 +296,7 @@ internal static partial class GameHost
         RegisterMenuDefs();
         modsMenu = new ModsMenu(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,
             menuDrawing, menuLoop, menuInput, menuDefs, ui, Session);
-        videoMenu = new VideoMenu(AssetManager, _inputManager, AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        videoMenu = new VideoMenu(AssetManager, _inputManager, AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs, Settings);
         soundMenu = new SoundMenu(AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
         controlMenus = new ControlMenus(AssetManager, _inputManager, AudioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, ControlSettings);
         customizeScreen = new CustomizeControlsScreen(AssetManager, _inputManager, AudioManager, _videoManager,
@@ -453,6 +455,8 @@ internal static partial class GameHost
         Entities.Actors.Monster.CheckClasses(AssetManager.GetActorMetadata());
         FactionManager.CheckClasses(AssetManager.GetActorMetadata());
         TranslationManager.CheckDefinitions(AssetManager.GetActorMetadata(), FactionManager.Table);
+        foreach (var problem in particles.CheckDefinitions())      // particles.yaml (Rendering/Particles.cs)
+            Console.WriteLine(problem);
         RegisterConsoleCommands();
         gameScripts.RegisterCommands();     // the scripts' own (game.command), once the game's are in
 

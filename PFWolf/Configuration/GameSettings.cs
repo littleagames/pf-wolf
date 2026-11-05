@@ -1,5 +1,14 @@
 namespace PFWolf.Configuration;
 
+/// <summary>The Particles setting (Options → Video, r_particles): how many particles there can be, and how many emitters throw out</summary>
+internal enum ParticleDetail : byte
+{
+    Off = 0,
+    Low = 1,
+    Medium = 2,
+    High = 3,
+}
+
 /// <summary>
 /// The player's settings and high scores that config.cfg and controls.cfg keep (GameEngineManager
 /// reads and writes them), besides what the managers hold themselves
@@ -29,6 +38,9 @@ internal sealed class GameSettings
 
     /// <summary>The Game Options menu's settings (Configuration/GameOptions.cs)</summary>
     internal readonly GameOptions Options = new();
+
+    /// <summary>The Particles setting (Rendering/Particles.cs): the player's own, never a game's or a host's</summary>
+    internal ParticleDetail Particles = ParticleDetail.High;
 
     /// <summary>Whether the game saves itself at each new level (autosave.dat)</summary>
     internal bool AutosaveEnabled { get => Options.Autosave; set => Options.SetChoice(GameOption.Autosave, value); }

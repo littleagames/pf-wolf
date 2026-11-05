@@ -35,6 +35,8 @@ public static class DefinitionFiles
             "game-info.yaml", "gamepacks/{pack}/game-info.yaml", () => FieldSchema.For(typeof(GameInfoAsset))),
         new("factions", "factions.yaml", "The sides actors are on, and how each treats the others.",
             "factions.yaml", "gamepacks/{pack}/factions.yaml", () => FieldSchema.For(typeof(FactionsAsset))),
+        new("particles", "particles.yaml", "Particle effects, only for show: the kinds of particle (how each looks and moves) and the emitters that throw them out.",
+            "particles.yaml", "gamepacks/{pack}/particles.yaml", () => FieldSchema.For(typeof(ParticlesAsset))),
         new("actordefs", "actordefs/*.yaml", "Actor classes: the player, enemies, items, decorations and projectiles.",
             "actordefs/*.yaml", "actordefs/{pack}/*.yaml", () => FieldSchema.Entries("", "Actor classes by name", ActorSchema.Build())),
         new("actor-properties", "Actor properties", "The properties an actor class can set under properties:, and what each does.",

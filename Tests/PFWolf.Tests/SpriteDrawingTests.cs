@@ -23,7 +23,7 @@ public class SpriteDrawingTests
             CenterX = 160, ProjectionWidth = 320, Scale = 160, HeightNumerator = 0x100000,
         };
         _sprites = [];
-        _drawing = new SpriteDrawing(null!, null!, null!, null!, null!, null!, null!, _render, null!, new GameSession(),
+        _drawing = new SpriteDrawing(null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, null!, new GameSession(),
             new SpriteDrawingHooks(() => null, ob => ob.Name == "Body", _ => null, ob => ob.Name, _sprites.Contains,
                 () => null, () => 1));
     }

@@ -2005,6 +2005,16 @@ internal class VideoManager
     internal byte ParseColor(Color color)
         => FindClosestPaletteIndex(color.Red, color.Green, color.Blue);
 
+    /// <summary>The game palette's nearest color to red, green and blue</summary>
+    internal byte NearestPaletteIndex(byte r, byte g, byte b) => FindClosestPaletteIndex(r, g, b);
+
+    /// <summary>A game palette index's red, green and blue</summary>
+    internal (byte R, byte G, byte B) PaletteRgb(int index)
+    {
+        var c = GamePal[Math.Clamp(index, 0, GamePal.Length - 1)];
+        return (c.r, c.g, c.b);
+    }
+
     private byte FindClosestPaletteIndex(byte r, byte g, byte b)
     {
         byte closestIndex = 0;

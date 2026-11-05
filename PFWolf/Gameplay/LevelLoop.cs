@@ -14,6 +14,8 @@ namespace PFWolf.Gameplay;
 /// <param name="AfterThinking">demotrace: writes down the frame just played (Gameplay/DemoTracer.cs)</param>
 /// <param name="TickLevelTimer">A level against the clock (Gameplay/LevelTimer.cs)</param>
 /// <param name="TickWalls">Walls crumbling, breaking once their animation's played (Gameplay/DestructibleWalls.cs)</param>
+/// <param name="TickParticles">Particles moving on, only for show (Rendering/Particles.cs)</param>
+/// <param name="ClearParticles">A new level, life or loaded game starts with no particles in the air</param>
 internal sealed record LevelLoopHooks(
     Func<bool> DemoTesting,
     Action<uint> TickPlayerBodies,
@@ -25,7 +27,9 @@ internal sealed record LevelLoopHooks(
     Action? AfterThinking = null,
     Action? TickLevelTimer = null,
     Action? ShowQuickInstructions = null,
-    Action? TickWalls = null);
+    Action? TickWalls = null,
+    Action<uint>? TickParticles = null,
+    Action? ClearParticles = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -90,6 +94,7 @@ internal sealed class LevelLoop(
 
         hooks.UpdateSoundListener();
         frame.Interpolation?.Forget();     // nothing slides in from the last level, life or saved game
+        hooks.ClearParticles?.Invoke();    // nor is left in the air from it
 
         do
         {
@@ -162,6 +167,7 @@ internal sealed class LevelLoop(
                 levelAI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
                 lighting.TickZoneLights(session.Tics);       // light zones' fades and effects (Rendering/Lighting.cs)
                 map.Scrollers.Tick(session.Tics);            // scrolling walls and flats (Rendering/Scrollers.cs)
+                hooks.TickParticles?.Invoke(session.Tics);   // particles, only for show (Rendering/Particles.cs)
                 hooks.TickAmbience?.Invoke();               // the player's zone's ambient sound (Gameplay/ZoneAmbience.cs)
                 scripts.RunTickHooks();             // the scripts' game.ontick hooks (Scripting/GameScripts.cs)
                 if (session.GameMode != GameMode.Single)

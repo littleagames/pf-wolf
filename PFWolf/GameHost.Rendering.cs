@@ -62,7 +62,7 @@ internal static partial class GameHost
     static WallPosts wallPosts = null!;     // made in InitServices
 
     static WallPosts MakeWallPosts() =>
-        new(_videoManager, MapManager, lighting, skyAndFlats, Render, weather, Session, WallTexture);
+        new(_videoManager, MapManager, lighting, skyAndFlats, Render, pointDrawing, Session, WallTexture);
 
     static bool IsArch(int tilex, int tiley) => wallPosts.IsArch(tilex, tiley);
     static int FloorRow(int half) => wallPosts.FloorRow(half);
@@ -98,7 +98,7 @@ internal static partial class GameHost
     static SpriteDrawing spriteDrawing = null!;     // made in InitServices
 
     static SpriteDrawing MakeSpriteDrawing() => new(AssetManager, MapManager, TranslationManager, lighting, spriteScaler,
-        wallSpriteDrawing, weather, Render, WeaponBob, Session,
+        wallSpriteDrawing, weather, particles, pointDrawing, Render, WeaponBob, Session,
         new SpriteDrawingHooks(WeaponShapeName, IsPlayerBody, VisiblePlayerBody, DrawnSprite, SpriteExists,
             () => DeathCamSprite, () => WeaponScale, DrawCrosshair));
 
@@ -119,7 +119,7 @@ internal static partial class GameHost
     static FrameRefresh frameRefresh = null!;       // made in InitServices
 
     static FrameRefresh MakeFrameRefresh() => new(_videoManager, _graphicManager, MapManager, _consoleManager, lighting, actorLights,
-        weather, skyAndFlats, rayTrace, spriteDrawing, playerView, Render, Session,
+        weather, particles, pointDrawing, skyAndFlats, rayTrace, spriteDrawing, playerView, Render, Session,
         new FrameRefreshHooks(() => LevelFadeStyle, () => LevelFadeTics,
             RestoreBorderAfterConsole,
             () =>
@@ -226,7 +226,22 @@ internal static partial class GameHost
     // Rain and snow (Rendering/Weather.cs)
     static Weather weather = null!;     // made in InitServices
 
-    static Weather MakeWeather() => new(GameEngineManager, _videoManager, MapManager, lighting, Render, Session, FloorRow, IsArch, seeThroughPosts);
+    static Weather MakeWeather() => new(GameEngineManager, _videoManager, MapManager, lighting, Render, Session, FloorRow, IsArch, seeThroughPosts, pointDrawing);
+
+    // ==== Particles ==============================================================================
+
+    // Rain, snow and particles drawn in among the sprites (Rendering/PointDrawing.cs)
+    static PointDrawing pointDrawing = null!;       // made in InitServices
+
+    static PointDrawing MakePointDrawing() => new(_videoManager, Render, FloorRow, seeThroughPosts);
+
+    // Particle effects, only for show (Rendering/Particles.cs)
+    static Particles particles = null!;     // made in InitServices
+
+    static Particles MakeParticles() => new(AssetManager, _videoManager, MapManager, lighting, Render, pointDrawing,
+        new ParticleHooks(() => Settings.Particles, (x, y) => skyAndFlats.SkyOver(x, y),
+            door => Particles.DoorLetsThrough(lineOfSight.DoorPosition(door)),
+            () => frameInterpolation.Active ? frameInterpolation.Fraction : 1));
 
     // ==== See-through doors ======================================================================
 

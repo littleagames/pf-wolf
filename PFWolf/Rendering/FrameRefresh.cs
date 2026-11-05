@@ -51,6 +51,8 @@ internal sealed class FrameRefresh(
     Lighting lighting,
     ActorLights actorLights,
     Weather weather,
+    Particles particles,
+    PointDrawing points,
     SkyAndFlats skyAndFlats,
     RayTrace rayTrace,
     SpriteDrawing spriteDrawing,
@@ -249,7 +251,7 @@ internal sealed class FrameRefresh(
         FrameProfiler.Mark(FrameProfiler.Section.Flats);
 
         render.MarkSeen = camera.OnPlayer;     // the automap only learns what the player sees
-        weather.SetupWeather();
+        points.Setup(weather.Active || particles.Active);     // rain, snow and particles note the walls as they're traced
         rayTrace.WallRefresh();
 
         if (render.MarkSeen)

@@ -158,6 +158,7 @@ internal class GameEngineManager
         public bool? AutomapStats;
         public HighScore[]? ScoreTable;
         public GameOptionSetting[]? GameOptions;
+        public ParticleDetail? Particles;
     }
 
     /// <summary>The video settings appended after the score table (see ReadMoreVideoSettings)</summary>
@@ -328,6 +329,8 @@ internal class GameEngineManager
             audioManager.SoundVolume = soundVolume;     // clamped by the setter
         if (config.MusicVolume is int musicVolume)
             audioManager.MusicVolume = musicVolume;
+        if (config.Particles is { } particles && Enum.IsDefined(particles))
+            settings.Particles = particles;
         var options = settings.Options;
         if (config.GameOptions is { } saved)
         {
@@ -461,6 +464,10 @@ internal class GameEngineManager
                     MaxFps = Math.Clamp(maxFps, 0, MaxFrameRate),
                 };
             }
+
+            // The Particles setting (r_particles): older configs come up High, the default
+            if (stream.Position < stream.Length)
+                config.Particles = (ParticleDetail)br.ReadByte();
         }
 
         return config;
@@ -740,6 +747,8 @@ internal class GameEngineManager
         var video = videoManager.Settings;
         bw.Write((byte)(video.Uncapped ? FrameRateFlags.None : FrameRateFlags.Classic));
         bw.Write((ushort)Math.Clamp(video.MaxFps, 0, MaxFrameRate));
+
+        bw.Write((byte)settings.Particles);
     }
 
     /// <summary>

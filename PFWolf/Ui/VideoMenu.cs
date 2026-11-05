@@ -5,11 +5,11 @@ namespace PFWolf.Ui;
 
 /// <summary>
 /// The Video menu (menudefs/video): FullScreen, VSync, uncapped frame rate and aspect checkboxes, and the window
-/// size, resolution, UI scale and filter stepped through with left/right (or Enter). A change
+/// size, resolution, UI scale, filter and particles stepped through with left/right (or Enter). A change
 /// that could leave the screen unreadable asks to be kept, and goes back if it isn't.
 /// </summary>
 internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
-    MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs)
+    MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, GameSettings settings)
 {
     // Loaded from menudefs/ in CheckForEpisodes
     internal ControlPanelItem[] Items = [];
@@ -26,33 +26,34 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
         {
             which = loop.HandleMenu(Info, Items, null, (w, delta) => StepVideoChoice(w, delta, wrap: false));
 
-            var settings = video.Settings;
+            var current = video.Settings;
             switch (MenuDefs.SelectedId(Items, which))
             {
                 case "fullscreen":
                     loop.ShootSnd();
-                    ChangeVideo(settings with { Fullscreen = !settings.Fullscreen });
+                    ChangeVideo(current with { Fullscreen = !current.Fullscreen });
                     break;
 
                 case "vsync":
                     loop.ShootSnd();
-                    ChangeVideo(settings with { VSync = !settings.VSync });
+                    ChangeVideo(current with { VSync = !current.VSync });
                     break;
 
                 case "uncapped":
                     loop.ShootSnd();
-                    ChangeVideo(settings with { Uncapped = !settings.Uncapped });
+                    ChangeVideo(current with { Uncapped = !current.Uncapped });
                     break;
 
                 case "aspect":
                     loop.ShootSnd();
-                    ChangeVideo(WithAspect(settings, !settings.AspectCorrect));
+                    ChangeVideo(WithAspect(current, !current.AspectCorrect));
                     break;
 
                 case "window-size":
                 case "render-scale":
                 case "ui-scale":
                 case "filter":
+                case "particles":
                     StepVideoChoice(which, 1, wrap: true);
                     break;
             }
@@ -66,31 +67,32 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
 
     internal void DrawVideoMenu(bool update = true)
     {
-        var settings = video.Settings;
+        var current = video.Settings;
         var language = assets.GetText("en-us");
 
         defs.DrawMenuComponents("video");
 
         // The window's size means nothing while FullScreen
-        MenuDefs.FindMenuItem(Items, "window-size")?.Active = (short)(settings.Fullscreen ? 0 : 1);
+        MenuDefs.FindMenuItem(Items, "window-size")?.Active = (short)(current.Fullscreen ? 0 : 1);
         if (Items[Info.CurPos].Active == 0)
             Info.CurPos = (short)Math.Max(0, Array.FindIndex(Items, item => item.Active != 0));
 
         draw.DrawMenu(Info, Items);
 
-        draw.DrawMenuCheckbox(Info, Items, "fullscreen", settings.Fullscreen);
-        draw.DrawMenuCheckbox(Info, Items, "vsync", settings.VSync);
-        draw.DrawMenuCheckbox(Info, Items, "uncapped", settings.Uncapped);
-        draw.DrawMenuCheckbox(Info, Items, "aspect", settings.AspectCorrect);
-        draw.DrawMenuChoice(Info, Items, "window-size", $"{settings.WindowWidth}x{settings.WindowHeight}");
-        draw.DrawMenuChoice(Info, Items, "render-scale", settings.MatchWindow
+        draw.DrawMenuCheckbox(Info, Items, "fullscreen", current.Fullscreen);
+        draw.DrawMenuCheckbox(Info, Items, "vsync", current.VSync);
+        draw.DrawMenuCheckbox(Info, Items, "uncapped", current.Uncapped);
+        draw.DrawMenuCheckbox(Info, Items, "aspect", current.AspectCorrect);
+        draw.DrawMenuChoice(Info, Items, "window-size", $"{current.WindowWidth}x{current.WindowHeight}");
+        draw.DrawMenuChoice(Info, Items, "render-scale", current.MatchWindow
             ? "$STR_AUTO".ToLanguageText(language)
-            : $"{settings.RenderWidth}x{settings.RenderHeight}");
-        var uiScale = VideoSettings.FormatScale(settings.EffectiveUiScale);
-        draw.DrawMenuChoice(Info, Items, "ui-scale", settings.UiScale <= 0
+            : $"{current.RenderWidth}x{current.RenderHeight}");
+        var uiScale = VideoSettings.FormatScale(current.EffectiveUiScale);
+        draw.DrawMenuChoice(Info, Items, "ui-scale", current.UiScale <= 0
             ? $"{"$STR_AUTO".ToLanguageText(language)} ({uiScale}x)"
             : $"{uiScale}x");
-        draw.DrawMenuChoice(Info, Items, "filter", FilterName(settings.Filter).ToLanguageText(language));
+        draw.DrawMenuChoice(Info, Items, "filter", FilterName(current.Filter).ToLanguageText(language));
+        draw.DrawMenuChoice(Info, Items, "particles", ParticlesName(settings.Particles).ToLanguageText(language));
 
         draw.DrawMenuGun(Info);
         if (update)
@@ -103,6 +105,14 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
         _ => "$STR_NEAREST",
     };
 
+    internal static string ParticlesName(ParticleDetail detail) => detail switch
+    {
+        ParticleDetail.Off => "$STR_PARTICLESOFF",
+        ParticleDetail.Low => "$STR_PARTICLESLOW",
+        ParticleDetail.Medium => "$STR_PARTICLESMEDIUM",
+        _ => "$STR_PARTICLESHIGH",
+    };
+
     // Moves a Video menu choice row to its next value, and switches to it
     private void StepVideoChoice(int which, int delta, bool wrap)
     {
@@ -110,12 +120,25 @@ internal sealed class VideoMenu(AssetManager assets, InputManager input, AudioMa
         if (id == null)
             return;
 
-        var settings = video.Settings;
-        var choices = VideoChoices(id, settings);
+        if (id == "particles")
+        {
+            // not a video mode: nothing to switch, only the particles to have more or fewer of
+            int now = (int)settings.Particles, stepped = MenuDrawing.StepMenuChoice(now, (int)ParticleDetail.High + 1, delta, wrap);
+            if (stepped == now)
+                return;
+            Info.CurPos = (short)which;
+            audio.Play("menu/move1");
+            settings.Particles = (ParticleDetail)stepped;
+            DrawVideoMenu();
+            return;
+        }
+
+        var mode = video.Settings;
+        var choices = VideoChoices(id, mode);
         if (choices.Count == 0)
             return;
 
-        int current = Math.Max(0, choices.IndexOf(settings));
+        int current = Math.Max(0, choices.IndexOf(mode));
         int next = MenuDrawing.StepMenuChoice(current, choices.Count, delta, wrap);
         if (next == current)
             return;

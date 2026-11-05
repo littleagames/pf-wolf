@@ -31,7 +31,7 @@ components:
       - x: 16
       - y: 57
       - width: 288
-      - height: 110
+      - height: 123
 # Values are drawn by code. Fullscreen, window size, resolution and VSync ask to be kept
 # once changed, and go back after a few seconds if nobody answers.
 menu-items:
@@ -78,4 +78,10 @@ menu-items:
       id: "filter"
       type: "ChoiceMenuItem"
       text: "$STR_FILTER"
+      enabled: true
+  # How many particles a mod's effects throw out (r_particles): off, low, medium or high
+  -
+      id: "particles"
+      type: "ChoiceMenuItem"
+      text: "$STR_PARTICLES"
       enabled: true

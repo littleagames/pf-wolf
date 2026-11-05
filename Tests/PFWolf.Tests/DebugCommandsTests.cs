@@ -12,7 +12,7 @@ public class DebugCommandsTests
         _console = new ConsoleManager { LevelLoaded = () => true, CheatsEnabled = () => true };
         var session = _session = new GameSession();
         var render = new RenderState(new Assets.TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
-        _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, session, null!);
+        _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, session, null!);
         new DebugCommands(_console, null!, null!, null!, null!, _frame, null!, null!, render, null!, session,
             new Configuration.GameSettings { ViewSize = 15 }).Register();
     }

@@ -25,8 +25,8 @@ internal sealed record SpriteDrawingHooks(
 /// <summary>
 /// The level's sprites: each actor and item worth drawing is placed on the view (TransformActor),
 /// given the sprite for its angle to the viewer (CalcRotate), and they're drawn farthest first
-/// behind the walls in front of them (DrawScaleds), wall sprites and weather among them; then the
-/// weapon in hand over everything (DrawPlayerWeapon).
+/// behind the walls in front of them (DrawScaleds), wall sprites, weather and particles among
+/// them; then the weapon in hand over everything (DrawPlayerWeapon).
 /// </summary>
 internal sealed class SpriteDrawing(
     AssetManager assets,
@@ -36,6 +36,8 @@ internal sealed class SpriteDrawing(
     SpriteScaler scaler,
     WallSpriteDrawing wallSprites,
     Weather weather,
+    Particles particles,
+    PointDrawing points,
     RenderState render,
     WeaponBob weaponBob,
     GameSession session,
@@ -400,8 +402,11 @@ internal sealed class SpriteDrawing(
         //
         numvisable = (int)(visptr);
 
-        // Rain and snow go in among the sprites by distance (GameHost.cs)
+        // Rain, snow and particles go in among the sprites by distance (PointDrawing.cs)
+        points.Clear();
         weather.ProjectWeather();
+        particles.Project();
+        points.Sort();
 
         for (i = 0; i < numvisable; i++)
         {
@@ -422,7 +427,7 @@ internal sealed class SpriteDrawing(
             if (farthest != -1)
             {
                 VisibleObject farthest_obj = VisList[farthest];
-                weather.DrawWeatherBeyond(farthest_obj.ViewHeight);
+                points.DrawBeyond(farthest_obj.ViewHeight);
                 if (farthest_obj.WallSprite != null)
                     wallSprites.ScaleWallSprite(farthest_obj);
                 else
@@ -432,7 +437,7 @@ internal sealed class SpriteDrawing(
             }
         }
 
-        weather.DrawWeatherBeyond(int.MaxValue);    // and what's nearer than every sprite
+        points.DrawBeyond(int.MaxValue);    // and what's nearer than every sprite
     }
 
     internal void DrawPlayerWeapon()

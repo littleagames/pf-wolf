@@ -20,7 +20,7 @@ internal sealed class WallPosts(
     Lighting lighting,
     SkyAndFlats skyAndFlats,
     RenderState render,
-    Weather weather,
+    PointDrawing points,
     GameSession session,
     WallTextureLookup wallTexture)
 {
@@ -129,8 +129,8 @@ internal sealed class WallPosts(
     // Draws the column's queued posts, farthest first
     internal void DrawPosts()
     {
-        if (weather.WeatherOn)
-            weather.NoteOccluders();            // what hides rain and snow in this column (Weather.cs)
+        if (points.On)
+            points.NoteOccluders();            // what hides rain, snow and particles in this column (PointDrawing.cs)
 
         if (render.PixX < render.CoverCount.Length)
             render.CoverCount[render.PixX] = 0;

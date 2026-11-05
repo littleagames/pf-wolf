@@ -77,6 +77,8 @@ internal static partial class GameHost
         factionCommands.Register();     // factions, setfaction, settranslation, translations, playercolor (Commands/FactionCommands.cs)
         Group("Changing the level");
         levelEditCommands.Register();       // WallHeight, sky, weather, fog, light(s), zone*, height, tag, patch, removewall, breakwall, flat(s) (Commands/LevelEditCommands.cs)
+        Group("Particles");
+        new ParticleCommands(_consoleManager, particles, Settings, Session).Register();     // r_particles, particles, particle (Commands/ParticleCommands.cs)
         Group("Players, views and game modes");
         Register("spectate", "Watches through another actor's eyes while you play on: the next or previous enemy (default next), the next of a class, or back to the player. Not saved; each level starts on the player.",
             "spectate [next|prev|player|<class>]", SpectateCommand, Cheat | InLevel,

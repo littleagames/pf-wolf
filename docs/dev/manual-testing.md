@@ -77,6 +77,14 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       every ~10 s in either window position.
 - [ ] Crosshair (Game Options) sits on the view centre at every resolution, with pitch.
 - [ ] **(never tried)** Blake level-start message and PS screens in widescreen.
+- [ ] **(never tried)** Video menu → Particles: left/right steps Off/Low/Medium/High in Wolf3D's
+      and Blake's menus, the row fits in the window, and it's kept after a restart (the config
+      round trip was checked headless 2026-11-04 with `r_particles`).
+- [ ] **(never tried)** Particles (a scratch mod's particles.yaml, `particle <name>` in the
+      console): sparks, smoke and blobs look right at high `vid_scale`, in widescreen, looking up
+      and down, with uncapped frame rates (smooth between tics), on a fog/dark level (lit ones
+      darken, `bright: true` ones don't), and behind see-through doors. Seen headless at 640x400
+      only, 2026-11-04.
 
 ## 1.4 Controls
 

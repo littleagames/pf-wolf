@@ -13,10 +13,8 @@ namespace PFWolf.Rendering;
 /// touched: demos and net games play the same with or without it.
 ///
 /// A particle isn't drawn under a ceiling flat (any, even one that's all see-through) or an arch,
-/// in a door's tile, or inside a wall below its top. Walls hide it per screen column (the posts
-/// the trace queued, so it shows above a short wall in front of a taller one), and it's drawn in
-/// among the sprites, farthest first. A see-through door farther away in a pixel's column is drawn
-/// before the pixel is (SeeThroughPosts), so the particle shows in front of it.
+/// in a door's tile, or inside a wall below its top. It's drawn in among the sprites, farthest
+/// first, hidden by the walls in front of it (PointDrawing.cs, which particles share).
 /// </summary>
 internal sealed class Weather(
     GameEngineManager engine,
@@ -27,8 +25,11 @@ internal sealed class Weather(
     GameSession session,
     Func<int, int> floorRow,
     Func<int, int, bool> isArch,
-    SeeThroughPosts? seeThrough = null)
+    SeeThroughPosts? seeThrough = null,
+    PointDrawing? points = null)
 {
+    readonly PointDrawing points = points ?? new PointDrawing(video, render, floorRow, seeThrough);
+
     internal WeatherInfo? LevelWeather;      // the level's rain or snow, null for none
     internal string? LevelWeatherName;
 
@@ -162,63 +163,8 @@ internal sealed class Weather(
         return z ^ (z >> 31);
     }
 
-    internal bool WeatherOn;        // this frame has weather: the posts are noted as they're drawn
-
-    //
-    // Each column's walls, as the trace queued them: how high each is (as WallHeight, so nearer
-    // is higher) and the rows it covers
-    //
-    short[] occheight = [], occtop = [], occbottom = [];
-    byte[] occcount = [];
-
-    /// <summary>Gets the frame's weather ready, before the walls are traced</summary>
-    internal void SetupWeather()
-    {
-        WeatherOn = LevelWeather != null && weatherz.Length > 0;
-        if (!WeatherOn || occcount.Length == render.ViewWidth)
-            return;
-        occcount = new byte[render.ViewWidth];
-        occheight = new short[render.ViewWidth * RenderState.MaxPosts];
-        occtop = new short[render.ViewWidth * RenderState.MaxPosts];
-        occbottom = new short[render.ViewWidth * RenderState.MaxPosts];
-    }
-
-    /// <summary>Notes what the column's queued posts cover, before DrawPosts draws them</summary>
-    internal void NoteOccluders()
-    {
-        int at = render.PixX * RenderState.MaxPosts;
-        for (int i = 0; i < render.PostCount; i++, at++)
-        {
-            // the rows DrawPost fills
-            int half = render.PostHeights[i] >> 3;
-            if (half <= 0) half = 100;
-            int floor = floorRow(half);
-            int top = floor - render.PostStories[i] * 2 * half;
-            int bottom = floor - 1 - render.PostFirstStory[i] * 2 * half;
-
-            // an arch's underside is above all that's past it too, up to where the trace leaves it
-            if (render.PostUnderside[i] != 0)
-            {
-                int exithalf = render.PostUnderside[i] >> 3;
-                bottom = Math.Max(bottom, floorRow(exithalf) - 2 * exithalf - 1);
-            }
-
-            occheight[at] = render.PostHeights[i];
-            occtop[at] = (short)Math.Clamp(top, short.MinValue, short.MaxValue);
-            occbottom[at] = (short)Math.Clamp(bottom, short.MinValue, short.MaxValue);
-        }
-        occcount[render.PixX] = (byte)render.PostCount;
-    }
-
-    // Whether a wall nearer than something height high (as WallHeight) covers row y of column x
-    bool Occluded(int x, int y, int height)
-    {
-        int at = x * RenderState.MaxPosts;
-        for (int end = at + occcount[x]; at < end; at++)
-            if (occheight[at] > height && y >= occtop[at] && y <= occbottom[at])
-                return true;
-        return false;
-    }
+    /// <summary>This frame has weather to draw</summary>
+    internal bool Active => LevelWeather != null && weatherz.Length > 0;
 
     /// <summary>
     /// Whether a particle at (gx, gy) (global units), z texels up, is somewhere it can't be: under
@@ -239,14 +185,6 @@ internal sealed class Weather(
         if (map.CeilingFlat[map.TileIndex(x, y)] != null)
             return true;
         return isArch(x, y) && z < map.StoryMap[x, y] * GameConstants.TextureSize;
-    }
-
-    struct WeatherDrop
-    {
-        public short X0, Y0, X1, Y1;    // the head, and a streak's tail (a flake's the same)
-        public byte Size;               // pixels across (a splash's: how far it has spread)
-        public byte Color;
-        public bool Splash;
     }
 
     const int SplashTics = 8;           // how long a splash lasts
@@ -283,40 +221,18 @@ internal sealed class Weather(
         return dim[Math.Min(step, Lighting.FadeSteps - 1) * 256 + color];
     }
 
-    void AddWeatherDrop(int x0, int y0, int x1, int y1, int size, byte color, long nx, bool splash)
-    {
-        // Off the screen altogether
-        if (Math.Max(x0, x1) + size < 0 || Math.Min(x0, x1) - size >= render.ViewWidth
-            || Math.Max(y0, y1) + size < 0 || Math.Min(y0, y1) - size >= render.ViewHeight)
-            return;
+    // A flake (head and tail the same) is a square; a streak runs from its head to its tail
+    void AddWeatherDrop(int x0, int y0, int x1, int y1, int size, byte color, long nx, bool splash) =>
+        points.Add(x0, y0, x1, y1, size, color, nx,
+            splash ? PointDrawing.Shape.Splash : x0 == x1 && y0 == y1 ? PointDrawing.Shape.Square : PointDrawing.Shape.Streak);
 
-        weatherdrops[weathercount] = new WeatherDrop
-        {
-            X0 = (short)Math.Clamp(x0, short.MinValue, short.MaxValue), Y0 = (short)Math.Clamp(y0, short.MinValue, short.MaxValue),
-            X1 = (short)Math.Clamp(x1, short.MinValue, short.MaxValue), Y1 = (short)Math.Clamp(y1, short.MinValue, short.MaxValue),
-            Size = (byte)size, Color = color, Splash = splash,
-        };
-        weatherkeys[weathercount] = (int)Math.Min(render.HeightNumerator * 256L / nx, int.MaxValue);
-        weathercount++;
-    }
-
-    WeatherDrop[] weatherdrops = [];
-    int[] weatherkeys = [];      // each drop's height (as WallHeight), to sort them farthest first
-    int weathercount, weathernext;
-
-    /// <summary>Works out where this frame's particles are on screen, farthest first</summary>
+    /// <summary>Works out where this frame's particles are on screen, into the frame's points (PointDrawing.cs)</summary>
     internal void ProjectWeather()
     {
-        weathercount = weathernext = 0;
-        if (!WeatherOn || LevelWeather is not { } info)
+        if (!Active || LevelWeather is not { } info)
             return;
 
         int all = weatherz.Length;
-        if (weatherdrops.Length < all * 2)
-        {
-            weatherdrops = new WeatherDrop[all * 2];      // each drop, and its splash
-            weatherkeys = new int[all * 2];
-        }
 
         bool snow = info.Kind.Equals("snow", StringComparison.OrdinalIgnoreCase);
         bool splashes = !snow && info.Splashes;
@@ -398,8 +314,6 @@ internal sealed class Weather(
 
             AddWeatherDrop(x0, y0, x1, y1, size, WeatherColor(basecolor, dim, gx, gy, nx, maxdist), nx, false);
         }
-
-        Array.Sort(weatherkeys, weatherdrops, 0, weathercount);
     }
 
     /// <summary>
@@ -435,90 +349,8 @@ internal sealed class Weather(
         return r < 0 ? r + modulus : r;
     }
 
-    /// <summary>
-    /// Where a point (global units, z texels up) is on screen, as sprites are placed: nx how far
-    /// along the view it is, half how many pixels half a story is there. False when it's too close
-    /// or behind the view.
-    /// </summary>
-    internal bool ProjectPoint(long gx, long gy, double z, out int sx, out int sy, out long nx, out double half)
-    {
-        long dx = gx - render.ViewX, dy = gy - render.ViewY;
-        nx = (dx * render.ViewCos >> 16) - (dy * render.ViewSin >> 16);
-        long ny = (dx * render.ViewSin >> 16) + (dy * render.ViewCos >> 16);
-        if (nx < GameConstants.MinDist)
-        {
-            sx = sy = 0;
-            half = 0;
-            return false;
-        }
 
-        sx = (int)Math.Clamp(render.CenterX + ny * render.Scale / nx, -100000, 100000);
-        half = render.HeightNumerator * 32.0 / nx;
-        sy = (int)Math.Clamp(render.CenterY + half * (render.ViewEyeZ - z) / (GameConstants.TextureSize / 2), -100000, 100000);
-        return true;
-    }
-
-    /// <summary>Draws the particles farther away than something height high (as WallHeight), farthest first</summary>
-    internal void DrawWeatherBeyond(int height)
-    {
-        if (weathernext >= weathercount || weatherkeys[weathernext] >= height)
-            return;
-
-        int pitch = (int)video.BufferPitch;
-        unsafe
-        {
-            byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
-            for (; weathernext < weathercount && weatherkeys[weathernext] < height; weathernext++)
-            {
-                ref var drop = ref weatherdrops[weathernext];
-                int key = weatherkeys[weathernext];
-                if (drop.Splash)
-                {
-                    // droplets thrown out to each side and up from where it landed
-                    int r = drop.Size, dot = Math.Max(r / 4, 1);
-                    DrawWeatherDot(dest, pitch, drop.X0 - r, drop.Y0 - (r + 1) / 2, dot, drop.Color, key);
-                    DrawWeatherDot(dest, pitch, drop.X0 + r - dot + 1, drop.Y0 - (r + 1) / 2, dot, drop.Color, key);
-                    if (r > 2)
-                        DrawWeatherDot(dest, pitch, drop.X0, drop.Y0 - r, dot, drop.Color, key);
-                    continue;
-                }
-
-                if (drop.X0 == drop.X1 && drop.Y0 == drop.Y1)
-                {
-                    // a flake: a square around its middle
-                    DrawWeatherDot(dest, pitch, drop.X0 - (drop.Size >> 1), drop.Y0 - (drop.Size >> 1), drop.Size, drop.Color, key);
-                    continue;
-                }
-
-                // a streak, head to tail, size pixels wide
-                int dx = drop.X1 - drop.X0, dy = drop.Y1 - drop.Y0;
-                int steps = Math.Min(Math.Max(Math.Abs(dx), Math.Abs(dy)), render.ViewHeight);
-                for (int s = 0; s <= steps; s++)
-                {
-                    int px = drop.X0 + (steps == 0 ? 0 : dx * s / steps);
-                    int py = drop.Y0 + (steps == 0 ? 0 : dy * s / steps);
-                    if ((uint)py >= (uint)render.ViewHeight)
-                        continue;
-                    for (int x = Math.Max(px, 0); x < Math.Min(px + drop.Size, render.ViewWidth); x++)
-                        if (!Occluded(x, py, key))
-                        {
-                            seeThrough?.DrawBeyond(x, key);
-                            dest[py * pitch + x] = drop.Color;
-                        }
-                }
-            }
-        }
-    }
-
-    // A size by size square from (left, top), where no wall nearer than height covers it
-    unsafe void DrawWeatherDot(byte* dest, int pitch, int left, int top, int size, byte color, int height)
-    {
-        for (int y = Math.Max(top, 0); y < Math.Min(top + size, render.ViewHeight); y++)
-            for (int x = Math.Max(left, 0); x < Math.Min(left + size, render.ViewWidth); x++)
-                if (!Occluded(x, y, height))
-                {
-                    seeThrough?.DrawBeyond(x, height);
-                    dest[y * pitch + x] = color;
-                }
-    }
+    /// <summary>Where a point (global units, z texels up) is on screen (PointDrawing.ProjectPoint)</summary>
+    internal bool ProjectPoint(long gx, long gy, double z, out int sx, out int sy, out long nx, out double half) =>
+        points.ProjectPoint(gx, gy, z, out sx, out sy, out nx, out half);
 }
