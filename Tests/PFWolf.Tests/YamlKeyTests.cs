@@ -189,7 +189,7 @@ public class YamlKeyTests
     // The keys StateDataNodeDeserializer reads from an actor state's frame, hyphens left out
     // ("frame" too, for "frames"). A frame of { goto: State } has nothing else.
     private static readonly HashSet<string> FrameKeys =
-        ["sprite", "frames", "frame", "ticsperframe", "modifiers", "light", "action", "think", "nextstate"];
+        ["sprite", "frames", "frame", "ticsperframe", "modifiers", "light", "particles", "action", "think", "nextstate"];
 
     private static void CheckFrame(YamlMappingNode frame, string path, string file, List<string> problems)
     {

@@ -12,7 +12,9 @@ internal sealed class ParticleCommands(ConsoleManager console, Particles particl
             "r_particles [off|low|medium|high|0-3]", ParticlesSettingCommand, complete: Values("off", "low", "medium", "high"));
         console.Register("particles", "Lists particles.yaml's particle types and emitters, and how many particles there are now.",
             "particles", _ => ListParticles());
-        console.Register("particle", "Throws out a burst from a particles.yaml emitter or of a particle type, a tile in front of you; count in place of its own.",
+        console.Register("emitters", "Lists the actors running particles.yaml emitters (actordefs particles, states' particles:, A_StartEmitter), and which.",
+            "emitters", _ => ListEmitters(), InLevel);
+        console.Register("particle","Throws out a burst from a particles.yaml emitter or of a particle type, a tile in front of you; count in place of its own.",
             "particle <emitter|type> [count]", ParticleCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? particles.Definitions.Emitters.Keys.Concat(particles.Definitions.Types.Keys).Order() : []);
     }
@@ -40,6 +42,18 @@ internal sealed class ParticleCommands(ConsoleManager console, Particles particl
         console.Print(defs.Types.Count == 0 ? "No particle types (particles.yaml)" : $"Types: {string.Join(", ", defs.Types.Keys.Order())}");
         if (defs.Emitters.Count > 0)
             console.Print($"Emitters: {string.Join(", ", defs.Emitters.Keys.Order())}");
+    }
+
+    void ListEmitters()
+    {
+        int shown = 0;
+        foreach (var line in particles.DescribeEmitters())
+        {
+            console.Print(line);
+            shown++;
+        }
+        if (shown == 0)
+            console.Print("No actors run emitters");
     }
 
     void ParticleCommand(string[] args)

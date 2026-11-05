@@ -273,6 +273,7 @@ public static class ActorProperties
         Int("light.low", "The effect's dark end, 0-255; half the intensity when left out"),
         Int("light.tics", "The effect's timing, in tics (flicker 8, pulse 70, strobe 35 when left out)"),
         Int("light.brighttics", "How long a strobe stays at its intensity, in tics", "5"),
+        Text("particles", "The particles.yaml emitters it runs all the time, throwing their particles out from where it is, their way turned by the way it faces: one, a list, or several with commas between. A state's particles: changes them while it shows; A_StartEmitter and A_StopEmitter change them as it plays (kept in a saved game). Only for show: particles are drawn on each machine alone, and those in the air aren't saved"),
     ];
 
     /// <summary>A property by its name, ignoring case; health.normal and the like find health.SKILL</summary>

@@ -82,6 +82,9 @@ internal record Actor : Thinker
     // set the first time it's looked at, and where its light's effect is. Not saved.
     internal ActorLightState? LightState { get; set; }
 
+    // Its emitters as it goes (Rendering/Particles.cs, ActorParticles.cs)
+    internal ActorParticleState? ParticleState { get; set; }
+
     // Sub-tile fixed-point world position and its containing tile -- kept as separate mutable
     // fields because the movement code (MoveObj/TryWalk) updates TileX/TileY the instant a move
     // toward a new tile begins, while X/Y trail behind and approach the new tile center gradually.

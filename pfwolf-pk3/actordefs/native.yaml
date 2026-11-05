@@ -112,6 +112,16 @@ Weapon:
     weapon.ammogive1: 0
     weapon.ammouse1: 0
 
+# An unseen spot that throws out particles: a mod's class on it lists its particles.yaml
+# emitters (particles: TorchSparks) and gets a mapdefs thing id, and a switch with the tile's
+# tag starts and stops them (A_StartEmitter, A_StopEmitter)
+ParticleEmitter:
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: -1
+
 Monster: {}
 
 BlakeMonster:

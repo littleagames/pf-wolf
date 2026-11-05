@@ -58,3 +58,11 @@ They add no properties of their own; the class is what they bring. An enemy's th
 (`T_Chase`, `T_Shoot`, `A_FireProjectile`...) only run on an actor that has the class they need
 as an ancestor, and the [actions reference](../reference/actions) says which that is. On any
 other actor they're skipped, with a warning.
+
+## Effects
+
+| Class | What it is |
+| --- | --- |
+| `ParticleEmitter` | An unseen spot that throws out particles: a class of your own on it lists its `particles.yaml` emitters in its `particles` property and gets a mapdefs thing id. A switch with its tile's tag starts and stops them (`A_StartEmitter`, `A_StopEmitter`). |
+
+Any class can have `particles`, not only these: a torch's sparks, a rocket's smoke trail.

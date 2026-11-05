@@ -241,7 +241,8 @@ internal static partial class GameHost
     static Particles MakeParticles() => new(AssetManager, _videoManager, MapManager, lighting, Render, pointDrawing,
         new ParticleHooks(() => Settings.Particles, (x, y) => skyAndFlats.SkyOver(x, y),
             door => Particles.DoorLetsThrough(lineOfSight.DoorPosition(door)),
-            () => frameInterpolation.Active ? frameInterpolation.Fraction : 1));
+            () => frameInterpolation.Active ? frameInterpolation.Fraction : 1,
+            () => (Session.Camera.X, Session.Camera.Y)));
 
     // ==== See-through doors ======================================================================
 

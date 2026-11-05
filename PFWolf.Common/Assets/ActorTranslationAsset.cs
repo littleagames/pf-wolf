@@ -162,6 +162,13 @@ public class ActorStatesData : StateData
     public float TicsPerFrame { get; internal set; }
     public List<string> Modifiers { get; internal set; } = [];
     public StateLight? Light { get; internal set; }
+
+    /// <summary>
+    /// The particles.yaml emitters running while the frame shows, in place of the class's
+    /// `particles` property; empty for none (`particles: none`); null when the frame doesn't say
+    /// </summary>
+    public List<string>? Particles { get; internal set; }
+
     public string Action { get; internal set; }
     public string Think { get; internal set; }
     public string? NextState { get; internal set; }

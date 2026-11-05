@@ -47,6 +47,9 @@ internal class ActorStateFrame
     // The state's `light:`, overriding the actor's light on this frame; null keeps the actor's
     public StateLight? Light { get; init; }
 
+    // The state's `particles:`, the emitters running on this frame in place of the actor's; null keeps the actor's
+    public List<string>? Particles { get; init; }
+
     public string? Think { get; init; }
     public string? Action { get; init; }
     public ActorStateFrame? Next { get; internal set; }

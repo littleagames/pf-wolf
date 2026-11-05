@@ -73,6 +73,9 @@ public class StateDataNodeDeserializer : INodeDeserializer
         if (fields.TryGetValue("light", out var light))
             data.Light = StateLight.Parse(light);
 
+        if (fields.TryGetValue("particles", out var particles))
+            data.Particles = EmitterNames(particles);
+
         if (fields.TryGetValue("action", out var action))
             data.Action = action?.ToString() ?? "";
 
@@ -91,6 +94,21 @@ public class StateDataNodeDeserializer : INodeDeserializer
             return list.Select(v => v?.ToString() ?? "").ToList();
 
         return [value?.ToString() ?? ""];
+    }
+
+    /// <summary>
+    /// particles.yaml emitter names as actordefs writes them: one, a list, or several with commas
+    /// between ("Sparks, Smoke"); none (or off) for none. Also an actor class's `particles` property.
+    /// </summary>
+    public static List<string> EmitterNames(object? value)
+    {
+        var names = (value is List<object> list ? list.Select(v => v?.ToString() ?? "") : (value?.ToString() ?? "").Split(','))
+            .Select(name => name.Trim())
+            .Where(name => name.Length > 0)
+            .ToList();
+        return names is [var only] && (only.Equals("none", StringComparison.OrdinalIgnoreCase) || only.Equals("off", StringComparison.OrdinalIgnoreCase))
+            ? []
+            : names;
     }
 
     private static string Normalize(string key) => key.Replace("-", "").ToLowerInvariant();

@@ -9,11 +9,13 @@ namespace PFWolf.Rendering;
 /// <param name="SkyOver">Whether a tile is open to the sky above (no ceiling for particles to meet)</param>
 /// <param name="DoorOpen">Whether a door (its number) is open far enough for particles to go through</param>
 /// <param name="Fraction">How far the frame is between the last two tics (FrameInterpolation), 1 when it's not</param>
+/// <param name="ViewPoint">Where the view is (global units), for how far a running emitter is from it; none: every one's near</param>
 internal sealed record ParticleHooks(
     Func<ParticleDetail> Detail,
     Func<int, int, bool> SkyOver,
     Func<int, bool> DoorOpen,
-    Func<double> Fraction);
+    Func<double> Fraction,
+    Func<(int X, int Y)>? ViewPoint = null);
 
 /*
 =============================================================================
@@ -49,6 +51,7 @@ internal sealed class Particles(
     const long NearParticle = MapConstants.TileGlobal / 8;     // nothing's drawn nearer the view than this
     const long FarParticle = 32 * MapConstants.TileGlobal;     // nor farther
     const int RampSteps = 16;                                  // colors a particle goes through over its life
+    const double TicsPerSecond = 70;
     const float DoorThreshold = 0xC000;
 
     internal enum CollideMode : byte { Die, Bounce, Stop, None }
@@ -294,9 +297,13 @@ internal sealed class Particles(
         if (TypeNamed(emitter.Type) is not { } type)
             return -1;
 
-        var detail = hooks.Detail();
-        int wanted = ScaledCount(howMany ?? emitter.Count, detail);
-        int max = MaxFor(detail);
+        return Emit(emitter, type, x, y, z, angle, ScaledCount(howMany ?? emitter.Count, hooks.Detail()));
+    }
+
+    // wanted of an emitter's particles (already scaled by the setting) at (x, y), z added to its own, facing angle
+    int Emit(EmitterInfo emitter, ResolvedType type, double x, double y, double z, double angle, int wanted)
+    {
+        int max = MaxFor(hooks.Detail());
         if (pool.Length < max)
             Array.Resize(ref pool, max);
 
@@ -343,6 +350,247 @@ internal sealed class Particles(
         return (dx * cosTheta + e1x * c + e2x * sn, dy * cosTheta + e1y * c + e2y * sn, dz * cosTheta + e1z * c + e2z * sn);
     }
 
+    // ---- Actors' emitters ----------------------------------------------------------------------
+
+    // Each class's `particles` property and whether any of its states have `particles:`, read once
+    readonly Dictionary<string, (List<string> Emitters, bool States)> classEmitters = new(StringComparer.OrdinalIgnoreCase);
+
+    (List<string> Emitters, bool States) ClassEmitters(Entities.Actors.Actor actor)
+    {
+        if (classEmitters.TryGetValue(actor.Name, out var known))
+            return known;
+        var names = actor.Properties.TryGetValue("particles", out var value)
+            ? Loaders.StateDataNodeDeserializer.EmitterNames(value)
+            : [];
+        bool states = actor.ResolvedStates.Values.Any(first =>
+        {
+            var seen = new HashSet<Entities.Actors.ActorStateFrame>(ReferenceEqualityComparer.Instance);
+            for (var frame = first; frame != null && seen.Add(frame); frame = frame.Next)
+                if (frame.Particles != null)
+                    return true;
+            return false;
+        });
+        classEmitters[actor.Name] = known = (names, states);
+        return known;
+    }
+
+    /// <summary>An actor's emitters as it goes, its class's read the first time it's asked for</summary>
+    internal Entities.Actors.ActorParticleState StateOf(Entities.Actors.Actor actor)
+    {
+        var state = actor.ParticleState ??= new Entities.Actors.ActorParticleState();
+        if (!state.Resolved)
+        {
+            state.ClassEmitters = ClassEmitters(actor).Emitters;
+            state.Resolved = true;
+        }
+        return state;
+    }
+
+    static readonly List<string> NoEmitters = [];
+
+    /// <summary>
+    /// The emitters an actor runs now: none after A_StopEmitter(); else its state's
+    /// `particles:` if the frame has one, else what A_StartEmitter / A_StopEmitter left, else its
+    /// class's `particles`
+    /// </summary>
+    internal List<string> CurrentEmitters(Entities.Actors.Actor actor)
+    {
+        var state = StateOf(actor);
+        if (state.Override is { Off: true })
+            return NoEmitters;
+        return actor.CurrentState?.Particles ?? state.Override?.Names ?? state.ClassEmitters;
+    }
+
+    // Whether an actor could be running an emitter, without making it a state to find out
+    bool MayEmit(Entities.Actors.Actor actor) =>
+        actor.ParticleState?.Override != null || ClassEmitters(actor) is { } known && (known.Emitters.Count > 0 || known.States);
+
+    /// <summary>Which way an actor faces, in degrees (0 east, 90 north): its direction, else its angle (a projectile's, the player's)</summary>
+    internal static double Facing(Entities.Actors.Actor actor) =>
+        actor.Dir != ObjDir.NoDir ? GameConstants.DirAngle[(byte)actor.Dir] : actor.Angle;
+
+    // Where an actor is, in texels
+    static (double X, double Y) TexelsOf(Entities.Actors.Actor actor) =>
+        (actor.X / (double)TexelGlobal, actor.Y / (double)TexelGlobal);
+
+    /// <summary>Each actor's running emitters throw out what they owe for the tics gone by: rate a second, scaled by the setting</summary>
+    void EmitFromActors(uint tics)
+    {
+        var defs = Definitions;
+        if (defs.Emitters.Count == 0)
+            return;
+
+        double share = ShareFor(hooks.Detail());
+        var view = hooks.ViewPoint?.Invoke();
+        foreach (var actor in map.GetActors())
+        {
+            if (actor == null || !MayEmit(actor))
+                continue;
+            var names = CurrentEmitters(actor);
+            if (names.Count == 0)
+                continue;
+
+            var state = StateOf(actor);
+            var (x, y) = TexelsOf(actor);
+            foreach (var name in names)
+            {
+                if (!defs.Emitters.TryGetValue(name, out var emitter))
+                {
+                    Warn($"{actor.Name}: particles.yaml has no emitter {name}");
+                    continue;
+                }
+                if (TypeNamed(emitter.Type) is not { } type)
+                    continue;
+
+                var owed = state.Owed ??= new(StringComparer.OrdinalIgnoreCase);
+                if (view is var (vx, vy) && Math.Max(Math.Abs(actor.X - vx), Math.Abs(actor.Y - vy)) > emitter.Range * MapConstants.TileGlobal)
+                {
+                    owed.Remove(name);      // out of range: nothing piles up to come out at once
+                    continue;
+                }
+
+                double due = owed.GetValueOrDefault(name) + Math.Max(emitter.Rate, 0) * share * tics / TicsPerSecond;
+                int whole = (int)due;
+                owed[name] = due - whole;
+                if (whole > 0)
+                    Emit(emitter, type, x, y, actor.Z, Facing(actor), whole);
+            }
+        }
+    }
+
+    /*
+    =============================================================================
+
+                                    ACTIONS
+
+    For actor states (on the actor itself) and switches (on the actors with the switch's tag):
+
+      A_SpawnParticles("name"[, count][, z])  a burst from the emitter (or of the particle
+                                              type) where the actor is: count in place of its
+                                              own, z texels higher
+      A_StartEmitter(["name"])                the emitter runs on the actor, beside what it runs
+                                              already; with no name, its class's emitters back
+      A_StopEmitter(["name"])                 that emitter stops; with no name, all of them,
+                                              states' particles: too, until A_StartEmitter
+
+    =============================================================================
+    */
+
+    /// <summary>The actions, for actor states and switches. Saved: what A_StartEmitter / A_StopEmitter leave</summary>
+    internal static void RegisterActions(Func<Particles> particles, Func<MapManager> map)
+    {
+        Entities.Actors.ActorActionRegistry.Register("A_SpawnParticles", (actor, args) => particles().SpawnAction(actor, args));
+        Entities.Actors.ActorActionRegistry.Register("A_StartEmitter", (actor, args) => particles().StartEmitter(actor, args.FirstOrDefault()));
+        Entities.Actors.ActorActionRegistry.Register("A_StopEmitter", (actor, args) => particles().StopEmitter(actor, args.FirstOrDefault()));
+        Entities.MapTriggerRegistry.Register("A_SpawnParticles", (trigger, args) =>
+            ForTagged(map(), trigger, actor => particles().SpawnAction(actor, args)));
+        Entities.MapTriggerRegistry.Register("A_StartEmitter", (trigger, args) =>
+            ForTagged(map(), trigger, actor => particles().StartEmitter(actor, args.FirstOrDefault())));
+        Entities.MapTriggerRegistry.Register("A_StopEmitter", (trigger, args) =>
+            ForTagged(map(), trigger, actor => particles().StopEmitter(actor, args.FirstOrDefault())));
+    }
+
+    static bool ForTagged(MapManager map, Entities.TriggerActivation trigger, Func<Entities.Actors.Actor, bool> act)
+    {
+        bool any = false;
+        foreach (var actor in map.TaggedActors(trigger.Tag).ToList())
+            any |= act(actor);
+        return any;
+    }
+
+    /// <summary>A_SpawnParticles("name"[, count][, z]): a burst where the actor is, facing its way</summary>
+    internal bool SpawnAction(Entities.Actors.Actor actor, string[] args)
+    {
+        var name = args.FirstOrDefault()?.Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            Warn($"{actor.Name}: A_SpawnParticles needs an emitter or particle type's name");
+            return false;
+        }
+
+        int? count = null;
+        if (args.ElementAtOrDefault(1) is { Length: > 0 } countArg)
+        {
+            if (!int.TryParse(countArg, out int n) || n < 0)
+            {
+                Warn($"{actor.Name}: A_SpawnParticles count '{countArg}' isn't a number of particles");
+                return false;
+            }
+            count = n;
+        }
+        double z = 0;
+        if (args.ElementAtOrDefault(2) is { Length: > 0 } zArg
+            && !double.TryParse(zArg, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out z))
+        {
+            Warn($"{actor.Name}: A_SpawnParticles z '{zArg}' isn't a height in texels");
+            return false;
+        }
+
+        var (x, y) = TexelsOf(actor);
+        if (Burst(name, x, y, actor.Z + z, Facing(actor), count) < 0)
+        {
+            Warn($"{actor.Name}: A_SpawnParticles: particles.yaml has no emitter or particle type {name}");
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>A_StartEmitter(["name"]): the emitter runs on the actor beside the rest; no name, its class's back</summary>
+    internal bool StartEmitter(Entities.Actors.Actor actor, string? name)
+    {
+        var state = StateOf(actor);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            state.Override = null;
+            return true;
+        }
+
+        name = name.Trim();
+        if (!Definitions.Emitters.ContainsKey(name))
+            Warn($"{actor.Name}: A_StartEmitter: particles.yaml has no emitter {name}");
+        var names = new List<string>(state.Override is { Off: false } set ? set.Names : state.ClassEmitters);
+        if (!names.Contains(name, StringComparer.OrdinalIgnoreCase))
+            names.Add(name);
+        state.Override = new Entities.Actors.ParticleOverride(false, names);
+        return true;
+    }
+
+    /// <summary>A_StopEmitter(["name"]): that emitter stops; no name, all of them, states' too</summary>
+    internal bool StopEmitter(Entities.Actors.Actor actor, string? name)
+    {
+        var state = StateOf(actor);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            state.Override = new Entities.Actors.ParticleOverride(true, []);
+            return true;
+        }
+
+        name = name.Trim();
+        var names = new List<string>(state.Override is { Off: false } set ? set.Names : state.ClassEmitters);
+        names.RemoveAll(n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
+        state.Override = new Entities.Actors.ParticleOverride(false, names);
+        return true;
+    }
+
+    /// <summary>The console's `emitters`: each actor running emitters, and which</summary>
+    internal IEnumerable<string> DescribeEmitters()
+    {
+        foreach (var actor in map.GetActors())
+        {
+            if (actor == null || !MayEmit(actor))
+                continue;
+            var names = CurrentEmitters(actor);
+            var state = StateOf(actor);
+            var how = state.Override switch
+            {
+                { Off: true } => " (A_StopEmitter)",
+                not null => " (A_StartEmitter / A_StopEmitter)",
+                _ => actor.CurrentState?.Particles != null ? " (its state's)" : "",
+            };
+            yield return $"{actor.Name} at {actor.TileX},{actor.TileY}: {(names.Count == 0 ? "none" : string.Join(", ", names))}{how}";
+        }
+    }
+
     // ---- Moving --------------------------------------------------------------------------------
 
     /// <summary>Moves every particle on by the tics the game ran, and lets go of those whose time is up</summary>
@@ -353,6 +601,8 @@ internal sealed class Particles(
             count = 0;
             return;
         }
+
+        EmitFromActors(tics);
 
         for (int i = count - 1; i >= 0; i--)
         {

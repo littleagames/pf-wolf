@@ -85,6 +85,12 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       and down, with uncapped frame rates (smooth between tics), on a fog/dark level (lit ones
       darken, `bright: true` ones don't), and behind see-through doors. Seen headless at 640x400
       only, 2026-11-04.
+- [ ] **(never tried)** Emitters on actors: a `ParticleEmitter` class placed by mapdefs id keeps
+      throwing out its `particles` (a summoned one was seen headless 2026-11-05); a switch with its
+      tag runs `A_StopEmitter` / `A_StartEmitter` and the change is kept through save and load; a
+      state's `particles:` (a barrel smoking once hit, `particles: none` on death); a moving
+      actor's trail (a projectile's `particles`, emitter `angle: 180`); emitters out of `range`
+      start again as you come near; mid-game join sees the same stopped emitters.
 
 ## 1.4 Controls
 

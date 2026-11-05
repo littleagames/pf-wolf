@@ -41,6 +41,7 @@ internal static class ActorStateResolver
                             TicTime = ToTicTime(frameData.TicsPerFrame),
                             Modifiers = frameData.Modifiers,
                             Light = frameData.Light,
+                            Particles = frameData.Particles,
                             Think = string.IsNullOrEmpty(frameData.Think) ? null : frameData.Think,
                             Action = string.IsNullOrEmpty(frameData.Action) ? null : frameData.Action,
                         };
@@ -160,6 +161,7 @@ internal static class ActorStateResolver
                 TicTime = from.TicTime > 0 ? from.TicTime : RaiseHoldTics,
                 Modifiers = from.Modifiers,
                 Light = from.Light,
+                Particles = from.Particles,
                 Action = i == 0 ? "A_Resume" : null,
             };
             if (previous != null)

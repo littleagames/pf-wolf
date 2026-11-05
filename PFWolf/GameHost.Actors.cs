@@ -258,6 +258,7 @@ internal static partial class GameHost
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Rendering/Lighting.cs)
         Scrollers.RegisterActions(() => MapManager.Scrollers); // scrolling walls and flats, for switches and actors (Rendering/Scrollers.cs)
         RegisterActorLightActions(); // actors' own lights (Rendering/ActorLights.cs)
+        Particles.RegisterActions(() => particles, () => MapManager); // bursts and emitters, for switches and actors (Rendering/Particles.cs)
         RegisterProjectileActions(); // projectiles and jumps for any actor, traps (Gameplay/ProjectileActions.cs)
     }
 

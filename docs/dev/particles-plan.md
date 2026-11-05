@@ -198,6 +198,27 @@ the *emitter* (`e:set{...}` in `game.ontick`), which is cheap.
 - Not done in phase 1: arch undersides as a ceiling, diagonal walls (a diagonal tile is solid
   to particles).
 
+**Phase 2 as built (2026-11-05):**
+
+- actordefs `particles` property (one emitter, a list, or commas between) and a state's
+  `particles:` (in place of the class's while the frame shows; `none` for none), read by
+  `StateDataNodeDeserializer.EmitterNames`, kept on `ActorStateFrame.Particles`.
+- Running emitters in `Particles.EmitFromActors`, each tic before the particles move: `rate` a
+  second times the setting's share, the fraction carried over per actor and emitter; from the
+  actor's spot and `Z`, turned by its facing (its `Dir`, else its `Angle`); none farther than
+  `range` tiles from the camera (nothing piles up meanwhile).
+- `A_SpawnParticles("name"[, count][, z])`, `A_StartEmitter(["name"])`,
+  `A_StopEmitter(["name"])` for actor states, and for switches on the tagged actors (so
+  `game.trigger` has them too). What the last two leave (`ParticleOverride`: off, or the names
+  running) is **saved** with the actor: save v41, net state v17. A stopped emitter coming back
+  after a load would be a bug, so this one piece of particle state is kept; particles in the
+  air still aren't.
+- **Tile emitters by tag were dropped** for a shared `ParticleEmitter` class (actordefs
+  native.yaml, a TNT1 spot): a mod's class on it lists `particles` and gets a mapdefs thing id,
+  and a switch reaches it by its tile's tag. That does what game-info `emitters:` by tag would,
+  with one way to do it instead of two. In the manual's Built-in classes.
+- Console `emitters` lists the actors running emitters and why.
+
 Phases 1–3 give a usable system (solid particles, from YAML, actors and Lua). Phase 4 is what
 makes smoke and magic look good.
 

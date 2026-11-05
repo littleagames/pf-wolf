@@ -43,6 +43,7 @@ internal sealed record ActorSnapshot
     public double Z { get; init; }
     public double ZSpeed { get; init; }
     public int Suspicion { get; init; }
+    public ParticleOverride? Particles { get; init; }
 
     public static ActorSnapshot Capture(Actor actor)
     {
@@ -85,6 +86,7 @@ internal sealed record ActorSnapshot
             Z = actor.Z,
             ZSpeed = actor.ZSpeed,
             Suspicion = (actor as Monster)?.Suspicion ?? 0,       // Gameplay/Stealth.cs
+            Particles = actor.ParticleState?.Override,            // A_StartEmitter / A_StopEmitter (Rendering/Particles.cs)
         };
     }
 
@@ -127,6 +129,8 @@ internal sealed record ActorSnapshot
         actor.ZSpeed = ZSpeed;
         if (actor is Monster monster)
             monster.Suspicion = Suspicion;
+        if (Particles != null)
+            (actor.ParticleState ??= new ActorParticleState()).Override = Particles;
         actor.SyncPosition();
     }
 
@@ -170,6 +174,8 @@ internal sealed record ActorSnapshot
         bw.Write(Z);
         bw.Write(ZSpeed);
         bw.Write(Suspicion);
+        bw.Write(Particles != null);
+        Particles?.Write(bw);
     }
 
     public static ActorSnapshot Read(BinaryReader br)
@@ -214,6 +220,7 @@ internal sealed record ActorSnapshot
             Z = br.ReadDouble(),
             ZSpeed = br.ReadDouble(),
             Suspicion = br.ReadInt32(),
+            Particles = br.ReadBoolean() ? ParticleOverride.Read(br) : null,
         };
     }
 
