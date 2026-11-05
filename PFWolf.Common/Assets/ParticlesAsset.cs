@@ -22,10 +22,42 @@ public record ParticlesAsset : Asset
 public record ParticleTypeInfo
 {
     /// <summary>
-    /// How it's drawn: dot (a round blob), square, or streak (a line back along the way it's
-    /// going, trail tics long)
+    /// How it's drawn: dot (a round blob), square, streak (a line back along the way it's
+    /// going, trail tics long), or sprite (a sprite's frames, scale times its size)
     /// </summary>
     public string Shape { get; set; } = "dot";
+
+    /// <summary>
+    /// How it's laid over what's behind it: opaque (the default), translucent (half and half),
+    /// translucent25, translucent50 or translucent75 (that much of it), or additive (its light
+    /// added to what's behind: sparks, fire, magic; a color ramp to black fades it out)
+    /// </summary>
+    public string Blend { get; set; } = "opaque";
+
+    /// <summary>Fades out over the last half of its life, through the translucent steps (not an additive one: give it colors ending in black)</summary>
+    public bool Fade { get; set; }
+
+    /// <summary>With shape: sprite, the sprite's four-letter name (SMOK): its frames are SMOKA0, SMOKB0...</summary>
+    public string? Sprite { get; set; }
+
+    /// <summary>With shape: sprite, its frame letters in order: A-D, or ACE; played over its life, or frame-tics each</summary>
+    public string Frames { get; set; } = "A";
+
+    /// <summary>With shape: sprite, tics each frame shows, the frames over again; 0 (the default) spreads them over its life once</summary>
+    public double FrameTics { get; set; }
+
+    /// <summary>With shape: sprite, how big it's drawn: 1 as big as an actor's sprite would be there</summary>
+    public double Scale { get; set; } = 1;
+
+    /// <summary>With shape: sprite, how big it's drawn at the end of its life, growing or shrinking to it; scale when left out</summary>
+    public double? ScaleEnd { get; set; }
+
+    /// <summary>
+    /// What it leaves when it dies (its life out, or meeting something with collide: die): a
+    /// particles.yaml emitter's burst there, or one particle of a type going on as it went. What
+    /// that leaves doesn't leave anything itself.
+    /// </summary>
+    public string? OnDeath { get; set; }
 
     /// <summary>How big it is, in texels (a streak: how wide); at least a pixel however far away</summary>
     public double Size { get; set; } = 1;
@@ -33,7 +65,7 @@ public record ParticleTypeInfo
     /// <summary>How big it is at the end of its life, growing or shrinking to it; size when left out</summary>
     public double? SizeEnd { get; set; }
 
-    /// <summary>Its color: #RRGGBB or a palette index (0-255)</summary>
+    /// <summary>Its color: #RRGGBB or a palette index (0-255); a sprite keeps its own</summary>
     public string Color { get; set; } = "#FFFFFF";
 
     /// <summary>

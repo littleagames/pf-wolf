@@ -23,14 +23,30 @@ internal sealed class PointDrawing(
         Dot,            // a round blob size across
         Streak,         // a line from the head to the tail, size wide
         Splash,         // a raindrop's crown: droplets thrown out to each side and up
+        Sprite,         // a sprite's picture, scaled to Width by Height from (X0, Y0)
+    }
+
+    /// <summary>How a point's pixels are laid over what's behind them (BlendTable)</summary>
+    internal enum Blend : byte
+    {
+        Opaque,
+        Translucent75,  // three parts it to one behind
+        Translucent50,
+        Translucent25,
+        Additive,       // its red, green and blue added to what's behind
     }
 
     struct Point
     {
-        public short X0, Y0, X1, Y1;    // the head, and a streak's tail (the same for the rest)
+        public short X0, Y0, X1, Y1;    // the head, and a streak's tail (the same for the rest); a sprite's top left
         public byte Size;               // pixels across (a splash's: how far it has spread)
         public byte Color;
         public Shape Shape;
+        public Blend Blend;
+        public Assets.SpriteAsset? Sprite;
+        public byte[]? Shade;           // a sprite's light row, from ShadeOfs
+        public int ShadeOfs;
+        public short Width, Height;     // a sprite's size on screen
     }
 
     /// <summary>This frame has points to draw: the posts are noted as they're drawn</summary>
@@ -131,30 +147,57 @@ internal sealed class PointDrawing(
     /// Adds a point nx along the view: a head (x0, y0) and a streak's tail (x1, y1), size pixels
     /// across. One off the screen altogether isn't kept.
     /// </summary>
-    internal void Add(int x0, int y0, int x1, int y1, int size, byte color, long nx, Shape shape)
+    internal void Add(int x0, int y0, int x1, int y1, int size, byte color, long nx, Shape shape, Blend blend = Blend.Opaque)
     {
         if (Math.Max(x0, x1) + size < 0 || Math.Min(x0, x1) - size >= render.ViewWidth
             || Math.Max(y0, y1) + size < 0 || Math.Min(y0, y1) - size >= render.ViewHeight)
             return;
 
+        int at = Next(nx);      // first: it may make the list bigger
+        points[at] = new Point
+        {
+            X0 = Short(x0), Y0 = Short(y0), X1 = Short(x1), Y1 = Short(y1),
+            Size = (byte)Math.Clamp(size, 0, 255), Color = color, Shape = shape, Blend = blend,
+        };
+    }
+
+    /// <summary>
+    /// Adds a sprite's picture nx along the view, width by height pixels from (left, top), its
+    /// indices lit through shade from shadeofs
+    /// </summary>
+    internal void AddSprite(int left, int top, int width, int height, Assets.SpriteAsset sprite, byte[] shade, int shadeofs, long nx, Blend blend)
+    {
+        if (width <= 0 || height <= 0 || left + width <= 0 || left >= render.ViewWidth || top + height <= 0 || top >= render.ViewHeight)
+            return;
+
+        int at = Next(nx);      // first: it may make the list bigger
+        points[at] = new Point
+        {
+            X0 = Short(left), Y0 = Short(top), Width = Short(width), Height = Short(height),
+            Shape = Shape.Sprite, Blend = blend, Sprite = sprite, Shade = shade, ShadeOfs = shadeofs,
+        };
+    }
+
+    static short Short(int value) => (short)Math.Clamp(value, short.MinValue, short.MaxValue);
+
+    // A slot for one more point, nx along the view, with its key
+    int Next(long nx)
+    {
         if (count == points.Length)
         {
             Array.Resize(ref points, Math.Max(256, count * 2));
             Array.Resize(ref keys, points.Length);
         }
-
-        points[count] = new Point
-        {
-            X0 = (short)Math.Clamp(x0, short.MinValue, short.MaxValue), Y0 = (short)Math.Clamp(y0, short.MinValue, short.MaxValue),
-            X1 = (short)Math.Clamp(x1, short.MinValue, short.MaxValue), Y1 = (short)Math.Clamp(y1, short.MinValue, short.MaxValue),
-            Size = (byte)Math.Clamp(size, 0, 255), Color = color, Shape = shape,
-        };
         keys[count] = (int)Math.Min(render.HeightNumerator * 256L / Math.Max(nx, 1), int.MaxValue);
-        count++;
+        return count++;
     }
 
     /// <summary>Puts the frame's points farthest first, once they're all added</summary>
     internal void Sort() => Array.Sort(keys, points, 0, count);
+
+
+    // The blend table the point being drawn goes through (BlendTable), null for opaque
+    byte[]? blending;
 
     /// <summary>Draws the points farther away than something height high (as WallHeight), farthest first</summary>
     internal void DrawBeyond(int height)
@@ -175,6 +218,7 @@ internal sealed class PointDrawing(
             {
                 ref var point = ref points[next];
                 int key = keys[next];
+                blending = BlendTable(point.Blend);
                 switch (point.Shape)
                 {
                     case Shape.Splash:
@@ -193,11 +237,15 @@ internal sealed class PointDrawing(
                     case Shape.Dot:
                         DrawDot(dest, pitch, point.X0, point.Y0, point.Size, point.Color, key);
                         break;
+                    case Shape.Sprite:
+                        DrawSprite(dest, pitch, ref point, key);
+                        break;
                     default:
                         DrawStreak(dest, pitch, ref point, key);
                         break;
                 }
             }
+            blending = null;
         }
     }
 
@@ -249,11 +297,106 @@ internal sealed class PointDrawing(
         }
     }
 
+    // A sprite's picture scaled onto its rectangle, its see-through pixels left out, lit through its shade row
+    unsafe void DrawSprite(byte* dest, int pitch, ref Point point, int height)
+    {
+        var sprite = point.Sprite!;
+        byte[] shade = point.Shade!;
+        int ofs = point.ShadeOfs;
+        int width = point.Width, rows = point.Height;
+        for (int x = Math.Max((int)point.X0, 0); x < Math.Min(point.X0 + width, render.ViewWidth); x++)
+        {
+            int column = (int)((long)(x - point.X0) * sprite.Width / width);
+            for (int y = Math.Max((int)point.Y0, 0); y < Math.Min(point.Y0 + rows, render.ViewHeight); y++)
+            {
+                int at = (int)((long)(y - point.Y0) * sprite.Height / rows) * sprite.Width + column;
+                if (sprite.OpacityMask[at] != 0)
+                    Plot(dest, pitch, x, y, shade[ofs + sprite.RawData[at]], height);
+            }
+        }
+    }
+
     unsafe void Plot(byte* dest, int pitch, int x, int y, byte color, int height)
     {
         if (Occluded(x, y, height))
             return;
         seeThrough?.DrawBeyond(x, height);
-        dest[y * pitch + x] = color;
+        byte* pixel = dest + y * pitch + x;
+        *pixel = blending == null ? color : blending[color << 8 | *pixel];
+    }
+
+    /*
+    =============================================================================
+
+                                  BLEND TABLES
+
+    The view is drawn in the palette's 256 colors, so a pixel laid over another is looked up:
+    a table for each blend, 256 by 256, the nearest palette color to the two mixed (or added).
+    Made the first time each is wanted, through a 32x32x32 cube of the nearest palette color to
+    every color (5 bits a channel), so a table is 65536 lookups rather than searches.
+
+    =============================================================================
+    */
+
+    readonly byte[]?[] blendTables = new byte[]?[5];
+    byte[]? nearestCube;
+
+    /// <summary>The table a blend draws through: its color's index times 256 plus what's behind's; null for opaque (or no palette: tests)</summary>
+    internal byte[]? BlendTable(Blend blend)
+    {
+        if (blend == Blend.Opaque || video == null)
+            return null;
+        return blendTables[(int)blend] ??= MakeBlendTable(blend);
+    }
+
+    byte[] MakeBlendTable(Blend blend)
+    {
+        var palette = new (int R, int G, int B)[256];
+        for (int i = 0; i < 256; i++)
+        {
+            var (r, g, b) = video.PaletteRgb(i);
+            palette[i] = (r, g, b);
+        }
+        nearestCube ??= MakeNearestCube(palette);
+
+        double share = blend switch { Blend.Translucent75 => 0.75, Blend.Translucent50 => 0.5, Blend.Translucent25 => 0.25, _ => 1 };
+        var table = new byte[256 * 256];
+        for (int src = 0; src < 256; src++)
+        {
+            var s = palette[src];
+            for (int dst = 0; dst < 256; dst++)
+            {
+                var d = palette[dst];
+                int r, g, b;
+                if (blend == Blend.Additive)
+                    (r, g, b) = (Math.Min(s.R + d.R, 255), Math.Min(s.G + d.G, 255), Math.Min(s.B + d.B, 255));
+                else
+                    (r, g, b) = ((int)(s.R * share + d.R * (1 - share) + 0.5), (int)(s.G * share + d.G * (1 - share) + 0.5), (int)(s.B * share + d.B * (1 - share) + 0.5));
+                table[src << 8 | dst] = nearestCube[(r >> 3) << 10 | (g >> 3) << 5 | (b >> 3)];
+            }
+        }
+        return table;
+    }
+
+    // The nearest palette color to the middle of each 8x8x8 block of colors
+    static byte[] MakeNearestCube((int R, int G, int B)[] palette)
+    {
+        var cube = new byte[32 * 32 * 32];
+        for (int r = 0; r < 32; r++)
+            for (int g = 0; g < 32; g++)
+                for (int b = 0; b < 32; b++)
+                {
+                    int cr = r << 3 | 4, cg = g << 3 | 4, cb = b << 3 | 4;
+                    int best = 0, bestDistance = int.MaxValue;
+                    for (int i = 0; i < palette.Length; i++)
+                    {
+                        int dr = cr - palette[i].R, dg = cg - palette[i].G, db = cb - palette[i].B;
+                        int distance = dr * dr + dg * dg + db * db;
+                        if (distance < bestDistance)
+                            (best, bestDistance) = (i, distance);
+                    }
+                    cube[r << 10 | g << 5 | b] = (byte)best;
+                }
+        return cube;
     }
 }

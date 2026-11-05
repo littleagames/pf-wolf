@@ -69,6 +69,11 @@ internal sealed class Particles(
         public bool Bright;
         public CollideMode Collide;
         public float Bounce, Trail;
+        public PointDrawing.Blend Blend;
+        public bool Fade;
+        public Assets.SpriteAsset[] Sprites = [];      // shape: sprite, its frames in order
+        public float FrameTics, Scale, ScaleEnd;
+        public string? OnDeath;
     }
 
     struct Particle
@@ -78,6 +83,7 @@ internal sealed class Particles(
         public float PX, PY, PZ;            // where it was before the last batch of tics, to draw between
         public float Age, Life;             // tics
         public bool Stopped;                // collide: stop, and it met something
+        public bool Left;                   // left by another's death (on-death): leaves nothing itself
         public ResolvedType Type;
     }
 
@@ -183,8 +189,47 @@ internal sealed class Particles(
             "dot" or null or "" => PointDrawing.Shape.Dot,
             "square" => PointDrawing.Shape.Square,
             "streak" => PointDrawing.Shape.Streak,
-            var other => Warned(PointDrawing.Shape.Dot, $"particles.yaml type {name}: shape {other} isn't dot, square or streak; drawing a dot"),
+            "sprite" => PointDrawing.Shape.Sprite,
+            var other => Warned(PointDrawing.Shape.Dot, $"particles.yaml type {name}: shape {other} isn't dot, square, streak or sprite; drawing a dot"),
         };
+        var blend = info.Blend?.Trim().ToLowerInvariant() switch
+        {
+            "opaque" or null or "" => PointDrawing.Blend.Opaque,
+            "translucent" or "translucent50" => PointDrawing.Blend.Translucent50,
+            "translucent25" => PointDrawing.Blend.Translucent25,
+            "translucent75" => PointDrawing.Blend.Translucent75,
+            "additive" => PointDrawing.Blend.Additive,
+            var other => Warned(PointDrawing.Blend.Opaque, $"particles.yaml type {name}: blend {other} isn't opaque, translucent, translucent25, translucent50, translucent75 or additive; it's opaque"),
+        };
+
+        // A sprite's frames: their pictures once the assets are there, else only checked
+        var letters = FrameLetters(info.Frames);
+        if (letters == null)
+        {
+            warn($"particles.yaml type {name}: frames {info.Frames} isn't frame letters (A-D, or ACE)");
+            letters = ["A"];
+        }
+        Assets.SpriteAsset[] sprites = [];
+        if (shape == PointDrawing.Shape.Sprite)
+        {
+            if (string.IsNullOrWhiteSpace(info.Sprite))
+                shape = Warned(PointDrawing.Shape.Dot, $"particles.yaml type {name}: shape sprite has no sprite; drawing a dot");
+            else if (colors && assets != null)
+            {
+                var found = new List<Assets.SpriteAsset>();
+                foreach (var letter in letters)
+                {
+                    var shapeName = Entities.Actors.ActorStateFrame.ShapeNames(info.Sprite.Trim(), letter)[0];
+                    if (assets.Find<Assets.SpriteAsset>(shapeName) is { } sprite)
+                        found.Add(sprite);
+                    else
+                        warn($"particles.yaml type {name}: there's no sprite {shapeName}");
+                }
+                sprites = [.. found];
+                if (sprites.Length == 0)
+                    shape = PointDrawing.Shape.Dot;
+            }
+        }
         var collide = info.Collide?.Trim().ToLowerInvariant() switch
         {
             "die" or null or "" => CollideMode.Die,
@@ -216,6 +261,13 @@ internal sealed class Particles(
             Collide = collide,
             Bounce = (float)Math.Clamp(info.Bounce, 0, 1),
             Trail = (float)Math.Max(info.Trail, 0),
+            Blend = blend,
+            Fade = info.Fade,
+            Sprites = sprites,
+            FrameTics = (float)Math.Max(info.FrameTics, 0),
+            Scale = (float)Math.Max(info.Scale, 0),
+            ScaleEnd = (float)Math.Max(info.ScaleEnd ?? info.Scale, 0),
+            OnDeath = string.IsNullOrWhiteSpace(info.OnDeath) ? null : info.OnDeath.Trim(),
         };
 
         T Warned<T>(T value, string message)
@@ -223,6 +275,33 @@ internal sealed class Particles(
             warn(message);
             return value;
         }
+    }
+
+    /// <summary>A sprite's frame letters as particles.yaml writes them: A-D, ACE, or one; null when it's none of those</summary>
+    internal static List<string>? FrameLetters(string? frames)
+    {
+        var text = (frames ?? "").Replace(" ", "").Replace(",", "").ToUpperInvariant();
+        if (text.Length == 0)
+            return null;
+        var letters = new List<string>();
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c is < 'A' or > 'Z')
+                return null;
+            if (i + 2 < text.Length && text[i + 1] == '-')
+            {
+                char last = text[i + 2];
+                if (last is < 'A' or > 'Z' || last < c)
+                    return null;
+                for (char f = c; f <= last; f++)
+                    letters.Add(f.ToString());
+                i += 2;
+            }
+            else
+                letters.Add(c.ToString());
+        }
+        return letters;
     }
 
     // A color as red, green and blue: #RRGGBB or a palette index (looked up in the palette when lookup)
@@ -264,7 +343,11 @@ internal sealed class Particles(
         var problems = new List<string>();
         var defs = Definitions;
         foreach (var (name, info) in defs.Types)
+        {
             Resolve(name, info, problems.Add, colors: false);
+            if (info.OnDeath is { Length: > 0 } leaves && !defs.Types.ContainsKey(leaves.Trim()) && !defs.Emitters.ContainsKey(leaves.Trim()))
+                problems.Add($"particles.yaml type {name}: on-death {leaves} isn't a particles.yaml emitter or type");
+        }
         foreach (var (name, emitter) in defs.Emitters)
         {
             if (string.IsNullOrWhiteSpace(emitter.Type))
@@ -304,7 +387,7 @@ internal sealed class Particles(
     }
 
     // wanted of an emitter's particles (already scaled by the setting) at (x, y), z added to its own, facing angle
-    int Emit(EmitterInfo emitter, ResolvedType type, double x, double y, double z, double angle, int wanted)
+    int Emit(EmitterInfo emitter, ResolvedType type, double x, double y, double z, double angle, int wanted, bool left = false)
     {
         int max = MaxFor(hooks.Detail());
         if (pool.Length < max)
@@ -329,10 +412,44 @@ internal sealed class Particles(
                 X = px, Y = py, Z = pz, PX = px, PY = py, PZ = pz,
                 VX = (float)(vx * s), VY = (float)(vy * s), VZ = (float)(vz * s),
                 Life = (float)type.Life.At(random.NextDouble()),
+                Left = left,
                 Type = type,
             };
         }
         return made;
+    }
+
+    /// <summary>
+    /// What a particle leaves as it dies (its type's on-death): an emitter's burst where it was,
+    /// facing the way it went, or one particle of a type going on as it went. Those left leave nothing.
+    /// </summary>
+    void LeaveOnDeath(in Particle dead)
+    {
+        if (dead.Left || dead.Type.OnDeath is not { } name)
+            return;
+        var defs = Definitions;
+        double heading = Math.Atan2(-dead.VY, dead.VX) * 180 / Math.PI;
+        if (defs.Emitters.TryGetValue(name, out var emitter))
+        {
+            if (TypeNamed(emitter.Type) is { } burst)
+                Emit(emitter, burst, dead.X, dead.Y, dead.Z - emitter.Z, heading, ScaledCount(emitter.Count, hooks.Detail()), left: true);
+            return;
+        }
+        if (TypeNamed(name) is not { } type)
+        {
+            Warn($"particles.yaml type {dead.Type.Name}: on-death {name} isn't a particles.yaml emitter or type");
+            return;
+        }
+        if (count >= MaxFor(hooks.Detail()))
+            return;
+        pool[count++] = new Particle
+        {
+            X = dead.X, Y = dead.Y, Z = dead.Z, PX = dead.X, PY = dead.Y, PZ = dead.Z,
+            VX = dead.VX, VY = dead.VY, VZ = dead.VZ,
+            Life = (float)type.Life.At(random.NextDouble()),
+            Left = true,
+            Type = type,
+        };
     }
 
     // A way within the cone round (dx, dy, dz) (a unit vector) whose half-angle's cosine is cosSpread, evenly over it
@@ -937,7 +1054,11 @@ internal sealed class Particles(
             for (uint t = 0; t < tics && alive; t++)
                 alive = Step(ref p);
             if (!alive)
+            {
+                var dead = p;
                 pool[i] = pool[--count];        // the last in its place: order doesn't matter
+                LeaveOnDeath(dead);             // (what it leaves, at the end: not moved till the next tics)
+            }
         }
     }
 
@@ -1087,10 +1208,40 @@ internal sealed class Particles(
             double texels = type.Size + (type.SizeEnd - type.Size) * life;
             int size = Math.Clamp((int)(texels * half / (GameConstants.TextureSize / 2) + 0.5), 1, maxsize);
 
-            byte color = type.Ramp[Math.Min((int)(life * RampSteps), RampSteps - 1)];
+            // Fading out over the last half of its life, through the translucent steps to nothing
+            var blend = type.Blend;
+            if (type.Fade && blend != PointDrawing.Blend.Additive)
+            {
+                double alpha = Opacity(blend) * Math.Min(1, (1 - life) * 2);
+                if (alpha < 0.125)
+                    continue;
+                blend = alpha >= 0.875 ? PointDrawing.Blend.Opaque : alpha >= 0.625 ? PointDrawing.Blend.Translucent75
+                    : alpha >= 0.375 ? PointDrawing.Blend.Translucent50 : PointDrawing.Blend.Translucent25;
+            }
+
+            byte[] shade = Lighting.NoShade;
+            int shadeofs = 0;
             if (!type.Bright)
-                color = lighting.LightAt(map.TileIndexOrNone((int)(gx >> MapConstants.TileShift), (int)(gy >> MapConstants.TileShift)), gx, gy)
-                    [lighting.ShadeOffset(nx) + color];
+            {
+                shade = lighting.LightAt(map.TileIndexOrNone((int)(gx >> MapConstants.TileShift), (int)(gy >> MapConstants.TileShift)), gx, gy);
+                shadeofs = lighting.ShadeOffset(nx);
+            }
+
+            if (type.Shape == PointDrawing.Shape.Sprite && type.Sprites.Length > 0)
+            {
+                // Its frame now: frame-tics each, round and round, or spread over its life once
+                int frames = type.Sprites.Length;
+                int frame = type.FrameTics > 0 ? (int)(p.Age / type.FrameTics) % frames : Math.Min((int)(life * frames), frames - 1);
+                var sprite = type.Sprites[frame];
+                // no bigger than half the view's height: one right in the view's face would cost a screenful
+                double scale = (type.Scale + (type.ScaleEnd - type.Scale) * life) * half / (GameConstants.TextureSize / 2);
+                scale = Math.Min(scale, render.ViewHeight / 2.0 / Math.Max(Math.Max((int)sprite.Width, (int)sprite.Height), 1));
+                int width = (int)(sprite.Width * scale + 0.5), height = (int)(sprite.Height * scale + 0.5);
+                points.AddSprite(sx - width / 2, sy - height / 2, width, height, sprite, shade, shadeofs, nx, blend);
+                continue;
+            }
+
+            byte color = shade[shadeofs + type.Ramp[Math.Min((int)(life * RampSteps), RampSteps - 1)]];
 
             int tx = sx, ty = sy;
             var shape = type.Shape;
@@ -1103,7 +1254,16 @@ internal sealed class Particles(
                 size = Math.Min(size, 4);
             }
 
-            points.Add(sx, sy, tx, ty, size, color, nx, shape);
+            points.Add(sx, sy, tx, ty, size, color, nx, shape, blend);
         }
     }
+
+    // How much of a blend's color shows over what's behind
+    static double Opacity(PointDrawing.Blend blend) => blend switch
+    {
+        PointDrawing.Blend.Translucent75 => 0.75,
+        PointDrawing.Blend.Translucent50 => 0.5,
+        PointDrawing.Blend.Translucent25 => 0.25,
+        _ => 1,
+    };
 }

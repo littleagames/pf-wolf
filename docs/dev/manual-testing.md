@@ -96,6 +96,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       keeps going on its corpse, and ends when it's removed (a picked-up item); `actor:particles` in `game.ondamage` (blood) and
       `game.onkill` (gibs); `game.particles` from `game.onhud`; `game.defineparticle` with `base`
       in a mod's script used by its actordefs `particles`; a multiplayer game with these scripts.
+- [ ] **(never tried)** How particles look: additive sparks, `fade: true` translucent smoke,
+      `shape: sprite` smoke (SMOK A-D) growing with `scale-end`, and `on-death` embers, in Wolf3D,
+      Spear and Blake (each palette makes its own blend tables), on a dark level, at high
+      `vid_scale` (big sprites cost the most), and with many on screen at once. Seen headless at
+      640x400 in Wolf3D only, 2026-11-05.
 
 ## 1.4 Controls
 

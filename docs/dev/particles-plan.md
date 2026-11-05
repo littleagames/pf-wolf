@@ -242,6 +242,26 @@ the *emitter* (`e:set{...}` in `game.ontick`), which is cheap.
 - Not done: `print(handle)` shows a table; editor autocomplete after `e:` shows actor methods,
   not the emitter's.
 
+**Phase 4 as built (2026-11-05):**
+
+- Type fields: `blend` (opaque, translucent = translucent50, translucent25, translucent75,
+  additive), `fade` (out over the last half of its life through 75/50/25%, then gone; not
+  additive, where a color ramp ending in black does the same), `shape: sprite` with `sprite`
+  (four letters), `frames` (A-D, ACE), `frame-tics` (0: spread over its life once), `scale`
+  and `scale-end` (1: as big as an actor's sprite there), and `on-death` (an emitter's burst
+  where it died, facing the way it went, or one particle of a type going on with its speed;
+  what's left leaves nothing). The plan's per-particle `scale` range became two numbers.
+- `PointDrawing`: points carry a `Blend`; `Plot` goes through a 256×256 table for it
+  (`BlendTable`), made the first time each blend is drawn from the palette through a 32³
+  nearest-color cube. Sprite points (`AddSprite`) draw the picture scaled, its see-through
+  pixels left out, lit through the light row at the particle, occluded per pixel like the rest.
+- A sprite particle is drawn no bigger than half the view's height (its shape kept): each of
+  its pixels checks the walls, so one in the view's face would otherwise cost a screenful.
+- Found and fixed while testing: `points[Next(nx)]` took the array before `Next` grew it.
+- Not done: tables aren't remade if the palette changes mid-game (it doesn't today); sprite
+  particles don't take color translations; Wolf3D's palette has few in-between greys and
+  teals, so translucent smoke over a teal door reads mostly grey.
+
 Phases 1–3 give a usable system (solid particles, from YAML, actors and Lua). Phase 4 is what
 makes smoke and magic look good.
 
