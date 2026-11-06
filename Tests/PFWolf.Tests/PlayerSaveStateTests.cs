@@ -35,7 +35,7 @@ public class PlayerSaveStateTests
         var timed = new Gameplay.TimedSwitch(5, 6, true, 101, 102, 7, ControlDir.North, ["A_CloseDoor"], new ushort[1, 1]) { TicsLeft = 90 };
 
         // Act: saved, read back, and put on a fresh player over the level's restored actors
-        var saved = RoundTrip(bw => PlayerSaveState.Capture(player, actors, [timed]).Write(bw), PlayerSaveState.Read);
+        var saved = RoundTrip(bw => PlayerSaveState.Capture(player, actors, [timed], []).Write(bw), PlayerSaveState.Read);
         var restoredActors = Enumerable.Range(0, 4).Select(i => (Entities.Actors.Actor)new Monster { Name = $"A{i}" }).ToList();
         var loaded = new Entities.PlayerState();
         saved.ApplyTo(loaded, restoredActors);
@@ -57,7 +57,7 @@ public class PlayerSaveStateTests
     [Test]
     public void Nothing_Manned_Latched_Or_Ridden_Stays_So()
     {
-        var saved = RoundTrip(bw => PlayerSaveState.Capture(new Entities.PlayerState(), [], []).Write(bw), PlayerSaveState.Read);
+        var saved = RoundTrip(bw => PlayerSaveState.Capture(new Entities.PlayerState(), [], [], []).Write(bw), PlayerSaveState.Read);
         var loaded = new Entities.PlayerState { Mount = new Monster { Name = "Old" }, Vehicle = "Boat" };
         saved.ApplyTo(loaded, []);
 

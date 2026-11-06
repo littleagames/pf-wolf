@@ -932,8 +932,53 @@ level stops while it's open.
   end)
   ```
 
-On a switch, `A_Puzzle("needle")` in its `actions:` opens it for whoever used it; the panel's
-look (frame, colors, fonts) is game-info's `puzzle-panel`.
+### On a switch
+
+A switch (a wall's or a patch's, in `mapdefs`) with a `puzzle:` opens it when used, and only a
+win throws the switch: its `to`, sound and `actions` (and any keys it takes). Each other result
+has its own actions, and a failed one can be locked out for a while or broken for good:
+
+```yaml
+walls:
+  '70':
+    North: TERMINAL
+    South: TERMINAL
+    East: TERMINAL
+    West: TERMINAL
+    switch:
+      to: 71
+      puzzle: needle
+      puzzle-args: { hits: 4, reds: 3 }
+      actions:                    # won
+        - A_OpenDoor("hold")
+        - A_SetFaction("allies")  # the tagged turret fights for you now
+      fail:
+        - A_Alarm                 # every enemy the players' areas reach hears it
+        - A_HurtPlayer(10)
+      cancel: []                  # backed out of (Esc): nothing, as here
+      retry: 350                  # tics before it can be tried again after a fail
+      retry-message: "The panel is still sparking."
+      tries: 3                    # fails before it breaks for good...
+      broken: 72                  # ...and becomes this wall (none: it just never works again)
+      skip-item: AutoHackTool     # carried, it throws the switch with no puzzle, used up
+```
+
+Like every switch action, they act on whatever shares the switch tile's tag. A switch's fails
+and lockout are kept in a saved game. `A_Puzzle("needle")` in a switch's `actions:`, a mapdefs
+trigger or an actor's state opens the puzzle too, but then only `game.onpuzzle` hears how it
+went.
+
+### With others, and in demos
+
+With others, everyone's machine runs every puzzle from that player's controls, so it comes out
+the same everywhere. The level doesn't stop for one player (`pause` does nothing there), they
+can be shot while they work, and the others see a line saying so ("Alice is hacking": the
+puzzle's `verb`). Someone joining mid-game closes every open puzzle, as backed out of.
+
+A demo keeps only some controls, so in one a puzzle reads the walk and turn as up/down and
+left/right, use and fire, and the slot keys 1 to 4 as digits; Esc can't back out there.
+
+The panel's look (frame, colors, fonts) is game-info's `puzzle-panel`.
 
 ## Grate Doors Demo (`mods/grate-doors-demo`)
 

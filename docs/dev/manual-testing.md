@@ -414,8 +414,13 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 - [ ] **(never tried)** By ear: the needle's hit, miss and short sounds.
 - [ ] **(never tried)** Wide screens and UI Scale above 1: the panel centered on the view; a small
       view size (the panel bigger than the view).
-- [ ] **(never tried)** `A_Puzzle` on a switch and on an actor's Use state; saving with a puzzle
-      open (it's gone after loading); dying in a `pause = false` puzzle.
+- [ ] **(never tried)** `A_Puzzle` on an actor's Use state; saving with a puzzle open (it's gone
+      after loading); dying in a `pause = false` puzzle.
+- [ ] **(never tried)** A switch's `puzzle:` by hand: the `retry-message`, `broken` wall shown,
+      `skip-item` used up, a patch switch's puzzle, saving and loading in a lockout.
+- [ ] **(never tried)** With others (LAN): one player hacking while the other plays on, the
+      "is hacking" line, someone joining mid-game closing it, no desync (GameChecksum).
+- [ ] **(never tried)** Recording a demo through a puzzle switch and playing it back the same.
 
 **Wall patches + mirrored textures** (`patch-demo`)
 - [ ] Ammo/button/lever/first-aid patches on the right faces; patch switches give items.

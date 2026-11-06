@@ -282,6 +282,7 @@ internal static partial class GameHost
         MapManager.ActorAdded = gameScripts.ActorAdded;     // game.onactorspawn
         puzzles = new Puzzles(Session, gameScripts, text => _consoleManager.Print(text));
         puzzlePanel = MakePuzzlePanel();
+        playerUse.PuzzleSwitches = PuzzleSwitches;      // a switch's puzzle: only a success throws it
         levelMusic = new LevelMusic(GameEngineManager, AudioManager, Session) { ChooseSong = song => gameScripts.ChooseSong(song) };
         playKeys = MakePlayKeys();
         levelLoop = MakeLevelLoop();

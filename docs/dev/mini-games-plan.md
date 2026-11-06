@@ -262,7 +262,19 @@ test mod. Refused in a demo and with others until phase 2 (as `game.showtext` is
 one open saves without it. Tests: the runner, input edges, `ChangesTheGame` in `draw`, results
 running the actions.
 
-**Phase 2 — switches, outcomes, others.** The switch block's `puzzle`, `puzzle-args`, `fail`,
+**Phase 2 — switches, outcomes, others (done 2026-11-06).** What it came to: the switch fields
+on MapSwitchTranslation (walls and patches), Gameplay/PuzzleSwitches.cs (fails, lockouts,
+broken, skip item; saved: save version 42), PlayerUse split into Use/Throw so only a success
+throws, A_Alarm (ambushers in the players' reach woken, noise this tic and the next the world
+moves: GameSession.AlarmPending), A_HurtPlayer, A_SetFaction for switches. Allowed in demos
+(ReadKeys reads only the walk/turn, use/fire and slots 1-4 there; no Esc) and with others (no
+net version bump: puzzles ride the TicCmd as it is). A joiner closes every open puzzle as
+"cancel" on every machine at the join step (AddNetPlayer), since it isn't in the join state; the
+puzzle switches' lockouts aren't sent to a joiner either (nor are timed switches). The others'
+line is drawn by Ui/PuzzlePanel.cs. Tests: PuzzleSwitchesTests, PuzzleGameTests (a scripted
+demo through a switch: win, fail, lockout, alarm, faction).
+
+**Phase 2 — as planned:** The switch block's `puzzle`, `puzzle-args`, `fail`,
 `cancel`, `retry`, `tries`, `broken`, `skip-item` (walls.yaml and patches); retries and broken
 state saved (save version bump); `A_Alarm`, `A_HurtPlayer`, trigger `A_SetFaction`; allowed with
 others and in demos, `pause` ignored with others; the "is hacking" line for others (net version

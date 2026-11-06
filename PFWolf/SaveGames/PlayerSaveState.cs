@@ -7,11 +7,15 @@ namespace PFWolf.SaveGames;
 /// <summary>A timed switch still waiting to turn back, as a save keeps it</summary>
 internal sealed record SavedTimedSwitch(int X, int Y, bool Patch, int From, int To, ushort Tag, ControlDir Dir, List<string> Actions, int TicsLeft);
 
+/// <summary>A puzzle switch's fails and lockout (Gameplay/PuzzleSwitches.cs), as a save keeps it</summary>
+internal sealed record SavedPuzzleSwitch(int X, int Y, bool Patch, int Fails, int ReadyAt);
+
 /// <summary>
 /// What a save keeps of the player beyond the game state and the inventory, and of the level's
 /// clocks: the mounted gun they're manning (Gameplay/MountedWeapons.cs), what's latched onto
 /// them (Gameplay/Latching.cs), what they're riding (Gameplay/Vehicles.cs), going unseen
-/// (Gameplay/Stealth.cs), their kill chain, and the timed switches still waiting to turn back.
+/// (Gameplay/Stealth.cs), their kill chain, the timed switches still waiting to turn back, and the
+/// puzzle switches' fails and lockouts.
 /// The gun and the latcher are by their places among the level's saved actors
 /// (MapManager.GetSavedActors), -1 for none.
 /// </summary>
@@ -21,9 +25,11 @@ internal sealed record PlayerSaveState(
     string? Vehicle, string? VehicleMap, int VehicleSpeed, int VehicleThrottle, string? VehicleGun, string? VehicleFrom,
     bool Undetected, int StealthKills, int SuspicionMeter, int SuspicionPending,
     int KillChain, int KillChainAt,
-    List<SavedTimedSwitch> TimedSwitches)
+    List<SavedTimedSwitch> TimedSwitches,
+    List<SavedPuzzleSwitch> PuzzleSwitches)
 {
-    internal static PlayerSaveState Capture(Entities.PlayerState p, List<Entities.Actors.Actor> actors, IEnumerable<TimedSwitch> timed)
+    internal static PlayerSaveState Capture(Entities.PlayerState p, List<Entities.Actors.Actor> actors, IEnumerable<TimedSwitch> timed,
+        IEnumerable<PuzzleSwitchState> puzzleSwitches)
     {
         // By reference: actors are records, so IndexOf would match a look-alike by value
         int IndexOf(Entities.Actors.Actor? actor) => actor == null ? -1 : actors.FindIndex(a => ReferenceEquals(a, actor));
@@ -33,7 +39,8 @@ internal sealed record PlayerSaveState(
             p.Vehicle, p.VehicleMap, p.VehicleSpeed, p.VehicleThrottle, p.VehicleGun, p.VehicleFrom,
             p.Undetected, p.StealthKills, p.SuspicionMeter, p.SuspicionPending,
             p.KillChain, p.KillChainAt,
-            timed.Select(t => new SavedTimedSwitch(t.X, t.Y, t.Patch, t.From, t.To, t.Tag, t.Dir, [.. t.Actions], t.TicsLeft)).ToList());
+            timed.Select(t => new SavedTimedSwitch(t.X, t.Y, t.Patch, t.From, t.To, t.Tag, t.Dir, [.. t.Actions], t.TicsLeft)).ToList(),
+            puzzleSwitches.Select(s => new SavedPuzzleSwitch(s.X, s.Y, s.Patch, s.Fails, s.ReadyAt)).ToList());
     }
 
     /// <summary>Puts it back on the player, the gun and latcher found among the level's restored actors</summary>
@@ -66,6 +73,11 @@ internal sealed record PlayerSaveState(
                 bw.Write(action);
             bw.Write(t.TicsLeft);
         }
+        bw.Write(PuzzleSwitches.Count);
+        foreach (var s in PuzzleSwitches)
+        {
+            bw.Write(s.X); bw.Write(s.Y); bw.Write(s.Patch); bw.Write(s.Fails); bw.Write(s.ReadyAt);
+        }
     }
 
     internal static PlayerSaveState Read(BinaryReader br)
@@ -79,6 +91,8 @@ internal sealed record PlayerSaveState(
             br.ReadInt32(), br.ReadInt32(),
             [.. Enumerable.Range(0, br.ReadCount()).Select(_ => new SavedTimedSwitch(
                 br.ReadInt32(), br.ReadInt32(), br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadUInt16(), (ControlDir)br.ReadByte(),
-                [.. Enumerable.Range(0, br.ReadCount()).Select(_ => br.ReadString())], br.ReadInt32()))]);
+                [.. Enumerable.Range(0, br.ReadCount()).Select(_ => br.ReadString())], br.ReadInt32()))],
+            [.. Enumerable.Range(0, br.ReadCount()).Select(_ => new SavedPuzzleSwitch(
+                br.ReadInt32(), br.ReadInt32(), br.ReadBoolean(), br.ReadInt32(), br.ReadInt32()))]);
     }
 }

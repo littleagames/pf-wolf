@@ -195,6 +195,39 @@ internal static partial class GameHost
                 foreach (var p in PlayerStates)
                     p.CinematicTics = Math.Max(p.CinematicTics, tics);
         });
+        // A_Alarm(["sound"]): every enemy in the areas the players' reach hears it, as a shot, even
+        // those lying in ambush (a failed puzzle, a tripped alarm); the sound from where it went off
+        Entities.MapTriggerRegistry.Register("A_Alarm", (trigger, args) => SoundAlarm(trigger.Activator, args.ElementAtOrDefault(0)));
+        ActorActionRegistry.Register("A_Alarm", (Entities.Actors.Actor ob, string[] args) => SoundAlarm(ob, args.ElementAtOrDefault(0)));
+        // A_HurtPlayer(points): the player who set it off (from an actor's state, the acting player)
+        // takes that much damage, from nothing (a shock from a failed puzzle)
+        Entities.MapTriggerRegistry.Register("A_HurtPlayer", (trigger, args) =>
+            trigger.Activator is Entities.Actors.PlayerPawn pawn && HurtPlayer(pawn, args.ElementAtOrDefault(0)));
+        ActorActionRegistry.Register("A_HurtPlayer", (Entities.Actors.Actor _, string[] args) =>
+        {
+            if (Session.PlayerState.Pawn is { } pawn)
+                HurtPlayer(pawn, args.ElementAtOrDefault(0));
+        });
+        // A_SetFaction("faction"[, "follow"]) from a switch: the tagged enemies go over to that side
+        // (a hacked turret fighting for the player); an actor's own is Monster's
+        Entities.MapTriggerRegistry.Register("A_SetFaction", (trigger, args) =>
+        {
+            if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
+            {
+                Console.WriteLine("A_SetFaction: no faction given.");
+                return false;
+            }
+            bool follow = args.Skip(1).Any(a => a.Trim().Equals("follow", StringComparison.OrdinalIgnoreCase));
+            bool any = false;
+            foreach (var monster in MapManager.TaggedActors(trigger.Tag).OfType<Entities.Actors.Monster>().ToList())
+            {
+                if (monster.IsRemoved)
+                    continue;
+                monster.SetFaction(args[0].Trim(), follow);
+                any = true;
+            }
+            return any;
+        });
         // A_Replace("Class"): becomes one of another class where it stands, facing the same way
         // (Midnight Assault's gates: a lock clipped off, a gate opened)
         ActorActionRegistry.Register("A_Replace", (Entities.Actors.Actor ob, string[] args) =>
@@ -261,6 +294,37 @@ internal static partial class GameHost
         Particles.RegisterActions(() => particles, () => MapManager); // bursts and emitters, for switches and actors (Rendering/Particles.cs)
         RegisterProjectileActions(); // projectiles and jumps for any actor, traps (Gameplay/ProjectileActions.cs)
         Gameplay.Puzzles.RegisterActions(() => Puzzles); // A_Puzzle, for switches and actors (Gameplay/Puzzles.cs)
+    }
+
+    // A_Alarm: the enemies the players' areas reach hear it, ambushers too, this tic and the next
+    // one the world moves (Session.AlarmPending: one raised by a puzzle that stopped the level)
+    static bool SoundAlarm(Entities.Actors.Actor source, string? sound)
+    {
+        if (!string.IsNullOrWhiteSpace(sound))
+            PlaySoundLocActor(sound.Trim(), source);
+        var reach = Session.Areas.AreaByPlayer;
+        int areas = MapManager.Floors.NumAreas;
+        foreach (var monster in MapManager.GetActors().OfType<Entities.Actors.Monster>())
+        {
+            if (!monster.IsRemoved && (monster.AreaNumber >= areas || monster.AreaNumber < reach.Length && reach[monster.AreaNumber] != 0))
+                monster.RuntimeFlags &= ~ObjFlags.Ambush;
+        }
+        Session.MadeNoise = true;
+        Session.AlarmPending = true;
+        return true;
+    }
+
+    // A_HurtPlayer: damage from nothing to a player, as a floor that hurts does
+    static bool HurtPlayer(Entities.Actors.PlayerPawn pawn, string? points)
+    {
+        if (!int.TryParse(points, out var damage) || damage <= 0)
+        {
+            Console.WriteLine($"A_HurtPlayer: \"{points}\" isn't a number of points.");
+            return false;
+        }
+        using var _ = Session.ActAs(pawn.State);
+        playerStats.ApplyDamageToPlayer(damage);
+        return true;
     }
 
     /// <summary>A_PushWall: the trigger's wall pushed the way the player faces, unless it only goes another way (see RegisterActorActions)</summary>

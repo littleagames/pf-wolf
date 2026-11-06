@@ -87,6 +87,9 @@ internal sealed class OpenPuzzle(PuzzleDefinition definition, PlayerPawn player,
 
     /// <summary>The script's own (its Lua table, Scripting/GameScripts.Puzzles.cs)</summary>
     internal object? Handle { get; set; }
+
+    /// <summary>What its result does besides telling the scripts: a switch's (Gameplay/PuzzleSwitches.cs)</summary>
+    internal Action<string>? Ended { get; init; }
 }
 
 /// <summary>What a puzzle's script did with a think: the result it gave (null: still going), and whether it erred</summary>
@@ -117,8 +120,10 @@ internal interface IPuzzleScripts
 /// while it's open (playing alone). Only its drawing is this machine's (Ui/PuzzlePanel.cs).
 /// </summary>
 /// <remarks>
-/// Not yet in demos or with others (docs/dev/mini-games-plan.md, phase 2), and an open puzzle
-/// isn't saved (phase 3).
+/// With others, every machine runs every puzzle from the same controls, pause is ignored, and
+/// a player joining mid-game closes them all (as backed out of: an open puzzle isn't in the state
+/// a joiner's sent, nor in a save yet: docs/dev/mini-games-plan.md, phase 3). In a demo, a
+/// puzzle reads only the controls a demo keeps.
 /// </remarks>
 internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Action<string> print)
 {
@@ -139,17 +144,12 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
 
     /// <summary>
     /// Opens a puzzle for a player, started from a tile (-1, -1 for none) with a tag (0 for
-    /// none): false if it can't be (none of that name, they have one open already, they're
-    /// dead, its script erred, or it's a demo or a game with others)
+    /// none), <paramref name="ended"/> told its result as it closes: false if it can't be (none
+    /// of that name, they have one open already, they're dead, or its script erred)
     /// </summary>
-    internal bool Start(PlayerPawn player, string name, object? args, int x = -1, int y = -1, int tag = 0)
+    internal bool Start(PlayerPawn player, string name, object? args, int x = -1, int y = -1, int tag = 0, Action<string>? ended = null)
     {
         name = name.Trim();
-        if (session.DemoPlayback || session.DemoRecord || session.NetGame)
-        {
-            print($"Puzzle {name}: puzzles don't open in a demo or a game with others yet");
-            return false;
-        }
         if (scripts.FindPuzzle(name) is not { } definition)
         {
             print($"Puzzle {name}: there's no puzzle of that name (a script's game.puzzle)");
@@ -159,7 +159,7 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
         if (state == null || state.Puzzle != null || state.Health <= 0)
             return false;
 
-        var puzzle = new OpenPuzzle(definition, player, state, x, y, tag);
+        var puzzle = new OpenPuzzle(definition, player, state, x, y, tag) { Ended = ended };
         state.Puzzle = puzzle;
         if (!scripts.StartPuzzle(puzzle, args))
         {
@@ -189,7 +189,7 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
             return false;
         }
 
-        var keys = ReadKeys(puzzle, input, (int)session.Tics);
+        var keys = ReadKeys(puzzle, input, (int)session.Tics, demo: session.DemoRecord || session.DemoPlayback);
         puzzle.Tics += keys.Tics;
 
         string? result = null;
@@ -240,13 +240,34 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
         }
     }
 
+    /// <summary>
+    /// A player's joined mid-game: every open puzzle closes, as backed out of, on every machine
+    /// at the same frame (the joiner's sent no puzzles), each as its own player
+    /// </summary>
+    internal void CloseAll()
+    {
+        foreach (var p in session.Players.ToList())
+        {
+            if (p.Puzzle is not { } puzzle)
+                continue;
+            using (session.ActAs(p))
+                Close(puzzle, "cancel");
+        }
+    }
+
+    // After it's closed: what it ends may open another
     void Close(OpenPuzzle puzzle, string result)
     {
         if (ReferenceEquals(puzzle.State.Puzzle, puzzle))
             puzzle.State.Puzzle = null;
         puzzle.State.PuzzleButtonsHeld = true;
-        scripts.PuzzleFinished(puzzle, result);     // after it's closed: a hook may open another
+        puzzle.Ended?.Invoke(result);               // a switch thrown, its fail actions...
+        scripts.PuzzleFinished(puzzle, result);     // game.onpuzzle
     }
+
+    /// <summary>The other players working puzzles (with others), for the line saying so (Ui/PuzzlePanel.cs)</summary>
+    internal IEnumerable<OpenPuzzle> OthersPuzzles() =>
+        session.Players.Where(p => !ReferenceEquals(p, session.LocalPlayer) && p.Puzzle != null).Select(p => p.Puzzle!);
 
     // Use and fire still held from a closed puzzle count for nothing till they're let go of
     static void LetGoOfHeldButtons(PlayerState state, PlayerInput input)
@@ -262,32 +283,53 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
             state.PuzzleButtonsHeld = false;
     }
 
+    // In a demo, how far the turn or walk has to go, a tic, to count as a direction (the arrow
+    // keys walk and turn at 35)
+    const int DemoPush = 20;
+
     /// <summary>
     /// The puzzle's keys from the player's controls this think: the movement and turn buttons
     /// (or a stick pushed far enough) as directions, use, fire, Esc, the weapon slot keys as
-    /// digits; fresh against what was held the think before
+    /// digits; fresh against what was held the think before. In a demo, only what a demo keeps
+    /// (the first eight buttons, the turn and the walk): the turn and walk as directions, slots 1
+    /// to 4 as digits, and no Esc, so it plays back as it was recorded.
     /// </summary>
-    internal static PuzzleInput ReadKeys(OpenPuzzle puzzle, PlayerInput input, int tics)
+    internal static PuzzleInput ReadKeys(OpenPuzzle puzzle, PlayerInput input, int tics, bool demo = false)
     {
         tics = Math.Max(tics, 1);
-        int push = StickPush * tics;
         var held = PuzzleKeys.None;
-        if (input.IsPressed(ButtonType.MoveForward) || input.ControlY <= -push)
-            held |= PuzzleKeys.Up;
-        if (input.IsPressed(ButtonType.MoveBackward) || input.ControlY >= push)
-            held |= PuzzleKeys.Down;
-        if (input.IsPressed(ButtonType.TurnLeft) || input.IsPressed(ButtonType.StrafeLeft) || input.ControlStrafe <= -push)
-            held |= PuzzleKeys.Left;
-        if (input.IsPressed(ButtonType.TurnRight) || input.IsPressed(ButtonType.StrafeRight) || input.ControlStrafe >= push)
-            held |= PuzzleKeys.Right;
+        if (demo)
+        {
+            int push = DemoPush * tics;
+            if (input.ControlY <= -push)
+                held |= PuzzleKeys.Up;
+            if (input.ControlY >= push)
+                held |= PuzzleKeys.Down;
+            if (input.ControlX <= -push)
+                held |= PuzzleKeys.Left;
+            if (input.ControlX >= push)
+                held |= PuzzleKeys.Right;
+        }
+        else
+        {
+            int push = StickPush * tics;
+            if (input.IsPressed(ButtonType.MoveForward) || input.ControlY <= -push)
+                held |= PuzzleKeys.Up;
+            if (input.IsPressed(ButtonType.MoveBackward) || input.ControlY >= push)
+                held |= PuzzleKeys.Down;
+            if (input.IsPressed(ButtonType.TurnLeft) || input.IsPressed(ButtonType.StrafeLeft) || input.ControlStrafe <= -push)
+                held |= PuzzleKeys.Left;
+            if (input.IsPressed(ButtonType.TurnRight) || input.IsPressed(ButtonType.StrafeRight) || input.ControlStrafe >= push)
+                held |= PuzzleKeys.Right;
+            if (input.IsPressed(ButtonType.Esc))
+                held |= PuzzleKeys.Cancel;
+        }
         if (input.IsPressed(ButtonType.Use))
             held |= PuzzleKeys.Use;
         if (input.IsPressed(ButtonType.Attack))
             held |= PuzzleKeys.Fire;
-        if (input.IsPressed(ButtonType.Esc))
-            held |= PuzzleKeys.Cancel;
         for (int digit = 0; digit <= 9; digit++)
-            if (input.IsPressed(SlotButton(digit)))
+            if ((!demo || digit is >= 1 and <= 4) && input.IsPressed(SlotButton(digit)))
                 held |= DigitKey(digit);
 
         var pressed = held & ~puzzle.PreviousKeys;

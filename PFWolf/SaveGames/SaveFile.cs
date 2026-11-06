@@ -70,7 +70,9 @@ internal static class SaveFile
     // 39: the vehicle's weapon and the one it replaced (vehicle.weapon), after the vehicle's throttle.
     // 40: each level ratio's kill, secret and treasure counts and totals, after its time.
     // 41: each actor's emitters as A_StartEmitter / A_StopEmitter left them, after its suspicion.
-    internal const int SaveVersion = 41;
+    // 42: the puzzle switches' fails and lockouts (a count, then each one's x, y, patch, fails and
+    //     ready-at), after the timed switches.
+    internal const int SaveVersion = 42;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

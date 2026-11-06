@@ -27,6 +27,7 @@ internal sealed class PuzzlePanel(
 
     internal void Draw()
     {
+        DrawOthers();
         if (puzzles.LocalPuzzle is not { } puzzle)
             return;
         var panel = panelInfo();
@@ -67,6 +68,25 @@ internal sealed class PuzzlePanel(
             graphics.DrawText(frameX + (frameWidth - titleWidth) / 2, frameY + Margin, title, new Fonts.TextStyle(panel.TitleFont, panel.TitleColor));
 
         scripts.DrawPuzzle(puzzle, frameX + Margin, frameY + Margin + titleHeight);
+    }
+
+    // With others: a line for each other player working a puzzle ("Alice is hacking"), at the
+    // bottom left of the view
+    void DrawOthers()
+    {
+        var others = puzzles.OthersPuzzles().ToList();
+        if (others.Count == 0)
+            return;
+        var panel = panelInfo();
+        var (vx, vy, _, vh) = viewLayout();
+        graphics.MeasureText("A", panel.Font, out _, out int lineHeight);
+        int y = vy + vh - Margin - others.Count * lineHeight;
+        foreach (var puzzle in others)
+        {
+            var who = puzzle.State.Name ?? $"Player {puzzle.State.Number + 1}";
+            graphics.DrawText(vx + Margin, y, $"{who} is {localize(puzzle.Definition.Verb)}", new Fonts.TextStyle(panel.Font, "White"));
+            y += lineHeight;
+        }
     }
 
     /// <summary>

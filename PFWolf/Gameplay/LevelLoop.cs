@@ -156,7 +156,8 @@ internal sealed class LevelLoop(
                 // actor thinking
                 //
                 session.NoiseLastTic = session.MadeNoise;
-                session.MadeNoise = false;
+                session.MadeNoise = session.AlarmPending;     // an alarm raised since the last tic is heard now (A_Alarm)
+                session.AlarmPending = false;
                 doors.MoveDoors();
                 pushWalls.MovePWalls();
                 timedSwitches.Tick(session.Tics);       // switches turning back by themselves (Gameplay/TimedSwitches.cs)

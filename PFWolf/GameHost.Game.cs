@@ -264,7 +264,7 @@ internal static partial class GameHost
             ToggleAutomap, HandleAutomapKey, DrawPlayBorder, DrawPlayBorderSides,
             OpenControlPanel, DrawPlayScreen, PopupMap,
             key => HudMessageManager.Show(HudMessageKind.Other, key),
-            () => puzzles?.LocalPuzzle != null));
+            () => puzzles?.LocalPuzzle != null && !Session.DemoRecord));    // a demo keeps no Esc: it backs out of nothing there
 
     // Playing a level, a frame at a time (Gameplay/LevelLoop.cs)
     static LevelLoop levelLoop = null!;     // made in InitServices
@@ -358,6 +358,7 @@ internal static partial class GameHost
             }))
     {
         TimedSwitches = TimedSwitches,
+        PuzzleSwitches = PuzzleSwitches,
     };
 
     static bool AutosavePending { get => gameSaves.AutosavePending; set => gameSaves.AutosavePending = value; }
@@ -500,6 +501,12 @@ internal static partial class GameHost
     // game.startpuzzle or the puzzle command; made in InitServices, or by the actions without it
     static Puzzles? puzzles;
     static Puzzles Puzzles => puzzles ??= new Puzzles(Session, gameScripts ??= MakeGameScripts(), text => _consoleManager.Print(text));
+
+    // Switches with a puzzle to work first: their fails, lockouts and broken ones (Gameplay/PuzzleSwitches.cs)
+    static PuzzleSwitches? puzzleSwitches;
+    static PuzzleSwitches PuzzleSwitches => puzzleSwitches ??= new PuzzleSwitches(MapManager, InventoryManager, Session, new PuzzleSwitchHooks(
+        (name, args, x, y, tag, ended) => Puzzles.Start(Session.Player, name, args, x, y, tag, ended),
+        message => HudMessageManager.Show(HudMessageKind.Lock, message)));
 
     // The local player's open puzzle drawn over the view (Ui/PuzzlePanel.cs)
     static PuzzlePanel puzzlePanel = null!;     // made in InitServices

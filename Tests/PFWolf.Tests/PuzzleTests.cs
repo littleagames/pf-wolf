@@ -255,22 +255,75 @@ public class PuzzleTests
     }
 
     [Test]
-    public void A_Puzzle_Doesnt_Open_In_A_Demo_Or_With_Others_Yet_Nor_Twice()
+    public void A_Puzzle_Doesnt_Open_Twice_Nor_One_There_Isnt()
     {
         // Arrange
         Load(CountingPuzzle);
 
         // Act / Assert
-        _session.DemoRecord = true;
-        Assert.That(_puzzles.Start(_pawn, "count", null), Is.False);
-        _session.DemoRecord = false;
-        _session.NetGame = true;
-        Assert.That(_puzzles.Start(_pawn, "count", null), Is.False);
-        _session.NetGame = false;
         Assert.That(_puzzles.Start(_pawn, "nothere", null), Is.False);
         Assert.That(_puzzles.Start(_pawn, "count", null), Is.True);
         Assert.That(_puzzles.Start(_pawn, "count", null), Is.False);
-        Assert.That(Printed(), Has.Some.Contains("don't open in a demo").And.Some.Contains("no puzzle of that name"));
+        Assert.That(Printed(), Has.Some.Contains("no puzzle of that name"));
+    }
+
+    [Test]
+    public void A_Switchs_Result_Comes_Before_The_Scripts_Hear_Of_It()
+    {
+        // Arrange: opened with something to do with its result, as a switch's is
+        Load(CountingPuzzle);
+        _puzzles.Start(_pawn, "count", new[] { "need=1" }, ended: result => _console.Print($"switch {result}"));
+
+        // Act
+        Think();
+        Think(ButtonType.Use);
+
+        // Assert
+        var printed = Printed();
+        Assert.That(printed.IndexOf("switch success"), Is.GreaterThanOrEqualTo(0).And.LessThan(printed.FindIndex(line => line.StartsWith("puzzle\tcount"))));
+    }
+
+    [Test]
+    public void Someone_Joining_Mid_Game_Closes_Every_Puzzle_As_Backed_Out_Of()
+    {
+        // Arrange: two players, both working one
+        Load(CountingPuzzle);
+        var other = new PlayerState { Health = 100, Name = "Alice" };
+        other.Pawn = new PlayerPawn { Name = "Player", State = other };
+        _session.Players.Add(other);
+        _session.NetGame = true;
+        _puzzles.Start(_pawn, "count", null, 1, 1, 0);
+        _puzzles.Start(other.Pawn!, "count", null, 2, 2, 0);
+        bool othersShown = _puzzles.OthersPuzzles().Single().State == other;
+
+        // Act
+        _puzzles.CloseAll();
+
+        // Assert
+        Assert.That(othersShown, Is.True);
+        Assert.That(State.Puzzle, Is.Null);
+        Assert.That(other.Puzzle, Is.Null);
+        Assert.That(Printed().Count(line => line.StartsWith("puzzle\tcount\tcancel")), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void In_A_Demo_A_Puzzle_Reads_Only_What_A_Demo_Keeps()
+    {
+        // Arrange: turning right and walking forward, Esc and slot 5 held, slot 2 pressed
+        var definition = new PuzzleDefinition("p", "", "", true, PuzzleCancel.Nothing, 0, 240, 140);
+        var puzzle = new OpenPuzzle(definition, _pawn, State, -1, -1, 0) { PreviousKeys = PuzzleKeys.None };
+        var input = new PlayerInput();
+        var cmd = new TicCmd { ControlX = 35, ControlY = -35 };
+        foreach (var button in new[] { ButtonType.Esc, ButtonType.Slot5, ButtonType.Slot2, ButtonType.TurnLeft })
+            cmd.SetDown(button, true);
+        input.Begin(cmd);
+
+        // Act
+        var keys = Puzzles.ReadKeys(puzzle, input, 1, demo: true);
+
+        // Assert: the turn and walk, not the buttons a demo hasn't got
+        Assert.That(keys.Held, Is.EqualTo(PuzzleKeys.Up | PuzzleKeys.Right | Puzzles.DigitKey(2)));
+        Assert.That(keys.Digit, Is.EqualTo(2));
     }
 
     [Test]

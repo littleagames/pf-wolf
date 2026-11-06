@@ -71,7 +71,13 @@ internal static partial class GameHost
     static NetPlay MakeNetPlay() =>
         new(MapManager, _videoManager, _inputManager, HudMessageManager, doors, pushWalls, Session,
             new NetPlayHooks(() => LocalCmd, WriteNetState, ThreeDRefresh,
-                () => LastTimeCount = (int)GameEngineManager.GetTimeCount(), AddNetPlayer, ConnectAreas));
+                () => LastTimeCount = (int)GameEngineManager.GetTimeCount(),
+                join =>
+                {
+                    puzzles?.CloseAll();    // a joiner's sent no open puzzles, so they close everywhere first (Gameplay/Puzzles.cs)
+                    AddNetPlayer(join);
+                },
+                ConnectAreas));
 
     static NetOverlay MakeNetOverlay() =>
         new(_inputManager, _videoManager, MapManager, ui, menuDrawing, scoreboard, netPlay, Session);

@@ -886,6 +886,45 @@ public record MapSwitchTranslation
     /// </summary>
     public string State { get; init; } = "";
 
+    /// <summary>
+    /// A script's puzzle (game.puzzle) the player works first: using the switch opens it, and only
+    /// a success throws the switch (its `to`, sound, `actions`, keys taken). A fail runs
+    /// <see cref="Fail"/>, backing out runs <see cref="Cancel"/>; a result of the script's own does
+    /// nothing here (game.onpuzzle hears of it). Empty: no puzzle.
+    /// </summary>
+    public string Puzzle { get; init; } = "";
+
+    /// <summary>What the puzzle's start gets as its args table, by key (`{ size: 6 }`)</summary>
+    public Dictionary<string, string> PuzzleArgs { get; init; } = [];
+
+    /// <summary>The action calls run when its <see cref="Puzzle"/> is failed (A_Alarm, A_HurtPlayer(10), say)</summary>
+    public List<string> Fail { get; init; } = [];
+
+    /// <summary>The action calls run when its <see cref="Puzzle"/> is backed out of (none, usually)</summary>
+    public List<string> Cancel { get; init; } = [];
+
+    /// <summary>Tics after a failed <see cref="Puzzle"/> before the switch can be tried again. 0: at once.</summary>
+    public int Retry { get; init; }
+
+    /// <summary>Shown when it's used before <see cref="Retry"/> is up (a $NAME language key or the text). Empty: nothing's shown.</summary>
+    public string RetryMessage { get; init; } = "";
+
+    /// <summary>
+    /// Fails of its <see cref="Puzzle"/> before the switch is broken for good: it becomes wall (or
+    /// patch) <see cref="Broken"/>, or with none it just never works again. 0: it can be failed
+    /// any number of times.
+    /// </summary>
+    public int Tries { get; init; }
+
+    /// <summary>The wall (or, on a patch's switch, the patch) the switch becomes once its <see cref="Tries"/> are used up; 0 leaves it as it is</summary>
+    public int Broken { get; init; }
+
+    /// <summary>
+    /// An inventory item that throws it with no puzzle, one used up each time (BioShock's
+    /// auto-hack tool). Empty: none.
+    /// </summary>
+    public string SkipItem { get; init; } = "";
+
     /// <summary>Whether the player can use it while facing <paramref name="dir"/>.</summary>
     public bool UsableFrom(ControlDir dir)
     {

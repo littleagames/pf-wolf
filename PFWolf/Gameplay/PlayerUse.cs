@@ -93,10 +93,30 @@ internal sealed class PlayerUse(
         if (keys == null)
             return;
 
-        var gamestate = session.GameState;
         var tag = map.GetTag(tilex, tiley);
         if (hooks.MaySwitch?.Invoke(tilex, tiley, tag) == false)
             return;                 // a script leaves it be (game.onswitch)
+        if (PuzzleSwitches?.Use(wallSwitch, tilex, tiley, patch: false, tag,
+            () => ThrowSwitch(wallSwitch, tilex, tiley, dir, tag, keys), actions => RunActions(actions, tilex, tiley, dir, tag)) == true)
+            return;                 // its puzzle first: a success throws it (Gameplay/PuzzleSwitches.cs)
+        ThrowSwitch(wallSwitch, tilex, tiley, dir, tag, keys);
+    }
+
+    /// <summary>Switches with a puzzle to work first (Gameplay/PuzzleSwitches.cs); none: they're thrown as ever</summary>
+    internal PuzzleSwitches? PuzzleSwitches { get; set; }
+
+    // A switch's action calls, run on its tag from its tile, as the acting player
+    void RunActions(IReadOnlyList<string> actions, int tilex, int tiley, ControlDir dir, ushort tag)
+    {
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.Player, tag);
+        foreach (var action in actions)
+            Entities.MapTriggerRegistry.Invoke(action, activation);
+    }
+
+    // A switch wall thrown: its keys taken, it and its linked ones flipped, its sound and actions
+    void ThrowSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir, ushort tag, List<string> keys)
+    {
+        var gamestate = session.GameState;
         if (wallSwitch.TakesKey && keys.Count > 0)
             doors.TakeKeys(keys);
         if (wallSwitch.To is > 0 and < BitWall && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
@@ -131,9 +151,7 @@ internal sealed class PlayerUse(
         if (!string.IsNullOrEmpty(wallSwitch.Sound))
             hooks.PlayPlayerSound(wallSwitch.Sound);
 
-        var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.Player, tag);
-        foreach (var action in wallSwitch.Actions)
-            Entities.MapTriggerRegistry.Invoke(action, activation);
+        RunActions(wallSwitch.Actions, tilex, tiley, dir, tag);
     }
 
     /// <summary>
@@ -197,7 +215,16 @@ internal sealed class PlayerUse(
         var tag = map.GetTag(tilex, tiley);
         if (hooks.MaySwitch?.Invoke(tilex, tiley, tag) == false)
             return;                 // a script leaves it be (game.onswitch)
+        if (PuzzleSwitches?.Use(patchSwitch, tilex, tiley, patch: true, tag,
+            () => ThrowPatchSwitch(patchSwitch, tilex, tiley, dir, tag, keys), actions => RunActions(actions, tilex, tiley, dir, tag)) == true)
+            return;                 // its puzzle first: a success throws it (Gameplay/PuzzleSwitches.cs)
+        ThrowPatchSwitch(patchSwitch, tilex, tiley, dir, tag, keys);
+    }
 
+    // A patch's switch thrown: its sound and actions, then (unless they all came to nothing) its
+    // keys taken and it and its linked ones flipped
+    void ThrowPatchSwitch(MapSwitchTranslation patchSwitch, int tilex, int tiley, ControlDir dir, ushort tag, List<string> keys)
+    {
         if (!string.IsNullOrEmpty(patchSwitch.Sound))
             hooks.PlayPlayerSound(patchSwitch.Sound);
 
