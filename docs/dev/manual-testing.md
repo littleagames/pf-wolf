@@ -673,10 +673,10 @@ can reach), not played by hand.
       on the status bar running down while a guard waits for papers.
 - [ ] Boss Demo (`--file boss-demo`), driven windowed: the health bar; the gatling gun taking the
       Warden to half, his enraging into the red phase (rockets, its bar full again); killing it
-      opening the exit. **(never tried)**: the fight played fair (no god mode); the quake on his
-      steps; the music change and back; saving and loading in either phase (the bar's full
-      health is kept on the boss); dying and restarting mid-fight; the end-of-level kill ratio
-      100% with the Warden counted once (the enraged phase takes his place in the total).
+      opening the exit; the end-of-level kill ratio 100% with the Warden counted once (the
+      enraged phase takes his place in the total). **(never tried)**: the fight played fair (no
+      god mode); the quake on his steps; the music change and back; saving and loading in either
+      phase (the bar's full health is kept on the boss); dying and restarting mid-fight.
 - [ ] Hunters Demo (`--file hunters-demo`): headless, with everyone set chasing, the hunters closed
       to about half their starting distance in 30 seconds against the plain guards' two thirds,
       and the hook raised no errors. **(never tried)**: watching a hunter come round the maze's
