@@ -1,0 +1,9 @@
+# The Transitions Demo's panels, on the object plane of every panel's wall tile (970-979 are
+# this mod's). Use one and you go to the other tile with its tag (the tag plane, plane 4): the
+# same style's panel in the other hall. "beside" puts you on the first open tile next to it,
+# behind you as you face, since the panel is a wall. `repeat: true` keeps it for good.
+# scripts/transitions-demo.lua plays the panel's style as you go (game.onuse).
+triggers:
+  970:
+    action: A_TeleportTag("beside", "switches/elevbutn")
+    repeat: true

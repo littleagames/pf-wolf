@@ -145,6 +145,10 @@ public static class ScriptApi
             "Makes an emitter of the script's, as game.defineparticle does a type; its type must be one there is. actordefs particles and A_SpawnParticles can name it once it's made"),
         Fn("particlecount", "game.particlecount()", "How many particles there are now, for a script to throw out fewer when there are many"),
         Fn("showtext", "game.showtext(name)", "Shows a text (texts/, in the help article format) as an article, then goes back to the level, its clock not counting the reading (A_ShowText). It does nothing while a demo plays or records, or in a game with others"),
+        Fn("fade", "game.fade(style[, tics[, color]])",
+            "Fades the screen out to a color (black; a name, #RRGGBB or palette index) in a fade style at once, and back in the same way once the tic is done, so what the script does meanwhile (a teleport) happens out of sight. Styles: palette, fizzle, melt, mosaic, crossfade, dither, burn, iris, doors, crt, clock, spiral, wipe-left, wipe-right, wipe-up, wipe-down, blinds. tics (1-700) is each half's length, the game's screen fade's when left out. Not in game.onhud"),
+        Fn("transition", "game.transition(style[, tics])",
+            "The frame drawn after this tic comes in over the one on screen in a fade style (as game.fade lists), with no color between: a teleport crossfaded or wiped. tics (1-700) is its length, the level fade's when left out. Not in game.onhud"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> ActorFields { get; } =

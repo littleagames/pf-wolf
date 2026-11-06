@@ -783,6 +783,17 @@ can reach), not played by hand.
       (`--game spear`, its blue BKGDCOLOR under the glows), widescreen and UI Scale, a real pickup
       message, the clock running past a minute, the greeting after loading a save and after
       dying, and the fonts in the editor (Ctrl+F in fonts.yaml, F11 Definitions).
+- [ ] Transitions Demo (`--file transitions-demo`, every fade style, 2026-11-06): driven windowed
+      with `fadetics 140`, burst screenshots of a crossfade and an iris cut (Hall of Cuts), a burn
+      out through black (Hall of Fades), the death melt into red, and opening the control panel
+      (burn out, crossfade in); every new style rendered off-screen at five points, picture to
+      picture and out to black. **(never tried)** in-game: the other 13 panels in each hall
+      (palette's plain cut, wipes, blinds, doors, CRT, clock, spiral, dither, fizzle, melt,
+      mosaic), the level-start iris after Get Psyched and after a death, the guard room, the
+      elevator's intermission and the burn between screens, the styles at a high resolution
+      and with UI Scale (chunky dither/spiral/burn), widescreen, uncapped frame rates during a
+      `game.fade`, the `fade <style>` console command with the new names, and a game.fade in a
+      network game (it blocks every machine together).
 
 ## 1.15 Multiplayer
 

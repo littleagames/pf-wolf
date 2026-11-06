@@ -70,11 +70,11 @@ internal sealed class GameInfoSettings
         if (string.IsNullOrEmpty(value))
             return fallback;
 
-        // By name only: Enum.TryParse would also take numbers
-        if (Enum.GetNames<FadeStyle>().Contains(value, StringComparer.OrdinalIgnoreCase))
-            return Enum.Parse<FadeStyle>(value, ignoreCase: true);
+        // By name only (wipe-left or wipeleft): Enum.TryParse would also take numbers
+        if (FadeStyles.TryParse(value, out var style))
+            return style;
 
-        Console.WriteLine($"Unknown {key} '{value}' in game-info, using {fallback.ToString().ToLowerInvariant()} instead");
+        Console.WriteLine($"Unknown {key} '{value}' in game-info, using {FadeStyles.Name(fallback)} instead");
         return fallback;
     }
 }

@@ -212,7 +212,12 @@ internal sealed class LevelLoop(
 
             hooks.UpdateSoundListener();      // JAB
             if (video.ScreenFaded)
+            {
+                bool scripted = video.NextFadeIn != null;     // a script's game.fade coming back in
                 video.FadeIn();
+                if (scripted)
+                    frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();    // the fade's time isn't played
+            }
 
             // A new game's quick instructions over its first view (bstone's ShowQuickInstructions);
             // the time spent reading them isn't played

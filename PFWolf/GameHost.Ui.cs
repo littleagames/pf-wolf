@@ -393,6 +393,19 @@ internal static partial class GameHost
         LastTimeCount = (int)GameEngineManager.GetTimeCount();
     }
 
+    /// <summary>
+    /// A script's game.fade: the screen fades out to a color in a style now, in the middle of the
+    /// tic, and the play loop fades the next frame back in the same way (VideoManager.NextFadeIn).
+    /// The clock doesn't count the time it took.
+    /// </summary>
+    internal static void ScriptFade(FadeStyle style, int? tics, string color)
+    {
+        _automapManager.Close();
+        _videoManager.FadeOut(style, _videoManager.PaletteColor(color), 30, tics ?? _videoManager.FadeTics);
+        _videoManager.NextFadeIn = (style, tics ?? _videoManager.FadeTics);
+        LastTimeCount = (int)GameEngineManager.GetTimeCount();
+    }
+
     // The status bar's radar (Ui/Radar.cs)
     static Radar radar = null!;     // made in InitServices
 

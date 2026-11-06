@@ -36,9 +36,9 @@ internal sealed class DebugCommands(
         console.Register("perf", "Times each part of every frame from now on (1), stops (0), or shows what's been timed (no argument).", "perf [0|1]", PerfCommand, complete: Values("0", "1"));
         console.Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", SlowMoCommand);
         console.Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", VblsCommand);
-        console.Register("fade", "Fades the view out to black and back in, to try a fade style.",
-            "fade <palette|fizzle|melt|mosaic> [tics]", FadeCommand, InLevel,
-            complete: Values(Enum.GetNames<FadeStyle>().Select(n => n.ToLowerInvariant()).ToArray()));
+        console.Register("fade", "Fades the view out to black and back in, to try a fade style (no style lists them).",
+            "fade [style] [tics]", FadeCommand, InLevel,
+            complete: Values(FadeStyles.Names));
         console.Register("screenshot","Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => debugScreens.ScreenshotPending = true);
     }
     internal void OverheadCommand(string[] args)
@@ -203,8 +203,13 @@ internal sealed class DebugCommands(
 
     internal void FadeCommand(string[] args)
     {
-        if (args.Length == 0 || !Enum.TryParse<FadeStyle>(args[0], ignoreCase: true, out var style))
-            throw new ArgumentException("usage: fade <palette|fizzle|melt|mosaic> [tics]");
+        if (args.Length == 0)
+        {
+            console.Print("Fade styles: " + string.Join(", ", FadeStyles.Names));
+            return;
+        }
+        if (!FadeStyles.TryParse(args[0], out var style))
+            throw new ArgumentException($"unknown fade style '{args[0]}': {string.Join(", ", FadeStyles.Names)}");
 
         // Without a length, as long as a screen fade
         int? tics = args.Length > 1 ? ParseInt(args[1], 1, 700) : video.FadeTics;

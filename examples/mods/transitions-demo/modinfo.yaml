@@ -1,0 +1,4 @@
+name: Transitions Demo
+version: "1.0"
+description: Every screen transition - palette, fizzle, melt, mosaic, crossfade, dither, burn, iris, doors, CRT, clock, spiral, wipes and blinds - on panels in a gallery (replacing Floor 1), straight from view to view and out through black, and the game's own fades each in a different style.
+game-packs: [wolf3d]

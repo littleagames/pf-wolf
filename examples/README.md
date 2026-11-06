@@ -2237,6 +2237,63 @@ The font pictures, the font file and the gallery's pages are made by
 powershell -ExecutionPolicy Bypass -File examples/tools/make-fonts-demo.ps1
 ```
 
+## Transitions Demo (`mods/transitions-demo`)
+
+**Every screen transition** (Wolfenstein 3D, replacing Floor 1): a gallery of panels, one for
+each fade style, and the game's own fades each set to a different one.
+
+```
+PFWolf.exe --file transitions-demo
+```
+
+- **Two halls, no doors between them.** The Hall of Cuts (blue stone, steel panels) and the
+  Hall of Fades (red brick, brass panels) each have 17 panels, one per style, with a picture of
+  the style half way through and its name. Use a panel and you go to the same panel in the
+  other hall:
+  - from the **Hall of Cuts**, the view after comes in straight over the one before
+    (`game.transition`);
+  - from the **Hall of Fades**, the screen goes out to black and comes back in the same style
+    (`game.fade`).
+- **The styles:** `palette` (every color steps together; between two pictures it's a plain
+  cut), `fizzle` (Wolf3D's death fizzle), `melt` (DOOM's columns), `mosaic` (SNES blocks),
+  `crossfade`, `dither` (an 8x8 ordered dither), `burn` (blotches burning away with ember
+  edges), `iris` (a cartoon's circle), `doors` (steel elevator doors shut and part), `crt` (an
+  old TV off to a line and a dot, and back on), `clock` (a clock hand's sweep), `spiral`
+  (blocks spiralling in), `wipe-left`, `wipe-right`, `wipe-up`, `wipe-down` (a soft edge
+  sweeping across) and `blinds` (venetian slats turning over). Iris, doors and CRT shut on the
+  old picture and open on the new one.
+- **The game's own fades** (`game-info.yaml`): between screens the screen burns away
+  (`screen-fade-style: burn`), the control panel crossfades (`menu-fade-style`), a level's
+  first view opens in an iris (`level-fade-style`), and being killed melts the view into red
+  (`death-fade-style`). The guard room off the Hall of Fades will show you that one; the
+  elevator at its east end ends the level.
+- `fadetics 140` in the console slows the panels down (70 tics a second; 50 to start). The
+  `fade <style> [tics]` console command fades the view out and in in any style, anywhere.
+
+### What's in it
+
+- `game-info.yaml`: the four fade styles and their lengths (`-tics`).
+- `mapdefs/walls.yaml`: the panels, walls 160-176 (steel) and 177-193 (brass);
+  `mapdefs/triggers.yaml`: object 970 on each panel's tile, a use trigger running
+  `A_TeleportTag("beside", ...)`, which takes you to the other tile with its tag. Each style's
+  two panels share a tag (the tag plane, plane 4): palette is 1, blinds 17.
+- `scripts/transitions-demo.lua`: `game.onuse` picks the panel's style by its tag before its
+  trigger moves you, and calls `game.transition(style, tics)` or `game.fade(style, tics)`;
+  `game.message` (keyed, so it shows with messages off) names it; `game.command` adds
+  `fadetics`.
+- `textures/TDCUT01-17.png`, `TDFADE01-17.png`: the panels; `maps/MAP01.wad`: the gallery.
+
+A script can use any style: `game.fade(style[, tics[, color]])` fades out to a color (black)
+at once and back in after the tic, so what the script does meanwhile happens out of sight;
+`game.transition(style[, tics])` brings the next frame in over the one on screen.
+
+The panels, their walls and the level are made by `tools/make-transitions-demo.ps1`. Edit it
+and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-transitions-demo.ps1
+```
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

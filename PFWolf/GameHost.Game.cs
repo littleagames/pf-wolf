@@ -460,6 +460,13 @@ internal static partial class GameHost
             AddObjective = (name, amount) => Objectives.Add(name, amount),
             CompleteObjective = (name, amount) => Objectives.Complete(name, amount),
             ShowText = ShowTextInLevel,
+            Fade = ScriptFade,
+            Transition = (style, tics) =>
+            {
+                Session.FizzleIn = true;
+                Session.FizzleInStyle = style;
+                Session.FizzleInTics = tics;
+            },
             RemoveWall = (x, y, arch) => destructibleWalls.Remove(x, y, arch),
             BreakWall = (x, y) => destructibleWalls.Break(x, y),
             WallHealth = (x, y) => destructibleWalls.HealthLeft(x, y),

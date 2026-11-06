@@ -150,6 +150,13 @@ internal sealed class GameSession
     /// <summary>Whether a game is going (the menu was opened from it), and whether the next frame fades the level in</summary>
     internal bool InGame, FizzleIn;
 
+    /// <summary>
+    /// The style and length that fade in, when not the level's own (a script's game.transition);
+    /// both go back to null once it has
+    /// </summary>
+    internal Managers.FadeStyle? FizzleInStyle;
+    internal int? FizzleInTics;
+
     /// <summary>The color of the border around the view (Change View, in game)</summary>
     internal string BorderCol = "VIEWCOLOR";
 

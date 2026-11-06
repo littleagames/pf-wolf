@@ -141,13 +141,16 @@ public record GameInfoAsset : Asset
     /// </summary>
     public string? MenuFadeColor { get; init; }
 
-    // Fade styles are palette, fizzle, melt or mosaic (see FadeStyle). Each has a length in
-    // tics (70 a second) beside it; a palette fade takes a step every 2 tics or so.
+    // Fade styles (see FadeStyle) are palette, fizzle, melt, mosaic, crossfade, dither, burn,
+    // iris, doors, crt, clock, spiral, wipe-left, wipe-right, wipe-up, wipe-down or blinds. Each
+    // has a length in tics (70 a second) beside it; a palette fade takes a step every 2 tics or so.
 
     /// <summary>
     /// How the screen fades out and back in between screens (default palette). Every fade style
-    /// here is palette, fizzle, melt or mosaic, and each -tics beside one is its length in tics
-    /// (70 a second).
+    /// here is palette, fizzle, melt, mosaic, crossfade, dither, burn, iris, doors, crt, clock,
+    /// spiral, wipe-left, wipe-right, wipe-up, wipe-down or blinds, and each -tics beside one is
+    /// its length in tics (70 a second). Iris, doors and crt shut on the color a fade goes to and
+    /// open from it; between two pictures (a level's first view) they shut to black and open.
     /// </summary>
     public string? ScreenFadeStyle { get; init; }
 

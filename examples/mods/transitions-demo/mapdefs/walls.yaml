@@ -1,0 +1,211 @@
+# The Transitions Demo's panels, one per fade style in each hall (160-193 are this mod's):
+# steel in the Hall of Cuts, brass in the Hall of Fades. Using one is the use trigger on its
+# tile (object 970, mapdefs/triggers.yaml). Written by tools/make-transitions-demo.ps1, with
+# the textures.
+walls:
+    # The Hall of Cuts
+    # palette, tag 1
+    '160':
+        North: TDCUT01
+        South: TDCUT01
+        East: TDCUT01
+        West: TDCUT01
+    # fizzle, tag 2
+    '161':
+        North: TDCUT02
+        South: TDCUT02
+        East: TDCUT02
+        West: TDCUT02
+    # melt, tag 3
+    '162':
+        North: TDCUT03
+        South: TDCUT03
+        East: TDCUT03
+        West: TDCUT03
+    # mosaic, tag 4
+    '163':
+        North: TDCUT04
+        South: TDCUT04
+        East: TDCUT04
+        West: TDCUT04
+    # crossfade, tag 5
+    '164':
+        North: TDCUT05
+        South: TDCUT05
+        East: TDCUT05
+        West: TDCUT05
+    # dither, tag 6
+    '165':
+        North: TDCUT06
+        South: TDCUT06
+        East: TDCUT06
+        West: TDCUT06
+    # burn, tag 7
+    '166':
+        North: TDCUT07
+        South: TDCUT07
+        East: TDCUT07
+        West: TDCUT07
+    # iris, tag 8
+    '167':
+        North: TDCUT08
+        South: TDCUT08
+        East: TDCUT08
+        West: TDCUT08
+    # doors, tag 9
+    '168':
+        North: TDCUT09
+        South: TDCUT09
+        East: TDCUT09
+        West: TDCUT09
+    # crt, tag 10
+    '169':
+        North: TDCUT10
+        South: TDCUT10
+        East: TDCUT10
+        West: TDCUT10
+    # clock, tag 11
+    '170':
+        North: TDCUT11
+        South: TDCUT11
+        East: TDCUT11
+        West: TDCUT11
+    # spiral, tag 12
+    '171':
+        North: TDCUT12
+        South: TDCUT12
+        East: TDCUT12
+        West: TDCUT12
+    # wipe-left, tag 13
+    '172':
+        North: TDCUT13
+        South: TDCUT13
+        East: TDCUT13
+        West: TDCUT13
+    # wipe-right, tag 14
+    '173':
+        North: TDCUT14
+        South: TDCUT14
+        East: TDCUT14
+        West: TDCUT14
+    # wipe-up, tag 15
+    '174':
+        North: TDCUT15
+        South: TDCUT15
+        East: TDCUT15
+        West: TDCUT15
+    # wipe-down, tag 16
+    '175':
+        North: TDCUT16
+        South: TDCUT16
+        East: TDCUT16
+        West: TDCUT16
+    # blinds, tag 17
+    '176':
+        North: TDCUT17
+        South: TDCUT17
+        East: TDCUT17
+        West: TDCUT17
+    # The Hall of Fades
+    # palette, tag 1
+    '177':
+        North: TDFADE01
+        South: TDFADE01
+        East: TDFADE01
+        West: TDFADE01
+    # fizzle, tag 2
+    '178':
+        North: TDFADE02
+        South: TDFADE02
+        East: TDFADE02
+        West: TDFADE02
+    # melt, tag 3
+    '179':
+        North: TDFADE03
+        South: TDFADE03
+        East: TDFADE03
+        West: TDFADE03
+    # mosaic, tag 4
+    '180':
+        North: TDFADE04
+        South: TDFADE04
+        East: TDFADE04
+        West: TDFADE04
+    # crossfade, tag 5
+    '181':
+        North: TDFADE05
+        South: TDFADE05
+        East: TDFADE05
+        West: TDFADE05
+    # dither, tag 6
+    '182':
+        North: TDFADE06
+        South: TDFADE06
+        East: TDFADE06
+        West: TDFADE06
+    # burn, tag 7
+    '183':
+        North: TDFADE07
+        South: TDFADE07
+        East: TDFADE07
+        West: TDFADE07
+    # iris, tag 8
+    '184':
+        North: TDFADE08
+        South: TDFADE08
+        East: TDFADE08
+        West: TDFADE08
+    # doors, tag 9
+    '185':
+        North: TDFADE09
+        South: TDFADE09
+        East: TDFADE09
+        West: TDFADE09
+    # crt, tag 10
+    '186':
+        North: TDFADE10
+        South: TDFADE10
+        East: TDFADE10
+        West: TDFADE10
+    # clock, tag 11
+    '187':
+        North: TDFADE11
+        South: TDFADE11
+        East: TDFADE11
+        West: TDFADE11
+    # spiral, tag 12
+    '188':
+        North: TDFADE12
+        South: TDFADE12
+        East: TDFADE12
+        West: TDFADE12
+    # wipe-left, tag 13
+    '189':
+        North: TDFADE13
+        South: TDFADE13
+        East: TDFADE13
+        West: TDFADE13
+    # wipe-right, tag 14
+    '190':
+        North: TDFADE14
+        South: TDFADE14
+        East: TDFADE14
+        West: TDFADE14
+    # wipe-up, tag 15
+    '191':
+        North: TDFADE15
+        South: TDFADE15
+        East: TDFADE15
+        West: TDFADE15
+    # wipe-down, tag 16
+    '192':
+        North: TDFADE16
+        South: TDFADE16
+        East: TDFADE16
+        West: TDFADE16
+    # blinds, tag 17
+    '193':
+        North: TDFADE17
+        South: TDFADE17
+        East: TDFADE17
+        West: TDFADE17

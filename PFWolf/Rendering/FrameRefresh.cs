@@ -307,8 +307,11 @@ internal sealed class FrameRefresh(
             // the last frame's (a warp's "transporting out") staying up through it
             hooks.DrawStatusOverlay();
             hooks.DrawHudMessages();
-            video.Transition(hooks.LevelFadeStyle(), 0, 0, video.ScreenWidth, video.ScreenHeight, (uint)hooks.LevelFadeTics());
+            video.Transition(session.FizzleInStyle ?? hooks.LevelFadeStyle(), 0, 0, video.ScreenWidth, video.ScreenHeight,
+                (uint)(session.FizzleInTics ?? hooks.LevelFadeTics()));
             session.FizzleIn = false;
+            session.FizzleInStyle = null;
+            session.FizzleInTics = null;
 
             LastTimeCount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count
         }

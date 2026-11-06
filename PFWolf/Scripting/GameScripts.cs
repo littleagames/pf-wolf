@@ -61,6 +61,12 @@ internal sealed partial class GameScripts(
     /// <summary>game.showtext: a text shown as an article in the middle of the level (A_ShowText)</summary>
     internal Action<string> ShowText { get; init; } = _ => { };
 
+    /// <summary>game.fade: the screen fades out to a color (style, tics or null, color) now, and back in after the tic</summary>
+    internal Action<FadeStyle, int?, string> Fade { get; init; } = (_, _, _) => { };
+
+    /// <summary>game.transition: the next frame comes in over this one (style, tics or null)</summary>
+    internal Action<FadeStyle, int?> Transition { get; init; } = (_, _) => { };
+
     /// <summary>game.removewall: takes the wall off a tile, an arch left or not (Gameplay/DestructibleWalls.cs); false if it can't go</summary>
     internal Func<int, int, bool, bool> RemoveWall { get; init; } = (_, _, _) => false;
 
@@ -478,6 +484,25 @@ internal sealed partial class GameScripts(
             ShowText(StringArg(c, 0));
             return new(c.Return());
         });
+        // game.fade(style[, tics[, color]]): the screen fades out to a color (black) in a style
+        // (Managers/ScreenTransitions.cs) at once, and back in the same way once the tic is done,
+        // so what the script changes meanwhile (a teleport) happens out of sight.
+        // game.transition(style[, tics]): the frame drawn after this tic comes in over the one on
+        // screen in a style, without a color between.
+        game["fade"] = new LuaFunction("game.fade", (c, _) =>
+        {
+            NotWhileDrawing(c, "game.fade");
+            var style = StyleArg(c, "game.fade");
+            var color = OptionalString(c, 2) is { Length: > 0 } given ? given : "Black";
+            Fade(style, TicsArg(c), color);
+            return new(c.Return());
+        });
+        game["transition"] = new LuaFunction("game.transition", (c, _) =>
+        {
+            NotWhileDrawing(c, "game.transition");
+            Transition(StyleArg(c, "game.transition"), TicsArg(c));
+            return new(c.Return());
+        });
         game["message"] = new LuaFunction("game.message", (c, _) =>
         {
             // With a key: the message with that key, kept up to date where it is (a clock), shown with messages
@@ -491,6 +516,22 @@ internal sealed partial class GameScripts(
         InstallParticleApi(game, methods);      // only for show, in any hook (Scripting/GameScripts.Particles.cs)
         InstallPuzzleFunctions(game, host);     // game.puzzle, game.startpuzzle and the drawing a puzzle does (Scripting/GameScripts.Puzzles.cs)
         host.Globals["game"] = game;
+    }
+
+    // A fade style by name (wipe-left), for game.fade and game.transition
+    static FadeStyle StyleArg(LuaFunctionExecutionContext c, string what) =>
+        FadeStyles.TryParse(StringArg(c, 0), out var style) ? style
+            : throw new LuaRuntimeException(c.State, (LuaValue)$"{what}: \"{StringArg(c, 0)}\" isn't a fade style ({string.Join(", ", FadeStyles.Names)})", 1);
+
+    // A fade's length in tics, 1 to 700; nil (or none) for the usual
+    static int? TicsArg(LuaFunctionExecutionContext c) =>
+        c.ArgumentCount > 1 && Arg(c, 1).Type != LuaValueType.Nil ? Math.Clamp((int)Math.Round(NumberArg(c, 1, 0)), 1, 700) : null;
+
+    // Fades take the screen over, which a hook drawing over it (game.onhud, a puzzle's draw) can't let them
+    void NotWhileDrawing(LuaFunctionExecutionContext c, string what)
+    {
+        if (_localHook != null)
+            throw new LuaRuntimeException(c.State, (LuaValue)$"{what} can't run in {_localHook}: it draws, and a fade takes the screen over", 1);
     }
 
     // Switch actions that work on the switch's own tile rather than its tag, which game.trigger

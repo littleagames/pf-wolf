@@ -1,0 +1,22 @@
+# Merged into the game pack's game-info.yaml: each of the game's own fades in a different style,
+# so going about the game shows four of them. Every style a fade can have:
+#   palette, fizzle, melt, mosaic, crossfade, dither, burn, iris, doors, crt, clock, spiral,
+#   wipe-left, wipe-right, wipe-up, wipe-down, blinds
+# Each -tics is a length in tics (70 a second).
+
+# Between screens: the title, the menus from them, a level's intermission, the high scores...
+# The screen burns away to black and back.
+screen-fade-style: burn
+screen-fade-tics: 45
+
+# The control panel in and out, quicker: a crossfade
+menu-fade-style: crossfade
+menu-fade-tics: 20
+
+# A level's first view (after Get Psyched, a saved game, a life lost): a cartoon iris
+level-fade-style: iris
+level-fade-tics: 50
+
+# Killed, the view melts down into red, as DOOM's screens melt
+death-fade-style: melt
+death-fade-tics: 90

@@ -1031,7 +1031,18 @@ internal class VideoManager
     private const int TicsPerFadeStep = 2;
 
     internal void FadeIn() => FadeIn(30);
-    internal void FadeIn(int steps) => FadeIn(FadeStyle, new GamePalette { Colors = GamePal }, steps, FadeTics);
+    internal void FadeIn(int steps)
+    {
+        var (style, tics) = NextFadeIn ?? (FadeStyle, FadeTics);
+        NextFadeIn = null;
+        FadeIn(style, new GamePalette { Colors = GamePal }, steps, tics);
+    }
+
+    /// <summary>
+    /// How the next fade in that isn't given a style goes, once (a script's game.fade, which
+    /// fades out at once and leaves the play loop to fade back in); null for the usual
+    /// </summary>
+    internal (FadeStyle Style, int? Tics)? NextFadeIn { get; set; }
     internal void FadeIn(FadeStyle style, int steps, int? tics = null) => FadeIn(style, new GamePalette { Colors = GamePal }, steps, tics);
     internal void FadeIn(GamePalette gamePalette, int steps) => FadeIn(FadeStyle, gamePalette, steps, FadeTics);
 
@@ -1359,10 +1370,14 @@ internal class VideoManager
         if (style != FadeStyle.Palette)
         {
             var from = CaptureScreen();
+            var to = RenderScreenBuffer(CurPal);
+
+            // A death's or warp's color filling the view is a fade to it, a level's first frame
+            // after black a fade in: the styles that shut and open again only do half
             var canvas = new TransitionCanvas
             {
                 From = from,
-                To = RenderScreenBuffer(CurPal),
+                To = to,
                 Output = (uint[])from.Clone(),
                 Stride = ScreenWidth,
                 X = x1,
@@ -1370,6 +1385,9 @@ internal class VideoManager
                 Width = width,
                 Height = height,
                 ScaleFactor = TransitionBlockSize,
+                FromIsSolid = TransitionCanvas.IsSolid(from, ScreenWidth, x1, y1, width, height),
+                ToIsSolid = TransitionCanvas.IsSolid(to, ScreenWidth, x1, y1, width, height),
+                MapRgb = MapScreenRgb,
             };
             wasCutShort = RunTransition(style, canvas, tics, cutShort);
         }
@@ -1439,7 +1457,18 @@ internal class VideoManager
         ScaleFactor = TransitionBlockSize,
         FromIsSolid = fromIsSolid,
         ToIsSolid = toIsSolid,
+        MapRgb = MapScreenRgb,
     };
+
+    /// <summary>A color as a pixel in the screen surface's format</summary>
+    private uint MapScreenRgb(byte r, byte g, byte b) => SDL.SDL_MapRGBA(GetSurface(Screen).format, r, g, b, 255);
+
+    /// <summary>A color name, #RRGGBB or palette index, as the color it is in the game's palette</summary>
+    internal Color PaletteColor(string color)
+    {
+        var entry = GamePal[ResolveColor(color)];
+        return new Color { Red = entry.r, Green = entry.g, Blue = entry.b, Alpha = 255 };
+    }
 
     /// <summary>
     /// Runs a transition to the end, putting each step on screen once a tic, or jumps to the end
@@ -1447,13 +1476,7 @@ internal class VideoManager
     /// </summary>
     private bool RunTransition(FadeStyle style, TransitionCanvas canvas, uint tics, Func<bool>? cutShort = null)
     {
-        ScreenTransition transition = style switch
-        {
-            FadeStyle.Fizzle => new FizzleTransition(rndmask, (int)rndBitsY),
-            FadeStyle.Melt => new MeltTransition(canvas),
-            FadeStyle.Mosaic => new MosaicTransition(),
-            _ => throw new ArgumentOutOfRangeException(nameof(style), style, "Not a transition style"),
-        };
+        var transition = ScreenTransition.Create(style, canvas, rndmask, (int)rndBitsY);
 
         uint start = GameEngineManager.GetTimeCount();
         uint frame = start;
