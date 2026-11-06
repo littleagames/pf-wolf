@@ -1,0 +1,28 @@
+^P
+^C0A
+How the Fonts Demo is made
+^C00
+
+fonts.yaml names each font and what
+it is made of: Wolf3D's SmallFont or
+LargeFont (type: vga), a font file,
+a picture sheet or a picture a
+character. Shadows, gradients,
+outlines and glows go on any font.
+
+Text is printed by font name: menu
+Labels, menu items, the messages
+over the view, Lua's game.drawtext.
+^P
+^C0A
+Where it all is
+^C00
+
+menudefs/ holds these pages, and
+scripts/fonts-demo.lua prints fonts
+over the view as you play. Type
+"fonts" in the console to hide them.
+
+The pictures are drawn by
+examples/tools/make-fonts-demo.ps1.
+^E

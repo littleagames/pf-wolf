@@ -273,10 +273,20 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
             Outline: LabelOutline(label), Glow: LabelGlow(label));
 
         var text = label.Text.ToLanguageText(language);
-        if (label.HorizontalOrientation == HorizontalOrientation.Center && label.Width > 0)
-            ui.CenteredText(label.X, label.Width, label.Y, style).CPrint(text);
-        else if (label.HorizontalOrientation == HorizontalOrientation.Center)
-            ui.CenteredText(0, 320, label.Y, style).CPrint(text);
+        if (label.HorizontalOrientation == HorizontalOrientation.Center)
+        {
+            // Centered between X and X + Width, or across the screen. A line wider than that
+            // runs past both sides rather than stopping the game (US_CPrintLine's Quit), since
+            // it's a mod's text in a mod's font.
+            var (left, width) = label.Width > 0 ? (label.X, label.Width) : (0, 320);
+            int y = label.Y;
+            foreach (var line in text.TrimEnd('\n').Split('\n'))
+            {
+                ui.MeasureText(line, label.Font, out int w, out int h);
+                ui.TextAt(left + (width - w) / 2, y, style).Print(line);
+                y += h;
+            }
+        }
         else
             ui.TextAt(label.X, label.Y, style).Print(text);
     }

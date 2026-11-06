@@ -1,0 +1,169 @@
+# The Font Gallery's Glows page (menudefs/fonts-demo.yaml opens it). Made by
+# examples/tools/make-fonts-demo.ps1: change it there and run it again.
+#
+# Each sample is a Label in a font from fonts.yaml (left), with what makes it beside it in the
+# small font (right). Glows fade into the window's color (BKGDCOLOR), as text in a menu
+# window does.
+music: "WONDERIN"
+type: "wolf3d-menu"
+position:
+  x: 58
+  y: 163
+indent: 24
+components:
+  -
+    id: "background"
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    id: "legend"
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "Center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "Glows"
+      - horizontal-orientation: "Center"
+      - y: 4
+      - font: "FdShadowDeep"
+      - color: "READHCOLOR"
+  -
+    type: "Window"
+    params:
+      - x: 6
+      - y: 22
+      - width: 308
+      - height: 134
+  -
+    type: "Label"
+    params:
+      - text: "Glow"
+      - x: 14
+      - y: 28
+      - font: "FdGlow"
+      - color: "READHCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "glow: {}"
+      - x: 160
+      - y: 29
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "(radius 2, strength 50)"
+      - x: 160
+      - y: 38
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "Yellow glow"
+      - x: 14
+      - y: 53
+      - font: "FdGlowYellow"
+      - color: "White"
+  -
+    type: "Label"
+    params:
+      - text: "glow: { color: Yellow }"
+      - x: 160
+      - y: 54
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "Wide, bright"
+      - x: 14
+      - y: 78
+      - font: "FdGlowWide"
+      - color: "White"
+  -
+    type: "Label"
+    params:
+      - text: "glow: { radius: 4,"
+      - x: 160
+      - y: 79
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "  strength: 80 }"
+      - x: 160
+      - y: 88
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "Faint"
+      - x: 14
+      - y: 103
+      - font: "FdGlowFaint"
+      - color: "HIGHLIGHT"
+  -
+    type: "Label"
+    params:
+      - text: "glow: { radius: 3,"
+      - x: 160
+      - y: 104
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "  strength: 25 }"
+      - x: 160
+      - y: 113
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "Everything"
+      - x: 14
+      - y: 128
+      - font: "FdEverything"
+      - color: "READHCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "shadow, gradient,"
+      - x: 160
+      - y: 129
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "outline and glow"
+      - x: 160
+      - y: 138
+      - font: "SmallFont"
+      - color: "TEXTCOLOR"
+  # One item: 13 pixels plus 6
+  -
+    type: "Window"
+    params:
+      - x: 50
+      - y: 160
+      - width: 220
+      - height: 19
+menu-items:
+  -
+      id: "next"
+      type: "MenuSwitcher"
+      text: "Next: Picture Fonts"
+      short-key: P
+      enabled: true
+      action: "CP_Menu"
+      menu: "fonts-demo-pictures"

@@ -1,0 +1,4 @@
+name: Fonts Demo
+version: "1.0"
+description: Every kind of font and font effect - shadows, gradients, outlines, glows, font files, picture sheets and per-character pictures - in a Font Gallery under Options, over the view as you play, and in the pickup messages.
+game-packs: [wolf3d]

@@ -1,0 +1,244 @@
+# The Fonts Demo's fonts, merged into the game's fonts.yaml font by font: a name the game has
+# already (HudMessage, at the bottom) replaces that font; a new name adds one. Every key is in
+# the fonts reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/fonts
+#
+# Text is printed by font name: a menu Label's `font`, a menu's `font` for its items,
+# hud-messages.yaml's styles, intermission.yaml, the status bar, game.drawtext in Lua. The font
+# brings its effects (shadow, gradient, outline, glow) with it wherever it's used.
+#
+# The fonts are shown in Options -> Font Gallery (menudefs/), and some over the view as you
+# play (scripts/fonts-demo.lua).
+
+# ---------------------------------------------------------------------------------------------
+# Shadows: a copy of the text drawn first, offset, in one color. `shadow: {}` is 1 pixel right
+# and down, in black. Any type of font can have one.
+# ---------------------------------------------------------------------------------------------
+
+FdShadow:
+  type: vga
+  source: LargeFont
+  shadow: {}
+
+FdShadowSmall:
+  type: vga
+  source: SmallFont
+  shadow: {}
+
+# Further away: a heavier, deeper drop
+FdShadowDeep:
+  type: vga
+  source: LargeFont
+  shadow: { x: 2, y: 2, color: Black }
+
+# Up and to the left in white: lit from below, so the letters look pressed into the page
+FdEngraved:
+  type: vga
+  source: LargeFont
+  shadow: { x: -1, y: -1, color: White }
+
+# A colored shadow, straight down
+FdShadowBlue:
+  type: vga
+  source: LargeFont
+  shadow: { x: 0, y: 2, color: Blue }
+
+# ---------------------------------------------------------------------------------------------
+# Gradients: the text's color shaded down the glyphs, from `top` to `bottom` percent toward
+# white (positive) or black (negative). `gradient: {}` is 40 to -40. Made from whatever color
+# the text is printed in, so one font gives a gradient in every color. vga fonts, and graphic
+# and sheet fonts with colorize, can have one.
+# ---------------------------------------------------------------------------------------------
+
+FdGradient:
+  type: vga
+  source: LargeFont
+  gradient: {}
+
+FdGradientStrong:
+  type: vga
+  source: LargeFont
+  gradient: { top: 75, bottom: -75 }
+
+# Dark at the top, light at the bottom
+FdGradientFlip:
+  type: vga
+  source: LargeFont
+  gradient: { top: -60, bottom: 40 }
+
+# Only lightening: a highlight across the top, the text's own color at the bottom
+FdGradientShine:
+  type: vga
+  source: LargeFont
+  gradient: { top: 80, bottom: 0 }
+
+# ---------------------------------------------------------------------------------------------
+# Outlines: a border round each glyph. `outline: {}` is 1 pixel of black all round. The letters
+# don't move further apart, so thick outlines fill the gaps between them. Any type.
+# ---------------------------------------------------------------------------------------------
+
+FdOutline:
+  type: vga
+  source: LargeFont
+  outline: {}
+
+FdOutlineWhite:
+  type: vga
+  source: LargeFont
+  outline: { color: White }
+
+FdOutlineThick:
+  type: vga
+  source: LargeFont
+  outline: { color: Black, thickness: 2 }
+
+# diagonals: false leaves the corners out, so the border is rounder
+FdOutlineRound:
+  type: vga
+  source: LargeFont
+  outline: { color: Black, thickness: 2, diagonals: false }
+
+FdOutlineSmall:
+  type: vga
+  source: SmallFont
+  outline: { color: Black }
+
+# ---------------------------------------------------------------------------------------------
+# Glows: rings round the glyphs fading from `strength` percent of the glow color into the
+# background color behind the text (in the menus, the window's BKGDCOLOR). `glow: {}` is 2
+# rings in the text's own color, from 50%. Drawn in solid colors, so keep glowing text on a
+# plain background. Any type.
+# ---------------------------------------------------------------------------------------------
+
+FdGlow:
+  type: vga
+  source: LargeFont
+  glow: {}
+
+FdGlowYellow:
+  type: vga
+  source: LargeFont
+  glow: { color: Yellow }
+
+FdGlowWide:
+  type: vga
+  source: LargeFont
+  glow: { color: "Light Blue", radius: 4, strength: 80 }
+
+FdGlowFaint:
+  type: vga
+  source: LargeFont
+  glow: { radius: 3, strength: 25 }
+
+# ---------------------------------------------------------------------------------------------
+# All together: a glow starts outside the outline, the shadow is cast by the outlined letters,
+# and the gradient shades the letters themselves
+# ---------------------------------------------------------------------------------------------
+
+FdEverything:
+  type: vga
+  source: LargeFont
+  shadow: { x: 2, y: 2 }
+  gradient: { top: 60, bottom: -50 }
+  outline: { color: Black }
+  glow: { color: Yellow, radius: 2, strength: 40 }
+
+# ---------------------------------------------------------------------------------------------
+# Font types besides Wolf3D's own two
+# ---------------------------------------------------------------------------------------------
+
+# upper-case: lower case letters use the capitals' glyphs (any type)
+FdCaps:
+  type: vga
+  source: SmallFont
+  upper-case: true
+
+# vga from a file: fonts/FDITALIC.fnt is a font in Wolf3D's own format (WDC's .wsf files work
+# too). Named by its file name. A file named like one of the game's fonts (fonts/SmallFont.fnt)
+# would replace it.
+FdItalic:
+  type: vga
+  source: FDITALIC
+
+# sheet: one picture (graphics/FDDOTS.png) cut into a grid of cells, left to right and down.
+# The first cell is '!' (first-char 33); there's no space cell, so a space moves along
+# space-width. proportional trims each glyph to the columns it uses and leaves `spacing` after
+# it. colorize draws the glyphs in the text's color (they're white in the picture), which lets
+# it have a gradient.
+FdDots:
+  type: sheet
+  image: FDDOTS
+  cell-width: 10
+  cell-height: 14
+  first-char: 33
+  proportional: true
+  spacing: 2
+  space-width: 6
+  upper-case: true
+  colorize: true
+  gradient: { top: 50, bottom: -30 }
+
+# sheet in its own colors (no colorize: the text's color is ignored), fixed width (every
+# character moves along the cell width, 13), holding only the characters in `chars`, in order.
+# The picture has no see-through pixels, so `transparent` names the background color to leave
+# out (a color name, #RRGGBB or a palette index); without it the shadow would be a solid box.
+FdGold:
+  type: sheet
+  image: FDGOLD
+  cell-width: 13
+  cell-height: 17
+  chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?.,:-'"
+  transparent: "#FF00FF"
+  upper-case: true
+  space-width: 8
+  advances:
+    "!": 7
+    ".": 7
+    ",": 7
+    ":": 7
+    "'": 7
+  shadow: { x: 2, y: 2 }
+
+# graphic: a picture for each character, in its own colors. `pattern` names the pictures by
+# character code ({code:000} pads it: '0' is 48, so FDLED048), for each of `chars`; `glyphs`
+# gives a character a picture by name; `advances` gives a character its own width, and one
+# with no picture (the space) is a blank that wide. cell-width is how far the others move along.
+FdLed:
+  type: graphic
+  pattern: "FDLED{code:000}"
+  chars: "0123456789"
+  glyphs:
+    ":": FDLEDCOL
+  cell-width: 11
+  advances:
+    ":": 5
+    " ": 6
+  line-height: 18
+
+# The same pictures, colorized: drawn in the text's color, with a gradient. Colorized, the
+# unlit segments would light up too (every pixel that's drawn takes the text's color), so
+# `transparent` leaves their dark red out.
+FdLedTinted:
+  type: graphic
+  pattern: "FDLED{code:000}"
+  chars: "0123456789"
+  glyphs:
+    ":": FDLEDCOL
+  cell-width: 11
+  advances:
+    ":": 5
+    " ": 6
+  colorize: true
+  transparent: "#460808"
+  gradient: { top: 60, bottom: -40 }
+
+# ---------------------------------------------------------------------------------------------
+# Replacing one of the game's own fonts: HudMessage is what the messages over the view print in
+# (pickups, locked doors; hud-messages.yaml). The game's is SmallFont with a shadow; this one
+# is outlined and shaded instead. game-info.yaml turns the messages on.
+# ---------------------------------------------------------------------------------------------
+
+HudMessage:
+  type: vga
+  source: SmallFont
+  outline: { color: Black }
+  gradient: { top: 50, bottom: -30 }

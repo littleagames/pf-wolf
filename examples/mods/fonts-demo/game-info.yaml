@@ -1,0 +1,4 @@
+# Merged into the game pack's game-info.yaml: messages over the view on (unless the player has
+# turned them off in Options), so pickups show in the mod's HudMessage font (fonts.yaml)
+setting-defaults:
+  messages: true

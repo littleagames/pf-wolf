@@ -23,8 +23,10 @@ components:
     type: "Stripe"
     params:
       - y: 10
-  # Window fits the item count: 13 per row plus 6
+  # Window fits the item count: 13 per row plus 6. A mod adding items gives this id a taller
+  # height (examples/mods/fonts-demo).
   -
+    id: "window"
     type: "Window"
     params:
       - x: 68

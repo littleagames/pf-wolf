@@ -774,6 +774,15 @@ can reach), not played by hand.
       treasure (sparkles), the barrels' smoke coming and going, the rockets' sparks on the east wall
       up close, Options → Video → Particles Low/Off with the count, uncapped frame rates, and the
       editor's map of the level (the particle badges on the braziers, vents, fountain and barrels).
+- [ ] Fonts Demo (`--file fonts-demo`, every font setting, 2026-11-06): driven windowed, Options →
+      Font Gallery (the item and the taller Options window), its index (FdGold title, shaded
+      items) and all six pages through to the article's two pages, then Escape back page by page;
+      headless shots of the fonts down the left of the view, the LED clock, the FontsDemo
+      greeting and a `msg` pickup line in the outlined HudMessage, and `fonts` hiding the samples.
+      **(never tried)**: the gallery from the in-game menu (Esc while playing), Spear
+      (`--game spear`, its blue BKGDCOLOR under the glows), widescreen and UI Scale, a real pickup
+      message, the clock running past a minute, the greeting after loading a save and after
+      dying, and the fonts in the editor (Ctrl+F in fonts.yaml, F11 Definitions).
 
 ## 1.15 Multiplayer
 

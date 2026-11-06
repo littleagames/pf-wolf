@@ -1,0 +1,10 @@
+# Merged into the game's hud-messages.yaml: a style of the mod's own, which the script's greeting
+# uses (game.message(text, "FontsDemo")). A style's font is any font from fonts.yaml; the game's
+# own styles print in HudMessage, which the mod's fonts.yaml replaces.
+# Top middle, below the pickup messages (top left) and the script's clock (top right)
+FontsDemo:
+  anchor: Top
+  y: 24
+  font: FdOutline
+  color: READHCOLOR
+  duration: 280

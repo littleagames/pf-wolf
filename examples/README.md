@@ -2175,6 +2175,68 @@ With cheats on, `emitters` lists the actors running emitters (and why), `particl
 and emitters there are, and `particle Sparkle` throws one out in front of you. In the editor,
 a thing that throws particles out has a pink `*` on the map.
 
+## Fonts Demo (`mods/fonts-demo`)
+
+**Every kind of font and font effect** (Wolfenstein 3D; it changes no level): shadows,
+gradients, outlines and glows, a font file, picture sheets and a picture per character. See
+them in **Options → Font Gallery**, over the view as you play, and in the pickup messages.
+
+```
+PFWolf.exe --file fonts-demo
+```
+
+- **The Font Gallery** (Options → Font Gallery): a page each for shadows, gradients, outlines,
+  glows, picture fonts and a Label's own settings. Each line is printed in a font, with what
+  makes it beside it. Enter goes on to the next page, Escape back a page; the last page's item
+  is a two-page article on where it all is.
+- **In play:** six of the fonts down the left of the view and the level's clock in
+  seven-segment digits at the top right (`fonts` in the console hides and shows them), a
+  greeting in the mod's own message style as each level starts, and the pickup messages in
+  its replacement HudMessage font.
+
+### What's in it
+
+- `fonts.yaml`, merged into the game's fonts font by font:
+  - `shadow`: `FdShadow` (`{}`), `FdShadowDeep` (2 pixels), `FdShadowBlue` (straight down, in
+    blue), `FdEngraved` (up and left, in white), `FdShadowSmall` (on SmallFont).
+  - `gradient`: `FdGradient` (`{}`), `FdGradientStrong`, `FdGradientFlip` (dark at the top),
+    `FdGradientShine` (only lightening). Made from the text's color, so one font shades any color.
+  - `outline`: `FdOutline` (`{}`), `FdOutlineWhite`, `FdOutlineThick` (2 pixels),
+    `FdOutlineRound` (`diagonals: false`), `FdOutlineSmall`.
+  - `glow`: `FdGlow` (`{}`), `FdGlowYellow`, `FdGlowWide` (radius 4, strength 80),
+    `FdGlowFaint`. `FdEverything` has all four effects at once.
+  - Types: `FdCaps` (SmallFont with `upper-case`); `FdItalic` (`vga` from a Wolf3D-format font
+    file, `fonts/FDITALIC.fnt`); `FdDots` (`sheet`, `colorize`, `proportional`, `first-char`,
+    `spacing`, `space-width`, with a gradient); `FdGold` (`sheet` in its own colors, fixed
+    width, `chars`, `advances`, and `transparent` keying out its magenta background so its
+    shadow is letter-shaped); `FdLed` (`graphic`: `pattern` `FDLED{code:000}`, `glyphs` for the
+    colon, `advances`, `cell-width`); `FdLedTinted` (the same pictures colorized, with
+    `transparent` dropping the unlit segments).
+  - `HudMessage`: replaces the game's message font (SmallFont with a shadow) with an outlined,
+    shaded one.
+- `menudefs/options.yaml`: laid over the Options menu, adding the Font Gallery item
+  (`action: CP_Menu`) and making its window (id `window`) a row taller.
+- `menudefs/fonts-demo.yaml`: the gallery's own menu; `font: FdGradient` shades its items.
+  `menudefs/fonts-demo-*.yaml`: the pages, made of Labels with `font` and `color`. The Label
+  Settings page gives plain LargeFont its effects with a Label's own `shadow`, `shadow-x`,
+  `shadow-color`, `gradient-top`, `gradient-bottom`, `outline-color`, `outline-thickness`,
+  `glow-color` and `glow-radius`, and takes a font's own shadow away with `shadow: false`.
+- `hud-messages.yaml`: the `FontsDemo` message style, printing in `FdOutline`.
+- `scripts/fonts-demo.lua`: the fonts over the view (`game.onhud`, `game.drawtext`,
+  `game.textwidth`), the `fonts` command (`game.command`) and the greeting (`game.message`
+  with the style).
+- `texts/FDHOWTO.txt`: the article; `game-info.yaml` turns the messages over the view on.
+
+Glows fade into the background color behind the text (in menus, the window's), drawn in solid
+colors, so they belong on plain backgrounds: the script leaves them off the 3D view.
+
+The font pictures, the font file and the gallery's pages are made by
+`tools/make-fonts-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-fonts-demo.ps1
+```
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

@@ -98,6 +98,14 @@ string's width, where bstone measures the code's digits.
   thrown from afar (floor triggers 158-160, an enemy's death linked by floor code 79), which
   already works. Nothing to do.
 
+## game.message from game.onlevel is lost
+
+Found making the Fonts Demo (2026-11-06): `game.onlevel` runs before LevelLoop.PlayLoop, which
+clears the messages over the view ("nothing left over from the last level"), so a message a
+script shows from onlevel never appears. The Fonts Demo works round it by showing its greeting
+on the level's first `game.ontick`. A fix: clear the messages before the level's hooks run (at
+level setup and on loading), or keep ones shown since the level was set up.
+
 ## Destructible walls: extras
 
 Left out of the destructible walls work (docs/dev/destructible-walls-plan.md) at the user's

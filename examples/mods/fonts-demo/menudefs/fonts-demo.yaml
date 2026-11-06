@@ -1,0 +1,117 @@
+# The Font Gallery (Options -> Font Gallery): a menu of the mod's own, its file name new to the
+# game, opened by the Options item in menudefs/options.yaml. Each item opens a page
+# (fonts-demo-*.yaml) of the fonts in fonts.yaml; each page's item goes on to the next, and
+# Escape goes back a page.
+#
+# A Label prints a line of text in any font (`font`, default LargeFont) and color; it can also
+# give or take away a shadow, gradient, outline or glow of its own (the Label Settings page).
+# The menu's `font` is its items' font: here FdGradient, so the items are shaded.
+music: "WONDERIN"
+type: "wolf3d-menu"
+position:
+  x: 76
+  y: 66
+indent: 24
+font: "FdGradient"
+components:
+  -
+    id: "background"
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    id: "legend"
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "Center"
+      - y: 184
+  # The title in FdGold: a sheet font in its own colors, with a shadow
+  -
+    type: "Label"
+    params:
+      - text: "FONT GALLERY"
+      - horizontal-orientation: "Center"
+      - y: 10
+      - font: "FdGold"
+  -
+    type: "Label"
+    params:
+      - text: "Each line is a font from the mod's fonts.yaml,"
+      - horizontal-orientation: "Center"
+      - y: 38
+      - font: "FdShadowSmall"
+      - color: "HIGHLIGHT"
+  -
+    type: "Label"
+    params:
+      - text: "or a Label's own settings in menudefs/"
+      - horizontal-orientation: "Center"
+      - y: 48
+      - font: "FdShadowSmall"
+      - color: "HIGHLIGHT"
+  # 6 items: 13 per row plus 6
+  -
+    type: "Window"
+    params:
+      - x: 68
+      - y: 63
+      - width: 178
+      - height: 84
+  -
+    type: "Label"
+    params:
+      - text: "Escape goes back a page"
+      - horizontal-orientation: "Center"
+      - y: 158
+      - font: "FdCaps"
+      - color: "READCOLOR"
+menu-items:
+  -
+      id: "shadows"
+      type: "MenuSwitcher"
+      text: "Shadows"
+      short-key: S
+      enabled: true
+      action: "CP_Menu"
+      menu: "fonts-demo-shadows"
+  -
+      id: "gradients"
+      type: "MenuSwitcher"
+      text: "Gradients"
+      short-key: G
+      enabled: true
+      action: "CP_Menu"
+      menu: "fonts-demo-gradients"
+  -
+      id: "outlines"
+      type: "MenuSwitcher"
+      text: "Outlines"
+      short-key: O
+      enabled: true
+      action: "CP_Menu"
+      menu: "fonts-demo-outlines"
+  -
+      id: "glows"
+      type: "MenuSwitcher"
+      text: "Glows"
+      short-key: L
+      enabled: true
+      action: "CP_Menu"
+      menu: "fonts-demo-glows"
+  -
+      id: "pictures"
+      type: "MenuSwitcher"
+      text: "Picture Fonts"
+      short-key: P
+      enabled: true
+      action: "CP_Menu"
+      menu: "fonts-demo-pictures"
+  -
+      id: "labels"
+      type: "MenuSwitcher"
+      text: "Label Settings"
+      short-key: B
+      enabled: true
+      action: "CP_Menu"
+      menu: "fonts-demo-labels"
