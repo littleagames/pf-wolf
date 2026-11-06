@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Numerics;
 using Avalonia;
 using Avalonia.Controls;
@@ -82,6 +82,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
 
     private Gl? _gl;
     private int _program, _viewProjection, _mode, _texture, _eye, _forward, _fog, _fadeColor, _time;
+    // A tile's own sky, seen through its ceiling or floor: its look (Mode 2 and 3)
+    private int _surfaceSkyLook, _surfaceSkyTop, _surfaceSkyBottom;
     private int _staticVao, _staticVbo, _dynamicVao, _dynamicVbo;
     // The sky: a picture behind everything, drawn by a pass of its own over the whole view
     private int _skyProgram, _skyInverse, _skyEye, _skyTop, _skyScale, _skyTanHalf, _skyTexture, _skyVao, _skyVbo;
@@ -184,6 +186,9 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             _fog = gl.GetUniformLocation(_program, "uFog");
             _fadeColor = gl.GetUniformLocation(_program, "uFadeColor");
             _time = gl.GetUniformLocation(_program, "uTime");
+            _surfaceSkyLook = gl.GetUniformLocation(_program, "uSkyLook");
+            _surfaceSkyTop = gl.GetUniformLocation(_program, "uSkyTop");
+            _surfaceSkyBottom = gl.GetUniformLocation(_program, "uSkyBottom");
 
             _skyProgram = gl.MakeProgram(header + SkyVertexShader, header + SkyFragmentShader, "aPosition");
             _skyInverse = gl.GetUniformLocation(_skyProgram, "uInverseViewProjection");
@@ -346,8 +351,21 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         {
             if (texture.Source == TextureSource.Sprite)
                 gl.Disable(Gl.CULL_FACE);      // wall sprites show from behind too
+            bool tileSky = texture.Source is TextureSource.Sky or TextureSource.FloorSky;
+            if (tileSky)
+            {
+                // A tile's own sky: the way through each pixel picks its texel, as the level's sky's does
+                var (skyWidth, skyTop, skyBottom) = Look(texture.Name);
+                gl.Uniform1(_mode, texture.Source == TextureSource.Sky ? 2 : 3);
+                gl.Uniform4(_surfaceSkyLook, 1024f / Math.Max(skyWidth, 1), MathF.Tan(Camera3D.FieldOfViewY * MathF.PI / 360),
+                    _mesh.FloorSkyMirror ? 1 : 0, 0);
+                gl.Uniform3(_surfaceSkyTop, skyTop);
+                gl.Uniform3(_surfaceSkyBottom, skyBottom);
+            }
             gl.BindTexture(Gl.TEXTURE_2D, TextureId(gl, texture));
             gl.DrawArrays(Gl.TRIANGLES, first, count);
+            if (tileSky)
+                gl.Uniform1(_mode, 0);
             if (texture.Source == TextureSource.Sprite)
                 gl.Enable(Gl.CULL_FACE);
         }
@@ -416,7 +434,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         int id = TextureId(gl, texture);
         if (id == _missing || !Matrix4x4.Invert(viewProjection, out var inverse))
             return;
-        var (width, top) = _skyLooks.TryGetValue(sky, out var known) ? known : _skyLooks[sky] = SkyLook(texture);
+        var (width, top, _) = Look(sky);
 
         gl.Disable(Gl.DEPTH_TEST);
         gl.Disable(Gl.CULL_FACE);
@@ -433,24 +451,30 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.BindVertexArray(0);
     }
 
-    private readonly Dictionary<string, (int Width, Vector3 Top)> _skyLooks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (int Width, Vector3 Top, Vector3 Bottom)> _skyLooks = new(StringComparer.OrdinalIgnoreCase);
 
-    // A sky's width, and the most common color of its top row: what shows above it, as in the game
-    // (repeating the row would stretch a star on it into a streak)
-    private (int Width, Vector3 Top) SkyLook(TextureRef texture)
+    private (int Width, Vector3 Top, Vector3 Bottom) Look(string sky)
+        => _skyLooks.TryGetValue(sky, out var known) ? known : _skyLooks[sky] = SkyLook(new TextureRef(TextureSource.Picture, sky));
+
+    // A sky's width, and the most common colors of its top and bottom rows: what shows past them,
+    // as in the game (repeating the row would stretch a star on it into a streak)
+    private (int Width, Vector3 Top, Vector3 Bottom) SkyLook(TextureRef texture)
     {
-        if (Art?.Pixels(texture) is not { Width: > 0 } pixels)
-            return (1024, Vector3.Zero);
+        if (Art?.Pixels(texture) is not { Width: > 0, Height: > 0 } pixels)
+            return (1024, Vector3.Zero, Vector3.Zero);
 
-        var counts = new Dictionary<int, int>();
-        for (int x = 0; x < pixels.Width; x++)
+        Vector3 Common(int row)
         {
-            int color = BitConverter.ToInt32(pixels.Rgba, x * 4);
-            counts[color] = counts.GetValueOrDefault(color) + 1;
+            var counts = new Dictionary<int, int>();
+            for (int x = 0; x < pixels.Width; x++)
+            {
+                int color = BitConverter.ToInt32(pixels.Rgba, (row * pixels.Width + x) * 4);
+                counts[color] = counts.GetValueOrDefault(color) + 1;
+            }
+            var bytes = BitConverter.GetBytes(counts.MaxBy(entry => entry.Value).Key);
+            return new Vector3(bytes[0], bytes[1], bytes[2]) / 255f;
         }
-        int common = counts.MaxBy(entry => entry.Value).Key;
-        var bytes = BitConverter.GetBytes(common);
-        return (pixels.Width, new Vector3(bytes[0], bytes[1], bytes[2]) / 255f);
+        return (pixels.Width, Common(0), Common(pixels.Height - 1));
     }
 
     private void EnsureMesh()
@@ -880,32 +904,63 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         out vec2 vUv;
         out vec4 vColor;
         out float vDepth;
+        out vec3 vWorld;
         void main()
         {
             gl_Position = uViewProjection * vec4(aPosition, 1.0);
             vUv = aUv + aScroll * uTime;
             vColor = aColor;
             vDepth = dot(aPosition - uEye, uForward);
+            vWorld = aPosition;
         }
         """;
 
     // Mode 0: the texture (see-through texels cut out) times the color (its light), faded toward
     // the fade color with distance; 1: just the color, blended (the tints). uFog: fade start and
-    // end in tiles, max fade 0 to 1, 1 for the inverse curve (Lighting.ShadeOffset)
+    // end in tiles, max fade 0 to 1, 1 for the inverse curve (Lighting.ShadeOffset). 2: a tile's
+    // own sky, unshaded, by the way through the pixel as the sky pass does it; 3: a floor sky, down
+    // from the horizon (SkyAndFlats.FloorSkyPixel). uSkyLook: the sky's turns around the circle,
+    // the tangent of half the view's height, 1 for a mirrored floor sky
     private const string FragmentShader = """
         in vec2 vUv;
         in vec4 vColor;
         in float vDepth;
+        in vec3 vWorld;
         uniform sampler2D uTexture;
         uniform int uMode;
         uniform vec4 uFog;
         uniform vec3 uFadeColor;
+        uniform vec3 uEye;
+        uniform vec4 uSkyLook;
+        uniform vec3 uSkyTop;
+        uniform vec3 uSkyBottom;
         out vec4 fragColor;
         void main()
         {
             if (uMode == 1)
             {
                 fragColor = vColor;
+                return;
+            }
+            if (uMode >= 2)
+            {
+                vec3 way = normalize(vWorld - uEye);
+                float angle = mod(atan(-way.z, way.x), 6.2831853);
+                float u = (1.0 - angle / 6.2831853) * uSkyLook.x;
+                float rise = way.y / max(length(way.xz), 0.00001);
+                if (uMode == 2)
+                {
+                    float v = 1.0 - rise / uSkyLook.y;
+                    fragColor = v < 0.0 ? vec4(uSkyTop, 1.0) : vec4(texture(uTexture, vec2(u, min(v, 0.999))).rgb, 1.0);
+                }
+                else
+                {
+                    float below = -rise / uSkyLook.y;
+                    bool mirror = uSkyLook.z > 0.5;
+                    float v = mirror ? 1.0 - below : below;
+                    fragColor = v < 0.0 || v > 1.0 ? vec4(mirror ? uSkyTop : uSkyBottom, 1.0)
+                        : vec4(texture(uTexture, vec2(u, min(v, 0.999))).rgb, 1.0);
+                }
                 return;
             }
             vec4 texel = texture(uTexture, vUv);

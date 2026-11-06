@@ -90,6 +90,11 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         => Defs.Flats.Skies.TryGetValue(FlatValue(x, y) >> 8, out var sky) && !string.IsNullOrEmpty(sky)
             && !sky.Equals("none", StringComparison.OrdinalIgnoreCase) ? sky : null;
 
+    /// <summary>The floor sky a tile shows through its floor of its own (mapdefs flats floor-skies), else null</summary>
+    public string? FloorTileSky(int x, int y)
+        => Defs.Flats.FloorSkies.TryGetValue(FlatValue(x, y) & 0xff, out var sky) && !string.IsNullOrEmpty(sky)
+            && !sky.Equals("none", StringComparison.OrdinalIgnoreCase) ? sky : null;
+
     /// <summary>
     /// A tile's flats as the game loads them: its flat-plane value, else (at 0) the level's own
     /// ceiling-floor-flats code's (MapManager.ReadMapInfo fills those tiles with it)
@@ -148,6 +153,22 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
 
     /// <summary>The level's sky picture name (game-info sky), or null for its ceiling color</summary>
     public string? Sky => (Properties.Sky ?? map.Defaults.Sky ?? content.DefaultMapInfo.Sky) is { Length: > 0 } sky ? sky : null;
+
+    /// <summary>
+    /// The level's floor sky (game-info floor-sky), its own else the default map's, and whether
+    /// it's mirrored (LevelSetup's pick); null for the floor color
+    /// </summary>
+    public (string? Name, bool Mirror) FloorSky
+    {
+        get
+        {
+            var properties = Properties;
+            var (name, mirror) = properties.FloorSky != null
+                ? (properties.FloorSky, properties.FloorSkyMirror)
+                : (content.DefaultMapInfo.FloorSky, content.DefaultMapInfo.FloorSkyMirror);
+            return (name is { Length: > 0 } && !name.Equals("none", StringComparison.OrdinalIgnoreCase) ? name : null, mirror);
+        }
+    }
 
     /// <summary>
     /// The level's distance fade and light, each value from its game-info entry, else the default

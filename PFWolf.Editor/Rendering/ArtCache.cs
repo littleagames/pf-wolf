@@ -198,6 +198,8 @@ public sealed class ArtCache(GameContent content) : IDisposable
             }
             case TextureSource.Picture:
                 return Pixels(texture with { Source = TextureSource.Texture });
+            case TextureSource.Sky or TextureSource.FloorSky:
+                return Pixels(texture with { Source = TextureSource.Picture });
             case TextureSource.Texture when content.Find<TextureAsset>(texture.Name) is { Width: > 0, Height: > 0 } wall:
             {
                 // Stored column by column

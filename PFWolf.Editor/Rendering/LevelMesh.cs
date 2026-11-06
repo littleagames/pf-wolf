@@ -20,6 +20,10 @@ public enum TextureSource
     Picture,
     /// <summary>A floor or ceiling texture by name, its see-through (0xFF) pixels in the Fill color</summary>
     Flat,
+    /// <summary>A sky picture by name, seen through a ceiling: drawn by the way through each pixel, as the level's sky is</summary>
+    Sky,
+    /// <summary>A floor sky picture by name, seen through a floor, below the horizon</summary>
+    FloorSky,
 }
 
 /// <param name="Fill">A Flat's color where it's see-through; with no alpha (default), they're clear (the sky shows)</param>
@@ -166,9 +170,23 @@ public sealed class LevelMesh
         }
 
         // Only a sky that's there to show
-        if (tiles.Sky is { } sky && (tiles.Content.Find<GraphicAsset>(sky) != null || tiles.Content.Find<TextureAsset>(sky) != null))
-            Sky = sky;
+        Sky = Shown(tiles.Sky);
+        (var floorSky, FloorSkyMirror) = tiles.FloorSky;
+        FloorSky = Shown(floorSky);
     }
+
+    /// <summary>The level's floor sky, shown where a floor has no flat (and through its see-through pixels), or null</summary>
+    public string? FloorSky { get; }
+
+    /// <summary>Floor skies are drawn upside down from the horizon (game-info floor-sky-mirror)</summary>
+    public bool FloorSkyMirror { get; }
+
+    // A sky picture (or wall texture) by name, when there is one to show
+    private string? Shown(string? sky)
+        => sky != null && (_tiles.Content.Find<GraphicAsset>(sky) != null || _tiles.Content.Find<TextureAsset>(sky) != null) ? sky : null;
+
+    // How far behind a flat a sky seen through its see-through pixels lies
+    private const float SkyGap = 1 / 128f;
 
     /// <param name="shade">Light the surfaces by the level's light and light zones, and fade them with distance</param>
     public static LevelMesh Build(MapTiles tiles, bool shade = true)
@@ -640,18 +658,33 @@ public sealed class LevelMesh
     {
         polygon ??= Corners(x, y);
         var light = Light(x, y);
+        // A floor sky (the tile's own, mapdefs flats floor-skies, else the level's) shows in place of
+        // the floor color, and behind a floor flat's see-through pixels, just under it
         var floor = _tiles.FloorFlat(x, y);
-        AddFlat(new SurfaceRef(SurfaceKind.Floor, x, y), polygon, 0, up: true,
-            floor != null ? Flat(floor, floorColor) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light,
-            scroll: floor != null ? FlatScroll(x, y, scroller => scroller.Floor) : default);
-
-        // The sky shows in place of the ceiling color, and behind a ceiling flat's see-through pixels
-        // (a tile's own sky, mapdefs flats skies, leaves it open too: the view shows the level's sky there, if any)
-        var top = _tiles.CeilingFlat(x, y);
-        bool sky = Sky != null || _tiles.CeilingSky(x, y) != null;
-        if (ceiling is { } height && (top != null || !sky))
+        var floorSky = Shown(_tiles.FloorTileSky(x, y)) ?? FloorSky;
+        var floorRef = new SurfaceRef(SurfaceKind.Floor, x, y);
+        if (floorSky != null)
+            AddFlat(floorRef, polygon, floor != null ? -SkyGap : 0, up: true, new TextureRef(TextureSource.FloorSky, floorSky), Vector4.One);
+        if (floor != null || floorSky == null)
         {
-            AddFlat(new SurfaceRef(SurfaceKind.Ceiling, x, y), polygon, height, up: false,
+            AddFlat(floorRef, polygon, 0, up: true,
+                floor != null ? Flat(floor, floorSky == null ? floorColor : default) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light,
+                scroll: floor != null ? FlatScroll(x, y, scroller => scroller.Floor) : default);
+        }
+
+        // The sky shows in place of the ceiling color, and behind a ceiling flat's see-through pixels:
+        // the level's is drawn behind everything, a tile's own (mapdefs flats skies) just over its ceiling
+        var top = _tiles.CeilingFlat(x, y);
+        var tileSky = Shown(_tiles.CeilingSky(x, y));
+        bool sky = Sky != null || _tiles.CeilingSky(x, y) != null;
+        if (ceiling is not { } height)
+            return;
+        var ceilingRef = new SurfaceRef(SurfaceKind.Ceiling, x, y);
+        if (tileSky != null)
+            AddFlat(ceilingRef, polygon, top != null ? height + SkyGap : height, up: false, new TextureRef(TextureSource.Sky, tileSky), Vector4.One);
+        if (top != null || !sky)
+        {
+            AddFlat(ceilingRef, polygon, height, up: false,
                 top != null ? Flat(top, !sky ? ceilingColor : default) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light,
                 scroll: top != null ? FlatScroll(x, y, scroller => scroller.Ceiling) : default);
         }

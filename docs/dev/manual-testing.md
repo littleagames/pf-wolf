@@ -715,11 +715,14 @@ can reach), not played by hand.
       the meadow's day sky and the night garden's night sky through their ceilings with the hall's
       roof between, the lattice over the night sky, the level's dusk sky and the cloud floor sky
       at the bridge, and `game.trigger(1, 'A_ChangeTexture', 'SDDAY', 'SDNIGHT')` turning the
-      meadow to night (`where` shows each tile's sky). **(never tried)**: throwing the meadow's
+      meadow to night (`where` shows each tile's sky). The editor's 3D view (2026-11-05)
+      showed the meadow's day sky, the garden's night sky and the cloud floor sky at the bridge
+      in screenshots. **(never tried)**: throwing the meadow's
       switch by hand (the zone dimming with it), walking the bridge (the CloudsEdge markers
       keeping you on it), looking up/down with y-shearing at the tile skies, an animated tile
       sky, saving and loading after the switch (the sky should stay night), widescreen, and
-      the editor's 3D view of the level (tile-sky ceilings left open).
+      in the editor: the lattice over the night sky up close, a mirrored floor sky, and a
+      level's game-info floor-sky (not editable in Level properties; it's only kept).
 - [ ] Particles Demo (`--file particles-demo`, particle effects, 2026-11-05): headless
       screenshots showed the braziers' flames, light, embers and smoke, the steam out of the grates,
       the fountain's jet, the magic orb's trail round the pillar, a rocket down the gallery with its

@@ -43,6 +43,10 @@ public sealed record MapProperties
     public string? DefaultCeiling { get; init; }
     public string? Weather { get; init; }
 
+    /// <summary>The level's floor sky (game-info floor-sky) and whether it's mirrored: shown, not edited</summary>
+    public string? FloorSky { get; init; }
+    public bool FloorSkyMirror { get; init; }
+
     /// <summary>The level's floor in its mission (game-info floor-number: Blake Stone's 0 to 10), which elevators and map-info links go by</summary>
     public int? FloorNumber { get; init; }
 
@@ -76,6 +80,8 @@ public sealed record MapProperties
         DefaultFloor = info.DefaultFloor,
         DefaultCeiling = info.DefaultCeiling,
         Weather = info.Weather,
+        FloorSky = info.FloorSky,
+        FloorSkyMirror = info.FloorSkyMirror,
         // game-info can't tell floor 0 from none: both are left to the default, 0
         FloorNumber = info.FloorNumber == 0 ? null : info.FloorNumber,
         Cluster = info.Cluster == 0 ? null : info.Cluster,

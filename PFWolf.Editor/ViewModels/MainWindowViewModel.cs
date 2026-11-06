@@ -2126,6 +2126,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         };
         if (surface.Texture.Source is TextureSource.Texture or TextureSource.Flat)
             what += $" ({surface.Texture.Name})";
+        else if (surface.Texture.Source is TextureSource.Sky or TextureSource.FloorSky)
+            what += $" (sky {surface.Texture.Name})";
         if (target != (surface.Ref.X, surface.Ref.Y))
             what += $", editing the tile in front";
         HoverInfo = $"3D: {what}   ({x}, {y})   " + string.Join("   ·   ", Tiles.Describe(x, y));

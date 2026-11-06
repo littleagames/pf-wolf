@@ -47,6 +47,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         IReadOnlyList<string> maps, IReadOnlyList<string>? weather = null, MapSizeViewModel? size = null)
     {
         MapName = mapName;
+        _loaded = properties;
         Size = size;
         Defaults = defaults;
         MusicNames = music;
@@ -197,7 +198,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
             }
 
             Error = "";
-            return new MapProperties
+            // What the dialog doesn't edit (the floor sky) is kept as it was
+            return _loaded with
             {
                 Name = Optional(Name),
                 Music = Optional(Music)?.ToUpperInvariant(),
@@ -228,6 +230,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
             return null;
         }
     }
+
+    private readonly MapProperties _loaded;
 
     private static string? Optional(string text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
