@@ -190,6 +190,19 @@ hud-messages:
   lock-style: Default
   obituary-style: Obituary
 
+# A script's puzzles (game.puzzle) on the LINC terminal's look: green on near-black, the title in
+# the status bars' capitals
+puzzle-panel:
+  frame: menu
+  background: BKGDCOLOR
+  border: BORDCOLOR
+  border-shadow: BORD2COLOR
+  title-font: BlakeHud
+  title-color: HIGHLIGHT
+  font: SmallFont
+  text-color: TEXTCOLOR
+  dim: 0.35
+
 skills:
   NOVICE:
     name: "Level 1:\nNovice Agent"

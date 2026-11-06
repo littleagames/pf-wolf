@@ -489,6 +489,7 @@ internal sealed partial class GameScripts(
             return new(c.Return());
         });
         InstallParticleApi(game, methods);      // only for show, in any hook (Scripting/GameScripts.Particles.cs)
+        InstallPuzzleFunctions(game, host);     // game.puzzle, game.startpuzzle and the drawing a puzzle does (Scripting/GameScripts.Puzzles.cs)
         host.Globals["game"] = game;
     }
 

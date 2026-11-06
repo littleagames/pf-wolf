@@ -278,6 +278,12 @@ public record GameInfoAsset : Asset
     public KillChainInfo KillChain { get; init; } = new();
 
     /// <summary>
+    /// How a puzzle's panel looks over the view (Gameplay/Puzzles.cs: a script's game.puzzle):
+    /// its frame, colors and fonts. The menu's window in its colors when unset.
+    /// </summary>
+    public PuzzlePanelInfo PuzzlePanel { get; init; } = new();
+
+    /// <summary>
     /// The skill (a key in skills) demos are recorded and played back on; the hardest (last)
     /// one when unset. A demo only replays right on the skill it was recorded on.
     /// </summary>
@@ -1757,6 +1763,44 @@ public record KillChainInfo
 
     /// <summary>A kill made unseen (Gameplay/Stealth.cs) gives the prize of a chain of 1 (none) up to this many, at random; 0 for none</summary>
     public int StealthPrize { get; init; }
+}
+
+/// <summary>
+/// Game-info `puzzle-panel:` (Gameplay/Puzzles.cs). Colors are theme color names (colors.yaml),
+/// #RRGGBB or palette indexes; fonts are fonts.yaml names.
+/// </summary>
+public record PuzzlePanelInfo
+{
+    /// <summary>
+    /// What's drawn round the puzzle: "menu" (the menus' window: background, with a border in
+    /// border and border-shadow), "none", or a picture's name, drawn at the frame's top left
+    /// (make it the frame's size)
+    /// </summary>
+    public string Frame { get; init; } = "menu";
+
+    /// <summary>The window's inside (frame: menu)</summary>
+    public string Background { get; init; } = "BKGDCOLOR";
+
+    /// <summary>The window's bottom and right edges (frame: menu)</summary>
+    public string Border { get; init; } = "BORD2COLOR";
+
+    /// <summary>The window's top and left edges (frame: menu)</summary>
+    public string BorderShadow { get; init; } = "DEACTIVE";
+
+    /// <summary>The puzzle's title, over its panel</summary>
+    public string TitleFont { get; init; } = "SmallFont";
+
+    /// <summary>The title's color</summary>
+    public string TitleColor { get; init; } = "READHCOLOR";
+
+    /// <summary>The font a puzzle's game.drawtext prints in when it names none</summary>
+    public string Font { get; init; } = "SmallFont";
+
+    /// <summary>The color a puzzle's game.drawtext prints in when it names none</summary>
+    public string TextColor { get; init; } = "TEXTCOLOR";
+
+    /// <summary>How bright the view behind stays: 0 (black) to 1 (not dimmed)</summary>
+    public double Dim { get; init; } = 0.5;
 }
 
 /// <summary>

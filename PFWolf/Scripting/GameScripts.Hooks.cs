@@ -102,6 +102,9 @@ internal sealed partial class GameScripts
         way ("north", "northeast"... "none" to stand there) sends it that way if it can go (else
         the game chooses as ever); nil leaves it to the game. monster:pathto(target) is the way
         by the shortest open path (A*: Gameplay/Pathfinding.cs).
+    game.onpuzzle(function(player, name, result, x, y, tag) ... end): a puzzle (game.puzzle)
+        ended: "success", "fail", "cancel" or a result of its own, with the tile and tag it was
+        started from (-1, -1 and 0 for none) (Scripting/GameScripts.Puzzles.cs).
 
     On this machine alone, for what it shows: these mustn't change the game (game.random,
     game.trigger, spawning, setting an actor's fields and the like are an error in them):
@@ -131,7 +134,7 @@ internal sealed partial class GameScripts
         "onplayerdeath", "onspawn", "onsight", "ondoor", "onpushwall", "onswitch", "onenter", "onexit", "onteleport",
         "onactorspawn", "onrevive", "onfactionchange", "onfire", "onweaponswitch", "ongive", "onpowerup",
         "onobjective", "onchain", "onstealthkill", "ontimeup", "onfrag", "onflag", "onmatchend", "onchasedir",
-        "onhud", "onmusic", "ontally", "onwallbreak",
+        "onhud", "onmusic", "ontally", "onwallbreak", "onpuzzle",
     ];
 
     sealed class ScriptHook(LuaValue function, string name)
@@ -188,7 +191,8 @@ internal sealed partial class GameScripts
         game["drawtext"] = new LuaFunction("game.drawtext", (c, _) =>
         {
             var (viewX, viewY, _, _) = HudView(c, "game.drawtext");
-            DrawText(StringArg(c, 0), viewX + (int)NumberArg(c, 1, 0), viewY + (int)NumberArg(c, 2, 0), OptionalString(c, 3), OptionalString(c, 4));
+            DrawText(StringArg(c, 0), viewX + (int)NumberArg(c, 1, 0), viewY + (int)NumberArg(c, 2, 0),
+                FontOr(OptionalString(c, 3)), OptionalString(c, 4) ?? DefaultTextColor());
             return new(c.Return());
         });
         game["drawpic"] = new LuaFunction("game.drawpic", (c, _) =>
@@ -225,10 +229,14 @@ internal sealed partial class GameScripts
         });
     }
 
-    // Where game.onhud draws from (the view's top left); an error outside game.onhud
-    (int X, int Y, int Width, int Height) HudView(LuaFunctionExecutionContext c, string what) => _localHook == "game.onhud"
-        ? ViewRect()
-        : throw new LuaRuntimeException(c.State, (LuaValue)$"{what} only draws in a game.onhud hook", 1);
+    // Where game.onhud draws from (the view's top left), or a puzzle's draw (its panel's); an
+    // error anywhere else
+    (int X, int Y, int Width, int Height) HudView(LuaFunctionExecutionContext c, string what) => _localHook switch
+    {
+        "game.onhud" => ViewRect(),
+        PuzzleDrawHook => puzzleArea,
+        _ => throw new LuaRuntimeException(c.State, (LuaValue)$"{what} only draws in a game.onhud hook or a puzzle's draw", 1),
+    };
 
     int AddHook(LuaFunctionExecutionContext c, ScriptHost host, List<ScriptHook> hooks, string what)
     {

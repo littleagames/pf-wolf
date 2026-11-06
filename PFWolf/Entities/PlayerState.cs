@@ -114,6 +114,12 @@ internal sealed class PlayerState
     // weapon isn't drawn and black bars cover the top and bottom of the view
     public int CinematicTics;
 
+    // Working a puzzle (Gameplay/Puzzles.cs): the one open, whose controls it takes, or null; and,
+    // once one's closed, use and fire still held from it, which count for nothing till let go
+    // (so the press that ended it doesn't throw the switch again or fire). Not saved.
+    internal Gameplay.OpenPuzzle? Puzzle;
+    internal bool PuzzleButtonsHeld;
+
     // Something latched on (Gameplay/Latching.cs): who, the struggle it puts in their hands, the
     // weapon they had picked before, the map, how many times they've struck at it, and how many
     // times slower they move

@@ -260,6 +260,7 @@ internal static partial class GameHost
         RegisterActorLightActions(); // actors' own lights (Rendering/ActorLights.cs)
         Particles.RegisterActions(() => particles, () => MapManager); // bursts and emitters, for switches and actors (Rendering/Particles.cs)
         RegisterProjectileActions(); // projectiles and jumps for any actor, traps (Gameplay/ProjectileActions.cs)
+        Gameplay.Puzzles.RegisterActions(() => Puzzles); // A_Puzzle, for switches and actors (Gameplay/Puzzles.cs)
     }
 
     /// <summary>A_PushWall: the trigger's wall pushed the way the player faces, unless it only goes another way (see RegisterActorActions)</summary>
@@ -340,7 +341,8 @@ internal static partial class GameHost
             },
             () => deathmatch.Objective?.IsWaiting(Session.PlayerState) == true,
             (x, y) => gameScripts.RunEnterHooks(Session.Player, x, y),
-            (from, to) => gameScripts.RunWeaponSwitchHooks(Session.Player, from, to)));
+            (from, to) => gameScripts.RunWeaponSwitchHooks(Session.Player, from, to),
+            () => puzzles?.Think() == true));
 
     internal static void ThinkPlayer(Entities.Actors.Actor ob) => playerThink.ThinkPlayer(ob);
 

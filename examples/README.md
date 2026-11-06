@@ -896,6 +896,45 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-footsteps-demo.ps1
 In game, `where` shows the floor you're on; with cheats on, `lua print(game.floor(me.tilex, me.tiley))`
 shows what the script sees, and `flat <floor> <ceiling>` changes the one you stand on.
 
+## Puzzles Demo (`mods/puzzles-demo`)
+
+Puzzles (mini-games) as Lua scripts, meant to be copied into your own mods. A puzzle opens over
+the view in the game's menu window, takes the player's controls until it ends, and its end
+("success", "fail", "cancel" or a result of its own) goes to `game.onpuzzle`. So far there's one,
+the timing needle; more come with the demo's level.
+
+```
+PFWolf.exe --file puzzles-demo
+```
+
+It doesn't replace any level: in any level, with cheats on, open the console and type
+`puzzle needle` (`puzzle` alone lists the puzzles there are).
+
+The needle sweeps along a track. Press use (or fire) as it crosses green to bypass that part of
+the lock; three bypasses win. Red shorts the lock out (a fail), and pressing on bare track is a
+miss: three misses fail too. Esc backs out (nothing happens; the next Esc opens the menu). The
+level stops while it's open.
+
+### What's in it
+
+- `scripts/needle.lua`: the puzzle, made with `game.puzzle("needle", { ... })`: its `start`
+  lays the zones (with `game.random`, so every machine and demo gets the same), its `tick` moves
+  the needle and reads the presses (`input.pressed.use`), returning `"success"` or `"fail"` to
+  end it, and its `draw` draws the track with `game.drawrect`, `game.drawline` and
+  `game.drawtext`. Words after its name change it: `A_Puzzle("needle", "hits=4", "misses=1",
+  "speed=3", "greens=2", "reds=2")`, or `puzzle needle hits=4` in the console.
+- `scripts/results.lua`: a message for each end. A mod's own would open a door or sound an
+  alarm with the tile and tag the puzzle was started from:
+
+  ```lua
+  game.onpuzzle(function(player, name, result, x, y, tag)
+    if result == "success" and tag > 0 then game.trigger(tag, 'A_OpenDoor("hold")') end
+  end)
+  ```
+
+On a switch, `A_Puzzle("needle")` in its `actions:` opens it for whoever used it; the panel's
+look (frame, colors, fonts) is game-info's `puzzle-panel`.
+
 ## Grate Doors Demo (`mods/grate-doors-demo`)
 
 Wolfenstein 3D's plain doors become barred gates (every level, Wolfenstein 3D only). Shut, you

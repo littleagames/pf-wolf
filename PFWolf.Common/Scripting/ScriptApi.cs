@@ -107,8 +107,23 @@ public static class ScriptApi
         Fn("onhud", "game.onhud(function() ... end)", "Adds a hook called each frame drawn, on this machine alone, over the view: game.drawtext and game.drawpic draw there. It mustn't change the game (game.random, game.trigger, spawning and setting actors' fields are an error)"),
         Fn("onmusic", "game.onmusic(function(map, song) ... end)", "Adds a hook asked, on this machine alone, as the level's song is about to start (or start again after the menu): return a song's name to play that instead"),
         Fn("ontally", "game.ontally(function(map, result) ... end)", "Adds a hook asked, on this machine alone, as a level's finished (result as game.onlevelend's): text returned is shown on the tally (intermission.yaml's script value)"),
-        Fn("drawtext", "game.drawtext(text, x, y[, font[, color]])", "In a game.onhud hook: draws text (a $NAME language key or the text) at x, y from the view's top left, in a font (SmallFont when left out) and color (White)"),
-        Fn("drawpic", "game.drawpic(picture, x, y)", "In a game.onhud hook: draws a picture at x, y from the view's top left"),
+        Fn("drawtext", "game.drawtext(text, x, y[, font[, color]])", "In a game.onhud hook or a puzzle's draw: draws text (a $NAME language key or the text) at x, y from the view's top left (a puzzle's panel's), in a font and color (SmallFont and White; the panel's in a puzzle: game-info puzzle-panel)"),
+        Fn("drawpic", "game.drawpic(picture, x, y)", "In a game.onhud hook or a puzzle's draw: draws a picture at x, y from the view's top left (a puzzle's panel's)"),
+        Fn("drawrect", "game.drawrect(x, y, width, height, color)", "In a game.onhud hook or a puzzle's draw: fills a rectangle, in a color (a colors.yaml name, #RRGGBB or a palette index)"),
+        Fn("drawframe", "game.drawframe(x, y, width, height, color)", "In a game.onhud hook or a puzzle's draw: a rectangle's outline, a pixel wide"),
+        Fn("drawline", "game.drawline(x0, y0, x1, y1, color[, thickness])", "In a game.onhud hook or a puzzle's draw: a line from one point to another, thickness pixels wide (1)"),
+        Fn("drawshade", "game.drawshade(x, y, width, height[, brightness])", "In a game.onhud hook or a puzzle's draw: dims what's drawn in a rectangle to a brightness, 0 (black) to 1 (as it was); 0.5 when left out"),
+        Fn("textwidth", "game.textwidth(text[, font])", "How wide and how tall a line of text is in a font (SmallFont; the panel's in a puzzle's draw), to center it"),
+        Fn("puzzle", "game.puzzle(name, { title, pause, cancel, timelimit, width, height, start, tick, draw })",
+            "Makes a puzzle (a mini-game) A_Puzzle(\"name\"), game.startpuzzle and the puzzle command open, at a script's top level. "
+            + "tick = function(pz, input) runs in the game's think while it's open, from the player's controls (input.held and input.pressed: up, down, left, right, use, fire, cancel; "
+            + "input.digit, input.dx, input.dy, input.tics), and returns \"success\", \"fail\" or a result of its own to end it; "
+            + "draw = function(pz, width, height) draws it on this machine alone (drawing only); start = function(pz, args) sets pz.state up. "
+            + "title is shown over it; pause (true) stops the level while it's open, playing alone; cancel is what Esc comes to: \"nothing\" (the default), \"fail\" or \"never\"; "
+            + "timelimit is tics till it's a fail; width and height its panel's size (240 by 140). "
+            + "pz has state (the puzzle's own table), name, player, x, y, tag (where it was started), args, tics, timeleft, pz:finish(result) and pz:sound(name)"),
+        Fn("startpuzzle", "game.startpuzzle(player, name[, args])", "Opens a puzzle (game.puzzle) for a player, args a table its start gets: true if it opened (not if they have one open, or in a demo or a game with others yet)"),
+        Fn("onpuzzle", "game.onpuzzle(function(player, name, result, x, y, tag) ... end)", "Adds a hook called as a puzzle ends: \"success\", \"fail\", \"cancel\" (backed out of, or its script failed) or its own result, with the tile and tag it was started from (-1, -1 and 0 for none)"),
         Fn("viewsize", "game.viewsize()", "How big the view is, in the pixels game.onhud draws in: its width and height"),
         Fn("music", "game.music(song)", "Plays a song now, for the rest of the level (and after the menu); nil plays the level's own again"),
         Fn("command", "game.command(name, help, function(...) ... end)", "Gives the console a command (not while playing with others), called with the words typed after it, numbers as numbers. Add commands at a script's top level; one the game has already wins"),

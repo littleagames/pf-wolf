@@ -94,6 +94,19 @@ hud-messages:
   lock-style: Center
   obituary-style: Obituary
 
+# A script's puzzles (game.puzzle) in the menus' window: its colors are colors.yaml's, so Spear's
+# is blue as its menus are
+puzzle-panel:
+  frame: menu
+  background: BKGDCOLOR
+  border: BORD2COLOR
+  border-shadow: DEACTIVE
+  title-font: SmallFont
+  title-color: READHCOLOR
+  font: SmallFont
+  text-color: TEXTCOLOR
+  dim: 0.5
+
 # Easiest first: a skill's place here is what saves record
 skills:
   BABY:

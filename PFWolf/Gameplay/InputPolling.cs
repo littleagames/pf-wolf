@@ -49,6 +49,10 @@ internal sealed class InputPolling(
     internal double ControlPitch;            // how far to look up (down if negative) this frame, in degrees
     internal bool ControlCenterView;         // look straight ahead again this frame
 
+    // The Esc key backed out of a puzzle (Ui/PlayKeys.cs): the next frame's controls have the Esc
+    // button down, so the puzzle hears of it in the game's think (Gameplay/Puzzles.cs)
+    internal bool PressEscNextFrame;
+
 
     // Degrees a tic the look keys (and a stick pushed all the way) look up or down: level to
     // the steepest the view allows (about 19 degrees) in half a second, like Heretic's keys
@@ -179,6 +183,11 @@ internal sealed class InputPolling(
             Pitch = ControlPitch,
             CenterView = ControlCenterView,
         };
+        if (PressEscNextFrame)
+        {
+            LocalCmd.SetDown(ButtonType.Esc, true);
+            PressEscNextFrame = false;
+        }
     }
 
     /// <summary>The buttons pressed this frame, a bit each (bit 0 is Attack)</summary>

@@ -263,7 +263,8 @@ internal static partial class GameHost
         Settings, new PlayKeysHooks(() => NetChatting, NetChatKeys, NetCheckKeys,
             ToggleAutomap, HandleAutomapKey, DrawPlayBorder, DrawPlayBorderSides,
             OpenControlPanel, DrawPlayScreen, PopupMap,
-            key => HudMessageManager.Show(HudMessageKind.Other, key)));
+            key => HudMessageManager.Show(HudMessageKind.Other, key),
+            () => puzzles?.LocalPuzzle != null));
 
     // Playing a level, a frame at a time (Gameplay/LevelLoop.cs)
     static LevelLoop levelLoop = null!;     // made in InitServices
@@ -272,7 +273,7 @@ internal static partial class GameHost
         frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
         new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick(),
             () => demoTracer.AfterFrame(), () => LevelTimer.Tick(), () => playScreen.ShowQuickInstructions(), () => destructibleWalls.Tick(),
-            particles.Tick, particles.Reset));
+            particles.Tick, particles.Reset, Puzzles));
 
     // A level against the clock (Gameplay/LevelTimer.cs): game-info map time-limit
     static LevelTimer? _levelTimer;
@@ -469,7 +470,62 @@ internal static partial class GameHost
                 if (GameState.MapOn is { } map && GameEngineManager.GetGameInfo().Maps.ContainsKey(map))
                     levelMusic.StartMusic();        // game.music's song now (ChooseSong), or the level's own again
             },
+            StartPuzzleFor = (player, name, args) => Puzzles.Start(player, name, args),
+            PuzzlePanel = () => GameEngineManager.GetGameInfo().PuzzlePanel,
+            DrawRect = (x, y, width, height, color) =>
+            {
+                if (width > 0 && height > 0)
+                    _videoManager.Bar(x, y, width, height, color);
+            },
+            DrawLine = (x0, y0, x1, y1, color, thickness) => _videoManager.DrawLineScaledCoord(
+                _videoManager.ScreenX((int)Math.Round(x0)), _videoManager.ScreenY((int)Math.Round(y0)),
+                _videoManager.ScreenX((int)Math.Round(x1)), _videoManager.ScreenY((int)Math.Round(y1)),
+                color, Math.Max(_videoManager.ToScreenLength(thickness), 1), 0, 0, _videoManager.ScreenWidth, _videoManager.ScreenHeight),
+            DrawShade = (x, y, width, height, brightness) =>
+            {
+                int sx = _videoManager.ScreenX(x), sy = _videoManager.ScreenY(y);
+                _videoManager.ShadeRegionScaledCoord(sx, sy, _videoManager.ScreenX(x + width) - sx, _videoManager.ScreenY(y + height) - sy,
+                    _videoManager.GetDarkenTable((float)brightness));
+            },
+            MeasureText = (text, font) =>
+            {
+                _graphicManager.MeasureText(HudMessageManager.Localize(text), font, out var width, out var height);
+                return (width, height);
+            },
         };
+
+    // ==== Puzzles ================================================================================
+
+    // The puzzles players work (Gameplay/Puzzles.cs): a script's game.puzzle, opened by A_Puzzle,
+    // game.startpuzzle or the puzzle command; made in InitServices, or by the actions without it
+    static Puzzles? puzzles;
+    static Puzzles Puzzles => puzzles ??= new Puzzles(Session, gameScripts ??= MakeGameScripts(), text => _consoleManager.Print(text));
+
+    // The local player's open puzzle drawn over the view (Ui/PuzzlePanel.cs)
+    static PuzzlePanel puzzlePanel = null!;     // made in InitServices
+
+    static PuzzlePanel MakePuzzlePanel() => new(_videoManager, _graphicManager, Puzzles, gameScripts,
+        () => GameEngineManager.GetGameInfo().PuzzlePanel,
+        () => (Render.ViewScreenX, Render.ViewScreenY, Render.ViewWidth, Render.ViewHeight),
+        ScriptViewRect, text => HudMessageManager.Localize(text));
+
+    // puzzle <name> [args...]: opens a puzzle for the player here, to try it (args as A_Puzzle's)
+    static void PuzzleCommand(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            var names = gameScripts?.PuzzleNames.ToList() ?? [];
+            _consoleManager.Print(names.Count == 0 ? "No puzzles: a script makes one with game.puzzle" : $"Puzzles: {string.Join(", ", names)}");
+            return;
+        }
+        if (Session.LocalPlayer?.Pawn is not { } pawn || GameState.MapOn == null)
+        {
+            _consoleManager.Print("puzzle: only in a level");
+            return;
+        }
+        if (!Puzzles.Start(pawn, args[0], args[1..]))
+            _consoleManager.Print($"puzzle: {args[0]} didn't open");
+    }
 
     // The 3D view on the screen in the layout pixels text is drawn in (as the HUD messages find it), for game.onhud
     static (int X, int Y, int Width, int Height) ScriptViewRect()

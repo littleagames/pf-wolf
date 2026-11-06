@@ -18,6 +18,7 @@ namespace PFWolf.Ui;
 /// about the player with Shift held: false when it has none
 /// </param>
 /// <param name="ShowMessage">Shows a message (a $NAME language key) whatever the messages setting: the option keys' (Ui/OptionToggleKeys.cs)</param>
+/// <param name="PuzzleOpen">Whether the player on this machine is working a puzzle (Gameplay/Puzzles.cs): Esc backs out of it then</param>
 internal sealed record PlayKeysHooks(
     Func<bool> NetChatting,
     Action NetChatKeys,
@@ -29,7 +30,8 @@ internal sealed record PlayKeysHooks(
     Action<ScanCodes> ControlPanel,
     Action DrawPlayScreen,
     Func<bool, bool>? PopupMap = null,
-    Action<string>? ShowMessage = null);
+    Action<string>? ShowMessage = null,
+    Func<bool>? PuzzleOpen = null);
 
 /// <summary>
 /// The keys during play, once a frame (CheckKeys): the console, the automap, console binds,
@@ -58,6 +60,10 @@ internal sealed class PlayKeys(
     PlayKeysHooks hooks)
 {
     OptionToggleKeys? optionKeys;
+
+    // A controller's Esc button that backed out of a puzzle, still held: it doesn't open the menu
+    // till it's let go of
+    bool puzzleEscHeld;
 
     internal void CheckKeys()
     {
@@ -133,6 +139,21 @@ internal sealed class PlayKeys(
         optionKeys.CheckKeys();
 
         scan = inputManager.GetLastKeyPressed();
+
+        // Working a puzzle: Esc backs out of it, as the player's Esc button in the next frame's
+        // controls (so it goes where the controls go); the menu comes on the next Esc
+        bool escPressed = scan == ScanCodes.Escape || inputManager.IsButtonPressed(ButtonType.Esc);
+        if (puzzleEscHeld && !inputManager.IsButtonPressed(ButtonType.Esc))
+            puzzleEscHeld = false;
+        if (escPressed && hooks.PuzzleOpen?.Invoke() == true)
+        {
+            polling.PressEscNextFrame = true;
+            puzzleEscHeld = inputManager.IsButtonPressed(ButtonType.Esc);
+            inputManager.ClearKeysDown();
+            return;
+        }
+        if (puzzleEscHeld && scan != ScanCodes.Escape)
+            return;
 
         // With others: no cheat keys, no pausing and no menus over the game; Esc asks to leave
         if (session.NetGame)

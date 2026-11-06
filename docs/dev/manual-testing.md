@@ -405,6 +405,18 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       sounds; the walking and running cadence feels right (`stride` 2.5, `mintics` 12).
 - [ ] **(never tried)** Another player's steps heard from where they are (network game).
 
+**Puzzles** (`puzzles-demo`, `puzzle needle` with cheats on)
+- [ ] The needle's panel in Wolf3D's menu window over a dimmed, stopped level; use on green
+      bypasses, red fails, Esc backs out and the next Esc opens the menu (seen in Wolf3D 2026-11-06).
+- [ ] **(never tried)** The panel in Spear (blue) and Blake Stone (green on black, BlakeHud title).
+- [ ] **(never tried)** A controller: the stick's push as left/right/up/down, its Esc button
+      backing out without opening the menu while held.
+- [ ] **(never tried)** By ear: the needle's hit, miss and short sounds.
+- [ ] **(never tried)** Wide screens and UI Scale above 1: the panel centered on the view; a small
+      view size (the panel bigger than the view).
+- [ ] **(never tried)** `A_Puzzle` on a switch and on an actor's Use state; saving with a puzzle
+      open (it's gone after loading); dying in a `pause = false` puzzle.
+
 **Wall patches + mirrored textures** (`patch-demo`)
 - [ ] Ammo/button/lever/first-aid patches on the right faces; patch switches give items.
 - [ ] **(never tried)** `flip:` mirrored faces (truck sides), patches stay unflipped, lintels and

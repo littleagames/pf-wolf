@@ -1,0 +1,4 @@
+name: Puzzles Demo
+version: "0.1"
+description: Puzzles (mini-games) as Lua scripts, to copy into your own mods. So far the timing needle; try it in any level with the console's `puzzle needle` (a cheat).
+game-packs: [wolf3d]

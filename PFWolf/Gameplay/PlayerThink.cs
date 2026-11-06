@@ -13,8 +13,10 @@ namespace PFWolf.Gameplay;
 /// <param name="Waiting">Whether the match mode keeps the acting player still for now (Prop Hunt's hunters while the props hide)</param>
 /// <param name="EnteredTile">The acting player's stepped onto another tile (game.onenter)</param>
 /// <param name="WeaponChanged">The weapon in the acting player's hand has changed, from and to (game.onweaponswitch)</param>
+/// <param name="Puzzle">The acting player's open puzzle thinks (Gameplay/Puzzles.cs): true if they have one, whose think this is</param>
 internal sealed record PlayerThinkHooks(Action UpdateRadar, Func<bool> VictoryRunning, Action InitAreas, Action<bool> UpdateZoom,
-    Func<bool>? Waiting = null, Action<int, int>? EnteredTile = null, Action<string, string>? WeaponChanged = null);
+    Func<bool>? Waiting = null, Action<int, int>? EnteredTile = null, Action<string, string>? WeaponChanged = null,
+    Func<bool>? Puzzle = null);
 
 /// <summary>
 /// The acting player's think each tic (T_Player): the status bar's face and gauges, changing
@@ -64,6 +66,10 @@ internal sealed class PlayerThink(
         statusBar.UpdateHeartMonitor();
         statusBar.UpdatePowerMeter();
         hooks.UpdateRadar();
+
+        // Working a puzzle: the controls are its, so they don't move, turn, fire or use
+        if (hooks.Puzzle?.Invoke() == true)
+            return;
 
         // Reloading is like being ready, as the original Midnight Assault's T_Reload: use works,
         // and fire is kept for cutting the reload short (WeaponInHand.TickWeapon); only the

@@ -16,6 +16,7 @@ namespace PFWolf.Gameplay;
 /// <param name="TickWalls">Walls crumbling, breaking once their animation's played (Gameplay/DestructibleWalls.cs)</param>
 /// <param name="TickParticles">Particles moving on, only for show (Rendering/Particles.cs)</param>
 /// <param name="ClearParticles">A new level, life or loaded game starts with no particles in the air</param>
+/// <param name="Puzzles">The puzzles players work (Gameplay/Puzzles.cs): one that pauses stops the level while it's open</param>
 internal sealed record LevelLoopHooks(
     Func<bool> DemoTesting,
     Action<uint> TickPlayerBodies,
@@ -29,7 +30,8 @@ internal sealed record LevelLoopHooks(
     Action? ShowQuickInstructions = null,
     Action? TickWalls = null,
     Action<uint>? TickParticles = null,
-    Action? ClearParticles = null);
+    Action? ClearParticles = null,
+    Puzzles? Puzzles = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -95,6 +97,7 @@ internal sealed class LevelLoop(
         hooks.UpdateSoundListener();
         frame.Interpolation?.Forget();     // nothing slides in from the last level, life or saved game
         hooks.ClearParticles?.Invoke();    // nor is left in the air from it
+        hooks.Puzzles?.Reset();             // nor a puzzle left open from it
 
         do
         {
@@ -120,7 +123,17 @@ internal sealed class LevelLoop(
             // Not with others, though: the game goes on for them
             bool worldPaused = console.IsPausingGame && !session.NetGame;
 
-            if (!worldPaused)
+            // A puzzle that pauses stops the level while it's open (playing alone): only the
+            // puzzles think, and the clock doesn't count it (Gameplay/Puzzles.cs)
+            bool puzzlePaused = !worldPaused && hooks.Puzzles?.FreezesWorld == true;
+            if (puzzlePaused)
+            {
+                foreach (var p in session.Players)
+                    p.Input.Begin(ReferenceEquals(p, session.LocalPlayer) ? polling.LocalCmd : p.PendingCmd);
+                hooks.Puzzles!.ThinkFrozen();
+                hudMessages.Tick((int)session.Tics);
+            }
+            else if (!worldPaused)
             {
                 // this frame's controls, for each player to read as they think: with others,
                 // everyone's as the host sent them (Networking/NetPlay.cs); else this machine's for
@@ -191,7 +204,7 @@ internal sealed class LevelLoop(
             if (hooks.AutosavePending())
                 hooks.AutoSaveGame();         // now there's a picture of the level for it
 
-            if (!worldPaused)
+            if (!worldPaused && !puzzlePaused)
             {
                 session.GameState.TimeCount += (int)session.Tics;
                 session.GameState.PlayTime += (int)session.Tics;

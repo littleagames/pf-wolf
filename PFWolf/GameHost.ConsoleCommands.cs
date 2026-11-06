@@ -92,6 +92,8 @@ internal static partial class GameHost
         Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", ScriptsCommand);
         Register("lua", "Runs Lua in the scripts' state (`me` is the player). Strings take 'single quotes'; separate statements with spaces, not ;.",
             "lua <code>", LuaCommand, Cheat);
+        Register("puzzle", "Opens a script's puzzle (game.puzzle) for you, to try it; its words after the name go to it as A_Puzzle's do (key=value or in order). With no name, lists the puzzles.",
+            "puzzle [name] [args...]", PuzzleCommand, Cheat);
         Group("Unlocks and records");
         new Commands.UnlockCommands(_consoleManager, Unlocks, LevelRecords).Register();     // unlock, lock, records (Commands/UnlockCommands.cs)
         Group("Demos");
