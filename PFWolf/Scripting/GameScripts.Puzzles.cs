@@ -187,8 +187,18 @@ internal sealed partial class GameScripts : IPuzzleScripts
             _ => new LuaTable(),
         };
 
+        var pz = MakeHandle(puzzle, script, argsTable, new LuaTable());
+        if (script.Start.Type == LuaValueType.Function
+            && !_scripts.Call(script.Start, $"puzzle {puzzle.Definition.Name} start", [pz, argsTable]))
+            return false;
+        return true;
+    }
+
+    // The pz table a puzzle's functions get, with its state and args, kept on the open puzzle
+    LuaTable MakeHandle(OpenPuzzle puzzle, PuzzleScript script, LuaTable argsTable, LuaTable state)
+    {
         var pz = new LuaTable();
-        pz["state"] = new LuaTable();
+        pz["state"] = state;
         pz["name"] = puzzle.Definition.Name;
         pz["title"] = puzzle.Definition.Title;
         pz["player"] = LuaActor.Of(puzzle.Player);
@@ -216,11 +226,128 @@ internal sealed partial class GameScripts : IPuzzleScripts
         var handle = new PuzzleHandle(script, pz, input, held, pressed);
         puzzle.Handle = handle;
         UpdateClock(puzzle, pz);
+        return pz;
+    }
 
-        if (script.Start.Type == LuaValueType.Function
-            && !_scripts.Call(script.Start, $"puzzle {puzzle.Definition.Name} start", [pz, argsTable]))
+    /*
+    -----------------------------------------------------------------------------
+    Keeping them: pz.state and pz.args as plain data
+    -----------------------------------------------------------------------------
+    */
+
+    // A value's kind as it's written
+    enum KeptValue : byte { False, True, Number, String, Table }
+
+    // Tables nested deeper than this are taken for a mistake
+    const int MaxKeptDepth = 32;
+
+    public string? WritePuzzleState(OpenPuzzle puzzle, BinaryWriter bw)
+    {
+        if (puzzle.Handle is not PuzzleHandle handle)
+            return "it has no script state";
+        // Written whole first, so a problem part way writes nothing
+        using var ms = new MemoryStream();
+        using (var body = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            var problem = WriteKept(body, handle.Pz["state"], "pz.state", [])
+                ?? WriteKept(body, handle.Pz["args"], "pz.args", []);
+            if (problem != null)
+                return problem;
+        }
+        bw.Write(ms.ToArray());
+        return null;
+    }
+
+    public bool RestorePuzzle(OpenPuzzle puzzle, BinaryReader br)
+    {
+        if (_scripts == null || !puzzleScripts.TryGetValue(puzzle.Definition.Name, out var script))
             return false;
+        var state = ReadKept(br, 0);
+        var args = ReadKept(br, 0);
+        if (!state.TryRead<LuaTable>(out var stateTable) || !args.TryRead<LuaTable>(out var argsTable))
+            throw new InvalidDataException("a puzzle's kept state isn't two tables");
+        MakeHandle(puzzle, script, argsTable, stateTable);
         return true;
+    }
+
+    // One value of pz.state or pz.args: null if it went, else what can't be kept and where
+    static string? WriteKept(BinaryWriter bw, LuaValue value, string where, HashSet<LuaTable> path)
+    {
+        switch (value.Type)
+        {
+            case LuaValueType.Boolean:
+                bw.Write((byte)(value.Read<bool>() ? KeptValue.True : KeptValue.False));
+                return null;
+            case LuaValueType.Number:
+                bw.Write((byte)KeptValue.Number);
+                bw.Write(value.Read<double>());
+                return null;
+            case LuaValueType.String:
+                bw.Write((byte)KeptValue.String);
+                bw.Write(value.Read<string>());
+                return null;
+            case LuaValueType.Table:
+                var table = value.Read<LuaTable>();
+                if (path.Count >= MaxKeptDepth)
+                    return $"{where} is nested more than {MaxKeptDepth} tables deep";
+                if (!path.Add(table))
+                    return $"{where} is a table it's already inside (a loop)";
+                var entries = new List<(LuaValue Key, LuaValue Value)>();
+                foreach (var (key, item) in table)
+                    entries.Add((key, item));
+                bw.Write((byte)KeptValue.Table);
+                bw.Write(entries.Count);
+                foreach (var (key, item) in entries)
+                {
+                    var keyName = key.Type == LuaValueType.String ? $"{where}.{key.Read<string>()}" : $"{where}[{KeyText(key)}]";
+                    if (key.Type is not (LuaValueType.String or LuaValueType.Number or LuaValueType.Boolean))
+                        return $"{keyName} has a {TypeName(key)} for a key";
+                    var problem = WriteKept(bw, key, keyName, path) ?? WriteKept(bw, item, keyName, path);
+                    if (problem != null)
+                        return problem;
+                }
+                path.Remove(table);
+                return null;
+            default:
+                return $"{where} is {(value.TryRead<LuaActor>(out _) ? "an actor" : "a " + TypeName(value))}";
+        }
+    }
+
+    static string KeyText(LuaValue key) => key.Type switch
+    {
+        LuaValueType.Number => key.Read<double>().ToString(CultureInfo.InvariantCulture),
+        LuaValueType.Boolean => key.Read<bool>() ? "true" : "false",
+        _ => "?",
+    };
+
+    static string TypeName(LuaValue value) => value.Type switch
+    {
+        LuaValueType.Function => "function",
+        LuaValueType.Nil => "nil",
+        _ => value.Type.ToString().ToLowerInvariant(),
+    };
+
+    static LuaValue ReadKept(BinaryReader br, int depth)
+    {
+        if (depth > MaxKeptDepth)
+            throw new InvalidDataException("a puzzle's kept state is nested too deep");
+        switch ((KeptValue)br.ReadByte())
+        {
+            case KeptValue.False: return false;
+            case KeptValue.True: return true;
+            case KeptValue.Number: return br.ReadDouble();
+            case KeptValue.String: return br.ReadString();
+            case KeptValue.Table:
+                var table = new LuaTable();
+                for (int i = br.ReadInt32(); i > 0; i--)
+                {
+                    var key = ReadKept(br, depth + 1);
+                    table[key] = ReadKept(br, depth + 1);
+                }
+                return table;
+            default:
+                throw new InvalidDataException("a puzzle's kept state has a value of no known kind");
+        }
     }
 
     public PuzzleTickResult TickPuzzle(OpenPuzzle puzzle, in PuzzleInput keys)

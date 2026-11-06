@@ -280,7 +280,7 @@ internal static partial class GameHost
             && MapManager.TileMap[x, y] == 0;
         gameScripts = MakeGameScripts();
         MapManager.ActorAdded = gameScripts.ActorAdded;     // game.onactorspawn
-        puzzles = new Puzzles(Session, gameScripts, text => _consoleManager.Print(text));
+        puzzles = MakePuzzles();
         puzzlePanel = MakePuzzlePanel();
         playerUse.PuzzleSwitches = PuzzleSwitches;      // a switch's puzzle: only a success throws it
         levelMusic = new LevelMusic(GameEngineManager, AudioManager, Session) { ChooseSong = song => gameScripts.ChooseSong(song) };

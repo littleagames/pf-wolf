@@ -26,10 +26,11 @@ internal sealed record PlayerSaveState(
     bool Undetected, int StealthKills, int SuspicionMeter, int SuspicionPending,
     int KillChain, int KillChainAt,
     List<SavedTimedSwitch> TimedSwitches,
-    List<SavedPuzzleSwitch> PuzzleSwitches)
+    List<SavedPuzzleSwitch> PuzzleSwitches,
+    byte[]? OpenPuzzle = null)
 {
     internal static PlayerSaveState Capture(Entities.PlayerState p, List<Entities.Actors.Actor> actors, IEnumerable<TimedSwitch> timed,
-        IEnumerable<PuzzleSwitchState> puzzleSwitches)
+        IEnumerable<PuzzleSwitchState> puzzleSwitches, byte[]? openPuzzle = null)
     {
         // By reference: actors are records, so IndexOf would match a look-alike by value
         int IndexOf(Entities.Actors.Actor? actor) => actor == null ? -1 : actors.FindIndex(a => ReferenceEquals(a, actor));
@@ -40,7 +41,39 @@ internal sealed record PlayerSaveState(
             p.Undetected, p.StealthKills, p.SuspicionMeter, p.SuspicionPending,
             p.KillChain, p.KillChainAt,
             timed.Select(t => new SavedTimedSwitch(t.X, t.Y, t.Patch, t.From, t.To, t.Tag, t.Dir, [.. t.Actions], t.TicsLeft)).ToList(),
-            puzzleSwitches.Select(s => new SavedPuzzleSwitch(s.X, s.Y, s.Patch, s.Fails, s.ReadyAt)).ToList());
+            puzzleSwitches.Select(s => new SavedPuzzleSwitch(s.X, s.Y, s.Patch, s.Fails, s.ReadyAt)).ToList(),
+            openPuzzle);
+    }
+
+    /// <summary>A puzzle switch list, as a save and a joiner's state both write it</summary>
+    internal static void WritePuzzleSwitches(BinaryWriter bw, IReadOnlyCollection<SavedPuzzleSwitch> switches)
+    {
+        bw.Write(switches.Count);
+        foreach (var s in switches)
+        {
+            bw.Write(s.X); bw.Write(s.Y); bw.Write(s.Patch); bw.Write(s.Fails); bw.Write(s.ReadyAt);
+        }
+    }
+
+    internal static List<SavedPuzzleSwitch> ReadPuzzleSwitches(BinaryReader br) =>
+        [.. Enumerable.Range(0, br.ReadCount()).Select(_ => new SavedPuzzleSwitch(br.ReadInt32(), br.ReadInt32(), br.ReadBoolean(), br.ReadInt32(), br.ReadInt32()))];
+
+    /// <summary>An open puzzle (Gameplay/Puzzles.cs Write), or none, as a save and a joiner's state both write it</summary>
+    internal static void WriteOpenPuzzle(BinaryWriter bw, byte[]? puzzle)
+    {
+        bw.Write(puzzle?.Length ?? -1);
+        if (puzzle != null)
+            bw.Write(puzzle);
+    }
+
+    internal static byte[]? ReadOpenPuzzle(BinaryReader br)
+    {
+        int length = br.ReadInt32();
+        if (length < 0)
+            return null;
+        if (length > br.BaseStream.Length - br.BaseStream.Position)
+            throw new InvalidDataException("an open puzzle's longer than what's left");
+        return br.ReadBytes(length);
     }
 
     /// <summary>Puts it back on the player, the gun and latcher found among the level's restored actors</summary>
@@ -73,11 +106,8 @@ internal sealed record PlayerSaveState(
                 bw.Write(action);
             bw.Write(t.TicsLeft);
         }
-        bw.Write(PuzzleSwitches.Count);
-        foreach (var s in PuzzleSwitches)
-        {
-            bw.Write(s.X); bw.Write(s.Y); bw.Write(s.Patch); bw.Write(s.Fails); bw.Write(s.ReadyAt);
-        }
+        WritePuzzleSwitches(bw, PuzzleSwitches);
+        WriteOpenPuzzle(bw, OpenPuzzle);
     }
 
     internal static PlayerSaveState Read(BinaryReader br)
@@ -92,7 +122,7 @@ internal sealed record PlayerSaveState(
             [.. Enumerable.Range(0, br.ReadCount()).Select(_ => new SavedTimedSwitch(
                 br.ReadInt32(), br.ReadInt32(), br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadUInt16(), (ControlDir)br.ReadByte(),
                 [.. Enumerable.Range(0, br.ReadCount()).Select(_ => br.ReadString())], br.ReadInt32()))],
-            [.. Enumerable.Range(0, br.ReadCount()).Select(_ => new SavedPuzzleSwitch(
-                br.ReadInt32(), br.ReadInt32(), br.ReadBoolean(), br.ReadInt32(), br.ReadInt32()))]);
+            ReadPuzzleSwitches(br),
+            ReadOpenPuzzle(br));
     }
 }

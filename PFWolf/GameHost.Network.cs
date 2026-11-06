@@ -74,7 +74,7 @@ internal static partial class GameHost
                 () => LastTimeCount = (int)GameEngineManager.GetTimeCount(),
                 join =>
                 {
-                    puzzles?.CloseAll();    // a joiner's sent no open puzzles, so they close everywhere first (Gameplay/Puzzles.cs)
+                    puzzles?.CloseUnsendable();     // a puzzle whose state can't go to them closes everywhere first (Gameplay/Puzzles.cs)
                     AddNetPlayer(join);
                 },
                 ConnectAreas));
@@ -117,7 +117,11 @@ internal static partial class GameHost
 
     static MidGameJoin MakeMidGameJoin() => new(MapManager, InventoryManager, levelBodies, levelSetup, pushWalls, playersManager, deathmatch,
         scoreboard, netPlay, Session,
-        new MidGameJoinHooks(PlayerColor, () => StartGame = 1));
+        new MidGameJoinHooks(PlayerColor, () => StartGame = 1))
+    {
+        Puzzles = Puzzles,
+        PuzzleSwitches = PuzzleSwitches,
+    };
 
     static byte[] WriteNetState() => midGameJoin.WriteNetState();
     static string? BeginJoinedGame(NetSession session, JoinStateInfo join) => midGameJoin.BeginJoinedGame(session, join);

@@ -182,6 +182,46 @@ public class PuzzleGameTests
         Assert.That(lines, Has.None.EqualTo(doesnt));
     }
 
+    // Marks each second it's been open (the level runs on: console waits count down), keeping
+    // the count in its state
+    private const string KeptScript = """
+        game.puzzle("slow", {
+          pause = false,
+          start = function(pz) pz.state.marks = 0 end,
+          tick = function(pz)
+            if pz.tics >= 70 * (pz.state.marks + 1) then
+              pz.state.marks = pz.state.marks + 1
+              print("MARK " .. pz.state.marks)
+            end
+          end,
+        })
+        game.onlevel(function(reason) print("LEVEL " .. reason) end)
+        """;
+
+    [Test]
+    public void A_Puzzle_Open_As_The_Game_Is_Saved_Is_Open_And_Where_It_Was_After_Loading()
+    {
+        // Arrange
+        var mod = WriteMod(Walls, KeptScript, guard: false);
+
+        // Act: about two seconds in, saved, then loaded and left a while
+        var (exitCode, output) = HeadlessGame.Run(_workFolder, "wolf3d",
+            "wait 10; puzzle slow; wait 150; save keeper; wait 70; load keeper; wait 5; wait 200; quit", Timeout,
+            ["--warp", "MAP01", "--cheats"], mod);
+
+        // Assert: it marks on from where it was saved, not from the start
+        var log = string.Join(Environment.NewLine, output.TakeLast(40));
+        Assert.That(exitCode, Is.Zero, log);
+        int loaded = output.FindIndex(line => line == "LEVEL loaded");
+        Assert.That(loaded, Is.GreaterThan(0), log);
+        var before = output.Take(loaded).Where(line => line.StartsWith("MARK ")).ToList();
+        var after = output.Skip(loaded).Where(line => line.StartsWith("MARK ")).ToList();
+        TestContext.Out.WriteLine(string.Join(Environment.NewLine, before.Append("-- loaded --").Concat(after)));
+        Assert.That(before, Has.Some.EqualTo("MARK 2"), log);
+        Assert.That(after, Is.Not.Empty, "the puzzle wasn't open after loading");
+        Assert.That(after, Has.None.EqualTo("MARK 1"), "the puzzle started again rather than going on");
+    }
+
     private string WriteMod() => WriteMod(Walls, Script, guard: false);
 
     private string WriteMod(string walls, string script, bool guard)

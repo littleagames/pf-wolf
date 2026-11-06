@@ -973,7 +973,16 @@ went.
 With others, everyone's machine runs every puzzle from that player's controls, so it comes out
 the same everywhere. The level doesn't stop for one player (`pause` does nothing there), they
 can be shot while they work, and the others see a line saying so ("Alice is hacking": the
-puzzle's `verb`). Someone joining mid-game closes every open puzzle, as backed out of.
+puzzle's `verb`). Someone joining mid-game is sent the open puzzles as they stand.
+
+### Saving
+
+An open puzzle goes into a saved game (and to someone joining mid-game) with its `pz.state` and
+`pz.args`, and carries on where it was after loading; its `start` doesn't run again. Keep
+`pz.state` to plain data: true and false, numbers, strings and tables of them. A function or an
+actor in it can't be kept: the console says which key, the game's saved without the puzzle, and
+(with others) it closes, as backed out of, when someone joins. Keep what you'd put there as
+names or numbers instead, and look the actor up again (`pz.player` is always there).
 
 A demo keeps only some controls, so in one a puzzle reads the walk and turn as up/down and
 left/right, use and fire, and the slot keys 1 to 4 as digits; Esc can't back out there.

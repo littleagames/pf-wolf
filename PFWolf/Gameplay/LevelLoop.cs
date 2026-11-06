@@ -97,7 +97,6 @@ internal sealed class LevelLoop(
         hooks.UpdateSoundListener();
         frame.Interpolation?.Forget();     // nothing slides in from the last level, life or saved game
         hooks.ClearParticles?.Invoke();    // nor is left in the air from it
-        hooks.Puzzles?.Reset();             // nor a puzzle left open from it
 
         do
         {

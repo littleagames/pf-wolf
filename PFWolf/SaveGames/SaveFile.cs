@@ -72,7 +72,9 @@ internal static class SaveFile
     // 41: each actor's emitters as A_StartEmitter / A_StopEmitter left them, after its suspicion.
     // 42: the puzzle switches' fails and lockouts (a count, then each one's x, y, patch, fails and
     //     ready-at), after the timed switches.
-    internal const int SaveVersion = 42;
+    // 43: the player's open puzzle (its length then Gameplay/Puzzles.cs Write's bytes; -1 for none),
+    //     after the puzzle switches.
+    internal const int SaveVersion = 43;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

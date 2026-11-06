@@ -121,8 +121,9 @@ public static class ScriptApi
             + "draw = function(pz, width, height) draws it on this machine alone (drawing only); start = function(pz, args) sets pz.state up. "
             + "title is shown over it; pause (true) stops the level while it's open, playing alone; cancel is what Esc comes to: \"nothing\" (the default), \"fail\" or \"never\"; "
             + "timelimit is tics till it's a fail; width and height its panel's size (240 by 140). "
-            + "pz has state (the puzzle's own table), name, player, x, y, tag (where it was started), args, tics, timeleft, pz:finish(result) and pz:sound(name)"),
-        Fn("startpuzzle", "game.startpuzzle(player, name[, args])", "Opens a puzzle (game.puzzle) for a player, args a table its start gets: true if it opened (not if they have one open already). With others, every machine runs it from the player's controls, and pause doesn't stop the level; someone joining mid-game closes every open puzzle as backed out of"),
+            + "pz has state (the puzzle's own table), name, player, x, y, tag (where it was started), args, tics, timeleft, pz:finish(result) and pz:sound(name). "
+            + "An open puzzle is kept in a save (and sent to someone joining) with pz.state and pz.args, so keep them to booleans, numbers, strings and tables of them: a function or an actor there can't be kept"),
+        Fn("startpuzzle", "game.startpuzzle(player, name[, args])", "Opens a puzzle (game.puzzle) for a player, args a table its start gets: true if it opened (not if they have one open already). With others, every machine runs it from the player's controls, and pause doesn't stop the level"),
         Fn("onpuzzle", "game.onpuzzle(function(player, name, result, x, y, tag) ... end)", "Adds a hook called as a puzzle ends: \"success\", \"fail\", \"cancel\" (backed out of, or its script failed) or its own result, with the tile and tag it was started from (-1, -1 and 0 for none)"),
         Fn("viewsize", "game.viewsize()", "How big the view is, in the pixels game.onhud draws in: its width and height"),
         Fn("music", "game.music(song)", "Plays a song now, for the rest of the level (and after the menu); nil plays the level's own again"),

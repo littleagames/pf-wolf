@@ -96,14 +96,23 @@ internal sealed class PlayerUse(
         var tag = map.GetTag(tilex, tiley);
         if (hooks.MaySwitch?.Invoke(tilex, tiley, tag) == false)
             return;                 // a script leaves it be (game.onswitch)
-        if (PuzzleSwitches?.Use(wallSwitch, tilex, tiley, patch: false, tag,
-            () => ThrowSwitch(wallSwitch, tilex, tiley, dir, tag, keys), actions => RunActions(actions, tilex, tiley, dir, tag)) == true)
+        int id = map.TileMap[tilex, tiley] & ~BitWall;
+        if (PuzzleSwitches?.Use(wallSwitch, new SwitchPuzzle(false, tilex, tiley, dir, tag, id, keys)) == true)
             return;                 // its puzzle first: a success throws it (Gameplay/PuzzleSwitches.cs)
         ThrowSwitch(wallSwitch, tilex, tiley, dir, tag, keys);
     }
 
     /// <summary>Switches with a puzzle to work first (Gameplay/PuzzleSwitches.cs); none: they're thrown as ever</summary>
     internal PuzzleSwitches? PuzzleSwitches { get; set; }
+
+    /// <summary>A switch whose puzzle was won (or whose skip item was used) thrown, as the acting player</summary>
+    internal void ThrowFor(SwitchPuzzle origin, MapSwitchTranslation sw)
+    {
+        if (origin.Patch)
+            ThrowPatchSwitch(sw, origin.X, origin.Y, origin.Dir, origin.Tag, origin.Keys);
+        else
+            ThrowSwitch(sw, origin.X, origin.Y, origin.Dir, origin.Tag, origin.Keys);
+    }
 
     // A switch's action calls, run on its tag from its tile, as the acting player
     void RunActions(IReadOnlyList<string> actions, int tilex, int tiley, ControlDir dir, ushort tag)
@@ -215,8 +224,7 @@ internal sealed class PlayerUse(
         var tag = map.GetTag(tilex, tiley);
         if (hooks.MaySwitch?.Invoke(tilex, tiley, tag) == false)
             return;                 // a script leaves it be (game.onswitch)
-        if (PuzzleSwitches?.Use(patchSwitch, tilex, tiley, patch: true, tag,
-            () => ThrowPatchSwitch(patchSwitch, tilex, tiley, dir, tag, keys), actions => RunActions(actions, tilex, tiley, dir, tag)) == true)
+        if (PuzzleSwitches?.Use(patchSwitch, new SwitchPuzzle(true, tilex, tiley, dir, tag, map.GetPatch(tilex, tiley), keys)) == true)
             return;                 // its puzzle first: a success throws it (Gameplay/PuzzleSwitches.cs)
         ThrowPatchSwitch(patchSwitch, tilex, tiley, dir, tag, keys);
     }

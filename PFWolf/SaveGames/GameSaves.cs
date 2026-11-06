@@ -203,8 +203,11 @@ internal sealed class GameSaves(
         // The gun they're manning, what's latched on, what they ride, going unseen, their kill
         // chain and the timed switches still counting down
         PlayerSaveState.Capture(session.PlayerState, mapManager.GetSavedActors(), TimedSwitches?.Pending ?? [],
-            PuzzleSwitches?.States ?? []).Write(bw);
+            PuzzleSwitches?.States ?? [], Puzzles?.Write(session.PlayerState)).Write(bw);
     }
+
+    /// <summary>The puzzles players work (Gameplay/Puzzles.cs): one open goes into a save</summary>
+    internal Gameplay.Puzzles? Puzzles { get; init; }
 
     /// <summary>The timed switches waiting to turn back (Gameplay/TimedSwitches.cs), kept in a save</summary>
     internal Gameplay.TimedSwitches? TimedSwitches { get; init; }
@@ -321,6 +324,7 @@ internal sealed class GameSaves(
         data.Extras.ApplyTo(session.PlayerState, actors);
         TimedSwitches?.Restore(data.Extras.TimedSwitches);
         PuzzleSwitches?.Restore(data.Extras.PuzzleSwitches);
+        Puzzles?.Read(session.PlayerState, data.Extras.OpenPuzzle);     // on the player just put back
 
         // The weapon picks up where it was (mid-attack, say).
         session.PlayerState.WeaponSprite = null;

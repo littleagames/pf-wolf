@@ -74,7 +74,11 @@ internal static partial class GameHost
         new(GameEngineManager, AssetManager, _videoManager, InventoryManager, statusBarDrawing, playerClassRules, playerWeapons, Session,
             Settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound, HudMessageManager.ShowKeyed, ShowAttacker,
                 (points, attacker, type) => gameScripts.RunDamageHooks(Session.Player, points, attacker, type),
-                killer => gameScripts.RunPlayerDeathHooks(Session.Player, killer),
+                killer =>
+                {
+                    puzzles?.CloseForDeath();      // a puzzle they were working closes, as backed out of
+                    gameScripts.RunPlayerDeathHooks(Session.Player, killer);
+                },
                 (item, amount) => gameScripts.RunGiveHooks(Session.Player, item, amount),
                 (powerup, started) => gameScripts.RunPowerupHooks(Session.Player, powerup, started)));
 

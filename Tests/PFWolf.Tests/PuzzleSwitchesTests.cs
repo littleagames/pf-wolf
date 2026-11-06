@@ -22,7 +22,7 @@ public class PuzzleSwitchesTests
     private PuzzleSwitches _switches = null!;
     private readonly List<string> _log = [];
     private Action<string>? _ended;
-    private bool _opens;
+    private MapSwitchTranslation _switch = new();
 
     [SetUp]
     public void SetUp()
@@ -35,8 +35,9 @@ public class PuzzleSwitchesTests
         };
         typeof(MapManager).GetField("mapsegs", BindingFlags.NonPublic | BindingFlags.Instance)!
             .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
-        typeof(MapManager).GetField("_levelMapData", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(_map, new MapObjectTranslationAsset());
         _map.TileMap[SwitchX, SwitchY] = SwitchWall;
+        _switch = new MapSwitchTranslation();
+        _session.PlayerState.Pawn = new Entities.Actors.PlayerPawn { Name = "Player", State = _session.PlayerState };
 
         _inventory = new InventoryManager(ActorDefs.Metadata("""
             Inventory: {}
@@ -46,28 +47,43 @@ public class PuzzleSwitchesTests
 
         _log.Clear();
         _ended = null;
-        _opens = true;
         _switches = new PuzzleSwitches(_map, _inventory, _session, new PuzzleSwitchHooks(
-            (name, args, x, y, tag, ended) =>
+            (name, args, origin) =>
             {
-                _log.Add($"open {name} [{string.Join(" ", args)}] {x},{y} {tag}");
-                _ended = ended;
-                return _opens;
+                _log.Add($"open {name} [{string.Join(" ", args)}] {origin.X},{origin.Y} {origin.Tag}");
+                _ended = result => _switches.Ended(origin, result);
+                return true;
             },
+            (origin, sw) => _log.Add("thrown"),
             message => _log.Add($"message {message}")));
+
+        // Its fail and cancel actions log themselves
+        Entities.MapTriggerRegistry.Register("Test_Log", (_, args) =>
+        {
+            _log.Add($"action {string.Join(" ", args)}");
+            return true;
+        });
     }
 
-    // The acting player uses the switch: whether its use was the puzzle's
-    private bool Use(MapSwitchTranslation sw) =>
-        _switches.Use(sw, SwitchX, SwitchY, patch: false, Tag, () => _log.Add("thrown"), actions => _log.Add($"actions {string.Join(" ", actions)}"));
+    // The acting player uses the switch (wall 70 is that switch now): whether its use was the puzzle's
+    private bool Use(MapSwitchTranslation sw)
+    {
+        if (!ReferenceEquals(sw, _switch))
+        {
+            _switch = sw;
+            typeof(MapManager).GetField("_levelMapData", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(_map,
+                new MapObjectTranslationAsset { Walls = { [SwitchWall] = new MapTextureTranslation { North = "X", Switch = sw } } });
+        }
+        return _switches.Use(sw, new SwitchPuzzle(false, SwitchX, SwitchY, ControlDir.East, Tag, SwitchWall, []));
+    }
 
     private static MapSwitchTranslation Hack(int retry = 0, int tries = 0, int broken = 0, string skipItem = "") => new()
     {
         To = 71,
         Puzzle = "needle",
         PuzzleArgs = new() { ["size"] = "6" },
-        Fail = ["A_Alarm", "A_HurtPlayer(10)"],
-        Cancel = ["A_Message(\"left\")"],
+        Fail = ["Test_Log(\"alarm\")", "Test_Log(\"hurt\")"],
+        Cancel = ["Test_Log(\"left\")"],
         Retry = retry,
         RetryMessage = "Not yet",
         Tries = tries,
@@ -100,10 +116,10 @@ public class PuzzleSwitchesTests
         Assert.That(_log.Last(), Is.EqualTo("thrown"));
     }
 
-    [TestCase("fail", "actions A_Alarm A_HurtPlayer(10)")]
-    [TestCase("cancel", "actions A_Message(\"left\")")]
-    [TestCase("lights", null)]
-    public void A_Puzzle_That_Isnt_Won_Runs_Its_Results_Actions_And_Throws_Nothing(string result, string? expected)
+    [TestCase("fail", new[] { "action alarm", "action hurt" })]
+    [TestCase("cancel", new[] { "action left" })]
+    [TestCase("lights", new string[0])]
+    public void A_Puzzle_That_Isnt_Won_Runs_Its_Results_Actions_And_Throws_Nothing(string result, string[] expected)
     {
         // Act
         Use(Hack());
@@ -111,7 +127,7 @@ public class PuzzleSwitchesTests
         _ended!(result);
 
         // Assert
-        Assert.That(_log, Is.EqualTo(expected == null ? Array.Empty<string>() : new[] { expected }));
+        Assert.That(_log, Is.EqualTo(expected));
     }
 
     [Test]

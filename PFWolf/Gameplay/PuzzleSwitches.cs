@@ -1,4 +1,5 @@
 using PFWolf.Assets;
+using PFWolf.Enums;
 using PFWolf.Managers;
 
 namespace PFWolf.Gameplay;
@@ -17,11 +18,32 @@ internal sealed record PuzzleSwitchState(int X, int Y, bool Patch, ushort[,] Lev
     internal int ReadyAt;
 }
 
+/// <summary>
+/// The switch a puzzle was opened from, all its result needs to act (as data, so an open puzzle
+/// can be saved and sent to a player joining): a wall's or a patch's switch, its tile, the way
+/// the player faced, its tag, the wall or patch id it was, and the keys it'll take if it's thrown
+/// </summary>
+internal sealed record SwitchPuzzle(bool Patch, int X, int Y, ControlDir Dir, ushort Tag, int Id, List<string> Keys)
+{
+    internal void Write(BinaryWriter bw)
+    {
+        bw.Write(Patch); bw.Write(X); bw.Write(Y); bw.Write((byte)Dir); bw.Write(Tag); bw.Write(Id);
+        bw.Write(Keys.Count);
+        foreach (var key in Keys)
+            bw.Write(key);
+    }
+
+    internal static SwitchPuzzle Read(BinaryReader br) => new(br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), (ControlDir)br.ReadByte(),
+        br.ReadUInt16(), br.ReadInt32(), [.. Enumerable.Range(0, br.ReadInt32()).Select(_ => br.ReadString())]);
+}
+
 /// <summary>What puzzle switches need from the game</summary>
-/// <param name="OpenPuzzle">Opens a puzzle for the acting player: its name, args, the switch's tile and tag, and what to do with its result; false if it didn't open</param>
+/// <param name="OpenPuzzle">Opens a puzzle for the acting player: its name, args and the switch it's for (its result comes to Ended); false if it didn't open</param>
+/// <param name="Throw">Throws a switch as using it does (PlayerUse): flips it, its sound and actions, its keys taken</param>
 /// <param name="Message">Shows the acting player a message (a $NAME language key or the text)</param>
 internal sealed record PuzzleSwitchHooks(
-    Func<string, string[], int, int, ushort, Action<string>, bool> OpenPuzzle,
+    Func<string, string[], SwitchPuzzle, bool> OpenPuzzle,
+    Action<SwitchPuzzle, MapSwitchTranslation> Throw,
     Action<string> Message);
 
 /// <summary>
@@ -49,17 +71,16 @@ internal sealed class PuzzleSwitches(MapManager map, InventoryManager inventory,
 
     /// <summary>
     /// The acting player uses a switch: with no puzzle, false (it's thrown as ever). Else true,
-    /// and the puzzle's opened (its success calling <paramref name="throwSwitch"/>, its fail and
-    /// cancel running <paramref name="runActions"/> with those lists), unless it's locked out, or
-    /// broken for good, or the player's skip item throws it at once.
+    /// and the puzzle's opened (its result coming to <see cref="Ended"/>), unless it's locked
+    /// out, or broken for good, or the player's skip item throws it at once.
     /// </summary>
-    internal bool Use(MapSwitchTranslation sw, int x, int y, bool patch, ushort tag, Action throwSwitch, Action<IReadOnlyList<string>> runActions)
+    internal bool Use(MapSwitchTranslation sw, SwitchPuzzle origin)
     {
         if (sw.Puzzle.Length == 0)
             return false;
 
         DropStale();
-        var state = Find(x, y, patch);
+        var state = Find(origin.X, origin.Y, origin.Patch);
         if (state != null && state.ReadyAt > session.GameState.TimeCount)
         {
             if (sw.RetryMessage.Length > 0)
@@ -70,33 +91,59 @@ internal sealed class PuzzleSwitches(MapManager map, InventoryManager inventory,
         if (sw.SkipItem.Length > 0 && inventory.Has(sw.SkipItem))
         {
             inventory.Take(sw.SkipItem, 1);
-            Forget(x, y, patch);
-            throwSwitch();
+            Forget(origin.X, origin.Y, origin.Patch);
+            hooks.Throw(origin, sw);
             return true;
         }
 
         var args = sw.PuzzleArgs.Select(arg => $"{arg.Key}={arg.Value}").ToArray();
-        hooks.OpenPuzzle(sw.Puzzle, args, x, y, tag, result => Ended(sw, x, y, patch, result, throwSwitch, runActions));
+        hooks.OpenPuzzle(sw.Puzzle, args, origin);
         return true;
     }
 
-    void Ended(MapSwitchTranslation sw, int x, int y, bool patch, string result, Action throwSwitch, Action<IReadOnlyList<string>> runActions)
+    /// <summary>
+    /// A switch's puzzle has ended, as the player who worked it: a success throws it, a fail runs
+    /// its fail actions (and counts toward its lockout and tries), backing out its cancel ones;
+    /// a result of the script's own does nothing here. The switch is the one its wall or patch
+    /// id names, so it acts as that switch whatever its tile shows by now.
+    /// </summary>
+    internal void Ended(SwitchPuzzle origin, string result)
     {
+        if (SwitchOf(origin) is not { } sw)
+            return;
         switch (result)
         {
             case "success":
-                Forget(x, y, patch);
-                throwSwitch();
+                Forget(origin.X, origin.Y, origin.Patch);
+                hooks.Throw(origin, sw);
                 break;
             case "fail":
-                runActions(sw.Fail);
-                Failed(sw, x, y, patch);
+                RunActions(sw.Fail, origin);
+                Failed(sw, origin.X, origin.Y, origin.Patch);
                 break;
             case "cancel":
-                runActions(sw.Cancel);
+                RunActions(sw.Cancel, origin);
                 break;
-            // a result of the script's own: game.onpuzzle sees to it
         }
+    }
+
+    // The switch a wall or patch id has (walls.yaml / patches.yaml), if it still has one
+    MapSwitchTranslation? SwitchOf(SwitchPuzzle origin)
+    {
+        var data = map.GetMapData();
+        return origin.Patch
+            ? data.Patches.TryGetValue(origin.Id, out var patch) ? patch.Switch : null
+            : data.Walls.TryGetValue(origin.Id, out var wall) ? wall.Switch : null;
+    }
+
+    // A switch's action calls, run on its tag from its tile, as the acting player
+    void RunActions(IReadOnlyList<string> actions, SwitchPuzzle origin)
+    {
+        if (actions.Count == 0)
+            return;
+        var activation = new Entities.TriggerActivation(origin.X, origin.Y, origin.Dir, session.Player, origin.Tag);
+        foreach (var action in actions)
+            Entities.MapTriggerRegistry.Invoke(action, activation);
     }
 
     void Failed(MapSwitchTranslation sw, int x, int y, bool patch)
@@ -125,7 +172,7 @@ internal sealed class PuzzleSwitches(MapManager map, InventoryManager inventory,
         map.RestartAnimations(x, y, session.GameState.TimeCount);
     }
 
-    /// <summary>A loaded game's puzzle switches (SaveGames/PlayerSaveState.cs), on the level just rebuilt</summary>
+    /// <summary>A loaded game's (or a joined game's) puzzle switches (SaveGames/PlayerSaveState.cs), on the level just rebuilt</summary>
     internal void Restore(IEnumerable<SaveGames.SavedPuzzleSwitch> saved)
     {
         states.Clear();

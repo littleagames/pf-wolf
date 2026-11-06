@@ -281,7 +281,22 @@ others and in demos, `pause` ignored with others; the "is hacking" line for othe
 bump if needed). Tests: a scripted headless demo that plays a puzzle and checks the door opened
 (the same trace twice), each new action, lockout and broken.
 
-**Phase 3 — saving and joining mid-game.** The open puzzle and its `state` table in the save
+**Phase 3 — saving and joining mid-game (done 2026-11-06).** What it came to: the switch a
+puzzle's for is data (SwitchPuzzle: patch, tile, dir, tag, wall/patch id, keys) rather than a
+callback, so its result finds the switch again by id (PuzzleSwitches.Ended); Puzzles.Write/Read
+keep an open puzzle (name, tile, tag, tics, held keys, errors, its switch) and the script's
+pz.state and pz.args as plain data (GameScripts.WritePuzzleState: booleans, numbers, strings,
+tables of them; a function, an actor, a loop or more than 32 deep is refused, naming the key,
+and the puzzle's left out of the save). Save version 43 and join state version 18 carry it (and
+the join state now carries the puzzle switches' lockouts too). A joiner closes only the puzzles
+that can't be sent (Puzzles.CloseUnsendable, the same answer on every machine). The "nothing
+left open" reset moved from PlayLoop to SetupGameLevel, so a loaded or joined game's puzzle is
+put back after it. A player dying closes their puzzle. Note `wait` in the console doesn't count
+while a pausing puzzle stops the level. Tests: PuzzleTests (kept and taken up, a function
+refused, joiners, death, a puzzle gone from the scripts), PuzzleGameTests (saved and loaded in a
+game).
+
+**Phase 3 — as planned:** The open puzzle and its `state` table in the save
 (and in a joiner's state). A table that holds functions or actors gets an error that names the
 key.
 

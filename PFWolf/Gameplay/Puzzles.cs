@@ -88,8 +88,8 @@ internal sealed class OpenPuzzle(PuzzleDefinition definition, PlayerPawn player,
     /// <summary>The script's own (its Lua table, Scripting/GameScripts.Puzzles.cs)</summary>
     internal object? Handle { get; set; }
 
-    /// <summary>What its result does besides telling the scripts: a switch's (Gameplay/PuzzleSwitches.cs)</summary>
-    internal Action<string>? Ended { get; init; }
+    /// <summary>The switch it was opened from, whose result throws it or runs its fail actions (Gameplay/PuzzleSwitches.cs); null for none</summary>
+    internal SwitchPuzzle? Switch { get; init; }
 }
 
 /// <summary>What a puzzle's script did with a think: the result it gave (null: still going), and whether it erred</summary>
@@ -109,6 +109,16 @@ internal interface IPuzzleScripts
 
     /// <summary>A puzzle's ended (game.onpuzzle): "success", "fail", "cancel" or a result of the script's own</summary>
     void PuzzleFinished(OpenPuzzle puzzle, string result);
+
+    /// <summary>
+    /// Writes what a puzzle's script keeps (pz.state and pz.args), for a save or a player
+    /// joining: null if it went, else what in it can't be kept (a function, an actor: "pz.state.f
+    /// is a function"), and nothing's written
+    /// </summary>
+    string? WritePuzzleState(OpenPuzzle puzzle, BinaryWriter bw);
+
+    /// <summary>Takes up a puzzle as WritePuzzleState wrote it, without its start running again: false if it can't be</summary>
+    bool RestorePuzzle(OpenPuzzle puzzle, BinaryReader br);
 }
 
 /// <summary>
@@ -120,9 +130,10 @@ internal interface IPuzzleScripts
 /// while it's open (playing alone). Only its drawing is this machine's (Ui/PuzzlePanel.cs).
 /// </summary>
 /// <remarks>
-/// With others, every machine runs every puzzle from the same controls, pause is ignored, and
-/// a player joining mid-game closes them all (as backed out of: an open puzzle isn't in the state
-/// a joiner's sent, nor in a save yet: docs/dev/mini-games-plan.md, phase 3). In a demo, a
+/// With others, every machine runs every puzzle from the same controls and pause is ignored.
+/// An open puzzle goes into a save and to a player joining mid-game (Write / Read), its
+/// script's pz.state and pz.args with it, as long as they're plain data; one that isn't is left
+/// out of a save, and closed (as backed out of) on every machine as someone joins. In a demo, a
 /// puzzle reads only the controls a demo keeps.
 /// </remarks>
 internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Action<string> print)
@@ -147,7 +158,7 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
     /// none), <paramref name="ended"/> told its result as it closes: false if it can't be (none
     /// of that name, they have one open already, they're dead, or its script erred)
     /// </summary>
-    internal bool Start(PlayerPawn player, string name, object? args, int x = -1, int y = -1, int tag = 0, Action<string>? ended = null)
+    internal bool Start(PlayerPawn player, string name, object? args, int x = -1, int y = -1, int tag = 0, SwitchPuzzle? origin = null)
     {
         name = name.Trim();
         if (scripts.FindPuzzle(name) is not { } definition)
@@ -159,7 +170,7 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
         if (state == null || state.Puzzle != null || state.Health <= 0)
             return false;
 
-        var puzzle = new OpenPuzzle(definition, player, state, x, y, tag) { Ended = ended };
+        var puzzle = new OpenPuzzle(definition, player, state, x, y, tag) { Switch = origin };
         state.Puzzle = puzzle;
         if (!scripts.StartPuzzle(puzzle, args))
         {
@@ -240,19 +251,30 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
         }
     }
 
+    /// <summary>What a switch's puzzle's result does to it (Gameplay/PuzzleSwitches.cs Ended)</summary>
+    internal Action<SwitchPuzzle, string>? SwitchEnded { get; set; }
+
     /// <summary>
-    /// A player's joined mid-game: every open puzzle closes, as backed out of, on every machine
-    /// at the same frame (the joiner's sent no puzzles), each as its own player
+    /// A player's joining mid-game: every open puzzle whose script's state can't be sent to them
+    /// closes, as backed out of, on every machine at the same frame (each machine's scripts hold
+    /// the same, so all of them find the same ones), each as its own player
     /// </summary>
-    internal void CloseAll()
+    internal void CloseUnsendable()
     {
         foreach (var p in session.Players.ToList())
         {
-            if (p.Puzzle is not { } puzzle)
+            if (p.Puzzle is not { } puzzle || scripts.WritePuzzleState(puzzle, new BinaryWriter(Stream.Null)) == null)
                 continue;
             using (session.ActAs(p))
                 Close(puzzle, "cancel");
         }
+    }
+
+    /// <summary>The acting player's died: a puzzle they had open closes, as backed out of</summary>
+    internal void CloseForDeath()
+    {
+        if (session.PlayerState.Puzzle is { } puzzle)
+            Close(puzzle, "cancel");
     }
 
     // After it's closed: what it ends may open another
@@ -261,8 +283,84 @@ internal sealed class Puzzles(GameSession session, IPuzzleScripts scripts, Actio
         if (ReferenceEquals(puzzle.State.Puzzle, puzzle))
             puzzle.State.Puzzle = null;
         puzzle.State.PuzzleButtonsHeld = true;
-        puzzle.Ended?.Invoke(result);               // a switch thrown, its fail actions...
+        if (puzzle.Switch is { } origin)
+            SwitchEnded?.Invoke(origin, result);     // a switch thrown, its fail actions...
         scripts.PuzzleFinished(puzzle, result);     // game.onpuzzle
+    }
+
+    /*
+    =============================================================================
+    SAVING AND JOINING
+    =============================================================================
+    */
+
+    /// <summary>
+    /// A player's open puzzle as a save or a joiner keeps it: what it is and how far it's got,
+    /// the switch it's for, and its script's state. Null when they have none, or (with why,
+    /// told on the console) when its script's state can't be kept.
+    /// </summary>
+    internal byte[]? Write(PlayerState p)
+    {
+        if (p.Puzzle is not { } puzzle)
+            return null;
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            bw.Write(puzzle.Definition.Name);
+            bw.Write(puzzle.X);
+            bw.Write(puzzle.Y);
+            bw.Write(puzzle.Tag);
+            bw.Write(puzzle.Tics);
+            bw.Write((uint)puzzle.PreviousKeys);
+            bw.Write(puzzle.Errors);
+            bw.Write(puzzle.Switch != null);
+            puzzle.Switch?.Write(bw);
+            if (scripts.WritePuzzleState(puzzle, bw) is { } problem)
+            {
+                print($"Puzzle {puzzle.Definition.Name} can't be kept ({problem}), so it's left out");
+                return null;
+            }
+        }
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// Puts back a player's open puzzle as Write wrote it (none for null), on a player whose pawn
+    /// is in place: false (with why, on the console) if it can't be, and they have none
+    /// </summary>
+    internal bool Read(PlayerState p, byte[]? saved)
+    {
+        p.Puzzle = null;
+        if (saved == null || p.Pawn is not { } pawn)
+            return saved == null;
+        try
+        {
+            using var br = new BinaryReader(new MemoryStream(saved));
+            var name = br.ReadString();
+            if (scripts.FindPuzzle(name) is not { } definition)
+            {
+                print($"Puzzle {name} isn't there any more (a script's game.puzzle), so it's closed");
+                return false;
+            }
+            int x = br.ReadInt32(), y = br.ReadInt32(), tag = br.ReadInt32();
+            int tics = br.ReadInt32();
+            var previous = (PuzzleKeys)br.ReadUInt32();
+            int errors = br.ReadInt32();
+            var origin = br.ReadBoolean() ? SwitchPuzzle.Read(br) : null;
+            var puzzle = new OpenPuzzle(definition, pawn, p, x, y, tag)
+            {
+                Switch = origin, Tics = tics, PreviousKeys = previous, Errors = errors,
+            };
+            if (!scripts.RestorePuzzle(puzzle, br))
+                return false;
+            p.Puzzle = puzzle;
+            return true;
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or FormatException)
+        {
+            print($"An open puzzle couldn't be read back: {e.Message}");
+            return false;
+        }
     }
 
     /// <summary>The other players working puzzles (with others), for the line saying so (Ui/PuzzlePanel.cs)</summary>

@@ -37,7 +37,7 @@ internal sealed class MidGameJoin(
     ===============
     */
 
-    internal const int NetStateVersion = 17;    // 17: each actor's emitters (A_StartEmitter, save v41); 16: the crumbling walls in the level body (save v38); 15: the damage destructible walls have taken in the level body (save v37); 14: the level's outlet and warp site waits in the level body (save v35); 13: the level's points earned and total in the game state (save v34); 12: each door's jammed flag in the level body (save v33); 11: actors' height, fall and suspicion (save v30); 10: the level's entrance in the game state (save v29); 9: the level's size in the level body (save v28); 8: the level body's scrollers (save v27); 7: Prop Hunt's hide and hunt times; 6: each player's Prop Hunt disguise and part; 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
+    internal const int NetStateVersion = 18;    // 18: the puzzle switches' fails and lockouts and each player's open puzzle, at the end (save v43); 17: each actor's emitters (A_StartEmitter, save v41); 16: the crumbling walls in the level body (save v38); 15: the damage destructible walls have taken in the level body (save v37); 14: the level's outlet and warp site waits in the level body (save v35); 13: the level's points earned and total in the game state (save v34); 12: each door's jammed flag in the level body (save v33); 11: actors' height, fall and suspicion (save v30); 10: the level's entrance in the game state (save v29); 9: the level's size in the level body (save v28); 8: the level body's scrollers (save v27); 7: Prop Hunt's hide and hunt times; 6: each player's Prop Hunt disguise and part; 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save
@@ -103,9 +103,22 @@ internal sealed class MidGameJoin(
 
             // The mode's flags, points or waves (Gameplay/MatchModes)
             deathmatch.Objective?.Write(bw);
+
+            // The puzzle switches' fails and lockouts, and each player's open puzzle (those that
+            // couldn't be sent were closed on every machine as they joined: Puzzles.CloseUnsendable)
+            PlayerSaveState.WritePuzzleSwitches(bw, (PuzzleSwitches?.States ?? [])
+                .Select(s => new SavedPuzzleSwitch(s.X, s.Y, s.Patch, s.Fails, s.ReadyAt)).ToList());
+            foreach (var p in gameSession.Players)
+                PlayerSaveState.WriteOpenPuzzle(bw, Puzzles?.Write(p));
         }
         return ms.ToArray();
     }
+
+    /// <summary>The puzzles players work (Gameplay/Puzzles.cs): open ones go to a player joining</summary>
+    internal Gameplay.Puzzles? Puzzles { get; init; }
+
+    /// <summary>The puzzle switches' fails and lockouts (Gameplay/PuzzleSwitches.cs), sent to a player joining</summary>
+    internal Gameplay.PuzzleSwitches? PuzzleSwitches { get; init; }
 
     // One player in full (Networking/NetPlayerState.cs)
     internal void WriteNetPlayer(BinaryWriter bw, Entities.PlayerState p, Func<Entities.Actors.Actor?, int> indexOf) =>
@@ -182,6 +195,10 @@ internal sealed class MidGameJoin(
             for (int i = br.ReadInt32(); i > 0; i--)
                 deathmatch.ItemRespawns.Add(new ItemRespawn(br.ReadString(), br.ReadInt32(), br.ReadInt32(), br.ReadInt32()));
             deathmatch.Objective?.Read(br);
+
+            PuzzleSwitches?.Restore(PlayerSaveState.ReadPuzzleSwitches(br));
+            foreach (var p in gameSession.Players)
+                Puzzles?.Read(p, PlayerSaveState.ReadOpenPuzzle(br));
 
             for (int i = 0; i < gameSession.Players.Count; i++)
             {

@@ -270,9 +270,10 @@ public class PuzzleTests
     [Test]
     public void A_Switchs_Result_Comes_Before_The_Scripts_Hear_Of_It()
     {
-        // Arrange: opened with something to do with its result, as a switch's is
+        // Arrange: opened from a switch
         Load(CountingPuzzle);
-        _puzzles.Start(_pawn, "count", new[] { "need=1" }, ended: result => _console.Print($"switch {result}"));
+        _puzzles.SwitchEnded = (origin, result) => _console.Print($"switch {result} {origin.X},{origin.Y}");
+        _puzzles.Start(_pawn, "count", new[] { "need=1" }, 4, 5, 0, Switch(4, 5));
 
         // Act
         Think();
@@ -280,30 +281,127 @@ public class PuzzleTests
 
         // Assert
         var printed = Printed();
-        Assert.That(printed.IndexOf("switch success"), Is.GreaterThanOrEqualTo(0).And.LessThan(printed.FindIndex(line => line.StartsWith("puzzle\tcount"))));
+        Assert.That(printed.IndexOf("switch success 4,5"), Is.GreaterThanOrEqualTo(0).And.LessThan(printed.FindIndex(line => line.StartsWith("puzzle\tcount"))));
+    }
+
+    private static SwitchPuzzle Switch(int x, int y) => new(false, x, y, ControlDir.East, 3, 70, ["GoldKey"]);
+
+    // A puzzle that keeps all sorts in its state, and one that keeps a function there
+    private const string KeepingPuzzles = """
+        game.puzzle("keep", {
+          start = function(pz, args)
+            pz.state.grid = { { 1, 2 }, { 3, 4 } }
+            pz.state.name = "safe"
+            pz.state.open = false
+            pz.state[7] = 0.5
+          end,
+          tick = function(pz, input)
+            if input.pressed.use then
+              print("kept", pz.state.grid[2][1], pz.state.name, pz.state.open, pz.state[7], pz.args.size, pz.tics)
+              return "success"
+            end
+          end,
+        })
+        game.puzzle("fn", { start = function(pz) pz.state.later = { f = function() end } end, tick = function() end })
+        game.onpuzzle(function(player, name, result, x, y, tag) print("puzzle", name, result, x, y, tag) end)
+        """;
+
+    [Test]
+    public void An_Open_Puzzle_Is_Kept_And_Taken_Up_Where_It_Was()
+    {
+        // Arrange: opened from a switch, three tics in
+        Load(KeepingPuzzles);
+        _puzzles.SwitchEnded = (origin, result) => _console.Print($"switch {result} {origin.X},{origin.Y} {origin.Dir} {origin.Tag} {origin.Id} {string.Join(",", origin.Keys)}");
+        _puzzles.Start(_pawn, "keep", new[] { "size=6" }, 4, 5, 3, Switch(4, 5));
+        Think();
+        Think();
+        Think();
+
+        // Act: kept, closed, taken up again, then won
+        var kept = _puzzles.Write(State);
+        _puzzles.Reset();
+        bool read = _puzzles.Read(State, kept);
+        Think();
+        Think(ButtonType.Use);
+
+        // Assert: its state, args and clock as they were (one tic more), and its switch's result
+        Assert.That(read, Is.True);
+        Assert.That(Printed(), Has.Some.EqualTo("kept\t3\tsafe\tfalse\t0.5\t6\t5"));
+        Assert.That(Printed(), Has.Some.EqualTo("switch success 4,5 East 3 70 GoldKey"));
+        Assert.That(Printed(), Has.Some.EqualTo("puzzle\tkeep\tsuccess\t4\t5\t3"));
     }
 
     [Test]
-    public void Someone_Joining_Mid_Game_Closes_Every_Puzzle_As_Backed_Out_Of()
+    public void A_Puzzle_Keeping_A_Function_Isnt_Kept_And_Says_Where_It_Is()
     {
-        // Arrange: two players, both working one
-        Load(CountingPuzzle);
+        // Arrange
+        Load(KeepingPuzzles);
+        _puzzles.Start(_pawn, "fn", null);
+
+        // Act
+        var kept = _puzzles.Write(State);
+
+        // Assert
+        Assert.That(kept, Is.Null);
+        Assert.That(Printed(), Has.Some.Contains("pz.state.later.f is a function"));
+    }
+
+    [Test]
+    public void Someone_Joining_Mid_Game_Closes_Only_The_Puzzles_That_Cant_Go_To_Them()
+    {
+        // Arrange: two players, one working a puzzle that can be sent, the other one that can't
+        Load(KeepingPuzzles);
         var other = new PlayerState { Health = 100, Name = "Alice" };
         other.Pawn = new PlayerPawn { Name = "Player", State = other };
         _session.Players.Add(other);
         _session.NetGame = true;
-        _puzzles.Start(_pawn, "count", null, 1, 1, 0);
-        _puzzles.Start(other.Pawn!, "count", null, 2, 2, 0);
+        _puzzles.Start(_pawn, "keep", null, 1, 1, 0);
+        _puzzles.Start(other.Pawn!, "fn", null, 2, 2, 0);
         bool othersShown = _puzzles.OthersPuzzles().Single().State == other;
 
         // Act
-        _puzzles.CloseAll();
+        _puzzles.CloseUnsendable();
 
         // Assert
         Assert.That(othersShown, Is.True);
-        Assert.That(State.Puzzle, Is.Null);
+        Assert.That(State.Puzzle, Is.Not.Null);
         Assert.That(other.Puzzle, Is.Null);
-        Assert.That(Printed().Count(line => line.StartsWith("puzzle\tcount\tcancel")), Is.EqualTo(2));
+        Assert.That(Printed(), Has.Some.EqualTo("puzzle\tfn\tcancel\t2\t2\t0"));
+    }
+
+    [Test]
+    public void A_Player_Dying_Closes_Their_Puzzle()
+    {
+        // Arrange
+        Load(CountingPuzzle);
+        _puzzles.Start(_pawn, "count", null);
+
+        // Act
+        using (_session.ActAs(State))
+            _puzzles.CloseForDeath();
+
+        // Assert
+        Assert.That(State.Puzzle, Is.Null);
+        Assert.That(Printed(), Has.Some.StartsWith("puzzle\tcount\tcancel"));
+    }
+
+    [Test]
+    public void A_Kept_Puzzle_Thats_Gone_From_The_Scripts_Is_Closed()
+    {
+        // Arrange: kept in one game, read in another with no such puzzle
+        Load(CountingPuzzle);
+        _puzzles.Start(_pawn, "count", null);
+        var kept = _puzzles.Write(State);
+        SetUp();
+        Load("x = 1");
+
+        // Act
+        bool read = _puzzles.Read(State, kept);
+
+        // Assert
+        Assert.That(read, Is.False);
+        Assert.That(State.Puzzle, Is.Null);
+        Assert.That(Printed(), Has.Some.Contains("isn't there any more"));
     }
 
     [Test]

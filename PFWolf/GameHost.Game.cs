@@ -359,6 +359,7 @@ internal static partial class GameHost
     {
         TimedSwitches = TimedSwitches,
         PuzzleSwitches = PuzzleSwitches,
+        Puzzles = Puzzles,
     };
 
     static bool AutosavePending { get => gameSaves.AutosavePending; set => gameSaves.AutosavePending = value; }
@@ -500,12 +501,18 @@ internal static partial class GameHost
     // The puzzles players work (Gameplay/Puzzles.cs): a script's game.puzzle, opened by A_Puzzle,
     // game.startpuzzle or the puzzle command; made in InitServices, or by the actions without it
     static Puzzles? puzzles;
-    static Puzzles Puzzles => puzzles ??= new Puzzles(Session, gameScripts ??= MakeGameScripts(), text => _consoleManager.Print(text));
+    static Puzzles Puzzles => puzzles ??= MakePuzzles();
+
+    static Puzzles MakePuzzles() => new(Session, gameScripts ??= MakeGameScripts(), text => _consoleManager.Print(text))
+    {
+        SwitchEnded = (origin, result) => PuzzleSwitches.Ended(origin, result),
+    };
 
     // Switches with a puzzle to work first: their fails, lockouts and broken ones (Gameplay/PuzzleSwitches.cs)
     static PuzzleSwitches? puzzleSwitches;
     static PuzzleSwitches PuzzleSwitches => puzzleSwitches ??= new PuzzleSwitches(MapManager, InventoryManager, Session, new PuzzleSwitchHooks(
-        (name, args, x, y, tag, ended) => Puzzles.Start(Session.Player, name, args, x, y, tag, ended),
+        (name, args, origin) => Puzzles.Start(Session.Player, name, args, origin.X, origin.Y, origin.Tag, origin),
+        (origin, sw) => playerUse.ThrowFor(origin, sw),
         message => HudMessageManager.Show(HudMessageKind.Lock, message)));
 
     // The local player's open puzzle drawn over the view (Ui/PuzzlePanel.cs)
