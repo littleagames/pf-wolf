@@ -269,6 +269,14 @@ public static class ScriptApi
             "or", "repeat", "return", "then", "true", "until", "while", "self" }
             .Select(word => new ScriptApiEntry(ScriptApiKind.Keyword, word, word, "Lua"))];
 
+    /// <summary>
+    /// The puzzles a script makes (game.puzzle("name", ...)), by name, as the editor finds them
+    /// without running it: a name written out in quotes, not one worked out
+    /// </summary>
+    public static IEnumerable<string> PuzzleNamesIn(string script) =>
+        System.Text.RegularExpressions.Regex.Matches(script, @"game\s*\.\s*puzzle\s*\(\s*(?:""([^""\r\n]+)""|'([^'\r\n]+)')")
+            .Select(match => match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value);
+
     /// <summary>The switch actions game.trigger can't run: they work on a switch's own tile</summary>
     public static IReadOnlyList<string> OwnTileActions { get; } = ["A_PushWall", "A_Vend", "A_SmartSwitch", "A_FloorSelect", "A_Teleport", "A_TeleportTag", "A_Warp"];
 

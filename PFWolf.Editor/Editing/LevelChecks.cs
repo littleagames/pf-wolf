@@ -51,6 +51,7 @@ public static class LevelChecks
         var unusedDoorValues = new Dictionary<int, (int X, int Y, int Count)>();
         var unnamedWalls = new Dictionary<int, (int X, int Y, int Count)>();
         var destructibleProblems = new Dictionary<string, (int X, int Y, int Count)>();
+        var puzzleProblems = new Dictionary<string, (int X, int Y, int Count)>();
         var toName = tiles.Content.ChunksToName;
         int doors = 0;
         (int X, int Y) firstPastDoorLimit = (-1, -1);
@@ -87,6 +88,9 @@ public static class LevelChecks
 
                 if (kind == TileKind.Wall && tiles.Wall(x, y)?.Destructible is { } destructible)
                     CheckDestructible(tiles, problems, destructibleProblems, x, y, tile, destructible);
+
+                if (kind == TileKind.Wall)
+                    CheckPuzzleSwitch(tiles, puzzleProblems, x, y);
 
                 int height = tiles[MapConstants.HeightPlane, x, y];
                 if (height > 8)
@@ -136,6 +140,8 @@ public static class LevelChecks
         foreach (var (value, (x, y, count)) in unknownPatches)
             problems.Add(new(CheckSeverity.Warning, $"patch {value} isn't in the mapdefs patches, so nothing's drawn ({count} {Tiles(count)})", x, y));
         foreach (var (reason, (x, y, count)) in destructibleProblems)
+            problems.Add(new(CheckSeverity.Warning, $"{reason} ({count} {Tiles(count)})", x, y));
+        foreach (var (reason, (x, y, count)) in puzzleProblems)
             problems.Add(new(CheckSeverity.Warning, $"{reason} ({count} {Tiles(count)})", x, y));
 
         CheckTags(tiles, problems);
@@ -557,6 +563,26 @@ public static class LevelChecks
             }
         }
         return reached;
+    }
+
+    // A switch with a puzzle (its `puzzle`, or A_Puzzle in its actions): one no script makes does
+    // nothing as it's used; a skip-item that isn't a class, or a broken wall or patch the mapdefs
+    // don't know, is a mistake
+    private static void CheckPuzzleSwitch(MapTiles tiles, Dictionary<string, (int X, int Y, int Count)> problems, int x, int y)
+    {
+        if (tiles.PuzzleAt(x, y) is not { } puzzle)
+            return;
+        if (!tiles.Content.PuzzleNames.Contains(puzzle.Name, StringComparer.OrdinalIgnoreCase))
+            Count(problems, $"{puzzle.Source}'s puzzle \"{puzzle.Name}\" isn't made by any script (game.puzzle), so using it does nothing", x, y);
+
+        bool onPatch = puzzle.Source.StartsWith("patch", StringComparison.Ordinal);
+        var sw = onPatch ? tiles.PatchDef(x, y)?.Switch : tiles.Wall(x, y)?.Switch;
+        if (sw == null)
+            return;
+        if (sw.SkipItem.Length > 0 && !tiles.Content.Actors.ContainsKey(sw.SkipItem))
+            Count(problems, $"{puzzle.Source}'s skip-item \"{sw.SkipItem}\" isn't an actordefs class", x, y);
+        if (sw.Broken > 0 && (onPatch ? !tiles.Defs.Patches.ContainsKey(sw.Broken) : !tiles.Defs.Walls.ContainsKey(sw.Broken)))
+            Count(problems, $"{puzzle.Source}'s broken {(onPatch ? "patch" : "wall")} {sw.Broken} isn't in the mapdefs", x, y);
     }
 
     private static void Count<T>(Dictionary<T, (int X, int Y, int Count)> counts, T value, int x, int y) where T : notnull

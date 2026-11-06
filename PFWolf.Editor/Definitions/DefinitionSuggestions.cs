@@ -1,5 +1,6 @@
 using PFWolf.Assets;
 using PFWolf.Assets.Sounds;
+using PFWolf.Definitions;
 using PFWolf.Editor.Data;
 
 namespace PFWolf.Editor.Definitions;
@@ -47,6 +48,8 @@ public sealed class DefinitionSuggestions
             FieldHint.Faction => content.FactionNames,
             FieldHint.Translation => content.TranslationNames,
             FieldHint.DamageType => content.DamageTypesDealt,
+            FieldHint.Puzzle => content.PuzzleNames,
+            FieldHint.SwitchAction => GameActions.All.Where(action => action.Use.HasFlag(ActionUse.Switch)).Select(action => action.Name),
             _ => [],
         };
         return names.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();

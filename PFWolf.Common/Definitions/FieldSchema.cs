@@ -51,6 +51,10 @@ public enum FieldHint
     Art,
     /// <summary>A kind of blow (Bullet, Melee, Blast, an actordefs damagetype)</summary>
     DamageType,
+    /// <summary>A script's puzzle (game.puzzle) by its name</summary>
+    Puzzle,
+    /// <summary>A switch's or trigger's action call (A_OpenDoor("hold"))</summary>
+    SwitchAction,
 }
 
 /// <summary>
@@ -137,9 +141,12 @@ public sealed class FieldSchema
 
     public bool IsScalar => Type is FieldType.Text or FieldType.Integer or FieldType.Number or FieldType.Boolean or FieldType.Choice;
 
-    /// <summary>A list of numbers or names, edited as one line ("1, 2, 3") rather than a row each</summary>
+    /// <summary>
+    /// A list of numbers or names, edited as one line ("1, 2, 3") rather than a row each; not
+    /// action calls, whose own commas would split them
+    /// </summary>
     public bool IsInlineList => Type == FieldType.List && (_inline ?? (Item is { Type: FieldType.Integer or FieldType.Number or FieldType.Choice or FieldType.Boolean }
-                                                                    || Item is { Type: FieldType.Text, Hint: not FieldHint.None }));
+                                                                    || Item is { Type: FieldType.Text, Hint: not (FieldHint.None or FieldHint.SwitchAction) }));
 
     // Whether a list is edited on one line: null works it out from its items
     private bool? _inline;
@@ -314,8 +321,12 @@ public sealed class FieldSchema
         if (name is "north" or "south" or "east" or "west" or "texture" or "sky" or "defaultfloor" or "defaultceiling" or "floor" or "ceiling"
             or "animation")
             return FieldHint.Texture;
-        if (name is "class" or "else" or "drop" or "lock" or "parent" or "spawn")
+        if (name is "class" or "else" or "drop" or "lock" or "parent" or "spawn" or "skipitem")
             return FieldHint.Class;
+        if (name is "puzzle")
+            return FieldHint.Puzzle;
+        if (name is "actions" or "resetactions" or "fail" or "cancel")
+            return FieldHint.SwitchAction;
         if (name.Contains("pic") || name is "menubackdrop" or "frame")
             return FieldHint.Picture;
         if (name is "font")

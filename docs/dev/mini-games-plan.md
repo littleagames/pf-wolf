@@ -319,5 +319,16 @@ one station per puzzle, a note with the keypad code, a turret to turn, an alarm 
 docs (Lua reference, switch fields, the new actions, a tutorial: "Make your own puzzle"), and
 entries in manual-testing.md.
 
-**Phase 5 (if wanted) — editor.** The switch block's new fields in the walls editor, and
+**Phase 5 — editor (done 2026-11-06).** What it came to: FieldHint.Puzzle (`puzzle`, suggesting
+GameContent.PuzzleNames: ScriptApi.PuzzleNamesIn over the loaded scripts, names written out in
+quotes) and FieldHint.SwitchAction (`actions`, `reset-actions`, `fail`, `cancel`: the switch
+actions; such lists stay a row per call, since a call's own commas would split an inline one),
+`skip-item` a class; MapTiles.PuzzleAt (a wall's or patch's switch: `puzzle` or A_Puzzle in its
+actions) and StandBeside; "Try this puzzle" in the map's and 3D view's right-click menu
+(MainWindowViewModel.TryPuzzle → GameLaunch.PuzzleArguments: --cheats --exec "wait 10; tp x y
+angle; puzzle name args"); LevelChecks warn of a puzzle no script makes, a skip-item that isn't
+a class and an unknown broken wall/patch. Tests: EditorPuzzleTests, LevelChecksGameTests on the
+demo. The launch line was run by hand; the menu click wasn't.
+
+**Phase 5 — as planned:** The switch block's new fields in the walls editor, and
 "Try this puzzle" from a switch's right-click menu (runs it in the game with `--warp`).

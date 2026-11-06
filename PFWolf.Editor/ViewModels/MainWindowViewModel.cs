@@ -1839,6 +1839,45 @@ public sealed partial class MainWindowViewModel : ObservableObject
                             ?? PlaySkills.ElementAtOrDefault(Math.Min(2, PlaySkills.Count - 1));
     }
 
+    /// <summary>The puzzle a switch on a tile opens, for the map's right-click menu (Try this puzzle); null when there's none</summary>
+    public TilePuzzle? PuzzleAt(int x, int y) => Tiles?.PuzzleAt(x, y);
+
+    /// <summary>
+    /// Saves the level if it needs it, then starts PFWolf on it in front of the switch on the
+    /// tile, with its puzzle open (Try this puzzle): cheats on, so the puzzle command can open it
+    /// </summary>
+    public async Task TryPuzzle(int x, int y)
+    {
+        if (Tiles?.PuzzleAt(x, y) is not { } puzzle || Document is not { } document || Content is not { } content)
+            return;
+        if (document.IsDirty && !await SaveDocument(document, document.SaveFolder))
+        {
+            Status = "Not tried: the level has to be saved for the game to see the changes";
+            return;
+        }
+        var exe = Path.Combine(GameFolder, OperatingSystem.IsWindows() ? "PFWolf.exe" : "PFWolf");
+        if (!File.Exists(exe))
+        {
+            Problems.Add($"Try this puzzle: there's no {Path.GetFileName(exe)} in {GameFolder}");
+            Status = "Couldn't start the game.";
+            return;
+        }
+
+        var arguments = GameLaunch.PuzzleArguments(content.PackId, document.AssetName, SelectedPlaySkill?.Value, Tiles.StandBeside(x, y),
+            puzzle.Name, puzzle.Args, Mods);
+        try
+        {
+            GameLaunch.Start(exe, GameFolder, arguments);
+            Status = $"Started PFWolf on {document.AssetName.ToUpperInvariant()} with {puzzle.Source}'s puzzle, {puzzle.Name}, open";
+            SaveSettings();
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or IOException)
+        {
+            Problems.Add($"Try this puzzle: {e.Message}");
+            Status = "Couldn't start the game.";
+        }
+    }
+
     /// <summary>Saves the level if it needs it, then starts PFWolf on it from its player start (F5)</summary>
     [RelayCommand(CanExecute = nameof(HasDocument))]
     private Task PlayAsync() => Play(null);

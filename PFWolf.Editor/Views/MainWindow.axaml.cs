@@ -271,7 +271,20 @@ public partial class MainWindow : Window, IEditorDialogs
         };
         if (breakable is { } picked)
             makeBreakable.Click += (_, _) => ViewModel.MakeBreakable(picked.Wall);
-        var menu = new ContextMenu { ItemsSource = new[] { create, goTo, makeBreakable } };
+        var items = new List<MenuItem> { create, goTo, makeBreakable };
+        if (ViewModel.PuzzleAt(e.X, e.Y) is { } puzzle)
+        {
+            var tryPuzzle = new MenuItem
+            {
+                Header = $"Try this puzzle ({puzzle.Name})",
+                [ToolTip.TipProperty] = "Saves the level and starts PFWolf on it, in front of this switch with its puzzle open (cheats on); "
+                                        + "the switch itself can be used once it's done",
+            };
+            int x = e.X, y = e.Y;
+            tryPuzzle.Click += async (_, _) => await ViewModel.TryPuzzle(x, y);
+            items.Add(tryPuzzle);
+        }
+        var menu = new ContextMenu { ItemsSource = items };
         menu.Open(sender as Control ?? Canvas);
     }
 

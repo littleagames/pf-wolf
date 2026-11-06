@@ -24,6 +24,25 @@ public static class GameLaunch
     }
 
     /// <summary>
+    /// The game's command line to try a switch's puzzle: as Play's, with cheats on, and once the
+    /// level's up the player put in front of the switch, facing it (tp), and the puzzle opened
+    /// (the puzzle command, with its words), so it can be tried at once and then the switch used
+    /// for real
+    /// </summary>
+    /// <param name="stand">Where to stand, and the way to face (0 east, 90 north...); null to stay at the player start</param>
+    public static List<string> PuzzleArguments(string gamePackId, string mapName, int? skill, (int X, int Y, int Angle)? stand,
+        string puzzle, IEnumerable<string> puzzleArgs, IEnumerable<string> mods)
+    {
+        var arguments = Arguments(gamePackId, mapName, skill, null, mods);
+        var commands = new List<string> { "wait 10" };
+        if (stand is { } at)
+            commands.Add(string.Create(CultureInfo.InvariantCulture, $"tp {at.X} {at.Y} {at.Angle}"));
+        commands.Add(string.Join(' ', new[] { "puzzle", puzzle }.Concat(puzzleArgs.Select(arg => arg.Replace(' ', '_')))));
+        arguments.AddRange(["--cheats", "--exec", string.Join("; ", commands)]);
+        return arguments;
+    }
+
+    /// <summary>
     /// The game's command line to watch a demo: past the title and menus (--nowait) to the demo
     /// file (playdemo), with the editor's mods; back to the title when it ends
     /// </summary>

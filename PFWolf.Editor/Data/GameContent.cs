@@ -344,6 +344,13 @@ public sealed class GameContent
     public IReadOnlyList<string> WeatherNames => WeatherInfo.TypesOf(GameInfo).Keys
         .Order(StringComparer.OrdinalIgnoreCase).Append(WeatherInfo.None).ToList();
 
+    private IReadOnlyList<string>? _puzzleNames;
+
+    /// <summary>The puzzles the scripts make (game.puzzle), by name: what a switch's `puzzle` and A_Puzzle can open</summary>
+    public IReadOnlyList<string> PuzzleNames => _puzzleNames ??= Assets.GetScripts()
+        .SelectMany(script => PFWolf.Scripting.ScriptApi.PuzzleNamesIn(script.Text))
+        .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+
     /// <summary>The factions a thing or class can be on (factions.yaml's, and the pack's player-faction and monster-faction)</summary>
     public IReadOnlyList<string> FactionNames
     {

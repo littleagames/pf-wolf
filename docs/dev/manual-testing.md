@@ -416,6 +416,14 @@ the keypad's note and code open its closet)
       retry message between.
 - [ ] **(never tried)** The auto-hack tool picked up, then the wires terminal thrown with no puzzle.
 
+**Puzzles in the editor**
+- [ ] **(never tried)** Right-click a Puzzles Demo terminal → Try this puzzle (needle...): the
+      game starts in front of it, facing it, the puzzle open (the launch itself was run by hand
+      2026-11-06 from the command line it builds; the menu click wasn't).
+- [ ] **(never tried)** Definitions: a wall's switch `puzzle` suggests the demo's puzzles,
+      `fail` / `cancel` / `actions` suggest switch actions and stay one row each.
+- [ ] **(never tried)** Check level on a switch with a misspelt puzzle: the warning.
+
 **Puzzles** (`puzzles-demo`, `puzzle needle` with cheats on)
 - [ ] The needle's panel in Wolf3D's menu window over a dimmed, stopped level; use on green
       bypasses, red fails, Esc backs out and the next Esc opens the menu (seen in Wolf3D 2026-11-06).

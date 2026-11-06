@@ -134,6 +134,8 @@ a mistake (warnings). Picking one goes to its tile:
 - patches off walls, or on faces that never show;
 - switches without a tag, or with one nothing else has, and tags no switch has;
 - light zones the level properties don't define;
+- switches whose puzzle no script makes (`game.puzzle`), whose `skip-item` isn't a class, or
+  whose `broken` wall or patch the mapdefs don't know;
 - open floor on the level's edge, and rooms the player can't get to;
 - a level game-info doesn't list, which only the `map` command reaches.
 
@@ -143,3 +145,10 @@ a mistake (warnings). Picking one goes to its tile:
 PFWolf on it with the mods, on the skill picked beside the button. **Play from here** (Shift+F5
 over the map) starts on the tile under the pointer instead of the player start; the button starts
 on the selection.
+
+**Try this puzzle**, in the right-click menu of a switch with a puzzle (its `puzzle:`, or an
+`A_Puzzle` in its actions), starts PFWolf the same way with cheats on, puts you in front of the
+switch facing it, and opens its puzzle with the switch's words (the `puzzle` console command).
+Back out or finish it, and the switch itself is there to use. In the Definitions window, a
+switch's `puzzle` suggests the puzzles the scripts make, `skip-item` the classes, and its
+`actions`, `fail` and `cancel` the switch actions, one to a row.
