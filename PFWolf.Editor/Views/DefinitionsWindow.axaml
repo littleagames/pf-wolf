@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PFWolf.Editor.ViewModels"
         xmlns:v="using:PFWolf.Editor.Views"
+        xmlns:avaloniaEdit="https://github.com/avaloniaui/avaloniaedit"
         x:Class="PFWolf.Editor.Views.DefinitionsWindow"
         x:DataType="vm:DefinitionsViewModel"
         Title="{Binding Title}"
@@ -77,19 +78,23 @@
       </TabItem>
       <TabItem x:Name="LevelOwnTab" Header="This level's own"
                ToolTip.Tip="The open level's own walls, doors, flats, triggers and extra things (a UWMF level's), read-only">
-        <TextBox Text="{Binding LevelOwnText}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
-                 FontFamily="Cascadia Mono,Consolas,Menlo,monospace" Margin="0,8,0,8"
-                 ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+        <Border BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" CornerRadius="4" Margin="0,8,0,8">
+          <avaloniaEdit:TextEditor x:Name="LevelOwnBox" v:CodeEditorText.Text="{Binding LevelOwnText, Mode=OneWay}" IsReadOnly="True"
+                                   ShowLineNumbers="True" WordWrap="False" FontFamily="Cascadia Mono,Consolas,Menlo,monospace" FontSize="13" Padding="4"
+                                   HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+        </Border>
       </TabItem>
       <TabItem x:Name="FilesTab" Header="YAML files">
         <DockPanel DataContext="{Binding Files}" x:DataType="vm:YamlFilesViewModel">
           <!-- Every file -->
           <DockPanel DockPanel.Dock="Left" Width="330" Margin="0,8,8,8">
             <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,6">
-              <TextBox Text="{Binding Filter}" PlaceholderText="Find by path, mod or what it is (actor, colors)" />
+              <TextBox x:Name="FilesFilter" Text="{Binding Filter}" PlaceholderText="{Binding FilterHint}" />
               <WrapPanel>
                 <CheckBox Content="pfwolf.pk3's files" IsChecked="{Binding ShowBase}" Margin="0,0,12,0" />
-                <CheckBox Content="Only problems" IsChecked="{Binding OnlyProblems}" />
+                <CheckBox Content="Only problems" IsChecked="{Binding OnlyProblems}" Margin="0,0,12,0" />
+                <CheckBox Content="Search inside" IsChecked="{Binding SearchInside}"
+                          ToolTip.Tip="Find the files with the words in their text too (a file picked opens at the first)" />
               </WrapPanel>
               <TextBlock Text="{Binding CountText}" Classes="hint" />
             </StackPanel>
@@ -167,10 +172,12 @@
                          IsVisible="{Binding !HasProblem}" />
             </StackPanel>
             <TextBlock DockPanel.Dock="Bottom" Text="{Binding CaretText}" Classes="hint" Margin="0,4,0,0" />
-            <TextBox x:Name="SourceBox" Text="{Binding Source}" AcceptsReturn="True" AcceptsTab="False" TextWrapping="NoWrap"
-                     IsReadOnly="{Binding IsReadOnly}"
-                     FontFamily="Consolas,Menlo,monospace" FontSize="13"
-                     ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+            <!-- Ctrl+F finds in the file (F3 / Shift+F3 the next and last, Ctrl+H replaces) -->
+            <Border BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" CornerRadius="4">
+              <avaloniaEdit:TextEditor x:Name="SourceBox" v:CodeEditorText.Text="{Binding Source}" IsReadOnly="{Binding IsReadOnly}"
+                                       ShowLineNumbers="True" WordWrap="False" FontFamily="Consolas,Menlo,monospace" FontSize="13" Padding="4"
+                                       HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+            </Border>
           </DockPanel>
         </DockPanel>
       </TabItem>

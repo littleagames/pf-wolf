@@ -23,11 +23,11 @@ public partial class TextBrowserWindow : Window
             }
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
-        // The page follows the caret through the text
-        SourceBox.PropertyChanged += (_, e) =>
+        // The page follows the caret through the text (and what's found, from the find panel)
+        SourceBox.TextArea.Caret.PositionChanged += (_, _) =>
         {
-            if (e.Property == TextBox.CaretIndexProperty && SourceBox.IsFocused)
-                ViewModel.ShowPageOf(SourceBox.CaretIndex);
+            if (SourceBox.IsKeyboardFocusWithin)
+                ViewModel.ShowPageOf(SourceBox.CaretOffset);
         };
 
         Page.PointerPressed += (_, e) =>
@@ -53,25 +53,13 @@ public partial class TextBrowserWindow : Window
     {
         Dispatcher.UIThread.Post(() =>
         {
-            var text = SourceBox.Text ?? "";
-            index = Math.Clamp(index, 0, text.Length);
+            var document = SourceBox.Document;
+            index = Math.Clamp(index, 0, document.TextLength);
             SourceBox.Focus();
-            SourceBox.SelectionStart = index;
-            // The caret goes to the selection's end with it (setting CaretIndex would undo the selection)
-            SourceBox.SelectionEnd = Math.Min(index + length, text.Length);
-            SourceBox.ScrollToLine(LineOf(text, index));
+            SourceBox.Select(index, Math.Min(length, document.TextLength - index));
+            var at = document.GetLocation(index);
+            SourceBox.ScrollTo(at.Line, at.Column);
         });
-    }
-
-    private static int LineOf(string text, int index)
-    {
-        int line = 0;
-        for (int i = 0; i < index && i < text.Length; i++)
-        {
-            if (text[i] == '\n')
-                line++;
-        }
-        return line;
     }
 
     private void OnProblemPicked(object? sender, SelectionChangedEventArgs e)
@@ -92,13 +80,13 @@ public partial class TextBrowserWindow : Window
             Search.SelectAll();
             e.Handled = true;
         }
-        else if (e.Key == Key.PageUp && !SourceBox.IsFocused)
+        else if (e.Key == Key.PageUp && !SourceBox.IsKeyboardFocusWithin)
         {
             if (ViewModel.PreviousPageCommand.CanExecute(null))
                 ViewModel.PreviousPageCommand.Execute(null);
             e.Handled = true;
         }
-        else if (e.Key == Key.PageDown && !SourceBox.IsFocused)
+        else if (e.Key == Key.PageDown && !SourceBox.IsKeyboardFocusWithin)
         {
             if (ViewModel.NextPageCommand.CanExecute(null))
                 ViewModel.NextPageCommand.Execute(null);
@@ -106,7 +94,11 @@ public partial class TextBrowserWindow : Window
         }
         else if (e.Key == Key.Escape)
         {
-            Close();
+            // the find panel closes first (there's none till the editor's first shown)
+            if (SourceBox.SearchPanel is { IsClosed: false } find)
+                find.Close();
+            else
+                Close();
             e.Handled = true;
         }
     }

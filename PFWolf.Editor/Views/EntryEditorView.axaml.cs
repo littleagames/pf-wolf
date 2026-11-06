@@ -12,6 +12,13 @@ public partial class EntryEditorView : UserControl
 {
     public EntryEditorView() => InitializeComponent();
 
+    /// <summary>Ctrl+F: the keyboard to the list's "Find by name"</summary>
+    public void FocusFilter()
+    {
+        FilterBox.Focus();
+        FilterBox.SelectAll();
+    }
+
     private EntryEditorViewModel? _watched;
 
     // A field picked from elsewhere (a script's caller gone to) is scrolled to, once its opened

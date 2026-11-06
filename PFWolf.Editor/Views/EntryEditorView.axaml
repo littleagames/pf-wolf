@@ -25,7 +25,7 @@
     <!-- The definitions -->
     <DockPanel DockPanel.Dock="Left" Width="300" Margin="0,8,8,8">
       <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,6">
-        <TextBox Text="{Binding Filter}" PlaceholderText="Find by name" />
+        <TextBox x:Name="FilterBox" Text="{Binding Filter}" PlaceholderText="Find by name" ToolTip.Tip="Ctrl+F" />
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
           <TextBlock Text="{Binding CountText}" Classes="hint" VerticalAlignment="Center" />
           <Button Grid.Column="1" Content="New…" Command="{Binding NewEntryCommand}" IsVisible="{Binding CanAddWithoutChoice}" Classes="small"

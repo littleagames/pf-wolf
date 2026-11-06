@@ -270,7 +270,11 @@ public partial class ScriptBrowserWindow : Window
         }
         else if (e.Key == Key.Escape)
         {
-            Close();
+            // the find panel closes first (there's none till the editor's first shown)
+            if (SourceBox.SearchPanel is { IsClosed: false } find)
+                find.Close();
+            else
+                Close();
             e.Handled = true;
         }
     }

@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using PFWolf.Editor.ViewModels;
 
 namespace PFWolf.Editor.Views;
@@ -13,12 +12,10 @@ public partial class DefinitionsWindow : Window
     public DefinitionsWindow()
     {
         InitializeComponent();
-        SourceBox.PropertyChanged += (_, e) =>
-        {
-            if (e.Property == TextBox.CaretIndexProperty)
-                UpdateCaretText();
-        };
-        SourceBox.AddHandler(KeyDownEvent, OnSourceKeyDown, RoutingStrategies.Tunnel);
+        // YAML can't be indented with tabs: Tab puts in spaces
+        SourceBox.Options.ConvertTabsToSpaces = true;
+        SourceBox.Options.IndentationSize = 2;
+        SourceBox.TextArea.Caret.PositionChanged += (_, _) => UpdateCaretText();
         KeyDown += OnWindowKeyDown;
     }
 
@@ -28,6 +25,7 @@ public partial class DefinitionsWindow : Window
         if (_viewModel != null)
         {
             _viewModel.Files.GoToLineRequested -= OnGoToLine;
+            _viewModel.Files.SelectTextRequested -= OnSelectText;
             _viewModel.ShowFilesRequested -= OnShowFiles;
             _viewModel.ShowTabRequested -= OnShowTab;
         }
@@ -35,6 +33,7 @@ public partial class DefinitionsWindow : Window
         if (_viewModel != null)
         {
             _viewModel.Files.GoToLineRequested += OnGoToLine;
+            _viewModel.Files.SelectTextRequested += OnSelectText;
             _viewModel.ShowFilesRequested += OnShowFiles;
             _viewModel.ShowTabRequested += OnShowTab;
         }
@@ -92,35 +91,52 @@ public partial class DefinitionsWindow : Window
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.S || e.KeyModifiers != KeyModifiers.Control || _viewModel == null)
+        if (_viewModel == null)
             return;
-        if (ShownEditor is { } editor)
+        if (e.Key == Key.S && e.KeyModifiers == KeyModifiers.Control)
         {
-            if (editor.SaveCommand.CanExecute(null))
-                editor.SaveCommand.Execute(null);
+            if (ShownEditor is { } editor)
+            {
+                if (editor.SaveCommand.CanExecute(null))
+                    editor.SaveCommand.Execute(null);
+            }
+            else if (Tabs.SelectedItem == FilesTab && _viewModel.Files.SaveCommand.CanExecute(null))
+                _viewModel.Files.SaveCommand.Execute(null);
+            e.Handled = true;
         }
-        else if (Tabs.SelectedItem == FilesTab && _viewModel.Files.SaveCommand.CanExecute(null))
-            _viewModel.Files.SaveCommand.Execute(null);
-        e.Handled = true;
+        else if (e.Key == Key.F && e.KeyModifiers == KeyModifiers.Control)
+        {
+            // (in a file's text the editor has it first, and finds in the text)
+            if (Tabs.SelectedItem == LevelOwnTab)
+                OpenFind(LevelOwnBox);
+            else if (Tabs.SelectedItem == FilesTab && FilesFilter.IsKeyboardFocusWithin && _viewModel.Files.HasSelection)
+                OpenFind(SourceBox);
+            else if (Tabs.SelectedItem == FilesTab)
+            {
+                FilesFilter.Focus();
+                FilesFilter.SelectAll();
+            }
+            else if ((Tabs.SelectedItem as TabItem)?.Content is EntryEditorView entries)
+                entries.FocusFilter();
+            e.Handled = true;
+        }
     }
 
-    // YAML can't be indented with tabs: Tab puts in spaces
-    private void OnSourceKeyDown(object? sender, KeyEventArgs e)
+    // The editor's find panel, with what's searched for in the files' list in it
+    private void OpenFind(AvaloniaEdit.TextEditor editor)
     {
-        if (e.Key != Key.Tab || e.KeyModifiers != KeyModifiers.None || SourceBox.IsReadOnly)
+        // (there's no find panel till the editor's first shown)
+        if (editor.SearchPanel is not { } find)
             return;
-        var text = SourceBox.Text ?? "";
-        int start = Math.Min(SourceBox.SelectionStart, SourceBox.SelectionEnd), end = Math.Max(SourceBox.SelectionStart, SourceBox.SelectionEnd);
-        int lineStart = text.LastIndexOf('\n', Math.Max(0, start - 1)) + 1;
-        if (start == 0)
-            lineStart = 0;
-        var indent = new string(' ', 2 - (start - lineStart) % 2);
-        SourceBox.Text = text[..start] + indent + text[end..];
-        SourceBox.CaretIndex = start + indent.Length;
-        e.Handled = true;
+        editor.Focus();
+        if (editor == SourceBox && _viewModel is { Files: { SearchInside: true } files } && files.Filter.Trim().Length > 0)
+            find.SearchPattern = files.Filter.Trim();
+        find.Open();
+        // (its search box is there once it's laid out, as AvaloniaEdit's own Ctrl+F does it)
+        Avalonia.Threading.Dispatcher.UIThread.Post(find.Reactivate, Avalonia.Threading.DispatcherPriority.Input);
     }
 
-    // After the text box has the file just picked (its text is bound, so it changes a moment later)
+    // After the editor has the file just picked (its text is bound, so it changes a moment later)
     private void OnGoToLine(object? sender, int line)
     {
         Tabs.SelectedItem = FilesTab;
@@ -129,42 +145,37 @@ public partial class DefinitionsWindow : Window
 
     private void SelectLine(int line)
     {
-        var text = SourceBox.Text ?? "";
-        int index = 0;
-        for (int i = 1; i < line && index >= 0; i++)
-        {
-            index = text.IndexOf('\n', index);
-            if (index >= 0)
-                index++;
-        }
-        if (index < 0)
-            index = text.Length;
-        int lineEnd = text.IndexOfAny(['\r', '\n'], index);
-        if (lineEnd < 0)
-            lineEnd = text.Length;
+        var document = SourceBox.Document;
+        if (document.LineCount == 0)
+            return;
+        var docLine = document.GetLineByNumber(Math.Clamp(line, 1, document.LineCount));
 
         Tabs.SelectedItem = FilesTab;
         SourceBox.Focus();
-        SourceBox.CaretIndex = index;
-        SourceBox.SelectionStart = index;
-        SourceBox.SelectionEnd = lineEnd;
+        SourceBox.Select(docLine.Offset, docLine.Length);
+        SourceBox.TextArea.Caret.Line = docLine.LineNumber;
+        SourceBox.ScrollToLine(docLine.LineNumber);
+    }
+
+    // The search's first in a file picked, selected without taking the keyboard from the list or the search box
+    private void OnSelectText(object? sender, (int Index, int Length) found)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            var document = SourceBox.Document;
+            if (found.Index + found.Length > document.TextLength)
+                return;
+            SourceBox.Select(found.Index, found.Length);
+            var at = document.GetLocation(found.Index);
+            SourceBox.ScrollTo(at.Line, at.Column);
+        }, Avalonia.Threading.DispatcherPriority.Background);
     }
 
     private void UpdateCaretText()
     {
         if (_viewModel == null)
             return;
-        var text = SourceBox.Text ?? "";
-        int caret = Math.Clamp(SourceBox.CaretIndex, 0, text.Length);
-        int line = 1, lineStart = 0;
-        for (int i = 0; i < caret; i++)
-        {
-            if (text[i] == '\n')
-            {
-                line++;
-                lineStart = i + 1;
-            }
-        }
-        _viewModel.Files.CaretText = $"Line {line}, column {caret - lineStart + 1}";
+        var caret = SourceBox.TextArea.Caret;
+        _viewModel.Files.CaretText = $"Line {caret.Line}, column {caret.Column}";
     }
 }

@@ -897,6 +897,11 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] New / Delete / Take out (`!remove`) and restore.
 - [ ] pfwolf.pk3 and the pfwolf-pk3 folder refuse every save.
 - [ ] "This level's own" read-only tab for UWMF levels.
+- [ ] Ctrl+F in the YAML files text, the level's own tab and the Texts (F2) text opens the find panel
+      (matches highlighted, Enter / F3 / Shift+F3, Esc closes it); Ctrl+F elsewhere goes to the list's
+      filter. YAML files "Search inside" lists files with the text in them and opens each at the first.
+- [ ] **(never tried)** Ctrl+H replace / replace all in a mod's YAML file and in a text, then Save;
+      Undo after a find-and-replace.
 
 ## 2.14 Scripts (F12)
 

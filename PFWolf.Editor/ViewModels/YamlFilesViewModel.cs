@@ -74,7 +74,18 @@ public sealed partial class YamlFilesViewModel : ObservableObject
     [ObservableProperty] private string _filter = "";
     [ObservableProperty] private bool _showBase = true;
     [ObservableProperty] private bool _onlyProblems;
+
+    /// <summary>The filter finds files with it in their text too</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilterHint))]
+    private bool _searchInside;
+
     [ObservableProperty] private string _countText = "";
+
+    public string FilterHint => SearchInside ? "Find by path, mod, what it is, or text in it" : "Find by path, mod or what it is (actor, colors)";
+
+    /// <summary>Asks the window to select text in the file shown, and show it (the search's first, in a file picked)</summary>
+    public event EventHandler<(int Index, int Length)>? SelectTextRequested;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection), nameof(IsReadOnly), nameof(ReadOnlyText), nameof(FileTitle), nameof(FileWhat),
@@ -214,25 +225,58 @@ public sealed partial class YamlFilesViewModel : ObservableObject
         }
     }
 
-    partial void OnFilterChanged(string value) => Refilter();
+    partial void OnFilterChanged(string value)
+    {
+        Refilter();
+        SelectFound();
+    }
     partial void OnShowBaseChanged(bool value) => Refilter();
     partial void OnOnlyProblemsChanged(bool value) => Refilter();
+
+    partial void OnSearchInsideChanged(bool value)
+    {
+        Refilter();
+        if (value)
+            SelectFound();
+    }
 
     private void Refilter()
     {
         var selected = SelectedItem;
         var words = Filter.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var phrase = SearchPhrase;
         Items.Clear();
         foreach (var item in _all.Where(item => (ShowBase || !item.IsBase) && (!OnlyProblems || item.HasError || item == selected)
-                                                && words.All(word => item.EntryPath.Contains(word, StringComparison.OrdinalIgnoreCase)
-                                                                     || item.SourceName.Contains(word, StringComparison.OrdinalIgnoreCase)
-                                                                     || (item.What?.Contains(word, StringComparison.OrdinalIgnoreCase) ?? false))))
+                                                && (words.All(word => item.EntryPath.Contains(word, StringComparison.OrdinalIgnoreCase)
+                                                                      || item.SourceName.Contains(word, StringComparison.OrdinalIgnoreCase)
+                                                                      || (item.What?.Contains(word, StringComparison.OrdinalIgnoreCase) ?? false))
+                                                    || (phrase != null && TextOf(item).Contains(phrase, StringComparison.OrdinalIgnoreCase)))))
             Items.Add(item);
         int problems = _all.Count(item => item.HasError);
         CountText = (Items.Count == _all.Count ? $"{Items.Count} files" : $"{Items.Count} of {_all.Count} files")
                     + (problems > 0 ? $", {problems} with problems" : "");
         if (selected != null && Items.Contains(selected))
             SelectedItem = selected;
+    }
+
+    // What's searched for in the files' text, when it is
+    private string? SearchPhrase => SearchInside && Filter.Trim() is { Length: > 0 } phrase ? phrase : null;
+
+    // A file's text: the one shown as changed in the box, or as read (read now, if the check hasn't yet)
+    private string TextOf(YamlFileItem item)
+    {
+        if (item == SelectedItem)
+            return Source;
+        if (!_texts.TryGetValue(item, out var text))
+            _texts[item] = text = ReadText(item) ?? "";
+        return text;
+    }
+
+    // Selects the search's first in the file shown
+    private void SelectFound()
+    {
+        if (SearchPhrase is { } phrase && Source.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) is >= 0 and var index)
+            SelectTextRequested?.Invoke(this, (index, phrase.Length));
     }
 
     partial void OnSelectedItemChanged(YamlFileItem? value)
@@ -260,6 +304,7 @@ public sealed partial class YamlFilesViewModel : ObservableObject
         }
         IsChanged = false;
         CheckSource();
+        SelectFound();
     }
 
     partial void OnSourceChanged(string value)
