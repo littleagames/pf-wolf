@@ -27,7 +27,8 @@ internal enum PuzzleCancel
 /// <param name="Height">Its panel's height</param>
 internal sealed record PuzzleDefinition(string Name, string Title, string Verb, bool Pause, PuzzleCancel Cancel, int TimeLimit, int Width, int Height)
 {
-    internal const int DefaultWidth = 240, DefaultHeight = 140;
+    // With its frame and title, a panel this high fits in Wolf3D's usual view (152 high)
+    internal const int DefaultWidth = 240, DefaultHeight = 128;
 }
 
 /// <summary>The keys a puzzle reads, held or just pressed: directions, use, fire, back out, and the digits</summary>

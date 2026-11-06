@@ -1,4 +1,4 @@
 name: Puzzles Demo
-version: "0.1"
-description: Puzzles (mini-games) as Lua scripts, to copy into your own mods. So far the timing needle; try it in any level with the console's `puzzle needle` (a cheat).
+version: "1.0"
+description: Puzzles (mini-games) as Lua scripts, to copy into your own mods, and a hall of terminals (replacing Floor 1) to try them on. Each terminal's puzzle opens a locked closet; fail the needle and the barracks come for you.
 game-packs: [wolf3d]

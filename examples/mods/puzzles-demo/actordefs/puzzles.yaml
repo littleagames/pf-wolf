@@ -1,0 +1,14 @@
+# The auto-hack tool: carried, it throws a switch whose `skip-item` it is with no puzzle, and is
+# used up (mapdefs/walls.yaml's wires terminal). As BioShock's auto-hack tool.
+AutoHackTool:
+  parent: Inventory
+  properties:
+    inventory.pickupmessage: "Picked up an auto-hack tool!"
+    inventory.pickupsound: misc/k_pkup
+    inventory.maxamount: 3
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: PZHK
+        frames: [A]
+        tics-per-frame: -1

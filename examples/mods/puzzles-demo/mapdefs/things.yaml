@@ -1,0 +1,5 @@
+# The auto-hack tool's object-plane id
+things:
+  590:
+    class: AutoHackTool
+    angles: 0

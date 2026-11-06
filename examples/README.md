@@ -898,39 +898,69 @@ shows what the script sees, and `flat <floor> <ceiling>` changes the one you sta
 
 ## Puzzles Demo (`mods/puzzles-demo`)
 
-Puzzles (mini-games) as Lua scripts, meant to be copied into your own mods. A puzzle opens over
-the view in the game's menu window, takes the player's controls until it ends, and its end
-("success", "fail", "cancel" or a result of its own) goes to `game.onpuzzle`. So far there's one,
-the timing needle; more come with the demo's level.
+Puzzles (mini-games) as Lua scripts, meant to be copied into your own mods, and a hall of
+terminals (replacing Floor 1, Wolfenstein 3D only) to try them on. A puzzle opens over the view
+in the game's menu window, takes the player's controls until it ends, and its end ("success",
+"fail", "cancel" or a result of its own) throws its switch, runs its fail actions, or goes to
+`game.onpuzzle`. None of it is in the engine: each puzzle is one script.
 
 ```
 PFWolf.exe --file puzzles-demo
 ```
 
-It doesn't replace any level: in any level, with cheats on, open the console and type
-`puzzle needle` (`puzzle` alone lists the puzzles there are).
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time. With
+cheats on, the console's `puzzle <name>` opens any of them anywhere (`puzzle` alone lists them).
 
-The needle sweeps along a track. Press use (or fire) as it crosses green to bypass that part of
-the lock; three bypasses win. Red shorts the lock out (a fail), and pressing on bare track is a
-miss: three misses fail too. Esc backs out (nothing happens; the next Esc opens the menu). The
-level stops while it's open.
+You start at the west end of a long hall. Along both walls are terminals (a red screen), each
+beside a locked closet; use one to work its puzzle, and win to open the closet (the screen goes
+green). Esc backs out with nothing lost (the next Esc opens the menu), and the level stops
+while you work.
+
+| Terminal | Puzzle | Controls | In the closet |
+| --- | --- | --- | --- |
+| North 1 | **Timing needle**: press as the needle crosses green; red shorts it | use | a machine gun. A fail sounds the alarm: the guards in the barracks (south, at the east end) come for you, and it shocks you |
+| North 2 | **Keypad**: the code's on the note on the wall by the start | number keys, or arrows and use | a chest |
+| North 3 | **Pipe flow**: turn the pieces to lay a path before the coolant comes (BioShock's hacking) | arrows, use turns, fire opens the valve | a cross |
+| North 4 | **Safe dial**: turn to each number (it clicks) and set it | left/right, use | a crown |
+| North 5 | **Lockpick**: find the sweet spot, then hold use to turn | left/right, hold use | first aid. Two fails and it breaks for good |
+| North 6 | **Wires**: cut the wire that runs to the red terminal | up/down, use | an extra life. The auto-hack tool by the start throws it with no puzzle |
+| South 1 | **Sequence**: repeat the lamps, one more each round | arrows or 1-4 | a prisoner: freed, he's on your side and follows you |
+| South 2 | **Lights out**: light every switch; each flips its neighbors too | arrows, use | a chalice |
+| South 3 | **Sliding picture**: slide the tiles back into a castle | arrows | a chain gun |
+| South 4 | **Frequency**: line your wave up with the signal | arrows, or the mouse | food |
+| South 5 | **Power routing**: power for one system only: the vault, the medbay or the armory | up/down, use | a chest, if you pick the vault |
 
 ### What's in it
 
-- `scripts/needle.lua`: the puzzle, made with `game.puzzle("needle", { ... })`: its `start`
-  lays the zones (with `game.random`, so every machine and demo gets the same), its `tick` moves
-  the needle and reads the presses (`input.pressed.use`), returning `"success"` or `"fail"` to
-  end it, and its `draw` draws the track with `game.drawrect`, `game.drawline` and
-  `game.drawtext`. Words after its name change it: `A_Puzzle("needle", "hits=4", "misses=1",
-  "speed=3", "greens=2", "reds=2")`, or `puzzle needle hits=4` in the console.
-- `scripts/results.lua`: a message for each end. A mod's own would open a door or sound an
-  alarm with the tile and tag the puzzle was started from:
+- `scripts/*.lua`: a puzzle each (`needle`, `keypad`, `pipes`, `safedial`, `lockpick`,
+  `wires`, `sequence`, `lightsout`, `sliding`, `frequency`, `power`), each made with
+  `game.puzzle(name, { start, tick, draw, ... })`. Its `start` sets the puzzle up in `pz.state`
+  (with `game.random`, so every machine and demo gets the same); its `tick` reads the player's
+  presses (`input.pressed.use`, `input.digit`...) and returns `"success"` or `"fail"` to end it;
+  its `draw` draws it with `game.drawrect`, `game.drawline`, `game.drawtext` and
+  `game.drawpic`'s cut-outs. The comment at the top of each says what its words do:
+  `A_Puzzle("needle", "hits=4", "misses=1")`, or `puzzle-args: { hits: 4 }` on a switch. Copy
+  the ones you want into your own mod's `scripts`.
+- `scripts/results.lua`: a message for each end, and power routing's choice: its result is the
+  system's name, which a switch can't act on, so the script does (`game.trigger` on the
+  station's tag: the vault's door, or an item from the medbay or armory).
+- `scripts/notes.lua`: using the note (tag 50) shows `texts/PZNOTE.txt` with `game.showtext`
+  (`game.onuse`).
+- `mapdefs/walls.yaml`: the terminals, walls 64 to 74: switches with `puzzle:`, each opening
+  its closet's gold-locked door (on its tag) as it's won, and `fail:`, `retry:`, `tries:`,
+  `broken:` and `skip-item:` where they're used; 75 the green screen, 76 the broken one, 77 the
+  note.
+- `actordefs/puzzles.yaml` and `mapdefs/things.yaml`: the auto-hack tool (590), an item a
+  switch's `skip-item` uses up.
+- `textures/`, `graphics/PZSLIDE.png` (the sliding picture), `sprites/PZHKA0.png` and
+  `maps/MAP01.wad`: made by `tools/make-puzzles-demo.ps1`. Edit it and run it again:
 
-  ```lua
-  game.onpuzzle(function(player, name, result, x, y, tag)
-    if result == "success" and tag > 0 then game.trigger(tag, 'A_OpenDoor("hold")') end
-  end)
   ```
+  powershell -ExecutionPolicy Bypass -File examples/tools/make-puzzles-demo.ps1
+  ```
+
+A tutorial, [Your first puzzle](../docs/manual/tutorials/first-puzzle.md), writes a small one
+from scratch.
 
 ### On a switch
 

@@ -167,6 +167,12 @@ internal sealed partial class GameScripts
     /// <summary>game.drawpic in game.onhud: a picture at a point of the screen (layout pixels)</summary>
     internal Action<string, int, int> DrawPic { get; init; } = (_, _, _) => { };
 
+    /// <summary>game.drawpic's cut-out: a picture's part (sx, sy, width, height) drawn at a point (layout pixels)</summary>
+    internal Action<string, int, int, int, int, int, int> DrawPicRegion { get; init; } = (_, _, _, _, _, _, _) => { };
+
+    /// <summary>game.picsize: a picture's width and height, or null if there's none of that name</summary>
+    internal Func<string, (int Width, int Height)?> PicSize { get; init; } = _ => null;
+
     /// <summary>The 3D view on the screen, in layout pixels (game.viewsize, and where game.onhud draws from)</summary>
     internal Func<(int X, int Y, int Width, int Height)> ViewRect { get; init; } = () => (0, 0, 320, 160);
 
@@ -198,9 +204,15 @@ internal sealed partial class GameScripts
         game["drawpic"] = new LuaFunction("game.drawpic", (c, _) =>
         {
             var (viewX, viewY, _, _) = HudView(c, "game.drawpic");
-            DrawPic(StringArg(c, 0), viewX + (int)NumberArg(c, 1, 0), viewY + (int)NumberArg(c, 2, 0));
+            int x = viewX + (int)NumberArg(c, 1, 0), y = viewY + (int)NumberArg(c, 2, 0);
+            if (c.ArgumentCount > 3)        // a cut-out of it: sx, sy, width, height
+                DrawPicRegion(StringArg(c, 0), (int)NumberArg(c, 3, 0), (int)NumberArg(c, 4, 0), (int)NumberArg(c, 5, 0), (int)NumberArg(c, 6, 0), x, y);
+            else
+                DrawPic(StringArg(c, 0), x, y);
             return new(c.Return());
         });
+        game["picsize"] = new LuaFunction("game.picsize", (c, _) =>
+            new(PicSize(StringArg(c, 0)) is { } size ? c.Return(size.Width, size.Height) : c.Return(LuaValue.Nil)));
         game["viewsize"] = new LuaFunction("game.viewsize", (c, _) =>
         {
             var (_, _, width, height) = ViewRect();

@@ -108,7 +108,8 @@ public static class ScriptApi
         Fn("onmusic", "game.onmusic(function(map, song) ... end)", "Adds a hook asked, on this machine alone, as the level's song is about to start (or start again after the menu): return a song's name to play that instead"),
         Fn("ontally", "game.ontally(function(map, result) ... end)", "Adds a hook asked, on this machine alone, as a level's finished (result as game.onlevelend's): text returned is shown on the tally (intermission.yaml's script value)"),
         Fn("drawtext", "game.drawtext(text, x, y[, font[, color]])", "In a game.onhud hook or a puzzle's draw: draws text (a $NAME language key or the text) at x, y from the view's top left (a puzzle's panel's), in a font and color (SmallFont and White; the panel's in a puzzle: game-info puzzle-panel)"),
-        Fn("drawpic", "game.drawpic(picture, x, y)", "In a game.onhud hook or a puzzle's draw: draws a picture at x, y from the view's top left (a puzzle's panel's)"),
+        Fn("drawpic", "game.drawpic(picture, x, y[, sx, sy, width, height])", "In a game.onhud hook or a puzzle's draw: draws a picture at x, y from the view's top left (a puzzle's panel's); with sx, sy, width and height, only that part of it (a sliding puzzle's tiles)"),
+        Fn("picsize", "game.picsize(picture)", "A picture's width and height, nil if there's none of that name"),
         Fn("drawrect", "game.drawrect(x, y, width, height, color)", "In a game.onhud hook or a puzzle's draw: fills a rectangle, in a color (a colors.yaml name, #RRGGBB or a palette index)"),
         Fn("drawframe", "game.drawframe(x, y, width, height, color)", "In a game.onhud hook or a puzzle's draw: a rectangle's outline, a pixel wide"),
         Fn("drawline", "game.drawline(x0, y0, x1, y1, color[, thickness])", "In a game.onhud hook or a puzzle's draw: a line from one point to another, thickness pixels wide (1)"),
@@ -120,7 +121,7 @@ public static class ScriptApi
             + "input.digit, input.dx, input.dy, input.tics), and returns \"success\", \"fail\" or a result of its own to end it; "
             + "draw = function(pz, width, height) draws it on this machine alone (drawing only); start = function(pz, args) sets pz.state up. "
             + "title is shown over it; pause (true) stops the level while it's open, playing alone; cancel is what Esc comes to: \"nothing\" (the default), \"fail\" or \"never\"; "
-            + "timelimit is tics till it's a fail; width and height its panel's size (240 by 140). "
+            + "timelimit is tics till it's a fail; width and height its panel's size (240 by 128, which with its frame and title fits the usual view). "
             + "pz has state (the puzzle's own table), name, player, x, y, tag (where it was started), args, tics, timeleft, pz:finish(result) and pz:sound(name). "
             + "An open puzzle is kept in a save (and sent to someone joining) with pz.state and pz.args, so keep them to booleans, numbers, strings and tables of them: a function or an actor there can't be kept"),
         Fn("startpuzzle", "game.startpuzzle(player, name[, args])", "Opens a puzzle (game.puzzle) for a player, args a table its start gets: true if it opened (not if they have one open already). With others, every machine runs it from the player's controls, and pause doesn't stop the level"),

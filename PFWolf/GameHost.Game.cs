@@ -466,6 +466,8 @@ internal static partial class GameHost
             DrawText = (text, x, y, font, color) => _graphicManager.DrawText(x, y, HudMessageManager.Localize(text),
                 new Fonts.TextStyle(font ?? UiFonts.SmallFont, color ?? "White")),
             DrawPic = (name, x, y) => _graphicManager.DrawPic(name, x, y),
+            DrawPicRegion = (name, sx, sy, width, height, x, y) => _graphicManager.DrawPicRegion(name, sx, sy, width, height, x, y),
+            PicSize = name => _graphicManager.PicSize(name),
             ViewRect = ScriptViewRect,
             PlayMusic = _ =>
             {
@@ -521,7 +523,12 @@ internal static partial class GameHost
     static PuzzlePanel MakePuzzlePanel() => new(_videoManager, _graphicManager, Puzzles, gameScripts,
         () => GameEngineManager.GetGameInfo().PuzzlePanel,
         () => (Render.ViewScreenX, Render.ViewScreenY, Render.ViewWidth, Render.ViewHeight),
-        ScriptViewRect, text => HudMessageManager.Localize(text));
+        ScriptViewRect, text => HudMessageManager.Localize(text),
+        () =>
+        {
+            if (Settings.ViewSize != 21)
+                DrawPlayScreen();
+        });
 
     // puzzle <name> [args...]: opens a puzzle for the player here, to try it (args as A_Puzzle's)
     static void PuzzleCommand(string[] args)

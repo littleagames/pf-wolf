@@ -463,7 +463,7 @@ public class PuzzleTests
         _scripts.DrawPuzzle(State.Puzzle!, 40, 30);
 
         // Assert
-        Assert.That(_drawn, Is.EqualTo(new[] { "rect 41,32 240x140 Red", "text hi 40,30 PanelFont PanelColor" }));
+        Assert.That(_drawn, Is.EqualTo(new[] { "rect 41,32 240x128 Red", "text hi 40,30 PanelFont PanelColor" }));
         Assert.That(Printed(), Has.Some.StartsWith("random\tfalse"));
         Assert.That(_session.Random.RndIndex, Is.EqualTo(randomBefore));
     }

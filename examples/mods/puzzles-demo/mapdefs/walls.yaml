@@ -1,0 +1,187 @@
+# The demo's terminals: switches with a puzzle (every switch field is in the docs' mapdefs
+# reference). Using one opens its puzzle; only a win throws it, turning it into wall 75 (a green
+# screen) and running its actions: opening its closet's locked door (on the terminal's tag). The
+# puzzles are the scripts in scripts/, by name.
+walls:
+    # 1: the timing needle. A fail sounds the alarm (the barracks' guards come) and shocks you,
+    # and the terminal needs two seconds before it can be tried again.
+    '64':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: needle
+            actions:
+                - A_OpenDoor("hold")
+            fail:
+                - A_Alarm
+                - A_HurtPlayer(5)
+            retry: 140
+            retry-message: "The terminal is rebooting."
+
+    # 2: the keypad. Its code is on the note by the start (texts/PZNOTE.txt).
+    '65':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: keypad
+            puzzle-args: { code: 7319 }
+            actions:
+                - A_OpenDoor("hold")
+
+    # 3: pipe flow
+    '66':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: pipes
+            actions:
+                - A_OpenDoor("hold")
+            retry: 70
+
+    # 4: the safe's dial
+    '67':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: safedial
+            actions:
+                - A_OpenDoor("hold")
+
+    # 5: the lockpick. Two fails and it breaks for good (wall 76), the first aid kit lost.
+    '68':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: lockpick
+            puzzle-args: { picks: 2 }
+            actions:
+                - A_OpenDoor("hold")
+            fail:
+                - A_HurtPlayer(2)
+            retry: 210
+            retry-message: "The lock's jammed. Give it a moment."
+            tries: 2
+            broken: 76
+
+    # 6: wire cutting. Carrying the auto-hack tool (by the start) throws it with no puzzle.
+    '69':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: wires
+            actions:
+                - A_OpenDoor("hold")
+            skip-item: AutoHackTool
+
+    # 7: the sequence. A win frees the prisoner in its closet: he's on your side now, and
+    # follows you about.
+    '70':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: sequence
+            actions:
+                - A_SetFaction("allies", "follow")
+                - A_OpenDoor("hold")
+
+    # 8: lights out
+    '71':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: lightsout
+            actions:
+                - A_OpenDoor("hold")
+
+    # 9: the sliding picture (graphics/PZSLIDE.png)
+    '72':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: sliding
+            actions:
+                - A_OpenDoor("hold")
+
+    # 10: frequency tuning
+    '73':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            puzzle: frequency
+            actions:
+                - A_OpenDoor("hold")
+
+    # 11: power routing. Not a switch's puzzle: the switch is thrown as it's used and opens
+    # the puzzle with A_Puzzle, whose result (the system chosen) scripts/results.lua sees to:
+    # the vault opens its closet, the others hand something out.
+    '74':
+        North: PZTERM
+        South: PZTERM
+        East: PZTERM
+        West: PZTERM
+        switch:
+            to: 75
+            sound: switches/elevbutn
+            actions:
+                - A_Puzzle("power", "vault", "medbay", "armory")
+
+    # Done: a green screen, no longer a switch
+    '75':
+        North: PZTERMOK
+        South: PZTERMOK
+        East: PZTERMOK
+        West: PZTERMOK
+
+    # Broken for good
+    '76':
+        North: PZTERMX
+        South: PZTERMX
+        East: PZTERMX
+        West: PZTERMX
+
+    # The note with the keypad's code (scripts/notes.lua shows it, by its tag, 50)
+    '77':
+        North: PZNOTE
+        South: PZNOTE
+        East: PZNOTE
+        West: PZNOTE

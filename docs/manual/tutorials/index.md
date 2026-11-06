@@ -14,6 +14,7 @@ Step by step, from an empty folder to a working mod.
 | [Your first script](./first-script) | Lua that counts the elite guards down, and an action of your own |
 | [Your first switch](./first-switch) | A wall that turns the lights on and off, and what tags are for |
 | [A new weapon](./new-weapon) | A pistol that fires in bursts: states of its own, a slot shared, put away and brought up |
+| [Your first puzzle](./first-puzzle) | A reactor to steady before the light switch works: a Lua puzzle on a switch |
 
 ## The example mods
 
@@ -34,3 +35,4 @@ with PFWolf, in the game's `mods` folder, ready to switch on.
 | Holster Demo | Weapons put away and brought up as they're changed |
 | Bob Demo | Each weapon bobbing its own way: Doom's swing, Planet Strike's spring and ZDoom's styles |
 | Standalone Demo | A game of its own, with none of Wolfenstein 3D's files |
+| Puzzles Demo | Puzzles (mini-games) in Lua on switches: eleven to copy, from a keypad to pipe flow |

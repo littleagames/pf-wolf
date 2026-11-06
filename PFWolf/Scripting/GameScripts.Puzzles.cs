@@ -37,6 +37,9 @@ internal sealed partial class GameScripts : IPuzzleScripts
     /// <summary>game.startpuzzle: opens a puzzle for a player (Gameplay/Puzzles.cs Start), from a tile and with a tag</summary>
     internal Func<Entities.Actors.PlayerPawn, string, object?, bool> StartPuzzleFor { get; init; } = (_, _, _) => false;
 
+    /// <summary>pz:sound: a sound for the player on this machine (the game's sounds when null)</summary>
+    internal Action<string>? PuzzleSound { get; init; }
+
     /// <summary>The look of a puzzle's panel (game-info puzzle-panel): its default font and text color</summary>
     internal Func<Assets.PuzzlePanelInfo> PuzzlePanel { get; init; } = () => new();
 
@@ -215,7 +218,7 @@ internal sealed partial class GameScripts : IPuzzleScripts
         pz["sound"] = new LuaFunction("pz:sound", (c, _) =>
         {
             if (ReferenceEquals(puzzle.State, session.LocalPlayer))
-                audio.Play(StringArg(c, 1));
+                (PuzzleSound ?? audio.Play)(StringArg(c, 1));
             return new(c.Return());
         });
         var held = new LuaTable();

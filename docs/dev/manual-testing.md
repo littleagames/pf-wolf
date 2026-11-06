@@ -405,6 +405,17 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       sounds; the walking and running cadence feels right (`stride` 2.5, `mintics` 12).
 - [ ] **(never tried)** Another player's steps heard from where they are (network game).
 
+**Puzzles Demo level** (`puzzles-demo`, Floor 1; seen 2026-11-06: every panel opens and draws,
+the keypad's note and code open its closet)
+- [ ] **(never tried)** Solving each by hand and finding them fair: pipes (the valve's 8 s),
+      safe dial, lockpick, wires, sequence, lights out, sliding picture, frequency (keys and
+      mouse), power routing (each of vault / medbay / armory).
+- [ ] **(never tried)** The needle failed: the barracks' three ambush guards come out; the shock.
+- [ ] **(never tried)** The sequence won: the prisoner's door opens and he follows and fights.
+- [ ] **(never tried)** The lockpick failed twice: it breaks (the smashed terminal), the
+      retry message between.
+- [ ] **(never tried)** The auto-hack tool picked up, then the wires terminal thrown with no puzzle.
+
 **Puzzles** (`puzzles-demo`, `puzzle needle` with cheats on)
 - [ ] The needle's panel in Wolf3D's menu window over a dimmed, stopped level; use on green
       bypasses, red fails, Esc backs out and the next Esc opens the menu (seen in Wolf3D 2026-11-06).

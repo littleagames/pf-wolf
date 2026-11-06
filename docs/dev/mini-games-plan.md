@@ -300,7 +300,19 @@ game).
 (and in a joiner's state). A table that holds functions or actors gets an error that names the
 key.
 
-**Phase 4 — the `puzzles-demo` mod.** Pipe flow, keypad, safe dial, lockpick, wire cut,
+**Phase 4 — the `puzzles-demo` mod (done 2026-11-06).** What it came to: ten more puzzles
+(pipes, keypad, safedial, lockpick, wires, sequence, lightsout, sliding, frequency, power), one
+script each; game.drawpic cut-outs and game.picsize (GraphicManager.DrawPicRegion was there); a
+level made by examples/tools/make-puzzles-demo.ps1 (a hall of eleven terminals, walls 64-74,
+each opening a gold-locked closet; the note, a prisoner, a barracks for the alarm, the auto-hack
+tool, thing 590); texts/PZNOTE.txt; the README section; the tutorial docs/manual/tutorials/first-puzzle.md
+(its code is run by PuzzleDemoScriptsTests). Found in play and fixed: a panel taller than the
+view left its frame on the border and status bar, which aren't redrawn every frame, so the
+default panel is 240 x 128 and the play screen is drawn again as a panel goes
+(PuzzlePanel's redrawPlayScreen). pz:sound goes through GameScripts.PuzzleSound when set
+(tests). Tests: PuzzleDemoScriptsTests plays, draws, keeps and takes up every demo puzzle.
+
+**Phase 4 — as planned:** Pipe flow, keypad, safe dial, lockpick, wire cut,
 sequence, Lights Out, sliding picture, frequency tuning, power routing as scripts in the mod,
 written to be copied (one file each, no shared helpers they can't live without). A level with
 one station per puzzle, a note with the keypad code, a turret to turn, an alarm to set off. The

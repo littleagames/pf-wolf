@@ -12,6 +12,7 @@ namespace PFWolf.Ui;
 /// <param name="viewOnScreen">The 3D view, in screen pixels (dimmed)</param>
 /// <param name="viewLayout">The 3D view, in layout pixels (the panel's centered in it)</param>
 /// <param name="localize">A $NAME language key's text, or the text</param>
+/// <param name="redrawPlayScreen">Draws the border and status bar again (drawn only when they change, so a panel bigger than the view would stay on them)</param>
 internal sealed class PuzzlePanel(
     VideoManager video,
     GraphicManager graphics,
@@ -20,16 +21,28 @@ internal sealed class PuzzlePanel(
     Func<PuzzlePanelInfo> panelInfo,
     Func<(int X, int Y, int Width, int Height)> viewOnScreen,
     Func<(int X, int Y, int Width, int Height)> viewLayout,
-    Func<string, string> localize)
+    Func<string, string> localize,
+    Action? redrawPlayScreen = null)
 {
     // Layout pixels between the frame's edge and the puzzle's panel (and the title)
     internal const int Margin = 4;
+
+    // Whether a puzzle's panel was drawn last frame, so the play screen is drawn again as it goes
+    bool shown;
 
     internal void Draw()
     {
         DrawOthers();
         if (puzzles.LocalPuzzle is not { } puzzle)
+        {
+            if (shown)
+            {
+                shown = false;
+                redrawPlayScreen?.Invoke();
+            }
             return;
+        }
+        shown = true;
         var panel = panelInfo();
         var definition = puzzle.Definition;
 
