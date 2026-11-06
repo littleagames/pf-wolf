@@ -2549,15 +2549,22 @@ internal partial record Monster : Actor
             return;
         }
 
-        // As a map spawn of it would: its own speed, and a kill to count unless it's NOTCOUNTED
+        // As a map spawn of it would: its own speed, and a kill to count unless it's NOTCOUNTED.
+        // One that leaves the level alive (no "keep", not killed first: a boss's next phase)
+        // hands its place in the kill total to the new one rather than adding another, as it
+        // will never die to be counted; a kept or already-dead one was its own kill.
         newActor.Speed = newActor.PropertyInt("speed", SpdPatrol);
-        if (!LoadedGame && newActor is Monster { CountsAsKill: true })
+        bool keep = args.Skip(1).Any(a => a.Trim().Equals("keep", StringComparison.OrdinalIgnoreCase));
+        if (!LoadedGame)
         {
-            GameState.KillTotal++;
-            GameState.PointsTotal += MapManager.KillWorth(newActor);
+            bool newCounts = newActor is Monster { CountsAsKill: true };
+            bool leavesUncounted = !keep && RuntimeFlags.Has(ObjFlags.Shootable) && CountsAsKill;
+            GameState.KillTotal += (short)((newCounts ? 1 : 0) - (leavesUncounted ? 1 : 0));
+            GameState.PointsTotal += (newCounts ? MapManager.KillWorth(newActor) : 0)
+                - (leavesUncounted ? MapManager.KillWorth(this) : 0);
         }
 
-        if (!args.Skip(1).Any(a => a.Trim().Equals("keep", StringComparison.OrdinalIgnoreCase)))
+        if (!keep)
             MapManager.MarkForRemoval(this);
     }
 }
