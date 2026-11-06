@@ -164,6 +164,16 @@ internal class GraphicManager
         DrawPic(x, y, asset);
     }
 
+    /// <summary>
+    /// Draws a picture; an animdefs animation shows its frame <paramref name="elapsedTics"/> after
+    /// it started (a title screen's own clock), rather than by the engine's
+    /// </summary>
+    public void DrawPicFrame(string graphicName, int x, int y, int elapsedTics)
+    {
+        if (!string.IsNullOrEmpty(graphicName) && assetManager.Value.Find<GraphicAsset>(graphicName, elapsedTics) is { } asset)
+            DrawPic(x, y, asset);
+    }
+
     /// <summary>Draws part of a picture: width by height of it from (srcX, srcY), at (x, y)</summary>
     public void DrawPicRegion(string graphicName, int srcX, int srcY, int width, int height, int x, int y)
     {

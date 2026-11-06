@@ -1,0 +1,35 @@
+# Merged into the game pack's game-info.yaml: the title screens. The fields are in the game-info
+# reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+#
+# A picture a screen names can be an animation (animdefs/animated-title.yaml): it plays while the
+# screen is up, from its first frame once the screen has faded in. Pictures are drawn in the
+# order listed, each over the ones before, and the screen is drawn again every tic.
+
+title-sequence:
+  # Shown once as the game starts, in place of Wolf3D's notice and rating screen (a list replaces
+  # the game pack's whole). The spotlight plays once; until-animation-ends keeps the screen up until
+  # it has, then its seconds more on the last frame. A key skips on to the title.
+  intro:
+    - pics: [{ pic: ATREVEAL }]
+      music: NAZI_NOR
+      until-animation-ends: true
+      seconds: 1.5
+
+  # Round and round until a key opens the menu: this mod's title, then Wolf3D's credits, high
+  # scores and a demo
+  loop:
+    - pics:
+        - { pic: ATSKY }                      # the night sky, searchlights sweeping it
+        - { pic: ATLOGO, y: 14 }              # the logo, over the sky
+        - { pic: ATWALL, y: 100 }             # the wall, the sky showing between its battlements
+        - { pic: ATBANNER, x: 36, y: 118 }    # one animation shown twice: they wave together
+        - { pic: ATBANNER, x: 260, y: 118 }
+        - { pic: ATTORCH1, x: 105, y: 124 }   # over the wall's torch brackets
+        - { pic: ATTORCH2, x: 201, y: 124 }
+        - { pic: ATPRESS, x: 100, y: 187 }    # blinks
+      seconds: 20
+    - pics: [{ pic: credits }]
+      seconds: 10
+    - high-scores: true
+      seconds: 10
+    - demo: true

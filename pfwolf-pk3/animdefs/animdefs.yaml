@@ -8,3 +8,7 @@
 #       - { name: SLIME2, tics: 16 }
 #       - SLIME3
 #       - stop
+#
+# Frames can be walls, flats or pictures. A picture animation can be named in game-info's
+# title-sequence pics, where it plays from its first frame as its screen finishes fading in;
+# examples/mods/animated-title has a whole title made of them.

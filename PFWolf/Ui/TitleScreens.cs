@@ -159,6 +159,7 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             if (!video.ScreenFaded)
                 video.FadeOut();
 
+            screenClockStart = GameEngineManager.GetTimeCount();
             DrawScreen(screen);
             video.Update();
             FadeInWithPalette(screen.Palette);
@@ -195,8 +196,10 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
                 }
             }
 
-            // An animated picture (animdefs) plays on as the screen's held: it's drawn again each
-            // tic. Not over a fizzled picture, which the redraw would cover.
+            // An animated picture (animdefs) plays as the screen's held, from its first frame now
+            // it's faded in: it's drawn again each tic. Not over a fizzled picture, which the
+            // redraw would cover.
+            screenClockStart = GameEngineManager.GetTimeCount();
             Action? animate = string.IsNullOrEmpty(screen.FizzlePic) && IsAnimated(screen)
                 ? () => { DrawScreen(screen); video.Update(); }
                 : null;
@@ -233,8 +236,9 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
             draw.DrawStripes(stripeY);
         if (screen.HighScores)
             hooks.DrawHighScores();
+        int tics = ScreenTics;
         foreach (var pic in screen.Pics)
-            graphics.DrawPic(pic.Pic, pic.X, pic.Y);
+            graphics.DrawPicFrame(pic.Pic, pic.X, pic.Y, tics);
         foreach (var line in screen.Lines)
             ui.TextAt(line.X, line.Y, new TextStyle(line.Font ?? UiFonts.MenuFont, line.Color)).Print(line.Text);
         if (screen.Text is { } text)
@@ -244,6 +248,27 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
     /// <summary>Whether any of the screen's pictures is an animdefs animation</summary>
     bool IsAnimated(TitleScreenInfo screen) =>
         screen.Pics.Any(pic => !string.IsNullOrEmpty(pic.Pic) && assets.FindAnimation<GraphicAsset>(pic.Pic) != null);
+
+    /// <summary>
+    /// When the shown screen's clock started: its animations play from their first frame from
+    /// here, not by the engine's clock (so a loop doesn't come in part way, and one that plays
+    /// once hasn't already ended)
+    /// </summary>
+    uint screenClockStart;
+
+    /// <summary>Tics since the shown screen's clock started</summary>
+    int ScreenTics => (int)(GameEngineManager.GetTimeCount() - screenClockStart);
+
+    /// <summary>
+    /// Tics until the longest of a screen's play-once pictures has played (0 when none of them
+    /// is one), for until-animation-ends
+    /// </summary>
+    internal static int PlayOnceTics(TitleScreenInfo screen, Func<string, IAnimatedAsset?> findAnimation) =>
+        screen.Pics.Select(pic => string.IsNullOrEmpty(pic.Pic) ? null : findAnimation(pic.Pic))
+            .Where(animation => animation is { Loops: false })
+            .Select(animation => animation!.TotalTics)
+            .DefaultIfEmpty(0)
+            .Max();
 
     /// <summary>Whether a key or button has been pressed since StartAck</summary>
     bool KeyPressed()
@@ -300,6 +325,8 @@ internal sealed class TitleScreens(VideoManager video, AudioManager audio, Input
         }
 
         uint start = GameEngineManager.GetTimeCount(), tics = (uint)Math.Max(screen.Seconds * Timing.TickBase, 0);
+        if (screen.UntilAnimationEnds)
+            tics += (uint)PlayOnceTics(screen, name => assets.FindAnimation<GraphicAsset>(name));
         while (GameEngineManager.GetTimeCount() - start < tics)
         {
             if (KeyPressed() && !ignoreKeys)

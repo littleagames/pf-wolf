@@ -783,6 +783,13 @@ can reach), not played by hand.
       (`--game spear`, its blue BKGDCOLOR under the glows), widescreen and UI Scale, a real pickup
       message, the clock running past a minute, the greeting after loading a save and after
       dying, and the fonts in the editor (Ctrl+F in fonts.yaml, F11 Definitions).
+- [ ] Animated Title (`--file animated-title`, animated title screens, 2026-11-06): timed
+      windowed screenshots showed the spotlight intro from its first frame after the fade-in,
+      held on its last frame, then the title's searchlights sweeping, banners, torches and the
+      blinking "press a key". **(never tried)**: a key during the intro (skips to the title) and
+      during the title (the menu); the loop coming round to the title again (it should start
+      from frame 1 again); the title at widescreen, with UI Scale and at an uncapped frame rate;
+      `until-animation-ends` with music off; the animations in the editor's art browser.
 - [ ] Transitions Demo (`--file transitions-demo`, every fade style, 2026-11-06): driven windowed
       with `fadetics 140`, burst screenshots of a crossfade and an iris cut (Hall of Cuts), a burn
       out through black (Hall of Fades), the death melt into red, and opening the control panel

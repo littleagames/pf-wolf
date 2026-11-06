@@ -1,0 +1,36 @@
+# Written by examples/tools/make-animated-title.ps1: change it there and run it again. The fields
+# are in the animdefs reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/animdefs
+#
+# Each animation is a picture name the title screens draw (game-info.yaml's title-sequence), shown
+# a frame at a time, 	ics each (70 a second). On a title screen they start from their first
+# frame as the screen finishes fading in.
+
+# The intro: 48 frames, 2 tics each, then stop: it plays once and holds the last frame.
+# Its screen has until-animation-ends, so it stays up until this has played.
+ATREVEAL:
+  tics: 2
+  frames: [ATREV01, ATREV02, ATREV03, ATREV04, ATREV05, ATREV06, ATREV07, ATREV08, ATREV09, ATREV10, ATREV11, ATREV12, ATREV13, ATREV14, ATREV15, ATREV16, ATREV17, ATREV18, ATREV19, ATREV20, ATREV21, ATREV22, ATREV23, ATREV24, ATREV25, ATREV26, ATREV27, ATREV28, ATREV29, ATREV30, ATREV31, ATREV32, ATREV33, ATREV34, ATREV35, ATREV36, ATREV37, ATREV38, ATREV39, ATREV40, ATREV41, ATREV42, ATREV43, ATREV44, ATREV45, ATREV46, ATREV47, ATREV48, stop]
+
+# The title's sky: 64 frames, the searchlights' sweep there and back, round and round
+ATSKY:
+  tics: 3
+  frames: [ATSKY01, ATSKY02, ATSKY03, ATSKY04, ATSKY05, ATSKY06, ATSKY07, ATSKY08, ATSKY09, ATSKY10, ATSKY11, ATSKY12, ATSKY13, ATSKY14, ATSKY15, ATSKY16, ATSKY17, ATSKY18, ATSKY19, ATSKY20, ATSKY21, ATSKY22, ATSKY23, ATSKY24, ATSKY25, ATSKY26, ATSKY27, ATSKY28, ATSKY29, ATSKY30, ATSKY31, ATSKY32, ATSKY33, ATSKY34, ATSKY35, ATSKY36, ATSKY37, ATSKY38, ATSKY39, ATSKY40, ATSKY41, ATSKY42, ATSKY43, ATSKY44, ATSKY45, ATSKY46, ATSKY47, ATSKY48, ATSKY49, ATSKY50, ATSKY51, ATSKY52, ATSKY53, ATSKY54, ATSKY55, ATSKY56, ATSKY57, ATSKY58, ATSKY59, ATSKY60, ATSKY61, ATSKY62, ATSKY63, ATSKY64]
+
+# Both banners show this, so they wave together
+ATBANNER:
+  tics: 5
+  frames: [ATBAN01, ATBAN02, ATBAN03, ATBAN04, ATBAN05, ATBAN06, ATBAN07, ATBAN08, ATBAN09, ATBAN10, ATBAN11, ATBAN12]
+
+# The torches share their frames but not their order or speed, so they don't flicker in step
+ATTORCH1:
+  tics: 5
+  frames: [ATFLAME1, ATFLAME2, ATFLAME3, ATFLAME4, ATFLAME5, ATFLAME6, ATFLAME7, ATFLAME8]
+ATTORCH2:
+  tics: 4
+  frames: [ATFLAME5, ATFLAME2, ATFLAME7, ATFLAME4, ATFLAME1, ATFLAME6, ATFLAME3, ATFLAME8]
+
+# "Press a key": on for 40 tics, off (an empty picture) for 25. A frame can give its own tics.
+ATPRESS:
+  frames:
+    - { name: ATKEY, tics: 40 }
+    - { name: ATBLANK, tics: 25 }

@@ -2294,6 +2294,58 @@ and run it again:
 powershell -ExecutionPolicy Bypass -File examples/tools/make-transitions-demo.ps1
 ```
 
+## Animated Title (`mods/animated-title`)
+
+**Title screens that move** (Wolfenstein 3D): a spotlight that finds the logo, then a castle at
+night with searchlights, banners, torches and a blinking "press a key". It's all pictures and
+YAML: no level, no script.
+
+```
+PFWolf.exe --file animated-title
+```
+
+- **The intro** (in place of Wolf3D's notice and rating screen): on a black screen a spotlight
+  crosses the logo, showing it a piece at a time, comes back to the middle and opens out over all
+  of it, and the logo flashes white. One full-screen animation of 48 frames that plays once and
+  holds its last; the screen stays up until it has played, then a second and a half more. A key
+  skips on.
+- **The title**, eight pictures drawn over each other, five of them animated:
+  - the night sky with two searchlights sweeping it out of step (64 frames);
+  - the logo, over the sky (a still picture);
+  - the castle wall, the sky showing between its battlements (a still picture with see-through
+    gaps);
+  - two banners in the wind: one animation drawn twice, so they wave together (12 frames);
+  - two torches: two animations made of the same 8 frames, in a different order and at a
+    different speed, so they don't flicker in step;
+  - "PRESS A KEY", on for 40 tics and off for 25: a frame can give its own tics, and "off" is an
+    empty picture.
+
+  Then Wolf3D's credits, high scores and a demo, and round again.
+
+### What's in it
+
+- `animdefs/animated-title.yaml`: the animations. Each is a picture name that stands for its
+  frames, `tics` each (70 a second). `stop` as the last frame plays it once and holds the last.
+- `game-info.yaml`: `title-sequence`, the screens. A screen's `pics` are drawn in order, each
+  over the ones before, at its `x`, `y`; any of them can be an animation. Things to know:
+  - A title screen's animations start from their first frame as it finishes fading in, every
+    time it's shown, whatever else has been going on.
+  - `until-animation-ends: true` keeps a screen up until its play-once pictures have played,
+    then for its `seconds` more on their last frames.
+  - The screen's drawn again every tic, so the pictures that change need still ones behind them
+    (here the sky and the wall); a frame's see-through pixels show what was drawn first.
+- `graphics/AT*.png`: 136 pictures: the intro's frames `ATREV01-48`, the sky's `ATSKY01-64`, the
+  banner's `ATBAN01-12`, the flames' `ATFLAME1-8`, the logo, the wall, `ATKEY` and `ATBLANK`.
+  PNGs' colors snap to Wolf3D's palette as they load, so smooth shades come out banded, and a
+  navy with much red in it turns purple.
+
+The pictures and the animdefs file are made by `tools/make-animated-title.ps1`: the frame
+counts, timings and drawings are all there. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-animated-title.ps1
+```
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team

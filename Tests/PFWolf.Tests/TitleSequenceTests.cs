@@ -67,6 +67,46 @@ public class TitleSequenceTests
         Assert.That(TitleScreens.CanShowPics(Screen("pg13", "credits"), has.Contains), Is.True);
     }
 
+    /// <summary>A picture animation of frames lasting these tics, looping or played once</summary>
+    private static AnimatedAsset<GraphicAsset> PicAnimation(bool loops, params int[] tics)
+        => new(tics.Select((t, i) => new AnimationFrame<GraphicAsset>($"F{i}", new GraphicAsset([(byte)i], 1, 1), t)).ToList(), loops);
+
+    [Test]
+    public void Until_Animation_Ends_Holds_For_The_Longest_Play_Once_Picture()
+    {
+        // Arrange
+        var animations = new Dictionary<string, IAnimatedAsset>
+        {
+            ["REVEAL"] = PicAnimation(false, 10, 10, 30),
+            ["SHORT"] = PicAnimation(false, 5),
+            ["FLAG"] = PicAnimation(true, 100, 100),
+        };
+        TitleScreenInfo Screen(params string[] pics) => new() { UntilAnimationEnds = true, Pics = [.. pics.Select(pic => new PicPlacement { Pic = pic })] };
+        IAnimatedAsset? Find(string name) => animations.GetValueOrDefault(name);
+
+        // Act / Assert: loops never end, so they don't count; plain pictures neither
+        Assert.That(TitleScreens.PlayOnceTics(Screen("SHORT", "REVEAL", "FLAG"), Find), Is.EqualTo(50));
+        Assert.That(TitleScreens.PlayOnceTics(Screen("FLAG", "Title"), Find), Is.EqualTo(0));
+        Assert.That(TitleScreens.PlayOnceTics(Screen(), Find), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Until_Animation_Ends_Is_Read()
+    {
+        // Act
+        var info = Parse("""
+            title-sequence:
+              intro:
+                - pics: [{ pic: REVEAL }]
+                  until-animation-ends: true
+                  seconds: 2
+            """);
+
+        // Assert
+        Assert.That(info.TitleSequence.Intro[0].UntilAnimationEnds, Is.True);
+        Assert.That(info.TitleSequence.Intro[0].Seconds, Is.EqualTo(2.0));
+    }
+
     [TestCase("next", TitleKeyAction.Next)]
     [TestCase("menu", TitleKeyAction.Menu)]
     [TestCase("end-intro", TitleKeyAction.EndIntro)]

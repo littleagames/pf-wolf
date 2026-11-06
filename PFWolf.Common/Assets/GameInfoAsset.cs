@@ -807,7 +807,8 @@ public record TitleScreenInfo
     /// Pictures drawn in order, each with its top left corner at x, y (Spear's title is two
     /// halves, Midnight Assault's credits page several pictures). One the game hasn't got is
     /// skipped; when it has none of them, the screen is left out. A picture that's an animdefs
-    /// animation plays on while the screen is held, but not under a fizzle-pic.
+    /// animation plays while the screen is held, from its first frame once the screen has faded
+    /// in (one that ends in stop plays once and holds its last frame), but not under a fizzle-pic.
     /// </summary>
     public List<PicPlacement> Pics { get; init; } = [];
 
@@ -831,6 +832,13 @@ public record TitleScreenInfo
 
     /// <summary>Stays up until the music ends, unless a key is pressed; with music off, for its seconds</summary>
     public bool UntilMusicEnds { get; init; }
+
+    /// <summary>
+    /// Stays up until its pictures' play-once animations (animdefs, ending in stop) have all
+    /// played, then for its seconds more on their last frames, unless a key is pressed; with no
+    /// play-once animation among its pictures, for its seconds
+    /// </summary>
+    public bool UntilAnimationEnds { get; init; }
 
     /// <summary>Stays up until a key is pressed, however long (its seconds are ignored, and so is on-key ignore)</summary>
     public bool WaitForKey { get; init; }

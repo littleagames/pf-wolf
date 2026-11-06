@@ -1,0 +1,4 @@
+name: Animated Title
+version: "1.0"
+description: Title screens that move - a spotlight that finds the logo, then a castle at night with sweeping searchlights, waving banners, flickering torches and a blinking "press a key", all animdefs pictures - for Wolfenstein 3D.
+game-packs: [wolf3d]
