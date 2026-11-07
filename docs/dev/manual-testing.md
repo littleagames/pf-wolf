@@ -312,6 +312,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [x] Wall outlets and Goldfire's warp-in keep their timers through a save and load (2026-10-27,
       headless on AOG MAP04: BlakeLevelAIGameTests; `levelai` shows the waits). **(never tried)**
       with Goldfire already warped in once (last/chosen site, the later wait).
+- [x] Goldfire's next wait (30 s to 4 minutes) starts as he's shot down and runs while he warps
+      out, on floor 9 too (2026-11-06, headless on AOG MAP04 + MAP10: BlakeLevelAIGameTests).
+      Outlets try their sides north, south, west, east, and can let an alien out onto a solid
+      static, as bstone (LevelAIOutletTests). **(never tried)** by eye: Goldfire back on floor 9
+      after a real fight, not a second after he warps out.
 - [ ] Help pages (Instructions): ^AN animations (posts, arcs, turret, transport, guards) run
       while the page is up.
 - [ ] Quit, End Game and new-game questions in bstone's words.

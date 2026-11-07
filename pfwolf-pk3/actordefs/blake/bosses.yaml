@@ -311,8 +311,10 @@ Goldfire:
       - { sprite: DGLD, frames: [D], tics-per-frame: 10, think: T_Chase }
       - { sprite: DGLD, frames: [D], tics-per-frame: 3 }
       - { sprite: DGLD, frames: [E], tics-per-frame: 8, think: T_Chase }
-    # Shot down: laughs, taps his wrist and warps out
+    # Shot down: laughs, taps his wrist and warps out. The wait for his next warp in starts as
+    # he's shot, as bstone's KillActor (A_WarpSiteGone)
     Death:
+      - { sprite: DGLD, frames: [A], tics-per-frame: 0, action: A_WarpSiteGone }
       - { sprite: DGLD, frames: [A], tics-per-frame: 45, action: 'A_PlaySound("bs/goldsternlaugh", "positional")' }
       - { sprite: DGLD, frames: [J], tics-per-frame: 25 }
       - { sprite: DGLD, frames: [K], tics-per-frame: 25, action: A_PlaySound("bs/elev_button") }
@@ -321,7 +323,7 @@ Goldfire:
       - { sprite: DGLD, frames: [A], tics-per-frame: 15 }
       - { sprite: DGLD, frames: [L], tics-per-frame: 30, action: A_PlaySound("bs/warpout") }
       - { sprite: DGLD, frames: [M, N, O], tics-per-frame: 30 }
-      - { sprite: DGLD, frames: [P], tics-per-frame: 40, action: A_WarpSiteGone }
+      - { sprite: DGLD, frames: [P], tics-per-frame: 40 }
       - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
 
 # One of Goldfire's spawn sites (invisible)

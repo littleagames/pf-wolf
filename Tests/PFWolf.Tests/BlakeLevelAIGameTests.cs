@@ -48,6 +48,40 @@ public class BlakeLevelAIGameTests
         }
     }
 
+    [TestCase("MAP04")]     // mission 1 floor 3
+    [TestCase("MAP10")]     // floor 9, where he comes back after a second (warpsite.quickfloor)
+    public void Goldfires_Next_Wait_Starts_When_He_Is_Shot_Down(string map)
+    {
+        // Arrange: Goldfire summoned and killed at once, before the level's first wait is up
+        var workFolder = Path.Combine(Path.GetTempPath(), "pfwolf-goldwait-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(workFolder);
+        try
+        {
+            HeadlessGame.PrepareFolder(workFolder, "blake-aog");
+
+            // Act: the warp sites' wait while he warps out (about 310 tics), 100 tics apart
+            var (exitCode, output) = HeadlessGame.Run(workFolder, "blake",
+                "wait 5; god; summon Goldfire; wait 1; killall; wait 20; levelai; actors Goldfire; wait 100; levelai; actors Goldfire; quit",
+                TimeSpan.FromMinutes(2), extraArgs: ["--warp", map, "--cheats"]);
+            var log = string.Join(Environment.NewLine, output.TakeLast(40));
+            var waits = output.Where(line => line.StartsWith("Warp sites "))
+                .Select(line => int.Parse(Regex.Match(line, @"wait (\d+) tics").Groups[1].Value))
+                .ToList();
+
+            // Assert: bstone's KillActor wait (30 s to 4 minutes, never the quick floor's second),
+            // counting down while he's still there warping out
+            Assert.That(exitCode, Is.Zero, log);
+            Assert.That(output.Count(line => line.StartsWith("Goldfire at ")), Is.EqualTo(2), "still warping out at both read-outs\n" + log);
+            Assert.That(waits, Has.Count.EqualTo(2), log);
+            Assert.That(waits[0], Is.InRange(30 * 60 - 30, 240 * 60), log);
+            Assert.That(waits[0] - waits[1], Is.InRange(99, 102), log);
+        }
+        finally
+        {
+            try { Directory.Delete(workFolder, recursive: true); } catch (IOException) { }
+        }
+    }
+
     [Test]
     public void Firing_Stays_Off_When_A_Game_Saved_Mid_Morph_Is_Loaded()
     {

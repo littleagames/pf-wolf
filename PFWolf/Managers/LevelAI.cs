@@ -165,6 +165,25 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         _map.GetActors().Count(a => !a.IsRemoved && a.RuntimeFlags.Has(ObjFlags.Shootable) && a.Name == outlet.Spec.Class
             && (a is not BlakeMonster b || b.SeekX == outlet.X + 1 && b.SeekY == outlet.Y + 1));
 
+    /// <summary>The sides an outlet's actor can come out of, in the order they're tried (bstone's xy_offset: north, south, west, east)</summary>
+    internal static readonly (int Dx, int Dy)[] OutletSides = [(0, -1), (0, 1), (-1, 0), (1, 0)];
+
+    /// <summary>The first side of the outlet at x,y whose tile joins the player's area (CheckSpawnEA), or null</summary>
+    internal static (int X, int Y)? OutletSide(int x, int y, Func<int, int, bool> joinsPlayer)
+    {
+        foreach (var (dx, dy) in OutletSides)
+            if (joinsPlayer(x + dx, y + dy))
+                return (x + dx, y + dy);
+        return null;
+    }
+
+    /// <summary>
+    /// Whether an outlet's actor can come out onto a tile with this ActorAt entry: an empty one, or
+    /// one with a solid static (bstone refuses only a living actor there, so an alien can come out
+    /// on a pillar); never a wall, door or wall sprite. Living actors are checked apart.
+    /// </summary>
+    internal static bool OutletTileOpen(PFWolf.Actor? at) => at is null || at.GetType() == typeof(BlockingActor);
+
     private void TickOutlets()
     {
         foreach (var outlet in _outlets)
@@ -181,17 +200,12 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
             outlet.Delay = 1;       // try again next tic, unless one comes out
 
             // Beside it, in a room joined to the player's
-            (int X, int Y)? spot = null;
-            foreach (var (dx, dy) in new[] { (0, -1), (1, 0), (0, 1), (-1, 0) })
+            var spot = OutletSide(outlet.X, outlet.Y, (x, y) =>
             {
-                int area = _map.AreaAt(outlet.X + dx, outlet.Y + dy);
-                if (area >= 0 && area < _map.Floors.NumAreas && session.Areas.AreaByPlayer[area] != 0)
-                {
-                    spot = (outlet.X + dx, outlet.Y + dy);
-                    break;
-                }
-            }
-            if (spot is not { } tile || _map.ActorAt[tile.X, tile.Y] != null || _map.IsShootableActorAt(tile.X, tile.Y)
+                int area = _map.AreaAt(x, y);
+                return area >= 0 && area < _map.Floors.NumAreas && session.Areas.AreaByPlayer[area] != 0;
+            });
+            if (spot is not { } tile || !OutletTileOpen(_map.ActorAt[tile.X, tile.Y]) || _map.IsShootableActorAt(tile.X, tile.Y)
                 || Math.Abs(session.Player.TileX - tile.X) < 2 && Math.Abs(session.Player.TileY - tile.Y) < 2)
                 continue;
 
@@ -221,7 +235,9 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
     the player can see (not where he last did, when there are others), after a wait (first
     `warpsite.firstwait`, then `warpsite.wait`, both [min, max] seconds; one second on its
     `warpsite.quickfloor`), once nothing's on it and the player is more than a tile off. Only one
-    is about at a time; when it dies (A_WarpSiteGone) the next wait starts.
+    is about at a time; when it's shot down (A_WarpSiteGone, on its death's first frame) a
+    `warpsite.wait` starts at once, even on the quick floor, and runs while it warps out; then
+    a site is picked and waited for as above (bstone's KillActor, then CheckSpawnGoldstern).
 
     =============================================================================
     */
@@ -241,9 +257,9 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         _warpWait = _warpSites.Count > 0 ? WarpWait(_warpSites[0], first: true) : 0;
     }
 
-    private int WarpWait(Entities.Actors.Actor site, bool first)
+    private int WarpWait(Entities.Actors.Actor site, bool first, bool quick = true)
     {
-        if (site.PropertyInt("warpsite.quickfloor", -1) == _map.CurrentFloorNumber)
+        if (quick && site.PropertyInt("warpsite.quickfloor", -1) == _map.CurrentFloorNumber)
             return 60;
         var range = site.PropertyInts(first ? "warpsite.firstwait" : "warpsite.wait");
         int min = range.ElementAtOrDefault(0), max = Math.Max(range.ElementAtOrDefault(1), min);
@@ -254,8 +270,8 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
     {
         if (_warpSites.Count == 0 || _warpClass == null)
             return;
-        if (_map.GetActors().Any(a => !a.IsRemoved && a.Name == _warpClass))
-            return;     // it's about (or still warping out)
+        if (_map.GetActors().Any(a => !a.IsRemoved && a.Name == _warpClass && a.RuntimeFlags.Has(ObjFlags.Shootable)))
+            return;     // it's about (once shot down and warping out, the wait runs)
 
         if (_warpWait > session.Tics)
         {
@@ -290,11 +306,14 @@ internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, Positiona
         _warpChosen = -1;
     }
 
-    /// <summary>A_WarpSiteGone: the warp site's actor has gone (warped out); the wait for the next starts</summary>
+    /// <summary>
+    /// A_WarpSiteGone: the warp site's actor is shot down; the wait for the next starts now, while
+    /// it warps out, and is never the quick floor's second (bstone's KillActor)
+    /// </summary>
     internal void WarpSiteGone()
     {
         if (_warpSites.Count > 0)
-            _warpWait = WarpWait(_warpSites[0], first: false);
+            _warpWait = WarpWait(_warpSites[0], first: false, quick: false);
         _warpChosen = -1;
     }
 

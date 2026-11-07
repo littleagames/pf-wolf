@@ -111,7 +111,7 @@ public static class GameActions
         new("A_LatchRelease", Actor, "A_LatchRelease", "The struggle's over, and the weapon the player had is back in hand"),
         new("A_ShowPapers", Actor, "A_ShowPapers", "The papers in hand are shown (their attacksound) to every enemy in sight that suspects the player: each is satisfied, unless its `monster.papersfail` says it isn't fooled"),
         new("A_Disguise", Actor, "A_Disguise(\"Disguise\", \"Papers\"[, \"State\"])", "The player puts on the disguise and takes the papers, with the disguise's pickup message and sound, and the thing used goes to the state"),
-        new("A_WarpSiteGone", Actor, "A_WarpSiteGone", "A warp site's actor has warped out: the wait for the next starts"),
+        new("A_WarpSiteGone", Actor, "A_WarpSiteGone", "A warp site's actor is shot down: the wait for the next starts (on its death's first frame)"),
         new("A_WarpSitesOff", Actor, "A_WarpSitesOff", "No more come: the level's warp sites go (Goldfire, morphed)"),
 
         ]),
