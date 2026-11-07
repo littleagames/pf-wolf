@@ -71,32 +71,42 @@ internal class FontManager
 
     private string GamePackId => assetManager.Value.GamePackId;
 
-    // upperCase: lower case letters use the upper case glyphs (Blake Stone's small font has only capitals)
-    private VgaFont? FindVgaFont(string source, bool upperCase = false)
+    // upperCase: lower case letters use the upper case glyphs (Blake Stone's small font has only capitals).
+    // cursor: the character whose glyph the typing cursor (128) uses (Blake Stone's "@")
+    private VgaFont? FindVgaFont(string source, bool upperCase = false, string? cursor = null)
     {
         var asset = assetManager.Value.Find<FontAsset>(source);
         if (asset == null)
             return null;
-        if (upperCase)
+        if (upperCase || !string.IsNullOrEmpty(cursor))
         {
             var location = (short[])asset.Location.Clone();
             var width = (byte[])asset.Width.Clone();
-            for (char ch = 'a'; ch <= 'z'; ch++)
+            if (upperCase)
+                for (char ch = 'a'; ch <= 'z'; ch++)
+                {
+                    location[ch] = location[char.ToUpperInvariant(ch)];
+                    width[ch] = width[char.ToUpperInvariant(ch)];
+                }
+            if (!string.IsNullOrEmpty(cursor) && cursor[0] < 256)
             {
-                location[ch] = location[char.ToUpperInvariant(ch)];
-                width[ch] = width[char.ToUpperInvariant(ch)];
+                location[CursorChar] = location[cursor[0]];
+                width[CursorChar] = width[cursor[0]];
             }
             asset = asset with { Location = location, Width = width };
         }
         return new VgaFont(asset);
     }
 
+    /// <summary>The character the typing cursor is drawn as (UiText.XORICursor)</summary>
+    internal const char CursorChar = '\x80';
+
     private Font? Build(string name, FontDefinition definition)
     {
         switch (definition.Type.ToLowerInvariant())
         {
             case "vga":
-                return FindVgaFont(string.IsNullOrEmpty(definition.Source) ? name : definition.Source, definition.UpperCase);
+                return FindVgaFont(string.IsNullOrEmpty(definition.Source) ? name : definition.Source, definition.UpperCase, definition.Cursor);
 
             case "graphic":
                 return BuildGraphicFont(name, definition);

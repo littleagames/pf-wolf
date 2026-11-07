@@ -166,6 +166,8 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
             //
             var layout = HighScoresLayout;
             int x = layout.NameX, y = layout.RowY + (layout.RowHeight * n);
+            if (!string.IsNullOrEmpty(layout.EntryFrame))
+                defs.DrawMenuComponents(layout.EntryFrame);     // bstone's DrawInstructions(IT_ENTER_HIGHSCORE)
             if (layout.EntryBarWidth > 0)
             {
                 video.Bar(x - 2, y - 2, layout.EntryBarWidth, Math.Min(15, layout.RowHeight), layout.EntryBackground);

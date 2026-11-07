@@ -124,6 +124,7 @@ help-text: HelpText
 # game's last floor rating as its mission ratio
 high-scores:
   frame: high-scores
+  entry-frame: high-scores-entry
   pics: []
   labels:
     - { text: "NAME", x: 86, y: 60, color: "86" }

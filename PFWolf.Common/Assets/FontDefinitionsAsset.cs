@@ -183,4 +183,10 @@ public class FontDefinition
 
     /// <summary>Any type: lower case letters use the upper case glyphs (Blake Stone's small font has only capitals)</summary>
     public bool UpperCase { get; set; }
+
+    /// <summary>
+    /// vga: the character whose glyph is the typing cursor (character 128, Wolf3D's cursor block),
+    /// for a font without one of its own: Blake Stone's "@" (bstone's custom cursor)
+    /// </summary>
+    public string? Cursor { get; set; }
 }

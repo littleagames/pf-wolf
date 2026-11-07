@@ -1,0 +1,7 @@
+# Drawn over the high scores' frame (high-scores.yaml) while a new score's name is typed
+# (game-info high-scores entry-frame): the help line becomes bstone's IT_ENTER_HIGHSCORE.
+# Not a menu of its own.
+type: "blake-menu"
+components:
+  - { type: "Fill", params: [ { x: 47 }, { y: 162 }, { width: 237 }, { height: 9 }, { color: "MENUBACK" } ] }
+  - { type: "Label", params: [ { text: "ENTER YOUR NAME AND PRESS ENTER" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }

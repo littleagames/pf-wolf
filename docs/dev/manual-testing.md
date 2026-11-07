@@ -243,9 +243,18 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       BlakeMachinesGameTests). Steam never hurts (bstone's doesn't); it only puffs while seen.
       **(never tried)** by hand: a boss fight to the death with real weapons, the bosses' attack
       info pictures, a level's own steam vents and oozes by eye.
-- [ ] **(never tried)** End movie after a real win.
+- [x] End movie after a real win (2026-11-06, in the window, `--warp` + `killall`/`god`, walked
+      onto the win tile): mission 1 (MAP10 20,8) ran Blake to the shuttle, played the shuttle
+      movie, then "Mission 1 Successful"; mission 3 (MAP40 56,60) the Goldfire movie, then its
+      briefing. **(never tried)** missions 2, 4, 5 and 6 (6's own movie).
 - [ ] Lose screen ("Goldfire Transmission") typed out, scrolling up as it fills.
-- [ ] **(never tried)** High-score name entry with a placing score (ratio column).
+- [x] High-score name entry with a placing score (ratio column), 2026-11-06 after the wins above:
+      the row is typed into with bstone's help line "ENTER YOUR NAME AND PRESS ENTER" (game-info
+      high-scores entry-frame) and its block cursor (fonts.yaml BlakeSmall `cursor: "@"`; it was
+      invisible before, Blake Stone's fonts having no character 128); Enter goes to the main menu,
+      and High Scores there shows it (ratio 82), kept in config.cfg. Planet Strike's the same
+      after its ending. Known: the name is kept as typed (bstone upper-cases it as it's typed;
+      ours shows capitals either way), and a save's name has no cursor yet (Font5, no "@" cursor).
 - [ ] Weapon charge after save/load.
 - [ ] Charge packs give 1–8 units, the message says how many.
 - [ ] Elevator panel: the floor's overhead map (seen tiles, keys, Blake); **(never tried)** a
@@ -355,8 +364,16 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       spector demon, armored stalker, crawler beast); security cube.
 - [ ] Morphing posts → spider mutant; killing a linked reptilian drops its posts.
 - [ ] Cloaked cyborg shimmer and hit frame.
-- [ ] **(never tried)** Door triggers 158–160 (smart switches) in play.
-- [ ] Teleporter, detonator, gold morph, ending.
+- [x] Door triggers 158–160 (smart switches) in play, 2026-11-06 in the window (walked onto with
+      the arrow keys; `tp` doesn't set them off): AOG MAP04's 158 at 14,22 opened prison door
+      14,19 and stayed; PS MAP03's 160 at 42,48 turned the switch at 37,50 on ("ACTIVATING
+      BARRIER", v-spikes 39-41,50 up), more 160s left it on, the 159 at 44,52 turned it off, a
+      159 with it off did nothing; PS MAP01's 158 at 28,26 woke the pro guard on 25,34 (it came
+      for the player) and the trigger went. Known difference: bstone checks these each tic the
+      player moves on the tile (a door held open while standing there); ours once, on entering.
+- [ ] Teleporter, detonator, gold morph, ending. (Ending seen 2026-11-06: Goldfire morphed killed
+      on MAP20, "You've defeated Dr. Goldfire!", the end movie, the closing transmission, then
+      the high scores.)
 - [x] New Mission from the menu during a game asks "Continuing past this point..." over the main
       menu (it was a black screen: the one-mission path skipped the menu that fades back in).
       Checked 2026-11-06 in the window: No goes back to the menu, Yes on to the skills; Spear's

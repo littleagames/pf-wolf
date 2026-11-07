@@ -566,6 +566,12 @@ public record HighScoresInfo
     /// </summary>
     public string? Frame { get; init; }
 
+    /// <summary>
+    /// A menudef whose components are drawn over the screen while a new score's name is typed
+    /// (Blake Stone's help line turning to "ENTER YOUR NAME AND PRESS ENTER"); none when unset
+    /// </summary>
+    public string? EntryFrame { get; init; }
+
     /// <summary>Text drawn over the frame, such as column headings</summary>
     public List<HighScoreLabel> Labels { get; init; } = [];
 
