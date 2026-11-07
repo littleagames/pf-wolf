@@ -85,6 +85,9 @@ internal sealed class PointDrawing(
             int floor = floorRow(half);
             int top = floor - render.PostStories[i] * 2 * half;
             int bottom = floor - 1 - render.PostFirstStory[i] * 2 * half;
+            // a post under the floor is only drawn down the pit in front of it
+            top = Math.Max(top, render.PostClipTop[i]);
+            bottom = Math.Min(bottom, render.PostClipBottom[i]);
 
             // an arch's underside is above all that's past it too, up to where the trace leaves it
             if (render.PostUnderside[i] != 0)

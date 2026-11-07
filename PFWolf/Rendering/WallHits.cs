@@ -85,7 +85,7 @@ internal sealed class WallHits(
             SetPatchPost(render.XTile, render.YIntTile, face, texture);
         else
             SeeThroughJamb(mapTexture, face, texture, render.XTile, render.YIntTile);
-        posts.ScalePost();
+        posts.ScalePost(below: true);
     }
 
     /// <summary>
@@ -181,7 +181,7 @@ internal sealed class WallHits(
             SetPatchPost(render.XIntTile, render.YTile, face, texture);
         else
             SeeThroughJamb(mapTexture, face, texture, render.XIntTile, render.YTile);
-        posts.ScalePost();
+        posts.ScalePost(below: true);
     }
 
     // True when the door is seen through (WallPosts.SeesThrough): it's kept for drawing among the

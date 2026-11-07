@@ -49,12 +49,21 @@ internal sealed class WallPosts(
     }
 
 
-    // drawn: how many stories to draw, if not all HitStories (a door under its lintel draws one)
-    internal void ScalePost(int drawn = 0)
+    // drawn: how many stories to draw, if not all HitStories (a door under its lintel draws one);
+    // below: a wall that goes on under the floor, seen down a pit just in front of it
+    internal void ScalePost(int drawn = 0, bool below = false)
     {
         var upper = render.UpperSource ?? render.PostSource;
         QueuePost(render.PostHeight, 0, drawn > 0 ? drawn : render.HitStories, render.PostSource, render.PostOfs, upper, render.UpperSource != null ? render.UpperOfs : render.PostOfs,
             patch: render.PatchSource, patchofs: render.PatchOfs, patchstory: render.PatchStory, scrollrow: render.ScrollRow);
+        if (below && render.PitBeforeWall)
+        {
+            // its stories under the floor, in its own texture, down the pit
+            render.PitBeforeWall = false;
+            QueuePost(render.PostHeight, -map.StoriesBelow, 0, render.PostSource, render.PostOfs, render.PostSource, render.PostOfs,
+                patch: render.PatchSource, patchofs: render.PatchOfs, patchstory: render.PatchStory, scrollrow: render.ScrollRow,
+                cliptop: render.PitClipTop, clipbottom: render.PitClipBottom);
+        }
         render.UpperSource = null;
         render.PatchSource = null;
         render.ScrollRow = 0;
@@ -104,10 +113,12 @@ internal sealed class WallPosts(
 
     internal void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
         short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false,
-        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0, int scrollrow = 0)
+        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0, int scrollrow = 0, int cliptop = 0, int clipbottom = int.MaxValue)
     {
         if (render.PostCount == RenderState.MaxPosts)
             return;
+        render.PostClipTop[render.PostCount] = cliptop;
+        render.PostClipBottom[render.PostCount] = clipbottom;
         render.PostScrollRow[render.PostCount] = scrollrow;
         render.PostPatch[render.PostCount] = patch;
         render.PostPatchOfs[render.PostCount] = patchofs;
@@ -117,7 +128,7 @@ internal sealed class WallPosts(
         render.PostUnderTexture[render.PostCount] = undertexture;
         render.PostUnderFlat[render.PostCount] = underflat;
         render.PostHeights[render.PostCount] = height;
-        render.PostFirstStory[render.PostCount] = (byte)firststory;
+        render.PostFirstStory[render.PostCount] = (sbyte)firststory;
         render.PostStories[render.PostCount] = (byte)stories;
         render.PostLower[render.PostCount] = lower;
         render.PostLowerOfs[render.PostCount] = lowerofs;
@@ -138,12 +149,15 @@ internal sealed class WallPosts(
         while (render.PostCount > 0)
         {
             render.PostCount--;
+            int cliptop = render.PostClipTop[render.PostCount], clipbottom = render.PostClipBottom[render.PostCount];
             DrawPost(render.PixX, render.PostHeights[render.PostCount] >> 3, render.PostFirstStory[render.PostCount], render.PostStories[render.PostCount],
                 render.PostLower[render.PostCount], render.PostLowerOfs[render.PostCount], render.PostUpper[render.PostCount], render.PostUpperOfs[render.PostCount],
-                render.PostLight[render.PostCount], lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]), render.PostScrollRow[render.PostCount]);
+                render.PostLight[render.PostCount], lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]), render.PostScrollRow[render.PostCount],
+                cliptop, clipbottom);
             if (render.PostPatch[render.PostCount] is { } patch)
-                DrawPatch(render.PixX, render.PostHeights[render.PostCount] >> 3, render.PostStories[render.PostCount], patch, render.PostPatchOfs[render.PostCount],
-                    render.PostPatchStory[render.PostCount], render.PostLight[render.PostCount], lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]));
+                DrawPatch(render.PixX, render.PostHeights[render.PostCount] >> 3, render.PostFirstStory[render.PostCount], render.PostStories[render.PostCount], patch,
+                    render.PostPatchOfs[render.PostCount], render.PostPatchStory[render.PostCount], render.PostLight[render.PostCount],
+                    lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]), cliptop, clipbottom);
             if (render.PostUnderside[render.PostCount] != 0)
                 DrawUnderside(render.PixX, render.PostHeights[render.PostCount] >> 3, render.PostUnderside[render.PostCount] >> 3, render.PostUnderTexture[render.PostCount],
                     render.PostUnderFlat[render.PostCount]);
@@ -371,6 +385,84 @@ internal sealed class WallPosts(
         QueuePost(render.ArchHeight, 1, render.ArchStories, render.ArchTexture!, render.ArchOfs, render.ArchTexture!, render.ArchOfs, exitheight, render.ArchUnderside, render.ArchLight, render.ArchUnderFlat);
     }
 
+    /*
+    ====================
+    =
+    = Pits
+    =
+    = With the floor on a story above the first (story-level), walls carry on below it, and a pit
+    = tile (mapdefs flats pits) has no floor: looking down it, what's beyond its far edge shows
+    = below the floor line, in the rows the pit's floor would have covered. That's the pit's side
+    = under the floor beyond (open floor or a door's tile) or a wall's stories under the floor.
+    = What's past that edge is hidden behind it, so each post under the floor is clipped to the
+    = rows of the one pit in front of it. Rows no post covers are the pit's bottom: the floor pass
+    = draws its floor sky or the pit color there (SkyAndFlats.DrawFlats).
+    =
+    ====================
+    */
+
+    /// <summary>Sets up the pits for the column being traced: the view may be over one</summary>
+    internal void StartPits()
+    {
+        render.PitOpen = render.PitBeforeWall = false;
+        if (!render.PitsOn || !map.IsPit(render.FocalTx, render.FocalTy))
+            return;
+        render.PitOpen = true;
+        render.PitEntryHeight = short.MaxValue;
+        render.PitSideTexture = map.PitSide[map.TileIndex(render.FocalTx, render.FocalTy)];
+    }
+
+    /// <summary>
+    /// The trace crosses into (tilex, tiley) across the edge at (edgex, edgey); vertical says
+    /// it's an edge along x = constant. Entering a pit opens it; leaving one queues its side, or
+    /// leaves the rows for the wall it's about to hit (ScalePost's below).
+    /// </summary>
+    internal void CrossPitEdge(int tilex, int tiley, int edgex, int edgey, bool vertical)
+    {
+        render.PitBeforeWall = false;
+        if (!render.PitsOn || render.PastWall)
+            return;                     // past the nearest wall, the floor is out of sight
+
+        if (map.IsPit(tilex, tiley))
+        {
+            if (!render.PitOpen)
+            {
+                render.PitOpen = true;
+                render.PitEntryHeight = HeightAt(edgex, edgey);
+            }
+            render.PitSideTexture = map.PitSide[map.TileIndex(tilex, tiley)];
+            return;
+        }
+        if (!render.PitOpen)
+            return;
+        render.PitOpen = false;
+
+        // the rows under the floor line from this edge down to where the pit starts
+        short exitheight = HeightAt(edgex, edgey);
+        int cliptop = FloorRow(PostHalf(exitheight));
+        int clipbottom = render.PitEntryHeight == short.MaxValue ? render.ViewHeight - 1
+            : FloorRow(PostHalf(render.PitEntryHeight)) - 1;
+        if (cliptop > clipbottom || render.PitSideTexture is not { } side)
+            return;
+
+        var tile = map.TileMap[tilex, tiley];
+        if (tile == 0 || (tile & GameConstants.BitDoor) != 0)
+        {
+            // floor beyond the edge: the pit's side under it, lit from the pit
+            int ofs = vertical ? LintelColumn(edgey, render.XTileStep == -1) : LintelColumn(edgex, render.YTileStep == 1);
+            QueuePost(exitheight, -map.StoriesBelow, 0, side, ofs, side, ofs, light: WallLight(edgex, edgey),
+                cliptop: cliptop, clipbottom: clipbottom);
+            return;
+        }
+
+        render.PitBeforeWall = true;
+        render.PitClipTop = cliptop;
+        render.PitClipBottom = clipbottom;
+    }
+
+    // Half a story's height in pixels for a post height (as WallHeight), as DrawPost takes it
+    static int PostHalf(short height) => height >> 3 is > 0 and var half ? half : 100;
+
     // The height (as WallHeight) of a wall at (x, y)
     internal short HeightAt(int x, int y)
     {
@@ -427,10 +519,12 @@ internal sealed class WallPosts(
     /// above that. half is half a story's height in pixels; lowerofs and UpperOfs are the
     /// column to draw, times 64, as the trace finds it across a tile. Each texel is remapped
     /// through shade from shadeofs (a light row and fade step, see WL_SHADE.cs). scrollrow
-    /// moves the texels that many down (a scroller's, Rendering/Scrollers.cs).
+    /// moves the texels that many down (a scroller's, Rendering/Scrollers.cs). A firststory below
+    /// 0 is a story under the floor (story-level), from lower; only rows cliptop to clipbottom are
+    /// drawn (a post under the floor, the rows down the pit in front of it).
     /// </summary>
     internal void DrawPost(int x, int half, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
-        byte[] shade, int shadeofs, int scrollrow = 0)
+        byte[] shade, int shadeofs, int scrollrow = 0, int cliptop = 0, int clipbottom = int.MaxValue)
     {
         if (half <= 0) half = 100;
 
@@ -440,8 +534,8 @@ internal sealed class WallPosts(
         //
         int floor = FloorRow(half);
         int bottom = floor - 1 - firststory * 2 * half;
-        int top = floor - stories * 2 * half;
-        int y = Math.Min(bottom, render.ViewHeight - 1);
+        int top = Math.Max(floor - stories * 2 * half, cliptop);
+        int y = Math.Min(Math.Min(bottom, render.ViewHeight - 1), clipbottom);
         if (top < 0) top = 0;
         if (y < top) return;
         render.Cover(x, top, y);
@@ -466,8 +560,8 @@ internal sealed class WallPosts(
                 {
                     long s = t + scrollrow;     // the texel up the wall that's moved down to here
                     col = shade[shadeofs + (t < GameConstants.TextureSize
-                        ? lowerdata[lowercolumn + lowerheight - 1 - (int)(s % lowerheight)]
-                        : upperdata[uppercolumn + upperheight - 1 - (int)(s % upperheight)])];
+                        ? lowerdata[lowercolumn + lowerheight - 1 - Wrap(s, lowerheight)]
+                        : upperdata[uppercolumn + upperheight - 1 - Wrap(s, upperheight)])];
                     colt = t;
                 }
                 dest[y * pitch] = col;
@@ -484,33 +578,44 @@ internal sealed class WallPosts(
 
     const byte PatchMask = 0xff;        // a wall patch's see-through pixels, as a flat's
 
+    // s wrapped into 0 to size - 1, below 0 too (a texel under the floor)
+    static int Wrap(long s, int size)
+    {
+        int r = (int)(s % size);
+        return r < 0 ? r + size : r;
+    }
+
     /// <summary>
     /// Draws one screen column of a wall patch over the wall post just drawn (DrawPost), its
     /// texels laid out the same way: from the floor of story <paramref name="story"/> (1 up) for
-    /// as many stories as the patch is tall, or (story 0) on every story of the wall, repeating as
-    /// the wall's texture does. Its see-through pixels leave the wall showing.
+    /// as many stories as the patch is tall, or (story 0) on every story of the wall from
+    /// firststory (below 0 under the floor), repeating as the wall's texture does. Its see-through
+    /// pixels leave the wall showing. Only rows cliptop to clipbottom are drawn, as DrawPost.
     /// </summary>
-    internal void DrawPatch(int x, int half, int stories, TextureAsset patch, int ofs, int story, byte[] shade, int shadeofs)
+    internal void DrawPatch(int x, int half, int firststory, int stories, TextureAsset patch, int ofs, int story, byte[] shade, int shadeofs,
+        int cliptop = 0, int clipbottom = int.MaxValue)
     {
         if (half <= 0) half = 100;
 
         int height = patch.Height;
-        int first = story == 0 ? 0 : story - 1;
+        int first = story == 0 ? firststory : story - 1;
         int last = story == 0 ? stories : Math.Min(stories, first + (height + GameConstants.TextureSize - 1) / GameConstants.TextureSize);
-        if (first >= last)
+        if (first >= last || first < firststory)
             return;                     // on a story the wall doesn't reach
 
         int floor = FloorRow(half);
         int bottom = floor - 1 - first * 2 * half;
-        int top = floor - last * 2 * half;
-        int y = Math.Min(bottom, render.ViewHeight - 1);
+        int top = Math.Max(floor - last * 2 * half, cliptop);
+        int y = Math.Min(Math.Min(bottom, render.ViewHeight - 1), clipbottom);
         if (top < 0) top = 0;
         if (y < top) return;
 
-        // texels up from the patch's bottom, stepped as DrawPost steps the wall's
+        // texels up from the patch's bottom, stepped as DrawPost steps the wall's; on every story
+        // it repeats from the floor up, so under the floor it's in step with the stories above
         long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
         long t = num / half;
         long rem = num % half;
+        long phase = story == 0 ? (long)first * GameConstants.TextureSize : 0;
         int pitch = (int)video.BufferPitch;
 
         byte[] data = patch.RawData;
@@ -521,7 +626,7 @@ internal sealed class WallPosts(
             byte* dest = (byte*)render.VbufPtr + render.ScreenOfs + x;
             for (; y >= top; y--)
             {
-                long row = story == 0 ? t % height : t;
+                long row = story == 0 ? Wrap(t + phase, height) : t;
                 if (row < height)
                 {
                     byte pixel = data[column + height - 1 - (int)row];

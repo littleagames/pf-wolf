@@ -96,6 +96,7 @@ internal sealed class LevelSetup(
         // The level's game-info entry, then what its own file says (a UWMF level's), then the default map's
         map.LevelWallStories = Math.Clamp(mapInfo?.WallHeight ?? map.LevelDefaults.WallStories ?? engine.GetGameInfo().DefaultMap.WallHeight,
             1, GameConstants.MaxWallStories);
+        map.StoryLevel = Math.Clamp(mapInfo?.StoryLevel ?? engine.GetGameInfo().DefaultMap.StoryLevel, 1, GameConstants.MaxWallStories);
         skyAndFlats.LevelSky = mapInfo?.Sky ?? map.LevelDefaults.Sky ?? engine.GetGameInfo().DefaultMap.Sky;
         // the floor sky and how it's drawn come together, from the map or else the default map
         (skyAndFlats.LevelFloorSky, skyAndFlats.FloorSkyMirror) = mapInfo?.FloorSky is { } floorSky

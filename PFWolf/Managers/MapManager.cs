@@ -81,6 +81,15 @@ internal class MapManager
     /// <summary>How many 64 unit stories tall the level's walls are, where plane 3 doesn't say (tall walls; mapdefs wall-height)</summary>
     internal int LevelWallStories = 1;
 
+    /// <summary>
+    /// The story the player's floor is on (game-info story-level): walls carry on
+    /// <see cref="StoriesBelow"/> stories under the floor, seen down the pits (<see cref="PitSide"/>)
+    /// </summary>
+    internal int StoryLevel = 1;
+
+    /// <summary>How many stories walls go down below the floor</summary>
+    internal int StoriesBelow => StoryLevel - 1;
+
     private UInt16[][] mapsegs = new ushort[LevelPlanes][];
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
@@ -245,6 +254,19 @@ internal class MapManager
 
     /// <summary>Whether any tile has a ceiling sky, or a floor sky, of its own.</summary>
     internal bool HasCeilingSkies, HasFloorSkies;
+
+    /// <summary>
+    /// Each tile's pit (mapdefs flats pits, by its floor index): the texture on the pit's sides,
+    /// null for none. Indexed <see cref="TileIndex"/>; built with the flats. Only open floor is a
+    /// pit (<see cref="IsPit"/>).
+    /// </summary>
+    internal TextureAsset?[] PitSide = new TextureAsset?[MapConstants.ClassicMapArea];
+
+    /// <summary>Whether any tile is a pit</summary>
+    internal bool HasPits;
+
+    /// <summary>Whether the tile is a pit: open floor whose floor index is one of the mapdefs flats pits</summary>
+    internal bool IsPit(int x, int y) => HasPits && TileMap[x, y] == 0 && PitSide[TileIndex(x, y)] != null;
 
     private void ClearTileSkies()
     {
@@ -1061,6 +1083,9 @@ internal class MapManager
         animatedfloors.Clear();
         animatedceilings.Clear();
         ClearTileSkies();
+        PitSide = new TextureAsset?[MapArea];
+        HasPits = false;
+        var pits = GetMapData().Flats.Pits;
 
         // the skies tiles show, each named once
         var skyslots = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
@@ -1090,9 +1115,17 @@ internal class MapManager
                 CeilingSky[i] = SkySlot(TileSkyName(x, y, ceiling: true));
                 HasFloorSkies |= FloorSky[i] != 0;
                 HasCeilingSkies |= CeilingSky[i] != 0;
+                if (pits.Count > 0 && pits.TryGetValue(MapSpot(x, y, FlatPlane) & 0xff, out var side))
+                {
+                    PitSide[i] = PitTexture(Flat(side));
+                    HasPits |= PitSide[i] != null;
+                }
             }
     }
 
+    // A pit's side texture: an animation's first frame (pit sides don't animate)
+    private static TextureAsset? PitTexture(Asset? flat) =>
+        flat is AnimatedAsset<TextureAsset> animation ? animation.FrameAt(0) : flat as TextureAsset;
     /// <summary>
     /// The sky a tile shows through its ceiling (or floor) of its own: its flat-plane index's
     /// entry in the mapdefs flats skies (or floor-skies), through any A_ChangeTexture on the
@@ -1144,8 +1177,10 @@ internal class MapManager
         var flats = GetMapData().Flats;
         var table = ceiling ? flats.Ceiling : flats.Floor;
         var defaultName = ceiling ? defaultceiling : defaultfloor;
-        // an index that opens onto a sky of its own doesn't get the default
+        // an index that opens onto a sky of its own doesn't get the default, and a pit has no floor
         bool skyIndex = (ceiling ? flats.Skies : flats.FloorSkies).ContainsKey(index);
+        if (!ceiling && flats.Pits.ContainsKey(index))
+            return null;
         var name = table.TryGetValue(index, out var listed) && FindFlat(listed) != null ? listed
             : !skyIndex && FindFlat(defaultName) != null ? defaultName : null;
         return name == null ? null : ChangedTexture(x, y, name);
@@ -1158,6 +1193,8 @@ internal class MapManager
         int index = ceiling ? spot >> 8 : spot & 0xff;
         var name = FlatTextureName(x, y, ceiling);
         var sky = TileSkyName(x, y, ceiling);
+        if (!ceiling && GetMapData().Flats.Pits.TryGetValue(index, out var side))
+            return $"{index} pit, sides {side}{(sky == null ? "" : $", sky {sky}")}";
         var shown = name != null && FindFlat(name) != null ? name : sky != null ? null : "(color)";
         return $"{index} {shown}{(sky == null ? "" : shown == null ? $"sky {sky}" : $" over sky {sky}")}";
     }

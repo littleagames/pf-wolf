@@ -10,7 +10,7 @@ namespace PFWolf.Rendering;
 /// </summary>
 internal sealed class RenderState
 {
-    internal const int MaxPosts = 16;
+    internal const int MaxPosts = 24;
 
     //
     // projection: the view window and how the world is projected into it
@@ -75,7 +75,9 @@ internal sealed class RenderState
     //
     internal int PostCount;
     internal readonly short[] PostHeights = new short[MaxPosts];
-    internal readonly byte[] PostFirstStory = new byte[MaxPosts];
+    internal readonly sbyte[] PostFirstStory = new sbyte[MaxPosts];  // below 0: stories under the floor
+    internal readonly int[] PostClipTop = new int[MaxPosts];         // the rows it's drawn in: below the floor, only down a pit
+    internal readonly int[] PostClipBottom = new int[MaxPosts];
     internal readonly byte[] PostStories = new byte[MaxPosts];
     internal readonly TextureAsset[] PostLower = new TextureAsset[MaxPosts];
     internal readonly int[] PostLowerOfs = new int[MaxPosts];
@@ -170,6 +172,18 @@ internal sealed class RenderState
     internal bool ArchUnderFlat;        // ArchUnderside is the tile's ceiling flat
     internal int ArchOfs;
     internal byte[] ArchLight;          // its face's light row: where the trace entered it
+
+    //
+    // the pit the trace is passing over (mapdefs flats pits), when walls go below the floor
+    // (story-level): looking down it shows the stories under the floor of what's beyond its far
+    // edge, a pit side or a wall, in the rows its floor would have covered
+    //
+    internal bool PitsOn;               // this frame: the level has pits and stories below
+    internal bool PitOpen;
+    internal short PitEntryHeight;      // where the trace entered it (short.MaxValue: the view is over it)
+    internal TextureAsset? PitSideTexture;      // the side texture of the pit tile last crossed
+    internal bool PitBeforeWall;        // the trace just left a pit for a wall: its lower stories show in
+    internal int PitClipTop, PitClipBottom;     // these rows
 
     internal readonly TextureAsset NoTexture;    // what a post shows with no texture: nothing
 

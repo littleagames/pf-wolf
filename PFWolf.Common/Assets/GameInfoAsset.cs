@@ -1085,6 +1085,15 @@ public record DefaultMapInfo
     public int WallHeight { get; init; } = 1;
 
     /// <summary>
+    /// The story the player's floor is on (1-8): walls carry on that many stories less one below
+    /// the floor, seen down the level's pits (mapdefs flats pits). 1 for none below.
+    /// </summary>
+    public int StoryLevel { get; init; } = 1;
+
+    /// <summary>#RRGGBB at the bottom of a pit with no floor sky (mapdefs flats pits)</summary>
+    public string PitColor { get; init; } = "#000000";
+
+    /// <summary>
     /// What a message's {floor-text} says, for a map without its own floor-text (Blake Stone's
     /// barrier switches' "ON FLOOR {floor}"); null for nothing
     /// </summary>
@@ -2085,6 +2094,15 @@ public record MapInfo
     /// How many 64 unit stories tall the walls are; null uses the default map's
     /// </summary>
     public int? WallHeight { get; init; } = null;
+
+    /// <summary>
+    /// The story the player's floor is on (1-8), walls carrying on below it down the pits; null
+    /// uses the default map's
+    /// </summary>
+    public int? StoryLevel { get; init; } = null;
+
+    /// <summary>#RRGGBB at the bottom of a pit with no floor sky; null uses the default map's</summary>
+    public string? PitColor { get; init; } = null;
 
     /// <summary>
     /// Graphic (or wall texture) drawn in place of the ceiling color; null uses the default map's

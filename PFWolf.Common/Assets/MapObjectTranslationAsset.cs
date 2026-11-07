@@ -92,6 +92,7 @@ public record MapObjectTranslationAsset : Asset
             {
                 Floor = Merged(Flats.Floor, local.Flats.Floor), Ceiling = Merged(Flats.Ceiling, local.Flats.Ceiling),
                 Skies = Merged(Flats.Skies, local.Flats.Skies), FloorSkies = Merged(Flats.FloorSkies, local.Flats.FloorSkies),
+                Pits = Merged(Flats.Pits, local.Flats.Pits),
             },
             Floors = local.Floors.AreaCount is { } count ? Floors with { AreaCount = count } : Floors,
         };
@@ -266,6 +267,14 @@ public record MapFlatsTranslation
     /// level's floor-sky-mirror says.
     /// </summary>
     public Dictionary<int, string> FloorSkies { get; set; } = new();
+
+    /// <summary>
+    /// Floor indices that are pits, by index, with the texture on their sides: a tile with one
+    /// has no floor, and looks down past the walls' stories below the player's (game-info
+    /// story-level) to the tile's floor sky, else the level's, else the pit color. The sides are
+    /// what shows under the floor beyond the pit's edge. Only a look: things cross a pit as floor.
+    /// </summary>
+    public Dictionary<int, string> Pits { get; set; } = new();
 
     /// <summary>
     /// Floors that hurt whoever stands on them (Midnight Assault's electrified water), by the

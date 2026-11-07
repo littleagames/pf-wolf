@@ -25,6 +25,8 @@ internal sealed class LevelEditCommands(
     {
         console.Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{GameConstants.MaxWallStories}]", WallHeightCommand, Cheat | InLevel);
+        console.Register("storylevel", "The story the level's floor is on, until the level is left or reloaded: walls carry on one less story than that below the floor, seen down the pits (mapdefs flats pits).",
+            $"storylevel [1-{GameConstants.MaxWallStories}]", StoryLevelCommand, Cheat | InLevel);
         console.Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
             "sky [name|none]", SkyCommand, InLevel);
         console.Register("weather", "Makes it rain or snow (a game-info weather-types name, or rain, heavy-rain, snow or blizzard) until the level is left or reloaded; none for clear weather.",
@@ -312,6 +314,14 @@ internal sealed class LevelEditCommands(
         if (args.Length > 0)
             map.LevelWallStories = ParseInt(args[0], 1, GameConstants.MaxWallStories);
         console.Print($"Walls are {map.LevelWallStories} {(map.LevelWallStories == 1 ? "story" : "stories")} tall");
+    }
+
+    internal void StoryLevelCommand(string[] args)
+    {
+        if (args.Length > 0)
+            map.StoryLevel = ParseInt(args[0], 1, GameConstants.MaxWallStories);
+        console.Print($"The floor is on story {map.StoryLevel}: walls go {map.StoriesBelow} {(map.StoriesBelow == 1 ? "story" : "stories")} below it"
+            + (map.HasPits ? "" : " (the level has no pits to see them down)"));
     }
 
     internal void SkyCommand(string[] args)

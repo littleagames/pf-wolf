@@ -419,6 +419,13 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       opening); **(never tried)** standing in the doorway looking up, and a door set into no wall.
 - [ ] **(never tried)** A pushwall carrying its height; diagonals with heights.
 
+**Story level and pits** (mapdefs flats `pits:`, game-info `story-level`, `storylevel` cheat)
+- [ ] Story level 3 with a pit in E1M1's first corridor: walls carry on down, the pit's side under
+      a door's tile, standing on the pit, pitch down, story level 1 as a black hole (headless
+      screenshots, 2026-11-07). **(never tried)** walking up to the edge and back (no seams,
+      nothing under solid floor), two pits in a row with floor between, a low eye height.
+- [ ] **(never tried)** A pit with a floor sky (floor-skies on the same index); a pit-color.
+
 **Diagonal walls**
 - [ ] Slide along a diagonal face; automap both styles.
 - [ ] **(never tried)** Enemy sight and hitscan through the open half; rockets hitting the face;
