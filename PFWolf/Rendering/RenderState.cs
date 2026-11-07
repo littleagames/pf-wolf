@@ -131,6 +131,10 @@ internal sealed class RenderState
         SeeThroughLowerOfs = new int[width * MaxSeeThrough];
         SeeThroughUpperOfs = new int[width * MaxSeeThrough];
         SeeThroughLight = new byte[width * MaxSeeThrough][];
+
+        PitSpanCount = new int[width];
+        PitSpanTop = new int[width * MaxPitSpans];
+        PitSpanBottom = new int[width * MaxPitSpans];
     }
 
     /// <summary>Column x's walls painted rows top to bottom (outside WallRefresh, with no room made, not kept)</summary>
@@ -184,6 +188,12 @@ internal sealed class RenderState
     internal TextureAsset? PitSideTexture;      // the side texture of the pit tile last crossed
     internal bool PitBeforeWall;        // the trace just left a pit for a wall: its lower stories show in
     internal int PitClipTop, PitClipBottom;     // these rows
+
+    // each column's pits' rows (as CrossPitEdge clips to), for grates drawn over what's down them;
+    // column x's are from x * MaxPitSpans
+    internal const int MaxPitSpans = 8;
+    internal int[] PitSpanCount = [];
+    internal int[] PitSpanTop = [], PitSpanBottom = [];
 
     internal readonly TextureAsset NoTexture;    // what a post shows with no texture: nothing
 

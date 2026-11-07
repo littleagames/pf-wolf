@@ -50,6 +50,7 @@ internal sealed class AutomapDrawing(
         ["AutomapItem"] = "#20AAFF",
         ["AutomapDecor"] = "#8D8D8D",
         ["AutomapWallSprite"] = "#8D8D8D",
+        ["AutomapPit"] = "#555555",
         ["AutomapGrid"] = "#004040",
         ["AutomapTitle"] = "#FFFF55",
         ["AutomapStats"] = "#C2C2C2",
@@ -131,6 +132,7 @@ internal sealed class AutomapDrawing(
 
         if (automap.ShowGrid && automap.Zoom >= AutomapMinGridZoom)
             DrawAutomapGrid(view);
+        DrawAutomapPits(view, reveal);
 
         if (automap.Style == AutomapStyle.Graphic)
         {
@@ -165,6 +167,33 @@ internal sealed class AutomapDrawing(
             AutomapLine(view, x, firstY, x, lastY + 1, color, pen: 1);
         for (int y = firstY; y <= lastY + 1; y++)
             AutomapLine(view, first, y, last + 1, y, color, pen: 1);
+    }
+
+    /// <summary>
+    /// Seen pits (mapdefs flats pits), as a square set in from the tile's edges: a hole in the
+    /// floor, which the player walks over all the same.
+    /// </summary>
+    void DrawAutomapPits(AutomapView view, bool reveal)
+    {
+        if (!map.HasPits)
+            return;
+        var (firstX, lastX) = AutomapReach(view.CenterX, map.MapWidth, view);
+        var (firstY, lastY) = AutomapReach(view.CenterY, map.MapHeight, view);
+        string color = AutomapColor("AutomapPit");
+        const float In = 0.2f, Out = 0.8f;
+
+        for (int y = firstY; y <= lastY; y++)
+        {
+            for (int x = firstX; x <= lastX; x++)
+            {
+                if (!map.IsPit(x, y) || !reveal && (map.Seen[x, y] & SeenFlags.Floor) == 0)
+                    continue;
+                AutomapLine(view, x + In, y + In, x + Out, y + In, color);
+                AutomapLine(view, x + In, y + Out, x + Out, y + Out, color);
+                AutomapLine(view, x + In, y + In, x + In, y + Out, color);
+                AutomapLine(view, x + Out, y + In, x + Out, y + Out, color);
+            }
+        }
     }
 
     /// <summary>

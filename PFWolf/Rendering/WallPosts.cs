@@ -405,6 +405,8 @@ internal sealed class WallPosts(
     internal void StartPits()
     {
         render.PitOpen = render.PitBeforeWall = false;
+        if ((uint)render.PixX < (uint)render.PitSpanCount.Length)
+            render.PitSpanCount[render.PixX] = 0;
         if (!render.PitsOn || !map.IsPit(render.FocalTx, render.FocalTy))
             return;
         render.PitOpen = true;
@@ -445,8 +447,15 @@ internal sealed class WallPosts(
         if (cliptop > clipbottom || render.PitSideTexture is not { } side)
             return;
 
-        var tile = map.TileMap[tilex, tiley];
-        if (tile == 0 || (tile & GameConstants.BitDoor) != 0)
+        // where the pit's rows are, for a grate over it (SkyAndFlats.DrawGrates)
+        if ((uint)render.PixX < (uint)render.PitSpanCount.Length && render.PitSpanCount[render.PixX] < RenderState.MaxPitSpans)
+        {
+            int at = render.PixX * RenderState.MaxPitSpans + render.PitSpanCount[render.PixX]++;
+            render.PitSpanTop[at] = cliptop;
+            render.PitSpanBottom[at] = clipbottom;
+        }
+
+        if (FloorBeyondPit(tilex, tiley, vertical))
         {
             // floor beyond the edge: the pit's side under it, lit from the pit
             int ofs = vertical ? LintelColumn(edgey, render.XTileStep == -1) : LintelColumn(edgex, render.YTileStep == 1);
@@ -458,6 +467,26 @@ internal sealed class WallPosts(
         render.PitBeforeWall = true;
         render.PitClipTop = cliptop;
         render.PitClipBottom = clipbottom;
+    }
+
+    /// <summary>
+    /// Whether a pit's edge into (tilex, tiley), crossed as CrossPitEdge says, has floor on the
+    /// far side (so the pit's side shows under it) rather than a wall standing on the edge: open
+    /// floor, a door's tile, a moving pushwall's (a block sliding on the floor, not a wall going
+    /// down), or a diagonal entered by its open half (its face stands back from the edge).
+    /// </summary>
+    internal bool FloorBeyondPit(int tilex, int tiley, bool vertical)
+    {
+        var tile = map.TileMap[tilex, tiley];
+        if (tile == 0 || (tile & GameConstants.BitDoor) != 0 || tile == GameConstants.BitWall)
+            return true;
+        var shape = map.WallShapes[tilex, tiley];
+        if (shape == WallShape.Square)
+            return false;
+        var edge = vertical
+            ? render.XTileStep == 1 ? SeenFlags.WestFace : SeenFlags.EastFace
+            : render.YTileStep == 1 ? SeenFlags.NorthFace : SeenFlags.SouthFace;
+        return (Diagonals.DiagonalSolidEdges(shape) & edge) == 0;
     }
 
     // Half a story's height in pixels for a post height (as WallHeight), as DrawPost takes it

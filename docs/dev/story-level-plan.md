@@ -68,9 +68,18 @@ Sprites need nothing: they stand on the floor line and clip against the nearest 
 
 ## Phases
 
-Phase 1 done 2026-11-07 (StoryLevelTests; headless screenshots in E1M1). Pushwalls and diagonals
-already take the wall path's lower stories, but untested; a diagonal entered by its open half and
-a moving pushwall's gap are phase 2. Pit-side textures don't animate or follow A_ChangeTexture.
+Phase 1 done 2026-11-07 (StoryLevelTests; headless screenshots in E1M1). Pit-side textures don't
+animate or follow A_ChangeTexture.
+
+Phase 2 done 2026-11-07. A moving pushwall is a block sliding on the floor: a pit beside it shows
+its side under it, not the pushwall's stories below (a stopped one is a wall again). A diagonal
+entered by its open half has floor before its face: the pit's side. Wall sprites are actors, so
+they float over a pit as things do. See-through doors needed nothing (the trace goes on past them,
+and they're drawn over what's behind). Grates: a `floor:` texture on a pit index; DrawFlats draws
+it over the pit's bottom, and DrawGrates over the pit's rows the walls below covered (per-column pit
+spans in RenderState). The automap marks seen pits with an inset square (theme color AutomapPit).
+Seen by headless screenshots: grate, automap, diagonal past a pit, arch over a pit, eye height 10.
+Not seen: a moving pushwall beside a pit, a see-through door by a pit.
 
 1. **Story level, pits, walls below (game).** `story-level` / `pit-color` on game-info maps
    (Common) → set in LevelSetup; `storylevel [1-8]` console cheat (not saved, as `wallheight`).

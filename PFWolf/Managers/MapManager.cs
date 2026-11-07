@@ -262,8 +262,8 @@ internal class MapManager
     /// </summary>
     internal TextureAsset?[] PitSide = new TextureAsset?[MapConstants.ClassicMapArea];
 
-    /// <summary>Whether any tile is a pit</summary>
-    internal bool HasPits;
+    /// <summary>Whether any tile is a pit, and whether any pit has a floor texture over it (a grate)</summary>
+    internal bool HasPits, HasGrates;
 
     /// <summary>Whether the tile is a pit: open floor whose floor index is one of the mapdefs flats pits</summary>
     internal bool IsPit(int x, int y) => HasPits && TileMap[x, y] == 0 && PitSide[TileIndex(x, y)] != null;
@@ -1084,7 +1084,7 @@ internal class MapManager
         animatedceilings.Clear();
         ClearTileSkies();
         PitSide = new TextureAsset?[MapArea];
-        HasPits = false;
+        HasPits = HasGrates = false;
         var pits = GetMapData().Flats.Pits;
 
         // the skies tiles show, each named once
@@ -1119,6 +1119,7 @@ internal class MapManager
                 {
                     PitSide[i] = PitTexture(Flat(side));
                     HasPits |= PitSide[i] != null;
+                    HasGrates |= PitSide[i] != null && FloorFlat[i] != null;
                 }
             }
     }
@@ -1179,9 +1180,10 @@ internal class MapManager
         var defaultName = ceiling ? defaultceiling : defaultfloor;
         // an index that opens onto a sky of its own doesn't get the default, and a pit has no floor
         bool skyIndex = (ceiling ? flats.Skies : flats.FloorSkies).ContainsKey(index);
-        if (!ceiling && flats.Pits.ContainsKey(index))
-            return null;
+        // (only its own floor: entry, a grate over it)
+        bool pitIndex = !ceiling && flats.Pits.ContainsKey(index);
         var name = table.TryGetValue(index, out var listed) && FindFlat(listed) != null ? listed
+            : pitIndex ? null
             : !skyIndex && FindFlat(defaultName) != null ? defaultName : null;
         return name == null ? null : ChangedTexture(x, y, name);
     }
@@ -1194,7 +1196,7 @@ internal class MapManager
         var name = FlatTextureName(x, y, ceiling);
         var sky = TileSkyName(x, y, ceiling);
         if (!ceiling && GetMapData().Flats.Pits.TryGetValue(index, out var side))
-            return $"{index} pit, sides {side}{(sky == null ? "" : $", sky {sky}")}";
+            return $"{index} pit, sides {side}{(name == null ? "" : $", grate {name}")}{(sky == null ? "" : $", sky {sky}")}";
         var shown = name != null && FindFlat(name) != null ? name : sky != null ? null : "(color)";
         return $"{index} {shown}{(sky == null ? "" : shown == null ? $"sky {sky}" : $" over sky {sky}")}";
     }

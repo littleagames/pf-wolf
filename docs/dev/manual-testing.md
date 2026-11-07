@@ -425,6 +425,10 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       screenshots, 2026-11-07). **(never tried)** walking up to the edge and back (no seams,
       nothing under solid floor), two pits in a row with floor between, a low eye height.
 - [ ] **(never tried)** A pit with a floor sky (floor-skies on the same index); a pit-color.
+- [ ] A grate (`floor:` texture on a pit index) over a pit, the automap's pit marks, a diagonal
+      past a pit, an arch over a pit, eye height 10 (headless screenshots, 2026-11-07).
+      **(never tried)** a moving pushwall beside a pit, a see-through door by a pit, walking over a
+      grate.
 
 **Diagonal walls**
 - [ ] Slide along a diagonal face; automap both styles.

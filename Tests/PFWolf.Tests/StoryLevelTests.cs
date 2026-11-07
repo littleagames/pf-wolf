@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using PFWolf.Assets;
 using PFWolf.Constants;
+using PFWolf.Enums;
 
 namespace PFWolf.Tests;
 
@@ -265,6 +266,102 @@ public class StoryLevelTests
         _screen[(Height - 1) * Width] = 200;
         _sky.DrawFlats(new TextureAsset?[MapConstants.ClassicMapArea], 3, Horizon, Height - 1, _sky.FloorHalves, behind: true, pits: pits);
         Assert.That(At(0, Height - 1), Is.EqualTo(200));
+    }
+
+    // Into a pit on tile 12, then out of it into tile 13, heading east
+    private void CrossPitInto13()
+    {
+        _posts.StartPits();
+        _posts.CrossPitEdge(12, 10, 12 * Tile, 10 * Tile + Tile / 2, vertical: true);
+        _posts.CrossPitEdge(13, 10, 13 * Tile, 10 * Tile + Tile / 2, vertical: true);
+    }
+
+    [Test]
+    public void A_Moving_Pushwall_Beyond_A_Pit_Slides_On_Floor_So_The_Pits_Side_Shows()
+    {
+        // Arrange
+        var side = Numbered();
+        MakePit(12, 10, side);
+        _map.TileMap[13, 10] = GameConstants.BitWall;
+
+        // Act
+        CrossPitInto13();
+
+        // Assert
+        Assert.That((_render.PostCount, _render.PostLower[0], _render.PitBeforeWall), Is.EqualTo((1, side, false)));
+    }
+
+    [TestCase(WallShape.SolidNE, true)]      // heading east, its west edge is open: floor, then the face
+    [TestCase(WallShape.SolidSE, true)]
+    [TestCase(WallShape.SolidNW, false)]     // its west edge is solid: a wall on the edge
+    [TestCase(WallShape.SolidSW, false)]
+    public void A_Diagonal_Entered_By_Its_Open_Half_Has_Floor_Before_Its_Face(WallShape shape, bool floor)
+    {
+        // Arrange
+        MakePit(12, 10, Numbered());
+        _map.TileMap[13, 10] = 1;
+        _map.WallShapes[13, 10] = shape;
+
+        // Act
+        CrossPitInto13();
+
+        // Assert: the pit's side, or the rows left for the wall's stories below
+        Assert.That((_render.PostCount, _render.PitBeforeWall), Is.EqualTo(floor ? (1, false) : (0, true)));
+    }
+
+    [Test]
+    public void A_Pits_Rows_Are_Kept_For_A_Grate()
+    {
+        // Arrange
+        MakePit(12, 10, Numbered());
+
+        // Act
+        CrossPitInto13();
+
+        // Assert: the same rows its side is clipped to
+        Assert.That(_render.PitSpanCount[0], Is.EqualTo(1));
+        Assert.That((_render.PitSpanTop[0], _render.PitSpanBottom[0]), Is.EqualTo((_render.PostClipTop[0], _render.PostClipBottom[0])));
+        _posts.StartPits();
+        Assert.That(_render.PitSpanCount[0], Is.EqualTo(0));        // a new column starts with none
+    }
+
+    [Test]
+    public void A_Grate_Is_Drawn_Over_Whats_Down_The_Pit_But_Its_See_Through_Pixels()
+    {
+        // Arrange: every tile a pit; a grate of color 7 with see-through pixels in its left half
+        var data = Enumerable.Repeat((byte)7, 64 * 64).ToArray();
+        Array.Fill(data, SkyAndFlats.FlatMask, 0, 32 * 64);
+        var grate = new TextureAsset { Width = 64, Height = 64, RawData = data };
+        var pits = Enumerable.Repeat<TextureAsset?>(Numbered(), MapConstants.ClassicMapArea).ToArray();
+        var flats = Enumerable.Repeat<TextureAsset?>(grate, MapConstants.ClassicMapArea).ToArray();
+        _render.PitSpanCount[0] = 1;
+        (_render.PitSpanTop[0], _render.PitSpanBottom[0]) = (20, 30);
+        _sky.SetupFlatColumns();
+
+        // Act
+        _sky.DrawGrates(flats, pits);
+
+        // Assert: only column 0's pit rows, and of them only where the grate isn't see-through
+        Assert.That(At(0, 19), Is.EqualTo(200));
+        Assert.That(At(0, 31), Is.EqualTo(200));
+        var drawn = Enumerable.Range(20, 11).Select(y => At(0, y)).ToList();
+        Assert.That(drawn.All(pixel => pixel is 7 or 200), Is.True);
+        Assert.That(drawn, Does.Contain((byte)7));
+        Assert.That(Enumerable.Range(0, Height).All(y => At(1, y) == 200), Is.True);
+    }
+
+    [Test]
+    public void A_Grate_With_No_Opaque_Pixels_Leaves_The_Pit_As_It_Is()
+    {
+        var grate = new TextureAsset { Width = 64, Height = 64, RawData = Enumerable.Repeat(SkyAndFlats.FlatMask, 64 * 64).ToArray() };
+        var pits = Enumerable.Repeat<TextureAsset?>(Numbered(), MapConstants.ClassicMapArea).ToArray();
+        _render.PitSpanCount[0] = 1;
+        (_render.PitSpanTop[0], _render.PitSpanBottom[0]) = (20, 30);
+        _sky.SetupFlatColumns();
+
+        _sky.DrawGrates(Enumerable.Repeat<TextureAsset?>(grate, MapConstants.ClassicMapArea).ToArray(), pits);
+
+        Assert.That(_screen.All(pixel => pixel == 200), Is.True);
     }
 
     [Test]

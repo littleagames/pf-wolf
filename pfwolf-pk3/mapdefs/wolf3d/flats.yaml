@@ -18,7 +18,8 @@
 # Things cross it as floor; it's only a look. With game-info story-level above 1, walls carry on
 # that many stories less one below the floor, and looking down a pit shows them, and the pit's
 # sides under the floor beyond its edge. Its bottom is the tile's floor sky (floor-skies: on the
-# same index), else the level's floor sky, else game-info pit-color (black).
+# same index), else the level's floor sky, else game-info pit-color (black). A floor: texture on
+# a pit's index is a grate over it: its see-through pixels show the pit.
 #
 # Keep the whole table in this one file: a mod's flats.yaml merges over it entry by entry.
 flats:
