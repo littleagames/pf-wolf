@@ -227,8 +227,12 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] **(never tried)** Wounding, blowback, pain attack, SMART running away, interrogating an
       informant (hint text), killing an informant warning.
 - [ ] Barriers: switch toggles linked barriers, walk through when off.
-- [ ] **(never tried)** Arc barrier shock, re-activated barrier blocks again, barrier state after
-      save/load.
+- [x] Arc barrier shock (4 points, 1 in 16 a tic from each barrier in reach, none while off),
+      re-activated barrier blocks again, barrier state after save/load both ways (2026-11-06,
+      headless on AOG MAP02's row at 11..21,27..28: BlakeBarrierGameTests, toggled by
+      game.trigger as a switch would). **(never tried)** the player standing in a barrier's tile
+      as it comes back on, and an enemy standing in one (bstone's DoActor hurts it, 500 a hit;
+      we have nothing for that).
 - [ ] Food units: full, no token, vend, out of order.
 - [ ] Elevator floor select; red card unlocks the next floor; teleporters; hub floors keep their
       state when revisited.
