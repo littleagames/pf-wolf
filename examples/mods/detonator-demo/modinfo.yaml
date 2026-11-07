@@ -1,0 +1,4 @@
+name: Detonator Demo
+version: "1.0"
+description: A small floor for Blake Stone - Planet Strike (replacing the Transport Arrival Area) to try the fission detonator blowing doors open - a plain door, a locked door, a one-way door and one out of reach round the drop spot by the security cube.
+game-packs: [planetstrike]

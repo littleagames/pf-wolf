@@ -2023,6 +2023,54 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-blake-demo.ps1
 With cheats on, `actors` lists who the bio-techs turned out to be, and `lua print(game.trigger(1,
 'A_ToggleActive'))` throws the barrier switch from the console.
 
+## Detonator Demo (`mods/detonator-demo`)
+
+A test floor for **Blake Stone: Planet Strike**: the fission detonator blowing open the doors
+round it (`A_BlastDoors`, Planet Strike's BlastNearDoors). It replaces the Transport Arrival Area.
+
+```
+PFWolf.exe --game planetstrike --file detonator-demo
+```
+
+It needs Planet Strike's data files (the VSI set). As in Planet Strike, a detonator can only be
+dropped within two tiles of the floor's security cube, in its area, while the next floor is still
+locked, so there's one blast a floor; the doors are all round the spot it's dropped on.
+
+- **The arrival room,** where you start: a fission detonator beside you to pick up.
+- **The hall** west, to a red floor tile: the drop spot. The security cube is in the alcove two
+  tiles east of it. Stand on the spot and press 7 (or hold Use with nothing to open) to drop the
+  detonator, then run back east: it goes off after four seconds, and the blast hurts.
+- **Round the spot:** north, a plain door, which is blown open for good (half the time it leaves
+  rubble in the doorway); south, a door locked with the red card, and west, a one-way door, which
+  both stay shut, as locked and one-way doors aren't blasted; and two tiles east, in the north
+  wall, a plain door out of the blast's reach, which is left as it was. The cube breaks and the
+  transporter's security goes off.
+
+`doors` in the console says which doors are "blown open"; save and load to see they stay that
+way.
+
+### What's in it
+
+- `maps/MAP01.wad`: the level, in Planet Strike's mapdefs ids (pfwolf-pk3's `mapdefs/planetstrike`
+  over `mapdefs/blake`): wall 42 (planet wall); doors 91 (metal, east-west) and 100 (one-way,
+  passed going east); things 22 the player start (facing west), 486 a fission detonator, 177 the
+  security cube, and 55 on the south door's tile, its red-card lock. Floor codes 109-113 are areas
+  1-5: the hall, the cube's alcove and the arrival room share area 1. The flat plane gives grey
+  floors and ceilings, and the drop spot a red floor.
+- `game-info.yaml`: the floor's name, merged into Planet Strike's game-info (it keeps its place in
+  the floors' hub, its music and shading).
+- `modinfo.yaml`: `game-packs: [planetstrike]`, so it only loads in Planet Strike.
+
+The level is made by `tools/make-detonator-demo.ps1` (the layout is an ASCII drawing in it). Edit
+it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-detonator-demo.ps1
+```
+
+With cheats on, `lua print(game.trigger(1, 'A_DropDetonator', 'PlasmaDetonatorArmed',
+'SecurityCube', 'PlasmaDetonator'))` drops the detonator where you stand, as the 7 key does.
+
 ## Arena Demo (`mods/arena-demo`)
 
 A **multiplayer arena** of its own for Wolfenstein 3D, *Twin Keeps*, outside the Multiplayer mod:

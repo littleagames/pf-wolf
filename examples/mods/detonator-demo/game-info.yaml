@@ -1,0 +1,6 @@
+# Merged into Planet Strike's game-info.yaml: the Transport Arrival Area (MAP01) keeps its place
+# in the floors' hub (cluster 1, floor-number 0, the teleporter's floor list), its music and its
+# shading; the mod gives it a name of its own on the status bar and the teleporter map.
+maps:
+  MAP01:
+    name: "DETONATOR TEST AREA"

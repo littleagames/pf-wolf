@@ -369,8 +369,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       Checked 2026-10-27 headless on PS MAP01 (`summon PlasmaDetonatorArmed` beside doors): the
       doors beside two went open for good, one left rubble; the locked door 54,36 stayed shut,
       and a door two tiles off wasn't touched. Only the detonator blasts doors, as in bstone
-      (its only BlastNearDoors call). **(never tried)** by eye: the doorway's explosion; a
-      one-way door left shut; a blown door after save/load.
+      (its only BlastNearDoors call). 2026-11-06, headless with the Detonator Demo mod
+      (DetonatorDemoGameTests): a plain door beside it blown open, a one-way and a red-locked one
+      left shut, one two tiles off untouched, the cube broken, and the blown door still open after
+      a save and load. **(never tried)** by eye: the doorway's explosion and rubble, dropping it
+      with the 7 key, and walking through the blown door.
 - [x] No firing while Goldfire morphs; firing again once he's morphed. Checked 2026-10-27 on
       PS MAP20 (summoned, `killall`, fire tapped throughout): no shot from his death until
       GoldfireMorphed came on, 139 tics (2 s at 70 a second, as bstone's 60 + 8 x 10), then
@@ -757,6 +760,11 @@ can reach), not played by hand.
       the status bar, every actor spawns, and the switch's action turns the barrier off. **(never
       tried)**: talking to the bio-techs, buying from the food units, throwing the switch by hand,
       the red card opening Floor 2 on the elevator panel, and the level's colors.
+- [ ] Detonator Demo (`--game planetstrike --file detonator-demo`, 2026-11-06): headless
+      (DetonatorDemoGameTests), the detonator picked up, dropped on the red spot, and only the
+      plain door beside it blown open, still so after a save and load. **(never tried)**: the
+      whole thing by hand in the window (pick up, 7 to drop, run, the blast and the doorway's
+      explosion), the briefing before it on a new game, and the teleporter after the cube breaks.
 - [ ] Arena Demo (`--file arena-demo`): headless with `addplayer`, `match` found both flags at
       their bases, the four control points and the two hill spots. **(never tried)**: picking
       Twin Keeps in the lobby; a real game over the LAN in each mode (Horde's enemies at the
