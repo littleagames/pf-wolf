@@ -184,11 +184,18 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         // ALREADY IN A GAME?
         //
         if (session.InGame)
+        {
+            // A game with one episode comes straight here from the menu, which HandleMenu faded
+            // out before calling us: the question goes over that menu, faded back in (as bstone
+            // asks Planet Strike's in the main menu), not over a black screen
+            if (singleEpisode)
+                draw.MenuFadeIn();
             if (loop.Confirm($"$CURGAME".ToLanguageText(language)) == 0)
             {
                 draw.MenuFadeOut();
                 return 0;
             }
+        }
 
         // The episode's level, on its level select (Midnight Assault's Dog Tag and Challenge
         // Missions): only the open ones can be picked; Esc goes back to the episodes

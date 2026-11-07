@@ -357,6 +357,10 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Cloaked cyborg shimmer and hit frame.
 - [ ] **(never tried)** Door triggers 158–160 (smart switches) in play.
 - [ ] Teleporter, detonator, gold morph, ending.
+- [x] New Mission from the menu during a game asks "Continuing past this point..." over the main
+      menu (it was a black screen: the one-mission path skipped the menu that fades back in).
+      Checked 2026-11-06 in the window: No goes back to the menu, Yes on to the skills; Spear's
+      question shows over its main menu the same way; AOG's still comes over the mission menu.
 - [x] The teleporter map warps you out and in, as a warp wall does (bstone's ex_transported).
       Checked 2026-10-27, floor 0 (panel 29,63) to Bio-Tech Labs: the view fades back in after
       the map, "transporting out", it turns and fizzles out, "Get Ready, Blake!", then the new
