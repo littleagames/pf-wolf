@@ -91,6 +91,10 @@ internal sealed class RayTrace(
             render.TexDelta = 0;
             render.HitTile = map.TileIndexOrNone(render.FocalTx, render.FocalTy);
             render.ColumnHit = render.PastWall = render.ArchOpen = false;
+            // nothing in front of the sprites until a wall's drawn here: a trace that ends on a
+            // wall with no texture (the solid edge round an open map) draws none, and mustn't
+            // leave the depth an earlier frame had
+            render.WallHeight[render.PixX] = 0;
             render.ColumnTallest = 0;
             render.ColumnTop = render.ViewHeight;
             render.SeeThroughCount[render.PixX] = 0;
