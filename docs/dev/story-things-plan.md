@@ -100,6 +100,26 @@ Sprites on the player's story still clip against the nearest wall, so story 1 is
 shots: E1M1's corpse at the bottom of a drop on story 2; a plant and two lamps on the Rooftops
 Demo's street, the lamps hidden by the bridge's deck but for their tops.
 
+Phase 3 done 2026-11-08 (ThingStoriesTests). ActorAt[] stays the player's story's. A story with
+things off the player's story gets a grid of its own (MapManager.StoryGrid) for its solid things
+and enemies, and `StorySolid(x, y, story)` says what's solid there: a block taking the story in
+(the spans), a door's tile, a moving pushwall's, the map's edge. `ActorOn(x, y, story)` puts them
+together as ActorAt[] has it, so Monster's walking (TryWalk, CheckSide, CheckDiag, CanPassTile for
+A*, Blake Stone's patrol checks and ClipMove, the step aside, rising, a Spectre's return) reads its
+own story through `TileEntry`, and MarkActorTile / UnmarkActorTile(monster) mark its story's grid.
+The player's movement, projectiles and doors read ActorAt[] alone, so they don't feel anything off
+the player's story; an enemy off it isn't stopped by the players (MoveObj). Things spawned by an
+actor (death drops, A_Replace, a morph) take its story; SpawnThing takes a story. The grids aren't
+saved: a load (and `story`, `thingstory`: MapManager.RebuildStoryGrids, MoveToStory) puts their
+things back. `actors` shows a thing's story when it's off the player's. Checked headless: E1M1
+on story 2 with `wallheight 1`, two patrollers moved to story 1 (`thingstory 1`) walk their paths
+tile for tile as they do on the player's story, and the third stops at the door it opens there.
+
+Approximations: an enemy off the player's story keeps the area of the tile it last had one on (a
+wall tile it walks on top of has none), so sound and sleep go by that; chasing heads for the
+player's tile, which may not be on its story's floor (it gets as near as it can). An A_BlockTile
+mark off the player's story isn't saved.
+
 ## Later
 
 - Things moving between stories: stairs and lifts (with the player's), enemies that fly up and

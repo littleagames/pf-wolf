@@ -763,7 +763,7 @@ internal partial record BlakeMonster : Monster
             return !Blocked(TileX + dx, TileY) && !Blocked(TileX, TileY + dy)
                 && CheckDiag(x, y) && CheckDiag(TileX + dx, TileY) && CheckDiag(TileX, TileY + dy);
 
-        switch (MapManager.ActorAt[x, y])
+        switch (TileEntry(x, y))
         {
             case Wall or BlockingActor:
                 return false;
@@ -771,7 +771,7 @@ internal partial record BlakeMonster : Monster
                 return HasFlag("PHASEDOORS")
                     || !HasFlag("NODOORS") && (!HasFlag("NOLOCKEDDOORS") || !DoorObjects[door.DoorNumber].IsLocked);
             default:
-                return !MapManager.IsShootableActorAt(x, y);
+                return !MapManager.IsShootableActorAt(x, y, Story);
         }
     }
 
@@ -875,7 +875,7 @@ internal partial record BlakeMonster : Monster
             int tx = cx >> (int)MapConstants.TileShift, ty = cy >> (int)MapConstants.TileShift;
             if (!MapManager.InMap(tx, ty))
                 return false;
-            switch (MapManager.ActorAt[tx, ty])
+            switch (TileEntry(tx, ty))
             {
                 case Wall or BlockingActor:
                     return false;

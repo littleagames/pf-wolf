@@ -113,8 +113,7 @@ internal sealed class LevelEditCommands(
         map.SetMapSpot(x, y, MapManager.StoryPlane, (ushort)set);
         int story = map.ThingStory(x, y);
         var moved = map.GetActors().Where(a => a is not Entities.Actors.PlayerPawn && !a.IsRemoved && a.TileX == x && a.TileY == y).ToList();
-        foreach (var actor in moved)
-            actor.Story = story == map.Story ? 0 : story;
+        map.MoveToStory(moved, story);
         console.Print($"Tile {x},{y}: things stand on story {story}{(set == 0 ? " (the floor under them)" : "")}; {moved.Count} moved");
     }
 
@@ -124,6 +123,7 @@ internal sealed class LevelEditCommands(
         {
             map.Story = ParseInt(args[0], 1, GameConstants.MaxWallStories);
             map.ApplyStory();
+            map.RebuildStoryGrids();        // things on other stories: the player's new one's in ActorAt[]
         }
         console.Print($"The player is on story {map.Story}; walls run up to story {map.LevelWallStories}");
     }

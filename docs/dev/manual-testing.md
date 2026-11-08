@@ -1003,6 +1003,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       Rooftops Demo's street hidden behind the bridge. **(never tried)** a wall sprite off the
       player's story, a thing over the player's head (`thingstory 5`), the automap's outlines,
       a see-through door in front of a thing below.
+- [ ] Enemies on their own story (story-things-plan phase 3): E1M1's patrollers on story 1 under
+      the player on story 2 (`wallheight 1`) walking as on the player's story, stopped by a door
+      (headless `actors`, 2026-11-08). **(never tried)** a guard on the
+      Rooftops Demo's street (`thingstory 1`) walking under the roofs and the bridge and not through
+      a door, the player walking over it on the roofs, a barrel on the street not blocking the
+      player above, `story` changed with guards on two stories, a save and load with a guard on the
+      street (it's marked there again), a guard killed on the street dropping its clip there.
 - [ ] Stories in the editor: the 3D view of MAP01 on story 2 (a mod's game-info), the door and
       things a story up on the door's frame (UI Automation screenshot, 2026-11-08). **(never
       tried)** typing 3-5, 1-2,4-8, 9 and 5-3 in the heights plane's Stories box (the value and the

@@ -408,15 +408,17 @@ internal sealed class Missiles(
     /// <summary>A_BlockTile: the actor's tile blocks movement, as a solid thing's does</summary>
     internal void BlockTile(Entities.Actors.Actor ob)
     {
-        if (map.ActorAt[ob.TileX, ob.TileY] == null)
-            map.ActorAt[ob.TileX, ob.TileY] = new BlockingActor();
+        var grid = map.GridOf(ob);      // on its own story
+        if (grid[ob.TileX, ob.TileY] == null)
+            grid[ob.TileX, ob.TileY] = new BlockingActor();
     }
 
     /// <summary>A_UnblockTile: the actor's tile no longer blocks (if a solid thing was all that blocked it)</summary>
     internal void UnblockTile(Entities.Actors.Actor ob)
     {
-        if (map.ActorAt[ob.TileX, ob.TileY] is BlockingActor and not WallSpriteBlocker)
-            map.ActorAt[ob.TileX, ob.TileY] = null;
+        var grid = map.GridOf(ob);
+        if (grid[ob.TileX, ob.TileY] is BlockingActor and not WallSpriteBlocker)
+            grid[ob.TileX, ob.TileY] = null;
     }
 
     /// <summary>

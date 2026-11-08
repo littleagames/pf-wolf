@@ -378,6 +378,7 @@ internal class MapManager
         Spotvis = new bool[MapWidth, MapHeight];
         Seen = new SeenFlags[MapWidth, MapHeight];
         ActorAt = new Actor?[MapWidth, MapHeight];
+        storygrids.Clear();
 
         // Every actor lives in _actors and nothing else clears this list, so reloading a level
         // (death with lives left, replaying a level in a new game, etc.) would otherwise pile
@@ -517,8 +518,10 @@ internal class MapManager
             if (!thing.OnSkill(_difficulty) || !InMap(thing.TileX, thing.TileY))
                 continue;
 
+            // its own story, not its tile's plane 6 (the object plane's thing's)
             var actor = SpawnThing(thing.TileX, thing.TileY,
-                new MapActorTranslation { Class = thing.Class, Angles = thing.Angle, Patrol = thing.Patrol ? 1 : 0 });
+                new MapActorTranslation { Class = thing.Class, Angles = thing.Angle, Patrol = thing.Patrol ? 1 : 0 },
+                story: ThingStory(thing.TileX, thing.TileY, thing.Story));
             if (actor == null)
             {
                 if (missingclasses.Add(thing.Class))
@@ -527,9 +530,6 @@ internal class MapManager
             }
             if (thing.Ambush)
                 actor.RuntimeFlags |= ObjFlags.Ambush;
-            // its own story, not its tile's plane 6 (the object plane's thing's)
-            int story = ThingStory(thing.TileX, thing.TileY, thing.Story);
-            actor.Story = story == Story ? 0 : story;
 
             // Off its tile's middle: where the level puts it (a patroller is on its way already)
             bool centered = Math.Abs(thing.X - thing.TileX - 0.5) < 0.01 && Math.Abs(thing.Y - thing.TileY - 0.5) < 0.01;
@@ -1872,21 +1872,22 @@ internal class MapManager
     internal MapTriggerTranslation? GetTrigger(int x, int y) =>
         GetMapData().Triggers.TryGetValue(MapSpot(x, y, 1), out var trigger) ? trigger : null;
 
-    public void SpawnThing(int tilex, int tiley, string className) =>
-        SpawnThing(tilex, tiley, new MapActorTranslation { Class = className });
+    public void SpawnThing(int tilex, int tiley, string className, int story = 0) =>
+        SpawnThing(tilex, tiley, new MapActorTranslation { Class = className }, story: story);
 
     /// <param name="countKill">
     /// Whether a killable enemy adds to the level's kill total: not for one appearing mid-level
     /// out of another that already counted for it (an alien out of its canister)
     /// </param>
-    public Entities.Actors.Actor? SpawnThing(int tilex, int tiley, MapActorTranslation thing, bool countKill = true)
+    /// <param name="story">The story it stands on (1 to 8); 0 for its tile's (<see cref="ThingStory(int, int)"/>)</param>
+    public Entities.Actors.Actor? SpawnThing(int tilex, int tiley, MapActorTranslation thing, bool countKill = true, int story = 0)
     {
         // MinSkill gates enemy availability by skill (its place in game-info's skills, as the
         // legacy ScanInfoPlane's gd_medium/gd_hard checks per tile-number range); always 0 for
         // decorations/pickups, so this is a no-op there.
         if (thing.MinSkill > _difficulty)
             return string.IsNullOrEmpty(thing.Else) ? null
-                : SpawnThing(tilex, tiley, thing with { Class = thing.Else, MinSkill = 0, Else = "" }, countKill);
+                : SpawnThing(tilex, tiley, thing with { Class = thing.Else, MinSkill = 0, Else = "" }, countKill, story);
 
         var actorMetaData = assetManager.Value.GetActorMetadata();
 
@@ -1929,7 +1930,8 @@ internal class MapManager
         // that never patrols would never notice the player if area 0 isn't connected.
         builtActor.AreaNumber = SpawnArea(tilex, tiley);
         builtActor.Tag = GetTag(tilex, tiley);
-        int story = ThingStory(tilex, tiley);
+        if (story is < 1 or > GameConstants.MaxWallStories)
+            story = ThingStory(tilex, tiley);
         builtActor.Story = story == Story ? 0 : story;     // 0: on the player's
 
         // Angles: 0=east, 45=northeast, 90=north ... 315=southeast, in ObjDir order
@@ -2056,10 +2058,8 @@ internal class MapManager
         // through `parent:`) make their whole tile impassable to the player, enemies and
         // projectiles, as the original's `block` statics did. The blocking marker is the same
         // "something is here" entry walls and doors use, so every ActorAt[,] check sees it.
-        if (builtActor.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
-            ActorAt[tilex, tiley] = new BlockingActor();
-        else if (WallSprites.IsWallSprite(builtActor) && !WallSprites.IsPassable(builtActor) && ActorAt[tilex, tiley] == null)
-            ActorAt[tilex, tiley] = new WallSpriteBlocker();
+        // On another story, its story's grid takes it (StoryGrid).
+        MarkSolidThing(builtActor, tilex, tiley);
 
         _actors.AddLast(builtActor);
         ActorAdded?.Invoke(builtActor);
@@ -2141,6 +2141,7 @@ internal class MapManager
         builtActor.Distance = source.Distance;
         builtActor.Dir = source.Dir;
         builtActor.AreaNumber = source.AreaNumber;
+        builtActor.Story = source.Story;
         // Hitler stuck-with-nodir fix (vanilla's A_HitlerMorph): the morphed
         // actor must remain markable even if the dying source had NonMark set.
         builtActor.RuntimeFlags = (source.RuntimeFlags & ~ObjFlags.NonMark) | ObjFlags.Shootable;
@@ -2225,10 +2226,12 @@ internal class MapManager
             session.GameState.TreasureTotal--;
             session.GameState.PointsTotal = Math.Max(session.GameState.PointsTotal - ItemWorth(old), 0);
         }
-        if (ActorAt[x, y] is BlockingActor || ActorAt[x, y] is ActorMark mark && ReferenceEquals(mark.Who, old))
-            ActorAt[x, y] = null;
+        var grid = GridOf(old);
+        if (grid[x, y] is BlockingActor || grid[x, y] is ActorMark mark && ReferenceEquals(mark.Who, old))
+            grid[x, y] = null;
         int angles = old.Dir == ObjDir.NoDir ? -1 : (int)old.Dir * 45;
-        var replaced = SpawnThing(x, y, new MapActorTranslation { Class = className, Angles = angles }, countKill: false);
+        var replaced = SpawnThing(x, y, new MapActorTranslation { Class = className, Angles = angles }, countKill: false,
+            story: StoryOf(old));
         if (replaced != null)
             replaced.Tag = old.Tag;
         return replaced;
@@ -2372,11 +2375,13 @@ internal class MapManager
             .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
 
     /// <summary>True if a living (Shootable) actor that's in the way occupies the tile</summary>
-    internal bool IsShootableActorAt(int tilex, int tiley)
+    internal bool IsShootableActorAt(int tilex, int tiley, int story = 0)
     {
+        if (story == 0)
+            story = Story;          // the player's
         foreach (var actor in _actors)
         {
-            if (!actor.IsRemoved && actor.TileX == tilex && actor.TileY == tiley && IsSolidActor(actor))
+            if (!actor.IsRemoved && actor.TileX == tilex && actor.TileY == tiley && IsSolidActor(actor) && StoryOf(actor) == story)
                 return true;
         }
 
@@ -2511,7 +2516,7 @@ internal class MapManager
         // It's lifted off its tile while it thinks, and put back on the one it ends up on
         bool marks = ob is Entities.Actors.Monster && (ob.RuntimeFlags & (ObjFlags.NonMark | ObjFlags.NeverMark)) == 0;
         if (marks)
-            UnmarkActorTile(ob.TileX, ob.TileY);
+            UnmarkActorTile((Entities.Actors.Monster)ob);
 
         // Mirrors vanilla DoActor (WL_PLAY.C): a frame that holds forever (-1) only
         // runs its Think each tic; Next is never consulted again. So does one with no countdown
@@ -2552,7 +2557,10 @@ internal class MapManager
         if (ob.RuntimeFlags.Has(ObjFlags.NeverMark))
             return;
 
-        ref var spot = ref ActorAt[ob.TileX, ob.TileY];
+        bool ours = OnPlayersStory(ob);
+        if (!ours && StorySolid(ob.TileX, ob.TileY, ob.Story))
+            return;                 // inside a block on its story
+        ref var spot = ref (ours ? ActorAt : StoryGrid(ob.Story))[ob.TileX, ob.TileY];
         if (spot is Wall or BlockingActor)
             return;                 // never on a wall or a solid thing (or a wall sprite's tile)
         if (ob.RuntimeFlags.Has(ObjFlags.NonMark) && spot != null)
@@ -2567,8 +2575,158 @@ internal class MapManager
             ActorAt[tilex, tiley] = null;
     }
 
+    /// <summary>
+    /// Clears the entry on an enemy's tile, on its own story: <see cref="UnmarkActorTile(int, int)"/>
+    /// on the player's, else whoever's marked there on its story's grid
+    /// </summary>
+    internal void UnmarkActorTile(Entities.Actors.Monster ob)
+    {
+        if (OnPlayersStory(ob))
+            UnmarkActorTile(ob.TileX, ob.TileY);
+        else if (storygrids.TryGetValue(ob.Story, out var grid) && grid[ob.TileX, ob.TileY] is ActorMark)
+            grid[ob.TileX, ob.TileY] = null;
+    }
+
     /// <summary>The enemy marked on a tile (MarkActorTile), if any</summary>
     internal Entities.Actors.Monster? ActorMarkAt(int tilex, int tiley) => (ActorAt[tilex, tiley] as ActorMark)?.Who;
+
+    /*
+    =============================================================================
+
+                                OTHER STORIES
+
+    ActorAt[] is the player's story's: its walls (TileMap), doors, solid things and enemies. Each
+    other story that has a thing on it gets a grid of its own for its solid things and enemies
+    (StoryGrid), and what's solid on it comes from the tiles' blocks (StorySolid): a block that
+    takes the story in, a door's tile (its frame below, its lintel above: doors work on the
+    player's story only), a moving pushwall's, and the map's edge. ActorOn puts the two together
+    as ActorAt has it, so an enemy on another story walks its own floor with the same checks.
+
+    =============================================================================
+    */
+
+    // Each other story's solid things and enemies, by story (made when one's needed)
+    private readonly Dictionary<int, Actor?[,]> storygrids = [];
+
+    // What ActorOn gives for a tile solid on another story
+    private static readonly Wall StoryWall = new();
+
+    /// <summary>The grid of a story other than the player's (made on first use)</summary>
+    internal Actor?[,] StoryGrid(int story)
+    {
+        if (!storygrids.TryGetValue(story, out var grid) || grid.GetLength(0) != MapWidth || grid.GetLength(1) != MapHeight)
+            storygrids[story] = grid = new Actor?[MapWidth, MapHeight];
+        return grid;
+    }
+
+    /// <summary>The grid an actor's marked on: ActorAt[] on the player's story, else its story's (<see cref="StoryGrid"/>)</summary>
+    internal Actor?[,] GridOf(Entities.Actors.Actor actor) => OnPlayersStory(actor) ? ActorAt : StoryGrid(actor.Story);
+
+    /// <summary>
+    /// Whether a tile is solid on a story: on the player's, TileMap; on another, one of its blocks
+    /// takes the story in, or it's a door's or a moving pushwall's tile, or on the map's edge
+    /// </summary>
+    internal bool StorySolid(int x, int y, int story)
+    {
+        if (story == 0 || story == Story)
+            return TileMap[x, y] != 0;
+        if (OnEdge(x, y) || (TileMap[x, y] & GameConstants.BitDoor) != 0 || TileMap[x, y] == GameConstants.BitWall)
+            return true;
+        int i = TileIndex(x, y);
+        return (uint)i < (uint)SpanStop.Length
+            && (SpanStop[i] != 0 && SpanStart[i] <= story && story <= SpanStop[i]
+                || UpperSpanStop[i] != 0 && UpperSpanStart[i] <= story && story <= UpperSpanStop[i]);
+    }
+
+    /// <summary>
+    /// What's on a tile on a story (0: the player's), as ActorAt[] has it on the player's: a Wall
+    /// where it's solid, else a solid thing or an enemy marked there, else null
+    /// </summary>
+    internal Actor? ActorOn(int x, int y, int story)
+    {
+        if (story == 0 || story == Story)
+            return ActorAt[x, y];
+        if (StorySolid(x, y, story))
+            return StoryWall;
+        return storygrids.TryGetValue(story, out var grid) && x < grid.GetLength(0) && y < grid.GetLength(1) ? grid[x, y] : null;
+    }
+
+    /// <summary>What's on a tile on an actor's story, as <see cref="ActorOn"/></summary>
+    internal Actor? ActorOn(int x, int y, Entities.Actors.Actor who) => ActorOn(x, y, who.Story);
+
+    // A solid thing's (or a blocking wall sprite's) mark on its tile, on its own story
+    private void MarkSolidThing(Entities.Actors.Actor thing, int tilex, int tiley)
+    {
+        bool ours = OnPlayersStory(thing);
+        var grid = ours ? ActorAt : StoryGrid(thing.Story);
+        if (thing.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
+        {
+            if (ours || !StorySolid(tilex, tiley, thing.Story))
+                grid[tilex, tiley] = new BlockingActor();
+        }
+        else if (WallSprites.IsWallSprite(thing) && !WallSprites.IsPassable(thing) && grid[tilex, tiley] == null
+            && (ours || !StorySolid(tilex, tiley, thing.Story)))
+            grid[tilex, tiley] = new WallSpriteBlocker();
+    }
+
+    /// <summary>
+    /// Puts every thing off the player's story back on its story's grid (after the player's story
+    /// changes, a thing's story is set, or a game's loaded); one now on the player's story (its own
+    /// story is the player's new one) is marked in ActorAt[], and one that's left it is taken out
+    /// </summary>
+    internal void RebuildStoryGrids()
+    {
+        storygrids.Clear();
+        foreach (var actor in _actors)
+        {
+            if (actor.IsRemoved || actor is Entities.Actors.PlayerPawn || actor.Story == 0 || !InMap(actor.TileX, actor.TileY))
+                continue;
+            int x = actor.TileX, y = actor.TileY;
+            if (actor is Entities.Actors.Monster monster)
+            {
+                if (ActorAt[x, y] is ActorMark mark && ReferenceEquals(mark.Who, monster) && !OnPlayersStory(monster))
+                    ActorAt[x, y] = null;           // it was on the player's old story
+                MarkActorTile(monster);
+            }
+            else if (OnPlayersStory(actor))
+            {
+                if (ActorAt[x, y] == null)
+                    MarkSolidThing(actor, x, y);
+            }
+            else
+            {
+                // A solid thing that was on the player's old story: off ActorAt[], unless another's there
+                if (ActorAt[x, y] is BlockingActor and not WallSpriteBlocker && IsSolidThing(actor)
+                    && !_actors.Any(a => !a.IsRemoved && a.TileX == x && a.TileY == y && OnPlayersStory(a) && IsSolidThing(a)))
+                    ActorAt[x, y] = null;
+                MarkSolidThing(actor, x, y);
+            }
+        }
+    }
+
+    /// <summary>Puts things on a story (1 to 8), each marked on its new story's grid (or ActorAt[], the player's)</summary>
+    internal void MoveToStory(IReadOnlyList<Entities.Actors.Actor> things, int story)
+    {
+        foreach (var thing in things)
+        {
+            if (thing is Entities.Actors.Monster monster)
+                UnmarkActorTile(monster);
+            thing.Story = story == Story ? 0 : story;
+        }
+        RebuildStoryGrids();
+        foreach (var thing in things)
+        {
+            if (!OnPlayersStory(thing) || !InMap(thing.TileX, thing.TileY))
+                continue;
+            if (thing is Entities.Actors.Monster monster)
+                MarkActorTile(monster);
+            else if (ActorAt[thing.TileX, thing.TileY] == null)
+                MarkSolidThing(thing, thing.TileX, thing.TileY);
+        }
+    }
+
+    private static bool IsSolidThing(Entities.Actors.Actor thing) =>
+        thing is not Entities.Actors.Monster && thing.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase));
 
     /*
     =============================================================================
@@ -2827,9 +2985,14 @@ internal class MapManager
             restored[i].Shooter = At(level.Links[i].Shooter);
         }
 
-        // Saves don't hold the enemies' ActorAt[] marks: put them back where they stand
+        // Saves don't hold the enemies' ActorAt[] marks: put them back where they stand (and
+        // the things on other stories on theirs: they aren't in ActorAt[])
+        storygrids.Clear();
         foreach (var monster in restored.OfType<Entities.Actors.Monster>())
             MarkActorTile(monster);
+        foreach (var thing in restored)
+            if (thing is not Entities.Actors.Monster && !OnPlayersStory(thing) && InMap(thing.TileX, thing.TileY))
+                MarkSolidThing(thing, thing.TileX, thing.TileY);
 
         // The player has to think first, as it does after a normal level load (with several,
         // they're already first, in the order they think)

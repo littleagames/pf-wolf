@@ -49,11 +49,14 @@ internal partial record Monster : Actor
     private protected bool CheckLine(Actor ob, bool shot = false) => World.LineOfSight.CheckLine(ob, shot);
     private protected bool CheckLine(Actor ob, Actor to, bool shot = false) => World.LineOfSight.CheckLine(ob, to, shot);
     private protected bool CheckLine(int fromX, int fromY, Actor to, bool shot = false) => World.LineOfSight.CheckLine(fromX, fromY, to, shot);
-    private protected bool CheckDiag(int x, int y) => World.LineOfSight.CheckDiag(x, y);
+    private protected bool CheckDiag(int x, int y) => Gameplay.LineOfSight.ClearForDiagonal(TileEntry(x, y));
+
+    // What's on a tile on its story, as ActorAt[] has it on the player's (MapManager.ActorOn)
+    private protected PFWolf.Actor? TileEntry(int x, int y) => Story == 0 ? MapManager.ActorAt[x, y] : MapManager.ActorOn(x, y, Story);
     private protected DoorObject[] DoorObjects => World.Doors.DoorObjList;
     private protected int LastDoorObject => World.Doors.LastDoorObj;
     private protected void OpenDoor(int door) => World.Doors.OpenDoor(door, this);
-    private protected void SpawnItemAt(string itemClass, int tilex, int tiley) => World.Map.SpawnThing(tilex, tiley, itemClass);
+    private protected void SpawnItemAt(string itemClass, int tilex, int tiley) => World.Map.SpawnThing(tilex, tiley, itemClass, World.Map.StoryOf(this));
     private protected void PlayActorSound(Actor ob, string key) => World.ActorSounds.PlayActorSound(ob, key);
     private protected void PlaySoundAtActor(string s, Actor ob) => World.PositionalSounds.PlaySoundLocActor(s, ob);
     private protected string ActorTag(Actor actor) => World.HudMessageDrawing.ActorTag(actor);
@@ -223,7 +226,7 @@ internal partial record Monster : Actor
     /// blocker it's kept off; a door it can open or drift through (not a locked one for a
     /// NOLOCKEDDOORS actor, none for NODOORS). Other actors don't count: they move on.
     /// </summary>
-    internal bool CanPassTile(int x, int y) => InMap(x, y) && !Blocked(x, y) && MapManager.ActorAt[x, y] switch
+    internal bool CanPassTile(int x, int y) => InMap(x, y) && !Blocked(x, y) && TileEntry(x, y) switch
     {
         null or ActorMark => true,
         Wall or BlockingActor => false,
@@ -233,7 +236,7 @@ internal partial record Monster : Actor
     };
 
     /// <summary>Whether it could step onto (or past) a tile diagonally: open floor, as its diagonal walk needs (no door)</summary>
-    internal bool CanPassDiagonally(int x, int y) => InMap(x, y) && !Blocked(x, y) && MapManager.ActorAt[x, y] is null or ActorMark;
+    internal bool CanPassDiagonally(int x, int y) => InMap(x, y) && !Blocked(x, y) && TileEntry(x, y) is null or ActorMark;
 
     Func<int, int, bool>? _canPass, _canPassDiagonally;
 
@@ -285,8 +288,10 @@ internal partial record Monster : Actor
             default: GameEngineManager.Quit("MoveObj: bad dir!"); break;
         }
 
-        // A NOTSOLID actor (Blake Stone's electro-spheres) goes right through the player
-        if ((AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0) && !HasFlag("NOTSOLID"))
+        // A NOTSOLID actor (Blake Stone's electro-spheres) goes right through the player, and
+        // one on another story under or over them
+        if ((AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0) && !HasFlag("NOTSOLID")
+            && MapManager.OnPlayersStory(this))
         {
             // Any player in the way stops it, not just the one it's after
             foreach (var pawn in MapManager.Players)
@@ -426,7 +431,7 @@ internal partial record Monster : Actor
 
         // A door tile has no area of its own, so a PHASEDOORS actor passing through one
         // keeps the area it came from, and so does one crossing a floor code that isn't an area
-        if (MapManager.ActorAt[TileX, TileY] is not Door && MapManager.ValidArea(MapManager.FloorCode(TileX, TileY)))
+        if (TileEntry(TileX, TileY) is not Door && MapManager.ValidArea(MapManager.FloorCode(TileX, TileY)))
             AreaNumber = (byte)(MapManager.FloorCode(TileX, TileY) - MapManager.Floors.AreaTile);
         Distance = (int)MapConstants.TileGlobal;
         SyncPosition();
@@ -438,7 +443,7 @@ internal partial record Monster : Actor
 
     internal int CheckSide(int x, int y, ref int doornumtile)
     {
-        var temp = MapManager.ActorAt[x, y];
+        var temp = TileEntry(x, y);
         if (temp is ActorMark mark)
             return MapManager.IsSolidActor(mark.Who) ? 0 : 2;     // another enemy's there (alive, it's in the way)
 
@@ -794,7 +799,7 @@ internal partial record Monster : Actor
     // Open floor nothing stands on (nor the player shoving it)
     private bool OpenForStep(int x, int y, PlayerPawn shover) =>
         x > 0 && x < MapManager.MapWidth - 1 && y > 0 && y < MapManager.MapHeight - 1
-        && MapManager.TileMap[x, y] == 0 && MapManager.ActorAt[x, y] is null
+        && !MapManager.StorySolid(x, y, Story) && TileEntry(x, y) is null
         && !(shover.TileX == x && shover.TileY == y);
 
     private void StartWalking()
@@ -1011,9 +1016,11 @@ internal partial record Monster : Actor
     // no player standing over it
     private bool HasRoomToRise()
     {
-        if (MapManager.TileMap[TileX, TileY] != 0 || MapManager.ActorAt[TileX, TileY] is not (null or ActorMark)
-            || MapManager.IsShootableActorAt(TileX, TileY))
+        if (MapManager.StorySolid(TileX, TileY, Story) || TileEntry(TileX, TileY) is not (null or ActorMark)
+            || MapManager.IsShootableActorAt(TileX, TileY, Story))
             return false;
+        if (Story != 0 && Story != MapManager.Story)
+            return true;        // the players are on their own story
 
         long centerX = (TileX << (int)MapConstants.TileShift) + MapConstants.TileGlobal / 2;
         long centerY = (TileY << (int)MapConstants.TileShift) + MapConstants.TileGlobal / 2;
@@ -1625,7 +1632,7 @@ internal partial record Monster : Actor
             TileY = (byte)tiley;
             SyncPosition();
         }
-        MapManager.UnmarkActorTile(TileX, TileY);
+        MapManager.UnmarkActorTile(this);
 
         // Points for the player's kills (and a trap's), not for one enemy killing another, nor
         // for killing one again that a reviver brought back
@@ -2106,7 +2113,7 @@ internal partial record Monster : Actor
     {
         if (RetreatX >= 0)
         {
-            MapManager.UnmarkActorTile(TileX, TileY);
+            MapManager.UnmarkActorTile(this);
             SetPosition(RetreatX, RetreatY);        // its think marks it there again, as it lives
         }
         (RetreatX, RetreatY) = (-1, -1);
@@ -2506,6 +2513,8 @@ internal partial record Monster : Actor
     {
         foreach (var pawn in MapManager.Players)
         {
+            if (!MapManager.OnPlayersStory(this))
+                break;          // the players are on their own story
             var deltax = X - pawn.X;
             var deltay = Y - pawn.Y;
             if (deltax >= -MinActorDist && deltax <= MinActorDist && deltay >= -MinActorDist && deltay <= MinActorDist)
@@ -2520,7 +2529,7 @@ internal partial record Monster : Actor
         for (var y = yl; y <= yh; y++)
             for (var x = xl; x <= xh; x++)
             {
-                if (MapManager.ActorAt[x, y] != null || MapManager.IsShootableActorAt(x, y))
+                if (TileEntry(x, y) != null || MapManager.IsShootableActorAt(x, y, Story))
                     return;
             }
 

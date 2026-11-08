@@ -91,7 +91,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
 
         // Out of sight and out of the way
         biter.RuntimeFlags = (biter.RuntimeFlags & ~ObjFlags.Shootable) | ObjFlags.NonMark;
-        map.UnmarkActorTile(biter.TileX, biter.TileY);
+        map.UnmarkActorTile(biter);
         GoTo(biter, LatchedState);
     }
 

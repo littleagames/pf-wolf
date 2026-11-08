@@ -162,6 +162,8 @@ internal sealed class DebugCommands(
                 line.Append("  active");
             if (actor.Tag != 0)
                 line.Append($"  tag {actor.Tag}");
+            if (!map.OnPlayersStory(actor))
+                line.Append($"  story {actor.Story}");     // off the player's story
             if (MapManager.IsEnemy(actor) && map.InMonsterKeepOut(actor.TileX, actor.TileY))
                 line.Append("  keep-out");      // on a floor enemies are kept off (Blake Stone's elevators)
             line.Append(targets.WallSpriteDescription(actor));

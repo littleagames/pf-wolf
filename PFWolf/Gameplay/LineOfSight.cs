@@ -12,7 +12,10 @@ namespace PFWolf.Gameplay;
 internal sealed class LineOfSight(MapManager map, Doors doors, GameSession session, Func<long, long, long, long, bool> wallSpriteBlocks)
 {
     // A diagonal step is blocked by a wall/door (ActorAt[,]) or by a living actor marked on the tile.
-    internal bool CheckDiag(int x, int y) => map.ActorAt[x, y] switch
+    internal bool CheckDiag(int x, int y) => ClearForDiagonal(map.ActorAt[x, y]);
+
+    /// <summary>Whether a tile's entry (ActorAt[], or MapManager.ActorOn's for another story) lets a diagonal step by</summary>
+    internal static bool ClearForDiagonal(Actor? spot) => spot switch
     {
         null => true,
         ActorMark mark => !Managers.MapManager.IsSolidActor(mark.Who),
