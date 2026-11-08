@@ -14,6 +14,7 @@ default-map:
   # floor-sky: RiverValley
   # story: 3                  # the player's story: a tile's block (plane 3) taking it in is solid
   # wall-height: 8            # walls with no block of their own run from story 1 to this one
+  # pushwall-stories: above   # which of a pushwall's stories move: all, above (the player's and up) or story
   # shading:
   #   fade-color: "#000000"
   #   fade-start: 2

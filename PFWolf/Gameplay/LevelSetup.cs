@@ -90,6 +90,8 @@ internal sealed class LevelSetup(
         map.Story = Math.Clamp(levelInfo?.Story ?? engine.GetGameInfo().DefaultMap.Story, 1, GameConstants.MaxWallStories);
         map.WallHeightSetting = levelInfo?.WallHeight;
         map.DefaultWallHeight = engine.GetGameInfo().DefaultMap.WallHeight;
+        map.PushwallStories = PushWalls.ParseStories(levelInfo?.PushwallStories ?? engine.GetGameInfo().DefaultMap.PushwallStories, "pushwall-stories")
+            ?? PushwallStories.All;
         map.LoadMap(session.GameState.MapOn, session.GameState.Difficulty, hooks.CurrentSkill().EnemyHealth,
             levelInfo?.FloorNumber ?? -1);
         if (map.LevelWallStories < map.Story)

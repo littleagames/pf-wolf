@@ -74,7 +74,9 @@ internal static class SaveFile
     //     ready-at), after the timed switches.
     // 43: the player's open puzzle (its length then Gameplay/Puzzles.cs Write's bytes; -1 for none),
     //     after the puzzle switches.
-    internal const int SaveVersion = 43;
+    // 44: each moving pushwall's stories (the start and stop of the part that moves, and of a
+    //     second part above it), after its wall id.
+    internal const int SaveVersion = 44;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

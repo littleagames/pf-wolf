@@ -438,6 +438,13 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       through a window in a wall (`height 1-1,3-6` on a wall at story 2), looking down through a
       gap at a lower block's top, two overhead blocks one above the other, `removewall arch` on
       a wall with two blocks, `where` on one.
+- [ ] Pushwall stories: E1M1 on story 2 with `wallheight 4`, wall 31,55 tagged and pushed north
+      with `lua game.trigger(7, 'A_MoveWall', 'north', '', '', '', 'story')`: a one-story hole
+      with the floor and lintel left, the piece two tiles on (headless screenshots, 2026-11-08).
+      **(never tried)** a secret pushwall with `A_PushWall(..., "above")` pushed by hand, game-info
+      `pushwall-stories`, a push refused for needing three blocks (blocked sound), a piece
+      stopping on a floor block and joining it, saving and loading mid-push, a pushwall at story 1
+      in a multiplayer game.
 
 **Diagonal walls**
 - [ ] Slide along a diagonal face; automap both styles.

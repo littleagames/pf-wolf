@@ -92,6 +92,12 @@ internal class MapManager
     internal int Story = 1;
 
     /// <summary>
+    /// Which of a pushwall's stories move for an A_PushWall or A_MoveWall that doesn't say
+    /// (game-info pushwall-stories, the level's else the default map's): set before LoadMap
+    /// </summary>
+    internal Gameplay.PushwallStories PushwallStories = Gameplay.PushwallStories.All;
+
+    /// <summary>
     /// The level's wall height from game-info (null: the level's own, else the default map's),
     /// for LoadMap to settle <see cref="LevelWallStories"/> before it works out what's solid
     /// </summary>
@@ -1006,8 +1012,58 @@ internal class MapManager
     /// </summary>
     internal (int Start, int Stop)? BlockSpan(int x, int y) =>
         BlockStops[x, y] != 0 ? (BlockStarts[x, y], BlockStops[x, y])
-        : IsWallCode(x, y) || TileMap[x, y] is > 0 and < GameConstants.BitDoor ? (1, LevelWallStories)
+        : IsWallCode(x, y) || TileMap[x, y] is > 0 and < GameConstants.BitDoor and not GameConstants.BitWall ? (1, LevelWallStories)
         : null;
+
+    /// <summary>
+    /// A tile's blocks, bottom up: its own, a wall's default (story 1 to the level's wall height)
+    /// if it has none; whatever TileMap holds (a moving pushwall's tiles have only their own)
+    /// </summary>
+    internal List<(int Start, int Stop)> TileBlocks(int x, int y)
+    {
+        var blocks = new List<(int Start, int Stop)>(2);
+        if (BlockStops[x, y] != 0)
+            blocks.Add((BlockStarts[x, y], BlockStops[x, y]));
+        else if (IsWallCode(x, y))
+            blocks.Add((1, LevelWallStories));
+        if (UpperStops[x, y] != 0)
+            blocks.Add((UpperStarts[x, y], UpperStops[x, y]));
+        return blocks;
+    }
+
+    /// <summary>Blocks put together bottom up, joined where they overlap or touch</summary>
+    internal static List<(int Start, int Stop)> JoinBlocks(IEnumerable<(int Start, int Stop)> blocks)
+    {
+        var joined = new List<(int Start, int Stop)>();
+        foreach (var (start, stop) in blocks.OrderBy(b => b.Start))
+        {
+            if (joined.Count > 0 && start <= joined[^1].Stop + 1)
+                joined[^1] = (joined[^1].Start, Math.Max(joined[^1].Stop, stop));
+            else
+                joined.Add((start, stop));
+        }
+        return joined;
+    }
+
+    /// <summary>
+    /// Sets a tile's blocks (as <see cref="SetBlocks"/>) from a list joined bottom up: none gives it
+    /// back its default; more than two are joined from the top down until two are left
+    /// </summary>
+    internal void SetTileBlocks(int x, int y, List<(int Start, int Stop)> blocks)
+    {
+        blocks = JoinBlocks(blocks);
+        while (blocks.Count > 2)
+        {
+            blocks[^2] = (blocks[^2].Start, blocks[^1].Stop);
+            blocks.RemoveAt(blocks.Count - 1);
+        }
+        if (blocks.Count == 0)
+            SetBlock(x, y, 0, 0);
+        else if (blocks.Count == 1)
+            SetBlock(x, y, blocks[0].Start, blocks[0].Stop);
+        else
+            SetBlocks(x, y, blocks[0].Start, blocks[0].Stop, blocks[1].Start, blocks[1].Stop);
+    }
 
     /// <summary>A tile's second block, above its first with a gap between; null for none</summary>
     internal (int Start, int Stop)? UpperSpan(int x, int y) =>

@@ -278,10 +278,11 @@ internal static partial class GameHost
 
         // mapdefs trigger and switch actions, run when the player uses a trigger's tile or a
         // switch wall (PressUse) or steps onto a walk-over trigger (Thrust)
-        // A_PushWall("moving sound", "blocked sound"[, "direction", "message"]): either sound left
-        // out is silent. With a direction (north, east, south or west) it only moves that way:
-        // pushed from another side, it shows the message and plays the blocked sound instead
-        // (Midnight Assault's one-way MovingWalls)
+        // A_PushWall("moving sound", "blocked sound"[, "direction", "message"][, "stories"]): either
+        // sound left out is silent. With a direction (north, east, south or west) it only moves that
+        // way: pushed from another side, it shows the message and plays the blocked sound instead
+        // (Midnight Assault's one-way MovingWalls). Stories: which of its stories move (all, above
+        // or story; left out, game-info pushwall-stories)
         Entities.MapTriggerRegistry.Register("A_PushWall", PushWallAction);
         // A_VictoryTile("BJVictory"): that class runs for the exit, then the level ends (Gameplay/BJVictory.cs)
         Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, args) => { VictoryTile(args.ElementAtOrDefault(0)); return true; });
@@ -353,7 +354,8 @@ internal static partial class GameHost
                 return false;
             }
         }
-        return PushWall(trigger.TileX, trigger.TileY, trigger.Dir, moveSound, blockedSound);
+        var stories = Gameplay.PushWalls.ParseStories(args.ElementAtOrDefault(4), "A_PushWall");
+        return pushWalls.PushWall(trigger.TileX, trigger.TileY, trigger.Dir, moveSound, blockedSound, stories);
     }
 
     // A_GiveExtraMan, A_GiveInventory and A_ChangeMap (Gameplay/PlayerActions.cs)

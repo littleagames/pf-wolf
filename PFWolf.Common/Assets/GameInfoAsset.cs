@@ -1093,6 +1093,13 @@ public record DefaultMapInfo
     public int Story { get; init; } = 1;
 
     /// <summary>
+    /// Which of a pushwall's stories move when it's pushed, for an A_PushWall or A_MoveWall that
+    /// doesn't say: all (the whole column), above (the player's story and up; what's below stays
+    /// as floor) or story (only the player's story; what's below and above stay)
+    /// </summary>
+    public string PushwallStories { get; init; } = "all";
+
+    /// <summary>
     /// What a message's {floor-text} says, for a map without its own floor-text (Blake Stone's
     /// barrier switches' "ON FLOOR {floor}"); null for nothing
     /// </summary>
@@ -2096,6 +2103,9 @@ public record MapInfo
 
     /// <summary>The player's story (1-8); null uses the default map's</summary>
     public int? Story { get; init; } = null;
+
+    /// <summary>Which of a pushwall's stories move (all, above or story); null uses the default map's</summary>
+    public string? PushwallStories { get; init; } = null;
 
     /// <summary>
     /// Graphic (or wall texture) drawn in place of the ceiling color; null uses the default map's

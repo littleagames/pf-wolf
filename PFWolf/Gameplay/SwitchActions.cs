@@ -280,10 +280,11 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     };
 
     /// <summary>
-    /// A_MoveWall("direction", "moving sound", "blocked sound"[, object]): the walls with the
-    /// switch's tag pushed that way (the way the player faces when left out). With an object-plane
-    /// value, only the tagged walls with it on their tile move: a switch whose walls go different
-    /// ways runs one A_MoveWall for each (Midnight Assault's 656-659 walls).
+    /// A_MoveWall("direction", "moving sound", "blocked sound"[, object][, "stories"]): the walls
+    /// with the switch's tag pushed that way (the way the player faces when left out). With an
+    /// object-plane value, only the tagged walls with it on their tile move: a switch whose walls
+    /// go different ways runs one A_MoveWall for each (Midnight Assault's 656-659 walls). Stories:
+    /// which of their stories move (all, above or story; left out or "", game-info pushwall-stories).
     /// </summary>
     private bool MoveWallAction(TriggerActivation trigger, string[] args)
     {
@@ -300,13 +301,14 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         }
 
         int? onlyObject = int.TryParse(args.ElementAtOrDefault(3), out var objectValue) ? objectValue : null;
+        var stories = PushWalls.ParseStories(args.ElementAtOrDefault(4), "A_MoveWall");
 
         // every tagged wall moves together; one sound for the lot
         bool moved = false, any = false;
         foreach (var (x, y) in TaggedWalls(trigger).Where(t => onlyObject == null || map.MapSpot(t.X, t.Y, 1) == onlyObject).ToList())
         {
             any = true;
-            moved |= pushWalls.PushWall(x, y, dir);
+            moved |= pushWalls.PushWall(x, y, dir, stories: stories);
         }
 
         var sound = moved ? args.ElementAtOrDefault(1) : any ? args.ElementAtOrDefault(2) : null;

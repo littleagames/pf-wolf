@@ -107,7 +107,7 @@ internal sealed class RayTrace(
             if (render.HitPushwall)
             {
                 pushWalls.SelectPushWall(render.FocalTx, render.FocalTy);
-                posts.SetHitBlock(pushWalls.PWall.X, pushWalls.PWall.Y);
+                posts.SetHitSpan(pushWalls.PWall.Span(map.LevelWallStories));
                 if ((pushWalls.PWall.Dir == ControlDir.East && render.XTileStep == 1) || (pushWalls.PWall.Dir == ControlDir.West && render.XTileStep == -1))
                 {
                     yinttemp = render.YIntercept - ((ystep * (64 - pushWalls.PWall.Pos)) >> 6);
@@ -239,7 +239,7 @@ internal sealed class RayTrace(
         if (render.HitPushwall)
         {
             pushWalls.SelectPushWall(hitx, hity);     // which of the moving MovingWalls this is
-            posts.SetHitBlock(pushWalls.PWall.X, pushWalls.PWall.Y);
+            posts.SetHitSpan(pushWalls.PWall.Span(map.LevelWallStories));
         }
         else
             posts.SetHitBlock(hitx, hity, door: (render.TileHit & GameConstants.BitDoor) != 0);
@@ -495,7 +495,7 @@ internal sealed class RayTrace(
         if (render.HitPushwall)
         {
             pushWalls.SelectPushWall(hitx, hity);     // which of the moving MovingWalls this is
-            posts.SetHitBlock(pushWalls.PWall.X, pushWalls.PWall.Y);
+            posts.SetHitSpan(pushWalls.PWall.Span(map.LevelWallStories));
         }
         else
             posts.SetHitBlock(hitx, hity, door: (render.TileHit & GameConstants.BitDoor) != 0);

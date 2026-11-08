@@ -158,7 +158,7 @@ The renderer goes from "walls grow up from the one floor" to blocks at any heigh
      renderer's tiles queuing both blocks' faces and every surface that shows (each block's top
      below the eyes and underside above them, the ground under the lowest, the higher of two
      tops drawn over the lower), also fixing the ground not drawn under a floating floor block;
-   - pushwall stories: the A_PushWall/A_MoveWall argument and game-info `pushwall-stories`,
+   - pushwall stories (done): the A_PushWall/A_MoveWall argument and game-info `pushwall-stories`,
      the moving piece's start and stop on MovingPushWall (save version bump), splitting and
      joining blocks where it starts and stops, refusing pushes that won't fit;
    - doors on any story (frame below, lintel above), moving pushwalls drawn at their piece's
@@ -166,7 +166,8 @@ The renderer goes from "walls grow up from the one floor" to blocks at any heigh
      (`removewall arch` becomes a block), weather falling to the ground, the automap (walls at
      the player's story; drops and overheads shown apart), UWMF levels' plane 3, tile floor
      skies on caps.
-4. **Editor.** A start/stop brush for plane 3 (with a second block), Level properties' Story (and the pit fields go),
+4. **Editor.** A start/stop brush for plane 3 (with a second block), Level properties' Story and
+   pushwall stories (and the pit fields go),
    the 3D view's blocks, caps and story (LevelMesh: replacing arches and pits), the 2D view's
    span badges, tile info, map checks (the start on a solid tile, walls not reaching the story).
 5. **Mods.** A tool to convert old arch values (and a check for them), then the example mods
@@ -221,6 +222,19 @@ caps clipped to below the block over them. The player's floor is drawn as a cap,
 level's flats, where rows under it are still open (a gap under the block): farther things seen
 through the gap would otherwise paint its rows first. Story 1 still pixel-identical (14 shots);
 headless shots of a window at story 2 and a slab with a gap under it at story 5.
+
+Phase 3, part 2 (pushwall stories) done 2026-11-08 (PushwallStoriesTests). `A_PushWall`'s fifth
+argument and `A_MoveWall`'s fifth (after the object) say `all`, `above` or `story`; else game-info
+`pushwall-stories` (MapManager.PushwallStories, set by LevelSetup), else all. PushWalls.SplitStories
+works out the piece and what's left, and refuses (blocked sound) when what's left, or any open tile
+it could stop on joined with the piece, needs more than two blocks. The piece rides on
+MovingPushWall (Start/Stop/Start2/Stop2; a Stop of 0 is a whole wall with no block of its own,
+which stays that way where it stops): save version 44. The tiles it crosses keep their own blocks
+(nothing moves block by block any more); what's left keeps the wall id on plane 0, walked on or
+under, and the areas are rebuilt (ApplyStory) once it's open. Where it stops it joins the tile's
+blocks (MapManager.JoinBlocks/SetTileBlocks). Drawn at its piece's stories (WallPosts.SetHitSpan;
+two parts drawn as one, gap filled, while it moves); a moving pushwall's tiles show their own blocks
+as an open tile's. A classic push is unchanged: demos identical, the finished push pixel-identical.
 
 ## Later
 

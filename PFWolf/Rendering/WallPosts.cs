@@ -98,6 +98,13 @@ internal sealed class WallPosts(
         render.HitStories = map.WallStories(tilex, tiley) - story + 1;
     }
 
+    /// <summary>The stories of a moving pushwall the trace has just hit: the part that moves (MovingPushWall.Span)</summary>
+    internal void SetHitSpan((int Start, int Stop) span)
+    {
+        render.HitFirst = span.Start - map.Story;
+        render.HitStories = span.Stop - map.Story + 1;
+    }
+
     /*
     ====================
     =
@@ -192,11 +199,15 @@ internal sealed class WallPosts(
         render.CellEntry = focal ? short.MaxValue : HeightAt(edgex, edgey);
         render.CellBlocks = render.CellLowFloors = 0;
         render.CellFloor = 0;
-        if ((tile & GameConstants.BitDoor) != 0 || tile == GameConstants.BitWall)
-            return;                     // a door's or a moving pushwall's floor is the player's
+        if ((tile & GameConstants.BitDoor) != 0)
+            return;                     // a door's floor is the player's
+
+        // a moving pushwall's tile is open but for the pushwall (drawn as a wall, at its own
+        // stories): its own blocks, and what the pushwall left, show as an open tile's
+        bool open = tile == 0 || tile == GameConstants.BitWall;
         if (stop == 0)
         {
-            if (tile == 0)
+            if (open)
                 render.CellFloor = render.GroundStory;   // open all the way down
             return;
         }
@@ -210,7 +221,7 @@ internal sealed class WallPosts(
         int start2 = stop2 != 0 ? map.UpperSpanStart[i] : 0;
         int blocks = stop2 != 0 ? 2 : 1;
         Span<int> firsts = [start - story, start2 - story], tops = [stop - story + 1, stop2 - story + 1];
-        Span<bool> solid = [tile != 0 && start <= story && story <= stop, tile != 0 && stop2 != 0 && start2 <= story && story <= stop2];
+        Span<bool> solid = [!open && start <= story && story <= stop, !open && stop2 != 0 && start2 <= story && story <= stop2];
 
         TextureAsset? texture = null;
         bool mirrored = false, textured = false;
