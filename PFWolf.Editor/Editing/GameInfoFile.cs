@@ -19,7 +19,7 @@ public static class GameInfoFile
     public static readonly IReadOnlyList<string> Keys =
     [
         "name", "music", "next", "secret-next", "par-time", "floor-number", "cluster", "floor-color", "ceiling-color", "wall-height",
-        "story", "sky", "default-floor", "default-ceiling", "weather", "shading", "zones", "scrollers",
+        "story", "pushwall-stories", "sky", "default-floor", "default-ceiling", "weather", "shading", "zones", "scrollers",
     ];
 
     /// <summary>
@@ -228,6 +228,7 @@ public static class GameInfoFile
         "ceiling-color" => Quote(properties.CeilingColor),
         "wall-height" => Number(properties.WallHeight),
         "story" => Number(properties.Story),
+        "pushwall-stories" => Quote(properties.PushwallStories),
         "sky" => Quote(properties.Sky),
         "default-floor" => Quote(properties.DefaultFloor),
         "default-ceiling" => Quote(properties.DefaultCeiling),

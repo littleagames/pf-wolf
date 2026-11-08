@@ -156,6 +156,18 @@ public class GameInfoFileTests
     }
 
     [Test]
+    public void Pushwall_Stories_Are_Written_And_Read_Back()
+    {
+        // Act
+        var properties = new MapProperties { PushwallStories = "above" };
+        var text = GameInfoFile.Apply(null, "MAP01", properties, properties.ChangedKeys(new MapProperties()));
+
+        // Assert
+        Assert.That(text, Is.EqualTo("maps:\n  MAP01:\n    pushwall-stories: \"above\"\n"));
+        Assert.That(Parse(text).Maps["MAP01"].PushwallStories, Is.EqualTo("above"));
+    }
+
+    [Test]
     public void Shading_Is_Written_As_A_Block_Of_What_Is_Set()
     {
         // Arrange

@@ -41,6 +41,9 @@ public sealed record MapProperties
 
     /// <summary>The player's story (game-info story): blocks taking it in are walls, those below it floor</summary>
     public int? Story { get; init; }
+
+    /// <summary>Which of a pushwall's stories move (game-info pushwall-stories): all, above or story</summary>
+    public string? PushwallStories { get; init; }
     public string? Sky { get; init; }
     public string? DefaultFloor { get; init; }
     public string? DefaultCeiling { get; init; }
@@ -80,6 +83,7 @@ public sealed record MapProperties
         CeilingColor = info.CeilingColor,
         WallHeight = info.WallHeight,
         Story = info.Story,
+        PushwallStories = info.PushwallStories,
         Sky = info.Sky,
         DefaultFloor = info.DefaultFloor,
         DefaultCeiling = info.DefaultCeiling,
@@ -118,6 +122,7 @@ public sealed record MapProperties
         Check("ceiling-color", CeilingColor == other.CeilingColor);
         Check("wall-height", WallHeight == other.WallHeight);
         Check("story", Story == other.Story);
+        Check("pushwall-stories", PushwallStories == other.PushwallStories);
         Check("sky", Sky == other.Sky);
         Check("default-floor", DefaultFloor == other.DefaultFloor);
         Check("default-ceiling", DefaultCeiling == other.DefaultCeiling);

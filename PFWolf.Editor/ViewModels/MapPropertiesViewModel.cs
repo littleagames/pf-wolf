@@ -63,6 +63,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         _ceilingColor = properties.CeilingColor ?? "";
         _wallHeight = Text(properties.WallHeight);
         _story = Text(properties.Story);
+        _pushwallStories = properties.PushwallStories ?? "";
         _sky = properties.Sky ?? "";
         _defaultFloor = properties.DefaultFloor ?? "";
         _defaultCeiling = properties.DefaultCeiling ?? "";
@@ -116,6 +117,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     [ObservableProperty] private string _ceilingColor;
     [ObservableProperty] private string _wallHeight;
     [ObservableProperty] private string _story;
+    [ObservableProperty] private string _pushwallStories;
     [ObservableProperty] private string _sky;
     [ObservableProperty] private string _defaultFloor;
     [ObservableProperty] private string _defaultCeiling;
@@ -141,6 +143,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     public string CeilingColorDefault => Defaults.CeilingColor ?? "";
     public string WallHeightDefault => Defaults.WallHeight.ToString(CultureInfo.InvariantCulture);
     public string StoryDefault => Defaults.Story.ToString(CultureInfo.InvariantCulture);
+    public string PushwallStoriesDefault => Defaults.PushwallStories;
+    public IReadOnlyList<string> PushwallStoriesNames { get; } = ["all", "above", "story"];
     public string SkyDefault => Defaults.Sky ?? "none";
     public string DefaultFloorDefault => Defaults.DefaultFloor ?? "the floor color";
     public string DefaultCeilingDefault => Defaults.DefaultCeiling ?? "the ceiling color";
@@ -213,6 +217,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 CeilingColor = Color(CeilingColor, "ceiling color"),
                 WallHeight = Int(WallHeight, "wall height", 1, 8),
                 Story = Int(Story, "story", 1, 8),
+                PushwallStories = PushwallStoriesName(PushwallStories),
                 Sky = Optional(Sky),
                 DefaultFloor = Optional(DefaultFloor),
                 DefaultCeiling = Optional(DefaultCeiling),
@@ -236,6 +241,15 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     }
 
     private readonly MapProperties _loaded;
+
+    // Which of a pushwall's stories move: all, above or story; empty for the default map's
+    private static string? PushwallStoriesName(string text)
+    {
+        var name = Optional(text)?.ToLowerInvariant();
+        if (name is null or "all" or "above" or "story")
+            return name;
+        throw new FormatException($"pushwall stories '{text}' isn't all, above or story");
+    }
 
     private static string? Optional(string text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 

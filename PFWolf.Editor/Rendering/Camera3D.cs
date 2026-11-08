@@ -89,10 +89,10 @@ public sealed class Camera3D
         return (_position, Vector3.Normalize(direction));
     }
 
-    /// <summary>Stands on a tile's middle at eye height, facing the game's angle</summary>
-    public void PlaceOn(int x, int y, float? yaw = null)
+    /// <summary>Stands on a tile's middle at eye height over a floor (stories up from the ground: the player's story's), facing the game's angle</summary>
+    public void PlaceOn(int x, int y, float? yaw = null, float floor = 0)
     {
-        _position = new Vector3(x + 0.5f, EyeHeight, y + 0.5f);
+        _position = new Vector3(x + 0.5f, floor + EyeHeight, y + 0.5f);
         if (yaw is { } angle)
             _yaw = ((angle % 360) + 360) % 360;
         _pitch = 0;

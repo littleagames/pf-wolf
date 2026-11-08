@@ -382,10 +382,10 @@ public class LevelMeshTests
     [Test]
     public void An_Arch_Is_A_Block_From_Story_Two_With_The_Wall_Ending_Its_Run_As_Texture()
     {
-        // Arrange: a 3-story arch across the room's width at row 10, walls at each end (the room's edge)
+        // Arrange: an arch from story 2 to 3 (0x0203) across the room's width at row 10, walls at each end (the room's edge)
         var document = Room();
         for (int x = 1; x < 63; x++)
-            EditorMaps.Set(document, MapConstants.HeightPlane, x, 10, 3);
+            EditorMaps.Set(document, MapConstants.HeightPlane, x, 10, 0x0203);
 
         // Act
         var arch = At(Build(document), SurfaceKind.Arch, 20, 10).ToList();
@@ -400,14 +400,82 @@ public class LevelMeshTests
         Assert.That(underside.Points.All(p => p.Y == 1) && Vector3.Dot(underside.Normal, -Vector3.UnitY) > 0.99f);
     }
 
+    [Test]
+    public void A_Wall_With_Two_Blocks_Has_A_Gap_Between_Them()
+    {
+        // Arrange: a pillar from story 1 to 1 and 3 to 4
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Wall);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 0x3041);
+
+        // Act
+        var north = At(Build(document), SurfaceKind.Wall, 10, 10, Face.North).ToList();
+
+        // Assert: its north face runs 0 to 1 and 2 to 4, with each block's underside and top
+        Assert.That(north.Select(s => (s.Points.Min(p => p.Y), s.Points.Max(p => p.Y))).Order(), Is.EqualTo(new[] { (0f, 1f), (2f, 4f) }));
+        Assert.That(At(Build(document), SurfaceKind.Wall, 10, 10, Face.Bottom).Select(s => s.Points[0].Y), Is.EqualTo(new[] { 2f }));
+    }
+
+    [Test]
+    public void A_Face_Is_Hidden_Only_Where_The_Block_Beside_It_Reaches()
+    {
+        // Arrange: a wall 1 to 4 beside a floor block 1 to 2
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Wall);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 4);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 11, 10, 2);
+
+        // Act
+        var east = At(Build(document), SurfaceKind.Wall, 10, 10, Face.East).Single();
+
+        // Assert: the wall's east face shows above the block only
+        Assert.That((east.Points.Min(p => p.Y), east.Points.Max(p => p.Y)), Is.EqualTo((2f, 4f)));
+    }
+
+    [Test]
+    public void On_A_Higher_Story_Doors_And_Things_Stand_On_The_Players_Floor()
+    {
+        // Arrange: the player on story 3, a door in a wall across the room, a floor block under the start
+        var document = Room();
+        document.SetProperties(new MapProperties { Story = 3, WallHeight = 4 });
+        for (int y = 1; y < 63; y++)
+            EditorMaps.Set(document, 0, 20, y, Wall);
+        EditorMaps.Set(document, 0, 20, 10, VerticalDoor);
+        EditorMaps.Set(document, 1, 5, 5, Start);
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert: the door from 2 to 3 with its frame below it, the start's arrow at 2
+        var door = At(mesh, SurfaceKind.Door, 20, 10, Face.West).ToList();
+        Assert.That(door.Select(s => (s.Points.Min(p => p.Y), s.Points.Max(p => p.Y))), Does.Contain((2f, 3f)));
+        Assert.That(At(mesh, SurfaceKind.Door, 20, 10).Any(s => s.Points.Min(p => p.Y) == 0 && s.Points.Max(p => p.Y) == 2), Is.True, "the frame");
+        Assert.That(At(mesh, SurfaceKind.PlayerStart, 5, 5).Single().Points[0].Y, Is.EqualTo(2.01f).Within(0.001f));
+    }
+
+    [Test]
+    public void A_Block_Below_The_Players_Floor_Is_Topped_With_The_Floor()
+    {
+        // Arrange: on story 3, a floor block from story 1 to 2 (its top the player's floor)
+        var document = Room();
+        document.SetProperties(new MapProperties { Story = 3, WallHeight = 4 });
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 2);
+
+        // Act
+        var top = At(Build(document), SurfaceKind.Arch, 10, 10, Face.Top).Single();
+
+        // Assert: the floor color (no flat), at the player's floor
+        Assert.That((top.Texture.Source, top.Points[0].Y), Is.EqualTo((TextureSource.Solid, 2f)));
+    }
+
     [TestCase(0, TextureSource.Texture, "WALLEW")]
     [TestCase(2, TextureSource.Flat, "CEIL2")]
     public void An_Arches_Underside_Is_Its_Ceiling_Flat_Unless_The_Ceiling_Index_Is_0(int ceiling, TextureSource source, string name)
     {
-        // Arrange: a 3-story arch across the room at row 10
+        // Arrange: an arch from story 2 to 3 (0x0203) across the room at row 10
         var document = Room();
         for (int x = 1; x < 63; x++)
-            EditorMaps.Set(document, MapConstants.HeightPlane, x, 10, 3);
+            EditorMaps.Set(document, MapConstants.HeightPlane, x, 10, 0x0203);
         EditorMaps.Set(document, MapConstants.FlatPlane, 20, 10, (ushort)(ceiling << 8));
 
         // Act
@@ -424,7 +492,7 @@ public class LevelMeshTests
     {
         // Arrange: a single arch tile in the middle of the room: its runs end on open floor
         var document = Room();
-        EditorMaps.Set(document, MapConstants.HeightPlane, 20, 20, 3);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 20, 20, 0x0203);
 
         // Act
         var mesh = Build(document);

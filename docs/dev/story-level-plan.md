@@ -166,7 +166,7 @@ The renderer goes from "walls grow up from the one floor" to blocks at any heigh
      (`removewall arch` becomes a block), weather falling to the ground, the automap (walls at
      the player's story; drops and overheads shown apart), UWMF levels' plane 3, tile floor
      skies on caps.
-4. **Editor.** A start/stop brush for plane 3 (with a second block), Level properties' Story and
+4. **Editor** (done). A start/stop brush for plane 3 (with a second block), Level properties' Story and
    pushwall stories (and the pit fields go),
    the 3D view's blocks, caps and story (LevelMesh: replacing arches and pits), the 2D view's
    span badges, tile info, map checks (the start on a solid tile, walls not reaching the story).
@@ -267,6 +267,34 @@ Phase 3, part 3 (the rest) done 2026-11-08:
 Checked: story 1 pixel-identical (14 shots); headless shots of a door on story 2 over a drop
 (frame below), heavy rain falling into a drop, the automap's drop marks, the architecture demo
 on story 2 with wall height 1 (doors on frames over trenches).
+
+Phase 4 (editor) done 2026-11-08. The height-plane encoding moved to PFWolf.Common
+(Definitions.StoryBlocks: Decode, Encode, Parse "3-5"/"1-2,4-8", Format), which MapManager and
+the editor share. In the editor:
+- **Brush**: with Heights (plane 3) picked, a Stories box takes `3-5`, `3` (1-3) or `1-2,4-8`
+  and sets the value (an error under it says why one won't do); the value shows back as stories.
+- **2D view**: the heights layer labels each tile with its stories (3-5, 1-2,4-8).
+- **Tile info**: "Height: stories 3 to 5, overhead; stories 7 to 8, overhead", as `where` says it.
+- **Level properties**: Pushwall stories (all/above/story), written to game-info
+  `pushwall-stories` (Story was done in phase 1).
+- **3D view** (LevelMesh): every tile's blocks (MapTiles.Blocks) at their heights from the ground,
+  each face drawn only where the block beside it doesn't hide it (Uncovered), each block's top
+  (the tile's floor where it's at or under the player's floor, else the block's texture
+  darkened) and underside; the ground where no block stands on it; the ceiling only where it's
+  over the player's floor and no block reaches it. Floor tiles' blocks take their flats sides,
+  else the walls ending their run. Doors stand on the player's story, a frame below them down to
+  the ground and the lintel from their top; things, the player start and markers stand on the
+  player's floor, and the camera starts at its eye height.
+- **Map checks**: a height that isn't stories, the walls (wall height) not reaching the player's
+  story, the player starting in a block solid on their story.
+- The game's arch runs (WallPosts.IsArch) now take any open floor tile with blocks of its own
+  (as the editor's MapTiles.IsArch), so a raised floor under the player gets its sides from the
+  walls at the run's ends; on story 1 that's the same tiles as before (screenshots identical).
+
+Checked: the editor opened on MAP01 with a mod putting it on story 2 (UI Automation and a
+PrintWindow shot): the door and things a story up, the door on its frame. Not tried in the
+editor: typing in the Stories box, the badges, pushwall stories in Level properties, a level
+with blocks in the 3D view.
 
 ## Later
 

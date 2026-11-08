@@ -737,10 +737,16 @@ public sealed class MapCanvas : Control
                 if (_zoom < 20)
                     continue;
 
-                // Flats read as floor/ceiling indices
-                var label = plane == MapConstants.FlatPlane ? $"{value & 0xff}/{value >> 8}" : value.ToString(CultureInfo.InvariantCulture);
+                // Flats read as floor/ceiling indices, heights as stories (3-5, 1-2,4-8)
+                var label = plane switch
+                {
+                    MapConstants.FlatPlane => $"{value & 0xff}/{value >> 8}",
+                    MapConstants.HeightPlane => PFWolf.Definitions.StoryBlocks.Format(value),
+                    _ => value.ToString(CultureInfo.InvariantCulture),
+                };
+                double size = Math.Min(_zoom * 0.35, 16) * (label.Length > 4 ? 0.65 : 1);
                 var text = new FormattedText(label, CultureInfo.InvariantCulture,
-                    FlowDirection.LeftToRight, LabelFont, Math.Min(_zoom * 0.35, 16), Brushes.White);
+                    FlowDirection.LeftToRight, LabelFont, size, Brushes.White);
                 context.DrawText(text, new Point(rect.Center.X - text.Width / 2, rect.Center.Y - text.Height / 2));
             }
         }
@@ -933,7 +939,7 @@ public sealed class MapCanvas : Control
                 break;
             case Key.V when e.KeyModifiers == KeyModifiers.None && ShowCamera && _hover.X >= 0:
                 // The 3D view's camera onto the tile, still facing the same way
-                Camera?.PlaceOn(_hover.X, _hover.Y, Camera.Yaw);
+                Camera?.PlaceOn(_hover.X, _hover.Y, Camera.Yaw, Tiles is { } placed ? placed.PlayerStory - 1 : 0);
                 break;
             case >= Key.A and <= Key.Z when e.KeyModifiers == KeyModifiers.None:
                 ToolKeyPressed?.Invoke(this, e.Key.ToString());

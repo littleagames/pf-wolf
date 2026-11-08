@@ -52,6 +52,7 @@ public static class LevelChecks
         var unnamedWalls = new Dictionary<int, (int X, int Y, int Count)>();
         var destructibleProblems = new Dictionary<string, (int X, int Y, int Count)>();
         var puzzleProblems = new Dictionary<string, (int X, int Y, int Count)>();
+        var notStories = new Dictionary<int, (int X, int Y, int Count)>();
         var toName = tiles.Content.ChunksToName;
         int doors = 0;
         (int X, int Y) firstPastDoorLimit = (-1, -1);
@@ -93,10 +94,22 @@ public static class LevelChecks
                     CheckPuzzleSwitch(tiles, puzzleProblems, x, y);
 
                 int height = tiles[MapConstants.HeightPlane, x, y];
-                if (height > 8)
-                    problems.Add(new(CheckSeverity.Warning, $"height {height}: walls are 1 to 8 stories, so it's the level's height", x, y));
+                if (height != 0 && PFWolf.Definitions.StoryBlocks.Decode(height).Lower == null)
+                    Count(notStories, height, x, y);
             }
         }
+
+        foreach (var (value, (x, y, count)) in notStories)
+            problems.Add(new(CheckSeverity.Warning, $"height {value} isn't stories (1 to 8, as 3-5, or 1-2,4-8 with a second block above the first), "
+                + $"so the tile takes its default ({count} {Tiles(count)})", x, y));
+
+        // The player's story: the level's walls should reach it, and the start mustn't be in a block
+        int story = tiles.PlayerStory;
+        if (tiles.LevelStories < story)
+            problems.Add(new(CheckSeverity.Warning, $"the walls run up to story {tiles.LevelStories} (wall height), under the player's story {story}: "
+                + "only tiles with blocks of their own (plane 3) are solid, and the player walks over the rest"));
+        if (starts.Count > 0 && tiles.Solid(starts[^1].X, starts[^1].Y))
+            problems.Add(new(CheckSeverity.Error, $"the player starts in a block that's solid on their story ({story})", starts[^1].X, starts[^1].Y));
 
         if (doors > MapConstants.MaxDoors)
             problems.Add(new(CheckSeverity.Error, $"{doors} doors: the game takes {MapConstants.MaxDoors} at most, and stops on this one",

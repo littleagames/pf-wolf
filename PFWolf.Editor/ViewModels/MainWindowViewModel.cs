@@ -755,7 +755,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private int _scatterDensity = 20;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPalette), nameof(IsFlatsPlane), nameof(HasNextUnused), nameof(PlaneHint))]
+    [NotifyPropertyChangedFor(nameof(HasPalette), nameof(IsFlatsPlane), nameof(IsHeightsPlane), nameof(HasNextUnused), nameof(PlaneHint))]
     private PlaneOption _selectedPlane;
 
     public bool HasPalette => PaletteEntries.HasPalette(SelectedPlane.Plane);
@@ -790,6 +790,24 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private ChoiceOption? _selectedFlatCeiling;
 
     public bool IsFlatsPlane => SelectedPlane.Plane == MapConstants.FlatPlane;
+
+    // The heights (plane 3): blocks typed as stories, "3-5" or "1-2,4-8" (PFWolf.Definitions.StoryBlocks)
+    public bool IsHeightsPlane => SelectedPlane.Plane == MapConstants.HeightPlane;
+    [ObservableProperty] private string _blocksText = "";
+    [ObservableProperty] private string? _blocksError;
+
+    partial void OnBlocksTextChanged(string value)
+    {
+        if (_syncing || !IsHeightsPlane)
+            return;
+        var parsed = PFWolf.Definitions.StoryBlocks.Parse(value, out var error);
+        BlocksError = error;
+        if (parsed is not { } number)
+            return;
+        _syncing = true;
+        PlaneValue = number;
+        _syncing = false;
+    }
     public bool HasNextUnused => SelectedPlane.Plane is MapConstants.TagPlane or MapConstants.ZonePlane;
 
     /// <summary>What a plane's number means</summary>
@@ -798,7 +816,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         : SelectedPlane.Plane switch
     {
         MapConstants.FlatPlane => "Ceiling × 256 + floor: the mapdefs flats indices. 0 is the level's default floor and ceiling.",
-        MapConstants.HeightPlane => $"The wall's height in stories, 1 to 8. 0 uses the level's height ({LevelWallHeight}). Taller than 1 on open floor makes an arch.",
+        MapConstants.HeightPlane => $"A tile's blocks, as stories from one to another (1 to 8): 3-5, or two with a gap, 1-2,4-8; a plain 3 is 1-3. "
+            + $"Empty or 0: a wall from the ground to the level's height ({LevelWallHeight}), open floor none. A block taking in the player's story is solid, "
+            + "one under it is floor, one over it is overhead.",
         MapConstants.TagPlane => "A switch acts on the doors, walls and things that share its tag. 0 is no tag.",
         MapConstants.ZonePlane => "The level's light zones (Level properties); 0 is lit as the level.",
         _ => "",
@@ -1258,6 +1278,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             case MapConstants.ZonePlane: ShowZones = true; break;
         }
         BuildPalette();
+        if (IsHeightsPlane)
+            OnPlaneValueChanged(PlaneValue);    // the stories box shows the value
     }
 
     partial void OnSelectedPaletteItemChanged(PaletteItem? value)
@@ -1335,6 +1357,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _syncing = true;
             SelectedFlatFloor = FlatFloorOptions.FirstOrDefault(option => option.Value == (number & 0xff));
             SelectedFlatCeiling = FlatCeilingOptions.FirstOrDefault(option => option.Value == number >> 8);
+            _syncing = false;
+        }
+        if (IsHeightsPlane && !_syncing)
+        {
+            _syncing = true;
+            BlocksText = PFWolf.Definitions.StoryBlocks.Format(number);
+            BlocksError = number != 0 && PFWolf.Definitions.StoryBlocks.Decode(number).Lower == null ? "not stories: the game ignores it" : null;
             _syncing = false;
         }
     }
@@ -2141,12 +2170,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 if (tiles.PlayerStart(x, y) is { Deathmatch: false } start)
                 {
-                    Camera.PlaceOn(x, y, start.Angles);
+                    Camera.PlaceOn(x, y, start.Angles, tiles.PlayerStory - 1);
                     return;
                 }
             }
         }
-        Camera.PlaceOn(tiles.Width / 2, tiles.Height / 2, 90);
+        Camera.PlaceOn(tiles.Width / 2, tiles.Height / 2, 90, tiles.PlayerStory - 1);
     }
 
     /// <summary>

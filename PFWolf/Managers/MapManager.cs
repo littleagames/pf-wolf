@@ -958,31 +958,15 @@ internal class MapManager
     /// A second block (its start in bits 12-15, its stop in bits 4-7) must start above the
     /// first's stop: touching it, the two are one block; anything else and the value's no block.
     /// </summary>
-    internal static ((int Start, int Stop)? Lower, (int Start, int Stop)? Upper) DecodeBlocks(int value)
-    {
-        if ((uint)value > 0xffff)
-            return (null, null);
-        int stop = value & 0x0f, start = value >> 8 & 0x0f;
-        int stop2 = value >> 4 & 0x0f, start2 = value >> 12 & 0x0f;
-        if (start == 0)
-            start = 1;
-        if (stop is < 1 or > GameConstants.MaxWallStories || start > stop)
-            return (null, null);
-        if (stop2 == 0 && start2 == 0)
-            return ((start, stop), null);
-        if (stop2 > GameConstants.MaxWallStories || start2 <= stop || start2 > stop2)
-            return (null, null);
-        if (start2 == stop + 1)
-            return ((start, stop2), null);          // touching: one block
-        return ((start, stop), (start2, stop2));
-    }
+    internal static ((int Start, int Stop)? Lower, (int Start, int Stop)? Upper) DecodeBlocks(int value) =>
+        Definitions.StoryBlocks.Decode(value);
 
     /// <summary>A block as a height-plane value: a plain stop when it starts at story 1, as tall walls always were</summary>
-    internal static ushort EncodeBlock(int start, int stop) => (ushort)(start <= 1 ? stop : start << 8 | stop);
+    internal static ushort EncodeBlock(int start, int stop) => Definitions.StoryBlocks.Encode(start, stop);
 
     /// <summary>Two blocks as a height-plane value (the second above the first with a gap; a stop of 0: none)</summary>
     internal static ushort EncodeBlocks(int start, int stop, int start2, int stop2) =>
-        (ushort)(stop == 0 ? 0 : EncodeBlock(start, stop) | (stop2 == 0 ? 0 : start2 << 12 | stop2 << 4));
+        Definitions.StoryBlocks.Encode(start, stop, start2, stop2);
 
     /// <summary>Sets <see cref="BlockStarts"/>, <see cref="BlockStops"/> and the upper blocks from the height plane</summary>
     private void BuildBlocks()

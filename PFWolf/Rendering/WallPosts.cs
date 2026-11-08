@@ -665,7 +665,10 @@ internal sealed class WallPosts(
     */
 
 
-    internal bool IsArch(int tilex, int tiley) => map.IsOverhead(tilex, tiley);
+    // An open floor tile with blocks of its own (over it or under the player): a run of them takes
+    // its sides from the walls at its ends (ArchEndTexture). On story 1 they're all overhead.
+    internal bool IsArch(int tilex, int tiley) =>
+        map.TileMap[tilex, tiley] == 0 && map.BlockStops[tilex, tiley] != 0 && !map.IsWallCode(tilex, tiley);
 
     /// <summary>
     /// The trace enters a door tile at (TileX, TileY) as OpenArch enters an arch. Above the first

@@ -102,6 +102,41 @@ public class LevelChecksTests
     }
 
     [Test]
+    public void Starting_In_A_Block_Solid_On_The_Players_Story_Is_An_Error()
+    {
+        // Arrange: a block from story 1 to 2 under the start
+        var document = Room();
+        EditorMaps.Set(document, MapConstants.HeightPlane, 5, 5, 2);
+
+        // Act
+        var problem = Check(document).Single();
+
+        // Assert
+        Assert.That((problem.Severity, problem.X, problem.Y), Is.EqualTo((CheckSeverity.Error, 5, 5)));
+        Assert.That(problem.Message, Does.Contain("starts in a block"));
+
+        // on story 3 it's stood on
+        document.SetProperties(new MapProperties { Story = 3, WallHeight = 3 });
+        Assert.That(Check(document), Is.Empty);
+    }
+
+    [Test]
+    public void Walls_Not_Reaching_The_Players_Story_Are_Warned_About()
+    {
+        var document = Room();
+        document.SetProperties(new MapProperties { Story = 2 });
+        Assert.That(Check(document).Single().Message, Does.Contain("under the player's story 2"));
+    }
+
+    [Test]
+    public void A_Height_That_Isnt_Stories_Is_Warned_About()
+    {
+        var document = Room();
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 0x4385);    // the second block inside the first
+        Assert.That(Check(document).Single().Message, Does.Contain("isn't stories"));
+    }
+
+    [Test]
     public void A_Level_Game_Info_Lacks_Is_Warned_About()
     {
         // Act

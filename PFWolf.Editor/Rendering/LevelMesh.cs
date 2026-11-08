@@ -41,7 +41,7 @@ public enum SurfaceKind
     Ceiling,
     Thing,
     PlayerStart,
-    /// <summary>An arch's block over open floor: its faces, underside and top</summary>
+    /// <summary>A block on open floor (an arch over it, a raised floor): its faces, underside and top</summary>
     Arch,
 }
 
@@ -219,9 +219,12 @@ public sealed class LevelMesh
 
     private void Build()
     {
-        var floorColor = ParseColor(_tiles.FloorColor) ?? new Vector4(0.44f, 0.44f, 0.44f, 1);
+        _floorColor = ParseColor(_tiles.FloorColor) ?? new Vector4(0.44f, 0.44f, 0.44f, 1);
+        var floorColor = _floorColor;
         var ceilingColor = ParseColor(_tiles.CeilingColor) ?? new Vector4(0.22f, 0.22f, 0.22f, 1);
-        float ceiling = _tiles.LevelStories;
+        _floor = _tiles.PlayerStory - 1;
+        // The level's ceiling, opaque over the walls' height, unless that's at or under the player's floor
+        float? ceiling = _tiles.LevelStories > _floor ? _tiles.LevelStories : null;
 
         for (int y = 0; y < _tiles.Height; y++)
         {
@@ -235,20 +238,20 @@ public sealed class LevelMesh
 
                     case TileKind.Door:
                         bool lintel = AddDoor(x, y, ceilingColor);
-                        // A lintel at least as high as the ceiling hides it, as an arch does
-                        AddFloorAndCeiling(x, y, floorColor, ceilingColor, !lintel || _tiles.Stories(x, y) < ceiling ? ceiling : null, null);
+                        // A lintel at least as high as the ceiling hides it, as a block does; the
+                        // door's floor is the player's, on its frame
+                        AddFloorAndCeiling(x, y, floorColor, ceilingColor, !lintel || _tiles.Stories(x, y) < ceiling ? ceiling : null, null, _floor);
                         break;
 
                     case TileKind.Unknown:
                         // A value the mapdefs don't know: marked on the floor
-                        AddFlat(new SurfaceRef(SurfaceKind.Floor, x, y), Corners(x, y), 0, up: true, TextureRef.Solid, UnknownColor);
+                        AddFlat(new SurfaceRef(SurfaceKind.Floor, x, y), Corners(x, y), _floor, up: true, TextureRef.Solid, UnknownColor);
                         break;
 
                     default:
-                        bool arch = _tiles.IsArch(x, y) && AddArch(x, y, ceilingColor);
-                        // An arch at least as high as the ceiling hides it
-                        bool ceilingShows = !arch || _tiles.Stories(x, y) < ceiling;
-                        AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceilingShows ? ceiling : null, null);
+                        var blocks = _tiles.Blocks(x, y);
+                        AddFloorBlocks(x, y, blocks, ceilingColor);
+                        AddFloorAndCeiling(x, y, floorColor, ceilingColor, CeilingOver(blocks, ceiling), null, Ground(blocks));
                         AddThing(x, y);
                         break;
                 }
@@ -283,7 +286,7 @@ public sealed class LevelMesh
         var texture = new TextureRef(TextureSource.Sprite, thing.Class);
         var thingRef = new SurfaceRef(SurfaceKind.Thing, x, y);
         var (originX, originY) = sprite.Origin;
-        float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize;
+        float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + _floor;   // on the player's story
         float shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize;
 
         if (content.IsWallSprite(thing.Class))
@@ -302,10 +305,73 @@ public sealed class LevelMesh
     // Walls
     //
 
-    private void AddWallTile(int x, int y, Vector4 floorColor, Vector4 ceilingColor, float ceiling)
+    // The player's floor, in stories up from the ground: doors and things stand on it
+    private int _floor;
+    private Vector4 _floorColor;
+
+    /// <summary>The ground under a tile's blocks (0), or null when one stands on it</summary>
+    private static float? Ground(List<(int Bottom, int Top)> blocks) => blocks.Any(block => block.Bottom == 0) ? null : 0;
+
+    /// <summary>The level's ceiling over a tile, or null where it has none or a block reaches it</summary>
+    private static float? CeilingOver(List<(int Bottom, int Top)> blocks, float? ceiling)
+        => ceiling is { } height && blocks.Any(block => block.Bottom < height && height <= block.Top) ? null : ceiling;
+
+    /// <summary>
+    /// What hides a face toward the tile at (nx, ny), seen across its <paramref name="side"/>: its
+    /// blocks (a wall's or a floor tile's; a diagonal only along its solid edges); off the map, everything
+    /// </summary>
+    private List<(int Bottom, int Top)> CoverAt(int nx, int ny, Face side)
+    {
+        if (!InMap(nx, ny))
+            return [(0, MapTiles.MaxStories)];
+        return _tiles.KindAt(nx, ny) switch
+        {
+            TileKind.Wall when !CoversEdge(nx, ny, side) => [],
+            TileKind.Wall or TileKind.Floor => _tiles.Blocks(nx, ny),
+            _ => [],
+        };
+    }
+
+    /// <summary>The parts of bottom to top that nothing in <paramref name="cover"/> hides</summary>
+    private static List<(int Bottom, int Top)> Uncovered(int bottom, int top, List<(int Bottom, int Top)> cover)
+    {
+        var parts = new List<(int Bottom, int Top)> { (bottom, top) };
+        foreach (var (b, t) in cover)
+        {
+            for (int i = parts.Count - 1; i >= 0; i--)
+            {
+                var (pb, pt) = parts[i];
+                if (t <= pb || b >= pt)
+                    continue;
+                parts.RemoveAt(i);
+                if (pb < b)
+                    parts.Add((pb, b));
+                if (t < pt)
+                    parts.Add((t, pt));
+            }
+        }
+        parts.Sort();
+        return parts;
+    }
+
+    /// <summary>
+    /// A block's top: where it's at or under the player's floor, the tile's floor (its flat, else
+    /// the floor color), as the game draws it; over that, the block's own texture darkened, only
+    /// seen from above in the editor
+    /// </summary>
+    private void AddBlockTop(SurfaceRef topRef, int x, int y, Vector2[] polygon, int top, string? texture, Vector4 light)
+    {
+        if (top <= _floor)
+            AddFloor(x, y, polygon, top, _floorColor, topRef);
+        else if (texture != null)
+            AddFlat(topRef, polygon, top, up: true, Texture(texture), TopShade * light, TextureStories(texture));
+    }
+
+    private void AddWallTile(int x, int y, Vector4 floorColor, Vector4 ceilingColor, float? ceiling)
     {
         var wall = _tiles.Wall(x, y)!;
-        int stories = _tiles.Stories(x, y);
+        var blocks = _tiles.Blocks(x, y);
+        int stories = blocks[^1].Top;
         var diagonal = _tiles.Diagonal(x, y);
         var patch = _tiles.PatchDef(x, y);
         if (_tiles.IsPushWall(x, y))
@@ -325,63 +391,85 @@ public sealed class LevelMesh
             if (!InMap(nx, ny))
                 continue;
 
-            // Hidden behind a square wall at least as tall; a shorter one leaves the top showing
-            float bottom = 0;
-            if (_tiles.KindAt(nx, ny) == TileKind.Wall && CoversEdge(nx, ny, Opposite(face)))
-            {
-                bottom = _tiles.Stories(nx, ny);
-                if (bottom >= stories)
-                    continue;
-            }
-
+            // Each block's face, but where a wall or block beside it hides it
+            var cover = CoverAt(nx, ny, Opposite(face));
             var (a, b) = Edge(x, y, face);
             var texture = wall.WallFace(FaceName(face));
             var faceRef = new SurfaceRef(SurfaceKind.Wall, x, y, face);
             var light = Light(nx, ny);
             bool flip = wall.IsFlipped(FaceName(face));
             float flipU0 = flip ? 1 : 0, flipU1 = flip ? 0 : 1;   // a flipped face's texture runs right to left
+            var outward = new Vector2(nx - x, ny - y);
 
-            if (_tiles.KindAt(nx, ny) == TileKind.Door)
+            foreach (var (blockBottom, blockTop) in blocks)
             {
-                // The door's frame: its side texture for the door's story, the wall above (the
-                // face's direction is the way a ray travels from the door into the wall)
-                var door = _tiles.Door(nx, ny)!;
-                var jamb = DoorFace(door, nx, ny, TravelName(Opposite(face)));
-                if (_tiles.Content.Find<TextureAsset>(jamb) is { Masked: true } && texture.Length > 0)
+                foreach (var (bottom, top) in Uncovered(blockBottom, blockTop, cover))
                 {
-                    // a see-through jamb is over the wall's own face, as a patch is (WallHits.SeeThroughJamb)
-                    AddWall(faceRef, a, b, 0, 1, texture, light, flipU0, flipU1);
-                    AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), 0, stories, new MapPatchTranslation { Texture = jamb }, light);
+                    if (_tiles.KindAt(nx, ny) == TileKind.Door && bottom <= _floor && _floor < top)
+                    {
+                        // The door's frame: its side texture for the door's story (the player's),
+                        // the wall below and above (the face's direction is the way a ray travels
+                        // from the door into the wall)
+                        var door = _tiles.Door(nx, ny)!;
+                        var jamb = DoorFace(door, nx, ny, TravelName(Opposite(face)));
+                        if (_tiles.Content.Find<TextureAsset>(jamb) is { Masked: true } && texture.Length > 0)
+                        {
+                            // a see-through jamb is over the wall's own face, as a patch is (WallHits.SeeThroughJamb)
+                            AddWall(faceRef, a, b, _floor, _floor + 1, texture, light, flipU0, flipU1);
+                            AddPatch(faceRef, a, b, outward, _floor, _floor + 1, new MapPatchTranslation { Texture = jamb, Story = _floor + 1 }, light);
+                        }
+                        else
+                            AddWall(faceRef, a, b, _floor, _floor + 1, jamb, light);
+                        if (bottom < _floor)
+                            AddWall(faceRef, a, b, bottom, _floor, texture, light, flipU0, flipU1);
+                        if (_floor + 1 < top)
+                            AddWall(faceRef, a, b, _floor + 1, top, texture, light, flipU0, flipU1);
+                    }
+                    else
+                    {
+                        AddWall(faceRef, a, b, bottom, top, texture, light, flipU0, flipU1, scroll: WallScroll(x, y, flipU1 - flipU0, texture));
+                        if (patch != null && patch.IsOn(FaceName(face)))
+                            AddPatch(faceRef, a, b, outward, bottom, top, patch, light, FaceName(face));
+                    }
                 }
-                else
-                    AddWall(faceRef, a, b, 0, 1, jamb, light);
-                if (stories > 1)
-                    AddWall(faceRef, a, b, 1, stories, texture, light, flipU0, flipU1);
-            }
-            else
-            {
-                AddWall(faceRef, a, b, bottom, stories, texture, light, flipU0, flipU1, scroll: WallScroll(x, y, flipU1 - flipU0, texture));
-                if (patch != null && patch.IsOn(FaceName(face)))
-                    AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), bottom, stories, patch, light, FaceName(face));
             }
         }
 
         var topRef = new SurfaceRef(SurfaceKind.Wall, x, y, Face.Top);
-        var topColor = TopShade * Light(x, y);
+        var bottomRef = new SurfaceRef(SurfaceKind.Wall, x, y, Face.Bottom);
+        var tileLight = Light(x, y);
+        var solidPart = Corners(x, y);
         if (diagonal != null)
         {
-            // The slanted face, toward the open half, which has floor and ceiling
+            // The slanted face of each block, toward the open half, which has the ground and the ceiling
             var (solid, open) = DiagonalHalves(x, y, diagonal.Shape);
             var (p, q) = Slant(x, y, diagonal.Shape);
             var (a, b) = Ordered(p, q, OpenDirection(diagonal.Shape));
             var texture = string.IsNullOrEmpty(diagonal.Texture) ? wall.North : diagonal.Texture;
-            AddWall(new SurfaceRef(SurfaceKind.Wall, x, y, Face.Diagonal), a, b, 0, stories, texture, Light(x, y), scroll: WallScroll(x, y, 1, texture));
-
-            AddFlat(topRef, solid, stories, up: true, Texture(wall.North), topColor, TextureStories(wall.North));
-            AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceiling, OpenHalf(x, y, diagonal.Shape));
+            foreach (var (bottom, top) in blocks)
+                AddWall(new SurfaceRef(SurfaceKind.Wall, x, y, Face.Diagonal), a, b, bottom, top, texture, tileLight, scroll: WallScroll(x, y, 1, texture));
+            AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceiling, open, 0);
+            solidPart = solid;
         }
-        else
-            AddFlat(topRef, Corners(x, y), stories, up: true, Texture(wall.North), topColor, TextureStories(wall.North));
+
+        // Each block's top and, off the ground, its underside; the ground and ceiling round them
+        foreach (var (bottom, top) in blocks)
+        {
+            AddBlockTop(topRef, x, y, solidPart, top, wall.North, tileLight);
+            if (bottom > 0)
+                AddUnderside(bottomRef, x, y, solidPart, bottom, wall.North, ceilingColor, tileLight);
+        }
+        AddFloorAndCeiling(x, y, floorColor, ceilingColor, CeilingOver(blocks, ceiling), solidPart, Ground(blocks));
+    }
+
+    /// <summary>A block's underside: the tile's ceiling flat if it has one, else the block's texture (WallPosts.UndersideOf)</summary>
+    private void AddUnderside(SurfaceRef bottomRef, int x, int y, Vector2[] polygon, int height, string? texture, Vector4 ceilingColor, Vector4 light)
+    {
+        var flat = _tiles.ArchCeilingFlat(x, y);
+        if (flat != null)
+            AddFlat(bottomRef, polygon, height, up: false, Flat(flat, ceilingColor), light);
+        else if (texture != null)
+            AddFlat(bottomRef, polygon, height, up: false, Texture(texture), light, TextureStories(texture));
     }
 
     /// <summary>
@@ -442,53 +530,43 @@ public sealed class LevelMesh
     }
 
     //
-    // Arches
+    // Blocks on open floor (a raised floor, an arch over it)
     //
 
     /// <summary>
-    /// An arch: a block over the walkway from story 2 up to the tile's height, its faces and
-    /// underside textured from the walls ending its run (WallPosts.OpenArch), or from its ceiling
-    /// flat; false when there's no wall to take a texture from, which the game leaves open
+    /// An open floor tile's blocks (plane 3): each one's faces where nothing beside hides them,
+    /// textured from the tile's flats sides, else the walls ending its run (WallPosts.BlockFaceTexture);
+    /// its top (the floor, at or under the player's) and, off the ground, its underside (its
+    /// ceiling flat, else the run's texture). A face with nothing to take a texture from is left
+    /// open, as the game leaves it.
     /// </summary>
-    private bool AddArch(int x, int y, Vector4 ceilingColor)
+    private void AddFloorBlocks(int x, int y, List<(int Bottom, int Top)> blocks, Vector4 ceilingColor)
     {
-        int stories = _tiles.Stories(x, y);
-        var underside = _tiles.ArchUndersideTexture(x, y);
-        var faces = SquareFaces.Select(face => (Face: face, Texture: _tiles.ArchFaceTexture(x, y, FaceName(face)))).ToList();
-        underside ??= faces.Select(face => face.Texture).FirstOrDefault(texture => texture != null);
-        if (underside == null)
-            return false;
+        if (blocks.Count == 0)
+            return;
+        var sides = _tiles.FlatSides(x, y);
+        var faces = SquareFaces.Select(face => (Face: face, Texture: sides ?? _tiles.ArchFaceTexture(x, y, FaceName(face)))).ToList();
+        var underside = sides ?? _tiles.ArchUndersideTexture(x, y) ?? faces.Select(face => face.Texture).FirstOrDefault(texture => texture != null);
 
         foreach (var (face, texture) in faces)
         {
-            if (texture == null)
-                continue;
             var (nx, ny) = Step(x, y, face);
-            if (!InMap(nx, ny))
+            if (texture == null || !InMap(nx, ny))
                 continue;
-
-            // Hidden by an arch or wall beside it as tall; a shorter one leaves its top showing
-            float bottom = 1;
-            if (_tiles.IsArch(nx, ny) || _tiles.KindAt(nx, ny) == TileKind.Wall && CoversEdge(nx, ny, Opposite(face)))
-            {
-                bottom = Math.Max(1, _tiles.Stories(nx, ny));
-                if (bottom >= stories)
-                    continue;
-            }
-
+            var cover = CoverAt(nx, ny, Opposite(face));
             var (a, b) = Edge(x, y, face);
-            AddWall(new SurfaceRef(SurfaceKind.Arch, x, y, face), a, b, bottom, stories, texture, Light(nx, ny));
+            foreach (var (blockBottom, blockTop) in blocks)
+                foreach (var (bottom, top) in Uncovered(blockBottom, blockTop, cover))
+                    AddWall(new SurfaceRef(SurfaceKind.Arch, x, y, face), a, b, bottom, top, texture, Light(nx, ny));
         }
 
         var light = Light(x, y);
-        float undersideStories = TextureStories(underside);
-        var topTexture = Texture(underside);
-        // A ceiling flat on the tile shows underneath, its see-through pixels the ceiling color
-        var flat = _tiles.ArchCeilingFlat(x, y);
-        AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Bottom), Corners(x, y), 1, up: false,
-            flat != null ? Flat(flat, ceilingColor) : topTexture, light, flat != null ? 1 : undersideStories);
-        AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Top), Corners(x, y), stories, up: true, topTexture, TopShade * light, undersideStories);
-        return true;
+        foreach (var (bottom, top) in blocks)
+        {
+            AddBlockTop(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Top), x, y, Corners(x, y), top, underside, light);
+            if (bottom > 0)
+                AddUnderside(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Bottom), x, y, Corners(x, y), bottom, underside, ceilingColor, light);
+        }
     }
 
     //
@@ -533,12 +611,18 @@ public sealed class LevelMesh
     // Doors
     //
 
-    /// <summary>A door, and above its first story the lintel over it; true when that's capped like an arch (<see cref="AddLintel"/>)</summary>
+    /// <summary>
+    /// A door, on the player's story; above it the lintel over it, and below it (on a story over
+    /// the first) its frame down to the ground; true when the lintel's capped like a block (<see cref="AddLintel"/>)
+    /// </summary>
     private bool AddDoor(int x, int y, Vector4 ceilingColor)
     {
         var door = _tiles.Door(x, y)!;
         int stories = _tiles.Stories(x, y);
-        bool lintel = stories > 1 && AddLintel(x, y, door.Vertical, stories, ceilingColor);
+        float bottom = _floor, top = _floor + 1;
+        bool lintel = stories > top && AddLintel(x, y, door.Vertical, stories, ceilingColor);
+        if (_floor > 0)
+            AddDoorFrame(x, y, door.Vertical);
 
         if (door.Vertical)
         {
@@ -547,13 +631,13 @@ public sealed class LevelMesh
             Vector2 north = new(x + 0.5f, y), south = new(x + 0.5f, y + 1);
             Vector4 westLight = FaceLight(x, y, Face.West), eastLight = FaceLight(x, y, Face.East);
             string westFace = DoorFace(door, x, y, "west"), eastFace = DoorFace(door, x, y, "east");
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 0, 1, westFace, westLight, seeThrough: SeesThrough(westFace));
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 0, 1, eastFace, eastLight, 1, 0, seeThrough: SeesThrough(eastFace));
-            if (stories > 1 && !lintel)
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, bottom, top, westFace, westLight, seeThrough: SeesThrough(westFace));
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, bottom, top, eastFace, eastLight, 1, 0, seeThrough: SeesThrough(eastFace));
+            if (stories > top && !lintel)
             {
                 // Set into no wall: the door carries on up (WallHits.UnderLintel)
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories, westFace, westLight, seeThrough: SeesThrough(westFace));
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories, westFace, eastLight, seeThrough: SeesThrough(westFace));
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, top, stories, westFace, westLight, seeThrough: SeesThrough(westFace));
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, top, stories, westFace, eastLight, seeThrough: SeesThrough(westFace));
             }
         }
         else
@@ -561,12 +645,12 @@ public sealed class LevelMesh
             Vector2 west = new(x, y + 0.5f), east = new(x + 1, y + 0.5f);
             Vector4 northLight = FaceLight(x, y, Face.North), southLight = FaceLight(x, y, Face.South);
             string northFace = DoorFace(door, x, y, "north"), southFace = DoorFace(door, x, y, "south");
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 0, 1, northFace, northLight, 1, 0, seeThrough: SeesThrough(northFace));
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 0, 1, southFace, southLight, seeThrough: SeesThrough(southFace));
-            if (stories > 1 && !lintel)
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, bottom, top, northFace, northLight, 1, 0, seeThrough: SeesThrough(northFace));
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, bottom, top, southFace, southLight, seeThrough: SeesThrough(southFace));
+            if (stories > top && !lintel)
             {
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories, northFace, northLight, seeThrough: SeesThrough(northFace));
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories, northFace, southLight, seeThrough: SeesThrough(northFace));
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, top, stories, northFace, northLight, seeThrough: SeesThrough(northFace));
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, top, stories, northFace, southLight, seeThrough: SeesThrough(northFace));
             }
         }
         return lintel;
@@ -576,9 +660,28 @@ public sealed class LevelMesh
     private bool SeesThrough(string texture) => _tiles.Content.Find<TextureAsset>(texture) is { Masked: true };
 
     /// <summary>
-    /// Above a door's first story, its tile capped like an arch (WallPosts.OpenDoorArch): on its
-    /// open sides a lintel flush with the wall the door is set into, and an underside over the
-    /// doorway, from its ceiling flat or else the wall beside it; false when it's set into no wall
+    /// Under a door on a story over the first, its frame from the ground up to the player's floor
+    /// (WallPosts.OpenTile): on its open sides, faced like the wall the door is set into
+    /// </summary>
+    private void AddDoorFrame(int x, int y, bool vertical)
+    {
+        Face[] open = vertical ? [Face.West, Face.East] : [Face.North, Face.South];
+        foreach (var face in open)
+        {
+            var (nx, ny) = Step(x, y, face);
+            if (!InMap(nx, ny) || LintelTexture(x, y, vertical, FaceName(face)) is not { } texture)
+                continue;
+            var (a, b) = Edge(x, y, face);
+            foreach (var (bottom, top) in Uncovered(0, _floor, CoverAt(nx, ny, Opposite(face))))
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, face), a, b, bottom, top, texture, Light(nx, ny));
+        }
+    }
+
+    /// <summary>
+    /// Above a door, its tile capped like a block (WallPosts.OpenDoorArch): on its open sides a
+    /// lintel flush with the wall the door is set into, from the door's top up to the tile's height,
+    /// and an underside over the doorway, from its ceiling flat or else the wall beside it; false
+    /// when it's set into no wall
     /// </summary>
     private bool AddLintel(int x, int y, bool vertical, int stories, Vector4 ceilingColor)
     {
@@ -587,23 +690,17 @@ public sealed class LevelMesh
         if (faces.All(face => face.Texture == null))
             return false;
 
+        int doorTop = _floor + 1;
         foreach (var (face, texture) in faces)
         {
             var (nx, ny) = Step(x, y, face);
             if (texture == null || !InMap(nx, ny))
                 continue;
 
-            // Hidden by an arch or wall in front as tall, as an arch's face
-            float bottom = 1;
-            if (_tiles.IsArch(nx, ny) || _tiles.KindAt(nx, ny) == TileKind.Wall && CoversEdge(nx, ny, Opposite(face)))
-            {
-                bottom = Math.Max(1, _tiles.Stories(nx, ny));
-                if (bottom >= stories)
-                    continue;
-            }
-
+            // Hidden by a block or wall in front
             var (a, b) = Edge(x, y, face);
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, face), a, b, bottom, stories, texture, Light(nx, ny));
+            foreach (var (bottom, top) in Uncovered(doorTop, stories, CoverAt(nx, ny, Opposite(face))))
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, face), a, b, bottom, top, texture, Light(nx, ny));
         }
 
         // The face of the wall beside the door that looks into the doorway (WallPosts.DoorArchUndersideTexture)
@@ -615,7 +712,7 @@ public sealed class LevelMesh
         float undersideStories = TextureStories(underside);
         var topTexture = Texture(underside);
         var flat = _tiles.ArchCeilingFlat(x, y);
-        AddFlat(new SurfaceRef(SurfaceKind.Door, x, y, Face.Bottom), Corners(x, y), 1, up: false,
+        AddFlat(new SurfaceRef(SurfaceKind.Door, x, y, Face.Bottom), Corners(x, y), doorTop, up: false,
             flat != null ? Flat(flat, ceilingColor) : topTexture, light, flat != null ? 1 : undersideStories);
         AddFlat(new SurfaceRef(SurfaceKind.Door, x, y, Face.Top), Corners(x, y), stories, up: true, topTexture, TopShade * light, undersideStories);
         return true;
@@ -654,23 +751,13 @@ public sealed class LevelMesh
     //
 
     /// <param name="ceiling">The ceiling's height, or null for none</param>
-    private void AddFloorAndCeiling(int x, int y, Vector4 floorColor, Vector4 ceilingColor, float? ceiling, Vector2[]? polygon)
+    /// <param name="floor">The floor's height (stories up from the ground), or null for none</param>
+    private void AddFloorAndCeiling(int x, int y, Vector4 floorColor, Vector4 ceilingColor, float? ceiling, Vector2[]? polygon, float? floor = 0)
     {
         polygon ??= Corners(x, y);
         var light = Light(x, y);
-        // A floor sky (the tile's own, mapdefs flats floor-skies, else the level's) shows in place of
-        // the floor color, and behind a floor flat's see-through pixels, just under it
-        var floor = _tiles.FloorFlat(x, y);
-        var floorSky = Shown(_tiles.FloorTileSky(x, y)) ?? FloorSky;
-        var floorRef = new SurfaceRef(SurfaceKind.Floor, x, y);
-        if (floorSky != null)
-            AddFlat(floorRef, polygon, floor != null ? -SkyGap : 0, up: true, new TextureRef(TextureSource.FloorSky, floorSky), Vector4.One);
-        if (floor != null || floorSky == null)
-        {
-            AddFlat(floorRef, polygon, 0, up: true,
-                floor != null ? Flat(floor, floorSky == null ? floorColor : default) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light,
-                scroll: floor != null ? FlatScroll(x, y, scroller => scroller.Floor) : default);
-        }
+        if (floor is { } floorHeight)
+            AddFloor(x, y, polygon, floorHeight, floorColor, new SurfaceRef(SurfaceKind.Floor, x, y));
 
         // The sky shows in place of the ceiling color, and behind a ceiling flat's see-through pixels:
         // the level's is drawn behind everything, a tile's own (mapdefs flats skies) just over its ceiling
@@ -687,6 +774,26 @@ public sealed class LevelMesh
             AddFlat(ceilingRef, polygon, height, up: false,
                 top != null ? Flat(top, !sky ? ceilingColor : default) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light,
                 scroll: top != null ? FlatScroll(x, y, scroller => scroller.Ceiling) : default);
+        }
+    }
+
+    /// <summary>
+    /// A tile's floor at a height (the ground, or a block's top): its floor flat, else the floor
+    /// color; a floor sky (the tile's own, mapdefs flats floor-skies, else the level's) shows in
+    /// place of the color, and behind a floor flat's see-through pixels, just under it
+    /// </summary>
+    private void AddFloor(int x, int y, Vector2[] polygon, float height, Vector4 floorColor, SurfaceRef floorRef)
+    {
+        var light = Light(x, y);
+        var floor = _tiles.FloorFlat(x, y);
+        var floorSky = Shown(_tiles.FloorTileSky(x, y)) ?? FloorSky;
+        if (floorSky != null)
+            AddFlat(floorRef, polygon, floor != null ? height - SkyGap : height, up: true, new TextureRef(TextureSource.FloorSky, floorSky), Vector4.One);
+        if (floor != null || floorSky == null)
+        {
+            AddFlat(floorRef, polygon, height, up: true,
+                floor != null ? Flat(floor, floorSky == null ? floorColor : default) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light,
+                scroll: floor != null ? FlatScroll(x, y, scroller => scroller.Floor) : default);
         }
     }
 
@@ -734,7 +841,7 @@ public sealed class LevelMesh
             // As the game places it: its origin pixel (a Wolf3D sprite's middle of the bottom of
             // 64 × 64) on the thing's spot on the floor
             var (originX, originY) = sprite.Origin;
-            float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize;
+            float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + _floor;   // on the player's story
             float shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize;
 
             if (content.IsWallSprite(thing.Class))
@@ -756,7 +863,7 @@ public sealed class LevelMesh
             Vector2[] arrow = [center + front * 0.4f, center - front * 0.3f + side * 0.3f, center - front * 0.3f - side * 0.3f];
             if (Cross(arrow[1] - arrow[0], arrow[2] - arrow[0]) > 0)
                 (arrow[1], arrow[2]) = (arrow[2], arrow[1]);
-            AddFlat(new SurfaceRef(SurfaceKind.PlayerStart, x, y), arrow, 0.01f, up: true, TextureRef.Solid, StartColor);
+            AddFlat(new SurfaceRef(SurfaceKind.PlayerStart, x, y), arrow, _floor + 0.01f, up: true, TextureRef.Solid, StartColor);
         }
         else if (!_tiles.ObjectKnown(x, y))
             AddMarker(x, y, UnknownColor);
@@ -772,7 +879,7 @@ public sealed class LevelMesh
         Vector2[] diamond = [center + new Vector2(0, 0.35f), center + new Vector2(0.35f, 0), center + new Vector2(0, -0.35f), center + new Vector2(-0.35f, 0)];
         if (Cross(diamond[1] - diamond[0], diamond[2] - diamond[0]) > 0)
             Array.Reverse(diamond);
-        AddFlat(new SurfaceRef(SurfaceKind.Thing, x, y), diamond, 0.01f, up: true, TextureRef.Solid, color);
+        AddFlat(new SurfaceRef(SurfaceKind.Thing, x, y), diamond, _floor + 0.01f, up: true, TextureRef.Solid, color);
     }
 
     /// <summary>

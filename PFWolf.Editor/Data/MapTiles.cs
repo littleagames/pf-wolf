@@ -1,5 +1,6 @@
 using PFWolf.Assets;
 using PFWolf.Constants;
+using PFWolf.Definitions;
 using PFWolf.Editor.Editing;
 
 namespace PFWolf.Editor.Data;
@@ -145,11 +146,48 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
     /// <summary>How tall the level's walls are, in stories, unless a tile says otherwise</summary>
     public int LevelStories => Math.Clamp(Properties.WallHeight ?? map.Defaults.WallStories ?? content.DefaultMapInfo.WallHeight, 1, MaxStories);
 
-    /// <summary>How tall a tile's wall is: its height-plane value when that's 1 to 8, else the level's (MapManager.WallStories)</summary>
-    public int Stories(int x, int y) => this[MapConstants.HeightPlane, x, y] is var stories and >= 1 and <= MaxStories ? stories : LevelStories;
+    /// <summary>The player's story on the level (game-info story), 1 to 8: doors and things stand on it</summary>
+    public int PlayerStory => Math.Clamp(Properties.Story ?? content.DefaultMapInfo.Story, 1, MaxStories);
 
-    /// <summary>An open floor tile with a height over 1: a block from story 2 up to it, over the walkway</summary>
-    public bool IsArch(int x, int y) => KindAt(x, y) == TileKind.Floor && this[MapConstants.HeightPlane, x, y] is > 1 and <= MaxStories;
+    /// <summary>
+    /// A tile's blocks from the height plane (StoryBlocks), bottom up, as heights in stories from
+    /// the ground (story 3 to 5 is 2 to 5): its own, else a wall's default (the ground to the
+    /// level's height); none on open floor (MapManager.TileBlocks)
+    /// </summary>
+    public List<(int Bottom, int Top)> Blocks(int x, int y)
+    {
+        var blocks = new List<(int Bottom, int Top)>(2);
+        var (lower, upper) = StoryBlocks.Decode(this[MapConstants.HeightPlane, x, y]);
+        if (lower is var (start, stop))
+            blocks.Add((start - 1, stop));
+        else if (KindAt(x, y) == TileKind.Wall)
+            blocks.Add((0, LevelStories));
+        if (upper is var (start2, stop2))
+            blocks.Add((start2 - 1, stop2));
+        return blocks;
+    }
+
+    /// <summary>How tall a tile's wall (or door's lintel) is: the top of its highest block, else the level's height (MapManager.WallStories)</summary>
+    public int Stories(int x, int y) => StoryBlocks.Decode(this[MapConstants.HeightPlane, x, y]) switch
+    {
+        (_, var (_, stop2)) => stop2,
+        (var (_, stop), null) => stop,
+        _ => LevelStories,
+    };
+
+    /// <summary>Whether a tile's block (either) takes in the player's story: it's solid there</summary>
+    public bool Solid(int x, int y)
+    {
+        int story = PlayerStory;
+        return Blocks(x, y).Any(block => block.Bottom < story && story <= block.Top);
+    }
+
+    /// <summary>An open floor tile with blocks of its own (a raised floor, an arch over it): their sides come from the walls ending the run (WallPosts.IsArch)</summary>
+    public bool IsArch(int x, int y) => KindAt(x, y) == TileKind.Floor && StoryBlocks.Decode(this[MapConstants.HeightPlane, x, y]).Lower != null;
+
+    /// <summary>The texture on the sides of a floor tile's blocks from its floor index (mapdefs flats sides), or null</summary>
+    public string? FlatSides(int x, int y)
+        => Defs.Flats.Sides.TryGetValue(FlatValue(x, y) & 0xff, out var sides) && !string.IsNullOrEmpty(sides) ? sides : null;
 
     /// <summary>The level's sky picture name (game-info sky), or null for its ceiling color</summary>
     public string? Sky => (Properties.Sky ?? map.Defaults.Sky ?? content.DefaultMapInfo.Sky) is { Length: > 0 } sky ? sky : null;
@@ -516,7 +554,7 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
 
         int height = this[MapConstants.HeightPlane, x, y];
         if (height != 0)
-            yield return $"Height: {height} {(height == 1 ? "story" : "stories")}";
+            yield return $"Height: {BlocksText(x, y, height)}";
 
         int tag = this[MapConstants.TagPlane, x, y];
         if (tag != 0)
@@ -525,6 +563,21 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         int zone = this[MapConstants.ZonePlane, x, y];
         if (zone != 0)
             yield return $"Light zone: {zone}";
+    }
+
+    /// <summary>
+    /// A height-plane value's blocks and what each is on the player's story, as MapManager.DescribeBlock
+    /// says it ("stories 3 to 5, overhead; stories 7 to 8, overhead"); the bare number if it isn't blocks
+    /// </summary>
+    public string BlocksText(int x, int y, int value)
+    {
+        var (lower, upper) = StoryBlocks.Decode(value);
+        if (lower == null)
+            return $"{value} (not stories: ignored)";
+        int story = PlayerStory;
+        string Describe((int Start, int Stop) block) => $"stories {block.Start} to {block.Stop}"
+            + (block.Start <= story && story <= block.Stop ? ", solid" : block.Stop < story ? ", floor below the player" : ", overhead");
+        return Describe(lower.Value) + (upper is { } second ? "; " + Describe(second) : "");
     }
 
     private string ObjectText(int x, int y, int obj)

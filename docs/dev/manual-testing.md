@@ -989,6 +989,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] Pick and edit from the 3D view; **(never tried)** clicking an extra thing.
 - [ ] **(never tried)** Level properties' Story saved to the mod's game-info (`story:`); the flat
       brush listing floor-sky and sky indices with no texture.
+- [ ] Stories in the editor: the 3D view of MAP01 on story 2 (a mod's game-info), the door and
+      things a story up on the door's frame (UI Automation screenshot, 2026-11-08). **(never
+      tried)** typing 3-5, 1-2,4-8, 9 and 5-3 in the heights plane's Stories box (the value and the
+      error), the heights layer's labels, the tile info line, Level properties' Pushwall stories
+      saved as `pushwall-stories`, blocks with a gap and a raised floor in the 3D view (tops in the
+      floor flat at or under the player's floor), the camera at the player's story, the checks
+      for a start in a block and walls under the player's story.
 
 ## 2.7 Playing from the editor
 
