@@ -432,6 +432,7 @@ internal sealed partial class SkyAndFlats(
         int width = render.ViewWidth;
         long viewx = render.ViewX, viewy = render.ViewY;
         ulong mapwidth = map.MapWidth, mapheight = map.MapHeight;
+        int edgewall = map.EdgeWall;
         bool shaded = lighting.Shading;
         bool fillbare = (lighting.HasZones || actorLights.HasLights) && !behind;    // tiles with no texture are cast too
         long[] dirxs = flatdirx, dirys = flatdiry;
@@ -475,12 +476,14 @@ internal sealed partial class SkyAndFlats(
                         lasttexture = flats[tile];
                         data = lasttexture?.RawData ?? [];
                         square = lasttexture is { Width: GameConstants.TextureSize, Height: GameConstants.TextureSize };
-                        inwall = lasttexture == null && map.TileMap[tilex, tiley] != 0;
+                        inwall = lasttexture == null && map.TileMap[tilex, tiley] is var wall && wall != 0 && wall != edgewall;
                     }
                     var texture = lasttexture;
 
                     // A wall's tile rarely has a flat, but the rows just past its face (where its post
-                    // rounds short of the true edge) land on it: they take the tile the ray came from
+                    // rounds short of the true edge) land on it: they take the tile the ray came from.
+                    // Not the solid edge round an open map: it draws no post, so its whole tile would
+                    // take the last texels before it, smeared
                     if (inwall && FlatBeforeWall(dirxs[x], dirys[x], ref px, ref py, ref tilex, ref tiley))
                     {
                         tile = tiley * (long)mapwidth + tilex;

@@ -528,13 +528,19 @@ internal class MapManager
     }
 
     /// <summary>
+    /// The wall id <see cref="SealEdge"/> makes the open tiles round the map's edge (0: none yet).
+    /// It's drawn as nothing, so the floor and ceiling past it are those tiles' own.
+    /// </summary>
+    internal int EdgeWall { get; set; }
+
+    /// <summary>
     /// Makes the open tiles round the map's edge solid: view traces and movement only stop at
     /// walls, and would run off the map. They're a wall id the mapdefs don't give, so they're
     /// drawn as nothing (the floor and ceiling show through) but can't be crossed.
     /// </summary>
     private void SealEdge(string mapName, MapObjectTranslationAsset data)
     {
-        int edgeWall = Enumerable.Range(1, GameConstants.BitWall - 1).Reverse().FirstOrDefault(id => !data.Walls.ContainsKey(id), 1);
+        int edgeWall = EdgeWall = Enumerable.Range(1, GameConstants.BitWall - 1).Reverse().FirstOrDefault(id => !data.Walls.ContainsKey(id), 1);
         int sealedTiles = 0;
         for (int y = 0; y < MapHeight; y++)
         {

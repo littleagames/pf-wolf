@@ -104,6 +104,30 @@ public class SkyAndFlatsTests
         Assert.That((At(5, 8), At(5, 9)), Is.EqualTo(((byte)1, (byte)1)));
     }
 
+    [TestCase(false, (byte)7)]      // a wall's tile: the rows on it take the flat in front of its face
+    [TestCase(true, (byte)1)]       // the solid edge round an open map draws nothing: its tile's own (none) shows
+    public void Rows_On_A_Walls_Tile_Take_The_Flat_In_Front_Unless_It_Is_The_Maps_Sealed_Edge(bool edge, byte shown)
+    {
+        // Arrange: looking east along row 10, floor flats of color 7 up to tile 18, then walls with
+        // none from tile 19 (row 8 lands at x 19.6, row 9 at 17.6)
+        const ushort WallId = 90;
+        var stone = new TextureAsset { Width = 64, Height = 64, RawData = Enumerable.Repeat((byte)7, 64 * 64).ToArray() };
+        var flats = new TextureAsset?[MapConstants.ClassicMapArea];
+        for (int x = 0; x < 19; x++)
+            flats[10 * MapConstants.ClassicMapSize + x] = stone;
+        for (int x = 19; x < MapConstants.ClassicMapSize; x++)
+            _map.TileMap[x, 10] = WallId;
+        if (edge)
+            _map.EdgeWall = WallId;
+
+        // Act
+        _sky.SetupFlatColumns();
+        _sky.DrawFlats(flats, 3, Height / 2, Height - 1, _sky.FloorHalves, behind: false);
+
+        // Assert
+        Assert.That((At(0, 8), At(0, 9)), Is.EqualTo((shown, (byte)7)));
+    }
+
     [Test]
     public void Where_A_Tile_Has_No_Flat_The_Color_Under_It_Stays()
     {
