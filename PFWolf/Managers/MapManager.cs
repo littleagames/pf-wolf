@@ -193,6 +193,9 @@ internal class MapManager
     /// <summary>Whether a tile is on the level</summary>
     internal bool InMap(int x, int y) => (uint)x < MapWidth && (uint)y < MapHeight;
 
+    /// <summary>Whether a tile is on the map's edge, which is always solid</summary>
+    internal bool OnEdge(int x, int y) => x == 0 || y == 0 || x == MapWidth - 1 || y == MapHeight - 1;
+
     /// <summary>A tile's <see cref="TileIndex"/>, or -1 when it's off the level</summary>
     internal int TileIndexOrNone(int x, int y) => InMap(x, y) ? y * MapWidth + x : -1;
 
@@ -419,8 +422,9 @@ internal class MapManager
                 int tile = MapSpot(x, y, 0);
                 bool door = data.Doors.ContainsKey(tile);
                 bool wallCode = IsWallId(tile) && data.Walls.ContainsKey(tile);
-                // a wall, or a floor tile with a block, is solid where its block takes in the player's story
-                bool solid = door || (wallCode || BlockStops[x, y] != 0 && BlockWall != 0) && BlocksStory(x, y);
+                // a wall, or a floor tile with a block, is solid where its block takes in the player's
+                // story; a wall round the map's edge always is, so nothing leaves the map
+                bool solid = door || (wallCode || BlockStops[x, y] != 0 && BlockWall != 0) && (BlocksStory(x, y) || wallCode && OnEdge(x, y));
                 CheckPatch(mapName, x, y, isWall: wallCode, data);
                 if (solid)
                 {
@@ -1141,6 +1145,34 @@ internal class MapManager
     /// </summary>
     internal byte[] SpanStart = [], SpanStop = [], UpperSpanStart = [], UpperSpanStop = [];
 
+    /// <summary>Whether a point z texels up from the ground on a tile is inside one of its blocks (from the spans)</summary>
+    internal bool InBlock(int x, int y, float z)
+    {
+        int i = TileIndex(x, y);
+        if ((uint)i >= (uint)SpanStop.Length || z < 0)
+            return false;
+        int story = (int)(z / GameConstants.TextureSize) + 1;
+        return SpanStop[i] != 0 && SpanStart[i] <= story && story <= SpanStop[i]
+            || UpperSpanStop[i] != 0 && UpperSpanStart[i] <= story && story <= UpperSpanStop[i];
+    }
+
+    /// <summary>
+    /// The floor under a point z texels up from the ground on a tile: the top (texels up from the
+    /// ground) of its highest block that ends at or below z, else the ground (0)
+    /// </summary>
+    internal float FloorUnder(int x, int y, float z)
+    {
+        int i = TileIndex(x, y);
+        if ((uint)i >= (uint)SpanStop.Length)
+            return 0;
+        float floor = 0;
+        if (SpanStop[i] != 0 && SpanStop[i] * GameConstants.TextureSize <= z + 0.5f)
+            floor = SpanStop[i] * GameConstants.TextureSize;
+        if (UpperSpanStop[i] != 0 && UpperSpanStop[i] * GameConstants.TextureSize <= z + 0.5f)
+            floor = UpperSpanStop[i] * GameConstants.TextureSize;
+        return floor;
+    }
+
     private void RebuildSpans()
     {
         SpanStart = new byte[MapArea];
@@ -1244,8 +1276,8 @@ internal class MapManager
             for (int x = 0; x < MapWidth; x++)
             {
                 var tile = TileMap[x, y];
-                if ((tile & GameConstants.BitDoor) != 0 || tile == GameConstants.BitWall || (EdgeWall != 0 && tile == EdgeWall))
-                    continue;
+                if ((tile & GameConstants.BitDoor) != 0 || tile == GameConstants.BitWall || (EdgeWall != 0 && tile == EdgeWall) || OnEdge(x, y))
+                    continue;                   // the map's edge stays solid, whatever the story (LoadMap, SealEdge)
                 bool wall = IsWallCode(x, y);
                 if (!wall && BlockStops[x, y] == 0)
                 {

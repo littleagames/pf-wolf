@@ -152,7 +152,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
 
                 value = (uint)map.TileMap[x, y];
                 var shape = map.WallShapes[x, y];
-                if (shape != WallShape.Square && Diagonals.LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
+                if (shape != WallShape.Square && value != 0 && Diagonals.LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
                     return false;
                 x += xstep;
 
@@ -206,7 +206,7 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
 
                 value = (uint)map.TileMap[x, y];
                 var shape = map.WallShapes[x, y];
-                if (shape != WallShape.Square && Diagonals.LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
+                if (shape != WallShape.Square && value != 0 && Diagonals.LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
                     return false;
                 y += ystep;
 

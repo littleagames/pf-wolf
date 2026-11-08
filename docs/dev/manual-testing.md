@@ -445,6 +445,13 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       `pushwall-stories`, a push refused for needing three blocks (blocked sound), a piece
       stopping on a floor block and joining it, saving and loading mid-push, a pushwall at story 1
       in a multiplayer game.
+- [ ] Stories, the rest: a door on story 2 over a drop sitting on a frame, rain falling into a
+      drop, the automap's drop marks, the architecture demo on story 2 with `wallheight 1`
+      (headless screenshots, 2026-11-08). **(never tried)** walking through a door on story 2, a
+      see-through door on story 2, a diagonal walked over (story 2) and under (`height 3` on it,
+      story 1), its slanted face and that enemies behind it still show, snow and splashes on a
+      rooftop, particles bouncing into a drop and off a block's top, the automap's overhead
+      line under an arch, a floor sky on a tile below the player's floor.
 
 **Diagonal walls**
 - [ ] Slide along a diagonal face; automap both styles.

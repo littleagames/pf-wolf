@@ -161,7 +161,7 @@ The renderer goes from "walls grow up from the one floor" to blocks at any heigh
    - pushwall stories (done): the A_PushWall/A_MoveWall argument and game-info `pushwall-stories`,
      the moving piece's start and stop on MovingPushWall (save version bump), splitting and
      joining blocks where it starts and stops, refusing pushes that won't fit;
-   - doors on any story (frame below, lintel above), moving pushwalls drawn at their piece's
+   - (done) doors on any story (frame below, lintel above), moving pushwalls drawn at their piece's
      height, diagonals at any height, see-through doors, wall sprites, destructible walls
      (`removewall arch` becomes a block), weather falling to the ground, the automap (walls at
      the player's story; drops and overheads shown apart), UWMF levels' plane 3, tile floor
@@ -235,6 +235,38 @@ under, and the areas are rebuilt (ApplyStory) once it's open. Where it stops it 
 blocks (MapManager.JoinBlocks/SetTileBlocks). Drawn at its piece's stories (WallPosts.SetHitSpan;
 two parts drawn as one, gap filled, while it moves); a moving pushwall's tiles show their own blocks
 as an open tile's. A classic push is unchanged: demos identical, the finished push pixel-identical.
+
+Phase 3, part 3 (the rest) done 2026-11-08:
+- **Doors**: above the first story a door's tile queues a frame from the ground up to the
+  player's floor as it's entered (a shut door ends the trace before the tile's left), faced like
+  its lintel (BlockFaceTexture). A door is always at least a story tall (SetHitBlock), and with a
+  sky the rows over the tallest block are only closed from a story up (TallestStory ≥ 1), so a
+  door over walls lower than the player's story shows.
+- **The map's edge** stays solid on any story (LoadMap, ApplyStory: MapManager.OnEdge): a wall
+  round the edge that doesn't reach the player's story let the trace off the map (a crash).
+- **Diagonals** walked on or under (their block not taking in the story): through an open edge
+  the trace draws the slanted face at the block's stories and goes on (RayTrace.WalkableDiagonal,
+  WallHits.HitDiagWall solid: false, so sprites aren't clipped by it); through a solid edge the
+  square face shows as an open tile's block's. Its top and underside cover the whole tile (an
+  approximation). Sight goes over or under one (LineOfSight); movement and shots already did.
+- **See-through doors**, **wall sprites** and **destructible walls** needed nothing more: doors
+  and wall sprites stand on the player's story; `removewall arch` keeps both blocks' parts above it.
+- **Weather** measures from the ground: drops fall past the player's floor into drops, are
+  hidden under the top of a tile's highest block, and splash on it (or the ground), never on a
+  wall at the player's story or above the eyes. **Particles** bounce on the floor under them
+  (MapManager.FloorUnder: the ground or a block's top), stop inside blocks walked on or under
+  (MapManager.InBlock), and the ceiling's measured from the player's floor.
+- **The automap** shows walls at the player's story (it always went by TileMap); seen drops
+  (floor below the player's) get an inset outline (AutomapDrop) and tiles with a block overhead
+  a corner-to-corner line (AutomapOverhead), in both styles.
+- **UWMF** already carried plane 3 whole (tile and sector `height`), blocks with a start and two
+  blocks included (UwmfTranslatorTests).
+- **Floor skies on caps**: a cap with no texel shows its tile's floor sky (SkyAndFlats.FloorSkyAt),
+  the tile skies loaded at the frame's start on a story above the first.
+
+Checked: story 1 pixel-identical (14 shots); headless shots of a door on story 2 over a drop
+(frame below), heavy rain falling into a drop, the automap's drop marks, the architecture demo
+on story 2 with wall height 1 (doors on frames over trenches).
 
 ## Later
 

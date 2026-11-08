@@ -175,6 +175,23 @@ public class WallPostsTests
         Assert.That(_render.HitFirst, Is.Zero);                                         // a door is on the player's story
     }
 
+    [Test]
+    public void A_Door_Is_A_Story_Tall_When_The_Walls_Dont_Reach_The_Players_Story()
+    {
+        _map.LevelWallStories = 1;
+        _map.Story = 3;
+        _posts.SetHitBlock(11, 10, door: true);
+        Assert.That((_render.HitFirst, _render.HitStories), Is.EqualTo((0, 1)));
+    }
+
+    [Test]
+    public void A_Moving_Pushwall_Is_Hit_At_Its_Pieces_Stories()
+    {
+        _map.Story = 2;
+        _posts.SetHitSpan((2, 3));
+        Assert.That((_render.HitFirst, _render.HitStories), Is.EqualTo((0, 2)));
+    }
+
     // A frame on story 3 of a level with a sky: the ground two stories down; a smaller view, so
     // the tiles' rows are on screen
     private void OnStory3()

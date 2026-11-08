@@ -51,6 +51,8 @@ internal sealed class AutomapDrawing(
         ["AutomapDecor"] = "#8D8D8D",
         ["AutomapWallSprite"] = "#8D8D8D",
         ["AutomapGrid"] = "#004040",
+        ["AutomapDrop"] = "#4040A0",
+        ["AutomapOverhead"] = "#606060",
         ["AutomapTitle"] = "#FFFF55",
         ["AutomapStats"] = "#C2C2C2",
     };
@@ -135,11 +137,13 @@ internal sealed class AutomapDrawing(
         if (automap.Style == AutomapStyle.Graphic)
         {
             DrawAutomapTexels(view, reveal);
+            DrawAutomapStories(view, reveal);
             DrawAutomapWallSprites(view, reveal, graphic: true);
             DrawAutomapActors(view, reveal, sprites: automap.Zoom >= AutomapMinSpriteZoom);
         }
         else
         {
+            DrawAutomapStories(view, reveal);
             DrawAutomapWalls(view, reveal);
             DrawAutomapPushwall(view, reveal);
             DrawAutomapDoors(view, reveal);
@@ -215,6 +219,38 @@ internal sealed class AutomapDrawing(
                 if ((faces & SeenFlags.SouthFace) != 0 && !IsAutomapSolidEdge(x, y + 1, SeenFlags.NorthFace)) AutomapLine(view, x, y + 1, x + 1, y + 1, color);
                 if ((faces & SeenFlags.WestFace) != 0 && !IsAutomapSolidEdge(x - 1, y, SeenFlags.EastFace)) AutomapLine(view, x, y, x, y + 1, color);
                 if ((faces & SeenFlags.EastFace) != 0 && !IsAutomapSolidEdge(x + 1, y, SeenFlags.WestFace)) AutomapLine(view, x + 1, y, x + 1, y + 1, color);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The open tiles whose floor isn't at the player's height (a drop: the ground or a block's
+    /// top below, outlined inside the tile) and those with a block overhead (a line corner to
+    /// corner), where the player has seen the floor
+    /// </summary>
+    void DrawAutomapStories(AutomapView view, bool reveal)
+    {
+        var (firstX, lastX) = AutomapReach(view.CenterX, map.MapWidth, view);
+        var (firstY, lastY) = AutomapReach(view.CenterY, map.MapHeight, view);
+        string drop = AutomapColor("AutomapDrop"), overhead = AutomapColor("AutomapOverhead");
+        float zbase = (map.Story - 1) * GameConstants.TextureSize;
+        const float Inset = 0.2f;
+
+        for (int y = firstY; y <= lastY; y++)
+        {
+            for (int x = firstX; x <= lastX; x++)
+            {
+                if (map.TileMap[x, y] != 0 || !reveal && (map.Seen[x, y] & SeenFlags.Floor) == 0)
+                    continue;
+                if (zbase > 0 && map.FloorUnder(x, y, zbase) < zbase)
+                {
+                    AutomapLine(view, x + Inset, y + Inset, x + 1 - Inset, y + Inset, drop);
+                    AutomapLine(view, x + Inset, y + 1 - Inset, x + 1 - Inset, y + 1 - Inset, drop);
+                    AutomapLine(view, x + Inset, y + Inset, x + Inset, y + 1 - Inset, drop);
+                    AutomapLine(view, x + 1 - Inset, y + Inset, x + 1 - Inset, y + 1 - Inset, drop);
+                }
+                if (map.IsOverhead(x, y))
+                    AutomapLine(view, x, y, x + 1, y + 1, overhead);
             }
         }
     }

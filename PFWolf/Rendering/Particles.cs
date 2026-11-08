@@ -1112,25 +1112,27 @@ internal sealed class Particles(
             }
         }
 
-        // The floor
-        if (nz < 0)
+        // The floor: the player's, or over a drop the ground or a block's top (heights here are
+        // from the player's floor)
+        float floor = FloorAt(nx, ny, p.Z);
+        if (nz < floor)
         {
             switch (type.Collide)
             {
                 case CollideMode.Die:
                     return false;
                 case CollideMode.Stop:
-                    (p.X, p.Y, p.Z) = (nx, ny, 0);
+                    (p.X, p.Y, p.Z) = (nx, ny, floor);
                     p.Stopped = true;
                     return true;
             }
 
-            nz = -nz * type.Bounce;
+            nz = floor + (floor - nz) * type.Bounce;
             p.VZ = -p.VZ * type.Bounce;
             if (Math.Abs(p.VZ) <= Math.Max(Math.Abs(type.Gravity) * 2, 0.05f))
             {
                 // too slow to bounce again: it lies on the floor, sliding to a stop
-                nz = 0;
+                nz = floor;
                 p.VZ = 0;
                 p.VX *= 0.8f;
                 p.VY *= 0.8f;
@@ -1159,27 +1161,46 @@ internal sealed class Particles(
         return true;
     }
 
-    /// <summary>Whether a point (texels) is somewhere a particle can't be: off the map, in a shut door's tile, or in a wall below its top</summary>
+    // Where the ground is, texels below the player's floor
+    float ZBase => (map.Story - 1) * TexelsPerTile;
+
+    /// <summary>
+    /// Whether a point (texels, z up from the player's floor) is somewhere a particle can't be: off
+    /// the map, in a shut door's tile, in a wall below its top, or inside a block walked on or under
+    /// </summary>
     internal bool Blocked(float x, float y, float z)
     {
         int tx = (int)MathF.Floor(x / TexelsPerTile), ty = (int)MathF.Floor(y / TexelsPerTile);
         if (!map.InMap(tx, ty))
             return true;
         int tile = map.TileMap[tx, ty];
-        if (tile == 0)
-            return false;
         if ((tile & GameConstants.BitDoor) != 0)
             return !hooks.DoorOpen(tile & ~GameConstants.BitDoor);
-        return z < map.WallStories(tx, ty) * TexelsPerTile;
+        if (tile != 0)
+            return z + ZBase < map.WallStories(tx, ty) * TexelsPerTile;     // a wall at the player's story: anywhere below its top
+        return map.InBlock(tx, ty, z + ZBase);
     }
 
-    /// <summary>How high the ceiling is over a point (texels): the level's walls' top, or none where the sky shows</summary>
+    /// <summary>
+    /// The floor under a point (texels, z up from the player's floor): the ground, or the top of
+    /// the highest block below it, up from the player's floor (below it, negative)
+    /// </summary>
+    internal float FloorAt(float x, float y, float z)
+    {
+        int tx = (int)MathF.Floor(x / TexelsPerTile), ty = (int)MathF.Floor(y / TexelsPerTile);
+        float zbase = ZBase;
+        if (zbase == 0 || !map.InMap(tx, ty))
+            return 0;                   // on story 1 the ground is the player's floor
+        return map.FloorUnder(tx, ty, z + zbase) - zbase;
+    }
+
+    /// <summary>How high the ceiling is over a point (texels, up from the player's floor): the level's walls' top, or none where the sky shows</summary>
     internal float CeilingAt(float x, float y)
     {
         int tx = (int)MathF.Floor(x / TexelsPerTile), ty = (int)MathF.Floor(y / TexelsPerTile);
         if (!map.InMap(tx, ty) || hooks.SkyOver(tx, ty))
             return float.MaxValue;
-        return map.LevelWallStories * TexelsPerTile;
+        return map.LevelWallStories * TexelsPerTile - ZBase;
     }
 
     /// <summary>Whether a door, as far open as it is (0 shut to 0xFFFF open), lets particles through</summary>

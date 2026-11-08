@@ -443,7 +443,9 @@ internal sealed class WallHits(
         return true;
     }
 
-    internal void HitDiagWall(WallShape shape, int tilex, int tiley)
+    // solid: the face is a wall at the player's story (sprites behind it are hidden by it), not a
+    // walkable diagonal's (RayTrace.WalkableDiagonal)
+    internal void HitDiagWall(WallShape shape, int tilex, int tiley, bool solid = true)
     {
         //
         // seen from the open side, the face runs left to right along +u for SolidNW/SolidNE,
@@ -471,7 +473,7 @@ internal sealed class WallHits(
             return;
         render.PostSource = textureAsset;
         render.PostOfs = ScrollWall(tilex, tiley, texture);
-        posts.ScalePost();
+        posts.ScalePost(solid: solid);
     }
 
     /// <summary>

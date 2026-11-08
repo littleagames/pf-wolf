@@ -58,5 +58,7 @@ AutomapItem: "#20AAFF"
 AutomapDecor: "#8D8D8D"
 AutomapWallSprite: "#8D8D8D"
 AutomapGrid: "#004040"
+AutomapDrop: "#4040A0"         # a drop: floor below the player's story (the automap marks it)
+AutomapOverhead: "#606060"     # a block overhead
 AutomapTitle: "#FFFF55"
 AutomapStats: "#C2C2C2"

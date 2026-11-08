@@ -12,8 +12,9 @@ namespace PFWolf.Rendering;
 /// the box), there's nothing to save or keep in step, and the game's own random numbers aren't
 /// touched: demos and net games play the same with or without it.
 ///
-/// A particle isn't drawn under a ceiling flat (any, even one that's all see-through) or an arch,
-/// in a door's tile, or inside a wall below its top. It's drawn in among the sprites, farthest
+/// A particle isn't drawn under a ceiling flat (any, even one that's all see-through), in a door's
+/// tile, inside a wall below its top, or under the top of a tile's highest block. Heights are from
+/// the ground: on a story above the first it falls past the player's floor into drops. It's drawn in among the sprites, farthest
 /// first, hidden by the walls in front of it (PointDrawing.cs, which particles share).
 /// </summary>
 internal sealed class Weather(
@@ -24,7 +25,6 @@ internal sealed class Weather(
     RenderState render,
     GameSession session,
     Func<int, int> floorRow,
-    Func<int, int, bool> isArch,
     SeeThroughPosts? seeThrough = null,
     PointDrawing? points = null)
 {
@@ -167,8 +167,9 @@ internal sealed class Weather(
     internal bool Active => LevelWeather != null && weatherz.Length > 0;
 
     /// <summary>
-    /// Whether a particle at (gx, gy) (global units), z texels up, is somewhere it can't be: under
-    /// a ceiling flat or an arch, in a door's tile, or inside a wall
+    /// Whether a particle at (gx, gy) (global units), z texels up from the ground, is somewhere it
+    /// can't be: under a ceiling flat, in a door's tile, inside a block or under one (below the
+    /// top of a tile's highest block)
     /// </summary>
     bool WeatherCovered(long gx, long gy, double z)
     {
@@ -184,8 +185,13 @@ internal sealed class Weather(
             return z < map.WallStories(x, y) * GameConstants.TextureSize;
         if (map.CeilingFlat[map.TileIndex(x, y)] != null)
             return true;
-        return isArch(x, y) && z < map.WallStories(x, y) * GameConstants.TextureSize;
+        return z < Landing(x, y);
     }
+
+    // How high (texels up from the ground) weather lands on an open tile: the top of its highest
+    // block (a floor, a wall walked on, an arch's roof), else the ground
+    double Landing(int x, int y) =>
+        map.BlockStops[x, y] != 0 || map.IsWallCode(x, y) ? map.WallStories(x, y) * GameConstants.TextureSize : 0;
 
     const int SplashTics = 8;           // how long a splash lasts
 
@@ -273,7 +279,7 @@ internal sealed class Weather(
             if (splashes && fallen < dropfall * SplashTics)
                 AddSplash(info, i, falls - 1, time - fallen / dropfall, fallen / dropfall, originx, originy, box, basecolor, dim, maxdist);
 
-            double z = top - fallen;
+            double z = top - fallen;            // up from the ground
             var (spotx, spoty) = WeatherSpot(i, falls, box);
             long gx = spotx + windx, gy = spoty + windy;
             if (snow && info.Drift != 0)
@@ -287,7 +293,7 @@ internal sealed class Weather(
             if (WeatherCovered(gx, gy, z))
                 continue;
             // Not right in the view's face, where a streak would cross half the screen
-            if (!ProjectPoint(gx, gy, z, out int x0, out int y0, out long nx, out double half) || nx > maxdist || nx < NearWeather)
+            if (!ProjectPoint(gx, gy, z - render.ZBase, out int x0, out int y0, out long nx, out double half) || nx > maxdist || nx < NearWeather)
                 continue;
 
             int x1 = x0, y1 = y0, size;
@@ -300,7 +306,7 @@ internal sealed class Weather(
                 double speed = Math.Sqrt(nowx * nowx + nowy * nowy + dropfall * dropfall);
                 double length = info.Length * weatherspeed[i];
                 if (!ProjectPoint(gx - (long)(nowx / speed * length * TexelGlobal), gy - (long)(nowy / speed * length * TexelGlobal),
-                        z + dropfall / speed * length, out x1, out y1, out _, out _))
+                        z - render.ZBase + dropfall / speed * length, out x1, out y1, out _, out _))
                     continue;
 
                 int rows = Math.Abs(y1 - y0);
@@ -327,9 +333,14 @@ internal sealed class Weather(
         var (spotx, spoty) = WeatherSpot(i, fall, box);
         var (gx, gy) = InWeatherBox(spotx + windx, spoty + windy, originx, originy, box);
         long tx = gx >> MapConstants.TileShift, ty = gy >> MapConstants.TileShift;
-        if ((ulong)tx >= (ulong)map.MapWidth || (ulong)ty >= (ulong)map.MapHeight || WeatherCovered(gx, gy, 0))
+        if ((ulong)tx >= (ulong)map.MapWidth || (ulong)ty >= (ulong)map.MapHeight)
             return;
-        if (!ProjectPoint(gx, gy, 0, out int sx, out int sy, out long nx, out double half) || nx > maxdist || nx < NearWeather)
+        // on the top of a block, else the ground: not on a wall at the player's story, nor where
+        // it's above the eyes (a roof, never seen from under it)
+        double landing = Landing((int)tx, (int)ty);
+        if (map.TileMap[tx, ty] != 0 || landing - render.ZBase > render.ViewEyeZ || WeatherCovered(gx, gy, landing))
+            return;
+        if (!ProjectPoint(gx, gy, landing - render.ZBase, out int sx, out int sy, out long nx, out double half) || nx > maxdist || nx < NearWeather)
             return;
 
         // it spreads to about 3 texels across as it goes

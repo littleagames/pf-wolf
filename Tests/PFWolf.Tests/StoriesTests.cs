@@ -164,6 +164,28 @@ public class StoriesTests
         Assert.That((_map.BlockSpan(10, 10), _map.UpperSpan(10, 10)), Is.EqualTo((((int, int)?)(3, 3), ((int, int)?)(5, 6))));
     }
 
+    [TestCase(10f, true)]               // story 1
+    [TestCase(70f, false)]              // story 2: the gap
+    [TestCase(130f, true)]              // story 3
+    [TestCase(200f, false)]             // above both
+    public void A_Point_Is_In_A_Block_By_Its_Height_From_The_Ground(float z, bool inside)
+    {
+        _map.SetBlocks(10, 10, 1, 1, 3, 3);
+        _map.ApplyStory();
+        Assert.That(_map.InBlock(10, 10, z), Is.EqualTo(inside));
+    }
+
+    [TestCase(10f, 0f)]                 // inside the lower block: the ground under it
+    [TestCase(100f, 64f)]               // in the gap: on the lower block
+    [TestCase(300f, 192f)]              // over both: on the upper one
+    public void The_Floor_Under_A_Point_Is_The_Highest_Block_Top_Below_It(float z, float floor)
+    {
+        _map.SetBlocks(10, 10, 1, 1, 3, 3);
+        _map.ApplyStory();
+        Assert.That(_map.FloorUnder(10, 10, z), Is.EqualTo(floor));
+        Assert.That(_map.FloorUnder(11, 10, z), Is.Zero);
+    }
+
     [Test]
     public void A_Wall_With_No_Block_Of_Its_Own_Runs_From_Story_1_To_The_Levels_Wall_Height()
     {
@@ -191,6 +213,22 @@ public class StoriesTests
         Assert.That(_map.TileMap[10, 10] != 0, Is.EqualTo(solid));
         Assert.That(_map.ActorAt[10, 10] is Wall, Is.EqualTo(solid));
         Assert.That(_map.MapSpot(10, 10, 0), Is.EqualTo(WallId));      // plane 0 keeps the wall either way
+    }
+
+    [Test]
+    public void A_Wall_On_The_Maps_Edge_Stays_Solid_On_Any_Story()
+    {
+        // Arrange: walls up to story 2 at the edge and inside, the player on story 3
+        Wall(0, 10);
+        Wall(10, 10);
+        _map.Story = 3;
+
+        // Act
+        _map.ApplyStory();
+
+        // Assert: nothing walks (or traces) off the map
+        Assert.That(_map.TileMap[0, 10], Is.EqualTo(WallId));
+        Assert.That(_map.TileMap[10, 10], Is.Zero);
     }
 
     [Test]

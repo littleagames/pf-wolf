@@ -226,7 +226,7 @@ internal static partial class GameHost
     // Rain and snow (Rendering/Weather.cs)
     static Weather weather = null!;     // made in InitServices
 
-    static Weather MakeWeather() => new(GameEngineManager, _videoManager, MapManager, lighting, Render, Session, FloorRow, IsArch, seeThroughPosts, pointDrawing);
+    static Weather MakeWeather() => new(GameEngineManager, _videoManager, MapManager, lighting, Render, Session, FloorRow, seeThroughPosts, pointDrawing);
 
     // ==== Particles ==============================================================================
 

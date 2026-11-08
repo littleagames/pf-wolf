@@ -10,7 +10,7 @@ public class WeatherTests
     private static (Weather Weather, RenderState Render) Make()
     {
         var render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, new byte[256]);
-        var weather = new Weather(null!, null!, null!, null!, render, new GameSession(), half => half, (_, _) => false);
+        var weather = new Weather(null!, null!, null!, null!, render, new GameSession(), half => half);
         return (weather, render);
     }
 

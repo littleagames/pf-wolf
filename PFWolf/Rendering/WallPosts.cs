@@ -49,8 +49,9 @@ internal sealed class WallPosts(
     }
 
 
-    // drawn: how many stories to draw, if not all HitStories (a door under its lintel draws one)
-    internal void ScalePost(int drawn = 0)
+    // drawn: how many stories to draw, if not all HitStories (a door under its lintel draws one);
+    // solid: it's a wall at the player's story, which sprites behind clip against
+    internal void ScalePost(int drawn = 0, bool solid = true)
     {
         var upper = render.UpperSource ?? render.PostSource;
         int first = render.HitFirst;
@@ -68,7 +69,7 @@ internal sealed class WallPosts(
         // sprites clip against the nearest wall: nothing behind it is taller than it
         // on screen, since every wall stands at least a story high and sprites don't
         //
-        if (!render.ColumnHit)
+        if (!render.ColumnHit && solid)
         {
             render.WallHeight[render.PixX] = render.PostHeight;
             render.ColumnHit = true;
@@ -96,6 +97,8 @@ internal sealed class WallPosts(
         }
         render.HitFirst = door ? 0 : map.BlockStart(tilex, tiley) - story;
         render.HitStories = map.WallStories(tilex, tiley) - story + 1;
+        if (door && render.HitStories < 1)
+            render.HitStories = 1;      // a door's always on the player's story, whatever the walls' height
     }
 
     /// <summary>The stories of a moving pushwall the trace has just hit: the part that moves (MovingPushWall.Span)</summary>
@@ -127,9 +130,13 @@ internal sealed class WallPosts(
         render.ZBase = (story - 1) * GameConstants.TextureSize;
         render.GroundStory = 1 - story;
         render.CeilingStory = map.LevelWallStories - story + 1;
-        render.TallestStory = map.MaxWallStories - story + 1;
+        render.TallestStory = Math.Max(map.MaxWallStories - story + 1, 1);    // a door's at least a story up from the player's floor
         render.OpaqueCeiling = !skyAndFlats.SkyShows && !map.HasCeilingSkies
             && render.CeilingStory * GameConstants.TextureSize > render.ViewEyeZ;
+
+        // floors at other heights (caps) show tiles' floor skies as the trace goes: loaded first
+        if (map.HasFloorSkies && story > 1)
+            skyAndFlats.LoadTileSkies();
     }
 
     /// <summary>Gets a column ready to trace: every row open, no tile or floor run open</summary>
@@ -200,7 +207,21 @@ internal sealed class WallPosts(
         render.CellBlocks = render.CellLowFloors = 0;
         render.CellFloor = 0;
         if ((tile & GameConstants.BitDoor) != 0)
-            return;                     // a door's floor is the player's
+        {
+            // a door's floor is the player's; above the first story its frame runs down to the
+            // ground under it, faced like the wall the door is set into. It's queued now: a shut
+            // door ends the trace before the tile's left, and the frame's in front of it
+            if (render.GroundStory < 0 && !focal && BlockFaceTexture(tilex, tiley, vertical, out bool doormirrored) is { } frame)
+            {
+                int ofs = vertical
+                    ? LintelColumn(edgey, (render.XTileStep == -1) != doormirrored)
+                    : LintelColumn(edgex, (render.YTileStep == 1) != doormirrored);
+                short entry = render.CellEntry;
+                QueuePost(entry, render.GroundStory, 0, frame, ofs, frame, ofs, light: WallLight(edgex, edgey));
+                Occlude(RowAt(entry, 0), RowAt(entry, render.GroundStory) - 1);
+            }
+            return;
+        }
 
         // a moving pushwall's tile is open but for the pushwall (drawn as a wall, at its own
         // stories): its own blocks, and what the pushwall left, show as an open tile's
@@ -223,6 +244,16 @@ internal sealed class WallPosts(
         Span<int> firsts = [start - story, start2 - story], tops = [stop - story + 1, stop2 - story + 1];
         Span<bool> solid = [!open && start <= story && story <= stop, !open && stop2 != 0 && start2 <= story && story <= stop2];
 
+        // a diagonal walked on or under shows a square face only through its solid edges: through
+        // an open one, its slanted face is drawn (RayTrace.WalkableDiagonal)
+        bool slanted = false;
+        if (open && map.WallShapes[tilex, tiley] is var shape and not WallShape.Square)
+        {
+            var entered = vertical ? render.XTileStep == 1 ? SeenFlags.WestFace : SeenFlags.EastFace
+                : render.YTileStep == 1 ? SeenFlags.NorthFace : SeenFlags.SouthFace;
+            slanted = (Gameplay.Diagonals.DiagonalSolidEdges(shape) & entered) == 0;
+        }
+
         TextureAsset? texture = null;
         bool mirrored = false, textured = false;
         for (int k = 0; k < blocks; k++)
@@ -238,7 +269,7 @@ internal sealed class WallPosts(
             // its own texture, else a wall's at the end of its run, else one beside it
             if (!textured)
             {
-                texture = focal ? null : BlockFaceTexture(tilex, tiley, vertical, out mirrored);
+                texture = focal || slanted ? null : BlockFaceTexture(tilex, tiley, vertical, out mirrored);
                 textured = true;
                 if (texture != null)
                     render.CellLight = WallLight(edgex, edgey);
@@ -586,6 +617,7 @@ internal sealed class WallPosts(
                 int tile = map.TileIndexOrNone((int)(px >> MapConstants.TileShift), (int)(py >> MapConstants.TileShift));
                 var light = lighting.LightAt(tile, px, py);
                 int shadeofs = lighting.ShadeOffset((long)nx);
+                byte skypixel;
                 if (perTile)
                 {
                     var floor = tile >= 0 ? map.FloorFlat[tile] : null;
@@ -595,7 +627,8 @@ internal sealed class WallPosts(
                 }
                 if (data == null)
                 {
-                    dest[y * pitch] = light[shadeofs + color];
+                    // a floor with no texture: the tile's own floor sky, unshaded, else the color
+                    dest[y * pitch] = perTile && skyAndFlats.FloorSkyAt(tile, x, y, out skypixel) ? skypixel : light[shadeofs + color];
                     continue;
                 }
 
@@ -604,7 +637,14 @@ internal sealed class WallPosts(
                 int row = flat || height < GameConstants.TextureSize ? v * height / GameConstants.TextureSize : height - GameConstants.TextureSize + v;
                 byte pixel = data[u * width / GameConstants.TextureSize * height + row];
                 if (flat && pixel == SkyAndFlats.FlatMask)
+                {
+                    if (perTile && skyAndFlats.FloorSkyAt(tile, x, y, out skypixel))
+                    {
+                        dest[y * pitch] = skypixel;
+                        continue;
+                    }
                     pixel = color;
+                }
                 dest[y * pitch] = light[shadeofs + pixel];
             }
         }

@@ -6,7 +6,7 @@ public class WeatherVaryTests
 {
     private static Weather MakeWeather() =>
         new(null!, null!, null!, null!, new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade),
-            new GameSession(), half => half, (_, _) => false);
+            new GameSession(), half => half);
 
     private static readonly WeatherInfo Varying = new() { Kind = "snow", Vary = true, VaryChance = 0, VaryRate = 0.1 };
 

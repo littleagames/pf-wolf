@@ -295,6 +295,25 @@ public class UwmfTranslatorTests
     }
 
     [Test]
+    public void A_Height_Is_The_Whole_Height_Plane_Value_Blocks_With_A_Start_And_Two_Blocks_Too()
+    {
+        // Arrange: a wall from story 3 to 5, open floor with blocks on 3 to 5 and 7 to 8
+        var tiles = Stone + """
+
+            tile { texturenorth = "GSTONEA1"; texturesouth = "GSTONEA1"; textureeast = "GSTONEA2"; texturewest = "GSTONEA2"; height = 773; }
+            sector { texturefloor = "GSTONEA1"; height = 29573; }
+            """;
+        var rows = new[] { "###", "#t#", "#s#", "###" };
+
+        // Act
+        var (map, _) = Translate(Level(rows, "", new() { ['t'] = "{1, 0, -1}", ['s'] = "{-1, 0, 0}" }, space: "PFWolf", tiles: tiles));
+
+        // Assert
+        Assert.That(At(map, MapConstants.HeightPlane, 1, 1), Is.EqualTo(0x0305));
+        Assert.That(At(map, MapConstants.HeightPlane, 1, 2), Is.EqualTo(0x7385));
+    }
+
+    [Test]
     public void Ids_Name_The_Mapdefs_Codes_Exactly()
     {
         // Arrange: the elevator textures but id 22's; zone id 106; a guard by code 112

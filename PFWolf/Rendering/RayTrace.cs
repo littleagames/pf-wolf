@@ -469,6 +469,10 @@ internal sealed class RayTrace(
         //
         // mark the tile as visible and setup for next step
         //
+        if (map.WallShapes[render.XTile, render.YIntTile] is var openshape and not WallShape.Square
+            && !hits.IsSolidEdge(openshape, render.XTileStep == 1 ? ControlDir.West : ControlDir.East))
+            WalkableDiagonal(openshape, render.XTile, render.YIntTile, render.XTileStep == 1 ? 0 : MapConstants.TileGlobal,
+                render.YIntercept - (render.YIntTile << MapConstants.TileShift), render.XTileStep * MapConstants.TileGlobal, ystep);
         PassVert(ystep);
         return false;
     }
@@ -726,8 +730,32 @@ internal sealed class RayTrace(
         //
         // mark the tile as visible and setup for next step
         //
+        if (map.WallShapes[render.XIntTile, render.YTile] is var openshape and not WallShape.Square
+            && !hits.IsSolidEdge(openshape, render.YTileStep == 1 ? ControlDir.North : ControlDir.South))
+            WalkableDiagonal(openshape, render.XIntTile, render.YTile, render.XIntercept - (render.XIntTile << MapConstants.TileShift),
+                render.YTileStep == 1 ? 0 : MapConstants.TileGlobal, xstep, render.YTileStep * MapConstants.TileGlobal);
         PassHoriz(xstep);
         return false;
+    }
+
+    /// <summary>
+    /// A diagonal tile that's walked on or under at the player's story (its block doesn't take the
+    /// story in), entered by an open edge: its slanted face is drawn at its block's stories if the
+    /// trace meets it, and the trace goes on through the tile as through any open one
+    /// </summary>
+    void WalkableDiagonal(WallShape shape, int tilex, int tiley, long eu, long ev, long du, long dv)
+    {
+        if (map.TileMap[tilex, tiley] != 0 || !map.IsWallCode(tilex, tiley))
+            return;
+        int xintercept = render.XIntercept, yintercept = render.YIntercept;
+        if (hits.TraceDiagonal(shape, tilex, tiley, eu, ev, du, dv))
+        {
+            var tilehit = render.TileHit;
+            render.TileHit = (ushort)map.MapSpot(tilex, tiley, 0);
+            hits.HitDiagWall(shape, tilex, tiley, solid: false);
+            render.TileHit = tilehit;
+        }
+        (render.XIntercept, render.YIntercept) = (xintercept, yintercept);
     }
 
     internal void PassHoriz(int xstep)

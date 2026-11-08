@@ -218,6 +218,17 @@ internal sealed partial class SkyAndFlats(
         }
     }
 
+    /// <summary>
+    /// A tile's (TileIndex) own floor sky at view column x, screen row y, as a floor cap at another
+    /// height shows it where it has no texel (WallPosts.DrawUnderside); false if the tile has none
+    /// </summary>
+    internal bool FloorSkyAt(int tile, int x, int y, out byte pixel)
+    {
+        pixel = 0;
+        return map.HasFloorSkies && (uint)tile < (uint)map.FloorSky.Length && map.FloorSky[tile] != 0
+            && TileSkyPixel(map.FloorSky[tile] - 1, x, y, floor: true, out pixel);
+    }
+
     // A tile's own sky (slot: its CeilingSky or FloorSky) at view column x, screen row y; false if it can't be found
     bool TileSkyPixel(int slot, int x, int y, bool floor, out byte pixel)
     {
