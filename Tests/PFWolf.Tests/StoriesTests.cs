@@ -80,6 +80,90 @@ public class StoriesTests
         Assert.That(MapManager.DecodeBlock(value), Is.EqualTo(((int, int)?)(start, stop)));
     }
 
+    [TestCase(0x7385, 3, 5, 7, 8)]       // stories 3 to 5 and 7 to 8
+    [TestCase(0x6082, 1, 2, 6, 8)]       // the first from story 1
+    [TestCase(0x6375, 3, 7, null, null)] // touching: one block
+    [TestCase(0x4385, null, null, null, null)]  // the second starting inside the first
+    [TestCase(0x0085, null, null, null, null)]  // the second with no start
+    [TestCase(0x8375, null, null, null, null)]  // the second starting above where it stops
+    public void A_Height_Plane_Value_Can_Hold_A_Second_Block(int value, int? start, int? stop, int? start2, int? stop2)
+    {
+        var (lower, upper) = MapManager.DecodeBlocks(value);
+        Assert.That((lower?.Start, lower?.Stop, upper?.Start, upper?.Stop), Is.EqualTo((start, stop, start2, stop2)));
+    }
+
+    [TestCase(3, 5, 7, 8, 0x7385)]
+    [TestCase(1, 2, 6, 8, 0x6082)]
+    [TestCase(3, 5, 0, 0, 0x0305)]
+    public void Two_Blocks_Are_Written_Back_As_They_Are_Read(int start, int stop, int start2, int stop2, int value)
+    {
+        Assert.That(MapManager.EncodeBlocks(start, stop, start2, stop2), Is.EqualTo(value));
+    }
+
+    [TestCase(1, true)]
+    [TestCase(2, true)]
+    [TestCase(3, false)]                // the gap
+    [TestCase(4, true)]
+    [TestCase(5, true)]
+    [TestCase(6, false)]
+    public void A_Tile_Is_Solid_Where_Either_Block_Takes_In_The_Story(int story, bool solid)
+    {
+        // Arrange: a wall from story 1 to 2 and 4 to 5
+        Wall(10, 10);
+        _map.SetBlocks(10, 10, 1, 2, 4, 5);
+        _map.Story = story;
+
+        // Act
+        _map.ApplyStory();
+
+        // Assert
+        Assert.That(_map.TileMap[10, 10] != 0, Is.EqualTo(solid));
+        Assert.That(_map.MapSpot(10, 10, MapManager.HeightPlane), Is.EqualTo(0x4052));
+    }
+
+    [Test]
+    public void A_Second_Block_Touching_The_First_Joins_It_And_One_Below_It_Is_Dropped()
+    {
+        _map.SetBlocks(10, 10, 1, 2, 3, 5);
+        Assert.That((_map.BlockSpan(10, 10), _map.UpperSpan(10, 10)), Is.EqualTo((((int, int)?)(1, 5), ((int, int)?)null)));
+
+        _map.SetBlocks(10, 10, 4, 5, 1, 2);
+        Assert.That((_map.BlockSpan(10, 10), _map.UpperSpan(10, 10)), Is.EqualTo((((int, int)?)(4, 5), ((int, int)?)null)));
+    }
+
+    [Test]
+    public void Moving_Blocks_Takes_Both()
+    {
+        _map.SetBlocks(10, 10, 1, 2, 4, 5);
+        _map.MoveWallStories(10, 10, 11, 10);
+        Assert.That((_map.BlockSpan(11, 10), _map.UpperSpan(11, 10)), Is.EqualTo((((int, int)?)(1, 2), ((int, int)?)(4, 5))));
+        Assert.That(_map.MapSpot(10, 10, MapManager.HeightPlane), Is.Zero);
+    }
+
+    [Test]
+    public void The_Console_Says_What_Each_Of_Two_Blocks_Is()
+    {
+        _map.SetBlocks(10, 10, 1, 2, 4, 5);
+        _map.Story = 3;
+        Assert.That(_map.DescribeBlock(10, 10), Is.EqualTo("stories 1 to 2, floor below the player; stories 4 to 5, overhead"));
+    }
+
+    [Test]
+    public void Removing_A_Wall_As_An_Arch_Keeps_What_Is_Above_The_Players_Story()
+    {
+        // Arrange: on story 2, a wall from story 1 to 3 and 5 to 6
+        Wall(10, 10);
+        _map.SetBlocks(10, 10, 1, 3, 5, 6);
+        _map.Story = 2;
+        _map.ApplyStory();
+
+        // Act
+        _map.RemoveWall(10, 10, 3, arch: true);
+
+        // Assert
+        Assert.That((_map.BlockSpan(10, 10), _map.UpperSpan(10, 10)), Is.EqualTo((((int, int)?)(3, 3), ((int, int)?)(5, 6))));
+    }
+
     [Test]
     public void A_Wall_With_No_Block_Of_Its_Own_Runs_From_Story_1_To_The_Levels_Wall_Height()
     {

@@ -432,6 +432,12 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       there (its wall id is on plane 0 where it stopped).
 - [ ] **(never tried)** A floor tile with a block solid at the player's story, drawn with its
       flats `sides:` texture, else a wall beside it's.
+- [ ] Two blocks on a tile (`height 1-1,3-4`): a window at story 2 in E1M1's start corridor,
+      its lintel's ceiling flat and the floor flat under it; a slab at the player's floor on
+      story 5 with a gap below it (headless screenshots, 2026-11-08). **(never tried)** walking
+      through a window in a wall (`height 1-1,3-6` on a wall at story 2), looking down through a
+      gap at a lower block's top, two overhead blocks one above the other, `removewall arch` on
+      a wall with two blocks, `where` on one.
 
 **Diagonal walls**
 - [ ] Slide along a diagonal face; automap both styles.

@@ -85,6 +85,15 @@ internal sealed class WallPosts(
     internal void SetHitBlock(int tilex, int tiley, bool door = false)
     {
         int story = map.Story;
+        int i = map.TileIndex(tilex, tiley);
+        if (!door && (uint)i < (uint)map.UpperSpanStop.Length && map.UpperSpanStop[i] != 0)
+        {
+            // two blocks: the one it's solid with (the other's drawn as an open tile's, OpenTile)
+            bool upper = map.UpperSpanStart[i] <= story;
+            render.HitFirst = (upper ? map.UpperSpanStart[i] : map.SpanStart[i]) - story;
+            render.HitStories = (upper ? map.UpperSpanStop[i] : map.SpanStop[i]) - story + 1;
+            return;
+        }
         render.HitFirst = door ? 0 : map.BlockStart(tilex, tiley) - story;
         render.HitStories = map.WallStories(tilex, tiley) - story + 1;
     }
@@ -158,9 +167,9 @@ internal sealed class WallPosts(
     /// <summary>
     /// The trace enters a tile at (TileX, TileY) across the edge at (edgex, edgey) (focal: the view
     /// is in it); vertical says it's an edge along x = constant. What it shows is queued as the
-    /// trace leaves it (CloseTile): an open tile's block's near face, its underside if it's
-    /// overhead, and the tile's floor where it isn't at the player's height (a block's top below
-    /// the player, else the ground). A wall's face is WallHits'.
+    /// trace leaves it (CloseTile): each of its blocks' near faces (up to two), their undersides
+    /// if they're overhead, and its floors where they aren't at the player's height (a block's top
+    /// below the player, the ground). A wall's face, of the block it's solid with, is WallHits'.
     /// </summary>
     internal void OpenTile(int tilex, int tiley, int edgex, int edgey, bool vertical, bool focal = false)
     {
@@ -170,53 +179,97 @@ internal sealed class WallPosts(
         render.CellEdgeY = edgey;
 
         int i = map.TileIndex(tilex, tiley);
-        int stop = (uint)i < (uint)map.SpanStop.Length ? map.SpanStop[i] : 0;
+        bool inmap = (uint)i < (uint)map.SpanStop.Length;
+        int stop = inmap ? map.SpanStop[i] : 0;
         var tile = map.TileMap[tilex, tiley];
         render.CellPlain = tile == 0 && stop == 0 && render.GroundStory == 0;
         if (render.CellPlain)
             return;                     // most of them: see CloseTile
 
-        int start = stop != 0 ? map.SpanStart[i] : 0;
         int story = map.Story;
         render.CellX = tilex;
         render.CellY = tiley;
         render.CellEntry = focal ? short.MaxValue : HeightAt(edgex, edgey);
-        render.CellFace = render.CellOverhead = false;
+        render.CellBlocks = render.CellLowFloors = 0;
         render.CellFloor = 0;
-        if (tile != 0)
+        if ((tile & GameConstants.BitDoor) != 0 || tile == GameConstants.BitWall)
+            return;                     // a door's or a moving pushwall's floor is the player's
+        if (stop == 0)
         {
-            // a door's or a moving pushwall's floor is the player's; a wall the trace goes on past
-            // stands on the ground, or over it from a story up
-            if ((tile & GameConstants.BitDoor) == 0 && tile != GameConstants.BitWall && stop != 0)
-                render.CellFloor = start > 1 ? render.GroundStory : int.MinValue;
+            if (tile == 0)
+                render.CellFloor = render.GroundStory;   // open all the way down
+            return;
         }
-        else if (stop == 0)
-            render.CellFloor = render.GroundStory;       // open all the way down
-        else
+
+        //
+        // its blocks from the bottom up, from the player's floor: one it's solid with is a wall
+        // (WallHits draws it), the others are seen from outside
+        //
+        int start = map.SpanStart[i];
+        int stop2 = inmap && i < map.UpperSpanStop.Length ? map.UpperSpanStop[i] : 0;
+        int start2 = stop2 != 0 ? map.UpperSpanStart[i] : 0;
+        int blocks = stop2 != 0 ? 2 : 1;
+        Span<int> firsts = [start - story, start2 - story], tops = [stop - story + 1, stop2 - story + 1];
+        Span<bool> solid = [tile != 0 && start <= story && story <= stop, tile != 0 && stop2 != 0 && start2 <= story && story <= stop2];
+
+        TextureAsset? texture = null;
+        bool mirrored = false, textured = false;
+        for (int k = 0; k < blocks; k++)
         {
-            render.CellFirst = start - story;
-            render.CellTop = stop - story + 1;
-            render.CellOverhead = start > story;
-            render.CellFloor = render.CellOverhead ? render.GroundStory : render.CellTop;
+            if (solid[k])
+                continue;
+            int n = render.CellBlocks++;
+            render.CellFirst[n] = firsts[k];
+            render.CellTop[n] = tops[k];
+            render.CellOverhead[n] = firsts[k] > 0;
+            render.CellUnderClip[n] = k > 0 ? tops[k - 1] : int.MinValue;
 
             // its own texture, else a wall's at the end of its run, else one beside it
-            bool mirrored = false;
-            var texture = focal ? null : BlockFaceTexture(tilex, tiley, vertical, out mirrored);
+            if (!textured)
+            {
+                texture = focal ? null : BlockFaceTexture(tilex, tiley, vertical, out mirrored);
+                textured = true;
+                if (texture != null)
+                    render.CellLight = WallLight(edgex, edgey);
+            }
+            render.CellFace[n] = texture != null;
             if (texture != null)
             {
-                render.CellFace = true;
-                render.CellTexture = texture;
-                render.CellLight = WallLight(edgex, edgey);
-                render.CellOfs = vertical
+                render.CellTexture[n] = texture;
+                render.CellOfs[n] = vertical
                     ? LintelColumn(edgey, (render.XTileStep == -1) != mirrored)
                     : LintelColumn(edgex, (render.YTileStep == 1) != mirrored);
             }
-            if (render.CellOverhead)
+            if (render.CellOverhead[n])
             {
-                (render.CellUnderside, render.CellUnderFlat) = UndersideOf(tilex, tiley, texture);
+                (render.CellUnderside[n], render.CellUnderFlat[n]) = UndersideOf(tilex, tiley, texture);
                 if (focal)
                     render.CellLight = lighting.LightAt(render.HitTile, render.ViewX, render.ViewY);
             }
+        }
+
+        //
+        // its floors, from the top down: each block's top below the eyes, then the ground if the
+        // lowest doesn't stand on it; the highest is the floor (run with its neighbours'), the
+        // others only show through the gap under the block over them
+        //
+        render.CellFloor = int.MinValue;
+        for (int k = blocks - 1; k >= 0; k--)
+            if (!solid[k] && tops[k] <= 0)
+                AddCellFloor(tops[k], k + 1 < blocks ? firsts[k + 1] : int.MinValue);
+        if (firsts[0] > render.GroundStory)
+            AddCellFloor(render.GroundStory, firsts[0]);
+    }
+
+    // A floor that shows on the tile being opened, under the block starting at story over (int.MinValue: none)
+    void AddCellFloor(int floor, int over)
+    {
+        if (render.CellFloor == int.MinValue)
+            render.CellFloor = floor;
+        else if (render.CellLowFloors < render.CellLowFloor.Length)
+        {
+            render.CellLowFloor[render.CellLowFloors] = floor;
+            render.CellLowClip[render.CellLowFloors++] = over;
         }
     }
 
@@ -268,31 +321,56 @@ internal sealed class WallPosts(
         if (exit == 0)
             exit = 1;
 
-        int first = render.CellFirst;
-        int top = render.CellTop;
-        if (render.OpaqueCeiling)
-            top = Math.Min(top, render.CeilingStory);
-        bool face = render.CellFace && top > first;
-        bool under = render.CellOverhead && render.CellUnderside != null && (!render.OpaqueCeiling || first < render.CeilingStory);
-        if (face || under)
+        // its blocks from the bottom up: an overhead one's underside shows over a higher one's
+        for (int k = 0; k < render.CellBlocks; k++)
         {
-            QueuePost(entry, first, Math.Max(top, first), face ? render.CellTexture! : render.NoTexture, render.CellOfs,
-                face ? render.CellTexture! : render.NoTexture, render.CellOfs,
-                under ? exit : (short)0, render.CellUnderside, render.CellLight, render.CellUnderFlat, capstory: first, capup: false);
+            int first = render.CellFirst[k];
+            int top = render.CellTop[k];
+            if (render.OpaqueCeiling)
+                top = Math.Min(top, render.CeilingStory);
+            bool face = render.CellFace[k] && top > first;
+            bool under = render.CellOverhead[k] && render.CellUnderside[k] != null && (!render.OpaqueCeiling || first < render.CeilingStory);
+            if (!face && !under)
+                continue;
+            var texture = face ? render.CellTexture[k]! : render.NoTexture;
+
+            // an underside over another block shows only above that one's top
+            int clipbottom = render.OpenBottom;
+            if (under && render.CellUnderClip[k] != int.MinValue)
+                clipbottom = Math.Min(clipbottom, RowAt(entry, render.CellUnderClip[k]) - 1);
+            QueuePost(entry, first, Math.Max(top, first), texture, render.CellOfs[k], texture, render.CellOfs[k],
+                under ? exit : (short)0, render.CellUnderside[k], render.CellLight, render.CellUnderFlat[k], capstory: first, capup: false,
+                cliptop: render.OpenTop, clipbottom: clipbottom);
             if (face)
                 Occlude(RowAt(entry, top), RowAt(entry, first) - 1);
             if (under)
-                Occlude(RowAt(entry, first), RowAt(exit, first) - 1);
+                Occlude(RowAt(entry, first), Math.Min(RowAt(exit, first) - 1, clipbottom));
         }
 
-        // its floor: the player's (drawn with the level's flats), else a cap at its height
-        if (render.CellFloor == 0)
+        // its floor: the player's (drawn with the level's flats), else a cap at its height. The
+        // level's flats only fill rows nothing else painted, so the player's floor is a cap too
+        // where rows under it are still open (a gap under a block): farther things seen through
+        // the gap could paint its rows first
+        if (render.CellFloor == 0 && RowAt(entry, 0) - 1 >= render.OpenBottom)
         {
             FlushRun();
             Occlude(RowAt(exit, 0), RowAt(entry, 0) - 1);
         }
         else if (render.CellFloor != int.MinValue)
             AddFloorRun(render.CellFloor, entry, exit);
+
+        // floors under it, through the gaps at the tile's side: each shows only below the bottom
+        // of the block over it
+        for (int k = 0; k < render.CellLowFloors; k++)
+        {
+            int floor = render.CellLowFloor[k];
+            int cliptop = Math.Max(render.OpenTop, RowAt(entry, render.CellLowClip[k]));
+            if (cliptop > render.OpenBottom)
+                continue;
+            QueuePost(entry, floor, floor, render.NoTexture, 0, render.NoTexture, 0, exit, null, render.CellLight, true,
+                capstory: floor, capup: true, cliptop: cliptop, clipbottom: render.OpenBottom);
+            Occlude(Math.Max(RowAt(exit, floor), cliptop), RowAt(entry, floor) - 1);
+        }
 
         // the ceiling over it covers from the top; with a sky, nothing farther shows above the
         // tallest block there is

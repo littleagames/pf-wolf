@@ -911,7 +911,9 @@ internal class MapManager
                                     BLOCKS
 
     A tile's block runs from a start story to a stop story (plane 3: start in the high byte, stop
-    in the low byte, each 1 to 8; a start of 0 is 1). With no block of its own, a wall tile's runs
+    in the low byte, each 1 to 8; a start of 0 is 1). A tile can hold a second block above the
+    first with a gap between (its start in bits 12-15, its stop in bits 4-7: 0x7385 is stories 3
+    to 5 and 7 to 8); it's solid if either takes in the story. With no block of its own, a wall tile's runs
     from story 1 to the level's wall height and a floor tile has none. Against the player's story
     (Story) a block that takes it in is solid, one that ends below it is floor, one that starts
     above it is overhead. A plane-0 wall whose block doesn't take in the story is walked on (or
@@ -929,40 +931,70 @@ internal class MapManager
     /// </summary>
     internal byte[,] BlockStarts = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
     internal byte[,] BlockStops = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
+
+    /// <summary>Each tile's second block, above its first with a gap between: 0 where it has none</summary>
+    internal byte[,] UpperStarts = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
+    internal byte[,] UpperStops = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
     private int maxtilestories;
 
     /// <summary>
-    /// A height-plane value's block, or null for none: 0, or anything that isn't a start and stop
-    /// of 1 to 8 with the start no higher than the stop (such as an ECWolf info plane's values)
+    /// A height-plane value's first block, or null for none: see <see cref="DecodeBlocks"/>
     /// </summary>
-    internal static (int Start, int Stop)? DecodeBlock(int value)
+    internal static (int Start, int Stop)? DecodeBlock(int value) => DecodeBlocks(value).Lower;
+
+    /// <summary>
+    /// A height-plane value's blocks, null for none: 0, or anything that isn't a start and stop
+    /// of 1 to 8 with the start no higher than the stop (such as an ECWolf info plane's values).
+    /// A second block (its start in bits 12-15, its stop in bits 4-7) must start above the
+    /// first's stop: touching it, the two are one block; anything else and the value's no block.
+    /// </summary>
+    internal static ((int Start, int Stop)? Lower, (int Start, int Stop)? Upper) DecodeBlocks(int value)
     {
-        int stop = value & 0xff, start = value >> 8;
+        if ((uint)value > 0xffff)
+            return (null, null);
+        int stop = value & 0x0f, start = value >> 8 & 0x0f;
+        int stop2 = value >> 4 & 0x0f, start2 = value >> 12 & 0x0f;
         if (start == 0)
             start = 1;
         if (stop is < 1 or > GameConstants.MaxWallStories || start > stop)
-            return null;
-        return (start, stop);
+            return (null, null);
+        if (stop2 == 0 && start2 == 0)
+            return ((start, stop), null);
+        if (stop2 > GameConstants.MaxWallStories || start2 <= stop || start2 > stop2)
+            return (null, null);
+        if (start2 == stop + 1)
+            return ((start, stop2), null);          // touching: one block
+        return ((start, stop), (start2, stop2));
     }
 
     /// <summary>A block as a height-plane value: a plain stop when it starts at story 1, as tall walls always were</summary>
     internal static ushort EncodeBlock(int start, int stop) => (ushort)(start <= 1 ? stop : start << 8 | stop);
 
-    /// <summary>Sets <see cref="BlockStarts"/> and <see cref="BlockStops"/> from the height plane</summary>
+    /// <summary>Two blocks as a height-plane value (the second above the first with a gap; a stop of 0: none)</summary>
+    internal static ushort EncodeBlocks(int start, int stop, int start2, int stop2) =>
+        (ushort)(stop == 0 ? 0 : EncodeBlock(start, stop) | (stop2 == 0 ? 0 : start2 << 12 | stop2 << 4));
+
+    /// <summary>Sets <see cref="BlockStarts"/>, <see cref="BlockStops"/> and the upper blocks from the height plane</summary>
     private void BuildBlocks()
     {
         BlockStarts = new byte[MapWidth, MapHeight];
         BlockStops = new byte[MapWidth, MapHeight];
+        UpperStarts = new byte[MapWidth, MapHeight];
+        UpperStops = new byte[MapWidth, MapHeight];
         maxtilestories = 0;
 
         for (int y = 0; y < MapHeight; y++)
             for (int x = 0; x < MapWidth; x++)
-                if (DecodeBlock(MapSpot(x, y, HeightPlane)) is var (start, stop))
-                {
-                    BlockStarts[x, y] = (byte)start;
-                    BlockStops[x, y] = (byte)stop;
-                    maxtilestories = Math.Max(maxtilestories, stop);
-                }
+                StoreBlocks(x, y, MapSpot(x, y, HeightPlane));
+    }
+
+    // Puts a height-plane value's blocks in BlockStarts and the rest
+    private void StoreBlocks(int x, int y, int value)
+    {
+        var (lower, upper) = DecodeBlocks(value);
+        (BlockStarts[x, y], BlockStops[x, y]) = lower is var (s, e) ? ((byte)s, (byte)e) : ((byte)0, (byte)0);
+        (UpperStarts[x, y], UpperStops[x, y]) = upper is var (s2, e2) ? ((byte)s2, (byte)e2) : ((byte)0, (byte)0);
+        maxtilestories = Math.Max(maxtilestories, Math.Max(BlockStops[x, y], UpperStops[x, y]));
     }
 
     /// <summary>Whether plane 0 holds a mapdefs wall here (solid or not at the player's story)</summary>
@@ -977,51 +1009,88 @@ internal class MapManager
         : IsWallCode(x, y) || TileMap[x, y] is > 0 and < GameConstants.BitDoor ? (1, LevelWallStories)
         : null;
 
-    /// <summary>A tile's block and what it is at the player's story, for the console</summary>
-    internal string DescribeBlock(int x, int y) => BlockSpan(x, y) is var (start, stop)
-        ? $"stories {start} to {stop}{(BlockStops[x, y] == 0 ? " (the level's wall height)" : "")}, "
-          + (start <= Story && Story <= stop ? "solid" : stop < Story ? "floor below the player" : "overhead")
-        : "no block: open floor";
+    /// <summary>A tile's second block, above its first with a gap between; null for none</summary>
+    internal (int Start, int Stop)? UpperSpan(int x, int y) =>
+        UpperStops[x, y] != 0 ? (UpperStarts[x, y], UpperStops[x, y]) : null;
 
-    /// <summary>Whether a tile's block takes in the player's story: it's solid</summary>
-    internal bool BlocksStory(int x, int y) => BlockSpan(x, y) is var (start, stop) && start <= Story && Story <= stop;
+    /// <summary>A tile's blocks and what each is at the player's story, for the console</summary>
+    internal string DescribeBlock(int x, int y)
+    {
+        if (BlockSpan(x, y) is not var (start, stop))
+            return "no block: open floor";
+        string Describe(int s, int e) => $"stories {s} to {e}"
+            + (s <= Story && Story <= e ? ", solid" : e < Story ? ", floor below the player" : ", overhead");
+        return Describe(start, stop) + (BlockStops[x, y] == 0 ? " (the level's wall height)" : "")
+            + (UpperSpan(x, y) is var (s2, e2) ? "; " + Describe(s2, e2) : "");
+    }
 
-    /// <summary>The story a tile's wall (or a door's lintel) runs up to: its block's stop, else the level's wall height</summary>
-    internal int WallStories(int x, int y) => BlockStops[x, y] != 0 ? BlockStops[x, y] : LevelWallStories;
+    /// <summary>Whether either of a tile's blocks takes in the player's story: it's solid</summary>
+    internal bool BlocksStory(int x, int y) => SolidSpan(x, y) != null;
 
-    /// <summary>The story a tile's block starts at: 1 unless the height plane says otherwise</summary>
+    /// <summary>The block of a tile that takes in the player's story, null if neither does</summary>
+    internal (int Start, int Stop)? SolidSpan(int x, int y)
+    {
+        if (BlockSpan(x, y) is var (start, stop) && start <= Story && Story <= stop)
+            return (start, stop);
+        if (UpperSpan(x, y) is var (s2, e2) && s2 <= Story && Story <= e2)
+            return (s2, e2);
+        return null;
+    }
+
+    /// <summary>
+    /// The story a tile's wall (or a door's lintel) runs up to: its block's stop (the upper one's,
+    /// if it has two), else the level's wall height
+    /// </summary>
+    internal int WallStories(int x, int y) =>
+        UpperStops[x, y] != 0 ? UpperStops[x, y] : BlockStops[x, y] != 0 ? BlockStops[x, y] : LevelWallStories;
+
+    /// <summary>The story a tile's (first) block starts at: 1 unless the height plane says otherwise</summary>
     internal int BlockStart(int x, int y) => BlockStops[x, y] != 0 ? BlockStarts[x, y] : 1;
 
     /// <summary>Whether an open tile has a block of its own starting above the player's story: an arch over it</summary>
-    internal bool IsOverhead(int x, int y) => TileMap[x, y] == 0 && BlockStops[x, y] != 0 && BlockStarts[x, y] > Story;
+    internal bool IsOverhead(int x, int y) => TileMap[x, y] == 0
+        && (BlockStops[x, y] != 0 && BlockStarts[x, y] > Story || UpperStops[x, y] != 0 && UpperStarts[x, y] > Story);
 
     /// <summary>The tallest block anywhere on the level.</summary>
     internal int MaxWallStories => Math.Max(maxtilestories, LevelWallStories);
 
     /// <summary>
     /// Sets a tile's block on the height plane, so it's saved with the level; a stop of 0 gives it
-    /// back to its kind's default. Doesn't change what's solid: see <see cref="ApplyStory"/>.
+    /// back to its kind's default. It's the tile's only block. Doesn't change what's solid: see
+    /// <see cref="ApplyStory"/>.
     /// </summary>
-    internal void SetBlock(int x, int y, int start, int stop)
+    internal void SetBlock(int x, int y, int start, int stop) => SetBlocks(x, y, start, stop, 0, 0);
+
+    /// <summary>
+    /// Sets a tile's two blocks on the height plane (a second stop of 0: just the first), as
+    /// <see cref="SetBlock"/>. A second that doesn't start above the first is dropped; one
+    /// touching it joins it.
+    /// </summary>
+    internal void SetBlocks(int x, int y, int start, int stop, int start2, int stop2)
     {
-        ushort value = stop == 0 ? (ushort)0 : EncodeBlock(start, stop);
+        if (stop2 != 0 && (stop == 0 || start2 <= stop || start2 > stop2))
+            stop2 = 0;
+        else if (stop2 != 0 && start2 == stop + 1)
+            (stop, stop2) = (stop2, 0);
+        ushort value = EncodeBlocks(start, stop, start2, stop2);
         SetMapSpot(x, y, HeightPlane, value);
-        (BlockStarts[x, y], BlockStops[x, y]) = DecodeBlock(value) is var (s, e) ? ((byte)s, (byte)e) : ((byte)0, (byte)0);
-        maxtilestories = Math.Max(maxtilestories, BlockStops[x, y]);
+        StoreBlocks(x, y, value);
         UpdateSpan(x, y);
     }
 
     /// <summary>
-    /// Every tile's <see cref="BlockSpan"/> (start and stop stories, a stop of 0 for none), by
-    /// <see cref="TileIndex"/>, for the renderer to read quickly. Kept up to date by SetBlock and
-    /// rebuilt with the blocks' areas (load, restore, <see cref="ApplyStory"/>).
+    /// Every tile's <see cref="BlockSpan"/> (start and stop stories, a stop of 0 for none) and
+    /// <see cref="UpperSpan"/>, by <see cref="TileIndex"/>, for the renderer to read quickly. Kept
+    /// up to date by SetBlock and rebuilt with the blocks' areas (load, restore, <see cref="ApplyStory"/>).
     /// </summary>
-    internal byte[] SpanStart = [], SpanStop = [];
+    internal byte[] SpanStart = [], SpanStop = [], UpperSpanStart = [], UpperSpanStop = [];
 
     private void RebuildSpans()
     {
         SpanStart = new byte[MapArea];
         SpanStop = new byte[MapArea];
+        UpperSpanStart = new byte[MapArea];
+        UpperSpanStop = new byte[MapArea];
         for (int y = 0; y < MapHeight; y++)
             for (int x = 0; x < MapWidth; x++)
                 UpdateSpan(x, y);
@@ -1033,6 +1102,7 @@ internal class MapManager
         if ((uint)i >= (uint)SpanStop.Length)
             return;
         (SpanStart[i], SpanStop[i]) = BlockSpan(x, y) is var (start, stop) ? ((byte)start, (byte)stop) : ((byte)0, (byte)0);
+        (UpperSpanStart[i], UpperSpanStop[i]) = (UpperStarts[x, y], UpperStops[x, y]);
     }
 
     /// <summary>Sets a tile's wall height (a block from story 1); 0 gives it back to the default</summary>
@@ -1270,12 +1340,13 @@ internal class MapManager
         PatchMap[tox, toy] = patch;
     }
 
-    /// <summary>Moves a tile's block to another tile, as a pushwall slides.</summary>
+    /// <summary>Moves a tile's blocks to another tile, as a pushwall slides.</summary>
     internal void MoveWallStories(int fromx, int fromy, int tox, int toy)
     {
         int start = BlockStarts[fromx, fromy], stop = BlockStops[fromx, fromy];
+        int start2 = UpperStarts[fromx, fromy], stop2 = UpperStops[fromx, fromy];
         SetBlock(fromx, fromy, 0, 0);
-        SetBlock(tox, toy, start, stop);
+        SetBlocks(tox, toy, start, stop, start2, stop2);
     }
 
     private string? defaultfloor, defaultceiling;
@@ -1637,7 +1708,11 @@ internal class MapManager
     /// </summary>
     internal void RemoveWall(int x, int y, int area, bool arch)
     {
-        int stories = WallStories(x, y);
+        // what's above the player's story, of each block
+        var (lower, upper) = (BlockSpan(x, y), UpperSpan(x, y));
+        (int, int)? Above((int Start, int Stop)? block) =>
+            block is var (s, e) && e > Story ? (Math.Max(s, Story + 1), e) : null;
+        var kept = new[] { Above(lower), Above(upper) }.Where(b => b != null).Select(b => b!.Value).ToArray();
         if (blockareas.Length > 0)
             blockareas[TileIndex(x, y)] = -1;
         if (WallShapes[x, y] != WallShape.Square)
@@ -1648,8 +1723,10 @@ internal class MapManager
             ActorAt[x, y] = null;
         SetMapSpot(x, y, 0, (ushort)(Floors.AreaTile + area));
         PatchMap[x, y] = 0;
-        if (arch && stories > Story)
-            SetBlock(x, y, Story + 1, stories);
+        if (arch && kept.Length == 2)
+            SetBlocks(x, y, kept[0].Item1, kept[0].Item2, kept[1].Item1, kept[1].Item2);
+        else if (arch && kept.Length == 1)
+            SetBlock(x, y, kept[0].Item1, kept[0].Item2);
         else
             SetBlock(x, y, 0, 0);
     }

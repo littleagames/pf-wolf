@@ -37,6 +37,17 @@ pits marked in mapdefs). Its phases 1 and 2 are committed (f44b0813, 2847cc7e); 
   it, or makes it a death trap.
 - Later, not now: enemies moving up and down (a helicopter), lifts and stairs between stories.
 
+Added 2026-11-08, for phase 3:
+
+- **A tile can hold two blocks**: a lower and an upper one, with a gap between (a window in a
+  wall, a hole a pushwall leaves, a bridge under a beam).
+- **A pushwall moves all of its stories, or only some**, set on each pushwall (its A_PushWall,
+  and A_MoveWall for switches), with a game-info default for the level and the game; all if
+  neither says:
+  - `all`: the whole column goes (as today);
+  - `above`: the player's story and everything above it go; what's below stays (the floor);
+  - `story`: only the player's story goes; what's below and above stay (a hole with a lintel).
+
 ## The model
 
 Story n runs from (n − 1) × 64 to n × 64 texels up from the ground. The player on story P
@@ -55,6 +66,23 @@ A tile's block: **start in the high byte, stop in the low byte**, each 1 to 8; 0
 A plain stop keeps today's tall walls as they are. **Today's arches break**: an open tile with
 plane 3 = 3 was a block from story 2 to 3 over the walkway; now it's a block from 1 to 3. An arch
 is written 0x0203. (Phase 5 converts the mods.)
+
+**A second block (phase 3)** takes the nibbles the first one leaves free: its stop in bits 4-7
+and its start in bits 12-15, so 0x0305 stays one block and 0x7385 is stories 3 to 5 and 7 to 8
+(0x7000 the second's start, 0x0080 its stop). The second must start above the first's
+top with a gap (touching blocks are one block); anything else is ignored as today. A wall with
+no block of its own still runs from 1 to the wall height.
+
+### Pushwalls and stories (phase 3)
+
+`A_PushWall("move sound", "blocked sound", "direction", "message", "stories")` and
+`A_MoveWall(..., "stories")` take `all`, `above` or `story`; left out, game-info
+`pushwall-stories` (per map, else default-map), else `all`. The part that moves goes with the
+moving wall (MovingPushWall keeps its start and stop, saved with it: a save version bump); what's
+left stays on the tile, which keeps its wall id on plane 0 (a walkable wall's, area from its
+neighbours). Where the piece stops it joins the tile's own blocks (touching ones merge). A push
+that would leave a tile, or end on one, needing more than two blocks is refused: the wall stays
+put with its blocked sound.
 
 ### Game-info
 
@@ -124,11 +152,21 @@ The renderer goes from "walls grow up from the one floor" to blocks at any heigh
    ceilings, sprites, rain and particles' occluders (PointDrawing). Arches and pits replaced.
    Tests; headless screenshots at story 1 (unchanged), 3 and 8; `perf` against today on E1M1
    and a worst case.
-3. **The rest of the renderer and play.** Doors on any story (frame below, lintel above),
-   pushwalls carrying blocks, diagonals at any height, see-through doors, wall sprites,
-   destructible walls (`removewall arch` becomes a block), weather falling to the ground, the
-   automap (walls at the player's story; drops and overheads shown apart), UWMF levels' plane 3.
-4. **Editor.** A start/stop brush for plane 3, Level properties' Story (and the pit fields go),
+3. **Two blocks per tile, pushwall stories, and the rest of the renderer and play.** In order:
+   - two blocks per tile: the plane-3 encoding above, MapManager's blocks and spans, what's
+     solid (either block taking in the player's story), `height` taking `1-2,4-8`, `where`; the
+     renderer's tiles queuing both blocks' faces and every surface that shows (each block's top
+     below the eyes and underside above them, the ground under the lowest, the higher of two
+     tops drawn over the lower), also fixing the ground not drawn under a floating floor block;
+   - pushwall stories: the A_PushWall/A_MoveWall argument and game-info `pushwall-stories`,
+     the moving piece's start and stop on MovingPushWall (save version bump), splitting and
+     joining blocks where it starts and stops, refusing pushes that won't fit;
+   - doors on any story (frame below, lintel above), moving pushwalls drawn at their piece's
+     height, diagonals at any height, see-through doors, wall sprites, destructible walls
+     (`removewall arch` becomes a block), weather falling to the ground, the automap (walls at
+     the player's story; drops and overheads shown apart), UWMF levels' plane 3, tile floor
+     skies on caps.
+4. **Editor.** A start/stop brush for plane 3 (with a second block), Level properties' Story (and the pit fields go),
    the 3D view's blocks, caps and story (LevelMesh: replacing arches and pits), the 2D view's
    span badges, tile info, map checks (the start on a solid tile, walls not reaching the story).
 5. **Mods.** A tool to convert old arch values (and a check for them), then the example mods
@@ -170,6 +208,19 @@ an overhead block under a sky, rooftops). Walls cost at 1080p (E1M1): Release 1.
 Debug about 4.7 → 5.6 ms. Left for phase 3: doors on a story above 1 (nothing under them yet),
 see-through doors, diagonals' open halves, pushwalls, wall sprites, sprites standing on lower
 floors, weather and particles at height, tile floor skies on caps, the automap.
+
+Phase 3, part 1 (two blocks per tile) done 2026-11-08. MapManager keeps a second block
+(`UpperStarts`/`UpperStops`, `UpperSpan`, `DecodeBlocks`/`EncodeBlocks`, `SetBlocks`); a tile is
+solid if either takes in the player's story (`SolidSpan`); `WallStories` is the higher one's stop;
+pushwalls move both; `removewall arch` keeps what's above the player's story of each. `height`
+takes `1-2,4-8`; `where` describes both. The renderer: OpenTile sees each block that isn't the one
+a wall is solid with (SetHitBlock takes that one), queuing faces bottom up, undersides clipped to
+above the block under them, and every floor that shows (each block's top below the eyes, the
+ground under a block that doesn't stand on it): the highest is the tile's floor, the others are
+caps clipped to below the block over them. The player's floor is drawn as a cap, not left to the
+level's flats, where rows under it are still open (a gap under the block): farther things seen
+through the gap would otherwise paint its rows first. Story 1 still pixel-identical (14 shots);
+headless shots of a window at story 2 and a slab with a gap under it at story 5.
 
 ## Later
 

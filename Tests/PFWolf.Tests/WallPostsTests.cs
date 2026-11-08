@@ -266,6 +266,108 @@ public class WallPostsTests
         Assert.That((_render.PostCapUp[0], _render.PostCapStory[0]), Is.EqualTo((true, (sbyte)-1)));
     }
 
+    // Gives tile (11, 10) blocks for OpenTile: a second stop of 0 for one
+    private void Blocks(int start, int stop, int start2 = 0, int stop2 = 0)
+    {
+        _map.SpanStart = new byte[MapConstants.ClassicMapArea];
+        _map.SpanStop = new byte[MapConstants.ClassicMapArea];
+        _map.UpperSpanStart = new byte[MapConstants.ClassicMapArea];
+        _map.UpperSpanStop = new byte[MapConstants.ClassicMapArea];
+        int i = _map.TileIndex(11, 10);
+        (_map.SpanStart[i], _map.SpanStop[i], _map.UpperSpanStart[i], _map.UpperSpanStop[i]) = ((byte)start, (byte)stop, (byte)start2, (byte)stop2);
+    }
+
+    private void CrossTile11()
+    {
+        _posts.OpenTile(11, 10, 11 * Tile, 10 * Tile + Tile / 2, vertical: true);
+        _posts.CloseTile(12 * Tile, 10 * Tile + Tile / 2);
+        _posts.FinishColumn();
+    }
+
+    [Test]
+    public void The_Ground_Shows_Under_A_Floor_Block_That_Doesnt_Stand_On_It()
+    {
+        // Arrange: on story 4, a floor block on story 2 only
+        OnStory3();
+        _map.Story = 4;
+        _render.GroundStory = -3;
+        _render.HeightNumerator = 0x2000;       // smaller, so the gap's rows are on screen
+        Blocks(2, 2);
+
+        // Act
+        CrossTile11();
+
+        // Assert: its top a story down, then the ground three down, only below the block's bottom
+        short entry = _posts.HeightAt(11 * Tile, 10 * Tile + Tile / 2);
+        Assert.That(_render.PostCount, Is.EqualTo(2));
+        Assert.That((_render.PostCapUp[0], _render.PostCapStory[0]), Is.EqualTo((true, (sbyte)-1)));
+        Assert.That((_render.PostCapUp[1], _render.PostCapStory[1]), Is.EqualTo((true, (sbyte)-3)));
+        Assert.That(_render.PostClipTop[1], Is.EqualTo(_posts.RowAt(entry, -2)));
+    }
+
+    [Test]
+    public void A_Lower_Blocks_Top_Shows_Through_The_Gap_Under_A_Higher_One()
+    {
+        // Arrange: on story 5, blocks on story 1 and stories 3 to 4 (its top the player's floor)
+        OnStory3();
+        _map.Story = 5;
+        _render.GroundStory = -4;
+        _render.HeightNumerator = 0x1000;       // smaller, so the gap's rows are on screen
+        Blocks(1, 1, 3, 4);
+
+        // Act
+        CrossTile11();
+
+        // Assert: the player's floor is a cap too (rows under it are open through the gap, so the
+        // level's flats can't be left to fill it); the lower one's top (three down) shows only
+        // below the higher block's bottom
+        short entry = _posts.HeightAt(11 * Tile, 10 * Tile + Tile / 2);
+        var caps = Enumerable.Range(0, _render.PostCount).Where(p => _render.PostCapUp[p]).ToArray();
+        Assert.That(caps.Select(p => _render.PostCapStory[p]), Is.EqualTo(new sbyte[] { 0, -3 }));
+        Assert.That(_render.PostClipTop[caps[1]], Is.EqualTo(_posts.RowAt(entry, -2)));
+    }
+
+    [Test]
+    public void A_Higher_Overhead_Blocks_Underside_Shows_Only_Above_The_Lower_Ones_Top()
+    {
+        // Arrange: on story 1 with a sky, blocks on story 2 and story 4
+        _map.Story = 1;
+        _render.ViewHeight = 160;
+        _render.HeightNumerator = 0x10000;
+        (_render.GroundStory, _render.CeilingStory, _render.TallestStory, _render.OpaqueCeiling) = (0, 4, 4, false);
+        _posts.StartColumn();
+        Blocks(2, 2, 4, 4);
+        typeof(MapManager).GetField("mapsegs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
+
+        // Act
+        _posts.OpenTile(11, 10, 11 * Tile, 10 * Tile + Tile / 2, vertical: true);
+
+        // Assert: both are overhead, the higher's underside over the lower's top
+        Assert.That(_render.CellBlocks, Is.EqualTo(2));
+        Assert.That((_render.CellFirst[0], _render.CellTop[0], _render.CellFirst[1], _render.CellTop[1]), Is.EqualTo((1, 2, 3, 4)));
+        Assert.That((_render.CellUnderClip[0], _render.CellUnderClip[1]), Is.EqualTo((int.MinValue, 2)));
+    }
+
+    [Test]
+    public void A_Wall_Solid_With_One_Block_Shows_The_Other_As_An_Open_Tiles()
+    {
+        // Arrange: on story 3, a wall from story 3 to 4 over a block on story 1
+        OnStory3();
+        Blocks(1, 1, 3, 4);
+        _map.TileMap[11, 10] = 5;
+
+        // Act
+        _posts.OpenTile(11, 10, 11 * Tile, 10 * Tile + Tile / 2, vertical: true);
+        _posts.SetHitBlock(11, 10);
+
+        // Assert: the wall's hit is the upper block; the lower is a block seen from outside, its top the floor
+        Assert.That((_render.HitFirst, _render.HitStories), Is.EqualTo((0, 2)));
+        Assert.That(_render.CellBlocks, Is.EqualTo(1));
+        Assert.That((_render.CellFirst[0], _render.CellTop[0]), Is.EqualTo((-2, -1)));
+        Assert.That(_render.CellFloor, Is.EqualTo(-1));
+    }
+
     [Test]
     public void An_Arch_Is_An_Open_Tile_Whose_Block_Starts_Above_The_Players_Story()
     {

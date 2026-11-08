@@ -49,8 +49,8 @@ internal sealed class LevelEditCommands(
         console.Register("zoneeffect", "Makes a light zone flicker, pulse or strobe (none stops it), down to low, timed in tics (70 a second).",
             "zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]", ZoneEffectCommand, Cheat | InLevel,
             complete: (_, i) => i == 1 ? ["none", "flicker", "pulse", "strobe"] : []);
-        console.Register("height", "Sets a tile's block (default: the one you face): up to a story (from story 1), or from one story to another, as 3-5; 0 gives it back to its default (a wall: 1 to the level's height; open floor: none).",
-            $"height <0|stop|start-stop> [tilex tiley]", HeightCommand, Cheat | InLevel);
+        console.Register("height", "Sets a tile's block (default: the one you face): up to a story (from story 1), or from one story to another, as 3-5; a second block after a comma, above the first, as 1-2,4-8; 0 gives it back to its default (a wall: 1 to the level's height; open floor: none).",
+            $"height <0|stop|start-stop[,start-stop]> [tilex tiley]", HeightCommand, Cheat | InLevel);
         console.Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
             "tag [0-65535 [tilex tiley]]", TagCommand, Cheat | InLevel);
         console.Register("scroll", "Lists the level's scrollers (scrolling walls and flats, by tag), or sets one's speeds in texels a tic (x right/east, y down/south), starts, stops or removes it.",
@@ -71,24 +71,33 @@ internal sealed class LevelEditCommands(
     }
     internal void HeightCommand(string[] args)
     {
-        const string Usage = "usage: height <0|stop|start-stop> [tilex tiley]";
+        const string Usage = "usage: height <0|stop|start-stop[,start-stop]> [tilex tiley]";
         if (args.Length == 0)
             throw new ArgumentException(Usage);
 
-        var parts = args[0].Split('-');
-        int start = 1, stop;
-        if (parts.Length == 2)
+        (int Start, int Stop) Block(string text)
         {
-            start = ParseInt(parts[0], 1, GameConstants.MaxWallStories);
-            stop = ParseInt(parts[1], start, GameConstants.MaxWallStories);
-        }
-        else if (parts.Length == 1)
-            stop = ParseInt(parts[0], 0, GameConstants.MaxWallStories);
-        else
+            var parts = text.Split('-');
+            if (parts.Length == 2)
+            {
+                int start = ParseInt(parts[0], 1, GameConstants.MaxWallStories);
+                return (start, ParseInt(parts[1], start, GameConstants.MaxWallStories));
+            }
+            if (parts.Length == 1)
+                return (1, ParseInt(parts[0], 0, GameConstants.MaxWallStories));
             throw new ArgumentException(Usage);
+        }
+
+        var blocks = args[0].Split(',');
+        if (blocks.Length > 2)
+            throw new ArgumentException(Usage);
+        var (start, stop) = Block(blocks[0]);
+        var (start2, stop2) = blocks.Length == 2 ? Block(blocks[1]) : (0, 0);
+        if (stop2 != 0 && (stop == 0 || start2 <= stop))
+            throw new ArgumentException("The second block has to start above where the first stops (as 1-2,4-8)");
         var (x, y) = targets.TileArg(args, 1);
 
-        map.SetBlock(x, y, start, stop);
+        map.SetBlocks(x, y, start, stop, start2, stop2);
         map.ApplyStory();
         console.Print($"Tile {x},{y}: {map.DescribeBlock(x, y)}");
     }

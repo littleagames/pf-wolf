@@ -182,17 +182,28 @@ internal sealed class RenderState
     internal bool PlainOpen, PlainFocal;
     internal int PlainEntryX, PlainEntryY, PlainExitX, PlainExitY;
     internal short CellEntry;           // the height (as WallHeight) where the trace entered it (short.MaxValue: the view is in it)
-    internal bool CellFace;             // its block's near face is queued as it's left
-    internal int CellFirst, CellTop;    // that block's stories
-    internal TextureAsset? CellTexture;
-    internal int CellOfs;
     internal byte[] CellLight;
-    internal bool CellOverhead;         // the block is overhead: its underside shows
-    internal TextureAsset? CellUnderside;
-    internal bool CellUnderFlat;
-    internal bool CellFloorCap;         // its floor isn't the player's: drawn at CellFloor as it's left
+
+    // its blocks the trace sees from outside (not one it's solid with: WallHits draws that), up to
+    // two, from the bottom up: each one's stories, near face, and underside if it's overhead
+    internal int CellBlocks;
+    internal readonly int[] CellFirst = new int[2], CellTop = new int[2];
+    internal readonly bool[] CellFace = new bool[2];
+    internal readonly TextureAsset?[] CellTexture = new TextureAsset?[2];
+    internal readonly int[] CellOfs = new int[2];
+    internal readonly bool[] CellOverhead = new bool[2];
+    internal readonly TextureAsset?[] CellUnderside = new TextureAsset?[2];
+    internal readonly bool[] CellUnderFlat = new bool[2];
+    internal readonly int[] CellUnderClip = new int[2];   // the top of the block under it (int.MinValue: none): its underside shows above that only
+
+    // its floor: the top of its highest block below the eyes, else the ground (int.MinValue: none
+    // shows); 0, the player's, is drawn with the level's flats
     internal int CellFloor;
-    internal bool CellCeiling;          // the level's ceiling shows over it (opaque: it covers rows)
+
+    // floors under that one that show through a gap at the tile's side: each one's story and the
+    // bottom of the block over it (it shows only below that)
+    internal int CellLowFloors;
+    internal readonly int[] CellLowFloor = new int[2], CellLowClip = new int[2];
 
     // a run of tiles' floors at one height, drawn as one cap from where the run starts to where it
     // ends, clipped to the rows open when it started
