@@ -38,6 +38,9 @@ public sealed record MapProperties
     public string? FloorColor { get; init; }
     public string? CeilingColor { get; init; }
     public int? WallHeight { get; init; }
+
+    /// <summary>The player's story (game-info story): blocks taking it in are walls, those below it floor</summary>
+    public int? Story { get; init; }
     public string? Sky { get; init; }
     public string? DefaultFloor { get; init; }
     public string? DefaultCeiling { get; init; }
@@ -76,6 +79,7 @@ public sealed record MapProperties
         FloorColor = info.FloorColor,
         CeilingColor = info.CeilingColor,
         WallHeight = info.WallHeight,
+        Story = info.Story,
         Sky = info.Sky,
         DefaultFloor = info.DefaultFloor,
         DefaultCeiling = info.DefaultCeiling,
@@ -113,6 +117,7 @@ public sealed record MapProperties
         Check("floor-color", FloorColor == other.FloorColor);
         Check("ceiling-color", CeilingColor == other.CeilingColor);
         Check("wall-height", WallHeight == other.WallHeight);
+        Check("story", Story == other.Story);
         Check("sky", Sky == other.Sky);
         Check("default-floor", DefaultFloor == other.DefaultFloor);
         Check("default-ceiling", DefaultCeiling == other.DefaultCeiling);

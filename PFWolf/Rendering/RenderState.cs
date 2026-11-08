@@ -76,7 +76,7 @@ internal sealed class RenderState
     internal int PostCount;
     internal readonly short[] PostHeights = new short[MaxPosts];
     internal readonly sbyte[] PostFirstStory = new sbyte[MaxPosts];  // below 0: stories under the floor
-    internal readonly int[] PostClipTop = new int[MaxPosts];         // the rows it's drawn in: below the floor, only down a pit
+    internal readonly int[] PostClipTop = new int[MaxPosts];         // the only rows it's drawn in
     internal readonly int[] PostClipBottom = new int[MaxPosts];
     internal readonly byte[] PostStories = new byte[MaxPosts];
     internal readonly TextureAsset[] PostLower = new TextureAsset[MaxPosts];
@@ -131,10 +131,6 @@ internal sealed class RenderState
         SeeThroughLowerOfs = new int[width * MaxSeeThrough];
         SeeThroughUpperOfs = new int[width * MaxSeeThrough];
         SeeThroughLight = new byte[width * MaxSeeThrough][];
-
-        PitSpanCount = new int[width];
-        PitSpanTop = new int[width * MaxPitSpans];
-        PitSpanBottom = new int[width * MaxPitSpans];
     }
 
     /// <summary>Column x's walls painted rows top to bottom (outside WallRefresh, with no room made, not kept)</summary>
@@ -170,30 +166,13 @@ internal sealed class RenderState
     //
     internal bool ArchOpen;
     internal short ArchHeight;          // where the trace entered it (short.MaxValue: the view is inside)
+    internal int ArchFirst;             // the stories above the floor it starts at (1 for a door's lintel)
     internal int ArchStories;
     internal TextureAsset? ArchTexture;
     internal TextureAsset? ArchUnderside;
     internal bool ArchUnderFlat;        // ArchUnderside is the tile's ceiling flat
     internal int ArchOfs;
     internal byte[] ArchLight;          // its face's light row: where the trace entered it
-
-    //
-    // the pit the trace is passing over (mapdefs flats pits), when walls go below the floor
-    // (story-level): looking down it shows the stories under the floor of what's beyond its far
-    // edge, a pit side or a wall, in the rows its floor would have covered
-    //
-    internal bool PitsOn;               // this frame: the level has pits and stories below
-    internal bool PitOpen;
-    internal short PitEntryHeight;      // where the trace entered it (short.MaxValue: the view is over it)
-    internal TextureAsset? PitSideTexture;      // the side texture of the pit tile last crossed
-    internal bool PitBeforeWall;        // the trace just left a pit for a wall: its lower stories show in
-    internal int PitClipTop, PitClipBottom;     // these rows
-
-    // each column's pits' rows (as CrossPitEdge clips to), for grates drawn over what's down them;
-    // column x's are from x * MaxPitSpans
-    internal const int MaxPitSpans = 8;
-    internal int[] PitSpanCount = [];
-    internal int[] PitSpanTop = [], PitSpanBottom = [];
 
     internal readonly TextureAsset NoTexture;    // what a post shows with no texture: nothing
 

@@ -474,9 +474,10 @@ public class DestructibleWallsTests
         // Act
         _walls.Remove(10, 10, arch);
 
-        // Assert
-        Assert.That(_map.StoryMap[10, 10], Is.EqualTo(left));
-        Assert.That(_map.MapSpot(10, 10, MapManager.HeightPlane), Is.EqualTo(left));
+        // Assert: an arch is a block from the story above the player's (1) to the wall's top
+        Assert.That(_map.BlockStops[10, 10], Is.EqualTo(left));
+        Assert.That(_map.MapSpot(10, 10, MapManager.HeightPlane), Is.EqualTo(left == 0 ? 0 : 0x0200 | left));
+        Assert.That(_map.IsOverhead(10, 10), Is.EqualTo(left > 0));
     }
 
     [Test]
@@ -490,7 +491,7 @@ public class DestructibleWallsTests
         _walls.Remove(10, 10, arch: true);
 
         // Assert
-        Assert.That(_map.StoryMap[10, 10], Is.EqualTo(2));
+        Assert.That((_map.BlockStarts[10, 10], _map.BlockStops[10, 10]), Is.EqualTo(((byte)2, (byte)2)));
     }
 
     [Test]

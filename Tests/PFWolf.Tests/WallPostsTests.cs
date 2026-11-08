@@ -137,13 +137,16 @@ public class WallPostsTests
     }
 
     [Test]
-    public void An_Arch_Is_An_Open_Tile_More_Than_One_Story_Tall()
+    public void An_Arch_Is_An_Open_Tile_Whose_Block_Starts_Above_The_Players_Story()
     {
-        _map.StoryMap[3, 3] = 2;
-        _map.StoryMap[4, 3] = 1;
+        (_map.BlockStarts[3, 3], _map.BlockStops[3, 3]) = (2, 3);
+        (_map.BlockStarts[4, 3], _map.BlockStops[4, 3]) = (1, 3);
         Assert.That(_posts.IsArch(3, 3), Is.True);
-        Assert.That(_posts.IsArch(4, 3), Is.False);
+        Assert.That(_posts.IsArch(4, 3), Is.False);         // from story 1: solid at story 1
         _map.TileMap[3, 3] = 5;
         Assert.That(_posts.IsArch(3, 3), Is.False);         // a wall, however tall
+        _map.TileMap[3, 3] = 0;
+        _map.Story = 2;
+        Assert.That(_posts.IsArch(3, 3), Is.False);         // takes in the player's story
     }
 }

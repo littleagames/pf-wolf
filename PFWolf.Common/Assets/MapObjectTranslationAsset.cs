@@ -92,7 +92,7 @@ public record MapObjectTranslationAsset : Asset
             {
                 Floor = Merged(Flats.Floor, local.Flats.Floor), Ceiling = Merged(Flats.Ceiling, local.Flats.Ceiling),
                 Skies = Merged(Flats.Skies, local.Flats.Skies), FloorSkies = Merged(Flats.FloorSkies, local.Flats.FloorSkies),
-                Pits = Merged(Flats.Pits, local.Flats.Pits),
+                Sides = Merged(Flats.Sides, local.Flats.Sides),
             },
             Floors = local.Floors.AreaCount is { } count ? Floors with { AreaCount = count } : Floors,
         };
@@ -269,12 +269,11 @@ public record MapFlatsTranslation
     public Dictionary<int, string> FloorSkies { get; set; } = new();
 
     /// <summary>
-    /// Floor indices that are pits, by index, with the texture on their sides: a tile with one
-    /// has no floor, and looks down past the walls' stories below the player's (game-info
-    /// story-level) to the tile's floor sky, else the level's, else the pit color. The sides are
-    /// what shows under the floor beyond the pit's edge. Only a look: things cross a pit as floor.
+    /// The texture on the sides of a floor tile's block (plane 3), by the tile's floor index: a
+    /// floor tile has no wall texture of its own. With none, its sides take the wall at the end
+    /// of its run of blocks, as arches always have.
     /// </summary>
-    public Dictionary<int, string> Pits { get; set; } = new();
+    public Dictionary<int, string> Sides { get; set; } = new();
 
     /// <summary>
     /// Floors that hurt whoever stands on them (Midnight Assault's electrified water), by the

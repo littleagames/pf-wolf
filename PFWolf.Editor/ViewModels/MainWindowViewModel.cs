@@ -1351,13 +1351,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _syncing = false;
     }
 
-    private static void FillFlatOptions(ObservableCollection<ChoiceOption> options, Dictionary<int, string> flats)
+    /// <summary>
+    /// The flats indices to pick from: every index with a texture or a sky of its own, each named
+    /// by what it shows
+    /// </summary>
+    private static void FillFlatOptions(ObservableCollection<ChoiceOption> options, Dictionary<int, string> flats,
+        Dictionary<int, string> skies)
     {
         options.Clear();
-        if (!flats.ContainsKey(0))
+        var indices = flats.Keys.Concat(skies.Keys).Where(index => index is >= 0 and <= 255).Distinct().Order();
+        if (!indices.Contains(0))
             options.Add(new ChoiceOption(0, "0  the level's default"));
-        foreach (var (index, name) in flats.Where(flat => flat.Key is >= 0 and <= 255).OrderBy(flat => flat.Key))
-            options.Add(new ChoiceOption(index, $"{index}  {name}"));
+        foreach (var index in indices)
+        {
+            var parts = new List<string>();
+            if (flats.TryGetValue(index, out var name))
+                parts.Add(name);
+            if (skies.TryGetValue(index, out var sky))
+                parts.Add($"sky {sky}");
+            options.Add(new ChoiceOption(index, $"{index}  {string.Join(", ", parts)}"));
+        }
     }
 
     /// <summary>One more than the highest tag (or zone) the level uses</summary>
@@ -1389,8 +1402,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (plane == MapConstants.FlatPlane)
             {
                 _syncing = true;
-                FillFlatOptions(FlatFloorOptions, defs.Flats.Floor);
-                FillFlatOptions(FlatCeilingOptions, defs.Flats.Ceiling);
+                FillFlatOptions(FlatFloorOptions, defs.Flats.Floor, defs.Flats.FloorSkies);
+                FillFlatOptions(FlatCeilingOptions, defs.Flats.Ceiling, defs.Flats.Skies);
                 _syncing = false;
             }
             _allPaletteItems = (SelectedPlane.Patches ? PaletteEntries.Patches(defs) : PaletteEntries.ForPlane(defs, plane))

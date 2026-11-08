@@ -1,105 +1,155 @@
-# Story level and pits
+# Stories: blocks from one story to another, and the player's story
 
-The player's floor sits at a story of its own, and walls carry on down below it as tall walls
-carry on up. The floor is solid, so what's below only shows through **pits**: tiles with no
-floor, looking down past walls' lower stories to a bottomless drop.
+Every tile can hold a block running from one story up to another (1 to 8, 3 to 5, ...), and the
+player is on a story of their own. What a block is depends on where the player is:
 
-## Decisions (2026-11-07)
+- a block that takes in the player's story is a **wall**;
+- one that ends below it is **floor**: stood on, or looked down onto from above, its top
+  covered by the tile's floor flat;
+- one that starts above it is **overhead**: today's arches, its underside the ceiling flat.
 
-- **Global per level**: one story level for the whole map, not per-tile floor heights.
-- **Heights count up from the player's floor**: plane 3 means what it means today, and every
-  wall also gets `story-level - 1` stories below. Story level 1 (the default) looks exactly as
-  now, so existing maps and mods don't change.
-- **Pits are a mapdefs flat flag**, on the flat-plane floor index, beside `floor-skies:`.
-- **Pits are visual only**: players, enemies, shots and sight cross them as floor. No falling,
-  no collision change, so demos, saves and multiplayer are untouched.
-- **The bottom is a void**: the tile's floor sky, else the level's floor sky, else a plain
-  color. No second floor plane at ground level.
+So one level can put the player on a rooftop, on the third floor of a building looking out of
+its windows, or at the foot of a skyscraper looking up. Falling, death pits and keeping people
+off open edges are the mod's to build (blocking tiles, triggers); the engine only draws it and
+keeps the player's story solid where it should be.
 
-## Data
+This replaces the first version of this plan (2026-11-07: one story level for the whole floor,
+pits marked in mapdefs). Its phases 1 and 2 are committed (f44b0813, 2847cc7e); its phase 3
+(editor, pits-demo) was left uncommitted. The pit code goes (phase 1 below).
+
+## Decisions (2026-11-08)
+
+- **Breaking change is fine.** Nothing's released; the example mods and the user's own mods
+  (Midnight Assault, End of Destiny, Trench Warfare) are fixed up afterwards (phase 5).
+- **One block per tile**, a start and a stop story, on plane 3.
+- **Both kinds of tile can hold one.** A plane-0 wall whose block doesn't take in the player's
+  story is walked on (or under) and takes a neighbouring tile's area. A plane-0 floor tile with a
+  block is a block whose sides come from a new `sides:` on its flats index (mapdefs flats), else
+  today's arch rule (the wall ending its run).
+- **The level's ceiling is opaque** unless the level has a sky: blocks taller than it don't show
+  through it any more. With a sky, taller blocks show against it.
+- **The player's story is set per level** (game-info), with a console cheat to change it. Lifts,
+  stairs and an action to change it during play come later, with saving it.
+- **Pits are gone**: `pits:`, `pit-color`, grates, `DrawGrates`, pit spans, the automap's pit
+  marks, `PitEdge` and pits-demo. A drop is a tile with nothing under the player's story: the
+  blocks around it go down, and the ground (or a lower block's top) shows at its bottom.
+- **No falling.** Things cross a drop at the player's story as if it were floor. The mod blocks
+  it, or makes it a death trap.
+- Later, not now: enemies moving up and down (a helicopter), lifts and stairs between stories.
+
+## The model
+
+Story n runs from (n − 1) × 64 to n × 64 texels up from the ground. The player on story P
+stands at (P − 1) × 64, eyes eye-height above that.
+
+### Plane 3
+
+A tile's block: **start in the high byte, stop in the low byte**, each 1 to 8; 0 is the default.
+
+| plane 3 | wall tile (plane 0 a wall) | floor tile (plane 0 a floor code) |
+|---|---|---|
+| 0 | stories 1 to wall-height | no block: open down to the ground |
+| 0x0003 (just a stop, today's tall wall) | 1 to 3 | 1 to 3 |
+| 0x0305 | 3 to 5 | 3 to 5 |
+
+A plain stop keeps today's tall walls as they are. **Today's arches break**: an open tile with
+plane 3 = 3 was a block from story 2 to 3 over the walkway; now it's a block from 1 to 3. An arch
+is written 0x0203. (Phase 5 converts the mods.)
+
+### Game-info
 
 ```yaml
-# game-info: default-map and per map
-default-map:
-  story-level: 1          # 1-8; the player's floor is this many stories up
 maps:
   MAP01:
-    story-level: 3
-    pit-color: Black      # the void with no floor sky (left out: black)
-
-# mapdefs flats.yaml: floor index -> the texture on the pit's sides
-flats:
-  pits:
-    10: GSTONEA1
-    11: GSTONEA1
-  floor-skies:
-    10: Clouds            # optional: clouds at the bottom of pit 10
-  floor:
-    11: GRATE             # optional (phase 2): a grate over pit 11, see-through pixels show the pit
+    story: 3            # the player's story (1-8, default 1); replaces story-level
+    wall-height: 8      # walls with no block of their own run from story 1 to this one
+    sky: CITYSKY        # the ceiling, else at the top of story wall-height, hides what's above it
 ```
 
-A pit's side texture is what shows under the solid floor beyond the pit's edge (from the floor
-line down to the ground). An index in `pits:` with no texture isn't a pit (warned). A pit on a
-door or wall tile is ignored (warned). With `story-level: 1` a pit has no depth: it shows only
-its void, a hole in the floor.
+`pit-color` goes. A level whose plain walls don't reach the player's story (wall-height < story)
+gets a startup warning: nothing would be solid but the tiles with blocks of their own.
 
-## How it renders
+### What's solid
 
-- **Pit spans.** While the ray trace walks a column, before its first wall, each pit tile it
-  crosses adds the screen rows its floor would have covered: `FloorRow(exit)` to
-  `FloorRow(entry)`. A view standing on a pit (it's walkable) starts the span at the bottom of
-  the screen, as `OpenFocalArch` does for arches.
-- **Below-floor posts are clipped to the pit spans.** Everything below the floor line is drawn
-  only inside them, so solid floor in front hides it. Painter's order (farthest first) handles
-  the rest: a nearer pit's far side covers what's past it.
-- **Pit sides.** Leaving a pit into an open tile that isn't one (or a door's tile) queues a post
-  at that edge from the floor line down to the ground, `story-level - 1` stories, in the pit's
-  side texture. Its light is the pit tile's.
-- **Walls' lower stories.** The first wall a column hits gets its stories below the floor too,
-  the wall's own texture repeating per story (DrawPost with a negative first story). Walls the
-  trace goes past for tall walls don't: the first wall's lower stories hide theirs.
-- **The void.** Pit rows nothing covers keep what's behind: DrawFlats treats a pit tile as having
-  no floor (its floor sky, the level's floor sky, else `pit-color`).
-- **Covers.** Below-floor posts record their rows (RenderState.Cover) so DrawLevelFlats skips
-  them; MaxCovers may need raising.
-- **No pits, no cost.** A level with story level 1 or no pit tiles skips all of it.
+At level start (and on the `story` cheat) each tile is solid if its block takes in story P:
 
-Sprites need nothing: they stand on the floor line and clip against the nearest wall as now.
+- a wall tile whose block doesn't is walkable: its wall id is kept for drawing (a new per-tile
+  block map), and it takes the area of the nearest walkable floor tile (a flood fill from its
+  neighbours), for sound, doors and enemies;
+- a floor tile whose block does is a wall: drawn with its flats `sides:` texture.
+
+Doors stay on story P: the door, the floor under it (its frame going down to the ground), and a
+lintel above it up to its block's stop (0: the level's wall height), as door lintels are now.
+Pushwalls carry their block as they carry their height now; one that doesn't take in story P is
+just a block. Diagonals keep their slanted face over their whole block, and are solid only when
+it takes in story P. Sight, shots and collision stay 2D on story P, so their code is untouched:
+only TileMap and ActorAt change.
+
+With no blocks of its own and story 1, a level is exactly what it was: demotest stays identical.
+
+### Drawing
+
+The renderer goes from "walls grow up from the one floor" to blocks at any height:
+
+- **Heights are measured from the ground**, the eye at (P − 1) × 64 + eye height.
+  `FloorRow(half)` becomes a row for any height; textures repeat per story up from the ground,
+  so story-1 walls look as they do now.
+- **Each tile the trace crosses** queues its block's near face (all of it) and its caps: the top
+  (floor flat) of a block below the eye, the bottom (ceiling flat) of one above it, and the
+  ground (floor flat at height 0) under a tile with nothing below the eye. Caps are drawn per
+  column between where the trace enters and leaves the tile, as arch undersides are now
+  (`DrawUnderside`, generalised). They're drawn farthest first, so nearer ones cover farther
+  ones: per column on a grid this is exact.
+- **Floors at the player's own floor height and the level's ceiling** stay with the row-by-row
+  `DrawLevelFlats` pass into the rows nothing else painted, as now: the common case stays fast.
+- **The trace stops** when nothing farther could show: each column keeps the rows still open,
+  narrowed from the top and bottom by faces, caps, the player's floor and an opaque ceiling. With
+  a sky, rows above the tallest block in the level (at the current distance) count as closed;
+  rows below the ground always are. Today's "go on past a wall while a taller one could show"
+  becomes this.
+- **Sprites** stand on story P and clip against the nearest wall that takes in story P (as
+  `WallHeight` does now): blocks below the floor or overhead never cover them.
+- Arches, door arches and the pit code are replaced by the general block code.
 
 ## Phases
 
-Phase 1 done 2026-11-07 (StoryLevelTests; headless screenshots in E1M1). Pit-side textures don't
-animate or follow A_ChangeTexture.
+1. **Data and gameplay.** Plane-3 start/stop (MapManager: block per tile, `BlockSpan`, default
+   by tile kind), game-info `story` (replacing `story-level`) and the wall-height warning,
+   solidity per story (TileMap/ActorAt, the block map, areas for walkable wall tiles), flats
+   `sides:` (MapFlatsTranslation), `story [1-8]` cheat (replacing `storylevel`), `where` and
+   `height` showing and setting start and stop. Remove the pit code. Tests; demotest identical.
+   The renderer still draws story 1 only (as now) until phase 2.
+2. **Renderer core.** Ground-measured heights, faces and caps per tile, coverage-based trace
+   termination, the global passes only at the player's floor and the level's ceiling, opaque
+   ceilings, sprites, rain and particles' occluders (PointDrawing). Arches and pits replaced.
+   Tests; headless screenshots at story 1 (unchanged), 3 and 8; `perf` against today on E1M1
+   and a worst case.
+3. **The rest of the renderer and play.** Doors on any story (frame below, lintel above),
+   pushwalls carrying blocks, diagonals at any height, see-through doors, wall sprites,
+   destructible walls (`removewall arch` becomes a block), weather falling to the ground, the
+   automap (walls at the player's story; drops and overheads shown apart), UWMF levels' plane 3.
+4. **Editor.** A start/stop brush for plane 3, Level properties' Story (and the pit fields go),
+   the 3D view's blocks, caps and story (LevelMesh: replacing arches and pits), the 2D view's
+   span badges, tile info, map checks (the start on a solid tile, walls not reaching the story).
+5. **Mods.** A tool to convert old arch values (and a check for them), then the example mods
+   (tall-walls-demo, skies-demo, architecture-demo, ...), a new example level (a rooftop and a
+   street below), and the user's mods. Docs, manual-testing items.
 
-Phase 2 done 2026-11-07. A moving pushwall is a block sliding on the floor: a pit beside it shows
-its side under it, not the pushwall's stories below (a stopped one is a wall again). A diagonal
-entered by its open half has floor before its face: the pit's side. Wall sprites are actors, so
-they float over a pit as things do. See-through doors needed nothing (the trace goes on past them,
-and they're drawn over what's behind). Grates: a `floor:` texture on a pit index; DrawFlats draws
-it over the pit's bottom, and DrawGrates over the pit's rows the walls below covered (per-column pit
-spans in RenderState). The automap marks seen pits with an inset square (theme color AutomapPit).
-Seen by headless screenshots: grate, automap, diagonal past a pit, arch over a pit, eye height 10.
-Not seen: a moving pushwall beside a pit, a see-through door by a pit.
+## Status
 
-1. **Story level, pits, walls below (game).** `story-level` / `pit-color` on game-info maps
-   (Common) → set in LevelSetup; `storylevel [1-8]` console cheat (not saved, as `wallheight`).
-   mapdefs `flats: pits:` on MapFlatsTranslation → MapManager pit map (rebuilt in BuildFlats, no
-   save change); `where` shows the pit and story level. Renderer: pit spans in RayTrace (incl.
-   the focal tile), pit sides, lower stories on the first wall's posts (plain walls, door frames),
-   DrawPost/DrawPatch below the floor (story-0 patches repeat below, numbered ones don't), clip to
-   spans, covers, DrawFlats leaving pits bare. Tests (WallPostsTests: lower texel mapping,
-   clipping; flats translation parsing; MapManager pit map).
-2. **The other wall kinds.** Pushwalls moving next to or over a pit, diagonal walls, wall
-   sprites, doors on a pit's edge (their tile's floor is solid: a pit side), see-through doors,
-   arches over pits, a `floor:` texture on a pit index drawn over it as a grate, the automap
-   marking pits, y-shearing and eye height looking down into pits. Tests.
-3. **Editor, example, docs.** Editor 3D view (LevelMesh: walls down to the ground, no floor on
-   pit tiles, pit sides, void/floor-sky bottom), 2D view pit mark, Map Properties story level,
-   Definitions window `pits:`. Example mod `pits-demo` (generator script, as tall-walls-demo): a
-   level at story 3 with a chasm, a bridge, a cloud floor sky in the pit and a grate. flats.yaml
-   comments, game-info docs, manual-testing "(never tried)" items.
+Phase 1 done 2026-11-08 (StoriesTests). MapManager keeps each tile's block (`BlockStarts`,
+`BlockStops`, `BlockSpan`, `BlocksStory`, `SetBlock`) and works out what's solid as the map
+loads (LevelSetup now sets `Story` and the wall height first) and on `ApplyStory` (the `story`,
+`height` and `wallheight` cheats). Plane 0 stays the record of a tile's wall: a pushwall now
+writes its id where it stops, so `ApplyStory` can rebuild from the planes. A walkable wall's
+area comes from `FloorCode`, which every area lookup now goes through; a floor tile's solid
+block is `BlockWall` in TileMap, drawn with `BlockSideTexture`. `removewall arch` leaves a block
+from the story above the player's. Pit code gone. Done early from phase 4: Level properties'
+Story field. At story 1 the renderer already draws floor tiles' solid blocks (their sides) and
+overhead blocks from their own start story with their own texture; any other story is phase 2.
 
-## Out of scope
+## Later
 
-Falling into pits, per-tile floor heights (platforms, stairs), a floor at ground level, the eye
-above the walls (wall tops), particles/weather falling into pits (they stop at the floor line).
+- Lifts and stairs: an action to change the player's story, saved with the level.
+- Enemies that move up and down (a helicopter): actors with a height of their own.
+- Falling and death pits as engine features, if mods want more than blocking tiles.

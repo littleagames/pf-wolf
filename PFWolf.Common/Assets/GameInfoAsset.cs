@@ -1080,18 +1080,17 @@ public record DefaultMapInfo
     public string CeilingColor { get; init; } = "#383838";
 
     /// <summary>
-    /// How many 64 unit stories tall the walls are
+    /// The story walls with no block of their own (plane 3) run up to, from story 1: how many 64
+    /// unit stories tall they are
     /// </summary>
     public int WallHeight { get; init; } = 1;
 
     /// <summary>
-    /// The story the player's floor is on (1-8): walls carry on that many stories less one below
-    /// the floor, seen down the level's pits (mapdefs flats pits). 1 for none below.
+    /// The player's story (1-8). A tile's block (plane 3: start and stop stories) that takes it in
+    /// is a wall; one that ends below it is floor, stood on or looked down onto; one that starts
+    /// above it is overhead.
     /// </summary>
-    public int StoryLevel { get; init; } = 1;
-
-    /// <summary>#RRGGBB at the bottom of a pit with no floor sky (mapdefs flats pits)</summary>
-    public string PitColor { get; init; } = "#000000";
+    public int Story { get; init; } = 1;
 
     /// <summary>
     /// What a message's {floor-text} says, for a map without its own floor-text (Blake Stone's
@@ -2095,14 +2094,8 @@ public record MapInfo
     /// </summary>
     public int? WallHeight { get; init; } = null;
 
-    /// <summary>
-    /// The story the player's floor is on (1-8), walls carrying on below it down the pits; null
-    /// uses the default map's
-    /// </summary>
-    public int? StoryLevel { get; init; } = null;
-
-    /// <summary>#RRGGBB at the bottom of a pit with no floor sky; null uses the default map's</summary>
-    public string? PitColor { get; init; } = null;
+    /// <summary>The player's story (1-8); null uses the default map's</summary>
+    public int? Story { get; init; } = null;
 
     /// <summary>
     /// Graphic (or wall texture) drawn in place of the ceiling color; null uses the default map's

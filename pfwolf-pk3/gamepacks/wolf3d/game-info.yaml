@@ -12,8 +12,8 @@ default-map:
   # default-ceiling: CEIL1
   # sky: NightSky
   # floor-sky: RiverValley
-  # story-level: 3            # the floor on story 3: walls go 2 stories below it, seen down pits (mapdefs flats pits)
-  # pit-color: "#000000"      # a pit's bottom where there's no floor sky
+  # story: 3                  # the player's story: a tile's block (plane 3) taking it in is solid
+  # wall-height: 8            # walls with no block of their own run from story 1 to this one
   # shading:
   #   fade-color: "#000000"
   #   fade-start: 2

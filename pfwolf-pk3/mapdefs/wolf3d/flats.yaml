@@ -14,12 +14,8 @@
 # and a night yard on one level. A ceiling: texture on the same index is drawn over it; with
 # none the tile has no ceiling at all, not even the default. See examples/mods/skies-demo.
 #
-# pits: (by floor index, with the texture on the pit's sides) make a tile a hole in the floor.
-# Things cross it as floor; it's only a look. With game-info story-level above 1, walls carry on
-# that many stories less one below the floor, and looking down a pit shows them, and the pit's
-# sides under the floor beyond its edge. Its bottom is the tile's floor sky (floor-skies: on the
-# same index), else the level's floor sky, else game-info pit-color (black). A floor: texture on
-# a pit's index is a grate over it: its see-through pixels show the pit.
+# sides: (by floor index) is the texture on the sides of a floor tile's block (plane 3: a start
+# and stop story), which has no wall texture of its own. With none, its sides take a wall beside it.
 #
 # Keep the whole table in this one file: a mod's flats.yaml merges over it entry by entry.
 flats:

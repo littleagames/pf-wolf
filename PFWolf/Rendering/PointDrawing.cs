@@ -93,7 +93,7 @@ internal sealed class PointDrawing(
             if (render.PostUnderside[i] != 0)
             {
                 int exithalf = render.PostUnderside[i] >> 3;
-                bottom = Math.Max(bottom, floorRow(exithalf) - 2 * exithalf - 1);
+                bottom = Math.Max(bottom, floorRow(exithalf) - render.PostFirstStory[i] * 2 * exithalf - 1);
             }
 
             occheight[at] = render.PostHeights[i];

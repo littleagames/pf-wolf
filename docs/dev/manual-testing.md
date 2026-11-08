@@ -419,16 +419,14 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       opening); **(never tried)** standing in the doorway looking up, and a door set into no wall.
 - [ ] **(never tried)** A pushwall carrying its height; diagonals with heights.
 
-**Story level and pits** (mapdefs flats `pits:`, game-info `story-level`, `storylevel` cheat)
-- [ ] Story level 3 with a pit in E1M1's first corridor: walls carry on down, the pit's side under
-      a door's tile, standing on the pit, pitch down, story level 1 as a black hole (headless
-      screenshots, 2026-11-07). **(never tried)** walking up to the edge and back (no seams,
-      nothing under solid floor), two pits in a row with floor between, a low eye height.
-- [ ] **(never tried)** A pit with a floor sky (floor-skies on the same index); a pit-color.
-- [ ] A grate (`floor:` texture on a pit index) over a pit, the automap's pit marks, a diagonal
-      past a pit, an arch over a pit, eye height 10 (headless screenshots, 2026-11-07).
-      **(never tried)** a moving pushwall beside a pit, a see-through door by a pit, walking over a
-      grate.
+**Stories** (plane-3 blocks with a start and stop, game-info `story`; docs/dev/story-level-plan.md)
+- [ ] **(never tried)** `story 3` in E1M1 (cheat): its walls (up to story 1) are walked through,
+      `wallheight 3` makes them solid again; `height 3-5` on a wall, then `story` 1, 4 and 6: solid
+      only on 4; `where` says what each is. (Drawn right only from phase 2.)
+- [ ] **(never tried)** A pushwall pushed and stopped, then `story` changed and back: it's still
+      there (its wall id is on plane 0 where it stopped).
+- [ ] **(never tried)** A floor tile with a block solid at the player's story, drawn with its
+      flats `sides:` texture, else a wall beside it's.
 
 **Diagonal walls**
 - [ ] Slide along a diagonal face; automap both styles.
@@ -964,6 +962,8 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] Shading and markers toggles.
 - [ ] Blake AOG floor 1: octagon floor + panel ceiling from its codes.
 - [ ] Pick and edit from the 3D view; **(never tried)** clicking an extra thing.
+- [ ] **(never tried)** Level properties' Story saved to the mod's game-info (`story:`); the flat
+      brush listing floor-sky and sky indices with no texture.
 
 ## 2.7 Playing from the editor
 

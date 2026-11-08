@@ -152,7 +152,7 @@ internal sealed class DestructibleWalls(MapManager map, Doors doors, GameSession
             int nx = x + dx, ny = y + dy;
             if (!map.InMap(nx, ny) || map.TileMap[nx, ny] != 0)
                 continue;
-            int code = map.MapSpot(nx, ny, 0);
+            int code = map.FloorCode(nx, ny);
             if (map.ValidArea(code))
                 areas.Add(code - map.Floors.AreaTile);
             else if (doors.AreaNumberAt(nx, ny) is >= 0 and var near)

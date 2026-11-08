@@ -73,6 +73,8 @@ internal sealed class WallHits(
             wallpic = (mapTexture ?? MapTextureTranslation.None).WallFace(face);
         }
 
+        if (!jamb && map.BlockWall != 0 && (render.TileHit & ~GameConstants.BitWall) == map.BlockWall)
+            wallpic = map.BlockSideTexture(render.XTile, render.YIntTile) ?? "";     // a floor tile's block: its flats sides
         var textureAsset = WorldTexture(wallpic, render.XTile, render.YIntTile);
         if (textureAsset == null)
         {
@@ -85,7 +87,7 @@ internal sealed class WallHits(
             SetPatchPost(render.XTile, render.YIntTile, face, texture);
         else
             SeeThroughJamb(mapTexture, face, texture, render.XTile, render.YIntTile);
-        posts.ScalePost(below: true);
+        posts.ScalePost();
     }
 
     /// <summary>
@@ -168,6 +170,8 @@ internal sealed class WallHits(
             wallpic = (mapTexture ?? MapTextureTranslation.None).WallFace(face);
         }
 
+        if (!jamb && map.BlockWall != 0 && (render.TileHit & ~GameConstants.BitWall) == map.BlockWall)
+            wallpic = map.BlockSideTexture(render.XIntTile, render.YTile) ?? "";     // a floor tile's block: its flats sides
         var textureAsset = WorldTexture(wallpic, render.XIntTile, render.YTile);
         if (textureAsset == null)
         {
@@ -181,7 +185,7 @@ internal sealed class WallHits(
             SetPatchPost(render.XIntTile, render.YTile, face, texture);
         else
             SeeThroughJamb(mapTexture, face, texture, render.XIntTile, render.YTile);
-        posts.ScalePost(below: true);
+        posts.ScalePost();
     }
 
     // True when the door is seen through (WallPosts.SeesThrough): it's kept for drawing among the
@@ -329,11 +333,26 @@ internal sealed class WallHits(
     {
         mirrored = false;
         var tile = map.TileMap[tilex, tiley];
-        if ((tile & GameConstants.BitDoor) != 0 || (tile & ~GameConstants.BitWall) == 0)
-            return null;                // open floor, a door or a pushwall
+        if ((tile & GameConstants.BitDoor) != 0 || tile == GameConstants.BitWall)
+            return null;                // a door or a moving pushwall
+
+        int id = tile & ~GameConstants.BitWall;
+        if (id == 0)
+        {
+            // open at the player's story: a wall's block above or below it, or a floor tile's
+            // block with flats sides; else nothing
+            if (map.IsWallCode(tilex, tiley))
+                id = map.MapSpot(tilex, tiley, 0);
+            else if (map.BlockStops[tilex, tiley] != 0 && map.BlockSideTexture(tilex, tiley, neighbours: false) is { } side)
+                return WorldTexture(side, tilex, tiley);
+            else
+                return null;
+        }
+        if (id == map.BlockWall)
+            return map.BlockSideTexture(tilex, tiley) is { } blockSide ? WorldTexture(blockSide, tilex, tiley) : null;
 
         MapTextureTranslation? mapTexture = null;
-        if (map.GetMapData()?.Walls.TryGetValue(tile & ~GameConstants.BitWall, out mapTexture) != true || mapTexture == null)
+        if (map.GetMapData()?.Walls.TryGetValue(id, out mapTexture) != true || mapTexture == null)
             return null;
         mirrored = mapTexture.IsFlipped(face);
         return WorldTexture(mapTexture.WallFace(face), tilex, tiley);

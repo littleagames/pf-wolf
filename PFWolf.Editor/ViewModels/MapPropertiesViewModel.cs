@@ -62,6 +62,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         _floorColor = properties.FloorColor ?? "";
         _ceilingColor = properties.CeilingColor ?? "";
         _wallHeight = Text(properties.WallHeight);
+        _story = Text(properties.Story);
         _sky = properties.Sky ?? "";
         _defaultFloor = properties.DefaultFloor ?? "";
         _defaultCeiling = properties.DefaultCeiling ?? "";
@@ -114,6 +115,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     [ObservableProperty] private string _floorColor;
     [ObservableProperty] private string _ceilingColor;
     [ObservableProperty] private string _wallHeight;
+    [ObservableProperty] private string _story;
     [ObservableProperty] private string _sky;
     [ObservableProperty] private string _defaultFloor;
     [ObservableProperty] private string _defaultCeiling;
@@ -138,6 +140,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     public string FloorColorDefault => Defaults.FloorColor ?? "";
     public string CeilingColorDefault => Defaults.CeilingColor ?? "";
     public string WallHeightDefault => Defaults.WallHeight.ToString(CultureInfo.InvariantCulture);
+    public string StoryDefault => Defaults.Story.ToString(CultureInfo.InvariantCulture);
     public string SkyDefault => Defaults.Sky ?? "none";
     public string DefaultFloorDefault => Defaults.DefaultFloor ?? "the floor color";
     public string DefaultCeilingDefault => Defaults.DefaultCeiling ?? "the ceiling color";
@@ -209,6 +212,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 FloorColor = Color(FloorColor, "floor color"),
                 CeilingColor = Color(CeilingColor, "ceiling color"),
                 WallHeight = Int(WallHeight, "wall height", 1, 8),
+                Story = Int(Story, "story", 1, 8),
                 Sky = Optional(Sky),
                 DefaultFloor = Optional(DefaultFloor),
                 DefaultCeiling = Optional(DefaultCeiling),

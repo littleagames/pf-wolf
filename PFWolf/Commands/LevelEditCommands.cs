@@ -25,8 +25,8 @@ internal sealed class LevelEditCommands(
     {
         console.Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{GameConstants.MaxWallStories}]", WallHeightCommand, Cheat | InLevel);
-        console.Register("storylevel", "The story the level's floor is on, until the level is left or reloaded: walls carry on one less story than that below the floor, seen down the pits (mapdefs flats pits).",
-            $"storylevel [1-{GameConstants.MaxWallStories}]", StoryLevelCommand, Cheat | InLevel);
+        console.Register("story", "The player's story, until the level is left or reloaded: a tile's block that takes it in is solid, one below it floor, one above it overhead.",
+            $"story [1-{GameConstants.MaxWallStories}]", StoryCommand, Cheat | InLevel);
         console.Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
             "sky [name|none]", SkyCommand, InLevel);
         console.Register("weather", "Makes it rain or snow (a game-info weather-types name, or rain, heavy-rain, snow or blizzard) until the level is left or reloaded; none for clear weather.",
@@ -49,8 +49,8 @@ internal sealed class LevelEditCommands(
         console.Register("zoneeffect", "Makes a light zone flicker, pulse or strobe (none stops it), down to low, timed in tics (70 a second).",
             "zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]", ZoneEffectCommand, Cheat | InLevel,
             complete: (_, i) => i == 1 ? ["none", "flicker", "pulse", "strobe"] : []);
-        console.Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
-            $"height <0-{GameConstants.MaxWallStories}> [tilex tiley]", HeightCommand, Cheat | InLevel);
+        console.Register("height", "Sets a tile's block (default: the one you face): up to a story (from story 1), or from one story to another, as 3-5; 0 gives it back to its default (a wall: 1 to the level's height; open floor: none).",
+            $"height <0|stop|start-stop> [tilex tiley]", HeightCommand, Cheat | InLevel);
         console.Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
             "tag [0-65535 [tilex tiley]]", TagCommand, Cheat | InLevel);
         console.Register("scroll", "Lists the level's scrollers (scrolling walls and flats, by tag), or sets one's speeds in texels a tic (x right/east, y down/south), starts, stops or removes it.",
@@ -71,16 +71,36 @@ internal sealed class LevelEditCommands(
     }
     internal void HeightCommand(string[] args)
     {
+        const string Usage = "usage: height <0|stop|start-stop> [tilex tiley]";
         if (args.Length == 0)
-            throw new ArgumentException($"usage: height <0-{GameConstants.MaxWallStories}> [tilex tiley]");
+            throw new ArgumentException(Usage);
 
-        int stories = ParseInt(args[0], 0, GameConstants.MaxWallStories);
+        var parts = args[0].Split('-');
+        int start = 1, stop;
+        if (parts.Length == 2)
+        {
+            start = ParseInt(parts[0], 1, GameConstants.MaxWallStories);
+            stop = ParseInt(parts[1], start, GameConstants.MaxWallStories);
+        }
+        else if (parts.Length == 1)
+            stop = ParseInt(parts[0], 0, GameConstants.MaxWallStories);
+        else
+            throw new ArgumentException(Usage);
         var (x, y) = targets.TileArg(args, 1);
 
-        map.SetWallStories(x, y, stories);
-        console.Print(stories == 0
-            ? $"Tile {x},{y} is back to the level's height ({map.LevelWallStories})"
-            : $"Tile {x},{y} is now {stories} {(stories == 1 ? "story" : "stories")} tall");
+        map.SetBlock(x, y, start, stop);
+        map.ApplyStory();
+        console.Print($"Tile {x},{y}: {map.DescribeBlock(x, y)}");
+    }
+
+    internal void StoryCommand(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            map.Story = ParseInt(args[0], 1, GameConstants.MaxWallStories);
+            map.ApplyStory();
+        }
+        console.Print($"The player is on story {map.Story}; walls run up to story {map.LevelWallStories}");
     }
 
     internal void TagCommand(string[] args)
@@ -182,7 +202,7 @@ internal sealed class LevelEditCommands(
             throw new ArgumentException($"Can't remove it: {why}");
 
         destructibleWalls.Remove(x, y, arch);
-        console.Print($"Tile {x},{y}: the wall is gone{(map.StoryMap[x, y] > 1 ? $", an arch of {map.StoryMap[x, y]} stories left" : "")}");
+        console.Print($"Tile {x},{y}: the wall is gone{(map.IsOverhead(x, y) ? $", an arch of stories {map.BlockStart(x, y)} to {map.WallStories(x, y)} left" : "")}");
     }
 
     internal void BreakWallCommand(string[] args)
@@ -312,16 +332,11 @@ internal sealed class LevelEditCommands(
     internal void WallHeightCommand(string[] args)
     {
         if (args.Length > 0)
+        {
             map.LevelWallStories = ParseInt(args[0], 1, GameConstants.MaxWallStories);
+            map.ApplyStory();       // walls with no block of their own may reach the player's story now, or no longer
+        }
         console.Print($"Walls are {map.LevelWallStories} {(map.LevelWallStories == 1 ? "story" : "stories")} tall");
-    }
-
-    internal void StoryLevelCommand(string[] args)
-    {
-        if (args.Length > 0)
-            map.StoryLevel = ParseInt(args[0], 1, GameConstants.MaxWallStories);
-        console.Print($"The floor is on story {map.StoryLevel}: walls go {map.StoriesBelow} {(map.StoriesBelow == 1 ? "story" : "stories")} below it"
-            + (map.HasPits ? "" : " (the level has no pits to see them down)"));
     }
 
     internal void SkyCommand(string[] args)

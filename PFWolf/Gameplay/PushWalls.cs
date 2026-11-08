@@ -156,7 +156,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
         map.TileMap[checkx, checky] = GameConstants.BitWall;
         map.TileMap[checkx + dx, checky + dy] = GameConstants.BitWall;
         map.SetMapSpot(checkx, checky, 1,  0);   // remove P tile info
-        map.SetMapSpot(checkx, checky, 0, (ushort)map.MapSpot(session.Player.TileX, session.Player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
+        map.SetMapSpot(checkx, checky, 0, (ushort)map.FloorCode(session.Player.TileX, session.Player.TileY)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
         if (!string.IsNullOrEmpty(moveSound))
             audio.Play(moveSound);
@@ -214,6 +214,8 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 // the block has been pushed as far as it goes
                 //
                 map.TileMap[wall.X + dx, wall.Y + dy] = (ushort)oldtile;
+                // plane 0 holds the wall where it stops, as a wall placed there would (MapManager.ApplyStory)
+                map.SetMapSpot(wall.X + dx, wall.Y + dy, 0, (ushort)(oldtile & ~GameConstants.BitWall));
                 map.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MovePatch(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
@@ -237,6 +239,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                     || map.Players.Any(pawn => PlayerBoxCovers(pawn, aheadx, aheady)))
                 {
                     map.TileMap[wall.X, wall.Y] = (ushort)oldtile;
+                    map.SetMapSpot(wall.X, wall.Y, 0, (ushort)(oldtile & ~GameConstants.BitWall));
                     return false;
                 }
 

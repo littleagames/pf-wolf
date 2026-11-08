@@ -117,3 +117,13 @@ choice, 2026-10-28:
   down).
 - Walls that come back: A_RestoreWall puts a removed wall back, refused while something stands
   on the tile.
+
+## Stories: after the blocks rework
+
+Left for later by the stories plan (docs/dev/story-level-plan.md, 2026-11-08):
+
+- Enemies that move up and down, a helicopter say: actors with a height of their own, drawn and
+  aimed at it, flying over drops and between stories.
+- Lifts and stairs: an action (A_SetStory) that moves the player to another story during play,
+  rebuilding what's solid, saved with the level.
+- Falling and death pits as engine features, if mods want more than blocking tiles and triggers.

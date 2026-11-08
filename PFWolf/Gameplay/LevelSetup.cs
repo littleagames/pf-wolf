@@ -84,8 +84,17 @@ internal sealed class LevelSetup(
         //
         deathmatch.DeathmatchLevelSetup();         // with or without its enemies (Gameplay/Deathmatch.cs)
         //int mapnum = GameState.MapOn + 10 * GameState.cluster;
+        // The player's story and the walls' height decide what's solid as the map loads: the
+        // level's game-info entry, then what its own file says (a UWMF level's), then the default map's
+        var levelInfo = CurrentMapInfo.For(session, engine.GetGameInfo());
+        map.Story = Math.Clamp(levelInfo?.Story ?? engine.GetGameInfo().DefaultMap.Story, 1, GameConstants.MaxWallStories);
+        map.WallHeightSetting = levelInfo?.WallHeight;
+        map.DefaultWallHeight = engine.GetGameInfo().DefaultMap.WallHeight;
         map.LoadMap(session.GameState.MapOn, session.GameState.Difficulty, hooks.CurrentSkill().EnemyHealth,
-            CurrentMapInfo.For(session, engine.GetGameInfo())?.FloorNumber ?? -1);
+            levelInfo?.FloorNumber ?? -1);
+        if (map.LevelWallStories < map.Story)
+            Console.WriteLine($"{session.GameState.MapOn}: its walls run up to story {map.LevelWallStories} (wall-height), below the player's "
+                + $"story {map.Story}: only tiles with blocks of their own (plane 3) are solid");
 
         // The cluster follows the map, however it was reached: a new game, the next/secret
         // level, a map-change trigger or the console's "map" warp
@@ -93,10 +102,6 @@ internal sealed class LevelSetup(
         if (mapInfo != null)
             session.GameState.Cluster = mapInfo.Cluster;
 
-        // The level's game-info entry, then what its own file says (a UWMF level's), then the default map's
-        map.LevelWallStories = Math.Clamp(mapInfo?.WallHeight ?? map.LevelDefaults.WallStories ?? engine.GetGameInfo().DefaultMap.WallHeight,
-            1, GameConstants.MaxWallStories);
-        map.StoryLevel = Math.Clamp(mapInfo?.StoryLevel ?? engine.GetGameInfo().DefaultMap.StoryLevel, 1, GameConstants.MaxWallStories);
         skyAndFlats.LevelSky = mapInfo?.Sky ?? map.LevelDefaults.Sky ?? engine.GetGameInfo().DefaultMap.Sky;
         // the floor sky and how it's drawn come together, from the map or else the default map
         (skyAndFlats.LevelFloorSky, skyAndFlats.FloorSkyMirror) = mapInfo?.FloorSky is { } floorSky
@@ -157,14 +162,14 @@ internal sealed class LevelSetup(
 
                 if (tile == map.Floors.AmbushTile)
                 {
-                    if (map.ValidArea(map.MapSpot(x + 1, y, 0)))
-                        tile = (ushort)map.MapSpot(x + 1, y, 0);
-                    if (map.ValidArea(map.MapSpot(x, y - 1, 0)))
-                        tile = (ushort)map.MapSpot(x, y - 1, 0);
-                    if (map.ValidArea(map.MapSpot(x, y + 1, 0)))
-                        tile = (ushort)map.MapSpot(x, y + 1, 0);
-                    if (map.ValidArea(map.MapSpot(x - 1, y, 0)))
-                        tile = (ushort)map.MapSpot(x - 1, y, 0);
+                    if (map.ValidArea(map.FloorCode(x + 1, y)))
+                        tile = (ushort)map.FloorCode(x + 1, y);
+                    if (map.ValidArea(map.FloorCode(x, y - 1)))
+                        tile = (ushort)map.FloorCode(x, y - 1);
+                    if (map.ValidArea(map.FloorCode(x, y + 1)))
+                        tile = (ushort)map.FloorCode(x, y + 1);
+                    if (map.ValidArea(map.FloorCode(x - 1, y)))
+                        tile = (ushort)map.FloorCode(x - 1, y);
 
                     map.SetMapSpot(x, y, 1, 0);
                 }

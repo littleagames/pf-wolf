@@ -160,7 +160,7 @@ internal sealed class Players(
     // Floor a player can walk on: no wall, door or solid thing, and in an area
     internal bool IsOpenFloor(int x, int y) =>
         map.TileMap[x, y] == 0 && map.ActorAt[x, y] == null
-        && map.ValidArea(map.MapSpot(x, y, 0));
+        && map.ValidArea(map.FloorCode(x, y));
 
     // Open floor nobody stands on: no enemy, and no player already put there
     internal bool IsFreeFloor(int x, int y) =>

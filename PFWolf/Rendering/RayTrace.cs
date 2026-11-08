@@ -26,7 +26,6 @@ internal sealed class RayTrace(
         int pwallposnorm=0, pwallposinv=0, pwallposi=0;           // holds modified PWall.Pos
         render.SizeCovers(render.ViewWidth);
         render.AnySeeThrough = false;
-        render.PitsOn = map.HasPits && map.StoriesBelow > 0;
 
         for (render.PixX = 0; render.PixX < render.ViewWidth; render.PixX++)
         {
@@ -98,7 +97,6 @@ internal sealed class RayTrace(
             render.ColumnTallest = 0;
             render.ColumnTop = render.ViewHeight;
             render.SeeThroughCount[render.PixX] = 0;
-            posts.StartPits();
             bool focalhit = false;              // hit a wall in the view's own tile: no trace
 
             //
@@ -234,7 +232,6 @@ internal sealed class RayTrace(
         int hitx = render.XTile, hity = render.YIntTile;
         posts.CloseArch(posts.VertEdge, render.YIntercept);
         posts.EnterTileLight(render.XTile - render.XTileStep, render.YIntTile);
-        posts.CrossPitEdge(hitx, hity, posts.VertEdge, render.YIntercept, true);
         render.TileHit = map.TileMap[render.XTile, render.YIntTile];
         render.HitPushwall = render.TileHit == GameConstants.BitWall;
         if (render.HitPushwall)
@@ -487,7 +484,6 @@ internal sealed class RayTrace(
         int hitx = render.XIntTile, hity = render.YTile;
         posts.CloseArch(render.XIntercept, posts.HorizEdge);
         posts.EnterTileLight(render.XIntTile, render.YTile - render.YTileStep);
-        posts.CrossPitEdge(hitx, hity, render.XIntercept, posts.HorizEdge, false);
         render.TileHit = map.TileMap[render.XIntTile, render.YTile];
         render.HitPushwall = render.TileHit == GameConstants.BitWall;
         if (render.HitPushwall)

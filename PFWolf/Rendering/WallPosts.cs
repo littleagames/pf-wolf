@@ -49,21 +49,12 @@ internal sealed class WallPosts(
     }
 
 
-    // drawn: how many stories to draw, if not all HitStories (a door under its lintel draws one);
-    // below: a wall that goes on under the floor, seen down a pit just in front of it
-    internal void ScalePost(int drawn = 0, bool below = false)
+    // drawn: how many stories to draw, if not all HitStories (a door under its lintel draws one)
+    internal void ScalePost(int drawn = 0)
     {
         var upper = render.UpperSource ?? render.PostSource;
         QueuePost(render.PostHeight, 0, drawn > 0 ? drawn : render.HitStories, render.PostSource, render.PostOfs, upper, render.UpperSource != null ? render.UpperOfs : render.PostOfs,
             patch: render.PatchSource, patchofs: render.PatchOfs, patchstory: render.PatchStory, scrollrow: render.ScrollRow);
-        if (below && render.PitBeforeWall)
-        {
-            // its stories under the floor, in its own texture, down the pit
-            render.PitBeforeWall = false;
-            QueuePost(render.PostHeight, -map.StoriesBelow, 0, render.PostSource, render.PostOfs, render.PostSource, render.PostOfs,
-                patch: render.PatchSource, patchofs: render.PatchOfs, patchstory: render.PatchStory, scrollrow: render.ScrollRow,
-                cliptop: render.PitClipTop, clipbottom: render.PitClipBottom);
-        }
         render.UpperSource = null;
         render.PatchSource = null;
         render.ScrollRow = 0;
@@ -160,22 +151,23 @@ internal sealed class WallPosts(
                     lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]), cliptop, clipbottom);
             if (render.PostUnderside[render.PostCount] != 0)
                 DrawUnderside(render.PixX, render.PostHeights[render.PostCount] >> 3, render.PostUnderside[render.PostCount] >> 3, render.PostUnderTexture[render.PostCount],
-                    render.PostUnderFlat[render.PostCount]);
+                    render.PostUnderFlat[render.PostCount], render.PostFirstStory[render.PostCount]);
         }
     }
 
     /// <summary>
-    /// Draws an arch's underside, one story up, between where the trace enters it (half a story
-    /// is entryhalf pixels there) and where it leaves (exithalf). It's a flat surface, so each
-    /// row is textured from where the view ray meets it, from the texture's bottom story
-    /// laid flat: one tile of it per tile. A ceiling flat (flat) is sampled as DrawFlats does,
-    /// its see-through pixels the ceiling color. With no texture, it's the ceiling color.
+    /// Draws an arch's underside, <paramref name="story"/> stories up (where its block starts),
+    /// between where the trace enters it (half a story is entryhalf pixels there) and where it
+    /// leaves (exithalf). It's a flat surface, so each row is textured from where the view ray
+    /// meets it, from the texture's bottom story laid flat: one tile of it per tile. A ceiling
+    /// flat (flat) is sampled as DrawFlats does, its see-through pixels the ceiling color. With
+    /// no texture, it's the ceiling color.
     /// </summary>
-    internal void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture, bool flat)
+    internal void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture, bool flat, int story = 1)
     {
-        // one story up from the floor line, as DrawPost puts the top of the arch's first story
-        int from = Math.Max(FloorRow(entryhalf) - 2 * entryhalf, 0);
-        int to = Math.Min(FloorRow(exithalf) - 2 * exithalf - 1, render.ViewHeight - 1);
+        // story stories up from the floor line, as DrawPost puts the bottom of the arch's first story
+        int from = Math.Max(FloorRow(entryhalf) - story * 2 * entryhalf, 0);
+        int to = Math.Min(FloorRow(exithalf) - story * 2 * exithalf - 1, render.ViewHeight - 1);
         if (from > to)
             return;
         int pitch = (int)video.BufferPitch;
@@ -184,7 +176,7 @@ internal sealed class WallPosts(
         unsafe
         {
             byte* dest = (byte*)render.VbufPtr + render.ScreenOfs + x;
-            double numerator = render.HeightNumerator * 32.0 * skyAndFlats.EyeHalves(GameConstants.TextureSize);
+            double numerator = render.HeightNumerator * 32.0 * skyAndFlats.EyeHalves(story * GameConstants.TextureSize);
 
             //
             // The underside, h half stories above the eye, shows on row y where its edge would at
@@ -228,18 +220,19 @@ internal sealed class WallPosts(
     =
     = Arches
     =
-    = An open floor tile with a height (plane 3) above one story is an arch: a block from the
-    = second story up to that height, that can be walked under. The trace opens one as it
+    = An open tile whose block (plane 3) starts above the player's story is an arch: walked
+    = under, from the story its block starts at up to where it stops. The trace opens one as it
     = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
-    = Its faces take the texture of a wall beside it, and its underside the tile's ceiling flat
-    = (a non-zero flat-plane ceiling index), else the wall's texture too. A door's tile above
-    = one story is capped the same way, its lintel flush with the wall the door is set into.
+    = Its faces take its own texture (a wall's, or a floor tile's flats sides), else that of a
+    = wall at the end of its run, and its underside the tile's ceiling flat (a non-zero
+    = flat-plane ceiling index), else the face texture too. A door's tile above one story is
+    = capped the same way, its lintel flush with the wall the door is set into.
     =
     ====================
     */
 
 
-    internal bool IsArch(int tilex, int tiley) => map.TileMap[tilex, tiley] == 0 && map.StoryMap[tilex, tiley] > 1;
+    internal bool IsArch(int tilex, int tiley) => map.IsOverhead(tilex, tiley);
 
     /// <summary>
     /// The trace enters the arch at (TileX, TileY), crossing its edge at (edgex, edgey); vertical
@@ -247,17 +240,24 @@ internal sealed class WallPosts(
     /// </summary>
     internal void OpenArch(int tilex, int tiley, int edgex, int edgey, bool vertical)
     {
-        // the same face of the wall at either end of the run of arch tiles in line with the face,
-        // else at either end of the run across it (a face on the end of a run, entered along it)
+        // its own texture, else the same face of the wall at either end of the run of arch tiles
+        // in line with the face, else at either end of the run across it (a face on the end of a
+        // run, entered along it)
         int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
         var face = SeenFace(vertical);
-        var texture = ArchEndTexture(tilex, tiley, -dx, -dy, face, out bool mirrored) ?? ArchEndTexture(tilex, tiley, dx, dy, face, out mirrored)
+        var own = wallTexture(tilex, tiley, face, out bool mirrored);
+        var texture = own ?? ArchEndTexture(tilex, tiley, -dx, -dy, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dx, dy, face, out mirrored)
             ?? ArchEndTexture(tilex, tiley, -dy, -dx, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dy, dx, face, out mirrored);
         if (texture == null)
             return;                     // nothing to texture it from: leave it open
 
-        StartArch(tilex, tiley, map.StoryMap[tilex, tiley], texture, mirrored, ArchUndersideTexture(tilex, tiley), edgex, edgey, vertical);
+        StartArch(tilex, tiley, map.BlockStart(tilex, tiley) - map.Story, map.WallStories(tilex, tiley) - map.Story + 1, texture, mirrored,
+            ArchUnderside(tilex, tiley), edgex, edgey, vertical);
     }
+
+    // An arch tile's underside: its own texture, else the run's (ArchUndersideTexture)
+    TextureAsset? ArchUnderside(int tilex, int tiley) =>
+        wallTexture(tilex, tiley, "north", out _) ?? ArchUndersideTexture(tilex, tiley);
 
     /// <summary>
     /// The trace enters a door tile at (TileX, TileY) as OpenArch enters an arch. Above the first
@@ -278,7 +278,7 @@ internal sealed class WallPosts(
         if (texture == null)
             return;                     // set into nothing: a shut door carries on up (WallHits.SetLintelPost)
 
-        StartArch(tilex, tiley, stories, texture, mirrored, DoorArchUndersideTexture(tilex, tiley, doorVertical), edgex, edgey, vertical);
+        StartArch(tilex, tiley, 1, stories, texture, mirrored, DoorArchUndersideTexture(tilex, tiley, doorVertical), edgex, edgey, vertical);
     }
 
     /// <summary>
@@ -289,8 +289,9 @@ internal sealed class WallPosts(
         ? wallTexture(tilex, tiley - 1, "south", out _) ?? wallTexture(tilex, tiley + 1, "north", out _)
         : wallTexture(tilex - 1, tiley, "east", out _) ?? wallTexture(tilex + 1, tiley, "west", out _);
 
-    // Opens an arch stories high on (TileX, TileY), its face texture entered across (edgex, edgey)
-    void StartArch(int tilex, int tiley, int stories, TextureAsset texture, bool mirrored, TextureAsset? underside,
+    // Opens an arch on (TileX, TileY), from first stories above the floor up to stories, its face
+    // texture entered across (edgex, edgey)
+    void StartArch(int tilex, int tiley, int first, int stories, TextureAsset texture, bool mirrored, TextureAsset? underside,
         int edgex, int edgey, bool vertical)
     {
         render.ArchTexture = texture;
@@ -298,6 +299,7 @@ internal sealed class WallPosts(
         render.ArchLight = WallLight(edgex, edgey);
         render.ArchUnderside = underside ?? texture;
         UseArchCeilingFlat(tilex, tiley);
+        render.ArchFirst = first;
         render.ArchStories = stories;
         render.ArchHeight = HeightAt(edgex, edgey);
         render.ArchOfs = vertical
@@ -348,18 +350,20 @@ internal sealed class WallPosts(
 
     // The view starts under an arch: there's no face, only the underside from above the view
     internal void OpenFocalArch() =>
-        StartFocalArch(map.StoryMap[render.FocalTx, render.FocalTy], ArchUndersideTexture(render.FocalTx, render.FocalTy));
+        StartFocalArch(map.BlockStart(render.FocalTx, render.FocalTy) - map.Story, map.WallStories(render.FocalTx, render.FocalTy) - map.Story + 1,
+            ArchUnderside(render.FocalTx, render.FocalTy));
 
     // The view starts in a door's tile, under its lintel (OpenDoorArch)
     internal void OpenFocalDoorArch(bool doorVertical)
     {
         int stories = map.WallStories(render.FocalTx, render.FocalTy);
         if (stories > 1)
-            StartFocalArch(stories, DoorArchUndersideTexture(render.FocalTx, render.FocalTy, doorVertical));
+            StartFocalArch(1, stories, DoorArchUndersideTexture(render.FocalTx, render.FocalTy, doorVertical));
     }
 
-    void StartFocalArch(int stories, TextureAsset? underside)
+    void StartFocalArch(int first, int stories, TextureAsset? underside)
     {
+        render.ArchFirst = first;
         render.ArchUnderside = underside;
         if (render.ArchUnderside == null)
             return;                     // as OpenArch: nothing to texture it from
@@ -382,115 +386,8 @@ internal sealed class WallPosts(
         short exitheight = HeightAt(edgex, edgey);
         if (exitheight == 0)
             exitheight = 1;             // 0 means no underside
-        QueuePost(render.ArchHeight, 1, render.ArchStories, render.ArchTexture!, render.ArchOfs, render.ArchTexture!, render.ArchOfs, exitheight, render.ArchUnderside, render.ArchLight, render.ArchUnderFlat);
+        QueuePost(render.ArchHeight, render.ArchFirst, render.ArchStories, render.ArchTexture!, render.ArchOfs, render.ArchTexture!, render.ArchOfs, exitheight, render.ArchUnderside, render.ArchLight, render.ArchUnderFlat);
     }
-
-    /*
-    ====================
-    =
-    = Pits
-    =
-    = With the floor on a story above the first (story-level), walls carry on below it, and a pit
-    = tile (mapdefs flats pits) has no floor: looking down it, what's beyond its far edge shows
-    = below the floor line, in the rows the pit's floor would have covered. That's the pit's side
-    = under the floor beyond (open floor or a door's tile) or a wall's stories under the floor.
-    = What's past that edge is hidden behind it, so each post under the floor is clipped to the
-    = rows of the one pit in front of it. Rows no post covers are the pit's bottom: the floor pass
-    = draws its floor sky or the pit color there (SkyAndFlats.DrawFlats).
-    =
-    ====================
-    */
-
-    /// <summary>Sets up the pits for the column being traced: the view may be over one</summary>
-    internal void StartPits()
-    {
-        render.PitOpen = render.PitBeforeWall = false;
-        if ((uint)render.PixX < (uint)render.PitSpanCount.Length)
-            render.PitSpanCount[render.PixX] = 0;
-        if (!render.PitsOn || !map.IsPit(render.FocalTx, render.FocalTy))
-            return;
-        render.PitOpen = true;
-        render.PitEntryHeight = short.MaxValue;
-        render.PitSideTexture = map.PitSide[map.TileIndex(render.FocalTx, render.FocalTy)];
-    }
-
-    /// <summary>
-    /// The trace crosses into (tilex, tiley) across the edge at (edgex, edgey); vertical says
-    /// it's an edge along x = constant. Entering a pit opens it; leaving one queues its side, or
-    /// leaves the rows for the wall it's about to hit (ScalePost's below).
-    /// </summary>
-    internal void CrossPitEdge(int tilex, int tiley, int edgex, int edgey, bool vertical)
-    {
-        render.PitBeforeWall = false;
-        if (!render.PitsOn || render.PastWall)
-            return;                     // past the nearest wall, the floor is out of sight
-
-        if (map.IsPit(tilex, tiley))
-        {
-            if (!render.PitOpen)
-            {
-                render.PitOpen = true;
-                render.PitEntryHeight = HeightAt(edgex, edgey);
-            }
-            render.PitSideTexture = map.PitSide[map.TileIndex(tilex, tiley)];
-            return;
-        }
-        if (!render.PitOpen)
-            return;
-        render.PitOpen = false;
-
-        // the rows under the floor line from this edge down to where the pit starts
-        short exitheight = HeightAt(edgex, edgey);
-        int cliptop = FloorRow(PostHalf(exitheight));
-        int clipbottom = render.PitEntryHeight == short.MaxValue ? render.ViewHeight - 1
-            : FloorRow(PostHalf(render.PitEntryHeight)) - 1;
-        if (cliptop > clipbottom || render.PitSideTexture is not { } side)
-            return;
-
-        // where the pit's rows are, for a grate over it (SkyAndFlats.DrawGrates)
-        if ((uint)render.PixX < (uint)render.PitSpanCount.Length && render.PitSpanCount[render.PixX] < RenderState.MaxPitSpans)
-        {
-            int at = render.PixX * RenderState.MaxPitSpans + render.PitSpanCount[render.PixX]++;
-            render.PitSpanTop[at] = cliptop;
-            render.PitSpanBottom[at] = clipbottom;
-        }
-
-        if (FloorBeyondPit(tilex, tiley, vertical))
-        {
-            // floor beyond the edge: the pit's side under it, lit from the pit
-            int ofs = vertical ? LintelColumn(edgey, render.XTileStep == -1) : LintelColumn(edgex, render.YTileStep == 1);
-            QueuePost(exitheight, -map.StoriesBelow, 0, side, ofs, side, ofs, light: WallLight(edgex, edgey),
-                cliptop: cliptop, clipbottom: clipbottom);
-            return;
-        }
-
-        render.PitBeforeWall = true;
-        render.PitClipTop = cliptop;
-        render.PitClipBottom = clipbottom;
-    }
-
-    /// <summary>
-    /// Whether a pit's edge into (tilex, tiley), crossed as CrossPitEdge says, has floor on the
-    /// far side (so the pit's side shows under it) rather than a wall standing on the edge: open
-    /// floor, a door's tile, a moving pushwall's (a block sliding on the floor, not a wall going
-    /// down), or a diagonal entered by its open half (its face stands back from the edge).
-    /// </summary>
-    internal bool FloorBeyondPit(int tilex, int tiley, bool vertical)
-    {
-        var tile = map.TileMap[tilex, tiley];
-        if (tile == 0 || (tile & GameConstants.BitDoor) != 0 || tile == GameConstants.BitWall)
-            return true;
-        var shape = map.WallShapes[tilex, tiley];
-        if (shape == WallShape.Square)
-            return false;
-        var edge = vertical
-            ? render.XTileStep == 1 ? SeenFlags.WestFace : SeenFlags.EastFace
-            : render.YTileStep == 1 ? SeenFlags.NorthFace : SeenFlags.SouthFace;
-        return (Diagonals.DiagonalSolidEdges(shape) & edge) == 0;
-    }
-
-    // Half a story's height in pixels for a post height (as WallHeight), as DrawPost takes it
-    static int PostHalf(short height) => height >> 3 is > 0 and var half ? half : 100;
 
     // The height (as WallHeight) of a wall at (x, y)
     internal short HeightAt(int x, int y)

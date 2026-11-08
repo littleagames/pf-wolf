@@ -274,7 +274,7 @@ internal sealed class PlayerMovement(
 
         // A diagonal wall tile's open half has no area number (plane 0 holds the wall), so keep
         // the one the player walked in from.
-        var areatile = map.MapSpot(player.TileX, player.TileY, 0);
+        var areatile = map.FloorCode(player.TileX, player.TileY);
         if (map.ValidArea(areatile))
             player.AreaNumber = (byte)(areatile - map.Floors.AreaTile);
 

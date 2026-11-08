@@ -426,8 +426,8 @@ internal partial record Monster : Actor
 
         // A door tile has no area of its own, so a PHASEDOORS actor passing through one
         // keeps the area it came from, and so does one crossing a floor code that isn't an area
-        if (MapManager.ActorAt[TileX, TileY] is not Door && MapManager.ValidArea(MapManager.MapSpot(TileX, TileY, 0)))
-            AreaNumber = (byte)(MapManager.MapSpot(TileX, TileY, 0) - MapManager.Floors.AreaTile);
+        if (MapManager.ActorAt[TileX, TileY] is not Door && MapManager.ValidArea(MapManager.FloorCode(TileX, TileY)))
+            AreaNumber = (byte)(MapManager.FloorCode(TileX, TileY) - MapManager.Floors.AreaTile);
         Distance = (int)MapConstants.TileGlobal;
         SyncPosition();
         return true;

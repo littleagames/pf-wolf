@@ -71,7 +71,6 @@ internal sealed partial class SkyAndFlats(
     upside down from the horizon instead: a sky reflected in water.
     */
     internal string? LevelFloorSky;      // the level's floor sky graphic (or wall texture), null for none
-    internal byte PitColor;              // this frame's: the bottom of a pit with no floor sky (game-info pit-color)
     internal bool FloorSkyMirror;        // drawn upside down from the horizon
 
     readonly SkyPicture sky = new(), floorsky = new();
@@ -289,7 +288,6 @@ internal sealed partial class SkyAndFlats(
                 floorColor = video.ParseColorOr(altFloor, floorColor);
         }
         CeilingColor = ceilingColor;
-        PitColor = video.ParseColorOr(mapInfo?.PitColor ?? gameInfo.DefaultMap.PitColor, 0);
 
         var destIndex = render.Vbuf;
         int y;
@@ -352,7 +350,7 @@ internal sealed partial class SkyAndFlats(
         // With Show Floors or Show Ceilings off (Blake Stone's switches), that side's flats aren't drawn
         // A tile's own sky shows whatever the switches say: it's not a texture.
         bool showFloors = ShowFloors(), showCeilings = ShowCeilings();
-        bool floorflats = map.HasFloorFlats && showFloors || map.HasFloorSkies || map.HasPits || (lighting.HasZones || actorLights.HasLights) && !floorSkyBehind;
+        bool floorflats = map.HasFloorFlats && showFloors || map.HasFloorSkies || (lighting.HasZones || actorLights.HasLights) && !floorSkyBehind;
         bool ceilingflats = map.HasCeilingFlats && showCeilings || map.HasCeilingSkies || (lighting.HasZones || actorLights.HasLights) && !skyBehind;
         if (floorflats || ceilingflats)
         {
@@ -362,9 +360,7 @@ internal sealed partial class SkyAndFlats(
             if (floorflats)
                 DrawFlats(showFloors ? map.FloorFlat : NoFlats(map.FloorFlat.Length), frameFloorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, floorSkyBehind,
                     map.Scrollers.AnyFloors ? map.Scrollers.FloorX : null, map.Scrollers.FloorY,
-                    map.HasFloorSkies ? map.FloorSky : null, floor: true, pits: map.HasPits ? map.PitSide : null);
-            if (floorflats && showFloors && map.HasGrates && render.PitsOn)
-                DrawGrates(map.FloorFlat, map.PitSide);
+                    map.HasFloorSkies ? map.FloorSky : null, floor: true);
             if (ceilingflats)
                 DrawFlats(showCeilings ? map.CeilingFlat : NoFlats(map.CeilingFlat.Length), CeilingColor, 0, render.CenterY - 1, CeilingHalves, skyBehind,
                     map.Scrollers.AnyCeilings ? map.Scrollers.CeilingX : null, map.Scrollers.CeilingY,
@@ -417,11 +413,10 @@ internal sealed partial class SkyAndFlats(
     /// far east and south each tile's texture has moved, in global units (Rendering/Scrollers.cs).
     /// skies (null: none) are the tiles' own skies (MapManager.CeilingSky or FloorSky, loaded by
     /// LoadTileSkies), shown where a tile has one and no texture or a see-through pixel; floor
-    /// says they're floor skies. pits (null: none) are the floor's pits (MapManager.PitSide): with
-    /// no sky of their own, they show the sky behind, else <see cref="PitColor"/>.
+    /// says they're floor skies.
     /// </summary>
     internal void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves, bool behind,
-        int[]? scrollx = null, int[]? scrolly = null, byte[]? skies = null, bool floor = false, TextureAsset?[]? pits = null)
+        int[]? scrollx = null, int[]? scrolly = null, byte[]? skies = null, bool floor = false)
     {
         if (from > to)
             return;
@@ -515,13 +510,6 @@ internal sealed partial class SkyAndFlats(
                         row[x] = pixel;
                         continue;
                     }
-                    // a pit's bottom: the sky behind, else the pit color
-                    if (bare && pits != null && pits[tile] != null)
-                    {
-                        if (!behind)
-                            row[x] = PitColor;
-                        continue;
-                    }
                     if (bare && !fillbare)
                         continue;
                     if (bare)
@@ -542,56 +530,6 @@ internal sealed partial class SkyAndFlats(
                         pixel = light[shadeofs + pixel];
                     }
                     row[x] = pixel;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Draws the grates (a pit's own floor texture, mapdefs flats floor: on a pit index) over what
-    /// shows down the pits: the walls' stories below and the pits' sides, in the rows each
-    /// column's pits cover (RenderState's pit spans), which DrawFlats left to them. The rest of a
-    /// grate, over the pit's bottom, DrawFlats draws as any flat. Their see-through pixels leave
-    /// what's down the pit showing.
-    /// </summary>
-    internal void DrawGrates(TextureAsset?[] flats, TextureAsset?[] pits)
-    {
-        int pitch = (int)video.BufferPitch;
-        double numerator = render.HeightNumerator * 32.0 * FloorHalves;
-        bool shaded = lighting.Shading;
-
-        unsafe
-        {
-            byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
-            int width = Math.Min(render.ViewWidth, render.PitSpanCount.Length);
-            for (int x = 0; x < width; x++)
-            {
-                for (int s = 0; s < render.PitSpanCount[x]; s++)
-                {
-                    int at = x * RenderState.MaxPitSpans + s;
-                    int top = Math.Max(render.PitSpanTop[at], Math.Max((int)render.CenterY, 0));
-                    int bottom = Math.Min(render.PitSpanBottom[at], render.ViewHeight - 1);
-                    for (int y = top; y <= bottom; y++)
-                    {
-                        long nx = (long)(numerator / Math.Abs(y + 0.5 - render.CenterY));
-                        long px = render.ViewX + (nx * flatdirx[x] >> 16);
-                        long py = render.ViewY + (nx * flatdiry[x] >> 16);
-                        long tilex = px >> MapConstants.TileShift, tiley = py >> MapConstants.TileShift;
-                        if ((ulong)tilex >= map.MapWidth || (ulong)tiley >= map.MapHeight)
-                            continue;
-                        int tile = (int)(tiley * map.MapWidth + tilex);
-                        if (pits[tile] == null || flats[tile] is not { } grate)
-                            continue;
-
-                        int u = (int)(px >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
-                        int v = (int)(py >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
-                        byte pixel = FlatTexel(grate, u, v);
-                        if (pixel == FlatMask)
-                            continue;
-                        if (shaded)
-                            pixel = lighting.LightAt(tile, px, py)[lighting.ShadeOffset(nx) + pixel];
-                        dest[y * pitch + x] = pixel;
-                    }
                 }
             }
         }

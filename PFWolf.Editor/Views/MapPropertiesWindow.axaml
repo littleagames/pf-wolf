@@ -61,7 +61,10 @@
         </StackPanel>
 
         <TextBlock Classes="heading" Text="How it looks" />
-        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+          <TextBlock Classes="label" Grid.Row="7" Text="Story" />
+          <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Story}" PlaceholderText="{Binding StoryDefault}"
+                   ToolTip.Tip="The player's story, 1 to 8. A tile's block (plane 3, start and stop stories) that takes it in is a wall; one that ends below it is floor; one that starts above it is overhead." />
           <TextBlock Classes="label" Grid.Row="0" Text="Floor color" />
           <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding FloorColor}" PlaceholderText="{Binding FloorColorDefault}" />
           <TextBlock Classes="label" Grid.Row="1" Text="Ceiling color" />

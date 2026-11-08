@@ -78,17 +78,25 @@ internal class MapManager
     private readonly Lazy<FactionManager> factionManager;
     private readonly GameSession session;
 
-    /// <summary>How many 64 unit stories tall the level's walls are, where plane 3 doesn't say (tall walls; mapdefs wall-height)</summary>
+    /// <summary>
+    /// The story a wall's block runs up to where plane 3 doesn't say (game-info wall-height, else
+    /// a UWMF level's own, else the default map's); its block starts at story 1
+    /// </summary>
     internal int LevelWallStories = 1;
 
     /// <summary>
-    /// The story the player's floor is on (game-info story-level): walls carry on
-    /// <see cref="StoriesBelow"/> stories under the floor, seen down the pits (<see cref="PitSide"/>)
+    /// The player's story (game-info story): a tile's block that takes it in is solid (a wall),
+    /// one that ends below it is floor, one that starts above it is overhead. Set before LoadMap;
+    /// the `story` cheat changes it with <see cref="ApplyStory"/>.
     /// </summary>
-    internal int StoryLevel = 1;
+    internal int Story = 1;
 
-    /// <summary>How many stories walls go down below the floor</summary>
-    internal int StoriesBelow => StoryLevel - 1;
+    /// <summary>
+    /// The level's wall height from game-info (null: the level's own, else the default map's),
+    /// for LoadMap to settle <see cref="LevelWallStories"/> before it works out what's solid
+    /// </summary>
+    internal int? WallHeightSetting;
+    internal int DefaultWallHeight = 1;
 
     private UInt16[][] mapsegs = new ushort[LevelPlanes][];
 
@@ -191,14 +199,6 @@ internal class MapManager
     internal WallShape[,] WallShapes = new WallShape[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
     /// <summary>
-    /// Each tile's wall height in stories from the height plane (plane 3), or 0 where it has
-    /// none and the map's default applies (see <see cref="WallStories"/>). Rebuilt from the
-    /// planes whenever they're loaded or restored, like <see cref="WallShapes"/>.
-    /// </summary>
-    internal byte[,] StoryMap = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
-    private int maxtilestories;
-
-    /// <summary>
     /// Each wall tile's patch (mapdefs patches), 0 for none. A map keeps it in the high byte of
     /// plane 0 (MapConstants.PatchShift), which LoadMap takes off into here, so plane 0 holds only
     /// the tiles' own codes. Saved with the level.
@@ -254,19 +254,6 @@ internal class MapManager
 
     /// <summary>Whether any tile has a ceiling sky, or a floor sky, of its own.</summary>
     internal bool HasCeilingSkies, HasFloorSkies;
-
-    /// <summary>
-    /// Each tile's pit (mapdefs flats pits, by its floor index): the texture on the pit's sides,
-    /// null for none. Indexed <see cref="TileIndex"/>; built with the flats. Only open floor is a
-    /// pit (<see cref="IsPit"/>).
-    /// </summary>
-    internal TextureAsset?[] PitSide = new TextureAsset?[MapConstants.ClassicMapArea];
-
-    /// <summary>Whether any tile is a pit, and whether any pit has a floor texture over it (a grate)</summary>
-    internal bool HasPits, HasGrates;
-
-    /// <summary>Whether the tile is a pit: open floor whose floor index is one of the mapdefs flats pits</summary>
-    internal bool IsPit(int x, int y) => HasPits && TileMap[x, y] == 0 && PitSide[TileIndex(x, y)] != null;
 
     private void ClearTileSkies()
     {
@@ -346,6 +333,8 @@ internal class MapManager
             throw new Exception($"Map {mapName} can't be played: {badSize}");
         MapWidth = mapAsset.Width;
         MapHeight = mapAsset.Height;
+        // The level's wall height: game-info's, else its own (a UWMF level's), else the default map's
+        LevelWallStories = Math.Clamp(WallHeightSetting ?? LevelDefaults.WallStories ?? DefaultWallHeight, 1, GameConstants.MaxWallStories);
         // Clone each plane: SpawnDoor and other setup code mutate mapsegs in place
         // (e.g. SetMapSpot), and mapAsset is a cached singleton reused for every
         // load of this level, so writing through the original array would
@@ -410,20 +399,31 @@ internal class MapManager
                 && badpatchswitches.Add(id))
                 Console.WriteLine($"mapdefs patch {id}'s switch goes to {patchSwitch.To}, which isn't a patch; it won't change when used");
 
+        // Two wall ids the mapdefs don't give: the open map's sealed edge (drawn as nothing) and a
+        // floor tile's block that's solid at the player's story (drawn with its flats sides)
+        var unused = Enumerable.Range(1, GameConstants.BitWall - 1).Reverse().Where(id => !data.Walls.ContainsKey(id)).Take(2).ToList();
+        EdgeWall = unused.Count > 0 ? unused[0] : 1;
+        BlockWall = unused.Count > 1 ? unused[1] : 0;
+        BuildBlocks();
+
         for (int y = 0; y < MapHeight; y++)
         {
             for (int x = 0; x < MapWidth; x++)
             {
                 int tile = MapSpot(x, y, 0);
-                bool solid = IsWallId(tile) && data.Walls.ContainsKey(tile) || data.Doors.ContainsKey(tile);
-                CheckPatch(mapName, x, y, isWall: solid && !data.Doors.ContainsKey(tile), data);
+                bool door = data.Doors.ContainsKey(tile);
+                bool wallCode = IsWallId(tile) && data.Walls.ContainsKey(tile);
+                // a wall, or a floor tile with a block, is solid where its block takes in the player's story
+                bool solid = door || (wallCode || BlockStops[x, y] != 0 && BlockWall != 0) && BlocksStory(x, y);
+                CheckPatch(mapName, x, y, isWall: wallCode, data);
                 if (solid)
                 {
                     // solid wall (a door's tile is made a door by SpawnDoor)
-                    TileMap[x, y] = (ushort)tile;
-                    ActorAt[x, y] = new Wall(tile);// (uint)tile;
+                    int id = door || wallCode ? tile : BlockWall;
+                    TileMap[x, y] = (ushort)id;
+                    ActorAt[x, y] = new Wall(id);// (uint)tile;
                     // a destructible wall that's a secret counts toward the total (found as it breaks)
-                    if (!session.LoadedGame && data.Walls.TryGetValue(tile, out var wallDef) && wallDef.Destructible is { Secret: true })
+                    if (!session.LoadedGame && wallCode && data.Walls.TryGetValue(tile, out var wallDef) && wallDef.Destructible is { Secret: true })
                         session.GameState.SecretTotal++;
                 }
                 else
@@ -488,7 +488,7 @@ internal class MapManager
         SpawnExtraThings(mapName, mapAsset.ExtraThings);
         SealEdge(mapName, data);
         BuildWallShapes();
-        BuildWallHeights();
+        BuildBlockAreas();
         ZonesVersion++;
     }
 
@@ -540,7 +540,7 @@ internal class MapManager
     /// </summary>
     private void SealEdge(string mapName, MapObjectTranslationAsset data)
     {
-        int edgeWall = EdgeWall = Enumerable.Range(1, GameConstants.BitWall - 1).Reverse().FirstOrDefault(id => !data.Walls.ContainsKey(id), 1);
+        int edgeWall = EdgeWall;
         int sealedTiles = 0;
         for (int y = 0; y < MapHeight; y++)
         {
@@ -899,49 +899,242 @@ internal class MapManager
         foreach (var (dx, dy) in new[] { (0, 0), (1, 0), (0, -1), (0, 1), (-1, 0) })
         {
             int tx = x + dx, ty = y + dy;
-            if (tx >= 0 && ty >= 0 && tx < MapWidth && ty < MapHeight && ValidArea(MapSpot(tx, ty, 0)))
-                return (byte)(MapSpot(tx, ty, 0) - Floors.AreaTile);
+            if (tx >= 0 && ty >= 0 && tx < MapWidth && ty < MapHeight && ValidArea(FloorCode(tx, ty)))
+                return (byte)(FloorCode(tx, ty) - Floors.AreaTile);
         }
         return 0;
     }
 
+    /*
+    =============================================================================
+
+                                    BLOCKS
+
+    A tile's block runs from a start story to a stop story (plane 3: start in the high byte, stop
+    in the low byte, each 1 to 8; a start of 0 is 1). With no block of its own, a wall tile's runs
+    from story 1 to the level's wall height and a floor tile has none. Against the player's story
+    (Story) a block that takes it in is solid, one that ends below it is floor, one that starts
+    above it is overhead. A plane-0 wall whose block doesn't take in the story is walked on (or
+    under): it keeps its wall id on plane 0 for drawing, and takes a neighbour's area
+    (FloorCode). A floor tile whose block does is solid: BlockWall in TileMap, drawn with its
+    flats sides (BlockSideTexture).
+
+    =============================================================================
+    */
+
     /// <summary>
-    /// Sets <see cref="StoryMap"/> from the height plane. Values outside 1 to MaxWallStories
-    /// (such as an ECWolf info plane) are left to the map's default.
+    /// Each tile's own block from the height plane: start and stop stories, 0 where it has none
+    /// (its kind's default, <see cref="BlockSpan"/>). Rebuilt from the planes whenever they're
+    /// loaded or restored, like <see cref="WallShapes"/>.
     /// </summary>
-    private void BuildWallHeights()
+    internal byte[,] BlockStarts = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
+    internal byte[,] BlockStops = new byte[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
+    private int maxtilestories;
+
+    /// <summary>
+    /// A height-plane value's block, or null for none: 0, or anything that isn't a start and stop
+    /// of 1 to 8 with the start no higher than the stop (such as an ECWolf info plane's values)
+    /// </summary>
+    internal static (int Start, int Stop)? DecodeBlock(int value)
     {
-        StoryMap = new byte[MapWidth, MapHeight];
+        int stop = value & 0xff, start = value >> 8;
+        if (start == 0)
+            start = 1;
+        if (stop is < 1 or > GameConstants.MaxWallStories || start > stop)
+            return null;
+        return (start, stop);
+    }
+
+    /// <summary>A block as a height-plane value: a plain stop when it starts at story 1, as tall walls always were</summary>
+    internal static ushort EncodeBlock(int start, int stop) => (ushort)(start <= 1 ? stop : start << 8 | stop);
+
+    /// <summary>Sets <see cref="BlockStarts"/> and <see cref="BlockStops"/> from the height plane</summary>
+    private void BuildBlocks()
+    {
+        BlockStarts = new byte[MapWidth, MapHeight];
+        BlockStops = new byte[MapWidth, MapHeight];
         maxtilestories = 0;
 
         for (int y = 0; y < MapHeight; y++)
             for (int x = 0; x < MapWidth; x++)
-            {
-                int stories = MapSpot(x, y, HeightPlane);
-                if (stories is >= 1 and <= GameConstants.MaxWallStories)
+                if (DecodeBlock(MapSpot(x, y, HeightPlane)) is var (start, stop))
                 {
-                    StoryMap[x, y] = (byte)stories;
-                    maxtilestories = Math.Max(maxtilestories, stories);
+                    BlockStarts[x, y] = (byte)start;
+                    BlockStops[x, y] = (byte)stop;
+                    maxtilestories = Math.Max(maxtilestories, stop);
                 }
-            }
     }
 
-    /// <summary>How many stories tall the wall on this tile is.</summary>
-    internal int WallStories(int x, int y) => StoryMap[x, y] != 0 ? StoryMap[x, y] : LevelWallStories;
+    /// <summary>Whether plane 0 holds a mapdefs wall here (solid or not at the player's story)</summary>
+    internal bool IsWallCode(int x, int y) => IsWallId(MapSpot(x, y, 0)) && GetMapData().Walls.ContainsKey(MapSpot(x, y, 0));
 
-    /// <summary>The tallest wall anywhere on the level.</summary>
+    /// <summary>
+    /// A tile's block: its own from the height plane, else a wall tile's default (story 1 to the
+    /// level's wall height), else null (open floor, all the way down)
+    /// </summary>
+    internal (int Start, int Stop)? BlockSpan(int x, int y) =>
+        BlockStops[x, y] != 0 ? (BlockStarts[x, y], BlockStops[x, y])
+        : IsWallCode(x, y) || TileMap[x, y] is > 0 and < GameConstants.BitDoor ? (1, LevelWallStories)
+        : null;
+
+    /// <summary>A tile's block and what it is at the player's story, for the console</summary>
+    internal string DescribeBlock(int x, int y) => BlockSpan(x, y) is var (start, stop)
+        ? $"stories {start} to {stop}{(BlockStops[x, y] == 0 ? " (the level's wall height)" : "")}, "
+          + (start <= Story && Story <= stop ? "solid" : stop < Story ? "floor below the player" : "overhead")
+        : "no block: open floor";
+
+    /// <summary>Whether a tile's block takes in the player's story: it's solid</summary>
+    internal bool BlocksStory(int x, int y) => BlockSpan(x, y) is var (start, stop) && start <= Story && Story <= stop;
+
+    /// <summary>The story a tile's wall (or a door's lintel) runs up to: its block's stop, else the level's wall height</summary>
+    internal int WallStories(int x, int y) => BlockStops[x, y] != 0 ? BlockStops[x, y] : LevelWallStories;
+
+    /// <summary>The story a tile's block starts at: 1 unless the height plane says otherwise</summary>
+    internal int BlockStart(int x, int y) => BlockStops[x, y] != 0 ? BlockStarts[x, y] : 1;
+
+    /// <summary>Whether an open tile has a block of its own starting above the player's story: an arch over it</summary>
+    internal bool IsOverhead(int x, int y) => TileMap[x, y] == 0 && BlockStops[x, y] != 0 && BlockStarts[x, y] > Story;
+
+    /// <summary>The tallest block anywhere on the level.</summary>
     internal int MaxWallStories => Math.Max(maxtilestories, LevelWallStories);
 
     /// <summary>
-    /// Sets a tile's height on the height plane, so it's saved with the level; 0 gives it back
-    /// to the map's default.
+    /// Sets a tile's block on the height plane, so it's saved with the level; a stop of 0 gives it
+    /// back to its kind's default. Doesn't change what's solid: see <see cref="ApplyStory"/>.
     /// </summary>
-    internal void SetWallStories(int x, int y, int stories)
+    internal void SetBlock(int x, int y, int start, int stop)
     {
-        SetMapSpot(x, y, HeightPlane, (ushort)stories);
-        StoryMap[x, y] = (byte)stories;
-        if (stories > maxtilestories)
-            maxtilestories = stories;
+        ushort value = stop == 0 ? (ushort)0 : EncodeBlock(start, stop);
+        SetMapSpot(x, y, HeightPlane, value);
+        (BlockStarts[x, y], BlockStops[x, y]) = DecodeBlock(value) is var (s, e) ? ((byte)s, (byte)e) : ((byte)0, (byte)0);
+        maxtilestories = Math.Max(maxtilestories, BlockStops[x, y]);
+    }
+
+    /// <summary>Sets a tile's wall height (a block from story 1); 0 gives it back to the default</summary>
+    internal void SetWallStories(int x, int y, int stories) => SetBlock(x, y, 1, stories);
+
+    /// <summary>
+    /// The wall id <see cref="LoadMap"/> puts in TileMap for a floor tile whose block is solid at the
+    /// player's story: one the mapdefs don't give, drawn with the tile's flats sides
+    /// </summary>
+    internal int BlockWall { get; set; }
+
+    // Each walkable wall tile's area (a plane-0 wall whose block doesn't take in the player's
+    // story), -1 elsewhere: the nearest area code across walkable tiles
+    private short[] blockareas = [];
+
+    /// <summary>
+    /// A tile's plane-0 code for its area: plane 0, except on a wall tile that's walked on at the
+    /// player's story (its plane 0 is its wall id), which takes the area of the nearest floor
+    /// </summary>
+    internal int FloorCode(int x, int y)
+    {
+        int i = TileIndex(x, y);
+        return (uint)i < (uint)blockareas.Length && blockareas[i] >= 0 ? Floors.AreaTile + blockareas[i] : MapSpot(x, y, 0);
+    }
+
+    /// <summary>Works out the areas of the wall tiles walked on at the player's story (<see cref="FloorCode"/>)</summary>
+    private void BuildBlockAreas()
+    {
+        blockareas = new short[MapArea];
+        Array.Fill(blockareas, (short)-1);
+        var queue = new Queue<(int X, int Y, short Area)>();
+        bool any = false;
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
+            {
+                if (TileMap[x, y] == 0 && IsWallCode(x, y))
+                    any = true;
+                else if (TileMap[x, y] == 0 && ValidArea(MapSpot(x, y, 0)))
+                    queue.Enqueue((x, y, (short)(MapSpot(x, y, 0) - Floors.AreaTile)));
+            }
+        if (!any)
+        {
+            blockareas = [];
+            return;
+        }
+
+        // out from every area tile at once, across the walkable wall tiles: each takes the nearest
+        while (queue.Count > 0)
+        {
+            var (x, y, area) = queue.Dequeue();
+            foreach (var (dx, dy) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
+            {
+                int nx = x + dx, ny = y + dy;
+                if (!InMap(nx, ny) || TileMap[nx, ny] != 0 || !IsWallCode(nx, ny) || blockareas[TileIndex(nx, ny)] >= 0)
+                    continue;
+                blockareas[TileIndex(nx, ny)] = area;
+                queue.Enqueue((nx, ny, area));
+            }
+        }
+
+        // walled off from every area: area 0
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
+                if (TileMap[x, y] == 0 && IsWallCode(x, y) && blockareas[TileIndex(x, y)] < 0)
+                    blockareas[TileIndex(x, y)] = 0;
+    }
+
+    /// <summary>
+    /// Makes what's solid fit the player's story (after <see cref="Story"/> or a block changes):
+    /// each wall tile or floor tile with a block is solid if its block takes in the story, and
+    /// walked on if not. Doors, moving pushwalls and the map's sealed edge stay as they are, and a
+    /// wall already solid keeps its TileMap value (a thrown switch, a door-side mark).
+    /// </summary>
+    internal void ApplyStory()
+    {
+        if (mapsegs.Length == 0 || mapsegs[0] == null)
+            return;                     // no level loaded
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
+            {
+                var tile = TileMap[x, y];
+                if ((tile & GameConstants.BitDoor) != 0 || tile == GameConstants.BitWall || (EdgeWall != 0 && tile == EdgeWall))
+                    continue;
+                bool wall = IsWallCode(x, y);
+                if (!wall && BlockStops[x, y] == 0)
+                {
+                    if (tile == BlockWall && BlockWall != 0)
+                        (TileMap[x, y], ActorAt[x, y]) = (0, null);    // a floor block that's gone
+                    continue;
+                }
+
+                bool solid = BlocksStory(x, y);
+                if (solid && tile == 0)
+                {
+                    int id = wall ? MapSpot(x, y, 0) : BlockWall;
+                    TileMap[x, y] = (ushort)id;
+                    ActorAt[x, y] = new Wall(id);
+                }
+                else if (!solid && tile != 0)
+                {
+                    TileMap[x, y] = 0;
+                    if (ActorAt[x, y] is Wall)
+                        ActorAt[x, y] = null;
+                }
+            }
+        BuildBlockAreas();
+    }
+
+    /// <summary>
+    /// The texture on the sides of a floor tile's block: its floor index's flats sides, else (with
+    /// <paramref name="neighbours"/>) the face of a wall beside it (north, east, south, west);
+    /// null when there's neither
+    /// </summary>
+    internal string? BlockSideTexture(int x, int y, bool neighbours = true)
+    {
+        var data = GetMapData();
+        if (data.Flats.Sides.TryGetValue(MapSpot(x, y, FlatPlane) & 0xff, out var side) && !string.IsNullOrEmpty(side))
+            return ChangedTexture(x, y, side);
+        if (!neighbours)
+            return null;
+        foreach (var (dx, dy, face) in new[] { (0, -1, "south"), (1, 0, "west"), (0, 1, "north"), (-1, 0, "east") })
+        {
+            int nx = x + dx, ny = y + dy;
+            if (InMap(nx, ny) && IsWallCode(nx, ny) && data.Walls.TryGetValue(MapSpot(nx, ny, 0), out var wall))
+                return wall.WallFace(face);
+        }
+        return null;
     }
 
     /// <summary>The light zone a tile is in, 0 for none.</summary>
@@ -1048,12 +1241,12 @@ internal class MapManager
         PatchMap[tox, toy] = patch;
     }
 
-    /// <summary>Moves a tile's height to another tile, as a pushwall slides.</summary>
+    /// <summary>Moves a tile's block to another tile, as a pushwall slides.</summary>
     internal void MoveWallStories(int fromx, int fromy, int tox, int toy)
     {
-        int stories = StoryMap[fromx, fromy];
-        SetWallStories(fromx, fromy, 0);
-        SetWallStories(tox, toy, stories);
+        int start = BlockStarts[fromx, fromy], stop = BlockStops[fromx, fromy];
+        SetBlock(fromx, fromy, 0, 0);
+        SetBlock(tox, toy, start, stop);
     }
 
     private string? defaultfloor, defaultceiling;
@@ -1089,9 +1282,6 @@ internal class MapManager
         animatedfloors.Clear();
         animatedceilings.Clear();
         ClearTileSkies();
-        PitSide = new TextureAsset?[MapArea];
-        HasPits = HasGrates = false;
-        var pits = GetMapData().Flats.Pits;
 
         // the skies tiles show, each named once
         var skyslots = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
@@ -1121,18 +1311,9 @@ internal class MapManager
                 CeilingSky[i] = SkySlot(TileSkyName(x, y, ceiling: true));
                 HasFloorSkies |= FloorSky[i] != 0;
                 HasCeilingSkies |= CeilingSky[i] != 0;
-                if (pits.Count > 0 && pits.TryGetValue(MapSpot(x, y, FlatPlane) & 0xff, out var side))
-                {
-                    PitSide[i] = PitTexture(Flat(side));
-                    HasPits |= PitSide[i] != null;
-                    HasGrates |= PitSide[i] != null && FloorFlat[i] != null;
-                }
             }
     }
 
-    // A pit's side texture: an animation's first frame (pit sides don't animate)
-    private static TextureAsset? PitTexture(Asset? flat) =>
-        flat is AnimatedAsset<TextureAsset> animation ? animation.FrameAt(0) : flat as TextureAsset;
     /// <summary>
     /// The sky a tile shows through its ceiling (or floor) of its own: its flat-plane index's
     /// entry in the mapdefs flats skies (or floor-skies), through any A_ChangeTexture on the
@@ -1184,12 +1365,9 @@ internal class MapManager
         var flats = GetMapData().Flats;
         var table = ceiling ? flats.Ceiling : flats.Floor;
         var defaultName = ceiling ? defaultceiling : defaultfloor;
-        // an index that opens onto a sky of its own doesn't get the default, and a pit has no floor
+        // an index that opens onto a sky of its own doesn't get the default
         bool skyIndex = (ceiling ? flats.Skies : flats.FloorSkies).ContainsKey(index);
-        // (only its own floor: entry, a grate over it)
-        bool pitIndex = !ceiling && flats.Pits.ContainsKey(index);
         var name = table.TryGetValue(index, out var listed) && FindFlat(listed) != null ? listed
-            : pitIndex ? null
             : !skyIndex && FindFlat(defaultName) != null ? defaultName : null;
         return name == null ? null : ChangedTexture(x, y, name);
     }
@@ -1201,8 +1379,6 @@ internal class MapManager
         int index = ceiling ? spot >> 8 : spot & 0xff;
         var name = FlatTextureName(x, y, ceiling);
         var sky = TileSkyName(x, y, ceiling);
-        if (!ceiling && GetMapData().Flats.Pits.TryGetValue(index, out var side))
-            return $"{index} pit, sides {side}{(name == null ? "" : $", grate {name}")}{(sky == null ? "" : $", sky {sky}")}";
         var shown = name != null && FindFlat(name) != null ? name : sky != null ? null : "(color)";
         return $"{index} {shown}{(sky == null ? "" : shown == null ? $"sky {sky}" : $" over sky {sky}")}";
     }
@@ -1427,11 +1603,14 @@ internal class MapManager
     /// as a pushwall leaves the tile it slides off (Gameplay/DestructibleWalls.cs joins the areas
     /// round it and sees to what was in it). Its diagonal shape, door-side mark and patch go with
     /// it; its tag, flats and any A_ChangeTexture on its floor stay. With <paramref name="arch"/>,
-    /// a wall taller than a story only loses its bottom one: the rest stays up as an arch.
+    /// a wall taller than the player's story only loses up to that one: the rest stays up as an
+    /// arch (a block from the story above).
     /// </summary>
     internal void RemoveWall(int x, int y, int area, bool arch)
     {
         int stories = WallStories(x, y);
+        if (blockareas.Length > 0)
+            blockareas[TileIndex(x, y)] = -1;
         if (WallShapes[x, y] != WallShape.Square)
             SetWallShape(x, y, WallShape.Square);
 
@@ -1440,7 +1619,10 @@ internal class MapManager
             ActorAt[x, y] = null;
         SetMapSpot(x, y, 0, (ushort)(Floors.AreaTile + area));
         PatchMap[x, y] = 0;
-        SetWallStories(x, y, arch && stories > 1 ? stories : 0);
+        if (arch && stories > Story)
+            SetBlock(x, y, Story + 1, stories);
+        else
+            SetBlock(x, y, 0, 0);
     }
 
     internal record MapPlayerStart(int TileX, int TileY, int Angle);
@@ -1874,7 +2056,7 @@ internal class MapManager
     {
         if (!InMap(x, y))
             return -1;
-        int spot = MapSpot(x, y, 0);
+        int spot = FloorCode(x, y);
         return ValidArea(spot) ? spot - Floors.AreaTile : -1;
     }
 
@@ -2383,7 +2565,8 @@ internal class MapManager
         CrumblingWalls = [.. level.CrumblingWalls];
         ReadMapInfo(fillFlats: false);      // the saved flat plane already has the map's flats
         BuildWallShapes();
-        BuildWallHeights();
+        BuildBlocks();
+        BuildBlockAreas();
         BuildFlats(defaultfloor, defaultceiling);
         ZonesVersion++;
 

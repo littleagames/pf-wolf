@@ -184,7 +184,7 @@ internal sealed class Weather(
             return z < map.WallStories(x, y) * GameConstants.TextureSize;
         if (map.CeilingFlat[map.TileIndex(x, y)] != null)
             return true;
-        return isArch(x, y) && z < map.StoryMap[x, y] * GameConstants.TextureSize;
+        return isArch(x, y) && z < map.WallStories(x, y) * GameConstants.TextureSize;
     }
 
     const int SplashTics = 8;           // how long a splash lasts

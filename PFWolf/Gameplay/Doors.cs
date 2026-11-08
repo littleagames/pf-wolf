@@ -166,7 +166,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
     // A tile's area from its floor code, or null when the code isn't an area's
     int? AreaCodeAt(int x, int y) =>
-        map.MapSpot(x, y, 0) is var code && map.ValidArea(code) ? code - map.Floors.AreaTile : null;
+        map.FloorCode(x, y) is var code && map.ValidArea(code) ? code - map.Floors.AreaTile : null;
 
     /// <summary>
     /// Marks a wall beside a door (BitWall) so it's drawn with the door-side texture. Only a wall

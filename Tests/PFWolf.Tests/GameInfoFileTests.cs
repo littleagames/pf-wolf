@@ -144,6 +144,18 @@ public class GameInfoFileTests
     }
 
     [Test]
+    public void The_Story_Is_Written_And_Read_Back()
+    {
+        // Act
+        var properties = new MapProperties { Story = 3 };
+        var text = GameInfoFile.Apply(null, "MAP01", properties, properties.ChangedKeys(new MapProperties()));
+
+        // Assert
+        Assert.That(text, Is.EqualTo("maps:\n  MAP01:\n    story: 3\n"));
+        Assert.That(Parse(text).Maps["MAP01"].Story, Is.EqualTo((int?)3));
+    }
+
+    [Test]
     public void Shading_Is_Written_As_A_Block_Of_What_Is_Set()
     {
         // Arrange

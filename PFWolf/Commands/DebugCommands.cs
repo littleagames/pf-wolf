@@ -72,8 +72,9 @@ internal sealed class DebugCommands(
             console.Print($"diagonal walls beside: {string.Join("  ", diagonals)}");
 
         var (fx, fy) = targets.TileArg([], 0);
-        console.Print($"wall heights: level {map.LevelWallStories}  tallest {map.MaxWallStories}  story level {map.StoryLevel}  "
-            + $"faced tile {fx},{fy}: {map.WallStories(fx, fy)} (plane 3: {map.MapSpot(fx, fy, MapManager.HeightPlane)})");
+        console.Print($"story {map.Story}  walls up to story {map.LevelWallStories}  tallest {map.MaxWallStories}");
+        console.Print($"tile {x},{y}: {map.DescribeBlock(x, y)}  faced tile {fx},{fy}: {map.DescribeBlock(fx, fy)} "
+            + $"(plane 3: 0x{map.MapSpot(fx, fy, MapManager.HeightPlane):X4})");
 
         console.Print($"flats: floor {map.FlatName(x, y, false)}  ceiling {map.FlatName(x, y, true)}  "
             + $"(plane 2: {map.MapSpot(x, y, MapManager.FlatPlane)})");
