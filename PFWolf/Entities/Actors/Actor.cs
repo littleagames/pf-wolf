@@ -43,6 +43,13 @@ internal record Actor : Thinker
     /// <summary>How fast Z is rising (falling, negative), in texels a tic</summary>
     public double ZSpeed { get; internal set; }
 
+    /// <summary>
+    /// The story it stands on (1 to 8), or 0 for the player's (MapManager.Story), which most
+    /// actors are on: a thing the map stands on the street under the player's roofs, or on a
+    /// beam over them (map plane 6, MapManager.ThingStory). See docs/dev/story-things-plan.md.
+    /// </summary>
+    public int Story { get; internal set; }
+
     public byte AreaNumber { get; internal set; }
 
     // The tag on the tile it spawned on (MapManager.TagPlane), 0 for none; a switch with the

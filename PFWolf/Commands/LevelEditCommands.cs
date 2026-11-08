@@ -51,6 +51,8 @@ internal sealed class LevelEditCommands(
             complete: (_, i) => i == 1 ? ["none", "flicker", "pulse", "strobe"] : []);
         console.Register("height", "Sets a tile's block (default: the one you face): up to a story (from story 1), or from one story to another, as 3-5; a second block after a comma, above the first, as 1-2,4-8; 0 gives it back to its default (a wall: 1 to the level's height; open floor: none).",
             $"height <0|stop|start-stop[,start-stop]> [tilex tiley]", HeightCommand, Cheat | InLevel);
+        console.Register("thingstory", "Sets the story the things on a tile (default: the one you face) stand on, on plane 6, and moves them there; 0 is the floor under them.",
+            $"thingstory <0-{GameConstants.MaxWallStories}> [tilex tiley]", ThingStoryCommand, Cheat | InLevel);
         console.Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
             "tag [0-65535 [tilex tiley]]", TagCommand, Cheat | InLevel);
         console.Register("scroll", "Lists the level's scrollers (scrolling walls and flats, by tag), or sets one's speeds in texels a tic (x right/east, y down/south), starts, stops or removes it.",
@@ -100,6 +102,20 @@ internal sealed class LevelEditCommands(
         map.SetBlocks(x, y, start, stop, start2, stop2);
         map.ApplyStory();
         console.Print($"Tile {x},{y}: {map.DescribeBlock(x, y)}");
+    }
+
+    internal void ThingStoryCommand(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException($"usage: thingstory <0-{GameConstants.MaxWallStories}> [tilex tiley]");
+        int set = ParseInt(args[0], 0, GameConstants.MaxWallStories);
+        var (x, y) = targets.TileArg(args, 1);
+        map.SetMapSpot(x, y, MapManager.StoryPlane, (ushort)set);
+        int story = map.ThingStory(x, y);
+        var moved = map.GetActors().Where(a => a is not Entities.Actors.PlayerPawn && !a.IsRemoved && a.TileX == x && a.TileY == y).ToList();
+        foreach (var actor in moved)
+            actor.Story = story == map.Story ? 0 : story;
+        console.Print($"Tile {x},{y}: things stand on story {story}{(set == 0 ? " (the floor under them)" : "")}; {moved.Count} moved");
     }
 
     internal void StoryCommand(string[] args)

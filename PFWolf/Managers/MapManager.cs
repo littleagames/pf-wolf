@@ -227,6 +227,7 @@ internal class MapManager
     /// each is lit (Rendering/Lighting.cs).
     /// </summary>
     internal const int ZonePlane = MapConstants.ZonePlane;
+    internal const int StoryPlane = MapConstants.StoryPlane;
 
     /// <summary>Goes up whenever the zone plane may have changed: a level loaded or restored, or a zone set.</summary>
     internal int ZonesVersion { get; private set; }
@@ -526,6 +527,9 @@ internal class MapManager
             }
             if (thing.Ambush)
                 actor.RuntimeFlags |= ObjFlags.Ambush;
+            // its own story, not its tile's plane 6 (the object plane's thing's)
+            int story = ThingStory(thing.TileX, thing.TileY, thing.Story);
+            actor.Story = story == Story ? 0 : story;
 
             // Off its tile's middle: where the level puts it (a patroller is on its way already)
             bool centered = Math.Abs(thing.X - thing.TileX - 0.5) < 0.01 && Math.Abs(thing.Y - thing.TileY - 0.5) < 0.01;
@@ -1322,6 +1326,36 @@ internal class MapManager
         return null;
     }
 
+    /// <summary>
+    /// The story a thing on a tile stands on: its thing-story plane value (plane 6, 1 to 8), else
+    /// the floor under it. That's the player's story where the tile's walkable on it, or inside
+    /// a block solid on it (a thing in a wall); else just over the highest block top under the
+    /// player's story; else story 1, the ground (a street under the roofs).
+    /// </summary>
+    internal int ThingStory(int x, int y) => ThingStory(x, y, MapSpot(x, y, StoryPlane));
+
+    /// <summary>A thing's story, as <see cref="ThingStory(int, int)"/>, with its own setting (a UWMF extra thing's) in place of plane 6</summary>
+    internal int ThingStory(int x, int y, int set)
+    {
+        if (set is >= 1 and <= GameConstants.MaxWallStories)
+            return set;
+        int floor = 1;
+        foreach (var (start, stop) in TileBlocks(x, y))
+        {
+            if (start <= Story && Story <= stop)
+                return Story;
+            if (stop < Story)
+                floor = Math.Max(floor, stop + 1);
+        }
+        return TileMap[x, y] != 0 || floor == Story ? Story : floor;
+    }
+
+    /// <summary>The story an actor stands on: its own, or the player's (an actor's Story of 0)</summary>
+    internal int StoryOf(Entities.Actors.Actor actor) => actor.Story == 0 ? Story : actor.Story;
+
+    /// <summary>Whether an actor is on the player's story (and so a pickup can be taken, a collision felt)</summary>
+    internal bool OnPlayersStory(Entities.Actors.Actor actor) => actor.Story == 0 || actor.Story == Story;
+
     /// <summary>The light zone a tile is in, 0 for none.</summary>
     internal ushort GetZone(int x, int y) => (ushort)MapSpot(x, y, ZonePlane);
 
@@ -1895,6 +1929,8 @@ internal class MapManager
         // that never patrols would never notice the player if area 0 isn't connected.
         builtActor.AreaNumber = SpawnArea(tilex, tiley);
         builtActor.Tag = GetTag(tilex, tiley);
+        int story = ThingStory(tilex, tiley);
+        builtActor.Story = story == Story ? 0 : story;     // 0: on the player's
 
         // Angles: 0=east, 45=northeast, 90=north ... 315=southeast, in ObjDir order
         // (enemies only face the four cardinal ones, patrol points all eight); -1 faces no way

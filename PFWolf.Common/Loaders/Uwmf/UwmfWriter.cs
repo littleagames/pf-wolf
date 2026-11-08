@@ -53,7 +53,7 @@ public static class UwmfWriter
                 for (int x = 0; x < _width; x++)
                     WriteObject(x, y);
             foreach (var thing in map.ExtraThings)
-                _things.Add(ThingBlock(thing.Class, thing.X, thing.Y, thing.Angle, thing.Patrol, thing.Ambush, thing.Skills, id: null));
+                _things.Add(ThingBlock(thing.Class, thing.X, thing.Y, thing.Angle, thing.Patrol, thing.Ambush, thing.Skills, id: null, thing.Story));
 
             return Text();
         }
@@ -327,7 +327,7 @@ public static class UwmfWriter
                 bool ambush = _defs.Floors.Ambush is >= 0 and var ambushCode && floor == ambushCode;
                 if (thing.InWall || thing.Else.Length > 0 || thing.Faction.Length > 0 || thing.Translation.Length > 0 || thing.MinSkill > 3)
                     _pfwolf = true;
-                _things.Add(ThingBlock(thing.Class, x + 0.5, y + 0.5, thing.Angles, thing.Patrol != 0, ambush, skills, id ? code : null));
+                _things.Add(ThingBlock(thing.Class, x + 0.5, y + 0.5, thing.Angles, thing.Patrol != 0, ambush, skills, id ? code : null, Plane(MapConstants.StoryPlane, x, y)));
                 return;
             }
 
@@ -390,7 +390,7 @@ public static class UwmfWriter
                 _pfwolf = true;
         }
 
-        private UwmfBlock ThingBlock(string className, double x, double y, int angle, bool patrol, bool ambush, int skills, int? id)
+        private UwmfBlock ThingBlock(string className, double x, double y, int angle, bool patrol, bool ambush, int skills, int? id, int story = 0)
         {
             var block = new UwmfBlock();
             block.Add("x", x);
@@ -406,6 +406,11 @@ public static class UwmfWriter
                 block.Add($"skill{s + 1}", (skills & (1 << s)) != 0);
             if (id is { } code)
                 block.Add("id", code);
+            if (story != 0)
+            {
+                block.Add("story", story);         // PFWolf's: the story it stands on
+                _pfwolf = true;
+            }
             return block;
         }
 

@@ -641,6 +641,8 @@ public static class UwmfTranslator
 
                 bool ambush = thing.Bool("ambush"), patrol = thing.Bool("patrol");
                 bool centered = Math.Abs(x - tx - 0.5) < 0.01 && Math.Abs(y - ty - 0.5) < 0.01;
+                // PFWolf's: the story it stands on (0, or left out: the floor under it)
+                int story = Math.Clamp(thing.Int("story"), 0, Definitions.StoryBlocks.MaxStories);
 
                 string type = thing["type"]?.Value switch
                 {
@@ -668,11 +670,12 @@ public static class UwmfTranslator
                 if (code != 0 && centered && _planes[1][i] == 0)
                 {
                     _planes[1][i] = (ushort)code;
+                    _planes[MapConstants.StoryPlane][i] = (ushort)story;
                     if (ambush)
                         MarkAmbush(tx, ty);
                 }
                 else
-                    _extra.Add(new MapThing(className, x, y, angle, ambush, patrol, skills));
+                    _extra.Add(new MapThing(className, x, y, angle, ambush, patrol, skills, story));
             }
         }
 

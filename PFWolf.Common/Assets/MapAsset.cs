@@ -18,7 +18,9 @@ public enum MapFormat
 /// <param name="X">Where it stands, in tiles (29.5 is the middle of tile 29)</param>
 /// <param name="Angle">The way it faces: 0 east, 90 north, 180 west, 270 south</param>
 /// <param name="Skills">Which skills it's on, a bit each from the easiest (bit 0); the last bit stands for every harder skill</param>
-public sealed record MapThing(string Class, double X, double Y, int Angle, bool Ambush = false, bool Patrol = false, int Skills = MapThing.AllSkills)
+/// <param name="Story">The story it stands on, 1 to 8; 0 for the floor under it (as map plane 6, MapConstants.StoryPlane)</param>
+public sealed record MapThing(string Class, double X, double Y, int Angle, bool Ambush = false, bool Patrol = false, int Skills = MapThing.AllSkills,
+    int Story = 0)
 {
     public const int AllSkills = 0b1111;
 

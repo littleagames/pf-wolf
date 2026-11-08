@@ -996,6 +996,9 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** Converted arches: tall-walls-demo's colonnade and gate, weather-demo's
       colonnade, DM02's alcoves and Midnight Assault's CAMP02 look as they did; the editor's Level →
       Convert old arches on a level with some, and its warning in Check level.
+- [ ] Things on stories (docs/dev/story-things-plan.md): `where` and `thingstory` in E1M1 on
+      story 3 (headless, 2026-11-08). **(never tried)** an item on the street under a roof not
+      picked up, a save and load keeping an actor's story, a UWMF level with a thing's `story`.
 - [ ] Stories in the editor: the 3D view of MAP01 on story 2 (a mod's game-info), the door and
       things a story up on the door's frame (UI Automation screenshot, 2026-11-08). **(never
       tried)** typing 3-5, 1-2,4-8, 9 and 5-3 in the heights plane's Stories box (the value and the

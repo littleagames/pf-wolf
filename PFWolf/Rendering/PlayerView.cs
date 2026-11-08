@@ -46,7 +46,7 @@ internal sealed class PlayerView(
     }
 
     /// <summary>
-    /// Picks up the items the player is on, each tic after the actors have moved. An item is
+    /// Picks up the items the player is on, on the player's story, each tic after the actors have moved. An item is
     /// taken when it's within TransformTile's grabbing distance of the player's view point and
     /// in front of it, or in the player's own tile (vanilla's spotvis fix for that tile).
     /// </summary>
@@ -61,9 +61,11 @@ internal sealed class PlayerView(
 
         foreach (var actor in map.GetActors())
         {
-            // Only the items DrawScaleds would have drawn as statics
+            // Only the items DrawScaleds would have drawn as statics, on the player's story (one on
+            // the street below a roof, or a beam above it, is out of reach)
             if (actor is not Inventory item || item.IsRemoved || item.CurrentState == null
-                || item.ResolvedStates.ContainsKey("Chase") || item.Active == ActiveType.Yes || hooks.IsWallSprite(item))
+                || item.ResolvedStates.ContainsKey("Chase") || item.Active == ActiveType.Yes || hooks.IsWallSprite(item)
+                || !map.OnPlayersStory(item))
                 continue;
 
             int tx = (int)item.Position.X, ty = (int)item.Position.Y;

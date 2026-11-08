@@ -231,6 +231,20 @@ public class UwmfTranslatorTests
     }
 
     [Test]
+    public void A_Things_Story_Goes_On_Plane_6_Or_With_An_Extra_Thing()
+    {
+        // Act: a cross on story 3 on its tile's middle, and a second thing on that tile on story 2
+        var (map, _) = Translate(Level(Room, """
+            thing { x = 1.5; y = 1.5; type = "Cross"; story = 3; skill1 = true; skill2 = true; skill3 = true; skill4 = true; }
+            thing { x = 1.5; y = 1.5; type = "Guard"; story = 2; skill1 = true; skill2 = true; skill3 = true; skill4 = true; }
+            """));
+
+        // Assert
+        Assert.That(At(map, MapConstants.StoryPlane, 1, 1), Is.EqualTo(3));
+        Assert.That(map.ExtraThings.Single().Story, Is.EqualTo(2));
+    }
+
+    [Test]
     public void An_Ambush_Thing_Stands_On_The_Ambush_Code()
     {
         var (map, _) = Translate(Level(Room, """

@@ -75,6 +75,10 @@ internal sealed class DebugCommands(
         console.Print($"story {map.Story}  walls up to story {map.LevelWallStories}  tallest {map.MaxWallStories}");
         console.Print($"tile {x},{y}: {map.DescribeBlock(x, y)}  faced tile {fx},{fy}: {map.DescribeBlock(fx, fy)} "
             + $"(plane 3: 0x{map.MapSpot(fx, fy, MapManager.HeightPlane):X4})");
+        var things = map.GetActors().Where(a => a is not Entities.Actors.PlayerPawn && !a.IsRemoved && a.TileX == fx && a.TileY == fy)
+            .Select(a => $"{a.Name} on story {map.StoryOf(a)}").ToList();
+        console.Print($"faced tile's things: {(things.Count == 0 ? "none" : string.Join(", ", things))}  "
+            + $"(plane 6: {map.MapSpot(fx, fy, MapManager.StoryPlane)}, 0 for the floor under them)");
 
         console.Print($"flats: floor {map.FlatName(x, y, false)}  ceiling {map.FlatName(x, y, true)}  "
             + $"(plane 2: {map.MapSpot(x, y, MapManager.FlatPlane)})");

@@ -73,6 +73,7 @@ public class UwmfWriterTests
         Set(map, MapConstants.TagPlane, 4, 3, 12);
         Set(map, 1, 1, 2, 108);
         Set(map, 0, 1, 2, Ambush);
+        Set(map, MapConstants.StoryPlane, 1, 2, 3);     // the guard on story 3
         Set(map, 1, 4, 1, 0x7e05);
         map.Defaults = new MapLevelDefaults { Sky = "SKY1", WallStories = 2 };
         var defs = UwmfTranslatorTests.Defs();
@@ -104,7 +105,7 @@ public class UwmfWriterTests
         map.LocalDefs = local;
         Set(map, 0, 1, 0, 250);
         Set(map, 0, 2, 0, 251);
-        map.ExtraThings = [new MapThing("Guard", 2.25, 2.75, 180, Skills: 0b0011), new MapThing("Barrel", 3.5, 2.5, 0)];
+        map.ExtraThings = [new MapThing("Guard", 2.25, 2.75, 180, Skills: 0b0011), new MapThing("Barrel", 3.5, 2.5, 0, Story: 2)];
 
         // Act
         var (_, back) = RoundTrip(map);

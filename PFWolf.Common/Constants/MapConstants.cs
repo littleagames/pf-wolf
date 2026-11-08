@@ -36,10 +36,10 @@ public static class MapConstants
 
     /// <summary>
     /// Planes every loaded level has: walls, objects, flats (ECWolf's floor and ceiling, see
-    /// <see cref="FlatPlane"/>), wall heights, tags and light zones. A GAMEMAPS level has none
-    /// of the last three, so they're empty.
+    /// <see cref="FlatPlane"/>), wall heights (blocks), tags, light zones and things' stories. A
+    /// GAMEMAPS level has none of the last five, so they're empty.
     /// </summary>
-    public const int LevelPlanes = 6;
+    public const int LevelPlanes = 7;
 
     /// <summary>
     /// ECWolf's floor and ceiling plane: the low byte of a tile's value picks its floor flat and
@@ -57,6 +57,13 @@ public static class MapConstants
 
     /// <summary>Each tile's light zone, 0 for none (the map's light)</summary>
     public const int ZonePlane = 5;
+
+    /// <summary>
+    /// The story the thing on a tile (plane 1) stands on, 1 to 8; 0 for the floor under it (the
+    /// player's floor where the tile's walkable on the player's story, else the top of the highest
+    /// block under it, else the ground)
+    /// </summary>
+    public const int StoryPlane = 6;
 
     /// <summary>
     /// A wall tile's patch (mapdefs patches, 1 to 255; 0 for none) is the high byte of its plane 0

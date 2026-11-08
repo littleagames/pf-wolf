@@ -76,7 +76,9 @@ internal static class SaveFile
     //     after the puzzle switches.
     // 44: each moving pushwall's stories (the start and stop of the part that moves, and of a
     //     second part above it), after its wall id.
-    internal const int SaveVersion = 44;
+    // 45: a seventh map plane (things' stories); each actor's story (a byte, 0 for the player's),
+    //     after its emitters.
+    internal const int SaveVersion = 45;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage
