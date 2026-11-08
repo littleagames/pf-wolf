@@ -1,0 +1,5 @@
+# Merged over the game's flats: a floor tile's block (the bridge, its rails, the building's upper
+# story) takes its sides from its floor index's sides:
+flats:
+  sides:
+    3: WOOD1

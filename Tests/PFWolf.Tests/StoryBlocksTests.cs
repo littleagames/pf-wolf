@@ -7,10 +7,11 @@ public class StoryBlocksTests
 {
     [TestCase("3-5", 0x0305)]
     [TestCase("3", 3)]                  // a plain stop: from story 1
-    [TestCase("1-3", 3)]
-    [TestCase("1-2,4-8", 0x4082)]
+    [TestCase("1-3", 0x0103)]           // typed with its start: kept, never an old arch
+    [TestCase("1-2,4-8", 0x4182)]
     [TestCase(" 3 - 5 , 7 - 8 ", 0x7385)]
-    [TestCase("1-2,3-5", 5)]            // touching: one block
+    [TestCase("1-2,3-5", 0x0105)]       // touching: one block
+    [TestCase("2,4-8", 0x4082)]
     [TestCase("", 0)]
     [TestCase("0", 0)]
     public void Stories_Are_Typed_As_Start_Dash_Stop(string text, int value)
@@ -31,7 +32,8 @@ public class StoryBlocksTests
     }
 
     [TestCase(0, "")]
-    [TestCase(3, "1-3")]
+    [TestCase(3, "3")]                  // plain: from story 1
+    [TestCase(0x0103, "1-3")]
     [TestCase(0x0305, "3-5")]
     [TestCase(0x7385, "3-5,7-8")]
     [TestCase(0x0010, "16")]            // not blocks: the bare number

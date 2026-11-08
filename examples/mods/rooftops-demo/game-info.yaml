@@ -1,0 +1,13 @@
+# Merged into the game pack's game-info.yaml: the demo level's story, walls, sky and street.
+maps:
+  MAP01:
+    name: Rooftops
+    # The player is on story 3: a tile's block (plane 3) that takes it in is solid, one under it
+    # is floor (its top drawn with the tile's floor flat), one over it is overhead
+    story: 3
+    # Walls with no block of their own run from the ground to story 2: the roofs underfoot
+    wall-height: 2
+    # A picture in the mod's graphics/ folder, drawn above the horizon (the level has no ceiling)
+    sky: RTSKY
+    # The street, two stories down
+    floor-color: "#303030"

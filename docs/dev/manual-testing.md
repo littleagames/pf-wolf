@@ -989,6 +989,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] Pick and edit from the 3D view; **(never tried)** clicking an extra thing.
 - [ ] **(never tried)** Level properties' Story saved to the mod's game-info (`story:`); the flat
       brush listing floor-sky and sky indices with no texture.
+- [ ] Rooftops Demo (`--file rooftops-demo`): the roofs, the street below from the bridge, the
+      building's upper story, the automap's drop and overhead marks (headless screenshots,
+      2026-11-08). **(never tried)** walking the whole level, off the bridge's south side (on air),
+      through the window, the door, pushing the crate (story mode), the exit.
+- [ ] **(never tried)** Converted arches: tall-walls-demo's colonnade and gate, weather-demo's
+      colonnade, DM02's alcoves and Midnight Assault's CAMP02 look as they did; the editor's Level →
+      Convert old arches on a level with some, and its warning in Check level.
 - [ ] Stories in the editor: the 3D view of MAP01 on story 2 (a mod's game-info), the door and
       things a story up on the door's frame (UI Automation screenshot, 2026-11-08). **(never
       tried)** typing 3-5, 1-2,4-8, 9 and 5-3 in the heights plane's Stories box (the value and the

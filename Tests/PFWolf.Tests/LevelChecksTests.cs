@@ -104,9 +104,9 @@ public class LevelChecksTests
     [Test]
     public void Starting_In_A_Block_Solid_On_The_Players_Story_Is_An_Error()
     {
-        // Arrange: a block from story 1 to 2 under the start
+        // Arrange: a block from story 1 to 2 under the start (typed 1-2, so not an old arch)
         var document = Room();
-        EditorMaps.Set(document, MapConstants.HeightPlane, 5, 5, 2);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 5, 5, 0x0102);
 
         // Act
         var problem = Check(document).Single();
@@ -126,6 +126,40 @@ public class LevelChecksTests
         var document = Room();
         document.SetProperties(new MapProperties { Story = 2 });
         Assert.That(Check(document).Single().Message, Does.Contain("under the player's story 2"));
+    }
+
+    [Test]
+    public void An_Old_Arch_Is_Warned_About_And_Converts_To_A_Block_From_Story_Two()
+    {
+        // Arrange: open floor with a plain height 3 (an arch from story 2 before blocks had a start), and a plain 1
+        var document = Room();
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 3);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 11, 10, 3);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 12, 10, 1);
+        var tiles = new MapTiles(Content(), document.Map, () => document.Properties);
+
+        // Act / Assert: warned of, once for each value
+        var problems = Check(document);
+        Assert.That(problems.Select(p => p.Message), Has.Exactly(1).Contains("makes it 2-3;").And.Contains("(2 tiles)"));
+        Assert.That(problems.Select(p => p.Message), Has.Exactly(1).Contains("height 1 on open floor"));
+
+        // converted: 2-3, the 1 cleared, and no more warnings
+        Assert.That(OldArches.Convert(document, tiles), Is.EqualTo(3));
+        Assert.That((document[MapConstants.HeightPlane, 10, 10], document[MapConstants.HeightPlane, 12, 10]), Is.EqualTo((0x0203, 0)));
+        Assert.That(Check(document), Is.Empty);
+    }
+
+    [Test]
+    public void A_Rooftop_With_Blocks_Of_Its_Own_On_The_Story_Isnt_Warned_About()
+    {
+        // Arrange: on story 2 over 1-story walls, a parapet (a block up to story 2) somewhere
+        var document = Room();
+        document.SetProperties(new MapProperties { Story = 2 });
+        EditorMaps.Set(document, 0, 10, 10, Wall);
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 2);
+
+        // Act / Assert: the low walls are meant
+        Assert.That(Check(document), Is.Empty);
     }
 
     [Test]

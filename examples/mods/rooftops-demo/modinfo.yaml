@@ -1,0 +1,4 @@
+name: Rooftops Demo
+version: "1.0"
+description: A level (replacing Floor 1) on the rooftops, three stories up - a street two stories below, a bridge across it, a building entered by its window, and a crate that pushes along its own story.
+game-packs: [wolf3d]

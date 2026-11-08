@@ -170,7 +170,7 @@ The renderer goes from "walls grow up from the one floor" to blocks at any heigh
    pushwall stories (and the pit fields go),
    the 3D view's blocks, caps and story (LevelMesh: replacing arches and pits), the 2D view's
    span badges, tile info, map checks (the start on a solid tile, walls not reaching the story).
-5. **Mods.** A tool to convert old arch values (and a check for them), then the example mods
+5. **Mods** (done). A tool to convert old arch values (and a check for them), then the example mods
    (tall-walls-demo, skies-demo, architecture-demo, ...), a new example level (a rooftop and a
    street below), and the user's mods. Docs, manual-testing items.
 
@@ -295,6 +295,24 @@ Checked: the editor opened on MAP01 with a mod putting it on story 2 (UI Automat
 PrintWindow shot): the door and things a story up, the door on its frame. Not tried in the
 editor: typing in the Stories box, the badges, pushwall stories in Level properties, a level
 with blocks in the 3D view.
+
+Phase 5 (mods) done 2026-11-08:
+- **Old arches**: an open floor tile with a plain height N was an arch from story 2 to N; now a
+  plain N is a block from story 1. The editor converts them (Level → Convert old arches,
+  Editing/OldArches: N becomes 2-N, a plain 1 is cleared) and warns of them (Check level); its
+  Stories box writes a typed `1-3` with its start (0x0103), so only a plain number on open floor
+  looks old. `examples/tools/convert-old-arches.cs` (`dotnet run`) scans a mod and with
+  `--convert` saves each level back in its format (a pack's own `maps/wolf3d/` levels are left
+  for what makes them).
+- **Converted**: tall-walls-demo MAP01 (8 tiles), weather-demo MAP01 (4), the multiplayer pack's
+  DM02 (36, by regenerating the arenas), and their generator scripts; Midnight Assault's CAMP02
+  (72 tiles, in midnight-assault.pk3, the old pk3 kept as .bak). Every other example mod, End of
+  Destiny and Trench Warfare had none.
+- **Rooftops Demo** (`examples/mods/rooftops-demo`, `tools/make-rooftops-demo.ps1`): story 3 over
+  2-story roofs, a street below, a bridge with a rail on one side, a building entered by a window
+  (two blocks), its door, a sign overhead, a crate pushwall moving its own story only.
+- `tp` and `summon` go onto walkable wall tiles (a roof); the load warning and the editor's check
+  about walls under the player's story only speak up when no tile's own block is solid there.
 
 ## Later
 

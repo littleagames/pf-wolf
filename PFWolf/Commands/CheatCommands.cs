@@ -256,7 +256,7 @@ internal sealed class CheatCommands(
             problem = $"tile {x},{y} is off the level";
             return false;
         }
-        if (mapManager.TileMap[x, y] != 0 || mapManager.ActorAt[x, y] != null || !IsFloorCode(mapManager.MapSpot(x, y, 0)))
+        if (mapManager.TileMap[x, y] != 0 || mapManager.ActorAt[x, y] != null || !IsFloorCode(mapManager.FloorCode(x, y)))
         {
             problem = $"tile {x},{y} is not open floor";
             return false;
@@ -317,7 +317,7 @@ internal sealed class CheatCommands(
         var (x, y) = targets.TileArg(args, 2);
 
         if (mapManager.TileMap[x, y] != 0 || mapManager.ActorAt[x, y] != null
-            || !mapManager.ValidArea(mapManager.MapSpot(x, y, 0)))
+            || !mapManager.ValidArea(mapManager.FloorCode(x, y)))
             throw new ArgumentException($"tile {x},{y} is not open floor");
 
         var before = mapManager.GetActors().Last;

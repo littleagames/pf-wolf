@@ -124,9 +124,11 @@ The level has no roof, so `sky` in `game-info.yaml` puts a dusk sky above the wa
 - `game-info.yaml`: the level's `wall-height` (1 story, for every tile the map doesn't raise),
   its `sky` and its floor color.
 - `maps/MAP01.wad`: the level. **How tall each wall stands is on the map's height plane
-  (plane 3)**, per tile: 0 uses the level's `wall-height`, 1 to 8 is that many stories. A
-  height on an open floor tile makes an arch. The arch's face and underside come from the wall
-  at the end of its row of arch tiles. A door's height is how high its lintel goes.
+  (plane 3)**, per tile: 0 uses the level's `wall-height`, 1 to 8 is that many stories (a block
+  from story 1). An arch is a block on open floor that starts above story 1: its start story
+  in the high byte and its stop in the low (0x0202 is story 2 alone, 0x0203 stories 2 to 3; the
+  editor's Stories box takes `2-3`). The arch's face and underside come from the wall at the end
+  of its row of arch tiles. A door's height is how high its lintel goes.
 
 Everything in the mod (pictures and level) is made by `tools/make-tall-walls-demo.ps1`. The
 pictures are drawn pixel by pixel in the script, and the level comes from an ASCII layout in
@@ -136,8 +138,64 @@ it. Edit either and run it again:
 powershell -ExecutionPolicy Bypass -File examples/tools/make-tall-walls-demo.ps1
 ```
 
-In game, `where` shows the height of the tile you're facing. With cheats on, `height <0-8>`
-changes it and `wallheight` changes the level's default. `sky <name|none>` swaps the sky.
+In game, `where` shows the blocks of the tile you're facing. With cheats on, `height <0-8>`
+(or `height 2-3`) changes it and `wallheight` changes the level's default. `sky <name|none>`
+swaps the sky, and `story 2` puts you on the rooftops.
+
+## Rooftops Demo (`mods/rooftops-demo`)
+
+A level that replaces Floor 1 (Wolfenstein 3D only), up on the roofs: the player is on
+**story 3**, with a street two stories below.
+
+```
+PFWolf.exe --file rooftops-demo
+```
+
+It replaces Floor 1 like the Switch Demo does, so switch on only one of them at a time.
+
+Every tile can hold a **block** (or two) from one story to another on the map's height plane
+(plane 3). Against the player's story a block is a wall (it takes the story in), floor (it's
+under it: its top is drawn with the tile's floor flat) or overhead (it's over it: its underside
+is the tile's ceiling flat). You start on a brick roof:
+
+- **The roofs** are the level's plain walls, 2 stories tall (`wall-height: 2`): under the
+  player's story, so they're floor. **The parapets** round them are blocks up to story 3, solid.
+- **The street** is open floor with no block: you look down two stories onto it, and the
+  buildings' faces run down to it.
+- **The bridge** across it is a block on story 2 alone (`0x0202`), its top the floor. Its north
+  side has a **rail** (a block on story 3 alone, `0x0303`, hanging over the street). Its south
+  side hasn't: step off it and you walk on air. **There's no falling**: a level blocks an edge
+  like that, or makes it a trap.
+- **The blue building** is 5 stories, entered through a **window**: a wall with two blocks, 1
+  to 2 and 4 to 5 (`0x4052`), open on story 3. Its upper story is open floor with a block
+  under it and one over it (`0x4152`), with wooden flats for both. A **door** leads out onto the
+  terrace: on story 3, with its lintel up to story 5.
+- **The terrace** (a grey roof) has the exit switch, and a **crate** that's a pushwall moving
+  only its own story: push it and it slides off the roof it stood on, which stays.
+- **A sign** hangs over the brick roofs on story 4: a tile with blocks 1 to 2 and 4 to 4.
+
+### What's in it
+
+- `game-info.yaml`: the level's `story` (3), `wall-height` (2), `sky` and street color.
+- `mapdefs/flats.yaml`: `sides:` for floor index 3, the wood on the sides of the bridge, its
+  rail and the building's upper story (a floor tile's block has no wall texture of its own).
+- `mapdefs/triggers.yaml`: object 450, the crate's pushwall: `A_PushWall` with `"story"` as its
+  fifth argument (`all`, `above` or `story`; game-info `pushwall-stories` sets it for a level).
+- `graphics/RTSKY.png`: the dusk sky over a far skyline.
+- `maps/MAP01.wad`: the level. Plane 3 holds each tile's blocks: the start story in bits 8-11
+  and the stop in bits 0-3 (a plain number is a block from story 1), a second block's start in
+  bits 12-15 and its stop in bits 4-7. The editor's Heights plane takes them typed as stories
+  (`3-5`, `1-2,4-5`).
+
+The level comes from an ASCII layout in `tools/make-rooftops-demo.ps1`; edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-rooftops-demo.ps1
+```
+
+In game, `where` says what the tile you stand on and the one you face are on your story,
+`story 1` drops you to the street (the roofs become walls), and `height 3-5` (cheats on) gives
+the faced tile a block.
 
 ## Patch Demo (`mods/patch-demo`)
 

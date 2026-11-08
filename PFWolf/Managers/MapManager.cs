@@ -1095,6 +1095,20 @@ internal class MapManager
     internal bool IsOverhead(int x, int y) => TileMap[x, y] == 0
         && (BlockStops[x, y] != 0 && BlockStarts[x, y] > Story || UpperStops[x, y] != 0 && UpperStarts[x, y] > Story);
 
+    /// <summary>
+    /// Whether any tile has a block of its own (plane 3) that takes in the player's story: a level
+    /// whose walls are lower than the story is meant that way when it has some (a rooftop's parapets)
+    /// </summary>
+    internal bool AnyOwnBlockOnStory()
+    {
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
+                if (BlockStops[x, y] != 0 && BlockStarts[x, y] <= Story && Story <= BlockStops[x, y]
+                    || UpperStops[x, y] != 0 && UpperStarts[x, y] <= Story && Story <= UpperStops[x, y])
+                    return true;
+        return false;
+    }
+
     /// <summary>The tallest block anywhere on the level.</summary>
     internal int MaxWallStories => Math.Max(maxtilestories, LevelWallStories);
 

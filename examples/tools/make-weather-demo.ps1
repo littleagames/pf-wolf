@@ -116,7 +116,7 @@ $Storm = @(
 $Tiles = [Collections.Hashtable]::new([StringComparer]::Ordinal)
 $Tiles['#'] = @{ Plane0 = 1 }                                          # grey stone
 $Tiles['I'] = @{ Plane0 = 1 }                                          # a pillar
-$Tiles['a'] = @{ Plane0 = 108; Height = 2 }                            # an arch: open below, wall above
+$Tiles['a'] = @{ Plane0 = 108; Height = 0x0202 }                       # an arch: open below, a block on story 2 (start 2, stop 2)
 $Tiles['.'] = @{ Plane0 = 108 }                                        # the courtyard, open to the sky
 $Tiles['p'] = @{ Plane0 = 108; Flat = $Roof }                          # the porch
 $Tiles['L'] = @{ Plane0 = 108; Flat = $Roof; Plane1 = $Lamp }          # a porch lamp

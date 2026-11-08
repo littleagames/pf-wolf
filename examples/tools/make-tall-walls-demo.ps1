@@ -230,9 +230,9 @@ $sky.Dispose()
 #
 # One character per tile, placed with its top-left corner at tile ($Left, $Top). Every tile
 # outside it is plain wall. The level's walls are 1 story by default (game-info.yaml); the
-# height plane (plane 3) raises single tiles. A floor tile with a height of 2 or more is an
-# arch: open below, a block of wall from story 2 up to that height, faced with the texture of
-# the wall at the end of its run.
+# height plane (plane 3) raises single tiles. A floor tile with a block from story 2 up (its
+# start in the high byte, its stop in the low: 0x0203 is stories 2 to 3) is an arch: open below,
+# faced with the texture of the wall at the end of its run.
 # ---------------------------------------------------------------------------------------------
 
 $Left = 18
@@ -281,8 +281,8 @@ $Tiles = @{
     'K' = @{ Plane0 = 51; Height = 2 }                      # the keep (TWSTON, 2 stories)
     'I' = @{ Plane0 = 52; Height = 2 }                      # a pillar (TWARCH, 2 stories)
     'H' = @{ Plane0 = 52; Height = 3 }                      # a gate pillar, 3 stories
-    'a' = @{ Plane0 = $Courtyard; Height = 2 }              # an arch, 2 stories
-    'G' = @{ Plane0 = $Courtyard; Height = 3 }              # the gate's arch, 3 stories
+    'a' = @{ Plane0 = $Courtyard; Height = 0x0202 }         # an arch: a block on story 2
+    'G' = @{ Plane0 = $Courtyard; Height = 0x0203 }         # the gate's arch, stories 2 to 3
     'D' = @{ Plane0 = 91; Height = 3 }                      # a door, its lintel 3 stories up
     'X' = @{ Plane0 = 21 }                                  # elevator switch: ends the level
     '1' = @{ Plane0 = 1; Height = 1 }                       # stock 64x64 walls repeat a

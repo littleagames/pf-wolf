@@ -64,7 +64,7 @@
         <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
           <TextBlock Classes="label" Grid.Row="8" Text="Pushwall stories" />
           <AutoCompleteBox Grid.Row="8" Grid.Column="1" Text="{Binding PushwallStories}" ItemsSource="{Binding PushwallStoriesNames}" FilterMode="StartsWith"
-                           Watermark="{Binding PushwallStoriesDefault}"
+                           PlaceholderText="{Binding PushwallStoriesDefault}"
                            ToolTip.Tip="Which of a pushwall's stories move when it's pushed, unless its A_PushWall or A_MoveWall says: all, above (the player's story and up; what's below stays as floor) or story (only the player's)." />
           <TextBlock Classes="label" Grid.Row="7" Text="Story" />
           <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Story}" PlaceholderText="{Binding StoryDefault}"

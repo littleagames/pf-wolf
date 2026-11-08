@@ -161,6 +161,8 @@
                   ToolTip.Tip="A new width and height (3 to 256 tiles each way), keeping a corner, an edge or the middle where it is; Level properties has them too" />
         <MenuItem Header="_Check level" Command="{Binding CheckLevelCommand}" InputGesture="F7"
                   ToolTip.Tip="Player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
+        <MenuItem Header="Convert old _arches" Command="{Binding ConvertOldArchesCommand}"
+                  ToolTip.Tip="Open floor with a plain height N was an arch from story 2 to N before blocks had a start story; now it's a block from story 1. This writes them as 2-N (Undo puts them back)" />
         <Separator IsVisible="{Binding HasLevelCodes}" />
         <MenuItem Header="_Edit code…" Command="{Binding EditCodeCommand}" InputGesture="Ctrl+E" IsVisible="{Binding HasLevelCodes}"
                   ToolTip.Tip="The map-info code or link on the tile under the pointer (or picked in Level codes): its value, floor, hint or target" />

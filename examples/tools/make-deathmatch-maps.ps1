@@ -25,7 +25,8 @@
 #   Sided          a character whose thing differs by half: @(west, east)
 #   Start          @(x, y) of the level's own start, when the middle tile is taken
 #   Heights        a character's height in stories (plane 3), for walls taller than the level's
-#                  `wall-height` (game-info); on a floor character (':', ';') it's an arch overhead
+#                  `wall-height` (game-info); on a floor character (':', ';') a block overhead, an
+#                  arch, written with its start story in the high byte (0x0203: stories 2 to 3)
 #   Ceilings       a character's ceiling flat (mapdefs flats `ceiling:` index, plane 2's high
 #                  byte); on an arch, its underside
 #   DiagonalSides  $true: each 45 degree wall takes the wall beside it on its solid side, not 'D'
@@ -121,7 +122,7 @@ $Arenas = @(
         # The fire walls are 1 story, set back in alcoves whose arch (';': red brick, from the
         # lane wall beside it, and underneath, ceiling flat 17 in multiplayer-pk3's
         # mapdefs/flats.yaml) hides the stories above them
-        Heights = @{ '%' = 3; '*' = 3; '(' = 1; ')' = 1; ':' = 3; ';' = 3 }
+        Heights = @{ '%' = 3; '*' = 3; '(' = 1; ')' = 1; ':' = 0x0203; ';' = 0x0203 }   # the arches: blocks from story 2 to 3
         Ceilings = @{ ';' = 17 }
         Sided = @{ 'F' = @(421, 421); 'W' = @(420, 420) } # flamethrower, rocket launcher
         Start = @(31, 29)                               # the rocket launcher has the middle

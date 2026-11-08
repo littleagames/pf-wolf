@@ -47,8 +47,8 @@ public static class StoryBlocks
         (ushort)(stop == 0 ? 0 : Encode(start, stop) | (stop2 == 0 ? 0 : start2 << 12 | stop2 << 4));
 
     /// <summary>
-    /// A value as it's typed: "3-5", "1-2,4-8", "3" (from story 1); "" for 0, and the bare number
-    /// for a value that isn't blocks
+    /// A value as it's typed: "3-5", "1-2,4-8", a plain "3" (from story 1, as tall walls and old
+    /// arches were written); "" for 0, and the bare number for a value that isn't blocks
     /// </summary>
     public static string Format(int value)
     {
@@ -57,13 +57,19 @@ public static class StoryBlocks
         var (lower, upper) = Decode(value);
         if (lower is not var (start, stop))
             return value.ToString(CultureInfo.InvariantCulture);
-        return $"{start}-{stop}" + (upper is var (s2, e2) ? $",{s2}-{e2}" : "");
+        bool plain = (value >> 8 & 0x0f) == 0;
+        return (plain ? $"{stop}" : $"{start}-{stop}") + (upper is var (s2, e2) ? $",{s2}-{e2}" : "");
     }
 
+    /// <summary>Whether a value's first block is a plain stop (no start of its own): a tall wall's, or an old arch's</summary>
+    public static bool IsPlain(int value) => value is >= 1 and <= MaxStories;
+
     /// <summary>
-    /// What's typed as blocks: "3-5", "3" (story 1 to 3), "1-2,4-8", "" or "0" (none); null with
-    /// the reason when it can't be (stories past 8, a start above its stop, a second block not
-    /// above the first, more than two)
+    /// What's typed as blocks: "3-5", "1-2,4-8", a plain "3" (story 1 to 3, written as a plain
+    /// stop), "" or "0" (none); null with the reason when it can't be (stories past 8, a start
+    /// above its stop, a second block not above the first, more than two). A block typed with its
+    /// start keeps it, even 1 ("1-3" is 0x0103), so it's never taken for an old arch (a plain stop
+    /// on open floor).
     /// </summary>
     public static ushort? Parse(string? text, out string? error)
     {
@@ -79,6 +85,7 @@ public static class StoryBlocks
         }
 
         var blocks = new (int Start, int Stop)[parts.Length];
+        bool plain = false;
         for (int i = 0; i < parts.Length; i++)
         {
             var ends = parts[i].Split('-', StringSplitOptions.TrimEntries);
@@ -91,7 +98,11 @@ public static class StoryBlocks
             }
             int last = ends.Length == 2 ? int.Parse(ends[1], CultureInfo.InvariantCulture) : first;
             if (ends.Length == 1)
+            {
                 first = 1;                          // a plain stop: from story 1
+                if (i == 0)
+                    plain = true;
+            }
             if (first < 1 || last > MaxStories || first > last)
             {
                 error = $"'{parts[i]}': stories go from 1 to {MaxStories}, the first no higher than the last";
@@ -100,15 +111,17 @@ public static class StoryBlocks
             blocks[i] = (first, last);
         }
 
+        // the first block with its start (unless typed plain)
+        ushort First(int start, int stop) => (ushort)(plain ? stop : start << 8 | stop);
         if (blocks.Length == 1)
-            return Encode(blocks[0].Start, blocks[0].Stop);
+            return First(blocks[0].Start, blocks[0].Stop);
         if (blocks[1].Start <= blocks[0].Stop)
         {
             error = "the second block has to start above where the first stops";
             return null;
         }
         if (blocks[1].Start == blocks[0].Stop + 1)
-            return Encode(blocks[0].Start, blocks[1].Stop);     // touching: one block
-        return Encode(blocks[0].Start, blocks[0].Stop, blocks[1].Start, blocks[1].Stop);
+            return First(blocks[0].Start, blocks[1].Stop);      // touching: one block
+        return (ushort)(First(blocks[0].Start, blocks[0].Stop) | blocks[1].Start << 12 | blocks[1].Stop << 4);
     }
 }

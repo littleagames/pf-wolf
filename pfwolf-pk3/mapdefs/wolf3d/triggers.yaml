@@ -2,7 +2,9 @@
 # tile is cleared.
 #   action:     the trigger action to run (MapTriggerRegistry), e.g. A_PushWall. A_PushWall's
 #               arguments are the sound as the wall starts moving and the sound when something
-#               blocks it (either left out is silent)
+#               blocks it (either left out is silent), then optionally a direction it only goes
+#               and a message, and which of its stories move (all, above or story; left out,
+#               game-info pushwall-stories)
 #   activation: use  -- pressing use while facing the tile (the default)
 #               walk -- stepping onto the tile
 #   secret:     counts toward the level's secret ratio (the total when the map loads, one found

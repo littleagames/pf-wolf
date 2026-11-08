@@ -1822,6 +1822,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>A check's tile should be shown: the window scrolls the map to it</summary>
     public event EventHandler<(int X, int Y)>? GoToTile;
 
+    /// <summary>
+    /// Level → Convert old arches: open floor tiles with a plain height N (an arch from story 2,
+    /// as levels wrote them before blocks had a start) become 2-N, as one undoable edit
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(HasDocument))]
+    private void ConvertOldArches()
+    {
+        if (Tiles == null || Document == null)
+            return;
+        int count = OldArches.Convert(Document, Tiles);
+        Status = count == 0
+            ? "No old arches: no open floor has a plain height"
+            : $"{count} old arch {(count == 1 ? "tile" : "tiles")} now run from story 2 (Undo puts them back)";
+        if (Checks.Count > 0)
+            CheckLevel();
+    }
+
     [RelayCommand(CanExecute = nameof(HasDocument))]
     private void CheckLevel()
     {

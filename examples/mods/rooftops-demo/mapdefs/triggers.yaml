@@ -1,0 +1,6 @@
+# A pushwall that moves only the player's story (A_PushWall's fifth argument): the crate on the
+# terrace slides off the roof it stands on, which stays
+triggers:
+  450:
+    action: A_PushWall("world/pushwall", "player/usefail", "", "", "story")
+    secret: true

@@ -94,9 +94,9 @@ internal sealed class LevelSetup(
             ?? PushwallStories.All;
         map.LoadMap(session.GameState.MapOn, session.GameState.Difficulty, hooks.CurrentSkill().EnemyHealth,
             levelInfo?.FloorNumber ?? -1);
-        if (map.LevelWallStories < map.Story)
+        if (map.LevelWallStories < map.Story && !map.AnyOwnBlockOnStory())
             Console.WriteLine($"{session.GameState.MapOn}: its walls run up to story {map.LevelWallStories} (wall-height), below the player's "
-                + $"story {map.Story}: only tiles with blocks of their own (plane 3) are solid");
+                + $"story {map.Story}, and no tile has a block of its own (plane 3) there: nothing but the doors and the map's edge is solid");
 
         // The cluster follows the map, however it was reached: a new game, the next/secret
         // level, a map-change trigger or the console's "map" warp

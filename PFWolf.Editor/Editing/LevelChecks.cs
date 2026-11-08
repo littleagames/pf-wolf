@@ -53,6 +53,7 @@ public static class LevelChecks
         var destructibleProblems = new Dictionary<string, (int X, int Y, int Count)>();
         var puzzleProblems = new Dictionary<string, (int X, int Y, int Count)>();
         var notStories = new Dictionary<int, (int X, int Y, int Count)>();
+        var oldArches = new Dictionary<int, (int X, int Y, int Count)>();
         var toName = tiles.Content.ChunksToName;
         int doors = 0;
         (int X, int Y) firstPastDoorLimit = (-1, -1);
@@ -96,6 +97,8 @@ public static class LevelChecks
                 int height = tiles[MapConstants.HeightPlane, x, y];
                 if (height != 0 && PFWolf.Definitions.StoryBlocks.Decode(height).Lower == null)
                     Count(notStories, height, x, y);
+                else if (PFWolf.Definitions.StoryBlocks.IsPlain(height) && kind == TileKind.Floor)
+                    Count(oldArches, height, x, y);
             }
         }
 
@@ -103,11 +106,25 @@ public static class LevelChecks
             problems.Add(new(CheckSeverity.Warning, $"height {value} isn't stories (1 to 8, as 3-5, or 1-2,4-8 with a second block above the first), "
                 + $"so the tile takes its default ({count} {Tiles(count)})", x, y));
 
+        foreach (var (value, (x, y, count)) in oldArches)
+            problems.Add(new(CheckSeverity.Warning, (value == 1
+                ? "height 1 on open floor is a block on story 1: before blocks had a start it was nothing (Level → Convert old arches clears it; typed 1-1 it's kept as a block)"
+                : $"height {value} on open floor is a block from story 1 to {value}: before blocks had a start it was an arch from story 2 "
+                  + $"(Level → Convert old arches makes it 2-{value}; typed 1-{value} it's kept as a block)") + $" ({count} {Tiles(count)})", x, y));
+
         // The player's story: the level's walls should reach it, and the start mustn't be in a block
         int story = tiles.PlayerStory;
-        if (tiles.LevelStories < story)
+        // (meant, on a rooftop: some tiles' own blocks are solid there)
+        bool ownBlockOnStory = false;
+        for (int y = 0; y < tiles.Height && !ownBlockOnStory; y++)
+            for (int x = 0; x < tiles.Width && !ownBlockOnStory; x++)
+            {
+                var (lower, upper) = PFWolf.Definitions.StoryBlocks.Decode(tiles[MapConstants.HeightPlane, x, y]);
+                ownBlockOnStory = lower is var (s, e) && s <= story && story <= e || upper is var (s2, e2) && s2 <= story && story <= e2;
+            }
+        if (tiles.LevelStories < story && !ownBlockOnStory)
             problems.Add(new(CheckSeverity.Warning, $"the walls run up to story {tiles.LevelStories} (wall height), under the player's story {story}: "
-                + "only tiles with blocks of their own (plane 3) are solid, and the player walks over the rest"));
+                + "no tile has a block of its own (plane 3) there, so nothing but the doors is solid, and the player walks over the rest"));
         if (starts.Count > 0 && tiles.Solid(starts[^1].X, starts[^1].Y))
             problems.Add(new(CheckSeverity.Error, $"the player starts in a block that's solid on their story ({story})", starts[^1].X, starts[^1].Y));
 
