@@ -10,12 +10,14 @@ namespace PFWolf.Gameplay;
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
 /// <param name="MissileHitWall">A missile that's flown into a wall: the wall takes the damage the roll gives, if its damage type hurts it (Gameplay/DestructibleWalls.cs)</param>
 /// <param name="BlastHitWall">A blast reaching the wall on a tile: the same</param>
+/// <param name="ClearLine3D">Whether a line in 3D (global coordinates, heights in texels from the ground) is clear (LineOfSight.CheckLine3D); a blast reaches other stories along one</param>
 internal sealed record MissileHooks(
     Func<Entities.Actors.Actor, bool> ProjectileTryMove,
     Action<string, Entities.Actors.Actor> PlaySoundAt,
     Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer,
     Action<Entities.Actors.Actor, Func<int>>? MissileHitWall = null,
-    Action<Entities.Actors.Actor, int, int, Func<int>>? BlastHitWall = null);
+    Action<Entities.Actors.Actor, int, int, Func<int>>? BlastHitWall = null,
+    Func<long, long, double, long, long, double, bool>? ClearLine3D = null);
 
 /// <summary>
 /// The player's weapons can throw missiles (A_FireMissile) that fly until they hit a wall, a
@@ -86,6 +88,11 @@ internal sealed class Missiles(
         missile.Shooter = player;
         missile.TicCount = 1;
 
+        // At an enemy in the sights on another story, one that doesn't fall flies up or down to it
+        if (PropertyDouble(missile, "gravity", 0) == 0 && map.AnyEnemyOffStory()
+            && attacks.AimedTarget() is { } aimed && !map.OnPlayersStory(aimed))
+            map.AimAcrossStories(missile, player, aimed);
+
         // Just in front of the player, so one fired point blank at a wall still shows its blast
         const int ahead = (int)(9L * GameConstants.MinDist / 8);
         missile.X += MathUtils.FixedMul(ahead, TrigTables.CosTable[missile.Angle]);
@@ -138,8 +145,14 @@ internal sealed class Missiles(
     /// </summary>
     internal void Missile(Entities.Actors.Actor ob, string[] args)
     {
-        // up and down as it flies, with a gravity (Missiles.Fall)
-        (ob.Z, ob.ZSpeed) = Fall(ob.Z, ob.ZSpeed, PropertyDouble(ob, "gravity", 0), PropertyDouble(ob, "zfloor", 0), (int)session.Tics);
+        // up and down as it flies, with a gravity (Missiles.Fall); without, straight up or down
+        // to a target on another story (Projectiles.Climb)
+        double gravity = PropertyDouble(ob, "gravity", 0);
+        if (gravity == 0 && ob.Story != 0)
+            Projectiles.Climb(ob, session.Tics);
+        else
+            (ob.Z, ob.ZSpeed) = Fall(ob.Z, ob.ZSpeed, gravity, PropertyDouble(ob, "zfloor", 0), (int)session.Tics);
+        int story = ob.Story == 0 ? map.Story : MapManager.StoryAtHeight(map.MiddleHeight(ob));
 
         int speed = (int)(ob.Speed * session.Tics);
         int dx = MathUtils.FixedMul(speed, TrigTables.CosTable[ob.Angle]);
@@ -160,8 +173,8 @@ internal sealed class Missiles(
         {
             // the player's side's (factions.yaml) it flies past: no friendly fire
             victim = (Entities.Actors.Actor?)map.ShootableActorsNear(ob.X, ob.Y, GameConstants.ProjectileSize / 2)
-                .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !factions.IsAlly(ob, a))
-                ?? RivalHitBy(ob);
+                .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !factions.IsAlly(ob, a) && map.StoryOf(a) == story)
+                ?? (story == map.Story ? RivalHitBy(ob) : null);
             if (victim == null)
                 return;
         }
@@ -296,11 +309,18 @@ internal sealed class Missiles(
             && int.TryParse(a["playermax:".Length..], out var cap) ? cap : -1).FirstOrDefault(cap => cap >= 0, int.MaxValue);
         int damage = max > min ? min + session.Random.RndT() * (max - min + 1) / 256 : min;
 
+        // The story the blast goes off in: it spreads across that story's floor (the player's: as
+        // ever), and reaches things on other stories along a clear line, a story up or down
+        // counting as a tile (BlastAcrossStories)
+        int band = ob.Story == 0 ? map.Story : MapManager.StoryAtHeight(map.MiddleHeight(ob));
+        bool Solid(int x, int y) => band == map.Story ? IsSolidForBlast(x, y) : map.StorySolid(x, y, band);
+
         // What a thing standing where it does takes of the blast (0 for out of its reach)
-        int DamageTo(Entities.Actors.Actor target) => falloff ? BlastFalloff(damage, radius, ob, target) : damage;
+        int DamageTo(Entities.Actors.Actor target) => falloff
+            ? BlastFalloffAt(damage, radius, ob.X, ob.Y, target.X, target.Y, map.StoryOf(target) - band) : damage;
 
         int cx = ob.TileX, cy = ob.TileY;
-        if (IsSolidForBlast(cx, cy))
+        if (Solid(cx, cy))
             return;
 
         var shooter = ob.Shooter as Entities.Actors.PlayerPawn;
@@ -320,25 +340,12 @@ internal sealed class Missiles(
             // a player's blast leaves their side's be (no friendly fire). A blast whose source
             // gives no damagetype deals Blast, for a Death.Blast state (Planet Strike's detonator,
             // set off by another's blast a moment later)
-            foreach (var target in map.ShootableActorsAt(x, y).ToList())
+            foreach (var target in map.ShootableActorsAt(x, y).Where(t => map.StoryOf(t) == band).ToList())
                 if (!ReferenceEquals(target, ob) && !(shooter != null && factions.IsAlly(shooter, target))
                     && DamageTo(target) is > 0 and var hit)
-                {
-                    bool typed = target.BlowType == null && !ob.Properties.ContainsKey("damagetype");
-                    if (typed)
-                        target.BlowType = BlastDamageType;
-                    try
-                    {
-                        target.Damage(shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
-                    }
-                    finally
-                    {
-                        if (typed)
-                            target.BlowType = null;
-                    }
-                }
+                    BlastHit(target, hit);
 
-            foreach (var pawn in blasted.Where(p => p.TileX == x && p.TileY == y))
+            foreach (var pawn in blasted.Where(p => p.TileX == x && p.TileY == y && band == map.Story))
                 if (Math.Min(DamageTo(pawn), playerMax) is > 0 and var hit)
                     HurtByMissile(pawn, shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
 
@@ -356,13 +363,50 @@ internal sealed class Missiles(
                     || !map.InMap(nx, ny)
                     || !seen.Add((nx, ny)))
                     continue;
-                if (IsSolidForBlast(nx, ny))
+                if (Solid(nx, ny))
                 {
-                    if (map.ActorAt[nx, ny] is Wall)
+                    if (band == map.Story && map.ActorAt[nx, ny] is Wall)
                         walls.Add((nx, ny));
                     continue;
                 }
                 open.Enqueue((nx, ny));
+            }
+        }
+
+        // Things on the other stories (the players too, off the blast's), along a clear line
+        if (band != map.Story || map.AnyEnemyOffStory())
+        {
+            double height = map.MiddleHeight(ob);
+            bool Reaches(Entities.Actors.Actor target) =>
+                map.StoryOf(target) != band && Math.Abs(map.StoryOf(target) - band) <= radius
+                && Math.Abs(target.TileX - cx) <= radius && Math.Abs(target.TileY - cy) <= radius
+                && hooks.ClearLine3D?.Invoke(ob.X, ob.Y, height, target.X, target.Y, map.MiddleHeight(target)) == true;
+
+            foreach (var target in map.ShootableActorsNear(ob.X, ob.Y, (long)radius << MapConstants.TileShift).Where(Reaches).ToList())
+                if (!ReferenceEquals(target, ob) && !(shooter != null && factions.IsAlly(shooter, target))
+                    && DamageTo(target) is > 0 and var hit)
+                    BlastHit(target, hit);
+            foreach (var pawn in blasted.Where(Reaches))
+                if (Math.Min(DamageTo(pawn), playerMax) is > 0 and var hit)
+                    HurtByMissile(pawn, shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
+        }
+
+        // A blast's damage on something shootable. A blast whose source gives no damagetype deals
+        // Blast, for a Death.Blast state (Planet Strike's detonator, set off by another's blast a
+        // moment later)
+        void BlastHit(Entities.Actors.Monster target, int hit)
+        {
+            bool typed = target.BlowType == null && !ob.Properties.ContainsKey("damagetype");
+            if (typed)
+                target.BlowType = BlastDamageType;
+            try
+            {
+                target.Damage(shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
+            }
+            finally
+            {
+                if (typed)
+                    target.BlowType = null;
             }
         }
 
@@ -388,10 +432,12 @@ internal sealed class Missiles(
         BlastFalloffAt(damage, radius, blast.X, blast.Y, target.X, target.Y);
 
     /// <summary>The same, from a blast at one point (global units) to something at another</summary>
-    internal static int BlastFalloffAt(int damage, int radius, long blastX, long blastY, long targetX, long targetY)
+    /// <param name="stories">How many stories up (or down) from the blast the target is: each a tile further off</param>
+    internal static int BlastFalloffAt(int damage, int radius, long blastX, long blastY, long targetX, long targetY, int stories = 0)
     {
         double dx = (double)targetX - blastX, dy = (double)targetY - blastY;
-        double tiles = Math.Sqrt(dx * dx + dy * dy) / MapConstants.TileGlobal;
+        double across = Math.Sqrt(dx * dx + dy * dy) / MapConstants.TileGlobal;
+        double tiles = Math.Sqrt(across * across + (double)stories * stories);
         if (tiles >= radius)
             return 0;
         return tiles <= 1 ? damage : (int)(damage / (tiles * tiles));

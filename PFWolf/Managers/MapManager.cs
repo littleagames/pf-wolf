@@ -1356,6 +1356,57 @@ internal class MapManager
     /// <summary>Whether an actor is on the player's story (and so a pickup can be taken, a collision felt)</summary>
     internal bool OnPlayersStory(Entities.Actors.Actor actor) => actor.Story == 0 || actor.Story == Story;
 
+    /// <summary>Whether any enemy stands off the player's story (most levels: none, and nothing needs to work in 3D)</summary>
+    internal bool AnyEnemyOffStory() => _actors.Any(a => !a.IsRemoved && a is Entities.Actors.Monster && !OnPlayersStory(a));
+
+    /// <summary>Whether two actors stand on the same story (a blow, a bite, a knife only reach that far)</summary>
+    internal bool SameStory(Entities.Actors.Actor a, Entities.Actors.Actor b) => StoryOf(a) == StoryOf(b);
+
+    /// <summary>
+    /// The height of an actor's middle, in texels up from the ground: half a story over its
+    /// story's floor, and its Z (a missile's height in the air) on top
+    /// </summary>
+    internal double MiddleHeight(Entities.Actors.Actor actor) =>
+        (StoryOf(actor) - 1) * GameConstants.TextureSize + GameConstants.TextureSize / 2 + actor.Z;
+
+    /// <summary>The story a height (texels up from the ground) is in: 1 for the ground's, to 8</summary>
+    internal static int StoryAtHeight(double height) =>
+        Math.Clamp((int)Math.Floor(height / GameConstants.TextureSize) + 1, 1, GameConstants.MaxWallStories);
+
+    /// <summary>
+    /// How far apart two actors are in tiles, as the enemies' aim and the players' guns count it:
+    /// the most of across, along and (a story to a tile) up or down
+    /// </summary>
+    internal int TileDistance(Entities.Actors.Actor a, Entities.Actors.Actor b) =>
+        Math.Max(Math.Max(Math.Abs(a.TileX - b.TileX), Math.Abs(a.TileY - b.TileY)), Math.Abs(StoryOf(a) - StoryOf(b)));
+
+    /// <summary>
+    /// How fast (texels a tic) a projectile flying at <paramref name="speed"/> (global units a
+    /// tic) from one actor has to climb or drop to meet another's middle: 0 for one on the same story
+    /// </summary>
+    internal double ClimbToward(Entities.Actors.Actor from, Entities.Actors.Actor to, int speed)
+    {
+        if (StoryOf(from) == StoryOf(to) || speed <= 0)
+            return 0;
+        double dx = (double)to.X - from.X, dy = (double)to.Y - from.Y;
+        double tics = Math.Max(Math.Sqrt(dx * dx + dy * dy) / speed, 1);
+        return (MiddleHeight(to) - MiddleHeight(from)) / tics;
+    }
+
+    /// <summary>
+    /// A projectile just fired by <paramref name="shooter"/> at <paramref name="target"/> flies
+    /// on stories (Gameplay/Projectiles.cs) when either is off the player's story: it takes the
+    /// shooter's story as its own and climbs or drops to meet the target. Otherwise nothing changes.
+    /// </summary>
+    internal void AimAcrossStories(Entities.Actors.Actor projectile, Entities.Actors.Actor shooter, Entities.Actors.Actor? target)
+    {
+        if (OnPlayersStory(shooter) && (target == null || OnPlayersStory(target)))
+            return;
+        projectile.Story = StoryOf(shooter);
+        if (target != null)
+            projectile.ZSpeed = ClimbToward(shooter, target, projectile.Speed);
+    }
+
     /// <summary>The light zone a tile is in, 0 for none.</summary>
     internal ushort GetZone(int x, int y) => (ushort)MapSpot(x, y, ZonePlane);
 
@@ -2181,6 +2232,7 @@ internal class MapManager
         builtActor.SetPosition(source.TileX, source.TileY);
         builtActor.X = source.X;
         builtActor.Y = source.Y;
+        builtActor.Story = source is Entities.Actors.PlayerPawn ? 0 : source.Story;     // on its source's story
         builtActor.Dir = ObjDir.NoDir;
         builtActor.Active = ActiveType.Yes;
         builtActor.RuntimeFlags = ObjFlags.NeverMark;

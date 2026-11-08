@@ -280,6 +280,7 @@ internal partial record BlakeMonster : Monster
         var target = Target;
         if (Math.Abs(target.X - X) - MapConstants.TileGlobal <= MinActorDist
             && Math.Abs(target.Y - Y) - MapConstants.TileGlobal <= MinActorDist
+            && MapManager.SameStory(this, target)       // a blow only reaches its own story
             && NextRandom() < chance)
         {
             HurtTarget(max > min ? min + NextRandom() * (max - min + 1) / 256 : min);
@@ -306,7 +307,7 @@ internal partial record BlakeMonster : Monster
             if (CheckLine(this, Target, shot: true))
             {
                 Hidden = false;
-                int dist = Math.Max(Math.Max(Math.Abs(TileX - Target.TileX), Math.Abs(TileY - Target.TileY)), 1);
+                int dist = Math.Max(TileDist(Target), 1);
                 bool nearAttack = dist == 1 && Distance < 0x4000;
 
                 // Shoot-mode actors keep at whichever they're doing until their count runs out
@@ -409,15 +410,14 @@ internal partial record BlakeMonster : Monster
     /// </summary>
     private void DoAttack()
     {
-        int dx = Math.Abs(TileX - Target.TileX), dy = Math.Abs(TileY - Target.TileY);
-        int dist = Math.Max(Math.Max(dx, dy), 1);
+        int dist = Math.Max(TileDist(Target), 1);
         if (PropertyInt("monster.attackrange", 0) is > 0 and var range && dist > range)
             return;
         if (PropertyInt("monster.attackmindist", 0) is > 0 and var mindist && dist < mindist)
             return;
         if (PropertyInt("monster.attackchance", 256) is var chance and < 256 && NextRandom() >= chance)
             return;
-        SetState(dist <= 1 && ResolvedStates.ContainsKey("Melee") ? "Melee" : "Attack");
+        SetState(dist <= 1 && MapManager.SameStory(this, Target) && ResolvedStates.ContainsKey("Melee") ? "Melee" : "Attack");
     }
 
     /*

@@ -62,6 +62,24 @@ internal sealed class Projectiles(
     ===================
     */
 
+    /*
+    A projectile fired on (or at) another story than the player's carries an explicit Story (its
+    shooter's) and climbs or drops (ZSpeed, MapManager.ClimbToward) toward what it was fired at.
+    Whatever story its middle is in (FlightStory) is what it meets: on the player's, ActorAt[] and
+    the players as ever; on another, that story's solid tiles and things (MapManager.StorySolid,
+    ActorOn) and the enemies standing on it. Below the ground it's struck the floor.
+    */
+
+    /// <summary>The story a projectile's flying in: its middle's (the player's for one with no story of its own)</summary>
+    internal int FlightStory(Entities.Actors.Actor ob) => ob.Story == 0 ? map.Story : MapManager.StoryAtHeight(map.MiddleHeight(ob));
+
+    /// <summary>Climbs or drops a projectile with its ZSpeed for the tics gone by (no gravity: a straight line)</summary>
+    internal static void Climb(Entities.Actors.Actor ob, uint tics)
+    {
+        if (ob.ZSpeed != 0)
+            ob.Z += ob.ZSpeed * tics;
+    }
+
     internal bool ProjectileTryMove(Entities.Actors.Actor ob)
     {
         const int PROJSIZE = GameConstants.ProjSize;
@@ -73,6 +91,19 @@ internal sealed class Projectiles(
 
         xh = (ob.X + PROJSIZE) >> MapConstants.TileShift;
         yh = (ob.Y + PROJSIZE) >> MapConstants.TileShift;
+
+        // off the player's story: its story's solid tiles and things, and the ground
+        int story = FlightStory(ob);
+        if (story != map.Story)
+        {
+            if (map.MiddleHeight(ob) < 0)
+                return false;
+            for (y = yl; y <= yh; y++)
+                for (x = xl; x <= xh; x++)
+                    if (!map.InMap(x, y) || map.ActorOn(x, y, story) is Wall or BlockingActor)
+                        return false;
+            return true;
+        }
 
         //
         // check for solid walls
@@ -134,10 +165,12 @@ internal sealed class Projectiles(
 
         ob.X += (int)deltax;
         ob.Y += (int)deltay;
+        Climb(ob, session.Tics);
+        int story = FlightStory(ob);
 
         // the first player (in player order) it's on, if any, unless they're on its side (it's
-        // on its thrower's: Actor.Faction)
-        var hit = map.Players.FirstOrDefault(pawn => session.IsTargetable(pawn)
+        // on its thrower's: Actor.Faction); only flying on the players' story
+        var hit = story != map.Story ? null : map.Players.FirstOrDefault(pawn => session.IsTargetable(pawn)
             && Math.Abs(ob.X - pawn.X) < PROJECTILESIZE && Math.Abs(ob.Y - pawn.Y) < PROJECTILESIZE
             && !factions.IsAlly(ob, pawn));
 
@@ -172,9 +205,9 @@ internal sealed class Projectiles(
         // player; its own side's it passes by.
         var monster = hit != null ? null
             : ob.HasFlag("HURTMONSTERS")
-                ? map.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2).FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter))
+                ? map.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2).FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && map.StoryOf(a) == story)
                 : map.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE - 1)
-                    .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !factions.IsAlly(ob, a));
+                    .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !factions.IsAlly(ob, a) && map.StoryOf(a) == story);
 
         if (hit != null || monster != null)
         {       // hit the player (or an enemy)

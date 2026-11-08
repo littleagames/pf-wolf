@@ -48,8 +48,11 @@ internal partial record Monster : Actor
     // shot: a line to shoot along, not to see along (Gameplay/LineOfSight.cs)
     private protected bool CheckLine(Actor ob, bool shot = false) => World.LineOfSight.CheckLine(ob, shot);
     private protected bool CheckLine(Actor ob, Actor to, bool shot = false) => World.LineOfSight.CheckLine(ob, to, shot);
-    private protected bool CheckLine(int fromX, int fromY, Actor to, bool shot = false) => World.LineOfSight.CheckLine(fromX, fromY, to, shot);
+    private protected bool CheckLine(int fromX, int fromY, Actor to, bool shot = false) => World.LineOfSight.CheckLine(fromX, fromY, to, shot, Story);
     private protected bool CheckDiag(int x, int y) => Gameplay.LineOfSight.ClearForDiagonal(TileEntry(x, y));
+
+    // How far away another is in tiles, a story counting as a tile (MapManager.TileDistance)
+    private protected int TileDist(Actor other) => MapManager.TileDistance(this, other);
 
     // What's on a tile on its story, as ActorAt[] has it on the player's (MapManager.ActorOn)
     private protected PFWolf.Actor? TileEntry(int x, int y) => Story == 0 ? MapManager.ActorAt[x, y] : MapManager.ActorOn(x, y, Story);
@@ -1941,9 +1944,7 @@ internal partial record Monster : Actor
         if (CheckLine(this, Target, shot: true))
         {
             Hidden = false;
-            var dx = Math.Abs(TileX - Target.TileX);
-            var dy = Math.Abs(TileY - Target.TileY);
-            var dist = dx > dy ? dx : dy;
+            var dist = TileDist(Target);
             int chance;
 
             if (DemoRecord || DemoPlayback)
@@ -2165,7 +2166,7 @@ internal partial record Monster : Actor
                 var dy = Target.Y - Y;
                 if (dy < 0) dy = -dy;
                 dy -= move;
-                if (dy <= MinActorDist)
+                if (dy <= MinActorDist && MapManager.SameStory(this, Target))
                 {
                     SetState("Attack");
                     return;
@@ -2210,7 +2211,7 @@ internal partial record Monster : Actor
             var dy = Target.Y - Y;
             if (dy < 0) dy = -dy;
             dy -= (int)MapConstants.TileGlobal;
-            if (dy <= MinActorDist)
+            if (dy <= MinActorDist && MapManager.SameStory(this, Target))     // a bite only reaches its own story
                 return NextRandom() < chance;
         }
         return false;
@@ -2251,9 +2252,7 @@ internal partial record Monster : Actor
     // up when possible, otherwise dodges toward the player (or runs, once very close).
     internal void DodgeChase()
     {
-        var dx = Math.Abs(TileX - Target.TileX);
-        var dy = Math.Abs(TileY - Target.TileY);
-        var dist = dx > dy ? dx : dy;
+        var dist = TileDist(Target);
         var dodge = false;
 
         if (CheckLine(this, Target, shot: true))
@@ -2367,9 +2366,7 @@ internal partial record Monster : Actor
     /// </summary>
     internal void ShotAtPlayer()
     {
-        var dx = Math.Abs(TileX - Target.TileX);
-        var dy = Math.Abs(TileY - Target.TileY);
-        var dist = dx > dy ? dx : dy;
+        var dist = TileDist(Target);
 
         if (Properties.ContainsKey("monster.sharpshooter"))
             dist = dist * 2 / 3;
@@ -2430,6 +2427,7 @@ internal partial record Monster : Actor
         newobj.Angle = (short)iangle;
         newobj.Speed = speed;
         newobj.Shooter = this;
+        MapManager.AimAcrossStories(newobj, this, Target);
 
         if (sound == null && newobj.Properties.TryGetValue("attacksound", out var attackSound))
             sound = attackSound as string;
@@ -2446,7 +2444,7 @@ internal partial record Monster : Actor
 
         var dx = Math.Abs(TileX - Target.TileX);
         var dy = Math.Abs(TileY - Target.TileY);
-        if (Math.Max(dx, dy) <= 1)
+        if (Math.Max(dx, dy) <= 1 && MapManager.SameStory(this, Target))
             HurtTarget(damage);
     }
 

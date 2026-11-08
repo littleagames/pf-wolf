@@ -58,12 +58,14 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     internal Entities.Actors.Actor? SpawnProjectile(Entities.Actors.Actor ob, string className, int angle, string mode)
     {
         var (x, y) = LookoutPoint(ob);
+        Entities.Actors.Actor? aimed = null;
 
         if (mode.Equals("aim", StringComparison.OrdinalIgnoreCase))
         {
             if (NearestPlayer(x, y) is not { } target)
                 return null;
             angle += AngleTo(x, y, target.X, target.Y);
+            aimed = target;
         }
         else if (!mode.Equals("absolute", StringComparison.OrdinalIgnoreCase))
         {
@@ -95,6 +97,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         missile.Speed = speed;
         missile.Shooter = ob;
         missile.TicCount = 1;       // its first frame ends on the next tic, as a thrown one's (Monster.ThrowProjectile)
+        map.AimAcrossStories(missile, ob, aimed);       // on another story than the player's, up or down to them
 
         playActorSound(missile, "attacksound");
         return missile;
@@ -176,7 +179,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
             if ((long)(pawn.X - x) * cos - (long)(pawn.Y - y) * sin <= 0)
                 return false;
         }
-        return lineOfSight.CheckLine(x, y, pawn);
+        return lineOfSight.CheckLine(x, y, pawn, fromStory: ob.Story);
     }
 
     /// <summary>Whether the actor stands inside a wall (a map thing with `in-wall: true`)</summary>

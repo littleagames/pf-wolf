@@ -691,7 +691,8 @@ internal static partial class GameHost
         new(MapManager, FactionManager, doors, playerWeapons, playerAttacks, playerStats, Session,
             new MissileHooks(ProjectileTryMove, PlaySoundLocActor, TakeDamage,
                 (ob, damage) => destructibleWalls.HitByMissile(ob, damage),
-                (ob, x, y, damage) => destructibleWalls.HitByBlast(ob, x, y, damage)));
+                (ob, x, y, damage) => destructibleWalls.HitByBlast(ob, x, y, damage),
+                (fx, fy, fz, tx, ty, tz) => lineOfSight.CheckLine3D(fx, fy, fz, tx, ty, tz)));
 
     static void RegisterMissileActions() => (missiles ??= MakeMissiles()).Register();
 

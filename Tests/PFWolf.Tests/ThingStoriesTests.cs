@@ -242,6 +242,88 @@ public class ThingStoriesTests
         Assert.That(_map.ActorOn(13, 10, 3), Is.Null, "nothing left on the roofs' story");
     }
 
+    // Sight across stories (phase 4): a LineOfSight on the test level, with no doors of its own
+    private Gameplay.LineOfSight Sight() =>
+        new(_map, new Gameplay.Doors(null!, null!, _map, null!, null!, new GameSession(), null!), new GameSession(), (_, _, _, _) => false);
+
+    [Test]
+    public void A_Guard_Under_A_Roof_Edge_Cant_See_Someone_Back_On_The_Roof()
+    {
+        // Arrange: the player on the roof at 11,10 (story 3), a guard on the street at 13,10
+        MakeRooftops();
+        var player = Guard(11, 10);
+        var guard = Guard(13, 10, story: 1);
+
+        // Act / Assert: the line climbs through the roof at 12,10
+        Assert.That(Sight().CheckLine(guard, player), Is.False);
+    }
+
+    [Test]
+    public void A_Guard_Out_On_The_Street_Sees_Someone_At_The_Roofs_Edge()
+    {
+        MakeRooftops();
+        var player = Guard(12, 10);
+        var guard = Guard(15, 10, story: 1);
+        Assert.That(Sight().CheckLine(guard, player), Is.True);
+        Assert.That(Sight().CheckLine(player, guard), Is.True, "and the other way");
+    }
+
+    [Test]
+    public void On_Another_Story_The_Blocks_And_Doors_Stop_A_Line_Along_It()
+    {
+        // Arrange: on the street (story 1), open at 9,10 and 13 to 15,10, the roofs between,
+        // the door at 16,10; the player's story is 3
+        MakeRooftops();
+        var west = Guard(9, 10, story: 1);
+        var east = Guard(13, 10, story: 1);
+        var near = Guard(15, 10, story: 1);
+        var beyond = Guard(17, 10, story: 1);
+        var sight = Sight();
+
+        // Act / Assert
+        Assert.That(sight.CheckLine(east, near), Is.True, "along the street");
+        Assert.That(sight.CheckLine(west, east), Is.False, "through the roofs' walls");
+        Assert.That(sight.CheckLine(near, beyond), Is.False, "a door's tile off the player's story");
+    }
+
+    [Test]
+    public void Distance_Counts_A_Story_As_A_Tile()
+    {
+        MakeRooftops();
+        var player = Guard(13, 10);
+        Assert.That(_map.TileDistance(Guard(13, 10, story: 1), player), Is.EqualTo(2));
+        Assert.That(_map.TileDistance(Guard(16, 11, story: 1), player), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void A_Projectile_Climbs_To_Meet_Its_Target_On_Another_Story()
+    {
+        // Arrange: from the street (story 1) to the roof (story 3), 2 tiles off, at 1/8 tile a tic
+        MakeRooftops();
+        var guard = Guard(13, 10, story: 1);
+        var player = Guard(11, 10);
+        var rocket = new Monster { Name = "Rocket", Speed = 0x2000 };
+        var level = new Monster { Name = "Rocket", Speed = 0x2000 };
+
+        // Act
+        _map.AimAcrossStories(rocket, guard, player);
+        _map.AimAcrossStories(level, player, Guard(14, 10));
+
+        // Assert: 128 texels up over 16 tics; one on the player's story is left as it was
+        Assert.That((rocket.Story, rocket.ZSpeed), Is.EqualTo((1, 8.0)));
+        Assert.That((level.Story, level.ZSpeed), Is.EqualTo((0, 0.0)));
+        Assert.That(MapManager.StoryAtHeight(_map.MiddleHeight(rocket) + 8 * 10), Is.EqualTo(2), "10 tics up it's in story 2");
+        Assert.That(MapManager.StoryAtHeight(_map.MiddleHeight(rocket) + 8 * 16), Is.EqualTo(3), "and at the end in story 3");
+    }
+
+    [Test]
+    public void A_Blast_Weakens_A_Tile_A_Story_Up_Or_Down()
+    {
+        Assert.That(Gameplay.Missiles.BlastFalloffAt(100, 3, 0, 0, 0, 0, stories: 2), Is.EqualTo(25));
+        Assert.That(Gameplay.Missiles.BlastFalloffAt(100, 3, 0, 0, 0, 0, stories: 3), Is.EqualTo(0), "out of its reach");
+        Assert.That(Gameplay.Missiles.BlastFalloffAt(100, 3, 0, 0, 0, 0), Is.EqualTo(100));
+    }
+
     [Test]
     public void An_Actors_Story_Is_Saved()
     {

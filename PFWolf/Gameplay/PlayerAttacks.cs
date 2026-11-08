@@ -155,7 +155,7 @@ internal sealed class PlayerAttacks(
     {
         PlayAttackSound();
 
-        var closest = FindShootCandidates().FirstOrDefault(c => c.Depth <= KnifeReach).Actor;
+        var closest = InKnifeReach().FirstOrDefault().Actor;
         if (closest == null)
         {
             // missed: a wall in reach takes the blow, if it's one the knife breaks
@@ -212,9 +212,17 @@ internal sealed class PlayerAttacks(
         session.PlayerState.Weapon is { } weapon && inventory.GetProperty(weapon, property) is { } value
         && (value is true || bool.TryParse(value.ToString(), out var b) && b);
 
+    /// <summary>The closest target in the sights with a clear line to it (what a shot would hit), if any</summary>
+    internal Entities.Actors.Actor? AimedTarget() =>
+        FindShootCandidates().Select(c => c.Actor).FirstOrDefault(a => lineOfSight.CheckLine(a, shot: true));
+
+    // What's in the sights within the knife's reach, nearest first: on the player's own story only
+    IEnumerable<ShotTarget> InKnifeReach() =>
+        FindShootCandidates().Where(c => c.Depth <= KnifeReach && map.OnPlayersStory(c.Actor));
+
     // The nearest enemy in the knife's reach, if it isn't going after anyone (AttackMode)
     Entities.Actors.Monster? UnawareInReach() =>
-        FindShootCandidates().FirstOrDefault(c => c.Depth <= KnifeReach).Actor is Entities.Actors.Monster monster
+        InKnifeReach().FirstOrDefault().Actor is Entities.Actors.Monster monster
         && !monster.RuntimeFlags.Has(ObjFlags.AttackMode) && monster.Hitpoints > 0 ? monster : null;
 
     // Degrees between two facings, 0 to 180
@@ -283,7 +291,8 @@ internal sealed class PlayerAttacks(
             int out_ = (int)Math.Min(HitPuffOut, dist / 2);
             at = (target.X + (int)(dx * out_ / dist), target.Y + (int)(dy * out_ / dist));
         }
-        SpawnPuff(puff, at.Value.X, at.Value.Y, z);
+        if (SpawnPuff(puff, at.Value.X, at.Value.Y, z) is { } spawned)
+            spawned.Story = target is Entities.Actors.PlayerPawn ? 0 : target.Story;     // on the target's story
     }
 
     /// <summary>
@@ -323,14 +332,15 @@ internal sealed class PlayerAttacks(
     }
 
     // A puff of that class at the point (global coordinates), so many texels up or down
-    void SpawnPuff(string className, int x, int y, double z = 0)
+    Entities.Actors.Actor? SpawnPuff(string className, int x, int y, double z = 0)
     {
         if (map.SpawnAt(className, x, y, session.Player) is not { } puff)
         {
             Console.WriteLine($"Hit puff: '{className}' isn't an actor.");
-            return;
+            return null;
         }
         puff.Z = z;
+        return puff;
     }
 
     /*
@@ -373,7 +383,7 @@ internal sealed class PlayerAttacks(
             double z = height > 0 ? (session.Random.RndT() / 255.0 * 2 - 1) * height : 0;
 
             Entities.Actors.Actor? hit = null;
-            var trace = lineOfSight.TraceShot(player.X, player.Y, angle, reach, (x, y) => (hit = PelletTarget(x, y)) != null);
+            var trace = lineOfSight.TraceShot(player.X, player.Y, angle, reach, (x, y) => (hit = PelletTarget(x, y, aim)) != null);
             if (hit != null)
             {
                 HitShotTarget(hit, PlayerDamage(damage));
@@ -389,13 +399,14 @@ internal sealed class PlayerAttacks(
     }
 
     // What a pellet at the point hits: a living enemy it passes close to (not on the player's
-    // side), or with others playing a rival player; null for none
-    Entities.Actors.Actor? PelletTarget(int x, int y)
+    // side), or with others playing a rival player; null for none. Off the player's story, only
+    // the one the shot's aimed at (it flies up or down to it).
+    Entities.Actors.Actor? PelletTarget(int x, int y, Entities.Actors.Actor? aim)
     {
         var shooter = session.Player;
         foreach (var actor in map.GetActors())
         {
-            if (actor.IsRemoved || actor == shooter)
+            if (actor.IsRemoved || actor == shooter || !map.OnPlayersStory(actor) && !ReferenceEquals(actor, aim))
                 continue;
             int size;
             if (actor is Entities.Actors.Monster monster)
@@ -451,7 +462,7 @@ internal sealed class PlayerAttacks(
                 return;
             if (inventory.GetIntProperty(weapon, "weapon.killrange", 0) is > 0 and var killRange)
             {
-                int dist = Math.Max(Math.Abs(closest.TileX - session.Player.TileX), Math.Abs(closest.TileY - session.Player.TileY));
+                int dist = map.TileDistance(closest, session.Player);
                 if (dist <= killRange && closest is Entities.Actors.Monster victim)
                     HitShotTarget(victim, (uint)Math.Max((int)victim.Hitpoints, 1));
                 return;
@@ -467,7 +478,7 @@ internal sealed class PlayerAttacks(
     internal void GunAttack(Entities.Actors.Actor ob, int near = 4, int mid = 6, int far = 6)
     {
         int damage;
-        int dx, dy, dist;
+        int dist;
 
         PlayAttackSound();
 
@@ -495,9 +506,7 @@ internal sealed class PlayerAttacks(
         // hit something
         //
         var player = session.Player;
-        dx = Math.Abs(closest.TileX - player.TileX);
-        dy = Math.Abs(closest.TileY - player.TileY);
-        dist = dx > dy ? dx : dy;
+        dist = map.TileDistance(closest, player);      // a story up or down counts as a tile
         if (dist < 2)
             damage = session.Random.RndT() / near;
         else if (dist < 4)

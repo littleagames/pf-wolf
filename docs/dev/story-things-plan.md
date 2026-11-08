@@ -120,6 +120,33 @@ wall tile it walks on top of has none), so sound and sleep go by that; chasing h
 player's tile, which may not be on its story's floor (it gets as near as it can). An A_BlockTile
 mark off the player's story isn't saved.
 
+Phase 4 done 2026-11-08 (ThingStoriesTests). A line between two actors where either is off the
+player's story (and any line along another story) is followed in 3D (LineOfSight.CheckLine3D),
+from one's middle (MapManager.MiddleHeight: half a story over its floor, plus its Z) to the
+other's, tile by tile: a tile stops it where the heights it crosses that tile at meet one of its
+blocks (the spans), anywhere on a door's tile off the player's story or with the door shut (as
+CheckLine), on a moving pushwall's or the map's edge; the two ends' tiles aren't checked. Two
+actors on the player's story keep vanilla's 2D line, so the demos are unchanged. Through it:
+enemies' sight and hitscan, A_JumpIfInSight, the player's auto-aim (the closest in the sights with
+a clear line, whatever its height) and their shots. Distances for aim and damage count a story as a
+tile (MapManager.TileDistance). Melee (the knife, bites and latching, Blake Stone's blows, the
+point-blank hit, a dog's lunge) only reaches the same story. Projectiles fired at or from another
+story (MapManager.AimAcrossStories: enemies' thrown and A_SpawnProjectile "aim" ones, the player's
+missiles without gravity at an enemy in the sights) take their shooter's story and climb or drop
+(ZSpeed) to meet the target; in flight they meet whatever story their middle is in
+(Projectiles.FlightStory): ActorAt[] and the players on the player's, else that story's solid tiles
+and things and the enemies on it, and the ground. A blast spreads across the floor of the story it
+goes off in, and reaches things on other stories within its radius (a story a tile) along a clear 3D
+line, its falloff by 3D distance; a player's pellets only hit off the player's story what the shot
+was aimed at. Hit puffs are put on their target's story. Sound goes by area, as before. Checked
+headless: E1M1 on story 2 with `wallheight 1`, a guard summoned on the street beside the player
+shoots them (100 → 3 health); on story 3 with `wallheight 2` one on the street behind a wall
+doesn't see them on the wall top.
+
+Approximations: diagonal walls count as whole blocks for a 3D line, and wall sprites' panels don't
+stop one; pellets fly along the player's story's walls; a blast only hits destructible walls on the
+player's story.
+
 ## Later
 
 - Things moving between stories: stairs and lifts (with the player's), enemies that fly up and

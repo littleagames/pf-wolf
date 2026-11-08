@@ -1010,6 +1010,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       a door, the player walking over it on the roofs, a barrel on the street not blocking the
       player above, `story` changed with guards on two stories, a save and load with a guard on the
       street (it's marked there again), a guard killed on the street dropping its clip there.
+- [ ] Fighting across stories (story-things-plan phase 4): a guard on the street shooting the
+      player a story up, one behind a wall not seeing them (headless, 2026-11-08). **(never tried)**
+      the player shooting down at a street guard on the Rooftops Demo (auto-aim, its blood puff on
+      the street), the knife and a dog's bite not reaching across stories, an officer's rocket
+      (Spear, A_SpawnProjectile "aim") climbing to a roof and stopping against a roof's edge, a
+      rocket's blast reaching the roof from the street, the arsenal-demo's grenade still arcing as
+      before.
 - [ ] Stories in the editor: the 3D view of MAP01 on story 2 (a mod's game-info), the door and
       things a story up on the door's frame (UI Automation screenshot, 2026-11-08). **(never
       tried)** typing 3-5, 1-2,4-8, 9 and 5-3 in the heights plane's Stories box (the value and the
