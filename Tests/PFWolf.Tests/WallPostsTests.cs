@@ -132,8 +132,138 @@ public class WallPostsTests
 
         // Assert
         Assert.That(_render.PostCount, Is.EqualTo(2));
-        Assert.That((_render.PostHeights[1], _render.PostStories[1], _render.PostLowerOfs[1], _render.PostUpperOfs[1]), Is.EqualTo(((short)100, (byte)2, 64, 128)));
+        Assert.That((_render.PostHeights[1], _render.PostStories[1], _render.PostLowerOfs[1], _render.PostUpperOfs[1]), Is.EqualTo(((short)100, (sbyte)2, 64, 128)));
         Assert.That((_render.PostPatchOfs[1], _render.PostPatchStory[1]), Is.EqualTo((5, (byte)1)));
+    }
+
+    [TestCase(0, 0)]                    // the player's floor: the floor row
+    [TestCase(1, -1)]                   // a story up: a whole story's pixels higher
+    [TestCase(-2, 2)]                   // two down
+    public void A_Storys_Row_Is_Measured_From_The_Floor_Row(int story, int stories)
+    {
+        short height = 160;             // half a story is 20 pixels
+        Assert.That(_posts.RowAt(height, story), Is.EqualTo(_posts.FloorRow(20) + stories * 40));
+    }
+
+    [Test]
+    public void Rows_Covered_From_The_Top_Or_Bottom_Close_In_And_Those_In_The_Middle_Dont()
+    {
+        // Arrange: a 160-row view, all open
+        _render.ViewHeight = 160;
+        _posts.StartColumn();
+
+        // Act / Assert
+        _posts.Occlude(-5, 20);
+        Assert.That((_render.OpenTop, _render.OpenBottom), Is.EqualTo((21, 159)));
+        _posts.Occlude(150, 200);
+        Assert.That((_render.OpenTop, _render.OpenBottom), Is.EqualTo((21, 149)));
+        _posts.Occlude(60, 70);         // a floating block: rows in the middle
+        Assert.That((_render.OpenTop, _render.OpenBottom), Is.EqualTo((21, 149)));
+        _posts.Occlude(10, 150);        // everything left
+        Assert.That(_render.ColumnOpen, Is.False);
+    }
+
+    [Test]
+    public void A_Walls_Stories_Are_Counted_From_The_Players_Floor()
+    {
+        _map.LevelWallStories = 8;
+        _map.Story = 3;
+        _posts.SetHitBlock(11, 10);
+        Assert.That((_render.HitFirst, _render.HitStories), Is.EqualTo((-2, 6)));     // stories 1 to 8, from story 3
+
+        _posts.SetHitBlock(11, 10, door: true);
+        Assert.That(_render.HitFirst, Is.Zero);                                         // a door is on the player's story
+    }
+
+    // A frame on story 3 of a level with a sky: the ground two stories down; a smaller view, so
+    // the tiles' rows are on screen
+    private void OnStory3()
+    {
+        _map.Story = 3;
+        _map.LevelWallStories = 3;
+        _render.ViewHeight = 160;
+        _render.HeightNumerator = 0x10000;
+        (_render.GroundStory, _render.CeilingStory, _render.TallestStory, _render.OpaqueCeiling) = (-2, 1, 1, false);
+        _posts.StartColumn();
+    }
+
+    [Test]
+    public void The_Ground_Under_Open_Tiles_Below_The_Player_Is_One_Cap_Across_Them()
+    {
+        // Arrange
+        OnStory3();
+
+        // Act: across two open tiles east of the view's
+        _posts.OpenTile(11, 10, 11 * Tile, 10 * Tile + Tile / 2, vertical: true);
+        _posts.CloseTile(12 * Tile, 10 * Tile + Tile / 2);
+        _posts.OpenTile(12, 10, 12 * Tile, 10 * Tile + Tile / 2, vertical: true);
+        _posts.CloseTile(13 * Tile, 10 * Tile + Tile / 2);
+        _posts.FinishColumn();
+
+        // Assert: a floor cap two stories down, from the first's near edge to the second's far one,
+        // drawn in the rows that were open
+        Assert.That(_render.PostCount, Is.EqualTo(1));
+        Assert.That((_render.PostCapUp[0], _render.PostCapStory[0]), Is.EqualTo((true, (sbyte)-2)));
+        Assert.That(_render.PostHeights[0], Is.EqualTo(_posts.HeightAt(11 * Tile, 10 * Tile + Tile / 2)));
+        Assert.That(_render.PostUnderside[0], Is.EqualTo(_posts.HeightAt(13 * Tile, 10 * Tile + Tile / 2)));
+        Assert.That((_render.PostClipTop[0], _render.PostClipBottom[0]), Is.EqualTo((0, 159)));
+        Assert.That(_render.OpenBottom, Is.EqualTo(_posts.RowAt(_render.PostUnderside[0], -2) - 1));
+    }
+
+    [Test]
+    public void Open_Tiles_At_The_Players_Floor_Queue_Nothing_But_Cover_The_Floor_Rows()
+    {
+        // Arrange: story 1, so the ground is the player's floor; a smaller view, so the rows are on screen
+        _render.ViewHeight = 160;
+        _render.HeightNumerator = 0x10000;
+        (_render.GroundStory, _render.CeilingStory, _render.TallestStory, _render.OpaqueCeiling) = (0, 1, 1, true);
+        _posts.StartColumn();
+
+        // Act: the view's own tile, then the next
+        _posts.OpenTile(10, 10, 0, 0, vertical: false, focal: true);
+        _posts.CloseTile(11 * Tile, 10 * Tile + Tile / 2);
+        _posts.OpenTile(11, 10, 11 * Tile, 10 * Tile + Tile / 2, vertical: true);
+        _posts.CloseTile(12 * Tile, 10 * Tile + Tile / 2);
+        _posts.FinishColumn();
+
+        // Assert: the level's flats draw it later; the rows it and the ceiling over it cover close in
+        short exit = _posts.HeightAt(12 * Tile, 10 * Tile + Tile / 2);
+        Assert.That(_render.PostCount, Is.Zero);
+        Assert.That(_render.OpenBottom, Is.EqualTo(_posts.RowAt(exit, 0) - 1));
+        Assert.That(_render.OpenTop, Is.EqualTo(_posts.RowAt(exit, 1)));
+    }
+
+    [Test]
+    public void Whats_Queued_Past_A_Nearer_Floor_Is_Clipped_Above_It()
+    {
+        // Arrange: on story 3, rows 120 down covered by a nearer floor
+        OnStory3();
+        _posts.Occlude(120, 159);
+
+        // Act
+        _posts.QueuePost(100, -2, 1, _render.NoTexture, 0, _render.NoTexture, 0, light: Lighting.NoShade);
+
+        // Assert: it's only drawn in the rows still open
+        Assert.That((_render.PostClipTop[0], _render.PostClipBottom[0]), Is.EqualTo((0, 119)));
+    }
+
+    [Test]
+    public void A_Floor_Block_Below_The_Player_Has_Its_Top_Drawn_At_Its_Height()
+    {
+        // Arrange: on story 3, a floor block from story 1 to 1 east of the view's tile
+        OnStory3();
+        _map.SpanStart = new byte[MapConstants.ClassicMapArea];
+        _map.SpanStop = new byte[MapConstants.ClassicMapArea];
+        (_map.SpanStart[_map.TileIndex(11, 10)], _map.SpanStop[_map.TileIndex(11, 10)]) = (1, 1);
+
+        // Act
+        _posts.OpenTile(11, 10, 11 * Tile, 10 * Tile + Tile / 2, vertical: true);
+        _posts.CloseTile(12 * Tile, 10 * Tile + Tile / 2);
+        _posts.FinishColumn();
+
+        // Assert: its top is a story below the player's floor
+        Assert.That(_render.PostCount, Is.EqualTo(1));
+        Assert.That((_render.PostCapUp[0], _render.PostCapStory[0]), Is.EqualTo((true, (sbyte)-1)));
     }
 
     [Test]

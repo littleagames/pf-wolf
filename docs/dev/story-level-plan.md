@@ -148,6 +148,29 @@ from the story above the player's. Pit code gone. Done early from phase 4: Level
 Story field. At story 1 the renderer already draws floor tiles' solid blocks (their sides) and
 overhead blocks from their own start story with their own texture; any other story is phase 2.
 
+Phase 2 done 2026-11-08. The trace counts heights in stories from the player's floor
+(RenderState.ZBase/GroundStory/CeilingStory/TallestStory, set by WallPosts.StartFrame); textures
+repeat up from the ground. Each tile crossed is opened (OpenTile) and closed (CloseTile): an open
+tile's block queues its near face and, overhead, its underside; a tile whose floor isn't the
+player's queues a floor cap at its height (a run of them at one height as one post, each pixel
+taking its tile's floor flat). Caps are `DrawUnderside` generalised (up or down, any story).
+Everything queued is clipped to the rows nothing nearer covered yet (OpenTop..OpenBottom),
+because the player's floor and the level's ceiling are still the row-by-row DrawLevelFlats pass
+after the walls; the column stops once no rows are open (that replaces "go past a wall while a
+taller one could show"). An opaque ceiling (no sky, no tile skies) covers rows from the top and
+clips walls at its height; with a sky, rows above the tallest block at the current distance count
+as covered. Runs of plain tiles (no block, floor at the player's height) are only measured when
+they end, to keep flat levels fast. Arches are open tiles' overhead blocks now (OpenArch is gone);
+door lintels keep CloseArch.
+
+Checked: 14 story-1 screenshots (E1M1, tall-walls-demo, skies-demo, architecture-demo, with
+pitch) pixel-identical to phase 1's build (only BJ's status-bar face differs, which animates at
+random); headless screenshots at stories 2, 3 and 8 (a bridge, a raised row with flats sides,
+an overhead block under a sky, rooftops). Walls cost at 1080p (E1M1): Release 1.32 → 1.61 ms,
+Debug about 4.7 → 5.6 ms. Left for phase 3: doors on a story above 1 (nothing under them yet),
+see-through doors, diagonals' open halves, pushwalls, wall sprites, sprites standing on lower
+floors, weather and particles at height, tile floor skies on caps, the automap.
+
 ## Later
 
 - Lifts and stairs: an action to change the player's story, saved with the level.

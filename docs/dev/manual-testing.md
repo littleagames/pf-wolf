@@ -422,7 +422,12 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
 **Stories** (plane-3 blocks with a start and stop, game-info `story`; docs/dev/story-level-plan.md)
 - [ ] **(never tried)** `story 3` in E1M1 (cheat): its walls (up to story 1) are walked through,
       `wallheight 3` makes them solid again; `height 3-5` on a wall, then `story` 1, 4 and 6: solid
-      only on 4; `where` says what each is. (Drawn right only from phase 2.)
+      only on 4; `where` says what each is.
+- [ ] Drawn at stories 2, 3 and 8: walls going down to the ground, a bridge of floor blocks over
+      drops, a raised row's sides and top, an overhead block's underside under a sky, rooftops
+      from above (headless screenshots, 2026-11-08). **(never tried)** walking along a bridge and
+      off its end, turning round over a drop, a very low eye height, high `vid_scale`, a level
+      with a colored ceiling and blocks taller than it (hidden).
 - [ ] **(never tried)** A pushwall pushed and stopped, then `story` changed and back: it's still
       there (its wall id is on plane 0 where it stopped).
 - [ ] **(never tried)** A floor tile with a block solid at the player's story, drawn with its

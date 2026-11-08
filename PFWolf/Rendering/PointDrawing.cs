@@ -85,16 +85,18 @@ internal sealed class PointDrawing(
             int floor = floorRow(half);
             int top = floor - render.PostStories[i] * 2 * half;
             int bottom = floor - 1 - render.PostFirstStory[i] * 2 * half;
-            // a post under the floor is only drawn down the pit in front of it
-            top = Math.Max(top, render.PostClipTop[i]);
-            bottom = Math.Min(bottom, render.PostClipBottom[i]);
-
             // an arch's underside is above all that's past it too, up to where the trace leaves it
-            if (render.PostUnderside[i] != 0)
+            // (a floor at another height hides nothing above it)
+            if (render.PostUnderside[i] != 0 && !render.PostCapUp[i])
             {
                 int exithalf = render.PostUnderside[i] >> 3;
-                bottom = Math.Max(bottom, floorRow(exithalf) - render.PostFirstStory[i] * 2 * exithalf - 1);
+                if (exithalf <= 0) exithalf = 100;
+                bottom = Math.Max(bottom, floorRow(exithalf) - render.PostCapStory[i] * 2 * exithalf - 1);
             }
+
+            // a post is only drawn in the rows open when it was queued
+            top = Math.Max(top, render.PostClipTop[i]);
+            bottom = Math.Min(bottom, render.PostClipBottom[i]);
 
             occheight[at] = render.PostHeights[i];
             occtop[at] = (short)Math.Clamp(top, short.MinValue, short.MaxValue);

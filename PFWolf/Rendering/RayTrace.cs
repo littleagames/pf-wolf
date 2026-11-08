@@ -26,6 +26,7 @@ internal sealed class RayTrace(
         int pwallposnorm=0, pwallposinv=0, pwallposi=0;           // holds modified PWall.Pos
         render.SizeCovers(render.ViewWidth);
         render.AnySeeThrough = false;
+        posts.StartFrame();
 
         for (render.PixX = 0; render.PixX < render.ViewWidth; render.PixX++)
         {
@@ -94,9 +95,9 @@ internal sealed class RayTrace(
             // wall with no texture (the solid edge round an open map) draws none, and mustn't
             // leave the depth an earlier frame had
             render.WallHeight[render.PixX] = 0;
-            render.ColumnTallest = 0;
-            render.ColumnTop = render.ViewHeight;
             render.SeeThroughCount[render.PixX] = 0;
+            posts.StartColumn();
+            posts.OpenTile(render.FocalTx, render.FocalTy, 0, 0, false, focal: true);
             bool focalhit = false;              // hit a wall in the view's own tile: no trace
 
             //
@@ -106,7 +107,7 @@ internal sealed class RayTrace(
             if (render.HitPushwall)
             {
                 pushWalls.SelectPushWall(render.FocalTx, render.FocalTy);
-                render.HitStories = map.WallStories(pushWalls.PWall.X, pushWalls.PWall.Y);
+                posts.SetHitBlock(pushWalls.PWall.X, pushWalls.PWall.Y);
                 if ((pushWalls.PWall.Dir == ControlDir.East && render.XTileStep == 1) || (pushWalls.PWall.Dir == ControlDir.West && render.XTileStep == -1))
                 {
                     yinttemp = render.YIntercept - ((ystep * (64 - pushWalls.PWall.Pos)) >> 6);
@@ -161,7 +162,7 @@ internal sealed class RayTrace(
                     render.XTileStep * MapConstants.TileGlobal, ystep))
                 {
                     render.TileHit = map.TileMap[render.FocalTx, render.FocalTy];
-                    render.HitStories = map.WallStories(render.FocalTx, render.FocalTy);
+                    posts.SetHitBlock(render.FocalTx, render.FocalTy);
                     hits.HitDiagWall(focalshape, render.FocalTx, render.FocalTy);
                     MarkSeen(render.FocalTx, render.FocalTy, SeenFlags.DiagonalFace);
                     focalhit = true;
@@ -171,19 +172,17 @@ internal sealed class RayTrace(
             {
                 posts.OpenFocalDoorArch(doors.DoorObjList[map.TileMap[render.FocalTx, render.FocalTy] & ~GameConstants.BitDoor].Vertical);
             }
-            else if (posts.IsArch(render.FocalTx, render.FocalTy))
-            {
-                posts.OpenFocalArch();
-            }
 
             //
-            // trace along this angle until we hit a wall, and on past it while a taller wall
-            // could still show over the top: a wall that is hit and passed is traced through
-            // from where the trace entered its tile, as if it were open floor
+            // trace along this angle until we hit a wall, and on past it while rows are left
+            // that something farther could show in (over it, or under one that doesn't reach the
+            // ground): a wall that is hit and passed is traced through from where the trace
+            // entered its tile, as if it were open floor. Open tiles' floors, blocks and the
+            // ceiling close rows too.
             //
             // CORE LOOP!
             //
-            while (!focalhit)
+            while (!focalhit && render.ColumnOpen)
             {
                 //
                 // check intersections with vertical walls
@@ -222,6 +221,7 @@ internal sealed class RayTrace(
                 }
             }
 
+            posts.FinishColumn();
             posts.DrawPosts();
         }
     }
@@ -231,12 +231,18 @@ internal sealed class RayTrace(
         // the pushwall cases below move YIntTile, so keep the tile the trace entered for the automap
         int hitx = render.XTile, hity = render.YIntTile;
         posts.CloseArch(posts.VertEdge, render.YIntercept);
+        posts.CloseTile(posts.VertEdge, render.YIntercept);
         posts.EnterTileLight(render.XTile - render.XTileStep, render.YIntTile);
+        posts.OpenTile(hitx, hity, posts.VertEdge, render.YIntercept, true);
         render.TileHit = map.TileMap[render.XTile, render.YIntTile];
         render.HitPushwall = render.TileHit == GameConstants.BitWall;
         if (render.HitPushwall)
+        {
             pushWalls.SelectPushWall(hitx, hity);     // which of the moving MovingWalls this is
-        render.HitStories =render.TileHit == GameConstants.BitWall ? map.WallStories(pushWalls.PWall.X, pushWalls.PWall.Y) : map.WallStories(hitx, hity);
+            posts.SetHitBlock(pushWalls.PWall.X, pushWalls.PWall.Y);
+        }
+        else
+            posts.SetHitBlock(hitx, hity, door: (render.TileHit & GameConstants.BitDoor) != 0);
 
         if (render.TileHit != 0)
         {
@@ -463,8 +469,6 @@ internal sealed class RayTrace(
         //
         // mark the tile as visible and setup for next step
         //
-        if (posts.IsArch(render.XTile, render.YIntTile))
-            posts.OpenArch(render.XTile, render.YIntTile, posts.VertEdge, render.YIntercept, true);
         PassVert(ystep);
         return false;
     }
@@ -483,12 +487,18 @@ internal sealed class RayTrace(
         // the pushwall cases below move XIntTile, so keep the tile the trace entered for the automap
         int hitx = render.XIntTile, hity = render.YTile;
         posts.CloseArch(render.XIntercept, posts.HorizEdge);
+        posts.CloseTile(render.XIntercept, posts.HorizEdge);
         posts.EnterTileLight(render.XIntTile, render.YTile - render.YTileStep);
+        posts.OpenTile(hitx, hity, render.XIntercept, posts.HorizEdge, false);
         render.TileHit = map.TileMap[render.XIntTile, render.YTile];
         render.HitPushwall = render.TileHit == GameConstants.BitWall;
         if (render.HitPushwall)
+        {
             pushWalls.SelectPushWall(hitx, hity);     // which of the moving MovingWalls this is
-        render.HitStories =render.TileHit == GameConstants.BitWall ? map.WallStories(pushWalls.PWall.X, pushWalls.PWall.Y) : map.WallStories(hitx, hity);
+            posts.SetHitBlock(pushWalls.PWall.X, pushWalls.PWall.Y);
+        }
+        else
+            posts.SetHitBlock(hitx, hity, door: (render.TileHit & GameConstants.BitDoor) != 0);
 
         if (render.TileHit != 0)
         {
@@ -716,8 +726,6 @@ internal sealed class RayTrace(
         //
         // mark the tile as visible and setup for next step
         //
-        if (posts.IsArch(render.XIntTile, render.YTile))
-            posts.OpenArch(render.XIntTile, render.YTile, render.XIntercept, posts.HorizEdge, false);
         PassHoriz(xstep);
         return false;
     }

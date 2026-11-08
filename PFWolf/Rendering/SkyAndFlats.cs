@@ -338,6 +338,12 @@ internal sealed partial class SkyAndFlats(
     byte frameFloorColor;
     bool skyBehind, floorSkyBehind;
 
+    /// <summary>This frame's floor color: a floor at another height with no flat (WallPosts' caps)</summary>
+    internal byte FloorColorNow => frameFloorColor;
+
+    /// <summary>Whether this frame has a sky over the level (a picture, stars or clouds): the ceiling isn't opaque</summary>
+    internal bool SkyShows => skyBehind;
+
     /// <summary>
     /// Casts the floor and ceiling flats over what VGAClearScreen drew, after the walls (WallRefresh),
     /// into only the rows they left: a wall's rows would just be drawn over.
@@ -351,7 +357,8 @@ internal sealed partial class SkyAndFlats(
         // A tile's own sky shows whatever the switches say: it's not a texture.
         bool showFloors = ShowFloors(), showCeilings = ShowCeilings();
         bool floorflats = map.HasFloorFlats && showFloors || map.HasFloorSkies || (lighting.HasZones || actorLights.HasLights) && !floorSkyBehind;
-        bool ceilingflats = map.HasCeilingFlats && showCeilings || map.HasCeilingSkies || (lighting.HasZones || actorLights.HasLights) && !skyBehind;
+        bool ceilingflats = (map.HasCeilingFlats && showCeilings || map.HasCeilingSkies || (lighting.HasZones || actorLights.HasLights) && !skyBehind)
+            && CeilingStories * GameConstants.TextureSize > render.ViewEyeZ;     // a ceiling below the eyes is never seen
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
@@ -643,7 +650,10 @@ internal sealed partial class SkyAndFlats(
     // ShadeOffset for screen row y of a floor or ceiling halves half stories from the eye (as DrawFlats)
     // How far the floor, and the ceiling at the top of the level's walls, are from the eye, in half stories
     internal double FloorHalves => EyeHalves(0);
-    internal double CeilingHalves => EyeHalves(map.LevelWallStories * GameConstants.TextureSize);
+    internal double CeilingHalves => EyeHalves(CeilingStories * GameConstants.TextureSize);
+
+    // The level's ceiling (the top of its walls), in stories up from the player's floor
+    int CeilingStories => map.LevelWallStories - map.Story + 1;
 
     int FlatRowShadeOffset(int y, double halves) =>
         lighting.Shading ? lighting.ShadeOffset((long)(render.HeightNumerator * 32.0 * halves / Math.Abs(y + 0.5 - render.CenterY))) : 0;

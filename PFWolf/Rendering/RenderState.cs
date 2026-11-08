@@ -10,7 +10,7 @@ namespace PFWolf.Rendering;
 /// </summary>
 internal sealed class RenderState
 {
-    internal const int MaxPosts = 24;
+    internal const int MaxPosts = 48;
 
     //
     // projection: the view window and how the world is projected into it
@@ -78,15 +78,17 @@ internal sealed class RenderState
     internal readonly sbyte[] PostFirstStory = new sbyte[MaxPosts];  // below 0: stories under the floor
     internal readonly int[] PostClipTop = new int[MaxPosts];         // the only rows it's drawn in
     internal readonly int[] PostClipBottom = new int[MaxPosts];
-    internal readonly byte[] PostStories = new byte[MaxPosts];
+    internal readonly sbyte[] PostStories = new sbyte[MaxPosts];     // the story above its top (0 or below: under the floor)
     internal readonly TextureAsset[] PostLower = new TextureAsset[MaxPosts];
     internal readonly int[] PostLowerOfs = new int[MaxPosts];
     internal readonly TextureAsset[] PostUpper = new TextureAsset[MaxPosts];
     internal readonly int[] PostUpperOfs = new int[MaxPosts];
     internal readonly int[] PostScrollRow = new int[MaxPosts];          // texels down a scroller has moved it
-    internal readonly short[] PostUnderside = new short[MaxPosts];     // an arch's: the height where the trace leaves
+    internal readonly short[] PostUnderside = new short[MaxPosts];     // a cap's: the height where the trace leaves (0: none)
     internal readonly TextureAsset?[] PostUnderTexture = new TextureAsset?[MaxPosts];
-    internal readonly bool[] PostUnderFlat = new bool[MaxPosts];         // the underside's texture is a ceiling
+    internal readonly bool[] PostUnderFlat = new bool[MaxPosts];         // the cap's texture is a flat
+    internal readonly sbyte[] PostCapStory = new sbyte[MaxPosts];       // the story the cap is at the bottom of
+    internal readonly bool[] PostCapUp = new bool[MaxPosts];            // a floor (its top) rather than an underside
     internal readonly byte[][] PostLight = new byte[MaxPosts][];        // its face's light row
     internal readonly TextureAsset?[] PostPatch = new TextureAsset?[MaxPosts];     // a wall patch over it
     internal readonly int[] PostPatchOfs = new int[MaxPosts];
@@ -96,7 +98,7 @@ internal sealed class RenderState
     // the rows each column's walls painted (DrawPost, DrawUnderside), as top and bottom row pairs:
     // the flats are cast after the walls, only into the rows left (SkyAndFlats.DrawFlats)
     //
-    internal const int MaxCovers = 2 * MaxPosts;     // a post and its arch's underside each
+    internal const int MaxCovers = 2 * MaxPosts;     // a post and its cap each
     internal int[] CoverCount = [];
     internal int[] CoverTop = [], CoverBottom = [];    // column x's are from x * MaxCovers
 
@@ -148,10 +150,56 @@ internal sealed class RenderState
 
     internal int HitTile = -1;
     internal short PostHeight;         // the height (as WallHeight) of the post ScalePost queues
-    internal int HitStories;            // how many stories tall the wall the trace just hit is
+    internal int HitFirst;              // the wall the trace just hit: the story its block starts at,
+    internal int HitStories;            // and the one it stops below, counted up from the player's floor (0)
     internal bool ColumnHit;            // this column's trace has hit a wall: WallHeight is set
-    internal int ColumnTallest;         // the most stories of any wall it has hit
-    internal int ColumnTop;             // the highest screen row any of them reach
+
+    //
+    // stories: heights in the trace are counted in stories up from the player's floor (story 0,
+    // the player's story; below it negative). Set for the frame by WallPosts.StartFrame.
+    //
+    internal int ZBase;                 // texels from the ground up to the player's floor: textures repeat up from the ground
+    internal int GroundStory;           // the ground, in stories from the player's floor (0 or below)
+    internal int CeilingStory;          // the level's ceiling (the top of its walls)
+    internal bool OpaqueCeiling;        // no sky: the ceiling hides what's above it, and clips the walls
+    internal int TallestStory;          // the top of the tallest block anywhere
+
+    // the rows of this column nothing nearer has covered yet, from the top or from the bottom:
+    // farther posts are clipped to them, and the trace stops once there are none
+    internal int OpenTop, OpenBottom;
+    internal bool ColumnOpen => OpenTop <= OpenBottom;
+
+    //
+    // the tile the trace is crossing, and what it queues as it leaves (WallPosts.OpenTile)
+    //
+    internal bool CellOpen;
+    internal bool CellPlain;            // no block, its floor the player's: only what it covers counts
+    internal bool CellFocal;
+    internal int CellEdgeX, CellEdgeY;  // where the trace entered it
+    internal int CellX, CellY;
+
+    // a run of plain tiles, what they cover worked out once it ends (the edges it starts and ends at)
+    internal bool PlainOpen, PlainFocal;
+    internal int PlainEntryX, PlainEntryY, PlainExitX, PlainExitY;
+    internal short CellEntry;           // the height (as WallHeight) where the trace entered it (short.MaxValue: the view is in it)
+    internal bool CellFace;             // its block's near face is queued as it's left
+    internal int CellFirst, CellTop;    // that block's stories
+    internal TextureAsset? CellTexture;
+    internal int CellOfs;
+    internal byte[] CellLight;
+    internal bool CellOverhead;         // the block is overhead: its underside shows
+    internal TextureAsset? CellUnderside;
+    internal bool CellUnderFlat;
+    internal bool CellFloorCap;         // its floor isn't the player's: drawn at CellFloor as it's left
+    internal int CellFloor;
+    internal bool CellCeiling;          // the level's ceiling shows over it (opaque: it covers rows)
+
+    // a run of tiles' floors at one height, drawn as one cap from where the run starts to where it
+    // ends, clipped to the rows open when it started
+    internal bool RunOpen;
+    internal int RunFloor;
+    internal short RunEntry, RunExit;
+    internal int RunClipTop, RunClipBottom;
 
     // the wall patch for the post ScalePost queues, if it has one
     internal TextureAsset? PatchSource;
@@ -181,5 +229,6 @@ internal sealed class RenderState
         this.NoTexture = notexture;
         PostSource = notexture;
         ArchLight = noshade;
+        CellLight = noshade;
     }
 }

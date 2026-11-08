@@ -53,7 +53,12 @@ internal sealed class WallPosts(
     internal void ScalePost(int drawn = 0)
     {
         var upper = render.UpperSource ?? render.PostSource;
-        QueuePost(render.PostHeight, 0, drawn > 0 ? drawn : render.HitStories, render.PostSource, render.PostOfs, upper, render.UpperSource != null ? render.UpperOfs : render.PostOfs,
+        int first = render.HitFirst;
+        int top = drawn > 0 ? first + drawn : render.HitStories;
+        if (render.OpaqueCeiling)
+            top = Math.Min(top, render.CeilingStory);       // the ceiling hides what's above it
+        top = Math.Max(top, first);
+        QueuePost(render.PostHeight, first, top, render.PostSource, render.PostOfs, upper, render.UpperSource != null ? render.UpperOfs : render.PostOfs,
             patch: render.PatchSource, patchofs: render.PatchOfs, patchstory: render.PatchStory, scrollrow: render.ScrollRow);
         render.UpperSource = null;
         render.PatchSource = null;
@@ -69,9 +74,278 @@ internal sealed class WallPosts(
             render.ColumnHit = true;
         }
 
-        int half = Math.Max(render.PostHeight >> 3, 1);
-        render.ColumnTop = Math.Min(render.ColumnTop, FloorRow(half) - render.HitStories * 2 * half);
-        render.ColumnTallest = Math.Max(render.ColumnTallest, render.HitStories);
+        Occlude(RowAt(render.PostHeight, top), RowAt(render.PostHeight, first) - 1);
+    }
+
+    /// <summary>
+    /// The story the wall the trace has just hit starts at and the one above its top, counted up
+    /// from the player's floor (HitFirst, HitStories); a door is on the player's story, up to its
+    /// lintel's top
+    /// </summary>
+    internal void SetHitBlock(int tilex, int tiley, bool door = false)
+    {
+        int story = map.Story;
+        render.HitFirst = door ? 0 : map.BlockStart(tilex, tiley) - story;
+        render.HitStories = map.WallStories(tilex, tiley) - story + 1;
+    }
+
+    /*
+    ====================
+    =
+    = Stories
+    =
+    = Heights in a column are counted in stories up from the player's floor: story 0 is the
+    = player's, those below it negative. A row for a height at a distance is RowAt. The trace
+    = queues the posts nearest first, and each is clipped to the rows nothing nearer has covered
+    = yet (OpenTop to OpenBottom): the floor at the player's height and the level's ceiling are
+    = drawn after the walls into the rows left (SkyAndFlats.DrawLevelFlats), so nothing farther
+    = may paint over where they show. The column is done once no rows are left open.
+    =
+    ====================
+    */
+
+    /// <summary>Gets the frame's stories ready, from the player's story and the level's walls</summary>
+    internal void StartFrame()
+    {
+        int story = map.Story;
+        render.ZBase = (story - 1) * GameConstants.TextureSize;
+        render.GroundStory = 1 - story;
+        render.CeilingStory = map.LevelWallStories - story + 1;
+        render.TallestStory = map.MaxWallStories - story + 1;
+        render.OpaqueCeiling = !skyAndFlats.SkyShows && !map.HasCeilingSkies
+            && render.CeilingStory * GameConstants.TextureSize > render.ViewEyeZ;
+    }
+
+    /// <summary>Gets a column ready to trace: every row open, no tile or floor run open</summary>
+    internal void StartColumn()
+    {
+        render.OpenTop = 0;
+        render.OpenBottom = render.ViewHeight - 1;
+        render.CellOpen = render.RunOpen = render.PlainOpen = false;
+    }
+
+    /// <summary>Finishes a column's trace: what's still waiting to be queued is</summary>
+    internal void FinishColumn()
+    {
+        FlushPlain();
+        FlushRun();
+    }
+
+    // Half a story's height in pixels for a post height (as WallHeight), as DrawPost takes it
+    static int PostHalf(short height) => height >> 3 is > 0 and var half ? half : 100;
+
+    /// <summary>The screen row of the bottom of story <paramref name="story"/> (from the player's floor) for something height high (as WallHeight)</summary>
+    internal int RowAt(short height, int story) => RowAtHalf(PostHalf(height), story);
+
+    int RowAtHalf(int half, int story) => FloorRow(half) - story * 2 * half;     // a half's at most 4095, a story at most 8 either way
+
+    /// <summary>
+    /// Something nearer covers rows top to bottom: if they reach the open rows' top or bottom,
+    /// those close in (rows in the middle leave them as they are)
+    /// </summary>
+    internal void Occlude(int top, int bottom)
+    {
+        if (top < 0) top = 0;
+        if (bottom > render.ViewHeight - 1) bottom = render.ViewHeight - 1;
+        if (top > bottom)
+            return;
+        if (top <= render.OpenTop && bottom >= render.OpenTop)
+            render.OpenTop = bottom + 1;
+        if (bottom >= render.OpenBottom && top <= render.OpenBottom)
+            render.OpenBottom = top - 1;
+    }
+
+    /// <summary>
+    /// The trace enters a tile at (TileX, TileY) across the edge at (edgex, edgey) (focal: the view
+    /// is in it); vertical says it's an edge along x = constant. What it shows is queued as the
+    /// trace leaves it (CloseTile): an open tile's block's near face, its underside if it's
+    /// overhead, and the tile's floor where it isn't at the player's height (a block's top below
+    /// the player, else the ground). A wall's face is WallHits'.
+    /// </summary>
+    internal void OpenTile(int tilex, int tiley, int edgex, int edgey, bool vertical, bool focal = false)
+    {
+        render.CellOpen = true;
+        render.CellFocal = focal;
+        render.CellEdgeX = edgex;
+        render.CellEdgeY = edgey;
+
+        int i = map.TileIndex(tilex, tiley);
+        int stop = (uint)i < (uint)map.SpanStop.Length ? map.SpanStop[i] : 0;
+        var tile = map.TileMap[tilex, tiley];
+        render.CellPlain = tile == 0 && stop == 0 && render.GroundStory == 0;
+        if (render.CellPlain)
+            return;                     // most of them: see CloseTile
+
+        int start = stop != 0 ? map.SpanStart[i] : 0;
+        int story = map.Story;
+        render.CellX = tilex;
+        render.CellY = tiley;
+        render.CellEntry = focal ? short.MaxValue : HeightAt(edgex, edgey);
+        render.CellFace = render.CellOverhead = false;
+        render.CellFloor = 0;
+        if (tile != 0)
+        {
+            // a door's or a moving pushwall's floor is the player's; a wall the trace goes on past
+            // stands on the ground, or over it from a story up
+            if ((tile & GameConstants.BitDoor) == 0 && tile != GameConstants.BitWall && stop != 0)
+                render.CellFloor = start > 1 ? render.GroundStory : int.MinValue;
+        }
+        else if (stop == 0)
+            render.CellFloor = render.GroundStory;       // open all the way down
+        else
+        {
+            render.CellFirst = start - story;
+            render.CellTop = stop - story + 1;
+            render.CellOverhead = start > story;
+            render.CellFloor = render.CellOverhead ? render.GroundStory : render.CellTop;
+
+            // its own texture, else a wall's at the end of its run, else one beside it
+            bool mirrored = false;
+            var texture = focal ? null : BlockFaceTexture(tilex, tiley, vertical, out mirrored);
+            if (texture != null)
+            {
+                render.CellFace = true;
+                render.CellTexture = texture;
+                render.CellLight = WallLight(edgex, edgey);
+                render.CellOfs = vertical
+                    ? LintelColumn(edgey, (render.XTileStep == -1) != mirrored)
+                    : LintelColumn(edgex, (render.YTileStep == 1) != mirrored);
+            }
+            if (render.CellOverhead)
+            {
+                (render.CellUnderside, render.CellUnderFlat) = UndersideOf(tilex, tiley, texture);
+                if (focal)
+                    render.CellLight = lighting.LightAt(render.HitTile, render.ViewX, render.ViewY);
+            }
+        }
+    }
+
+    // The texture on a block's face seen going the way the trace is: its own (a wall's, or a floor
+    // tile's flats sides), else the wall ending its run of arch tiles, else a wall beside it
+    TextureAsset? BlockFaceTexture(int tilex, int tiley, bool vertical, out bool mirrored)
+    {
+        int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
+        var face = SeenFace(vertical);
+        return wallTexture(tilex, tiley, face, out mirrored)
+            ?? ArchEndTexture(tilex, tiley, -dx, -dy, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dx, dy, face, out mirrored)
+            ?? ArchEndTexture(tilex, tiley, -dy, -dx, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dy, dx, face, out mirrored);
+    }
+
+    // An overhead block's underside: the tile's ceiling flat, else its own texture, else the run's
+    (TextureAsset? Texture, bool Flat) UndersideOf(int tilex, int tiley, TextureAsset? face)
+    {
+        if (map.MapSpot(tilex, tiley, MapManager.FlatPlane) >> 8 != 0 && map.CeilingFlat[map.TileIndex(tilex, tiley)] is { } flat)
+            return (flat, true);
+        return (wallTexture(tilex, tiley, "north", out _) ?? ArchUndersideTexture(tilex, tiley) ?? face, false);
+    }
+
+    /// <summary>
+    /// The trace leaves the tile it's crossing across the edge at (edgex, edgey): its block's face
+    /// and underside, and its floor, are queued (a run of floors at one height as one), and the
+    /// rows they, the player's floor there and an opaque ceiling over it cover close in
+    /// </summary>
+    internal void CloseTile(int edgex, int edgey)
+    {
+        if (!render.CellOpen)
+            return;
+        render.CellOpen = false;
+
+        if (render.CellPlain)
+        {
+            // one more tile of a run of them
+            if (!render.PlainOpen)
+            {
+                render.PlainOpen = true;
+                (render.PlainEntryX, render.PlainEntryY, render.PlainFocal) = (render.CellEdgeX, render.CellEdgeY, render.CellFocal);
+            }
+            (render.PlainExitX, render.PlainExitY) = (edgex, edgey);
+            return;
+        }
+        FlushPlain();
+
+        short entry = render.CellEntry;
+        short exit = HeightAt(edgex, edgey);
+        if (exit == 0)
+            exit = 1;
+
+        int first = render.CellFirst;
+        int top = render.CellTop;
+        if (render.OpaqueCeiling)
+            top = Math.Min(top, render.CeilingStory);
+        bool face = render.CellFace && top > first;
+        bool under = render.CellOverhead && render.CellUnderside != null && (!render.OpaqueCeiling || first < render.CeilingStory);
+        if (face || under)
+        {
+            QueuePost(entry, first, Math.Max(top, first), face ? render.CellTexture! : render.NoTexture, render.CellOfs,
+                face ? render.CellTexture! : render.NoTexture, render.CellOfs,
+                under ? exit : (short)0, render.CellUnderside, render.CellLight, render.CellUnderFlat, capstory: first, capup: false);
+            if (face)
+                Occlude(RowAt(entry, top), RowAt(entry, first) - 1);
+            if (under)
+                Occlude(RowAt(entry, first), RowAt(exit, first) - 1);
+        }
+
+        // its floor: the player's (drawn with the level's flats), else a cap at its height
+        if (render.CellFloor == 0)
+        {
+            FlushRun();
+            Occlude(RowAt(exit, 0), RowAt(entry, 0) - 1);
+        }
+        else if (render.CellFloor != int.MinValue)
+            AddFloorRun(render.CellFloor, entry, exit);
+
+        // the ceiling over it covers from the top; with a sky, nothing farther shows above the
+        // tallest block there is
+        if (render.OpaqueCeiling)
+            Occlude(RowAt(entry, render.CeilingStory), RowAt(exit, render.CeilingStory) - 1);
+        else
+            render.OpenTop = Math.Max(render.OpenTop, RowAt(exit, render.TallestStory));
+    }
+
+    // A run of plain tiles ends: the player's floor and the ceiling over them close in the open rows
+    void FlushPlain()
+    {
+        if (!render.PlainOpen)
+            return;
+        render.PlainOpen = false;
+        FlushRun();
+        short entry = render.PlainFocal ? short.MaxValue : HeightAt(render.PlainEntryX, render.PlainEntryY);
+        short exit = HeightAt(render.PlainExitX, render.PlainExitY);
+        if (exit == 0)
+            exit = 1;
+        Occlude(RowAt(exit, 0), RowAt(entry, 0) - 1);
+        if (render.OpaqueCeiling)
+            Occlude(RowAt(entry, render.CeilingStory), RowAt(exit, render.CeilingStory) - 1);
+        else
+            render.OpenTop = Math.Max(render.OpenTop, RowAt(exit, render.TallestStory));
+    }
+
+    // A floor at story floor from where the trace entered a tile to where it left: one more tile of
+    // the run of floors at that height, or the start of a run
+    void AddFloorRun(int floor, short entry, short exit)
+    {
+        if (!(render.RunOpen && render.RunFloor == floor))
+        {
+            FlushRun();
+            render.RunOpen = true;
+            render.RunFloor = floor;
+            render.RunEntry = entry;
+            render.RunClipTop = render.OpenTop;
+            render.RunClipBottom = render.OpenBottom;
+        }
+        render.RunExit = exit;
+        Occlude(RowAt(exit, floor), RowAt(entry, floor) - 1);
+    }
+
+    // Queues the run of floors, if there is one: a cap with each tile's floor flat
+    void FlushRun()
+    {
+        if (!render.RunOpen)
+            return;
+        render.RunOpen = false;
+        QueuePost(render.RunEntry, render.RunFloor, render.RunFloor, render.NoTexture, 0, render.NoTexture, 0,
+            render.RunExit, null, render.CellLight, true, capstory: render.RunFloor, capup: true,
+            cliptop: render.RunClipTop, clipbottom: render.RunClipBottom, fromRun: true);
     }
 
     /// <summary>
@@ -102,14 +376,30 @@ internal sealed class WallPosts(
         render.UpperSource = null;
     }
 
+    /// <summary>
+    /// Queues a post: stories firststory up to (not including) stories, counted from the
+    /// player's floor, and a cap (underside: the height where the trace leaves, 0 for none) at the
+    /// bottom of story capstory, a floor (capup) or an underside. It's clipped to the rows open
+    /// now (or cliptop to clipbottom), after any run of floors waiting is queued before it.
+    /// </summary>
     internal void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
         short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false,
-        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0, int scrollrow = 0, int cliptop = 0, int clipbottom = int.MaxValue)
+        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0, int scrollrow = 0, int cliptop = int.MinValue, int clipbottom = int.MaxValue,
+        int capstory = 1, bool capup = false, bool fromRun = false)
     {
+        if (!fromRun)
+        {
+            FlushPlain();
+            FlushRun();
+        }
         if (render.PostCount == RenderState.MaxPosts)
             return;
+        if (cliptop == int.MinValue)
+            (cliptop, clipbottom) = (render.OpenTop, render.OpenBottom);
         render.PostClipTop[render.PostCount] = cliptop;
         render.PostClipBottom[render.PostCount] = clipbottom;
+        render.PostCapStory[render.PostCount] = (sbyte)capstory;
+        render.PostCapUp[render.PostCount] = capup;
         render.PostScrollRow[render.PostCount] = scrollrow;
         render.PostPatch[render.PostCount] = patch;
         render.PostPatchOfs[render.PostCount] = patchofs;
@@ -120,7 +410,7 @@ internal sealed class WallPosts(
         render.PostUnderFlat[render.PostCount] = underflat;
         render.PostHeights[render.PostCount] = height;
         render.PostFirstStory[render.PostCount] = (sbyte)firststory;
-        render.PostStories[render.PostCount] = (byte)stories;
+        render.PostStories[render.PostCount] = (sbyte)stories;
         render.PostLower[render.PostCount] = lower;
         render.PostLowerOfs[render.PostCount] = lowerofs;
         render.PostUpper[render.PostCount] = upper;
@@ -150,26 +440,33 @@ internal sealed class WallPosts(
                     render.PostPatchOfs[render.PostCount], render.PostPatchStory[render.PostCount], render.PostLight[render.PostCount],
                     lighting.ShadeOffsetForHeight(render.PostHeights[render.PostCount]), cliptop, clipbottom);
             if (render.PostUnderside[render.PostCount] != 0)
-                DrawUnderside(render.PixX, render.PostHeights[render.PostCount] >> 3, render.PostUnderside[render.PostCount] >> 3, render.PostUnderTexture[render.PostCount],
-                    render.PostUnderFlat[render.PostCount], render.PostFirstStory[render.PostCount]);
+                DrawUnderside(render.PixX, PostHalf(render.PostHeights[render.PostCount]), PostHalf(render.PostUnderside[render.PostCount]),
+                    render.PostUnderTexture[render.PostCount], render.PostUnderFlat[render.PostCount], render.PostCapStory[render.PostCount],
+                    render.PostCapUp[render.PostCount], cliptop, clipbottom);
         }
     }
 
     /// <summary>
-    /// Draws an arch's underside, <paramref name="story"/> stories up (where its block starts),
-    /// between where the trace enters it (half a story is entryhalf pixels there) and where it
-    /// leaves (exithalf). It's a flat surface, so each row is textured from where the view ray
-    /// meets it, from the texture's bottom story laid flat: one tile of it per tile. A ceiling
-    /// flat (flat) is sampled as DrawFlats does, its see-through pixels the ceiling color. With
-    /// no texture, it's the ceiling color.
+    /// Draws a cap: an underside at the bottom of story <paramref name="story"/> (from the
+    /// player's floor), or with <paramref name="up"/> a floor there, between where the trace
+    /// enters it (half a story is entryhalf pixels there) and where it leaves (exithalf), in rows
+    /// cliptop to clipbottom only. It's a flat surface, so each row is textured from where the
+    /// view ray meets it, from the texture's bottom story laid flat: one tile of it per tile. A
+    /// flat (flat) is sampled as DrawFlats does, its see-through pixels the ceiling (or floor)
+    /// color; a floor with no texture takes each tile's floor flat. With neither, it's the color.
     /// </summary>
-    internal void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture, bool flat, int story = 1)
+    internal void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture, bool flat, int story = 1, bool up = false,
+        int cliptop = 0, int clipbottom = int.MaxValue)
     {
-        // story stories up from the floor line, as DrawPost puts the bottom of the arch's first story
-        int from = Math.Max(FloorRow(entryhalf) - story * 2 * entryhalf, 0);
-        int to = Math.Min(FloorRow(exithalf) - story * 2 * exithalf - 1, render.ViewHeight - 1);
+        // where DrawPost puts the bottom of that story: an underside from the near edge back, a
+        // floor from the far edge down to the near one
+        int from = up ? RowAtHalf(exithalf, story) : RowAtHalf(entryhalf, story);
+        int to = (up ? RowAtHalf(entryhalf, story) : RowAtHalf(exithalf, story)) - 1;
+        from = Math.Max(from, Math.Max(cliptop, 0));
+        to = Math.Min(to, Math.Min(clipbottom, render.ViewHeight - 1));
         if (from > to)
             return;
+        byte color = up ? skyAndFlats.FloorColorNow : skyAndFlats.CeilingColor;
         int pitch = (int)video.BufferPitch;
         render.Cover(x, from, to);
 
@@ -192,15 +489,24 @@ internal sealed class WallPosts(
             byte[]? data = texture?.RawData;
             int width = texture?.Width ?? 0, height = texture?.Height ?? 0;
 
+            bool perTile = up && texture == null;   // a floor: each tile's own floor flat
             for (int y = from; y <= to; y++)
             {
-                double nx = numerator / (render.CenterY - y - 0.5);
+                double nx = numerator / Math.Abs(render.CenterY - y - 0.5);
                 long px = (long)(render.ViewX + nx * stepx), py = (long)(render.ViewY + nx * stepy);
-                var light = lighting.LightAt(map.TileIndexOrNone((int)(px >> MapConstants.TileShift), (int)(py >> MapConstants.TileShift)), px, py);
+                int tile = map.TileIndexOrNone((int)(px >> MapConstants.TileShift), (int)(py >> MapConstants.TileShift));
+                var light = lighting.LightAt(tile, px, py);
                 int shadeofs = lighting.ShadeOffset((long)nx);
+                if (perTile)
+                {
+                    var floor = tile >= 0 ? map.FloorFlat[tile] : null;
+                    data = floor?.RawData;
+                    (width, height) = (floor?.Width ?? 0, floor?.Height ?? 0);
+                    flat = true;
+                }
                 if (data == null)
                 {
-                    dest[y * pitch] = light[shadeofs + skyAndFlats.CeilingColor];
+                    dest[y * pitch] = light[shadeofs + color];
                     continue;
                 }
 
@@ -209,7 +515,7 @@ internal sealed class WallPosts(
                 int row = flat || height < GameConstants.TextureSize ? v * height / GameConstants.TextureSize : height - GameConstants.TextureSize + v;
                 byte pixel = data[u * width / GameConstants.TextureSize * height + row];
                 if (flat && pixel == SkyAndFlats.FlatMask)
-                    pixel = skyAndFlats.CeilingColor;
+                    pixel = color;
                 dest[y * pitch] = light[shadeofs + pixel];
             }
         }
@@ -220,44 +526,17 @@ internal sealed class WallPosts(
     =
     = Arches
     =
-    = An open tile whose block (plane 3) starts above the player's story is an arch: walked
-    = under, from the story its block starts at up to where it stops. The trace opens one as it
-    = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
-    = Its faces take its own texture (a wall's, or a floor tile's flats sides), else that of a
-    = wall at the end of its run, and its underside the tile's ceiling flat (a non-zero
-    = flat-plane ceiling index), else the face texture too. A door's tile above one story is
-    = capped the same way, its lintel flush with the wall the door is set into.
+    = An open tile whose block (plane 3) starts above the player's story is an arch, walked
+    = under: OpenTile and CloseTile queue its face and underside. The textures for one come from
+    = here: its own, else the wall at the end of its run of arch tiles. A door's tile taller than
+    = the player's story is capped the same way, its lintel flush with the wall the door is set
+    = into (OpenDoorArch, CloseArch).
     =
     ====================
     */
 
 
     internal bool IsArch(int tilex, int tiley) => map.IsOverhead(tilex, tiley);
-
-    /// <summary>
-    /// The trace enters the arch at (TileX, TileY), crossing its edge at (edgex, edgey); vertical
-    /// says whether that's an edge along x = constant (an east or west face).
-    /// </summary>
-    internal void OpenArch(int tilex, int tiley, int edgex, int edgey, bool vertical)
-    {
-        // its own texture, else the same face of the wall at either end of the run of arch tiles
-        // in line with the face, else at either end of the run across it (a face on the end of a
-        // run, entered along it)
-        int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
-        var face = SeenFace(vertical);
-        var own = wallTexture(tilex, tiley, face, out bool mirrored);
-        var texture = own ?? ArchEndTexture(tilex, tiley, -dx, -dy, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dx, dy, face, out mirrored)
-            ?? ArchEndTexture(tilex, tiley, -dy, -dx, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dy, dx, face, out mirrored);
-        if (texture == null)
-            return;                     // nothing to texture it from: leave it open
-
-        StartArch(tilex, tiley, map.BlockStart(tilex, tiley) - map.Story, map.WallStories(tilex, tiley) - map.Story + 1, texture, mirrored,
-            ArchUnderside(tilex, tiley), edgex, edgey, vertical);
-    }
-
-    // An arch tile's underside: its own texture, else the run's (ArchUndersideTexture)
-    TextureAsset? ArchUnderside(int tilex, int tiley) =>
-        wallTexture(tilex, tiley, "north", out _) ?? ArchUndersideTexture(tilex, tiley);
 
     /// <summary>
     /// The trace enters a door tile at (TileX, TileY) as OpenArch enters an arch. Above the first
@@ -267,8 +546,8 @@ internal sealed class WallPosts(
     /// </summary>
     internal void OpenDoorArch(int tilex, int tiley, bool doorVertical, int edgex, int edgey, bool vertical)
     {
-        int stories = map.WallStories(tilex, tiley);
-        if (stories == 1)
+        int stories = map.WallStories(tilex, tiley) - map.Story + 1;    // its top, from the player's floor
+        if (stories <= 1)
             return;
 
         // the wall on either side in line with the door
@@ -348,15 +627,10 @@ internal sealed class WallPosts(
         render.ArchUnderFlat = true;
     }
 
-    // The view starts under an arch: there's no face, only the underside from above the view
-    internal void OpenFocalArch() =>
-        StartFocalArch(map.BlockStart(render.FocalTx, render.FocalTy) - map.Story, map.WallStories(render.FocalTx, render.FocalTy) - map.Story + 1,
-            ArchUnderside(render.FocalTx, render.FocalTy));
-
     // The view starts in a door's tile, under its lintel (OpenDoorArch)
     internal void OpenFocalDoorArch(bool doorVertical)
     {
-        int stories = map.WallStories(render.FocalTx, render.FocalTy);
+        int stories = map.WallStories(render.FocalTx, render.FocalTy) - map.Story + 1;
         if (stories > 1)
             StartFocalArch(1, stories, DoorArchUndersideTexture(render.FocalTx, render.FocalTy, doorVertical));
     }
@@ -386,20 +660,33 @@ internal sealed class WallPosts(
         short exitheight = HeightAt(edgex, edgey);
         if (exitheight == 0)
             exitheight = 1;             // 0 means no underside
-        QueuePost(render.ArchHeight, render.ArchFirst, render.ArchStories, render.ArchTexture!, render.ArchOfs, render.ArchTexture!, render.ArchOfs, exitheight, render.ArchUnderside, render.ArchLight, render.ArchUnderFlat);
+        int first = render.ArchFirst;
+        int top = render.OpaqueCeiling ? Math.Min(render.ArchStories, render.CeilingStory) : render.ArchStories;
+        if (top <= first)
+            return;                     // all of it above the ceiling
+        QueuePost(render.ArchHeight, first, top, render.ArchTexture!, render.ArchOfs, render.ArchTexture!, render.ArchOfs, exitheight,
+            render.ArchUnderside, render.ArchLight, render.ArchUnderFlat, capstory: first);
+        Occlude(RowAt(render.ArchHeight, top), RowAt(render.ArchHeight, first) - 1);
+        Occlude(RowAt(render.ArchHeight, first), RowAt(exitheight, first) - 1);
     }
 
     // The height (as WallHeight) of a wall at (x, y)
     internal short HeightAt(int x, int y)
     {
-        int savex = render.XIntercept, savey = render.YIntercept;
-        render.XIntercept = x;
-        render.YIntercept = y;
-        short height = CalcHeight();
-        render.XIntercept = savex;
-        render.YIntercept = savey;
+        // a tile's edge is measured as the trace leaves one tile and again as it enters the next
+        if (x == lastheightx && y == lastheighty && render.ViewX == lastviewx && render.ViewY == lastviewy && render.ViewCos == lastviewcos)
+            return lastheight;
+
+        int nx = MathUtils.FixedMul(x - render.ViewX, render.ViewCos) - MathUtils.FixedMul(y - render.ViewY, render.ViewSin);
+        if (nx < GameConstants.MinDist)
+            nx = (int)GameConstants.MinDist;
+        short height = (short)(render.HeightNumerator / (nx >> 8));     // as CalcHeight
+        (lastheightx, lastheighty, lastviewx, lastviewy, lastviewcos, lastheight) = (x, y, render.ViewX, render.ViewY, render.ViewCos, height);
         return height;
     }
+
+    int lastheightx = int.MinValue, lastheighty, lastviewx, lastviewy, lastviewcos;
+    short lastheight;
 
     // Where the trace meets the vertical edge it enters XTile by, and the horizontal one it enters YTile by
     internal int VertEdge => (render.XTileStep == 1 ? render.XTile : render.XTile + 1) << MapConstants.TileShift;
@@ -407,11 +694,11 @@ internal sealed class WallPosts(
 
     /// <summary>
     /// Whether the trace should go on past the wall it just hit, on the tile (TileX, TileY): only
-    /// while a taller wall somewhere on the level could still show above everything it has hit.
+    /// while rows are left that something farther could show in (above it, or under it).
     /// </summary>
     internal bool TracePastWall(int tilex, int tiley)
     {
-        if (render.ColumnTallest >= map.MaxWallStories || render.ColumnTop <= 0 || render.PostCount >= RenderState.MaxPosts - 1)
+        if (!render.ColumnOpen || render.PostCount >= RenderState.MaxPosts - 1)
             return false;
         // a trace never leaves the map through its edge
         return tilex > 0 && tiley > 0 && tilex < map.MapWidth - 1 && tiley < map.MapHeight - 1;
@@ -439,15 +726,14 @@ internal sealed class WallPosts(
     }
 
     /// <summary>
-    /// Draws one screen column of a wall, standing on the floor, stories tall. Stories
-    /// firststory and up are drawn: the first story from lower, the ones above it from upper.
-    /// A texture covers a story per 64 texels of its height, from the floor up, and repeats
-    /// above that. half is half a story's height in pixels; lowerofs and UpperOfs are the
-    /// column to draw, times 64, as the trace finds it across a tile. Each texel is remapped
-    /// through shade from shadeofs (a light row and fade step, see WL_SHADE.cs). scrollrow
-    /// moves the texels that many down (a scroller's, Rendering/Scrollers.cs). A firststory below
-    /// 0 is a story under the floor (story-level), from lower; only rows cliptop to clipbottom are
-    /// drawn (a post under the floor, the rows down the pit in front of it).
+    /// Draws one screen column of a wall: stories firststory up to (not including) stories,
+    /// counted from the player's floor (story 0, the player's; below it negative). The player's
+    /// story is drawn from lower (a door's jamb), the others from upper. A texture covers a story
+    /// per 64 texels of its height, from the ground up, and repeats above that. half is half a
+    /// story's height in pixels; lowerofs and UpperOfs are the column to draw, times 64, as the
+    /// trace finds it across a tile. Each texel is remapped through shade from shadeofs (a light
+    /// row and fade step, see WL_SHADE.cs). scrollrow moves the texels that many down (a
+    /// scroller's, Rendering/Scrollers.cs). Only rows cliptop to clipbottom are drawn.
     /// </summary>
     internal void DrawPost(int x, int half, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
         byte[] shade, int shadeofs, int scrollrow = 0, int cliptop = 0, int clipbottom = int.MaxValue)
@@ -467,8 +753,9 @@ internal sealed class WallPosts(
         render.Cover(x, top, y);
 
         long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
-        long t = num / half + firststory * GameConstants.TextureSize;
+        long t = num / half + firststory * GameConstants.TextureSize;   // texels up from the player's floor
         long rem = num % half;
+        long zbase = render.ZBase + scrollrow;                          // where the texture repeats from: the ground
         int pitch = (int)video.BufferPitch;
 
         byte[] lowerdata = lower.RawData, upperdata = upper.RawData;
@@ -484,8 +771,8 @@ internal sealed class WallPosts(
             {
                 if (t != colt)
                 {
-                    long s = t + scrollrow;     // the texel up the wall that's moved down to here
-                    col = shade[shadeofs + (t < GameConstants.TextureSize
+                    long s = t + zbase;         // the texel up the wall (that's moved down to here)
+                    col = shade[shadeofs + ((ulong)t < GameConstants.TextureSize
                         ? lowerdata[lowercolumn + lowerheight - 1 - Wrap(s, lowerheight)]
                         : upperdata[uppercolumn + upperheight - 1 - Wrap(s, upperheight)])];
                     colt = t;
@@ -513,10 +800,10 @@ internal sealed class WallPosts(
 
     /// <summary>
     /// Draws one screen column of a wall patch over the wall post just drawn (DrawPost), its
-    /// texels laid out the same way: from the floor of story <paramref name="story"/> (1 up) for
-    /// as many stories as the patch is tall, or (story 0) on every story of the wall from
-    /// firststory (below 0 under the floor), repeating as the wall's texture does. Its see-through
-    /// pixels leave the wall showing. Only rows cliptop to clipbottom are drawn, as DrawPost.
+    /// texels laid out the same way: from the floor of story <paramref name="story"/> (1 up from
+    /// the ground) for as many stories as the patch is tall, or (story 0) on every story of the
+    /// wall from firststory, repeating up from the ground as the wall's texture does. Its
+    /// see-through pixels leave the wall showing. Only rows cliptop to clipbottom are drawn, as DrawPost.
     /// </summary>
     internal void DrawPatch(int x, int half, int firststory, int stories, TextureAsset patch, int ofs, int story, byte[] shade, int shadeofs,
         int cliptop = 0, int clipbottom = int.MaxValue)
@@ -524,7 +811,7 @@ internal sealed class WallPosts(
         if (half <= 0) half = 100;
 
         int height = patch.Height;
-        int first = story == 0 ? firststory : story - 1;
+        int first = story == 0 ? firststory : story - map.Story;
         int last = story == 0 ? stories : Math.Min(stories, first + (height + GameConstants.TextureSize - 1) / GameConstants.TextureSize);
         if (first >= last || first < firststory)
             return;                     // on a story the wall doesn't reach
@@ -541,7 +828,7 @@ internal sealed class WallPosts(
         long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
         long t = num / half;
         long rem = num % half;
-        long phase = story == 0 ? (long)first * GameConstants.TextureSize : 0;
+        long phase = story == 0 ? (long)first * GameConstants.TextureSize + render.ZBase : 0;
         int pitch = (int)video.BufferPitch;
 
         byte[] data = patch.RawData;

@@ -1008,6 +1008,31 @@ internal class MapManager
         SetMapSpot(x, y, HeightPlane, value);
         (BlockStarts[x, y], BlockStops[x, y]) = DecodeBlock(value) is var (s, e) ? ((byte)s, (byte)e) : ((byte)0, (byte)0);
         maxtilestories = Math.Max(maxtilestories, BlockStops[x, y]);
+        UpdateSpan(x, y);
+    }
+
+    /// <summary>
+    /// Every tile's <see cref="BlockSpan"/> (start and stop stories, a stop of 0 for none), by
+    /// <see cref="TileIndex"/>, for the renderer to read quickly. Kept up to date by SetBlock and
+    /// rebuilt with the blocks' areas (load, restore, <see cref="ApplyStory"/>).
+    /// </summary>
+    internal byte[] SpanStart = [], SpanStop = [];
+
+    private void RebuildSpans()
+    {
+        SpanStart = new byte[MapArea];
+        SpanStop = new byte[MapArea];
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
+                UpdateSpan(x, y);
+    }
+
+    private void UpdateSpan(int x, int y)
+    {
+        int i = TileIndex(x, y);
+        if ((uint)i >= (uint)SpanStop.Length)
+            return;
+        (SpanStart[i], SpanStop[i]) = BlockSpan(x, y) is var (start, stop) ? ((byte)start, (byte)stop) : ((byte)0, (byte)0);
     }
 
     /// <summary>Sets a tile's wall height (a block from story 1); 0 gives it back to the default</summary>
@@ -1033,9 +1058,13 @@ internal class MapManager
         return (uint)i < (uint)blockareas.Length && blockareas[i] >= 0 ? Floors.AreaTile + blockareas[i] : MapSpot(x, y, 0);
     }
 
-    /// <summary>Works out the areas of the wall tiles walked on at the player's story (<see cref="FloorCode"/>)</summary>
+    /// <summary>
+    /// Works out the areas of the wall tiles walked on at the player's story (<see cref="FloorCode"/>),
+    /// and every tile's span (<see cref="SpanStart"/>)
+    /// </summary>
     private void BuildBlockAreas()
     {
+        RebuildSpans();
         blockareas = new short[MapArea];
         Array.Fill(blockareas, (short)-1);
         var queue = new Queue<(int X, int Y, short Area)>();
