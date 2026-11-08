@@ -31,7 +31,7 @@ internal sealed class SpriteScaler(
     // translation, if any, recolors each index first (Managers/TranslationManager.cs), by its
     // row's band when it has more than one ("below N")
     internal void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs,
-        bool cloaked = false, SpriteTranslation? translation = null)
+        bool cloaked = false, SpriteTranslation? translation = null, short depth = 0)
     {
         int height = sprite.Height;
         int width = sprite.Width;
@@ -79,6 +79,13 @@ internal sealed class SpriteScaler(
                 byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
                 while (startpix < endpix)
                 {
+                    // off the player's story, behind whatever's nearer there (RenderState.Depth)
+                    if (depth != 0 && render.Depth[x * render.ViewHeight + startpix] > depth)
+                    {
+                        destIndex += video.BufferPitch;
+                        startpix++;
+                        continue;
+                    }
                     // cloaked: what's behind, darkened (shade is then the light table, shadeofs its level)
                     dest[destIndex] = cloaked ? shade[shadeofs + dest[destIndex]] : color;
                     destIndex += video.BufferPitch;
@@ -133,6 +140,7 @@ internal sealed class SpriteScaler(
         }
 
         x2 = xcenter;
+        bool offstory = sprite.OffStory && render.DepthOn;
 
         for (int i = 0; i < spriteAsset.Width; i++)
         {
@@ -158,7 +166,13 @@ internal sealed class SpriteScaler(
 
             while (x1 < x2)
             {
-                if (render.WallHeight[x1] < sprite.ViewHeight)
+                // off the player's story it's hidden pixel by pixel; on it, by the nearest wall
+                if (offstory)
+                {
+                    seeThrough?.DrawBeyond(x1, sprite.ViewHeight);
+                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.Cloaked, sprite.Translation, sprite.ViewHeight);
+                }
+                else if (render.WallHeight[x1] < sprite.ViewHeight)
                 {
                     seeThrough?.DrawBeyond(x1, sprite.ViewHeight);
                     ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.Cloaked, sprite.Translation);

@@ -137,6 +137,41 @@ internal sealed class WallPosts(
         // floors at other heights (caps) show tiles' floor skies as the trace goes: loaded first
         if (map.HasFloorSkies && story > 1)
             skyAndFlats.LoadTileSkies();
+
+        if (render.DepthOn)
+            StartDepth();
+    }
+
+    // Each row's depth before anything's drawn: the player's floor below the horizon, the
+    // level's ceiling above it (where it's opaque; else the sky, 0), as the level's flats are
+    // drawn into the rows the walls leave (RenderState.Depth)
+    internal void StartDepth()
+    {
+        int rows = render.ViewHeight;
+        if (render.Depth.Length != render.ViewWidth * rows)
+            render.Depth = new short[render.ViewWidth * rows];
+        if (render.DepthRows.Length != rows)
+            render.DepthRows = new short[rows];
+        double eye = render.ViewEyeZ / (double)(GameConstants.TextureSize / 2);    // the eyes, in half stories over the floor
+        for (int y = 0; y < rows; y++)
+        {
+            // the half-story size (pixels) whose floor (or ceiling) line is on this row
+            double over = y + 0.5 - render.CenterY;
+            double half = over > 0 ? (eye > 0 ? over / eye : double.MaxValue)
+                : render.OpaqueCeiling && eye - 2 * render.CeilingStory < 0 ? over / (eye - 2 * render.CeilingStory) : 0;
+            render.DepthRows[y] = (short)Math.Clamp(half * 8, 0, short.MaxValue);
+        }
+    }
+
+    // Writes how near a post (half pixels to half a story) is over rows top to bottom of column x
+    void WriteDepth(int x, int top, int bottom, int half)
+    {
+        if (!render.DepthOn || (uint)x >= (uint)render.ViewWidth)
+            return;
+        top = Math.Max(top, 0);
+        bottom = Math.Min(bottom, render.ViewHeight - 1);
+        if (top <= bottom)
+            Array.Fill(render.Depth, (short)Math.Min(half * 8, short.MaxValue), x * render.ViewHeight + top, bottom - top + 1);
     }
 
     /// <summary>Gets a column ready to trace: every row open, no tile or floor run open</summary>
@@ -145,6 +180,8 @@ internal sealed class WallPosts(
         render.OpenTop = 0;
         render.OpenBottom = render.ViewHeight - 1;
         render.CellOpen = render.RunOpen = render.PlainOpen = false;
+        if (render.DepthOn && (uint)render.PixX < (uint)render.ViewWidth)
+            Array.Copy(render.DepthRows, 0, render.Depth, render.PixX * render.ViewHeight, render.ViewHeight);
     }
 
     /// <summary>Finishes a column's trace: what's still waiting to be queued is</summary>
@@ -614,6 +651,8 @@ internal sealed class WallPosts(
             {
                 double nx = numerator / Math.Abs(render.CenterY - y - 0.5);
                 long px = (long)(render.ViewX + nx * stepx), py = (long)(render.ViewY + nx * stepy);
+                if (render.DepthOn)
+                    render.Depth[x * render.ViewHeight + y] = (short)Math.Min(render.HeightNumerator / Math.Max((long)nx >> 8, 1), short.MaxValue);
                 int tile = map.TileIndexOrNone((int)(px >> MapConstants.TileShift), (int)(py >> MapConstants.TileShift));
                 var light = lighting.LightAt(tile, px, py);
                 int shadeofs = lighting.ShadeOffset((long)nx);
@@ -883,6 +922,7 @@ internal sealed class WallPosts(
         if (top < 0) top = 0;
         if (y < top) return;
         render.Cover(x, top, y);
+        WriteDepth(x, top, y, half);
 
         long num = (long)(bottom - y) * (GameConstants.TextureSize / 2);
         long t = num / half + firststory * GameConstants.TextureSize;   // texels up from the player's floor

@@ -252,6 +252,7 @@ internal sealed class FrameRefresh(
 
         render.MarkSeen = camera.OnPlayer;     // the automap only learns what the player sees
         points.Setup(weather.Active || particles.Active);     // rain, snow and particles note the walls as they're traced
+        render.DepthOn = spriteDrawing.AnyOffStory();         // things off the player's story are hidden pixel by pixel
         rayTrace.WallRefresh();
 
         if (render.MarkSeen)

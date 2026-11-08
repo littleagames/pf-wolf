@@ -185,6 +185,29 @@ public class WallPostsTests
     }
 
     [Test]
+    public void Each_Rows_Depth_Starts_As_The_Floor_Or_Ceiling_Would_Put_It()
+    {
+        // Arrange: a 160-row view, eyes half a story up, an opaque ceiling a story over the floor
+        (_render.ViewWidth, _render.ViewHeight, _render.DepthOn) = (4, 160, true);
+        (_render.CeilingStory, _render.OpaqueCeiling) = (1, true);
+
+        // Act
+        _posts.StartDepth();
+
+        // Assert: a row the floor's on for something half pixels to half a story has its height
+        // (8 a half-story pixel); the ceiling's rows likewise; nearer rows are nearer
+        int half = 20;
+        Assert.That(_render.DepthRows[_posts.FloorRow(half)], Is.EqualTo(half * 8).Within(8));
+        Assert.That(_render.DepthRows[_posts.RowAt((short)(half * 8), 1)], Is.EqualTo(half * 8).Within(8));
+        Assert.That(_render.DepthRows[150], Is.GreaterThan(_render.DepthRows[_posts.FloorRow(half)]));
+
+        // with a sky there's no ceiling: the rows over the horizon are far off
+        _render.OpaqueCeiling = false;
+        _posts.StartDepth();
+        Assert.That(_render.DepthRows[10], Is.Zero);
+    }
+
+    [Test]
     public void A_Moving_Pushwall_Is_Hit_At_Its_Pieces_Stories()
     {
         _map.Story = 2;

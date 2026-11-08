@@ -164,6 +164,14 @@ internal sealed class RenderState
     internal bool OpaqueCeiling;        // no sky: the ceiling hides what's above it, and clips the walls
     internal int TallestStory;          // the top of the tallest block anywhere
 
+    // How near what's drawn at each pixel is (as WallHeight: higher is nearer; 0 is the sky),
+    // column by column (x * ViewHeight + y), on a frame with things off the player's story to
+    // hide pixel by pixel (DepthOn). Each column starts as the player's floor and the level's
+    // ceiling would put it (DepthRows), and posts and caps write theirs as they're drawn.
+    internal bool DepthOn;
+    internal short[] Depth = [];
+    internal short[] DepthRows = [];
+
     // the rows of this column nothing nearer has covered yet, from the top or from the bottom:
     // farther posts are clipped to them, and the trace stops once there are none
     internal int OpenTop, OpenBottom;

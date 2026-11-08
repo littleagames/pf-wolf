@@ -86,8 +86,19 @@ it), and `StoryOf` / `OnPlayersStory` read it. Saved with the actor (save versio
 protocol is 16 (it also takes in save 44's pushwall stories in the mid-game join's level body,
 which part 2 of the stories plan should have bumped). Items are only picked up on the player's
 story. `where` lists the faced tile's things and their stories; the `thingstory <0-8> [x y]`
-cheat sets plane 6 on a tile and moves its things. Drawing is still at the player's story
-(phase 2).
+cheat sets plane 6 on a tile and moves its things.
+
+Phase 2 done 2026-11-08. A sprite (and a wall sprite) off the player's story is drawn its
+story's height over or under the player's floor (SpriteDrawing.PlaceOnStory adds it to the
+sprite's Z) and hidden pixel by pixel: on a frame with any thing off the player's story
+(SpriteDrawing.AnyOffStory) the renderer keeps a depth per pixel (RenderState.Depth, as WallHeight:
+higher is nearer). Each column starts from DepthRows (the player's floor below the horizon, the
+level's ceiling above it where it's opaque, else 0 for the sky: what DrawLevelFlats fills), and
+DrawPost and DrawUnderside write theirs; ScaleColumn skips a pixel that's nearer than the sprite.
+Sprites on the player's story still clip against the nearest wall, so story 1 is pixel-identical
+(14 shots). The automap draws a thing off the player's story as an outline. Checked by headless
+shots: E1M1's corpse at the bottom of a drop on story 2; a plant and two lamps on the Rooftops
+Demo's street, the lamps hidden by the bridge's deck but for their tops.
 
 ## Later
 

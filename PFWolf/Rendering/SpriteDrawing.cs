@@ -335,7 +335,7 @@ internal sealed class SpriteDrawing(
                 visptr_val.ShapeNum = ActorShapeName(sprite, actor.CurrentState.FrameLetter, actor);
                 visptr_val.ViewX = actor.ViewX;
                 visptr_val.ViewHeight = (short)actor.ViewHeight;
-                visptr_val.Z = actor.Z;
+                PlaceOnStory(visptr_val, actor);
 
                 // A cloaked enemy shows for a frame when it's hit (bstone's FL2_DAMAGE_CLOAK)
                 visptr_val.Cloaked = actor.Cloaked && !actor.CloakHit && actor.Hitpoints > 0;
@@ -361,6 +361,7 @@ internal sealed class SpriteDrawing(
             {
                 if (wallSprites.WallSpriteSeen(actor) && wallSprites.TransformWallSprite(actor, visptr_val) && visptr < GameConstants.MaxVisible - 1)
                 {
+                    PlaceOnStory(visptr_val, actor);
                     visptr_val.TileX = actor.TileX;
                     visptr_val.TileY = actor.TileY;
                     (visptr_val.WorldX, visptr_val.WorldY) = Lighting.TileCenter(actor.TileX, actor.TileY);
@@ -384,7 +385,7 @@ internal sealed class SpriteDrawing(
             if (visptr_val.ViewHeight == 0)
                 continue;                                               // to close to the object
             actor.RuntimeFlags |= ObjFlags.Visible;
-            visptr_val.Z = actor.Z;
+            PlaceOnStory(visptr_val, actor);
 
             if (visptr < (GameConstants.MaxVisible - 1))    // don't let it overflow
             {
@@ -438,6 +439,29 @@ internal sealed class SpriteDrawing(
         }
 
         points.DrawBeyond(int.MaxValue);    // and what's nearer than every sprite
+    }
+
+    /// <summary>
+    /// A thing's height on screen: its Z, and on another story than the player's that story's
+    /// height over (or under) the player's floor, hidden pixel by pixel (RenderState.Depth)
+    /// </summary>
+    internal void PlaceOnStory(VisibleObject vis, Entities.Actors.Actor actor)
+    {
+        vis.Z = actor.Z;
+        if (actor.Story != 0 && actor.Story != map.Story)
+        {
+            vis.Z += (actor.Story - map.Story) * GameConstants.TextureSize;
+            vis.OffStory = true;
+        }
+    }
+
+    /// <summary>Whether the level has things off the player's story: the frame needs RenderState.Depth</summary>
+    internal bool AnyOffStory()
+    {
+        foreach (var actor in map.GetActors())
+            if (actor.Story != 0 && actor.Story != map.Story && !actor.IsRemoved)
+                return true;
+        return false;
     }
 
     internal void DrawPlayerWeapon()

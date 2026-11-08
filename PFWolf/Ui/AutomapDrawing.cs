@@ -380,7 +380,9 @@ internal sealed class AutomapDrawing(
         {
             var (sx, sy) = view.ToScreen(actor.X / (float)MapConstants.TileGlobal, actor.Y / (float)MapConstants.TileGlobal);
 
-            if (sprites && DrawAutomapSprite(view, actor, sx, sy))
+            // on another story than the player's (the street under a roof): an outline, apart
+            bool offstory = !map.OnPlayersStory(actor);
+            if (sprites && !offstory && DrawAutomapSprite(view, actor, sx, sy))
                 continue;
 
             string color = AutomapColor(mark switch
@@ -392,6 +394,15 @@ internal sealed class AutomapDrawing(
                 _ => "AutomapEnemy",
             });
 
+            if (offstory)
+            {
+                float mx = actor.X / (float)MapConstants.TileGlobal, my = actor.Y / (float)MapConstants.TileGlobal, r = 0.2f;
+                AutomapLine(view, mx - r, my - r, mx + r, my - r, color);
+                AutomapLine(view, mx + r, my - r, mx + r, my + r, color);
+                AutomapLine(view, mx + r, my + r, mx - r, my + r, color);
+                AutomapLine(view, mx - r, my + r, mx - r, my - r, color);
+                continue;
+            }
             AutomapFill(view, (int)MathF.Round(sx) - size / 2, (int)MathF.Round(sy) - size / 2, size, size, color);
         }
     }

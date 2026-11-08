@@ -123,7 +123,8 @@ internal sealed class WallSpriteDrawing(
                 continue;                                   // behind the view
 
             short height = HeightAtDepth(s * (dx * cos - dy * sin));
-            if (render.WallHeight[x] >= height)
+            bool offstory = vis.OffStory && render.DepthOn;     // then hidden pixel by pixel (RenderState.Depth)
+            if (!offstory && render.WallHeight[x] >= height)
                 continue;                                   // a wall is in front
 
             int half = height >> 3;
@@ -135,10 +136,12 @@ internal sealed class WallSpriteDrawing(
             if (turned)
                 column = spriteAsset.Width - 1 - column;
             seeThrough?.DrawBeyond(x, height);
-            int top =floorRow(half) - SpriteScaler.TexelsToPixels(spriteAsset.Origin.Y, half);
+            // on another story, raised (or lowered) by its height over the player's floor
+            int top = vis.Z == 0 ? floorRow(half) - SpriteScaler.TexelsToPixels(spriteAsset.Origin.Y, half)
+                : SpriteScaler.RaisedTop(floorRow(half), spriteAsset.Origin.Y, vis.Z, half);
             scaler.ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, GameConstants.TextureSize / 2), spriteAsset, column,
                 vis.Bright ? Lighting.NoShade : lighting.LightAt(map.TileIndexOrNone(vis.TileX, vis.TileY), vis.WorldX, vis.WorldY),
-                vis.Bright ? 0 : lighting.LightenedShadeOffset(height, vis.Lighten), translation: vis.Translation);
+                vis.Bright ? 0 : lighting.LightenedShadeOffset(height, vis.Lighten), translation: vis.Translation, depth: offstory ? height : (short)0);
         }
     }
 }

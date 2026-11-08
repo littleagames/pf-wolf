@@ -999,6 +999,10 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] Things on stories (docs/dev/story-things-plan.md): `where` and `thingstory` in E1M1 on
       story 3 (headless, 2026-11-08). **(never tried)** an item on the street under a roof not
       picked up, a save and load keeping an actor's story, a UWMF level with a thing's `story`.
+      Drawn at their story (headless, 2026-11-08): a corpse at the bottom of a drop, lamps on the
+      Rooftops Demo's street hidden behind the bridge. **(never tried)** a wall sprite off the
+      player's story, a thing over the player's head (`thingstory 5`), the automap's outlines,
+      a see-through door in front of a thing below.
 - [ ] Stories in the editor: the 3D view of MAP01 on story 2 (a mod's game-info), the door and
       things a story up on the door's frame (UI Automation screenshot, 2026-11-08). **(never
       tried)** typing 3-5, 1-2,4-8, 9 and 5-3 in the heights plane's Stories box (the value and the

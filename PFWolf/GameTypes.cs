@@ -17,11 +17,13 @@ internal class VisibleObject
     public bool Cloaked;                        // drawn as a dark shimmer of what's behind it (Actor.Cloaked)
     public int WorldX, WorldY;                  // where it stands (global units), for its light
     public Assets.SpriteTranslation? Translation;   // its colors remapped (Managers/TranslationManager.cs), or null
-    public double Z;                            // drawn this many texels higher than its art puts it (Actor.Z)
+    public double Z;                            // drawn this many texels higher than its art puts it (Actor.Z, and its story's height over the player's)
+    public bool OffStory;                       // on another story than the player's: hidden pixel by pixel (RenderState.Depth), not by the nearest wall
 
     /// <summary>Back to as it was made, to be used again</summary>
     public void Reset()
     {
+        OffStory = false;
         TileX = TileY = 0;
         ViewX = ViewHeight = 0;
         ShapeNum = null!;
