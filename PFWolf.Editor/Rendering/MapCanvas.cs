@@ -51,6 +51,7 @@ public sealed class MapCanvas : Control
     public static readonly StyledProperty<bool> ShowHeightsProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowHeights));
     public static readonly StyledProperty<bool> ShowTagsProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowTags));
     public static readonly StyledProperty<bool> ShowZonesProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowZones));
+    public static readonly StyledProperty<bool> ShowStoriesProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowStories));
     public static readonly StyledProperty<bool> ShowGridProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowGrid), true);
     public static readonly StyledProperty<Camera3D?> CameraProperty = AvaloniaProperty.Register<MapCanvas, Camera3D?>(nameof(Camera));
     public static readonly StyledProperty<bool> ShowCameraProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowCamera));
@@ -59,7 +60,7 @@ public sealed class MapCanvas : Control
     static MapCanvas()
     {
         AffectsRender<MapCanvas>(TilesProperty, ArtProperty, ShowWallsProperty, ShowThingsProperty, ShowFlatsProperty,
-            ShowHeightsProperty, ShowTagsProperty, ShowZonesProperty, ShowGridProperty, ShowCameraProperty, OverlayProperty);
+            ShowHeightsProperty, ShowTagsProperty, ShowZonesProperty, ShowStoriesProperty, ShowGridProperty, ShowCameraProperty, OverlayProperty);
         FocusableProperty.OverrideDefaultValue<MapCanvas>(true);
         ClipToBoundsProperty.OverrideDefaultValue<MapCanvas>(true);
     }
@@ -73,6 +74,9 @@ public sealed class MapCanvas : Control
     public bool ShowHeights { get => GetValue(ShowHeightsProperty); set => SetValue(ShowHeightsProperty, value); }
     public bool ShowTags { get => GetValue(ShowTagsProperty); set => SetValue(ShowTagsProperty, value); }
     public bool ShowZones { get => GetValue(ShowZonesProperty); set => SetValue(ShowZonesProperty, value); }
+
+    /// <summary>The thing-story plane (plane 6): each tile's set story, with its number</summary>
+    public bool ShowStories { get => GetValue(ShowStoriesProperty); set => SetValue(ShowStoriesProperty, value); }
     public bool ShowGrid { get => GetValue(ShowGridProperty); set => SetValue(ShowGridProperty, value); }
 
     /// <summary>The 3D view's camera, drawn on the map while <see cref="ShowCamera"/> is set; V puts it on the tile under the pointer</summary>
@@ -135,6 +139,7 @@ public sealed class MapCanvas : Control
     private static readonly IBrush ZoneBadgeBrush = new SolidColorBrush(Color.FromArgb(170, 30, 30, 30));
     private static readonly IBrush BreakableBadgeBrush = new SolidColorBrush(Color.FromArgb(220, 190, 110, 30));
     private static readonly IBrush ParticlesBadgeBrush = new SolidColorBrush(Color.FromArgb(220, 200, 60, 170));
+    private static readonly IBrush StoryBadgeBrush = new SolidColorBrush(Color.FromArgb(220, 40, 130, 70));
     private static readonly IPen WallSpritePen = new Pen(new SolidColorBrush(Color.FromRgb(196, 150, 90)), 3);
     private static readonly IPen WallSpriteTickPen = new Pen(new SolidColorBrush(Color.FromRgb(196, 150, 90)), 2);
     private static readonly IPen SwitchLinkPen = new Pen(new SolidColorBrush(Color.FromArgb(220, 255, 220, 60)), 2);
@@ -257,6 +262,7 @@ public sealed class MapCanvas : Control
         if (ShowFlats) DrawPlaneValues(context, tiles, MapConstants.FlatPlane, x0, y0, x1, y1, fill: false);
         if (ShowHeights) DrawPlaneValues(context, tiles, MapConstants.HeightPlane, x0, y0, x1, y1);
         if (ShowZones) DrawZones(context, tiles, x0, y0, x1, y1);
+        if (ShowStories) DrawPlaneValues(context, tiles, MapConstants.StoryPlane, x0, y0, x1, y1);
         if (ShowTags)
         {
             DrawPlaneValues(context, tiles, MapConstants.TagPlane, x0, y0, x1, y1);
@@ -472,6 +478,10 @@ public sealed class MapCanvas : Control
             // The skills it's on, when it's not on all of them
             if (thing.MinSkill > 0 && _zoom >= 16)
                 DrawBadge(context, rect, (thing.MinSkill + 1).ToString(CultureInfo.InvariantCulture) + "+", SkillBadgeBrush, bottom: true);
+
+            // The story it stands on, when it isn't the player's (plane 6, or the floor under it)
+            if (_zoom >= 16 && tiles.ThingStory(x, y) is var story && story != tiles.PlayerStory)
+                DrawBadge(context, rect, "s" + story.ToString(CultureInfo.InvariantCulture), StoryBadgeBrush, bottom: true, left: true);
         }
         else if (tiles.IsValueTile(x, y))
         {
@@ -546,12 +556,12 @@ public sealed class MapCanvas : Control
     private static readonly IPen LinkHoverPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 255, 255)), 2.5);
     private static readonly IBrush CodeBadgeBrush = new SolidColorBrush(Color.FromArgb(210, 40, 110, 150));
 
-    /// <summary>A small labelled box in a corner of the tile</summary>
-    private void DrawBadge(DrawingContext context, Rect rect, string label, IBrush background, bool bottom)
+    /// <summary>A small labelled box in a corner of the tile: top left, bottom right, or (<paramref name="left"/>) bottom left</summary>
+    private void DrawBadge(DrawingContext context, Rect rect, string label, IBrush background, bool bottom, bool left = false)
     {
         var text = new FormattedText(label, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, LabelFont,
             Math.Clamp(_zoom * 0.28, 8, 13), Brushes.White);
-        var box = new Rect(bottom ? rect.Right - text.Width - 4 : rect.X + 1, bottom ? rect.Bottom - text.Height - 1 : rect.Y + 1,
+        var box = new Rect(bottom && !left ? rect.Right - text.Width - 4 : rect.X + 1, bottom ? rect.Bottom - text.Height - 1 : rect.Y + 1,
             text.Width + 3, text.Height);
         context.FillRectangle(background, box);
         context.DrawText(text, new Point(box.X + 1.5, box.Y));
@@ -742,6 +752,7 @@ public sealed class MapCanvas : Control
                 {
                     MapConstants.FlatPlane => $"{value & 0xff}/{value >> 8}",
                     MapConstants.HeightPlane => PFWolf.Definitions.StoryBlocks.Format(value),
+                    MapConstants.StoryPlane => "s" + value.ToString(CultureInfo.InvariantCulture),
                     _ => value.ToString(CultureInfo.InvariantCulture),
                 };
                 double size = Math.Min(_zoom * 0.35, 16) * (label.Length > 4 ? 0.65 : 1);

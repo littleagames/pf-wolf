@@ -1017,6 +1017,14 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       (Spear, A_SpawnProjectile "aim") climbing to a roof and stopping against a roof's edge, a
       rocket's blast reaching the roof from the street, the arsenal-demo's grenade still arcing as
       before.
+- [ ] Thing stories in the editor and the Rooftops Demo (story-things-plan phase 5): the demo's
+      guards on story 1 in the street, the patroller seeing the player and chasing, the vase on the
+      sign (headless, 2026-11-08). **(never tried)** the editor: painting "Thing stories (plane 6)",
+      View → Thing stories' labels, the green "s1" badges on the demo's guards, the tile info's
+      story line, the 3D view's guards in the street and vase on the sign, Check level's warnings (a
+      medkit in the street, a thing set inside a wall's block, a story of 12), a thing on a roof no
+      longer said not to be placed; in the game, playing the demo through with the guards shooting
+      from the street (and not through the bridge's deck from under it).
 - [ ] Stories in the editor: the 3D view of MAP01 on story 2 (a mod's game-info), the door and
       things a story up on the door's frame (UI Automation screenshot, 2026-11-08). **(never
       tried)** typing 3-5, 1-2,4-8, 9 and 5-3 in the heights plane's Stories box (the value and the

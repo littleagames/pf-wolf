@@ -123,6 +123,7 @@
         <MenuItem Header="H_eights" ToggleType="CheckBox" IsChecked="{Binding ShowHeights}" />
         <MenuItem Header="_Tags" ToggleType="CheckBox" IsChecked="{Binding ShowTags}" />
         <MenuItem Header="_Light zones" ToggleType="CheckBox" IsChecked="{Binding ShowZones}" />
+        <MenuItem Header="Thing _stories" ToggleType="CheckBox" IsChecked="{Binding ShowStories}" />
         <MenuItem Header="_Grid" ToggleType="CheckBox" IsChecked="{Binding ShowGrid}" />
         <Separator />
         <MenuItem Header="_3D view" ToggleType="CheckBox" IsChecked="{Binding Show3D}" InputGesture="F3"
@@ -499,6 +500,7 @@
           <CheckBox Content="Heights" IsChecked="{Binding ShowHeights}" MinWidth="90" />
           <CheckBox Content="Tags" IsChecked="{Binding ShowTags}" MinWidth="90" />
           <CheckBox Content="Zones" IsChecked="{Binding ShowZones}" MinWidth="90" ToolTip.Tip="Light zones" />
+          <CheckBox Content="Stories" IsChecked="{Binding ShowStories}" MinWidth="90" ToolTip.Tip="Thing stories (plane 6)" />
         </WrapPanel>
       </StackPanel>
     </Grid>
@@ -530,7 +532,7 @@
                    ShowWalls="{Binding ShowWalls}" ShowThings="{Binding ShowThings}"
                    ShowFlats="{Binding ShowFlats}" ShowHeights="{Binding ShowHeights}"
                    ShowTags="{Binding ShowTags}" ShowZones="{Binding ShowZones}"
-                   ShowGrid="{Binding ShowGrid}"
+                   ShowStories="{Binding ShowStories}" ShowGrid="{Binding ShowGrid}"
                    Camera="{Binding Camera}" ShowCamera="{Binding Show3D}"
                    TileHovered="OnTileHovered" ToolKeyPressed="OnToolKeyPressed"
                    TileContextRequested="OnTileContextRequested" />

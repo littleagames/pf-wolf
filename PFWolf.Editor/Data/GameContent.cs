@@ -285,6 +285,23 @@ public sealed class GameContent
 
     private HashSet<string>? _damageTypes;
 
+    // The game's item kinds (PFWolf.Entities.Actors' Inventory records): a class that is one, or
+    // has one among its parents, is an item the player picks up
+    private static readonly HashSet<string> ItemKinds = new(StringComparer.Ordinal)
+        { "Inventory", "CustomInventory", "Ammo", "Health", "BasicArmor", "Key", "ScoreItem", "Powerup", "BackpackItem", "Weapon" };
+
+    /// <summary>Whether a class is an item the player picks up (an Inventory kind, by its name or a parent's)</summary>
+    public bool IsItem(string className)
+    {
+        var visited = new HashSet<string>();
+        for (var name = className; !string.IsNullOrWhiteSpace(name) && visited.Add(name); name = _actors.TryGetValue(name, out var actor) ? actor.Parent : null)
+        {
+            if (ItemKinds.Contains(name))
+                return true;
+        }
+        return false;
+    }
+
     /// <summary>A flat panel standing in its tile (actordefs WALLSPRITE), not a billboard</summary>
     public bool IsWallSprite(string className)
     {

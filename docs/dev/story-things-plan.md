@@ -125,7 +125,8 @@ player's story (and any line along another story) is followed in 3D (LineOfSight
 from one's middle (MapManager.MiddleHeight: half a story over its floor, plus its Z) to the
 other's, tile by tile: a tile stops it where the heights it crosses that tile at meet one of its
 blocks (the spans), anywhere on a door's tile off the player's story or with the door shut (as
-CheckLine), on a moving pushwall's or the map's edge; the two ends' tiles aren't checked. Two
+CheckLine), on a moving pushwall's or the map's edge; the two ends' tiles (as phase 5 has it) only
+by a block the end isn't inside. Two
 actors on the player's story keep vanilla's 2D line, so the demos are unchanged. Through it:
 enemies' sight and hitscan, A_JumpIfInSight, the player's auto-aim (the closest in the sights with
 a clear line, whatever its height) and their shots. Distances for aim and damage count a story as a
@@ -146,6 +147,24 @@ doesn't see them on the wall top.
 Approximations: diagonal walls count as whole blocks for a 3D line, and wall sprites' panels don't
 stop one; pellets fly along the player's story's walls; a blast only hits destructible walls on the
 player's story.
+
+Phase 5 done 2026-11-08 (EditorThingStoriesTests). The editor has plane 6 as "Thing stories (plane
+6)": painted as any numbered plane, shown with View → Thing stories (each tile's set story, "s5"),
+and every thing off the player's story wears a green "s1" badge (bottom left). MapTiles.ThingStory
+works out a thing's story as the game does; the tile info says it when it's set or off the player's,
+and a UWMF extra thing's own story. The 3D view stands things on their story's floor. Level checks:
+a plane-6 value that isn't a story, a thing set inside a block on its story, a door's tile set off
+the player's story, and an item off the player's story (GameContent.IsItem: an Inventory kind by
+its name or a parent's), which can't be picked up. Things on walls the player walks on (roofs) are
+placed, as the game places them (MapTiles.SolidForThings), so the editor no longer says they aren't.
+The example tools' Add-MapLayout takes a Story key (New-MapPlanes -Count 7). The Rooftops Demo has a
+guard on watch and one patrolling in the street, and a vase on the sign (story 5). Checked headless:
+both guards on story 1, the patroller sees the player from the street and chases along it, the vase
+stands on the sign.
+
+A 3D line also checks its two ends' own tiles now (only blocks between the end's height and where it
+leaves the tile, not one the end is inside): the patroller standing under the bridge, right below
+the player, shot up through its deck before.
 
 ## Later
 

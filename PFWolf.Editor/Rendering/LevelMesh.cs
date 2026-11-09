@@ -286,7 +286,7 @@ public sealed class LevelMesh
         var texture = new TextureRef(TextureSource.Sprite, thing.Class);
         var thingRef = new SurfaceRef(SurfaceKind.Thing, x, y);
         var (originX, originY) = sprite.Origin;
-        float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + _floor;   // on the player's story
+        float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + _tiles.ThingStory(x, y, thing.Story) - 1;   // on its story's floor
         float shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize;
 
         if (content.IsWallSprite(thing.Class))
@@ -841,7 +841,7 @@ public sealed class LevelMesh
             // As the game places it: its origin pixel (a Wolf3D sprite's middle of the bottom of
             // 64 × 64) on the thing's spot on the floor
             var (originX, originY) = sprite.Origin;
-            float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + _floor;   // on the player's story
+            float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + _tiles.ThingStory(x, y) - 1;   // on its story's floor
             float shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize;
 
             if (content.IsWallSprite(thing.Class))

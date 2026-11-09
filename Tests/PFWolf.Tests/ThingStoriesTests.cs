@@ -269,6 +269,23 @@ public class ThingStoriesTests
     }
 
     [Test]
+    public void A_Guard_Under_A_Bridge_Doesnt_See_The_Player_Standing_On_It()
+    {
+        // Arrange: a bridge's deck (a block on story 2) over the street at 14,10; a thing in a
+        // wall (the roof at 11,10, inside its block on story 1) beside the street
+        MakeRooftops();
+        _map.SetBlock(14, 10, 2, 2);
+        _map.ApplyStory();
+        var player = Guard(14, 10);
+        var under = Guard(14, 10, story: 1);
+        var inWall = Guard(12, 10, story: 1);
+
+        // Act / Assert: the deck between them on their own tile; one inside a block sees out of it
+        Assert.That(Sight().CheckLine(under, player), Is.False);
+        Assert.That(Sight().CheckLine(inWall, Guard(13, 10, story: 1)), Is.True);
+    }
+
+    [Test]
     public void On_Another_Story_The_Blocks_And_Doors_Stop_A_Line_Along_It()
     {
         // Arrange: on the street (story 1), open at 9,10 and 13 to 15,10, the roofs between,

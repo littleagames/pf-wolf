@@ -34,6 +34,53 @@ public static class LevelChecks
 
     /// <param name="inGameInfo">Whether game-info lists the level</param>
     /// <param name="mapName">The level's name (MAP01), to tell whether the game ever goes there; null: it does</param>
+    /// <summary>
+    /// The thing-story plane (plane 6) and the stories things stand on: a value that isn't a story,
+    /// a thing set inside a block on its story, a door's tile set off the player's story (doors only
+    /// work on theirs), and an item off the player's story, which can't be picked up
+    /// </summary>
+    internal static void CheckThingStories(MapTiles tiles, List<LevelProblem> problems)
+    {
+        var notStory = new Dictionary<int, (int X, int Y, int Count)>();
+        var inBlock = new Dictionary<int, (int X, int Y, int Count)>();
+        var offDoor = new Dictionary<int, (int X, int Y, int Count)>();
+        var itemsOff = new Dictionary<int, (int X, int Y, int Count)>();
+        int story = tiles.PlayerStory;
+
+        void CheckThing(int x, int y, string className, int set)
+        {
+            int on = tiles.ThingStory(x, y, set);
+            if (set is >= 1 and <= MapTiles.MaxStories && tiles.KindAt(x, y) == TileKind.Door && set != story)
+                Count(offDoor, set, x, y);
+            else if (set is >= 1 and <= MapTiles.MaxStories && tiles.Blocks(x, y).Any(block => block.Bottom < set && set <= block.Top))
+                Count(inBlock, set, x, y);
+            if (on != story && tiles.Content.IsItem(className))
+                Count(itemsOff, on, x, y);
+        }
+
+        for (int y = 0; y < tiles.Height; y++)
+            for (int x = 0; x < tiles.Width; x++)
+            {
+                int set = tiles[MapConstants.StoryPlane, x, y];
+                if (set > MapTiles.MaxStories)
+                    Count(notStory, set, x, y);
+                if (tiles.Thing(x, y) is { } thing)
+                    CheckThing(x, y, thing.Class, set);
+            }
+        foreach (var extra in tiles.ExtraThings)
+            if (extra.TileX >= 0 && extra.TileY >= 0 && extra.TileX < tiles.Width && extra.TileY < tiles.Height)
+                CheckThing(extra.TileX, extra.TileY, extra.Class, extra.Story);
+
+        foreach (var (value, (x, y, count)) in notStory)
+            problems.Add(new(CheckSeverity.Warning, $"thing story {value} isn't a story (1 to {MapTiles.MaxStories}), so things there stand on the floor under them ({count} {Tiles(count)})", x, y));
+        foreach (var (value, (x, y, count)) in inBlock)
+            problems.Add(new(CheckSeverity.Warning, $"a thing set on story {value} is inside a block on that story ({count} {Tiles(count)})", x, y));
+        foreach (var (value, (x, y, count)) in offDoor)
+            problems.Add(new(CheckSeverity.Warning, $"a thing on a door's tile set on story {value}: off the player's story ({story}) a door's tile is solid ({count} {Tiles(count)})", x, y));
+        foreach (var (value, (x, y, count)) in itemsOff)
+            problems.Add(new(CheckSeverity.Warning, $"an item on story {value} can't be picked up: items are only picked up on the player's story ({story}) ({count} {Tiles(count)})", x, y));
+    }
+
     public static List<LevelProblem> Run(MapTiles tiles, bool inGameInfo, string? mapName = null)
     {
         var problems = new List<LevelProblem>();
@@ -128,6 +175,8 @@ public static class LevelChecks
         if (starts.Count > 0 && tiles.Solid(starts[^1].X, starts[^1].Y))
             problems.Add(new(CheckSeverity.Error, $"the player starts in a block that's solid on their story ({story})", starts[^1].X, starts[^1].Y));
 
+        CheckThingStories(tiles, problems);
+
         if (doors > MapConstants.MaxDoors)
             problems.Add(new(CheckSeverity.Error, $"{doors} doors: the game takes {MapConstants.MaxDoors} at most, and stops on this one",
                 firstPastDoorLimit.X, firstPastDoorLimit.Y));
@@ -220,7 +269,7 @@ public static class LevelChecks
         Dictionary<string, (int, int, int)> broken, int x, int y, int obj, TileKind kind)
     {
         var defs = tiles.Defs;
-        bool solid = kind is TileKind.Wall or TileKind.Door;
+        bool solid = tiles.SolidForThings(x, y);
 
         // Data for the tile west of it (a map-info value, a link's target), whatever it looks like
         if (tiles.IsValueTile(x, y) || kind == TileKind.Door && defs.DoorLocks.ContainsKey(obj))
@@ -230,7 +279,7 @@ public static class LevelChecks
         {
             // an `in-wall` thing (a trap shooter) is placed on a wall, though not on a door
             if (solid && !(thing.InWall && kind == TileKind.Wall))
-                problems.Add(new(CheckSeverity.Warning, $"{thing.Class} is on a {(kind == TileKind.Door ? "door" : "wall")}, so it isn't placed", x, y));
+                problems.Add(new(CheckSeverity.Warning, $"{thing.Class} is on a {(kind == TileKind.Door ? "door" : kind == TileKind.Wall ? "wall" : "block")} solid on the player's story, so it isn't placed", x, y));
             else if (tiles.Content.BrokenThingReason(thing.Class) is { } reason)
                 Count(broken, reason, x, y);
             return;

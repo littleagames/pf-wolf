@@ -172,7 +172,8 @@ function Add-Noise([double[]]$Samples, [Random]$Random, [double]$At, [double]$Am
 #
 
 # A level's planes: $Count planes of $Size x $Size, plane 0 filled with $Fill (a wall). PFWolf's
-# six planes are walls/floors, objects, flats, wall heights, tags and light zones.
+# planes are walls/floors, objects, flats, wall heights, tags, light zones and (a seventh, with
+# -Count 7) the stories things stand on.
 function New-MapPlanes([int]$Size = 64, [int]$Fill = 1, [int]$Count = 6) {
     $planes = @()
     for ($p = 0; $p -lt $Count; $p++) { $planes += , (New-Object 'uint16[]' ($Size * $Size)) }
@@ -183,10 +184,12 @@ function New-MapPlanes([int]$Size = 64, [int]$Fill = 1, [int]$Count = 6) {
 # Lays an ASCII layout onto the planes, one character per tile, its top-left corner at tile
 # ($Left, $Top). $Tiles maps each character to a hashtable of what goes on each plane: Plane0
 # (wall, door or floor code), Plane1 (object), Flat (plane 2: floor index + ceiling index * 256),
-# Height (plane 3), Tag (plane 4), Zone (plane 5). A key left out leaves that plane as it is.
+# Height (plane 3), Tag (plane 4), Zone (plane 5), Story (plane 6: the story the tile's things
+# stand on, 1 to 8; the planes need -Count 7). A key left out leaves that plane as it is.
 function Add-MapLayout($Planes, [string[]]$Layout, [hashtable]$Tiles, [int]$Left, [int]$Top, [int]$Size = 64) {
     if (($Layout | ForEach-Object Length | Sort-Object -Unique).Count -ne 1) { throw 'The layout rows are different lengths' }
-    $keys = @{ Plane0 = 0; Plane1 = 1; Flat = 2; Height = 3; Tag = 4; Zone = 5 }
+    $keys = @{ Plane0 = 0; Plane1 = 1; Flat = 2; Height = 3; Tag = 4; Zone = 5; Story = 6 }
+    if ($Planes.Count -lt 7 -and ($Tiles.Values | Where-Object { $_.ContainsKey('Story') })) { throw 'A tile sets Story: make the planes with New-MapPlanes -Count 7' }
     for ($row = 0; $row -lt $Layout.Count; $row++) {
         $line = $Layout[$row]
         for ($col = 0; $col -lt $line.Length; $col++) {
@@ -195,7 +198,7 @@ function Add-MapLayout($Planes, [string[]]$Layout, [hashtable]$Tiles, [int]$Left
             $tile = $Tiles[$ch]
             $i = ($Top + $row) * $Size + $Left + $col
             foreach ($key in $keys.Keys) {
-                if ($tile.ContainsKey($key) -and $null -ne $tile[$key]) { $Planes[$keys[$key]][$i] = [uint16]$tile[$key] }
+                if ($tile.ContainsKey($key) -and $null -ne $tile[$key] -and $keys[$key] -lt $Planes.Count) { $Planes[$keys[$key]][$i] = [uint16]$tile[$key] }
             }
         }
     }

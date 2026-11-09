@@ -182,6 +182,46 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         return Blocks(x, y).Any(block => block.Bottom < story && story <= block.Top);
     }
 
+    /// <summary>
+    /// The story a thing on a tile stands on (MapManager.ThingStory): its thing-story plane value
+    /// (plane 6, 1 to 8), else the floor under it: the player's story where the tile's walkable on
+    /// it or a block's solid there (a thing in a wall) or it's a door, else just over the highest
+    /// block top under the player's story, else story 1, the ground
+    /// </summary>
+    public int ThingStory(int x, int y) => ThingStory(x, y, this[MapConstants.StoryPlane, x, y]);
+
+    /// <summary>
+    /// Whether a tile's solid where things are placed (MapManager.LoadMap): a door, or a wall or a
+    /// floor block that takes in the player's story (a wall round the map's edge always); a thing
+    /// on one isn't placed, unless it's `in-wall`. A roof (a wall under the player's story) isn't.
+    /// </summary>
+    public bool SolidForThings(int x, int y) => KindAt(x, y) switch
+    {
+        TileKind.Door => true,
+        TileKind.Wall => Solid(x, y) || x == 0 || y == 0 || x == Width - 1 || y == Height - 1,
+        TileKind.Floor => Solid(x, y),
+        _ => false,
+    };
+
+    /// <summary>A UWMF level's things the object plane can't hold (MapAsset.ExtraThings)</summary>
+    public IReadOnlyList<MapThing> ExtraThings => map.ExtraThings;
+
+    /// <summary>A thing's story, as <see cref="ThingStory(int, int)"/>, with its own setting (a UWMF extra thing's) in place of plane 6</summary>
+    public int ThingStory(int x, int y, int set)
+    {
+        if (set is >= 1 and <= MaxStories)
+            return set;
+        int story = PlayerStory, floor = 1;
+        foreach (var (bottom, top) in Blocks(x, y))
+        {
+            if (bottom < story && story <= top)
+                return story;
+            if (top < story)
+                floor = Math.Max(floor, top + 1);
+        }
+        return KindAt(x, y) == TileKind.Door ? story : floor;
+    }
+
     /// <summary>An open floor tile with blocks of its own (a raised floor, an arch over it): their sides come from the walls ending the run (WallPosts.IsArch)</summary>
     public bool IsArch(int x, int y) => KindAt(x, y) == TileKind.Floor && StoryBlocks.Decode(this[MapConstants.HeightPlane, x, y]).Lower != null;
 
@@ -394,16 +434,14 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         => Defs.Doors.GetValueOrDefault(this[0, x, y]);
 
     /// <summary>
-    /// The thing placed on the tile: on open floor, or (an `in-wall` one) on a wall, as in the
-    /// game; not on a tile whose value is data for the tile west of it (<see cref="IsValueTile"/>)
+    /// The thing placed on the tile: where it isn't solid on the player's story (open floor, a roof
+    /// under it: <see cref="SolidForThings"/>), or (an `in-wall` one) on a wall, as in the game;
+    /// not on a tile whose value is data for the tile west of it (<see cref="IsValueTile"/>)
     /// </summary>
     public MapActorTranslation? Thing(int x, int y)
-        => Defs.Things.GetValueOrDefault(this[1, x, y]) is { } thing && KindAt(x, y) switch
-        {
-            TileKind.Door => false,
-            TileKind.Wall => thing.InWall,
-            _ => true,
-        } && !IsValueTile(x, y) ? thing : null;
+        => Defs.Things.GetValueOrDefault(this[1, x, y]) is { } thing
+           && (!SolidForThings(x, y) || KindAt(x, y) == TileKind.Wall && thing.InWall)
+           && !IsValueTile(x, y) ? thing : null;
 
     /// <summary>
     /// Whether the tile's object-plane value is data for the tile west of it: a map-info code's
@@ -545,8 +583,19 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         foreach (var extra in map.ExtraThings.Where(t => t.TileX == x && t.TileY == y))
         {
             var skills = extra.Skills == MapThing.AllSkills ? "" : $", skills {string.Join(",", Enumerable.Range(1, 4).Where(s => (extra.Skills & (1 << (s - 1))) != 0))}";
-            yield return $"Thing {extra.Class} at {extra.X:0.##},{extra.Y:0.##} facing {extra.Angle}{(extra.Patrol ? ", patrols" : "")}{(extra.Ambush ? ", ambush" : "")}{skills} (the level's own, not on the object plane)";
+            int extraStory = ThingStory(x, y, extra.Story);
+            var onStory = extraStory != PlayerStory || extra.Story != 0 ? $", on story {extraStory}" : "";
+            yield return $"Thing {extra.Class} at {extra.X:0.##},{extra.Y:0.##} facing {extra.Angle}{(extra.Patrol ? ", patrols" : "")}{(extra.Ambush ? ", ambush" : "")}{skills}{onStory} (the level's own, not on the object plane)";
         }
+
+        // The story things here stand on: said when it's set (plane 6) or off the player's
+        int set = this[MapConstants.StoryPlane, x, y];
+        int thingStory = ThingStory(x, y);
+        if (set != 0 || obj != 0 && thingStory != PlayerStory)
+            yield return set is >= 1 and <= MaxStories
+                ? $"Thing story: {set} (plane 6){(set == PlayerStory ? ", the player's" : "")}"
+                : set != 0 ? $"Thing story: {set} (not 1 to {MaxStories}: the floor under it, story {thingStory})"
+                : $"Things here stand on story {thingStory}, the floor under them (the player's is {PlayerStory})";
 
         int flat = this[MapConstants.FlatPlane, x, y];
         if (flat != 0)
@@ -617,7 +666,7 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
         if (ValueUse(x, y) is { } use)
             return use;
         if (Defs.Things.ContainsKey(obj))
-            return "a thing, but on a wall or door, so it isn't placed (only `in-wall` ones go on walls)";
+            return "a thing, but on a wall or door solid on the player's story, so it isn't placed (only `in-wall` ones go on walls)";
         if (Defs.DoorLocks.TryGetValue(obj, out var lockItem))
             return $"door lock ({lockItem}), but not on a door";
         return "not in the mapdefs";

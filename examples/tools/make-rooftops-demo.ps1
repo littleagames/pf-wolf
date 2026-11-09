@@ -44,7 +44,13 @@ Save-Picture "$modDir\graphics\RTSKY.png" 512 128 {
 # open ('i': a floor block up to the player's floor, a ceiling block over it), and a door ('D')
 # leads out onto the grey terrace ('R'), with the exit switch ('E') and a crate ('C') that
 # pushes along the terrace on its own story, leaving the roof under it. A tower ('T') stands at
-# the corner and a sign hangs over the brick roofs ('o').
+# the corner and a sign hangs over the brick roofs ('o'), a vase standing on it ('O').
+#
+# Guards walk the street, two stories down: one on watch ('g') and one patrolling up and down it
+# ('G', turned at 'v' and '^'). Things stand on the floor under them, so a thing on the street is
+# on story 1 by itself; the vase on the sign is set on story 5 (plane 6, Story). From the bridge's
+# open south side the player and the guards see (and shoot) each other; the parapets hide the
+# roofs from the street.
 #
 # The bridge's south side has no rail, so the street shows below it. The engine has no falling:
 # step off and you walk on air at the player's story. A level blocks such an edge (the north
@@ -52,14 +58,14 @@ Save-Picture "$modDir\graphics\RTSKY.png" 512 128 {
 
 $Level = @(
     '##########################'   # y=24
-    '#pppppppp......WWWWWWWWTT#'
-    '#rrrrrrrp......WiiiiiiWTT#'
+    '#pppppppp...v..WWWWWWWWTT#'   #      the patrol turns south
+    '#rrrrrrrp.g....WiiiiiiWTT#'   #      a guard on watch in the street, facing west
     '#rPrrrrrphhhhhhWiiiiiiDRR#'   #      the player start, facing east; the terrace door
     '#rrrrrrrrbbbbbbwiiiiiiWRE#'   # y=28 the bridge, into the window; the exit switch
     '#rrrrrrrp......WiiiiiiWRR#'   #      no rail on the bridge's south side: see below
-    '#rrrrorrp......WiiiiiiWRC#'   #      the sign; the crate
+    '#rrrrOrrp...G..WiiiiiiWRC#'   #      the sign and its vase; a patrolling guard; the crate
     '#rrrrrrrp......WWWwWWWWRR#'
-    '#pppppppp......ppppppppRR#'
+    '#pppppppp...^..ppppppppRR#'   #      the patrol turns north
     '##########################'   # y=33
 )
 
@@ -82,6 +88,11 @@ $Tiles['T'] = @{ Plane0 = 1; Height = 7 }                          # the tower
 $Tiles['R'] = @{ Plane0 = 1; Flat = $Roof }                        # the grey terrace (a roof)
 $Tiles['E'] = @{ Plane0 = 21; Height = 3 }                         # the exit switch, on the player's story
 $Tiles['C'] = @{ Plane0 = 12; Height = 3; Flat = $Roof; Plane1 = 450 }   # a crate: the mod's pushwall trigger 450
-$planes = New-MapPlanes
+$Tiles['O'] = @{ Plane0 = 28; Flat = $Roof; Height = 0x4042; Plane1 = 35; Story = 5 }   # the sign, a vase (35) on top of it: story 5
+$Tiles['g'] = @{ Plane0 = 108; Plane1 = 110 }                      # a guard standing in the street, facing west
+$Tiles['G'] = @{ Plane0 = 108; Plane1 = 113 }                      # a guard patrolling, setting off north
+$Tiles['v'] = @{ Plane0 = 108; Plane1 = 96 }                       # a patrol point: turn south
+$Tiles['^'] = @{ Plane0 = 108; Plane1 = 92 }                       # a patrol point: turn north
+$planes = New-MapPlanes -Count 7
 Add-MapLayout $planes $Level $Tiles 18 24
 Save-MapWad "$modDir\maps\MAP01.wad" 'MAP01' 'Rooftops' $planes

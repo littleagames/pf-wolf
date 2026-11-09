@@ -144,6 +144,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         new(MapConstants.HeightPlane, "Heights (plane 3)"),
         new(MapConstants.TagPlane, "Tags (plane 4)"),
         new(MapConstants.ZonePlane, "Light zones (plane 5)"),
+        new(MapConstants.StoryPlane, "Thing stories (plane 6)"),
     ];
 
     [ObservableProperty]
@@ -212,6 +213,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private bool _showHeights;
     [ObservableProperty] private bool _showTags;
     [ObservableProperty] private bool _showZones;
+    [ObservableProperty] private bool _showStories;
     [ObservableProperty] private bool _showGrid = true;
 
     // The 3D view beside the map, and what it shows
@@ -821,6 +823,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             + "one under it is floor, one over it is overhead.",
         MapConstants.TagPlane => "A switch acts on the doors, walls and things that share its tag. 0 is no tag.",
         MapConstants.ZonePlane => "The level's light zones (Level properties); 0 is lit as the level.",
+        MapConstants.StoryPlane => $"The story (1 to 8) the things on a tile stand on. 0: the floor under them, the player's story ({Tiles?.PlayerStory ?? 1}) "
+            + "where it's walkable, else the top of the highest block under it, else the ground.",
         _ => "",
     };
 
@@ -1276,6 +1280,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             case MapConstants.HeightPlane: ShowHeights = true; break;
             case MapConstants.TagPlane: ShowTags = true; break;
             case MapConstants.ZonePlane: ShowZones = true; break;
+            case MapConstants.StoryPlane: ShowStories = true; break;
         }
         BuildPalette();
         if (IsHeightsPlane)

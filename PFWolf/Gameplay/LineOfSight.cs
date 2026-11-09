@@ -104,9 +104,10 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
     tile it's blocked if, at the heights it crosses that tile at, the tile has a block (MapManager's
     spans; a wall's default block from story 1), or it's a door's tile anywhere off the player's
     story (its frame and lintel: doors work there only) or with the door shut on it (unless the line
-    gets through, as CheckLine's), a moving pushwall's, or on the map's edge. The two ends' own
-    tiles aren't checked (a thing in a wall still sees out). Diagonal walls count as whole blocks,
-    and wall sprites' panels don't stop it.
+    gets through, as CheckLine's), a moving pushwall's, or on the map's edge. On the two ends' own
+    tiles only a block between the end and where the line leaves (or meets) the tile stops it, not
+    one the end is inside (a thing in a wall still sees out): a guard under a bridge doesn't see the
+    player standing on it. Diagonal walls count as whole blocks, and wall sprites' panels don't stop it.
     */
 
     /// <summary>Whether a line in 3D (global coordinates, heights in texels up from the ground) is clear</summary>
@@ -123,7 +124,16 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         double stepX = sx != 0 ? 1 / Math.Abs(dx) : double.PositiveInfinity;
         double stepY = sy != 0 ? 1 / Math.Abs(dy) : double.PositiveInfinity;
 
-        for (int guard = 0; (tx, ty) != (ex, ey) && guard < 4 * MapConstants.MaxMapSize; guard++)
+        double Z(double t) => fromZ + (toZ - fromZ) * t;
+
+        // The start's own tile, up (or down) to where the line leaves it: only a block it isn't inside
+        double first = Math.Min(Math.Min(nextX, nextY), 1);
+        if ((tx, ty) == (ex, ey))
+            return !EndBlocks(tx, ty, fromZ, toZ, fromZ, toZ);
+        if (EndBlocks(tx, ty, fromZ, Z(first), fromZ, double.NaN))
+            return false;
+
+        for (int guard = 0; guard < 4 * MapConstants.MaxMapSize; guard++)
         {
             double enter;
             if (nextX < nextY)
@@ -138,15 +148,33 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 nextY += stepY;
                 ty += sy;
             }
-            if (enter >= 1 || (tx, ty) == (ex, ey))
+            if (enter >= 1)
                 break;
+            if ((tx, ty) == (ex, ey))
+                return !EndBlocks(tx, ty, Z(enter), toZ, double.NaN, toZ);     // the end's own tile, to it
             double leave = Math.Min(Math.Min(nextX, nextY), 1);
-            double za = fromZ + (toZ - fromZ) * enter, zb = fromZ + (toZ - fromZ) * leave;
+            double za = Z(enter), zb = Z(leave);
             if (BlocksLine3D(tx, ty, Math.Min(za, zb), Math.Max(za, zb), shot))
                 return false;
         }
         return true;
     }
+
+    // Whether a block on an end's own tile stops the line between two heights: one that the end
+    // (at fromZ or toZ, NaN for neither) is inside doesn't (a thing in a wall still sees out)
+    bool EndBlocks(int x, int y, double za, double zb, double fromZ, double toZ)
+    {
+        int i = map.TileIndex(x, y);
+        if (!map.InMap(x, y) || (uint)i >= (uint)map.SpanStop.Length)
+            return false;
+        double low = Math.Min(za, zb), high = Math.Max(za, zb);
+        bool Stops(int start, int stop) => Crosses(start, stop, low, high) && !Holds(start, stop, fromZ) && !Holds(start, stop, toZ);
+        return Stops(map.SpanStart[i], map.SpanStop[i]) || Stops(map.UpperSpanStart[i], map.UpperSpanStop[i]);
+    }
+
+    // Whether a block takes in a height (NaN: never)
+    static bool Holds(int start, int stop, double z) =>
+        stop != 0 && z >= (start - 1) * GameConstants.TextureSize && z < stop * GameConstants.TextureSize;
 
     /// <summary>Whether a tile stops a line crossing it between two heights (texels up from the ground)</summary>
     internal bool BlocksLine3D(int x, int y, double low, double high, bool shot)
