@@ -303,7 +303,40 @@ internal sealed class WallPosts(
             render.CellOverhead[n] = firsts[k] > 0;
             render.CellUnderClip[n] = k > 0 ? tops[k - 1] : int.MinValue;
 
-            // its own texture, else a wall's at the end of its run, else one beside it
+            // A face no open row is left for needs no texture: a raised floor's, under the next
+            // tile of the same floor, is in rows that floor has covered already. Looking one up
+            // walks the run of blocks to the wall ending it, every tile, every column. (An
+            // overhead block's underside still shows; it takes the face's texture only when
+            // nothing else gives one.)
+            bool faceshows = focal || render.PlainOpen || FaceCanShow(render.CellEntry, firsts[k], tops[k]);
+            render.CellFace[n] = false;
+            if (faceshows)
+            {
+                var face = Face();
+                render.CellFace[n] = face != null;
+                if (face != null)
+                {
+                    render.CellTexture[n] = face;
+                    render.CellOfs[n] = vertical
+                        ? LintelColumn(edgey, (render.XTileStep == -1) != mirrored)
+                        : LintelColumn(edgex, (render.YTileStep == 1) != mirrored);
+                }
+            }
+            if (render.CellOverhead[n])
+            {
+                var under = UndersideOf(tilex, tiley, texture);
+                if (under.Texture == null && !textured)
+                    under = UndersideOf(tilex, tiley, Face());
+                (render.CellUnderside[n], render.CellUnderFlat[n]) = under;
+                if (focal)
+                    render.CellLight = lighting.LightAt(render.HitTile, render.ViewX, render.ViewY);
+            }
+        }
+
+        // its own texture, else a wall's at the end of its run, else one beside it: looked up once
+        // for the tile's blocks
+        TextureAsset? Face()
+        {
             if (!textured)
             {
                 texture = focal || slanted ? null : BlockFaceTexture(tilex, tiley, vertical, out mirrored);
@@ -311,20 +344,7 @@ internal sealed class WallPosts(
                 if (texture != null)
                     render.CellLight = WallLight(edgex, edgey);
             }
-            render.CellFace[n] = texture != null;
-            if (texture != null)
-            {
-                render.CellTexture[n] = texture;
-                render.CellOfs[n] = vertical
-                    ? LintelColumn(edgey, (render.XTileStep == -1) != mirrored)
-                    : LintelColumn(edgex, (render.YTileStep == 1) != mirrored);
-            }
-            if (render.CellOverhead[n])
-            {
-                (render.CellUnderside[n], render.CellUnderFlat[n]) = UndersideOf(tilex, tiley, texture);
-                if (focal)
-                    render.CellLight = lighting.LightAt(render.HitTile, render.ViewX, render.ViewY);
-            }
+            return texture;
         }
 
         //
@@ -339,6 +359,11 @@ internal sealed class WallPosts(
         if (firsts[0] > render.GroundStory)
             AddCellFloor(render.GroundStory, firsts[0]);
     }
+
+    // Whether a block's face from story first up to story top (from the player's floor), height entry
+    // where the trace enters its tile, has any of the column's open rows to show in
+    bool FaceCanShow(short entry, int first, int top) =>
+        RowAt(entry, top) <= render.OpenBottom && RowAt(entry, first) - 1 >= render.OpenTop;
 
     // A floor that shows on the tile being opened, under the block starting at story over (int.MinValue: none)
     void AddCellFloor(int floor, int over)
