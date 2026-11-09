@@ -342,6 +342,15 @@ public record GameInfoAsset : Asset
     public bool Lives { get; init; } = true;
 
     /// <summary>
+    /// A player stepping into an area (floor code) no open door joins to the one they were in
+    /// joins up the areas again from it, so enemies there see and hear them -- walking from one
+    /// floor code to another with no door between, or teleporting -- as Midnight Assault does.
+    /// Off (Wolf3D's way, which its demos play back by), only doors opening and closing do, so
+    /// enemies in an area the player crossed into stay blind and deaf until shot.
+    /// </summary>
+    public bool AreasFollowPlayer { get; init; }
+
+    /// <summary>
     /// Items a death gives back as the player had them coming into the level, after the
     /// starting items (Midnight Assault's medkits: oldmedkits). Not with death-restores-level-start,
     /// which puts everything back.

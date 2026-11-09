@@ -22,7 +22,8 @@ internal sealed record PlayerMovementHooks(
     Action<int, int> WallSpriteMoveFrom,
     Action<MapTriggerTranslation, int, int, ControlDir> ActivateTrigger,
     Func<int, uint, int>? Throttle = null,
-    Action? Stalled = null);
+    Action? Stalled = null,
+    Func<bool>? AreasFollowPlayer = null);
 
 /// <summary>
 /// The acting player's movement: turning, looking up and down, walking and strafing from their
@@ -276,7 +277,17 @@ internal sealed class PlayerMovement(
         // the one the player walked in from.
         var areatile = map.FloorCode(player.TileX, player.TileY);
         if (map.ValidArea(areatile))
+        {
             player.AreaNumber = (byte)(areatile - map.Floors.AreaTile);
+
+            // Into an area no open door joins to theirs (another floor code with no door
+            // between, or a teleport's far end): with game-info areas-follow-player, the areas
+            // are joined up again from it, as Midnight Assault's Thrust did, so enemies there see
+            // and hear them. Wolf3D left it to the doors.
+            var byplayer = session.Areas.AreaByPlayer;
+            if (player.AreaNumber < byplayer.Length && byplayer[player.AreaNumber] == 0 && hooks.AreasFollowPlayer?.Invoke() == true)
+                session.Areas.ConnectAreas(map.Players.Select(pawn => (int)pawn.AreaNumber), map.Floors.NumAreas);
+        }
 
         //
         // mapdefs walk-over trigger (the end-of-castle exit) on the tile just stepped onto
