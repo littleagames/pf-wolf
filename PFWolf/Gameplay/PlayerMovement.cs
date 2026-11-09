@@ -381,7 +381,8 @@ internal sealed class PlayerMovement(
 
         //
         // check for actors: a living actor marked on a tile near the player
-        // (MapManager.MarkActorTile), and within MinActorDist of it, blocks the move
+        // (MapManager.MarkActorTile), and within MinActorDist of it, blocks the move -- or, if
+        // its class gives a radius, within that and the player's own size
         //
         if (yl > 0)
             yl--;
@@ -399,11 +400,12 @@ internal sealed class PlayerMovement(
                 if (map.ActorMarkAt((int)x, (int)y) is not { } actor || !MapManager.IsSolidActor(actor))
                     continue;
 
+                long reach = actor.Reach(PLAYERSIZE, GameConstants.MinActorDist);
                 var deltax = ob.X - actor.X;
-                if (deltax < -GameConstants.MinActorDist || deltax > GameConstants.MinActorDist)
+                if (deltax < -reach || deltax > reach)
                     continue;
                 var deltay = ob.Y - actor.Y;
-                if (deltay < -GameConstants.MinActorDist || deltay > GameConstants.MinActorDist)
+                if (deltay < -reach || deltay > reach)
                     continue;
 
                 // An ally following the player gets out of their way

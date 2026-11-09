@@ -261,6 +261,36 @@ public class PlayerMovementTests
         Assert.That(_movement.TryMove(Player()), Is.True);
     }
 
+    [TestCase(0, 0x10000, true)]         // no radius: the game's own box, a tile each way
+    [TestCase(16, 0x10000, false)]       // a radius of 16 texels: only within it and the player's size (0x5800)
+    [TestCase(16, 0x9900, false)]
+    [TestCase(16, 0x9800, true)]         // 16 texels (0x4000) and the player's 0x5800: touching
+    public void An_Actor_Given_A_Radius_Blocks_Only_Within_It_And_The_Players_Size(int radius, int apart, bool blocked)
+    {
+        // Arrange: a tree marked on the next tile east, its middle apart from the player's
+        var tree = new Monster { Name = "ForestTree", Radius = radius, X = 11 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
+        tree.RuntimeFlags |= ObjFlags.Shootable;
+        _map.ActorAt[11, 10] = tree.Mark;
+        var pawn = Player();
+        pawn.X = tree.X - apart;
+
+        // Act / Assert
+        Assert.That(_movement.TryMove(pawn), Is.EqualTo(!blocked));
+    }
+
+    [TestCase(0x3000, 16, true)]         // 12 texels aside, a radius of 16: the shot passes within it
+    [TestCase(0x3000, 8, false)]
+    [TestCase(-0x3000, 16, true)]
+    public void A_Shot_Hits_An_Actor_Given_A_Radius_Only_If_It_Passes_Within_It(int aside, int radius, bool hit)
+    {
+        // Arrange: looking east from (10.5, 10.5), the tree five tiles ahead and a little south
+        var tree = new Monster { Name = "ForestTree", Radius = radius, X = 15 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 + aside };
+        var east = (10 * Tile + Tile / 2, 10 * Tile + Tile / 2, 0, 0x10000);
+
+        // Act / Assert
+        Assert.That(PlayerAttacks.WithinRadius(tree, east), Is.EqualTo(hit));
+    }
+
     [Test]
     public void Running_Into_A_Wall_Slides_Along_It_And_Bumps()
     {

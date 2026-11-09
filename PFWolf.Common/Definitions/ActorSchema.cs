@@ -34,7 +34,7 @@ public static class ActorSchema
                 "true: it changes the class of its name loaded before it (a base pack's, say) rather than replacing it: its properties and states replace those of the same name, and its flags are added (~FLAG takes one away)",
                 defaultText: "false"),
             FieldSchema.Value("radius", FieldType.Integer,
-                "How far it reaches from its middle, in texels (32: the whole tile). Nothing bumps into it by this (blocking goes by whole tiles, with the SOLID flag); it's how much health a Prop Hunt prop looking like it has, when it has no prophunt.health"),
+                "How far it reaches from its middle, in texels (32: the whole tile). A living actor (an enemy, or anything shootable built on Monster) is bumped into and shot by it: a player stops at its radius plus their own size, a shot hits it only if it passes within the radius, and a rocket or missile once within it and its own size. Left out, the game's own: a player kept a tile off, and a shot hitting anywhere near the middle of the view. Decorations still block their whole tile (SOLID). It's also how much health a Prop Hunt prop looking like it has, when it has no prophunt.health"),
             FieldSchema.List("flags", "Its flags (SOLID, AMBUSH, NOTCOUNTED...), its parents' as well (~FLAG takes one away). The actor flags reference lists each one.",
                 FieldSchema.Value("flag", FieldType.Text, null, hint: FieldHint.Flag), inline: true),
             FieldSchema.Entries("properties",

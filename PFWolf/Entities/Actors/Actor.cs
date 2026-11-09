@@ -11,6 +11,15 @@ internal record Actor : Thinker
     public Dictionary<string, ActorStateFrame> ResolvedStates { get; internal set; } = [];
     public ActorStateFrame? CurrentState { get; internal set; }
     public int Radius { get; internal set; }
+
+    /// <summary>
+    /// How near (global units, each way) something whose own half-width is <paramref name="size"/>
+    /// comes to its middle before they meet: its class's radius (texels) plus that size, or
+    /// <paramref name="classic"/> -- the game's own box -- when its class gives no radius
+    /// </summary>
+    internal long Reach(long size, long classic) =>
+        Radius > 0 ? ((long)Radius << (MapConstants.TileShift - Gameplay.GameConstants.TextureShift)) + size : classic;
+
     public HashSet<string> Flags { get; internal set; } = [];
     public string? Parent { get; internal set; } = null;
     public Dictionary<string, object> Properties { get; internal set; } = [];

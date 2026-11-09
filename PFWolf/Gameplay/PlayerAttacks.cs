@@ -61,20 +61,34 @@ internal sealed class PlayerAttacks(
             return ShootCandidatesFrom(session.Player);
 
         var candidates = new List<Entities.Actors.Monster>();
+        var origin = hooks.ViewOrigin();
 
         foreach (var actor in map.GetActors().OfType<Entities.Actors.Monster>())
         {
             if (actor == null || !actor.ResolvedStates.ContainsKey("Chase")) continue;
             if (factions.IsAlly(session.Player, actor)) continue;     // the player's side: shots pass them by
-            if (actor.RuntimeFlags.Has(ObjFlags.Shootable) && actor.RuntimeFlags.Has(ObjFlags.Visible)
-                && Math.Abs(actor.ViewX - hooks.CenterX()) < hooks.ShootDelta())
-            {
+            if (!actor.RuntimeFlags.Has(ObjFlags.Shootable) || !actor.RuntimeFlags.Has(ObjFlags.Visible)) continue;
+
+            // near the middle of the view; one whose class gives a radius, only if the shot
+            // passes within it
+            if (actor.Radius > 0 ? WithinRadius(actor, origin) : Math.Abs(actor.ViewX - hooks.CenterX()) < hooks.ShootDelta())
                 candidates.Add(actor);
-            }
         }
 
         candidates.Sort((a, b) => a.TransX.CompareTo(b.TransX));
         return candidates.Select(c => new ShotTarget(c, c.TransX)).ToList();
+    }
+
+    /// <summary>
+    /// Whether a shot from the view (<paramref name="origin"/>: hooks.ViewOrigin) straight ahead
+    /// passes within the actor's radius of its middle: how far to the side of the line of fire its
+    /// middle is, as ShootCandidatesFrom works it out
+    /// </summary>
+    internal static bool WithinRadius(Entities.Actors.Actor actor, (int X, int Y, int Sin, int Cos) origin)
+    {
+        int gx = actor.X - origin.X, gy = actor.Y - origin.Y;
+        int ny = MathUtils.FixedMul(gy, origin.Cos) + MathUtils.FixedMul(gx, origin.Sin);
+        return Math.Abs((long)ny) <= actor.Reach(0, 0);
     }
 
     /// <summary>
@@ -107,8 +121,10 @@ internal sealed class PlayerAttacks(
             if (nx < GameConstants.MinDist)
                 continue;
 
-            // |ny / nx| * scale < ShootDelta, with the view's width taken out of both
-            if (Math.Abs((long)ny) * 5 * (GameConstants.FocalLength + GameConstants.MinDist) >= (long)nx * (GameConstants.ViewGlobal / 2))
+            // |ny / nx| * scale < ShootDelta, with the view's width taken out of both; one whose
+            // class gives a radius, only if the shot passes within it
+            if (actor.Radius > 0 ? Math.Abs((long)ny) > actor.Reach(0, 0)
+                : Math.Abs((long)ny) * 5 * (GameConstants.FocalLength + GameConstants.MinDist) >= (long)nx * (GameConstants.ViewGlobal / 2))
                 continue;
 
             if (!lineOfSight.CheckLine(actor, shooter, shot: true))

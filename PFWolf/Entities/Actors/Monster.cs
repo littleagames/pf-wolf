@@ -304,8 +304,9 @@ internal partial record Monster : Actor
 
                 var deltax = Math.Abs(newx - pawn.X);
                 var deltay = Math.Abs(newy - pawn.Y);
+                long reach = Reach(PlayerSize, MinActorDist);     // as the player's move into it (PlayerMovement.TryMove)
 
-                if (deltax <= MinActorDist && deltay <= MinActorDist)
+                if (deltax <= reach && deltay <= reach)
                 {
                     // An ally walking after a player (or out of their way) is only stopped
                     // getting nearer them, not moving off past or away from them

@@ -2414,10 +2414,14 @@ internal class MapManager
     internal IEnumerable<Entities.Actors.Monster> ShootableActorsAt(int tilex, int tiley) =>
         _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.TileX == tilex && a.TileY == tiley && a.RuntimeFlags.Has(ObjFlags.Shootable));
 
-    /// <summary>The living (Shootable) actors within <paramref name="reach"/> (global units, each way) of a point, nearest first</summary>
+    /// <summary>
+    /// The living (Shootable) actors within <paramref name="reach"/> (global units, each way) of a
+    /// point -- one whose class gives a radius, within that and a projectile's size -- nearest first
+    /// </summary>
     internal IEnumerable<Entities.Actors.Monster> ShootableActorsNear(int x, int y, long reach) =>
         _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.RuntimeFlags.Has(ObjFlags.Shootable)
-                && Math.Abs((long)a.X - x) <= reach && Math.Abs((long)a.Y - y) <= reach)
+                && a.Reach(Gameplay.GameConstants.ProjSize, reach) is var r
+                && Math.Abs((long)a.X - x) <= r && Math.Abs((long)a.Y - y) <= r)
             .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
 
     /// <summary>The dead (no longer Shootable) enemies within <paramref name="reach"/> (global units, each way) of a point, nearest first</summary>
