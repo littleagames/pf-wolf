@@ -1,0 +1,83 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:opl="using:PFWolf.Editor.Audio.Opl"
+        x:Class="PFWolf.Editor.Views.MidiImportWindow"
+        x:DataType="vm:MidiImportViewModel"
+        Title="{Binding FileName, StringFormat='Import MIDI - {0}'}"
+        Width="760" Height="640" MinWidth="560" MinHeight="460"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,10,0,4" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,12,0,0">
+      <TextBlock Text="{Binding Status}" Opacity="0.8" TextWrapping="Wrap"
+                 IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+        <Button Content="{Binding PlayLabel}" Command="{Binding PlayCommand}" MinWidth="90"
+                ToolTip.Tip="Plays the song as it will be saved" />
+        <Button Grid.Column="2" Content="Save to mod…" Classes="accent" Command="{Binding SaveSongCommand}"
+                ToolTip.Tip="Puts it in a mod as music/NAME.imf: named like one of the game's songs, it plays in its place" />
+        <Button Grid.Column="3" Content="Close" IsCancel="True" Click="OnClose" />
+      </Grid>
+    </StackPanel>
+
+    <ScrollViewer>
+      <StackPanel Spacing="4" Margin="0,0,12,0">
+        <TextBlock TextWrapping="Wrap" Opacity="0.7"
+                   Text="Each note is given to a free OPL channel; when they're all busy the oldest note is cut short. Instruments come from the bank, volume from velocity, channel volume and expression." />
+
+        <TextBlock Classes="heading" Text="What it made" />
+        <SelectableTextBlock Text="{Binding Report}" TextWrapping="Wrap" />
+
+        <TextBlock Classes="heading" Text="Instruments" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <ComboBox ItemsSource="{Binding Banks}" SelectedItem="{Binding SelectedBank}" HorizontalAlignment="Stretch" />
+          <Button Grid.Column="1" Content="Load GENMIDI bank…" Click="OnLoadBank"
+                  ToolTip.Tip="A DMX GENMIDI bank (.op2, as Doom's): an OPL2 voice for every General MIDI instrument and drum" />
+        </Grid>
+
+        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="8" Margin="0,8,0,0">
+          <TextBlock Classes="label" Text="Transpose" />
+          <NumericUpDown Grid.Column="1" Value="{Binding Transpose}" Minimum="-48" Maximum="48" Increment="1" FormatString="0" Width="140" HorizontalAlignment="Left"
+                         ToolTip.Tip="Semitones every note but the drums is moved (12 is an octave)" />
+          <TextBlock Classes="label" Grid.Row="1" Text="Snap notes to" />
+          <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Quantizes}" SelectedItem="{Binding SelectedQuantize}" MinWidth="220"
+                    ToolTip.Tip="Moves note starts and ends to the nearest point of this grid (by the file's beat)" />
+        </Grid>
+
+        <TextBlock Classes="heading" Text="OPL channels to play on" />
+        <ItemsControl ItemsSource="{Binding Channels}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel ItemSpacing="12" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:OplChannelOption">
+              <CheckBox Content="{Binding Label}" IsChecked="{Binding IsOn}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock Classes="heading" Text="MIDI channels to import" />
+        <ItemsControl ItemsSource="{Binding MidiChannels}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:MidiChannelOption">
+              <CheckBox Content="{Binding Label}" IsChecked="{Binding IsOn}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

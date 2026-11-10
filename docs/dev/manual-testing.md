@@ -1068,6 +1068,8 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** Export file… on a song (.imf), an AdLib sound (.adl) and a PC sound (.pcs); the files play in another IMF player / load back with Add.
 - [ ] **(never tried)** Add song to mod… with an .imf and with an .ogg named like a game song (e.g. CORNER): the list shows it as the mod's, it plays in its place in the game, and adding the other one takes the first out of the mod.
 - [ ] **(never tried)** Add sound to mod… with a .wav, an .adl and a .pcs of one name: all three stay (one each kind); a bad file says why and writes nothing; a pk3 mod.
+- [ ] **(never tried by ear)** Import MIDI… with a few real MIDI files (a busy one, one with drums): Play sounds like the tune, notes in the right octave, drums recognisable; Save to mod… named like a game song plays in the game.
+- [ ] **(never tried)** Import MIDI… → Load GENMIDI bank… with a real .op2 (Doom's GENMIDI lump or DMXOPL): instruments sound right and in the right octave.
 
 ## 2.11 Palettes (F9)
 

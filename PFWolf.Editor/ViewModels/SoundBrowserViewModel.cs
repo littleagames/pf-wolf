@@ -160,8 +160,6 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
     /// </summary>
     public async Task AddToModAsync(bool asSong, string fileName, byte[] data)
     {
-        if (AskText == null || PickMod == null)
-            return;
 
         SoundKind kind;
         try
@@ -184,30 +182,47 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         }
         var suggested = pickedName ?? new string(Path.GetFileNameWithoutExtension(fileName)
             .Select(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' ? char.ToUpperInvariant(c) : '_').ToArray());
+        await SaveToModAsync(kind, suggested, Path.GetExtension(fileName).ToLowerInvariant(), data);
+    }
+
+    /// <summary>An IMF song made here (by Import MIDI) put in a mod as music/NAME.imf; true once it's there</summary>
+    public Task<bool> SaveSongToModAsync(string suggestedName, byte[] imf)
+    {
+        // Named after the song picked, to play in its place, if one is
+        var name = SelectedItem?.Entry is { Kind: SoundKind.Music } picked ? picked.Name : suggestedName;
+        return SaveToModAsync(SoundKind.Music, name, ".imf", imf);
+    }
+
+    // Asks for a name and a mod, then writes the file there in place of the mod's others of that name and kind
+    private async Task<bool> SaveToModAsync(SoundKind kind, string suggested, string extension, byte[] data)
+    {
+        if (AskText == null || PickMod == null)
+            return false;
         var what = kind == SoundKind.Music ? "song" : $"{SoundCatalog.KindName(kind)} sound";
         var name = await AskText($"Add a {what} to a mod",
             $"Its name: one of the game's {what}s' names plays it in that one's place, a new name is a new one{(kind == SoundKind.Music ? " for game-info or mapdefs to play" : " to play by name or from sound-seq")}:",
             suggested, candidate => ArtFiles.CheckName(candidate.Trim()));
         if (string.IsNullOrWhiteSpace(name))
-            return;
+            return false;
         name = name.Trim().ToUpperInvariant();
 
         var folder = await PickMod($"A mod to put {name} in (it goes in its {SoundFiles.Folder(kind)} folder)");
         if (folder == null)
-            return;
+            return false;
 
         try
         {
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
             var (entryPath, deletes) = SoundFiles.Target(folder, kind, name, extension);
             var path = Editing.ModFiles.Change(folder, [(entryPath, data)], deletes);
             Status = $"Saved {path}" + (deletes.Count > 0 ? $" in place of {string.Join(", ", deletes)}" : "");
             _showAfterLoad = (kind, name);
             Saved?.Invoke(this, folder);
+            return true;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             Status = $"Couldn't save {name}: {e.Message}";
+            return false;
         }
     }
 

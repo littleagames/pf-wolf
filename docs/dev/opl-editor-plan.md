@@ -149,5 +149,29 @@ byte by byte, so command order inside a tick may differ). Plus synthetic tests.
 - Checked in the editor by screenshot: the new buttons, Export file… on for a song. Not tried
   by hand: the file pickers, an actual Add into a mod (folder or pk3), exported files elsewhere.
 
+**Phase 2 done 2026-11-10** (MIDI import):
+- `MidiFile` (Audio/Opl): type 0/1/2, running status, tempo map (and SMPTE timing), program,
+  CC 7 volume, CC 11 expression, pitch bend with its RPN 0 range kept as a note starts (bends
+  during a note are counted, not played), notes never let go end with the file, optional
+  snapping to 1/8, 1/16, 1/32 notes. Length = where the last track ends.
+- `OplBank`: PFWolf's built-in bank (16 family voices + 7 drums, made here, rough, to be tuned
+  by ear) and DMX GENMIDI `.op2` (first voice of each instrument; fixed-note flag; note
+  offset). `.wopl` not done: no file on hand to check the format against.
+- `MidiImport.ToSong`: notes to channels 1-8 (0 only when allowed and the rest are busy),
+  a free channel already set to the instrument first, else the one free longest, else the
+  oldest note is cut short; volume = carrier level + 40·log10 of velocity, CC 7 and CC 11 in
+  0.75 dB steps (carrier only, so an additive voice's modulator stays as loud); drums on the
+  same channels with the bank's fixed notes; song starts Muse-style; loops where the file ends.
+  `MidiImportReport` says what was cut short, out of range, missing drums, skipped bends, and
+  warns past 16383 commands.
+- F8 **Import MIDI…** → MidiImportWindow: report, bank (+ Load GENMIDI bank…), transpose,
+  snap, OPL channels, MIDI channels; Play; Save to mod… (music/NAME.imf through the same
+  save as Add song to mod, named after the song picked in the browser if any). Tests in
+  MidiImportTests (MIDI bytes built in the test).
+- Checked in the editor with a generated 3-track MIDI file: the dialog, report, toggling drums
+  off and channel 0 on. Not tried: Play (by ear), Save to mod, a real-world MIDI, a real
+  GENMIDI file (the .op2 layout is from Chocolate Doom's structs; whether DMX's notes come out
+  an octave off needs an ear).
+
 Numbers for phase 3: Wolf3D's songs read as 23382 notes with 1451 kept writes; Spear 2180,
 Blake 3440 kept writes (worth a look at what they are before the raw view is designed).

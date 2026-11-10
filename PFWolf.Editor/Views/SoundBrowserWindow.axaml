@@ -104,6 +104,8 @@
                   ToolTip.Tip="Puts an IMF (.imf, .wlf), OGG, MP3 or WAV file in a mod's music folder: named like one of the game's songs, it plays in its place" />
           <Button Content="Add sound to mod…" Click="AddSound"
                   ToolTip.Tip="Puts a WAV, OGG or MP3 (digitized), .adl (AdLib) or .pcs (PC speaker) file in a mod's sounds folder: named like one of the game's sounds, it plays in its place" />
+          <Button Content="Import MIDI…" Click="ImportMidi"
+                  ToolTip.Tip="Makes a MIDI file into an IMF song (AdLib) to hear and put in a mod" />
         </WrapPanel>
       </StackPanel>
     </ScrollViewer>
@@ -121,6 +123,7 @@
           <Separator />
           <MenuItem Header="Add song to mod…" Click="AddSong" />
           <MenuItem Header="Add sound to mod…" Click="AddSound" />
+          <MenuItem Header="Import MIDI…" Click="ImportMidi" />
           <Separator />
           <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" />
         </ContextMenu>

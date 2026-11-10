@@ -142,6 +142,32 @@ public partial class SoundBrowserWindow : Window
         await stream.WriteAsync(export.Data);
     }
 
+    private async void ImportMidi(object? sender, RoutedEventArgs e)
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "A MIDI file to make into a song",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("MIDI files") { Patterns = ["*.mid", "*.midi", "*.smf"] }, FilePickerFileTypes.All],
+        });
+        if (files.Count == 0 || files[0].TryGetLocalPath() is not { } path)
+            return;
+
+        MidiImportViewModel import;
+        try
+        {
+            import = new MidiImportViewModel(path, await File.ReadAllBytesAsync(path));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            ViewModel.Status = $"Couldn't import {Path.GetFileName(path)}: {ex.Message}";
+            return;
+        }
+        ViewModel.Stop();
+        import.Save = ViewModel.SaveSongToModAsync;
+        await new MidiImportWindow { DataContext = import }.ShowDialog(this);
+    }
+
     private void AddSong(object? sender, RoutedEventArgs e) => AddFile(asSong: true);
     private void AddSound(object? sender, RoutedEventArgs e) => AddFile(asSong: false);
 
