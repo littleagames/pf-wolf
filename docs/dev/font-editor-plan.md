@@ -159,3 +159,28 @@ Planned 2026-11-10.
   Wolf3D, Spear, shareware, Blake and Planet Strike fonts.yaml builds with no warning and
   draws). The snapshot tests planned first weren't needed: the drawing code moved unchanged,
   and the screenshots show it.
+
+**Phase 1 done 2026-11-10** (the font window, read-only):
+- `FontCatalog` (Data): every font, each fonts.yaml definition plus each font asset no
+  definition names (Blake's Font1-5); `DefinedIn` (each fonts.yaml file defining it, with its
+  lines, read from the asset's origins); uses: `FontNames.EngineUses`, fonts made from it, and a
+  reflection walk (`FontReferences`) of game-info, hud-messages, statusbar(-fullscreen),
+  intermission, presenter and every menu for string properties ending in Font, `Fonts` lists and
+  `font` keys of string maps (menu components' params), with YAML key paths for Go to; Lua
+  `game.drawtext` / `game.textwidth` string literals naming a font. `BuildFont` and `Notes`
+  (Blake's Font1, unknown type).
+- FontBrowserViewModel / FontBrowserWindow (Resources → Fonts…, Ctrl+Shift+F): list with type
+  filter and ⚠ for problems; details; preview (text, color, background, zoom 1-8) through
+  `IndexedTextCanvas`; the 0-255 character grid (missing cells dark, hover says code and width);
+  problems (builder warnings, unknown colors, nothing names it); Used by with Go to (Definitions
+  window `ShowEntry` at the field, or the script browser's new `ShowLine`); Defined in with the
+  entry's YAML; Copy name, Export font file (.fnt).
+- Manual page docs/manual/editor/fonts.md. Tests: FontCatalogTests, GameData
+  FontCatalogGameTests (Wolf3D, Spear's fonts from wolf3d's file, Blake's chunks and presenter
+  uses, the Fonts Demo mod: HudMessage defined in two files, its vga/graphic/sheet fonts build
+  with nothing wrong).
+- Checked by screenshots: HudMessage, SmallFont, IntermissionFont (upper-case glyphs, own
+  colors), Used by / Defined in, Go to opening game-info high-scores at its Font field. Not
+  tried in the window: Export .fnt's dialog, the Fonts Demo's fonts, a Lua use's Go to, Blake.
+  Driving recipe: Avalonia's top menus have no UIA expand, so Ctrl+Shift+F went in as SendInput
+  scancodes after checking the editor was the foreground window.

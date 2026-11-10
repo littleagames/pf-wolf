@@ -6,7 +6,7 @@ order: 9
 # The editor
 
 PFWolf Editor (`PFWolf.Editor.exe`) edits levels and what goes into them:
-textures and sprites, sounds, palettes, texts, scripts and the definition files. It reads the game
+textures and sprites, sounds, palettes, fonts, texts, scripts and the definition files. It reads the game
 the way PFWolf does, pfwolf.pk3 with your mods laid over it, and it saves into a mod, a folder or
 a `.pk3`, never into pfwolf.pk3 or the original data files.
 
@@ -23,6 +23,7 @@ stand-alone games mods add. Blake Stone's games aren't in it yet.
 | [Texts](./texts) | The help screens, end texts and briefings, page by page (F2) |
 | [Scripts](./scripts) | The Lua the game runs, with what it gives and what calls it (F12) |
 | [Demos](./demos) | The demos, and where everyone went in them (Ctrl+Shift+D) |
+| [Fonts](./fonts) | Every font, drawn as the game draws it, with its characters and what prints in it (Ctrl+Shift+F) |
 | [Definitions](./definitions) | The definition files, in fields or as YAML (F11) |
 
 ## Loading a game
@@ -86,5 +87,6 @@ asks whether to save them first.
 | F11 | Definitions |
 | F12 | Scripts |
 | Ctrl+Shift+D | Demos |
+| Ctrl+Shift+F | Fonts |
 
 [Editing levels](./levels#tools) has the map's own keys.

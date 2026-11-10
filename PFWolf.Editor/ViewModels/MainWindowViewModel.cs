@@ -341,6 +341,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _paletteBrowser?.Load(Content);
         _textBrowser?.Load(Content);
         _scriptBrowser?.Load(Content);
+        _fontBrowser?.Load(Content);
         _definitions?.Load(Content, Mods.ToList());
     }
 
@@ -572,6 +573,41 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _scriptBrowser.Load(Content);
         }
         Dialogs.ShowScriptBrowser(_scriptBrowser);
+    }
+
+    //
+    // The font window
+    //
+
+    private FontBrowserViewModel? _fontBrowser;
+
+    /// <summary>Opens the font window, on the first font the first time</summary>
+    [RelayCommand]
+    private void ShowFonts()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_fontBrowser == null)
+        {
+            _fontBrowser = new FontBrowserViewModel();
+            // A use's Go to: its definition in the Definitions window, or its line in the script browser
+            _fontBrowser.GoTo += (_, target) =>
+            {
+                if (target.Script != null)
+                {
+                    ShowScripts();
+                    _scriptBrowser?.ShowLine(target.Script, target.Line);
+                }
+                else if (target.Kind is { } kind && target.Path is { Count: > 0 } path)
+                {
+                    ShowDefinitions();
+                    _definitions?.ShowEntry(kind, [path[0]], path.Count > 1 ? [.. path.Skip(1)] : null);
+                }
+            };
+            _fontBrowser.Load(Content);
+        }
+        Dialogs.ShowFontBrowser(_fontBrowser);
     }
 
     //

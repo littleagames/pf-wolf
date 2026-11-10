@@ -1,0 +1,151 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:data="using:PFWolf.Editor.Data"
+        x:Class="PFWolf.Editor.Views.FontBrowserWindow"
+        x:DataType="vm:FontBrowserViewModel"
+        Title="{Binding Title}"
+        Width="1200" Height="780" MinWidth="820" MinHeight="480"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,8,0,0" />
+    </Style>
+    <Style Selector="Image.pixels">
+      <Setter Property="Stretch" Value="Fill" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <!-- What's listed -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+        <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}" MinWidth="200" />
+        <TextBox x:Name="Search" Grid.Column="1" Text="{Binding Filter}" VerticalAlignment="Center"
+                 PlaceholderText="Find by name, its glyphs or what prints in it (LargeFont, Font3, hud-messages)" />
+        <TextBlock Grid.Column="2" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="100" />
+      </Grid>
+    </Border>
+
+    <!-- What's been done -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Opacity="0.8" />
+    </Border>
+
+    <!-- Every font -->
+    <ListBox x:Name="List" DockPanel.Dock="Left" Width="290" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8">
+      <ListBox.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="Copy name" Command="{Binding CopyNameCommand}" />
+          <MenuItem Header="Export font file (.fnt)…" Click="ExportFont" IsEnabled="{Binding CanExportFont}" />
+        </ContextMenu>
+      </ListBox.ContextMenu>
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="8,3" />
+        </Style>
+      </ListBox.Styles>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:FontItem">
+          <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="{Binding ToolTip}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="⚠" Foreground="#E0A030" IsVisible="{Binding HasProblems}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Grid.Column="1" Text="{Binding TypeText}" Opacity="0.6" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <!-- The font picked -->
+    <ScrollViewer Margin="8" IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="6" Margin="0,0,12,0">
+        <SelectableTextBlock Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+
+        <!-- The preview -->
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
+          <TextBox Text="{Binding SampleText}" AcceptsReturn="True" MaxHeight="80" PlaceholderText="Text to show it with" />
+          <TextBlock Grid.Column="1" Text="Text" VerticalAlignment="Center" />
+          <AutoCompleteBox Grid.Column="2" Text="{Binding TextColor}" ItemsSource="{Binding ColorNames}" FilterMode="StartsWith" MinWidth="130"
+                           ToolTip.Tip="A colors.yaml name, #RRGGBB or a palette index" />
+          <TextBlock Grid.Column="3" Text="on" VerticalAlignment="Center" />
+          <AutoCompleteBox Grid.Column="4" Text="{Binding BackgroundColor}" ItemsSource="{Binding ColorNames}" FilterMode="StartsWith" MinWidth="130"
+                           ToolTip.Tip="The color behind the text (a glow fades into it): a colors.yaml name, #RRGGBB or a palette index" />
+          <TextBlock Grid.Column="5" Text="Zoom" VerticalAlignment="Center" />
+          <NumericUpDown Grid.Column="6" Value="{Binding Zoom}" Minimum="1" Maximum="8" Increment="1" FormatString="0" Width="110" />
+        </Grid>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+          <Image Classes="pixels" RenderOptions.BitmapInterpolationMode="None" Source="{Binding PreviewImage}" Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}"
+                 ToolTip.Tip="As the game draws it, with the font's shadow, outline, gradient and glow" />
+        </ScrollViewer>
+
+        <!-- Its characters -->
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <TextBlock Classes="heading" Text="Characters" />
+          <TextBlock Text="{Binding CoverageText}" Opacity="0.7" VerticalAlignment="Bottom" />
+          <TextBlock x:Name="CharacterInfo" Opacity="0.85" VerticalAlignment="Bottom" FontFamily="Consolas,Menlo,monospace" />
+        </StackPanel>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+          <Image x:Name="Characters" Classes="pixels" RenderOptions.BitmapInterpolationMode="None" Source="{Binding CharactersImage}" Width="{Binding CharactersWidth}" Height="{Binding CharactersHeight}"
+                 ToolTip.Tip="Codes 0 to 255, 16 to a row; dark cells are characters the font hasn't got (it leaves room for them)" />
+        </ScrollViewer>
+
+        <!-- What's wrong -->
+        <TextBlock Classes="heading" Text="Problems" IsVisible="{Binding SelectedItem.HasProblems, FallbackValue=False}" />
+        <ItemsControl ItemsSource="{Binding Problems}" IsVisible="{Binding SelectedItem.HasProblems, FallbackValue=False}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding StringFormat='⚠ {0}'}" TextWrapping="Wrap" Foreground="#E0A030" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- What prints in it -->
+        <TextBlock Classes="heading" Text="Used by" />
+        <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="200" DoubleTapped="OnUseDoubleTapped">
+          <ListBox.ContextMenu>
+            <ContextMenu>
+              <MenuItem Header="Go to" Command="{Binding GoToUseCommand}" />
+            </ContextMenu>
+          </ListBox.ContextMenu>
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem">
+              <Setter Property="Padding" Value="8,3" />
+            </Style>
+          </ListBox.Styles>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="data:FontUse">
+              <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Where it's defined -->
+        <TextBlock Classes="heading" Text="Defined in" IsVisible="{Binding DefinitionYaml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <ItemsControl ItemsSource="{Binding DefinedIn}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" FontSize="12" Opacity="0.8" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <SelectableTextBlock Text="{Binding DefinitionYaml}" FontFamily="Consolas,Menlo,monospace" FontSize="12" Opacity="0.85"
+                             IsVisible="{Binding DefinitionYaml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <WrapPanel ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+          <Button Content="Go to" Command="{Binding GoToUseCommand}"
+                  ToolTip.Tip="Opens the use picked: its entry in the Definitions window, or its line in the script browser (or double-click it)" />
+          <Button Content="Copy name" Command="{Binding CopyNameCommand}" />
+          <Button Content="Export font file (.fnt)…" Click="ExportFont" IsEnabled="{Binding CanExportFont}"
+                  ToolTip.Tip="Saves the Wolf3D font this font's glyphs come from, as a file a mod's fonts/ folder takes" />
+        </WrapPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

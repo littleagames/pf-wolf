@@ -116,6 +116,9 @@ public interface IEditorDialogs
     /// <summary>Shows the demo browser beside the editor, or brings it to the front</summary>
     void ShowDemoBrowser(DemoBrowserViewModel browser);
 
+    /// <summary>Shows the font window beside the editor, or brings it to the front</summary>
+    void ShowFontBrowser(FontBrowserViewModel browser);
+
     /// <summary>Shows the palette browser beside the editor, or brings it to the front</summary>
     void ShowPaletteBrowser(PaletteBrowserViewModel browser);
 

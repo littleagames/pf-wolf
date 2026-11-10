@@ -31,6 +31,7 @@
     <KeyBinding Gesture="F11" Command="{Binding ShowDefinitionsCommand}" />
     <KeyBinding Gesture="F12" Command="{Binding ShowScriptsCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding ShowDemosCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+F" Command="{Binding ShowFontsCommand}" />
   </Window.KeyBindings>
 
   <Window.Styles>
@@ -181,6 +182,8 @@
                   ToolTip.Tip="Every sound and song, to listen to, with where it comes from and what plays it" />
         <MenuItem Header="_Palettes…" Command="{Binding ShowPalettesCommand}" InputGesture="F9"
                   ToolTip.Tip="Every palette, to look at and edit, with where it comes from and what's drawn in it" />
+        <MenuItem Header="_Fonts…" Command="{Binding ShowFontsCommand}" InputGesture="Ctrl+Shift+F"
+                  ToolTip.Tip="Every font the game prints in, drawn as the game draws it, with its characters, where it's defined and what prints in it" />
         <MenuItem Header="Te_xts…" Command="{Binding ShowTextsCommand}" InputGesture="F2"
                   ToolTip.Tip="The help screens, end texts and briefings, each article page as the game shows it, with what's wrong with it" />
         <MenuItem Header="S_cripts…" Command="{Binding ShowScriptsCommand}" InputGesture="F12"

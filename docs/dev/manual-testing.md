@@ -1151,6 +1151,15 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       (raw-data-map.yaml and mapdefs walls follow); a level using an unnamed wall gets the F7
       check warning.
 
+## 2.18 Fonts (Ctrl+Shift+F)
+
+- [ ] Wolf3D: every font listed, previews and character grids look as in the game; text,
+      colors and zoom change the preview; the hover line names codes.
+- [ ] **(never tried)** Blake and Planet Strike in the window (Font1-5, Font1's note, presenter
+      uses); the Fonts Demo mod loaded (its sheet fonts, FDITALIC.fnt, Defined in with the mod's
+      fonts.yaml over the game's); Go to on a Lua use (opens the script browser at the line);
+      Export font file (.fnt)… and the file loading from a mod's fonts/ folder.
+
 ---
 
 ## When done

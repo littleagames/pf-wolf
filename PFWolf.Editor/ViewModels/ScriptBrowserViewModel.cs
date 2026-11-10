@@ -272,6 +272,9 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
         return true;
     }
 
+    /// <summary>Shows a script (keeping the one shown's changes) at a line of it</summary>
+    public void ShowLine(string script, int line) => GoTo(script, line);
+
     // Shows a script (keeping the one shown's changes) and selects a line of it
     private void GoTo(string script, int line)
     {

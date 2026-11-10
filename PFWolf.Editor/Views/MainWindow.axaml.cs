@@ -118,6 +118,20 @@ public partial class MainWindow : Window, IEditorDialogs
 
     private PaletteBrowserWindow? _paletteBrowser;
 
+    private FontBrowserWindow? _fontBrowser;
+
+    public void ShowFontBrowser(FontBrowserViewModel browser)
+    {
+        if (_fontBrowser == null)
+        {
+            _fontBrowser = new FontBrowserWindow { DataContext = browser };
+            _fontBrowser.Closed += (_, _) => _fontBrowser = null;
+            _fontBrowser.Show(this);
+        }
+        else
+            _fontBrowser.Activate();
+    }
+
     public void ShowPaletteBrowser(PaletteBrowserViewModel browser)
     {
         if (_paletteBrowser == null)
