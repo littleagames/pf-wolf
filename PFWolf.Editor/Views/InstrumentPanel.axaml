@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PFWolf.Editor.ViewModels"
+             xmlns:r="using:PFWolf.Editor.Rendering"
+             x:Class="PFWolf.Editor.Views.InstrumentPanel"
+             x:DataType="vm:InstrumentEditorViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="NumericUpDown.small">
+      <Setter Property="FormatString" Value="0" />
+      <Setter Property="Increment" Value="1" />
+      <Setter Property="MinWidth" Value="110" />
+    </Style>
+  </UserControl.Styles>
+
+  <UserControl.DataTemplates>
+    <!-- One operator's settings -->
+    <DataTemplate DataType="vm:OperatorEditorViewModel">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+        <r:EnvelopeView Height="60" Attack="{Binding Attack}" Decay="{Binding Decay}" Sustain="{Binding Sustain}"
+                        Release="{Binding Release}" Sustaining="{Binding Sustaining}"
+                        ToolTip.Tip="Its envelope, roughly: attack, decay to the sustain level, (holding while the key's on if it sustains), release after the dashed line" />
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="3" ColumnSpacing="6">
+          <TextBlock Classes="label" Text="Attack" />
+          <NumericUpDown Grid.Column="1" Classes="small" Value="{Binding Attack}" Minimum="0" Maximum="15" ToolTip.Tip="0 never rises, 15 at once" />
+          <TextBlock Classes="label" Grid.Row="1" Text="Decay" />
+          <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="small" Value="{Binding Decay}" Minimum="0" Maximum="15" ToolTip.Tip="How fast it falls to the sustain level: 0 never, 15 at once" />
+          <TextBlock Classes="label" Grid.Row="2" Text="Sustain" />
+          <NumericUpDown Grid.Row="2" Grid.Column="1" Classes="small" Value="{Binding Sustain}" Minimum="0" Maximum="15" ToolTip.Tip="The level it falls to: 0 loudest, 15 quietest (3 dB a step)" />
+          <TextBlock Classes="label" Grid.Row="3" Text="Release" />
+          <NumericUpDown Grid.Row="3" Grid.Column="1" Classes="small" Value="{Binding Release}" Minimum="0" Maximum="15" ToolTip.Tip="How fast it dies once let go: 0 never, 15 at once" />
+          <TextBlock Classes="label" Grid.Row="4" Text="Level" />
+          <NumericUpDown Grid.Row="4" Grid.Column="1" Classes="small" Value="{Binding Level}" Minimum="0" Maximum="63" ToolTip.Tip="Total level: 0 loudest, 63 quietest (0.75 dB a step); the carrier's is how loud it is" />
+          <TextBlock Classes="label" Grid.Row="5" Text="Multiplier" />
+          <NumericUpDown Grid.Row="5" Grid.Column="1" Classes="small" Value="{Binding Multiplier}" Minimum="0" Maximum="15" ToolTip.Tip="Its frequency against the note's: 0 is ½, 1 the note, 2 an octave up..." />
+          <TextBlock Classes="label" Grid.Row="6" Text="Key scale" />
+          <NumericUpDown Grid.Row="6" Grid.Column="1" Classes="small" Value="{Binding KeyScaleLevel}" Minimum="0" Maximum="3" ToolTip.Tip="Quieter higher up: 0 none, 1 1.5, 2 3, 3 6 dB an octave" />
+          <TextBlock Classes="label" Grid.Row="7" Text="Waveform" />
+          <ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{x:Static vm:OperatorEditorViewModel.Waveforms}" SelectedIndex="{Binding Waveform}" MinWidth="110" />
+        </Grid>
+        <WrapPanel ItemSpacing="8">
+          <CheckBox Content="Sustains" IsChecked="{Binding Sustaining}" ToolTip.Tip="Holds at the sustain level while the key's on (else it goes on dying away, like a piano)" />
+          <CheckBox Content="Tremolo" IsChecked="{Binding Tremolo}" />
+          <CheckBox Content="Vibrato" IsChecked="{Binding Vibrato}" />
+          <CheckBox Content="KSR" IsChecked="{Binding KeyScaleRate}" ToolTip.Tip="Key scale rate: the envelope runs faster higher up" />
+        </WrapPanel>
+      </StackPanel>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <StackPanel Spacing="6">
+    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" IsEnabled="{Binding !IgnoresFeedback}">
+      <TextBlock Classes="label" Text="Feedback" />
+      <NumericUpDown Grid.Column="1" Classes="small" Value="{Binding Feedback}" Minimum="0" Maximum="7"
+                     ToolTip.Tip="How much of the modulator is fed back into itself: brighter, buzzier" />
+      <CheckBox Grid.Column="2" Content="Additive" IsChecked="{Binding Additive}"
+                ToolTip.Tip="Both operators sound (organ-like); off, the modulator shapes the carrier (FM)" />
+    </Grid>
+    <TextBlock Text="Wolf3D plays AdLib sounds with no feedback and FM (it writes 0 there), so these are kept in the file but not heard."
+               TextWrapping="Wrap" Opacity="0.7" FontSize="12" IsVisible="{Binding IgnoresFeedback}" />
+    <ContentControl Content="{Binding Modulator}" Margin="0,6,0,0" />
+    <ContentControl Content="{Binding Carrier}" Margin="0,6,0,0" />
+  </StackPanel>
+</UserControl>

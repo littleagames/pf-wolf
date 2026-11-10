@@ -111,6 +111,9 @@
           <Button Content="Edit song…" Click="EditSong" IsEnabled="{Binding CanEditSong}"
                   ToolTip.Tip="Opens the IMF song picked in the song editor: its notes on a piano roll, its instruments" />
           <Button Content="New song…" Click="NewSong" ToolTip.Tip="Opens the song editor on an empty song" />
+          <Button Content="Edit AdLib sound…" Click="EditAdLib" IsEnabled="{Binding CanEditAdLib}"
+                  ToolTip.Tip="Opens the AdLib sound shown (or the one the sound-seq entry's picked variant plays) in the AdLib sound editor" />
+          <Button Content="New AdLib sound…" Click="NewAdLib" ToolTip.Tip="Opens the AdLib sound editor on a second of silence to draw on" />
         </WrapPanel>
       </StackPanel>
     </ScrollViewer>
@@ -131,6 +134,8 @@
           <MenuItem Header="Import MIDI…" Click="ImportMidi" />
           <MenuItem Header="Edit song…" Click="EditSong" IsEnabled="{Binding CanEditSong}" />
           <MenuItem Header="New song…" Click="NewSong" />
+          <MenuItem Header="Edit AdLib sound…" Click="EditAdLib" IsEnabled="{Binding CanEditAdLib}" />
+          <MenuItem Header="New AdLib sound…" Click="NewAdLib" />
           <Separator />
           <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" />
         </ContextMenu>

@@ -261,6 +261,46 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         return editor;
     }
 
+    // The AdLib sound shown: the one picked, or the one a sound-seq entry's picked variant plays
+    private string? AdLibName => SelectedItem?.Entry switch
+    {
+        { Kind: SoundKind.AdLib } entry => entry.Name,
+        { Kind: SoundKind.Sound } when SelectedVariant?.Variant is { Kind: SoundKind.AdLib } variant => variant.AssetName,
+        _ => null,
+    };
+
+    /// <summary>An AdLib sound is shown for the AdLib sound editor to open</summary>
+    public bool CanEditAdLib => _content != null && AdLibName is { } name && _content.Assets.Exists<PFWolf.Assets.Sounds.AdLibSound>(name);
+
+    /// <summary>The AdLib sound editor on the AdLib sound shown</summary>
+    public AdLibEditorViewModel? EditAdLib()
+    {
+        if (!CanEditAdLib || _content?.Find<PFWolf.Assets.Sounds.AdLibSound>(AdLibName!) is not { } sound)
+            return null;
+        Stop();
+        return AdLibEditor(AdLibName!.ToUpperInvariant(), AdLibDraft.From(sound), isNew: false);
+    }
+
+    /// <summary>
+    /// The AdLib sound editor on a new sound: a second of silence to draw on, with the instrument
+    /// of the game's first AdLib sound (or the built-in percussive voice) and priority 50
+    /// </summary>
+    public AdLibEditorViewModel NewAdLib()
+    {
+        Stop();
+        var instrument = _content?.Assets.AssetNames.Where(name => !name.Contains('/') && _content.Assets.Exists<PFWolf.Assets.Sounds.AdLibSound>(name))
+            .Order(StringComparer.OrdinalIgnoreCase).Select(name => _content.Find<PFWolf.Assets.Sounds.AdLibSound>(name)?.Instrument).FirstOrDefault(found => found != null)
+            ?? Audio.Opl.OplBank.BuiltIn.Melodic(112).Instrument;
+        return AdLibEditor("NEWSOUND", new AdLibDraft(50, instrument, 4, new byte[AdLibDraft.TicksPerSecond]), isNew: true);
+    }
+
+    private AdLibEditorViewModel AdLibEditor(string name, AdLibDraft draft, bool isNew)
+    {
+        var editor = new AdLibEditorViewModel(name, draft, isNew, InstrumentLibrary());
+        editor.SaveToMod = (soundName, adl) => SaveToModAsync(SoundKind.AdLib, soundName, ".adl", adl);
+        return editor;
+    }
+
     private (GameContent Content, List<InstrumentSource> Library)? _library;
 
     /// <summary>Instruments to copy from: every game song's, every AdLib sound's, the built-in bank's</summary>
@@ -467,6 +507,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         PositionText = "";
         OnPropertyChanged(nameof(CanExport));
         OnPropertyChanged(nameof(CanEditSong));
+        OnPropertyChanged(nameof(CanEditAdLib));
 
         if (value == null || _content == null)
         {
@@ -508,6 +549,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
     partial void OnSelectedVariantChanged(SoundVariantOption? value)
     {
         OnPropertyChanged(nameof(CanExport));
+        OnPropertyChanged(nameof(CanEditAdLib));
         if (SelectedItem?.Entry is not { Kind: SoundKind.Sound } entry || _content == null)
             return;
         Stop();

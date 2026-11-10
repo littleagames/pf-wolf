@@ -201,5 +201,26 @@ byte by byte, so command order inside a tick may differ). Plus synthetic tests.
   Play / audition by ear, dragging notes by mouse, resize by mouse, Save to mod, Export
   dialogs, a Blake song's pitch-change lines, the close prompt.
 
+**Phase 4 done 2026-11-10** (AdLib sound editor):
+- Views/InstrumentPanel (UserControl): the instrument settings, now shared by the song
+  editor and this one; `InstrumentEditorViewModel.IgnoresFeedback` greys feedback/additive
+  with a note (Wolf3D writes 0xC0 = 0 for sound effects; the byte is still kept in the file).
+- `AdLibDraft` (priority, instrument, block, tones) and AdLibEditorViewModel: strokes (a drag
+  is one undo step, the sound grows when drawn past its end), snap to semitones, Up/Down a
+  semitone, Longer/Shorter (×2, ½, same pitches), Silence, Take out, on the ticks picked or
+  all; Block ± keeping the pitch (tones doubled/halved); length, block, priority; instrument
+  edits within 2 s one step; copy instrument from the library; Play as the game does
+  (AdLibSound.ToPcm16) with a playhead; Save to mod (sounds/NAME.adl, the browser's name
+  prompt), Export .adl / WAV; "*" against the saved version.
+- ToneStripView: a column a tick at its pitch (rows a semitone, C's labelled, tones 8-255
+  shown), left draws (interpolating between mouse points), right erases, Shift-drag or the
+  ruler picks ticks, Ctrl+wheel zooms; hover line says tick, tone, Hz, note.
+- F8: **Edit AdLib sound…** (the AdLib sound picked, or the one a sound-seq entry's picked
+  variant plays) and **New AdLib sound…** (a second of silence, block 4, priority 50, the
+  game's first AdLib sound's instrument).
+- Tests: AdLibEditorTests. Checked by screenshots: ALHITWAL open (8 ticks), New AdLib sound,
+  a drawn sweep (one undo step, snapped). Not tried: Play by ear, erasing/picking by mouse,
+  Save to mod, the export dialogs, the close prompt.
+
 Numbers for phase 3 (before pitch changes): Wolf3D's songs read as 23382 notes with 1451 kept writes; Spear 2180,
 Blake 3440 kept writes (worth a look at what they are before the raw view is designed).

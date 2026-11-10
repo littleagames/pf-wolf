@@ -177,6 +177,24 @@ public partial class SoundBrowserWindow : Window
 
     private void NewSong(object? sender, RoutedEventArgs e) => ShowSongEditor(ViewModel.NewSong());
 
+    private void EditAdLib(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel.EditAdLib() is { } editor)
+            ShowAdLibEditor(editor);
+    }
+
+    private void NewAdLib(object? sender, RoutedEventArgs e) => ShowAdLibEditor(ViewModel.NewAdLib());
+
+    private void ShowAdLibEditor(AdLibEditorViewModel editor)
+    {
+        var window = new AdLibEditorWindow
+        {
+            DataContext = editor,
+            ConfirmDiscard = async message => ViewModel.Confirm == null || await ViewModel.Confirm("Close the AdLib sound editor", message, "Close"),
+        };
+        window.Show(this);
+    }
+
     private void ShowSongEditor(SongEditorViewModel editor)
     {
         var window = new SongEditorWindow

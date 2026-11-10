@@ -1,0 +1,91 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:r="using:PFWolf.Editor.Rendering"
+        xmlns:views="using:PFWolf.Editor.Views"
+        x:Class="PFWolf.Editor.Views.AdLibEditorWindow"
+        x:DataType="vm:AdLibEditorViewModel"
+        Title="{Binding Title}"
+        Width="1200" Height="760" MinWidth="860" MinHeight="500"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <!-- Playing, the tools, saving -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <WrapPanel ItemSpacing="8" LineSpacing="6">
+        <Button Content="{Binding PlayLabel}" Command="{Binding PlayCommand}" Classes="accent" MinWidth="86" ToolTip.Tip="Plays it as the game does. Space" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <CheckBox Content="Snap to notes" IsChecked="{Binding SnapToNotes}" VerticalAlignment="Center"
+                  ToolTip.Tip="Drawn tones go to the nearest semitone" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <TextBlock Classes="label" Text="On the ticks picked (or all):" />
+        <Button Content="Up" Command="{Binding UpCommand}" ToolTip.Tip="A semitone higher" />
+        <Button Content="Down" Command="{Binding DownCommand}" ToolTip.Tip="A semitone lower" />
+        <Button Content="Longer" Command="{Binding LongerCommand}" ToolTip.Tip="Twice as long, same pitches" />
+        <Button Content="Shorter" Command="{Binding ShorterCommand}" ToolTip.Tip="Half as long, same pitches" />
+        <Button Content="Silence" Command="{Binding SilenceCommand}" />
+        <Button Content="Take out" Command="{Binding DeleteRangeCommand}" ToolTip.Tip="Takes the ticks picked out; the rest closes up" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <Button Content="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z" />
+        <Button Content="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Ctrl+Y" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <Button Content="Save to mod…" Command="{Binding SaveCommand}" ToolTip.Tip="Puts it in a mod as sounds/NAME.adl. Ctrl+S" />
+        <Button Content="Export .adl…" Click="OnExportAdl" />
+        <Button Content="Export WAV…" Click="OnExportWav" />
+      </WrapPanel>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <StackPanel Spacing="2">
+        <TextBlock x:Name="HoverText" FontSize="12" Opacity="0.8" Text=" " />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+          <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Opacity="0.8" />
+          <TextBlock Grid.Column="1" Text="{Binding Info}" Opacity="0.8" />
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <!-- The sound's settings and instrument -->
+    <ScrollViewer DockPanel.Dock="Right" Width="400" Margin="4,0,0,0">
+      <StackPanel Spacing="6" Margin="8">
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+          <TextBlock Classes="label" Text="Length (ticks)" />
+          <NumericUpDown Grid.Column="1" Value="{Binding Length}" Minimum="1" Maximum="10000" Increment="14" FormatString="0"
+                         ToolTip.Tip="140 ticks a second; longer adds silence, shorter cuts the end off" />
+          <TextBlock Classes="label" Grid.Row="1" Text="Block" />
+          <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Block}" Minimum="0" Maximum="7" Increment="1" FormatString="0"
+                         ToolTip.Tip="The octave every tone plays in: each block up is an octave higher (the tones stay as they are)" />
+          <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="4">
+            <Button Content="Block −, same pitch" Command="{Binding BlockDownCommand}"
+                    ToolTip.Tip="A block down with the tones doubled: sounds the same, in finer steps (tones past 255 are clamped)" />
+            <Button Content="Block +, same pitch" Command="{Binding BlockUpCommand}"
+                    ToolTip.Tip="A block up with the tones halved: sounds the same, in coarser steps, with room higher up" />
+          </StackPanel>
+          <TextBlock Classes="label" Grid.Row="3" Text="Priority" />
+          <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Priority}" Minimum="0" Maximum="65535" Increment="1" FormatString="0"
+                         ToolTip.Tip="A sound plays over one playing with a lower priority, and not over a higher one" />
+        </Grid>
+
+        <TextBlock Text="Instrument" FontWeight="SemiBold" Margin="0,10,0,0" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+          <ComboBox x:Name="Library" ItemsSource="{Binding Library}" PlaceholderText="Copy from a game song, AdLib sound or bank…" HorizontalAlignment="Stretch" />
+          <Button Grid.Column="1" Content="Copy" Click="OnCopyInstrument" />
+        </Grid>
+        <views:InstrumentPanel DataContext="{Binding InstrumentEditor}" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- The tones -->
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+      <r:ToneStripView x:Name="Strip" Revision="{Binding Revision}" PlayheadTick="{Binding PlayheadTick}"
+                       ToolTip.Tip="Draw tones with the left button, erase with the right; Shift-drag (or drag on the ruler) picks ticks for the tools. Ctrl+wheel zooms." />
+    </ScrollViewer>
+  </DockPanel>
+</Window>

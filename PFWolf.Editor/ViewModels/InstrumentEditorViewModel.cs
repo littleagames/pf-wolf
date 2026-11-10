@@ -74,6 +74,9 @@ public sealed partial class InstrumentEditorViewModel : ObservableObject
     [ObservableProperty] private int _feedback;        // 0xC0 bits 1-3
     [ObservableProperty] private bool _additive;       // 0xC0 bit 0: both operators sound (else the modulator shapes the carrier)
 
+    /// <summary>Feedback and connection aren't heard (an AdLib sound: Wolf3D writes 0xC0 = 0 for them)</summary>
+    [ObservableProperty] private bool _ignoresFeedback;
+
     /// <summary>The instrument changed from here</summary>
     public event EventHandler<OplInstrument>? Changed;
 
@@ -94,6 +97,8 @@ public sealed partial class InstrumentEditorViewModel : ObservableObject
     }
 
     public OplInstrument ToInstrument() => new(Modulator.ToOperator(), Carrier.ToOperator(), (byte)(((Feedback & 7) << 1) | (Additive ? 1 : 0)));
+
+    public InstrumentEditorViewModel(bool ignoresFeedback) : this() => _ignoresFeedback = ignoresFeedback;
 
     partial void OnFeedbackChanged(int value) => Raise();
     partial void OnAdditiveChanged(bool value) => Raise();
