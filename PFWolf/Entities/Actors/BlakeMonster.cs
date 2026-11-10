@@ -56,6 +56,9 @@ internal partial record BlakeMonster : Monster
     // The body slides back from what killed it (T_BlowBack)
     protected override void OnKilled(Actor? attacker) => StartBlowBack(attacker);
 
+    // ...which is all the knockback Blake Stone's have: not shoved by every hit (Monster.Knockback.cs)
+    internal override bool Knockable => false;
+
     internal override void Damage(uint damage, Actor? attacker = null)
     {
         // A sleeper on a timer (`monster.wakeprotected`, the gurney mutant) can't be shot awake

@@ -45,6 +45,10 @@ internal sealed record ActorSnapshot
     public int Suspicion { get; init; }
     public ParticleOverride? Particles { get; init; }
     public int Story { get; init; }
+    public int PushX { get; init; }
+    public int PushY { get; init; }
+    public int DispX { get; init; }
+    public int DispY { get; init; }
 
     public static ActorSnapshot Capture(Actor actor)
     {
@@ -89,6 +93,11 @@ internal sealed record ActorSnapshot
             Suspicion = (actor as Monster)?.Suspicion ?? 0,       // Gameplay/Stealth.cs
             Particles = actor.ParticleState?.Override,            // A_StartEmitter / A_StopEmitter (Rendering/Particles.cs)
             Story = actor.Story,
+            // A shove (Monster.Knockback.cs): what's still to come, and how far it's off its walk
+            PushX = (actor as Monster)?.PushX ?? 0,
+            PushY = (actor as Monster)?.PushY ?? 0,
+            DispX = (actor as Monster)?.DispX ?? 0,
+            DispY = (actor as Monster)?.DispY ?? 0,
         };
     }
 
@@ -130,7 +139,10 @@ internal sealed record ActorSnapshot
         actor.Z = Z;
         actor.ZSpeed = ZSpeed;
         if (actor is Monster monster)
+        {
             monster.Suspicion = Suspicion;
+            (monster.PushX, monster.PushY, monster.DispX, monster.DispY) = (PushX, PushY, DispX, DispY);
+        }
         if (Particles != null)
             (actor.ParticleState ??= new ActorParticleState()).Override = Particles;
         actor.Story = Story;
@@ -180,6 +192,10 @@ internal sealed record ActorSnapshot
         bw.Write(Particles != null);
         Particles?.Write(bw);
         bw.Write((byte)Story);
+        bw.Write(PushX);
+        bw.Write(PushY);
+        bw.Write(DispX);
+        bw.Write(DispY);
     }
 
     public static ActorSnapshot Read(BinaryReader br)
@@ -226,6 +242,10 @@ internal sealed record ActorSnapshot
             Suspicion = br.ReadInt32(),
             Particles = br.ReadBoolean() ? ParticleOverride.Read(br) : null,
             Story = br.ReadByte(),
+            PushX = br.ReadInt32(),
+            PushY = br.ReadInt32(),
+            DispX = br.ReadInt32(),
+            DispY = br.ReadInt32(),
         };
     }
 

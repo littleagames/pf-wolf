@@ -78,7 +78,8 @@ internal static class SaveFile
     //     second part above it), after its wall id.
     // 45: a seventh map plane (things' stories); each actor's story (a byte, 0 for the player's),
     //     after its emitters.
-    internal const int SaveVersion = 45;
+    // 46: each actor's shove (knockback: still to come, and off its walk, x and y of each), after its story.
+    internal const int SaveVersion = 46;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Anything claiming more than this is garbage

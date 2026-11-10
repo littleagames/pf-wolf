@@ -31,6 +31,7 @@ public static class ActorFlags
         new("KEEPTILEONDEATH", "Dying, it keeps the tile it holds rather than moving to the one it's over (Mecha Hitler, so the Hitler it becomes doesn't jump a tile)"),
         new("NODISGUISE", "A decoration no Prop Hunt prop can look like (a puddle flat on the floor)"),
         new("NODOORS", "Never opens doors (Wolf3D's dogs and fake Hitlers, Blake Stone's liquid alien)"),
+        new("NOKNOCKBACK", "Never shoved by a hit (knockback, weapon.knockback): a tree, a lamp post. Wall sprites and STATIONARY actors never are"),
         new("NOLOCKEDDOORS", "Doesn't open a door that needs a key (Blake Stone's enemies)"),
         new("NOREVIVE", "A reviver can't bring it back (the bosses)"),
         new("NOTCOUNTED", "Not a kill: left out of the level's kill total and ratio (crates, Goldfire, who keeps coming back)"),

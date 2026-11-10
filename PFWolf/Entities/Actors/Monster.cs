@@ -201,10 +201,24 @@ internal partial record Monster : Actor
                 { ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir,ObjDir.NoDir}
 };
 
-    internal void RecenterOnTile()
+    /// <summary>
+    /// Puts it on the middle of its tile; with <paramref name="keepDisplacement"/> (its walk
+    /// arriving there), as far off it as it's been shoved (Monster.Knockback.cs), else no longer
+    /// shoved at all
+    /// </summary>
+    internal void RecenterOnTile(bool keepDisplacement = false)
     {
         X = (int)((TileX << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
         Y = (int)((TileY << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
+        if (!keepDisplacement)
+            ClearPush();
+        else if (DispX != 0 || DispY != 0)
+        {
+            X += DispX;
+            Y += DispY;
+            if (!ClearToShove(X, Y, players: false, X, Y))
+                DropDisplacement();
+        }
     }
 
     // Reached the middle of the tile it was walking to (EoD's CheckEnemyTile): what's there can
@@ -212,7 +226,7 @@ internal partial record Monster : Actor
     // (Monster.Pickups.cs), and it picks its next way from there
     private void ArriveOnTile()
     {
-        RecenterOnTile();
+        RecenterOnTile(keepDisplacement: true);
         World?.TileArrived?.Invoke(this);
         TakePickups();
         World?.Scripts?.RunEnterHooks(this, TileX, TileY);     // game.onenter
@@ -334,6 +348,8 @@ internal partial record Monster : Actor
         X = newx;
         Y = newy;
         Distance -= move;
+        if (DispX != 0 || DispY != 0)
+            EaseBack(move);     // shoved off its walk, it drifts back onto it (Monster.Knockback.cs)
     }
 
     // A monster blocker on the tile keeps it off: any (blocktile: monsters), or a BOSS (bosses)
@@ -1812,6 +1828,9 @@ internal partial record Monster : Actor
                 return;
             damage = (uint)hooked;
         }
+
+        // The blow shoves it back, if it's one that does (Monster.Knockback.cs)
+        Knock(attacker);
 
         int oldHitpoints = Hitpoints;
         Hitpoints -= (short)damage;

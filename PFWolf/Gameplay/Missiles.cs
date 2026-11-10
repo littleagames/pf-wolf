@@ -399,6 +399,10 @@ internal sealed class Missiles(
             bool typed = target.BlowType == null && !ob.Properties.ContainsKey("damagetype");
             if (typed)
                 target.BlowType = BlastDamageType;
+            // its knockback (Monster.Knockback.cs) weakens with distance as its damage does
+            int knockback = ob.PropertyInt("knockback", 0);
+            if (knockback > 0 && damage > 0)
+                target.BlowKnockback = (int)((long)knockback * Math.Min(hit, damage) / damage);
             try
             {
                 target.Damage(shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
@@ -407,6 +411,7 @@ internal sealed class Missiles(
             {
                 if (typed)
                     target.BlowType = null;
+                target.BlowKnockback = null;
             }
         }
 

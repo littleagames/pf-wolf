@@ -2574,6 +2574,10 @@ internal class MapManager
         if (marks)
             UnmarkActorTile((Entities.Actors.Monster)ob);
 
+        // A shove from a hit eases out (Monster.Knockback.cs)
+        if (ob is Entities.Actors.Monster { Pushing: true } shoved)
+            shoved.PushTick(tics);
+
         // Mirrors vanilla DoActor (WL_PLAY.C): a frame that holds forever (-1) only
         // runs its Think each tic; Next is never consulted again. So does one with no countdown
         // at all, as the original's TicCount 0: a demo's spawn can leave a patroller that way
