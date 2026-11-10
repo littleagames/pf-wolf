@@ -226,7 +226,8 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
         var box = engine.GetGameInfo().MenuMessage;
         var style = box == null
             ? new TextStyle(UiFonts.LargeFont, "Black", "TEXTCOLOR")
-            : new TextStyle(box.Font, box.Color, box.Med, Shadow: new FontShadow(1, 1, box.Shadow));
+            : new TextStyle(box.Font, box.Color, box.Med, Shadow: box.Shadow.Equals("none", StringComparison.OrdinalIgnoreCase)
+                ? FontShadow.None : new FontShadow(1, 1, box.Shadow));
 
         var font = fonts.Find(style.Font);
         if (font == null)
@@ -252,7 +253,14 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
         int x = 160 - (mw / 2);
         int y = (areaHeight / 2) - (h / 2);
 
-        if (box != null)
+        if (box is { Window: true })
+        {
+            // Wolf3D's window in the game's colors (Midnight Assault's Message: BKGDCOLOR, edged
+            // in BORDCOLOR and black)
+            DrawWindow(x - 5, y - 5, mw + 10, h + 10, box.Med);
+            DrawOutline(x - 5, y - 5, mw + 10, h + 10, box.Lo, box.Hi);
+        }
+        else if (box != null)
             BevelBox(x - 5, y - 5, mw + 10, h + 10, box.Hi, box.Med, box.Lo);
         else
         {

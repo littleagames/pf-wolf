@@ -982,17 +982,25 @@ public record LoseScreenInfo
 
 /// <summary>
 /// The menus' message and question box (Blake Stone's): a bevelled box in its hi, med and lo
-/// colors, with the text in color over a shadow. Colors are color names, #RRGGBB or palette indices.
+/// colors, with the text in color over a shadow. Or, with window, Wolf3D's window in those
+/// colors (a mod that recolored it, as Midnight Assault). Colors are color names, #RRGGBB or
+/// palette indices.
 /// </summary>
 public record MenuMessageInfo
 {
+    /// <summary>
+    /// Wolf3D's window (its DrawWindow and DrawOutline) rather than the bevel: filled with med,
+    /// its top and left edges hi and its bottom and right lo, a pixel wider and taller
+    /// </summary>
+    public bool Window { get; init; }
+
     /// <summary>The text's font</summary>
     public string Font { get; init; } = "LargeFont";
 
     /// <summary>The text's color</summary>
     public string Color { get; init; } = "White";
 
-    /// <summary>The text's shadow, one pixel right and down</summary>
+    /// <summary>The text's shadow, one pixel right and down; none for no shadow</summary>
     public string Shadow { get; init; } = "Black";
 
     /// <summary>The bevel's light edge</summary>
