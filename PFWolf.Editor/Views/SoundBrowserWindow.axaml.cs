@@ -65,10 +65,32 @@ public partial class SoundBrowserWindow : Window
             Play();
             e.Handled = true;
         }
+        else if (e.Key == Key.E && e.KeyModifiers == KeyModifiers.Control)
+        {
+            EditShown(null, new RoutedEventArgs());
+            e.Handled = true;
+        }
         else if (e.Key == Key.Escape)
         {
             Close();
             e.Handled = true;
+        }
+    }
+
+    // Edit: the song or sound shown in its own editor
+    private void EditShown(object? sender, RoutedEventArgs e)
+    {
+        switch (ViewModel.EditShown())
+        {
+            case SongEditorViewModel song:
+                ShowSongEditor(song);
+                break;
+            case AdLibEditorViewModel adLib:
+                ShowAdLibEditor(adLib);
+                break;
+            case PcSpeakerEditorViewModel pc:
+                ShowPcEditor(pc);
+                break;
         }
     }
 
@@ -169,19 +191,7 @@ public partial class SoundBrowserWindow : Window
         await new MidiImportWindow { DataContext = import }.ShowDialog(this);
     }
 
-    private void EditSong(object? sender, RoutedEventArgs e)
-    {
-        if (ViewModel.EditSong() is { } editor)
-            ShowSongEditor(editor);
-    }
-
     private void NewSong(object? sender, RoutedEventArgs e) => ShowSongEditor(ViewModel.NewSong());
-
-    private void EditAdLib(object? sender, RoutedEventArgs e)
-    {
-        if (ViewModel.EditAdLib() is { } editor)
-            ShowAdLibEditor(editor);
-    }
 
     private void NewAdLib(object? sender, RoutedEventArgs e) => ShowAdLibEditor(ViewModel.NewAdLib());
 
@@ -193,12 +203,6 @@ public partial class SoundBrowserWindow : Window
             ConfirmDiscard = async message => ViewModel.Confirm == null || await ViewModel.Confirm("Close the AdLib sound editor", message, "Close"),
         };
         window.Show(this);
-    }
-
-    private void EditPc(object? sender, RoutedEventArgs e)
-    {
-        if (ViewModel.EditPc() is { } editor)
-            ShowPcEditor(editor);
     }
 
     private void NewPc(object? sender, RoutedEventArgs e) => ShowPcEditor(ViewModel.NewPc());

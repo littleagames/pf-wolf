@@ -405,6 +405,28 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
 
     public bool CanExport => ExportableFile != null;
 
+    /// <summary>Export's menu item for the file: what kind it is</summary>
+    public string ExportFileLabel => ExportableFile is { } file ? $"{file.Extension.TrimStart('.').ToUpperInvariant()} file (as a mod takes it)…" : "Game file (.imf, .adl, .pcs)…";
+
+    /// <summary>The song or sound shown opens in an editor</summary>
+    public bool CanEdit => CanEditSong || CanEditAdLib || CanEditPc;
+
+    /// <summary>What Edit opens: the song editor, the AdLib or the PC speaker sound editor</summary>
+    public string EditLabel => CanEditSong ? "Edit song…" : CanEditAdLib ? "Edit AdLib sound…" : CanEditPc ? "Edit PC speaker sound…" : "Edit…";
+
+    /// <summary>New PC speaker sound: with an AdLib sound shown, it's that sound's PC version</summary>
+    public string NewPcLabel => CanEditAdLib ? $"PC speaker sound from {AdLibName!.ToUpperInvariant()}…" : "PC speaker sound…";
+
+    /// <summary>The editor for the song or sound shown, or null when it has none</summary>
+    public object? EditShown() => CanEditSong ? EditSong() : CanEditAdLib ? EditAdLib() : CanEditPc ? EditPc() : null;
+
+    // What the sound shown can be edited and exported as changed with it
+    private void ActionsChanged()
+    {
+        foreach (var name in new[] { nameof(CanExport), nameof(ExportFileLabel), nameof(CanEditSong), nameof(CanEditAdLib), nameof(CanEditPc), nameof(CanEdit), nameof(EditLabel), nameof(NewPcLabel) })
+            OnPropertyChanged(name);
+    }
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(GoToUseCommand))]
     private SoundUse? _selectedUse;
@@ -554,10 +576,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         Details = "";
         Samples = null;
         PositionText = "";
-        OnPropertyChanged(nameof(CanExport));
-        OnPropertyChanged(nameof(CanEditSong));
-        OnPropertyChanged(nameof(CanEditAdLib));
-        OnPropertyChanged(nameof(CanEditPc));
+        ActionsChanged();
 
         if (value == null || _content == null)
         {
@@ -598,9 +617,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
 
     partial void OnSelectedVariantChanged(SoundVariantOption? value)
     {
-        OnPropertyChanged(nameof(CanExport));
-        OnPropertyChanged(nameof(CanEditAdLib));
-        OnPropertyChanged(nameof(CanEditPc));
+        ActionsChanged();
         if (SelectedItem?.Entry is not { Kind: SoundKind.Sound } entry || _content == null)
             return;
         Stop();

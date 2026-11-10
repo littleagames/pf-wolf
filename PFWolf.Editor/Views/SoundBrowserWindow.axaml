@@ -12,13 +12,35 @@
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
         <ComboBox Grid.Column="0" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" MinWidth="190" />
         <ComboBox Grid.Column="1" ItemsSource="{Binding Shows}" SelectedItem="{Binding SelectedShow}" MinWidth="140"
                   ToolTip.Tip="In use: actordefs, mapdefs, sound-seq or game-info plays it" />
         <TextBox x:Name="Search" Grid.Column="2" Text="{Binding Filter}" VerticalAlignment="Center"
                  PlaceholderText="Find by name, what it plays or what plays it (guard, door 1, DSDROPN)" />
         <TextBlock Grid.Column="3" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="120" />
+        <DropDownButton Grid.Column="4" Content="New" ToolTip.Tip="Makes a new song or sound in its editor">
+          <DropDownButton.Flyout>
+            <MenuFlyout Placement="BottomEdgeAlignedRight">
+              <MenuItem Header="Song…" Click="NewSong" ToolTip.Tip="Opens the song editor on an empty song" />
+              <MenuItem Header="Song from a MIDI file…" Click="ImportMidi" ToolTip.Tip="Makes a MIDI file into an IMF song (AdLib) to hear, edit and put in a mod" />
+              <Separator />
+              <MenuItem Header="AdLib sound…" Click="NewAdLib" ToolTip.Tip="Opens the AdLib sound editor on a second of silence to draw on" />
+              <MenuItem Header="PC speaker sound…" Click="NewPc"
+                        ToolTip.Tip="Opens the PC speaker sound editor on a second of silence; with an AdLib sound shown, it's that sound's PC version and can be made from it" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
+        <DropDownButton Grid.Column="5" Content="Add to mod" ToolTip.Tip="Puts a file of your own in a mod">
+          <DropDownButton.Flyout>
+            <MenuFlyout Placement="BottomEdgeAlignedRight">
+              <MenuItem Header="Song file…" Click="AddSong"
+                        ToolTip.Tip="Puts an IMF (.imf, .wlf), OGG, MP3 or WAV file in a mod's music folder: named like one of the game's songs, it plays in its place" />
+              <MenuItem Header="Sound file…" Click="AddSound"
+                        ToolTip.Tip="Puts a WAV, OGG or MP3 (digitized), .adl (AdLib) or .pcs (PC speaker) file in a mod's sounds folder: named like one of the game's sounds, it plays in its place" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
       </Grid>
     </Border>
 
@@ -90,34 +112,24 @@
         <TextBlock Text="Nothing in actordefs, mapdefs, sound-seq or game-info plays it (the engine itself may)." Opacity="0.6" FontSize="12"
                    TextWrapping="Wrap" IsVisible="{Binding !HasUses}" />
 
+        <!-- What can be done with the sound shown; New and Add to mod are up top, everything is on the list's right-click too -->
         <WrapPanel ItemSpacing="6" LineSpacing="6" Margin="0,6,0,0">
-          <Button Content="Go to sound" Command="{Binding GoToUseCommand}"
+          <Button Content="{Binding EditLabel}" Click="EditShown" IsEnabled="{Binding CanEdit}"
+                  ToolTip.Tip="Opens the IMF song, AdLib sound or PC speaker sound shown (a sound-seq entry: the variant picked) in its editor" />
+          <DropDownButton Content="Export">
+            <DropDownButton.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="WAV…" Click="ExportWav" IsEnabled="{Binding HasWaveform}"
+                          ToolTip.Tip="Saves the sound shown as a 16-bit WAV, as the game plays it" />
+                <MenuItem Header="{Binding ExportFileLabel}" Click="ExportFile" IsEnabled="{Binding CanExport}"
+                          ToolTip.Tip="Saves the IMF song, AdLib sound (.adl) or PC speaker sound (.pcs) shown as the file a mod takes" />
+                <Separator />
+                <MenuItem Header="Copy name" Click="CopyName" />
+              </MenuFlyout>
+            </DropDownButton.Flyout>
+          </DropDownButton>
+          <Button Content="Go to sound" Command="{Binding GoToUseCommand}" IsVisible="{Binding HasUses}"
                   ToolTip.Tip="Shows the sound-seq sound picked under Played by (or double-click it)" />
-          <Button Content="Copy name" Click="CopyName" />
-          <Button Content="Export WAV…" Click="ExportWav" IsEnabled="{Binding HasWaveform}"
-                  ToolTip.Tip="Saves the sound shown as a 16-bit WAV, as the game plays it" />
-          <Button Content="Export file…" Click="ExportFile" IsEnabled="{Binding CanExport}"
-                  ToolTip.Tip="Saves the IMF song, AdLib sound (.adl) or PC speaker sound (.pcs) shown as the file a mod takes" />
-        </WrapPanel>
-        <WrapPanel ItemSpacing="6" LineSpacing="6">
-          <Button Content="Add song to mod…" Click="AddSong"
-                  ToolTip.Tip="Puts an IMF (.imf, .wlf), OGG, MP3 or WAV file in a mod's music folder: named like one of the game's songs, it plays in its place" />
-          <Button Content="Add sound to mod…" Click="AddSound"
-                  ToolTip.Tip="Puts a WAV, OGG or MP3 (digitized), .adl (AdLib) or .pcs (PC speaker) file in a mod's sounds folder: named like one of the game's sounds, it plays in its place" />
-          <Button Content="Import MIDI…" Click="ImportMidi"
-                  ToolTip.Tip="Makes a MIDI file into an IMF song (AdLib) to hear and put in a mod" />
-        </WrapPanel>
-        <WrapPanel ItemSpacing="6" LineSpacing="6">
-          <Button Content="Edit song…" Click="EditSong" IsEnabled="{Binding CanEditSong}"
-                  ToolTip.Tip="Opens the IMF song picked in the song editor: its notes on a piano roll, its instruments" />
-          <Button Content="New song…" Click="NewSong" ToolTip.Tip="Opens the song editor on an empty song" />
-          <Button Content="Edit AdLib sound…" Click="EditAdLib" IsEnabled="{Binding CanEditAdLib}"
-                  ToolTip.Tip="Opens the AdLib sound shown (or the one the sound-seq entry's picked variant plays) in the AdLib sound editor" />
-          <Button Content="New AdLib sound…" Click="NewAdLib" ToolTip.Tip="Opens the AdLib sound editor on a second of silence to draw on" />
-          <Button Content="Edit PC speaker sound…" Click="EditPc" IsEnabled="{Binding CanEditPc}"
-                  ToolTip.Tip="Opens the PC speaker sound shown (or the one the sound-seq entry's picked variant plays) in the PC speaker sound editor" />
-          <Button Content="New PC speaker sound…" Click="NewPc"
-                  ToolTip.Tip="Opens the PC speaker sound editor on a second of silence; with an AdLib sound shown, it's named after it and can be made from it" />
         </WrapPanel>
       </StackPanel>
     </ScrollViewer>
@@ -128,20 +140,25 @@
       <ListBox.ContextMenu>
         <ContextMenu>
           <MenuItem Header="{Binding PlayLabel}" Command="{Binding PlayCommand}" InputGesture="Space" />
+          <MenuItem Header="{Binding EditLabel}" Click="EditShown" IsEnabled="{Binding CanEdit}" InputGesture="Ctrl+E" />
           <Separator />
+          <MenuItem Header="Export">
+            <MenuItem Header="WAV…" Click="ExportWav" IsEnabled="{Binding HasWaveform}" />
+            <MenuItem Header="{Binding ExportFileLabel}" Click="ExportFile" IsEnabled="{Binding CanExport}" />
+          </MenuItem>
           <MenuItem Header="Copy name" Click="CopyName" />
-          <MenuItem Header="Export WAV…" Click="ExportWav" IsEnabled="{Binding HasWaveform}" />
-          <MenuItem Header="Export file…" Click="ExportFile" IsEnabled="{Binding CanExport}" />
           <Separator />
-          <MenuItem Header="Add song to mod…" Click="AddSong" />
-          <MenuItem Header="Add sound to mod…" Click="AddSound" />
-          <MenuItem Header="Import MIDI…" Click="ImportMidi" />
-          <MenuItem Header="Edit song…" Click="EditSong" IsEnabled="{Binding CanEditSong}" />
-          <MenuItem Header="New song…" Click="NewSong" />
-          <MenuItem Header="Edit AdLib sound…" Click="EditAdLib" IsEnabled="{Binding CanEditAdLib}" />
-          <MenuItem Header="New AdLib sound…" Click="NewAdLib" />
-          <MenuItem Header="Edit PC speaker sound…" Click="EditPc" IsEnabled="{Binding CanEditPc}" />
-          <MenuItem Header="New PC speaker sound…" Click="NewPc" />
+          <MenuItem Header="New">
+            <MenuItem Header="Song…" Click="NewSong" />
+            <MenuItem Header="Song from a MIDI file…" Click="ImportMidi" />
+            <Separator />
+            <MenuItem Header="AdLib sound…" Click="NewAdLib" />
+            <MenuItem Header="{Binding NewPcLabel}" Click="NewPc" />
+          </MenuItem>
+          <MenuItem Header="Add to mod">
+            <MenuItem Header="Song file…" Click="AddSong" />
+            <MenuItem Header="Sound file…" Click="AddSound" />
+          </MenuItem>
           <Separator />
           <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" />
         </ContextMenu>
