@@ -172,6 +172,22 @@ public static class SoundCatalog
     }
 
     /// <summary>
+    /// The PC speaker sound and AdLib sound that are one sound's two versions: the sound-seq entry
+    /// naming <paramref name="name"/> as its <paramref name="kind"/> version gives the other one
+    /// (Wolf3D's PCHITWAL goes with ALHITWAL); with no entry, the same name
+    /// </summary>
+    public static string PartnerOf(Dictionary<string, (SoundProfile Profile, string From)> sequences, SoundKind kind, string name)
+    {
+        foreach (var (profile, _) in sequences.Values)
+        {
+            var (mine, other) = kind == SoundKind.PcSpeaker ? (profile.PC, profile.AdLib) : (profile.AdLib, profile.PC);
+            if (other != null && string.Equals(mine, name, StringComparison.OrdinalIgnoreCase))
+                return other.ToUpperInvariant();
+        }
+        return name.ToUpperInvariant();
+    }
+
+    /// <summary>
     /// The profile a sound name plays, following aliases and (with <paramref name="pickRandom"/>)
     /// random picks as the engine does, up to 8 deep; null when there's none or it's still random
     /// </summary>

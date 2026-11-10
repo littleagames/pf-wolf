@@ -195,6 +195,24 @@ public partial class SoundBrowserWindow : Window
         window.Show(this);
     }
 
+    private void EditPc(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel.EditPc() is { } editor)
+            ShowPcEditor(editor);
+    }
+
+    private void NewPc(object? sender, RoutedEventArgs e) => ShowPcEditor(ViewModel.NewPc());
+
+    private void ShowPcEditor(PcSpeakerEditorViewModel editor)
+    {
+        var window = new PcSpeakerEditorWindow
+        {
+            DataContext = editor,
+            ConfirmDiscard = async message => ViewModel.Confirm == null || await ViewModel.Confirm("Close the PC speaker sound editor", message, "Close"),
+        };
+        window.Show(this);
+    }
+
     private void ShowSongEditor(SongEditorViewModel editor)
     {
         var window = new SongEditorWindow

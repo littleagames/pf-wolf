@@ -1,6 +1,7 @@
 using PFWolf.Assets.Sounds;
 using PFWolf.Editor.Audio.Opl;
 using PFWolf.Editor.Data;
+using PFWolf.Editor.ViewModels;
 
 namespace PFWolf.Tests;
 
@@ -98,5 +99,51 @@ public class ImfSongGameTests
             var written = PcSound.Create(sound.Priority, sound.Values);
             Assert.That(written.RawData, Is.EqualTo(sound.RawData[..written.RawData.Length]), $"{game} PC {name}");
         }
+    }
+
+    [TestCase("wolf3d")]
+    [TestCase("blake")]
+    public void Pc_Sounds_Open_In_The_Editor_As_They_Are_And_AdLib_Ones_Make_Pc_Ones(string game)
+    {
+        var content = Load(game);
+        var adLibs = All<AdLibSound>(content).ToDictionary(sound => sound.Name, sound => sound.Asset, StringComparer.OrdinalIgnoreCase);
+        var sequences = SoundCatalog.Sequences(content);
+        int lowest = 255, highest = 0, made = 0, ticks = 0, near = 0;
+        var differences = new List<double>();
+        foreach (var (name, sound) in All<PcSound>(content))
+        {
+            var draft = PcDraft.From(sound);
+            Assert.That(draft.ToFile(), Is.EqualTo(sound.RawData[..draft.ToFile().Length]), $"{game} PC {name}");
+            foreach (var value in draft.Tones.Where(value => value != 0))
+                (lowest, highest) = (Math.Min(lowest, value), Math.Max(highest, value));
+
+            // Its AdLib version, as the sound-seq entries pair them (PCHITWAL and ALHITWAL)
+            var partner = SoundCatalog.PartnerOf(sequences, SoundKind.PcSpeaker, name);
+            if (!adLibs.TryGetValue(partner, out var adLib))
+                continue;
+            Assert.That(SoundCatalog.PartnerOf(sequences, SoundKind.AdLib, partner), Is.EqualTo(name).IgnoreCase);
+            var fromAdLib = PcDraft.FromAdLib(AdLibDraft.From(adLib), draft.Priority);
+            Assert.That(fromAdLib.Tones, Has.Length.EqualTo(adLib.Tones.Length));
+            made++;
+            // How near the game's own PC versions the made ones come: ticks within a semitone
+            for (var tick = 0; tick < Math.Min(draft.Tones.Length, fromAdLib.Tones.Length); tick++)
+            {
+                if (draft.Tones[tick] == 0 || fromAdLib.Tones[tick] == 0)
+                    continue;
+                ticks++;
+                var difference = OplPitch.MidiNote(draft.Frequency(draft.Tones[tick])) - OplPitch.MidiNote(fromAdLib.Frequency(fromAdLib.Tones[tick]));
+                differences.Add(difference);
+                if (Math.Abs(difference) <= 1)
+                    near++;
+            }
+        }
+        differences.Sort();
+        var median = differences[differences.Count / 2];
+        TestContext.Out.WriteLine($"{game}: PC values {lowest}-{highest}; {made} made from AdLib, {near} of {ticks} sounding ticks within a semitone of the game's;"
+            + $" the game's are a median {median:0.#} semitones higher");
+        Assert.That(made, Is.GreaterThan(0));
+        // The game's PC versions weren't made from the AdLib ones; they mostly sit about an octave
+        // up, which is why "Make it from" goes an octave higher unless told otherwise
+        Assert.That(median, Is.InRange(6, 18));
     }
 }

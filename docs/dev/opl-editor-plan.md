@@ -222,5 +222,27 @@ byte by byte, so command order inside a tick may differ). Plus synthetic tests.
   a drawn sweep (one undo step, snapped). Not tried: Play by ear, erasing/picking by mouse,
   Save to mod, the export dialogs, the close prompt.
 
+**Phase 5 done 2026-11-10** (PC speaker editor):
+- `ToneDraft` / `ToneSoundEditorViewModel`: what the AdLib and PC speaker editors share (strokes,
+  snap, Up/Down, Longer/Shorter, Silence, Take out, length, priority, undo/redo with versions,
+  Play, Save to mod), pitches through each draft's `Frequency` / `ToneOfFrequency`, so Up on a PC
+  sound is a smaller value. `AdLibDraft` and AdLibEditorViewModel now sit on it (block, instrument).
+- `PcDraft` (priority, a value a tick; 1193180 / (value × 60) Hz; played through `PcSound.ToMono8`)
+  and PcSpeakerEditorViewModel: **Make it from** the AdLib version, tick by tick, each tone as the
+  nearest value, **octaves higher** (default 1). The AdLib version is found through the sound-seq
+  entries (`SoundCatalog.PartnerOf`: PCHITWAL goes with ALHITWAL), else the same name. The games'
+  own PC versions weren't made from the AdLib ones: Wolf3D's sit a median 13 semitones above,
+  Blake's 9 (hence the octave default); every game PC sound uses values 15-160, so the strip shows
+  8-255 (2486 Hz down to 78 Hz).
+- ToneStripView takes either editor (PC values drawn green); a drag now goes between mouse
+  points in pitch, not in tone numbers.
+- PcSpeakerEditorWindow; F8 **Edit PC speaker sound…** (the PC sound picked, or a sound-seq
+  entry's picked PC variant) and **New PC speaker sound…** (a second of silence; with an AdLib
+  sound shown, named as its PC version and able to be made from it).
+- Tests: PcSpeakerEditorTests, GameData `Pc_Sounds_Open_In_The_Editor_As_They_Are_And_AdLib_Ones_Make_Pc_Ones`.
+  Checked by screenshots: PCHITWAL open (8 values, paired with ALHITWAL), Make it from ALHITWAL
+  (an octave up, "*", undo). Not tried: Play by ear, drawing/erasing by mouse, New PC speaker sound
+  from an AdLib sound in the window, Save to mod, the export dialogs, the close prompt.
+
 Numbers for phase 3 (before pitch changes): Wolf3D's songs read as 23382 notes with 1451 kept writes; Spear 2180,
 Blake 3440 kept writes (worth a look at what they are before the raw view is designed).

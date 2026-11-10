@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -12,15 +12,15 @@ namespace PFWolf.Editor.Rendering;
 using Point = Avalonia.Point;
 
 /// <summary>
-/// An AdLib sound's tones along time, a column a tick (140 a second), each at its pitch (a
-/// row a semitone, C's marked); silent ticks empty. Drawn on with the left button (the tone
+/// An AdLib or PC speaker sound's tones along time, a column a tick (140 a second), each at its
+/// pitch (a row a semitone, C's marked); silent ticks empty. Drawn on with the left button (the tone
 /// under the mouse, snapped to semitones when asked), erased with the right; Shift and a drag
 /// picks a run of ticks for the tools. Ticks past the end are drawn into to make it longer.
 /// </summary>
 public sealed class ToneStripView : Control
 {
-    public static readonly StyledProperty<AdLibEditorViewModel?> EditorProperty =
-        AvaloniaProperty.Register<ToneStripView, AdLibEditorViewModel?>(nameof(Editor));
+    public static readonly StyledProperty<ToneSoundEditorViewModel?> EditorProperty =
+        AvaloniaProperty.Register<ToneStripView, ToneSoundEditorViewModel?>(nameof(Editor));
     public static readonly StyledProperty<int> RevisionProperty = AvaloniaProperty.Register<ToneStripView, int>(nameof(Revision));
     public static readonly StyledProperty<int> PlayheadTickProperty = AvaloniaProperty.Register<ToneStripView, int>(nameof(PlayheadTick), -1);
     public static readonly StyledProperty<double> PixelsPerTickProperty = AvaloniaProperty.Register<ToneStripView, double>(nameof(PixelsPerTick), 8);
@@ -32,7 +32,7 @@ public sealed class ToneStripView : Control
         FocusableProperty.OverrideDefaultValue<ToneStripView>(true);
     }
 
-    public AdLibEditorViewModel? Editor { get => GetValue(EditorProperty); set => SetValue(EditorProperty, value); }
+    public ToneSoundEditorViewModel? Editor { get => GetValue(EditorProperty); set => SetValue(EditorProperty, value); }
     public int Revision { get => GetValue(RevisionProperty); set => SetValue(RevisionProperty, value); }
     public int PlayheadTick { get => GetValue(PlayheadTickProperty); set => SetValue(PlayheadTickProperty, value); }
     public double PixelsPerTick { get => GetValue(PixelsPerTickProperty); set => SetValue(PixelsPerTickProperty, value); }
@@ -41,13 +41,13 @@ public sealed class ToneStripView : Control
     public event EventHandler<string>? Hover;
 
     private const double LabelWidth = 44, RulerHeight = 18, RowHeight = 7;
-    // The tones shown: from 8 (lower ones are coarse steps) to 255
-    private const int LowestTone = 8;
 
     private static readonly IBrush Background = new SolidColorBrush(Color.FromRgb(0x1e, 0x1e, 0x22));
     private static readonly IBrush PastEnd = new SolidColorBrush(Color.FromArgb(0x60, 0, 0, 0));
     private static readonly IBrush ToneBrush = new SolidColorBrush(Color.FromRgb(0xe8, 0xb4, 0x4a));
     private static readonly IBrush StemBrush = new SolidColorBrush(Color.FromArgb(0x30, 0xe8, 0xb4, 0x4a));
+    private static readonly IBrush PcToneBrush = new SolidColorBrush(Color.FromRgb(0x6c, 0xd0, 0x8a));
+    private static readonly IBrush PcStemBrush = new SolidColorBrush(Color.FromArgb(0x30, 0x6c, 0xd0, 0x8a));
     private static readonly IBrush RangeBrush = new SolidColorBrush(Color.FromArgb(0x30, 0x60, 0xa0, 0xff));
     private static readonly IBrush LabelBrush = new SolidColorBrush(Color.FromArgb(0xc0, 0xff, 0xff, 0xff));
     private static readonly IBrush RulerBack = new SolidColorBrush(Color.FromRgb(0x2a, 0x2a, 0x30));
@@ -58,27 +58,31 @@ public sealed class ToneStripView : Control
     private static readonly IPen PlayheadPen = new Pen(Brushes.White, 1.5);
     private static readonly Typeface Font = new(FontFamily.Default);
 
-    private AdLibDraft? Draft => Editor?.Draft;
+    private ToneDraft? Draft => Editor?.Current;
 
-    // The pitch range shown (MIDI notes, fractional) for the block
-    private (double Low, double High) Notes(AdLibDraft draft)
-        => (OplPitch.MidiNote(draft.Frequency(LowestTone)), OplPitch.MidiNote(draft.Frequency(255)));
+    // The pitch range shown (MIDI notes, fractional)
+    private static (double Low, double High) Notes(ToneDraft draft)
+        => (OplPitch.MidiNote(draft.Shown.Low), OplPitch.MidiNote(draft.Shown.High));
 
-    private double YOfNote(AdLibDraft draft, double note)
+    private static double YOfNote(ToneDraft draft, double note)
     {
-        var (_, high) = Notes(draft);
-        return RulerHeight + (high - note) * RowHeight;
+        var (low, high) = Notes(draft);
+        return RulerHeight + (high - Math.Clamp(note, low, high)) * RowHeight;
     }
 
-    private double YOfTone(AdLibDraft draft, int tone) => YOfNote(draft, OplPitch.MidiNote(draft.Frequency(Math.Max(tone, LowestTone))));
+    private static double NoteOf(ToneDraft draft, int tone) => OplPitch.MidiNote(draft.Frequency(tone));
 
-    private int ToneOfY(AdLibDraft draft, double y)
+    private static double YOfTone(ToneDraft draft, int tone) => YOfNote(draft, NoteOf(draft, tone));
+
+    private static double NoteOfY(ToneDraft draft, double y)
     {
-        var (_, high) = Notes(draft);
-        var note = high - (y - RulerHeight) / RowHeight;
-        var frequency = 440 * Math.Pow(2, (note - 69) / 12);
-        return (int)Math.Clamp(Math.Round(frequency * (1 << (20 - draft.Block)) / OplPitch.ChipRate), 1, 255);
+        var (low, high) = Notes(draft);
+        return Math.Clamp(high - (y - RulerHeight) / RowHeight, low, high);
     }
+
+    private static int ToneOfNote(ToneDraft draft, double note) => draft.ToneOfFrequency(440 * Math.Pow(2, (note - 69) / 12));
+
+    private static int ToneOfY(ToneDraft draft, double y) => ToneOfNote(draft, NoteOfY(draft, y));
 
     private double XOf(double tick) => LabelWidth + tick * PixelsPerTick;
     private int TickOf(double x) => (int)Math.Floor((x - LabelWidth) / PixelsPerTick);
@@ -88,7 +92,7 @@ public sealed class ToneStripView : Control
         if (Draft is not { } draft)
             return new Size(0, 0);
         var (low, high) = Notes(draft);
-        return new Size(XOf(draft.Tones.Length + AdLibDraft.TicksPerSecond), RulerHeight + (high - low + 1) * RowHeight);
+        return new Size(XOf(draft.Tones.Length + ToneDraft.TicksPerSecond), RulerHeight + (high - low + 1) * RowHeight);
     }
 
     public override void Render(DrawingContext context)
@@ -130,8 +134,8 @@ public sealed class ToneStripView : Control
                 continue;
             var y = YOfTone(draft, tone);
             var x = XOf(tick);
-            context.FillRectangle(StemBrush, new Rect(x, y, Math.Max(1, PixelsPerTick - 1), bottom - y));
-            context.FillRectangle(ToneBrush, new Rect(x, y - RowHeight / 2, Math.Max(1, PixelsPerTick - 1), RowHeight));
+            context.FillRectangle(draft is PcDraft ? PcStemBrush : StemBrush, new Rect(x, y, Math.Max(1, PixelsPerTick - 1), bottom - y));
+            context.FillRectangle(draft is PcDraft ? PcToneBrush : ToneBrush, new Rect(x, y - RowHeight / 2, Math.Max(1, PixelsPerTick - 1), RowHeight));
         }
 
         var endX = XOf(draft.Tones.Length);
@@ -144,7 +148,8 @@ public sealed class ToneStripView : Control
     private enum DragKind { None, Draw, Erase, Range }
 
     private DragKind _drag;
-    private int _lastTick, _lastTone, _rangeStart;
+    private int _lastTick, _rangeStart;
+    private double _lastNote;
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
@@ -168,8 +173,8 @@ public sealed class ToneStripView : Control
             _drag = properties.IsLeftButtonPressed ? DragKind.Draw : DragKind.Erase;
             editor.BeginStroke();
             _lastTick = tick;
-            _lastTone = _drag == DragKind.Draw ? ToneOfY(draft, point.Y) : 0;
-            var tone = _lastTone;
+            _lastNote = NoteOfY(draft, point.Y);
+            var tone = _drag == DragKind.Draw ? ToneOfY(draft, point.Y) : 0;
             editor.SetTones(tick, tick, _ => tone);
         }
         else
@@ -187,19 +192,24 @@ public sealed class ToneStripView : Control
         var tick = Math.Max(0, TickOf(point.X));
         var toneHere = ToneOfY(draft, point.Y);
         var existing = tick < draft.Tones.Length ? draft.Tones[tick] : 0;
+        var word = draft.ToneWord;
         Hover?.Invoke(this, $"Tick {tick} ({tick / 140.0:0.00} s)   "
-            + (existing > 0 ? $"tone {existing}: {draft.Frequency(existing):0.#} Hz, {ImfSongEdits.NoteName((int)Math.Round(OplPitch.MidiNote(draft.Frequency(existing))))}" : "silent")
-            + $"   ·   the mouse is at tone {toneHere} ({ImfSongEdits.NoteName((int)Math.Round(OplPitch.MidiNote(draft.Frequency(toneHere))))})");
+            + (existing > 0 ? $"{word} {existing}: {draft.Frequency(existing):0.#} Hz, {ImfSongEdits.NoteName((int)Math.Round(NoteOf(draft, existing)))}" : "silent")
+            + $"   ·   the mouse is at {word} {toneHere} ({ImfSongEdits.NoteName((int)Math.Round(NoteOf(draft, toneHere)))})");
 
         switch (_drag)
         {
-            case DragKind.Draw or DragKind.Erase:
-                var tone = _drag == DragKind.Draw ? toneHere : 0;
-                // Every tick between the last point and this one, the tone going from one to the other
-                var (fromTick, fromTone) = (_lastTick, _lastTone);
-                editor.SetTones(fromTick, tick, at => tick == fromTick ? tone
-                    : (int)Math.Round(fromTone + (tone - fromTone) * (at - fromTick) / (double)(tick - fromTick)));
-                (_lastTick, _lastTone) = (tick, tone);
+            case DragKind.Erase:
+                editor.SetTones(_lastTick, tick, _ => 0);
+                _lastTick = tick;
+                break;
+            case DragKind.Draw:
+                // Every tick between the last point and this one, the pitch going from one to the other
+                var (fromTick, fromNote) = (_lastTick, _lastNote);
+                var noteHere = NoteOfY(draft, point.Y);
+                editor.SetTones(fromTick, tick, at => tick == fromTick ? toneHere
+                    : ToneOfNote(draft, fromNote + (noteHere - fromNote) * (at - fromTick) / (tick - fromTick)));
+                (_lastTick, _lastNote) = (tick, noteHere);
                 break;
             case DragKind.Range:
                 editor.Range = (Math.Min(_rangeStart, tick), Math.Max(_rangeStart, tick) + 1);

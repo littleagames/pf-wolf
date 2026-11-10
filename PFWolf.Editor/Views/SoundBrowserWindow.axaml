@@ -114,6 +114,10 @@
           <Button Content="Edit AdLib sound…" Click="EditAdLib" IsEnabled="{Binding CanEditAdLib}"
                   ToolTip.Tip="Opens the AdLib sound shown (or the one the sound-seq entry's picked variant plays) in the AdLib sound editor" />
           <Button Content="New AdLib sound…" Click="NewAdLib" ToolTip.Tip="Opens the AdLib sound editor on a second of silence to draw on" />
+          <Button Content="Edit PC speaker sound…" Click="EditPc" IsEnabled="{Binding CanEditPc}"
+                  ToolTip.Tip="Opens the PC speaker sound shown (or the one the sound-seq entry's picked variant plays) in the PC speaker sound editor" />
+          <Button Content="New PC speaker sound…" Click="NewPc"
+                  ToolTip.Tip="Opens the PC speaker sound editor on a second of silence; with an AdLib sound shown, it's named after it and can be made from it" />
         </WrapPanel>
       </StackPanel>
     </ScrollViewer>
@@ -136,6 +140,8 @@
           <MenuItem Header="New song…" Click="NewSong" />
           <MenuItem Header="Edit AdLib sound…" Click="EditAdLib" IsEnabled="{Binding CanEditAdLib}" />
           <MenuItem Header="New AdLib sound…" Click="NewAdLib" />
+          <MenuItem Header="Edit PC speaker sound…" Click="EditPc" IsEnabled="{Binding CanEditPc}" />
+          <MenuItem Header="New PC speaker sound…" Click="NewPc" />
           <Separator />
           <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" />
         </ContextMenu>

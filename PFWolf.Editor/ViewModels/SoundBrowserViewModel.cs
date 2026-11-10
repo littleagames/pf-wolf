@@ -301,6 +301,55 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         return editor;
     }
 
+    // The PC speaker sound shown: the one picked, or the one a sound-seq entry's picked variant plays
+    private string? PcName => SelectedItem?.Entry switch
+    {
+        { Kind: SoundKind.PcSpeaker } entry => entry.Name,
+        { Kind: SoundKind.Sound } when SelectedVariant?.Variant is { Kind: SoundKind.PcSpeaker } variant => variant.AssetName,
+        _ => null,
+    };
+
+    /// <summary>A PC speaker sound is shown for the PC speaker sound editor to open</summary>
+    public bool CanEditPc => _content != null && PcName is { } name && _content.Assets.Exists<PFWolf.Assets.Sounds.PcSound>(name);
+
+    /// <summary>The PC speaker sound editor on the PC speaker sound shown</summary>
+    public PcSpeakerEditorViewModel? EditPc()
+    {
+        if (!CanEditPc || _content?.Find<PFWolf.Assets.Sounds.PcSound>(PcName!) is not { } sound)
+            return null;
+        Stop();
+        var name = PcName!.ToUpperInvariant();
+        var adLibName = SoundCatalog.PartnerOf(_sequences, SoundKind.PcSpeaker, name);
+        return PcEditor(name, PcDraft.From(sound), isNew: false, AdLibVersionOf(adLibName), adLibName);
+    }
+
+    /// <summary>
+    /// The PC speaker sound editor on a new sound: a second of silence at priority 50, or, when an
+    /// AdLib sound is shown, its PC speaker version (named as its sound-seq entry names it, else
+    /// after it) with the AdLib sound to make it from
+    /// </summary>
+    public PcSpeakerEditorViewModel NewPc()
+    {
+        Stop();
+        var adLibName = CanEditAdLib ? AdLibName!.ToUpperInvariant() : null;
+        var adLib = adLibName != null ? AdLibVersionOf(adLibName) : null;
+        var name = adLibName != null ? SoundCatalog.PartnerOf(_sequences, SoundKind.AdLib, adLibName) : "NEWSOUND";
+        return PcEditor(name, new PcDraft(adLib?.Priority ?? 50, new byte[PcDraft.TicksPerSecond]), isNew: true, adLib, adLibName);
+    }
+
+    // The game's AdLib sound of a name, as the editor holds one
+    private AdLibDraft? AdLibVersionOf(string name)
+        => _content != null && _content.Assets.Exists<PFWolf.Assets.Sounds.AdLibSound>(name) && _content.Find<PFWolf.Assets.Sounds.AdLibSound>(name) is { RawData.Length: >= 23 } sound
+            ? AdLibDraft.From(sound)
+            : null;
+
+    private PcSpeakerEditorViewModel PcEditor(string name, PcDraft draft, bool isNew, AdLibDraft? adLibVersion, string? adLibName)
+    {
+        var editor = new PcSpeakerEditorViewModel(name, draft, isNew, adLibVersion, adLibName);
+        editor.SaveToMod = (soundName, pcs) => SaveToModAsync(SoundKind.PcSpeaker, soundName, ".pcs", pcs);
+        return editor;
+    }
+
     private (GameContent Content, List<InstrumentSource> Library)? _library;
 
     /// <summary>Instruments to copy from: every game song's, every AdLib sound's, the built-in bank's</summary>
@@ -508,6 +557,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         OnPropertyChanged(nameof(CanExport));
         OnPropertyChanged(nameof(CanEditSong));
         OnPropertyChanged(nameof(CanEditAdLib));
+        OnPropertyChanged(nameof(CanEditPc));
 
         if (value == null || _content == null)
         {
@@ -550,6 +600,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
     {
         OnPropertyChanged(nameof(CanExport));
         OnPropertyChanged(nameof(CanEditAdLib));
+        OnPropertyChanged(nameof(CanEditPc));
         if (SelectedItem?.Entry is not { Kind: SoundKind.Sound } entry || _content == null)
             return;
         Stop();
