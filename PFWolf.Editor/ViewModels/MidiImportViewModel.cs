@@ -101,7 +101,7 @@ public sealed partial class MidiImportViewModel : ObservableObject, IDisposable
     private bool _isPlaying;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(PlayCommand), nameof(SaveSongCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PlayCommand), nameof(SaveSongCommand), nameof(EditSongCommand))]
     private byte[]? _imf;
 
     public string PlayLabel => IsPlaying ? "■ Stop" : "▶ Play";
@@ -143,7 +143,8 @@ public sealed partial class MidiImportViewModel : ObservableObject, IDisposable
                 Muted = MidiChannels.Where(channel => !channel.IsOn).Select(channel => channel.Channel).ToHashSet(),
             };
             var (song, report) = MidiImport.ToSong(midi, options);
-            Imf = Wolf3dImfAudio.ToFile(ImfSongWriter.Write(song), Title ?? SuggestedName, remarks: $"Imported from {FileName}");
+            _song = song;
+            Imf =Wolf3dImfAudio.ToFile(ImfSongWriter.Write(song), Title ?? SuggestedName, remarks: $"Imported from {FileName}");
             Report = report.ToString() + (Channels.Any(channel => channel.Channel == 0 && channel.IsOn)
                 ? "\nChannel 0 is on: PFWolf plays it, but in DOS Wolf3D the AdLib sound effects take it over" : "");
         }
@@ -177,8 +178,24 @@ public sealed partial class MidiImportViewModel : ObservableObject, IDisposable
         IsPlaying = false;
     }
 
-    /// <summary>Raised once the song's in a mod, for the dialog to close</summary>
+    /// <summary>Raised once the song's in a mod (or opened in the song editor), for the dialog to close</summary>
     public event EventHandler? Saved;
+
+    /// <summary>Opens a song in the song editor (its suggested name, the song)</summary>
+    public Action<string, ImfSong>? Edit { get; set; }
+
+    private ImfSong? _song;
+
+    /// <summary>Opens the song as it's made now in the song editor, to change before saving</summary>
+    [RelayCommand(CanExecute = nameof(HasSong))]
+    private void EditSong()
+    {
+        if (_song == null || Edit == null)
+            return;
+        Stop();
+        Edit(SuggestedName, _song.Clone());
+        Saved?.Invoke(this, EventArgs.Empty);
+    }
 
     [RelayCommand(CanExecute = nameof(HasSong))]
     private async Task SaveSongAsync()

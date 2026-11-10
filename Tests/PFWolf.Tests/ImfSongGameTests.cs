@@ -57,7 +57,7 @@ public class ImfSongGameTests
             Assert.That(song.Notes, Is.Not.Empty, $"{game} {name} has notes");
         }
         TestContext.Out.WriteLine($"{game}: {songs.Count} songs,{songs.Sum(song => ImfSongReader.Read(song.Asset).Writes.Count)} writes kept as writes, "
-            + $"{songs.Sum(song => ImfSongReader.Read(song.Asset).Notes.Count)} notes");
+            + $"{songs.Sum(song => ImfSongReader.Read(song.Asset).Notes.Count)} notes, {songs.Sum(song => ImfSongReader.Read(song.Asset).PitchChanges.Count)} pitch changes");
     }
 
     [Test]

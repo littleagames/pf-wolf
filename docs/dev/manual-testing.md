@@ -1070,6 +1070,8 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** Add sound to mod… with a .wav, an .adl and a .pcs of one name: all three stay (one each kind); a bad file says why and writes nothing; a pk3 mod.
 - [ ] **(never tried by ear)** Import MIDI… with a few real MIDI files (a busy one, one with drums): Play sounds like the tune, notes in the right octave, drums recognisable; Save to mod… named like a game song plays in the game.
 - [ ] **(never tried)** Import MIDI… → Load GENMIDI bank… with a real .op2 (Doom's GENMIDI lump or DMXOPL): instruments sound right and in the right octave.
+- [ ] **(never tried by ear)** Song editor (Edit song… on a Wolf3D song): Play from the cursor, Loop these, mute/solo while playing, the playhead follows; a drawn or dragged note sounds as it's placed; Try it on the Instrument tab.
+- [ ] **(never tried)** Song editor by mouse: drag notes (time and pitch), drag a right edge, Ctrl-click, Shift-box, Ctrl+wheel zoom, arrows/Delete/Ctrl+Z/Ctrl+S; a Blake song's pitch-change lines; New song… drawn from scratch; Save to mod plays in the game; Export .imf / WAV; closing with changes asks first.
 
 ## 2.11 Palettes (F9)
 

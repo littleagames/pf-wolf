@@ -166,6 +166,25 @@ public class ImfSongTests
     }
 
     [Test]
+    public void A_Pitch_Written_While_A_Note_Sounds_Is_A_Pitch_Change_Of_It()
+    {
+        Command[] commands =
+        [
+            new(0x00, 0x00, 0), new(0xB2, 0x00, 10),
+            new(0xA2, 0x8B, 0), new(0xB2, 0x36, 20),     // tick 10: on
+            new(0xA2, 0x99, 10),                         // tick 30: slide up, same block
+            new(0xA2, 0x10, 0), new(0xB2, 0x3A, 10),     // tick 40: on into block 6
+            new(0xB2, 0x1A, 10),                         // tick 50: off at the pitch it's at now
+        ];
+        var song = ImfSongReader.Read(commands);
+        Assert.That(song.Notes.Single(), Is.EqualTo(new ImfNote(2, 10, 40, 0x28B, 5)));
+        Assert.That(song.PitchChanges, Is.EqualTo(new[] { new ImfPitchChange(30, 2, 0x299, 5), new ImfPitchChange(40, 2, 0x210, 6) }));
+        Assert.That(song.Writes.Select(write => write.Tick), Is.All.EqualTo(0), "only the start is kept as writes");
+        Assert.That(song.PitchChangesOf(song.Notes[0]).Count(), Is.EqualTo(2));
+        ImfPlayback.AssertSame(ImfPlayback.Of(commands), ImfPlayback.Of(ImfSongWriter.Write(song)), "slide");
+    }
+
+    [Test]
     public void A_Gap_Longer_Than_A_Delay_Holds_Is_Split()
     {
         var song = new ImfSong { Length = 70000 };

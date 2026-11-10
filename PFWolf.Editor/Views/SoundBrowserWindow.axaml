@@ -107,6 +107,11 @@
           <Button Content="Import MIDI…" Click="ImportMidi"
                   ToolTip.Tip="Makes a MIDI file into an IMF song (AdLib) to hear and put in a mod" />
         </WrapPanel>
+        <WrapPanel ItemSpacing="6" LineSpacing="6">
+          <Button Content="Edit song…" Click="EditSong" IsEnabled="{Binding CanEditSong}"
+                  ToolTip.Tip="Opens the IMF song picked in the song editor: its notes on a piano roll, its instruments" />
+          <Button Content="New song…" Click="NewSong" ToolTip.Tip="Opens the song editor on an empty song" />
+        </WrapPanel>
       </StackPanel>
     </ScrollViewer>
 
@@ -124,6 +129,8 @@
           <MenuItem Header="Add song to mod…" Click="AddSong" />
           <MenuItem Header="Add sound to mod…" Click="AddSound" />
           <MenuItem Header="Import MIDI…" Click="ImportMidi" />
+          <MenuItem Header="Edit song…" Click="EditSong" IsEnabled="{Binding CanEditSong}" />
+          <MenuItem Header="New song…" Click="NewSong" />
           <Separator />
           <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" />
         </ContextMenu>

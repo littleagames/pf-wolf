@@ -185,30 +185,34 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         await SaveToModAsync(kind, suggested, Path.GetExtension(fileName).ToLowerInvariant(), data);
     }
 
-    /// <summary>An IMF song made here (by Import MIDI) put in a mod as music/NAME.imf; true once it's there</summary>
-    public Task<bool> SaveSongToModAsync(string suggestedName, byte[] imf)
+    /// <summary>
+    /// An IMF song made here (by Import MIDI or the song editor) put in a mod as music/NAME.imf,
+    /// named after the song picked in the list when <paramref name="namedAfterPicked"/> (to play
+    /// in its place); the name it's saved as, or null when it isn't
+    /// </summary>
+    public Task<string?> SaveSongToModAsync(string suggestedName, byte[] imf, bool namedAfterPicked)
     {
-        // Named after the song picked, to play in its place, if one is
-        var name = SelectedItem?.Entry is { Kind: SoundKind.Music } picked ? picked.Name : suggestedName;
+        var name = namedAfterPicked && SelectedItem?.Entry is { Kind: SoundKind.Music } picked ? picked.Name : suggestedName;
         return SaveToModAsync(SoundKind.Music, name, ".imf", imf);
     }
 
-    // Asks for a name and a mod, then writes the file there in place of the mod's others of that name and kind
-    private async Task<bool> SaveToModAsync(SoundKind kind, string suggested, string extension, byte[] data)
+    // Asks for a name and a mod, then writes the file there in place of the mod's others of that
+    // name and kind; the name it's saved as, or null
+    private async Task<string?> SaveToModAsync(SoundKind kind, string suggested, string extension, byte[] data)
     {
         if (AskText == null || PickMod == null)
-            return false;
+            return null;
         var what = kind == SoundKind.Music ? "song" : $"{SoundCatalog.KindName(kind)} sound";
         var name = await AskText($"Add a {what} to a mod",
             $"Its name: one of the game's {what}s' names plays it in that one's place, a new name is a new one{(kind == SoundKind.Music ? " for game-info or mapdefs to play" : " to play by name or from sound-seq")}:",
             suggested, candidate => ArtFiles.CheckName(candidate.Trim()));
         if (string.IsNullOrWhiteSpace(name))
-            return false;
+            return null;
         name = name.Trim().ToUpperInvariant();
 
         var folder = await PickMod($"A mod to put {name} in (it goes in its {SoundFiles.Folder(kind)} folder)");
         if (folder == null)
-            return false;
+            return null;
 
         try
         {
@@ -217,13 +221,82 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
             Status = $"Saved {path}" + (deletes.Count > 0 ? $" in place of {string.Join(", ", deletes)}" : "");
             _showAfterLoad = (kind, name);
             Saved?.Invoke(this, folder);
-            return true;
+            return name;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             Status = $"Couldn't save {name}: {e.Message}";
-            return false;
+            return null;
         }
+    }
+
+    /// <summary>The song picked is an IMF song the song editor can open (not one a music file plays over)</summary>
+    public bool CanEditSong => _content != null && SelectedItem?.Entry is { Kind: SoundKind.Music } entry
+        && !_content.Assets.Exists<PFWolf.Assets.Sounds.MusicFileAsset>(entry.Name) && _content.Assets.Exists<PFWolf.Assets.Sounds.Wolf3dImfAudio>(entry.Name);
+
+    /// <summary>The song editor on the song picked</summary>
+    public SongEditorViewModel? EditSong()
+    {
+        if (!CanEditSong || _content?.Find<PFWolf.Assets.Sounds.Wolf3dImfAudio>(SelectedItem!.Name) is not { } imf)
+            return null;
+        Stop();
+        return SongEditor(SelectedItem.Name, Audio.Opl.ImfSongReader.Read(imf), isNew: false);
+    }
+
+    /// <summary>The song editor on a new, empty song (eight seconds long, the built-in piano on hand)</summary>
+    public SongEditorViewModel NewSong()
+    {
+        Stop();
+        var song = new Audio.Opl.ImfSong { Length = 8 * Audio.Opl.ImfSong.TicksPerSecond };
+        song.Instruments.Add(Audio.Opl.OplBank.BuiltIn.Melodic(0).Instrument);
+        song.Writes.AddRange([new Audio.Opl.ImfWrite(0, 0x00, 0x00), new Audio.Opl.ImfWrite(0, 0xBD, 0x00), new Audio.Opl.ImfWrite(0, 0x08, 0x00)]);
+        return SongEditor("NEWSONG", song, isNew: true);
+    }
+
+    /// <summary>The song editor on a song made here (by Import MIDI)</summary>
+    public SongEditorViewModel SongEditor(string name, Audio.Opl.ImfSong song, bool isNew)
+    {
+        var editor = new SongEditorViewModel(name, song, isNew, InstrumentLibrary());
+        editor.SaveToMod = (songName, imf) => SaveSongToModAsync(songName, imf, namedAfterPicked: false);
+        return editor;
+    }
+
+    private (GameContent Content, List<InstrumentSource> Library)? _library;
+
+    /// <summary>Instruments to copy from: every game song's, every AdLib sound's, the built-in bank's</summary>
+    public IReadOnlyList<InstrumentSource> InstrumentLibrary()
+    {
+        if (_content == null)
+            return [];
+        if (_library is { } cached && cached.Content == _content)
+            return cached.Library;
+
+        var library = new List<InstrumentSource>();
+        var assets = _content.Assets;
+        foreach (var name in assets.AssetNames.Where(name => !name.Contains('/')).Order(StringComparer.OrdinalIgnoreCase))
+        {
+            if (assets.Exists<PFWolf.Assets.Sounds.Wolf3dImfAudio>(name) && _content.Find<PFWolf.Assets.Sounds.Wolf3dImfAudio>(name) is { } imf)
+            {
+                try
+                {
+                    var song = Audio.Opl.ImfSongReader.Read(imf);
+                    library.AddRange(song.Instruments.Select((instrument, index) => new InstrumentSource($"{name.ToUpperInvariant()} instrument {index + 1}", instrument)));
+                }
+                catch (InvalidDataException)
+                {
+                }
+            }
+        }
+        foreach (var name in assets.AssetNames.Where(name => !name.Contains('/')).Order(StringComparer.OrdinalIgnoreCase))
+        {
+            if (assets.Exists<PFWolf.Assets.Sounds.AdLibSound>(name) && _content.Find<PFWolf.Assets.Sounds.AdLibSound>(name) is { RawData.Length: >= 23 } sound)
+                library.Add(new InstrumentSource($"AdLib sound {name.ToUpperInvariant()}", sound.Instrument));
+        }
+        var bank = Audio.Opl.OplBank.BuiltIn;
+        for (var program = 0; program < 128; program += 8)
+            library.Add(new InstrumentSource($"Built-in {bank.Melodic(program).Name}", bank.Melodic(program).Instrument));
+        _library = (_content, library);
+        return library;
     }
 
     // The song or sound just put in a mod, shown once the game's loaded again
@@ -393,6 +466,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         Samples = null;
         PositionText = "";
         OnPropertyChanged(nameof(CanExport));
+        OnPropertyChanged(nameof(CanEditSong));
 
         if (value == null || _content == null)
         {

@@ -39,6 +39,15 @@ public sealed record ImfPatchChange(int Tick, int Channel, int Instrument);
 /// <summary>A channel's volume (its carrier's 0x40 register) set at a tick, apart from a note starting</summary>
 public sealed record ImfVolumeChange(int Tick, int Channel, byte Level);
 
+/// <summary>
+/// A note's pitch changed while it sounds, without striking it again (a slide, a vibrato): the
+/// F-number and block it plays from this tick, on the channel of the note sounding then
+/// </summary>
+public sealed record ImfPitchChange(int Tick, int Channel, int FNumber, int Block)
+{
+    public double Frequency => OplPitch.Frequency(FNumber, Block);
+}
+
 /// <summary>A register write the song model doesn't read as anything else, kept at its tick</summary>
 public sealed record ImfWrite(int Tick, byte Register, byte Value);
 
@@ -55,6 +64,9 @@ public sealed class ImfSong
     public List<ImfNote> Notes { get; } = [];
     public List<ImfPatchChange> PatchChanges { get; } = [];
     public List<ImfVolumeChange> VolumeChanges { get; } = [];
+
+    /// <summary>Pitches changed while notes sound; each belongs to the note sounding on its channel at its tick</summary>
+    public List<ImfPitchChange> PitchChanges { get; } = [];
 
     /// <summary>Writes that aren't notes, instruments or volumes (the start's 00, BD and 08, a pitch set while no note sounds), in order</summary>
     public List<ImfWrite> Writes { get; } = [];
@@ -76,4 +88,21 @@ public sealed class ImfSong
 
     /// <summary>The channels that play a note</summary>
     public IEnumerable<int> ChannelsUsed => Notes.Select(note => note.Channel).Distinct().Order();
+
+    /// <summary>The pitch changes during a note (after its start, before its end)</summary>
+    public IEnumerable<ImfPitchChange> PitchChangesOf(ImfNote note)
+        => PitchChanges.Where(change => change.Channel == note.Channel && change.Tick > note.Start && change.Tick < (note.End ?? int.MaxValue));
+
+    /// <summary>A copy to change without changing this one (the lists are new; what's in them can't change)</summary>
+    public ImfSong Clone()
+    {
+        var copy = new ImfSong { Length = Length };
+        copy.Instruments.AddRange(Instruments);
+        copy.Notes.AddRange(Notes);
+        copy.PatchChanges.AddRange(PatchChanges);
+        copy.VolumeChanges.AddRange(VolumeChanges);
+        copy.PitchChanges.AddRange(PitchChanges);
+        copy.Writes.AddRange(Writes);
+        return copy;
+    }
 }

@@ -164,8 +164,27 @@ public partial class SoundBrowserWindow : Window
             return;
         }
         ViewModel.Stop();
-        import.Save = ViewModel.SaveSongToModAsync;
+        import.Save = async (name, imf) => await ViewModel.SaveSongToModAsync(name, imf, namedAfterPicked: true) != null;
+        import.Edit = (name, song) => ShowSongEditor(ViewModel.SongEditor(name, song, isNew: true));
         await new MidiImportWindow { DataContext = import }.ShowDialog(this);
+    }
+
+    private void EditSong(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel.EditSong() is { } editor)
+            ShowSongEditor(editor);
+    }
+
+    private void NewSong(object? sender, RoutedEventArgs e) => ShowSongEditor(ViewModel.NewSong());
+
+    private void ShowSongEditor(SongEditorViewModel editor)
+    {
+        var window = new SongEditorWindow
+        {
+            DataContext = editor,
+            ConfirmDiscard = async message => ViewModel.Confirm == null || await ViewModel.Confirm("Close the song editor", message, "Close"),
+        };
+        window.Show(this);
     }
 
     private void AddSong(object? sender, RoutedEventArgs e) => AddFile(asSong: true);

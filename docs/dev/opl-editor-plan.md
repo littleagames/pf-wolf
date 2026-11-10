@@ -173,5 +173,33 @@ byte by byte, so command order inside a tick may differ). Plus synthetic tests.
   GENMIDI file (the .op2 layout is from Chocolate Doom's structs; whether DMX's notes come out
   an octave off needs an ear).
 
-Numbers for phase 3: Wolf3D's songs read as 23382 notes with 1451 kept writes; Spear 2180,
+**Phase 3 done 2026-11-10** (song editor):
+- Model: `ImfPitchChange` — A/B written while a note read as one sounds (no re-strike) is the
+  note's pitch change, so it moves and transposes with the note. Kept writes fell to Wolf3D
+  1032, Spear 1327, Blake 379 (what's left: Muse's pitch-set-ahead writes while a channel is
+  silent, and the start block); pitch changes: Wolf3D 402, Spear 847, Blake 2995. A note's
+  key-off is now at the pitch it's sounding at. Round trip still exact for every game.
+- `ImfSongEdits`: add (cuts short / takes out what it lands on, one note a channel), remove,
+  move (time, semitones, channel; pitch changes go along), resize (not into the next note),
+  volume, per-note instrument (changes back for the next note), `GuessTicksPerRow`
+  (fractional: Muse's songs aren't on whole ticks — Dungeon's gaps 58-62, Blake's 87/88 —
+  most common gap ≥ 10 ticks, its half/third/quarter if common too, least-squares fitted).
+- `ImfRangeSource` (play from a tick, loop a region; earlier commands written first so notes
+  already keyed sound), `OplAudition` (a note of an instrument).
+- SongEditorWindow (F8 **Edit song…**, **New song…**, and Import MIDI's **Edit in the song
+  editor…**): PianoRollView (channel colors, dim muted, pitch-change lines, ruler cursor,
+  loop region, song end; Draw/Select tools, Shift-box, Ctrl-click, drag to move, right
+  edge to resize, arrows, Delete, Ctrl+A, Ctrl+wheel zoom), side tabs Song (channels:
+  current, mute, solo; length), Notes (volume 0-63, instrument, to channel, delete),
+  Instrument (list, New, copy from any game song/AdLib sound/built-in voice, Try, feedback,
+  additive, each operator by name with an envelope graph), Raw (kept writes, every command).
+  Undo/redo of whole-song snapshots; instrument edits within 2 s are one step; "*" tracks the
+  saved version (undo back to it clears). Save to mod (music/NAME.imf), Export .imf / WAV.
+- Tests: SongEditorTests (edits, grid, playback, VM undo/dirty/save/mute).
+- Checked by screenshots: GETTHEM open, ruler cursor, drawing a note (took out 10 channel-1
+  notes it landed on, now said in the status), undo, box select, Instrument tab. Not tried:
+  Play / audition by ear, dragging notes by mouse, resize by mouse, Save to mod, Export
+  dialogs, a Blake song's pitch-change lines, the close prompt.
+
+Numbers for phase 3 (before pitch changes): Wolf3D's songs read as 23382 notes with 1451 kept writes; Spear 2180,
 Blake 3440 kept writes (worth a look at what they are before the raw view is designed).

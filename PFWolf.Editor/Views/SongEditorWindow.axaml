@@ -1,0 +1,218 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:r="using:PFWolf.Editor.Rendering"
+        x:Class="PFWolf.Editor.Views.SongEditorWindow"
+        x:DataType="vm:SongEditorViewModel"
+        Title="{Binding Title}"
+        Width="1280" Height="800" MinWidth="900" MinHeight="520"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,10,0,4" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="NumericUpDown.small">
+      <Setter Property="FormatString" Value="0" />
+      <Setter Property="Increment" Value="1" />
+      <Setter Property="MinWidth" Value="110" />
+    </Style>
+  </Window.Styles>
+
+  <Window.DataTemplates>
+    <!-- One operator's settings -->
+    <DataTemplate DataType="vm:OperatorEditorViewModel">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+        <r:EnvelopeView Height="60" Attack="{Binding Attack}" Decay="{Binding Decay}" Sustain="{Binding Sustain}"
+                        Release="{Binding Release}" Sustaining="{Binding Sustaining}"
+                        ToolTip.Tip="Its envelope, roughly: attack, decay to the sustain level, (holding while the key's on if it sustains), release after the dashed line" />
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="3" ColumnSpacing="6">
+          <TextBlock Classes="label" Text="Attack" />
+          <NumericUpDown Grid.Column="1" Classes="small" Value="{Binding Attack}" Minimum="0" Maximum="15" ToolTip.Tip="0 never rises, 15 at once" />
+          <TextBlock Classes="label" Grid.Row="1" Text="Decay" />
+          <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="small" Value="{Binding Decay}" Minimum="0" Maximum="15" ToolTip.Tip="How fast it falls to the sustain level: 0 never, 15 at once" />
+          <TextBlock Classes="label" Grid.Row="2" Text="Sustain" />
+          <NumericUpDown Grid.Row="2" Grid.Column="1" Classes="small" Value="{Binding Sustain}" Minimum="0" Maximum="15" ToolTip.Tip="The level it falls to: 0 loudest, 15 quietest (3 dB a step)" />
+          <TextBlock Classes="label" Grid.Row="3" Text="Release" />
+          <NumericUpDown Grid.Row="3" Grid.Column="1" Classes="small" Value="{Binding Release}" Minimum="0" Maximum="15" ToolTip.Tip="How fast it dies once let go: 0 never, 15 at once" />
+          <TextBlock Classes="label" Grid.Row="4" Text="Level" />
+          <NumericUpDown Grid.Row="4" Grid.Column="1" Classes="small" Value="{Binding Level}" Minimum="0" Maximum="63" ToolTip.Tip="Total level: 0 loudest, 63 quietest (0.75 dB a step); the carrier's is the note's volume" />
+          <TextBlock Classes="label" Grid.Row="5" Text="Multiplier" />
+          <NumericUpDown Grid.Row="5" Grid.Column="1" Classes="small" Value="{Binding Multiplier}" Minimum="0" Maximum="15" ToolTip.Tip="Its frequency against the note's: 0 is ½, 1 the note, 2 an octave up..." />
+          <TextBlock Classes="label" Grid.Row="6" Text="Key scale" />
+          <NumericUpDown Grid.Row="6" Grid.Column="1" Classes="small" Value="{Binding KeyScaleLevel}" Minimum="0" Maximum="3" ToolTip.Tip="Quieter higher up: 0 none, 1 1.5, 2 3, 3 6 dB an octave" />
+          <TextBlock Classes="label" Grid.Row="7" Text="Waveform" />
+          <ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{x:Static vm:OperatorEditorViewModel.Waveforms}" SelectedIndex="{Binding Waveform}" MinWidth="110" />
+        </Grid>
+        <WrapPanel ItemSpacing="8">
+          <CheckBox Content="Sustains" IsChecked="{Binding Sustaining}" ToolTip.Tip="Holds at the sustain level while the key's on (else it goes on dying away, like a piano)" />
+          <CheckBox Content="Tremolo" IsChecked="{Binding Tremolo}" />
+          <CheckBox Content="Vibrato" IsChecked="{Binding Vibrato}" />
+          <CheckBox Content="KSR" IsChecked="{Binding KeyScaleRate}" ToolTip.Tip="Key scale rate: the envelope runs faster higher up" />
+        </WrapPanel>
+      </StackPanel>
+    </DataTemplate>
+  </Window.DataTemplates>
+
+  <DockPanel>
+    <!-- Playing, tools, grid, saving -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <WrapPanel ItemSpacing="8" LineSpacing="6">
+        <Button Content="{Binding PlayLabel}" Command="{Binding PlayCommand}" Classes="accent" MinWidth="86"
+                ToolTip.Tip="Plays from the cursor (the blue line; click the ruler to move it), or the loop region when Loop is on. Space" />
+        <CheckBox Content="Loop" IsChecked="{Binding Loop}" VerticalAlignment="Center"
+                  ToolTip.Tip="Plays the loop region (or the whole song) over and over" />
+        <Button Content="Loop these" Command="{Binding LoopSelectionCommand}" ToolTip.Tip="Sets the loop region to the notes picked" />
+        <Button Content="No loop region" Command="{Binding ClearLoopCommand}" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <RadioButton Content="Draw" GroupName="tool" IsChecked="{Binding IsDrawTool}" VerticalAlignment="Center"
+                     ToolTip.Tip="A click on nothing puts a note there (drag for its length). Shift-drag picks notes in a box" />
+        <RadioButton Content="Select" GroupName="tool" IsChecked="{Binding !IsDrawTool}" VerticalAlignment="Center"
+                     ToolTip.Tip="A drag on nothing picks the notes in a box" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <TextBlock Classes="label" Text="Ticks a row" />
+        <NumericUpDown Value="{Binding TicksPerRow}" Minimum="1" Maximum="700" Increment="1" FormatString="0.##" Width="120"
+                       ToolTip.Tip="Where notes snap, in ticks (700 a second)" />
+        <TextBlock Classes="label" Text="Rows a beat" />
+        <NumericUpDown Value="{Binding RowsPerBeat}" Minimum="1" Maximum="32" Increment="1" FormatString="0" Width="100" />
+        <TextBlock Classes="label" Text="{Binding BeatsPerMinute}" Opacity="0.7" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <Button Content="−" Command="{Binding ZoomOutCommand}" ToolTip.Tip="Zoom out (Ctrl+wheel)" MinWidth="32" />
+        <Button Content="+" Command="{Binding ZoomInCommand}" ToolTip.Tip="Zoom in (Ctrl+wheel)" MinWidth="32" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <Button Content="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z" />
+        <Button Content="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Ctrl+Y" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <Button Content="Save to mod…" Command="{Binding SaveCommand}" ToolTip.Tip="Puts it in a mod as music/NAME.imf. Ctrl+S" />
+        <Button Content="Export .imf…" Click="OnExportImf" />
+        <Button Content="Export WAV…" Click="OnExportWav" />
+      </WrapPanel>
+    </Border>
+
+    <!-- What was done, and the song in numbers -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Opacity="0.8" />
+        <TextBlock Grid.Column="1" Text="{Binding Info}" Opacity="0.8" TextAlignment="Right" />
+      </Grid>
+    </Border>
+
+    <!-- The channels, the notes picked, the instruments, the raw writes -->
+    <TabControl DockPanel.Dock="Right" Width="410" Margin="4,0,0,0">
+      <TabItem Header="Song">
+        <ScrollViewer>
+          <StackPanel Spacing="4" Margin="4">
+            <TextBlock Classes="heading" Text="Channels" />
+            <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12"
+                       Text="New notes go on the channel picked. A channel plays one note at a time. Muted channels are dim and not heard." />
+            <ListBox ItemsSource="{Binding Channels}" SelectedItem="{Binding CurrentChannel}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:SongChannelItem">
+                  <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                    <Rectangle Width="14" Height="14" Fill="{Binding Brush}" RadiusX="3" RadiusY="3" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="12">
+                      <Run Text="{Binding Label}" />
+                      <Run Text="{Binding Notes, StringFormat=' · {0} notes'}" Foreground="Gray" />
+                    </TextBlock>
+                    <CheckBox Grid.Column="2" Content="Mute" IsChecked="{Binding IsMuted}" FontSize="12" />
+                    <CheckBox Grid.Column="3" Content="Solo" IsChecked="{Binding IsSolo}" FontSize="12" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock Classes="heading" Text="Length" />
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <TextBlock Classes="label" Text="Loops after (ticks)" />
+              <NumericUpDown Grid.Column="1" Value="{Binding SongLength}" Minimum="1" Maximum="10000000" Increment="70" FormatString="0"
+                             ToolTip.Tip="Where the song goes back to the start (the red line); never before the last note ends" />
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Notes">
+        <ScrollViewer>
+          <StackPanel Spacing="6" Margin="4">
+            <TextBlock Classes="heading" Text="Picked" />
+            <TextBlock Text="{Binding SelectionText}" TextWrapping="Wrap" />
+            <StackPanel Spacing="6" IsEnabled="{Binding HasSelection}">
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                <TextBlock Classes="label" Text="Volume" />
+                <NumericUpDown Grid.Column="1" Value="{Binding SelectionVolume}" Minimum="0" Maximum="63" Increment="1" FormatString="0"
+                               ToolTip.Tip="63 is as loud as the instrument goes, 0 silent (the carrier's level, 0.75 dB a step)" />
+                <TextBlock Classes="label" Grid.Row="1" Text="Instrument" />
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Instruments}" SelectedItem="{Binding SelectionInstrument}" HorizontalAlignment="Stretch"
+                          ToolTip.Tip="The channel changes to it as the note starts, and back for the next note" />
+              </Grid>
+              <WrapPanel ItemSpacing="6" LineSpacing="6">
+                <Button Content="To the current channel" Click="OnMoveToChannel" ToolTip.Tip="Moves the notes picked to the channel picked on the Song tab" />
+                <Button Content="Delete" Command="{Binding DeleteSelectionCommand}" ToolTip.Tip="Delete" />
+              </WrapPanel>
+            </StackPanel>
+            <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,8,0,0"
+                       Text="Click a note to pick it (Ctrl adds), drag it to move it (Up/Down a semitone, Ctrl an octave, Left/Right a row), drag its right edge to make it longer or shorter. Ctrl+A picks every note shown." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Instrument">
+        <ScrollViewer>
+          <StackPanel Spacing="6" Margin="4">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+              <ComboBox ItemsSource="{Binding Instruments}" SelectedItem="{Binding CurrentInstrument}" HorizontalAlignment="Stretch"
+                        ToolTip.Tip="The instrument new notes are given, and the one edited here (everywhere it's used)" />
+              <Button Grid.Column="1" Content="New" Command="{Binding NewInstrumentCommand}" ToolTip.Tip="A copy of this one, to change" />
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+              <ComboBox x:Name="Library" ItemsSource="{Binding Library}" PlaceholderText="Copy from a game song, AdLib sound or bank…" HorizontalAlignment="Stretch" />
+              <Button Grid.Column="1" Content="Copy" Click="OnCopyInstrument" ToolTip.Tip="Makes this instrument a copy of the one picked on the left" />
+            </Grid>
+            <Button Content="▶ Try it" Command="{Binding TryInstrumentCommand}" ToolTip.Tip="Plays the note picked (or middle C) with it" />
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,4,0,0">
+              <TextBlock Classes="label" Text="Feedback" />
+              <NumericUpDown Grid.Column="1" Classes="small" Value="{Binding InstrumentEditor.Feedback}" Minimum="0" Maximum="7"
+                             ToolTip.Tip="How much of the modulator is fed back into itself: brighter, buzzier" />
+              <CheckBox Grid.Column="2" Content="Additive" IsChecked="{Binding InstrumentEditor.Additive}"
+                        ToolTip.Tip="Both operators sound (organ-like); off, the modulator shapes the carrier (FM)" />
+            </Grid>
+            <ContentControl Content="{Binding InstrumentEditor.Modulator}" Margin="0,6,0,0" />
+            <ContentControl Content="{Binding InstrumentEditor.Carrier}" Margin="0,6,0,0" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Raw">
+        <DockPanel Margin="4">
+          <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,4"
+                     Text="Writes the song keeps as they are: its start, and pitches set while nothing sounds on a channel. Tick, register = value." />
+          <Button DockPanel.Dock="Bottom" Content="Show every command" Click="OnShowCommands" Margin="0,6,0,0"
+                  ToolTip.Tip="The song as the IMF commands it's saved as" />
+          <ListBox x:Name="RawList" ItemsSource="{Binding KeptWrites}" FontFamily="Cascadia Mono,Consolas,monospace" FontSize="11" />
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+
+    <!-- The notes -->
+    <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+      <r:PianoRollView x:Name="Roll" Revision="{Binding Revision}" PixelsPerTick="{Binding PixelsPerTick}" PlayheadTick="{Binding PlayheadTick}">
+        <r:PianoRollView.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Delete" Command="{Binding DeleteSelectionCommand}" InputGesture="Delete" />
+            <MenuItem Header="Give them the current instrument" Click="OnUseInstrument" />
+            <MenuItem Header="Move them to the current channel" Click="OnMoveToChannel" />
+            <MenuItem Header="Loop these" Command="{Binding LoopSelectionCommand}" />
+            <Separator />
+            <MenuItem Header="Pick every note shown" Command="{Binding SelectAllCommand}" InputGesture="Ctrl+A" />
+          </ContextMenu>
+        </r:PianoRollView.ContextMenu>
+      </r:PianoRollView>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

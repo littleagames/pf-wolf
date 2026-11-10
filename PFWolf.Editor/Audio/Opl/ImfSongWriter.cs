@@ -33,6 +33,8 @@ public static class ImfSongWriter
             At(change.Tick).Patches.Add(change);
         foreach (var change in song.VolumeChanges)
             At(change.Tick).Volumes.Add(change);
+        foreach (var change in song.PitchChanges)
+            At(change.Tick).Pitches.Add(change);
 
         var registers = new byte[256];
         var commands = new List<Command>();
@@ -55,10 +57,16 @@ public static class ImfSongWriter
                 registers[register] = value;
             }
 
+            // Keyed off at the pitch it's sounding at (a pitch change may have moved it)
             foreach (var note in events.Ends.OrderBy(note => note.Channel))
-                Put((byte)(0xB0 + note.Channel), (byte)(note.KeyOnValue & ~OplRegisters.KeyOn));
+                Put((byte)(0xB0 + note.Channel), (byte)(registers[0xB0 + note.Channel] & ~OplRegisters.KeyOn));
             foreach (var write in events.Writes)
                 Put(write.Register, write.Value);
+            foreach (var change in events.Pitches)
+            {
+                Put((byte)(0xA0 + change.Channel), (byte)(change.FNumber & 0xFF), always: false);
+                Put((byte)(0xB0 + change.Channel), (byte)(OplRegisters.KeyOn | ((change.Block & 7) << 2) | ((change.FNumber >> 8) & 3)), always: false);
+            }
             foreach (var change in events.Patches)
             {
                 if (change.Instrument < 0 || change.Instrument >= song.Instruments.Count)
@@ -103,5 +111,6 @@ public static class ImfSongWriter
         public List<ImfWrite> Writes { get; } = [];
         public List<ImfPatchChange> Patches { get; } = [];
         public List<ImfVolumeChange> Volumes { get; } = [];
+        public List<ImfPitchChange> Pitches { get; } = [];
     }
 }

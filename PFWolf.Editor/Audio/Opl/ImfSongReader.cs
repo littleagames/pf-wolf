@@ -51,6 +51,8 @@ public static class ImfSongReader
         Strike,
         /// <summary>Anything stranger (on and off again in the tick): the A/B writes are kept as they are</summary>
         Raw,
+        /// <summary>A note read as one sounds on and its pitch is written: a pitch change</summary>
+        Bend,
     }
 
     private sealed class ReadState(ImfSong song)
@@ -97,12 +99,24 @@ public static class ImfSongReader
                 else if (turnedOff)
                 {
                     changes[channel] = KeyChange.Off;
-                    // The note's end when it keeps the note's pitch and nothing keys it again after
-                    if (_sounding[channel] is { } sounding && offWrite is { } off && off == lastB
-                        && commands[off].Value ==(song.Notes[sounding].KeyOnValue & ~OplRegisters.KeyOn))
+                    // The note's end when it keeps the pitch it's sounding at and nothing keys it again after
+                    if (_sounding[channel] != null && offWrite is { } off && off == lastB
+                        && commands[off].Value == (_registers[0xB0 + channel] & ~OplRegisters.KeyOn))
                         endWrite[channel] = offWrite;
                 }
+                else if (_sounding[channel] != null && (finalB & 0xC0) == 0 && PitchWritten(channel))
+                    changes[channel] = KeyChange.Bend;
                 _keyOn[channel] = key;
+            }
+
+            bool PitchWritten(int channel)
+            {
+                for (var i = first; i <= last; i++)
+                {
+                    if (commands[i].Register == 0xA0 + channel || commands[i].Register == 0xB0 + channel)
+                        return true;
+                }
+                return false;
             }
 
             // The writes, in order: what isn't read as notes, instruments or volumes is kept
@@ -115,7 +129,7 @@ public static class ImfSongReader
 
                 if ((OplRegisters.ChannelOf(register, 0xA0) ?? OplRegisters.ChannelOf(register, 0xB0)) is { } pitchChannel)
                 {
-                    var absorbed = changes[pitchChannel] == KeyChange.Strike || endWrite[pitchChannel] == i;
+                    var absorbed = changes[pitchChannel] is KeyChange.Strike or KeyChange.Bend || endWrite[pitchChannel] == i;
                     if (!absorbed)
                         song.Writes.Add(new ImfWrite(tick, register, value));
                 }
@@ -134,8 +148,14 @@ public static class ImfSongReader
 
             for (var channel = 0; channel < OplRegisters.Channels; channel++)
             {
+                if (changes[channel] == KeyChange.Bend)
+                {
+                    var b = _registers[0xB0 + channel];
+                    song.PitchChanges.Add(new ImfPitchChange(tick, channel, _registers[0xA0 + channel] | ((b & 3) << 8), (b >> 2) & 7));
+                }
+
                 // A note sounding ends when the key goes off (keyed on again counts)
-                if (wasOn[channel] && changes[channel] != KeyChange.None && _sounding[channel] is { } sounding)
+                if (wasOn[channel] && changes[channel] is not (KeyChange.None or KeyChange.Bend) && _sounding[channel] is { } sounding)
                 {
                     var note = song.Notes[sounding];
                     song.Notes[sounding] = note with { Length = tick - note.Start };

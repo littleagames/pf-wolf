@@ -22,12 +22,14 @@
     <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,12,0,0">
       <TextBlock Text="{Binding Status}" Opacity="0.8" TextWrapping="Wrap"
                  IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
         <Button Content="{Binding PlayLabel}" Command="{Binding PlayCommand}" MinWidth="90"
                 ToolTip.Tip="Plays the song as it will be saved" />
-        <Button Grid.Column="2" Content="Save to mod…" Classes="accent" Command="{Binding SaveSongCommand}"
+        <Button Grid.Column="2" Content="Edit in the song editor…" Command="{Binding EditSongCommand}"
+                ToolTip.Tip="Opens the song as it's made now in the song editor, to change before saving" />
+        <Button Grid.Column="3" Content="Save to mod…" Classes="accent" Command="{Binding SaveSongCommand}"
                 ToolTip.Tip="Puts it in a mod as music/NAME.imf: named like one of the game's songs, it plays in its place" />
-        <Button Grid.Column="3" Content="Close" IsCancel="True" Click="OnClose" />
+        <Button Grid.Column="4" Content="Close" IsCancel="True" Click="OnClose" />
       </Grid>
     </StackPanel>
 
