@@ -273,6 +273,7 @@ public static class ActorProperties
         Int("light.low", "The effect's dark end, 0-255; half the intensity when left out"),
         Int("light.tics", "The effect's timing, in tics (flicker 8, pulse 70, strobe 35 when left out)"),
         Int("light.brighttics", "How long a strobe stays at its intensity, in tics", "5"),
+        Text("light.mode", "add: its light is added to what's there. set: what it reaches takes its intensity as its light, as a light zone would, darker than the level too, blending into the light round it over the outer half of its radius; a state's light: sets that frame's (a bulb whose room goes dark as it flickers off)", "add"),
         Text("particles", "The particles.yaml emitters it runs all the time, throwing their particles out from where it is, their way turned by the way it faces: one, a list, or several with commas between. A state's particles: changes them while it shows; A_StartEmitter and A_StopEmitter change them as it plays (kept in a saved game). Only for show: particles are drawn on each machine alone, and those in the air aren't saved"),
     ];
 

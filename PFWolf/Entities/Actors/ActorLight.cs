@@ -12,9 +12,12 @@ namespace PFWolf.Entities.Actors;
 ///   light.low         the effect's dark end, 0-255 (default half the intensity)
 ///   light.tics        the effect's timing, 70 a second (default flicker 8, pulse 70, strobe 35)
 ///   light.brighttics  how long a strobe stays at the intensity (default 5)
+///   light.mode        add (the default): its light is added to what's there; set: what it
+///                     reaches takes its intensity as its light, as a light zone would, darker
+///                     than the level too (a bulb whose room goes dark as it goes off)
 /// </summary>
 internal sealed record ActorLightInfo(int Intensity, double Radius, string? Color, ZoneEffect Effect, int? Low, int Tics, int BrightTics,
-    bool HasStateLights)
+    bool HasStateLights, bool Sets = false)
 {
     public const double DefaultRadius = 2;
 
@@ -23,7 +26,18 @@ internal sealed record ActorLightInfo(int Intensity, double Radius, string? Colo
     {
         int intensity = Math.Clamp(Int(actor, "light.intensity") ?? 0, 0, 255);
         bool stateLights = actor.ResolvedStates.Values.Any(HasLight);
-        if (intensity == 0 && !stateLights)
+        bool sets = false;
+        if (actor.Properties.TryGetValue("light.mode", out var mode))
+        {
+            switch (mode?.ToString()?.Trim().ToLowerInvariant())
+            {
+                case "set": sets = true; break;
+                case "add" or "" or null: break;
+                default: Console.WriteLine($"{actor.Name}: unknown light.mode '{mode}' (add or set)"); break;
+            }
+        }
+        // A set light at 0 is a dark one, not none
+        if (intensity == 0 && !stateLights && !sets)
             return null;
 
         var effect = ZoneEffect.None;
@@ -39,7 +53,7 @@ internal sealed record ActorLightInfo(int Intensity, double Radius, string? Colo
 
         return new ActorLightInfo(intensity, radius, color, effect, Int(actor, "light.low"),
             Math.Max(Int(actor, "light.tics") ?? LightEffects.DefaultTics(effect), 1),
-            Math.Max(Int(actor, "light.brighttics") ?? 5, 0), stateLights);
+            Math.Max(Int(actor, "light.brighttics") ?? 5, 0), stateLights, sets);
     }
 
     private static int? Int(Actor actor, string key) =>

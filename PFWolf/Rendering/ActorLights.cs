@@ -22,6 +22,14 @@ namespace PFWolf.Rendering;
 /// end in a hard edge.
 ///
 /// A_SetLight and A_LightOff change an actor's light as it plays (LightOverride, saved).
+///
+/// A set light (light.mode: set) doesn't add: what it reaches takes its intensity as its
+/// light, as a light zone would (lighting.CellSet, the steps from each cell's base light to
+/// its own), darker than the level as well as lighter. It holds all of it out to half its
+/// radius and blends into the light round it over the rest; where set lights overlap, the
+/// one that holds a cell more has it. It spreads and is stopped as any light is, and turns
+/// shading on for a level that has none (lighting.ActorShading), so a bulb can darken a room
+/// at full light as it goes off (its dark frames' `light:` a lower intensity).
 /// </summary>
 internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting, GameSession session)
 {
@@ -208,7 +216,8 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             var (intensity, radius, color) = CurrentLight(actor);
             var state = LightStateOf(actor);
             var where = ReferenceEquals(actor, WeaponSprite) ? "in hand" : $"at {actor.TileX},{actor.TileY}";
-            var text = intensity > 0 ? $"{intensity} over {radius:0.##} tiles{(color != null ? $", {color}" : "")}" : "off";
+            bool lit = state.Info?.Sets == true ? radius > 0 : intensity > 0;
+            var text = lit ? $"{(state.Info?.Sets == true ? "sets " : "")}{intensity} over {radius:0.##} tiles{(color != null ? $", {color}" : "")}" : "off";
             if (state.Info is { Effect: not ZoneEffect.None } info)
                 text += $", {info.Effect.ToString().ToLowerInvariant()}";
             if (state.Override != null)
@@ -267,11 +276,21 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
                 Array.Clear(lighting.CellAdd, start, LightCellCount);
                 Array.Clear(lighting.CellStrong, start, LightCellCount);
                 Array.Clear(lighting.CellTint, start, LightCellCount);
+                Array.Clear(lighting.CellSet, start, LightCellCount);
+                Array.Clear(lighting.CellSetWeight, start, LightCellCount);
             }
         }
         casttiles.Clear();
         castframe++;
         HasLights = false;
+
+        // A set light on a level with no shading turns it on (once a level), so it can darken
+        if (!lighting.Shading && !lighting.ActorShading && LitActors().Any(SetsLight))
+        {
+            lighting.ActorShading = true;
+            lighting.RebuildShading();
+            lighting.UpdateLightGrid();         // the tiles' base lights the set lights go from
+        }
         if (!lighting.Shading)
             return;
 
@@ -280,17 +299,25 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             var (intensity, radius, color) = CurrentLight(actor);
             // the weapon in hand isn't placed in the world: it's where the player is
             bool inhand = ReferenceEquals(actor, WeaponSprite);
-            CastLight(inhand ? session.Player.X : actor.X, inhand ? session.Player.Y : actor.Y, intensity, radius, ColorTints(color));
+            CastLight(inhand ? session.Player.X : actor.X, inhand ? session.Player.Y : actor.Y, intensity, radius, ColorTints(color), SetsLight(actor));
         }
         HasLights = casttiles.Count > 0;
     }
 
-    /// <summary>Adds a light at (lx, ly) (global units) to the cells around it, as far as it spreads, tinted (null: white).</summary>
-    void CastLight(int lx, int ly, int intensity, double radius, byte[]? tints)
+    // Whether an actor's light is a set one (light.mode: set)
+    bool SetsLight(Entities.Actors.Actor actor) => LightStateOf(actor).Info?.Sets == true;
+
+    /// <summary>
+    /// Adds a light at (lx, ly) (global units) to the cells around it, as far as it spreads,
+    /// tinted (null: white); a set light (sets) gives them its light in place of theirs.
+    /// </summary>
+    void CastLight(int lx, int ly, int intensity, double radius, byte[]? tints, bool sets = false)
     {
-        float levels = intensity / 255f * MaxLightLevel;
+        // a set light's is the light level a zone at its intensity would have
+        float levels = sets ? Lighting.LightLevelOf(intensity) : intensity / 255f * MaxLightLevel;
         long r = (long)(radius * MapConstants.TileGlobal);
-        if (levels <= 0 || r <= 0)
+        // a set light at 0 is a dark one; put out (light: none, A_LightOff) its radius is 0
+        if (levels <= 0 && !sets || r <= 0)
             return;
 
         int tx = lx >> MapConstants.TileShift, ty = ly >> MapConstants.TileShift;
@@ -304,7 +331,12 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         {
             var (x, y) = castqueue.Dequeue();
             if ((x, y) == (tx, ty) || LightSees(x, y, lx, ly))
-                LightCells(x, y, lx, ly, r, levels, tints);
+            {
+                if (sets)
+                    SetCells(x, y, lx, ly, r, levels, tints);
+                else
+                    LightCells(x, y, lx, ly, r, levels, tints);
+            }
             if ((x, y) != (tx, ty) && !LightPasses(x, y))
                 continue;               // the light goes no further
 
@@ -378,16 +410,75 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         return dx * dx + dy * dy < r * r;
     }
 
-    // Adds a light's share to each of a tile's cells: levels at the light, falling smoothly to
-    // none at r. Where it's the strongest light, the cell takes its tint, paler as it falls off.
-    void LightCells(int x, int y, int lx, int ly, long r, float levels, byte[]? tints)
+    // Notes a tile as having light on its cells this frame, to clear them before the next
+    void MarkCast(int tile)
     {
-        int tile = map.TileIndexOrNone(x, y);
         if (caststamp[tile] != castframe)
         {
             caststamp[tile] = castframe;
             casttiles.Add(tile);
         }
+    }
+
+    /// <summary>How much of a set light holds a cell t of its radius out (0-1): all of it to half way, then blending to none.</summary>
+    internal static double SetHold(double t)
+    {
+        const double FULL = 0.5;
+        if (t <= FULL)
+            return 1;
+        if (t >= 1)
+            return 0;
+        double u = (t - FULL) / (1 - FULL);
+        return 1 - u * u * (3 - 2 * u);
+    }
+
+    // Gives a set light's light to each of a tile's cells: the steps from the tile's base light
+    // to its own, as much of the way as it holds there. Where another set light holds a cell
+    // more, that one keeps it; where it's the light holding most, the cell takes its tint.
+    void SetCells(int x, int y, int lx, int ly, long r, float levels, byte[]? tints)
+    {
+        int tile = map.TileIndexOrNone(x, y);
+        MarkCast(tile);
+        int baselevel = lighting.TileLevel[tile];
+
+        long r2 = r * r;
+        int cellx0 = x << LightCellShift, celly0 = y << LightCellShift;
+        for (int cy = celly0; cy < celly0 + LightCellCount; cy++)
+        {
+            long dy = ((long)cy << CellGlobalShift) + HalfCell - ly;
+            for (int cx = cellx0; cx < cellx0 + LightCellCount; cx++)
+            {
+                long dx = ((long)cx << CellGlobalShift) + HalfCell - lx;
+                long d2 = dx * dx + dy * dy;
+                if (d2 >= r2)
+                    continue;
+
+                double hold = SetHold(Math.Sqrt(d2) / r);
+                int weight = (int)Math.Round(hold * 255);
+                int i = lighting.CellIndex(cx, cy);
+                if (weight <= 0 || weight <= lighting.CellSetWeight[i])
+                    continue;
+
+                int shift = (int)Math.Floor((levels - baselevel) * hold + bayer4[((cy & 3) << 2) + (cx & 3)] / 16f);
+                lighting.CellSetWeight[i] = (byte)weight;
+                lighting.CellSet[i] = (sbyte)Math.Clamp(shift, -MaxLightLevel, MaxLightLevel);
+                int strong = (int)(levels * hold);
+                if (strong >= lighting.CellStrong[i])
+                {
+                    lighting.CellStrong[i] = (byte)Math.Min(strong, byte.MaxValue);
+                    lighting.CellTint[i] = tints == null ? (byte)0
+                        : tints[Math.Clamp((int)Math.Ceiling(hold * TintSteps), 1, TintSteps) - 1];
+                }
+            }
+        }
+    }
+
+    // Adds a light's share to each of a tile's cells: levels at the light, falling smoothly to
+    // none at r. Where it's the strongest light, the cell takes its tint, paler as it falls off.
+    void LightCells(int x, int y, int lx, int ly, long r, float levels, byte[]? tints)
+    {
+        int tile = map.TileIndexOrNone(x, y);
+        MarkCast(tile);
 
         long r2 = r * r;
         int cellx0 = x << LightCellShift, celly0 = y << LightCellShift;

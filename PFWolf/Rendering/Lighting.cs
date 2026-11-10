@@ -114,7 +114,7 @@ internal sealed class Lighting(
         // any zone at all, since its light can change as the level is played; nothing with the
         // Lighting setting off
         lightingOn = hooks.LightingOn?.Invoke() ?? true;
-        Shading = lightingOn && (s.MaxFade > 0 || s.Light < 255 || LevelZones.Count > 0);
+        Shading = lightingOn && (s.MaxFade > 0 || s.Light < 255 || LevelZones.Count > 0 || ActorShading);
         LightRow = NoShade;
         foreach (var zone in LevelZones.Values)
             zone.RowLevel = -1;
@@ -274,6 +274,7 @@ internal sealed class Lighting(
         SetLightenLevels(engine.GetGameInfo().LightenLevels);
         var defaultMap = engine.GetGameInfo().DefaultMap;
         _levelMapInfo = mapInfo;
+        ActorShading = false;
         LevelZones = ResolveZones(mapInfo, defaultMap);
         SetShading(ResolveShading(mapInfo, defaultMap));
     }
@@ -299,6 +300,14 @@ internal sealed class Lighting(
     internal byte[] CellAdd = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
     internal byte[] CellStrong = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)], CellTint = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
 
+    // What a set light (light.mode: set) moves each cell's base light by, up or down, toward its
+    // own; and how much of the way (0-255) it went, so where set lights overlap the nearest wins
+    internal sbyte[] CellSet = new sbyte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
+    internal byte[] CellSetWeight = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
+
+    // A set light needs the level shaded, on a level that isn't otherwise (ActorLights)
+    internal bool ActorShading;
+
     /// <summary>The cell (x, y in cells) in CellAdd, CellStrong and CellTint</summary>
     internal int CellIndex(int cx, int cy) => cy * GridWidth + cx;
 
@@ -316,6 +325,8 @@ internal sealed class Lighting(
         CellAdd = new byte[gridWidth * gridHeight];
         CellStrong = new byte[gridWidth * gridHeight];
         CellTint = new byte[gridWidth * gridHeight];
+        CellSet = new sbyte[gridWidth * gridHeight];
+        CellSetWeight = new byte[gridWidth * gridHeight];
         GridDirty = true;
     }
 
@@ -376,7 +387,9 @@ internal sealed class Lighting(
         if ((ulong)cx < (ulong)GridWidth && (ulong)cy < (ulong)GridHeight)
         {
             long cell = cy * GridWidth + cx;
-            level += CellAdd[cell];
+            level += CellAdd[cell] + CellSet[cell];
+            if (level < 0)
+                level = 0;
             if (CellTint[cell] != 0)
                 tint = CellTint[cell];
         }

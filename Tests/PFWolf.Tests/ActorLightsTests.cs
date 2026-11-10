@@ -180,6 +180,97 @@ public class ActorLightsTests
         Assert.That(_lights.CurrentLight(lamp).Intensity, Is.EqualTo(150));
     }
 
+    // A set light (light.mode: set) in the middle of a tile, and the level's planes for the
+    // tiles' base lights it goes from (no zones)
+    private Monster SetLamp(int x, int y, int intensity, double radius = 3)
+    {
+        typeof(MapManager).GetField("mapsegs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
+        var lamp = Lamp(x, y, intensity, radius);
+        lamp.Name = $"SetLamp{intensity}";
+        lamp.Properties["light.mode"] = "set";
+        return lamp;
+    }
+
+    // The light level at the middle of a tile: its base light, with what lights did to its cell
+    private int LevelAt(int x, int y)
+    {
+        int cell = (((y << Lighting.LightCellShift) + Lighting.LightCells / 2) << 9) + (x << Lighting.LightCellShift) + Lighting.LightCells / 2;
+        return Math.Clamp(_lighting.TileLevel[_map.TileIndex(x, y)] + _lighting.CellAdd[cell] + _lighting.CellSet[cell], 0, Lighting.MaxLightLevel);
+    }
+
+    [Test]
+    public void A_Set_Light_Darkens_What_It_Reaches_On_A_Level_At_Full_Light()
+    {
+        // Arrange: no shading of the level's own
+        _lighting.SetShading(new ShadingSettings("#000000", 0, 16, 0, 255));
+        Assert.That(_lighting.Shading, Is.False);
+        SetLamp(10, 10, intensity: 64);
+
+        // Act
+        _lights.CastActorLights();
+
+        // Assert: shading's turned on for it; its own tile and the next take its light, far off the level's
+        Assert.That(_lighting.Shading, Is.True);
+        int full = Lighting.MaxLightLevel, its = Lighting.LightLevelOf(64);
+        Assert.That(LevelAt(10, 10), Is.EqualTo(its));
+        Assert.That(LevelAt(11, 10), Is.EqualTo(its));
+        Assert.That(LevelAt(12, 10), Is.InRange(its + 1, full - 1));    // blending out
+        Assert.That(LevelAt(14, 10), Is.EqualTo(full));                 // past its radius
+    }
+
+    [Test]
+    public void A_Set_Light_Lightens_A_Dim_Level_And_Is_Stopped_By_Walls()
+    {
+        // Arrange
+        Dim();
+        _map.TileMap[12, 10] = 1;
+        SetLamp(10, 10, intensity: 255);
+        _lighting.UpdateLightGrid();
+
+        // Act
+        _lights.CastActorLights();
+
+        // Assert
+        Assert.That(LevelAt(10, 10), Is.EqualTo(Lighting.MaxLightLevel));
+        Assert.That(LevelAt(13, 10), Is.EqualTo(_lighting.AmbientLevel));    // behind the wall
+    }
+
+    [Test]
+    public void A_Set_Lights_Dark_Frame_Sets_Its_Lower_Light_And_None_Puts_It_Out()
+    {
+        // Arrange: on at 255; its state's light: 32 (a bulb's dark frame), then light: none
+        Dim();
+        var lamp = SetLamp(10, 10, intensity: 255);
+        _lighting.UpdateLightGrid();
+        lamp.CurrentState = new ActorStateFrame { StateName = "Off", Sprite = "BULB", FrameLetter = "B", Light = StateLight.Parse("32") };
+
+        // Act / Assert
+        _lights.CastActorLights();
+        Assert.That(LevelAt(10, 10), Is.EqualTo(Lighting.LightLevelOf(32)));
+
+        lamp.CurrentState = new ActorStateFrame { StateName = "Off", Sprite = "BULB", FrameLetter = "B", Light = StateLight.Parse("none") };
+        _lights.CastActorLights();
+        Assert.That(LevelAt(10, 10), Is.EqualTo(_lighting.AmbientLevel));
+    }
+
+    [Test]
+    public void Where_Set_Lights_Overlap_The_One_Nearer_Has_The_Cell()
+    {
+        // Arrange: a bright one and a dark one three tiles apart
+        Dim();
+        SetLamp(10, 10, intensity: 255);
+        SetLamp(13, 10, intensity: 0);
+        _lighting.UpdateLightGrid();
+
+        // Act
+        _lights.CastActorLights();
+
+        // Assert
+        Assert.That(LevelAt(10, 10), Is.EqualTo(Lighting.MaxLightLevel));
+        Assert.That(LevelAt(13, 10), Is.Zero);
+    }
+
     [Test]
     public void The_Lights_Command_Says_What_Each_Lit_Actor_Gives_Off()
     {
