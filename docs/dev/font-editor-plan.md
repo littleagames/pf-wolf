@@ -143,4 +143,19 @@ offsets) is turned into one on load (`FontAsset.FromWsf`).
 
 ## Status
 
-Planned 2026-11-10; nothing built.
+Planned 2026-11-10.
+
+**Phase 0 done 2026-11-10:**
+- PFWolf.Common/Fonts: `Font`, `VgaFont`, `GraphicFont` and the effect records moved there
+  (`git mv`, now public) and draw onto an `ITextCanvas`; the game's `VideoManager` is one
+  (its pixel drawing unchanged), `IndexedTextCanvas` is the editor's (a picture of palette
+  indices, one layout pixel each, colors resolved from colors.yaml / #RRGGBB / index as the
+  game does). `FontColors` holds the gradient and glow palette math both use. `FontBuilder`
+  holds what `FontManager` did (definition → font, effects, upper-case and cursor
+  adjustments, `GlyphPictures`); `FontManager` is now its cache.
+- Checked: the main menu, Options, the Fonts Demo gallery and its six pages screenshot
+  pixel-identical before and after. Tests: FontDrawingTests (glyphs, shadow, outline,
+  gradient, glow, colors, builder rules) and GameData FontGameTests (every font in the
+  Wolf3D, Spear, shareware, Blake and Planet Strike fonts.yaml builds with no warning and
+  draws). The snapshot tests planned first weren't needed: the drawing code moved unchanged,
+  and the screenshots show it.

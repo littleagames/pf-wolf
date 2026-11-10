@@ -894,5 +894,5 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     private readonly Dictionary<(Dictionary<string, IntermissionValue>, string), (int X, int Y, int Width, int Height)> valueAreas = [];
 
     /// <summary>The intermission, victory and death cam text when intermission.yaml doesn't set a font or color</summary>
-    internal static readonly TextStyle IntermissionStyle = new("IntermissionFont", "White");
+    internal static readonly TextStyle IntermissionStyle = new(FontNames.Intermission, "White");
 }

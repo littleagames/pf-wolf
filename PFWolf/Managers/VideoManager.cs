@@ -2,6 +2,7 @@ using SDL2;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using PFWolf.Assets;
+using PFWolf.Fonts;
 using PFWolf.Configuration;
 using PFWolf.Entities;
 using PFWolf.Extensions;
@@ -25,7 +26,7 @@ internal enum UiSide
     Right,
 }
 
-internal class VideoManager
+internal class VideoManager : ITextCanvas
 {
     /// <summary>The video mode in use; change it with ApplyVideoSettings.</summary>
     internal VideoSettings Settings { get; private set; } = new();
@@ -709,7 +710,7 @@ internal class VideoManager
     /// <paramref name="bottom"/> percent at the last: positive toward white, negative toward black.
     /// Each row is matched to the closest palette entry. Built once per color and shape.
     /// </summary>
-    internal byte[] GetGradient(string color, int rows, int top, int bottom)
+    public byte[] GetGradient(string color, int rows, int top, int bottom)
     {
         rows = Math.Max(rows, 1);
         var key = (color, rows, top, bottom);
@@ -717,17 +718,7 @@ internal class VideoManager
             return table;
 
         var c = GamePal[ResolveColorByte(color)];
-        static byte Shade(byte value, float amount)
-            => (byte)Math.Clamp(amount >= 0 ? value + (255 - value) * amount : value * (1 + amount), 0, 255);
-
-        table = new byte[rows];
-        for (int i = 0; i < rows; i++)
-        {
-            float t = rows > 1 ? i / (float)(rows - 1) : 0.5f;
-            float amount = (top + (bottom - top) * t) / 100f;
-            table[i] = FindClosestPaletteIndex(Shade(c.r, amount), Shade(c.g, amount), Shade(c.b, amount));
-        }
-
+        table = FontColors.Gradient((c.r, c.g, c.b), rows, top, bottom, FindClosestPaletteIndex);
         _gradients[key] = table;
         return table;
     }
@@ -739,7 +730,7 @@ internal class VideoManager
     /// glow color mixed into the background at <paramref name="strength"/> percent for the
     /// first, fading evenly for the rest. Each is a palette index, as a color string.
     /// </summary>
-    internal string[] GetGlowColors(string glow, string background, int radius, int strength)
+    public string[] GetGlowColors(string glow, string background, int radius, int strength)
     {
         radius = Math.Max(radius, 1);
         var key = (glow, background, radius, strength);
@@ -748,15 +739,7 @@ internal class VideoManager
 
         var g = GamePal[ResolveColorByte(glow)];
         var b = GamePal[ResolveColorByte(background)];
-        static byte Mix(byte from, byte to, float amount) => (byte)Math.Clamp(from + (to - from) * amount, 0, 255);
-
-        colors = new string[radius];
-        for (int ring = 0; ring < radius; ring++)
-        {
-            float amount = strength / 100f * (1 - ring / (float)radius);
-            colors[ring] = FindClosestPaletteIndex(Mix(b.r, g.r, amount), Mix(b.g, g.g, amount), Mix(b.b, g.b, amount)).ToString();
-        }
-
+        colors = [.. FontColors.GlowRings((g.r, g.g, g.b), (b.r, b.g, b.b), radius, strength, FindClosestPaletteIndex).Select(ring => ring.ToString())];
         _glowColors[key] = colors;
         return colors;
     }
@@ -1133,7 +1116,7 @@ internal class VideoManager
 
 
     /// <summary>A color name, #RRGGBB or palette index, as the palette index it draws with</summary>
-    internal byte ResolveColor(string color) => ResolveColorByte(color);
+    public byte ResolveColor(string color) => ResolveColorByte(color);
 
     /// <summary>
     /// Draws part of a paletted image (width by height from srcX, srcY) at (x, y) in 320x200
@@ -1141,7 +1124,7 @@ internal class VideoManager
     /// a color, every pixel drawn is that color instead of its own, or with
     /// <paramref name="rowColors"/> too, each row that row's color. Clipped to the screen.
     /// </summary>
-    internal void DrawImageRegion(byte[] pixels, byte[]? opacityMask, int stride, int srcX, int srcY, int width, int height,
+    public void DrawImageRegion(byte[] pixels, byte[]? opacityMask, int stride, int srcX, int srcY, int width, int height,
         int x, int y, byte? key = null, string? color = null, byte[]? rowColors = null)
     {
         IntPtr destPtr = LockSurface(ScreenBuffer);
@@ -1203,7 +1186,7 @@ internal class VideoManager
     /// screen, so text (or a shadow, outline or glow drawn with it) can reach past the edges.
     /// </summary>
     /// <param name="rowColors">A palette index for each row of the glyphs, in place of <paramref name="fontcolor"/></param>
-    internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font, byte[]? rowColors = null)
+    public void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font, byte[]? rowColors = null)
     {
         IntPtr destPtr = LockSurface(ScreenBuffer);
         if (destPtr == IntPtr.Zero)

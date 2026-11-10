@@ -1,13 +1,13 @@
-using PFWolf.Managers;
-
 namespace PFWolf.Fonts;
 
 /// <summary>
 /// Something text is drawn with: a Wolf3D VGAGRAPH font (<see cref="VgaFont"/>) or a set of
 /// pictures, one per character (<see cref="GraphicFont"/>). Coordinates are in the 320x200
-/// virtual screen. A font draws a single line; newlines are up to the caller (<see cref="TextWindow"/>).
+/// virtual screen (the game's layout pixels), drawn onto an <see cref="ITextCanvas"/>: the game's
+/// screen, or a picture in the editor. A font draws a single line; newlines are up to the caller
+/// (the game's TextWindow).
 /// </summary>
-internal abstract class Font
+public abstract class Font
 {
     /// <summary>Height of the glyphs</summary>
     public abstract int Height { get; }
@@ -20,6 +20,9 @@ internal abstract class Font
     /// font doesn't have isn't drawn, but still takes up room so text doesn't run together.
     /// </summary>
     public abstract int Advance(char ch);
+
+    /// <summary>Whether the font has a glyph (or a blank of its own) for <paramref name="ch"/>, rather than leaving room for it</summary>
+    public virtual bool Has(char ch) => true;
 
     /// <summary>A copy of the text drawn behind it, offset, in one color; none by default</summary>
     public FontShadow? Shadow { get; set; }
@@ -40,7 +43,7 @@ internal abstract class Font
     /// Draws a line of text, with the font's own shadow, outline, gradient and glow; a glow fades
     /// into black, as there's no style saying what's behind the text
     /// </summary>
-    public void Draw(VideoManager video, int x, int y, string text, string color)
+    public void Draw(ITextCanvas video, int x, int y, string text, string color)
         => Draw(video, x, y, text, color, Shadow, Gradient, Outline, Glow, "Black");
 
     /// <summary>
@@ -50,7 +53,7 @@ internal abstract class Font
     /// like the shadow, spreads from the outlined text. None of them change how far characters
     /// move along, so they spread into the gaps between them.
     /// </summary>
-    public void Draw(VideoManager video, int x, int y, string text, string color, FontShadow? shadow, FontGradient? gradient,
+    public void Draw(ITextCanvas video, int x, int y, string text, string color, FontShadow? shadow, FontGradient? gradient,
         FontOutline? outline = null, FontGlow? glow = null, string background = "Black")
     {
         bool outlined = outline != null && outline != FontOutline.None;
@@ -85,7 +88,7 @@ internal abstract class Font
 
     /// <param name="silhouette">Draw every pixel of the glyphs in <paramref name="color"/>, even for a font whose glyphs have their own colors</param>
     /// <param name="rowColors">For glyphs drawn in the text's color, a palette index for each row from the top, in place of it</param>
-    protected abstract void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors);
+    protected abstract void DrawText(ITextCanvas video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors);
 
     /// <summary>Width of a line of text</summary>
     public int Measure(string text)
@@ -107,9 +110,9 @@ internal abstract class Font
 }
 
 /// <summary>A text shadow: how far right and down of the text it sits, and its color</summary>
-internal record FontShadow(int X, int Y, string Color)
+public record FontShadow(int X, int Y, string Color)
 {
-    /// <summary>For a <see cref="TextStyle"/>: no shadow, even if the font has one</summary>
+    /// <summary>For a text style: no shadow, even if the font has one</summary>
     public static readonly FontShadow None = new(0, 0, "");
 
     /// <summary>One pixel right and down, in black</summary>
@@ -121,9 +124,9 @@ internal record FontShadow(int X, int Y, string Color)
 /// every side, including the corners when <paramref name="Diagonals"/> (otherwise only straight
 /// up, down, left and right, for a rounder look)
 /// </summary>
-internal record FontOutline(string Color, int Thickness = 1, bool Diagonals = true)
+public record FontOutline(string Color, int Thickness = 1, bool Diagonals = true)
 {
-    /// <summary>For a <see cref="TextStyle"/>: no outline, even if the font has one</summary>
+    /// <summary>For a text style: no outline, even if the font has one</summary>
     public static readonly FontOutline None = new("", 0);
 
     /// <summary>One pixel of black all round</summary>
@@ -151,9 +154,9 @@ internal record FontOutline(string Color, int Thickness = 1, bool Diagonals = tr
 /// at <paramref name="Strength"/> percent over the background, each further one fading more
 /// toward the background. No <paramref name="Color"/> glows in the text's own color.
 /// </summary>
-internal record FontGlow(string? Color = null, int Radius = 2, int Strength = 50)
+public record FontGlow(string? Color = null, int Radius = 2, int Strength = 50)
 {
-    /// <summary>For a <see cref="TextStyle"/>: no glow, even if the font has one</summary>
+    /// <summary>For a text style: no glow, even if the font has one</summary>
     public static readonly FontGlow None = new(null, 0, 0);
 
     /// <summary>Two rings in the text's color, from 50% strength</summary>
@@ -186,9 +189,9 @@ internal record FontGlow(string? Color = null, int Radius = 2, int Strength = 50
 /// to <paramref name="Bottom"/> percent at the bottom, positive toward white and negative
 /// toward black, blending in between
 /// </summary>
-internal record FontGradient(int Top, int Bottom)
+public record FontGradient(int Top, int Bottom)
 {
-    /// <summary>For a <see cref="TextStyle"/>: the plain color, even if the font has a gradient</summary>
+    /// <summary>For a text style: the plain color, even if the font has a gradient</summary>
     public static readonly FontGradient None = new(0, 0);
 
     /// <summary>40% lighter at the top, 40% darker at the bottom</summary>

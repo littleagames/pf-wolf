@@ -1,5 +1,4 @@
 using PFWolf.Assets;
-using PFWolf.Managers;
 
 namespace PFWolf.Fonts;
 
@@ -7,7 +6,7 @@ namespace PFWolf.Fonts;
 /// A Wolf3D proportional font (VGAGRAPH's SmallFont/LargeFont): one-bit glyphs for the first
 /// 256 characters, drawn in whatever color the text asks for.
 /// </summary>
-internal sealed class VgaFont : Font
+public sealed class VgaFont : Font
 {
     public VgaFont(FontAsset asset)
     {
@@ -20,7 +19,9 @@ internal sealed class VgaFont : Font
 
     public override int Advance(char ch) => ch < Asset.Width.Length ? Asset.Width[ch] : Asset.Width[' '];
 
+    public override bool Has(char ch) => ch < Asset.Width.Length && Asset.Width[ch] > 0;
+
     // Its glyphs are one color already, so a silhouette is drawn the same way
-    protected override void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors)
+    protected override void DrawText(ITextCanvas video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors)
         => video.DrawPropString(x, y, text, color, Asset, rowColors);
 }

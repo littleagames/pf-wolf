@@ -1,5 +1,4 @@
 using PFWolf.Assets;
-using PFWolf.Managers;
 
 namespace PFWolf.Fonts;
 
@@ -8,7 +7,7 @@ namespace PFWolf.Fonts;
 /// intermission letters (FONTL*), or cells cut from one sheet of characters. The pictures carry
 /// their own colors, unless the font colorizes them in the text's color.
 /// </summary>
-internal sealed class GraphicFont : Font
+public sealed class GraphicFont : Font
 {
     /// <summary>
     /// A character's picture: the part of <paramref name="Image"/> from (SrcX, SrcY), Width by
@@ -60,7 +59,9 @@ internal sealed class GraphicFont : Font
 
     public override int Advance(char ch) => FindGlyph(ch)?.Advance ?? SpaceWidth;
 
-    protected override void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors)
+    public override bool Has(char ch) => FindGlyph(ch) != null;
+
+    protected override void DrawText(ITextCanvas video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors)
     {
         foreach (char ch in text)
         {

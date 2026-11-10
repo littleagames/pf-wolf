@@ -1,3 +1,4 @@
+using PFWolf.Fonts;
 using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Entities.Actors;
@@ -70,7 +71,7 @@ internal sealed class AutomapDrawing(
     // How bright the 3D view stays under the map in Overlay mode
     const float AutomapOverlayBrightness = 0.4f;
 
-    const string AutomapFont = "SmallFont";
+    const string AutomapFont = FontNames.Small;
 
     string AutomapColor(string name) =>
         video.IsThemeColor(name) ? name : AutomapColorFallbacks[name];

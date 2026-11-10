@@ -9,7 +9,7 @@ public class ConsoleDrawingTests
     {
         public override int Height => 8;
         public override int Advance(char ch) => 1;
-        protected override void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors) { }
+        protected override void DrawText(ITextCanvas video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors) { }
     }
 
     private readonly Font _font = new OneWideFont();

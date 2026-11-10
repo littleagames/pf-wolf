@@ -20,7 +20,7 @@ internal sealed class ConsoleDrawing(
     // hangs from the top of the screen and reaches across all of it, however wide.
     internal const int ConsoleHeight = 100;
     internal const int ConsoleMargin = 4;
-    internal const string ConsoleFont = "SmallFont";
+    internal const string ConsoleFont = FontNames.Small;
     internal const string ConsolePrompt = "] ";
 
     // Whether the console panel was drawn over the last frame

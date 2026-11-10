@@ -5,8 +5,8 @@ namespace PFWolf.Ui;
 /// <summary>The fonts the menus and screens use</summary>
 internal static class UiFonts
 {
-    internal const string SmallFont = "SmallFont";
-    internal const string LargeFont = "LargeFont";
+    internal const string SmallFont = FontNames.Small;
+    internal const string LargeFont = FontNames.Large;
 
     /// <summary>Control panel menu items are printed in this</summary>
     internal const string MenuFont = LargeFont;
