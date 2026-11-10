@@ -127,9 +127,19 @@
         <!-- Its characters -->
         <TabItem Header="Characters">
           <DockPanel Margin="0,4,0,0">
-            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12">
-              <TextBlock Text="{Binding CoverageText}" Opacity="0.7" />
-              <TextBlock x:Name="CharacterInfo" Opacity="0.85" FontFamily="Consolas,Menlo,monospace" />
+            <StackPanel DockPanel.Dock="Top" Spacing="6">
+              <WrapPanel ItemSpacing="6" LineSpacing="6">
+                <Button Content="Edit glyphs…" Command="{Binding EditGlyphsCommand}"
+                        ToolTip.Tip="A vga font's letters in the glyph editor: drawn a pixel at a time, saved into a mod as fonts/NAME.fnt" />
+                <Button Content="Edit glyph picture…" Command="{Binding EditGlyphPictureCommand}"
+                        ToolTip.Tip="A graphic font's picture for the character picked (click one below), or a sheet font's sheet, in the pixel editor" />
+                <Button Content="New font file…" Command="{Binding NewFontFileCommand}"
+                        ToolTip.Tip="A new Wolf3D font (fonts/NAME.fnt): a copy of the picked vga font's letters, or one with just a space" />
+              </WrapPanel>
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="{Binding CoverageText}" Opacity="0.7" />
+                <TextBlock x:Name="CharacterInfo" Opacity="0.85" FontFamily="Consolas,Menlo,monospace" />
+              </StackPanel>
             </StackPanel>
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0">
               <Image x:Name="Characters" Classes="pixels" RenderOptions.BitmapInterpolationMode="None" Source="{Binding CharactersImage}"

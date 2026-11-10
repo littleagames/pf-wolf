@@ -1165,6 +1165,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** Save into a pk3 mod; New font… (a copy, then saved; a font chunk's copy;
       a name with a space refused); Take out the mod's change…; closing the editor with a changed
       font asks to save; the Definitions window's Fonts tab New… / Delete / Edit YAML.
+- [ ] Glyph editor (Characters → Edit glyphs… on SmallFont): pick a character on the grid, draw
+      and erase by mouse, width and height buttons, move/flip/clear, Undo/Redo; In use redraws.
+- [ ] **(never tried)** Save to mod… (fonts/SmallFont.fnt; the game prints with it: menus, HUD
+      messages); New font file… then used by a fonts.yaml `source`; Copy/Paste between two glyph
+      editors; "Copy them in" from LargeFont; a too-big font refused; Export .fnt…; closing with
+      changes asks; Edit glyph picture… on IntermissionFont (pixel editor opens on FONTL065).
 
 ---
 

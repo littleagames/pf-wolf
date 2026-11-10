@@ -1,0 +1,123 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:r="using:PFWolf.Editor.Rendering"
+        x:Class="PFWolf.Editor.Views.GlyphEditorWindow"
+        x:DataType="vm:GlyphEditorViewModel"
+        Title="{Binding Title}"
+        Width="1240" Height="820" MinWidth="900" MinHeight="560"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,8,0,0" />
+    </Style>
+    <Style Selector="Button.small">
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="MinWidth" Value="34" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <!-- Saving, undo, the clipboard -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <WrapPanel ItemSpacing="8" LineSpacing="6">
+        <Button Content="Save to mod…" Command="{Binding SaveCommand}" Classes="accent"
+                ToolTip.Tip="Puts it in a mod as fonts/NAME.fnt: a game font's name replaces the game's (pfwolf.pk3 is read-only). Ctrl+S" />
+        <Button Content="Export .fnt…" Click="OnExport" ToolTip.Tip="Saves it as a Wolf3D font file anywhere" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <Button Content="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z" />
+        <Button Content="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Ctrl+Y" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <Button Content="Copy" Command="{Binding CopyGlyphCommand}" ToolTip.Tip="The character's glyph, to paste into another (in this font or another). Ctrl+C" />
+        <Button Content="Paste" Command="{Binding PasteGlyphCommand}" ToolTip.Tip="The glyph copied, in place of this one (its width too). Ctrl+V" />
+        <Rectangle Width="1" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,2" />
+        <TextBlock Classes="label" Text="The characters it hasn't got, from" />
+        <ComboBox ItemsSource="{Binding OtherFonts}" SelectedItem="{Binding CopyFrom}" MinWidth="140" />
+        <Button Content="Copy them in" Command="{Binding CopyMissingCommand}"
+                ToolTip.Tip="Every character this font hasn't got and that one has, copied from it (rows from the top)" />
+      </WrapPanel>
+    </Border>
+
+    <!-- What's under the mouse, what was done -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+        <TextBlock x:Name="HoverText" MinWidth="200" Opacity="0.8" FontFamily="Consolas,Menlo,monospace" />
+        <TextBlock Grid.Column="1" Text="{Binding Status}" TextTrimming="CharacterEllipsis" Opacity="0.8" />
+      </Grid>
+    </Border>
+
+    <!-- Every character: a click picks one -->
+    <ScrollViewer DockPanel.Dock="Left" HorizontalScrollBarVisibility="Auto" Margin="8" MaxWidth="560">
+      <Image x:Name="Grid" Source="{Binding GridImage}" Width="{Binding GridWidth}" Height="{Binding GridHeight}" Stretch="Fill"
+             RenderOptions.BitmapInterpolationMode="None" VerticalAlignment="Top" HorizontalAlignment="Left" Cursor="Hand"
+             ToolTip.Tip="Codes 0 to 255, 16 to a row; click one to draw it. Dark cells are characters the font hasn't got." />
+    </ScrollViewer>
+
+    <!-- The character picked, and the font -->
+    <ScrollViewer Margin="8">
+      <StackPanel Spacing="6">
+        <TextBlock Text="{Binding Info}" FontWeight="SemiBold" />
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Classes="label" Text="Width" />
+          <NumericUpDown Value="{Binding GlyphWidth}" Minimum="0" Maximum="255" Increment="1" FormatString="0" Width="120"
+                         ToolTip.Tip="How far it moves the text along; columns are added or cut at the right. 0 takes it out of the font." />
+          <Button Content="+ left" Classes="small" Command="{Binding WiderLeftCommand}" ToolTip.Tip="A column more at its left" />
+          <Button Content="− left" Classes="small" Command="{Binding NarrowerLeftCommand}" ToolTip.Tip="A column fewer at its left" />
+          <Button Content="+ right" Classes="small" Command="{Binding WiderRightCommand}" ToolTip.Tip="A column more at its right" />
+          <Button Content="− right" Classes="small" Command="{Binding NarrowerRightCommand}" ToolTip.Tip="A column fewer at its right" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Classes="label" Text="Move" />
+          <Button Content="←" Classes="small" Command="{Binding ShiftLeftCommand}" ToolTip.Tip="Its pixels a column left (the edge column's are lost)" />
+          <Button Content="→" Classes="small" Command="{Binding ShiftRightCommand}" />
+          <Button Content="↑" Classes="small" Command="{Binding ShiftUpCommand}" />
+          <Button Content="↓" Classes="small" Command="{Binding ShiftDownCommand}" />
+          <Button Content="Flip ↔" Classes="small" Command="{Binding FlipAcrossCommand}" />
+          <Button Content="Flip ↕" Classes="small" Command="{Binding FlipOverCommand}" />
+          <Button Content="Clear" Classes="small" Command="{Binding ClearGlyphCommand}" ToolTip.Tip="Every pixel off; it keeps its width, as a space does" />
+          <Button Content="Take out" Classes="small" Command="{Binding RemoveGlyphCommand}" ToolTip.Tip="Out of the font: 0 wide" />
+        </StackPanel>
+
+        <!-- The glyph: left draws, right erases -->
+        <Border Background="#18181C" Padding="12" HorizontalAlignment="Left" IsVisible="{Binding HasGlyph}">
+          <r:PixelCanvas x:Name="Canvas" Picture="{Binding GlyphImage}" Zoom="{Binding Zoom}"
+                         ToolTip.Tip="The left button draws, the right erases; a drag is one step" />
+        </Border>
+        <TextBlock Text="Not in the font: give it a width (or paste a glyph) to draw it." Opacity="0.7" IsVisible="{Binding !HasGlyph}" />
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Classes="label" Text="Zoom" />
+          <Slider Minimum="6" Maximum="48" Value="{Binding Zoom}" Width="200" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <TextBlock Classes="heading" Text="The font" />
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Classes="label" Text="Height" />
+          <NumericUpDown Value="{Binding FontHeight}" Minimum="1" Maximum="255" Increment="1" FormatString="0" Width="120"
+                         ToolTip.Tip="Every glyph's rows: added or cut at the bottom" />
+          <Button Content="+ top" Classes="small" Command="{Binding RowsAtTopMoreCommand}" ToolTip.Tip="A row more above every glyph" />
+          <Button Content="− top" Classes="small" Command="{Binding RowsAtTopFewerCommand}" ToolTip.Tip="Every glyph's top row cut" />
+          <Button Content="+ bottom" Classes="small" Command="{Binding RowsAtBottomMoreCommand}" ToolTip.Tip="A row more under every glyph" />
+          <Button Content="− bottom" Classes="small" Command="{Binding RowsAtBottomFewerCommand}" ToolTip.Tip="Every glyph's bottom row cut" />
+        </StackPanel>
+
+        <TextBlock Classes="heading" Text="In use" />
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+          <TextBox Text="{Binding TestText}" PlaceholderText="Some text to see it in" />
+          <TextBlock Grid.Column="1" Classes="label" Text="in" />
+          <TextBox Grid.Column="2" Text="{Binding TextColor}" Width="130" ToolTip.Tip="A colors.yaml name, #RRGGBB or a palette index" />
+        </Grid>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+          <Image Source="{Binding TestImage}" Width="{Binding TestWidth}" Height="{Binding TestHeight}" Stretch="Fill"
+                 RenderOptions.BitmapInterpolationMode="None" HorizontalAlignment="Left"
+                 ToolTip.Tip="The text in the font as it is now, as the game draws it" />
+        </ScrollViewer>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

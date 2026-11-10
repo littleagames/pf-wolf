@@ -32,15 +32,29 @@ public partial class FontBrowserWindow : Window
             CharacterInfo.Text = ViewModel.CharacterAt(at.X / zoom, at.Y / zoom);
         };
         Characters.PointerExited += (_, _) => CharacterInfo.Text = "";
+        // A click picks the character (a graphic font's picture to edit)
+        Characters.PointerPressed += (_, e) =>
+        {
+            var at = e.GetPosition(Characters);
+            var zoom = Math.Max(ViewModel.Zoom, 1);
+            ViewModel.PickCharacterAt(at.X / zoom, at.Y / zoom);
+        };
 
         DataContextChanged += (_, _) =>
         {
-            if (DataContext is FontBrowserViewModel browser)
-                browser.CopyText += async (_, text) =>
-                {
-                    if (Clipboard is { } clipboard)
-                        await clipboard.SetValueAsync(DataFormat.Text, text);
-                };
+            if (DataContext is not FontBrowserViewModel browser)
+                return;
+            browser.CopyText += async (_, text) =>
+            {
+                if (Clipboard is { } clipboard)
+                    await clipboard.SetValueAsync(DataFormat.Text, text);
+            };
+            // The glyph editor beside this window
+            browser.GlyphEditRequested += (_, editor) => new GlyphEditorWindow
+            {
+                DataContext = editor,
+                ConfirmDiscard = async message => browser.Confirm == null || await browser.Confirm("Close the glyph editor", message, "Close"),
+            }.Show(this);
         };
     }
 

@@ -599,6 +599,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
             };
             // A font saved into a mod: the game loads again with the mod, so the list shows it as the game has it
             _fontBrowser.Saved += async (_, _) => await ReloadAfterDelete(() => _fontBrowser.Status, status => _fontBrowser.Status = status);
+            // A graphic or sheet font's picture: in the art browser's pixel editor
+            _fontBrowser.PictureEditRequested += (_, picture) =>
+            {
+                ShowArt();
+                _artBrowser?.Show(ArtKind.Picture, picture);
+                if (_artBrowser?.EditPixelsCommand.CanExecute(null) == true)
+                    _artBrowser.EditPixelsCommand.Execute(null);
+            };
             // A use's Go to: its definition in the Definitions window, or its line in the script browser
             _fontBrowser.GoTo += (_, target) =>
             {

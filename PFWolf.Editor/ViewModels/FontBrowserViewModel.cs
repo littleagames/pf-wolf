@@ -83,7 +83,7 @@ public sealed partial class FontBrowserViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection), nameof(CanExportFont))]
-    [NotifyCanExecuteChangedFor(nameof(CopyNameCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CopyNameCommand), nameof(EditGlyphsCommand), nameof(EditGlyphPictureCommand))]
     private FontItem? _selectedItem;
 
     public bool HasSelection => SelectedItem != null;
@@ -311,47 +311,35 @@ public sealed partial class FontBrowserViewModel : ObservableObject
         DrawCharacters(font, color, background, zoom);
     }
 
-    /// <summary>The character grid: 16 across, codes 0-255, cells this big</summary>
-    public (int CellWidth, int CellHeight) CharacterCell { get; private set; }
+    private CharacterGrid? _grid;
 
+    /// <summary>The character picked on the grid (a click): what Edit glyph picture works on</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(EditGlyphPictureCommand))]
+    private int? _pickedCharacter;
+
+    partial void OnPickedCharacterChanged(int? value) => Redraw();
+
+    // The glyphs plain, without the font's effects, so each one's own pixels show
     private void DrawCharacters(Font font, string color, string background, int zoom)
     {
-        int glyphWidth = Enumerable.Range(0, 256).Where(code => font.Has((char)code)).Select(code => font.Advance((char)code)).DefaultIfEmpty(4).Max();
-        int cellWidth = Math.Max(glyphWidth, 4) + 2, cellHeight = Math.Max(font.Height, 4) + 2;
-        CharacterCell = (cellWidth, cellHeight);
-        var canvas = Canvas(cellWidth * 16 + 1, cellHeight * 16 + 1);
-        byte back = canvas.ResolveColor(background), missing = canvas.ResolveColor("#3C3C3C"), lines = canvas.ResolveColor("#606060");
-        Array.Fill(canvas.Pixels, lines);
-
-        int has = 0;
-        for (int code = 0; code < 256; code++)
-        {
-            int x = code % 16 * cellWidth + 1, y = code / 16 * cellHeight + 1;
-            bool present = font.Has((char)code);
-            has += present ? 1 : 0;
-            for (int row = 0; row < cellHeight - 1; row++)
-                Array.Fill(canvas.Pixels, present ? back : missing, (y + row) * canvas.Width + x, cellWidth - 1);
-            // The glyph plain, without the font's effects, so each one's own pixels show
-            if (present)
-                font.Draw(canvas, x, y, ((char)code).ToString(), color, FontShadow.None, FontGradient.None, FontOutline.None, FontGlow.None, background);
-        }
-        CoverageText = $"{has} of 256 characters";
-        CharactersImage = Bitmap(new IndexedPicture(canvas.Width, canvas.Height, canvas.Pixels, null));
-        (CharactersWidth, CharactersHeight) = (canvas.Width * zoom, canvas.Height * zoom);
+        _grid = CharacterGrid.Draw(font, Canvas, color, background, PickedCharacter);
+        CoverageText = $"{_grid.Count} of 256 characters" + (PickedCharacter is int picked ? $"; picked: {CharacterGrid.Describe(picked)}" : "");
+        CharactersImage = Bitmap(_grid.Picture);
+        (CharactersWidth, CharactersHeight) = (_grid.Picture.Width * zoom, _grid.Picture.Height * zoom);
     }
 
     /// <summary>What's under the mouse on the character grid (in its own pixels)</summary>
     public string CharacterAt(double x, double y)
     {
-        if (PreviewFont is not { } font || CharacterCell.CellWidth == 0)
+        if (PreviewFont is not { } font || _grid?.CodeAt(x, y) is not int code)
             return "";
-        int column = (int)(x / CharacterCell.CellWidth), row = (int)(y / CharacterCell.CellHeight);
-        if (column is < 0 or > 15 || row is < 0 or > 15)
-            return "";
-        var ch = (char)(row * 16 + column);
-        var shown = ch is < ' ' or (>= '\x7f' and < '\xa0') ? "" : $" '{ch}'";
-        return font.Has(ch) ? $"Code {(int)ch}{shown}: {font.Advance(ch)} wide" : $"Code {(int)ch}{shown}: none (leaves {font.Advance(ch)} pixels)";
+        var ch = (char)code;
+        return font.Has(ch) ? $"{CharacterGrid.Describe(code)}: {font.Advance(ch)} wide" : $"{CharacterGrid.Describe(code)}: none (leaves {font.Advance(ch)} pixels)";
     }
+
+    /// <summary>Picks the character clicked on the grid (in its own pixels)</summary>
+    public void PickCharacterAt(double x, double y) => PickedCharacter = _grid?.CodeAt(x, y);
 
     //
     // Doing things with the font picked

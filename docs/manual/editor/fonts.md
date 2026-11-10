@@ -56,3 +56,34 @@ mods before make it.
 
 *Copy name* copies a font's name, and *Export font file (.fnt)…* saves a vga font's glyphs as a
 Wolf3D font file, the kind a mod's `fonts/` folder takes.
+
+## Drawing the letters
+
+In the Characters tab, **Edit glyphs…** opens a vga font's letters (its font chunk's or file's,
+such as SmallFont or Blake Stone's Font3) in the glyph editor. **New font file…** starts a new one
+there: a copy of the picked vga font's letters, or one with just a space.
+
+The glyph editor shows every character on the left, sixteen to a row; a click picks one to draw.
+The left button draws, the right erases, and a drag is one step. For the character picked:
+
+- **Width**: how far it moves the text along; columns are added or cut at the right, or with
+  *+ left* / *− left* at its left. 0 takes it out of the font (as does *Take out*);
+- **Move** its pixels a step (those moved off it are lost), **Flip** it either way, **Clear** it;
+- **Copy** and **Paste** a glyph, to another character or another font's glyph editor (Ctrl+C,
+  Ctrl+V);
+- *The characters it hasn't got, from* another font: every character this font hasn't got and
+  that one has, copied in.
+
+The font's **Height** adds or cuts rows at the bottom of every glyph, or with *+ top* / *− top* at
+the top. **In use** draws a line of text in the font as it is now, in a color of your choosing.
+Undo and Redo (Ctrl+Z, Ctrl+Y) step through it all.
+
+**Save to mod…** (Ctrl+S) writes `fonts/NAME.fnt` into the mod whose file it is already, else one
+you pick. A file named like one of the game's font chunks (`SmallFont.fnt`) replaces it, and a
+`.wsf` of the name in that mod is taken out. A font file's glyphs must start within its first
+32767 bytes (its offsets are 16-bit), so a font too big for that isn't saved, saying by how much.
+*Export .fnt…* saves the file anywhere.
+
+A graphic font's letters are pictures, and a sheet font's are one: pick a character in the
+Characters tab (a click) and **Edit glyph picture…** opens its picture (a sheet font's sheet) in
+the [pixel editor](./art).

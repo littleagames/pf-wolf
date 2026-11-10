@@ -89,4 +89,56 @@ public record FontAsset : Asset
     public short Height { get; init; }
     public short[] Location { get; init; } = new short[256];
     public byte[] Width { get; init; } = new byte[256];
+
+    /// <summary>
+    /// A character's glyph: <see cref="Height"/> rows of its width, a byte a pixel, non-zero where
+    /// it draws (empty for a character the font hasn't got)
+    /// </summary>
+    public byte[] Glyph(int ch)
+    {
+        if (ch is < 0 or > 255 || Width[ch] == 0 || Height <= 0)
+            return [];
+        int size = Width[ch] * Height, at = Location[ch];
+        var pixels = new byte[size];
+        if (at >= 0 && at < RawData.Length)
+            RawData.AsSpan(at, Math.Min(size, RawData.Length - at)).CopyTo(pixels);
+        return pixels;
+    }
+
+    /// <summary>
+    /// How far into a font file the glyphs can start: the offsets are 16-bit, so a font's glyphs
+    /// all start within the first 32767 bytes
+    /// </summary>
+    public const int MaxGlyphOffset = short.MaxValue;
+
+    /// <summary>
+    /// A Wolf3D font file (what <see cref="FromFile"/> reads, a mod's fonts/NAME.fnt): the height,
+    /// then each of the 256 characters' glyph, in code order. Throws InvalidDataException when the
+    /// glyphs don't fit the 16-bit offsets (by how many bytes).
+    /// </summary>
+    /// <param name="glyphs">Each character's width (0 for none) and its rows of a byte a pixel, non-zero where it draws</param>
+    public static byte[] Write(int height, IReadOnlyList<(int Width, byte[] Pixels)> glyphs)
+    {
+        if (height is < 1 or > short.MaxValue)
+            throw new InvalidDataException($"a font's height is 1 or more, not {height}");
+        if (glyphs.Count != 256)
+            throw new ArgumentException("a font has 256 characters", nameof(glyphs));
+
+        var data = new List<byte>(new byte[HeaderSize]);
+        BitConverter.TryWriteBytes(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(data)[..2], (short)height);
+        for (int ch = 0; ch < 256; ch++)
+        {
+            var (width, pixels) = glyphs[ch];
+            if (width is < 0 or > 255)
+                throw new InvalidDataException($"character {ch} is {width} wide; a glyph is 0 to 255");
+            int at = data.Count;
+            if (width > 0 && at > MaxGlyphOffset)
+                throw new InvalidDataException($"the glyphs are {at - MaxGlyphOffset} bytes too many for the font file's 16-bit offsets: make the font smaller or take characters out");
+            BitConverter.TryWriteBytes(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(data).Slice(2 + ch * 2, 2), (short)Math.Min(at, MaxGlyphOffset));
+            data[2 + 512 + ch] = (byte)width;
+            for (int i = 0; i < width * height; i++)
+                data.Add(i < pixels.Length ? pixels[i] : (byte)0);
+        }
+        return [.. data];
+    }
 }

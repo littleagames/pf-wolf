@@ -206,3 +206,29 @@ Planned 2026-11-10.
 - Checked by screenshots: the Style tab on HudMessage, Shadow Y set (preview redrawn, ●, Save
   on), Revert, the Definitions window's Fonts tab. Not tried by hand: Save from the window, New
   font…, Take out, the "Save first?" prompt.
+
+**Phase 3 done 2026-11-10** (the glyph editor):
+- `FontAsset.Write` (Common): a Wolf3D font file from a height and 256 glyphs, refused (by how
+  many bytes) when a glyph would start past the 16-bit offsets; `FontAsset.Glyph(ch)`.
+- `FontDocument` (Editing): the font's height and each character's width and pixels (drawn
+  pixels get the font's own ink value, Wolf3D's 1); strokes as one step, SetWidth (at the right
+  or left), Shift, Flip, Clear, Remove, Copy/Paste (`GlyphData`, rows from the top),
+  CopyMissingFrom, SetHeight (at the bottom or top); whole-state undo/redo; IsDirty; ToFile.
+- `CharacterGrid` (Rendering): the 0-255 grid both windows draw (one cell can be marked).
+- GlyphEditorViewModel / GlyphEditorWindow: the grid (click picks), the glyph on the pixel
+  editor's `PixelCanvas` (left draws, right erases), width/move/flip/clear/take out, the font's
+  height, copy/paste (a clipboard shared by every glyph editor), "the characters it hasn't got,
+  from" another font, a line of text drawn in it as it is, Save to mod… / Export .fnt…, close
+  prompt. The width is set by numbers and buttons rather than by dragging the right edge.
+- The font window's Characters tab: Edit glyphs… (a vga font's source asset), New font file…
+  (a copy of the picked vga font's letters, or just a space, 10 high), Edit glyph picture… (a
+  click on the grid picks the character; a graphic font's picture for it, a sheet's sheet, in
+  F6's pixel editor). Saving: fonts/NAME.fnt into the mod whose file it is (a .wsf of the name
+  there taken out), else one picked; then the game reloads.
+- Tests: FontDocumentTests (round trip, strokes, each change, undo, paste between heights,
+  copy missing, height, the size limit), GameData FontDocumentGameTests (every Wolf3D, Spear,
+  Blake and Planet Strike font chunk comes back the same; SmallFont drawn, saved, and the game
+  then reads the mod's; IntermissionFont's 'a' opens FONTL065).
+- Checked by screenshots: SmallFont in the glyph editor, B picked by a click on the grid, a
+  pixel drawn by a click (*, Undo on). Not tried by hand: saving from the window, the other
+  tools by mouse, New font file…, Edit glyph picture… opening the pixel editor.
