@@ -1,11 +1,12 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:v="using:PFWolf.Editor.Views"
         xmlns:data="using:PFWolf.Editor.Data"
         x:Class="PFWolf.Editor.Views.FontBrowserWindow"
         x:DataType="vm:FontBrowserViewModel"
         Title="{Binding Title}"
-        Width="1200" Height="780" MinWidth="820" MinHeight="480"
+        Width="1240" Height="840" MinWidth="860" MinHeight="520"
         WindowStartupLocation="CenterOwner">
 
   <Window.Styles>
@@ -22,24 +23,33 @@
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
         <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}" MinWidth="200" />
         <TextBox x:Name="Search" Grid.Column="1" Text="{Binding Filter}" VerticalAlignment="Center"
                  PlaceholderText="Find by name, its glyphs or what prints in it (LargeFont, Font3, hud-messages)" />
         <TextBlock Grid.Column="2" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="100" />
+        <Button Grid.Column="3" Content="New font…" Command="{Binding NewFontCommand}"
+                ToolTip.Tip="A new font, not saved until you save it: a copy of the font picked (a font chunk's: a vga font of its letters), or a vga font of the small font's" />
       </Grid>
     </Border>
 
     <!-- What's been done -->
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
             IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-      <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Opacity="0.8" />
+      <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Opacity="0.8" ToolTip.Tip="{Binding Status}" />
     </Border>
 
     <!-- Every font -->
     <ListBox x:Name="List" DockPanel.Dock="Left" Width="290" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8">
       <ListBox.ContextMenu>
         <ContextMenu>
+          <MenuItem Header="Save" Command="{Binding SaveStyleCommand}" InputGesture="Ctrl+S" />
+          <MenuItem Header="Revert" Command="{Binding RevertStyleCommand}" />
+          <Separator />
+          <MenuItem Header="New font from this…" Command="{Binding NewFontCommand}" />
+          <MenuItem Header="Take out the mod's change…" Command="{Binding TakeOutStyleCommand}" />
+          <MenuItem Header="Open in the Definitions window" Command="{Binding EditInDefinitionsCommand}" />
+          <Separator />
           <MenuItem Header="Copy name" Command="{Binding CopyNameCommand}" />
           <MenuItem Header="Export font file (.fnt)…" Click="ExportFont" IsEnabled="{Binding CanExportFont}" />
         </ContextMenu>
@@ -51,25 +61,39 @@
       </ListBox.Styles>
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="vm:FontItem">
-          <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="{Binding ToolTip}">
+          <Grid ColumnDefinitions="*,Auto,Auto" ToolTip.Tip="{Binding ToolTip}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <TextBlock Text="⚠" Foreground="#E0A030" IsVisible="{Binding HasProblems}" VerticalAlignment="Center" />
               <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
             </StackPanel>
             <TextBlock Grid.Column="1" Text="{Binding TypeText}" Opacity="0.6" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0" />
+            <TextBlock Grid.Column="2" Text="●" Foreground="Orange" IsVisible="{Binding HasEdits}" VerticalAlignment="Center" Margin="6,0,0,0"
+                       ToolTip.Tip="Changed, not saved" />
           </Grid>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
 
-    <!-- The font picked -->
-    <ScrollViewer Margin="8" IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Spacing="6" Margin="0,0,12,0">
-        <SelectableTextBlock Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
+    <!-- The font picked: its preview stays in view, the rest in tabs under it -->
+    <DockPanel Margin="8" IsVisible="{Binding HasSelection}">
+      <StackPanel DockPanel.Dock="Top" Spacing="6">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6">
+          <StackPanel>
+            <SelectableTextBlock Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding StyleSource}" FontSize="12" Opacity="0.7" />
+          </StackPanel>
+          <TextBlock Grid.Column="1" Text="Changed, not saved" FontSize="12" Opacity="0.7" VerticalAlignment="Center" IsVisible="{Binding IsStyleChanged}" />
+          <Button Grid.Column="2" Content="Save" Command="{Binding SaveStyleCommand}" Classes="accent" VerticalAlignment="Center"
+                  ToolTip.Tip="Ctrl+S: into the mod with its own of it, else one you pick; just what's changed (pfwolf.pk3 is read-only)" />
+          <Button Grid.Column="3" Content="Revert" Command="{Binding RevertStyleCommand}" VerticalAlignment="Center"
+                  ToolTip.Tip="Back to the font as the files have it" />
+          <Button Grid.Column="4" Content="Undo" Command="{Binding UndoStyleCommand}" VerticalAlignment="Center" ToolTip.Tip="Ctrl+Z (outside a field)" />
+          <Button Grid.Column="5" Content="Redo" Command="{Binding RedoStyleCommand}" VerticalAlignment="Center" ToolTip.Tip="Ctrl+Y (outside a field)" />
+        </Grid>
         <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
 
         <!-- The preview -->
-        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,4,0,0">
           <TextBox Text="{Binding SampleText}" AcceptsReturn="True" MaxHeight="80" PlaceholderText="Text to show it with" />
           <TextBlock Grid.Column="1" Text="Text" VerticalAlignment="Center" />
           <AutoCompleteBox Grid.Column="2" Text="{Binding TextColor}" ItemsSource="{Binding ColorNames}" FilterMode="StartsWith" MinWidth="130"
@@ -82,70 +106,93 @@
         </Grid>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
           <Image Classes="pixels" RenderOptions.BitmapInterpolationMode="None" Source="{Binding PreviewImage}" Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}"
-                 ToolTip.Tip="As the game draws it, with the font's shadow, outline, gradient and glow" />
+                 ToolTip.Tip="As the game draws it (with the changes not saved yet), with the font's shadow, outline, gradient and glow" />
         </ScrollViewer>
-
-        <!-- Its characters -->
-        <StackPanel Orientation="Horizontal" Spacing="12">
-          <TextBlock Classes="heading" Text="Characters" />
-          <TextBlock Text="{Binding CoverageText}" Opacity="0.7" VerticalAlignment="Bottom" />
-          <TextBlock x:Name="CharacterInfo" Opacity="0.85" VerticalAlignment="Bottom" FontFamily="Consolas,Menlo,monospace" />
-        </StackPanel>
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-          <Image x:Name="Characters" Classes="pixels" RenderOptions.BitmapInterpolationMode="None" Source="{Binding CharactersImage}" Width="{Binding CharactersWidth}" Height="{Binding CharactersHeight}"
-                 ToolTip.Tip="Codes 0 to 255, 16 to a row; dark cells are characters the font hasn't got (it leaves room for them)" />
-        </ScrollViewer>
-
-        <!-- What's wrong -->
-        <TextBlock Classes="heading" Text="Problems" IsVisible="{Binding SelectedItem.HasProblems, FallbackValue=False}" />
+        <TextBlock Text="{Binding StyleError}" Foreground="OrangeRed" TextWrapping="Wrap" IsVisible="{Binding HasStyleError}" />
         <ItemsControl ItemsSource="{Binding Problems}" IsVisible="{Binding SelectedItem.HasProblems, FallbackValue=False}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="x:String">
-              <TextBlock Text="{Binding StringFormat='⚠ {0}'}" TextWrapping="Wrap" Foreground="#E0A030" />
+              <TextBlock Text="{Binding StringFormat='⚠ {0}'}" TextWrapping="Wrap" Foreground="#E0A030" FontSize="12" />
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
+      </StackPanel>
+
+      <TabControl Margin="0,6,0,0">
+        <!-- Its fonts.yaml fields -->
+        <TabItem Header="Style">
+          <v:FieldTree Rows="{Binding StyleRows}" Margin="0,4,0,0" />
+        </TabItem>
+
+        <!-- Its characters -->
+        <TabItem Header="Characters">
+          <DockPanel Margin="0,4,0,0">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12">
+              <TextBlock Text="{Binding CoverageText}" Opacity="0.7" />
+              <TextBlock x:Name="CharacterInfo" Opacity="0.85" FontFamily="Consolas,Menlo,monospace" />
+            </StackPanel>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0">
+              <Image x:Name="Characters" Classes="pixels" RenderOptions.BitmapInterpolationMode="None" Source="{Binding CharactersImage}"
+                     Width="{Binding CharactersWidth}" Height="{Binding CharactersHeight}" VerticalAlignment="Top"
+                     ToolTip.Tip="Codes 0 to 255, 16 to a row; dark cells are characters the font hasn't got (it leaves room for them)" />
+            </ScrollViewer>
+          </DockPanel>
+        </TabItem>
 
         <!-- What prints in it -->
-        <TextBlock Classes="heading" Text="Used by" />
-        <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="200" DoubleTapped="OnUseDoubleTapped">
-          <ListBox.ContextMenu>
-            <ContextMenu>
-              <MenuItem Header="Go to" Command="{Binding GoToUseCommand}" />
-            </ContextMenu>
-          </ListBox.ContextMenu>
-          <ListBox.Styles>
-            <Style Selector="ListBoxItem">
-              <Setter Property="Padding" Value="8,3" />
-            </Style>
-          </ListBox.Styles>
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="data:FontUse">
-              <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
+        <TabItem Header="Used by">
+          <DockPanel Margin="0,4,0,0">
+            <WrapPanel DockPanel.Dock="Bottom" ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+              <Button Content="Go to" Command="{Binding GoToUseCommand}"
+                      ToolTip.Tip="Opens the use picked: its entry in the Definitions window, or its line in the script browser (or double-click it)" />
+              <Button Content="Copy name" Command="{Binding CopyNameCommand}" />
+              <Button Content="Export font file (.fnt)…" Click="ExportFont" IsEnabled="{Binding CanExportFont}"
+                      ToolTip.Tip="Saves the Wolf3D font this font's glyphs come from, as a file a mod's fonts/ folder takes" />
+            </WrapPanel>
+            <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" DoubleTapped="OnUseDoubleTapped">
+              <ListBox.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Go to" Command="{Binding GoToUseCommand}" />
+                </ContextMenu>
+              </ListBox.ContextMenu>
+              <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                  <Setter Property="Padding" Value="8,3" />
+                </Style>
+              </ListBox.Styles>
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="data:FontUse">
+                  <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </TabItem>
 
         <!-- Where it's defined -->
-        <TextBlock Classes="heading" Text="Defined in" IsVisible="{Binding DefinitionYaml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-        <ItemsControl ItemsSource="{Binding DefinedIn}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="x:String">
-              <TextBlock Text="{Binding}" FontSize="12" Opacity="0.8" />
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <SelectableTextBlock Text="{Binding DefinitionYaml}" FontFamily="Consolas,Menlo,monospace" FontSize="12" Opacity="0.85"
-                             IsVisible="{Binding DefinitionYaml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-
-        <WrapPanel ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
-          <Button Content="Go to" Command="{Binding GoToUseCommand}"
-                  ToolTip.Tip="Opens the use picked: its entry in the Definitions window, or its line in the script browser (or double-click it)" />
-          <Button Content="Copy name" Command="{Binding CopyNameCommand}" />
-          <Button Content="Export font file (.fnt)…" Click="ExportFont" IsEnabled="{Binding CanExportFont}"
-                  ToolTip.Tip="Saves the Wolf3D font this font's glyphs come from, as a file a mod's fonts/ folder takes" />
-        </WrapPanel>
-      </StackPanel>
-    </ScrollViewer>
+        <TabItem Header="Defined in">
+          <DockPanel Margin="0,4,0,0">
+            <WrapPanel DockPanel.Dock="Bottom" ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+              <Button Content="Open in the Definitions window" Command="{Binding EditInDefinitionsCommand}"
+                      ToolTip.Tip="Its entry in the Definitions window's Fonts tab: the files it comes from, each one's YAML" />
+              <Button Content="Take out the mod's change…" Command="{Binding TakeOutStyleCommand}"
+                      ToolTip.Tip="Takes the last mod's say in this font out of its fonts.yaml, so it's what the game (and the mods before) make it" />
+            </WrapPanel>
+            <ScrollViewer>
+              <StackPanel Spacing="4">
+                <ItemsControl ItemsSource="{Binding DefinedIn}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" FontSize="12" Opacity="0.8" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <SelectableTextBlock Text="{Binding DefinitionYaml}" FontFamily="Consolas,Menlo,monospace" FontSize="12" Opacity="0.85" />
+              </StackPanel>
+            </ScrollViewer>
+          </DockPanel>
+        </TabItem>
+      </TabControl>
+    </DockPanel>
   </DockPanel>
 </Window>

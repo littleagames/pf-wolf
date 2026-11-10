@@ -184,6 +184,66 @@ public class DefinitionSetGameTests
             Assert.That(content.Assets.Animations[name][0].TotalTics, Is.EqualTo(definition.Read(_ => { }).Frames.Sum(frame => frame.Tics)), name);
     }
 
+    [TestCase("wolf3d")]
+    [TestCase("spear")]
+    [TestCase("blake")]
+    [TestCase("planetstrike")]
+    [TestCase("wolf3d", "fonts-demo")]
+    public void Merged_Fonts_Read_As_The_Games(string game, string? mod = null)
+    {
+        // Arrange
+        var content = mod == null ? Load(game) : Load(game, Path.Combine(TestPaths.RepoRoot(), "examples", "mods", mod));
+
+        // Act
+        var set = DefinitionSet.Load(content, DefinitionKind.Fonts);
+        var merged = YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, FontDefinition>>(YamlTree.ToText(set.Merged));
+
+        // Assert: each font as the game has it, its effects and all
+        var loaded = content.Assets.FindInGamePack<FontDefinitionsAsset>("fonts")!.Fonts;
+        Assert.That(set.Files.Where(file => file.Error != null), Is.Empty);
+        Assert.That(merged.Keys, Is.EquivalentTo(loaded.Keys));
+        foreach (var (name, font) in loaded)
+        {
+            var mine = merged[name];
+            Assert.That((mine.Type, mine.Source, mine.Pattern, mine.Image, mine.Chars, mine.CellWidth, mine.UpperCase, mine.Colorize),
+                Is.EqualTo((font.Type, font.Source, font.Pattern, font.Image, font.Chars, font.CellWidth, font.UpperCase, font.Colorize)), name);
+            Assert.That((mine.Shadow?.X, mine.Shadow?.Y, mine.Shadow?.Color, mine.Outline?.Color, mine.Glow?.Radius, mine.Gradient?.Top),
+                Is.EqualTo((font.Shadow?.X, font.Shadow?.Y, font.Shadow?.Color, font.Outline?.Color, font.Glow?.Radius, font.Gradient?.Top)), name);
+            Assert.That(mine.Glyphs, Is.EquivalentTo(font.Glyphs), name);
+            Assert.That(mine.Advances, Is.EquivalentTo(font.Advances), name);
+        }
+    }
+
+    [Test]
+    public void A_Fonts_Change_Saved_Into_A_Mod_Is_Just_What_Changed()
+    {
+        // Arrange
+        var mod = Path.Combine(Path.GetTempPath(), "pfwolf-defs-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(mod);
+        try
+        {
+            var content = Load("wolf3d");
+            var set = DefinitionSet.Load(content, DefinitionKind.Fonts);
+            var edited = (YamlMappingNode)YamlNodes.Clone(set.ValueOf(["HudMessage"], baseOnly: false)!);
+            YamlNodes.Set(edited, ["shadow"], new YamlMappingNode { { "x", "2" }, { "y", "2" }, { "color", "Red" } });
+
+            // Act
+            DefinitionSaver.Save(set.PlanWrite(["HudMessage"], edited, mod));
+            var reloaded = Load("wolf3d", mod);
+
+            // Assert: the mod's fonts.yaml has the font's shadow only, and the game reads it with the rest of the font kept
+            var text = File.ReadAllText(Path.Combine(mod, "fonts.yaml"));
+            Assert.That(text, Does.Contain("HudMessage").And.Contain("Red").And.Not.Contain("source"));
+            var hud = reloaded.Assets.FindInGamePack<FontDefinitionsAsset>("fonts")!.Fonts["HudMessage"];
+            Assert.That((hud.Source, hud.Shadow?.X, hud.Shadow?.Color), Is.EqualTo(("SmallFont", 2, "Red")));
+            Assert.That(DefinitionSet.Load(reloaded, DefinitionKind.Fonts).FilesDefining(["HudMessage"]).Last().ModPath, Is.EqualTo(mod));
+        }
+        finally
+        {
+            Directory.Delete(mod, recursive: true);
+        }
+    }
+
     [Test]
     public void Game_Packs_List_Every_Release()
     {

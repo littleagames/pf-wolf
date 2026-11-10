@@ -164,7 +164,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     public bool HasSelection => SelectedItem != null;
     public bool HasError => Error.Length > 0;
     public bool CanAddEntries => Kind is DefinitionKind.GamePackInfo or DefinitionKind.MapDefs or DefinitionKind.Actors or DefinitionKind.Animations
-        or DefinitionKind.Graphics;
+        or DefinitionKind.Graphics or DefinitionKind.Fonts;
 
     /// <summary>What New… can make, when it's asked (mapdefs: its tables of entries, walls, doors, things...); empty when there's one kind</summary>
     public IReadOnlyList<NewEntryChoice> NewChoices { get; }
@@ -279,6 +279,9 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                     detail = "⚠ " + detail;
                 return (detail, _owner.Art?.Invoke(FieldHint.Picture, entry.Name));
             }
+            case DefinitionKind.Fonts:
+                // "vga: Font5", "graphic: FONTN{code:000}", "sheet: FDGOLD"
+                return ($"{Field("type") ?? "vga"}{(Field("source", "pattern", "image") is { } from ? $": {from}" : "")}", null);
             default:
                 return ("", null);
         }
@@ -320,6 +323,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         DefinitionKind.Actors => "classes",
         DefinitionKind.Animations => "animations",
         DefinitionKind.Graphics => "pictures",
+        DefinitionKind.Fonts => "fonts",
         _ => "entries",
     };
 
@@ -405,6 +409,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             : FieldSchema.For(typeof(object), path[0]),
         DefinitionKind.Animations => DefinitionSchemas.Animation,
         DefinitionKind.Graphics => DefinitionSchemas.Graphic,
+        DefinitionKind.Fonts => DefinitionSchemas.Font,
         _ => DefinitionSchemas.Actor,
     };
 
@@ -453,6 +458,13 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     // which they're for ("Doors only: ...", "Patches only: ...")
     private void HideFieldsThatDoNotApply(FieldNode root, IReadOnlyList<string> path)
     {
+        // A font shows the keys its type reads (vga, graphic, sheet)
+        if (Kind == DefinitionKind.Fonts)
+        {
+            var type = (root.Build([]) is YamlMappingNode font ? YamlNodes.Get(font, ["type"]) as YamlScalarNode : null)?.Value;
+            root.HideUnset(field => !FontSchema.AppliesTo(field.Key, type));
+            return;
+        }
         if (Kind != DefinitionKind.MapDefs || path.Count < 2)
             return;
         string[] others = path[0].ToLowerInvariant() switch
@@ -684,6 +696,23 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                     { "width", "64" },
                     { "height", "64" },
                 };
+                break;
+            }
+            case DefinitionKind.Fonts:
+            {
+                var name = await _owner.AskText("New font", "Its name (as menus, messages, the status bar and scripts name it):", "",
+                    candidate => Data.FontCatalog.NameProblem(candidate, taken => YamlNodes.Get(merged, [taken]) != null));
+                if (name == null)
+                    return;
+                path = [name.Trim()];
+                // The picked font's copy, else a vga font with the small font's letters
+                value = SelectedItem != null && set.ValueOf(SelectedItem.Entry.Path, baseOnly: false) is { } picked
+                    ? YamlNodes.Clone(picked)
+                    : new YamlMappingNode { { "type", "vga" }, { "source", PFWolf.Fonts.FontNames.Small } };
+                // A vga font's source defaults to its own name, which the copy hasn't got: it's named
+                if (SelectedItem != null && value is YamlMappingNode copy && YamlNodes.Get(copy, ["source"]) == null
+                    && FontSchema.AppliesTo("source", (YamlNodes.Get(copy, ["type"]) as YamlScalarNode)?.Value))
+                    copy.Add("source", SelectedItem.Name);
                 break;
             }
             default:
@@ -980,4 +1009,5 @@ public static class DefinitionSchemas
     public static FieldSchema Actor { get; } = ActorSchema.Build();
     public static FieldSchema Animation { get; } = AnimationSchema.Build();
     public static FieldSchema Graphic { get; } = GraphicSchema.Build();
+    public static FieldSchema Font { get; } = FontSchema.Build();
 }

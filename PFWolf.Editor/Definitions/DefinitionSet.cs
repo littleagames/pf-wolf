@@ -101,6 +101,7 @@ public sealed class DefinitionSet
         DefinitionKind.Elevator => [($"{packId}/elevator", nameof(ElevatorAsset), "")],
         DefinitionKind.Presenter => [($"{packId}/presenter", nameof(PresenterAsset), "")],
         DefinitionKind.Particles => [($"{packId}/particles", nameof(ParticlesAsset), "")],
+        DefinitionKind.Fonts => [($"{packId}/fonts", nameof(FontDefinitionsAsset), "")],
         DefinitionKind.Actors =>
         [
             ("actordefs", nameof(ActorTranslationAsset), DefinitionFile.SharedLayer),
@@ -192,6 +193,7 @@ public sealed class DefinitionSet
                     break;
                 case DefinitionKind.Animations:
                 case DefinitionKind.Graphics:
+                case DefinitionKind.Fonts:
                     // pfwolf.pk3's files replace entries name by name; a mod's merge all the way down
                     if (file.IsBase)
                         YamlTree.MergeLevels(target, tree, 1);
@@ -246,7 +248,7 @@ public sealed class DefinitionSet
 
             var group = Kind switch
             {
-                DefinitionKind.Actors or DefinitionKind.GamePackInfo or DefinitionKind.Animations or DefinitionKind.Graphics
+                DefinitionKind.Actors or DefinitionKind.GamePackInfo or DefinitionKind.Animations or DefinitionKind.Graphics or DefinitionKind.Fonts
                     => LastFileDefining([name], baseOnly)?.SourceName ?? "",
                 _ => "",
             };

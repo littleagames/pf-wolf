@@ -184,3 +184,25 @@ Planned 2026-11-10.
   tried in the window: Export .fnt's dialog, the Fonts Demo's fonts, a Lua use's Go to, Blake.
   Driving recipe: Avalonia's top menus have no UIA expand, so Ctrl+Shift+F went in as SendInput
   scancodes after checking the editor was the foreground window.
+
+**Phase 2 done 2026-11-10** (editing styles):
+- `DefinitionKind.Fonts`: fonts.yaml in the Definitions window's machinery (base packs replace a
+  font whole, mods merge into it all the way down, as the loader does; a mod's root
+  fonts.yaml), with a Fonts tab. `FontSchema` (Common/Definitions): FontDefinition's fields and
+  doc comments, type as a choice, pictures/fonts/colors hinted, `AppliesTo(key, type)` — both
+  windows show only the keys a font's type reads (plus any set).
+- `FieldTree` (Views): the field rows, now shared by the Definitions window's tabs and the font
+  window. FieldNode fix: a record written empty (`shadow: {}`) builds back as `{}` (it was
+  dropped, losing the shadow).
+- The font window: preview at the top, tabs Style / Characters / Used by / Defined in. Style
+  edits draw live (the edited definition built through FontBuilder); undo/redo (a field's typing
+  one step; a type change shows the new type's fields); Save (into the mod defining it, else one
+  picked; just what changed; the game reloads), Revert, New font… (a copy of the one picked; a
+  vga copy names its source, which otherwise defaults to the new name), Take out the mod's
+  change…, Open in the Definitions window. Unsaved fonts join the editor's "Save first?".
+- Tests: DefinitionSetGameTests (fonts merge == loaded for Wolf3D, Spear, Blake, Planet Strike,
+  the Fonts Demo; a change saved is just what changed), FontStyleEditingTests (draw/undo/save,
+  a new font saved whole, type-specific fields), FieldNodeGameTests covers fonts.
+- Checked by screenshots: the Style tab on HudMessage, Shadow Y set (preview redrawn, ●, Save
+  on), Revert, the Definitions window's Fonts tab. Not tried by hand: Save from the window, New
+  font…, Take out, the "Save first?" prompt.

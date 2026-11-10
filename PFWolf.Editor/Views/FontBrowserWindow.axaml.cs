@@ -51,10 +51,28 @@ public partial class FontBrowserWindow : Window
         base.OnKeyDown(e);
         if (e.Handled)
             return;
-        if (e.Key == Key.F && e.KeyModifiers == KeyModifiers.Control)
+        var ctrl = e.KeyModifiers == KeyModifiers.Control;
+        // A text field keeps its own undo
+        var typing = FocusManager?.GetFocusedElement() is TextBox;
+        if (ctrl && e.Key == Key.F)
         {
             Search.Focus();
             Search.SelectAll();
+            e.Handled = true;
+        }
+        else if (ctrl && e.Key == Key.S)
+        {
+            ViewModel.SaveStyleCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (ctrl && e.Key == Key.Z && !typing)
+        {
+            ViewModel.UndoStyleCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if ((ctrl && e.Key == Key.Y || e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.Z) && !typing)
+        {
+            ViewModel.RedoStyleCommand.Execute(null);
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)

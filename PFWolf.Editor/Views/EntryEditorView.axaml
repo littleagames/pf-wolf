@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:PFWolf.Editor.ViewModels"
+             xmlns:v="using:PFWolf.Editor.Views"
              x:Class="PFWolf.Editor.Views.EntryEditorView"
              x:DataType="vm:EntryEditorViewModel">
 
@@ -14,10 +15,6 @@
       <Setter Property="Padding" Value="6,1" />
       <Setter Property="MinWidth" Value="26" />
       <Setter Property="FontSize" Value="12" />
-    </Style>
-    <Style Selector="TreeViewItem" x:DataType="vm:FieldNode">
-      <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-      <Setter Property="Padding" Value="0,1" />
     </Style>
   </UserControl.Styles>
 
@@ -129,55 +126,7 @@
       </Expander>
 
       <!-- Its fields -->
-      <TreeView x:Name="Fields" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow, Mode=TwoWay}">
-        <TreeView.ItemTemplate>
-          <TreeDataTemplate x:DataType="vm:FieldNode" ItemsSource="{Binding Children}">
-            <Grid ColumnDefinitions="220,*,Auto" ColumnSpacing="8" MinHeight="30" Background="Transparent">
-              <Grid.ContextMenu>
-                <ContextMenu Opening="OnFieldMenuOpening">
-                  <MenuItem Header="Add an entry" Command="{Binding AddCommand}" IsVisible="{Binding CanAdd}" />
-                  <MenuItem Header="Move up" Command="{Binding MoveUpCommand}" IsVisible="{Binding CanMove}" />
-                  <MenuItem Header="Move down" Command="{Binding MoveDownCommand}" IsVisible="{Binding CanMove}" />
-                  <MenuItem Header="Take this out" Command="{Binding RemoveCommand}" IsVisible="{Binding CanRemove}" />
-                  <MenuItem Header="Reset to the default" Command="{Binding ResetCommand}" IsVisible="{Binding CanReset}" />
-                </ContextMenu>
-              </Grid.ContextMenu>
-              <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
-                <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" MaxWidth="200" />
-                <TextBlock Text="●" FontSize="9" Foreground="DodgerBlue" VerticalAlignment="Center" IsVisible="{Binding IsModified}" />
-              </StackPanel>
-              <TextBox Grid.Column="1" Text="{Binding Text}" PlaceholderText="{Binding Placeholder}" IsVisible="{Binding IsText}"
-                       MinWidth="200" VerticalAlignment="Center" />
-              <!-- Typed, or picked from the names the game has. (An AutoCompleteBox here lost the first key
-                   typed, and an editable ComboBox emptied the field when an item was picked.) -->
-              <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="4" IsVisible="{Binding IsSuggested}" VerticalAlignment="Center">
-                <TextBox Text="{Binding Text}" PlaceholderText="{Binding Placeholder}" MinWidth="200" />
-                <Button Grid.Column="1" Content="…" Classes="small" VerticalAlignment="Stretch" ToolTip.Tip="Pick from the names the game has">
-                  <Button.Flyout>
-                    <Flyout Placement="BottomEdgeAlignedRight">
-                      <DockPanel Width="320" Height="360">
-                        <TextBox DockPanel.Dock="Top" Text="{Binding PickerFilter}" PlaceholderText="Find" Margin="0,0,0,6" />
-                        <ListBox ItemsSource="{Binding PickerItems}" SelectionChanged="OnNamePicked" />
-                      </DockPanel>
-                    </Flyout>
-                  </Button.Flyout>
-                </Button>
-              </Grid>
-              <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding ChoiceText}" PlaceholderText="{Binding Placeholder}"
-                        IsVisible="{Binding IsChoice}" MinWidth="200" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Text="{Binding Summary}" IsVisible="{Binding IsGroup}" Opacity="0.6" VerticalAlignment="Center" />
-              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                <Button Content="+" Classes="small" Command="{Binding AddCommand}" IsVisible="{Binding CanAdd}" ToolTip.Tip="Add an entry" />
-                <Button Content="↑" Classes="small" Command="{Binding MoveUpCommand}" IsVisible="{Binding CanMove}" ToolTip.Tip="Move up" />
-                <Button Content="↓" Classes="small" Command="{Binding MoveDownCommand}" IsVisible="{Binding CanMove}" ToolTip.Tip="Move down" />
-                <Button Content="✕" Classes="small" Command="{Binding RemoveCommand}" IsVisible="{Binding CanRemove}" ToolTip.Tip="Take this out" />
-                <Button Content="⟲" Classes="small" Command="{Binding ResetCommand}" IsVisible="{Binding CanReset}"
-                        ToolTip.Tip="Empty it, so the game uses its default (or what's there before the mod)" />
-              </StackPanel>
-            </Grid>
-          </TreeDataTemplate>
-        </TreeView.ItemTemplate>
-      </TreeView>
+      <v:FieldTree x:Name="Fields" Rows="{Binding Rows}" SelectedRow="{Binding SelectedRow, Mode=TwoWay}" />
     </DockPanel>
   </DockPanel>
 </UserControl>

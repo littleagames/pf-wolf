@@ -423,8 +423,10 @@ public sealed partial class FieldNode : ObservableObject
                     if (child.Kind != FieldKind.Placeholder && child.Build(errors) is { } value)
                         mapping.Add(child._keyNode != null ? YamlNodes.Clone(child._keyNode) : new YamlScalarNode(child.Key), value);
                 }
+                // Empty: left out, unless it was written empty ({}), which can mean something
+                // (fonts.yaml's `shadow: {}` is a shadow with every default)
                 if (mapping.Children.Count == 0 && !IsEntry)
-                    return Schema.Type == FieldType.Dictionary && _original != null ? mapping : null;
+                    return Schema.Type == FieldType.Dictionary && _original != null || _original is YamlMappingNode { Children.Count: 0 } ? mapping : null;
                 return mapping;
         }
     }

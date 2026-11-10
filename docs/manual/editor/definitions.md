@@ -7,7 +7,8 @@ order: 9
 
 **Resources → Definitions…** (F11) edits the definition files the game is made of, as fields or
 as YAML: game-info, the game packs, actor classes, map definitions, animations, cropped pictures
-(graphicdefs) and factions. pfwolf.pk3's own are read-only: a change is saved into a mod, as just
+(graphicdefs), factions, particles and fonts (the [font window](./fonts) edits fonts too, drawing
+each as it changes). pfwolf.pk3's own are read-only: a change is saved into a mod, as just
 what it changes, and laid over the game's as the game lays mods over it ([How files
 combine](../combining-files)).
 

@@ -261,6 +261,7 @@ public class FieldNodeGameTests
                     DefinitionKind.GamePackInfo => DefinitionSchemas.GamePack,
                     DefinitionKind.Actors => DefinitionSchemas.Actor,
                     DefinitionKind.Animations => DefinitionSchemas.Animation,
+                    DefinitionKind.Fonts => DefinitionSchemas.Font,
                     _ => DefinitionSchemas.MapDefs.Field(path[0]) is { } table && path.Count > 1 ? table.Item : DefinitionSchemas.MapDefs.Field(path[0]),
                 };
 

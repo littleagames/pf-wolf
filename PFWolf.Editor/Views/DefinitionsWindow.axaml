@@ -73,6 +73,10 @@
                ToolTip.Tip="particles.yaml: the particle types (how each looks and moves) and the emitters that throw them out">
         <v:EntryEditorView DataContext="{Binding Particles}" />
       </TabItem>
+      <TabItem x:Name="FontsTab" Header="Fonts"
+               ToolTip.Tip="fonts.yaml: the fonts text is printed in, by name (Resources → Fonts… shows each one drawn)">
+        <v:EntryEditorView DataContext="{Binding Fonts}" />
+      </TabItem>
       <TabItem x:Name="GamePacksTab" Header="Game packs">
         <v:EntryEditorView DataContext="{Binding GamePacks}" />
       </TabItem>

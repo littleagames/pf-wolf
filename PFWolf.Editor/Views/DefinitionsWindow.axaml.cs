@@ -50,6 +50,7 @@ public partial class DefinitionsWindow : Window
         Definitions.DefinitionKind.Elevator => ElevatorTab,
         Definitions.DefinitionKind.Presenter => PresenterTab,
         Definitions.DefinitionKind.Particles => ParticlesTab,
+        Definitions.DefinitionKind.Fonts => FontsTab,
         _ => MapDefsTab,
     };
 
@@ -66,6 +67,7 @@ public partial class DefinitionsWindow : Window
         : Tabs.SelectedItem == ElevatorTab ? _viewModel.Elevator
         : Tabs.SelectedItem == PresenterTab ? _viewModel.Presenter
         : Tabs.SelectedItem == ParticlesTab ? _viewModel.Particles
+        : Tabs.SelectedItem == FontsTab ? _viewModel.Fonts
         : Tabs.SelectedItem == GamePacksTab ? _viewModel.GamePacks
         : null;
 
@@ -75,7 +77,7 @@ public partial class DefinitionsWindow : Window
         if (_viewModel == null || e.Source != Tabs)
             return;
         foreach (var editor in new[] { _viewModel.GameInfo, _viewModel.Actors, _viewModel.MapDefs, _viewModel.Animations, _viewModel.Graphics, _viewModel.Factions,
-                     _viewModel.Elevator, _viewModel.Presenter, _viewModel.Particles, _viewModel.GamePacks })
+                     _viewModel.Elevator, _viewModel.Presenter, _viewModel.Particles, _viewModel.Fonts, _viewModel.GamePacks })
         {
             if (editor != ShownEditor)
                 editor.Deactivate();

@@ -175,6 +175,8 @@ public static class YamlFileTypes
             return DefinitionKind.Presenter;
         if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/particles.yaml", StringComparison.OrdinalIgnoreCase))
             return DefinitionKind.Particles;
+        if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/fonts.yaml", StringComparison.OrdinalIgnoreCase))
+            return DefinitionKind.Fonts;
         if (path.StartsWith("actordefs/", StringComparison.OrdinalIgnoreCase))
             return DefinitionKind.Actors;
         if (path.StartsWith("mapdefs/", StringComparison.OrdinalIgnoreCase))

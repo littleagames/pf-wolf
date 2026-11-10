@@ -2,7 +2,6 @@ using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
-using Avalonia.LogicalTree;
 using PFWolf.Editor.ViewModels;
 
 namespace PFWolf.Editor.Views;
@@ -37,18 +36,7 @@ public partial class EntryEditorView : UserControl
     {
         if (e.PropertyName != nameof(EntryEditorViewModel.SelectedRow) || _watched?.SelectedRow is not { } row)
             return;
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => Fields.TreeContainerFromItem(row)?.BringIntoView(),
-            Avalonia.Threading.DispatcherPriority.Background);
-    }
-
-    // A name picked from a field's list goes in the field, and the list closes
-    private void OnNamePicked(object? sender, SelectionChangedEventArgs e)
-    {
-        if (sender is not ListBox { SelectedItem: string name, DataContext: FieldNode field } list)
-            return;
-        field.Text = name;
-        list.SelectedItem = null;
-        list.FindLogicalAncestorOfType<Popup>()?.Close();
+        Fields.BringRowIntoView(row);
     }
 
     // One menu item for each kind New… can make (mapdefs: walls, doors, things...), the table picked first
@@ -87,12 +75,5 @@ public partial class EntryEditorView : UserControl
         newItem.Items.Clear();
         foreach (var item in NewChoiceItems(editor))
             newItem.Items.Add(item);
-    }
-
-    // A field's right-click menu has its row buttons; one with none doesn't open
-    private void OnFieldMenuOpening(object? sender, CancelEventArgs e)
-    {
-        if (sender is ContextMenu { DataContext: FieldNode field })
-            e.Cancel = !(field.CanAdd || field.CanMove || field.CanRemove || field.CanReset);
     }
 }

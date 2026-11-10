@@ -1159,6 +1159,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       uses); the Fonts Demo mod loaded (its sheet fonts, FDITALIC.fnt, Defined in with the mod's
       fonts.yaml over the game's); Go to on a Lua use (opens the script browser at the line);
       Export font file (.fnt)… and the file loading from a mod's fonts/ folder.
+- [ ] Style tab: change a shadow/outline/glow field (preview redraws, ● in the list), Undo/Redo,
+      Revert; change Type (other fields come); Save into a mod (the game reloads, the change is in
+      the game: HudMessage's shadow over the view).
+- [ ] **(never tried)** Save into a pk3 mod; New font… (a copy, then saved; a font chunk's copy;
+      a name with a space refused); Take out the mod's change…; closing the editor with a changed
+      font asks to save; the Definitions window's Fonts tab New… / Delete / Edit YAML.
 
 ---
 

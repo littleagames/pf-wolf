@@ -36,6 +36,9 @@ public enum DefinitionKind
 
     /// <summary>The game pack's particles.yaml (a mod's at its root): the particle types and emitters</summary>
     Particles,
+
+    /// <summary>The game pack's fonts.yaml (a mod's at its root): the fonts text is printed in, by name</summary>
+    Fonts,
 }
 
 public static class DefinitionKinds
@@ -53,6 +56,7 @@ public static class DefinitionKinds
         DefinitionKind.Elevator => "Elevator",
         DefinitionKind.Presenter => "Presenter",
         DefinitionKind.Particles => "Particles",
+        DefinitionKind.Fonts => "Fonts",
         _ => "Map definitions",
     };
 
@@ -83,6 +87,7 @@ public static class DefinitionKinds
         DefinitionKind.Elevator => "elevator.yaml",
         DefinitionKind.Presenter => "presenter.yaml",
         DefinitionKind.Particles => "particles.yaml",
+        DefinitionKind.Fonts => "fonts.yaml",
         _ => null,
     };
 
@@ -154,6 +159,9 @@ public static class DefinitionKinds
                 break;
             case DefinitionKind.Particles:
                 YamlDataEntryLoader.DeserializeQuietly<ParticlesAsset>(yaml);
+                break;
+            case DefinitionKind.Fonts:
+                YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, FontDefinition>>(yaml);
                 break;
             default:
                 YamlDataEntryLoader.DeserializeQuietly<MapObjectTranslationAsset>(yaml);

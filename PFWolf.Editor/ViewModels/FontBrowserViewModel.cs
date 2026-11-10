@@ -10,8 +10,14 @@ using PFWolf.Fonts;
 namespace PFWolf.Editor.ViewModels;
 
 /// <summary>A font in the font window's list</summary>
-public sealed class FontItem(FontEntry entry, Font? font, IReadOnlyList<string> problems)
+public sealed partial class FontItem(FontEntry entry, Font? font, IReadOnlyList<string> problems) : ObservableObject
 {
+    /// <summary>A new font made here, not saved in a mod yet</summary>
+    public bool IsDraft { get; init; }
+
+    /// <summary>Changed here, not saved</summary>
+    [ObservableProperty] private bool _hasEdits;
+
     public FontEntry Entry { get; } = entry;
 
     /// <summary>The font as the game builds it; null when it can't be built</summary>
@@ -121,6 +127,7 @@ public sealed partial class FontBrowserViewModel : ObservableObject
         }
 
         _theme = content.Assets.FindInGamePackIfAny<ColorThemeAsset>("colors");
+        LoadStyles(content);
         foreach (var name in _theme?.Colors.Keys.Order(StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>())
             ColorNames.Add(name);
         if (!ColorNames.Contains(TextColor))
@@ -142,8 +149,12 @@ public sealed partial class FontBrowserViewModel : ObservableObject
             }
             if (entry.IsDefined && entry.Uses.Count == 0)
                 problems.Add("Nothing names it: no game-info, menu, message style, status bar, intermission, presenter or script (Lua's game.drawtext can still name it in a way the editor can't see)");
-            _all.Add(new FontItem(entry, font, problems));
+            _all.Add(new FontItem(entry, font, problems) { HasEdits = _edits.ContainsKey(entry.Name) });
         }
+        // New fonts not saved yet stay listed
+        foreach (var name in _drafts.Keys)
+            _all.Add(DraftItem(content, name));
+        _all.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 
         Title = $"Fonts - {content.Title}";
         Refilter();
@@ -200,6 +211,7 @@ public sealed partial class FontBrowserViewModel : ObservableObject
         CoverageText = "";
         if (value == null)
         {
+            OpenStyle(null);
             Redraw();
             return;
         }
@@ -215,7 +227,7 @@ public sealed partial class FontBrowserViewModel : ObservableObject
             DefinedIn.Add(site.File);
         DefinitionYaml = entry.DefinedIn.Count > 0 ? entry.DefinedIn[^1].Yaml : "";
         Details = Describe(value);
-        Redraw();
+        OpenStyle(value);
     }
 
     private string Describe(FontItem item)
@@ -263,12 +275,20 @@ public sealed partial class FontBrowserViewModel : ObservableObject
         return outline + Math.Max(glow, shadow) + 2;
     }
 
+    /// <summary>The preview as drawn (palette indices), whether or not there's a window to show it in</summary>
+    public IndexedPicture? PreviewPicture { get; private set; }
+
+    // A picture for the window; none without one (tests)
+    private Bitmap? Bitmap(IndexedPicture picture)
+        => Avalonia.Application.Current == null || _content == null ? null : ArtCache.Render(picture, _content.Palette);
+
     /// <summary>Draws the preview and the character grid again</summary>
     public void Redraw()
     {
         PreviewImage = null;
+        PreviewPicture = null;
         CharactersImage = null;
-        if (_content == null || SelectedItem?.Font is not { } font)
+        if (_content == null || PreviewFont is not { } font)
             return;
 
         var zoom = Math.Clamp(Zoom, 1, 8);
@@ -284,7 +304,8 @@ public sealed partial class FontBrowserViewModel : ObservableObject
         Array.Fill(canvas.Pixels, canvas.ResolveColor(background));
         for (int i = 0; i < lines.Length; i++)
             font.Draw(canvas, reach, reach + i * font.LineHeight, lines[i], color, font.Shadow, font.Gradient, font.Outline, font.Glow, background);
-        PreviewImage = ArtCache.Render(new IndexedPicture(width, height, canvas.Pixels, null), _content.Palette);
+        PreviewPicture = new IndexedPicture(width, height, canvas.Pixels, null);
+        PreviewImage = Bitmap(PreviewPicture);
         (PreviewWidth, PreviewHeight) = (width * zoom, height * zoom);
 
         DrawCharacters(font, color, background, zoom);
@@ -315,14 +336,14 @@ public sealed partial class FontBrowserViewModel : ObservableObject
                 font.Draw(canvas, x, y, ((char)code).ToString(), color, FontShadow.None, FontGradient.None, FontOutline.None, FontGlow.None, background);
         }
         CoverageText = $"{has} of 256 characters";
-        CharactersImage = ArtCache.Render(new IndexedPicture(canvas.Width, canvas.Height, canvas.Pixels, null), _content!.Palette);
+        CharactersImage = Bitmap(new IndexedPicture(canvas.Width, canvas.Height, canvas.Pixels, null));
         (CharactersWidth, CharactersHeight) = (canvas.Width * zoom, canvas.Height * zoom);
     }
 
     /// <summary>What's under the mouse on the character grid (in its own pixels)</summary>
     public string CharacterAt(double x, double y)
     {
-        if (SelectedItem?.Font is not { } font || CharacterCell.CellWidth == 0)
+        if (PreviewFont is not { } font || CharacterCell.CellWidth == 0)
             return "";
         int column = (int)(x / CharacterCell.CellWidth), row = (int)(y / CharacterCell.CellHeight);
         if (column is < 0 or > 15 || row is < 0 or > 15)

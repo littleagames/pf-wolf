@@ -114,6 +114,15 @@ public static partial class FontCatalog
         return font;
     }
 
+    /// <summary>What's wrong with a name for a new font (none, a space or a colon in it, taken), or null when it'll do</summary>
+    public static string? NameProblem(string candidate, Func<string, bool> taken)
+    {
+        var name = candidate.Trim();
+        if (name.Length == 0 || name.Any(c => char.IsWhiteSpace(c) || c is ':' or '/' or '\\' or '#' or '"' or '\''))
+            return "A name without spaces, colons, slashes, quotes or #";
+        return taken(name) ? $"There's a font {name} already" : null;
+    }
+
     /// <summary>What's odd about a font that the game won't say: Blake Stone's Font1 can't print plain text</summary>
     public static IEnumerable<string> Notes(FontEntry entry)
     {

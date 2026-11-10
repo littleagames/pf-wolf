@@ -590,7 +590,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (_fontBrowser == null)
         {
-            _fontBrowser = new FontBrowserViewModel();
+            _fontBrowser = new FontBrowserViewModel
+            {
+                PickMod = PickModToSaveIn,
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+                AddMod = folder => AddModFolder(folder),
+            };
+            // A font saved into a mod: the game loads again with the mod, so the list shows it as the game has it
+            _fontBrowser.Saved += async (_, _) => await ReloadAfterDelete(() => _fontBrowser.Status, status => _fontBrowser.Status = status);
             // A use's Go to: its definition in the Definitions window, or its line in the script browser
             _fontBrowser.GoTo += (_, target) =>
             {
@@ -1776,12 +1784,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var dirty = DirtyDocuments.ToList();
         var palettes = _paletteBrowser?.DirtyDocuments.ToList() ?? [];
         var definitions = _definitions?.UnsavedNames ?? [];
-        if (dirty.Count + palettes.Count + definitions.Count == 0 || Dialogs == null)
+        var fonts = _fontBrowser?.UnsavedNames ?? [];
+        if (dirty.Count + palettes.Count + definitions.Count + fonts.Count == 0 || Dialogs == null)
             return true;
 
         var names = string.Join(", ", dirty.Select(document => document.AssetName.ToUpperInvariant())
             .Concat(palettes.Select(palette => $"palette {palette.Name}"))
-            .Concat(definitions));
+            .Concat(definitions)
+            .Concat(fonts));
         switch (await Dialogs.AskUnsaved($"{what} {names}. Save first?"))
         {
             case UnsavedChoice.Save:
@@ -1790,6 +1800,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 {
                     Status = "Not everything in the definitions window could be saved: " + _definitions.Status;
                     ShowDefinitions();
+                    return false;
+                }
+                if (fonts.Count > 0 && !await _fontBrowser!.SaveAllAsync())
+                {
+                    Status = "Not every font could be saved: " + _fontBrowser.Status;
+                    ShowFonts();
                     return false;
                 }
                 foreach (var document in dirty)
