@@ -20,6 +20,36 @@ public record AdLibSound : Asset
         return new AdLibSound(data);
     }
 
+    // A 32-bit length, a 16-bit priority, the 16-byte instrument and the block come before the tones
+    private const int HeaderBytes = 23;
+
+    /// <summary>
+    /// An AdLib sound as AUDIOT keeps it: its priority, instrument (the five bytes after it,
+    /// voice, mode and three unused, are left 0), octave block and one tone a tick (an F-number's
+    /// low byte, 0 for silence), 140 a second
+    /// </summary>
+    public static AdLibSound Create(ushort priority, OplInstrument instrument, byte block, ReadOnlySpan<byte> tones)
+    {
+        var data = new byte[HeaderBytes + tones.Length];
+        BitConverter.TryWriteBytes(data.AsSpan(0, 4), (uint)tones.Length);
+        BitConverter.TryWriteBytes(data.AsSpan(4, 2), priority);
+        instrument.ToAdLibBytes(data.AsSpan(6, OplInstrument.AdLibBytes));
+        data[22] = block;
+        tones.CopyTo(data.AsSpan(HeaderBytes));
+        return new AdLibSound(data);
+    }
+
+    /// <summary>The sound's priority: one plays over another of a lower one</summary>
+    public ushort Priority => BitConverter.ToUInt16(RawData, 4);
+
+    public OplInstrument Instrument => OplInstrument.FromAdLibBytes(RawData.AsSpan(6, OplInstrument.AdLibBytes));
+
+    /// <summary>The octave block every tone plays in (0-7)</summary>
+    public byte Block => RawData[22];
+
+    /// <summary>One F-number low byte a tick, 140 a second; 0 is silence</summary>
+    public byte[] Tones => RawData.AsSpan(HeaderBytes, (int)Math.Min(BitConverter.ToUInt32(RawData, 0), (uint)(RawData.Length - HeaderBytes))).ToArray();
+
     private const int AdLibSampleRate = 44100;
     private const int SoundTicksPerSecond = 140;
     // The OPL's output for one channel peaks near ±4100, so this brings it up to about half scale

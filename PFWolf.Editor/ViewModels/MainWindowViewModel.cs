@@ -688,8 +688,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _soundBrowser = new SoundBrowserViewModel
             {
                 Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+                PickMod = PickModToSaveIn,
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
             };
             _soundBrowser.Deleted += async (_, _) => await ReloadAfterDelete(() => _soundBrowser.Status, status => _soundBrowser.Status = status);
+            // A song or sound put in a mod: the game loads again with the mod, so the list shows it as the game has it
+            _soundBrowser.Saved += async (_, folder) =>
+            {
+                AddModFolder(folder);
+                await ReloadAfterDelete(() => _soundBrowser.Status, status => _soundBrowser.Status = status);
+            };
             _soundBrowser.Load(Content);
             if (Document?.Properties.Music is { Length: > 0 } music)
                 _soundBrowser.Show(SoundKind.Music, music);

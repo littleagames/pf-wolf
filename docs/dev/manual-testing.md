@@ -1065,6 +1065,9 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried by ear)** Play digitized, AdLib and PC sounds and every song; loudness.
 - [ ] Go to sound → its sound-seq entry; variants list.
 - [ ] **(never tried)** Export WAV; Copy name; music files from a mod; Spear's sounds.
+- [ ] **(never tried)** Export file… on a song (.imf), an AdLib sound (.adl) and a PC sound (.pcs); the files play in another IMF player / load back with Add.
+- [ ] **(never tried)** Add song to mod… with an .imf and with an .ogg named like a game song (e.g. CORNER): the list shows it as the mod's, it plays in its place in the game, and adding the other one takes the first out of the mod.
+- [ ] **(never tried)** Add sound to mod… with a .wav, an .adl and a .pcs of one name: all three stay (one each kind); a bad file says why and writes nothing; a pk3 mod.
 
 ## 2.11 Palettes (F9)
 

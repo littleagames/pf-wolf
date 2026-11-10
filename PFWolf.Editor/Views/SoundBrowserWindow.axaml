@@ -96,6 +96,14 @@
           <Button Content="Copy name" Click="CopyName" />
           <Button Content="Export WAV…" Click="ExportWav" IsEnabled="{Binding HasWaveform}"
                   ToolTip.Tip="Saves the sound shown as a 16-bit WAV, as the game plays it" />
+          <Button Content="Export file…" Click="ExportFile" IsEnabled="{Binding CanExport}"
+                  ToolTip.Tip="Saves the IMF song, AdLib sound (.adl) or PC speaker sound (.pcs) shown as the file a mod takes" />
+        </WrapPanel>
+        <WrapPanel ItemSpacing="6" LineSpacing="6">
+          <Button Content="Add song to mod…" Click="AddSong"
+                  ToolTip.Tip="Puts an IMF (.imf, .wlf), OGG, MP3 or WAV file in a mod's music folder: named like one of the game's songs, it plays in its place" />
+          <Button Content="Add sound to mod…" Click="AddSound"
+                  ToolTip.Tip="Puts a WAV, OGG or MP3 (digitized), .adl (AdLib) or .pcs (PC speaker) file in a mod's sounds folder: named like one of the game's sounds, it plays in its place" />
         </WrapPanel>
       </StackPanel>
     </ScrollViewer>
@@ -109,6 +117,10 @@
           <Separator />
           <MenuItem Header="Copy name" Click="CopyName" />
           <MenuItem Header="Export WAV…" Click="ExportWav" IsEnabled="{Binding HasWaveform}" />
+          <MenuItem Header="Export file…" Click="ExportFile" IsEnabled="{Binding CanExport}" />
+          <Separator />
+          <MenuItem Header="Add song to mod…" Click="AddSong" />
+          <MenuItem Header="Add sound to mod…" Click="AddSound" />
           <Separator />
           <MenuItem Header="Delete…" Command="{Binding DeleteCommand}" />
         </ContextMenu>

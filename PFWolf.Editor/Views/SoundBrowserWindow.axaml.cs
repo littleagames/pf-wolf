@@ -114,4 +114,65 @@ public partial class SoundBrowserWindow : Window
         var wav = SoundCatalog.ToWav(sound.Samples, sound.SampleRate);
         await stream.WriteAsync(wav);
     }
+
+    private async void ExportFile(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel.ExportableFile is not { } export || ViewModel.SelectedItem is not { } item)
+            return;
+
+        var name = ViewModel.SelectedVariant?.Variant?.AssetName ?? item.Name;
+        name = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
+        var (label, pattern) = export.Extension switch
+        {
+            ".imf" => ("IMF song", "*.imf"),
+            ".adl" => ("AdLib sound", "*.adl"),
+            _ => ("PC speaker sound", "*.pcs"),
+        };
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = $"Save {name} as a file",
+            SuggestedFileName = name + export.Extension,
+            DefaultExtension = export.Extension.TrimStart('.'),
+            FileTypeChoices = [new FilePickerFileType(label) { Patterns = [pattern] }],
+        });
+        if (file == null)
+            return;
+
+        await using var stream = await file.OpenWriteAsync();
+        await stream.WriteAsync(export.Data);
+    }
+
+    private void AddSong(object? sender, RoutedEventArgs e) => AddFile(asSong: true);
+    private void AddSound(object? sender, RoutedEventArgs e) => AddFile(asSong: false);
+
+    private async void AddFile(bool asSong)
+    {
+        var extensions = asSong ? SoundFiles.SongExtensions : SoundFiles.SoundExtensions;
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = asSong ? "A song to put in a mod" : "A sound to put in a mod",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType(asSong ? "Songs (IMF, OGG, MP3, WAV)" : "Sounds (WAV, OGG, MP3, AdLib, PC speaker)")
+                {
+                    Patterns = extensions.Select(extension => "*" + extension).ToArray(),
+                },
+            ],
+        });
+        if (files.Count == 0 || files[0].TryGetLocalPath() is not { } path)
+            return;
+
+        byte[] data;
+        try
+        {
+            data = await File.ReadAllBytesAsync(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ViewModel.Status = $"Couldn't read {Path.GetFileName(path)}: {ex.Message}";
+            return;
+        }
+        await ViewModel.AddToModAsync(asSong, path, data);
+    }
 }

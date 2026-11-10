@@ -44,6 +44,45 @@ public record Wolf3dImfAudio : Asset
         return new Wolf3dImfAudio(data, commands);
     }
 
+    /// <summary>The most commands a type 1 file (or an AUDIOT chunk) holds: its length is 16-bit</summary>
+    public const int MaxType1Commands = ushort.MaxValue / 4;
+
+    /// <summary>
+    /// A .imf file of these commands: type 1 (a 16-bit byte length first, as in AUDIOT) with a
+    /// tag after the commands (0x1A, then title, composer and remarks each ending in a 0, then
+    /// the program's name in 9 bytes) when it has a title; type 0 (all commands) when there are
+    /// more than a type 1 file holds
+    /// </summary>
+    public static byte[] ToFile(IReadOnlyList<WolfensteinMusicCommand> commands, string? title = null, string? composer = null, string? remarks = null)
+    {
+        using var stream = new MemoryStream();
+        using var writer = new BinaryWriter(stream);
+        var isType1 = commands.Count <= MaxType1Commands;
+        if (isType1)
+            writer.Write((ushort)(commands.Count * 4));
+        foreach (var command in commands)
+        {
+            writer.Write(command.Register);
+            writer.Write(command.Value);
+            writer.Write(command.Delay);
+        }
+
+        if (isType1 && (title ?? composer ?? remarks) != null)
+        {
+            writer.Write((byte)0x1A);
+            foreach (var text in new[] { title, composer, remarks })
+            {
+                writer.Write(System.Text.Encoding.ASCII.GetBytes(text ?? ""));
+                writer.Write((byte)0);
+            }
+            var program = new byte[9];
+            System.Text.Encoding.ASCII.GetBytes("PFWolf").CopyTo(program, 0);
+            writer.Write(program);
+        }
+        writer.Flush();
+        return stream.ToArray();
+    }
+
     private static WolfensteinMusicCommand[] ReadCommands(BinaryReader dataReader, int count)
     {
         var commands = new WolfensteinMusicCommand[count];

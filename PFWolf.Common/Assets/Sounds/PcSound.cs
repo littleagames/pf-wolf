@@ -24,6 +24,25 @@ public record PcSound : Asset
         return new PcSound(data);
     }
 
+    /// <summary>
+    /// A PC speaker sound as AUDIOT keeps it: its priority and one value a tick, 140 a second (the
+    /// PIT's reload value / 60, so 1193180 / (value * 60) Hz; 0 is silence)
+    /// </summary>
+    public static PcSound Create(ushort priority, ReadOnlySpan<byte> values)
+    {
+        var data = new byte[6 + values.Length];
+        BitConverter.TryWriteBytes(data.AsSpan(0, 4), (uint)values.Length);
+        BitConverter.TryWriteBytes(data.AsSpan(4, 2), priority);
+        values.CopyTo(data.AsSpan(6));
+        return new PcSound(data);
+    }
+
+    /// <summary>The sound's priority: one plays over another of a lower one</summary>
+    public ushort Priority => BitConverter.ToUInt16(RawData, 4);
+
+    /// <summary>One value a tick, 140 a second; 0 is silence</summary>
+    public byte[] Values => RawData.AsSpan(6, (int)Math.Min(BitConverter.ToUInt32(RawData, 0), (uint)(RawData.Length - 6))).ToArray();
+
     public byte[] ToMono8()
     {
         using var dataReader = new BinaryReader(new MemoryStream(RawData));

@@ -144,6 +144,90 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         }
     }
 
+    /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
+    public Func<string, Task<string?>>? PickMod { get; set; }
+
+    /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
+    public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
+
+    /// <summary>A song or sound went into a mod (the editor adds the mod and loads the game again)</summary>
+    public event EventHandler<string>? Saved;
+
+    /// <summary>
+    /// Puts a song or sound file into a mod: music/NAME.ext for a song, sounds/NAME.ext for a
+    /// sound, named after the one picked when it's of that kind (so it plays in its place), else
+    /// after the file. The mod's files of that name it takes the place of are taken out.
+    /// </summary>
+    public async Task AddToModAsync(bool asSong, string fileName, byte[] data)
+    {
+        if (AskText == null || PickMod == null)
+            return;
+
+        SoundKind kind;
+        try
+        {
+            kind = SoundFiles.Check(asSong, fileName, data);
+        }
+        catch (Exception e) when (e is InvalidDataException or EndOfStreamException or ArgumentException or PFWolf.Exceptions.PfWolfAudioException)
+        {
+            Status = $"{Path.GetFileName(fileName)} can't be a {(asSong ? "song" : "sound")}: {e.Message}";
+            return;
+        }
+
+        string? pickedName = null;
+        if (SelectedItem?.Entry is { } picked)
+        {
+            if (picked.Kind == kind)
+                pickedName = picked.Name;
+            else if (picked.Kind == SoundKind.Sound && SelectedVariant?.Variant is { } variant && variant.Kind == kind)
+                pickedName = variant.AssetName;
+        }
+        var suggested = pickedName ?? new string(Path.GetFileNameWithoutExtension(fileName)
+            .Select(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' ? char.ToUpperInvariant(c) : '_').ToArray());
+        var what = kind == SoundKind.Music ? "song" : $"{SoundCatalog.KindName(kind)} sound";
+        var name = await AskText($"Add a {what} to a mod",
+            $"Its name: one of the game's {what}s' names plays it in that one's place, a new name is a new one{(kind == SoundKind.Music ? " for game-info or mapdefs to play" : " to play by name or from sound-seq")}:",
+            suggested, candidate => ArtFiles.CheckName(candidate.Trim()));
+        if (string.IsNullOrWhiteSpace(name))
+            return;
+        name = name.Trim().ToUpperInvariant();
+
+        var folder = await PickMod($"A mod to put {name} in (it goes in its {SoundFiles.Folder(kind)} folder)");
+        if (folder == null)
+            return;
+
+        try
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            var (entryPath, deletes) = SoundFiles.Target(folder, kind, name, extension);
+            var path = Editing.ModFiles.Change(folder, [(entryPath, data)], deletes);
+            Status = $"Saved {path}" + (deletes.Count > 0 ? $" in place of {string.Join(", ", deletes)}" : "");
+            _showAfterLoad = (kind, name);
+            Saved?.Invoke(this, folder);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            Status = $"Couldn't save {name}: {e.Message}";
+        }
+    }
+
+    // The song or sound just put in a mod, shown once the game's loaded again
+    private (SoundKind Kind, string Name)? _showAfterLoad;
+
+    /// <summary>The song or sound shown as a file a pk3 takes (.imf, .adl, .pcs), for Export; null for others</summary>
+    public (byte[] Data, string Extension)? ExportableFile
+    {
+        get
+        {
+            if (_content == null || SelectedItem?.Entry is not { } entry)
+                return null;
+            var (kind, name) = entry.Kind == SoundKind.Sound && SelectedVariant?.Variant is { } variant ? (variant.Kind, variant.AssetName) : (entry.Kind, entry.Name);
+            return SoundFiles.Exportable(_content, kind, name);
+        }
+    }
+
+    public bool CanExport => ExportableFile != null;
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(GoToUseCommand))]
     private SoundUse? _selectedUse;
@@ -218,6 +302,12 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         Refilter();
         SelectedItem = picked != null ? Items.FirstOrDefault(item => item.Entry.Kind == picked.Kind && item.Name.Equals(picked.Name, StringComparison.OrdinalIgnoreCase)) : null;
         SelectedItem ??= Items.FirstOrDefault();
+
+        if (_showAfterLoad is { } added && content != null)
+        {
+            _showAfterLoad = null;
+            Show(added.Kind, added.Name);
+        }
     }
 
     /// <summary>Shows a sound or song by name, of the kind asked for when there's one of each</summary>
@@ -287,6 +377,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
         Details = "";
         Samples = null;
         PositionText = "";
+        OnPropertyChanged(nameof(CanExport));
 
         if (value == null || _content == null)
         {
@@ -327,6 +418,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
 
     partial void OnSelectedVariantChanged(SoundVariantOption? value)
     {
+        OnPropertyChanged(nameof(CanExport));
         if (SelectedItem?.Entry is not { Kind: SoundKind.Sound } entry || _content == null)
             return;
         Stop();
