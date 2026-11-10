@@ -1171,6 +1171,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       messages); New font file… then used by a fonts.yaml `source`; Copy/Paste between two glyph
       editors; "Copy them in" from LargeFont; a too-big font refused; Export .fnt…; closing with
       changes asks; Edit glyph picture… on IntermissionFont (pixel editor opens on FONTL065).
+- [ ] Files → Bring in a sheet… with the Fonts Demo's FDGOLD.png: 13 x 17 cells guessed, the
+      magenta left out, the characters listed (ABC…Z0…9!?.,:-) drawn right as a sheet font and
+      as a vga font.
+- [ ] **(never tried)** Its Save to mod… (graphics/NAME.png + fonts.yaml, the game prints in it);
+      Open in the glyph editor… then saved; Add font file to mod… with a .fnt and a .wsf (the
+      game prints in it by name); Export as a PNG sheet… (the PNG opens in a paint program; the
+      clipboard's entry and the PNG in a mod print like the vga font).
 
 ---
 

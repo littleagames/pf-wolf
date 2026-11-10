@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        x:Class="PFWolf.Editor.Views.SheetImportWindow"
+        x:DataType="vm:SheetImportViewModel"
+        Title="{Binding Name, StringFormat='Bring in a sheet of characters - {0}'}"
+        Width="1000" Height="760" MinWidth="760" MinHeight="520"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="12">
+    <!-- What it becomes, and done -->
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,10,0,0">
+      <TextBlock Text="{Binding Problem}" Foreground="OrangeRed" TextWrapping="Wrap" VerticalAlignment="Center" IsVisible="{Binding HasProblem}" />
+      <Button Grid.Column="1" Content="{Binding DoneLabel}" Command="{Binding DoneCommand}" Classes="accent"
+              ToolTip.Tip="A sheet font: its picture (graphics/NAME) and fonts.yaml entry into a mod you pick. A vga font: its glyphs in the glyph editor, to look over and save from there." />
+      <Button Grid.Column="2" Content="Cancel" Click="OnCancel" />
+    </Grid>
+
+    <StackPanel DockPanel.Dock="Top" Spacing="8">
+      <TextBlock Text="{Binding Info}" Opacity="0.8" />
+      <Grid ColumnDefinitions="Auto,200,Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6">
+        <TextBlock Classes="label" Text="Name" />
+        <TextBox Grid.Column="1" Text="{Binding Name}" ToolTip.Tip="What it's printed in by: a fonts.yaml font (sheet), or a fonts/NAME.fnt file (vga)" />
+        <StackPanel Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="12">
+          <RadioButton Content="A sheet font" IsChecked="{Binding AsSheet, Mode=OneWay}" GroupName="kind" Click="OnSheet"
+                       ToolTip.Tip="The picture as it is, cut into cells: its own colors (or the text's, colorized)" />
+          <RadioButton Content="A vga font" IsChecked="{Binding AsVga}" GroupName="kind"
+                       ToolTip.Tip="One-bit glyphs drawn in the text's color, with shadows, outlines, gradients and glows; edited in the glyph editor" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" Classes="label" Text="Cells" />
+        <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8">
+          <NumericUpDown Value="{Binding CellWidth}" Minimum="1" Maximum="255" Increment="1" FormatString="0" Width="120" ToolTip.Tip="A cell's width" />
+          <TextBlock Classes="label" Text="by" />
+          <NumericUpDown Value="{Binding CellHeight}" Minimum="1" Maximum="255" Increment="1" FormatString="0" Width="120" ToolTip.Tip="A cell's height" />
+          <TextBlock Classes="label" Text="first character" Margin="8,0,0,0" />
+          <NumericUpDown Value="{Binding FirstChar}" Minimum="0" Maximum="255" Increment="1" FormatString="0" Width="120"
+                         ToolTip.Tip="The character in the first cell (32, a space, for most sheets); the rest follow left to right and down" />
+          <TextBlock Classes="label" Text="or the characters in order" Margin="8,0,0,0" />
+          <TextBox Text="{Binding Chars}" MinWidth="220" PlaceholderText="ABC…, for a sheet not in code order"
+                   ToolTip.Tip="Each cell's character, left to right and down, for a sheet whose characters aren't in code order (ABC...XYZ012...)" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="2" Classes="label" Text="As" />
+        <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="12">
+          <CheckBox Content="{Binding CornerText}" IsChecked="{Binding KeyOutCorner}" IsVisible="{Binding HasCorner}"
+                    ToolTip.Tip="A sheet with no see-through pixels has a background color: the top-left pixel's. Left out of the letters (a sheet font's transparent)." />
+          <CheckBox Content="Proportional" IsChecked="{Binding Proportional}" IsVisible="{Binding AsSheet}"
+                    ToolTip.Tip="Each character as wide as what it draws, plus a pixel; else every one a cell wide" />
+          <CheckBox Content="Colorize" IsChecked="{Binding Colorize}" IsVisible="{Binding AsSheet}"
+                    ToolTip.Tip="Drawn in the text's color instead of the picture's own" />
+          <TextBlock Classes="label" Text="Brightness to draw" IsVisible="{Binding AsVga}" />
+          <NumericUpDown Value="{Binding Threshold}" Minimum="0" Maximum="255" Increment="8" FormatString="0" Width="120" IsVisible="{Binding AsVga}"
+                         ToolTip.Tip="A pixel is drawn where it shows and is at least this bright (0-255)" />
+          <TextBlock Classes="label" Text="Gap after each" IsVisible="{Binding AsVga}" />
+          <NumericUpDown Value="{Binding Spacing}" Minimum="0" Maximum="16" Increment="1" FormatString="0" Width="110" IsVisible="{Binding AsVga}"
+                         ToolTip.Tip="Columns added after each glyph, trimmed to what it draws" />
+        </StackPanel>
+      </Grid>
+
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+        <TextBox Text="{Binding SampleText}" PlaceholderText="Some text to see it in" />
+        <TextBlock Grid.Column="1" Classes="label" Text="in" />
+        <TextBox Grid.Column="2" Text="{Binding TextColor}" Width="130" ToolTip.Tip="A colors.yaml name, #RRGGBB or a palette index" />
+      </Grid>
+      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+        <Image Source="{Binding PreviewImage}" Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}" Stretch="Fill"
+               RenderOptions.BitmapInterpolationMode="None" HorizontalAlignment="Left" ToolTip.Tip="The text in the font the sheet makes" />
+      </ScrollViewer>
+    </StackPanel>
+
+    <!-- The sheet with its cells marked -->
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" Margin="0,8,0,0">
+      <Image Source="{Binding SheetImage}" Width="{Binding SheetWidth}" Height="{Binding SheetHeight}" Stretch="Fill"
+             RenderOptions.BitmapInterpolationMode="None" HorizontalAlignment="Left" VerticalAlignment="Top"
+             ToolTip.Tip="The sheet, with its cells marked" />
+    </ScrollViewer>
+  </DockPanel>
+</Window>

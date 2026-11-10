@@ -232,3 +232,30 @@ Planned 2026-11-10.
 - Checked by screenshots: SmallFont in the glyph editor, B picked by a click on the grid, a
   pixel drawn by a click (*, Undo on). Not tried by hand: saving from the window, the other
   tools by mouse, New font file…, Edit glyph picture… opening the pixel editor.
+
+**Phase 4 done 2026-11-10** (fonts in and out); every phase of the plan is done:
+- `FontSheets` (Data): `Export` (a vga font's characters 32-255 as a 16-column PNG, white on
+  see-through, and the fonts.yaml entry reading it: a colorized sheet with `advances` for each
+  width that isn't the cell's — draws pixel-identical to the vga font); `Guess` (of the cell
+  sizes 4-64 dividing the picture, a usual character count in 16 columns first, else cells
+  nearest 1.3 tall to wide); `ToVgaFont` (a brightness threshold, a see-through color, glyphs
+  trimmed plus a gap); `SheetDefinition` (first-char or `chars`, proportional, colorize,
+  `transparent`); `ToPicture` (a picture as the game reads a PNG); `CornerColor`,
+  `HasTransparency`. `SheetCells` takes characters in order for a sheet not in code order.
+- The font window's Files menu: Add font file to mod… (.fnt/.wsf → fonts/NAME.fnt through the
+  glyph save), Bring in a sheet… (SheetImportWindow: cells guessed and drawn over the sheet,
+  first character or characters in order, the corner's color see-through, sheet font —
+  proportional, colorize; Save to mod… writes graphics/NAME.png and the fonts.yaml entry — or vga
+  font — threshold, gap; Open in the glyph editor…), Export font file (.fnt)…, Export as a PNG
+  sheet… (the entry to the clipboard).
+- Tests: FontSheetsTests (TinyFont exported draws the same; read back as vga; guesses incl.
+  FDGOLD 13x17; FDGOLD's magenta left out and its characters listed), GameData
+  FontSheetsGameTests (SmallFont, LargeFont, Blake's Font2 as sheets draw the same; a .fnt
+  added to a mod is printed in by name; a sheet brought in as a sheet font saved and loaded, and
+  as a vga font opened).
+- Checked by screenshots: the import dialog on FDGOLD (first a wrong 16-column guess and the
+  magenta drawn, which led to the better guess, the see-through corner and the characters
+  list), then as a vga font. Not tried by hand: the saves from the dialog, Add font file, the
+  exports' dialogs. UI recipe: an Avalonia MenuFlyout item doesn't run its Click from a UIA
+  Invoke; post a click at it to WindowFromPoint (scratchpad clickname.ps1); its popup's
+  elements are listed under the owner window.

@@ -23,13 +23,28 @@
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
         <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}" MinWidth="200" />
         <TextBox x:Name="Search" Grid.Column="1" Text="{Binding Filter}" VerticalAlignment="Center"
                  PlaceholderText="Find by name, its glyphs or what prints in it (LargeFont, Font3, hud-messages)" />
         <TextBlock Grid.Column="2" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="100" />
         <Button Grid.Column="3" Content="New font…" Command="{Binding NewFontCommand}"
                 ToolTip.Tip="A new font, not saved until you save it: a copy of the font picked (a font chunk's: a vga font of its letters), or a vga font of the small font's" />
+        <DropDownButton Grid.Column="4" Content="Files" ToolTip.Tip="Fonts brought in from files, and saved out as them">
+          <DropDownButton.Flyout>
+            <MenuFlyout Placement="BottomEdgeAlignedRight">
+              <MenuItem Header="Add font file to mod… (.fnt, .wsf)" Click="AddFontFile"
+                        ToolTip.Tip="A Wolf3D font file, or WDC's .wsf, into a mod's fonts/ folder: printed in by its name (a game font's name replaces it)" />
+              <MenuItem Header="Bring in a sheet of characters… (PNG, BMP)" Click="ImportSheet"
+                        ToolTip.Tip="A picture of characters in cells, made a sheet font (the picture and a fonts.yaml entry) or a vga font (to the glyph editor)" />
+              <Separator />
+              <MenuItem Header="Export font file (.fnt)…" Click="ExportFont" IsEnabled="{Binding CanExportFont}"
+                        ToolTip.Tip="The picked vga font's glyphs as a Wolf3D font file" />
+              <MenuItem Header="Export as a PNG sheet…" Click="ExportSheet" IsEnabled="{Binding CanExportFont}"
+                        ToolTip.Tip="The picked vga font's characters 32-255 as a picture of cells, white on see-through; the fonts.yaml entry that reads it goes on the clipboard" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
       </Grid>
     </Border>
 

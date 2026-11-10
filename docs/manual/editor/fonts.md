@@ -87,3 +87,28 @@ you pick. A file named like one of the game's font chunks (`SmallFont.fnt`) repl
 A graphic font's letters are pictures, and a sheet font's are one: pick a character in the
 Characters tab (a click) and **Edit glyph picture…** opens its picture (a sheet font's sheet) in
 the [pixel editor](./art).
+
+## Font files and sheets
+
+The **Files** menu at the top right:
+
+- **Add font file to mod… (.fnt, .wsf)** puts a Wolf3D font file, or WDC's `.wsf` (made a
+  `.fnt`), into a mod's `fonts/` folder under the name you give it. It's printed in by that name
+  with no `fonts.yaml` entry needed, and a game font's name (`SmallFont`) replaces that font.
+- **Bring in a sheet of characters… (PNG, BMP)** reads a picture of characters in cells. Its
+  cells are guessed (the sizes that divide it evenly, a usual character set preferred) and shown
+  over it, to set: their size, the character in the first cell, or, for a sheet not in code
+  order, the characters in order (`ABC…XYZ012…`). A sheet with no see-through pixels has a
+  background color, the top-left pixel's, which is left out. It becomes either
+  - **a sheet font**: proportional (each character as wide as it draws) or not, in its own
+    colors or the text's (colorize); *Save to mod…* puts the picture in the mod as
+    `graphics/NAME.png` and its `fonts.yaml` entry beside it, or
+  - **a vga font**: a pixel is drawn where it's at least so bright, each glyph trimmed to what
+    it draws plus a gap; *Open in the glyph editor…* opens it there, to look over and save.
+  A line of text is drawn in the font it makes as you change these.
+- **Export font file (.fnt)…** saves the picked vga font's glyphs.
+- **Export as a PNG sheet…** saves the picked vga font's characters 32 to 255 as a picture of
+  cells, sixteen to a row, white on see-through, and puts the `fonts.yaml` entry that reads it
+  (a colorized sheet font, each character moving along its own width) on the clipboard. Put the
+  picture in a mod's `graphics/` folder and the entry in its `fonts.yaml`, and it prints just as
+  the vga font does.
