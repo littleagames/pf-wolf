@@ -342,6 +342,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _textBrowser?.Load(Content);
         _scriptBrowser?.Load(Content);
         _fontBrowser?.Load(Content);
+        _actorBrowser?.Load(Content);
         _definitions?.Load(Content, Mods.ToList());
     }
 
@@ -624,6 +625,62 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _fontBrowser.Load(Content);
         }
         Dialogs.ShowFontBrowser(_fontBrowser);
+    }
+
+    //
+    // The actor window
+    //
+
+    private ActorBrowserViewModel? _actorBrowser;
+
+    /// <summary>Opens the actor window, on the first enemy the first time</summary>
+    [RelayCommand]
+    private void ShowActors()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_actorBrowser == null)
+        {
+            _actorBrowser = new ActorBrowserViewModel();
+            // A frame's sprite: in the art window
+            _actorBrowser.SpriteRequested += (_, sprite) =>
+            {
+                ShowArt();
+                _artBrowser?.Show(ArtKind.Sprite, sprite);
+            };
+            // A use's Go to: its definition, its script line, or the level at the first one placed
+            _actorBrowser.GoTo += (_, target) =>
+            {
+                if (target.Script != null)
+                {
+                    ShowScripts();
+                    _scriptBrowser?.ShowLine(target.Script, target.Line);
+                }
+                else if (target.Map != null)
+                    ShowOnLevel(target.Map, target.X, target.Y);
+                else if (target.Kind is { } kind && target.EntryPath is { Count: > 0 } entry)
+                {
+                    ShowDefinitions();
+                    _definitions?.ShowEntry(kind, entry, target.FieldPath);
+                }
+            };
+            _actorBrowser.Load(Content);
+        }
+        Dialogs.ShowActorBrowser(_actorBrowser);
+    }
+
+    /// <summary>Opens a level with a tile picked and in view (a thing an actor window's use points at)</summary>
+    private void ShowOnLevel(string mapName, int x, int y)
+    {
+        if (Maps.FirstOrDefault(map => map.Name.Equals(mapName, StringComparison.OrdinalIgnoreCase)) is not { } map)
+            return;
+        SelectedMap = map;
+        if (SelectedMap != map || Tiles is not { } tiles || x < 0 || y < 0 || x >= tiles.Width || y >= tiles.Height)
+            return;
+        Controller.SelectTile(x, y);
+        GoToTile?.Invoke(this, (x, y));
+        Hover(x, y);
     }
 
     //

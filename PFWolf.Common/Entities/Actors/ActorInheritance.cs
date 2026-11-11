@@ -39,6 +39,26 @@ public static class ActorInheritance
     }
 
     /// <summary>
+    /// A copy of the class with what its parents give it, as the game builds it, leaving the
+    /// class's own data as it is (the editor's, which it shows as written)
+    /// </summary>
+    /// <exception cref="Exception">As <see cref="Ancestors"/></exception>
+    public static ActorData Merged(string name, ActorData actor, IReadOnlyDictionary<string, ActorData> actors)
+    {
+        var copy = new ActorData
+        {
+            States = new(actor.States),
+            Radius = actor.Radius,
+            Flags = [.. actor.Flags],
+            Parent = actor.Parent,
+            Properties = new(actor.Properties),
+            Extend = actor.Extend,
+        };
+        Inherit(copy, [.. Ancestors(name, actor, actors).Select(ancestor => ancestor.Data)]);
+        return copy;
+    }
+
+    /// <summary>
     /// Gives <paramref name="actor"/> what its <paramref name="ancestors"/> (nearest first) have: each
     /// property, state and the radius it hasn't got, from the nearest that has it (Key's
     /// "inventory.interhubamount" beats Inventory's), and every flag. Changes the class's data, as

@@ -196,3 +196,36 @@ Planned 2026-11-10.
   it saves that to a file; before and after the move the files were byte-identical. The full
   suite passes (3772, incl. DemoRegressionTests' demos); one run of three had a single failure
   that didn't come back, which the summary didn't name.
+
+**Phase 1 done 2026-11-10** (the actor window, read-only):
+- Common: `ActorClasses` (the engine's actor classes and what each is built on, kept in step
+  with the engine's types by a test; `EngineClass`, `IsA`; `EngineUses`, the classes the engine
+  makes by name), `StatePlayer` (steps frames as DoActor/AdvanceFrames do, telling each action
+  as its frame ends; stops at an action that may jump; tested tic by tic against the game's
+  Actor), `ActorInheritance.Merged` (a merged copy, the class as written left alone).
+- `ActorCatalog` (Data): every class merged and resolved; kind (enemy, item, weapon,
+  projectile, decoration, player, unseen) from its engine class, flags and Spawn sprite;
+  problems (can't be made, unknown modifiers, a next-state it hasn't got, actions nothing has
+  or for another kind, properties and flags the engine doesn't read or only another kind
+  reads); a frame with no sprite is a problem only on a class a level places, else a note
+  (shared classes draw frames only other games have). Uses: the engine's, classes built on it,
+  class-hinted properties and action arguments naming it, mapdefs things (one line per class,
+  ids as runs), game-info and factions values (names and shown text skipped), Lua spawn /
+  spawnprojectile / actors / tagged string literals, and every level placing it (count, first
+  tile). Defined in: each actordefs file's lines.
+- ActorBrowserViewModel / ActorBrowserWindow (Resources → Actors…, Ctrl+Shift+A): list with
+  kind filter and ⚠; preview (state picker, Play/Pause, Next frame, Restart, 1×/½×/¼×, Follow
+  next-state, views 1-8, zoom; a 35 Hz timer stepping two tics); the timeline (frames as wide as
+  their tics, a click shows one); problems and notes; tabs Properties (with the parent each comes
+  from), Used by (Go to: a class here, the Definitions window at an entry, a script's line, a
+  level with the first one's tile picked), Defined in. Show sprite (F6), Open in Definitions,
+  Copy name. Manual page docs/manual/editor/actors.md, manual-testing 2.19.
+- Tests: ActorCatalogTests (calls, runs, engine classes), GameData ActorCatalogGameTests (every
+  Wolf3D, Spear, Blake and Planet Strike class with no problems; the Guard's kind, states, file,
+  uses and level Go to target; views; the window playing Guard and Pistol), StatePlayerTests.
+- Checked by screenshots: BJVictory and the Guard playing, view 3, Attack followed into Chase,
+  Used by (which found a `tag: Guard` and a game-info player-class name counted as uses, and one
+  line per mapdefs thing: fixed), Go to MAP02 (tile 18,2 picked, "Object 144: Guard"), the
+  Pistol's Ready (which found Next frame running 10000 tics on a frame looping on itself and the
+  ran-actions line growing without end: fixed). Not tried by hand: Blake, a mod's classes, a ⚠
+  class, Go to into the Definitions window and a script, Show sprite, the jump wait.

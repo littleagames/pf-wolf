@@ -32,6 +32,7 @@
     <KeyBinding Gesture="F12" Command="{Binding ShowScriptsCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding ShowDemosCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+F" Command="{Binding ShowFontsCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+A" Command="{Binding ShowActorsCommand}" />
   </Window.KeyBindings>
 
   <Window.Styles>
@@ -176,6 +177,8 @@
                   ToolTip.Tip="The level's ceiling and floor flats code: the one it has, else a new one in the top row" />
       </MenuItem>
       <MenuItem Header="_Resources">
+        <MenuItem Header="_Actors…" Command="{Binding ShowActorsCommand}" InputGesture="Ctrl+Shift+A"
+                  ToolTip.Tip="Every actor class, played as the game plays it, with what it's built on, where it's defined and what places or names it" />
         <MenuItem Header="_Textures and sprites…" Command="{Binding ShowArtCommand}" InputGesture="F6"
                   ToolTip.Tip="Every wall texture, flat, sprite and picture, where it comes from and what uses it" />
         <MenuItem Header="_Sounds and music…" Command="{Binding ShowSoundsCommand}" InputGesture="F8"

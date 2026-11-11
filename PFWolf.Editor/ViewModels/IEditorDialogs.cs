@@ -119,6 +119,9 @@ public interface IEditorDialogs
     /// <summary>Shows the font window beside the editor, or brings it to the front</summary>
     void ShowFontBrowser(FontBrowserViewModel browser);
 
+    /// <summary>Shows the actor window beside the editor, or brings it to the front</summary>
+    void ShowActorBrowser(ActorBrowserViewModel browser);
+
     /// <summary>Shows the palette browser beside the editor, or brings it to the front</summary>
     void ShowPaletteBrowser(PaletteBrowserViewModel browser);
 

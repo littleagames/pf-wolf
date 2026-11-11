@@ -1179,6 +1179,20 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       game prints in it by name); Export as a PNG sheet… (the PNG opens in a paint program; the
       clipboard's entry and the PNG in a mod print like the vga font).
 
+## 2.19 Actors (Ctrl+Shift+A)
+
+- [ ] Wolf3D: the Guard plays Chase in a loop; Attack goes on into Chase with Follow next-state
+      (and starts over without it); views 1-8 turn it; Next frame, Restart, ½× and ¼×, Space to
+      pause; a click on a timeline frame shows it.
+- [ ] The Pistol plays Ready from below the box; Used by on the Guard: the mapdefs things line
+      and a level's Go to (the level opens with the first guard's tile picked).
+- [ ] **(never tried)** Blake and Planet Strike in the window (BlakeMonster classes, Informant,
+      their weapons); a mod with its own classes (an example mod: its file in Defined in, an
+      extend over a game class); a class with a ⚠ (a misspelt action or sprite in a mod);
+      Go to on a mapdefs use (the Definitions window at the thing), a Lua use (the script
+      browser at the line) and a game-info use; Show sprite (F6 on the frame's sprite); Open in
+      Definitions; a state with an A_Jump action (the preview waits, Go on).
+
 ---
 
 ## When done
