@@ -13,6 +13,9 @@ namespace PFWolf.Gameplay;
 internal sealed record NetRules(bool Monsters, int ScoreLimit, int TimeLimitMinutes, bool ItemRespawn,
     int HideSeconds = 30, int HuntMinutes = 3);
 
+/// <summary>How a match went for a player (Deathmatch.Outcome)</summary>
+internal enum MatchOutcome { Won, Lost, Draw }
+
 // An item taken, to come back: its class, where, and when (GameState.TimeCount)
 internal sealed record ItemRespawn(string ClassName, int TileX, int TileY, int At);
 
@@ -81,6 +84,9 @@ internal interface IMatchObjective
     /// <summary>The final scoreboard's title, where the mode has its own ("Survived 7 waves"); else null</summary>
     string? FinalTitle() => null;
 
+    /// <summary>How the match went for a player, as it ends, where the mode decides it (Horde); else null, for the score to</summary>
+    MatchOutcome? Outcome(Entities.PlayerState p) => null;
+
     /// <summary>Its state, for a player joining mid-game (Networking/MidGameJoin.cs)</summary>
     void Write(BinaryWriter bw);
     void Read(BinaryReader br);
@@ -146,7 +152,7 @@ internal sealed class Deathmatch(
         MatchOver = false;
         Array.Clear(TeamScores);
         foreach (var p in session.Players)
-            p.Frags = p.Objective = 0;
+            p.Frags = p.Objective = p.Streak = 0;
     }
 
     /// <summary>
@@ -273,7 +279,9 @@ internal sealed class Deathmatch(
             if (!session.AreRivals(rival.State, victim))
                 return;
             rival.State.Frags++;
+            rival.State.Streak++;
             Fragged?.Invoke(victim, rival);
+            Streaked?.Invoke(rival.State);
             using (session.ActAs(rival.State))
                 statusBar.DrawScore();
             if (tdm)
@@ -292,9 +300,13 @@ internal sealed class Deathmatch(
         }
     }
 
-    /// <summary>A player has died with others playing (not co-op): a frag in a versus mode, and whatever it means to the objective</summary>
+    /// <summary>
+    /// A player has died with others playing (not co-op): their kill streak's over, a frag in a
+    /// versus mode, and whatever it means to the objective
+    /// </summary>
     internal void PlayerKilled(Entities.PlayerState victim, Entities.Actors.Actor? killer)
     {
+        victim.Streak = 0;
         if (session.IsVersus)
             CountFrag(victim, killer);
         Objective?.PlayerDied(victim);
@@ -349,8 +361,29 @@ internal sealed class Deathmatch(
     /// <summary>A frag's been counted (before the score limit's looked at): the victim, and the player who made it (the victim: one off for killing themselves)</summary>
     internal Action<Entities.PlayerState, PlayerPawn>? Fragged { get; set; }
 
+    /// <summary>A player has killed a rival, after the frag's counted: their kill streak (PlayerState.Streak) is one longer</summary>
+    internal Action<Entities.PlayerState>? Streaked { get; set; }
+
     /// <summary>The match is over (game.onmatchend)</summary>
     internal Action? MatchEnded { get; set; }
+
+    /// <summary>
+    /// How the match went for a player, as it ends: the mode's own say (Horde: won unless they were
+    /// wiped out); in a team game, won for the team ahead (a draw when level); in a deathmatch,
+    /// won for the one player with the most frags, a draw for players sharing the most, else lost
+    /// </summary>
+    internal MatchOutcome Outcome(Entities.PlayerState p)
+    {
+        if (Objective?.Outcome(p) is { } own)
+            return own;
+        if (session.IsTeamGame)
+            return LeadingTeam < 0 ? MatchOutcome.Draw : p.Team == LeadingTeam ? MatchOutcome.Won : MatchOutcome.Lost;
+        var playing = session.Players.Where(o => !o.Gone).ToList();
+        int top = playing.Count > 0 ? playing.Max(o => o.Frags) : p.Frags;
+        return p.Frags < top ? MatchOutcome.Lost
+            : playing.Count(o => o.Frags == top) > 1 ? MatchOutcome.Draw
+            : MatchOutcome.Won;
+    }
 
     /// <summary>The deathmatch is over: the level ends, and the scoreboard shows who won</summary>
     internal void EndMatch()

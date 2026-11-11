@@ -218,6 +218,9 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
         return $"Wave {Wave}: {left} left" + (Session.LocalPlayer.Health <= 0 ? " - back after the wave" : "");
     }
 
+    // The players are all on one side: they win together, unless they were wiped out
+    public MatchOutcome? Outcome(Entities.PlayerState p) => Wiped ? MatchOutcome.Lost : MatchOutcome.Won;
+
     public string? FinalTitle() =>
         Wiped ? $"Survived {Survived} wave{(Survived == 1 ? "" : "s")}"
         : Survived > 0 && Match.NetRules.ScoreLimit > 0 && Survived >= Match.NetRules.ScoreLimit ? $"Victory! All {Survived} waves beaten"

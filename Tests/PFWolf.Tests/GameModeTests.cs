@@ -310,6 +310,21 @@ public class MatchScoringTests
     }
 
     [Test]
+    public void A_Horde_Is_Won_Or_Lost_By_Everyone_Together()
+    {
+        // Arrange
+        var rig = new Rig(GameMode.Horde);
+        var horde = HordeOf(rig, new HordeInfo());
+        rig.Match.MatchObjectives.Add(horde);
+
+        // Act / Assert: outlasted, then wiped out
+        Assert.That(rig.Session.Players.Select(rig.Match.Outcome), Is.All.EqualTo(MatchOutcome.Won));
+        rig.Red1.Health = rig.Red2.Health = rig.Blue.Health = 0;
+        ((IMatchObjective)horde).PlayerDied(rig.Blue);
+        Assert.That(rig.Session.Players.Select(rig.Match.Outcome), Is.All.EqualTo(MatchOutcome.Lost));
+    }
+
+    [Test]
     public void Prop_Hunt_Props_Are_The_Team_Not_Hunting_And_Come_In_Disguised_With_A_Props_Loadout()
     {
         // Arrange: red hunts, blue hides; everyone alive

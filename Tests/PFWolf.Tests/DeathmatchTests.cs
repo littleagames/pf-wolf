@@ -104,6 +104,74 @@ public class DeathmatchTests
     }
 
     [Test]
+    public void A_Kill_Streak_Grows_With_Each_Rival_Killed_And_Ends_With_Any_Death()
+    {
+        // Arrange
+        var rig = new Rig();
+        var streaks = new List<(int Number, int Streak)>();
+        rig.Deathmatch.Streaked = p => streaks.Add((p.Number, p.Streak));
+
+        // Act: two kills, then killed by a guard; one more, then their own rocket
+        rig.Deathmatch.PlayerKilled(rig.Second, rig.First.Pawn);
+        rig.Deathmatch.PlayerKilled(rig.Second, rig.First.Pawn);
+        rig.Deathmatch.PlayerKilled(rig.First, new Monster { Name = "Guard" });
+        rig.Deathmatch.PlayerKilled(rig.Second, rig.First.Pawn);
+        int before = rig.First.Streak;
+        rig.Deathmatch.PlayerKilled(rig.First, new Monster { Name = "Rocket", Shooter = rig.First.Pawn });
+
+        // Assert: the victim's streak is gone; killing yourself grows none
+        Assert.That(streaks, Is.EqualTo(new[] { (0, 1), (0, 2), (0, 1) }));
+        Assert.That((before, rig.First.Streak, rig.Second.Streak), Is.EqualTo((1, 0, 0)));
+    }
+
+    [Test]
+    public void A_New_Match_Starts_Every_Streak_Over()
+    {
+        var rig = new Rig();
+        rig.First.Streak = 4;
+        rig.Deathmatch.NewMatch();
+        Assert.That(rig.First.Streak, Is.Zero);
+    }
+
+    [TestCase(5, 3, "Won", "Lost")]
+    [TestCase(4, 4, "Draw", "Draw")]
+    public void In_Deathmatch_The_One_With_The_Most_Frags_Wins(int first, int second, string firstGets, string secondGets)
+    {
+        var rig = new Rig();
+        (rig.First.Frags, rig.Second.Frags) = (first, second);
+        Assert.That((rig.Deathmatch.Outcome(rig.First).ToString(), rig.Deathmatch.Outcome(rig.Second).ToString()), Is.EqualTo((firstGets, secondGets)));
+    }
+
+    [Test]
+    public void Behind_A_Shared_Lead_Is_Still_A_Loss_And_Those_Gone_Dont_Count()
+    {
+        // Arrange: a third player behind two level at the top, and a fourth, gone, with more
+        var rig = new Rig();
+        rig.Session.Players.Add(new Entities.PlayerState { Number = 2, Frags = 1 });
+        rig.Session.Players.Add(new Entities.PlayerState { Number = 3, Frags = 9, Gone = true });
+        (rig.First.Frags, rig.Second.Frags) = (4, 4);
+
+        // Act / Assert
+        Assert.That(rig.Session.Players.Take(3).Select(rig.Deathmatch.Outcome),
+            Is.EqualTo(new[] { MatchOutcome.Draw, MatchOutcome.Draw, MatchOutcome.Lost }));
+    }
+
+    [Test]
+    public void In_A_Team_Game_The_Team_Ahead_Wins()
+    {
+        // Arrange
+        var rig = new Rig();
+        rig.Session.SetGameMode(GameMode.TeamDeathmatch);
+        (rig.First.Team, rig.Second.Team) = (0, 1);
+        rig.Deathmatch.TeamScores[1] = 2;
+
+        // Act / Assert
+        Assert.That((rig.Deathmatch.Outcome(rig.First), rig.Deathmatch.Outcome(rig.Second)), Is.EqualTo((MatchOutcome.Lost, MatchOutcome.Won)));
+        rig.Deathmatch.TeamScores[0] = 2;
+        Assert.That(rig.Deathmatch.Outcome(rig.First), Is.EqualTo(MatchOutcome.Draw));
+    }
+
+    [Test]
     public void The_Time_Limit_Ends_It_Too()
     {
         // Arrange: a minute

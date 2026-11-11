@@ -137,8 +137,25 @@ internal static partial class GameHost
             new DeathmatchHooks(IsFreeFloor, GiveAllKeys))
         {
             Fragged = (victim, killer) => gameScripts?.RunFragHooks(victim.Pawn, killer),
-            MatchEnded = () => gameScripts?.RunMatchEndHooks(MatchWinner()),
+            Streaked = player =>
+            {
+                Announcer.Streaked(player);
+                gameScripts?.RunStreakHooks(player.Pawn, player.Streak);
+            },
+            MatchEnded = () =>
+            {
+                Announcer.MatchOver(deathmatch.Outcome);
+                gameScripts?.RunMatchEndHooks(MatchWinner());
+            },
         };
+
+    // Kill streak and match end cues (Gameplay/Announcer.cs)
+    static Announcer? _announcer;
+    static Announcer Announcer => _announcer ??= new Announcer(Session, new AnnouncerHooks(
+        () => GameEngineManager.GetGameInfo().Announcer,
+        name => AudioManager.Play(name),
+        (message, style, placeholders) => HudMessageManager.ShowToAll(HudMessageKind.Other, message, style, placeholders),
+        p => p.Name ?? $"Player {p.Number + 1}"));
 
     // Who won the match, for game.onmatchend: the team ahead, else the player alone with the
     // most frags; nil for a draw

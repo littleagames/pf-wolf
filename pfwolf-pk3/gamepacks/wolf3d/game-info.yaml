@@ -150,6 +150,22 @@ horde:
   spawn-tics: 35
   max-alive: 12
 
+# Multiplayer cues (Gameplay/Announcer.cs). Each is a sound (sounds/ name) and a message (text or
+# a $language key, in a hud-messages style, default Center), either left out for none. Streaks
+# go by how many rivals a player has killed since they last died, to: self (the default),
+# others or all; %p in a streak's message is the player, %n the count. The slots are empty
+# until there are sounds for them:
+#   3: { sound: announcer/spree, message: "Killing spree!" }
+#   5: { sound: announcer/rampage, message: "%p is on a rampage!", to: all }
+announcer:
+  streaks:
+    3: {}
+    5: {}
+    10: {}
+  match-won: {}
+  match-lost: {}
+  match-draw: {}
+
 # id's demos were recorded on HARD
 demo-skill: HARD
 

@@ -281,6 +281,12 @@ public record GameInfoAsset : Asset
     public KillChainInfo KillChain { get; init; } = new();
 
     /// <summary>
+    /// What players hear (and see) as their kill streaks grow in a versus game and as a match
+    /// ends (Gameplay/Announcer.cs). Nothing when unset.
+    /// </summary>
+    public AnnouncerInfo Announcer { get; init; } = new();
+
+    /// <summary>
     /// How a puzzle's panel looks over the view (Gameplay/Puzzles.cs: a script's game.puzzle):
     /// its frame, colors and fonts. The menu's window in its colors when unset.
     /// </summary>
@@ -1792,6 +1798,49 @@ public record StealthInfo
     /// "Infiltration successful!")
     /// </summary>
     public bool UnseenNoKillsCountsAll { get; init; }
+}
+
+/// <summary>
+/// Game-info `announcer:` (Gameplay/Announcer.cs): cues for a multiplayer match. A kill streak
+/// is how many rivals a player has killed since they last died; each cue under `streaks` is
+/// given as a streak reaches its number. As a match ends, the winners get `match-won`, the rest
+/// `match-lost`, and everyone `match-draw` when nobody's ahead.
+/// </summary>
+public record AnnouncerInfo
+{
+    /// <summary>By a streak's length (3, 5, 10...): the cue as a player's streak reaches it</summary>
+    public Dictionary<int, AnnouncerCue> Streaks { get; init; } = [];
+
+    /// <summary>To the winners: the team ahead, the player with the most frags, or everyone who outlasted a Horde</summary>
+    public AnnouncerCue? MatchWon { get; init; }
+
+    /// <summary>To everyone but the winners</summary>
+    public AnnouncerCue? MatchLost { get; init; }
+
+    /// <summary>To everyone, when the match ends level (the teams' scores, or the top frags, shared)</summary>
+    public AnnouncerCue? MatchDraw { get; init; }
+}
+
+/// <summary>
+/// A sound and a message for an announcer event; either (or both) may be left out. The message is
+/// text or a $language key; in a streak's, %p is the player on it and %n its length.
+/// </summary>
+public record AnnouncerCue
+{
+    /// <summary>A sound's name (sounds/, or a Wolf3D sound's), heard only by the players it's for, unplaced</summary>
+    public string? Sound { get; init; }
+
+    /// <summary>Shown to the players it's for, even with messages off (it's the match's news)</summary>
+    public string? Message { get; init; }
+
+    /// <summary>The hud-messages.yaml style the message is shown in</summary>
+    public string Style { get; init; } = "Center";
+
+    /// <summary>
+    /// A streak's: who it's for: "self" (the player on it; the default), "others" (everyone
+    /// else) or "all". A match's cues go to the winners, the rest, or everyone, whatever this says.
+    /// </summary>
+    public string To { get; init; } = "self";
 }
 
 /// <summary>

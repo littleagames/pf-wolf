@@ -939,6 +939,10 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       rocket suicide ("Client blew themselves up" on the host). **(never tried)** one player
       killing another ("Host killed Client"), an enemy's kill, team modes; on the dead player's
       own screen the scoreboard covers most of it.
+- [ ] Announcer (game-info `announcer:`; Wolf3D ships empty slots): with a mod filling in
+      messages, a 5-minute DM on loopback 2026-11-11 ended with "you won" on the host (0 frags)
+      and "you lost" on the client (-1). **(never tried)** a streak cue (needs one player killing
+      another), `to: others`/`all`, a draw, team modes, Horde, any sound heard, `game.onstreak`.
 
 ## 1.16 Demos
 

@@ -92,6 +92,8 @@ internal sealed partial class GameScripts
         script sees to it, and nobody dies (nor is a time-limit-completes level got through).
     game.onfrag(function(victim, killer) ... end): a frag counted in a versus game (killer the
         victim: one taken off for killing themselves).
+    game.onstreak(function(player, count) ... end): a player's kill streak grown by a rival's kill
+        (count 1 and up: rivals killed since they last died). game-info announcer gives sounds by it.
     game.onflag(function(event, player, team) ... end): capture the flag: a team's flag "taken",
         "dropped", "returned" (by a player of its team), "home" (back by itself) or "captured".
     game.onmatchend(function(winner) ... end): a match over: the winning team ("red", "blue"), or
@@ -133,7 +135,7 @@ internal sealed partial class GameScripts
         "onlevel", "ontick", "onlevelend", "ondamage", "onkill", "ontrypickup", "onpickup", "onsecret", "onuse",
         "onplayerdeath", "onspawn", "onsight", "ondoor", "onpushwall", "onswitch", "onenter", "onexit", "onteleport",
         "onactorspawn", "onrevive", "onfactionchange", "onfire", "onweaponswitch", "ongive", "onpowerup",
-        "onobjective", "onchain", "onstealthkill", "ontimeup", "onfrag", "onflag", "onmatchend", "onchasedir",
+        "onobjective", "onchain", "onstealthkill", "ontimeup", "onfrag", "onstreak", "onflag", "onmatchend", "onchasedir",
         "onhud", "onmusic", "ontally", "onwallbreak", "onpuzzle",
     ];
 
@@ -536,6 +538,10 @@ internal sealed partial class GameScripts
     /// <summary>The scripts' frag hooks, as a frag's counted (Gameplay/Deathmatch.cs)</summary>
     internal void RunFragHooks(Entities.Actors.Actor? victim, Entities.Actors.Actor? killer) =>
         Tell("onfrag", () => [LuaActor.Of(victim), LuaActor.Of(killer)]);
+
+    /// <summary>The scripts' streak hooks, as a player's kill streak grows (Gameplay/Deathmatch.cs): the player and its length</summary>
+    internal void RunStreakHooks(Entities.Actors.Actor? player, int count) =>
+        Tell("onstreak", () => [LuaActor.Of(player), count]);
 
     /// <summary>The scripts' flag hooks, as something happens to a capture-the-flag flag</summary>
     internal void RunFlagHooks(string what, Entities.Actors.Actor? player, int team) =>
