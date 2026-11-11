@@ -80,6 +80,45 @@ public class ActorShadingGameTests
     }
 
     [Test]
+    public void A_Thing_Is_Lit_By_Its_Own_Light_And_Its_Pulse_Plays()
+    {
+        // Arrange: a guard glowing green and pulsing (a mod's), on moody-lights' dim default map
+        // (light 64). The content's lit decorations are all drawn bright, so unshaded anyway.
+        var root = TestPaths.RepoRoot();
+        var mod = Path.Combine(Path.GetTempPath(), "pfwolf-glow-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(mod, "actordefs"));
+        File.WriteAllText(Path.Combine(mod, "modinfo.yaml"), "name: Glow test\ngame-packs: [wolf3d]\n");
+        File.WriteAllText(Path.Combine(mod, "actordefs", "glow.yaml"),
+            "GlowGuard:\n  parent: Guard\n  properties:\n    \"light.intensity\": 180\n    \"light.radius\": 3\n"
+            + "    \"light.color\": \"#40FF40\"\n    \"light.effect\": pulse\n    \"light.low\": 40\n    \"light.tics\": 70\n");
+        try
+        {
+            var actors = new ActorBrowserViewModel();
+            actors.Load(Load("wolf3d", Path.Combine(root, "examples", "mods", "moody-lights"), mod));
+            actors.Show("GlowGuard");
+            actors.SeenFromPlayer = true;
+            actors.Distance = 4;
+            var first = actors.ShadeText;
+
+            // Act: half a second of play, as the window's timer gives it
+            var seen = new HashSet<string> { first };
+            for (int i = 0; i < 18; i++)
+            {
+                actors.Tick(2);
+                seen.Add(actors.ShadeText);
+            }
+
+            // Assert: its light adds to the level's 8 and tints it green; the pulse moves it
+            Assert.That(first, Does.Contain("its light +").And.Contain("tinted #"), first);
+            Assert.That(seen, Has.Count.GreaterThan(1), "the pulse changes how much it adds");
+        }
+        finally
+        {
+            Directory.Delete(mod, recursive: true);
+        }
+    }
+
+    [Test]
     public void Shading_Set_By_Hand_Resolves_As_A_Levels_Own_Would()
     {
         // Arrange: Wolf3D has no shading anywhere

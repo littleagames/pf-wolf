@@ -132,14 +132,45 @@ public sealed partial class ActorBrowserViewModel
     private MapInfo? PreviewMapInfo() =>
         SelectedShadingSource.MapName is { } name ? _content?.GameInfo?.Maps.GetValueOrDefault(name) : null;
 
-    /// <summary>Runs the picked zone's effect (flicker, pulse, strobe) on; true when the light it shows moved a level</summary>
+    /// <summary>
+    /// Runs the picked zone's effect (flicker, pulse, strobe) on, and the class's own light's;
+    /// true when what they show moved
+    /// </summary>
     private bool TickPreviewZone(int tics)
     {
-        if (!SeenFromPlayer || !_previewZones.TryGetValue(SelectedPreviewZone.Id, out var zone))
+        if (!SeenFromPlayer)
             return false;
-        int before = ShadeMath.LightLevelOf(zone.Current);
-        zone.Tick(tics, _zoneRandom);
-        return ShadeMath.LightLevelOf(zone.Current) != before;
+        bool moved = false;
+        if (_previewZones.TryGetValue(SelectedPreviewZone.Id, out var zone))
+        {
+            int before = ShadeMath.LightLevelOf(zone.Current);
+            zone.Tick(tics, _zoneRandom);
+            moved = ShadeMath.LightLevelOf(zone.Current) != before;
+        }
+        if (ShownLight() is { Effect: not ZoneEffect.None } info)
+        {
+            LightEffects.Tick(info.Effect, tics, info.Tics, ref _lightPhase, ref _lightFlicker, _zoneRandom);
+            moved = true;
+        }
+        return moved;
+    }
+
+    // The class's own light (ActorLightInfo, as the game reads it), by the entry shown; where its effect is
+    private ActorEntry? _lightEntry;
+    private ActorLightInfo? _lightInfo;
+    private int _lightPhase, _lightFlicker;
+
+    private ActorLightInfo? ShownLight()
+    {
+        if (Shown is not { } entry)
+            return null;
+        if (!ReferenceEquals(entry, _lightEntry))
+        {
+            var data = entry.Merged ?? entry.Own;
+            (_lightEntry, _lightPhase, _lightFlicker) = (entry, 0, 0);
+            _lightInfo = ActorLightInfo.From(entry.Name, data.Properties, entry.States.Values);
+        }
+        return _lightInfo;
     }
 
     private void DisposeShaded()
@@ -244,15 +275,21 @@ public sealed partial class ActorBrowserViewModel
         PreviewZone? zone = _previewZones.TryGetValue(SelectedPreviewZone.Id, out var state)
             ? new PreviewZone(SelectedPreviewZone.Id, state.Current, ShadingResolver.ParseRgb(state.Color, ShadingResolver.NoTint, "zone color"))
             : null;
+        // Its own light now (ActorLightRules.Current: its class's, changed by the frame's `light:`
+        // and its effect), cast round it as the game casts it (in hand, at the player's spot)
+        var info = ShownLight();
+        var (intensity, radius, color) = ActorLightRules.Current(info, null, frame.Light, _lightPhase, _lightFlicker);
+        SelfLight? self = info != null && (intensity > 0 || info.Sets) ? new SelfLight(intensity, radius, color, info.Sets) : null;
+
         var shade = _shadePreview.Shade(_content.Palette, settings, Math.Clamp(Distance, NearestDistance, FarthestDistance),
-            inHand, bright, lighten, _previewZones.Count > 0, zone);
+            inHand, bright, lighten, _previewZones.Count > 0, zone, self);
         notes.Insert(0, shade.Text);
-        if (settings == null && _previewZones.Count == 0 && notes.Count == 1)
+        if (settings == null && _previewZones.Count == 0 && notes.Count == 1 && self is not { Sets: true })
             notes.Add(SelectedShadingSource.MapName == null
                 ? "the game's default map has no shading: pick a level, or set some by hand"
                 : "this level has no shading");
-        if (frame.Light != null)
-            notes.Add("its own light isn't shown");
+        if (self != null && !ShadePreview.Shades(settings, _previewZones.Count > 0 || zone != null) && !self.Sets)
+            notes.Add("its light can't show at full light");
         notes.AddRange(_lightenWarnings);
         return shade with { Text = string.Join("; ", notes) };
     }

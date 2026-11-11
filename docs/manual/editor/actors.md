@@ -43,8 +43,11 @@ Ready, anything else on Spawn.
   then faded toward the fade color by the distance, less the class's `lighten` or the frame's
   `lighten(level)`. A `bright` frame (or a class with the bright flag or `lighten: bright`) is
   unshaded at any distance, and a weapon's frames in hand are lit but never faded, as in the
-  game. The line under it gives the fade step and light level. A frame's own `light` (the glow
-  it casts) isn't shown.
+  game. The line under it gives the fade step and light level. A class that gives off light
+  (`light.*`, or a frame's `light:`) is lit by its own light as the game lights it where it
+  stands: brighter, and tinted by a coloured light; its flicker, pulse or strobe plays along, and
+  the line says how many light levels its light adds. A bright frame is unshaded anyway, and a
+  light can't show on a level at full light (except a set light, which can darken).
   - **Shading from**: the default map's shading (Blake Stone's distance darkening; Wolfenstein 3D
     and Spear have none), or a level's that has shading or light zones of its own, the loaded
     mods' too, resolved as the game resolves it.

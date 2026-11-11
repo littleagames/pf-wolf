@@ -237,3 +237,31 @@ Planned 2026-11-11.
     exactly: the enemy varies run to run.
   - The switch-demo light room still isn't repeatable even seeded (the flicker depends on how
     tics fall into frames); the seeded `lightgrid` hash covers its lamp.
+- Committed adea2e4f (the full suite, 3842, passed).
+
+**Phase 1 done 2026-11-11** (the frame's own light in the actor preview):
+- `ShadePreview.LightOnItself(base level, base tint, SelfLight?)`:
+  - a 5×5 `LightGrid` of open floor (an `ILightMap` that lets light everywhere), every tile at
+    the zone's or level's light and tint;
+  - the frame's light is cast from the middle of the middle tile by `LightCaster`, with
+    `ColorTints` on the grid's tints;
+  - then it reads `LightAt` at that spot, giving the level, the tint and how much the light
+    added.
+- `Shade(...)` takes a `SelfLight` (intensity, radius, colour, set): a set light turns shading
+  on for an unshaded level, as `Lighting.ActorShading` does. The caption adds "its light +N
+  levels" and the tint.
+- The view model reads the class's light with `ActorLightInfo.From`, once per entry shown.
+  `ActorLightRules.Current` (no override) gives its light now, with the frame's `light:`. Its
+  effect ticks with the preview on the zones' Random and redraws. A light on a level at full
+  light is said ("its light can't show at full light").
+- Found: every lit decoration in the content (the game's lamps, moody-lights', the demo mods')
+  is drawn bright, so unshaded, so its own light doesn't show on it in the game either. The
+  preview agrees.
+- Tests:
+  - `ShadePreviewTests.A_Things_Own_Light_On_Itself_Is_The_Games`: 7 lights (white, amber,
+    flash, small, set at full light, tinted set on a dark level, a dark set light) against the
+    game's `ActorLights.CastActorLights` + `Lighting.LightAt` at the lamp's spot: same row.
+  - `ActorShadingGameTests.A_Thing_Is_Lit_By_Its_Own_Light_And_Its_Pulse_Plays`: a temp mod's
+    green pulsing guard on moody-lights.
+- Checked in the editor: that guard tinted green, its brightness moving with the pulse. Docs:
+  manual actors.md, manual-testing 2.19.

@@ -180,6 +180,51 @@ public class ShadePreviewTests
         Assert.That(ShadingResolver.ResolveZones(edited, defaults).Keys, Is.EqualTo(new[] { 1 }), "an ambient-only zone isn't a light zone");
     }
 
+    // (intensity, radius, color, set light, the level's light)
+    [TestCase(160, 2.5, null, false, 64)]
+    [TestCase(255, 3, "#FFB060", false, 40)]
+    [TestCase(200, 3, "#FFD890", false, 120)]
+    [TestCase(90, 1, null, false, 200)]
+    [TestCase(64, 3, null, true, 255)]
+    [TestCase(255, 3, "#FFFFC0", true, 30)]
+    [TestCase(0, 2, null, true, 180)]
+    public void A_Things_Own_Light_On_Itself_Is_The_Games(int intensity, double radius, string? color, bool sets, int levelLight)
+    {
+        // Arrange: the game's level, open floor, a lamp in the middle of a tile
+        var session = new GameSession();
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets")), null!, session, null)
+        {
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+        };
+        typeof(MapManager).GetField("mapsegs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
+        ActorLights? lights = null;
+        var lighting = new Lighting(null!, LightingTests.GreyVideo(), map,
+            new LightingHooks(() => ShadePreview.HeightNumerator, () => lights?.ColorTintTables.Clear(), tics => lights?.TickActorLights(tics)));
+        lights = new ActorLights(map, new Doors(null!, null!, map, null!, null!, session, null!), lighting, session);
+        var settings = new ShadingSettings("#000000", 2, 12, 60, levelLight);
+        lighting.SetShading(settings);
+        lighting.UpdateLightGrid();
+        var lamp = new PFWolf.Entities.Actors.Monster { Name = "Lamp", X = 10 * (int)Tile + (int)Tile / 2, Y = 10 * (int)Tile + (int)Tile / 2, TileX = 10, TileY = 10 };
+        lamp.Properties["light.intensity"] = intensity;
+        lamp.Properties["light.radius"] = radius;
+        if (color != null)
+            lamp.Properties["light.color"] = color;
+        if (sets)
+            lamp.Properties["light.mode"] = "set";
+        map.GetActors().AddLast(lamp);
+        lights.CastActorLights();
+        var game = lighting.LightAt(lighting.TileIndex(10, 10), lamp.X, lamp.Y);
+
+        // Act: the preview, in hand (no fade, so the row alone)
+        var shade = new ShadePreview().Shade(GreyRamp(), settings, 4, inHand: true, bright: false, lighten: 0,
+            self: new SelfLight(intensity, radius, color, sets));
+
+        // Assert
+        Assert.That(shade.Row, Is.EqualTo(game));
+    }
+
     [Test]
     public void Remapping_Leaves_See_Through_Pixels_See_Through()
     {
