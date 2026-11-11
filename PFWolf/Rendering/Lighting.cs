@@ -34,8 +34,9 @@ internal sealed class Lighting(
     MapManager map,
     LightingHooks hooks)
 {
-    internal const int LightLevels = 32;    // light 0 (black) to LightLevels - 1 (full)
-    internal const int FadeSteps = 32;      // step 0 (none) to FadeSteps - 1 (all the fade color)
+    // The numbers are PFWolf.Common's (Shading/ShadeMath.cs), shared with the editor's previews
+    internal const int LightLevels = ShadeMath.LightLevels;
+    internal const int FadeSteps = ShadeMath.FadeSteps;
 
     internal static readonly byte[] NoShade = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
 
@@ -46,59 +47,22 @@ internal sealed class Lighting(
     internal Dictionary<int, ZoneState> LevelZones = [];     // RegisterZoneLightActions
     internal bool Shading;                // anything to do: something is dimmed, tinted or faded
     internal byte[] LightRow = NoShade;   // the level's light's row
-    internal byte FadeR, FadeG, FadeB;
-    internal long FadeStart, FadeEnd;     // along the view, in global units (TileGlobal a tile)
-    internal int MaxFadeStep;
-    internal bool InverseFade;            // fade-curve inverse: MaxFadeStep × (1 − FadeStart / nx)
+    internal FadeParams Fade;             // the level's fade, as RebuildShading last made it
+    internal byte FadeR => Fade.R;
+    internal byte FadeG => Fade.G;
+    internal byte FadeB => Fade.B;
+    internal long FadeStart => Fade.Start;    // along the view, in global units (TileGlobal a tile)
+    internal long FadeEnd => Fade.End;
+    internal int MaxFadeStep => Fade.MaxFadeStep;
+    internal bool InverseFade => Fade.Inverse;    // fade-curve inverse: MaxFadeStep × (1 − FadeStart / nx)
 
-    /// <summary>
-    /// The map's shading, each value it leaves out taken from the default map's, else the
-    /// ShadingInfo defaults; null when neither has any.
-    /// </summary>
-    internal static ShadingSettings? ResolveShading(MapInfo? mapInfo, DefaultMapInfo defaultMap)
-    {
-        ShadingInfo? map = mapInfo?.Shading, fallback = defaultMap.Shading;
-        if (map == null && fallback == null)
-            return null;
+    /// <inheritdoc cref="ShadingResolver.ResolveShading"/>
+    internal static ShadingSettings? ResolveShading(MapInfo? mapInfo, DefaultMapInfo defaultMap) => ShadingResolver.ResolveShading(mapInfo, defaultMap);
 
-        return new ShadingSettings(
-            map?.FadeColor ?? fallback?.FadeColor ?? "#000000",
-            map?.FadeStart ?? fallback?.FadeStart ?? 0,
-            map?.FadeEnd ?? fallback?.FadeEnd ?? 16,
-            map?.MaxFade ?? fallback?.MaxFade ?? 100,
-            map?.Light ?? fallback?.Light ?? 255,
-            IsInverseCurve(map?.FadeCurve ?? fallback?.FadeCurve));
-    }
+    internal static bool IsInverseCurve(string? curve) => ShadingResolver.IsInverseCurve(curve);
 
-    internal static bool IsInverseCurve(string? curve)
-    {
-        if (string.IsNullOrEmpty(curve) || curve.Equals("linear", StringComparison.OrdinalIgnoreCase))
-            return false;
-        if (curve.Equals("inverse", StringComparison.OrdinalIgnoreCase))
-            return true;
-        if (BadColors.Add("fade-curve:" + curve))
-            Console.WriteLine($"Unknown shading fade-curve '{curve}' (linear or inverse); using linear");
-        return false;
-    }
-
-    /// <summary>
-    /// The map's light zones and the default map's, a map's zone taking each value it leaves
-    /// out from the default map's zone of the same id, else the ZoneInfo defaults. A zone that
-    /// only has ambient sound, in both, isn't one: its tiles keep the level's light.
-    /// </summary>
-    internal static Dictionary<int, ZoneState> ResolveZones(MapInfo? mapInfo, DefaultMapInfo defaultMap)
-    {
-        var zones = new Dictionary<int, ZoneState>();
-        var mapZones = mapInfo?.Zones ?? [];
-        foreach (var id in defaultMap.Zones.Keys.Union(mapZones.Keys))
-        {
-            ZoneInfo? map = mapZones.GetValueOrDefault(id), fallback = defaultMap.Zones.GetValueOrDefault(id);
-            if (map is { HasLight: false } && fallback is not { HasLight: true } || map == null && fallback is { HasLight: false })
-                continue;
-            zones[id] = ZoneState.FromInfo(map, fallback);
-        }
-        return zones;
-    }
+    /// <inheritdoc cref="ShadingResolver.ResolveZones"/>
+    internal static Dictionary<int, ZoneState> ResolveZones(MapInfo? mapInfo, DefaultMapInfo defaultMap) => ShadingResolver.ResolveZones(mapInfo, defaultMap);
 
     /// <summary>Shades the level with settings (null for none) until it's left or reloaded.</summary>
     internal void SetShading(ShadingSettings? settings)
@@ -122,11 +86,7 @@ internal sealed class Lighting(
         if (!Shading)
             return;
 
-        (FadeR, FadeG, FadeB) = ParseRgb(s.FadeColor, (0, 0, 0), "shading fade-color");
-        FadeStart = (long)(Math.Max(s.FadeStart, 0) * MapConstants.TileGlobal);
-        FadeEnd = Math.Max((long)(s.FadeEnd * MapConstants.TileGlobal), FadeStart + 1);
-        MaxFadeStep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FadeSteps - 1));
-        InverseFade = s.InverseFade;
+        Fade = FadeParams.From(s);
 
         ResetLightRows();
         AmbientLevel = LightLevelOf(s.Light);
@@ -155,119 +115,69 @@ internal sealed class Lighting(
         }
     }
 
-    internal static readonly HashSet<string> BadColors = [];
+    internal static HashSet<string> BadColors => ShadingResolver.BadColors;
 
     // A #RRGGBB color, or fallback when there's none or it isn't one (warned about once)
-    internal static (byte R, byte G, byte B) ParseRgb(string? color, (byte, byte, byte) fallback, string what)
-    {
-        if (string.IsNullOrEmpty(color))
-            return fallback;
-        try
-        {
-            var c = Color.FromHexRGBA(color);
-            return (c.Red, c.Green, c.Blue);
-        }
-        catch (Exception e) when (e is ArgumentException or FormatException)
-        {
-            if (BadColors.Add(color))
-                Console.WriteLine($"The {what} '{color}' isn't #RRGGBB; using #{fallback.Item1:X2}{fallback.Item2:X2}{fallback.Item3:X2}");
-            return fallback;
-        }
-    }
+    internal static (byte R, byte G, byte B) ParseRgb(string? color, (byte, byte, byte) fallback, string what) =>
+        ShadingResolver.ParseRgb(color, fallback, what);
 
     // The light level (0 to LightLevels - 1) for a light (0 to 255)
-    internal static int LightLevelOf(int light) => (int)Math.Round(Math.Clamp(light, 0, 255) / 255.0 * (LightLevels - 1));
+    internal static int LightLevelOf(int light) => ShadeMath.LightLevelOf(light);
 
     // The light row for a light level with a tint
     internal byte[] LevelRow(int level, (byte R, byte G, byte B) tint) =>
         Shading ? video.GetLightRow(level, LightLevels, FadeSteps, FadeR, FadeG, FadeB, tint.R, tint.G, tint.B) : NoShade;
 
     /// <summary>Where the remap for something nx away along the view (global units) starts in a light row.</summary>
-    internal int ShadeOffset(long nx)
-    {
-        if (!Shading || nx <= FadeStart || MaxFadeStep == 0)
-            return 0;
-        if (InverseFade)
-            return (int)(MaxFadeStep - MaxFadeStep * FadeStart / nx) * 256;
-        if (nx >= FadeEnd)
-            return MaxFadeStep * 256;
-        return (int)((nx - FadeStart) * MaxFadeStep / (FadeEnd - FadeStart)) * 256;
-    }
+    internal int ShadeOffset(long nx) => !Shading ? 0 : ShadeMath.ShadeOffset(nx, Fade);
 
     /// <summary>ShadeOffset for something drawn height high (as WallHeight: a story is height >> 2 pixels).</summary>
     internal int ShadeOffsetForHeight(int height) =>
-        !Shading ? 0 : ShadeOffset(height > 0 ? (long)hooks.HeightNumerator() * 256 / height : long.MaxValue);
+        !Shading ? 0 : ShadeMath.ShadeOffsetForHeight(height, hooks.HeightNumerator(), Fade);
 
     /// <summary>
     /// Whether an actor's frame is drawn unshaded: its state has the bright modifier (or
     /// lighten(bright)), or the actor the BRIGHT flag (or `lighten: bright`)
     /// </summary>
-    internal static bool IsBright(Entities.Actors.Actor actor) =>
-        actor.CurrentState?.Bright == true || actor.HasFlag("bright")
-        || actor.Properties.TryGetValue("lighten", out var level) && IsBrightLevel(level?.ToString());
+    internal static bool IsBright(Entities.Actors.Actor actor)
+    {
+        bool hasOwn = actor.Properties.TryGetValue("lighten", out var level);
+        return ActorShadingRules.IsBright(actor.CurrentState?.Bright == true, actor.HasFlag("bright"), hasOwn, level?.ToString());
+    }
 
     /// <summary>
-    /// How many fade steps (of <see cref="FadeSteps"/>) less an actor darkens with distance: its
-    /// `lighten` (Blake Stone's lamps, lit a little rather than drawn unshaded) or its state's
-    /// lighten(level) modifier (an explosion), whichever is more when it has both. A level is a
-    /// number of steps or a game-info lighten-levels name; below 0 is darker (a flickering
-    /// light's dim frames).
+    /// How many fade steps (of <see cref="FadeSteps"/>) less an actor darkens with distance
+    /// (<see cref="ActorShadingRules.Lighten"/>), with the game's lighten levels
     /// </summary>
     internal static int Lighten(Entities.Actors.Actor actor)
     {
         bool hasOwn = actor.Properties.TryGetValue("lighten", out var level);
-        string? stateLevel = actor.CurrentState?.LightenLevel;
-        if (stateLevel == null)
-            return hasOwn ? LevelSteps(level?.ToString()) : 0;
-        return hasOwn ? Math.Max(LevelSteps(level?.ToString()), LevelSteps(stateLevel)) : LevelSteps(stateLevel);
+        return ActorShadingRules.Lighten(hasOwn, level?.ToString(), actor.CurrentState?.LightenLevel, Levels);
     }
 
     /// <summary>A sprite's shade offset: its distance's, less its lighten's steps, within the level's fade</summary>
-    internal int LightenedShadeOffset(int height, int lighten) =>
-        Math.Clamp(ShadeOffsetForHeight(height) - lighten * 256, 0, MaxFadeStep * 256);
+    internal int LightenedShadeOffset(int height, int lighten) => ShadeMath.Lightened(ShadeOffsetForHeight(height), lighten, Fade);
 
     /// <summary>The name that draws something unshaded, as the bright flag does</summary>
-    internal const string BrightLevel = "bright";
+    internal const string BrightLevel = LightenLevelTable.BrightLevel;
 
-    internal static bool IsBrightLevel(string? level) => string.Equals(level, BrightLevel, StringComparison.OrdinalIgnoreCase);
+    internal static bool IsBrightLevel(string? level) => LightenLevelTable.IsBrightLevel(level);
 
-    // The named lighten levels in use: game-info lighten-levels, with the `lighten` command's changes over them
-    static readonly Dictionary<string, int> levels = new(StringComparer.OrdinalIgnoreCase);
-    static readonly Dictionary<string, int> levelChanges = new(StringComparer.OrdinalIgnoreCase);
-    static readonly HashSet<string> unknownLevels = new(StringComparer.OrdinalIgnoreCase);
+    // The named lighten levels in use: game-info lighten-levels, with the `lighten` command's
+    // changes over them for the rest of the session
+    internal static readonly LightenLevelTable Levels = new();
 
     /// <summary>The named lighten levels as they are now (game-info's, with any the `lighten` command changed)</summary>
-    internal static IReadOnlyDictionary<string, int> LightenLevels => levels;
+    internal static IReadOnlyDictionary<string, int> LightenLevels => Levels.Levels;
 
     /// <summary>Takes the game's named lighten levels (game-info lighten-levels), keeping the `lighten` command's changes</summary>
-    internal static void SetLightenLevels(IReadOnlyDictionary<string, int> fromGameInfo)
-    {
-        levels.Clear();
-        foreach (var (name, steps) in fromGameInfo)
-            levels[name] = steps;
-        foreach (var (name, steps) in levelChanges)
-            levels[name] = steps;
-    }
+    internal static void SetLightenLevels(IReadOnlyDictionary<string, int> fromGameInfo) => Levels.Set(fromGameInfo);
 
     /// <summary>Changes a named lighten level for the rest of the session (the `lighten` command)</summary>
-    internal static void ChangeLightenLevel(string name, int steps)
-    {
-        levelChanges[name] = levels[name] = steps;
-    }
+    internal static void ChangeLightenLevel(string name, int steps) => Levels.Change(name, steps);
 
     /// <summary>A lighten level's fade steps: a number, a name's (warned of once if there's no such name), else 0</summary>
-    internal static int LevelSteps(string? level)
-    {
-        if (string.IsNullOrEmpty(level) || IsBrightLevel(level))
-            return 0;
-        if (int.TryParse(level, out var steps))
-            return steps;
-        if (levels.TryGetValue(level, out steps))
-            return steps;
-        if (unknownLevels.Add(level))
-            Console.WriteLine($"Unknown lighten level '{level}': give it in game-info lighten-levels, or use a number of fade steps");
-        return 0;
-    }
+    internal static int LevelSteps(string? level) => Levels.Steps(level);
 
     internal void InitLevelShading(MapInfo? mapInfo)
     {
@@ -285,7 +195,7 @@ internal sealed class Lighting(
     internal const int LightCellShift = 3;
     internal const int LightCells = 1 << LightCellShift;                    // cells a tile, each way
     internal const int CellGlobalShift = MapConstants.TileShift - LightCellShift;    // global units to cells
-    internal const int MaxLightLevel = LightLevels - 1;
+    internal const int MaxLightLevel = ShadeMath.MaxLightLevel;
 
     // Cells across and down the level: LightCells a tile each way (SizeToLevel)
     internal int GridWidth { get; private set; } = MapConstants.ClassicMapSize << LightCellShift;
@@ -339,7 +249,7 @@ internal sealed class Lighting(
     internal int GridVersion;             // the MapManager.ZonesVersion they were built for
     internal bool HasZones;               // some tile's base light isn't the level's
 
-    internal static readonly (byte, byte, byte) NoTint = (255, 255, 255);
+    internal static readonly (byte, byte, byte) NoTint = ShadingResolver.NoTint;
 
     /// <summary>A tint's index in tints, added if it's new.</summary>
     internal byte TintIndex((byte R, byte G, byte B) tint)
@@ -429,8 +339,7 @@ internal sealed class Lighting(
     // Flickering is only for show, so it doesn't draw on the game's random numbers (demos)
     internal static readonly Random ZoneRandom = new();
 
-    internal static bool TryParseZoneEffect(string name, out ZoneEffect effect) =>
-        Enum.TryParse(name, ignoreCase: true, out effect) && Enum.IsDefined(effect);
+    internal static bool TryParseZoneEffect(string name, out ZoneEffect effect) => ShadingResolver.TryParseZoneEffect(name, out effect);
 
     /// <summary>Runs the zones' fades and effects for this tic's worth of time.</summary>
     // The Lighting setting as RebuildShading last found it
@@ -646,11 +555,7 @@ internal sealed class Lighting(
         return false;
     }
 
-    internal static bool IsRgb(string color)
-    {
-        try { Color.FromHexRGBA(color); return color.TrimStart('#').Length == 6; }
-        catch (Exception e) when (e is ArgumentException or FormatException) { return false; }
-    }
+    internal static bool IsRgb(string color) => ShadingResolver.IsRgb(color);
 
     /*
     =============================================================================

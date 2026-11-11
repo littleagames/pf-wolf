@@ -9,3 +9,4 @@ global using PFWolf.Commands;
 global using PFWolf.SaveGames;
 global using PFWolf.Ui;
 global using PFWolf.Rendering;
+global using PFWolf.Shading;

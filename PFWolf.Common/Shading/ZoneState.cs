@@ -1,19 +1,18 @@
 using PFWolf.Assets;
-using PFWolf.Entities;
 
-namespace PFWolf;
+namespace PFWolf.Shading;
 
 /// <summary>A level's shading, with every value filled in (see ShadingInfo)</summary>
-internal record struct ShadingSettings(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light, bool InverseFade = false);
+public record struct ShadingSettings(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light, bool InverseFade = false);
 
-internal enum ZoneEffect : byte { None, Flicker, Pulse, Strobe }
+public enum ZoneEffect : byte { None, Flicker, Pulse, Strobe }
 
 /// <summary>
 /// How an effect moves a light between low and its light, for light zones and actor lights
 /// alike. An effect's place is a phase (tics into a pulse or strobe cycle, or for a flicker,
 /// tics until it jumps again) and, for a flicker, how far toward low it jumped (0 to 256).
 /// </summary>
-internal static class LightEffects
+public static class LightEffects
 {
     public static int DefaultTics(ZoneEffect effect) => effect switch
     {
@@ -67,7 +66,7 @@ internal static class LightEffects
 /// A light zone as it stands: its light (game-info zones, changed by switches and actors), its
 /// tint, a fade in progress and an effect. Saved with the level.
 /// </summary>
-internal sealed class ZoneState
+public sealed class ZoneState
 {
     /// <summary>The light, 0 to 255: where a fade in progress is heading</summary>
     public int Light = 255;
@@ -86,8 +85,9 @@ internal sealed class ZoneState
     // jumps again, and how far toward Low it jumped (0 to 256)
     public int Phase, FlickerAmount;
 
-    // The light level and tint (an index in GameHost's tints) its tiles have in the light grid,
-    // and the color the tint is for; RowLevel -1 until they're set
+    // The game's light grid bookkeeping: the light level and tint (an index in the game's
+    // Lighting.Tints) its tiles have in the light grid, and the color the tint is for; RowLevel
+    // -1 until they're set. Not saved.
     public int RowLevel = -1;
     public byte RowTint;
     public string? RowColor;
@@ -126,7 +126,7 @@ internal sealed class ZoneState
             BrightTics = Math.Max(map?.BrightTics ?? fallback?.BrightTics ?? 5, 0),
         };
         var effect = map?.Effect ?? fallback?.Effect;
-        if (effect != null && !Lighting.TryParseZoneEffect(effect, out zone.Effect))
+        if (effect != null && !ShadingResolver.TryParseZoneEffect(effect, out zone.Effect))
             Console.WriteLine($"Unknown zone effect '{effect}' (none, flicker, pulse or strobe)");
         return zone;
     }

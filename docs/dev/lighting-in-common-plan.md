@@ -5,8 +5,8 @@ and the bright / lighten rules, and how game-info shading and zones resolve) out
 project into PFWolf.Common, so the editor can draw things shaded exactly as the game does.
 First use: the actor editor's "seen from the player" preview, the one piece
 `docs/dev/actor-editor-plan.md` phase 4 left out. Later: the map editor's 3D view switches from
-its RGB look-alike to the same tables. Branch: not started (feature/imf-editor, where the actor
-and font editors are).
+its RGB look-alike to the same tables. Branch: feature/editor/actor-editor, with the actor
+editor.
 
 Decided (2026-11-11, by the user):
 - **Math and rules move, renderer state stays.** Into Common: the light-row builder (the
@@ -227,4 +227,34 @@ the preview.
 
 ## Status
 
-Planned 2026-11-11; nothing built.
+Planned 2026-11-11.
+
+**Phase 0 done 2026-11-11** (shading in Common):
+- PFWolf.Common/Shading (namespace `PFWolf.Shading`, a global using in the game and the tests):
+  `ShadeMath` (LightLevels, FadeSteps, MaxLightLevel, LightLevelOf, ShadeOffset,
+  ShadeOffsetForHeight, `Lightened`) with `FadeParams.From(settings)`; `LightRowBuilder`
+  (GetLightRow's tables and the CIELAB match, one per palette); `LightenLevelTable` (named
+  that, not `LightenLevels`, which `Lighting` already has as a property; a `Warn` sink, the
+  console by default); `ActorShadingRules` (IsBright, Lighten, taking whether the class has a
+  `lighten` key, since an empty one still counts); `ShadingResolver` (ResolveShading,
+  ResolveZones, IsInverseCurve, ParseRgb, IsRgb, TryParseZoneEffect, BadColors, NoTint).
+  `ShadingSettings`, `ZoneEffect`, `LightEffects` and `ZoneState` moved with `git mv`
+  (`PFWolf/LightingTypes.cs` → `Shading/ZoneState.cs`, now public). `ZoneState` keeps its
+  RowLevel / RowTint / RowColor fields, marked as the game's grid bookkeeping (not saved).
+- The game: `Lighting` keeps every member, the moved ones now one-line calls (`Fade` holds the
+  level's `FadeParams`; FadeR...InverseFade read from it); `VideoManager.GetLightRow` makes a
+  `LightRowBuilder` from the game palette on first use and again after `Init`. No renderer
+  file changed. `GetDarkenTable` (menus' dim, RGB-matched) stayed in `VideoManager`: the
+  editor doesn't need it.
+- Checked: `ShadingSnapshotTests` (Content, ~15 s; `PFWOLF_SHADING_SNAPSHOT=<file>` writes
+  it), written and run before anything moved, was byte-identical after (442 KB: all 32 light
+  levels of each fade color × tint the games using a palette have, 150 such sets over the
+  wolfpal / spearpal / blake palettes (7 fade colors, 18 tints in all), and darken tables;
+  each map's shading, its fade fields and fade steps at 0-64 tiles and heights 0-8192 at three
+  height numerators with five lighten values; each map's zones with their save bytes; bright /
+  lighten for every frame of every class in the 7 games, Multiplayer and 43 example mods).
+  Headless screenshots (scratchpad shots.ps1: `--warp`, `--exec "wait 35; screenshot"` under
+  SDL's dummy driver) were the same before and after: Wolf3D E1M1, Blake MAP01 + MAP02, Planet
+  Strike MAP01, moody-lights, weather-demo and E1M1 with the console's `fog #808080 1 8 90;
+  light 140`. switch-demo's light room was left out: its flickering lamp (own Random) differs
+  from one run to the next.
