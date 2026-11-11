@@ -110,6 +110,10 @@
           <DropDownButton Grid.Column="6" Content="More" VerticalAlignment="Top">
             <DropDownButton.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedRight">
+                <MenuItem Header="Edit the frame's picture…" Command="{Binding EditPictureCommand}"
+                          ToolTip.Tip="The sprite the preview shows, from the view picked, in the pixel editor; a view it lacks is started there, blank" />
+                <MenuItem Header="Put it on the map" Command="{Binding PlaceOnMapCommand}"
+                          ToolTip.Tip="Its mapdefs thing picked in the map's palette, to put down on the level open" />
                 <MenuItem Header="Show sprite" Command="{Binding ShowSpriteCommand}"
                           ToolTip.Tip="The sprite the preview shows, in the textures and sprites window (F6)" />
                 <MenuItem Header="Open in the Definitions window" Command="{Binding EditInDefinitionsCommand}"
@@ -146,6 +150,8 @@
               <Button Content="Next frame" Command="{Binding StepFrameCommand}" ToolTip.Tip="On to the frame after this one, its actions told (Right arrow)" />
               <Button Content="Restart" Command="{Binding RestartCommand}" ToolTip.Tip="The state from its first frame again (Home)" />
               <ComboBox ItemsSource="{Binding Speeds}" SelectedItem="{Binding SelectedSpeed}" ToolTip.Tip="How fast: 1× is the game's 70 tics a second" />
+              <CheckBox Content="Sounds" IsChecked="{Binding PlaySounds}"
+                        ToolTip.Tip="Its sounds play as the preview passes the actions that make them (A_PlaySound, its deathsound on A_DeathScream, attacksound on T_Shoot, seesound going from Spawn to Chase)" />
               <CheckBox Content="Follow next-state" IsChecked="{Binding FollowNext}"
                         ToolTip.Tip="Going on into the state its frames lead to (Attack into Chase), as the game does; off, the state picked plays again" />
               <TextBlock Text="Zoom" VerticalAlignment="Center" />
@@ -172,6 +178,7 @@
             <TextBlock Text="{Binding TicText}" Opacity="0.85" />
             <TextBlock Text="{Binding RunningText}" Opacity="0.85" TextWrapping="Wrap" />
             <TextBlock Text="{Binding EventText}" Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding SoundText}" Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding IsStuck}">
               <TextBlock Text="{Binding JumpText}" Foreground="#E0A030" TextWrapping="Wrap" VerticalAlignment="Center" />
               <Button Grid.Column="1" Content="Go on" Command="{Binding GoOnCommand}" />
@@ -239,6 +246,8 @@
                 <Button Content="Take out" Command="{Binding DeleteFrameCommand}" ToolTip.Tip="This frame out of the state" />
                 <Button Content="←" Command="{Binding MoveFrameLeftCommand}" ToolTip.Tip="Earlier in the state" />
                 <Button Content="→" Command="{Binding MoveFrameRightCommand}" ToolTip.Tip="Later in the state" />
+                <Button Content="Edit picture…" Command="{Binding EditPictureCommand}"
+                        ToolTip.Tip="The frame's sprite from the view picked, in the pixel editor; a view it lacks is started there, blank" />
                 <Border Width="12" />
                 <Button Content="+ State…" Command="{Binding AddStateCommand}" ToolTip.Tip="A state of its own: a parent's of the name to start from, else this frame, looping" />
                 <Button Content="Rename…" Command="{Binding RenameStateCommand}" ToolTip.Tip="Its own state renamed, and its own states going on to it" />
@@ -333,6 +342,8 @@
         <TabItem Header="Used by">
           <DockPanel Margin="0,4,0,0">
             <WrapPanel DockPanel.Dock="Bottom" ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+              <Button Content="Put it on the map" Command="{Binding PlaceOnMapCommand}"
+                      ToolTip.Tip="Its mapdefs thing picked in the map's palette, to put down on the level open" />
               <Button Content="Go to" Command="{Binding GoToUseCommand}"
                       ToolTip.Tip="Opens the use picked: the class here, its entry in the Definitions window, its line in the script browser, or the level at the first one placed (or double-click it)" />
             </WrapPanel>

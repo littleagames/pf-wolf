@@ -315,6 +315,73 @@ public class ActorEditingTests
     }
 
     [Test]
+    public void The_Preview_Says_The_Sounds_Its_Actions_Make_Quietly_Unless_Asked()
+    {
+        // Arrange: sounds off (the default): nothing plays, the line still says what would
+        var actors = GuardAttack();
+        Assert.That(actors.PlaySounds, Is.False);
+        actors.Playing = true;
+
+        // Act: its shot (T_Shoot as the second frame ends)
+        actors.Tick(40);
+
+        // Assert
+        Assert.That(actors.SoundText, Is.EqualTo("Sound: guard/attack"));
+
+        actors.SelectedState = "Death";
+        actors.Tick(20);
+        Assert.That(actors.SoundText, Is.EqualTo("Sound: guard/death"));
+    }
+
+    [Test]
+    public void Sounds_Are_The_Actions_Own_Or_The_Class_Property_The_Engine_Plays()
+    {
+        var guard = ActorCatalog.Build(Load("wolf3d"), levels: false).Single(entry => entry.Name == "Guard").Merged!;
+
+        Assert.That(ActorSoundPreview.SoundOf("A_PlaySound(\"misc/yeah\", \"positional\")", guard), Is.EqualTo("misc/yeah"));
+        Assert.That(ActorSoundPreview.SoundOf("A_DeathScream", guard), Is.EqualTo("guard/death"));
+        Assert.That(ActorSoundPreview.SoundOf("T_Shoot", guard), Is.EqualTo("guard/attack"));
+        Assert.That(ActorSoundPreview.SoundOf("A_Look", guard), Is.Null);
+        Assert.That(ActorSoundPreview.SoundOfGoing("Spawn", "Chase", guard), Is.EqualTo("guard/sight"));
+        Assert.That(ActorSoundPreview.SoundOfGoing("Attack", "Chase", guard), Is.Null);
+    }
+
+    [Test]
+    public void Edit_Picture_Asks_For_The_Frames_Sprite_Or_A_View_It_Lacks()
+    {
+        var actors = GuardAttack();
+        var asked = new List<SpritePictureRequest>();
+        actors.PictureEditRequested += (_, request) => asked.Add(request);
+
+        // The frame shown: a guard shooting faces the player, a sprite with one view
+        actors.SelectedView = 3;
+        actors.EditPictureCommand.Execute(null);
+        Assert.That(asked[^1], Is.EqualTo(new SpritePictureRequest("GARDF0", true)));
+
+        // A sprite the game hasn't got: started blank
+        actors.FrameSprite = "ZZZZ";
+        actors.EditPictureCommand.Execute(null);
+        Assert.That(asked[^1], Is.EqualTo(new SpritePictureRequest("ZZZZF3", false)));
+    }
+
+    [Test]
+    public void A_Class_A_Mapdefs_Thing_Places_Can_Be_Put_On_The_Map()
+    {
+        var actors = new ActorBrowserViewModel();
+        actors.Load(Load("wolf3d"));
+        var placed = new List<string>();
+        actors.PlaceRequested += (_, name) => placed.Add(name);
+
+        actors.Show("Guard");
+        actors.PlaceOnMapCommand.Execute(null);
+        actors.Show("Monster");
+        actors.PlaceOnMapCommand.Execute(null);
+
+        Assert.That(placed, Is.EqualTo(new[] { "Guard" }));
+        Assert.That(actors.Status, Does.Contain("No mapdefs thing is a Monster"));
+    }
+
+    [Test]
     public void A_Copy_Is_The_Class_As_Written_Under_A_New_Name()
     {
         var answers = new Queue<string>(["GuardCopy", ""]);

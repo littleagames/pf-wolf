@@ -282,3 +282,23 @@ Planned 2026-11-10.
 - Checked by screenshots: the Frame tab on the Guard's Chase (paused by Next frame after Attack
   went on into it), the letter picker's picture. Not tried by hand: drag, saving a state change,
   light/particles.
+
+**Phase 4 done 2026-11-10** (extras); every phase of the plan is done:
+- `ActorSoundPreview` (Data): the sound an action makes on a class (A_PlaySound's or A_Taunt's
+  first argument; deathsound for A_DeathScream, activesound, meleesound, attacksound for T_Shoot
+  and the projectile actions) and its seesound going from Spawn/Path into Chase/See, played as the
+  game picks (sound-seq, the best device it has). The window's Sounds box (off by default) plays
+  them; the line under the preview says them either way.
+- Edit picture… (Frame tab, More): the paused frame's sprite from the view picked in F6's pixel
+  editor, or, a view it lacks, `ArtBrowserViewModel.NewPicture` blank under its name.
+- Put it on the map (Used by, More): `MainWindowViewModel.PlaceClass` picks the class's thing in
+  the things plane's palette; a class no mapdefs thing places says so.
+- Left out: the "seen from the player" preview with distance shading. Matching the game would
+  mean moving its shading (Lighting's fade tables and lighten levels) into Common first, a phase of
+  its own; a preview that didn't match the game would go against the plan's first decision.
+- Tests: ActorEditingTests (the sounds said for the Guard's Attack and Death with sounds off;
+  SoundOf / SoundOfGoing; Edit picture's request for a sprite and a missing view; Put it on the
+  map for a placed class and for Monster).
+- Checked by screenshots: Put it on the map (the Guard picked in the things palette), Edit
+  picture… (the pixel editor on GARDD1). Not tried: the sounds by ear (kept quiet on this
+  machine), a missing view started blank and saved.

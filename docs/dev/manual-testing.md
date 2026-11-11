@@ -1205,6 +1205,11 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       state changed on a class built on the Guard; Raise shown but not changeable.
 - [ ] **(never tried)** Dragging a frame along the timeline; saving a state change (the game
       plays it: a guard shooting slower); light and particles typed as YAML.
+- [ ] Put it on the map (the Guard: things plane, "Guard (24 ways)" picked); Edit picture… on a
+      paused frame (the pixel editor on its sprite).
+- [ ] **(never tried)** Sounds ticked, by ear: the Guard's Attack (its shot), Death (its scream),
+      Spawn to Chase (its sight); Edit picture… on a view a sprite lacks (a blank one, saved into a
+      mod, then shown in the preview).
 
 ---
 

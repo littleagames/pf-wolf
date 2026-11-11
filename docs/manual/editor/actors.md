@@ -38,6 +38,11 @@ Ready, anything else on Spawn.
   action it runs as it ends (the preview names them; it doesn't run them), and the actions that
   just ran.
 
+- **Sounds** (off until ticked): its sounds play as the preview passes the actions that make
+  them: an `A_PlaySound`'s own, its `deathsound` on `A_DeathScream`, its `attacksound` on
+  `T_Shoot` and the projectile actions, and its `seesound` as it goes from Spawn or Path into
+  Chase, each played as the game picks it. Ticked or not, the line under the preview says which.
+
 The preview doesn't run thinks or actions, so it can't know where an action that may jump will
 send the actor (`A_Jump`, `A_JumpIf…`, `A_ReFire`): it waits on that frame, saying so. **Go on**
 goes to the frame after it, as if it didn't jump; or pick a state.
@@ -66,7 +71,8 @@ have frames other games draw.
 - **Used by**: what places or names it: the mapdefs things that are it, the levels with it on
   them and how many, the classes built on it, other classes' properties and actions that name it
   (a drop, a projectile), game-info, factions, scripts that spawn it, and what the engine itself
-  makes by name. *Go to* (or a double-click) shows another class here, opens the Definitions
+  makes by name. *Put it on the map* picks its mapdefs thing in the map's palette, on the things
+  plane, to put down on the level open. *Go to* (or a double-click) shows another class here, opens the Definitions
   window at the entry, the script browser at the line, or the level with the first one picked;
 - **Defined in**: the actordefs files that have it, and its lines in the last of them.
 
@@ -101,7 +107,9 @@ its fields:
   brackets (`A_FireProjectile("Rocket")`). What each does is under them;
 - **Modifiers** (`bright`, `lighten(6)`), **Light** and **Particles** (written as in actordefs).
 
-*+ Frame* adds one after it, the sprite's next letter for as long, with no action; *Duplicate*
+*Edit picture…* opens the frame's sprite, from the view picked, in the [pixel
+editor](./art); a view the sprite hasn't got is started there blank, under its name, and goes in a
+mod when it's saved. *+ Frame* adds one after it, the sprite's next letter for as long, with no action; *Duplicate*
 copies it; *Take out* takes it out; *←* and *→* move it, and so does dragging it along the
 timeline. *After its last frame it* says what the state does then: loops back to its first
 frame, stops on its last, or goes on to another state.

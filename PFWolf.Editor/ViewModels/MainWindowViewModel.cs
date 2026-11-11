@@ -657,6 +657,25 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 ShowArt();
                 _artBrowser?.Show(ArtKind.Sprite, sprite);
             };
+            // A frame's sprite to draw: the art window's pixel editor, on it or (a view it lacks) on a blank one of its name
+            _actorBrowser.PictureEditRequested += (_, picture) =>
+            {
+                ShowArt();
+                if (_artBrowser == null)
+                    return;
+                if (picture.Exists)
+                {
+                    _artBrowser.Show(ArtKind.Sprite, picture.Name);
+                    if (_artBrowser.EditPixelsCommand.CanExecute(null))
+                        _artBrowser.EditPixelsCommand.Execute(null);
+                }
+                else if (_artBrowser.CheckNewName(ArtKind.Sprite, picture.Name) is { } problem)
+                    _actorBrowser.Status = problem;
+                else
+                    _artBrowser.NewPicture(ArtKind.Sprite, picture.Name, 64, 64, clear: true);
+            };
+            // The class put down on the map: its thing picked in the palette
+            _actorBrowser.PlaceRequested += (_, className) => _actorBrowser.Status = PlaceClass(className);
             // A use's Go to: its definition, its script line, or the level at the first one placed
             _actorBrowser.GoTo += (_, target) =>
             {
@@ -676,6 +695,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _actorBrowser.Load(Content);
         }
         Dialogs.ShowActorBrowser(_actorBrowser);
+    }
+
+    /// <summary>
+    /// Picks an actor class's thing in the map's palette (the things plane), to put down on the
+    /// level open; says what it did
+    /// </summary>
+    public string PlaceClass(string className)
+    {
+        if (Planes.FirstOrDefault(option => option.Plane == 1 && !option.Patches) is not { } things)
+            return "The map has no things plane";
+        SelectedPlane = things;
+        PaletteFilter = "";
+        if (PaletteItems.FirstOrDefault(item => item.Entry.ThingClass == className) is not { } item)
+            return $"The map's palette has no {className}: its level's own mapdefs may leave it out";
+        SelectedPaletteItem = item;
+        Status = $"Putting down: {className}";
+        return $"{className} picked in the map's palette, to put down";
     }
 
     /// <summary>Opens a level with a tile picked and in view (a thing an actor window's use points at)</summary>

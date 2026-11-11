@@ -200,6 +200,7 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
         {
             LoadFields(content);
             LoadStatePickers(content);
+            _sounds.Load(content);
             _all = [.. ActorCatalog.Build(content).Select(entry => new ActorItem(entry) { HasEdits = HasUnsaved(entry.Name) })];
             // New classes not saved yet stay listed
             foreach (var name in _drafts.Keys)
@@ -473,6 +474,7 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
         {
             if (FollowNext)
             {
+                Sound([], SelectedState, frame.StateName);
                 _following = true;
                 SelectedState = frame.StateName;
                 _following = false;
@@ -489,6 +491,7 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
 
     private void Report(List<StateEvent> events)
     {
+        Sound(events);
         if (events.Count > 0)
             EventText = "Ran: " + RunsOf(events.Select(e => e.Action));
         if (_player.Stuck && events.LastOrDefault() is { MayJump: true } jump)
