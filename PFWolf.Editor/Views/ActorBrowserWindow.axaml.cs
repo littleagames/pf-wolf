@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
@@ -97,10 +99,30 @@ public partial class ActorBrowserWindow : Window
         }
     }
 
+    // The frame a press started on, for a drag along the timeline
+    private TimelineFrame? _dragged;
+
     private void OnFramePressed(object? sender, PointerPressedEventArgs e)
     {
         if ((sender as Control)?.DataContext is TimelineFrame frame)
+        {
+            _dragged = frame;
             ViewModel.PickFrame(frame);
+        }
+    }
+
+    // Let go over another frame of the state: the one pressed on moves there
+    private void OnFrameReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        var from = _dragged;
+        _dragged = null;
+        if (from == null)
+            return;
+        var over = this.InputHitTest(e.GetPosition(this)) as Visual;
+        while (over != null && !(over is Control { DataContext: TimelineFrame } control && control.Classes.Contains("frame")))
+            over = over.GetVisualParent();
+        if ((over as Control)?.DataContext is TimelineFrame to && to != from)
+            ViewModel.MoveFrame(from.Index, to.Index);
     }
 
     private void OnUseDoubleTapped(object? sender, TappedEventArgs e)

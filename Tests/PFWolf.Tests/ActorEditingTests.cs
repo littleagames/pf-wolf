@@ -172,6 +172,148 @@ public class ActorEditingTests
         Assert.That(reloaded.MapDefs.Things[2004].Patrol, Is.EqualTo(1));
     }
 
+    // The Guard picked, its Attack state paused on its first frame
+    private ActorBrowserViewModel GuardAttack(Func<string, string?>? answer = null)
+    {
+        var actors = new ActorBrowserViewModel
+        {
+            PickMod = _ => Task.FromResult<string?>(_mod),
+            AskText = (_, _, _, check) => Task.FromResult(answer?.Invoke("")),
+        };
+        actors.Load(Load("wolf3d"));
+        actors.Show("Guard");
+        actors.SelectedState = "Attack";
+        actors.Playing = false;
+        return actors;
+    }
+
+    [Test]
+    public void A_Frames_Tics_Changed_Play_And_Save_As_The_State()
+    {
+        // Arrange
+        var actors = GuardAttack();
+        Assert.That(actors.CanEditFrame, Is.True);
+        Assert.That(actors.FrameIndex, Is.EqualTo(0));
+        Assert.That((actors.FrameSprite, actors.FrameLetter?.Letter, actors.FrameTics), Is.EqualTo(("GARD", "F", 20m)));
+        Assert.That(actors.LetterChoices.Select(choice => choice.Letter), Is.SupersetOf(new[] { "A", "F", "N" }));
+
+        // Act
+        actors.FrameTics = 30;
+
+        // Assert: the timeline and the preview are the state as changed, still on the frame
+        Assert.That(actors.IsChanged, Is.True);
+        Assert.That(actors.SelectedState, Is.EqualTo("Attack"));
+        Assert.That(actors.Timeline.Select(frame => frame.Tics), Is.EqualTo(new[] { "30", "20", "20" }));
+        Assert.That(actors.FrameIndex, Is.EqualTo(0));
+        actors.UndoClassCommand.Execute(null);
+        Assert.That(actors.Timeline[0].Tics, Is.EqualTo("20"));
+        actors.RedoClassCommand.Execute(null);
+
+        actors.SaveClassCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        var text = File.ReadAllText(Path.Combine(_mod, "actordefs", "actors.yaml"));
+        Assert.That(text, Does.Contain("Attack:").And.Contain("30").And.Not.Contain("Chase:").And.Not.Contain("Death:"));
+
+        var guard = ActorCatalog.Build(Load("wolf3d", _mod), levels: false).Single(entry => entry.Name == "Guard");
+        Assert.That(ActorCatalog.FramesOf(guard.States["Attack"]).Select(frame => frame.TicTime), Is.EqualTo(new short[] { 30, 20, 20 }));
+        Assert.That(ActorCatalog.FramesOf(guard.States["Attack"])[1].Action, Is.EqualTo("T_Shoot"));
+        Assert.That(ActorCatalog.FramesOf(guard.States["Chase"]), Has.Count.EqualTo(6), "the rest of its states as they were");
+        Assert.That(guard.States["Attack"].Next!.Next!.Next!.StateName, Is.EqualTo("Chase"), "it still goes on into Chase");
+    }
+
+    [Test]
+    public void Frames_Are_Added_Moved_And_Taken_Out()
+    {
+        var actors = GuardAttack();
+
+        actors.AddFrameCommand.Execute(null);
+        Assert.That(actors.Timeline.Select(frame => frame.Letter), Is.EqualTo(new[] { "F", "G", "G", "H" }), "the next letter, after F");
+        Assert.That(actors.FrameIndex, Is.EqualTo(1));
+        Assert.That(actors.Timeline[1].HasAction, Is.False);
+
+        actors.MoveFrameRightCommand.Execute(null);
+        Assert.That(actors.Timeline[2].HasAction, Is.False, "the new frame after the shooting one");
+        Assert.That(actors.FrameIndex, Is.EqualTo(2));
+
+        actors.MoveFrame(2, 0);
+        Assert.That(actors.Timeline[0].HasAction, Is.False);
+
+        actors.DeleteFrameCommand.Execute(null);
+        Assert.That(actors.Timeline.Select(frame => frame.Letter), Is.EqualTo(new[] { "F", "G", "H" }));
+        Assert.That(actors.Timeline[1].HasAction, Is.True);
+    }
+
+    [Test]
+    public void A_State_Ends_As_Picked()
+    {
+        var actors = GuardAttack();
+        Assert.That(actors.SelectedEnd!.Label, Is.EqualTo("goes on to Chase"));
+
+        actors.SelectedEnd = actors.EndChoices.Single(choice => choice.Label == "loops back to its first frame");
+        Assert.That(actors.TimelineEnd, Is.EqualTo("↺ loops"));
+
+        actors.SelectedEnd = actors.EndChoices.Single(choice => choice.Label == "stops on its last frame");
+        Assert.That(actors.TimelineEnd, Is.EqualTo("↺ its last frame again (stop)"));
+    }
+
+    [Test]
+    public void States_Are_Added_Renamed_And_Taken_Out()
+    {
+        // Arrange: answers to New state, then Rename
+        var answers = new Queue<string>(["Melee", "Bite"]);
+        var actors = GuardAttack(_ => answers.Dequeue());
+
+        // A new state: the frame shown, looping
+        actors.AddStateCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Assert.That(actors.SelectedState, Is.EqualTo("Melee"));
+        Assert.That(actors.Timeline.Select(frame => frame.Letter), Is.EqualTo(new[] { "F" }));
+        Assert.That(actors.StateIsOwn, Is.True);
+
+        // Attack going on to it follows a rename
+        actors.SelectedState = "Attack";
+        actors.Playing = false;
+        actors.SelectedEnd = actors.EndChoices.Single(choice => choice.Label == "goes on to Melee");
+        actors.SelectedState = "Melee";
+        actors.RenameStateCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Assert.That(actors.States, Does.Contain("Bite").And.Not.Contain("Melee"));
+        actors.SelectedState = "Attack";
+        actors.Playing = false;
+        Assert.That(actors.SelectedEnd!.Label, Is.EqualTo("goes on to Bite"));
+
+        // Taken out
+        actors.SelectedState = "Bite";
+        actors.DeleteStateCommand.Execute(null);
+        Assert.That(actors.States, Has.None.EqualTo("Bite"));
+    }
+
+    [Test]
+    public void A_Parents_State_Changed_Becomes_The_Class_Own_And_A_Made_Raise_Is_Only_Shown()
+    {
+        // Arrange: a class built on the Guard, with no states of its own
+        var answers = new Queue<string>(["MyGuard", ""]);
+        var actors = new ActorBrowserViewModel { AskText = (_, _, _, _) => Task.FromResult<string?>(answers.Dequeue()) };
+        actors.Load(Load("wolf3d"));
+        actors.Show("Guard");
+        actors.NewChildCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        actors.SelectedState = "Chase";
+        actors.Playing = false;
+        Assert.That(actors.StateNote, Does.Contain("Guard's"));
+        Assert.That(actors.StateIsOwn, Is.False);
+
+        // Act
+        actors.FrameTics = 4;
+
+        // Assert
+        Assert.That(actors.StateIsOwn, Is.True);
+        Assert.That(actors.StateNote, Is.Empty);
+        Assert.That(actors.Timeline[0].Tics, Is.EqualTo("4"));
+
+        // The Raise the engine makes from its Death can't be changed here
+        actors.SelectedState = "Raise";
+        actors.Playing = false;
+        Assert.That(actors.StateEditable, Is.False);
+        Assert.That(actors.StateNote, Does.Contain("made by the engine"));
+    }
+
     [Test]
     public void A_Copy_Is_The_Class_As_Written_Under_A_New_Name()
     {

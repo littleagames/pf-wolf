@@ -55,6 +55,8 @@ have frames other games draw.
 
 ## The tabs
 
+- **Frame**: the frame the preview's paused on (click one in the timeline, or *Next frame*), to
+  change, and its state's frames and ending (see [Changing its states](#changing-its-states));
 - **Fields**: its own parent, radius, flags and properties, to change (the mouse over one says
   what it does, and a sound or class field has a list to pick from). Only the properties it sets
   are listed; *Add property* has the others its kind of actor reads (a Blake Stone enemy's
@@ -84,6 +86,35 @@ again with it. **Revert** goes back to the class as the files have it; **Undo** 
 other classes, and loading the game again or closing the editor asks whether to save them first.
 *Take out the mod's change…* (under *More*, and in the list's right-click menu) takes the last
 mod's say in the class out of its actordefs.
+
+## Changing its states
+
+Pause on a frame, by clicking it in the timeline or with *Next frame*, and the **Frame** tab has
+its fields:
+
+- **Sprite** and **Letter**: the sprite's four letters (`GARD`, `TNT1` for nothing to see), and
+  which of its frames, each letter it has shown with its picture;
+- **Tics**: how long it shows, 70 to a second; 0 ends it the moment it's entered, -1 holds it
+  for good;
+- **Think**, run every tic it shows, and **Action**, run once as it ends, each picked from those
+  this kind of actor can run (the engine's and its scripts'), with an action's arguments in
+  brackets (`A_FireProjectile("Rocket")`). What each does is under them;
+- **Modifiers** (`bright`, `lighten(6)`), **Light** and **Particles** (written as in actordefs).
+
+*+ Frame* adds one after it, the sprite's next letter for as long, with no action; *Duplicate*
+copies it; *Take out* takes it out; *←* and *→* move it, and so does dragging it along the
+timeline. *After its last frame it* says what the state does then: loops back to its first
+frame, stops on its last, or goes on to another state.
+
+*+ State…* adds a state: a parent's of the name to start from, else the frame shown, looping.
+*Rename…* renames one of the class's own states, and its own states that go on to it; *Take out
+state* takes one out, and a parent's of the name, if there is one, is the class's again.
+
+A state the class has from a parent says so, and changing it gives the class its own, the
+parent's copied and changed. The Raise state the engine makes from a class's Death (its frames
+backwards, for a revived corpse) is only shown: add a Raise state to change it. A state is saved
+whole when it changes, with frames alike but for the letter written as one entry, as the files
+write them.
 
 **New actor** (top right) makes a class that's only in the window until it's saved:
 

@@ -181,7 +181,7 @@
         </Grid>
 
         <!-- The state's frames, each as wide as its tics -->
-        <TextBlock Classes="heading" Text="Frames of the state (click one to look at it)" />
+        <TextBlock Classes="heading" Text="Frames of the state (click one to look at it and change it; drag one to move it)" />
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
           <StackPanel Orientation="Horizontal" Spacing="3">
             <ItemsControl x:Name="Timeline" ItemsSource="{Binding Timeline}">
@@ -193,7 +193,7 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:TimelineFrame">
                   <Border Classes="frame" Classes.current="{Binding IsCurrent}" Width="{Binding Width}" ToolTip.Tip="{Binding ToolTip}"
-                          PointerPressed="OnFramePressed">
+                          PointerPressed="OnFramePressed" PointerReleased="OnFrameReleased">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                       <TextBlock Text="{Binding Letter}" HorizontalAlignment="Center" FontWeight="SemiBold" />
                       <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="2">
@@ -227,6 +227,70 @@
       </StackPanel>
 
       <TabControl Margin="0,6,0,0">
+        <!-- The frame paused on, and the state's frames and ending -->
+        <TabItem Header="Frame">
+          <ScrollViewer Margin="0,4,0,0">
+            <StackPanel Spacing="6">
+              <TextBlock Text="{Binding StateNote}" Opacity="0.75" FontSize="12" TextWrapping="Wrap"
+                         IsVisible="{Binding StateNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <WrapPanel ItemSpacing="6" LineSpacing="6">
+                <Button Content="+ Frame" Command="{Binding AddFrameCommand}" ToolTip.Tip="A frame after this one: the sprite's next letter, as long, with no action" />
+                <Button Content="Duplicate" Command="{Binding DuplicateFrameCommand}" ToolTip.Tip="A copy of this frame after it" />
+                <Button Content="Take out" Command="{Binding DeleteFrameCommand}" ToolTip.Tip="This frame out of the state" />
+                <Button Content="←" Command="{Binding MoveFrameLeftCommand}" ToolTip.Tip="Earlier in the state" />
+                <Button Content="→" Command="{Binding MoveFrameRightCommand}" ToolTip.Tip="Later in the state" />
+                <Border Width="12" />
+                <Button Content="+ State…" Command="{Binding AddStateCommand}" ToolTip.Tip="A state of its own: a parent's of the name to start from, else this frame, looping" />
+                <Button Content="Rename…" Command="{Binding RenameStateCommand}" ToolTip.Tip="Its own state renamed, and its own states going on to it" />
+                <Button Content="Take out state" Command="{Binding DeleteStateCommand}" ToolTip.Tip="Its own state taken out: a parent's of the name comes back" />
+                <TextBlock Text="After its last frame it" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ComboBox ItemsSource="{Binding EndChoices}" SelectedItem="{Binding SelectedEnd}" MinWidth="200" IsEnabled="{Binding StateEditable}"
+                          ToolTip.Tip="Loops back to its first frame, stops on its last (the stop marker), or goes on to another state (next-state)" />
+              </WrapPanel>
+              <TextBlock Text="Pause on a frame (click it in the timeline, or Next frame) to change it" Opacity="0.6" FontSize="12"
+                         IsVisible="{Binding !CanEditFrame}" />
+              <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6" IsEnabled="{Binding CanEditFrame}">
+                <TextBlock Text="Sprite" VerticalAlignment="Center" />
+                <AutoCompleteBox Grid.Column="1" Text="{Binding FrameSprite, UpdateSourceTrigger=LostFocus}" ItemsSource="{Binding SpriteNames}" FilterMode="StartsWith"
+                                 ToolTip.Tip="The sprite's four-letter name (GARD); TNT1 for nothing to see" />
+                <TextBlock Grid.Column="2" Text="Letter" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="3" ItemsSource="{Binding LetterChoices}" SelectedItem="{Binding FrameLetter}" MinWidth="120"
+                          ToolTip.Tip="The frame of the sprite: the letters it has, each as seen from the front">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LetterChoice">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Image Source="{Binding Picture}" Width="32" Height="32" RenderOptions.BitmapInterpolationMode="None" />
+                        <TextBlock Text="{Binding Letter}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Grid.Column="4" Text="Tics" VerticalAlignment="Center" />
+                <NumericUpDown Grid.Column="5" Value="{Binding FrameTics}" Minimum="-1" Maximum="10000" Increment="1" FormatString="0"
+                               ToolTip.Tip="How long it shows, in tics (70 a second); 0 ends it the moment it's entered, -1 holds it for good" />
+
+                <TextBlock Grid.Row="1" Text="Think" VerticalAlignment="Center" />
+                <AutoCompleteBox Grid.Row="1" Grid.Column="1" Text="{Binding FrameThink, UpdateSourceTrigger=LostFocus}" ItemsSource="{Binding ThinkNames}" FilterMode="Contains"
+                                 ToolTip.Tip="Run every tic the frame shows (T_Chase): those this kind of actor can run" />
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="Action" VerticalAlignment="Center" />
+                <AutoCompleteBox Grid.Row="1" Grid.Column="3" Text="{Binding FrameAction, UpdateSourceTrigger=LostFocus}" ItemsSource="{Binding ActionNames}" FilterMode="Contains"
+                                 ToolTip.Tip="Run once as the frame ends (A_FireProjectile(&quot;Rocket&quot;)): those this kind of actor can run, with their arguments in brackets" />
+                <TextBlock Grid.Row="1" Grid.Column="4" Text="Modifiers" VerticalAlignment="Center" />
+                <TextBox Grid.Row="1" Grid.Column="5" Text="{Binding FrameModifiers, UpdateSourceTrigger=LostFocus}" PlaceholderText="bright, lighten(6)"
+                         ToolTip.Tip="bright: drawn unshaded; lighten(level): darkening less with distance. Commas between" />
+
+                <TextBlock Grid.Row="2" Text="Light" VerticalAlignment="Center" />
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding FrameLight, UpdateSourceTrigger=LostFocus}" PlaceholderText="its own"
+                         ToolTip.Tip="Its light while the frame shows: none, an intensity (200), or { intensity, radius, color }" />
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="Particles" VerticalAlignment="Center" />
+                <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding FrameParticles, UpdateSourceTrigger=LostFocus}" PlaceholderText="its own"
+                         ToolTip.Tip="The particles.yaml emitters running while it shows, in place of its particles property; none for none" />
+              </Grid>
+              <TextBlock Text="{Binding CallHelp}" Opacity="0.75" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
         <!-- Its own fields, to change; what its parents give it under them -->
         <TabItem Header="Fields">
           <ScrollViewer Margin="0,4,0,0">

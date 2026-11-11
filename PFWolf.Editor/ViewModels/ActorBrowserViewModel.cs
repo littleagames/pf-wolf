@@ -199,6 +199,7 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
         if (content != null)
         {
             LoadFields(content);
+            LoadStatePickers(content);
             _all = [.. ActorCatalog.Build(content).Select(entry => new ActorItem(entry) { HasEdits = HasUnsaved(entry.Name) })];
             // New classes not saved yet stay listed
             foreach (var name in _drafts.Keys)
@@ -319,6 +320,8 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
         SelectedState = null;
         SelectedState = keepState && state != null && entry.States.ContainsKey(state) ? state : FirstState(entry);
         AddableProperties = PropertiesToAdd(entry);
+        FillStatePickers(entry);
+        UpdateFramePanel();
     }
 
     // Where the preview starts: Spawn, unless it stands still for good and the class has a Chase
@@ -570,6 +573,8 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
             (PreviewWidth, PreviewHeight) = (64 * zoom, 64 * zoom);
         // A box the size of a 64-pixel sprite, or the picture's if it's bigger, so the preview doesn't jump about
         (PreviewBoxWidth, PreviewBoxHeight) = (Math.Max(64 * zoom, PreviewWidth), Math.Max(64 * zoom, PreviewHeight));
+        if (!Playing)
+            UpdateFramePanel();
     }
 
     // A sprite drawn in the game's palette, see-through where it is; none without a window (tests)

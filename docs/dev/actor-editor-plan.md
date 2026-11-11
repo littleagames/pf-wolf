@@ -256,3 +256,29 @@ Planned 2026-11-10.
 - Checked by screenshots: the Fields tab on the Guard, health set to 50 (● , Changed, numbers,
   still playing), Revert. Not tried by hand: saving from the window, New actor (its menu, the
   questions), Take out, the "Save first?" prompt.
+
+**Phase 3 done 2026-11-10** (states):
+- `StateFrames` (Editing): a state's YAML read into single frames (`FrameSpec`: sprite, letter,
+  tics, think, action, modifiers, light and particles as written) and how it ends (`StateEnd`:
+  loop, stop, next), as the game reads it (the last frame entry's next-state, else the first
+  marker after it); written back with frames alike but for the letter grouped as one entry. A
+  next-state or marker that's never reached is left out (the game ignores it). Checked: every
+  state of pfwolf-pk3, the Multiplayer mod and the example mods (871) plays the same written back.
+- `ActorBrowserViewModel.States`: the Frame tab, on the frame the preview's paused on: sprite
+  (the game's sprite names), letter (the sprite's letters with pictures), tics, think and action
+  (pickers of the engine's actions that fit the class's engine class, and its scripts'; what they
+  do shown), modifiers, light, particles (YAML on a line); + Frame (next letter, no action),
+  Duplicate, Take out (not the last), ←/→, drag along the timeline; how the state ends (loops,
+  stops, goes on to a state); + State… (a parent's of the name, else the frame shown, looping),
+  Rename… (its own states going on to it follow), Take out state. Each is one step to undo,
+  writing the state whole into the class's fields (a parent's state becomes the class's own),
+  the preview kept on the frame. The engine's Raise made from Death is shown, not changeable.
+  Drag is within a state only (not between states, as planned); the tics are set by number, not
+  by dragging a block's edge.
+- Tests: StateFramesTests (reading, grouping, markers, the 871-state round trip),
+  ActorEditingTests (a frame's tics changed, undone, saved as the state and the game playing it;
+  frames added, moved, taken out; endings; states added, renamed, taken out; a parent's state
+  becoming the class's own; Raise not changeable).
+- Checked by screenshots: the Frame tab on the Guard's Chase (paused by Next frame after Attack
+  went on into it), the letter picker's picture. Not tried by hand: drag, saving a state change,
+  light/particles.
