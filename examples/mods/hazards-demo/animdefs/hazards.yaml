@@ -7,6 +7,7 @@ HZLAVA:
 HZACID:
   tics: 20
   frames: [HZACID1, HZACID2]
+# Midnight Assault's electrified water, at its pace: a frame each 16 tics
 HZSHOCK:
-  tics: 4
-  frames: [HZSHOCK1, HZSHOCK2]
+  tics: 16
+  frames: [HZSHOCK1, HZSHOCK2, HZSHOCK3, HZSHOCK4]

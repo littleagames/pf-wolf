@@ -1,5 +1,6 @@
-# The mod's own sounds (sounds/*.wav, made by examples/tools/make-arsenal-demo.ps1), by the names
-# its weapons play them by (actordefs/arsenal.yaml)
+# The mod's own sounds (sounds/*.wav: Midnight Assault's, copied by
+# examples/tools/make-arsenal-demo.ps1, but for the silenced pistol's, which it makes), by the
+# names its weapons play them by (actordefs/arsenal.yaml)
 sound-info:
   arsenal/shotgun:
     digitized: ARSHOT
@@ -7,15 +8,38 @@ sound-info:
     digitized: ARPUMP
   arsenal/shell:
     digitized: ARSHELL
+  arsenal/loadpump:
+    digitized: ARLDPMP
   arsenal/throw:
     digitized: ARTHROW
   arsenal/boom:
     digitized: ARBOOM
+  # A grenade off a wall: one of three, at random
   arsenal/clink:
-    digitized: ARCLINK
+    random: [arsenal/clink1, arsenal/clink2, arsenal/clink3]
+  arsenal/clink1:
+    digitized: ARCLNK1
+  arsenal/clink2:
+    digitized: ARCLNK2
+  arsenal/clink3:
+    digitized: ARCLNK3
   arsenal/quiet:
     digitized: ARQUIET
   arsenal/rifle:
     digitized: ARRIFLE
+  arsenal/bolt:
+    digitized: ARBOLT
   arsenal/zoom:
     digitized: ARZOOM
+  arsenal/bazooka:
+    digitized: ARBAZK
+  arsenal/bazookaload:
+    digitized: ARBZLD
+  arsenal/rockethit:
+    digitized: ARRKHIT
+  arsenal/pickup:
+    digitized: ARPKGUN
+  arsenal/grenadepickup:
+    digitized: ARPKGR
+  arsenal/bazookapickup:
+    digitized: ARPKBZ

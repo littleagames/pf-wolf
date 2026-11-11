@@ -741,6 +741,16 @@ can reach), not played by hand.
       stay put when one is shot with the silenced pistol; the pickups' and icons' looks, and every
       sound by ear. Seen fixed: the status bar back after zooming out, and the power meter
       filling green, yellow, red as a grenade cooks.
+      2026-11-11, with Midnight Assault's art and sounds and the new bazooka, driven windowed:
+      the shotgun's pump frames and a shell reloaded on R; the bazooka's rocket blowing up on the
+      door and its reload; 8 going from the bazooka to the grenades; a grenade thrown and going
+      off by the door; the rifle's bolt and the scope picture over the middle of Wolf3D's view;
+      the silenced pistol firing; the icons opaque on the bar's blue. **(never tried)**: the
+      bazooka's blast hurting you close up (no god mode) and the quake; the rocket's smoke trail
+      and its 8 sides seen from the side; a grenade's low blast on the floor against its air
+      blast; picking up the bazooka and rockets (objects 867/868) and their sounds; whether MA's
+      view weapons, drawn smaller than Wolf3D's own (the shotgun's at rest is just its tip),
+      look right at every screen size; every new sound by ear.
 - [ ] Mission Demo (`--file mission-demo`): seen working (headless and windowed): the HUD's panel,
       clock and compass; the radios breaking (`game.breakwall`) and counting; the documents
       picked up by walking onto them; "That's everything" once both are done; reinforcements at
@@ -793,6 +803,11 @@ can reach), not played by hand.
       and its countdown showed. **(never tried)**: the switch thrown by hand and back; the
       animations playing; the warnings on stepping in; picking the suit up (not set by `lua`);
       saving and loading with the suit on and the current off.
+      2026-11-11, the water now Midnight Assault's, driven windowed: the live water's four frames
+      and its sparks (scripts/hazards.lua, particles.yaml); the switch thrown by hand turning it
+      to the dark water and the sparks stopping. **(never tried)**: the sparks back after
+      switching on again; the live water still hurting (by its animation's name, HZSHOCK);
+      whether the dark water reads as water in a lit level.
 - [ ] Music Demo (`--file music-demo`): headless, `changemus` showed the calm song at the start,
       the fight song with guards chasing, and the calm one again six seconds after they died.
       **(never tried)**, by ear: the songs themselves and their loops' seams, their loudness

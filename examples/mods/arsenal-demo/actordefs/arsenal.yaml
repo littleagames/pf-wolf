@@ -1,18 +1,24 @@
 # The Arsenal Demo's weapons, each showing a part of the weapon system Wolf3D's own four don't
 # use. They follow the game's weapons (pfwolf-pk3 actordefs/wolf3d/weapons.yaml): 70Hz tics,
 # and a frame's action runs as the frame ends. Every action is in the docs' Actions reference.
+# Their pictures and sounds are Midnight Assault's (examples/tools/make-arsenal-demo.ps1).
 #
 #   Shotgun         pellets (A_FirePellets) from a 6-shell tube (weapon.magazine), reloaded a
 #                   shell at a time (A_Reload's loop); fire cuts a reload short once a shell's in
 #   HandGrenade     cooked by holding fire (A_HoldCharge, up to about 1.4 seconds), thrown as
 #                   hard as it was cooked (A_FireMissile "power"); the grenade arcs (gravity),
-#                   bounces off walls and blows up when its fuse runs out (A_Explode)
+#                   bounces off walls and blows up when its fuse runs out (A_Explode), a lower
+#                   blast if it's come to rest on the floor (A_JumpIfOnFloor)
 #   ScopedRifle     a scope (weapon.zoom: hold the zoom key, Z, to zoom in), and once zoomed in
 #                   it fires its ZoomFire state: a far harder hit (A_FireBullet)
 #   SilencedPistol  weapon.silent: its shots alert no one, so guards round the one it drops
 #                   don't come running
+#   Bazooka         one rocket loaded at a time (weapon.magazine of 1, its Reload state after
+#                   every shot), flying with a smoke trail and blowing up on what it hits, the
+#                   view shaking (A_Quake)
 #
-# Each is in its own slot (7 to 0 here, clear of the multiplayer mod's 5 and 6) and ranked by
+# Each is in its own slot (7 to 0 here, clear of the multiplayer mod's 5 and 6; the bazooka
+# shares 8 with the grenades: 8 again goes from one to the other) and ranked by
 # weapon.selectionorder (lower is better: the pistol's 1900, the gatling gun's 700).
 
 #
@@ -26,7 +32,7 @@ Shotgun:
     attacksound: arsenal/shotgun
     inventory.type: Shotgun
     inventory.icon: ARICSG
-    inventory.pickupsound: weapon/machine/pickup
+    inventory.pickupsound: arsenal/pickup
     inventory.pickupmessage: "Picked up a shotgun!"
     weapon.slot: 7
     weapon.selectionorder: 900
@@ -51,42 +57,58 @@ Shotgun:
       # 7 pellets, up to 6 degrees either side, 6-14 damage each
       - sprite: ARSG
         frames: [B]
-        tics-per-frame: 5
+        tics-per-frame: 6
+      - sprite: ARSG
+        frames: [C]
+        tics-per-frame: 6
         modifiers: [bright]
         light: { intensity: 230, radius: 4, color: "#FFE0A0" }
         action: A_FirePellets(7, 6, 6, 14)
       - sprite: ARSG
-        frames: [A]
-        tics-per-frame: 8
-      - sprite: ARSG
-        frames: [C]
-        tics-per-frame: 8
+        frames: [D]
+        tics-per-frame: 6
         action: A_PlaySound("arsenal/pump")
       - sprite: ARSG
-        frames: [A]
+        frames: [E, F, G, H]
         tics-per-frame: 6
         next-state: Ready
     # The tube empty, or reload pressed with room in it: a shell at a time (ReloadLoop goes
     # round while there's room and shells left), then a pump
     Reload:
-      - sprite: ARSG
-        frames: [C]
-        tics-per-frame: 8
+      - sprite: ARSR
+        frames: [A]
+        tics-per-frame: 12
+        action: A_PlaySound("arsenal/loadpump")
+      - sprite: ARSR
+        frames: [B]
+        tics-per-frame: 12
         next-state: ReloadLoop
     ReloadLoop:
-      - sprite: ARSG
+      - sprite: ARSR
         frames: [C]
-        tics-per-frame: 0
+        tics-per-frame: 12
+      - sprite: ARSR
+        frames: [D]
+        tics-per-frame: 8
         action: A_PlaySound("arsenal/shell")
-      - sprite: ARSG
-        frames: [C]
-        tics-per-frame: 14
-        action: A_Reload(1, "ReloadLoop")
-      - sprite: ARSG
+      - sprite: ARSR
+        frames: [E]
+        tics-per-frame: 8
+        action: A_Reload(1, "ReloadMore")
+      - sprite: ARSR
+        frames: [F, B]
+        tics-per-frame: 8
+      - sprite: ARSR
         frames: [A]
         tics-per-frame: 8
-        action: A_PlaySound("arsenal/pump")
+        action: A_PlaySound("arsenal/loadpump")
         next-state: Ready
+    # Room for another and shells left: the hand back to the tube for the next
+    ReloadMore:
+      - sprite: ARSR
+        frames: [F, B]
+        tics-per-frame: 8
+        next-state: ReloadLoop
 
 # The shells loaded in the tube: what the shotgun fires from
 ShotgunTube:
@@ -119,6 +141,7 @@ HandGrenade:
     attacksound: arsenal/throw
     inventory.type: HandGrenade
     inventory.icon: ARICGR
+    inventory.pickupsound: arsenal/grenadepickup
     inventory.pickupmessage: "Picked up a crate of grenades!"
     weapon.slot: 8
     # Worse than the pistol, so picking it up doesn't put it in hand
@@ -139,23 +162,26 @@ HandGrenade:
         action: A_WeaponReady
         next-state: Ready
     Fire:
-      - sprite: ARGV
-        frames: [B]
+      - sprite: ARGT
+        frames: [A]
         tics-per-frame: 4
         next-state: Cook
     # Held, the throw cooks: A_HoldCharge comes back here each tic, the power rising a tic's
-    # worth to 100; let go, it goes on to the throw
+    # worth to 100; let go, it goes on to the wind-up and the throw
     Cook:
-      - sprite: ARGV
-        frames: [B]
+      - sprite: ARGT
+        frames: [A]
         tics-per-frame: 1
         action: A_HoldCharge("Cook", 100)
-      - sprite: ARGV
-        frames: [C]
+      - sprite: ARGT
+        frames: [B, C, D]
+        tics-per-frame: 4
+      - sprite: ARGT
+        frames: [E]
         tics-per-frame: 6
         action: A_FireMissile("ThrownGrenade", 2, "power")
-      - sprite: ARGV
-        frames: [C]
+      - sprite: ARGT
+        frames: [F]
         tics-per-frame: 12
       - sprite: ARGV
         frames: [A]
@@ -168,52 +194,74 @@ Grenades:
     inventory.type: Grenades
     inventory.amount: 3
     inventory.maxamount: 12
+    inventory.pickupsound: arsenal/grenadepickup
     inventory.pickupmessage: "Picked up grenades."
   states:
     Spawn:
-      - sprite: ARGB
+      - sprite: ARGC
         frames: [A]
         tics-per-frame: -1
 
-# The grenade in flight. z is how high it's drawn over its picture's own place (it's drawn in
-# the middle of its picture), zspeed how fast that rises as it leaves the hand (cooked less, it's
-# thrown softer and lower), gravity how fast that falls away each tic, and zfloor where it rests
-# on the floor. A_Missile's "bounce" turns it back off walls at half speed; an enemy it flies
-# into takes 10-20 and sets it off. Otherwise its fuse is its Spawn frames: about 2.3 seconds.
+# The grenade in flight. Its pictures are drawn on the floor at the bottom of theirs, so z is
+# how high it is over the floor in texels: thrown from eye height (32), zspeed how fast that
+# rises as it leaves the hand (cooked less, it's thrown softer and lower), gravity how fast that
+# falls away each tic, and zfloor (0) where it comes to rest. A_Missile's "bounce" turns it back
+# off walls at half speed; an enemy it flies into takes 10-20 and sets it off. Otherwise its
+# fuse is its Spawn frames: about 2.3 seconds.
 ThrownGrenade:
   flags: [PROJECTILE]
   properties:
     speed: 11000
-    z: 0
+    z: 32
     zspeed: 1.3
     gravity: 0.055
-    zfloor: -28
+    zfloor: 0
     bouncesound: arsenal/clink
     deathsound: arsenal/boom
   states:
     Spawn:
       - sprite: ARGN
-        frames: [A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B]
+        frames: [A, B, C, D, A, B, C, D, A, B, C, D, A, B, C, D, A, B, C, D]
         tics-per-frame: 8
         think: A_Missile(10, 20, "bounce")
+        next-state: Fuse
+    # The fuse out: its bang (one that hits something has it from its deathsound)
+    Fuse:
+      - sprite: ARGN
+        frames: [A]
+        tics-per-frame: 0
+        action: A_PlaySound("arsenal/boom")
         next-state: Death
     # The blast: 40-110 to everything shootable within 2 tiles, less further out ("falloff"),
-    # and the thrower too if they're in it
+    # and the thrower too if they're in it. Lying on the floor, it's the lower blast.
     Death:
-      - sprite: AREX
-        frames: [A]
-        tics-per-frame: 4
+      - sprite: ARGN
+        frames: [E]
+        tics-per-frame: 0
+        action: A_JumpIfOnFloor("LowDeath")
+      - sprite: ARGN
+        frames: [E]
+        tics-per-frame: 6
         modifiers: [bright]
         light: { intensity: 255, radius: 5, color: "#FFC070" }
         action: A_Explode(40, 110, 2, "hurtplayer", "falloff")
-      - sprite: AREX
-        frames: [B]
+      - sprite: ARGN
+        frames: [F, G, H]
+        tics-per-frame: 6
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Remove
+    LowDeath:
+      - sprite: ARGN
+        frames: [I]
         tics-per-frame: 6
         modifiers: [bright]
-        light: { intensity: 220, radius: 4, color: "#FF9040" }
-      - sprite: AREX
-        frames: [C]
-        tics-per-frame: 10
+        light: { intensity: 255, radius: 5, color: "#FFC070" }
+        action: A_Explode(40, 110, 2, "hurtplayer", "falloff")
+      - sprite: ARGN
+        frames: [J, K, L]
+        tics-per-frame: 6
       - sprite: TNT1
         frames: [A]
         tics-per-frame: 0
@@ -230,7 +278,7 @@ ScopedRifle:
     attacksound: arsenal/rifle
     inventory.type: ScopedRifle
     inventory.icon: ARICRF
-    inventory.pickupsound: weapon/machine/pickup
+    inventory.pickupsound: arsenal/pickup
     inventory.pickupmessage: "Picked up a scoped rifle! Hold Z to zoom."
     weapon.slot: 9
     weapon.selectionorder: 1000
@@ -256,25 +304,40 @@ ScopedRifle:
         next-state: Ready
     # From the hip: a hit for 25-50 whatever the distance, then working the bolt
     Fire:
-      - sprite: ARRV
+      - sprite: ARRF
+        frames: [A]
+        tics-per-frame: 4
+      - sprite: ARRF
         frames: [B]
         tics-per-frame: 5
         modifiers: [bright]
         light: { intensity: 220, radius: 3, color: "#FFF0D0" }
         action: A_FireBullet(25, 50)
-      - sprite: ARRV
-        frames: [A]
-        tics-per-frame: 35
-        next-state: Ready
+      - sprite: ARRF
+        frames: [C, D]
+        tics-per-frame: 6
+        next-state: Bolt
     # Zoomed all the way in: 90-160, enough for an SS at the far end of the range
     ZoomFire:
-      - sprite: ARRV
+      - sprite: ARRF
+        frames: [A]
+        tics-per-frame: 4
+      - sprite: ARRF
         frames: [B]
         tics-per-frame: 5
         action: A_FireBullet(90, 160)
-      - sprite: ARRV
+      - sprite: ARRF
+        frames: [C, D]
+        tics-per-frame: 6
+        next-state: Bolt
+    Bolt:
+      - sprite: ARRB
         frames: [A]
-        tics-per-frame: 35
+        tics-per-frame: 5
+        action: A_PlaySound("arsenal/bolt")
+      - sprite: ARRB
+        frames: [B, C, D, E, F, G]
+        tics-per-frame: 5
         next-state: Ready
 
 RifleRounds:
@@ -295,7 +358,8 @@ RifleRounds:
 #
 
 # The pistol's own ammo (clips), but silent: weapon.silent and A_FireBullet's "silent" both
-# keep the shot from alerting anyone (only a hit enemy knows)
+# keep the shot from alerting anyone (only a hit enemy knows). Its pictures are Midnight
+# Assault's .45, the frame with the muzzle flash (ARPF B) left out.
 SilencedPistol:
   parent: WolfWeapon
   properties:
@@ -303,6 +367,7 @@ SilencedPistol:
     attacksound: arsenal/quiet
     inventory.type: SilencedPistol
     inventory.icon: ARICSP
+    inventory.pickupsound: arsenal/pickup
     inventory.pickupmessage: "Picked up a silenced pistol."
     weapon.slot: 0
     weapon.selectionorder: 1950
@@ -320,11 +385,135 @@ SilencedPistol:
         action: A_WeaponReady
         next-state: Ready
     Fire:
-      - sprite: ARPV
-        frames: [B]
+      - sprite: ARPF
+        frames: [A]
+        tics-per-frame: 4
+      - sprite: ARPF
+        frames: [C]
         tics-per-frame: 6
         action: A_FireBullet(15, 40, "silent")
-      - sprite: ARPV
+      - sprite: ARPF
+        frames: [D]
+        tics-per-frame: 6
+      - sprite: ARPF
         frames: [A]
-        tics-per-frame: 12
+        tics-per-frame: 4
         next-state: Ready
+
+#
+# THE BAZOOKA
+#
+
+Bazooka:
+  parent: WolfWeapon
+  properties:
+    tag: "Bazooka"
+    attacksound: arsenal/bazooka
+    inventory.type: Bazooka
+    inventory.icon: ARICBZ
+    inventory.pickupsound: arsenal/bazookapickup
+    inventory.pickupmessage: "Picked up a bazooka!"
+    weapon.slot: 8
+    # Below the pistol too: its blast can catch you, so picking it up doesn't put it in hand
+    weapon.selectionorder: 2400
+    weapon.ammotype1: Rockets
+    weapon.ammouse1: 1
+    weapon.ammogive1: 2
+    # One rocket in the tube: empty after every shot, so it goes to Reload for the next
+    weapon.magazine: BazookaTube
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: ARBP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: ARBZ
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: ARBZ
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: ARBZ
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 230, radius: 4, color: "#FFC080" }
+        action: A_FireMissile("BazookaRocket")
+      - sprite: ARBZ
+        frames: [D, E, F]
+        tics-per-frame: 6
+        next-state: Ready
+    Reload:
+      - sprite: ARBR
+        frames: [A]
+        tics-per-frame: 10
+        action: A_PlaySound("arsenal/bazookaload")
+      - sprite: ARBR
+        frames: [B, C, D, E, F]
+        tics-per-frame: 10
+      - sprite: ARBR
+        frames: [G]
+        tics-per-frame: 10
+        action: A_Reload
+      - sprite: ARBR
+        frames: [H, I, J, K]
+        tics-per-frame: 10
+        next-state: Ready
+
+BazookaTube:
+  parent: Ammo
+  properties:
+    inventory.type: BazookaTube
+    inventory.maxamount: 1
+
+Rockets:
+  parent: Ammo
+  properties:
+    inventory.type: Rockets
+    inventory.amount: 2
+    inventory.maxamount: 10
+    inventory.pickupmessage: "Picked up rockets."
+  states:
+    Spawn:
+      - sprite: ARBA
+        frames: [A]
+        tics-per-frame: -1
+
+# The rocket: seen from all 8 sides (ARRK A1-A8), leaving Wolf3D's own rocket smoke behind it
+# (the base game's Smoke). What it flies into takes 30-60; then the blast, 60-160 to everything
+# shootable within 2 tiles, less further out, the one who fired it too, and the view shakes.
+BazookaRocket:
+  flags: [PROJECTILE]
+  properties:
+    speed: 16384
+    deathsound: arsenal/rockethit
+  states:
+    Spawn:
+      - sprite: ARRK
+        frames: [A]
+        tics-per-frame: 3
+        think: A_Missile(30, 60)
+        action: A_SpawnThing("Smoke")
+    Death:
+      - sprite: ARRK
+        frames: [B]
+        tics-per-frame: 0
+        action: A_Quake(0, 14)
+      - sprite: ARRK
+        frames: [B]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 255, radius: 5, color: "#FFC080" }
+        action: A_Explode(60, 160, 2, "hurtplayer", "falloff")
+      - sprite: ARRK
+        frames: [C, D]
+        tics-per-frame: 6
+        modifiers: [bright]
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Remove

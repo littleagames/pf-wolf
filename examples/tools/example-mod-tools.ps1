@@ -94,6 +94,119 @@ function New-Color([double]$R, [double]$G, [double]$B) {
 }
 
 #
+# MIDNIGHT ASSAULT'S ART AND SOUNDS
+#
+
+# Some example mods take their pictures and sounds from Midnight Assault (its pk3,
+# midnight-assault.pk3) rather than drawing them. A script opens the pk3 once, then copies what
+# it needs under the mod's own names. Its pictures are matched to Midnight Assault's palette; the
+# game snaps their colors to the Wolf3D palette as it loads them, as it does any PNG's.
+$script:MidnightAssaultPk3 = 'D:\projects\Wolf3D\Midnight Assault\midnight-assault.pk3'
+
+function Open-MidnightAssault([string]$Path = $script:MidnightAssaultPk3) {
+    if (!$Path -or !(Test-Path $Path)) {
+        throw "Midnight Assault's pk3 isn't at '$Path': pass -MidnightAssault <path to midnight-assault.pk3>"
+    }
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zip = [IO.Compression.ZipFile]::OpenRead((Resolve-Path $Path).Path)
+    # By file name alone (sprites/weapons/SGUNA0.bmp is SGUNA0.bmp), any case
+    $index = @{}
+    foreach ($entry in $zip.Entries) { if ($entry.Name) { $index[$entry.Name.ToLowerInvariant()] = $entry } }
+    @{ Zip = $zip; Index = $index }
+}
+
+function Close-MidnightAssault($MA) { $MA.Zip.Dispose() }
+
+function Get-MAEntry($MA, [string]$Name) {
+    $entry = $MA.Index[$Name.ToLowerInvariant()]
+    if (!$entry) { throw "Midnight Assault's pk3 has no $Name" }
+    $entry
+}
+
+# A picture out of the pk3 as a 32-bit bitmap, its see-through color (Wolf3D's 152,0,136, which
+# its BMPs fill their backgrounds with) made clear
+function Read-MAPicture($MA, [string]$Name) {
+    $stream = (Get-MAEntry $MA $Name).Open()
+    $ms = New-Object IO.MemoryStream
+    $stream.CopyTo($ms); $stream.Dispose()
+    $ms.Position = 0
+    $source = New-Object Drawing.Bitmap $ms
+    $bitmap = New-Object Drawing.Bitmap $source.Width, $source.Height
+    for ($y = 0; $y -lt $source.Height; $y++) {
+        for ($x = 0; $x -lt $source.Width; $x++) {
+            $c = $source.GetPixel($x, $y)
+            if ($c.A -lt 128 -or ($c.R -eq 152 -and $c.G -eq 0 -and $c.B -eq 136)) { $c = [Drawing.Color]::Transparent }
+            $bitmap.SetPixel($x, $y, $c)
+        }
+    }
+    $source.Dispose(); $ms.Dispose()
+    $bitmap
+}
+
+# Copies a picture out of the pk3 as a PNG. $ShiftY moves it up (negative) or down, the rows it
+# uncovers filled with $Fill ($null: clear).
+function Copy-MAPicture($MA, [string]$Name, [string]$Path, [int]$ShiftY = 0, $Fill = $null) {
+    $bitmap = Read-MAPicture $MA $Name
+    if ($ShiftY -ne 0) {
+        $moved = New-Object Drawing.Bitmap $bitmap.Width, $bitmap.Height
+        for ($y = 0; $y -lt $bitmap.Height; $y++) {
+            $sy = $y - $ShiftY
+            for ($x = 0; $x -lt $bitmap.Width; $x++) {
+                $c = if ($sy -ge 0 -and $sy -lt $bitmap.Height) { $bitmap.GetPixel($x, $sy) } elseif ($null -ne $Fill) { $Fill } else { [Drawing.Color]::Transparent }
+                $moved.SetPixel($x, $y, $c)
+            }
+        }
+        $bitmap.Dispose(); $bitmap = $moved
+    }
+    New-Item -ItemType Directory -Force (Split-Path $Path) | Out-Null
+    $bitmap.Save($Path, [Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+    "Wrote $Path (Midnight Assault's $Name)"
+}
+
+# An icon of $Width x $Height made from a pickup's picture: the part of it that isn't clear,
+# shrunk if it has to be to fit (a pixel's border left), in the middle, on $Background ($null:
+# clear). A status bar draws its weapon icon over the last one, so one with clear pixels shows
+# the last through them: give it the bar's own color there.
+function Save-MAIcon($MA, [string]$Name, [string]$Path, [int]$Width = 48, [int]$Height = 24, $Background = $null) {
+    $source = Read-MAPicture $MA $Name
+    $minX = $source.Width; $minY = $source.Height; $maxX = -1; $maxY = -1
+    for ($y = 0; $y -lt $source.Height; $y++) {
+        for ($x = 0; $x -lt $source.Width; $x++) {
+            if ($source.GetPixel($x, $y).A -gt 0) {
+                $minX = [Math]::Min($minX, $x); $maxX = [Math]::Max($maxX, $x)
+                $minY = [Math]::Min($minY, $y); $maxY = [Math]::Max($maxY, $y)
+            }
+        }
+    }
+    if ($maxX -lt 0) { throw "$Name is all clear" }
+    $w = $maxX - $minX + 1; $h = $maxY - $minY + 1
+    $scale = [Math]::Min(1.0, [Math]::Min(($Width - 2) / $w, ($Height - 2) / $h))
+    $dw = [int][Math]::Max(1, [Math]::Round($w * $scale)); $dh = [int][Math]::Max(1, [Math]::Round($h * $scale))
+    $bitmap = New-Object Drawing.Bitmap $Width, $Height
+    $g = [Drawing.Graphics]::FromImage($bitmap)
+    $g.Clear($(if ($null -ne $Background) { $Background } else { [Drawing.Color]::Transparent }))
+    $g.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+    $g.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::Half
+    $dest = New-Object Drawing.Rectangle ([int](($Width - $dw) / 2)), ([int](($Height - $dh) / 2)), $dw, $dh
+    $g.DrawImage($source, $dest, $minX, $minY, $w, $h, [Drawing.GraphicsUnit]::Pixel)
+    $g.Dispose(); $source.Dispose()
+    New-Item -ItemType Directory -Force (Split-Path $Path) | Out-Null
+    $bitmap.Save($Path, [Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+    "Wrote $Path (from Midnight Assault's $Name)"
+}
+
+# Copies a file (a sound) out of the pk3 as it is
+function Copy-MAFile($MA, [string]$Name, [string]$Path) {
+    New-Item -ItemType Directory -Force (Split-Path $Path) | Out-Null
+    $stream = (Get-MAEntry $MA $Name).Open()
+    $out = [IO.File]::Create($Path)
+    $stream.CopyTo($out); $out.Dispose(); $stream.Dispose()
+    "Wrote $Path (Midnight Assault's $Name)"
+}
+
+#
 # SOUNDS
 #
 

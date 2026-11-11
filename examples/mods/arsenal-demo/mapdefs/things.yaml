@@ -7,3 +7,5 @@ things:
   864: { class: ScopedRifle, angles: 0 }
   865: { class: RifleRounds, angles: 0 }
   866: { class: SilencedPistol, angles: 0 }
+  867: { class: Bazooka, angles: 0 }
+  868: { class: Rockets, angles: 0 }

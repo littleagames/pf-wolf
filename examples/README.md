@@ -1339,10 +1339,10 @@ vault walls from the console (a script has no switch tile, so the lever slides w
 
 ## Arsenal Demo (`mods/arsenal-demo`)
 
-Four new weapons for Wolfenstein 3D, all data: a **shotgun** fed from a tube and reloaded a shell
-at a time, **grenades** you cook before you throw, a **scoped rifle** and a **silenced pistol**.
-And a range to try them on, replacing Floor 1. It's YAML, with the pictures, sounds and level a
-script makes.
+Five new weapons for Wolfenstein 3D, all data: a **shotgun** fed from a tube and reloaded a shell
+at a time, **grenades** you cook before you throw, a **scoped rifle**, a **silenced pistol** and a
+**bazooka**. And a range to try them on, replacing Floor 1. It's YAML, with Midnight Assault's
+pictures and sounds and a level that a script puts together.
 
 ```
 PFWolf.exe --file arsenal-demo
@@ -1350,10 +1350,11 @@ PFWolf.exe --file arsenal-demo
 
 It replaces Floor 1 like the other level demos, so switch on only one of them at a time. The
 weapons themselves work on every level: with cheats on, `give Shotgun`, `give HandGrenade`,
-`give ScopedRifle` or `give SilencedPistol`.
+`give ScopedRifle`, `give SilencedPistol` or `give Bazooka`.
 
-- **The armory,** where you start: the four weapons laid out in a row with their ammo behind them.
-  Their keys are 7 (shotgun), 8 (grenades), 9 (rifle) and 0 (silenced pistol).
+- **The armory,** where you start: the weapons laid out in a row with their ammo behind them, the
+  bazooka and its rockets beside you. Their keys are 7 (shotgun), 8 (the bazooka, and 8 again
+  for the grenades), 9 (rifle) and 0 (silenced pistol).
 - **The shotgun** fires seven pellets in a spread. It holds six shells in its tube: when the tube
   runs dry, or you press **R** (reload) with room in it, it loads a shell at a time, and firing
   cuts the reload short once there's a shell in.
@@ -1364,8 +1365,11 @@ weapons themselves work on every level: with cheats on, `give Shotgun`, `give Ha
 - **The rifle:** hold **Z** (zoom) to look through the scope, up to four times closer, turning
   slower; let go to stay zoomed, hold it again to zoom out. Zoomed in, its shot hits far harder.
 - **The silenced pistol** uses the pistol's clips, and its shots alert no one.
+- **The bazooka** holds one rocket at a time and reloads after every shot. The rocket trails
+  smoke and blows up on whatever it hits, shaking the view and hurting everything near it, you
+  too if you're close.
 - **The range,** north: SS at the far end for the rifle, a knot of guards in the middle for a
-  grenade. **Close quarters,** west: dogs and guards among pillars, for the shotgun. **The
+  grenade or a rocket. **Close quarters,** west: dogs and guards among pillars, for the shotgun. **The
   barracks,** east: guards facing the walls, for the silenced pistol. The exit is off the range.
 
 ### What's in it
@@ -1380,31 +1384,48 @@ weapons themselves work on every level: with cheats on, `give Shotgun`, `give Ha
     held, cooking the throw; `A_FireMissile("ThrownGrenade", 2, "power")` throws as hard as it
     was cooked. `ThrownGrenade` has `z`, `zspeed`, `gravity` and `zfloor` (it arcs and comes to
     rest on the floor), thinks `A_Missile(10, 20, "bounce")` (off walls at half speed, its
-    `bouncesound`), and when its Spawn frames run out, its Death state's `A_Explode(40, 110, 2,
-    "hurtplayer", "falloff")` blows up.
+    `bouncesound`, one of three at random), and when its Spawn frames run out, its Death state's
+    `A_Explode(40, 110, 2, "hurtplayer", "falloff")` blows up; `A_JumpIfOnFloor("LowDeath")`
+    picks the lower blast for one that's come to rest.
   - `ScopedRifle`: `weapon.zoom` (4 times), `weapon.zoompic` (the scope picture, over the whole
     screen), `weapon.zoomsound`, `weapon.zoomturn`, and a `ZoomFire` state it fires zoomed in:
     `A_FireBullet(90, 160)` against `Fire`'s `A_FireBullet(25, 50)` from the hip.
   - `SilencedPistol`: `weapon.silent: true`, and `A_FireBullet(15, 40, "silent")`.
-  - Each has a `weapon.slot`, a `weapon.selectionorder` (lower is better), an `inventory.icon` for
-    the status bar and a `tag` (its name).
-- `mapdefs/things.yaml`: objects 860-866, the weapons and their ammo, for any level to place.
-- `sprites/`: the view frames (`ARSG`, `ARGV`, `ARRV`, `ARPV`: 64x64, drawn at the bottom of the
-  view), the pickups, the grenade (`ARGN`) and its blast (`AREX`). `graphics/`: the four status bar
-  icons (48x24) and the scope (`ARSCOPE`, 320x200, clear in the middle). `sounds/`, named in
-  `sounds/sound-seq.yaml`.
+  - `Bazooka`: `weapon.magazine: BazookaTube`, an `Ammo` holding 1, so it goes to `Reload` after
+    every shot; `A_FireMissile("BazookaRocket")`. `BazookaRocket` leaves the base game's `Smoke`
+    behind it (`A_SpawnThing`), hits for `A_Missile(30, 60)`, then `A_Quake` and
+    `A_Explode(60, 160, 2, "hurtplayer", "falloff")`.
+  - Each has a `weapon.slot` (the bazooka shares 8 with the grenades: the slot's key goes from
+    one to the other), a `weapon.selectionorder` (lower is better), an `inventory.icon` for the
+    status bar and a `tag` (its name).
+- `mapdefs/things.yaml`: objects 860-868, the weapons and their ammo, for any level to place.
+- `sprites/`: the view frames (`ARSG`/`ARSR` shotgun, `ARGV`/`ARGT` grenade, `ARRV`/`ARRF`/`ARRB`
+  rifle, `ARPV`/`ARPF` pistol, `ARBZ`/`ARBR` bazooka: 64x64, drawn at the bottom of the view),
+  the pickups, the grenade in flight and its blasts (`ARGN`), and the rocket from its 8 sides and
+  its blast (`ARRK`). `graphics/`: the five status bar icons (48x24, on the bar's blue: the bar
+  draws an icon over the last one) and the scope (`ARSCOPE`, 320x200, clear in the middle).
+  `sounds/`, named in `sounds/sound-seq.yaml`.
 - `statusbar.yaml`: a `power-meter` along the bottom of the level, score and lives box (Wolf3D's
   status bar has none), its `levels` changing its color as the power rises, and `box-fill: bar`
   putting the bar's own picture back as it shrinks.
 - `game-info.yaml`: messages over the view on, for the pickups'.
 - `maps/MAP01.wad`: the range.
 
-Everything but the YAML is made by `tools/make-arsenal-demo.ps1`, the pictures drawn with shapes
-(`Save-Drawing` in `tools/example-mod-tools.ps1`). Edit it and run it again:
+The pictures and sounds are **Midnight Assault's**: `tools/make-arsenal-demo.ps1` copies them
+out of its `midnight-assault.pk3` under this mod's own names (`Copy-MAPicture`, `Save-MAIcon` and
+`Copy-MAFile` in `tools/example-mod-tools.ps1`), its BMPs turned into PNGs, and the game snaps
+their colors to Wolf3D's palette as it loads them. The scope picture is moved up 20 rows to sit
+over the middle of Wolf3D's view, which has a status bar under it. The silenced pistol is Midnight
+Assault's .45 without its muzzle-flash frame, and its quiet shot is the one sound the script
+makes. The script also builds the level. Edit it and run it again, giving it the pk3 if it isn't
+where the script looks:
 
 ```
-powershell -ExecutionPolicy Bypass -File examples/tools/make-arsenal-demo.ps1
+powershell -ExecutionPolicy Bypass -File examples/tools/make-arsenal-demo.ps1 [-MidnightAssault <path to midnight-assault.pk3>]
 ```
+
+Midnight Assault draws its weapons for a view with no status bar, so in Wolf3D's shorter view
+they look smaller than the game's own (the shotgun at rest shows little more than its tip).
 
 Wolf3D's status bar has no room for the shotgun's loaded shells (a status bar `clip` part shows
 them where there's one), so the tube's count doesn't show; the ammo number is the shells,
@@ -1842,16 +1863,21 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
   tag (the channel's, 1) and back. Plain water (`HZWATER`) has no damage, so the current's off.
 - `scripts/hazards.lua`: the suit (`game.onpickup` notes until when it lasts on the player's
   `temp1`; `game.ondamage` makes a floor's hurt nothing meanwhile, a floor's having no attacker),
-  the warnings (`game.onenter` and `game.floor`), and the countdown (`game.onhud`).
+  the warnings (`game.onenter` and `game.floor`), the countdown (`game.onhud`), and sparks
+  jumping off the live water near you (`game.onlevel` finds the water's tiles, `game.ontick`
+  throws up `game.particles` while a tile's floor is still `HZSHOCK`).
+- `particles.yaml`: the sparks and the flash under them, Midnight Assault's own.
 - `actordefs/hazards.yaml` and `mapdefs/things.yaml`: the suit, object 920.
 - `game-info.yaml`: the lava hall's light zone (1), tinted orange.
 - `flats/`, `sprites/`, `maps/MAP01.wad`: made by the script below.
 
-The floors, the suit and the level are made by `tools/make-hazards-demo.ps1`. Edit it and run it
-again:
+The floors, the suit and the level are made by `tools/make-hazards-demo.ps1`. The water, live
+(four frames) and dark, is **Midnight Assault's**, copied out of its `midnight-assault.pk3`; the
+lava, acid and suit, which it has none of, are drawn. Edit it and run it again, giving it the
+pk3 if it isn't where the script looks:
 
 ```
-powershell -ExecutionPolicy Bypass -File examples/tools/make-hazards-demo.ps1
+powershell -ExecutionPolicy Bypass -File examples/tools/make-hazards-demo.ps1 [-MidnightAssault <path to midnight-assault.pk3>]
 ```
 
 With cheats on, `where` shows the floor you're on, and `lua print(game.floor(me.tilex, me.tiley))`

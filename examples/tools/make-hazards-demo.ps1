@@ -2,7 +2,12 @@
 # ones in frames that animdefs/hazards.yaml plays), the hazard suit (sprites/HZSTA0.png) and the
 # level (maps/MAP01.wad). Run it after changing any of them:
 #
-#   powershell -ExecutionPolicy Bypass -File examples/tools/make-hazards-demo.ps1
+#   powershell -ExecutionPolicy Bypass -File examples/tools/make-hazards-demo.ps1 [-MidnightAssault <midnight-assault.pk3>]
+#
+# The water, live and dead, is Midnight Assault's (out of its pk3); the lava, the acid and the
+# suit, which it has none of, are drawn here.
+
+param([string]$MidnightAssault = 'D:\projects\Wolf3D\Midnight Assault\midnight-assault.pk3')
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'example-mod-tools.ps1')
@@ -30,22 +35,12 @@ foreach ($f in 1..2) {
         New-Color (60 + $v) (150 + $v) (40 + $v / 2)
     }
 }
-# Water: plain, and electrified (sparks crawling over it, two frames)
-$Water = { param($x, $y) $v = [Math]::Sin($a * (2 * $x + [Math]::Sin($a * 2 * $y) * 3)) * 10; New-Color (30 + $v) (60 + $v) (110 + $v) }
-Save-Picture "$modDir\flats\HZWATER.png" 64 64 $Water
-foreach ($f in 1..2) {
-    $sparks = New-Object Random (20 + $f)
-    $lit = @{}
-    for ($k = 0; $k -lt 14; $k++) {
-        $sx = $sparks.Next(64); $sy = $sparks.Next(64)
-        for ($s = 0; $s -lt 6; $s++) { $lit["$(($sx + $s) % 64),$(($sy + $sparks.Next(-1, 2) + 64) % 64)"] = $true }
-    }
-    Save-Picture "$modDir\flats\HZSHOCK$f.png" 64 64 {
-        param($x, $y)
-        if ($lit.ContainsKey("$x,$y")) { return New-Color 220 240 255 }
-        & $Water $x $y
-    }
-}
+# Water: Midnight Assault's dark water (the current off), and its electrified water, the current
+# crawling over it in four frames (WATER_ELECTRIC1-4)
+$ma = Open-MidnightAssault $MidnightAssault
+Copy-MAPicture $ma 'WATER_DARK.bmp' "$modDir\flats\HZWATER.png"
+foreach ($f in 1..4) { Copy-MAPicture $ma "WATER_ELECTRIC$f.bmp" "$modDir\flats\HZSHOCK$f.png" }
+Close-MidnightAssault $ma
 
 # The hazard suit: a yellow suit and a helmet with a dark visor, folded on the floor
 Save-Drawing "$modDir\sprites\HZSTA0.png" 64 64 {
