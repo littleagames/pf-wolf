@@ -81,8 +81,11 @@ public class BlakeMachinesGameTests
     [TestCase("BioMechGuardian", "BIOM")]
     public void A_Mission_Boss_Fights_Dies_And_Leaves_The_Gold_Card(string boss, string sprite)
     {
-        // Act: across the room from the player (in god mode), then killed
-        var output = Play($"god; summon {boss} 0 26 53; wait 400; actors; killall; wait 150; actors");
+        // Act: across the room from the player (in god mode), then killed. Its shots roll to hit,
+        // less often from further off, and the game's random numbers start where the clock says,
+        // so it's given time for several attacks: in 400 tics a boss sometimes fired once or twice
+        // and missed (the Breather Beast, about 1 run in 12)
+        var output = Play($"god; summon {boss} 0 26 53; wait 800; actors; killall; wait 150; actors");
 
         // Assert: it came for the player and hit them, then lay dead with the gold card dropped
         Assert.That(output, Has.Some.StartsWith("ATTACKING:"), "it hit the player");
