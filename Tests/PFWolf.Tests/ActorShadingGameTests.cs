@@ -51,6 +51,14 @@ public class ActorShadingGameTests
         Assert.That(actors.ShadeText, Does.StartWith("24 tiles: fade step 15 of 25 (lighten +6 from step 21)"));
     }
 
+    [TestCase("blake", "FloorLamp", false, 6)]      // partial-bright
+    [TestCase("wolf3d", "FloorLamp", true, 0)]      // bright
+    [TestCase("wolf3d", "Guard", false, 0)]
+    public void The_3D_Views_Things_Are_Lit_As_The_Game_Lights_Their_Spawn_Frame(string game, string thing, bool bright, int lighten)
+    {
+        Assert.That(Load(game).ThingShading(thing), Is.EqualTo((bright, lighten)));
+    }
+
     [Test]
     public void A_Mod_Levels_Zone_Lights_The_Frame()
     {

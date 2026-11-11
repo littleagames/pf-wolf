@@ -198,6 +198,46 @@ public sealed class GameContent
 
     private readonly Dictionary<string, string> _thingSpriteNames = new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly Dictionary<string, (bool Bright, int Lighten)> _thingShading = new(StringComparer.OrdinalIgnoreCase);
+    private Shading.LightenLevelTable? _lightenLevels;
+
+    /// <summary>
+    /// How a thing is lit as it stands (its Spawn state's first frame, as the game resolves it):
+    /// whether it's drawn unshaded and how many fade steps less it darkens, by the game's own
+    /// rules (PFWolf.Common's ActorShadingRules, as Lighting.IsBright and Lighten) with game-info's
+    /// lighten-levels
+    /// </summary>
+    public (bool Bright, int Lighten) ThingShading(string className)
+    {
+        if (_thingShading.TryGetValue(className, out var known))
+            return known;
+        if (_lightenLevels == null)
+        {
+            _lightenLevels = new Shading.LightenLevelTable { Warn = _ => { } };
+            _lightenLevels.Set(GameInfo?.LightenLevels ?? []);
+        }
+
+        (bool, int) result = (false, 0);
+        if (_actors.TryGetValue(className, out var own))
+        {
+            try
+            {
+                var merged = Entities.Actors.ActorInheritance.Merged(className, own, _actors);
+                var states = Entities.Actors.ActorStateResolver.Resolve(merged.States, (_, _, _) => { });
+                var frame = states.GetValueOrDefault("Spawn");
+                bool hasOwn = merged.Properties.TryGetValue("lighten", out var lighten);
+                bool flag = merged.Flags.Any(f => f.Equals("bright", StringComparison.OrdinalIgnoreCase));
+                result = (Shading.ActorShadingRules.IsBright(frame?.Bright == true, flag, hasOwn, lighten?.ToString()),
+                    Shading.ActorShadingRules.Lighten(hasOwn, lighten?.ToString(), frame?.LightenLevel, _lightenLevels));
+            }
+            catch (Exception e) when (e is InvalidOperationException or KeyNotFoundException or ArgumentException)
+            {
+                // a class that can't be built (a missing parent) is lit as anything else
+            }
+        }
+        return _thingShading[className] = result;
+    }
+
     /// <summary>
     /// Why a thing's class shows nothing when it should: it isn't in the actordefs, or its Spawn
     /// frame names a sprite the game can't find; null when it shows, or is meant not to (TNT1,

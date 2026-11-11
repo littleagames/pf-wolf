@@ -5,9 +5,11 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
+using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Editing;
+using PFWolf.Shading;
 
 namespace PFWolf.Editor.Rendering;
 
@@ -77,11 +79,19 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     private Point? _rightClickStart;
     private const double ClickSlop = 4;
 
-    private const int FloatsPerVertex = 11;   // position 3, texture 2, color 4, scroll 2
+    private const int FloatsPerVertex = 14;   // position 3, texture 2, color 4, scroll 2, light 3 (row, step, solid index)
     private const double TicsPerSecond = 70;     // the game's clock, which scrollers move by
 
     private Gl? _gl;
-    private int _program, _viewProjection, _mode, _texture, _eye, _forward, _fog, _fadeColor, _time;
+    private int _program, _viewProjection, _mode, _texture, _rowsSampler, _eye, _forward, _fade, _time;
+
+    // The light rows the level's surfaces are drawn in (PFWolf.Common's LightRowBuilder), as colors:
+    // each a band FadeSteps texels high and 256 wide, by row number (the mesh's lights, numbered)
+    private int _rowsTexture;
+    private readonly Dictionary<SurfaceLight, int> _rowIds = [];
+
+    // Pictures by palette index, for shading (the level's surfaces and things); skies keep their colors
+    private readonly Dictionary<TextureRef, int> _skyTextures = [];
     // A tile's own sky, seen through its ceiling or floor: its look (Mode 2 and 3)
     private int _surfaceSkyLook, _surfaceSkyTop, _surfaceSkyBottom;
     private int _staticVao, _staticVbo, _dynamicVao, _dynamicVbo;
@@ -177,14 +187,14 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             var gl = new Gl(glInterface);
             bool es = GlVersion.Type == GlProfileType.OpenGLES;
             string header = es ? "#version 300 es\nprecision mediump float;\n" : "#version 330 core\n";
-            _program = gl.MakeProgram(header + VertexShader, header + FragmentShader, "aPosition", "aUv", "aColor", "aScroll");
+            _program = gl.MakeProgram(header + VertexShader, header + FragmentShader, "aPosition", "aUv", "aColor", "aScroll", "aLight");
             _viewProjection = gl.GetUniformLocation(_program, "uViewProjection");
             _mode = gl.GetUniformLocation(_program, "uMode");
             _texture = gl.GetUniformLocation(_program, "uTexture");
+            _rowsSampler = gl.GetUniformLocation(_program, "uRows");
             _eye = gl.GetUniformLocation(_program, "uEye");
             _forward = gl.GetUniformLocation(_program, "uForward");
-            _fog = gl.GetUniformLocation(_program, "uFog");
-            _fadeColor = gl.GetUniformLocation(_program, "uFadeColor");
+            _fade = gl.GetUniformLocation(_program, "uFade");
             _time = gl.GetUniformLocation(_program, "uTime");
             _surfaceSkyLook = gl.GetUniformLocation(_program, "uSkyLook");
             _surfaceSkyTop = gl.GetUniformLocation(_program, "uSkyTop");
@@ -226,6 +236,9 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         if (_gl is { } gl)
         {
             DeleteTextures(gl);
+            if (_rowsTexture != 0)
+                gl.DeleteTexture(_rowsTexture);
+            _rowsTexture = 0;
             gl.DeleteTexture(_white);
             gl.DeleteTexture(_missing);
             gl.DeleteBuffer(_staticVbo);
@@ -245,6 +258,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     {
         _gl = null;
         _glTextures.Clear();
+        _skyTextures.Clear();
+        _rowsTexture = 0;
         base.OnOpenGlLost();
     }
 
@@ -258,10 +273,12 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.VertexAttribPointer(1, 2, stride, 3 * sizeof(float));
         gl.VertexAttribPointer(2, 4, stride, 5 * sizeof(float));
         gl.VertexAttribPointer(3, 2, stride, 9 * sizeof(float));
+        gl.VertexAttribPointer(4, 3, stride, 11 * sizeof(float));
         gl.EnableVertexAttribArray(0);
         gl.EnableVertexAttribArray(1);
         gl.EnableVertexAttribArray(2);
         gl.EnableVertexAttribArray(3);
+        gl.EnableVertexAttribArray(4);
         gl.BindVertexArray(0);
         return (vao, vbo);
     }
@@ -280,21 +297,98 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
 
     private void DeleteTextures(Gl gl)
     {
-        foreach (var id in _glTextures.Values)
+        foreach (var id in _glTextures.Values.Concat(_skyTextures.Values).Where(id => id != _missing && id != _white))
             gl.DeleteTexture(id);
         _glTextures.Clear();
+        _skyTextures.Clear();
     }
 
+    /// <summary>
+    /// A surface's picture on the card: a sky's in its colors (it's never shaded), anything else
+    /// by palette index (the index in red, alpha where it shows) for the shader to shade
+    /// </summary>
     private int TextureId(Gl gl, TextureRef texture)
     {
         if (texture.Source == TextureSource.Solid)
             return _white;
-        if (_glTextures.TryGetValue(texture, out var id))
+        bool sky = texture.Source is TextureSource.Picture or TextureSource.Sky or TextureSource.FloorSky;
+        var cache = sky ? _skyTextures : _glTextures;
+        if (cache.TryGetValue(texture, out var id))
             return id;
 
-        id = Art?.Pixels(texture) is var (width, height, rgba) ? MakeTexture(gl, width, height, rgba) : _missing;
-        _glTextures[texture] = id;
+        var pixels = sky ? Art?.Pixels(texture) : Art?.IndexedPixels(texture);
+        id = pixels is var (width, height, rgba) ? MakeTexture(gl, width, height, rgba) : _missing;
+        cache[texture] = id;
         return id;
+    }
+
+    /// <summary>The light rows the mesh's surfaces and things are drawn in, numbered, as one texture of their colors</summary>
+    private void MakeRows(Gl gl, LevelMesh mesh)
+    {
+        if (_rowsTexture != 0)
+            gl.DeleteTexture(_rowsTexture);
+        var palette = mesh.Tiles.Content.Palette;
+        if (_rowBuilder == null || !ReferenceEquals(_rowBuilderPalette, palette))
+            (_rowBuilder, _rowBuilderPalette) = (new LightRowBuilder(palette), palette);
+
+        var fade = mesh.Fade;
+        const int Steps = ShadeMath.FadeSteps;
+        var rgba = new byte[_rowIds.Count * Steps * 256 * 4];
+        foreach (var (light, id) in _rowIds)
+        {
+            var row = _rowBuilder.Row(light.Level, ShadeMath.LightLevels, Steps, fade.R, fade.G, fade.B,
+                (byte)(light.Tint >> 16), (byte)(light.Tint >> 8), (byte)light.Tint);
+            for (int i = 0; i < Steps * 256; i++)
+            {
+                var color = row[i] < palette.Length ? palette[row[i]] : new PaletteColor(255, 0, 255);
+                int at = (id * Steps * 256 + i) * 4;
+                (rgba[at], rgba[at + 1], rgba[at + 2], rgba[at + 3]) = (color.Red, color.Green, color.Blue, 255);
+            }
+        }
+        _rowsTexture = rgba.Length > 0 ? MakeTexture(gl, 256, _rowIds.Count * Steps, rgba) : 0;
+    }
+
+    private LightRowBuilder? _rowBuilder;
+    private PaletteColor[]? _rowBuilderPalette;
+
+    // A light's row number, added if it's new; -1 for an editor mark (its own color)
+    private int RowId(SurfaceLight light)
+    {
+        if (light.IsEditor)
+            return -1;
+        if (!_rowIds.TryGetValue(light, out var id))
+            _rowIds[light] = id = _rowIds.Count;
+        return id;
+    }
+
+    // What a surface's vertices carry for shading: its row, a step worked out per fragment, and a
+    // solid game color's palette index (the nearest, as VideoManager.ParseColor finds it)
+    private (Vector3 Light, Vector4 Color) SurfaceShade(Surface surface, PaletteColor[] palette)
+    {
+        int row = RowId(surface.Light);
+        if (surface.Texture.Source != TextureSource.Solid || surface.Light.IsEditor)
+            return (new Vector3(row, -1, -1), surface.Color);
+        var c = surface.Color;
+        static byte Byte(float value) => (byte)Math.Clamp(MathF.Round(value * 255), 0, 255);
+        int index = new Palette { Colors = palette }.ClosestIndex(Byte(c.X), Byte(c.Y), Byte(c.Z));
+        return (new Vector3(row, -1, index), Vector4.One);
+    }
+
+    /// <summary>
+    /// A thing's fade step this frame, as the game works one out per sprite (SpriteDrawing,
+    /// SpriteScaler): from how far its middle is along the view, through the classic window's
+    /// sprite height, less its lighten; none when it's bright or the level isn't shaded
+    /// </summary>
+    private static int SpriteStep(LevelMesh mesh, Billboard sprite, Camera3D camera)
+    {
+        if (!mesh.Shaded || sprite.Bright)
+            return 0;
+        float along = Vector3.Dot(new Vector3(sprite.Base.X, camera.Position.Y, sprite.Base.Z) - camera.Position, camera.FlatForward);
+        int height = SpriteShading.ViewHeight((long)Math.Round(along * MapConstants.TileGlobal), ShadePreview.HeightNumerator);
+        if (height == 0)
+            return 0;
+        var fade = mesh.Fade;
+        return ShadeMath.Lightened(ShadeMath.ShadeOffsetForHeight(height, ShadePreview.HeightNumerator, fade), sprite.Lighten, fade) / 256;
     }
 
     protected override void OnOpenGlRender(GlInterface glInterface, int framebuffer)
@@ -334,12 +428,15 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.Uniform1(_texture, 0);
         gl.Uniform1(_mode, 0);
 
-        // The fade with distance along the view (Lighting.ShadeOffset)
-        var fog = _mesh.Fog;
+        // The fade with distance along the view (ShadeMath.ShadeOffset), and the light rows on unit 1
+        var fade = _mesh.Fade;
         gl.Uniform3(_eye, camera.Position);
         gl.Uniform3(_forward, camera.FlatForward);
-        gl.Uniform4(_fog, fog?.Start ?? 0, fog?.End ?? 1, fog?.MaxFade ?? 0, fog is { Inverse: true } ? 1 : 0);
-        gl.Uniform3(_fadeColor, fog?.Color ?? Vector3.Zero);
+        gl.Uniform4(_fade, fade.Start, fade.End, fade.MaxFadeStep, fade.Inverse ? 1 : 0);
+        gl.ActiveTexture(Gl.TEXTURE0 + 1);
+        gl.BindTexture(Gl.TEXTURE_2D, _rowsTexture);
+        gl.ActiveTexture(Gl.TEXTURE0);
+        gl.Uniform1(_rowsSampler, 1);
         // Scrolling surfaces' clock, in tics; it starts over every hour, so a float keeps it exact
         gl.Uniform1(_time, (float)(_clock.Elapsed.TotalSeconds * TicsPerSecond % 252000));
 
@@ -380,7 +477,10 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             {
                 int first = vertices.Count / FloatsPerVertex;
                 foreach (var sprite in group)
-                    AddQuad(vertices, BillboardCorners(sprite, camera), SquareUvs, sprite.Color);
+                {
+                    var light = new Vector3(RowId(sprite.Bright ? SurfaceLight.Full : sprite.Light), SpriteStep(_mesh, sprite, camera), -1);
+                    AddPolygon(vertices, BillboardCorners(sprite, camera), SquareUvs, Vector4.One, light: light);
+                }
                 spriteBatches.Add((group.Key, first, vertices.Count / FloatsPerVertex - first));
             }
         }
@@ -495,18 +595,28 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     {
         _uploadPending = false;
         _batches.Clear();
+        _rowIds.Clear();
         var vertices = new List<float>();
         if (_mesh != null)
         {
+            // Full light first: bright things are drawn in it, unshaded
+            RowId(SurfaceLight.Full);
+            var palette = _mesh.Tiles.Content.Palette;
             var shown = _mesh.Surfaces.Where(surface => (ShowCeilings || surface.Ref.Kind != SurfaceKind.Ceiling)
                                                        && (ShowThings || surface.Ref.Kind != SurfaceKind.Thing));
             foreach (var group in shown.GroupBy(surface => surface.Texture))
             {
                 int first = vertices.Count / FloatsPerVertex;
                 foreach (var surface in group)
-                    AddPolygon(vertices, surface.Points, surface.Uvs, surface.Color, surface.Scroll);
+                {
+                    var (light, color) = SurfaceShade(surface, palette);
+                    AddPolygon(vertices, surface.Points, surface.Uvs, color, surface.Scroll, light);
+                }
                 _batches.Add((group.Key, first, vertices.Count / FloatsPerVertex - first));
             }
+            foreach (var sprite in _mesh.Billboards)
+                RowId(sprite.Light);
+            MakeRows(gl, _mesh);
         }
 
         gl.BindBuffer(Gl.ARRAY_BUFFER, _staticVbo);
@@ -515,25 +625,28 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
 
     /// <summary>A convex polygon as a fan of triangles</summary>
     /// <param name="scroll">How far its texture moves a tic, in texture widths and heights</param>
-    private static void AddPolygon(List<float> vertices, Vector3[] points, Vector2[] uvs, Vector4 color, Vector2 scroll = default)
+    /// <param name="light">Its light row, fade step (-1: per fragment) and solid palette index (-1: none); none (an overlay) by default</param>
+    private static void AddPolygon(List<float> vertices, Vector3[] points, Vector2[] uvs, Vector4 color, Vector2 scroll = default, Vector3? light = null)
     {
+        var shade = light ?? new Vector3(-1, -1, -1);
         for (int i = 1; i + 1 < points.Length; i++)
         {
-            AddVertex(vertices, points[0], uvs[0], color, scroll);
-            AddVertex(vertices, points[i], uvs[i], color, scroll);
-            AddVertex(vertices, points[i + 1], uvs[i + 1], color, scroll);
+            AddVertex(vertices, points[0], uvs[0], color, scroll, shade);
+            AddVertex(vertices, points[i], uvs[i], color, scroll, shade);
+            AddVertex(vertices, points[i + 1], uvs[i + 1], color, scroll, shade);
         }
     }
 
     private static void AddQuad(List<float> vertices, Vector3[] corners, Vector2[] uvs, Vector4 color)
         => AddPolygon(vertices, corners, uvs, color);
 
-    private static void AddVertex(List<float> vertices, Vector3 point, Vector2 uv, Vector4 color, Vector2 scroll)
+    private static void AddVertex(List<float> vertices, Vector3 point, Vector2 uv, Vector4 color, Vector2 scroll, Vector3 light)
     {
         vertices.Add(point.X); vertices.Add(point.Y); vertices.Add(point.Z);
         vertices.Add(uv.X); vertices.Add(uv.Y);
         vertices.Add(color.X); vertices.Add(color.Y); vertices.Add(color.Z); vertices.Add(color.W);
         vertices.Add(scroll.X); vertices.Add(scroll.Y);
+        vertices.Add(light.X); vertices.Add(light.Y); vertices.Add(light.Z);
     }
 
     /// <summary>A sprite's corners, square to the view (bottom left, bottom right, top right, top left)</summary>
@@ -897,14 +1010,16 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         in vec2 aUv;
         in vec4 aColor;
         in vec2 aScroll;
+        in vec3 aLight;
         uniform mat4 uViewProjection;
         uniform float uTime;
         uniform vec3 uEye;
         uniform vec3 uForward;
         out vec2 vUv;
         out vec4 vColor;
-        out float vDepth;
+        out highp float vDepth;
         out vec3 vWorld;
+        flat out vec3 vLight;
         void main()
         {
             gl_Position = uViewProjection * vec4(aPosition, 1.0);
@@ -912,29 +1027,46 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             vColor = aColor;
             vDepth = dot(aPosition - uEye, uForward);
             vWorld = aPosition;
+            vLight = aLight;
         }
         """;
 
-    // Mode 0: the texture (see-through texels cut out) times the color (its light), faded toward
-    // the fade color with distance; 1: just the color, blended (the tints). uFog: fade start and
-    // end in tiles, max fade 0 to 1, 1 for the inverse curve (Lighting.ShadeOffset). 2: a tile's
-    // own sky, unshaded, by the way through the pixel as the sky pass does it; 3: a floor sky, down
-    // from the horizon (SkyAndFlats.FloorSkyPixel). uSkyLook: the sky's turns around the circle,
-    // the tangent of half the view's height, 1 for a mirrored floor sky
+    // Mode 0, as the game shades (PFWolf.Common's Shading): the texel's palette index (in its red;
+    // see-through texels cut out), or a solid surface's (vLight.z), looked up in its light row
+    // (vLight.x: a row of uRows, FadeSteps × 256 colors high) at its fade step, times the color
+    // (an editor-only shade); the step is vLight.y when set (a sprite's, worked out per sprite),
+    // else from the depth along the view as ShadeMath.ShadeOffset has it (uFade: start and end in
+    // global units, the most steps, 1 for the inverse curve). vLight.x below 0: an editor mark, in
+    // its color. 1: just the color, blended (the tints). 2: a tile's own sky, unshaded, by the way
+    // through the pixel as the sky pass does it; 3: a floor sky, down from the horizon
+    // (SkyAndFlats.FloorSkyPixel). uSkyLook: the sky's turns around the circle, the tangent of half
+    // the view's height, 1 for a mirrored floor sky
     private const string FragmentShader = """
         in vec2 vUv;
         in vec4 vColor;
-        in float vDepth;
+        in highp float vDepth;
         in vec3 vWorld;
+        flat in vec3 vLight;
         uniform sampler2D uTexture;
+        uniform sampler2D uRows;
         uniform int uMode;
-        uniform vec4 uFog;
-        uniform vec3 uFadeColor;
+        uniform highp vec4 uFade;
         uniform vec3 uEye;
         uniform vec4 uSkyLook;
         uniform vec3 uSkyTop;
         uniform vec3 uSkyBottom;
         out vec4 fragColor;
+        int FadeStep(highp float nx)
+        {
+            int most = int(uFade.z);
+            if (nx <= uFade.x || most == 0)
+                return 0;
+            if (uFade.w > 0.5)
+                return most - int(floor(float(most) * uFade.x / nx));
+            if (nx >= uFade.y)
+                return most;
+            return int(floor((nx - uFade.x) * float(most) / (uFade.y - uFade.x)));
+        }
         void main()
         {
             if (uMode == 1)
@@ -963,20 +1095,24 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
                 }
                 return;
             }
-            vec4 texel = texture(uTexture, vUv);
-            if (texel.a < 0.5)
-                discard;
-            vec3 color = texel.rgb * vColor.rgb;
-
-            float fade = 0.0;
-            if (uFog.z > 0.0 && vDepth > uFog.x)
+            if (vLight.x < -0.5)
             {
-                if (uFog.w > 0.5)
-                    fade = uFog.z * (1.0 - uFog.x / vDepth);
-                else
-                    fade = uFog.z * clamp((vDepth - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0);
+                fragColor = vec4(vColor.rgb, 1.0);
+                return;
             }
-            fragColor = vec4(mix(color, uFadeColor, fade), 1.0);
+            int index;
+            if (vLight.z > -0.5)
+                index = int(vLight.z + 0.5);
+            else
+            {
+                vec4 texel = texture(uTexture, vUv);
+                if (texel.a < 0.5)
+                    discard;
+                index = int(texel.r * 255.0 + 0.5);
+            }
+            int step = vLight.y > -0.5 ? int(vLight.y + 0.5) : FadeStep(vDepth * 65536.0);
+            vec3 color = texelFetch(uRows, ivec2(index, int(vLight.x + 0.5) * 32 + step), 0).rgb;
+            fragColor = vec4(color * vColor.rgb, 1.0);
         }
         """;
 

@@ -42,7 +42,11 @@ The View menu has the 3D view's own layers:
 
 - **3D: things**, the level's things;
 - **3D: ceilings**, the ceilings, off to look down into rooms;
-- **3D: shading**, the level's light, its light zones and distance fade, as the game shows them;
+- **3D: shading**, the level's light, its light zones and distance fade, as the game shows them:
+  the game's own shading tables, so a surface is dimmed and faded in the same steps and to the
+  same palette colors as in the game. A thing fades as one, by how far its middle is (less its
+  `lighten`; bright ones stay unshaded). Not shown: the lights things give off (halo lights) and
+  a zone's flicker, pulse or strobe;
 - **3D: markers**: push walls tinted purple and switches green, and, hovering a tagged tile,
   everything with its tag in orange.
 

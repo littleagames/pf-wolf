@@ -238,6 +238,60 @@ public sealed class ArtCache(GameContent content) : IDisposable
         }
     }
 
+    /// <summary>
+    /// A surface's picture as <see cref="Pixels"/> has it, but by palette index for the 3D view to
+    /// shade as the game does: the index in red, alpha 255 where it shows. A flat's see-through
+    /// pixels take its fill color's nearest palette index (VideoManager.ParseColor's), or are clear.
+    /// Not for skies (they're never shaded: <see cref="Pixels"/>).
+    /// </summary>
+    public (int Width, int Height, byte[] Rgba)? IndexedPixels(TextureRef texture)
+    {
+        switch (texture.Source)
+        {
+            case TextureSource.Texture when content.Find<TextureAsset>(texture.Name) is { Width: > 0, Height: > 0 } wall:
+            {
+                int width = wall.Width, height = wall.Height;
+                return (width, height, MakeIndexRgba(width, height, (x, y) => wall.RawData[x * height + y], null));
+            }
+            case TextureSource.Flat when content.Find<TextureAsset>(texture.Name) is { Width: > 0, Height: > 0 } flat:
+            {
+                int width = flat.Width, height = flat.Height;
+                var fill = texture.Fill;
+                static byte Byte(float value) => (byte)Math.Clamp(MathF.Round(value * 255), 0, 255);
+                byte fillIndex = new Palette { Colors = content.Palette }.ClosestIndex(Byte(fill.X), Byte(fill.Y), Byte(fill.Z));
+                bool filled = fill.W > 0.5f;
+                return (width, height, MakeIndexRgba(width, height,
+                    (x, y) => flat.RawData[x * height + y] is var i && i == FlatMask ? fillIndex : i,
+                    (x, y) => filled || flat.RawData[x * height + y] != FlatMask));
+            }
+            case TextureSource.Sprite when content.ThingSprite(texture.Name) is { Width: > 0, Height: > 0 } sprite:
+            {
+                int width = sprite.Width;
+                return (width, sprite.Height, MakeIndexRgba(width, sprite.Height, (x, y) => sprite.RawData[y * width + x],
+                    sprite.OpacityMask.Length > 0 ? (x, y) => sprite.OpacityMask[y * width + x] != 0 : null));
+            }
+            default:
+                return null;
+        }
+    }
+
+    private static byte[] MakeIndexRgba(int width, int height, Func<int, int, byte> index, Func<int, int, bool>? opaque)
+    {
+        var rgba = new byte[width * height * 4];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (opaque != null && !opaque(x, y))
+                    continue;
+                int at = (y * width + x) * 4;
+                rgba[at] = index(x, y);
+                rgba[at + 3] = 255;
+            }
+        }
+        return rgba;
+    }
+
     private byte[] MakeRgba(int width, int height, Func<int, int, byte> index, Func<int, int, bool>? opaque)
     {
         var palette = content.Palette;

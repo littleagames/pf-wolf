@@ -513,11 +513,14 @@ public class LevelMeshTests
         // Act
         var mesh = Build(document);
 
-        // Assert: the west face and the zoned floor are a fifth lit and red; the east face is full light
-        var dim = new Vector4(0.2f, 0, 0, 1);
-        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Color, Is.EqualTo(dim).Using<Vector4>(Near));
-        Assert.That(At(mesh, SurfaceKind.Floor, 9, 10).Single().Color.X, Is.EqualTo(0.2f * 0.44f).Within(0.01));
-        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.East).Single().Color, Is.EqualTo(Vector4.One));
+        // Assert: the west face and the zoned floor in the zone's light level (51 of 255: 6 of 31)
+        // tinted red, as the game's light grid gives the tile; the east face full light
+        var dim = new SurfaceLight(ShadeMath.LightLevelOf(51), 0xFF0000);
+        Assert.That(mesh.Shaded, Is.True, "a level with zones is shaded");
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Light, Is.EqualTo(dim));
+        Assert.That(At(mesh, SurfaceKind.Floor, 9, 10).Single().Light, Is.EqualTo(dim));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.East).Single().Light, Is.EqualTo(SurfaceLight.Full));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Color, Is.EqualTo(Vector4.One), "the light isn't a color now");
     }
 
     [Test]
@@ -575,12 +578,60 @@ public class LevelMeshTests
         var shaded = LevelMesh.Build(tiles);
         var plain = LevelMesh.Build(tiles, shade: false);
 
-        // Assert
-        Assert.That(shaded.Fog, Is.EqualTo(new LevelFog(new Vector3(128 / 255f), 2, 10, 0.5f, false)).Using<LevelFog>(
-            (a, b) => Vector3.Distance(a.Color, b.Color) < 1e-4f && a with { Color = b.Color } == b));
-        Assert.That(At(shaded, SurfaceKind.Wall, 0, 5).First().Color.X, Is.EqualTo(128 / 255f).Within(1e-4));
-        Assert.That(plain.Fog, Is.Null);
-        Assert.That(At(plain, SurfaceKind.Wall, 0, 5).First().Color, Is.EqualTo(Vector4.One));
+        // Assert: the game's fade steps for these settings, and its light level for 128
+        Assert.That(shaded.Shaded, Is.True);
+        Assert.That(shaded.Fade, Is.EqualTo(FadeParams.From(new ShadingSettings("#808080", 2, 10, 50, 128))));
+        Assert.That(At(shaded, SurfaceKind.Wall, 0, 5).First().Light, Is.EqualTo(new SurfaceLight(ShadeMath.LightLevelOf(128), 0xFFFFFF)));
+        Assert.That(plain.Shaded, Is.False);
+        Assert.That(plain.Fade.MaxFadeStep, Is.Zero);
+        Assert.That(At(plain, SurfaceKind.Wall, 0, 5).First().Light, Is.EqualTo(SurfaceLight.Full));
+    }
+
+    [Test]
+    public void Floor_And_Ceiling_Colors_Are_Game_Colors_Marks_Are_The_Editors()
+    {
+        // Arrange
+        var document = Room();
+        document.SetProperties(new MapProperties { FloorColor = "#707070", Light = 200 });
+        EditorMaps.Set(document, 1, 6, 6, Start);
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert: a floor color is lit (the shader takes its nearest palette entry); marks aren't
+        var floor = At(mesh, SurfaceKind.Floor, 5, 5).Single();
+        Assert.That(floor.Light, Is.EqualTo(new SurfaceLight(ShadeMath.LightLevelOf(200), 0xFFFFFF)));
+        Assert.That(floor.Color, Is.EqualTo(new Vector4(0x70 / 255f, 0x70 / 255f, 0x70 / 255f, 1)));
+        Assert.That(At(mesh, SurfaceKind.PlayerStart, 6, 6).Single().Light, Is.EqualTo(SurfaceLight.Editor));
+    }
+
+    // The 3D view's fragment shader's FadeStep (LevelView3D.FragmentShader), in the same 32-bit
+    // float arithmetic: it has to give ShadeMath.ShadeOffset's steps
+    private static int ShaderFadeStep(float nx, FadeParams fade)
+    {
+        int most = fade.MaxFadeStep;
+        float start = fade.Start, end = fade.End;
+        if (nx <= start || most == 0)
+            return 0;
+        if (fade.Inverse)
+            return most - (int)MathF.Floor(most * start / nx);
+        if (nx >= end)
+            return most;
+        return (int)MathF.Floor((nx - start) * most / (end - start));
+    }
+
+    [TestCase(4.52, 16, 80, true)]      // Blake Stone's
+    [TestCase(1.07, 16, 57, true)]      // a Planet Strike floor's
+    [TestCase(2, 10, 50, false)]
+    [TestCase(0, 16, 100, false)]
+    public void The_Shaders_Fade_Steps_Are_The_Games(double start, double end, int maxFade, bool inverse)
+    {
+        var fade = FadeParams.From(new ShadingSettings("#000000", start, end, maxFade, 255, inverse));
+        for (float tiles = 0; tiles <= 64; tiles += 1 / 64f)
+        {
+            float nx = tiles * 65536f;
+            Assert.That(ShaderFadeStep(nx, fade), Is.EqualTo(ShadeMath.ShadeOffset((long)nx, fade) / 256), $"{tiles} tiles");
+        }
     }
 
     [Test]

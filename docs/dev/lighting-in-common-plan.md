@@ -328,3 +328,47 @@ Planned 2026-11-11.
     tiles: step 15 of 31) and a bad value.
 - **Checked in the editor:** Wolf3D + switch-demo, the Guard in MAP01's zone 1 drawn near black.
   Docs: manual actors.md and levels.md, manual-testing 2.19.
+
+**Phase 3 done 2026-11-11** (the 3D view on the game's tables); every phase of the plan is done:
+- **Mesh** (`LevelMesh`): light is no longer a colour.
+  - Each `Surface` and `Billboard` has a `SurfaceLight` (light level 0-31 and a packed tint, as
+    a light row is keyed). `Full` is unshaded; `Editor` marks the start arrow and the marker
+    diamonds, which are drawn in their own colour.
+  - `Color` is left for solid colours and the editor-only top shade.
+  - `Light(x, y)` gives the light grid's level and tint (`LightLevelOf(zone.Current)`, the
+    level's light off the map), and Full when the level isn't shaded.
+  - `Shaded` (the game's rule, zones included) and `Fade` (`FadeParams`) replace `LevelFog`.
+  - A level with no floor or ceiling colour takes the game's palette 0x19 / 0x1d, not an editor
+    grey.
+  - Things carry `Bright` / `Lighten` from `GameContent.ThingShading`: the Spawn frame as
+    `ActorStateResolver` makes it, through `ActorShadingRules` with game-info lighten-levels.
+- **View** (`LevelView3D`):
+  - Surfaces and things upload by palette index (`ArtCache.IndexedPixels`: the index in red,
+    alpha where it shows; a flat's see-through pixels take its fill colour's nearest index).
+    Skies keep their colours, in their own cache.
+  - Each upload numbers the lights in use (Full first) and builds one texture of their rows'
+    colours: 256 × 32 steps per light, from `LightRowBuilder` on the game palette.
+  - Vertices gained `aLight`: the row, a fixed step (-1 means per fragment) and a solid colour's
+    nearest palette index.
+  - The fragment shader `texelFetch`es index → row × 32 + step. The step comes from the
+    fragment's depth along the level view, by the same integer-floored formula as
+    `ShadeMath.ShadeOffset` (in highp float).
+  - Things get a step per thing per frame on the CPU: `SpriteShading.ViewHeight` of their
+    middle's depth through the classic height numerator, then `ShadeOffsetForHeight` and
+    `Lightened`, as the game does per sprite. Bright things are drawn in the Full row at step 0.
+  - The RGB light/fog path is gone.
+- **Tests:**
+  - `LevelMeshTests`: zone light/tint per surface, fade params and levels, solid game colours
+    vs editor marks.
+  - `The_Shaders_Fade_Steps_Are_The_Games`: the shader's FadeStep written out in C# float
+    arithmetic equals `ShadeMath.ShadeOffset` every 1/64 tile to 64 tiles, for Blake's,
+    a Planet Strike floor's and two linear fades.
+  - `ActorShadingGameTests`: `ThingShading` for a Blake FloorLamp (lighten 6), a Wolf3D
+    FloorLamp (bright) and a Guard.
+- **Checked by screenshot** against the game's own screenshots from phase 0:
+  - Blake AOG MAP01 from the start: the far wall is darkened alike.
+  - Wolf3D + moody-lights is dim alike, but a door the game lights with a lamp's halo light is
+    brighter there: halo lights (the light grid's cells) aren't in the editor, as planned.
+- **Not in:** halo lights, zone effects (the 3D view shows a zone's starting light), and wall
+  sprites still fade per fragment, where the game fades one step per sprite. Docs: manual
+  3d-view.md, manual-testing 2.6.

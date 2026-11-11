@@ -985,6 +985,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** Arches, fog, tag highlight under the pointer, patch quads, scroll
       animation by eye, see-through doors (`grate-doors-demo`) clear between the bars.
 - [ ] Shading and markers toggles.
+- [ ] Shading as the game's palette rows (2026-11-11): Blake AOG MAP01 from the start looks like
+      the game's first view (far wall darkened alike); Wolf3D + moody-lights dim alike (but the
+      game's halo lights aren't in the editor: a lamp-lit door is brighter in the game).
+- [ ] **(never tried)** A tinted zone (switch-demo's alarm) and a fogged level (weather-demo)
+      in the 3D view next to the game at the same spot; a bright thing (Wolf3D FloorLamp) staying
+      lit far away under fog; a Blake lamp (partial-bright) darkening less than a crate; a flat's
+      see-through pixels in the floor color; a level with no color (the game's palette 0x19/0x1d).
 - [ ] Blake AOG floor 1: octagon floor + panel ceiling from its codes.
 - [ ] Pick and edit from the 3D view; **(never tried)** clicking an extra thing.
 - [ ] **(never tried)** Level properties' Story saved to the mod's game-info (`story:`); the flat
