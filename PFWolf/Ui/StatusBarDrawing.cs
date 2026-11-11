@@ -458,18 +458,34 @@ internal sealed class StatusBarDrawing(
             using var _ = StatusBarOrigin(element);
             if (!string.IsNullOrEmpty(icon))
             {
+                // A picture with see-through pixels would show the last one through them: the bar's
+                // own picture goes back under it first, where either of them is
+                if (graphics.IsSeeThrough(icon))
+                {
+                    RestoreBarUnderWeapon(element, shownWeaponIcon);
+                    RestoreBarUnderWeapon(element, icon);
+                }
                 graphics.DrawPic(icon, element.X, StatusBarTop(element) + element.Y);
                 shownWeaponIcon = icon;
             }
-            else if (shownWeaponIcon != null && !IsOverlay && !element.Top && graphics.PicSize(shownWeaponIcon) is { } size
-                && StatusBar.Get("background") is { Pic: { Length: > 0 } bar })
+            else if (shownWeaponIcon != null && RestoreBarUnderWeapon(element, shownWeaponIcon))
             {
                 // A weapon with no picture (a Prop Hunt prop's empty hands): the bar's own picture where the last one was
-                graphics.DrawPicRegion(bar, element.X, element.Y, size.Width, size.Height, element.X, StatusBarTop(element) + element.Y);
                 shownWeaponIcon = null;
             }
         }
         DrawWeaponCorner();
+    }
+
+    // Draws the bottom bar's own picture over where a weapon picture is (or was); false when there's
+    // no such picture or bar to put back (an overlay or top bar, which redraw under their parts)
+    bool RestoreBarUnderWeapon(Assets.StatusBarElement element, string? pic)
+    {
+        if (pic == null || IsOverlay || element.Top || graphics.PicSize(pic) is not { } size
+            || StatusBar.Get("background") is not { Pic: { Length: > 0 } bar })
+            return false;
+        graphics.DrawPicRegion(bar, element.X, element.Y, size.Width, size.Height, element.X, StatusBarTop(element) + element.Y);
+        return true;
     }
 
     // The weapon picture last drawn, to take away for a weapon with none

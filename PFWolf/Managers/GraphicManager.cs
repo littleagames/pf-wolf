@@ -191,6 +191,10 @@ internal class GraphicManager
         !string.IsNullOrEmpty(graphicName) && assetManager.Value.Find<GraphicAsset>(graphicName) is { } asset
             ? (asset.Width, asset.Height) : null;
 
+    /// <summary>Whether a picture has see-through pixels (a PNG with alpha), so what's behind it shows</summary>
+    public bool IsSeeThrough(string graphicName) =>
+        !string.IsNullOrEmpty(graphicName) && assetManager.Value.Find<GraphicAsset>(graphicName)?.OpacityMask != null;
+
     /// <summary>Draws a picture leaving out the pixels of a palette index (a masked pic), or all of it with no mask</summary>
     public void DrawPic(string graphicName, int x, int y, byte? mask)
     {
