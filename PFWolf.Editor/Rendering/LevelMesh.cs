@@ -3,6 +3,7 @@ using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Editing;
+using PFWolf.Entities.Actors;
 using PFWolf.Enums;
 using PFWolf.Shading;
 
@@ -62,9 +63,11 @@ public enum Face
 
 /// <summary>
 /// The light a surface is drawn in, as the game's light rows are made (PFWolf.Common's
-/// LightRowBuilder): a light level (0 to 31) and a tint (#RRGGBB packed, white for none)
+/// LightRowBuilder): a light level (0 to 31) and a tint (#RRGGBB packed, white for none), and
+/// the tile it's the base light of (-1: none, the level's or full light), which the view follows
+/// as zone effects change it
 /// </summary>
-public readonly record struct SurfaceLight(int Level, int Tint)
+public readonly record struct SurfaceLight(int Level, int Tint, int TileX = -1, int TileY = -1)
 {
     /// <summary>Full light, no tint: as the game draws an unshaded level</summary>
     public static readonly SurfaceLight Full = new(ShadeMath.MaxLightLevel, 0xFFFFFF);
@@ -244,14 +247,26 @@ public sealed class LevelMesh
     /// </summary>
     public LightGrid? Grid { get; private set; }
 
-    // The things giving off light, in the order the game spawns them: where (global units), and their light
-    private readonly List<(int X, int Y, ThingLight Light)> _lightSources = [];
+    /// <summary>A thing giving off light: where (global units), what its light is made of, and where its effect is</summary>
+    private sealed class LightSource(int x, int y, ActorLightInfo info, StateLight? spawnLight)
+    {
+        public readonly int X = x, Y = y;
+        public readonly ActorLightInfo Info = info;
+        public readonly StateLight? SpawnLight = spawnLight;
+        public int Phase, FlickerAmount;
+
+        // Its light now (ActorLightRules.Current, as the game's ActorLights.CurrentLight)
+        public (int Intensity, double Radius, string? Color) Current => ActorLightRules.Current(Info, null, SpawnLight, Phase, FlickerAmount);
+    }
+
+    // The things giving off light, in the order the game spawns them
+    private readonly List<LightSource> _lightSources = [];
 
     // Notes a thing's light, if its class gives one off (whether or not it has a sprite to see)
     private void NoteLight(string className, double x, double y)
     {
-        if (_tiles.Content.ThingLightOf(className) is { } light)
-            _lightSources.Add(((int)(x * MapConstants.TileGlobal), (int)(y * MapConstants.TileGlobal), light));
+        if (_tiles.Content.ThingLightParts(className) is var (info, spawnLight))
+            _lightSources.Add(new LightSource((int)(x * MapConstants.TileGlobal), (int)(y * MapConstants.TileGlobal), info, spawnLight));
     }
 
     private static bool AnySetLight(MapTiles tiles)
@@ -263,6 +278,10 @@ public sealed class LevelMesh
         return tiles.Map.ExtraThings.Any(thing => tiles.Content.ThingLightOf(thing.Class) is { Sets: true });
     }
 
+    private LightCaster? _caster;
+    private StartLightMap? _lightMap;
+    private readonly Dictionary<string, byte[]> _lightTints = new(StringComparer.OrdinalIgnoreCase);
+
     private void BuildLightGrid()
     {
         if (!Shaded)
@@ -270,6 +289,17 @@ public sealed class LevelMesh
         var grid = new LightGrid();
         grid.SizeTo(_tiles.Width, _tiles.Height);
         grid.TintIndex(ShadingResolver.NoTint);
+        Grid = grid;
+        _caster = new LightCaster(grid);
+        _lightMap = new StartLightMap(_tiles);
+        UpdateTileBases();
+        CastLights();
+    }
+
+    // Each tile's base light from the zones as they are now (Lighting.UpdateLightGrid)
+    private void UpdateTileBases()
+    {
+        var grid = Grid!;
         for (int y = 0; y < _tiles.Height; y++)
         {
             for (int x = 0; x < _tiles.Width; x++)
@@ -280,14 +310,57 @@ public sealed class LevelMesh
                 grid.TileTint[i] = grid.TintIndex(((byte)(light.Tint >> 16), (byte)(light.Tint >> 8), (byte)light.Tint));
             }
         }
+    }
 
-        var caster = new LightCaster(grid);
-        caster.BeginFrame(_tiles.Width * _tiles.Height, _tiles.Width);
-        var map = new StartLightMap(_tiles);
-        var tints = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (x, y, light) in _lightSources)
-            caster.CastLight(map, x, y, light.Intensity, light.Radius, LightCaster.ColorTints(light.Color, tints, grid.TintIndex), light.Sets);
-        Grid = grid;
+    // Clears what the lights cast last time and casts them as they are now (ActorLights.CastActorLights)
+    private void CastLights()
+    {
+        var grid = Grid!;
+        _caster!.BeginFrame(_tiles.Width * _tiles.Height, _tiles.Width);
+        foreach (var source in _lightSources)
+        {
+            var (intensity, radius, color) = source.Current;
+            _caster.CastLight(_lightMap!, source.X, source.Y, intensity, radius, LightCaster.ColorTints(color, _lightTints, grid.TintIndex), source.Info.Sets);
+        }
+    }
+
+    /// <summary>Whether some zone or light on the level flickers, pulses or strobes, so the view keeps time</summary>
+    public bool Animates => Grid != null
+        && (_zones.Values.Any(zone => zone.Effect != ZoneEffect.None) || _lightSources.Any(source => source.Info.Effect != ZoneEffect.None));
+
+    // Flickering is only for show, as the game's (Lighting.ZoneRandom)
+    private readonly Random _effectRandom = new();
+
+    /// <summary>
+    /// Runs the zones' and lights' effects on by some tics, as the game does each tic
+    /// (Lighting.TickZoneLights, ActorLights.TickActorLights), then the grid as the game builds it
+    /// each frame: the tiles' base lights, then the lights cast; true when something moved
+    /// </summary>
+    public bool TickEffects(int tics)
+    {
+        if (Grid == null || tics <= 0)
+            return false;
+        bool zonesMoved = false;
+        foreach (var zone in _zones.Values)
+        {
+            int before = ShadeMath.LightLevelOf(zone.Current);
+            zone.Tick(tics, _effectRandom);
+            zonesMoved |= ShadeMath.LightLevelOf(zone.Current) != before;
+        }
+        bool lightsMoved = false;
+        foreach (var source in _lightSources)
+        {
+            if (source.Info.Effect == ZoneEffect.None)
+                continue;
+            var before = source.Current;
+            LightEffects.Tick(source.Info.Effect, tics, source.Info.Tics, ref source.Phase, ref source.FlickerAmount, _effectRandom);
+            lightsMoved |= source.Current != before;
+        }
+        if (zonesMoved)
+            UpdateTileBases();
+        if (zonesMoved || lightsMoved)
+            CastLights();
+        return zonesMoved || lightsMoved;
     }
 
     /// <summary>The level as light sees it as it starts (the game's ActorLights.LightEnters / LightPasses): doors shut, pushwalls in place</summary>
@@ -312,8 +385,11 @@ public sealed class LevelMesh
             return Light(x, y);
         var (level, tint) = grid.LightAt(y * _tiles.Width + x, gx, gy);
         var (r, g, b) = grid.Tints[tint];
-        return new SurfaceLight(level, r << 16 | g << 8 | b);
+        return new SurfaceLight(level, r << 16 | g << 8 | b, x, y);
     }
+
+    /// <summary>The level's own light level, for a surface lit from off the map</summary>
+    public int LevelLightLevel => Shaded ? _levelLevel : ShadeMath.MaxLightLevel;
 
     private readonly int _levelLevel;
 
@@ -329,7 +405,7 @@ public sealed class LevelMesh
             return new SurfaceLight(_levelLevel, 0xFFFFFF);
         var (light, tint) = _tiles.LightAt(x, y, _zones, _levelLight);
         var (r, g, b) = ShadingResolver.ParseRgb(tint, ShadingResolver.NoTint, "zone color");
-        return new SurfaceLight(ShadeMath.LightLevelOf(light), r << 16 | g << 8 | b);
+        return new SurfaceLight(ShadeMath.LightLevelOf(light), r << 16 | g << 8 | b, x, y);
     }
 
     /// <summary>The light a face gets: the open tile it's seen from, across its edge</summary>

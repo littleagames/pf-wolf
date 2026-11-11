@@ -515,11 +515,11 @@ public class LevelMeshTests
 
         // Assert: the west face and the zoned floor in the zone's light level (51 of 255: 6 of 31)
         // tinted red, as the game's light grid gives the tile; the east face full light
-        var dim = new SurfaceLight(ShadeMath.LightLevelOf(51), 0xFF0000);
+        var dim = new SurfaceLight(ShadeMath.LightLevelOf(51), 0xFF0000, 9, 10);
         Assert.That(mesh.Shaded, Is.True, "a level with zones is shaded");
-        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Light, Is.EqualTo(dim));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Light, Is.EqualTo(dim), "lit from the tile it faces");
         Assert.That(At(mesh, SurfaceKind.Floor, 9, 10).Single().Light, Is.EqualTo(dim));
-        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.East).Single().Light, Is.EqualTo(SurfaceLight.Full));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.East).Single().Light, Is.EqualTo(new SurfaceLight(ShadeMath.MaxLightLevel, 0xFFFFFF, 11, 10)));
         Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Color, Is.EqualTo(Vector4.One), "the light isn't a color now");
     }
 
@@ -581,7 +581,7 @@ public class LevelMeshTests
         // Assert: the game's fade steps for these settings, and its light level for 128
         Assert.That(shaded.Shaded, Is.True);
         Assert.That(shaded.Fade, Is.EqualTo(FadeParams.From(new ShadingSettings("#808080", 2, 10, 50, 128))));
-        Assert.That(At(shaded, SurfaceKind.Wall, 0, 5).First().Light, Is.EqualTo(new SurfaceLight(ShadeMath.LightLevelOf(128), 0xFFFFFF)));
+        Assert.That(At(shaded, SurfaceKind.Wall, 0, 5).First().Light, Is.EqualTo(new SurfaceLight(ShadeMath.LightLevelOf(128), 0xFFFFFF, 1, 5)));
         Assert.That(plain.Shaded, Is.False);
         Assert.That(plain.Fade.MaxFadeStep, Is.Zero);
         Assert.That(At(plain, SurfaceKind.Wall, 0, 5).First().Light, Is.EqualTo(SurfaceLight.Full));
@@ -600,7 +600,7 @@ public class LevelMeshTests
 
         // Assert: a floor color is lit (the shader takes its nearest palette entry); marks aren't
         var floor = At(mesh, SurfaceKind.Floor, 5, 5).Single();
-        Assert.That(floor.Light, Is.EqualTo(new SurfaceLight(ShadeMath.LightLevelOf(200), 0xFFFFFF)));
+        Assert.That(floor.Light, Is.EqualTo(new SurfaceLight(ShadeMath.LightLevelOf(200), 0xFFFFFF, 5, 5)));
         Assert.That(floor.Color, Is.EqualTo(new Vector4(0x70 / 255f, 0x70 / 255f, 0x70 / 255f, 1)));
         Assert.That(At(mesh, SurfaceKind.PlayerStart, 6, 6).Single().Light, Is.EqualTo(SurfaceLight.Editor));
     }
@@ -666,6 +666,90 @@ public class LevelMeshTests
         Assert.That(grid.CellTint, Is.EqualTo(lighting.CellTint));
         Assert.That(grid.Tints, Is.EqualTo(lighting.Tints));
         Assert.That(grid.CellAdd.Any(add => add > 0), Is.True);
+    }
+
+    // The game's level for the light tests: the room's walls, empty planes, its Lighting and ActorLights
+    private static (MapManager Map, Lighting Lighting, ActorLights Lights) GameRoom()
+    {
+        var session = new GameSession();
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets")), null!, session, null)
+        {
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+        };
+        typeof(MapManager).GetField("mapsegs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
+        for (int i = 0; i < MapConstants.ClassicMapSize; i++)
+            map.TileMap[i, 0] = map.TileMap[i, 63] = map.TileMap[0, i] = map.TileMap[63, i] = 1;
+        ActorLights? lights = null;
+        var lighting = new Lighting(null!, LightingTests.GreyVideo(), map,
+            new LightingHooks(() => 0, () => lights?.ColorTintTables.Clear(), tics => lights?.TickActorLights(tics)));
+        lights = new ActorLights(map, new Doors(null!, null!, map, null!, null!, session, null!), lighting, session);
+        return (map, lighting, lights);
+    }
+
+    [TestCase(10)]
+    [TestCase(35)]
+    [TestCase(61)]
+    public void A_Zones_Pulse_Moves_Its_Tiles_Light_As_The_Games_Does(int tics)
+    {
+        // Arrange: zone 1 over a patch of the room, pulsing from 200 down to 40 every 70 tics
+        var document = Room();
+        for (int x = 20; x < 24; x++)
+            EditorMaps.Set(document, MapConstants.ZonePlane, x, 20, 1);
+        document.SetProperties(new MapProperties { Light = 120, MaxFade = 0, Zones = [new ZoneProperties(1, Light: 200, Effect: "pulse", Low: 40, Tics: 70)] });
+        var mesh = Build(document);
+
+        var (map, lighting, _) = GameRoom();
+        for (int x = 20; x < 24; x++)
+            map.SetZone(x, 20, 1);
+        lighting.LevelZones = ShadingResolver.ResolveZones(document.Properties.ToShadingMapInfo(), new DefaultMapInfo());
+        lighting.SetShading(new ShadingSettings("#000000", 0, 16, 0, 120));
+        lighting.UpdateLightGrid();
+
+        // Act
+        bool moved = mesh.TickEffects(tics);
+        lighting.TickZoneLights((uint)tics);
+        lighting.UpdateLightGrid();
+
+        // Assert
+        Assert.That(mesh.Animates, Is.True);
+        Assert.That(moved, Is.True);
+        Assert.That(mesh.Grid!.TileLevel, Is.EqualTo(lighting.TileLevel));
+    }
+
+    [TestCase(12)]
+    [TestCase(40)]
+    public void A_Lamps_Pulse_Is_Cast_As_The_Games_Is(int tics)
+    {
+        // Arrange: a pulsing amber lamp in the dim room
+        var lamp = new ActorData();
+        foreach (var (key, value) in new (string, object)[] { ("light.intensity", 220), ("light.radius", 4), ("light.color", "#FFB060"),
+                     ("light.effect", "pulse"), ("light.low", 30), ("light.tics", 50) })
+            lamp.Properties[key] = value;
+        var content = GameContent.FromDefinitions(Content().MapDefs, actors: new() { ["Lamp"] = lamp });
+        var document = Room();
+        document.SetProperties(new MapProperties { Light = 64, MaxFade = 0 });
+        document.Map.ExtraThings = [new MapThing("Lamp", 10.5, 10.5, 0)];
+        var mesh = LevelMesh.Build(new MapTiles(content, document.Map, () => document.Properties));
+
+        var (map, lighting, lights) = GameRoom();
+        lighting.SetShading(new ShadingSettings("#000000", 0, 16, 0, 64));
+        lighting.UpdateLightGrid();
+        var actor = new PFWolf.Entities.Actors.Monster { Name = "Lamp", X = (int)(10.5 * 65536), Y = (int)(10.5 * 65536), TileX = 10, TileY = 10 };
+        foreach (var (key, value) in lamp.Properties)
+            actor.Properties[key] = value;
+        map.GetActors().AddLast(actor);
+        lights.CastActorLights();
+
+        // Act
+        mesh.TickEffects(tics);
+        lights.TickActorLights((uint)tics);
+        lights.CastActorLights();
+
+        // Assert
+        Assert.That(mesh.Grid!.CellAdd, Is.EqualTo(lighting.CellAdd));
+        Assert.That(mesh.Grid.CellTint, Is.EqualTo(lighting.CellTint));
     }
 
     // The 3D view's fragment shader's FadeStep (LevelView3D.FragmentShader), in the same 32-bit

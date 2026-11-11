@@ -230,6 +230,14 @@ public sealed class GameContent
         return intensity > 0 || info.Sets ? new ThingLight(intensity, radius, color, info.Sets) : null;
     }
 
+    /// <summary>
+    /// What a thing's light is made of, for working it out as it plays (ActorLightRules.Current
+    /// with its effect's place): its class's light and its Spawn frame's `light:`; null when it
+    /// has no light at all
+    /// </summary>
+    public (Entities.Actors.ActorLightInfo Info, Entities.Actors.StateLight? SpawnLight)? ThingLightParts(string className)
+        => Look(className) is { Light: { } info } look ? (info, look.SpawnLight) : null;
+
     private sealed record ThingLook(bool Bright, int Lighten, Entities.Actors.ActorLightInfo? Light, Entities.Actors.StateLight? SpawnLight);
 
     private ThingLook Look(string className)

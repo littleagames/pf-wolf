@@ -83,7 +83,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     private const double TicsPerSecond = 70;     // the game's clock, which scrollers move by
 
     private Gl? _gl;
-    private int _program, _viewProjection, _mode, _texture, _rowsSampler, _cellsSampler, _cellsSizeUniform, _eye, _forward, _fade, _time;
+    private int _program, _viewProjection, _mode, _texture, _rowsSampler, _cellsSampler, _cellsSizeUniform, _tilesSampler, _tilesSizeUniform, _eye, _forward, _fade, _time;
 
     // The light rows the level's surfaces are drawn in (PFWolf.Common's LightRowBuilder), as colors
     // (MakeRows), and its light cells (MakeCells)
@@ -193,6 +193,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             _rowsSampler = gl.GetUniformLocation(_program, "uRows");
             _cellsSampler = gl.GetUniformLocation(_program, "uCells");
             _cellsSizeUniform = gl.GetUniformLocation(_program, "uCellsSize");
+            _tilesSampler = gl.GetUniformLocation(_program, "uTiles");
+            _tilesSizeUniform = gl.GetUniformLocation(_program, "uTilesSize");
             _eye = gl.GetUniformLocation(_program, "uEye");
             _forward = gl.GetUniformLocation(_program, "uForward");
             _fade = gl.GetUniformLocation(_program, "uFade");
@@ -241,7 +243,9 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
                 gl.DeleteTexture(_rowsTexture);
             if (_cellsTexture != 0)
                 gl.DeleteTexture(_cellsTexture);
-            _rowsTexture = _cellsTexture = 0;
+            if (_tilesTexture != 0)
+                gl.DeleteTexture(_tilesTexture);
+            _rowsTexture = _cellsTexture = _tilesTexture = 0;
             gl.DeleteTexture(_white);
             gl.DeleteTexture(_missing);
             gl.DeleteBuffer(_staticVbo);
@@ -262,7 +266,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         _gl = null;
         _glTextures.Clear();
         _skyTextures.Clear();
-        _rowsTexture = _cellsTexture = 0;
+        _rowsTexture = _cellsTexture = _tilesTexture = 0;
         base.OnOpenGlLost();
     }
 
@@ -402,35 +406,76 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         _cellsSize = (grid.GridWidth, grid.GridHeight);
     }
 
-    private int _cellsTexture;
-    private (int Width, int Height) _cellsSize;
+    private int _cellsTexture, _tilesTexture;
+    private (int Width, int Height) _cellsSize, _tilesSize;
+
+    // The game's clock for the level's flickering, pulsing and strobing lights and zones: when
+    // they were last run, in tics
+    private double _effectClock;
+
+    /// <summary>
+    /// Runs the level's light and zone effects on by the tics gone by (at most 35 times a second),
+    /// and puts the grid they leave on the card
+    /// </summary>
+    private void TickEffects(Gl gl)
+    {
+        if (_mesh is not { Animates: true } mesh)
+            return;
+        double now = _clock.Elapsed.TotalSeconds * TicsPerSecond;
+        int tics = (int)(now - _effectClock);
+        if (tics < 2)
+            return;
+        _effectClock += tics;
+        if (mesh.TickEffects(Math.Min(tics, (int)TicsPerSecond)))
+        {
+            MakeCells(gl, mesh);
+            MakeTiles(gl, mesh);
+        }
+    }
+
+    /// <summary>Each tile's base light (LightGrid.TileLevel, TileTint) as a texture, a texel a tile; 1×1 when there's no grid</summary>
+    private void MakeTiles(Gl gl, LevelMesh mesh)
+    {
+        if (_tilesTexture != 0)
+            gl.DeleteTexture(_tilesTexture);
+        if (mesh.Grid is not { } grid)
+        {
+            _tilesTexture = MakeTexture(gl, 1, 1, [ShadeMath.MaxLightLevel, 0, 0, 255]);
+            _tilesSize = (0, 0);
+            return;
+        }
+        int width = mesh.Tiles.Width, height = mesh.Tiles.Height;
+        var rgba = new byte[width * height * 4];
+        for (int i = 0; i < width * height; i++)
+            (rgba[i * 4], rgba[i * 4 + 1], rgba[i * 4 + 2], rgba[i * 4 + 3]) = (grid.TileLevel[i], grid.TileTint[i], 0, 255);
+        _tilesTexture = MakeTexture(gl, width, height, rgba);
+        _tilesSize = (width, height);
+    }
     private LightRowBuilder? _rowBuilder;
     private PaletteColor[]? _rowBuilderPalette;
 
-    // How a fragment finds its light (aLight.w): at its point (floors, ceilings), half a light
-    // cell toward the view from its point (walls, as WallPosts.WallLight), or as the vertex says
-    // (things and wall sprites, worked out per thing)
-    private const float AtPoint = 0, WallSide = 1, Fixed = 2;
+    // How a fragment finds its light (aLight.w). With its base light from the tile aLight.xy
+    // names (uTiles; off the map, the level's): at its point (floors, ceilings), half a light
+    // cell toward the view from its point (walls, as WallPosts.WallLight), or at that tile's
+    // middle (wall sprites, as WallSpriteDrawing). Fixed: aLight.xy is the level and tint,
+    // worked out per thing. Mark: an editor mark, in its color.
+    private const float AtPoint = 0, WallSide = 1, Fixed = 2, TileMiddle = 3, Mark = 4;
 
-    // What a surface's vertices carry for shading: its base light level and tint, a step worked
+    // What a surface's vertices carry for shading: where its light comes from, a step worked
     // out per fragment, how its light is found; a solid game color's palette index (the nearest,
     // as VideoManager.ParseColor finds it); and what the color is then
     private (Vector4 Light, float Solid, Vector4 Color) SurfaceShade(Surface surface, PaletteColor[] palette, LevelMesh mesh)
     {
         if (surface.Light.IsEditor)
-            return (new Vector4(-1, 0, -1, Fixed), -1, surface.Color);
+            return (new Vector4(0, 0, -1, Mark), -1, surface.Color);
 
         var light = surface.Light;
         float sampling = surface.Ref.Face is Face.Top or Face.Bottom or Face.None ? AtPoint : WallSide;
+        var shade = new Vector4(light.TileX, light.TileY, -1, sampling);
         if (surface.Texture.Source == TextureSource.Sprite)
-        {
-            // a wall sprite: lit at its tile's middle, as the game lights it (WallSpriteDrawing)
-            int tx = surface.Ref.X, ty = surface.Ref.Y;
-            light = mesh.LightAtPoint(tx, ty, ((long)tx << MapConstants.TileShift) + MapConstants.TileGlobal / 2,
-                ((long)ty << MapConstants.TileShift) + MapConstants.TileGlobal / 2);
-            sampling = Fixed;
-        }
-        var shade = new Vector4(light.Level, TintId(light.Tint), -1, sampling);
+            shade = new Vector4(surface.Ref.X, surface.Ref.Y, -1, TileMiddle);     // a wall sprite
+        if (mesh.Grid == null)
+            shade = new Vector4(light.Level, TintId(light.Tint), -1, Fixed);      // unshaded: as it is
         if (surface.Texture.Source != TextureSource.Solid)
             return (shade, -1, surface.Color);
         var c = surface.Color;
@@ -469,7 +514,11 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         }
         EnsureMesh();
         if (_uploadPending)
+        {
             Upload(gl);
+            _effectClock = _clock.Elapsed.TotalSeconds * TicsPerSecond;
+        }
+        TickEffects(gl);
 
         double scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
         int width = Math.Max(1, (int)(Bounds.Width * scaling)), height = Math.Max(1, (int)(Bounds.Height * scaling));
@@ -506,6 +555,11 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.Uniform1(_rowsSampler, 1);
         gl.Uniform1(_cellsSampler, 2);
         gl.Uniform4(_cellsSizeUniform, _cellsSize.Width, _cellsSize.Height, 0, 0);
+        gl.ActiveTexture(Gl.TEXTURE0 + 3);
+        gl.BindTexture(Gl.TEXTURE_2D, _tilesTexture);
+        gl.ActiveTexture(Gl.TEXTURE0);
+        gl.Uniform1(_tilesSampler, 3);
+        gl.Uniform4(_tilesSizeUniform, _tilesSize.Width, _tilesSize.Height, _mesh.LevelLightLevel, 0);
         // Scrolling surfaces' clock, in tics; it starts over every hour, so a float keeps it exact
         gl.Uniform1(_time, (float)(_clock.Elapsed.TotalSeconds * TicsPerSecond % 252000));
 
@@ -592,7 +646,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.UseProgram(0);
 
         // Scrolling walls and flats move on by themselves
-        if (moving || _mesh.Scrolls)
+        if (moving || _mesh.Scrolls || _mesh.Animates)
             RequestNextFrameRendering();
     }
 
@@ -688,6 +742,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
                 TintId(_mesh.LightAtPoint(sprite.Ref.X, sprite.Ref.Y, (long)Math.Round(sprite.Base.X * MapConstants.TileGlobal), (long)Math.Round(sprite.Base.Z * MapConstants.TileGlobal)).Tint);
             MakeRows(gl, _mesh);
             MakeCells(gl, _mesh);
+            MakeTiles(gl, _mesh);
         }
 
         gl.BindBuffer(Gl.ARRAY_BUFFER, _staticVbo);
@@ -701,7 +756,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     private static void AddPolygon(List<float> vertices, Vector3[] points, Vector2[] uvs, Vector4 color, Vector2 scroll = default, Vector4? light = null,
         float solid = -1)
     {
-        var shade = light ?? new Vector4(-1, 0, -1, Fixed);
+        var shade = light ?? new Vector4(0, 0, -1, Mark);
         for (int i = 1; i + 1 < points.Length; i++)
         {
             AddVertex(vertices, points[0], uvs[0], color, scroll, shade, solid);
@@ -1132,6 +1187,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         uniform sampler2D uRows;
         uniform sampler2D uCells;
         uniform vec4 uCellsSize;
+        uniform sampler2D uTiles;
+        uniform vec4 uTilesSize;
         uniform int uMode;
         uniform highp vec4 uFade;
         uniform highp vec3 uEye;
@@ -1178,7 +1235,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
                 }
                 return;
             }
-            if (vLight.x < -0.5)
+            if (vLight.w > 3.5)
             {
                 fragColor = vec4(vColor.rgb, 1.0);
                 return;
@@ -1198,10 +1255,28 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             // with what lights did to the light cell at the point (LightGrid.LightAt); a wall's
             // point half a cell toward the view (WallPosts.WallLight)
             int level = int(vLight.x + 0.5), tint = int(vLight.y + 0.5);
-            if (vLight.w < 1.5 && uCellsSize.x > 0.5)
+            if (vLight.w < 1.5 || vLight.w > 2.5)
+            {
+                // the base: its tile's (uTiles), off the map the level's
+                ivec2 t = ivec2(floor(vLight.xy + 0.5));
+                if (t.x >= 0 && t.y >= 0 && float(t.x) < uTilesSize.x && float(t.y) < uTilesSize.y)
+                {
+                    vec4 b = texelFetch(uTiles, t, 0);
+                    level = int(b.r * 255.0 + 0.5);
+                    tint = int(b.g * 255.0 + 0.5);
+                }
+                else
+                {
+                    level = int(uTilesSize.z + 0.5);
+                    tint = 0;
+                }
+            }
+            if ((vLight.w < 1.5 || vLight.w > 2.5) && uCellsSize.x > 0.5)
             {
                 highp vec2 g = vWorld.xz * 65536.0;
-                if (vLight.w > 0.5)
+                if (vLight.w > 2.5)
+                    g = (floor(vLight.xy + 0.5) + 0.5) * 65536.0;
+                else if (vLight.w > 0.5)
                 {
                     highp vec2 eye = uEye.xz * 65536.0;
                     g += vec2(eye.x > g.x ? 4096.0 : eye.x < g.x ? -4096.0 : 0.0, eye.y > g.y ? 4096.0 : eye.y < g.y ? -4096.0 : 0.0);

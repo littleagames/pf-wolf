@@ -48,8 +48,7 @@ The View menu has the 3D view's own layers:
   `lighten`; bright ones stay unshaded). The light things give off (actordefs `light.*`, their
   Spawn frame's `light:`) is cast round them as the game casts it as the level starts, doors
   shut: brighter and tinted in pools, stopped by walls, a set light darkening or lightening what
-  it reaches. Not shown yet: a light's or a zone's flicker, pulse or strobe (each shows the light
-  it starts with);
+  it reaches. Lights and light zones that flicker, pulse or strobe do so as in the game;
 - **3D: markers**: push walls tinted purple and switches green, and, hovering a tagged tile,
   everything with its tag in orange.
 

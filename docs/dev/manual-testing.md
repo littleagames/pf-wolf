@@ -997,6 +997,11 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** A coloured pool of light on a floor next to the game at the same spot;
       light stopped by a wall and a shut door; switch-demo's light room lamp (amber); a set
       light (`light.mode: set`) darkening a full-light room; a thing standing in a pool lit by it.
+- [ ] Effects in the 3D view (2026-11-11): switch-demo's light room, the amber lamp's light on
+      the wall and ceiling flickering (camera still).
+- [ ] **(never tried)** A pulsing or strobing light zone (a mod's game-info zone effect); a
+      pulsing coloured light; the 3D view staying smooth on a big level full of flickering lights;
+      "3D: shading" off stopping the effects.
 - [ ] Blake AOG floor 1: octagon floor + panel ceiling from its codes.
 - [ ] Pick and edit from the 3D view; **(never tried)** clicking an extra thing.
 - [ ] **(never tried)** Level properties' Story saved to the mod's game-info (`story:`); the flat

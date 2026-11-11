@@ -300,3 +300,40 @@ Planned 2026-11-11.
   `ActorLights.CastActorLights` on the same level.
 - **Checked by screenshot:** Wolf3D + moody-lights MAP01 from the start. The door a lamp lights
   is teal, as in the game; it was grey before. Docs: manual 3d-view.md, manual-testing 2.6.
+- Committed 97054fdb (the full suite, 3851, passed).
+
+**Phase 3 done 2026-11-11** (effects in the 3D view); every phase of the plan is done:
+- **Mesh** (`LevelMesh`):
+  - Light sources keep their `ActorLightInfo` and Spawn `light:` (`GameContent.ThingLightParts`)
+    and where their effect is (Phase, FlickerAmount).
+  - `TickEffects(tics)` ticks the level's zones (`ZoneState.Tick`) and the lights' effects
+    (`LightEffects.Tick`) on the mesh's own Random, as the game's do on `ZoneRandom`. As the game
+    builds its grid each frame, it then refreshes the tiles' base lights if a zone's level moved
+    (`UpdateTileBases`), and clears and recasts every light (`CastLights`: `BeginFrame` and then
+    each light as it is now).
+  - Recasting all of them, not just the moving ones, is what the game does each frame, and it's
+    exact; that was the plan's open question.
+  - `Animates` is true when the grid has any zone or light effect.
+- **Surfaces:** `SurfaceLight` gained `TileX` / `TileY`, the tile whose base light it is.
+- **View** (`LevelView3D`):
+  - Vertices name that tile, not a level and tint. The shader reads the base from a tiles
+    texture (`MakeTiles`: level and tint a texel), and off the map the level's own
+    (`LevelLightLevel`).
+  - Wall sprites read their tile's middle cell in the shader (TileMiddle), so they follow
+    effects too. Things are still worked out per frame on the CPU, and editor marks have their
+    own mode (Mark).
+  - `TickEffects` runs on the view's clock at most 35 times a second (2 tics or more, at most a
+    second's worth at once) and re-uploads the cells and tiles textures when something moved. The
+    view keeps redrawing while the mesh animates, as for scrollers. With "3D: shading" off the
+    mesh has no grid, so nothing animates.
+- **Tests** (`LevelMeshTests`):
+  - `A_Zones_Pulse_Moves_Its_Tiles_Light_As_The_Games_Does`: 10, 35 and 61 tics against
+    `Lighting.TickZoneLights` + `UpdateLightGrid`.
+  - `A_Lamps_Pulse_Is_Cast_As_The_Games_Is`: 12 and 40 tics against `ActorLights.TickActorLights`
+    + `CastActorLights`, cells and tints equal.
+  - The face/zone tests now say which tile each surface takes its light from (the west face
+    from 9,10, the tile it faces).
+- **Checked by screenshot:** the switch demo, camera moved into the light room (select tool,
+  click, V; scratchpad drive3d.ps1 / turn3d.ps1) and turned to the lamp. Three shots a quarter
+  second apart differ, with the amber light on the wall and ceiling flickering. The program links
+  (no 3D view problem listed).
