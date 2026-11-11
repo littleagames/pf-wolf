@@ -175,6 +175,16 @@
               </ListBox>
               <TextBlock Text="(one view only)" VerticalAlignment="Center" Opacity="0.6" IsVisible="{Binding !Turns}" />
             </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <CheckBox Content="Seen from the player" IsChecked="{Binding SeenFromPlayer}" AutomationProperties.AutomationId="SeenFromPlayer"
+                        ToolTip.Tip="The frame shaded as the game shades it that far away: dimmed to the level's light and faded toward its fade color, less its lighten; bright frames unshaded, weapons in hand lit but never faded. The game's default-map shading." />
+              <Slider Minimum="0.75" Maximum="32" Value="{Binding Distance}" Width="200" TickFrequency="0.125" IsSnapToTickEnabled="True"
+                      IsEnabled="{Binding SeenFromPlayer}" AutomationProperties.AutomationId="Distance" VerticalAlignment="Center"
+                      ToolTip.Tip="How far away, in tiles, to its middle along the view" />
+              <TextBlock Text="{Binding Distance, StringFormat='{}{0:0.###} tiles'}" VerticalAlignment="Center" IsVisible="{Binding SeenFromPlayer}" />
+            </StackPanel>
+            <TextBlock Text="{Binding ShadeText}" Opacity="0.85" TextWrapping="Wrap" IsVisible="{Binding SeenFromPlayer}" />
+
             <TextBlock Text="{Binding TicText}" Opacity="0.85" />
             <TextBlock Text="{Binding RunningText}" Opacity="0.85" TextWrapping="Wrap" />
             <TextBlock Text="{Binding EventText}" Opacity="0.7" FontSize="12" TextWrapping="Wrap" />

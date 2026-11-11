@@ -38,6 +38,14 @@ Ready, anything else on Spawn.
   action it runs as it ends (the preview names them; it doesn't run them), and the actions that
   just ran.
 
+- **Seen from the player** (off until ticked): the frame shaded as the game shades it that far
+  away, set with the slider (in tiles, to its middle along the view): dimmed to the level's light,
+  then faded toward the fade color by the distance, less the class's `lighten` or the frame's
+  `lighten(level)`. A `bright` frame (or a class with the bright flag or `lighten: bright`) is
+  unshaded at any distance, and a weapon's frames in hand are lit but never faded, as in the
+  game. The line under it gives the fade step and light level. It shades with the game's
+  default-map shading (Blake Stone's distance darkening); Wolfenstein 3D and Spear have none, so
+  there nothing changes. A frame's own `light` (the glow it casts) isn't shown.
 - **Sounds** (off until ticked): its sounds play as the preview passes the actions that make
   them: an `A_PlaySound`'s own, its `deathsound` on `A_DeathScream`, its `attacksound` on
   `T_Shoot` and the projectile actions, and its `seesound` as it goes from Spawn or Path into

@@ -205,10 +205,12 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
         foreach (var bitmap in _bitmaps.Values)
             bitmap?.Dispose();
         _bitmaps.Clear();
+        DisposeShaded();
         var picked = SelectedItem?.Name;
         _all = [];
         if (content != null)
         {
+            LoadShading(content);
             LoadFields(content);
             LoadStatePickers(content);
             _sounds.Load(content);
@@ -582,7 +584,10 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
                     + (frame.Modifiers.Count > 0 ? $"; {string.Join(", ", frame.Modifiers)}" : "");
 
         int zoom = Math.Clamp(Zoom, 1, 6);
-        PreviewImage = found && name != null ? Picture(name) : null;
+        var shade = SeenFromPlayer ? FrameShading(frame) : null;
+        ShadeText = shade?.Text ?? "";
+        PreviewImage = !found || name == null || shade is { Drawn: false } ? null
+            : shade != null ? ShadedPicture(name, shade) : Picture(name);
         if (PreviewImage is { } bitmap)
             (PreviewWidth, PreviewHeight) = (bitmap.PixelSize.Width * zoom, bitmap.PixelSize.Height * zoom);
         else

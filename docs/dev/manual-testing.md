@@ -1215,6 +1215,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** Sounds ticked, by ear: the Guard's Attack (its shot), Death (its scream),
       Spawn to Chase (its sight); Edit picture… on a view a sprite lacks (a blank one, saved into a
       mod, then shown in the preview).
+- [ ] Seen from the player, Blake: FloorLamp darkens with the distance slider, the line under it
+      saying its fade step less its lighten (+6); the caption at 2, 8 and 24 tiles.
+- [ ] **(never tried)** Seen from the player on an explosion (lighten(explosion): nearly unshaded),
+      a frame with `bright` (unshaded at any distance), a flickering light's lamp-dim frame
+      (darker), a Blake weapon's Ready/Fire (lit, never faded); Wolf3D (says it has no default
+      shading); Planet Strike; the same thing in the game at about that distance looking alike.
 
 ---
 

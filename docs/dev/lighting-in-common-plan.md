@@ -258,3 +258,33 @@ Planned 2026-11-11.
   Strike MAP01, moody-lights, weather-demo and E1M1 with the console's `fog #808080 1 8 90;
   light 140`. switch-demo's light room was left out: its flickering lamp (own Random) differs
   from one run to the next.
+
+**Phase 1 done 2026-11-11** (seen from the player):
+- Common: `SpriteShading`. It has the game's ActorSize / MinDist / FocalLength / ViewGlobal (a test
+  checks they're GameConstants'), `HeightNumerator(projectionWidth)` (CalcProjection's) and
+  `ViewHeight(distance, heightNumerator)` (TransformActor's: measured to the sprite's near side,
+  0 when too near). `ClassicProjectionWidth` is 304, the 320×200 window at view size 19.
+- Editor: `Rendering/ShadePreview` picks the row and offset as SpriteDrawing / SpriteScaler do:
+  - no shading (or one that neither dims nor fades) leaves the picture as it is;
+  - bright is unshaded;
+  - in hand is the light row at step 0;
+  - anything else is `Lightened(ShadeOffsetForHeight(ViewHeight))`.
+
+  `Remap` puts a picture through one remap. `ActorBrowserViewModel.Shading.cs` adds the toggle,
+  the 0.75-32 tile slider (1/8 steps, default 8) and the caption, and makes shaded bitmaps per
+  (sprite, row, offset). The class's bright flag and `lighten` come from its merged data, the
+  frame's from `Bright` / `LightenLevel`, through `ActorShadingRules` with the game's
+  `lighten-levels` (`LightenLevelTable` whose warnings go to the caption). "In hand" means a
+  Weapon-kind class's frames outside Spawn.
+- Tests: `ShadePreviewTests`. The main one, `Each_Distance_Gets_The_Step_The_Games_Lighting_Gives_It`,
+  checks every 1/8 tile from 1 to 32 at lighten 0, 6, -2 and 26, for Blake's inverse fade and a
+  grey fog, against the game's own `Lighting.LightenedShadeOffset` and `LightRow`. The others
+  cover the classic height numerator (`ViewSetup` at 320×200), bright, in hand, unshaded, rows
+  equal to `VideoManager.GetLightRow`, and remap keeping transparency. Gotcha: the game's
+  integer division gives step 1 right past fade-start, not 0.
+- Checked in the editor (Blake AOG, FloorLamp): 2 tiles step 0, 8 tiles step 5, 24 tiles step 15,
+  each with lighten +6, and the lamp visibly darker as it goes. Docs: manual actors.md,
+  manual-testing 2.19.
+- Left from the plan's defaults: the toggle and distance aren't remembered in `EditorSettings`
+  (the actor window has no settings access yet), and the slider isn't greyed for weapons (the
+  caption says they don't fade).
