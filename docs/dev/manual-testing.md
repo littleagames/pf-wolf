@@ -904,6 +904,14 @@ can reach), not played by hand.
       and with UI Scale (chunky dither/spiral/burn), widescreen, uncapped frame rates during a
       `game.fade`, the `fade <style>` console command with the new names, and a game.fade in a
       network game (it blocks every machine together).
+- [ ] Swarm Demo (`--file swarm-demo`, 1,000 / 5,000 / 20,000 enemies, 2026-11-11): headless
+      with `perf`, all three floors load (1,024 / 5,040 / 20,072 actors), the chain gun and 999
+      bullets on a three-digit counter, and the army waking and charging when `tp` puts you
+      outside the fort; Floor 2 ran at ~7 fps and Floor 3 at ~4 s a frame once awake (see
+      todo.md). **(never tried)**: playing it by hand (opening the door, shooting, the elevator
+      at the far side), killing a large part of an army (dropped clips, the score past six
+      digits on Floor 3), saving and loading with thousands of actors, and the levels in the
+      editor (2D, 3D view and the actor list).
 
 ## 1.15 Multiplayer
 

@@ -1,0 +1,4 @@
+name: Swarm Demo
+version: "1.0"
+description: A stress test for fun. Floors 1 to 3 become open fields holding 1,000, 5,000 and 20,000 enemies, one zone each, so a single shot wakes the whole army. You start with a chain gun and 999 bullets.
+game-packs: [wolf3d]

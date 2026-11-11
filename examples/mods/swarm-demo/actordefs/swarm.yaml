@@ -1,0 +1,12 @@
+# The player, extended (extend: true keeps the base class's states and properties and changes
+# only these): a chain gun from the start, and room for 999 bullets, because the army is big.
+Player:
+  extend: true
+  properties:
+    player.maxamount:
+      Clip: 999
+    player.startitem:
+      Knife: 1
+      Pistol: 1
+      GatlingGun: 1
+      Clip: 999

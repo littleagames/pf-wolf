@@ -1,0 +1,15 @@
+# Merged into the game pack's game-info.yaml: a dim sky-less night over the three fields. The
+# levels themselves are maps/MAP01-03.uwmf, made by examples/tools/make-swarm-demo.ps1.
+maps:
+  MAP01:
+    ceiling-color: "#202020"
+    floor-color: "#505050"
+    par-time: 600
+  MAP02:
+    ceiling-color: "#202020"
+    floor-color: "#505050"
+    par-time: 1200
+  MAP03:
+    ceiling-color: "#202020"
+    floor-color: "#505050"
+    par-time: 3600

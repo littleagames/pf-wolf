@@ -1,0 +1,6 @@
+# Wolf3D's ammo number has two digits (a longer number shows its last ones), but here the player
+# carries up to 999 bullets: three digits, a digit further left, still inside the ammo box
+ammo:
+  x: 208
+  y: 16
+  digits: 3

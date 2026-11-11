@@ -2498,6 +2498,62 @@ counts, timings and drawings are all there. Edit it and run it again:
 powershell -ExecutionPolicy Bypass -File examples/tools/make-animated-title.ps1
 ```
 
+## Swarm Demo (`mods/swarm-demo`)
+
+**A stress test, for fun** (Wolfenstein 3D): Floors 1 to 3 become open fields packed with far
+more enemies than Wolf3D ever allowed (it stopped at 150 actors). See how the engine copes.
+
+```
+PFWolf.exe --file swarm-demo
+```
+
+It replaces Floors 1 to 3 like the other level demos, so switch on only one of them at a time.
+
+| Floor | Level | Field | Enemies |
+| --- | --- | --- | --- |
+| 1 | The Courtyard | 64x64 | 1,000 |
+| 2 | The Parade Ground | 128x128 | 5,000 |
+| 3 | The Endless Army | 256x256 | 20,000 |
+
+- You start in a small blue-stone fort at the middle of the west wall, with ammo boxes and first
+  aid kits. Its door opens onto the field.
+- Each field is a single area, so **one shot wakes the whole army**. Stone pillars give a little
+  cover. Guards mostly, then SS, dogs, officers and mutants, one to a tile, facing every way.
+- The way out is an elevator in the middle of the east wall, on the far side of them all.
+- You start with the chain gun and 999 bullets, and the ammo counter has three digits.
+
+What to expect (measured headless, Release build, at 320x200): the levels load in a second or
+two, and a sleeping army costs almost nothing. Awake is another matter: on Floor 1 a few hundred
+soldiers chasing you take about 4 ms a frame; on Floor 2, 1,700 of them take about 140 ms
+(7 frames a second, and the game slows down); on Floor 3, 2,000 awake among 20,000 take nearly
+4 seconds a frame. Two engine limits show here:
+
+- **The more actors on the level, the slower each sight check gets.** Every check for a wall
+  sprite in the way walks the whole actor list, so it's worst on Floor 3.
+- **Only 250 sprites are drawn at once.** With thousands in view, the first 250 in the actor list
+  win, not the nearest, so soldiers right in front of you can go undrawn while far ones show.
+
+`perf 1` in the console times every frame from then on, and `perf` shows the breakdown (cheats
+on for `god`: `--cheats`).
+
+### What's in it
+
+- `maps/MAP01.uwmf`, `MAP02.uwmf`, `MAP03.uwmf`: the levels, in UWMF text (see the
+  [Big Map Demo](#big-map-demo-modsbigmap-demo) for the format). Each thing is on one line, but
+  20,000 of them still make Floor 3 a 3 MB file.
+- `actordefs/swarm.yaml`: `Player` with `extend: true`, so only the properties given change: the
+  chain gun and 999 bullets at the start (`player.startitem`), and room for them
+  (`player.maxamount`).
+- `statusbar.yaml`: the ammo number, three digits wide and a digit further left.
+- `game-info.yaml`: the floor and ceiling colors, and longer par times.
+
+The levels are made by `tools/make-swarm-demo.ps1`. The sizes, enemy counts, the army's mix and
+the random seeds are at the top and bottom of it. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-swarm-demo.ps1
+```
+
 ## Multiplayer modes and arenas
 
 Playing with others, the host picks how (the lobby's Game row): Co-op, Deathmatch, Team
