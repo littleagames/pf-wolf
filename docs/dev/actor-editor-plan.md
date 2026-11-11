@@ -180,3 +180,19 @@ classes.
 ## Status
 
 Planned 2026-11-10.
+
+**Phase 0 done 2026-11-10** (the state rules in Common):
+- PFWolf.Common/Entities/Actors: `ActorStateFrame` and `ActorStateResolver` moved there (`git mv`,
+  now public, namespace unchanged). A frame's picture is `ShapeName(view)`; the game's
+  `GetShapeName(ObjDir)` is an extension (`ActorStateFrameViews`), and `Bright` reads
+  `lighten(bright)` itself rather than through the game's `Lighting`. `ActorInheritance` holds
+  the parent rules `ActorMetadata.CreateActor` had: `Ancestors` (nearest first; a missing
+  parent of the class itself or a loop is an error, a missing one further up ends the line)
+  and `Inherit` (properties, states and radius from the nearest that has them, every flag).
+  `CreateActor` still picks the C# type and builds the actor.
+- Checked: `ActorStateSnapshotTests` writes every class of the seven games, the Multiplayer
+  mod and the 27 example mods with actordefs (6354 classes): type, radius, flags, properties,
+  each state's frames with where each goes, and the warnings. With `PFWOLF_ACTOR_SNAPSHOT` set
+  it saves that to a file; before and after the move the files were byte-identical. The full
+  suite passes (3772, incl. DemoRegressionTests' demos); one run of three had a single failure
+  that didn't come back, which the summary didn't name.

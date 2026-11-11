@@ -25,65 +25,12 @@ internal class ActorMetadata
         // merged in), to be checked against the kind of actor it turns out to be
         List<string>? ownSettings = _settingsChecked.Add(name) ? [.. actor.Properties.Keys, .. actor.Flags] : null;
 
+        // The kind of actor it is: the C# class of its name, else the nearest parent's that has one
         var actorType = Type.GetType($"PFWolf.Entities.Actors.{name}");
-        if (!string.IsNullOrWhiteSpace(actor.Parent))
-        {
-            if (!Actors.TryGetValue(actor.Parent, out var parentActor))
-            {
-                throw new Exception($"Parent actor {actor.Parent} not found");
-            }
-
-            var visitedParents = new HashSet<string> { name };
-            var ancestorChain = new Stack<ActorData>();
-            ancestorChain.Push(actor);
-
-            var currentParent = parentActor;
-            var currentParentName = actor.Parent;
-
-            while (currentParent != null)
-            {
-                if (!visitedParents.Add(currentParentName ?? ""))
-                {
-                    throw new Exception("Circular reference detected");
-                }
-
-                if (actorType == null)
-                {
-                    var candidateType = Type.GetType($"PFWolf.Entities.Actors.{currentParentName}");
-                    if (candidateType != null && typeof(Entities.Actors.Actor).IsAssignableFrom(candidateType))
-                    {
-                        actorType = candidateType;
-                    }
-                }
-
-                ancestorChain.Push(currentParent);
-
-                if (string.IsNullOrWhiteSpace(currentParent.Parent) ||
-                    !Actors.TryGetValue(currentParent.Parent, out var nextParent))
-                {
-                    currentParentName = "";
-                    currentParent = null;
-                }
-                else
-                {
-                    currentParentName = currentParent.Parent;
-                    currentParent = nextParent;
-                }
-            }
-
-            // The stack enumerates root-first, so Reverse() walks the actor, its parent, then
-            // up to the root. Properties and states (and a radius) only fill what's still missing, so
-            // the nearest ancestor has to go first: Key's "inventory.interhubamount" must
-            // beat Inventory's, not the other way round.
-            foreach (var ancestor in ancestorChain.Reverse())
-                MergeInheritedMembers(ancestor, actor);
-
-            while (ancestorChain.Count > 0)
-            {
-                var ancestor = ancestorChain.Pop();
-                MergeActorProperties(ancestor, actor);
-            }
-        }
+        var ancestors = ActorInheritance.Ancestors(name, actor, Actors);
+        actorType ??= ancestors.Select(ancestor => Type.GetType($"PFWolf.Entities.Actors.{ancestor.Name}"))
+            .FirstOrDefault(type => type != null && typeof(Entities.Actors.Actor).IsAssignableFrom(type));
+        ActorInheritance.Inherit(actor, [.. ancestors.Select(ancestor => ancestor.Data)]);
 
         // Inventory itself is abstract: a class made straight from it is an item all the same, a
         // CustomInventory (else it would be a plain actor, never picked up)
@@ -185,29 +132,4 @@ internal class ActorMetadata
     private readonly HashSet<List<StateData>> _warnedStates = new(ReferenceEqualityComparer.Instance);
     private readonly HashSet<List<StateData>> _modifiersChecked = new(ReferenceEqualityComparer.Instance);
 
-    // Fills properties and states the target doesn't already have. Callers walk from the
-    // nearest ancestor to the root so the closest definition wins.
-    private static void MergeInheritedMembers(ActorData source, ActorData target)
-    {
-        if (target.Radius == 0)
-            target.Radius = source.Radius;      // the nearest that gives one
-
-
-        foreach (var kvp in source.Properties)
-        {
-            if (!target.Properties.ContainsKey(kvp.Key))
-                target.Properties[kvp.Key] = kvp.Value;
-        }
-
-        foreach (var kvp in source.States)
-        {
-            if (!target.States.ContainsKey(kvp.Key))
-                target.States[kvp.Key] = kvp.Value;
-        }
-    }
-
-    private static void MergeActorProperties(ActorData source, ActorData target)
-    {
-        target.Flags.UnionWith(source.Flags);
-    }
 }

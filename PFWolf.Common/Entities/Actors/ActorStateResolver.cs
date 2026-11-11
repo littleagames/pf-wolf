@@ -7,12 +7,12 @@ namespace PFWolf.Entities.Actors;
 /// definitions into a linked sequence of single-frame <see cref="ActorStateFrame"/> nodes,
 /// where each frame's `Next` is its following frame, a named next state, or a loop/stop.
 /// </summary>
-internal static class ActorStateResolver
+public static class ActorStateResolver
 {
     /// <param name="ignored">Told of each next-state, goto, stop or loop that's never reached, as
     /// the state's name, its entries and the marker: one on an entry before the last, which the
     /// next entry's frames follow instead</param>
-    internal static Dictionary<string, ActorStateFrame> Resolve(Dictionary<string, List<StateData>> states,
+    public static Dictionary<string, ActorStateFrame> Resolve(Dictionary<string, List<StateData>> states,
         Action<string, List<StateData>, StateData>? ignored = null)
     {
         var firstFrameByGroup = new Dictionary<string, ActorStateFrame>();
@@ -103,7 +103,7 @@ internal static class ActorStateResolver
     }
 
     /// <summary>The warning for a marker Resolve found is never reached</summary>
-    internal static string IgnoredMessage(string className, string state, StateData marker) =>
+    public static string IgnoredMessage(string className, string state, StateData marker) =>
         $"Actor {className}: in its {state} state, " + marker switch
         {
             GoToStateData goTo => $"next-state (or goto) {goTo.NextState}",
@@ -112,16 +112,16 @@ internal static class ActorStateResolver
         } + " isn't on the state's last entry, so it's never reached: the frames after it play instead";
 
     /// <summary>A state's frame modifiers the engine doesn't read (fast, a misspelt bright), each once</summary>
-    internal static IEnumerable<string> UnknownModifiers(List<StateData> entries) =>
+    public static IEnumerable<string> UnknownModifiers(List<StateData> entries) =>
         entries.OfType<ActorStatesData>().SelectMany(frames => frames.Modifiers)
             .Where(modifier => !ActorStateFrame.IsKnownModifier(modifier)).Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The warning for a modifier the engine doesn't read</summary>
-    internal static string UnknownModifierMessage(string className, string state, string modifier) =>
+    public static string UnknownModifierMessage(string className, string state, string modifier) =>
         $"Actor {className}: in its {state} state, the modifier {modifier} does nothing (bright and lighten(level) are the only ones)";
 
     /// <summary>The state a corpse brought back by a reviver plays (Monster.Rise)</summary>
-    internal const string RaiseState = "Raise";
+    public const string RaiseState = "Raise";
 
     // How long a raise shows a frame that held forever dying (the corpse's own), in tics
     private const short RaiseHoldTics = 8;
@@ -133,7 +133,7 @@ internal static class ActorStateResolver
     /// Its last frame runs A_Resume (Monster.Resume: back to chasing or standing), and then
     /// goes to Spawn should that do nothing.
     /// </summary>
-    internal static void AddRaiseFromDeath(Dictionary<string, ActorStateFrame> states)
+    public static void AddRaiseFromDeath(Dictionary<string, ActorStateFrame> states)
     {
         if (states.ContainsKey(RaiseState) || !states.TryGetValue("Death", out var death))
             return;

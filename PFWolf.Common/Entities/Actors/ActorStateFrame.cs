@@ -1,8 +1,11 @@
-using PFWolf;
-
 namespace PFWolf.Entities.Actors;
 
-internal class ActorStateFrame
+/// <summary>
+/// One frame of an actor's state, as <see cref="ActorStateResolver"/> makes them from a class's
+/// actordefs states: a sprite frame shown for a number of tics, what it runs, and the frame after
+/// it. Shared by the game, which plays them, and the editor, which shows them.
+/// </summary>
+public class ActorStateFrame
 {
     public required string StateName { get; init; }
     public required string Sprite { get; init; }
@@ -16,7 +19,7 @@ internal class ActorStateFrame
     // The "bright" modifier (or lighten(bright)): the frame is drawn at full light, unshaded
     private bool? _bright;
     public bool Bright => _bright ??= Modifiers.Contains(BrightModifier, StringComparer.OrdinalIgnoreCase)
-        || Rendering.Lighting.IsBrightLevel(LightenLevel);
+        || string.Equals(LightenLevel, BrightModifier, StringComparison.OrdinalIgnoreCase);     // lighten(bright): the game's Lighting.BrightLevel
 
     // The "lighten(level)" modifier: the frame darkens less with distance, as the actor's
     // `lighten` property (Blake Stone's explosions, nearly unshaded): a number of fade steps or a
@@ -34,10 +37,10 @@ internal class ActorStateFrame
     }
 
     /// <summary>The frame modifiers the engine reads (the actordefs reference's modifiers); any other is ignored, with a warning</summary>
-    internal const string BrightModifier = "bright";
-    internal static readonly IReadOnlySet<string> KnownModifiers = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { BrightModifier };
+    public const string BrightModifier = "bright";
+    public static readonly IReadOnlySet<string> KnownModifiers = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { BrightModifier };
 
-    internal static bool IsKnownModifier(string modifier) => KnownModifiers.Contains(modifier) || LightenArgument(modifier) != null;
+    public static bool IsKnownModifier(string modifier) => KnownModifiers.Contains(modifier) || LightenArgument(modifier) != null;
 
     // lighten(level)'s level, else null
     static string? LightenArgument(string modifier) =>
@@ -54,11 +57,8 @@ internal class ActorStateFrame
     public string? Action { get; init; }
     public ActorStateFrame? Next { get; internal set; }
 
-    public string GetShapeName(ObjDir dir)
-    {
-        var frame = dir == ObjDir.NoDir ? 0 : (int)dir;
-        return ShapeNames(Sprite, FrameLetter)[frame];
-    }
+    /// <summary>The frame's picture seen from a view: 0 its single view, 1 (front) to 8 turning ("GARDA1")</summary>
+    public string ShapeName(int view) => ShapeNames(Sprite, FrameLetter)[view];
 
     private static readonly Dictionary<(string, string), string[]> _shapeNames = [];
 
