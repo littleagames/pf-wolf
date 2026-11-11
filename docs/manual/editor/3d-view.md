@@ -45,8 +45,11 @@ The View menu has the 3D view's own layers:
 - **3D: shading**, the level's light, its light zones and distance fade, as the game shows them:
   the game's own shading tables, so a surface is dimmed and faded in the same steps and to the
   same palette colors as in the game. A thing fades as one, by how far its middle is (less its
-  `lighten`; bright ones stay unshaded). Not shown: the lights things give off (halo lights) and
-  a zone's flicker, pulse or strobe;
+  `lighten`; bright ones stay unshaded). The light things give off (actordefs `light.*`, their
+  Spawn frame's `light:`) is cast round them as the game casts it as the level starts, doors
+  shut: brighter and tinted in pools, stopped by walls, a set light darkening or lightening what
+  it reaches. Not shown yet: a light's or a zone's flicker, pulse or strobe (each shows the light
+  it starts with);
 - **3D: markers**: push walls tinted purple and switches green, and, hovering a tagged tile,
   everything with its tag in orange.
 

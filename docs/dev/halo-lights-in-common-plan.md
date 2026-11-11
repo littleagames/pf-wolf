@@ -265,3 +265,38 @@ Planned 2026-11-11.
     green pulsing guard on moody-lights.
 - Checked in the editor: that guard tinted green, its brightness moving with the pulse. Docs:
   manual actors.md, manual-testing 2.19.
+- Committed 4feccaba (the full suite, 3850, passed).
+
+**Phase 2 done 2026-11-11** (halo lights in the 3D view):
+- **`GameContent.ThingLightOf(class)`:** a thing's light as it stands (`ActorLightInfo.From` and
+  its Spawn frame's `light:` through `ActorLightRules.Current`, effects at their start). It
+  shares one cached `Look` with `ThingShading`.
+- **`LevelMesh`:**
+  - It notes each thing's light where the game spawns it (a grid thing at its tile's middle, an
+    extra thing at its X/Y), whether or not it has a sprite. A set light anywhere turns shading
+    on, as `ActorShading` does.
+  - `BuildLightGrid` makes a `LightGrid` the size of the level with every tile's base light
+    (`Light(x, y)`: the zone's or the level's) and its tints, then casts every light in spawn
+    order through `LightCaster`. The level is seen through `StartLightMap`: floor, doors and
+    diagonals take light, and only floor lets it through, since doors are shut as the level
+    starts.
+  - `Grid` and `LightAtPoint` are public.
+- **`LevelView3D`:**
+  - Vertices carry `aLight` = (base level, tint index, fixed step or -1, how found) and `aSolid`.
+    How found is 0 at the point (floors, ceilings, tops, undersides), 1 half a cell toward the
+    eye on each axis (wall and door faces, as `WallPosts.WallLight`), or 2 worked out on the CPU.
+    Things and wall sprites use 2, at their spot with `LightGrid.LightAt`.
+  - A cells texture (a texel a cell: added, set + 128, tint) and a rows texture of every tint ×
+    32 levels (16 rows of 256 across) replace the per-light row numbering. The shader adds the
+    cell, clamps, takes the cell's tint, and looks up row tint × 32 + level.
+  - Wall sprites are lit at their tile's middle as the game lights them, but still fade per
+    fragment; the game's one step per wall sprite is left out.
+- **Found in the editor:** the program wouldn't link ("precisions of uniform 'uEye' differ"),
+  since the shader header makes floats mediump and only the fragment's `uEye` was highp. Both are
+  highp now. No test can catch a GL link error, so a screenshot is the check.
+- **Tests:** `LevelMeshTests.The_Levels_Light_Grid_Is_The_Games_As_It_Starts`: a walled room
+  with a wall stub and a shut door, dim, an amber lamp and a dim set light as extra things. Its
+  `TileLevel`, `CellAdd`, `CellSet`, `CellTint` and `Tints` equal the game's `Lighting` after
+  `ActorLights.CastActorLights` on the same level.
+- **Checked by screenshot:** Wolf3D + moody-lights MAP01 from the start. The door a lamp lights
+  is teal, as in the game; it was grey before. Docs: manual 3d-view.md, manual-testing 2.6.

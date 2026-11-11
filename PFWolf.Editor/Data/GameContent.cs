@@ -15,6 +15,9 @@ public sealed record MapEntry(string Name, string Title, string Label = "", bool
     public override string ToString() => string.IsNullOrWhiteSpace(Title) ? Name : $"{Name}  {Title}";
 }
 
+/// <summary>The light a thing gives off as it stands: intensity 0-255, radius in tiles, #RRGGBB or null, and whether it's a set light</summary>
+public sealed record ThingLight(int Intensity, double Radius, string? Color, bool Sets);
+
 /// <summary>Where a file is in a mod (a folder or a pk3): "texts/end1.txt"</summary>
 public sealed record ModEntry(string ModPath, string EntryPath)
 {
@@ -198,7 +201,7 @@ public sealed class GameContent
 
     private readonly Dictionary<string, string> _thingSpriteNames = new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly Dictionary<string, (bool Bright, int Lighten)> _thingShading = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, ThingLook> _thingLooks = new(StringComparer.OrdinalIgnoreCase);
     private Shading.LightenLevelTable? _lightenLevels;
 
     /// <summary>
@@ -209,7 +212,29 @@ public sealed class GameContent
     /// </summary>
     public (bool Bright, int Lighten) ThingShading(string className)
     {
-        if (_thingShading.TryGetValue(className, out var known))
+        var look = Look(className);
+        return (look.Bright, look.Lighten);
+    }
+
+    /// <summary>
+    /// The light a thing gives off as it stands (its class's light, changed by its Spawn frame's
+    /// `light:`; its effect at its start), as the game's actor lights read it
+    /// (ActorLightInfo.From, ActorLightRules.Current); null when it gives off none
+    /// </summary>
+    public ThingLight? ThingLightOf(string className)
+    {
+        var look = Look(className);
+        if (look.Light is not { } info)
+            return null;
+        var (intensity, radius, color) = Entities.Actors.ActorLightRules.Current(info, null, look.SpawnLight, 0, 0);
+        return intensity > 0 || info.Sets ? new ThingLight(intensity, radius, color, info.Sets) : null;
+    }
+
+    private sealed record ThingLook(bool Bright, int Lighten, Entities.Actors.ActorLightInfo? Light, Entities.Actors.StateLight? SpawnLight);
+
+    private ThingLook Look(string className)
+    {
+        if (_thingLooks.TryGetValue(className, out var known))
             return known;
         if (_lightenLevels == null)
         {
@@ -217,7 +242,7 @@ public sealed class GameContent
             _lightenLevels.Set(GameInfo?.LightenLevels ?? []);
         }
 
-        (bool, int) result = (false, 0);
+        var result = new ThingLook(false, 0, null, null);
         if (_actors.TryGetValue(className, out var own))
         {
             try
@@ -227,15 +252,17 @@ public sealed class GameContent
                 var frame = states.GetValueOrDefault("Spawn");
                 bool hasOwn = merged.Properties.TryGetValue("lighten", out var lighten);
                 bool flag = merged.Flags.Any(f => f.Equals("bright", StringComparison.OrdinalIgnoreCase));
-                result = (Shading.ActorShadingRules.IsBright(frame?.Bright == true, flag, hasOwn, lighten?.ToString()),
-                    Shading.ActorShadingRules.Lighten(hasOwn, lighten?.ToString(), frame?.LightenLevel, _lightenLevels));
+                var light = Entities.Actors.ActorLightInfo.From(className, merged.Properties, states.Values);
+                result = new ThingLook(Shading.ActorShadingRules.IsBright(frame?.Bright == true, flag, hasOwn, lighten?.ToString()),
+                    Shading.ActorShadingRules.Lighten(hasOwn, lighten?.ToString(), frame?.LightenLevel, _lightenLevels),
+                    light, frame?.Light);
             }
             catch (Exception e) when (e is InvalidOperationException or KeyNotFoundException or ArgumentException)
             {
                 // a class that can't be built (a missing parent) is lit as anything else
             }
         }
-        return _thingShading[className] = result;
+        return _thingLooks[className] = result;
     }
 
     /// <summary>

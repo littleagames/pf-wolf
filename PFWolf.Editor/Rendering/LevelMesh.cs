@@ -199,7 +199,8 @@ public sealed class LevelMesh
         var settings = shade ? tiles.Shading : null;
         _levelLight = settings?.Light ?? 255;
         _scrollers = tiles.Scrollers;
-        Shaded = shade && ShadePreview.Shades(settings, _zones.Count > 0);
+        // a set light turns shading on for a level with none (Lighting.ActorShading)
+        Shaded = shade && (ShadePreview.Shades(settings, _zones.Count > 0) || AnySetLight(tiles));
         if (Shaded)
             Fade = FadeParams.From(settings ?? ShadingResolver.NoFade);
         _levelLevel = ShadeMath.LightLevelOf(_levelLight);
@@ -228,7 +229,90 @@ public sealed class LevelMesh
     {
         var mesh = new LevelMesh(tiles, shade);
         mesh.Build();
+        mesh.BuildLightGrid();
         return mesh;
+    }
+
+    //
+    // The light grid (PFWolf.Common's LightGrid and LightCaster), as the game's is as the level starts
+    //
+
+    /// <summary>
+    /// The level's light grid as the game has it as the level starts (Lighting.UpdateLightGrid,
+    /// ActorLights.CastActorLights): each tile's base light (its zone's, else the level's), and the
+    /// things' lights cast into the cells round them, doors shut; null when the level isn't shaded
+    /// </summary>
+    public LightGrid? Grid { get; private set; }
+
+    // The things giving off light, in the order the game spawns them: where (global units), and their light
+    private readonly List<(int X, int Y, ThingLight Light)> _lightSources = [];
+
+    // Notes a thing's light, if its class gives one off (whether or not it has a sprite to see)
+    private void NoteLight(string className, double x, double y)
+    {
+        if (_tiles.Content.ThingLightOf(className) is { } light)
+            _lightSources.Add(((int)(x * MapConstants.TileGlobal), (int)(y * MapConstants.TileGlobal), light));
+    }
+
+    private static bool AnySetLight(MapTiles tiles)
+    {
+        for (int y = 0; y < tiles.Height; y++)
+            for (int x = 0; x < tiles.Width; x++)
+                if (tiles.Thing(x, y) is { } thing && tiles.Content.ThingLightOf(thing.Class) is { Sets: true })
+                    return true;
+        return tiles.Map.ExtraThings.Any(thing => tiles.Content.ThingLightOf(thing.Class) is { Sets: true });
+    }
+
+    private void BuildLightGrid()
+    {
+        if (!Shaded)
+            return;
+        var grid = new LightGrid();
+        grid.SizeTo(_tiles.Width, _tiles.Height);
+        grid.TintIndex(ShadingResolver.NoTint);
+        for (int y = 0; y < _tiles.Height; y++)
+        {
+            for (int x = 0; x < _tiles.Width; x++)
+            {
+                var light = Light(x, y);
+                int i = y * _tiles.Width + x;
+                grid.TileLevel[i] = (byte)light.Level;
+                grid.TileTint[i] = grid.TintIndex(((byte)(light.Tint >> 16), (byte)(light.Tint >> 8), (byte)light.Tint));
+            }
+        }
+
+        var caster = new LightCaster(grid);
+        caster.BeginFrame(_tiles.Width * _tiles.Height, _tiles.Width);
+        var map = new StartLightMap(_tiles);
+        var tints = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (x, y, light) in _lightSources)
+            caster.CastLight(map, x, y, light.Intensity, light.Radius, LightCaster.ColorTints(light.Color, tints, grid.TintIndex), light.Sets);
+        Grid = grid;
+    }
+
+    /// <summary>The level as light sees it as it starts (the game's ActorLights.LightEnters / LightPasses): doors shut, pushwalls in place</summary>
+    private sealed class StartLightMap(MapTiles tiles) : ILightMap
+    {
+        public int TileIndexOrNone(int x, int y) => (uint)x < tiles.Width && (uint)y < tiles.Height ? y * tiles.Width + x : -1;
+
+        public bool LightEnters(int x, int y) => tiles.KindAt(x, y) switch
+        {
+            TileKind.Floor or TileKind.Door => true,
+            TileKind.Wall => tiles.Diagonal(x, y) != null,
+            _ => false,
+        };
+
+        public bool LightPasses(int x, int y) => tiles.KindAt(x, y) == TileKind.Floor;
+    }
+
+    /// <summary>The light at a point (global units) on a tile, as the game's LightAt finds it: its level and tint</summary>
+    public SurfaceLight LightAtPoint(int x, int y, long gx, long gy)
+    {
+        if (Grid is not { } grid || !InMap(x, y))
+            return Light(x, y);
+        var (level, tint) = grid.LightAt(y * _tiles.Width + x, gx, gy);
+        var (r, g, b) = grid.Tints[tint];
+        return new SurfaceLight(level, r << 16 | g << 8 | b);
     }
 
     private readonly int _levelLevel;
@@ -311,6 +395,7 @@ public sealed class LevelMesh
             return;
 
         var content = _tiles.Content;
+        NoteLight(thing.Class, thing.X, thing.Y);
         if (content.BrokenThingReason(thing.Class) != null)
         {
             AddMarker(x, y, BrokenColor);
@@ -863,6 +948,8 @@ public sealed class LevelMesh
         var content = _tiles.Content;
         if (_tiles.Thing(x, y) is { } thing)
         {
+            // where the game spawns it: the middle of its tile
+            NoteLight(thing.Class, x + 0.5, y + 0.5);
             if (content.BrokenThingReason(thing.Class) != null)
             {
                 AddMarker(x, y, BrokenColor);

@@ -992,6 +992,11 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       in the 3D view next to the game at the same spot; a bright thing (Wolf3D FloorLamp) staying
       lit far away under fog; a Blake lamp (partial-bright) darkening less than a crate; a flat's
       see-through pixels in the floor color; a level with no color (the game's palette 0x19/0x1d).
+- [ ] Halo lights in the 3D view (2026-11-11): Wolf3D + moody-lights MAP01 from the start, the
+      lamp-lit door teal as in the game.
+- [ ] **(never tried)** A coloured pool of light on a floor next to the game at the same spot;
+      light stopped by a wall and a shut door; switch-demo's light room lamp (amber); a set
+      light (`light.mode: set`) darkening a full-light room; a thing standing in a pool lit by it.
 - [ ] Blake AOG floor 1: octagon floor + panel ceiling from its codes.
 - [ ] Pick and edit from the 3D view; **(never tried)** clicking an extra thing.
 - [ ] **(never tried)** Level properties' Story saved to the mod's game-info (`story:`); the flat

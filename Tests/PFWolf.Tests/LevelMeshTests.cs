@@ -605,6 +605,69 @@ public class LevelMeshTests
         Assert.That(At(mesh, SurfaceKind.PlayerStart, 6, 6).Single().Light, Is.EqualTo(SurfaceLight.Editor));
     }
 
+    [Test]
+    public void The_Levels_Light_Grid_Is_The_Games_As_It_Starts()
+    {
+        // Arrange: the room, dim (light 64), a wall stub and a shut door, an amber lamp and a dim
+        // set light as extra things, as the game would cast them
+        var lamp = new ActorData();
+        lamp.Properties["light.intensity"] = 220;
+        lamp.Properties["light.radius"] = 4;
+        lamp.Properties["light.color"] = "#FFB060";
+        var bulb = new ActorData();
+        bulb.Properties["light.intensity"] = 20;
+        bulb.Properties["light.radius"] = 3;
+        bulb.Properties["light.mode"] = "set";
+        var content = GameContent.FromDefinitions(Content().MapDefs, actors: new() { ["Lamp"] = lamp, ["Bulb"] = bulb });
+        var document = Room();
+        document.SetProperties(new MapProperties { Light = 64, MaxFade = 0 });
+        EditorMaps.Set(document, 0, 12, 10, Wall);
+        EditorMaps.Set(document, 0, 10, 12, HorizontalDoor);
+        document.Map.ExtraThings = [new MapThing("Lamp", 10.5, 10.5, 0), new MapThing("Bulb", 20.5, 20.5, 0)];
+
+        // Act
+        var mesh = LevelMesh.Build(new MapTiles(content, document.Map, () => document.Properties));
+
+        // The game's: the same walls and door (shut), the same lights where the level puts them
+        var session = new GameSession();
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets")), null!, session, null)
+        {
+            TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+            ActorAt = new Actor?[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize],
+        };
+        typeof(MapManager).GetField("mapsegs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
+        for (int i = 0; i < MapConstants.ClassicMapSize; i++)
+            map.TileMap[i, 0] = map.TileMap[i, 63] = map.TileMap[0, i] = map.TileMap[63, i] = 1;
+        map.TileMap[12, 10] = 1;
+        map.TileMap[10, 12] = GameConstants.BitDoor;
+        var doors = new Doors(null!, null!, map, null!, null!, session, null!);
+        doors.DoorObjList[0] = new DoorObject { TileX = 10, TileY = 12, Action = DoorAction.Closed };
+        ActorLights? lights = null;
+        var lighting = new Lighting(null!, LightingTests.GreyVideo(), map,
+            new LightingHooks(() => 0, () => lights?.ColorTintTables.Clear(), tics => lights?.TickActorLights(tics)));
+        lights = new ActorLights(map, doors, lighting, session);
+        lighting.SetShading(new ShadingSettings("#000000", 0, 16, 0, 64));
+        lighting.UpdateLightGrid();
+        foreach (var (name, x, y, data) in new[] { ("Lamp", 10.5, 10.5, lamp), ("Bulb", 20.5, 20.5, bulb) })
+        {
+            var actor = new PFWolf.Entities.Actors.Monster { Name = name, X = (int)(x * 65536), Y = (int)(y * 65536), TileX = (byte)x, TileY = (byte)y };
+            foreach (var (key, value) in data.Properties)
+                actor.Properties[key] = value;
+            map.GetActors().AddLast(actor);
+        }
+        lights.CastActorLights();
+
+        // Assert: cell for cell, tile for tile, tint for tint
+        var grid = mesh.Grid!;
+        Assert.That(grid.TileLevel, Is.EqualTo(lighting.TileLevel));
+        Assert.That(grid.CellAdd, Is.EqualTo(lighting.CellAdd));
+        Assert.That(grid.CellSet, Is.EqualTo(lighting.CellSet));
+        Assert.That(grid.CellTint, Is.EqualTo(lighting.CellTint));
+        Assert.That(grid.Tints, Is.EqualTo(lighting.Tints));
+        Assert.That(grid.CellAdd.Any(add => add > 0), Is.True);
+    }
+
     // The 3D view's fragment shader's FadeStep (LevelView3D.FragmentShader), in the same 32-bit
     // float arithmetic: it has to give ShadeMath.ShadeOffset's steps
     private static int ShaderFadeStep(float nx, FadeParams fade)
