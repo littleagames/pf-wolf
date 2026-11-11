@@ -176,4 +176,19 @@ public class FontGameTests
         Assert.That(warnings, Is.Empty);
         Assert.That(canvas.UnknownColors, Is.Empty);
     }
+
+    [Test]
+    public void A_Picture_Fonts_Ink_Is_Its_Glyphs_Color_Not_Their_Background()
+    {
+        // Arrange: a 3x3 '1' in 7 on a box of 2 (the status bar digits' blue), another glyph all see-through
+        var one = new GraphicAsset([2, 7, 2, 2, 7, 2, 2, 7, 2], 3, 3);
+        var clear = new GraphicAsset([5, 5, 5, 5], 2, 2) { OpacityMask = [0, 0, 0, 0] };
+        var font = new GraphicFont(new Dictionary<char, GraphicFont.Glyph> { ['1'] = new(one, 3), ['2'] = new(clear, 2), [' '] = new(null, 3) });
+
+        // Act / Assert
+        Assert.That(font.InkColor('1'), Is.EqualTo((byte)7));
+        Assert.That(font.InkColor('2'), Is.Null);
+        Assert.That(font.InkColor(' '), Is.Null);
+        Assert.That(new GraphicFont(new Dictionary<char, GraphicFont.Glyph> { ['1'] = new(one, 3) }, colorize: true).InkColor('1'), Is.Null);
+    }
 }

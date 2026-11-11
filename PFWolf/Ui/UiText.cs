@@ -26,6 +26,9 @@ internal sealed class UiText(GraphicManager graphics, FontManager fonts)
 
     internal void MeasureText(string text, string font, out int width, out int height) => graphics.MeasureText(text, font, out width, out height);
 
+    /// <summary>A font by name, or null with none of that name</summary>
+    internal Font? FindFont(string font) => fonts.Find(font);
+
     internal int TextWidth(string text, string font)
     {
         MeasureText(text, font, out int width, out _);

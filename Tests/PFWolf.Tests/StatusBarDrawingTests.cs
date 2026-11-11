@@ -81,6 +81,25 @@ public class StatusBarDrawingTests
         Assert.That(StatusBarDrawing.HintFrame(1234, 16, 1), Is.Zero);
     }
 
+    [TestCase(42, 6, true, "    42", -1)]
+    [TestCase(-1, 6, true, "    -1", -1)]
+    [TestCase(-1, 6, false, "     1", 4)]        // a blank where the minus sign is drawn
+    [TestCase(1234567, 6, true, "234567", -1)]   // too long: the last digits
+    [TestCase(-1234567, 6, false, " 34567", 0)]  // too long and below 0: the sign kept
+    [TestCase(-5, 0, false, " 5", 0)]            // as long as it is
+    public void A_Number_Keeps_Its_Minus_Sign(int number, int digits, bool fontHasMinus, string text, int minusAt)
+    {
+        var element = new Assets.StatusBarElement { Digits = digits };
+        Assert.That(StatusBarDrawing.NumberText(element, number, fontHasMinus), Is.EqualTo((text, minusAt)));
+    }
+
+    [Test]
+    public void A_Numbers_Minus_Sign_Comes_After_Its_Prefix()
+    {
+        var element = new Assets.StatusBarElement { Digits = 0, Prefix = "FRAGS-", Suffix = "!" };
+        Assert.That(StatusBarDrawing.NumberText(element, -3, fontHasMinus: false), Is.EqualTo(("FRAGS- 3!", 6)));
+    }
+
     [Test]
     public void Doesnt_Grin_Without_A_Pickup_Sound()
     {

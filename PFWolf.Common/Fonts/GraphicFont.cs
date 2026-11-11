@@ -77,6 +77,31 @@ public sealed class GraphicFont : Font
         }
     }
 
+    /// <summary>
+    /// The palette index most of a glyph's drawn pixels are, leaving out the color at its top
+    /// left corner when that's drawn (a background, like the status bar digits' blue box), for
+    /// a font whose pictures keep their own colors; null for one drawn in the text's color, or a
+    /// blank. For drawing something to match the glyphs (the bar's minus sign the digits lack).
+    /// </summary>
+    public byte? InkColor(char ch)
+    {
+        if (_colorize || FindGlyph(ch) is not { Image: { } image } glyph)
+            return null;
+        bool Drawn(int i) => i < image.RawData.Length && (image.OpacityMask == null || image.OpacityMask[i] != 0) && image.RawData[i] != _transparent;
+        int corner = glyph.SrcY * image.Width + glyph.SrcX;
+        int? background = Drawn(corner) ? image.RawData[corner] : null;
+        var counts = new int[256];
+        for (int y = glyph.SrcY; y < Math.Min(glyph.SrcY + glyph.Height, image.Height); y++)
+            for (int x = glyph.SrcX; x < Math.Min(glyph.SrcX + glyph.Width, image.Width); x++)
+            {
+                int i = y * image.Width + x;
+                if (Drawn(i) && image.RawData[i] != background)
+                    counts[image.RawData[i]]++;
+            }
+        int most = Array.IndexOf(counts, counts.Max());
+        return counts[most] > 0 ? (byte)most : null;
+    }
+
     private Glyph? FindGlyph(char ch)
     {
         if (_upperCase)

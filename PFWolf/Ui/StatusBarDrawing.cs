@@ -170,17 +170,44 @@ internal sealed class StatusBarDrawing(
             return;
         }
 
-        // digits 0: as long as the number is, else right-aligned in that many (its last digits if longer)
-        string str = number.ToString();
-        if (element.Digits > 0)
-            str = str.Length <= element.Digits ? str.PadLeft(element.Digits) : str[^element.Digits..];
-        str = element.Prefix + str + element.Suffix;
+        string color = element.Color ?? numbers?.Color ?? "White";
+        var (str, minusAt) = NumberText(element, number, ui.FindFont(font)?.Has('-') ?? true);
+        int x = DrawStatusText(element, str, font, color);
 
-        DrawStatusText(element, str, font, element.Color ?? numbers?.Color ?? "White");
+        // A font with no minus sign (Wolf3D's and Blake's bar digits): a dash of the digits'
+        // color, across the middle of the place it would be (a deathmatch's frags go below 0)
+        if (minusAt >= 0 && ui.FindFont(font) is { } f)
+        {
+            int left = x + ui.TextWidth(str[..minusAt], font), width = Math.Max(1, f.Advance('0') - 2);
+            string ink = (f as Fonts.GraphicFont)?.InkColor('0') is { } index ? index.ToString() : color;
+            using var _ = StatusBarOrigin(element);
+            video.Bar(left + 1, StatusBarTop(element) + element.Y + f.Height / 2 - 1, width, 2, ink);
+        }
     }
 
-    /// <summary>Text at a status bar part, lined up as its align says</summary>
-    internal void DrawStatusText(Assets.StatusBarElement element, string text, string font, string color)
+    /// <summary>
+    /// A number's text in a part: right-aligned in its digits (as long as the number is with
+    /// digits 0), its last digits if longer, keeping a minus sign in front; between the part's
+    /// prefix and suffix. When the font has no minus sign, a blank is left in its place and
+    /// MinusAt is where it is, else -1.
+    /// </summary>
+    internal static (string Text, int MinusAt) NumberText(Assets.StatusBarElement element, int number, bool fontHasMinus)
+    {
+        string str = number.ToString();
+        if (element.Digits > 0 && str.Length > element.Digits)
+            str = number < 0 && element.Digits > 1 ? "-" + str[^(element.Digits - 1)..] : str[^element.Digits..];
+        if (element.Digits > 0)
+            str = str.PadLeft(element.Digits);
+        str = element.Prefix + str + element.Suffix;
+
+        int minusAt = number < 0 && !fontHasMinus ? str.IndexOf('-', element.Prefix.Length) : -1;
+        if (minusAt >= 0)
+            str = str[..minusAt] + " " + str[(minusAt + 1)..];
+        return (str, minusAt);
+    }
+
+    /// <summary>Text at a status bar part, lined up as its align says; returns where it starts across</summary>
+    internal int DrawStatusText(Assets.StatusBarElement element, string text, string font, string color)
     {
         int x = element.Align.ToLowerInvariant() switch
         {
@@ -190,6 +217,7 @@ internal sealed class StatusBarDrawing(
         };
         using var _ = StatusBarOrigin(element);
         graphics.DrawText(x, StatusBarTop(element) + element.Y, text, new Fonts.TextStyle(font, color));
+        return x;
     }
 
     /// <summary>
