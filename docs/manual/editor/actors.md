@@ -43,9 +43,16 @@ Ready, anything else on Spawn.
   then faded toward the fade color by the distance, less the class's `lighten` or the frame's
   `lighten(level)`. A `bright` frame (or a class with the bright flag or `lighten: bright`) is
   unshaded at any distance, and a weapon's frames in hand are lit but never faded, as in the
-  game. The line under it gives the fade step and light level. It shades with the game's
-  default-map shading (Blake Stone's distance darkening); Wolfenstein 3D and Spear have none, so
-  there nothing changes. A frame's own `light` (the glow it casts) isn't shown.
+  game. The line under it gives the fade step and light level. A frame's own `light` (the glow
+  it casts) isn't shown.
+  - **Shading from**: the default map's shading (Blake Stone's distance darkening; Wolfenstein 3D
+    and Spear have none), or a level's that has shading or light zones of its own, the loaded
+    mods' too, resolved as the game resolves it.
+  - **Zone**: one of that level's light zones to stand it in, lit and tinted by the zone. A
+    zone's flicker, pulse or strobe plays along with the preview.
+  - **Set by hand**: light, fade color, start, end, max fade and curve over the level's, as if
+    its game-info shading said them (a light alone fades with the game's defaults). These are
+    never saved: the level's shading is set in Map Properties.
 - **Sounds** (off until ticked): its sounds play as the preview passes the actions that make
   them: an `A_PlaySound`'s own, its `deathsound` on `A_DeathScream`, its `attacksound` on
   `T_Shoot` and the projectile actions, and its `seesound` as it goes from Spawn or Path into

@@ -466,11 +466,16 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
             return;
         _ticsOwed -= whole;
         var before = _player.Frame;
+        bool relit = TickPreviewZone(whole);
         Report(_player.Step(whole));
         if (_player.Frame != before || _player.Stuck)
             Moved();
         else
+        {
             TicText = TicLine();
+            if (relit)
+                DrawFrame();
+        }
     }
 
     /// <summary>Shows a frame of the timeline (a click), playing stopped</summary>

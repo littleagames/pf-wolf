@@ -88,7 +88,11 @@
         </Grid>
 
         <TextBlock Classes="heading" Text="Shading (night, fog)" />
-        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+          <TextBlock Classes="label" Grid.Row="5" Text="Fade curve" />
+          <AutoCompleteBox Grid.Row="5" Grid.Column="1" Text="{Binding FadeCurve}" ItemsSource="{Binding FadeCurveNames}" FilterMode="StartsWith"
+                           PlaceholderText="{Binding FadeCurveDefault}"
+                           ToolTip.Tip="How the fade grows past fade start: linear reaches max fade at fade end; inverse (Blake Stone's) is max fade × (1 − fade start / distance), nearing max fade far away (fade end isn't used)." />
           <TextBlock Classes="label" Grid.Row="0" Text="Light (0-255)" />
           <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Light}" PlaceholderText="{Binding LightDefault}" />
           <TextBlock Classes="label" Grid.Row="1" Text="Fade color" />

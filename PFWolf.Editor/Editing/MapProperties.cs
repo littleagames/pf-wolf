@@ -66,11 +66,31 @@ public sealed record MapProperties
     public int? MaxFade { get; init; }
     public int? Light { get; init; }
 
+    /// <summary>How the fade grows past fade-start (game-info fade-curve): linear or inverse (Blake Stone's)</summary>
+    public string? FadeCurve { get; init; }
+
     public IReadOnlyList<ZoneProperties> Zones { get; init; } = [];
 
     public IReadOnlyList<ScrollerProperties> Scrollers { get; init; } = [];
 
-    public bool HasShading => FadeColor != null || FadeStart != null || FadeEnd != null || MaxFade != null || Light != null;
+    public bool HasShading => FadeColor != null || FadeStart != null || FadeEnd != null || MaxFade != null || Light != null || FadeCurve != null;
+
+    /// <summary>
+    /// Its shading and zones as game-info has them, for the game's own rules to resolve
+    /// (PFWolf.Common's ShadingResolver) as the edits stand
+    /// </summary>
+    public MapInfo ToShadingMapInfo() => new()
+    {
+        Shading = HasShading
+            ? new ShadingInfo { FadeColor = FadeColor, FadeStart = FadeStart, FadeEnd = FadeEnd, MaxFade = MaxFade, Light = Light, FadeCurve = FadeCurve }
+            : null,
+        Zones = Zones.Count == 0 ? null : Zones.ToDictionary(zone => zone.Id, zone => new ZoneInfo
+        {
+            Light = zone.Light, Color = zone.Color, Effect = zone.Effect, Low = zone.Low, Tics = zone.Tics,
+            BrightTics = zone.BrightTics, Ambient = zone.Ambient, AmbientDisguised = zone.AmbientDisguised,
+            AmbientUndetected = zone.AmbientUndetected,
+        }),
+    };
 
     public static MapProperties From(MapInfo? info) => info == null ? new() : new()
     {
@@ -98,6 +118,7 @@ public sealed record MapProperties
         FadeEnd = info.Shading?.FadeEnd,
         MaxFade = info.Shading?.MaxFade,
         Light = info.Shading?.Light,
+        FadeCurve = info.Shading?.FadeCurve,
         Zones = (info.Zones ?? []).OrderBy(zone => zone.Key).Select(zone => ZoneProperties.From(zone.Key, zone.Value)).ToList(),
         Scrollers = (info.Scrollers ?? []).OrderBy(scroller => scroller.Key)
             .Select(scroller => ScrollerProperties.From(scroller.Key, scroller.Value)).ToList(),
@@ -130,7 +151,7 @@ public sealed record MapProperties
         Check("floor-number", FloorNumber == other.FloorNumber);
         Check("cluster", Cluster == other.Cluster);
         Check("shading", FadeColor == other.FadeColor && FadeStart == other.FadeStart && FadeEnd == other.FadeEnd
-                         && MaxFade == other.MaxFade && Light == other.Light);
+                         && MaxFade == other.MaxFade && Light == other.Light && FadeCurve == other.FadeCurve);
         Check("zones", Zones.SequenceEqual(other.Zones));
         Check("scrollers", Scrollers.SequenceEqual(other.Scrollers));
         return keys;

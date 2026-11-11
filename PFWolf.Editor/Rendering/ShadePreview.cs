@@ -14,11 +14,14 @@ public sealed record FrameShade(byte[]? Row, int Offset, bool Drawn, string Text
     public int Step => Offset / 256;
 }
 
+/// <summary>A light zone the frame stands in: the light it shows now (0-255) and its tint</summary>
+public sealed record PreviewZone(int Id, int Light, (byte R, byte G, byte B) Tint);
+
 /// <summary>
 /// A frame shaded as the game shades a sprite at some distance (Rendering/SpriteDrawing.cs and
 /// SpriteScaler.cs in the game, the numbers from PFWolf.Common's Shading): drawn unshaded when
 /// bright; the weapon in hand lit but not faded; anything else lit, then faded by its distance
-/// less its lighten. Lit by the level's own light: zones and actors' lights aren't here.
+/// less its lighten. Lit by the level's light, or a zone's; actors' own lights aren't here.
 /// </summary>
 public sealed class ShadePreview
 {
@@ -28,25 +31,37 @@ public sealed class ShadePreview
     /// <summary>The height numerator the distance goes through: the classic window's</summary>
     public static readonly int HeightNumerator = SpriteShading.HeightNumerator(SpriteShading.ClassicProjectionWidth);
 
-    /// <summary>Whether the game shades a level with these settings at all (Lighting.RebuildShading, zones aside)</summary>
-    public static bool Shades(ShadingSettings? settings) => settings is { } s && (s.MaxFade > 0 || s.Light < 255);
+    /// <summary>
+    /// Whether the game shades a level with these settings at all (Lighting.RebuildShading): when
+    /// something is dimmed or faded, or the level has light zones (whose light can change)
+    /// </summary>
+    public static bool Shades(ShadingSettings? settings, bool levelHasZones = false)
+    {
+        var s = settings ?? ShadingResolver.NoFade;
+        return s.MaxFade > 0 || s.Light < 255 || levelHasZones;
+    }
 
     /// <summary>
     /// The shade for a frame <paramref name="tiles"/> tiles away (its middle, along the view)
-    /// with these settings (null: the level isn't shaded)
+    /// with these settings (null: the level has no shading of its own), standing in
+    /// <paramref name="zone"/> (null: lit by the level's light)
     /// </summary>
-    public FrameShade Shade(PaletteColor[] palette, ShadingSettings? settings, double tiles, bool inHand, bool bright, int lighten)
+    public FrameShade Shade(PaletteColor[] palette, ShadingSettings? settings, double tiles, bool inHand, bool bright, int lighten,
+        bool levelHasZones = false, PreviewZone? zone = null)
     {
-        if (!Shades(settings))
+        levelHasZones |= zone != null;
+        if (!Shades(settings, levelHasZones))
             return new FrameShade(null, 0, true, settings == null ? "no shading here: nothing fades" : "this shading neither dims nor fades");
-        var s = settings!.Value;
+        var s = settings ?? ShadingResolver.NoFade;
         var fade = FadeParams.From(s);
-        int level = ShadeMath.LightLevelOf(s.Light);
+        int level = ShadeMath.LightLevelOf(zone?.Light ?? s.Light);
         if (bright)
             return new FrameShade(null, 0, true, "drawn bright: unshaded at any distance");
 
-        var row = Rows(palette).Row(level, ShadeMath.LightLevels, ShadeMath.FadeSteps, fade.R, fade.G, fade.B);
-        string light = $"light level {level} of {ShadeMath.MaxLightLevel}";
+        var tint = zone?.Tint ?? ShadingResolver.NoTint;
+        var row = Rows(palette).Row(level, ShadeMath.LightLevels, ShadeMath.FadeSteps, fade.R, fade.G, fade.B, tint.R, tint.G, tint.B);
+        string light = $"light level {level} of {ShadeMath.MaxLightLevel}"
+                       + (zone == null ? "" : $" (zone {zone.Id}{(tint == ShadingResolver.NoTint ? "" : $", tinted #{tint.R:X2}{tint.G:X2}{tint.B:X2}")})");
         if (inHand)
             return new FrameShade(row, 0, true, $"in hand: {light}, weapons in hand don't fade");
 
@@ -58,8 +73,8 @@ public sealed class ShadePreview
         int far = ShadeMath.ShadeOffsetForHeight(height, HeightNumerator, fade);
         int offset = ShadeMath.Lightened(far, lighten, fade);
         string lightened = lighten == 0 ? "" : $" (lighten {lighten:+#;-#} from step {far / 256})";
-        return new FrameShade(row, offset, true,
-            $"{Tiles(tiles)}: fade step {offset / 256} of {fade.MaxFadeStep}{lightened}, {light}");
+        string faded = fade.MaxFadeStep == 0 ? "no fade" : $"fade step {offset / 256} of {fade.MaxFadeStep}{lightened}";
+        return new FrameShade(row, offset, true, $"{Tiles(tiles)}: {faded}, {light}");
     }
 
     private static string Tiles(double tiles) => $"{tiles:0.##} tile{(tiles == 1 ? "" : "s")}";

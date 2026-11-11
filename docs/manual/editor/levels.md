@@ -104,7 +104,8 @@ the whole level: it lists what the level has, most used first.
 - **The level**: its name, music, next and secret next levels (no next level ends the episode),
   and par time;
 - **How it looks**: floor and ceiling colors, wall height, sky, default flats, weather, and shading
-  (light, fade color and distance, for night and fog);
+  (light, fade color and distance, for night and fog, and the fade curve: linear, or inverse as
+  Blake Stone's);
 - **Zones**: the light zones plane 5 names, each with its light, color and effect, and the sounds
   looped in it;
 - **Scrollers**: for a tag on plane 4, how fast the textures of its walls, floor or ceiling slide,

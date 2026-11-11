@@ -149,6 +149,7 @@ public static class GameInfoFile
                     AppendValue(block, shading, "fade-end", Number(properties.FadeEnd), newline);
                     AppendValue(block, shading, "max-fade", Number(properties.MaxFade), newline);
                     AppendValue(block, shading, "light", Number(properties.Light), newline);
+                    AppendValue(block, shading, "fade-curve", Quote(properties.FadeCurve), newline);
                     break;
 
                 case "zones":

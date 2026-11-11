@@ -1221,6 +1221,14 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       a frame with `bright` (unshaded at any distance), a flickering light's lamp-dim frame
       (darker), a Blake weapon's Ready/Fire (lit, never faded); Wolf3D (says it has no default
       shading); Planet Strike; the same thing in the game at about that distance looking alike.
+- [ ] Seen from the player, Wolf3D with the switch demo: Shading from MAP01, Zone 1 (light 24):
+      the Guard near black, "no fade, light level 3 of 31 (zone 1)".
+- [ ] **(never tried)** A zone with an effect (a mod's flicker or strobe zone: the preview
+      flickers with it while playing); a tinted zone; Set by hand: a fade color and max fade on
+      Wolf3D (fades), a bad value (said, left out), Clear; a Planet Strike floor's own fade-start.
+- [ ] **(never tried)** Map Properties → Fade curve: inverse saved into a mod (game-info
+      `fade-curve: inverse`), the 3D view and the game both fading the inverse way; a zone with
+      only ambient sound keeps the level's light in the 3D view.
 
 ---
 

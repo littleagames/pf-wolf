@@ -183,6 +183,36 @@
                       ToolTip.Tip="How far away, in tiles, to its middle along the view" />
               <TextBlock Text="{Binding Distance, StringFormat='{}{0:0.###} tiles'}" VerticalAlignment="Center" IsVisible="{Binding SeenFromPlayer}" />
             </StackPanel>
+            <WrapPanel ItemSpacing="6" LineSpacing="6" IsVisible="{Binding SeenFromPlayer}">
+              <TextBlock Text="Shading from" VerticalAlignment="Center" />
+              <ComboBox ItemsSource="{Binding ShadingSources}" SelectedItem="{Binding SelectedShadingSource}" MinWidth="200"
+                        AutomationProperties.AutomationId="ShadingSource"
+                        ToolTip.Tip="Whose shading: the default map's (every level without its own), or a level with shading or light zones of its own (with the loaded mods')" />
+              <ComboBox ItemsSource="{Binding PreviewZones}" SelectedItem="{Binding SelectedPreviewZone}" MinWidth="180"
+                        AutomationProperties.AutomationId="PreviewZone"
+                        ToolTip.Tip="A light zone of that level to stand it in: lit (and tinted) by the zone, its flicker, pulse or strobe playing with the preview" />
+            </WrapPanel>
+            <Expander Header="Set by hand" IsVisible="{Binding SeenFromPlayer}" HorizontalAlignment="Stretch"
+                      ToolTip.Tip="Values over the level's, as if its game-info shading said them; never saved (Map Properties is where shading is set)">
+              <StackPanel Spacing="6">
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <TextBlock Text="Light" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding HandLight}" Width="60" PlaceholderText="0-255" AutomationProperties.AutomationId="HandLight" />
+                  <TextBlock Text="Fade color" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding HandFadeColor}" Width="90" PlaceholderText="#RRGGBB" AutomationProperties.AutomationId="HandFadeColor" />
+                  <TextBlock Text="Start" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding HandFadeStart}" Width="60" PlaceholderText="tiles" AutomationProperties.AutomationId="HandFadeStart" />
+                  <TextBlock Text="End" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding HandFadeEnd}" Width="60" PlaceholderText="tiles" AutomationProperties.AutomationId="HandFadeEnd" />
+                  <TextBlock Text="Max fade" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding HandMaxFade}" Width="60" PlaceholderText="%" AutomationProperties.AutomationId="HandMaxFade" />
+                  <TextBlock Text="Curve" VerticalAlignment="Center" />
+                  <AutoCompleteBox Text="{Binding HandFadeCurve}" ItemsSource="{Binding FadeCurveNames}" FilterMode="StartsWith" Width="90"
+                                   PlaceholderText="linear" AutomationProperties.AutomationId="HandFadeCurve" />
+                  <Button Content="Clear" Command="{Binding ClearHandShadingCommand}" />
+                </WrapPanel>
+              </StackPanel>
+            </Expander>
             <TextBlock Text="{Binding ShadeText}" Opacity="0.85" TextWrapping="Wrap" IsVisible="{Binding SeenFromPlayer}" />
 
             <TextBlock Text="{Binding TicText}" Opacity="0.85" />

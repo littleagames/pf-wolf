@@ -2,6 +2,7 @@ using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Definitions;
 using PFWolf.Editor.Editing;
+using PFWolf.Shading;
 
 namespace PFWolf.Editor.Data;
 
@@ -14,9 +15,6 @@ public enum TileKind
     /// <summary>A value the mapdefs don't know: neither a wall, a door nor a floor code</summary>
     Unknown,
 }
-
-/// <summary>A level's shading with every value filled in (the game's ShadingSettings): fade start and end in tiles, max fade in percent, light 0 to 255</summary>
-public sealed record ShadingValues(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light, bool InverseFade);
 
 /// <summary>
 /// Reads a level's planes the way the game does when it loads one (MapManager.LoadMap): which
@@ -55,6 +53,12 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
 
     /// <summary>The light zones that apply to the level: the default map's, with its own over them</summary>
     public Dictionary<int, ZoneProperties> Zones => Properties.EffectiveZones(content.DefaultMapInfo);
+
+    /// <summary>
+    /// The light zones as the game lights them (PFWolf.Common's ShadingResolver.ResolveZones):
+    /// a zone with only ambient sound isn't one, so its tiles keep the level's light
+    /// </summary>
+    public Dictionary<int, ZoneState> LightZones => ShadingResolver.ResolveZones(Properties.ToShadingMapInfo(), content.DefaultMapInfo);
 
     /// <summary>The level's scrollers by tag (game-info scrollers; a level's own only)</summary>
     public Dictionary<int, ScrollerProperties> Scrollers => Properties.Scrollers.ToDictionary(scroller => scroller.Tag);
@@ -249,36 +253,21 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
     }
 
     /// <summary>
-    /// The level's distance fade and light, each value from its game-info entry, else the default
-    /// map's, else the game's defaults (Lighting.ResolveShading); null when neither sets any
+    /// The level's distance fade and light, each value from its game-info entry (as edited), else
+    /// the default map's, else the game's defaults: the game's own ShadingResolver.ResolveShading;
+    /// null when neither sets any
     /// </summary>
-    public ShadingValues? Shading
-    {
-        get
-        {
-            var map = Properties;
-            var fallback = content.DefaultMapInfo.Shading;
-            if (!map.HasShading && fallback == null)
-                return null;
-            return new ShadingValues(
-                map.FadeColor ?? fallback?.FadeColor ?? "#000000",
-                map.FadeStart ?? fallback?.FadeStart ?? 0,
-                map.FadeEnd ?? fallback?.FadeEnd ?? 16,
-                map.MaxFade ?? fallback?.MaxFade ?? 100,
-                map.Light ?? fallback?.Light ?? 255,
-                string.Equals(fallback?.FadeCurve, "inverse", StringComparison.OrdinalIgnoreCase));
-        }
-    }
+    public ShadingSettings? Shading => ShadingResolver.ResolveShading(Properties.ToShadingMapInfo(), content.DefaultMapInfo);
 
     /// <summary>
     /// How a tile is lit, 0 to 255, and the zone's tint (#RRGGBB) if it has one: its light
-    /// zone's when game-info defines the zone, else the level's light
+    /// zone's (<see cref="LightZones"/>, the light it shows as the level starts), else the level's
     /// </summary>
-    public (int Light, string? Tint) LightAt(int x, int y, IReadOnlyDictionary<int, ZoneProperties> zones, int levelLight)
+    public (int Light, string? Tint) LightAt(int x, int y, IReadOnlyDictionary<int, ZoneState> zones, int levelLight)
     {
         int zone = this[MapConstants.ZonePlane, x, y];
-        if (zone != 0 && zones.TryGetValue(zone, out var properties))
-            return (Math.Clamp(properties.Light ?? 255, 0, 255), properties.Color);
+        if (zone != 0 && zones.TryGetValue(zone, out var state))
+            return (state.Current, state.Color);
         return (levelLight, null);
     }
 

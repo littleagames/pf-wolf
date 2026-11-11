@@ -185,6 +185,20 @@ public class GameInfoFileTests
     }
 
     [Test]
+    public void A_Fade_Curve_Is_Written_With_The_Shading()
+    {
+        // Arrange
+        var properties = new MapProperties { FadeCurve = "inverse" };
+
+        // Act
+        var text = GameInfoFile.Apply(null, "MAP01", properties, properties.ChangedKeys(new MapProperties()));
+
+        // Assert
+        Assert.That(Parse(text).Maps["MAP01"].Shading!.FadeCurve, Is.EqualTo("inverse"));
+        Assert.That(MapProperties.From(Parse(text).Maps["MAP01"]).FadeCurve, Is.EqualTo("inverse"));
+    }
+
+    [Test]
     public void A_Flow_Style_Level_Is_Rewritten_As_A_Block()
     {
         // Arrange

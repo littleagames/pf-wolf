@@ -125,6 +125,62 @@ public class ShadePreviewTests
     }
 
     [Test]
+    public void A_Zone_Lights_And_Tints_It_As_The_Games_Rows_Do()
+    {
+        // Arrange: the game's Lighting with the fog, and a dim red zone
+        var lighting = new Lighting(null!, LightingTests.GreyVideo(), new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets")), null!, new GameSession(), null),
+            new LightingHooks(() => ShadePreview.HeightNumerator, () => { }, _ => { }));
+        lighting.SetShading(Fog);
+        var zone = new PreviewZone(3, 96, (255, 64, 64));
+
+        // Act
+        var shade = new ShadePreview().Shade(GreyRamp(), Fog, 10, false, false, 0, levelHasZones: true, zone);
+
+        // Assert: the zone's light level and tint, as the game's light grid gives a tile in it
+        Assert.That(shade.Row, Is.EqualTo(lighting.LevelRow(ShadeMath.LightLevelOf(96), (255, 64, 64))));
+        Assert.That(shade.Text, Does.Contain("zone 3").And.Contain("#FF4040"));
+    }
+
+    [Test]
+    public void Zones_Shade_A_Level_With_No_Shading_Of_Its_Own_As_The_Game_Does()
+    {
+        // Arrange: a level with a zone and no shading: the game shades it with no fade
+        var lighting = new Lighting(null!, LightingTests.GreyVideo(), new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets")), null!, new GameSession(), null),
+            new LightingHooks(() => ShadePreview.HeightNumerator, () => { }, _ => { }));
+        lighting.SetShading(null);
+        lighting.FadeZoneLight(1, 60, 0);
+
+        // Act
+        var shade = new ShadePreview().Shade(GreyRamp(), null, 20, false, false, 0, levelHasZones: true, new PreviewZone(1, 60, ShadingResolver.NoTint));
+
+        // Assert: dimmed to the zone's light, never faded
+        Assert.That(lighting.Shading, Is.True);
+        Assert.That(ShadePreview.Shades(null, levelHasZones: true), Is.True);
+        Assert.That(shade.Row, Is.EqualTo(lighting.LevelRow(ShadeMath.LightLevelOf(60), ShadingResolver.NoTint)));
+        Assert.That(shade.Offset, Is.Zero);
+    }
+
+    [Test]
+    public void A_Levels_Edited_Properties_Resolve_As_The_Game_Resolves_Its_Game_Info()
+    {
+        // Arrange: its own fade curve, and a zone that only has ambient sound
+        var info = new MapInfo
+        {
+            Shading = new ShadingInfo { FadeStart = 2, MaxFade = 70, FadeCurve = "inverse" },
+            Zones = new() { [1] = new ZoneInfo { Light = 40, Color = "#4060FF" }, [2] = new ZoneInfo { Ambient = "RAIN" } },
+        };
+        var defaults = new DefaultMapInfo { Shading = new ShadingInfo { FadeColor = "#102030" } };
+
+        // Act
+        var edited = Editor.Editing.MapProperties.From(info).ToShadingMapInfo();
+
+        // Assert
+        Assert.That(ShadingResolver.ResolveShading(edited, defaults), Is.EqualTo(ShadingResolver.ResolveShading(info, defaults)));
+        Assert.That(ShadingResolver.ResolveShading(edited, defaults)!.Value.InverseFade, Is.True, "the map's own fade-curve");
+        Assert.That(ShadingResolver.ResolveZones(edited, defaults).Keys, Is.EqualTo(new[] { 1 }), "an ambient-only zone isn't a light zone");
+    }
+
+    [Test]
     public void Remapping_Leaves_See_Through_Pixels_See_Through()
     {
         var picture = new IndexedPicture(2, 1, [10, 20], [true, false]);

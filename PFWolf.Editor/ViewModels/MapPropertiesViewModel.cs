@@ -75,6 +75,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         _fadeEnd = Text(properties.FadeEnd);
         _maxFade = Text(properties.MaxFade);
         _light = Text(properties.Light);
+        _fadeCurve = properties.FadeCurve ?? "";
         foreach (var zone in properties.Zones)
         {
             Zones.Add(new ZoneRow
@@ -132,6 +133,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     [ObservableProperty] private string _fadeEnd;
     [ObservableProperty] private string _maxFade;
     [ObservableProperty] private string _light;
+    [ObservableProperty] private string _fadeCurve;
 
     public ObservableCollection<ZoneRow> Zones { get; } = [];
     public ObservableCollection<ScrollerRow> Scrollers { get; } = [];
@@ -154,6 +156,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     public string FadeEndDefault => Text(Defaults.Shading?.FadeEnd) is { Length: > 0 } text ? text : "16";
     public string MaxFadeDefault => Text(Defaults.Shading?.MaxFade) is { Length: > 0 } text ? text : "100";
     public string LightDefault => Text(Defaults.Shading?.Light) is { Length: > 0 } text ? text : "255";
+    public string FadeCurveDefault => Defaults.Shading?.FadeCurve is { Length: > 0 } curve ? curve : "linear";
+    public IReadOnlyList<string> FadeCurveNames { get; } = ["linear", "inverse"];
 
     [RelayCommand]
     private void AddZone()
@@ -229,6 +233,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 FadeEnd = Double(FadeEnd, "fade end"),
                 MaxFade = Int(MaxFade, "max fade", 0, 100),
                 Light = Int(Light, "light", 0, 255),
+                FadeCurve = FadeCurveName(FadeCurve),
                 Zones = zones.OrderBy(zone => zone.Id).ToList(),
                 Scrollers = scrollers.OrderBy(scroller => scroller.Tag).ToList(),
             };
@@ -243,6 +248,14 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     private readonly MapProperties _loaded;
 
     // Which of a pushwall's stories move: all, above or story; empty for the default map's
+    private static string? FadeCurveName(string text)
+    {
+        var name = Optional(text)?.ToLowerInvariant();
+        if (name is null or "linear" or "inverse")
+            return name;
+        throw new FormatException($"fade curve '{text}' isn't linear or inverse");
+    }
+
     private static string? PushwallStoriesName(string text)
     {
         var name = Optional(text)?.ToLowerInvariant();

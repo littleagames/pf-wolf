@@ -288,3 +288,43 @@ Planned 2026-11-11.
 - Left from the plan's defaults: the toggle and distance aren't remembered in `EditorSettings`
   (the actor window has no settings access yet), and the slider isn't greyed for weapons (the
   caption says they don't fade).
+
+**Phase 2 done 2026-11-11** (shading from a level, zones, set by hand):
+- **Resolver check first:** a one-off test ran the editor's old resolving (MapTiles.Shading's
+  copy, `MapProperties.EffectiveZones` + LightAt) against `ShadingResolver` on every map entry of
+  the Wolf3D, Spear, Blake and Planet Strike packs, Multiplayer and every example mod (2891 entries, 44 zones). There
+  were **no differences**: today no map sets its own fade-curve, and no ambient-only zone sits
+  where lighting reads it. The switch was made anyway, so later maps can't drift.
+- **Editor onto the shared rules:**
+  - `MapProperties` gained `FadeCurve` (read, saved as `fade-curve`, compared, in `HasShading`)
+    and `ToShadingMapInfo()`, so the edits resolve through Common.
+  - `MapTiles.Shading` is now `ShadingResolver.ResolveShading`, and the `ShadingValues` record is
+    gone (Common's `ShadingSettings` is used).
+  - New `MapTiles.LightZones` (`ResolveZones`); `LightAt` takes those and gives a zone's
+    `Current`.
+  - `LevelMesh` lights from them.
+  - The zone overlay and level checks still use `Zones` (`EffectiveZones`): they're about the
+    plane's ids, not light.
+- **Map Properties:** a Fade curve field (linear / inverse, the default map's as placeholder).
+- **Common:** `ShadingResolver.NoFade` (the game's `Lighting.NoFade` forwards to it).
+- **Preview:**
+  - `ShadePreview.Shade` takes whether the level has zones (the game shades a level with zones
+    even when nothing dims or fades, through NoFade) and a `PreviewZone` (light, tint), using the
+    zone's light level and tinted row as the game's light grid does.
+  - The view model (ActorBrowserViewModel.Shading.cs) adds Shading from (the default map, plus
+    each game-info map with shading or zones, mods merged) and Zone (the level's resolved zones,
+    which tick with the preview on their own Random, redrawing when the level of light moves).
+  - It also adds Set by hand (light, fade color, start, end, max fade, curve, with Clear). These
+    are laid over the map's own `ShadingInfo` and resolved, so a light alone takes the game's
+    fade defaults; bad values are left out and said.
+  - The caption says "no fade" when the max fade is 0.
+- **Tests:**
+  - `ShadePreviewTests`: a zone's row equals the game's `Lighting.LevelRow` for that level and
+    tint; a zones-only level is shaded as `Lighting.Shading` says; edited properties resolve like
+    the game-info they came from (map fade-curve, ambient-only zone left out).
+  - `GameInfoFileTests`: fade-curve written and read back.
+  - `ActorShadingGameTests` (GameData): Blake FloorLamp at 24 tiles; switch-demo MAP01 zone 1
+    ("no fade, light level 3 of 31 (zone 1)"); Wolf3D shading set by hand (light 128 at 8.25
+    tiles: step 15 of 31) and a bad value.
+- **Checked in the editor:** Wolf3D + switch-demo, the Guard in MAP01's zone 1 drawn near black.
+  Docs: manual actors.md and levels.md, manual-testing 2.19.

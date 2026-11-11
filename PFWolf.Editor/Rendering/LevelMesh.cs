@@ -123,7 +123,7 @@ public sealed class LevelMesh
     private readonly MapTiles _tiles;
     private readonly bool _shade;
     private readonly Dictionary<string, float> _textureStories = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<int, ZoneProperties> _zones;
+    private readonly Dictionary<int, PFWolf.Shading.ZoneState> _zones;
     private readonly int _levelLight;
     private readonly Dictionary<int, ScrollerProperties> _scrollers;
 
@@ -158,11 +158,11 @@ public sealed class LevelMesh
     {
         _tiles = tiles;
         _shade = shade;
-        _zones = shade ? tiles.Zones : [];
-        var shading = shade ? tiles.Shading : null;
-        _levelLight = shading?.Light ?? 255;
+        _zones = shade ? tiles.LightZones : [];
+        var settings = shade ? tiles.Shading : null;
+        _levelLight = settings?.Light ?? 255;
         _scrollers = tiles.Scrollers;
-        if (shading is { MaxFade: > 0 })
+        if (settings is { MaxFade: > 0 } shading)
         {
             Fog = new LevelFog(ParseColor(shading.FadeColor) is { } fade ? new Vector3(fade.X, fade.Y, fade.Z) : Vector3.Zero,
                 (float)Math.Max(shading.FadeStart, 0), (float)Math.Max(shading.FadeEnd, shading.FadeStart + 1 / 64.0),

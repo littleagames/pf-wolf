@@ -41,7 +41,7 @@ internal sealed class Lighting(
     internal static readonly byte[] NoShade = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
 
     // What the level fades with when it has zones but no shading of its own: nothing
-    internal static readonly ShadingSettings NoFade = new("#000000", 0, 16, 0, 255);
+    internal static readonly ShadingSettings NoFade = ShadingResolver.NoFade;
 
     internal ShadingSettings? LevelShading;  // null: the level isn't shaded
     internal Dictionary<int, ZoneState> LevelZones = [];     // RegisterZoneLightActions

@@ -58,6 +58,9 @@ public static class ShadingResolver
         return zones;
     }
 
+    /// <summary>What a level fades with when it has zones but no shading of its own: nothing</summary>
+    public static readonly ShadingSettings NoFade = new("#000000", 0, 16, 0, 255);
+
     /// <summary>White: no tint</summary>
     public static readonly (byte, byte, byte) NoTint = (255, 255, 255);
 
