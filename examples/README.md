@@ -1397,7 +1397,7 @@ weapons themselves work on every level: with cheats on, `give Shotgun`, `give Ha
     rest on the floor), thinks `A_Missile(10, 20, "bounce")` (off walls at half speed, its
     `bouncesound`, one of three at random), and when its Spawn frames run out, its Death state's
     `A_Explode(40, 110, 2, "hurtplayer", "falloff")` blows up; `A_JumpIfOnFloor("LowDeath")`
-    picks the lower blast for one that's come to rest.
+    picks the lower blast for one that's come to rest (the mod's own action, in its Lua below).
   - `ScopedRifle`: `weapon.zoom` (4 times), `weapon.zoompic` (the scope picture, over the whole
     screen), `weapon.zoomsound`, `weapon.zoomturn`, and a `ZoomFire` state it fires zoomed in:
     `A_FireBullet(90, 160)` against `Fire`'s `A_FireBullet(25, 50)` from the hip.
@@ -1409,6 +1409,8 @@ weapons themselves work on every level: with cheats on, `give Shotgun`, `give Ha
   - Each has a `weapon.slot` (the bazooka shares 8 with the grenades: the slot's key goes from
     one to the other), a `weapon.selectionorder` (lower is better), an `inventory.icon` for the
     status bar and a `tag` (its name).
+- `scripts/arsenal.lua`: `A_JumpIfOnFloor("State")`, an action in Lua (the engine hasn't got
+  it): the state when the grenade's `z` is down at its `zfloor`.
 - `mapdefs/things.yaml`: objects 860-868, the weapons and their ammo, for any level to place.
 - `sprites/`: the view frames (`ARSG`/`ARSR` shotgun, `ARGV`/`ARGT` grenade, `ARRV`/`ARRF`/`ARRB`
   rifle, `ARPV`/`ARPF` pistol, `ARBZ`/`ARBR` bazooka: 64x64, drawn at the bottom of the view),
