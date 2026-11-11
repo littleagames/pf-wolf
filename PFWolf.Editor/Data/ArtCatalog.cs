@@ -24,7 +24,8 @@ public enum ArtKind
 public sealed record PaletteTarget(int Plane, ushort Value, ushort Keep = 0, bool Patch = false);
 
 /// <summary>Something that shows a picture: a mapdefs wall or door, a flat index, a thing class, a level's sky</summary>
-public sealed record ArtUse(string Label, PaletteTarget? Target = null)
+/// <param name="ActorClass">The actordefs class that shows it (its states' frames, a face it gives), for Show in Actors</param>
+public sealed record ArtUse(string Label, PaletteTarget? Target = null, string? ActorClass = null)
 {
     public override string ToString() => Label;
 }
@@ -315,7 +316,7 @@ public static class ArtCatalog
                     _ => [],
                 };
                 foreach (var pic in pics)
-                    Add(pic, new ArtUse($"{className}'s {property}"));
+                    Add(pic, new ArtUse($"{className}'s {property}", ActorClass: className));
             }
         }
 
@@ -367,7 +368,7 @@ public static class ArtCatalog
         foreach (var (className, actor) in content.Actors.OrderBy(actor => actor.Key, StringComparer.OrdinalIgnoreCase))
         {
             var target = codes.TryGetValue(className, out var variants) ? new PaletteTarget(1, variants[0].Id) : null;
-            var use = new ArtUse(target != null ? $"{className}  (thing {variants![0].Id})" : className, target);
+            var use = new ArtUse(target != null ? $"{className}  (thing {variants![0].Id})" : className, target, className);
             foreach (var frame in actor.States.Values.SelectMany(states => states).OfType<ActorStatesData>())
             {
                 if (string.IsNullOrWhiteSpace(frame.Sprite))

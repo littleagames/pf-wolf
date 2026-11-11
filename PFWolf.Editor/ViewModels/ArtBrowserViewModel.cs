@@ -314,7 +314,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     private int _zoom = 4;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(UseInPaletteCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UseInPaletteCommand), nameof(ShowInActorsCommand))]
     private ArtUse? _selectedUse;
 
     public ObservableCollection<string> Origins { get; } = [];
@@ -742,6 +742,19 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         Zoom = largest switch { > 256 => 1, > 128 => 2, _ => Zoom < 3 ? 4 : Zoom };
         RefreshFile();
         OnPropertyChanged(nameof(PaletteText));
+    }
+
+    private bool CanShowInActors => SelectedUse?.ActorClass != null;
+
+    /// <summary>Asks for the actor window on a class (one that shows the picture)</summary>
+    public event EventHandler<string>? ActorRequested;
+
+    /// <summary>The actordefs class picked under Used by, in the actor window</summary>
+    [RelayCommand(CanExecute = nameof(CanShowInActors))]
+    private void ShowInActors()
+    {
+        if (SelectedUse?.ActorClass is { } className)
+            ActorRequested?.Invoke(this, className);
     }
 
     private bool CanUseInPalette => SelectedUse?.Target != null;

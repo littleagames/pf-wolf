@@ -20,7 +20,8 @@ Picking one shows it big, with:
 - **Where it comes from**: each place that has a picture of that name, the last being the one the
   game uses (a mod's over pfwolf.pk3's over the data files');
 - **Used by**: what shows it. *Use in palette* (or a double-click) picks that wall, door, flat or
-  thing to put down on the map.
+  thing to put down on the map; *Show in Actors* opens an actor class that shows it (a sprite's
+  frames, a status bar face) in the [actor window](./actors).
 
 A sprite frame drawn from eight sides shows one at a time: ◀ and ▶ (or , and .) turn it, 1 facing
 you and 5 away. An animation (animdefs) plays as the game plays it, 70 tics a second, and its frame

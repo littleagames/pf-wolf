@@ -185,6 +185,8 @@
       <WrapPanel Grid.Row="7" ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
         <Button Content="Use in palette" Command="{Binding UseInPaletteCommand}" Classes="accent"
                 ToolTip.Tip="Picks the wall, door, flat or thing chosen under Used by to put down on the map (or double-click it)" />
+        <Button Content="Show in Actors" Command="{Binding ShowInActorsCommand}"
+                ToolTip.Tip="The actordefs class picked under Used by, in the actor window (Ctrl+Shift+A): played, with its states and fields" />
         <Button Content="Copy name" Click="CopyName" />
         <Button Content="Export PNG…" Click="ExportPng" ToolTip.Tip="Saves the picture as a PNG, in the palette it's shown in" />
         <Button Content="Replace…" Click="ReplacePicture" IsEnabled="{Binding CanReplace}"

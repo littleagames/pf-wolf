@@ -267,6 +267,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 }
             };
             _artBrowser.UseRequested += (_, use) => UseInPalette(use);
+            // A class that shows the picture: in the actor window
+            _artBrowser.ActorRequested += (_, className) =>
+            {
+                ShowActors();
+                _actorBrowser?.Show(className);
+            };
             _artBrowser.Changed += async (_, change) => await OnArtFilesChanged(change);
             _artBrowser.Load(Content, Art);
         }

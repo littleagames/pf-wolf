@@ -174,7 +174,8 @@ classes.
 - Weapons: a separate Weapons kind with a view-sized hand preview (default), or a weapon
   window of its own later?
 - Should F6 link each sprite back to the classes using it (it knows them already) with a Go to
-  the actor window? Default: yes, once phase 1 is in.
+  the actor window? Default: yes, once phase 1 is in. Done 2026-11-10: F6's Used by has Show in
+  Actors for a class's sprite frames and status bar faces (`ArtUse.ActorClass`).
 - The engine-only classes (the C# types: `Monster`, `BlakeMonster`, `Inventory`...) listed as
   read-only roots of the tree (default), or hidden?
 

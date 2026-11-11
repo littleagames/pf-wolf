@@ -206,6 +206,15 @@ public class ActorCatalogGameTests
     }
 
     [Test]
+    public void A_Sprites_Uses_Name_The_Classes_For_Show_In_Actors()
+    {
+        var uses = ArtCatalog.SpriteUses(Load("wolf3d"));
+
+        Assert.That(uses["GARDA"].Select(use => use.ActorClass), Does.Contain("Guard"));
+        Assert.That(uses["GARDA"].Single(use => use.ActorClass == "Guard").Target, Is.Not.Null, "and it's still put in the palette");
+    }
+
+    [Test]
     public void A_Frame_Shows_Its_Sprite_From_Each_View()
     {
         // Arrange
