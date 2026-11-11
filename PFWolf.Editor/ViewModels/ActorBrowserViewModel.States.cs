@@ -459,6 +459,56 @@ public sealed partial class ActorBrowserViewModel
         }, frame: to);
     }
 
+    /// <summary>Sets a frame's tics (its edge dragged on the timeline): one step to undo</summary>
+    public void SetFrameTics(int index, int tics)
+    {
+        if (SelectedState is not { } state || !StateEditable || WrittenState(state) is not { } written || index < 0 || index >= written.Spec.Frames.Count)
+            return;
+        tics = Math.Max(tics, 0);
+        if (written.Spec.Frames[index].Tics == tics.ToString(CultureInfo.InvariantCulture))
+            return;
+        ChangeState(state, spec =>
+        {
+            spec.Frames[index] = spec.Frames[index] with { Tics = tics.ToString(CultureInfo.InvariantCulture) };
+            return spec;
+        }, frame: index);
+        Status = $"{state} frame {index + 1}: {tics} tics";
+    }
+
+    /// <summary>
+    /// A frame of the state picked put at the end of another state (dropped on its name): moved, or
+    /// with <paramref name="copy"/> copied; a state's only frame is always copied. That state is
+    /// shown after, on the frame.
+    /// </summary>
+    public void MoveFrameToState(int index, string target, bool copy)
+    {
+        if (SelectedState is not { } state || target == state || CurrentEdit is not { } edit
+            || WrittenState(state) is not { } from || WrittenState(target) is not { } to
+            || index < 0 || index >= from.Spec.Frames.Count)
+        {
+            if (target != SelectedState && WrittenState(target) == null)
+                Status = $"{target} is made by the engine: add a {target} state of its own first";
+            return;
+        }
+        copy |= from.Spec.Frames.Count == 1;
+
+        var source = from.Spec.Clone();
+        var destination = to.Spec.Clone();
+        var frame = source.Frames[index];
+        destination.Frames.Add(frame);
+        if (!copy)
+            source.Frames.RemoveAt(index);
+
+        var value = (YamlMappingNode)YamlNodes.Clone(edit.Root.Build([]) ?? new YamlMappingNode());
+        if (YamlNodes.Get(value, ["states"]) is not YamlMappingNode states)
+            value.Children[new YamlScalarNode("states")] = states = new YamlMappingNode();
+        if (!copy)
+            states.Children[YamlNodes.FindKey(states, state) ?? new YamlScalarNode(state)] = StateFrames.Write(source);
+        states.Children[YamlNodes.FindKey(states, target) ?? new YamlScalarNode(target)] = StateFrames.Write(destination);
+        Apply(edit, value, target, destination.Frames.Count - 1);
+        Status = $"{frame.Sprite}{frame.Letter} {(copy ? "copied" : "moved")} from {state} to the end of {target}";
+    }
+
     /// <summary>The names a class's states usually have, for New state</summary>
     public static IReadOnlyList<string> UsualStates { get; } =
         ["Spawn", "See", "Path", "Chase", "Melee", "Attack", "Missile", "Pain", "Death", "XDeath", "Raise", "Use", "Pickup", "Ready", "Select", "Deselect", "Fire", "Hold"];

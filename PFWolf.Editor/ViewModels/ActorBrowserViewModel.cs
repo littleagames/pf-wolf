@@ -44,9 +44,20 @@ public sealed partial class TimelineFrame(ActorStateFrame frame, int index) : Ob
     public ActorStateFrame Frame { get; } = frame;
     public int Index { get; } = index;
     public string Letter => Frame.FrameLetter;
-    public string Tics => Frame.HoldsForever ? "∞" : Frame.TicTime.ToString(CultureInfo.InvariantCulture);
+    public string Tics => Frame.HoldsForever ? "∞" : (DragTics ?? Frame.TicTime).ToString(CultureInfo.InvariantCulture);
     public bool HasAction => !string.IsNullOrWhiteSpace(Frame.Action);
-    public double Width => Frame.HoldsForever ? 44 : Math.Clamp(Frame.TicTime * 3, 26, 150);
+    public double Width => Frame.HoldsForever ? 44 : WidthOf(DragTics ?? Frame.TicTime);
+
+    /// <summary>How wide a frame of so many tics is drawn: three pixels a tic, within reason</summary>
+    public static double WidthOf(int tics) => Math.Clamp(tics * 3, 26, 150);
+
+    /// <summary>A frame that lasts a while (not for good) can have its tics set by dragging its right edge</summary>
+    public bool CanStretch => !Frame.HoldsForever;
+
+    /// <summary>The tics while its edge is being dragged, shown before they're set; null otherwise</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Tics), nameof(Width))]
+    private int? _dragTics;
 
     public string ToolTip => $"{Frame.Sprite}{Frame.FrameLetter}, {(Frame.HoldsForever ? "held for good" : $"{Frame.TicTime} tics")}"
         + (Frame.Think is { } think ? $"\nthink: {think} (every tic)" : "")

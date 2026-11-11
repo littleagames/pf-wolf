@@ -282,6 +282,51 @@ public class ActorEditingTests
     }
 
     [Test]
+    public void A_Frames_Tics_Are_Set_As_Its_Edge_Is_Dragged()
+    {
+        var actors = GuardAttack();
+
+        actors.SetFrameTics(1, 35);
+
+        Assert.That(actors.Timeline.Select(frame => frame.Tics), Is.EqualTo(new[] { "20", "35", "20" }));
+        Assert.That(actors.FrameIndex, Is.EqualTo(1));
+        actors.UndoClassCommand.Execute(null);
+        Assert.That(actors.Timeline[1].Tics, Is.EqualTo("20"), "one step");
+        Assert.That(TimelineFrame.WidthOf(35), Is.EqualTo(105));
+    }
+
+    [Test]
+    public void A_Frame_Dropped_On_Another_State_Goes_To_Its_End()
+    {
+        var actors = GuardAttack();
+
+        // Moved: out of Attack, onto the end of Pain, which is then shown on it
+        actors.MoveFrameToState(0, "Pain", copy: false);
+        Assert.That(actors.SelectedState, Is.EqualTo("Pain"));
+        Assert.That(actors.Timeline.Select(frame => frame.Letter), Is.EqualTo(new[] { "I", "F" }));
+        Assert.That(actors.FrameIndex, Is.EqualTo(1));
+        actors.SelectedState = "Attack";
+        Assert.That(actors.Timeline.Select(frame => frame.Letter), Is.EqualTo(new[] { "G", "H" }));
+
+        // Copied (Ctrl): Attack keeps it
+        actors.Playing = false;
+        actors.MoveFrameToState(0, "Death", copy: true);
+        Assert.That(actors.Timeline.Last().Letter, Is.EqualTo("G"));
+        actors.SelectedState = "Attack";
+        Assert.That(actors.Timeline.Select(frame => frame.Letter), Is.EqualTo(new[] { "G", "H" }));
+
+        // A state's only frame is copied, not moved; the engine's Raise takes none
+        actors.SelectedState = "Pain1";
+        actors.Playing = false;
+        actors.MoveFrameToState(0, "Chase", copy: false);
+        actors.SelectedState = "Pain1";
+        Assert.That(actors.Timeline, Has.Count.EqualTo(1));
+        actors.Playing = false;
+        actors.MoveFrameToState(0, "Raise", copy: false);
+        Assert.That(actors.Status, Does.Contain("made by the engine"));
+    }
+
+    [Test]
     public void A_State_Ends_As_Picked()
     {
         var actors = GuardAttack();

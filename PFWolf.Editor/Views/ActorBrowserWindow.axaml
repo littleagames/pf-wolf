@@ -188,7 +188,7 @@
         </Grid>
 
         <!-- The state's frames, each as wide as its tics -->
-        <TextBlock Classes="heading" Text="Frames of the state (click one to look at it and change it; drag one to move it)" />
+        <TextBlock Classes="heading" Text="Frames of the state (click one to look at it and change it; drag one to move it, its right edge to set its tics)" />
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
           <StackPanel Orientation="Horizontal" Spacing="3">
             <ItemsControl x:Name="Timeline" ItemsSource="{Binding Timeline}">
@@ -201,13 +201,19 @@
                 <DataTemplate x:DataType="vm:TimelineFrame">
                   <Border Classes="frame" Classes.current="{Binding IsCurrent}" Width="{Binding Width}" ToolTip.Tip="{Binding ToolTip}"
                           PointerPressed="OnFramePressed" PointerReleased="OnFrameReleased">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                      <TextBlock Text="{Binding Letter}" HorizontalAlignment="Center" FontWeight="SemiBold" />
-                      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="2">
-                        <TextBlock Text="{Binding Tics}" FontSize="11" Opacity="0.8" />
-                        <TextBlock Text="✦" FontSize="11" IsVisible="{Binding HasAction}" />
+                    <Grid>
+                      <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding Letter}" HorizontalAlignment="Center" FontWeight="SemiBold" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="2">
+                          <TextBlock Text="{Binding Tics}" FontSize="11" Opacity="0.8" />
+                          <TextBlock Text="✦" FontSize="11" IsVisible="{Binding HasAction}" />
+                        </StackPanel>
                       </StackPanel>
-                    </StackPanel>
+                      <!-- Its right edge: dragged, it sets the frame's tics -->
+                      <Border Classes="grip" Width="6" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWestEast"
+                              IsVisible="{Binding CanStretch}" ToolTip.Tip="Drag to set its tics (three pixels a tic)"
+                              PointerPressed="OnGripPressed" PointerMoved="OnGripMoved" PointerReleased="OnGripReleased" />
+                    </Grid>
                   </Border>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -216,6 +222,27 @@
           </StackPanel>
         </ScrollViewer>
         <TextBlock Text="{Binding FrameText}" Opacity="0.8" FontSize="12" TextWrapping="Wrap" />
+        <!-- Its states: a click shows one; a frame dropped on one goes to its end (Ctrl: a copy) -->
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="States" VerticalAlignment="Center" Opacity="0.75" FontSize="12" />
+          <ItemsControl x:Name="StateChips" ItemsSource="{Binding States}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel ItemSpacing="4" LineSpacing="4" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="sys:String">
+                <Border Classes="statechip" Padding="8,2" CornerRadius="10" BorderThickness="1" Cursor="Hand"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        ToolTip.Tip="Shows this state; a frame dragged here goes to its end (hold Ctrl to copy it)"
+                        Tapped="OnStateChipTapped">
+                  <TextBlock Text="{Binding}" FontSize="12" />
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
 
         <ItemsControl ItemsSource="{Binding Problems}">
           <ItemsControl.ItemTemplate>

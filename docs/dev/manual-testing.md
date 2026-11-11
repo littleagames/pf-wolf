@@ -1204,8 +1204,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       pictures), think and action (the pickers; what they do shown); + Frame, Duplicate, Take out,
       ←/→; the ending (loops, stops, goes on to); + State…, Rename…, Take out state; a parent's
       state changed on a class built on the Guard; Raise shown but not changeable.
-- [ ] **(never tried)** Dragging a frame along the timeline; saving a state change (the game
-      plays it: a guard shooting slower); light and particles typed as YAML.
+- [ ] Timeline drags by mouse: a frame's right edge (its tics; the Guard's first Chase frame
+      10 → 20), a frame dropped on a state's name under the timeline (moved to its end; with Ctrl
+      copied).
+- [ ] **(never tried)** Dragging a frame along the timeline to another place in its state;
+      saving a state change (the game plays it: a guard shooting slower); light and particles
+      typed as YAML.
 - [ ] Put it on the map (the Guard: things plane, "Guard (24 ways)" picked); Edit picture… on a
       paused frame (the pixel editor on its sprite).
 - [ ] **(never tried)** Sounds ticked, by ear: the Guard's Attack (its shot), Death (its scream),

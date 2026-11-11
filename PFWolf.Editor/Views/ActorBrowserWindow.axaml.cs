@@ -111,7 +111,8 @@ public partial class ActorBrowserWindow : Window
         }
     }
 
-    // Let go over another frame of the state: the one pressed on moves there
+    // Let go over another frame of the state: the one pressed on moves there; over a state's name:
+    // it goes to that state's end (with Ctrl, a copy)
     private void OnFrameReleased(object? sender, PointerReleasedEventArgs e)
     {
         var from = _dragged;
@@ -119,10 +120,60 @@ public partial class ActorBrowserWindow : Window
         if (from == null)
             return;
         var over = this.InputHitTest(e.GetPosition(this)) as Visual;
-        while (over != null && !(over is Control { DataContext: TimelineFrame } control && control.Classes.Contains("frame")))
+        while (over != null && !(over is Control control && (control.Classes.Contains("frame") || control.Classes.Contains("statechip"))))
             over = over.GetVisualParent();
-        if ((over as Control)?.DataContext is TimelineFrame to && to != from)
-            ViewModel.MoveFrame(from.Index, to.Index);
+        switch ((over as Control)?.DataContext)
+        {
+            case TimelineFrame to when to != from:
+                ViewModel.MoveFrame(from.Index, to.Index);
+                break;
+            case string state when state != ViewModel.SelectedState:
+                ViewModel.MoveFrameToState(from.Index, state, copy: e.KeyModifiers.HasFlag(KeyModifiers.Control));
+                break;
+        }
+    }
+
+    // A state's name clicked: that state shown
+    private void OnStateChipTapped(object? sender, TappedEventArgs e)
+    {
+        if ((sender as Control)?.DataContext is string state)
+            ViewModel.SelectedState = state;
+    }
+
+    // A frame's right edge dragged: its tics as the edge goes, set when it's let go
+    private TimelineFrame? _stretched;
+    private double _stretchFrom;
+    private int _stretchTics;
+
+    private void OnGripPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Control grip || grip.DataContext is not TimelineFrame frame || !frame.CanStretch)
+            return;
+        e.Handled = true;       // not the frame's own press (a pick, a drag along the timeline)
+        _stretched = frame;
+        _stretchFrom = e.GetPosition(this).X;
+        _stretchTics = frame.Frame.TicTime;
+        frame.DragTics = _stretchTics;
+        e.Pointer.Capture(grip);
+    }
+
+    private void OnGripMoved(object? sender, PointerEventArgs e)
+    {
+        if (_stretched is not { } frame)
+            return;
+        frame.DragTics = Math.Max(0, _stretchTics + (int)Math.Round((e.GetPosition(this).X - _stretchFrom) / 3));
+    }
+
+    private void OnGripReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_stretched is not { } frame)
+            return;
+        _stretched = null;
+        e.Pointer.Capture(null);
+        e.Handled = true;
+        var tics = frame.DragTics ?? frame.Frame.TicTime;
+        frame.DragTics = null;
+        ViewModel.SetFrameTics(frame.Index, tics);
     }
 
     private void OnUseDoubleTapped(object? sender, TappedEventArgs e)

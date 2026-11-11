@@ -274,8 +274,10 @@ Planned 2026-11-10.
   Rename… (its own states going on to it follow), Take out state. Each is one step to undo,
   writing the state whole into the class's fields (a parent's state becomes the class's own),
   the preview kept on the frame. The engine's Raise made from Death is shown, not changeable.
-  Drag is within a state only (not between states, as planned); the tics are set by number, not
-  by dragging a block's edge.
+  Drag was within a state only and tics set by number at first; both gaps closed 2026-11-11:
+  a block's right edge drags its tics (`TimelineFrame.DragTics`, set on release), and a frame
+  dropped on a state's name (the chips under the timeline) goes to its end (`MoveFrameToState`;
+  Ctrl copies; a state's only frame is copied).
 - Tests: StateFramesTests (reading, grouping, markers, the 871-state round trip),
   ActorEditingTests (a frame's tics changed, undone, saved as the state and the game playing it;
   frames added, moved, taken out; endings; states added, renamed, taken out; a parent's state

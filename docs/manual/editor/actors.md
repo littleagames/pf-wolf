@@ -114,7 +114,9 @@ its fields:
 editor](./art); a view the sprite hasn't got is started there blank, under its name, and goes in a
 mod when it's saved. *+ Frame* adds one after it, the sprite's next letter for as long, with no action; *Duplicate*
 copies it; *Take out* takes it out; *←* and *→* move it, and so does dragging it along the
-timeline. *After its last frame it* says what the state does then: loops back to its first
+timeline. Dragging a frame's right edge sets its tics, three pixels a tic. Under the timeline
+are the class's states by name: a click shows one, and a frame dropped on one goes to that state's
+end (moved, or with Ctrl held a copy; a state's only frame is always copied). *After its last frame it* says what the state does then: loops back to its first
 frame, stops on its last, or goes on to another state.
 
 *+ State…* adds a state: a parent's of the name to start from, else the frame shown, looping.
