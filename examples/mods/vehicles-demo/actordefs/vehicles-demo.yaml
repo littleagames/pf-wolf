@@ -1,5 +1,6 @@
 # The Vehicles Demo's actors. Vehicles are in the engine (Gameplay/Vehicles.cs); everything here
-# is properties and states. Speeds are global units a tic (65536 a tile).
+# is properties and states. Speeds are global units a tic (65536 a tile). The tank, its shell
+# and their sounds are Midnight Assault's (examples/tools/make-vehicles-demo.ps1).
 #
 #   Jeep        quick and light: forward is the throttle, back brakes and then reverses, and it
 #               coasts to a stop with neither (drag). Use facing a door opens it; anywhere else
@@ -96,29 +97,34 @@ TankCannon:
         tics-per-frame: 100
         next-state: Ready
 
-# Wolf3D's own rocket pictures (ROCK, BOOM) and smoke trail; the burst hurts everything within
-# two tiles, less further out, but not the tank's crew
+# Midnight Assault's tank shell (VDSH: seen from its 8 sides, then its blast) and Wolf3D's own
+# smoke trail; the burst shakes the view and hurts everything within two tiles, less further
+# out, but not the tank's crew
 TankShell:
   flags: [PROJECTILE]
   properties:
     speed: 16384
-    deathsound: missile/hit
+    deathsound: vehicles/boom
   states:
     Spawn:
-      - sprite: ROCK
+      - sprite: VDSH
         frames: [A]
         tics-per-frame: 3
         think: A_Missile(60, 100)
         action: A_SpawnThing("Smoke")
     Death:
-      - sprite: BOOM
-        frames: [A]
+      - sprite: VDSH
+        frames: [B]
+        tics-per-frame: 0
+        action: A_Quake(0, 14)
+      - sprite: VDSH
+        frames: [B]
         tics-per-frame: 6
         modifiers: [bright]
         light: { intensity: 255, radius: 5, color: "#FFC080" }
         action: A_Explode(50, 120, 2, "falloff")
-      - sprite: BOOM
-        frames: [B, C]
+      - sprite: VDSH
+        frames: [C, D]
         tics-per-frame: 6
         modifiers: [bright]
       - sprite: TNT1

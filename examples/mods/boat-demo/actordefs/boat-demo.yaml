@@ -13,8 +13,12 @@
 #   GunNest         the sandbagged gun: using it runs A_Mount, putting the player on its tile
 #                   with the NestGun in hand. They can turn but not move, and take half damage
 #                   behind the sandbags; use again steps them off behind it.
-#   NestGun         the gun they man: a gatling gun (its pictures and fire) that needs no ammo,
-#                   only ever held while manning the nest (weapon.mounted)
+#   NestGun         the gun they man: a gatling gun (its rate of fire and damage) in Midnight
+#                   Assault's nest gun's pictures and sound, that needs no ammo, only ever held
+#                   while manning the nest (weapon.mounted)
+#
+# The boat, the nest, its gun and their sounds are Midnight Assault's
+# (examples/tools/make-boat-demo.ps1).
 
 Boat:
   properties:
@@ -30,10 +34,12 @@ Boat:
     vehicle.dockmessage: "Press use to step onto the dock"
   flags: [SOLID]
   states:
+    # Rocking on the water
     Spawn:
       - sprite: BDBT
-        frames: [A]
-        tics-per-frame: -1
+        frames: [A, B, C, D, C, B]
+        tics-per-frame: 12
+        next-state: Spawn
     Use:
       - sprite: BDBT
         frames: [A]
@@ -68,9 +74,42 @@ GunNest:
 NestGun:
   parent: GatlingGun
   properties:
+    attacksound: boat/nestgun
     weapon.mounted: true
     # the share of a hit the player takes while manning it, in percent
     weapon.mountdamage: 50
     weapon.mountnoroom: "No room to step off the gun."
     weapon.ammouse1: 0
     weapon.ammogive1: 0
+  # The gatling gun's fire (two shots each 12 tics while fire's held), Midnight Assault's gun
+  states:
+    Ready:
+      - sprite: BDMG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: BDMG
+        frames: [B]
+        tics-per-frame: 6
+        next-state: Hold
+    Hold:
+      - sprite: BDMG
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
+        action: A_GunAttack
+      - sprite: BDMG
+        frames: [D]
+        tics-per-frame: 6
+        action: A_GunAttack
+      - sprite: BDMG
+        frames: [D]
+        tics-per-frame: 0
+        action: A_ReFire
+      - sprite: BDMG
+        frames: [A]
+        tics-per-frame: 1
+        next-state: Ready

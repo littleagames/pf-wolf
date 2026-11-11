@@ -709,6 +709,10 @@ can reach), not played by hand.
       use message going while you man it, facing the yard, fire (no ammo used, half damage
       taken), step off behind it; the yard's enemies flanking through the door. Save and load
       while riding and while manning the gun.
+      2026-11-11, with Midnight Assault's boat, nest, gun, docks and sky, driven windowed: the
+      dinghy rocking at the pier; the slat docks; the river-valley sky; the nest manned, MA's gun
+      in hand, firing and killing the officer. **(never tried)**: the boat rocking while you
+      ride it (or hidden); the nest gun's two shot sounds by ear; MA's boat sound as the motor.
 - [ ] Vehicles Demo (`--file vehicles-demo`), driven windowed (`tp` to place the vehicle):
       both board; the jeep's throttle and meter, stopping dead at a wall, braking into reverse
       (the meter full in reverse), coasting to a stop; use opening the motor pool's door from
@@ -719,6 +723,11 @@ can reach), not played by hand.
       **(never tried)**: "No room" boxed in; a quarter of each hit in the tank (god mode was on);
       crushing in reverse; dying in the tank (the cannon gone); the bunker's door; the sounds by
       ear. Seen: the use message of the vehicle you just got into stays up a moment.
+      2026-11-11, with Midnight Assault's tank, shell, flats, sky and sounds, driven windowed:
+      the tank (front view) in the motor pool, boarded, its icon on the bar's blue; the beamed
+      ceiling; the day sky over the courtyard; a shell's red blast killing the dogs. **(never
+      tried)**: the shell seen in flight from the side (its 8 views) and the quake; the tank's
+      engine, gun and blast by ear.
 - [ ] **(never tried)** Weather Demo (`--file weather-demo`), Floors 1-3 by hand: no rain under
       the porch, the gallery, the arches, the doorways and the elevator room, and its splashes
       on the courtyard floor only; looking up and down in it; Floor 2's squalls thickening,
@@ -759,6 +768,9 @@ can reach), not played by hand.
       are done; the tally's "Mission: ..." line; the compass turning as you do; dying and
       restarting (the documents objective added again); saving and loading mid-mission; the
       documents picked up now they're `parent: Inventory` (were CustomInventory when seen).
+      2026-11-11, with Midnight Assault's comms console and papers, driven windowed: the console
+      on the comms room's wall, shot with the pistol into its wrecked stage ("Radios 1/2"); the
+      papers on the office floor. **(never tried)**: picking them up with MA's files sound.
 - [ ] Architecture Demo (`--file architecture-demo`): headless shots showed the mosaic diagonal
       corners, the checkerboard, the lattice and skylight (looking up too), the mirrored arrows
       pointing east from both sides, and the 45 degree corridor. **(never tried)**: walking the
@@ -788,6 +800,10 @@ can reach), not played by hand.
       the papers; the dog ignoring the uniform; the alarm's music; the tally line; the rack
       refusing while you're hunted; the guards' patrol loop round the ring; the suspicion meter
       on the status bar running down while a guard waits for papers.
+      2026-11-11, with Midnight Assault's rack and papers, driven windowed: the rack with the
+      uniform, bare once it's taken; the papers low in hand, raised and held out on fire, put
+      away. **(never tried)**: showing them to a guard with MA's frames and rustle. Seen: the
+      bare rack still says "Press Use to put on the uniform" (it was so before).
 - [ ] Boss Demo (`--file boss-demo`), driven windowed: the health bar; the gatling gun taking the
       Warden to half, his enraging into the red phase (rockets, its bar full again); killing it
       opening the exit; the end-of-level kill ratio 100% with the Warden counted once (the

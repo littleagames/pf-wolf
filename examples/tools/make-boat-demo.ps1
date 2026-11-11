@@ -1,16 +1,23 @@
-# Builds examples/mods/boat-demo: its floors (flats/*.png), sky (graphics/BDSKY.png), the boat
-# and gun nest sprites (sprites/*.png), its sounds (sounds/*.wav) and its level (maps/MAP01.wad).
-# Run it after changing any of them:
+# Builds examples/mods/boat-demo: its floors (flats/*.png), sky (graphics/BDSKY.png), the boat,
+# the gun nest and its gun in hand (sprites/*.png), its sounds (sounds/*.wav) and its level
+# (maps/MAP01.wad). Run it after changing any of them:
 #
-#   powershell -ExecutionPolicy Bypass -File examples/tools/make-boat-demo.ps1
+#   powershell -ExecutionPolicy Bypass -File examples/tools/make-boat-demo.ps1 [-MidnightAssault <midnight-assault.pk3>]
+#
+# The docks, the sky, the boat, the nest, its gun and their sounds are Midnight Assault's, taken
+# out of its pk3 under this mod's own names. The river is made here: Midnight Assault's water is
+# all at night, and this river runs under a day sky.
 #
 # The level: a pier in the west, where the boat's moored; a river running east past four guard
 # posts on islands either side; and a landing at the east end with a machine-gun nest
 # overlooking a yard full of enemies, and the way out past them.
 
+param([string]$MidnightAssault = 'D:\projects\Wolf3D\Midnight Assault\midnight-assault.pk3')
+
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'example-mod-tools.ps1')
 $modDir = Get-ModDir 'boat-demo'
+$ma = Open-MidnightAssault $MidnightAssault
 
 #
 # FLATS AND SKY
@@ -26,121 +33,43 @@ Save-Picture "$modDir\flats\BDWATER.png" 64 64 {
     New-Color (24 + 10 * $ripple) (64 + 14 * $ripple) (80 + 16 * $ripple)
 }
 
-# The docks: planks running east-west, 8 pixels wide with dark gaps between, and nail heads
-$grain = New-Object Random 7
-Save-Picture "$modDir\flats\BDDOCK.png" 64 64 {
-    param($x, $y)
-    $plank = [Math]::Floor($y / 8)
-    if ($y % 8 -eq 7) { return New-Color 36 22 12 }
-    if (($x - 13 * $plank) % 32 -eq 3 -and $y % 8 -in 2, 4) { return New-Color 40 40 44 }
-    $shade = 8 * [Math]::Sin(($x + 17 * $plank) * 0.7) + $grain.Next(-6, 7) - 6 * ($plank % 2)
-    New-Color (128 + $shade) (88 + $shade) (52 + $shade / 2)
-}
+# The docks: Midnight Assault's wooden slats, running east-west
+Copy-MAPicture $ma 'WOOD_SLATS.bmp' "$modDir\flats\BDDOCK.png"
 
-# The sky: blue at the top, paler toward the horizon, with soft clouds; 512 wide so it goes
-# round the view twice, and the clouds' sines repeat every 512 pixels so it joins up
-Save-Picture "$modDir\graphics\BDSKY.png" 512 128 {
-    param($x, $y)
-    $t = $y / 127
-    $a = 2 * [Math]::PI * $x / 512
-    $cloud = [Math]::Sin(3 * $a + 0.08 * $y) + 0.7 * [Math]::Sin(7 * $a - 0.05 * $y + 1) + 0.4 * [Math]::Sin(13 * $a + 2) -
-        2.2 * [Math]::Abs($t - 0.45) * 2
-    # a distant tree line along the bottom
-    $trees = 110 + 6 * [Math]::Sin(9 * $a) + 3 * [Math]::Sin(31 * $a + 1) + 2 * [Math]::Sin(67 * $a)
-    if ($y -gt $trees) { return New-Color 34 58 40 }
-    $r = 70 + 110 * $t; $g = 120 + 90 * $t; $b = 200 + 40 * $t
-    if ($cloud -gt 0.4) { $k = [Math]::Min(1, ($cloud - 0.4) * 1.5); return New-Color ($r + (236 - $r) * $k) ($g + (238 - $g) * $k) ($b + (242 - $b) * $k) }
-    New-Color $r $g $b
-}
+# The sky: Midnight Assault's river valley by day, wooded banks and the river winding off
+# between them (1024x64, so it goes round the view once)
+Copy-MAPicture $ma 'RIVER_VALLEY.png' "$modDir\graphics\BDSKY.png"
 
 #
-# SPRITES
+# SPRITES: Midnight Assault's
 #
 
-# The boat, side on: a red hull with a white stripe, its bow to the right, a windscreen and an
-# outboard motor at the stern. Sprites stand on the floor, so it sits at the picture's bottom.
-Save-Picture "$modDir\sprites\BDBTA0.png" 64 64 {
-    param($x, $y)
-    # the hull: from the gunwale (y 44) down to the keel (y 57), the bow sweeping up at the right
-    if ($y -ge 44 -and $y -le 57) {
-        $depth = ($y - 44) / 13
-        $left = 6 + 4 * $depth
-        $right = 61 - 16 * $depth * $depth
-        if ($x -ge $left -and $x -le $right) {
-            if ($y -le 45) { return New-Color 236 236 228 }
-            if ($y -in 49, 50) { return New-Color 236 236 228 }
-            return New-Color (176 - 40 * $depth) 24 20
-        }
-    }
-    # spray along the waterline
-    if ($y -ge 58 -and $y -le 60 -and ($x * 7 + $y * 3) % 5 -lt 2 -and $x -ge 8 -and $x -le 50) { return New-Color 200 224 232 }
-    # the windscreen
-    if ($y -ge 36 -and $y -le 43 -and $x -ge 30 -and $x -le 40 - ($y - 36) / 2 -and $x -ge 30 + (43 - $y) / 3) {
-        if ($x -eq 30 -or $y -eq 36) { return New-Color 60 60 64 }
-        return New-Color 150 196 220
-    }
-    # the outboard motor at the stern, hanging into the water
-    if ($x -ge 1 -and $x -le 6 -and $y -ge 36 -and $y -le 46) { return New-Color 52 52 56 }
-    if ($x -ge 3 -and $x -le 4 -and $y -ge 47 -and $y -le 58) { return New-Color 72 72 76 }
-    $null
-}
-
-# The gun nest: a ring of sandbags with a machine gun on a pivot, its barrel to the right
-Save-Picture "$modDir\sprites\BDNSA0.png" 64 64 {
-    param($x, $y)
-    # the barrel, with a cooling jacket and the gun's body behind it
-    if ($y -ge 33 -and $y -le 36 -and $x -ge 30 -and $x -le 60) {
-        if ($x -ge 34 -and $x -le 48 -and ($x % 3) -eq 0) { return New-Color 20 20 22 }
-        return New-Color (60 + 20 * ($y -eq 33)) (60 + 20 * ($y -eq 33)) 64
-    }
-    if ($y -ge 30 -and $y -le 39 -and $x -ge 18 -and $x -le 30) { return New-Color (44 + 30 * ($y -eq 30)) 44 48 }
-    if ($y -ge 36 -and $y -le 42 -and $x -ge 14 -and $x -le 18) { return New-Color 70 48 30 }      # the stock
-    if ($y -ge 40 -and $y -le 46 -and $x -ge 23 -and $x -le 25) { return New-Color 50 50 54 }      # the pivot
-    # the sandbags: three rows of rounded bags, staggered
-    if ($y -ge 46) {
-        $row = [Math]::Floor(($y - 46) / 6)
-        $bx = ($x + 5 * ($row % 2)) % 10
-        $by = ($y - 46) % 6
-        $inside = (($bx - 4.5) / 5) * (($bx - 4.5) / 5) + (($by - 2.5) / 3.2) * (($by - 2.5) / 3.2)
-        if ($x -lt 2 -or $x -gt 61) { return $null }
-        if ($inside -gt 1) { return New-Color 92 78 50 }
-        return New-Color (182 - 40 * $inside) (160 - 36 * $inside) (110 - 30 * $inside)
-    }
-    $null
-}
+# The boat: its dinghy, rocking on the water (A-D). Sprites stand on the floor, so it sits at
+# the picture's bottom.
+foreach ($frame in 'A', 'B', 'C', 'D') { Copy-MAPicture $ma "BOAT${frame}0.bmp" "$modDir\sprites\BDBT${frame}0.png" }
+# The gun nest: a ring of sandbags with a machine gun on it
+Copy-MAPicture $ma 'NESTA0.bmp' "$modDir\sprites\BDNSA0.png"
+# The nest's gun as the view's weapon: A ready, B-C firing (C the flash), D the spent case
+foreach ($frame in 'A', 'B', 'C', 'D') { Copy-MAPicture $ma "MGNS${frame}0.bmp" "$modDir\sprites\BDMG${frame}0.png" }
 
 #
 # SOUNDS
 #
 
-# The boat's motor starting: a puttering that quickens and settles into a steady drone
-$random = New-Object Random 3
-$motor = New-Samples 1.4
-$sr = $script:SampleRate
-for ($i = 0; $i -lt $motor.Length; $i++) {
-    $t = $i / $sr
-    $rate = 5 + 13 * [Math]::Min(1, $t / 0.9)                       # firings a second
-    $pulse = [Math]::Pow([Math]::Max(0, [Math]::Sin(2 * [Math]::PI * $rate * $t * (1 + $t / 3))), 6)
-    $tone = [Math]::Sin(2 * [Math]::PI * 55 * $t) + 0.5 * [Math]::Sin(2 * [Math]::PI * 110 * $t) + 0.25 * [Math]::Sin(2 * [Math]::PI * 165 * $t)
-    $fade = [Math]::Min(1, (1.4 - $t) / 0.2)
-    $motor[$i] = (0.4 + 0.6 * $pulse) * $tone * $fade
-}
-Add-Noise $motor $random 0 0.25 0.08
-Save-Wav "$modDir\sounds\BDMOTOR.wav" $motor 0.55
+# The boat's motor, swinging the gun round and loading it, and its fire: Midnight Assault's
+Copy-MAFile $ma 'boat_enter.wav' "$modDir\sounds\BDMOTOR.wav"
+Copy-MAFile $ma 'mgnest_load.wav' "$modDir\sounds\BDCLACK.wav"
+Copy-MAFile $ma 'mgnest_fire1.wav' "$modDir\sounds\BDMGUN1.wav"
+Copy-MAFile $ma 'mgnest_fire2.wav' "$modDir\sounds\BDMGUN2.wav"
+Close-MidnightAssault $ma
 
 # Stepping onto the dock: a hollow knock on planks
+$random = New-Object Random 3
 $thud = New-Samples 0.3
 Add-Noise $thud $random 0 0.9 0.2 0.03
 Add-Tone $thud 0 120 1.0 0.07
 Add-Tone $thud 0.005 190 0.4 0.05
 Save-Wav "$modDir\sounds\BDTHUD.wav" $thud 0.6
-
-# Swinging the gun round on its pivot: a short metal clack and a ratchet
-$clack = New-Samples 0.35
-Add-Noise $clack $random 0 1.0 0.7 0.01
-Add-Tone $clack 0 900 0.5 0.03
-foreach ($k in 1..4) { Add-Noise $clack $random (0.06 + 0.04 * $k) 0.5 0.8 0.006 0.02 }
-Save-Wav "$modDir\sounds\BDCLACK.wav" $clack 0.5
 
 #
 # THE LEVEL

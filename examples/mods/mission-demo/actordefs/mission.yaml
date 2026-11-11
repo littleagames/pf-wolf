@@ -14,7 +14,7 @@ SecretDocuments:
   parent: Inventory
   properties:
     inventory.pickupmessage: "Got the documents!"
-    inventory.pickupsound: misc/k_pkup
+    inventory.pickupsound: mission/documents
   flags: [INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:

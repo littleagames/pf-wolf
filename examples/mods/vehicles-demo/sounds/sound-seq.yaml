@@ -1,5 +1,6 @@
-# The mod's own sounds (sounds/*.wav, made by examples/tools/make-vehicles-demo.ps1), by the
-# names its actors play them by (actordefs/vehicles-demo.yaml).
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-vehicles-demo.ps1: the tank's
+# engine, its gun and the shell's blast are Midnight Assault's), by the names its actors play
+# them by (actordefs/vehicles-demo.yaml).
 sound-info:
   vehicles/jeep:
     digitized: VDJEEP
@@ -7,6 +8,8 @@ sound-info:
     digitized: VDTANK
   vehicles/cannon:
     digitized: VDCANN
+  vehicles/boom:
+    digitized: VDBOOM
   vehicles/crunch:
     digitized: VDCRSH
   vehicles/out:

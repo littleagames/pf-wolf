@@ -1,6 +1,7 @@
 # The Stealth Demo's actors, and changes to Wolf3D's own (a mod's actordefs merge into the base
 # game's key by key, so these hold on every level while the mod's on). How stealth works is in
 # the engine's Gameplay/Stealth.cs; every property is in the docs' Actor properties reference.
+# The coat rack and papers are Midnight Assault's pictures (examples/tools/make-stealth-demo.ps1).
 
 # The coat rack: use it and you put on the uniform and pocket the papers (A_Disguise), and the
 # rack's left bare. Not while anyone's already after you (game-info stealth `alert`).
@@ -51,14 +52,21 @@ Papers:
         tics-per-frame: 1
         action: A_WeaponReady
         next-state: Ready
+    # Raised and held out to whoever's looking, then put away (Midnight Assault's frames)
     Fire:
       - sprite: SDPP
         frames: [B]
+        tics-per-frame: 6
+      - sprite: SDPP
+        frames: [C]
         tics-per-frame: 20
         action: A_ShowPapers
       - sprite: SDPP
-        frames: [B]
+        frames: [C]
         tics-per-frame: 25
+      - sprite: SDPP
+        frames: [D, E]
+        tics-per-frame: 6
         next-state: Ready
 
 # The knife kills outright from behind an enemy that doesn't know you're there, and a kill

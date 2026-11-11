@@ -1154,17 +1154,24 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
   box (Wolf3D's has none), which shows the throttle while you ride.
 - `game-info.yaml`: the level's sky and grass color, the river's current (a `scrollers` entry for
   its tag, 1, sliding its floor east), and messages over the view on.
-- `flats/`, `graphics/BDSKY.png`, `sprites/` (the boat and the nest) and `sounds/` (the motor, the
-  dock and the gun swinging round, named in `sounds/sound-seq.yaml`).
+- `actordefs/boat-demo.yaml`'s `NestGun` keeps the gatling gun's fire but has its own `Ready`,
+  `Fire` and `Hold` states, showing Midnight Assault's nest gun in your hands (`BDMG`), and the
+  boat's `Spawn` frames rock it on the water.
+- `flats/`, `graphics/BDSKY.png`, `sprites/` (the boat rocking, the nest and its gun) and
+  `sounds/` (the motor, the dock, the gun swinging round and its fire, named in
+  `sounds/sound-seq.yaml`).
 - `maps/MAP01.wad`: the level. Every river tile carries the keep-out marker on the object plane,
   the water flat and tag 1; every tile of bank next to the water is a dock. The boat's own tile
   is a plank mooring: a tile holds one thing, so it can't also keep you out once the boat's gone.
 
 Everything but the YAML and the script is made by `tools/make-boat-demo.ps1` (the layout is an
-ASCII drawing in it). Edit it and run it again:
+ASCII drawing in it). The boat, the nest and its gun, the docks, the river-valley sky and all
+the sounds but the dock's thud are **Midnight Assault's**, copied out of its
+`midnight-assault.pk3`. The river is drawn, because Midnight Assault's water is all night water.
+Edit it and run it again, giving it the pk3 if it isn't where the script looks:
 
 ```
-powershell -ExecutionPolicy Bypass -File examples/tools/make-boat-demo.ps1
+powershell -ExecutionPolicy Bypass -File examples/tools/make-boat-demo.ps1 [-MidnightAssault <path to midnight-assault.pk3>]
 ```
 
 The newer generators share `tools/example-mod-tools.ps1`, which writes the levels, pictures and
@@ -1206,22 +1213,26 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
     `vehicle.crushspeed` and `vehicle.crushsound` (running enemies down). The tank's
     `vehicle.weapon: TankCannon` is in your hands while you ride, and you can't change it.
   - `TankCannon`, the cannon (`weapon.mounted: true`, so it's never kept, and no ammo), firing
-    `TankShell`: Wolf3D's own rocket pictures and smoke, with an `A_Explode` burst.
+    `TankShell`: Midnight Assault's shell (`VDSH`, seen from its 8 sides, and its blast) with
+    Wolf3D's own smoke trail, an `A_Quake` and an `A_Explode` burst.
 - `mapdefs/things.yaml`: objects 940 (the jeep) and 941 (the tank).
-- `mapdefs/flats.yaml`: concrete and a girdered roof indoors, tarmac under the sky outdoors.
+- `mapdefs/flats.yaml`: concrete and a beamed ceiling indoors, tarmac under the sky outdoors.
 - `statusbar.yaml`: a `power-meter` along the bottom of the status bar showing the throttle,
   forward or in reverse.
 - `game-info.yaml`: the sky, and messages over the view on.
 - `flats/`, `graphics/` (the sky and the cannon's status bar picture), `sprites/` (the jeep, the
-  tank and the cannon in your hands) and `sounds/` (both engines, the cannon, the crunch and the
-  door), named in `sounds/sound-seq.yaml`.
+  tank, the cannon in your hands and its shell) and `sounds/` (both engines, the cannon, the
+  shell's blast, the crunch and the door), named in `sounds/sound-seq.yaml`.
 - `maps/MAP01.wad`: the level.
 
 Everything but the YAML is made by `tools/make-vehicles-demo.ps1` (the layout is an ASCII drawing
-in it). Edit it and run it again:
+in it). The tank, its shell, the floors, ceiling and day sky, and the tank's engine, gun and
+blast are **Midnight Assault's**, copied out of its `midnight-assault.pk3`; it has no jeep or
+cannon seen from inside, so those and the other sounds are drawn and made. Edit it and run it
+again, giving it the pk3 if it isn't where the script looks:
 
 ```
-powershell -ExecutionPolicy Bypass -File examples/tools/make-vehicles-demo.ps1
+powershell -ExecutionPolicy Bypass -File examples/tools/make-vehicles-demo.ps1 [-MidnightAssault <path to midnight-assault.pk3>]
 ```
 
 ## Weather Demo (`mods/weather-demo`)
@@ -1484,12 +1495,17 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
   - `game.ontally`: text for the tally (intermission.yaml's `script` place).
   - `game.command`: the `objectives` console command.
 - `textures/MDRADIO.png`, `MDRADIOX.png` (the radio, and wrecked), `sprites/MDDOA0.png` (the
-  documents), `sounds/MDZAP.wav` and `maps/MAP01.wad`.
+  documents), `sounds/MDZAP.wav` (a radio shot up), `MDDOCS.wav` (the documents taken) and
+  `maps/MAP01.wad`.
 
-The pictures, sound and level are made by `tools/make-mission-demo.ps1`. Edit it and run it again:
+The pictures, sounds and level are made by `tools/make-mission-demo.ps1`. The radio (a comms
+console), the documents and their sound are **Midnight Assault's**, copied out of its
+`midnight-assault.pk3`. The wrecked radio is that console with scorching, a smashed hole and
+hanging wires drawn over it. Edit it and run it again, giving it the pk3 if it isn't where the
+script looks:
 
 ```
-powershell -ExecutionPolicy Bypass -File examples/tools/make-mission-demo.ps1
+powershell -ExecutionPolicy Bypass -File examples/tools/make-mission-demo.ps1 [-MidnightAssault <path to midnight-assault.pk3>]
 ```
 
 With cheats on, `lua print(game.objective('radios'))` shows an objective's count, and
@@ -1739,14 +1755,16 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 - `statusbar.yaml`: a `power-meter` along the bottom of the status bar (Wolf3D's has none), which
   shows the suspicion meter while there's no weapon power or vehicle throttle to show.
 - `mapdefs/things.yaml`: object 890, the coat rack. `sprites/`, `sounds/`: the rack, the papers
-  in hand and their rustle.
+  in hand (low, raised and held out, put away) and their rustle.
 - `maps/MAP01.wad`: the level. The guards patrol the ring by Wolf3D's patrol arrows (objects 90-97)
   at its corners.
 
-The pictures, sound and level are made by `tools/make-stealth-demo.ps1`. Edit it and run it again:
+The level is made by `tools/make-stealth-demo.ps1`, which also copies the pictures and the sound
+out of **Midnight Assault's** `midnight-assault.pk3`: its coat rack with the uniform and bare,
+and its papers. Edit it and run it again, giving it the pk3 if it isn't where the script looks:
 
 ```
-powershell -ExecutionPolicy Bypass -File examples/tools/make-stealth-demo.ps1
+powershell -ExecutionPolicy Bypass -File examples/tools/make-stealth-demo.ps1 [-MidnightAssault <path to midnight-assault.pk3>]
 ```
 
 ## Boss Demo (`mods/boss-demo`)

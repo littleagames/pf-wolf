@@ -1,5 +1,7 @@
-# The mod's own sound (sounds/MDZAP.wav, made by examples/tools/make-mission-demo.ps1): a radio
-# shot up (mapdefs/walls.yaml)
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-mission-demo.ps1): a radio
+# shot up (mapdefs/walls.yaml), and the documents taken (Midnight Assault's, actordefs/mission.yaml)
 sound-info:
   mission/zap:
     digitized: MDZAP
+  mission/documents:
+    digitized: MDDOCS

@@ -1,49 +1,57 @@
 # Builds examples/mods/mission-demo: the radio wall and its wrecked stage (textures/*.png), the
 # documents (sprites/MDDOA0.png), the HUD's panel (graphics/MDPANEL.png), the radio's sound as
-# it's shot up (sounds/MDZAP.wav) and the level (maps/MAP01.wad). Run it after changing any:
+# it's shot up (sounds/MDZAP.wav), the documents' (sounds/MDDOCS.wav) and the level
+# (maps/MAP01.wad). Run it after changing any:
 #
-#   powershell -ExecutionPolicy Bypass -File examples/tools/make-mission-demo.ps1
+#   powershell -ExecutionPolicy Bypass -File examples/tools/make-mission-demo.ps1 [-MidnightAssault <midnight-assault.pk3>]
+#
+# The radio wall, the documents and their sound are Midnight Assault's, taken out of its pk3
+# under this mod's own names; the radio wrecked is its wall with the damage drawn over it here.
+# The HUD's panel and the radio's zap are made here.
 #
 # The mission: steal the documents from the office, wreck the two radios in the comms room, and
 # (if you can) kill the two officers, then reach the exit before reinforcements arrive. The
 # objectives, the time limit and the HUD are in game-info.yaml and scripts/mission.lua.
 
+param([string]$MidnightAssault = 'D:\projects\Wolf3D\Midnight Assault\midnight-assault.pk3')
+
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'example-mod-tools.ps1')
 $modDir = Get-ModDir 'mission-demo'
+$ma = Open-MidnightAssault $MidnightAssault
 
-# The radio set: a grey steel cabinet with dials, a speaker grille and two rows of lamps
-Save-Drawing "$modDir\textures\MDRADIO.png" 64 64 {
-    param($g)
-    Add-Rect $g @(84, 88, 96) 0 0 64 64
-    Add-Rect $g @(60, 64, 70) 0 0 64 3
-    Add-Rect $g @(60, 64, 70) 0 61 64 3
-    Add-Rect $g @(44, 46, 52) 6 8 52 30                                   # the front panel
-    foreach ($k in 0..2) { Add-Ellipse $g @(200, 200, 190) (10 + 16 * $k) 13 11 11; Add-Rect $g @(30, 30, 30) (15 + 16 * $k) 14 1 5 }
-    foreach ($k in 0..5) { Add-Rect $g $(if ($k % 2) { @(40, 220, 60) } else { @(230, 180, 40) }) (10 + 8 * $k) 30 4 3 }
-    for ($y = 42; $y -lt 58; $y += 3) { Add-Rect $g @(36, 38, 42) 8 $y 48 1 }    # the grille
-}
-# Shot up: the panel smashed and blackened, wires hanging out
-Save-Drawing "$modDir\textures\MDRADIOX.png" 64 64 {
-    param($g)
-    Add-Rect $g @(70, 72, 78) 0 0 64 64
-    Add-Rect $g @(24, 22, 22) 6 8 52 30
-    Add-Poly $g @(12, 10, 10) @(14, 10, 50, 12, 40, 36, 20, 30)
-    Add-Ellipse $g @(200, 200, 190) 42 13 11 11
-    Add-Rect $g @(200, 40, 30) 20 36 1 12
-    Add-Rect $g @(40, 120, 200) 30 36 1 16
-    Add-Rect $g @(220, 200, 40) 36 36 1 9
-    for ($y = 42; $y -lt 58; $y += 3) { Add-Rect $g @(36, 38, 42) 8 $y 48 1 }
-    Add-Ellipse $g @(30, 26, 24) 4 40 20 18
-}
+# The radio set: Midnight Assault's comms console, a wall of grilles, dials and switches
+Copy-MAPicture $ma 'Wall-095.bmp' "$modDir\textures\MDRADIO.png"
 
-# The documents: a manila folder, a red stamp, papers sticking out; on the floor
-Save-Drawing "$modDir\sprites\MDDOA0.png" 64 64 {
-    param($g)
-    Add-Poly $g @(236, 236, 228) @(20, 50, 44, 48, 46, 56, 22, 58)
-    Add-Poly $g @(214, 182, 110) @(16, 52, 46, 52, 48, 62, 14, 62)
-    Add-Rect $g @(190, 30, 24) 24 55 12 4
+# Shot up: the same console, scorched round a smashed hole in its middle with wires hanging out
+$wreck = Read-MAPicture $ma 'Wall-095.bmp'
+for ($y = 0; $y -lt 64; $y++) {
+    for ($x = 0; $x -lt 64; $x++) {
+        $d = [Math]::Sqrt(($x - 28) * ($x - 28) + ($y - 34) * ($y - 34) * 1.4)
+        if ($d -ge 26) { continue }
+        $k = if ($d -lt 16) { 0.3 } else { 0.3 + 0.7 * ($d - 16) / 10 }      # blackest at the middle
+        $c = $wreck.GetPixel($x, $y)
+        $wreck.SetPixel($x, $y, [Drawing.Color]::FromArgb(255, [int]($c.R * $k), [int]($c.G * $k), [int]($c.B * $k)))
+    }
 }
+$g = [Drawing.Graphics]::FromImage($wreck)
+$g.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::None
+$g.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::Half
+Add-Poly $g @(10, 9, 8) @(16, 24, 26, 20, 40, 23, 42, 36, 34, 46, 20, 43, 14, 34)    # the hole
+Add-Poly $g @(54, 50, 46) @(26, 20, 30, 22, 22, 27)                                    # a bent flap of the panel
+Add-Rect $g @(200, 40, 30) 22 36 1 15                                                  # the wires
+Add-Rect $g @(40, 120, 200) 28 38 1 18
+Add-Rect $g @(220, 200, 40) 34 37 1 11
+Add-Rect $g @(200, 40, 30) 38 36 1 7
+$g.Dispose()
+$wreck.Save("$modDir\textures\MDRADIOX.png", [Drawing.Imaging.ImageFormat]::Png)
+$wreck.Dispose()
+"Wrote $modDir\textures\MDRADIOX.png (Midnight Assault's Wall-095.bmp, wrecked)"
+
+# The documents: Midnight Assault's papers, spread on the floor, and the sound of taking them
+Copy-MAPicture $ma 'LOGBB0.bmp' "$modDir\sprites\MDDOA0.png"
+Copy-MAFile $ma 'pickup_files.wav' "$modDir\sounds\MDDOCS.wav"
+Close-MidnightAssault $ma
 
 # The HUD's panel: a dark plate the objectives are written on, its corners clipped
 Save-Picture "$modDir\graphics\MDPANEL.png" 100 32 {

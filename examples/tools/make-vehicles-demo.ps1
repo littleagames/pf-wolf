@@ -1,65 +1,48 @@
 # Builds examples/mods/vehicles-demo: its floors and ceiling (flats/*.png), sky
-# (graphics/VDSKY.png), the jeep, the tank and the tank's cannon (sprites/*.png), its sounds
-# (sounds/*.wav) and its level (maps/MAP01.wad). Run it after changing any of them:
+# (graphics/VDSKY.png), the jeep, the tank, the tank's cannon and its shell (sprites/*.png), its
+# sounds (sounds/*.wav) and its level (maps/MAP01.wad). Run it after changing any of them:
 #
-#   powershell -ExecutionPolicy Bypass -File examples/tools/make-vehicles-demo.ps1
+#   powershell -ExecutionPolicy Bypass -File examples/tools/make-vehicles-demo.ps1 [-MidnightAssault <midnight-assault.pk3>]
+#
+# The floors, ceiling, sky, the tank, its shell and their sounds are Midnight Assault's, taken
+# out of its pk3 under this mod's own names; the jeep, the cannon in your hands and the rest of
+# the sounds, which it has none of, are made here.
 #
 # The level: a motor pool in the west with a jeep and a tank parked in it; a courtyard full of
 # guards and dogs behind its door; a bunker of SS and an officer past the courtyard; and the
 # exit beneath the bunker.
 
+param([string]$MidnightAssault = 'D:\projects\Wolf3D\Midnight Assault\midnight-assault.pk3')
+
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'example-mod-tools.ps1')
 $modDir = Get-ModDir 'vehicles-demo'
+$ma = Open-MidnightAssault $MidnightAssault
 
 #
-# FLATS AND SKY
+# FLATS AND SKY: Midnight Assault's
 #
 
-# Concrete for the motor pool and the bunker: grey with a speckle, and joints every 32 pixels
-$speckle = New-Object Random 11
-Save-Picture "$modDir\flats\VDCONC.png" 64 64 {
-    param($x, $y)
-    if ($x % 32 -eq 0 -or $y % 32 -eq 0) { return New-Color 70 70 72 }
-    $shade = $speckle.Next(-10, 11) + 4 * [Math]::Sin($x * 0.3 + $y * 0.2)
-    New-Color (128 + $shade) (126 + $shade) (122 + $shade)
-}
-
-# The motor pool's roof: dark sheeting between steel girders running east-west
-Save-Picture "$modDir\flats\VDROOF.png" 64 64 {
-    param($x, $y)
-    $band = $y % 16
-    if ($band -le 2) { return New-Color (60 + 20 * ($band -eq 1)) 62 66 }      # a girder, lit along its middle
-    if ($band -eq 3) { return New-Color 24 24 26 }                             # its shadow
-    New-Color (40 + 6 * [Math]::Sin($x * 0.8)) (38 + 6 * [Math]::Sin($x * 0.8)) 36
-}
-
-# The courtyard's tarmac: near-black with grit and the odd paler stone
-$grit = New-Object Random 5
-Save-Picture "$modDir\flats\VDROAD.png" 64 64 {
-    param($x, $y)
-    $n = $grit.Next(0, 100)
-    if ($n -lt 3) { return New-Color 120 116 108 }
-    $shade = $grit.Next(-8, 9)
-    New-Color (52 + $shade) (52 + $shade) (56 + $shade)
-}
-
-# An overcast sky over low hills; 512 wide so it goes round the view twice, its sines repeating
-# every 512 pixels so it joins up
-Save-Picture "$modDir\graphics\VDSKY.png" 512 128 {
-    param($x, $y)
-    $t = $y / 127
-    $a = 2 * [Math]::PI * $x / 512
-    $hills = 100 + 8 * [Math]::Sin(2 * $a + 1) + 5 * [Math]::Sin(7 * $a) + 2 * [Math]::Sin(23 * $a + 2)
-    if ($y -gt $hills) { return New-Color 52 60 50 }
-    $cloud = [Math]::Sin(3 * $a + 0.1 * $y) + 0.6 * [Math]::Sin(8 * $a - 0.07 * $y + 2) + 0.3 * [Math]::Sin(17 * $a)
-    $base = 150 + 40 * $t + 12 * $cloud
-    New-Color $base ($base + 2) ($base + 8)
-}
+# Concrete for the motor pool and the bunker, the courtyard's tarmac, and the motor pool's roof
+# (panels between beams)
+Copy-MAPicture $ma 'ROAD.bmp' "$modDir\flats\VDCONC.png"
+Copy-MAPicture $ma 'ASPHALT.bmp' "$modDir\flats\VDROAD.png"
+Copy-MAPicture $ma 'INTERIOR_CEILING.bmp' "$modDir\flats\VDROOF.png"
+# A day sky with clouds (1024x64, so it goes round the view once)
+Copy-MAPicture $ma 'SKY_DAY.png' "$modDir\graphics\VDSKY.png"
 
 #
 # SPRITES
 #
+
+# The tank, Midnight Assault's, seen from the front. Sprites stand on the floor: it sits at the
+# bottom.
+Copy-MAPicture $ma 'TANKA0.bmp' "$modDir\sprites\VDTKA0.png"
+# The cannon's shell: Midnight Assault's enemy rocket from its 8 sides (VDSH A1-A8), and its
+# blast (B-D)
+foreach ($view in 1..8) { Copy-MAPicture $ma "ERKTA$view.bmp" "$modDir\sprites\VDSHA$view.png" }
+$i = 0
+foreach ($frame in 'A', 'B', 'C') { Copy-MAPicture $ma "EBOM${frame}0.bmp" "$modDir\sprites\VDSH$([char](66 + $i))0.png"; $i++ }
 
 # The jeep, side on, facing right: an olive body with a white star, a fold-down windscreen,
 # black wheels and a spare on the back. Sprites stand on the floor: it sits at the bottom.
@@ -82,20 +65,6 @@ Save-Drawing "$modDir\sprites\VDJPA0.png" 64 64 {
     }
 }
 
-# The tank, side on, facing right: tracks and road wheels, a sloped hull, a turret and its gun
-$hull = @(64, 96, 24); $hullDark = @(36, 60, 8); $track = @(40, 40, 42); $wheel = @(92, 92, 86)
-Save-Drawing "$modDir\sprites\VDTKA0.png" 64 64 {
-    param($g)
-    Add-Poly $g $track @(2, 50, 62, 50, 58, 62, 6, 62)                  # the tracks
-    foreach ($wx in 7, 18, 29, 40, 51) { Add-Ellipse $g $wheel $wx 52 8 8 }
-    Add-Poly $g $hull @(1, 40, 54, 40, 63, 47, 63, 50, 1, 50)           # the hull, its glacis sloping forward
-    Add-Rect $g $hullDark 1 47 62 3
-    Add-Poly $g $hull @(16, 30, 40, 30, 44, 34, 44, 40, 14, 40)         # the turret
-    Add-Rect $g $hullDark 14 38 30 2
-    Add-Rect $g @(52, 80, 16) 44 33 19 3                                # the gun
-    Add-Rect $g @(36, 56, 8) 60 32 4 5                                  # its muzzle brake
-    Add-Rect $g @(36, 36, 38) 24 27 6 3                                 # the hatch
-}
 
 # The cannon from inside the turret, as the view's weapon (64x64, drawn at the bottom of the
 # view): the breech and barrel running up from the bottom middle, its muzzle brake short of the
@@ -116,19 +85,18 @@ Save-Drawing "$modDir\sprites\VDCNB0.png" 64 64 {
     Add-Cannon $g
 }
 
-# The cannon's status bar picture (48x24, as Wolf3D's weapon pictures): the tank in black
-Save-Drawing "$modDir\graphics\VDICCN.png" 48 24 {
-    param($g)
-    $black = @(0, 0, 0)
-    Add-Poly $g $black @(4, 15, 40, 15, 37, 21, 7, 21)                  # the tracks
-    Add-Rect $g $black 3 11 38 5                                        # the hull
-    Add-Rect $g $black 13 6 14 6                                        # the turret
-    Add-Rect $g $black 26 8 19 2                                        # the gun
-}
+# The cannon's status bar picture (48x24, as Wolf3D's weapon pictures): the tank, on the bar's
+# blue (the bar draws it over the last weapon's picture, so it mustn't be see-through)
+Save-MAIcon $ma 'TANKA0.bmp' "$modDir\graphics\VDICCN.png" -Background ([Drawing.Color]::FromArgb(255, 0, 0, 164))
 
 #
-# SOUNDS
+# SOUNDS: the tank's engine, its gun and the shell's blast are Midnight Assault's
 #
+
+Copy-MAFile $ma 'tank_move.wav' "$modDir\sounds\VDTANK.wav"
+Copy-MAFile $ma 'tank_attack.wav' "$modDir\sounds\VDCANN.wav"
+Copy-MAFile $ma 'rocket_explode.wav' "$modDir\sounds\VDBOOM.wav"
+Close-MidnightAssault $ma
 
 $random = New-Object Random 3
 $sr = $script:SampleRate
@@ -145,28 +113,6 @@ for ($i = 0; $i -lt $jeep.Length; $i++) {
 }
 Add-Noise $jeep $random 0 0.2 0.1
 Save-Wav "$modDir\sounds\VDJEEP.wav" $jeep 0.55
-
-# The tank starting: a deep diesel rumble and the clank of its tracks
-$tank = New-Samples 1.6
-for ($i = 0; $i -lt $tank.Length; $i++) {
-    $t = $i / $sr
-    $rate = 6 + 10 * [Math]::Min(1, $t / 1.0)
-    $pulse = [Math]::Pow([Math]::Max(0, [Math]::Sin(2 * [Math]::PI * $rate * $t)), 3)
-    $tone = [Math]::Sin(2 * [Math]::PI * 38 * $t) + 0.7 * [Math]::Sin(2 * [Math]::PI * 76 * $t) + 0.3 * [Math]::Sin(2 * [Math]::PI * 114 * $t)
-    $fade = [Math]::Min(1, (1.6 - $t) / 0.25)
-    $tank[$i] = (0.45 + 0.55 * $pulse) * $tone * $fade
-}
-foreach ($k in 0..5) { Add-Noise $tank $random (0.5 + 0.18 * $k) 0.5 0.6 0.01 0.03 }
-Add-Noise $tank $random 0 0.25 0.05
-Save-Wav "$modDir\sounds\VDTANK.wav" $tank 0.6
-
-# The cannon: a sharp crack and a long low boom
-$cannon = New-Samples 1.2
-Add-Noise $cannon $random 0 1.0 0.9 0.04
-Add-Noise $cannon $random 0 0.8 0.08 0.5
-Add-Tone $cannon 0 55 1.0 0.45
-Add-Tone $cannon 0 34 0.7 0.7
-Save-Wav "$modDir\sounds\VDCANN.wav" $cannon 0.8
 
 # Running someone down: a thump and a crunch
 $crunch = New-Samples 0.45

@@ -1,5 +1,6 @@
-# The mod's own sounds (sounds/*.wav, made by examples/tools/make-boat-demo.ps1), by the names
-# its actors play them by (actordefs/boat-demo.yaml).
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-boat-demo.ps1: all but the
+# dock's thud are Midnight Assault's), by the names its actors play them by
+# (actordefs/boat-demo.yaml).
 sound-info:
   boat/motor:
     digitized: BDMOTOR
@@ -7,3 +8,10 @@ sound-info:
     digitized: BDTHUD
   boat/gunpivot:
     digitized: BDCLACK
+  # The nest gun's shot: one of two, at random
+  boat/nestgun:
+    random: [boat/nestgun1, boat/nestgun2]
+  boat/nestgun1:
+    digitized: BDMGUN1
+  boat/nestgun2:
+    digitized: BDMGUN2
