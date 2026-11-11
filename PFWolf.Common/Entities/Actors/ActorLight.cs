@@ -1,4 +1,5 @@
 using System.Globalization;
+using PFWolf.Shading;
 
 namespace PFWolf.Entities.Actors;
 
@@ -16,24 +17,27 @@ namespace PFWolf.Entities.Actors;
 ///                     reaches takes its intensity as its light, as a light zone would, darker
 ///                     than the level too (a bulb whose room goes dark as it goes off)
 /// </summary>
-internal sealed record ActorLightInfo(int Intensity, double Radius, string? Color, ZoneEffect Effect, int? Low, int Tics, int BrightTics,
+public sealed record ActorLightInfo(int Intensity, double Radius, string? Color, ZoneEffect Effect, int? Low, int Tics, int BrightTics,
     bool HasStateLights, bool Sets = false)
 {
     public const double DefaultRadius = 2;
 
-    /// <summary>The light of an actor's class, or null if it has none at all.</summary>
-    public static ActorLightInfo? Of(Actor actor)
+    /// <summary>
+    /// The light of a class (by its name, merged properties and resolved states), or null if it
+    /// has none at all; what isn't right is said on the console, as the game says it
+    /// </summary>
+    public static ActorLightInfo? From(string name, IReadOnlyDictionary<string, object> properties, IEnumerable<ActorStateFrame> resolvedStates)
     {
-        int intensity = Math.Clamp(Int(actor, "light.intensity") ?? 0, 0, 255);
-        bool stateLights = actor.ResolvedStates.Values.Any(HasLight);
+        int intensity = Math.Clamp(Int(properties, "light.intensity") ?? 0, 0, 255);
+        bool stateLights = resolvedStates.Any(HasLight);
         bool sets = false;
-        if (actor.Properties.TryGetValue("light.mode", out var mode))
+        if (properties.TryGetValue("light.mode", out var mode))
         {
             switch (mode?.ToString()?.Trim().ToLowerInvariant())
             {
                 case "set": sets = true; break;
                 case "add" or "" or null: break;
-                default: Console.WriteLine($"{actor.Name}: unknown light.mode '{mode}' (add or set)"); break;
+                default: Console.WriteLine($"{name}: unknown light.mode '{mode}' (add or set)"); break;
             }
         }
         // A set light at 0 is a dark one, not none
@@ -41,23 +45,23 @@ internal sealed record ActorLightInfo(int Intensity, double Radius, string? Colo
             return null;
 
         var effect = ZoneEffect.None;
-        if (actor.Properties.TryGetValue("light.effect", out var name)
-            && !Lighting.TryParseZoneEffect(name?.ToString() ?? "", out effect))
-            Console.WriteLine($"{actor.Name}: unknown light.effect '{name}' (none, flicker, pulse or strobe)");
+        if (properties.TryGetValue("light.effect", out var effectName)
+            && !ShadingResolver.TryParseZoneEffect(effectName?.ToString() ?? "", out effect))
+            Console.WriteLine($"{name}: unknown light.effect '{effectName}' (none, flicker, pulse or strobe)");
 
-        double radius = actor.Properties.TryGetValue("light.radius", out var r)
+        double radius = properties.TryGetValue("light.radius", out var r)
             && double.TryParse(Convert.ToString(r, CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture, out var tiles)
             && tiles >= 0 ? tiles : DefaultRadius;
 
-        var color = actor.Properties.TryGetValue("light.color", out var c) ? c?.ToString() : null;
+        var color = properties.TryGetValue("light.color", out var c) ? c?.ToString() : null;
 
-        return new ActorLightInfo(intensity, radius, color, effect, Int(actor, "light.low"),
-            Math.Max(Int(actor, "light.tics") ?? LightEffects.DefaultTics(effect), 1),
-            Math.Max(Int(actor, "light.brighttics") ?? 5, 0), stateLights, sets);
+        return new ActorLightInfo(intensity, radius, color, effect, Int(properties, "light.low"),
+            Math.Max(Int(properties, "light.tics") ?? LightEffects.DefaultTics(effect), 1),
+            Math.Max(Int(properties, "light.brighttics") ?? 5, 0), stateLights, sets);
     }
 
-    private static int? Int(Actor actor, string key) =>
-        actor.Properties.TryGetValue(key, out var value)
+    private static int? Int(IReadOnlyDictionary<string, object> properties, string key) =>
+        properties.TryGetValue(key, out var value)
         && int.TryParse(Convert.ToString(value, CultureInfo.InvariantCulture), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number)
         ? number : null;
 
@@ -76,7 +80,7 @@ internal sealed record ActorLightInfo(int Intensity, double Radius, string? Colo
 /// An actor's light as it goes: its class's light (null for none, once Resolved), what
 /// A_SetLight / A_LightOff set in its place, and where its effect is.
 /// </summary>
-internal sealed class ActorLightState
+public sealed class ActorLightState
 {
     public bool Resolved;
     public ActorLightInfo? Info;
@@ -88,7 +92,7 @@ internal sealed class ActorLightState
 /// What A_SetLight (or A_LightOff: Off) set an actor's light to, in place of its class's
 /// light. A state's own `light:` still changes it frame by frame, unless it's off. Saved.
 /// </summary>
-internal sealed record LightOverride(bool Off, int Intensity, double Radius, string? Color)
+public sealed record LightOverride(bool Off, int Intensity, double Radius, string? Color)
 {
     public void Write(BinaryWriter bw)
     {
@@ -107,5 +111,30 @@ internal sealed record LightOverride(bool Off, int Intensity, double Radius, str
         if (intensity is < 0 or > 255 || radius < 0 || double.IsNaN(radius))
             throw new InvalidDataException("An actor's light is out of range.");
         return new LightOverride(off, intensity, radius, color.Length == 0 ? null : color);
+    }
+}
+
+/// <summary>The light an actor gives off, from what it's made of: the game's and the editor's rule</summary>
+public static class ActorLightRules
+{
+    /// <summary>
+    /// The light an actor gives off now (intensity 0-255, radius in tiles, color or null): its
+    /// class's light (<paramref name="info"/>) or what A_SetLight set (<paramref name="set"/>),
+    /// changed by its frame's `light:` and its effect where that is (phase, flicker amount).
+    /// A_LightOff, or a frame's `light: none`, puts it out.
+    /// </summary>
+    public static (int Intensity, double Radius, string? Color) Current(ActorLightInfo? info, LightOverride? set, StateLight? light,
+        int phase, int flickerAmount)
+    {
+        if (set?.Off == true || light?.Off == true || (info == null && set == null))
+            return (0, 0, null);
+
+        int intensity = light?.Intensity ?? set?.Intensity ?? info!.Intensity;
+        double radius = light?.Radius ?? set?.Radius ?? info!.Radius;
+        string? color = light?.Color ?? (set != null ? set.Color : info!.Color);
+        if (info is { Effect: not ZoneEffect.None })
+            intensity = LightEffects.Apply(info.Effect, intensity, info.Low ?? intensity / 2, info.Tics, info.BrightTics,
+                phase, flickerAmount);
+        return (intensity, radius, color);
     }
 }

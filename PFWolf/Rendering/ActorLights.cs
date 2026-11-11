@@ -5,57 +5,32 @@ namespace PFWolf.Rendering;
 
 /// <summary>
 /// Actors can give off light (ActorLightInfo: actordefs `light.*` properties, and a state's
-/// `light:` overriding them). Each frame every lit actor adds its light to the cells of the
-/// light grid around it (lighting.CellAdd), most at the actor and none at its radius. It spreads from
-/// the actor's tile through open floor and open doors, and lights the tiles it reaches that
-/// a straight line from it can see, so it doesn't shine through walls or round corners: a
-/// closed door or a diagonal wall is lit, but the light goes no further. Light can't make
-/// anything brighter than full, so actor lights only show where the level is darker than
-/// that, and aren't cast at all on a level with no lighting.shading.
-///
-/// The light added is in whole light levels; a 4x4 ordered dither over the cells turns the
-/// fraction into a pattern, so its falloff doesn't show as rings.
-///
-/// A colored light tints what it lights. Where lights overlap, their light adds up, but a
-/// cell takes the tint of the strongest light there (lighting.CellTint, by lighting.CellStrong). The tint
-/// fades toward white over TintSteps steps as the light falls off, so a colored pool doesn't
-/// end in a hard edge.
+/// `light:` overriding them; ActorLightRules.Current). Each frame every lit actor's light is
+/// cast into the light grid's cells around it: how it spreads, falls off, is dithered, tinted
+/// and stopped by walls and shut doors, and how a set light (light.mode: set) takes the cells
+/// over, is PFWolf.Common's LightCaster, shared with the editor. This says which actors light
+/// (those on the level, the players' bodies, the weapon in hand at the player's spot), what
+/// the level lets light through (ILightMap: this class), and when. Light can't make anything
+/// brighter than full, so actor lights only show where the level is darker than that, and
+/// aren't cast at all on a level with no lighting.Shading; a set light turns shading on for a
+/// level that has none (lighting.ActorShading), so a bulb can darken a room at full light as it
+/// goes off (its dark frames' `light:` a lower intensity).
 ///
 /// A_SetLight and A_LightOff change an actor's light as it plays (LightOverride, saved).
-///
-/// A set light (light.mode: set) doesn't add: what it reaches takes its intensity as its
-/// light, as a light zone would (lighting.CellSet, the steps from each cell's base light to
-/// its own), darker than the level as well as lighter. It holds all of it out to half its
-/// radius and blends into the light round it over the rest; where set lights overlap, the
-/// one that holds a cell more has it. It spreads and is stopped as any light is, and turns
-/// shading on for a level that has none (lighting.ActorShading), so a bulb can darken a room
-/// at full light as it goes off (its dark frames' `light:` a lower intensity).
 /// </summary>
-internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting, GameSession session)
+internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting, GameSession session) : ILightMap
 {
-    const int LightCellCount = Lighting.LightCells, LightCellShift = Lighting.LightCellShift;
-    const int CellGlobalShift = Lighting.CellGlobalShift, MaxLightLevel = Lighting.MaxLightLevel;
-    const int HalfCell = 1 << (CellGlobalShift - 1);
-
     // The weapon in hand (the acting player's), and the player it's with
     Entities.Actors.Actor? WeaponSprite => session.PlayerState.WeaponSprite;
     readonly Dictionary<string, ActorLightInfo?> lightclasses = new(StringComparer.OrdinalIgnoreCase);
-
-    const int TintSteps = 4;
 
     // Each light color's tints (indexes in tints), from a quarter of the color to all of it;
     // forgotten with the light rows (ResetLightRows)
     internal readonly Dictionary<string, byte[]> ColorTintTables = new(StringComparer.OrdinalIgnoreCase);
 
-    readonly List<int> casttiles = [];           // the tiles whose cells have light added this frame
-    int[] caststamp = new int[MapConstants.ClassicMapArea], visitstamp = new int[MapConstants.ClassicMapArea];
-    int castwidth = MapConstants.ClassicMapSize;       // the level width casttiles and the stamps are for
-    int castframe, castvisit;
-    readonly Queue<(int X, int Y)> castqueue = new();
+    // Casts the lights into the light grid's cells (PFWolf.Common's LightCaster, shared with the editor)
+    readonly LightCaster caster = new(lighting.Grid);
     internal bool HasLights;                              // some cell has light added this frame
-
-    // A 4x4 Bayer matrix: each cell's threshold, in 16ths of a light level
-    static readonly int[] bayer4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
     /// <summary>An actor's light state, with its class's light looked up the first time it's asked for.</summary>
     internal ActorLightState LightStateOf(Entities.Actors.Actor actor)
@@ -64,7 +39,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         if (!state.Resolved)
         {
             if (!lightclasses.TryGetValue(actor.Name, out var info))
-                lightclasses[actor.Name] = info = ActorLightInfo.Of(actor);
+                lightclasses[actor.Name] = info = ActorLightInfo.From(actor.Name, actor.Properties, actor.ResolvedStates.Values);
             state.Info = info;
             state.Resolved = true;
         }
@@ -79,40 +54,11 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     internal (int Intensity, double Radius, string? Color) CurrentLight(Entities.Actors.Actor actor)
     {
         var state = LightStateOf(actor);
-        var info = state.Info;
-        var set = state.Override;
-        var light = actor.CurrentState?.Light;
-        if (set?.Off == true || light?.Off == true || (info == null && set == null))
-            return (0, 0, null);
-
-        int intensity = light?.Intensity ?? set?.Intensity ?? info!.Intensity;
-        double radius = light?.Radius ?? set?.Radius ?? info!.Radius;
-        string? color = light?.Color ?? (set != null ? set.Color : info!.Color);
-        if (info is { Effect: not ZoneEffect.None })
-            intensity = LightEffects.Apply(info.Effect, intensity, info.Low ?? intensity / 2, info.Tics, info.BrightTics,
-                state.Phase, state.FlickerAmount);
-        return (intensity, radius, color);
+        return ActorLightRules.Current(state.Info, state.Override, actor.CurrentState?.Light, state.Phase, state.FlickerAmount);
     }
 
     /// <summary>A light color's tints, a quarter of it to all of it; null for white (no color, or not #RRGGBB).</summary>
-    internal byte[]? ColorTints(string? color)
-    {
-        if (string.IsNullOrEmpty(color))
-            return null;
-        if (ColorTintTables.TryGetValue(color, out var steps))
-            return steps.Length == 0 ? null : steps;
-
-        var (r, g, b) = Lighting.ParseRgb(color, Lighting.NoTint, "light color");
-        steps = (r, g, b) == Lighting.NoTint ? [] : new byte[TintSteps];
-        for (int i = 0; i < steps.Length; i++)
-        {
-            float amount = (i + 1) / (float)TintSteps;
-            static byte Mix(byte to, float amount) => (byte)Math.Round(255 + (to - 255) * amount);
-            steps[i] = lighting.TintIndex((Mix(r, amount), Mix(g, amount), Mix(b, amount)));
-        }
-        ColorTintTables[color] = steps;
-        return steps.Length == 0 ? null : steps;
-    }
+    internal byte[]? ColorTints(string? color) => LightCaster.ColorTints(color, ColorTintTables, lighting.TintIndex);
 
     /*
     =============================================================================
@@ -259,29 +205,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     {
         // A level of another size: the grid starts afresh, and so do the tiles lit on it
         lighting.SizeToLevel();
-        if (caststamp.Length != map.MapArea || castwidth != map.MapWidth)
-        {
-            caststamp = new int[map.MapArea];
-            visitstamp = new int[map.MapArea];
-            castwidth = map.MapWidth;
-            casttiles.Clear();
-        }
-
-        foreach (int tile in casttiles)
-        {
-            int x = tile % castwidth, y = tile / castwidth;
-            for (int cy = 0; cy < LightCellCount; cy++)
-            {
-                int start = lighting.CellIndex(x << LightCellShift, (y << LightCellShift) + cy);
-                Array.Clear(lighting.CellAdd, start, LightCellCount);
-                Array.Clear(lighting.CellStrong, start, LightCellCount);
-                Array.Clear(lighting.CellTint, start, LightCellCount);
-                Array.Clear(lighting.CellSet, start, LightCellCount);
-                Array.Clear(lighting.CellSetWeight, start, LightCellCount);
-            }
-        }
-        casttiles.Clear();
-        castframe++;
+        caster.BeginFrame(map.MapArea, map.MapWidth);
         HasLights = false;
 
         // A set light on a level with no shading turns it on (once a level), so it can darken
@@ -299,214 +223,30 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             var (intensity, radius, color) = CurrentLight(actor);
             // the weapon in hand isn't placed in the world: it's where the player is
             bool inhand = ReferenceEquals(actor, WeaponSprite);
-            CastLight(inhand ? session.Player.X : actor.X, inhand ? session.Player.Y : actor.Y, intensity, radius, ColorTints(color), SetsLight(actor));
+            caster.CastLight(this, inhand ? session.Player.X : actor.X, inhand ? session.Player.Y : actor.Y, intensity, radius, ColorTints(color), SetsLight(actor));
         }
-        HasLights = casttiles.Count > 0;
+        HasLights = caster.LitTiles > 0;
     }
 
     // Whether an actor's light is a set one (light.mode: set)
     bool SetsLight(Entities.Actors.Actor actor) => LightStateOf(actor).Info?.Sets == true;
 
-    /// <summary>
-    /// Adds a light at (lx, ly) (global units) to the cells around it, as far as it spreads,
-    /// tinted (null: white); a set light (sets) gives them its light in place of theirs.
-    /// </summary>
-    void CastLight(int lx, int ly, int intensity, double radius, byte[]? tints, bool sets = false)
-    {
-        // a set light's is the light level a zone at its intensity would have
-        float levels = sets ? Lighting.LightLevelOf(intensity) : intensity / 255f * MaxLightLevel;
-        long r = (long)(radius * MapConstants.TileGlobal);
-        // a set light at 0 is a dark one; put out (light: none, A_LightOff) its radius is 0
-        if (levels <= 0 && !sets || r <= 0)
-            return;
-
-        int tx = lx >> MapConstants.TileShift, ty = ly >> MapConstants.TileShift;
-        if (map.TileIndexOrNone(tx, ty) < 0)
-            return;
-
-        castvisit++;
-        visitstamp[map.TileIndexOrNone(tx, ty)] = castvisit;
-        castqueue.Enqueue((tx, ty));
-        while (castqueue.Count > 0)
-        {
-            var (x, y) = castqueue.Dequeue();
-            if ((x, y) == (tx, ty) || LightSees(x, y, lx, ly))
-            {
-                if (sets)
-                    SetCells(x, y, lx, ly, r, levels, tints);
-                else
-                    LightCells(x, y, lx, ly, r, levels, tints);
-            }
-            if ((x, y) != (tx, ty) && !LightPasses(x, y))
-                continue;               // the light goes no further
-
-            foreach (var (nx, ny) in new[] { (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1) })
-            {
-                int next = map.TileIndexOrNone(nx, ny);
-                if (next < 0 || visitstamp[next] == castvisit || !LightEnters(nx, ny) || !TileInReach(nx, ny, lx, ly, r))
-                    continue;
-                visitstamp[next] = castvisit;
-                castqueue.Enqueue((nx, ny));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Whether a light at (lx, ly) shines straight on any of tile (x, y): a line to its middle,
-    /// or to its point nearest the light (an eighth of a tile in from its edges), crosses
-    /// nothing that stops light. Spreading tile by tile alone would let light turn corners.
-    /// </summary>
-    internal bool LightSees(int x, int y, int lx, int ly)
-    {
-        const long INSET = MapConstants.TileGlobal / 8;
-        long x0 = (long)x << MapConstants.TileShift, y0 = (long)y << MapConstants.TileShift;
-        long nearx = Math.Clamp(lx, x0 + INSET, x0 + MapConstants.TileGlobal - INSET);
-        long neary = Math.Clamp(ly, y0 + INSET, y0 + MapConstants.TileGlobal - INSET);
-        return ClearLine(lx, ly, nearx, neary, x, y)
-            || ClearLine(lx, ly, x0 + MapConstants.TileGlobal / 2, y0 + MapConstants.TileGlobal / 2, x, y);
-    }
-
-    // Whether every tile a line passes through, between the light's tile and tile (x, y), lets
-    // light through; checked every eighth of a tile along it
-    bool ClearLine(long fromx, long fromy, long tox, long toy, int x, int y)
-    {
-        int startx = (int)(fromx >> MapConstants.TileShift), starty = (int)(fromy >> MapConstants.TileShift);
-        long dx = tox - fromx, dy = toy - fromy;
-        int steps = (int)(Math.Max(Math.Abs(dx), Math.Abs(dy)) / (MapConstants.TileGlobal / 8)) + 1;
-        for (int i = 1; i < steps; i++)
-        {
-            int sx = (int)((fromx + dx * i / steps) >> MapConstants.TileShift);
-            int sy = (int)((fromy + dy * i / steps) >> MapConstants.TileShift);
-            if ((sx, sy) == (startx, starty) || (sx, sy) == (x, y))
-                continue;
-            if (map.TileIndexOrNone(sx, sy) < 0 || !LightPasses(sx, sy))
-                return false;
-        }
-        return true;
-    }
+    // The level as casting sees it (ILightMap)
+    public int TileIndexOrNone(int x, int y) => map.TileIndexOrNone(x, y);
 
     // Light can light a tile: open floor, a door or a diagonal wall (its open half), not a solid wall
-    internal bool LightEnters(int x, int y)
+    public bool LightEnters(int x, int y)
     {
         int tile = map.TileMap[x, y];
         return tile == 0 || (tile & GameConstants.BitDoor) != 0 || map.WallShapes[x, y] != WallShape.Square;
     }
 
     // Light carries on through a tile: open floor, or a door that isn't shut
-    internal bool LightPasses(int x, int y)
+    public bool LightPasses(int x, int y)
     {
         int tile = map.TileMap[x, y];
         if (tile == 0)
             return true;
         return (tile & GameConstants.BitDoor) != 0 && doors.DoorObjList[tile & ~GameConstants.BitDoor].Action != DoorAction.Closed;
-    }
-
-    // Whether any of a tile is within r (global units) of (lx, ly)
-    internal bool TileInReach(int x, int y, int lx, int ly, long r)
-    {
-        long x0 = (long)x << MapConstants.TileShift, y0 = (long)y << MapConstants.TileShift;
-        long dx = Math.Max(Math.Max(x0 - lx, lx - (x0 + MapConstants.TileGlobal)), 0);
-        long dy = Math.Max(Math.Max(y0 - ly, ly - (y0 + MapConstants.TileGlobal)), 0);
-        return dx * dx + dy * dy < r * r;
-    }
-
-    // Notes a tile as having light on its cells this frame, to clear them before the next
-    void MarkCast(int tile)
-    {
-        if (caststamp[tile] != castframe)
-        {
-            caststamp[tile] = castframe;
-            casttiles.Add(tile);
-        }
-    }
-
-    /// <summary>How much of a set light holds a cell t of its radius out (0-1): all of it to half way, then blending to none.</summary>
-    internal static double SetHold(double t)
-    {
-        const double FULL = 0.5;
-        if (t <= FULL)
-            return 1;
-        if (t >= 1)
-            return 0;
-        double u = (t - FULL) / (1 - FULL);
-        return 1 - u * u * (3 - 2 * u);
-    }
-
-    // Gives a set light's light to each of a tile's cells: the steps from the tile's base light
-    // to its own, as much of the way as it holds there. Where another set light holds a cell
-    // more, that one keeps it; where it's the light holding most, the cell takes its tint.
-    void SetCells(int x, int y, int lx, int ly, long r, float levels, byte[]? tints)
-    {
-        int tile = map.TileIndexOrNone(x, y);
-        MarkCast(tile);
-        int baselevel = lighting.TileLevel[tile];
-
-        long r2 = r * r;
-        int cellx0 = x << LightCellShift, celly0 = y << LightCellShift;
-        for (int cy = celly0; cy < celly0 + LightCellCount; cy++)
-        {
-            long dy = ((long)cy << CellGlobalShift) + HalfCell - ly;
-            for (int cx = cellx0; cx < cellx0 + LightCellCount; cx++)
-            {
-                long dx = ((long)cx << CellGlobalShift) + HalfCell - lx;
-                long d2 = dx * dx + dy * dy;
-                if (d2 >= r2)
-                    continue;
-
-                double hold = SetHold(Math.Sqrt(d2) / r);
-                int weight = (int)Math.Round(hold * 255);
-                int i = lighting.CellIndex(cx, cy);
-                if (weight <= 0 || weight <= lighting.CellSetWeight[i])
-                    continue;
-
-                int shift = (int)Math.Floor((levels - baselevel) * hold + bayer4[((cy & 3) << 2) + (cx & 3)] / 16f);
-                lighting.CellSetWeight[i] = (byte)weight;
-                lighting.CellSet[i] = (sbyte)Math.Clamp(shift, -MaxLightLevel, MaxLightLevel);
-                int strong = (int)(levels * hold);
-                if (strong >= lighting.CellStrong[i])
-                {
-                    lighting.CellStrong[i] = (byte)Math.Min(strong, byte.MaxValue);
-                    lighting.CellTint[i] = tints == null ? (byte)0
-                        : tints[Math.Clamp((int)Math.Ceiling(hold * TintSteps), 1, TintSteps) - 1];
-                }
-            }
-        }
-    }
-
-    // Adds a light's share to each of a tile's cells: levels at the light, falling smoothly to
-    // none at r. Where it's the strongest light, the cell takes its tint, paler as it falls off.
-    void LightCells(int x, int y, int lx, int ly, long r, float levels, byte[]? tints)
-    {
-        int tile = map.TileIndexOrNone(x, y);
-        MarkCast(tile);
-
-        long r2 = r * r;
-        int cellx0 = x << LightCellShift, celly0 = y << LightCellShift;
-        for (int cy = celly0; cy < celly0 + LightCellCount; cy++)
-        {
-            long dy = ((long)cy << CellGlobalShift) + HalfCell - ly;
-            for (int cx = cellx0; cx < cellx0 + LightCellCount; cx++)
-            {
-                long dx = ((long)cx << CellGlobalShift) + HalfCell - lx;
-                long d2 = dx * dx + dy * dy;
-                if (d2 >= r2)
-                    continue;
-
-                double t = Math.Sqrt(d2) / r;
-                double falloff = 1 - t * t * (3 - 2 * t);
-                int add = (int)(levels * falloff + bayer4[((cy & 3) << 2) + (cx & 3)] / 16f);
-                if (add <= 0)
-                    continue;
-
-                int i = lighting.CellIndex(cx, cy);
-                lighting.CellAdd[i] = (byte)Math.Min(lighting.CellAdd[i] + add, MaxLightLevel);
-                if (add > lighting.CellStrong[i])
-                {
-                    lighting.CellStrong[i] = (byte)Math.Min(add, byte.MaxValue);
-                    lighting.CellTint[i] = tints == null ? (byte)0
-                        : tints[Math.Clamp((int)Math.Ceiling(falloff * TintSteps), 1, TintSteps) - 1];
-                }
-            }
-        }
     }
 }

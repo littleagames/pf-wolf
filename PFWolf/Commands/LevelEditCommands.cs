@@ -42,6 +42,8 @@ internal sealed class LevelEditCommands(
             "light [0-255]", LightCommand, Cheat | InLevel);
         console.Register("lights", "Lists the actors giving off light (actordefs light.*, A_SetLight), and their light now.",
             "lights", LightsCommand, InLevel);
+        console.Register("lightgrid", "Prints a hash of the light grid as the last frame left it (each tile's base light, the light cells, the tints), for checking a change to lighting changes nothing; seed N makes flickering lights and zones repeat from run to run.",
+            "lightgrid [seed N]", LightGridCommand, InLevel);
         console.Register("zone", "Shows or sets the light zone (plane 5) of the tile you stand on, a tile, or a rectangle of tiles; 0 takes them out of any zone.",
             "zone [0-65535 [tilex tiley [tilex2 tiley2]]]", ZoneCommand, Cheat | InLevel);
         console.Register("zonelight", "Lists the level's light zones, or shows or sets how one is lit (light 0-255, optional #RRGGBB tint or none, optional fade tics; none as the light removes the zone).",
@@ -338,6 +340,18 @@ internal sealed class LevelEditCommands(
             console.Print(line);
         if (lights.Count > 0 && !lighting.Shading)
             console.Print("(the level is at full light, so they don't show)");
+    }
+
+    internal void LightGridCommand(string[] args)
+    {
+        if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCase))
+        {
+            int seed = ParseInt(args[1], int.MinValue, int.MaxValue);
+            Lighting.ZoneRandom = new Random(seed);
+            console.Print($"Flickering lights and zones now draw from seed {seed}");
+            return;
+        }
+        console.Print($"lightgrid {lighting.GridHash()} shading {lighting.Shading} lit {actorLights.HasLights}");
     }
 
     internal void ZoneEffectCommand(string[] args)

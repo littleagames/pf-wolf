@@ -196,4 +196,44 @@ Decided (2026-11-11, by the user):
 
 ## Status
 
-Planned 2026-11-11; nothing built.
+Planned 2026-11-11.
+
+**Phase 0 done 2026-11-11** (the grid and casting in Common):
+- PFWolf.Common/Shading:
+  - `LightGrid`: the arrays, `SizeTo`, `CellIndex`, `TintIndex` and the tint list, and
+    `LightAt` → (level, tint).
+  - `LightCaster`: casting, `LightSees`, `ClearLine`, `TileInReach`, `SetHold`, the dither, the
+    two cell writers, `ColorTints` taking a tint-index delegate (so the game's light rows keep
+    in step), `BeginFrame` (clears what it lit last time) and `LitTiles`.
+  - `ILightMap`.
+- PFWolf.Common/Entities/Actors/ActorLight.cs, moved with `git mv` and made public:
+  - `ActorLightInfo.From(name, properties, resolved states)`, which was `Of(actor)`;
+  - `LightOverride`, with unchanged save bytes;
+  - `ActorLightRules.Current`, which was the game's `CurrentLight`;
+  - `ActorLightState`, which moved too, since it's plain data the game's `Actor` holds (the plan
+    had it staying).
+- The game:
+  - `Lighting` owns a `LightGrid` (`Grid`). Its grid members forward to it, and `LightAt` is
+    `RowOf(Grid.LightAt(...))`.
+  - `TintIndex` keeps `TintRows` growing alongside the grid's tints.
+  - `ActorLights` is the game's `ILightMap` (its `LightEnters` / `LightPasses` as before) and
+    casts through a `LightCaster`.
+  - New: the console `lightgrid [seed N]` (a hash of the grid; seed makes `ZoneRandom` repeat),
+    with `ZoneRandom` now settable.
+- Checked:
+  - `LightGridSnapshotTests` (7 hand-made scenes): the grid hash and `LightAt`'s rows every 1/8
+    tile over 48×48 tiles. The scenes cover open floor, walls with shut / open / opening doors
+    and a corner, diagonals, overlapping coloured lights, set lights at full light, set + added
+    lights in a tinted zone, and state lights / A_SetLight / A_LightOff / pulse / strobe /
+    flicker part way.
+  - `LightGridGameTests` (GameData, headless `lightgrid seed 7; killall; wait 2; lightgrid`):
+    moody-lights, switch-demo, weather-demo, particles-demo and hub-demo MAP01, Blake and
+    Planet Strike MAP01. Repeatable run to run.
+  - Both of those, and the lighting plan's `ShadingSnapshotTests`, were byte-identical before
+    and after the move; `ActorLightsTests` and `LightingTests` pass.
+  - The lighting plan's headless screenshots were the same before and after: Wolf3D E1M1, Blake
+    MAP01, Planet Strike, moody-lights, weather-demo and E1M1 with `fog`. Blake MAP02 differed by
+    104 pixels where a far enemy stands, and of two more shots, one matched the before image
+    exactly: the enemy varies run to run.
+  - The switch-demo light room still isn't repeatable even seeded (the flicker depends on how
+    tics fall into frames); the seeded `lightgrid` hash covers its lamp.

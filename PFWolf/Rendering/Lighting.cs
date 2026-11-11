@@ -192,56 +192,50 @@ internal sealed class Lighting(
     // The level's map, for A_SetShading("on") to put its own shading back
     MapInfo? _levelMapInfo;
 
-    internal const int LightCellShift = 3;
-    internal const int LightCells = 1 << LightCellShift;                    // cells a tile, each way
-    internal const int CellGlobalShift = MapConstants.TileShift - LightCellShift;    // global units to cells
+    // The grid's numbers are PFWolf.Common's (Shading/LightGrid.cs), shared with the editor
+    internal const int LightCellShift = LightGrid.LightCellShift;
+    internal const int LightCells = LightGrid.LightCells;                    // cells a tile, each way
+    internal const int CellGlobalShift = LightGrid.CellGlobalShift;         // global units to cells
     internal const int MaxLightLevel = ShadeMath.MaxLightLevel;
 
+    /// <summary>THE LIGHT GRID (PFWolf.Common's LightGrid): each tile's base light, the light cells, the tints</summary>
+    internal readonly LightGrid Grid = new();
+
     // Cells across and down the level: LightCells a tile each way (SizeToLevel)
-    internal int GridWidth { get; private set; } = MapConstants.ClassicMapSize << LightCellShift;
-    internal int GridHeight { get; private set; } = MapConstants.ClassicMapSize << LightCellShift;
+    internal int GridWidth => Grid.GridWidth;
+    internal int GridHeight => Grid.GridHeight;
 
     // Each tile's base light, indexed MapManager.TileIndex like the flats: a light level, and a
     // tint (an index in tints)
-    internal byte[] TileLevel = new byte[MapConstants.ClassicMapArea], TileTint = new byte[MapConstants.ClassicMapArea];
+    internal byte[] TileLevel => Grid.TileLevel;
+    internal byte[] TileTint => Grid.TileTint;
 
     // Light levels added to each cell, indexed cy * GridWidth + cx; the most of them any one light
     // added, and that light's tint (0: none, the tile's own)
-    internal byte[] CellAdd = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
-    internal byte[] CellStrong = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)], CellTint = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
+    internal byte[] CellAdd => Grid.CellAdd;
+    internal byte[] CellStrong => Grid.CellStrong;
+    internal byte[] CellTint => Grid.CellTint;
 
     // What a set light (light.mode: set) moves each cell's base light by, up or down, toward its
     // own; and how much of the way (0-255) it went, so where set lights overlap the nearest wins
-    internal sbyte[] CellSet = new sbyte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
-    internal byte[] CellSetWeight = new byte[MapConstants.ClassicMapArea << (2 * LightCellShift)];
+    internal sbyte[] CellSet => Grid.CellSet;
+    internal byte[] CellSetWeight => Grid.CellSetWeight;
 
     // A set light needs the level shaded, on a level that isn't otherwise (ActorLights)
     internal bool ActorShading;
 
     /// <summary>The cell (x, y in cells) in CellAdd, CellStrong and CellTint</summary>
-    internal int CellIndex(int cx, int cy) => cy * GridWidth + cx;
+    internal int CellIndex(int cx, int cy) => Grid.CellIndex(cx, cy);
 
     /// <summary>Sizes the tiles' and cells' lights to the level loaded, if it's another size (cleared).</summary>
     internal void SizeToLevel()
     {
-        int gridWidth = map.MapWidth << LightCellShift, gridHeight = map.MapHeight << LightCellShift;
-        if (TileLevel.Length == map.MapArea && gridWidth == GridWidth && gridHeight == GridHeight)
-            return;
-
-        GridWidth = gridWidth;
-        GridHeight = gridHeight;
-        TileLevel = new byte[map.MapArea];
-        TileTint = new byte[map.MapArea];
-        CellAdd = new byte[gridWidth * gridHeight];
-        CellStrong = new byte[gridWidth * gridHeight];
-        CellTint = new byte[gridWidth * gridHeight];
-        CellSet = new sbyte[gridWidth * gridHeight];
-        CellSetWeight = new byte[gridWidth * gridHeight];
-        GridDirty = true;
+        if (Grid.SizeTo(map.MapWidth, map.MapHeight))
+            GridDirty = true;
     }
 
-    // The tints in use (0 is none), and each one's light rows by level, made as they're needed
-    internal readonly List<(byte R, byte G, byte B)> Tints = [];
+    // The tints in use (0 is none: the grid's), and each one's light rows by level, made as they're needed
+    internal List<(byte R, byte G, byte B)> Tints => Grid.Tints;
     internal readonly List<byte[]?[]> TintRows = [];
 
     internal int AmbientLevel;            // the level's own light level (tint 0)
@@ -251,17 +245,13 @@ internal sealed class Lighting(
 
     internal static readonly (byte, byte, byte) NoTint = ShadingResolver.NoTint;
 
-    /// <summary>A tint's index in tints, added if it's new.</summary>
+    /// <summary>A tint's index in tints, added if it's new (with room for its light rows).</summary>
     internal byte TintIndex((byte R, byte G, byte B) tint)
     {
-        int index = Tints.IndexOf(tint);
-        if (index >= 0)
-            return (byte)index;
-        if (Tints.Count > byte.MaxValue)
-            return 0;                   // more tints than a tile can name: untinted
-        Tints.Add(tint);
-        TintRows.Add(new byte[LightLevels][]);
-        return (byte)(Tints.Count - 1);
+        byte index = Grid.TintIndex(tint);
+        while (TintRows.Count < Tints.Count)
+            TintRows.Add(new byte[LightLevels][]);
+        return index;
     }
 
     /// <summary>Forgets the light rows (they're for the old fade), leaving the tints with only none.</summary>
@@ -283,7 +273,7 @@ internal sealed class Lighting(
 
     /// <summary>
     /// The light row at a point (global units): the base light of a tile (a TileIndex; off the
-    /// map, the level's) plus the light added to the point's cell.
+    /// map, the level's) plus the light added to the point's cell (LightGrid.LightAt).
     /// </summary>
     internal byte[] LightAt(int tile, long gx, long gy)
     {
@@ -292,18 +282,8 @@ internal sealed class Lighting(
         if (tile < 0)
             return LightRow;
 
-        int level = TileLevel[tile], tint = TileTint[tile];
-        long cx = gx >> CellGlobalShift, cy = gy >> CellGlobalShift;
-        if ((ulong)cx < (ulong)GridWidth && (ulong)cy < (ulong)GridHeight)
-        {
-            long cell = cy * GridWidth + cx;
-            level += CellAdd[cell] + CellSet[cell];
-            if (level < 0)
-                level = 0;
-            if (CellTint[cell] != 0)
-                tint = CellTint[cell];
-        }
-        return RowOf(tint, level > MaxLightLevel ? MaxLightLevel : level);
+        var (level, tint) = Grid.LightAt(tile, gx, gy);
+        return RowOf(tint, level);
     }
 
     /// <summary>The middle of a tile, in global units: where something placed on the tile stands.</summary>
@@ -337,7 +317,28 @@ internal sealed class Lighting(
     }
 
     // Flickering is only for show, so it doesn't draw on the game's random numbers (demos)
-    internal static readonly Random ZoneRandom = new();
+    internal static Random ZoneRandom = new();
+
+    /// <summary>
+    /// A hash of the light grid as it stands (the console's `lightgrid`): each tile's base light
+    /// and tint, every cell's added light, strongest light, tint and set light, and the tints
+    /// </summary>
+    internal string GridHash()
+    {
+        using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        hash.AppendData(BitConverter.GetBytes(GridWidth));
+        hash.AppendData(BitConverter.GetBytes(GridHeight));
+        hash.AppendData(TileLevel);
+        hash.AppendData(TileTint);
+        hash.AppendData(CellAdd);
+        hash.AppendData(CellStrong);
+        hash.AppendData(CellTint);
+        hash.AppendData(System.Runtime.InteropServices.MemoryMarshal.AsBytes(CellSet.AsSpan()));
+        hash.AppendData(CellSetWeight);
+        foreach (var (r, g, b) in Tints)
+            hash.AppendData([r, g, b]);
+        return Convert.ToHexString(hash.GetHashAndReset())[..16];
+    }
 
     internal static bool TryParseZoneEffect(string name, out ZoneEffect effect) => ShadingResolver.TryParseZoneEffect(name, out effect);
 
