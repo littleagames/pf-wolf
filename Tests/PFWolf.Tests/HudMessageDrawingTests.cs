@@ -22,7 +22,7 @@ public class HudMessageDrawingTests
         _session = new GameSession();
         _session.PlayerState.Pawn = new Entities.Actors.PlayerPawn { State = _session.PlayerState };
         var console = new ConsoleManager();
-        _messages = new HudMessageManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<ConsoleManager>(console))
+        _messages = new HudMessageManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<ConsoleManager>(console), session: _session)
         {
             EnabledSetting = true,
         };
@@ -79,6 +79,53 @@ public class HudMessageDrawingTests
 
         // Assert: not "killed by Player" (no language file here, so the key itself)
         Assert.That(_messages.Messages.Single().Text, Does.Contain("OB_SELF"));
+    }
+
+    /// <summary>A deathmatch with a second player, acting as them (the one killed); this machine's is the first</summary>
+    private Entities.PlayerState SecondPlayerActing()
+    {
+        var second = new Entities.PlayerState { Number = 1, Name = "Client" };
+        second.Pawn = new Entities.Actors.PlayerPawn { State = second };
+        _session.PlayerState.Name = "Host";
+        _session.Players.Add(second);
+        _session.SetGameMode(GameMode.Deathmatch);
+        _session.SetActing(second);
+        return second;
+    }
+
+    [Test]
+    public void The_Kill_Feed_Reaches_Players_Other_Than_The_One_Killed()
+    {
+        // Arrange: the first player (this machine's) shot the second, with messages off
+        SecondPlayerActing().LastAttacker = _session.Players[0].Pawn;
+        _messages.EnabledSetting = false;
+
+        // Act
+        _drawing.ShowKillFeed();
+
+        // Assert: shown here (no language file here, so the key itself)
+        Assert.That(_messages.Messages.Single().Text, Is.EqualTo("$KF_KILLED"));
+    }
+
+    [Test]
+    public void The_Kill_Feed_Says_How_They_Died()
+    {
+        var second = SecondPlayerActing();
+        var feed = new List<string>();
+        void Feed(Entities.Actors.Actor? killer)
+        {
+            second.LastAttacker = killer;
+            _drawing.ShowKillFeed();
+            feed.Add(_messages.Messages[^1].Text);
+            _messages.Clear();
+        }
+
+        Feed(new Entities.Actors.Monster { Name = "Rocket", Shooter = _session.Players[0].Pawn });    // a player's rocket
+        Feed(new Entities.Actors.Monster { Name = "Rocket", Shooter = second.Pawn });                // their own
+        Feed(Guard());
+        Feed(null);
+
+        Assert.That(feed, Is.EqualTo(new[] { "$KF_KILLED", "$KF_SELF", "$KF_MONSTER", "$KF_DIED" }));
     }
 
     [Test]

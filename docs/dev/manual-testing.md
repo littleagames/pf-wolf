@@ -935,6 +935,10 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       CTF/Domination announcements and network notices show in both. Tried 2026-11-11 on
       loopback with a Lua `game.onuse` message (only the presser saw it, both ways) and "left the
       game"; **(never tried)** the stock pickup/door/obituary/objective messages themselves.
+- [ ] Kill feed (versus modes, top right, shown with messages off): seen 2026-11-11 on DM01 for a
+      rocket suicide ("Client blew themselves up" on the host). **(never tried)** one player
+      killing another ("Host killed Client"), an enemy's kill, team modes; on the dead player's
+      own screen the scoreboard covers most of it.
 
 ## 1.16 Demos
 

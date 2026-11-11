@@ -23,7 +23,7 @@ public class PlayersTests
         public readonly Players Players;
         public readonly List<string> SoundsAtPawns = [];
         public readonly List<(Entities.PlayerState Victim, Entities.Actors.Actor? Killer)> Frags = [];
-        public int Obituaries;
+        public int Obituaries, KillFeeds;
         public bool NetGameCleared => !Session.NetGame;
         public int? DropTo;
 
@@ -50,7 +50,7 @@ public class PlayersTests
                 new Configuration.GameSettings(), new PlayerStatsHooks(() => 1, () => Players!.PlayerDies(), _ => { }));
             Players = new Players(null!, null!, null!, Inventory, null!, bar, classes, stats, weapons, null!, null!, Session,
                 new PlayersHooks((sound, _) => SoundsAtPawns.Add(sound), _ => (0, 0, 0), () => { }, (victim, killer) => Frags.Add((victim, killer)), _ => true,
-                    () => Obituaries++, () => { }, () => 5, () => DropTo, () => 4, color => color));
+                    () => Obituaries++, () => { }, () => 5, () => DropTo, () => 4, color => color, ShowKillFeed: () => KillFeeds++));
         }
 
         public Entities.PlayerState Second => Session.Players[1];
@@ -115,6 +115,7 @@ public class PlayersTests
         Assert.That(rig.SoundsAtPawns, Is.EqualTo(new[] { "player/death" }));
         Assert.That(rig.Obituaries, Is.EqualTo(1));
         Assert.That(rig.Frags, Is.Empty);           // co-op
+        Assert.That(rig.KillFeeds, Is.Zero);        // no kill feed in co-op
     }
 
     [Test]
@@ -129,6 +130,7 @@ public class PlayersTests
 
         // Assert
         Assert.That(rig.Frags, Is.EqualTo(new[] { (rig.Second, (Entities.Actors.Actor?)Guard) }));
+        Assert.That((rig.KillFeeds, rig.Obituaries), Is.EqualTo((1, 1)));     // the feed for everyone, and their own
     }
 
     [TestCase(0, 0, 10, 0, 0)]          // killer due east

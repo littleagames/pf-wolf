@@ -525,7 +525,7 @@ internal static partial class GameHost
             playerWeapons, playerMovement, playerThink, Session,
             new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, MayRespawn, ShowObituary, ConnectAreas,
                 () => DeathTurnSpeed, () => DeathDropHeight, () => DeathDropSpeed, PlayerColor,
-                (pawn, reason) => gameScripts.RunSpawnHooks(pawn, reason)));
+                (pawn, reason) => gameScripts.RunSpawnHooks(pawn, reason), ShowKillFeed));
 
     internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);
     internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);

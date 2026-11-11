@@ -50,6 +50,14 @@ Obituary:
   duration: 350
   max-lines: 1
 
+# A match's kill feed ("Host killed Client"), which every player sees, even with messages off:
+# its own stack in the top right, under the match's line
+KillFeed:
+  anchor: TopRight
+  color: White
+  duration: 280
+  max-lines: 4
+
 # Across the bottom of the view, above the weapon
 Bottom:
   anchor: Bottom

@@ -399,3 +399,10 @@ $OB_SELF: "You blew yourself up."
 # One of the player's allies (factions.yaml) killed: %o the ally, %k who killed them
 $OB_ALLYKILLED: "Your ally %o was killed by %k."
 $OB_ALLYDIED: "Your ally %o was killed."
+
+# A match's kill feed, which every player sees: %o the player killed, %k who killed them (a
+# player's name, or an enemy's tag)
+$KF_KILLED: "%k killed %o"
+$KF_SELF: "%o blew themselves up"
+$KF_MONSTER: "%o was killed by %k"
+$KF_DIED: "%o died"

@@ -16,6 +16,7 @@ namespace PFWolf.Gameplay;
 /// <param name="DeathDropSpeed">How fast it sinks (game-info death-drop-speed)</param>
 /// <param name="PlayerColor">A player's color as this machine has it: the translation, or null if there's no such one</param>
 /// <param name="Spawned">A player's been put on the level mid-game, and why: "respawn" or "join" (game.onspawn)</param>
+/// <param name="ShowKillFeed">A versus match: tells everyone who killed the acting player</param>
 internal sealed record PlayersHooks(
     Action<string, Entities.Actors.Actor> PlaySoundAt,
     Func<Entities.Actors.PlayerPawn, (int x, int y, int angle)> DeathmatchSpot,
@@ -28,7 +29,8 @@ internal sealed record PlayersHooks(
     Func<int?> DeathDropHeight,
     Func<int> DeathDropSpeed,
     Func<string, string?> PlayerColor,
-    Action<Entities.Actors.PlayerPawn, string>? Spawned = null);
+    Action<Entities.Actors.PlayerPawn, string>? Spawned = null,
+    Action? ShowKillFeed = null);
 
 /// <summary>
 /// Everyone in the game coming and going: a new game's players, putting them on a level, a
@@ -198,6 +200,8 @@ internal sealed class Players(
 
         if (inventory.GetStringProperty(playerstate.PlayerClass, "deathsound") is { Length: > 0 } deathSound)
             PlayPlayerSound(deathSound);
+        if (session.IsVersus)
+            hooks.ShowKillFeed?.Invoke();       // everyone's, as well as the victim's own obituary
         hooks.ShowObituary();
     }
 

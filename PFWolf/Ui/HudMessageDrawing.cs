@@ -4,7 +4,7 @@ namespace PFWolf.Ui;
 
 /// <summary>
 /// The HUD messages (HudMessageManager) drawn over the view each frame (DrawHudMessages), and
-/// the obituary the player's death puts up (ShowObituary).
+/// the obituary the player's death puts up (ShowObituary), and a match's kill feed (ShowKillFeed).
 /// </summary>
 internal sealed class HudMessageDrawing(
     VideoManager video,
@@ -121,6 +121,37 @@ internal sealed class HudMessageDrawing(
             ['k'] = killer == null ? "" : (killer.Shooter ?? killer) is Entities.Actors.PlayerPawn rival ? playersManager.PlayerName(rival) ?? ActorTag(rival) : ActorTag(killer.Shooter ?? killer),
         });
     }
+
+    /// <summary>The style the kill feed is shown in (hud-messages.yaml)</summary>
+    internal const string KillFeedStyle = "KillFeed";
+
+    /// <summary>
+    /// Tells every player who killed the acting player (a match's kill feed): "%k killed %o" for
+    /// a player's kill (a projectile's is its shooter's), their own blast's, an enemy's or no
+    /// killer at all each with words of their own. It's shown with messages off too, like the
+    /// scoreboard, in the KillFeed style.
+    /// </summary>
+    internal void ShowKillFeed()
+    {
+        var victim = session.Player;
+        var killer = session.PlayerState.LastAttacker;
+        var by = killer?.Shooter ?? killer;
+
+        string text = by == null ? "$KF_DIED"
+            : ReferenceEquals(by, victim) ? "$KF_SELF"
+            : by is Entities.Actors.PlayerPawn ? "$KF_KILLED"
+            : "$KF_MONSTER";
+
+        hudMessages.ShowToAll(HudMessageKind.Other, text, KillFeedStyle, new Dictionary<char, string>
+        {
+            ['o'] = NameOf(victim),
+            ['k'] = by == null ? "" : NameOf(by),
+        });
+    }
+
+    // A player's name in the game (theirs, or "Player n"), else an actor's tag
+    string NameOf(Entities.Actors.Actor actor) =>
+        actor is Entities.Actors.PlayerPawn pawn && playersManager.PlayerName(pawn) is { } name ? name : ActorTag(actor);
 
     /// <summary>
     /// An actor's name for messages: its `tag` (a $NAME language key or the name), or its class.

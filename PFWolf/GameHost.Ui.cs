@@ -432,6 +432,7 @@ internal static partial class GameHost
         puzzlePanel?.Draw();                // a puzzle the player's working, over it all (Ui/PuzzlePanel.cs)
     }
     internal static void ShowObituary() => hudMessageDrawing.ShowObituary();
+    internal static void ShowKillFeed() => hudMessageDrawing.ShowKillFeed();
     static List<string> WrapText(string text, string font, int width) => hudMessageDrawing.WrapText(text, font, width);
 
     // ==== ConsoleDraw ============================================================================
