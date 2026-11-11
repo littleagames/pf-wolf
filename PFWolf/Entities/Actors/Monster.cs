@@ -655,7 +655,16 @@ internal partial record Monster : Actor
         actor is PlayerPawn pawn ? ReferenceEquals(pawn.State.Pawn, pawn) : !actor.IsRemoved;
 
     // The first player (in player order) it's hostile to, living or not, or null
-    private PlayerPawn? FirstHostilePlayer() => MapManager.Players.FirstOrDefault(IsHostileTo);
+    // (a loop: asked by every enemy every tic, and FirstOrDefault(IsHostileTo) made a delegate each time)
+    private PlayerPawn? FirstHostilePlayer()
+    {
+        foreach (var pawn in MapManager.Players)
+        {
+            if (IsHostileTo(pawn))
+                return pawn;
+        }
+        return null;
+    }
 
     /*
     With rivals about, an enemy after someone looks round now and then (RetargetTics) for

@@ -29,8 +29,19 @@ internal partial record Monster
         if (World == null || !RuntimeFlags.Has(ObjFlags.Shootable))
             return;
 
-        foreach (var item in MapManager.GetActors().OfType<Inventory>()
-                     .Where(i => !i.IsRemoved && i.TileX == TileX && i.TileY == TileY).ToList())
+        // What's here, gathered first (taking one can change the level's actors). Every enemy
+        // that's walking asks at every tile, so only the items are gone through, and a list is
+        // only made when something's here.
+        List<Inventory>? here = null;
+        foreach (var i in MapManager.Items())
+        {
+            if (!i.IsRemoved && i.TileX == TileX && i.TileY == TileY)
+                (here ??= []).Add(i);
+        }
+        if (here == null)
+            return;
+
+        foreach (var item in here)
         {
             int heal = PickupInt(item, "monster.pickup.heal");
             bool kill = PickupFlag(item, "monster.pickup.kill");

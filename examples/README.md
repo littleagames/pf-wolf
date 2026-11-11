@@ -2522,16 +2522,19 @@ It replaces Floors 1 to 3 like the other level demos, so switch on only one of t
 - The way out is an elevator in the middle of the east wall, on the far side of them all.
 - You start with the chain gun and 999 bullets, and the ammo counter has three digits.
 
-What to expect (measured headless, Release build, at 320x200): the levels load in a second or
-two, and a sleeping army costs almost nothing. Awake is another matter: on Floor 1 a few hundred
-soldiers chasing you take about 4 ms a frame; on Floor 2, 1,700 of them take about 140 ms
-(7 frames a second, and the game slows down); on Floor 3, 2,000 awake among 20,000 take nearly
-4 seconds a frame. Two engine limits show here:
+What to expect (measured on a Release build at 320x200): the levels load in a second or two, and
+Floor 3 with the chain gun going, its whole army awake, still runs at about 60 frames a second
+(16 ms a frame on average, the enemies' thinking about 7 ms of it). The swarm found the engine's
+limits when it was first made, and they were fixed for it:
 
-- **The more actors on the level, the slower each sight check gets.** Every check for a wall
-  sprite in the way walks the whole actor list, so it's worst on Floor 3.
-- **Only 250 sprites are drawn at once.** With thousands in view, the first 250 in the actor list
-  win, not the nearest, so soldiers right in front of you can go undrawn while far ones show.
+- Every sight check went through the whole actor list looking for wall sprites in the way, so a
+  frame on Floor 3 took nearly 4 seconds. The level's wall sprites are now kept in a list of
+  their own, as are its items (which an enemy reaching a tile checks for something to pick up).
+- Every enemy's think made garbage (lists of the players): 850 KB a frame on Floor 2, now a few
+  KB.
+- Only 250 sprites were drawn at once, and the first 250 in the actor list won, so soldiers right
+  in front of you could go undrawn. Now the nearest 1,024 are drawn, sorted rather than picked
+  one at a time.
 
 `perf 1` in the console times every frame from then on, and `perf` shows the breakdown (cheats
 on for `god`: `--cheats`).

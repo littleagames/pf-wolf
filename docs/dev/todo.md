@@ -130,23 +130,19 @@ Left for later by the stories plan (docs/dev/story-level-plan.md, 2026-11-08):
 
 ## Huge enemy counts (found by the Swarm Demo)
 
-The swarm-demo example mod (2026-11-11: 1,000 / 5,000 / 20,000 enemies on open fields) loads and
-idles fine, but once a few thousand are awake the engine can't keep up. Measured headless,
-Release, 320x200, with `perf`:
+The swarm-demo example mod (2026-11-11: 1,000 / 5,000 / 20,000 enemies on open fields) first ran
+Floor 3 at ~4 s a frame once awake. Fixed the same day: wall sprites and items in cached lists
+(`WallSpriteBlocking.WallSpriteActors`, `MapManager.Items`, rebuilt when `ActorsVersion` or the
+list's count changes), `MapManager.Players` an array (a foreach over IReadOnlyList boxed an
+enumerator), `Stealth.Overlooks` and `Monster.FirstHostilePlayer` as loops, and the nearest
+1,024 sprites drawn after a real sort. Floor 3 with the whole army awake and the chain gun going
+now averages ~16 ms a frame (actors ~7, sprites ~5). What's left, if anyone wants more:
 
-- Sight checks scale with the whole level: `Monster.CanSee` → `LineOfSight.CheckLineFlat` →
-  `WallSprites.WallSpriteBlocksLine` walks every actor (`map.GetActors()`) looking for wall
-  sprites, on every check, even on a level with none. 2,038 awake among 20,072 actors took ~3.8 s
-  a frame, every stack sample in that loop. A list of the level's wall sprites (kept as they
-  spawn, break and go), or a per-tile index, would make it O(wall sprites near the line).
-- Per-think garbage: ~850 KB a frame with 1,700 awake on Floor 2, mostly LINQ over the player
-  pawns (`ArrayWhereIterator<PlayerPawn>`, `List<PlayerPawn>`, closures), e.g.
-  `ProjectileActions.cs` `map.Players.Where(session.IsTargetable).OrderBy(...)`,
-  `Missiles.cs` `map.Players.Where(...)`. Loops instead, as the performance pass did elsewhere.
-- Even without those, ~1,700 chasing actors cost ~14 ms a tic on Floor 2; at 10 tics a frame
-  (MaxTics) that's the 7 fps. Worth a profile once the two above are gone.
-- `GameConstants.MaxVisible` (250): `SpriteDrawing.DrawScaleds` fills VisList in actor-list
-  order and drops the rest, so with thousands in view the nearest soldiers can go undrawn while
-  distant ones show. Keep the nearest 250 (or grow the list), and the back-to-front selection
-  sort there is O(n²) in the count, so a real sort if the cap goes up.
-- `GameConstants.MaxActors` (150) and `MaxStats` (400) aren't used anywhere any more.
+- Every tic still goes through all the actors several times (DoActors, FindCombatants,
+  FrameInterpolation.BeginTics, ActorLights.TickActorLights): fine at 20,000, it's the next
+  wall at ~100,000.
+- Sprites cost ~5 ms at 320x200 with a field full of them; at a high resolution, more. The
+  1,024 cap (`GameConstants.MaxVisible`) could become a setting.
+- A little garbage is left per frame from LINQ over Inventory (OfType/Where), a few KB.
+- Other `map.Players` LINQ (Missiles, ProjectileActions, Doors) runs per shot or per door, not
+  per think, so it was left alone.

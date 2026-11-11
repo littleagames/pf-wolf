@@ -111,6 +111,38 @@ internal class MapManager
     /// <summary>Goes up each time the level's actors are put on afresh (a map loaded, a level restored): which level it is</summary>
     internal int LevelSerial { get; set; }       // (set by tests standing for a new level)
 
+    /// <summary>
+    /// Goes up each time MapManager adds an actor to the level's list or takes one off, so a
+    /// cache of some of them (WallSpriteBlocking's wall sprites) knows when to look again.
+    /// GetActors() is mutable, so such a cache also checks the list's Count.
+    /// </summary>
+    internal int ActorsVersion { get; private set; }
+
+    /// <summary>
+    /// The level's items (Inventory actors, removed ones too until they're swept), in the actor
+    /// list's order, found again only when the list has changed. For asking what lies on a tile
+    /// without going through every actor (an enemy reaching a tile, Monster.TakePickups).
+    /// Don't change the list, and don't hold it across a change to the level's actors.
+    /// </summary>
+    internal List<Entities.Actors.Inventory> Items()
+    {
+        if (ActorsVersion != _itemsVersion || _actors.Count != _itemsCount)
+        {
+            _items.Clear();
+            foreach (var actor in _actors)
+            {
+                if (actor is Entities.Actors.Inventory item)
+                    _items.Add(item);
+            }
+            _itemsVersion = ActorsVersion;
+            _itemsCount = _actors.Count;
+        }
+        return _items;
+    }
+
+    private readonly List<Entities.Actors.Inventory> _items = [];
+    private int _itemsVersion = -1, _itemsCount = -1;
+
     /// <summary>An actor has been put on the level as it plays (SpawnThing, SpawnAtActor...): the scripts' game.onactorspawn</summary>
     internal Action<Entities.Actors.Actor>? ActorAdded { get; set; }
 
@@ -119,13 +151,15 @@ internal class MapManager
     // clears _actors, which drops the previous level's pawns.
     internal Entities.Actors.PlayerPawn? Player => session.PlayerState.Pawn;
 
-    /// <summary>Every player's pawn on this level, in player order</summary>
-    internal IReadOnlyList<Entities.Actors.PlayerPawn> Players
+    /// <summary>Every player's pawn on this level, in player order. Never change the array.</summary>
+    internal Entities.Actors.PlayerPawn[] Players
     {
         get
         {
             // Asked many times a tic: the same array while the pawns are the same, a new one
-            // (never the old one changed, which someone may be going through) when they aren't
+            // (never the old one changed, which someone may be going through) when they aren't.
+            // An array, not IReadOnlyList: a foreach over the interface made an enumerator each
+            // time, thousands a tic with thousands of enemies awake (the Swarm Demo).
             var players = session.Players;
             int count = 0;
             bool same = true;
@@ -384,6 +418,7 @@ internal class MapManager
         // (death with lives left, replaying a level in a new game, etc.) would otherwise pile
         // the new level's actors on top of the previous load's instead of replacing them.
         _actors.Clear();
+        ActorsVersion++;
         LevelSerial++;
         ForgetPawns();
         PlayerStart = null;
@@ -2113,6 +2148,7 @@ internal class MapManager
         MarkSolidThing(builtActor, tilex, tiley);
 
         _actors.AddLast(builtActor);
+        ActorsVersion++;
         ActorAdded?.Invoke(builtActor);
         return builtActor;
     }
@@ -2209,6 +2245,7 @@ internal class MapManager
             MarkActorTile(morphed);
 
         _actors.AddLast(builtActor);
+        ActorsVersion++;
         ActorAdded?.Invoke(builtActor);
         return builtActor;
     }
@@ -2240,6 +2277,7 @@ internal class MapManager
         builtActor.Translation = TranslationManager.ClassTranslation(builtActor);
 
         _actors.AddLast(builtActor);
+        ActorsVersion++;
         ActorAdded?.Invoke(builtActor);
         return builtActor;
     }
@@ -2369,6 +2407,7 @@ internal class MapManager
     internal void RemoveActor(Entities.Actors.Inventory builtActor)
     {
         _actors.Remove(builtActor);
+        ActorsVersion++;
     }
 
     internal LinkedList<Entities.Actors.Actor> GetActors()
@@ -2546,7 +2585,10 @@ internal class MapManager
             // removing a node clears its own Next.
             var next = node.Next;
             if (node.Value.IsRemoved)
+            {
                 _actors.Remove(node);
+                ActorsVersion++;
+            }
             node = next;
         }
     }
@@ -3017,6 +3059,7 @@ internal class MapManager
         ZonesVersion++;
 
         _actors.Clear();
+        ActorsVersion++;
         LevelSerial++;
         ForgetPawns();
 
@@ -3033,6 +3076,7 @@ internal class MapManager
 
             saved.ApplyTo(actor);
             _actors.AddLast(actor);
+            ActorsVersion++;
             restored.Add(actor);
         }
 

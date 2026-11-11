@@ -55,14 +55,29 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
     /// <summary>Whether a monster in its standing or patrolling think lets the disguised player be (no sighting this tic)</summary>
     internal bool Overlooks(Entities.Actors.Monster monster)
     {
-        // Anyone it could see who isn't in disguise, it sees as ever
-        var pawns = map.Players.Where(p => p.State.Health > 0).ToList();
-        if (pawns.Count == 0 || !pawns.All(p => Disguised(p.State)))
+        // Anyone it could see who isn't in disguise, it sees as ever. The nearest living one
+        // (the first, at the same distance) is who it's wondering about. A loop, with nothing
+        // made: every standing or patrolling enemy asks every tic.
+        Entities.Actors.PlayerPawn? pawn = null;
+        int nearest = int.MaxValue;
+        foreach (var p in map.Players)
+        {
+            if (p.State.Health <= 0)
+                continue;
+            if (!Disguised(p.State))
+                return false;
+            int distance = Math.Max(Math.Abs(p.X - monster.X), Math.Abs(p.Y - monster.Y));
+            if (distance < nearest)
+            {
+                nearest = distance;
+                pawn = p;
+            }
+        }
+        if (pawn == null)
             return false;
 
         var settings = hooks.Settings();
         int range = Math.Max(settings.Range, 1) * Tile;
-        var pawn = pawns.MinBy(p => Math.Max(Math.Abs(p.X - monster.X), Math.Abs(p.Y - monster.Y)))!;
         if (Math.Abs(pawn.X - monster.X) > range || Math.Abs(pawn.Y - monster.Y) > range)
             return true;            // too far off to care
 

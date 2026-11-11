@@ -34,13 +34,14 @@ internal static class GameConstants
     internal const int BitDoor = (1 << (WallShift + 1));
     internal const int BitAllTiles = (1 << (WallShift + 2));
 
-    internal const int MaxActors = 150;
-    internal const int MaxStats = 400;
+    // No cap on actors or statics (Wolf3D's MAXACTORS 150 and MAXSTATS 400): the level's actors
+    // are a list. The Swarm Demo example mod puts 20,000 enemies on a level.
     // A door tile in TileMap is BitDoor | its number: 256 doors, for levels up to 256x256 (Wolf3D
     // allowed 64; Midnight Assault's Wolf4SDL raised it to 128). Door numbers stay below BitWall,
     // so a door tile never looks like a door-side (BitWall) one.
     internal const int MaxDoors = Constants.MapConstants.MaxDoors;
-    internal const int MaxVisible = 250;
+    // The most sprites drawn in a frame: the nearest, when more are in view (SpriteDrawing.DrawScaleds)
+    internal const int MaxVisible = 1024;
 
     internal const int NumberChars = 9;
 

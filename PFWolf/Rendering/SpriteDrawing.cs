@@ -240,12 +240,7 @@ internal sealed class SpriteDrawing(
 
     internal void DrawScaleds()
     {
-        int i, least, numvisable, height;
-        int statptr;
-        int farthest = -1;
-        int visptr, visstep;
-
-        visptr = 0;
+        int visptr = 0;
 
         //
         // place static objects
@@ -276,7 +271,10 @@ internal sealed class SpriteDrawing(
                 continue;                                               // the one looked through
 
             // The slot's entry from an earlier frame, filled in afresh: not one made for each
-            // thing each frame. It's only kept (visptr moves on) if the thing's drawn.
+            // thing each frame. It's only kept (visptr moves on) if the thing's drawn. Every
+            // thing in view gets one (the list grows); only the nearest MaxVisible are drawn.
+            if (visptr == VisList.Length)
+                Array.Resize(ref VisList, VisList.Length * 2);
             VisibleObject visptr_val = VisList[visptr] ??= new VisibleObject();
             visptr_val.Reset();
             visptr_val.Translation = translation;
@@ -341,15 +339,11 @@ internal sealed class SpriteDrawing(
                 visptr_val.Cloaked = actor.Cloaked && !actor.CloakHit && actor.Hitpoints > 0;
                 actor.CloakHit = false;
 
-                if (visptr < GameConstants.MaxVisible - 1)
-                {
-                    visptr_val.TileX = atx;
-                    visptr_val.TileY = aty;
-                    visptr_val.WorldX = actor.X;
-                    visptr_val.WorldY = actor.Y;
-                    VisList[visptr] = visptr_val;
-                    visptr++;
-                }
+                visptr_val.TileX = atx;
+                visptr_val.TileY = aty;
+                visptr_val.WorldX = actor.X;
+                visptr_val.WorldY = actor.Y;
+                visptr++;
                 continue;
             }
 
@@ -359,13 +353,12 @@ internal sealed class SpriteDrawing(
             // so it's placed by its own geometry rather than as a billboard in its tile.
             if (WallSprites.IsWallSprite(actor))
             {
-                if (wallSprites.WallSpriteSeen(actor) && wallSprites.TransformWallSprite(actor, visptr_val) && visptr < GameConstants.MaxVisible - 1)
+                if (wallSprites.WallSpriteSeen(actor) && wallSprites.TransformWallSprite(actor, visptr_val))
                 {
                     PlaceOnStory(visptr_val, actor);
                     visptr_val.TileX = actor.TileX;
                     visptr_val.TileY = actor.TileY;
                     (visptr_val.WorldX, visptr_val.WorldY) = Lighting.TileCenter(actor.TileX, actor.TileY);
-                    VisList[visptr] = visptr_val;
                     visptr++;
                 }
                 continue;
@@ -387,21 +380,11 @@ internal sealed class SpriteDrawing(
             actor.RuntimeFlags |= ObjFlags.Visible;
             PlaceOnStory(visptr_val, actor);
 
-            if (visptr < (GameConstants.MaxVisible - 1))    // don't let it overflow
-            {
-                visptr_val.TileX = (byte)actor.Position.X;
-                visptr_val.TileY = (byte)actor.Position.Y;
-                (visptr_val.WorldX, visptr_val.WorldY) = Lighting.TileCenter(visptr_val.TileX, visptr_val.TileY);
-                //visptr_val.flags = actor.Flags;
-                VisList[visptr] = visptr_val;
-                visptr++;
-            }
+            visptr_val.TileX = (byte)actor.Position.X;
+            visptr_val.TileY = (byte)actor.Position.Y;
+            (visptr_val.WorldX, visptr_val.WorldY) = Lighting.TileCenter(visptr_val.TileX, visptr_val.TileY);
+            visptr++;
         }
-
-        //
-        // draw from back to front
-        //
-        numvisable = (int)(visptr);
 
         // Rain, snow and particles go in among the sprites by distance (PointDrawing.cs)
         points.Clear();
@@ -409,37 +392,42 @@ internal sealed class SpriteDrawing(
         particles.Project();
         points.Sort();
 
-        for (i = 0; i < numvisable; i++)
+        //
+        // draw from back to front: smallest on screen (farthest) first, and at the same size in
+        // the order they were placed, as the original's selection sort drew them. One as near as
+        // 32000 high or more was never picked by it, so it's left out here too. With more in view
+        // than MaxVisible, only the nearest are drawn.
+        //
+        if (SortKeys.Length < VisList.Length)
+            SortKeys = new long[VisList.Length];
+        int count = 0;
+        for (int i = 0; i < visptr; i++)
         {
-            least = 32000;
-            for (visstep = 0; visstep < visptr; visstep++)
-            {
-                VisibleObject visstep_val = VisList[visstep];
-                height = visstep_val.ViewHeight;
-                if (height < least)
-                {
-                    least = height;
-                    farthest = visstep;
-                }
-            }
-            //
-            // draw farthest
-            //
-            if (farthest != -1)
-            {
-                VisibleObject farthest_obj = VisList[farthest];
-                points.DrawBeyond(farthest_obj.ViewHeight);
-                if (farthest_obj.WallSprite != null)
-                    wallSprites.ScaleWallSprite(farthest_obj);
-                else
-                    scaler.ScaleShape(farthest_obj);
+            var vis = VisList[i];
+            if (vis.ViewHeight >= 32000)
+                continue;
+            // keep the slots' objects together: a left-out one swaps to the back, to be used again
+            (VisList[count], VisList[i]) = (vis, VisList[count]);
+            SortKeys[count] = ((long)vis.ViewHeight << 32) | (uint)i;
+            count++;
+        }
+        Array.Sort(SortKeys, VisList, 0, count);
 
-                farthest_obj.ViewHeight = 32000;
-            }
+        for (int i = Math.Max(0, count - GameConstants.MaxVisible); i < count; i++)
+        {
+            var vis = VisList[i];
+            points.DrawBeyond(vis.ViewHeight);
+            if (vis.WallSprite != null)
+                wallSprites.ScaleWallSprite(vis);
+            else
+                scaler.ScaleShape(vis);
         }
 
         points.DrawBeyond(int.MaxValue);    // and what's nearer than every sprite
     }
+
+    // DrawScaleds' sort keys: a slot's height on screen, then its place in the list
+    long[] SortKeys = [];
 
     /// <summary>
     /// A thing's height on screen: its Z, and on another story than the player's that story's

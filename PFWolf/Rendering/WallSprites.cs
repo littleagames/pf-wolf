@@ -183,6 +183,29 @@ internal sealed class WallSpriteBlocking(MapManager map)
     // top of them) doesn't block, so they can always step off it
     internal int WallSpriteFromX, WallSpriteFromY;
 
+    // The level's wall sprites, in the actor list's order, found again only when that list has
+    // changed: sight checks and moves ask many times a tic, and walking every actor each time
+    // made a level with thousands of them crawl (the Swarm Demo)
+    private readonly List<Entities.Actors.Actor> wallSprites = [];
+    private int wallSpritesVersion = -1, wallSpritesCount = -1;
+
+    private List<Entities.Actors.Actor> WallSpriteActors()
+    {
+        var actors = map.GetActors();
+        if (map.ActorsVersion != wallSpritesVersion || actors.Count != wallSpritesCount)
+        {
+            wallSprites.Clear();
+            foreach (var actor in actors)
+            {
+                if (WallSprites.IsWallSprite(actor))
+                    wallSprites.Add(actor);
+            }
+            wallSpritesVersion = map.ActorsVersion;
+            wallSpritesCount = actors.Count;
+        }
+        return wallSprites;
+    }
+
     /// <summary>
     /// The first panel standing in tiles xl..xh, yl..yh that a box of half-width
     /// <paramref name="size"/> centred on (x, y) crosses. For the player, a panel the box
@@ -191,11 +214,11 @@ internal sealed class WallSpriteBlocking(MapManager map)
     /// </summary>
     internal WallSpriteSpan? WallSpriteHitByBox(int xl, int yl, int xh, int yh, long x, long y, long size, bool player)
     {
-        foreach (var actor in map.GetActors())
+        foreach (var actor in WallSpriteActors())
         {
             if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
                 continue;
-            if (!WallSprites.IsWallSprite(actor) || WallSprites.GetWallSpriteSpan(actor) is not { } span)
+            if (WallSprites.GetWallSpriteSpan(actor) is not { } span)
                 continue;
             if (WallSprites.IsPassable(actor) || WallSprites.IsBroken(actor))
                 continue;
@@ -216,11 +239,11 @@ internal sealed class WallSpriteBlocking(MapManager map)
         long xl = Math.Min(x1, x2) >> MapConstants.TileShift, xh = Math.Max(x1, x2) >> MapConstants.TileShift;
         long yl = Math.Min(y1, y2) >> MapConstants.TileShift, yh = Math.Max(y1, y2) >> MapConstants.TileShift;
 
-        foreach (var actor in map.GetActors())
+        foreach (var actor in WallSpriteActors())
         {
             if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
                 continue;
-            if (!WallSprites.IsWallSprite(actor) || actor.HasFlag(WallSprites.WallSpriteShootThroughFlag)
+            if (actor.HasFlag(WallSprites.WallSpriteShootThroughFlag)
                 || WallSprites.IsBroken(actor))
                 continue;
             if (WallSprites.GetWallSpriteSpan(actor) is { } span && WallSprites.LineHitsWallSprite(span, x1, y1, x2, y2))
