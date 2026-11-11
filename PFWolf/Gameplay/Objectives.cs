@@ -10,13 +10,15 @@ namespace PFWolf.Gameplay;
 /// <param name="Switches">Every switch on the level (a wall's or a patch's), for the objectives they count toward</param>
 /// <param name="Completed">More of an objective's done: its name, done and total (game.onobjective)</param>
 /// <param name="WallObjectives">The objectives of the level's destructible walls, one for each wall (Gameplay/DestructibleWalls.cs)</param>
+/// <param name="Announce">Shows a message to every player (the level's objectives and how they're going, which everyone shares); else ShowMessage</param>
 internal sealed record ObjectiveHooks(
     Func<IReadOnlyDictionary<string, ObjectiveInfo>> Settings,
     Func<string, string> Localize,
     Action<string> ShowMessage,
     Func<IEnumerable<MapSwitchTranslation>> Switches,
     Action<string, int, int>? Completed = null,
-    Func<IEnumerable<string>>? WallObjectives = null);
+    Func<IEnumerable<string>>? WallObjectives = null,
+    Action<string>? Announce = null);
 
 /*
 =============================================================================
@@ -71,8 +73,11 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
             return;
         foreach (var (name, count) in map.ObjectiveCounts)
             if (Info(name) is { Start: { Length: > 0 } start } info && count.Total >= Math.Max(info.StartFrom, 1))
-                hooks.ShowMessage(Format(start, count.Total));
+                Announce(Format(start, count.Total));
     }
+
+    // Everyone shares the level's objectives, so hears how they're going
+    void Announce(string message) => (hooks.Announce ?? hooks.ShowMessage)(message);
 
     /// <summary>A_AddObjective("name"[, n]): n more (1) to do</summary>
     internal void Add(string name, int amount)
@@ -101,9 +106,9 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
 
         var info = Info(name);
         if (info?.Progress is { Length: > 0 } progress)
-            hooks.ShowMessage(Format(progress, count.Done, count.Total));
+            Announce(Format(progress, count.Done, count.Total));
         if (count.Left == 0 && info?.Done is { Length: > 0 } done)
-            hooks.ShowMessage(Format(done, count.Done, count.Total));
+            Announce(Format(done, count.Done, count.Total));
         hooks.Completed?.Invoke(name, count.Done, count.Total);
     }
 

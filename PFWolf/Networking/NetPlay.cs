@@ -186,7 +186,7 @@ internal sealed class NetPlay(
         while (session.Notices.TryDequeue(out var line))
         {
             Console.WriteLine($"Network: {line}");
-            hudMessages.Show(HudMessageKind.Other, line);
+            hudMessages.ShowToAll(HudMessageKind.Other, line);
         }
     }
 

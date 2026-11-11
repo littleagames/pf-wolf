@@ -65,7 +65,7 @@ internal abstract class MatchObjective(MapManager map, GameSession session, Deat
     /// <summary>Tells everyone (over the view, and the console) what's happened, with a sound</summary>
     protected void Announce(string text, string? sound = null)
     {
-        Hud.Show(HudMessageKind.Other, text);
+        Hud.ShowToAll(HudMessageKind.Other, text);
         if (sound != null)
             Hooks.PlaySound(sound);
     }

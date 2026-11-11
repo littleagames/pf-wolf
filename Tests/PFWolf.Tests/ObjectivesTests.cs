@@ -86,6 +86,25 @@ public class ObjectivesTests
     }
 
     [Test]
+    public void How_Its_Going_Is_Told_To_Everyone_But_A_Refused_Exit_Only_To_Whoever_Tried()
+    {
+        // Arrange: messages to everyone kept apart from the acting player's
+        var everyone = new List<string>();
+        _objectives = new Objectives(_map, new ObjectiveHooks(() => _settings, text => text, _messages.Add, () => _switches,
+            Announce: everyone.Add));
+        _switches.AddRange([Panel(), Panel()]);
+        _objectives.CountLevel(announce: true);
+
+        // Act
+        _objectives.Complete("sabotage");
+        _objectives.ExitAllowed();
+
+        // Assert
+        Assert.That(everyone, Is.EqualTo(new[] { "There are 2 to sabotage.", "Sabotaged: 1 of 2" }));
+        Assert.That(_messages, Is.EqualTo(new[] { "1 left to sabotage." }));
+    }
+
+    [Test]
     public void One_Target_Isnt_Announced_Below_Its_Start_From()
     {
         Target(100);

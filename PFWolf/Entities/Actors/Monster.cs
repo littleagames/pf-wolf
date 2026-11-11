@@ -1665,12 +1665,10 @@ internal partial record Monster : Actor
         SetState(DeathStateFor(attacker));
         OnKilled(attacker);
 
-        // One of the player's own side down: they hear of it (as an obituary)
-        if (LocalPlayer.Pawn is { } local && IsAllyOf(local))
-        {
-            HudMessageManager.Show(HudMessageKind.Obituary, killedBy == null ? "$OB_ALLYDIED" : "$OB_ALLYKILLED", null,
-                new Dictionary<char, string> { ['o'] = ActorTag(this), ['k'] = killedBy == null ? "" : ActorTag(killedBy) });
-        }
+        // One of a player's own side down: they hear of it (as an obituary), whoever killed it
+        HudMessageManager.ShowToPlayers(p => p.Pawn is { } pawn && IsAllyOf(pawn), HudMessageKind.Obituary,
+            killedBy == null ? "$OB_ALLYDIED" : "$OB_ALLYKILLED", null,
+            new Dictionary<char, string> { ['o'] = ActorTag(this), ['k'] = killedBy == null ? "" : ActorTag(killedBy) });
 
         if (LeavesDrops && DeathDrop() is { } drop)
             SpawnItemAt(drop, tilex, tiley);

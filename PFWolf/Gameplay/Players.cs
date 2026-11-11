@@ -350,7 +350,7 @@ internal sealed class Players(
             }
         }
         hooks.ConnectAreas();     // SpawnPlayer started the areas afresh; it's mid-level
-        hudMessages.Show(HudMessageKind.Other, $"{join.Name} joined the game");
+        hudMessages.ShowToAll(HudMessageKind.Other, $"{join.Name} joined the game");
         using (session.ActAs(p))
             hooks.Spawned?.Invoke(pawn, "join");
     }

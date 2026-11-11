@@ -528,7 +528,7 @@ internal sealed class HubActions(
         if (hubs.ClusterFloorMap(hubs.CurrentFloorNumber() + 1) is not { } next || hubs.FloorOpen(next))
             return false;
         hubs.UnlockedMaps.Add(next);
-        hudMessages.Show(HudMessageKind.Other, string.IsNullOrEmpty(message) ? "$PS_FLOORUNLOCKED" : message);
+        hudMessages.ShowToAll(HudMessageKind.Other, string.IsNullOrEmpty(message) ? "$PS_FLOORUNLOCKED" : message);
         audio.Play("bs/roll_score");
         return true;
     }

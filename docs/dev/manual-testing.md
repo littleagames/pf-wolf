@@ -899,6 +899,11 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] Play as enemies: lobby class pick, dog bite **(never tried: damage)**, enemy class faces on
       the status bar; **(never tried)** class menu in single player with the mod.
 - [ ] Player colors in a real netgame and after a mid-game join.
+- [ ] Messages on, two windows: only the player who picks up an item, bumps a locked door, dies
+      (obituary) or makes a kill chain sees its message; objective progress, "joined the game",
+      CTF/Domination announcements and network notices show in both. Tried 2026-11-11 on
+      loopback with a Lua `game.onuse` message (only the presser saw it, both ways) and "left the
+      game"; **(never tried)** the stock pickup/door/obituary/objective messages themselves.
 
 ## 1.16 Demos
 

@@ -50,6 +50,12 @@ internal sealed class HudMessage(string text, HudMessageStyle style, string? key
 /// each in a style from the game pack's hud-messages.yaml. Messages whose styles share a
 /// position stack up there, oldest at the top, and each goes when its time runs out. They're
 /// drawn by GameHost.DrawHudMessages and aren't kept in saved games.
+///
+/// Each message is for someone. With others playing, every machine runs the same game, so
+/// each one comes to every message, and shows only those for its own player (session.LocalPlayer):
+/// Show and ShowKeyed's are the acting player's (the one whose think, pickup or use it came from;
+/// outside those, the local player, so a message from the world itself reaches everyone),
+/// ShowTo's one player's, ShowToPlayers' those it picks (a team), and ShowToAll's everyone's.
 /// </summary>
 internal class HudMessageManager
 {
@@ -59,15 +65,19 @@ internal class HudMessageManager
     private static readonly HudMessageStyle BuiltInDefault =
         new(DefaultStyleName, HudAnchor.TopLeft, 0, 0, 2, "SmallFont", "White", 210, 4);
 
-    public HudMessageManager(Lazy<AssetManager> assetManager, Lazy<ConsoleManager> consoleManager, GameSettings? settings = null)
+    /// <param name="session">Who's playing, for whom each message is; without one (a test) every message is shown</param>
+    public HudMessageManager(Lazy<AssetManager> assetManager, Lazy<ConsoleManager> consoleManager, GameSettings? settings = null,
+        Gameplay.GameSession? session = null)
     {
         this.assetManager = assetManager;
         this.consoleManager = consoleManager;
+        this.session = session;
         options = settings?.Options ?? new GameOptions();
     }
 
     private readonly Lazy<AssetManager> assetManager;
     private readonly Lazy<ConsoleManager> consoleManager;
+    private readonly Gameplay.GameSession? session;
     private readonly GameOptions options;
     private readonly List<HudMessage> messages = [];
     private readonly Dictionary<string, HudMessageStyle> styles = new(StringComparer.OrdinalIgnoreCase);
@@ -111,17 +121,47 @@ internal class HudMessageManager
     internal bool StyleExists(string name) =>
         name.Equals(DefaultStyleName, StringComparison.OrdinalIgnoreCase) || Definitions?.Styles.ContainsKey(name) == true;
 
+    /// <summary>Whether the acting player is this machine's, so a message for them is shown here</summary>
+    private bool ActingIsLocal => session?.ActingIsLocal ?? true;
+
+    /// <summary>Whether a message for those <paramref name="isFor"/> picks is shown here: for this machine's player</summary>
+    private bool ForLocal(Predicate<Entities.PlayerState> isFor) => session == null || isFor(session.LocalPlayer);
+
     /// <summary>
-    /// Shows <paramref name="text"/> (a $NAME language key or the text itself) in the named
-    /// style, or the one for its <paramref name="kind"/>. Nothing is shown while messages are
-    /// off, except the `msg` command's (<see cref="HudMessageKind.Other"/>). ZDoom-style
-    /// placeholders in it, such as %k, are filled in from <paramref name="placeholders"/> (%% is
-    /// a percent sign). The same text already up at that position is brought back to the bottom
-    /// of its stack with its time restarted instead of shown twice. It's printed to the console
-    /// too, which keeps a history of them.
+    /// Shows <paramref name="text"/> (a $NAME language key or the text itself) to the acting
+    /// player, in the named style, or the one for its <paramref name="kind"/>. Nothing is shown
+    /// while messages are off, except the `msg` command's (<see cref="HudMessageKind.Other"/>).
+    /// ZDoom-style placeholders in it, such as %k, are filled in from <paramref name="placeholders"/>
+    /// (%% is a percent sign). The same text already up at that position is brought back to the
+    /// bottom of its stack with its time restarted instead of shown twice. It's printed to the
+    /// console too, which keeps a history of them.
     /// </summary>
     internal void Show(HudMessageKind kind, string? text, string? styleName = null,
         IReadOnlyDictionary<char, string>? placeholders = null)
+    {
+        if (ActingIsLocal)
+            Put(kind, text, styleName, placeholders);
+    }
+
+    /// <summary>Shows a message (as Show does) to <paramref name="player"/>, whoever's acting</summary>
+    internal void ShowTo(Entities.PlayerState player, HudMessageKind kind, string? text, string? styleName = null,
+        IReadOnlyDictionary<char, string>? placeholders = null) =>
+        ShowToPlayers(p => ReferenceEquals(p, player), kind, text, styleName, placeholders);
+
+    /// <summary>Shows a message (as Show does) to each player <paramref name="isFor"/> picks (a team), whoever's acting</summary>
+    internal void ShowToPlayers(Predicate<Entities.PlayerState> isFor, HudMessageKind kind, string? text,
+        string? styleName = null, IReadOnlyDictionary<char, string>? placeholders = null)
+    {
+        if (ForLocal(isFor))
+            Put(kind, text, styleName, placeholders);
+    }
+
+    /// <summary>Shows a message (as Show does) to every player, whoever's acting</summary>
+    internal void ShowToAll(HudMessageKind kind, string? text, string? styleName = null,
+        IReadOnlyDictionary<char, string>? placeholders = null) =>
+        Put(kind, text, styleName, placeholders);
+
+    private void Put(HudMessageKind kind, string? text, string? styleName, IReadOnlyDictionary<char, string>? placeholders)
     {
         if (kind != HudMessageKind.Other && !Enabled)
             return;
@@ -147,14 +187,20 @@ internal class HudMessageManager
     }
 
     /// <summary>
-    /// Shows <paramref name="text"/> as the message with this <paramref name="key"/>: a new one
-    /// joins its stack as Show's do, and one already up has its text and time renewed where it
-    /// is (a countdown: power-ups' timers, a script's clock). It's shown with messages off too,
-    /// and not printed to the console. Null or empty text takes it down.
+    /// Shows <paramref name="text"/> to the acting player as the message with this
+    /// <paramref name="key"/>: a new one joins its stack as Show's do, and one already up has its
+    /// text and time renewed where it is (a countdown: power-ups' timers, a script's clock). It's
+    /// shown with messages off too, and not printed to the console. Null or empty text takes it down.
     /// </summary>
     internal void ShowKeyed(string key, string? text, string? styleName = null)
     {
-        text = string.IsNullOrEmpty(text) ? null : Localize(text).Trim();
+        if (ActingIsLocal)
+            PutKeyed(key, text, styleName);
+    }
+
+    private void PutKeyed(string key, string? text, string? styleName)
+    {
+        text =string.IsNullOrEmpty(text) ? null : Localize(text).Trim();
         var current = messages.FirstOrDefault(m => m.Key == key);
         if (string.IsNullOrEmpty(text))
         {
