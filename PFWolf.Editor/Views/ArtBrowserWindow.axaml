@@ -170,6 +170,7 @@
           <ListBox.ContextMenu>
             <ContextMenu>
               <MenuItem Header="Use in palette" Command="{Binding UseInPaletteCommand}" />
+              <MenuItem Header="Show in Actors" Command="{Binding ShowInActorsCommand}" />
             </ContextMenu>
           </ListBox.ContextMenu>
           <ListBox.ItemTemplate>
