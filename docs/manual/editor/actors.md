@@ -55,8 +55,12 @@ have frames other games draw.
 
 ## The tabs
 
-- **Properties**: its flags and properties, with the class each comes from when it's a parent's
-  (the mouse over one says what it does);
+- **Fields**: its own parent, radius, flags and properties, to change (the mouse over one says
+  what it does, and a sound or class field has a list to pick from). Only the properties it sets
+  are listed; *Add property* has the others its kind of actor reads (a Blake Stone enemy's
+  aren't offered for a Wolf3D guard), and puts the one picked in the list, empty, to fill in.
+  Under them, *From its parents*: every flag it has, and the properties its parents give it, each
+  with the class it comes from;
 - **Used by**: what places or names it: the mapdefs things that are it, the levels with it on
   them and how many, the classes built on it, other classes' properties and actions that name it
   (a drop, a projectile), game-info, factions, scripts that spawn it, and what the engine itself
@@ -64,6 +68,31 @@ have frames other games draw.
   window at the entry, the script browser at the line, or the level with the first one picked;
 - **Defined in**: the actordefs files that have it, and its lines in the last of them.
 
-*Show sprite* shows the frame's sprite in the [textures and sprites](./art) window, *Open in
-Definitions* opens the class in the [Definitions window](./definitions)'s Actors tab, where its
-fields can be changed, and *Copy name* copies its name.
+*More* has *Show sprite*, the frame's sprite in the [textures and sprites](./art) window, *Open in
+the Definitions window*, the class in the [Definitions window](./definitions)'s Actors tab (its
+states as fields, its YAML), and *Copy name*.
+
+## Changing a class
+
+Every change to a field is played and checked as it's made: the preview, the problems, the
+numbers and the timeline are the class as changed. **Save** (Ctrl+S) writes just what's changed
+into a mod's `actordefs`: the mod that has its own of the class already, else one you pick
+(pfwolf.pk3 is read-only). A mod's class is laid over the game's key by key, so the rest of the
+class stays the game's, and the game's later fixes to it still come through. The game is loaded
+again with it. **Revert** goes back to the class as the files have it; **Undo** and **Redo**
+(Ctrl+Z, Ctrl+Y, outside a field) step through the changes. Changes are kept while you look at
+other classes, and loading the game again or closing the editor asks whether to save them first.
+*Take out the mod's change…* (under *More*, and in the list's right-click menu) takes the last
+mod's say in the class out of its actordefs.
+
+**New actor** (top right) makes a class that's only in the window until it's saved:
+
+- **Built on this one…**: `parent:` the class picked. It has everything that one has, and
+  whatever that one's changed to later, and changes only what's set on it;
+- **A copy of this one…**: written as the class picked is written (its own fields, the same
+  parent), so changing the picked one later leaves it be.
+
+It's named as you ask, and given mapdefs things to place it with on the map, unless you leave the
+number empty: one, or for an enemy eight in a row, facing east, north, west and south, standing
+and then patrolling. They're saved with it, into the mod's mapdefs, and the map's palette has
+them once the game is loaded again.

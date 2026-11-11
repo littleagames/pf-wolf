@@ -642,7 +642,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (_actorBrowser == null)
         {
-            _actorBrowser = new ActorBrowserViewModel();
+            _actorBrowser = new ActorBrowserViewModel
+            {
+                PickMod = PickModToSaveIn,
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+                AddMod = folder => AddModFolder(folder),
+            };
+            // A class saved into a mod: the game loads again with the mod, so the window shows it as the game has it
+            _actorBrowser.Saved += async (_, _) => await ReloadAfterDelete(() => _actorBrowser.Status, status => _actorBrowser.Status = status);
             // A frame's sprite: in the art window
             _actorBrowser.SpriteRequested += (_, sprite) =>
             {
@@ -1850,13 +1858,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var palettes = _paletteBrowser?.DirtyDocuments.ToList() ?? [];
         var definitions = _definitions?.UnsavedNames ?? [];
         var fonts = _fontBrowser?.UnsavedNames ?? [];
-        if (dirty.Count + palettes.Count + definitions.Count + fonts.Count == 0 || Dialogs == null)
+        var actors = _actorBrowser?.UnsavedNames ?? [];
+        if (dirty.Count + palettes.Count + definitions.Count + fonts.Count + actors.Count == 0 || Dialogs == null)
             return true;
 
         var names = string.Join(", ", dirty.Select(document => document.AssetName.ToUpperInvariant())
             .Concat(palettes.Select(palette => $"palette {palette.Name}"))
             .Concat(definitions)
-            .Concat(fonts));
+            .Concat(fonts)
+            .Concat(actors));
         switch (await Dialogs.AskUnsaved($"{what} {names}. Save first?"))
         {
             case UnsavedChoice.Save:
@@ -1871,6 +1881,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 {
                     Status = "Not every font could be saved: " + _fontBrowser.Status;
                     ShowFonts();
+                    return false;
+                }
+                if (actors.Count > 0 && !await _actorBrowser!.SaveAllAsync())
+                {
+                    Status = "Not every actor could be saved: " + _actorBrowser.Status;
+                    ShowActors();
                     return false;
                 }
                 foreach (var document in dirty)

@@ -13,9 +13,16 @@ using PFWolf.Entities.Actors;
 namespace PFWolf.Editor.ViewModels;
 
 /// <summary>A class in the actor window's list</summary>
-public sealed class ActorItem(ActorEntry entry)
+public sealed partial class ActorItem(ActorEntry entry) : ObservableObject
 {
     public ActorEntry Entry { get; } = entry;
+
+    /// <summary>A new class made here, not saved in a mod yet</summary>
+    public bool IsDraft { get; init; }
+
+    /// <summary>Changed here, not saved</summary>
+    [ObservableProperty] private bool _hasEdits;
+
     public string Name => Entry.Name;
     public string KindText => ActorBrowserViewModel.KindLabel(Entry.Kind);
     public bool HasProblems => Entry.Problems.Count > 0;
@@ -188,7 +195,16 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
             bitmap?.Dispose();
         _bitmaps.Clear();
         var picked = SelectedItem?.Name;
-        _all = content == null ? [] : [.. ActorCatalog.Build(content).Select(entry => new ActorItem(entry))];
+        _all = [];
+        if (content != null)
+        {
+            LoadFields(content);
+            _all = [.. ActorCatalog.Build(content).Select(entry => new ActorItem(entry) { HasEdits = HasUnsaved(entry.Name) })];
+            // New classes not saved yet stay listed
+            foreach (var name in _drafts.Keys)
+                _all.Add(DraftItem(content, name));
+            _all.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        }
         Title = content == null ? "Actors" : $"Actors - {content.Title}";
         Refilter();
         SelectedItem = Items.FirstOrDefault(item => item.Name.Equals(picked, StringComparison.Ordinal))
@@ -240,8 +256,20 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
                                                      || frame.Think?.Contains(word, StringComparison.OrdinalIgnoreCase) == true
                                                      || frame.Action?.Contains(word, StringComparison.OrdinalIgnoreCase) == true);
 
+    // The class shown: as edited here (its fields changed, not saved), else as the game has it
+    private ActorEntry? _edited;
+    private ActorEntry? Shown => _edited ?? SelectedItem?.Entry;
+
     partial void OnSelectedItemChanged(ActorItem? value)
     {
+        OpenFields(value);
+        ShowEntry(keepState: false);
+    }
+
+    // Everything about the class shown, filled in again (picked, or its fields changed)
+    private void ShowEntry(bool keepState)
+    {
+        var state = SelectedState;
         States.Clear();
         Properties.Clear();
         Problems.Clear();
@@ -249,14 +277,13 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
         Uses.Clear();
         DefinedIn.Clear();
         (Details, Lineage, KeyNumbers, FlagsText, DefinitionYaml) = ("", "", "", "", "");
-        if (value == null || _content == null)
+        if (Shown is not { } entry || _content == null)
         {
             SelectedState = null;
             return;
         }
 
-        var entry = value.Entry;
-        var actors = _content.Actors;
+        var actors = _edited != null ? EditedActors(entry) : _content.Actors;
         Details = Describe(entry);
         Lineage = string.Join(" › ", entry.Ancestors.Reverse().Append(entry.Name));
 
@@ -273,11 +300,13 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
 
         if (entry.Merged is { } merged)
         {
+            // The ones from its parents: its own are its fields
             foreach (var (key, value2) in merged.Properties.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase))
             {
                 var from = entry.SourceOfProperty(key, actors) ?? entry.Name;
-                Properties.Add(new ActorPropertyRow(key, ValueText(value2), from == entry.Name ? "" : from, from == entry.Name,
-                    ActorProperties.Find(key)?.Description ?? "The engine doesn't read it (a script may)"));
+                if (from != entry.Name)
+                    Properties.Add(new ActorPropertyRow(key, ValueText(value2), from, false,
+                        ActorProperties.Find(key)?.Description ?? "The engine doesn't read it (a script may)"));
             }
             FlagsText = merged.Flags.Count == 0 ? "none"
                 : string.Join(", ", merged.Flags.Order(StringComparer.OrdinalIgnoreCase)
@@ -285,10 +314,11 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
             KeyNumbers = Numbers(merged);
         }
 
-        foreach (var state in entry.States.Keys)
-            States.Add(state);
+        foreach (var name in entry.States.Keys)
+            States.Add(name);
         SelectedState = null;
-        SelectedState = FirstState(entry);
+        SelectedState = keepState && state != null && entry.States.ContainsKey(state) ? state : FirstState(entry);
+        AddableProperties = PropertiesToAdd(entry);
     }
 
     // Where the preview starts: Spawn, unless it stands still for good and the class has a Chase
@@ -357,7 +387,7 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
         JumpText = "";
         EventText = "";
         _ticsOwed = 0;
-        if (SelectedItem?.Entry.States is not { } states || SelectedState == null || !states.TryGetValue(SelectedState, out var first))
+        if (Shown?.States is not { } states || SelectedState == null || !states.TryGetValue(SelectedState, out var first))
         {
             Timeline.Clear();
             (PreviewImage, PictureText, TicText, RunningText, FrameText) = (null, "", "", "", "");
@@ -482,7 +512,7 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
     private void FillTimeline()
     {
         Timeline.Clear();
-        if (SelectedItem?.Entry.States is not { } states || SelectedState == null || !states.TryGetValue(SelectedState, out var first))
+        if (Shown?.States is not { } states || SelectedState == null || !states.TryGetValue(SelectedState, out var first))
             return;
         int index = 0;
         foreach (var frame in ActorCatalog.FramesOf(first))
@@ -572,8 +602,10 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(HasPicked))]
     private void EditInDefinitions()
     {
-        if (SelectedItem is { } item)
+        if (SelectedItem is { IsDraft: false } item)
             GoTo?.Invoke(this, new ActorUseTarget(Kind: DefinitionKind.Actors, EntryPath: [item.Name]));
+        else if (SelectedItem != null)
+            Status = "It's new: save it first";
     }
 
     /// <summary>The sprite the preview shows, in the art window</summary>

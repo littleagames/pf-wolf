@@ -101,62 +101,89 @@ public static partial class ActorCatalog
         var sprites = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         bool HasSprite(string name) => sprites.TryGetValue(name, out var has) ? has : sprites[name] = content.Find<SpriteAsset>(name) != null;
 
-        var entries = new List<ActorEntry>();
-        foreach (var (name, own) in actors.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase))
-        {
-            var problems = new List<string>();
-            ActorData? merged = null;
-            List<string> ancestors = [];
-            try
-            {
-                ancestors = [.. ActorInheritance.Ancestors(name, own, actors).Select(ancestor => ancestor.Name)];
-                merged = ActorInheritance.Merged(name, own, actors);
-            }
-            catch (Exception e)
-            {
-                problems.Add($"It can't be made: {e.Message}");
-            }
-
-            var states = merged != null
-                ? ActorStateResolver.Resolve(merged.States, (state, _, marker) => problems.Add(ActorStateResolver.IgnoredMessage(name, state, marker)))
-                : [];
-            var engineClass = ActorClasses.EngineClass(name, ancestors);
-            var entry = new ActorEntry
-            {
-                Name = name,
-                Own = own,
-                Merged = merged,
-                Ancestors = ancestors,
-                EngineClass = engineClass,
-                Kind = KindOf(engineClass, merged, states),
-                States = states,
-            };
-            entry.Problems.AddRange(problems);
-            if (merged != null)
-            {
-                entry.Problems.AddRange(Problems(entry, merged, actors, luaActions));
-                entry.MissingSprites.AddRange(MissingSprites(merged, HasSprite));
-            }
-            entries.Add(entry);
-        }
+        var entries = actors.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(pair => Entry(pair.Key, pair.Value, actors, luaActions, HasSprite)).ToList();
 
         var byName = entries.ToDictionary(entry => entry.Name, StringComparer.Ordinal);
         AddDefinitionSites(content, byName);
         AddUses(content, byName);
         if (levels)
             AddLevelUses(content, byName);
-
-        // A frame with no sprite matters when a level places the class; shared classes (and
-        // mapdefs things for another release's levels) have frames only other games draw
-        foreach (var entry in entries.Where(entry => entry.MissingSprites.Count > 0))
-        {
-            var text = $"No sprite for {string.Join(", ", entry.MissingSprites)} (in any view): those frames show nothing";
-            if (entry.Uses.Any(use => use.Target?.Map != null))
-                entry.Problems.Add(text);
-            else
-                entry.Notes.Add(text + ", but no level here places it");
-        }
+        foreach (var entry in entries)
+            JudgeMissingSprites(entry);
         return entries;
+    }
+
+    /// <summary>
+    /// A class built again from <paramref name="own"/> (its fields as edited) in place of what the
+    /// files have, among the game's other classes; what names it and where it's defined are kept
+    /// from <paramref name="before"/> (its entry as the files have it, or none for a new class)
+    /// </summary>
+    public static ActorEntry Rebuild(GameContent content, string name, ActorData own, ActorEntry? before, HashSet<string> scriptActions)
+    {
+        var actors = content.Actors.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        actors[name] = own;
+        var entry = Entry(name, own, actors, scriptActions, sprite => content.Find<SpriteAsset>(sprite) != null);
+        if (before != null)
+        {
+            entry.Uses.AddRange(before.Uses);
+            entry.DefinedIn.AddRange(before.DefinedIn);
+        }
+        JudgeMissingSprites(entry);
+        return entry;
+    }
+
+    // One class merged with its parents and resolved, with what's wrong with it
+    private static ActorEntry Entry(string name, ActorData own, IReadOnlyDictionary<string, ActorData> actors,
+        HashSet<string> luaActions, Func<string, bool> hasSprite)
+    {
+        var problems = new List<string>();
+        ActorData? merged = null;
+        List<string> ancestors = [];
+        try
+        {
+            ancestors = [.. ActorInheritance.Ancestors(name, own, actors).Select(ancestor => ancestor.Name)];
+            merged = ActorInheritance.Merged(name, own, actors);
+        }
+        catch (Exception e)
+        {
+            problems.Add($"It can't be made: {e.Message}");
+        }
+
+        var states = merged != null
+            ? ActorStateResolver.Resolve(merged.States, (state, _, marker) => problems.Add(ActorStateResolver.IgnoredMessage(name, state, marker)))
+            : [];
+        var engineClass = ActorClasses.EngineClass(name, ancestors);
+        var entry = new ActorEntry
+        {
+            Name = name,
+            Own = own,
+            Merged = merged,
+            Ancestors = ancestors,
+            EngineClass = engineClass,
+            Kind = KindOf(engineClass, merged, states),
+            States = states,
+        };
+        entry.Problems.AddRange(problems);
+        if (merged != null)
+        {
+            entry.Problems.AddRange(Problems(entry, merged, actors, luaActions));
+            entry.MissingSprites.AddRange(MissingSprites(merged, hasSprite));
+        }
+        return entry;
+    }
+
+    // A frame with no sprite matters when a level places the class; shared classes (and mapdefs
+    // things for another release's levels) have frames only other games draw
+    private static void JudgeMissingSprites(ActorEntry entry)
+    {
+        if (entry.MissingSprites.Count == 0)
+            return;
+        var text = $"No sprite for {string.Join(", ", entry.MissingSprites)} (in any view): those frames show nothing";
+        if (entry.Uses.Any(use => use.Target?.Map != null))
+            entry.Problems.Add(text);
+        else
+            entry.Notes.Add(text + ", but no level here places it");
     }
 
     // Each frame (sprite and letter) the game can't find in any view
@@ -240,8 +267,8 @@ public static partial class ActorCatalog
         }
     }
 
-    // The actions the game's scripts define (game.defineaction), by name
-    private static HashSet<string> LuaActions(GameContent content)
+    /// <summary>The actions the game's scripts define (game.defineaction), by name</summary>
+    public static HashSet<string> LuaActions(GameContent content)
     {
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var script in ScriptCatalog.Build(content))

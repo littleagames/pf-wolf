@@ -1192,6 +1192,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       Go to on a mapdefs use (the Definitions window at the thing), a Lua use (the script
       browser at the line) and a game-info use; Show sprite (F6 on the frame's sprite); Open in
       Definitions; a state with an A_Jump action (the preview waits, Go on).
+- [ ] Fields: change the Guard's health (● in the list, the numbers line, still playing), Undo /
+      Redo / Revert; Add property (monster.chasespeed comes up empty; a Blake-only one isn't
+      offered); a parent that's no class (the problem, no timeline).
+- [ ] **(never tried)** Save into a mod (the game reloads; the Guard in a level has 50 health and
+      still its states); Take out the mod's change…; New actor → Built on this one… with thing
+      numbers (saved: the map palette has the eight things, one placed plays as the class);
+      A copy of this one…; closing the editor with a changed class asks to save; a pk3 mod.
 
 ---
 

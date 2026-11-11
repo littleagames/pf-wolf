@@ -281,6 +281,31 @@ public sealed partial class FieldNode : ObservableObject
         }
     }
 
+    /// <summary>
+    /// A record's field by its key, shown again if <see cref="HideUnset"/> left it out (in the
+    /// record's own order), to be filled in; null when the record has no such field
+    /// </summary>
+    public FieldNode? ShowField(string key)
+    {
+        EnsureChildren();
+        if (Kind != FieldKind.Group || Schema?.Type != FieldType.Record)
+            return null;
+        if (Children.FirstOrDefault(child => child.Key.Equals(key, StringComparison.OrdinalIgnoreCase)) is { } shown)
+            return shown;
+        if (Schema.Field(key) is not { } field)
+            return null;
+
+        var fields = Schema.Fields.ToList();
+        int order = fields.IndexOf(field);
+        int at = 0;
+        while (at < Children.Count && Children[at].Schema is { } before && fields.IndexOf(before) is >= 0 and var index && index < order)
+            at++;
+        var node = new FieldNode(field, field.Key, null, YamlNodes.Get(_baseValue, [field.Key]), this, _context);
+        Children.Insert(at, node);
+        OnPropertyChanged(nameof(Summary));
+        return node;
+    }
+
     /// <summary>Makes the group's fields (opening one that wasn't set)</summary>
     public void EnsureChildren()
     {

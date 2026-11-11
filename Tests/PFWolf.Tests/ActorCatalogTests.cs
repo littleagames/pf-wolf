@@ -174,7 +174,8 @@ public class ActorCatalogGameTests
         Assert.That(browser.Timeline[0].IsCurrent, Is.True);
         Assert.That(browser.PictureText, Is.EqualTo("GARDB1"));
         Assert.That(browser.TimelineEnd, Is.EqualTo("↺ loops"));
-        Assert.That(browser.Properties.Single(row => row.Key == "health").Value, Is.EqualTo("25"));
+        Assert.That(browser.KeyNumbers, Does.StartWith("health 25"));
+        Assert.That(browser.Properties, Is.Empty, "the guard's own properties are its fields; Monster gives it none");
 
         // Its attack: T_Shoot told as the second frame ends, then on into Chase
         browser.SelectedState = "Attack";

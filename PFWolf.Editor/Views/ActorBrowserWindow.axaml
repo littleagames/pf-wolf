@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PFWolf.Editor.ViewModels"
         xmlns:data="using:PFWolf.Editor.Data"
+        xmlns:v="using:PFWolf.Editor.Views"
         xmlns:sys="using:System"
         x:Class="PFWolf.Editor.Views.ActorBrowserWindow"
         x:DataType="vm:ActorBrowserViewModel"
@@ -31,11 +32,21 @@
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
         <ComboBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" MinWidth="200" />
         <TextBox x:Name="Search" Grid.Column="1" Text="{Binding Filter}" VerticalAlignment="Center"
                  PlaceholderText="Find by name, a parent, a sprite, a think or an action (Guard, Monster, GARD, T_Chase)" />
         <TextBlock Grid.Column="2" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="110" />
+        <DropDownButton Grid.Column="3" Content="New actor" ToolTip.Tip="A new class, not saved until you save it">
+          <DropDownButton.Flyout>
+            <MenuFlyout Placement="BottomEdgeAlignedRight">
+              <MenuItem Header="Built on this one…" Command="{Binding NewChildCommand}"
+                        ToolTip.Tip="parent: the class picked. It has all the picked one has (and what it's changed to later), and changes only what's set on it" />
+              <MenuItem Header="A copy of this one…" Command="{Binding NewCopyCommand}"
+                        ToolTip.Tip="Written as the picked class is (its own fields, the same parent), so changing the picked one later leaves it be" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
       </Grid>
     </Border>
 
@@ -49,6 +60,13 @@
     <ListBox x:Name="List" DockPanel.Dock="Left" Width="280" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8">
       <ListBox.ContextMenu>
         <ContextMenu>
+          <MenuItem Header="Save" Command="{Binding SaveClassCommand}" InputGesture="Ctrl+S" />
+          <MenuItem Header="Revert" Command="{Binding RevertClassCommand}" />
+          <Separator />
+          <MenuItem Header="New actor built on this…" Command="{Binding NewChildCommand}" />
+          <MenuItem Header="Copy as a new actor…" Command="{Binding NewCopyCommand}" />
+          <MenuItem Header="Take out the mod's change…" Command="{Binding TakeOutClassCommand}" />
+          <Separator />
           <MenuItem Header="Open in the Definitions window" Command="{Binding EditInDefinitionsCommand}" />
           <MenuItem Header="Copy name" Command="{Binding CopyNameCommand}" />
         </ContextMenu>
@@ -60,12 +78,14 @@
       </ListBox.Styles>
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="vm:ActorItem">
-          <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="{Binding ToolTip}">
+          <Grid ColumnDefinitions="*,Auto,Auto" ToolTip.Tip="{Binding ToolTip}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <TextBlock Text="⚠" Foreground="#E0A030" IsVisible="{Binding HasProblems}" VerticalAlignment="Center" />
               <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
             </StackPanel>
             <TextBlock Grid.Column="1" Text="{Binding KindText}" Opacity="0.6" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0" />
+            <TextBlock Grid.Column="2" Text="●" Foreground="Orange" IsVisible="{Binding HasEdits}" VerticalAlignment="Center" Margin="6,0,0,0"
+                       ToolTip.Tip="Changed, not saved" />
           </Grid>
         </DataTemplate>
       </ListBox.ItemTemplate>
@@ -74,17 +94,32 @@
     <!-- The class picked: its preview and states stay in view, the rest in tabs under them -->
     <DockPanel Margin="8" IsVisible="{Binding HasSelection}">
       <StackPanel DockPanel.Dock="Top" Spacing="4">
-        <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6">
           <StackPanel>
             <SelectableTextBlock Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
             <TextBlock Text="{Binding Details}" FontSize="12" Opacity="0.75" TextWrapping="Wrap" />
             <TextBlock Text="{Binding Lineage}" FontSize="12" Opacity="0.6" TextTrimming="CharacterEllipsis" ToolTip.Tip="What it's built on, from the root down" />
+            <TextBlock Text="{Binding FieldSource}" FontSize="12" Opacity="0.6" TextTrimming="CharacterEllipsis" />
           </StackPanel>
-          <Button Grid.Column="1" Content="Show sprite" Command="{Binding ShowSpriteCommand}" VerticalAlignment="Top"
-                  ToolTip.Tip="The sprite the preview shows, in the textures and sprites window (F6)" />
-          <Button Grid.Column="2" Content="Open in Definitions" Command="{Binding EditInDefinitionsCommand}" VerticalAlignment="Top"
-                  ToolTip.Tip="Its actordefs fields in the Definitions window (F11), where they can be changed" />
-          <Button Grid.Column="3" Content="Copy name" Command="{Binding CopyNameCommand}" VerticalAlignment="Top" />
+          <TextBlock Grid.Column="1" Text="Changed, not saved" FontSize="12" Opacity="0.7" VerticalAlignment="Top" Margin="0,8,0,0" IsVisible="{Binding IsChanged}" />
+          <Button Grid.Column="2" Content="Save" Command="{Binding SaveClassCommand}" Classes="accent" VerticalAlignment="Top"
+                  ToolTip.Tip="Ctrl+S: into the mod with its own of it, else one you pick; just what's changed (pfwolf.pk3 is read-only)" />
+          <Button Grid.Column="3" Content="Revert" Command="{Binding RevertClassCommand}" VerticalAlignment="Top" ToolTip.Tip="Back to the class as the files have it" />
+          <Button Grid.Column="4" Content="Undo" Command="{Binding UndoClassCommand}" VerticalAlignment="Top" ToolTip.Tip="Ctrl+Z (outside a field)" />
+          <Button Grid.Column="5" Content="Redo" Command="{Binding RedoClassCommand}" VerticalAlignment="Top" ToolTip.Tip="Ctrl+Y (outside a field)" />
+          <DropDownButton Grid.Column="6" Content="More" VerticalAlignment="Top">
+            <DropDownButton.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedRight">
+                <MenuItem Header="Show sprite" Command="{Binding ShowSpriteCommand}"
+                          ToolTip.Tip="The sprite the preview shows, in the textures and sprites window (F6)" />
+                <MenuItem Header="Open in the Definitions window" Command="{Binding EditInDefinitionsCommand}"
+                          ToolTip.Tip="Its actordefs entry in the Definitions window (F11): its states as fields, its YAML" />
+                <MenuItem Header="Take out the mod's change…" Command="{Binding TakeOutClassCommand}"
+                          ToolTip.Tip="Takes the last mod's say in this class out of its actordefs, so it's what the game (and the mods before) make it" />
+                <MenuItem Header="Copy name" Command="{Binding CopyNameCommand}" />
+              </MenuFlyout>
+            </DropDownButton.Flyout>
+          </DropDownButton>
         </Grid>
 
         <!-- The preview: as the game plays it -->
@@ -192,12 +227,27 @@
       </StackPanel>
 
       <TabControl Margin="0,6,0,0">
-        <!-- Its properties and flags, its parents' too -->
-        <TabItem Header="Properties">
+        <!-- Its own fields, to change; what its parents give it under them -->
+        <TabItem Header="Fields">
           <ScrollViewer Margin="0,4,0,0">
-            <StackPanel Spacing="2">
+            <StackPanel Spacing="4">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                <TextBlock Text="Add property" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding AddableProperties}" SelectedItem="{Binding PropertyToAdd}" MaxWidth="420"
+                          HorizontalAlignment="Left" MinWidth="260" PlaceholderText="One its kind reads"
+                          ToolTip.Tip="A property this kind of actor reads that it doesn't set: shown under properties, empty, to fill in">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PropertyChoice">
+                      <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding Description}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </Grid>
+              <TextBlock Text="{Binding FieldError}" Foreground="OrangeRed" TextWrapping="Wrap" IsVisible="{Binding HasFieldError}" />
+              <v:FieldTree Rows="{Binding FieldRows}" />
+              <TextBlock Classes="heading" Text="From its parents" />
               <TextBlock TextWrapping="Wrap" FontSize="12">
-                <Run Text="Flags: " FontWeight="SemiBold" /><Run Text="{Binding FlagsText}" />
+                <Run Text="Flags, all: " FontWeight="SemiBold" /><Run Text="{Binding FlagsText}" />
               </TextBlock>
               <ItemsControl ItemsSource="{Binding Properties}" Margin="0,6,0,0">
                 <ItemsControl.ItemTemplate>

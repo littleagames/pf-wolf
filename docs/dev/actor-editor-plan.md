@@ -113,8 +113,9 @@ classes.
   the preview draws through `ArtCache` like F6 does.
 - **Saving is mods only:** changed keys go into the mod's actordefs file through
   `DefinitionSet` (overlays, `YamlText` splices so comments survive). A class of the game's own
-  is saved with `extend: true` and just what changed; a new class is saved whole, in
-  `actordefs/<pack>/` of the mod picked. mapdefs ids for new classes go in the mod's mapdefs.
+  is saved as just what changed (a mod's `actordefs/x.yaml` loads into the running pack's
+  classes and merges into them key by key, so no `extend: true` is needed; found in phase 2); a
+  new class is saved whole. mapdefs ids for new classes go in the mod's mapdefs.
   pfwolf.pk3 stays read-only.
 
 ## Phases
@@ -161,8 +162,8 @@ classes.
 - Thinks are named, never run: a frame with T_Chase shows "T_Chase every tic". An action that
   may jump (`A_Jump`, `A_JumpIf…`, `A_ReFire`, Monster's pain choice) pauses the preview and
   offers each place it could go.
-- A game class changed in a mod is saved with `extend: true`, so the game's later fixes to the
-  rest of the class still reach it.
+- A game class changed in a mod is saved as just what changed, so the game's later fixes to the
+  rest of the class still reach it (mods' classes merge key by key; `extend: true` isn't needed).
 - Blake Stone's map-info and actor codes stay the map editor's (Level → Edit code…); the actor
   window only shows the classes.
 
@@ -229,3 +230,29 @@ Planned 2026-11-10.
   Pistol's Ready (which found Next frame running 10000 tics on a frame looping on itself and the
   ran-actions line growing without end: fixed). Not tried by hand: Blake, a mod's classes, a ⚠
   class, Go to into the Definitions window and a script, Show sprite, the jump wait.
+
+**Phase 2 done 2026-11-10** (fields):
+- `ActorBrowserViewModel.Fields` (the font window's style editing, for classes): a class's own
+  parent, radius, flags and properties as FieldTree rows, through `ClassSchema` (ActorSchema with
+  `properties` as ActorProperties' record, so each known property is a typed field with its
+  description, default and sound/class names to pick; unknown keys stay as YAML). Only the
+  properties it sets are shown; Add property lists those its engine class reads (Needs) and it
+  hasn't got, and `FieldNode.ShowField` puts the one picked in, empty. States stay off the rows
+  (phase 3's). Each change rebuilds the class (`ActorCatalog.Rebuild`: the class as edited among
+  the game's others, its uses and files kept), so the preview, problems, numbers, timeline and
+  the "From its parents" list are the class as changed; the state playing stays. Undo/redo,
+  Revert, Save (just what changed, through `DefinitionSet.PlanWrite`, into the mod that has it,
+  else one picked; the game reloads), Take out the mod's change, ● in the list, unsaved classes
+  in the editor's "Save first?".
+- New actor (top right): Built on this one… (`parent:` it) or A copy of this one… (its own
+  fields as written, the same parent: phase 1's plan said "everything its parents gave it,
+  written out", but a copy can't drop its parent without losing its engine class, so it's the
+  class as written). Named (no spaces, quotes, brackets...), then mapdefs things: one, or eight
+  for an enemy (angles 0/90/180/270, standing then patrol: 1), from the first free run at 1000,
+  or none; saved with the class as one change to the mod's things table.
+- Tests: ActorEditingTests (GameData: a health change played, undone, saved as just that and the
+  game with the mod keeping the Guard's other fields and states; Add property; a parent that's no
+  class; a class built on the Guard saved with things 2000-2007 and read back; a copy).
+- Checked by screenshots: the Fields tab on the Guard, health set to 50 (● , Changed, numbers,
+  still playing), Revert. Not tried by hand: saving from the window, New actor (its menu, the
+  questions), Take out, the "Save first?" prompt.

@@ -58,6 +58,21 @@ public partial class ActorBrowserWindow : Window
             Search.SelectAll();
             e.Handled = true;
         }
+        else if (ctrl && e.Key == Key.S)
+        {
+            ViewModel.SaveClassCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (ctrl && e.Key == Key.Z && !typing)
+        {
+            ViewModel.UndoClassCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if ((ctrl && e.Key == Key.Y || e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.Z) && !typing)
+        {
+            ViewModel.RedoClassCommand.Execute(null);
+            e.Handled = true;
+        }
         else if (e.Key == Key.Escape)
         {
             Close();
