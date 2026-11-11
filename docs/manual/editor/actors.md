@@ -90,6 +90,9 @@ class stays the game's, and the game's later fixes to it still come through. The
 again with it. **Revert** goes back to the class as the files have it; **Undo** and **Redo**
 (Ctrl+Z, Ctrl+Y, outside a field) step through the changes. Changes are kept while you look at
 other classes, and loading the game again or closing the editor asks whether to save them first.
+The engine's own base classes (`Monster`, `Inventory`, `Weapon`, `Key`...) can be changed too,
+and a change reaches every class built on them that doesn't set the same thing itself: saving one
+first says how many classes that is, and asks.
 *Take out the mod's change…* (under *More*, and in the list's right-click menu) takes the last
 mod's say in the class out of its actordefs.
 

@@ -177,7 +177,7 @@ classes.
   the actor window? Default: yes, once phase 1 is in. Done 2026-11-10: F6's Used by has Show in
   Actors for a class's sprite frames and status bar faces (`ArtUse.ActorClass`).
 - The engine-only classes (the C# types: `Monster`, `BlakeMonster`, `Inventory`...) listed as
-  read-only roots of the tree (default), or hidden?
+  read-only roots of the tree (default), or hidden? Decided 2026-11-11 (the user): editable, and saving one asks first, saying how many classes are built on it (`ActorBrowserViewModel.BuiltOn`, `BaseClassWarning`).
 
 ## Status
 

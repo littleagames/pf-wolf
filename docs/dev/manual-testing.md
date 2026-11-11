@@ -1199,6 +1199,7 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       still its states); Take out the mod's change…; New actor → Built on this one… with thing
       numbers (saved: the map palette has the eight things, one placed plays as the class);
       A copy of this one…; closing the editor with a changed class asks to save; a pk3 mod.
+      Saving Monster (say a radius) asks first, naming the classes built on it; no saves nothing.
 - [ ] Frame tab: pause on the Guard's Attack, change a frame's tics, letter (the picker's
       pictures), think and action (the pickers; what they do shown); + Frame, Duplicate, Take out,
       ←/→; the ending (loops, stops, goes on to); + State…, Rename…, Take out state; a parent's

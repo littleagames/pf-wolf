@@ -287,6 +287,8 @@ public sealed partial class ActorBrowserViewModel : ObservableObject
 
         var actors = _edited != null ? EditedActors(entry) : _content.Actors;
         Details = Describe(entry);
+        if (ActorClasses.Engine.ContainsKey(entry.Name) && BuiltOn(entry.Name) is { Count: > 0 } reached)
+            Details += $"; one of the engine's own base classes: {reached.Count} class{(reached.Count == 1 ? " is" : "es are")} built on it, and a change reaches them all";
         Lineage = string.Join(" › ", entry.Ancestors.Reverse().Append(entry.Name));
 
         foreach (var problem in entry.Problems)

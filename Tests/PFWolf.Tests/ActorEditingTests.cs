@@ -101,6 +101,45 @@ public class ActorEditingTests
     }
 
     [Test]
+    public void Saving_One_Of_The_Engines_Base_Classes_Asks_First()
+    {
+        // Arrange: no to the question, then yes
+        var questions = new List<string>();
+        var answers = new Queue<bool>([false, true]);
+        var actors = new ActorBrowserViewModel
+        {
+            PickMod = _ => Task.FromResult<string?>(_mod),
+            Confirm = (_, message, _) =>
+            {
+                questions.Add(message);
+                return Task.FromResult(answers.Dequeue());
+            },
+        };
+        actors.Load(Load("wolf3d"));
+        actors.Show("Monster");
+        Assert.That(actors.Details, Does.Contain("one of the engine's own base classes"));
+
+        // Act: a radius for every enemy
+        Row(actors, "radius").Text = "20";
+        actors.SaveClassCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+
+        // Assert: asked, naming what it reaches; no means nothing's saved
+        Assert.That(questions, Has.Count.EqualTo(1));
+        Assert.That(questions[0], Does.Contain("Dog").And.Contain("classes are built on it").And.Contain("more"));
+        Assert.That(Directory.Exists(Path.Combine(_mod, "actordefs")), Is.False);
+        Assert.That(actors.IsChanged, Is.True, "still there to save");
+
+        actors.SaveClassCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Assert.That(File.ReadAllText(Path.Combine(_mod, "actordefs", "actors.yaml")), Does.Contain("Monster:").And.Contain("radius: 20"));
+
+        // A class nothing's built on is saved without a word
+        actors.Show("Guard");
+        Row(actors, "properties", "health").Text = "30";
+        actors.SaveClassCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Assert.That(questions, Has.Count.EqualTo(2), "the no and the yes, and nothing for the Guard");
+    }
+
+    [Test]
     public void A_Property_Added_Comes_Up_Empty_To_Fill_In()
     {
         var actors = new ActorBrowserViewModel();

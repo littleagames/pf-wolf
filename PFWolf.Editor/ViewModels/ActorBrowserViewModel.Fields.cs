@@ -365,6 +365,16 @@ public sealed partial class ActorBrowserViewModel
         return true;
     }
 
+    /// <summary>The classes built on a class, its children and theirs, by name</summary>
+    public List<string> BuiltOn(string name)
+        => [.. _all.Where(item => item.Entry.Ancestors.Contains(name, StringComparer.Ordinal)).Select(item => item.Name)];
+
+    /// <summary>What saving one of the engine's base classes does, for the question before it's saved</summary>
+    public static string BaseClassWarning(string name, IReadOnlyList<string> reached)
+        => $"{name} is one of the engine's own base classes: {reached.Count} class{(reached.Count == 1 ? " is" : "es are")} built on it "
+           + $"({string.Join(", ", reached.Take(6))}{(reached.Count > 6 ? $" and {reached.Count - 6} more" : "")}), "
+           + "and each gets what's changed, unless it sets that itself. Save it?";
+
     // The loaded mod whose actordefs have their own say in the class, the last one, or null
     private string? ModDefining(string name)
         => _classSet?.FilesDefining([name]).LastOrDefault(file => !file.IsBase)?.ModPath;
@@ -379,6 +389,13 @@ public sealed partial class ActorBrowserViewModel
         if (errors.Count > 0)
         {
             Status = $"{name} isn't saved: {string.Join(" ", errors)}";
+            return false;
+        }
+        // One of the engine's own base classes changes every class built on it: asked first
+        if (ActorClasses.Engine.ContainsKey(name) && BuiltOn(name) is { Count: > 0 } reached && Confirm != null
+            && !await Confirm($"Save {name}", BaseClassWarning(name, reached), "Save"))
+        {
+            Status = $"{name} isn't saved";
             return false;
         }
         var mod = ModDefining(name) ?? (PickMod == null ? null : await PickMod($"Save the actor {name} into"));
