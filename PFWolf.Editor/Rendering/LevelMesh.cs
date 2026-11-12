@@ -432,6 +432,7 @@ public sealed class LevelMesh
                 {
                     case TileKind.Wall:
                         AddWallTile(x, y, floorColor, ceilingColor, ceiling);
+                        AddThing(x, y);     // on a roof (a wall under the player's story), or an in-wall one
                         break;
 
                     case TileKind.Door:

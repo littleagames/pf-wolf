@@ -55,6 +55,28 @@ public class EditorThingStoriesTests
     }
 
     [Test]
+    public void The_3D_View_Shows_A_Thing_On_A_Roof()
+    {
+        // Arrange: a puddle on a roof (a wall under the player's story), as the Rooftops Demo's vase on its sign
+        var document = Rooftops();
+        EditorMaps.Set(document, 1, 9, 20, Puddle);
+
+        // actordefs without a Puddle, so it's marked rather than drawn (the test has no sprites)
+        var content = GameContent.FromDefinitions(new MapObjectTranslationAsset
+        {
+            Walls = new() { [Wall] = new() { North = "GSTONEA1", East = "GSTONEA2", South = "GSTONEA1", West = "GSTONEA2" } },
+            Floors = new MapFloorsTranslation { AreaStart = Floor, AreaCount = 37, Ambush = 106, SecretExit = -1 },
+            Things = new() { [Puddle] = new MapActorTranslation { Class = "Puddle" } },
+        }, actors: new() { ["Guard"] = new ActorData() });
+
+        // Act
+        var mesh = PFWolf.Editor.Rendering.LevelMesh.Build(new MapTiles(content, document.Map, () => document.Properties));
+
+        // Assert
+        Assert.That(mesh.Surfaces.Where(s => s.Ref.Kind == PFWolf.Editor.Rendering.SurfaceKind.Thing && s.Ref.X == 9 && s.Ref.Y == 20), Is.Not.Empty);
+    }
+
+    [Test]
     public void The_Tile_Info_Says_A_Things_Story_Off_The_Players()
     {
         var document = Rooftops();
