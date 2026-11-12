@@ -635,7 +635,9 @@ internal sealed class WallPosts(
     /// cliptop to clipbottom only. It's a flat surface, so each row is textured from where the
     /// view ray meets it, from the texture's bottom story laid flat: one tile of it per tile. A
     /// flat (flat) is sampled as DrawFlats does, its see-through pixels the ceiling (or floor)
-    /// color; a floor with no texture takes each tile's floor flat. With neither, it's the color.
+    /// color; a floor with no texture takes each tile's floor flat (the ground below the player's
+    /// floor, its flats ground where it has one). With neither, it's the tile's floor sky, else the
+    /// level's, else the color.
     /// </summary>
     internal void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture, bool flat, int story = 1, bool up = false,
         int cliptop = 0, int clipbottom = int.MaxValue)
@@ -672,6 +674,9 @@ internal sealed class WallPosts(
             int width = texture?.Width ?? 0, height = texture?.Height ?? 0;
 
             bool perTile = up && texture == null;   // a floor: each tile's own floor flat
+            // the ground below the player's floor: a tile's flats ground (MapManager.GroundFlat) in
+            // place of its floor flat, where it has one
+            bool ground = perTile && map.HasGround && story < 0 && story == render.GroundStory;
             for (int y = from; y <= to; y++)
             {
                 double nx = numerator / Math.Abs(render.CenterY - y - 0.5);
@@ -684,15 +689,17 @@ internal sealed class WallPosts(
                 byte skypixel;
                 if (perTile)
                 {
-                    var floor = tile >= 0 ? map.FloorFlat[tile] : null;
+                    var floor = tile < 0 ? null : ground && map.GroundSet[tile] ? map.GroundFlat[tile] : map.FloorFlat[tile];
                     data = floor?.RawData;
                     (width, height) = (floor?.Width ?? 0, floor?.Height ?? 0);
                     flat = true;
                 }
                 if (data == null)
                 {
-                    // a floor with no texture: the tile's own floor sky, unshaded, else the color
-                    dest[y * pitch] = perTile && skyAndFlats.FloorSkyAt(tile, x, y, out skypixel) ? skypixel : light[shadeofs + color];
+                    // a floor with no texture: the tile's own floor sky, else the level's (as behind
+                    // the player's floor), unshaded, else the color
+                    dest[y * pitch] = perTile && (skyAndFlats.FloorSkyAt(tile, x, y, out skypixel) || skyAndFlats.LevelFloorSkyAt(x, y, out skypixel))
+                        ? skypixel : light[shadeofs + color];
                     continue;
                 }
 
@@ -702,7 +709,7 @@ internal sealed class WallPosts(
                 byte pixel = data[u * width / GameConstants.TextureSize * height + row];
                 if (flat && pixel == SkyAndFlats.FlatMask)
                 {
-                    if (perTile && skyAndFlats.FloorSkyAt(tile, x, y, out skypixel))
+                    if (perTile && (skyAndFlats.FloorSkyAt(tile, x, y, out skypixel) || skyAndFlats.LevelFloorSkyAt(x, y, out skypixel)))
                     {
                         dest[y * pitch] = skypixel;
                         continue;

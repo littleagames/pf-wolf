@@ -229,6 +229,21 @@ internal sealed partial class SkyAndFlats(
             && TileSkyPixel(map.FloorSky[tile] - 1, x, y, floor: true, out pixel);
     }
 
+    /// <summary>
+    /// The level's floor sky at view column x, screen row y, as it shows behind the player's floor
+    /// where a tile has no floor texture: for a floor cap at another height with no texel of its
+    /// own nor a floor sky of its own (WallPosts.DrawUnderside); false if the level has none this
+    /// frame, or the row is above the horizon
+    /// </summary>
+    internal bool LevelFloorSkyAt(int x, int y, out byte pixel)
+    {
+        pixel = 0;
+        if (!floorSkyBehind || y < render.CenterY)
+            return false;
+        pixel = FloorSkyPixel(floorsky, SkyColumn(x, floorsky), y);
+        return true;
+    }
+
     // A tile's own sky (slot: its CeilingSky or FloorSky) at view column x, screen row y; false if it can't be found
     bool TileSkyPixel(int slot, int x, int y, bool floor, out byte pixel)
     {

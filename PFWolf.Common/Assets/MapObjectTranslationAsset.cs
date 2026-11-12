@@ -93,6 +93,7 @@ public record MapObjectTranslationAsset : Asset
                 Floor = Merged(Flats.Floor, local.Flats.Floor), Ceiling = Merged(Flats.Ceiling, local.Flats.Ceiling),
                 Skies = Merged(Flats.Skies, local.Flats.Skies), FloorSkies = Merged(Flats.FloorSkies, local.Flats.FloorSkies),
                 Sides = Merged(Flats.Sides, local.Flats.Sides),
+                Ground = Merged(Flats.Ground, local.Flats.Ground),
             },
             Floors = local.Floors.AreaCount is { } count ? Floors with { AreaCount = count } : Floors,
         };
@@ -274,6 +275,14 @@ public record MapFlatsTranslation
     /// of its run of blocks, as arches always have.
     /// </summary>
     public Dictionary<int, string> Sides { get; set; } = new();
+
+    /// <summary>
+    /// What the ground under a floor tile's raised block shows, by the tile's floor index, where
+    /// the ground is below the player's floor (a bridge deck over a valley): a texture, or "sky"
+    /// for the floor sky (the tile's own, else the level's). With none, the tile's floor texture,
+    /// as the block's top has. On the player's own story the ground is their floor: untouched.
+    /// </summary>
+    public Dictionary<int, string> Ground { get; set; } = new();
 
     /// <summary>
     /// Floors that hurt whoever stands on them (Midnight Assault's electrified water), by the

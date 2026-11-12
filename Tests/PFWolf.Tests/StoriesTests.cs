@@ -358,4 +358,16 @@ public class StoriesTests
 
         Assert.That(game.With(level).Flats.Sides, Is.EquivalentTo(new Dictionary<int, string> { [5] = "GSTONEA1", [6] = "WOOD1" }));
     }
+
+    [Test]
+    public void A_Levels_Own_Ground_Lies_Over_The_Games()
+    {
+        var game = new MapObjectTranslationAsset();
+        game.Flats.Ground[5] = "sky";
+        game.Flats.Ground[6] = "GSTONEA1";
+        var level = new MapObjectTranslationAsset();
+        level.Flats.Ground[6] = "sky";
+
+        Assert.That(game.With(level).Flats.Ground, Is.EquivalentTo(new Dictionary<int, string> { [5] = "sky", [6] = "sky" }));
+    }
 }

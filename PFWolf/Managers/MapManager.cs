@@ -288,6 +288,17 @@ internal class MapManager
     internal bool HasFloorFlats, HasCeilingFlats;
 
     /// <summary>
+    /// The ground under each tile's raised block where the mapdefs flats `ground` gives one for its
+    /// floor index (<see cref="GroundSet"/>): its texture, null for the floor sky. Indexed
+    /// <see cref="TileIndex"/>; built with the flats.
+    /// </summary>
+    internal TextureAsset?[] GroundFlat = new TextureAsset?[MapConstants.ClassicMapArea];
+    internal bool[] GroundSet = new bool[MapConstants.ClassicMapArea];
+
+    /// <summary>Whether any tile's ground is set (<see cref="GroundSet"/>)</summary>
+    internal bool HasGround;
+
+    /// <summary>
     /// Each tile's own ceiling sky and floor sky (mapdefs flats skies / floor-skies): 1 + its
     /// index in <see cref="TileSkies"/>, 0 for none. Indexed <see cref="TileIndex"/>; built with the flats.
     /// </summary>
@@ -1585,6 +1596,10 @@ internal class MapManager
         FloorFlat = new TextureAsset?[MapArea];
         CeilingFlat = new TextureAsset?[MapArea];
         HasFloorFlats = HasCeilingFlats = false;
+        GroundFlat = new TextureAsset?[MapArea];
+        GroundSet = new bool[MapArea];
+        HasGround = false;
+        var grounds = GetMapData().Flats.Ground;
         animatedfloors.Clear();
         animatedceilings.Clear();
         ClearTileSkies();
@@ -1617,6 +1632,13 @@ internal class MapManager
                 CeilingSky[i] = SkySlot(TileSkyName(x, y, ceiling: true));
                 HasFloorSkies |= FloorSky[i] != 0;
                 HasCeilingSkies |= CeilingSky[i] != 0;
+
+                // flats ground: under a raised block, by the floor index ("sky": the floor sky)
+                if (grounds.Count > 0 && grounds.TryGetValue(MapSpot(x, y, FlatPlane) & 0xff, out var ground) && !string.IsNullOrEmpty(ground))
+                {
+                    GroundSet[i] = HasGround = true;
+                    GroundFlat[i] = ground.Equals("sky", StringComparison.OrdinalIgnoreCase) ? null : Flat(ground) as TextureAsset;
+                }
             }
     }
 

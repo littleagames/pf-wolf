@@ -206,6 +206,38 @@ public class SkyAndFlatsTests
             Assert.That(Enumerable.Range(0, Width).Select(x => At(x, y)), Is.All.EqualTo(rows[y - Height / 2]), $"row {y}");
     }
 
+    // What VGAClearScreen notes once it's drawn the floor sky behind the flats
+    private static void FloorSkyBehind(SkyAndFlats view, bool behind) =>
+        typeof(SkyAndFlats).GetField("floorSkyBehind", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(view, behind);
+
+    [Test]
+    public void A_Floor_Cap_With_No_Texture_Takes_The_Levels_Floor_Sky_Below_The_Horizon()
+    {
+        // Arrange: the floor sky drawn behind this frame (its row r is 10 + r)
+        var view = FloorSkyView(mirror: false);
+        view.LoadFloorSky();
+        FloorSkyBehind(view, true);
+
+        // Act
+        bool below = view.LevelFloorSkyAt(2, Height / 2 + 1, out byte pixel);
+        bool above = view.LevelFloorSkyAt(2, Height / 2 - 1, out _);
+
+        // Assert: what DrawFloorSky draws there; nothing above the horizon
+        Assert.That((below, pixel), Is.EqualTo((true, (byte)11)));
+        Assert.That(above, Is.False);
+    }
+
+    [Test]
+    public void With_No_Floor_Sky_Behind_A_Floor_Cap_Keeps_Its_Color()
+    {
+        var view = FloorSkyView(mirror: false);
+        view.LoadFloorSky();
+        FloorSkyBehind(view, false);
+
+        Assert.That(view.LevelFloorSkyAt(2, Height / 2 + 1, out _), Is.False);
+    }
+
     [Test]
     public void No_Floor_Sky_Or_None_Loads_Nothing()
     {

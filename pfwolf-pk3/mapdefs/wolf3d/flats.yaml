@@ -16,6 +16,9 @@
 #
 # sides: (by floor index) is the texture on the sides of a floor tile's block (plane 3: a start
 # and stop story), which has no wall texture of its own. With none, its sides take a wall beside it.
+# ground: (by floor index) is what the ground under such a block shows where the ground is below
+# the player's floor (a bridge deck over a valley): a texture, or sky for the floor sky (the
+# tile's own, else the level's). With none, it's the tile's floor texture, as the block's top has.
 #
 # Keep the whole table in this one file: a mod's flats.yaml merges over it entry by entry.
 flats:
