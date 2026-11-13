@@ -301,6 +301,42 @@ public sealed class GameContent
         return _rotating.Contains(className);
     }
 
+    /// <summary>
+    /// The pictures a thing's Spawn frame shows from each side, as the game picks them
+    /// (SpriteDrawing.ActorShapeName): views 1 (its front) to 8 at [0] to [7], a view the frame
+    /// lacks falling back to its single view; an entry is null when neither is there. Null when
+    /// the frame has no views 1 to 8 (it looks the same from every side).
+    /// </summary>
+    public string?[]? ThingViews(string className)
+    {
+        if (_thingViews.TryGetValue(className, out var cached))
+            return cached;
+
+        string?[]? views = null;
+        if (SpawnFrame(className) is { } frame && frame.Frames.Count > 0 && !string.IsNullOrEmpty(frame.Sprite))
+        {
+            var names = Entities.Actors.ActorStateFrame.ShapeNames(frame.Sprite, frame.Frames[0]);
+            if (names.Skip(1).Any(name => SpriteNamed(name) != null))
+            {
+                var single = SpriteNamed(names[0]) != null ? names[0] : null;
+                views = names.Skip(1).Select(name => SpriteNamed(name) != null ? name : single).ToArray();
+            }
+        }
+        return _thingViews[className] = views;
+    }
+
+    private readonly Dictionary<string, string?[]?> _thingViews = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A sprite by its own name ("GARDA3"), or null when there's none</summary>
+    public SpriteAsset? SpriteNamed(string name)
+    {
+        if (_spritesByName.TryGetValue(name, out var cached))
+            return cached;
+        return _spritesByName[name] = Find<SpriteAsset>(name);
+    }
+
+    private readonly Dictionary<string, SpriteAsset?> _spritesByName = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The actordefs classes, the pack's own over the shared ones</summary>
     public IReadOnlyDictionary<string, ActorData> Actors => _actors;
 

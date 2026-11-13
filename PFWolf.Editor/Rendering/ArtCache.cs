@@ -227,7 +227,7 @@ public sealed class ArtCache(GameContent content) : IDisposable
                 }
                 return (width, height, rgba);
             }
-            case TextureSource.Sprite when content.ThingSprite(texture.Name) is { Width: > 0, Height: > 0 } sprite:
+            case TextureSource.Sprite or TextureSource.SpriteView when SpriteOf(texture) is { Width: > 0, Height: > 0 } sprite:
             {
                 int width = sprite.Width;
                 return (width, sprite.Height, MakeRgba(width, sprite.Height, (x, y) => sprite.RawData[y * width + x],
@@ -264,7 +264,7 @@ public sealed class ArtCache(GameContent content) : IDisposable
                     (x, y) => flat.RawData[x * height + y] is var i && i == FlatMask ? fillIndex : i,
                     (x, y) => filled || flat.RawData[x * height + y] != FlatMask));
             }
-            case TextureSource.Sprite when content.ThingSprite(texture.Name) is { Width: > 0, Height: > 0 } sprite:
+            case TextureSource.Sprite or TextureSource.SpriteView when SpriteOf(texture) is { Width: > 0, Height: > 0 } sprite:
             {
                 int width = sprite.Width;
                 return (width, sprite.Height, MakeIndexRgba(width, sprite.Height, (x, y) => sprite.RawData[y * width + x],
@@ -274,6 +274,10 @@ public sealed class ArtCache(GameContent content) : IDisposable
                 return null;
         }
     }
+
+    // A Sprite texture is a class's spawn sprite; a SpriteView one, a sprite by its own name
+    private SpriteAsset? SpriteOf(TextureRef texture)
+        => texture.Source == TextureSource.SpriteView ? content.SpriteNamed(texture.Name) : content.ThingSprite(texture.Name);
 
     private static byte[] MakeIndexRgba(int width, int height, Func<int, int, byte> index, Func<int, int, bool>? opaque)
     {

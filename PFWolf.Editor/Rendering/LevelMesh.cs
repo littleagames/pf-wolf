@@ -16,6 +16,8 @@ public enum TextureSource
     Texture,
     /// <summary>A thing class's spawn sprite, by class name</summary>
     Sprite,
+    /// <summary>A sprite by its own name ("GARDA3"): one view of a thing that turns</summary>
+    SpriteView,
     /// <summary>No picture: the surface's color</summary>
     Solid,
     /// <summary>A picture (GraphicAsset, else a wall texture) by name: the sky</summary>
@@ -109,8 +111,11 @@ public sealed class Surface
     public Vector3 Normal => Vector3.Normalize(Vector3.Cross(Points[1] - Points[0], Points[2] - Points[0]));
 }
 
-/// <summary>A sprite standing on the floor that always turns to face the view, as the game's things do</summary>
-public sealed class Billboard
+/// <summary>
+/// A sprite standing on the floor that always turns to face the view, as the game's things do;
+/// one that's seen differently from each side (an enemy) shows the view toward the eye
+/// </summary>
+public sealed record Billboard
 {
     /// <summary>The thing's spot, at the height of the sprite's bottom edge</summary>
     public Vector3 Base { get; init; }
@@ -130,6 +135,35 @@ public sealed class Billboard
 
     /// <summary>How many fade steps less it darkens with distance (its class's lighten, its frame's lighten(level))</summary>
     public int Lighten { get; init; }
+
+    /// <summary>
+    /// A thing that turns: its views 1 (its front) to 8 at [0] to [7], each placed by its own
+    /// picture; null when it looks the same from every side
+    /// </summary>
+    public Billboard[]? Views { get; init; }
+
+    /// <summary>The way it faces, in the game's degrees (0 east, 90 north), or null for none: it shows its front to everyone</summary>
+    public int? Facing { get; init; }
+
+    /// <summary>What it looks like from a point: its view toward there, for one that turns</summary>
+    public Billboard SeenFrom(Vector3 eye) => Views is { Length: 8 } views ? views[ViewIndex(Base, Facing, eye)] : this;
+
+    /// <summary>
+    /// Which of a turning thing's 8 views (0 for view 1, its front) shows to an eye, as
+    /// SpriteDrawing.CalcRotate picks it: the way from the thing to the eye less the way it
+    /// faces, in eighths centred on each view. The game takes the way to the eye from the
+    /// screen column the thing is on; this takes it from where the eye is.
+    /// </summary>
+    public static int ViewIndex(Vector3 spot, int? facing, Vector3 eye)
+    {
+        float east = eye.X - spot.X, north = spot.Z - eye.Z;
+        if (facing is not { } way || east == 0 && north == 0)
+            return 0;
+        double toEye = Math.Atan2(north, east) * 180 / Math.PI;
+        double angle = toEye - way + 22.5;
+        angle = (angle % 360 + 360) % 360;
+        return (int)(angle / 45) % 8;
+    }
 }
 
 /// <summary>Tiles the 3D view tints to stand out</summary>
@@ -485,20 +519,45 @@ public sealed class LevelMesh
         float width = sprite.Width / (float)TextureAsset.StorySize, height = sprite.Height / (float)TextureAsset.StorySize;
         var texture = new TextureRef(TextureSource.Sprite, thing.Class);
         var thingRef = new SurfaceRef(SurfaceKind.Thing, x, y);
-        var (originX, originY) = sprite.Origin;
-        float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + _tiles.ThingStory(x, y, thing.Story) - 1;   // on its story's floor
-        float shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize;
+        float lift = (sprite.Origin.Y - sprite.Height) / (float)TextureAsset.StorySize + _tiles.ThingStory(x, y, thing.Story) - 1;   // on its story's floor
 
         if (content.IsWallSprite(thing.Class))
             AddWallSprite(x, y, thing.Angle, content.WallSpriteOffset(thing.Class), width, height, lift, texture, thingRef);
         else
+            Billboards.Add(StandingSprite(thing.Class, sprite, texture, thingRef, new Vector2((float)thing.X, (float)thing.Y), _tiles.ThingStory(x, y, thing.Story), thing.Angle, x, y));
+    }
+
+    /// <summary>
+    /// A thing's sprite as it stands on a spot (map units: tiles), lit as its tile is; one that
+    /// turns gets its 8 views, facing as the game spawns it (MapManager: the angle's eighth, a
+    /// negative one none)
+    /// </summary>
+    private Billboard StandingSprite(string className, SpriteAsset sprite, TextureRef texture, SurfaceRef thingRef, Vector2 spot, int story, int angles, int x, int y)
+    {
+        var content = _tiles.Content;
+        var (bright, lighten) = Shaded ? content.ThingShading(className) : (false, 0);
+        var look = Placed(new Billboard { Ref = thingRef, Light = Light(x, y), Bright = bright, Lighten = lighten }, sprite, texture, spot, story);
+        if (content.ThingViews(className) is not { } views)
+            return look;
+        return look with
         {
-            Billboards.Add(new Billboard
-            {
-                Base = new Vector3((float)thing.X, lift, (float)thing.Y), Shift = shift, Width = width, Height = height, Texture = texture, Ref = thingRef,
-                Light = Light(x, y), Bright = Shaded && content.ThingShading(thing.Class).Bright, Lighten = Shaded ? content.ThingShading(thing.Class).Lighten : 0,
-            });
-        }
+            Facing = angles < 0 ? null : (angles / 45 % 8 + 8) % 8 * 45,
+            Views = views.Select(name => name != null && content.SpriteNamed(name) is { Width: > 0, Height: > 0 } view
+                ? Placed(look, view, new TextureRef(TextureSource.SpriteView, name), spot, story) : look).ToArray(),
+        };
+    }
+
+    // As the game places a sprite: its origin pixel (a Wolf3D sprite's middle of the bottom of
+    // 64 × 64) on the thing's spot, on its story's floor
+    private static Billboard Placed(Billboard look, SpriteAsset sprite, TextureRef texture, Vector2 spot, int story)
+    {
+        var (originX, originY) = sprite.Origin;
+        float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + story - 1;
+        return look with
+        {
+            Base = new Vector3(spot.X, lift, spot.Y), Shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize, Texture = texture,
+            Width = sprite.Width / (float)TextureAsset.StorySize, Height = sprite.Height / (float)TextureAsset.StorySize,
+        };
     }
 
     //
@@ -1045,20 +1104,12 @@ public sealed class LevelMesh
 
             // As the game places it: its origin pixel (a Wolf3D sprite's middle of the bottom of
             // 64 × 64) on the thing's spot on the floor
-            var (originX, originY) = sprite.Origin;
-            float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize + _tiles.ThingStory(x, y) - 1;   // on its story's floor
-            float shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize;
+            float lift = (sprite.Origin.Y - sprite.Height) / (float)TextureAsset.StorySize + _tiles.ThingStory(x, y) - 1;   // on its story's floor
 
             if (content.IsWallSprite(thing.Class))
                 AddWallSprite(x, y, thing.Angles, content.WallSpriteOffset(thing.Class), width, height, lift, texture, thingRef);
             else
-            {
-                Billboards.Add(new Billboard
-                {
-                    Base = new Vector3(x + 0.5f, lift, y + 0.5f), Shift = shift, Width = width, Height = height, Texture = texture, Ref = thingRef,
-                    Light = Light(x, y), Bright = Shaded && content.ThingShading(thing.Class).Bright, Lighten = Shaded ? content.ThingShading(thing.Class).Lighten : 0,
-                });
-            }
+                Billboards.Add(StandingSprite(thing.Class, sprite, texture, thingRef, new Vector2(x + 0.5f, y + 0.5f), _tiles.ThingStory(x, y), thing.Angles, x, y));
         }
         else if (_tiles.PlayerStart(x, y) is { } start)
         {
@@ -1283,10 +1334,11 @@ public sealed class LevelMesh
         // Sprites turned to the view: a vertical rectangle across the line of sight
         var right = camera.Right;
         var back = -camera.FlatForward;
-        foreach (var sprite in Billboards)
+        foreach (var billboard in Billboards)
         {
-            if (include?.Invoke(sprite.Ref) == false)
+            if (include?.Invoke(billboard.Ref) == false)
                 continue;
+            var sprite = billboard.SeenFrom(camera.Position);
             float facing = Vector3.Dot(direction, back);
             if (facing >= -1e-6f)
                 continue;

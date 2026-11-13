@@ -596,7 +596,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         var spriteBatches = new List<(TextureRef Texture, int First, int Count)>();
         if (ShowThings)
         {
-            foreach (var group in _mesh.Billboards.GroupBy(sprite => sprite.Texture))
+            // each as it looks from here: a thing that turns shows its view toward the eye
+            foreach (var group in _mesh.Billboards.Select(sprite => sprite.SeenFrom(camera.Position)).GroupBy(sprite => sprite.Texture))
             {
                 int first = vertices.Count / FloatsPerVertex;
                 foreach (var sprite in group)
@@ -778,9 +779,10 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         vertices.Add(solid);
     }
 
-    /// <summary>A sprite's corners, square to the view (bottom left, bottom right, top right, top left)</summary>
-    private static Vector3[] BillboardCorners(Billboard sprite, Camera3D camera)
+    /// <summary>A sprite's corners as it's seen from the camera, square to the view (bottom left, bottom right, top right, top left)</summary>
+    private static Vector3[] BillboardCorners(Billboard billboard, Camera3D camera)
     {
+        var sprite = billboard.SeenFrom(camera.Position);
         var half = camera.Right * (sprite.Width / 2);
         var up = Vector3.UnitY * sprite.Height;
         var bottom = sprite.Base + camera.Right * sprite.Shift;

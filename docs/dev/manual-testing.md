@@ -1067,6 +1067,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       "3D: shading" off stopping the effects.
 - [ ] Blake AOG floor 1: octagon floor + panel ceiling from its codes.
 - [ ] Pick and edit from the 3D view; **(never tried)** clicking an extra thing.
+- [ ] Enemies turned the way they face (2026-11-13): E1M1's corridor guards at (21–23, 46–48)
+      show their front from the west and their backs from the east (screenshots). **(never
+      tried)** walking round one to see all 8 views; a Spear or Blake enemy; a mod enemy whose
+      views differ in size; a UWMF extra thing at an odd angle; the view matching the game's
+      from the same spot (the editor works it out from the camera's position, the game from the
+      enemy's screen column, so near the screen's edges they can differ by a view).
 - [ ] **(never tried)** Level properties' Story saved to the mod's game-info (`story:`); the flat
       brush listing floor-sky and sky indices with no texture.
 - [ ] Rooftops Demo (`--file rooftops-demo`): the roofs, the street below from the bridge, the
