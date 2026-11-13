@@ -1,0 +1,16 @@
+#!/bin/sh
+# The AppImage's way in: the game, or the editor with --editor (or when the AppImage is run
+# through a link with "editor" in its name). Both read the game's files from usr/bin inside it;
+# the data files, mods and settings are the player's own (~/.local/share/PFWolf, ~/.config/PFWolf).
+here="$(dirname "$(readlink -f "$0")")"
+
+if [ "${1:-}" = "--editor" ]; then
+    shift
+    exec "$here/usr/bin/PFWolf.Editor" "$@"
+fi
+
+case "$(basename "${ARGV0:-$0}")" in
+    *[Ee]ditor*) exec "$here/usr/bin/PFWolf.Editor" "$@" ;;
+esac
+
+exec "$here/usr/bin/PFWolf" "$@"

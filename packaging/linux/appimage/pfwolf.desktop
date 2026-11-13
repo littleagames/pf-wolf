@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=PFWolf
+Comment=Wolfenstein 3-D, Spear of Destiny and Blake Stone, with mods
+Exec=PFWolf %F
+Icon=pfwolf
+Terminal=false
+Categories=Game;ActionGame;
+Actions=Editor;
+
+[Desktop Action Editor]
+Name=PFWolf Editor
+Exec=PFWolf --editor

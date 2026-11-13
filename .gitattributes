@@ -1,2 +1,5 @@
-# Shell scripts run on Linux and macOS, where a CR at a line's end breaks them
+# Shell scripts run on Linux and macOS, where a CR at a line's end breaks them (AppRun is one,
+# and desktop entries are read there too)
 *.sh text eol=lf
+AppRun text eol=lf
+*.desktop text eol=lf

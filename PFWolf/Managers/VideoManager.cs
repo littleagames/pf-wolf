@@ -6,6 +6,7 @@ using PFWolf.Fonts;
 using PFWolf.Configuration;
 using PFWolf.Entities;
 using PFWolf.Extensions;
+using PFWolf.Startup;
 using static SDL2.SDL;
 
 namespace PFWolf.Managers;
@@ -160,6 +161,11 @@ internal class VideoManager : ITextCanvas
             flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
         // Shown once something is drawn in it (the loading screen, else Init), not blank white
         flags |= SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN;
+        // A Retina Mac's window in pixels, not points scaled up (Auto resolution draws at its
+        // pixel size: ResolveRenderSize). Windows is left alone: there it'd need the process to
+        // be DPI aware too, which changes every window size.
+        if (!OperatingSystem.IsWindows())
+            flags |= SDL.SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI;
 
         WindowHandle = SDL.SDL_CreateWindow("PFWolf", SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
             settings.WindowWidth, settings.WindowHeight, flags);
@@ -230,8 +236,9 @@ internal class VideoManager : ITextCanvas
 
     /// <summary>
     /// For settings whose render size matches the window (<see cref="VideoSettings.MatchWindow"/>),
-    /// that size worked out: the window's, or the display's when FullScreen, made shorter by
-    /// a sixth when aspect correcting so the 6:5 stretch fills it. Other settings come back as they are.
+    /// that size worked out: the window's, or the display's when FullScreen, in pixels (so twice
+    /// the size in points on a Retina Mac), made shorter by a sixth when aspect correcting so the
+    /// 6:5 stretch fills it. Other settings come back as they are.
     /// </summary>
     internal VideoSettings ResolveRenderSize(VideoSettings settings)
     {
@@ -241,12 +248,33 @@ internal class VideoManager : ITextCanvas
         var (width, height) = settings.Fullscreen && WindowHandle != IntPtr.Zero
             ? GetDisplaySize()
             : (settings.WindowWidth, settings.WindowHeight);
+        var pixelsPerPoint = PixelsPerPoint();
+        width = (int)Math.Round(width * pixelsPerPoint);
+        height = (int)Math.Round(height * pixelsPerPoint);
         if (settings.AspectCorrect)
             height = height * 5 / 6;
 
         width = Math.Clamp(width, VideoSettings.BaseWidth, VideoSettings.MaxRenderWidth);
         height = Math.Clamp(height, VideoSettings.BaseHeight, VideoSettings.MaxRenderHeight);
         return settings with { RenderSize = (width, height) };
+    }
+
+    // How many pixels a window point is: 2 on a Retina Mac (the window asks for high DPI), else 1.
+    // Also 1 with an SDL older than 2.26, which can't say.
+    private double PixelsPerPoint()
+    {
+        if (WindowHandle == IntPtr.Zero || OperatingSystem.IsWindows())
+            return 1;
+        SDL.SDL_GetWindowSize(WindowHandle, out int points, out _);
+        try
+        {
+            NativeSdl.SDL_GetWindowSizeInPixels(WindowHandle, out int pixels, out _);
+            return points > 0 && pixels > points ? (double)pixels / points : 1;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return 1;
+        }
     }
 
     // Room left for the window's title bar and borders when sizing it to the desktop

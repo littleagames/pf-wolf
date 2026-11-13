@@ -240,6 +240,24 @@ No WSL or Docker on the development PC, so testing off Windows is by CI and by h
      `PlatformHotkeyConfiguration`, or swapping Control for Meta when a window opens).
    - Not done: notarization (unsigned for now, by decision); a .dmg (a zip is enough to start).
 5. **Polish.** High-DPI game window, AppImage, a Linux package if wanted.
+   *Done 2026-11-12 (neither seen running):*
+   - High DPI: off Windows the window asks for it (`SDL_WINDOW_ALLOW_HIGHDPI`), and Auto
+     resolution (`MatchWindow`) draws at the window's size in pixels
+     (`NativeSdl.SDL_GetWindowSizeInPixels`, which SDL2-CS 1.0.82 doesn't bind; 1 with an SDL
+     older than 2.26), so a Retina Mac is drawn at twice the size in points rather than scaled
+     up. A set resolution is unchanged; the logical size still scales it to the window. Windows
+     is left alone: there it'd take a DPI-aware process, which changes every window size. Not
+     checked: the frame rate at Retina sizes (the renderer is software, and 2880x1800 is four
+     times the pixels); if it's too slow, Auto could stay in points on macOS.
+   - AppImage: packaging/linux/make-appimage.sh puts both programs in one
+     `PFWolf-<version>-<arch>.AppImage` (x86_64, aarch64). Its `AppRun` runs the game, or the
+     editor with `--editor` (or through a link named *editor*); the desktop entry has an Editor
+     action. The game files inside are read-only, so data files and new mods go to
+     `~/.local/share/PFWolf`; the editor's default game folder is the AppImage's own
+     (`DefaultGameFolder`), and Play starts the game inside it. appimagetool comes from PATH,
+     `$APPIMAGETOOL` or its continuous release, run with `APPIMAGE_EXTRACT_AND_RUN` (no FUSE in
+     CI). The Package workflow makes it beside the tarball.
+   - Not done (decided): Flatpak.
 
 ## Decisions
 
@@ -252,7 +270,4 @@ Made (2026-11-12):
 - **macOS user folder:** `~/Library/Application Support/PFWolf`.
 - **Signing:** unsigned (ad-hoc) for now, with first-run instructions; notarization later.
 - **Intel Macs:** both osx-arm64 and osx-x64 downloads.
-
-To make:
-
-- **Linux format.** Tarball only, or AppImage/Flatpak too.
+- **Linux format:** the tarball and an AppImage; no Flatpak.

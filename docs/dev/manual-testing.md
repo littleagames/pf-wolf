@@ -1349,6 +1349,14 @@ See docs/dev/mac-linux-plan.md; phase 1's changes were only run on Windows.
       the Definitions window (F11) shows the fields' descriptions.
 - [ ] **(never tried)** Windows: the published single-file editor's Definitions window (F11) shows
       the fields' descriptions (the docs XML lookup changed).
+- [ ] **(never tried)** Retina Mac, Auto resolution: the game is sharp (drawn at the window's pixel
+      size, not scaled up), the UI scale picks a size that reads well, the mouse still aims at
+      the menus, and `perf` shows a playable frame rate in a window and fullscreen. A set
+      resolution (e.g. 640x400) looks as before.
+- [ ] **(never tried)** Linux AppImage (x86_64, and aarch64 if there's a board): `chmod +x`, run it:
+      the game, with data files in `~/.local/share/PFWolf`; `--editor` opens the editor on the
+      AppImage's own game folder and Play starts the game; the desktop entry's Editor action
+      (through AppImageLauncher or similar); a new mod goes to `~/.local/share/PFWolf/mods`.
 
 ---
 
