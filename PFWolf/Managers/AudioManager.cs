@@ -208,7 +208,12 @@ internal class AudioManager
         _opened = true;
     }
 
-    private const string OpenALFileName = "OpenAL32.dll";
+    // The OpenAL library OpenTK loads: the copy of OpenAL Soft beside the exe on Windows, the
+    // system's elsewhere (OpenAL Soft on Linux, Apple's framework on macOS)
+    private static string OpenALFileName =>
+        OperatingSystem.IsWindows() ? "OpenAL32.dll"
+        : OperatingSystem.IsMacOS() ? "/System/Library/Frameworks/OpenAL.framework/OpenAL"
+        : "libopenal.so.1";
 
     // Opens the default device and makes a context current; on failure, returns why (null when it worked)
     private static string? TryOpenDevice(out ALDevice device, out ALContext context)
@@ -241,13 +246,30 @@ internal class AudioManager
         return null;
     }
 
-    // Why OpenAL32.dll didn't load. OpenTK only says it couldn't, so load the bundled copy
-    // directly to get the OS's reason, and compare its architecture with this process's.
+    // Why OpenAL didn't load. OpenTK only says it couldn't, so load the library directly to get
+    // the OS's reason; on Windows, also compare the bundled DLL's architecture with this process's.
     private static string DescribeLibraryFailure(Exception e)
     {
         var lines = new List<string> { $"{OpenALFileName} couldn't be loaded ({e.GetType().Name})." };
         var process = RuntimeInformation.ProcessArchitecture;
         lines.Add($"  Process: {process}, OS: {RuntimeInformation.OSArchitecture}");
+
+        if (!OperatingSystem.IsWindows())
+        {
+            try
+            {
+                NativeLibrary.Free(NativeLibrary.Load(OpenALFileName));
+                lines.Add("  Loading it directly works, so OpenTK looked somewhere else for it.");
+            }
+            catch (Exception loadError)
+            {
+                // Carries dlopen's reason: not found, or built for another architecture
+                lines.Add($"  {loadError.Message}");
+            }
+            if (OperatingSystem.IsLinux())
+                lines.Add("  Install OpenAL Soft: libopenal1 on Debian/Ubuntu, openal-soft on Fedora and Arch.");
+            return string.Join(Environment.NewLine, lines);
+        }
 
         var path = Path.Combine(AppContext.BaseDirectory, OpenALFileName);
         if (!File.Exists(path))

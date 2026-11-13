@@ -14,19 +14,21 @@ internal record ConfigDirectories
     /// <summary>Where the exportmap command writes levels</summary>
     public string ExportsDirectory { get; set; } = null!;
 
-    /// <param name="defaultModDirectory">The running game's folder under %APPDATA%\PFWolf ("Wolfenstein3D")</param>
+    /// <param name="defaultModDirectory">
+    /// The running game's folder under PFWolf in the user's settings folder ("Wolfenstein3D"):
+    /// %APPDATA% on Windows, ~/.config (or $XDG_CONFIG_HOME) elsewhere
+    /// </param>
     internal static ConfigDirectories Default(string defaultModDirectory)
     {
-        string defaultBaseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        const string gameDirectory = "PFWolf";
+        string gameDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", defaultModDirectory);
         return new ConfigDirectories
         {
-            ConfigDirectory = $"{defaultBaseDirectory}\\{gameDirectory}\\{defaultModDirectory}\\configs",
-            SaveGameDirectory = $"{defaultBaseDirectory}\\{gameDirectory}\\{defaultModDirectory}\\savegames",
-            ScreenshotsDirectory = $"{defaultBaseDirectory}\\{gameDirectory}\\{defaultModDirectory}\\screenshots",
-            ErrorLogsDirectory = $"{defaultBaseDirectory}\\{gameDirectory}\\{defaultModDirectory}\\logs",
-            DemosDirectory = $"{defaultBaseDirectory}\\{gameDirectory}\\{defaultModDirectory}\\demos",
-            ExportsDirectory = $"{defaultBaseDirectory}\\{gameDirectory}\\{defaultModDirectory}\\exports"
+            ConfigDirectory = Path.Combine(gameDirectory, "configs"),
+            SaveGameDirectory = Path.Combine(gameDirectory, "savegames"),
+            ScreenshotsDirectory = Path.Combine(gameDirectory, "screenshots"),
+            ErrorLogsDirectory = Path.Combine(gameDirectory, "logs"),
+            DemosDirectory = Path.Combine(gameDirectory, "demos"),
+            ExportsDirectory = Path.Combine(gameDirectory, "exports")
         };
     }
 }

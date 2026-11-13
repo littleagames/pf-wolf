@@ -18,4 +18,8 @@ internal static class TestPaths
 
     /// <summary>The pk3's source folder, which the build zips into pfwolf.pk3</summary>
     public static string Pk3SourceFolder() => Path.Combine(RepoRoot(), "pfwolf-pk3");
+
+    /// <summary>The game built beside the tests: PFWolf.exe on Windows, PFWolf elsewhere</summary>
+    public static string GameExe()
+        => Path.Combine(TestContext.CurrentContext.TestDirectory, OperatingSystem.IsWindows() ? "PFWolf.exe" : "PFWolf");
 }

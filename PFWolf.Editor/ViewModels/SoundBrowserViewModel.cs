@@ -461,7 +461,7 @@ public sealed partial class SoundBrowserViewModel : ObservableObject, IDisposabl
 
     public string PlayLabel => IsPlaying ? "■ Stop" : "▶ Play";
 
-    /// <summary>The editor has no sound player here (not Windows)</summary>
+    /// <summary>The editor has no sound player here (OpenAL couldn't be started)</summary>
     public static bool CannotPlay => !SoundPlayer.IsAvailable;
 
     /// <summary>The sound shown, as Export WAV saves it: a sound, not music</summary>

@@ -207,7 +207,7 @@
           <Button.Flyout>
             <MenuFlyout>
               <MenuItem Header="Pick a program…" Click="PickImageEditor" />
-              <MenuItem Header="The one Windows edits PNGs with" Click="UseDefaultImageEditor" />
+              <MenuItem Header="The system's own program for PNGs" Click="UseDefaultImageEditor" />
             </MenuFlyout>
           </Button.Flyout>
         </Button>

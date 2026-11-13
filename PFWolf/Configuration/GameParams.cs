@@ -4,13 +4,14 @@ using CommandLine;
 
 internal class GameParams
 {
-    [Option("configdir", Required = false, HelpText = "Directory where the configuration settings are located (config.cfg, binds.cfg, autoexec.cfg). Default: %APPDATA%\\PFWolf\\<game>\\configs.")]
+    // %APPDATA% is ~/.config off Windows (ConfigDirectories.Default)
+    [Option("configdir", Required = false, HelpText = "Directory where the configuration settings are located (config.cfg, binds.cfg, autoexec.cfg). Default: %APPDATA%/PFWolf/<game>/configs (~/.config off Windows).")]
     public string ConfigDir { get; set; } = "";
 
-    [Option("savedir", Required = false, HelpText = "Directory where the game saves are located. Default: %APPDATA%\\PFWolf\\<game>\\savegames.")]
+    [Option("savedir", Required = false, HelpText = "Directory where the game saves are located. Default: %APPDATA%/PFWolf/<game>/savegames (~/.config off Windows).")]
     public string SavesDir { get; set; } = "";
 
-    [Option("demodir", Required = false, HelpText = "Directory where recorded demos are kept (and played ahead of the game's own). Default: %APPDATA%\\PFWolf\\<game>\\demos.")]
+    [Option("demodir", Required = false, HelpText = "Directory where recorded demos are kept (and played ahead of the game's own). Default: %APPDATA%/PFWolf/<game>/demos (~/.config off Windows).")]
     public string DemoDir { get; set; } = "";
 
     [Option("nowait", Required = false, HelpText = "Don't wait at the signon screen or show the intro screens or level briefings; with --exec, for scripted runs.")]
@@ -59,7 +60,7 @@ internal class GameParams
     [Option("base", Required = false, HelpText = "With --make-mod: the game the files are built on (wolf3d, wolf3d-apogee, spear, blake...). Default: the one they match best.")]
     public string Base { get; set; } = "";
 
-    [Option("out", Required = false, HelpText = "With --make-mod: the mod folder to write (the data files are copied in). Default: mods\\<the data folder's name>.")]
+    [Option("out", Required = false, HelpText = "With --make-mod: the mod folder to write (the data files are copied in). Default: mods/<the data folder's name>.")]
     public string Out { get; set; } = "";
 
     [Option("title", Required = false, HelpText = "With --make-mod: the game's title. Default: the data folder's name.")]

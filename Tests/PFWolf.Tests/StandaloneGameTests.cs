@@ -260,7 +260,7 @@ public class StandaloneGameTests
     private (int ExitCode, List<string> Output) RunGame(string commands, string demos, string? mod = null)
     {
         mod ??= ModPath;
-        var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
+        var exe = TestPaths.GameExe();
         Assert.That(File.Exists(exe), Is.True, $"{exe} wasn't built beside the tests");
 
         var start = new ProcessStartInfo(exe)

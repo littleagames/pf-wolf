@@ -299,7 +299,7 @@ public sealed partial class DemoBrowserViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrWhiteSpace(name))
             return "Give it a name";
-        if (name.IndexOfAny([.. Path.GetInvalidFileNameChars(), ' ', '/', '\\']) >= 0)
+        if (name.IndexOfAny([.. PFWolf.Loaders.PortableFileName.InvalidChars, ' ']) >= 0)
             return "A name is one word, of letters, digits, - and _";
         return null;
     }
@@ -361,7 +361,7 @@ public sealed partial class DemoBrowserViewModel : ObservableObject, IDisposable
         {
             var folder = Path.Combine(Path.GetTempPath(), "pfwolf-editor-demos");
             Directory.CreateDirectory(folder);
-            var name = string.Join("_", Path.GetFileNameWithoutExtension(entry.Name).Split(Path.GetInvalidFileNameChars()));
+            var name = PFWolf.Loaders.PortableFileName.Clean(Path.GetFileNameWithoutExtension(entry.Name));
             var path = Path.Combine(folder, $"{name}.dmo");
             File.WriteAllBytes(path, entry.Demo.Data);
             GameLaunch.Start(game.Exe, game.GameFolder, GameLaunch.DemoArguments(_content.PackId, path, game.Mods));

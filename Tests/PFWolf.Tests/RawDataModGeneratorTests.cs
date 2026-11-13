@@ -511,7 +511,7 @@ public class RawDataModGeneratorTests
         var data = GameFolderWithWl6();
         var source = Directory.CreateDirectory(Path.Combine(_workFolder, "Odd TC")).FullName;
         File.Copy(Path.Combine(data, "VSWAP.WL6"), Path.Combine(source, "PAGES.DAT"));
-        var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
+        var exe = TestPaths.GameExe();
         var start = new System.Diagnostics.ProcessStartInfo(exe)
         {
             WorkingDirectory = _workFolder, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true,
@@ -580,7 +580,7 @@ public class RawDataModGeneratorTests
         var data = GameFolderWithWl6();
         var source = Directory.CreateDirectory(Path.Combine(_workFolder, "My TC")).FullName;
         File.Copy(Path.Combine(data, "VSWAP.WL6"), Path.Combine(source, "VSWAP.WL6"));
-        var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
+        var exe = TestPaths.GameExe();
         Assert.That(File.Exists(exe), Is.True, $"{exe} wasn't built beside the tests");
         var start = new System.Diagnostics.ProcessStartInfo(exe)
         {

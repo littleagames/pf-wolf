@@ -121,7 +121,7 @@ public partial class SoundBrowserWindow : Window
             return;
 
         // A sound-seq name ("doors/open") isn't a file name
-        var name = string.Join("_", item.Name.Split(Path.GetInvalidFileNameChars()));
+        var name = PFWolf.Loaders.PortableFileName.Clean(item.Name);
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = $"Save {item.Name} as a WAV",
@@ -143,7 +143,7 @@ public partial class SoundBrowserWindow : Window
             return;
 
         var name = ViewModel.SelectedVariant?.Variant?.AssetName ?? item.Name;
-        name = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
+        name = PFWolf.Loaders.PortableFileName.Clean(name);
         var (label, pattern) = export.Extension switch
         {
             ".imf" => ("IMF song", "*.imf"),

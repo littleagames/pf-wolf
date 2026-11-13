@@ -134,6 +134,25 @@ No WSL or Docker on the development PC, so testing off Windows is by CI and by h
    message for each system, the editor's sound player on OpenAL, the art editor's program
    picker, the tests' exe name, file-name checks. Check: every test passes on Windows (nothing
    changes there); a test for the case-free helper with an upper-case `VSWAP.WL6`.
+   *Done 2026-11-12:*
+   - `ConfigDirectories` uses `Path.Combine`; `--help` names `~/.config` beside `%APPDATA%`.
+   - `CaseInsensitiveFile.Find` (Common/Loaders) in `ResolveDataFile`, so every data file,
+     movie and map pair lookup gets the on-disk name; also the raw data mod generator's base
+     files and movies, and HeadlessGame.
+   - `AudioManager` names the OpenAL library per system (`libopenal.so.1`, Apple's framework)
+     and explains a failure with dlopen's reason plus an install hint on Linux.
+   - The editor's sound player keeps winmm on Windows: the editor can't count on an
+     OpenAL32.dll beside it, and Creative's OpenAL32.dll that some PCs have in System32 (its
+     "Generic Software" device) plays at the wrong speed. OpenAL is used elsewhere
+     (SoundPlayer.OpenAL.cs). `SoundPlayer.UseOpenAL` lets the tests run it on Windows with
+     OpenAL Soft's DLL copied beside them; they skip on Creative's.
+   - Art editor picker: `*.exe` on Windows, `.app` on macOS (started with `open -a`), any
+     file on Linux; "the system's own program for PNGs" wording.
+   - Tests start `TestPaths.GameExe()`.
+   - `PortableFileName` (Windows' invalid characters, on every system) for a mod game's user
+     folder, demo names and exported sound names.
+   - Found: OpenTK only looks for Apple's framework on macOS, so bundling OpenAL Soft there
+     (phase 2) needs our own load ahead of OpenTK's.
 2. **Native libraries and CI.** SDL2 for every runtime we publish (see Decisions), the system
    SDL2 fallback on Linux, OpenAL for macOS, `SDL2_mixer.dll` dropped; the GitHub Actions run on
    all three. Check: CI green on all three, a headless `demotest` on Linux identical to

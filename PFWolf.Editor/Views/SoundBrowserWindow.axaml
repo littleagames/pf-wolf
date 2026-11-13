@@ -83,7 +83,7 @@
           <TextBlock Text="Volume" VerticalAlignment="Center" />
           <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding Volume}" VerticalAlignment="Center" />
         </Grid>
-        <TextBlock Text="Sound only plays on Windows for now." Opacity="0.6" FontSize="12"
+        <TextBlock Text="Sound can't play: OpenAL couldn't be started (see the warnings)." Opacity="0.6" FontSize="12"
                    IsVisible="{x:Static vm:SoundBrowserViewModel.CannotPlay}" />
 
         <TextBlock Text="Where it comes from (the last one is used)" FontWeight="SemiBold" Margin="0,6,0,0" />

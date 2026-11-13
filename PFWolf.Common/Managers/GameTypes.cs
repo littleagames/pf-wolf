@@ -227,8 +227,7 @@ public static class GameTypes
 
     private static string SafeFolderName(string name)
     {
-        var invalid = Path.GetInvalidFileNameChars();
-        var safe = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim('.', ' ');
+        var safe = PortableFileName.Clean(name).Trim('.', ' ');
         return safe.Length == 0 ? "Game" : safe;
     }
 

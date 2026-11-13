@@ -30,11 +30,13 @@ internal static class HeadlessGame
 
         foreach (var folder in DataFolderCandidates())
         {
-            if (!files.All(file => File.Exists(Path.Combine(folder, file.File!)) && Md5Matches(Path.Combine(folder, file.File!), file.Md5)))
+            // (VSWAP.WL6 for vswap.wl6 where the file system cares, copied in under its own name)
+            string InFolder(PFWolf.Assets.FileReference file) => CaseInsensitiveFile.Find(Path.Combine(folder, file.File!));
+            if (!files.All(file => File.Exists(InFolder(file)) && Md5Matches(InFolder(file), file.Md5)))
                 continue;
 
             foreach (var file in files)
-                File.Copy(Path.Combine(folder, file.File!), Path.Combine(workFolder, file.File!));
+                File.Copy(InFolder(file), Path.Combine(workFolder, Path.GetFileName(InFolder(file))));
             ZipFile.CreateFromDirectory(TestPaths.Pk3SourceFolder(), Path.Combine(workFolder, "pfwolf.pk3"));
             return folder;
         }
@@ -75,7 +77,7 @@ internal static class HeadlessGame
     public static (int ExitCode, List<string> Output) Run(string workFolder, string gamePack, string commands,
         TimeSpan timeout, IReadOnlyList<string> extraArgs, params string[] mods)
     {
-        var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
+        var exe = TestPaths.GameExe();
         Assert.That(File.Exists(exe), Is.True, $"{exe} wasn't built beside the tests");
 
         var start = new ProcessStartInfo(exe)

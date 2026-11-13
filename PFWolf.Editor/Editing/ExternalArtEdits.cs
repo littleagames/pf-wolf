@@ -62,12 +62,19 @@ public sealed class ExternalArtEdits : IDisposable
         return art;
     }
 
-    /// <summary>Opens a file in a program, or else in the one Windows edits its kind of file with (or opens it with)</summary>
+    /// <summary>
+    /// Opens a file in a program, or else in the one the system edits its kind of file with (on
+    /// Windows; elsewhere, the one it opens it with)
+    /// </summary>
     public static void Open(string filePath, string? program)
     {
         if (!string.IsNullOrWhiteSpace(program))
         {
-            Process.Start(new ProcessStartInfo(program) { ArgumentList = { filePath }, UseShellExecute = false })?.Dispose();
+            // A macOS app is a folder: open starts it on the file
+            var start = OperatingSystem.IsMacOS() && Directory.Exists(program)
+                ? new ProcessStartInfo("open") { ArgumentList = { "-a", program, filePath }, UseShellExecute = false }
+                : new ProcessStartInfo(program) { ArgumentList = { filePath }, UseShellExecute = false };
+            Process.Start(start)?.Dispose();
             return;
         }
 

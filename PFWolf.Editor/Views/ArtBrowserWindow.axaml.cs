@@ -144,10 +144,15 @@ public partial class ArtBrowserWindow : Window
 
     private async void PickImageEditor(object? sender, RoutedEventArgs e)
     {
+        // Linux programs have no extension to filter by
+        IReadOnlyList<FilePickerFileType>? programs =
+            OperatingSystem.IsWindows() ? [new FilePickerFileType("Programs") { Patterns = ["*.exe"] }]
+            : OperatingSystem.IsMacOS() ? [new FilePickerFileType("Applications") { Patterns = ["*.app"], AppleUniformTypeIdentifiers = ["com.apple.application-bundle"] }]
+            : null;
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "The paint program to edit pictures in (Aseprite, Paint.NET, GIMP…)",
-            FileTypeFilter = [new FilePickerFileType("Programs") { Patterns = ["*.exe"] }],
+            FileTypeFilter = programs,
         });
         if (files is [var file, ..] && file.TryGetLocalPath() is { } path)
         {
@@ -159,7 +164,7 @@ public partial class ArtBrowserWindow : Window
     private void UseDefaultImageEditor(object? sender, RoutedEventArgs e)
     {
         ViewModel.ImageEditor = "";
-        ViewModel.Status = "Edit outside opens pictures in the program Windows edits PNGs with";
+        ViewModel.Status = "Edit outside opens pictures in the system's own program for PNGs";
     }
 
     private static readonly FilePickerFileType PictureFiles = new("Pictures (PNG, BMP)") { Patterns = ["*.png", "*.bmp"] };

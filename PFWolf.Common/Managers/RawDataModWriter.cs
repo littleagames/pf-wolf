@@ -259,7 +259,7 @@ public static partial class RawDataModWriter
             text.AppendLine("        movies:");
             foreach (var (name, movie) in movies)
             {
-                var own = movie.File is { } file && File.Exists(Path.Combine(match.DataFolder, file));
+                var own = movie.File is { } file && File.Exists(CaseInsensitiveFile.Find(Path.Combine(match.DataFolder, file)));
                 text.AppendLine($"          {name}: {{ file: {Quote(movie.File ?? "")} }}{(own ? "" : "   # the game folder's")}");
             }
         }

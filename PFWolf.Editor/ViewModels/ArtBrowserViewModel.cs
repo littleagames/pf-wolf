@@ -948,13 +948,13 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     // Made the first time a picture's opened outside; its watchers end with the editor
     private ExternalArtEdits? _external;
 
-    /// <summary>The paint program pictures open in; empty for the one Windows edits PNGs with</summary>
+    /// <summary>The paint program pictures open in; empty for the system's own program for PNGs</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ImageEditorText))]
     private string _imageEditor = "";
 
     public string ImageEditorText => string.IsNullOrWhiteSpace(ImageEditor)
-        ? "Opens in the program Windows edits PNGs with"
+        ? "Opens in the system's own program for PNGs"
         : $"Opens in {Path.GetFileNameWithoutExtension(ImageEditor)}";
 
     /// <summary>Pictures saved in the other program and not brought in yet, the oldest first</summary>

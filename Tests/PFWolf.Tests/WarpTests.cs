@@ -42,7 +42,7 @@ public class WarpTests
             .FirstOrDefault(folder => File.Exists(Path.Combine(folder, "pfwolf.pk3")) && File.Exists(Path.Combine(folder, "GAMEMAPS.WL6")));
         if (gameFolder == null)
             Assert.Ignore("No built game folder with Wolf3D's data files; build PFWolf for x64");
-        var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
+        var exe = TestPaths.GameExe();
 
         // Act
         var output = RunUntil(exe, gameFolder!, $"--game wolf3d --nowait --configdir \"{_configFolder}\" --savedir \"{_configFolder}\" --demodir \"{_configFolder}\" {arguments}",

@@ -373,7 +373,8 @@ public static class RawDataModGenerator
     // The base game's own data files in the game folder (the working folder), those that are there
     private static DataFileSet BaseDataFiles(FilePack filePack)
     {
-        string? There(string loader, string part) => FileName(filePack, loader, part) is { } name && File.Exists(name) ? Path.GetFullPath(name) : null;
+        string? There(string loader, string part)
+            => FileName(filePack, loader, part) is { } name && CaseInsensitiveFile.Find(name) is var found && File.Exists(found) ? Path.GetFullPath(found) : null;
         return new DataFileSet(
             There("Wolf3DVswapFileLoader", "data"),
             There("Wolf3DVgaFileLoader", "dict"), There("Wolf3DVgaFileLoader", "header"), There("Wolf3DVgaFileLoader", "data"),

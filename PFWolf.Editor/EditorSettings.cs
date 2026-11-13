@@ -23,7 +23,7 @@ public sealed class EditorSettings
     /// <summary>Whether the 3D view shows beside the map</summary>
     public bool Show3D { get; set; }
 
-    /// <summary>The paint program the art browser opens pictures in; empty for the one Windows edits PNGs with</summary>
+    /// <summary>The paint program the art browser opens pictures in; empty for the system's own program for PNGs</summary>
     public string ImageEditor { get; set; } = "";
 
     /// <summary>Whether the splash screen shows at startup; --nosplash skips it for one run</summary>

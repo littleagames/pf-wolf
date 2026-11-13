@@ -1310,6 +1310,24 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 
 ---
 
+# Part 3: Linux and macOS
+
+See docs/dev/mac-linux-plan.md; phase 1's changes were only run on Windows.
+
+- [ ] **(never tried)** Windows still: F8 plays sounds (winmm, as before); Edit outside → Pick a
+      program… offers `.exe` files; the menu's other item reads "The system's own program for PNGs".
+- [ ] **(never tried)** Linux: with Steam/GOG's upper-case `VSWAP.WL6` etc. beside the game, it
+      finds them (no "missing data files"); settings and saves land in
+      `~/.config/PFWolf/<game>/configs` and `savegames` (folders, not one long file name).
+- [ ] **(never tried)** Linux without OpenAL Soft installed: the signon says sound is off and the
+      warning names `libopenal.so.1` with the install hint; with it installed, sound and music play.
+- [ ] **(never tried by ear)** Editor on Linux/macOS: F8 plays sounds and songs through OpenAL
+      (Play, Stop part way, loop, the position counter); without OpenAL the window says so.
+- [ ] **(never tried)** Editor on macOS: Pick a program… offers apps (GIMP.app) and Edit outside
+      opens the picture in it; on Linux any program file.
+
+---
+
 ## When done
 
 - Move each failure into an issue or `docs/dev/todo.md`.

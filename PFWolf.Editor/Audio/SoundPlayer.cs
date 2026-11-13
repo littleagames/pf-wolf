@@ -4,11 +4,12 @@ using PFWolf.Assets.Sounds;
 namespace PFWolf.Editor.Audio;
 
 /// <summary>
-/// Plays one sound or song at a time through the Windows wave-out device (winmm), fed a chunk at
-/// a time from a <see cref="MusicSource"/> on a thread of its own. Starting another stops the
-/// one playing. Elsewhere than Windows it's silent (<see cref="IsAvailable"/> is false).
+/// Plays one sound or song at a time, fed a chunk at a time from a <see cref="MusicSource"/> on a
+/// thread of its own: through the Windows wave-out device (winmm) on Windows, which needs nothing
+/// installed, and through OpenAL elsewhere (SoundPlayer.OpenAL.cs). Starting another stops the
+/// one playing. Silent when OpenAL can't be started (<see cref="IsAvailable"/> is false).
 /// </summary>
-public sealed class SoundPlayer : IDisposable
+public sealed partial class SoundPlayer : IDisposable
 {
     // 100ms per buffer, a few queued so a slow chunk (an MP3 frame, a busy OPL) doesn't gap
     private const int BufferCount = 4;
@@ -21,7 +22,10 @@ public sealed class SoundPlayer : IDisposable
     private int _sampleRate = 1;
     private IntPtr _device;
 
-    public static bool IsAvailable => OperatingSystem.IsWindows();
+    /// <summary>Whether sounds play through OpenAL rather than winmm: off Windows, or in a test</summary>
+    internal static bool UseOpenAL { get; set; } = !OperatingSystem.IsWindows();
+
+    public static bool IsAvailable => !UseOpenAL || OpenALDevice.Value;
 
     /// <summary>Sound volume, 0 to 1</summary>
     public float Volume { get; set; } = 0.8f;
@@ -36,7 +40,7 @@ public sealed class SoundPlayer : IDisposable
         {
             lock (_lock)
             {
-                var frames = _framesOffset + DevicePosition();
+                var frames = _framesOffset + (UseOpenAL ? OpenALPosition() : DevicePosition());
                 return TimeSpan.FromSeconds(frames / (double)_sampleRate);
             }
         }
@@ -62,7 +66,7 @@ public sealed class SoundPlayer : IDisposable
         {
             using (source)
             {
-                var finished = Stream(source, loop, cancel.Token);
+                var finished = UseOpenAL ? StreamOpenAL(source, loop, cancel.Token) : Stream(source, loop, cancel.Token);
                 if (finished && id == _playId)
                     Finished?.Invoke(this, EventArgs.Empty);
             }
@@ -81,7 +85,7 @@ public sealed class SoundPlayer : IDisposable
 
     public void Dispose() => Stop();
 
-    // Returns true when the source ran out and everything queued played
+    // Through winmm; returns true when the source ran out and everything queued played
     private bool Stream(MusicSource source, bool loop, CancellationToken token)
     {
         var sampleRate = source.SampleRate;
