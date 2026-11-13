@@ -151,8 +151,8 @@ public class ModSource
     private static string Listed(List<string> items) =>
         items.Count == 1 ? items[0] : $"{string.Join(", ", items[..^1])} and {items[^1]}";
 
-    /// <summary>The mods/ folder beside the exe</summary>
-    public static string ModsFolder => Path.Combine(AppContext.BaseDirectory, "mods");
+    /// <summary>The mods/ folder beside the exe (in a macOS app, in its Contents/Resources: GameInstall)</summary>
+    public static string ModsFolder => Path.Combine(GameInstall.Folder, "mods");
 
     /// <summary>Where mods are looked for, in order: beside the exe, then the player's data folder's (UserDataFolder)</summary>
     public static IReadOnlyList<string> ModsFolders =>
@@ -162,15 +162,17 @@ public class ModSource
 
     /// <summary>
     /// Where a new mod goes (--make-mod's): the mods folder beside the exe when it can be written
-    /// to (or made), else the player's data folder's, made when it isn't there
+    /// to (or made) and isn't inside a macOS app, else the player's data folder's, made when it
+    /// isn't there
     /// </summary>
-    public static string WritableModsFolder => WritableModsFolderOf(AppContext.BaseDirectory);
+    public static string WritableModsFolder => WritableModsFolderOf(GameInstall.Folder);
 
     /// <summary>The same for a game in another folder (the editor's game folder)</summary>
     public static string WritableModsFolderOf(string gameFolder)
     {
         var mods = Path.Combine(gameFolder, "mods");
-        if (CanWriteTo(mods))
+        // (Writing inside a macOS app would break its signature)
+        if (!GameInstall.IsInsideApp(gameFolder) && CanWriteTo(mods))
             return mods;
         try
         {

@@ -392,9 +392,11 @@ public static class DocComments
         _summaries = [];
         try
         {
+            // Beside the assembly; published as one file it has no Location, so beside the exe, or
+            // in a macOS app's Contents/Resources (GameInstall.Folder)
             var path = Path.ChangeExtension(assembly.Location, ".xml");
-            if (!File.Exists(path))
-                path = Path.Combine(AppContext.BaseDirectory, Path.GetFileNameWithoutExtension(assembly.Location) + ".xml");
+            if (string.IsNullOrEmpty(assembly.Location) || !File.Exists(path))
+                path = Path.Combine(PFWolf.Loaders.GameInstall.Folder, assembly.GetName().Name + ".xml");
             if (!File.Exists(path))
                 return _summaries;
 

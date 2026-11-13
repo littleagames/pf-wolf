@@ -44,13 +44,14 @@ internal static class GameFolder
     internal const string BasePk3 = "pfwolf.pk3";
 
     /// <summary>
-    /// Files dropped on the exe start it in some other folder (often the dropped files' own), but
-    /// pfwolf.pk3 and the game's data files are read from the working folder. When they aren't
-    /// there and are beside the exe, work from there instead.
+    /// Files dropped on the exe start it in some other folder (often the dropped files' own), as
+    /// do a desktop's menu and macOS's Finder, but pfwolf.pk3 and the game's data files are read
+    /// from the working folder. When they aren't there and are beside the exe (or in its macOS
+    /// app's Contents/Resources: GameInstall.Folder), work from there instead.
     /// </summary>
     internal static void Use()
     {
-        if (Pick(Directory.GetCurrentDirectory(), AppContext.BaseDirectory) is { } folder)
+        if (Pick(Directory.GetCurrentDirectory(), Loaders.GameInstall.Folder) is { } folder)
             Directory.SetCurrentDirectory(folder);
     }
 

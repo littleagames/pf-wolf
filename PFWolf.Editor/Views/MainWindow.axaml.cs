@@ -226,7 +226,8 @@ public partial class MainWindow : Window, IEditorDialogs
         });
         if (folders is [var folder, ..] && folder.TryGetLocalPath() is { } path)
         {
-            ViewModel.GameFolder = path;
+            // (PFWolf.app picked on macOS: the game's files are in its Contents/Resources)
+            ViewModel.GameFolder = PFWolf.Loaders.GameInstall.ContentFolder(path);
             if (ViewModel.CanLoad)
                 await ViewModel.LoadAsync();
         }

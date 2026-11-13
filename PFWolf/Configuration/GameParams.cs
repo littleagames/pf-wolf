@@ -4,14 +4,14 @@ using CommandLine;
 
 internal class GameParams
 {
-    // %APPDATA% is ~/.config off Windows (ConfigDirectories.Default)
-    [Option("configdir", Required = false, HelpText = "Directory where the configuration settings are located (config.cfg, binds.cfg, autoexec.cfg). Default: %APPDATA%/PFWolf/<game>/configs (~/.config off Windows).")]
+    // %APPDATA% is ~/.config on Linux, ~/Library/Application Support on macOS (Loaders.UserSettingsFolder)
+    [Option("configdir", Required = false, HelpText = "Directory where the configuration settings are located (config.cfg, binds.cfg, autoexec.cfg). Default: %APPDATA%/PFWolf/<game>/configs (~/.config on Linux, ~/Library/Application Support on macOS).")]
     public string ConfigDir { get; set; } = "";
 
-    [Option("savedir", Required = false, HelpText = "Directory where the game saves are located. Default: %APPDATA%/PFWolf/<game>/savegames (~/.config off Windows).")]
+    [Option("savedir", Required = false, HelpText = "Directory where the game saves are located. Default: %APPDATA%/PFWolf/<game>/savegames (~/.config on Linux, ~/Library/Application Support on macOS).")]
     public string SavesDir { get; set; } = "";
 
-    [Option("demodir", Required = false, HelpText = "Directory where recorded demos are kept (and played ahead of the game's own). Default: %APPDATA%/PFWolf/<game>/demos (~/.config off Windows).")]
+    [Option("demodir", Required = false, HelpText = "Directory where recorded demos are kept (and played ahead of the game's own). Default: %APPDATA%/PFWolf/<game>/demos (~/.config on Linux, ~/Library/Application Support on macOS).")]
     public string DemoDir { get; set; } = "";
 
     [Option("nowait", Required = false, HelpText = "Don't wait at the signon screen or show the intro screens or level briefings; with --exec, for scripted runs.")]

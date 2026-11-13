@@ -37,7 +37,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(EditorSettings settings)
     {
         _settings = settings;
-        _gameFolder = settings.GameFolder;
+        _gameFolder = string.IsNullOrWhiteSpace(settings.GameFolder) ? DefaultGameFolder() ?? "" : settings.GameFolder;
         _selectedTool = Tools.First(tool => tool.Tool == EditTool.Paint);
         _selectedPlane = Planes[0];
         _show3D = settings.Show3D;
@@ -54,6 +54,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         // The shared code's warnings (an asset that can't be read, say) go to the problems list
         WarningLog.Sink = message => Dispatcher.UIThread.Post(() => Problems.Add(message));
+    }
+
+    // With no game folder remembered: the game that came with the editor, when it's there (the
+    // same folder in the Windows and Linux downloads; PFWolf.app beside PFWolf Editor.app on macOS)
+    private static string? DefaultGameFolder()
+    {
+        var own = PFWolf.Loaders.GameInstall.Folder;
+        if (File.Exists(Path.Combine(own, AssetManager.BasePk3FileName)))
+            return own;
+        if (!PFWolf.Loaders.GameInstall.IsAppBundle)
+            return null;
+
+        // .../PFWolf Editor.app/Contents/Resources -> .../PFWolf.app
+        var app = Path.GetFullPath(Path.Combine(own, "..", "..", "..", "PFWolf.app"));
+        var resources = PFWolf.Loaders.GameInstall.ContentFolder(app);
+        return File.Exists(Path.Combine(resources, AssetManager.BasePk3FileName)) ? resources : null;
     }
 
     /// <summary>Answers the editor's questions; the window sets it</summary>
@@ -883,7 +899,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 // The game plays the demos to trace them, as Play starts it: from its folder, with the mods
                 GameToRun = () => Content == null ? null
-                    : (Path.Combine(GameFolder, OperatingSystem.IsWindows() ? "PFWolf.exe" : "PFWolf"), GameFolder, Mods.ToList()),
+                    : (PFWolf.Loaders.GameInstall.ExeIn(GameFolder), GameFolder, Mods.ToList()),
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
             };
@@ -2102,7 +2118,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Status = "Not tried: the level has to be saved for the game to see the changes";
             return;
         }
-        var exe = Path.Combine(GameFolder, OperatingSystem.IsWindows() ? "PFWolf.exe" : "PFWolf");
+        var exe = PFWolf.Loaders.GameInstall.ExeIn(GameFolder);
         if (!File.Exists(exe))
         {
             Problems.Add($"Try this puzzle: there's no {Path.GetFileName(exe)} in {GameFolder}");
@@ -2151,7 +2167,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var exe = Path.Combine(GameFolder, OperatingSystem.IsWindows() ? "PFWolf.exe" : "PFWolf");
+        var exe = PFWolf.Loaders.GameInstall.ExeIn(GameFolder);
         if (!File.Exists(exe))
         {
             Problems.Add($"Play: there's no {Path.GetFileName(exe)} in {GameFolder}");

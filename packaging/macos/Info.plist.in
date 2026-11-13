@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- make-apps.sh fills in the @NAME@-style fields for each app -->
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>@NAME@</string>
+    <key>CFBundleDisplayName</key>
+    <string>@NAME@</string>
+    <key>CFBundleIdentifier</key>
+    <string>@ID@</string>
+    <key>CFBundleExecutable</key>
+    <string>@EXE@</string>
+    <key>CFBundleIconFile</key>
+    <string>@EXE@</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>@VERSION@</string>
+    <key>CFBundleVersion</key>
+    <string>@VERSION@</string>
+    <key>LSApplicationCategoryType</key>
+    <string>@CATEGORY@</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright (c) 2026 Little A Games</string>
+</dict>
+</plist>

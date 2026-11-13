@@ -11,18 +11,21 @@ and how a mod is laid out.
 
 ## Where the files go
 
-PFWolf runs on Windows and Linux. Unzip (or untar) it anywhere: nothing needs installing. It plays
-the original games' data files (`VSWAP.WL6`, `GAMEMAPS.WL6` and the rest, from Steam, GOG or the
-shareware), which aren't included: copy them beside the game, or into your PFWolf data folder.
-Upper or lower case names both work.
+PFWolf runs on Windows, Linux and macOS. Unzip (or untar) it anywhere: nothing needs installing.
+It plays the original games' data files (`VSWAP.WL6`, `GAMEMAPS.WL6` and the rest, from Steam,
+GOG or the shareware), which aren't included: copy them beside the game, or into your PFWolf data
+folder (on a Mac, always the data folder). Upper or lower case names both work.
 
-| What | Windows | Linux |
-| --- | --- | --- |
-| The game's data files, mods, `crash.log` | beside `PFWolf.exe`, else `%LOCALAPPDATA%\PFWolf` | beside `PFWolf`, else `~/.local/share/PFWolf` |
-| Settings, saves, screenshots, demos | `%APPDATA%\PFWolf\<game>` | `~/.config/PFWolf/<game>` |
+| What | Windows | Linux | macOS |
+| --- | --- | --- | --- |
+| The game's data files, mods, `crash.log` | beside `PFWolf.exe`, else `%LOCALAPPDATA%\PFWolf` | beside `PFWolf`, else `~/.local/share/PFWolf` | `~/Library/Application Support/PFWolf` |
+| Settings, saves, screenshots, demos | `%APPDATA%\PFWolf\<game>` | `~/.config/PFWolf/<game>` | `~/Library/Application Support/PFWolf/<game>` |
 
 On Linux, `install-desktop-entries.sh` in the game's folder adds PFWolf and the editor to the
-desktop's application menu.
+desktop's application menu. On a Mac, PFWolf.app and PFWolf Editor.app aren't notarized yet, so
+the first time macOS asks before opening them: right-click the app and choose **Open** (or, on
+macOS 15 and later, **System Settings → Privacy & Security → Open Anyway**). In the editor, pick
+PFWolf.app as the game folder.
 
 ## Playing a mod
 

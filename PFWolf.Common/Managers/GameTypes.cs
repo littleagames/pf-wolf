@@ -223,7 +223,7 @@ public static class GameTypes
 
     /// <summary>Where the game records demos (DEMO0.dmo...) unless --demodir says otherwise</summary>
     public static string DemosFolder(GameSelection game)
-        => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", UserFolderName(game), "demos");
+        => Path.Combine(UserSettingsFolder.Path, UserFolderName(game), "demos");
 
     private static string SafeFolderName(string name)
     {

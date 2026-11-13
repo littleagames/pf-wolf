@@ -33,7 +33,7 @@ public partial class App : Application
             // as that game
             if (args is [var folder, .. var mods] && Directory.Exists(folder))
             {
-                viewModel.GameFolder = Path.GetFullPath(folder);
+                viewModel.GameFolder = PFWolf.Loaders.GameInstall.ContentFolder(Path.GetFullPath(folder));
                 var modPaths = mods.Where(mod => File.Exists(mod) || Directory.Exists(mod)).Select(Path.GetFullPath).ToList();
                 if (modPaths.Count > 0)
                 {

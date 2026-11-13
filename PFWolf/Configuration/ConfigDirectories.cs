@@ -15,12 +15,12 @@ internal record ConfigDirectories
     public string ExportsDirectory { get; set; } = null!;
 
     /// <param name="defaultModDirectory">
-    /// The running game's folder under PFWolf in the user's settings folder ("Wolfenstein3D"):
-    /// %APPDATA% on Windows, ~/.config (or $XDG_CONFIG_HOME) elsewhere
+    /// The running game's folder in the player's PFWolf settings folder ("Wolfenstein3D"; see
+    /// Loaders.UserSettingsFolder for where that is on each system)
     /// </param>
     internal static ConfigDirectories Default(string defaultModDirectory)
     {
-        string gameDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", defaultModDirectory);
+        string gameDirectory = Path.Combine(Loaders.UserSettingsFolder.Path, defaultModDirectory);
         return new ConfigDirectories
         {
             ConfigDirectory = Path.Combine(gameDirectory, "configs"),

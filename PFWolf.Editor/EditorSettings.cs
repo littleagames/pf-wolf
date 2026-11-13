@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace PFWolf.Editor;
 
 /// <summary>
-/// What the editor remembers between runs (%APPDATA%\PFWolf\Editor\editor.json): the game
-/// folder, game and mods last opened
+/// What the editor remembers between runs (Editor/editor.json in the PFWolf settings folder,
+/// %APPDATA%\PFWolf on Windows: Loaders.UserSettingsFolder): the game folder, game and mods last opened
 /// </summary>
 public sealed class EditorSettings
 {
@@ -29,8 +29,7 @@ public sealed class EditorSettings
     /// <summary>Whether the splash screen shows at startup; --nosplash skips it for one run</summary>
     public bool ShowSplash { get; set; } = true;
 
-    private static string FilePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", "Editor", "editor.json");
+    private static string FilePath => Path.Combine(PFWolf.Loaders.UserSettingsFolder.Path, "Editor", "editor.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 

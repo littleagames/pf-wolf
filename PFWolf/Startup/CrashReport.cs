@@ -2,8 +2,8 @@ namespace PFWolf.Startup;
 
 /// <summary>
 /// A crash writes the error to crash.log beside the exe (or in the player's data folder, then the
-/// temp folder, when that can't be written) and keeps the console open, so a double-clicked exe
-/// doesn't vanish with it.
+/// temp folder, when that can't be written or is inside a macOS app) and keeps the console open,
+/// so a double-clicked exe doesn't vanish with it.
 /// Without a console window (no --console) it says so in a message box instead.
 /// </summary>
 internal static class CrashReport
@@ -24,7 +24,10 @@ internal static class CrashReport
         {
             // Then it's the temp folder
         }
-        var logPath = Save(report, [AppContext.BaseDirectory, Loaders.UserDataFolder.Path, Path.GetTempPath()]);
+        // (Not inside a macOS app: writing there breaks its signature)
+        var logPath = Save(report, Loaders.GameInstall.IsAppBundle
+            ? [Loaders.UserDataFolder.Path, Path.GetTempPath()]
+            : [AppContext.BaseDirectory, Loaders.UserDataFolder.Path, Path.GetTempPath()]);
 
         if (!ConsoleWindow.HasOutput)
         {

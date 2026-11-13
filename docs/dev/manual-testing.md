@@ -1339,6 +1339,16 @@ See docs/dev/mac-linux-plan.md; phase 1's changes were only run on Windows.
       New mod default to that folder; a crash writes `crash.log` there.
 - [ ] **(never tried)** Windows: data files only in `%LOCALAPPDATA%\PFWolf` are found; a mod there
       shows in the Mods screen.
+- [ ] **(never tried)** Mac zip (Package workflow's artifact), Apple Silicon and an Intel Mac:
+      both apps show their icons; the first open asks, right-click → Open gets past it; with the
+      data files in `~/Library/Application Support/PFWolf` the game plays with sound and music;
+      settings and saves land in `~/Library/Application Support/PFWolf/<game>`; the example mods
+      inside the app show in Options → Mods.
+- [ ] **(never tried)** Editor on a Mac: with no folder remembered it opens PFWolf.app beside it;
+      picking PFWolf.app as the game folder works; Play starts the game; the 3D view (F3) draws;
+      the Definitions window (F11) shows the fields' descriptions.
+- [ ] **(never tried)** Windows: the published single-file editor's Definitions window (F11) shows
+      the fields' descriptions (the docs XML lookup changed).
 
 ---
 

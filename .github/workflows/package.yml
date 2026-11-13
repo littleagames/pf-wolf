@@ -1,5 +1,6 @@
-# Makes the downloads: the Linux tarballs (packaging/linux/make-tarball.sh), on demand or for a
-# version tag. They're uploaded as the run's artifacts.
+# Makes the downloads: the Linux tarballs (packaging/linux/make-tarball.sh) and the macOS apps
+# (packaging/macos/make-apps.sh), on demand or for a version tag. They're uploaded as the run's
+# artifacts.
 name: Package
 
 on:
@@ -31,3 +32,27 @@ jobs:
         with:
           name: pfwolf-${{ matrix.rid }}
           path: artifacts/*.tar.gz
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [osx-arm64, osx-x64]
+    runs-on: macos-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Apps
+        run: bash packaging/macos/make-apps.sh ${{ matrix.rid }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pfwolf-${{ matrix.rid }}
+          path: artifacts/*.zip

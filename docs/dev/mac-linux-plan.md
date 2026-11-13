@@ -210,6 +210,35 @@ No WSL or Docker on the development PC, so testing off Windows is by CI and by h
 4. **macOS build.** The user folder decision, `.app` bundles for the game and the editor with
    icons, `Contents/Resources` in `GameFolder`, the editor's 3D view on macOS, `Cmd` shortcuts,
    signing/notarization if decided, docs. Check: by hand on a Mac.
+   *Done 2026-11-12 (nothing run on a Mac yet):*
+   - `UserSettingsFolder` (Common/Loaders): settings, saves, screenshots, demos and the editor's
+     settings in `~/Library/Application Support/PFWolf` on macOS (`%APPDATA%\PFWolf` and
+     `~/.config/PFWolf` elsewhere, unchanged); `ConfigDirectories`, `GameTypes.DemosFolder`,
+     `EditorSettings` use it. The data files and mods (UserDataFolder) are in the same folder
+     on macOS.
+   - `GameInstall` (Common/Loaders): in an app, the game's own files are in
+     `Contents/Resources` (`GameInstall.Folder`): `GameFolder.Use` moves there, `ModsFolder`
+     is there, the editor's docs XML is read there. Nothing is written inside an app (its
+     signature): new mods and crash.log go to the player's data folder. The docs XML lookup
+     also fixes the published single-file editor on Windows, where `Assembly.Location` is empty.
+   - The editor takes `PFWolf.app` as its game folder (`GameInstall.ContentFolder`), starts
+     `Contents/MacOS/PFWolf` (`GameInstall.ExeIn`) and, with no folder remembered, defaults to
+     the game that came with it (its own folder on Windows/Linux, `PFWolf.app` beside it on macOS).
+   - The editor asks Avalonia for OpenGL ahead of Metal on macOS (`AvaloniaNativePlatformOptions`),
+     for the 3D view. Not seen working: whether the context is a core profile new enough for
+     GLSL 330 is a check on a Mac.
+   - Publish profile `osx.pubxml` for the game and the editor (Apple Silicon by default, `-r
+     osx-x64` for Intel). packaging/macos/make-apps.sh builds `PFWolf.app` and
+     `PFWolf Editor.app` (program and dylibs in `Contents/MacOS`, the rest in `Resources`,
+     `.icns` from the 256 px PNGs, Info.plist from `Info.plist.in`, ad-hoc signed) and zips them
+     with a README (Gatekeeper's first-run steps). The Package workflow runs it on macos-latest
+     for osx-arm64 and osx-x64. Cross-published from Windows: it builds.
+   - getting-started.md: macOS column, first-run steps.
+   - Not done: `Cmd` shortcuts. The editor has 111 `Ctrl+` gestures in its XAML and 37
+     `KeyModifiers.Control` checks in code; on a Mac they're the Control key, which works but
+     isn't what Mac users expect. Worth doing with a Mac to try it on (Avalonia's
+     `PlatformHotkeyConfiguration`, or swapping Control for Meta when a window opens).
+   - Not done: notarization (unsigned for now, by decision); a .dmg (a zip is enough to start).
 5. **Polish.** High-DPI game window, AppImage, a Linux package if wanted.
 
 ## Decisions
@@ -220,12 +249,10 @@ Made (2026-11-12):
   bindings, on every system.
 - **OpenAL:** OpenAL Soft bundled for every system (Silk.NET.OpenAL.Soft.Native), the
   system's only as a fallback.
+- **macOS user folder:** `~/Library/Application Support/PFWolf`.
+- **Signing:** unsigned (ad-hoc) for now, with first-run instructions; notarization later.
+- **Intel Macs:** both osx-arm64 and osx-x64 downloads.
 
 To make:
 
-- **macOS user folder.** `~/Library/Application Support/PFWolf` (the convention) or
-  `~/.config/PFWolf` (what .NET gives, the same as Linux).
-- **Signing.** Whether to get an Apple Developer account for notarized downloads, or ship
-  unsigned with instructions.
 - **Linux format.** Tarball only, or AppImage/Flatpak too.
-- **Intel Macs.** Whether to publish `osx-x64` at all, or Apple Silicon only.
