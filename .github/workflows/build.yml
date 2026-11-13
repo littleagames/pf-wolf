@@ -36,6 +36,30 @@ jobs:
       - name: Test
         run: dotnet test Tests/PFWolf.Tests/PFWolf.Tests.csproj -c Release --no-build --logger trx --results-directory TestResults
 
+      # The failed tests as annotations on the run, which can be read without signing in (the
+      # logs can't): a count with every name, then the first ones' messages (GitHub shows ten
+      # errors and ten warnings a step)
+      - name: Failed tests
+        if: failure()
+        shell: pwsh
+        run: |
+          function Escape([string]$text) { $text -replace '%', '%25' -replace "`r", '%0D' -replace "`n", '%0A' }
+          function EscapeTitle([string]$text) { (Escape $text) -replace ':', '%3A' -replace ',', '%2C' }
+          $ns = @{ t = 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010' }
+          $failed = Get-ChildItem TestResults -Filter *.trx -Recurse | ForEach-Object {
+              Select-Xml -Path $_.FullName -XPath '//t:UnitTestResult[@outcome="Failed"]' -Namespace $ns | ForEach-Object { $_.Node }
+          }
+          $names = ($failed | ForEach-Object { $_.testName }) -join '; '
+          Write-Output "::error title=$($failed.Count) tests failed::$(Escape $names)"
+          $i = 0
+          foreach ($result in $failed) {
+              $message = "$($result.Output.ErrorInfo.Message) $($result.Output.ErrorInfo.StackTrace)"
+              if ($message.Length -gt 1500) { $message = $message.Substring(0, 1500) }
+              $level = if ($i -lt 9) { 'error' } else { 'warning' }
+              Write-Output "::$level title=$(EscapeTitle $result.testName)::$(Escape $message)"
+              if (++$i -ge 19) { break }
+          }
+
       - name: Test results
         if: always()
         uses: actions/upload-artifact@v4
