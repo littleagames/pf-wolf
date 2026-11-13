@@ -2260,7 +2260,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task NewModAsync()
     {
-        if (Dialogs == null || await Dialogs.AskNewMod(BaseGameChoices, Path.Combine(GameFolder, "mods")) is not { } request)
+        if (Dialogs == null || await Dialogs.AskNewMod(BaseGameChoices, PFWolf.Loaders.ModSource.WritableModsFolderOf(GameFolder)) is not { } request)
             return;
 
         try
@@ -2310,7 +2310,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return RawDataModGenerator.DetectBase(folder, files);
         }
 
-        if (await Dialogs.AskRawDataMod(Path.Combine(GameFolder, "mods"), Detect) is not { } request)
+        if (await Dialogs.AskRawDataMod(PFWolf.Loaders.ModSource.WritableModsFolderOf(GameFolder), Detect) is not { } request)
             return;
 
         RawDataModFiles files;

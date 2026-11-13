@@ -154,6 +154,55 @@ public class ModSource
     /// <summary>The mods/ folder beside the exe</summary>
     public static string ModsFolder => Path.Combine(AppContext.BaseDirectory, "mods");
 
+    /// <summary>Where mods are looked for, in order: beside the exe, then the player's data folder's (UserDataFolder)</summary>
+    public static IReadOnlyList<string> ModsFolders =>
+        Path.GetFullPath(ModsFolder).Equals(Path.GetFullPath(UserDataFolder.ModsFolder), StringComparison.OrdinalIgnoreCase)
+            ? [ModsFolder]
+            : [ModsFolder, UserDataFolder.ModsFolder];
+
+    /// <summary>
+    /// Where a new mod goes (--make-mod's): the mods folder beside the exe when it can be written
+    /// to (or made), else the player's data folder's, made when it isn't there
+    /// </summary>
+    public static string WritableModsFolder => WritableModsFolderOf(AppContext.BaseDirectory);
+
+    /// <summary>The same for a game in another folder (the editor's game folder)</summary>
+    public static string WritableModsFolderOf(string gameFolder)
+    {
+        var mods = Path.Combine(gameFolder, "mods");
+        if (CanWriteTo(mods))
+            return mods;
+        try
+        {
+            Directory.CreateDirectory(UserDataFolder.ModsFolder);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // Said when the mod is written there
+        }
+        return UserDataFolder.ModsFolder;
+    }
+
+    // Whether a file can be made in the folder, or, when it isn't there yet, in the folder it'd be
+    // made in; nothing is left behind
+    private static bool CanWriteTo(string folder)
+    {
+        var existing = Directory.Exists(folder) ? folder : Path.GetDirectoryName(Path.GetFullPath(folder));
+        if (existing == null || !Directory.Exists(existing))
+            return false;
+        try
+        {
+            var probe = Path.Combine(existing, $".pfwolf-write-test-{Guid.NewGuid():N}");
+            File.WriteAllBytes(probe, []);
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>
     /// The full path of a mod named on the command line, when it's there as given. Called before
     /// the working folder can change, since a relative path means the folder the game started in.
@@ -163,16 +212,19 @@ public class ModSource
         => File.Exists(path) || Directory.Exists(path) ? Path.GetFullPath(path) : path;
 
     /// <summary>
-    /// Where a named mod is: as given, then in mods/, then in mods/ with .pk3 added
-    /// (so "--file mymod" finds mods/mymod.pk3). Null when it's in none of them.
+    /// Where a named mod is: as given, then in each of the mods folders, as named and with .pk3
+    /// added (so "--file mymod" finds mods/mymod.pk3). Null when it's in none of them.
     /// </summary>
     public static string? ResolvePath(string path)
     {
         var candidates = new List<string> { path };
         if (!Path.IsPathRooted(path))
         {
-            candidates.Add(Path.Combine(ModsFolder, path));
-            candidates.Add(Path.Combine(ModsFolder, path + ".pk3"));
+            foreach (var folder in ModsFolders)
+            {
+                candidates.Add(Path.Combine(folder, path));
+                candidates.Add(Path.Combine(folder, path + ".pk3"));
+            }
         }
 
         var found = candidates.FirstOrDefault(candidate => File.Exists(candidate) || Directory.Exists(candidate));
@@ -188,19 +240,19 @@ public class ModSource
         => GamePackList.Includes(ForGamePacks, gamePackId, basePackIds);
 
     /// <summary>
-    /// Every pk3, zip and folder in the mods folder, by name
+    /// Every pk3, zip and folder in the mods folders, by name. One of the same name in both is the
+    /// game folder's, as ResolvePath finds it.
     /// </summary>
     public static IEnumerable<string> FindInModsFolder()
-    {
-        if (!Directory.Exists(ModsFolder))
-            return [];
-
-        return Directory.EnumerateDirectories(ModsFolder)
-            .Concat(Directory.EnumerateFiles(ModsFolder).Where(file =>
-                Path.GetExtension(file).Equals(".pk3", StringComparison.OrdinalIgnoreCase)
-                || Path.GetExtension(file).Equals(".zip", StringComparison.OrdinalIgnoreCase)))
-            .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase);
-    }
+        => ModsFolders
+            .Where(Directory.Exists)
+            .SelectMany(folder => Directory.EnumerateDirectories(folder)
+                .Concat(Directory.EnumerateFiles(folder).Where(file =>
+                    Path.GetExtension(file).Equals(".pk3", StringComparison.OrdinalIgnoreCase)
+                    || Path.GetExtension(file).Equals(".zip", StringComparison.OrdinalIgnoreCase))))
+            .DistinctBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     /// <summary>
     /// Opens a mod, or gives null (with the reason in warnings) when it can't be read

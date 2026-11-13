@@ -38,7 +38,8 @@ internal static class ModsConfig
             File.WriteAllLines(path,
             [
                 "# Mods loaded over pfwolf.pk3, in this order (later ones win). Set in the Options menu's",
-                "# Mods screen; a name is in the mods folder beside the game, anything else is a full path.",
+                "# Mods screen; a name is in the mods folder beside the game (or in your PFWolf data folder's),",
+                "# anything else is a full path.",
                 .. mods,
             ]);
             return true;
@@ -51,14 +52,21 @@ internal static class ModsConfig
     }
 
     /// <summary>
-    /// How a mod is written in mods.cfg: its name when it's directly in the mods folder, so the
-    /// game folder can be moved; its full path otherwise
+    /// How a mod is written in mods.cfg: its name when it's directly in one of the mods folders
+    /// (so the game folder can be moved) and the name finds it; its full path otherwise (one in
+    /// the player's mods folder that a mod of the same name beside the game hides)
     /// </summary>
     public static string ConfigName(string fullPath)
     {
-        var folder = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(fullPath));
-        return string.Equals(folder, Path.TrimEndingDirectorySeparator(ModSource.ModsFolder), StringComparison.OrdinalIgnoreCase)
-            ? Path.GetFileName(Path.TrimEndingDirectorySeparator(fullPath))
+        static string Trimmed(string path) => Path.TrimEndingDirectorySeparator(path);
+
+        var folder = Path.GetDirectoryName(Trimmed(fullPath));
+        if (!ModSource.ModsFolders.Any(modsFolder => string.Equals(folder, Trimmed(modsFolder), StringComparison.OrdinalIgnoreCase)))
+            return fullPath;
+
+        var name = Path.GetFileName(Trimmed(fullPath));
+        return ModSource.ResolvePath(name) is not { } found || string.Equals(Trimmed(found), Trimmed(Path.GetFullPath(fullPath)), StringComparison.OrdinalIgnoreCase)
+            ? name
             : fullPath;
     }
 }

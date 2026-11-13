@@ -60,7 +60,7 @@ internal class GameParams
     [Option("base", Required = false, HelpText = "With --make-mod: the game the files are built on (wolf3d, wolf3d-apogee, spear, blake...). Default: the one they match best.")]
     public string Base { get; set; } = "";
 
-    [Option("out", Required = false, HelpText = "With --make-mod: the mod folder to write (the data files are copied in). Default: mods/<the data folder's name>.")]
+    [Option("out", Required = false, HelpText = "With --make-mod: the mod folder to write (the data files are copied in). Default: mods/<the data folder's name>, in your PFWolf data folder when the game's can't be written to.")]
     public string Out { get; set; } = "";
 
     [Option("title", Required = false, HelpText = "With --make-mod: the game's title. Default: the data folder's name.")]

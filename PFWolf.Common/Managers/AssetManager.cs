@@ -440,8 +440,8 @@ public class AssetManager
         var missing = gamePackInfo.FindMissingDataFiles(gameReleaseId);
         if (missing.Count > 0)
             throw new DataFilesException(dataFolder != null
-                ? $"{release}: these data files are neither in {dataFolder} nor in the game folder: {string.Join(", ", missing)}"
-                : $"{release}: these data files aren't in the game folder: {string.Join(", ", missing)}");
+                ? $"{release}: these data files are neither in {dataFolder} nor in the game folder or {UserDataFolder.Path}: {string.Join(", ", missing)}"
+                : $"{release}: these data files aren't in the game folder or {UserDataFolder.Path}: {string.Join(", ", missing)}");
 
         if (filePack?.StrictMd5 == true)
         {
@@ -603,7 +603,7 @@ public class AssetManager
             var fullPath = ModSource.ResolvePath(modPath);
             if (fullPath == null)
             {
-                ModWarnings.Add($"Mod '{modPath}' isn't there, or in {ModSource.ModsFolder}, so it isn't loaded");
+                ModWarnings.Add($"Mod '{modPath}' isn't there, or in {string.Join(" or ", ModSource.ModsFolders)}, so it isn't loaded");
                 continue;
             }
             if (!seen.Add(fullPath))

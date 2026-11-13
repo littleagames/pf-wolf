@@ -1329,6 +1329,16 @@ See docs/dev/mac-linux-plan.md; phase 1's changes were only run on Windows.
       (Play, Stop part way, loop, the position counter); without OpenAL the window says so.
 - [ ] **(never tried)** Editor on macOS: Pick a program… offers apps (GIMP.app) and Edit outside
       opens the picture in it; on Linux any program file.
+- [ ] **(never tried)** Linux tarball (Package workflow's artifact): unpack, `./PFWolf` starts;
+      `./install-desktop-entries.sh` puts PFWolf and the editor in the application menu with their
+      icons and both start from there; `--remove` takes them out.
+- [ ] **(never tried)** Data files only in `~/.local/share/PFWolf` (none beside the game): the game
+      finds them; a missing one's error names both folders.
+- [ ] **(never tried)** The game folder read-only (`chmod -R a-w`): a mod in
+      `~/.local/share/PFWolf/mods` shows in Options → Mods and loads; `--make-mod` and the editor's
+      New mod default to that folder; a crash writes `crash.log` there.
+- [ ] **(never tried)** Windows: data files only in `%LOCALAPPDATA%\PFWolf` are found; a mod there
+      shows in the Mods screen.
 
 ---
 

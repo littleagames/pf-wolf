@@ -184,6 +184,29 @@ No WSL or Docker on the development PC, so testing off Windows is by CI and by h
    logs), Mods screen and New mod writing there when the game folder isn't writable, publish
    for linux-x64/arm64, tarball with a `.desktop` file, docs (getting-started: where files go,
    nothing to install: SDL2 and OpenAL Soft are bundled). Check: by hand on a Linux machine.
+   *Done 2026-11-12 (nothing run on Linux yet):*
+   - `UserDataFolder` (Common/Loaders): `LocalApplicationData/PFWolf`, so
+     `~/.local/share/PFWolf` on Linux, `%LOCALAPPDATA%\PFWolf` on Windows,
+     `~/Library/Application Support/PFWolf` on macOS. Data files (`ResolveDataFile` via
+     `FindBesideGame`, the raw data mod generator's base files) and mods (`ModSource.ModsFolders`:
+     listing, `--file` names, mods.cfg names) are looked for there after the game folder.
+     Windows too, where nothing changes unless the game folder lacks something.
+   - New mods (`--make-mod`, the editor's New mod and raw data mod wizard) default to the game's
+     mods folder when it can be written to, else the player's (`ModSource.WritableModsFolderOf`,
+     checked by writing a probe file, nothing made). crash.log: game folder, then the player's
+     folder, then temp.
+   - Publish profile `linux.pubxml` for the game and the editor (x64 by default, `-r
+     linux-arm64` for ARM), self-contained single file; the game's SDL2 and OpenAL Soft sit
+     beside it. Cross-published from Windows: it builds.
+   - packaging/linux: `make-tarball.sh <rid>` (publish both, icons, README, chmod, tar) →
+     `artifacts/pfwolf-<version>-<rid>.tar.gz`; `install-desktop-entries.sh` writes
+     `~/.local/share/applications/pfwolf.desktop` and `pfwolf-editor.desktop` pointing at the
+     unpacked folder (`--remove`). A tarball made on Windows loses the executable bits, so it's
+     made on Linux: .github/workflows/package.yml (on demand or a `v*` tag) for linux-x64 and
+     linux-arm64, uploaded as artifacts. `.gitattributes` keeps `*.sh` LF.
+   - getting-started.md: where the files go on Windows and Linux.
+   - Not done: the Mods screen's "There are no mods in the mods folder beside the game" text
+     (language/en-us.yaml) doesn't mention the player's folder.
 4. **macOS build.** The user folder decision, `.app` bundles for the game and the editor with
    icons, `Contents/Resources` in `GameFolder`, the editor's 3D view on macOS, `Cmd` shortcuts,
    signing/notarization if decided, docs. Check: by hand on a Mac.

@@ -77,7 +77,7 @@ internal static class MakeModCommand
 
             var title = string.IsNullOrWhiteSpace(gameParams.Title) ? folderName : gameParams.Title.Trim();
             var gameId = RawDataModWriter.GameIdFrom(title);
-            var modFolder = string.IsNullOrWhiteSpace(gameParams.Out) ? Path.Combine(ModSource.ModsFolder, folderName) : gameParams.Out;
+            var modFolder = string.IsNullOrWhiteSpace(gameParams.Out) ? Path.Combine(ModSource.WritableModsFolder, folderName) : gameParams.Out;
 
             // The mod's own palette: --palette, else the one palette file that came with the data files
             var paletteFile = string.IsNullOrWhiteSpace(gameParams.Palette) ? RawDataModGenerator.FindPaletteFile(dataFolder) : gameParams.Palette;

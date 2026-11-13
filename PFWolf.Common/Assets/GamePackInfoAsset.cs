@@ -100,14 +100,15 @@ public record GamePackInfoAsset : Asset
     /// <summary>
     /// Where one of the release's data files is: in the folder of the mod whose game gives the
     /// file-pack when it's there (a raw data mod's VSWAP.WL6), else the name as given, which is
-    /// the game folder's (the working folder). Either way with the name's case as it is on disk
-    /// (VSWAP.WL6 for vswap.wl6), for file systems that care.
+    /// the game folder's (the working folder), else the player's data folder's (UserDataFolder),
+    /// else the name as given. Each with the name's case as it is on disk (VSWAP.WL6 for
+    /// vswap.wl6), for file systems that care.
     /// </summary>
     public string ResolveDataFile(string releaseId, string file)
     {
         if (GetDataFolder(releaseId) is { } folder && CaseInsensitiveFile.Find(Path.Combine(folder, file)) is var inMod && File.Exists(inMod))
             return inMod;
-        return CaseInsensitiveFile.Find(file);
+        return UserDataFolder.FindBesideGame(file);
     }
 
     /// <summary>Whether a release plays from data files in the game folder (one built on standalone doesn't)</summary>

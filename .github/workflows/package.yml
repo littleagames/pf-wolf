@@ -1,0 +1,33 @@
+# Makes the downloads: the Linux tarballs (packaging/linux/make-tarball.sh), on demand or for a
+# version tag. They're uploaded as the run's artifacts.
+name: Package
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [linux-x64, linux-arm64]
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Tarball
+        run: bash packaging/linux/make-tarball.sh ${{ matrix.rid }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pfwolf-${{ matrix.rid }}
+          path: artifacts/*.tar.gz

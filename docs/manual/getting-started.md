@@ -6,20 +6,37 @@ order: 1
 # Getting started
 
 PFWolf is a source port of Wolfenstein 3D built so you can make a game, or change one, with data
-files instead of changing the engine. This page covers loading a mod and how a mod is laid out.
+files instead of changing the engine. This page covers where the game's files go, loading a mod
+and how a mod is laid out.
+
+## Where the files go
+
+PFWolf runs on Windows and Linux. Unzip (or untar) it anywhere: nothing needs installing. It plays
+the original games' data files (`VSWAP.WL6`, `GAMEMAPS.WL6` and the rest, from Steam, GOG or the
+shareware), which aren't included: copy them beside the game, or into your PFWolf data folder.
+Upper or lower case names both work.
+
+| What | Windows | Linux |
+| --- | --- | --- |
+| The game's data files, mods, `crash.log` | beside `PFWolf.exe`, else `%LOCALAPPDATA%\PFWolf` | beside `PFWolf`, else `~/.local/share/PFWolf` |
+| Settings, saves, screenshots, demos | `%APPDATA%\PFWolf\<game>` | `~/.config/PFWolf/<game>` |
+
+On Linux, `install-desktop-entries.sh` in the game's folder adds PFWolf and the editor to the
+desktop's application menu.
 
 ## Playing a mod
 
 A mod is a folder, a `.zip` or a `.pk3` with the game's data files in it. There are three ways to load one:
 
-- **From the menu:** put the mod in the `mods` folder next to the game, switch it on in
-  **Options → Mods** (the game restarts), and start a new game.
+- **From the menu:** put the mod in the `mods` folder next to the game (or in your PFWolf data
+  folder's `mods`), switch it on in **Options → Mods** (the game restarts), and start a new game.
 - **From the command line:** name it with `--file`:
 
   ```
   PFWolf.exe --file moody-lights
   ```
 
+  (`./PFWolf --file moody-lights` on Linux.)
 - **Drag and drop:** drop the mod onto `PFWolf.exe`.
 
 ## What's in a mod

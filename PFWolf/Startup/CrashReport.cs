@@ -1,8 +1,9 @@
 namespace PFWolf.Startup;
 
 /// <summary>
-/// A crash writes the error to crash.log beside the exe (or in the temp folder when that can't
-/// be written) and keeps the console open, so a double-clicked exe doesn't vanish with it.
+/// A crash writes the error to crash.log beside the exe (or in the player's data folder, then the
+/// temp folder, when that can't be written) and keeps the console open, so a double-clicked exe
+/// doesn't vanish with it.
 /// Without a console window (no --console) it says so in a message box instead.
 /// </summary>
 internal static class CrashReport
@@ -15,7 +16,15 @@ internal static class CrashReport
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         var report = Text(e.ExceptionObject, DateTime.Now);
-        var logPath = Save(report, [AppContext.BaseDirectory, Path.GetTempPath()]);
+        try
+        {
+            Directory.CreateDirectory(Loaders.UserDataFolder.Path);
+        }
+        catch
+        {
+            // Then it's the temp folder
+        }
+        var logPath = Save(report, [AppContext.BaseDirectory, Loaders.UserDataFolder.Path, Path.GetTempPath()]);
 
         if (!ConsoleWindow.HasOutput)
         {
