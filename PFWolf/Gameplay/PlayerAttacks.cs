@@ -9,7 +9,7 @@ namespace PFWolf.Gameplay;
 /// <param name="CenterX">The view's middle column, as the renderer last drew it</param>
 /// <param name="ShootDelta">How many pixels away from the middle a target can be</param>
 /// <param name="HurtPlayer">Hurts another player, as the acting player while it does (deathmatch)</param>
-/// <param name="PlayPlayerSound">A sound the acting player makes</param>
+/// <param name="PlayPlayerSound">The acting player's weapon firing (its attacksound: the local player's on the weapon channel)</param>
 /// <param name="DamageDealt">How much of their weapons' damage the player deals (player.damagedealt)</param>
 /// <param name="IsDecoy">
 /// Whether the match mode makes a decoration something the acting player's shot can hit, to

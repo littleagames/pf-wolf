@@ -34,4 +34,12 @@ public record SoundProfile
 
     /// <summary>Another sound's name, played in its place (switches/exitbutn: switches/normbutn)</summary>
     public string? Alias { get; set; }
+
+    /// <summary>
+    /// A channel of its own (boss: the bosses' chaingun): every sound naming the same channel plays
+    /// on one voice, each start cutting off the last, as Wolf4SDL's reserved channels did, so a burst
+    /// of fire retriggers instead of piling up. Unset, the sound takes any free voice. An entry
+    /// reached through random or alias plays on the first channel named along the way.
+    /// </summary>
+    public string? Channel { get; set; }
 }

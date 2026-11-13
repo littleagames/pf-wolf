@@ -74,6 +74,19 @@ internal sealed class Players(
     }
 
     /// <summary>
+    /// The acting player's weapon firing (its attacksound): the local player's on the weapon
+    /// channel, each shot cutting off the last as the original's did; anyone else's from where
+    /// that player stands, as any other sound of theirs
+    /// </summary>
+    internal void PlayPlayerWeaponSound(string name)
+    {
+        if (session.ActingIsLocal || session.PlayerState.Pawn is not { } pawn)
+            audio.Play(name, AudioManager.WeaponChannel);
+        else
+            hooks.PlaySoundAt(name, pawn);
+    }
+
+    /// <summary>
     /// A new game's players: just the local one, fresh. Anyone else is added after (addplayer).
     /// </summary>
     internal void ResetPlayers()

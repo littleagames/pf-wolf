@@ -488,7 +488,7 @@ internal static partial class GameHost
 
     static PlayerAttacks MakePlayerAttacks() =>
         new(MapManager, InventoryManager, FactionManager, lineOfSight, Session,
-            new PlayerAttackHooks(PlayerViewOrigin, () => CenterX, () => ShootDelta, TakeDamage, PlayPlayerSound,
+            new PlayerAttackHooks(PlayerViewOrigin, () => CenterX, () => ShootDelta, TakeDamage, PlayPlayerWeaponSound,
                 () => DamageDealt, actor => deathmatch.Objective?.IsDecoy(actor) == true,
                 (x, y, type, damage) => destructibleWalls.Hit(x, y, type, Session.Player, damage)));
 
@@ -532,6 +532,7 @@ internal static partial class GameHost
 
     internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);
     internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);
+    static void PlayPlayerWeaponSound(string name) => playersManager.PlayPlayerWeaponSound(name);
     static bool IsFreeFloor(int x, int y) => playersManager.IsFreeFloor(x, y);
     internal static void PlayerDies() => playersManager.PlayerDies();
     internal static void ThinkPlayerDead(Entities.Actors.Actor ob) => playersManager.ThinkPlayerDead(ob);

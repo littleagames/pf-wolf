@@ -783,6 +783,7 @@ sound-info:
       - lostofficer/death
 
   hans/attack:
+    channel: boss         # Wolf4SDL's boss weapon channel: each burst retriggers
     digitized: DSBOSSFR
     adlib: ALBOSSFR
     pc: PCBOSSFR
@@ -822,6 +823,7 @@ sound-info:
     pc: PCFAKDTH
 
   hitler/attack:
+    channel: boss
     digitized: DSBOSSFR
     adlib: ALBOSSFR
     pc: PCBOSSFR
@@ -883,6 +885,7 @@ sound-info:
     pc: PCBAREXP
 
   trans/attack:
+    channel: boss
     digitized: DSBOSSFR
     adlib: ALBOSSFR
     pc: PCBOSSFR
@@ -896,6 +899,7 @@ sound-info:
     pc: PCTRADTH
 
   will/attack:
+    channel: boss
     digitized: DSBOSSFR
     adlib: ALBOSSFR
     pc: PCBOSSFR
@@ -909,6 +913,7 @@ sound-info:
     pc: PCWILDTH
 
   uber/attack:
+    channel: boss
     digitized: DSBOSSFR
     adlib: ALBOSSFR
     pc: PCBOSSFR
@@ -918,6 +923,7 @@ sound-info:
     pc: PCUBRDTH
 
   knight/attack:
+    channel: boss
     digitized: DSBOSSFR
     adlib: ALBOSSFR
     pc: PCBOSSFR

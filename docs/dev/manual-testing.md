@@ -669,6 +669,10 @@ the keypad's note and code open its closet)
 - [ ] **(never tried)** Mod `sounds/` WAV/OGG/MP3/.pcs/.adl.
 - [ ] `playsound`, `changemus`.
 - [ ] Sounds of new features: CTF/heist/domination cues, taunts, medic raise, switch sounds.
+- [ ] **(never tried)** Held chaingun (and MG, fast pistol) against Wolf4SDL: each shot cuts off
+      the last (the weapon channel) rather than piling up; Hans/Hitler/Spear bosses' bursts the
+      same (sound-seq `channel: boss`); in a long fight, death screams and boss sightings play to
+      the end instead of being cut off by gunfire (shared voices: free first, then the oldest).
 
 ## 1.14 Mods
 

@@ -11,8 +11,19 @@ namespace PFWolf.Managers;
 
 internal class AudioManager
 {
-    // Number of sound channels to use
+    // Number of sound channels any sound may take
     private const int SourceCount = 16;
+
+    // Voices kept back for named channels (a sound-seq entry's channel, and WeaponChannel), after
+    // the SourceCount shared ones in _sources
+    private const int ChannelCount = 4;
+
+    /// <summary>
+    /// The local player's weapon: each shot cuts off the last, as on Wolf4SDL's reserved player
+    /// weapon channel (and DOS's one digitized channel), so a held chaingun retriggers rather than
+    /// piling its shots up
+    /// </summary>
+    public const string WeaponChannel = "weapon";
 
     // IMF music is boosted as it's synthesized (ImfMusicSource), then brought back down here
     private const float MusicGain = 0.75f;
@@ -135,9 +146,17 @@ internal class AudioManager
             StopAll();
     }
 
-    // Available sound channels
+    // The sound channels: the SourceCount shared ones, then ChannelCount kept for named channels
     private int _nextSource;
     private int[] _sources = [];
+
+    // When each of _sources last started a sound (a count of starts), to take the oldest when none is free
+    private long[] _startedAt = [];
+    private long _starts;
+
+    // Each named channel's voice (an index into _sources, past the shared ones), given on first use
+    private readonly Dictionary<string, int> _channelSources = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _reportedChannels = new(StringComparer.OrdinalIgnoreCase);
 
     private int _musicSource;
     private readonly Lazy<AssetManager> _assetManager;
@@ -193,7 +212,8 @@ internal class AudioManager
             return;
         }
 
-        _sources = AL.GenSources(SourceCount);
+        _sources = AL.GenSources(SourceCount + ChannelCount);
+        _startedAt = new long[_sources.Length];
         _musicSource = AL.GenSource();
         AL.Source(_musicSource, ALSourceb.SourceRelative, true);
         _ambientSource = AL.GenSource();
@@ -334,13 +354,19 @@ internal class AudioManager
     /// <summary>
     /// Plays a sound at the listener, with no distance attenuation or panning.
     /// </summary>
-    public void Play(string name) => Play(name, null);
+    public void Play(string name) => Play(name, null, null);
+
+    /// <summary>
+    /// Plays a sound at the listener on a named channel (<see cref="WeaponChannel"/>), cutting
+    /// off what that channel played last; it wins over the sound's own sound-seq channel.
+    /// </summary>
+    public void Play(string name, string channel) => Play(name, null, channel);
 
     /// <summary>
     /// Plays a sound at a world position (in tiles), attenuated and panned relative to the
     /// listener set by <see cref="SetListener"/>.
     /// </summary>
-    public void PlayAt(string name, float x, float y) => Play(name, (x, y));
+    public void PlayAt(string name, float x, float y) => Play(name, (x, y), null);
 
     /// <summary>
     /// Moves the OpenAL listener to the player's world position (in tiles) and facing.
@@ -357,16 +383,72 @@ internal class AudioManager
         AL.Listener(ALListenerfv.Orientation, orientation);
     }
 
-    private void Play(string name, (float X, float Y)? position)
+    private void Play(string name, (float X, float Y)? position, string? channel)
     {
-        if (!IsActive || ResolveBuffer(name) is not int playBuffer)
+        if (!IsActive || ResolveBuffer(name, out var soundChannel) is not int playBuffer)
             return;
 
-        // Get next available sound channel
-        var source = _sources[_nextSource++ % _sources.Length];
+        var index = ChannelSource(channel ?? soundChannel) ?? SharedSource();
+        var source = _sources[index];
+        _startedAt[index] = ++_starts;
         _lastBufferForSound[name.ToLowerInvariant()] = playBuffer;
         StartSource(source, playBuffer, position);
         _lastStarted = (source, playBuffer);
+    }
+
+    // A named channel's voice, given it on first use; null for no channel, or one more than
+    // there are voices kept for (that one shares, as an unnamed sound does, with a warning)
+    private int? ChannelSource(string? channel)
+    {
+        if (string.IsNullOrWhiteSpace(channel))
+            return null;
+        if (_channelSources.TryGetValue(channel, out var index))
+            return index;
+        if (_channelSources.Count >= ChannelCount)
+        {
+            if (_reportedChannels.Add(channel))
+                WarningLog.Write($"Sound channel {channel} is one more than the {ChannelCount} there can be: its sounds take any free voice");
+            return null;
+        }
+        return _channelSources[channel] = SourceCount + _channelSources.Count;
+    }
+
+    /*
+    A shared voice for a sound with no channel: a free one, looking on from the one taken last, as
+    Wolf4SDL's Mix_GroupAvailable; with all sixteen sounding, the one started longest ago
+    (Mix_GroupOldest). Taking the next in turn whether it was free or not cut off a long sound
+    (a death scream, a boss's sighting) when a held chaingun went round all of them in a second
+    or so.
+    */
+    private int SharedSource()
+    {
+        var index = PickSharedSource(SourceCount, _nextSource, _startedAt, i =>
+        {
+            AL.GetSource(_sources[i], ALGetSourcei.SourceState, out int state);
+            return (ALSourceState)state == ALSourceState.Playing;
+        });
+        _nextSource = index + 1;
+        return index;
+    }
+
+    /// <summary>
+    /// Which of the first <paramref name="count"/> voices a sound with no channel takes: the
+    /// first not sounding from <paramref name="next"/> on (round), else the one started longest ago
+    /// </summary>
+    internal static int PickSharedSource(int count, int next, IReadOnlyList<long> startedAt, Func<int, bool> sounding)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            var index = (next + i) % count;
+            if (!sounding(index))
+                return index;
+        }
+
+        var oldest = 0;
+        for (var i = 1; i < count; i++)
+            if (startedAt[i] < startedAt[oldest])
+                oldest = i;
+        return oldest;
     }
 
     /*
@@ -407,7 +489,7 @@ internal class AudioManager
             return;
 
         AL.SourceStop(_ambientSource);
-        if (ResolveBuffer(name) is not int buffer)
+        if (ResolveBuffer(name, out _) is not int buffer)
             return;
         AL.Source(_ambientSource, ALSourcei.Buffer, buffer);
         AL.Source(_ambientSource, ALSourcef.Gain, VolumeGain(_soundVolume));
@@ -415,9 +497,11 @@ internal class AudioManager
     }
 
     // The buffer a sound plays (its sound-seq entry's best variant on the devices switched on,
-    // through any random pick or alias), or null for one that's silent or unknown
-    private int? ResolveBuffer(string name)
+    // through any random pick or alias), or null for one that's silent or unknown; and the first
+    // channel named along the way, if any
+    private int? ResolveBuffer(string name, out string? channel)
     {
+        channel = null;
         var soundSeq = _assetManager.Value.Find<SoundSequenceAsset>("sound-seq");
         // The running pack's own sounds (gamepacks/<pack>/sound-seq.yaml) win over the shared ones
         var packSeq = _packSoundSeq ??= _assetManager.Value.Exists<SoundSequenceAsset>($"{_assetManager.Value.GamePackId}/sound-seq")
@@ -442,6 +526,9 @@ internal class AudioManager
                 soundProfile = new SoundProfile { Digitized = name, AdLib = name, PC = name };
                 break;
             }
+
+            if (channel == null && !string.IsNullOrWhiteSpace(soundProfile.Channel))
+                channel = soundProfile.Channel;
 
             if (soundProfile.Random.Count > 0)
             {
