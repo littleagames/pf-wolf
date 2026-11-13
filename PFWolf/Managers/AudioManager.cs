@@ -692,10 +692,25 @@ internal class AudioManager
     }
 
     // Whether the channel plays that buffer still (not a later sound it was given since)
-    private static bool SourcePlaying(int source, int buffer)
+    private bool SourcePlaying(int source, int buffer) =>
+        Sounding(source) && AL.GetSource(source, ALGetSourcei.Buffer) == buffer;
+
+    // Each AdLib buffer's samples up to its release tail (AdLibSound.SoundingSamples)
+    private readonly Dictionary<int, int> _soundingSamples = [];
+
+    /*
+    Whether a channel's sound plays still, as the game sees it. An AdLib sound is rendered with a
+    release tail so its note fades rather than clicks off, but the original's channel went free on
+    the sound's last tick: waiting through the tail too slowed the level-end tally (a wait on every
+    tenth step) to well behind DOS and Wolf4SDL. The tail rings on; it just isn't waited for.
+    */
+    private bool Sounding(int source)
     {
         AL.GetSource(source, ALGetSourcei.SourceState, out int state);
-        return (ALSourceState)state == ALSourceState.Playing && AL.GetSource(source, ALGetSourcei.Buffer) == buffer;
+        if ((ALSourceState)state != ALSourceState.Playing)
+            return false;
+        return !_soundingSamples.TryGetValue(AL.GetSource(source, ALGetSourcei.Buffer), out var end)
+            || AL.GetSource(source, ALGetSourcei.SampleOffset) < end;
     }
 
     public void WaitSoundDone()
@@ -703,19 +718,8 @@ internal class AudioManager
         if (!IsActive)
             return;
         foreach (var source in _sources)
-        {
-            AL.GetSource(source, ALGetSourcei.SourceState, out int stateInt);
-            var state = (ALSourceState)stateInt;
-            if (state == ALSourceState.Playing)
-            {
-                while (state == ALSourceState.Playing)
-                {
-                    SDL.SDL_Delay(5);
-                    AL.GetSource(source, ALGetSourcei.SourceState, out stateInt);
-                    state = (ALSourceState)stateInt;
-                }
-            }
-        }
+            while (Sounding(source))
+                SDL.SDL_Delay(5);
     }
 
     public bool IsAnySoundPlaying()
@@ -723,12 +727,8 @@ internal class AudioManager
         if (!IsActive)
             return false;
         foreach (var source in _sources)
-        {
-            AL.GetSource(source, ALGetSourcei.SourceState, out int stateInt);
-            var state = (ALSourceState)stateInt;
-            if (state == ALSourceState.Playing)
+            if (Sounding(source))
                 return true;
-        }
         return false;
     }
 
@@ -737,14 +737,7 @@ internal class AudioManager
         if (!IsActive || !_lastBufferForSound.TryGetValue(name.ToLowerInvariant(), out var buffer))
             return false;
         var source = _sources.FirstOrDefault(s => AL.GetSource(s, ALGetSourcei.Buffer) == buffer);
-        if (source == 0)
-            return false;
-
-        AL.GetSource(source, ALGetSourcei.SourceState, out int stateInt);
-
-        // Cast the returned integer to the ALSourceState enum
-        ALSourceState state = (ALSourceState)stateInt;
-        return state == ALSourceState.Playing;
+        return source != 0 && Sounding(source);
     }
 
     /// <param name="loop">false plays the track once (Blake Stone's Apogee fanfare); see IsMusicPlaying</param>
@@ -1040,6 +1033,7 @@ internal class AudioManager
         var buffer = AL.GenBuffer();
         var data = Samples(sound, sound.ToPcm16);
         AL.BufferData(buffer, ALFormat.Mono16, data, 44100);
+        _soundingSamples[buffer] = sound.SoundingSamples;
         return buffer;
     }
     private int CreateBuffer(PcSound sound)

@@ -52,6 +52,14 @@ public record AdLibSound : Asset
 
     private const int AdLibSampleRate = 44100;
     private const int SoundTicksPerSecond = 140;
+
+    /// <summary>
+    /// How many of ToPcm16's samples the sound lasts in the game's eyes: its ticks, without the
+    /// release tail after them. The original's channel went free on the last tick, so a wait on
+    /// the sound (the level-end tally's) ends there, not 200 ms later.
+    /// </summary>
+    public int SoundingSamples =>
+        (int)Math.Min(BitConverter.ToUInt32(RawData, 0), (uint)(RawData.Length - HeaderBytes)) * (AdLibSampleRate / SoundTicksPerSecond);
     // The OPL's output for one channel peaks near ±4100, so this brings it up to about half scale
     private const int Gain = 4;
 
