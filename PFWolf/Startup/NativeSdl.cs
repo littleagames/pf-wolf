@@ -15,7 +15,13 @@ internal static partial class NativeSdl
 {
     private const string LibraryName = "SDL2";
 
-    /// <summary>Before anything calls SDL</summary>
+    /// <summary>
+    /// Before anything calls SDL: when this assembly loads (a module initializer), so not only the
+    /// game but also the tests, calling the game's code without GameHost.Run, find it
+    /// </summary>
+#pragma warning disable CA2255 // (a module initializer in an app: here it's what's wanted)
+    [System.Runtime.CompilerServices.ModuleInitializer]
+#pragma warning restore CA2255
     internal static void UseBundled()
     {
         if (OperatingSystem.IsWindows())

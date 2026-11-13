@@ -411,8 +411,7 @@ internal static partial class GameHost
     internal static void Run(string[] args)
     {
         ConsoleWindow.OpenIfAsked(args);
-        NativeSdl.UseBundled();
-        CrashReport.Install();
+        CrashReport.Install();     // (SDL is found by NativeSdl, from when this assembly loads)
 
         // What startup prints is shown on the signon screen as warnings
         CaptureStartupOutput();
