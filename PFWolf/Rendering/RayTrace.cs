@@ -624,8 +624,10 @@ internal sealed class RayTrace(
                     {
                         if (render.XIntTile == pushWalls.PWall.X && render.YTile == pushWalls.PWall.Y)
                         {
-                            if ((pushWalls.PWall.Dir == ControlDir.East && (render.XIntercept) + xstep < (pwallposi << 10))
-                             || (pushWalls.PWall.Dir == ControlDir.West && (render.XIntercept) + xstep > (pwallposi << 10)))
+                            // (ushort): the intercept's place along the tile, not the whole map
+                            // coordinate, or a ray heading away from the face is set up on it
+                            if ((pushWalls.PWall.Dir == ControlDir.East && (int)((ushort)render.XIntercept) + xstep < (pwallposi << 10))
+                             || (pushWalls.PWall.Dir == ControlDir.West && (int)((ushort)render.XIntercept) + xstep > (pwallposi << 10)))
 
                             {
                                 PassHoriz(xstep);
@@ -668,8 +670,8 @@ internal sealed class RayTrace(
                         }
                         else
                         {
-                            if ((pushWalls.PWall.Dir == ControlDir.East && (render.XIntercept) + xstep > (pwallposi << 10))
-                             || (pushWalls.PWall.Dir == ControlDir.West && (render.XIntercept) + xstep < (pwallposi << 10)))
+                            if ((pushWalls.PWall.Dir == ControlDir.East && (int)((ushort)render.XIntercept) + xstep > (pwallposi << 10))
+                             || (pushWalls.PWall.Dir == ControlDir.West && (int)((ushort)render.XIntercept) + xstep < (pwallposi << 10)))
 
                             {
                                 PassHoriz(xstep);
