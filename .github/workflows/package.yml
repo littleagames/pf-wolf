@@ -1,6 +1,8 @@
-# Makes the downloads: the Linux tarballs and AppImages (packaging/linux/make-tarball.sh,
-# make-appimage.sh) and the macOS apps (packaging/macos/make-apps.sh), on demand or for a version
-# tag. They're uploaded as the run's artifacts.
+# Makes the downloads: the Windows zip (packaging/windows/make-zip.ps1), the Linux tarballs and
+# AppImages (packaging/linux/make-tarball.sh, make-appimage.sh) and the macOS apps
+# (packaging/macos/make-apps.sh), on demand or for a version tag. They're uploaded as the run's
+# artifacts; for a tag, a draft GitHub Release is made with all of them, to write the notes on
+# and publish by hand (docs/dev/releasing.md).
 name: Package
 
 on:
@@ -9,6 +11,27 @@ on:
     tags: ["v*"]
 
 jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Zip
+        shell: pwsh
+        run: ./packaging/windows/make-zip.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pfwolf-win-x64
+          path: artifacts/*.zip
+
   linux:
     strategy:
       fail-fast: false
@@ -61,3 +84,41 @@ jobs:
         with:
           name: pfwolf-${{ matrix.rid }}
           path: artifacts/*.zip
+
+  # For a version tag: a draft release with every download, marked a pre-release for an
+  # -alpha or -beta tag. GitHub's generated notes (the commits since the last release) are a
+  # start; the real notes are written on the draft before publishing it. Run again for the same
+  # tag, it replaces the draft's files.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Draft release
+        run: |
+          ls -l dist
+          # (A draft isn't found by its tag, so it's looked for in the list, which has drafts)
+          existing="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq ".[] | select(.tagName == \"$TAG\") | .tagName")"
+          if [ -n "$existing" ]; then
+            gh release upload "$TAG" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            # v0.9.1-beta -> "PFWolf 0.9.1 beta", a pre-release; v1.0.0 -> "PFWolf 1.0.0"
+            version="${TAG#v}"
+            title="PFWolf ${version%%-*}"
+            prerelease=""
+            case "$version" in
+              *-*) title="$title ${version#*-}"; prerelease="--prerelease" ;;
+            esac
+            gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --draft $prerelease \
+              --title "$title" --generate-notes
+          fi
