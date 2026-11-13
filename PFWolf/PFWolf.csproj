@@ -38,10 +38,15 @@
   </ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="OpenTK.Audio.OpenAL" Version="4.9.4" />
+		<!-- OpenAL Soft for every runtime, loaded ahead of the system's (Loaders/NativeLibraries in Common) -->
+		<PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1" />
 		<PackageReference Include="NukedOPL3Sharp" Version="1.3.1" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="ppy.SDL2-CS" Version="1.0.82" />
+		<!-- SDL2's bindings only: the library comes from Ultz.Native.SDL, which has it for every runtime
+		     (universal macOS, ARM Linux; Startup/NativeSdl finds it off Windows) -->
+		<PackageReference Include="ppy.SDL2-CS" Version="1.0.82" ExcludeAssets="native" />
+		<PackageReference Include="Ultz.Native.SDL" Version="2.32.10" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\PFWolf.Common\PFWolf.Common.csproj" />
@@ -103,8 +108,9 @@
 	<Target Name="PublishPfWolfExtras" AfterTargets="ComputeResolvedFilesToPublishList">
 		<ItemGroup>
 			<ResolvedFileToPublish Include="$(TargetDir)pfwolf.pk3" RelativePath="pfwolf.pk3" CopyToPublishDirectory="PreserveNewest" />
-			<ResolvedFileToPublish Include="$(TargetDir)mods\multiplayer.pk3" RelativePath="mods\multiplayer.pk3" CopyToPublishDirectory="PreserveNewest" />
-			<ResolvedFileToPublish Include="@(ExampleModFiles)" RelativePath="mods\%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+			<!-- (RelativePath with '/': metadata isn't turned into a path, so '\' would end up in a Linux file name) -->
+			<ResolvedFileToPublish Include="$(TargetDir)mods\multiplayer.pk3" RelativePath="mods/multiplayer.pk3" CopyToPublishDirectory="PreserveNewest" />
+			<ResolvedFileToPublish Include="@(ExampleModFiles)" RelativePath="mods/%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
 		</ItemGroup>
 	</Target>
 </Project>

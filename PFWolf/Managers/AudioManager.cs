@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using PFWolf.Assets;
 using PFWolf.Assets.Sounds;
+using PFWolf.Loaders;
 
 namespace PFWolf.Managers;
 
@@ -208,8 +209,9 @@ internal class AudioManager
         _opened = true;
     }
 
-    // The OpenAL library OpenTK loads: the copy of OpenAL Soft beside the exe on Windows, the
-    // system's elsewhere (OpenAL Soft on Linux, Apple's framework on macOS)
+    // The OpenAL library OpenTK loads when the bundled OpenAL Soft won't (NativeLibraries): an
+    // OpenAL32.dll beside the exe or in System32 on Windows, the system's elsewhere (OpenAL Soft
+    // on Linux, Apple's framework on macOS)
     private static string OpenALFileName =>
         OperatingSystem.IsWindows() ? "OpenAL32.dll"
         : OperatingSystem.IsMacOS() ? "/System/Library/Frameworks/OpenAL.framework/OpenAL"
@@ -220,13 +222,19 @@ internal class AudioManager
     {
         device = ALDevice.Null;
         context = ALContext.Null;
+        var bundled = NativeLibraries.LoadBundledOpenAL(typeof(AL).Assembly, out var bundledFailure);
+        if (bundled != null)
+            OpenALLibraryNameContainer.OverridePath = bundled;
         try
         {
             device = ALC.OpenDevice(null);
         }
         catch (Exception e) when (e is DllNotFoundException or BadImageFormatException or EntryPointNotFoundException)
         {
-            return DescribeLibraryFailure(e);
+            if (bundled != null)
+                return $"{bundled} was loaded, but OpenAL couldn't be started from it ({e.Message}).";
+            return $"The bundled OpenAL Soft couldn't be loaded:{Environment.NewLine}  {bundledFailure}{Environment.NewLine}"
+                + DescribeLibraryFailure(e);
         }
 
         if (device == ALDevice.Null)
@@ -274,7 +282,7 @@ internal class AudioManager
         var path = Path.Combine(AppContext.BaseDirectory, OpenALFileName);
         if (!File.Exists(path))
         {
-            lines.Add($"  {path} is missing (deleted, or quarantined by antivirus?)");
+            lines.Add($"  {path} isn't there either, nor one in System32");
             return string.Join(Environment.NewLine, lines);
         }
 

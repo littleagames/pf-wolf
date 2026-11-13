@@ -20,6 +20,10 @@ public sealed partial class SoundPlayer
 
     private static bool OpenOpenALDevice()
     {
+        // The bundled OpenAL Soft, else OpenTK's own names: the system's
+        if (PFWolf.Loaders.NativeLibraries.LoadBundledOpenAL(typeof(AL).Assembly, out var bundledFailure) is { } bundled)
+            OpenALLibraryNameContainer.OverridePath = bundled;
+
         ALDevice device;
         try
         {
@@ -27,8 +31,8 @@ public sealed partial class SoundPlayer
         }
         catch (Exception e) when (e is DllNotFoundException or BadImageFormatException or EntryPointNotFoundException)
         {
-            WarningLog.Write($"Sound can't play: OpenAL couldn't be loaded ({e.Message}). "
-                + "On Linux, install OpenAL Soft (libopenal1 on Debian/Ubuntu, openal-soft on Fedora and Arch).");
+            WarningLog.Write($"Sound can't play: neither the bundled OpenAL Soft ({bundledFailure}) nor the system's OpenAL "
+                + $"could be loaded ({e.Message}).");
             return false;
         }
 

@@ -5,9 +5,9 @@ namespace PFWolf.Tests;
 
 /// <summary>
 /// The editor's sound player through OpenAL, as it plays off Windows (docs/dev/mac-linux-plan.md),
-/// run here too. Needs an OpenAL library and an audio device: ignored without them, and with
-/// Creative's old OpenAL32.dll in System32, whose Generic Software device plays at the wrong
-/// speed. (Copy OpenAL Soft's OpenAL32.dll beside the tests to run them on Windows.)
+/// run here too, on the bundled OpenAL Soft. Needs an audio device: ignored without one, and
+/// when the bundled library didn't load and Creative's old OpenAL32.dll in System32 was taken
+/// instead (its Generic Software device plays at the wrong speed).
 /// </summary>
 [NonParallelizable]
 public class SoundPlayerOpenALTests

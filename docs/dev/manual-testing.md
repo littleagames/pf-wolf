@@ -1319,8 +1319,12 @@ See docs/dev/mac-linux-plan.md; phase 1's changes were only run on Windows.
 - [ ] **(never tried)** Linux: with Steam/GOG's upper-case `VSWAP.WL6` etc. beside the game, it
       finds them (no "missing data files"); settings and saves land in
       `~/.config/PFWolf/<game>/configs` and `savegames` (folders, not one long file name).
-- [ ] **(never tried)** Linux without OpenAL Soft installed: the signon says sound is off and the
-      warning names `libopenal.so.1` with the install hint; with it installed, sound and music play.
+- [ ] **(never tried by ear)** Windows: sound and music in the game on the bundled OpenAL Soft
+      (`soft_oal.dll`, no OpenAL32.dll beside the exe) and on SDL 2.32.10: window, fullscreen,
+      mouse, a controller as before.
+- [ ] **(never tried by ear)** Linux (x64 and an ARM board if there's one) and an Apple Silicon
+      Mac, with nothing installed: the game opens a window on the bundled SDL2, and sound and
+      music play on the bundled OpenAL Soft.
 - [ ] **(never tried by ear)** Editor on Linux/macOS: F8 plays sounds and songs through OpenAL
       (Play, Stop part way, loop, the position counter); without OpenAL the window says so.
 - [ ] **(never tried)** Editor on macOS: Pick a program… offers apps (GIMP.app) and Edit outside

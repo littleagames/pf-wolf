@@ -121,8 +121,8 @@ No WSL or Docker on the development PC, so testing off Windows is by CI and by h
 - **CI.** A GitHub Actions run on windows-latest, ubuntu-latest and macos-latest: build, then
   the tests headless (`SDL_VIDEODRIVER=dummy`, `SDL_AUDIODRIVER=dummy`). CI has no game data
   files, so the tests that need them (the `*GameTests`, demo regression, warp) skip; check
-  each skips cleanly rather than failing. Linux also needs openal-soft installed
-  (`libopenal1`).
+  each skips cleanly rather than failing. OpenAL Soft is bundled (phase 2), with its null
+  output (`ALSOFT_DRIVERS=null`) on runners with no sound card.
 - **By hand.** Adds to docs/dev/manual-testing.md: play a level on Linux and on a Mac, sound and
   music, save/load, the Mods screen, a LAN game against Windows, the editor's 3D view, sound
   browser and Play button.
@@ -157,23 +157,49 @@ No WSL or Docker on the development PC, so testing off Windows is by CI and by h
    SDL2 fallback on Linux, OpenAL for macOS, `SDL2_mixer.dll` dropped; the GitHub Actions run on
    all three. Check: CI green on all three, a headless `demotest` on Linux identical to
    Windows (the demos are the engine's own regression check).
+   *Done 2026-11-12 (CI not run yet: the branch isn't pushed):*
+   - SDL2 2.32.10 from Ultz.Native.SDL for every runtime (win x64/x86/arm64, linux
+     x64/arm/arm64, one universal macOS library); ppy.SDL2-CS stays for the bindings with
+     `ExcludeAssets="native"`. Windows moves from ppy's SDL to 2.32.10 too. Off Windows,
+     `Startup/NativeSdl` resolves SDL2-CS's "SDL2" to the bundled `libSDL2-2.0.so`/`.dylib`,
+     else the system's (`libSDL2-2.0.so.0`, Homebrew's).
+   - OpenAL Soft 1.23.1 from Silk.NET.OpenAL.Soft.Native for every runtime, in the game and the
+     editor: `NativeLibraries.LoadBundledOpenAL` (Common) loads `soft_oal.dll`/`libopenal.so`/
+     `libopenal.dylib` and points OpenTK's `OpenALLibraryNameContainer.OverridePath` at it;
+     OpenTK's own names (OpenAL32.dll, the system's) only when it won't load. No hand-copied
+     OpenAL32.dll needed, nothing to install on Linux. Checked on Windows: the game loads
+     `runtimes\win-x64\native\SDL2.dll` and `soft_oal.dll`; the editor's OpenAL player tests
+     now run (on OpenAL Soft) instead of skipping on Creative's System32 DLL.
+   - `SDL2_mixer.dll` was never in git: only a stale file in old build folders (as is a root
+     `SDL2.dll` there, which the runtimes folder now wins over). Delete them by hand.
+   - .github/workflows/build.yml: build + test on windows-latest, ubuntu-latest and
+     macos-latest (Apple Silicon, so AnyCPU, not `-p:Platform=x64`), SDL dummy drivers and
+     OpenAL Soft's null output, test results uploaded.
+   - Publish paths with `/` (`RelativePath="mods/..."`): metadata isn't fixed up into a path.
+   - Not done: the editor still plays through winmm on Windows. With OpenAL Soft bundled, it
+     could use OpenAL everywhere and drop winmm (a by-ear check on Windows first).
+   - A RID-less build copies every runtime's libraries (iOS/tvOS static SDL too, ~15 MB);
+     publishing per runtime (phases 3-4) takes only its own.
 3. **Linux build.** User data folder searched after the game folder (data files, mods, crash
    logs), Mods screen and New mod writing there when the game folder isn't writable, publish
    for linux-x64/arm64, tarball with a `.desktop` file, docs (getting-started: where files go,
-   installing openal-soft). Check: by hand on a Linux machine.
+   nothing to install: SDL2 and OpenAL Soft are bundled). Check: by hand on a Linux machine.
 4. **macOS build.** The user folder decision, `.app` bundles for the game and the editor with
    icons, `Contents/Resources` in `GameFolder`, the editor's 3D view on macOS, `Cmd` shortcuts,
    signing/notarization if decided, docs. Check: by hand on a Mac.
 5. **Polish.** High-DPI game window, AppImage, a Linux package if wanted.
 
-## Decisions to make
+## Decisions
 
-- **SDL2 for Apple Silicon and ARM Linux.** Build and bundle our own (`runtimes/osx-arm64`,
-  `runtimes/linux-arm64`, or one universal macOS library) next to ppy.SDL2-CS; or switch to a
-  binding package that already ships them all (Silk.NET.SDL does, at the cost of rewriting the
-  SDL calls). Moving to SDL3 is a bigger, separate job.
-- **OpenAL on macOS.** Bundle openal-soft (the same library as Windows and Linux, so the same
-  sound) or use Apple's OpenAL framework (always there, but deprecated and older).
+Made (2026-11-12):
+
+- **SDL2 for Apple Silicon and ARM Linux:** Ultz.Native.SDL's libraries under the ppy.SDL2-CS
+  bindings, on every system.
+- **OpenAL:** OpenAL Soft bundled for every system (Silk.NET.OpenAL.Soft.Native), the
+  system's only as a fallback.
+
+To make:
+
 - **macOS user folder.** `~/Library/Application Support/PFWolf` (the convention) or
   `~/.config/PFWolf` (what .NET gives, the same as Linux).
 - **Signing.** Whether to get an Apple Developer account for notarized downloads, or ship
