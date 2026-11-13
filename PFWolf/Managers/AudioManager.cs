@@ -366,6 +366,7 @@ internal class AudioManager
         var source = _sources[_nextSource++ % _sources.Length];
         _lastBufferForSound[name.ToLowerInvariant()] = playBuffer;
         StartSource(source, playBuffer, position);
+        _lastStarted = (source, playBuffer);
     }
 
     /*
@@ -574,6 +575,40 @@ internal class AudioManager
         foreach (var source in _sources)
             AL.SourceStop(source);
         AL.SourceStop(_ambientSource);      // asked for again, it starts afresh (SetAmbient)
+        _heldSound = null;
+    }
+
+    /*
+    A level's exit (A_Exit, A_SecretExit) and a switch's or trigger's A_ChangeMap wait for the
+    sound just played (the switch's) before the level ends, as the original's SD_WaitSoundDone
+    did. That waited on its one sound channel, where the level-done sound had cut off whatever
+    was playing; here every other channel goes on playing, so only the sound started last is
+    waited for, not a door closing or a gun firing as well. The wait comes after the level loop
+    has drawn its last frame (WaitHeldSound), so the switch is seen thrown while its sound plays.
+    */
+
+    private (int Source, int Buffer)? _lastStarted;
+    private (int Source, int Buffer)? _heldSound;
+
+    /// <summary>The sound started last is the one WaitHeldSound waits for (a switch's, as it ends the level)</summary>
+    public void HoldLastSound() => _heldSound = _lastStarted;
+
+    /// <summary>Waits for the sound HoldLastSound kept, if it's playing still, and forgets it</summary>
+    public void WaitHeldSound()
+    {
+        var held = _heldSound;
+        _heldSound = null;
+        if (!IsActive || held is not var (source, buffer))
+            return;
+        while (SourcePlaying(source, buffer))
+            SDL.SDL_Delay(5);
+    }
+
+    // Whether the channel plays that buffer still (not a later sound it was given since)
+    private static bool SourcePlaying(int source, int buffer)
+    {
+        AL.GetSource(source, ALGetSourcei.SourceState, out int state);
+        return (ALSourceState)state == ALSourceState.Playing && AL.GetSource(source, ALGetSourcei.Buffer) == buffer;
     }
 
     public void WaitSoundDone()

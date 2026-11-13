@@ -4,10 +4,10 @@ namespace PFWolf.Gameplay;
 
 /// <summary>What the actor actions that act on the player need from the game</summary>
 /// <param name="SetPendingMapChange">The map to switch to as the level ends (Gameplay/MainGameLoop.cs)</param>
-/// <param name="WaitSoundDone">Waits for a sound that's playing (a switch's) to finish</param>
+/// <param name="HoldSwitchSound">Keeps the sound just played (a switch's) for the level's end to wait for</param>
 internal sealed record PlayerActionsHooks(
     Action<PendingMapChange> SetPendingMapChange,
-    Action? WaitSoundDone = null);
+    Action? HoldSwitchSound = null);
 
 /// <summary>
 /// Actor actions that act on the player: an extra life (A_GiveExtraMan), an item
@@ -26,12 +26,12 @@ internal sealed class PlayerActions(
         ActorActionRegistry.Register("A_GiveExtraMan", (Entities.Actors.Actor _) => stats.GiveExtraMan());
         ActorActionRegistry.Register("A_GiveInventory", GiveInventoryAction);
         ActorActionRegistry.Register("A_ChangeMap", ChangeMapAction);
-        // A switch's or trigger's waits only for a sound that's playing (the switch's), as A_Exit does
+        // A switch's or trigger's waits only for the sound just played (the switch's), as A_Exit does
         Entities.MapTriggerRegistry.Register("A_ChangeMap", (_, args) =>
         {
             if (!ChangeMap(args, waitTics: 0))
                 return false;
-            hooks.WaitSoundDone?.Invoke();
+            hooks.HoldSwitchSound?.Invoke();
             return true;
         });
     }

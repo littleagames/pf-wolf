@@ -327,7 +327,8 @@ internal sealed class PlayerUse(
     /// <summary>
     /// A_Exit ends the level, going to the secret level when the player stands on the floors'
     /// secret-exit code (as the elevator always did); A_SecretExit always goes to the secret
-    /// level. Either waits for a sound that's playing (the switch's) to finish first.
+    /// level. Either waits for the sound just played (the switch's) to finish first, once the
+    /// level loop has drawn the thrown switch (AudioManager.HoldLastSound).
     /// </summary>
     internal bool ExitAction(bool secret)
     {
@@ -341,7 +342,7 @@ internal sealed class PlayerUse(
             return false;           // a script keeps the level going (game.onexit)
         session.PlayState = toSecret ? PlayState.SecretLevel : PlayState.Completed;
 
-        audio.WaitSoundDone();
+        audio.HoldLastSound();
         return true;
     }
 

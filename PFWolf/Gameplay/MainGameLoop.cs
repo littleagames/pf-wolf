@@ -202,6 +202,8 @@ internal sealed class MainGameLoop(
             statusBar.DrawLevel ();
 
             loop.PlayLoop();
+            // An exit switch's sound plays out over its last frame, the switch seen thrown (A_Exit)
+            audio.WaitHeldSound();
 
             // The deathmatch has been won, or its time is up: who won, then back to the menus
             if (deathmatch.MatchOver)

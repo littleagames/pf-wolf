@@ -168,6 +168,9 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] **(never tried)** Ambush tiles (enemies wait), area sound alerting only connected areas.
 - [ ] **(never tried)** Secret elevator / `A_SecretExit` goes to the secret level.
 - [ ] Elevator switch only from the east/west faces.
+- [ ] **(never tried)** Elevator switch: seen thrown at once, then about half a second (the
+      switch sound, digitized DSSWITCH) before the fade; no longer while a door's still sliding
+      or a gun's firing. The same for a hub switch's `A_ChangeMap`.
 - [ ] Death: turn to the killer, red fade, obituary message, lives down, level restart.
 - [ ] **(never tried)** Death "see again" text, F5 Change View text, video-mode messages.
 - [ ] Intermission: kill/secret/treasure %, par time, bonus counting, font.

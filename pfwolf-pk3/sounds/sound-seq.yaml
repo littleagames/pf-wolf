@@ -36,8 +36,9 @@ sound-info:
     pc: PCSWITCH
   switches/exitbutn:
     alias: switches/normbutn
+  # The original's LEVELDONESND: DSSWITCH digitized, as Wolf3D and Spear play it
   switches/elevbutn:
-    digitized: DSPLATFM
+    digitized: DSSWITCH
     adlib: ALSWITCH
     pc: PCSWITCH
 
