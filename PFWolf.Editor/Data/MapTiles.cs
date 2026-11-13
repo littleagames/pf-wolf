@@ -233,6 +233,21 @@ public sealed partial class MapTiles(GameContent content, MapAsset map, Func<Map
     public string? FlatSides(int x, int y)
         => Defs.Flats.Sides.TryGetValue(FlatValue(x, y) & 0xff, out var sides) && !string.IsNullOrEmpty(sides) ? sides : null;
 
+    /// <summary>
+    /// Whether a floor tile's floor index gives the ground under its raised block (mapdefs flats
+    /// ground, used where the ground is below the player's floor, MapManager.GroundFlat); its
+    /// texture, or null for "sky" (the floor sky)
+    /// </summary>
+    public bool GroundFlat(int x, int y, out string? texture)
+    {
+        texture = null;
+        if (!Defs.Flats.Ground.TryGetValue(FlatValue(x, y) & 0xff, out var ground) || string.IsNullOrEmpty(ground))
+            return false;
+        if (!ground.Equals("sky", StringComparison.OrdinalIgnoreCase))
+            texture = ground;
+        return true;
+    }
+
     /// <summary>The level's sky picture name (game-info sky), or null for its ceiling color</summary>
     public string? Sky => (Properties.Sky ?? map.Defaults.Sky ?? content.DefaultMapInfo.Sky) is { Length: > 0 } sky ? sky : null;
 

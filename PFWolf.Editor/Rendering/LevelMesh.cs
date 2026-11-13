@@ -980,12 +980,14 @@ public sealed class LevelMesh
     /// <summary>
     /// A tile's floor at a height (the ground, or a block's top): its floor flat, else the floor
     /// color; a floor sky (the tile's own, mapdefs flats floor-skies, else the level's) shows in
-    /// place of the color, and behind a floor flat's see-through pixels, just under it
+    /// place of the color, and behind a floor flat's see-through pixels, just under it. The ground
+    /// below the player's floor shows the tile's flats ground in place of its floor flat, where it
+    /// has one (WallPosts.DrawUnderside)
     /// </summary>
     private void AddFloor(int x, int y, Vector2[] polygon, float height, Vector4 floorColor, SurfaceRef floorRef)
     {
         var light = Light(x, y);
-        var floor = _tiles.FloorFlat(x, y);
+        var floor = height == 0 && _floor > 0 && _tiles.GroundFlat(x, y, out var ground) ? ground : _tiles.FloorFlat(x, y);
         var floorSky = Shown(_tiles.FloorTileSky(x, y)) ?? FloorSky;
         if (floorSky != null)
             AddFlat(floorRef, polygon, floor != null ? height - SkyGap : height, up: true, new TextureRef(TextureSource.FloorSky, floorSky), Vector4.One, SurfaceLight.Full);

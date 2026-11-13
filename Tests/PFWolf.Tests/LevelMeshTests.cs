@@ -468,6 +468,35 @@ public class LevelMeshTests
         Assert.That((top.Texture.Source, top.Points[0].Y), Is.EqualTo((TextureSource.Solid, 2f)));
     }
 
+    [TestCase(5, 3, TextureSource.Solid, null)]
+    [TestCase(6, 3, TextureSource.Flat, "GRASS")]
+    [TestCase(5, 1, TextureSource.Flat, "FLOOR5")]
+    [TestCase(7, 3, TextureSource.Flat, "FLOOR7")]
+    public void The_Ground_Under_A_Raised_Block_Is_Its_Flats_Ground_Below_The_Players_Floor(int index, int story, TextureSource source, string? name)
+    {
+        // Arrange: floors 5 to 7 with flats, the ground of 5 the floor sky (none here: the floor
+        // color) and of 6 GRASS, 7 none; a block on story 2 (0x0202) over a tile of the index
+        var defs = Content().MapDefs;
+        defs.Flats.Floor[5] = "FLOOR5";
+        defs.Flats.Floor[6] = "FLOOR6";
+        defs.Flats.Floor[7] = "FLOOR7";
+        defs.Flats.Ground[5] = "sky";
+        defs.Flats.Ground[6] = "GRASS";
+        var document = Room();
+        document.SetProperties(new MapProperties { Story = story, WallHeight = 4 });
+        EditorMaps.Set(document, MapConstants.HeightPlane, 10, 10, 0x0202);
+        EditorMaps.Set(document, MapConstants.FlatPlane, 10, 10, (ushort)index);
+
+        // Act
+        var mesh = LevelMesh.Build(new MapTiles(GameContent.FromDefinitions(defs), document.Map, () => document.Properties));
+
+        // Assert: the ground's texture; the block's top keeps the floor flat on story 3
+        var ground = At(mesh, SurfaceKind.Floor, 10, 10).Single(s => s.Points[0].Y == 0);
+        Assert.That((ground.Texture.Source, ground.Texture.Source == TextureSource.Solid ? null : ground.Texture.Name), Is.EqualTo((source, name)));
+        if (story == 3)
+            Assert.That(At(mesh, SurfaceKind.Arch, 10, 10, Face.Top).Single().Texture.Name, Is.EqualTo($"FLOOR{index}"));
+    }
+
     [TestCase(0, TextureSource.Texture, "WALLEW")]
     [TestCase(2, TextureSource.Flat, "CEIL2")]
     public void An_Arches_Underside_Is_Its_Ceiling_Flat_Unless_The_Ceiling_Index_Is_0(int ceiling, TextureSource source, string name)
