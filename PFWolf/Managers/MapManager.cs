@@ -594,6 +594,21 @@ internal class MapManager
     internal int EdgeWall { get; set; }
 
     /// <summary>
+    /// Whether a tile is one <see cref="SealEdge"/> filled: open floor in the map's data, so a
+    /// pushwall may still slide onto it, as it does in the original (E1M3's at 7,61)
+    /// </summary>
+    internal bool IsSealedEdge(int x, int y) => EdgeWall != 0 && InMap(x, y) && OnEdge(x, y) && TileMap[x, y] == EdgeWall;
+
+    /// <summary>Fills an edge tile a pushwall has left, as <see cref="SealEdge"/> did, so nothing leaves the map</summary>
+    internal void ResealEdge(int x, int y)
+    {
+        if (EdgeWall == 0 || !OnEdge(x, y) || TileMap[x, y] != 0)
+            return;
+        TileMap[x, y] = (ushort)EdgeWall;
+        ActorAt[x, y] = new Wall(EdgeWall);
+    }
+
+    /// <summary>
     /// Makes the open tiles round the map's edge solid: view traces and movement only stop at
     /// walls, and would run off the map. They're a wall id the mapdefs don't give, so they're
     /// drawn as nothing (the floor and ceiling show through) but can't be crossed.

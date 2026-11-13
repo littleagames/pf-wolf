@@ -211,7 +211,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
         for (int d = 1; d <= Distance; d++)
         {
             int tx = x + dx * d, ty = y + dy * d;
-            if (!map.InMap(tx, ty) || map.TileMap[tx, ty] != 0)
+            if (!map.InMap(tx, ty) || (map.TileMap[tx, ty] != 0 && !map.IsSealedEdge(tx, ty)))
                 break;
             if (MapManager.JoinBlocks(map.TileBlocks(tx, ty).Concat(piece)).Count > 2)
                 return false;
@@ -265,7 +265,9 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
         dx = Dirs[(int)dir][0];
         dy = Dirs[(int)dir][1];
 
-        if (map.ActorAt[checkx + dx, checky + dy] != null
+        // an open edge tile (sealed so nothing leaves the map) is floor to a pushwall
+        if (!map.InMap(checkx + dx, checky + dy)
+            || (map.ActorAt[checkx + dx, checky + dy] != null && !map.IsSealedEdge(checkx + dx, checky + dy))
             || map.EnemiesAt(checkx + dx, checky + dy).Any())
         {
             if (!string.IsNullOrEmpty(blockedSound))
@@ -354,6 +356,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             //
             map.TileMap[wall.X, wall.Y] = 0;
             map.ActorAt[wall.X, wall.Y] = null;
+            map.ResealEdge(wall.X, wall.Y);         // an edge tile left open would let things off the map
             // a tile with blocks of its own (what the pushwall left, or ones it slid past) keeps
             // its plane 0: a wall there is walked on or under, its area from its neighbours
             bool blocksleft = map.TileBlocks(wall.X, wall.Y).Count > 0;
@@ -388,8 +391,10 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 int aheadx = wall.X + dx, aheady = wall.Y + dy;
 
                 // stopped by anything in the way, a player included (any of them), or another
-                // moving wall's tile
-                if (map.ActorAt[aheadx, aheady] != null
+                // moving wall's tile, or the map's edge; an open edge tile (sealed so nothing
+                // leaves the map) is floor to it, as in the original
+                if (!map.InMap(aheadx, aheady)
+                    || (map.ActorAt[aheadx, aheady] != null && !map.IsSealedEdge(aheadx, aheady))
                     || map.TileMap[aheadx, aheady] == GameConstants.BitWall
                     || map.EnemiesAt(aheadx, aheady).Any()
                     || map.Players.Any(pawn => PlayerBoxCovers(pawn, aheadx, aheady)))
