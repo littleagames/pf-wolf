@@ -20,7 +20,13 @@ internal static class ConsoleCommandsSchema
     static IEnumerable<FieldSchema> Grouped()
     {
         var commands = GameHost.ConsoleCommandList();
-        return GameHost.ConsoleCommandGroups().Select(group =>
+        var groups = GameHost.ConsoleCommandGroups();
+
+        // Listing them set up the game's services, and with them a sound device (the bundled OpenAL
+        // Soft): left open, OpenAL Soft fails the process as it exits (0xC0000409)
+        GameHost.AudioManager?.Shutdown();
+
+        return groups.Select(group =>
             FieldSchema.Group(group, null, [.. commands.Where(c => c.Group == group).Select(Field)]));
     }
 
