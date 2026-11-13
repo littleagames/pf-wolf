@@ -291,6 +291,39 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     ControlPanelMenuInfo JoinItems = null!;
     LanBrowser? lanBrowser;
 
+    /// <summary>How many dots "Looking for games" shows: 1, 2, 3, then round again, a step every 400 ms</summary>
+    static int LookingDots() => 1 + (int)(Environment.TickCount64 / 400 % 3);
+
+    /// <summary>Marks the join screen's "Looking for games" row, for its dots to be redrawn in place</summary>
+    sealed class LookingRow
+    {
+        internal static readonly LookingRow Instance = new();
+    }
+
+    /// <summary>"Looking for games" with that many dots: the text's own trailing dots give way to them</summary>
+    string LookingText(int dots)
+        => "$STR_MP_LOOKING".ToLanguageText(assets.GetText("en-us")).TrimEnd('.', '…') + new string('.', dots);
+
+    /// <summary>
+    /// Redraws the "Looking for games" row with its next dots, in place, so the menu's cursor
+    /// keeps blinking as it was (building the menu again would start it over)
+    /// </summary>
+    void RedrawLooking(int dots)
+    {
+        int row = Array.FindIndex(JoinMenu, item => item.Data is LookingRow);
+        if (row < 0 || !JoinItems.IsRowVisible(row))
+            return;
+
+        var font = JoinItems.Font ?? UiFonts.MenuFont;
+        var bare = LookingText(0);
+        int x = JoinItems.X + JoinItems.Indent + ui.TextWidth(bare, font);
+        video.Bar(x, JoinItems.RowY(row), ui.TextWidth("...", font) + 2, JoinItems.RowHeight, "BKGDCOLOR");
+
+        JoinMenu[row].Text = LookingText(dots);
+        draw.PrintMenuItem(JoinItems, JoinMenu, row, "DEACTIVE");
+        video.Update();
+    }
+
     // A row of the join screen: a game found, or typing in an address
     sealed record JoinRow(LanBrowser.FoundGame? Game);
 
@@ -301,7 +334,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         try
         {
             browser.Poll();
-            int seen = -1;
+            int seen = -1, dots = 0;
             short curpos = 0;
             bool fadeIn = true;
 
@@ -312,6 +345,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                 if (JoinMenu[JoinItems.CurPos].Active == 0)
                     JoinItems.CurPos = (short)Math.Max(0, Array.FindIndex(JoinMenu, item => item.Active != 0));
                 seen = browser.Changes;
+                dots = LookingDots();
 
                 defs.DrawMenuComponents("join-game");
                 draw.DrawMenu(JoinItems, JoinMenu);
@@ -327,7 +361,14 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                 int which = loop.HandleMenu(JoinItems, JoinMenu, null, idle: () =>
                 {
                     browser.Poll();
-                    return browser.Changes != seen;     // the list changed: build it again
+                    if (browser.Changes != seen)
+                        return true;                    // the list changed: build it again
+                    if (LookingDots() != dots)
+                    {
+                        dots = LookingDots();
+                        RedrawLooking(dots);
+                    }
+                    return false;
                 });
                 curpos = JoinItems.CurPos;
 
@@ -403,7 +444,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         }
 
         if (games.Count == 0)
-            rows.Add(new ControlPanelItem(0, "$STR_MP_LOOKING".ToLanguageText(language), null));
+            rows.Add(new ControlPanelItem(0, LookingText(LookingDots()), null, LookingRow.Instance));
         rows.Add(new ControlPanelItem(1, "$STR_MP_ADDRESS".ToLanguageText(language), null, new JoinRow(null)));
         return rows.ToArray();
     }
