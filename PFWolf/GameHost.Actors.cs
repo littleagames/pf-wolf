@@ -337,7 +337,8 @@ internal static partial class GameHost
     static bool PushWallAction(Entities.TriggerActivation trigger, string[] args)
     {
         var moveSound = args.ElementAtOrDefault(0);
-        var blockedSound = args.ElementAtOrDefault(1);
+        // use held down (sliding along the walls): a refusal or a blocked wall says nothing
+        var blockedSound = trigger.Held ? null : args.ElementAtOrDefault(1);
         var only = args.ElementAtOrDefault(2)?.Trim();
         if (!string.IsNullOrEmpty(only))
         {
@@ -348,6 +349,8 @@ internal static partial class GameHost
             }
             if (trigger.Dir != onlyDir)
             {
+                if (trigger.Held)
+                    return false;
                 if (args.ElementAtOrDefault(3) is { Length: > 0 } message)
                     HudMessageManager.Show(HudMessageKind.Lock, message);
                 if (!string.IsNullOrEmpty(blockedSound))

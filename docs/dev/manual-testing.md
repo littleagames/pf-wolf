@@ -157,6 +157,8 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] New game on each skill; episode select; skill face pictures.
 - [ ] Doors (normal, gold, silver, elevator doors), auto-close, blocked by actors/corpses.
 - [ ] Pushwalls: push, can't push into a blocked tile, secret count.
+- [ ] **(never tried)** Use held down while sliding along a wall pushes a secret pushwall it comes
+      to (as vanilla), with no blocked sound or one-way message repeating while held.
 - [ ] **(never tried)** Two pushwalls moving at once side by side: drawn right, no gap; save and
       load mid-move.
 - [ ] Every weapon: knife, pistol, MG, chaingun; ammo use, refire, out of ammo switch.

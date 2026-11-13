@@ -1,3 +1,4 @@
+using System.Reflection;
 using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Entities.Actors;
@@ -457,5 +458,86 @@ public class PlayerUseTests
 
         // Act / Assert
         Assert.That(_use.SwitchKeys(new MapSwitchTranslation { Locks = ["RedKey", "BlueKey"], LocksNeeded = 1 }), Is.EqualTo(new[] { "BlueKey" }));
+    }
+
+    // A wall ahead of the player (east) with a use trigger on it, and the trigger actions it runs
+    // counted: A_PushWall stood in for (put back after), A_TestUse left unregistered
+    private readonly List<Entities.TriggerActivation> _pushes = [];
+    private Entities.MapTriggerRegistry.TriggerAction? _realPushWall;
+    private bool _stoodIn;
+
+    private static Dictionary<string, Entities.MapTriggerRegistry.TriggerAction> TriggerActions =>
+        (Dictionary<string, Entities.MapTriggerRegistry.TriggerAction>)typeof(Entities.MapTriggerRegistry)
+            .GetField("_actions", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+
+    private void TriggerAhead(string action, bool repeat = false)
+    {
+        _map.MapWidth = _map.MapHeight = MapConstants.ClassicMapSize;
+        typeof(MapManager).GetField("mapsegs", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
+        var data = new MapObjectTranslationAsset();
+        data.Triggers[98] = new MapTriggerTranslation { Action = action, Repeat = repeat };
+        typeof(MapManager).GetField("_levelMapData", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(_map, data);
+        _map.TileMap[11, 10] = 1;
+        _map.SetMapSpot(11, 10, 1, 98);
+
+        TriggerActions.TryGetValue("A_PushWall", out _realPushWall);
+        _stoodIn = true;
+        Entities.MapTriggerRegistry.Register("A_PushWall", (activation, _) => { _pushes.Add(activation); return false; });
+    }
+
+    [TearDown]
+    public void PutPushWallBack()
+    {
+        _pushes.Clear();            // one fixture for every test
+        if (!_stoodIn)
+            return;
+        _stoodIn = false;
+        if (_realPushWall != null)
+            TriggerActions["A_PushWall"] = _realPushWall;
+        else
+            TriggerActions.Remove("A_PushWall");
+    }
+
+    // Use down this frame, and the frame before too when held
+    private void PressUse(bool held)
+    {
+        var down = new Entities.TicCmd();
+        down.SetDown(ButtonType.Use, true);
+        _session.PlayerInput.Begin(held ? down : default);
+        _session.PlayerInput.Begin(down);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void A_Pushwall_Is_Pushed_By_A_Press_Or_By_Use_Held_Down_Coming_To_It(bool held)
+    {
+        // Arrange
+        TriggerAhead("A_PushWall(\"world/pushwall\", \"world/noway\")");
+        PressUse(held);
+
+        // Act
+        _use.PressUse();
+
+        // Assert: held, it's told so (a refusal stays quiet)
+        Assert.That(_pushes, Has.Count.EqualTo(1));
+        Assert.That(_pushes[0].Held, Is.EqualTo(held));
+        Assert.That((_pushes[0].TileX, _pushes[0].TileY, _pushes[0].Dir), Is.EqualTo((11, 10, ControlDir.East)));
+    }
+
+    [TestCase("A_PushWall(\"world/pushwall\")", true)]     // a pushwall that stays
+    [TestCase("A_TestUse", false)]                          // anything else
+    public void Other_Use_Triggers_Go_Off_Only_For_A_Fresh_Press(string action, bool repeat)
+    {
+        // Arrange
+        TriggerAhead(action, repeat);
+        PressUse(held: true);
+
+        // Act
+        _use.PressUse();
+
+        // Assert
+        Assert.That(_pushes, Is.Empty);
+        Assert.That(_console.ToString(), Does.Not.Contain("'A_TestUse'"));
     }
 }

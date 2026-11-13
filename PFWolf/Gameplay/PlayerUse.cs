@@ -64,11 +64,12 @@ internal sealed class PlayerUse(
 
     /// <summary>
     /// Runs a mapdefs trigger's action. If it goes off, a secret trigger counts as found, and the
-    /// trigger's tile is cleared so it can't go off again (unless it's a `repeat` one).
+    /// trigger's tile is cleared so it can't go off again (unless it's a `repeat` one). held: use
+    /// was down from before, not a fresh press (see TriggerActivation.Held).
     /// </summary>
-    internal void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir)
+    internal void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, ControlDir dir, bool held = false)
     {
-        var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.Player, map.GetTag(tilex, tiley));
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.Player, map.GetTag(tilex, tiley), held);
         if (!Entities.MapTriggerRegistry.Invoke(trigger.Action, activation))
             return;
 
@@ -80,6 +81,10 @@ internal sealed class PlayerUse(
         if (!trigger.Repeat)
             map.SetMapSpot(tilex, tiley, 1, 0);
     }
+
+    // A use trigger that pushes its wall (A_PushWall), which use held down still pushes
+    static bool IsPushWall(MapTriggerTranslation trigger) =>
+        Entities.Actors.ActorActionRegistry.Parse(trigger.Action).Name.Equals("A_PushWall", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Throws a switch wall: refused without its lock items, else it turns into its `to` wall,
@@ -456,13 +461,17 @@ internal sealed class PlayerUse(
         {
             //
             // mapdefs use trigger (a pushable wall): once a press, not every frame use is held,
-            // for one that stays (`repeat`: a ladder) or refuses (a one-way pushwall's message)
+            // for one that stays (`repeat`: a ladder). But use held down still pushes a pushwall
+            // it comes to, as vanilla's Cmd_Use did (sliding along the walls searching for
+            // secrets), only quietly: a one-way one's refusal and a blocked one's sound are
+            // for a fresh press
             //
             ResetUseHeld();
-            if (playerinput.IsHeld(ButtonType.Use))
+            bool held = playerinput.IsHeld(ButtonType.Use);
+            if (held && (trigger.Repeat || !IsPushWall(trigger)))
                 return;
             playerinput.SetHeld(ButtonType.Use, true);
-            ActivateTrigger(trigger, checkx, checky, dir);
+            ActivateTrigger(trigger, checkx, checky, dir, held);
             return;
         }
         if (!playerinput.IsHeld(ButtonType.Use) && PatchSwitchAt(checkx, checky, dir) is { } patchSwitch)
