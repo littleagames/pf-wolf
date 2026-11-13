@@ -767,7 +767,8 @@ internal class AudioManager
             {
                 buffersPrimed++;
                 // A short track that ended before priming plays what it has
-                if ((buffersPrimed == MusicStreamPrimedBuffers || ended) && !_isPaused)
+                // A SetPaused(false) meanwhile may have started it already; playing it again would rewind it
+                if ((buffersPrimed == MusicStreamPrimedBuffers || ended) && !_isPaused && !IsMusicSourcePlaying())
                     AL.SourcePlay(_musicSource);
             }
             else if (!_isPaused && framesWritten > 0 && !IsMusicSourceActive())
@@ -794,6 +795,12 @@ internal class AudioManager
         AL.GetSource(_musicSource, ALGetSourcei.SourceState, out var stateInt);
         var state = (ALSourceState)stateInt;
         return state is ALSourceState.Playing or ALSourceState.Paused;
+    }
+
+    private bool IsMusicSourcePlaying()
+    {
+        AL.GetSource(_musicSource, ALGetSourcei.SourceState, out var stateInt);
+        return (ALSourceState)stateInt == ALSourceState.Playing;
     }
 
     private void ReclaimProcessedMusicBuffers()
@@ -848,7 +855,11 @@ internal class AudioManager
         }
         else
         {
-            if (!string.IsNullOrEmpty(_requestedMusicTrack) && _musicStreamThread is { IsAlive: true })
+            // Only when it isn't already playing: alSourcePlay on a playing source starts it again
+            // from the first buffer still queued, so a screen that resumes on every redraw
+            // (Customize Controls, through StartMenuMusic) kept pulling the song back
+            if (!string.IsNullOrEmpty(_requestedMusicTrack) && _musicStreamThread is { IsAlive: true }
+                && !IsMusicSourcePlaying())
                 AL.SourcePlay(_musicSource);
             AL.GetSource(_ambientSource, ALGetSourcei.SourceState, out int ambientState);
             if (_ambientName != null && (ALSourceState)ambientState == ALSourceState.Paused)
