@@ -191,7 +191,8 @@ public class MidiImportTests
     public void The_Import_Dialog_Rebuilds_As_Its_Options_Change_And_Saves_The_Song()
     {
         var file = Midi(0, 96, [On(0, 60), On(0, 36, channel: 9), Off(96, 60), Off(0, 36, channel: 9), On(0, 64, channel: 1), Off(96, 64, channel: 1)]);
-        using var import = new PFWolf.Editor.ViewModels.MidiImportViewModel(@"C:\music\My Song.mid", file);
+        // (A path in this system's own form: off Windows, '\' isn't a separator)
+        using var import = new PFWolf.Editor.ViewModels.MidiImportViewModel(Path.Combine(Path.GetTempPath(), "music", "My Song.mid"), file);
 
         Assert.That(import.SuggestedName, Is.EqualTo("MY_SONG"));
         Assert.That(import.MidiChannels.Select(channel => channel.Channel), Is.EqualTo(new[] { 0, 1, 9 }));
