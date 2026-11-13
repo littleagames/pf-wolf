@@ -84,8 +84,9 @@ public record AdLibSound : Asset
         var samples = new short[(tones.Length * framesPerTick) + releaseFrames];
         var destination = 0;
         var stereo = new short[framesPerTick * 2];
-        foreach (var tone in tones)
+        for (var tick = 0; tick < tones.Length; tick++)
         {
+            var tone = tones[tick];
             if (tone == 0)
                 chip.WriteRegister(0xb0, 0);
             else
@@ -93,6 +94,11 @@ public record AdLibSound : Asset
                 chip.WriteRegister(0xa0, tone);
                 chip.WriteRegister(0xb0, (byte)(((block & 7) << 2) | 0x20));
             }
+            // The game keys the note off in the same tick as the last tone (SDL_ALSoundService),
+            // so the last tone never sounds; giving it a tick restarted the envelope, and the
+            // knife's swing ended in a pop
+            if (tick == tones.Length - 1)
+                chip.WriteRegister(0xb0, 0);
             chip.GenerateStream(stereo);
             ConvertToMono(stereo, samples.AsSpan(destination, framesPerTick));
             destination += framesPerTick;

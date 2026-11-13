@@ -86,6 +86,19 @@ public class ImfSongTests
     }
 
     [Test]
+    public void AdLib_Sound_Last_Tone_Is_Keyed_Off_In_Its_Own_Tick()
+    {
+        // Wolf3D's knife swing (ALKNFSWG) ends "... 09 00 0B": a rest, then one last tone. The game
+        // keys off in the same service call as the last tone, so it never sounds; with this
+        // instant-attack instrument, giving it a tick restarted the envelope as a loud pop
+        var knife = new OplInstrument(new OplOperator(0x00, 0x10, 0xF5, 0xF7, 0x01), new OplOperator(0x00, 0x00, 0xF5, 0xF7, 0x03), 0x01);
+        var pcm = AdLibSound.Create(50, knife, 6, [0x86, 0x87, 0x09, 0x00, 0x0B]).ToPcm16();
+        int Peak(int tick) => pcm.Skip(tick * 315).Take(315).Max(sample => Math.Abs((int)sample));
+        Assert.That(Peak(0), Is.GreaterThan(10000));
+        Assert.That(Peak(4), Is.LessThanOrEqualTo(Peak(3)), "the last tone doesn't key the note on again");
+    }
+
+    [Test]
     public void Pc_Sound_Round_Trips()
     {
         var sound = PcSound.Create(20, [40, 0, 60]);
