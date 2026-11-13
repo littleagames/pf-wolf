@@ -157,7 +157,10 @@ No WSL or Docker on the development PC, so testing off Windows is by CI and by h
    SDL2 fallback on Linux, OpenAL for macOS, `SDL2_mixer.dll` dropped; the GitHub Actions run on
    all three. Check: CI green on all three, a headless `demotest` on Linux identical to
    Windows (the demos are the engine's own regression check).
-   *Done 2026-11-12 (CI not run yet: the branch isn't pushed):*
+   *Done 2026-11-12.* CI green on all three at 6f3e55b9 (main), after two fixes it found:
+   SDL2 wasn't found by the tests off Windows (NativeSdl is a module initializer now, not a
+   GameHost.Run step), and a MIDI import test used a Windows path. The run turns failed tests
+   into annotations, readable without signing in (the job logs aren't).
    - SDL2 2.32.10 from Ultz.Native.SDL for every runtime (win x64/x86/arm64, linux
      x64/arm/arm64, one universal macOS library); ppy.SDL2-CS stays for the bindings with
      `ExcludeAssets="native"`. Windows moves from ppy's SDL to 2.32.10 too. Off Windows,
