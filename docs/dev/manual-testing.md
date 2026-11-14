@@ -176,8 +176,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Death: turn to the killer, red fade, obituary message, lives down, level restart.
 - [ ] **(never tried)** Death "see again" text, F5 Change View text, video-mode messages.
 - [ ] Intermission: kill/secret/treasure %, par time, bonus counting, font.
-- [ ] **(never tried)** Secret floor intermission (E1M10, and Spear's floors 19/20): "secret
+- [ ] Bonus screen intermission (game-info bonus-screen, bonus-screen-labels): E1M10 "secret
       floor completed!" and "15000 bonus!" with BJ breathing, no tally; the score goes up 15000.
+      Spear's boss floors (5, 10, 16, 18) say "trans grosse defeated!" etc., floors 19/20
+      "secret tunnel/castle area completed!". Seen via exitlevel on Wolf3D MAP10 and Spear
+      MAP05/MAP19; **(never tried)** reached by playing, in co-op, and Spear MAP10/16/18.
 - [ ] Boss death cam (Hans, Gretel, Hitler incl. Mecha → Hitler).
 - [ ] Episode end: end text with pictures, victory screen (colon spacing), BJ victory run.
 - [ ] **(never tried)** High-score name entry with a placing score, then View Scores.

@@ -2116,10 +2116,17 @@ public record MapInfo
     public List<string> IntermissionPics { get; init; } = [];
 
     /// <summary>
-    /// A secret floor: its level-end screen is intermission.yaml's secret-floor screen (Wolf3D's
-    /// "secret floor completed!" and its flat bonus) in place of the tally, when the pack has one
+    /// "bonus-screen": the level's end screen is intermission.yaml's bonus-screen (a flat bonus,
+    /// no tally) in place of the tally, when the pack has one: Wolf3D's secret floors, Spear's
+    /// boss floors and secret areas
     /// </summary>
-    public bool Secret { get; init; }
+    public bool BonusScreen { get; init; }
+
+    /// <summary>
+    /// "bonus-screen-labels": the bonus screen's text on this level, in place of its own labels
+    /// (Spear's "trans grosse defeated!", "secret tunnel area completed!")
+    /// </summary>
+    public List<IntermissionLabel> BonusScreenLabels { get; init; } = [];
 
     /// <summary>
     /// The level's floor number: the status bar and level-end screen show it, a level with no

@@ -125,8 +125,12 @@ maps: !replace
     music: XGETYOU
     ceiling-color: "#382C14"
     cluster: 1
-  # Trans Grosse
+  # Trans Grosse. The boss floors and secret areas end on intermission.yaml's bonus screen, each
+  # with its own text (id's mapon 4, 9, 15, 17, 18 and 19)
   MAP05:
+    bonus-screen: true
+    bonus-screen-labels:
+      - { text: " trans\n grosse\ndefeated!", x: 112, y: 32 }
     next: MAP06
     floor-number: 5
     music: ULTIMATE
@@ -162,6 +166,9 @@ maps: !replace
     cluster: 1
   # Barnacle Wilhelm
   MAP10:
+    bonus-screen: true
+    bonus-screen-labels:
+      - { text: "barnacle\nwilhelm\ndefeated!", x: 112, y: 32 }
     next: MAP11
     floor-number: 10
     music: ULTIMATE
@@ -205,6 +212,9 @@ maps: !replace
     cluster: 1
   # Ubermutant
   MAP16:
+    bonus-screen: true
+    bonus-screen-labels:
+      - { text: "ubermutant\ndefeated!", x: 112, y: 32 }
     next: MAP17
     floor-number: 16
     music: ULTIMATE
@@ -220,6 +230,9 @@ maps: !replace
   # Death Knight; the Spear of Destiny moves you to MAP21. Leaving any other way goes on
   # to the next map in order, as id's code does.
   MAP18:
+    bonus-screen: true
+    bonus-screen-labels:
+      - { text: " death\n knight\ndefeated!", x: 112, y: 32 }
     next: MAP19
     floor-number: 18
     music: ULTIMATE
@@ -227,7 +240,9 @@ maps: !replace
     cluster: 1
   # Secret level, from MAP04
   MAP19:
-    secret: true
+    bonus-screen: true
+    bonus-screen-labels:
+      - { text: "secret tunnel\n    area\n  completed!", x: 104, y: 32 }
     next: MAP05
     floor-number: 19
     music: XJAZNAZI
@@ -235,7 +250,9 @@ maps: !replace
     cluster: 1
   # Secret level, from MAP12
   MAP20:
-    secret: true
+    bonus-screen: true
+    bonus-screen-labels:
+      - { text: "secret castle\n    area\n  completed!", x: 104, y: 32 }
     next: MAP13
     floor-number: 20
     music: XFUNKIE

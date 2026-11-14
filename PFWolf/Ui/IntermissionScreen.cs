@@ -118,25 +118,26 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         DrawBJ();
 
         var extras = ExtraTallies();
-        // A secret floor (game-info map secret): its own screen and flat bonus in place of the
-        // tally, as Wolf3D's "secret floor completed!"; its ratios aren't kept for the victory tally
-        if (mapInfo.Secret && Intermission.SecretFloor is { } secretFloor)
+        // A level with game-info bonus-screen: its own screen and flat bonus in place of the
+        // tally, as Wolf3D's "secret floor completed!" and Spear's "trans grosse defeated!" (the
+        // level's bonus-screen-labels); its ratios aren't kept for the victory tally
+        if (mapInfo.BonusScreen && Intermission.BonusScreen is { } bonusScreen)
         {
-            foreach (var pic in secretFloor.Pics)
+            foreach (var pic in bonusScreen.Pics)
                 graphics.DrawPic(pic.Pic, pic.X, pic.Y);
-            foreach (var label in secretFloor.Labels)
+            foreach (var label in mapInfo.BonusScreenLabels.Count > 0 ? mapInfo.BonusScreenLabels : bonusScreen.Labels)
                 ui.TextAt(label.X, label.Y, LabelStyle(label)).Print(label.Text.ToLanguageText(language));
-            WriteValue(secretFloor.Values, "floor", mapInfo.FloorNumber.ToString());
-            WriteValue(secretFloor.Values, "name", hooks.MapDisplayName(session.GameState.MapOn));
+            WriteValue(bonusScreen.Values, "floor", mapInfo.FloorNumber.ToString());
+            WriteValue(bonusScreen.Values, "name", hooks.MapDisplayName(session.GameState.MapOn));
             sec = Math.Min(session.GameState.TimeCount / 70, 99 * 60);
-            WriteValue(secretFloor.Values, "time", $"{sec / 60:00}:{sec % 60:00}");
-            WriteValue(secretFloor.Values, "bonus", secretFloor.Bonus.ToString());
+            WriteValue(bonusScreen.Values, "time", $"{sec / 60:00}:{sec % 60:00}");
+            WriteValue(bonusScreen.Values, "bonus", bonusScreen.Bonus.ToString());
 
             video.Update();
             video.FadeIn();
 
             // Everyone's bonus, with others: each machine gives each player theirs alike
-            hooks.GiveEveryone(secretFloor.Bonus);
+            hooks.GiveEveryone(bonusScreen.Bonus);
         }
         else
         {

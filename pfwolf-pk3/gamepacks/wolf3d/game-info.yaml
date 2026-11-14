@@ -282,7 +282,7 @@ maps:
     music: WARMARCH
     cluster: 1
   MAP10:
-    secret: true
+    bonus-screen: true
     next: MAP02
     floor-number: 10
     music: CORNER
@@ -350,7 +350,7 @@ maps:
     music: WARMARCH
     cluster: 2
   MAP20:
-    secret: true
+    bonus-screen: true
     next: MAP12
     floor-number: 10
     ceiling-color: "#4040FC"
@@ -414,7 +414,7 @@ maps:
     music: ULTIMATE
     cluster: 3
   MAP30:
-    secret: true
+    bonus-screen: true
     next: MAP28
     floor-number: 10
     ceiling-color: "#000098"
@@ -483,7 +483,7 @@ maps:
     music: WARMARCH
     cluster: 4
   MAP40:
-    secret: true
+    bonus-screen: true
     next: MAP34
     floor-number: 10
     ceiling-color: "#483818"
@@ -550,7 +550,7 @@ maps:
     music: WARMARCH
     cluster: 5
   MAP50:
-    secret: true
+    bonus-screen: true
     next: MAP46
     floor-number: 10
     ceiling-color: "#580000"
@@ -617,7 +617,7 @@ maps:
     music: ULTIMATE
     cluster: 6
   MAP60:
-    secret: true
+    bonus-screen: true
     next: MAP54
     floor-number: 10
     ceiling-color: "#483818"

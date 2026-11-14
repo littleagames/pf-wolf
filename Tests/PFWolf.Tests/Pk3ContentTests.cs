@@ -69,7 +69,7 @@ public class Pk3ContentTests
     }
 
     [Test]
-    public void Wolf3Ds_Secret_Floor_Screen_Is_Read()
+    public void Wolf3Ds_Bonus_Screen_Is_Read()
     {
         // Arrange
         var path = Path.Combine(TestPaths.Pk3SourceFolder(), "gamepacks", "wolf3d", "intermission.yaml");
@@ -78,21 +78,34 @@ public class Pk3ContentTests
         var intermission = YamlDataEntryLoader.Deserialize<IntermissionAsset>(File.ReadAllText(path));
 
         // Assert: id's "secret floor completed!" and its 15000 bonus
-        Assert.That(intermission.SecretFloor, Is.Not.Null);
-        Assert.That(intermission.SecretFloor!.Bonus, Is.EqualTo(15000));
-        Assert.That(intermission.SecretFloor.Labels, Is.Not.Empty);
-        Assert.That(intermission.SecretFloor.Values.ContainsKey("bonus"));
+        Assert.That(intermission.BonusScreen, Is.Not.Null);
+        Assert.That(intermission.BonusScreen!.Bonus, Is.EqualTo(15000));
+        Assert.That(intermission.BonusScreen.Labels, Is.Not.Empty);
+        Assert.That(intermission.BonusScreen.Values.ContainsKey("bonus"));
     }
 
+    // id's: Wolf3D's mapon 9 of each episode; Spear's mapon 4, 9, 15, 17, 18 and 19
     [TestCase("wolf3d", "wolf3d", new[] { "MAP10", "MAP20", "MAP30", "MAP40", "MAP50", "MAP60" })]
-    [TestCase("spear", "spear", new[] { "MAP19", "MAP20" })]
-    public void Only_The_Secret_Floors_Are_Secret(string pack, string release, string[] secret)
+    [TestCase("spear", "spear", new[] { "MAP05", "MAP10", "MAP16", "MAP18", "MAP19", "MAP20" })]
+    public void Only_Ids_Bonus_Floors_End_On_The_Bonus_Screen(string pack, string release, string[] bonusFloors)
     {
         // Act
         var maps = Load(pack, release).Load<GameInfoAsset>($"{pack}/game-info").Maps;
 
         // Assert
-        Assert.That(maps.Where(m => m.Value.Secret).Select(m => m.Key), Is.EquivalentTo(secret));
+        Assert.That(maps.Where(m => m.Value.BonusScreen).Select(m => m.Key), Is.EquivalentTo(bonusFloors));
+    }
+
+    [Test]
+    public void Spears_Bonus_Floors_Each_Have_Their_Own_Text()
+    {
+        // Act
+        var maps = Load("spear", "spear").Load<GameInfoAsset>("spear/game-info").Maps;
+
+        // Assert
+        Assert.That(maps["MAP05"].BonusScreenLabels.Single().Text, Is.EqualTo(" trans\n grosse\ndefeated!"));
+        Assert.That(maps["MAP19"].BonusScreenLabels.Single().X, Is.EqualTo(104));
+        Assert.That(maps.Values.Where(m => m.BonusScreen).All(m => m.BonusScreenLabels.Count == 1));
     }
 
     // A game's sprites: its data files' (raw-data-map.yaml's, by chunk) and pfwolf-pk3's sprites/

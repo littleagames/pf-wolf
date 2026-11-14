@@ -42,8 +42,9 @@ sounds:
   perfect: misc/100percent
   none: misc/no_bonus
 
-# A secret floor's level-end screen (game-info map secret: true): no tally, a flat bonus
-secret-floor:
+# The level-end screen of a secret floor or a boss floor (game-info map bonus-screen: true): no
+# tally, a flat bonus. A map's bonus-screen-labels replace the labels (Spear's bosses).
+bonus-screen:
   bonus: 15000
   labels:
     - { text: "secret floor\n completed!", x: 112, y: 32 }
