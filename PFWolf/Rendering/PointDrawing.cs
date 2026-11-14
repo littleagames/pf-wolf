@@ -120,23 +120,8 @@ internal sealed class PointDrawing(
     /// along the view it is, half how many pixels half a story is there. False when it's too close
     /// or behind the view.
     /// </summary>
-    internal bool ProjectPoint(long gx, long gy, double z, out int sx, out int sy, out long nx, out double half)
-    {
-        long dx = gx - render.ViewX, dy = gy - render.ViewY;
-        nx = (dx * render.ViewCos >> 16) - (dy * render.ViewSin >> 16);
-        long ny = (dx * render.ViewSin >> 16) + (dy * render.ViewCos >> 16);
-        if (nx < GameConstants.MinDist)
-        {
-            sx = sy = 0;
-            half = 0;
-            return false;
-        }
-
-        sx = (int)Math.Clamp(render.CenterX + ny * render.Scale / nx, -100000, 100000);
-        half = render.HeightNumerator * 32.0 / nx;
-        sy = (int)Math.Clamp(render.CenterY + half * (render.ViewEyeZ - z) / (GameConstants.TextureSize / 2), -100000, 100000);
-        return true;
-    }
+    internal bool ProjectPoint(long gx, long gy, double z, out int sx, out int sy, out long nx, out double half) =>
+        ViewProjection.Project(render, gx, gy, z, out sx, out sy, out nx, out half);
 
     Point[] points = [];
     int[] keys = [];      // each point's height (as WallHeight), to sort them farthest first

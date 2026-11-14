@@ -30,6 +30,7 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
         ("ceilings", GameOption.ShowCeilings),
         ("floors", GameOption.ShowFloors),
         ("heartbeat", GameOption.HeartbeatSound),
+        ("objectivemarkers", GameOption.ObjectiveMarkers),
     ];
 
     internal int Run()

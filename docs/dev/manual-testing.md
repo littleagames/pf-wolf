@@ -956,6 +956,13 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       rockets and gas right away (before the first shot); also on getting off a mounted gun.
 - [ ] Game modes: TDM, CTF (drop/return), Heist, Domination, KOTH, Horde (HE01 too).
 - [ ] **(never tried)** Mid-game join into an objective mode; TDM/Domination/KOTH over a network.
+- [ ] Objective markers (Game Options → Objective Markers, `hud_markers`; seen headless 2026-11-14
+      on DM02): KOTH hill and Domination points in view through walls and pinned to the view's
+      edges when off to the side or behind. **(never tried)** the Game Options menu's new row;
+      the hill marker flashing after a move and counting down its last 10 s; CTF in real play
+      ("Kill" on an enemy carrying your flag, "Escort" on a teammate, "Capture"/"Base" while
+      carrying, "Return"/"Flag" on a dropped flag); while dead watching another player; a wide
+      screen and other UI scales.
 - [ ] Prop Hunt on PH01: disguise with Use, hide timer, hunt, decoy penalty, snap when still,
       taunts, lamp light, chase cam, lobby hide/hunt times.
 - [ ] Play as enemies: lobby class pick, dog bite **(never tried: damage)**, enemy class faces on

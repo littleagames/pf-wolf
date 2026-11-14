@@ -90,6 +90,7 @@ extra-life-score: 40000
 #   weapon-bob-sway: false
 #   always-run: false
 #   crosshair: false
+#   objective-markers: true
 # crosshair-color: White
 
 hud-messages:

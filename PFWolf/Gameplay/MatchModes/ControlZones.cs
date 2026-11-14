@@ -178,10 +178,21 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
         string.Join("   ", Zones.Select((zone, i) =>
         {
             var holder = zone.Owner >= 0 ? GameModes.TeamLabel(zone.Owner) : "-";
-            var (red, blue) = PlayersIn(zone);
-            bool taking = red > 0 != blue > 0 && zone.Owner != (red > 0 ? 0 : 1);
-            return taking ? $"{Letter(i)}: {holder} ({Math.Abs(zone.Progress) * 100 / CaptureTics}%)" : $"{Letter(i)}: {holder}";
+            return Taking(zone) is { } percent ? $"{Letter(i)}: {holder} ({percent}%)" : $"{Letter(i)}: {holder}";
         }));
+
+    /// <summary>How far a point is taken (percent), while one team alone is taking it; else null</summary>
+    int? Taking(Zone zone)
+    {
+        var (red, blue) = PlayersIn(zone);
+        bool taking = red > 0 != blue > 0 && zone.Owner != (red > 0 ? 0 : 1);
+        return taking ? Math.Abs(zone.Progress) * 100 / CaptureTics : null;
+    }
+
+    /// <summary>Every point, by its letter, in its holder's color; one being taken shows how far: "B 40%"</summary>
+    public IEnumerable<ObjectiveMarker> Markers(Entities.PlayerState viewer) =>
+        Zones.Select((zone, i) => ObjectiveMarker.OnTile(zone.At,
+            Taking(zone) is { } percent ? $"{Letter(i)} {percent}%" : Letter(i), zone.Owner)).ToList();
 }
 
 internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathmatch match, HudMessageManager hud, MatchModeHooks hooks)
@@ -256,6 +267,25 @@ internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathma
         var zone = Zones[Hill];
         var holder = zone.Owner >= 0 ? GameModes.TeamLabel(zone.Owner) : PlayersIn(zone) is (> 0, > 0) ? "contested" : "nobody";
         return $"Hill: {holder}   moves in {left / 60}:{left % 60:00}";
+    }
+
+    /// <summary>How long after the hill moves its marker flashes (tics)</summary>
+    internal const int MovedPulseTics = 5 * 70;
+
+    /// <summary>The seconds before a move from which the hill's marker counts them down</summary>
+    internal const int CountdownSeconds = 10;
+
+    /// <summary>The hill, in its holder's color: flashing just after it moves, counting down the last seconds before it moves again</summary>
+    public IEnumerable<ObjectiveMarker> Markers(Entities.PlayerState viewer)
+    {
+        if (Zones.Count == 0)
+            return [];
+        int now = Session.GameState.TimeCount;
+        int left = (Math.Max(0, MovesAt - now) + 69) / 70;
+        bool moved = now - (MovesAt - HillTics) < MovedPulseTics;
+        var zone = Zones[Hill];
+        return [ObjectiveMarker.OnTile(zone.At, left <= CountdownSeconds ? $"Hill {left}" : "Hill", zone.Owner,
+            moved ? MarkerStyle.Pulse : MarkerStyle.None)];
     }
 
     public override void Write(BinaryWriter bw)

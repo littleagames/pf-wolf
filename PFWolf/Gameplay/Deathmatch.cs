@@ -78,6 +78,12 @@ internal interface IMatchObjective
     /// <summary>A line for the top of the view: what's going on (whose flag's where, the wave)</summary>
     string? StatusLine() => null;
 
+    /// <summary>
+    /// Where the mode points a player to, as they'd see it (their team's side of things): drawn
+    /// over the view. Drawing only, so it may differ from machine to machine.
+    /// </summary>
+    IEnumerable<ObjectiveMarker> Markers(Entities.PlayerState viewer) => [];
+
     /// <summary>Where its things are, for the `match` command: "red base 3,4; blue base 60,4"</summary>
     string? Details() => null;
 

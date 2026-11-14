@@ -88,7 +88,7 @@ public class GameModeTests
     }
 }
 
-public class MatchScoringTests
+public partial class MatchScoringTests
 {
     // Two red players and a blue one, playing the mode; the second red acting
     private sealed class Rig

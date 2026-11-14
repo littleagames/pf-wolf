@@ -67,6 +67,7 @@ internal static partial class GameHost
     // and does over it (Ui/NetOverlay.cs)
     static NetPlay netPlay = null!;         // made in InitServices
     static NetOverlay netOverlay = null!;
+    static ObjectiveMarkerDrawing objectiveMarkers = null!;     // where a match's objectives are, over the view
 
     static NetPlay MakeNetPlay() =>
         new(MapManager, _videoManager, _inputManager, HudMessageManager, doors, pushWalls, Session,
@@ -87,7 +88,11 @@ internal static partial class GameHost
     static bool NetChatting => netOverlay.NetChatting;
     static void NetChatKeys() => netOverlay.NetChatKeys();
     static void NetCheckKeys(ScanCodes scan) => netOverlay.NetCheckKeys(scan);
-    static void DrawNetOverlay() => netOverlay.DrawNetOverlay();
+    static void DrawNetOverlay()
+    {
+        objectiveMarkers.Draw();        // under the match's line and the scoreboard (Ui/ObjectiveMarkerDrawing.cs)
+        netOverlay.DrawNetOverlay();
+    }
 
     // net_find, net_portcheck, net_status and scoreboard (Commands/NetCommands.cs)
     static NetCommands netCommands = null!;     // made in InitServices

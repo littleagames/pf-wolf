@@ -468,6 +468,9 @@ public record SettingDefaultsInfo
     /// <summary>The status bar heart monitor's beats heard (heart-monitor beat-sound; default false; s_heartbeat)</summary>
     public bool? HeartbeatSound { get; init; }
 
+    /// <summary>A match mode's objectives (the hill, control points, flags) marked over the view, through walls and at its edges (default true; hud_markers)</summary>
+    public bool? ObjectiveMarkers { get; init; }
+
     /// <summary>Running without holding Run; holding it walks (default false; alwaysrun)</summary>
     public bool? AlwaysRun { get; init; }
 

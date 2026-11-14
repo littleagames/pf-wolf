@@ -1,7 +1,7 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
 # The Game Options settings (freelook, msg_enabled, am_stats, autosave, weaponbob,
-# weaponbob_sway, alwaysrun, crosshair). Each starts as game-info setting-defaults has it, and is the player's own
+# weaponbob_sway, alwaysrun, crosshair, hud_markers). Each starts as game-info setting-defaults has it, and is the player's own
 # choice once they switch it.
 position:
   x: 52
@@ -34,7 +34,7 @@ components:
       - x: 44
       - y: 61
       - width: 202
-      - height: 110
+      - height: 123
 # Checkboxes drawn by code
 menu-items:
   -
@@ -84,4 +84,10 @@ menu-items:
       type: "ToggleMenuItem"
       text: "$STR_CROSSHAIR"
       short-key: C
+      enabled: true
+  -
+      id: "objectivemarkers"
+      type: "ToggleMenuItem"
+      text: "$STR_OBJECTIVEMARKERS"
+      short-key: O
       enabled: true

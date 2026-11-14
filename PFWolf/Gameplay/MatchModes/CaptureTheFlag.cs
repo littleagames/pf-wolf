@@ -219,6 +219,46 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
             return $"{GameModes.TeamLabel(team)} flag: {where}";
         }));
 
+    /// <summary>
+    /// The flags as a player of a team sees them. The other team's: at its base or where it lies
+    /// ("Flag"), or on a teammate carrying it ("Escort"). Their own, only away from home: where it
+    /// lies ("Return") or on the enemy carrying it ("Kill"). Carrying the other team's flag, their
+    /// own base too: "Capture", or "Base" while their own flag is away. A player on no team sees
+    /// both flags wherever they are.
+    /// </summary>
+    public IEnumerable<ObjectiveMarker> Markers(Entities.PlayerState viewer)
+    {
+        var markers = new List<ObjectiveMarker>();
+        int own = viewer.Team;
+        bool onTeam = own is 0 or 1;
+        for (int team = 0; team < 2; team++)
+        {
+            var flag = Flags[team];
+            bool mine = onTeam && team == own;
+            switch (flag.State)
+            {
+                case FlagState.Home when !mine:
+                    markers.Add(ObjectiveMarker.OnTile(flag.Home, "Flag", team));
+                    break;
+                case FlagState.Dropped:
+                    int left = (Math.Max(0, ReturnTics - (Session.GameState.TimeCount - flag.DroppedAt)) + 69) / 70;
+                    markers.Add(ObjectiveMarker.OnTile(flag.At, $"{(mine ? "Return" : "Flag")} {left}", team, MarkerStyle.Pulse));
+                    break;
+                case FlagState.Carried when CarrierOf(flag) is { Pawn: { } pawn } carrier && !ReferenceEquals(carrier, viewer):
+                    markers.Add(new ObjectiveMarker(pawn.X, pawn.Y, !onTeam ? "Flag" : mine ? "Kill" : "Escort", team,
+                        mine ? MarkerStyle.Pulse : MarkerStyle.None));
+                    break;
+            }
+        }
+
+        // Carrying theirs: home to score
+        if (onTeam && Flags[1 - own] is { State: FlagState.Carried } theirs && theirs.Carrier == viewer.Number)
+            markers.Add(Flags[own].State == FlagState.Home
+                ? ObjectiveMarker.OnTile(Flags[own].Home, "Capture", own, MarkerStyle.Pulse)
+                : ObjectiveMarker.OnTile(Flags[own].Home, "Base", own, MarkerStyle.Quiet));
+        return markers;
+    }
+
     public string? Details() =>
         $"red base {Flags[0].Home.x},{Flags[0].Home.y}; blue base {Flags[1].Home.x},{Flags[1].Home.y}; "
         + $"red flag {Flags[0].State} at {Flags[0].At.x},{Flags[0].At.y}; blue flag {Flags[1].State} at {Flags[1].At.x},{Flags[1].At.y}";

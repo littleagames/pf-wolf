@@ -18,6 +18,7 @@ internal enum GameOption : byte
     ShowFloors,         // floor flats drawn; off draws the plain floor color
     WeaponBobSway,      // the weapon bob swings side to side in an arc (Doom's); off bobs it up and down (Planet Strike's)
     HeartbeatSound,     // the status bar heart monitor's beats are heard (heart-monitor beat-sound: Blake Stone's)
+    ObjectiveMarkers,   // a match mode's objectives marked over the view, through walls and at its edges (Ui/ObjectiveMarkerDrawing.cs)
     Count,
 }
 
@@ -40,6 +41,7 @@ internal sealed class GameOptions
         GameOption.AttackInfo => true,
         GameOption.ShowCeilings => true,
         GameOption.ShowFloors => true,
+        GameOption.ObjectiveMarkers => true,
         _ => false,
     };
 
@@ -59,6 +61,7 @@ internal sealed class GameOptions
         GameOption.ShowFloors => "r_floors",
         GameOption.WeaponBobSway => "weaponbob_sway",
         GameOption.HeartbeatSound => "s_heartbeat",
+        GameOption.ObjectiveMarkers => "hud_markers",
         _ => throw new ArgumentOutOfRangeException(nameof(option)),
     };
 
@@ -93,6 +96,7 @@ internal sealed class GameOptions
         gameDefaults[(int)GameOption.ShowFloors] = d.ShowFloors;
         gameDefaults[(int)GameOption.WeaponBobSway] = d.WeaponBobSway;
         gameDefaults[(int)GameOption.HeartbeatSound] = d.HeartbeatSound;
+        gameDefaults[(int)GameOption.ObjectiveMarkers] = d.ObjectiveMarkers;
     }
 
     // Shorthands for the code that asks
@@ -109,4 +113,5 @@ internal sealed class GameOptions
     internal bool ShowFloors => this[GameOption.ShowFloors];
     internal bool WeaponBobSway => this[GameOption.WeaponBobSway];
     internal bool HeartbeatSound => this[GameOption.HeartbeatSound];
+    internal bool ObjectiveMarkers => this[GameOption.ObjectiveMarkers];
 }
