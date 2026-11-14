@@ -618,6 +618,10 @@ the keypad's note and code open its closet)
 - [ ] **(never tried)** Followers through doors and across areas, fighting while following,
       retargeting to a nearer foe, `A_Follow`, ally-killed message, projectiles/blasts sparing
       allies, patrollers giving up.
+- [ ] **(never tried)** No doorway soft-locks: an idle squad medic/guard in or near a doorway
+      steps aside when you walk into it (squad bunched in a corridor shoves on along it,
+      through the door); followers never stop on a door's tile; a stood-still neutral or
+      prisoner beside you doesn't wander off until you walk into it.
 
 **Medics** (`medic-demo`)
 - [ ] **(never tried)** A real play-through by hand: medic revives corpses, bosses never raised,

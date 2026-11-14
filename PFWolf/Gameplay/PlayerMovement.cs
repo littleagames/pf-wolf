@@ -308,6 +308,9 @@ internal sealed class PlayerMovement(
             map.StepOntoColorsCode(player.TileX, player.TileY);
     }
 
+    // The move ClipMove is trying: from where, and how far (TryMove's shove of an actor in the way)
+    private int moveFromX, moveFromY, moveX, moveY;
+
     internal bool TryMove(Entities.Actors.Actor ob)
     {
         const long PLAYERSIZE = GameConstants.PlayerSize;
@@ -419,8 +422,10 @@ internal sealed class PlayerMovement(
                 if (deltay < -reach || deltay > reach)
                     continue;
 
-                // An ally following the player gets out of their way
-                if (ob is Entities.Actors.PlayerPawn pawn)
+                // One not against the player gets out of their way, when they walk into it (not
+                // only stand beside it, or back off from it)
+                if (ob is Entities.Actors.PlayerPawn pawn
+                    && (long)moveX * (actor.X - moveFromX) + (long)moveY * (actor.Y - moveFromY) > 0)
                     actor.ShovedBy(pawn);
                 return false;
             }
@@ -435,6 +440,7 @@ internal sealed class PlayerMovement(
 
         basex = ob.X;
         basey = ob.Y;
+        (moveFromX, moveFromY, moveX, moveY) = (basex, basey, xmove, ymove);
 
         ob.X = basex + xmove;
         ob.Y = basey + ymove;

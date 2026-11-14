@@ -765,7 +765,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 
 - **The start room:** your squad, two guards drawn in your green. Once they've seen you they
   go about with you: they walk after you when you get more than 3 tiles away, stand by when
-  you stop, step aside when you walk into them, and fight whatever they see. Your shots pass
+  you stop (never in a doorway), step aside when you walk into them (so does anyone standing
+  about who isn't against you), and fight whatever they see. Your shots pass
   them by, and they're not in the kill count.
 - **The cell block:** four prisoners, drawn grey. Face one and press use: they turn green,
   join your squad and follow you.

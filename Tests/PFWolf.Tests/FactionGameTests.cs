@@ -148,6 +148,42 @@ public class FactionGameTests
     }
 
     [Test]
+    public void Allies_Standing_In_A_Corridor_Make_Way_Through_A_Door()
+    {
+        // Arrange: two allied guards that don't follow (so stood about, as an idle medic is)
+        // in a corridor between the player and a door, and a follower just past the door; the
+        // player walks east into the room beyond
+        var mod = WriteCorridorArena((11, PlayerFacingEast), (13, AllyFacingWest), (14, AllyFacingWest), (17, FollowerFacingWest));
+
+        // Act
+        var (census, _) = Play(mod, new DemoStep(0, 0, 0, 20), new DemoStep(0, 0, -35, 700), new DemoStep(0, 0, 0, 140));
+
+        // Assert: the player got through into the room, and nobody was hurt on the way
+        var last = census[^1];
+        Assert.That(TileX(last, "Player:allies"), Is.GreaterThanOrEqualTo(18), $"The squad kept the player out: {last}");
+        Assert.That(last, Does.Not.Contain(":allies:0:"), last);
+    }
+
+    [Test]
+    public void A_Follower_Doesnt_Stand_About_In_A_Doorway()
+    {
+        // Arrange: the player in the room by the door, facing it, a follower behind them (facing
+        // them); the player opens the door, walks a few tiles into the corridor and waits: the
+        // follower, coming after them, is near enough to stop just as it gets to the doorway
+        var mod = WriteCorridorArena((17, PlayerFacingWest), (20, FollowerFacingWest));
+
+        // Act
+        var (census, _) = Play(mod,
+            new DemoStep(0, 0, 0, 20), new DemoStep(Use, 0, 0, 3), new DemoStep(0, 0, 0, 40),
+            new DemoStep(0, 0, -35, 9), new DemoStep(0, 0, 0, 420));
+
+        // Assert: it didn't stop on the door's tile, and stands by
+        var last = census[^1];
+        Assert.That(TileX(last, "Follower:allies"), Is.Not.EqualTo(16), $"It stayed in the doorway: {last}");
+        Assert.That(last, Does.Contain("Follower:allies:25:Spawn"), last);
+    }
+
+    [Test]
     public void The_Faction_Demo_Puts_Everyone_On_Their_Side()
     {
         // Arrange: examples/mods/faction-demo, with a census of its own alongside
@@ -177,7 +213,7 @@ public class FactionGameTests
         Assert.That(KillTotal(result), Is.EqualTo(8), "the axis and the mutants, not the squad or the prisoners");
     }
 
-    // Prints, each second, every actor on a side: class:faction:health:state:TileX
+    // Prints, each second, every actor on a side: class:faction:health:state:TileX:TileY
     private const string CensusScript = """
         local due = 0
         game.ontick(function(tics)
@@ -186,7 +222,7 @@ public class FactionGameTests
           local parts = {}
           for _, a in ipairs(game.actors()) do
             if a.faction ~= nil then
-              parts[#parts + 1] = a.name .. ":" .. a.faction .. ":" .. a.health .. ":" .. tostring(a.state) .. ":" .. a.tilex
+              parts[#parts + 1] = a.name .. ":" .. a.faction .. ":" .. a.health .. ":" .. tostring(a.state) .. ":" .. a.tilex .. ":" .. a.tiley
             end
           end
           print("CENSUS t=" .. game.time() .. " " .. table.concat(parts, " "))
@@ -197,7 +233,29 @@ public class FactionGameTests
     /// A mod in the work folder: MAP01 as one room (x 10-22, y 30-34) with the things given along
     /// its middle row (y 32), at their x; the mod's things, factions and census script
     /// </summary>
-    private string WriteArena(params (int X, int Thing)[] things)
+    private string WriteArena(params (int X, int Thing)[] things) => WriteArena(tiles =>
+    {
+        for (int y = 30; y <= 34; y++)
+            for (int x = 10; x <= 22; x++)
+                tiles[y * 64 + x] = 108;                // area 1
+    }, things);
+
+    /// <summary>
+    /// The arena as a corridor (x 10-15 on y 32) through a door (x 16) into a room (x 17-22, y
+    /// 30-34): a squad blocking the way in has nowhere to go but on, or through the door
+    /// </summary>
+    private string WriteCorridorArena(params (int X, int Thing)[] things) => WriteArena(tiles =>
+    {
+        for (int x = 10; x <= 15; x++)
+            tiles[32 * 64 + x] = 108;
+        tiles[32 * 64 + 16] = 90;                       // a door, opening east-west
+        for (int y = 30; y <= 34; y++)
+            for (int x = 17; x <= 22; x++)
+                tiles[y * 64 + x] = 108;
+    }, things);
+
+    // The arena mod with the floor plan carve lays on plane 0
+    private string WriteArena(Action<ushort[]> carve, params (int X, int Thing)[] things)
     {
         var mod = Path.Combine(_workFolder, "arena");
         Directory.CreateDirectory(Path.Combine(mod, "maps"));
@@ -206,9 +264,7 @@ public class FactionGameTests
         Directory.CreateDirectory(Path.Combine(mod, "scripts"));
 
         var map = MapFiles.NewMap("Arena", wall: 1, floor: 1);
-        for (int y = 30; y <= 34; y++)
-            for (int x = 10; x <= 22; x++)
-                map.MapData[0][y * 64 + x] = 108;       // area 1
+        carve(map.MapData[0]);
         foreach (var (x, thing) in things)
             map.MapData[1][32 * 64 + x] = (ushort)thing;
         File.WriteAllBytes(Path.Combine(mod, "maps", "MAP01.wad"), EcWolfMapLoader.Save(map, "MAP01"));
@@ -266,7 +322,8 @@ public class FactionGameTests
         var result = output.FirstOrDefault(line => line.StartsWith("demotest 1:"));
         Assert.That(census, Is.Not.Empty, log);
         Assert.That(result, Is.Not.Null, log);
-        TestContext.Out.WriteLine(census[^1]);
+        foreach (var line in census)
+            TestContext.Out.WriteLine(line);
         TestContext.Out.WriteLine(result);
         return (census, result!);
     }
@@ -278,7 +335,7 @@ public class FactionGameTests
 
     private static int TileX(string census, string who) => Part(census, who, 4);
 
-    // A field (name:faction:health:state:TileX) of an actor in a census line
+    // A field (name:faction:health:state:TileX:TileY) of an actor in a census line
     private static int Part(string census, string who, int field) =>
         census.Split(' ').Where(part => part.StartsWith(who + ":")).Select(part => int.Parse(part.Split(':')[field])).First();
 

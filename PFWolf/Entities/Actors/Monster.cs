@@ -709,6 +709,7 @@ internal partial record Monster : Actor
     {
         RuntimeFlags &= ~(ObjFlags.AttackMode | ObjFlags.FirstAttack | ObjFlags.Following);
         _target = null;
+        _stepAside = null;
         Temp2 = 0;
         Speed = PropertyInt("speed", SpdPatrol);
         if (Distance < 0)
@@ -725,7 +726,9 @@ internal partial record Monster : Actor
     player, or A_SetFaction's "follow") walks after the nearest living player on its side when
     they get more than FollowFar tiles away, in its Chase state at its chasing speed, and stops
     within FollowNear. Anyone it's hostile to that it sees on the way, it goes after instead.
-    Walked into by a player, it steps a couple of tiles out of their way.
+    Walked into by a player, it steps a couple of tiles out of their way (so does any actor
+    standing about that isn't against them), passing the shove on to whoever's past it when
+    it's boxed in; and it never stands about in a doorway.
     */
     private const int FollowNear = 2, FollowFar = 3;
 
@@ -781,8 +784,8 @@ internal partial record Monster : Actor
         // `monster.follow`: it falls in with a player on its side once it sees them
         if (!Follows && PropertyBool("monster.follow") && Leader is { } met && CanSee(met))
             Follows = true;
-        if (!Follows)
-            return false;
+        if (!Follows && _stepAside == null)
+            return false;           // (one that doesn't follow walks only out of a player's way)
 
         bool walking = RuntimeFlags.Has(ObjFlags.Following);
         if (walking && CheckSight())
@@ -792,6 +795,10 @@ internal partial record Monster : Actor
             FirstSighting();
             return true;
         }
+
+        // Standing by in a doorway would keep the players out: it moves off to the tile past it
+        if (!walking && _stepAside == null && IsDoorway(TileX, TileY))
+            StepOffDoorway();
 
         if (_stepAside == null && (Leader is not { } leader || !walking && TileDistance(leader) <= FollowFar))
         {
@@ -806,30 +813,110 @@ internal partial record Monster : Actor
         return true;
     }
 
-    /// <summary>A player walked into it standing by: it steps a couple of tiles out of their way</summary>
-    internal void ShovedBy(PlayerPawn pawn)
+    /// <summary>
+    /// A player walked into it: one that follows them, or one standing about that isn't against
+    /// them (a neutral, an ally yet to fall in), steps a tile or two out of their way. With
+    /// nowhere to go, it passes the shove on to whoever's past it, to make room
+    /// </summary>
+    internal void ShovedBy(PlayerPawn pawn) => Shove(pawn, pawn.TileX, pawn.TileY, 0);
+
+    // How many more past the first a shove passes on to (a squad bunched up in a corridor)
+    private const int MaxShoveChain = 3;
+
+    private void Shove(PlayerPawn pawn, int fromX, int fromY, int chain)
     {
-        if (!Follows || RuntimeFlags.Has(ObjFlags.AttackMode) || _stepAside != null || !IsAllyOf(pawn))
+        if (!CanBeShovedBy(pawn))
             return;
 
-        // To one side of the way they face (two tiles if there's room), else straight away from them
+        // To one side of the way they face (two tiles if there's room), else straight away from
+        // them, else on the way they face
         bool facingAcross = Math.Abs(CosTable[pawn.Angle]) >= Math.Abs(SinTable[pawn.Angle]);
+        (int X, int Y) push = facingAcross ? (Math.Sign(CosTable[pawn.Angle]), 0) : (0, -Math.Sign(SinTable[pawn.Angle]));
         (int X, int Y)[] ways = facingAcross ? [(0, 1), (0, -1)] : [(1, 0), (-1, 0)];
-        ways = [.. ways, (Math.Sign(TileX - pawn.TileX), Math.Sign(TileY - pawn.TileY))];
-        foreach (var (dx, dy) in ways)
+        ways = [.. ways, (Math.Sign(TileX - fromX), Math.Sign(TileY - fromY)), push];
+        // A tile right beside the player (diagonally, too) still blocks them, so a spot clear of
+        // them comes first
+        var steps = ways.Where(way => way != (0, 0)).SelectMany(way => StepsTowards(way.X, way.Y)).ToList();
+        foreach (var step in steps)
         {
-            if ((dx, dy) == (0, 0) || !OpenForStep(TileX + dx, TileY + dy, pawn))
-                continue;
-            _stepAside = OpenForStep(TileX + dx * 2, TileY + dy * 2, pawn) ? (TileX + dx * 2, TileY + dy * 2) : (TileX + dx, TileY + dy);
-            return;
+            if (Math.Max(Math.Abs(step.X - pawn.TileX), Math.Abs(step.Y - pawn.TileY)) >= 2)
+            {
+                _stepAside = step;
+                return;
+            }
         }
+
+        // Boxed in (a doorway, a corridor): whoever's past it (past an empty doorway, too) is
+        // shoved on first, and as the player keeps pushing it follows once there's room
+        if (chain < MaxShoveChain && push != (0, 0))
+        {
+            int nextX = TileX + push.X, nextY = TileY + push.Y;
+            if (IsDoorway(nextX, nextY) && TileEntry(nextX, nextY) is null or Door)
+                (nextX, nextY) = (nextX + push.X, nextY + push.Y);
+            if (MapManager.InMap(nextX, nextY) && TileEntry(nextX, nextY) is ActorMark { Who: { } next } && !ReferenceEquals(next, this))
+            {
+                next.Shove(pawn, nextX - push.X, nextY - push.Y, chain + 1);
+                return;
+            }
+        }
+
+        // Else anywhere it can go
+        if (steps.Count > 0)
+            _stepAside = steps[0];
     }
 
-    // Open floor nothing stands on (nor the player shoving it)
-    private bool OpenForStep(int x, int y, PlayerPawn shover) =>
+    // Where a step aside one way can take it: two tiles, one; or, a doorway next to it that way,
+    // the tile past it
+    private IEnumerable<(int X, int Y)> StepsTowards(int dx, int dy)
+    {
+        int x1 = TileX + dx, y1 = TileY + dy, x2 = x1 + dx, y2 = y1 + dy;
+        if (OpenForStep(x1, y1))
+        {
+            if (OpenForStep(x2, y2))
+                yield return (x2, y2);
+            yield return (x1, y1);
+        }
+        else if ((dx == 0 || dy == 0) && IsDoorway(x1, y1) && TileEntry(x1, y1) is null or Door && !Blocked(x1, y1)
+            && !PlayerOn(x1, y1) && OpenForStep(x2, y2))
+            yield return (x2, y2);
+    }
+
+    // Whether a player walking into it makes it step aside: alive, not fighting nor busy
+    // reviving, not against them, and following them or standing about (not on a patrol)
+    private bool CanBeShovedBy(PlayerPawn pawn) =>
+        _stepAside == null && RuntimeFlags.Has(ObjFlags.Shootable) && !RuntimeFlags.Has(ObjFlags.AttackMode)
+        && !IsBusyReviving && !IsHostileTo(pawn) && ResolvedStates.ContainsKey("Chase")
+        && (Follows || this is not BlakeMonster && CurrentState?.StateName == "Spawn");
+
+    // Open floor it may walk onto that nothing stands on: not a doorway (open, a door's tile is
+    // as empty as any), nor a player's tile
+    private bool OpenForStep(int x, int y) =>
         x > 0 && x < MapManager.MapWidth - 1 && y > 0 && y < MapManager.MapHeight - 1
         && !MapManager.StorySolid(x, y, Story) && TileEntry(x, y) is null
-        && !(shover.TileX == x && shover.TileY == y);
+        && !IsDoorway(x, y) && !Blocked(x, y) && !PlayerOn(x, y);
+
+    private bool PlayerOn(int x, int y) => MapManager.Players.Any(pawn => pawn.TileX == x && pawn.TileY == y);
+
+    // Whether a tile is a door's
+    private bool IsDoorway(int x, int y) =>
+        MapManager.InMap(x, y) && (MapManager.TileMap[x, y] & GameConstants.BitDoor) != 0;
+
+    // Standing in a doorway: it picks the tile past it to step to (the side nearer its leader
+    // first); false when both are taken
+    private bool StepOffDoorway()
+    {
+        var leader = Leader;
+        (int X, int Y)[] ways = [(1, 0), (-1, 0), (0, 1), (0, -1)];
+        foreach (var (dx, dy) in ways.OrderBy(w => leader is null ? 0
+                     : Math.Max(Math.Abs(leader.TileX - (TileX + w.Item1)), Math.Abs(leader.TileY - (TileY + w.Item2)))))
+        {
+            if (!OpenForStep(TileX + dx, TileY + dy))
+                continue;
+            _stepAside = (TileX + dx, TileY + dy);
+            return true;
+        }
+        return false;
+    }
 
     private void StartWalking()
     {
@@ -902,7 +989,9 @@ internal partial record Monster : Actor
             move -= Distance;
             Distance = 0;
 
-            if (Arrived() || !SelectWalkDir())
+            // There, it stops; but not in a doorway, where it goes on to the tile past it
+            bool stop = Arrived() && (_stepAside != null || !IsDoorway(TileX, TileY) || !StepOffDoorway());
+            if (stop || !SelectWalkDir())
             {
                 StopWalking();
                 return;
@@ -913,6 +1002,23 @@ internal partial record Monster : Actor
     // Picks the way to WalkGoal (SelectChaseDir, towards it); false when there's none
     private bool SelectWalkDir()
     {
+        // Out of the way: straight there or not at all (no wandering off, nor into the player)
+        if (_stepAside is { } aside)
+        {
+            int dx = Math.Sign(aside.X - TileX), dy = Math.Sign(aside.Y - TileY);
+            foreach (var dir in new[] { dx > 0 ? ObjDir.East : dx < 0 ? ObjDir.West : ObjDir.NoDir,
+                                        dy > 0 ? ObjDir.South : dy < 0 ? ObjDir.North : ObjDir.NoDir })
+            {
+                if (dir == ObjDir.NoDir)
+                    continue;
+                Dir = dir;
+                if (TryWalk())
+                    return true;
+            }
+            Dir = ObjDir.NoDir;
+            return false;
+        }
+
         _walkGoal = WalkGoal();
         if (_walkGoal == null)
             return false;
