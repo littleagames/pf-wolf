@@ -1654,6 +1654,13 @@ public record ClusterInfo
     public string? VictoryMusic { get; init; }
 
     /// <summary>
+    /// The win tally counts the cluster's bonus-screen floors played (game-info map bonus-screen:
+    /// Wolf3D's secret floors, Spear's boss floors and secret areas) with the rest; left out, as
+    /// id's tally did, only the floors with the regular level-end tally count
+    /// </summary>
+    public bool VictoryCountsBonusFloors { get; init; }
+
+    /// <summary>
     /// Pictures shown one after another on the view color before the win tally (Spear's BJ collapsing)
     /// </summary>
     public List<VictoryFrameInfo> VictoryFrames { get; init; } = [];

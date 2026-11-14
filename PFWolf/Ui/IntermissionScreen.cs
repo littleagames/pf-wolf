@@ -120,7 +120,8 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         var extras = ExtraTallies();
         // A level with game-info bonus-screen: its own screen and flat bonus in place of the
         // tally, as Wolf3D's "secret floor completed!" and Spear's "trans grosse defeated!" (the
-        // level's bonus-screen-labels); its ratios aren't kept for the victory tally
+        // level's bonus-screen-labels). Its ratios are kept, for the episode. and game. stats; the
+        // victory tally leaves them out unless its cluster has victory-counts-bonus-floors.
         if (mapInfo.BonusScreen && Intermission.BonusScreen is { } bonusScreen)
         {
             foreach (var pic in bonusScreen.Pics)
@@ -138,6 +139,11 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
 
             // Everyone's bonus, with others: each machine gives each player theirs alike
             hooks.GiveEveryone(bonusScreen.Bonus);
+
+            (kr, sr, tr) = Ratios(session.GameState);
+            if (hooks.CountsAllKills?.Invoke() == true && UnseenNoKills(session.PlayerState, session.GameState))
+                kr = 100;
+            KeepLevelRatios(kr, sr, tr, sec);
         }
         else
         {
@@ -383,21 +389,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             //
             // SAVE RATIO INFORMATION FOR ENDGAME
             //
-            // The latest run through a floor counts; the win tally averages the won cluster's floors
-            session.LevelRatios[session.GameState.MapOn] =
-                new LevelRatio
-            {
-                Kill = (short)kr,
-                Secret = (short)sr,
-                Treasure = (short)tr,
-                Time = min * 60 + sec,
-                KillCount = session.GameState.KillCount, KillTotal = session.GameState.KillTotal,
-                SecretCount = session.GameState.SecretCount, SecretTotal = session.GameState.SecretTotal,
-                TreasureCount = session.GameState.TreasureCount, TreasureTotal = session.GameState.TreasureTotal,
-                Objectives = (hooks.Objectives?.Invoke() ?? [])
-                    .ToDictionary(o => o.Name, o => (o.Done, o.Total), StringComparer.OrdinalIgnoreCase),
-            };
-
+            KeepLevelRatios(kr, sr, tr, min * 60 + sec);
         }
 
         hooks.DrawScore();
@@ -424,6 +416,24 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         video.FadeOut();
         hooks.DrawPlayBorder();
     }
+
+    /// <summary>
+    /// The finished level's ratios and counts, kept for the victory tally and the episode. and
+    /// game. stats: the latest run through a floor counts
+    /// </summary>
+    private void KeepLevelRatios(int kr, int sr, int tr, int seconds) =>
+        session.LevelRatios[session.GameState.MapOn] = new LevelRatio
+        {
+            Kill = (short)kr,
+            Secret = (short)sr,
+            Treasure = (short)tr,
+            Time = seconds,
+            KillCount = session.GameState.KillCount, KillTotal = session.GameState.KillTotal,
+            SecretCount = session.GameState.SecretCount, SecretTotal = session.GameState.SecretTotal,
+            TreasureCount = session.GameState.TreasureCount, TreasureTotal = session.GameState.TreasureTotal,
+            Objectives = (hooks.Objectives?.Invoke() ?? [])
+                .ToDictionary(o => o.Name, o => (o.Done, o.Total), StringComparer.OrdinalIgnoreCase),
+        };
 
     /// <summary>
     /// What the game-info shows when the current cluster is won; an empty one when it has no entry
@@ -571,12 +581,12 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// Total time (minutes and seconds, 99:99 at most) and average ratios over the floors of the
     /// won cluster that were completed. id divided by a fixed floor count (8, or 20 in Spear),
     /// counting floors never played (Spear's boss floors, a skipped secret floor) as 0%; this
-    /// averages the ones played.
+    /// averages the ones played. Bonus-screen floors count only with countBonusFloors.
     /// </summary>
     internal static (int Min, int Sec, int Kill, int Secret, int Treasure) ClusterTotals(
-        Dictionary<string, LevelRatio> levelRatios, Dictionary<string, MapInfo> maps, int cluster)
+        Dictionary<string, LevelRatio> levelRatios, Dictionary<string, MapInfo> maps, int cluster, bool countBonusFloors = false)
     {
-        var floors = ClusterFloors(levelRatios, maps, cluster);
+        var floors = ClusterFloors(levelRatios, maps, cluster, countBonusFloors);
 
         int sec = floors.Sum(f => f.Time);
         int kr = 0, sr = 0, tr = 0;
@@ -595,10 +605,15 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         return (min, sec, kr, sr, tr);
     }
 
-    /// <summary>The ratios of the won cluster's floors this game completed</summary>
-    internal static List<LevelRatio> ClusterFloors(Dictionary<string, LevelRatio> levelRatios, Dictionary<string, MapInfo> maps, int cluster) =>
+    /// <summary>
+    /// The ratios of the won cluster's floors this game completed: its bonus-screen floors (game-info
+    /// map bonus-screen) only with countBonusFloors (the cluster's victory-counts-bonus-floors), as
+    /// id's tally left out Wolf3D's secret floors and Spear's boss floors and secret areas
+    /// </summary>
+    internal static List<LevelRatio> ClusterFloors(Dictionary<string, LevelRatio> levelRatios, Dictionary<string, MapInfo> maps, int cluster,
+        bool countBonusFloors = false) =>
         levelRatios
-            .Where(lr => maps.TryGetValue(lr.Key, out var map) && map.Cluster == cluster)
+            .Where(lr => maps.TryGetValue(lr.Key, out var map) && map.Cluster == cluster && (countBonusFloors || !map.BonusScreen))
             .Select(lr => lr.Value)
             .ToList();
 
@@ -624,13 +639,14 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
 
         // intermission.yaml victory; a label only-with a tally shows with it
         var maps = engine.GetGameInfo().Maps;
-        var extras = VictoryTallies(screen.Values, ClusterFloors(session.LevelRatios, maps, session.GameState.Cluster), hooks.Item);
+        var extras = VictoryTallies(screen.Values,
+            ClusterFloors(session.LevelRatios, maps, session.GameState.Cluster, cluster.VictoryCountsBonusFloors), hooks.Item);
         foreach (var label in screen.Labels.Where(label => string.IsNullOrEmpty(label.OnlyWith)
             || extras.Any(extra => extra.Name.Equals(label.OnlyWith, StringComparison.OrdinalIgnoreCase))))
             ui.TextAt(label.X, label.Y, LabelStyle(label)).Print(label.Text.ToLanguageText(language));
         foreach (var pic in screen.Pics)
             graphics.DrawPic(pic.Pic, pic.X, pic.Y);
-        (min, sec, kr, sr, tr) = ClusterTotals(session.LevelRatios, maps, session.GameState.Cluster);
+        (min, sec, kr, sr, tr) = ClusterTotals(session.LevelRatios, maps, session.GameState.Cluster, cluster.VictoryCountsBonusFloors);
 
         WriteValue(screen.Values, "time", $"{min:00}:{sec:00}");
         video.Update();

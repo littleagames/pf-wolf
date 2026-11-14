@@ -212,6 +212,8 @@ episodes:
     pic-name: C_EPISODE6
     key: C
 
+# The win tally leaves out the bonus-screen floors (the secret floor 10s), as id's did; a
+# cluster with victory-counts-bonus-floors: true counts them with the rest.
 clusters:
   1:
     end-text: ENDART1

@@ -136,6 +136,29 @@ public class IntermissionTests
         Assert.That(IntermissionScreen.ClusterTotals(ratios, Maps, 1), Is.EqualTo((2, 45, 75, 25, 50)));
     }
 
+    [TestCase(false, 2, 50)]    // id's tally: the secret floor left out
+    [TestCase(true, 3, 40)]     // victory-counts-bonus-floors: counted with the rest
+    public void Bonus_Screen_Floors_Count_Only_When_The_Cluster_Says(bool countBonusFloors, int floorCount, int killAverage)
+    {
+        // Arrange
+        var maps = new Dictionary<string, MapInfo>(Maps) { ["E1M10"] = new MapInfo { Cluster = 1, BonusScreen = true } };
+        var ratios = new Dictionary<string, LevelRatio>
+        {
+            ["E1M1"] = Floor(100, 0, 0, 60),
+            ["E1M2"] = Floor(0, 0, 0, 60),
+            ["E1M10"] = Floor(20, 0, 0, 60),
+        };
+
+        // Act
+        var floors = IntermissionScreen.ClusterFloors(ratios, maps, 1, countBonusFloors);
+        var totals = IntermissionScreen.ClusterTotals(ratios, maps, 1, countBonusFloors);
+
+        // Assert
+        Assert.That(floors, Has.Count.EqualTo(floorCount));
+        Assert.That(totals.Kill, Is.EqualTo(killAverage));
+        Assert.That(totals.Min, Is.EqualTo(floorCount));
+    }
+
     [Test]
     public void No_Floors_Played_Is_Nothing()
     {
