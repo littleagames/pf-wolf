@@ -310,10 +310,13 @@ internal sealed class SpriteDrawing(
             {
                 var atx = actor.TileX;
                 var aty = actor.TileY;
+                if (!OnMap(actor, atx, aty))
+                    continue;
 
                 // A neighbouring tile only counts while it's open floor: a wall the player
-                // sees isn't somewhere the actor could be showing from
-                bool Seen(int x, int y) => map.Spotvis[x, y] && map.TileMap[x, y] == 0;
+                // sees isn't somewhere the actor could be showing from. One on the map's edge
+                // has neighbours off it, which count as unseen.
+                bool Seen(int x, int y) => map.InMap(x, y) && map.Spotvis[x, y] && map.TileMap[x, y] == 0;
                 if (!(map.Spotvis[atx, aty]
                     || Seen(atx - 1, aty)
                     || Seen(atx + 1, aty)
@@ -378,6 +381,8 @@ internal sealed class SpriteDrawing(
 
             // Whether it's on screen counts for things that stand still too (a Blake Stone steam
             // vent only lets off steam while it's seen, bstone's FL_VISIBLE)
+            if (!OnMap(actor, (int)actor.Position.X, (int)actor.Position.Y))
+                continue;
             if (!map.Spotvis[(int)actor.Position.X, (int)actor.Position.Y])
             {
                 actor.RuntimeFlags &= ~ObjFlags.Visible;
@@ -440,6 +445,24 @@ internal sealed class SpriteDrawing(
 
     // DrawScaleds' sort keys: a slot's height on screen, then its place in the list
     long[] SortKeys = [];
+
+    // The things already reported off the map (OnMap), each once
+    readonly HashSet<Entities.Actors.Actor> reportedOffMap = [];
+
+    /// <summary>
+    /// Whether a thing's tile is on the map. One off it (something that got past the map's edge:
+    /// a multiplayer crash on Hell's Highways, 0.9.2) isn't drawn, and is reported once, by its
+    /// class and where it is, so what put it there can be found.
+    /// </summary>
+    bool OnMap(Entities.Actors.Actor actor, int tileX, int tileY)
+    {
+        if (map.InMap(tileX, tileY))
+            return true;
+        actor.RuntimeFlags &= ~ObjFlags.Visible;
+        if (reportedOffMap.Count < 64 && reportedOffMap.Add(actor))
+            Console.WriteLine($"Warning: {actor.Name} (state {actor.CurrentState?.StateName}) is off the map at tile ({tileX}, {tileY}), x {actor.X} y {actor.Y}; not drawn.");
+        return false;
+    }
 
     /// <summary>
     /// A thing's height on screen: its Z, and on another story than the player's that story's

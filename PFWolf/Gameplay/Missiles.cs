@@ -194,11 +194,25 @@ internal sealed class Missiles(
         else
         {
             // a wall: a destructible one its damage type hurts takes it (rolled only then)
-            using var _ = ActAsShooter(ob);
-            hooks.MissileHitWall?.Invoke(ob, () => (int)attacks.PlayerDamage(Roll()));
+            using (ActAsShooter(ob))
+                hooks.MissileHitWall?.Invoke(ob, () => (int)attacks.PlayerDamage(Roll()));
+
+            // It bursts where it was, in front of the wall: one faster than its box is wide (a
+            // flame) can have moved its middle into the wall's tile, and a burst drawn there sat
+            // in the wall, or (in the map's edge) had the sprites read off the map
+            StepBack(ob, dx, dy);
         }
 
         Detonate(ob);
+    }
+
+    /// <summary>A missile that's just moved dx, dy goes back to where it was</summary>
+    internal static void StepBack(Entities.Actors.Actor ob, int dx, int dy)
+    {
+        ob.X -= dx;
+        ob.Y -= dy;
+        ob.TileX = (byte)(ob.X >> MapConstants.TileShift);
+        ob.TileY = (byte)(ob.Y >> MapConstants.TileShift);
     }
 
     /// <summary>

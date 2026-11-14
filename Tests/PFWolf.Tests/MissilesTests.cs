@@ -53,11 +53,15 @@ public class MissilesTests
         var stats = new PlayerStats(null!, null!, null!, inventory, bar, classes, weapons, _session,
             new Configuration.GameSettings(), new PlayerStatsHooks(() => 1, () => { }, _ => { }));
         _missiles = new Missiles(_map, null!, _doors, weapons, null!, stats, _session,
-            new MissileHooks(_ => true, (sound, at) => _sounds.Add((sound, at)), (_, damage, _) => _playerHurts.Add(damage)));
+            new MissileHooks(ob => _clear(ob), (sound, at) => _sounds.Add((sound, at)), (_, damage, _) => _playerHurts.Add(damage)));
         _playerHurts = [];
+        _clear = _ => true;
     }
 
     private List<int> _playerHurts = null!;
+
+    // The move check (ProjectileTryMove): whether a missile's box where it is now is clear
+    private Func<Entities.Actors.Actor, bool> _clear = null!;
 
     private static Monster Thing(params (string Key, object Value)[] properties)
     {
@@ -237,6 +241,27 @@ public class MissilesTests
         Assert.That(grenade.Angle, Is.EqualTo(180));
         Assert.That(grenade.Speed, Is.EqualTo(6144));
         Assert.That(_sounds, Is.EqualTo(new[] { ("grenade/bounce", (Entities.Actors.Actor)grenade) }));
+    }
+
+    [Test]
+    public void A_Missile_Faster_Than_Its_Box_Bursts_In_Front_Of_The_Wall_Not_In_It()
+    {
+        // Arrange: a flame (3/16 tile a tic, more than its box's 1/8) flying west, its middle a
+        // little over a tile from the map's west edge, column 0 a wall (a Hell's Highways crash:
+        // its burst drawn in column 0 had the sprites read column -1)
+        TrigTables.BuildTables();      // the sines it flies by
+        _clear = ob => (ob.X - GameConstants.ProjSize) >> MapConstants.TileShift >= 1;
+        _session.Tics = 1;
+        var flame = Thing();
+        int startX = Tile + 0x2600;
+        (flame.X, flame.Y, flame.TileX, flame.TileY, flame.Angle, flame.Speed) = (startX, 5 * Tile + Tile / 2, 1, 5, 180, 12288);
+
+        // Act
+        _missiles.Missile(flame, ["6", "14"]);
+
+        // Assert: blocked, and back where it was, in column 1
+        Assert.That(flame.IsRemoved, Is.True);
+        Assert.That((flame.X, flame.TileX), Is.EqualTo((startX, (byte)1)));
     }
 
     [Test]

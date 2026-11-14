@@ -111,6 +111,8 @@ internal sealed class Projectiles(
         for (y = yl; y <= yh; y++)
             for (x = xl; x <= xh; x++)
             {
+                if (!map.InMap(x, y))
+                    return false;                   // the map's edge: as solid as a wall
                 check = map.ActorAt[x, y];
                 if (check is null or ActorMark)     // enemies are hit by the projectile's own check
                     continue;
