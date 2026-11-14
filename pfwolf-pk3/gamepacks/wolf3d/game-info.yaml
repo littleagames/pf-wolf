@@ -516,7 +516,7 @@ maps:
     cluster: 5
   MAP45:
     next: MAP46
-    secret-next: MAP40
+    secret-next: MAP50
     floor-number: 5
     ceiling-color: "#483818"
     par-time: 240
@@ -612,6 +612,7 @@ maps:
     music: ULTIMATE
     cluster: 6
   MAP60:
+    next: MAP55
     floor-number: 10
     ceiling-color: "#483818"
     music: FUNKYOU
