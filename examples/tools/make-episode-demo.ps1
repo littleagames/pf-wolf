@@ -37,13 +37,17 @@ Save-Picture "$modDir\graphics\NFSKY.png" 512 128 {
     New-Color (6 + 0.15 * $y) (8 + 0.15 * $y) (30 + 0.4 * $y)
 }
 
-# Shared tiles: walls, the player start, enemies, the exit
+# Shared tiles: walls, the elevator switch, doors. A door's tile number says which way it
+# faces: '|' (90) is one you go through east-west, between walls north and south of it; '-' (91)
+# one you go through north-south, between walls east and west; '=' (101) an elevator door you go
+# through north-south.
 function New-Tiles {
     $t = [Collections.Hashtable]::new([StringComparer]::Ordinal)
     $t['#'] = @{ Plane0 = 1 }
     $t['X'] = @{ Plane0 = 21 }
-    $t['D'] = @{ Plane0 = 91 }
-    $t['E'] = @{ Plane0 = 90 }
+    $t['|'] = @{ Plane0 = 90 }
+    $t['-'] = @{ Plane0 = 91 }
+    $t['='] = @{ Plane0 = 101 }
     $t
 }
 
@@ -53,13 +57,13 @@ $Docks = @(
     '########################'   # y=20
     '##################xxxX##'   #      the elevator
     '##################xxx###'
-    '###################E####'
+    '###################=####'   #      the elevator door
     '#################wwwww##'   #      the warehouse
     '#################wcwww##'   # y=25
     '##dddddddddddddd#wwwww##'   #      the dockside
     '##ddddddgddddodd#wwwww##'
     '##dddooddddddddd#wwkww##'
-    '##ddddddddddgdddDwwwww##'
+    '##ddddddddddgddd|wwwww##'   #      the warehouse door
     '##dddddddddddddd#wwwww##'   # y=30
     '##ddddddddooddgd#wwwww##'
     '##dddddddddddddd#wwwcw##'
@@ -96,8 +100,8 @@ $Fortress = @(
     '########rdrrr#qqqqqqq###'   # y=30
     '########rrrrr#qqqqqqq###'
     '########rrrrr#qqqqqqq###'
-    '##aaaaa###D#####D#######'
-    '##aaaaaEhhhhshhhhhshh###'   #      the corridor, SS on guard
+    '##aaaaa###-#####-#######'
+    '##aaaaa|hhhhshhhhhshh###'   #      the corridor, SS on guard
     '##aaaaa#################'   # y=35
     '##aaPaa#################'   #      the player start, facing north
     '########################'
@@ -122,12 +126,23 @@ $planes[0][25 * 64 + 15] = 111; $planes[0][29 * 64 + 19] = 111
 Save-MapWad "$modDir\maps\MAP62.wad" 'MAP62' 'The Fortress' $planes
 
 # MAP63, the Tower: a courtyard three stories high under the night sky, its guards; at the far
-# end the floor that ends the episode (object 99: BJ runs for it, as on Wolf3D's last floors)
+# end a door out, and past it the floor that ends the episode (object 99: BJ runs for it, as on
+# Wolf3D's last floors). BJ always runs north, six tiles and then a jump, so the way out needs
+# that much open floor north of it: with a wall in his way he'd stand there and the level would
+# never end.
 $Tower = @(
-    '########################'   # y=20
-    '########################'
-    '########################'
-    '###ccccccccvvcccccccc###'   #      the way out (v)
+    '########################'   # y=12
+    '###########c############'   #      BJ's run north
+    '###########c############'
+    '###########c############'   # y=15
+    '###########c############'
+    '###########c############'
+    '###########c############'
+    '###########c############'
+    '###########v############'   # y=20 the way out (v)
+    '###########c############'
+    '###########-############'   #      the door out of the courtyard
+    '###cccccccccccccccccc###'
     '###cccccgccccccgccccc###'
     '###cccccccccccccccccc###'   # y=25
     '###cccIccccccccccIccc###'   #      pillars
@@ -151,5 +166,5 @@ $Tiles['s'] = @{ Plane0 = 108; Plane1 = 129 }
 $Tiles['d'] = @{ Plane0 = 108; Plane1 = 137 }
 $Tiles['v'] = @{ Plane0 = 108; Plane1 = 99 }                     # the episode's end
 $planes = New-MapPlanes
-Add-MapLayout $planes $Tower $Tiles 0 20
+Add-MapLayout $planes $Tower $Tiles 0 12
 Save-MapWad "$modDir\maps\MAP63.wad" 'MAP63' 'The Tower' $planes

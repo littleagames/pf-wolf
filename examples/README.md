@@ -1966,8 +1966,8 @@ Start a new game and pick Episode 7.
 - **Floor 1, the Docks:** a night of rain on the dockside, guards among the barrels, a warehouse.
 - **Floor 2, the Fortress:** SS in the corridor, the gold key in one hall, the gold door out of the
   other.
-- **Floor 3, the Tower:** a courtyard three stories high under the stars; get to the far end and
-  B.J. runs for it, as on Wolf3D's last floors.
+- **Floor 3, the Tower:** a courtyard three stories high under the stars; go through the door at
+  the far end and B.J. runs for it, as on Wolf3D's last floors.
 - **The ending:** the tally, then the ending text, two pages.
 
 ### What's in it
@@ -1982,7 +1982,9 @@ Start a new game and pick Episode 7.
   page, `^C` a color, `^E` the end). A text in a mod's `texts/` is a text by that name.
 - `scripts/briefing.lua`: `game.showtext("NFBRIEF")` as MAP61 starts afresh.
 - `graphics/`: the episode's picture and the night sky. `maps/`: the levels. MAP63's way out is
-  object 99, pfwolf-pk3's `A_VictoryTile` trigger.
+  object 99, pfwolf-pk3's `A_VictoryTile` trigger. B.J. always runs north from it, six tiles and
+  a jump, so leave that much open floor north of the tile, or he stands still and the level never
+  ends.
 
 The pictures and levels are made by `tools/make-episode-demo.ps1`. Edit it and run it again:
 
