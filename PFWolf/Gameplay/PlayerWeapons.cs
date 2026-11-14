@@ -239,18 +239,15 @@ internal sealed class PlayerWeapons(
         return added;
     }
 
-    // The weapon in hand's picture, and what goes with it: its ammo (drawn over it, for a layout
-    // that puts it there) and its charge
+    // The weapon in hand's picture, and what goes with it: its ammo (a new weapon can shoot
+    // another ammo type, and a layout can draw the ammo over the picture) and its charge
     internal void DrawWeapon()
     {
         if (statusBar.StatusBarHidden) return;
         statusBar.DrawWeaponPic();
         statusBar.DrawWeaponName();
         DrawWeaponSlots();
-        if (statusBar.StatusBar.Get("ammo")?.Behind?.Equals("weapon", StringComparison.OrdinalIgnoreCase) == true
-            || statusBar.StatusBar.Get("ammo")?.OnlyWithAmmo == true || statusBar.StatusBar.Get("ammo-gauge") != null
-            || statusBar.StatusBar.Get("clip") != null)
-            DrawAmmo();
+        DrawAmmo();
         DrawCharge();
     }
 
@@ -332,7 +329,6 @@ internal sealed class PlayerWeapons(
             session.PlayerState.Weapon = session.PlayerState.ChosenWeapon = newBest;
 
         DrawWeapon();
-        DrawAmmo();
         return gotWeapon || gotAmmo;
     }
 

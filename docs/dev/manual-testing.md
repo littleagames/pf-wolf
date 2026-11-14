@@ -951,6 +951,9 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
 - [ ] **(never tried)** 3–4 players over a real network; **5–8 players** at all.
 - [ ] Deathmatch on DM01–DM04 (`multiplayer-pk3` on): frags, frag/time limit, scoreboard, item
       respawn, rocket/flamethrower frags **(never tried over the network)**.
+- [ ] **(never tried)** Ammo counter follows the weapon in hand: with the gatling gun, rocket
+      launcher and flamethrower held, switching by slot key and next/previous shows bullets,
+      rockets and gas right away (before the first shot); also on getting off a mounted gun.
 - [ ] Game modes: TDM, CTF (drop/return), Heist, Domination, KOTH, Horde (HE01 too).
 - [ ] **(never tried)** Mid-game join into an objective mode; TDM/Domination/KOTH over a network.
 - [ ] Prop Hunt on PH01: disguise with Use, hide timer, hunt, decoy penalty, snap when still,
