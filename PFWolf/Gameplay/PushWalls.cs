@@ -95,6 +95,13 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
     /// <summary>Whether the scripts let a pushwall slide from a tile the way given (game.onpushwall)</summary>
     internal Func<int, int, ControlDir, bool>? MayPush { get; init; }
 
+    /// <summary>Whether a wall stopping on a tile is a door's side (Doors.IsDoorSide), so it's drawn with the door-side texture</summary>
+    internal Func<int, int, bool>? IsDoorSide { get; init; }
+
+    // The wall id a stopped pushwall leaves on (x, y): with the door-side mark (BitWall) beside a doorway, without it elsewhere
+    int LandedTile(int x, int y, int tile) =>
+        IsDoorSide?.Invoke(x, y) == true ? tile | GameConstants.BitWall : tile & ~GameConstants.BitWall;
+
     // The MovingWalls on the move, in the order they were pushed
     internal readonly List<MovingPushWall> MovingWalls = [];
 
@@ -374,7 +381,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 //
                 // the block has been pushed as far as it goes
                 //
-                map.TileMap[wall.X + dx, wall.Y + dy] = (ushort)oldtile;
+                map.TileMap[wall.X + dx, wall.Y + dy] = (ushort)LandedTile(wall.X + dx, wall.Y + dy, oldtile);
                 PlacePiece(wall, wall.X + dx, wall.Y + dy, oldtile);
                 map.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MovePatch(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
@@ -399,7 +406,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                     || map.EnemiesAt(aheadx, aheady).Any()
                     || map.Players.Any(pawn => PlayerBoxCovers(pawn, aheadx, aheady)))
                 {
-                    map.TileMap[wall.X, wall.Y] = (ushort)oldtile;
+                    map.TileMap[wall.X, wall.Y] = (ushort)LandedTile(wall.X, wall.Y, oldtile);
                     PlacePiece(wall, wall.X, wall.Y, oldtile);
                     return false;
                 }

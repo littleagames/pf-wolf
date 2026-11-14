@@ -181,6 +181,20 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
             map.TileMap[x, y] |= GameConstants.BitWall;
     }
 
+    /// <summary>
+    /// Whether a wall on (x, y) is a door's side: a vertical door is north or south of it, or a
+    /// horizontal one east or west. For a wall that arrives later (a pushwall that stops beside
+    /// a doorway whose side was open floor, as on E2M3), so it gets the mark SpawnDoor gives.
+    /// </summary>
+    internal bool IsDoorSide(int x, int y) =>
+        IsDoorAt(x, y - 1, vertical: true) || IsDoorAt(x, y + 1, vertical: true)
+        || IsDoorAt(x - 1, y, vertical: false) || IsDoorAt(x + 1, y, vertical: false);
+
+    bool IsDoorAt(int x, int y, bool vertical) =>
+        map.InMap(x, y) && (map.TileMap[x, y] & GameConstants.BitDoor) != 0
+        && (map.TileMap[x, y] & ~GameConstants.BitDoor) is var door && door < LastDoorObj
+        && DoorObjList[door].Vertical == vertical;
+
     //===========================================================================
 
     /*

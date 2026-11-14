@@ -195,6 +195,7 @@ internal static partial class GameHost
         pushWalls = new PushWalls(MapManager, AudioManager, Session, () => GameEngineManager.GetGameInfo().PushwallDistance)
         {
             MayPush = (x, y, dir) => gameScripts?.RunPushWallHooks(Session.Player, x, y, dir) != false,
+            IsDoorSide = doors.IsDoorSide,
         };
         wallSpriteBlocking = new WallSpriteBlocking(MapManager);
         lineOfSight = new LineOfSight(MapManager, doors, Session, WallSpriteBlocksLine);
