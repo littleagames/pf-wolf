@@ -612,7 +612,7 @@ maps:
     music: ULTIMATE
     cluster: 6
   MAP60:
-    next: MAP55
+    next: MAP54
     floor-number: 10
     ceiling-color: "#483818"
     music: FUNKYOU
