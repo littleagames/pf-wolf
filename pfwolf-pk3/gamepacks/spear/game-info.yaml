@@ -227,6 +227,7 @@ maps: !replace
     cluster: 1
   # Secret level, from MAP04
   MAP19:
+    secret: true
     next: MAP05
     floor-number: 19
     music: XJAZNAZI
@@ -234,6 +235,7 @@ maps: !replace
     cluster: 1
   # Secret level, from MAP12
   MAP20:
+    secret: true
     next: MAP13
     floor-number: 20
     music: XFUNKIE

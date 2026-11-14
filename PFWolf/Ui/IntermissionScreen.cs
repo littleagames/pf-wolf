@@ -118,7 +118,27 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         DrawBJ();
 
         var extras = ExtraTallies();
-        //if (session.GameState.MapOn < LRpack)
+        // A secret floor (game-info map secret): its own screen and flat bonus in place of the
+        // tally, as Wolf3D's "secret floor completed!"; its ratios aren't kept for the victory tally
+        if (mapInfo.Secret && Intermission.SecretFloor is { } secretFloor)
+        {
+            foreach (var pic in secretFloor.Pics)
+                graphics.DrawPic(pic.Pic, pic.X, pic.Y);
+            foreach (var label in secretFloor.Labels)
+                ui.TextAt(label.X, label.Y, LabelStyle(label)).Print(label.Text.ToLanguageText(language));
+            WriteValue(secretFloor.Values, "floor", mapInfo.FloorNumber.ToString());
+            WriteValue(secretFloor.Values, "name", hooks.MapDisplayName(session.GameState.MapOn));
+            sec = Math.Min(session.GameState.TimeCount / 70, 99 * 60);
+            WriteValue(secretFloor.Values, "time", $"{sec / 60:00}:{sec % 60:00}");
+            WriteValue(secretFloor.Values, "bonus", secretFloor.Bonus.ToString());
+
+            video.Update();
+            video.FadeIn();
+
+            // Everyone's bonus, with others: each machine gives each player theirs alike
+            hooks.GiveEveryone(secretFloor.Bonus);
+        }
+        else
         {
             foreach (var label in Intermission.Labels ?? [])
                 if (label.OnlyWith is not { Length: > 0 } with || extras.Any(e => e.Name.Equals(with, StringComparison.OrdinalIgnoreCase)))
@@ -377,19 +397,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                     .ToDictionary(o => o.Name, o => (o.Done, o.Total), StringComparer.OrdinalIgnoreCase),
             };
 
-            // TODO This should be set up as different LevelCompleted "screens"???
         }
-        //else
-        //{
-        //    Write(14, 4, "secret floor\n completed!");
-        //    Write(10, 16, "15000 bonus!");
-
-        //    video.Update();
-        //    video.FadeIn();
-
-        //    GivePoints(15000);
-        //}
-
 
         hooks.DrawScore();
         video.Update();

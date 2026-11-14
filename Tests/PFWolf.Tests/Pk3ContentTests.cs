@@ -68,6 +68,33 @@ public class Pk3ContentTests
         Assert.That(intermission.DeathCam.HoldTics, Is.GreaterThan(0));
     }
 
+    [Test]
+    public void Wolf3Ds_Secret_Floor_Screen_Is_Read()
+    {
+        // Arrange
+        var path = Path.Combine(TestPaths.Pk3SourceFolder(), "gamepacks", "wolf3d", "intermission.yaml");
+
+        // Act
+        var intermission = YamlDataEntryLoader.Deserialize<IntermissionAsset>(File.ReadAllText(path));
+
+        // Assert: id's "secret floor completed!" and its 15000 bonus
+        Assert.That(intermission.SecretFloor, Is.Not.Null);
+        Assert.That(intermission.SecretFloor!.Bonus, Is.EqualTo(15000));
+        Assert.That(intermission.SecretFloor.Labels, Is.Not.Empty);
+        Assert.That(intermission.SecretFloor.Values.ContainsKey("bonus"));
+    }
+
+    [TestCase("wolf3d", "wolf3d", new[] { "MAP10", "MAP20", "MAP30", "MAP40", "MAP50", "MAP60" })]
+    [TestCase("spear", "spear", new[] { "MAP19", "MAP20" })]
+    public void Only_The_Secret_Floors_Are_Secret(string pack, string release, string[] secret)
+    {
+        // Act
+        var maps = Load(pack, release).Load<GameInfoAsset>($"{pack}/game-info").Maps;
+
+        // Assert
+        Assert.That(maps.Where(m => m.Value.Secret).Select(m => m.Key), Is.EquivalentTo(secret));
+    }
+
     // A game's sprites: its data files' (raw-data-map.yaml's, by chunk) and pfwolf-pk3's sprites/
     // pictures. Planet Strike starts from Aliens of Gold's classes and map objects, so a class one
     // game draws can name frames the other lettered differently, or hasn't got; the shareware and

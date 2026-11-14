@@ -176,6 +176,8 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Death: turn to the killer, red fade, obituary message, lives down, level restart.
 - [ ] **(never tried)** Death "see again" text, F5 Change View text, video-mode messages.
 - [ ] Intermission: kill/secret/treasure %, par time, bonus counting, font.
+- [ ] **(never tried)** Secret floor intermission (E1M10, and Spear's floors 19/20): "secret
+      floor completed!" and "15000 bonus!" with BJ breathing, no tally; the score goes up 15000.
 - [ ] Boss death cam (Hans, Gretel, Hitler incl. Mecha → Hitler).
 - [ ] Episode end: end text with pictures, victory screen (colon spacing), BJ victory run.
 - [ ] **(never tried)** High-score name entry with a placing score, then View Scores.

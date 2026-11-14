@@ -42,6 +42,14 @@ sounds:
   perfect: misc/100percent
   none: misc/no_bonus
 
+# A secret floor's level-end screen (game-info map secret: true): no tally, a flat bonus
+secret-floor:
+  bonus: 15000
+  labels:
+    - { text: "secret floor\n completed!", x: 112, y: 32 }
+  values:
+    bonus: { x: 80, y: 128, format: "{0} bonus!" }
+
 death-cam:
   pause-ms: 800
   hold-tics: 300

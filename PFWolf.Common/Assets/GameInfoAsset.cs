@@ -2116,6 +2116,12 @@ public record MapInfo
     public List<string> IntermissionPics { get; init; } = [];
 
     /// <summary>
+    /// A secret floor: its level-end screen is intermission.yaml's secret-floor screen (Wolf3D's
+    /// "secret floor completed!" and its flat bonus) in place of the tally, when the pack has one
+    /// </summary>
+    public bool Secret { get; init; }
+
+    /// <summary>
     /// The level's floor number: the status bar and level-end screen show it, a level with no
     /// name is called "Episode X, Floor Y" (or "Floor Y") by it, and elevators find a cluster's
     /// floors by it. 0 or less: a level with no name is called by its map name.

@@ -75,6 +75,12 @@ public record IntermissionAsset : Asset
     /// <summary>The bonus points added to the score: for time under par, and for perfect ratios</summary>
     public IntermissionScoring Scoring { get; set; } = new();
 
+    /// <summary>
+    /// The level-end screen of a secret floor (game-info map secret: true), in place of the tally,
+    /// in the same font and color, with BJ breathing; none: a secret floor has the tally too
+    /// </summary>
+    public SecretFloorScreen? SecretFloor { get; set; }
+
     /// <summary>The screen shown when a cluster is won, in the same font and color</summary>
     public VictoryScreen? Victory { get; set; }
 
@@ -135,6 +141,26 @@ public record VictoryScreen
     public List<IntermissionLabel> Labels { get; set; } = [];
 
     /// <summary>Where each of the won cluster's values goes, by name (time, kill, secret, treasure...)</summary>
+    public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>
+/// A secret floor's level-end screen (Wolf3D's "secret floor completed!" and "15000 bonus!"):
+/// its text, and a flat bonus given in place of the time and ratio bonuses. Its values: bonus
+/// (the bonus, with a format for its text) and floor, name and time as the tally's.
+/// </summary>
+public record SecretFloorScreen
+{
+    /// <summary>The points every player is given</summary>
+    public int Bonus { get; set; }
+
+    /// <summary>Pictures drawn over the labels</summary>
+    public List<IntermissionPic> Pics { get; set; } = [];
+
+    /// <summary>The screen's text</summary>
+    public List<IntermissionLabel> Labels { get; set; } = [];
+
+    /// <summary>Where each value goes, by name (bonus, floor, name, time)</summary>
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
