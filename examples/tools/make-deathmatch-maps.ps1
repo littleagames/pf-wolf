@@ -107,6 +107,7 @@ $Arenas = @(
     # of a 1-tile alcove under an arch) that shoot across them, to a
     # flamethrower in the middle of each; the middle lane (7 wide) runs from base mouth to base
     # mouth under four arches, to the rocket launcher in the very middle behind 45 degree cover.
+    # No ceiling lights: everything open is under the sky, with nothing for them to hang from.
     # Two connectors a side join the lanes past an armory (chaingun). Secret passages through the
     # solid blocks (pushwalls in the outer lanes', middle lane's and bases' walls) lead to stash
     # rooms. Lane walls are 3 stories, the rest 2 (game-info wall-height), under a sky; light
@@ -142,7 +143,7 @@ $Arenas = @(
             '#...%%%%%%%%%.+..z%%%%..%%%%%%%%'
             '#...%%%%%%%%%.....%%%%..%%%%%%%%'
             '#...%%%%%%%%%%%%.%%%%%..%%%.....'
-            '#...%%%%%%%%%%%%.%%%%%..%%%.L...'
+            '#...%%%%%%%%%%%%.%%%%%..%%%.....'
             '#...%%%%%%%%%%%%.%%%%%.......+.G'
             '#...%%%%%%%%%%%%.%%%%%..%%%.....'
             '#...%%%%%%%%%%%%.%%%%%..%%%.....'
@@ -153,7 +154,7 @@ $Arenas = @(
             '#........$..%%%%.%%%%%..%%%%%%%%'
             '#....M...C%%%%%%.%%%%%..%%%%%%%%'
             '#........C%%%%%..%%%%%..%%%%%%%%'
-            '#...L....C%%%%%..%%%%%..%%%%%%%%'
+            '#........C%%%%%..%%%%%..%%%%%%%%'
             '#........C%%%%%*%%%%%%..%%%%%%%%'
             '#.....>..C....:.........:......z'
             '#.............:.........:...3...'
