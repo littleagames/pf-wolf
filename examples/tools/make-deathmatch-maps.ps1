@@ -207,7 +207,9 @@ $Arenas = @(
     # between two corridors. A pushwall in each spawn room's two inner walls opens a passage to
     # the stash room between it and its neighbour, which pushwalls in the ring's outer wall open
     # onto too. Round walls are smoothed by 45 degree walls, each in the wall on its solid side:
-    # brown marble for the hub band, red brick for the ring's outer wall and the halls. Light
+    # brown marble for the hub band, red brick for the ring's outer wall and the halls. Ammo out
+    # in the open: two clips in each spawn room, one in each hall, two a quarter round the ring
+    # (with gas on the west side and rockets on the east), one at each corner of the pillar. Light
     # zones: tinted spawns, dim halls and ring, bright corridors, a pulsing vault, dark passages,
     # flickering stashes (multiplayer-pk3/gamepacks/wolf3d/game-info.yaml).
     # Hashtable keys ignore case, so 'C', 'F' and 'W' here hide 'c', 'f' and 'w'.
@@ -228,26 +230,26 @@ $Arenas = @(
             '##C..v...v..C#############...m..'
             '##C.........*..###########..W...'
             '##C....L....C.############....+.'
-            '##C.........C...................'
+            '##C.......m.C...................'
             '##C..>...>..C#############.#####'
-            '##C.M.......C#############.#####'
+            '##C.M...m...C#############.#####'
             '##C..........9############.#.###'
             '##CCCC*CCCC...9###########...###'
             '######...##1...9############$###'
             '######.#.###1...9#########7.....'
-            '########.####1...9#####7.......m'
-            '########.#####1...9##7...+......'
-            '########.######1...97...........'
+            '########.####1.m.9#####7.......m'
+            '########.#####1...9##7...+.W....'
+            '########.######1...97..m........'
             '########.#######1...........31..'
             '########.########1.......3%%%%.G'
             '########.########7......3%%%%%..'
             '########.#######7.....3%%%%%%7.m'
             '########.#######.....3%%%%%7....'
-            '########.######7.....%%%%7......'
+            '########.######7.m...%%%%7......'
             '########.######.....3%%%7......L'
             '########.######.+..3%%%7.L......'
             '####.........#7....%%%%.........'
-            '####.....###.#.....%%%7.........'
+            '####.....###.#..W..%%%7....m....'
             '####..W..##..$....3%%%..........'
             '####.m...#####....9%%7.......3&-'
             '####...+.#####...............&..'
