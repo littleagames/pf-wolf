@@ -783,9 +783,11 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
 
         y += LobbyTableRow + 3;
 
-        // This machine's row's bar first: it reaches up a pixel, under the row above's text
+        // This machine's row's bar first. The small font's letters sit a pixel down from the row's
+        // top (rows 1-7), so the bar runs from the row's top to a pixel past its bottom: a pixel
+        // clear each side of the text, short of the next row's letters and the heading's line
         if (session.LocalSlot is >= 0 and < PlayerCommands.MaxPlayers and var local)
-            video.Bar(LobbyPanelX - 2, y + local * LobbyTableRow - 1, LobbyPanelWidth + 4, LobbyTableRow, "DEACTIVE");
+            video.Bar(LobbyPanelX - 2, y + local * LobbyTableRow, LobbyPanelWidth + 4, LobbyTableRow + 1, "DEACTIVE");
 
         for (int slot = 0; slot < PlayerCommands.MaxPlayers; slot++, y += LobbyTableRow)
         {
