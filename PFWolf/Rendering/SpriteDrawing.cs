@@ -48,6 +48,18 @@ internal sealed class SpriteDrawing(
     /// <summary>Where moving things are drawn between tics (Rendering/FrameInterpolation.cs); unset, where they are</summary>
     internal FrameInterpolation? Interpolation { get; set; }
 
+    /// <summary>
+    /// Whether an actor is drawn where it really is (TransformActor), as vanilla drew everything
+    /// in its objlist, rather than in the middle of its tile as a static: anything with a Chase
+    /// or awake, and any Wolf3D-style Monster, even one with no Chase (the Pac-Man ghosts walk
+    /// in their Spawn state, and drawn as statics they'd jump a tile ahead of themselves). Blake
+    /// Stone's machines (steam vents, lights, barriers) have no Chase and stay put, so they're
+    /// still drawn as statics.
+    /// </summary>
+    internal static bool DrawnAsActor(Entities.Actors.Actor actor) =>
+        actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.Yes
+        || actor is Monster and not BlakeMonster;
+
     /*
 ========================
 =
@@ -294,7 +306,7 @@ internal sealed class SpriteDrawing(
             // the tile-snapped, always-front-facing path decorations/pickups use below.
             // Projectiles and their smoke/explosions (spawned Active by SpawnAtActor) fly
             // between tiles too, so they take the same path.
-            if (actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.Yes)
+            if (DrawnAsActor(actor))
             {
                 var atx = actor.TileX;
                 var aty = actor.TileY;

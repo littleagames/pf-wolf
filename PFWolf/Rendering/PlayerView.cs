@@ -64,7 +64,7 @@ internal sealed class PlayerView(
             // Only the items DrawScaleds would have drawn as statics, on the player's story (one on
             // the street below a roof, or a beam above it, is out of reach)
             if (actor is not Inventory item || item.IsRemoved || item.CurrentState == null
-                || item.ResolvedStates.ContainsKey("Chase") || item.Active == ActiveType.Yes || hooks.IsWallSprite(item)
+                || SpriteDrawing.DrawnAsActor(item) || hooks.IsWallSprite(item)
                 || !map.OnPlayersStory(item))
                 continue;
 
@@ -102,7 +102,7 @@ internal sealed class PlayerView(
         foreach (var actor in map.GetActors())
         {
             if (actor is PlayerPawn || actor.IsRemoved || actor.CurrentState == null
-                || !(actor.ResolvedStates.ContainsKey("Chase") || actor.Active == ActiveType.Yes))
+                || !SpriteDrawing.DrawnAsActor(actor))
                 continue;
 
             hooks.TransformActorFrom(actor, fromx, fromy, fromsin, fromcos);
