@@ -46,6 +46,9 @@ end
 -- The documents are an item, not something the level counts by itself: add one to do as the
 -- level starts afresh (a loaded game has its counts already)
 game.onlevel(function(reason, map)
+  if map == "MAP02" and reason == "new" then
+    game.message("The elevator north needs the gold key, east. Wreck the transmitter, west, first.")
+  end
   if map ~= MAP then return end
   if reason == "new" or reason == "restarted" then
     game.trigger(0, "A_AddObjective", "documents")

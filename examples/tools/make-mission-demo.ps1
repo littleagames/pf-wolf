@@ -1,7 +1,7 @@
 # Builds examples/mods/mission-demo: the radio wall and its wrecked stage (textures/*.png), the
 # documents (sprites/MDDOA0.png), the HUD's panel (graphics/MDPANEL.png), the radio's sound as
-# it's shot up (sounds/MDZAP.wav), the documents' (sounds/MDDOCS.wav) and the level
-# (maps/MAP01.wad). Run it after changing any:
+# it's shot up (sounds/MDZAP.wav), the documents' (sounds/MDDOCS.wav) and the levels
+# (maps/MAP01.wad, maps/MAP02.wad). Run it after changing any:
 #
 #   powershell -ExecutionPolicy Bypass -File examples/tools/make-mission-demo.ps1 [-MidnightAssault <midnight-assault.pk3>]
 #
@@ -129,3 +129,38 @@ for ($row = 0; $row -lt $Layout.Count; $row++) {
     }
 }
 Save-MapWad "$modDir\maps\MAP01.wad" 'MAP01' 'Mission Demo' $planes
+
+# The second level, a locked elevator: the hall in the south; west, the transmitter room (its
+# west wall the transmitter, wall 146, a "transmitter" objective that keeps the exit shut); east,
+# the key room with the gold key; north, the elevator, whose switch (wall 148, on its north wall)
+# needs the gold key and uses it up. No doors: MissionDemoGameTests plays it through with a
+# scripted demo, which a door closing behind it would stop, so mind its route if the rooms move. Try it before the transmitter's down and the exit is refused, but the switch
+# stays up and the key stays with you; wreck the transmitter and it takes you out, key and all.
+$Layout2 = @(
+    '################################'   # y=16
+    '################################'
+    '#############L##################'   #      the elevator switch, on the elevator's north wall
+    '############xxx#################'   #      the elevator
+    '############xxx#################'   # y=20
+    '#############x##################'
+    '##ccccc#hhhhhhhhh#kkkkk#########'   #      the transmitter room, the hall, the key room
+    '##ccccc#hhhhhhhhh#kkkkk#########'
+    '#TcccccchhhhhhhhhkkkkKk#########'   #      the transmitter; the gold key
+    '##ccccc#hhhhhhhhh#kkkkk#########'   # y=25
+    '########hhhhhPhhh###############'   #      the player start, facing north
+    '################################'
+)
+$Key = 113
+$Tiles2 = [Collections.Hashtable]::new([StringComparer]::Ordinal)
+$Tiles2['#'] = @{ Plane0 = 1 }
+$Tiles2['h'] = @{ Plane0 = $Hall }
+$Tiles2['P'] = @{ Plane0 = $Hall; Plane1 = 19 }
+$Tiles2['c'] = @{ Plane0 = $Comms }
+$Tiles2['T'] = @{ Plane0 = 146 }                           # the transmitter (walls.yaml), facing east
+$Tiles2['k'] = @{ Plane0 = $Key }
+$Tiles2['K'] = @{ Plane0 = $Key; Plane1 = 43 }             # the gold key
+$Tiles2['x'] = @{ Plane0 = $Exit }
+$Tiles2['L'] = @{ Plane0 = 148 }                           # the locked elevator switch (walls.yaml)
+$planes = New-MapPlanes
+Add-MapLayout $planes $Layout2 $Tiles2 0 16
+Save-MapWad "$modDir\maps\MAP02.wad" 'MAP02' 'Transmitter' $planes

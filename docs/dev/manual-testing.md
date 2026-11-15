@@ -714,7 +714,9 @@ the keypad's note and code open its closet)
       second trip into a finished level (back at its elevator, enemies still dead, its elevator
       switch up again and taking you back to the hub; the hub's lever up again too).
 - [ ] **(never tried)** Mission Demo: the elevator used with objectives left stays up (refused),
-      then works once they're done.
+      then works once they're done. Floor 2 (The Transmitter): the gold-key elevator tried before
+      the transmitter's wrecked says so and keeps the key (status bar), then takes you out (and
+      the key) once it's down. MissionDemoGameTests plays this by demo; by hand it's unplayed.
 
 ### Example mods (`examples/mods`, built 2026-10-29)
 

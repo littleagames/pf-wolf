@@ -132,8 +132,6 @@ internal sealed class PlayerUse(
     {
         var gamestate = session.GameState;
         var flipped = new List<(int X, int Y, bool Patch, int Was)>();
-        if (wallSwitch.TakesKey && keys.Count > 0)
-            doors.TakeKeys(keys);
         if (wallSwitch.To is > 0 and < BitWall && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
         {
             // flip the switch, keeping the door-side mark on a wall beside a door
@@ -174,13 +172,18 @@ internal sealed class PlayerUse(
         RememberIfExit(before, flipped);
 
         // An exit that didn't go (a level objective left, a script's game.onexit) leaves its
-        // switch as it was: the elevator's pressed wall isn't a switch, so it would never work again
+        // switch as it was, and its key with the player: the elevator's pressed wall isn't a
+        // switch, so it would never work again
         if (before == PlayState.StillPlaying && session.PlayState == PlayState.StillPlaying
             && wallSwitch.Actions.Any(LeavesLevel))
         {
             for (int i = flipped.Count - 1; i >= 0; i--)
                 map.TileMap[flipped[i].X, flipped[i].Y] = (ushort)flipped[i].Was;
+            return;
         }
+
+        if (wallSwitch.TakesKey && keys.Count > 0)
+            doors.TakeKeys(keys);
     }
 
     // A switch whose actions ended the level: how it was, for a kept hub level to have it back

@@ -19,3 +19,44 @@ walls:
         South: MDRADIOX
         East: MDRADIOX
         West: MDRADIOX
+
+    # MAP02's transmitter: the radio set again, but the "transmitter" objective, which keeps
+    # the elevator shut until it's wrecked (wall 147)
+    '146':
+        North: MDRADIO
+        South: MDRADIO
+        East: MDRADIO
+        West: MDRADIO
+        destructible:
+            damage-types: [Bullet, Melee, Blast]
+            health: 30
+            to: 147
+            sound: mission/zap
+            objective: transmitter
+    '147':
+        North: MDRADIOX
+        South: MDRADIOX
+        East: MDRADIOX
+        West: MDRADIOX
+
+    # MAP02's elevator switch: Wolf3D's (wall 21), but usable from any side (it's on the
+    # elevator's north wall), locked by the gold key, which it uses up (takes-key). Used while the
+    # transmitter's still sending, the exit is refused: the switch stays up and the key stays
+    # with you, so it works once the transmitter's down.
+    '148':
+        North: ELEV1_1
+        South: ELEV1_1
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 149
+            sound: switches/elevbutn
+            lock: GoldKey
+            takes-key: true
+            actions:
+                - A_Exit
+    '149':
+        North: ELEV2_1
+        South: ELEV2_1
+        East: ELEV2_2
+        West: ELEV2_2

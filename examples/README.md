@@ -1447,7 +1447,7 @@ grenades or rounds carried.
 
 ## Mission Demo (`mods/mission-demo`)
 
-A timed mission that replaces Floor 1 (Wolfenstein 3D only), with **level objectives** and a
+A timed mission that replaces Floor 1, and a locked exit on Floor 2 (Wolfenstein 3D only), with **level objectives** and a
 **HUD drawn by a Lua script**: steal the documents, wreck the radios, kill the officers if you
 can, and get out before reinforcements arrive. It's YAML, a level and a script.
 
@@ -1455,7 +1455,7 @@ can, and get out before reinforcements arrive. It's YAML, a level and a script.
 PFWolf.exe --file mission-demo
 ```
 
-It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+It replaces Floors 1 and 2, so switch on only one of the level demos at a time.
 
 - **The HUD,** drawn over the view by the script: the objectives at the bottom left (ticked off
   green as each is done), the time left at the top right (red in the last 30 seconds), and a
@@ -1472,6 +1472,11 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
   head straight for you.
 - At the level's end, the tally says how the mission went, and in the console, `objectives`
   lists them.
+- **Floor 2, The Transmitter:** a short level about a **locked exit**. The elevator switch, north,
+  needs the gold key (in the room east) and uses it up, and the exit waits for the transmitter
+  (the west room's far wall) to be wrecked. Try the elevator before the transmitter's down and
+  the exit is refused, but the switch stays as it was and the key stays with you: shoot the
+  transmitter and the same switch takes you out.
 
 ### What's in it
 
@@ -1482,8 +1487,11 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
     (and the officers a `marker-color`): each one still to do is marked.
   - `maps: MAP01: time-limit: 240`: seconds on the level's own clock (a saved game keeps what's
     left).
+  - `transmitter`, Floor 2's objective, with `blocks-exit`.
 - `mapdefs/walls.yaml`: the radios, walls 144 and 145, whose `destructible:` block has
   `objective: radios`: each counts toward it as the level starts and completes one as it breaks.
+  Floor 2's transmitter is walls 146 and 147 (`objective: transmitter`), and its elevator switch
+  is wall 148: a `switch:` with `lock: GoldKey`, `takes-key: true` and `A_Exit`.
 - `actordefs/mission.yaml`: `TargetOfficer`, an officer with the `objective` property (his death
   completes one); `SecretDocuments`, the documents (`parent: Inventory`); and two invisible markers, the exit for the compass and the
   spots reinforcements come in at.
@@ -1505,8 +1513,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
     exit once it's open. Markers aren't saved, so they're set in `game.onlevel` every time the
     level starts, a loaded game's too.
 - `textures/MDRADIO.png`, `MDRADIOX.png` (the radio, and wrecked), `sprites/MDDOA0.png` (the
-  documents), `sounds/MDZAP.wav` (a radio shot up), `MDDOCS.wav` (the documents taken) and
-  `maps/MAP01.wad`.
+  documents), `sounds/MDZAP.wav` (a radio shot up), `MDDOCS.wav` (the documents taken),
+  `maps/MAP01.wad` and `maps/MAP02.wad`.
 
 The pictures, sounds and level are made by `tools/make-mission-demo.ps1`. The radio (a comms
 console), the documents and their sound are **Midnight Assault's**, copied out of its

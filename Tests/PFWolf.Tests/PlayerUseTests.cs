@@ -514,9 +514,12 @@ public class PlayerUseTests
 
     private MapSwitchTranslation ElevatorAhead(params string[] actions) => ElevatorAhead(exitGoes: true, actions);
 
-    private MapSwitchTranslation ElevatorAhead(bool exitGoes, params string[] actions)
+    private MapSwitchTranslation ElevatorAhead(bool exitGoes, params string[] actions) => LockedElevatorAhead(exitGoes, "", actions);
+
+    // Locked by lockItem, which it takes ("": not locked)
+    private MapSwitchTranslation LockedElevatorAhead(bool exitGoes, string lockItem, params string[] actions)
     {
-        var elevator = new MapSwitchTranslation { To = 22, Actions = [.. actions] };
+        var elevator = new MapSwitchTranslation { To = 22, Actions = [.. actions], Lock = lockItem, TakesKey = lockItem.Length > 0 };
         _map.MapWidth = _map.MapHeight = MapConstants.ClassicMapSize;
         typeof(MapManager).GetField("mapsegs", BindingFlags.NonPublic | BindingFlags.Instance)!
             .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
@@ -551,6 +554,21 @@ public class PlayerUseTests
         Assert.That(_map.TileMap[11, 10], Is.EqualTo(21));
         Assert.That(_session.PlayState, Is.EqualTo(PlayState.StillPlaying));
         Assert.That(_map.ExitSwitch, Is.Empty);
+    }
+
+    [Test]
+    public void A_Locked_Exit_Switch_Whose_Exit_Is_Refused_Keeps_Its_Key_With_The_Player()
+    {
+        // Arrange: an elevator that takes the red key, and objectives left
+        _inventory.Give("RedKey", 1);
+        var elevator = LockedElevatorAhead(exitGoes: false, "RedKey", "A_Exit");
+
+        // Act
+        _use.UseSwitch(elevator, 11, 10, ControlDir.East);
+
+        // Assert: the key's still held for when they're done
+        Assert.That(_inventory.Has("RedKey"), Is.True);
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(21));
     }
 
     [Test]

@@ -26,6 +26,15 @@ objectives:
     stats: "Radios %d/%d"
     marker: true
     marker-label: "Radio"
+  # MAP02's: its one transmitter (walls.yaml 146)
+  transmitter:
+    blocks-exit: true
+    start: "Wreck the transmitter in the west room before you leave."
+    done: "The transmitter's down. Get to the elevator."
+    refused: "The transmitter is still sending."
+    stats: "Transmitter %d/%d"
+    marker: true
+    marker-label: "Transmitter"
   officers:
     progress: "Officer down: %d of %d."
     done: "Both officers are dead."
@@ -39,3 +48,8 @@ maps:
     # Seconds on the level's own clock; when they're up, scripts/mission.lua's game.ontimeup
     # brings in reinforcements rather than the player dying
     time-limit: 240
+
+  # The second level: a transmitter to wreck and an elevator locked by the gold key (the
+  # transmitter in walls.yaml, 146; the elevator, 148)
+  MAP02:
+    name: The Transmitter
