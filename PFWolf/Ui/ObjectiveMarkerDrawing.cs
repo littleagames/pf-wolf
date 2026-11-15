@@ -67,16 +67,26 @@ internal sealed class ObjectiveMarkerDrawing(
     internal static bool Underfoot(RenderState render, long gx, long gy) =>
         Math.Abs(gx - render.ViewX) < Tile && Math.Abs(gy - render.ViewY) < Tile;
 
-    /// <summary>The markers for the player being watched (this machine's, or the one the camera follows), over the view</summary>
+    /// <summary>
+    /// The markers to show now, for the player being watched (this machine's, or the one the
+    /// camera follows): none with the setting off, outside a match mode, or while the mode keeps
+    /// the player waiting. The automap draws them too (Ui/AutomapDrawing.cs).
+    /// </summary>
+    internal IReadOnlyList<ObjectiveMarker> Current()
+    {
+        if (!options.ObjectiveMarkers || Match?.Objective is not { } objective
+            || game.GameMode is GameMode.Single or GameMode.Coop || objective.IsWaiting(game.LocalPlayer))
+            return [];
+        var viewer = game.Camera.Target is PlayerPawn watched ? watched.State : game.LocalPlayer;
+        return objective.Markers(viewer).ToList();
+    }
+
+    /// <summary>The markers over the view (not with the automap open: it has its own)</summary>
     internal void Draw()
     {
-        if (!options.ObjectiveMarkers || automap.IsOpen || Match?.Objective is not { } objective
-            || game.GameMode is GameMode.Single or GameMode.Coop || render.ViewWidth <= 0 || render.ViewHeight <= 0
-            || objective.IsWaiting(game.LocalPlayer))
+        if (automap.IsOpen || render.ViewWidth <= 0 || render.ViewHeight <= 0)
             return;
-
-        var viewer = game.Camera.Target is PlayerPawn watched ? watched.State : game.LocalPlayer;
-        var markers = objective.Markers(viewer).ToList();
+        var markers = Current();
         if (markers.Count == 0)
             return;
 
@@ -192,7 +202,9 @@ internal sealed class ObjectiveMarkerDrawing(
 
     internal static string LabelColor(int team) => team switch { 0 => "#FC5454", 1 => "#5454FC", _ => "#FCFCFC" };
 
-    // White, flashing yellow while it pulses
-    string OutlineColor(ObjectiveMarker marker) =>
-        (marker.Style & MarkerStyle.Pulse) != 0 && game.GameState.TimeCount / 8 % 2 == 0 ? "#FCFC54" : "#FCFCFC";
+    /// <summary>A marker's outline: white, flashing yellow while it pulses (<paramref name="time"/>: GameState.TimeCount)</summary>
+    internal static string OutlineColor(ObjectiveMarker marker, int time) =>
+        (marker.Style & MarkerStyle.Pulse) != 0 && time / 8 % 2 == 0 ? "#FCFC54" : "#FCFCFC";
+
+    string OutlineColor(ObjectiveMarker marker) => OutlineColor(marker, game.GameState.TimeCount);
 }

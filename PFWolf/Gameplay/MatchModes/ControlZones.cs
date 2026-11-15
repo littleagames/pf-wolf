@@ -192,7 +192,7 @@ internal sealed class Domination(MapManager map, GameSession session, Deathmatch
     /// <summary>Every point, by its letter, in its holder's color; one being taken shows how far: "B 40%"</summary>
     public IEnumerable<ObjectiveMarker> Markers(Entities.PlayerState viewer) =>
         Zones.Select((zone, i) => ObjectiveMarker.OnTile(zone.At,
-            Taking(zone) is { } percent ? $"{Letter(i)} {percent}%" : Letter(i), zone.Owner)).ToList();
+            Taking(zone) is { } percent ? $"{Letter(i)} {percent}%" : Letter(i), zone.Owner, zone: Radius)).ToList();
 }
 
 internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathmatch match, HudMessageManager hud, MatchModeHooks hooks)
@@ -285,7 +285,7 @@ internal sealed class KingOfTheHill(MapManager map, GameSession session, Deathma
         bool moved = now - (MovesAt - HillTics) < MovedPulseTics;
         var zone = Zones[Hill];
         return [ObjectiveMarker.OnTile(zone.At, left <= CountdownSeconds ? $"Hill {left}" : "Hill", zone.Owner,
-            moved ? MarkerStyle.Pulse : MarkerStyle.None)];
+            moved ? MarkerStyle.Pulse : MarkerStyle.None, Radius)];
     }
 
     public override void Write(BinaryWriter bw)

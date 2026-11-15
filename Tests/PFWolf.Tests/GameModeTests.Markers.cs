@@ -13,6 +13,10 @@ public partial class MatchScoringTests
     private static ObjectiveMarker On((int x, int y) tile, string label, int team, MarkerStyle style = MarkerStyle.None) =>
         ObjectiveMarker.OnTile(tile, label, team, style);
 
+    // A zone's marker: KOTH's hill and Domination's points reach a tile out (3x3)
+    private static ObjectiveMarker Zone((int x, int y) tile, string label, int team, MarkerStyle style = MarkerStyle.None) =>
+        ObjectiveMarker.OnTile(tile, label, team, style, zone: 1);
+
     private static KingOfTheHill HillAt(Rig rig, int now, int movesAt, int owner = -1)
     {
         var koth = new KingOfTheHill(rig.Map, rig.Session, rig.Match, rig.Hud, rig.Hooks);
@@ -35,7 +39,7 @@ public partial class MatchScoringTests
         var markers = ((IMatchObjective)koth).Markers(rig.Red1);
 
         // Assert: only the hill, not the other spot
-        Assert.That(markers, Is.EqualTo(new[] { On((20, 8), "Hill", 1, MarkerStyle.Pulse) }));
+        Assert.That(markers, Is.EqualTo(new[] { Zone((20, 8), "Hill", 1, MarkerStyle.Pulse) }));
     }
 
     [Test]
@@ -43,9 +47,9 @@ public partial class MatchScoringTests
     {
         var rig = new Rig(GameMode.KingOfTheHill);
         Assert.That(((IMatchObjective)HillAt(rig, 1000, 1000 + 30 * 70)).Markers(rig.Red1),
-            Is.EqualTo(new[] { On((20, 8), "Hill", -1) }));
+            Is.EqualTo(new[] { Zone((20, 8), "Hill", -1) }));
         Assert.That(((IMatchObjective)HillAt(rig, 1000, 1000 + 7 * 70)).Markers(rig.Red1),
-            Is.EqualTo(new[] { On((20, 8), "Hill 7", -1) }));
+            Is.EqualTo(new[] { Zone((20, 8), "Hill 7", -1) }));
         Assert.That(((IMatchObjective)HillAt(rig, 1000, 1000 + 7 * 70 - 30)).Markers(rig.Red1).Single().Label,
             Is.EqualTo("Hill 7"), "a part second rounds up");
     }
@@ -60,7 +64,7 @@ public partial class MatchScoringTests
         domination.Zones.Add(new ControlZones.Zone { At = (17, 3), Owner = 1 });
 
         Assert.That(((IMatchObjective)domination).Markers(rig.Blue),
-            Is.EqualTo(new[] { On((3, 3), "A", 0), On((10, 10), "B", -1), On((17, 3), "C", 1) }));
+            Is.EqualTo(new[] { Zone((3, 3), "A", 0), Zone((10, 10), "B", -1), Zone((17, 3), "C", 1) }));
     }
 
     // Capture the flag with the red base at (2, 2) and the blue at (30, 2), both flags home
@@ -206,6 +210,43 @@ public partial class MatchScoringTests
         var (side, _, y) = ObjectiveMarkerDrawing.Place(render, tilex * Tile, tiley * Tile, ObjectiveMarkerDrawing.MarkerZ);
 
         Assert.That(((int)side, y), Is.EqualTo((expected, 80)));
+    }
+
+    // ==== On the automap =========================================================================
+
+    // A 300x160 automap view at (10, 20) on the screen
+    private static AutomapDrawing.AutomapView MapView() => new(10, 20, 300, 160, 8, 32, 32, 1, 0, 1);
+
+    [Test]
+    public void An_Objective_On_The_Map_In_View_Stays_On_Its_Spot()
+    {
+        Assert.That(AutomapDrawing.PinInside(MapView(), 100, 50, 4), Is.EqualTo((100f, 50f, false)));
+    }
+
+    [Test]
+    public void An_Objective_Off_The_Map_In_View_Is_Pulled_In_To_The_Edge_The_Way_It_Lies()
+    {
+        // Arrange: inside is x 14..305, y 24..175, its middle (159.5, 99.5)
+        var view = MapView();
+
+        // Act: far off to the right, level with the middle; and straight up
+        var right = AutomapDrawing.PinInside(view, 2000, 99.5f, 4);
+        var up = AutomapDrawing.PinInside(view, 159.5f, -500, 4);
+
+        // Assert
+        Assert.That(right.Pinned && up.Pinned, Is.True);
+        Assert.That(right.X, Is.EqualTo(305f).Within(0.01f));
+        Assert.That(right.Y, Is.EqualTo(99.5f).Within(0.01f));
+        Assert.That(up.X, Is.EqualTo(159.5f).Within(0.01f));
+        Assert.That(up.Y, Is.EqualTo(24f).Within(0.01f));
+    }
+
+    [Test]
+    public void An_Objective_Pinned_To_The_Top_Stays_Under_The_Match_Line()
+    {
+        var (_, y, pinned) = AutomapDrawing.PinInside(MapView(), 159.5f, -500, 4, top: 20);
+        Assert.That(pinned, Is.True);
+        Assert.That(y, Is.EqualTo(44f).Within(0.01f));
     }
 
     [Test]

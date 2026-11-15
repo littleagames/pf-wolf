@@ -963,6 +963,10 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       ("Kill" on an enemy carrying your flag, "Escort" on a teammate, "Capture"/"Base" while
       carrying, "Return"/"Flag" on a dropped flag); while dead watching another player; a wide
       screen and other UI scales.
+- [ ] Objective markers on the automap (seen headless 2026-11-14 on DM02, color and graphic
+      styles, overlay): zones outlined in the holder's color, diamonds and labels on unseen parts
+      too, ones off the map's view pulled in to its edge. **(never tried)** a rotated or panned
+      map, zooming in and out, a carried flag moving with its carrier.
 - [ ] Prop Hunt on PH01: disguise with Use, hide timer, hunt, decoy penalty, snap when still,
       taunts, lamp light, chase cam, lobby hide/hunt times.
 - [ ] Play as enemies: lobby class pick, dog bite **(never tried: damage)**, enemy class faces on

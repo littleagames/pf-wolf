@@ -281,6 +281,7 @@ internal static partial class GameHost
             Match = deathmatch,
             TopReserved = netOverlay.MatchLineHeight,                   // and the objective markers
         };
+        automapDrawing.Markers = objectiveMarkers.Current;              // which the automap shows too
         Session.Camera.WantsChase = () => ControlSettings.ChaseCam && deathmatch.Objective?.ChaseCam(Session.LocalPlayer) == true;
         Session.Camera.IsOpenTile = (x, y) => x > 0 && y > 0 && x < MapManager.MapWidth - 1 && y < MapManager.MapHeight - 1
             && MapManager.TileMap[x, y] == 0;

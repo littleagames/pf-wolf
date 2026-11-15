@@ -70,7 +70,7 @@ A watching player (dead, or `spectate`) sees the markers from the camera's view 
 
 ## Phases
 
-### Phase 1: markers in the view (KOTH, Domination, CTF) (done 2026-11-14, uncommitted)
+### Phase 1: markers in the view (KOTH, Domination, CTF) (done 2026-11-14, b19f7da3)
 
 As built: `Gameplay/ObjectiveMarker.cs` (`ObjectiveMarker`, `MarkerStyle`), `IMatchObjective.Markers`
 in KingOfTheHill / Domination / CaptureTheFlag, `Rendering/ViewProjection.cs` (PointDrawing
@@ -110,7 +110,18 @@ widescreen and UI scales, spectating.
 - Check: headless `--warp DM02 --exec "wait; addplayer; gamemode koth; ..."` screenshots
   facing toward, away from and sideways to the hill; same for CTF and Domination.
 
-### Phase 2: the automap
+### Phase 2: the automap (done 2026-11-14)
+
+As built: `ObjectiveMarker.Zone` (tiles out from the middle; KOTH and Domination give their
+radius, 1), `ObjectiveMarkerDrawing.Current()` (the markers to show, shared by the view and the
+automap), and `AutomapDrawing.DrawAutomapObjectives` (after the actors, under the player's
+arrow): each zone outlined in its holder's color, then a diamond and a label on a backdrop box
+for each marker, seen or not. One beyond the part of the map in view is pulled in along the line
+from the middle to the view's edge (`PinInside`), kept under the match's line, its label on the
+inside. The same Objective Markers setting turns it off. A carried flag shows where its carrier
+is (the carrier's marker), not as a mark on the player arrow. Checked: unit tests for the pinning
+and zones, headless DM02 automap shots in Domination, KOTH and CTF (color style) and Domination
+in the graphic style and overlay mode. Not yet checked: rotation, panning, other zooms.
 
 - Objective spots are always shown on the automap, seen or not: the zone's square outlined
   (3x3 for KOTH/Domination) in its holder's color, CTF bases and flags, a carrier as a
