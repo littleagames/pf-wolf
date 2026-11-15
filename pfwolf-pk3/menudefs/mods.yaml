@@ -5,10 +5,11 @@ position:
   x: 24
   y: 51
 indent: 48
-# One row per pk3, zip or folder in the mods folder, checked when mods.cfg switches it on, and
-# last "Find more mods online..." (the mod catalog, in a browser); past 8 they come a page at a
-# time, with a "More mods" row
+# One row per pk3, zip or folder in the mods folder, checked when mods.cfg switches it on; past 8
+# they scroll. Tab (or X) opens the mod catalog in a browser, as the catalog-hint label says
+# (left out in a build with no catalog)
 items-source: "mods"
+visible-rows: 8
 components:
   -
     id: "background"
@@ -29,7 +30,7 @@ components:
       - horizontal-orientation: "center"
       - y: 30
       - color: "READHCOLOR"
-  # Window fits 9 rows: 13 per row plus 6
+  # Window fits 8 rows (13 per row) and the catalog's key under them
   -
     type: "Window"
     params:
@@ -37,3 +38,12 @@ components:
       - y: 48
       - width: 288
       - height: 123
+  -
+    id: "catalog-hint"
+    type: "Label"
+    params:
+      - text: "$STR_MODS_CATALOG"
+      - font: "SmallFont"
+      - horizontal-orientation: "center"
+      - y: 159
+      - color: "READCOLOR"

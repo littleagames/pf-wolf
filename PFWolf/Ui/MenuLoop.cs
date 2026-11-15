@@ -20,11 +20,18 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
     /// Called again and again while the menu waits (a network game's screens take in what has
     /// arrived and redraw); returning true leaves the menu at once, with -2.
     /// </param>
+    /// <param name="keys">
+    /// Called with what's pressed each time round, for a screen's own keys (the Mods screen's
+    /// Tab); returning true leaves the menu at once, with -2 and CurPos where the cursor is.
+    /// </param>
     /// <remarks>
     /// A menu with VisibleRows scrolls when the cursor goes past what's shown: it returns -2 then
     /// too (CurPos and TopRow updated), for the caller to draw it again and come back.
+    /// Page Up and Page Down move a screenful (the whole menu when it doesn't scroll), and Home
+    /// and End to the first and last item.
     /// </remarks>
-    internal int HandleMenu(ControlPanelMenuInfo item_i, ControlPanelItem[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
+    internal int HandleMenu(ControlPanelMenuInfo item_i, ControlPanelItem[] items, Action<int>? routine, Action<int, int>? adjust = null,
+        Func<bool>? idle = null, Func<ControlInfo, bool>? keys = null)
     {
         char key;
         int i, x, y, basey, exit, which;
@@ -159,6 +166,30 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
             // GET INPUT
             //
             menuInput.ReadAnyControl(out ci);
+
+            if (exit == 0 && keys?.Invoke(ci) == true)
+            {
+                exit = 3;
+                break;
+            }
+
+            //
+            // JUMP A SCREENFUL, OR TO THE FIRST OR LAST ITEM
+            //
+            if (exit == 0 && JumpKey() is { } jumpKey)
+            {
+                input.ClearKey(jumpKey);    // the key's auto-repeat brings it back while it's held
+                int to = JumpTarget(item_i, items, which, jumpKey);
+                if (to != which)
+                {
+                    EraseGun(item_i, items, x, y, which);
+                    which = to;
+                    if (item_i.ScrollTo(which)) { exit = 3; audio.Play("menu/move2"); break; }
+                    DrawGun(item_i, items, x, ref y, which, basey, routine);
+                }
+                continue;
+            }
+
             switch (ci.Dir)
             {
                 ////////////////////////////////////////////////
@@ -303,6 +334,52 @@ internal sealed class MenuLoop(MenuDrawing draw, MenuInput menuInput, GraphicMan
         }
 
         return 0; // JUST TO SHUT UP THE ERROR MESSAGES!
+    }
+
+    static readonly ScanCodes[] JumpKeys = [ScanCodes.PgUp, ScanCodes.PgDn, ScanCodes.Home, ScanCodes.End];
+
+    /// <summary>Page Up, Page Down, Home or End, when one is down</summary>
+    private ScanCodes? JumpKey()
+    {
+        foreach (var key in JumpKeys)
+            if (input.IsKeyDown(key))
+                return key;
+        return null;
+    }
+
+    /// <summary>
+    /// Where Page Up, Page Down, Home or End takes the cursor from <paramref name="which"/>: a
+    /// screenful less a row up or down (the whole menu when it doesn't scroll), or the first or last
+    /// item, onto the nearest item that can be picked short of it; <paramref name="which"/> when
+    /// there's none that way
+    /// </summary>
+    internal static int JumpTarget(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int which, ScanCodes key)
+    {
+        int last = Math.Min(item_i.Amount, items.Length) - 1;
+        int page = item_i.Scrolls ? Math.Max(item_i.VisibleRows - 1, 1) : last + 1;
+        bool up = key is ScanCodes.PgUp or ScanCodes.Home;
+        int target = key switch
+        {
+            ScanCodes.PgUp => Math.Max(which - page, 0),
+            ScanCodes.PgDn => Math.Min(which + page, last),
+            ScanCodes.Home => 0,
+            _ => last,
+        };
+
+        // From the target back towards the cursor, the first that can be picked
+        if (up)
+        {
+            for (int i = target; i < which; i++)
+                if (items[i].Active != 0)
+                    return i;
+        }
+        else
+        {
+            for (int i = target; i > which; i--)
+                if (items[i].Active != 0)
+                    return i;
+        }
+        return which;
     }
 
     internal static char ItemKey(ControlPanelItem item)

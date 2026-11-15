@@ -703,8 +703,12 @@ the keypad's note and code open its closet)
 ## 1.14 Mods
 
 - [ ] `--file` with a folder, a `.pk3`, several at once (later wins).
-- [ ] `mods/` folder next to the exe; Options → Mods: toggle, paging past 9, other-game mods
-      greyed, restart prompt, `mods.cfg` written.
+- [ ] `mods/` folder next to the exe; Options → Mods: toggle, the list scrolls past 8 (9 in
+      Blake) with "N more" marks, other-game mods greyed, restart prompt, `mods.cfg` written.
+- [ ] **(never tried)** Options → Mods: Tab, the middle mouse button and controller X open the
+      mod catalog in the browser ("opening in your browser" message, then back to the list).
+- [ ] PgUp/PgDn move a screenful and Home/End to the first/last item in any menu (episode and
+      level select, lobby, Options); in a menu that doesn't scroll PgUp/PgDn go to the ends.
 - [ ] **(never tried)** Options → Mods restart inside a stand-alone game.
 - [ ] **(never tried)** High scores per mod set (`modscores.dat` in the config folder): a score
       made with a mod shows only with that set of mods (any order), not without mods or with

@@ -213,19 +213,80 @@ public class TitleScreensTests
     }
 }
 
+public class MenuJumpKeyTests
+{
+    // Twenty rows, eight shown at once; the ones in `off` can't be picked
+    private static (ControlPanelMenuInfo, ControlPanelItem[]) Menu(int visibleRows = 8, params int[] off)
+    {
+        var items = Enumerable.Range(0, 20)
+            .Select(i => new ControlPanelItem((short)(off.Contains(i) ? 0 : 1), $"Row {i}", null))
+            .ToArray();
+        return (new ControlPanelMenuInfo(24, 51, (short)items.Length, 0, 48) { VisibleRows = visibleRows }, items);
+    }
+
+    [TestCase(0, ScanCodes.PgDn, 7)]        // a screenful less a row: the old bottom row is the new top one
+    [TestCase(15, ScanCodes.PgDn, 19)]      // stops at the last
+    [TestCase(19, ScanCodes.PgDn, 19)]
+    [TestCase(10, ScanCodes.PgUp, 3)]
+    [TestCase(4, ScanCodes.PgUp, 0)]
+    [TestCase(10, ScanCodes.Home, 0)]
+    [TestCase(10, ScanCodes.End, 19)]
+    public void Page_And_Home_And_End_Jump_The_Cursor(int from, ScanCodes key, int to)
+    {
+        var (info, items) = Menu();
+        Assert.That(MenuLoop.JumpTarget(info, items, from, key), Is.EqualTo(to));
+    }
+
+    [Test]
+    public void A_Row_That_Cant_Be_Picked_Is_Passed_Back_Towards_The_Cursor()
+    {
+        // Arrange: the first two and the last can't be picked
+        var (info, items) = Menu(8, 0, 1, 19);
+
+        // Act / Assert
+        Assert.That(MenuLoop.JumpTarget(info, items, 10, ScanCodes.Home), Is.EqualTo(2));
+        Assert.That(MenuLoop.JumpTarget(info, items, 10, ScanCodes.End), Is.EqualTo(18));
+        Assert.That(MenuLoop.JumpTarget(info, items, 2, ScanCodes.PgUp), Is.EqualTo(2), "nothing above to go to");
+    }
+
+    [Test]
+    public void In_A_Menu_That_Doesnt_Scroll_Page_Keys_Go_To_The_Ends()
+    {
+        // Arrange: all twenty shown
+        var (info, items) = Menu(visibleRows: 0);
+
+        // Act / Assert
+        Assert.That(MenuLoop.JumpTarget(info, items, 10, ScanCodes.PgDn), Is.EqualTo(19));
+        Assert.That(MenuLoop.JumpTarget(info, items, 10, ScanCodes.PgUp), Is.EqualTo(0));
+    }
+}
+
 public class ModsMenuTests
 {
-    // The last row is always "Find more mods online..."
-    [TestCase(0, false, 8, 1)]
-    [TestCase(8, false, 8, 1)]          // a full page, no "More mods..."
-    [TestCase(9, true, 7, 2)]           // the row before the catalog's is "More mods..."
-    [TestCase(14, true, 7, 2)]
-    [TestCase(15, true, 7, 3)]
-    public void Mods_Are_Paged_With_Rows_Kept_For_More_And_The_Catalog(int count, bool paged, int perPage, int pages)
+    // Wolf3D's menudefs/mods.yaml: text from 72, 8 rows; the window's edge at 300, the scroll marks' text left of 262
+    private static MenuMetadata WolfMods() => new() { Position = new(24, 51), Indent = 48, VisibleRows = 8 };
+
+    [TestCase(0, 224)]
+    [TestCase(8, 224)]      // they all fit: the names reach the window's edge
+    [TestCase(9, 190)]      // they scroll: the names stop short of the "N more" marks
+    public void Mod_Names_Keep_Clear_Of_The_Scroll_Marks(int count, int width)
     {
-        Assert.That(ModsMenu.Paged(count), Is.EqualTo(paged));
-        Assert.That(ModsMenu.PerPage(count), Is.EqualTo(perPage));
-        Assert.That(ModsMenu.PageCount(count), Is.EqualTo(pages));
+        Assert.That(ModsMenu.ModNameWidth(WolfMods(), count), Is.EqualTo(width));
+    }
+
+    [Test]
+    public void Under_A_Highlight_Bar_Names_Stop_At_The_Bar()
+    {
+        // Arrange: Blake Stone's menudefs/blake/mods.yaml
+        var menu = new MenuMetadata
+        {
+            Position = new(40, 51), Indent = 32, VisibleRows = 9,
+            Cursor = new Assets.MenuCursorInfo { X = 34, Width = 196 },
+        };
+
+        // Act / Assert: the marks go right of the bar, so it's the bar's edge either way
+        Assert.That(ModsMenu.ModNameWidth(menu, 4), Is.EqualTo(156));
+        Assert.That(ModsMenu.ModNameWidth(menu, 20), Is.EqualTo(156));
     }
 
     [Test]

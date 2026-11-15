@@ -406,8 +406,8 @@ internal class MenuMetadata
             foreach (var prop in compType.GetProperties(flags))
             {
                 if (!prop.CanWrite) continue;
-                // game-packs sits beside type/params, not inside params
-                if (prop.Name == nameof(MenuComponent.GamePacks)) continue;
+                // game-packs and id sit beside type/params, not inside params
+                if (prop.Name is nameof(MenuComponent.GamePacks) or nameof(MenuComponent.Id)) continue;
                 if (paramMap.TryGetValue(NormalizeParamName(prop.Name), out var sval))
                 {
                     usedParams.Add(NormalizeParamName(prop.Name));
@@ -422,6 +422,7 @@ internal class MenuMetadata
 
             var component = (MenuComponent)instance;
             component.GamePacks = entry.GamePacks;
+            component.Id = entry.Id;
             result.Add(component);
         }
 
@@ -507,6 +508,9 @@ internal abstract record MenuComponent
     /// Game packs this is drawn in; null means every pack
     /// </summary>
     public List<string>? GamePacks { get; set; }
+
+    /// <summary>Its id in menudefs, for code to leave it out (MenuDefs.DrawMenuComponents); null when it has none</summary>
+    public string? Id { get; set; }
 }
 
 internal record Background : MenuComponent

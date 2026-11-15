@@ -5,10 +5,10 @@ using PFWolf.Loaders;
 namespace PFWolf.Ui;
 
 /// <summary>
-/// The Mods screen: a CheckBox for each pk3, zip and folder in the mods folder. The ones
-/// switched on are saved to mods.cfg on the way out, and as they only load when the game
-/// starts, it offers to restart. Its last row opens the mod catalog (ModCatalog) in a browser,
-/// and with no mods to switch on it offers to.
+/// The Mods screen: a CheckBox for each pk3, zip and folder in the mods folder, in a list that
+/// scrolls (the menudef's visible-rows). The ones switched on are saved to mods.cfg on the way
+/// out, and as they only load when the game starts, it offers to restart. Tab (or X) opens the
+/// mod catalog (ModCatalog) in a browser, and with no mods to switch on it offers to.
 /// </summary>
 internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
     MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, UiText ui, GameSession session)
@@ -31,29 +31,17 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
             : string.IsNullOrWhiteSpace(Mod.Info.Version) ? Mod.DisplayName : $"{Mod.DisplayName} {Mod.Info.Version}";
     }
 
-    // Rows the menu's window holds. The last is "Find more mods online..." (in a build that names
-    // the catalog), and with more mods than the rest hold, the one before it "More mods..."
-    internal const int ModsPageSize = 9;
-    private static int ModRows => ModCatalog.Url != null ? ModsPageSize - 1 : ModsPageSize;
-    // From the text's left edge to the window's right edge, less a margin
-    private const int ModNameWidth = 224;
+    // The menudef's component that says which key opens the catalog: left out when there's none
+    internal const string CatalogHintId = "catalog-hint";
+
+    // Where the scroll marks go: the window's right edge, or past a highlight bar's (Blake Stone's)
+    private const int ScrollMarkX = 300, BarScrollMarkGap = 38;
+    // Room the scroll marks' "N more" takes, left of them
+    private const int ScrollMarkRoom = 38;
 
     private List<ModMenuEntry> modMenuEntries = [];
-    private int modMenuPage;
     internal ControlPanelItem[] Items = [];
     internal ControlPanelMenuInfo Info = null!;
-
-    /// <summary>Whether that many mods need more than one page</summary>
-    internal static bool Paged(int count) => count > ModRows;
-
-    /// <summary>Mods on a page: the rows the catalog's (if any) leaves, less one for "More mods..." when there are pages</summary>
-    internal static int PerPage(int count) => Paged(count) ? ModRows - 1 : ModRows;
-
-    internal static int PageCount(int count) => Math.Max(1, (count + PerPage(count) - 1) / PerPage(count));
-
-    private bool ModsPaged => Paged(modMenuEntries.Count);
-    private int ModsPerPage => PerPage(modMenuEntries.Count);
-    private int ModsPageCount => PageCount(modMenuEntries.Count);
 
     /// <summary>The Mods screen, from the menu's Mods item (CP_Mods)</summary>
     internal int Run()
@@ -64,10 +52,10 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
         var before = ModsSwitchedOn();
 
         // Nothing to switch on: say so, and offer the catalog
-        if (!ModsPaged && !modMenuEntries.Any(entry => entry.Loadable))
+        if (!modMenuEntries.Any(entry => entry.Loadable))
         {
             var none = (modMenuEntries.Count == 0 ? "$STR_MODS_NONE" : "$STR_MODS_NONEFORGAME").ToLanguageText(language);
-            defs.DrawMenuComponents("mods");
+            defs.DrawMenuComponents("mods", CatalogHintId);
             if (ModCatalog.Url == null)
             {
                 draw.Message(none);
@@ -85,30 +73,32 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
             return 0;
         }
 
-        modMenuPage = 0;
-        LoadModsPage();
+        (Items, Info) = defs.LoadMenu("mods");
+        Info.CurPos = (short)Math.Max(0, Array.FindIndex(Items, item => item.Active != 0));
         DrawModsMenu();
         draw.MenuFadeIn();
         menuInput.WaitKeyUp();
 
+        // Tab, or the middle mouse button or X, opens the catalog (as Tab/X sorts the load and save lists)
+        bool findOnline = false;
+        bool CatalogKey(ControlInfo ci)
+            => findOnline = ModCatalog.Url != null && (ci.Button2 || input.IsKeyDown(ScanCodes.Tab));
+
         int which;
         do
         {
-            which = loop.HandleMenu(Info, Items, null);
-            if (which < 0)
+            which = loop.HandleMenu(Info, Items, null, keys: CatalogKey);
+            if (which == -1)
                 break;
 
-            if (Items[which].Id == "more")
+            if (which == -2)    // scrolled, or the catalog's key
             {
-                modMenuPage = (modMenuPage + 1) % ModsPageCount;
-                LoadModsPage();
-                DrawModsMenu();
-                audio.Play("menu/move1");
-            }
-            else if (Items[which].Id == "catalog")
-            {
-                loop.ShootSnd();
-                OpenCatalog();
+                if (findOnline)
+                {
+                    findOnline = false;
+                    loop.ShootSnd();
+                    OpenCatalog();
+                }
                 DrawModsMenu();
             }
             else if (Items[which].Data is ModMenuEntry entry)
@@ -186,27 +176,31 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
     private List<string> ModsSwitchedOn()
         => modMenuEntries.Where(entry => entry.On).Select(entry => ModsConfig.ConfigName(entry.FullPath)).ToList();
 
-    private void LoadModsPage()
+    /// <summary>The Mods menu's rows, one per mod (its items-source); the menudef's visible-rows scrolls them</summary>
+    internal ControlPanelItem[] BuildModsRows()
     {
-        (Items, Info) = defs.LoadMenu("mods");
-        Info.CurPos = (short)Math.Max(0, Array.FindIndex(Items, item => item.Active != 0));
+        var menu = assets.GetMenu("mods");
+        int nameWidth = menu == null ? 224 : ModNameWidth(menu, modMenuEntries.Count);
+        var font = menu?.Font ?? UiFonts.MenuFont;
+        return modMenuEntries
+            .Select(entry => new ControlPanelItem((short)(entry.Loadable ? 1 : 0), ui.FitText(entry.Text, nameWidth, font), null, entry))
+            .ToArray();
     }
 
-    /// <summary>The Mods menu's rows for the page showing (its items-source)</summary>
-    internal ControlPanelItem[] BuildModsPage()
+    /// <summary>Where the scroll marks go: the window's right edge, or past a highlight bar's</summary>
+    private static int MarkX(Assets.MenuCursorInfo? bar) => bar == null ? ScrollMarkX : bar.X + bar.Width + BarScrollMarkGap;
+
+    /// <summary>
+    /// How wide a mod's name can be: from the text's left edge to the window's right edge (less a
+    /// margin) or a highlight bar's, and clear of the scroll marks when there are more mods than rows
+    /// </summary>
+    internal static int ModNameWidth(Entities.MenuMetadata menu, int count)
     {
-        var language = assets.GetText("en-us");
-        var rows = modMenuEntries
-            .Skip(modMenuPage * ModsPerPage)
-            .Take(ModsPerPage)
-            .Select(entry => new ControlPanelItem((short)(entry.Loadable ? 1 : 0), ui.FitText(entry.Text, ModNameWidth, UiFonts.MenuFont), null, entry));
-
-        if (ModsPaged)
-            rows = rows.Append(new ControlPanelItem(1, "$STR_MODS_MORE".ToLanguageText(language), null) { Id = "more" });
-        if (ModCatalog.Url != null)
-            rows = rows.Append(new ControlPanelItem(1, "$STR_MODS_CATALOG".ToLanguageText(language), null) { Id = "catalog" });
-
-        return rows.ToArray();
+        int left = (int)menu.Position.X + menu.Indent;
+        int right = menu.Cursor is { } bar ? bar.X + bar.Width - 2 : ScrollMarkX - 4;
+        if (menu.VisibleRows is int rows && count > rows)
+            right = Math.Min(right, MarkX(menu.Cursor) - ScrollMarkRoom);
+        return Math.Max(right - left, 16);
     }
 
     /// <summary>
@@ -226,13 +220,20 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
 
     private void DrawModsMenu()
     {
-        defs.DrawMenuComponents("mods");
+        if (ModCatalog.Url == null)
+            defs.DrawMenuComponents("mods", CatalogHintId);
+        else
+            defs.DrawMenuComponents("mods");
         draw.DrawMenu(Info, Items);
         for (var i = 0; i < Items.Length; i++)
         {
             if (Items[i].Data is ModMenuEntry entry)
+            {
+                Items[i].CheckBox = entry.On;   // for a highlight bar to draw it again
                 draw.DrawMenuCheckbox(Info, i, entry.On);
+            }
         }
+        draw.DrawMenuScrollMarks(Info, Items, MarkX(Info.Cursor));
         draw.DrawMenuGun(Info);
         video.Update();
     }

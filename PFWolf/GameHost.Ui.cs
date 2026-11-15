@@ -284,7 +284,7 @@ internal static partial class GameHost
         };
 
         menuDefs.RegisterSource("player-classes", PlayerClassRows);
-        menuDefs.RegisterSource("mods", BuildModsPage);
+        menuDefs.RegisterSource("mods", BuildModsRows);
         menuDefs.RegisterSource("lan-games", BuildJoinRows);
     }
 
@@ -295,7 +295,7 @@ internal static partial class GameHost
     static CustomizeControlsScreen customizeScreen = null!;
     internal static int CustomControls(int _) => customizeScreen.Run();
     internal static int RunModsMenu(int _) => modsMenu.Run();
-    private static ControlPanelItem[] BuildModsPage() => modsMenu.BuildModsPage();
+    private static ControlPanelItem[] BuildModsRows() => modsMenu.BuildModsRows();
 
     private static ControlPanelItem[] PlayerClassRows() => newGameMenu.PlayerClassRows();
 

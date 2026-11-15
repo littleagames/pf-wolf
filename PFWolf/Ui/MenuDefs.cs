@@ -159,7 +159,8 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
     /// <summary>
     /// Draws the non-interactive parts of a menu (background, windows, graphics, labels)
     /// </summary>
-    internal void DrawMenuComponents(string name)
+    /// <param name="leaveOut">Ids of components not to draw this time (the Mods screen's catalog hint, with no catalog)</param>
+    internal void DrawMenuComponents(string name, params string[] leaveOut)
     {
         var menu = assets.GetMenu(name);
         if (menu == null)
@@ -169,7 +170,7 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
 
         foreach (var component in menu.Components)
         {
-            if (!InCurrentGamePack(component.GamePacks))
+            if (!InCurrentGamePack(component.GamePacks) || component.Id != null && leaveOut.Contains(component.Id))
                 continue;
 
             if (component is Label label)
