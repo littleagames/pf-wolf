@@ -972,6 +972,10 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       Rooftops Demo's street, a mod's game-info `objective-markers:` colors and show-distance.
       **(never tried)** an up arrow (a marker on a roof seen from the street), a mod font,
       default mark-last 3 in a real Horde game.
+- [ ] Objective markers in single player (seen headless 2026-11-14 in the Mission Demo): radios and
+      officers (game-info `marker: true`), the documents and then the exit (`game.marker`), each
+      going as it's done. **(never tried)** playing it through by hand, saving and loading
+      (the script marks them again in game.onlevel), co-op, a level with patch switches.
 - [ ] Prop Hunt on PH01: disguise with Use, hide timer, hunt, decoy penalty, snap when still,
       taunts, lamp light, chase cam, lobby hide/hunt times.
 - [ ] Play as enemies: lobby class pick, dog bite **(never tried: damage)**, enemy class faces on

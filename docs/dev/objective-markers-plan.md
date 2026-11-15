@@ -164,7 +164,34 @@ The plan as first written:
 - **Horde stragglers**: markers on the last few enemies (count from game-info `horde:`).
 - **Stories**: a marker on another story (rooftops) gets a small up or down chevron.
 
-### Phase 4 (optional): beyond match modes
+### Phase 4: beyond match modes (done 2026-11-14)
+
+As built: markers now show in single player and co-op too. `ObjectiveMarkerDrawing.Current()`
+gathers a match mode's markers, the level objectives' (`LevelMarkers`) and the scripts'
+(`ScriptMarkers`). `ObjectiveMarker.Color` gives a marker its own color in place of its team's.
+- **Lua** (`Scripting/GameScripts.Markers.cs`): `game.marker(id, x, y, label[, color])` on a
+  tile, `game.marker(id, actor, label[, color])` following an actor until it's removed, dies or
+  is taken off the level (a picked-up item isn't flagged removed, so the list is checked), and
+  `game.clearmarker([id])`. color "red"/"blue" is a team's look, anything else a color of its
+  own. Setting an id again moves it in its place. Markers belong to the level they were set on
+  (LevelSerial) and aren't saved: scripts set them in `game.onlevel`, which a load runs too.
+  Listed in ScriptApi.cs.
+- **Level objectives** (`Objectives.Markers`): game-info objective `marker: true`, with
+  `marker-label` (text or $key) and `marker-color`. Each switch not yet thrown (a wall's or a
+  patch's whose switch has the objective; thrown, it's its `to`), destructible wall not yet
+  broken, and actor with the objective still alive. The tile scan is cached until the level or
+  the objectives' done total changes. A switch with no `to` stays marked until its objective is
+  all done.
+- **Mission Demo**: radios and officers by game-info, the documents and (once the exit's open)
+  the exit by its script; README updated.
+
+Checked: unit tests (script markers: order, move, clear, level, actor gone/dead/picked up,
+colors, off-map error; level markers: switches thrown or not, walls, living actors, done or
+unmarked objectives) and headless Mission Demo shots (all four kinds in view, at the edges and
+on the automap; after wrecking both radios and taking the documents, only the exit and the
+officers). Not yet checked: a loaded game re-marking, co-op, patch switches in a level.
+
+The plan as first written:
 
 - Lua: `game.marker(id, x, y, label, color)` / `game.clearmarker(id)`, drawn by the same
   code, so mods can point at their own goals (hub doors, puzzle panels).

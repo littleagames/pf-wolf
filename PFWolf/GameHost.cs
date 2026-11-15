@@ -288,6 +288,8 @@ internal static partial class GameHost
             && MapManager.TileMap[x, y] == 0;
         gameScripts = MakeGameScripts();
         MapManager.ActorAdded = gameScripts.ActorAdded;     // game.onactorspawn
+        objectiveMarkers.LevelMarkers = () => Objectives.Markers();         // game-info objectives with marker: true
+        objectiveMarkers.ScriptMarkers = gameScripts.Markers;               // game.marker
         puzzles = MakePuzzles();
         puzzlePanel = MakePuzzlePanel();
         playerUse.PuzzleSwitches = PuzzleSwitches;      // a switch's puzzle: only a success throws it

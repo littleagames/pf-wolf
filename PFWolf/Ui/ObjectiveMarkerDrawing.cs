@@ -89,19 +89,34 @@ internal sealed class ObjectiveMarkerDrawing(
     internal static bool Underfoot(RenderState render, long gx, long gy) =>
         Math.Abs(gx - render.ViewX) < Tile && Math.Abs(gy - render.ViewY) < Tile;
 
+    /// <summary>The level's own objectives' markers (game-info objectives with marker: Gameplay/Objectives.cs); unset, none</summary>
+    internal Func<IEnumerable<ObjectiveMarker>>? LevelMarkers { get; set; }
+
+    /// <summary>The scripts' markers (game.marker: Scripting/GameScripts.Markers.cs); unset, none</summary>
+    internal Func<IEnumerable<ObjectiveMarker>>? ScriptMarkers { get; set; }
+
     /// <summary>
-    /// The markers to show now, for the player being watched (this machine's, or the one the
-    /// camera follows): none with the setting off, outside a match mode, or while the mode keeps
-    /// the player waiting. The automap draws them too (Ui/AutomapDrawing.cs).
+    /// The markers to show now: a match mode's for the player being watched (this machine's, or
+    /// the one the camera follows), the level's objectives', and the scripts'. None with the
+    /// setting off, or while a match mode keeps the player waiting. The automap draws them too
+    /// (Ui/AutomapDrawing.cs).
     /// </summary>
     internal IReadOnlyList<ObjectiveMarker> Current()
     {
         Look = Settings?.Invoke() ?? DefaultLook;
-        if (!options.ObjectiveMarkers || Match?.Objective is not { } objective
-            || game.GameMode is GameMode.Single or GameMode.Coop || objective.IsWaiting(game.LocalPlayer))
+        if (!options.ObjectiveMarkers)
             return [];
-        var viewer = game.Camera.Target is PlayerPawn watched ? watched.State : game.LocalPlayer;
-        return objective.Markers(viewer).ToList();
+        var markers = new List<ObjectiveMarker>();
+        if (game.GameMode is not (GameMode.Single or GameMode.Coop) && Match?.Objective is { } objective)
+        {
+            if (objective.IsWaiting(game.LocalPlayer))
+                return [];
+            var viewer = game.Camera.Target is PlayerPawn watched ? watched.State : game.LocalPlayer;
+            markers.AddRange(objective.Markers(viewer));
+        }
+        markers.AddRange(LevelMarkers?.Invoke() ?? []);
+        markers.AddRange(ScriptMarkers?.Invoke() ?? []);
+        return markers;
     }
 
     /// <summary>The story a marker is on: its own, else the floor of its tile (where a thing there would stand)</summary>
@@ -179,12 +194,12 @@ internal sealed class ObjectiveMarkerDrawing(
         if (inSight)
         {
             Diamond(cx, cy, r + 1, OutlineColor(marker));
-            Diamond(cx, cy, r, FillColor(marker.Team));
+            Diamond(cx, cy, r, FillColor(marker));
         }
         else
         {
             HollowDiamond(cx, cy, r + 1, OutlineColor(marker));
-            HollowDiamond(cx, cy, r, FillColor(marker.Team));
+            HollowDiamond(cx, cy, r, FillColor(marker));
         }
         if (storyHint != 0)
         {
@@ -192,7 +207,7 @@ internal sealed class ObjectiveMarkerDrawing(
         }
 
         int y = cy + r + 3;
-        Centered(marker.Label, cx, y, left, right, LabelColor(marker.Team));
+        Centered(marker.Label, cx, y, left, right, LabelColor(marker));
         if (look.ShowDistance)
             Centered(distance.ToString(), cx, y + line, left, right, look.DistanceColor);
     }
@@ -212,10 +227,10 @@ internal sealed class ObjectiveMarkerDrawing(
             // the outline: one pixel round the arrow, its tip one further out
             int tip = side == Side.Left ? left + 1 : right - 1, dir = (int)side;
             Arrow(tip + dir, y + 4, 6, dir, OutlineColor(marker));
-            Arrow(tip, y + 4, 4, dir, FillColor(marker.Team));
+            Arrow(tip, y + 4, 4, dir, FillColor(marker));
 
             int textLeft = left + 8, textRight = right - 8;
-            Beside(marker.Label, side, textLeft, textRight, y, LabelColor(marker.Team));
+            Beside(marker.Label, side, textLeft, textRight, y, LabelColor(marker));
             if (look.ShowDistance)
                 Beside(distance.ToString(), side, textLeft, textRight, y + line, look.DistanceColor);
             y += edgeHeight;
@@ -291,6 +306,12 @@ internal sealed class ObjectiveMarkerDrawing(
 
     /// <summary>A team's label color</summary>
     internal string LabelColor(int team) => team switch { 0 => Look.RedLabel, 1 => Look.BlueLabel, _ => Look.NeutralLabel };
+
+    /// <summary>A marker's color: its own (a script's, a level objective's), else its team's</summary>
+    internal string FillColor(ObjectiveMarker marker) => marker.Color ?? FillColor(marker.Team);
+
+    /// <summary>A marker's label color: its own color, else its team's label color</summary>
+    internal string LabelColor(ObjectiveMarker marker) => marker.Color ?? LabelColor(marker.Team);
 
     /// <summary>A marker's ring: the outline color, and the flash color every other FlashTics while it flashes (<paramref name="time"/>: GameState.TimeCount)</summary>
     internal static string OutlineColor(ObjectiveMarkersInfo look, ObjectiveMarker marker, int time) =>

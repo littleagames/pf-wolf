@@ -11,6 +11,7 @@ namespace PFWolf.Gameplay;
 /// <param name="Completed">More of an objective's done: its name, done and total (game.onobjective)</param>
 /// <param name="WallObjectives">The objectives of the level's destructible walls, one for each wall (Gameplay/DestructibleWalls.cs)</param>
 /// <param name="Announce">Shows a message to every player (the level's objectives and how they're going, which everyone shares); else ShowMessage</param>
+/// <param name="WallObjectiveAt">The objective of the destructible wall on a tile, if it has one (for its marker)</param>
 internal sealed record ObjectiveHooks(
     Func<IReadOnlyDictionary<string, ObjectiveInfo>> Settings,
     Func<string, string> Localize,
@@ -18,7 +19,8 @@ internal sealed record ObjectiveHooks(
     Func<IEnumerable<MapSwitchTranslation>> Switches,
     Action<string, int, int>? Completed = null,
     Func<IEnumerable<string>>? WallObjectives = null,
-    Action<string>? Announce = null);
+    Action<string>? Announce = null,
+    Func<int, int, string?>? WallObjectiveAt = null);
 
 /*
 =============================================================================
@@ -161,6 +163,67 @@ internal sealed class Objectives(MapManager map, ObjectiveHooks hooks)
             return;
         if (actor.ResolvedStates.TryGetValue(args[1].Trim(), out var frame))
             actor.JumpTo(frame);
+    }
+
+    /*
+    -----------------------------------------------------------------------------
+    Markers: what's left of each objective with game-info `marker: true`
+    -----------------------------------------------------------------------------
+    */
+
+    // The tiles of the marked objectives still to do, found again when the level or how much is
+    // done changes (a switch thrown, a wall broken)
+    List<(int X, int Y, string Objective)> markedTiles = [];
+    (int Level, int Done) markedFor = (-1, -1);
+
+    /// <summary>
+    /// A marker on each switch not yet thrown, destructible wall not yet broken and actor still
+    /// alive that's toward an objective with game-info `marker: true` and some left to do
+    /// </summary>
+    internal IEnumerable<ObjectiveMarker> Markers()
+    {
+        var marked = hooks.Settings().Where(o => o.Value.Marker && Count(o.Key).Left > 0)
+            .ToDictionary(o => o.Key, o => o.Value, StringComparer.OrdinalIgnoreCase);
+        if (marked.Count == 0)
+            return [];
+
+        var key = (map.LevelSerial, map.ObjectiveCounts.Values.Sum(c => c.Done));
+        if (markedFor != key)
+        {
+            markedTiles = ObjectiveTiles().ToList();
+            markedFor = key;
+        }
+
+        var markers = new List<ObjectiveMarker>();
+        foreach (var (x, y, name) in markedTiles)
+            if (marked.TryGetValue(name, out var info))
+                markers.Add(ObjectiveMarker.OnTile((x, y), Label(info), -1, color: info.MarkerColor));
+        foreach (var actor in map.GetActors())
+            if (!actor.IsRemoved && actor is not Entities.Actors.Monster { Hitpoints: <= 0 }
+                && ObjectiveOf(actor) is { } name && marked.TryGetValue(name, out var info))
+                markers.Add(ObjectiveMarker.OnActor(actor, Label(info), -1, info.MarkerColor));
+        return markers;
+    }
+
+    string Label(ObjectiveInfo info) => info.MarkerLabel is { Length: > 0 } label ? hooks.Localize(label) : "";
+
+    /// <summary>Every tile toward an objective now: a wall's or a patch's switch not yet thrown (thrown, it's its `to` one), a destructible wall</summary>
+    internal IEnumerable<(int X, int Y, string Objective)> ObjectiveTiles()
+    {
+        var data = map.GetMapData();
+        for (int y = 0; y < map.MapHeight; y++)
+            for (int x = 0; x < map.MapWidth; x++)
+            {
+                int tile = map.TileMap[x, y];
+                if (tile != 0 && (tile & GameConstants.BitDoor) == 0 && tile != GameConstants.BitWall
+                    && data.Walls.TryGetValue(tile & ~GameConstants.BitWall, out var wall) && wall.Switch?.Objective is { Length: > 0 } wallObjective)
+                    yield return (x, y, wallObjective.Trim());
+                if (map.GetPatch(x, y) is var id and > 0 && data.Patches.TryGetValue(id, out var patch)
+                    && patch.Switch?.Objective is { Length: > 0 } patchObjective)
+                    yield return (x, y, patchObjective.Trim());
+                if (hooks.WallObjectiveAt?.Invoke(x, y) is { Length: > 0 } wallsObjective)
+                    yield return (x, y, wallsObjective.Trim());
+            }
     }
 
     static string? ObjectiveOf(Entities.Actors.Actor actor) =>

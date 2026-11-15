@@ -89,7 +89,8 @@ internal static partial class GameHost
         LevelSwitches,
         (name, done, total) => gameScripts?.RunObjectiveHooks(name, done, total),
         () => destructibleWalls.LevelObjectives(),
-        message => HudMessageManager.ShowToAll(HudMessageKind.Lock, message)));
+        message => HudMessageManager.ShowToAll(HudMessageKind.Lock, message),
+        (x, y) => destructibleWalls.DestructibleAt(x, y)?.Objective));
 
     // What the player has unlocked, from game to game (Gameplay/Unlocks.cs): starts-locked episodes
     static Unlocks? _unlocks;

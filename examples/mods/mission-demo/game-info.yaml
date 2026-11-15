@@ -7,7 +7,10 @@ setting-defaults:
 # Level objectives, by name: what counts toward each is in the level's definitions (the radios'
 # destructible blocks, the officers' `objective` property; the documents, the script's
 # A_CompleteObjective). Messages fill in each %d in turn. blocks-exit keeps the elevator shut
-# until that one's done.
+# until that one's done. marker marks each one still to do over the view (through walls) and on
+# the automap, with marker-label under it in marker-color; the documents and the exit, which the
+# level doesn't count itself, the script marks (game.marker). Options -> Game Options ->
+# Objective Markers turns them all off.
 objectives:
   documents:
     blocks-exit: true
@@ -21,10 +24,15 @@ objectives:
     done: "Both radios are down. They can't call for help now."
     refused: "The radios are still working: %d left."
     stats: "Radios %d/%d"
+    marker: true
+    marker-label: "Radio"
   officers:
     progress: "Officer down: %d of %d."
     done: "Both officers are dead."
     stats: "Officers %d/%d"
+    marker: true
+    marker-label: "Officer"
+    marker-color: "#FC5454"
 
 maps:
   MAP01:

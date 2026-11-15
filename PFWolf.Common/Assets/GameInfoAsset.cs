@@ -1782,6 +1782,19 @@ public record ObjectiveInfo
 
     /// <summary>A line in the automap's stats, while the level has any</summary>
     public string? Stats { get; init; }
+
+    /// <summary>
+    /// Each one still to do is marked over the view and on the automap (objective markers): a
+    /// switch not yet thrown, a destructible wall not yet broken, an actor with the objective
+    /// still alive. What a script counts itself (A_AddObjective) it marks itself (game.marker).
+    /// </summary>
+    public bool Marker { get; init; }
+
+    /// <summary>The markers' label (text or a $language key); none, just the marker</summary>
+    public string? MarkerLabel { get; init; }
+
+    /// <summary>The markers' color (a color name, #RRGGBB or palette index); none, objective-markers' neutral</summary>
+    public string? MarkerColor { get; init; }
 }
 
 /// <summary>Game-info `stealth:` (Gameplay/Stealth.cs). Messages are text or $language keys; none shows nothing.</summary>

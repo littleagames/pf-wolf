@@ -1460,6 +1460,9 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 - **The HUD,** drawn over the view by the script: the objectives at the bottom left (ticked off
   green as each is done), the time left at the top right (red in the last 30 seconds), and a
   compass at the bottom right: an arrow toward the exit and how many tiles away it is.
+- **Objective markers** over the view (through walls, or at its edge the way to turn) and on the
+  automap: each radio still working, each officer still alive, the documents, and once the exit
+  will go, the exit. Options → Game Options → Objective Markers turns them off.
 - **The comms room,** west: two radio sets in its far wall. Shoot (or knife) each until it's
   wrecked.
 - **The office,** east: the documents on the desk, and an officer.
@@ -1475,7 +1478,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 - `game-info.yaml`:
   - `objectives`: `documents`, `radios` and `officers`, each with its messages (`start`,
     `progress`, `done`, `refused`, `stats`; each `%d` filled in turn) and whether the exit waits
-    for it (`blocks-exit`).
+    for it (`blocks-exit`). `radios` and `officers` have `marker: true`, with a `marker-label`
+    (and the officers a `marker-color`): each one still to do is marked.
   - `maps: MAP01: time-limit: 240`: seconds on the level's own clock (a saved game keeps what's
     left).
 - `mapdefs/walls.yaml`: the radios, walls 144 and 145, whose `destructible:` block has
@@ -1497,6 +1501,9 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
     markers (`actor:spawn`) and sends them chasing (`actor:jump("Chase")`).
   - `game.ontally`: text for the tally (intermission.yaml's `script` place).
   - `game.command`: the `objectives` console command.
+  - `game.marker`: a marker on the documents (one on an actor goes when it's taken), and on the
+    exit once it's open. Markers aren't saved, so they're set in `game.onlevel` every time the
+    level starts, a loaded game's too.
 - `textures/MDRADIO.png`, `MDRADIOX.png` (the radio, and wrecked), `sprites/MDDOA0.png` (the
   documents), `sounds/MDZAP.wav` (a radio shot up), `MDDOCS.wav` (the documents taken) and
   `maps/MAP01.wad`.

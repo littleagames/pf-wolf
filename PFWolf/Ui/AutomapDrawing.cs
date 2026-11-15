@@ -466,7 +466,7 @@ internal sealed class AutomapDrawing(
         {
             int tx = (int)(marker.X / (long)MapConstants.TileGlobal), ty = (int)(marker.Y / (long)MapConstants.TileGlobal);
             float x0 = tx - marker.Zone, y0 = ty - marker.Zone, x1 = tx + marker.Zone + 1, y1 = ty + marker.Zone + 1;
-            string color = look.FillColor(marker.Team);
+            string color = look.FillColor(marker);
             AutomapLine(view, x0, y0, x1, y0, color);
             AutomapLine(view, x1, y0, x1, y1, color);
             AutomapLine(view, x1, y1, x0, y1, color);
@@ -484,7 +484,7 @@ internal sealed class AutomapDrawing(
             var (px, py, pinned) = PinInside(view, sx, sy, outline, top);
             int cx = (int)MathF.Round(px), cy = (int)MathF.Round(py);
             AutomapDiamond(view, cx, cy, outline, look.OutlineColor(marker));
-            AutomapDiamond(view, cx, cy, r, look.FillColor(marker.Team));
+            AutomapDiamond(view, cx, cy, r, look.FillColor(marker));
 
             if (font == null || marker.Label.Length == 0)
                 continue;
@@ -496,7 +496,7 @@ internal sealed class AutomapDrawing(
             lx = Math.Clamp(lx, left + 2, Math.Max(left + 2, right - 2 - width));
             ly = Math.Clamp(ly, layoutTop + 1 + (TopReserved?.Invoke() ?? 0), Math.Max(layoutTop + 1, bottom - font.Height - 1));
             video.Bar(lx - 1, ly - 1, width + 2, font.Height + 2, AutomapColor("AutomapBackground"));
-            graphics.DrawText(lx, ly, marker.Label, font, look.LabelColor(marker.Team));
+            graphics.DrawText(lx, ly, marker.Label, font, look.LabelColor(marker));
         }
     }
 

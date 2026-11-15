@@ -122,6 +122,93 @@ public class GameScriptsTests
         Assert.That(Printed(), Has.Some.EqualTo("0\t0"));
     }
 
+    // A map with nothing on it, the scripts reading it
+    private (MapManager Map, ScriptHost Host) MarkerScripts()
+    {
+        var map = new MapManager(new Lazy<AssetManager>(() => null!), null!, _session, null);
+        _scripts = new GameScripts(null!, map, null!, null!, _console, null, null!, _session, (_, _) => { });
+        return (map, Host());
+    }
+
+    [Test]
+    public void A_Script_Marks_A_Tile_And_An_Actor_In_The_Order_Set()
+    {
+        // Arrange: a boss for the script to follow
+        var (map, host) = MarkerScripts();
+        var boss = new Entities.Actors.Monster { Name = "Boss", X = 0x45000, Y = 0x23000, Hitpoints = 100 };
+        map.GetActors().AddLast(boss);
+        host.Globals["boss"] = Scripting.LuaActor.Of(boss);
+
+        // Act
+        host.Execute("game.marker('door', 5, 6, 'Way out', 'Lime') game.marker('boss', boss, 'Boss', 'red')");
+
+        // Assert
+        Assert.That(_scripts.Markers(), Is.EqualTo(new[]
+        {
+            ObjectiveMarker.OnTile((5, 6), "Way out", -1, color: "Lime"),
+            new ObjectiveMarker(0x45000, 0x23000, "Boss", 0),
+        }));
+    }
+
+    [Test]
+    public void Setting_A_Marker_Again_Moves_It_And_Clearing_Takes_It_Away()
+    {
+        var (_, host) = MarkerScripts();
+        host.Execute("game.marker('a', 1, 1, 'A') game.marker('b', 2, 2, 'B') game.marker('a', 9, 9.7, 'A2', 'blue')");
+        Assert.That(_scripts.Markers(), Is.EqualTo(new[]
+        {
+            ObjectiveMarker.OnTile((9, 9), "A2", 1),
+            ObjectiveMarker.OnTile((2, 2), "B", -1),
+        }), "moved in its place; a part tile is the tile");
+
+        host.Execute("game.clearmarker('a')");
+        Assert.That(_scripts.Markers().Select(m => m.Label), Is.EqualTo(new[] { "B" }));
+        host.Execute("game.clearmarker()");
+        Assert.That(_scripts.Markers(), Is.Empty);
+    }
+
+    [Test]
+    public void A_Marker_Lasts_For_Its_Level_And_One_On_An_Actor_For_Its_Life()
+    {
+        // Arrange
+        var (map, host) = MarkerScripts();
+        var guard = new Entities.Actors.Monster { Name = "Guard", Hitpoints = 25 };
+        var key = new Entities.Actors.Monster { Name = "Key", Hitpoints = 1 };
+        var documents = new Entities.Actors.CustomInventory { Name = "Documents" };
+        foreach (var actor in new Entities.Actors.Actor[] { guard, key, documents })
+            map.GetActors().AddLast(actor);
+        host.Globals["guard"] = Scripting.LuaActor.Of(guard);
+        host.Globals["key"] = Scripting.LuaActor.Of(key);
+        host.Globals["documents"] = Scripting.LuaActor.Of(documents);
+        host.Execute("game.marker('guard', guard, 'G') game.marker('key', key, 'K') game.marker('docs', documents, 'D') game.marker('spot', 3, 3, 'S')");
+        Assert.That(_scripts.Markers().Select(m => m.Label), Is.EqualTo(new[] { "G", "K", "D", "S" }));
+
+        // Act / Assert: one dies, one's taken away, one's picked up (off the list); then a new level
+        guard.Hitpoints = 0;
+        key.IsRemoved = true;
+        map.RemoveActor(documents);
+        Assert.That(_scripts.Markers().Select(m => m.Label), Is.EqualTo(new[] { "S" }));
+        map.LevelSerial++;
+        Assert.That(_scripts.Markers(), Is.Empty);
+    }
+
+    [Test]
+    public void A_Marker_Off_The_Map_Is_An_Error()
+    {
+        var (_, host) = MarkerScripts();
+        Assert.That(host.Execute("game.marker('x', 99, 2, 'X')"), Does.Contain("isn't a tile on the map"));
+    }
+
+    [TestCase(null, -1, null)]
+    [TestCase("red", 0, null)]
+    [TestCase(" Blue ", 1, null)]
+    [TestCase("#FC00FC", -1, "#FC00FC")]
+    [TestCase("Lime", -1, "Lime")]
+    public void A_Markers_Color_Is_A_Teams_Look_Or_Its_Own(string? color, int team, string? own)
+    {
+        Assert.That(GameScripts.MarkerColor(color), Is.EqualTo((team, own)));
+    }
+
     [Test]
     public void A_Tick_Hook_Is_Given_The_Tics()
     {

@@ -427,6 +427,7 @@ internal sealed partial class GameScripts(
             return new(c.Return(Entities.MapTriggerRegistry.Invoke(name, args, activation)));
         });
         InstallHookFunctions(game, host);       // game.onlevel, game.ontick... and what the hooks use (Scripting/GameScripts.Hooks.cs)
+        InstallMarkerFunctions(game);           // game.marker, game.clearmarker (Scripting/GameScripts.Markers.cs)
         // game.record(map): the best done on a map, from game to game (records.cfg:
         // Gameplay/LevelRecords.cs), as game.onlevelend's result; nil if it's never been finished
         game["record"] = new LuaFunction("game.record", (c, _) =>

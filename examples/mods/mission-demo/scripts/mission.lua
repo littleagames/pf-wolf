@@ -7,6 +7,8 @@
 --   game.ontimeup     reinforcements when the clock runs out, instead of the player dying
 --   game.ontally      a line on the level's tally saying how the mission went
 --   game.command      an "objectives" console command
+--   game.marker       markers on the documents, then on the exit once it's open (the radios and
+--                     officers are marked by game-info.yaml's objectives: marker)
 -- Hooks that draw (onhud) or report (ontally) run on each machine alone and mustn't change the
 -- game; the rest may. Nothing here is kept in Lua variables that a saved game would need: the
 -- objectives are the game's own counts, and the time is the level's clock.
@@ -24,6 +26,23 @@ local function secondsleft()
   return TIME_LIMIT - math.floor(game.time() / 70)
 end
 
+-- Whether everything the exit waits for is done
+local function exitopen()
+  local d, dt = game.objective("documents")
+  local r, rt = game.objective("radios")
+  return d == dt and r == rt
+end
+
+-- The markers the level doesn't make itself: on the documents while they're there (one on an
+-- actor goes as it's taken), and on the exit once it's open. Markers aren't saved, so they're
+-- set again on every start of the level, a loaded game's too.
+local function setmarkers()
+  local documents = game.actors("SecretDocuments")[1]
+  if documents then game.marker("documents", documents, "Documents", "Yellow") end
+  local exit = game.actors("MissionExitMarker")[1]
+  if exit and exitopen() then game.marker("exit", exit, "Exit", "Lime") end
+end
+
 -- The documents are an item, not something the level counts by itself: add one to do as the
 -- level starts afresh (a loaded game has its counts already)
 game.onlevel(function(reason, map)
@@ -34,6 +53,7 @@ game.onlevel(function(reason, map)
   if reason == "new" then
     game.message("Get the documents and wreck the radios, then get out. Four minutes.")
   end
+  setmarkers()
 end)
 
 game.onpickup(function(player, item, amount)
@@ -45,10 +65,9 @@ end)
 -- Once both objectives the exit waits for are done
 game.onobjective(function(name, done, total)
   if done < total then return end
-  local d, dt = game.objective("documents")
-  local r, rt = game.objective("radios")
-  if d == dt and r == rt then
+  if exitopen() then
     game.message("That's everything. Get to the exit, east of the yard!")
+    setmarkers()
   end
 end)
 

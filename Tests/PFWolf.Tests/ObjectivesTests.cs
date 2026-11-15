@@ -49,6 +49,80 @@ public class ObjectivesTests
         return tank;
     }
 
+    // ==== Markers =================================================================================
+
+    // Walls: 5 a sabotage panel (thrown, it's 6), 7 a destructible wall toward "radios"
+    private void MarkerLevel()
+    {
+        var data = new MapObjectTranslationAsset
+        {
+            Walls =
+            {
+                [5] = new MapTextureTranslation { North = "PANEL", Switch = new MapSwitchTranslation { To = 6, Objective = "sabotage" } },
+                [6] = new MapTextureTranslation { North = "PANELX" },
+                [7] = new MapTextureTranslation { North = "RADIO", Destructible = new MapDestructibleTranslation { Objective = "radios" } },
+            },
+        };
+        typeof(MapManager).GetField("_levelMapData", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(_map, data);
+        _map.TileMap[3, 4] = 5;
+        _map.TileMap[8, 4] = 6;       // one thrown already
+        _map.TileMap[10, 12] = 7;
+        _settings["sabotage"] = _settings["sabotage"] with { Marker = true, MarkerLabel = "Panel", MarkerColor = "Yellow" };
+        _settings["targets"] = _settings["targets"] with { Marker = true };
+        _settings["radios"] = new ObjectiveInfo { Marker = true, MarkerLabel = "Radio" };
+        _objectives = new Objectives(_map, new ObjectiveHooks(() => _settings, text => text, _messages.Add, () => _switches,
+            WallObjectiveAt: (x, y) => _map.TileMap[x, y] == 7 ? "radios" : null));
+        _map.ObjectiveCounts["sabotage"] = new ObjectiveCount { Done = 1, Total = 2 };
+        _map.ObjectiveCounts["radios"] = new ObjectiveCount { Total = 1 };
+    }
+
+    [Test]
+    public void Marked_Objectives_Mark_Their_Switches_Not_Yet_Thrown_Their_Walls_And_Their_Living_Actors()
+    {
+        // Arrange: a living target and a dead one
+        MarkerLevel();
+        var tank = Target(100);
+        (tank.X, tank.Y) = (0x50000, 0x60000);
+        Target(0);
+        _map.ObjectiveCounts["targets"] = new ObjectiveCount { Done = 1, Total = 2 };
+
+        // Act
+        var markers = _objectives.Markers().ToList();
+
+        // Assert
+        Assert.That(markers, Is.EqualTo(new[]
+        {
+            ObjectiveMarker.OnTile((3, 4), "Panel", -1, color: "Yellow"),
+            ObjectiveMarker.OnTile((10, 12), "Radio", -1),
+            new ObjectiveMarker(0x50000, 0x60000, "", -1),
+        }));
+    }
+
+    [Test]
+    public void An_Objective_All_Done_Or_Not_Marked_Has_No_Markers()
+    {
+        MarkerLevel();
+        _map.ObjectiveCounts["sabotage"].Done = 2;
+        _settings["radios"] = _settings["radios"] with { Marker = false };
+
+        Assert.That(_objectives.Markers(), Is.Empty);
+    }
+
+    [Test]
+    public void A_Switch_Thrown_Loses_Its_Marker()
+    {
+        // Arrange
+        MarkerLevel();
+        Assert.That(_objectives.Markers().Count(m => m.Label == "Panel"), Is.EqualTo(1));
+
+        // Act: thrown, it's the other wall, and one more's done (with one left to do elsewhere)
+        _map.TileMap[3, 4] = 6;
+        _map.ObjectiveCounts["sabotage"] = new ObjectiveCount { Done = 2, Total = 3 };
+
+        // Assert
+        Assert.That(_objectives.Markers().Count(m => m.Label == "Panel"), Is.Zero);
+    }
+
     [Test]
     public void A_Level_Counts_Its_Objective_Switches_And_Actors_And_Says_So()
     {

@@ -19,10 +19,17 @@ internal enum MarkerStyle : byte
 /// <param name="Team">The team whose color it's in: 0 red, 1 blue, -1 nobody's</param>
 /// <param name="Zone">How many tiles out from its middle the zone it stands for reaches (1: a 3x3 square, outlined on the automap); 0, just a spot</param>
 /// <param name="Story">The story it's on (1 the ground's), for an actor (a flag's carrier, an enemy); 0, the floor of its tile</param>
-internal readonly record struct ObjectiveMarker(long X, long Y, string Label, int Team, MarkerStyle Style = MarkerStyle.None, int Zone = 0, int Story = 0)
+/// <param name="Color">Its own color (a script's, a level objective's), for the diamond and the label, in place of its team's</param>
+internal readonly record struct ObjectiveMarker(long X, long Y, string Label, int Team, MarkerStyle Style = MarkerStyle.None, int Zone = 0, int Story = 0,
+    string? Color = null)
 {
     /// <summary>A marker in the middle of a tile</summary>
-    internal static ObjectiveMarker OnTile((int x, int y) tile, string label, int team, MarkerStyle style = MarkerStyle.None, int zone = 0) =>
+    internal static ObjectiveMarker OnTile((int x, int y) tile, string label, int team, MarkerStyle style = MarkerStyle.None, int zone = 0,
+        string? color = null) =>
         new(tile.x * (long)MapConstants.TileGlobal + (long)MapConstants.TileGlobal / 2,
-            tile.y * (long)MapConstants.TileGlobal + (long)MapConstants.TileGlobal / 2, label, team, style, zone);
+            tile.y * (long)MapConstants.TileGlobal + (long)MapConstants.TileGlobal / 2, label, team, style, zone, Color: color);
+
+    /// <summary>A marker on an actor, following it (on its story)</summary>
+    internal static ObjectiveMarker OnActor(Entities.Actors.Actor actor, string label, int team, string? color = null) =>
+        new(actor.X, actor.Y, label, team, Story: actor.Story, Color: color);
 }
