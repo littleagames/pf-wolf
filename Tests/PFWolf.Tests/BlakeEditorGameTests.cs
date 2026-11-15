@@ -125,6 +125,8 @@ public class BlakeEditorGameTests
 
     [TestCase("blake")]
     [TestCase("blake-shareware")]
+    [TestCase("blake-v2")]      // with PFWOLF_GAMEDATA set to a folder of its files
+    [TestCase("blake-v3")]
     [TestCase("planetstrike")]
     public void Every_Thing_On_The_Levels_Shows(string game)
     {

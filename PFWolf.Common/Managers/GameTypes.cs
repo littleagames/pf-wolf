@@ -22,7 +22,11 @@ public enum GameType
     [Description("spear-demo")]
     SpearDemo,
     [Description("blake-shareware")]
-    BlakeShareware
+    BlakeShareware,
+    [Description("blake-v2")]
+    BlakeV2,
+    [Description("blake-v3")]
+    BlakeV3
 }
 
 /// <summary>
@@ -156,6 +160,8 @@ public static class GameTypes
             null or GameType.Wolf3D => FallbackOrder,
             GameType.SpearOfDestiny => [GameType.SpearDemo],
             GameType.BlakeStone => [GameType.BlakeShareware],
+            // Another release of Aliens of Gold: blake picks whichever one the files here are
+            GameType.BlakeV2 or GameType.BlakeV3 => [GameType.BlakeStone, GameType.BlakeShareware],
             _ => [],
         };
         foreach (var type in candidates)
@@ -202,6 +208,8 @@ public static class GameTypes
         GameType.WolfApogee => "wolf3d-apogee",
         GameType.SpearDemo => "spear-demo",
         GameType.BlakeShareware => "blake-shareware",
+        GameType.BlakeV2 => "blake-v2",
+        GameType.BlakeV3 => "blake-v3",
         _ => "wolf3d",
     };
 
@@ -213,7 +221,7 @@ public static class GameTypes
     {
         null => SafeFolderName(game.PackId),
         GameType.SpearOfDestiny => "SpearOfDestiny",
-        GameType.BlakeStone => "BlakeStone",
+        GameType.BlakeStone or GameType.BlakeV2 or GameType.BlakeV3 => "BlakeStone",     // the same game's later releases
         GameType.PlanetStrike => "PlanetStrike",
         GameType.WolfShareware => "Wolfenstein3DShareware",
         GameType.SpearDemo => "SpearOfDestinyDemo",

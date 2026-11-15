@@ -1,0 +1,6 @@
+# Aliens of Gold v2.1's presenter, laid over gamepacks/blake/presenter.yaml: its shape table
+# (bstone's jm_tp.cpp) is v1.0's, whose last two entries are pictures only v2.1 on has: the
+# instructions' L and Shift keys
+shapes:
+  214: { pic: H_L }
+  215: { pic: H_Shift }

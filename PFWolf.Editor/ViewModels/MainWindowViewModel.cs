@@ -91,6 +91,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         new("spear", "Spear of Destiny"),
         new("spear-demo", "Spear of Destiny (demo)"),
         new("blake", "Blake Stone: Aliens of Gold"),
+        new("blake-v2", "Blake Stone: Aliens of Gold (v2.1)"),
+        new("blake-v3", "Blake Stone: Aliens of Gold (v3.0)"),
         new("blake-shareware", "Blake Stone: Aliens of Gold (shareware)"),
         new("planetstrike", "Blake Stone: Planet Strike"),
     ];

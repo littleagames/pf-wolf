@@ -27,6 +27,21 @@ title-sequence:
     - pics: [{ pic: Promo2 }]
       seconds: 20
 
+# v3.0's high score table gives Apogee's order line (the registered v1.0 and v2.1's say
+# 1-800-GAME123)
+high-scores:
+  defaults:
+    - { name: "JAM PRODUCTIONS INC." }
+    - { name: "" }
+    - { name: "JERRY JONES" }
+    - { name: "MICHAEL MAYNARD" }
+    - { name: "JAMES T. ROW" }
+    - { name: "" }
+    - { name: "" }
+    - { name: "TO REGISTER CALL" }
+    - { name: " 1-800-APOGEE1" }
+    - { name: "" }
+
 # Missions 2-6 are listed, as in the original, but greyed out and can't be picked (bstone's
 # AT_NON_SELECTABLE); the shareware data has only mission 1's floors
 episodes:

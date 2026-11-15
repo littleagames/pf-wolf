@@ -21,6 +21,8 @@ public class LevelChecksGameTests
     [TestCase("spear", "")]
     [TestCase("blake", "")]
     [TestCase("blake-shareware", "")]
+    [TestCase("blake-v2", "")]      // with PFWOLF_GAMEDATA set to a folder of its files
+    [TestCase("blake-v3", "")]
     [TestCase("planetstrike", "")]
     [TestCase("wolf3d", "examples/mods/switch-demo")]
     [TestCase("wolf3d", "examples/mods/fireball-demo")]
