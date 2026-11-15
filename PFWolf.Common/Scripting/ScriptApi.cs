@@ -198,6 +198,8 @@ public static class ScriptApi
             "Throws out a burst from a particles.yaml emitter (or of a particle type) where it is, at its height and turned by the way it faces, with changes as game.particles's; how many were thrown out"),
         Method("pathto", "actor:pathto(x, y) or actor:pathto(other)",
             "The way (\"north\", \"northeast\"...) to go from its tile toward a tile (or another actor's) by the shortest path it can walk, found by A*: through the doors it can open, round walls, solid things and the monster blockers it's kept off, diagonally only past open floor. Nil when it's there, or nowhere it can get to is nearer"),
+        Method("move", "actor:move(dx, dy)",
+            "Moves it by so many tiles east (dx) and south (dy), at most 4 either way, and returns how far it went (dx, dy): a player as walking does (stopped by walls, doors and solid things, sliding along them; tiles stepped onto trigger as a step does, and game.onenter hears of a new one); a living monster as a hit's knockback shoves it, no more than 3/8 tile off the way it's walking (it drifts back on as it walks); a dead one anywhere it can slide. Anything else, a dead or spectating player, a wall sprite or one in a wall, doesn't move (0, 0). For ice, conveyors and the like, from game.ontick"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> EmitterMethods { get; } =

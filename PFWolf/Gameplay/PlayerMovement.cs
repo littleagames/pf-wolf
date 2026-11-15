@@ -268,7 +268,45 @@ internal sealed class PlayerMovement(
         }
 
         ClipMove(player, xmove, ymove);
+        Settle();
+    }
 
+    // The most a step of the acting player's can be (Thrust's bound), so it can't go through a wall
+    private const int MaxStep = (int)(GameConstants.MinDist * 2 - 1);
+
+    /// <summary>
+    /// A script's move of the acting player (actor:move): so far (global units) as walking would
+    /// take them -- stopped and slid along by what walking is, without the bump sound -- in steps
+    /// no longer than Thrust's, each settling their tile, area and what they step onto as a step
+    /// does. How far they went.
+    /// </summary>
+    internal (int X, int Y) MoveBy(int xmove, int ymove)
+    {
+        var player = session.Player;
+        var (fromx, fromy) = (player.X, player.Y);
+        long longest = Math.Max(Math.Abs((long)xmove), Math.Abs((long)ymove));
+        int steps = (int)Math.Max((longest + MaxStep - 1) / MaxStep, 1);
+        int donex = 0, doney = 0;
+        for (int i = 1; i <= steps; i++)
+        {
+            int tox = (int)((long)xmove * i / steps), toy = (int)((long)ymove * i / steps);
+            ClipMove(player, tox - donex, toy - doney, quiet: true);
+            (donex, doney) = (tox, toy);
+            Settle();
+        }
+
+        session.PlayerState.PlUX = (ushort)(player.X >> GameConstants.UnsignedShift);
+        session.PlayerState.PlUY = (ushort)(player.Y >> GameConstants.UnsignedShift);
+        return (player.X - fromx, player.Y - fromy);
+    }
+
+    /// <summary>
+    /// After a move: the acting player's tile and area are where they are now, and the walk-over
+    /// trigger, floors trigger or colors code of a tile they've stepped onto does its thing
+    /// </summary>
+    private void Settle()
+    {
+        var player = session.Player;
         var (oldtilex, oldtiley) = (player.TileX, player.TileY);
         player.TileX = (byte)(player.X >> (int)MapConstants.TileShift);                // scale to tile values
         player.TileY = (byte)(player.Y >> (int)MapConstants.TileShift);
@@ -434,7 +472,8 @@ internal sealed class PlayerMovement(
         return true;
     }
 
-    internal void ClipMove(Entities.Actors.Actor ob, int xmove, int ymove)
+    /// <param name="quiet">Not the bump sound when it's stopped (a script's move)</param>
+    internal void ClipMove(Entities.Actors.Actor ob, int xmove, int ymove, bool quiet = false)
     {
         int basex, basey;
 
@@ -455,7 +494,7 @@ internal sealed class PlayerMovement(
             && ob.Y < (((int)(map.MapHeight - 1)) << (int)MapConstants.TileShift))
             return;         // walk through walls
 
-        if (!audio.IsAnySoundPlaying())
+        if (!quiet && !audio.IsAnySoundPlaying())
              hooks.PlayPlayerSound("world/hitwall");
 
         //

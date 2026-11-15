@@ -469,6 +469,16 @@ internal static partial class GameHost
                 Session.FizzleInStyle = style;
                 Session.FizzleInTics = tics;
             },
+            MovePlayer = (pawn, dx, dy) =>
+            {
+                // As that player, and a script's onenter hears of a tile it's moved them onto
+                using var _ = Session.ActAs(pawn.State);
+                var (fromX, fromY) = (pawn.TileX, pawn.TileY);
+                var moved = playerMovement.MoveBy(dx, dy);
+                if (pawn.TileX != fromX || pawn.TileY != fromY)
+                    gameScripts.RunEnterHooks(pawn, pawn.TileX, pawn.TileY);
+                return moved;
+            },
             RemoveWall = (x, y, arch) => destructibleWalls.Remove(x, y, arch),
             BreakWall = (x, y) => destructibleWalls.Break(x, y),
             WallHealth = (x, y) => destructibleWalls.HealthLeft(x, y),

@@ -106,6 +106,21 @@ public class ScriptApiTests
     }
 
     [Test]
+    public void Moving_What_Isnt_A_Player_Or_Monster_Goes_Nowhere()
+    {
+        // Arrange: a plain actor (a NaN or too-far move doesn't error either)
+        var host = EngineHost();
+        host.Globals["thing"] = Scripting.LuaActor.Of(new EntityActor { Name = "Thing" });
+
+        // Act
+        var error = host.Execute("print(thing:move(1, -2)) print(thing:move(0/0, 99))");
+
+        // Assert
+        Assert.That(error, Is.Null);
+        Assert.That(_printed, Is.EqualTo(new[] { "0\t0", "0\t0" }));
+    }
+
+    [Test]
     public void The_Settable_Fields_Are_The_Ones_That_Can_Be_Set()
     {
         // Arrange

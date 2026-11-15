@@ -76,6 +76,12 @@ internal sealed partial class GameScripts(
     /// <summary>game.wallhealth: the damage the wall on a tile takes yet before it breaks; null for one that isn't destructible</summary>
     internal Func<int, int, int?> WallHealth { get; init; } = (_, _) => null;
 
+    /// <summary>actor:move for a player: moves them so far (global units) as walking would, as that player (PlayerMovement.MoveBy); how far they went</summary>
+    internal Func<Entities.Actors.PlayerPawn, int, int, (int X, int Y)> MovePlayer { get; init; } = (_, _, _) => (0, 0);
+
+    /// <summary>The farthest one actor:move goes, either way (4 tiles)</summary>
+    internal const double MaxScriptMove = 4;
+
     /// <summary>The scripts' Lua state, once any have loaded (or the lua command has made one)</summary>
     internal ScriptHost? Scripts => _scripts;
 
@@ -189,6 +195,21 @@ internal sealed partial class GameScripts(
                 var way = self is Entities.Actors.Monster monster ? monster.PathTo(x, y)
                     : pathfinder.FirstStep(map.MapWidth, map.MapHeight, self.TileX, self.TileY, x, y, OpenTile, OpenDiagonally);
                 return c.Return(way is { } dir ? Gameplay.Pathfinder.DirName(dir) : LuaValue.Nil);
+            }),
+            // actor:move(dx, dy): moves it by so many tiles (at most 4 either way), stopped by what
+            // stops it walking; how far it went. A player moves as walking does; a monster as a
+            // shove does (a living one only so far off its walk); anything else, nothing.
+            ["move"] = Method("move", (c, self) =>
+            {
+                ChangesTheGame(c, "actor:move");
+                int dx = MoveArg(c, 1), dy = MoveArg(c, 2);
+                var (movedX, movedY) = (dx, dy) == (0, 0) || self.IsRemoved ? (0, 0) : self switch
+                {
+                    Entities.Actors.PlayerPawn pawn when session.IsTargetable(pawn) => MovePlayer(pawn, dx, dy),
+                    Entities.Actors.Monster monster when !projectileActions.IsInWall(monster) => monster.MoveBy(dx, dy),
+                    _ => (0, 0),
+                };
+                return c.Return(movedX / (double)MapConstants.TileGlobal, movedY / (double)MapConstants.TileGlobal);
             }),
             ["remove"] = Method("remove", (c, self) =>
             {
@@ -606,6 +627,14 @@ internal sealed partial class GameScripts(
         if (tag < 0 || tag > ushort.MaxValue || tag != Math.Floor(tag))
             throw new LuaRuntimeException(c.State, (LuaValue)$"argument {index + 1} should be a tag: a whole number, 1 to {ushort.MaxValue}", 1);
         return (ushort)tag;
+    }
+
+    // actor:move's way, in tiles, as global units: no more than MaxScriptMove either way, nothing for a NaN
+    static int MoveArg(LuaFunctionExecutionContext c, int index)
+    {
+        double tiles = NumberArg(c, index, 0);
+        return double.IsNaN(tiles) ? 0
+            : (int)Math.Round(Math.Clamp(tiles, -MaxScriptMove, MaxScriptMove) * MapConstants.TileGlobal);
     }
 
     static short ShortArg(LuaFunctionExecutionContext c, int index) =>

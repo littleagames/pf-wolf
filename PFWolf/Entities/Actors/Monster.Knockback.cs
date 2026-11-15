@@ -152,8 +152,14 @@ internal partial record Monster
             }
         }
 
-        // A body is on the tile it's slid onto, off the one it left (DoActor marks it there again)
-        if (dead && (X >> (int)MapConstants.TileShift != TileX || Y >> (int)MapConstants.TileShift != TileY))
+        if (dead)
+            OntoBodysTile();
+    }
+
+    // A body is on the tile it's slid onto, off the one it left (DoActor marks it there again)
+    private void OntoBodysTile()
+    {
+        if (X >> (int)MapConstants.TileShift != TileX || Y >> (int)MapConstants.TileShift != TileY)
         {
             if (!MapManager.OnPlayersStory(this) || ReferenceEquals(MapManager.ActorMarkAt(TileX, TileY), this))
                 MapManager.UnmarkActorTile(this);
@@ -161,6 +167,57 @@ internal partial record Monster
             TileY = (byte)(Y >> (int)MapConstants.TileShift);
             SyncPosition();
         }
+    }
+
+    // The most a step of a script's move can be, so it can't go through a wall (the player's own bound)
+    private const int MaxMoveStep = ShoveSize * 2 - 1;
+
+    /// <summary>
+    /// A script's move (actor:move): so far (global units), stopped by what stops a shove
+    /// (ClearToShove) and slid along it; a living one goes no further off its walk than a shove
+    /// puts it (MaxDisplacement), a dead one anywhere. A wall sprite doesn't move. How far it went.
+    /// </summary>
+    internal (int X, int Y) MoveBy(int dx, int dy)
+    {
+        if (HasFlag("WALLSPRITE"))
+            return (0, 0);
+        bool dead = PushedDead;
+        if (dead)
+            DispX = DispY = 0;
+        else
+        {
+            dx = (int)Math.Clamp(DispX + (long)dx, -MaxDisplacement, MaxDisplacement) - DispX;
+            dy = (int)Math.Clamp(DispY + (long)dy, -MaxDisplacement, MaxDisplacement) - DispY;
+        }
+
+        var (fromX, fromY) = (X, Y);
+        long longest = Math.Max(Math.Abs((long)dx), Math.Abs((long)dy));
+        int steps = (int)Math.Max((longest + MaxMoveStep - 1) / MaxMoveStep, 1);
+        int doneX = 0, doneY = 0;
+        for (int i = 1; i <= steps; i++)
+        {
+            int toX = (int)((long)dx * i / steps), toY = (int)((long)dy * i / steps);
+            int sx = toX - doneX, sy = toY - doneY;
+            (doneX, doneY) = (toX, toY);
+            if ((sx != 0 || sy != 0) && !Shove(sx, sy))
+            {
+                // Along whatever's in the way; stopped both ways, it's done
+                bool movedX = sx != 0 && Shove(sx, 0);
+                bool movedY = sy != 0 && Shove(0, sy);
+                if (!movedX && !movedY)
+                    break;
+            }
+        }
+
+        int movedXBy = X - fromX, movedYBy = Y - fromY;
+        if (dead)
+            OntoBodysTile();
+        else
+        {
+            DispX += movedXBy;
+            DispY += movedYBy;
+        }
+        return (movedXBy, movedYBy);
     }
 
     // A tic's part of the shove left

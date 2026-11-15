@@ -669,6 +669,10 @@ the keypad's note and code open its closet)
       ScriptHookGameTests covers one guard round one wall): many enemies at once (frame time with
       `perf`), locked doors and NOLOCKEDDOORS/NODOORS enemies, dogs (they dodge), Blake Stone's
       enemies, a 256x256 UWMF level, a pushwall moving across a path, and a netgame staying in step.
+- [ ] **(never tried)** `actor:move(dx, dy)` in play (ScriptMoveGameTests covers the player against
+      walls and a living guard's 3/8-tile limit): a dead body sliding (and staying on the tile it
+      ends on), a walk-over trigger or floor code stepped onto by a move, `onenter` told of it, a
+      riding player, pushwalls and doors in the way, diagonals and wall sprites, a netgame in step.
 
 ## 1.13 Sound and music (by ear)
 
