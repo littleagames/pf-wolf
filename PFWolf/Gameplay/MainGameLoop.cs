@@ -232,8 +232,8 @@ internal sealed class MainGameLoop(
             {
                 // Spear waits 150 tics for its pickup sound before the new map loads; the score
                 // carries over, as the level ends without an intermission to bank it
-                if (PendingMapChange.WaitTics > 0)
-                    GameEngineManager.WaitVBL((uint)PendingMapChange.WaitTics);
+                // (tics at 70 Hz, as the original's GetTimeCount wait: not WaitVBL's 8 ms steps)
+                GameEngineManager.DelayTics(PendingMapChange.WaitTics);
                 foreach (var p in session.Players) p.OldScore = p.Score;
                 warped = true;
             }
@@ -397,6 +397,12 @@ internal sealed class MainGameLoop(
                     highScores.CheckHighScore(session.PlayerState.Score, won: true);
                     controlPanel.EnableViewScoresMenuItem();
                     return;
+
+                case PlayState.Warped when warped:
+                    // An A_ChangeMap switch goes straight on into the new map, its sound (the
+                    // Spear's pickup) ringing on into it, as the original's did
+                    if (settings.ViewSize == 21) playScreen.DrawPlayScreen();
+                    break;
 
                 default:
                     if (settings.ViewSize == 21) playScreen.DrawPlayScreen();
