@@ -150,6 +150,26 @@ horde:
   break-seconds: 10
   spawn-tics: 35
   max-alive: 12
+  # With none still to come and this many enemies left or fewer, each is marked (0: never)
+  mark-last: 3
+
+# How a match's objective markers look (the hill, control points, flags, Horde's last enemies),
+# over the view and on the automap. Whether they show is the Objective Markers setting
+# (setting-defaults objective-markers). The engine's defaults, which a mod can change:
+# objective-markers:
+#   red: "#FC0000"              # a red team's diamond, edge arrow and automap zone
+#   blue: "#0000FC"
+#   neutral: "#A8A8A8"          # nobody's
+#   red-label: "#FC5454"
+#   blue-label: "#5454FC"
+#   neutral-label: "#FCFCFC"
+#   outline: "#FCFCFC"          # the ring round each marker
+#   flash: "#FCFC54"            # the ring's other color while it flashes
+#   flash-tics: 8
+#   show-distance: true         # tiles away, under the label in the view
+#   distance-color: "#C0C0C0"
+#   font: SmallFont
+#   height: 72                  # texels over its spot in the view (64 a story)
 
 # Multiplayer cues (Gameplay/Announcer.cs). Each is a sound (sounds/ name) and a message (text or
 # a $language key, in a hud-messages style, default Center), either left out for none. Streaks

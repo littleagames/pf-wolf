@@ -967,6 +967,11 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       styles, overlay): zones outlined in the holder's color, diamonds and labels on unseen parts
       too, ones off the map's view pulled in to its edge. **(never tried)** a rotated or panned
       map, zooming in and out, a carried flag moving with its carrier.
+- [ ] Objective markers polish (seen headless 2026-11-14): hollow when the spot's behind a wall,
+      Horde's last enemies marked (game-info `horde: mark-last`), down arrows for enemies in the
+      Rooftops Demo's street, a mod's game-info `objective-markers:` colors and show-distance.
+      **(never tried)** an up arrow (a marker on a roof seen from the street), a mod font,
+      default mark-last 3 in a real Horde game.
 - [ ] Prop Hunt on PH01: disguise with Use, hide timer, hunt, decoy penalty, snap when still,
       taunts, lamp light, chase cam, lobby hide/hunt times.
 - [ ] Play as enemies: lobby class pick, dog bite **(never tried: damage)**, enemy class faces on

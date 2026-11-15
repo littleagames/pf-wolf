@@ -446,8 +446,8 @@ internal sealed class AutomapDrawing(
         return AutomapMark.None;                                // decorations you can walk through
     }
 
-    /// <summary>A match's objectives to mark (ObjectiveMarkerDrawing.Current); unset, none</summary>
-    internal Func<IReadOnlyList<ObjectiveMarker>>? Markers { get; set; }
+    /// <summary>A match's objective markers: which to show (Current) and how they look; unset, none</summary>
+    internal ObjectiveMarkerDrawing? ObjectiveMarkers { get; set; }
 
     /// <summary>
     /// A match's objectives (Ui/ObjectiveMarkerDrawing.cs), whether the player's seen that part
@@ -457,7 +457,7 @@ internal sealed class AutomapDrawing(
     /// </summary>
     void DrawAutomapObjectives(AutomapView view)
     {
-        if (Markers?.Invoke() is not { Count: > 0 } markers)
+        if (ObjectiveMarkers is not { } look || look.Current() is not { Count: > 0 } markers)
             return;
         const float Tile = MapConstants.TileGlobal;
 
@@ -466,7 +466,7 @@ internal sealed class AutomapDrawing(
         {
             int tx = (int)(marker.X / (long)MapConstants.TileGlobal), ty = (int)(marker.Y / (long)MapConstants.TileGlobal);
             float x0 = tx - marker.Zone, y0 = ty - marker.Zone, x1 = tx + marker.Zone + 1, y1 = ty + marker.Zone + 1;
-            string color = ObjectiveMarkerDrawing.FillColor(marker.Team);
+            string color = look.FillColor(marker.Team);
             AutomapLine(view, x0, y0, x1, y0, color);
             AutomapLine(view, x1, y0, x1, y1, color);
             AutomapLine(view, x1, y1, x0, y1, color);
@@ -483,10 +483,10 @@ internal sealed class AutomapDrawing(
             var (sx, sy) = view.ToScreen(marker.X / Tile, marker.Y / Tile);
             var (px, py, pinned) = PinInside(view, sx, sy, outline, top);
             int cx = (int)MathF.Round(px), cy = (int)MathF.Round(py);
-            AutomapDiamond(view, cx, cy, outline, ObjectiveMarkerDrawing.OutlineColor(marker, session.GameState.TimeCount));
-            AutomapDiamond(view, cx, cy, r, ObjectiveMarkerDrawing.FillColor(marker.Team));
+            AutomapDiamond(view, cx, cy, outline, look.OutlineColor(marker));
+            AutomapDiamond(view, cx, cy, r, look.FillColor(marker.Team));
 
-            if (font == null)
+            if (font == null || marker.Label.Length == 0)
                 continue;
             // The label beside it, on a backdrop box: to its left when it's pinned to the right
             int width = font.Measure(marker.Label);
@@ -496,7 +496,7 @@ internal sealed class AutomapDrawing(
             lx = Math.Clamp(lx, left + 2, Math.Max(left + 2, right - 2 - width));
             ly = Math.Clamp(ly, layoutTop + 1 + (TopReserved?.Invoke() ?? 0), Math.Max(layoutTop + 1, bottom - font.Height - 1));
             video.Bar(lx - 1, ly - 1, width + 2, font.Height + 2, AutomapColor("AutomapBackground"));
-            graphics.DrawText(lx, ly, marker.Label, font, ObjectiveMarkerDrawing.LabelColor(marker.Team));
+            graphics.DrawText(lx, ly, marker.Label, font, look.LabelColor(marker.Team));
         }
     }
 

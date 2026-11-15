@@ -246,7 +246,7 @@ internal sealed class CaptureTheFlag(MapManager map, GameSession session, Deathm
                     break;
                 case FlagState.Carried when CarrierOf(flag) is { Pawn: { } pawn } carrier && !ReferenceEquals(carrier, viewer):
                     markers.Add(new ObjectiveMarker(pawn.X, pawn.Y, !onTeam ? "Flag" : mine ? "Kill" : "Escort", team,
-                        mine ? MarkerStyle.Pulse : MarkerStyle.None));
+                        mine ? MarkerStyle.Pulse : MarkerStyle.None, Story: pawn.Story));
                     break;
             }
         }

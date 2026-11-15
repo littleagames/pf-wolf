@@ -218,6 +218,24 @@ internal sealed class Horde(MapManager map, GameSession session, Deathmatch matc
         return $"Wave {Wave}: {left} left" + (Session.LocalPlayer.Health <= 0 ? " - back after the wave" : "");
     }
 
+    /// <summary>
+    /// The wave's last few enemies, once none are still to come and no more than horde
+    /// mark-last are left: each marked where it is, without a label, so the stragglers can be found
+    /// </summary>
+    public IEnumerable<ObjectiveMarker> Markers(Entities.PlayerState viewer) =>
+        NoWaves || CurrentPhase != Phase.Wave || ToCome.Count > 0
+            ? []
+            : Stragglers(Map.GetActors().Where(a => a is Monster && !a.IsRemoved && a.RuntimeFlags.Has(ObjFlags.Shootable)), settings().MarkLast);
+
+    /// <summary>A marker on each enemy, when there are no more than <paramref name="markLast"/> of them (and some); else none</summary>
+    internal static List<ObjectiveMarker> Stragglers(IEnumerable<Entities.Actors.Actor> alive, int markLast)
+    {
+        var enemies = alive.ToList();
+        return enemies.Count == 0 || enemies.Count > markLast
+            ? []
+            : enemies.Select(a => new ObjectiveMarker(a.X, a.Y, "", 0, Story: a.Story)).ToList();     // (every one's an enemy: no label to crowd the view)
+    }
+
     // The players are all on one side: they win together, unless they were wiped out
     public MatchOutcome? Outcome(Entities.PlayerState p) => Wiped ? MatchOutcome.Lost : MatchOutcome.Won;
 

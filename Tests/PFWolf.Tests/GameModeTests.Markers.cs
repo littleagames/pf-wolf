@@ -212,6 +212,64 @@ public partial class MatchScoringTests
         Assert.That(((int)side, y), Is.EqualTo((expected, 80)));
     }
 
+    [TestCase(2, 4)]    // two left: both marked
+    [TestCase(3, 3)]    // just at the limit
+    public void Horde_Marks_Its_Last_Few_Enemies(int count, int markLast)
+    {
+        var enemies = Enumerable.Range(0, count).Select(i => new Entities.Actors.Monster { Name = "Mutant", X = (i + 3) * (int)Tile, Y = 5 * (int)Tile }).ToList();
+
+        var markers = Horde.Stragglers(enemies, markLast);
+
+        Assert.That(markers, Has.Count.EqualTo(count));
+        Assert.That(markers[0], Is.EqualTo(new ObjectiveMarker(3 * Tile, 5 * Tile, "", 0)));
+    }
+
+    [TestCase(4, 3)]    // too many still
+    [TestCase(0, 3)]    // none
+    [TestCase(1, 0)]    // marking turned off
+    public void Horde_Marks_No_Enemies_While_There_Are_Many_Or_None(int count, int markLast)
+    {
+        var enemies = Enumerable.Range(0, count).Select(_ => new Entities.Actors.Monster { Name = "Mutant" }).ToList();
+        Assert.That(Horde.Stragglers(enemies, markLast), Is.Empty);
+    }
+
+    // ==== Stories and looks ======================================================================
+
+    [TestCase(1, 0, 72, 72)]        // on the ground, seen from it
+    [TestCase(2, 0, 72, 136)]       // a story up
+    [TestCase(1, 64, 72, 8)]        // on the ground, seen from a roof
+    public void A_Marker_Floats_Over_Its_Own_Storys_Floor(int story, int zbase, int height, double expected)
+    {
+        Assert.That(ObjectiveMarkerDrawing.MarkerHeight(story, zbase, height), Is.EqualTo(expected));
+    }
+
+    [TestCase(2, 0, 1)]
+    [TestCase(1, 64, -1)]
+    [TestCase(2, 64, 0)]
+    public void A_Marker_On_Another_Story_Points_Up_Or_Down(int story, int zbase, int expected)
+    {
+        Assert.That(ObjectiveMarkerDrawing.StoryHint(story, zbase), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void A_Flashing_Markers_Ring_Changes_Color_Every_Flash_Tics()
+    {
+        var look = new ObjectiveMarkersInfo { Outline = "White", Flash = "Yellow", FlashTics = 10 };
+        var flashing = On((1, 1), "Hill", -1, MarkerStyle.Pulse);
+
+        Assert.That(new[] { 0, 9, 10, 19, 20 }.Select(t => ObjectiveMarkerDrawing.OutlineColor(look, flashing, t)),
+            Is.EqualTo(new[] { "Yellow", "Yellow", "White", "White", "Yellow" }));
+        Assert.That(ObjectiveMarkerDrawing.OutlineColor(look, On((1, 1), "A", -1), 0), Is.EqualTo("White"), "not flashing");
+    }
+
+    [Test]
+    public void Team_Colors_Come_From_The_Look()
+    {
+        var look = new ObjectiveMarkersInfo { Red = "Maroon", Blue = "Navy", Neutral = "Gray" };
+        Assert.That(new[] { 0, 1, -1 }.Select(team => ObjectiveMarkerDrawing.FillColor(look, team)),
+            Is.EqualTo(new[] { "Maroon", "Navy", "Gray" }));
+    }
+
     // ==== On the automap =========================================================================
 
     // A 300x160 automap view at (10, 20) on the screen

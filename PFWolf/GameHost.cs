@@ -276,12 +276,13 @@ internal static partial class GameHost
         netOverlay.ViewRect = () => (Render.ViewScreenX, Render.ViewScreenY, Render.ViewWidth, Render.ViewHeight);
         hudMessageDrawing.TopReserved = netOverlay.MatchLineHeight;     // messages go under a match's line
         automapDrawing.TopReserved = netOverlay.MatchLineHeight;        // and the automap's stats
-        objectiveMarkers = new ObjectiveMarkerDrawing(_videoManager, ui, Render, Session, Settings.Options, _automapManager)
+        objectiveMarkers = new ObjectiveMarkerDrawing(_videoManager, ui, Render, Session, Settings.Options, _automapManager, MapManager)
         {
             Match = deathmatch,
             TopReserved = netOverlay.MatchLineHeight,                   // and the objective markers
+            Settings = () => GameEngineManager.GetGameInfo().ObjectiveMarkers,
         };
-        automapDrawing.Markers = objectiveMarkers.Current;              // which the automap shows too
+        automapDrawing.ObjectiveMarkers = objectiveMarkers;             // which the automap shows too
         Session.Camera.WantsChase = () => ControlSettings.ChaseCam && deathmatch.Objective?.ChaseCam(Session.LocalPlayer) == true;
         Session.Camera.IsOpenTile = (x, y) => x > 0 && y > 0 && x < MapManager.MapWidth - 1 && y < MapManager.MapHeight - 1
             && MapManager.TileMap[x, y] == 0;

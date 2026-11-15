@@ -129,7 +129,33 @@ in the graphic style and overlay mode. Not yet checked: rotation, panning, other
 - Reuses `Markers(viewer)` plus a zone radius from the objective, so phase 1's per-viewer
   rules apply here too (no seeing your own flag's carrier on the map unless phase 1 shows it).
 
-### Phase 3: polish
+### Phase 3: polish (done 2026-11-14)
+
+As built, with two changes from the plan below:
+- **Seen or hidden** uses the map's `Spotvis` (the tiles the view could see this frame) rather
+  than PointDrawing's occluders: a marker's tile in sight draws filled, else hollow (a ring
+  in the outline color and one in the team's). Over the view only; the automap draws them filled.
+- **Look settings** went in game-info `objective-markers:` (`ObjectiveMarkersInfo`: red, blue,
+  neutral, their labels, outline, flash, flash-tics, show-distance, distance-color, font,
+  height), not hud-messages.yaml: that file is a plain list of message styles, and game-info
+  already holds blocks like `puzzle-panel:` that mods change. The automap uses the colors and
+  flash; it keeps its own font. KOTH's 5 s flash after a move stays a constant.
+- **Horde stragglers**: `horde: mark-last` (default 3, 0 for never). With none still to come
+  and that many or fewer alive, each enemy gets a marker with no label (they'd all say the
+  same and crowd the view), in red.
+- **Stories**: `ObjectiveMarker.Story` for actors (a flag's carrier, an enemy); a tile marker
+  is on its tile's floor (`MapManager.ThingStory`). It floats `height` over its own story's
+  floor, and a marker on another story than the view's has a small arrow beside its diamond
+  pointing up or down. Over the view only.
+
+Checked: unit tests (look colors and flashing, story heights and hints, stragglers), headless
+shots on DM02 (Domination with hidden B and C hollow) and with a scratch mod raising mark-last
+and turning markers magenta without distances: Horde on DM02 (filled and hollow in view, three
+on an edge, on the automap) and on the Rooftops Demo (mutants in the street two stories down
+with down arrows, floating lower than one on the roof). Not yet checked: an up arrow, a
+carried flag on another story, a mod font.
+
+The plan as first written:
 
 - **Seen or hidden.** A marker whose spot is in plain sight draws filled; one behind a wall
   draws as an outline. Uses the occluders `PointDrawing` already notes per column.

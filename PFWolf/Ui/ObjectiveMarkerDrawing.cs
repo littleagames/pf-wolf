@@ -1,3 +1,4 @@
+using PFWolf.Assets;
 using PFWolf.Configuration;
 using PFWolf.Entities.Actors;
 using PFWolf.Fonts;
@@ -10,12 +11,15 @@ namespace PFWolf.Ui;
                             OBJECTIVE MARKERS
 
     Where a match mode points its players (IMatchObjective.Markers: the hill,
-    the control points, the flags), drawn over the view each frame. One in
-    view is a diamond over its spot, about a story up, seen through walls,
-    with its label and how many tiles away it is under it. One off to the side
-    or behind sits on the view's left or right edge, the way to turn, with an
-    arrow. Each is in its team's color. Drawing only: nothing here is sent,
-    saved or played back. Off with the objective-markers setting (hud_markers).
+    the control points, the flags, Horde's last enemies), drawn over the view
+    each frame. One in view is a diamond over its spot, about a story up, seen
+    through walls (filled where its spot is in plain sight, hollow where it's
+    hidden), with its label and how many tiles away it is under it, and a
+    small arrow up or down when it's on another story. One off to the side or
+    behind sits on the view's left or right edge, the way to turn, with an
+    arrow. Each is in its team's color; game-info objective-markers has the
+    colors, font and height. Drawing only: nothing here is sent, saved or
+    played back. Off with the objective-markers setting (hud_markers).
 
 =============================================================================
 */
@@ -26,7 +30,8 @@ internal sealed class ObjectiveMarkerDrawing(
     RenderState render,
     GameSession game,
     GameOptions options,
-    AutomapManager automap)
+    AutomapManager automap,
+    MapManager map)
 {
     /// <summary>The match being played (Gameplay/Deathmatch.cs); unset, none</summary>
     internal Deathmatch? Match { get; set; }
@@ -34,13 +39,19 @@ internal sealed class ObjectiveMarkerDrawing(
     /// <summary>Lines kept clear at the top of the view (a match's line across it); unset, none</summary>
     internal Func<int>? TopReserved { get; set; }
 
-    /// <summary>How high up a marker floats over its spot (texels: a story, and a little more, over a flag)</summary>
+    /// <summary>How the markers look (game-info objective-markers); unset, the engine's defaults</summary>
+    internal Func<ObjectiveMarkersInfo>? Settings { get; set; }
+
+    /// <summary>How the markers look this frame: read afresh by <see cref="Current"/>, which each drawing starts with</summary>
+    internal ObjectiveMarkersInfo Look { get; private set; } = DefaultLook;
+
+    static readonly ObjectiveMarkersInfo DefaultLook = new();
+
+    /// <summary>How high up a marker floats over its spot by default (texels: a story, and a little more, over a flag)</summary>
     internal const double MarkerZ = GameConstants.TextureSize + 8;
 
     const long Tile = MapConstants.TileGlobal;
     const int Radius = 3;           // the diamond's, in layout pixels (7 across)
-    const int LineHeight = 8;       // SmallFont's lines
-    const int EdgeHeight = 2 * LineHeight + 2;  // a marker at the edge: its label and distance
 
     internal enum Side { Left = -1, InView = 0, Right = 1 }
 
@@ -55,6 +66,17 @@ internal sealed class ObjectiveMarkerDrawing(
         var (_, ny) = ViewProjection.ToView(render, gx, gy);
         return (ny < 0 ? Side.Left : Side.Right, ny < 0 ? 0 : render.ViewWidth - 1, render.ViewHeight / 2);
     }
+
+    /// <summary>
+    /// How high to project a marker on a story (1 the ground's), in texels up from the view's
+    /// floor (<paramref name="zbase"/>: RenderState.ZBase): <paramref name="height"/> over that
+    /// story's floor
+    /// </summary>
+    internal static double MarkerHeight(int story, int zbase, int height) =>
+        (story - 1) * GameConstants.TextureSize - zbase + height;
+
+    /// <summary>Whether a marker's story is over the view's (1), under it (-1), or the same (0)</summary>
+    internal static int StoryHint(int story, int zbase) => Math.Sign(story - MapManager.StoryAtHeight(zbase));
 
     /// <summary>How many tiles away a spot is from the view, rounded</summary>
     internal static int TilesAway(RenderState render, long gx, long gy)
@@ -74,11 +96,28 @@ internal sealed class ObjectiveMarkerDrawing(
     /// </summary>
     internal IReadOnlyList<ObjectiveMarker> Current()
     {
+        Look = Settings?.Invoke() ?? DefaultLook;
         if (!options.ObjectiveMarkers || Match?.Objective is not { } objective
             || game.GameMode is GameMode.Single or GameMode.Coop || objective.IsWaiting(game.LocalPlayer))
             return [];
         var viewer = game.Camera.Target is PlayerPawn watched ? watched.State : game.LocalPlayer;
         return objective.Markers(viewer).ToList();
+    }
+
+    /// <summary>The story a marker is on: its own, else the floor of its tile (where a thing there would stand)</summary>
+    internal int StoryOf(ObjectiveMarker marker)
+    {
+        if (marker.Story > 0)
+            return marker.Story;
+        int tx = (int)(marker.X / Tile), ty = (int)(marker.Y / Tile);
+        return map.InMap(tx, ty) ? map.ThingStory(tx, ty) : 1;
+    }
+
+    // Whether a marker's tile could be seen this frame (spotvis): in plain sight, not behind a wall
+    bool InSight(ObjectiveMarker marker)
+    {
+        int tx = (int)(marker.X / Tile), ty = (int)(marker.Y / Tile);
+        return tx >= 0 && ty >= 0 && tx < map.Spotvis.GetLength(0) && ty < map.Spotvis.GetLength(1) && map.Spotvis[tx, ty];
     }
 
     /// <summary>The markers over the view (not with the automap open: it has its own)</summary>
@@ -90,12 +129,16 @@ internal sealed class ObjectiveMarkerDrawing(
         if (markers.Count == 0)
             return;
 
+        var look = Look;
+        int line = ui.FindFont(look.Font)?.Height is > 0 and var h ? h + 1 : 8;
+        int edgeHeight = (look.ShowDistance ? 2 : 1) * line + 2;
+
         // The view, in the 320x200 layout, under the match's line
         int left = video.ToLayoutX(render.ViewScreenX, roundUp: true);
         int right = video.ToLayoutX(render.ViewScreenX + render.ViewWidth - 1);
         int top = video.ToLayoutY(render.ViewScreenY, roundUp: true) + (TopReserved?.Invoke() ?? 0);
         int bottom = video.ToLayoutY(render.ViewScreenY + render.ViewHeight - 1);
-        if (right - left < 40 || bottom - top < 3 * EdgeHeight)
+        if (right - left < 40 || bottom - top < 3 * edgeHeight)
             return;
 
         var atLeft = new List<(ObjectiveMarker Marker, int Distance)>();
@@ -105,13 +148,14 @@ internal sealed class ObjectiveMarkerDrawing(
             if (Underfoot(render, marker.X, marker.Y))
                 continue;
             int distance = TilesAway(render, marker.X, marker.Y);
-            var (side, sx, sy) = Place(render, marker.X, marker.Y, MarkerZ);
+            int story = StoryOf(marker);
+            var (side, sx, sy) = Place(render, marker.X, marker.Y, MarkerHeight(story, render.ZBase, look.Height));
             switch (side)
             {
                 case Side.InView:
-                    int cx = Math.Clamp(video.ToLayoutX(render.ViewScreenX + sx), left + Radius + 1, right - Radius - 1);
-                    int cy = Math.Clamp(video.ToLayoutY(render.ViewScreenY + sy), top + Radius + 1, bottom - Radius - 2 - 2 * LineHeight);
-                    DrawInView(marker, distance, cx, cy, left, right);
+                    int cx = Math.Clamp(video.ToLayoutX(render.ViewScreenX + sx), left + Radius + 1, right - Radius - 7);
+                    int cy = Math.Clamp(video.ToLayoutY(render.ViewScreenY + sy), top + Radius + 1, bottom - Radius - 2 - edgeHeight);
+                    DrawInView(marker, distance, cx, cy, left, right, line, InSight(marker), StoryHint(story, render.ZBase));
                     break;
                 case Side.Left:
                     atLeft.Add((marker, distance));
@@ -122,31 +166,48 @@ internal sealed class ObjectiveMarkerDrawing(
             }
         }
 
-        DrawEdge(atLeft, Side.Left, left, right, top, bottom);
-        DrawEdge(atRight, Side.Right, left, right, top, bottom);
+        DrawEdge(atLeft, Side.Left, left, right, top, bottom, line, edgeHeight);
+        DrawEdge(atRight, Side.Right, left, right, top, bottom, line, edgeHeight);
     }
 
-    // A marker in view: the diamond, and under it its label and distance, kept inside the view
-    void DrawInView(ObjectiveMarker marker, int distance, int cx, int cy, int left, int right)
+    // A marker in view: the diamond (hollow when its spot's hidden), an arrow beside it up or down
+    // to another story, and under it its label and distance, kept inside the view
+    void DrawInView(ObjectiveMarker marker, int distance, int cx, int cy, int left, int right, int line, bool inSight, int storyHint)
     {
+        var look = Look;
         int r = (marker.Style & MarkerStyle.Quiet) != 0 ? Radius - 1 : Radius;
-        Diamond(cx, cy, r + 1, OutlineColor(marker));
-        Diamond(cx, cy, r, FillColor(marker.Team));
+        if (inSight)
+        {
+            Diamond(cx, cy, r + 1, OutlineColor(marker));
+            Diamond(cx, cy, r, FillColor(marker.Team));
+        }
+        else
+        {
+            HollowDiamond(cx, cy, r + 1, OutlineColor(marker));
+            HollowDiamond(cx, cy, r, FillColor(marker.Team));
+        }
+        if (storyHint != 0)
+        {
+            Chevron(cx + r + 4, cy, storyHint, OutlineColor(marker));
+        }
+
         int y = cy + r + 3;
         Centered(marker.Label, cx, y, left, right, LabelColor(marker.Team));
-        Centered(distance.ToString(), cx, y + LineHeight, left, right, DistanceColor);
+        if (look.ShowDistance)
+            Centered(distance.ToString(), cx, y + line, left, right, look.DistanceColor);
     }
 
     // The markers off one side: stacked down that edge around the middle, each an arrow the way
     // to turn with its label and distance beside it
-    void DrawEdge(List<(ObjectiveMarker Marker, int Distance)> markers, Side side, int left, int right, int top, int bottom)
+    void DrawEdge(List<(ObjectiveMarker Marker, int Distance)> markers, Side side, int left, int right, int top, int bottom, int line, int edgeHeight)
     {
         if (markers.Count == 0)
             return;
-        int y = Math.Clamp((top + bottom) / 2 - markers.Count * EdgeHeight / 2, top, Math.Max(top, bottom - markers.Count * EdgeHeight));
+        var look = Look;
+        int y = Math.Clamp((top + bottom) / 2 - markers.Count * edgeHeight / 2, top, Math.Max(top, bottom - markers.Count * edgeHeight));
         foreach (var (marker, distance) in markers)
         {
-            if (y + EdgeHeight > bottom + 1)
+            if (y + edgeHeight > bottom + 1)
                 break;      // no more room down this edge
             // the outline: one pixel round the arrow, its tip one further out
             int tip = side == Side.Left ? left + 1 : right - 1, dir = (int)side;
@@ -155,8 +216,9 @@ internal sealed class ObjectiveMarkerDrawing(
 
             int textLeft = left + 8, textRight = right - 8;
             Beside(marker.Label, side, textLeft, textRight, y, LabelColor(marker.Team));
-            Beside(distance.ToString(), side, textLeft, textRight, y + LineHeight, DistanceColor);
-            y += EdgeHeight;
+            if (look.ShowDistance)
+                Beside(distance.ToString(), side, textLeft, textRight, y + line, look.DistanceColor);
+            y += edgeHeight;
         }
     }
 
@@ -167,6 +229,28 @@ internal sealed class ObjectiveMarkerDrawing(
         {
             int w = r - Math.Abs(i);
             video.Bar(cx - w, cy + i, 2 * w + 1, 1, color);
+        }
+    }
+
+    // Just a diamond's edge, a pixel wide
+    void HollowDiamond(int cx, int cy, int r, string color)
+    {
+        for (int i = -r; i <= r; i++)
+        {
+            int w = r - Math.Abs(i);
+            video.Bar(cx - w, cy + i, 1, 1, color);
+            if (w > 0)
+                video.Bar(cx + w, cy + i, 1, 1, color);
+        }
+    }
+
+    // A small arrowhead pointing up (dir 1) or down (-1), 5 across and 3 high, its middle at (cx, cy)
+    void Chevron(int cx, int cy, int dir, string color)
+    {
+        for (int row = 0; row < 3; row++)
+        {
+            int w = row;        // from the point out: up, the point's the top row; down, the bottom
+            video.Bar(cx - w, cy + dir * (row - 1), 2 * w + 1, 1, color);
         }
     }
 
@@ -183,28 +267,34 @@ internal sealed class ObjectiveMarkerDrawing(
 
     void Centered(string text, int cx, int y, int left, int right, string color)
     {
-        int width = ui.TextWidth(text, UiFonts.SmallFont);
+        if (text.Length == 0)
+            return;
+        int width = ui.TextWidth(text, Look.Font);
         int x = Math.Clamp(cx - width / 2, left + 1, Math.Max(left + 1, right - width));
         ui.TextAt(x, y, Style(color)).Print(text);
     }
 
     void Beside(string text, Side side, int textLeft, int textRight, int y, string color)
     {
-        int x = side == Side.Left ? textLeft : textRight - ui.TextWidth(text, UiFonts.SmallFont);
+        if (text.Length == 0)
+            return;
+        int x = side == Side.Left ? textLeft : textRight - ui.TextWidth(text, Look.Font);
         ui.TextAt(x, y, Style(color)).Print(text);
     }
 
-    static TextStyle Style(string color) => new TextStyle(UiFonts.SmallFont, color).WithShadow();
+    TextStyle Style(string color) => new TextStyle(Look.Font, color).WithShadow();
 
-    const string DistanceColor = "#C0C0C0";
+    /// <summary>A team's marker color: red, blue, or nobody's</summary>
+    internal string FillColor(int team) => FillColor(Look, team);
 
-    internal static string FillColor(int team) => team switch { 0 => "#FC0000", 1 => "#0000FC", _ => "#A8A8A8" };
+    internal static string FillColor(ObjectiveMarkersInfo look, int team) => team switch { 0 => look.Red, 1 => look.Blue, _ => look.Neutral };
 
-    internal static string LabelColor(int team) => team switch { 0 => "#FC5454", 1 => "#5454FC", _ => "#FCFCFC" };
+    /// <summary>A team's label color</summary>
+    internal string LabelColor(int team) => team switch { 0 => Look.RedLabel, 1 => Look.BlueLabel, _ => Look.NeutralLabel };
 
-    /// <summary>A marker's outline: white, flashing yellow while it pulses (<paramref name="time"/>: GameState.TimeCount)</summary>
-    internal static string OutlineColor(ObjectiveMarker marker, int time) =>
-        (marker.Style & MarkerStyle.Pulse) != 0 && time / 8 % 2 == 0 ? "#FCFC54" : "#FCFCFC";
+    /// <summary>A marker's ring: the outline color, and the flash color every other FlashTics while it flashes (<paramref name="time"/>: GameState.TimeCount)</summary>
+    internal static string OutlineColor(ObjectiveMarkersInfo look, ObjectiveMarker marker, int time) =>
+        (marker.Style & MarkerStyle.Pulse) != 0 && time / Math.Max(1, look.FlashTics) % 2 == 0 ? look.Flash : look.Outline;
 
-    string OutlineColor(ObjectiveMarker marker) => OutlineColor(marker, game.GameState.TimeCount);
+    internal string OutlineColor(ObjectiveMarker marker) => OutlineColor(Look, marker, game.GameState.TimeCount);
 }

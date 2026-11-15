@@ -293,6 +293,12 @@ public record GameInfoAsset : Asset
     public PuzzlePanelInfo PuzzlePanel { get; init; } = new();
 
     /// <summary>
+    /// How a match's objective markers look, over the view and on the automap
+    /// (Ui/ObjectiveMarkerDrawing.cs): their colors, font, height and flashing
+    /// </summary>
+    public ObjectiveMarkersInfo ObjectiveMarkers { get; init; } = new();
+
+    /// <summary>
     /// The skill (a key in skills) demos are recorded and played back on; the hardest (last)
     /// one when unset. A demo only replays right on the skill it was recorded on.
     /// </summary>
@@ -1912,6 +1918,53 @@ public record PuzzlePanelInfo
 }
 
 /// <summary>
+/// Game-info `objective-markers:` (Ui/ObjectiveMarkerDrawing.cs). Colors are theme color names
+/// (colors.yaml), #RRGGBB or palette indexes; the font is a fonts.yaml name. Whether they show at
+/// all is the player's Objective Markers setting (setting-defaults objective-markers).
+/// </summary>
+public record ObjectiveMarkersInfo
+{
+    /// <summary>A red team's marker (the diamond, an edge arrow, a zone's outline on the automap)</summary>
+    public string Red { get; init; } = "#FC0000";
+
+    /// <summary>A blue team's marker</summary>
+    public string Blue { get; init; } = "#0000FC";
+
+    /// <summary>Nobody's marker (a hill or point nobody holds)</summary>
+    public string Neutral { get; init; } = "#A8A8A8";
+
+    /// <summary>A red team's label</summary>
+    public string RedLabel { get; init; } = "#FC5454";
+
+    /// <summary>A blue team's label</summary>
+    public string BlueLabel { get; init; } = "#5454FC";
+
+    /// <summary>Nobody's label</summary>
+    public string NeutralLabel { get; init; } = "#FCFCFC";
+
+    /// <summary>The ring round each marker</summary>
+    public string Outline { get; init; } = "#FCFCFC";
+
+    /// <summary>The ring's other color while a marker flashes (a hill that's just moved, a dropped flag)</summary>
+    public string Flash { get; init; } = "#FCFC54";
+
+    /// <summary>How long each of a flashing marker's two colors shows, in tics</summary>
+    public int FlashTics { get; init; } = 8;
+
+    /// <summary>How many tiles away a marker is, under its label (over the view only)</summary>
+    public bool ShowDistance { get; init; } = true;
+
+    /// <summary>The distance's color</summary>
+    public string DistanceColor { get; init; } = "#C0C0C0";
+
+    /// <summary>The labels' and distances' font</summary>
+    public string Font { get; init; } = "SmallFont";
+
+    /// <summary>How high over its spot a marker floats in the view, in texels (64 a story)</summary>
+    public int Height { get; init; } = 72;
+}
+
+/// <summary>
 /// A palette-cycles run: colors first to last move along one place every so many tics, the last
 /// coming round to first
 /// </summary>
@@ -2012,6 +2065,12 @@ public record HordeInfo
 
     /// <summary>The most of a wave's enemies alive at once; the rest wait their turn</summary>
     public int MaxAlive { get; init; } = 12;
+
+    /// <summary>
+    /// With none still to come and this many of a wave's enemies left or fewer, each is marked
+    /// over the view and on the automap (objective markers), so the last stragglers can be found; 0 for never
+    /// </summary>
+    public int MarkLast { get; init; } = 3;
 }
 
 /// <summary>A Horde wave: the enemies it sends, by actordefs class</summary>
