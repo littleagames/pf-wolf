@@ -711,7 +711,8 @@ the keypad's note and code open its closet)
       spot facing out; the emblems survive the trips and the vault door names the missing one,
       then opens with all three; the vault elevator wins (victory tally, no end text). Also:
       dying in a level and in the hub, saving and loading mid-hub (kept levels, entrance), and a
-      second trip into a finished level (back at its elevator, enemies still dead).
+      second trip into a finished level (back at its elevator, enemies still dead, its elevator
+      switch up again and taking you back to the hub; the hub's lever up again too).
 
 ### Example mods (`examples/mods`, built 2026-10-29)
 

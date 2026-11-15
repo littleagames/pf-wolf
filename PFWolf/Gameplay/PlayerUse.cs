@@ -131,6 +131,7 @@ internal sealed class PlayerUse(
     void ThrowSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, ControlDir dir, ushort tag, List<string> keys)
     {
         var gamestate = session.GameState;
+        var flipped = new List<(int X, int Y, bool Patch, int Was)>();
         if (wallSwitch.TakesKey && keys.Count > 0)
             doors.TakeKeys(keys);
         if (wallSwitch.To is > 0 and < BitWall && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
@@ -138,6 +139,7 @@ internal sealed class PlayerUse(
             // flip the switch, keeping the door-side mark on a wall beside a door
             var tile = map.TileMap[tilex, tiley];
             int from = tile & ~BitWall;
+            flipped.Add((tilex, tiley, false, tile));
             map.TileMap[tilex, tiley] = (ushort)(wallSwitch.To | (tile & BitWall));
             map.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` wall's play-once animation starts now
             int thrown = from != wallSwitch.To ? 1 : 0;
@@ -151,6 +153,8 @@ internal sealed class PlayerUse(
                 {
                     if (id == from && id != wallSwitch.To && (x, y) != (tilex, tiley))
                         thrown++;
+                    if ((x, y) != (tilex, tiley))
+                        flipped.Add((x, y, false, other));
                     map.TileMap[x, y] = (ushort)(wallSwitch.To | (other & BitWall));
                     map.RestartAnimations(x, y, gamestate.TimeCount);
                 }
@@ -165,7 +169,19 @@ internal sealed class PlayerUse(
         if (!string.IsNullOrEmpty(wallSwitch.Sound))
             hooks.PlayPlayerSound(wallSwitch.Sound);
 
+        var before = session.PlayState;
         RunActions(wallSwitch.Actions, tilex, tiley, dir, tag);
+        RememberIfExit(before, flipped);
+    }
+
+    // A switch whose actions ended the level: how it was, for a kept hub level to have it back
+    void RememberIfExit(PlayState before, List<(int X, int Y, bool Patch, int Was)> flipped)
+    {
+        if (before != PlayState.StillPlaying || flipped.Count == 0
+            || session.PlayState is not (PlayState.Completed or PlayState.SecretLevel or PlayState.Warped))
+            return;
+        map.ExitSwitch.Clear();
+        map.ExitSwitch.AddRange(flipped);
     }
 
     /// <summary>
@@ -242,6 +258,7 @@ internal sealed class PlayerUse(
             hooks.PlayPlayerSound(patchSwitch.Sound);
 
         var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.Player, tag);
+        var before = session.PlayState;
         bool wentOff = patchSwitch.Actions.Count == 0;
         foreach (var action in patchSwitch.Actions)
             wentOff |= Entities.MapTriggerRegistry.Invoke(action, activation);
@@ -257,8 +274,10 @@ internal sealed class PlayerUse(
         if (to == from)
             return;
 
+        var flipped = new List<(int X, int Y, bool Patch, int Was)>();
         void Flip(int x, int y)
         {
+            flipped.Add((x, y, true, map.GetPatch(x, y)));
             map.SetPatch(x, y, (byte)to);
             map.RestartAnimations(x, y, session.GameState.TimeCount);    // a `to` patch's play-once animation starts now
         }
@@ -280,6 +299,7 @@ internal sealed class PlayerUse(
         if (patchSwitch.Objective is { Length: > 0 } objective)
             hooks.CompleteObjective?.Invoke(objective, thrown);         // a sabotage target (Gameplay/Objectives.cs)
         UnlockFor(patchSwitch, tag);
+        RememberIfExit(before, flipped);
     }
 
     // A thrown switch's `unlock` name, for good (a Kilroy drawn)

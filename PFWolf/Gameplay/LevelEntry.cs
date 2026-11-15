@@ -36,6 +36,7 @@ internal sealed class LevelEntry(
     /// </summary>
     internal bool EnterLevel()
     {
+        mapManager.ExitSwitch.Clear();
         if (hubs.LevelMap != null && hubs.ClusterOf(hubs.LevelMap) != hubs.ClusterOf(session.GameState.MapOn))
         {
             hubs.HubLevels.Clear();
@@ -59,7 +60,9 @@ internal sealed class LevelEntry(
     internal void LeaveLevel()
     {
         if (hubs.LevelMap == null || !hubs.IsHubMap(hubs.LevelMap))
-            return;
+            return;     // (EnterLevel forgets any exit switch)
+
+        PutBackExitSwitch();
 
         hubs.FloorScores[hubs.LevelMap] = hubs.FloorScore();
         hubs.FloorOverheads[hubs.LevelMap] = hooks.CaptureOverhead();
@@ -80,6 +83,25 @@ internal sealed class LevelEntry(
             hooks.WriteLevelBody(bw);
         }
         hubs.HubLevels[hubs.LevelMap] = ms.ToArray();
+    }
+
+    /// <summary>
+    /// The switch the level was left by (MapManager.ExitSwitch) as it was before it was thrown, so
+    /// it works again coming back: the elevator's, which would stay its pressed wall, a plain one.
+    /// Last flip first, so a tile flipped twice ends as it began.
+    /// </summary>
+    internal void PutBackExitSwitch()
+    {
+        var exitSwitch = mapManager.ExitSwitch;
+        for (int i = exitSwitch.Count - 1; i >= 0; i--)
+        {
+            var (x, y, patch, was) = exitSwitch[i];
+            if (patch)
+                mapManager.SetPatch(x, y, (byte)was);
+            else
+                mapManager.TileMap[x, y] = (ushort)was;
+        }
+        exitSwitch.Clear();
     }
 
     /// <summary>

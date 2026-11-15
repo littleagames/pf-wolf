@@ -236,6 +236,14 @@ internal class MapManager
     internal ushort[,] TileMap = new ushort[MapConstants.ClassicMapSize, MapConstants.ClassicMapSize];
 
     /// <summary>
+    /// The switch that ended the level (an elevator's A_Exit, a lever's A_ChangeMap), each tile it
+    /// flipped as it was before (a wall's tile, or a patch with Patch set), for a kept hub level to
+    /// be kept with it put back (Gameplay/LevelEntry.LeaveLevel): coming back, the elevator works
+    /// again. Filled by PlayerUse as the switch is thrown.
+    /// </summary>
+    internal readonly List<(int X, int Y, bool Patch, int Was)> ExitSwitch = [];
+
+    /// <summary>
     /// Each wall tile's shape: Square, or a 45 degree diagonal from a mapdefs diagonal marker on
     /// the object plane. Not saved: it's rebuilt from the planes whenever they're loaded or restored.
     /// </summary>

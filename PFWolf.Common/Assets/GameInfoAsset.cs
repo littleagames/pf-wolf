@@ -1636,7 +1636,8 @@ public record ClusterInfo
     /// the levels it leads to): going back to one finds it as the player left it, until the game
     /// leaves the cluster. Levels are left without the level-end screen. The player comes back
     /// where they left, unless they come by an entrance the level has a start for (next-entrance,
-    /// or A_ChangeMap's).
+    /// or A_ChangeMap's). The switch a level was left by (its elevator's) is kept unthrown, so it
+    /// works again coming back.
     /// </summary>
     public bool Hub { get; init; }
 

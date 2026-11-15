@@ -490,6 +490,14 @@ public class PlayerUseTests
     public void PutPushWallBack()
     {
         _pushes.Clear();            // one fixture for every test
+        if (_exitStoodIn)
+        {
+            _exitStoodIn = false;
+            if (_realExit != null)
+                TriggerActions["A_Exit"] = _realExit;
+            else
+                TriggerActions.Remove("A_Exit");
+        }
         if (!_stoodIn)
             return;
         _stoodIn = false;
@@ -497,6 +505,57 @@ public class PlayerUseTests
             TriggerActions["A_PushWall"] = _realPushWall;
         else
             TriggerActions.Remove("A_PushWall");
+    }
+
+    // An elevator switch (wall 21, thrown it's 22) at 11,10 with A_Exit stood in for (put back
+    // after), ending the level as the real one does
+    private Entities.MapTriggerRegistry.TriggerAction? _realExit;
+    private bool _exitStoodIn;
+
+    private MapSwitchTranslation ElevatorAhead(params string[] actions)
+    {
+        var elevator = new MapSwitchTranslation { To = 22, Actions = [.. actions] };
+        _map.MapWidth = _map.MapHeight = MapConstants.ClassicMapSize;
+        typeof(MapManager).GetField("mapsegs", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(_map, Enumerable.Range(0, MapManager.LevelPlanes).Select(_ => new ushort[MapConstants.ClassicMapArea]).ToArray());
+        var data = new MapObjectTranslationAsset();
+        data.Walls[21] = new MapTextureTranslation { North = "ELEV1", Switch = elevator };
+        data.Walls[22] = new MapTextureTranslation { North = "ELEV2" };
+        typeof(MapManager).GetField("_levelMapData", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(_map, data);
+        _map.TileMap[11, 10] = 21;
+
+        TriggerActions.TryGetValue("A_Exit", out _realExit);
+        _exitStoodIn = true;
+        Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => { _session.PlayState = PlayState.Completed; return true; });
+        return elevator;
+    }
+
+    [Test]
+    public void A_Switch_That_Ends_The_Level_Is_Remembered_As_It_Was()
+    {
+        // Arrange
+        var elevator = ElevatorAhead("A_Exit");
+
+        // Act
+        _use.UseSwitch(elevator, 11, 10, ControlDir.East);
+
+        // Assert: thrown, and remembered unthrown, for a kept hub level to put back
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(22));
+        Assert.That(_map.ExitSwitch, Is.EqualTo(new[] { (11, 10, false, 21) }));
+    }
+
+    [Test]
+    public void A_Switch_That_Doesnt_End_The_Level_Isnt_Remembered()
+    {
+        // Arrange: a lever that only flips
+        var lever = ElevatorAhead();
+
+        // Act
+        _use.UseSwitch(lever, 11, 10, ControlDir.East);
+
+        // Assert
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(22));
+        Assert.That(_map.ExitSwitch, Is.Empty);
     }
 
     // Use down this frame, and the frame before too when held
