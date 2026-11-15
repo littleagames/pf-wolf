@@ -705,7 +705,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             video.Update();
             if (i == 0)
                 video.FadeIn();
-            GameEngineManager.WaitVBL((uint)frame.Tics);
+            // Tics at 70 Hz, as id's VW_WaitVBL counted them: not WaitVBL's 8 ms steps, which
+            // cut the collapse (and its music) short, the last frame most of all
+            GameEngineManager.DelayTics(frame.Tics);
         }
 
         video.FadeOut(VictoryFadeColor(cluster), 5);
