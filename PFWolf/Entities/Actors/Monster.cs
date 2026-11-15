@@ -2657,10 +2657,12 @@ internal partial record Monster : Actor
         var yl = (int)((Y - MinDist) >> (int)MapConstants.TileShift);
         var yh = (int)((Y + MinDist) >> (int)MapConstants.TileShift);
 
+        // As the original, a corpse's mark (its own, which DoActor keeps putting back) isn't in
+        // the way; only a wall, door, blocking object or something shootable is
         for (var y = yl; y <= yh; y++)
             for (var x = xl; x <= xh; x++)
             {
-                if (TileEntry(x, y) != null || MapManager.IsShootableActorAt(x, y, Story))
+                if (TileEntry(x, y) is not (null or ActorMark) || MapManager.IsShootableActorAt(x, y, Story))
                     return;
             }
 

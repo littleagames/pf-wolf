@@ -518,11 +518,12 @@ AngelOfDeath:
     "deathsound": "angel/death"
 
 # MAP21's ghosts. Drift after the player (T_Ghosts); shot down, they fade and lie dormant,
-# then come back once nothing is in the way. Points only for the first kill. They drift
+# then come back once nothing is in the way. Points only for the first kill, and not in the
+# kill ratio (NOTCOUNTED; the original counted every kill, so it could pass 100%). They drift
 # through doors without opening them (PHASEDOORS) and hurt the player on contact (TOUCHDAMAGE).
 Spectre:
   parent: Monster
-  flags: [AMBUSH, NOREVIVE, POINTSONCE, PHASEDOORS, TOUCHDAMAGE]
+  flags: [AMBUSH, NOREVIVE, NOTCOUNTED, POINTSONCE, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn: # s_spectrewait1..4
       - sprite: SPCT
