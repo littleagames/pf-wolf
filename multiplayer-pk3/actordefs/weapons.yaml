@@ -145,8 +145,9 @@ Gas:
     "inventory.pickupmessage": "$GOTGAS"
 
 # The missiles. A_Missile(min, max) is the damage to what one flies into; the rocket's blast
-# (A_Explode) then hurts everything within a tile, the one who fired it too ("hurtplayer"; in
-# deathmatch everyone). `obituary` is what a player killed by one is told (%k: who fired it).
+# (A_Explode) then hurts everything up to 3 tiles off, the one who fired it too ("hurtplayer"; in
+# deathmatch everyone): all of its roll within a tile, weakening with the square of the
+# distance beyond ("falloff": about half at 1.5 tiles, a quarter at 2, nothing at 3). `obituary` is what a player killed by one is told (%k: who fired it).
 PlayerRocket:
   flags: [PROJECTILE]
   properties:
@@ -166,7 +167,7 @@ PlayerRocket:
         tics-per-frame: 6
         modifiers: [bright]
         light: { intensity: 255, radius: 4, color: "#FFC080" }
-        action: A_Explode(30, 90, 1, "hurtplayer")
+        action: A_Explode(50, 120, 3, "hurtplayer", "falloff")
       - sprite: BOOM
         frames: [B, C]
         tics-per-frame: 6
