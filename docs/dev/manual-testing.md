@@ -673,6 +673,10 @@ the keypad's note and code open its closet)
       walls and a living guard's 3/8-tile limit): a dead body sliding (and staying on the tile it
       ends on), a walk-over trigger or floor code stepped onto by a move, `onenter` told of it, a
       riding player, pushwalls and doors in the way, diagonals and wall sprites, a netgame in step.
+- [ ] **(never tried)** movement.lua (movement-demo; MovementGameTests covers a player on ice, mud
+      and a conveyor in a straight hall): how ice feels (turning, strafing, running), a `kick` pad
+      (facing and fixed), `onbump`, guards skidding on ice, a body shot on ice sliding on, a
+      riding player, a save/load mid-slide (they stop), a netgame in step.
 
 ## 1.13 Sound and music (by ear)
 

@@ -51,9 +51,17 @@ slide freely; knockback is part of `d`, so corpses glide across the ice.
    - Not from local-only hooks (`ChangesTheGame`); long moves are split into steps (no tunnelling),
      at most 4 tiles a call.
    - `ScriptApi.cs` (autocomplete), docs, tests.
-2. **Lua library** `scripts/movement.lua`: `movement.surfaces` by floor texture
-   (`ICE = {friction = ...}`, `MUD = {scale = 0.5}`...), `movement.tags` for conveyors and wind,
-   replaceable `movement.surfacefor` / `movement.apply`, as footsteps.lua.
+   *Done: 12f47cdd.*
+2. **Lua library** `examples/mods/movement-demo/scripts/movement.lua`: `movement.floors` by floor
+   texture and `movement.tags` by tag (a tag wins), each surface any of `slip` (speed kept a tic,
+   0 to <1; ice ~0.97), `scale` (own steps; mud 0.5), `carry = {east, south}` (tiles a second),
+   `kick` (tiles a second on stepping onto the tile: a number along the facing, or `{east, south}`;
+   dies away by `max(slip, movement.drag)` a tic). Switches `players`, `riders`, `monsters`,
+   `bodies`; replaceable `movement.surfacefor(actor)` and `movement.onbump(actor, speed)` (running
+   into something faster than `bumpspeed`). Powers by multiplying, not `^`, so machines agree.
+   Projectiles are left out; items and decorations don't move (actor:move gives them nothing).
+   *Done* (MovementGameTests: ice slides on after letting go, mud about half as far, a conveyor
+   carries a standing player); kicks, bumps, monsters and bodies untested.
 3. **Example mod `movement-demo`** from `examples/tools/make-movement-demo.ps1`: an ice rink with
    guards, a mud pit, a conveyor hall with scrolling flats, a wind tunnel, boost pads over an ice gap.
 4. **Tests and docs**: headless GameData tests (ice keeps you moving after letting go, stone

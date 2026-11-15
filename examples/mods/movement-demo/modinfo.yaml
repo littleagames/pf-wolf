@@ -1,0 +1,4 @@
+name: Movement Demo
+version: "1.0"
+description: Floors that change how you move, from a Lua script - ice you slide on, mud that slows you, conveyors and wind that carry you, and pads that kick you on your way.
+game-packs: [wolf3d]
