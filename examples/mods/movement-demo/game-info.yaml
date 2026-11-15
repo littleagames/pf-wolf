@@ -1,0 +1,10 @@
+# Merged into the game pack's game-info.yaml: the conveyor's belts scroll. The fields are in the
+# game-info reference: https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+maps:
+  MAP01:
+    # By tag (the tag plane, plane 4), in texels a tic: the north lane (tag 2) runs east, the
+    # south lane (tag 3) west. 2 texels a tic is 2 * 70 / 64 tiles a second, the speed
+    # scripts/movement.lua carries what's on them.
+    scrollers:
+      2: { x: 2, walls: false, ceiling: false }
+      3: { x: -2, walls: false, ceiling: false }

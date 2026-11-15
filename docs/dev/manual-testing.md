@@ -484,6 +484,13 @@ Use `--cheats` and the console (`tp`, `summon`, `where`) to get to them quickly.
       sounds; the walking and running cadence feels right (`stride` 2.5, `mintics` 12).
 - [ ] **(never tried)** Another player's steps heard from where they are (network game).
 
+**Movement Demo level** (`movement-demo`, Floor 1; MovementGameTests covers the boost pads and a
+body riding the belt; seen 2026-11-15: the ice and belts render, the belt guard stands on them)
+- [ ] **(never tried)** Playing it through by hand: the rink (sliding round the pillars to the
+      cross, the guards skidding, a shot guard sliding), the mud pit's food and clip, both belts
+      and the wind tunnel to the exit, the boost pads to the crown, the thud sliding into a wall;
+      whether the belts' chevrons and scrolling match the way they carry you.
+
 **Puzzles Demo level** (`puzzles-demo`, Floor 1; seen 2026-11-06: every panel opens and draws,
 the keypad's note and code open its closet)
 - [ ] **(never tried)** Solving each by hand and finding them fair: pipes (the valve's 8 s),

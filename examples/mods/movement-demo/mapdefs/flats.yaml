@@ -1,0 +1,11 @@
+# The level's floors (the flat plane, map plane 2: a tile's low byte is its floor), the pictures
+# in flats/. Indices 10 and up, clear of pfwolf.pk3's own 1-3. What each does is
+# scripts/movement.lua's floors table (and, for the belts and vents, its tags).
+flats:
+  floor:
+    10: MVICE
+    11: MVMUD
+    12: MVBELTE
+    13: MVBELTW
+    14: MVVENT
+    15: MVBOOST

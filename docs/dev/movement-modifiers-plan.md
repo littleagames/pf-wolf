@@ -62,8 +62,15 @@ slide freely; knockback is part of `d`, so corpses glide across the ice.
    Projectiles are left out; items and decorations don't move (actor:move gives them nothing).
    *Done* (MovementGameTests: ice slides on after letting go, mud about half as far, a conveyor
    carries a standing player); kicks, bumps, monsters and bodies untested.
+   *Committed 0767d181.*
 3. **Example mod `movement-demo`** from `examples/tools/make-movement-demo.ps1`: an ice rink with
    guards, a mud pit, a conveyor hall with scrolling flats, a wind tunnel, boost pads over an ice gap.
+   *Done:* flats MVICE/MVMUD/MVBELTE/MVBELTW/MVVENT/MVBOOST (indices 10-15), tags 2/3 belts
+   (scrollers x ±2 texels a tic = ±2·70/64 tiles a second), 4 the wind (south 3.5); the demo's
+   surfaces live in movement.lua's own table (a mod's script load order isn't guaranteed). The
+   "gap" is an ice runway with pads (no pits). MovementGameTests: pads send you further down the
+   runway; a killed guard's body rides the belt to its end, the rink's stay put. Seen in a window:
+   ice and belts render.
 4. **Tests and docs**: headless GameData tests (ice keeps you moving after letting go, stone
    doesn't; a conveyor carries a standing player; mud shortens a walk); "(never tried)" items in
    `manual-testing.md`; the examples README.

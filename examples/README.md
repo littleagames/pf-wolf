@@ -955,6 +955,69 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-footsteps-demo.ps1
 In game, `where` shows the floor you're on; with cheats on, `lua print(game.floor(me.tilex, me.tiley))`
 shows what the script sees, and `flat <floor> <ceiling>` changes the one you stand on.
 
+## Movement Demo (`mods/movement-demo`)
+
+Floors that change how you move, all in a Lua script: ice you slide on, mud that slows you,
+conveyor belts and wind that carry you, and boost pads that kick you on your way. Guards skid on
+the ice, and bodies slide on it and ride the belts. A level (replacing Floor 1, Wolfenstein 3D
+only) has a room of each. The engine adds nothing for it but `actor:move(dx, dy)`.
+
+```
+PFWolf.exe --file movement-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+From the start: north is the ice rink, three guards facing away from you, pillars to slide round
+and a cross out in the middle (shoot a guard on the run and watch it slide). West is the mud pit,
+food and a clip in the thick of it. East is the conveyor hall, its north lane running east and its
+south lane west, a guard on the belt; kill it and its body rides to the end. Past the hall, the wind
+tunnel blows you back as you head north to the exit. South of the start is the ice runway: step
+onto the red boost pads and you're sent flying down it to the crown at the far end.
+
+### What's in it
+
+- `scripts/movement.lua`: the movement. Each tick (`game.ontick`) it sees how far each player
+  and monster has moved by itself, keeps some of the way it was going, and moves it the rest of
+  the way with `actor:move`, which stops at walls. Everything is in its `movement` table:
+
+  ```lua
+  movement = {
+    floors = {                          -- by floor texture
+      MVICE = { slip = 0.97 },          -- the speed kept each tic (0 is normal floor)
+      MVMUD = { scale = 0.45 },         -- how far your own steps take you
+      MVBOOST = { slip = 0.97, kick = { 10, 0 } },  -- a shove east, tiles a second
+    },
+    tags = {                            -- by tag (the tag plane), which wins over the floor
+      [2] = { carry = { 2 * 70 / 64, 0 } },   -- carried east, tiles a second
+      [3] = { carry = { -2 * 70 / 64, 0 } },
+      [4] = { carry = { 0, 3.5 } },           -- the wind, blowing south
+    },
+  }
+  ```
+
+  A `kick` that's a number shoves the way the actor faces. Switches `players`, `riders`,
+  `monsters` and `bodies` say who's moved. `movement.surfacefor(actor)` finds the surface under
+  an actor, and `movement.onbump(actor, speed)` is told when one runs into something fast (the
+  demo's thuds); replace either to do more. A mod of your own can carry the script and put its
+  own floors and tags in the table, or leave this mod switched on and change the table from a
+  script loaded after it.
+- `game-info.yaml`: the belts' scrollers (tags 2 and 3), 2 texels a tic, the speed the script
+  carries you.
+- `flats/` and `mapdefs/flats.yaml`: the ice, mud, belts (east and west), vents and boost pads,
+  flat indices 10 to 15.
+- `maps/MAP01.wad`: the level. Tag 2 is the east lane, 3 the west lane, 4 the wind tunnel.
+
+Living monsters walk from one tile's middle to the next, so `actor:move` only lets one go 3/8
+tile off its way: on ice it skids where it turns or stops, but it doesn't glide, and mud doesn't
+slow it for long. Bodies slide freely. Speeds aren't saved: after a load you start standing still.
+
+The floors and the level are made by `tools/make-movement-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-movement-demo.ps1
+```
+
 ## Puzzles Demo (`mods/puzzles-demo`)
 
 Puzzles (mini-games) as Lua scripts, meant to be copied into your own mods, and a hall of

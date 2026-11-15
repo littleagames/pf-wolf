@@ -1,9 +1,9 @@
 -- Movement modifiers: floors that change how players and monsters move. Ice keeps them sliding,
 -- mud slows them, conveyors and wind carry them, and pads kick them on their way.
 --
--- It's all in the movement table below. A mod of your own can carry this script as it is and
--- fill in the table, or leave it here and fill it in from a script of its own (scripts run in
--- load order, so one loaded after this sees it):
+-- It's all in the movement table below, filled in for the demo's level. A mod of your own can
+-- carry this script and put its own floors and tags there, or leave it here and change the table
+-- from a script of its own (scripts run in load order, so one loaded after this sees it):
 --
 --     movement.floors.MYICE = { slip = 0.97 }
 --     movement.tags[7] = { carry = { 2, 0 } }       -- tagged tiles carry east, 2 tiles a second
@@ -37,10 +37,21 @@ movement = {
   riders = true,
   monsters = true,
   bodies = true,
-  -- Surfaces by floor texture
-  floors = {},
-  -- Surfaces by tag, which win over the floor's
-  tags = {},
+  -- Surfaces by floor texture: the demo level's (mapdefs/flats.yaml)
+  floors = {
+    MVICE = { slip = 0.97 },
+    MVMUD = { scale = 0.45 },
+    -- the runway's pads: ice that shoves you east, each pad you step onto
+    MVBOOST = { slip = 0.97, kick = { 10, 0 } },
+  },
+  -- Surfaces by tag, which win over the floor's: the demo level's (its tag plane)
+  tags = {
+    -- the conveyor's lanes, as fast as their belts scroll (game-info.yaml: 2 texels a tic)
+    [2] = { carry = { 2 * 70 / 64, 0 } },
+    [3] = { carry = { -2 * 70 / 64, 0 } },
+    -- the wind tunnel, blowing south
+    [4] = { carry = { 0, 3.5 } },
+  },
   -- How much of a kick is kept each tic off the ice (where the floor's slip is less)
   drag = 0.9,
   -- Running into a wall faster than this (tiles a second), movement.onbump is told
@@ -57,9 +68,10 @@ function movement.surfacefor(actor)
   end
 end
 
--- Told when an actor runs into something faster than bumpspeed (tiles a second). Replace it to
--- play a sound, say: actor:playsound("world/hitwall")
+-- Told when an actor runs into something faster than bumpspeed (tiles a second): a player
+-- sliding into a wall thuds. Replace it to do something else.
 function movement.onbump(actor, speed)
+  if actor.isplayer then actor:playsound("world/hitwall") end
 end
 
 -- Per actor: where the script left it last tic, the way it's going (tiles a tic) and what's left

@@ -86,7 +86,99 @@ public class MovementGameTests
         Assert.That(carried[^1].Y, Is.EqualTo(carried[0].Y).Within(1e-6));
     }
 
+    [Test]
+    public void The_Runways_Boost_Pads_Send_A_Player_Down_It()
+    {
+        // Arrange: the demo's own level; put on the runway west of its pads (3 tiles south of the
+        // start), then strafing east onto them for a moment and letting go -- with the pads'
+        // kicks, and with them taken off
+        var strafeEast = new[] { new DemoStep(Strafe, 35, 0, 10), new DemoStep(0, 0, 0, 120) };
+        const string ontoRunway = "local placed = false\ngame.ontick(function() if not placed then placed = true game.players()[1]:move(0, 3) end end)";
+
+        // Act
+        var kicked = PlayDemoLevel(ontoRunway, strafeEast);
+        var unkicked = PlayDemoLevel(ontoRunway + "\nmovement.floors.MVBOOST.kick = nil", strafeEast);
+
+        // Assert: on the runway (map row 38), and the pads take them much further east
+        Assert.That(kicked[^1].Y, Is.InRange(38, 39));
+        Assert.That(kicked[^1].X - unkicked[^1].X, Is.GreaterThan(3), $"kicked to {kicked[^1].X}, not to {unkicked[^1].X}");
+    }
+
+    [Test]
+    public void A_Body_On_The_Conveyor_Rides_It_To_The_End()
+    {
+        // Act: every enemy killed at once (killall waits for the level to be up; it puts them in
+        // their Death states, their health left as it was), then four seconds standing; the
+        // probe prints the guards
+        var output = HeadlessGame.Run(_workFolder, "wolf3d", "wait 4; killall; wait 280; quit", Timeout,
+            ["--warp", "MAP01", "--cheats"], DemoMod(), Probe("""
+                game.ontick(function()
+                  for _, guard in ipairs(game.actors("Guard")) do
+                    print(string.format("GUARD %d %.6f %.6f %s", game.time(), guard.x, guard.y, tostring(guard.state)))
+                  end
+                end)
+                """)).Output;
+
+        // Assert: the one on the belt (it starts at 31.5, 32.5) went east, as far as the belt
+        // runs (it stops carrying once the body's on x 38, past its end); the ones on the ice
+        // stayed where they fell
+        var guards = output.Where(line => line.StartsWith("GUARD ")).Select(line => line.Split(' '))
+            .Select(p => (Time: int.Parse(p[1], CultureInfo.InvariantCulture), X: Number(p[2]), Y: Number(p[3]), State: p[4]))
+            .ToList();
+        Assert.That(guards, Is.Not.Empty, string.Join(Environment.NewLine, output.TakeLast(30)));
+        var last = guards.Where(g => g.Time == guards[^1].Time).ToList();
+        TestContext.Out.WriteLine(string.Join(Environment.NewLine, last));
+        Assert.That(last.Select(g => g.State), Has.None.EqualTo("Spawn"), "all killed");
+        var belt = last.Single(g => g.Y is > 32 and < 33);
+        Assert.That(belt.X, Is.InRange(37.9, 38.5), "carried to the end of the belt");
+        var first = guards.Where(g => g.Time == guards[0].Time && !(g.Y is > 32 and < 33)).ToList();
+        Assert.That(first, Has.Count.EqualTo(3));
+        foreach (var guard in first)
+            Assert.That(last, Has.Some.Matches<(int Time, double X, double Y, string State)>(g => g.X == guard.X && g.Y == guard.Y),
+                $"the one at {guard.X},{guard.Y} stayed where it fell");
+    }
+
+    private const byte Strafe = 2;
+
     private readonly record struct Spot(int Time, double X, double Y);
+
+    private static string DemoMod() => Path.Combine(TestPaths.RepoRoot(), "examples", "mods", "movement-demo");
+
+    // A probe mod with a script of its own, loaded after the others
+    private string Probe(string lua)
+    {
+        var probe = Path.Combine(_workFolder, "probe");
+        Directory.CreateDirectory(Path.Combine(probe, "scripts"));
+        File.WriteAllText(Path.Combine(probe, "modinfo.yaml"), "name: Probe\nversion: \"1\"\ngame-packs: [wolf3d]\n");
+        File.WriteAllText(Path.Combine(probe, "scripts", "probe.lua"), lua);
+        return probe;
+    }
+
+    // Plays the steps on the movement demo's own level, the probe's script as well, printing
+    // where the player is each tic
+    private List<Spot> PlayDemoLevel(string lua, params DemoStep[] steps)
+    {
+        var probe = Probe(lua + """
+
+            game.ontick(function()
+              local me = game.players()[1]
+              if me then print(string.format("SPOT %d %.6f %.6f", game.time(), me.x, me.y)) end
+            end)
+            """);
+        var demos = Directory.CreateDirectory(Path.Combine(_workFolder, "demos")).FullName;
+        File.WriteAllBytes(Path.Combine(demos, "DEMO1.dmo"), ScriptedDemo(0, steps));
+
+        var (exitCode, output) = HeadlessGame.Run(_workFolder, "wolf3d", "demotest 1; quit", Timeout, DemoMod(), probe);
+        var log = string.Join(Environment.NewLine, output.TakeLast(30));
+        Assert.That(exitCode, Is.Zero, log);
+        Assert.That(output, Has.None.Contains("Exception").And.None.Contains("left out").And.None.Contains("switched off"), log);
+
+        var spots = output.Where(line => line.StartsWith("SPOT ")).Select(line => line.Split(' '))
+            .Select(p => new Spot(int.Parse(p[1], CultureInfo.InvariantCulture), Number(p[2]), Number(p[3]))).ToList();
+        Assert.That(spots, Is.Not.Empty, log);
+        TestContext.Out.WriteLine($"{spots[0]} .. {spots[^1]}");
+        return spots;
+    }
 
     // The last tic the player moved on
     private static int LastMoved(List<Spot> spots) =>
@@ -113,8 +205,9 @@ public class MovementGameTests
         var demos = Directory.CreateDirectory(Path.Combine(_workFolder, "demos")).FullName;
         File.WriteAllBytes(Path.Combine(demos, "DEMO1.dmo"), ScriptedDemo(0, steps));
 
+        // The footsteps demo after the movement demo, so its level is the one played
         var (exitCode, output) = HeadlessGame.Run(_workFolder, "wolf3d", "demotest 1; quit", Timeout,
-            Path.Combine(examples, "footsteps-demo"), Path.Combine(examples, "movement-demo"), probe);
+            Path.Combine(examples, "movement-demo"), Path.Combine(examples, "footsteps-demo"), probe);
 
         var log = string.Join(Environment.NewLine, output.TakeLast(30));
         Assert.That(exitCode, Is.Zero, log);
