@@ -17,6 +17,10 @@ internal sealed class ControlSettings
     // way round if inverted
     internal bool MouseLook, MouseInvert;
 
+    // Mouse walk: without mouse look, moving the mouse up and down walks forward and back. Off,
+    // the mouse only turns (the automap's pan mode still pans with it).
+    internal bool MouseWalk = true;
+
     // How much of a stick's travel around the middle is ignored, in percent; how fast a stick
     // turns, as a step of JoyTurnSpeed; and whether the left stick turns, with the right
     // strafing (classic), rather than the right stick turning (modern).
@@ -35,6 +39,7 @@ internal sealed class ControlSettings
         $"chasecam {(ChaseCam ? 1 : 0)}",
         $"m_look {(MouseLook ? 1 : 0)}",
         $"m_invert {(MouseInvert ? 1 : 0)}",
+        $"m_walk {(MouseWalk ? 1 : 0)}",
         $"joy_deadzone {JoyDeadzone}",
         $"joy_turnspeed {JoyTurnSpeed}",
         $"joy_sticks {JoySticksName}",

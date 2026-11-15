@@ -49,6 +49,12 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
                     loop.ShootSnd();
                     break;
 
+                case "mouse-walk":
+                    settings.MouseWalk ^= true;
+                    DrawCtlScreen();
+                    loop.ShootSnd();
+                    break;
+
                 case "joystick-enabled":
                     settings.JoystickEnabled ^= true;
                     DrawCtlScreen();
@@ -89,15 +95,17 @@ internal sealed class ControlMenus(AssetManager assets, InputManager input, Audi
 
         mouseSensItem?.Active = (short)(settings.MouseEnabled ? 1 : 0);
 
-        // Inverting only means something while the mouse looks
+        // Inverting only means something while the mouse looks, and walking while it doesn't
         MenuDefs.FindMenuItem(CtlMenu, "mouse-look")?.Active = (short)(settings.MouseEnabled ? 1 : 0);
         MenuDefs.FindMenuItem(CtlMenu, "mouse-invert")?.Active = (short)(settings.MouseEnabled && settings.MouseLook ? 1 : 0);
+        MenuDefs.FindMenuItem(CtlMenu, "mouse-walk")?.Active = (short)(settings.MouseEnabled && !settings.MouseLook ? 1 : 0);
 
         draw.DrawMenu(CtlItems, CtlMenu);
 
         draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-enabled", settings.MouseEnabled);
         draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-look", settings.MouseLook);
         draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-invert", settings.MouseInvert);
+        draw.DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-walk", settings.MouseWalk);
         draw.DrawMenuCheckbox(CtlItems, CtlMenu, "joystick-enabled", settings.JoystickEnabled);
 
         //

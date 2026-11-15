@@ -223,6 +223,7 @@ $STR_GAMEPAD: "Gravis GamePad Enabled"
 $STR_SENS: "Mouse Sensitivity"
 $STR_MOUSELOOK: "Mouse Look"
 $STR_MOUSEINVERT: "Invert Mouse Look"
+$STR_MOUSEWALK: "Mouse Walk"
 $STR_CUSTOM: "Customize controls"
 $STR_JOYSETTINGS: "Controller settings"
 

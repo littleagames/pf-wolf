@@ -305,7 +305,7 @@ public class BindCommandsTests
     public void Settings_Are_Set_In_Range()
     {
         // Act
-        _console.Execute("joy_deadzone 30; m_look 1; m_invert on; joy_sticks classic");
+        _console.Execute("joy_deadzone 30; m_look 1; m_invert on; m_walk 0; joy_sticks classic");
         _console.Execute("joy_turnspeed 99");
 
         // Assert
@@ -313,6 +313,7 @@ public class BindCommandsTests
         Assert.That(_settings.JoyTurnSpeed, Is.EqualTo(4));        // 99 is past the fastest: left alone
         Assert.That(_settings.MouseLook, Is.True);
         Assert.That(_settings.MouseInvert, Is.True);
+        Assert.That(_settings.MouseWalk, Is.False);
         Assert.That(_settings.JoyClassicSticks, Is.True);
     }
 
@@ -321,6 +322,7 @@ public class BindCommandsTests
     {
         // Arrange
         _settings.MouseLook = true;
+        _settings.MouseWalk = false;
         _settings.JoyDeadzone = 35;
         _settings.JoyTurnSpeed = 7;
         _settings.JoyClassicSticks = true;

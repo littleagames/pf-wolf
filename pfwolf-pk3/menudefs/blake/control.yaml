@@ -20,6 +20,7 @@ menu-items:
   - { id: "mouse-sensitivity", type: "MenuSwitcher", text: "MOUSE SENSITIVITY", enabled: false, action: "MouseSensitivity" }
   - { id: "mouse-look", type: "ToggleMenuItem", text: "MOUSE LOOK", enabled: false }
   - { id: "mouse-invert", type: "ToggleMenuItem", text: "INVERT MOUSE", enabled: false }
+  - { id: "mouse-walk", type: "ToggleMenuItem", text: "MOUSE WALK", enabled: false }
   - { id: "joystick-enabled", type: "ToggleMenuItem", text: "CONTROLLER ENABLED", enabled: false }
   - { id: "controller-settings", type: "MenuSwitcher", text: "CONTROLLER SETTINGS", enabled: true, action: "CP_ControllerSettings" }
   - { id: "customize", type: "MenuSwitcher", text: "CUSTOMIZE CONTROLS", enabled: true, action: "CustomControls" }

@@ -119,6 +119,8 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       prev/next weapon, automap keys.
 - [ ] Mouse: turn, fire, X1/X2 buttons, wheel = prev/next weapon; F12 grabs in a window.
 - [ ] Mouse look (`m_look 1`), `m_invert`, look keys PgUp/PgDn/End.
+- [ ] **(never tried)** Mouse Walk off (Control menu, `m_walk 0`, mouse look off): moving the mouse
+      up and down doesn't walk, only turns; the automap's pan mode still pans up and down.
 - [ ] Customize Controls screen: scrolls, capture key/mouse/pad, Esc or 6 s cancels, a taken
       input moves from its old action (play and automap kept apart), reset row.
 - [ ] `controls.cfg` round trip: rebind, quit, restart, still bound; old `readyknife`-style names
