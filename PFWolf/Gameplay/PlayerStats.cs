@@ -385,6 +385,12 @@ internal sealed class PlayerStats(
                 return GivePowerup(item.Name);
             case Entities.Actors.BackpackItem:
                 return GiveBackpack(item.Name);
+            case Entities.Actors.CustomInventory when !item.ResolvedStates.ContainsKey("Pickup"):
+                // Held, as ZDoom keeps a CustomInventory with no Pickup state (the Hub Demo's
+                // emblems, which its vault door's locks: name). Taken even when the player's
+                // already at its maxamount, as it always was (a second hazard suit).
+                inventory.Give(item.Name, amount);
+                return true;
             default:
                 return true;
         }

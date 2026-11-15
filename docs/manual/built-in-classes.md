@@ -15,7 +15,7 @@ for something the engine does in code, so a class of your own does that by havin
 | Class | What it is |
 | --- | --- |
 | `Inventory` | Anything the player picks up. Every item class below descends from it. |
-| `CustomInventory` | An item with nothing built in: what it does is its properties (`inventory.use`, say). |
+| `CustomInventory` | An item with nothing built in: what it does is its properties (`inventory.use`, say). Picked up, it's held (up to its `inventory.maxamount`, and always taken off the floor) unless its class has a `Pickup` state, whose actions are then all it does. |
 | `Ammo` | Ammunition, kept from level to level. |
 | `Health` | Heals as it's picked up, rather than being held. |
 | `Key` | Opens the doors and switches that name it as their lock, and is lost at a level change. |

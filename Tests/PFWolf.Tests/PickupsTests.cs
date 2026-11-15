@@ -41,6 +41,15 @@ public class PickupsTests
           parent: CustomInventory
           properties:
             "inventory.restrictedto": [Officer]
+        Emblem:
+          parent: CustomInventory
+        LifeToken:
+          parent: CustomInventory
+          states:
+            Pickup:
+              - sprite: TNT1
+                frames: [A]
+                tics-per-frame: 0
         Player:
           properties:
             "player.maxhealth": 100
@@ -204,6 +213,52 @@ public class PickupsTests
         var clue = rig.Item("Clue");
         rig.Pickups.GetBonus(clue);
         Assert.That(rig.OnTheFloor(clue), Is.False);
+    }
+
+    [Test]
+    public void A_Custom_Item_Without_A_Pickup_State_Is_Held()
+    {
+        // Arrange: the Hub Demo's emblems, which its vault door's locks: name
+        var rig = new Rig();
+        var emblem = rig.Item("Emblem");
+
+        // Act
+        rig.Pickups.GetBonus(emblem);
+
+        // Assert
+        Assert.That(rig.Inventory.GetCount("Emblem"), Is.EqualTo(1));
+        Assert.That(rig.OnTheFloor(emblem), Is.False);
+    }
+
+    [Test]
+    public void A_Custom_Item_Already_At_Its_Max_Is_Still_Taken()
+    {
+        // Arrange: one held already (maxamount 1)
+        var rig = new Rig();
+        rig.Pickups.GetBonus(rig.Item("Emblem"));
+        var second = rig.Item("Emblem");
+
+        // Act
+        rig.Pickups.GetBonus(second);
+
+        // Assert
+        Assert.That(rig.Inventory.GetCount("Emblem"), Is.EqualTo(1));
+        Assert.That(rig.OnTheFloor(second), Is.False);
+    }
+
+    [Test]
+    public void A_Custom_Item_With_A_Pickup_State_Isnt_Held()
+    {
+        // Arrange: its Pickup state does what it does (the extra life's A_GiveExtraMan)
+        var rig = new Rig();
+        var token = rig.Item("LifeToken");
+
+        // Act
+        rig.Pickups.GetBonus(token);
+
+        // Assert
+        Assert.That(rig.Inventory.Has("LifeToken"), Is.False);
+        Assert.That(rig.OnTheFloor(token), Is.False);
     }
 
     [Test]
