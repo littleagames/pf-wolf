@@ -172,6 +172,15 @@ internal sealed class PlayerUse(
         var before = session.PlayState;
         RunActions(wallSwitch.Actions, tilex, tiley, dir, tag);
         RememberIfExit(before, flipped);
+
+        // An exit that didn't go (a level objective left, a script's game.onexit) leaves its
+        // switch as it was: the elevator's pressed wall isn't a switch, so it would never work again
+        if (before == PlayState.StillPlaying && session.PlayState == PlayState.StillPlaying
+            && wallSwitch.Actions.Any(LeavesLevel))
+        {
+            for (int i = flipped.Count - 1; i >= 0; i--)
+                map.TileMap[flipped[i].X, flipped[i].Y] = (ushort)flipped[i].Was;
+        }
     }
 
     // A switch whose actions ended the level: how it was, for a kept hub level to have it back
@@ -418,6 +427,18 @@ internal sealed class PlayerUse(
         bool exit = action.StartsWith("A_Exit", StringComparison.OrdinalIgnoreCase)
             || action.StartsWith("A_SecretExit", StringComparison.OrdinalIgnoreCase);
         return exit && exitBlock.Blocked ? exitBlock.Message : trigger.FacingMessage;
+    }
+
+    // An action call that leaves the level: A_Exit, A_SecretExit or A_ChangeMap
+    static bool LeavesLevel(string action)
+    {
+        var name = action.Trim();
+        int paren = name.IndexOf('(');
+        if (paren >= 0)
+            name = name[..paren].TrimEnd();
+        return name.Equals("A_Exit", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("A_SecretExit", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("A_ChangeMap", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The tile the player faces, by the nearest of the four directions, and that direction</summary>

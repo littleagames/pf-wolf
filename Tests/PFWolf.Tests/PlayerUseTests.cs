@@ -512,7 +512,9 @@ public class PlayerUseTests
     private Entities.MapTriggerRegistry.TriggerAction? _realExit;
     private bool _exitStoodIn;
 
-    private MapSwitchTranslation ElevatorAhead(params string[] actions)
+    private MapSwitchTranslation ElevatorAhead(params string[] actions) => ElevatorAhead(exitGoes: true, actions);
+
+    private MapSwitchTranslation ElevatorAhead(bool exitGoes, params string[] actions)
     {
         var elevator = new MapSwitchTranslation { To = 22, Actions = [.. actions] };
         _map.MapWidth = _map.MapHeight = MapConstants.ClassicMapSize;
@@ -526,8 +528,29 @@ public class PlayerUseTests
 
         TriggerActions.TryGetValue("A_Exit", out _realExit);
         _exitStoodIn = true;
-        Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => { _session.PlayState = PlayState.Completed; return true; });
+        Entities.MapTriggerRegistry.Register("A_Exit", (_, _) =>
+        {
+            if (!exitGoes)
+                return false;           // refused: an objective left, say
+            _session.PlayState = PlayState.Completed;
+            return true;
+        });
         return elevator;
+    }
+
+    [Test]
+    public void An_Exit_Switch_Whose_Exit_Is_Refused_Stays_Unthrown()
+    {
+        // Arrange: the level's objectives keep the exit shut
+        var elevator = ElevatorAhead(exitGoes: false, "A_Exit");
+
+        // Act
+        _use.UseSwitch(elevator, 11, 10, ControlDir.East);
+
+        // Assert: still the elevator switch, to be used again once they're done
+        Assert.That(_map.TileMap[11, 10], Is.EqualTo(21));
+        Assert.That(_session.PlayState, Is.EqualTo(PlayState.StillPlaying));
+        Assert.That(_map.ExitSwitch, Is.Empty);
     }
 
     [Test]

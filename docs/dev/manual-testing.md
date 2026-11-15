@@ -713,6 +713,8 @@ the keypad's note and code open its closet)
       dying in a level and in the hub, saving and loading mid-hub (kept levels, entrance), and a
       second trip into a finished level (back at its elevator, enemies still dead, its elevator
       switch up again and taking you back to the hub; the hub's lever up again too).
+- [ ] **(never tried)** Mission Demo: the elevator used with objectives left stays up (refused),
+      then works once they're done.
 
 ### Example mods (`examples/mods`, built 2026-10-29)
 
