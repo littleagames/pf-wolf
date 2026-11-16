@@ -799,6 +799,16 @@ can reach), not played by hand.
       ceiling; the day sky over the courtyard; a shell's red blast killing the dogs. **(never
       tried)**: the shell seen in flight from the side (its 8 views) and the quake; the tank's
       engine, gun and blast by ear.
+- [ ] Vehicles in multiplayer (2026-11-15; the Vehicle Arenas pack outside the repo, `D:\projects\Wolf3D\Vehicle Arenas (PFWolf)`,
+      or any map with a vehicle). Seen headless with `addplayer` + `gamemode deathmatch` (Lua
+      `jump('Use')` boarding): a rider drawn to the other as the vehicle (Ride state), the
+      wreck where a rider was killed, another jeep back on the free spot after
+      `vehicle.respawntics`. **(never tried)**: a real netgame, the guest boarding with the use
+      key (Actor.UsedBy: before it, every machine boarded its own player); RideSee/RideMissile
+      animating as the rider drives and fires; running a rival down at speed (a frag, the kill
+      feed) and never a teammate in team deathmatch; a tank shell's blast fragging a rival (and
+      hurting the crew a little); someone joining mid-game while another rides (net state v20);
+      a dead rider coming back on foot; a vehicle barrier (docktile) keeping vehicles off a door.
 - [ ] **(never tried)** Weather Demo (`--file weather-demo`), Floors 1-3 by hand: no rain under
       the porch, the gallery, the arches, the doorways and the elevator room, and its splashes
       on the courtyard floor only; looking up and down in it; Floor 2's squalls thickening,

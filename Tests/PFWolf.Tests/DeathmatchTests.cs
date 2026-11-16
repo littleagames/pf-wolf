@@ -22,6 +22,10 @@ public class DeathmatchTests
           parent: WeaponGiver
           properties:
             "weapongiver.weapon": ChainGun
+        Jeep:
+          properties:
+            "vehicle.respawntics": 700
+        Tank: {}
         """;
 
     private sealed class Rig
@@ -31,9 +35,18 @@ public class DeathmatchTests
         public readonly MapManager Map;
         public readonly Deathmatch Deathmatch;
 
+        // The map's spots for things, by class (the jeeps' two), and the floor taken
+        public readonly Dictionary<string, List<(int X, int Y)>> Spots = new() { ["Jeep"] = [(5, 5), (7, 5)] };
+        public readonly HashSet<(int X, int Y)> Taken = [];
+        public readonly List<(int X, int Y, string Class)> Spawned = [];
+
         public Rig()
         {
-            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session, null);
+            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session, null)
+            {
+                TileMap = new ushort[Constants.MapConstants.ClassicMapSize, Constants.MapConstants.ClassicMapSize],
+                ActorAt = new Actor?[Constants.MapConstants.ClassicMapSize, Constants.MapConstants.ClassicMapSize],
+            };
             // Two players, acting as the second: the status bar is only the local player's
             Session.Players.Add(new Entities.PlayerState { Number = 1 });
             foreach (var p in Session.Players)
@@ -44,7 +57,8 @@ public class DeathmatchTests
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
-            Deathmatch = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((_, _) => true, () => { }));
+            Deathmatch = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((x, y) => !Taken.Contains((x, y)), () => { },
+                name => Spots.TryGetValue(name, out var spots) ? spots : [], (x, y, name) => Spawned.Add((x, y, name))));
         }
 
         public Entities.PlayerState First => Session.Players[0];
@@ -201,6 +215,46 @@ public class DeathmatchTests
 
         // Assert
         Assert.That(rig.Deathmatch.ItemRespawns, Is.EqualTo(new[] { new ItemRespawn("Medikit", 12, 34, 100 + Deathmatch.ItemRespawnTics) }));
+    }
+
+    [Test]
+    public void A_Wrecked_Vehicle_Comes_Back_On_A_Free_Spot_Of_Its_Own()
+    {
+        // Arrange: someone on the first jeep's spot
+        var rig = new Rig();
+        rig.Session.GameState.TimeCount = 100;
+        rig.Taken.Add((5, 5));
+
+        // Act
+        rig.Deathmatch.QueueVehicleRespawn("Jeep");
+        rig.Session.GameState.TimeCount = 799;
+        rig.Deathmatch.TickDeathmatch();
+        int waiting = rig.Spawned.Count;
+        rig.Session.GameState.TimeCount = 800;
+        rig.Deathmatch.TickDeathmatch();
+
+        // Assert: none before its vehicle.respawntics, then on the second spot
+        Assert.That(waiting, Is.Zero);
+        Assert.That(rig.Spawned, Is.EqualTo(new[] { (7, 5, "Jeep") }));
+        Assert.That(rig.Deathmatch.ItemRespawns, Is.Empty);
+    }
+
+    [Test]
+    public void A_Vehicle_With_Every_Spot_Taken_Waits_And_One_The_Map_Never_Had_Never_Comes()
+    {
+        // Arrange: both jeep spots taken
+        var rig = new Rig();
+        rig.Taken.UnionWith([(5, 5), (7, 5)]);
+
+        // Act
+        rig.Deathmatch.QueueVehicleRespawn("Jeep");
+        rig.Deathmatch.QueueVehicleRespawn("Tank");     // no spots for tanks
+        rig.Session.GameState.TimeCount = 700;
+        rig.Deathmatch.TickDeathmatch();
+
+        // Assert: the jeep tries again shortly
+        Assert.That(rig.Spawned, Is.Empty);
+        Assert.That(rig.Deathmatch.ItemRespawns, Is.EqualTo(new[] { new ItemRespawn("Jeep", -1, -1, 700 + Deathmatch.VehicleRetryTics) }));
     }
 
     [Test]

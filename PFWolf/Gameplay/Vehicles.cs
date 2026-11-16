@@ -31,7 +31,13 @@ status bar with no use hint).
 change it, and getting off gives back the one they had. `vehicle.damagetaken` is the share of a
 hit the rider takes (Gameplay/PlayerStats.cs). `vehicle.crushdamage` hurts an enemy it runs into
 at `vehicle.crushspeed` or faster (a quarter of its top speed by default), each one at most every
-half second, with `vehicle.crushsound`.
+half second, with `vehicle.crushsound` -- and, in a game against each other, a rival player, as
+the rider's own hit (a frag, if it kills).
+
+The rider killed, the vehicle's wrecked: its `vehicle.wreck` class (a burning hulk) is put down
+where they died, and in a game against each other another of the vehicle's class comes back on
+one of the map's spots for it after `vehicle.respawntics` (Gameplay/Deathmatch.cs). Others see a
+rider as the vehicle, through its Ride states (Gameplay/PlayerBodies.cs).
 
 =============================================================================
 */
@@ -41,8 +47,12 @@ half second, with `vehicle.crushsound`.
 /// <param name="Settle">Settles the player's tile and area where they've been put (PlayerMovement.Thrust(0, 0))</param>
 /// <param name="Respawn">Puts the vehicle's class back on a tile (MapManager.SpawnThing)</param>
 /// <param name="Crush">Hurts an enemy the vehicle runs into, by so much (Monster.Damage, from the player)</param>
+/// <param name="CrushPlayer">Hurts a rival player the vehicle runs into, by so much, as the rider's hit</param>
+/// <param name="Wrecked">The rider's been killed in a vehicle of this class (Deathmatch.QueueVehicleRespawn)</param>
 internal sealed record VehiclesHooks(Action<string> PlaySound, Action<string> ShowMessage, Action Settle, Action<int, int, string> Respawn,
-    Action<Entities.Actors.Monster, int>? Crush = null);
+    Action<Entities.Actors.Monster, int>? Crush = null,
+    Action<Entities.Actors.PlayerPawn, int>? CrushPlayer = null,
+    Action<string>? Wrecked = null);
 
 internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameSession session, VehiclesHooks hooks,
     PlayerWeapons? weapons = null)
@@ -50,9 +60,9 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
     // How long an enemy run into is spared another crush, in tics
     const int CrushWait = 35;
 
-    // Enemies just run into, and the tics until they can be again: by reference, as actors are
-    // records whose value (and hash) changes as they're hurt and move
-    readonly Dictionary<Entities.Actors.Monster, int> crushed = new(ReferenceEqualityComparer.Instance);
+    // Enemies and players just run into, and the tics until they can be again: by reference, as
+    // actors are records whose value (and hash) changes as they're hurt and move
+    readonly Dictionary<Entities.Actors.Actor, int> crushed = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>Whether the acting player is riding something</summary>
     internal bool IsRiding => session.PlayerState.Vehicle != null;
@@ -160,20 +170,32 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
         double angle = player.Angle * Math.PI / 180 + (carry < 0 ? Math.PI : 0);
         double ax = Math.Cos(angle), ay = -Math.Sin(angle);
         long reach = 0x10000 + Math.Abs(carry) + 0x800;
+        bool Ahead(Entities.Actors.Actor victim)
+        {
+            long dx = victim.X - player.X, dy = victim.Y - player.Y;
+            return Math.Abs(dx) <= reach && Math.Abs(dy) <= reach && dx * ax + dy * ay > 0;
+        }
+
         // Found first, then hurt: a death can drop things into the level's actors
         var victims = map.GetActors().OfType<Entities.Actors.Monster>().Where(monster =>
-        {
-            if (monster.IsRemoved || !monster.RuntimeFlags.Has(ObjFlags.Shootable) || crushed.ContainsKey(monster))
-                return false;
-            long dx = monster.X - player.X, dy = monster.Y - player.Y;
-            return Math.Abs(dx) <= reach && Math.Abs(dy) <= reach && dx * ax + dy * ay > 0;
-        }).ToList();
+            !monster.IsRemoved && monster.RuntimeFlags.Has(ObjFlags.Shootable) && !crushed.ContainsKey(monster) && Ahead(monster)).ToList();
+        // and, in a game against each other, rival players (no one on the rider's own team)
+        var rivals = hooks.CrushPlayer == null ? []
+            : map.Players.Where(pawn => pawn != player && pawn.State.Health > 0 && pawn.Active == ActiveType.Yes
+                && session.AreRivals(player.State, pawn.State) && !crushed.ContainsKey(pawn) && Ahead(pawn)).ToList();
         foreach (var monster in victims)
         {
             crushed[monster] = CrushWait;
             if (Text("vehicle.crushsound") is { } sound)
                 hooks.PlaySound(sound);
             hooks.Crush(monster, damage);
+        }
+        foreach (var pawn in rivals)
+        {
+            crushed[pawn] = CrushWait;
+            if (Text("vehicle.crushsound") is { } sound)
+                hooks.PlaySound(sound);
+            hooks.CrushPlayer!(pawn, damage);
         }
     }
 
@@ -239,17 +261,34 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
     /// </summary>
     internal string? DockMessage() => IsRiding && ExitBeside() != null ? Text("vehicle.dockmessage") : null;
 
-    /// <summary>Each think: a ride ends with the player's death or another level; its weapon stays in hand</summary>
+    /// <summary>
+    /// Each think: a ride ends with the player's death (the vehicle's wrecked) or another level;
+    /// its weapon stays in hand
+    /// </summary>
     internal void Tick()
     {
         var playerstate = session.PlayerState;
-        if (IsRiding && (playerstate.Health <= 0 || playerstate.VehicleMap != session.GameState.MapOn))
+        if (IsRiding && playerstate.Health <= 0 && playerstate.VehicleMap == session.GameState.MapOn)
+        {
+            Wreck();
+            Clear();
+        }
+        else if (IsRiding && (playerstate.Health <= 0 || playerstate.VehicleMap != session.GameState.MapOn))
             Clear();
         else if (IsRiding && playerstate.VehicleGun is { } gun && playerstate.Weapon != gun && inventory.Has(gun))
         {
             playerstate.Weapon = playerstate.ChosenWeapon = gun;
             weapons?.DrawWeapon();
         }
+    }
+
+    // The rider's been killed: the vehicle's wreck where they died, and another to come back
+    void Wreck()
+    {
+        var vehicle = session.PlayerState.Vehicle!;
+        if (Text("vehicle.wreck") is { } wreck && session.PlayerState.Pawn is { } player)
+            hooks.Respawn(player.TileX, player.TileY, wreck);
+        hooks.Wrecked?.Invoke(vehicle);
     }
 
     void Clear()

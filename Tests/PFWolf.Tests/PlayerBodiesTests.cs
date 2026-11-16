@@ -23,6 +23,26 @@ public class PlayerBodiesTests
                 frames: [H]
                 tics-per-frame: -1
         Ghost: {}
+        Jeep:
+          states:
+            Spawn:
+              - sprite: JEEP
+                frames: [A]
+                tics-per-frame: -1
+            Ride:
+              - sprite: JEEP
+                frames: [B]
+                tics-per-frame: -1
+            RideSee:
+              - sprite: JEEP
+                frames: [C, D]
+                tics-per-frame: 4
+        Boat:
+          states:
+            Spawn:
+              - sprite: BOAT
+                frames: [A]
+                tics-per-frame: -1
         Guard:
           properties:
             tag: Guard
@@ -82,6 +102,48 @@ public class PlayerBodiesTests
         _bodies.TickPlayerBodies(1);
 
         Assert.That(BodyState, Is.EqualTo("Death"));
+    }
+
+    [Test]
+    public void A_Rider_Is_Seen_As_Their_Vehicle_Through_Its_Ride_States()
+    {
+        // Arrange
+        _session.PlayerState.Vehicle = "Jeep";
+
+        // Act / Assert: still, then moving
+        _bodies.TickPlayerBodies(1);
+        _bodies.TickPlayerBodies(1);
+        Assert.That(_session.PlayerState.Body!.Name, Is.EqualTo("Jeep"));
+        Assert.That(BodyState, Is.EqualTo("Ride"));
+        _session.PlayerState.Pawn!.X += Tile / 4;
+        _bodies.TickPlayerBodies(1);
+        Assert.That(BodyState, Is.EqualTo("RideSee"));
+    }
+
+    [Test]
+    public void A_Vehicle_With_No_Ride_States_Is_Seen_As_It_Stands()
+    {
+        _session.PlayerState.Vehicle = "Boat";
+        _session.PlayerState.Pawn!.X += Tile / 4;
+
+        _bodies.TickPlayerBodies(1);
+
+        Assert.That((_session.PlayerState.Body!.Name, BodyState), Is.EqualTo(("Boat", "Spawn")));
+    }
+
+    [Test]
+    public void A_Rider_Killed_Lies_Dead_As_Themselves()
+    {
+        // Arrange: riding, then killed (the ride's over on their next think)
+        _session.PlayerState.Vehicle = "Jeep";
+        _bodies.TickPlayerBodies(1);
+        _session.PlayerState.Health = 0;
+
+        // Act
+        _bodies.TickPlayerBodies(1);
+
+        // Assert
+        Assert.That((_session.PlayerState.Body!.Name, BodyState), Is.EqualTo(("Player", "Death")));
     }
 
     [Test]

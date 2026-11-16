@@ -433,7 +433,13 @@ internal static partial class GameHost
     static Vehicles? _vehicles;
     static Vehicles Vehicles => _vehicles ??= new Vehicles(MapManager, InventoryManager, Session,
         new VehiclesHooks(PlayPlayerSound, message => HudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0),
-            (x, y, vehicle) => MapManager.SpawnThing(x, y, vehicle), (monster, damage) => monster.Damage((uint)damage, Session.Player)),
+            (x, y, vehicle) => MapManager.SpawnThing(x, y, vehicle), (monster, damage) => monster.Damage((uint)damage, Session.Player),
+            (pawn, damage) => playersManager.TakeDamage(pawn, damage, Session.Player),
+            vehicle =>
+            {
+                if (Session.IsVersus)
+                    deathmatch.QueueVehicleRespawn(vehicle);
+            }),
         playerWeapons);
 
     // Things that latch onto the player (Gameplay/Latching.cs): A_LatchBite, and striking them off
@@ -534,7 +540,11 @@ internal static partial class GameHost
     internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);
     static void PlayPlayerWeaponSound(string name) => playersManager.PlayPlayerWeaponSound(name);
     static bool IsFreeFloor(int x, int y) => playersManager.IsFreeFloor(x, y);
-    internal static void PlayerDies() => playersManager.PlayerDies();
+    internal static void PlayerDies()
+    {
+        Vehicles.Tick();        // a vehicle they rode is wrecked, before their weapon's taken away
+        playersManager.PlayerDies();
+    }
     internal static void ThinkPlayerDead(Entities.Actors.Actor ob) => playersManager.ThinkPlayerDead(ob);
     static void AddNetPlayer(Networking.NetJoin join) => playersManager.AddNetPlayer(join);
 

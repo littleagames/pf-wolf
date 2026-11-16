@@ -54,6 +54,13 @@ internal static class NetPlayerState
         bw.Write(p.TurnAround);
         bw.Write(p.TurnAngle);
         bw.Write(p.Input.Buttons);
+        // A vehicle they ride (Gameplay/Vehicles.cs)
+        bw.Write(p.Vehicle ?? "");
+        bw.Write(p.VehicleMap ?? "");
+        bw.Write(p.VehicleSpeed);
+        bw.Write(p.VehicleThrottle);
+        bw.Write(p.VehicleGun ?? "");
+        bw.Write(p.VehicleFrom ?? "");
         bw.Write(p.WeaponSprite != null);
         if (p.WeaponSprite != null)
             Entities.Actors.ActorSnapshot.Capture(p.WeaponSprite).Write(bw);
@@ -107,6 +114,12 @@ internal static class NetPlayerState
         p.TurnAround = br.ReadInt32();
         p.TurnAngle = br.ReadInt32();
         p.Input.RestoreButtons(br.ReadUInt64());
+        p.Vehicle = NullIfEmpty(br.ReadString());
+        p.VehicleMap = NullIfEmpty(br.ReadString());
+        p.VehicleSpeed = br.ReadInt32();
+        p.VehicleThrottle = br.ReadInt32();
+        p.VehicleGun = NullIfEmpty(br.ReadString());
+        p.VehicleFrom = NullIfEmpty(br.ReadString());
         weapon = br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null;
     }
 }

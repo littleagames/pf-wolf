@@ -47,6 +47,7 @@ public class VehiclesTests
             "vehicle.crushdamage": 30
             "vehicle.crushspeed": 50
             "vehicle.crushsound": "tank/crush"
+            "vehicle.wreck": TankWreck
           states:
             Spawn:
               - sprite: TANK
@@ -78,6 +79,8 @@ public class VehiclesTests
     private List<string> _sounds = null!, _messages = null!;
     private List<(int X, int Y, string Class)> _respawned = null!;
     private List<(Monster Victim, int Damage)> _crushed = null!;
+    private List<(PlayerPawn Victim, int Damage)> _crushedPlayers = null!;
+    private List<string> _wrecked = null!;
 
     [SetUp]
     public void MakeLevel()
@@ -105,10 +108,12 @@ public class VehiclesTests
         var bar = new StatusBarDrawing(null!, null, null!, null!, _inventory, null!, null!, null!, _session,
             new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
         var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
-        (_sounds, _messages, _respawned, _crushed) = ([], [], [], []);
+        (_sounds, _messages, _respawned, _crushed, _crushedPlayers, _wrecked) = ([], [], [], [], [], []);
         _vehicles = new Vehicles(_map, _inventory, _session,
             new VehiclesHooks(_sounds.Add, _messages.Add, () => { }, (x, y, vehicle) => _respawned.Add((x, y, vehicle)),
-                (victim, damage) => _crushed.Add((victim, damage))),
+                (victim, damage) => _crushed.Add((victim, damage)),
+                (victim, damage) => _crushedPlayers.Add((victim, damage)),
+                _wrecked.Add),
             weapons);
     }
 
@@ -234,6 +239,84 @@ public class VehiclesTests
         // Assert
         Assert.That(_vehicles.IsRiding, Is.False);
         Assert.That(_inventory.Has("Cannon"), Is.False);
+    }
+
+    [Test]
+    public void Dying_In_It_Leaves_Its_Wreck_Where_They_Died()
+    {
+        // Arrange: driven a tile on, then killed
+        BoardTank();
+        _pawn.SetPosition(12, 10);
+        _session.PlayerState.Health = 0;
+
+        // Act
+        _vehicles.Tick();
+
+        // Assert: the wreck put down there, and the tank to come back
+        Assert.That(_respawned, Is.EqualTo(new[] { (12, 10, "TankWreck") }));
+        Assert.That(_wrecked, Is.EqualTo(new[] { "Tank" }));
+        Assert.That(_vehicles.IsRiding, Is.False);
+    }
+
+    [Test]
+    public void A_New_Level_Ends_The_Ride_With_No_Wreck()
+    {
+        // Arrange
+        BoardTank();
+        _session.GameState.MapOn = "NEXTMAP";
+
+        // Act
+        _vehicles.Tick();
+
+        // Assert
+        Assert.That(_respawned, Is.Empty);
+        Assert.That(_wrecked, Is.Empty);
+    }
+
+    // Another player a tile ahead of the tank, on a team
+    private PlayerPawn OtherPlayerAhead(int team)
+    {
+        var other = new Entities.PlayerState { Health = 100, Team = team };
+        var pawn = new PlayerPawn { State = other, Active = ActiveType.Yes };
+        pawn.SetPosition(12, 10);
+        other.Pawn = pawn;
+        _session.Players.Add(other);
+        return pawn;
+    }
+
+    [Test]
+    public void At_Speed_It_Runs_Down_A_Rival_Player_Ahead()
+    {
+        // Arrange: a deathmatch, someone a tile ahead
+        _session.SetGameMode(GameMode.Deathmatch);
+        _pawn.Active = ActiveType.Yes;
+        BoardTank();
+        var rival = OtherPlayerAhead(0);
+
+        // Act
+        _vehicles.Throttle(-1, 5);
+        _vehicles.Throttle(-1, 1);
+
+        // Assert: hit once, and not again so soon
+        Assert.That(_crushedPlayers, Is.EqualTo(new[] { (rival, 30) }));
+    }
+
+    [Test]
+    public void It_Never_Runs_Down_A_Teammate_Or_A_Coop_Partner()
+    {
+        // Arrange: team deathmatch, a teammate ahead
+        _session.SetGameMode(GameMode.TeamDeathmatch);
+        BoardTank();
+        OtherPlayerAhead(_session.PlayerState.Team);
+
+        // Act / Assert
+        _vehicles.Throttle(-1, 8);
+        Assert.That(_crushedPlayers, Is.Empty);
+
+        // and in co-op
+        _session.SetGameMode(GameMode.Coop);
+        _vehicles.Throttle(-1, 8);
+        Assert.That(_crushedPlayers, Is.Empty);
     }
 
     [Test]

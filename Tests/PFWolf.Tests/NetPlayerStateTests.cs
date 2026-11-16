@@ -104,6 +104,22 @@ public class NetPlayerStateTests
     }
 
     [Test]
+    public void A_Vehicle_They_Ride_Goes_With_Them()
+    {
+        // Arrange: in a tank at speed, its cannon in hand
+        var p = Played();
+        (p.Vehicle, p.VehicleMap, p.VehicleSpeed, p.VehicleThrottle, p.VehicleGun, p.VehicleFrom) =
+            ("Tank", "MAP01", -1200, 50, "TankCannon", "Pistol");
+
+        // Act
+        var (read, _, _) = RoundTrip(p);
+
+        // Assert
+        Assert.That((read.Vehicle, read.VehicleMap, read.VehicleSpeed, read.VehicleThrottle, read.VehicleGun, read.VehicleFrom),
+            Is.EqualTo(("Tank", "MAP01", -1200, 50, "TankCannon", "Pistol")));
+    }
+
+    [Test]
     public void A_Color_This_Machine_Doesnt_Have_Is_None()
     {
         var (read, _, _) = RoundTrip(Played(), color => color == "blue" ? color : null);

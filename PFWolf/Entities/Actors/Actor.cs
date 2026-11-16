@@ -94,6 +94,11 @@ internal record Actor : Thinker
     // death by it is put down to the shooter (Died's obituary, kill credit, being turned on).
     public Actor? Shooter { get; internal set; }
 
+    // The player who used it (Gameplay/PlayerUse.cs TryUseActor), while it's in its Use state:
+    // it thinks as them (MapManager.DoActors), so its actions (A_Board, A_Mount) are theirs on
+    // every machine. Not saved: a Use state is over in a tic or two.
+    internal PlayerPawn? UsedBy { get; set; }
+
     // Its light (actordefs `light.*` properties and state `light:`, Rendering/ActorLights.cs):
     // set the first time it's looked at, and where its light's effect is. Not saved.
     internal ActorLightState? LightState { get; set; }

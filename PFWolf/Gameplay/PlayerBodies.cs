@@ -36,8 +36,16 @@ internal sealed class PlayerBodies(
     = Spawn states, played as on the map whatever the prop does. Once the prop has stood still
     = for SettleTics it's drawn in the middle of its tile, where the map's decorations stand.
     =
+    = A player riding a vehicle (PlayerState.Vehicle, Gameplay/Vehicles.cs) is drawn as the
+    = vehicle, through its riding states: Ride still, RideSee moving, RideMissile while its
+    = weapon fires and RidePain hurt, each where the vehicle's class has it, else Ride, else
+    = its parked Spawn look.
+    =
     ====================
     */
+
+    // A body state, as a vehicle being ridden has it (Spawn → Ride, See → RideSee, ...)
+    static string RideState(string state) => state == "Spawn" ? "Ride" : "Ride" + state;
 
     /// <summary>How long a disguised prop stands still before it's drawn in its tile's middle (a second)</summary>
     internal const int SettleTics = 70;
@@ -54,7 +62,8 @@ internal sealed class PlayerBodies(
         if (p.Pawn is not { } pawn)
             return;
 
-        var looks = p.Disguise ?? p.PlayerClass;
+        bool riding = p.Disguise == null && p.Vehicle != null && p.Health > 0;
+        var looks = p.Disguise ?? (riding ? p.Vehicle! : p.PlayerClass);
         if (p.BodyClass != looks)
         {
             p.BodyClass = looks;
@@ -62,7 +71,7 @@ internal sealed class PlayerBodies(
             if (p.Body?.ResolvedStates.ContainsKey("Spawn") != true)
                 p.Body = null;
             else
-                p.Body.SetState("Spawn");
+                p.Body.SetState(riding && p.Body.ResolvedStates.ContainsKey("Ride") ? "Ride" : "Spawn");
             p.BodyHoldsWeapon = p.Body != null && SpawnSprite(p.Body) is { } own
                 && string.Equals(own, SpawnSprite(inventory.CreateActor(PlayerClassRules.BasePlayerClass)), StringComparison.OrdinalIgnoreCase);
         }
@@ -76,14 +85,25 @@ internal sealed class PlayerBodies(
         bool attacking = p.WeaponSprite?.CurrentState is { } weaponState && weaponState.StateName != WeaponInHand.WeaponReadyState;
         p.PainTics = Math.Max(p.PainTics - (int)tics, 0);
 
-        var want = p.Disguise != null ? "Spawn"
-            : p.Health <= 0 ? "Death"
-            : p.PainTics > 0 ? (p.PainAlt && body.ResolvedStates.ContainsKey("Pain1") ? "Pain1" : "Pain")
-            : attacking ? "Missile"
-            : moving ? "See"
-            : "Spawn";
-        if (!body.ResolvedStates.ContainsKey(want))
-            want = moving && body.ResolvedStates.ContainsKey("See") ? "See" : "Spawn";
+        string want;
+        if (riding)
+        {
+            want = RideState(p.PainTics > 0 ? "Pain" : attacking ? "Missile" : moving ? "See" : "Spawn");
+            if (!body.ResolvedStates.ContainsKey(want))
+                want = moving && body.ResolvedStates.ContainsKey("RideSee") ? "RideSee"
+                    : body.ResolvedStates.ContainsKey("Ride") ? "Ride" : "Spawn";
+        }
+        else
+        {
+            want = p.Disguise != null ? "Spawn"
+                : p.Health <= 0 ? "Death"
+                : p.PainTics > 0 ? (p.PainAlt && body.ResolvedStates.ContainsKey("Pain1") ? "Pain1" : "Pain")
+                : attacking ? "Missile"
+                : moving ? "See"
+                : "Spawn";
+            if (!body.ResolvedStates.ContainsKey(want))
+                want = moving && body.ResolvedStates.ContainsKey("See") ? "See" : "Spawn";
+        }
         if (!InStateGroup(body, want))
             body.SetState(want);
 

@@ -16,15 +16,20 @@ internal sealed record NetRules(bool Monsters, int ScoreLimit, int TimeLimitMinu
 /// <summary>How a match went for a player (Deathmatch.Outcome)</summary>
 internal enum MatchOutcome { Won, Lost, Draw }
 
-// An item taken, to come back: its class, where, and when (GameState.TimeCount)
+// An item taken, to come back: its class, where, and when (GameState.TimeCount). A wrecked
+// vehicle's has no place (TileX -1): it comes back on a free spot of the map's for its class.
 internal sealed record ItemRespawn(string ClassName, int TileX, int TileY, int At);
 
 /// <summary>What a deathmatch needs from the game</summary>
 /// <param name="IsFreeFloor">Open floor nobody stands on</param>
 /// <param name="GiveAllKeys">The acting player carries every key</param>
+/// <param name="ThingSpots">Where the level's object plane puts things of a class (MapManager.ThingSpots)</param>
+/// <param name="SpawnThing">Puts a thing of a class on a tile (MapManager.SpawnThing)</param>
 internal sealed record DeathmatchHooks(
     Func<int, int, bool> IsFreeFloor,
-    Action GiveAllKeys);
+    Action GiveAllKeys,
+    Func<string, IReadOnlyList<(int X, int Y)>>? ThingSpots = null,
+    Action<int, int, string>? SpawnThing = null);
 
 /// <summary>
 /// What a mode with something to do besides fighting keeps (Gameplay/MatchModes): its things on
@@ -248,6 +253,41 @@ internal sealed class Deathmatch(
     internal void QueueItemRespawn(Inventory item) =>
         ItemRespawns.Add(new ItemRespawn(item.Name, (int)item.Position.X, (int)item.Position.Y, session.GameState.TimeCount + ItemRespawnTics));
 
+    /// <summary>
+    /// A vehicle has been wrecked (its rider killed): another of its class comes back after its
+    /// `vehicle.respawntics` (ItemRespawnTics by default) on one of the map's spots for it
+    /// </summary>
+    internal void QueueVehicleRespawn(string vehicle)
+    {
+        int tics = inventory.GetIntProperty(vehicle, "vehicle.respawntics", ItemRespawnTics);
+        if (tics >= 0 && ThingSpots(vehicle).Count > 0)
+            ItemRespawns.Add(new ItemRespawn(vehicle, -1, -1, session.GameState.TimeCount + tics));
+    }
+
+    IReadOnlyList<(int X, int Y)> ThingSpots(string className) =>
+        hooks.ThingSpots != null ? hooks.ThingSpots(className) : map.ThingSpots(className);
+
+    void SpawnThing(int x, int y, string className)
+    {
+        if (hooks.SpawnThing != null)
+            hooks.SpawnThing(x, y, className);
+        else
+            map.SpawnThing(x, y, className);
+    }
+
+    /// <summary>How long a vehicle waits to try again when every spot for it is taken (half a second)</summary>
+    internal const int VehicleRetryTics = 35;
+
+    // A spot of the map's for a vehicle's class with no vehicle of it, and nobody, on it; the first, in map order
+    (int X, int Y)? FreeVehicleSpot(string vehicle)
+    {
+        foreach (var (x, y) in ThingSpots(vehicle))
+            if (hooks.IsFreeFloor(x, y)
+                && !map.GetActors().Any(a => !a.IsRemoved && a.TileX == x && a.TileY == y && string.Equals(a.Name, vehicle, StringComparison.OrdinalIgnoreCase)))
+                return (x, y);
+        return null;
+    }
+
     /// <summary>Each frame of a deathmatch: items coming back, the objective, and the time limit</summary>
     internal void TickDeathmatch()
     {
@@ -257,8 +297,19 @@ internal sealed class Deathmatch(
             var item = ItemRespawns[i];
             if (gamestate.TimeCount < item.At)
                 continue;
+            if (item.TileX < 0)
+            {
+                if (FreeVehicleSpot(item.ClassName) is not { } spot)
+                {
+                    ItemRespawns[i] = item with { At = gamestate.TimeCount + VehicleRetryTics };
+                    continue;
+                }
+                ItemRespawns.RemoveAt(i--);
+                SpawnThing(spot.X, spot.Y, item.ClassName);
+                continue;
+            }
             ItemRespawns.RemoveAt(i--);
-            map.SpawnThing(item.TileX, item.TileY, item.ClassName);
+            SpawnThing(item.TileX, item.TileY, item.ClassName);
         }
 
         Objective?.Tick();

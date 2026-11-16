@@ -704,6 +704,33 @@ internal class MapManager
             docks[TileIndex(x, y)] = dock;
     }
 
+    // ThingSpots, by class, for the level they were found on (LevelSerial)
+    private readonly Dictionary<string, List<(int X, int Y)>> thingSpots = new(StringComparer.OrdinalIgnoreCase);
+    private int thingSpotsLevel = -1;
+
+    /// <summary>
+    /// Where the level's object plane puts things of a class, in map order (a wrecked vehicle
+    /// comes back on one: Gameplay/Deathmatch.cs)
+    /// </summary>
+    internal IReadOnlyList<(int X, int Y)> ThingSpots(string className)
+    {
+        if (thingSpotsLevel != LevelSerial)
+        {
+            thingSpots.Clear();
+            thingSpotsLevel = LevelSerial;
+        }
+        if (thingSpots.TryGetValue(className, out var spots))
+            return spots;
+
+        spots = [];
+        var things = GetMapData().Things;
+        for (int y = 0; y < MapHeight; y++)
+            for (int x = 0; x < MapWidth; x++)
+                if (things.TryGetValue(MapSpot(x, y, 1), out var thing) && string.Equals(thing.Class, className, StringComparison.OrdinalIgnoreCase))
+                    spots.Add((x, y));
+        return thingSpots[className] = spots;
+    }
+
     // A class that only marks its tile (blocktile, docktile) is never spawned
     static bool MarksTileOnly(Assets.ActorMetadata metadata, string className) =>
         metadata.TryGetProperty(className, "blocktile", out var blocktile) && BlockKind(blocktile?.ToString()) != MonsterBlock.None
@@ -2621,6 +2648,23 @@ internal class MapManager
             {
                 using (session.ActAs(pawn.State))
                     DoActor(pawn, tics);
+            }
+            // So does something a player's just used, through its Use state (A_Board, A_Mount):
+            // otherwise its actions would be each machine's own player's
+            else if (node.Value.UsedBy is { } user)
+            {
+                if (user.IsRemoved || node.Value.CurrentState?.StateName.Equals("Use", StringComparison.OrdinalIgnoreCase) != true)
+                {
+                    node.Value.UsedBy = null;
+                    DoActor(node.Value, tics);
+                }
+                else
+                {
+                    using (session.ActAs(user.State))
+                        DoActor(node.Value, tics);
+                    if (node.Value.CurrentState?.StateName.Equals("Use", StringComparison.OrdinalIgnoreCase) != true)
+                        node.Value.UsedBy = null;
+                }
             }
             else
                 DoActor(node.Value, tics);

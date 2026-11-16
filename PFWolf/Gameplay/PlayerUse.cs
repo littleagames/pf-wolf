@@ -569,6 +569,8 @@ internal sealed class PlayerUse(
         if (playerinput.IsHeld(ButtonType.Use) || UsableActor() is not { } chosen)
             return false;
         playerinput.SetHeld(ButtonType.Use, true);
+        // Its Use state's actions are this player's, even run on its own think a tic later
+        chosen.UsedBy = session.Player;
         chosen.SetState("Use");
         return true;
     }

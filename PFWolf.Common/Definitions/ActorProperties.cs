@@ -72,9 +72,11 @@ public static class ActorProperties
         Bool("vehicle.exitanywhere", "A vehicle: its rider can get off onto any open tile beside it, not only a dock"),
         Text("vehicle.weapon", "A vehicle: a weapon in its rider's hand while they ride (a tank's cannon), the one they had given back after"),
         Number("vehicle.damagetaken", "A vehicle: the share of a hit its rider takes (0.25: a quarter)", "1"),
-        Int("vehicle.crushdamage", "A vehicle: how much it hurts an enemy it runs into at speed (each one at most every half second)", "0"),
+        Int("vehicle.crushdamage", "A vehicle: how much it hurts an enemy (or, in a game against each other, a rival player) it runs into at speed (each one at most every half second)", "0"),
         Int("vehicle.crushspeed", "A vehicle: the least speed it crushes at (default a quarter of its top speed)"),
         Text("vehicle.crushsound", "A vehicle: played as it runs an enemy down", hint: FieldHint.Sound),
+        Text("vehicle.wreck", "A vehicle: a class put down where its rider's killed (a burning hulk)", hint: FieldHint.Class),
+        Int("vehicle.respawntics", "A vehicle: in a game against each other, how long after it's wrecked another comes back on one of the map's spots for it, in tics (-1: never)", "2100"),
         Int("wallsprite.offset", "A wall sprite: how far its panel sits off the tile's middle toward its front, in texels (32: on the tile's edge)"),
 
         // Its sounds
