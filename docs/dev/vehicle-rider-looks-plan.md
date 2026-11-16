@@ -71,7 +71,15 @@ directional vehicle + single-view swap → swap on the front view only.
 Docs: the vehicles section of the manual + actordefs property reference; the actor editor's
 property list if it has one for vehicles.
 
-## Phase 2 — art: riders on the jeep, tank and boat (A0, in the mod)
+## Phase 2 — art: riders on the jeep, tank and boat (A0, in the mod) (done 2026-11-16)
+
+Built in the pack's `tools/riders.ps1` (called from make-vehicle-arenas.ps1, new `-Wolf3D`
+parameter for the base game's VSWAP.WL6), and the three vehicles' `vehicle.ridersprites` in
+`actordefs/vehicle-arenas.yaml`. As it turned out, no hand touch-up was needed: the class
+heads are the same size as the jeep driver's (about 9 px wide), so they're pasted 1:1. The
+tunic color is the torso's commonest saturated color if colors cover a third of it (else its
+greys, for the officer), plus up to 3 more of that hue. Seen in the game headless: Guard, Dog
+and Mutant in jeeps, SS in the tank, Officer in the boat.
 
 In `tools/make-vehicle-arenas.ps1`, generated like the rest of the pack's art. Six classes each
 (B.J., Guard, Officer, SS, Mutant, Dog):

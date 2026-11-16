@@ -813,6 +813,14 @@ can reach), not played by hand.
       `--warp VA02`). Seen headless: a boat rider drawn to the other player as the boat, its
       dock prompt by the island, the boat's wreck and another back at its mooring after 20 s,
       domination's three points (B taken from the island), a gun nest manned. **(never tried)**:
+- [ ] Who's riding a vehicle (2026-11-16; `vehicle.ridersprites`, Vehicle Arenas' jeep, tank
+      and boat with multiplayer.pk3's "Play as" classes). Seen headless (`addplayer GuardPlayer`
+      etc., Lua `jump('Use')` boarding, `controlplayer 1` to look): a Guard and a Dog at the
+      jeeps' wheels, a Mutant in a jeep and an SS up out of the tank on VA01, an Officer in the
+      boat on VA02. **(never tried)**: a real netgame lobby's "Play as" then boarding; B.J. and the
+      other classes in every vehicle; the driving and firing frames (RideSee/RideMissile) by
+      eye; how a single-view rider looks from behind and the side (the front picture, as the
+      vehicles have no other views).
       driving a boat by hand round the lake and through the ferry stretches (it should stop at
       every dock, bridge rail and the island's ring); getting off onto a bridge rail; a jeep or
       tank on a bridge (not off its sides, not onto a shore dock); the guest manning a nest in a
