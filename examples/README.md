@@ -2658,7 +2658,10 @@ time limit are on the Rules screen. What each one is, in short:
 - **King of the Hill**: one hill at a time; the team alone on it scores a point a second, and
   the hill moves to another spot every minute.
 - **Horde**: everyone together against waves of enemies (game-info `horde:`, Wolf3D's are
-  mutants), with breaks between when the dead come back. Everyone dead at once ends it.
+  mutants), with breaks between when the dead come back. Everyone dead at once ends it. An
+  arena can send its own waves: a `horde:` block (laid out as the top-level one) in its own
+  `maps:` entry is used on that map only, so a map pack doesn't change Horde on anyone else's
+  maps. A game with no waves of its own still offers Horde for such an arena.
 
 The arenas are game-info maps with `deathmatch: true` (made by `examples/tools/make-deathmatch-maps.ps1`).
 Wolf3D's are the Multiplayer mod's (`multiplayer-pk3/maps/wolf3d/` and

@@ -200,7 +200,7 @@ internal static partial class GameHost
             new Gameplay.MatchModes.Heist(MapManager, Session, deathmatch, HudMessageManager, hooks),
             new Gameplay.MatchModes.Domination(MapManager, Session, deathmatch, HudMessageManager, hooks),
             new Gameplay.MatchModes.KingOfTheHill(MapManager, Session, deathmatch, HudMessageManager, hooks),
-            new Gameplay.MatchModes.Horde(MapManager, Session, deathmatch, HudMessageManager, hooks, () => GameEngineManager.GetGameInfo().Horde),
+            new Gameplay.MatchModes.Horde(MapManager, Session, deathmatch, HudMessageManager, hooks, () => GameEngineManager.GetGameInfo().HordeFor(Session.GameState.MapOn)),
             new Gameplay.MatchModes.PropHunt(MapManager, Session, deathmatch, HudMessageManager, hooks),
         ]);
     }

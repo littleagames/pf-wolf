@@ -68,8 +68,16 @@ public record GameInfoAsset : Asset
         new() { Text = "$STR_AM_TIME", Values = ["time"] },
     ];
 
-    /// <summary>The waves of enemies a multiplayer Horde game sends at the players</summary>
+    /// <summary>The waves of enemies a multiplayer Horde game sends at the players (a map can have its own: MapInfo.Horde)</summary>
     public HordeInfo Horde { get; init; } = new();
+
+    /// <summary>The Horde waves a map sends: its own, else the game's</summary>
+    public HordeInfo HordeFor(string? map) =>
+        map != null && Maps.TryGetValue(map, out var info) && info.Horde is { } own ? own : Horde;
+
+    /// <summary>Whether a Horde game can be played: the game, or an arena for it, has waves</summary>
+    public bool HasHordeWaves =>
+        Horde.Waves.Count > 0 || Maps.Values.Any(map => map.Horde is { Waves.Count: > 0 } && map.IsArenaFor("horde"));
 
     /// <summary>The New Game menu's episodes by id (the name A_Unlock unlocks), in menu order</summary>
     public Dictionary<string, EpisodeInfo> Episodes { get; init; } = [];
@@ -2133,6 +2141,13 @@ public record MapInfo
     /// their flags, points and spawns on any map when it has none placed.
     /// </summary>
     public List<string> Modes { get; init; } = [];
+
+    /// <summary>
+    /// The map's own Horde waves, in place of the game's (game-info's top-level `horde`) while a
+    /// Horde game is played on it: a map pack's arena can send its own enemies without changing
+    /// Horde on every other map. Left out, the map has the game's.
+    /// </summary>
+    public HordeInfo? Horde { get; init; }
 
     /// <summary>Whether the map is an arena for a multiplayer mode (its id)</summary>
     public bool IsArenaFor(string mode) =>

@@ -48,8 +48,11 @@ internal static class GameModes
     ];
 
     /// <summary>The modes a game offers in the lobby: Horde only when its game-info lists waves</summary>
-    internal static GameMode[] NetModesFor(HordeInfo horde) =>
-        NetModes.Where(mode => mode != GameMode.Horde || horde.Waves.Count > 0).ToArray();
+    internal static GameMode[] NetModesFor(HordeInfo horde) => NetModesFor(horde.Waves.Count > 0);
+
+    /// <summary>The modes a game offers in the lobby: Horde only when there are waves (the game's, or an arena's own)</summary>
+    internal static GameMode[] NetModesFor(bool hordeWaves) =>
+        NetModes.Where(mode => mode != GameMode.Horde || hordeWaves).ToArray();
 
     /// <summary>Players fight each other</summary>
     internal static bool IsVersus(this GameMode mode) =>

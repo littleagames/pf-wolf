@@ -809,6 +809,35 @@ can reach), not played by hand.
       feed) and never a teammate in team deathmatch; a tank shell's blast fragging a rival (and
       hurting the crew a little); someone joining mid-game while another rides (net state v20);
       a dead rider coming back on foot; a vehicle barrier (docktile) keeping vehicles off a door.
+- [ ] Boats and gun nests in multiplayer (2026-11-16; Vehicle Arenas' VA02 River Crossing,
+      `--warp VA02`). Seen headless: a boat rider drawn to the other player as the boat, its
+      dock prompt by the island, the boat's wreck and another back at its mooring after 20 s,
+      domination's three points (B taken from the island), a gun nest manned. **(never tried)**:
+      driving a boat by hand round the lake and through the ferry stretches (it should stop at
+      every dock, bridge rail and the island's ring); getting off onto a bridge rail; a jeep or
+      tank on a bridge (not off its sides, not onto a shore dock); the guest manning a nest in a
+      real netgame (A_Mount through Actor.UsedBy); being shot off a nest; the river's current
+      scrolling south.
+- [ ] Tank shells breaking walls in multiplayer (2026-11-16; Vehicle Arenas' VA03 Ruined Town,
+      `--warp VA03`). Seen headless: a shell fired at a house wall cracks it, a second brings
+      down the 3 walls in its reach (rubble, the way through open), King of the Hill's 5 spots
+      and holding the church. **(never tried)**: firing the tank's cannon by hand at houses; walls
+      breaking alike on both machines in a real netgame (lockstep), and for someone joining
+      mid-match after walls are down; driving a jeep over the rubble; whether the town opens up
+      too fast over a 10-minute match (each shell hits every house wall within 2 tiles).
+- [ ] Ice in multiplayer (2026-11-16; Vehicle Arenas' VA04 Frozen Depot, `--warp VA04`, its
+      scripts/vehicle-arenas-ice.lua keeps each player's slide in actor temp2/temp3). Seen
+      headless: a push on the pond glides on after it stops and on snow it doesn't; a save made
+      mid-slide loads with the slide carrying on; CTF starts with both flags home. **(never
+      tried)**: driving a jeep and the tank onto the pond by hand (feel, steering, the thud
+      into a boxcar); someone joining a real netgame mid-match while a player slides (it should
+      stay in step: no desync); the night's darkness and the lamps by eye.
+- [ ] A map's own Horde waves and vehicles in Horde (2026-11-16; Vehicle Arenas' VA05 Last Stand,
+      `--warp VA05`, `addplayer; gamemode horde`). Seen headless: wave 1 sends VA05's guards and
+      dogs (not the game's mutants), a wrecked jeep comes back at its spot, the lobby's mode
+      logic (GameModeTests). **(never tried)**: the lobby offering VA05 for Horde only; a whole
+      10-wave match to Hans and the win; DM01-DM04 with the pack on still sending mutants;
+      running enemies down and the gun nests against a wave; a real netgame.
 - [ ] **(never tried)** Weather Demo (`--file weather-demo`), Floors 1-3 by hand: no rain under
       the porch, the gallery, the arches, the doorways and the elevator room, and its splashes
       on the courtyard floor only; looking up and down in it; Floor 2's squalls thickening,

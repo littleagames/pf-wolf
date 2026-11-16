@@ -239,6 +239,22 @@ public class DeathmatchTests
         Assert.That(rig.Deathmatch.ItemRespawns, Is.Empty);
     }
 
+    [TestCase((int)GameMode.Horde, true)]
+    [TestCase((int)GameMode.TeamDeathmatch, true)]
+    [TestCase((int)GameMode.Coop, false)]
+    public void A_Wrecked_Vehicle_Comes_Back_In_A_Horde_But_Not_In_Coop(int mode, bool comesBack)
+    {
+        // Arrange
+        var rig = new Rig();
+        rig.Session.SetGameMode((GameMode)mode);
+
+        // Act
+        rig.Deathmatch.QueueVehicleRespawn("Jeep");
+
+        // Assert: queued in the modes whose items come back
+        Assert.That(rig.Deathmatch.ItemRespawns.Count, Is.EqualTo(comesBack ? 1 : 0));
+    }
+
     [Test]
     public void A_Vehicle_With_Every_Spot_Taken_Waits_And_One_The_Map_Never_Had_Never_Comes()
     {

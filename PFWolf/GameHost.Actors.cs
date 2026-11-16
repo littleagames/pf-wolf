@@ -435,11 +435,7 @@ internal static partial class GameHost
         new VehiclesHooks(PlayPlayerSound, message => HudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0),
             (x, y, vehicle) => MapManager.SpawnThing(x, y, vehicle), (monster, damage) => monster.Damage((uint)damage, Session.Player),
             (pawn, damage) => playersManager.TakeDamage(pawn, damage, Session.Player),
-            vehicle =>
-            {
-                if (Session.IsVersus)
-                    deathmatch.QueueVehicleRespawn(vehicle);
-            }),
+            deathmatch.QueueVehicleRespawn),
         playerWeapons);
 
     // Things that latch onto the player (Gameplay/Latching.cs): A_LatchBite, and striking them off

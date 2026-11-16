@@ -35,8 +35,8 @@ half second, with `vehicle.crushsound` -- and, in a game against each other, a r
 the rider's own hit (a frag, if it kills).
 
 The rider killed, the vehicle's wrecked: its `vehicle.wreck` class (a burning hulk) is put down
-where they died, and in a game against each other another of the vehicle's class comes back on
-one of the map's spots for it after `vehicle.respawntics` (Gameplay/Deathmatch.cs). Others see a
+where they died, and in a game against each other or a Horde another of the vehicle's class comes
+back on one of the map's spots for it after `vehicle.respawntics` (Gameplay/Deathmatch.cs). Others see a
 rider as the vehicle, through its Ride states (Gameplay/PlayerBodies.cs).
 
 =============================================================================

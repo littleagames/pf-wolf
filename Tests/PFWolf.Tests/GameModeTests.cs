@@ -284,6 +284,46 @@ public partial class MatchScoringTests
     }
 
     [Test]
+    public void A_Map_With_Its_Own_Horde_Waves_Sends_Those_And_Others_The_Games()
+    {
+        // Arrange: the game's mutants; one arena with soldiers of its own
+        var game = new GameInfoAsset
+        {
+            Horde = new HordeInfo { Waves = [new HordeWave { Enemies = new() { ["Mutant"] = 4 } }] },
+            Maps =
+            {
+                ["VA05"] = new MapInfo { Deathmatch = true, Horde = new HordeInfo { Waves = [new HordeWave { Enemies = new() { ["Guard"] = 6 } }] } },
+                ["DM01"] = new MapInfo { Deathmatch = true },
+            },
+        };
+
+        // Act
+        var own = game.HordeFor("VA05").Waves[0].Enemies;
+        var others = game.HordeFor("DM01").Waves[0].Enemies;
+        var none = game.HordeFor(null).Waves[0].Enemies;
+
+        // Assert
+        Assert.That(own, Is.EqualTo(new Dictionary<string, int> { ["Guard"] = 6 }));
+        Assert.That(others, Is.EqualTo(new Dictionary<string, int> { ["Mutant"] = 4 }));
+        Assert.That(none, Is.EqualTo(new Dictionary<string, int> { ["Mutant"] = 4 }));
+    }
+
+    [Test]
+    public void The_Lobby_Offers_Horde_When_Only_An_Arena_Has_Waves_Of_Its_Own()
+    {
+        // Arrange: a game with no waves (Spear's), and a Horde arena that brings its own
+        var waves = new HordeInfo { Waves = [new HordeWave { Enemies = new() { ["Guard"] = 6 } }] };
+        var plain = new GameInfoAsset { Maps = { ["DM01"] = new MapInfo { Deathmatch = true } } };
+        var withArena = new GameInfoAsset { Maps = { ["VA05"] = new MapInfo { Modes = ["horde"], Horde = waves } } };
+        var notAnArena = new GameInfoAsset { Maps = { ["MAP01"] = new MapInfo { Horde = waves } } };
+
+        // Act / Assert
+        Assert.That(plain.HasHordeWaves, Is.False);
+        Assert.That(withArena.HasHordeWaves, Is.True);
+        Assert.That(notAnArena.HasHordeWaves, Is.False);
+    }
+
+    [Test]
     public void In_Horde_The_Dead_Come_Back_Only_Between_Waves_And_Everyone_Dead_Ends_It()
     {
         // Arrange: a wave being fought

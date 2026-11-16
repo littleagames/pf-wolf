@@ -255,10 +255,13 @@ internal sealed class Deathmatch(
 
     /// <summary>
     /// A vehicle has been wrecked (its rider killed): another of its class comes back after its
-    /// `vehicle.respawntics` (ItemRespawnTics by default) on one of the map's spots for it
+    /// `vehicle.respawntics` (ItemRespawnTics by default) on one of the map's spots for it. In
+    /// the modes whose items come back (versus, and Horde): in co-op, as alone, it's gone.
     /// </summary>
     internal void QueueVehicleRespawn(string vehicle)
     {
+        if (!session.GameMode.KeepsItems())
+            return;
         int tics = inventory.GetIntProperty(vehicle, "vehicle.respawntics", ItemRespawnTics);
         if (tics >= 0 && ThingSpots(vehicle).Count > 0)
             ItemRespawns.Add(new ItemRespawn(vehicle, -1, -1, session.GameState.TimeCount + tics));
