@@ -91,6 +91,10 @@ internal class InventoryManager
         return match != null && baseClasses.Any(b => DerivesFrom(match, b)) ? match : null;
     }
 
+    /// <summary>An actordefs class's parent class, or null (none, or no such class)</summary>
+    public string? ParentOf(string name) =>
+        Metadata.Actors.TryGetValue(name, out var data) && !string.IsNullOrWhiteSpace(data.Parent) ? data.Parent : null;
+
     private bool DerivesFrom(string name, string baseClass)
     {
         // Bounded depth for the same reason as ActorMetadata.TryGetProperty: a parent cycle.

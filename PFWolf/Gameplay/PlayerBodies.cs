@@ -41,6 +41,13 @@ internal sealed class PlayerBodies(
     = weapon fires and RidePain hurt, each where the vehicle's class has it, else Ride, else
     = its parked Spawn look.
     =
+    = Who's riding can show: the vehicle's `vehicle.ridersprites` (rider class: sprite) gives a
+    = sprite drawn in place of the vehicle's Spawn sprite while that class rides it, the way
+    = weapon.bodysprite stands in for a body's (VJGD for VAJP with a Guard at the wheel). A class
+    = not listed uses its parent's entry (a mod's elite Guard rides as the Guard). Frame by frame
+    = and view by view, only where the rider's sprite has the picture; a single picture (B0) of
+    = a vehicle drawn from 8 sides stands in for the front view only.
+    =
     ====================
     */
 
@@ -147,6 +154,15 @@ internal sealed class PlayerBodies(
     {
         var state = actor.CurrentState!;
 
+        // Riding: who's at the wheel, where the vehicle has a sprite for their class
+        if (BodyOwner(actor) is { Vehicle: { } vehicle, Disguise: null, PlayerClass: { } riderClass } rider
+            && string.Equals(rider.BodyClass, vehicle, StringComparison.OrdinalIgnoreCase)
+            && RiderSprite(vehicle, riderClass) is { } riderSprite)
+            return actor.ResolvedStates.TryGetValue("Spawn", out var parked)
+                && string.Equals(state.Sprite, parked.Sprite, StringComparison.OrdinalIgnoreCase)
+                && RiderShows(riderSprite, state.Sprite, state.FrameLetter, actor)
+                ? riderSprite : state.Sprite;
+
         // Carrying a flag: its sprite in place of the Spawn one, frame by frame where it has it
         if (BodyOwner(actor) is { CarrySprite: { } carry, BodyHoldsWeapon: true }
             && actor.ResolvedStates.TryGetValue("Spawn", out var bodySpawn)
@@ -161,6 +177,40 @@ internal sealed class PlayerBodies(
             return state.Sprite;
 
         return SpriteExists(spriteDrawing.ActorShapeName(swap, state.FrameLetter, actor)) ? swap : state.Sprite;
+    }
+
+    // vehicle.ridersprites' sprite for a rider's class, or their nearest parent's; looked up once a pair
+    readonly Dictionary<(string Vehicle, string Rider), string?> riderSprites = [];
+
+    internal string? RiderSprite(string vehicle, string riderClass)
+    {
+        if (riderSprites.TryGetValue((vehicle, riderClass), out var cached))
+            return cached;
+        string? sprite = null;
+        if (inventory.GetProperty(vehicle, "vehicle.ridersprites") is IDictionary<object, object> sprites)
+        {
+            var current = riderClass;
+            for (int depth = 0; depth < 32 && current != null && sprite == null; depth++)    // bounded: a parent cycle
+            {
+                foreach (var (key, value) in sprites)
+                    if (string.Equals(key?.ToString(), current, StringComparison.OrdinalIgnoreCase)
+                        && value?.ToString() is { Length: > 0 } name)
+                        sprite = name.Trim();
+                current = inventory.ParentOf(current);
+            }
+        }
+        return riderSprites[(vehicle, riderClass)] = sprite;
+    }
+
+    // Whether the rider's sprite has the picture for this frame from where it's seen. A single
+    // picture stands in for a vehicle drawn from 8 sides only from the front: not a front seen
+    // from behind.
+    bool RiderShows(string riderSprite, string vehicleSprite, string frameLetter, Entities.Actors.Actor actor)
+    {
+        if (spriteDrawing.HasDirectionalSprites(riderSprite, frameLetter))
+            return SpriteExists(spriteDrawing.ActorShapeName(riderSprite, frameLetter, actor));
+        return SpriteExists(Entities.Actors.ActorStateFrame.ShapeNames(riderSprite, frameLetter)[0])
+            && (!spriteDrawing.HasDirectionalSprites(vehicleSprite, frameLetter) || spriteDrawing.CalcRotate(actor) == 1);
     }
 
     internal string? SpawnSprite(Entities.Actors.Actor? actor) =>

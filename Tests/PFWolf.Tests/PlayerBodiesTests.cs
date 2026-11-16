@@ -23,7 +23,15 @@ public class PlayerBodiesTests
                 frames: [H]
                 tics-per-frame: -1
         Ghost: {}
+        GuardPlayer:
+          parent: Player
+        EliteGuardPlayer:
+          parent: GuardPlayer
         Jeep:
+          properties:
+            vehicle.ridersprites:
+              Player: JPBJ
+              GuardPlayer: JPGD
           states:
             Spawn:
               - sprite: JEEP
@@ -61,6 +69,7 @@ public class PlayerBodiesTests
     private InventoryManager _inventory = null!;
     private GameSession _session = null!;
     private PlayerBodies _bodies = null!;
+    private RenderState _render = null!;
 
     [SetUp]
     public void Make()
@@ -75,7 +84,35 @@ public class PlayerBodiesTests
         _session.PlayerState.PlayerClass = "Player";
         _session.PlayerState.Health = 100;
         _session.PlayerState.Pawn = new Entities.Actors.PlayerPawn { State = _session.PlayerState, X = 5 * Tile, Y = 5 * Tile };
-        _bodies = new PlayerBodies(new AssetManager(), _map, _inventory, null!, _session);
+        // The viewer looks west, the body in the middle of the view
+        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade)
+        {
+            ViewAngle = 180, CenterX = 160, ProjectionWidth = 320, Scale = 160, HeightNumerator = 0x100000,
+        };
+        var drawing = new SpriteDrawing(null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, null!, _session,
+            new SpriteDrawingHooks(() => null, ob => _bodies.IsPlayerBody(ob), _ => null, ob => ob.CurrentState!.Sprite,
+                name => _bodies.SpriteExists(name), () => null, () => 1));
+        _bodies = new PlayerBodies(new AssetManager(), _map, _inventory, drawing, _session);
+    }
+
+    // Sprite pictures there are (any other isn't)
+    private void Pictures(params string[] names)
+    {
+        foreach (var name in names)
+            _bodies.SpriteExistsCache[name] = true;
+    }
+
+    // Riding the jeep as a class, facing a way (0 east, toward the viewer; 180 west, away), still
+    private Entities.Actors.Actor RideJeepAs(string playerClass, short angle = 0)
+    {
+        _session.PlayerState.PlayerClass = playerClass;
+        _session.PlayerState.Vehicle = "Jeep";
+        _session.PlayerState.Pawn!.Angle = angle;
+        _bodies.TickPlayerBodies(1);
+        _bodies.TickPlayerBodies(1);        // the first counts as having moved there
+        var body = _session.PlayerState.Body!;
+        body.ViewX = (short)_render.CenterX;
+        return body;
     }
 
     private string? BodyState => _session.PlayerState.Body?.CurrentState?.StateName;
@@ -129,6 +166,72 @@ public class PlayerBodiesTests
         _bodies.TickPlayerBodies(1);
 
         Assert.That((_session.PlayerState.Body!.Name, BodyState), Is.EqualTo(("Boat", "Spawn")));
+    }
+
+    [Test]
+    public void A_Rider_Is_Seen_With_Their_Class_At_The_Wheel()
+    {
+        // Arrange
+        Pictures("JPGDB0", "JPBJB0");
+
+        // Act / Assert
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("GuardPlayer")), Is.EqualTo("JPGD"));
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("Player")), Is.EqualTo("JPBJ"));
+    }
+
+    [Test]
+    public void A_Class_Not_Listed_Rides_As_Its_Parent_Else_As_The_Vehicle()
+    {
+        Pictures("JPGDB0");
+
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("EliteGuardPlayer")), Is.EqualTo("JPGD"));
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("Ghost")), Is.EqualTo("JEEP"));
+    }
+
+    [Test]
+    public void A_Frame_The_Riders_Sprite_Lacks_Shows_The_Vehicle()
+    {
+        // Arrange: only the still frame (B) made for the Guard; driving shows C and D
+        Pictures("JPGDB0");
+        RideJeepAs("GuardPlayer");
+        _session.PlayerState.Pawn!.X += Tile / 4;
+
+        // Act
+        _bodies.TickPlayerBodies(1);
+
+        // Assert
+        Assert.That((BodyState, _bodies.DrawnSprite(_session.PlayerState.Body!)), Is.EqualTo(("RideSee", "JEEP")));
+    }
+
+    [Test]
+    public void A_Single_Rider_Picture_On_A_Vehicle_Seen_From_8_Sides_Is_Only_Its_Front()
+    {
+        // Arrange: the jeep drawn from every side, the Guard's head only from the front
+        Pictures("JEEPB1", "JEEPB5", "JPGDB0");
+
+        // Act / Assert: coming toward the viewer, then going away
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("GuardPlayer", 0)), Is.EqualTo("JPGD"));
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("GuardPlayer", 180)), Is.EqualTo("JEEP"));
+    }
+
+    [Test]
+    public void A_Rider_Sprite_With_Views_Shows_The_One_For_Its_Angle()
+    {
+        Pictures("JEEPB1", "JEEPB5", "JPGDB1", "JPGDB5");
+
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("GuardPlayer", 180)), Is.EqualTo("JPGD"));
+    }
+
+    [Test]
+    public void A_Parked_Vehicle_Shows_No_Rider()
+    {
+        // Arrange: the Guard has a picture for the parked frame too
+        Pictures("JPGDA0");
+        _session.PlayerState.PlayerClass = "GuardPlayer";
+        var parked = _inventory.CreateActor("Jeep")!;
+
+        // Act / Assert
+        Assert.That(_bodies.DrawnSprite(parked), Is.EqualTo("JEEP"));
     }
 
     [Test]

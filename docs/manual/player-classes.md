@@ -58,3 +58,23 @@ death frames) are the same whatever's held.
 That swap only happens for a class whose `Spawn` sprite is Player's own. A class with states of
 its own (looking like a Guard, say) keeps its sprites whatever it holds. Give such a class every
 state, as one it leaves out is Player's.
+
+Riding a vehicle, a player is seen as the vehicle, through its `Ride`, `RideSee`, `RideMissile`
+and `RidePain` states. The vehicle can show which class is riding it: its
+`vehicle.ridersprites` maps class names to sprites, each drawn in place of the vehicle's `Spawn`
+sprite while that class rides it.
+
+```yaml
+ArmyJeep:
+  properties:
+    vehicle.ridersprites:
+      Player: VJBJ          # B.J. at the wheel
+      GuardPlayer: VJGD     # a Guard
+```
+
+A class that isn't listed uses its parent's entry, so a class made from `GuardPlayer` rides as
+the Guard. A class with no entry, its own or a parent's, shows the plain vehicle. As with
+`weapon.bodysprite`, a frame the rider's sprite lacks shows the vehicle's own picture. If the
+vehicle has pictures from 8 sides but the rider's sprite has only a single picture for a frame
+(`VJGDB0`), that picture is shown from the front only, and the plain vehicle from every other
+side. The parked vehicle never shows a rider.

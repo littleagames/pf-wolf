@@ -77,6 +77,7 @@ public static class ActorProperties
         Text("vehicle.crushsound", "A vehicle: played as it runs an enemy down", hint: FieldHint.Sound),
         Text("vehicle.wreck", "A vehicle: a class put down where its rider's killed (a burning hulk)", hint: FieldHint.Class),
         Int("vehicle.respawntics", "A vehicle: in a game against each other, how long after it's wrecked another comes back on one of the map's spots for it, in tics (-1: never)", "2100"),
+        Map("vehicle.ridersprites", "A vehicle: who's seen riding it: player class: sprite, drawn in place of its Spawn sprite while that class rides it (a class not listed uses its parent's)", item: FieldType.Text),
         Int("wallsprite.offset", "A wall sprite: how far its panel sits off the tile's middle toward its front, in texels (32: on the tile's edge)"),
 
         // Its sounds
