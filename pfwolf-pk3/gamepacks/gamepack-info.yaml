@@ -203,9 +203,63 @@ spear-demo:
 blake-aog:
   title: "Blake Stone: Aliens of Gold"
   game-palette: blake
-  # Blake Stone's own pack: it doesn't start from wolf3d's files
+  # Blake Stone's own pack: it doesn't start from wolf3d's files. Its files are v3.0's, the last
+  # release: v1.0's and v2.1's (GOG's) have the same names, and their md5s pick blake-v1 or
+  # blake-v2 (GameTypes.PickGameType)
   file-pack:
-    description: Blake Stone - Aliens of Gold (registered)
+    description: Blake Stone - Aliens of Gold v3.0 (registered)
+    file-loaders:
+      Wolf3DAudioFileLoader:
+        header:
+          file: audiohed.bs6
+          md5: 52a203285041846c9fd73e8947a64522
+        data:
+          file: audiot.bs6
+          md5: 144a201ef4bd5bd9989dc61d9250eeac
+      Wolf3DMapFileLoader:
+        header:
+          file: maphead.bs6
+          md5: 028dbaabf4202936209787abb8e9dc18
+        data:
+          file: maptemp.bs6
+          md5: 9b259747340ffedd37eb5eae898e95c1
+      Wolf3DVgaFileLoader:
+        dict:
+          file: vgadict.bs6
+          md5: 7ff0dae42ea839b425c3b3a801df226b
+        header:
+          file: vgahead.bs6
+          md5: e0de008dba2580709cfa49442424ab51
+        data:
+          file: vgagraph.bs6
+          md5: 5fb43bf55b58313be585bb2b06927534
+        font-count: 5
+      Wolf3DVswapFileLoader:
+        data:
+          file: vswap.bs6
+          md5: 7288f8acec83da317fca3a6d1895dc2a
+      # JAM's movies, by the names game-info and movies.yaml play them by
+      JamMovieFileLoader:
+        movies:
+          IntroMovie:
+            file: ianim.bs6
+          EndMovie:
+            file: eanim.bs6
+          ShuttleMovie:
+            file: sanim.bs6
+          GoldfireMovie:
+            file: ganim.bs6
+blake-v1:
+  title: "Blake Stone: Aliens of Gold"
+  game-palette: blake
+  # Aliens of Gold v1.0, the first release: blake's sounds, music, movies and sprite layout, its
+  # maps before v2.1's fixes, and a VGAGRAPH with fewer chunks, so its own raw-data-map
+  base-pack: blake
+  file-pack:
+    description: Blake Stone - Aliens of Gold v1.0 (registered)
+    # Its files have v3.0's names: the md5s are what tell them apart, and a --game blake with
+    # these files plays this pack (GameTypes.PickGameType)
+    strict-md5: true
     file-loaders:
       Wolf3DAudioFileLoader:
         header:
@@ -236,7 +290,6 @@ blake-aog:
         data:
           file: vswap.bs6
           md5: 5e7d5862fda72a1b2874301c01491aac
-      # JAM's movies, by the names game-info and movies.yaml play them by
       JamMovieFileLoader:
         movies:
           IntroMovie:
@@ -250,13 +303,13 @@ blake-aog:
 blake-v2:
   title: "Blake Stone: Aliens of Gold"
   game-palette: blake
-  # Aliens of Gold v2.1: blake's sounds, music, movies and sprite layout (six sprites redrawn), its
-  # maps with a few floors fixed up, and a VGAGRAPH with more chunks, so its own raw-data-map
+  # Aliens of Gold v2.1: v3.0's files but for a VGAGRAPH without the Planet Strike adverts and with
+  # v1.0's LINC screen, Apogee logo and menu checkboxes, so its own raw-data-map
   base-pack: blake
   file-pack:
     description: Blake Stone - Aliens of Gold v2.1 (registered)
-    # Its files have v1.0's names: the md5s are what tell them apart, and a --game blake with
-    # these files plays this pack (GameEngineManager.PickGameType)
+    # Its files have v3.0's names: the md5s are what tell them apart, and a --game blake with
+    # these files plays this pack (GameTypes.PickGameType)
     strict-md5: true
     file-loaders:
       Wolf3DAudioFileLoader:
@@ -283,55 +336,6 @@ blake-v2:
         data:
           file: vgagraph.bs6
           md5: 81b7807e965e72dccb1f812a7d534e65
-        font-count: 5
-      Wolf3DVswapFileLoader:
-        data:
-          file: vswap.bs6
-          md5: 7288f8acec83da317fca3a6d1895dc2a
-      JamMovieFileLoader:
-        movies:
-          IntroMovie:
-            file: ianim.bs6
-          EndMovie:
-            file: eanim.bs6
-          ShuttleMovie:
-            file: sanim.bs6
-          GoldfireMovie:
-            file: ganim.bs6
-blake-v3:
-  title: "Blake Stone: Aliens of Gold"
-  game-palette: blake
-  # Aliens of Gold v3.0: v2.1's files but for a VGAGRAPH with Planet Strike adverts, a new LINC
-  # screen and menu checkboxes, so its own raw-data-map
-  base-pack: blake
-  file-pack:
-    description: Blake Stone - Aliens of Gold v3.0 (registered)
-    strict-md5: true
-    file-loaders:
-      Wolf3DAudioFileLoader:
-        header:
-          file: audiohed.bs6
-          md5: 52a203285041846c9fd73e8947a64522
-        data:
-          file: audiot.bs6
-          md5: 144a201ef4bd5bd9989dc61d9250eeac
-      Wolf3DMapFileLoader:
-        header:
-          file: maphead.bs6
-          md5: 028dbaabf4202936209787abb8e9dc18
-        data:
-          file: maptemp.bs6
-          md5: 9b259747340ffedd37eb5eae898e95c1
-      Wolf3DVgaFileLoader:
-        dict:
-          file: vgadict.bs6
-          md5: 7ff0dae42ea839b425c3b3a801df226b
-        header:
-          file: vgahead.bs6
-          md5: e0de008dba2580709cfa49442424ab51
-        data:
-          file: vgagraph.bs6
-          md5: 5fb43bf55b58313be585bb2b06927534
         font-count: 5
       Wolf3DVswapFileLoader:
         data:

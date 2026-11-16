@@ -1,0 +1,16 @@
+# Blake Stone: Aliens of Gold v1.0. Laid over gamepacks/blake/game-info.yaml (the release's
+# base-pack, v3.0's), which says what each setting does; anything not here is v3.0's.
+
+# v1.0's high score table gives JAM's order line (v3.0's says 1-800-APOGEE1)
+high-scores:
+  defaults:
+    - { name: "JAM PRODUCTIONS INC." }
+    - { name: "" }
+    - { name: "JERRY JONES" }
+    - { name: "MICHAEL MAYNARD" }
+    - { name: "JAMES T. ROW" }
+    - { name: "" }
+    - { name: "" }
+    - { name: "TO REGISTER CALL" }
+    - { name: " 1-800-GAME123" }
+    - { name: "" }

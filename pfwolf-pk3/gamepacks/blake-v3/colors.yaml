@@ -1,4 +1,0 @@
-# Aliens of Gold v3.0's colors, laid over gamepacks/blake/colors.yaml: v3.0's LINC screen has a
-# lighter terminal, which the menus clear with (bstone's menu_background_color 0x04, as the v3.0
-# shareware's)
-MENUBACK: "#1C1C1C"     # 0x04

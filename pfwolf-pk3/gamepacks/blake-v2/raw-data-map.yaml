@@ -1,7 +1,7 @@
-# Blake Stone: Aliens of Gold v2.1. Its walls, sprites, sounds and music are v1.0's (blake's
-# raw-data-map: same layout, six sprites redrawn), but its VGAGRAPH has eleven more chunks: the
-# instructions' L and Shift keys, a new title screen, placeholder texts and a "saved game from an
-# older version" text. So the graphics list is its own, each chunk named as blake's names the same
+# Blake Stone: Aliens of Gold v2.1. Its walls, sprites, sounds, music and maps are v3.0's (blake's
+# raw-data-map but for the graphics), and its VGAGRAPH is v3.0's without the Planet Strike adverts,
+# with v1.0's LINC screen, Apogee logo and menu checkboxes, its own title screen and the BlakeDemo3
+# v3.0 dropped. So the graphics list is its own, each chunk named as blake's names the same
 # picture or text (matched by content).
 graphics:
     - STRUCTPIC

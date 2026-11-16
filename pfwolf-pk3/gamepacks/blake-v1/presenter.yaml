@@ -1,0 +1,9 @@
+# Aliens of Gold v1.0's presenter, laid over gamepacks/blake/presenter.yaml (v3.0's): the same
+# shape table (bstone's jm_tp.cpp) less the pictures v1.0's files haven't got: the instructions'
+# L and Shift keys and the ordering info's Planet Strike adverts
+shapes:
+  214: !remove
+  215: !remove
+  216: !remove
+  217: !remove
+  218: !remove

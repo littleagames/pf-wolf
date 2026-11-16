@@ -16,6 +16,21 @@ setting-defaults:
 intro-music: LASTLAFF
 high-scores-music: HISCORE
 
+# Its high score table gives JAM's order line, as Aliens of Gold v1.0's (blake's is v3.0's,
+# 1-800-APOGEE1)
+high-scores:
+  defaults:
+    - { name: "JAM PRODUCTIONS INC." }
+    - { name: "" }
+    - { name: "JERRY JONES" }
+    - { name: "MICHAEL MAYNARD" }
+    - { name: "JAMES T. ROW" }
+    - { name: "" }
+    - { name: "" }
+    - { name: "TO REGISTER CALL" }
+    - { name: " 1-800-GAME123" }
+    - { name: "" }
+
 # The control panel's music, in place of each menu's (blake's menudefs play Aliens of Gold's)
 menu-music: LASTLAFF
 

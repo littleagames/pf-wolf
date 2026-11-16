@@ -1,6 +1,7 @@
-# Aliens of Gold v2.1's presenter, laid over gamepacks/blake/presenter.yaml: its shape table
-# (bstone's jm_tp.cpp) is v1.0's, whose last two entries are pictures only v2.1 on has: the
-# instructions' L and Shift keys
+# Aliens of Gold v2.1's presenter, laid over gamepacks/blake/presenter.yaml (v3.0's): the same
+# shape table (bstone's jm_tp.cpp) less the ordering info's Planet Strike adverts, which only
+# v3.0 has
 shapes:
-  214: { pic: H_L }
-  215: { pic: H_Shift }
+  216: !remove
+  217: !remove
+  218: !remove

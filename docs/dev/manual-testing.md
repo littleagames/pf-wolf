@@ -371,22 +371,30 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] **(never tried)** A fresh high score table's order line reads " 1-800-APOGEE1" (v3.0's;
       the registered v1.0 says GAME123).
 
-### Aliens of Gold v2.1 and v3.0 (`blake-v2`, `blake-v3`: BS6 files under v1.0's names)
+### Aliens of Gold's releases (`blake` = v3.0, `blake-v1`, `blake-v2`: the same BS6 names)
 
-- [x] `--game blake` with v2.1's files runs blake-v2, with v3.0's blake-v3 (the md5s pick).
-      Checked 2026-11-15 in a window: v3.0's anti-piracy screen, Apogee logo, 1994 title, LINC
-      menus with the price tag (terminal in color 4), Ordering Info's Planet Strike pages and
-      adverts, Instructions' L and Shift keys, Switches' checkboxes, floor 1 and the status bar;
-      v2.1's title, menus, Instructions' L and Shift keys, MAP20's status bar. Headless: every
-      floor passes the level checks and every thing shows (BlakeReleasesGameTests, with
-      PFWOLF_GAMEDATA on a folder of one release's files).
-- [ ] **(never tried)** A play-through of the floors v2.1 changed: the redesigned secret floors
-      (MAP12/13 "Game1_Space/Secret2", MAP28, MAP87), MAP20's new room at 61,17, MAP33/34's
-      objects at 11-12,29, and riding the elevators (its tile's area changed on most floors).
+The checks above were made on v1.0's files, which `--game blake` now plays as `blake-v1`.
+
+- [x] `--game blake` picks by md5: v3.0's files run blake (no message), v1.0's blake-v1, v2.1's
+      blake-v2; `--game blake-v1` with v3.0's files plays blake. Checked 2026-11-15 in a window:
+      v3.0's anti-piracy screen, Apogee logo, 1994 title, LINC menus with the price tag (terminal
+      in color 4), Ordering Info's Planet Strike pages and adverts and 1-800-APOGEE1, Instructions'
+      L and Shift keys, Switches' checkboxes, floor 1 and the status bar; v1.0's dark terminal and
+      1-800-GAME-123 ordering page; v2.1's title, menus, L and Shift keys, MAP20's status bar;
+      Planet Strike's menus still dark, its high scores still 1-800-GAME123. Headless: every floor
+      passes the level checks and every thing shows on each release (BlakeReleasesGameTests and
+      the blake cases, with PFWOLF_GAMEDATA on a folder of one release's files).
+- [ ] **(never tried)** A play-through of the floors v2.1 changed (v3.0 has the same maps): the
+      redesigned secret floors (MAP12/13 "Game1_Space/Secret2", MAP28, MAP87), MAP20's new room
+      at 61,17, MAP33/34's objects at 11-12,29, and riding the elevators (its tile's area changed
+      on most floors).
 - [ ] **(never tried)** The fluid alien and slime glob frames v2.1 redrew (LIQS A-C, SPT1 D-F).
-- [ ] **(never tried)** A v1.0 save loaded under v2.1 or v3.0 (they share the BlakeStone folder):
-      it should load, with the newer maps on the floors that changed.
-- [ ] **(never tried)** v3.0's high score table's order line reads " 1-800-APOGEE1".
+- [ ] **(never tried)** A v1.0 save loaded under v3.0 (they share the BlakeStone folder): it should
+      load, with the newer maps on the floors that changed.
+- [ ] **(never tried)** A fresh high score table: v3.0's order line reads " 1-800-APOGEE1", v1.0's
+      and v2.1's " 1-800-GAME123".
+- [ ] **(never tried)** Planet Strike's Instructions draw its own Shift key (shape 215, H_KSHIFT;
+      it had none before).
 
 ## 1.10 Planet Strike (PS)
 

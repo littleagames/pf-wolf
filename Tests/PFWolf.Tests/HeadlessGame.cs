@@ -15,33 +15,40 @@ internal static class HeadlessGame
     /// <summary>
     /// Copies the release's data files (as gamepack-info names them) and a fresh pfwolf.pk3 into
     /// the work folder, from the first folder that has them all (PFWOLF_GAMEDATA, else the game's
-    /// own x64 build folder); ignores the test when none does. Returns that folder.
+    /// own x64 build folder); ignores the test when none does. Failing that, another release's
+    /// files under the same names (blake-aog's v3.0 files, else blake-v1's or blake-v2's), which
+    /// the game, started by pack, then plays. Returns that folder.
     /// </summary>
     public static string PrepareFolder(string workFolder, string release)
     {
         var info = PfWolfPk3Loader.ReadGamePackInfo(new DirectoryAssetSource(TestPaths.Pk3SourceFolder()))
             ?? throw new InvalidOperationException("pfwolf-pk3 has no gamepack-info");
-        var files = (info.GetGamePack(release).FilePack?.FileLoaders ?? [])
+        List<PFWolf.Assets.FileReference> FilesOf(string id) => (info.GetGamePack(id).FilePack?.FileLoaders ?? [])
             .Where(loader => !loader.Key.Equals("JamMovieFileLoader", StringComparison.OrdinalIgnoreCase))
             .SelectMany(loader => new[] { loader.Value.Header, loader.Value.Data, loader.Value.Dict })
             .Where(file => !string.IsNullOrWhiteSpace(file?.File))
             .Select(file => file!)
             .ToList();
+        var releases = new[] { release }
+            .Concat(info.GamePacks.Keys.Where(other => !other.Equals(release, StringComparison.OrdinalIgnoreCase)
+                                                       && info.GetGamePack(other).FilePack?.StrictMd5 == true
+                                                       && info.HasSameDataFileNames(release, other)));
 
-        foreach (var folder in DataFolderCandidates())
-        {
-            // (VSWAP.WL6 for vswap.wl6 where the file system cares, copied in under its own name)
-            string InFolder(PFWolf.Assets.FileReference file) => CaseInsensitiveFile.Find(Path.Combine(folder, file.File!));
-            if (!files.All(file => File.Exists(InFolder(file)) && Md5Matches(InFolder(file), file.Md5)))
-                continue;
+        foreach (var files in releases.Select(FilesOf))
+            foreach (var folder in DataFolderCandidates())
+            {
+                // (VSWAP.WL6 for vswap.wl6 where the file system cares, copied in under its own name)
+                string InFolder(PFWolf.Assets.FileReference file) => CaseInsensitiveFile.Find(Path.Combine(folder, file.File!));
+                if (!files.All(file => File.Exists(InFolder(file)) && Md5Matches(InFolder(file), file.Md5)))
+                    continue;
 
-            foreach (var file in files)
-                File.Copy(InFolder(file), Path.Combine(workFolder, Path.GetFileName(InFolder(file))));
-            ZipFile.CreateFromDirectory(TestPaths.Pk3SourceFolder(), Path.Combine(workFolder, "pfwolf.pk3"));
-            return folder;
-        }
+                foreach (var file in files)
+                    File.Copy(InFolder(file), Path.Combine(workFolder, Path.GetFileName(InFolder(file))));
+                ZipFile.CreateFromDirectory(TestPaths.Pk3SourceFolder(), Path.Combine(workFolder, "pfwolf.pk3"));
+                return folder;
+            }
 
-        Assert.Ignore($"{release}'s data files ({string.Join(", ", files.Select(f => f.File))}) aren't in "
+        Assert.Ignore($"{release}'s data files ({string.Join(", ", FilesOf(release).Select(f => f.File))}) aren't in "
             + $"{string.Join(" or ", DataFolderCandidates())}; set PFWOLF_GAMEDATA to a folder that has them");
         return "";
     }

@@ -1,5 +1,7 @@
-# Names for the Blake Stone: Aliens of Gold data files, in each file's order. Wall, sprite and
-# sound names follow ECWolf's bs6map, less the white and black oozes this release doesn't have.
+# Names for the Blake Stone: Aliens of Gold data files, in each file's order: v3.0's, the release
+# blake plays (blake-v1 and blake-v2 give v1.0's and v2.1's graphics lists; their other files
+# have this layout). Wall, sprite and sound names follow ECWolf's bs6map, less the white and black
+# oozes this release doesn't have.
 walls:
     - PRIWALA1
     - PRIWALA2
@@ -1328,11 +1330,14 @@ graphics:
     - FloorButtonLit9
     - FloorButtonLit10
     - FloorSelectBar
-    - LincScreen
-    - ApogeeLogo
+    - LincScreen         # v3.0's lighter terminal (colors.yaml MENUBACK)
+    - ApogeeLogo         # v3.0's
     - NonShareware
     - ParentalWarning
     - GoldfireScreen
+    - PSPromo1           # Planet Strike adverts (the ordering info's presenter shapes 216-218)
+    - PSPromo2
+    - PSPromo3
     - FloorStats
     - H_Alt
     - H_Ctrl
@@ -1369,6 +1374,8 @@ graphics:
     - H_F
     - H_P
     - H_M
+    - H_L                # the instructions' L and Shift keys (presenter shapes 214, 215)
+    - H_Shift
     - ApogeeLogoSmall
     - VisaCard
     - MasterCard
@@ -1403,7 +1410,7 @@ graphics:
     - MousePic
     - JoystickPic
     - GravisPadPic
-    - Title
+    - Title              # each release has its own title screen
     - WeaponPic1
     - WeaponPic2
     - WeaponPic3
@@ -1464,16 +1471,19 @@ graphics:
     - TopStatusBar
     - StatusBar
     - Tile8
+    - Unknown169         # JAM-compressed leftovers no version of the game reads
     - Extra1PAL
     - Extra2PAL
     - Extra3PAL
     - OrderScreen
-    - ErrorScreen
+    - ErrorScreen        # changed from v1.0's (blake-v1)
+    - Unknown175
+    - Unknown176
+    - Unknown177
     - BlakeDemo0
     - BlakeDemo1
     - BlakeDemo2
-    - BlakeDemo3
-    - BlakeDemo4
+    - BlakeDemo4         # no BlakeDemo3 in v3.0
     - BlakeDemo5
     - InformantHints
     - NiceScientistHints
@@ -1491,14 +1501,18 @@ graphics:
     - Mission6End
     - Mission6Brief
     - FloorNames
-    - HelpText
+    - POWERBAL           # placeholder texts (Planet Strike's POWERBALLTEXT, TICSTEXT, MUSICTEXT, RADARTEXT)
+    - TICSTEXT
+    - MUSTEXT
+    - RADARTEXT
+    - HelpText           # rewritten since v1.0 (blake-v1)
     - StoryText
     - Transmission
-    - ThankYouText
+    - ThankYouText       # the ordering info, rewritten since v1.0 (blake-v1)
     - CreditsText
     - Need386Text
-    - QuickInfo1          # bstone's QUICK_INFO1_TEXT: a new game's first words (game-info quick-instructions)
-    - QuickInfo2          # QUICK_INFO2_TEXT: the same, with "Press a key."
+    - QuickInfo1         # bstone's QUICK_INFO1_TEXT: a new game's first words (game-info quick-instructions)
+    - QuickInfo2         # QUICK_INFO2_TEXT: the same, with "Press a key."
     - CorruptLevelText
     - CalibrateJoystick1
     - CalibrateJoystick2
@@ -1512,6 +1526,7 @@ graphics:
     - ChangeViewSizeText
     - FileIdMissingText
     - ModifiedGameText
+    - BADSAVE            # BADSAVEGAME_TEXT: "from an older version of the game"
 # MAPTEMP's levels: mission n's floors are MAP((n-1)*15+1) (its basement) to MAP(n*15)
 maps:
     - MAP01

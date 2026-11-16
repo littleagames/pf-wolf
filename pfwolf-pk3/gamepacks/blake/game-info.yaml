@@ -153,7 +153,7 @@ high-scores:
     - { name: "" }
     - { name: "" }
     - { name: "TO REGISTER CALL" }
-    - { name: " 1-800-GAME123" }
+    - { name: " 1-800-APOGEE1" }     # v3.0's (v1.0, v2.1 and Planet Strike say 1-800-GAME123)
     - { name: "" }
 
 # Game over (bstone's LoseScreen): Goldfire's transmission typed out under his picture

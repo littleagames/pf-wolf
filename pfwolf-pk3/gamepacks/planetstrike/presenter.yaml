@@ -11,6 +11,7 @@ shapes:
   244: { sprite: VPSTC0 }     # post and spike barriers
   252: { sprite: VSPKC0 }
   214: { pic: H_KL }
+  215: { pic: H_KSHIFT }
   216: { sprite: DBOMA0 }     # fission detonator
   217: { sprite: AUTOA0 }     # automapper
   218: { pic: H_STARPT }      # the story's pictures

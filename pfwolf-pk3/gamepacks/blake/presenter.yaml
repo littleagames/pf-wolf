@@ -5,7 +5,8 @@
 fonts: [Presenter1, Presenter1, Presenter2, Presenter3, Presenter4]
 
 # What ^SHnnn draws (nnn in hex: ^SH090 is 144), from bstone's shape table for Aliens of Gold
-# v1.0 (jm_tp.cpp): pictures, and sprites and walls at 64x64. Only the ones the game's texts
+# v3.0 (jm_tp.cpp; v1.0's and v2.1's are the same less the pictures their files haven't got):
+# pictures, and sprites and walls at 64x64. Only the ones the game's texts
 # use are here: the briefings' mission pictures, the instructions' keys and items, the story's
 # pictures and the ordering info's logos.
 shapes:
@@ -104,11 +105,16 @@ shapes:
   204: { pic: H_Tab }
   205: { pic: H_C }
   206: { pic: H_F }
-  # The ordering info's
+  214: { pic: H_L }
+  215: { pic: H_Shift }
+  # The ordering info's, and its Planet Strike adverts
   210: { pic: ApogeeLogoSmall }
   211: { pic: VisaCard }
   212: { pic: MasterCard }
   213: { pic: FaxPic }
+  216: { pic: PSPromo1 }
+  217: { pic: PSPromo2 }
+  218: { pic: PSPromo3 }
 
 # What ^ANnn animates (nn in hex: ^AN24 is 36), from bstone's animation table: sprites drawn at
 # 64x64 one after another while the page is up (37x37 in the status bar's info area), each for
