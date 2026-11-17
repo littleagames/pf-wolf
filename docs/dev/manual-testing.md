@@ -1503,6 +1503,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       centred title (horizontal-orientation goes, x set); Shift-drag a row (indent, row height); the
       bar's edges on Blake; the highlighted picture on new-game (a selection-pic made); Esc while
       dragging; the guides on a wide picture; a drag saved (only the params changed written).
+- [x] Extras (2026-11-17, driven): the game with `--exec "menu sound"` on Sound, Esc to the main
+      menu; As pfwolf.pk3 has it on a mod's sound; Rows 7 on new-game (window outlined green and grown,
+      title orange); F5 on new-game started the game on its episode screen.
+- [ ] **(never tried)** Save picture… (a PNG at the zoom shown); F5 on a mod's own menu (opened as
+      a CP_Menu row would) and on a changed menu (asks to save first); the menu command typed in the
+      console during a game (opens when the menu next does).
 ---
 
 # Part 3: Linux and macOS

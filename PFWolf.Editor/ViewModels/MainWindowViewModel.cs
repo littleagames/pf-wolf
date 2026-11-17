@@ -674,6 +674,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
                 AddMod = folder => AddModFolder(folder),
                 Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+                StartGameOn = StartGameOnMenu,
             };
             // A menu saved into a mod: the game loads again with the mod, so the window shows it as the game has it
             _menuBrowser.Saved += async (_, _) => await ReloadAfterDelete(() => _menuBrowser.Status, status => _menuBrowser.Status = status);
@@ -692,6 +693,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _menuBrowser.Load(Content);
         }
         Dialogs.ShowMenuBrowser(_menuBrowser);
+    }
+
+    // The menu window's Test in game: the game, past the title, on the menu (with the mods)
+    private bool StartGameOnMenu(string menu)
+    {
+        var exe = PFWolf.Loaders.GameInstall.ExeIn(GameFolder);
+        if (Content is not { } content || !File.Exists(exe))
+        {
+            if (_menuBrowser != null)
+                _menuBrowser.Status = $"Test in game: there's no {Path.GetFileName(exe)} in {GameFolder}";
+            return false;
+        }
+        try
+        {
+            GameLaunch.Start(exe, GameFolder, GameLaunch.MenuArguments(content.PackId, menu, Mods));
+            SaveSettings();
+            return true;
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException or IOException)
+        {
+            if (_menuBrowser != null)
+                _menuBrowser.Status = $"Test in game: {e.Message}";
+            return false;
+        }
     }
 
     //

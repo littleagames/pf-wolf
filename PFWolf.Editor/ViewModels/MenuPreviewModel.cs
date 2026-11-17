@@ -8,6 +8,12 @@ using PFWolf.Menus;
 
 namespace PFWolf.Editor.ViewModels;
 
+/// <summary>A component fit-items grows (or moves), outlined on the picture while rows are tried, in the image's pixels</summary>
+public sealed record FitMark(double Left, double Top, double Width, double Height, bool Grows)
+{
+    public string Stroke => Grows ? "LimeGreen" : "Orange";
+}
+
 /// <summary>
 /// What a preview's parts are dragged into: the menu window's fields. The menu is drawn as it
 /// would be while a part's dragged, and the drag becomes one change when it's let go.
@@ -91,6 +97,12 @@ public sealed partial class MenuPreviewModel : ObservableObject, IDisposable
 
     public bool HasPicked => Picked != null;
     public string PickedLabel => Picked?.Label ?? "";
+
+    /// <summary>fit-items' grow (green) and move (orange) components, while a number of rows is tried</summary>
+    public ObservableCollection<FitMark> FitMarks { get; } = [];
+
+    /// <summary>What fit-items does with the rows shown, or empty for a menu without it</summary>
+    [ObservableProperty] private string _fitText = "";
 
     /// <summary>What drawing the menu found wrong: unknown colors, fonts that don't build</summary>
     public ObservableCollection<string> Problems { get; } = [];
@@ -192,6 +204,7 @@ public sealed partial class MenuPreviewModel : ObservableObject, IDisposable
         if (Picked != null)
             Picked = _picture.Parts.FirstOrDefault(part => part.Kind == Picked.Kind && part.Index == Picked.Index) ?? Picked;
         PlacePicked();
+        MarkFit();
         GuideX = (_picture.OriginX + 160) * Zoom;
         GuideY = (_picture.OriginY + 100) * Zoom;
         (LayoutLeft, LayoutTop) = (_picture.OriginX * Zoom, _picture.OriginY * Zoom);
@@ -200,6 +213,33 @@ public sealed partial class MenuPreviewModel : ObservableObject, IDisposable
     }
 
     partial void OnPickedChanged(MenuPart? value) => PlacePicked();
+
+    // fit-items: what it's laid out for and does with the rows now, and (rows being tried) its components outlined
+    private void MarkFit()
+    {
+        FitMarks.Clear();
+        if (_menu?.FitItems is not { Rows: > 0 } fit || _picture == null)
+        {
+            FitText = "";
+            return;
+        }
+        int rows = _picture.Rows.Length;
+        FitText = $"fit-items: laid out for {fit.Rows} rows"
+                  + (fit.MinRows is int min ? $", shrinks to {min}" : "") + (fit.MaxRows is int max ? $", grows to {max} then scrolls" : "")
+                  + $"; {rows} now"
+                  + (fit.Grow.Count > 0 ? $"; grows {string.Join(", ", fit.Grow)}" : "") + (fit.Move.Count > 0 ? $"; moves {string.Join(", ", fit.Move)}" : "");
+        if (RowCount is not > 0)
+            return;
+        foreach (var part in _picture.Parts.Where(part => part.Kind == MenuPartKind.Component))
+        {
+            if (_menu.Components[part.Index].Id is not { } id)
+                continue;
+            bool grows = fit.Grow.Contains(id, StringComparer.OrdinalIgnoreCase);
+            if (grows || fit.Move.Contains(id, StringComparer.OrdinalIgnoreCase))
+                FitMarks.Add(new FitMark((part.X + _picture.OriginX) * Zoom, (part.Y + _picture.OriginY) * Zoom,
+                    Math.Max(part.Width * Zoom, 2), Math.Max(part.Height * Zoom, 2), grows));
+        }
+    }
 
     // The outline round the part picked, in the image's pixels
     private void PlacePicked()

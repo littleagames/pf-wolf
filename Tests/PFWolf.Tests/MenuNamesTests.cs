@@ -28,6 +28,26 @@ public class MenuNamesTests
     }
 
     [Test]
+    public void Testing_A_Menu_Starts_The_Game_Past_The_Title_On_It()
+    {
+        // Act
+        var arguments = PFWolf.Editor.Editing.GameLaunch.MenuArguments("blake", "my-menu", ["mods/mine"]);
+
+        // Assert
+        Assert.That(arguments, Is.EqualTo(new[] { "--game", "blake", "--nowait", "--exec", "menu my-menu", "--file", "mods/mine" }));
+    }
+
+    [Test]
+    public void The_Menu_Command_Opens_Each_Engine_Menu_By_The_Action_That_Does()
+    {
+        // Every engine menu but the main menu and the jukebox is opened by one of the game's actions
+        // (Ui/ControlPanel.cs RunPendingMenu), or else as a CP_Menu item would
+        var opened = MenuNames.ActionMenus.Values.SelectMany(menus => menus).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.That(MenuNames.EngineUses.Keys.Where(name => !opened.Contains(name)), Is.EquivalentTo(new[] { "main-menu", "jukebox" }));
+    }
+
+    [Test]
     public void The_Items_Sources_Are_The_Ones_The_Game_Builds()
     {
         // Arrange: MenuDefs builds episodes and skills itself; the rest are registered

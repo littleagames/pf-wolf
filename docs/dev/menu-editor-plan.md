@@ -310,6 +310,23 @@ Not as planned:
 Not as planned: no Tab to cycle through the parts under the mouse; row spacing is a Shift-drag
 on a row rather than handles between rows; the guides show only while dragging.
 
+**Phase 4 done (2026-11-17): every phase is done.**
+- Game: the `menu NAME` console command (GameHost.Ui `MenuCommand`) sets
+  `ControlPanel.PendingMenu`, which the control panel opens before the main menu: an engine menu
+  by the action `MenuNames.ActionMenus` says opens it (`MenuDefs.Action`), any other as a
+  CP_Menu row does (`MenuDefs.SubMenu`). With `--nowait` it's at once; Esc goes on to the main menu.
+- Editor: `GameLaunch.MenuArguments` and the menu window's Test in game (F5; a changed menu saved
+  first if wanted, a new one has to be); "As pfwolf.pk3 has it" (`MenuBrowserViewModel.Compare`:
+  the base layers' menu in the picture, no dragging meanwhile); Save picture… (the picture at its
+  zoom, `PngFile`); fit-items' line under the picture and, with Rows set, its grow (green) and move
+  (orange) components outlined (`MenuPreviewModel.MarkFit`).
+- Checks: `MenuNamesTests` (MenuArguments; every engine menu but main-menu and the jukebox has an
+  action that opens it). Driven: the game with `--exec "menu sound"` on Sound, Esc to the main
+  menu; in the editor, compare on a mod's sound, Rows 7 on new-game (the window outlined green and
+  grown, the title orange), F5 on new-game starting the game (its episode screen first).
+- Not tried by hand: Save picture… (its file dialog), Test in game on a mod's own menu and with a
+  changed menu (the save question).
+
 Found: Blake Stone's and Planet Strike's jukebox, new-class and new-level are the shared menus,
 whose key legend picture (`c_mouselback`) Blake hasn't got. The game draws nothing there. The
 window shows them with ⚠, and `MenuCatalogGameTests` lists them as known.

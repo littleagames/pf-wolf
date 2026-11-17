@@ -40,6 +40,9 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
     /// <summary>What a menu item with action: <paramref name="name"/> runs</summary>
     internal void RegisterAction(string name, Func<int, int> action) => actions[name] = action;
 
+    /// <summary>What a menu item with action: <paramref name="name"/> runs; null for none registered</summary>
+    internal Func<int, int>? Action(string name) => actions.GetValueOrDefault(name);
+
     /// <summary>The rows of a menu with items-source: <paramref name="name"/></summary>
     internal void RegisterSource(string name, Func<ControlPanelItem[]> rows) => sources[name] = rows;
 

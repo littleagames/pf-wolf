@@ -1,3 +1,4 @@
+using Avalonia.Platform.Storage;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -45,6 +46,31 @@ public partial class MenuBrowserWindow : Window
             YamlBox.Select(from.Offset, to.EndOffset - from.Offset);
             YamlBox.ScrollTo(from.LineNumber, 0);
         });
+    }
+
+    private async void OnSavePicture(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var png = ViewModel.PicturePng();
+        if (png == null)
+            return;
+        var file = await StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "Save the menu's picture",
+            SuggestedFileName = ViewModel.PictureFileName,
+            DefaultExtension = "png",
+            FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType("PNG picture") { Patterns = ["*.png"] }],
+        });
+        if (file?.TryGetLocalPath() is not { } path)
+            return;
+        try
+        {
+            await File.WriteAllBytesAsync(path, png);
+            ViewModel.Status = $"Saved {path}";
+        }
+        catch (Exception problem) when (problem is IOException or UnauthorizedAccessException)
+        {
+            ViewModel.Status = $"Not saved: {problem.Message}";
+        }
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

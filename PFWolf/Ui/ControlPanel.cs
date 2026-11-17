@@ -33,6 +33,9 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
 
     internal int StartGame;
 
+    /// <summary>A menu to open before the main menu, the next time it opens (the menu command: the editor's Test in game)</summary>
+    internal string? PendingMenu { get; set; }
+
     /// <summary>The game was ended with End Game in the menu, so the game over screen is skipped</summary>
     internal bool EndedFromMenu;
     private void EnableEndGameMenuItem()
@@ -117,14 +120,18 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
                 return;
         }
 
-        DrawMainMenu();
-        draw.MenuFadeIn();
         StartGame = 0;
+        RunPendingMenu();
+        if (StartGame == 0)
+        {
+            DrawMainMenu();
+            draw.MenuFadeIn();
+        }
 
         //
         // MAIN MENU LOOP
         //
-        do
+        while (StartGame == 0)
         {
             which = loop.HandleMenu(MainItems, MainMenu, null);
             ShowHeldEasterEgg();
@@ -166,7 +173,6 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
             // "EXIT OPTIONS" OR "NEW GAME" EXITS
             //
         }
-        while (StartGame == 0);
 
         //
         // DEALLOCATE EVERYTHING
@@ -336,6 +342,22 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
 
         DrawMainMenu();
         return 0;
+    }
+
+    // The menu the menu command asked for, opened once: an engine menu by the action that opens it
+    // (sound by CP_Sound, new-episode by CP_NewGame), any other as a CP_Menu item opens one
+    private void RunPendingMenu()
+    {
+        if (PendingMenu is not { } name)
+            return;
+        PendingMenu = null;
+        if (name.Equals("main-menu", StringComparison.OrdinalIgnoreCase))
+            return;
+        var action = MenuNames.ActionMenus.FirstOrDefault(pair => pair.Value.Contains(name, StringComparer.OrdinalIgnoreCase)).Key;
+        if (action != null && defs.Action(action) is { } run)
+            run(0);
+        else
+            defs.SubMenu?.Invoke(name);
     }
 
     internal void CleanupControlPanel()

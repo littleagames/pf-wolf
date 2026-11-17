@@ -14,18 +14,21 @@
   <Window.KeyBindings>
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveMenuCommand}" />
     <KeyBinding Gesture="Ctrl+N" Command="{Binding NewMenuCommand}" />
+    <KeyBinding Gesture="F5" Command="{Binding TestInGameCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
         <TextBox x:Name="Search" Text="{Binding Filter}" VerticalAlignment="Center"
                  PlaceholderText="Find by name, file or mod (options, blake, my-mod)" />
         <ComboBox Grid.Column="1" ItemsSource="{x:Static vm:MenuBrowserViewModel.ShowChoices}" SelectedIndex="{Binding ShowIndex}"
                   MinWidth="200" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="120" />
-        <Button Grid.Column="3" Content="New menu…" Command="{Binding NewMenuCommand}"
+        <Button Grid.Column="3" Content="Test in game" Command="{Binding TestInGameCommand}" Margin="0,0,8,0" HorizontalAlignment="Right"
+                ToolTip.Tip="F5: PFWolf with the editor's mods, past the title, on this menu as it's saved (asks to save a changed one); Esc there goes to the main menu" />
+        <Button Grid.Column="4" Content="New menu…" Command="{Binding NewMenuCommand}"
                 ToolTip.Tip="Ctrl+N: a copy of the menu picked (or a blank one), saved into a mod, with a row on another menu that opens it" />
       </Grid>
     </Border>
@@ -59,6 +62,12 @@
         <StackPanel Spacing="6">
           <SelectableTextBlock Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
           <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" MaxWidth="780" HorizontalAlignment="Left" />
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <CheckBox Content="As pfwolf.pk3 has it" IsChecked="{Binding ShowGameMenu}" IsVisible="{Binding HasGameMenu}"
+                      ToolTip.Tip="The menu as pfwolf.pk3's files make it, without the mods' changes or the ones here: tick and untick to compare" />
+            <Button Content="Save picture…" Click="OnSavePicture" Padding="8,2"
+                    ToolTip.Tip="The picture as shown, at its zoom, as a PNG" />
+          </StackPanel>
           <v:MenuPreviewView DataContext="{Binding Preview}" />
           <TextBlock Text="{Binding CodeNote}" TextWrapping="Wrap" FontSize="12" FontStyle="Italic" Opacity="0.75"
                      MaxWidth="780" HorizontalAlignment="Left" IsVisible="{Binding HasCodeNote}" />

@@ -76,6 +76,9 @@ public sealed partial class MenuBrowserViewModel
     /// <summary>Adds a mod saved into to the editor's mods (so the game loads it)</summary>
     public Action<string>? AddMod { get; set; }
 
+    /// <summary>Starts the game on a menu (its name), as saved: false, with why in Status, when it can't</summary>
+    public Func<string, bool>? StartGameOn { get; set; }
+
     /// <summary>A menu went into a mod (the editor loads the game again)</summary>
     public event EventHandler<string>? Saved;
 
@@ -251,7 +254,8 @@ public sealed partial class MenuBrowserViewModel
             OnPropertyChanged(nameof(HasProblems));
         }
         FieldError = string.Join("\n", errors);
-        Preview.Show(_content, item.Name, menu);
+        LoadGameMenu(item);
+        ShowInPreview(item.Name, menu);
     }
 
     /// <summary>Picks the field of a part picked on the picture (a component's, a row's entry), opening the way to it</summary>
@@ -379,6 +383,26 @@ public sealed partial class MenuBrowserViewModel
             Status = $"{name} isn't saved: {e.Message}";
             return false;
         }
+    }
+
+    /// <summary>
+    /// Starts the game on the menu picked (the menu command): as it's saved, so a changed menu is
+    /// saved first if that's wanted; a new one has to be
+    /// </summary>
+    [RelayCommand]
+    private async Task TestInGameAsync()
+    {
+        if (SelectedItem is not { } item || StartGameOn == null)
+            return;
+        if (IsMenuChanged || item.IsDraft)
+        {
+            bool save = item.IsDraft || Confirm == null
+                        || await Confirm($"Test {item.Name} in the game", $"The game shows {item.Name} as it's saved. Save it first?", "Save");
+            if (save && !await SaveMenuAsync(item.Name))
+                return;
+        }
+        if (StartGameOn(item.Name))
+            Status = $"Started PFWolf on {item.Name}: Esc goes back to the main menu";
     }
 
     /// <summary>

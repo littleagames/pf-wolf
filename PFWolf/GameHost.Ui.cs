@@ -335,6 +335,17 @@ internal static partial class GameHost
     internal static void RouteMovementToAutomap() => automapInput.RouteMovementToAutomap();
 
     private static void AmStyleCommand(string[] args) => automapInput.AmStyleCommand(args);
+
+    // menu NAME: that menu, the next time the menu opens (Ui/ControlPanel.cs RunPendingMenu)
+    private static void MenuCommand(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: menu <name>");
+        if (AssetManager.GetMenu(args[0]) == null)
+            throw new ArgumentException($"There's no menu {args[0]}");
+        controlPanel.PendingMenu = args[0];
+        _consoleManager.Print($"{args[0]} opens when the menu next does");
+    }
     private static void AmOverlayCommand(string[] args) => automapInput.AmOverlayCommand(args);
     private static void AmGridCommand(string[] args) => automapInput.AmGridCommand(args);
     private static void AmRevealCommand(string[] args) => automapInput.AmRevealCommand(args);

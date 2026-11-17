@@ -54,6 +54,18 @@ public static class GameLaunch
         return arguments;
     }
 
+    /// <summary>
+    /// The game's command line to try a menu: past the title (--nowait) to the menu, which opens
+    /// that menu first (the menu command), with the editor's mods
+    /// </summary>
+    public static List<string> MenuArguments(string gamePackId, string menuName, IEnumerable<string> mods)
+    {
+        var arguments = new List<string> { "--game", gamePackId, "--nowait", "--exec", $"menu {menuName}" };
+        foreach (var mod in mods)
+            arguments.AddRange(["--file", mod]);
+        return arguments;
+    }
+
     /// <summary>Starts the game in its own folder, as it expects, and leaves it running</summary>
     public static void Start(string exe, string gameFolder, IEnumerable<string> arguments)
     {

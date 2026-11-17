@@ -49,12 +49,34 @@
                 Stroke="Yellow" StrokeThickness="1" StrokeDashArray="4,4" Opacity="0.7" IsVisible="{Binding IsDragging}" />
           <Rectangle Canvas.Left="{Binding LayoutLeft}" Canvas.Top="{Binding LayoutTop}" Width="{Binding LayoutWidth}" Height="{Binding LayoutHeight}"
                      Stroke="Yellow" StrokeThickness="1" StrokeDashArray="2,4" Opacity="0.6" IsVisible="{Binding IsDragging}" />
+          <!-- fit-items' grow and move components, while rows are tried -->
+          <ItemsControl ItemsSource="{Binding FitMarks}" Width="{Binding ImageWidth}" Height="{Binding ImageHeight}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <Canvas />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.Styles>
+              <Style Selector="ContentPresenter" x:DataType="vm:FitMark">
+                <Setter Property="Canvas.Left" Value="{Binding Left}" />
+                <Setter Property="Canvas.Top" Value="{Binding Top}" />
+              </Style>
+            </ItemsControl.Styles>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:FitMark">
+                <Rectangle Width="{Binding Width}" Height="{Binding Height}" Stroke="{Binding Stroke}" StrokeThickness="2" StrokeDashArray="5,3" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
           <Rectangle Canvas.Left="{Binding PickedLeft}" Canvas.Top="{Binding PickedTop}" Width="{Binding PickedWidth}" Height="{Binding PickedHeight}"
                      Stroke="DeepSkyBlue" StrokeThickness="2" StrokeDashArray="3,2" IsVisible="{Binding HasPicked}" />
         </Canvas>
       </Panel>
     </Border>
 
+    <TextBlock Text="{Binding FitText}" FontSize="12" Opacity="0.8" TextWrapping="Wrap"
+               IsVisible="{Binding FitText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+               ToolTip.Tip="Rows (beside the zoom) tries another number of them: what grows is outlined green, what moves orange" />
     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
       <TextBlock Text="{Binding Caption}" Classes="hint" FontSize="12" Opacity="0.75" />
       <TextBlock Grid.Column="1" Text="{Binding PickedLabel}" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="DeepSkyBlue" />

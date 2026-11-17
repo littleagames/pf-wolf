@@ -40,6 +40,20 @@ rows, round from the end), Home and End, or an item's letter. Clicking a part of
 it (outlined, and named under the picture): a row also takes the cursor there. Double-click an
 item that opens a menu to go to that menu, or a picture to see it in the art window (F6).
 
+## Trying it, comparing it, saving the picture
+
+- **Test in game** (F5) starts PFWolf with the editor's mods, past the title, on the menu picked
+  (the game's `menu NAME` console command, run with `--exec`): an engine menu as its own screen
+  (New Game starts at its first screen), a mod's as a `CP_Menu` row opens it. The game shows the
+  menu as it's saved, so a changed one is saved first if you say so (a new one has to be). Esc
+  there goes back to the main menu.
+- **As pfwolf.pk3 has it**, on a menu a mod or the fields change, shows pfwolf.pk3's own in its
+  place; tick and untick it to see what changed. Nothing can be dragged while it's ticked.
+- **Save picture…** saves the picture as shown, at its zoom, as a PNG.
+- On a menu with **fit-items**, a line under the picture says what it's laid out for and what it
+  does with the rows there are; with a number in **Rows**, the components it grows are outlined
+  green and the ones it moves orange.
+
 ## Laying it out on the picture
 
 In the menu window (not the Definitions window's preview), the picture can be laid out with the
