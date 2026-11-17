@@ -263,6 +263,35 @@ Not as planned:
   drawn placeholder rows. Mods, network games and the level select get sample rows.
 - Double-click opens menus and pictures only, not fonts or music.
 
+**Phase 2 done (2026-11-17).**
+- Common: `MenuSchema` (MenuAsset's fields with item and component types, actions and
+  items-sources as choices; one params record of every component type's, `ParamAppliesTo`) and
+  `FieldHint.Menu` / `FieldHint.Article`.
+- Editor `Editing/MenuEditing` (a component's params, a list of one-key mappings, as one mapping
+  to edit and back, keeping their order), `Editing/MenuOverlay` (the overlay in MergeYaml's terms:
+  changed keys, entries by id/control with only changed keys, `remove: true`, `before:`/`after:`
+  only where the order needs one, `!remove` for keys taken out, `!replace` for a list whose
+  id-less entries changed; every overlay checked by laying it over), `Editing/MenuSaver` (the
+  mod's own file of the menu or `menudefs/NAME.yaml`, laid over the files before that mod's,
+  checked by `MenuCatalog.Merge` reading it back, the file's top comments kept; pfwolf.pk3
+  refused). A save that writes a list whole asks first, naming what that costs.
+- `MenuBrowserViewModel.Fields`: the Fields tab (the shared `FieldTree`), undo/redo snapshots,
+  Save/Revert, a part picked on the picture opens its entry, New menu… (a copy, or `+name` blank,
+  plus a CP_Menu row on a menu named), unsaved menus in `ResolveUnsaved`.
+- Checks: `MenuOverlayTests` (10 cases), `MenuSavingGameTests` (every menu of wolf3d, spear,
+  blake and planetstrike through the fields and back unchanged; an edit and a new menu saved into
+  a scratch mod read back as edited; pfwolf.pk3 refused). Driven: an indent change saved into a
+  scratch mod (only `indent: 80` added, its existing entry kept, the game reloaded with it); a
+  click on the picture opening the Window's entry; New menu… (+my-test from options) drawn, with
+  the options row added.
+
+Not as planned:
+- No `DefinitionKind.Menus` / Menus tab in the Definitions window: a menu is a document of its own
+  merged by entry id, which DefinitionSet's key-path writes don't fit. F11's YAML files tab
+  (live preview since phase 1) is the Definitions window's way to edit menus.
+- Pickers: menus, texts, pictures, fonts, music, actions, types and items-sources; not Lua
+  functions, controls or game packs (typed).
+
 Found: Blake Stone's and Planet Strike's jukebox, new-class and new-level are the shared menus,
 whose key legend picture (`c_mouselback`) Blake hasn't got. The game draws nothing there. The
 window shows them with ⚠, and `MenuCatalogGameTests` lists them as known.

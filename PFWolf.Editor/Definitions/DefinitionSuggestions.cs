@@ -6,14 +6,14 @@ using PFWolf.Editor.Data;
 namespace PFWolf.Editor.Definitions;
 
 /// <summary>The names a definition's fields can take, from the loaded game: its textures, pictures, classes, sounds...</summary>
-public sealed class DefinitionSuggestions
+public class DefinitionSuggestions
 {
     private readonly GameContent? _content;
     private readonly Dictionary<FieldHint, IReadOnlyList<string>> _lists = [];
 
     public DefinitionSuggestions(GameContent? content) => _content = content;
 
-    public IReadOnlyList<string> For(FieldHint hint)
+    public virtual IReadOnlyList<string> For(FieldHint hint)
     {
         if (_content == null || hint is FieldHint.None or FieldHint.Color)
             return [];

@@ -10,15 +10,22 @@ using YamlDotNet.RepresentationModel;
 namespace PFWolf.Editor.ViewModels;
 
 /// <summary>A menu as the menu window lists it</summary>
-public sealed class MenuListItem(MenuEntry entry, int problems, string packId)
+public sealed partial class MenuListItem(MenuEntry entry, int problems, string packId) : ObservableObject
 {
+    /// <summary>Changed here and not saved: marked ●</summary>
+    [ObservableProperty] private bool _hasEdits;
+
+    /// <summary>A new menu, in no mod yet</summary>
+    public bool IsDraft { get; init; }
+
     public MenuEntry Entry { get; } = entry;
     public string Name => Entry.Name;
     public int ProblemCount { get; } = problems;
     public bool HasProblems => ProblemCount > 0;
 
     /// <summary>Where it's from, in a word or two</summary>
-    public string Where => Entry.IsModsOwn ? "a mod's own"
+    public string Where => IsDraft ? "new, not saved"
+        : Entry.IsModsOwn ? "a mod's own"
         : Entry.FromMod ? "changed by a mod"
         : Entry.IsPackOwn ? $"{packId}'s own"
         : "";
@@ -50,7 +57,11 @@ public sealed partial class MenuBrowserViewModel : ObservableObject, IDisposable
 
     public MenuBrowserViewModel()
     {
-        Preview.PartPicked += (_, part) => SelectPart(part);
+        Preview.PartPicked += (_, part) =>
+        {
+            SelectPart(part);
+            PickField(part);
+        };
         Preview.PartOpened += (_, part) => OpenPart(part);
     }
 
@@ -117,6 +128,17 @@ public sealed partial class MenuBrowserViewModel : ObservableObject, IDisposable
                 MenuCatalog.Problems(content, MenuCatalog.Merge(content, entry), _names).Count, content.PackId))];
             Title = $"Menus - {content.Title}";
         }
+        LoadFields(content);
+
+        // New menus not saved yet, and menus changed and not saved, as they were left
+        foreach (var (name, _) in _drafts)
+        {
+            _names.Add(name);
+            _all.Add(new MenuListItem(new MenuEntry(name, name, [], []), 0, content?.PackId ?? "") { IsDraft = true });
+        }
+        _all.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        foreach (var item in _all)
+            item.HasEdits = _edits.TryGetValue(item.Name, out var edit) && Changed(edit);
 
         Refilter();
         SelectedItem = picked != null ? Items.FirstOrDefault(item => item.Name.Equals(picked, StringComparison.OrdinalIgnoreCase)) : null;
@@ -184,6 +206,7 @@ public sealed partial class MenuBrowserViewModel : ObservableObject, IDisposable
             CodeNote = "";
             Preview.Show(_content, "", null);
             NotifyLists();
+            OpenFields(null);
             return;
         }
 
@@ -193,14 +216,17 @@ public sealed partial class MenuBrowserViewModel : ObservableObject, IDisposable
         foreach (var use in entry.Uses)
             Uses.Add(use);
 
-        _build = MenuCatalog.Merge(_content, entry);
+        _build = value.IsDraft && _drafts.TryGetValue(value.Name, out var draft)
+            ? new MenuBuild(draft, null, null, null, [])
+            : MenuCatalog.Merge(_content, entry);
         foreach (var problem in MenuCatalog.Problems(_content, _build, _names))
             Problems.Add(problem);
         MergedYaml = _build.Tree != null ? YamlTree.ToText(_build.Tree) : "";
         IndexYaml();
 
         var menu = _build.Menu;
-        Details = (entry.IsPackOwn ? $"{_content.PackId}'s own (menudefs/{_content.PackId}/{entry.Name}.yaml), in place of the shared one"
+        Details = (value.IsDraft ? "A new menu, in no mod yet: Save puts it in one, and a CP_Menu row (menu: " + entry.Name + ") opens it"
+                      : entry.IsPackOwn ? $"{_content.PackId}'s own (menudefs/{_content.PackId}/{entry.Name}.yaml), in place of the shared one"
                       : entry.IsModsOwn ? "A mod's own menu: a CP_Menu item opens it"
                       : "The shared menu (menudefs/), every pack's that hasn't its own")
                   + (entry.Reached ? "" : ". Nothing in this game opens it.")
@@ -208,6 +234,7 @@ public sealed partial class MenuBrowserViewModel : ObservableObject, IDisposable
         CodeNote = MenuSamples.CodeDrawn(entry.Name) ?? "";
         Preview.Show(_content, entry.Name, menu);
         NotifyLists();
+        OpenFields(value);
     }
 
     private void NotifyLists()

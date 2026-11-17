@@ -59,6 +59,13 @@ public partial class MenuBrowserWindow : Window
             Search.SelectAll();
             e.Handled = true;
         }
+        else if (e.Key is Key.Z or Key.Y && e.KeyModifiers == KeyModifiers.Control && FocusManager?.GetFocusedElement() is not TextBox)
+        {
+            var command = e.Key == Key.Z ? ViewModel.UndoMenuCommand : ViewModel.RedoMenuCommand;
+            if (command.CanExecute(null))
+                command.Execute(null);
+            e.Handled = true;
+        }
         else if (e.Key == Key.Escape)
         {
             if (YamlBox.SearchPanel is { IsClosed: false } find)

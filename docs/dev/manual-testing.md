@@ -1483,6 +1483,16 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       it); a problem typed into a mod file (an unknown action, a misspelt picture) shown under the
       F11 preview and, saved and reloaded, in the menu window; the palette window changing colors
       redraws the menu.
+- [x] Fields (2026-11-17, driven): sound's Indent 56 → 80 drawn at once (● in the list, Changed,
+      not saved); a click on the window in the picture opens its entry (#3); Ctrl+S into a scratch
+      mod already changing sound wrote only `indent: 80` beside its title entry, the game reloaded.
+- [x] New menu… (2026-11-17, driven): +my-test opened from options: a window and a Back row,
+      "new, not saved"; options gets a my-test row (●).
+- [ ] **(never tried)** Saving a new menu (the mod picker), then options (its row: `after:`); the
+      game opening it from Options; + and ✕ and ↑ ↓ on rows and components; a component's type
+      changed (its params change); Undo / Redo / Revert; a Window with no id changed on main-menu
+      (asks before writing components whole with !replace); closing the editor with a menu changed
+      asks to save; a pk3 mod; Blake (a highlight bar's cursor fields).
 ---
 
 # Part 3: Linux and macOS

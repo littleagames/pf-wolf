@@ -55,6 +55,10 @@ public enum FieldHint
     Puzzle,
     /// <summary>A switch's or trigger's action call (A_OpenDoor("hold"))</summary>
     SwitchAction,
+    /// <summary>A menudefs menu by its name (a CP_Menu item's menu)</summary>
+    Menu,
+    /// <summary>A text (texts/, a VGAGRAPH text) by its name: an article a CP_Article item shows</summary>
+    Article,
 }
 
 /// <summary>

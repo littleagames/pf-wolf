@@ -42,6 +42,30 @@ item that opens a menu to go to that menu, or a picture to see it in the art win
 
 ## The tabs
 
+- **Fields**: the menu's keys (where the rows go, how far apart, its font, cursor, music,
+  items-source, fit-items...), then its **components** and **menu items**, each a row of fields with
+  what it does. **+** adds a component or row, **↑ ↓** move one, **✕** takes one out. A
+  component's params are the ones its type reads (a Window's place and size, a Graphic's picture,
+  a Label's text and its shadow, outline, gradient and glow), and change when its type does. Item
+  types, actions and items-sources are picked from the game's; a `CP_Menu` row's menu, a
+  `CP_Article` row's text, pictures, fonts and music offer the game's names. Every change is drawn
+  at once, and a changed menu is marked ● in the list. **Undo** and **Redo** (Ctrl+Z, Ctrl+Y
+  outside a field) step through the changes; **Revert** goes back to the menu as its files make
+  it. Clicking a part of the picture opens its entry here.
+
+  **Save** (Ctrl+S) puts the menu in a mod: the last mod with its own file of it, else one you
+  pick (pfwolf.pk3 is read-only). The file says only what the mod changes: keys that differ, and
+  rows and components by their `id` with only their changed keys, `remove: true` for one taken
+  out and `before:`/`after:` for one moved or added in the middle. An entry with no `id` can't be
+  matched that way, so changing or moving one writes its whole list, tagged `!replace`, and the
+  editor asks first: that list then won't take in later changes pfwolf.pk3 makes to it (give its
+  entries ids to avoid that). The saved file is checked by merging it as the game does before it's written. The
+  game is then loaded again with the mod.
+
+  **New menu…** (Ctrl+N) starts a copy of the menu picked, or with a name starting `+` a blank
+  one (a window and a Back row), and asks for a menu to add a row to that opens it (`CP_Menu`).
+  Both are saved like any change. Closing the editor or loading the game again with menus
+  changed asks to save them first.
 - **Files and uses**: the files the menu is made from, in order: pfwolf.pk3's, then each mod's
   laid over it. **Edit…** opens a file in the Definitions window's YAML tab, which draws the menu
   beside it again as you type (pfwolf.pk3's own is read-only there: *Copy to mod* makes a mod's own
@@ -53,9 +77,9 @@ item that opens a menu to go to that menu, or a picture to see it in the art win
 - **YAML**: the menu as its files merge, to read. Clicking a part of the picture selects its
   entry here.
 
-## Changing a menu
+## Changing a menu as YAML
 
-A menu is changed in its files, in the Definitions window's **YAML files** tab (F11): pick a
+A menu can also be changed in its files, in the Definitions window's **YAML files** tab (F11): pick a
 `menudefs` file (or **Edit…** in the menu window) and the menu is drawn beside the text, again as
 you type, before anything is saved. A mod's file is drawn laid over the menu as the game lays it
 (only the keys it gives change, and `menu-items` and `components` entries by their `id`); a file

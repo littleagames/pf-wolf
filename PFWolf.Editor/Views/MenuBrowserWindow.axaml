@@ -11,15 +11,22 @@
         Width="1500" Height="860" MinWidth="1060" MinHeight="600"
         WindowStartupLocation="CenterOwner">
 
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveMenuCommand}" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding NewMenuCommand}" />
+  </Window.KeyBindings>
+
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
         <TextBox x:Name="Search" Text="{Binding Filter}" VerticalAlignment="Center"
                  PlaceholderText="Find by name, file or mod (options, blake, my-mod)" />
         <ComboBox Grid.Column="1" ItemsSource="{x:Static vm:MenuBrowserViewModel.ShowChoices}" SelectedIndex="{Binding ShowIndex}"
                   MinWidth="200" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="120" />
+        <Button Grid.Column="3" Content="New menu…" Command="{Binding NewMenuCommand}"
+                ToolTip.Tip="Ctrl+N: a copy of the menu picked (or a blank one), saved into a mod, with a row on another menu that opens it" />
       </Grid>
     </Border>
 
@@ -35,10 +42,12 @@
       </ListBox.Styles>
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="vm:MenuListItem">
-          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6" ToolTip.Tip="{Binding ToolTip}" Opacity="{Binding Opacity}">
+          <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="6" ToolTip.Tip="{Binding ToolTip}" Opacity="{Binding Opacity}">
             <TextBlock Text="⚠" Foreground="OrangeRed" IsVisible="{Binding HasProblems}" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="2" Text="{Binding Where}" Opacity="0.6" FontSize="11" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="●" Foreground="DeepSkyBlue" IsVisible="{Binding HasEdits}" VerticalAlignment="Center"
+                       ToolTip.Tip="Changed, not saved" />
+            <TextBlock Grid.Column="2" Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3" Text="{Binding Where}" Opacity="0.6" FontSize="11" VerticalAlignment="Center" />
           </Grid>
         </DataTemplate>
       </ListBox.ItemTemplate>
@@ -58,6 +67,23 @@
 
       <!-- Where it comes from, what opens it, what's wrong, and the YAML it reads as -->
       <TabControl Grid.Column="1">
+        <TabItem Header="Fields">
+          <DockPanel Margin="0,8,0,0">
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+              <TextBlock Text="Changed, not saved" FontSize="12" Opacity="0.7" VerticalAlignment="Center" IsVisible="{Binding IsMenuChanged}" />
+              <Button Grid.Column="1" Content="Save" Command="{Binding SaveMenuCommand}" Classes="accent"
+                      ToolTip.Tip="Ctrl+S: into the last mod with its own file of the menu, else one you pick; just what's changed, rows and components by id (pfwolf.pk3 is read-only)" />
+              <Button Grid.Column="2" Content="Revert" Command="{Binding RevertMenuCommand}" ToolTip.Tip="Back to the menu as its files make it" />
+              <Button Grid.Column="3" Content="Undo" Command="{Binding UndoMenuCommand}" ToolTip.Tip="Ctrl+Z (outside a field)" />
+              <Button Grid.Column="4" Content="Redo" Command="{Binding RedoMenuCommand}" ToolTip.Tip="Ctrl+Y (outside a field)" />
+            </Grid>
+            <TextBlock DockPanel.Dock="Top" Text="{Binding FieldError}" Foreground="OrangeRed" TextWrapping="Wrap" FontSize="12"
+                       Margin="0,0,0,6" IsVisible="{Binding HasFieldError}" />
+            <TextBlock DockPanel.Dock="Top" FontSize="12" Opacity="0.7" TextWrapping="Wrap" Margin="0,0,0,6"
+                       Text="The menu's keys, then its components and rows (+ adds one, ↑ ↓ move it). Click a part of the picture to find its entry. Each change is drawn at once." />
+            <v:FieldTree Rows="{Binding FieldRows}" SelectedRow="{Binding SelectedField}" />
+          </DockPanel>
+        </TabItem>
         <TabItem Header="Files and uses">
           <ScrollViewer>
             <StackPanel Spacing="6" Margin="0,8,0,0">

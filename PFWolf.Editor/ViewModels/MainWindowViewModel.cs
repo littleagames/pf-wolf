@@ -668,7 +668,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (_menuBrowser == null)
         {
-            _menuBrowser = new MenuBrowserViewModel();
+            _menuBrowser = new MenuBrowserViewModel
+            {
+                PickMod = PickModToSaveIn,
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+                AddMod = folder => AddModFolder(folder),
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+            };
+            // A menu saved into a mod: the game loads again with the mod, so the window shows it as the game has it
+            _menuBrowser.Saved += async (_, _) => await ReloadAfterDelete(() => _menuBrowser.Status, status => _menuBrowser.Status = status);
             // A menu's file: changed in the Definitions window's YAML tab, which draws the menu again as it's typed
             _menuBrowser.EditFileRequested += (_, layer) =>
             {
@@ -1954,14 +1962,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var definitions = _definitions?.UnsavedNames ?? [];
         var fonts = _fontBrowser?.UnsavedNames ?? [];
         var actors = _actorBrowser?.UnsavedNames ?? [];
-        if (dirty.Count + palettes.Count + definitions.Count + fonts.Count + actors.Count == 0 || Dialogs == null)
+        var menus = _menuBrowser?.UnsavedNames ?? [];
+        if (dirty.Count + palettes.Count + definitions.Count + fonts.Count + actors.Count + menus.Count == 0 || Dialogs == null)
             return true;
 
         var names = string.Join(", ", dirty.Select(document => document.AssetName.ToUpperInvariant())
             .Concat(palettes.Select(palette => $"palette {palette.Name}"))
             .Concat(definitions)
             .Concat(fonts)
-            .Concat(actors));
+            .Concat(actors)
+            .Concat(menus));
         switch (await Dialogs.AskUnsaved($"{what} {names}. Save first?"))
         {
             case UnsavedChoice.Save:
@@ -1982,6 +1992,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 {
                     Status = "Not every actor could be saved: " + _actorBrowser.Status;
                     ShowActors();
+                    return false;
+                }
+                if (menus.Count > 0 && !await _menuBrowser!.SaveAllAsync())
+                {
+                    Status = "Not every menu could be saved: " + _menuBrowser.Status;
+                    ShowMenus();
                     return false;
                 }
                 foreach (var document in dirty)
