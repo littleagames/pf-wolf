@@ -705,14 +705,14 @@ internal class MapManager
     }
 
     // ThingSpots, by class, for the level they were found on (LevelSerial)
-    private readonly Dictionary<string, List<(int X, int Y)>> thingSpots = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<(int X, int Y, int Angles)>> thingSpots = new(StringComparer.OrdinalIgnoreCase);
     private int thingSpotsLevel = -1;
 
     /// <summary>
-    /// Where the level's object plane puts things of a class, in map order (a wrecked vehicle
-    /// comes back on one: Gameplay/Deathmatch.cs)
+    /// Where the level's object plane puts things of a class, in map order, and the way each
+    /// faces (a wrecked vehicle comes back on one: Gameplay/Deathmatch.cs)
     /// </summary>
-    internal IReadOnlyList<(int X, int Y)> ThingSpots(string className)
+    internal IReadOnlyList<(int X, int Y, int Angles)> ThingSpots(string className)
     {
         if (thingSpotsLevel != LevelSerial)
         {
@@ -727,7 +727,7 @@ internal class MapManager
         for (int y = 0; y < MapHeight; y++)
             for (int x = 0; x < MapWidth; x++)
                 if (things.TryGetValue(MapSpot(x, y, 1), out var thing) && string.Equals(thing.Class, className, StringComparison.OrdinalIgnoreCase))
-                    spots.Add((x, y));
+                    spots.Add((x, y, thing.Angles));
         return thingSpots[className] = spots;
     }
 

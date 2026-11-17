@@ -109,17 +109,43 @@ That's 96 pictures (16 a class), all generated.
 
 With phase 1 not yet built, the new sprites are harmless: nothing refers to them.
 
-## Phase 3 — 8 directions (later, art-bound)
+## Phase 3 — 8 directions (engine and script done 2026-11-16; art waits on the user)
 
-- Riders already turn: a player's body rotates by its angle (`SpriteDrawing.CalcRotate`'s
-  `IsPlayerBody` branch), so `VAJPB1`–`B8` etc. would just work for riders with no engine work.
-- Parked vehicles rotate by `Dir`; a vehicle spawned by the map, put back on exit
-  (`Vehicles` → `hooks.Respawn`) or respawned by `Deathmatch` most likely faces nowhere
-  (`NoDir` → always the front). To check, and if so: put it back facing the way its rider faced,
-  and give map-placed ones the thing's angle.
-- The art is the real cost: OLSDL's jeep and Heimzahlung's tank only exist as front views, so
-  the 7 other views have to be drawn (or rendered from a model) — then times 6 classes for the
-  heads, unless heads are only drawn for the front and the side/back views use a generic helmet.
+The user draws the 7 other views (decision 5); everything else is ready for them:
+
+- **Parked things turn.** A thing that stands still was always drawn with `GetShapeName(NoDir)`,
+  its front, so a parked jeep with `VAJPA1`–`A8` still showed `A0` from every side.
+  `SpriteDrawing.DrawScaleds` now gives a static thing with views and a `Dir` the view
+  `ActorShapeName` picks (CalcRotate by `Dir`, its `ViewX` from `TransformTile`). Seen headless
+  with numbered stand-in views: VA01's jeep (angles 0, east) shows 1 from the east, 7 from the
+  south, 5 from the west and 3 from the north.
+- **Facing kept.** Getting out and wrecking put the vehicle (or wreck) down facing the nearest of
+  the eight ways to the rider's angle (`Vehicles.ParkedAngles`, through `hooks.Respawn`'s new
+  angles). A deathmatch respawn faces its map spot's angles (`MapManager.ThingSpots` returns
+  them). Getting into a vehicle drawn from its sides (`hooks.DrawnTurning`) turns the rider to
+  its `Dir`; a front-only one keeps the old 4-way snap to the rider's own facing. Seen headless:
+  boarding VA01's jeep from the south turned the player from 90 to 0.
+- **Riders on any view.** `RiderShows` lets any view of the rider's sprite show. A rider's
+  picture is the whole vehicle, so its own views are right even where the plain vehicle lacks
+  that view. Its single picture (B0) shows from the front, or where the vehicle falls back to its
+  own single picture, never as a front seen from behind. Seen headless: B.J. at the wheel from
+  the front, the plain view 7 from the side.
+- **The pack's script.** `art\sprites\*.png` (with a README of names, views and frames) are
+  copied into the mod before the riders are made. `riders.ps1` then puts each class into every
+  drawn view of a riding frame, with the class's head from the same side: VSWAP sprite + view - 1
+  (B.J.'s `PLMPA1`–`A8`), the head's rows taken from the front, its middle column found per view.
+  Where it goes is in `tools\rider-places.psd1`: per view (`'3'`) or frame and view (`'C3'`):
+  `Chin`, `Body` rows, `Behind` (a row, or `'rim'` for the boat), `Erase` (the jeep's own
+  driver, from the parked frame A of that view), `Tunic`. A drawn view with no place gets no
+  rider, and a warning. Tried on stand-in views (fronts copied as views 2, 3, 5): 96 pictures,
+  side and back heads right; the front riders came out byte-identical to phase 2's.
+- Tests: `VehiclesTests` (facing on boarding, getting out, wrecks, ParkedAngles),
+  `DeathmatchTests` (respawn faces the spot), `PlayerBodiesTests` (a rider drawn for some views,
+  a single picture where the vehicle shows its own single picture).
+
+Left: the art itself; then a `rider-places.psd1` entry per drawn view (check each with a contact
+sheet); mapdefs ids for vehicles facing other ways if the maps want them (all of them face east
+today, `angles: 0`); and the manual-testing entry's 8-direction items.
 
 ## Decisions (2026-11-16, the user's)
 
@@ -127,3 +153,5 @@ With phase 1 not yet built, the new sprites are harmless: nothing refers to them
 2. Head **and** tunic: the jeep driver's tunic is recolored per class.
 3. Dog: its head in the seat / hatch / boat, the same as the others (no dog-only pose).
 4. Jeep, tank **and boat**; not the gun nest.
+5. Phase 3's 7 other views: the user supplies the art (drawn or found), rather than models
+   rendered by the script.

@@ -809,10 +809,6 @@ can reach), not played by hand.
       feed) and never a teammate in team deathmatch; a tank shell's blast fragging a rival (and
       hurting the crew a little); someone joining mid-game while another rides (net state v20);
       a dead rider coming back on foot; a vehicle barrier (docktile) keeping vehicles off a door.
-- [ ] Boats and gun nests in multiplayer (2026-11-16; Vehicle Arenas' VA02 River Crossing,
-      `--warp VA02`). Seen headless: a boat rider drawn to the other player as the boat, its
-      dock prompt by the island, the boat's wreck and another back at its mooring after 20 s,
-      domination's three points (B taken from the island), a gun nest manned. **(never tried)**:
 - [ ] Who's riding a vehicle (2026-11-16; `vehicle.ridersprites`, Vehicle Arenas' jeep, tank
       and boat with multiplayer.pk3's "Play as" classes). Seen headless (`addplayer GuardPlayer`
       etc., Lua `jump('Use')` boarding, `controlplayer 1` to look): a Guard and a Dog at the
@@ -821,6 +817,18 @@ can reach), not played by hand.
       other classes in every vehicle; the driving and firing frames (RideSee/RideMissile) by
       eye; how a single-view rider looks from behind and the side (the front picture, as the
       vehicles have no other views).
+- [ ] Vehicles seen from 8 sides (2026-11-16; engine done, Vehicle Arenas' art not drawn yet).
+      Seen headless with numbered stand-in views (`VAJPA1`-`H8`, a scratch mod): VA01's parked
+      jeep shows 1/7/5/3 from the east/south/west/north (it faces east); boarding it from the
+      south turns you east; a rider seen from the side shows that side's view, not the front
+      rider. **(never tried)**: getting out (and a wreck) leaving the vehicle facing the way you
+      faced, then walking round it; a deathmatch respawn facing as the map has it; a decoration
+      with views (`A1`-`A8`) on a map turning; with the real art once drawn, every class's head
+      from every side (`rider-places.psd1`), and the jeep's tunic recolor on the side views.
+- [ ] Boats and gun nests in multiplayer (2026-11-16; Vehicle Arenas' VA02 River Crossing,
+      `--warp VA02`). Seen headless: a boat rider drawn to the other player as the boat, its
+      dock prompt by the island, the boat's wreck and another back at its mooring after 20 s,
+      domination's three points (B taken from the island), a gun nest manned. **(never tried)**:
       driving a boat by hand round the lake and through the ferry stretches (it should stop at
       every dock, bridge rail and the island's ring); getting off onto a bridge rail; a jeep or
       tank on a bridge (not off its sides, not onto a shore dock); the guest manning a nest in a

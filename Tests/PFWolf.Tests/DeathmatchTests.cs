@@ -36,9 +36,9 @@ public class DeathmatchTests
         public readonly Deathmatch Deathmatch;
 
         // The map's spots for things, by class (the jeeps' two), and the floor taken
-        public readonly Dictionary<string, List<(int X, int Y)>> Spots = new() { ["Jeep"] = [(5, 5), (7, 5)] };
+        public readonly Dictionary<string, List<(int X, int Y, int Angles)>> Spots = new() { ["Jeep"] = [(5, 5, 0), (7, 5, 90)] };
         public readonly HashSet<(int X, int Y)> Taken = [];
-        public readonly List<(int X, int Y, string Class)> Spawned = [];
+        public readonly List<(int X, int Y, string Class, int Angles)> Spawned = [];
 
         public Rig()
         {
@@ -58,7 +58,7 @@ public class DeathmatchTests
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
             Deathmatch = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((x, y) => !Taken.Contains((x, y)), () => { },
-                name => Spots.TryGetValue(name, out var spots) ? spots : [], (x, y, name) => Spawned.Add((x, y, name))));
+                name => Spots.TryGetValue(name, out var spots) ? spots : [], (x, y, name, angles) => Spawned.Add((x, y, name, angles))));
         }
 
         public Entities.PlayerState First => Session.Players[0];
@@ -233,9 +233,9 @@ public class DeathmatchTests
         rig.Session.GameState.TimeCount = 800;
         rig.Deathmatch.TickDeathmatch();
 
-        // Assert: none before its vehicle.respawntics, then on the second spot
+        // Assert: none before its vehicle.respawntics, then on the second spot, facing north as the map has it
         Assert.That(waiting, Is.Zero);
-        Assert.That(rig.Spawned, Is.EqualTo(new[] { (7, 5, "Jeep") }));
+        Assert.That(rig.Spawned, Is.EqualTo(new[] { (7, 5, "Jeep", 90) }));
         Assert.That(rig.Deathmatch.ItemRespawns, Is.Empty);
     }
 

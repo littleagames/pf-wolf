@@ -39,20 +39,27 @@ where they died, and in a game against each other or a Horde another of the vehi
 back on one of the map's spots for it after `vehicle.respawntics` (Gameplay/Deathmatch.cs). Others see a
 rider as the vehicle, through its Ride states (Gameplay/PlayerBodies.cs).
 
+Which way it faces shows when it's drawn from its sides (VAJPA1-A8): the one left behind when
+they get out, and its wreck, face the nearest of the eight ways to where its rider faced; one
+the map put down faces the thing's angles (and comes back so, Gameplay/Deathmatch.cs); and
+getting into one that faces a way turns them to face it.
+
 =============================================================================
 */
 
 /// <param name="PlaySound">A sound the player makes</param>
 /// <param name="ShowMessage">A message (a $NAME language key or the text)</param>
 /// <param name="Settle">Settles the player's tile and area where they've been put (PlayerMovement.Thrust(0, 0))</param>
-/// <param name="Respawn">Puts the vehicle's class back on a tile (MapManager.SpawnThing)</param>
+/// <param name="Respawn">Puts the vehicle's class back on a tile, facing so many degrees (MapManager.SpawnThing)</param>
 /// <param name="Crush">Hurts an enemy the vehicle runs into, by so much (Monster.Damage, from the player)</param>
 /// <param name="CrushPlayer">Hurts a rival player the vehicle runs into, by so much, as the rider's hit</param>
 /// <param name="Wrecked">The rider's been killed in a vehicle of this class (Deathmatch.QueueVehicleRespawn)</param>
-internal sealed record VehiclesHooks(Action<string> PlaySound, Action<string> ShowMessage, Action Settle, Action<int, int, string> Respawn,
+/// <param name="DrawnTurning">Whether a vehicle is drawn from more than one side (SpriteDrawing.HasDirectionalSprites)</param>
+internal sealed record VehiclesHooks(Action<string> PlaySound, Action<string> ShowMessage, Action Settle, Action<int, int, string, int> Respawn,
     Action<Entities.Actors.Monster, int>? Crush = null,
     Action<Entities.Actors.PlayerPawn, int>? CrushPlayer = null,
-    Action<string>? Wrecked = null);
+    Action<string>? Wrecked = null,
+    Func<Entities.Actors.Actor, bool>? DrawnTurning = null);
 
 internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameSession session, VehiclesHooks hooks,
     PlayerWeapons? weapons = null)
@@ -86,7 +93,11 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
 
         (playerstate.Vehicle, playerstate.VehicleMap, playerstate.VehicleSpeed, playerstate.VehicleThrottle) =
             (thing.Name, session.GameState.MapOn, 0, 0);
-        int facing = MountedWeapons.FacingAngle(PlayerMovement.FacingDir(player.Angle));
+        // A vehicle drawn from its sides faces a way, and they get in facing it (others would
+        // see it spin round otherwise); one seen only from the front, the way they used it from
+        int facing = thing.Dir != ObjDir.NoDir && hooks.DrawnTurning?.Invoke(thing) == true
+            ? GameConstants.DirAngle[(int)thing.Dir]
+            : MountedWeapons.FacingAngle(PlayerMovement.FacingDir(player.Angle));
         int x = thing.TileX, y = thing.TileY;
         map.MarkForRemoval(thing);
         if (map.ActorAt[x, y] is BlockingActor)
@@ -238,13 +249,14 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
 
         var (fromx, fromy) = (player.TileX, player.TileY);
         var dir = PlayerMovement.FacingDir(player.Angle);
+        int parked = ParkedAngles(player.Angle);
         var vehicle = playerstate.Vehicle!;
         var (message, sound) = (Text("vehicle.exitmessage"), Text("vehicle.exitsound"));
         player.SetPosition(exit.X, exit.Y);
         player.Angle = (short)MountedWeapons.FacingAngle(dir);
         hooks.Settle();
         Clear();
-        hooks.Respawn(fromx, fromy, vehicle);
+        hooks.Respawn(fromx, fromy, vehicle, parked);
         if (sound != null)
             hooks.PlaySound(sound);
         if (message != null)
@@ -287,9 +299,16 @@ internal sealed class Vehicles(MapManager map, InventoryManager inventory, GameS
     {
         var vehicle = session.PlayerState.Vehicle!;
         if (Text("vehicle.wreck") is { } wreck && session.PlayerState.Pawn is { } player)
-            hooks.Respawn(player.TileX, player.TileY, wreck);
+            hooks.Respawn(player.TileX, player.TileY, wreck, ParkedAngles(player.Angle));
         hooks.Wrecked?.Invoke(vehicle);
     }
+
+    /// <summary>
+    /// The way a vehicle left behind (got out of, or wrecked) faces: the nearest of the eight to
+    /// the way its rider faced, in degrees (0 east, 90 north), as a map thing's angles
+    /// </summary>
+    internal static int ParkedAngles(int angle) =>
+        ((angle % GameConstants.Angles + GameConstants.Angles) % GameConstants.Angles + 22) / 45 % 8 * 45;
 
     void Clear()
     {

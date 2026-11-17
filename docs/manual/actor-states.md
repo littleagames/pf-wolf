@@ -28,7 +28,10 @@ That's Wolfenstein 3D's guard shooting (written shorter than pfwolf.pk3's `guard
 he raises his gun, fires as `G` ends, and lowers it before going back to chasing.
 `frames: [A, B, C]` would be three frames, one after the other, each with the entry's tics, think
 and action. A frame shows the sprite with its letter and a view: `GARDA1` to `GARDA8` for an actor
-seen from 8 sides, or `GARDA0` for one that looks the same from all of them.
+seen from 8 sides, or `GARDA0` for one that looks the same from all of them. A view a frame
+doesn't have shows its `0` picture, if it has one. A thing that stands still (a decoration, a
+parked vehicle) with views shows the side it's seen from, by the way the map faces it (its
+mapdefs `angles`). With `angles: -1` it shows its front to everyone.
 
 Every actor starts on its `Spawn` state (a patrolling guard on `Path`). What sends it to its other
 states depends on what it is: an enemy's `Chase` once it's after the player, `Attack` when it

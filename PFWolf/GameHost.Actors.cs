@@ -433,9 +433,11 @@ internal static partial class GameHost
     static Vehicles? _vehicles;
     static Vehicles Vehicles => _vehicles ??= new Vehicles(MapManager, InventoryManager, Session,
         new VehiclesHooks(PlayPlayerSound, message => HudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0),
-            (x, y, vehicle) => MapManager.SpawnThing(x, y, vehicle), (monster, damage) => monster.Damage((uint)damage, Session.Player),
+            (x, y, vehicle, angles) => MapManager.SpawnThing(x, y, new Assets.MapActorTranslation { Class = vehicle, Angles = angles }),
+            (monster, damage) => monster.Damage((uint)damage, Session.Player),
             (pawn, damage) => playersManager.TakeDamage(pawn, damage, Session.Player),
-            deathmatch.QueueVehicleRespawn),
+            deathmatch.QueueVehicleRespawn,
+            thing => thing.CurrentState is { } state && spriteDrawing.HasDirectionalSprites(state.Sprite, state.FrameLetter)),
         playerWeapons);
 
     // Things that latch onto the player (Gameplay/Latching.cs): A_LatchBite, and striking them off

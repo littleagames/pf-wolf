@@ -46,7 +46,8 @@ internal sealed class PlayerBodies(
     = weapon.bodysprite stands in for a body's (VJGD for VAJP with a Guard at the wheel). A class
     = not listed uses its parent's entry (a mod's elite Guard rides as the Guard). Frame by frame
     = and view by view, only where the rider's sprite has the picture; a single picture (B0) of
-    = a vehicle drawn from 8 sides stands in for the front view only.
+    = a vehicle drawn from 8 sides stands in for the front view only (and wherever the vehicle
+    = shows its own single picture, having no view for that side).
     =
     ====================
     */
@@ -202,15 +203,19 @@ internal sealed class PlayerBodies(
         return riderSprites[(vehicle, riderClass)] = sprite;
     }
 
-    // Whether the rider's sprite has the picture for this frame from where it's seen. A single
-    // picture stands in for a vehicle drawn from 8 sides only from the front: not a front seen
-    // from behind.
+    // Whether the rider's sprite has the picture for this frame from where it's seen. A rider's
+    // picture is the whole vehicle, so any view of it will do; but its single picture (B0, a
+    // front) on a vehicle drawn from 8 sides only stands in from the front, or where the
+    // vehicle itself falls back to its own single picture: never a front seen from behind,
+    // including a rider drawn for some views (VJGDB1-B3) seen from one it hasn't got.
     bool RiderShows(string riderSprite, string vehicleSprite, string frameLetter, Entities.Actors.Actor actor)
     {
-        if (spriteDrawing.HasDirectionalSprites(riderSprite, frameLetter))
-            return SpriteExists(spriteDrawing.ActorShapeName(riderSprite, frameLetter, actor));
-        return SpriteExists(Entities.Actors.ActorStateFrame.ShapeNames(riderSprite, frameLetter)[0])
-            && (!spriteDrawing.HasDirectionalSprites(vehicleSprite, frameLetter) || spriteDrawing.CalcRotate(actor) == 1);
+        var rider = spriteDrawing.ActorShapeName(riderSprite, frameLetter, actor);
+        if (!SpriteExists(rider))
+            return false;
+        if (rider[^1] != '0' || !spriteDrawing.HasDirectionalSprites(vehicleSprite, frameLetter))
+            return true;
+        return spriteDrawing.CalcRotate(actor) == 1 || spriteDrawing.ActorShapeName(vehicleSprite, frameLetter, actor)[^1] == '0';
     }
 
     internal string? SpawnSprite(Entities.Actors.Actor? actor) =>

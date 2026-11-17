@@ -397,6 +397,15 @@ internal sealed class SpriteDrawing(
             actor.RuntimeFlags |= ObjFlags.Visible;
             PlaceOnStory(visptr_val, actor);
 
+            // One drawn from its sides (a parked vehicle, VAJPA1-A8) shows the side it's seen
+            // from, by the way it faces; the rest always face whoever looks
+            var frame = actor.CurrentState;
+            if (actor.Dir != ObjDir.NoDir && HasDirectionalSprites(frame.Sprite, frame.FrameLetter))
+            {
+                actor.ViewX = visptr_val.ViewX;
+                visptr_val.ShapeNum = ActorShapeName(frame.Sprite, frame.FrameLetter, actor);
+            }
+
             visptr_val.TileX = (byte)actor.Position.X;
             visptr_val.TileY = (byte)actor.Position.Y;
             (visptr_val.WorldX, visptr_val.WorldY) = Lighting.TileCenter(visptr_val.TileX, visptr_val.TileY);

@@ -28,8 +28,8 @@ internal sealed record ItemRespawn(string ClassName, int TileX, int TileY, int A
 internal sealed record DeathmatchHooks(
     Func<int, int, bool> IsFreeFloor,
     Action GiveAllKeys,
-    Func<string, IReadOnlyList<(int X, int Y)>>? ThingSpots = null,
-    Action<int, int, string>? SpawnThing = null);
+    Func<string, IReadOnlyList<(int X, int Y, int Angles)>>? ThingSpots = null,
+    Action<int, int, string, int>? SpawnThing = null);
 
 /// <summary>
 /// What a mode with something to do besides fighting keeps (Gameplay/MatchModes): its things on
@@ -267,27 +267,28 @@ internal sealed class Deathmatch(
             ItemRespawns.Add(new ItemRespawn(vehicle, -1, -1, session.GameState.TimeCount + tics));
     }
 
-    IReadOnlyList<(int X, int Y)> ThingSpots(string className) =>
+    IReadOnlyList<(int X, int Y, int Angles)> ThingSpots(string className) =>
         hooks.ThingSpots != null ? hooks.ThingSpots(className) : map.ThingSpots(className);
 
-    void SpawnThing(int x, int y, string className)
+    // A thing put back: facing as the map had it (a vehicle), else the way the map's things face by default
+    void SpawnThing(int x, int y, string className, int angles = 0)
     {
         if (hooks.SpawnThing != null)
-            hooks.SpawnThing(x, y, className);
+            hooks.SpawnThing(x, y, className, angles);
         else
-            map.SpawnThing(x, y, className);
+            map.SpawnThing(x, y, new Assets.MapActorTranslation { Class = className, Angles = angles });
     }
 
     /// <summary>How long a vehicle waits to try again when every spot for it is taken (half a second)</summary>
     internal const int VehicleRetryTics = 35;
 
     // A spot of the map's for a vehicle's class with no vehicle of it, and nobody, on it; the first, in map order
-    (int X, int Y)? FreeVehicleSpot(string vehicle)
+    (int X, int Y, int Angles)? FreeVehicleSpot(string vehicle)
     {
-        foreach (var (x, y) in ThingSpots(vehicle))
+        foreach (var (x, y, angles) in ThingSpots(vehicle))
             if (hooks.IsFreeFloor(x, y)
                 && !map.GetActors().Any(a => !a.IsRemoved && a.TileX == x && a.TileY == y && string.Equals(a.Name, vehicle, StringComparison.OrdinalIgnoreCase)))
-                return (x, y);
+                return (x, y, angles);
         return null;
     }
 
@@ -308,7 +309,7 @@ internal sealed class Deathmatch(
                     continue;
                 }
                 ItemRespawns.RemoveAt(i--);
-                SpawnThing(spot.X, spot.Y, item.ClassName);
+                SpawnThing(spot.X, spot.Y, item.ClassName, spot.Angles);
                 continue;
             }
             ItemRespawns.RemoveAt(i--);

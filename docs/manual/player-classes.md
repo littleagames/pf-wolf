@@ -77,4 +77,13 @@ the Guard. A class with no entry, its own or a parent's, shows the plain vehicle
 `weapon.bodysprite`, a frame the rider's sprite lacks shows the vehicle's own picture. If the
 vehicle has pictures from 8 sides but the rider's sprite has only a single picture for a frame
 (`VJGDB0`), that picture is shown from the front only, and the plain vehicle from every other
-side. The parked vehicle never shows a rider.
+side. It also shows wherever the vehicle falls back to its own single picture, having no view
+for that side. A rider's sprite drawn for some views (`VJGDB1`-`B3`) shows from those sides. From
+the others, the plain vehicle shows, not the rider's front picture. The parked vehicle never
+shows a rider.
+
+A vehicle drawn from 8 sides shows which way it faces. One the map puts down faces its mapdefs
+`angles`, and comes back facing that way in a deathmatch. One left behind when its rider gets
+out faces the nearest of the eight ways to where the rider faced, and so does a wreck. Getting
+into one turns you to face its way. A vehicle seen only from the front leaves you facing the
+way you used it from, as before.

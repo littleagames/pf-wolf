@@ -77,7 +77,8 @@ public class VehiclesTests
     private PlayerPawn _pawn = null!;
     private Entities.Actors.Actor _boat = null!;
     private List<string> _sounds = null!, _messages = null!;
-    private List<(int X, int Y, string Class)> _respawned = null!;
+    private List<(int X, int Y, string Class, int Angles)> _respawned = null!;
+    private bool _drawnTurning;
     private List<(Monster Victim, int Damage)> _crushed = null!;
     private List<(PlayerPawn Victim, int Damage)> _crushedPlayers = null!;
     private List<string> _wrecked = null!;
@@ -109,11 +110,12 @@ public class VehiclesTests
             new Configuration.GameSettings(), new StatusBarHooks(map => map, (text, _, _) => [text]));
         var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
         (_sounds, _messages, _respawned, _crushed, _crushedPlayers, _wrecked) = ([], [], [], [], [], []);
+        _drawnTurning = false;
         _vehicles = new Vehicles(_map, _inventory, _session,
-            new VehiclesHooks(_sounds.Add, _messages.Add, () => { }, (x, y, vehicle) => _respawned.Add((x, y, vehicle)),
+            new VehiclesHooks(_sounds.Add, _messages.Add, () => { }, (x, y, vehicle, angles) => _respawned.Add((x, y, vehicle, angles)),
                 (victim, damage) => _crushed.Add((victim, damage)),
                 (victim, damage) => _crushedPlayers.Add((victim, damage)),
-                _wrecked.Add),
+                _wrecked.Add, _ => _drawnTurning),
             weapons);
     }
 
@@ -187,7 +189,7 @@ public class VehiclesTests
         Assert.That(wasRiding, Is.True);
         Assert.That(_vehicles.IsRiding, Is.False);
         Assert.That((_pawn.TileX, _pawn.TileY), Is.EqualTo(((byte)11, (byte)11)));
-        Assert.That(_respawned, Is.EqualTo(new[] { (11, 10, "Tank") }));
+        Assert.That(_respawned, Is.EqualTo(new[] { (11, 10, "Tank", 0) }));
     }
 
     [Test]
@@ -253,7 +255,7 @@ public class VehiclesTests
         _vehicles.Tick();
 
         // Assert: the wreck put down there, and the tank to come back
-        Assert.That(_respawned, Is.EqualTo(new[] { (12, 10, "TankWreck") }));
+        Assert.That(_respawned, Is.EqualTo(new[] { (12, 10, "TankWreck", 0) }));
         Assert.That(_wrecked, Is.EqualTo(new[] { "Tank" }));
         Assert.That(_vehicles.IsRiding, Is.False);
     }
@@ -372,7 +374,7 @@ public class VehiclesTests
         _map.GetActors().AddLast(dog);
         var drop = _inventory.CreateActor("Dog")!;
         var vehicles = new Vehicles(_map, _inventory, _session,       // riding the same tank, its hook dropping something
-            new VehiclesHooks(_ => { }, _ => { }, () => { }, (_, _, _) => { }, (victim, _) => _map.GetActors().AddLast(drop)));
+            new VehiclesHooks(_ => { }, _ => { }, () => { }, (_, _, _, _) => { }, (victim, _) => _map.GetActors().AddLast(drop)));
 
         // Act / Assert
         Assert.DoesNotThrow(() => vehicles.Throttle(-1, 8));
@@ -413,6 +415,62 @@ public class VehiclesTests
         Assert.That(_messages, Is.EqualTo(new[] { "In the boat" }));
     }
 
+    [TestCase(true, 90)]      // drawn from its sides: they face the way it faces
+    [TestCase(false, 0)]      // seen from the front only: the way they used it from
+    public void Getting_Into_One_Drawn_From_Its_Sides_Turns_Them_To_Face_Its_Way(bool drawnTurning, int facing)
+    {
+        // Arrange: the boat faces north; the player, a little off east
+        _drawnTurning = drawnTurning;
+        _boat.Dir = ObjDir.North;
+        _pawn.Angle = 15;
+
+        // Act
+        _vehicles.Board(_boat, []);
+
+        // Assert
+        Assert.That(_pawn.Angle, Is.EqualTo((short)facing));
+    }
+
+    [Test]
+    public void Getting_Out_Leaves_It_Facing_The_Way_Its_Rider_Did()
+    {
+        // Arrange: a wall to the north, so out at the south side; turned to the northwest-ish
+        BoardTank();
+        _map.TileMap[11, 9] = 1;
+        _pawn.Angle = 140;
+
+        // Act
+        _vehicles.TryLeave();
+
+        // Assert
+        Assert.That(_respawned, Is.EqualTo(new[] { (11, 10, "Tank", 135) }));
+    }
+
+    [Test]
+    public void A_Wreck_Faces_The_Way_Its_Rider_Did()
+    {
+        // Arrange: heading south, then killed
+        BoardTank();
+        _pawn.Angle = 265;
+        _session.PlayerState.Health = 0;
+
+        // Act
+        _vehicles.Tick();
+
+        // Assert
+        Assert.That(_respawned, Is.EqualTo(new[] { (11, 10, "TankWreck", 270) }));
+    }
+
+    [TestCase(0, 0)]
+    [TestCase(22, 0)]
+    [TestCase(23, 45)]
+    [TestCase(200, 180)]
+    [TestCase(340, 0)]
+    [TestCase(-10, 0)]
+    [TestCase(359, 0)]
+    public void Left_Behind_It_Faces_The_Nearest_Of_The_Eight_Ways(int angle, int angles) =>
+        Assert.That(Vehicles.ParkedAngles(angle), Is.EqualTo(angles));
+
     [Test]
     public void Forward_Picks_Up_Speed_To_The_Top_And_Back_Slows_It()
     {
@@ -449,7 +507,7 @@ public class VehiclesTests
         Assert.That(_vehicles.IsRiding, Is.False);
         Assert.That(_session.PlayerState.VehicleSpeed, Is.Zero);
         Assert.That((_pawn.TileX, _pawn.TileY), Is.EqualTo(((byte)12, (byte)10)));
-        Assert.That(_respawned, Is.EqualTo(new[] { (11, 10, "Boat") }));
+        Assert.That(_respawned, Is.EqualTo(new[] { (11, 10, "Boat", 0) }));
         Assert.That(_sounds, Is.EqualTo(new[] { "boat/out" }));
         Assert.That(_messages, Is.EqualTo(new[] { "Out of the boat" }));
     }

@@ -223,6 +223,27 @@ public class PlayerBodiesTests
     }
 
     [Test]
+    public void A_Rider_Drawn_For_Some_Views_Isnt_Its_Front_Seen_From_The_Others()
+    {
+        // Arrange: the jeep from the front and back, the Guard's front view and single picture
+        Pictures("JEEPB1", "JEEPB5", "JPGDB0", "JPGDB1");
+
+        // Act / Assert: from behind, the jeep's own back, not the Guard's front
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("GuardPlayer", 0)), Is.EqualTo("JPGD"));
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("GuardPlayer", 180)), Is.EqualTo("JEEP"));
+    }
+
+    [Test]
+    public void A_Single_Rider_Picture_Shows_Where_The_Vehicle_Shows_Its_Own_Single_Picture()
+    {
+        // Arrange: the jeep's front is its single picture, with a side view (B3) only
+        Pictures("JEEPB0", "JEEPB3", "JPGDB0");
+
+        // Act / Assert: from behind it falls back to its front, and so does the Guard
+        Assert.That(_bodies.DrawnSprite(RideJeepAs("GuardPlayer", 180)), Is.EqualTo("JPGD"));
+    }
+
+    [Test]
     public void A_Parked_Vehicle_Shows_No_Rider()
     {
         // Arrange: the Guard has a picture for the parked frame too
