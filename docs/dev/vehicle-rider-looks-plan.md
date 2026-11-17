@@ -143,9 +143,14 @@ The user draws the 7 other views (decision 5); everything else is ready for them
   `DeathmatchTests` (respawn faces the spot), `PlayerBodiesTests` (a rider drawn for some views,
   a single picture where the vehicle shows its own single picture).
 
+The pack's mapdefs also have the vehicles facing the other ways (2026-11-16): 980-982 the jeep,
+983-985 the tank, 986-988 the boat, each north, west, south (970, 971, 973 face east). Seen
+headless with a scratch VA01 whose jeeps were 980: the front from the north, 7 from the east, 5
+from the south, and boarding from the east turned the player north. No map uses them yet.
+
 Left: the art itself; then a `rider-places.psd1` entry per drawn view (check each with a contact
-sheet); mapdefs ids for vehicles facing other ways if the maps want them (all of them face east
-today, `angles: 0`); and the manual-testing entry's 8-direction items.
+sheet); the maps using the new facings where they want them; and the manual-testing entry's
+8-direction items.
 
 ## Decisions (2026-11-16, the user's)
 
