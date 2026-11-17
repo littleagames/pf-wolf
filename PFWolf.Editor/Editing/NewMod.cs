@@ -182,9 +182,40 @@ public static partial class NewMod
             "    - { name: \"Player\", score: 2000 }\n" +
             "    - { name: \"Player\", score: 1000 }\n" +
             "\n" +
+            "# The skills on the New Game menu, easiest first (a saved game records its skill by its place\n" +
+            "# here, and mapdefs min-skill compares against it). Add as many as you like: the menu grows,\n" +
+            "# shrinks and scrolls to fit them. Besides its name, each can have:\n" +
+            "#   pic-name: a picture shown beside the skills while it's highlighted (Wolf3D's faces are 24x32)\n" +
+            "#   damage-taken: how much of the damage the player is dealt they take (default 1)\n" +
+            "#   enemy-health: the actordefs property enemies take their health from (health.easy, say)\n" +
+            "# For example:\n" +
+            "#   EASY:\n" +
+            "#     name: \"Easy\"\n" +
+            "#     pic-name: SKILLEASY\n" +
+            "#     damage-taken: 0.5\n" +
+            "#     enemy-health: health.easy\n" +
             "skills:\n" +
             "  NORMAL:\n" +
             "    name: \"Normal\"\n" +
+            "\n" +
+            "# Player classes: actordefs classes built on Player (parent: Player) that change its player.*\n" +
+            "# properties. With two or more here, a new game asks which before the skill (the first is the\n" +
+            "# one played when it doesn't ask: class-menu: false). Each can have a name for the menu and a\n" +
+            "# pic-name shown beside it while it's highlighted, up to 96x100. For example:\n" +
+            "# player-classes:\n" +
+            "#   Player:\n" +
+            "#     name: \"Player\"\n" +
+            "#   Scout:\n" +
+            "#     name: \"Scout\"\n" +
+            "#     pic-name: SCOUTPIC\n" +
+            "\n" +
+            "# The New Game menus are pfwolf.pk3's (menudefs/new-game.yaml, new-class.yaml and\n" +
+            "# new-episode.yaml). A file of the same name in this mod's menudefs/ changes them key by key\n" +
+            "# (https://www.littleagames.com/pf-wolf/docs/latest/reference/menudefs). To move the highlighted\n" +
+            "# skill's or class's picture, and clear a box behind it first:\n" +
+            "#   selection-pic: { x: 230, y: 107, width: 32, height: 32, color: \"BKGDCOLOR\" }\n" +
+            "# fit-items says how a menu fits more or fewer skills or classes: the rows it's laid out for,\n" +
+            "# the fewest its window shrinks to (min-rows) and the most before they scroll (max-rows).\n" +
             "\n" +
             "episodes:\n" +
             "  EP01:\n" +
