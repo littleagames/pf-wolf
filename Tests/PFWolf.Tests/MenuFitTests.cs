@@ -2,6 +2,7 @@ using PFWolf.Assets;
 using PFWolf.Entities;
 using PFWolf.Loaders;
 using PFWolf.Ui;
+using PFWolf.Menus;
 
 namespace PFWolf.Tests;
 
@@ -13,16 +14,16 @@ public class MenuFitTests
 
     [Test]
     public void The_Laid_Out_Number_Changes_Nothing()
-        => Assert.That(MenuDefs.Fit(Skills, 4, 13), Is.EqualTo(default(MenuDefs.MenuFit)));
+        => Assert.That(MenuFitting.Fit(Skills, 4, 13), Is.EqualTo(default(MenuFit)));
 
     [Test]
     public void No_Fit_Items_Changes_Nothing()
-        => Assert.That(MenuDefs.Fit(null, 9, 13), Is.EqualTo(default(MenuDefs.MenuFit)));
+        => Assert.That(MenuFitting.Fit(null, 9, 13), Is.EqualTo(default(MenuFit)));
 
     [Test]
     public void More_Grow_The_Window_And_Stay_Centered()
     {
-        var fit = MenuDefs.Fit(Skills, 6, 13);
+        var fit = MenuFitting.Fit(Skills, 6, 13);
 
         Assert.That(fit.Grow, Is.EqualTo(26));
         Assert.That(fit.FrameDy, Is.EqualTo(-13));
@@ -33,7 +34,7 @@ public class MenuFitTests
     [Test]
     public void Fewer_Shrink_It_No_Smaller_Than_Min_Rows_And_Are_Centered_In_It()
     {
-        var fit = MenuDefs.Fit(Skills, 1, 13);
+        var fit = MenuFitting.Fit(Skills, 1, 13);
 
         Assert.That(fit.Grow, Is.EqualTo(-13), "three rows' window");
         Assert.That(fit.FrameDy, Is.EqualTo(6));
@@ -46,14 +47,14 @@ public class MenuFitTests
         // new-class.yaml's: laid out for seven with room for the class picture
         var classes = new MenuFitItems { Rows = 7, MinRows = 7, MaxRows = 10, Grow = ["window"] };
 
-        Assert.That(MenuDefs.Fit(classes, 4, 13).Grow, Is.Zero, "a picture keeps seven rows");
-        Assert.That(MenuDefs.Fit(classes, 4, 13, pictures: false).Grow, Is.EqualTo(-39));
+        Assert.That(MenuFitting.Fit(classes, 4, 13).Grow, Is.Zero, "a picture keeps seven rows");
+        Assert.That(MenuFitting.Fit(classes, 4, 13, pictures: false).Grow, Is.EqualTo(-39));
     }
 
     [Test]
     public void Past_Max_Rows_They_Scroll()
     {
-        var fit = MenuDefs.Fit(Skills, 12, 13);
+        var fit = MenuFitting.Fit(Skills, 12, 13);
 
         Assert.That(fit.Grow, Is.EqualTo(52));
         Assert.That(fit.ItemsDy, Is.EqualTo(-26));
@@ -63,14 +64,14 @@ public class MenuFitTests
     [Test]
     public void Grow_Components_Grow_Move_Components_Move_Others_Stay()
     {
-        var fit = MenuDefs.Fit(Skills, 6, 13);
+        var fit = MenuFitting.Fit(Skills, 6, 13);
         var window = new Window { Id = "window", Y = 90, Height = 67 };
         var title = new Label { Id = "title", Y = 68 };
         var legend = new Graphic { Id = "legend", Y = 184 };
 
-        Assert.That(MenuDefs.Fitted(window, Skills, fit), Is.EqualTo(window with { Y = 77, Height = 93 }));
-        Assert.That(MenuDefs.Fitted(title, Skills, fit), Is.EqualTo(title with { Y = 55 }));
-        Assert.That(MenuDefs.Fitted(legend, Skills, fit), Is.SameAs(legend));
+        Assert.That(MenuFitting.Fitted(window, Skills, fit), Is.EqualTo(window with { Y = 77, Height = 93 }));
+        Assert.That(MenuFitting.Fitted(title, Skills, fit), Is.EqualTo(title with { Y = 55 }));
+        Assert.That(MenuFitting.Fitted(legend, Skills, fit), Is.SameAs(legend));
     }
 
     [Test]

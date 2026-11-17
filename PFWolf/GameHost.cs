@@ -186,7 +186,7 @@ internal static partial class GameHost
 
         debugScreens = new DebugScreens(GameEngineManager, _videoManager, _inputManager, MapManager, Session);
         menuInput = new MenuInput(_inputManager, AudioManager, GameEngineManager, () => MouseEnabled, () => JoystickEnabled);
-        menuDrawing = new MenuDrawing(_graphicManager, _videoManager, AssetManager, _fontManager, GameEngineManager, ui, () => gameInfoSettings);
+        menuDrawing = new MenuDrawing(_graphicManager, _videoManager, _fontManager, GameEngineManager, () => gameInfoSettings);
         menuLoop = new MenuLoop(menuDrawing, menuInput, _graphicManager, _videoManager, _inputManager, AudioManager, AssetManager);
         lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
         doors = new Doors(GameEngineManager, AudioManager, MapManager, InventoryManager, HudMessageManager, Session,
@@ -304,7 +304,7 @@ internal static partial class GameHost
         demos = MakeDemos();
         demoTracer = new DemoTracer(MapManager, doors, pushWalls, Session);
         demoCommands = new DemoCommands(_consoleManager, MapManager, demos, DemoBuffer, Session, demoTracer);
-        menuDefs = new MenuDefs(AssetManager, GameEngineManager, _graphicManager, AudioManager, ui);
+        menuDefs = new MenuDefs(AssetManager, GameEngineManager, _graphicManager, AudioManager);
         jukebox = new Jukebox(_inputManager, _videoManager, AudioManager, menuDrawing, menuLoop, menuDefs);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(GameEngineManager, AssetManager, _inputManager, AudioManager, _videoManager,

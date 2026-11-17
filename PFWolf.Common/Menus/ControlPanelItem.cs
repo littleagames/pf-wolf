@@ -1,6 +1,6 @@
-﻿namespace PFWolf;
+namespace PFWolf;
 
-internal class ControlPanelItem
+public class ControlPanelItem
 {
     public ControlPanelItem(short active, string text, Func<int, int>? routine)
     {
@@ -31,7 +31,7 @@ internal class ControlPanelItem
     public bool? CheckBox;
 }
 
-internal class ControlPanelMenuInfo
+public class ControlPanelMenuInfo
 {
     public short X, Y, Amount, CurPos, Indent;
 

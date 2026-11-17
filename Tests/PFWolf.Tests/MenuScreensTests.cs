@@ -1,12 +1,13 @@
 using PFWolf.Entities;
 using PFWolf.Fonts;
+using PFWolf.Menus;
 
 namespace PFWolf.Tests;
 
 public class MenuDefsTests
 {
     // Finding an item's action touches none of the managers
-    private static MenuDefs Defs() => new(null!, null!, null!, null!, null!);
+    private static MenuDefs Defs() => new(null!, null!, null!, null!);
 
     [Test]
     public void A_Label_Left_Alone_Keeps_Its_Fonts_Look()
@@ -15,10 +16,10 @@ public class MenuDefsTests
         var label = new Label();
 
         // Act / Assert
-        Assert.That(MenuDefs.LabelShadow(label), Is.Null);
-        Assert.That(MenuDefs.LabelGradient(label), Is.Null);
-        Assert.That(MenuDefs.LabelOutline(label), Is.Null);
-        Assert.That(MenuDefs.LabelGlow(label), Is.Null);
+        Assert.That(MenuPainter.LabelShadow(label), Is.Null);
+        Assert.That(MenuPainter.LabelGradient(label), Is.Null);
+        Assert.That(MenuPainter.LabelOutline(label), Is.Null);
+        Assert.That(MenuPainter.LabelGlow(label), Is.Null);
     }
 
     [Test]
@@ -28,10 +29,10 @@ public class MenuDefsTests
         var label = new Label { Shadow = false, Gradient = false, Outline = false, Glow = false };
 
         // Act / Assert
-        Assert.That(MenuDefs.LabelShadow(label), Is.EqualTo(FontShadow.None));
-        Assert.That(MenuDefs.LabelGradient(label), Is.EqualTo(FontGradient.None));
-        Assert.That(MenuDefs.LabelOutline(label), Is.EqualTo(FontOutline.None));
-        Assert.That(MenuDefs.LabelGlow(label), Is.EqualTo(FontGlow.None));
+        Assert.That(MenuPainter.LabelShadow(label), Is.EqualTo(FontShadow.None));
+        Assert.That(MenuPainter.LabelGradient(label), Is.EqualTo(FontGradient.None));
+        Assert.That(MenuPainter.LabelOutline(label), Is.EqualTo(FontOutline.None));
+        Assert.That(MenuPainter.LabelGlow(label), Is.EqualTo(FontGlow.None));
     }
 
     [Test]
@@ -41,10 +42,10 @@ public class MenuDefsTests
         var label = new Label { ShadowColor = "Red", GradientTop = 10, OutlineColor = "Blue", GlowRadius = 4 };
 
         // Act / Assert
-        Assert.That(MenuDefs.LabelShadow(label), Is.EqualTo(new FontShadow(1, 1, "Red")));
-        Assert.That(MenuDefs.LabelGradient(label), Is.EqualTo(new FontGradient(10, -40)));
-        Assert.That(MenuDefs.LabelOutline(label), Is.EqualTo(new FontOutline("Blue", 1)));
-        Assert.That(MenuDefs.LabelGlow(label), Is.EqualTo(new FontGlow(null, 4, 50)));
+        Assert.That(MenuPainter.LabelShadow(label), Is.EqualTo(new FontShadow(1, 1, "Red")));
+        Assert.That(MenuPainter.LabelGradient(label), Is.EqualTo(new FontGradient(10, -40)));
+        Assert.That(MenuPainter.LabelOutline(label), Is.EqualTo(new FontOutline("Blue", 1)));
+        Assert.That(MenuPainter.LabelGlow(label), Is.EqualTo(new FontGlow(null, 4, 50)));
     }
 
     [Test]
@@ -54,8 +55,8 @@ public class MenuDefsTests
         var label = new Label { OutlineThickness = 0, GlowRadius = -3, GlowStrength = 500 };
 
         // Act / Assert
-        Assert.That(MenuDefs.LabelOutline(label)!.Thickness, Is.EqualTo(1));
-        Assert.That(MenuDefs.LabelGlow(label), Is.EqualTo(new FontGlow(null, 1, 100)));
+        Assert.That(MenuPainter.LabelOutline(label)!.Thickness, Is.EqualTo(1));
+        Assert.That(MenuPainter.LabelGlow(label), Is.EqualTo(new FontGlow(null, 1, 100)));
     }
 
     [Test]

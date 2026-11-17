@@ -1,6 +1,6 @@
 using PFWolf.Assets;
 using PFWolf.Extensions;
-using PFWolf.Fonts;
+using PFWolf.Menus;
 
 namespace PFWolf.Ui;
 
@@ -10,7 +10,7 @@ namespace PFWolf.Ui;
 /// routines); a menu built from game data has an items-source, registered too unless it's
 /// episodes or skills, which come from game-info.
 /// </summary>
-internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, GraphicManager graphics, AudioManager audio, UiText ui)
+internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, GraphicManager graphics, AudioManager audio)
 {
     readonly Dictionary<string, Func<int, int>> actions = new(StringComparer.Ordinal);
     readonly Dictionary<string, Func<ControlPanelItem[]>> sources = new(StringComparer.OrdinalIgnoreCase);
@@ -60,86 +60,19 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
             items = BuildSourceItems(name, menuAsset.ItemsSource);
         }
         else
-        {
-            items = menuAsset.MenuItems
-                    .Where(mi => InCurrentGamePack(mi.GamePacks))
-                    .Select(mi =>
-                    new ControlPanelItem(
-                        (short)(mi.Enabled && mi is not BlankMenuItem ? (mi.Highlighted ? 2 : 1) : 0),
-                        (mi.Text ?? "").ToLanguageText(language),
-                        MapFunction(name, mi as MenuSwitcher))
-                    {
-                        Id = mi.Id,
-                        ShortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0],
-                        Data = (mi as MusicMenuItem)?.Music
-                    })
-                    .ToArray();
-        }
+            items = MenuRows.FromItems(menuAsset, InCurrentGamePack, text => text.ToLanguageText(language), item => MapFunction(name, item));
 
-        if (menuAsset.DefaultSelection is int selection)
-        {
-            if (selection >= 0 && selection < items.Length)
-                curpos = (short)selection;
-            else if (menuAsset.ItemsSource != null)
-                curpos = (short)Math.Max(0, items.Length - 1);    // the game has fewer (one skill, say): the last
-            else
-                Console.WriteLine($"Menu '{name}': default-selection {selection} is out of range (0-{items.Length - 1})");
-        }
-
-        int rowHeight = menuAsset.RowHeight is > 0 and int rows ? rows : 13;
-        var fit = Fit(menuAsset.FitItems, items.Length, rowHeight, pictures: items.Any(item => PicName(item.Data) is { Length: > 0 }));
+        var (info, fit) = MenuRows.Layout(name, menuAsset, items, curpos,
+            pictures: items.Any(item => PicName(item.Data) is { Length: > 0 }), Console.WriteLine);
         fits[name] = fit;
-
-        var info = new ControlPanelMenuInfo(
-            (short)menuAsset.Position.X,
-            (short)(menuAsset.Position.Y + fit.ItemsDy),
-            amount: (short)items.Length,
-            curpos: curpos,
-            indent: (short)menuAsset.Indent)
-        {
-            LayoutY = (int)menuAsset.Position.Y,
-            RowHeight = rowHeight,
-            VisibleRows = menuAsset.VisibleRows is > 0 and int visibleRows ? visibleRows : fit.VisibleRows,
-            ScrollMarkX = fit.VisibleRows > 0 ? GrownRight(menuAsset) - 6 : null,
-            Font = menuAsset.Font,
-            ItemShadow = menuAsset.ItemShadow,
-            Cursor = menuAsset.Cursor,
-            SelectionPic = menuAsset.SelectionPic,
-            CheckboxX = menuAsset.CheckboxOffset?.X ?? -24,
-            CheckboxY = menuAsset.CheckboxOffset?.Y ?? 3,
-        };
-
         return (items, info);
     }
 
     // Each menu's fit-items, as LoadMenu last worked it out for its items (DrawMenuComponents)
     readonly Dictionary<string, MenuFit> fits = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// How a fit-items menu changes for its number of items: the items move ItemsDy down, the
-    /// grow components get Grow taller and they and the move components move FrameDy down;
-    /// VisibleRows is how many show at once when they scroll (0: all of them)
-    /// </summary>
-    internal readonly record struct MenuFit(int ItemsDy, int FrameDy, int Grow, int VisibleRows);
-
-    /// <summary>fit-items worked out for <paramref name="count"/> items in rows <paramref name="rowHeight"/> high</summary>
-    /// <param name="pictures">Whether any item has a picture to show beside them (min-rows keeps room for it)</param>
-    internal static MenuFit Fit(MenuFitItems? fit, int count, int rowHeight, bool pictures = true)
-    {
-        if (fit is not { Rows: > 0 })
-            return default;
-
-        int min = pictures ? Math.Max(fit.MinRows ?? 1, 1) : 1;
-        int max = Math.Max(fit.MaxRows ?? int.MaxValue, min);
-        int shown = Math.Min(count, max);
-        int grow = (Math.Max(shown, min) - fit.Rows) * rowHeight;
-        // Halves rounded the same way for both, so the items stay where they were in the window
-        return new MenuFit(
-            ItemsDy: -((shown - fit.Rows) * rowHeight / 2),
-            FrameDy: -(grow / 2),
-            Grow: grow,
-            VisibleRows: count > max ? max : 0);
-    }
+    /// <summary>The fit-items LoadMenu last worked out for a menu (none before it's loaded)</summary>
+    internal MenuFit FitOf(string name) => fits.TryGetValue(name, out var fit) ? fit : default;
 
     // An items-source row's picture (game-info pic-name): its skill's, class's or episode's
     static string? PicName(object? data) => data switch
@@ -149,40 +82,6 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
         EpisodeInfo episode => episode.PicName,
         _ => null,
     };
-
-    // The first grow component's right edge (where a scrolling fit-items menu's marks go), or the screen's
-    static int GrownRight(MenuMetadata menu)
-    {
-        var grown = menu.Components.FirstOrDefault(c => c.Id != null && menu.FitItems!.Grow.Contains(c.Id, StringComparer.OrdinalIgnoreCase));
-        return grown switch
-        {
-            Window window => window.X + window.Width,
-            Fill fill => fill.X + fill.Width,
-            _ => 306,
-        };
-    }
-
-    /// <summary>A component as drawn for the menu's fit-items: grown, moved, or as it is</summary>
-    internal static MenuComponent Fitted(MenuComponent component, MenuFitItems? fitItems, MenuFit fit)
-    {
-        if (fitItems == null || component.Id is not { } id || fit == default)
-            return component;
-
-        bool grows = fitItems.Grow.Contains(id, StringComparer.OrdinalIgnoreCase);
-        if (!grows && !fitItems.Move.Contains(id, StringComparer.OrdinalIgnoreCase))
-            return component;
-
-        int dy = fit.FrameDy, dh = grows ? fit.Grow : 0;
-        return component switch
-        {
-            Window window => window with { Y = window.Y + dy, Height = Math.Max(window.Height + dh, 0) },
-            Fill fill => fill with { Y = fill.Y + dy, Height = Math.Max(fill.Height + dh, 0) },
-            Label label => label with { Y = label.Y + dy },
-            Graphic graphic when graphic.VerticalOrientation == VerticalOrientation.Top => graphic with { Y = graphic.Y + dy },
-            Stripe stripe => stripe with { Y = stripe.Y + dy },
-            _ => component,
-        };
-    }
 
     /// <summary>
     /// Builds menu items from game data for a menu's items-source
@@ -245,19 +144,18 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
             return;
 
         StartMenuMusic(menu);
-        fits.TryGetValue(name, out var fit);
+        DrawComponents(name, leaveOut);
+    }
 
-        foreach (var entry in menu.Components)
-        {
-            if (!InCurrentGamePack(entry.GamePacks) || entry.Id != null && leaveOut.Contains(entry.Id))
-                continue;
+    /// <summary>A menu's components as DrawMenuComponents draws them, without starting its music</summary>
+    internal void DrawComponents(string name, params string[] leaveOut)
+    {
+        var menu = assets.GetMenu(name);
+        if (menu == null)
+            return;
 
-            var component = Fitted(entry, menu.FitItems, fit);
-            if (component is Label label)
-                DrawLabel(label);
-            else
-                graphics.DrawComponent(component);
-        }
+        var language = assets.GetText("en-us");
+        graphics.Menus.DrawComponents(menu, FitOf(name), InCurrentGamePack, text => text.ToLanguageText(language), leaveOut);
     }
 
     /// <summary>
@@ -284,92 +182,6 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
         }
 
         audio.PlayMusic(music);     // StartCPMusic
-    }
-
-    /// <summary>A label's shadow: its own, none, or null to keep the font's</summary>
-    internal static FontShadow? LabelShadow(Label label)
-    {
-        if (label.Shadow == false)
-            return FontShadow.None;
-
-        if (label.Shadow == true || label.ShadowX != null || label.ShadowY != null || label.ShadowColor != null)
-        {
-            var d = FontShadow.Default;
-            return new FontShadow(label.ShadowX ?? d.X, label.ShadowY ?? d.Y, label.ShadowColor ?? d.Color);
-        }
-
-        return null;
-    }
-
-    /// <summary>A label's gradient: its own, none, or null to keep the font's</summary>
-    internal static FontGradient? LabelGradient(Label label)
-    {
-        if (label.Gradient == false)
-            return FontGradient.None;
-
-        if (label.Gradient == true || label.GradientTop != null || label.GradientBottom != null)
-        {
-            var d = FontGradient.Default;
-            return new FontGradient(label.GradientTop ?? d.Top, label.GradientBottom ?? d.Bottom);
-        }
-
-        return null;
-    }
-
-    /// <summary>A label's outline: its own, none, or null to keep the font's</summary>
-    internal static FontOutline? LabelOutline(Label label)
-    {
-        if (label.Outline == false)
-            return FontOutline.None;
-
-        if (label.Outline == true || label.OutlineColor != null || label.OutlineThickness != null)
-        {
-            var d = FontOutline.Default;
-            return new FontOutline(label.OutlineColor ?? d.Color, Math.Max(label.OutlineThickness ?? d.Thickness, 1));
-        }
-
-        return null;
-    }
-
-    /// <summary>A label's glow: its own, none, or null to keep the font's</summary>
-    internal static FontGlow? LabelGlow(Label label)
-    {
-        if (label.Glow == false)
-            return FontGlow.None;
-
-        if (label.Glow == true || label.GlowColor != null || label.GlowRadius != null || label.GlowStrength != null)
-        {
-            var d = FontGlow.Default;
-            return new FontGlow(label.GlowColor ?? d.Color, Math.Max(label.GlowRadius ?? d.Radius, 1),
-                Math.Clamp(label.GlowStrength ?? d.Strength, 0, 100));
-        }
-
-        return null;
-    }
-
-    private void DrawLabel(Label label)
-    {
-        var language = assets.GetText("en-us");
-        var style = new TextStyle(label.Font, label.Color, Shadow: LabelShadow(label), Gradient: LabelGradient(label),
-            Outline: LabelOutline(label), Glow: LabelGlow(label));
-
-        var text = label.Text.ToLanguageText(language);
-        if (label.HorizontalOrientation == HorizontalOrientation.Center)
-        {
-            // Centered between X and X + Width, or across the screen. A line wider than that
-            // runs past both sides rather than stopping the game (US_CPrintLine's Quit), since
-            // it's a mod's text in a mod's font.
-            var (left, width) = label.Width > 0 ? (label.X, label.Width) : (0, 320);
-            int y = label.Y;
-            foreach (var line in text.TrimEnd('\n').Split('\n'))
-            {
-                ui.MeasureText(line, label.Font, out int w, out int h);
-                ui.TextAt(left + (width - w) / 2, y, style).Print(line);
-                y += h;
-            }
-        }
-        else
-            ui.TextAt(label.X, label.Y, style).Print(text);
     }
 
     /// <summary>What a menu item does: its action, from those registered, or null (having said why) for none</summary>

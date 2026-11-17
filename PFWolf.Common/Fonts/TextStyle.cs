@@ -24,7 +24,7 @@ namespace PFWolf.Fonts;
 /// own; null keeps the font's, and <see cref="FontGlow.None"/> turns it off
 /// </param>
 /// <param name="GlowColor">Draws whichever glow the text has flat in this one color, with no fading</param>
-internal readonly record struct TextStyle(string Font, string Color, string Background = "BKGDCOLOR",
+public readonly record struct TextStyle(string Font, string Color, string Background = "BKGDCOLOR",
     FontShadow? Shadow = null, string? ShadowColor = null, FontGradient? Gradient = null,
     FontOutline? Outline = null, string? OutlineColor = null, FontGlow? Glow = null, string? GlowColor = null)
 {

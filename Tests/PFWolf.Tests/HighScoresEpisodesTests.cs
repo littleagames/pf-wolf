@@ -2,6 +2,7 @@ using PFWolf.Assets;
 using PFWolf.Gameplay;
 using PFWolf.Loaders;
 using PFWolf.Ui;
+using PFWolf.Menus;
 
 namespace PFWolf.Tests;
 
@@ -28,7 +29,7 @@ public class HighScoresEpisodesTests
         var best = HighScoresScreen.EpisodeBest([Record(180, 15, 20, 1, 2, ("intel", 3, 4)), null, null])!;
 
         // Act / Assert: the time as it is, the percentages a third of that level's
-        Assert.That(LevelStatsPanel.Text(new MenuStatsLine { Value = "time" }, best), Is.EqualTo("0:03:00"));
+        Assert.That(StatsPanel.Text(new MenuStatsLine { Value = "time" }, best), Is.EqualTo("0:03:00"));
         Assert.That(HighScoresScreen.LineText(new HighScoresEpisodeLine { Value = "kill" }, best), Is.EqualTo("25%"));
         Assert.That(HighScoresScreen.LineText(new HighScoresEpisodeLine { Value = "secret" }, best), Is.EqualTo("16%"));
         Assert.That(HighScoresScreen.LineText(new HighScoresEpisodeLine { Value = "objective.intel" }, best), Is.EqualTo("25%"));

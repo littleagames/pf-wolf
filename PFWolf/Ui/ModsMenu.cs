@@ -1,6 +1,7 @@
 using PFWolf.Configuration;
 using PFWolf.Extensions;
 using PFWolf.Loaders;
+using PFWolf.Menus;
 
 namespace PFWolf.Ui;
 
@@ -194,7 +195,7 @@ internal sealed class ModsMenu(GameEngineManager engine, AssetManager assets, In
     /// How wide a mod's name can be: from the text's left edge to the window's right edge (less a
     /// margin) or a highlight bar's, and clear of the scroll marks when there are more mods than rows
     /// </summary>
-    internal static int ModNameWidth(Entities.MenuMetadata menu, int count)
+    internal static int ModNameWidth(Menus.MenuMetadata menu, int count)
     {
         int left = (int)menu.Position.X + menu.Indent;
         int right = menu.Cursor is { } bar ? bar.X + bar.Width - 2 : ScrollMarkX - 4;

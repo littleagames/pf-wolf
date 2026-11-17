@@ -1,3 +1,4 @@
+using PFWolf.Menus;
 namespace PFWolf.Ui;
 
 internal sealed class OptionsMenu(VideoManager video, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs)

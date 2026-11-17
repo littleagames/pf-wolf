@@ -2,6 +2,7 @@ using PFWolf.Assets;
 using PFWolf.Gameplay;
 using PFWolf.Loaders;
 using PFWolf.Ui;
+using PFWolf.Menus;
 
 namespace PFWolf.Tests;
 
@@ -23,11 +24,11 @@ public class LevelStatsPanelTests
     {
         var stats = LevelStatsPanel.Of(Record(3725, 9, 12, 1, 4, ("intel", 1, 2), ("kilroys", 1, 2)));
 
-        Assert.That(LevelStatsPanel.Text(Time, stats), Is.EqualTo("1:02:05"));
-        Assert.That(LevelStatsPanel.Text(Kill, stats), Is.EqualTo("75%"));
-        Assert.That(LevelStatsPanel.Text(Secret, stats), Is.EqualTo("25%"));
-        Assert.That(LevelStatsPanel.Text(Intel, stats), Is.EqualTo("50%"));
-        Assert.That(LevelStatsPanel.Text(Kilroys, stats), Is.EqualTo("1"));
+        Assert.That(StatsPanel.Text(Time, stats), Is.EqualTo("1:02:05"));
+        Assert.That(StatsPanel.Text(Kill, stats), Is.EqualTo("75%"));
+        Assert.That(StatsPanel.Text(Secret, stats), Is.EqualTo("25%"));
+        Assert.That(StatsPanel.Text(Intel, stats), Is.EqualTo("50%"));
+        Assert.That(StatsPanel.Text(Kilroys, stats), Is.EqualTo("1"));
     }
 
     [Test]
@@ -35,10 +36,10 @@ public class LevelStatsPanelTests
     {
         var stats = LevelStatsPanel.Of(null);
 
-        Assert.That(LevelStatsPanel.Text(Time, stats), Is.EqualTo("0:00:00"));
-        Assert.That(LevelStatsPanel.Text(Kill, stats), Is.EqualTo("0%"));
-        Assert.That(LevelStatsPanel.Text(Intel, stats), Is.EqualTo("0%"));
-        Assert.That(LevelStatsPanel.Text(Kilroys, stats), Is.Null);
+        Assert.That(StatsPanel.Text(Time, stats), Is.EqualTo("0:00:00"));
+        Assert.That(StatsPanel.Text(Kill, stats), Is.EqualTo("0%"));
+        Assert.That(StatsPanel.Text(Intel, stats), Is.EqualTo("0%"));
+        Assert.That(StatsPanel.Text(Kilroys, stats), Is.Null);
     }
 
     [Test]
@@ -51,11 +52,11 @@ public class LevelStatsPanelTests
             null]);
 
         // Assert: kills (100 + 50 + 0) / 3, secrets (100 + 0 + 0) / 3, intel (50 + 100 + 0) / 3
-        Assert.That(LevelStatsPanel.Text(Time, stats), Is.EqualTo("0:01:30"));
-        Assert.That(LevelStatsPanel.Text(Kill, stats), Is.EqualTo("50%"));
-        Assert.That(LevelStatsPanel.Text(Secret, stats), Is.EqualTo("33%"));
-        Assert.That(LevelStatsPanel.Text(Intel, stats), Is.EqualTo("50%"));
-        Assert.That(LevelStatsPanel.Text(Kilroys, stats), Is.EqualTo("2"));
+        Assert.That(StatsPanel.Text(Time, stats), Is.EqualTo("0:01:30"));
+        Assert.That(StatsPanel.Text(Kill, stats), Is.EqualTo("50%"));
+        Assert.That(StatsPanel.Text(Secret, stats), Is.EqualTo("33%"));
+        Assert.That(StatsPanel.Text(Intel, stats), Is.EqualTo("50%"));
+        Assert.That(StatsPanel.Text(Kilroys, stats), Is.EqualTo("2"));
     }
 
     [Test]
@@ -74,7 +75,7 @@ public class LevelStatsPanelTests
                 - { label: "Time:", value: time, value-x: 48 }
                 - { label: "Kilroys:", value: objective.kilroys, count: true, hide-empty: true }
             """);
-        var menu = Entities.MenuMetadata.BuildFromAsset(asset)!;
+        var menu = MenuMetadata.BuildFromAsset(asset)!;
 
         // Assert
         var panel = menu.StatsPanel!;

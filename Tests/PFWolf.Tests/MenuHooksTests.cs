@@ -1,5 +1,5 @@
 using PFWolf.Assets;
-using PFWolf.Entities;
+using PFWolf.Menus;
 using PFWolf.Loaders;
 
 namespace PFWolf.Tests;
@@ -127,7 +127,7 @@ public class MenuHooksTests
     {
         // Arrange
         var called = new List<string>();
-        var defs = new MenuDefs(null!, null!, null!, null!, null!)
+        var defs = new MenuDefs(null!, null!, null!, null!)
         {
             SubMenu = name => { called.Add("menu " + name); return 0; },
             Article = name => { called.Add("article " + name); return 0; },

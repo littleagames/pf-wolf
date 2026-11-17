@@ -1,11 +1,14 @@
 ﻿using PFWolf.Assets;
-using PFWolf.Entities;
 using PFWolf.Fonts;
+using PFWolf.Menus;
 
 namespace PFWolf.Managers;
 
-
-internal class GraphicManager
+/// <summary>
+/// Pictures and text on the screen, in the 320x200 layout; also what menus are drawn on (the
+/// shared <see cref="MenuPainter"/>, as <see cref="Menus"/>)
+/// </summary>
+internal class GraphicManager : IMenuCanvas
 {
 
     public GraphicManager(VideoManager videoManager, Lazy<AssetManager> assetManager, FontManager fontManager)
@@ -13,12 +16,16 @@ internal class GraphicManager
         this.videoManager = videoManager;
         this.assetManager = assetManager;
         this.fontManager = fontManager;
+        Menus = new MenuPainter(this);
     }
 
 
     private readonly VideoManager videoManager;
     private readonly Lazy<AssetManager> assetManager;
     private readonly FontManager fontManager;
+
+    /// <summary>Draws menus (their components, rows and cursor) on this screen</summary>
+    public MenuPainter Menus { get; }
 
     /// <summary>
     /// Graphic drawn behind the menus in place of their background color (game-info menu-backdrop)
@@ -33,49 +40,32 @@ internal class GraphicManager
     /// <summary>
     /// Draws the menu stripe with its top at <paramref name="y"/>, in the given colors or the game's
     /// </summary>
-    public void DrawStripe(int y, string? color = null, string? lineColor = null)
+    public void DrawStripe(int y, string? color = null, string? lineColor = null) => Menus.DrawStripe(y, color, lineColor);
+
+    public void DrawMenuBackground(string color) => Menus.DrawBackground(color);
+
+    public bool HasMargins => videoManager.HasMargins;
+
+    public void FillScreen(string color) => videoManager.FillScreen(color);
+
+    public void BarAcross(int top, int bottom, string color)
     {
-        // Across the whole screen, however wide
-        int top = videoManager.ScreenY(y), line = videoManager.ScreenY(y + MenuStripe.LineY);
-        videoManager.BarScaledCoord(0, top, videoManager.ScreenWidth, videoManager.ScreenY(y + MenuStripe.Height) - top, color ?? MenuStripe.Color);
-        videoManager.BarScaledCoord(0, line, videoManager.ScreenWidth, videoManager.ScreenY(y + MenuStripe.LineY + 1) - line, lineColor ?? MenuStripe.LineColor);
+        int screenTop = videoManager.ScreenY(top);
+        videoManager.BarScaledCoord(0, screenTop, videoManager.ScreenWidth, videoManager.ScreenY(bottom) - screenTop, color);
     }
 
-    public void DrawMenuBackground(string color)
-    {
-        // A backdrop covers the 320x200 in the middle of the screen; the color fills the rest
-        bool backdrop = !string.IsNullOrEmpty(MenuBackdrop) && assetManager.Value.Exists<GraphicAsset>(MenuBackdrop);
-        if (!backdrop || videoManager.HasMargins)
-            videoManager.FillScreen(color);
-        if (backdrop)
-            DrawPic(MenuBackdrop!, 0, 0);
-    }
+    public bool HasPicture(string name) => assetManager.Value.Exists<GraphicAsset>(name);
+
+    public (int Width, int Height)? PictureSize(string name) => PicSize(name);
+
+    public void DrawPicture(string name, int x, int y) => DrawPic(name, x, y);
 
     /// <summary>Draws one line of text; a missing font draws nothing</summary>
     public void DrawText(int x, int y, string text, TextStyle style)
     {
         var font = fontManager.Find(style.Font);
-        if (font == null)
-            return;
-
-        var shadow = style.Shadow ?? font.Shadow;
-        if (shadow != null && shadow != FontShadow.None && style.ShadowColor != null)
-            shadow = shadow with { Color = style.ShadowColor };
-
-        var outline = style.Outline ?? font.Outline;
-        if (outline != null && outline != FontOutline.None && style.OutlineColor != null)
-            outline = outline with { Color = style.OutlineColor };
-
-        // A glow color draws the rings flat, fading from that color into itself
-        var glow = style.Glow ?? font.Glow;
-        var glowBackground = style.Background;
-        if (glow != null && glow != FontGlow.None && style.GlowColor != null)
-        {
-            glow = glow with { Color = style.GlowColor };
-            glowBackground = style.GlowColor;
-        }
-
-        font.Draw(videoManager, x, y, text, style.Color, shadow, style.Gradient ?? font.Gradient, outline, glow, glowBackground);
+        if (font != null)
+            TextDrawing.Draw(videoManager, font, x, y, text, style);
     }
 
     public void DrawText(int x, int y, string text, Font font, string color) => font.Draw(videoManager, x, y, text, color);
@@ -96,60 +86,6 @@ internal class GraphicManager
         if (tile8Asset == null)
             return;
         videoManager.MemToScreen(tile8Asset.RawData.Skip(tile * 64).ToArray(), 8, 8, x, y);
-    }
-
-    public void DrawComponent(MenuComponent component)
-    {
-        if (component is Background bkgd)
-        {
-            DrawMenuBackground(bkgd.Color);
-        }
-        else if (component is Graphic gfx)
-        {
-            if (string.IsNullOrEmpty(gfx.Name))
-                return;
-
-            var gfxAsset = assetManager.Value.Find<GraphicAsset>(gfx.Name);
-            if (gfxAsset == null)
-                return;
-
-            // Orientation overrides the explicit coordinate on that axis
-            int x = gfx.HorizontalOrientation switch
-            {
-                HorizontalOrientation.Center => 160 - gfxAsset.Width / 2,
-                HorizontalOrientation.Right => 320 - gfxAsset.Width,
-                _ => gfx.X
-            };
-            int y = gfx.VerticalOrientation switch
-            {
-                VerticalOrientation.Center => 100 - gfxAsset.Height / 2,
-                VerticalOrientation.Bottom => 200 - gfxAsset.Height,
-                _ => gfx.Y
-            };
-
-            DrawPic(x, y, gfxAsset);
-        }
-        else if (component is Stripe stripe)
-        {
-            DrawStripe(stripe.Y, stripe.BackingColor, stripe.LineColor);
-        }
-        else if (component is Window window)
-        {
-            videoManager.Bar(window.X, window.Y, window.Width, window.Height, window.Color);
-            DrawOutline(window.X, window.Y, window.Width, window.Height, "BORD2COLOR", "DEACTIVE");
-        }
-        else if (component is Fill fill)
-        {
-            videoManager.Bar(fill.X, fill.Y, fill.Width, fill.Height, fill.Color);
-        }
-    }
-
-    private void DrawOutline(int x, int y, int w, int h, string color1, string color2)
-    {
-        videoManager.HorizontalLine(x, x + w, y, color2);
-        videoManager.VerticalLine(y, y + h, x, color2);
-        videoManager.HorizontalLine(x, x + w, y + h, color1);
-        videoManager.VerticalLine(y, y + h, x + w, color1);
     }
 
     public void DrawPic(string graphicName, int x, int y)

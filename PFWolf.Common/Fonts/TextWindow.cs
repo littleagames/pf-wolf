@@ -1,5 +1,4 @@
 using PFWolf.Exceptions;
-using PFWolf.Managers;
 
 namespace PFWolf.Fonts;
 
@@ -7,11 +6,11 @@ namespace PFWolf.Fonts;
 /// An area of the screen text is printed into, with a print position that moves along as text
 /// is printed, and the style it's printed in. Coordinates are in the 320x200 virtual screen.
 /// </summary>
-internal sealed class TextWindow
+public sealed class TextWindow
 {
-    private readonly GraphicManager graphics;
+    private readonly ITextSurface graphics;
 
-    public TextWindow(GraphicManager graphics, int x, int y, int width, int height, TextStyle style)
+    public TextWindow(ITextSurface graphics, int x, int y, int width, int height, TextStyle style)
     {
         this.graphics = graphics;
         X = x;
@@ -23,10 +22,10 @@ internal sealed class TextWindow
     }
 
     /// <summary>A window covering the whole screen, for text placed by setting the print position</summary>
-    public static TextWindow FullScreen(GraphicManager graphics, TextStyle style) => new(graphics, 0, 0, 320, 200, style);
+    public static TextWindow FullScreen(ITextSurface graphics, TextStyle style) => new(graphics, 0, 0, 320, 200, style);
 
     /// <summary>A window from (x, y) to the bottom right of the screen: text prints from there, and newlines come back to x</summary>
-    public static TextWindow At(GraphicManager graphics, int x, int y, TextStyle style) => new(graphics, x, y, 320 - x, 200 - y, style);
+    public static TextWindow At(ITextSurface graphics, int x, int y, TextStyle style) => new(graphics, x, y, 320 - x, 200 - y, style);
 
     public int X { get; set; }
     public int Y { get; set; }

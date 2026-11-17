@@ -1,6 +1,7 @@
 using PFWolf.Assets;
 using PFWolf.Extensions;
 using PFWolf.Fonts;
+using PFWolf.Menus;
 
 namespace PFWolf.Ui;
 
@@ -112,7 +113,7 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
             }
 
             if (layout.TimeX >= 0)
-                ui.TextAt(layout.TimeX, y, valueStyle).Print(LevelStatsPanel.Text(new MenuStatsLine { Value = "time" }, best)!);
+                ui.TextAt(layout.TimeX, y, valueStyle).Print(StatsPanel.Text(new MenuStatsLine { Value = "time" }, best)!);
             foreach (var line in layout.Lines)
             {
                 ui.TextAt(layout.LabelX, y + line.Y, style).Print(text(line.Label));
@@ -127,7 +128,7 @@ internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager as
 
     /// <summary>A line's value as the episodes' rows show it</summary>
     internal static string LineText(HighScoresEpisodeLine line, LevelStats stats) =>
-        LevelStatsPanel.Text(new MenuStatsLine { Value = line.Value, Count = line.Count }, stats) ?? "";
+        StatsPanel.Text(new MenuStatsLine { Value = line.Value, Count = line.Count }, stats) ?? "";
 
     /// <summary>
     /// Ranks the score among the high scores, and has a name typed for it if it made the list.

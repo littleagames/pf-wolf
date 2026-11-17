@@ -1,31 +1,18 @@
-using PFWolf.Assets;
 using PFWolf.Fonts;
+using PFWolf.Menus;
 
 namespace PFWolf.Ui;
 
 /// <summary>
-/// Drawing the menus: the backdrop, stripes, windows and boxes, the fades, a menu's rows and
-/// highlight bar, its sliders, choices and checkboxes, the gun, and message boxes
+/// Drawing the menus: the fades, the gun and message boxes here; the backdrop, stripes, windows,
+/// a menu's rows and highlight bar, its sliders, choices and checkboxes are the shared
+/// <see cref="MenuPainter"/>'s (PFWolf.Common), which the editor draws its menus with too
 /// </summary>
 /// <param name="settings">game-info's menu fade, as read (GameHost's GameInfoSettings)</param>
-internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, AssetManager assets, FontManager fonts,
-    GameEngineManager engine, UiText ui, Func<GameInfoSettings> settings)
+internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, FontManager fonts,
+    GameEngineManager engine, Func<GameInfoSettings> settings)
 {
-    static readonly string[] colorHlite =
-    {
-        "DEACTIVE",
-        "HIGHLIGHT",
-        "READHCOLOR",
-        "Green" // 4 165 0 (used for disabled episodes)
-    };
-
-    static readonly string[] colorNorml =
-    {
-        "DEACTIVE",
-        "TEXTCOLOR",
-        "READCOLOR",
-        "DarkGreen" // 4 113 0 (used for disabled episodes)
-    };
+    private MenuPainter Painter => graphics.Menus;
 
     internal void ClearMScreen()
     {
@@ -37,19 +24,9 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
         graphics.DrawStripe(y);
     }
 
-    internal void DrawWindow(int x, int y, int w, int h, string wcolor)
-    {
-        video.Bar(x, y, w, h, wcolor);
-        DrawOutline(x, y, w, h, "BORD2COLOR", "DEACTIVE");
-    }
+    internal void DrawWindow(int x, int y, int w, int h, string wcolor) => Painter.DrawWindow(x, y, w, h, wcolor);
 
-    internal void DrawOutline(int x, int y, int w, int h, string color1, string color2)
-    {
-        video.HorizontalLine(x, x + w, y, color2);
-        video.VerticalLine(y, y + h, x, color2);
-        video.HorizontalLine(x, x + w, y + h, color1);
-        video.VerticalLine(y, y + h, x + w, color1);
-    }
+    internal void DrawOutline(int x, int y, int w, int h, string color1, string color2) => Painter.DrawOutline(x, y, w, h, color1, color2);
 
     internal void MenuFadeOut()
     {
@@ -58,155 +35,51 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     }
     internal void MenuFadeIn() => video.FadeIn(settings().MenuFadeStyle, 10, settings().MenuFadeTics);
 
-    internal void DrawMenu(ControlPanelMenuInfo item_i, ControlPanelItem[] items)
-    {
-        int which = item_i.CurPos;
+    internal void DrawMenu(ControlPanelMenuInfo item_i, ControlPanelItem[] items) => Painter.DrawMenu(item_i, items);
 
-        for (int i = 0; i < item_i.Amount; i++)
-            if (item_i.IsRowVisible(i))
-                PrintMenuItem(item_i, items, i, items[i].Active > 0 ? MenuItemColor(items[i], which == i) : "DEACTIVE");
-    }
-
-    /// <summary>
-    /// A scrolling menu's marks at its right edge (x): an arrow up by the first row shown and
-    /// one down by the last while there are items above or below, each with how many (not
-    /// counting blank rows: the episode menu's spacers)
-    /// </summary>
-    internal void DrawMenuScrollMarks(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int x)
-    {
-        if (!item_i.Scrolls)
-            return;
-        int bottom = Math.Min(item_i.TopRow + item_i.VisibleRows, items.Length);
-        int above = items.Take(item_i.TopRow).Count(item => !string.IsNullOrEmpty(item.Text)),
-            below = items.Skip(bottom).Count(item => !string.IsNullOrEmpty(item.Text));
-        var style = new TextStyle(UiFonts.SmallFont, "READCOLOR");
-        if (above > 0)
-        {
-            int y = item_i.RowY(item_i.TopRow) + 2;
-            DrawCustomArrow(x, y, up: true);
-            ui.TextAt(x - 6 - ui.TextWidth($"{above} more", UiFonts.SmallFont), y - 3, style).Print($"{above} more");
-        }
-        if (below > 0)
-        {
-            int y = item_i.RowY(item_i.TopRow + item_i.VisibleRows - 1) + 5;
-            DrawCustomArrow(x, y, up: false);
-            ui.TextAt(x - 6 - ui.TextWidth($"{below} more", UiFonts.SmallFont), y - 3, style).Print($"{below} more");
-        }
-    }
+    /// <summary>A scrolling menu's marks at its right edge (x), with how many rows are above and below</summary>
+    internal void DrawMenuScrollMarks(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int x) => Painter.DrawMenuScrollMarks(item_i, items, x);
 
     /// <summary>An item's text in its row; a newline in it goes on under the start of the text</summary>
     internal void PrintMenuItem(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int which, string color)
-        => ui.TextAt(item_i.X + item_i.Indent, MenuItemY(item_i, which), MenuItemStyle(item_i, color)).Print(items[which].Text);
+        => Painter.PrintMenuItem(item_i, items, which, color);
 
     /// <summary>The top of an item's row</summary>
-    internal static int MenuItemY(ControlPanelMenuInfo item_i, int which) => item_i.RowY(which);
+    internal static int MenuItemY(ControlPanelMenuInfo item_i, int which) => MenuPainter.MenuItemY(item_i, which);
 
     /// <summary>The menu's text style for its items: its font and shadow (menudef font, item-shadow)</summary>
-    internal TextStyle MenuItemStyle(ControlPanelMenuInfo item_i, string color)
-        => new(item_i.Font ?? UiFonts.MenuFont, color,
-            Shadow: item_i.ItemShadow is { } shadow ? new FontShadow(1, 1, shadow) : null);
+    internal static TextStyle MenuItemStyle(ControlPanelMenuInfo item_i, string color) => MenuPainter.MenuItemStyle(item_i, color);
 
-    /// <summary>
-    /// Draws or erases a menu's highlight bar (menudef cursor) behind the item, printing the item
-    /// over it highlighted, or plain when the bar is off
-    /// </summary>
-    internal void DrawMenuBar(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int which, bool on)
-    {
-        var bar = item_i.Cursor!;
-        video.Bar(bar.X, MenuItemY(item_i, which) + bar.YOffset, bar.Width, bar.Height, on ? bar.Color : bar.EraseColor);
-        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], on));
-        if (items[which].CheckBox is bool checkedOn)
-            DrawMenuCheckbox(item_i, which, checkedOn, highlighted: on);
-    }
+    /// <summary>Draws or erases a menu's highlight bar (menudef cursor) behind the item</summary>
+    internal void DrawMenuBar(ControlPanelMenuInfo item_i, ControlPanelItem[] items, int which, bool on) => Painter.DrawMenuBar(item_i, items, which, on);
 
-    internal static string MenuItemColor(ControlPanelItem item, bool hlight)
-        => hlight ? colorHlite[item.Active] : colorNorml[item.Active];
+    internal static string MenuItemColor(ControlPanelItem item, bool hlight) => MenuPainter.MenuItemColor(item, hlight);
 
-    internal const int MenuSliderWidth = 88;
-    internal const int MenuSliderOffset = 120; // from the start of the row's text, clear of "Sound Volume"; choices use it too
+    internal const int MenuSliderWidth = MenuPainter.MenuSliderWidth;
+    internal const int MenuSliderOffset = MenuPainter.MenuSliderOffset;
 
-    // A level bar to the right of a SliderMenuItem's text, drawn like the mouse sensitivity bar:
-    // a track with a highlighted knob at the current value (0 to max).
+    /// <summary>A level bar to the right of a SliderMenuItem's text, with a knob at the value (0 to max)</summary>
     internal void DrawMenuSlider(ControlPanelMenuInfo iteminfo, ControlPanelItem[] items, string id, int value, int max)
-    {
-        int index = Array.FindIndex(items, item => item.Id == id);
-        if (index < 0 || !iteminfo.IsRowVisible(index))
-            return;
+        => Painter.DrawMenuSlider(iteminfo, items, id, value, max);
 
-        int knobWidth = MenuSliderWidth / (max + 1);
-        int x = iteminfo.X + iteminfo.Indent + MenuSliderOffset;
-        int y = iteminfo.RowY(index) + 2;
-        video.Bar(x, y, knobWidth * (max + 1), 9, "TEXTCOLOR");
-        DrawOutline(x, y, knobWidth * (max + 1), 9, "Black", "HIGHLIGHT");
-        DrawOutline(x + knobWidth * value, y, knobWidth, 9, "Black", "READCOLOR");
-        video.Bar(x + knobWidth * value + 1, y + 1, knobWidth - 1, 8, "READHCOLOR");
-    }
+    internal const int MenuChoiceWidth = MenuPainter.MenuChoiceWidth;
 
-    internal const int MenuChoiceWidth = 96; // room for the widest value, like "1920x1200"
-
-    // A ChoiceMenuItem's current value, in the same column as the sliders. Greyed out with the row.
+    /// <summary>A ChoiceMenuItem's current value, in the same column as the sliders</summary>
     internal void DrawMenuChoice(ControlPanelMenuInfo iteminfo, ControlPanelItem[] items, string id, string value)
-    {
-        int index = Array.FindIndex(items, item => item.Id == id);
-        if (index < 0 || !iteminfo.IsRowVisible(index))
-            return;
+        => Painter.DrawMenuChoice(iteminfo, items, id, value);
 
-        int x = iteminfo.X + iteminfo.Indent + MenuSliderOffset;
-        int y = iteminfo.RowY(index);
-        video.Bar(x, y, MenuChoiceWidth, iteminfo.RowHeight, "BKGDCOLOR");
+    /// <summary>The choice after stepping a ChoiceMenuItem by delta (see MenuPainter.StepMenuChoice)</summary>
+    internal static int StepMenuChoice(int current, int count, int delta, bool wrap) => MenuPainter.StepMenuChoice(current, count, delta, wrap);
 
-        ui.TextAt(x, y, MenuItemStyle(iteminfo, MenuItemColor(items[index], false))).Print(value);
-    }
-
-    /// <summary>
-    /// The choice after stepping a ChoiceMenuItem by delta. Left/right stop at the ends of the
-    /// list; Enter wraps round, so it can reach every value on its own.
-    /// </summary>
-    internal static int StepMenuChoice(int current, int count, int delta, bool wrap)
-    {
-        if (count <= 0)
-            return 0;
-
-        int next = current + delta;
-        return wrap ? ((next % count) + count) % count : Math.Clamp(next, 0, count - 1);
-    }
-
-    // The on/off box to the left of a ToggleMenuItem's text
+    /// <summary>The on/off box to the left of a ToggleMenuItem's text</summary>
     internal void DrawMenuCheckbox(ControlPanelMenuInfo iteminfo, ControlPanelItem[] items, string id, bool on)
-    {
-        int index = Array.FindIndex(items, item => item.Id == id);
-        if (index >= 0)
-        {
-            items[index].CheckBox = on;
-            DrawMenuCheckbox(iteminfo, index, on);
-        }
-    }
+        => Painter.DrawMenuCheckbox(iteminfo, items, id, on);
 
     /// <param name="highlighted">Under a highlight bar: the pack's c_selected_hi / c_notselected_hi, when it has them</param>
     internal void DrawMenuCheckbox(ControlPanelMenuInfo iteminfo, int index, bool on, bool highlighted = false)
-    {
-        if (!iteminfo.IsRowVisible(index))
-            return;
-        int x = iteminfo.X + iteminfo.Indent + iteminfo.CheckboxX;
-        int y = iteminfo.RowY(index) + iteminfo.CheckboxY;
-        var pic = on ? "c_selected" : "c_notselected";
-        if (highlighted && assets.Exists<GraphicAsset>(pic + "_hi"))
-            pic += "_hi";
-        graphics.DrawPic(pic, x, y);
-    }
+        => Painter.DrawMenuCheckbox(iteminfo, index, on, highlighted);
 
-    internal void DrawMenuGun(ControlPanelMenuInfo iteminfo)
-    {
-        int x, y;
-
-        // A highlight bar goes on with its item's text when HandleMenu starts
-        if (iteminfo.Cursor != null)
-            return;
-
-        x = iteminfo.X & -8;    // same column HandleMenu draws and erases the gun in
-        y = iteminfo.RowY(iteminfo.CurPos) - 2;
-        DrawGunPic("c_cursor1", x, y);
-    }
+    internal void DrawMenuGun(ControlPanelMenuInfo iteminfo) => Painter.DrawMenuGun(iteminfo, settings().MenuGun);
 
     /// <summary>The gun cursor's shape, unless game-info's menu-cursor is none</summary>
     internal void DrawGunPic(string shape, int x, int y)
@@ -295,11 +168,7 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
     }
 
     /// <summary>A small arrow saying a list scrolls further up or down (the customize and load/save screens)</summary>
-    internal void DrawCustomArrow(int x, int y, bool up)
-    {
-        for (int i = 0; i < 4; i++)
-            video.HorizontalLine(x - i, x + i, up ? y + i : y + 3 - i, "READCOLOR");
-    }
+    internal void DrawCustomArrow(int x, int y, bool up) => Painter.DrawCustomArrow(x, y, up);
 
     // Message boxes don't wrap, so break a long reason onto lines of about 28 characters.
     internal static string WrapForMessage(string text)

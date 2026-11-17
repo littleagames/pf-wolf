@@ -1,10 +1,10 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Linq;
 using PFWolf.Assets;
 
-namespace PFWolf.Entities;
+namespace PFWolf.Menus;
 
-internal class MenuMetadata
+public class MenuMetadata
 {
     public Vector2 Position { get; set; } = Vector2.Zero;
 
@@ -75,7 +75,7 @@ internal class MenuMetadata
     /// <summary>A layout for a set number of items that fits the number the game has (Ui/MenuDefs.cs Fit)</summary>
     public Assets.MenuFitItems? FitItems { get; set; }
 
-    internal static MenuMetadata? BuildFromAsset(MenuAsset asset)
+    public static MenuMetadata? BuildFromAsset(MenuAsset asset)
     {
         if (asset is null) return null;
 
@@ -505,7 +505,7 @@ internal class MenuMetadata
     }
 }
 
-internal abstract record MenuComponent
+public abstract record MenuComponent
 {
     /// <summary>
     /// Game packs this is drawn in; null means every pack
@@ -516,7 +516,7 @@ internal abstract record MenuComponent
     public string? Id { get; set; }
 }
 
-internal record Background : MenuComponent
+public record Background : MenuComponent
 {
     public string Color { get; set; } = null!;
 
@@ -525,7 +525,7 @@ internal record Background : MenuComponent
     }
 }
 
-internal record Window : MenuComponent
+public record Window : MenuComponent
 {
     public int X { get; set; }
     public int Y { get; set; }
@@ -555,7 +555,7 @@ internal record Window : MenuComponent
 }
 
 /// <summary>A plain filled rectangle, without the window's outline (Blake Stone's menu terminal)</summary>
-internal record Fill : MenuComponent
+public record Fill : MenuComponent
 {
     public int X { get; set; }
     public int Y { get; set; }
@@ -568,7 +568,7 @@ internal record Fill : MenuComponent
     }
 }
 
-internal record Graphic : MenuComponent
+public record Graphic : MenuComponent
 {
     public string Name { get; set; }
     public int X { get; set; }
@@ -613,7 +613,7 @@ internal record Graphic : MenuComponent
 /// <summary>
 /// The band across the top of a menu, shaped by game-info menu-stripe; colors left unset come from there too
 /// </summary>
-internal record Stripe : MenuComponent
+public record Stripe : MenuComponent
 {
     public int Y { get; set; } = 0;
     public string? BackingColor { get; set; }
@@ -641,7 +641,7 @@ internal record Stripe : MenuComponent
 /// Center orientation centers the text across the full screen width, ignoring X, or between
 /// X and X + Width when a width is given.
 /// </summary>
-internal record Label : MenuComponent
+public record Label : MenuComponent
 {
     public string Text { get; set; } = "";
     public int X { get; set; }
@@ -712,21 +712,21 @@ internal record Label : MenuComponent
     }
 }
 
-internal enum HorizontalOrientation
+public enum HorizontalOrientation
 {
     Left,
     Center,
     Right
 }
 
-internal enum VerticalOrientation
+public enum VerticalOrientation
 {
     Top,
     Center,
     Bottom
 }
 
-internal abstract record MenuItem
+public abstract record MenuItem
 {
     public string? Id { get; set; }
     public string Text { get; set; } = null!;
@@ -740,7 +740,7 @@ internal abstract record MenuItem
     public bool Highlighted { get; set; }
 }
 
-internal record MenuSwitcher : MenuItem
+public record MenuSwitcher : MenuItem
 {
     public MenuSwitcher()
     {
@@ -768,7 +768,7 @@ internal record MenuSwitcher : MenuItem
     public string? Function { get; init; } = null;
 }
 
-internal record ToggleMenuItem : MenuItem
+public record ToggleMenuItem : MenuItem
 {
     public bool State { get; set; } = false;
     public ToggleMenuItem()
@@ -784,7 +784,7 @@ internal record ToggleMenuItem : MenuItem
     //}
 }
 
-internal record BlankMenuItem : MenuItem
+public record BlankMenuItem : MenuItem
 {
     public BlankMenuItem()
     {
@@ -796,7 +796,7 @@ internal record BlankMenuItem : MenuItem
 /// <summary>
 /// A level adjusted with left/right while highlighted (the Sound menu's volumes)
 /// </summary>
-internal record SliderMenuItem : MenuItem
+public record SliderMenuItem : MenuItem
 {
     public SliderMenuItem()
     {
@@ -806,7 +806,7 @@ internal record SliderMenuItem : MenuItem
 /// <summary>
 /// Plays a music track when chosen (jukebox)
 /// </summary>
-internal record MusicMenuItem : MenuItem
+public record MusicMenuItem : MenuItem
 {
     public string? Music { get; set; }
 
@@ -818,7 +818,7 @@ internal record MusicMenuItem : MenuItem
 /// <summary>
 /// A row of the Customize Controls screen: the keys and buttons bound to one control
 /// </summary>
-internal record ControlMenuItem : MenuItem
+public record ControlMenuItem : MenuItem
 {
     /// <summary>The control's controls.cfg name ("attack", "am_zoomin")</summary>
     public string? Control { get; set; }
@@ -831,7 +831,7 @@ internal record ControlMenuItem : MenuItem
 /// <summary>
 /// A title over a group of rows in a list that can't be selected (Customize Controls' sections)
 /// </summary>
-internal record HeaderMenuItem : MenuItem
+public record HeaderMenuItem : MenuItem
 {
     public HeaderMenuItem()
     {
@@ -843,7 +843,7 @@ internal record HeaderMenuItem : MenuItem
 /// One value picked from a list, stepped with left/right (or Enter) while highlighted.
 /// The menu's code supplies the values, since lists like resolutions come from the display.
 /// </summary>
-internal record ChoiceMenuItem : MenuItem
+public record ChoiceMenuItem : MenuItem
 {
     public ChoiceMenuItem()
     {

@@ -1,5 +1,6 @@
 using PFWolf.Assets;
 using PFWolf.Extensions;
+using PFWolf.Menus;
 
 namespace PFWolf.Ui;
 
@@ -27,7 +28,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         if (levelRecord == null || assets.GetMenu(menu)?.StatsPanel is not { } panel || statsFor(w) is not { } stats)
             return;
         var language = assets.GetText("en-us");
-        LevelStatsPanel.Draw(panel, stats, graphics, draw, text => text.ToLanguageText(language));
+        StatsPanel.Draw(panel, stats, graphics.Menus, text => text.ToLanguageText(language));
     }
 
     LevelStats? EpisodeStats(int w) =>
