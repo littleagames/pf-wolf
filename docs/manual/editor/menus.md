@@ -40,6 +40,24 @@ rows, round from the end), Home and End, or an item's letter. Clicking a part of
 it (outlined, and named under the picture): a row also takes the cursor there. Double-click an
 item that opens a menu to go to that menu, or a picture to see it in the art window (F6).
 
+## Laying it out on the picture
+
+In the menu window (not the Definitions window's preview), the picture can be laid out with the
+mouse; each drag is one change in the Fields tab, saved and undone like any other:
+
+- **Drag a part** to move it: a window or fill, a picture, a label, the stripe (up and down), the
+  highlight bar, the highlighted row's picture (it gets a `selection-pic` where it is, if the
+  menu had none) or the stats panel. Dragging a **row** moves all the rows (`position`).
+- **Drag a right or bottom edge** (or the corner) to size a window, fill, label with a width,
+  the highlight bar, the picture's box or the stats panel. The mouse pointer says what a drag will do.
+- **Shift-drag a row**: across changes the text's `indent`, down the rows' `row-height` (the row
+  dragged follows the mouse).
+- A picture or label centred (or put right or at the bottom) by an orientation stays put on that
+  axis; **Alt-drag** gives it a place of its own there, where it is now.
+- **Ctrl+arrows** nudge the part picked a pixel (Shift: 8); nudges close together undo as one.
+- **Snap to 8** puts what's dragged on 8-pixel steps. While dragging, dashed lines show the
+  320x200 middle's centre and, on a wide picture, its edges. **Esc** drops a drag.
+
 ## The tabs
 
 - **Fields**: the menu's keys (where the rows go, how far apart, its font, cursor, music,

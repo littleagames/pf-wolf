@@ -292,6 +292,24 @@ Not as planned:
 - Pickers: menus, texts, pictures, fonts, music, actions, types and items-sources; not Lua
   functions, controls or game packs (typed).
 
+**Phase 3 done (2026-11-17).**
+- Editor `Editing/MenuLayoutEdit`: a part dragged by (dx, dy) in a mode (move, width, height,
+  corner, row spacing) as changes to the fields' menu: components' params (an oriented axis kept
+  unless unlocked, which drops the orientation for an x/y where it is), the rows' position, indent
+  and row-height, the cursor bar, selection-pic (made where the picture is), stats-panel; snapping
+  to 8. Components are found as the menu reads them (unknown types skipped).
+- `MenuPreviewModel` drags (`IMenuLayoutTarget`: drawn as dragged, one change on drop), edge
+  zones for resizing, pointer shapes, Ctrl+arrow nudges, Esc, Snap to 8, guides while dragging.
+  Only the menu window has a target; F11's preview still only picks.
+- `MenuBrowserViewModel.Layout`: the target. A drag works from the fields as they were when it
+  started and becomes one undo step through `ShowFields`; nudges a second apart merge.
+- Checks: `MenuLayoutEditTests` (7). Driven on sound with a scratch mod: the Window dragged +20,
+  +10 and its bottom edge −10 (two steps, Ctrl+Z undid the second alone), a row dragged moving
+  `position` 24,62 → 14,72.
+
+Not as planned: no Tab to cycle through the parts under the mouse; row spacing is a Shift-drag
+on a row rather than handles between rows; the guides show only while dragging.
+
 Found: Blake Stone's and Planet Strike's jukebox, new-class and new-level are the shared menus,
 whose key legend picture (`c_mouselback`) Blake hasn't got. The game draws nothing there. The
 window shows them with ⚠, and `MenuCatalogGameTests` lists them as known.

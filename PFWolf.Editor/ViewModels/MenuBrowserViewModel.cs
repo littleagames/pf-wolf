@@ -63,6 +63,7 @@ public sealed partial class MenuBrowserViewModel : ObservableObject, IDisposable
             PickField(part);
         };
         Preview.PartOpened += (_, part) => OpenPart(part);
+        Preview.Layout = this;
     }
 
     public MenuPreviewModel Preview { get; } = new();

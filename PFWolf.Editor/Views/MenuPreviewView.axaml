@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:PFWolf.Editor.ViewModels"
              xmlns:sys="using:System"
+             xmlns:v="using:PFWolf.Editor.Views"
              x:Class="PFWolf.Editor.Views.MenuPreviewView"
              x:DataType="vm:MenuPreviewModel">
 
@@ -21,6 +22,8 @@
                 ToolTip.Tip="The main menu while a game is going on: Back to Game, and Save game open" />
       <CheckBox Content="Checkboxes on" IsChecked="{Binding ChecksOn}" Margin="0,0,12,4"
                 ToolTip.Tip="Every other toggle's checkbox on (the game fills in the real ones); off, they're all off" />
+      <CheckBox Content="Snap to 8" IsChecked="{Binding SnapToGrid}" Margin="0,0,12,4" IsVisible="{Binding CanLayOut}"
+                ToolTip.Tip="What's dragged lands on 8-pixel steps" />
       <CheckBox Content="Flash" IsChecked="{Binding Flashing}" Margin="0,0,12,4"
                 ToolTip.Tip="The highlight bar flashes as the game's does (Blake Stone's cursor)" />
       <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasItemsSource}" Margin="0,0,0,4"
@@ -37,8 +40,15 @@
       <Panel>
         <Image x:Name="Picture" Source="{Binding Image}" Width="{Binding ImageWidth}" Height="{Binding ImageHeight}" Stretch="Fill"
                RenderOptions.BitmapInterpolationMode="None" Cursor="Hand"
-               ToolTip.Tip="Click a part to pick it (a row moves the cursor there); double-click a picture or an item that opens a menu to go to it. Up, Down, Home, End and an item's letter move the cursor as the game's do." />
+               ToolTip.Tip="Click a part to pick it (a row moves the cursor there); double-click a picture or an item that opens a menu to go to it. Up, Down, Home, End and an item's letter move the cursor as the game's do. In the menu window, drag a part to move it (its right or bottom edge to size it; Shift on a row: indent and row height; Alt: a centred picture or label gets a place of its own), Ctrl+arrows nudge the part picked (Shift: 8 pixels), Esc drops a drag." />
         <Canvas IsHitTestVisible="False" Width="{Binding ImageWidth}" Height="{Binding ImageHeight}">
+          <!-- While dragging: the 320x200 middle's centre lines and edges -->
+          <Line StartPoint="0,0" EndPoint="{Binding ImageHeight, Converter={x:Static v:MenuGuides.Down}}" Canvas.Left="{Binding GuideX}"
+                Stroke="Yellow" StrokeThickness="1" StrokeDashArray="4,4" Opacity="0.7" IsVisible="{Binding IsDragging}" />
+          <Line StartPoint="0,0" EndPoint="{Binding ImageWidth, Converter={x:Static v:MenuGuides.Across}}" Canvas.Top="{Binding GuideY}"
+                Stroke="Yellow" StrokeThickness="1" StrokeDashArray="4,4" Opacity="0.7" IsVisible="{Binding IsDragging}" />
+          <Rectangle Canvas.Left="{Binding LayoutLeft}" Canvas.Top="{Binding LayoutTop}" Width="{Binding LayoutWidth}" Height="{Binding LayoutHeight}"
+                     Stroke="Yellow" StrokeThickness="1" StrokeDashArray="2,4" Opacity="0.6" IsVisible="{Binding IsDragging}" />
           <Rectangle Canvas.Left="{Binding PickedLeft}" Canvas.Top="{Binding PickedTop}" Width="{Binding PickedWidth}" Height="{Binding PickedHeight}"
                      Stroke="DeepSkyBlue" StrokeThickness="2" StrokeDashArray="3,2" IsVisible="{Binding HasPicked}" />
         </Canvas>

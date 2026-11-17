@@ -9,6 +9,22 @@ using PFWolf.Menus;
 namespace PFWolf.Editor.ViewModels;
 
 /// <summary>
+/// What a preview's parts are dragged into: the menu window's fields. The menu is drawn as it
+/// would be while a part's dragged, and the drag becomes one change when it's let go.
+/// </summary>
+public interface IMenuLayoutTarget
+{
+    bool CanMove(MenuPart part);
+    bool CanResize(MenuPart part);
+
+    /// <summary>The menu with the part dragged this far, to draw while it's dragged; null to draw it as it is</summary>
+    MenuMetadata? Dragged(MenuPart part, Editing.MenuDragMode mode, int dx, int dy, bool unlock, int snap);
+
+    /// <summary>The drag let go: the change made (one step to undo)</summary>
+    void Dropped(MenuPart part, Editing.MenuDragMode mode, int dx, int dy, bool unlock, int snap);
+}
+
+/// <summary>
 /// A menu's live preview, as the game draws it (Rendering/MenuPreview): shared by the menu window
 /// and the Definitions window's YAML tab. The cursor moves as the game's does (Up, Down, Home,
 /// End, an item's letter), a highlight bar flashes, and a part of the picture can be picked.
@@ -176,6 +192,10 @@ public sealed partial class MenuPreviewModel : ObservableObject, IDisposable
         if (Picked != null)
             Picked = _picture.Parts.FirstOrDefault(part => part.Kind == Picked.Kind && part.Index == Picked.Index) ?? Picked;
         PlacePicked();
+        GuideX = (_picture.OriginX + 160) * Zoom;
+        GuideY = (_picture.OriginY + 100) * Zoom;
+        (LayoutLeft, LayoutTop) = (_picture.OriginX * Zoom, _picture.OriginY * Zoom);
+        (LayoutWidth, LayoutHeight) = (320.0 * Zoom, 200.0 * Zoom);
         old?.Dispose();
     }
 
@@ -273,6 +293,135 @@ public sealed partial class MenuPreviewModel : ObservableObject, IDisposable
             }
         }
         return false;
+    }
+
+    //
+    // Laying out: parts dragged, resized and nudged (the menu window's; the YAML tab's preview only picks)
+    //
+
+    /// <summary>Where drags go; null when the picture is only looked at</summary>
+    public IMenuLayoutTarget? Layout
+    {
+        get => _layout;
+        set
+        {
+            _layout = value;
+            OnPropertyChanged(nameof(CanLayOut));
+        }
+    }
+
+    private IMenuLayoutTarget? _layout;
+
+    public bool CanLayOut => Layout != null;
+
+    /// <summary>Values dragged to round to 8 pixels</summary>
+    [ObservableProperty] private bool _snapToGrid;
+
+    /// <summary>A part is being dragged: the guides show</summary>
+    [ObservableProperty] private bool _isDragging;
+
+    // The guides, in the image's pixels: the 320x200 middle's centre lines and edges
+    [ObservableProperty] private double _guideX;
+    [ObservableProperty] private double _guideY;
+    [ObservableProperty] private double _layoutLeft;
+    [ObservableProperty] private double _layoutTop;
+    [ObservableProperty] private double _layoutWidth;
+    [ObservableProperty] private double _layoutHeight;
+
+    private sealed record Drag(MenuPart Part, Editing.MenuDragMode Mode, double StartX, double StartY, bool Unlock, MenuMetadata? Menu)
+    {
+        public int Dx { get; set; }
+        public int Dy { get; set; }
+    }
+
+    private Drag? _drag;
+    private int Snap => SnapToGrid ? 8 : 1;
+
+    // A screen pixel's worth of grab round an edge, at least
+    private double EdgeZone => Math.Max(5.0 / Zoom, 1.5);
+
+    /// <summary>What dragging from a point on the image would do (for the mouse's look); null for nothing</summary>
+    public Editing.MenuDragMode? ModeAt(double x, double y, bool shift)
+    {
+        if (Layout == null || _picture == null || PartAt(x, y) is not { } part)
+            return null;
+        return ModeOf(part, x / Zoom - _picture.OriginX, y / Zoom - _picture.OriginY, shift);
+    }
+
+    private Editing.MenuDragMode? ModeOf(MenuPart part, double lx, double ly, bool shift)
+    {
+        if (Layout is not { } layout)
+            return null;
+        if (shift && part.Kind == MenuPartKind.Row)
+            return Editing.MenuDragMode.Spacing;
+        if (layout.CanResize(part))
+        {
+            bool right = lx >= part.X + part.Width - EdgeZone, bottom = ly >= part.Y + part.Height - EdgeZone;
+            if (right && bottom)
+                return Editing.MenuDragMode.Resize;
+            if (right)
+                return Editing.MenuDragMode.ResizeWidth;
+            if (bottom)
+                return Editing.MenuDragMode.ResizeHeight;
+        }
+        return layout.CanMove(part) ? Editing.MenuDragMode.Move : null;
+    }
+
+    /// <summary>A press on the image: the part there can be dragged from it; false when nothing there can</summary>
+    public bool BeginDrag(double x, double y, bool shift, bool alt)
+    {
+        _drag = null;
+        if (Layout == null || _picture == null || PartAt(x, y) is not { } part
+            || ModeOf(part, x / Zoom - _picture.OriginX, y / Zoom - _picture.OriginY, shift) is not { } mode)
+            return false;
+        _drag = new Drag(part, mode, x, y, alt, _menu);
+        return true;
+    }
+
+    /// <summary>The mouse moved while pressed: the menu drawn with the part where it's dragged</summary>
+    public void DragTo(double x, double y)
+    {
+        if (_drag is not { } drag || Layout is not { } layout || _content == null)
+            return;
+        int dx = (int)Math.Round((x - drag.StartX) / Zoom), dy = (int)Math.Round((y - drag.StartY) / Zoom);
+        if (dx == drag.Dx && dy == drag.Dy)
+            return;
+        (drag.Dx, drag.Dy) = (dx, dy);
+        IsDragging = true;
+        var menu = layout.Dragged(drag.Part, drag.Mode, dx, dy, drag.Unlock, Snap) ?? drag.Menu;
+        _menu = menu;
+        Redraw();
+    }
+
+    /// <summary>Let go: the change made, if the part moved</summary>
+    public void EndDrag()
+    {
+        if (_drag is not { } drag)
+            return;
+        _drag = null;
+        IsDragging = false;
+        if (drag.Dx != 0 || drag.Dy != 0)
+            Layout?.Dropped(drag.Part, drag.Mode, drag.Dx, drag.Dy, drag.Unlock, Snap);
+    }
+
+    /// <summary>Esc while dragging: back as it was</summary>
+    public bool CancelDrag()
+    {
+        if (_drag is not { } drag)
+            return false;
+        _drag = null;
+        IsDragging = false;
+        _menu = drag.Menu;
+        Redraw();
+        return true;
+    }
+
+    /// <summary>Moves the part picked by a pixel or so (Ctrl+arrows, Shift for 8)</summary>
+    public void Nudge(int dx, int dy)
+    {
+        if (Picked is not { } part || Layout is not { } layout || !layout.CanMove(part))
+            return;
+        layout.Dropped(part, Editing.MenuDragMode.Move, dx, dy, unlock: false, snap: 1);
     }
 
     public void Dispose()

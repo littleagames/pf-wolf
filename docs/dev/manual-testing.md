@@ -1497,6 +1497,12 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       changed (its params change); Undo / Redo / Revert; a Window with no id changed on main-menu
       (asks before writing components whole with !replace); closing the editor with a menu changed
       asks to save; a pk3 mod; Blake (a highlight bar's cursor fields).
+- [x] Laying out (2026-11-17, driven): sound's Window dragged +20, +10, then its bottom edge −10;
+      Ctrl+Z undid the resize alone; a row dragged moved the rows (position 24,62 → 14,72).
+- [ ] **(never tried)** Ctrl+arrows (Shift: 8) on a picked part; Snap to 8; Alt-drag on main-menu's
+      centred title (horizontal-orientation goes, x set); Shift-drag a row (indent, row height); the
+      bar's edges on Blake; the highlighted picture on new-game (a selection-pic made); Esc while
+      dragging; the guides on a wide picture; a drag saved (only the params changed written).
 ---
 
 # Part 3: Linux and macOS
