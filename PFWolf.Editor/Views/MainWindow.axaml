@@ -33,6 +33,7 @@
     <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding ShowDemosCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+F" Command="{Binding ShowFontsCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+A" Command="{Binding ShowActorsCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+M" Command="{Binding ShowMenusCommand}" />
   </Window.KeyBindings>
 
   <Window.Styles>
@@ -187,6 +188,8 @@
                   ToolTip.Tip="Every palette, to look at and edit, with where it comes from and what's drawn in it" />
         <MenuItem Header="_Fonts…" Command="{Binding ShowFontsCommand}" InputGesture="Ctrl+Shift+F"
                   ToolTip.Tip="Every font the game prints in, drawn as the game draws it, with its characters, where it's defined and what prints in it" />
+        <MenuItem Header="_Menus…" Command="{Binding ShowMenusCommand}" InputGesture="Ctrl+Shift+M"
+                  ToolTip.Tip="Every menu (menudefs), drawn as the game draws it, with the files it's made from, what opens it and what's wrong with it" />
         <MenuItem Header="Te_xts…" Command="{Binding ShowTextsCommand}" InputGesture="F2"
                   ToolTip.Tip="The help screens, end texts and briefings, each article page as the game shows it, with what's wrong with it" />
         <MenuItem Header="S_cripts…" Command="{Binding ShowScriptsCommand}" InputGesture="F12"

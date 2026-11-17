@@ -176,6 +176,14 @@
                          IsVisible="{Binding !HasProblem}" />
             </StackPanel>
             <TextBlock DockPanel.Dock="Bottom" Text="{Binding CaretText}" Classes="hint" Margin="0,4,0,0" />
+            <!-- A menudefs file: its menu as the game draws it, again as it's typed -->
+            <ScrollViewer DockPanel.Dock="Right" Margin="10,0,0,0" IsVisible="{Binding IsMenuFile}" MaxWidth="800"
+                          HorizontalScrollBarVisibility="Auto">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{Binding MenuNote}" Classes="hint" TextWrapping="Wrap" MaxWidth="660" HorizontalAlignment="Left" />
+                <v:MenuPreviewView DataContext="{Binding MenuPreview}" />
+              </StackPanel>
+            </ScrollViewer>
             <!-- Ctrl+F finds in the file (F3 / Shift+F3 the next and last, Ctrl+H replaces) -->
             <Border BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" CornerRadius="4">
               <avaloniaEdit:TextEditor x:Name="SourceBox" v:CodeEditorText.Text="{Binding Source}" IsReadOnly="{Binding IsReadOnly}"

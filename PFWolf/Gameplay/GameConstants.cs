@@ -14,8 +14,8 @@ internal static class GameConstants
     =============================================================================
     */
 
-    internal const string YesButtonName = "Y";
-    internal const string NoButtonName = "N";
+    internal const string YesButtonName = Menus.LanguageStrings.YesButtonName;
+    internal const string NoButtonName = Menus.LanguageStrings.NoButtonName;
 
     /*
     =============================================================================

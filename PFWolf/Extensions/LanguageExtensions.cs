@@ -9,13 +9,5 @@ internal static class LanguageExtensions
     /// {YesButtonName} / {NoButtonName} placeholders with the confirm keys.
     /// </summary>
     internal static string ToLanguageText(this string text, LanguageMetadata? language)
-    {
-        text ??= string.Empty;
-        if (language != null && text.StartsWith("$") && language.TextStrings.TryGetValue(text, out var result))
-            text = result;
-
-        return text
-            .Replace("{YESBUTTONNAME}", GameConstants.YesButtonName)
-            .Replace("{NOBUTTONNAME}", GameConstants.NoButtonName);
-    }
+        => Menus.LanguageStrings.Translate(text, language?.TextStrings);
 }

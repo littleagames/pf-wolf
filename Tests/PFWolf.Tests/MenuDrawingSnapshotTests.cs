@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using PFWolf.Assets;
 using PFWolf.Editor.Data;
+using PFWolf.Editor.Rendering;
 using PFWolf.Extensions;
 using PFWolf.Fonts;
 using PFWolf.Menus;
@@ -88,7 +89,7 @@ public class MenuDrawingSnapshotTests
         // Assert: each game has its twenty-odd menus, every one drawn, and the editor's pictures the game's
         Assert.That(menus, Is.GreaterThan(100));
         Assert.That(snapshot.ToString(), Does.Contain("main-menu"));
-        Assert.That(snapshot.ToString(), Does.Not.Contain("[").And.Not.Contain("!EDITOR"), snapshot.ToString());
+        Assert.That(snapshot.ToString(), Does.Not.Contain("[").And.Not.Contain("!EDITOR").And.Not.Contain("!PREVIEW"), snapshot.ToString());
     }
 
     // A mod giving the new-episode and new-level menus stats panels (Midnight Assault's, outside the repository, has them)
@@ -210,6 +211,15 @@ public class MenuDrawingSnapshotTests
                     if (Environment.GetEnvironmentVariable("PFWOLF_MENU_PICTURES") is { Length: > 0 } folder)
                         WriteBitmap(Path.Combine(folder, $"{title.Replace(' ', '_')}-{name}-{width}x{height}-editor.bmp"), editor, width, height, content.Palette);
                 }
+
+                // The menu window's preview of a menu with nothing made up on it is the game's picture too
+                if (!lastRow && height == 200 && (width == 320 || width == MenuPreview.WideWidth) && IsPlain(name, menu))
+                {
+                    var preview = new MenuPreview(content).Draw(name, menu, new MenuPreviewState(Wide: width != 320)).Picture.Indices;
+                    int off = Enumerable.Range(0, pixels.Length).Count(i => pixels[i] != preview[i]);
+                    if (off > 0)
+                        hash += $"!PREVIEW({off}px)";
+                }
             }
             return hash;
         }
@@ -222,6 +232,12 @@ public class MenuDrawingSnapshotTests
             SDL.SDL_FreeSurface(surface);
         }
     }
+
+    // A menu the preview makes nothing up on: its rows are its menu-items, with no values, pictures or stats beside them
+    private static bool IsPlain(string name, MenuMetadata menu)
+        => menu.ItemsSource == null && menu.StatsPanel == null && menu.MenuItems.Count > 0
+           && !menu.MenuItems.Any(item => item is ToggleMenuItem or SliderMenuItem or ChoiceMenuItem)
+           && name is not ("new-level" or "new-episode" or "new-game" or "new-class");
 
     // A made-up best for the stats panels: an hour and a bit, most kills, some secrets, a Kilroy
     private static readonly LevelStats SampleStats = new(3723, 85, 40,

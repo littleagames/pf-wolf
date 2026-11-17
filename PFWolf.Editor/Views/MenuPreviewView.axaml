@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PFWolf.Editor.ViewModels"
+             xmlns:sys="using:System"
+             x:Class="PFWolf.Editor.Views.MenuPreviewView"
+             x:DataType="vm:MenuPreviewModel">
+
+  <StackPanel Spacing="6">
+    <!-- How it's shown -->
+    <WrapPanel>
+      <TextBlock Text="Zoom" VerticalAlignment="Center" Margin="0,0,6,0" />
+      <ComboBox x:Name="ZoomBox" SelectedIndex="0" Margin="0,0,12,4" SelectionChanged="OnZoomPicked"
+                ToolTip.Tip="Screen pixels to each of the game's 320x200">
+        <ComboBoxItem Content="2x" />
+        <ComboBoxItem Content="3x" />
+        <ComboBoxItem Content="4x" />
+      </ComboBox>
+      <CheckBox Content="Wide" IsChecked="{Binding Wide}" Margin="0,0,12,4"
+                ToolTip.Tip="A 16:10 screen 384 pixels wide: the backdrop and stripe as the game draws them round the 320x200 middle" />
+      <CheckBox Content="In a game" IsChecked="{Binding InGame}" Margin="0,0,12,4"
+                ToolTip.Tip="The main menu while a game is going on: Back to Game, and Save game open" />
+      <CheckBox Content="Checkboxes on" IsChecked="{Binding ChecksOn}" Margin="0,0,12,4"
+                ToolTip.Tip="Every other toggle's checkbox on (the game fills in the real ones); off, they're all off" />
+      <CheckBox Content="Flash" IsChecked="{Binding Flashing}" Margin="0,0,12,4"
+                ToolTip.Tip="The highlight bar flashes as the game's does (Blake Stone's cursor)" />
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasItemsSource}" Margin="0,0,0,4"
+                  ToolTip.Tip="How many rows the items-source makes (episodes, skills, classes...): blank for the game's own. Try fit-items with more or fewer.">
+        <TextBlock Text="Rows" VerticalAlignment="Center" />
+        <NumericUpDown Value="{Binding RowCount}" Minimum="0" Maximum="40" Increment="1" FormatString="0" Width="110"
+                       PlaceholderText="the game's" />
+      </StackPanel>
+    </WrapPanel>
+
+    <!-- The menu: click picks a part (a row takes the cursor), double-click opens it, keys move the cursor -->
+    <Border x:Name="Frame" BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            HorizontalAlignment="Left" Focusable="True" Background="Transparent">
+      <Panel>
+        <Image x:Name="Picture" Source="{Binding Image}" Width="{Binding ImageWidth}" Height="{Binding ImageHeight}" Stretch="Fill"
+               RenderOptions.BitmapInterpolationMode="None" Cursor="Hand"
+               ToolTip.Tip="Click a part to pick it (a row moves the cursor there); double-click a picture or an item that opens a menu to go to it. Up, Down, Home, End and an item's letter move the cursor as the game's do." />
+        <Canvas IsHitTestVisible="False" Width="{Binding ImageWidth}" Height="{Binding ImageHeight}">
+          <Rectangle Canvas.Left="{Binding PickedLeft}" Canvas.Top="{Binding PickedTop}" Width="{Binding PickedWidth}" Height="{Binding PickedHeight}"
+                     Stroke="DeepSkyBlue" StrokeThickness="2" StrokeDashArray="3,2" IsVisible="{Binding HasPicked}" />
+        </Canvas>
+      </Panel>
+    </Border>
+
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+      <TextBlock Text="{Binding Caption}" Classes="hint" FontSize="12" Opacity="0.75" />
+      <TextBlock Grid.Column="1" Text="{Binding PickedLabel}" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="DeepSkyBlue" />
+    </Grid>
+    <ItemsControl ItemsSource="{Binding Problems}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="sys:String">
+          <TextBlock Text="{Binding}" Foreground="OrangeRed" TextWrapping="Wrap" FontSize="12" />
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>

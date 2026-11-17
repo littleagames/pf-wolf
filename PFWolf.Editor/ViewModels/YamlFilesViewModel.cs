@@ -140,6 +140,7 @@ public sealed partial class YamlFilesViewModel : ObservableObject
         var picked = SelectedItem;
         var keepEdit = IsChanged ? Source : null;
         _texts.Clear();
+        _menus = null;
         lock (_sources)
             _sources.Clear();
         _all = [];
@@ -323,6 +324,7 @@ public sealed partial class YamlFilesViewModel : ObservableObject
         {
             Problem = "";
             ProblemLine = 0;
+            IsMenuFile = false;
             return;
         }
 
@@ -331,7 +333,70 @@ public sealed partial class YamlFilesViewModel : ObservableObject
         ProblemLine = error != null && error.StartsWith("Line ") && int.TryParse(error[5..].Split(',', ':')[0], out var line) ? line : 0;
         if (!IsChanged)
             item.Error = error;
+        ShowMenu(item);
     }
+
+    //
+    // A menudefs file's menu, drawn beside it as it's typed
+    //
+
+    // The game's menus, worked out once each time the files are listed
+    private List<Data.MenuEntry>? _menus;
+
+    /// <summary>The menu a menudefs file makes, as the game would draw it with the text as it stands</summary>
+    public MenuPreviewModel MenuPreview { get; } = new();
+
+    /// <summary>The file picked is a menudefs file, so its menu is drawn beside it</summary>
+    [ObservableProperty] private bool _isMenuFile;
+
+    /// <summary>What the menu drawn is made of ("pfwolf.pk3's, then this file's text")</summary>
+    [ObservableProperty] private string _menuNote = "";
+
+    private void ShowMenu(YamlFileItem item)
+    {
+        var content = _owner.Content;
+        var path = item.EntryPath.Replace('\\', '/');
+        IsMenuFile = content != null && path.StartsWith("menudefs/", StringComparison.OrdinalIgnoreCase)
+                     && path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase);
+        if (!IsMenuFile)
+        {
+            MenuNote = "";
+            return;
+        }
+
+        var name = Path.GetFileNameWithoutExtension(path);
+        _menus ??= Data.MenuCatalog.Build(content!);
+        var entry = _menus.FirstOrDefault(menu => menu.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        var mine = new Data.MenuLayer(item.SourceName, item.ModPath, item.EntryPath);
+
+        // The file's place among the menu's files: one of them (its text swapped in), a mod's
+        // over them (not loaded yet, or a new one), or a file the running pack doesn't use, alone
+        List<Data.MenuLayer> layers;
+        if (entry != null && entry.Layers.Any(layer => layer.Is(item.ModPath, item.EntryPath)))
+        {
+            layers = [.. entry.Layers];
+            MenuNote = entry.Layers.Count == 1 ? "This file's menu, as the game draws it." : $"The menu as {string.Join(", then ", entry.Layers.Select(LayerName))} make it, with this file's text.";
+        }
+        else if (entry != null && !item.IsBase && path.Count(c => c == '/') == 1)
+        {
+            layers = [.. entry.Layers, mine];
+            MenuNote = $"The menu as {string.Join(", then ", entry.Layers.Select(LayerName))} make it, with this file laid over them (once the game's loaded again with it).";
+        }
+        else
+        {
+            layers = [mine];
+            MenuNote = item.IsBase && entry != null
+                ? $"Not the menu the running game uses ({entry.AssetName}'s): this file on its own."
+                : "This file's menu on its own.";
+        }
+
+        var build = Data.MenuCatalog.Merge(content!, layers, layer => layer.Is(item.ModPath, item.EntryPath) ? Source : null);
+        if (build.Error != null && build.Menu == null)
+            MenuNote += $" It doesn't read: {build.Error}";
+        MenuPreview.Show(content, name, build.Menu);
+    }
+
+    private static string LayerName(Data.MenuLayer layer) => layer.IsBase ? $"pfwolf.pk3's {layer.EntryPath}" : $"{layer.SourceName}'s";
 
     /// <summary>Shows a file, with the caret on the line of a key path in it</summary>
     public void Show(string? modPath, string entryPath, IReadOnlyList<string> path)

@@ -86,10 +86,9 @@ join-game/lobby/net-rules, the jukebox, Blake's high scores.
   - In Common/Fonts: `TextStyle` and `TextWindow` moved there. `TextWindow` prints on an
     `ITextSurface` (bar, draw text, measure text), and `TextDrawing.Draw` holds the style-over-font
     rules `GraphicManager.DrawText` had.
-  - Not moved in phase 0: `MenuActions` (the CP_ names `GameHost.Ui` registers, plus the hook
-    actions) and `MenuSources` (episodes, skills, player-classes, mods, lan-games), shared like
-    `FontNames` with a test that the game registers exactly these. Only phase 2's pickers need
-    them, so they come with phase 2.
+  - Phase 1 added `MenuNames` (the menus the engine opens, the actions and the menus each opens,
+    the items-sources: `MenuNamesTests` checks them against the game's code and pfwolf.pk3) and
+    `LanguageStrings` (the $NAME lookup, which the game's `GetText` now uses too).
 - **PFWolf.Editor, Data/MenuCatalog:** every menu the running game pack would find: the shared
   menu or the pack's own, with the mod overlays merged by `MenuAsset.MergeYaml`. For each one:
   where it's defined (file and line per layer), which menus open it (`CP_Menu` items) or "the
@@ -153,7 +152,7 @@ Gate:
   Fields tab, using the shared `FieldTree`. `MenuSchema` comes from the `MenuAsset` records'
   doc comments (`FieldSchema`). Component `params` get a hand-made schema per component type
   from the `PFWolf.Menus` component records, since params are a list of one-key maps.
-- Pickers: actions (`MenuActions`), menus (CP_Menu), articles (texts), Lua functions (script
+- Pickers: actions (`MenuNames.Actions`, in Common since phase 1), menus (CP_Menu), articles (texts), Lua functions (script
   globals, as the script browser lists them), pictures, fonts (FontCatalog), colors (colors.yaml
   names + palette), music, controls (controls.cfg names), game packs.
 - Add / delete / reorder items and components (up/down, or drag in the list). Undo/redo
@@ -229,3 +228,41 @@ menu gets sample checkboxes, sliders and choices, the gun or bar, and the stats 
   fonts from `FontBuilder`) and fails unless every pixel matches the game's. It passes for every
   menu: the editor's preview will be the game's picture.
 - wolf3d-apogee's data files aren't on the dev machine, so it isn't in the snapshot.
+
+**Phase 1 done (2026-11-17).**
+- PFWolf.Common: `MenuNames`, `LanguageStrings`, and `MenuMetadata.BuildFromAsset(asset, warn)`,
+  which hands its warnings to the editor instead of the console.
+- Editor `Data/MenuCatalog`: every menu by the name the game opens it by, its asset (the pack's
+  own or the shared one), and its files from the asset origins. `Merge` replays them as the
+  loader does: pfwolf.pk3's replaces, a mod's is laid over with `MenuAsset.MergeYaml`, and a
+  file that doesn't read is left out. Any file's text can be swapped in for the live preview.
+  It also works out Opened by (the engine, game-info high-scores frames, other menus' CP_Menu
+  items), `Reached` (from main-menu and the jukebox by each menu's items in the running pack)
+  and `Problems`.
+- `Rendering/MenuPreview` + `MenuSamples`: the picture (`IndexedMenuCanvas`), plus where each
+  part went, for picking.
+- `MenuPreviewModel` / `MenuPreviewView`: the preview control both windows use (zoom, wide, in
+  a game, checkboxes, flash, rows, keys, click and double-click).
+- `MenuBrowserViewModel` / `MenuBrowserWindow`: Resources → Menus…, Ctrl+Shift+M.
+- F11's YAML tab: `YamlFilesViewModel.ShowMenu` draws a menudefs file's menu beside it, from the
+  text as it stands. `DefinitionsViewModel.ShowYamlFile` is what the menu window's Edit… calls.
+- Manual: docs/manual/editor/menus.md. Manual testing: 2.20.
+
+Checks:
+- `MenuCatalogGameTests`: every menu of 7 games, multiplayer-pk3 and the example mods, merged
+  again, equals the loaded asset; the menus the game gets to have no problems; a mod's unsaved
+  overlay is laid over; a bad CP_Menu and action are problems.
+- `MenuDrawingSnapshotTests` now also requires the preview of each plain menu (menu-items with
+  no values, pictures or stats) to equal the game's pixels, at 320 and 384 wide.
+- `MenuNamesTests`: the actions and items-sources are the ones the game registers, and the
+  menus the engine opens are in pfwolf.pk3.
+- Driven in the editor (Wolf3D, a scratch mod with live typing, Blake); see manual-testing 2.20.
+
+Not as planned:
+- The code-built screens (saved games, Customize rows, lobby) get a note under the picture, not
+  drawn placeholder rows. Mods, network games and the level select get sample rows.
+- Double-click opens menus and pictures only, not fonts or music.
+
+Found: Blake Stone's and Planet Strike's jukebox, new-class and new-level are the shared menus,
+whose key legend picture (`c_mouselback`) Blake hasn't got. The game draws nothing there. The
+window shows them with ⚠, and `MenuCatalogGameTests` lists them as known.

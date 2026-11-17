@@ -132,6 +132,20 @@ public partial class MainWindow : Window, IEditorDialogs
             _fontBrowser.Activate();
     }
 
+    private MenuBrowserWindow? _menuBrowser;
+
+    public void ShowMenuBrowser(MenuBrowserViewModel browser)
+    {
+        if (_menuBrowser == null)
+        {
+            _menuBrowser = new MenuBrowserWindow { DataContext = browser };
+            _menuBrowser.Closed += (_, _) => _menuBrowser = null;
+            _menuBrowser.Show(this);
+        }
+        else
+            _menuBrowser.Activate();
+    }
+
     private ActorBrowserWindow? _actorBrowser;
 
     public void ShowActorBrowser(ActorBrowserViewModel browser)

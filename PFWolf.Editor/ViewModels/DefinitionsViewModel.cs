@@ -270,6 +270,14 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         MapDefs.MakeBreakable(wall);
     }
 
+    /// <summary>Shows a file in the YAML tab, from the top (a menudefs file: drawn beside it as it's typed)</summary>
+    public void ShowYamlFile(string? modPath, string entryPath)
+    {
+        Files.ShowBase = Files.ShowBase || modPath == null;
+        Files.Show(modPath, entryPath, []);
+        ShowFilesRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>Shows a file in the YAML tab, at a definition's line</summary>
     public void ShowYaml(DefinitionFile file, IReadOnlyList<string> path)
     {

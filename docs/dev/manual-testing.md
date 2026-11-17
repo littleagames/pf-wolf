@@ -1463,6 +1463,26 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       `fade-curve: inverse`), the 3D view and the game both fading the inverse way; a zone with
       only ambient sound keeps the level's light in the 3D view.
 
+## 2.20 Menus (Ctrl+Shift+M)
+
+- [x] Wolf3D (2026-11-17, driven): main-menu drawn as the game's; a click on Load Game picks it
+      (outlined, cursor there), Down twice skips Save Game to Back to Demo; Sound with Wide on
+      (checkboxes, sliders, the margins); YAML tab: a click on the title picture selects its
+      entry; Edit… on pfwolf.pk3's file opens F11's YAML tab with the menu beside it.
+- [x] A mod's menudefs/sound.yaml (2026-11-17, driven): listed as changed by a mod, both files
+      under Files and uses; Edit… on the mod's, then typing a new title y redraws the menu at once.
+- [x] Blake (2026-11-17, driven): its own menus marked, the multiplayer ones faded, ⚠ on
+      jukebox, new-class and new-level (Wolf3D's legend picture), the bar flashing.
+- [ ] **(never tried)** Home/End and an item's letter in the preview; In a game (Back to Game,
+      Save game open); Checkboxes on off; Rows on new-game and new-class (fit-items grows the
+      window, then scrolls with marks past max-rows); 3x and 4x zoom.
+- [ ] **(never tried)** Double-click: an item that opens a menu (Options → its menu), a Graphic
+      (the art window on it); Go to on an Opened by line; the list's filters (the game gets to,
+      the pack's own, mods', problems) and search by file or mod.
+- [ ] **(never tried)** Planet Strike and Spear menus; a mod's own new menu (a CP_Menu item names
+      it); a problem typed into a mod file (an unknown action, a misspelt picture) shown under the
+      F11 preview and, saved and reloaded, in the menu window; the palette window changing colors
+      redraws the menu.
 ---
 
 # Part 3: Linux and macOS

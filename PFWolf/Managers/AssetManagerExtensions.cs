@@ -49,22 +49,8 @@ internal static class AssetManagerExtensions
         if (languageCache.TryGetValue(normalizedName, out var cached))
             return cached;
 
-        LanguageMetadata? metadata = null;
-        var languageAssets = new[]
-        {
-            assets.Find<LanguageAsset>($"language/{normalizedName}"),
-            assets.FindInGamePackIfAny<LanguageAsset>($"language/{normalizedName}"),
-        };
-        foreach (var asset in languageAssets)
-        {
-            if (asset == null)
-                continue;
-
-            metadata ??= new LanguageMetadata();
-            foreach (var (key, text) in asset.Strings)
-                metadata.TextStrings[key] = text;
-        }
-
+        var strings = LanguageStrings.Load(assets, normalizedName);
+        LanguageMetadata? metadata = strings == null ? null : new LanguageMetadata { TextStrings = strings };
         languageCache[normalizedName] = metadata;
         return metadata;
     }

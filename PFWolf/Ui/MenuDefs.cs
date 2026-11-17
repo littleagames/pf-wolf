@@ -21,12 +21,12 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
     /// </summary>
     internal Func<string, Func<int, int>>? TextScreen { get; set; }
 
-    internal const string TextScreenAction = "CP_TextScreen";
+    internal const string TextScreenAction = MenuNames.TextScreenAction;
 
     // MENU HOOKS: what a mod's menu items can run besides the game's own CP_ actions --
     // CP_Menu (`menu:` another menudefs menu, as a submenu), CP_Article (`article:` a text shown
     // as an article, as a level's briefing is) and CP_Lua (`function:` a script's global function)
-    internal const string SubMenuAction = "CP_Menu", ArticleAction = "CP_Article", ScriptAction = "CP_Lua";
+    internal const string SubMenuAction = MenuNames.SubMenuAction, ArticleAction = MenuNames.ArticleAction, ScriptAction = MenuNames.ScriptAction;
 
     /// <summary>Runs a menudefs menu as a submenu (CP_Menu)</summary>
     internal Func<string, int>? SubMenu { get; set; }

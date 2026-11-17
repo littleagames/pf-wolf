@@ -25,6 +25,7 @@ stand-alone games mods add. Blake Stone's games aren't in it yet.
 | [Demos](./demos) | The demos, and where everyone went in them (Ctrl+Shift+D) |
 | [Fonts](./fonts) | Every font, drawn as the game draws it, with its characters and what prints in it (Ctrl+Shift+F) |
 | [Actors](./actors) | Every actor class, played as the game plays it, with what it's built on and what places it (Ctrl+Shift+A) |
+| [Menus](./menus) | Every menu, drawn as the game draws it, with its files, what opens it and what's wrong with it (Ctrl+Shift+M) |
 | [Definitions](./definitions) | The definition files, in fields or as YAML (F11) |
 
 ## Loading a game
@@ -90,5 +91,6 @@ asks whether to save them first.
 | Ctrl+Shift+D | Demos |
 | Ctrl+Shift+F | Fonts |
 | Ctrl+Shift+A | Actors |
+| Ctrl+Shift+M | Menus |
 
 [Editing levels](./levels#tools) has the map's own keys.

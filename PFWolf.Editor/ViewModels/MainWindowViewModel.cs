@@ -356,6 +356,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 _demoBrowser?.Recolor(value);
             }
             _textBrowser?.Recolor();
+            _menuBrowser?.Recolor();
             return;
         }
 
@@ -367,6 +368,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _scriptBrowser?.Load(Content);
         _fontBrowser?.Load(Content);
         _actorBrowser?.Load(Content);
+        _menuBrowser?.Load(Content);
         _definitions?.Load(Content, Mods.ToList());
     }
 
@@ -649,6 +651,39 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _fontBrowser.Load(Content);
         }
         Dialogs.ShowFontBrowser(_fontBrowser);
+    }
+
+    //
+    // The menu window
+    //
+
+    private MenuBrowserViewModel? _menuBrowser;
+
+    /// <summary>Opens the menu window, on the main menu the first time</summary>
+    [RelayCommand]
+    private void ShowMenus()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_menuBrowser == null)
+        {
+            _menuBrowser = new MenuBrowserViewModel();
+            // A menu's file: changed in the Definitions window's YAML tab, which draws the menu again as it's typed
+            _menuBrowser.EditFileRequested += (_, layer) =>
+            {
+                ShowDefinitions();
+                _definitions?.ShowYamlFile(layer.ModPath, layer.EntryPath);
+            };
+            // A picture on the menu: in the art window
+            _menuBrowser.PictureRequested += (_, picture) =>
+            {
+                ShowArt();
+                _artBrowser?.Show(ArtKind.Picture, picture);
+            };
+            _menuBrowser.Load(Content);
+        }
+        Dialogs.ShowMenuBrowser(_menuBrowser);
     }
 
     //

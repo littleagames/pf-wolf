@@ -75,8 +75,10 @@ public class MenuMetadata
     /// <summary>A layout for a set number of items that fits the number the game has (Ui/MenuDefs.cs Fit)</summary>
     public Assets.MenuFitItems? FitItems { get; set; }
 
-    public static MenuMetadata? BuildFromAsset(MenuAsset asset)
+    /// <param name="warn">Told what's wrong as it's built (an unknown component or item type, a param it hasn't); the console by default</param>
+    public static MenuMetadata? BuildFromAsset(MenuAsset asset, Action<string>? warn = null)
     {
+        warn ??= Console.WriteLine;
         if (asset is null) return null;
 
         var metaType = typeof(MenuMetadata);
@@ -142,7 +144,7 @@ public class MenuMetadata
 
                         if (compEntries.Count > 0)
                         {
-                            var convertedList = ConvertComponentEntries(compEntries);
+                            var convertedList = ConvertComponentEntries(compEntries, warn);
                             targetProp.SetValue(meta, convertedList);
                             continue;
                         }
@@ -164,7 +166,7 @@ public class MenuMetadata
 
                         if (menuItemEntries.Count > 0)
                         {
-                            var convertedList = ConvertMenuItemEntries(menuItemEntries);
+                            var convertedList = ConvertMenuItemEntries(menuItemEntries, warn);
                             targetProp.SetValue(meta, convertedList);
                             continue;
                         }
@@ -358,7 +360,7 @@ public class MenuMetadata
         return null;
     }
 
-    private static List<MenuComponent> ConvertComponentEntries(IEnumerable<PFWolf.Assets.ComponentEntry> entries)
+    private static List<MenuComponent> ConvertComponentEntries(IEnumerable<PFWolf.Assets.ComponentEntry> entries, Action<string> warn)
     {
         var result = new List<MenuComponent>();
         var compBase = typeof(MenuComponent);
@@ -372,7 +374,7 @@ public class MenuMetadata
             var compType = assembly.GetTypes().FirstOrDefault(t => compBase.IsAssignableFrom(t) && string.Equals(t.Name, entry.Type, StringComparison.OrdinalIgnoreCase));
             if (compType == null)
             {
-                Console.WriteLine($"Menu: unknown component type '{entry.Type}', skipped");
+                warn($"Menu: unknown component type '{entry.Type}', skipped");
                 continue;
             }
 
@@ -416,12 +418,12 @@ public class MenuMetadata
                     usedParams.Add(NormalizeParamName(prop.Name));
                     var conv = ConvertValue(sval, prop.PropertyType);
                     if (conv != null) prop.SetValue(instance, conv);
-                    else Console.WriteLine($"Menu: {entry.Type}.{prop.Name} could not use value '{sval}'");
+                    else warn($"Menu: {entry.Type}.{prop.Name} could not use value '{sval}'");
                 }
             }
 
             foreach (var unused in paramMap.Keys.Where(k => !usedParams.Contains(k)))
-                Console.WriteLine($"Menu: {entry.Type} has no param '{unused}', ignored");
+                warn($"Menu: {entry.Type} has no param '{unused}', ignored");
 
             var component = (MenuComponent)instance;
             component.GamePacks = entry.GamePacks;
@@ -435,7 +437,7 @@ public class MenuMetadata
     private static string NormalizeParamName(string name)
         => name.Replace("-", "").Replace("_", "");
 
-    private static List<MenuItem> ConvertMenuItemEntries(IEnumerable<PFWolf.Assets.MenuItemEntry> entries)
+    private static List<MenuItem> ConvertMenuItemEntries(IEnumerable<PFWolf.Assets.MenuItemEntry> entries, Action<string> warn)
     {
         var result = new List<MenuItem>();
         var compBase = typeof(MenuItem);
@@ -449,7 +451,7 @@ public class MenuMetadata
             var menuItemType = assembly.GetTypes().FirstOrDefault(t => compBase.IsAssignableFrom(t) && string.Equals(t.Name, entry.Type, StringComparison.OrdinalIgnoreCase));
             if (menuItemType == null)
             {
-                Console.WriteLine($"Menu: unknown menu item type '{entry.Type}', skipped");
+                warn($"Menu: unknown menu item type '{entry.Type}', skipped");
                 continue;
             }
 
