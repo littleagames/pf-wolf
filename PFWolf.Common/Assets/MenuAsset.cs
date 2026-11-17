@@ -142,10 +142,11 @@ public record MenuAsset : Asset
     public bool? SpacerRows { get; init; }
 
     /// <summary>
-    /// Where the highlighted item's picture (its episode's or skill's pic-name) is drawn, in place
-    /// of each episode's beside its name, or Wolf3D's skill face
+    /// Where the highlighted item's picture (its episode's, skill's or class's pic-name) is
+    /// drawn, in place of each episode's beside its name, Wolf3D's skill face or the class
+    /// picture's own place; with a width and height, that box is cleared first
     /// </summary>
-    public MenuPoint? SelectionPic { get; init; }
+    public MenuSelectionPic? SelectionPic { get; init; }
 
     /// <summary>Where a toggle item's checkbox goes from its text's left and top (default -24, 3)</summary>
     public MenuPoint? CheckboxOffset { get; init; }
@@ -306,6 +307,24 @@ public record MenuPoint
 
     /// <summary>Down, in pixels</summary>
     public int Y { get; init; }
+}
+
+/// <summary>
+/// "selection-pic": where the highlighted item's picture goes (x, y: its top left), and the box
+/// cleared before it's drawn, so a smaller picture doesn't leave a bigger one's edges showing.
+/// Without a width and height nothing is cleared, except on the class menu, which clears
+/// 96x100 as it does without a selection-pic.
+/// </summary>
+public record MenuSelectionPic : MenuPoint
+{
+    /// <summary>The cleared box's width, from x</summary>
+    public int? Width { get; init; }
+
+    /// <summary>The cleared box's height, from y</summary>
+    public int? Height { get; init; }
+
+    /// <summary>What the box is cleared to: the menu's background (default BKGDCOLOR)</summary>
+    public string? Color { get; init; }
 }
 
 public record ComponentEntry

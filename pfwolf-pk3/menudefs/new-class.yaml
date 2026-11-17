@@ -6,7 +6,9 @@ position:
 indent: 24
 # One item per class in game-info's player-classes (name and pic-name come from there); only
 # shown when there's more than one. The highlighted class's picture is drawn 175 right of the
-# position, in up to 96x100.
+# position and 6 above it, in up to 96x100 (cleared first, so a smaller one leaves nothing of
+# the last). A mod can put it elsewhere with selection-pic, and give the box cleared first:
+#   selection-pic: { x: 200, y: 56, width: 96, height: 100, color: "BKGDCOLOR" }
 items-source: "player-classes"
 default-selection: 0
 # Laid out for seven classes, the window's height kept for the picture: fewer are centered

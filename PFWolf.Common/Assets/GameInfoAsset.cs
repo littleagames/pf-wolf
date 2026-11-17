@@ -1563,7 +1563,10 @@ public record PlayerClassInfo
     /// </summary>
     public string? Name { get; init; }
 
-    /// <summary>The picture shown beside the class menu while this class is highlighted; none when left out</summary>
+    /// <summary>
+    /// The picture shown beside the class menu while this class is highlighted, at the menu's
+    /// selection-pic when it has one; none when left out
+    /// </summary>
     public string? PicName { get; init; }
 }
 

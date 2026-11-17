@@ -43,7 +43,7 @@ internal class ControlPanelMenuInfo
     public Assets.MenuCursorInfo? Cursor;
 
     /// <summary>Where the highlighted item's picture goes; null for the menu's own placement</summary>
-    public Assets.MenuPoint? SelectionPic;
+    public Assets.MenuSelectionPic? SelectionPic;
 
     /// <summary>A toggle item's CheckBox, from its text's left and top</summary>
     public int CheckboxX = -24, CheckboxY = 3;

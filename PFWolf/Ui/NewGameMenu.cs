@@ -330,9 +330,30 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     /// <summary>The highlighted episode's picture at the menu's selection-pic, when it has one</summary>
     internal void DrawNewEpisodePic(int w)
     {
-        if (NewEitems.SelectionPic is { } at && w >= 0 && w < NewEmenu.Length
-            && NewEmenu[w].Data is EpisodeInfo { PicName: { Length: > 0 } pic })
-            graphics.DrawPic(pic, at.X, at.Y);
+        if (NewEitems.SelectionPic != null)
+            DrawSelectionPic(NewEitems, w >= 0 && w < NewEmenu.Length && NewEmenu[w].Data is EpisodeInfo episode ? episode.PicName : null, 0, 0);
+    }
+
+    /// <summary>
+    /// The highlighted row's picture: at the menu's selection-pic, else (x, y), the menu's own
+    /// place. The box it's in is cleared first (selection-pic's width and height, else
+    /// clearWidth by clearHeight), so a smaller picture, or none, leaves no edges of the last.
+    /// </summary>
+    internal void DrawSelectionPic(ControlPanelMenuInfo info, string? pic, int x, int y, int clearWidth = 0, int clearHeight = 0)
+    {
+        string color = "BKGDCOLOR";
+        if (info.SelectionPic is { } at)
+        {
+            (x, y) = (at.X, at.Y);
+            clearWidth = at.Width ?? clearWidth;
+            clearHeight = at.Height ?? clearHeight;
+            color = at.Color ?? color;
+        }
+
+        if (clearWidth > 0 && clearHeight > 0)
+            video.Bar(x, y, clearWidth, clearHeight, color);
+        if (!string.IsNullOrEmpty(pic))
+            graphics.DrawPic(pic, x, y);
     }
 
     /// <param name="fade">False when it's drawn again after scrolling (visible-rows), already faded in</param>
@@ -370,12 +391,7 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         // selection-pic or beside the skills: by the first rows as Wolf3D's (more skills move it up
         // with them), or where the layout puts it, the window's middle, when fewer move them down
         if (w >= 0 && w < NewMenu.Length && NewMenu[w].Data is SkillInfo skill)
-        {
-            if (NewItems.SelectionPic is { } at)
-                graphics.DrawPic(skill.PicName, at.X, at.Y);
-            else
-                graphics.DrawPic(skill.PicName, NewItems.X + 185, Math.Min(NewItems.Y, NewItems.LayoutY) + 7);
-        }
+            DrawSelectionPic(NewItems, skill.PicName, NewItems.X + 185, Math.Min(NewItems.Y, NewItems.LayoutY) + 7);
     }
 
     /// <summary>A class menu item: the actordefs class and its picture (game-info pic-name)</summary>
@@ -397,16 +413,18 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
 
     internal void DrawNewClassPic(int w)
     {
-        // The highlighted class's picture, where the layout puts it however many classes there
-        // are; pictures can differ in size, so the last one is cleared first. Without any, there's
-        // no room kept for them (fit-items' min-rows), so nothing is cleared.
+        // The highlighted class's picture, at the menu's selection-pic or where the layout puts it
+        // however many classes there are; pictures can differ in size, so the last one is cleared
+        // first (96x100 unless selection-pic says). Without any, there's no room kept for them
+        // (fit-items' min-rows), so nothing is cleared.
         if (!ClassMenu.Any(row => row.Data is PlayerClassChoice { PicName.Length: > 0 }))
             return;
-        int x = ClassItems.X + 175, y = ClassItems.LayoutY - 6;
-        video.Bar(x, y, 96, 100, "BKGDCOLOR");
-        if (w >= 0 && w < ClassMenu.Length && ClassMenu[w].Data is PlayerClassChoice { PicName: { Length: > 0 } pic })
-            graphics.DrawPic(pic, x, y);
+        DrawSelectionPic(ClassItems, w >= 0 && w < ClassMenu.Length && ClassMenu[w].Data is PlayerClassChoice choice ? choice.PicName : null,
+            ClassItems.X + 175, ClassItems.LayoutY - 6, ClassPicWidth, ClassPicHeight);
     }
+
+    // The room the class menu keeps for a class picture, cleared before each is drawn
+    const int ClassPicWidth = 96, ClassPicHeight = 100;
 
     /// <summary>The new-class menu's rows: named by game-info, else by the class's tag (the name obituaries use), else the class</summary>
     internal ControlPanelItem[] PlayerClassRows()

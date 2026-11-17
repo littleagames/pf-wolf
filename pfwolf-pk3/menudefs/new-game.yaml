@@ -4,7 +4,10 @@ position:
   x: 50
   y: 100
 indent: 24
-# One item per skill in game-info (name and pic-name come from there)
+# One item per skill in game-info (name and pic-name come from there). The highlighted skill's
+# face is drawn 185 right of the position, beside the top rows; a mod can put it elsewhere with
+# selection-pic, and give a box (width, height, color) cleared before each is drawn:
+#   selection-pic: { x: 230, y: 107, width: 32, height: 32, color: "BKGDCOLOR" }
 items-source: "skills"
 # "Bring 'em on!"
 default-selection: 2

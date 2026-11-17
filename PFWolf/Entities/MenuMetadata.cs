@@ -64,7 +64,7 @@ internal class MenuMetadata
     /// Where the highlighted item's picture (its episode's or skill's pic-name) is drawn, in
     /// place of each episode's beside its name, or Wolf3D's skill face
     /// </summary>
-    public Assets.MenuPoint? SelectionPic { get; set; }
+    public Assets.MenuSelectionPic? SelectionPic { get; set; }
 
     /// <summary>Where a toggle item's CheckBox goes from its text's left and top (default -24, 3)</summary>
     public Assets.MenuPoint? CheckboxOffset { get; set; }

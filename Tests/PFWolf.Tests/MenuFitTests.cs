@@ -74,6 +74,26 @@ public class MenuFitTests
     }
 
     [Test]
+    public void Selection_Pic_Reads_Its_Clear_Box()
+    {
+        var asset = YamlDataEntryLoader.Deserialize<MenuAsset>("""
+            items-source: "player-classes"
+            selection-pic: { x: 200, y: 56, width: 96, height: 100, color: "MENUBACK" }
+            """);
+
+        Assert.That(asset.SelectionPic, Is.EqualTo(new MenuSelectionPic { X = 200, Y = 56, Width = 96, Height = 100, Color = "MENUBACK" }));
+    }
+
+    [Test]
+    public void Selection_Pic_Without_A_Box_Leaves_It_Unset()
+    {
+        // Blake Stone's: its pictures are all one size, so nothing is cleared
+        var asset = YamlDataEntryLoader.Deserialize<MenuAsset>("selection-pic: { x: 192, y: 77 }");
+
+        Assert.That(asset.SelectionPic, Is.EqualTo(new MenuSelectionPic { X = 192, Y = 77 }));
+    }
+
+    [Test]
     public void Fit_Items_Reads_From_A_Menudef()
     {
         var asset = YamlDataEntryLoader.Deserialize<MenuAsset>("""
