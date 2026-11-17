@@ -155,6 +155,42 @@ public record MenuAsset : Asset
     /// window beside the list, as Midnight Assault's DrawEpisodeStats and DrawLevelStats
     /// </summary>
     public MenuStatsPanel? StatsPanel { get; init; }
+
+    /// <summary>
+    /// A menu laid out for a set number of items (an items-source's skills or classes) that fits
+    /// the number the game has: its window grows or shrinks and the items stay centered
+    /// </summary>
+    public MenuFitItems? FitItems { get; init; }
+}
+
+/// <summary>
+/// "fit-items": the menu's position and components are laid out for `rows` items. With a
+/// different number, each `grow` component (by id: a Window or Fill) gets a row-height taller or
+/// shorter for each, from `min-rows` up to `max-rows`, and it and each `move` component (a title
+/// above it, say) shift up or down by half that so the middle stays put. The items are centered
+/// on the same middle. Past max-rows they scroll (visible-rows), with marks at the first grow
+/// component's right edge. The menu's pictures (Wolf3D's skill face, the class picture) stay
+/// where the layout puts them.
+/// </summary>
+public record MenuFitItems
+{
+    /// <summary>How many items the menu's position and components are laid out for</summary>
+    public int Rows { get; init; }
+
+    /// <summary>
+    /// The fewest rows the grow components shrink to, keeping room for the picture beside them
+    /// (skills' and classes' pic-name); without any pictures they shrink to the items. Default 1.
+    /// </summary>
+    public int? MinRows { get; init; }
+
+    /// <summary>The most rows the grow components grow to; more items scroll. Unset, they grow for all of them.</summary>
+    public int? MaxRows { get; init; }
+
+    /// <summary>Ids of the components that grow and shrink with the items (and shift to stay centered)</summary>
+    public List<string> Grow { get; init; } = [];
+
+    /// <summary>Ids of the components that shift with the grow components, keeping their size</summary>
+    public List<string> Move { get; init; } = [];
 }
 
 /// <summary>

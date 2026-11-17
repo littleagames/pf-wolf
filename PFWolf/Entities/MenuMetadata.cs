@@ -72,6 +72,9 @@ internal class MenuMetadata
     /// <summary>new-episode and new-level: the highlighted one's best beside the list (Ui/LevelStatsPanel.cs)</summary>
     public Assets.MenuStatsPanel? StatsPanel { get; set; }
 
+    /// <summary>A layout for a set number of items that fits the number the game has (Ui/MenuDefs.cs Fit)</summary>
+    public Assets.MenuFitItems? FitItems { get; set; }
+
     internal static MenuMetadata? BuildFromAsset(MenuAsset asset)
     {
         if (asset is null) return null;

@@ -243,7 +243,9 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         {
             draw.MenuFadeOut();
             DrawNewClass();
-            which = loop.HandleMenu(ClassItems, ClassMenu, DrawNewClassPic);
+            // Scrolled (-2, more classes than fit-items' max-rows): drawn again where it now starts
+            while ((which = loop.HandleMenu(ClassItems, ClassMenu, DrawNewClassPic)) == -2)
+                DrawNewClass(fade: false);
             if (which < 0)
             {
                 draw.MenuFadeOut();
@@ -261,7 +263,9 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     skillpart:
         draw.MenuFadeOut();
         DrawNewGame();
-        which = loop.HandleMenu(NewItems, NewMenu, DrawNewGameDiff);
+        // Scrolled (-2, more skills than fit-items' max-rows): drawn again where it now starts
+        while ((which = loop.HandleMenu(NewItems, NewMenu, DrawNewGameDiff)) == -2)
+            DrawNewGame(fade: false);
         if (which < 0)
         {
             if (chooseClass)
@@ -345,13 +349,17 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         menuInput.WaitKeyUp();
     }
 
-    internal void DrawNewGame()
+    /// <param name="fade">False when it's drawn again after scrolling (fit-items' max-rows), already faded in</param>
+    internal void DrawNewGame(bool fade = true)
     {
         defs.DrawMenuComponents("new-game");
 
         draw.DrawMenu(NewItems, NewMenu);
+        draw.DrawMenuScrollMarks(NewItems, NewMenu, NewItems.ScrollMarkX ?? ScrollMarkX);
         DrawNewGameDiff(NewItems.CurPos);
         video.Update();
+        if (!fade)
+            return;
         draw.MenuFadeIn();
         menuInput.WaitKeyUp();
     }
@@ -359,33 +367,42 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
     internal void DrawNewGameDiff(int w)
     {
         // Face picture for the highlighted skill (pic-name in game-info), at the menu's
-        // selection-pic or beside the skills
+        // selection-pic or beside the skills: by the first rows as Wolf3D's (more skills move it up
+        // with them), or where the layout puts it, the window's middle, when fewer move them down
         if (w >= 0 && w < NewMenu.Length && NewMenu[w].Data is SkillInfo skill)
         {
             if (NewItems.SelectionPic is { } at)
                 graphics.DrawPic(skill.PicName, at.X, at.Y);
             else
-                graphics.DrawPic(skill.PicName, NewItems.X + 185, NewItems.Y + 7);
+                graphics.DrawPic(skill.PicName, NewItems.X + 185, Math.Min(NewItems.Y, NewItems.LayoutY) + 7);
         }
     }
 
     /// <summary>A class menu item: the actordefs class and its picture (game-info pic-name)</summary>
     internal sealed record PlayerClassChoice(string Class, string? PicName);
 
-    internal void DrawNewClass()
+    /// <param name="fade">False when it's drawn again after scrolling (fit-items' max-rows), already faded in</param>
+    internal void DrawNewClass(bool fade = true)
     {
         defs.DrawMenuComponents("new-class");
         draw.DrawMenu(ClassItems, ClassMenu);
+        draw.DrawMenuScrollMarks(ClassItems, ClassMenu, ClassItems.ScrollMarkX ?? ScrollMarkX);
         DrawNewClassPic(ClassItems.CurPos);
         video.Update();
+        if (!fade)
+            return;
         draw.MenuFadeIn();
         menuInput.WaitKeyUp();
     }
 
     internal void DrawNewClassPic(int w)
     {
-        // The highlighted class's picture; pictures can differ in size, so the last one is cleared first
-        int x = ClassItems.X + 175, y = ClassItems.Y - 6;
+        // The highlighted class's picture, where the layout puts it however many classes there
+        // are; pictures can differ in size, so the last one is cleared first. Without any, there's
+        // no room kept for them (fit-items' min-rows), so nothing is cleared.
+        if (!ClassMenu.Any(row => row.Data is PlayerClassChoice { PicName.Length: > 0 }))
+            return;
+        int x = ClassItems.X + 175, y = ClassItems.LayoutY - 6;
         video.Bar(x, y, 96, 100, "BKGDCOLOR");
         if (w >= 0 && w < ClassMenu.Length && ClassMenu[w].Data is PlayerClassChoice { PicName: { Length: > 0 } pic })
             graphics.DrawPic(pic, x, y);

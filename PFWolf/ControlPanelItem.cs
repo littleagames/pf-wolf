@@ -51,6 +51,15 @@ internal class ControlPanelMenuInfo
     /// <summary>How many items are shown at once (menudef visible-rows); 0 for all of them</summary>
     public int VisibleRows;
 
+    /// <summary>
+    /// Where the menudef puts the items, before fit-items centers them on a different number
+    /// (Y is where they are): the menu's pictures are laid out from this
+    /// </summary>
+    public int LayoutY;
+
+    /// <summary>Where a scrolling menu's marks go, when its menudef says (fit-items' grown window); null for the screen's own</summary>
+    public int? ScrollMarkX;
+
     /// <summary>The first item shown, when the menu scrolls (VisibleRows)</summary>
     public int TopRow;
 
@@ -79,6 +88,7 @@ internal class ControlPanelMenuInfo
     {
         this.X = x;
         this.Y = y;
+        this.LayoutY = y;
         this.Amount = amount;
         this.CurPos = curpos;
         this.Indent = indent;

@@ -11,6 +11,9 @@ cursor: { x: 60, y-offset: -2, width: 105, height: 16, color: "82", erase-color:
 items-source: "skills"
 selection-pic: { x: 192, y: 77 }
 default-selection: 1
+# Laid out for four skills; others are centered on the same middle, and past five (where the
+# list would reach the text under it) they scroll
+fit-items: { rows: 4, max-rows: 5 }
 components:
   # The LINC screen (game-info menu-backdrop) with its terminal cleared
   - { type: "Background", params: [ { color: "MENUBACK" } ] }

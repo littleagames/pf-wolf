@@ -86,15 +86,21 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
                 Console.WriteLine($"Menu '{name}': default-selection {selection} is out of range (0-{items.Length - 1})");
         }
 
+        int rowHeight = menuAsset.RowHeight is > 0 and int rows ? rows : 13;
+        var fit = Fit(menuAsset.FitItems, items.Length, rowHeight, pictures: items.Any(item => PicName(item.Data) is { Length: > 0 }));
+        fits[name] = fit;
+
         var info = new ControlPanelMenuInfo(
             (short)menuAsset.Position.X,
-            (short)menuAsset.Position.Y,
+            (short)(menuAsset.Position.Y + fit.ItemsDy),
             amount: (short)items.Length,
             curpos: curpos,
             indent: (short)menuAsset.Indent)
         {
-            RowHeight = menuAsset.RowHeight is > 0 and int rowHeight ? rowHeight : 13,
-            VisibleRows = menuAsset.VisibleRows is > 0 and int visibleRows ? visibleRows : 0,
+            LayoutY = (int)menuAsset.Position.Y,
+            RowHeight = rowHeight,
+            VisibleRows = menuAsset.VisibleRows is > 0 and int visibleRows ? visibleRows : fit.VisibleRows,
+            ScrollMarkX = fit.VisibleRows > 0 ? GrownRight(menuAsset) - 6 : null,
             Font = menuAsset.Font,
             ItemShadow = menuAsset.ItemShadow,
             Cursor = menuAsset.Cursor,
@@ -104,6 +110,78 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
         };
 
         return (items, info);
+    }
+
+    // Each menu's fit-items, as LoadMenu last worked it out for its items (DrawMenuComponents)
+    readonly Dictionary<string, MenuFit> fits = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// How a fit-items menu changes for its number of items: the items move ItemsDy down, the
+    /// grow components get Grow taller and they and the move components move FrameDy down;
+    /// VisibleRows is how many show at once when they scroll (0: all of them)
+    /// </summary>
+    internal readonly record struct MenuFit(int ItemsDy, int FrameDy, int Grow, int VisibleRows);
+
+    /// <summary>fit-items worked out for <paramref name="count"/> items in rows <paramref name="rowHeight"/> high</summary>
+    /// <param name="pictures">Whether any item has a picture to show beside them (min-rows keeps room for it)</param>
+    internal static MenuFit Fit(MenuFitItems? fit, int count, int rowHeight, bool pictures = true)
+    {
+        if (fit is not { Rows: > 0 })
+            return default;
+
+        int min = pictures ? Math.Max(fit.MinRows ?? 1, 1) : 1;
+        int max = Math.Max(fit.MaxRows ?? int.MaxValue, min);
+        int shown = Math.Min(count, max);
+        int grow = (Math.Max(shown, min) - fit.Rows) * rowHeight;
+        // Halves rounded the same way for both, so the items stay where they were in the window
+        return new MenuFit(
+            ItemsDy: -((shown - fit.Rows) * rowHeight / 2),
+            FrameDy: -(grow / 2),
+            Grow: grow,
+            VisibleRows: count > max ? max : 0);
+    }
+
+    // An items-source row's picture (game-info pic-name): its skill's, class's or episode's
+    static string? PicName(object? data) => data switch
+    {
+        SkillInfo skill => skill.PicName,
+        NewGameMenu.PlayerClassChoice playerClass => playerClass.PicName,
+        EpisodeInfo episode => episode.PicName,
+        _ => null,
+    };
+
+    // The first grow component's right edge (where a scrolling fit-items menu's marks go), or the screen's
+    static int GrownRight(MenuMetadata menu)
+    {
+        var grown = menu.Components.FirstOrDefault(c => c.Id != null && menu.FitItems!.Grow.Contains(c.Id, StringComparer.OrdinalIgnoreCase));
+        return grown switch
+        {
+            Window window => window.X + window.Width,
+            Fill fill => fill.X + fill.Width,
+            _ => 306,
+        };
+    }
+
+    /// <summary>A component as drawn for the menu's fit-items: grown, moved, or as it is</summary>
+    internal static MenuComponent Fitted(MenuComponent component, MenuFitItems? fitItems, MenuFit fit)
+    {
+        if (fitItems == null || component.Id is not { } id || fit == default)
+            return component;
+
+        bool grows = fitItems.Grow.Contains(id, StringComparer.OrdinalIgnoreCase);
+        if (!grows && !fitItems.Move.Contains(id, StringComparer.OrdinalIgnoreCase))
+            return component;
+
+        int dy = fit.FrameDy, dh = grows ? fit.Grow : 0;
+        return component switch
+        {
+            Window window => window with { Y = window.Y + dy, Height = Math.Max(window.Height + dh, 0) },
+            Fill fill => fill with { Y = fill.Y + dy, Height = Math.Max(fill.Height + dh, 0) },
+            Label label => label with { Y = label.Y + dy },
+            Graphic graphic when graphic.VerticalOrientation == VerticalOrientation.Top => graphic with { Y = graphic.Y + dy },
+            Stripe stripe => stripe with { Y = stripe.Y + dy },
+            _ => component,
+        };
     }
 
     /// <summary>
@@ -167,12 +245,14 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
             return;
 
         StartMenuMusic(menu);
+        fits.TryGetValue(name, out var fit);
 
-        foreach (var component in menu.Components)
+        foreach (var entry in menu.Components)
         {
-            if (!InCurrentGamePack(component.GamePacks) || component.Id != null && leaveOut.Contains(component.Id))
+            if (!InCurrentGamePack(entry.GamePacks) || entry.Id != null && leaveOut.Contains(entry.Id))
                 continue;
 
+            var component = Fitted(entry, menu.FitItems, fit);
             if (component is Label label)
                 DrawLabel(label);
             else

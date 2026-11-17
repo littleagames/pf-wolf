@@ -8,6 +8,15 @@ indent: 24
 items-source: "skills"
 # "Bring 'em on!"
 default-selection: 2
+# Laid out for Wolf3D's four skills. With more or fewer the window grows or shrinks a row for
+# each (no smaller than three, to hold the face) and it, the title and the skills stay centered;
+# past eight the window is full and the skills scroll.
+fit-items:
+  rows: 4
+  min-rows: 3
+  max-rows: 8
+  grow: [ "window" ]
+  move: [ "title" ]
 components:
   -
     id: "background"
@@ -30,6 +39,7 @@ components:
       - y: 68
       - color: "READHCOLOR"
   -
+    id: "window"
     type: "Window"
     params:
       - x: 45

@@ -5,10 +5,19 @@ position:
   y: 62
 indent: 24
 # One item per class in game-info's player-classes (name and pic-name come from there); only
-# shown when there's more than one. Room for seven. The highlighted class's picture is drawn
-# 175 right of the position, in up to 96x100.
+# shown when there's more than one. The highlighted class's picture is drawn 175 right of the
+# position, in up to 96x100.
 items-source: "player-classes"
 default-selection: 0
+# Laid out for seven classes, the window's height kept for the picture: fewer are centered
+# beside it (or, when no class has a picture, the window shrinks to them), more grow the window
+# (and move the title up) to ten, past which they scroll
+fit-items:
+  rows: 7
+  min-rows: 7
+  max-rows: 10
+  grow: [ "window" ]
+  move: [ "title" ]
 components:
   -
     id: "background"
@@ -23,6 +32,7 @@ components:
       - horizontal-orientation: "center"
       - y: 184
   -
+    id: "title"
     type: "Label"
     params:
       - text: "$STR_WHICHCLASS"
@@ -30,6 +40,7 @@ components:
       - y: 36
       - color: "READHCOLOR"
   -
+    id: "window"
     type: "Window"
     params:
       - x: 20
