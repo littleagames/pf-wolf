@@ -135,7 +135,8 @@ internal sealed class DestructibleWalls(MapManager map, Doors doors, GameSession
     /// Takes the wall off a tile (one <see cref="WhyNot"/> passes). The open floor beside it gives
     /// the tile its area, and the areas it stood between are joined for good, as a door that never
     /// shuts joins them. Anything inside it (a trap shooter) goes to its Death state, or away if it
-    /// has none; a secret trigger on it counts as found.
+    /// has none; a secret trigger on it counts as found. A door it was a side of goes with it
+    /// (Doors.RemoveDoor): with its frame broken it'd stand edge-on in the hole.
     /// </summary>
     internal bool Remove(int x, int y, bool arch = false)
     {
@@ -176,10 +177,15 @@ internal sealed class DestructibleWalls(MapManager map, Doors doors, GameSession
             map.SetMapSpot(x, y, 1, 0);
         }
 
+        // the doors it framed, which go with it (Doors.RemoveDoor)
+        var framed = doors.DoorsBeside(x, y);
+
         map.WallDamage.Remove(map.TileIndex(x, y));
         StopCrumbling(x, y);
         map.RemoveWall(x, y, areas.Count > 0 ? areas[0] : 0, arch);
         JoinAreas(areas);
+        foreach (var door in framed)
+            doors.RemoveDoor(door, arch);
         return true;
     }
 

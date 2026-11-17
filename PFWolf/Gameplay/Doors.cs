@@ -190,10 +190,64 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         IsDoorAt(x, y - 1, vertical: true) || IsDoorAt(x, y + 1, vertical: true)
         || IsDoorAt(x - 1, y, vertical: false) || IsDoorAt(x + 1, y, vertical: false);
 
-    bool IsDoorAt(int x, int y, bool vertical) =>
+    bool IsDoorAt(int x, int y, bool vertical) => DoorAt(x, y, vertical) >= 0;
+
+    // The number of the door on a tile that runs that way, or -1 for none
+    int DoorAt(int x, int y, bool vertical) =>
         map.InMap(x, y) && (map.TileMap[x, y] & GameConstants.BitDoor) != 0
         && (map.TileMap[x, y] & ~GameConstants.BitDoor) is var door && door < LastDoorObj
-        && DoorObjList[door].Vertical == vertical;
+        && DoorObjList[door].Vertical == vertical ? door : -1;
+
+    /// <summary>The doors a wall on (x, y) is a side of (as <see cref="IsDoorSide"/>)</summary>
+    internal List<int> DoorsBeside(int x, int y) =>
+        new[] { DoorAt(x, y - 1, true), DoorAt(x, y + 1, true), DoorAt(x - 1, y, false), DoorAt(x + 1, y, false) }
+            .Where(door => door >= 0).Distinct().ToList();
+
+    /// <summary>
+    /// Whether a door has been taken out (<see cref="RemoveDoor"/>): its tile isn't it any more.
+    /// It keeps its place in DoorObjList (the tile map holds the others' numbers), open for good.
+    /// </summary>
+    internal bool IsRemoved(int door)
+    {
+        var d = DoorObjList[door];
+        return map.TileMap[d.TileX, d.TileY] != (door | GameConstants.BitDoor);
+    }
+
+    /// <summary>
+    /// Takes a door out for good, as when a wall beside it breaks (Gameplay/DestructibleWalls.cs):
+    /// framed by nothing, it'd stand edge-on as a sheet, so it goes with its frame. Its areas are
+    /// joined (as an open door's), its tile is open floor in its own area (with
+    /// <paramref name="arch"/>, its lintel stays up as an arch), and the wall still beside it loses
+    /// its door-side texture. The door stays in the list, jammed open, so nothing moves it again;
+    /// a save keeps it so (the tile map and its motion are saved).
+    /// </summary>
+    internal void RemoveDoor(int door, bool arch = false)
+    {
+        if (door < 0 || door >= LastDoorObj || IsRemoved(door))
+            return;
+
+        var d = DoorObjList[door];
+        if (d.Position == 0)            // still shut: its areas aren't joined yet
+            ConnectDoorAreas(door);
+        d.Position = 0xffff;
+        d.Action = DoorAction.Open;
+        d.TicCount = 0;
+        d.Held = false;
+        d.Unlocked = true;
+        d.Jammed = true;
+
+        int x = d.TileX, y = d.TileY;
+        map.RemoveWall(x, y, AreaCodeAt(x, y) ?? Math.Max(AreaNumberAt(x - 1, y), 0), arch);
+
+        // its sides, if still walls and no other door's, are plain walls again
+        var sides = d.Vertical ? new[] { (x, y - 1), (x, y + 1) } : [(x - 1, y), (x + 1, y)];
+        foreach (var (sx, sy) in sides)
+        {
+            if (map.InMap(sx, sy) && map.TileMap[sx, sy] is > GameConstants.BitWall and < GameConstants.BitDoor
+                && !IsDoorSide(sx, sy))
+                map.TileMap[sx, sy] &= unchecked((ushort)~GameConstants.BitWall);
+        }
+    }
 
     //===========================================================================
 

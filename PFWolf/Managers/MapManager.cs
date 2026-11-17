@@ -1982,12 +1982,15 @@ internal class MapManager
     /// round it and sees to what was in it). Its diagonal shape, door-side mark and patch go with
     /// it; its tag, flats and any A_ChangeTexture on its floor stay. With <paramref name="arch"/>,
     /// a wall taller than the player's story only loses up to that one: the rest stays up as an
-    /// arch (a block from the story above).
+    /// arch (a block from the story above). A door's tile goes the same way (Doors.RemoveDoor),
+    /// its lintel kept as the arch.
     /// </summary>
     internal void RemoveWall(int x, int y, int area, bool arch)
     {
-        // what's above the player's story, of each block
-        var (lower, upper) = (BlockSpan(x, y), UpperSpan(x, y));
+        // what's above the player's story, of each block (a door's tile: its lintel, up to the
+        // level's wall height if it has no block of its own)
+        bool door = (TileMap[x, y] & GameConstants.BitDoor) != 0;
+        var (lower, upper) = (BlockSpan(x, y) ?? (door ? (1, LevelWallStories) : null), UpperSpan(x, y));
         (int, int)? Above((int Start, int Stop)? block) =>
             block is var (s, e) && e > Story ? (Math.Max(s, Story + 1), e) : null;
         var kept = new[] { Above(lower), Above(upper) }.Where(b => b != null).Select(b => b!.Value).ToArray();
@@ -1997,7 +2000,7 @@ internal class MapManager
             SetWallShape(x, y, WallShape.Square);
 
         TileMap[x, y] = 0;
-        if (ActorAt[x, y] is Wall)
+        if (ActorAt[x, y] is Wall or Door)
             ActorAt[x, y] = null;
         SetMapSpot(x, y, 0, (ushort)(Floors.AreaTile + area));
         PatchMap[x, y] = 0;

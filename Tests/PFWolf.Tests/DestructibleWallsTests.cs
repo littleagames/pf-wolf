@@ -21,6 +21,7 @@ public class DestructibleWallsTests
     private MapManager _map = null!;
     private GameSession _session = null!;
     private DestructibleWalls _walls = null!;
+    private Doors _doors = null!;
     private readonly List<string> _sounds = [], _objectives = [];
 
     private static MapObjectTranslationAsset MapData() => new()
@@ -69,7 +70,7 @@ public class DestructibleWallsTests
             .SetValue(_map, new FloorCodes(AreaTile, 45, 106, -1, 162));
         typeof(MapManager).GetField("_levelMapData", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(_map, MapData());
         _session.Areas.Reset(45);
-        var doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
+        var doors = _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         _sounds.Clear();
         _objectives.Clear();
         _breaks.Clear();
@@ -544,6 +545,77 @@ public class DestructibleWallsTests
 
         // Assert
         Assert.That(shooter.IsRemoved, Is.True);
+    }
+
+    // A north-south door at 10,11 between area 5 (west) and 7 (east), in a wall: its sides are
+    // 10,10 (between the same areas) and 10,12
+    private void DoorInWall()
+    {
+        foreach (int y in new[] { 10, 11, 12 })
+        {
+            _map.SetMapSpot(9, y, 0, AreaTile + 5);
+            _map.SetMapSpot(11, y, 0, AreaTile + 7);
+        }
+        Wall(10, 10);
+        Wall(10, 12);
+        _doors.InitDoorList();
+        _doors.SpawnDoor(10, 11, vertical: true, new MapTextureTranslation { North = "DOOR" });
+    }
+
+    [Test]
+    public void Breaking_A_Doors_Side_Takes_The_Door_With_It()
+    {
+        // Arrange
+        DoorInWall();
+
+        // Act
+        bool removed = _walls.Remove(10, 10);
+
+        // Assert: the door's tile is open floor in its area, and the door stays open for good
+        Assert.That(removed, Is.True);
+        Assert.That(_doors.IsRemoved(0), Is.True);
+        Assert.That(_map.TileMap[10, 11], Is.Zero);
+        Assert.That(_map.ActorAt[10, 11], Is.Null);
+        Assert.That(_map.MapSpot(10, 11, 0), Is.EqualTo(AreaTile + 5));
+        var door = _doors.DoorObjList[0];
+        Assert.That((door.Action, door.Position, door.Jammed), Is.EqualTo((DoorAction.Open, (ushort)0xffff, true)));
+        Assert.That(_session.Areas.AreaConnect[5, 7], Is.EqualTo(2), "joined through the hole and the doorway");
+        Assert.That(_map.TileMap[10, 12], Is.EqualTo(WallId), "its other side is a plain wall again");
+        Assert.That(_doors.DoorsBeside(10, 12), Is.Empty);
+    }
+
+    [Test]
+    public void A_Door_Already_Open_Isnt_Joined_Twice()
+    {
+        // Arrange: opening, so its areas are already joined once
+        DoorInWall();
+        _doors.DoorObjList[0].Action = DoorAction.Opening;
+        _doors.DoorObjList[0].Position = 0x4000;
+        _session.Areas.AreaConnect[5, 7] = _session.Areas.AreaConnect[7, 5] = 1;
+
+        // Act
+        _walls.Remove(10, 12);
+
+        // Assert
+        Assert.That(_doors.IsRemoved(0), Is.True);
+        Assert.That(_session.Areas.AreaConnect[5, 7], Is.EqualTo(2), "once by the doorway as it opened, once by the hole");
+        Assert.That(_map.TileMap[10, 10], Is.EqualTo(WallId));
+    }
+
+    [TestCase(false, 0)]
+    [TestCase(true, 2)]
+    public void A_Doors_Lintel_Stays_As_An_Arch_Only_When_Asked(bool arch, int left)
+    {
+        // Arrange: a level of 2-story walls, so the door has a lintel over it
+        _map.LevelWallStories = 2;
+        DoorInWall();
+
+        // Act
+        _walls.Remove(10, 10, arch);
+
+        // Assert
+        Assert.That(_map.BlockStops[10, 11], Is.EqualTo(left));
+        Assert.That(_map.IsOverhead(10, 11), Is.EqualTo(arch));
     }
 
     [TestCase(0, 10, "edge")]

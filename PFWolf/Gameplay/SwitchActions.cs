@@ -251,7 +251,8 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
 
         for (int door = 0; door < doors.LastDoorObj; door++)
         {
-            if (map.GetTag(doors.DoorObjList[door].TileX, doors.DoorObjList[door].TileY) != trigger.Tag)
+            if (map.GetTag(doors.DoorObjList[door].TileX, doors.DoorObjList[door].TileY) != trigger.Tag
+                || doors.IsRemoved(door))
                 continue;
             act(door);
             any = true;

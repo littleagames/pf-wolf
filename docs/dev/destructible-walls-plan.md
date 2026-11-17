@@ -55,6 +55,11 @@ One routine, `MapManager.RemoveWall(x, y, leaves)`, used by every way a wall goe
   to their Death state, or are removed if they have none.
 - Never a map-edge tile, a moving pushwall's tile, or a door. Those are refused, with a console
   warning.
+- A door the wall was a side of goes with it (added 2026-11-16, Doors.RemoveDoor): with its frame
+  broken it stood edge-on as a sheet in the hole. Its areas are joined (if it was shut), its tile
+  is open floor in its area (with `arch`, its lintel stays up as an arch), its other side loses
+  the door-side mark, and it stays in DoorObjList jammed open (Doors.IsRemoved: its tile isn't it
+  any more), so no save format change.
 
 The automap and renderer read TileMap, so they need nothing more.
 

@@ -632,6 +632,10 @@ the keypad's note and code open its closet)
       `objective` counting; floor/ceiling flats left behind; shotgun pellets (A_FirePellets).
 - [ ] A wall with an `animation` crumbles, solid, then goes; saved mid-crumble and loaded, it
       finishes (seen headless with `breakwall`).
+- [ ] A door's side wall broken takes the door with it; the other side goes back to a plain
+      wall; still gone after a save and load (seen headless with `removewall` on E1M1's first
+      door, never by shooting a breakable jamb by hand). **(never tried)** with `leaves: arch`
+      on a tall-wall level (the lintel stays as an arch), a see-through door, a locked door.
 - [ ] **(never tried)** A switch running `A_BreakWall` / `A_DamageWall`; a script's
       `game.onwallbreak` keeping a wall standing; a `to` stage after an animation.
 - [ ] `destructible-demo` played through: glass, boards, cracked wall and secret, lever and arch,

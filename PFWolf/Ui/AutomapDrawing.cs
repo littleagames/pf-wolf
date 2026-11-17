@@ -812,7 +812,7 @@ internal sealed class AutomapDrawing(
         for (int i = 0; i < doors.LastDoorObj; i++)
         {
             var door = doors.DoorObjList[i];
-            if (!reveal && map.Seen[door.TileX, door.TileY] == SeenFlags.None)
+            if (!reveal && map.Seen[door.TileX, door.TileY] == SeenFlags.None || doors.IsRemoved(i))
                 continue;
 
             automapDoorAt[door.TileX, door.TileY] = i + 1;
