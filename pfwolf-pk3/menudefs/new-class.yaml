@@ -29,6 +29,8 @@ components:
   -
     id: "legend"
     type: "Graphic"
+    # Wolf3D's key legend picture: Blake Stone and Planet Strike (built on it) haven't got one
+    game-packs: [ "*", "!blake" ]
     params:
       - name: "c_mouselback"
       - horizontal-orientation: "center"

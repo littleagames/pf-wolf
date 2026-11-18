@@ -92,12 +92,7 @@ public class MenuCatalogGameTests
         var problems = entries.Where(entry => entry.Reached).SelectMany(entry => MenuCatalog.Problems(content, MenuCatalog.Merge(content, entry), names)
             .Select(problem => $"{entry.Name}: {problem}")).ToList();
 
-        // Assert: (Blake Stone has Wolf3D's multiplayer menus, which it never opens.) Blake Stone's
-        // and Planet Strike's jukebox, class and level menus are the shared ones, whose Wolf3D
-        // key legend picture they haven't: the game draws nothing there
-        if (content.PackId.StartsWith("blake") || content.PackId == "planetstrike")
-            problems.RemoveAll(problem => problem is "jukebox: There's no picture c_mouselback (a Graphic)"
-                or "new-class: There's no picture c_mouselback (a Graphic)" or "new-level: There's no picture c_mouselback (a Graphic)");
+        // Assert (Blake Stone has Wolf3D's multiplayer menus, which it never opens)
         Assert.That(problems, Is.Empty);
         Assert.That(entries.Single(entry => entry.Name == "main-menu").Reached);
     }

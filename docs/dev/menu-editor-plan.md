@@ -328,5 +328,6 @@ on a row rather than handles between rows; the guides show only while dragging.
   changed menu (the save question).
 
 Found: Blake Stone's and Planet Strike's jukebox, new-class and new-level are the shared menus,
-whose key legend picture (`c_mouselback`) Blake hasn't got. The game draws nothing there. The
-window shows them with ⚠, and `MenuCatalogGameTests` lists them as known.
+whose key legend picture (`c_mouselback`) Blake hasn't got. Fixed 2026-11-17: their legend has
+`game-packs: ["*", "!blake"]` (Planet Strike is built on blake), and the menu window's problems
+now only check the components the running pack draws.

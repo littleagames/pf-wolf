@@ -335,12 +335,14 @@ public static class MenuCatalog
                 problems.Add($"fit-items names component '{id}', which the menu hasn't (give a component that id)");
         }
 
-        foreach (var graphic in menu.Components.OfType<Graphic>())
+        // Only what the running pack draws: a component its game-packs leave out isn't there
+        var drawn = menu.Components.Where(component => InPack(content, component.GamePacks)).ToList();
+        foreach (var graphic in drawn.OfType<Graphic>())
             if (!string.IsNullOrEmpty(graphic.Name) && content.Find<GraphicAsset>(graphic.Name) == null)
                 problems.Add($"There's no picture {graphic.Name} (a Graphic)");
 
         var fonts = FontNames(content);
-        foreach (var font in new[] { menu.Font }.Concat(menu.Components.OfType<Label>().Select(label => label.Font))
+        foreach (var font in new[] { menu.Font }.Concat(drawn.OfType<Label>().Select(label => label.Font))
                      .Concat([menu.StatsPanel?.Font]).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase))
             if (font.Length > 0 && !fonts.Contains(font))
                 problems.Add($"There's no font {font}");
