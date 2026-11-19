@@ -18,7 +18,7 @@ local TREES = 11
 local QUIET_FADE = 105          -- tics the generator room's hum takes to die away, or come back
 
 local ROOMS = {
-  [COURTYARD] = "Courtyard: wind, birds in the trees, and thunder far off.",
+  [COURTYARD] = "Courtyard: wind and rain, birds in the trees, thunder far off.",
   [SEWER] = "Sewer: drips all round you, and water pouring out at the far end.",
   [GENERATORS] = "Generator room: walk round the generators. Use one to switch them off.",
   [GUARDS] = "Guard post: tense while you're unseen. Get spotted: the alarm.",

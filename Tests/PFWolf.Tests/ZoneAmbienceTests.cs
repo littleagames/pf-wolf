@@ -20,6 +20,7 @@ public class ZoneAmbienceTests
               4: { ambient: none }
               5: { ambient: "ambient/hum", ambient-fade: 35 }
               6: { ambient: "ambient/calm", ambient-undetected: "ambient/tense", ambient-fade: 70 }
+              7: { ambient: "ambient/wind", ambient-2: "ambient/rain", ambient-2-disguised: "ambient/drizzle", ambient-fade: 20 }
           MAP02:
             zones:
               1: { light: 200 }
@@ -49,11 +50,24 @@ public class ZoneAmbienceTests
         _disguised = false;
         _asked = [];
         _fades = [];
+        _asked2 = [];
         _ambience = new ZoneAmbience(_session, new CurrentMapInfo(_session, () => _info), new ZoneAmbienceHooks(
-            (x, y) => _zones[x, y], () => _disguised, (sound, fade) => { _asked.Add(sound); _fades.Add(fade); }));
+            (x, y) => _zones[x, y], () => _disguised, (sound, fade, layer) =>
+            {
+                if (layer == 0)
+                {
+                    _asked.Add(sound);
+                    _fades.Add(fade);
+                }
+                else
+                    _asked2.Add((sound, fade));
+            }));
     }
 
     private List<int> _fades = null!;
+
+    // What the second layer was asked for, with its fade
+    private List<(string? Sound, int Fade)> _asked2 = null!;
 
     private string? StepTo(int x)
     {
@@ -167,6 +181,49 @@ public class ZoneAmbienceTests
     }
 
     [Test]
+    public void A_Zones_Second_Loop_Plays_Over_The_First_And_Stops_In_A_Zone_Without_One()
+    {
+        Assert.That(StepTo(7), Is.EqualTo("ambient/wind"));
+        Assert.That(_asked2[^1], Is.EqualTo(("ambient/rain", 20)));           // the zone's fade
+        Assert.That(StepTo(1), Is.EqualTo("ambient/wind"));                   // a light zone, no sound: both go on
+        Assert.That(_asked2[^1].Sound, Is.EqualTo("ambient/rain"));
+        Assert.That(StepTo(2), Is.EqualTo("ambient/crickets"));               // a sound but no ambient-2: the rain stops
+        Assert.That(_asked2[^1], Is.EqualTo(((string?)null, 0)));
+    }
+
+    [Test]
+    public void The_Second_Loop_Has_Its_Own_Disguised_Sound()
+    {
+        _disguised = true;
+        Assert.That(StepTo(7), Is.EqualTo("ambient/wind"));                   // no disguised one for the first
+        Assert.That(_asked2[^1].Sound, Is.EqualTo("ambient/drizzle"));
+    }
+
+    [Test]
+    public void A_Script_Holds_Each_Layer_Apart()
+    {
+        StepTo(7);
+        _ambience.SetScriptAmbient("ambient/thunder", 10, 1);
+        Assert.That(_asked2[^1], Is.EqualTo(("ambient/thunder", 10)));
+        Assert.That(StepTo(2), Is.EqualTo("ambient/crickets"));               // the zones keep the first
+        Assert.That(_asked2[^1].Sound, Is.EqualTo("ambient/thunder"));        // the script the second
+
+        _ambience.SetScriptAmbient(null, 0, 1);
+        Assert.That(_asked2[^1].Sound, Is.Null);                               // given back: crickets' zone has none
+        _ambience.SetScriptAmbient("ambient/radio", 0, 5);                     // no such layer: nothing
+        Assert.That(_asked.Last(), Is.EqualTo("ambient/crickets"));
+    }
+
+    [Test]
+    public void A_Zone_With_Only_A_Second_Sound_Is_An_Ambient_Zone()
+    {
+        var info = YamlDataEntryLoader.Deserialize<GameInfoAsset>("maps: { MAP01: { zones: { 3: { ambient-2: rain } } } }");
+        var zones = ZoneAmbience.Resolve(info.Maps["MAP01"], info.DefaultMap);
+        Assert.That(zones[3].Layer(1), Is.EqualTo(("rain", (string?)null, (string?)null)));
+        Assert.That(zones[3].Sound, Is.Null);
+    }
+
+    [Test]
     public void A_Zone_With_Only_Ambient_Sound_Is_Not_A_Light_Zone()
     {
         var lightZones = Lighting.ResolveZones(_info.Maps["MAP01"], _info.DefaultMap);
@@ -187,5 +244,7 @@ public class ZoneAmbienceTests
         Assert.That(again[2].Light, Is.EqualTo(64));
         Assert.That(again[5].AmbientFade, Is.EqualTo(35));
         Assert.That(again[6].AmbientUndetected, Is.EqualTo("ambient/tense"));
+        Assert.That(again[7].Ambient2, Is.EqualTo("ambient/rain"));
+        Assert.That(again[7].Ambient2Disguised, Is.EqualTo("ambient/drizzle"));
     }
 }

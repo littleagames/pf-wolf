@@ -13,7 +13,9 @@ maps:
       # ambient-fade: the tics (70 a second) the change takes as you step in, the last zone's
       # sound fading out as this one's fades in. Doors and doorways are zone 0: no sound of
       # their own, so whatever's playing carries on through them.
-      1: { ambient: ambience/wind, ambient-fade: 70 }          # the courtyard
+      # ambient-2: a second loop over the first. A zone with any ambient sound sets both, so the
+      # rain stops as you step into the hall, whose zone has no ambient-2.
+      1: { ambient: ambience/wind, ambient-2: ambience/rain, ambient-fade: 70 }     # the courtyard
       2: { ambient: ambience/sewer, ambient-fade: 70 }         # the sewer
       3: { ambient: ambience/hum, ambient-fade: 35 }           # the generator room
       # the guard post: tense while no enemy has noticed you yet; seen, the alarm

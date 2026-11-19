@@ -242,6 +242,27 @@ for ($k = 0; $k -lt 40; $k++) {
 Save-Wav "$modDir\sounds\AMWATER.wav" (Close-Loop $s $len $ov) 0.5
 
 #
+# A SECOND LOOP OVER A ZONE'S FIRST (game-info ambient-2)
+#
+
+# Light rain (over the courtyard's wind): a soft high hiss and drops ticking, five seconds
+$len = 5; $ov = 1
+$s = New-Samples ($len + $ov)
+$lp1 = 0.0
+for ($i = 0; $i -lt $s.Length; $i++) {
+    $n = Rnd
+    $lp1 += 0.5 * ($n - $lp1)
+    $s[$i] = 0.25 * ($n - $lp1)
+}
+for ($k = 0; $k -lt 900; $k++) {
+    $at = [int]($random.NextDouble() * ($s.Length - $sr * 0.01)); $amp = 0.1 + 0.5 * $random.NextDouble()
+    for ($i = 0; $i -lt [int]($sr * 0.008); $i++) {
+        $s[$at + $i] += $amp * [Math]::Exp(-$i / ($sr * 0.0015)) * (Rnd)
+    }
+}
+Save-Wav "$modDir\sounds\AMRAIN.wav" (Close-Loop $s $len $ov) 0.35
+
+#
 # SPRITES
 #
 

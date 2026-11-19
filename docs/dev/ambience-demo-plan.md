@@ -15,7 +15,8 @@
 Decisions taken: the mod is `ambience-demo`; for 2d, Lua wins (no layers). The generator room's
 generators are switched off with Use (not shot: no shootable-prop pattern to build on). Phase 3
 is planned in detail below: **3a is done** (2026-11-19: `Gameplay/LoopSounds.cs`, the `loops`
-command, the generators' drone and the sewer's outflow in the demo); 3b and 3c are not started.
+command, the generators' drone and the sewer's outflow in the demo); **3b is done** (2026-11-19:
+zone `ambient-2*`, `game.ambient`'s layer, the courtyard's rain); 3c is not started.
 Phase 4 is still open. The mod-facing changes (new sound-seq and zone fields, `game.ambient`'s
 second argument and its win over zones, `game.playsound`) belong in the release notes of whichever
 version ships this branch.
@@ -170,8 +171,11 @@ The model is particles. They have a class property, `particles:`, plus a per-fra
 #### 3b Ambient layers (`ambient-2`)
 
 - **Zones:** `ambient-2:` plus `ambient-2-disguised:` and `ambient-2-undetected:`. The second
-  loop plays over the first with the same carry-over and `none` rules, and the same
-  `ambient-fade`.
+  loop plays over the first with the same `none` rule and the same `ambient-fade`. Carry-over
+  goes by the zone as a whole (decided while building it): a zone with any ambient sound sets
+  both loops, so one without an `ambient-2` stops the second as you step in (else the
+  courtyard's rain would follow you into the hall); one with none at all, a door, leaves both.
+  `DescribeAmbient` adds ` | layer 2: …` when the second loop plays.
 - **AudioManager:** a second AmbientMixer with two more sources, so `AmbientMixer.Voices`
   stays 2 per layer. `SetAmbient(name, fade, layer = 0)`; `DescribeAmbient` shows both
   layers.

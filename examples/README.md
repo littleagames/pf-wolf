@@ -2098,8 +2098,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 
 - **The hall** you start in has a soft hush of its own. Walk into a room and the hush fades out
   as the room's sound fades in.
-- **The courtyard** (first door west): wind, birds singing from one tree or another (heard from
-  that side), and thunder far off now and then.
+- **The courtyard** (first door west): wind with light rain over it, birds singing from one tree
+  or another (heard from that side), and thunder far off now and then.
 - **The sewer** (first door east): a low rumble and trickle, and drips falling all round you,
   each a little louder or softer, higher or lower. Water pours out at the far end: you hear it
   come nearer as you walk up the sewer.
@@ -2121,8 +2121,13 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
   - `ambient-undetected: <sound>` plays in its place while no enemy on the level has noticed you
     yet (the guard post). `ambient-disguised:` (not used here) plays while you're in disguise.
   - `ambient: none` is silence (the radio room).
+  - `ambient-2: <sound>` loops a second sound over the first (the courtyard's rain over its
+    wind), with `ambient-2-disguised` and `ambient-2-undetected` as for the first, and the same
+    fade. A zone with any ambient sound sets both loops, so stepping into one without an
+    `ambient-2` (the hall) stops the rain. `game.ambient(sound, tics, 2)` holds the second loop
+    from a script, as the first.
   - A tile in no zone, or a zone with no ambient (the doors, the elevator room), leaves whatever's
-    playing as it is.
+    playing as it is, both loops.
 
   `music: ""` gives the level no song.
 - `sounds/sound-seq.yaml`: the sounds, each one of the folder's `.wav` files, with:

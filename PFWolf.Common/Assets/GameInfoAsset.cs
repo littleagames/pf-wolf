@@ -1401,6 +1401,22 @@ public record ZoneInfo
     public int? AmbientFade { get; init; }
 
     /// <summary>
+    /// A second sound looped over ambient (rain on the roof over the wind), fading as ambient-fade
+    /// says. A zone with any ambient sound sets both loops: without an ambient-2, the second stops
+    /// as the player steps in. "none" is silence
+    /// </summary>
+    [YamlDotNet.Serialization.YamlMember(Alias = "ambient-2")]
+    public string? Ambient2 { get; init; }
+
+    /// <summary>Played in place of ambient-2 while the player's in disguise</summary>
+    [YamlDotNet.Serialization.YamlMember(Alias = "ambient-2-disguised")]
+    public string? Ambient2Disguised { get; init; }
+
+    /// <summary>Played in place of ambient-2 while no enemy has noticed the player yet on the level</summary>
+    [YamlDotNet.Serialization.YamlMember(Alias = "ambient-2-undetected")]
+    public string? Ambient2Undetected { get; init; }
+
+    /// <summary>
     /// Whether it says anything about light. A zone with only ambient sound isn't a light zone:
     /// its tiles keep the level's light.
     /// </summary>

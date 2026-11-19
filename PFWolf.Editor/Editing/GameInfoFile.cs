@@ -174,6 +174,9 @@ public static class GameInfoFile
                         Field("ambient-disguised", Quote(zone.AmbientDisguised));
                         Field("ambient-undetected", Quote(zone.AmbientUndetected));
                         Field("ambient-fade", Number(zone.AmbientFade));
+                        Field("ambient-2", Quote(zone.Ambient2));
+                        Field("ambient-2-disguised", Quote(zone.Ambient2Disguised));
+                        Field("ambient-2-undetected", Quote(zone.Ambient2Undetected));
                         block.Append(childIndent).Append("  ").Append(zone.Id.ToString(CultureInfo.InvariantCulture))
                             .Append(": { ").Append(string.Join(", ", fields)).Append(fields.Count > 0 ? " }" : "}").Append(newline);
                     }

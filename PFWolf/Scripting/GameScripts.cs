@@ -47,7 +47,7 @@ internal sealed partial class GameScripts(
     /// game.ambient: a sound (or null) on the ambient channel, fading over so many tics; the
     /// game's goes through its zones' ambience (Gameplay/ZoneAmbience.cs), which the script's wins over
     /// </summary>
-    internal Action<string?, int>? Ambient { get; init; }
+    internal Action<string?, int, int>? Ambient { get; init; }
 
     /// <summary>game.unlocked: whether a name has been unlocked</summary>
     internal Func<string, bool> IsUnlocked { get; init; } = _ => false;
@@ -468,11 +468,15 @@ internal sealed partial class GameScripts(
         // ambient sounds until game.ambient(nil) gives the channel back to them (or stops it,
         // where they have none), and "none" is silence. Asking for the one playing changes
         // nothing, so a script can ask every tick (Gameplay/ZoneAmbience.cs, AudioManager.SetAmbient).
+        // game.ambient(sound, tics, 2) does the same for the second loop, over the first.
         game["ambient"] = new LuaFunction("game.ambient", (c, _) =>
         {
             var sound = OptionalString(c, 0);
             var fadeTics = (int)Math.Max(Math.Round(NumberArg(c, 1, 0)), 0);
-            (Ambient ?? audio.SetAmbient)(sound, fadeTics);
+            var layer = (int)Math.Round(NumberArg(c, 2, 1));
+            if (layer is < 1 or > Managers.AudioManager.AmbientLayers)
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.ambient: layer {layer} isn't one there is (1 or 2)", 1);
+            (Ambient ?? audio.SetAmbient)(sound, fadeTics, layer - 1);
             return new(c.Return());
         });
         // game.playsound(sound[, x, y]): a sound from a place on the map, in tiles as an actor's

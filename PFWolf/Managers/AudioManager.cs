@@ -108,8 +108,9 @@ internal class AudioManager
             var gain = VolumeGain(_soundVolume);
             for (var i = 0; i < _sources.Length; i++)
                 AL.Source(_sources[i], ALSourcef.Gain, _sourceVolumes[i] * gain);
-            for (var i = 0; i < _ambientSources.Length; i++)
-                ApplyAmbientGain(i);
+            for (var layer = 0; layer < AmbientLayers; layer++)
+                for (var voice = 0; voice < AmbientMixer.Voices; voice++)
+                    ApplyAmbientGain(layer, voice);
             for (var i = 0; i < _loopSources.Length; i++)
                 ApplyLoopGain(i);
         }
@@ -204,8 +205,8 @@ internal class AudioManager
     {
         _assetManager = assetManager;
         _session = session;
-        _ambientMixer = new AmbientMixer(new AmbientMixerHooks(StartAmbientVoice,
-            voice => AL.SourceStop(_ambientSources[voice]), AmbientVoicePlaying, (voice, _) => ApplyAmbientGain(voice)));
+        for (int layer = 0; layer < AmbientLayers; layer++)
+            _ambientMixers[layer] = MakeAmbientMixer(layer);
         _opening = Task.Run(Open);
     }
 
@@ -225,7 +226,7 @@ internal class AudioManager
         _sourceVolumes = [.. Enumerable.Repeat(1.0f, _sources.Length)];
         _musicSource = AL.GenSource();
         AL.Source(_musicSource, ALSourceb.SourceRelative, true);
-        _ambientSources = AL.GenSources(AmbientMixer.Voices);
+        _ambientSources = AL.GenSources(AmbientLayers * AmbientMixer.Voices);
         foreach (var source in _ambientSources)
         {
             AL.Source(source, ALSourceb.SourceRelative, true);
@@ -481,52 +482,89 @@ internal class AudioManager
     of the effects channels, so a new sound never takes it, and WaitSoundDone and
     IsAnySoundPlaying leave it out (a level's exit doesn't wait on it). StopAll stops it, and
     pausing pauses it. It has two voices, so that a change can fade over (Managers/AmbientMixer.cs).
+
+    There are two such loops, layers: the second plays over the first (rain over the wind), each
+    with its own mixer and voices, set apart (a zone's ambient-2, game.ambient's layer 2).
+    _ambientSources holds the first layer's voices, then the second's.
     */
 
-    private int[] _ambientSources = [];
-    private readonly float[] _ambientVolumes = [1, 1];     // each voice's sound-seq volume
-    private readonly AmbientMixer _ambientMixer;
-    private (string? Name, int FadeTics)? _pausedAmbient;   // asked for while paused, for when play goes on
+    /// <summary>How many ambient loops can play at once, one over the other</summary>
+    public const int AmbientLayers = 2;
 
-    /// <summary>The ambient sound asked for, or null for none</summary>
-    public string? Ambient => _pausedAmbient is { } asked ? asked.Name : _ambientMixer.Requested;
+    private int[] _ambientSources = [];
+    private readonly float[] _ambientVolumes = [.. Enumerable.Repeat(1.0f, AmbientLayers * AmbientMixer.Voices)];     // each voice's sound-seq volume
+    private readonly AmbientMixer[] _ambientMixers = new AmbientMixer[AmbientLayers];
+    private readonly (string? Name, int FadeTics)?[] _pausedAmbient = new (string?, int)?[AmbientLayers];   // asked for while paused, for when play goes on
+
+    // A layer's voice's index in _ambientSources
+    private static int AmbientVoice(int layer, int voice) => layer * AmbientMixer.Voices + voice;
+
+    private AmbientMixer MakeAmbientMixer(int layer) => new(new AmbientMixerHooks(
+        (voice, name) => StartAmbientVoice(AmbientVoice(layer, voice), name),
+        voice => AL.SourceStop(_ambientSources[AmbientVoice(layer, voice)]),
+        voice => AmbientVoicePlaying(AmbientVoice(layer, voice)),
+        (voice, _) => ApplyAmbientGain(layer, voice)));
+
+    /// <summary>The ambient sound asked for (the first layer's), or null for none</summary>
+    public string? Ambient => AmbientOf(0);
+
+    /// <summary>A layer's ambient sound asked for (0 the first, 1 the one over it), or null for none</summary>
+    public string? AmbientOf(int layer) =>
+        _pausedAmbient[layer] is { } asked ? asked.Name : _ambientMixers[layer].Requested;
 
     /// <summary>
     /// Loops <paramref name="name"/> as the ambient sound in place of the one there was, or stops
     /// it with null, the change fading over <paramref name="fadeTics"/> (70 a second; 0 cuts
     /// over at once). Asking for the one that's playing changes nothing (it goes on where it is);
-    /// if it was stopped (StopAll), it starts again.
+    /// if it was stopped (StopAll), it starts again. <paramref name="layer"/> 1 is the second
+    /// loop, over the first.
     /// </summary>
-    public void SetAmbient(string? name, int fadeTics = 0)
+    public void SetAmbient(string? name, int fadeTics = 0, int layer = 0)
     {
+        if (layer < 0 || layer >= AmbientLayers)
+            return;
         if (!IsActive || _isPaused)
         {
-            _pausedAmbient = (name, fadeTics);
+            _pausedAmbient[layer] = (name, fadeTics);
             return;
         }
-        _pausedAmbient = null;
-        _ambientMixer.Set(name, Math.Max(fadeTics, 0));
+        _pausedAmbient[layer] = null;
+        _ambientMixers[layer].Set(name, Math.Max(fadeTics, 0));
     }
 
-    /// <summary>What the ambient loop plays, for the ambient command: the voices sounding, each at its level</summary>
+    /// <summary>
+    /// What the ambient loops play, for the ambient command: the voices sounding, each at its
+    /// level; the second layer's after a |, when it has any
+    /// </summary>
     public string DescribeAmbient()
     {
-        if (!IsActive)
-            return Ambient is { } asked ? $"Ambient: {asked} (sound is off)" : "No ambient sound (sound is off)";
-        var voices = _ambientMixer.Describe().ToList();
-        if (_pausedAmbient is { } paused)
-            return $"Ambient: {paused.Name ?? "none"} (paused)";
-        return voices.Count == 0 ? "No ambient sound" : $"Ambient: {string.Join("; ", voices)}";
+        var layers = new List<string>();
+        for (int layer = 0; layer < AmbientLayers; layer++)
+        {
+            string? said = !IsActive ? AmbientOf(layer) is { } asked ? $"{asked} (sound is off)" : null
+                : _pausedAmbient[layer] is { } paused ? $"{paused.Name ?? "none"} (paused)"
+                : _ambientMixers[layer].Describe().ToList() is { Count: > 0 } voices ? string.Join("; ", voices)
+                : null;
+            if (layer == 0)
+                layers.Add(said ?? "none");
+            else if (said != null)
+                layers.Add($"layer {layer + 1}: {said}");
+        }
+        if (layers is ["none"])
+            return IsActive ? "No ambient sound" : "No ambient sound (sound is off)";
+        return $"Ambient: {string.Join(" | ", layers)}";
     }
 
-    /// <summary>The ambient loop's fades move on by so many tics</summary>
+    /// <summary>The ambient loops' fades move on by so many tics</summary>
     public void TickAmbient(int tics)
     {
         if (IsActive && !_isPaused)
-            _ambientMixer.Tick(tics);
+            foreach (var mixer in _ambientMixers)
+                mixer.Tick(tics);
     }
 
-    // AmbientMixer's Start: a voice loops a sound, from silence until the mixer sets its level
+    // AmbientMixer's Start: a voice (its index in _ambientSources) loops a sound, from silence
+    // until the mixer sets its level
     private bool StartAmbientVoice(int voice, string name)
     {
         var source = _ambientSources[voice];
@@ -547,9 +585,12 @@ internal class AudioManager
         return (ALSourceState)state is ALSourceState.Playing or ALSourceState.Paused;
     }
 
-    // A voice's gain: its fade level, its sound-seq volume and the sound volume setting
-    private void ApplyAmbientGain(int voice) =>
-        AL.Source(_ambientSources[voice], ALSourcef.Gain, _ambientMixer.Level(voice) * _ambientVolumes[voice] * VolumeGain(_soundVolume));
+    // A layer's voice's gain: its fade level, its sound-seq volume and the sound volume setting
+    private void ApplyAmbientGain(int layer, int voice)
+    {
+        int index = AmbientVoice(layer, voice);
+        AL.Source(_ambientSources[index], ALSourcef.Gain, _ambientMixers[layer].Level(voice) * _ambientVolumes[index] * VolumeGain(_soundVolume));
+    }
 
     /*
     Looping sounds placed in the world (actordefs loopsound / loop-sound, Gameplay/LoopSounds.cs):
@@ -831,7 +872,8 @@ internal class AudioManager
             AL.SourceStop(source);          // asked for again, it starts afresh (SetAmbient)
         foreach (var source in _loopSources)
             AL.SourceStop(source);          // still wanted, LoopSounds starts them again
-        _ambientMixer.Stopped();
+        foreach (var mixer in _ambientMixers)
+            mixer.Stopped();
         _heldSound = null;
     }
 
@@ -1130,8 +1172,9 @@ internal class AudioManager
                 if ((ALSourceState)loopState == ALSourceState.Paused)
                     AL.SourcePlay(source);
             }
-            if (_pausedAmbient is { } asked)
-                SetAmbient(asked.Name, asked.FadeTics);
+            for (int layer = 0; layer < AmbientLayers; layer++)
+                if (_pausedAmbient[layer] is { } asked)
+                    SetAmbient(asked.Name, asked.FadeTics, layer);
         }
     }
 

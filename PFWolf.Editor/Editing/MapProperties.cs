@@ -2,14 +2,18 @@ using PFWolf.Assets;
 
 namespace PFWolf.Editor.Editing;
 
-/// <summary>A zone of a level (game-info zones: the zone plane's value → how it's lit, and its ambient sound)</summary>
+/// <summary>
+/// A zone of a level (game-info zones: the zone plane's value → how it's lit, and its ambient
+/// sounds; Ambient2 and its variants are the second loop, over the first)
+/// </summary>
 public sealed record ZoneProperties(int Id, int? Light = null, string? Color = null, string? Effect = null,
     int? Low = null, int? Tics = null, int? BrightTics = null, string? Ambient = null, string? AmbientDisguised = null,
-    string? AmbientUndetected = null, int? AmbientFade = null)
+    string? AmbientUndetected = null, int? AmbientFade = null, string? Ambient2 = null, string? Ambient2Disguised = null,
+    string? Ambient2Undetected = null)
 {
     public static ZoneProperties From(int id, ZoneInfo zone)
         => new(id, zone.Light, zone.Color, zone.Effect, zone.Low, zone.Tics, zone.BrightTics, zone.Ambient, zone.AmbientDisguised,
-            zone.AmbientUndetected, zone.AmbientFade);
+            zone.AmbientUndetected, zone.AmbientFade, zone.Ambient2, zone.Ambient2Disguised, zone.Ambient2Undetected);
 }
 
 /// <summary>
@@ -89,6 +93,7 @@ public sealed record MapProperties
             Light = zone.Light, Color = zone.Color, Effect = zone.Effect, Low = zone.Low, Tics = zone.Tics,
             BrightTics = zone.BrightTics, Ambient = zone.Ambient, AmbientDisguised = zone.AmbientDisguised,
             AmbientUndetected = zone.AmbientUndetected, AmbientFade = zone.AmbientFade,
+            Ambient2 = zone.Ambient2, Ambient2Disguised = zone.Ambient2Disguised, Ambient2Undetected = zone.Ambient2Undetected,
         }),
     };
 
@@ -167,7 +172,9 @@ public sealed record MapProperties
                 ? new ZoneProperties(zone.Id, zone.Light ?? under.Light, zone.Color ?? under.Color, zone.Effect ?? under.Effect,
                     zone.Low ?? under.Low, zone.Tics ?? under.Tics, zone.BrightTics ?? under.BrightTics,
                     zone.Ambient ?? under.Ambient, zone.AmbientDisguised ?? under.AmbientDisguised,
-                    zone.AmbientUndetected ?? under.AmbientUndetected, zone.AmbientFade ?? under.AmbientFade)
+                    zone.AmbientUndetected ?? under.AmbientUndetected, zone.AmbientFade ?? under.AmbientFade,
+                    zone.Ambient2 ?? under.Ambient2, zone.Ambient2Disguised ?? under.Ambient2Disguised,
+                    zone.Ambient2Undetected ?? under.Ambient2Undetected)
                 : zone;
         }
         return zones;

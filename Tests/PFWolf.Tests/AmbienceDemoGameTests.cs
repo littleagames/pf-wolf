@@ -54,9 +54,9 @@ public class AmbienceDemoGameTests
 
         Assert.That(said, Has.Count.EqualTo(10), string.Join(Environment.NewLine, said));
         Assert.That(said[0], Is.EqualTo("Ambient: ambience/hall 100%"));
-        Assert.That(said[1], Does.Match(@"^Ambient: ambience/wind (4\d|5\d)%, fading in; ambience/hall (4\d|5\d)%, fading out$"));
-        Assert.That(said[2], Is.EqualTo("Ambient: ambience/wind 100%"));
-        Assert.That(said[3], Is.EqualTo("Ambient: ambience/hum 100%"));
+        Assert.That(said[1], Does.Match(@"^Ambient: ambience/wind (4\d|5\d)%, fading in; ambience/hall (4\d|5\d)%, fading out \| layer 2: ambience/rain (4\d|5\d)%, fading in$"));
+        Assert.That(said[2], Is.EqualTo("Ambient: ambience/wind 100% | layer 2: ambience/rain 100%"));     // the rain over the wind (ambient-2)
+        Assert.That(said[3], Is.EqualTo("Ambient: ambience/hum 100%"));          // the generator room has no ambient-2: the rain's gone
         Assert.That(said[4], Is.EqualTo("No ambient sound"));
         Assert.That(said[5], Is.EqualTo("Ambient: ambience/hum 100%"));
         Assert.That(said[6], Is.EqualTo("Ambient: ambience/tense 100%"));

@@ -461,7 +461,7 @@ internal static partial class GameHost
         {
             Unlock = Unlock,
             IsUnlocked = name => Unlocks.IsUnlocked(name),
-            Ambient = (sound, fadeTics) => ZoneAmbience.SetScriptAmbient(sound, fadeTics),
+            Ambient = (sound, fadeTics, layer) => ZoneAmbience.SetScriptAmbient(sound, fadeTics, layer),
             ParticleSystem = () => particles,
             Record = map => LevelRecords.Get(map),
             Stat = name => StatValues.Get(name),

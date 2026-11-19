@@ -979,6 +979,13 @@ can reach), not played by hand.
       generators not in step; the drones pausing with the menu and coming back after it, after
       loading a game and after dying; a loop on a moving thing (none in the demo yet); the Sound
       volume setting changing them.
+- [ ] Ambient layers (game-info `ambient-2`, `game.ambient(sound, tics, 2)`, the Ambience Demo's
+      courtyard rain, 2026-11-19): headless (AmbienceDemoGameTests), `ambient` showed the wind and
+      rain fading in together over the hall's hush, both at full, and the rain gone in the
+      generator room. **(never tried)**, by ear: the rain over the wind and no seam in AMRAIN; the
+      rain fading out as you step into the hall; both going on through the courtyard's doorway;
+      both after the menu and after loading a game; a script holding layer 2; the editor's Map
+      Properties "Ambient 2" column saving and loading.
 - [ ] Episode Demo (`--file episode-demo`): seen windowed: Episode 7 and its picture on the menu
       (scrolled into view, "1 more" marks above and below), the briefing article before MAP61;
       each map loads. **(never tried)**: a Blake Stone episode menu or a level select long

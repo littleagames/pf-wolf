@@ -19,6 +19,9 @@ sound-info:
   ambience/hum:                 # only the room's buzz: the generators' drone is their own (below)
     digitized: AMHUM
     volume: 0.2
+  ambience/rain:                # the courtyard's second loop (ambient-2), over its wind
+    digitized: AMRAIN
+    volume: 0.6
   ambience/hall:
     digitized: AMTONE
     volume: 0.5
