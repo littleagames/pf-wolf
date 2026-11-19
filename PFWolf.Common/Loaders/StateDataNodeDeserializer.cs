@@ -76,6 +76,9 @@ public class StateDataNodeDeserializer : INodeDeserializer
         if (fields.TryGetValue("particles", out var particles))
             data.Particles = EmitterNames(particles);
 
+        if (fields.TryGetValue("loopsound", out var loopSound))
+            data.LoopSound = LoopSoundName(loopSound);
+
         if (fields.TryGetValue("action", out var action))
             data.Action = action?.ToString() ?? "";
 
@@ -109,6 +112,18 @@ public class StateDataNodeDeserializer : INodeDeserializer
         return names is [var only] && (only.Equals("none", StringComparison.OrdinalIgnoreCase) || only.Equals("off", StringComparison.OrdinalIgnoreCase))
             ? []
             : names;
+    }
+
+    /// <summary>
+    /// A looping sound as actordefs writes it, a frame's `loop-sound:` or a class's `loopsound`
+    /// property: its name, or "" for none (none, off or nothing)
+    /// </summary>
+    public static string LoopSoundName(object? value)
+    {
+        var name = value?.ToString()?.Trim() ?? "";
+        return name.Equals("none", StringComparison.OrdinalIgnoreCase) || name.Equals("off", StringComparison.OrdinalIgnoreCase)
+            ? ""
+            : name;
     }
 
     private static string Normalize(string key) => key.Replace("-", "").ToLowerInvariant();

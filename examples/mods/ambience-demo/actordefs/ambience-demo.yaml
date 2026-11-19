@@ -19,14 +19,18 @@ AmbienceDrip:
         action: A_PlaySound("ambience/drip", "positional")
         next-state: Spawn
 
-# A generator: a cabinet, its lamp blinking, clanking now and then from where it stands. Use it
-# and every generator winds down (A_GeneratorUse sends them all to Off), and the script stops
-# the room's hum; use one again and they start up. temp1 is 1 while they're off, so a saved
-# game keeps them so.
+# A generator: a cabinet, its lamp blinking, clanking now and then from where it stands, and
+# droning all the while: its loopsound loops from where it is, louder as you walk up to it and
+# from its side, heard out to its loopradius (in tiles). Use it and every generator winds down
+# (A_GeneratorUse sends them all to Off, whose loop-sound: none silences the drone), and the
+# script stops the room's buzz; use one again and they start up. temp1 is 1 while they're off,
+# so a saved game keeps them so.
 AmbienceGenerator:
   flags: [SOLID]
   properties:
     usemessage: "Press Use to switch the generators off or on"
+    loopsound: ambience/generator
+    loopradius: 9
   states:
     Spawn:
       - sprite: AMGN
@@ -53,9 +57,23 @@ AmbienceGenerator:
       - sprite: AMGN
         frames: [C]
         tics-per-frame: 0
+        loop-sound: none
         action: A_PlaySound("ambience/powerdown", "positional")
       - sprite: AMGN
         frames: [C]
+        tics-per-frame: -1
+        loop-sound: none
+
+# Water pouring out of a pipe at the sewer's far end: nothing to see (TNT1), only heard, louder
+# as you come up the sewer toward it
+AmbienceWater:
+  properties:
+    loopsound: ambience/water
+    loopradius: 12
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
         tics-per-frame: -1
 
 # The radio: plays its station's tune from where it stands, again each time round (the tunes

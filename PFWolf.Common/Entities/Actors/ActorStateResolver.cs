@@ -42,6 +42,7 @@ public static class ActorStateResolver
                             Modifiers = frameData.Modifiers,
                             Light = frameData.Light,
                             Particles = frameData.Particles,
+                            LoopSound = frameData.LoopSound,
                             Think = string.IsNullOrEmpty(frameData.Think) ? null : frameData.Think,
                             Action = string.IsNullOrEmpty(frameData.Action) ? null : frameData.Action,
                         };
@@ -162,6 +163,7 @@ public static class ActorStateResolver
                 Modifiers = from.Modifiers,
                 Light = from.Light,
                 Particles = from.Particles,
+                LoopSound = from.LoopSound,
                 Action = i == 0 ? "A_Resume" : null,
             };
             if (previous != null)

@@ -6,3 +6,5 @@ things:
     class: AmbienceGenerator
   992:
     class: AmbienceRadio
+  993:
+    class: AmbienceWater

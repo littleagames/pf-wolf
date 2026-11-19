@@ -2101,9 +2101,11 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 - **The courtyard** (first door west): wind, birds singing from one tree or another (heard from
   that side), and thunder far off now and then.
 - **The sewer** (first door east): a low rumble and trickle, and drips falling all round you,
-  each a little louder or softer, higher or lower.
-- **The generator room** (second west): the hum. Use a generator and they all wind down, and the
-  room goes quiet. Use one again and the hum comes back.
+  each a little louder or softer, higher or lower. Water pours out at the far end: you hear it
+  come nearer as you walk up the sewer.
+- **The generator room** (second west): a faint buzz, and each generator droning from where it
+  stands, louder as you walk up to it and from its side. Use a generator and they all wind down,
+  and the room goes quiet. Use one again and they start up.
 - **The guard post** (second east): two guards with their backs to you, and a tense ticking
   while they haven't seen you. Let one see you and the alarm fades in.
 - **The radio room** (third west): no ambience at all, only the radio playing. Use it to change
@@ -2130,13 +2132,19 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
     or variance named along the way counts, so the list's own apply to every pick;
   - `channel: radio`: every sound on one channel plays on one voice, each cutting off the last, so
     the knob's click stops a tune.
-- `actordefs/ambience-demo.yaml` and `mapdefs/things.yaml` (objects 990-992):
+- `actordefs/ambience-demo.yaml` and `mapdefs/things.yaml` (objects 990-993):
   - `AmbienceDrip`: an invisible thing (sprite `TNT1`) that drips now and then
     (`A_Jump(96, "Drip")`, then `A_PlaySound("ambience/drip", "positional")`).
     `positional` plays a sound from where the thing is, so it's louder the nearer you are, and
     from that side.
   - `AmbienceGenerator`: clanks as it blinks; its `Use` state calls the script's
-    `A_GeneratorUse`.
+    `A_GeneratorUse`. Its `loopsound: ambience/generator` property loops that sound from where
+    it stands, following it if it moved, heard out to its `loopradius: 9` tiles and fading away
+    toward that edge. Its `Off` frames have `loop-sound: none`, which silences it while they
+    show; a frame's `loop-sound: <sound>` would play another in its place. Only the nearest 8
+    looping things are heard at once. The console's `loops` command lists them.
+  - `AmbienceWater` (object 993): nothing to see, only `loopsound: ambience/water` with a
+    `loopradius` of 12, at the sewer's far end.
   - `AmbienceRadio`: plays its station's four-second tune again every 280 tics. Its `Use`
     clicks and calls `A_RadioUse`.
 - `scripts/ambience.lua`:

@@ -24,6 +24,9 @@ public static class ActorSchema
                     "The actor's light while the frame shows, in place of its light.* properties: none (or off) for none, an intensity (200) for its light that bright, or { intensity, radius, color } with any of them, the rest its own"),
                 FieldSchema.Value("particles", FieldType.Text,
                     "The particles.yaml emitters running while the frame shows, in place of the class's particles property: one, a list, or several with commas between; none for none (a barrel smoking only once it's been hit)"),
+                FieldSchema.Value("loop-sound", FieldType.Text,
+                    "The sound looping from the actor while the frame shows, in place of the class's loopsound property; none for none (a generator switched off)",
+                    hint: FieldHint.Sound),
                 FieldSchema.Value("goto", FieldType.Text, "Written on its own ({ goto: Spawn }): goes on to that state"),
             ]);
 

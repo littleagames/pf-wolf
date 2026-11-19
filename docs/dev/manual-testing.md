@@ -970,6 +970,15 @@ can reach), not played by hand.
       Use on a generator (wind down, silence, wind up) and on the radio (two stations, the click
       cutting the tune off, off); the ambience after the menu and after loading a game (the
       level has no music); `ambient` in the console while fading.
+- [ ] Looping sounds on things (actordefs `loopsound` / `loop-sound`, Ambience Demo's generators and
+      sewer outflow, 2026-11-19): headless (AmbienceDemoGameTests), `loops` showed both generators
+      at full in their room, none once switched off (`loop-sound: none`) and both again on, and
+      the water at its radius's edge (level 0.67) and full beside it. **(never tried)**, by ear:
+      the drone panning as you turn and walk round a generator; the water growing as you walk up
+      the sewer and fading out (no click) at its edge; no seam in AMGEN and AMWATER; two
+      generators not in step; the drones pausing with the menu and coming back after it, after
+      loading a game and after dying; a loop on a moving thing (none in the demo yet); the Sound
+      volume setting changing them.
 - [ ] Episode Demo (`--file episode-demo`): seen windowed: Episode 7 and its picture on the menu
       (scrolled into view, "1 more" marks above and below), the briefing article before MAP61;
       each map loads. **(never tried)**: a Blake Stone episode menu or a level select long

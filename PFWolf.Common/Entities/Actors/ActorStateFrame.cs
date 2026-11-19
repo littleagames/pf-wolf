@@ -53,6 +53,10 @@ public class ActorStateFrame
     // The state's `particles:`, the emitters running on this frame in place of the actor's; null keeps the actor's
     public List<string>? Particles { get; init; }
 
+    // The state's `loop-sound:`, the sound looping from the actor on this frame in place of its
+    // class's loopsound; "" for none; null keeps the class's
+    public string? LoopSound { get; init; }
+
     public string? Think { get; init; }
     public string? Action { get; init; }
     public ActorStateFrame? Next { get; internal set; }

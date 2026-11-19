@@ -61,7 +61,8 @@ for ($i = 0; $i -lt $s.Length; $i++) {
 }
 Save-Wav "$modDir\sounds\AMSEWER.wav" (Close-Loop $s $len $ov) 0.5
 
-# The generators' hum: mains hum (50 Hz) and its harmonics, two seconds (a whole number of cycles)
+# The generator room's buzz: mains hum (50 Hz) and its harmonics, two seconds (a whole number of
+# cycles); the generators' own drone is AMGEN, below
 $hum = New-Samples 2
 for ($i = 0; $i -lt $hum.Length; $i++) {
     $t = $i / $sr
@@ -201,6 +202,46 @@ Add-Tone $s 0 1100 0.3 0.01 0.04
 Save-Wav "$modDir\sounds\AMCLICK.wav" $s 0.5
 
 #
+# LOOPS PLACED ON THINGS (actordefs loopsound)
+#
+# (After the rest, so the sounds above keep the random numbers they had)
+
+# A generator's drone: a 45 Hz motor and its harmonics chugging three times a second, a whine
+# wavering over it and a little rush of air, two seconds (the tones a whole number of cycles)
+$len = 2; $ov = 0.5
+$s = New-Samples ($len + $ov)
+$lp1 = 0.0
+for ($i = 0; $i -lt $s.Length; $i++) {
+    $t = $i / $sr
+    $lp1 += 0.05 * ((Rnd) - $lp1)
+    $chug = 1 + 0.3 * [Math]::Sin(2 * [Math]::PI * 3 * $t)
+    $s[$i] = $chug * ([Math]::Sin(2 * [Math]::PI * 45 * $t) + 0.6 * [Math]::Sin(2 * [Math]::PI * 90 * $t) + 0.3 * [Math]::Sin(2 * [Math]::PI * 135 * $t)) +
+        0.15 * [Math]::Sin(2 * [Math]::PI * 720 * $t) * (1 + 0.6 * [Math]::Sin(2 * [Math]::PI * 4 * $t)) + 0.6 * $lp1
+}
+Save-Wav "$modDir\sounds\AMGEN.wav" (Close-Loop $s $len $ov) 0.5
+
+# Water pouring from a pipe: a rushing band of noise, swelling a little, with bubbles, four seconds
+$len = 4; $ov = 1
+$s = New-Samples ($len + $ov)
+$lp1 = 0.0; $lp2 = 0.0
+for ($i = 0; $i -lt $s.Length; $i++) {
+    $t = $i / $sr
+    $n = Rnd
+    $lp1 += 0.35 * ($n - $lp1)
+    $lp2 += 0.04 * ($n - $lp2)
+    $swell = 0.8 + 0.2 * [Math]::Sin(2 * [Math]::PI * $t / 1.7)
+    $s[$i] = $swell * ($lp1 - $lp2 + 1.5 * $lp2)
+}
+for ($k = 0; $k -lt 40; $k++) {
+    $at = [int]($random.NextDouble() * ($s.Length - $sr * 0.05)); $f0 = 300 + 500 * $random.NextDouble()
+    for ($i = 0; $i -lt [int]($sr * 0.04); $i++) {
+        $t = $i / $sr
+        $s[$at + $i] += 0.25 * [Math]::Exp(-$t / 0.012) * [Math]::Sin(2 * [Math]::PI * ($f0 + 4000 * $t) * $t)
+    }
+}
+Save-Wav "$modDir\sounds\AMWATER.wav" (Close-Loop $s $len $ov) 0.5
+
+#
 # SPRITES
 #
 
@@ -245,7 +286,7 @@ $Layout = @(
     '#LcctccccccccuccL#hhlhh#BssdsssspssssssB#'
     '#LccccccccccccccL#hhhhh#BsssssssssssdssB#'
     '#LccccccccccccccL#hhhhh#BsssspsssssssssB#'   # y=15
-    '#LcccccccwccccccvEhhhhhEyssssssssssssssB#'
+    '#LcccccccwccccccvEhhhhhEysssssssssssssfB#'
     '#LccccccccccccccL#hhhhh#BsssssssssspsssB#'
     '#LccccccccccccccL#hhhhh#BssssssssssssssB#'
     '#LccuccccccccctcL#hhlhh#BsssssdssssssdsB#'
@@ -290,11 +331,12 @@ $Tiles['t'] = @{ Plane0 = 109; Zone = 1; Tag = 11; Plane1 = 31 }
 $Tiles['u'] = @{ Plane0 = 109; Zone = 1; Tag = 11; Plane1 = 34 }
 $Tiles['w'] = @{ Plane0 = 109; Zone = 1; Tag = 1; Plane1 = 59 }
 $Tiles['v'] = @{ Plane0 = 109 }                                   # its doorway (zone 0)
-# the sewer (zone 2, tag 2): blue stone, the drips (object 990) and puddles
+# the sewer (zone 2, tag 2): blue stone, the drips (object 990), puddles, and water pouring out at the far end
 $Tiles['B'] = @{ Plane0 = 8 }
 $Tiles['s'] = @{ Plane0 = 110; Zone = 2; Tag = 2 }
 $Tiles['d'] = @{ Plane0 = 110; Zone = 2; Tag = 2; Plane1 = 990 }
 $Tiles['p'] = @{ Plane0 = 110; Zone = 2; Tag = 2; Plane1 = 23 }
+$Tiles['f'] = @{ Plane0 = 110; Zone = 2; Tag = 2; Plane1 = 993 }   # the water pouring out (object 993)
 $Tiles['y'] = @{ Plane0 = 110 }
 # the generator room (zone 3, tag 3): steel, the generators (object 991)
 $Tiles['S'] = @{ Plane0 = 15 }

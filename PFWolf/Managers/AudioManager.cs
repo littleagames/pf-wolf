@@ -110,6 +110,8 @@ internal class AudioManager
                 AL.Source(_sources[i], ALSourcef.Gain, _sourceVolumes[i] * gain);
             for (var i = 0; i < _ambientSources.Length; i++)
                 ApplyAmbientGain(i);
+            for (var i = 0; i < _loopSources.Length; i++)
+                ApplyLoopGain(i);
         }
     }
 
@@ -228,6 +230,15 @@ internal class AudioManager
         {
             AL.Source(source, ALSourceb.SourceRelative, true);
             AL.Source(source, ALSourceb.Looping, true);
+        }
+        // Placed loops: in the world, heard as the effects are (their MaxDistance is each loop's radius)
+        _loopSources = AL.GenSources(LoopVoices);
+        foreach (var source in _loopSources)
+        {
+            AL.Source(source, ALSourceb.SourceRelative, false);
+            AL.Source(source, ALSourceb.Looping, true);
+            AL.Source(source, ALSourcef.ReferenceDistance, 1.5f);
+            AL.Source(source, ALSourcef.RolloffFactor, 0.35f);
         }
         foreach (var source in _sources)
         {
@@ -540,6 +551,87 @@ internal class AudioManager
     private void ApplyAmbientGain(int voice) =>
         AL.Source(_ambientSources[voice], ALSourcef.Gain, _ambientMixer.Level(voice) * _ambientVolumes[voice] * VolumeGain(_soundVolume));
 
+    /*
+    Looping sounds placed in the world (actordefs loopsound / loop-sound, Gameplay/LoopSounds.cs):
+    a pool of voices of their own, so they never take an effect's voice or a channel. Which
+    emitters have them, and how loud each is (its fade in or out, its edge), is LoopSounds'
+    business; here a voice loops a sound from a place at a level. Like the ambient, they're left
+    out of WaitSoundDone and IsAnySoundPlaying; StopAll stops them and pausing pauses them.
+    */
+
+    /// <summary>How many placed loops can sound at once</summary>
+    public const int LoopVoices = 8;
+
+    private int[] _loopSources = [];
+    private readonly float[] _loopVolumes = new float[LoopVoices];      // each voice's sound-seq volume
+    private readonly float[] _loopLevels = new float[LoopVoices];       // and the level LoopSounds gave it
+
+    /// <summary>
+    /// Starts a loop voice looping <paramref name="name"/> from (x, y), in tiles, heard out to
+    /// <paramref name="radius"/> tiles, at <paramref name="level"/> (0 to 1, under its sound-seq
+    /// volume and the sound volume), from a random place in the sound so two alike aren't heard in
+    /// step. False when there's nothing to play (sound off, an unknown or silent sound).
+    /// </summary>
+    public bool StartLoopVoice(int voice, string name, float x, float y, float radius, float level)
+    {
+        if (!IsActive || voice < 0 || voice >= _loopSources.Length)
+            return false;
+        var source = _loopSources[voice];
+        AL.SourceStop(source);
+        if (Resolve(name, cosmetic: true) is not { } sound)
+            return false;
+        _loopVolumes[voice] = sound.Volume;
+        _loopLevels[voice] = level;
+        AL.Source(source, ALSourcei.Buffer, sound.Buffer);
+        AL.Source(source, ALSourcef.Pitch, sound.Pitch);
+        AL.Source(source, ALSourcef.MaxDistance, Math.Max(radius, 1.0f));
+        AL.Source(source, ALSource3f.Position, x, 0.0f, y);
+        ApplyLoopGain(voice);
+        AL.GetBuffer(sound.Buffer, ALGetBufferi.Size, out int bytes);
+        AL.GetBuffer(sound.Buffer, ALGetBufferi.Bits, out int bits);
+        AL.GetBuffer(sound.Buffer, ALGetBufferi.Channels, out int channels);
+        int samples = bits > 0 && channels > 0 ? bytes / (bits / 8 * channels) : 0;
+        if (samples > 1)
+            AL.Source(source, ALSourcei.SampleOffset, System.Random.Shared.Next(samples));
+        AL.SourcePlay(source);
+        if (_isPaused)
+            AL.SourcePause(source);         // (it goes on as play does: SetPaused)
+        return true;
+    }
+
+    /// <summary>A loop voice's place (in tiles) and level, as its emitter moves and fades</summary>
+    public void MoveLoopVoice(int voice, float x, float y, float level)
+    {
+        if (!IsActive || voice < 0 || voice >= _loopSources.Length)
+            return;
+        AL.Source(_loopSources[voice], ALSource3f.Position, x, 0.0f, y);
+        if (_loopLevels[voice] != level)
+        {
+            _loopLevels[voice] = level;
+            ApplyLoopGain(voice);
+        }
+    }
+
+    /// <summary>Stops a loop voice</summary>
+    public void StopLoopVoice(int voice)
+    {
+        if (IsActive && voice >= 0 && voice < _loopSources.Length)
+            AL.SourceStop(_loopSources[voice]);
+    }
+
+    /// <summary>Whether a loop voice sounds (paused counts): not once StopAll has stopped it</summary>
+    public bool LoopVoicePlaying(int voice)
+    {
+        if (!IsActive || voice < 0 || voice >= _loopSources.Length)
+            return false;
+        AL.GetSource(_loopSources[voice], ALGetSourcei.SourceState, out int state);
+        return (ALSourceState)state is ALSourceState.Playing or ALSourceState.Paused;
+    }
+
+    // A loop voice's gain: its level, its sound-seq volume and the sound volume setting
+    private void ApplyLoopGain(int voice) =>
+        AL.Source(_loopSources[voice], ALSourcef.Gain, _loopLevels[voice] * _loopVolumes[voice] * VolumeGain(_soundVolume));
+
     /// <summary>
     /// What a sound plays: the buffer (its sound-seq entry's best variant on the devices switched
     /// on, through any random pick or alias), the first channel named along the way, and its
@@ -562,8 +654,10 @@ internal class AudioManager
     /// <summary>The range sound-seq pitch is held to (half and double speed are an octave down and up)</summary>
     internal const float MinPitch = 0.25f, MaxPitch = 4.0f;
 
-    // What a sound plays, or null for one that's silent or unknown
-    private ResolvedSound? Resolve(string name)
+    // What a sound plays, or null for one that's silent or unknown. A cosmetic sound (a loop,
+    // started for where the camera is) picks a random: entry with System.Random, never the game's
+    // numbers, which a sound only one machine (or only with sound on) plays mustn't take from.
+    private ResolvedSound? Resolve(string name, bool cosmetic = false)
     {
         string? channel = null;
         float? volume = null, volumeVariance = null, pitch = null, pitchVariance = null;
@@ -601,7 +695,7 @@ internal class AudioManager
 
             if (soundProfile.Random.Count > 0)
             {
-                name = soundProfile.Random[_session.SoundRandom() % soundProfile.Random.Count];
+                name = soundProfile.Random[(cosmetic ? System.Random.Shared.Next(256) : _session.SoundRandom()) % soundProfile.Random.Count];
                 continue;
             }
 
@@ -735,6 +829,8 @@ internal class AudioManager
             AL.SourceStop(source);
         foreach (var source in _ambientSources)
             AL.SourceStop(source);          // asked for again, it starts afresh (SetAmbient)
+        foreach (var source in _loopSources)
+            AL.SourceStop(source);          // still wanted, LoopSounds starts them again
         _ambientMixer.Stopped();
         _heldSound = null;
     }
@@ -1007,6 +1103,12 @@ internal class AudioManager
             AL.SourcePause(_musicSource);
             foreach (var source in _ambientSources)
                 AL.SourcePause(source);
+            foreach (var source in _loopSources)
+            {
+                AL.GetSource(source, ALGetSourcei.SourceState, out int loopState);
+                if ((ALSourceState)loopState == ALSourceState.Playing)
+                    AL.SourcePause(source);
+            }
         }
         else
         {
@@ -1020,6 +1122,12 @@ internal class AudioManager
             {
                 AL.GetSource(source, ALGetSourcei.SourceState, out int ambientState);
                 if ((ALSourceState)ambientState == ALSourceState.Paused)
+                    AL.SourcePlay(source);
+            }
+            foreach (var source in _loopSources)
+            {
+                AL.GetSource(source, ALGetSourcei.SourceState, out int loopState);
+                if ((ALSourceState)loopState == ALSourceState.Paused)
                     AL.SourcePlay(source);
             }
             if (_pausedAmbient is { } asked)
@@ -1038,10 +1146,13 @@ internal class AudioManager
         AL.SourceStop(_musicSource);
         foreach (var source in _ambientSources)
             AL.SourceStop(source);
+        foreach (var source in _loopSources)
+            AL.SourceStop(source);
         foreach (var source in _sources)
             AL.SourceStop(source);
         AL.DeleteSource(_musicSource);
         AL.DeleteSources(_ambientSources);
+        AL.DeleteSources(_loopSources);
         AL.DeleteSources(_sources);
         AL.DeleteBuffers(_buffers.Values.ToArray());
         ALC.MakeContextCurrent(ALContext.Null);

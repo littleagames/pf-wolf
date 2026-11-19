@@ -361,6 +361,9 @@
                 <TextBlock Grid.Row="2" Grid.Column="2" Text="Particles" VerticalAlignment="Center" />
                 <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding FrameParticles, UpdateSourceTrigger=LostFocus}" PlaceholderText="its own"
                          ToolTip.Tip="The particles.yaml emitters running while it shows, in place of its particles property; none for none" />
+                <TextBlock Grid.Row="2" Grid.Column="4" Text="Loop sound" VerticalAlignment="Center" />
+                <TextBox Grid.Row="2" Grid.Column="5" Text="{Binding FrameLoopSound, UpdateSourceTrigger=LostFocus}" PlaceholderText="its own"
+                         ToolTip.Tip="The sound looping from it while the frame shows, in place of its loopsound property; none for none" />
               </Grid>
               <TextBlock Text="{Binding CallHelp}" Opacity="0.75" FontSize="12" TextWrapping="Wrap" />
             </StackPanel>

@@ -65,8 +65,38 @@ public class AmbienceDemoGameTests
         Assert.That(said[9], Is.EqualTo("Ambient: ambience/hall 100%"));
     }
 
-    // Warps to the demo's MAP01 and runs the commands, a wait after each; what the ambient command printed
-    private List<string> Play(params string[] commands)
+    [Test]
+    public void Things_Loop_Their_Sounds_From_Where_They_Are()
+    {
+        var said = Play(IsLoops,
+            "wait 60", "god", "loops",                  // 1. the hall: the generators are too far off
+            "tp 18 26", "wait 35", "loops",             // 2. the generator room: both, at full (well inside their radius)
+            "lua A_GeneratorUse(game.actors('AmbienceGenerator')[1])", "wait 35", "loops",      // 3. switched off: loop-sound none
+            "lua A_GeneratorUse(game.actors('AmbienceGenerator')[1])", "wait 35", "loops",      // 4. on again
+            "tp 38 16", "wait 35", "loops",             // 5. the sewer's near end: the water, toward the edge of its radius
+            "tp 46 16", "wait 35", "loops");            // 6. beside it
+
+        Assert.That(said, Has.Count.EqualTo(12), string.Join(Environment.NewLine, said));
+        Assert.That(said[0], Is.EqualTo("No looping sounds heard (3 out of reach)"));
+        Assert.That(said[1], Is.EqualTo("Looping sounds (2 of 8 voices, 3 emitters):"));
+        Assert.That(said[2..4], Has.All.Match(@"^\d: AmbienceGenerator ambience/generator, [23]\.\d tiles off, level 1\.00$"));
+        Assert.That(said[4], Is.EqualTo("No looping sounds heard (1 out of reach)"));
+        Assert.That(said[5], Is.EqualTo("Looping sounds (2 of 8 voices, 3 emitters):"));
+        Assert.That(said[8], Is.EqualTo("Looping sounds (1 of 8 voices, 3 emitters):"));
+        Assert.That(said[9], Does.Match(@"^\d: AmbienceWater ambience/water, 10\.0 tiles off, level 0\.6\d$"));     // its edge: (12 - 10) / 3
+        Assert.That(said[10], Is.EqualTo("Looping sounds (1 of 8 voices, 3 emitters):"));
+        Assert.That(said[11], Does.Match(@"^\d: AmbienceWater ambience/water, 2\.0 tiles off, level 1\.00$"));
+    }
+
+    private static bool IsAmbient(string line) => line.StartsWith("Ambient: ") || line == "No ambient sound";
+
+    private static bool IsLoops(string line) => line.StartsWith("Looping sounds") || line.StartsWith("No looping sounds")
+        || Regex.IsMatch(line, @"^\d: Ambience");
+
+    private List<string> Play(params string[] commands) => Play(IsAmbient, commands);
+
+    // Warps to the demo's MAP01 and runs the commands, a wait after each; what the commands printed that the filter takes
+    private List<string> Play(Func<string, bool> printed, params string[] commands)
     {
         var demo = Path.Combine(TestPaths.RepoRoot(), "examples", "mods", "ambience-demo");
         var previous = Environment.GetEnvironmentVariable("ALSOFT_DRIVERS");
@@ -81,8 +111,7 @@ public class AmbienceDemoGameTests
             Assert.That(output, Has.None.Contains("Exception").And.None.Contains("left out").And.None.Contains("nothing to play")
                 .And.None.Contains("Sound is off"), log);
             TestContext.Out.WriteLine(log);
-            return [.. output.Select(line => Regex.Replace(line, @"^\S*> ?", ""))
-                .Where(line => line.StartsWith("Ambient: ") || line == "No ambient sound")];
+            return [.. output.Select(line => Regex.Replace(line, @"^\S*> ?", "")).Where(printed)];
         }
         finally
         {

@@ -60,6 +60,7 @@ public sealed partial class ActorBrowserViewModel
     [ObservableProperty] private string _frameModifiers = "";
     [ObservableProperty] private string _frameLight = "";
     [ObservableProperty] private string _frameParticles = "";
+    [ObservableProperty] private string _frameLoopSound = "";
 
     /// <summary>What the frame's think and action do</summary>
     [ObservableProperty] private string _callHelp = "";
@@ -227,10 +228,11 @@ public sealed partial class ActorBrowserViewModel
                 FrameModifiers = string.Join(", ", frame.ModifierList);
                 FrameLight = frame.Light == null ? "" : YamlText.Inline(frame.Light);
                 FrameParticles = frame.Particles == null ? "" : YamlText.Inline(frame.Particles);
+                FrameLoopSound = frame.LoopSound ?? "";
             }
             else
             {
-                (FrameSprite, FrameThink, FrameAction, FrameModifiers, FrameLight, FrameParticles) = ("", "", "", "", "", "");
+                (FrameSprite, FrameThink, FrameAction, FrameModifiers, FrameLight, FrameParticles, FrameLoopSound) = ("", "", "", "", "", "", "");
                 (FrameLetter, FrameTics, LetterChoices) = (null, null, []);
             }
             CallHelp = Help(FrameThink, FrameAction);
@@ -330,6 +332,12 @@ public sealed partial class ActorBrowserViewModel
     {
         if (!_filling)
             ChangeFrame(frame => frame with { Particles = Node(value) });
+    }
+
+    partial void OnFrameLoopSoundChanged(string value)
+    {
+        if (!_filling)
+            ChangeFrame(frame => frame with { LoopSound = NullIfBlank(value) });
     }
 
     private static string? NullIfBlank(string text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();

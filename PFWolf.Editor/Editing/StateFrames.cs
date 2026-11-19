@@ -16,17 +16,18 @@ public enum StateEnd
 
 /// <summary>
 /// One frame of a state as the actor window edits it: a sprite frame for a number of tics, with
-/// what it runs. Light and particles are kept as written (YAML).
+/// what it runs. Light and particles are kept as written (YAML); LoopSound is its loop-sound, as written.
 /// </summary>
 public sealed record FrameSpec(string Sprite, string Letter, string Tics, string? Think = null, string? Action = null,
-    IReadOnlyList<string>? Modifiers = null, YamlNode? Light = null, YamlNode? Particles = null)
+    IReadOnlyList<string>? Modifiers = null, YamlNode? Light = null, YamlNode? Particles = null, string? LoopSound = null)
 {
     public IReadOnlyList<string> ModifierList => Modifiers ?? [];
 
     /// <summary>Everything but the letter the same: written as one entry with both letters</summary>
     public bool GroupsWith(FrameSpec other)
         => Sprite == other.Sprite && Tics == other.Tics && Think == other.Think && Action == other.Action
-           && ModifierList.SequenceEqual(other.ModifierList) && SameNode(Light, other.Light) && SameNode(Particles, other.Particles);
+           && ModifierList.SequenceEqual(other.ModifierList) && SameNode(Light, other.Light) && SameNode(Particles, other.Particles)
+           && LoopSound == other.LoopSound;
 
     private static bool SameNode(YamlNode? a, YamlNode? b)
         => a == null ? b == null : b != null && Definitions.YamlNodes.Equal(a, b);
@@ -94,7 +95,8 @@ public static class StateFrames
                 NullIfEmpty(Text(fields.GetValueOrDefault("action"))),
                 fields.TryGetValue("modifiers", out var modifiers) ? Strings(modifiers) : null,
                 fields.TryGetValue("light", out var light) ? Definitions.YamlNodes.Clone(light) : null,
-                fields.TryGetValue("particles", out var particles) ? Definitions.YamlNodes.Clone(particles) : null);
+                fields.TryGetValue("particles", out var particles) ? Definitions.YamlNodes.Clone(particles) : null,
+                NullIfEmpty(Text(fields.GetValueOrDefault("loopsound"))));
             foreach (var letter in letters)
                 spec.Frames.Add(frame with { Letter = letter });
             if (letters.Count > 0 && NullIfEmpty(Text(fields.GetValueOrDefault("nextstate"))) is { } next)
@@ -145,6 +147,8 @@ public static class StateFrames
                 entry.Add("light", Definitions.YamlNodes.Clone(first.Light));
             if (first.Particles != null)
                 entry.Add("particles", Definitions.YamlNodes.Clone(first.Particles));
+            if (first.LoopSound != null)
+                entry.Add("loop-sound", first.LoopSound);
             if (i == groups.Count - 1 && spec.End == StateEnd.Next && !string.IsNullOrEmpty(spec.Next))
                 entry.Add("next-state", spec.Next);
             list.Add(entry);

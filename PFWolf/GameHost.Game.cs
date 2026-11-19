@@ -275,7 +275,11 @@ internal static partial class GameHost
         frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
         new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick(),
             () => demoTracer.AfterFrame(), () => LevelTimer.Tick(), () => playScreen.ShowQuickInstructions(), () => destructibleWalls.Tick(),
-            particles.Tick, particles.Reset, Puzzles));
+            particles.Tick, particles.Reset, Puzzles, tics => LoopSounds.Tick(tics)));
+
+    // Sounds looping from actors (Gameplay/LoopSounds.cs): actordefs loopsound, loop-sound
+    static LoopSounds? _loopSounds;
+    static LoopSounds LoopSounds => _loopSounds ??= new LoopSounds(MapManager, AudioManager, Session);
 
     // A level against the clock (Gameplay/LevelTimer.cs): game-info map time-limit
     static LevelTimer? _levelTimer;

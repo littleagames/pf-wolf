@@ -16,9 +16,9 @@ sound-info:
   ambience/sewer:
     digitized: AMSEWER
     volume: 0.7
-  ambience/hum:
+  ambience/hum:                 # only the room's buzz: the generators' drone is their own (below)
     digitized: AMHUM
-    volume: 0.6
+    volume: 0.2
   ambience/hall:
     digitized: AMTONE
     volume: 0.5
@@ -61,6 +61,14 @@ sound-info:
     digitized: AMTHUND
     volume: 0.7
     pitch-variance: 0.1
+
+  # Loops placed on things (actordefs loopsound): each from where its thing is
+  ambience/generator:
+    digitized: AMGEN
+    volume: 0.8
+  ambience/water:
+    digitized: AMWATER
+    volume: 0.9
 
   # The generators: a clank now and then, from each, and winding down and up
   ambience/clank:

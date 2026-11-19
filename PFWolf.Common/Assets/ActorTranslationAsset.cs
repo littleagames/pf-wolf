@@ -169,6 +169,12 @@ public class ActorStatesData : StateData
     /// </summary>
     public List<string>? Particles { get; internal set; }
 
+    /// <summary>
+    /// The sound looping from the actor while the frame shows, in place of the class's
+    /// `loopsound` property; "" for none (`loop-sound: none`); null when the frame doesn't say
+    /// </summary>
+    public string? LoopSound { get; internal set; }
+
     public string Action { get; internal set; }
     public string Think { get; internal set; }
     public string? NextState { get; internal set; }

@@ -90,6 +90,8 @@ public static class ActorProperties
         Text("revivesound", "Played as it revives a fallen ally (monster.revive)", hint: FieldHint.Sound),
         Text("touchsound", "Played as it zaps the player it touches (monster.touchdamage)", hint: FieldHint.Sound, needs: BlakeMonster),
         Text("bouncesound", "A missile: played as it bounces", hint: FieldHint.Sound),
+        Text("loopsound", "A sound looping from where it is, following it as it moves, heard louder as the player comes near (a generator, a waterfall); a frame's loop-sound changes it while the frame shows, none for silence. Only the nearest 8 are heard at once", hint: FieldHint.Sound),
+        Number("loopradius", "How far off its loopsound is heard, in tiles", "16"),
 
         // Missiles in the air
         Number("z", "A missile: its height above the floor as it's fired"),

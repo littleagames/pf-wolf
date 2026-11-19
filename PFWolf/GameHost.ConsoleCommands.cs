@@ -38,6 +38,8 @@ internal static partial class GameHost
         new GameOptionCommands(_consoleManager, Settings.Options).Register();     // freelook, am_stats, autosave, weaponbob, alwaysrun, crosshair
         Group("Mods, sounds and music");
         new AssetCommands(_consoleManager, AssetManager, AudioManager, GameEngineManager).Register();
+        Register("loops", "Shows the looping sounds placed on actors (actordefs loopsound, loop-sound): each voice's actor, sound, distance and level.",
+            "loops", _ => _consoleManager.Print(LoopSounds.Describe()), InLevel);
         Register("menu", "Opens a menudefs menu by its name the next time the menu opens (at once from the title with --nowait): an engine menu as its own screen, a mod's as a CP_Menu item would. The editor's Test in game runs it.",
             "menu <name>", MenuCommand, complete: (_, i) => i == 0 ? [.. AssetManager.GetMenuNames().Order(StringComparer.OrdinalIgnoreCase)] : []);
 

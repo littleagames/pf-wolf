@@ -2,9 +2,10 @@
 --   birds        now and then, from one of the courtyard's trees (their tiles have tag 11):
 --                game.playsound(sound, x, y), heard from that side and fainter far off
 --   thunder      now and then while you're in the courtyard: game.playsound(sound), unplaced
---   generators   A_GeneratorUse, their Use action: off, all of them, or on again. While they're
+--   generators   A_GeneratorUse, their Use action: off, all of them, or on again (their drone
+--                is their actordefs loopsound, and stops with their Off state). While they're
 --                off the generator room is silent: game.ambient("none", tics) holds the
---                ambience over the zone's hum until game.ambient(nil, tics) gives it back
+--                ambience over the zone's buzz until game.ambient(nil, tics) gives it back
 --   the radio    A_RadioUse: the next station, or off
 --   messages     a word about each room the first time you walk into it
 -- Rooms are told apart by the tag plane (plane 4): each room's tiles have its own tag.
@@ -18,8 +19,8 @@ local QUIET_FADE = 105          -- tics the generator room's hum takes to die aw
 
 local ROOMS = {
   [COURTYARD] = "Courtyard: wind, birds in the trees, and thunder far off.",
-  [SEWER] = "Sewer: drips all round you, each a little different.",
-  [GENERATORS] = "Generator room: it hums. Use a generator to switch them off.",
+  [SEWER] = "Sewer: drips all round you, and water pouring out at the far end.",
+  [GENERATORS] = "Generator room: walk round the generators. Use one to switch them off.",
   [GUARDS] = "Guard post: tense while you're unseen. Get spotted: the alarm.",
   [RADIO] = "Radio room: no ambience, only the radio. Use it to change station.",
   [ELEVATOR] = "No zone here: the hall's hush carries on. The elevator's ahead.",
