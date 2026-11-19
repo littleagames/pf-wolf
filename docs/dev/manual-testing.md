@@ -986,6 +986,16 @@ can reach), not played by hand.
       rain fading out as you step into the hall; both going on through the courtyard's doorway;
       both after the menu and after loading a game; a script holding layer 2; the editor's Map
       Properties "Ambient 2" column saving and loading.
+- [ ] Sound muffling (Game Options → Muffle Thru Doors, `s_muffle`, game-info `sound-muffle`, on in
+      the Ambience Demo, 2026-11-19): headless (AmbienceDemoGameTests), `loops` from the hall by
+      the generator room's shut door showed the drone muffled to 0.35, unmuffled with `s_muffle
+      0`, and nothing muffled in the room. Seen windowed: Wolf3D's Game Options scrolling to the
+      new row with its marks clear of the text, wrapping both ways, Enter toggling it; Blake
+      Stone's Game Switches likewise (11 rows shown). **(never tried)**, by ear: the drone
+      dropping as the door shuts and swelling as it opens (no click); an enemy's shots and
+      sighting yell behind a shut door; two doors quieter than one; a pushwall-only area; the
+      setting off in stock Wolf3D sounding as before; spectating (the watched player's doors);
+      Planet Strike's Game Switches (12 rows, no scrolling) not checked.
 - [ ] Episode Demo (`--file episode-demo`): seen windowed: Episode 7 and its picture on the menu
       (scrolled into view, "1 more" marks above and below), the briefing article before MAP61;
       each map loads. **(never tried)**: a Blake Stone episode menu or a level select long

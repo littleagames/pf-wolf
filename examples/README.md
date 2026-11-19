@@ -2105,7 +2105,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
   come nearer as you walk up the sewer.
 - **The generator room** (second west): a faint buzz, and each generator droning from where it
   stands, louder as you walk up to it and from its side. Use a generator and they all wind down,
-  and the room goes quiet. Use one again and they start up.
+  and the room goes quiet. Use one again and they start up. Step out into the hall and let the
+  door shut: the drone drops away behind it, and swells again as the door opens.
 - **The guard post** (second east): two guards with their backs to you, and a tense ticking
   while they haven't seen you. Let one see you and the alarm fades in.
 - **The radio room** (third west): no ambience at all, only the radio playing. Use it to change
@@ -2130,6 +2131,13 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
     playing as it is, both loops.
 
   `music: ""` gives the level no song.
+
+  `setting-defaults: sound-muffling: true` switches on Game Options → Muffle Thru Doors
+  (`s_muffle`) for the mod, which the game has off: a sound placed in the world (an actor's, a
+  door's, `game.playsound` at a place, a `loopsound`) is quieter for each shut door between its
+  area and yours, each leaving `sound-muffle` of it (0.35 here, the default). At most three
+  doors count, and an area no door leads to counts as three. Sounds that aren't placed (weapons,
+  pickups, the ambience) aren't muffled. The player's own choice in the menu still wins.
 - `sounds/sound-seq.yaml`: the sounds, each one of the folder's `.wav` files, with:
   - `volume` (0 to 1), and `volume-variance`: up or down at random by up to that each time it plays;
   - `pitch` (2 is an octave up and twice as fast), and `pitch-variance`;

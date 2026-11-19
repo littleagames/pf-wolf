@@ -8,6 +8,9 @@ type: "blake-menu"
 position: { x: 111, y: 53 }
 indent: 0
 row-height: 9
+# Eleven rows fit the terminal with room for the scroll marks above the help line; the rest
+# scroll into view with the cursor
+visible-rows: 11
 font: "SmallFont"
 item-shadow: "1"
 cursor: { x: 87, y-offset: -1, width: 132, height: 9, color: "82", erase-color: "MENUBACK", flash-tics: 40 }
@@ -31,3 +34,4 @@ menu-items:
   - { id: "weaponbobsway", type: "ToggleMenuItem", text: "BOB SIDE TO SIDE", short-key: D, enabled: true }
   - { id: "crosshair", type: "ToggleMenuItem", text: "CROSSHAIR", short-key: H, enabled: true }
   - { id: "autosave", type: "ToggleMenuItem", text: "AUTOSAVE", short-key: S, enabled: true }
+  - { id: "soundmuffling", type: "ToggleMenuItem", text: "MUFFLE THRU DOORS", short-key: O, enabled: true }

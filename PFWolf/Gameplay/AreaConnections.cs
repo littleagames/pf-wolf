@@ -32,6 +32,10 @@ internal sealed class AreaConnections
     bool anySight, anyShot;
     byte[] seen = [], shot = [];
 
+    // The doors, open or shut, between each two areas: fixed for the level once its doors are
+    // spawned, for sound muffling (DoorsBetween)
+    internal byte[,] DoorJoin = new byte[0, 0];
+
     /// <summary>The areas enemies can see a player from: AreaByPlayer, and on through shut see-through doors</summary>
     internal byte[] AreaSeenByPlayer => anySight ? seen : AreaByPlayer;
 
@@ -45,6 +49,7 @@ internal sealed class AreaConnections
         AreaConnect = new byte[numareas, numareas];
         SightConnect = new byte[numareas, numareas];
         ShotConnect = new byte[numareas, numareas];
+        DoorJoin = new byte[numareas, numareas];
         seen = new byte[numareas];
         shot = new byte[numareas];
         anySight = anyShot = false;
@@ -61,6 +66,57 @@ internal sealed class AreaConnections
         ShotConnect[area1, area2]++;
         ShotConnect[area2, area1]++;
         anyShot = true;
+    }
+
+    /// <summary>A door stands between the two areas, open or shut (for DoorsBetween)</summary>
+    internal void JoinByDoor(uint area1, uint area2)
+    {
+        if (area1 >= DoorJoin.GetLength(0) || area2 >= DoorJoin.GetLength(0) || area1 == area2)
+            return;
+        if (DoorJoin[area1, area2] < byte.MaxValue)
+        {
+            DoorJoin[area1, area2]++;
+            DoorJoin[area2, area1]++;
+        }
+    }
+
+    /// <summary>A count for an area no door path reaches (DoorsBetween)</summary>
+    internal const int Unreached = int.MaxValue;
+
+    /// <summary>
+    /// The fewest shut doors between <paramref name="from"/> and each area (into
+    /// <paramref name="result"/>, one per area): 0 through open doors (connect, AreaConnect) or
+    /// none, 1 more for each shut door (doorJoin with no open one beside it), Unreached for an area
+    /// no door path reaches (only through a wall: a pushwall). A 0-1 breadth-first search: an
+    /// open way first, a shut door after.
+    /// </summary>
+    internal static void DoorsBetween(int from, byte[,] connect, byte[,] doorJoin, int[] result)
+    {
+        int count = result.Length;
+        Array.Fill(result, Unreached);
+        if (from < 0 || from >= count || connect.GetLength(0) < count || doorJoin.GetLength(0) < count)
+            return;
+        var queue = new LinkedList<int>();
+        result[from] = 0;
+        queue.AddFirst(from);
+        while (queue.First is { } node)
+        {
+            int area = node.Value;
+            queue.RemoveFirst();
+            for (int next = 0; next < count; next++)
+            {
+                if (next == area)
+                    continue;
+                int cost = connect[area, next] != 0 ? 0 : doorJoin[area, next] != 0 ? 1 : -1;
+                if (cost < 0 || result[area] + cost >= result[next])
+                    continue;
+                result[next] = result[area] + cost;
+                if (cost == 0)
+                    queue.AddFirst(next);
+                else
+                    queue.AddLast(next);
+            }
+        }
     }
 
     /*

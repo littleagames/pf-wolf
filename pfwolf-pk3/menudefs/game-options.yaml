@@ -1,12 +1,14 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
 # The Game Options settings (freelook, msg_enabled, am_stats, autosave, weaponbob,
-# weaponbob_sway, alwaysrun, crosshair, hud_markers). Each starts as game-info setting-defaults has it, and is the player's own
+# weaponbob_sway, alwaysrun, crosshair, hud_markers, s_muffle). Each starts as game-info setting-defaults has it, and is the player's own
 # choice once they switch it.
 position:
   x: 52
   y: 64
 indent: 48
+# Nine rows fit the window; the rest scroll into view with the cursor
+visible-rows: 9
 components:
   -
     id: "background"
@@ -90,4 +92,10 @@ menu-items:
       type: "ToggleMenuItem"
       text: "$STR_OBJECTIVEMARKERS"
       short-key: O
+      enabled: true
+  -
+      id: "soundmuffling"
+      type: "ToggleMenuItem"
+      text: "$STR_SOUNDMUFFLING"
+      short-key: U
       enabled: true

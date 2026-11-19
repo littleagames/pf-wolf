@@ -16,7 +16,8 @@ Decisions taken: the mod is `ambience-demo`; for 2d, Lua wins (no layers). The g
 generators are switched off with Use (not shot: no shootable-prop pattern to build on). Phase 3
 is planned in detail below: **3a is done** (2026-11-19: `Gameplay/LoopSounds.cs`, the `loops`
 command, the generators' drone and the sewer's outflow in the demo); **3b is done** (2026-11-19:
-zone `ambient-2*`, `game.ambient`'s layer, the courtyard's rain); 3c is not started.
+zone `ambient-2*`, `game.ambient`'s layer, the courtyard's rain); **3c is done** (2026-11-19:
+`Gameplay/SoundMuffling.cs`, Game Options "Muffle Thru Doors", on in the demo). Phase 3 is done.
 Phase 4 is still open. The mod-facing changes (new sound-seq and zone fields, `game.ambient`'s
 second argument and its win over zones, `game.playsound`) belong in the release notes of whichever
 version ships this branch.
@@ -193,17 +194,20 @@ The model is particles. They have a class property, `particles:`, plus a per-fra
 - **How much:** by the fewest **shut doors** between the listener's area and the sound's.
   - 0 means it's heard as now. Each shut door multiplies the gain by `muffle` (default
     0.35), so two doors give 0.12.
-  - An area that no door path reaches at all (only through a pushwall, say) gets `muffle`
-    squared.
+  - At most three doors count (`SoundMuffling.MaxDoors`), and an area that no door path
+    reaches at all (only through a pushwall, say) counts as three: as built, in place of the
+    first idea of `muffle` squared, which would have been louder than three doors.
   - This beats the plan's first idea, AreaByPlayer's yes or no. A room two doors off is
     quieter than one next door, and a generator through one door is still heard.
 - **Where it's worked out:** `AreaConnections.DoorsBetween(from)`, a 0-1 breadth-first search
   over the door graph (each door joins its two areas; open costs 0, shut costs 1).
   - It's a pure static helper with unit tests.
-  - It's cached, and redone only when a door opens or closes (`ConnectAreas` is already
-    called then) or the listener's area changes.
-  - It must be the **listener's** area, from the camera's actor. `AreaByPlayer` is every
-    player's in multiplayer, so it would be wrong here.
+  - As built, it's worked out afresh each tic in `Gameplay/SoundMuffling.cs` (Wolf3D has 37
+    areas, so it's cheap), not cached: AreaConnect is changed in several places (doors,
+    destructible walls, a loaded game), and nothing can go stale this way. Each door's two
+    areas go in `AreaConnections.DoorJoin` as the level's doors are spawned.
+  - It must be the **listener's** area: the camera tile's, else (in a doorway) its actor's,
+    else the last one. `AreaByPlayer` is every player's in multiplayer, so it would be wrong.
 - **Applying it:**
   - The sound's area is `MapManager.AreaAt` of its tile. A door or wall tile (a door's own
     sound) isn't muffled, and doors already check AreaByPlayer.
@@ -216,6 +220,11 @@ The model is particles. They have a class property, `particles:`, plus a per-fra
   - Ambience Demo turns it on in its setting-defaults, and its sign says where to switch it
     off.
   - The strength is game-info `sound-muffle: 0.35`, so a pack can change it.
+  - As built, the menu row is "Muffle Thru Doors" (Blake Stone's and Planet Strike's Game
+    Switches too). Wolf3D's Game Options and Blake's Game Switches got one row too many, so
+    they scroll now (`visible-rows` 9 and 11), and GameOptionsMenu redraws on the menu loop's
+    scroll (-2), which it used to take as leaving the menu.
+  - The `loops` command shows a voice's muffling ("muffled to 0.35").
 - **No EFX low-pass here.** Phase 4 has to load EFX through OpenTK anyway, so the filter goes
   in with it, applied on the same muffle path. Until then muffling is gain only.
 

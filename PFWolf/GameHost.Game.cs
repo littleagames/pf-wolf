@@ -275,11 +275,33 @@ internal static partial class GameHost
         frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
         new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick(),
             () => demoTracer.AfterFrame(), () => LevelTimer.Tick(), () => playScreen.ShowQuickInstructions(), () => destructibleWalls.Tick(),
-            particles.Tick, particles.Reset, Puzzles, tics => LoopSounds.Tick(tics)));
+            particles.Tick, particles.Reset, Puzzles, TickPlacedSounds));
+
+    // Sounds placed in the world, once the listener's moved: what shut doors leave of them
+    // (Gameplay/SoundMuffling.cs), then the loops from actors (Gameplay/LoopSounds.cs)
+    static void TickPlacedSounds(uint tics)
+    {
+        SoundMuffling.Tick();
+        AudioManager.TickMuffling((int)tics);
+        LoopSounds.Tick(tics);
+    }
 
     // Sounds looping from actors (Gameplay/LoopSounds.cs): actordefs loopsound, loop-sound
     static LoopSounds? _loopSounds;
     static LoopSounds LoopSounds => _loopSounds ??= new LoopSounds(MapManager, AudioManager, Session);
+
+    // Placed sounds quieter through shut doors (Gameplay/SoundMuffling.cs): Game Options' Sound
+    // Muffling, as strong as game-info's sound-muffle
+    static SoundMuffling? _soundMuffling;
+    static SoundMuffling SoundMuffling => _soundMuffling ??= MakeSoundMuffling();
+
+    static SoundMuffling MakeSoundMuffling()
+    {
+        var muffling = new SoundMuffling(MapManager, Session, () => Settings.Options.SoundMuffling,
+            () => GameEngineManager.GetGameInfo().SoundMuffle ?? SoundMuffling.DefaultStrength);
+        AudioManager.MuffleAt = muffling.At;
+        return muffling;
+    }
 
     // A level against the clock (Gameplay/LevelTimer.cs): game-info map time-limit
     static LevelTimer? _levelTimer;

@@ -25,6 +25,7 @@ internal sealed class GameOptionCommands(ConsoleManager console, GameOptions opt
         Add(GameOption.ShowFloors, "Whether floor flats are drawn; 0 draws the plain floor color.");
         Add(GameOption.HeartbeatSound, "Whether the status bar heart monitor's beats are heard (heart-monitor beat-sound: Blake Stone's).");
         Add(GameOption.ObjectiveMarkers, "Whether a match's objectives (the hill, control points, flags) are marked over the view, through walls and at its edges.");
+        Add(GameOption.SoundMuffling, "Whether sounds placed in the world are quieter for each shut door between them and you (game-info sound-muffle says how much).");
     }
 
     void Add(GameOption option, string help)

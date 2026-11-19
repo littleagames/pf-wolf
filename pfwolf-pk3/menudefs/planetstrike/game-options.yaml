@@ -27,3 +27,4 @@ menu-items:
   - { id: "weaponbobsway", type: "ToggleMenuItem", text: "BOB SIDE TO SIDE", short-key: D, enabled: true }
   - { id: "crosshair", type: "ToggleMenuItem", text: "CROSSHAIR", short-key: H, enabled: true }
   - { id: "autosave", type: "ToggleMenuItem", text: "AUTOSAVE", short-key: S, enabled: true }
+  - { id: "soundmuffling", type: "ToggleMenuItem", text: "MUFFLE THRU DOORS", short-key: O, enabled: true }

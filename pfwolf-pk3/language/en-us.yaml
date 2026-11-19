@@ -34,6 +34,7 @@ $STR_WEAPONBOBSWAY: "Bob Side to Side"
 $STR_ALWAYSRUN: "Always Run"
 $STR_CROSSHAIR: "Crosshair"
 $STR_OBJECTIVEMARKERS: "Objective Markers"
+$STR_SOUNDMUFFLING: "Muffle Thru Doors"
 
 # Mods
 $STR_MODS_NONE: "There are no mods in\nthe mods folder beside\nthe game."

@@ -32,7 +32,15 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
         ("floors", GameOption.ShowFloors),
         ("heartbeat", GameOption.HeartbeatSound),
         ("objectivemarkers", GameOption.ObjectiveMarkers),
+        ("soundmuffling", GameOption.SoundMuffling),
     ];
+
+    // Where the marks go while the rows scroll (visible-rows): at the screen's right, clear of the
+    // longest names (as the episode and Mods menus have them), or well past a highlight bar's end,
+    // in the terminal still (Blake Stone's: REBA ATTACK INFO comes near the bar's end)
+    const int ScrollMarkX = 312, BarScrollMarkGap = 51;
+    static int MarkX(ControlPanelMenuInfo info) =>
+        info.ScrollMarkX ?? (info.Cursor is { } bar ? bar.X + bar.Width + BarScrollMarkGap : ScrollMarkX);
 
     internal int Run()
     {
@@ -45,6 +53,11 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
         do
         {
             which = loop.HandleMenu(Info, Items, null);
+            if (which == -2)
+            {
+                DrawGameOptionsMenu();      // scrolled (visible-rows): drawn again where it's got to
+                continue;
+            }
             var id = MenuDefs.SelectedId(Items, which);
             foreach (var (itemId, option) in ItemOptions)
             {
@@ -58,7 +71,7 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
                 loop.ShootSnd();
             }
         }
-        while (which >= 0);
+        while (which >= 0 || which == -2);
 
         draw.MenuFadeOut();
 
@@ -71,6 +84,7 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
         draw.DrawMenu(Info, Items);
         foreach (var (id, option) in ItemOptions)
             draw.DrawMenuCheckbox(Info, Items, id, options[option]);
+        draw.DrawMenuScrollMarks(Info, Items, MarkX(Info));
         draw.DrawMenuGun(Info);
         video.Update();
     }

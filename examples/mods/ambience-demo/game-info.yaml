@@ -4,6 +4,13 @@
 # https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
 setting-defaults:
   messages: true
+  # Sounds placed in the world quieter for each shut door between (Game Options → Muffle Thru
+  # Doors, s_muffle): shut the generator room's door from the hall and the machines drop away.
+  # Off by default in the game, so this mod turns it on; the player's own choice still wins.
+  sound-muffling: true
+
+# What each shut door leaves of a placed sound (0.35 when left out)
+sound-muffle: 0.35
 
 maps:
   MAP01:

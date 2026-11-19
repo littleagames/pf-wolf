@@ -307,6 +307,13 @@ public record GameInfoAsset : Asset
     public ObjectiveMarkersInfo ObjectiveMarkers { get; init; } = new();
 
     /// <summary>
+    /// With Sound Muffling on (setting-defaults sound-muffling, s_muffle), what each shut door
+    /// between a placed sound and the player leaves of it, 0 to 1 (Gameplay/SoundMuffling.cs):
+    /// 0.35 when unset. At most three doors count; an area no door path reaches counts as three.
+    /// </summary>
+    public float? SoundMuffle { get; init; }
+
+    /// <summary>
     /// The skill (a key in skills) demos are recorded and played back on; the hardest (last)
     /// one when unset. A demo only replays right on the skill it was recorded on.
     /// </summary>
@@ -484,6 +491,13 @@ public record SettingDefaultsInfo
 
     /// <summary>A match mode's objectives (the hill, control points, flags) marked over the view, through walls and at its edges (default true; hud_markers)</summary>
     public bool? ObjectiveMarkers { get; init; }
+
+    /// <summary>
+    /// Sounds placed in the world (an enemy's, a door's beyond, a looping machine) quieter for each
+    /// shut door between them and the player, as game-info sound-muffle says (default false, as
+    /// stock Wolf3D sounds the same through doors; s_muffle)
+    /// </summary>
+    public bool? SoundMuffling { get; init; }
 
     /// <summary>Running without holding Run; holding it walks (default false; alwaysrun)</summary>
     public bool? AlwaysRun { get; init; }

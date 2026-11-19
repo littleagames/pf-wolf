@@ -131,14 +131,18 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
 
     /// <summary>
     /// Joins the areas either side of each see-through door for sight (and a shoot-through one for
-    /// shots), shut or not (Gameplay/AreaConnections.cs): once every door on the level is spawned,
-    /// so the area beside one isn't another door's tile still to be given its area
+    /// shots), shut or not, and notes every door's two areas for sound muffling
+    /// (Gameplay/AreaConnections.cs): once every door on the level is spawned, so the area beside
+    /// one isn't another door's tile still to be given its area
     /// </summary>
     internal void JoinSeeThroughDoors()
     {
         for (int door = 0; door < LastDoorObj; door++)
         {
-            if (DoorObjList[door].SeeThrough && DoorAreas(door) is var (area1, area2))
+            if (DoorAreas(door) is not var (area1, area2))
+                continue;
+            session.Areas.JoinByDoor(area1, area2);
+            if (DoorObjList[door].SeeThrough)
                 session.Areas.JoinThroughDoor(area1, area2, DoorObjList[door].ShootThrough);
         }
     }

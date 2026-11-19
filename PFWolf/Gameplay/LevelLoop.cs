@@ -17,7 +17,7 @@ namespace PFWolf.Gameplay;
 /// <param name="TickParticles">Particles moving on, only for show (Rendering/Particles.cs)</param>
 /// <param name="ClearParticles">A new level, life or loaded game starts with no particles in the air</param>
 /// <param name="Puzzles">The puzzles players work (Gameplay/Puzzles.cs): one that pauses stops the level while it's open</param>
-/// <param name="TickLoopSounds">Sounds looping from actors, heard from the camera (Gameplay/LoopSounds.cs): the tics gone by, 0 while paused</param>
+/// <param name="TickPlacedSounds">Sounds placed in the world, heard from the camera: their muffling (Gameplay/SoundMuffling.cs) and the loops from actors (Gameplay/LoopSounds.cs); the tics gone by, 0 while paused</param>
 internal sealed record LevelLoopHooks(
     Func<bool> DemoTesting,
     Action<uint> TickPlayerBodies,
@@ -33,7 +33,7 @@ internal sealed record LevelLoopHooks(
     Action<uint>? TickParticles = null,
     Action? ClearParticles = null,
     Puzzles? Puzzles = null,
-    Action<uint>? TickLoopSounds = null);
+    Action<uint>? TickPlacedSounds = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -213,7 +213,7 @@ internal sealed class LevelLoop(
             }
 
             hooks.UpdateSoundListener();      // JAB
-            hooks.TickLoopSounds?.Invoke(worldPaused || puzzlePaused ? 0 : session.Tics);     // the loops follow, from there
+            hooks.TickPlacedSounds?.Invoke(worldPaused || puzzlePaused ? 0 : session.Tics);   // muffling and the loops follow, from there
             if (video.ScreenFaded)
             {
                 bool scripted = video.NextFadeIn != null;     // a script's game.fade coming back in

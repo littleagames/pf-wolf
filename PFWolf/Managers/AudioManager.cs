@@ -107,7 +107,7 @@ internal class AudioManager
                 return;
             var gain = VolumeGain(_soundVolume);
             for (var i = 0; i < _sources.Length; i++)
-                AL.Source(_sources[i], ALSourcef.Gain, _sourceVolumes[i] * gain);
+                AL.Source(_sources[i], ALSourcef.Gain, _sourceVolumes[i] * _sourceMuffles[i] * gain);
             for (var layer = 0; layer < AmbientLayers; layer++)
                 for (var voice = 0; voice < AmbientMixer.Voices; voice++)
                     ApplyAmbientGain(layer, voice);
@@ -160,6 +160,66 @@ internal class AudioManager
 
     // Each of _sources' sound-seq volume (0 to 1), under the sound volume setting
     private float[] _sourceVolumes = [];
+
+    /*
+    Muffling (Gameplay/SoundMuffling.cs): a placed sound, an effect or a loop, is quieter for each
+    shut door between it and the listener. Each keeps where it is and what's left of it; each
+    tic (TickMuffling) that moves toward what MuffleAt says now, over MuffleTics, so a door
+    opening swells the sound beyond it rather than cutting in.
+    */
+
+    /// <summary>What's left of a placed sound from (x, y), in tiles, through shut doors; unset, nothing's muffled</summary>
+    public Func<float, float, float>? MuffleAt { get; set; }
+
+    /// <summary>The tics a placed sound takes to go from unmuffled to all but silent, or back</summary>
+    internal const int MuffleTics = 8;
+
+    private (float X, float Y)?[] _sourcePlaces = [];       // each of _sources' place (null: at the listener)
+    private float[] _sourceMuffles = [];                    // and what's left of it through shut doors
+
+    private float Muffle(float x, float y) => MuffleAt?.Invoke(x, y) ?? 1;
+
+    /// <summary>
+    /// Placed sounds' levels move toward what's left of them through shut doors now (a door
+    /// opened or shut, the listener moved), by so many tics' worth
+    /// </summary>
+    public void TickMuffling(int tics)
+    {
+        if (!IsActive || tics <= 0)
+            return;
+        float step = tics / (float)MuffleTics;
+        float gain = VolumeGain(_soundVolume);
+        for (int i = 0; i < _sources.Length; i++)
+        {
+            if (_sourcePlaces[i] is not { } place)
+                continue;
+            AL.GetSource(_sources[i], ALGetSourcei.SourceState, out int state);
+            if ((ALSourceState)state != ALSourceState.Playing)
+            {
+                _sourcePlaces[i] = null;        // done: nothing to follow until it plays again
+                continue;
+            }
+            if (MoveToward(ref _sourceMuffles[i], Muffle(place.X, place.Y), step))
+                AL.Source(_sources[i], ALSourcef.Gain, _sourceVolumes[i] * _sourceMuffles[i] * gain);
+        }
+        for (int v = 0; v < _loopSources.Length; v++)
+        {
+            if (LoopVoicePlaying(v) && MoveToward(ref _loopMuffles[v], Muffle(_loopPlaces[v].X, _loopPlaces[v].Y), step))
+                ApplyLoopGain(v);
+        }
+    }
+
+    // A level a step nearer what it's going to; whether it changed
+    private static bool MoveToward(ref float level, float target, float step)
+    {
+        if (level == target)
+            return false;
+        level = level < target ? Math.Min(level + step, target) : Math.Max(level - step, target);
+        return true;
+    }
+
+    /// <summary>What's left of a loop voice through shut doors, for the loops command</summary>
+    public float LoopVoiceMuffle(int voice) => voice >= 0 && voice < LoopVoices ? _loopMuffles[voice] : 1;
 
     // Each named channel's voice (an index into _sources, past the shared ones), given on first use
     private readonly Dictionary<string, int> _channelSources = new(StringComparer.OrdinalIgnoreCase);
@@ -224,6 +284,8 @@ internal class AudioManager
         _sources = AL.GenSources(SourceCount + ChannelCount);
         _startedAt = new long[_sources.Length];
         _sourceVolumes = [.. Enumerable.Repeat(1.0f, _sources.Length)];
+        _sourcePlaces = new (float, float)?[_sources.Length];
+        _sourceMuffles = [.. Enumerable.Repeat(1.0f, _sources.Length)];
         _musicSource = AL.GenSource();
         AL.Source(_musicSource, ALSourceb.SourceRelative, true);
         _ambientSources = AL.GenSources(AmbientLayers * AmbientMixer.Voices);
@@ -414,8 +476,10 @@ internal class AudioManager
         var source = _sources[index];
         _startedAt[index] = ++_starts;
         _sourceVolumes[index] = sound.Volume;
+        _sourcePlaces[index] = position;
+        _sourceMuffles[index] = position is { } place ? Muffle(place.X, place.Y) : 1;
         _lastBufferForSound[name.ToLowerInvariant()] = sound.Buffer;
-        AL.Source(source, ALSourcef.Gain, sound.Volume * VolumeGain(_soundVolume));
+        AL.Source(source, ALSourcef.Gain, sound.Volume * _sourceMuffles[index] * VolumeGain(_soundVolume));
         AL.Source(source, ALSourcef.Pitch, sound.Pitch);
         StartSource(source, sound.Buffer, position);
         _lastStarted = (source, sound.Buffer);
@@ -606,6 +670,8 @@ internal class AudioManager
     private int[] _loopSources = [];
     private readonly float[] _loopVolumes = new float[LoopVoices];      // each voice's sound-seq volume
     private readonly float[] _loopLevels = new float[LoopVoices];       // and the level LoopSounds gave it
+    private readonly (float X, float Y)[] _loopPlaces = new (float, float)[LoopVoices];
+    private readonly float[] _loopMuffles = [.. Enumerable.Repeat(1.0f, LoopVoices)];     // what's left through shut doors
 
     /// <summary>
     /// Starts a loop voice looping <paramref name="name"/> from (x, y), in tiles, heard out to
@@ -623,6 +689,8 @@ internal class AudioManager
             return false;
         _loopVolumes[voice] = sound.Volume;
         _loopLevels[voice] = level;
+        _loopPlaces[voice] = (x, y);
+        _loopMuffles[voice] = Muffle(x, y);
         AL.Source(source, ALSourcei.Buffer, sound.Buffer);
         AL.Source(source, ALSourcef.Pitch, sound.Pitch);
         AL.Source(source, ALSourcef.MaxDistance, Math.Max(radius, 1.0f));
@@ -646,6 +714,7 @@ internal class AudioManager
         if (!IsActive || voice < 0 || voice >= _loopSources.Length)
             return;
         AL.Source(_loopSources[voice], ALSource3f.Position, x, 0.0f, y);
+        _loopPlaces[voice] = (x, y);
         if (_loopLevels[voice] != level)
         {
             _loopLevels[voice] = level;
@@ -669,9 +738,9 @@ internal class AudioManager
         return (ALSourceState)state is ALSourceState.Playing or ALSourceState.Paused;
     }
 
-    // A loop voice's gain: its level, its sound-seq volume and the sound volume setting
+    // A loop voice's gain: its level, what's left of it through shut doors, its sound-seq volume and the sound volume setting
     private void ApplyLoopGain(int voice) =>
-        AL.Source(_loopSources[voice], ALSourcef.Gain, _loopLevels[voice] * _loopVolumes[voice] * VolumeGain(_soundVolume));
+        AL.Source(_loopSources[voice], ALSourcef.Gain, _loopLevels[voice] * _loopMuffles[voice] * _loopVolumes[voice] * VolumeGain(_soundVolume));
 
     /// <summary>
     /// What a sound plays: the buffer (its sound-seq entry's best variant on the devices switched

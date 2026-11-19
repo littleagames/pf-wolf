@@ -91,7 +91,11 @@ extra-life-score: 40000
 #   always-run: false
 #   crosshair: false
 #   objective-markers: true
+#   sound-muffling: false
 # crosshair-color: White
+# With Sound Muffling on, what each shut door between a placed sound and the player leaves of it
+# (at most three count):
+# sound-muffle: 0.35
 
 hud-messages:
   pickup-style: Default
