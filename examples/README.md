@@ -2081,6 +2081,89 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-music-demo.ps1
 
 In the console, `changemus` shows what's playing and `changemus <name>` plays a song.
 
+## Ambience Demo (`mods/ambience-demo`)
+
+**A level of sounds**, replacing Floor 1 (Wolfenstein 3D only): each room has its own ambience,
+fading over as you walk from one to the next. Drips and birds come from where they are, the
+generators can be switched off, the guard post sounds tense until you're seen, and a radio has
+two stations. It's YAML for the zones and sounds, a few things, a script, and the sounds,
+sprites and level the generator script makes. The level has no music, so you hear only the
+ambience.
+
+```
+PFWolf.exe --file ambience-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The hall** you start in has a soft hush of its own. Walk into a room and the hush fades out
+  as the room's sound fades in.
+- **The courtyard** (first door west): wind, birds singing from one tree or another (heard from
+  that side), and thunder far off now and then.
+- **The sewer** (first door east): a low rumble and trickle, and drips falling all round you,
+  each a little louder or softer, higher or lower.
+- **The generator room** (second west): the hum. Use a generator and they all wind down, and the
+  room goes quiet. Use one again and the hum comes back.
+- **The guard post** (second east): two guards with their backs to you, and a tense ticking
+  while they haven't seen you. Let one see you and the alarm fades in.
+- **The radio room** (third west): no ambience at all, only the radio playing. Use it to change
+  station, and again to switch it off.
+- **The elevator room** (third east) has no zone, so the hall's hush carries on in it.
+
+### What's in it
+
+- `game-info.yaml`: the level's zones (plane 5 holds each tile's zone), under `maps: MAP01: zones:`.
+  A zone with `ambient: <sound>` loops that sound, unplaced, while you're in it:
+  - `ambient-fade: <tics>` (70 a second): stepping into the zone, the last zone's sound fades
+    out as this one's fades in. It's the zone you step into that says how long.
+  - `ambient-undetected: <sound>` plays in its place while no enemy on the level has noticed you
+    yet (the guard post). `ambient-disguised:` (not used here) plays while you're in disguise.
+  - `ambient: none` is silence (the radio room).
+  - A tile in no zone, or a zone with no ambient (the doors, the elevator room), leaves whatever's
+    playing as it is.
+
+  `music: ""` gives the level no song.
+- `sounds/sound-seq.yaml`: the sounds, each one of the folder's `.wav` files, with:
+  - `volume` (0 to 1), and `volume-variance`: up or down at random by up to that each time it plays;
+  - `pitch` (2 is an octave up and twice as fast), and `pitch-variance`;
+  - `random`: one of a list, picked each time (the drips, the birds); the first `volume`, `pitch`
+    or variance named along the way counts, so the list's own apply to every pick;
+  - `channel: radio`: every sound on one channel plays on one voice, each cutting off the last, so
+    the knob's click stops a tune.
+- `actordefs/ambience-demo.yaml` and `mapdefs/things.yaml` (objects 990-992):
+  - `AmbienceDrip`: an invisible thing (sprite `TNT1`) that drips now and then
+    (`A_Jump(96, "Drip")`, then `A_PlaySound("ambience/drip", "positional")`).
+    `positional` plays a sound from where the thing is, so it's louder the nearer you are, and
+    from that side.
+  - `AmbienceGenerator`: clanks as it blinks; its `Use` state calls the script's
+    `A_GeneratorUse`.
+  - `AmbienceRadio`: plays its station's four-second tune again every 280 tics. Its `Use`
+    clicks and calls `A_RadioUse`.
+- `scripts/ambience.lua`:
+  - `game.playsound(sound, x, y)`: a sound from a place on the map, in tiles as an actor's `x`
+    and `y` are (a tile's middle is n + 0.5). The birds sing from the trees, whose tiles have tag
+    11 (`game.taggedtiles(11)`). With no place, `game.playsound(sound)` plays at the listener (the
+    thunder).
+  - `game.ambient(sound, tics)` holds the ambience over the zones' sounds, fading over `tics`.
+    `"none"` is silence. In the generator room, while the generators are off, the script asks
+    for `game.ambient("none", 105)` each tic, and otherwise `game.ambient(nil, 105)`, which gives
+    the ambience back to the zones.
+  - `A_GeneratorUse` and `A_RadioUse`: Lua actions the actordefs call. They keep what's on in the
+    actors' `temp1`, which saved games keep.
+  - A word about each room the first time you walk in (`game.message`). Rooms are told apart by
+    their tag (`game.tag`).
+- `maps/MAP01.wad`: the level.
+
+The sounds (all synthesized), the generator's and radio's sprites and the level are made by
+`tools/make-ambience-demo.ps1`. Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-ambience-demo.ps1
+```
+
+In the console, `ambient` shows what the ambient loop is playing, at what level, and whether it's
+fading. `playsound <name>` plays any sound.
+
 ## Episode Demo (`mods/episode-demo`)
 
 A **seventh episode** for Wolfenstein 3D, *Operation Nightfall*: three short levels, a briefing as

@@ -1,0 +1,8 @@
+# The Ambience Demo's things on the object plane (990-999 are this mod's)
+things:
+  990:
+    class: AmbienceDrip
+  991:
+    class: AmbienceGenerator
+  992:
+    class: AmbienceRadio

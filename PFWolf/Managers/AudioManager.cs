@@ -106,9 +106,10 @@ internal class AudioManager
             if (!IsActive)
                 return;
             var gain = VolumeGain(_soundVolume);
-            foreach (var source in _sources)
-                AL.Source(source, ALSourcef.Gain, gain);
-            AL.Source(_ambientSource, ALSourcef.Gain, gain);
+            for (var i = 0; i < _sources.Length; i++)
+                AL.Source(_sources[i], ALSourcef.Gain, _sourceVolumes[i] * gain);
+            for (var i = 0; i < _ambientSources.Length; i++)
+                ApplyAmbientGain(i);
         }
     }
 
@@ -154,6 +155,9 @@ internal class AudioManager
     private long[] _startedAt = [];
     private long _starts;
 
+    // Each of _sources' sound-seq volume (0 to 1), under the sound volume setting
+    private float[] _sourceVolumes = [];
+
     // Each named channel's voice (an index into _sources, past the shared ones), given on first use
     private readonly Dictionary<string, int> _channelSources = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _reportedChannels = new(StringComparer.OrdinalIgnoreCase);
@@ -198,6 +202,8 @@ internal class AudioManager
     {
         _assetManager = assetManager;
         _session = session;
+        _ambientMixer = new AmbientMixer(new AmbientMixerHooks(StartAmbientVoice,
+            voice => AL.SourceStop(_ambientSources[voice]), AmbientVoicePlaying, (voice, _) => ApplyAmbientGain(voice)));
         _opening = Task.Run(Open);
     }
 
@@ -214,11 +220,15 @@ internal class AudioManager
 
         _sources = AL.GenSources(SourceCount + ChannelCount);
         _startedAt = new long[_sources.Length];
+        _sourceVolumes = [.. Enumerable.Repeat(1.0f, _sources.Length)];
         _musicSource = AL.GenSource();
         AL.Source(_musicSource, ALSourceb.SourceRelative, true);
-        _ambientSource = AL.GenSource();
-        AL.Source(_ambientSource, ALSourceb.SourceRelative, true);
-        AL.Source(_ambientSource, ALSourceb.Looping, true);
+        _ambientSources = AL.GenSources(AmbientMixer.Voices);
+        foreach (var source in _ambientSources)
+        {
+            AL.Source(source, ALSourceb.SourceRelative, true);
+            AL.Source(source, ALSourceb.Looping, true);
+        }
         foreach (var source in _sources)
         {
             AL.Source(source, ALSourceb.SourceRelative, true);
@@ -385,15 +395,18 @@ internal class AudioManager
 
     private void Play(string name, (float X, float Y)? position, string? channel)
     {
-        if (!IsActive || ResolveBuffer(name, out var soundChannel) is not int playBuffer)
+        if (!IsActive || Resolve(name) is not { } sound)
             return;
 
-        var index = ChannelSource(channel ?? soundChannel) ?? SharedSource();
+        var index = ChannelSource(channel ?? sound.Channel) ?? SharedSource();
         var source = _sources[index];
         _startedAt[index] = ++_starts;
-        _lastBufferForSound[name.ToLowerInvariant()] = playBuffer;
-        StartSource(source, playBuffer, position);
-        _lastStarted = (source, playBuffer);
+        _sourceVolumes[index] = sound.Volume;
+        _lastBufferForSound[name.ToLowerInvariant()] = sound.Buffer;
+        AL.Source(source, ALSourcef.Gain, sound.Volume * VolumeGain(_soundVolume));
+        AL.Source(source, ALSourcef.Pitch, sound.Pitch);
+        StartSource(source, sound.Buffer, position);
+        _lastStarted = (source, sound.Buffer);
     }
 
     // A named channel's voice, given it on first use; null for no channel, or one more than
@@ -456,52 +469,104 @@ internal class AudioManager
     area's ambience, as Midnight Assault's DoAmbience played on its chan_ambient). It isn't one
     of the effects channels, so a new sound never takes it, and WaitSoundDone and
     IsAnySoundPlaying leave it out (a level's exit doesn't wait on it). StopAll stops it, and
-    pausing pauses it.
+    pausing pauses it. It has two voices, so that a change can fade over (Managers/AmbientMixer.cs).
     */
 
-    private int _ambientSource;
-    private string? _ambientName;
+    private int[] _ambientSources = [];
+    private readonly float[] _ambientVolumes = [1, 1];     // each voice's sound-seq volume
+    private readonly AmbientMixer _ambientMixer;
+    private (string? Name, int FadeTics)? _pausedAmbient;   // asked for while paused, for when play goes on
 
     /// <summary>The ambient sound asked for, or null for none</summary>
-    public string? Ambient => _ambientName;
+    public string? Ambient => _pausedAmbient is { } asked ? asked.Name : _ambientMixer.Requested;
 
     /// <summary>
     /// Loops <paramref name="name"/> as the ambient sound in place of the one there was, or stops
-    /// it with null. Asking for the one that's playing changes nothing (it goes on where it is);
+    /// it with null, the change fading over <paramref name="fadeTics"/> (70 a second; 0 cuts
+    /// over at once). Asking for the one that's playing changes nothing (it goes on where it is);
     /// if it was stopped (StopAll), it starts again.
     /// </summary>
-    public void SetAmbient(string? name)
+    public void SetAmbient(string? name, int fadeTics = 0)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (!IsActive || _isPaused)
         {
-            _ambientName = null;
-            if (IsActive)
-                AL.SourceStop(_ambientSource);
+            _pausedAmbient = (name, fadeTics);
             return;
         }
-
-        bool same = string.Equals(name, _ambientName, StringComparison.OrdinalIgnoreCase);
-        _ambientName = name;
-        if (!IsActive || _isPaused)
-            return;
-        AL.GetSource(_ambientSource, ALGetSourcei.SourceState, out int stateInt);
-        if (same && (ALSourceState)stateInt == ALSourceState.Playing)
-            return;
-
-        AL.SourceStop(_ambientSource);
-        if (ResolveBuffer(name, out _) is not int buffer)
-            return;
-        AL.Source(_ambientSource, ALSourcei.Buffer, buffer);
-        AL.Source(_ambientSource, ALSourcef.Gain, VolumeGain(_soundVolume));
-        AL.SourcePlay(_ambientSource);
+        _pausedAmbient = null;
+        _ambientMixer.Set(name, Math.Max(fadeTics, 0));
     }
 
-    // The buffer a sound plays (its sound-seq entry's best variant on the devices switched on,
-    // through any random pick or alias), or null for one that's silent or unknown; and the first
-    // channel named along the way, if any
-    private int? ResolveBuffer(string name, out string? channel)
+    /// <summary>What the ambient loop plays, for the ambient command: the voices sounding, each at its level</summary>
+    public string DescribeAmbient()
     {
-        channel = null;
+        if (!IsActive)
+            return Ambient is { } asked ? $"Ambient: {asked} (sound is off)" : "No ambient sound (sound is off)";
+        var voices = _ambientMixer.Describe().ToList();
+        if (_pausedAmbient is { } paused)
+            return $"Ambient: {paused.Name ?? "none"} (paused)";
+        return voices.Count == 0 ? "No ambient sound" : $"Ambient: {string.Join("; ", voices)}";
+    }
+
+    /// <summary>The ambient loop's fades move on by so many tics</summary>
+    public void TickAmbient(int tics)
+    {
+        if (IsActive && !_isPaused)
+            _ambientMixer.Tick(tics);
+    }
+
+    // AmbientMixer's Start: a voice loops a sound, from silence until the mixer sets its level
+    private bool StartAmbientVoice(int voice, string name)
+    {
+        var source = _ambientSources[voice];
+        AL.SourceStop(source);
+        if (Resolve(name) is not { } sound)
+            return false;
+        _ambientVolumes[voice] = sound.Volume;
+        AL.Source(source, ALSourcei.Buffer, sound.Buffer);
+        AL.Source(source, ALSourcef.Pitch, sound.Pitch);
+        AL.Source(source, ALSourcef.Gain, 0.0f);
+        AL.SourcePlay(source);
+        return true;
+    }
+
+    private bool AmbientVoicePlaying(int voice)
+    {
+        AL.GetSource(_ambientSources[voice], ALGetSourcei.SourceState, out int state);
+        return (ALSourceState)state is ALSourceState.Playing or ALSourceState.Paused;
+    }
+
+    // A voice's gain: its fade level, its sound-seq volume and the sound volume setting
+    private void ApplyAmbientGain(int voice) =>
+        AL.Source(_ambientSources[voice], ALSourcef.Gain, _ambientMixer.Level(voice) * _ambientVolumes[voice] * VolumeGain(_soundVolume));
+
+    /// <summary>
+    /// What a sound plays: the buffer (its sound-seq entry's best variant on the devices switched
+    /// on, through any random pick or alias), the first channel named along the way, and its
+    /// volume and pitch (each the first named along the way, varied by its variance)
+    /// </summary>
+    private readonly record struct ResolvedSound(int Buffer, string? Channel, float Volume, float Pitch);
+
+    // The sound-seq volume and pitch a sound plays at: each 1 unless an entry along the way names
+    // it (the first one does), moved up or down at random by up to its variance. Picked with
+    // System.Random, never the game's numbers, so that demos and network games stay in step.
+    internal static (float Volume, float Pitch) VolumeAndPitch(float? volume, float? volumeVariance, float? pitch, float? pitchVariance,
+        Func<float> random)
+    {
+        static float Vary(float value, float? variance, Func<float> random) =>
+            variance is > 0 ? value + (random() * 2 - 1) * variance.Value : value;
+        return (Math.Clamp(Vary(volume ?? 1, volumeVariance, random), 0, 1),
+            Math.Clamp(Vary(pitch ?? 1, pitchVariance, random), MinPitch, MaxPitch));
+    }
+
+    /// <summary>The range sound-seq pitch is held to (half and double speed are an octave down and up)</summary>
+    internal const float MinPitch = 0.25f, MaxPitch = 4.0f;
+
+    // What a sound plays, or null for one that's silent or unknown
+    private ResolvedSound? Resolve(string name)
+    {
+        string? channel = null;
+        float? volume = null, volumeVariance = null, pitch = null, pitchVariance = null;
         var soundSeq = _assetManager.Value.Find<SoundSequenceAsset>("sound-seq");
         // The running pack's own sounds (gamepacks/<pack>/sound-seq.yaml) win over the shared ones
         var packSeq = _packSoundSeq ??= _assetManager.Value.Exists<SoundSequenceAsset>($"{_assetManager.Value.GamePackId}/sound-seq")
@@ -529,6 +594,10 @@ internal class AudioManager
 
             if (channel == null && !string.IsNullOrWhiteSpace(soundProfile.Channel))
                 channel = soundProfile.Channel;
+            volume ??= soundProfile.Volume;
+            volumeVariance ??= soundProfile.VolumeVariance;
+            pitch ??= soundProfile.Pitch;
+            pitchVariance ??= soundProfile.PitchVariance;
 
             if (soundProfile.Random.Count > 0)
             {
@@ -559,7 +628,10 @@ internal class AudioManager
                 WarningLog.Write($"Sound {name} has nothing to play: this game has none of {string.Join(", ",
                     new[] { soundProfile.Digitized, soundProfile.AdLib, soundProfile.PC }.Where(v => !string.IsNullOrWhiteSpace(v)))}");
         }
-        return variant is { } chosen ? FindBuffer(chosen.Device, chosen.Asset) : null;
+        if (variant is not { } chosen || FindBuffer(chosen.Device, chosen.Asset) is not int buffer)
+            return null;
+        var (gain, speed) = VolumeAndPitch(volume, volumeVariance, pitch, pitchVariance, System.Random.Shared.NextSingle);
+        return new ResolvedSound(buffer, channel, gain, speed);
     }
 
     // The variant each sound (by its name past any random pick or alias) plays on the devices
@@ -661,7 +733,9 @@ internal class AudioManager
             return;
         foreach (var source in _sources)
             AL.SourceStop(source);
-        AL.SourceStop(_ambientSource);      // asked for again, it starts afresh (SetAmbient)
+        foreach (var source in _ambientSources)
+            AL.SourceStop(source);          // asked for again, it starts afresh (SetAmbient)
+        _ambientMixer.Stopped();
         _heldSound = null;
     }
 
@@ -931,7 +1005,8 @@ internal class AudioManager
         if (isPaused)
         {
             AL.SourcePause(_musicSource);
-            AL.SourcePause(_ambientSource);
+            foreach (var source in _ambientSources)
+                AL.SourcePause(source);
         }
         else
         {
@@ -941,9 +1016,14 @@ internal class AudioManager
             if (!string.IsNullOrEmpty(_requestedMusicTrack) && _musicStreamThread is { IsAlive: true }
                 && !IsMusicSourcePlaying())
                 AL.SourcePlay(_musicSource);
-            AL.GetSource(_ambientSource, ALGetSourcei.SourceState, out int ambientState);
-            if (_ambientName != null && (ALSourceState)ambientState == ALSourceState.Paused)
-                AL.SourcePlay(_ambientSource);
+            foreach (var source in _ambientSources)
+            {
+                AL.GetSource(source, ALGetSourcei.SourceState, out int ambientState);
+                if ((ALSourceState)ambientState == ALSourceState.Paused)
+                    AL.SourcePlay(source);
+            }
+            if (_pausedAmbient is { } asked)
+                SetAmbient(asked.Name, asked.FadeTics);
         }
     }
 
@@ -956,11 +1036,12 @@ internal class AudioManager
             return;
         StopMusicStream();
         AL.SourceStop(_musicSource);
-        AL.SourceStop(_ambientSource);
+        foreach (var source in _ambientSources)
+            AL.SourceStop(source);
         foreach (var source in _sources)
             AL.SourceStop(source);
         AL.DeleteSource(_musicSource);
-        AL.DeleteSource(_ambientSource);
+        AL.DeleteSources(_ambientSources);
         AL.DeleteSources(_sources);
         AL.DeleteBuffers(_buffers.Values.ToArray());
         ALC.MakeContextCurrent(ALContext.Null);

@@ -1394,6 +1394,13 @@ public record ZoneInfo
     public string? AmbientUndetected { get; init; }
 
     /// <summary>
+    /// Tics (70 a second) the ambient sound takes to fade over as the player steps into the
+    /// zone, the last zone's sound fading out as this one's fades in (default 0: at once). It's
+    /// the zone stepped into that says
+    /// </summary>
+    public int? AmbientFade { get; init; }
+
+    /// <summary>
     /// Whether it says anything about light. A zone with only ambient sound isn't a light zone:
     /// its tiles keep the level's light.
     /// </summary>

@@ -303,12 +303,13 @@ internal static partial class GameHost
         },
         () => { if (!statusBarDrawing.IsOverlay) statusBarDrawing.DrawLevelTimer(); }));
 
-    // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
+    // Zones' ambient sounds, and the scripts' game.ambient (Gameplay/ZoneAmbience.cs)
     static ZoneAmbience? _zoneAmbience;
     static ZoneAmbience ZoneAmbience => _zoneAmbience ??= new ZoneAmbience(Session, currentMapInfo, new ZoneAmbienceHooks(
         (x, y) => MapManager.GetZone(x, y),
         () => Stealth.WearingDisguise(Session.PlayerState),
-        AudioManager.SetAmbient));
+        AudioManager.SetAmbient,
+        AudioManager.TickAmbient));
 
     // ==== WL_DEF =================================================================================
 
@@ -456,6 +457,7 @@ internal static partial class GameHost
         {
             Unlock = Unlock,
             IsUnlocked = name => Unlocks.IsUnlocked(name),
+            Ambient = (sound, fadeTics) => ZoneAmbience.SetScriptAmbient(sound, fadeTics),
             ParticleSystem = () => particles,
             Record = map => LevelRecords.Get(map),
             Stat = name => StatValues.Get(name),

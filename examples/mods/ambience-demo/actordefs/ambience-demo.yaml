@@ -1,0 +1,98 @@
+# The Ambience Demo's things (mapdefs/things.yaml puts them on the object plane). Their sounds
+# are sounds/sound-seq.yaml's; A_PlaySound(sound, "positional") plays one from where the thing
+# is, louder the nearer you are and from that side. The Lua actions (A_GeneratorUse,
+# A_RadioUse) are scripts/ambience.lua's.
+
+# A drip, heard from where it falls: an invisible thing (TNT1 is no sprite) that each half
+# second has a 96 in 256 chance (A_Jump) of dripping
+AmbienceDrip:
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 35
+        action: A_Jump(96, "Drip")
+    Drip:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_PlaySound("ambience/drip", "positional")
+        next-state: Spawn
+
+# A generator: a cabinet, its lamp blinking, clanking now and then from where it stands. Use it
+# and every generator winds down (A_GeneratorUse sends them all to Off), and the script stops
+# the room's hum; use one again and they start up. temp1 is 1 while they're off, so a saved
+# game keeps them so.
+AmbienceGenerator:
+  flags: [SOLID]
+  properties:
+    usemessage: "Press Use to switch the generators off or on"
+  states:
+    Spawn:
+      - sprite: AMGN
+        frames: [A]
+        tics-per-frame: 35
+        modifiers: [bright]
+        action: A_PlaySound("ambience/clank", "positional")
+      - sprite: AMGN
+        frames: [B]
+        tics-per-frame: 35
+        modifiers: [bright]
+    Use:
+      - sprite: AMGN
+        frames: [A]
+        tics-per-frame: 0
+        action: A_GeneratorUse
+    PowerOn:
+      - sprite: AMGN
+        frames: [A]
+        tics-per-frame: 0
+        action: A_PlaySound("ambience/powerup", "positional")
+        next-state: Spawn
+    Off:
+      - sprite: AMGN
+        frames: [C]
+        tics-per-frame: 0
+        action: A_PlaySound("ambience/powerdown", "positional")
+      - sprite: AMGN
+        frames: [C]
+        tics-per-frame: -1
+
+# The radio: plays its station's tune from where it stands, again each time round (the tunes
+# are four seconds, 280 tics). Use it for the next station, then off, then the first again
+# (A_RadioUse, by temp1). Its sounds are all on the radio channel, so the click of the knob
+# cuts the tune off.
+AmbienceRadio:
+  flags: [SOLID]
+  properties:
+    usemessage: "Press Use to change station"
+  states:
+    Spawn:
+      - sprite: AMRD
+        frames: [A]
+        tics-per-frame: 0
+        action: A_PlaySound("radio/one", "positional")
+      - sprite: AMRD
+        frames: [A]
+        tics-per-frame: 280
+    StationTwo:
+      - sprite: AMRD
+        frames: [A]
+        tics-per-frame: 0
+        action: A_PlaySound("radio/two", "positional")
+      - sprite: AMRD
+        frames: [A]
+        tics-per-frame: 280
+    Off:
+      - sprite: AMRD
+        frames: [B]
+        tics-per-frame: -1
+    Use:
+      - sprite: AMRD
+        frames: [B]
+        tics-per-frame: 0
+        action: A_PlaySound("radio/click", "positional")
+      - sprite: AMRD
+        frames: [B]
+        tics-per-frame: 14
+        action: A_RadioUse

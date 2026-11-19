@@ -42,4 +42,23 @@ public record SoundProfile
     /// reached through random or alias plays on the first channel named along the way.
     /// </summary>
     public string? Channel { get; set; }
+
+    /// <summary>
+    /// How loud it plays, 0 to 1 (default 1), under the sound volume setting: a quiet drip, a
+    /// distant hum. An entry reached through random or alias takes the first volume named along
+    /// the way, as channel does
+    /// </summary>
+    public float? Volume { get; set; }
+
+    /// <summary>How far volume is moved up or down at random each time it plays (0.2: up to 0.2 either way)</summary>
+    public float? VolumeVariance { get; set; }
+
+    /// <summary>
+    /// How fast it plays, 0.25 to 4 (default 1): 2 is an octave higher and twice as quick, 0.5
+    /// an octave lower. The first named along the way counts, as volume's does
+    /// </summary>
+    public float? Pitch { get; set; }
+
+    /// <summary>How far pitch is moved up or down at random each time it plays (0.1: footsteps that don't all sound alike)</summary>
+    public float? PitchVariance { get; set; }
 }

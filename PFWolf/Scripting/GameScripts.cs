@@ -43,6 +43,12 @@ internal sealed partial class GameScripts(
     /// <summary>game.unlock: unlocks a name for good, true if it wasn't already (Gameplay/Unlocks.cs)</summary>
     internal Func<string, bool> Unlock { get; init; } = _ => false;
 
+    /// <summary>
+    /// game.ambient: a sound (or null) on the ambient channel, fading over so many tics; the
+    /// game's goes through its zones' ambience (Gameplay/ZoneAmbience.cs), which the script's wins over
+    /// </summary>
+    internal Action<string?, int>? Ambient { get; init; }
+
     /// <summary>game.unlocked: whether a name has been unlocked</summary>
     internal Func<string, bool> IsUnlocked { get; init; } = _ => false;
 
@@ -457,12 +463,33 @@ internal sealed partial class GameScripts(
         game["tics"] = new LuaFunction("game.tics", (c, _) => new(c.Return(session.Tics)));
         game["map"] = new LuaFunction("game.map", (c, _) => new(c.Return(session.GameState.MapOn ?? "")));
         game["skill"] = new LuaFunction("game.skill", (c, _) => new(c.Return(session.GameState.Difficulty)));
-        // game.ambient(sound) loops a sound at the listener as the ambience, in place of the one
-        // there was; game.ambient(nil) stops it. Asking for the one playing changes nothing, so
-        // a script can ask every tick (Managers/AudioManager.cs SetAmbient).
+        // game.ambient(sound[, tics]) loops a sound at the listener as the ambience, in place of
+        // the one there was, fading over so many tics (0: at once); it wins over the zones'
+        // ambient sounds until game.ambient(nil) gives the channel back to them (or stops it,
+        // where they have none), and "none" is silence. Asking for the one playing changes
+        // nothing, so a script can ask every tick (Gameplay/ZoneAmbience.cs, AudioManager.SetAmbient).
         game["ambient"] = new LuaFunction("game.ambient", (c, _) =>
         {
-            audio.SetAmbient(OptionalString(c, 0));
+            var sound = OptionalString(c, 0);
+            var fadeTics = (int)Math.Max(Math.Round(NumberArg(c, 1, 0)), 0);
+            (Ambient ?? audio.SetAmbient)(sound, fadeTics);
+            return new(c.Return());
+        });
+        // game.playsound(sound[, x, y]): a sound from a place on the map, in tiles as an actor's
+        // x and y are (a tile's middle is n + 0.5), heard from where the player is; with no
+        // place, at the listener. Only for show: nothing in the game hears it
+        game["playsound"] = new LuaFunction("game.playsound", (c, _) =>
+        {
+            var sound = StringArg(c, 0);
+            if (Arg(c, 1).Type == LuaValueType.Nil && Arg(c, 2).Type == LuaValueType.Nil)
+                audio.Play(sound);
+            else
+            {
+                double x = NumberArg(c, 1, double.NaN), y = NumberArg(c, 2, double.NaN);
+                if (double.IsNaN(x) || double.IsNaN(y))
+                    throw new LuaRuntimeException(c.State, (LuaValue)"game.playsound: give both x and y, or neither", 1);
+                audio.PlayAt(sound, (float)x, (float)y);
+            }
             return new(c.Return());
         });
         // game.objective(name): how many of a level objective are done, and of how many

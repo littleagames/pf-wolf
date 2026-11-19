@@ -1,0 +1,85 @@
+# The Ambience Demo's sounds. Each is one of this folder's .wav files (made by
+# tools/make-ambience-demo.ps1): sounds/NAME.wav is the digitized sound NAME.
+#   volume            how loud it plays, 0 to 1 (under the sound volume setting)
+#   volume-variance   moved up or down at random by up to this each time it plays
+#   pitch             how fast it plays (2: an octave up and twice as quick)
+#   pitch-variance    moved up or down at random by up to this each time it plays
+#   channel           every sound naming the same channel plays on one voice, each cutting
+#                     off the last (the radio: a new station, or the click, stops the tune)
+# A sound reached through random takes the first of each named along the way: the drips'
+# volume and variances are their random entry's.
+sound-info:
+  # The zones' ambient loops (game-info.yaml)
+  ambience/wind:
+    digitized: AMWIND
+    volume: 0.8
+  ambience/sewer:
+    digitized: AMSEWER
+    volume: 0.7
+  ambience/hum:
+    digitized: AMHUM
+    volume: 0.6
+  ambience/hall:
+    digitized: AMTONE
+    volume: 0.5
+  ambience/tense:
+    digitized: AMTENSE
+    volume: 0.8
+  ambience/alarm:
+    digitized: AMALARM
+    volume: 0.6
+
+  # Drips, from the sewer's drip things (actordefs): never quite the same twice
+  ambience/drip:
+    volume: 0.7
+    volume-variance: 0.25
+    pitch-variance: 0.2
+    random:
+      - ambience/drip1
+      - ambience/drip2
+  ambience/drip1:
+    digitized: AMDRIP1
+  ambience/drip2:
+    digitized: AMDRIP2
+
+  # Birds in the courtyard's trees (the script plays them from a tree: game.playsound at a place)
+  ambience/bird:
+    pitch-variance: 0.12
+    random:
+      - ambience/bird1
+      - ambience/bird2
+      - ambience/bird3
+  ambience/bird1:
+    digitized: AMBIRD1
+  ambience/bird2:
+    digitized: AMBIRD2
+  ambience/bird3:
+    digitized: AMBIRD3
+
+  # Thunder far off over the courtyard (unplaced: game.playsound with no place)
+  ambience/thunder:
+    digitized: AMTHUND
+    volume: 0.7
+    pitch-variance: 0.1
+
+  # The generators: a clank now and then, from each, and winding down and up
+  ambience/clank:
+    digitized: AMCLANK
+    volume: 0.5
+    volume-variance: 0.15
+    pitch-variance: 0.2
+  ambience/powerdown:
+    digitized: AMPOWDN
+  ambience/powerup:
+    digitized: AMPOWUP
+
+  # The radio, all on its own channel
+  radio/one:
+    digitized: AMRAD1
+    channel: radio
+  radio/two:
+    digitized: AMRAD2
+    channel: radio
+  radio/click:
+    digitized: AMCLICK
+    channel: radio

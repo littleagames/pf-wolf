@@ -1,0 +1,4 @@
+name: Ambience Demo
+version: "1.0"
+description: A level of sounds (replacing Floor 1) - each room its own ambience, fading as you walk between them; drips and birds heard from where they are; generators you switch off; a guard post that's tense until you're seen; a radio with two stations.
+game-packs: [wolf3d]

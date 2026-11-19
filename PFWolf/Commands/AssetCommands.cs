@@ -5,8 +5,8 @@ using PFWolf.Loaders;
 namespace PFWolf.Commands;
 
 /// <summary>
-/// What the game is made of, and hearing it: mods, assetinfo, anims, exportmap, playsound and
-/// changemus
+/// What the game is made of, and hearing it: mods, assetinfo, anims, exportmap, playsound,
+/// ambient and changemus
 /// </summary>
 internal sealed class AssetCommands(ConsoleManager console, AssetManager assets, AudioManager audio, GameEngineManager engine)
 {
@@ -19,7 +19,9 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
             "anims [name]", AnimsCommand, complete: (_, i) => i == 0 ? assets.Animations.Keys : []);
         console.Register("playsound", "Plays a sound: a sound-seq name (doors/open), or a sound file's or digitized sound's name.",
             "playsound <name>", PlaySoundCommand);
-        console.Register("changemus", "Plays a song, from a pk3's music/ folder or the game's own; with no name, shows what's playing. A song that ends stops instead of looping with 'once'.",
+        console.Register("ambient", "Shows the ambient loop (a zone's, or a script's game.ambient): each sound playing, at what level, and whether it's fading.",
+            "ambient", _ => console.Print(audio.DescribeAmbient()));
+        console.Register("changemus","Plays a song, from a pk3's music/ folder or the game's own; with no name, shows what's playing. A song that ends stops instead of looping with 'once'.",
             "changemus [name] [once]", ChangeMusCommand, complete: (_, i) => i == 1 ? ["once"] : []);
         console.Register("exportmap", "Writes a level, or all of them, as ECWolf maps (NAME.wad) for a mod's maps/ folder: binary planes, or UWMF text with 'uwmf'; to the exports folder, or the folder given.",
             "exportmap <MAP##|all> [folder] [uwmf]", ExportMapCommand,

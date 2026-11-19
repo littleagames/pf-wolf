@@ -20,8 +20,10 @@ internal sealed class LevelMusic(GameEngineManager engine, AudioManager audio, G
         //audio.SetPaused(true);
         var song = LevelSong();
         LastMusicChunk = song;
-        if (!string.IsNullOrEmpty(song))        // a map with no music keeps quiet
+        if (!string.IsNullOrEmpty(song))
             audio.PlayMusic(LastMusicChunk);
+        else
+            audio.StopMusic();                  // a map with no music keeps quiet, the menu's song too
     }
 
     // Music offsets aren't tracked, so this resumes the level's song if it's the one paused, and
@@ -34,6 +36,13 @@ internal sealed class LevelMusic(GameEngineManager engine, AudioManager audio, G
             audio.SetPaused(false);
         else if (!string.IsNullOrEmpty(song))
             audio.PlayMusic(song);
+        else
+        {
+            // A map with no music: the menu's song stops, and the ambient loop goes on (it
+            // was paused with the level's song)
+            audio.StopMusic();
+            audio.SetPaused(false);
+        }
     }
 
     internal int StopMusic()

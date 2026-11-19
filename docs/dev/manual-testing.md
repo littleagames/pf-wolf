@@ -959,6 +959,17 @@ can reach), not played by hand.
       **(never tried)**, by ear: the songs themselves and their loops' seams, their loudness
       against Wolf3D's, the switch mid-song, the generators' hum starting and stopping at the
       room's edge, and the song after the menu and after loading a game.
+- [ ] Ambience Demo (`--file ambience-demo`, 2026-11-19): headless (AmbienceDemoGameTests, OpenAL's
+      null device), `ambient` showed the hall's hush, the courtyard's wind half faded in over it,
+      the hum, silence with the generators off (Lua `game.ambient("none")` over the zone) and the
+      hum back, the guard post's tense loop then the alarm once a guard saw the player, the radio
+      room silent, and the hall's hush carried into the elevator room. Seen in screenshots: the
+      courtyard, the generator, the radio room. **(never tried)**, by ear: every sound (all
+      synthesized) and the loops' seams; the fades between rooms; drips and birds placed left and
+      right and fainter far off; the drips' and clanks' pitch and volume varying; the thunder;
+      Use on a generator (wind down, silence, wind up) and on the radio (two stations, the click
+      cutting the tune off, off); the ambience after the menu and after loading a game (the
+      level has no music); `ambient` in the console while fading.
 - [ ] Episode Demo (`--file episode-demo`): seen windowed: Episode 7 and its picture on the menu
       (scrolled into view, "1 more" marks above and below), the briefing article before MAP61;
       each map loads. **(never tried)**: a Blake Stone episode menu or a level select long
