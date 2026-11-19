@@ -1,0 +1,489 @@
+<title>PFWolf Shorts Checklist</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; a sticky bar with progress + filters; feature groups as sections of tick rows. */
+:root {
+  --bg: #e8ebf0;          /* castle stone */
+  --surface: #f7f8fa;
+  --ink: #17223a;         /* Wolf3D blue-wall ink */
+  --muted: #5a657b;
+  --line: #cdd3dd;
+  --gold: #a26f05;        /* gold-key text */
+  --gold-fill: #e3a617;
+  --gold-soft: #f6e7bf;
+  --warn: #9a3b1d;
+  --warn-soft: #f7e0d6;
+  --done-ink: #8d96a8;
+  --font-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1420; --surface: #161d2b; --ink: #e5e9f0; --muted: #9ba5b8; --line: #2a3346;
+    --gold: #f0b62f; --gold-fill: #e3a617; --gold-soft: #3a2f12;
+    --warn: #f19a78; --warn-soft: #3b2219; --done-ink: #6c768a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1420; --surface: #161d2b; --ink: #e5e9f0; --muted: #9ba5b8; --line: #2a3346;
+  --gold: #f0b62f; --gold-fill: #e3a617; --gold-soft: #3a2f12;
+  --warn: #f19a78; --warn-soft: #3b2219; --done-ink: #6c768a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+}
+.wrap {
+  max-width: 880px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+header.intro { display: grid; gap: 6px; margin-bottom: 18px; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--gold);
+}
+h1 {
+  font-family: var(--font-display); font-weight: 800; font-size: clamp(36px, 7vw, 54px);
+  line-height: .95; margin: 0; letter-spacing: .01em; text-wrap: balance; text-transform: uppercase;
+}
+.intro p { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
+
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--bg);
+}
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line);
+  display: grid; gap: 10px; margin-bottom: 8px;
+}
+.progress-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.count {
+  font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.count small { font-family: var(--font-body); font-weight: 500; font-size: 13px; color: var(--muted); margin-left: 4px; }
+.status { font-size: 12.5px; color: var(--muted); margin-left: auto; }
+.status.warn { color: var(--warn); }
+.track { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.fill { height: 100%; width: 0; background: var(--gold-fill); transition: width .3s ease; }
+@media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
+
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button {
+  font: 500 13px var(--font-body); color: var(--muted); background: var(--surface);
+  border: 0; padding: 6px 12px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.search {
+  flex: 1 1 180px; min-width: 0; font: 14px var(--font-body); color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px;
+}
+.jump { display: flex; gap: 6px; flex-wrap: wrap; }
+.jump button {
+  font: 500 12px var(--font-body); color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer;
+}
+.jump button span { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 4px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-fill); outline-offset: 2px; }
+
+section.group { margin-top: 26px; scroll-margin-top: 150px; }
+.group-head {
+  display: flex; align-items: baseline; gap: 10px; padding-bottom: 6px;
+  border-bottom: 2px solid var(--ink);
+}
+.group-head h2 {
+  font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: .02em;
+  text-transform: uppercase; margin: 0;
+}
+.group-head .gcount { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+ul.items { list-style: none; margin: 0; padding: 0; }
+li.item {
+  display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 12px;
+  padding: 12px 2px; border-bottom: 1px solid var(--line);
+}
+li.item input[type="checkbox"] {
+  appearance: none; width: 22px; height: 22px; margin: 2px 0 0; cursor: pointer;
+  border: 2px solid var(--muted); border-radius: 4px; background: var(--surface);
+  display: grid; place-content: center;
+}
+li.item input[type="checkbox"]::after {
+  content: ""; width: 10px; height: 6px; border: 3px solid transparent; border-top: 0; border-right: 0;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+li.item input[type="checkbox"]:checked { background: var(--gold-fill); border-color: var(--gold-fill); }
+li.item input[type="checkbox"]:checked::after { border-color: #1b1404; }
+li.item input[type="checkbox"]:disabled { cursor: default; opacity: .6; }
+.body { min-width: 0; display: grid; gap: 3px; }
+.hook { font-weight: 600; font-size: 16px; }
+.hook label { cursor: pointer; }
+.show { color: var(--muted); font-size: 14px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 3px; align-items: center; }
+.chip {
+  font-family: var(--font-mono); font-size: 12px; padding: 1px 7px; border-radius: 4px;
+  background: var(--gold-soft); color: var(--ink); overflow-wrap: anywhere;
+}
+.chip.cmd { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.badge {
+  font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--warn); background: var(--warn-soft); padding: 1px 7px; border-radius: 4px;
+}
+.check-note { font-size: 13px; color: var(--warn); }
+li.item.done .hook, li.item.done .show { color: var(--done-ink); }
+li.item.done .hook label { text-decoration: line-through; text-decoration-thickness: 1px; }
+.link-row { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.link-row input {
+  flex: 1 1 220px; min-width: 0; font: 13px var(--font-mono); color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px;
+}
+.link-row a { font-size: 13px; color: var(--gold); }
+.empty { color: var(--muted); padding: 24px 0; }
+footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+@media (max-width: 520px) {
+  .status { margin-left: 0; width: 100%; }
+  .jump { display: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <div class="eyebrow">YouTube Shorts · 15–60 s · vertical</div>
+    <h1>PFWolf Shorts</h1>
+    <p>One feature per Short. Tick the ones you've already made; ticks are saved with this page. "Check first" marks features that haven't been tried by hand yet, so test them before recording.</p>
+  </header>
+
+  <div class="bar">
+    <div class="progress-row">
+      <div class="count" id="count">0 / 0<small>made</small></div>
+      <div class="status" id="status">Loading your ticks…</div>
+    </div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Show">
+        <button type="button" id="f-all" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" id="f-todo" data-filter="todo" aria-pressed="false">To make</button>
+        <button type="button" id="f-done" data-filter="done" aria-pressed="false">Made</button>
+      </div>
+      <input class="search" id="search" type="search" placeholder="Search features, mods, commands" aria-label="Search">
+    </div>
+    <div class="jump" id="jump"></div>
+  </div>
+
+  <main id="list"></main>
+  <footer>Sources: docs/dev/showcase.md, examples/README.md and the feature notes. Chips name the example mod (<span class="chip">mod</span>) or the menu / command (<span class="chip cmd">cmd</span>) to record from.</footer>
+</div>
+
+<script>
+const GROUPS = [
+  ["render", "Looks and rendering"],
+  ["light", "Light and weather"],
+  ["level", "Level features"],
+  ["combat", "Weapons and enemies"],
+  ["mods", "Gameplay mods"],
+  ["mp", "Multiplayer"],
+  ["games", "Games and presentation"],
+  ["modding", "Modding and scripting"],
+  ["editor", "The editor"],
+];
+
+// [id, group, hook, what to show, mod (or ""), menu/command (or ""), check-first note (or "")]
+const ITEMS = [
+  ["look", "render", "Wolf3D can look up and down", "Mouse look: tilt up at a tall wall, then down off a roof.", "", "any map · pitch 20", ""],
+  ["widescreen", "render", "Widescreen Wolf3D, no stretching", "Hor+ widescreen against 4:3, then the UI Scale slider.", "", "Options → Video", "Fullscreen with Auto resolution hasn't been tried."],
+  ["fps", "render", "Wolf3D at your monitor's refresh rate", "Uncapped frame rate next to the original 70 Hz, slowed down side by side.", "", "Options → Video", ""],
+  ["tall", "render", "Walls three stories tall", "The curtain wall, the 2-story keep and the stepped wall.", "tall-walls-demo", "", ""],
+  ["arches", "render", "Arches in Wolf3D", "Walk the colonnade, look up at the arch undersides, then the 3-story gate.", "tall-walls-demo", "", ""],
+  ["diagonal", "render", "45° walls", "The octagonal atrium, a walk along a diagonal, then the automap.", "architecture-demo", "", ""],
+  ["flats", "render", "Textured floors and ceilings", "Flats where the flat colors used to be.", "architecture-demo", "", ""],
+  ["skylight", "render", "A skylight in Wolf3D", "Look up through the atrium's skylight.", "architecture-demo", "", ""],
+  ["mirror", "render", "Mirrored wall textures", "Asymmetric textures that read the right way on both sides.", "architecture-demo", "", "Mirrored textures are untested in-game."],
+  ["skies", "render", "Two skies on one level", "A day yard, under a roof, out into a night yard.", "skies-demo", "", ""],
+  ["rooftops", "render", "Fighting on the rooftops", "Start on story 3, look down at the street, cross the bridge.", "rooftops-demo", "", ""],
+  ["window", "render", "Climb in through a window", "Into the 5-story building through a window, out onto the terrace.", "rooftops-demo", "", ""],
+  ["crate", "render", "A pushwall that slides off a roof", "Push the terrace crate; the roof under it stays.", "rooftops-demo", "", ""],
+  ["stories", "render", "Same tile, different floor", "Drop to the street with story 1 and the roofs turn into walls.", "rooftops-demo", "story 1", ""],
+  ["bigmap", "render", "A Wolf3D map twice the size", "The 128×96 town, the automap zoomed out, then the UWMF file in a text editor.", "bigmap-demo", "", ""],
+  ["wallsprites", "render", "Fences you can see through", "Flat fence and gate panels; shoot through a fence.", "wallsprites-demo", "", "Gates can't be opened yet."],
+  ["grates", "render", "Doors with bars", "See guards through a shut grate door, and they see you.", "grate-doors-demo", "", ""],
+  ["patches", "render", "Posters on any wall", "Signs and cracks laid over one wall texture.", "patch-demo", "", ""],
+  ["patch-switch", "render", "A button painted on the wall", "A wall patch that works as a switch.", "patch-demo", "", ""],
+  ["animated", "render", "Walls and floors that move", "Animated lava and acid flats, a lever animation.", "hazards-demo", "", ""],
+  ["scrolling", "render", "Conveyor belts and waterfalls", "Scrolling floor and wall; switches stop and speed them.", "switch-demo", "scroll room", ""],
+  ["destructible", "render", "Shoot through the wall", "Walls shot out, knifed open, cracked in stages.", "destructible-demo", "", ""],
+  ["collapse", "render", "Bring the wall down", "A lever and a floor trigger taking walls away.", "destructible-demo", "", ""],
+  ["deathdrop", "render", "Dying looks different now", "Eye height and the camera dropping to the floor on death.", "", "any map", ""],
+  ["bob", "render", "Every gun bobs its own way", "Doom's swing, Planet Strike's spring and ZDoom's styles, one per weapon.", "bob-demo", "", ""],
+  ["holster", "render", "Weapon switching like Doom", "Put the gun away, bring the next one up.", "holster-demo", "", ""],
+  ["transitions", "render", "13 ways to fade the screen", "The fade gallery, then the game's own fades in each style.", "transitions-demo", "", ""],
+  ["fonts", "render", "Fonts with glows and outlines", "Shadows, gradients, outlines and glows in the Font Gallery.", "fonts-demo", "Options → Font Gallery", ""],
+
+  ["dark", "light", "Wolf3D in the dark", "Darkened levels, each lamp lighting its room in its own color.", "moody-lights", "", ""],
+  ["muzzle", "light", "Your gun lights up the room", "Fire in a dark room and watch the muzzle flash light it.", "switch-demo", "dark room", ""],
+  ["lightswitch", "light", "Turn the lights off", "A switch fading a room's light down and up.", "switch-demo", "station 6", ""],
+  ["alarm", "light", "Red alert", "The alarm switch strobing red across the hall.", "switch-demo", "station 7", ""],
+  ["flicker", "light", "Flickering lamps", "An amber lamp flickering in the dark.", "switch-demo", "", ""],
+  ["glow", "light", "Fireballs that glow", "Projectiles lighting the walls as they fly.", "fireball-demo", "", ""],
+  ["fog", "light", "Fog and night", "Distance fog, night shading, tinted light zones.", "", "game-info shading", "No demo level for fog yet."],
+  ["rain", "light", "It's raining in the castle", "Rain stopping under roofs, arches and doorways.", "weather-demo", "Floor 1", ""],
+  ["snow", "light", "Snow that comes and goes", "Snowfall rising and easing off.", "weather-demo", "Floor 2", ""],
+  ["ash", "light", "Falling ash", "Ash drifting over a ruined level.", "weather-demo", "Floor 3", ""],
+  ["particles", "light", "Particle effects", "Sparks, smoke and fountains from YAML, a switch and Lua.", "particles-demo", "", ""],
+
+  ["switches", "level", "Switches that do things", "Doors held open, walls moved, flags hung.", "switch-demo", "", ""],
+  ["keys", "level", "Doors that need two keys", "Red and blue keys; any-two and all-four doors.", "key-demo", "", ""],
+  ["hub", "level", "Levels you can come back to", "Leave the hub and come back; it's how you left it.", "hub-demo", "", ""],
+  ["secrets", "level", "Secret 2 of 5", "Pushwalls and the secret counter message.", "secrets-demo", "", ""],
+  ["multipush", "level", "Several pushwalls at once", "One switch sliding several walls.", "secrets-demo", "", "Multiple pushwalls are untested in-game."],
+  ["ambush", "level", "Guards waiting in ambush", "Floor codes: an ambush, and an elevator to the secret level.", "secrets-demo", "", "Floor codes are untested in-game."],
+  ["teleport", "level", "Teleporters in Wolf3D", "Paired pads, one-way warps and a ladder.", "teleport-demo", "", ""],
+  ["vending", "level", "A vending machine for ammo", "Trade tokens for ammo.", "teleport-demo", "", ""],
+  ["hazards", "level", "Floors that hurt", "Lava, acid, and water a switch turns the power off for.", "hazards-demo", "", ""],
+  ["suit", "level", "Hazard suit", "Walk across the lava for a while.", "hazards-demo", "", ""],
+  ["footsteps", "level", "Footsteps that match the floor", "Each floor sounds its own.", "footsteps-demo", "", "Not checked by ear."],
+  ["music", "level", "Music that follows the fight", "Calm song, fight song when someone sees you, calm again.", "music-demo", "", ""],
+  ["messages", "level", "Pickup messages and obituaries", "HUD messages for pickups, locked doors and kills.", "", "Options → Messages", ""],
+
+  ["shotgun", "combat", "A shotgun, loaded shell by shell", "Tube-fed shotgun and its reload.", "arsenal-demo", "", ""],
+  ["grenades", "combat", "Cook a grenade", "Hold, then throw.", "arsenal-demo", "", ""],
+  ["rifle", "combat", "Scoped rifle", "Zoom in on the range.", "arsenal-demo", "", ""],
+  ["silenced", "combat", "Silenced pistol", "Kill without waking the room.", "arsenal-demo", "", ""],
+  ["factions", "combat", "Guards vs mutants", "Two sides already fighting in the hall ahead.", "faction-demo", "", ""],
+  ["squad", "combat", "A squad that follows you", "Free the prisoners and they join you.", "faction-demo", "", ""],
+  ["medic", "combat", "Medics that raise the dead", "Kill the guards, the medic gets them back up.", "medic-demo", "", ""],
+  ["hunters", "combat", "Enemies that find their way to you", "Hunters using A* pathfinding through a maze.", "hunters-demo", "", ""],
+  ["boss", "combat", "A boss fight with a health bar", "Two phases and a script-drawn health bar.", "boss-demo", "", ""],
+  ["fireball", "combat", "Walls that spit fireballs", "A gauntlet of fireball patterns.", "fireball-demo", "", ""],
+  ["stealth", "combat", "Sneak in wearing their uniform", "Papers, the knife from behind, and the alarm.", "stealth-demo", "", ""],
+  ["classes", "combat", "Pick your class", "Three classes with their own health, speed, weapons and face.", "classes-demo", "", ""],
+
+  ["jeep", "mods", "Drive a jeep through the castle", "Through a courtyard of guards.", "vehicles-demo", "", ""],
+  ["tank", "mods", "Drive a tank, crush everything", "The cannon and running guards over.", "vehicles-demo", "", ""],
+  ["boat", "mods", "A boat ride past the guards", "Down the river past the guard posts.", "boat-demo", "", ""],
+  ["nest", "mods", "Man the machine-gun nest", "The mounted gun at the end of the river.", "boat-demo", "", ""],
+  ["puzzles", "mods", "Hack the terminal", "Mini-game puzzles that open over the view.", "puzzles-demo", "", ""],
+  ["mission", "mods", "Steal the documents, get out", "Objectives, a timer and a Lua-drawn HUD.", "mission-demo", "", ""],
+  ["episode", "mods", "A seventh episode", "Operation Nightfall on the episode menu, with a briefing.", "episode-demo", "", ""],
+
+  ["dm", "mp", "Wolf3D deathmatch", "4-player deathmatch arenas.", "multiplayer.pk3", "", ""],
+  ["coop", "mp", "Co-op Wolf3D", "Co-op, with a friend joining mid-game.", "", "lobby", ""],
+  ["tdm", "mp", "Team deathmatch", "Two teams, one arena.", "multiplayer.pk3", "", ""],
+  ["ctf", "mp", "Capture the flag", "Grab the flag and run it home.", "multiplayer.pk3", "", ""],
+  ["koth", "mp", "King of the hill", "Hold the hill.", "multiplayer.pk3", "", ""],
+  ["domination", "mp", "Domination", "Take and hold the points.", "multiplayer.pk3", "", ""],
+  ["heist", "mp", "Heist", "Rob the vault.", "multiplayer.pk3", "HE01", ""],
+  ["horde", "mp", "Horde mode", "Survive the waves together.", "multiplayer.pk3", "", ""],
+  ["prophunt", "mp", "Prop Hunt in Wolf3D", "Hide as a lamp or a barrel while the hunters search.", "multiplayer.pk3", "PH01", ""],
+  ["dog", "mp", "Play as a dog", "Enemy player classes in the lobby.", "multiplayer.pk3", "", ""],
+  ["arena", "mp", "Twin Keeps", "A mod's own arena, marked for every mode.", "arena-demo", "", ""],
+  ["online", "mp", "Host an online game", "Port check, then friends joining over the internet.", "", "online play", "LAN play is untested."],
+  ["streamer", "mp", "Streamer Mode", "Hosting on stream without showing your IP.", "", "Options", ""],
+  ["spectate", "mp", "Watch the AI play", "The spectator camera following actors.", "", "spectate", ""],
+
+  ["blake", "games", "Blake Stone in a Wolf3D port", "Aliens of Gold running in PFWolf.", "", "--game blake", ""],
+  ["planetstrike", "games", "Planet Strike too", "Planet Strike, detonator and all.", "", "--game", ""],
+  ["versions", "games", "Every version of Wolf3D", "Shareware, Apogee, Activision, Spear and the Spear demo.", "", "game selection", ""],
+  ["shareware", "games", "Free to try", "Runs on the free shareware episode.", "", "WL1", ""],
+  ["demosync", "games", "Frame-perfect demos", "Original demos side by side with Wolf4SDL, identical.", "", "", ""],
+  ["standalone", "games", "A game with no Wolf3D files", "A standalone game built with the engine.", "standalone-demo", "", ""],
+  ["attract", "games", "Your own title demo", "A title loop with a scripted demo.", "attract-demo", "", ""],
+  ["animtitle", "games", "An animated title screen", "Title screens that move.", "animated-title", "", ""],
+  ["eastereggs", "games", "The Spear I+D easter egg", "Leave View Scores holding I and D.", "", "--game spear", ""],
+  ["startup", "games", "Starts in under a second", "Double-click to title screen, with the sign-on panel.", "", "", ""],
+  ["saves", "games", "Saves with screenshots", "Thumbnails, quicksave and autosave.", "", "Save / Load menus", ""],
+  ["controls", "games", "Rebind anything, play on a controller", "Custom controls and a gamepad.", "", "Options → Controls", "Controller look is untested."],
+  ["blakecontrols", "games", "Blake Stone's controls", "Quick turns, toggle keys and the heartbeat.", "", "--game blake", ""],
+  ["highscores", "games", "High scores for each mod", "Separate tables per mod set.", "", "View Scores", ""],
+
+  ["dragdrop", "modding", "Install a mod by dropping it on the game", "Drag a pk3 onto the exe and play.", "", "drag-drop · --file", ""],
+  ["modsmenu", "modding", "Mods menu", "Turn mods on and off in the game.", "", "Options → Mods", ""],
+  ["classic", "modding", "Play classic Wolf3D mods", "Old data-file mods running as they are.", "", "--make-mod", "Parts of raw data mods are untested."],
+  ["png", "modding", "Drop in a PNG, get a wall", "A picture in textures/ becomes a wall texture.", "", "textures/", ""],
+  ["newenemy", "modding", "A new enemy, no code", "Follow the new-enemy tutorial in YAML.", "", "tutorials/new-enemy", ""],
+  ["newweapon", "modding", "A new weapon, no code", "Follow the new-weapon tutorial in YAML.", "", "tutorials/new-weapon", ""],
+  ["lua", "modding", "Lua scripting in Wolf3D", "A script reacting to the level in a few lines.", "", "tutorials/first-script", ""],
+  ["luahud", "modding", "Draw your own HUD", "A HUD drawn by a Lua script.", "mission-demo", "", ""],
+  ["audio", "modding", "Your own music and sounds", "ogg, mp3 and wav dropped into a mod.", "music-demo", "music/ · sounds/", "Not checked by ear."],
+
+  ["editplay", "editor", "Edit a map, hit Play", "Change a room, Play, and you're in it.", "", "editor", ""],
+  ["3dview", "editor", "3D view in the editor", "Split view with the live 3D view.", "", "editor", ""],
+  ["heights", "editor", "Build a tower by typing 3-5", "Stories typed on the Heights plane.", "", "editor", ""],
+  ["tools", "editor", "Brushes, stamps and the magic wand", "Map editing tools, rotate and flip.", "", "editor", ""],
+  ["pixel", "editor", "Pixel-edit a texture", "Art browser and pixel editor, saved into a mod.", "", "F6", ""],
+  ["usedby", "editor", "Where is this texture used?", "The art browser's \"used by\".", "", "F6", ""],
+  ["sounds", "editor", "Sound and music browser", "Browse and play every sound.", "", "F8", ""],
+  ["palette", "editor", "Edit the palette", "The palette browser and editor.", "", "F9", ""],
+  ["texts", "editor", "Edit the game's texts", "Help screens and end texts.", "", "F2", ""],
+  ["defs", "editor", "Edit definitions in the editor", "The Definitions window, YAML for mods.", "", "F11", ""],
+  ["scripts", "editor", "Lua with autocomplete", "The script browser and its autocomplete.", "", "F12", ""],
+  ["find", "editor", "Find anything", "Search YAML and texts.", "", "Ctrl+F", ""],
+  ["import", "editor", "Import a map", "Import planes from another map.", "", "Ctrl+I", ""],
+  ["newmod", "editor", "New mod to a standalone game", "The New mod wizard to a game of your own.", "", "New mod…", ""],
+  ["demoviewer", "editor", "Watch demos in the editor", "Play a demo back in the editor's demo window.", "", "editor", ""],
+  ["blakeedit", "editor", "Edit Blake Stone maps", "The editor working on a Blake Stone map.", "", "editor", ""],
+];
+
+const groupName = Object.fromEntries(GROUPS);
+const state = new Map();   // id -> {done, url}
+let filter = "all", query = "", canSave = true;
+let db = null, col = null;
+const writes = new Map();  // id -> promise chain, one write at a time per doc
+
+const $ = (id) => document.getElementById(id);
+
+function rowFor(it) {
+  const [id, , hook, show, mod, cmd, check] = it;
+  const s = state.get(id) || {};
+  const li = document.createElement("li");
+  li.className = "item" + (s.done ? " done" : "");
+  li.dataset.id = id;
+
+  const cb = document.createElement("input");
+  cb.type = "checkbox"; cb.id = "cb-" + id; cb.checked = !!s.done; cb.disabled = !canSave;
+  cb.addEventListener("change", () => save(id, { done: cb.checked, url: (state.get(id) || {}).url || "" }));
+  li.appendChild(cb);
+
+  const body = document.createElement("div"); body.className = "body";
+  const h = document.createElement("div"); h.className = "hook";
+  const lab = document.createElement("label"); lab.htmlFor = cb.id; lab.textContent = hook;
+  h.appendChild(lab); body.appendChild(h);
+  const p = document.createElement("div"); p.className = "show"; p.textContent = show; body.appendChild(p);
+
+  const meta = document.createElement("div"); meta.className = "meta";
+  if (mod) { const c = document.createElement("span"); c.className = "chip"; c.textContent = mod; meta.appendChild(c); }
+  if (cmd) { const c = document.createElement("span"); c.className = "chip cmd"; c.textContent = cmd; meta.appendChild(c); }
+  if (check && !s.done) { const b = document.createElement("span"); b.className = "badge"; b.textContent = "Check first"; b.title = check; meta.appendChild(b);
+    const n = document.createElement("span"); n.className = "check-note"; n.textContent = check; meta.appendChild(n); }
+  if (meta.childNodes.length) body.appendChild(meta);
+
+  if (s.done) {
+    const lr = document.createElement("div"); lr.className = "link-row";
+    const inp = document.createElement("input");
+    inp.type = "url"; inp.id = "url-" + id; inp.placeholder = "Link to the Short (optional)";
+    inp.value = s.url || ""; inp.disabled = !canSave; inp.setAttribute("aria-label", "Link to the Short for " + hook);
+    inp.addEventListener("change", () => save(id, { done: true, url: inp.value.trim() }));
+    lr.appendChild(inp);
+    if (s.url && /^https?:\/\//i.test(s.url)) {
+      const a = document.createElement("a"); a.href = s.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Open";
+      lr.appendChild(a);
+    }
+    body.appendChild(lr);
+  }
+  li.appendChild(body);
+  return li;
+}
+
+function matches(it) {
+  const s = state.get(it[0]) || {};
+  if (filter === "todo" && s.done) return false;
+  if (filter === "done" && !s.done) return false;
+  if (!query) return true;
+  return (it[2] + " " + it[3] + " " + it[4] + " " + it[5] + " " + groupName[it[1]]).toLowerCase().includes(query);
+}
+
+function render() {
+  const total = ITEMS.length;
+  const done = ITEMS.filter(it => (state.get(it[0]) || {}).done).length;
+  $("count").innerHTML = "";
+  $("count").append(done + " / " + total);
+  const sm = document.createElement("small"); sm.textContent = "made"; $("count").appendChild(sm);
+  $("fill").style.width = (total ? (done / total * 100) : 0) + "%";
+
+  const list = $("list");
+  const focusId = document.activeElement && document.activeElement.id;
+  list.innerHTML = "";
+  const jump = $("jump"); jump.innerHTML = "";
+  let shown = 0;
+  for (const [gid, gname] of GROUPS) {
+    const all = ITEMS.filter(it => it[1] === gid);
+    const vis = all.filter(matches);
+    const gdone = all.filter(it => (state.get(it[0]) || {}).done).length;
+    if (!vis.length) continue;
+    shown += vis.length;
+    const sec = document.createElement("section"); sec.className = "group"; sec.id = "g-" + gid;
+    const head = document.createElement("div"); head.className = "group-head";
+    const h2 = document.createElement("h2"); h2.textContent = gname; head.appendChild(h2);
+    const gc = document.createElement("span"); gc.className = "gcount"; gc.textContent = gdone + " / " + all.length; head.appendChild(gc);
+    sec.appendChild(head);
+    const ul = document.createElement("ul"); ul.className = "items";
+    vis.forEach(it => ul.appendChild(rowFor(it)));
+    sec.appendChild(ul);
+    list.appendChild(sec);
+
+    const jb = document.createElement("button"); jb.type = "button";
+    jb.textContent = gname;
+    const sp = document.createElement("span"); sp.textContent = vis.length; jb.appendChild(sp);
+    jb.addEventListener("click", () => sec.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }));
+    jump.appendChild(jb);
+  }
+  if (!shown) {
+    const e = document.createElement("p"); e.className = "empty";
+    e.textContent = filter === "done" && !query ? "Nothing ticked yet. Tick the Shorts you've already made." : "No features match.";
+    list.appendChild(e);
+  }
+  if (focusId) { const el = document.getElementById(focusId); if (el) el.focus({ preventScroll: true }); }
+}
+
+function setStatus(text, warn) {
+  const el = $("status"); el.textContent = text; el.classList.toggle("warn", !!warn);
+}
+
+// Fallback for views without the shared store: keep ticks in this browser only.
+const LS_KEY = "pfwolf-shorts-v1";
+function lsLoad() { try { const o = JSON.parse(localStorage.getItem(LS_KEY) || "{}"); for (const k in o) state.set(k, o[k]); } catch (e) {} }
+function lsSave() { try { localStorage.setItem(LS_KEY, JSON.stringify(Object.fromEntries(state))); } catch (e) {} }
+
+function save(id, data) {
+  state.set(id, data);
+  render();
+  if (!col) { lsSave(); return; }
+  const prev = writes.get(id) || Promise.resolve();
+  const next = prev.then(() => (data.done || data.url) ? col.doc(id).set(data) : col.doc(id).delete())
+    .then(() => setStatus("Saved"))
+    .catch((e) => {
+      if (e && e.code === "invalid_argument") { canSave = false; setStatus("You can view this list but not change it.", true); render(); }
+      else setStatus("Couldn't save that tick. Try again in a moment.", true);
+    });
+  writes.set(id, next);
+}
+
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+}));
+$("search").addEventListener("input", (e) => { query = e.target.value.trim().toLowerCase(); render(); });
+
+render();
+
+(async () => {
+  try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
+  if (!db) {
+    lsLoad(); render();
+    setStatus("Ticks are kept in this browser only here.", true);
+    return;
+  }
+  col = db.collection("shorts");
+  const timer = setTimeout(() => setStatus("Can't reach saved ticks yet.", true), 10000);
+  col.onSnapshot((snap) => {
+    if (!snap.metadata.fromCache) clearTimeout(timer);
+    state.clear();
+    snap.docs.forEach(d => { if (d.exists) state.set(d.id, d.data()); });
+    render();
+    if (!snap.metadata.hasPendingWrites) setStatus("Ticks saved with this page");
+  }, (e) => {
+    clearTimeout(timer);
+    setStatus("Saved ticks stopped updating. Reopen the page to reconnect.", true);
+  });
+})();
+</script>

@@ -862,6 +862,12 @@ can reach), not played by hand.
       logic (GameModeTests). **(never tried)**: the lobby offering VA05 for Horde only; a whole
       10-wave match to Hans and the win; DM01-DM04 with the pack on still sending mutants;
       running enemies down and the gun nests against a wave; a real netgame.
+- [ ] Heist with vehicles (2026-11-16; Vehicle Arenas' VA06 Gold Rush, `--warp VA06`,
+      `addplayer; gamemode heist`). Seen headless: a jeep's rider picking up a cross (the rope
+      moves to Red) and a silver key; the counts (34 crosses, 8 chalices, 8 chests, 4 crowns, 6
+      keys, 17 guards). **(never tried)**: the silver and gold doors opened with keys carried
+      from the posts and towers; a key lost on a rider's death and coming back at its post; the
+      vehicle barriers keeping jeeps out of the bank; a whole Heist match to 100.
 - [ ] **(never tried)** Weather Demo (`--file weather-demo`), Floors 1-3 by hand: no rain under
       the porch, the gallery, the arches, the doorways and the elevator room, and its splashes
       on the courtyard floor only; looking up and down in it; Floor 2's squalls thickening,
