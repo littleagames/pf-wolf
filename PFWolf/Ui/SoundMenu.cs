@@ -2,8 +2,8 @@ using PFWolf.Menus;
 namespace PFWolf.Ui;
 
 /// <summary>
-/// The Sound menu (menudefs/sound): each sound device and music switched on or off, and the
-/// sound and music volume sliders moved with left/right
+/// The Sound menu (menudefs/sound): each sound device and music switched on or off, the reverb
+/// (s_reverb), and the sound and music volume sliders moved with left/right
 /// </summary>
 internal sealed class SoundMenu(AudioManager audio, VideoManager video, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs)
 {
@@ -47,6 +47,11 @@ internal sealed class SoundMenu(AudioManager audio, VideoManager video, MenuDraw
                     DrawSoundMenu();
                     loop.ShootSnd();
                     break;
+                case "reverb":
+                    audio.ReverbEnabled ^= true;
+                    DrawSoundMenu();
+                    loop.ShootSnd();
+                    break;
             }
         }
         while (which >= 0);
@@ -65,6 +70,7 @@ internal sealed class SoundMenu(AudioManager audio, VideoManager video, MenuDraw
         draw.DrawMenuCheckbox(Info, Items, "sound-adlib", audio.AdLibSoundEnabled);
         draw.DrawMenuCheckbox(Info, Items, "sound-digitized", audio.DigitizedSoundEnabled);
         draw.DrawMenuCheckbox(Info, Items, "music", audio.MusicEnabled);
+        draw.DrawMenuCheckbox(Info, Items, "reverb", audio.ReverbEnabled);
         draw.DrawMenuSlider(Info, Items, "sound-volume", audio.SoundVolume, AudioManager.MaxVolume);
         draw.DrawMenuSlider(Info, Items, "music-volume", audio.MusicVolume, AudioManager.MaxVolume);
 

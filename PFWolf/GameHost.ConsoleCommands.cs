@@ -40,6 +40,11 @@ internal static partial class GameHost
         new AssetCommands(_consoleManager, AssetManager, AudioManager, GameEngineManager).Register();
         Register("loops", "Shows the looping sounds placed on actors (actordefs loopsound, loop-sound): each voice's actor, sound, distance and level.",
             "loops", _ => _consoleManager.Print(LoopSounds.Describe()), InLevel);
+        Register("reverb", "Shows the reverb heard (a zone's or the map's game-info reverb, or a script's game.reverb); with a preset (cave, sewer-pipe, none...), holds that one over the zones, as game.reverb does, until 'reverb zones' gives it back.",
+            "reverb [preset|none|zones]", ReverbCommand, InLevel,
+            complete: (_, i) => i == 0 ? ["none", "zones", .. Assets.Sounds.ReverbNames.All] : []);
+        Register("s_reverb", "Whether sounds have the reverb of the room they're heard in (Options → Sound's Reverb): 1 on, 0 every sound dry.",
+            "s_reverb [0|1]", ReverbSettingCommand, complete: Values("0", "1"));
         Register("menu", "Opens a menudefs menu by its name the next time the menu opens (at once from the title with --nowait): an engine menu as its own screen, a mod's as a CP_Menu item would. The editor's Test in game runs it.",
             "menu <name>", MenuCommand, complete: (_, i) => i == 0 ? [.. AssetManager.GetMenuNames().Order(StringComparer.OrdinalIgnoreCase)] : []);
 
@@ -135,6 +140,33 @@ internal static partial class GameHost
 
     // What commands act on, and how they describe it (Commands/ConsoleTargets.cs)
     static ConsoleTargets consoleTargets = null!;       // made in InitServices
+
+    // reverb [preset|none|zones]: what's heard, or a preset held over the zones (as game.reverb), or given back
+    static void ReverbCommand(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            if (args[0].Equals("zones", StringComparison.OrdinalIgnoreCase))
+                ZoneReverb.SetScriptReverb(null, ZoneReverb.DefaultFade);
+            else if (Assets.Sounds.ReverbNames.IsNone(args[0]) || Assets.Sounds.ReverbNames.Find(args[0]) != null)
+                ZoneReverb.SetScriptReverb(args[0], ZoneReverb.DefaultFade);
+            else
+            {
+                _consoleManager.Print($"There's no reverb {args[0]} (Tab lists them)");
+                return;
+            }
+        }
+        _consoleManager.Print(AudioManager.DescribeReverb()
+            + (ZoneReverb.ScriptHolds ? " (held over the zones: 'reverb zones' gives it back)" : ""));
+    }
+
+    // s_reverb [0|1]: Options → Sound's Reverb
+    static void ReverbSettingCommand(string[] args)
+    {
+        if (args.Length > 0)
+            AudioManager.ReverbEnabled = ParseBool(args[0]);
+        _consoleManager.Print($"s_reverb is {(AudioManager.ReverbEnabled ? 1 : 0)}");
+    }
 
     static void Register(string name, string help, string usage, Action<string[]> run,
         ConsoleCommandFlags flags = ConsoleCommandFlags.None, string[]? aliases = null, ConsoleCompleter? complete = null) =>

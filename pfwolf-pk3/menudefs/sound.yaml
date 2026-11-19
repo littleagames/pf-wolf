@@ -23,7 +23,7 @@ components:
       - x: 16
       - y: 57
       - width: 288
-      - height: 99
+      - height: 112
   -
     id: "title"
     type: "Graphic"
@@ -33,7 +33,8 @@ components:
       - y: 38
 # Each sound device is an on/off switch. A sound plays its best variant among the devices
 # that are on (digitized, then AdLib, then PC speaker), or nothing if none of them are.
-# The volume rows are sliders: left/right while highlighted.
+# Reverb (s_reverb) gives sounds the reverb of the room they're heard in, where a level has any
+# (game-info reverb) and OpenAL has EFX. The volume rows are sliders: left/right while highlighted.
 menu-items:
   -
       id: "sound-pc"
@@ -54,6 +55,11 @@ menu-items:
       id: "music"
       type: "ToggleMenuItem"
       text: "$STR_MUSIC"
+      enabled: true
+  -
+      id: "reverb"
+      type: "ToggleMenuItem"
+      text: "$STR_REVERB"
       enabled: true
   -
       type: "BlankMenuItem"

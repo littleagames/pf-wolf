@@ -212,6 +212,7 @@ $STR_PC: "PC Speaker"
 $STR_ADLIB: "AdLib"
 $STR_DIGITIZED: "Digitized Sound"
 $STR_MUSIC: "Music"
+$STR_REVERB: "Reverb"
 $STR_SOUNDVOL: "Sound Volume"
 $STR_MUSICVOL: "Music Volume"
 

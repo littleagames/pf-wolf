@@ -19,7 +19,8 @@ public static class GameInfoFile
     public static readonly IReadOnlyList<string> Keys =
     [
         "name", "music", "next", "secret-next", "par-time", "floor-number", "cluster", "floor-color", "ceiling-color", "wall-height",
-        "story", "pushwall-stories", "sky", "default-floor", "default-ceiling", "weather", "shading", "zones", "scrollers",
+        "story", "pushwall-stories", "sky", "default-floor", "default-ceiling", "weather", "reverb", "reverb-fade", "shading", "zones",
+        "scrollers",
     ];
 
     /// <summary>
@@ -177,6 +178,8 @@ public static class GameInfoFile
                         Field("ambient-2", Quote(zone.Ambient2));
                         Field("ambient-2-disguised", Quote(zone.Ambient2Disguised));
                         Field("ambient-2-undetected", Quote(zone.Ambient2Undetected));
+                        Field("reverb", Quote(zone.Reverb));
+                        Field("reverb-fade", Number(zone.ReverbFade));
                         block.Append(childIndent).Append("  ").Append(zone.Id.ToString(CultureInfo.InvariantCulture))
                             .Append(": { ").Append(string.Join(", ", fields)).Append(fields.Count > 0 ? " }" : "}").Append(newline);
                     }
@@ -238,6 +241,8 @@ public static class GameInfoFile
         "default-floor" => Quote(properties.DefaultFloor),
         "default-ceiling" => Quote(properties.DefaultCeiling),
         "weather" => Quote(properties.Weather),
+        "reverb" => Quote(properties.Reverb),
+        "reverb-fade" => Number(properties.ReverbFade),
         "floor-number" => Number(properties.FloorNumber),
         "cluster" => Number(properties.Cluster),
         _ => null,

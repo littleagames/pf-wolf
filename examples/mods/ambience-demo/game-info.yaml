@@ -16,16 +16,21 @@ maps:
   MAP01:
     # No song, so the ambience is all you hear
     music: ""
+    # The reverb the level starts with (the hall's), until you step into a zone with its own.
+    # A reverb is one of Creative's EFX presets by name: fire your pistol in each room
+    reverb: hallway
     zones:
       # ambient-fade: the tics (70 a second) the change takes as you step in, the last zone's
       # sound fading out as this one's fades in. Doors and doorways are zone 0: no sound of
       # their own, so whatever's playing carries on through them.
       # ambient-2: a second loop over the first. A zone with any ambient sound sets both, so the
       # rain stops as you step into the hall, whose zone has no ambient-2.
-      1: { ambient: ambience/wind, ambient-2: ambience/rain, ambient-fade: 70 }     # the courtyard
-      2: { ambient: ambience/sewer, ambient-fade: 70 }         # the sewer
-      3: { ambient: ambience/hum, ambient-fade: 35 }           # the generator room
+      # reverb: the room's reverb, crossfading (reverb-fade, 35 tics when left out) as you step
+      # in; doorways have none, so the last one carries on through them.
+      1: { ambient: ambience/wind, ambient-2: ambience/rain, ambient-fade: 70, reverb: castle-courtyard }   # the courtyard
+      2: { ambient: ambience/sewer, ambient-fade: 70, reverb: sewer-pipe }          # the sewer
+      3: { ambient: ambience/hum, ambient-fade: 35, reverb: factory-medium-room }   # the generator room
       # the guard post: tense while no enemy has noticed you yet; seen, the alarm
-      4: { ambient: ambience/alarm, ambient-undetected: ambience/tense, ambient-fade: 70 }
-      5: { ambient: none, ambient-fade: 35 }                   # the radio room: silence but the radio
-      6: { ambient: ambience/hall, ambient-fade: 50 }          # the hall
+      4: { ambient: ambience/alarm, ambient-undetected: ambience/tense, ambient-fade: 70, reverb: stone-room }
+      5: { ambient: none, ambient-fade: 35, reverb: living-room }   # the radio room: silence but the radio
+      6: { ambient: ambience/hall, ambient-fade: 50, reverb: hallway }    # the hall

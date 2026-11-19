@@ -21,7 +21,10 @@ zone `ambient-2*`, `game.ambient`'s layer, the courtyard's rain); **3c is done**
 Phase 4 (reverb zones, and a low-pass on muffled sounds) is planned in detail below: **4a is
 done** (2026-11-19: `Managers/AudioEffects.cs`, the `soundinfo` command, muffled sounds dulled;
 EFX proven on the null driver and on this PC's device: OpenAL Soft 1.23.1, EFX 1.0, 4 sends a
-source). 4b and 4c are not started.
+source); **4b is done** (2026-11-19: `Managers/ReverbMixer.cs`, `Gameplay/ZoneReverb.cs`,
+`ReverbNames` in Common, game-info `reverb`/`reverb-fade`, sound-seq `reverb`, `game.reverb`,
+Options → Sound → Reverb, the `reverb` and `s_reverb` commands, the editor's fields, every demo
+room's reverb). 4c (custom reverbs) is left for later, as recommended.
 Phase 4 is still open. The mod-facing changes (new sound-seq and zone fields, `game.ambient`'s
 second argument and its win over zones, `game.playsound`) belong in the release notes of whichever
 version ships this branch.
@@ -366,6 +369,19 @@ extension.
 - **Multiplayer and demos:** only for show, local to the listener (the camera's zone, as
   ambience). Nothing in TicCmds or saves.
 
+**As built (4b):**
+- The reverb follows the **camera's** zone, as muffling does, not the player pawn's as
+  ambience does.
+- OpenTK spells the sewer preset `Sewerpipe`; the list writes `sewer-pipe`, and names match
+  without hyphens, spaces or underscores and in any case.
+- `s_reverb` is saved as a "reverb off" bit in config.cfg's audio-devices byte, so older
+  configs come up with it on.
+- The `reverb` command also takes a preset (held over the zones, as `game.reverb`), or `zones`
+  to give it back, with Tab completing the names.
+- The EAX reverb type was there on OpenAL Soft's null driver, so the standard-reverb fallback
+  hasn't been run.
+- StopAll (a level's end) silences both slots, so the intermission is dry.
+
 #### 4c Custom reverbs (small, optional)
 
 game-info `reverbs:` holds named reverbs, each a `base:` preset with any of its numbers changed
@@ -452,6 +468,8 @@ Phase 4's, with the recommendation first:
     no reverb zones; recommended), or Game Options (already scrolling), or no switch?
 12. **Custom reverbs (4c):** with phase 4, or later if the presets turn out to be enough
     (recommended: later)?
+
+*(9 to 12 taken 2026-11-19 as recommended: the user started 4a and 4b on the defaults.)*
 
 ## Testing
 

@@ -234,6 +234,7 @@ internal class GameEngineManager
         AdLibSound = 2,
         DigitizedSound = 4,
         Music = 8,
+        ReverbOff = 16,     // s_reverb 0: set only when it's off, so older configs come up with it on
     }
 
     // The controls' place in the original fixed layout: the movement keys, a key per button
@@ -324,6 +325,7 @@ internal class GameEngineManager
             audioManager.AdLibSoundEnabled = devices.HasFlag(AudioDevices.AdLibSound);
             audioManager.DigitizedSoundEnabled = devices.HasFlag(AudioDevices.DigitizedSound);
             audioManager.MusicEnabled = devices.HasFlag(AudioDevices.Music);
+            audioManager.ReverbEnabled = !devices.HasFlag(AudioDevices.ReverbOff);
         }
         if (config.SoundVolume is int soundVolume)
             audioManager.SoundVolume = soundVolume;     // clamped by the setter
@@ -718,6 +720,8 @@ internal class GameEngineManager
             devices |= AudioDevices.DigitizedSound;
         if (audioManager.MusicEnabled)
             devices |= AudioDevices.Music;
+        if (!audioManager.ReverbEnabled)
+            devices |= AudioDevices.ReverbOff;
         bw.Write((byte)devices);
         bw.Write((byte)audioManager.SoundVolume);
         bw.Write((byte)audioManager.MusicVolume);

@@ -23,6 +23,10 @@ public sealed partial class ZoneRow : ObservableObject
     [ObservableProperty] private string _ambientUndetected = "";
     [ObservableProperty] private string _ambientFade = "";
     [ObservableProperty] private string _ambient2 = "";
+    [ObservableProperty] private string _reverb = "";
+
+    // reverb-fade: not in the grid, kept as it was
+    public int? ReverbFade { get; init; }
 
     // ambient-2-disguised and ambient-2-undetected: not in the grid, kept as they were
     public string? Ambient2Disguised { get; init; }
@@ -74,6 +78,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         _defaultFloor = properties.DefaultFloor ?? "";
         _defaultCeiling = properties.DefaultCeiling ?? "";
         _weather = properties.Weather ?? "";
+        _reverb = properties.Reverb ?? "";
+        _reverbFade = Text(properties.ReverbFade);
         _floorNumber = Text(properties.FloorNumber);
         _cluster = Text(properties.Cluster);
         _fadeColor = properties.FadeColor ?? "";
@@ -91,6 +97,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 Ambient = zone.Ambient ?? "", AmbientDisguised = zone.AmbientDisguised ?? "", AmbientUndetected = zone.AmbientUndetected ?? "",
                 AmbientFade = Text(zone.AmbientFade), Ambient2 = zone.Ambient2 ?? "",
                 Ambient2Disguised = zone.Ambient2Disguised, Ambient2Undetected = zone.Ambient2Undetected,
+                Reverb = zone.Reverb ?? "", ReverbFade = zone.ReverbFade,
             });
         }
         foreach (var scroller in properties.Scrollers)
@@ -131,6 +138,13 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     [ObservableProperty] private string _defaultFloor;
     [ObservableProperty] private string _defaultCeiling;
     [ObservableProperty] private string _weather;
+    [ObservableProperty] private string _reverb;
+    [ObservableProperty] private string _reverbFade;
+
+    /// <summary>The reverbs a level or zone can name: none, then Creative's presets</summary>
+    public static IReadOnlyList<string> ReverbChoices { get; } = [Assets.Sounds.ReverbNames.None, .. Assets.Sounds.ReverbNames.All];
+    public string ReverbDefault => Defaults.Reverb ?? Assets.Sounds.ReverbNames.None;
+    public string ReverbFadeDefault => Text(Defaults.ReverbFade) is { Length: > 0 } text ? text : "35";
     [ObservableProperty] private string _floorNumber;
     [ObservableProperty] private string _cluster;
     [ObservableProperty] private string _fadeColor;
@@ -204,7 +218,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                     Optional(row.Effect), Int(row.Low, $"zone {id}'s low", 0, 255), Int(row.Tics, $"zone {id}'s tics", 1, 100000),
                     Int(row.BrightTics, $"zone {id}'s bright tics", 1, 100000), Optional(row.Ambient), Optional(row.AmbientDisguised),
                     Optional(row.AmbientUndetected), Int(row.AmbientFade, $"zone {id}'s fade", 0, 100000),
-                    Optional(row.Ambient2), row.Ambient2Disguised, row.Ambient2Undetected));
+                    Optional(row.Ambient2), row.Ambient2Disguised, row.Ambient2Undetected,
+                    ReverbName(row.Reverb, $"zone {id}'s reverb"), row.ReverbFade));
             }
 
             var scrollers = new List<ScrollerProperties>();
@@ -235,6 +250,8 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 DefaultFloor = Optional(DefaultFloor),
                 DefaultCeiling = Optional(DefaultCeiling),
                 Weather = WeatherName(Weather),
+                Reverb = ReverbName(Reverb, "the reverb"),
+                ReverbFade = Int(ReverbFade, "reverb fade", 0, 100000),
                 FloorNumber = Int(FloorNumber, "floor number", 0, 255),
                 Cluster = Int(Cluster, "cluster", 1, short.MaxValue),
                 FadeColor = Color(FadeColor, "fade color"),
@@ -282,6 +299,17 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
             return null;
         return WeatherNames.FirstOrDefault(name => name.Equals(value, StringComparison.OrdinalIgnoreCase))
                ?? throw new FormatException($"there's no weather named {value}: it's one of {string.Join(", ", WeatherNames)}");
+    }
+
+    // A reverb there is (a preset, or none), written as the list has it
+    private static string? ReverbName(string text, string what)
+    {
+        if (Optional(text) is not { } value)
+            return null;
+        if (Assets.Sounds.ReverbNames.IsNone(value))
+            return Assets.Sounds.ReverbNames.None;
+        return Assets.Sounds.ReverbNames.Find(value)
+               ?? throw new FormatException($"{what} '{value}' isn't one of the reverbs (cave, sewer-pipe, hallway... or none)");
     }
 
     private static int? Int(string text, string what, int min, int max)

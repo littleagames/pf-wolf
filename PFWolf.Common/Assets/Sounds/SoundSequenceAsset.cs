@@ -61,4 +61,11 @@ public record SoundProfile
 
     /// <summary>How far pitch is moved up or down at random each time it plays (0.1: footsteps that don't all sound alike)</summary>
     public float? PitchVariance { get; set; }
+
+    /// <summary>
+    /// How much of it goes to the reverb the player's zone has (game-info reverb), 0 to 1
+    /// (default 1): 0 keeps it dry (a narrator, a sound that has its own room in it). The first
+    /// named along the way counts, as volume's does
+    /// </summary>
+    public float? Reverb { get; set; }
 }

@@ -1207,6 +1207,16 @@ public record DefaultMapInfo
     /// override these value by value
     /// </summary>
     public Dictionary<int, ZoneInfo> Zones { get; init; } = [];
+
+    /// <summary>
+    /// The reverb every level starts with, until the player steps into a zone with a reverb of its
+    /// own (Gameplay/ZoneReverb.cs): one of Creative's presets by name (cave, sewer-pipe,
+    /// stone-corridor...; the sound reference lists them), or none for dry (the default)
+    /// </summary>
+    public string? Reverb { get; init; }
+
+    /// <summary>Tics (70 a second) a change of reverb crossfades over (default 35)</summary>
+    public int? ReverbFade { get; init; }
 }
 
 /// <summary>A line of game-info level-start-text: its text (a $language key or the text; %m the level's name), font and color</summary>
@@ -1429,6 +1439,16 @@ public record ZoneInfo
     /// <summary>Played in place of ambient-2 while no enemy has noticed the player yet on the level</summary>
     [YamlDotNet.Serialization.YamlMember(Alias = "ambient-2-undetected")]
     public string? Ambient2Undetected { get; init; }
+
+    /// <summary>
+    /// The reverb the player hears in the zone, as they step in (Gameplay/ZoneReverb.cs): a preset's
+    /// name (cave, sewer-pipe, hallway...), or none for dry. A zone without one leaves the reverb as
+    /// it is, so a doorway between two rooms doesn't flicker
+    /// </summary>
+    public string? Reverb { get; init; }
+
+    /// <summary>Tics the reverb takes to crossfade as the player steps in; the map's reverb-fade when left out</summary>
+    public int? ReverbFade { get; init; }
 
     /// <summary>
     /// Whether it says anything about light. A zone with only ambient sound isn't a light zone:
@@ -2410,6 +2430,15 @@ public record MapInfo
     /// Light zones by zone id; each value left out uses the default map's zone of that id
     /// </summary>
     public Dictionary<int, ZoneInfo>? Zones { get; init; } = null;
+
+    /// <summary>
+    /// The reverb the level starts with, until the player steps into a zone with one of its own
+    /// (a preset's name, or none for dry); the default map's when left out
+    /// </summary>
+    public string? Reverb { get; init; }
+
+    /// <summary>Tics a change of reverb crossfades over; the default map's when left out (35)</summary>
+    public int? ReverbFade { get; init; }
 
     /// <summary>Scrolling walls and flats by tag (the tag plane's value)</summary>
     public Dictionary<int, ScrollerInfo>? Scrollers { get; init; } = null;

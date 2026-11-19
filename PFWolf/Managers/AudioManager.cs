@@ -203,6 +203,7 @@ internal class AudioManager
             {
                 AL.Source(_sources[i], ALSourcef.Gain, _sourceVolumes[i] * _sourceMuffles[i] * gain);
                 ApplyDulling(_sources[i], _sourceMuffles[i], ref _sourceDulled[i]);
+                ApplySend(_sources[i], _sourceSends[i], _sourceMuffles[i]);
             }
         }
         for (int v = 0; v < _loopSources.Length; v++)
@@ -211,6 +212,7 @@ internal class AudioManager
             {
                 ApplyLoopGain(v);
                 ApplyDulling(_loopSources[v], _loopMuffles[v], ref _loopDulled[v]);
+                ApplySend(_loopSources[v], _loopSends[v], _loopMuffles[v]);
             }
         }
     }
@@ -273,6 +275,8 @@ internal class AudioManager
         _session = session;
         for (int layer = 0; layer < AmbientLayers; layer++)
             _ambientMixers[layer] = MakeAmbientMixer(layer);
+        _reverbMixer = new ReverbMixer(new ReverbMixerHooks(
+            (slot, name) => _effects.LoadReverb(slot, name), (slot, gain) => _effects.SetSlotGain(slot, gain), RouteReverb));
         _opening = Task.Run(Open);
     }
 
@@ -317,9 +321,87 @@ internal class AudioManager
             AL.Source(source, ALSourcef.RolloffFactor, 0.35f);
         }
         _sourceDulled = new bool[_sources.Length];
+        _sourceSends = [.. Enumerable.Repeat(1.0f, _sources.Length)];
         _effects.Open(_device);
         _opened = true;
     }
+
+    /*
+    The reverb (Managers/ReverbMixer.cs, a zone's or a script's: Gameplay/ZoneReverb.cs): every
+    game sound, the effects, the channels and the placed loops, sends to the slot the mixer has
+    them on, as much of it as its sound-seq reverb says (1 unless it says less). The music and the
+    ambient loops never send: they're the space already. A muffled sound's send is dulled as its
+    direct sound is.
+    */
+
+    private readonly ReverbMixer _reverbMixer;
+    private float[] _sourceSends = [];                              // each of _sources' sound-seq reverb
+    private readonly float[] _loopSends = [.. Enumerable.Repeat(1.0f, LoopVoices)];
+    private bool _reverbEnabled = true;
+
+    /// <summary>The Reverb setting (Options → Sound, s_reverb): off, every sound is dry</summary>
+    public bool ReverbEnabled
+    {
+        get => _reverbEnabled;
+        set
+        {
+            _reverbEnabled = value;
+            UpdateReverbMaster();
+        }
+    }
+
+    // Both slots heard while playing with the setting on; silent while paused (a menu's click is dry)
+    private void UpdateReverbMaster()
+    {
+        if (IsActive)
+            _reverbMixer.Master = _reverbEnabled && !_isPaused ? 1 : 0;
+    }
+
+    /// <summary>The reverb asked for (a preset's name), or null for none</summary>
+    public string? Reverb => _reverbMixer.Requested;
+
+    /// <summary>
+    /// The reverb in place of the one there was: a preset's name (ReverbNames: cave,
+    /// sewer-pipe...), or dry with null or "none", crossfading over so many tics. Asking for the
+    /// one there is changes nothing.
+    /// </summary>
+    public void SetReverb(string? name, int fadeTics = 0)
+    {
+        if (IsActive)
+            _reverbMixer.Set(name, fadeTics);
+    }
+
+    /// <summary>The reverb's crossfade moves on by so many tics</summary>
+    public void TickReverb(int tics)
+    {
+        if (IsActive && !_isPaused)
+            _reverbMixer.Tick(tics);
+    }
+
+    /// <summary>What reverb there is, for the reverb command: the slots ringing, each at its level</summary>
+    public string DescribeReverb()
+    {
+        if (!IsActive)
+            return "No reverb (sound is off)";
+        if (!_effects.ReverbAvailable)
+            return $"No reverb: {_effects.Description}";
+        var slots = _reverbMixer.Describe().ToList();
+        string setting = !_reverbEnabled ? " (the Reverb setting is off)" : _isPaused ? " (paused)" : "";
+        return slots.Count == 0 ? $"No reverb{setting}" : $"Reverb: {string.Join("; ", slots)}{setting}";
+    }
+
+    // Every sound's send to the slot the mixer has them on now (ReverbMixer's Route)
+    private void RouteReverb(int slot)
+    {
+        for (int i = 0; i < _sources.Length; i++)
+            _effects.SetSend(_sources[i], slot, _sourceSends[i], _sourceDulled[i] ? AudioEffects.LowpassFor(_sourceMuffles[i]) : null);
+        for (int v = 0; v < _loopSources.Length; v++)
+            _effects.SetSend(_loopSources[v], slot, _loopSends[v], _loopDulled[v] ? AudioEffects.LowpassFor(_loopMuffles[v]) : null);
+    }
+
+    // A source's send as it starts or its muffle moves
+    private void ApplySend(int source, float send, float muffle) =>
+        _effects.SetSend(source, _reverbMixer.Routed, send, AudioEffects.LowpassFor(muffle));
 
     // EFX (Managers/AudioEffects.cs): the low-pass that dulls a muffled sound
     private readonly AudioEffects _effects = new();
@@ -526,6 +608,8 @@ internal class AudioManager
         _lastBufferForSound[name.ToLowerInvariant()] = sound.Buffer;
         AL.Source(source, ALSourcef.Gain, sound.Volume * _sourceMuffles[index] * VolumeGain(_soundVolume));
         ApplyDulling(source, _sourceMuffles[index], ref _sourceDulled[index]);     // (taken off one reused unmuffled)
+        _sourceSends[index] = sound.Reverb;
+        ApplySend(source, sound.Reverb, _sourceMuffles[index]);
         AL.Source(source, ALSourcef.Pitch, sound.Pitch);
         StartSource(source, sound.Buffer, position);
         _lastStarted = (source, sound.Buffer);
@@ -738,6 +822,8 @@ internal class AudioManager
         _loopPlaces[voice] = (x, y);
         _loopMuffles[voice] = Muffle(x, y);
         ApplyDulling(source, _loopMuffles[voice], ref _loopDulled[voice]);
+        _loopSends[voice] = sound.Reverb;
+        ApplySend(source, sound.Reverb, _loopMuffles[voice]);
         AL.Source(source, ALSourcei.Buffer, sound.Buffer);
         AL.Source(source, ALSourcef.Pitch, sound.Pitch);
         AL.Source(source, ALSourcef.MaxDistance, Math.Max(radius, 1.0f));
@@ -794,7 +880,7 @@ internal class AudioManager
     /// on, through any random pick or alias), the first channel named along the way, and its
     /// volume and pitch (each the first named along the way, varied by its variance)
     /// </summary>
-    private readonly record struct ResolvedSound(int Buffer, string? Channel, float Volume, float Pitch);
+    private readonly record struct ResolvedSound(int Buffer, string? Channel, float Volume, float Pitch, float Reverb = 1);
 
     // The sound-seq volume and pitch a sound plays at: each 1 unless an entry along the way names
     // it (the first one does), moved up or down at random by up to its variance. Picked with
@@ -817,7 +903,7 @@ internal class AudioManager
     private ResolvedSound? Resolve(string name, bool cosmetic = false)
     {
         string? channel = null;
-        float? volume = null, volumeVariance = null, pitch = null, pitchVariance = null;
+        float? volume = null, volumeVariance = null, pitch = null, pitchVariance = null, reverb = null;
         var soundSeq = _assetManager.Value.Find<SoundSequenceAsset>("sound-seq");
         // The running pack's own sounds (gamepacks/<pack>/sound-seq.yaml) win over the shared ones
         var packSeq = _packSoundSeq ??= _assetManager.Value.Exists<SoundSequenceAsset>($"{_assetManager.Value.GamePackId}/sound-seq")
@@ -849,6 +935,7 @@ internal class AudioManager
             volumeVariance ??= soundProfile.VolumeVariance;
             pitch ??= soundProfile.Pitch;
             pitchVariance ??= soundProfile.PitchVariance;
+            reverb ??= soundProfile.Reverb;
 
             if (soundProfile.Random.Count > 0)
             {
@@ -882,7 +969,7 @@ internal class AudioManager
         if (variant is not { } chosen || FindBuffer(chosen.Device, chosen.Asset) is not int buffer)
             return null;
         var (gain, speed) = VolumeAndPitch(volume, volumeVariance, pitch, pitchVariance, System.Random.Shared.NextSingle);
-        return new ResolvedSound(buffer, channel, gain, speed);
+        return new ResolvedSound(buffer, channel, gain, speed, Math.Clamp(reverb ?? 1, 0, 1));
     }
 
     // The variant each sound (by its name past any random pick or alias) plays on the devices
@@ -990,6 +1077,7 @@ internal class AudioManager
             AL.SourceStop(source);          // still wanted, LoopSounds starts them again
         foreach (var mixer in _ambientMixers)
             mixer.Stopped();
+        _reverbMixer.Stopped();             // nothing rings on (a level's end); asked for again, it starts afresh
         _heldSound = null;
     }
 
@@ -1256,6 +1344,7 @@ internal class AudioManager
         if (!IsActive)
             return;
         _isPaused = isPaused;
+        UpdateReverbMaster();
         if (isPaused)
         {
             AL.SourcePause(_musicSource);

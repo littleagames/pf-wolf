@@ -1003,6 +1003,17 @@ can reach), not played by hand.
       door duller as well as quieter, brightening as it opens; a guard's shot through a door; no
       dulling with Muffle Thru Doors off; a sound started next to you after a muffled one on
       the same voice not left dull.
+- [ ] Reverb zones (game-info `reverb`/`reverb-fade`, sound-seq `reverb`, `game.reverb`, Options →
+      Sound → Reverb `s_reverb`, the `reverb` command; the Ambience Demo's rooms, 2026-11-19):
+      headless (AmbienceDemoGameTests, EAX reverb on the null driver), `reverb` showed the hall's
+      hallway, the courtyard's castle-courtyard, the sewer's sewer-pipe, the setting off, a held
+      underwater crossfading in and back out, and the sewer's carried into the elevator room.
+      Seen windowed: Wolf3D's and Blake Stone's Sound menus with the Reverb row. **(never
+      tried)**, by ear: every preset choice in the demo; the pistol in each room; a shot's tail
+      ringing on as you step out of the sewer; the crossfade at each doorway; menu clicks dry
+      (paused); dry after the level ends (intermission); the ambient loops and music dry; a
+      muffled sound's reverb dulled too; `s_reverb 0` saved in config.cfg; the editor's Map
+      Properties Reverb field and zone Reverb column (not looked at).
 - [ ] Episode Demo (`--file episode-demo`): seen windowed: Episode 7 and its picture on the menu
       (scrolled into view, "1 more" marks above and below), the briefing article before MAP61;
       each map loads. **(never tried)**: a Blake Stone episode menu or a level select long

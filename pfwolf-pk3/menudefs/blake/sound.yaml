@@ -20,6 +20,7 @@ menu-items:
   - { id: "sound-adlib", type: "ToggleMenuItem", text: "ADLIB SOUND", enabled: true }
   - { id: "sound-digitized", type: "ToggleMenuItem", text: "DIGITIZED SOUND", enabled: true }
   - { id: "music", type: "ToggleMenuItem", text: "MUSIC", enabled: true }
+  - { id: "reverb", type: "ToggleMenuItem", text: "REVERB", enabled: true }
   - { type: "BlankMenuItem" }
   - { id: "sound-volume", type: "SliderMenuItem", text: "SOUND VOLUME", enabled: true }
   - { id: "music-volume", type: "SliderMenuItem", text: "MUSIC VOLUME", enabled: true }

@@ -2133,6 +2133,18 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 
   `music: ""` gives the level no song.
 
+  `reverb: hallway` on the map, and a `reverb:` on each zone, give each room its reverb: the
+  courtyard `castle-courtyard`, the sewer `sewer-pipe`, the generator room
+  `factory-medium-room`, the guard post `stone-room`, the radio room `living-room`, the hall
+  `hallway`. Fire your pistol in each. A reverb is one of Creative's EFX presets by name (the
+  console's `reverb` command completes them with Tab). It crossfades as you step into a zone
+  (`reverb-fade`, 35 tics when left out). A zone without one (a doorway, the elevator room)
+  keeps the last. Every game sound has it, your weapons too, but not the music or the ambient
+  loops. A sound-seq entry's `reverb: 0..1` sends less of it, and 0 keeps it dry. Options →
+  Sound → Reverb (`s_reverb`) switches it all off. `game.reverb(preset, tics)` holds one over
+  the zones from a script, until `game.reverb(nil)`, and so does `reverb underwater` in the
+  console, until `reverb zones`.
+
   `setting-defaults: sound-muffling: true` switches on Game Options → Muffle Thru Doors
   (`s_muffle`) for the mod, which the game has off: a sound placed in the world (an actor's, a
   door's, `game.playsound` at a place, a `loopsound`) is quieter for each shut door between its

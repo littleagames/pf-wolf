@@ -49,6 +49,12 @@ internal sealed partial class GameScripts(
     /// </summary>
     internal Action<string?, int, int>? Ambient { get; init; }
 
+    /// <summary>
+    /// game.reverb: a preset (or null, giving it back to the zones) over the zones' reverb,
+    /// crossfading over so many tics (Gameplay/ZoneReverb.cs); unset, straight to the sound
+    /// </summary>
+    internal Action<string?, int>? Reverb { get; init; }
+
     /// <summary>game.unlocked: whether a name has been unlocked</summary>
     internal Func<string, bool> IsUnlocked { get; init; } = _ => false;
 
@@ -477,6 +483,20 @@ internal sealed partial class GameScripts(
             if (layer is < 1 or > Managers.AudioManager.AmbientLayers)
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.ambient: layer {layer} isn't one there is (1 or 2)", 1);
             (Ambient ?? audio.SetAmbient)(sound, fadeTics, layer - 1);
+            return new(c.Return());
+        });
+        // game.reverb(preset[, tics]): the reverb the player hears, one of Creative's presets by
+        // name (cave, sewer-pipe, underwater...), crossfading over so many tics (0, the default:
+        // at once); it holds over the zones' reverb until game.reverb(nil) gives it back, and
+        // "none" is dry. Asking for the one there is changes nothing, so a script can ask every tick.
+        game["reverb"] = new LuaFunction("game.reverb", (c, _) =>
+        {
+            var name = OptionalString(c, 0);
+            var fadeTics = (int)Math.Max(Math.Round(NumberArg(c, 1, 0)), 0);
+            if (Reverb != null)
+                Reverb(name, fadeTics);
+            else
+                audio.SetReverb(name, fadeTics);
             return new(c.Return());
         });
         // game.playsound(sound[, x, y]): a sound from a place on the map, in tiles as an actor's

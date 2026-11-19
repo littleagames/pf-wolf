@@ -273,7 +273,8 @@ internal static partial class GameHost
 
     static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, HudMessageManager, MapManager,
         frameRefresh, inputPolling, playKeys, doors, pushWalls, TimedSwitches, FloorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, LevelAI, Session,
-        new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame, () => ZoneAmbience.Tick(),
+        new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame,
+            () => { ZoneAmbience.Tick(); ZoneReverb.Tick(); },
             () => demoTracer.AfterFrame(), () => LevelTimer.Tick(), () => playScreen.ShowQuickInstructions(), () => destructibleWalls.Tick(),
             particles.Tick, particles.Reset, Puzzles, TickPlacedSounds));
 
@@ -336,6 +337,13 @@ internal static partial class GameHost
         () => Stealth.WearingDisguise(Session.PlayerState),
         AudioManager.SetAmbient,
         AudioManager.TickAmbient));
+
+    // Zones' reverb, and the scripts' game.reverb (Gameplay/ZoneReverb.cs)
+    static ZoneReverb? _zoneReverb;
+    static ZoneReverb ZoneReverb => _zoneReverb ??= new ZoneReverb(Session, currentMapInfo, new ZoneReverbHooks(
+        (x, y) => MapManager.GetZone(x, y),
+        (name, fadeTics) => AudioManager.SetReverb(name, fadeTics),
+        AudioManager.TickReverb));
 
     // ==== WL_DEF =================================================================================
 
@@ -484,6 +492,7 @@ internal static partial class GameHost
             Unlock = Unlock,
             IsUnlocked = name => Unlocks.IsUnlocked(name),
             Ambient = (sound, fadeTics, layer) => ZoneAmbience.SetScriptAmbient(sound, fadeTics, layer),
+            Reverb = (name, fadeTics) => ZoneReverb.SetScriptReverb(name, fadeTics),
             ParticleSystem = () => particles,
             Record = map => LevelRecords.Get(map),
             Stat = name => StatValues.Get(name),

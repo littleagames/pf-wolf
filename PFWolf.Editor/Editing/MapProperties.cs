@@ -4,16 +4,17 @@ namespace PFWolf.Editor.Editing;
 
 /// <summary>
 /// A zone of a level (game-info zones: the zone plane's value → how it's lit, and its ambient
-/// sounds; Ambient2 and its variants are the second loop, over the first)
+/// sounds; Ambient2 and its variants are the second loop, over the first; and its reverb)
 /// </summary>
 public sealed record ZoneProperties(int Id, int? Light = null, string? Color = null, string? Effect = null,
     int? Low = null, int? Tics = null, int? BrightTics = null, string? Ambient = null, string? AmbientDisguised = null,
     string? AmbientUndetected = null, int? AmbientFade = null, string? Ambient2 = null, string? Ambient2Disguised = null,
-    string? Ambient2Undetected = null)
+    string? Ambient2Undetected = null, string? Reverb = null, int? ReverbFade = null)
 {
     public static ZoneProperties From(int id, ZoneInfo zone)
         => new(id, zone.Light, zone.Color, zone.Effect, zone.Low, zone.Tics, zone.BrightTics, zone.Ambient, zone.AmbientDisguised,
-            zone.AmbientUndetected, zone.AmbientFade, zone.Ambient2, zone.Ambient2Disguised, zone.Ambient2Undetected);
+            zone.AmbientUndetected, zone.AmbientFade, zone.Ambient2, zone.Ambient2Disguised, zone.Ambient2Undetected,
+            zone.Reverb, zone.ReverbFade);
 }
 
 /// <summary>
@@ -52,6 +53,10 @@ public sealed record MapProperties
     public string? DefaultFloor { get; init; }
     public string? DefaultCeiling { get; init; }
     public string? Weather { get; init; }
+
+    /// <summary>The reverb the level starts with (game-info reverb: a preset's name, or none), and its crossfade (reverb-fade)</summary>
+    public string? Reverb { get; init; }
+    public int? ReverbFade { get; init; }
 
     /// <summary>The level's floor sky (game-info floor-sky) and whether it's mirrored: shown, not edited</summary>
     public string? FloorSky { get; init; }
@@ -94,6 +99,7 @@ public sealed record MapProperties
             BrightTics = zone.BrightTics, Ambient = zone.Ambient, AmbientDisguised = zone.AmbientDisguised,
             AmbientUndetected = zone.AmbientUndetected, AmbientFade = zone.AmbientFade,
             Ambient2 = zone.Ambient2, Ambient2Disguised = zone.Ambient2Disguised, Ambient2Undetected = zone.Ambient2Undetected,
+            Reverb = zone.Reverb, ReverbFade = zone.ReverbFade,
         }),
     };
 
@@ -113,6 +119,8 @@ public sealed record MapProperties
         DefaultFloor = info.DefaultFloor,
         DefaultCeiling = info.DefaultCeiling,
         Weather = info.Weather,
+        Reverb = info.Reverb,
+        ReverbFade = info.ReverbFade,
         FloorSky = info.FloorSky,
         FloorSkyMirror = info.FloorSkyMirror,
         // game-info can't tell floor 0 from none: both are left to the default, 0
@@ -153,6 +161,8 @@ public sealed record MapProperties
         Check("default-floor", DefaultFloor == other.DefaultFloor);
         Check("default-ceiling", DefaultCeiling == other.DefaultCeiling);
         Check("weather", Weather == other.Weather);
+        Check("reverb", Reverb == other.Reverb);
+        Check("reverb-fade", ReverbFade == other.ReverbFade);
         Check("floor-number", FloorNumber == other.FloorNumber);
         Check("cluster", Cluster == other.Cluster);
         Check("shading", FadeColor == other.FadeColor && FadeStart == other.FadeStart && FadeEnd == other.FadeEnd
@@ -174,7 +184,7 @@ public sealed record MapProperties
                     zone.Ambient ?? under.Ambient, zone.AmbientDisguised ?? under.AmbientDisguised,
                     zone.AmbientUndetected ?? under.AmbientUndetected, zone.AmbientFade ?? under.AmbientFade,
                     zone.Ambient2 ?? under.Ambient2, zone.Ambient2Disguised ?? under.Ambient2Disguised,
-                    zone.Ambient2Undetected ?? under.Ambient2Undetected)
+                    zone.Ambient2Undetected ?? under.Ambient2Undetected, zone.Reverb ?? under.Reverb, zone.ReverbFade ?? under.ReverbFade)
                 : zone;
         }
         return zones;

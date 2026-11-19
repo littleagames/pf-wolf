@@ -99,11 +99,35 @@ public class AmbienceDemoGameTests
             "tp 22 26", "wait 35", "loops");            // 3. in the room: nothing between
 
         Assert.That(said, Has.Count.EqualTo(8), string.Join(Environment.NewLine, said));
-        Assert.That(said[0], Does.Match(@"^EFX 1\.\d+, \d+ auxiliary sends? a source$"));
+        Assert.That(said[0], Does.Match(@"^EFX 1\.\d+, \d+ auxiliary sends? a source; reverb (EAX|standard)$"));
         Assert.That(said[2], Does.Match(@"^\d: AmbienceGenerator ambience/generator, 7\.3 tiles off, level 0\.\d\d, muffled to 0\.35 and dulled$"));
         Assert.That(said[4], Does.Match(@"^\d: AmbienceGenerator ambience/generator, 7\.3 tiles off, level 0\.\d\d$"));
         Assert.That(said[5], Is.EqualTo("Looping sounds (2 of 8 voices, 3 emitters):"));
         Assert.That(said[6..8], Has.None.Contains("muffled"));
+    }
+
+    [Test]
+    public void Each_Room_Has_Its_Reverb()
+    {
+        var said = Play(line => line.StartsWith("Reverb:") || line.StartsWith("No reverb"),
+            "wait 60", "god", "reverb",                 // 1. the hall: the map's (and its zone's)
+            "tp 16 14", "wait 70", "reverb",            // 2. the courtyard
+            "tp 36 16", "wait 70", "reverb",            // 3. the sewer
+            "s_reverb 0", "reverb", "s_reverb 1",       // 4. the setting off
+            "reverb underwater", "wait 70", "reverb",   // 5. held over the zones (as game.reverb)
+            "reverb zones", "wait 70", "reverb",        // 6. given back
+            "tp 40 35", "wait 70", "reverb");           // 7. the elevator room, no zone: the last one carries on
+
+        Assert.That(said, Has.Count.EqualTo(9), string.Join(Environment.NewLine, said));
+        Assert.That(said[0], Is.EqualTo("Reverb: hallway 100%"));
+        Assert.That(said[1], Is.EqualTo("Reverb: castle-courtyard 100%"));
+        Assert.That(said[2], Is.EqualTo("Reverb: sewer-pipe 100%"));
+        Assert.That(said[3], Is.EqualTo("Reverb: sewer-pipe 100% (the Reverb setting is off)"));
+        Assert.That(said[4], Does.StartWith("Reverb: underwater 0%, fading in; sewer-pipe 100%, fading out (held"));    // as it's asked for
+        Assert.That(said[5], Does.StartWith("Reverb: underwater 100% (held over the zones"));
+        Assert.That(said[6], Is.EqualTo("Reverb: sewer-pipe 0%, fading in; underwater 100%, fading out"));       // as it's given back
+        Assert.That(said[7], Is.EqualTo("Reverb: sewer-pipe 100%"));
+        Assert.That(said[8], Is.EqualTo("Reverb: sewer-pipe 100%"));
     }
 
     private static bool IsAmbient(string line) => line.StartsWith("Ambient: ") || line == "No ambient sound";
