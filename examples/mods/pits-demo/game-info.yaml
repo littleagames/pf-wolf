@@ -1,0 +1,14 @@
+# Merged into the game pack's game-info.yaml. The fields are in the game-info reference:
+# https://www.littleagames.com/pf-wolf/docs/latest/reference/game-info
+maps:
+  MAP01:
+    name: "The Chasm"
+    # The player is on story 3: a tile's block (plane 3) that takes it in is solid, one under it
+    # is floor (its top drawn with the tile's floor flat). A floor tile with no block is a pit,
+    # open down to the ground.
+    story: 3
+    # Walls with no block of their own run from the ground up to story 3, so they're solid on
+    # the player's story and go on down the pits. The ceiling is at the top of story 3.
+    wall-height: 3
+    # What shows through the grate's see-through pixels
+    floor-color: "#000000"

@@ -1,0 +1,4 @@
+name: Pits Demo
+version: "2.0"
+description: One level (replacing Floor 1) on the third story - a chasm two stories deep, a stone bridge across it, a grate walkway, stone pillars, and a sea of cloud far below.
+game-packs: [wolf3d]

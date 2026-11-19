@@ -1,0 +1,5 @@
+# The Pits Demo's object-plane ids (980-989 are this mod's). The marker is never seen: it only
+# keeps its tile clear.
+things:
+  980:
+    class: PitEdge

@@ -1,0 +1,5 @@
+# The Pits Demo's actor: a marker on each pit tile. No one walks onto it, enemy or player: the
+# engine has no falling, so things would cross a pit at the player's story as if it were floor.
+PitEdge:
+  properties:
+    blocktile: all

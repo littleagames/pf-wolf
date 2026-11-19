@@ -197,6 +197,56 @@ In game, `where` says what the tile you stand on and the one you face are on you
 `story 1` drops you to the street (the roofs become walls), and `height 3-5` (cheats on) gives
 the faced tile a block.
 
+## Pits Demo (`mods/pits-demo`)
+
+A level that replaces Floor 1 (Wolfenstein 3D only): a chasm two stories deep, crossed on
+**story 3**.
+
+```
+PFWolf.exe --file pits-demo
+```
+
+It replaces Floor 1 like the Switch Demo does, so switch on only one of them at a time.
+
+The walls with no block of their own run from the ground up to story 3 (`wall-height: 3`), so
+they're solid on the player's story and go on down. Every floor you walk on is a floor tile with
+a **block** under it (plane 3: `2`, stories 1 to 2, its top the floor). A **pit** is a floor
+tile with no block: open down to the ground. You start in the hall; north of it:
+
+- **The stone bridge** runs straight across the chasm to the door and the exit. Its sides are
+  grey stone (`sides:` on its floor index).
+- **The west pit** goes down two stories to a stone floor (its floor index's texture, drawn on
+  the ground).
+- **The grate walkway** crosses it to the west wall: a block on story 2 alone (`0x0202`), with
+  story 1 open under it. Its top is a grate whose see-through pixels show the floor color (a
+  flat doesn't show what's under it), its sides are steel, and the ground under it is the pit's
+  stone floor (`ground:`).
+- **The east pit** has no floor texture, so its floor sky shows at its bottom: a sea of cloud.
+- **Stone pillars** stand in both pits, from the ground to the ceiling.
+
+**There's no falling**: things would walk across a pit at the player's story as if it were
+floor. So each pit tile has a `PitEdge` marker (`blocktile: all`) that keeps everyone off it.
+
+### What's in it
+
+- `game-info.yaml`: the level's `story` (3), `wall-height` (3) and floor color.
+- `mapdefs/flats.yaml`: the pits' floors (40, 41's `floor-skies:`), the grate (42), `sides:`
+  for the bridge (1) and the grate, and `ground:` under the grate.
+- `mapdefs/things.yaml` and `actordefs/pits-demo.yaml`: `PitEdge` (980), the pits' marker.
+- `flats/PDGRATE.png`, `graphics/PDCLOUDS.png`: the grate and the clouds.
+- `maps/MAP01.wad`: the level.
+
+Everything is made by `tools/make-pits-demo.ps1`, the level from an ASCII layout; edit it and
+run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-pits-demo.ps1
+```
+
+In game, `where` says what the tile you stand on and the one you face are on your story, and
+with cheats on `story 1` then `tp 30 17` puts you at the bottom of the west pit (the walkways
+are walls there).
+
 ## Patch Demo (`mods/patch-demo`)
 
 A hall that replaces Floor 1 (Wolfenstein 3D only), to show off **wall patches**: pictures

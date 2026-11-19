@@ -1223,6 +1223,11 @@ Loopback first (`--host` / `--join 127.0.0.1`, several windows), then LAN, then 
       building's upper story, the automap's drop and overhead marks (headless screenshots,
       2026-11-08). **(never tried)** walking the whole level, off the bridge's south side (on air),
       through the window, the door, pushing the crate (story mode), the exit.
+- [ ] Pits Demo (`--file pits-demo`), rebuilt for stories 2026-11-19: the hall, the bridge, both
+      pits from the bridge, the grate walkway and its metal sides, the pillars (headless
+      screenshots). **(never tried)** walking it: the PitEdge markers keeping you (and a summoned
+      guard) off the pits, the grate, the door, the exit; the cloud pit's floor sky (looking down
+      shows only its bottom color).
 - [ ] **(never tried)** The editor's 3D view showing a thing on a roof (a wall tile under the
       player's story): the Rooftops Demo's vase on its sign (fixed 2026-11-12, EditorThingStoriesTests).
 - [ ] **(never tried)** Converted arches: tall-walls-demo's colonnade and gate, weather-demo's

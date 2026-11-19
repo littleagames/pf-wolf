@@ -1,0 +1,22 @@
+# The level's floors (the flat plane, map plane 2: a tile's low byte is its floor index). Merged
+# entry by entry over pfwolf-pk3's table, so its 1 (grey stone) is the hall's and the bridge's.
+#
+# A pit is a floor tile with no block (plane 3): its floor index is what's at the bottom, on the
+# ground two stories down. 40 is a stone floor; 41 has no floor texture, so its floor sky shows
+# there: a sea of cloud with no bottom.
+#
+# sides: is the texture on the sides of a floor tile's block, which has no wall texture of its
+# own: the bridge's (index 1) and the grate walkway's (42). ground: is what the ground under a
+# block that doesn't reach it shows (the grate is on story 2 alone): the pit's stone floor, not
+# the grate.
+flats:
+  floor:
+    40: GSTONEA1
+    42: PDGRATE
+  floor-skies:
+    41: PDCLOUDS
+  sides:
+    1: GSTONEA1
+    42: METAL1
+  ground:
+    42: GSTONEA1
