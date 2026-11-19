@@ -99,9 +99,9 @@ $Lamp = 810; $Fire = 811
 # are open below with a block of wall above, faced like the pillars ('I') beside them. The roofs
 # are at the top of story 2, so the lamps ('L') hang on story 2 (plane 6), not mid-air on story 1.
 $Storm = @(
-    '##X#######################'   # y=24 the elevator switch
+    '##########################'   # y=24
     '#eee#pppppppLppppppp#rrr##'   #      the elevator room; the porch, roofed, with lamps
-    '#eeeEppppppppppppppp#rrr##'   #      the elevator room's door
+    'XeeeEppppppppppppppp#rrr##'   #      the elevator switch (used from the east) and the room's door
     '#eee#...............IrLr##'   # y=27 the courtyard; the colonnade and its gallery
     '#####...............arrr##'
     '#####......w........Irrr##'   #      a well
@@ -140,9 +140,9 @@ Save-MapWad "$modDir\maps\MAP01.wad" 'MAP01' 'Night Storm' $planes
 # MAP02: the farm. The barn ('b') is roofed and open to the yard on its east side; the shed with
 # the elevator ('e') is roofed. Wood walls ('W') for the farm buildings.
 $Farm = @(
-    '####################X###'   # y=26
+    '########################'   # y=26
     '#bbbbW..t.......t..#eee#'
-    '#bbbbW.............Deee#'   #      the shed's door
+    '#bbbbW.............DeeeX'   #      the shed's door; the elevator switch (used from the west)
     '#bbbb..........t...#####'
     '#bPbb.....WWW......#####'   # y=30 the player start, in the barn, facing east
     '#bbbb.....WWW....t.#####'
@@ -167,9 +167,9 @@ Save-MapWad "$modDir\maps\MAP02.wad" 'MAP02' 'Snow Squalls' $planes
 # MAP03: the burned village. Digits are what's left of its walls, 1 to 3 stories; 'f' a fire
 # still burning; the chapel ('c') still has its roof.
 $Ruins = @(
-    '##################X###'   # y=26
+    '######################'   # y=26
     '#P...1..f..3....#ccc##'   #      the player start, facing east
-    '#.........2.....Dccc##'   #      the chapel's door
+    '#.........2.....DcccX#'   #      the chapel's door; the elevator switch (used from the west)
     '#..33........f..#ccc##'
     '#...........1...######'   # y=30
     '#.f....22.......######'
