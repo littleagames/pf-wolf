@@ -21,6 +21,8 @@ internal sealed class AssetCommands(ConsoleManager console, AssetManager assets,
             "playsound <name>", PlaySoundCommand);
         console.Register("ambient", "Shows the ambient loop (a zone's, or a script's game.ambient): each sound playing, at what level, and whether it's fading.",
             "ambient", _ => console.Print(audio.DescribeAmbient()));
+        console.Register("soundinfo", "Shows the sound device, OpenAL's version, and whether it has EFX (the treble cut on sounds muffled through doors).",
+            "soundinfo", _ => console.Print(audio.SoundInfo()));
         console.Register("changemus","Plays a song, from a pk3's music/ folder or the game's own; with no name, shows what's playing. A song that ends stops instead of looping with 'once'.",
             "changemus [name] [once]", ChangeMusCommand, complete: (_, i) => i == 1 ? ["once"] : []);
         console.Register("exportmap", "Writes a level, or all of them, as ECWolf maps (NAME.wad) for a mod's maps/ folder: binary planes, or UWMF text with 'uwmf'; to the exports folder, or the folder given.",

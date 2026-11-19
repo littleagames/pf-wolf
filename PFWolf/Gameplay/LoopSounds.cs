@@ -32,12 +32,14 @@ internal readonly record struct LoopCandidate(object Key, string Name, string So
 /// <param name="Stop">A voice stops</param>
 /// <param name="Playing">Whether a voice sounds still (StopAll stops them)</param>
 /// <param name="Muffle">What's left of a voice through shut doors (Gameplay/SoundMuffling.cs), for the loops command</param>
+/// <param name="Dulled">Whether a voice's treble is cut as it's muffled (EFX's low-pass), for the loops command</param>
 internal sealed record LoopVoiceHooks(
     Func<int, string, float, float, float, float, bool> Start,
     Action<int, float, float, float> Move,
     Action<int> Stop,
     Func<int, bool> Playing,
-    Func<int, float>? Muffle = null);
+    Func<int, float>? Muffle = null,
+    Func<int, bool>? Dulled = null);
 
 /// <summary>
 /// Which emitters have the loop voices, and how loud each is: given the emitters each tic and
@@ -200,7 +202,9 @@ internal sealed class LoopEmitters(LoopVoiceHooks hooks, int voices)
                 : !slot.Wanted ? " (fading out)" : slot.Fade < 1 ? " (fading in)" : "";
             float muffle = hooks.Muffle?.Invoke(v) ?? 1;
             string muffled = slot.Started && muffle < 0.999f
-                ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $", muffled to {muffle:0.00}") : "";
+                ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $", muffled to {muffle:0.00}")
+                    + (hooks.Dulled?.Invoke(v) == true ? " and dulled" : "")
+                : "";
             yield return string.Create(System.Globalization.CultureInfo.InvariantCulture,
                 $"{v + 1}: {slot.Name} {slot.Sound}, {slot.Distance:0.0} tiles off, level {Level(slot):0.00}{muffled}{how}");
         }
@@ -291,7 +295,7 @@ internal sealed class LoopSounds
 
     internal LoopSounds(MapManager map, AudioManager audio, GameSession session)
         : this(map, session, new LoopVoiceHooks(audio.StartLoopVoice, audio.MoveLoopVoice, audio.StopLoopVoice, audio.LoopVoicePlaying,
-            audio.LoopVoiceMuffle))
+            audio.LoopVoiceMuffle, audio.LoopVoiceDulled))
     {
     }
 

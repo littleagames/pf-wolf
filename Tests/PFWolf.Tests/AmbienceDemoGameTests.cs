@@ -91,18 +91,19 @@ public class AmbienceDemoGameTests
     [Test]
     public void A_Shut_Door_Muffles_What_Is_Beyond_It()
     {
-        var said = Play(IsLoops,
-            "wait 60", "god",
-            "tp 28 26", "wait 35", "loops",             // 1. the hall, by the generator room's shut door: one in reach, muffled
-            "s_muffle 0", "wait 35", "loops",           // 2. muffling off: back up over a few tics
+        var said = Play(line => IsLoops(line) || line.StartsWith("EFX"),
+            "wait 60", "god", "soundinfo",              // 0. OpenAL Soft's null device has EFX too
+            "tp 28 26", "wait 35", "loops",             // 1. the hall, by the generator room's shut door: one in reach, muffled and dulled
+            "s_muffle 0", "wait 35", "loops",           // 2. muffling off: back up over a few tics, the low-pass taken off
             "s_muffle 1", "wait 35",
             "tp 22 26", "wait 35", "loops");            // 3. in the room: nothing between
 
-        Assert.That(said, Has.Count.EqualTo(7), string.Join(Environment.NewLine, said));
-        Assert.That(said[1], Does.Match(@"^\d: AmbienceGenerator ambience/generator, 7\.3 tiles off, level 0\.\d\d, muffled to 0\.35$"));
-        Assert.That(said[3], Does.Match(@"^\d: AmbienceGenerator ambience/generator, 7\.3 tiles off, level 0\.\d\d$"));
-        Assert.That(said[4], Is.EqualTo("Looping sounds (2 of 8 voices, 3 emitters):"));
-        Assert.That(said[5..7], Has.None.Contains("muffled"));
+        Assert.That(said, Has.Count.EqualTo(8), string.Join(Environment.NewLine, said));
+        Assert.That(said[0], Does.Match(@"^EFX 1\.\d+, \d+ auxiliary sends? a source$"));
+        Assert.That(said[2], Does.Match(@"^\d: AmbienceGenerator ambience/generator, 7\.3 tiles off, level 0\.\d\d, muffled to 0\.35 and dulled$"));
+        Assert.That(said[4], Does.Match(@"^\d: AmbienceGenerator ambience/generator, 7\.3 tiles off, level 0\.\d\d$"));
+        Assert.That(said[5], Is.EqualTo("Looping sounds (2 of 8 voices, 3 emitters):"));
+        Assert.That(said[6..8], Has.None.Contains("muffled"));
     }
 
     private static bool IsAmbient(string line) => line.StartsWith("Ambient: ") || line == "No ambient sound";

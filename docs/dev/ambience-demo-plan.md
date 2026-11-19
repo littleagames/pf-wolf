@@ -18,6 +18,10 @@ is planned in detail below: **3a is done** (2026-11-19: `Gameplay/LoopSounds.cs`
 command, the generators' drone and the sewer's outflow in the demo); **3b is done** (2026-11-19:
 zone `ambient-2*`, `game.ambient`'s layer, the courtyard's rain); **3c is done** (2026-11-19:
 `Gameplay/SoundMuffling.cs`, Game Options "Muffle Thru Doors", on in the demo). Phase 3 is done.
+Phase 4 (reverb zones, and a low-pass on muffled sounds) is planned in detail below: **4a is
+done** (2026-11-19: `Managers/AudioEffects.cs`, the `soundinfo` command, muffled sounds dulled;
+EFX proven on the null driver and on this PC's device: OpenAL Soft 1.23.1, EFX 1.0, 4 sends a
+source). 4b and 4c are not started.
 Phase 4 is still open. The mod-facing changes (new sound-seq and zone fields, `game.ambient`'s
 second argument and its win over zones, `game.playsound`) belong in the release notes of whichever
 version ships this branch.
@@ -265,12 +269,154 @@ Mod-facing additions for the release notes: `loopsound`/`loopradius`/`loop-sound
 `ambient-2*`, `game.ambient`'s layer argument, the `sound-muffling` setting and the
 `sound-muffle` strength.
 
-### Phase 4 (optional): reverb zones
+### Phase 4: reverb zones and a muffled low-pass (planned 2026-11-19)
 
-Zone field `reverb: cave | hall | room | none` using OpenAL Soft's EFX reverb presets on an
-auxiliary send. The bundled OpenAL Soft has EFX on Windows and Linux. Apple's framework doesn't,
-so there it's quietly ignored. The demo's sewer becomes a cave. This phase is the riskiest
-(EFX through OpenTK, untested hardware paths), so it goes last.
+A sewer that sounds like a pipe, a hall that rings, the player's gun echoing in a cave; and a
+sound behind a shut door that's duller as well as quieter. All of it through OpenAL's EFX
+extension.
+
+#### What's there to build on (checked 2026-11-19)
+
+- **OpenTK.Audio.OpenAL 4.9.4 has the whole EFX API** (`ALC.EFX`):
+  - `GenEffect`, `Effect(id, EffectInteger.EffectType, EffectType.EaxReverb)` and the reverb's
+    `EffectFloat`/`EffectVector3` parameters.
+  - `GenAuxiliaryEffectSlot` and `AuxiliaryEffectSlot(slot, EffectSlotInteger.Effect, effect)`,
+    with `EffectSlotFloat.Gain`.
+  - `GenFilter`, `Filter(id, FilterInteger.FilterType, FilterType.Lowpass)`, `FilterFloat`
+    `LowpassGain` and `LowpassGainHF`.
+  - Per source: `Source(src, EFXSourceInteger.DirectFilter, filter)` and
+    `Source(src, EFXSourceInteger3.AuxiliarySendFilter, slot, send, filter)`.
+  - `IsExtensionPresent(device)`.
+- **It ships 113 named presets**, `ReverbPresets.*` as `ReverbProperties` (Creative's
+  efx-presets.h): Cave, Sewerpipe, Hangar, Hallway, StoneCorridor, StoneRoom, Room,
+  LivingRoom, Bathroom, Arena, Underwater, CastleCourtyard, FactoryHall, SpaceStationHall,
+  Forest, Mountains, Drugged, Dizzy… so nobody has to tune reverb numbers.
+- **OpenAL Soft 1.23.1 is bundled for every OS, macOS included** (the mac-linux work), and it
+  has EFX. The first plan's note that Apple's framework has none only matters if the bundled
+  library fails to load. Then `IsExtensionPresent` is false and everything stays dry, with a
+  line in the `reverb` command.
+- `ALSOFT_DRIVERS=null` still runs EFX, so headless tests can check the bookkeeping.
+- Phase 3c already leaves the hook for the low-pass: each placed source's muffle level moves in
+  `AudioManager.TickMuffling`.
+
+#### 4a EFX plumbing, and muffled sounds lose their treble
+
+- **`Managers/AudioEffects.cs`:** opened with the device (on AudioManager's open thread, the
+  context current).
+  - It finds out whether EFX is there.
+  - It makes the two auxiliary slots (4b) and one scratch low-pass filter.
+  - It deletes them all at Shutdown.
+  - With no EFX, every call does nothing.
+- **The low-pass:** with muffling on, a muffled source (`_sourceMuffles` / `_loopMuffles`
+  below 1) gets a direct low-pass of gain 1 and GainHF = muffle^1.5, re-attached as its muffle
+  moves. The level is still the gain's job, as now. OpenAL copies a filter's values as it's
+  attached, so one scratch filter serves every source. Unmuffled sources get no filter.
+- **No new setting:** it's part of Muffle Thru Doors, on whenever that is and EFX is there.
+- **Tests:**
+  - A pure helper `LowpassFor(muffle)`, unit tested.
+  - The `loops` command adds " and dulled" after "muffled to …" when a voice is filtered.
+  - The muffling game test checks it.
+- **As built:** the slots wait for 4b; 4a makes only the filter. A `soundinfo` console command
+  shows the device, OpenAL's version and the EFX line (or why there's none).
+
+#### 4b Reverb zones
+
+- **Where it's said:**
+  - A map's `reverb: <preset>` is where the level starts.
+  - A zone's `reverb: <preset>` takes over as the player steps in.
+  - A zone with no `reverb` (a door, a doorway, a light zone) keeps whatever's playing, as
+    ambient does.
+  - `none` is dry.
+  - `reverb-fade: <tics>` on the zone or map (default 35) crossfades the change.
+  - `default-map` gives every level's default.
+- **Preset names:** the OpenTK preset names in hyphenated lower case (`cave`, `sewer-pipe`,
+  `stone-corridor`, `castle-courtyard`, `space-station-hall`…).
+  - `PFWolf.Common` keeps the list of names (`ReverbNames`) for the docs, the editor and load
+    warnings.
+  - The engine maps a name to its `ReverbPresets` field.
+  - A unit test checks every name resolves and every preset has a name.
+  - An unknown name warns once and is dry.
+- **ReverbMixer (`Managers/ReverbMixer.cs`):** pure and hooked, as AmbientMixer is. It has
+  two auxiliary slots.
+  - A change loads the new preset into the idle slot's EAX-reverb effect, moves every
+    source's send to it, and fades the slot gains (old out, new in) over the fade.
+  - The old slot's tail rings on while its gain falls, so a gunshot fired as you leave a cave
+    still echoes behind you.
+  - If the EAX reverb type isn't there, it falls back to the standard reverb type, using the
+    preset's matching fields.
+- **What's sent to it:**
+  - Every game sound: effects, channels (the radio) and the 3a loops.
+  - The player's own weapons, which is the point: a pistol in a cave.
+  - Not the music, and not the ambient loops, which are recorded "in the space" already, and
+    a cave's wind through a cave reverb turns to mush.
+  - A sound-seq `reverb: 0..1` sets a sound's send level (1 by default; 0 keeps a sound
+    dry: menu clicks, a narrator).
+- **Menus and pausing:** pausing drops both slots' gains at once, so a menu click is dry.
+  Resuming brings the zone's back.
+- **Lua:** `game.reverb(preset[, tics])` holds the reverb over the zones until
+  `game.reverb(nil)`, as `game.ambient` does: an underwater section, a dream with `drugged`.
+  It isn't saved, as the script's own state isn't.
+- **Setting:** Options → Sound gets a "Reverb" checkbox (`s_reverb`, config.cfg), on by
+  default. A stock game has no reverb zones, so nothing changes until a mod uses them.
+  - Wolf3D's Sound menu has room for the row (the window grows by one row).
+  - Blake Stone's needs checking.
+- **Console:** `reverb` shows the preset playing, each slot's level, and whether EFX is there.
+- **Editor:** a map-level Reverb field in Map Properties and a "Reverb" column in the zones
+  grid, as drop-downs of the preset names. The YAML round trip is tested as `ambient-2` is.
+- **Multiplayer and demos:** only for show, local to the listener (the camera's zone, as
+  ambience). Nothing in TicCmds or saves.
+
+#### 4c Custom reverbs (small, optional)
+
+game-info `reverbs:` holds named reverbs, each a `base:` preset with any of its numbers changed
+(`decay-time`, `gain`, `density`, `diffusion`, `reflections-gain`, `late-reverb-gain`,
+`decay-hf-ratio`…). Zones and `game.reverb` name them like presets. It's for a pack that wants
+"Hitler's bunker" tuned by ear, rather than the closest of Creative's 113.
+
+#### The demo, after phase 4
+
+| Room | Reverb |
+|---|---|
+| Hall | `hallway` |
+| Courtyard | `castle-courtyard` |
+| Sewer | `sewer-pipe` |
+| Generator room | `factory-medium-room` |
+| Guard post | `stone-room` |
+| Radio room | `living-room` |
+| Elevator room | no zone, so the hall's carries on |
+
+- The README tells you to fire the pistol in each room.
+- Shut a door on the generators and they go quieter **and** duller (4a).
+- If 4c goes in, the script shows `game.reverb("underwater")` on a switch, or one custom reverb
+  for the sewer's far end.
+
+#### Risks
+
+- EFX function pointers are loaded through `alGetProcAddress` with the context current.
+  AudioManager opens the device on a task thread, but the context is current for the whole
+  process, so it should work. 4a's first step is to prove it with the null driver in a test.
+- The reverb's cost is OpenAL Soft's own. Two slots is the default limit
+  (`EFXContextAttributes.MaxAuxiliarySends`); we need one send per source, so there's no need
+  to raise it.
+- Nobody can judge reverb but by ear. Every preset choice in the demo is a guess until it's
+  listened to.
+
+#### Testing
+
+- **Unit tests:**
+  - `ReverbMixer` (crossfade, the same preset asked again, `none`, a pause, StopAll).
+  - Preset name mapping both ways.
+  - `LowpassFor`.
+  - Zone `reverb` resolution and carry-over in `ZoneAmbienceTests` (or a ZoneReverb class
+    beside it).
+  - The editor's YAML round trip.
+- **Game tests:** AmbienceDemoGameTests reads `reverb` room by room, and checks that a
+  `reverb` change while paused is dry.
+- **Demo sync:** the 8 demos stay trace-identical.
+- **By ear:** everything, as "(never tried)" lines in manual-testing.md.
+
+Mod-facing additions for the release notes: zone and map `reverb` / `reverb-fade`, sound-seq
+`reverb`, `game.reverb`, the `s_reverb` setting, and (4c) game-info `reverbs:`.
 
 ## Decisions for the user
 
@@ -291,6 +437,21 @@ Phase 3's, with the recommendation first:
 7. **How much muffling:** by the number of shut doors between (recommended), or AreaByPlayer's
    yes or no (simpler, but a room two doors off is as loud as one next door)?
 8. **EFX low-pass:** with phase 4 (recommended, as both need EFX loaded), or in 3c already?
+   *(Taken: with phase 4.)*
+
+Phase 4's, with the recommendation first:
+
+9. **Where reverb comes from:** carried over as ambient is (a zone with no `reverb` keeps the
+   last one, and the map's `reverb` is where the level starts; recommended), or every zone
+   without one going back to the map's (simpler to read, but a doorway between two reverb
+   rooms would flicker through the map's)?
+10. **Which sounds reverberate:** every game sound including the player's weapons, but not
+    music or the ambient loops, with sound-seq `reverb: 0` to keep one dry (recommended); or
+    placed sounds only?
+11. **The switch:** Options → Sound "Reverb" (`s_reverb`, on by default, since stock games have
+    no reverb zones; recommended), or Game Options (already scrolling), or no switch?
+12. **Custom reverbs (4c):** with phase 4, or later if the presets turn out to be enough
+    (recommended: later)?
 
 ## Testing
 

@@ -996,6 +996,13 @@ can reach), not played by hand.
       sighting yell behind a shut door; two doors quieter than one; a pushwall-only area; the
       setting off in stock Wolf3D sounding as before; spectating (the watched player's doors);
       Planet Strike's Game Switches (12 rows, no scrolling) not checked.
+- [ ] Muffled sounds dulled (EFX low-pass, `soundinfo`, 2026-11-19): headless, `soundinfo` on the
+      null driver said EFX 1.0, and `loops` from the hall showed the generator "muffled to 0.35
+      and dulled", the filter gone with `s_muffle 0`; `soundinfo` on this PC's own device: OpenAL
+      Soft 1.23.1, EFX 1.0, 4 sends a source. **(never tried)**, by ear: the drone behind the shut
+      door duller as well as quieter, brightening as it opens; a guard's shot through a door; no
+      dulling with Muffle Thru Doors off; a sound started next to you after a muffled one on
+      the same voice not left dull.
 - [ ] Episode Demo (`--file episode-demo`): seen windowed: Episode 7 and its picture on the menu
       (scrolled into view, "1 more" marks above and below), the briefing article before MAP61;
       each map loads. **(never tried)**: a Blake Stone episode menu or a level select long

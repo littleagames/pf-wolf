@@ -2106,7 +2106,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 - **The generator room** (second west): a faint buzz, and each generator droning from where it
   stands, louder as you walk up to it and from its side. Use a generator and they all wind down,
   and the room goes quiet. Use one again and they start up. Step out into the hall and let the
-  door shut: the drone drops away behind it, and swells again as the door opens.
+  door shut: the drone drops away behind it, duller as well as quieter, and swells again as the
+  door opens.
 - **The guard post** (second east): two guards with their backs to you, and a tense ticking
   while they haven't seen you. Let one see you and the alarm fades in.
 - **The radio room** (third west): no ambience at all, only the radio playing. Use it to change
@@ -2135,7 +2136,8 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
   `setting-defaults: sound-muffling: true` switches on Game Options → Muffle Thru Doors
   (`s_muffle`) for the mod, which the game has off: a sound placed in the world (an actor's, a
   door's, `game.playsound` at a place, a `loopsound`) is quieter for each shut door between its
-  area and yours, each leaving `sound-muffle` of it (0.35 here, the default). At most three
+  area and yours, each leaving `sound-muffle` of it (0.35 here, the default), and loses its
+  treble too (where OpenAL has EFX: the console's `soundinfo` says). At most three
   doors count, and an area no door leads to counts as three. Sounds that aren't placed (weapons,
   pickups, the ambience) aren't muffled. The player's own choice in the menu still wins.
 - `sounds/sound-seq.yaml`: the sounds, each one of the folder's `.wav` files, with:

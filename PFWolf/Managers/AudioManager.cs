@@ -200,12 +200,18 @@ internal class AudioManager
                 continue;
             }
             if (MoveToward(ref _sourceMuffles[i], Muffle(place.X, place.Y), step))
+            {
                 AL.Source(_sources[i], ALSourcef.Gain, _sourceVolumes[i] * _sourceMuffles[i] * gain);
+                ApplyDulling(_sources[i], _sourceMuffles[i], ref _sourceDulled[i]);
+            }
         }
         for (int v = 0; v < _loopSources.Length; v++)
         {
             if (LoopVoicePlaying(v) && MoveToward(ref _loopMuffles[v], Muffle(_loopPlaces[v].X, _loopPlaces[v].Y), step))
+            {
                 ApplyLoopGain(v);
+                ApplyDulling(_loopSources[v], _loopMuffles[v], ref _loopDulled[v]);
+            }
         }
     }
 
@@ -310,8 +316,47 @@ internal class AudioManager
             AL.Source(source, ALSourcef.MaxDistance, 16.0f);
             AL.Source(source, ALSourcef.RolloffFactor, 0.35f);
         }
+        _sourceDulled = new bool[_sources.Length];
+        _effects.Open(_device);
         _opened = true;
     }
+
+    // EFX (Managers/AudioEffects.cs): the low-pass that dulls a muffled sound
+    private readonly AudioEffects _effects = new();
+
+    /// <summary>
+    /// What sound the game has, for the soundinfo command: the device, OpenAL's version and
+    /// whether EFX (muffled treble, reverb) is there
+    /// </summary>
+    public string SoundInfo()
+    {
+        if (!IsActive)
+            return "Sound is off: OpenAL couldn't be started";
+        string device = ALC.GetString(_device, AlcGetString.DeviceSpecifier) ?? "?";
+        return $"Device: {device}\nOpenAL: {AL.Get(ALGetString.Version)} ({AL.Get(ALGetString.Vendor)}, {AL.Get(ALGetString.Renderer)})\n"
+            + _effects.Description;
+    }
+
+    /// <summary>Whether EFX is there (muffled sounds dulled, reverb)</summary>
+    public bool EffectsAvailable => IsActive && _effects.Available;
+
+    // Each of _sources' and the loop voices' low-pass: on while it's muffled (and EFX is there)
+    private bool[] _sourceDulled = [];
+    private readonly bool[] _loopDulled = new bool[LoopVoices];
+
+    // A source's low-pass as it's muffled: put on, changed, or taken off; nothing when there's none
+    // and it needs none
+    private void ApplyDulling(int source, float muffle, ref bool dulled)
+    {
+        var gainHF = AudioEffects.LowpassFor(muffle);
+        if (gainHF == null && !dulled)
+            return;
+        _effects.SetDirectFilter(source, gainHF);
+        dulled = gainHF != null && _effects.Available;
+    }
+
+    /// <summary>Whether a loop voice is dulled through shut doors, for the loops command</summary>
+    public bool LoopVoiceDulled(int voice) => voice >= 0 && voice < LoopVoices && _loopDulled[voice];
 
     // The OpenAL library OpenTK loads when the bundled OpenAL Soft won't (NativeLibraries): an
     // OpenAL32.dll beside the exe or in System32 on Windows, the system's elsewhere (OpenAL Soft
@@ -480,6 +525,7 @@ internal class AudioManager
         _sourceMuffles[index] = position is { } place ? Muffle(place.X, place.Y) : 1;
         _lastBufferForSound[name.ToLowerInvariant()] = sound.Buffer;
         AL.Source(source, ALSourcef.Gain, sound.Volume * _sourceMuffles[index] * VolumeGain(_soundVolume));
+        ApplyDulling(source, _sourceMuffles[index], ref _sourceDulled[index]);     // (taken off one reused unmuffled)
         AL.Source(source, ALSourcef.Pitch, sound.Pitch);
         StartSource(source, sound.Buffer, position);
         _lastStarted = (source, sound.Buffer);
@@ -691,6 +737,7 @@ internal class AudioManager
         _loopLevels[voice] = level;
         _loopPlaces[voice] = (x, y);
         _loopMuffles[voice] = Muffle(x, y);
+        ApplyDulling(source, _loopMuffles[voice], ref _loopDulled[voice]);
         AL.Source(source, ALSourcei.Buffer, sound.Buffer);
         AL.Source(source, ALSourcef.Pitch, sound.Pitch);
         AL.Source(source, ALSourcef.MaxDistance, Math.Max(radius, 1.0f));
@@ -1265,6 +1312,7 @@ internal class AudioManager
         AL.DeleteSource(_musicSource);
         AL.DeleteSources(_ambientSources);
         AL.DeleteSources(_loopSources);
+        _effects.Shutdown();
         AL.DeleteSources(_sources);
         AL.DeleteBuffers(_buffers.Values.ToArray());
         ALC.MakeContextCurrent(ALContext.Null);
