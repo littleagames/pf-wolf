@@ -16,6 +16,9 @@ public class FactionGameTests
 
     private string _workFolder = "";
 
+    // The game's output from the last Play
+    private List<string> _lastOutput = [];
+
     [SetUp]
     public void SetUp()
     {
@@ -40,7 +43,7 @@ public class FactionGameTests
     // The arena's things (mapdefs things of the mod): guards on the players' side facing either
     // way, and a tough guard of a side that's neutral to everyone
     private const int AllyFacingEast = 500, AllyFacingWest = 501, NeutralFacingWest = 502;
-    private const int FollowerFacingWest = 503, PrisonerFacingEast = 504;
+    private const int FollowerFacingWest = 503, PrisonerFacingEast = 504, WeaklingFacingEast = 505, ChampionFacingEast = 506;
     private const int AxisGuardEast = 108, AxisGuardWest = 110, PlayerFacingEast = 20, PlayerFacingWest = 22;
 
     [Test]
@@ -63,6 +66,24 @@ public class FactionGameTests
             Assert.That(Kills(result), Is.EqualTo(1), "the axis guard counts as a kill whoever killed it");
             Assert.That(Score(result), Is.Zero, "no points for an enemy one of the player's allies killed");
         }
+    }
+
+    [Test]
+    public void A_Dead_Ally_Stays_Dead_Once_The_Last_Enemy_Dies()
+    {
+        // Arrange: a one-hit ally nearest an axis guard (so it's shot first) and a tough ally
+        // further back that finishes the guard off; the player waits behind them
+        var mod = WriteArena((11, PlayerFacingEast), (12, ChampionFacingEast), (16, WeaklingFacingEast), (19, AxisGuardWest));
+
+        // Act
+        var (census, _) = Play(mod, new DemoStep(0, 0, 0, 1400));
+
+        // Assert: both died, and the ally's body, its enemies all gone, didn't get back up
+        // (it kept attack mode from its life, and "gave up" into its Spawn state)
+        var last = census[^1];
+        Assert.That(Health(last, "Guard:axis"), Is.LessThanOrEqualTo(0), $"The axis guard lived: {last}");
+        Assert.That(Health(last, "Weakling:allies"), Is.LessThanOrEqualTo(0), $"The weak ally lived: {last}");
+        Assert.That(State(last, "Weakling:allies"), Is.Not.EqualTo("Spawn"), $"The dead ally stood up: {last}");
     }
 
     [Test]
@@ -146,6 +167,42 @@ public class FactionGameTests
         Assert.That(Math.Abs(TileX(last, "Prisoner:allies") - TileX(last, "Player:allies")), Is.LessThanOrEqualTo(3), last);
         Assert.That(last, Does.Contain("Prisoner:allies:25:Spawn"), $"It should be standing by: {last}");
     }
+
+    [Test]
+    public void A_Prisoner_Used_While_Stepping_Aside_Doesnt_Glide_On()
+    {
+        // Arrange: the player walks into a prisoner (which steps aside, out of their way) and
+        // uses it as it starts to go; a script tells of anyone moving tic after tic out of its
+        // walk (Chase) state
+        var mod = WriteArena((20, PlayerFacingWest), (18, PrisonerFacingEast));
+        File.WriteAllText(Path.Combine(mod, "scripts", "glide.lua"), GlideScript);
+
+        // Act
+        var (census, _) = Play(mod, new DemoStep(0, 0, 0, 20), new DemoStep(0, 0, -35, 4), new DemoStep(0, 0, 0, 1),
+            new DemoStep(Use, 0, 0, 2), new DemoStep(0, 0, 0, 120));
+
+        // Assert: freed, and it stopped where it stood rather than sliding on in its standing frame
+        Assert.That(census[^1], Does.Contain("Prisoner:allies:25:Spawn"), census[^1]);
+        Assert.That(_lastOutput, Has.None.StartsWith("GLIDE"), string.Join(Environment.NewLine, _lastOutput.Where(l => l.StartsWith("GLIDE"))));
+    }
+
+    // Prints GLIDE when an actor on a side moves two tics running while out of its Chase state
+    // (a walk's last step onto its tile's middle is one tic, as it stops)
+    private const string GlideScript = """
+        local last = {}
+        game.ontick(function(tics)
+          for _, a in ipairs(game.actors()) do
+            if a.faction ~= nil and not a.isplayer then
+              local l = last[a]
+              local moved = l ~= nil and (l.x ~= a.x or l.y ~= a.y) and a.state ~= "Chase"
+              if moved and l.moved then
+                print("GLIDE t=" .. game.time() .. " " .. a.name .. " " .. tostring(a.state) .. " " .. a.x .. "," .. a.y)
+              end
+              last[a] = { x = a.x, y = a.y, moved = moved }
+            end
+          end
+        end)
+        """;
 
     [Test]
     public void Allies_Standing_In_A_Corridor_Make_Way_Through_A_Door()
@@ -294,6 +351,16 @@ public class FactionGameTests
                     tics-per-frame: 1
                     action: A_SetFaction("allies", "follow")
                     next-state: Spawn
+            Weakling:
+              parent: Guard
+              properties:
+                health: 1
+                faction: allies
+            Champion:
+              parent: Guard
+              properties:
+                health: 400
+                faction: allies
             """);
         File.WriteAllText(Path.Combine(mod, "mapdefs", "arena.yaml"), $$"""
             things:
@@ -302,6 +369,8 @@ public class FactionGameTests
               {{NeutralFacingWest}}: { class: Brute, angles: 180 }
               {{FollowerFacingWest}}: { class: Follower, angles: 180 }
               {{PrisonerFacingEast}}: { class: Prisoner, angles: 0 }
+              {{WeaklingFacingEast}}: { class: Weakling, angles: 0 }
+              {{ChampionFacingEast}}: { class: Champion, angles: 0 }
             """);
         File.WriteAllText(Path.Combine(mod, "scripts", "census.lua"), CensusScript);
         return mod;
@@ -318,6 +387,7 @@ public class FactionGameTests
         Assert.That(exitCode, Is.Zero, log);
         Assert.That(output, Has.None.Contains("Exception"), log);
 
+        _lastOutput = output;
         var census = output.Where(line => line.StartsWith("CENSUS ")).ToList();
         var result = output.FirstOrDefault(line => line.StartsWith("demotest 1:"));
         Assert.That(census, Is.Not.Empty, log);
@@ -334,6 +404,10 @@ public class FactionGameTests
     private static int Health(string census, string who) => Part(census, who, 2);
 
     private static int TileX(string census, string who) => Part(census, who, 4);
+
+    // An actor's state name in a census line
+    private static string State(string census, string who) =>
+        census.Split(' ').First(part => part.StartsWith(who + ":")).Split(':')[3];
 
     // A field (name:faction:health:state:TileX:TileY) of an actor in a census line
     private static int Part(string census, string who, int field) =>

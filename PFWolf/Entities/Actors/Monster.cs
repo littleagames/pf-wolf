@@ -328,7 +328,11 @@ internal partial record Monster : Actor
                         && Math.Max(deltax, deltay) >= Math.Max(Math.Abs(X - pawn.X), Math.Abs(Y - pawn.Y)))
                         continue;
 
-                    if (!Hidden || !PlayerTileInView(pawn))
+                    // As the original, one that's lost sight of who it's after (Hidden, set by its
+                    // chase) slips past them where they can see it happen. Only past whoever it's
+                    // after, though: an ally of theirs, or an enemy after one of their allies, that
+                    // has lost sight of its foe mustn't walk through a player on the way
+                    if (!Hidden || !PlayerTileInView(pawn) || !IsAfter(pawn))
                     {
                         // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
                         if (HasFlag("TOUCHDAMAGE"))
@@ -351,6 +355,11 @@ internal partial record Monster : Actor
         if (DispX != 0 || DispY != 0)
             EaseBack(move);     // shoved off its walk, it drifts back onto it (Monster.Knockback.cs)
     }
+
+    // Whether it's going after that player: the one it's set on, else (none set) any it's hostile
+    // to. Asked without Target's picking one (that would change who it's after mid-step); alone
+    // and with no other sides, always the player, as the original
+    private bool IsAfter(PlayerPawn pawn) => TargetIfAny is { } target ? ReferenceEquals(target, pawn) : IsHostileTo(pawn);
 
     // A monster blocker on the tile keeps it off: any (blocktile: monsters), or a BOSS (bosses)
     // (Midnight Assault's BLOCK_ENEMIES and BLOCK_BOSSES, CHECKSIDE/CHECKDIAG)
@@ -680,7 +689,10 @@ internal partial record Monster : Actor
     /// </summary>
     internal bool BeforeThink(uint tics)
     {
-        if (!RuntimeFlags.Has(ObjFlags.AttackMode))
+        // A corpse (not Shootable) keeps AttackMode from its life, as the original's did: it
+        // mustn't "give up" and stand back up once no foe is left (an ally's or a prisoner's
+        // body, after the last of the enemies dies)
+        if (!RuntimeFlags.Has(ObjFlags.AttackMode) || !RuntimeFlags.Has(ObjFlags.Shootable))
             return false;
 
         if (!HasFoe)
@@ -778,6 +790,13 @@ internal partial record Monster : Actor
     /// </summary>
     internal bool ThinkInstead(uint tics)
     {
+        // Taken off its walk by something else (a player using it, a hurt, a fight, reviving or
+        // dying), it isn't walking any more: else it would glide on in that state, and keep the
+        // walking ally's leave to move off past a player in a fight
+        if (RuntimeFlags.Has(ObjFlags.Following) && (RuntimeFlags.Has(ObjFlags.AttackMode)
+                || !RuntimeFlags.Has(ObjFlags.Shootable) || CurrentState?.StateName != "Chase"))
+            StopWalking(stand: false);
+
         if (RuntimeFlags.Has(ObjFlags.AttackMode) || !RuntimeFlags.Has(ObjFlags.Shootable) || IsBusyReviving)
             return false;
 

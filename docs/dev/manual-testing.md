@@ -662,6 +662,10 @@ the keypad's note and code open its closet)
       steps aside when you walk into it (squad bunched in a corridor shoves on along it,
       through the door); followers never stop on a door's tile; a stood-still neutral or
       prisoner beside you doesn't wander off until you walk into it.
+- [ ] **(never tried)** After a fight where the squad (or a medic) lost sight of an enemy, walking
+      into your followers: they stop against you rather than walk through you; enemies after
+      one of your squad don't walk through you either. Dead allies stay down once the last
+      enemy dies. A prisoner used just as it steps aside stops rather than gliding on.
 
 **Medics** (`medic-demo`)
 - [ ] **(never tried)** A real play-through by hand: medic revives corpses, bosses never raised,
