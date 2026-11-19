@@ -1342,12 +1342,16 @@ of them at a time.
   drawn bright.
 - `mapdefs/things.yaml`: objects 810 (the lamp) and 811 (the fire).
 - `graphics/`: the three skies. `sprites/WDFRA0.png`, `WDFRB0.png`: the fire's two frames.
+- `sprites/GLMPA0.png`: the ceiling light, replacing the game's own. It's the same lamp without
+  the grey pool of light the original draws on the floor under it. The porch's lamps hang on
+  story 2 (plane 6) under its 2-story roof, and that pool would float in the air one story up.
+  The lamp's own light (`light.*`) lights the floor instead.
 - `maps/MAP01.wad` to `MAP03.wad`: the levels. A roofed tile is one with a **ceiling flat** (the
   high byte of its flat plane, plane 2, value): rain and snow never fall under one, even a
   see-through one. An arch (an open tile with a height on plane 3) covers its tile too.
 
-Everything but the YAML is made by `tools/make-weather-demo.ps1` (the layouts are ASCII drawings
-in it). Edit it and run it again:
+Everything but the YAML and `sprites/GLMPA0.png` is made by `tools/make-weather-demo.ps1` (the
+layouts are ASCII drawings in it). Edit it and run it again:
 
 ```
 powershell -ExecutionPolicy Bypass -File examples/tools/make-weather-demo.ps1

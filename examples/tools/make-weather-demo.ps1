@@ -12,6 +12,9 @@
 # Rain and snow don't fall under a ceiling flat, under an arch, in a doorway or inside a wall, so
 # every roofed tile here has a ceiling flat: the flat plane's high byte (pfwolf-pk3's index 3,
 # wood planks).
+#
+# sprites/GLMPA0.png isn't made here: it's the game's ceiling light with its floor pool of light
+# (rows 59-63) cut off, so a lamp hung on story 2 doesn't leave the pool floating mid-air.
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'example-mod-tools.ps1')
@@ -93,7 +96,8 @@ $Barn = 3 * 256 + 3
 $Lamp = 810; $Fire = 811
 
 # MAP01: the storm. Walls are 2 stories (game-info wall-height); the colonnade's arches ('a')
-# are open below with a block of wall above, faced like the pillars ('I') beside them.
+# are open below with a block of wall above, faced like the pillars ('I') beside them. The roofs
+# are at the top of story 2, so the lamps ('L') hang on story 2 (plane 6), not mid-air on story 1.
 $Storm = @(
     '##X#######################'   # y=24 the elevator switch
     '#eee#pppppppLppppppp#rrr##'   #      the elevator room; the porch, roofed, with lamps
@@ -119,7 +123,7 @@ $Tiles['I'] = @{ Plane0 = 1 }                                          # a pilla
 $Tiles['a'] = @{ Plane0 = 108; Height = 0x0202 }                       # an arch: open below, a block on story 2 (start 2, stop 2)
 $Tiles['.'] = @{ Plane0 = 108 }                                        # the courtyard, open to the sky
 $Tiles['p'] = @{ Plane0 = 108; Flat = $Roof }                          # the porch
-$Tiles['L'] = @{ Plane0 = 108; Flat = $Roof; Plane1 = $Lamp }          # a porch lamp
+$Tiles['L'] = @{ Plane0 = 108; Flat = $Roof; Plane1 = $Lamp; Story = 2 }   # a porch lamp, hung from the roof up on story 2
 $Tiles['r'] = @{ Plane0 = 108; Flat = $Roof }                          # the gallery behind the arches
 $Tiles['w'] = @{ Plane0 = 108; Plane1 = 59 }                           # the well
 $Tiles['v'] = @{ Plane0 = 108; Plane1 = 58 }                           # a barrel
@@ -129,7 +133,7 @@ $Tiles['e'] = @{ Plane0 = 110; Flat = $Roof }                          # the ele
 $Tiles['D'] = @{ Plane0 = 91 }                                         # a door, north-south
 $Tiles['E'] = @{ Plane0 = 90 }                                         # a door, east-west
 $Tiles['X'] = @{ Plane0 = 21 }                                         # elevator switch
-$planes = New-MapPlanes
+$planes = New-MapPlanes -Count 7                                       # plane 6: the lamps' story
 Add-MapLayout $planes $Storm $Tiles 19 24
 Save-MapWad "$modDir\maps\MAP01.wad" 'MAP01' 'Night Storm' $planes
 
