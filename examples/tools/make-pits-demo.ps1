@@ -48,7 +48,7 @@ Save-Picture "$modDir\graphics\PDCLOUDS.png" 512 96 {
 # THE LEVEL
 #
 # You start in the hall at the south ('S', facing north) between two lamps ('L'). North of it is
-# the chasm: a stone bridge ('b') runs straight across it to the door ('D') and the exit ('E').
+# the chasm: a stone bridge ('b') runs straight across it to the door ('D') and the elevator.
 # West of the bridge the pit ('w') goes down two stories to a stone floor, crossed by a steel
 # grate walkway ('g', a block on story 2 alone, so story 1 is open under it); east of it the pit
 # ('c') drops into a sea of cloud. Stone pillars ('P') stand in the pits, from the bottom up to
@@ -57,10 +57,16 @@ Save-Picture "$modDir\graphics\PDCLOUDS.png" 512 96 {
 # The engine has no falling: a thing walks across a pit at the player's story as if it were
 # floor. So every pit tile has a PitEdge marker (980, `blocktile: all`) that keeps everyone off it.
 
+#
+# North of the door a passage turns east into the elevator ('V' its door, 'T' its walls), with
+# the switch ('E') at its east end. Wall 21 is a switch only on its east and west faces: its
+# north and south ones are the elevator's plain walls. So the elevator runs east-west, the switch
+# faced from the west, and its side walls (21 too) show their plain faces.
+
 $Level = @(
-    '#######E#######'   # y=10 the exit switch
-    '######eee######'
-    '######eee######'
+    '#########TT####'   # y=10 the elevator's north wall
+    '#######eVeeE###'   #      the passage, the elevator door, the elevator, the switch
+    '#######e#TT####'   #      the elevator's south wall
     'BBBBBBBDBBBBBBB'   #      the door to the exit
     'BwwwwwwbccccccB'   # y=14 the chasm: the stone pit, the bridge, the cloud pit
     'BwwwwwwbccccccB'
@@ -79,7 +85,9 @@ $Floor = 2                 # a floor tile's block: stories 1 to 2, its top the f
 $Tiles = [Collections.Hashtable]::new([StringComparer]::Ordinal)
 $Tiles['#'] = @{ Plane0 = 1 }                                          # grey stone, the ground to story 3
 $Tiles['B'] = @{ Plane0 = 8 }                                          # blue stone round the chasm
-$Tiles['E'] = @{ Plane0 = 21 }                                         # the exit switch
+$Tiles['E'] = @{ Plane0 = 21 }                                         # the elevator switch, faced from the west
+$Tiles['T'] = @{ Plane0 = 21 }                                         # the elevator's walls (their plain faces)
+$Tiles['V'] = @{ Plane0 = 100; Flat = 1 }                              # the elevator door (east-west)
 $Tiles['D'] = @{ Plane0 = 91; Flat = 1 }                               # a door on story 3, its frame down to the ground
 $Tiles['e'] = @{ Plane0 = 108; Flat = 1; Height = $Floor }             # the hall's floor (grey stone, index 1)
 $Tiles['L'] = @{ Plane0 = 108; Flat = 1; Height = $Floor; Plane1 = 26 }   # a floor lamp

@@ -213,8 +213,8 @@ they're solid on the player's story and go on down. Every floor you walk on is a
 a **block** under it (plane 3: `2`, stories 1 to 2, its top the floor). A **pit** is a floor
 tile with no block: open down to the ground. You start in the hall; north of it:
 
-- **The stone bridge** runs straight across the chasm to the door and the exit. Its sides are
-  grey stone (`sides:` on its floor index).
+- **The stone bridge** runs straight across the chasm to the door, and a passage behind it to
+  the elevator. Its sides are grey stone (`sides:` on its floor index).
 - **The west pit** goes down two stories to a stone floor (its floor index's texture, drawn on
   the ground).
 - **The grate walkway** crosses it to the west wall: a block on story 2 alone (`0x0202`), with
