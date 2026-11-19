@@ -2,9 +2,10 @@ music: "WONDERIN"
 type: "wolf3d-menu"
 # The Game Options settings (freelook, msg_enabled, am_stats, autosave, weaponbob,
 # weaponbob_sway, alwaysrun, crosshair, hud_markers, s_muffle). Each starts as game-info setting-defaults has it, and is the player's own
-# choice once they switch it.
+# choice once they switch it. As wide as the Mods menu, so the longest names (Objective Markers,
+# Muffle Thru Doors) clear the scroll marks at the window's right
 position:
-  x: 52
+  x: 24
   y: 64
 indent: 48
 # Nine rows fit the window; the rest scroll into view with the cursor
@@ -33,9 +34,9 @@ components:
   -
     type: "Window"
     params:
-      - x: 44
+      - x: 16
       - y: 61
-      - width: 202
+      - width: 288
       - height: 123
 # Checkboxes drawn by code
 menu-items:

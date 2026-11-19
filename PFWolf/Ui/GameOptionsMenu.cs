@@ -35,10 +35,10 @@ internal sealed class GameOptionsMenu(VideoManager video, HudMessageManager mess
         ("soundmuffling", GameOption.SoundMuffling),
     ];
 
-    // Where the marks go while the rows scroll (visible-rows): at the screen's right, clear of the
-    // longest names (as the episode and Mods menus have them), or well past a highlight bar's end,
-    // in the terminal still (Blake Stone's: REBA ATTACK INFO comes near the bar's end)
-    const int ScrollMarkX = 312, BarScrollMarkGap = 51;
+    // Where the marks go while the rows scroll (visible-rows): inside the window's right edge, clear
+    // of the longest names (as the episode and Mods menus have them), or well past a highlight bar's
+    // end, in the terminal still (Blake Stone's: REBA ATTACK INFO comes near the bar's end)
+    const int ScrollMarkX = 300, BarScrollMarkGap = 51;
     static int MarkX(ControlPanelMenuInfo info) =>
         info.ScrollMarkX ?? (info.Cursor is { } bar ? bar.X + bar.Width + BarScrollMarkGap : ScrollMarkX);
 
