@@ -9,7 +9,9 @@ Map tile values 0x6a through 0xa3 (mapdefs floors) are area numbers. Enemies onl
 hear the player from areas connected to the player's. Each door counts in AreaConnect while
 it's open, joining the two areas it stands between; AreaByPlayer is worked out afresh from
 the players' areas each time a door opens or closes, and (game-info areas-follow-player, as
-Midnight Assault) when a player steps or teleports into an area it doesn't take in.
+Midnight Assault) when a player steps or teleports into an area it doesn't take in. With
+game-info areas-mark-player (Blake Stone) such an area is just added to it instead, keeping
+the ones the player came from.
 
 A see-through door (Rendering/SeeThroughPosts.cs) joins its two areas for sight even while it's
 shut, and a shoot-through one for shots too: AreaSeenByPlayer and AreaShotByPlayer are
@@ -165,6 +167,18 @@ internal sealed class AreaConnections
             if (area < numareas)
                 AreaByPlayer[area] = 1; // true
         }
+        SpreadSight();
+    }
+
+    /// <summary>
+    /// Adds one area to the players' (game-info areas-mark-player, bstone's Thrust): only it, not
+    /// the areas its open doors join, which the next door to open or close takes in
+    /// </summary>
+    internal void MarkArea(int area)
+    {
+        if (area < 0 || area >= AreaByPlayer.Length || AreaByPlayer[area] != 0)
+            return;
+        AreaByPlayer[area] = 1; // true
         SpreadSight();
     }
 

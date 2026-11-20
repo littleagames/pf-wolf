@@ -51,7 +51,7 @@ internal static partial class GameHost
             (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: true),
             (x, y) => (WallSpriteFromX, WallSpriteFromY) = (x, y),
             ActivateTrigger, (controlY, tics) => Vehicles.Throttle(controlY, tics), () => Vehicles.Stalled(),
-            () => GameEngineManager.GetGameInfo().AreasFollowPlayer));
+            () => GameEngineManager.GetGameInfo().AreasFollowPlayer, () => GameEngineManager.GetGameInfo().AreasMarkPlayer));
 
     static ControlDir FacingDir(int angle) => PlayerMovement.FacingDir(angle);
 

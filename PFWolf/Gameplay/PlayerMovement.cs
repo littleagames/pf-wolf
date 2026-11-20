@@ -23,7 +23,8 @@ internal sealed record PlayerMovementHooks(
     Action<MapTriggerTranslation, int, int, ControlDir> ActivateTrigger,
     Func<int, uint, int>? Throttle = null,
     Action? Stalled = null,
-    Func<bool>? AreasFollowPlayer = null);
+    Func<bool>? AreasFollowPlayer = null,
+    Func<bool>? AreasMarkPlayer = null);
 
 /// <summary>
 /// The acting player's movement: turning, looking up and down, walking and strafing from their
@@ -321,10 +322,16 @@ internal sealed class PlayerMovement(
             // Into an area no open door joins to theirs (another floor code with no door
             // between, or a teleport's far end): with game-info areas-follow-player, the areas
             // are joined up again from it, as Midnight Assault's Thrust did, so enemies there see
-            // and hear them. Wolf3D left it to the doors.
+            // and hear them. With areas-mark-player it's just added, keeping the ones they came
+            // from, as Blake Stone's Thrust did. Wolf3D left it to the doors.
             var byplayer = session.Areas.AreaByPlayer;
-            if (player.AreaNumber < byplayer.Length && byplayer[player.AreaNumber] == 0 && hooks.AreasFollowPlayer?.Invoke() == true)
-                session.Areas.ConnectAreas(map.Players.Select(pawn => (int)pawn.AreaNumber), map.Floors.NumAreas);
+            if (player.AreaNumber < byplayer.Length && byplayer[player.AreaNumber] == 0)
+            {
+                if (hooks.AreasFollowPlayer?.Invoke() == true)
+                    session.Areas.ConnectAreas(map.Players.Select(pawn => (int)pawn.AreaNumber), map.Floors.NumAreas);
+                else if (hooks.AreasMarkPlayer?.Invoke() == true)
+                    session.Areas.MarkArea(player.AreaNumber);
+            }
         }
 
         //

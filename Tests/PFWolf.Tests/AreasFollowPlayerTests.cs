@@ -17,13 +17,14 @@ public class AreasFollowPlayerTests
 
     private MapManager _map = null!;
     private GameSession _session = null!;
-    private bool _follow;
+    private bool _follow, _mark;
     private PlayerMovement _movement = null!;
 
     [SetUp]
     public void MakeLevel()
     {
         // Area 5 from x 0 to 10 on row 10, area 6 from x 11 on: no door between
+        _follow = _mark = false;        // NUnit keeps one fixture instance across the tests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session, null)
         {
@@ -44,7 +45,7 @@ public class AreasFollowPlayerTests
         _session.PlayerState.Pawn = new PlayerPawn { State = _session.PlayerState };
         _movement = new PlayerMovement(_map, new AudioManager(new Lazy<AssetManager>(() => null!), _session), new PushWalls(null!, null!, new GameSession()), _session,
             new PlayerMovementHooks(_ => 1, () => 20, _ => { }, (_, _, _, _, _, _, _) => null, (_, _) => { }, (_, _, _, _) => { },
-                AreasFollowPlayer: () => _follow));
+                AreasFollowPlayer: () => _follow, AreasMarkPlayer: () => _mark));
 
         // In area 5, the areas joined from there
         var pawn = _session.Player;
@@ -76,6 +77,61 @@ public class AreasFollowPlayerTests
     {
         Assert.That(new GameInfoAsset().AreasFollowPlayer, Is.False);
         Assert.That(PFWolf.Loaders.YamlDataEntryLoader.Deserialize<GameInfoAsset>("areas-follow-player: true\n").AreasFollowPlayer, Is.True);
+        Assert.That(new GameInfoAsset().AreasMarkPlayer, Is.False);
+        Assert.That(PFWolf.Loaders.YamlDataEntryLoader.Deserialize<GameInfoAsset>("areas-mark-player: true\n").AreasMarkPlayer, Is.True);
+    }
+
+    [Test]
+    public void Marking_Adds_The_Area_Stepped_Into_And_Keeps_The_One_Left()
+    {
+        // Arrange: Blake Stone's way
+        _mark = true;
+        var pawn = _session.Player;
+
+        // Act: east across the edge into area 6
+        pawn.X = 11 * Tile + 0x1000;
+        _movement.Thrust(0, 0);
+
+        // Assert: both are the player's, as bstone's areabyplayer after Thrust
+        Assert.That((_session.Areas.AreaByPlayer[5], _session.Areas.AreaByPlayer[6]), Is.EqualTo(((byte)1, (byte)1)));
+    }
+
+    [Test]
+    public void Marking_Leaves_Areas_Joined_By_Open_Doors_To_The_Next_Door_Change()
+    {
+        // Arrange: a door between 6 and 7 standing open, while the player's in 5
+        _mark = true;
+        _session.Areas.AreaConnect[6, 7] = _session.Areas.AreaConnect[7, 6] = 1;
+        var pawn = _session.Player;
+
+        // Act: into area 6
+        pawn.X = 11 * Tile + 0x1000;
+        _movement.Thrust(0, 0);
+
+        // Assert: 6 only, as bstone (7 comes in when a door opens or closes)
+        Assert.That((_session.Areas.AreaByPlayer[6], _session.Areas.AreaByPlayer[7]), Is.EqualTo(((byte)1, (byte)0)));
+
+        // And a door changing works them out afresh from the player's area: 6 and 7, not 5
+        _session.Areas.ConnectAreas([pawn.AreaNumber], 45);
+        Assert.That((_session.Areas.AreaByPlayer[5], _session.Areas.AreaByPlayer[6], _session.Areas.AreaByPlayer[7]),
+            Is.EqualTo(((byte)0, (byte)1, (byte)1)));
+    }
+
+    [Test]
+    public void Marking_Spreads_Sight_Through_See_Through_Doors()
+    {
+        // Arrange: a see-through door between 6 and 8
+        _mark = true;
+        _session.Areas.JoinThroughDoor(6, 8, shootThrough: false);
+        _session.Areas.ConnectAreas([5], 45);
+        var pawn = _session.Player;
+
+        // Act
+        pawn.X = 11 * Tile + 0x1000;
+        _movement.Thrust(0, 0);
+
+        // Assert: enemies in 8 can see the player through it
+        Assert.That(_session.Areas.AreaSeenByPlayer[8], Is.EqualTo(1));
     }
 
     [Test]

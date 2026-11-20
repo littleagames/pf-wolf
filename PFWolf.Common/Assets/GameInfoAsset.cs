@@ -378,6 +378,15 @@ public record GameInfoAsset : Asset
     public bool AreasFollowPlayer { get; init; }
 
     /// <summary>
+    /// A player stepping into an area (floor code) no open door joins to theirs adds just that area
+    /// to the ones enemies see and hear them from, keeping the ones they came from, until the next
+    /// door opens or closes works them out afresh -- Blake Stone's way (bstone's Thrust marks
+    /// areabyplayer[player->areanumber]), for maps whose rooms run across several floor codes with
+    /// no door between. Used when areas-follow-player is off.
+    /// </summary>
+    public bool AreasMarkPlayer { get; init; }
+
+    /// <summary>
     /// Items a death gives back as the player had them coming into the level, after the
     /// starting items (Midnight Assault's medkits: oldmedkits). Not with death-restores-level-start,
     /// which puts everything back.

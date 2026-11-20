@@ -236,6 +236,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Weapons: ACP charge light, SFP, RAW, DND, PDU grenades (4 ammo/shot, explode on walls).
 - [ ] **(never tried)** Grenade and hitscan damage on enemies.
 - [ ] Enemies: rent-a-cop, pro guard, SWAT, bio-tech, aliens, pods/eggs, gurney mutants, spit.
+- [ ] **(never tried)** Enemies in a room that runs across several floor codes with no door
+      between notice Blake as soon as he steps into their part (game-info areas-mark-player,
+      bstone's Thrust); before, they stood blind and still until a shot or a door woke them.
+      Unit-tested only (AreasFollowPlayerTests). One enemy firing still wakes every enemy in
+      connected areas, as bstone's T_Shoot does.
 - [ ] **(never tried)** Wounding, blowback, pain attack, SMART running away, interrogating an
       informant (hint text), killing an informant warning.
 - [ ] Barriers: switch toggles linked barriers, walk through when off.

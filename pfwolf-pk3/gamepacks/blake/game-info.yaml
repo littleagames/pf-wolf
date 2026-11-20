@@ -16,6 +16,11 @@ default-map:
     max-fade: 80
     fade-curve: inverse
 
+# Blake Stone's rooms often run across several floor codes with no door between: each one Blake
+# steps into is added to the areas whose enemies see and hear him, keeping the ones he came from,
+# until a door opens or closes (bstone's Thrust). Without it they'd stand blind and still.
+areas-mark-player: true
+
 # How much less things darken with distance (actordefs lighten, the lighten(level) modifier), in
 # fade steps of 32, as bstone's `lighting` (of its 63 shade levels, about half as many of ours).
 # bright (unshaded) needs no entry; below 0 is darker. `lighten partial-bright 12` in the console
