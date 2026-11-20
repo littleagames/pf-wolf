@@ -281,6 +281,7 @@ public sealed partial class ActorBrowserViewModel
         var (intensity, radius, color) = ActorLightRules.Current(info, null, frame.Light, _lightPhase, _lightFlicker);
         SelfLight? self = info != null && (intensity > 0 || info.Sets) ? new SelfLight(intensity, radius, color, info.Sets) : null;
 
+        _shadePreview.PaletteCycles = _content.GameInfo?.PaletteCycles;
         var shade = _shadePreview.Shade(_content.Palette, settings, Math.Clamp(Distance, NearestDistance, FarthestDistance),
             inHand, bright, lighten, _previewZones.Count > 0, zone, self);
         notes.Insert(0, shade.Text);

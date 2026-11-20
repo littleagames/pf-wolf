@@ -359,7 +359,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             gl.DeleteTexture(_rowsTexture);
         var palette = mesh.Tiles.Content.Palette;
         if (_rowBuilder == null || !ReferenceEquals(_rowBuilderPalette, palette))
-            (_rowBuilder, _rowBuilderPalette) = (new LightRowBuilder(palette), palette);
+            (_rowBuilder, _rowBuilderPalette) = (new LightRowBuilder(palette, PaletteCycleInfo.IndicesOf(mesh.Tiles.Content.GameInfo?.PaletteCycles)), palette);
 
         var fade = mesh.Fade;
         const int Steps = ShadeMath.FadeSteps;

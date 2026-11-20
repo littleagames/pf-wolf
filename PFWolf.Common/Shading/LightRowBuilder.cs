@@ -11,14 +11,25 @@ namespace PFWolf.Shading;
 public sealed class LightRowBuilder
 {
     private readonly PaletteColor[] _palette;
+    private readonly bool[] _skipped;
     private readonly Dictionary<(int Level, int Levels, int FadeSteps, int Fade, int Tint), byte[]> _rows = [];
     private readonly Dictionary<int, byte> _matches = [];
     private (double L, double A, double B)[]? _paletteLab;
 
-    /// <summary>Rows for these 256 colors (copied)</summary>
-    public LightRowBuilder(IReadOnlyList<PaletteColor> palette)
+    /// <summary>
+    /// Rows for these 256 colors (copied). No shaded color is matched to an index in
+    /// <paramref name="skip"/>: the palette-cycles indices (Blake Stone's 240-254), whose colors
+    /// move, so a faded wall would flash with them (a dark green turning bright green far off).
+    /// </summary>
+    public LightRowBuilder(IReadOnlyList<PaletteColor> palette, IEnumerable<int>? skip = null)
     {
         _palette = [.. palette];
+        _skipped = new bool[_palette.Length];
+        foreach (int i in skip ?? [])
+            if (i >= 0 && i < _skipped.Length)
+                _skipped[i] = true;
+        if (_skipped.All(s => s))
+            Array.Clear(_skipped);      // nothing left to match: skip none
     }
 
     /// <summary>
@@ -71,7 +82,7 @@ public sealed class LightRowBuilder
     /// <summary>
     /// The palette entry closest to a color as the eye sees it (in CIELAB): a faded or dimmed
     /// color keeps its hue where the palette allows, instead of jumping to one that's merely
-    /// near in Rgb (a greyed blue to a purple).
+    /// near in Rgb (a greyed blue to a purple). Skipped indices are never picked.
     /// </summary>
     public byte ClosestByLab(byte r, byte g, byte b)
     {
@@ -83,6 +94,8 @@ public sealed class LightRowBuilder
 
         for (int i = 0; i < _paletteLab.Length; i++)
         {
+            if (_skipped[i])
+                continue;
             var p = _paletteLab[i];
             double dl = l - p.L, da = a - p.A, db = bb - p.B;
             double distance = dl * dl + da * da + db * db;

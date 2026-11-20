@@ -798,7 +798,8 @@ internal class VideoManager : ITextCanvas
     internal byte[] GetLightRow(int level, int levels, int fadeSteps, byte fadeR, byte fadeG, byte fadeB,
         byte tintR = 255, byte tintG = 255, byte tintB = 255)
     {
-        _lightRowBuilder ??= new Shading.LightRowBuilder(GamePal.Select(c => new PaletteColor(c.r, c.g, c.b)).ToArray());
+        _lightRowBuilder ??= new Shading.LightRowBuilder(GamePal.Select(c => new PaletteColor(c.r, c.g, c.b)).ToArray(),
+            PaletteCycleInfo.IndicesOf(PaletteCycles()));
         return _lightRowBuilder.Row(level, levels, fadeSteps, fadeR, fadeG, fadeB, tintR, tintG, tintB);
     }
 

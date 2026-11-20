@@ -30,6 +30,18 @@ public sealed class ShadePreview
 {
     private LightRowBuilder? _rows;
     private PaletteColor[]? _rowsPalette;
+    private HashSet<int> _cycled = [];
+
+    /// <summary>The game's palette-cycles indices, which shaded colors never match (as the game's light rows)</summary>
+    public IEnumerable<PaletteCycleInfo>? PaletteCycles
+    {
+        set
+        {
+            var cycled = PaletteCycleInfo.IndicesOf(value);
+            if (!cycled.SetEquals(_cycled))
+                (_cycled, _rows) = (cycled, null);
+        }
+    }
 
     /// <summary>The height numerator the distance goes through: the classic window's</summary>
     public static readonly int HeightNumerator = SpriteShading.HeightNumerator(SpriteShading.ClassicProjectionWidth);
@@ -139,7 +151,7 @@ public sealed class ShadePreview
     private LightRowBuilder Rows(PaletteColor[] palette)
     {
         if (_rows == null || !ReferenceEquals(_rowsPalette, palette))
-            (_rows, _rowsPalette) = (new LightRowBuilder(palette), palette);
+            (_rows, _rowsPalette) = (new LightRowBuilder(palette, _cycled), palette);
         return _rows;
     }
 

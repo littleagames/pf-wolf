@@ -2060,6 +2060,16 @@ public record PaletteCycleInfo
 
     /// <summary>Tics between moves</summary>
     public int Tics { get; init; } = 10;
+
+    /// <summary>Every palette index these runs move (within 0-255)</summary>
+    public static HashSet<int> IndicesOf(IEnumerable<PaletteCycleInfo>? cycles)
+    {
+        var indices = new HashSet<int>();
+        foreach (var cycle in cycles ?? [])
+            for (int i = Math.Max(cycle.First, 0); i <= Math.Min(cycle.Last, 255); i++)
+                indices.Add(i);
+        return indices;
+    }
 }
 
 /// <summary>One of the automap's stats lines (game-info automap-stats-lines)</summary>
