@@ -568,6 +568,100 @@ internal sealed partial class SkyAndFlats(
         }
     }
 
+    /*
+    ====================
+    =
+    = Ceiling clipping
+    =
+    = With a sky over the level (or tiles' own skies) the ceiling isn't opaque everywhere, so the
+    = walls aren't cut off at it (WallPosts.StartFrame's OpaqueCeiling). Where it has a flat (or,
+    = with no sky behind, its plain color) it still hides what's above it: a wall's rows above the
+    = ceiling's height that look up through it there take the ceiling's pixel, just as DrawFlats
+    = would draw it (CeilingHides).
+    =
+    ====================
+    */
+
+    /// <summary>This frame's ceiling is opaque in places only: walls above it ask CeilingHides, row by row</summary>
+    internal bool CeilingClips { get; private set; }
+
+    TextureAsset?[] clipFlats = [];
+    double clipNumerator;
+    bool clipFillBare;
+
+    /// <summary>Gets CeilingClips ready for the frame, after VGAClearScreen and WallPosts.StartFrame</summary>
+    internal void StartCeilingClip()
+    {
+        CeilingClips = false;
+        if (render.OpaqueCeiling || CeilingStories * GameConstants.TextureSize <= render.ViewEyeZ)
+            return;                     // clipped whole (WallPosts), or never seen
+        bool showCeilings = ShowCeilings();
+        if (skyBehind && !(map.HasCeilingFlats && showCeilings))
+            return;                     // nothing but sky over the walls
+        clipFlats = showCeilings ? map.CeilingFlat : NoFlats(map.CeilingFlat.Length);
+        clipNumerator = render.HeightNumerator * 32.0 * CeilingHalves;
+        clipFillBare = (lighting.HasZones || actorLights.HasLights) && !skyBehind;
+        SetupFlatColumns();
+        CeilingClips = true;
+    }
+
+    /// <summary>
+    /// Whether the level's ceiling is in front of whatever's above its height on row y of column
+    /// x (a row above the horizon), and if so the pixel DrawFlats draws there: false where it
+    /// shows a sky (the level's, or the tile's own), which is behind everything.
+    /// </summary>
+    internal bool CeilingHides(int x, int y, out byte pixel)
+    {
+        pixel = 0;
+        if ((uint)x >= (uint)flatdirx.Length)
+            return false;
+        long nx = (long)(clipNumerator / Math.Abs(y + 0.5 - render.CenterY));
+        long px = render.ViewX + (nx * flatdirx[x] >> 16), py = render.ViewY + (nx * flatdiry[x] >> 16);
+        long tilex = px >> MapConstants.TileShift, tiley = py >> MapConstants.TileShift;
+        long tile = -1;
+        TextureAsset? texture = null;
+        byte texel = CeilingColor;
+        if ((ulong)tilex < map.MapWidth && (ulong)tiley < map.MapHeight)
+        {
+            // as DrawFlats: rows just past a wall's face take the tile the ray came from
+            tile = tiley * (long)map.MapWidth + tilex;
+            texture = clipFlats[tile];
+            if (texture == null && map.TileMap[tilex, tiley] is var wall && wall != 0 && wall != map.EdgeWall
+                && FlatBeforeWall(flatdirx[x], flatdiry[x], ref px, ref py, ref tilex, ref tiley))
+            {
+                tile = tiley * (long)map.MapWidth + tilex;
+                texture = clipFlats[tile];
+            }
+            if (texture != null)
+            {
+                long tx = px, ty = py;
+                if (map.Scrollers.AnyCeilings)
+                {
+                    tx -= map.Scrollers.CeilingX[tile];
+                    ty -= map.Scrollers.CeilingY[tile];
+                }
+                int u = (int)(tx >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
+                int v = (int)(ty >> (MapConstants.TileShift - GameConstants.TextureShift)) & (GameConstants.TextureSize - 1);
+                texel = FlatTexel(texture, u, v);
+            }
+        }
+
+        if (texture == null || texel == FlatMask)
+        {
+            // bare: a sky shows through, else the plain ceiling, cast in the light or as VGAClearScreen filled it
+            if (tile >= 0 && map.HasCeilingSkies && map.CeilingSky[tile] != 0 || skyBehind)
+                return false;
+            if (!clipFillBare || tile < 0)
+            {
+                pixel = lighting.LightRow[FlatRowShadeOffset(y, CeilingHalves) + CeilingColor];
+                return true;
+            }
+            texel = CeilingColor;
+        }
+        pixel = lighting.Shading ? lighting.LightAt((int)tile, px, py)[lighting.ShadeOffset(nx) + texel] : texel;
+        return true;
+    }
+
     // A flat's texel u across and v down a tile (0-63), of any size of texture
     static byte FlatTexel(TextureAsset texture, int u, int v)
     {

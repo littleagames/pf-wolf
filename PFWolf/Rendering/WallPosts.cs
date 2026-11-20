@@ -133,6 +133,7 @@ internal sealed class WallPosts(
         render.TallestStory = Math.Max(map.MaxWallStories - story + 1, 1);    // a door's at least a story up from the player's floor
         render.OpaqueCeiling = !skyAndFlats.SkyShows && !map.HasCeilingSkies
             && render.CeilingStory * GameConstants.TextureSize > render.ViewEyeZ;
+        skyAndFlats.StartCeilingClip();     // with a sky, the ceiling's flats still hide walls above it, pixel by pixel
 
         // floors at other heights (caps) show tiles' floor skies as the trace goes: loaded first
         if (map.HasFloorSkies && story > 1)
@@ -161,6 +162,25 @@ internal sealed class WallPosts(
                 : render.OpaqueCeiling && eye - 2 * render.CeilingStory < 0 ? over / (eye - 2 * render.CeilingStory) : 0;
             render.DepthRows[y] = (short)Math.Clamp(half * 8, 0, short.MaxValue);
         }
+    }
+
+    // How near the level's ceiling is on row y (above the horizon), as StartDepth has it where it's opaque
+    short CeilingDepth(int y)
+    {
+        double eye = render.ViewEyeZ / (double)(GameConstants.TextureSize / 2);
+        return (short)Math.Clamp((y + 0.5 - render.CenterY) / (eye - 2 * render.CeilingStory) * 8, 0, short.MaxValue);
+    }
+
+    // Row y of column x shows something above the level's ceiling (from row above, in DrawPost's
+    // terms): where the ceiling hides it, it's drawn there in its place, and true
+    unsafe bool CeilingOver(int x, int y, int above, byte* dest, int pitch)
+    {
+        if (y >= above || !skyAndFlats.CeilingHides(x, y, out byte pixel))
+            return false;
+        dest[y * pitch] = pixel;
+        if (render.DepthOn)
+            render.Depth[x * render.ViewHeight + y] = CeilingDepth(y);
+        return true;
     }
 
     // Writes how near a post (half pixels to half a story) is over rows top to bottom of column x
@@ -677,8 +697,12 @@ internal sealed class WallPosts(
             // the ground below the player's floor: a tile's flats ground (MapManager.GroundFlat) in
             // place of its floor flat, where it has one
             bool ground = perTile && map.HasGround && story < 0 && story == render.GroundStory;
+            // an underside above the level's ceiling is behind it where it's opaque
+            int above = !up && skyAndFlats.CeilingClips && story > render.CeilingStory ? int.MaxValue : int.MinValue;
             for (int y = from; y <= to; y++)
             {
+                if (CeilingOver(x, y, above, dest, pitch))
+                    continue;
                 double nx = numerator / Math.Abs(render.CenterY - y - 0.5);
                 long px = (long)(render.ViewX + nx * stepx), py = (long)(render.ViewY + nx * stepy);
                 if (render.DepthOn)
@@ -965,6 +989,7 @@ internal sealed class WallPosts(
         byte[] lowerdata = lower.RawData, upperdata = upper.RawData;
         int lowerheight = lower.Height, upperheight = upper.Height;
         int lowercolumn = TextureColumn(lower, lowerofs), uppercolumn = TextureColumn(upper, upperofs);
+        int above = skyAndFlats.CeilingClips ? RowAtHalf(half, render.CeilingStory) : int.MinValue;     // rows over the ceiling's height
 
         unsafe
         {
@@ -973,15 +998,18 @@ internal sealed class WallPosts(
             long colt = -1;             // the t col is for
             for (; y >= top; y--)
             {
-                if (t != colt)
+                if (!CeilingOver(x, y, above, dest, pitch))     // else the ceiling's in front
                 {
-                    long s = t + zbase;         // the texel up the wall (that's moved down to here)
-                    col = shade[shadeofs + ((ulong)t < GameConstants.TextureSize
-                        ? lowerdata[lowercolumn + lowerheight - 1 - Wrap(s, lowerheight)]
-                        : upperdata[uppercolumn + upperheight - 1 - Wrap(s, upperheight)])];
-                    colt = t;
+                    if (t != colt)
+                    {
+                        long s = t + zbase;         // the texel up the wall (that's moved down to here)
+                        col = shade[shadeofs + ((ulong)t < GameConstants.TextureSize
+                            ? lowerdata[lowercolumn + lowerheight - 1 - Wrap(s, lowerheight)]
+                            : upperdata[uppercolumn + upperheight - 1 - Wrap(s, upperheight)])];
+                        colt = t;
+                    }
+                    dest[y * pitch] = col;
                 }
-                dest[y * pitch] = col;
 
                 rem += GameConstants.TextureSize / 2;
                 while (rem >= half)
@@ -1037,6 +1065,7 @@ internal sealed class WallPosts(
 
         byte[] data = patch.RawData;
         int column = TextureColumn(patch, ofs);
+        int above = skyAndFlats.CeilingClips ? RowAtHalf(half, render.CeilingStory) : int.MinValue;     // as DrawPost
 
         unsafe
         {
@@ -1044,7 +1073,7 @@ internal sealed class WallPosts(
             for (; y >= top; y--)
             {
                 long row = story == 0 ? Wrap(t + phase, height) : t;
-                if (row < height)
+                if (row < height && !(y < above && skyAndFlats.CeilingHides(x, y, out _)))     // not where DrawPost drew the ceiling
                 {
                     byte pixel = data[column + height - 1 - (int)row];
                     if (pixel != PatchMask)
