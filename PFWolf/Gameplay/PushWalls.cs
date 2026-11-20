@@ -8,7 +8,7 @@ namespace PFWolf.Gameplay;
 /// </summary>
 internal sealed class MovingPushWall
 {
-    public ushort State;                // session.tics since it started: a tile per 128
+    public ushort State;                // session.tics since it started, times PushWalls.Speed: a tile per 128
     public ushort Pos;                  // amount it has moved into the tile ahead (0-63)
     public ushort X, Y;                 // the tile it's leaving
     public ControlDir Dir;
@@ -80,17 +80,22 @@ internal enum PushwallStories
                                 PUSHABLE WALLS
 
 A pushwall slides two tiles (game-info pushwall-distance; unless something stops it sooner), a
-tile per 128 session.tics. Any number can move at once; demos keep the original game's one at a
-time.
+tile per 128 session.tics (game-info pushwall-speed: Blake Stone's 4 times as fast, a tile per 32).
+Any number can move at once; demos keep the original game's one at a time.
 
 =============================================================================
 */
 
 /// <param name="distance">How many tiles a pushwall slides (game-info pushwall-distance); 2 when left out</param>
-internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession session, Func<int?>? distance = null)
+/// <param name="speed">How much a pushwall's state goes up a tic (game-info pushwall-speed); 1 when left out</param>
+internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession session, Func<int?>? distance = null,
+    Func<int?>? speed = null)
 {
     // Tiles a pushwall slides: read as it moves, so a loaded game's walls go as far as the game says
     internal int Distance => Math.Clamp(distance?.Invoke() ?? 2, 1, 255);
+
+    // State a pushwall gains a tic, a tile being 128 (bstone's pwall_state_step 1/16 = 4 of ours)
+    internal int Speed => Math.Clamp(speed?.Invoke() ?? 1, 1, 128);
 
     /// <summary>Whether the scripts let a pushwall slide from a tile the way given (game.onpushwall)</summary>
     internal Func<int, int, ControlDir, bool>? MayPush { get; init; }
@@ -351,7 +356,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
 
         oldblock = wall.State / 128;
 
-        wall.State += (ushort)session.Tics;
+        wall.State += (ushort)(session.Tics * Speed);
 
         if (wall.State / 128 != oldblock)
         {

@@ -113,6 +113,12 @@ public record GameInfoAsset : Asset
     public int? PushwallDistance { get; init; }
 
     /// <summary>
+    /// How fast a pushwall slides, as a multiple of Wolf3D's tile per 128 tics (default 1; Blake
+    /// Stone's go 4, a tile per 32 tics). 128 must divide by it for a whole number of tics a tile.
+    /// </summary>
+    public int? PushwallSpeed { get; init; }
+
+    /// <summary>
     /// Music for the title, demo loop and control panel
     /// </summary>
     public string? IntroMusic { get; init; }

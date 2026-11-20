@@ -21,6 +21,9 @@ default-map:
 # until a door opens or closes (bstone's Thrust). Without it they'd stand blind and still.
 areas-mark-player: true
 
+# Pushwalls slide a tile every 32 tics, four times Wolf3D's speed (bstone's pwall_state_step)
+pushwall-speed: 4
+
 # How much less things darken with distance (actordefs lighten, the lighten(level) modifier), in
 # fade steps of 32, as bstone's `lighting` (of its 63 shade levels, about half as many of ours).
 # bright (unshaded) needs no entry; below 0 is darker. `lighten partial-bright 12` in the console

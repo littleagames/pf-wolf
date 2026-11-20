@@ -192,7 +192,8 @@ internal static partial class GameHost
         doors = new Doors(GameEngineManager, AudioManager, MapManager, InventoryManager, HudMessageManager, Session,
             new DoorHooks(PlaySoundLocTile, DrawKeys, (x, y, opening, by) => gameScripts?.RunDoorHooks(x, y, opening, by) != false,
                 DoorSeesThrough));
-        pushWalls = new PushWalls(MapManager, AudioManager, Session, () => GameEngineManager.GetGameInfo().PushwallDistance)
+        pushWalls = new PushWalls(MapManager, AudioManager, Session, () => GameEngineManager.GetGameInfo().PushwallDistance,
+            () => GameEngineManager.GetGameInfo().PushwallSpeed)
         {
             MayPush = (x, y, dir) => gameScripts?.RunPushWallHooks(Session.Player, x, y, dir) != false,
             IsDoorSide = doors.IsDoorSide,

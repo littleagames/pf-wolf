@@ -67,6 +67,27 @@ public class PushwallStoriesTests
 
     private static (int, int) B(int start, int stop) => (start, stop);
 
+    [TestCase(1, 127)]          // Wolf3D's: a tile per 128 tics (it starts on 1)
+    [TestCase(4, 32)]           // Blake Stone's: a tile per 32 (1 + 4 a tic reaches 128 on the 32nd)
+    public void A_Wall_Crosses_A_Tile_As_Fast_As_Game_Info_Says(int speed, int ticsPerTile)
+    {
+        // Arrange
+        _pushWalls = new PushWalls(_map, null!, _session, () => 2, () => speed);
+        Wall(10, 10, 1, 4);
+        Assert.That(_pushWalls.PushWall(10, 10, ControlDir.East), Is.True);
+        var wall = _pushWalls.MovingWalls[0];
+        _session.Tics = 1;
+
+        // Act: one tic short of a tile, then that tic
+        for (int i = 1; i < ticsPerTile; i++)
+            _pushWalls.MovePWalls();
+        int before = wall.X;
+        _pushWalls.MovePWalls();
+
+        // Assert
+        Assert.That((before, (int)wall.X), Is.EqualTo((10, 11)));
+    }
+
     [TestCase("all", new[] { 1, 4 }, new int[0])]
     [TestCase("above", new[] { 2, 4 }, new[] { 1, 1 })]
     [TestCase("story", new[] { 2, 2 }, new[] { 1, 1, 3, 4 })]

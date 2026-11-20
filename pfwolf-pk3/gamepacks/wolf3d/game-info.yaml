@@ -36,6 +36,7 @@ signon:
   text-area: { x: 16, y: 79, width: 290, height: 101 }
 
 # pushwall-distance: 2
+# pushwall-speed: 1          # times Wolf3D's tile per 128 tics (Blake Stone's 4)
 
 intro-music: NAZI_NOR
 high-scores-music: ROSTER

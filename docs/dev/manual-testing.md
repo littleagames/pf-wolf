@@ -241,6 +241,8 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       bstone's Thrust); before, they stood blind and still until a shot or a door woke them.
       Unit-tested only (AreasFollowPlayerTests). One enemy firing still wakes every enemy in
       connected areas, as bstone's T_Shoot does.
+- [ ] **(never tried)** Pushwalls slide at the original's speed, a tile every 32 tics (about half
+      a second; game-info pushwall-speed 4); Wolf3D's still take 128. Unit-tested only.
 - [ ] **(never tried)** Wounding, blowback, pain attack, SMART running away, interrogating an
       informant (hint text), killing an informant warning.
 - [ ] Barriers: switch toggles linked barriers, walk through when off.
