@@ -160,13 +160,13 @@ $Tiles['g'] = @{ Plane0 = $Area; Flat = $Coffer }
 $Tiles['P'] = @{ Plane0 = $Area; Flat = $Coffer; Plane1 = 19 }
 $Tiles['x'] = @{ Plane0 = $ExitArea; Flat = $Coffer }
 $Tiles['X'] = @{ Plane0 = 21 }
-$Tiles['D'] = @{ Plane0 = 91 }
-$Tiles['E'] = @{ Plane0 = 90 }
+$Tiles['D'] = @{ Plane0 = 91; Flat = $Coffer }
+$Tiles['E'] = @{ Plane0 = 90; Flat = $Coffer }
 $planes = New-MapPlanes -Fill 200
 Add-MapLayout $planes $Layout $Tiles 0 20
-# The marble floor, in a checkerboard: every open tile's floor index by its square's color
+# The marble floor, in a checkerboard: every open tile's (and doorway's) floor index by its square's color
 for ($i = 0; $i -lt 64 * 64; $i++) {
-    if ($planes[0][$i] -ge 108 -and $planes[0][$i] -le 143) {
+    if (($planes[0][$i] -ge 108 -and $planes[0][$i] -le 143) -or $planes[0][$i] -in 90, 91) {
         $x = $i % 64; $y = [Math]::Floor($i / 64)
         $planes[2][$i] = ($planes[2][$i] -band 0xFF00) + 30 + (($x + $y) % 2)
     }

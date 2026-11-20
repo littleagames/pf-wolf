@@ -504,7 +504,7 @@ internal sealed partial class SkyAndFlats(
                         lasttexture = flats[tile];
                         data = lasttexture?.RawData ?? [];
                         square = lasttexture is { Width: GameConstants.TextureSize, Height: GameConstants.TextureSize };
-                        inwall = lasttexture == null && map.TileMap[tilex, tiley] is var wall && wall != 0 && wall != edgewall;
+                        inwall = lasttexture == null && IsWallForFlats(map.TileMap[tilex, tiley], edgewall);
                     }
                     var texture = lasttexture;
 
@@ -626,7 +626,7 @@ internal sealed partial class SkyAndFlats(
             // as DrawFlats: rows just past a wall's face take the tile the ray came from
             tile = tiley * (long)map.MapWidth + tilex;
             texture = clipFlats[tile];
-            if (texture == null && map.TileMap[tilex, tiley] is var wall && wall != 0 && wall != map.EdgeWall
+            if (texture == null && IsWallForFlats(map.TileMap[tilex, tiley], map.EdgeWall)
                 && FlatBeforeWall(flatdirx[x], flatdiry[x], ref px, ref py, ref tilex, ref tiley))
             {
                 tile = tiley * (long)map.MapWidth + tilex;
@@ -734,6 +734,14 @@ internal sealed partial class SkyAndFlats(
             bottoms[j] = bottom;
         }
     }
+
+    /// <summary>
+    /// Whether a tile with no flat is a wall's, whose rows just past its face take the tile the ray
+    /// came from (FlatBeforeWall). Not the solid edge round an open map, and not a door's: its floor
+    /// and ceiling are open in front of the slab, and with no flat they're the color (or the sky)
+    /// as on any other bare tile, not the next tile's texels smeared across the doorway.
+    /// </summary>
+    static bool IsWallForFlats(int tile, int edgewall) => tile != 0 && tile != edgewall && (tile & GameConstants.BitDoor) == 0;
 
     /// <summary>
     /// Moves a flat point (px, py) in a wall's tile back to the edge of the tile its ray (dirx, diry)

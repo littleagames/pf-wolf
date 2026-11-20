@@ -113,7 +113,7 @@ $Tiles['c'] = @{ Plane0 = $Cell; Flat = $Roof }
 $Tiles['k'] = @{ Plane0 = $Cell; Flat = $Roof; Plane1 = 54 }             # a chest, out of reach
 $Tiles['x'] = @{ Plane0 = $ExitRoom; Flat = $Roof }
 $Tiles['X'] = @{ Plane0 = 21 }
-$Tiles['E'] = @{ Plane0 = 90 }
+$Tiles['E'] = @{ Plane0 = 90; Flat = $Roof }
 $planes = New-MapPlanes -Fill 12
 Add-MapLayout $planes $Layout $Tiles 0 20
 # A plant in the hedged bed

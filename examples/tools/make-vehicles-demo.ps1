@@ -160,8 +160,8 @@ $Jeep = 940; $Tank = 941
 $Tiles = [Collections.Hashtable]::new([StringComparer]::Ordinal)
 $Tiles['#'] = @{ Plane0 = 1 }                                           # grey stone
 $Tiles['.'] = @{ Plane0 = $MotorPool }
-$Tiles['-'] = @{ Plane0 = 90 }                                          # door, passed east-west
-$Tiles['|'] = @{ Plane0 = 91 }                                          # door, passed north-south
+$Tiles['-'] = @{ Plane0 = 90; Flat = $Indoors }                        # door, passed east-west (roofed, as the room it opens from)
+$Tiles['|'] = @{ Plane0 = 91; Flat = $Indoors }                        # door, passed north-south
 $Tiles['P'] = @{ Plane0 = $MotorPool; Plane1 = 20 }                     # player start, facing east
 $Tiles['J'] = @{ Plane0 = $MotorPool; Plane1 = $Jeep }
 $Tiles['T'] = @{ Plane0 = $MotorPool; Plane1 = $Tank }

@@ -130,8 +130,8 @@ $Tiles['v'] = @{ Plane0 = 108; Plane1 = 58 }                           # a barre
 $Tiles['g'] = @{ Plane0 = 109; Flat = $Roof }                          # the gatehouse
 $Tiles['P'] = @{ Plane0 = 109; Flat = $Roof; Plane1 = 19 }             # player start, facing north
 $Tiles['e'] = @{ Plane0 = 110; Flat = $Roof }                          # the elevator room
-$Tiles['D'] = @{ Plane0 = 91 }                                         # a door, north-south
-$Tiles['E'] = @{ Plane0 = 90 }                                         # a door, east-west
+$Tiles['D'] = @{ Plane0 = 91; Flat = $Roof }                          # a door, north-south (roofed, as the room it opens from)
+$Tiles['E'] = @{ Plane0 = 90; Flat = $Roof }                          # a door, east-west
 $Tiles['X'] = @{ Plane0 = 21 }                                         # elevator switch
 $planes = New-MapPlanes -Count 7                                       # plane 6: the lamps' story
 Add-MapLayout $planes $Storm $Tiles 19 24
@@ -158,7 +158,7 @@ $Tiles['t'] = @{ Plane0 = 108; Plane1 = 34 }                           # a bare 
 $Tiles['b'] = @{ Plane0 = 109; Flat = $Barn }                          # the barn
 $Tiles['P'] = @{ Plane0 = 109; Flat = $Barn; Plane1 = 20 }             # player start, facing east
 $Tiles['e'] = @{ Plane0 = 110; Flat = $Roof }                          # the shed
-$Tiles['D'] = @{ Plane0 = 90 }                                         # door, east-west
+$Tiles['D'] = @{ Plane0 = 90; Flat = $Roof }                          # door, east-west, roofed as the shed
 $Tiles['X'] = @{ Plane0 = 21 }
 $planes = New-MapPlanes
 Add-MapLayout $planes $Farm $Tiles 20 26
@@ -187,7 +187,7 @@ $Tiles['.'] = @{ Plane0 = 108 }
 $Tiles['f'] = @{ Plane0 = 108; Plane1 = $Fire }
 $Tiles['P'] = @{ Plane0 = 108; Plane1 = 20 }
 $Tiles['c'] = @{ Plane0 = 109; Flat = $Roof }
-$Tiles['D'] = @{ Plane0 = 90 }
+$Tiles['D'] = @{ Plane0 = 90; Flat = $Roof }                          # the chapel's door, roofed as the chapel
 $Tiles['X'] = @{ Plane0 = 21 }
 $planes = New-MapPlanes
 Add-MapLayout $planes $Ruins $Tiles 20 26

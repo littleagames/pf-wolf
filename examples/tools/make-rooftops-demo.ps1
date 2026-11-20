@@ -83,7 +83,7 @@ $Tiles['b'] = @{ Plane0 = 108; Flat = $Wood; Height = 0x0202 }     # the bridge:
 $Tiles['W'] = @{ Plane0 = 8; Height = 5 }                          # the blue building, 5 stories
 $Tiles['w'] = @{ Plane0 = 8; Height = 0x4052 }                     # a window: wall but for story 3
 $Tiles['i'] = @{ Plane0 = 109; Flat = $Wood; Height = 0x4152 }     # its upper story: floor 1-2, ceiling 4-5
-$Tiles['D'] = @{ Plane0 = 90; Height = 5 }                         # a door out, its lintel up to story 5
+$Tiles['D'] = @{ Plane0 = 90; Height = 5; Flat = $Wood }           # a door out, its lintel up to story 5
 $Tiles['T'] = @{ Plane0 = 1; Height = 7 }                          # the tower
 $Tiles['R'] = @{ Plane0 = 1; Flat = $Roof }                        # the grey terrace (a roof)
 $Tiles['E'] = @{ Plane0 = 21; Height = 3 }                         # the exit switch, on the player's story

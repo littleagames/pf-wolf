@@ -46,10 +46,10 @@ $Tiles['n'] = @{ Plane0 = 110; Flat = $floor }                    # north room: 
 $Tiles['f'] = @{ Plane0 = 111; Flat = $floor }                    # far room: area 3
 $Tiles['w'] = @{ Plane0 = 112; Flat = $floor }                    # west room: area 4
 $Tiles['s'] = @{ Plane0 = 113; Flat = $floor }                    # south room: area 5
-$Tiles['N'] = @{ Plane0 = 91 }                                    # metal door, east-west
-$Tiles['F'] = @{ Plane0 = 91 }                                    # the same, out of reach
-$Tiles['L'] = @{ Plane0 = 91; Plane1 = 55 }                       # the same, locked: red card
-$Tiles['O'] = @{ Plane0 = 100 }                                   # one-way door, passed going east
+$Tiles['N'] = @{ Plane0 = 91; Flat = $floor }                     # metal door, east-west
+$Tiles['F'] = @{ Plane0 = 91; Flat = $floor }                     # the same, out of reach
+$Tiles['L'] = @{ Plane0 = 91; Plane1 = 55; Flat = $floor }        # the same, locked: red card
+$Tiles['O'] = @{ Plane0 = 100; Flat = $floor }                    # one-way door, passed going east
 $planes = New-MapPlanes -Fill 64
 Add-MapLayout $planes $Layout $Tiles 20 20
 Save-MapWad "$modDir\maps\MAP01.wad" 'MAP01' 'Detonator Demo' $planes

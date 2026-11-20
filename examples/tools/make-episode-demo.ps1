@@ -72,6 +72,8 @@ $Docks = @(
 )
 $Tiles = New-Tiles
 $Roof = 3 * 256 + 1
+$Tiles['|'] = @{ Plane0 = 90; Flat = $Roof }                     # the warehouse door, roofed as the warehouse
+$Tiles['='] = @{ Plane0 = 101; Flat = $Roof }
 $Tiles['d'] = @{ Plane0 = 108 }
 $Tiles['P'] = @{ Plane0 = 108; Plane1 = 19 }
 $Tiles['o'] = @{ Plane0 = 108; Plane1 = 58 }                     # a barrel
