@@ -329,11 +329,13 @@ PodAlien:
 # Sleepers: each counts as the enemy it becomes (monster.becomes). A canister shot open lets
 # its alien out; a gurney mutant wakes when shot or, with a time on the map (a 0xFA value east of
 # it), that many seconds after Blake first sees it, and can't be shot till then; a pod egg
-# hatches 5-24 seconds (or the map's time) after Blake first sees it, or when shot.
+# hatches 5-24 seconds (or the map's time) after Blake first sees it, or when shot. Broken open
+# or empty, each still blocks its tile (KEEPSOLID: bstone's KeepSolid), the enemy that comes
+# out stepping off it.
 # -----------------------------------------------------------------------
 ScanCanister:
   parent: BlakeMonster
-  flags: [STATIONARY]
+  flags: [STATIONARY, KEEPSOLID]
   properties:
     "tag": "$BS_SCANALIEN"
     "health": 1
@@ -349,7 +351,6 @@ ScanCanister:
       - { sprite: CNSA, frames: [B], tics-per-frame: 30, action: A_DeathScream }
       - { sprite: CNSA, frames: [C, D], tics-per-frame: 30 }
       - { sprite: CNSA, frames: [E], tics-per-frame: 0, action: A_SpawnEnemy("ScanAlien") }
-      - { sprite: CNSA, frames: [E], tics-per-frame: 0, action: A_BlockTile }
       - { sprite: CNSA, frames: [E], tics-per-frame: -1 }
 
 LcanCanister:
@@ -367,12 +368,11 @@ LcanCanister:
       - { sprite: CNTA, frames: [B], tics-per-frame: 30, action: A_DeathScream }
       - { sprite: CNTA, frames: [C, D], tics-per-frame: 30 }
       - { sprite: CNTA, frames: [E], tics-per-frame: 0, action: A_SpawnEnemy("LcanAlien") }
-      - { sprite: CNTA, frames: [E], tics-per-frame: 0, action: A_BlockTile }
       - { sprite: CNTA, frames: [E], tics-per-frame: -1 }
 
 GurneySleeper:
   parent: BlakeMonster
-  flags: [STATIONARY]
+  flags: [STATIONARY, KEEPSOLID]
   properties:
     "tag": "$BS_GURNEYMUTANT"
     "health": 1
@@ -389,11 +389,11 @@ GurneySleeper:
     Death:
       - { sprite: MGUR, frames: [B, C, D], tics-per-frame: 30 }
       - { sprite: MGUR, frames: [E], tics-per-frame: 0, action: A_SpawnEnemy("GurneyMutant") }
-      - { sprite: MGUR, frames: [E], tics-per-frame: 0, action: A_BlockTile }
       - { sprite: MGUR, frames: [E], tics-per-frame: -1 }
 
 PodEgg:
   parent: BlakeMonster
+  flags: [KEEPSOLID]      # solid while it hatches (removed once its alien is out)
   properties:
     "switched": kill      # a smart switch on its tile hatches it (Gameplay/SmartSwitches.cs)
     "tag": "$BS_PODALIEN"

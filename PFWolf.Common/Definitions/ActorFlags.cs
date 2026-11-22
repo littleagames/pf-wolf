@@ -28,6 +28,7 @@ public static class ActorFlags
         new("FRIENDLY", "Starts friendly: patrolling, it only looks for the player after a noise (Blake Stone's scientists)", BlakeMonster),
         new("HURTMONSTERS", "A projectile: hurts the enemies it flies into too, not only players, never its shooter (a trap's fireball)"),
         new("INVENTORY.ALWAYSPICKUP", "Picked up even when it gives the player nothing (health at full, a key already held), rather than left on the floor"),
+        new("KEEPSOLID", "Dead, it still blocks its tile as it did alive (Blake Stone's broken alien canisters and empty gurneys)"),
         new("KEEPTILEONDEATH", "Dying, it keeps the tile it holds rather than moving to the one it's over (Mecha Hitler, so the Hitler it becomes doesn't jump a tile)"),
         new("NODISGUISE", "A decoration no Prop Hunt prop can look like (a puddle flat on the floor)"),
         new("NODOORS", "Never opens doors (Wolf3D's dogs and fake Hitlers, Blake Stone's liquid alien)"),

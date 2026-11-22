@@ -2559,11 +2559,12 @@ internal class MapManager
     }
 
     /// <summary>
-    /// A living actor in the way of the player and other actors: shootable, and not NOTSOLID
-    /// (Blake Stone's hanging turrets and electro-spheres, which things pass under or through)
+    /// An actor in the way of the player and other actors: a living (shootable) one that isn't
+    /// NOTSOLID (Blake Stone's hanging turrets and electro-spheres, which things pass under or
+    /// through), or a KEEPSOLID one alive or dead (bstone's KeepSolid: a broken alien canister)
     /// </summary>
     internal static bool IsSolidActor(Entities.Actors.Actor actor) =>
-        actor.RuntimeFlags.Has(ObjFlags.Shootable) && !actor.HasFlag("NOTSOLID");
+        (actor.RuntimeFlags.Has(ObjFlags.Shootable) || actor.HasFlag("KEEPSOLID") && !actor.IsRemoved) && !actor.HasFlag("NOTSOLID");
 
     /// <summary>
     /// Creates a fresh pawn for a player, replacing any they had, at the head of _actors after

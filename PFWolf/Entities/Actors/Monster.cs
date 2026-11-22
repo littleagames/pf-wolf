@@ -1779,14 +1779,16 @@ internal partial record Monster : Actor
 
         // As KillActor: it dies on the tile it's over, not the one it was walking to (except a
         // KEEPTILEONDEATH one: Mecha Hitler, whose Hitler would otherwise jump: MCS's fix), and
-        // leaves ActorAt[] until its corpse lies on an empty tile
+        // leaves ActorAt[] until its corpse lies on an empty tile. A KEEPSOLID one stays there
+        // and in the way (bstone's KeepSolid): it's marked again whenever its tile is free
         if (!HasFlag("KEEPTILEONDEATH"))
         {
             TileX = (byte)tilex;
             TileY = (byte)tiley;
             SyncPosition();
         }
-        MapManager.UnmarkActorTile(this);
+        if (!HasFlag("KEEPSOLID"))
+            MapManager.UnmarkActorTile(this);
 
         // Points for the player's kills (and a trap's), not for one enemy killing another, nor
         // for killing one again that a reviver brought back

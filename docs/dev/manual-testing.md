@@ -328,6 +328,11 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] **(never tried)** Explosions (floating bomb, transport, turret, generator) unshaded at a
       distance and the bomb's and transport's fading back as they burn; a generator lit a little
       before it blows; a distant guard a little brighter just after firing.
+- [ ] **(never tried)** A broken alien canister (or an empty gurney) stays solid once its alien
+      is out: Blake can't walk through it and a patrolling volatile transport turns aside rather
+      than driving into it (mission 1 floor 2: blow up the floating bomb near the canister, then
+      watch the transport that comes past). Before, the transport ended up inside the canister
+      and blew up there. Planet Strike's morphing posts stay solid while they change.
 - [ ] Planet Strike's floors lit as bstone's per floor: area 0 from 1.07 tiles up to 57%
       (`fog`), area 3 to black far off. **(never tried)** the others by eye against bstone; a
       security cube's explosion slightly shaded on areas 2-3.
