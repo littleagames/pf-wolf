@@ -365,6 +365,22 @@ internal partial record Monster : Actor
     // (Midnight Assault's BLOCK_ENEMIES and BLOCK_BOSSES, CHECKSIDE/CHECKDIAG)
     protected bool Blocked(int x, int y) => MapManager.BlocksMonster(x, y, HasFlag("BOSS"));
 
+    /// <summary>
+    /// The door it waited at (Distance -door-1) is open: on into the doorway. CheckSide, as
+    /// Wolf4SDL's CHECKSIDE, left it on its own tile while the door opened (in a demo it stepped
+    /// on at once, as the original). If something has got into the doorway since, it stays put and
+    /// picks its way again (Distance 0); walking on would take it a tile toward the door and,
+    /// still on its own tile, put it back where it started.
+    /// </summary>
+    private protected void GoThroughOpenedDoor()
+    {
+        Distance = (int)MapConstants.TileGlobal;
+        if (DemoRecord || DemoPlayback)
+            return;
+        if (!TryWalk())
+            Distance = 0;
+    }
+
     internal bool TryWalk()
     {
         int doornumtile = -1;
@@ -993,9 +1009,7 @@ internal partial record Monster : Actor
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TileGlobal;
-                if (!(DemoRecord || DemoPlayback))
-                    TryWalk();
+                GoThroughOpenedDoor();
             }
 
             if (move < Distance)
@@ -2071,9 +2085,7 @@ internal partial record Monster : Actor
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TileGlobal;
-                if (!(DemoRecord || DemoPlayback))
-                    TryWalk();
+                GoThroughOpenedDoor();
             }
 
             if (move < Distance)
@@ -2154,9 +2166,7 @@ internal partial record Monster : Actor
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TileGlobal;
-                if (!(DemoRecord || DemoPlayback))
-                    TryWalk();
+                GoThroughOpenedDoor();
             }
 
             if (move < Distance)
@@ -2247,9 +2257,7 @@ internal partial record Monster : Actor
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].Action != (byte)DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TileGlobal;
-                if (!(DemoRecord || DemoPlayback))
-                    TryWalk();
+                GoThroughOpenedDoor();
             }
 
             if (move < Distance)

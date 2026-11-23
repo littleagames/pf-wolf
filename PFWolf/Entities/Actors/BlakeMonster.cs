@@ -363,7 +363,7 @@ internal partial record BlakeMonster : Monster
                 OpenDoor(-Distance - 1);
                 if (DoorObjects[-Distance - 1].Action != DoorAction.Open)
                     return;
-                Distance = (int)MapConstants.TileGlobal;
+                GoThroughOpenedDoor();      // (it hadn't stepped into the doorway yet: bstone's TryWalk had)
             }
 
             if (move < Distance)
