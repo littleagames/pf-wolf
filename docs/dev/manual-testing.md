@@ -234,7 +234,10 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] Mission select, briefing after skill pick (Esc back to skills), "Get Ready, Blake!".
 - [ ] Status bar: score LED, ammo over weapon, charge gauge, card squares, ECG heart, info area.
 - [ ] Weapons: ACP charge light, SFP, RAW, DND, PDU grenades (4 ammo/shot, explode on walls).
-- [ ] **(never tried)** Grenade and hitscan damage on enemies.
+- [ ] Grenade and hitscan damage on enemies. Grenades checked headless 2026-11-22 (summoned
+      grenade, angle set by Lua, into a large canister alien pinned with speed 0, skill 4): 20
+      throws averaged 228 damage, 1 killed it, as bstone's 40-167 hit + 50-177 blast. An enemy
+      that hasn't noticed Blake takes double, so a grenade then usually kills one.
 - [ ] Enemies: rent-a-cop, pro guard, SWAT, bio-tech, aliens, pods/eggs, gurney mutants, spit.
 - [ ] **(never tried)** Enemies in a room that runs across several floor codes with no door
       between notice Blake as soon as he steps into their part (game-info areas-mark-player,
