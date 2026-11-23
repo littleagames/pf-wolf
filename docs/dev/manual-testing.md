@@ -241,6 +241,12 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       bstone's Thrust); before, they stood blind and still until a shot or a door woke them.
       Unit-tested only (AreasFollowPlayerTests). One enemy firing still wakes every enemy in
       connected areas, as bstone's T_Shoot does.
+- [ ] **(never tried)** Rent-a-cops join in as soon as any cop near them opens fire, even ones
+      walking away from Blake (game-info noise-carries-over: a shot is heard through the next
+      tic, so an enemy earlier in the actor list hears it too). M1F1: walk west from the start;
+      the cop patrolling west along row 54 should turn and chase once the others shoot.
+      Checked headless only.
+- [ ] **(never tried)** Electro-aliens fire a burst of five bolts, not a stream of about 14.
 - [ ] **(never tried)** Pushwalls slide at the original's speed, a tile every 32 tics (about half
       a second; game-info pushwall-speed 4); Wolf3D's still take 128. Unit-tested only.
 - [ ] **(never tried)** Wounding, blowback, pain attack, SMART running away, interrogating an

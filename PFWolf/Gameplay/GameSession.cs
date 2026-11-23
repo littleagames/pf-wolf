@@ -184,6 +184,12 @@ internal sealed class GameSession
     /// <summary>A noise was made last tic (bstone's `alerted` counting down): security lights still hear it</summary>
     internal bool NoiseLastTic;
 
+    /// <summary>Enemies hear last tic's noise too (game-info noise-carries-over, Blake Stone), whatever their place in the actor list</summary>
+    internal bool NoiseCarriesOver;
+
+    /// <summary>A noise an enemy in the players' areas hears now: this tic's, or with noise-carries-over last tic's</summary>
+    internal bool NoiseHeard => MadeNoise || NoiseCarriesOver && NoiseLastTic;
+
     /// <summary>An alarm (A_Alarm) to be heard as noise in the next tic the world moves, too (one raised while a puzzle stopped it)</summary>
     internal bool AlarmPending;
 

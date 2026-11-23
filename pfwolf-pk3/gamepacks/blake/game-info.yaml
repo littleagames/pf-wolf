@@ -21,6 +21,12 @@ default-map:
 # until a door opens or closes (bstone's Thrust). Without it they'd stand blind and still.
 areas-mark-player: true
 
+# Gunfire is heard through the next tic too, by every enemy in a joined area. In bstone (and so
+# the DOS code) a shot is heard only by enemies that think after the shooter that tic, so a
+# rent-a-cop placed earlier on the map patrols on, deaf to its neighbours shooting at Blake;
+# in DOS play they were up and after him almost at once.
+noise-carries-over: true
+
 # Pushwalls slide a tile every 32 tics, four times Wolf3D's speed (bstone's pwall_state_step)
 pushwall-speed: 4
 

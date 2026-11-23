@@ -1396,7 +1396,7 @@ internal partial record Monster : Actor
             // Seen through a see-through door, but only heard through an open one
             if (AreaNumber < MapManager.Floors.NumAreas && AreaSeenByPlayer[AreaNumber] == 0)
                 return false;
-            bool heard = MadeNoise && (AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0);
+            bool heard = World.Session.NoiseHeard && (AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0);
 
             // A disguised player it suspects, or has been shown papers by, it lets be (Gameplay/Stealth.cs)
             if (World.Stealth?.Overlooks(this) == true)
@@ -2052,7 +2052,7 @@ internal partial record Monster : Actor
             return;
 
         // A friendly patroller only looks for the player once there's been a noise
-        if ((!RuntimeFlags.Has(ObjFlags.Friendly) || MadeNoise) && SightPlayer())
+        if ((!RuntimeFlags.Has(ObjFlags.Friendly) || World.Session.NoiseHeard) && SightPlayer())
             return;
 
         if (Dir == ObjDir.NoDir)

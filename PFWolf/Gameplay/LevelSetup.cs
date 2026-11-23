@@ -49,6 +49,7 @@ internal sealed class LevelSetup(
         weaponBob.Init();
         session.NoShots = false;                    // the weapon can fire (A_PlayerFire)
         session.NoiseLastTic = false;               // no noise carried over from the last level
+        session.NoiseCarriesOver = engine.GetGameInfo().NoiseCarriesOver;
         session.AlarmPending = false;               // nor an alarm (A_Alarm)
 
         if (!session.LoadedGame)

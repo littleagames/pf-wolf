@@ -393,6 +393,14 @@ public record GameInfoAsset : Asset
     public bool AreasMarkPlayer { get; init; }
 
     /// <summary>
+    /// A noise (gunfire, a scream) is still heard through the next tic, so every enemy in an area
+    /// joined to the player's hears it, wherever it thinks in the actor list. Off (as the original
+    /// games), it's heard only in the tic it was made, by those thinking after whoever made it, so
+    /// an enemy placed earlier on the map stays deaf to its neighbours' shots.
+    /// </summary>
+    public bool NoiseCarriesOver { get; init; }
+
+    /// <summary>
     /// Items a death gives back as the player had them coming into the level, after the
     /// starting items (Midnight Assault's medkits: oldmedkits). Not with death-restores-level-start,
     /// which puts everything back.
