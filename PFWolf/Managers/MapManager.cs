@@ -2738,6 +2738,9 @@ internal class MapManager
             state = ob.CurrentState ?? state;
         }
 
+        if (ob.Properties.ContainsKey("barrier.damage"))
+            BarrierTick(ob);
+
         // An enemy after someone checks it still has someone to be after (and, with rivals
         // about, whether someone else is nearer)
         if (ob is Entities.Actors.Monster fighter && fighter.BeforeThink(tics))
@@ -2749,6 +2752,31 @@ internal class MapManager
 
         if (ob is Entities.Actors.Monster monster && !ob.IsRemoved)
             MarkActorTile(monster);
+    }
+
+    /// <summary>
+    /// A barrier (`barrier.damage`, Blake Stone's arc and post barriers) that's on -- not in an
+    /// Inactive state -- each tic, as bstone's DoActor does for FL_BARRIER: a living thing in
+    /// its tile (one that was there as it came on) is hurt for barrier.damage, a chance in 256
+    /// (`barrier.chance`) a tic; once nothing living is there, the tile is blocked again (a
+    /// corpse doesn't stop it), so nothing gets through a barrier switched back on.
+    /// </summary>
+    private void BarrierTick(Entities.Actors.Actor ob)
+    {
+        if (ob.IsRemoved || ob.CurrentState?.StateName?.StartsWith("Inactive", StringComparison.Ordinal) != false
+            || !InMap(ob.TileX, ob.TileY))
+            return;
+
+        var grid = GridOf(ob);
+        ref var spot = ref grid[ob.TileX, ob.TileY];
+        if (spot is ActorMark { Who: var who } && !ReferenceEquals(who, ob) && !who.IsRemoved && IsSolidActor(who))
+        {
+            if (session.Random.RndT() < ob.PropertyInt("barrier.chance", 0x7f) && who.RuntimeFlags.Has(ObjFlags.Shootable))
+                who.Damage((uint)Math.Max(ob.PropertyInt("barrier.damage", 0), 0), ob);
+            return;
+        }
+        if (spot is null or ActorMark)
+            spot = new BlockingActor();
     }
 
     /*

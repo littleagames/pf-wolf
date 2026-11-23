@@ -44,15 +44,23 @@ internal partial record BlakeMonster
     /// The think of a bouncing actor (`monster.bounce`: horizontal, vertical or diagonal): it
     /// goes straight until blocked, then back the way it came (a diagonal one turns 90 degrees
     /// first if it can). Within a tile of the player it zaps them (`monster.touchdamage`, with
-    /// its `touchsound`). It doesn't open doors.
+    /// its `touchsound`), at most once every `monster.touchtics` tics. It doesn't open doors.
     /// </summary>
+    /// <remarks>
+    /// bstone's T_OfsBounce zaps once a frame, which at its 70 a second takes 280 health a second
+    /// and kills Blake as a sphere passes through him; DOS Blake drew far fewer frames, so far
+    /// fewer zaps. Temp1 counts the tics to the next zap (0 or less: the next touch zaps).
+    /// </remarks>
     internal void Bounce()
     {
-        if (Math.Max(Math.Abs(Player.X - X), Math.Abs(Player.Y - Y)) < MapConstants.TileGlobal
+        if (Temp1 > 0)
+            Temp1 = (short)Math.Max(Temp1 - (int)Tics, 0);
+        if (Temp1 <= 0 && Math.Max(Math.Abs(Player.X - X), Math.Abs(Player.Y - Y)) < MapConstants.TileGlobal
             && PropertyInt("monster.touchdamage", 0) is > 0 and var zap)
         {
             PlayActorSound(this, "touchsound");
             TakeDamage(zap, this);
+            Temp1 = (short)Math.Max(PropertyInt("monster.touchtics", 1), 1);
         }
 
         if (Dir == ObjDir.NoDir)

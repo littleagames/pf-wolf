@@ -73,6 +73,20 @@ public class BlakeBarrierGameTests
     }
 
     [Test]
+    public void A_Barrier_Turned_On_With_An_Enemy_In_It_Kills_It_And_Blocks_Again()
+    {
+        // Act: barriers off, an alien put on the barrier's tile and held there, barriers on again
+        // (bstone's DoActor FL_BARRIER: 500 a hit, 127 in 256 a tic); then onto the tile
+        var output = Play($"god; tp 11 29; {Toggle}; summon LcanAlien 0 11 28; "
+            + "lua game.actors('LcanAlien')[1].speed = 0; "
+            + $"{Toggle}; wait 35; actors LcanAlien; tp 11 28");
+
+        // Assert: it died where it stood, and the barrier blocks its tile again
+        Assert.That(output, Has.Some.Matches(@"^LcanAlien at 11,28 .*state Death"), "killed by the barrier");
+        Assert.That(OntoBarrier(output), Is.EqualTo(new[] { false }), "blocked again over its body");
+    }
+
+    [Test]
     public void A_Barrier_Saved_Off_Loads_Off_And_Can_Be_Turned_Back_On()
     {
         // Act: saved off, turned on, loaded: is it off and open, and does it block again once on

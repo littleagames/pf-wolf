@@ -259,8 +259,14 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       re-activated barrier blocks again, barrier state after save/load both ways (2026-11-06,
       headless on AOG MAP02's row at 11..21,27..28: BlakeBarrierGameTests, toggled by
       game.trigger as a switch would). **(never tried)** the player standing in a barrier's tile
-      as it comes back on, and an enemy standing in one (bstone's DoActor hurts it, 500 a hit;
-      we have nothing for that).
+      as it comes back on.
+- [ ] **(never tried)** An enemy in a barrier's tile as it's switched back on (M1F1's canister
+      aliens): it's killed (barrier.damage 500, 127 in 256 a tic, as bstone's DoActor), and the
+      barrier blocks again once it's dead or gone. Headless only (2026-11-23,
+      BlakeBarrierGameTests, a held LcanAlien on 11,28).
+- [ ] **(never tried)** Electro-sphere touch damage feels right: 4 at most every 3 tics
+      (monster.touchtics; bstone zaps every 70 Hz frame and killed Blake in under a second).
+      Headless only (2026-11-23, BlakeElectroSphereGameTests: 18 zaps in 60 tics).
 - [ ] Food units: full, no token, vend, out of order.
 - [ ] Elevator floor select; red card unlocks the next floor; teleporters; hub floors keep their
       state when revisited.

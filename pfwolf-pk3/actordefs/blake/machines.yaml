@@ -85,6 +85,9 @@ ElectroSphere:
     "speed": 3096
     "monster.bounce": "diagonal"
     "monster.touchdamage": 4
+    # bstone zaps every frame (70 a second: dead as a sphere passes through); DOS drew a frame
+    # about every 3 tics, as the electro-alien's bursts assume
+    "monster.touchtics": 3
     "touchsound": "bs/elecarcdamage"
   states:
     Spawn:

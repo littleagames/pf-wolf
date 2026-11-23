@@ -5,9 +5,13 @@
 #
 # The arc barrier also shocks a player within 1.375 tiles of it now and then: a 1 in 16 chance
 # each tic, for 4 points.
+#
+# Switched on with an enemy in it (bstone's DoActor, FL_BARRIER), either kind hurts it for 500, a
+# 127 in 256 chance a tic, and blocks its tile again once it's dead or gone (barrier.damage).
 ArcBarrier:
   properties:
     "attackinfo": "$BS_ATTACK_ARC"
+    "barrier.damage": 500
   radius: 32
   flags: [SOLID]
   states:
@@ -33,6 +37,8 @@ ArcBarrier:
         tics-per-frame: -1
 
 PostBarrier:
+  properties:
+    "barrier.damage": 500
   radius: 32
   flags: [SOLID]
   states:
