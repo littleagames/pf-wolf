@@ -2105,19 +2105,31 @@ internal class MapManager
         if (thing.Patrol != 0 && builtActor.ResolvedStates.TryGetValue("Path", out var pathState))
         {
             builtActor.ArmState(pathState);
-            builtActor.Distance = (int)MapConstants.TileGlobal;
             builtActor.Active = ActiveType.Yes;     // a patroller walks wherever the player is
 
-            // As SpawnPatrol did: it's already on its way to the next tile, which is its tile from
-            // now on (it leaves the spawn tile's centre), or reaching it would snap it back a tile
-            switch (builtActor.Dir)
+            if (builtActor is Entities.Actors.Monster { StepsBlindOffSpawn: false })
             {
-                case ObjDir.East: builtActor.TileX++; break;
-                case ObjDir.North: builtActor.TileY--; break;
-                case ObjDir.West: builtActor.TileX--; break;
-                case ObjDir.South: builtActor.TileY++; break;
+                // bstone's SpawnPatrol: distance 0 and a TryWalk, which a wall, a solid thing or
+                // the elevator floor refuses, leaving it on its own tile. That TryWalk waits for
+                // its first T_Path (arriving where it stands, it picks its way), since the tiles
+                // after this one in the scan aren't in place yet
+                builtActor.Distance = 0;
             }
-            builtActor.SyncPosition();
+            else
+            {
+                // As Wolf3D's SpawnPatrol did: it's already on its way to the next tile, which is
+                // its tile from now on (it leaves the spawn tile's centre), or reaching it would
+                // snap it back a tile. Blind: the map puts it facing open floor
+                builtActor.Distance = (int)MapConstants.TileGlobal;
+                switch (builtActor.Dir)
+                {
+                    case ObjDir.East: builtActor.TileX++; break;
+                    case ObjDir.North: builtActor.TileY--; break;
+                    case ObjDir.West: builtActor.TileX--; break;
+                    case ObjDir.South: builtActor.TileY++; break;
+                }
+                builtActor.SyncPosition();
+            }
         }
 
         // AMBUSH actors (the bosses, the Pac-Man ghosts) are always spawned ambush-ready,

@@ -2038,6 +2038,13 @@ internal partial record Monster : Actor
 
     internal virtual void Stand() => SightPlayer();
 
+    /// <summary>
+    /// Whether a patroller spawned by the map steps onto the tile it faces without looking
+    /// (Wolf3D's SpawnPatrol, which demos depend on); a Blake Stone one tries the step as it
+    /// first patrols instead (bstone's TryWalk), so a wall or the elevator floor keeps it put
+    /// </summary>
+    internal virtual bool StepsBlindOffSpawn => true;
+
     internal virtual void Patrol()
     {
         // A STATIONARY actor (Blake Stone's parked transports) stays put

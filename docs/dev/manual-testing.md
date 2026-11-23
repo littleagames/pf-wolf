@@ -329,10 +329,12 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       distance and the bomb's and transport's fading back as they burn; a generator lit a little
       before it blows; a distant guard a little brighter just after firing.
 - [ ] **(never tried)** A broken alien canister (or an empty gurney) stays solid once its alien
-      is out: Blake can't walk through it and a patrolling volatile transport turns aside rather
-      than driving into it (mission 1 floor 2: blow up the floating bomb near the canister, then
-      watch the transport that comes past). Before, the transport ended up inside the canister
-      and blew up there. Planet Strike's morphing posts stay solid while they change.
+      is out: Blake can't walk through it, nor an enemy. Planet Strike's morphing posts stay
+      solid while they change.
+- [ ] **(never tried)** Mission 4 floor 2 (MAP48), the elevator lobby: the volatile transport at
+      38,29 stays parked on the elevator floor (as bstone's), and the one at 39,36 too. Before,
+      it started inside the wall at 39,29, came out onto the canister at 39,30 and blew up there.
+      Elsewhere transports and guards still go their patrol routes.
 - [ ] Planet Strike's floors lit as bstone's per floor: area 0 from 1.07 tiles up to 57%
       (`fog`), area 3 to black far off. **(never tried)** the others by eye against bstone; a
       security cube's explosion slightly shaded on areas 2-3.

@@ -95,6 +95,9 @@ internal partial record BlakeMonster : Monster
             StepBack();
     }
 
+    // A patroller looks before its first step off its spawn tile (bstone's SpawnPatrol TryWalk)
+    internal override bool StepsBlindOffSpawn => false;
+
     // A PATROLTURNS patroller turns when blocked rather than stopping
     internal override void SelectPathDir()
     {
