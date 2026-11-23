@@ -40,10 +40,16 @@ ElectroAlien:
       - { sprite: ELCA, frames: [G], tics-per-frame: 14 }
     Pain:
       - { sprite: ELCA, frames: [H], tics-per-frame: 14, next-state: Chase }
-    # A stream of bolts: bstone runs its T_Shoot as the frame's think, so one every tic
+    # A stream of bolts over the 14-tic firing frame. bstone runs its T_Shoot as the frame's
+    # think, so one a drawn frame: 14 at its 70 fps, but the DOS game drew far fewer frames, so
+    # a burst there was a handful of bolts. Five, about every 3 tics, plays like DOS.
     Attack:
       - { sprite: ELCA, frames: [I], tics-per-frame: 14 }
-      - { sprite: ELCA, frames: [J], tics-per-frame: 14, think: A_FireProjectile("ElectroShot") }
+      - { sprite: ELCA, frames: [J], tics-per-frame: 1, action: A_FireProjectile("ElectroShot") }
+      - { sprite: ELCA, frames: [J], tics-per-frame: 3, action: A_FireProjectile("ElectroShot") }
+      - { sprite: ELCA, frames: [J], tics-per-frame: 3, action: A_FireProjectile("ElectroShot") }
+      - { sprite: ELCA, frames: [J], tics-per-frame: 3, action: A_FireProjectile("ElectroShot") }
+      - { sprite: ELCA, frames: [J], tics-per-frame: 4, action: A_FireProjectile("ElectroShot") }
       - { sprite: ELCA, frames: [K], tics-per-frame: 14, next-state: Chase }
     Death:
       - { sprite: ELCA, frames: [L], tics-per-frame: 14, action: A_DeathScream }
