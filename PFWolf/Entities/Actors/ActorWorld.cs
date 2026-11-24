@@ -63,6 +63,9 @@ internal sealed class ActorWorld(
     /// <summary>Kills in quick succession (Gameplay/KillChains.cs): a player's kill carries their chain on</summary>
     internal Gameplay.KillChains? KillChains { get; init; }
 
+    /// <summary>The level's bonuses (Gameplay/LevelBonuses.cs): an actor's death may give one (`when: killed`)</summary>
+    internal Gameplay.LevelBonuses? LevelBonuses { get; init; }
+
     /// <summary>A* over the level's tiles, for monsters finding their way (Gameplay/Pathfinding.cs)</summary>
     internal Gameplay.Pathfinder Pathfinder { get; } = new();
 

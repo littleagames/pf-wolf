@@ -6,6 +6,41 @@
 # Planet Strike's weapon sprites fill more of their 64x64 than Aliens of Gold's, so bstone draws
 # them 88 high where AOG's are 128 (the 3D view's height)
 weapon-scale: 0.6875
+
+# Aliens of Gold's bonuses but the guardian alien's (bstone gives that one only in Aliens of
+# Gold). A list replaces Aliens of Gold's whole, so the rest are here again.
+level-bonuses:
+  bonuses:
+    - when: score
+      at: 10000000
+      recurs: true
+      points: 1000000
+      health: 99
+      give: { ChargeUnit: 99 }
+      message: "$BS_BONUS_SCOREROLLED"
+      score-text: "-ROLL-"
+      score-text-tics: 600
+    - when: score
+      at: 500000
+      points: 1000000
+      health: 99
+      give: { ChargeUnit: 99 }
+      message: "$BS_BONUS_GREATSCORE"
+    - when: extra-life
+      recurs: true
+      message: "$BS_BONUS_EXTRALIFE"
+      sound: bs/extra_man
+    - when: kills
+      points: 50000
+      message: "$BS_BONUS_ENEMY"
+    - when: points
+      points: 50000
+      message: "$BS_BONUS_POINTS"
+    - when: informants
+      needs-some: true
+      after: [kills, points]
+      points: 50000
+      message: "$BS_BONUS_INFORMANTS"
 # ...and bob it while Blake walks forwards or back (Aliens of Gold's doesn't), until the
 # player turns Weapon Bob off in Game Options
 setting-defaults:

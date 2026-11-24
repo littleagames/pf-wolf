@@ -257,6 +257,14 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       doesn't replace one (hud-messages Bonus priority). Leaving the floor and coming back, or a
       saved game, doesn't give them again. The enemy one checked headless only (AOG MAP02 + PS
       MAP01 killall: BlakeLevelBonusGameTests); the rest unit-tested only (LevelBonusesTests).
+- [ ] **(never tried)** Score bonuses: an extra life every 400,000 points up to 4 lives, "GREAT
+      SCORE! EXTRA LIFE BONUS!" with the extra-man sound; reaching 500,000 gives "GREAT SCORE!"
+      with full ammo and health and 1,000,000 points; passing 9,999,999 gives "ROLLED SCORE
+      DISPLAY!" (the same rewards) and the LED shows " rOLL " for about 8 seconds (the data
+      files' dash picture is blank). Killing a mission's guardian alien (Aliens of Gold only)
+      shows "GUARDIAN ALIEN DESTROYED! FIND THE EXIT..." ("...DESTROY ALL PROJECTION
+      GENERATORS!" on mission 6). Headless with `give points` and summoned spiders
+      (BlakeLevelBonusGameTests); the LED seen once in a window screenshot (2026-11-23).
 - [ ] **(never tried)** Electro-aliens fire a burst of five bolts, not a stream of about 14.
 - [ ] **(never tried)** Pushwalls slide at the original's speed, a tile every 32 tics (about half
       a second; game-info pushwall-speed 4); Wolf3D's still take 128. Unit-tested only.

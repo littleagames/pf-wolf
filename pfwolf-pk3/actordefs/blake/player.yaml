@@ -11,4 +11,4 @@ Player:
     "player.starthealth": 100
     "player.startlives": 3
     "player.maxhealth": 100
-    "player.maxlives": 9
+    "player.maxlives": 4      # bstone's MAX_EXTRA_LIVES: no extra life for score past 4

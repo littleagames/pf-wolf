@@ -185,6 +185,22 @@ internal sealed class StatusBarDrawing(
         }
     }
 
+    /// <summary>Text in a number's part (its font, place and box), right-aligned in its digits as a number would be</summary>
+    internal void LatchText(string part, string text)
+    {
+        if (StatusBar.Get(part) is not { } element)
+            return;
+        var numbers = StatusBar.Get("numbers");
+        if ((element.Font ?? numbers?.Font) is not { Length: > 0 } font)
+            return;
+        if (element.Behind is { Length: > 0 } behind)
+            DrawStatusPart(behind);
+        ClearBox(element);
+        if (element.Digits > 0)
+            text = text.Length > element.Digits ? text[^element.Digits..] : text.PadLeft(element.Digits);
+        DrawStatusText(element, element.Prefix + text + element.Suffix, font, element.Color ?? numbers?.Color ?? "White");
+    }
+
     /// <summary>
     /// A number's text in a part: right-aligned in its digits (as long as the number is with
     /// digits 0), its last digits if longer, keeping a minus sign in front; between the part's
@@ -438,9 +454,17 @@ internal sealed class StatusBarDrawing(
     /// <summary>What the score box shows for a player with others playing (Gameplay/Deathmatch.cs: frags, the team's score); unset, their score</summary>
     internal Func<Entities.PlayerState, int>? ScoreShown { get; set; }
 
+    /// <summary>Text the score box shows in place of the score for now (Gameplay/LevelBonuses.cs: Blake Stone's "-ROLL-"), or null</summary>
+    internal Func<string?>? ScoreText { get; set; }
+
     internal void DrawScore()
     {
         if (StatusBarHidden) return;
+        if (session.GameMode is GameMode.Single or GameMode.Coop && ScoreText?.Invoke() is { } text)
+        {
+            LatchText("score", text);
+            return;
+        }
         // a deathmatch keeps score in frags, a team game the team's
         LatchNumber("score", session.GameMode != GameMode.Single && ScoreShown != null
             ? ScoreShown(session.PlayerState)

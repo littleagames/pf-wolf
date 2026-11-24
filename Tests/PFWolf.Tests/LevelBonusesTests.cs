@@ -3,9 +3,10 @@ using PFWolf.Assets;
 namespace PFWolf.Tests;
 
 /// <summary>
-/// Game-info level-bonuses (Gameplay/LevelBonuses.cs): Blake Stone's floor bonuses for all enemies
-/// destroyed, all points collected and then all informants alive, checked as the score goes up,
-/// each given once, their messages one at a time
+/// Game-info level-bonuses (Gameplay/LevelBonuses.cs): Blake Stone's pinball bonuses -- the floor's
+/// all enemies destroyed, all points collected and then all informants alive, the score reaching
+/// 500,000 and rolling over, an extra life, a guardian alien killed -- checked as the score goes up,
+/// each given once (unless it recurs), their messages one at a time
 /// </summary>
 public class LevelBonusesTests
 {
@@ -13,19 +14,31 @@ public class LevelBonusesTests
     private Dictionary<string, (int, int)> _stats = null!;
     private List<string> _shown = null!;
     private List<string> _sounds = null!;
+    private List<string> _given = null!;
+    private int _redraws;
+    private LevelBonusesInfo _settings = null!;
     private LevelBonuses _bonuses = null!;
 
-    private static readonly LevelBonusesInfo BlakeBonuses = new()
-    {
-        Sound = "bs/roll_score",
-        Style = "Bonus",
-        Bonuses =
-        [
-            new() { When = "kills", Points = 50000, Message = "ENEMY" },
-            new() { When = "points", Points = 50000, Message = "POINTS" },
-            new() { When = "informants", NeedsSome = true, After = ["kills", "points"], Points = 50000, Message = "INFORMANTS" },
-        ],
-    };
+    private static readonly LevelBonusInfo[] FloorBonuses =
+    [
+        new() { When = "kills", Points = 50000, Message = "ENEMY" },
+        new() { When = "points", Points = 50000, Message = "POINTS" },
+        new() { When = "informants", NeedsSome = true, After = ["kills", "points"], Points = 50000, Message = "INFORMANTS" },
+    ];
+
+    // Blake Stone's whole table, in bstone's order
+    private static readonly LevelBonusInfo[] AllBonuses =
+    [
+        new() { When = "killed", Actors = ["SpiderMutant", "AcidDragon"], Message = "GUARDIAN", ClusterMessages = { [6] = "GENERATORS" } },
+        new()
+        {
+            When = "score", At = 10000000, Recurs = true, Points = 1000000, Health = 99, Give = { ["ChargeUnit"] = 99 },
+            Message = "ROLLED", ScoreText = "-ROLL-", ScoreTextTics = 600,
+        },
+        new() { When = "score", At = 500000, Points = 1000000, Health = 99, Give = { ["ChargeUnit"] = 99 }, Message = "GREAT" },
+        new() { When = "extra-life", Recurs = true, Message = "EXTRA", Sound = "bs/extra_man" },
+        .. FloorBonuses,
+    ];
 
     [SetUp]
     public void Make()
@@ -40,13 +53,25 @@ public class LevelBonusesTests
         };
         _shown = [];
         _sounds = [];
+        _given = [];
+        _redraws = 0;
+        _settings = new LevelBonusesInfo { Sound = "bs/roll_score", Style = "Bonus", Bonuses = [.. FloorBonuses] };
         _bonuses = new LevelBonuses(_session, new LevelBonusHooks(
-            () => BlakeBonuses,
+            () => _settings,
             when => _stats.TryGetValue(when, out var stat) ? stat : null,
             (player, points) => player.Score += points,
+            (_, health) => _given.Add($"health {health}"),
+            (_, item, amount) => _given.Add($"{item} {amount}"),
             (message, style) => _shown.Add($"{message} ({style})"),
             _sounds.Add,
-            _ => 420));
+            _ => 420,
+            () => _redraws++));
+        _bonuses.Start();
+    }
+
+    private void UseAllBonuses()
+    {
+        _settings = _settings with { Bonuses = [.. AllBonuses] };
         _bonuses.Start();
     }
 
@@ -55,6 +80,12 @@ public class LevelBonusesTests
     {
         _session.PlayerState.Score += points;
         _bonuses.Tick(tics);
+    }
+
+    private void Tics(int count)
+    {
+        for (int tic = 0; tic < count; tic++)
+            _bonuses.Tick(1);
     }
 
     [Test]
@@ -112,8 +143,7 @@ public class LevelBonusesTests
         Score(500);
         int scoreAtOnce = _session.PlayerState.Score;
         var shownAtOnce = _shown.ToList();
-        for (int tic = 0; tic < 419; tic++)
-            _bonuses.Tick(1);
+        Tics(419);
         var shownBeforeTimeUp = _shown.ToList();
         _bonuses.Tick(1);
 
@@ -123,8 +153,7 @@ public class LevelBonusesTests
         Assert.That(shownBeforeTimeUp, Has.Count.EqualTo(1));
         Assert.That(_shown, Is.EqualTo(new[] { "ENEMY (Bonus)", "POINTS (Bonus)" }));
 
-        for (int tic = 0; tic < 420; tic++)
-            _bonuses.Tick(1);
+        Tics(420);
         Assert.That(_shown.Last(), Is.EqualTo("INFORMANTS (Bonus)"));
     }
 
@@ -190,18 +219,127 @@ public class LevelBonusesTests
     public void No_Bonuses_Without_The_Setting()
     {
         // Arrange
-        var bonuses = new LevelBonuses(_session, new LevelBonusHooks(
-            () => new LevelBonusesInfo(), _ => (1, 1), (player, points) => player.Score += points,
-            (message, _) => _shown.Add(message), _sounds.Add, _ => 420));
-        bonuses.Start();
+        _settings = new LevelBonusesInfo();
+        _bonuses.Start();
 
         // Act
-        _session.PlayerState.Score += 100;
-        bonuses.Tick(1);
+        Score(100);
 
         // Assert
         Assert.That(_session.PlayerState.Score, Is.EqualTo(100));
         Assert.That(_shown, Is.Empty);
+    }
+
+    [Test]
+    public void Reaching_500000_Gives_Full_Ammo_And_Health_And_A_Million_Points_Once()
+    {
+        // Arrange
+        UseAllBonuses();
+        _session.PlayerState.Score = 499000;
+        _bonuses.Start();
+
+        // Act: reached, then again (a death putting the score back as Blake came onto the floor)
+        Score(1000);
+        int scoreAfter = _session.PlayerState.Score;
+        Tics(500);
+        _session.PlayerState.Score = 499000;
+        _bonuses.Tick(1);
+        Score(1000);
+        Tics(500);
+
+        // Assert
+        Assert.That(scoreAfter, Is.EqualTo(500000 + 1000000));
+        Assert.That(_shown, Is.EqualTo(new[] { "GREAT (Bonus)" }));
+        Assert.That(_given, Is.EqualTo(new[] { "health 99", "ChargeUnit 99" }));
+    }
+
+    [Test]
+    public void A_Bonus_s_Own_Points_Can_Reach_A_Score_Mark()
+    {
+        // Arrange: the last kill's bonus takes the score past 500,000
+        UseAllBonuses();
+        _stats["kills"] = (10, 10);
+        _session.PlayerState.Score = 460000;
+        _bonuses.Start();
+
+        // Act
+        Score(500);
+        _bonuses.Tick(1);
+        Tics(420);
+
+        // Assert: the 50,000 is news the next tic; shown in the table's order after what came first
+        Assert.That(_session.PlayerState.Score, Is.EqualTo(460500 + 50000 + 1000000));
+        Assert.That(_shown, Is.EqualTo(new[] { "ENEMY (Bonus)", "GREAT (Bonus)" }));
+    }
+
+    [Test]
+    public void The_Score_Rolling_Over_Shows_Its_Score_Text_For_A_While_And_Can_Come_Again()
+    {
+        // Arrange
+        UseAllBonuses();
+        _session.PlayerState.Score = 9999000;
+        _bonuses.Start();
+
+        // Act
+        Score(1000);
+        var during = _bonuses.ScoreText;
+        Tics(599);
+        var nearlyDone = _bonuses.ScoreText;
+        _bonuses.Tick(1);
+
+        // Assert
+        Assert.That((during, nearlyDone, _bonuses.ScoreText), Is.EqualTo(("-ROLL-", "-ROLL-", (string?)null)));
+        Assert.That(_redraws, Is.EqualTo(2), "drawn as it comes up and as it goes");
+        Assert.That(_bonuses.Given, Is.Empty, "it recurs");
+    }
+
+    [Test]
+    public void An_Extra_Life_Shows_Its_Message_With_Its_Own_Sound()
+    {
+        // Arrange
+        UseAllBonuses();
+
+        // Act: given within the score's rise (PlayerStats.GivePoints)
+        _bonuses.ExtraLife(_session.PlayerState);
+        Score(100);
+        _bonuses.ExtraLife(_session.PlayerState);
+        Score(100);
+        Tics(420);
+
+        // Assert
+        Assert.That(_shown, Is.EqualTo(new[] { "EXTRA (Bonus)", "EXTRA (Bonus)" }));
+        Assert.That(_sounds, Is.EqualTo(new[] { "bs/extra_man", "bs/extra_man" }));
+    }
+
+    [Test]
+    public void A_Guardian_Killed_Says_So_Even_With_No_Points_For_It()
+    {
+        // Arrange
+        UseAllBonuses();
+
+        // Act
+        _bonuses.Killed(new Entities.Actors.Monster { Name = "RentACop" });
+        _bonuses.Tick(1);
+        _bonuses.Killed(new Entities.Actors.Monster { Name = "SpiderMutant" });
+        _bonuses.Tick(1);
+
+        // Assert
+        Assert.That(_shown, Is.EqualTo(new[] { "GUARDIAN (Bonus)" }));
+    }
+
+    [Test]
+    public void A_Guardian_Killed_On_Mission_6_Says_To_Destroy_The_Generators()
+    {
+        // Arrange
+        UseAllBonuses();
+        _session.GameState.Cluster = 6;
+
+        // Act
+        _bonuses.Killed(new Entities.Actors.Monster { Name = "AcidDragon" });
+        Score(25000);
+
+        // Assert
+        Assert.That(_shown, Is.EqualTo(new[] { "GENERATORS (Bonus)" }));
     }
 
     [Test]
@@ -218,12 +356,28 @@ public class LevelBonusesTests
                   after: [kills, points]
                   points: 50000
                   message: "$BS_BONUS_INFORMANTS"
+                - when: score
+                  at: 10000000
+                  recurs: true
+                  health: 99
+                  give: { ChargeUnit: 99 }
+                  score-text: "-ROLL-"
+                  score-text-tics: 600
+                - when: killed
+                  actors: [SpiderMutant]
+                  cluster-messages:
+                    6: "$BS_BONUS_GUARDIAN_GENERATORS"
             """).LevelBonuses;
 
         // Assert
         Assert.That((info.Sound, info.Style), Is.EqualTo(("bs/roll_score", "Bonus")));
-        var bonus = info.Bonuses.Single();
-        Assert.That((bonus.When, bonus.NeedsSome, bonus.Points, bonus.Message), Is.EqualTo(("informants", true, 50000, "$BS_BONUS_INFORMANTS")));
-        Assert.That(bonus.After, Is.EqualTo(new[] { "kills", "points" }));
+        var informants = info.Bonuses[0];
+        Assert.That((informants.When, informants.NeedsSome, informants.Points, informants.Message), Is.EqualTo(("informants", true, 50000, "$BS_BONUS_INFORMANTS")));
+        Assert.That(informants.After, Is.EqualTo(new[] { "kills", "points" }));
+        var rolled = info.Bonuses[1];
+        Assert.That((rolled.At, rolled.Recurs, rolled.Health, rolled.Give["ChargeUnit"], rolled.ScoreText, rolled.ScoreTextTics),
+            Is.EqualTo((10000000, true, 99, 99, "-ROLL-", 600)));
+        var guardian = info.Bonuses[2];
+        Assert.That((guardian.Actors.Single(), guardian.ClusterMessages[6]), Is.EqualTo(("SpiderMutant", "$BS_BONUS_GUARDIAN_GENERATORS")));
     }
 }

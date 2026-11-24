@@ -2010,8 +2010,10 @@ public record LevelBonusesInfo
 public record LevelBonusInfo
 {
     /// <summary>
-    /// What the player must get all of on the level: kills, points (Blake Stone's points ratio),
-    /// treasure, secrets, or informants (all of Blake Stone's informants still alive)
+    /// What gives it: all of something on the level -- kills, points (Blake Stone's points
+    /// ratio), treasure, secrets, or informants (all of Blake Stone's informants still alive);
+    /// `score`, the player's score reaching `at`; `extra-life`, an extra life for score
+    /// (game-info extra-life-score); or `killed`, one of `actors` killed
     /// </summary>
     public string When { get; init; } = "";
 
@@ -2021,11 +2023,38 @@ public record LevelBonusInfo
     /// <summary>Only once these bonuses (by their `when`) have been given on the level</summary>
     public List<string> After { get; init; } = [];
 
+    /// <summary>For `when: score`: the score that, reached, gives it</summary>
+    public int At { get; init; }
+
+    /// <summary>For `when: killed`: the actor classes whose death gives it</summary>
+    public List<string> Actors { get; init; } = [];
+
+    /// <summary>Given again each time (an extra life, the score rolling over); else once a level</summary>
+    public bool Recurs { get; init; }
+
     /// <summary>The points it gives</summary>
     public int Points { get; init; }
 
+    /// <summary>Health it gives, up to the player's max</summary>
+    public int Health { get; init; }
+
+    /// <summary>Items it gives, each with how many (as player.startitem): ammo up to its max</summary>
+    public Dictionary<string, int> Give { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Shown when it's given: text or a $language key</summary>
     public string? Message { get; init; }
+
+    /// <summary>Its message in a cluster (a Blake Stone mission) by number, in place of message</summary>
+    public Dictionary<int, string> ClusterMessages { get; init; } = [];
+
+    /// <summary>
+    /// Shown in the status bar's score box in place of the score, for score-text-tics after its
+    /// message comes up (Blake Stone's "-ROLL-" as the score rolls over)
+    /// </summary>
+    public string? ScoreText { get; init; }
+
+    /// <summary>How long score-text is shown, in tics</summary>
+    public int ScoreTextTics { get; init; }
 
     /// <summary>Its own message style, in place of level-bonuses' style</summary>
     public string? Style { get; init; }

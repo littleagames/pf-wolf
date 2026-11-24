@@ -288,9 +288,23 @@ internal static partial class GameHost
             using var _ = Session.ActAs(player);
             playerStats.GivePoints(points);
         },
+        (player, health) =>
+        {
+            using var _ = Session.ActAs(player);
+            playerStats.HealSelf(health);
+        },
+        (player, item, amount) =>
+        {
+            using var _ = Session.ActAs(player);
+            if (InventoryManager.CreateActor(item) is Entities.Actors.Inventory inventoryItem)
+                playerStats.TryApplyInventory(inventoryItem, amount);
+            else
+                Console.WriteLine($"level-bonuses: no item '{item}' to give.");
+        },
         (message, style) => HudMessageManager.ShowToAll(HudMessageKind.Other, message, style),
         PlayPlayerSound,
-        style => HudMessageManager.FindStyle(style).Duration));
+        style => HudMessageManager.FindStyle(style).Duration,
+        () => statusBarDrawing.DrawScore()));
 
     // A level bonus's `when`: (got, total) on the level in play
     static (int Got, int Total)? LevelBonusStat(string when)

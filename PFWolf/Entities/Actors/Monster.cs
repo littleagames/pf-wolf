@@ -1812,6 +1812,7 @@ internal partial record Monster : Actor
         if (killedBy is PlayerPawn killer)
             killer.State.Kills++;       // for the scoreboard, with others (a missile's: who fired it)
         World.Objectives?.ActorDied(this);     // an `objective` enemy's death (Gameplay/Objectives.cs)
+        World.LevelBonuses?.Killed(this);      // a level bonus for its death (Gameplay/LevelBonuses.cs)
         SetState(DeathStateFor(attacker));
         OnKilled(attacker);
 

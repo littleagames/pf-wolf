@@ -27,13 +27,43 @@ areas-mark-player: true
 # in DOS play they were up and after him almost at once.
 noise-carries-over: true
 
-# The floor's "pinball" bonuses (bstone's CheckPinballBonus): all enemies destroyed, all points
-# collected, then all informants still alive, 50,000 points each, shown in the info area with
-# ROLL_SCORESND, one after another. Checked as the score goes up.
+# An extra life every 400,000 points (bstone's EXTRAPOINTS), up to 4 (player.maxlives)
+extra-life-score: 400000
+
+# The "pinball" bonuses (bstone's PinballBonus table, in its order): shown in the info area with
+# ROLL_SCORESND, one after another, and checked as the score goes up. A guardian alien (a mission's
+# boss) destroyed; the score rolling past the LED's 7 digits ("-ROLL-" there for 600 tics) and
+# reaching 500,000, each with full ammo and health and 1,000,000 points; an extra life; then the
+# floor's: all enemies destroyed, all points collected, all informants still alive, 50,000 each.
 level-bonuses:
   sound: bs/roll_score
   style: Bonus
   bonuses:
+    - when: killed
+      actors: [SpiderMutant, BreatherBeast, CyborgWarrior, ReptilianWarrior, AcidDragon, BioMechGuardian]
+      message: "$BS_BONUS_GUARDIAN"
+      cluster-messages:
+        6: "$BS_BONUS_GUARDIAN_GENERATORS"
+    - when: score
+      at: 10000000
+      recurs: true
+      points: 1000000
+      health: 99
+      give: { ChargeUnit: 99 }
+      message: "$BS_BONUS_SCOREROLLED"
+      score-text: "-ROLL-"
+      score-text-tics: 600
+    - when: score
+      at: 500000
+      points: 1000000
+      health: 99
+      give: { ChargeUnit: 99 }
+      message: "$BS_BONUS_GREATSCORE"
+    # (bstone plays EXTRA_MANSND straight after ROLL_SCORESND, which cuts it off)
+    - when: extra-life
+      recurs: true
+      message: "$BS_BONUS_EXTRALIFE"
+      sound: bs/extra_man
     - when: kills
       points: 50000
       message: "$BS_BONUS_ENEMY"

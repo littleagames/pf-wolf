@@ -272,14 +272,20 @@ internal sealed class PlayerStats(
     ===============
     */
 
-    internal void GiveExtraMan()
+    /// <summary>Gives the player a life, if they have fewer than their max; true if it did</summary>
+    internal bool GiveExtraMan()
     {
-        if (PlayerState.Lives < classes.MaxLives)
+        bool given = PlayerState.Lives < classes.MaxLives;
+        if (given)
             PlayerState.Lives++;
         statusBar.DrawLives();
         if (statusBar.StatusBar.Get("lives")?.Sound is { Length: > 0 } sound)
             hooks.PlayPlayerSound(sound);
+        return given;
     }
+
+    /// <summary>A player was given an extra life for their score (Gameplay/LevelBonuses.cs: Blake Stone's EXTRA LIFE BONUS)</summary>
+    internal Action<Entities.PlayerState>? ExtraLifeForScore { get; set; }
 
     /*
     ===============
@@ -298,7 +304,8 @@ internal sealed class PlayerStats(
         while (ExtraLifeScore > 0 && PlayerState.Score >= PlayerState.NextExtra)
         {
             PlayerState.NextExtra += ExtraLifeScore;
-            GiveExtraMan();
+            if (GiveExtraMan())
+                ExtraLifeForScore?.Invoke(PlayerState);
         }
         statusBar.DrawScore();
     }

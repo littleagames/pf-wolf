@@ -38,6 +38,13 @@ StatusNumbers:
     "7": N_7
     "8": N_8
     "9": N_9
+    # The LED's "-ROLL-" as the score rolls over (bstone's N_RPIC, N_OPIC, N_LPIC, N_DASHPIC;
+    # the raw-data-map names the dash N_Blank2, as the picture in the data files is blank, so it
+    # shows " rOLL ")
+    "R": N_R
+    "O": N_O
+    "L": N_L
+    "-": N_Blank2
   cell-width: 8
 
 # The status bars' small print: Font3, as bstone prints them (fontnumber 2). The top bar's with

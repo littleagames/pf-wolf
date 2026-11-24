@@ -370,8 +370,11 @@ internal static partial class GameHost
             playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, LevelAI, Stealth, Objectives, Session)
         {
             KillChains = KillChains,
+            LevelBonuses = LevelBonuses,
             Scripts = gameScripts,
         };
+        playerStats.ExtraLifeForScore = LevelBonuses.ExtraLife;     // Blake Stone's EXTRA LIFE BONUS (Gameplay/LevelBonuses.cs)
+        statusBarDrawing.ScoreText = () => LevelBonuses.ScoreText;  // and its "-ROLL-"
 
         // TODO: Remove circular dependencies here
     }
