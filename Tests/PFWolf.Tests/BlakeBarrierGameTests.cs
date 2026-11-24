@@ -47,8 +47,9 @@ public class BlakeBarrierGameTests
     public void An_Arc_Barrier_Shocks_A_Player_Beside_It_Only_While_It_Is_On()
     {
         // Act: 70 tics beside two barriers that are on (bstone: 4 points, 1 in 16 a tic, each),
-        // then 70 more with them off; `hurt 1` reads the health out
-        var output = Play($"tp 11 29; wait 70; hurt 1; {Toggle}; wait 70; hurt 1");
+        // then 70 more with them off; `hurt 1` reads the health out. First the killall's "ALL
+        // ENEMY DESTROYED!" runs out, as the info area shows no attack info under it
+        var output = Play($"wait 420; tp 11 29; wait 70; hurt 1; {Toggle}; wait 70; hurt 1");
 
         // Assert: about 35 points between the two barriers (the 1 is hurt's), none once they're off.
         // The 1 in 16 comes from the random table, which where it starts can give a barrier as few

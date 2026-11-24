@@ -63,8 +63,9 @@ public class BlakeMachinesGameTests
     public void Standing_In_Ooze_Hurts(string ooze)
     {
         // Act: under the player, who stands in it for about four of its 90-tic rounds (4 points,
-        // 1 in 8, each tic of its third frame)
-        var output = Play($"summon {ooze} 0 37 54; wait 350; hurt 1");
+        // 1 in 8, each tic of its third frame). First the killall's "ALL ENEMY DESTROYED!" runs
+        // out, as the info area shows no attack info under it
+        var output = Play($"wait 420; summon {ooze} 0 37 54; wait 350; hurt 1");
 
         // Assert: the 1 from hurt, and many bites (a dozen or so), not one a round, which took
         // under 10 in this time
