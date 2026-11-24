@@ -362,6 +362,10 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
 - [ ] **(never tried)** A broken alien canister (or an empty gurney) stays solid once its alien
       is out: Blake can't walk through it, nor an enemy. Planet Strike's morphing posts stay
       solid while they change.
+- [ ] **(never tried)** Walking past an alien canister, gurney, pod egg or crate on the next
+      tile over doesn't catch Blake (M4F1's large canister at 21,52): each blocks only its own
+      tile, as a static thing does (BLOCKSTILE, bstone's FL_FAKE_STATIC). Head-on, Blake still
+      stops at its tile's edge, and it can still be shot.
 - [ ] **(never tried)** Mission 4 floor 2 (MAP48), the elevator lobby: the volatile transport at
       38,29 stays parked on the elevator floor (as bstone's), and the one at 39,36 too. Before,
       it started inside the wall at 39,29, came out onto the canister at 39,30 and blew up there.

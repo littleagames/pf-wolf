@@ -4,10 +4,10 @@
 # east of it) that many seconds after Blake first sees it; then it changes over 9 frames into
 # the enemy, which comes straight for him. Each counts as the enemy it becomes. Below their
 # skill they're plain scenery (mapdefs/planetstrike/decorations.yaml). Each stays solid while
-# it changes (KEEPSOLID: bstone's KeepSolid).
+# it changes (KEEPSOLID: bstone's KeepSolid), blocking Blake on its own tile only (BLOCKSTILE).
 MorphingSpiderMutant:
   parent: BlakeMonster
-  flags: [KEEPSOLID]
+  flags: [KEEPSOLID, BLOCKSTILE]
   properties:
     "tag": "$BS_SPIDERMUTANT"
     "health": 1
@@ -30,7 +30,7 @@ MorphingSpiderMutant:
 
 MorphingReptilianWarrior:
   parent: BlakeMonster
-  flags: [KEEPSOLID]
+  flags: [KEEPSOLID, BLOCKSTILE]
   properties:
     "tag": "$BS_REPTILIANWARRIOR"
     "health": 1
@@ -52,7 +52,7 @@ MorphingReptilianWarrior:
 
 MorphingMutantHuman2:
   parent: BlakeMonster
-  flags: [KEEPSOLID]
+  flags: [KEEPSOLID, BLOCKSTILE]
   properties:
     "tag": "$BS_MUTANTHUMAN2"
     "health": 1

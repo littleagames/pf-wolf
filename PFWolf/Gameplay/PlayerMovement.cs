@@ -385,6 +385,12 @@ internal sealed class PlayerMovement(
                     return false;
 
                 check = map.ActorAt[x, y];
+
+                // a BLOCKSTILE actor blocks only its own tile, as a static thing does (bstone's
+                // FL_FAKE_STATIC: alien canisters, gurneys, crates), not up to a tile from its center
+                if (check is ActorMark { Who: var still } && still.HasFlag("BLOCKSTILE") && MapManager.IsSolidActor(still))
+                    return false;
+
                 if (check != null && check is not ActorMark)       // enemies are checked below
                 {
                     if (check is WallSpriteBlocker)
@@ -456,7 +462,8 @@ internal sealed class PlayerMovement(
         {
             for (x = xl; x <= xh; x++)
             {
-                if (map.ActorMarkAt((int)x, (int)y) is not { } actor || !MapManager.IsSolidActor(actor))
+                if (map.ActorMarkAt((int)x, (int)y) is not { } actor || !MapManager.IsSolidActor(actor)
+                    || actor.HasFlag("BLOCKSTILE"))      // checked with the walls above
                     continue;
 
                 long reach = actor.Reach(PLAYERSIZE, GameConstants.MinActorDist);

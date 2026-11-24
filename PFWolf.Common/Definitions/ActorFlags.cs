@@ -20,6 +20,7 @@ public static class ActorFlags
     [
         new("AMBUSH", "Always placed ready to ambush (deaf until it sees the player), whatever floor code it stands on; other enemies only on the ambush code (the bosses, the Pac-Man ghosts)"),
         new("BLIND", "Never goes after the player: it just goes its way (Blake Stone's volatile material transports)"),
+        new("BLOCKSTILE", "Blocks the player on its own tile only, as a SOLID thing does, rather than anywhere within a tile of its center as an enemy does; it's still shot as an enemy (Blake Stone's alien canisters, gurneys, pod eggs and crates: bstone's FL_FAKE_STATIC)"),
         new("BOSS", "A boss: kept off blocktile: bosses tiles, and spared by a weapon with weapon.spares: BOSS. No class in pfwolf.pk3 has it."),
         new("BRIGHT", "Drawn at full light, unshaded, in every state (a frame's bright modifier does it for one frame)"),
         new("BURSTONPLAYER", "A projectile: bursts on the player (or enemy) it hits, going to its Death state, as on a wall (Blake Stone's spit and shots)"),

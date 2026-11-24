@@ -331,11 +331,12 @@ PodAlien:
 # it), that many seconds after Blake first sees it, and can't be shot till then; a pod egg
 # hatches 5-24 seconds (or the map's time) after Blake first sees it, or when shot. Broken open
 # or empty, each still blocks its tile (KEEPSOLID: bstone's KeepSolid), the enemy that comes
-# out stepping off it.
+# out stepping off it. Like a static thing, each blocks Blake on its own tile only (BLOCKSTILE:
+# bstone's FL_FAKE_STATIC), so he can walk close by.
 # -----------------------------------------------------------------------
 ScanCanister:
   parent: BlakeMonster
-  flags: [STATIONARY, KEEPSOLID]
+  flags: [STATIONARY, KEEPSOLID, BLOCKSTILE]
   properties:
     "tag": "$BS_SCANALIEN"
     "health": 1
@@ -372,7 +373,7 @@ LcanCanister:
 
 GurneySleeper:
   parent: BlakeMonster
-  flags: [STATIONARY, KEEPSOLID]
+  flags: [STATIONARY, KEEPSOLID, BLOCKSTILE]
   properties:
     "tag": "$BS_GURNEYMUTANT"
     "health": 1
@@ -393,7 +394,7 @@ GurneySleeper:
 
 PodEgg:
   parent: BlakeMonster
-  flags: [KEEPSOLID]      # solid while it hatches (removed once its alien is out)
+  flags: [KEEPSOLID, BLOCKSTILE]      # solid while it hatches (removed once its alien is out)
   properties:
     "switched": kill      # a smart switch on its tile hatches it (Gameplay/SmartSwitches.cs)
     "tag": "$BS_PODALIEN"

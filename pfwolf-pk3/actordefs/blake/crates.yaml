@@ -4,7 +4,7 @@
 # numbers (432-485) are in mapdefs/blake/crates.yaml. Not counted as enemies.
 BlakeCrate:
   parent: Monster
-  flags: [NOTCOUNTED, STATIONARY]
+  flags: [NOTCOUNTED, STATIONARY, BLOCKSTILE]   # in the way on its tile only, as bstone's FL_FAKE_STATIC
   properties:
     "attackinfo": "$BS_ATTACK_BLAST"
     "health": 1
