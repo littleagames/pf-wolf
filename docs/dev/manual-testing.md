@@ -249,6 +249,14 @@ Work through it per game where a line says so: **W** = `wolf3d`, **A** = `wolf3d
       tic, so an enemy earlier in the actor list hears it too). M1F1: walk west from the start;
       the cop patrolling west along row 54 should turn and chase once the others shoot.
       Checked headless only.
+- [ ] **(never tried)** Floor bonuses (game-info level-bonuses, bstone's pinball bonuses): the
+      last enemy killed shows "ALL ENEMY DESTROYED! 50,000 POINT BONUS!" in the info area with
+      the roll-score sound; the last points item (or kill) taking the points ratio to 100% shows
+      "ALL POINTS COLLECTED!"; with both and every informant still alive, "ALL INFORMANTS ALIVE!"
+      follows. Two at once show one after the other, 7 seconds each, and a pickup meanwhile
+      doesn't replace one (hud-messages Bonus priority). Leaving the floor and coming back, or a
+      saved game, doesn't give them again. The enemy one checked headless only (AOG MAP02 + PS
+      MAP01 killall: BlakeLevelBonusGameTests); the rest unit-tested only (LevelBonusesTests).
 - [ ] **(never tried)** Electro-aliens fire a burst of five bolts, not a stream of about 14.
 - [ ] **(never tried)** Pushwalls slide at the original's speed, a tile every 32 tics (about half
       a second; game-info pushwall-speed 4); Wolf3D's still take 128. Unit-tested only.

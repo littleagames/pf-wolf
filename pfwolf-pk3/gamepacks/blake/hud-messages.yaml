@@ -18,6 +18,13 @@ Talk:
   parent: Default
   duration: 600
 
+# A level bonus (game-info level-bonuses): 7 seconds, and pickups and the like don't replace it
+# meanwhile (bstone's MP_PINBALL_BONUS priority)
+Bonus:
+  parent: Default
+  duration: 420
+  priority: 1
+
 Center:
   anchor: Center
   color: Yellow

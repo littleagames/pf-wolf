@@ -18,6 +18,7 @@ namespace PFWolf.Gameplay;
 /// <param name="ClearParticles">A new level, life or loaded game starts with no particles in the air</param>
 /// <param name="Puzzles">The puzzles players work (Gameplay/Puzzles.cs): one that pauses stops the level while it's open</param>
 /// <param name="TickPlacedSounds">Sounds placed in the world, heard from the camera: their muffling (Gameplay/SoundMuffling.cs) and the loops from actors (Gameplay/LoopSounds.cs); the tics gone by, 0 while paused</param>
+/// <param name="LevelBonuses">Bonuses for getting all of something on the level (Gameplay/LevelBonuses.cs)</param>
 internal sealed record LevelLoopHooks(
     Func<bool> DemoTesting,
     Action<uint> TickPlayerBodies,
@@ -33,7 +34,8 @@ internal sealed record LevelLoopHooks(
     Action<uint>? TickParticles = null,
     Action? ClearParticles = null,
     Puzzles? Puzzles = null,
-    Action<uint>? TickPlacedSounds = null);
+    Action<uint>? TickPlacedSounds = null,
+    LevelBonuses? LevelBonuses = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -92,6 +94,7 @@ internal sealed class LevelLoop(
             hudMessages.Show(HudMessageKind.Other, arriving);
             session.LevelStartHudMessage = null;
         }
+        hooks.LevelBonuses?.Start();     // what the level has given already (Gameplay/LevelBonuses.cs)
 
         if (session.DemoPlayback)
             input.StartAck();
@@ -180,6 +183,7 @@ internal sealed class LevelLoop(
                 hooks.TickPlayerBodies(session.Tics);     // what others see of the players, and
                 session.Camera.Tick(session.Tics);          // a watched actor's view turning (Gameplay/Camera.cs)
                 levelAI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
+                hooks.LevelBonuses?.Tick((int)session.Tics);     // all of something got (Gameplay/LevelBonuses.cs)
                 lighting.TickZoneLights(session.Tics);       // light zones' fades and effects (Rendering/Lighting.cs)
                 map.Scrollers.Tick(session.Tics);            // scrolling walls and flats (Rendering/Scrollers.cs)
                 hooks.TickParticles?.Invoke(session.Tics);   // particles, only for show (Rendering/Particles.cs)

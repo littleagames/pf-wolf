@@ -17,6 +17,8 @@
 #   color:      A color name from colors.yaml, #RRGGBB or a palette index
 #   duration:   How long each message stays up, in tics (70 a second)
 #   max-lines:  How many messages can be up at the anchor at once; a new one pushes out the oldest
+#   priority:   While one of its messages is up, a message in a style of lower priority at the
+#               same anchor isn't shown (0 when left out; Blake Stone's Bonus style is 1)
 #
 # Styles with the same anchor, x, y and margin share one stack of messages, oldest at the top.
 # Showing a message that's already up brings it back to the bottom with its time restarted.

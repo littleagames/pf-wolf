@@ -17,7 +17,7 @@ internal enum HudAnchor : byte
 
 /// <summary>A message style from hud-messages.yaml, with everything its parents give it filled in</summary>
 internal sealed record HudMessageStyle(string Name, HudAnchor Anchor, int X, int Y, int Margin,
-    string Font, string Color, int Duration, int MaxLines)
+    string Font, string Color, int Duration, int MaxLines, int Priority = 0)
 {
     /// <summary>Where messages in this style stack up: styles that share it share a stack</summary>
     public HudMessagePosition Position => new(Anchor, X, Y, Margin);
@@ -171,7 +171,12 @@ internal class HudMessageManager
             return;
 
         var style = FindStyle(string.IsNullOrWhiteSpace(styleName) ? KindStyle(kind) : styleName);
-        bool alreadyUp = messages.RemoveAll(m => m.Style.Position == style.Position && m.Text == text && m.Key == null) > 0;
+
+        // A message of higher priority up there keeps its place (as Blake Stone's DisplayInfoMsg)
+        if (messages.Any(m => m.Style.Position == style.Position && m.Style.Priority > style.Priority))
+            return;
+
+        bool alreadyUp =messages.RemoveAll(m => m.Style.Position == style.Position && m.Text == text && m.Key == null) > 0;
         messages.Add(new HudMessage(text, style));
 
         var stack = messages.Where(m => m.Style.Position == style.Position).ToList();
@@ -330,7 +335,8 @@ internal class HudMessageManager
             string.IsNullOrWhiteSpace(definition.Font) ? parent.Font : definition.Font,
             string.IsNullOrWhiteSpace(definition.Color) ? parent.Color : definition.Color,
             Math.Max(definition.Duration ?? parent.Duration, 1),
-            Math.Max(definition.MaxLines ?? parent.MaxLines, 1));
+            Math.Max(definition.MaxLines ?? parent.MaxLines, 1),
+            definition.Priority ?? parent.Priority);
     }
 
     private static HudAnchor? ParseAnchor(string styleName, string? anchor)

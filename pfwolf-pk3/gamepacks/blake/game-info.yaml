@@ -27,6 +27,25 @@ areas-mark-player: true
 # in DOS play they were up and after him almost at once.
 noise-carries-over: true
 
+# The floor's "pinball" bonuses (bstone's CheckPinballBonus): all enemies destroyed, all points
+# collected, then all informants still alive, 50,000 points each, shown in the info area with
+# ROLL_SCORESND, one after another. Checked as the score goes up.
+level-bonuses:
+  sound: bs/roll_score
+  style: Bonus
+  bonuses:
+    - when: kills
+      points: 50000
+      message: "$BS_BONUS_ENEMY"
+    - when: points
+      points: 50000
+      message: "$BS_BONUS_POINTS"
+    - when: informants
+      needs-some: true
+      after: [kills, points]
+      points: 50000
+      message: "$BS_BONUS_INFORMANTS"
+
 # Pushwalls slide a tile every 32 tics, four times Wolf3D's speed (bstone's pwall_state_step)
 pushwall-speed: 4
 

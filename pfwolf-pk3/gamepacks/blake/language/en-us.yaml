@@ -68,6 +68,12 @@ $BS_REBAREADY: "^FCA6R.E.B.A.\nAGENT: BLAKE STONE\nALL SYSTEMS READY."
 $BS_NOMESSAGES: "^FCA6\n\n    NO MESSAGES.^FCA8\n\n    FOOD TOKENS: {FoodToken}"
 $BS_OUTOFORDER: "^FCA6\n\n   FOOD UNIT MACHINE\n    IS OUT OF ORDER."
 
+# The floor's bonuses (game-info level-bonuses; bstone's B_EnemyDestroyed etc., the same in
+# BS_AOG.EXE and Planet Strike)
+$BS_BONUS_ENEMY: "^FC57\n\n ALL ENEMY DESTROYED!\n^FCA6  50,000 POINT BONUS!\n"
+$BS_BONUS_POINTS: "^FC57\n\n ALL POINTS COLLECTED!\n^FCA6  50,000 POINT BONUS!\n"
+$BS_BONUS_INFORMANTS: "^FC57\n\n ALL INFORMANTS ALIVE!\n^FCA6  50,000 POINT BONUS!\n"
+
 # Guards and bio-techs (actordefs/blake/enemies.yaml)
 $BS_RENTACOP: "Rent-a-cop"
 $BS_PROGUARD: "Pro guard"

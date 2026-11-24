@@ -276,7 +276,36 @@ internal static partial class GameHost
         new LevelLoopHooks(() => DemoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => AutosavePending, AutoSaveGame,
             () => { ZoneAmbience.Tick(); ZoneReverb.Tick(); },
             () => demoTracer.AfterFrame(), () => LevelTimer.Tick(), () => playScreen.ShowQuickInstructions(), () => destructibleWalls.Tick(),
-            particles.Tick, particles.Reset, Puzzles, TickPlacedSounds));
+            particles.Tick, particles.Reset, Puzzles, TickPlacedSounds, LevelBonuses));
+
+    // Bonuses for getting all of something on a level (Gameplay/LevelBonuses.cs)
+    static LevelBonuses? _levelBonuses;
+    static LevelBonuses LevelBonuses => _levelBonuses ??= new LevelBonuses(Session, new LevelBonusHooks(
+        () => GameEngineManager.GetGameInfo().LevelBonuses,
+        LevelBonusStat,
+        (player, points) =>
+        {
+            using var _ = Session.ActAs(player);
+            playerStats.GivePoints(points);
+        },
+        (message, style) => HudMessageManager.ShowToAll(HudMessageKind.Other, message, style),
+        PlayPlayerSound,
+        style => HudMessageManager.FindStyle(style).Duration));
+
+    // A level bonus's `when`: (got, total) on the level in play
+    static (int Got, int Total)? LevelBonusStat(string when)
+    {
+        var game = Session.GameState;
+        return when.Trim().ToLowerInvariant() switch
+        {
+            "kills" => (game.KillCount, game.KillTotal),
+            "points" => (game.PointsCount, game.PointsTotal),
+            "treasure" => (game.TreasureCount, game.TreasureTotal),
+            "secrets" => (game.SecretCount, game.SecretTotal),
+            "informants" => (hubs.InformantsAlive(), hubs.InformantTotal),
+            _ => null,
+        };
+    }
 
     // Sounds placed in the world, once the listener's moved: what shut doors leave of them
     // (Gameplay/SoundMuffling.cs), then the loops from actors (Gameplay/LoopSounds.cs)

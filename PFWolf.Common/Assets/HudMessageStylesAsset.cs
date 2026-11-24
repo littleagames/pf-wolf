@@ -54,4 +54,11 @@ public class HudMessageStyleDefinition
 
     /// <summary>How many messages can be up at this position at once; the oldest goes first</summary>
     public int? MaxLines { get; set; }
+
+    /// <summary>
+    /// While one of its messages is up, a message in a style of lower priority at the same
+    /// position isn't shown (Blake Stone's info-area priorities: a level bonus stays up through
+    /// the pickups); 0 when unset
+    /// </summary>
+    public int? Priority { get; set; }
 }

@@ -295,6 +295,12 @@ public record GameInfoAsset : Asset
     public KillChainInfo KillChain { get; init; } = new();
 
     /// <summary>
+    /// A level's bonuses for getting all of something (Gameplay/LevelBonuses.cs): Blake Stone's
+    /// "ALL ENEMY DESTROYED!" and the like, each with its points, message and sound. None when unset.
+    /// </summary>
+    public LevelBonusesInfo LevelBonuses { get; init; } = new();
+
+    /// <summary>
     /// What players hear (and see) as their kill streaks grow in a versus game and as a match
     /// ends (Gameplay/Announcer.cs). Nothing when unset.
     /// </summary>
@@ -1982,6 +1988,50 @@ public record KillChainInfo
 
     /// <summary>A kill made unseen (Gameplay/Stealth.cs) gives the prize of a chain of 1 (none) up to this many, at random; 0 for none</summary>
     public int StealthPrize { get; init; }
+}
+
+/// <summary>
+/// Game-info `level-bonuses:` (Gameplay/LevelBonuses.cs): the bonuses a level gives once each,
+/// as the player gets all of something there
+/// </summary>
+public record LevelBonusesInfo
+{
+    /// <summary>Played as each bonus is shown (Blake Stone's ROLL_SCORESND); a bonus's own sound wins</summary>
+    public string? Sound { get; init; }
+
+    /// <summary>The hud-messages.yaml style the messages are shown in; a bonus's own style wins</summary>
+    public string? Style { get; init; }
+
+    /// <summary>The bonuses, checked in this order</summary>
+    public List<LevelBonusInfo> Bonuses { get; init; } = [];
+}
+
+/// <summary>One of game-info level-bonuses' bonuses</summary>
+public record LevelBonusInfo
+{
+    /// <summary>
+    /// What the player must get all of on the level: kills, points (Blake Stone's points ratio),
+    /// treasure, secrets, or informants (all of Blake Stone's informants still alive)
+    /// </summary>
+    public string When { get; init; } = "";
+
+    /// <summary>Only on a level that has at least one (Blake Stone's informants); else a level with none counts as all got</summary>
+    public bool NeedsSome { get; init; }
+
+    /// <summary>Only once these bonuses (by their `when`) have been given on the level</summary>
+    public List<string> After { get; init; } = [];
+
+    /// <summary>The points it gives</summary>
+    public int Points { get; init; }
+
+    /// <summary>Shown when it's given: text or a $language key</summary>
+    public string? Message { get; init; }
+
+    /// <summary>Its own message style, in place of level-bonuses' style</summary>
+    public string? Style { get; init; }
+
+    /// <summary>Its own sound, in place of level-bonuses' sound</summary>
+    public string? Sound { get; init; }
 }
 
 /// <summary>
