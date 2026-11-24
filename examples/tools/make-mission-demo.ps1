@@ -132,17 +132,21 @@ Save-MapWad "$modDir\maps\MAP01.wad" 'MAP01' 'Mission Demo' $planes
 
 # The second level, a locked elevator: the hall in the south; west, the transmitter room (its
 # west wall the transmitter, wall 146, a "transmitter" objective that keeps the exit shut); east,
-# the key room with the gold key; north, the elevator, whose switch (wall 148, on its north wall)
-# needs the gold key and uses it up. No doors: MissionDemoGameTests plays it through with a
-# scripted demo, which a door closing behind it would stop, so mind its route if the rooms move. Try it before the transmitter's down and the exit is refused, but the switch
-# stays up and the key stays with you; wreck the transmitter and it takes you out, key and all.
+# the key room with the gold key; north, up a corridor, the elevator. It's Wolf3D's: it runs
+# east-west, entered at its west end (where a door would be), its sides Wolf3D's elevator walls
+# (21: the lever shows only on a wall's east and west faces, which these keep hidden), and its
+# switch the east end wall (148), which needs the gold key and uses it up. No doors:
+# MissionDemoGameTests plays it through with a scripted demo, which a door closing behind it
+# would stop, so mind its route if the rooms move. Try it before the transmitter's down and the
+# exit is refused, but the switch stays up and the key stays with you; wreck the transmitter and
+# it takes you out, key and all.
 $Layout2 = @(
     '################################'   # y=16
     '################################'
-    '#############L##################'   #      the elevator switch, on the elevator's north wall
-    '############xxx#################'   #      the elevator
-    '############xxx#################'   # y=20
-    '#############x##################'
+    '############EE##################'   #      the elevator's walls
+    '#########xxxxxL#################'   #      the corridor, the elevator, its switch on its east wall
+    '#########x##EE##################'   # y=20
+    '#########x######################'
     '##ccccc#hhhhhhhhh#kkkkk#########'   #      the transmitter room, the hall, the key room
     '##ccccc#hhhhhhhhh#kkkkk#########'
     '#TcccccchhhhhhhhhkkkkKk#########'   #      the transmitter; the gold key
@@ -160,6 +164,7 @@ $Tiles2['T'] = @{ Plane0 = 146 }                           # the transmitter (wa
 $Tiles2['k'] = @{ Plane0 = $Key }
 $Tiles2['K'] = @{ Plane0 = $Key; Plane1 = 43 }             # the gold key
 $Tiles2['x'] = @{ Plane0 = $Exit }
+$Tiles2['E'] = @{ Plane0 = 21 }                            # elevator wall (its lever faces only east and west)
 $Tiles2['L'] = @{ Plane0 = 148 }                           # the locked elevator switch (walls.yaml)
 $planes = New-MapPlanes
 Add-MapLayout $planes $Layout2 $Tiles2 0 16

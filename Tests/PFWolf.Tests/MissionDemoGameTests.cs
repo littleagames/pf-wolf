@@ -60,22 +60,26 @@ public class MissionDemoGameTests
         [.. Enumerable.Range(0, shots).SelectMany(_ => new[] { Press(HeadlessGame.Attack), Wait(10) })];
 
     // MAP02 from its start (13.5,26.5, facing north): to the hall's middle row, east to the key
-    // room's far wall over the gold key, back and north up to the elevator switch (the exit
-    // refused: the transmitter's sending), south and west to the transmitter to shoot it down,
-    // then back to the switch. Long enough that only the level ending cuts it short.
+    // room's far wall over the gold key, back and west to the corridor, north up it into the
+    // elevator and east to its switch (the exit refused: the transmitter's sending), back down
+    // and west to the transmitter to shoot it down, then back to the switch. Long enough that
+    // only the level ending cuts it short.
     private static readonly Step[] Route =
     [
         Wait(5),
         .. Walk(2),                                 // 13.5,24.5
         Right(), .. ToWall(23 - Near - 13.5),       // east, over the key, to the key room's far wall
-        Right(2), .. Walk(23 - Near - 13.5),        // west, back to 13.5,24.5
-        Right(), .. ToWall(24.5 - (19 + Near)),     // north, up to the switch
+        Right(2), .. Walk(23 - Near - 9.5),         // west, back past the start to 9.5,24.5
+        Right(), .. Walk(5),                        // north, up the corridor to 9.5,19.5
+        Right(), .. ToWall(14 - Near - 9.5),        // east, through the elevator to its switch
         Press(HeadlessGame.Use), Wait(20),          // refused: the transmitter's still sending
-        Right(2), .. Walk(24.5 - (19 + Near)),      // south, back to 13.5,24.5
-        Right(), .. ToWall(13.5 - (2 + Near)),      // west, up to the transmitter
+        Right(2), .. Walk(14 - Near - 9.5),         // west, back to 9.5,19.5
+        Left(), .. Walk(5),                         // south, back to 9.5,24.5
+        Right(), .. ToWall(9.5 - (2 + Near)),       // west, up to the transmitter
         .. Shoot(8),
-        Right(2), .. Walk(13.5 - (2 + Near)),       // east, back to 13.5,24.5
-        Left(), .. ToWall(24.5 - (19 + Near)),      // north, up to the switch
+        Right(2), .. Walk(9.5 - (2 + Near)),        // east, back to 9.5,24.5
+        Left(), .. Walk(5),                         // north, up the corridor to 9.5,19.5
+        Right(), .. ToWall(14 - Near - 9.5),        // east, to the switch
         Press(HeadlessGame.Use), Wait(150),         // out, key and all
     ];
 
@@ -102,7 +106,7 @@ public class MissionDemoGameTests
         Assert.That(exitCode, Is.Zero, string.Join(Environment.NewLine, output.TakeLast(30)));
         var trace = DemoTrace.Read(tracePath);
         var log = Describe(trace);
-        var switchTile = trace.Tiles.GetValueOrDefault((13, 18)) ?? [];
+        var switchTile = trace.Tiles.GetValueOrDefault((14, 19)) ?? [];
         var transmitterTile = trace.Tiles.GetValueOrDefault((1, 24)) ?? [];
 
         Assert.That(trace.Events, Has.Some.Matches<TraceEvent>(e => e.Kind == TraceEventKind.Pickup && e.Text.Contains("GoldKey")), log);
